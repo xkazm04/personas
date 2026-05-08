@@ -2762,6 +2762,10 @@ fn row_to_competition(row: &Row) -> rusqlite::Result<DevCompetition> {
             .flatten(),
         baseline_json: row.get::<_, Option<String>>("baseline_json").ok().flatten(),
         reviewer_notes: row.get("reviewer_notes")?,
+        worktree_base_ref: row
+            .get::<_, Option<String>>("worktree_base_ref")
+            .ok()
+            .flatten(),
         created_at: row.get("created_at")?,
         resolved_at: row.get("resolved_at")?,
     })
@@ -2803,6 +2807,7 @@ pub fn create_competition(
     source_idea_id: Option<&str>,
     source_goal_id: Option<&str>,
     slot_count: i32,
+    worktree_base_ref: Option<&str>,
 ) -> Result<DevCompetition, AppError> {
     if task_title.trim().is_empty() {
         return Err(AppError::Validation(
@@ -2817,9 +2822,9 @@ pub fn create_competition(
         let now = chrono::Utc::now().to_rfc3339();
         let conn = pool.get()?;
         conn.execute(
-            "INSERT INTO dev_competitions (id, project_id, task_title, task_description, source_idea_id, source_goal_id, slot_count, status, created_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'running', ?8)",
-            params![id, project_id, task_title, task_description, source_idea_id, source_goal_id, slot_count, now],
+            "INSERT INTO dev_competitions (id, project_id, task_title, task_description, source_idea_id, source_goal_id, slot_count, status, worktree_base_ref, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'running', ?8, ?9)",
+            params![id, project_id, task_title, task_description, source_idea_id, source_goal_id, slot_count, worktree_base_ref, now],
         )?;
         get_competition_by_id(pool, &id)
     })

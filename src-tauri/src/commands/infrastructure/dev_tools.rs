@@ -2251,6 +2251,13 @@ pub struct CompetitionSlotInput {
 /// a distinct worktree name. Claude Code creates isolated git worktrees so
 /// the runs don't clobber each other. Each task's `session_id` is set to
 /// "worktree:<name>" which the task executor reads to add --worktree flag.
+///
+/// `worktree_base_ref` is the optional Claude CLI 2.1.133 `worktree.baseRef`
+/// setting — `"head"` (current default, branch from local HEAD) or
+/// `"fresh"` (branch from `origin/<default>` for a clean baseline). When
+/// set, personas merges the value into `<project_root>/.claude/settings.json`
+/// before spawning the slots; preserves any other user-authored keys. NULL
+/// leaves settings.json untouched and Claude Code uses its built-in default.
 #[tauri::command]
 pub fn dev_tools_start_competition(
     state: State<'_, Arc<AppState>>,
@@ -2260,6 +2267,7 @@ pub fn dev_tools_start_competition(
     source_idea_id: Option<String>,
     source_goal_id: Option<String>,
     slots: Vec<CompetitionSlotInput>,
+    worktree_base_ref: Option<String>,
 ) -> Result<serde_json::Value, AppError> {
     require_auth_sync(&state)?;
 
@@ -2271,6 +2279,13 @@ pub fn dev_tools_start_competition(
     if task_title.trim().is_empty() {
         return Err(AppError::Validation("Task title cannot be empty".into()));
     }
+    if let Some(ref v) = worktree_base_ref {
+        if !crate::engine::worktree_settings::VALID_BASE_REFS.contains(&v.as_str()) {
+            return Err(AppError::Validation(
+                "worktree_base_ref must be 'head' or 'fresh'".into(),
+            ));
+        }
+    }
 
     // Verify project exists
     let project = repo::get_project_by_id(&state.db, &project_id)?;
@@ -2278,6 +2293,24 @@ pub fn dev_tools_start_competition(
     // Baseline capture — measure project health BEFORE competitors run.
     // Non-blocking: if any check fails, we still create the competition.
     let baseline = capture_project_baseline(&project.root_path);
+
+    // Apply worktree.baseRef into <project_root>/.claude/settings.json if
+    // requested. Best-effort: a failure here logs and falls through so the
+    // competition still runs with whatever settings.json (if any) already
+    // says. Claude CLI < 2.1.133 silently ignores the unknown key, so the
+    // write is forward-compatible.
+    if let Some(ref base_ref) = worktree_base_ref {
+        if let Err(e) = crate::engine::worktree_settings::apply_worktree_base_ref(
+            std::path::Path::new(&project.root_path),
+            base_ref,
+        ) {
+            tracing::warn!(
+                error = %e,
+                project_id = %project_id,
+                "worktree_settings: skipping merge — competition will use existing settings.json"
+            );
+        }
+    }
 
     // Create competition row
     let competition = repo::create_competition(
@@ -2288,6 +2321,7 @@ pub fn dev_tools_start_competition(
         source_idea_id.as_deref(),
         source_goal_id.as_deref(),
         slots.len() as i32,
+        worktree_base_ref.as_deref(),
     )?;
 
     // Persist the baseline on the competition record (best-effort update)

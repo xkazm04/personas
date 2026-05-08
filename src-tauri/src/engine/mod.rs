@@ -151,6 +151,7 @@ pub mod url_safety;
 pub mod vector_store;
 pub mod webhook;
 pub mod workflow_compiler;
+pub mod worktree_settings;
 
 #[cfg(test)]
 mod circuit_breakers_integration_tests;

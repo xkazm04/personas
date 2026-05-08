@@ -309,6 +309,7 @@ pub struct DevCompetition {
     pub winner_insight: Option<String>,
     pub baseline_json: Option<String>,
     pub reviewer_notes: Option<String>,
+    pub worktree_base_ref: Option<String>,
     pub created_at: String,
     pub resolved_at: Option<String>,
 }

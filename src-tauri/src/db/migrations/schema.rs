@@ -1292,6 +1292,7 @@ CREATE TABLE IF NOT EXISTS dev_competitions (
   winner_insight      TEXT,
   baseline_json       TEXT,
   reviewer_notes      TEXT,
+  worktree_base_ref   TEXT,
   created_at          TEXT NOT NULL DEFAULT (datetime('now')),
   resolved_at         TEXT
 );
