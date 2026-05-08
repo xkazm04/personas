@@ -616,11 +616,11 @@ pub(super) async fn run_session(
                         // `capability_titles` empty — the synthesizer's
                         // humanise_capability_id fallback handles the
                         // raw-id case but a real title is always better.
-                        if !capability_titles.contains_key(capability_id) {
-                            if let Some(t) = value.get("title").and_then(|v| v.as_str()) {
-                                if !t.is_empty() {
-                                    capability_titles.insert(capability_id.clone(), t.to_string());
-                                }
+                        if let Some(t) = value.get("title").and_then(|v| v.as_str()) {
+                            if !t.is_empty() {
+                                capability_titles
+                                    .entry(capability_id.clone())
+                                    .or_insert_with(|| t.to_string());
                             }
                         }
                         // Defensive open: when the user already answered the
