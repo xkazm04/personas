@@ -22,10 +22,24 @@ use super::n8n_transform::{
 // -- Template integrity helper -----------------------------------
 
 /// Verify template content against the embedded checksum manifest.
-/// Returns `Err(AppError::Validation)` if the template is known but its
-/// content does not match the expected hash (possible tampering).
+/// Returns `Err(AppError::Validation)` if the template is unknown in release
+/// builds, or if the template is known but its content does not match the
+/// expected hash (possible tampering).
 fn check_template_integrity(template_name: &str, content_json: &str) -> Result<(), AppError> {
     let integrity = crate::engine::template_checksums::verify_template(template_name, content_json);
+    #[cfg(not(debug_assertions))]
+    if !integrity.is_known_template {
+        tracing::warn!(
+            template = %template_name,
+            actual = %integrity.actual_hash,
+            "SECURITY: Unknown template rejected during adoption"
+        );
+        return Err(AppError::Validation(
+            "Template integrity verification failed: template is not in the trusted checksum manifest."
+                .into(),
+        ));
+    }
+
     if integrity.is_known_template && !integrity.valid {
         tracing::warn!(
             template = %template_name,

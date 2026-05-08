@@ -271,7 +271,7 @@ rustLines.push('    let invalid_count = results.iter().filter(|r| r.is_known_tem
 rustLines.push('    let unknown_count = results.iter().filter(|r| !r.is_known_template).count();');
 rustLines.push('');
 rustLines.push('    BatchIntegrityResult {');
-rustLines.push('        all_valid: invalid_count == 0,');
+rustLines.push('        all_valid: invalid_count == 0 && unknown_count == 0,');
 rustLines.push('        total: results.len(),');
 rustLines.push('        valid_count,');
 rustLines.push('        invalid_count,');

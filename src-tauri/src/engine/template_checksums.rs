@@ -353,7 +353,7 @@ pub fn verify_templates_batch(templates: &[(String, String)]) -> BatchIntegrityR
     let unknown_count = results.iter().filter(|r| !r.is_known_template).count();
 
     BatchIntegrityResult {
-        all_valid: invalid_count == 0,
+        all_valid: invalid_count == 0 && unknown_count == 0,
         total: results.len(),
         valid_count,
         invalid_count,
