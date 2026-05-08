@@ -39,7 +39,7 @@ function sectionFromPath(path: string): { lang: string; section: string } | null
 /** Loaded top-level sections keyed by language code. English lives in englishSections.ts. */
 const sectionCache = new Map<Language, Partial<Record<TranslationSection, unknown>>>();
 const bundleCache = new Map<Language, Translations>();
-const loadingSet = new Set<string>();
+const loadingPromises = new Map<string, Promise<void>>();
 
 function sectionLoadKey(lang: Language, section: TranslationSection): string {
   return `${lang}:${section}`;
@@ -61,57 +61,73 @@ function cacheSection(lang: Language, section: TranslationSection, value: unknow
   sections[section] = value;
 }
 
+function loadSection(lang: Language, section: TranslationSection): Promise<void> {
+  if (lang === 'en') {
+    getEnglishSection(section);
+    return Promise.resolve();
+  }
+
+  if (getCachedSection(lang, section) !== undefined) {
+    return Promise.resolve();
+  }
+
+  const key = sectionLoadKey(lang, section);
+  const existing = loadingPromises.get(key);
+  if (existing) return existing;
+
+  const entry = Object.entries(sectionLoaders).find(([path]) => {
+    const parsed = sectionFromPath(path);
+    return parsed?.lang === lang && parsed.section === section;
+  });
+  if (!entry) return Promise.resolve();
+
+  const [, loader] = entry;
+  const promise = loader()
+    .catch(
+      () =>
+        new Promise<{ default: unknown }>((resolve, reject) => {
+          setTimeout(() => {
+            loader().then(resolve, reject);
+          }, 1000);
+        }),
+    )
+    .then((mod) => {
+      cacheSection(lang, section, mod.default);
+      bundleVersion++;
+      listeners.forEach((fn) => fn());
+    })
+    .catch((err: unknown) => {
+      import('@/lib/log').then(({ createLogger }) => {
+        createLogger('i18n').error(
+          `Failed to load "${lang}.${section}" translation section after retry -- falling back to English`,
+          { error: err instanceof Error ? err.message : String(err) },
+        );
+      });
+    })
+    .finally(() => {
+      loadingPromises.delete(key);
+    });
+
+  loadingPromises.set(key, promise);
+  return promise;
+}
+
 /**
  * Kick off loading route-required translation sections. Fires a listener
  * broadcast once each section resolves so useSyncExternalStore re-renders
  * consumers.
  */
 export function preloadSections(lang: Language, sections: readonly TranslationSection[]): void {
-  if (lang === 'en') {
-    for (const section of sections) getEnglishSection(section);
-    return;
-  }
-
   for (const section of sections) {
-    if (getCachedSection(lang, section) !== undefined) continue;
-    const key = sectionLoadKey(lang, section);
-    if (loadingSet.has(key)) continue;
-
-    const entry = Object.entries(sectionLoaders).find(([path]) => {
-      const parsed = sectionFromPath(path);
-      return parsed?.lang === lang && parsed.section === section;
-    });
-    if (!entry) continue;
-
-    const [, loader] = entry;
-    loadingSet.add(key);
-
-    const attempt = (isRetry: boolean): void => {
-      loader()
-        .then((mod) => {
-          cacheSection(lang, section, mod.default);
-          bundleVersion++;
-          listeners.forEach((fn) => fn());
-        })
-        .catch((err: unknown) => {
-          if (!isRetry) {
-            setTimeout(() => attempt(true), 1000);
-            return;
-          }
-          import('@/lib/log').then(({ createLogger }) => {
-            createLogger('i18n').error(
-              `Failed to load "${lang}.${section}" translation section after retry — falling back to English`,
-              { error: err instanceof Error ? err.message : String(err) },
-            );
-          });
-        })
-        .finally(() => {
-          loadingSet.delete(key);
-        });
-    };
-
-    attempt(false);
+    void loadSection(lang, section);
   }
+}
+
+export function preloadSectionsAsync(
+  lang: Language,
+  sections: readonly TranslationSection[],
+): Promise<void> {
+  return Promise.all(sections.map((section) => loadSection(lang, section))).then(() => undefined);
 }
 
 function getBundle(lang: Language): Translations {

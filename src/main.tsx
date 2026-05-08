@@ -14,6 +14,10 @@ import { isTelemetryEnabled } from "./lib/telemetryPreference";
 import { persistCrash } from "./lib/utils/crashPersistence";
 import { createLogger } from "./lib/log";
 import { installPreloadErrorRecovery } from "./lib/recovery/preloadErrorRecovery";
+import { preloadSectionsAsync } from "./i18n/useTranslation";
+import { isLocaleCode, type LocaleCode } from "./i18n/locales.manifest";
+import { sectionsForRoute } from "./i18n/routeSections";
+import type { SidebarSection } from "./lib/types/types";
 import "./styles/globals.css";
 
 const globalErrorLogger = createLogger("global-error");
@@ -122,12 +126,46 @@ window.addEventListener("unhandledrejection", (event) => {
 // (see preloadErrorRecovery.test.ts).
 installPreloadErrorRecovery();
 
-// -- Render React immediately (sync) -----------------------------------------
-// On Android WebView, async bootstrap can hang if Tauri IPC promises never
-// resolve. Render first, then set up Sentry asynchronously.
+function readPersistedLocale(): LocaleCode {
+  try {
+    const raw = localStorage.getItem("personas-i18n-storage");
+    if (!raw) return "en";
+    const parsed = JSON.parse(raw) as { state?: { language?: unknown } };
+    const language = parsed?.state?.language;
+    return typeof language === "string" && isLocaleCode(language) ? language : "en";
+  } catch {
+    return "en";
+  }
+}
+
+function readPersistedSidebarSection(): SidebarSection {
+  try {
+    const raw = localStorage.getItem("persona-ui-system");
+    if (!raw) return "home";
+    const parsed = JSON.parse(raw) as { state?: { sidebarSection?: unknown } };
+    const section = parsed?.state?.sidebarSection;
+    return typeof section === "string" ? (section as SidebarSection) : "home";
+  } catch {
+    return "home";
+  }
+}
+
+async function preloadPersistedLocaleBeforeMount(): Promise<void> {
+  const language = readPersistedLocale();
+  if (language === "en") return;
+  const sections = sectionsForRoute(readPersistedSidebarSection());
+  await Promise.race([
+    preloadSectionsAsync(language, sections),
+    new Promise<void>((resolve) => setTimeout(resolve, 1200)),
+  ]);
+}
+
+// -- Render React after persisted locale preload -----------------------------
+// The preload only touches local code-split chunks, not Tauri IPC, so it avoids
+// the English first-paint flash without adding backend startup risk.
 
 const root = document.getElementById("root");
-if (root) {
+function mountReact(root: HTMLElement) {
   try {
     const AppWithBoundary = Sentry.withErrorBoundary(App, {
       fallback: ({ error, resetError }) => {
@@ -191,6 +229,16 @@ if (root) {
       </React.StrictMode>
     );
   }
+}
+
+if (root) {
+  void preloadPersistedLocaleBeforeMount()
+    .catch((e) => {
+      globalErrorLogger.warn("Persisted locale preload failed", {
+        error: e instanceof Error ? e.message : String(e),
+      });
+    })
+    .finally(() => mountReact(root));
 } else {
   globalErrorLogger.error("#root element not found");
 }
