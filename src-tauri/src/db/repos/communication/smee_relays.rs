@@ -203,3 +203,27 @@ pub fn list_active_urls(pool: &DbPool) -> Result<Vec<(String, String)>, AppError
         Ok(rows.filter_map(|r| r.ok()).collect())
     })
 }
+
+/// Get active relays with the routing fields that must take effect immediately
+/// when edited.
+pub fn list_active_configs(
+    pool: &DbPool,
+) -> Result<Vec<(String, String, Option<String>, Option<String>)>, AppError> {
+    timed_query!("smee_relays", "smee_relays::list_active_configs", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT id, channel_url, target_persona_id, event_filter
+             FROM smee_relays
+             WHERE status = 'active'",
+        )?;
+        let rows = stmt.query_map([], |row| {
+            Ok((
+                row.get::<_, String>("id")?,
+                row.get::<_, String>("channel_url")?,
+                row.get::<_, Option<String>>("target_persona_id")?,
+                row.get::<_, Option<String>>("event_filter")?,
+            ))
+        })?;
+        Ok(rows.filter_map(|r| r.ok()).collect())
+    })
+}

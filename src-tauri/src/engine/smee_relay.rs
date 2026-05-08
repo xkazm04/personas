@@ -117,6 +117,24 @@ pub struct SmeeRelayStatus {
     pub error: Option<String>,
 }
 
+struct ActiveRelayTask {
+    handle: tokio::task::JoinHandle<()>,
+    config_key: String,
+}
+
+fn relay_config_key(
+    channel_url: &str,
+    target_persona_id: Option<&str>,
+    event_filter: Option<&str>,
+) -> String {
+    serde_json::json!({
+        "channel_url": channel_url,
+        "target_persona_id": target_persona_id,
+        "event_filter": event_filter,
+    })
+    .to_string()
+}
+
 fn emit_status(app: &AppHandle, state: &mut SmeeRelayState) {
     let any_connected = state.relays.values().any(|r| r.connected);
     let total_events: u64 = state.relays.values().map(|r| r.events_relayed).sum();
@@ -345,85 +363,80 @@ pub async fn run_smee_relay(
     tokio::time::sleep(Duration::from_secs(5)).await;
 
     // Track active relay tasks by relay ID
-    let active_tasks: Arc<tokio::sync::Mutex<HashMap<String, tokio::task::JoinHandle<()>>>> =
+    let active_tasks: Arc<tokio::sync::Mutex<HashMap<String, ActiveRelayTask>>> =
         Arc::new(tokio::sync::Mutex::new(HashMap::new()));
 
     loop {
         // ---- Sync relay tasks with database state ----
-        let active_relays = smee_relay_repo::list_active_urls(&pool).unwrap_or_default();
+        let active_relays = smee_relay_repo::list_active_configs(&pool).unwrap_or_default();
 
-        let desired_ids: std::collections::HashSet<String> =
-            active_relays.iter().map(|(id, _)| id.clone()).collect();
+        let desired_configs: HashMap<String, String> = active_relays
+            .iter()
+            .map(|(id, channel_url, target_persona_id, event_filter)| {
+                (
+                    id.clone(),
+                    relay_config_key(
+                        channel_url,
+                        target_persona_id.as_deref(),
+                        event_filter.as_deref(),
+                    ),
+                )
+            })
+            .collect();
 
         let mut tasks = active_tasks.lock().await;
 
-        // Stop tasks for relays that are no longer active
+        // Stop tasks for relays that are no longer active or whose routing
+        // config changed while the SSE connection was alive.
         let current_ids: Vec<String> = tasks.keys().cloned().collect();
         for id in current_ids {
-            if !desired_ids.contains(&id) {
-                if let Some(handle) = tasks.remove(&id) {
-                    handle.abort();
+            let should_stop = tasks.get(&id).is_some_and(|task| {
+                desired_configs
+                    .get(&id)
+                    .map(|desired| desired != &task.config_key)
+                    .unwrap_or(true)
+            });
+            if should_stop {
+                if let Some(task) = tasks.remove(&id) {
+                    task.handle.abort();
                     let mut s = state.lock().await;
                     s.relays.remove(&id);
-                    tracing::info!(relay_id = %id, "Stopped Smee relay task");
+                    tracing::info!(relay_id = %id, "Stopped Smee relay task for config sync");
                 }
             }
         }
 
         // Start tasks for new active relays
-        for (relay_id, channel_url) in &active_relays {
+        for (relay_id, channel_url, target_persona_id, event_filter) in &active_relays {
             if tasks.contains_key(relay_id) {
                 continue; // already running
             }
 
+            let config_key = relay_config_key(
+                channel_url,
+                target_persona_id.as_deref(),
+                event_filter.as_deref(),
+            );
             let pool2 = pool.clone();
             let app2 = app.clone();
             let state2 = state.clone();
             let relay_id2 = relay_id.clone();
             let url2 = channel_url.clone();
+            let target_persona_id2 = target_persona_id.clone();
+            let event_filter2: Option<Vec<String>> = event_filter
+                .as_deref()
+                .and_then(|filter| serde_json::from_str(filter).ok());
 
             let handle = tokio::spawn(async move {
                 let mut backoff = Duration::from_secs(1);
                 let max_backoff = Duration::from_secs(30);
-                // Cache relay config in memory; only refresh from DB on first
-                // connect and after SmeeRelayNotifier signals a config change.
-                let mut cached_target: Option<Option<String>> = None;
-                let mut cached_filter: Option<Option<Vec<String>>> = None;
                 loop {
-                    // Only query DB when cache is empty (first iteration or after invalidation)
-                    if cached_target.is_none() {
-                        cached_target = Some({
-                            let conn = pool2.get().ok();
-                            conn.and_then(|c| {
-                                c.query_row(
-                                    "SELECT target_persona_id FROM smee_relays WHERE id = ?1",
-                                    rusqlite::params![relay_id2],
-                                    |row| row.get::<_, Option<String>>(0),
-                                )
-                                .ok()
-                            })
-                            .flatten()
-                        });
-                        cached_filter = Some({
-                            let conn = pool2.get().ok();
-                            conn.and_then(|c| {
-                                c.query_row(
-                                    "SELECT event_filter FROM smee_relays WHERE id = ?1",
-                                    rusqlite::params![relay_id2],
-                                    |row| row.get::<_, Option<String>>(0),
-                                )
-                                .ok()
-                            })
-                            .flatten()
-                            .and_then(|f| serde_json::from_str(&f).ok())
-                        });
-                    }
                     let params = RelayParams {
                         relay_key: relay_id2.clone(),
                         channel_url: url2.clone(),
                         source_id: Some(relay_id2.clone()),
-                        target_persona_id: cached_target.clone().flatten(),
-                        event_filter: cached_filter.clone().flatten(),
+                        target_persona_id: target_persona_id2.clone(),
+                        event_filter: event_filter2.clone(),
                     };
                     let connected_at = Instant::now();
                     match relay_sse_core(&params, &pool2, &app2, &state2).await {
@@ -453,10 +466,6 @@ pub async fn run_smee_relay(
                             emit_status(&app2, &mut s);
                         }
                     }
-                    // Invalidate cached config on disconnect so next connect picks up changes
-                    cached_target = None;
-                    cached_filter = None;
-
                     tokio::time::sleep(backoff).await;
                     backoff = (backoff * 2).min(max_backoff);
 
@@ -470,7 +479,7 @@ pub async fn run_smee_relay(
                 }
             });
 
-            tasks.insert(relay_id.clone(), handle);
+            tasks.insert(relay_id.clone(), ActiveRelayTask { handle, config_key });
             tracing::info!(relay_id = %relay_id, url = %channel_url, "Started Smee relay task");
         }
 
