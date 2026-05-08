@@ -419,7 +419,7 @@ pub fn get_all(pool: &DbPool) -> Result<Vec<Persona>, AppError> {
     timed_query!("personas", "personas::get_all", {
         let start = Instant::now();
         let conn = pool.get()?;
-        let mut stmt = conn.prepare("SELECT * FROM personas ORDER BY created_at DESC")?;
+        let mut stmt = conn.prepare_cached("SELECT * FROM personas ORDER BY created_at DESC")?;
         let rows = stmt.query_map([], row_to_persona_redacted)?;
         let result = collect_rows(rows, "personas::get_all");
         let elapsed_ms = start.elapsed().as_millis() as u64;
@@ -436,12 +436,9 @@ pub fn get_by_id(pool: &DbPool, id: &str) -> Result<Persona, AppError> {
     timed_query!("personas", "personas::get_by_id", {
         let start = Instant::now();
         let conn = pool.get()?;
-        let result = conn
-            .query_row(
-                "SELECT * FROM personas WHERE id = ?1",
-                params![id],
-                row_to_persona,
-            )
+        let mut stmt = conn.prepare_cached("SELECT * FROM personas WHERE id = ?1")?;
+        let result = stmt
+            .query_row(params![id], row_to_persona)
             .map_err(|e| match e {
                 rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Persona {id}")),
                 other => AppError::Database(other),
@@ -461,12 +458,9 @@ pub fn get_by_id(pool: &DbPool, id: &str) -> Result<Persona, AppError> {
 pub fn find_by_id_if_exposed(pool: &DbPool, id: &str) -> Result<Option<Persona>, AppError> {
     timed_query!("personas", "personas::find_by_id_if_exposed", {
         let conn = pool.get()?;
-        let result = conn
-            .query_row(
-                "SELECT * FROM personas WHERE id = ?1",
-                params![id],
-                row_to_persona,
-            )
+        let mut stmt = conn.prepare_cached("SELECT * FROM personas WHERE id = ?1")?;
+        let result = stmt
+            .query_row(params![id], row_to_persona)
             .optional()
             .map_err(AppError::Database)?;
         Ok(result.filter(|p| p.gateway_exposure.is_externally_visible()))
@@ -504,7 +498,8 @@ pub fn get_enabled(pool: &DbPool) -> Result<Vec<Persona>, AppError> {
     timed_query!("personas", "personas::get_enabled", {
         let start = Instant::now();
         let conn = pool.get()?;
-        let mut stmt = conn.prepare("SELECT * FROM personas WHERE enabled = 1 ORDER BY name")?;
+        let mut stmt =
+            conn.prepare_cached("SELECT * FROM personas WHERE enabled = 1 ORDER BY name")?;
         let rows = stmt.query_map([], row_to_persona)?;
         let result = collect_rows(rows, "personas::get_enabled");
         let elapsed_ms = start.elapsed().as_millis() as u64;
@@ -948,7 +943,7 @@ pub fn get_summaries(pool: &DbPool) -> Result<Vec<PersonaSummary>, AppError> {
         let today = chrono::Utc::now().date_naive();
 
         // Query 1: Basic summary (trigger counts + last run) — 1 query for all personas
-        let mut summary_stmt = conn.prepare(
+        let mut summary_stmt = conn.prepare_cached(
             "SELECT
              p.id AS persona_id,
              COALESCE(t.cnt, 0) AS enabled_trigger_count,
@@ -978,7 +973,7 @@ pub fn get_summaries(pool: &DbPool) -> Result<Vec<PersonaSummary>, AppError> {
 
         // Query 2: Combined CTE for recent statuses, runs-today, and 7-day sparkline
         // Single scan of persona_executions instead of 3 separate queries.
-        let mut combined_stmt = conn.prepare(
+        let mut combined_stmt = conn.prepare_cached(
             "WITH ranked AS (
              SELECT persona_id, status, created_at,
                     ROW_NUMBER() OVER (PARTITION BY persona_id ORDER BY created_at DESC) AS rn

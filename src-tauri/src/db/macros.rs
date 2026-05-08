@@ -146,12 +146,10 @@ macro_rules! crud_get_by_id {
         ) -> Result<$model, $crate::error::AppError> {
             let _start = std::time::Instant::now();
             let conn = pool.get()?;
-            let result = conn
-                .query_row(
-                    concat!("SELECT * FROM ", $table, " WHERE id = ?1"),
-                    rusqlite::params![id],
-                    $mapper,
-                )
+            let mut stmt =
+                conn.prepare_cached(concat!("SELECT * FROM ", $table, " WHERE id = ?1"))?;
+            let result = stmt
+                .query_row(rusqlite::params![id], $mapper)
                 .map_err(|e| match e {
                     rusqlite::Error::QueryReturnedNoRows => {
                         $crate::error::AppError::NotFound(format!(concat!($entity, " {}"), id))
@@ -183,7 +181,8 @@ macro_rules! crud_get_all {
         pub fn get_all(pool: &$crate::db::DbPool) -> Result<Vec<$model>, $crate::error::AppError> {
             let _start = std::time::Instant::now();
             let conn = pool.get()?;
-            let mut stmt = conn.prepare(concat!("SELECT * FROM ", $table, " ORDER BY ", $order))?;
+            let mut stmt =
+                conn.prepare_cached(concat!("SELECT * FROM ", $table, " ORDER BY ", $order))?;
             let rows = stmt.query_map([], $mapper)?;
             let result = Ok($crate::db::repos::utils::collect_rows(
                 rows,
@@ -213,10 +212,9 @@ macro_rules! crud_delete {
         ) -> Result<bool, $crate::error::AppError> {
             let _start = std::time::Instant::now();
             let conn = pool.get()?;
-            let rows = conn.execute(
-                concat!("DELETE FROM ", $table, " WHERE id = ?1"),
-                rusqlite::params![id],
-            )?;
+            let mut stmt =
+                conn.prepare_cached(concat!("DELETE FROM ", $table, " WHERE id = ?1"))?;
+            let rows = stmt.execute(rusqlite::params![id])?;
             $crate::db::perf::record_query($table, concat!($table, "::delete"), _start.elapsed());
             Ok(rows > 0)
         }
@@ -393,17 +391,15 @@ macro_rules! lab_crud {
         ) -> Result<$run_type, $crate::error::AppError> {
             timed_query!($run_table, concat!($run_table, "::get_run_by_id"), {
                 let conn = pool.get()?;
-                conn.query_row(
-                    concat!("SELECT * FROM ", $run_table, " WHERE id = ?1"),
-                    rusqlite::params![id],
-                    $run_mapper,
-                )
-                .map_err(|e| match e {
-                    rusqlite::Error::QueryReturnedNoRows => {
-                        $crate::error::AppError::NotFound(format!(concat!($run_entity, " {}"), id))
-                    }
-                    other => $crate::error::AppError::Database(other),
-                })
+                let mut stmt =
+                    conn.prepare_cached(concat!("SELECT * FROM ", $run_table, " WHERE id = ?1"))?;
+                stmt.query_row(rusqlite::params![id], $run_mapper)
+                    .map_err(|e| match e {
+                        rusqlite::Error::QueryReturnedNoRows => $crate::error::AppError::NotFound(
+                            format!(concat!($run_entity, " {}"), id),
+                        ),
+                        other => $crate::error::AppError::Database(other),
+                    })
             })
         }
 
@@ -415,7 +411,7 @@ macro_rules! lab_crud {
             timed_query!($run_table, concat!($run_table, "::get_runs_by_persona"), {
                 let limit = limit.unwrap_or(20);
                 let conn = pool.get()?;
-                let mut stmt = conn.prepare(concat!(
+                let mut stmt = conn.prepare_cached(concat!(
                     "SELECT * FROM ",
                     $run_table,
                     " WHERE persona_id = ?1 ORDER BY created_at DESC LIMIT ?2"
@@ -547,7 +543,7 @@ macro_rules! lab_crud {
                 concat!($result_table, "::get_results_by_run"),
                 {
                     let conn = pool.get()?;
-                    let mut stmt = conn.prepare(concat!(
+                    let mut stmt = conn.prepare_cached(concat!(
                         "SELECT * FROM ",
                         $result_table,
                         " WHERE run_id = ?1 ORDER BY ",

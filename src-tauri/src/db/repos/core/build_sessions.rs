@@ -52,31 +52,31 @@ fn row_to_build_session(row: &Row) -> rusqlite::Result<BuildSession> {
 pub fn create(pool: &DbPool, session: &BuildSession) -> Result<(), AppError> {
     timed_query!("build_sessions", "build_sessions::create", {
         let conn = pool.get()?;
-        conn.execute(
+        let mut stmt = conn.prepare_cached(
             "INSERT INTO build_sessions
              (id, persona_id, phase, resolved_cells, pending_question, agent_ir,
               adoption_answers, intent, error_message, cli_pid, workflow_json,
               parser_result_json, mode, companion_session_id, created_at, updated_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)",
-            params![
-                session.id,
-                session.persona_id,
-                session.phase.as_str(),
-                session.resolved_cells,
-                session.pending_question,
-                session.agent_ir,
-                session.adoption_answers,
-                session.intent,
-                session.error_message,
-                session.cli_pid.map(|p| p as i64),
-                session.workflow_json,
-                session.parser_result_json,
-                session.mode,
-                session.companion_session_id,
-                session.created_at,
-                session.updated_at,
-            ],
         )?;
+        stmt.execute(params![
+            session.id,
+            session.persona_id,
+            session.phase.as_str(),
+            session.resolved_cells,
+            session.pending_question,
+            session.agent_ir,
+            session.adoption_answers,
+            session.intent,
+            session.error_message,
+            session.cli_pid.map(|p| p as i64),
+            session.workflow_json,
+            session.parser_result_json,
+            session.mode,
+            session.companion_session_id,
+            session.created_at,
+            session.updated_at,
+        ])?;
         Ok(())
     })
 }
@@ -85,11 +85,8 @@ pub fn create(pool: &DbPool, session: &BuildSession) -> Result<(), AppError> {
 pub fn get_by_id(pool: &DbPool, id: &str) -> Result<Option<BuildSession>, AppError> {
     timed_query!("build_sessions", "build_sessions::get_by_id", {
         let conn = pool.get()?;
-        let result = conn.query_row(
-            "SELECT * FROM build_sessions WHERE id = ?1",
-            params![id],
-            row_to_build_session,
-        );
+        let mut stmt = conn.prepare_cached("SELECT * FROM build_sessions WHERE id = ?1")?;
+        let result = stmt.query_row(params![id], row_to_build_session);
         match result {
             Ok(session) => Ok(Some(session)),
             Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
@@ -108,13 +105,12 @@ pub fn get_active_for_persona(
         "build_sessions::get_active_for_persona",
         {
             let conn = pool.get()?;
-            let result = conn.query_row(
+            let mut stmt = conn.prepare_cached(
                 "SELECT * FROM build_sessions
              WHERE persona_id = ?1 AND phase NOT IN ('completed', 'failed', 'cancelled', 'promoted')
              ORDER BY updated_at DESC LIMIT 1",
-                params![persona_id],
-                row_to_build_session,
-            );
+            )?;
+            let result = stmt.query_row(params![persona_id], row_to_build_session);
             match result {
                 Ok(session) => Ok(Some(session)),
                 Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
@@ -135,13 +131,12 @@ pub fn get_latest_for_persona(
         "build_sessions::get_latest_for_persona",
         {
             let conn = pool.get()?;
-            let result = conn.query_row(
+            let mut stmt = conn.prepare_cached(
                 "SELECT * FROM build_sessions
              WHERE persona_id = ?1
              ORDER BY updated_at DESC LIMIT 1",
-                params![persona_id],
-                row_to_build_session,
-            );
+            )?;
+            let result = stmt.query_row(params![persona_id], row_to_build_session);
             match result {
                 Ok(session) => Ok(Some(session)),
                 Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
@@ -207,7 +202,7 @@ pub fn list_non_terminal(
         let conn = pool.get()?;
 
         if let Some(pid) = persona_id {
-            let mut stmt = conn.prepare(
+            let mut stmt = conn.prepare_cached(
                 "SELECT * FROM build_sessions
                  WHERE persona_id = ?1 AND phase NOT IN ('completed', 'failed', 'cancelled', 'promoted')
                  ORDER BY updated_at DESC",
@@ -215,7 +210,7 @@ pub fn list_non_terminal(
             let rows = stmt.query_map(params![pid], row_to_build_session)?;
             Ok(collect_rows(rows, "build_sessions::list_non_terminal"))
         } else {
-            let mut stmt = conn.prepare(
+            let mut stmt = conn.prepare_cached(
                 "SELECT * FROM build_sessions
                  WHERE phase NOT IN ('completed', 'failed', 'cancelled', 'promoted')
                  ORDER BY updated_at DESC",
@@ -230,7 +225,8 @@ pub fn list_non_terminal(
 pub fn delete(pool: &DbPool, id: &str) -> Result<(), AppError> {
     timed_query!("build_sessions", "build_sessions::delete", {
         let conn = pool.get()?;
-        conn.execute("DELETE FROM build_sessions WHERE id = ?1", params![id])?;
+        let mut stmt = conn.prepare_cached("DELETE FROM build_sessions WHERE id = ?1")?;
+        stmt.execute(params![id])?;
         Ok(())
     })
 }

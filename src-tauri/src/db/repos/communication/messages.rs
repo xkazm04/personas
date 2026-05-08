@@ -56,7 +56,7 @@ pub fn get_all(
         let offset = offset.unwrap_or(0);
         let conn = pool.get()?;
 
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT * FROM persona_messages
              ORDER BY created_at DESC
              LIMIT ?1 OFFSET ?2",
@@ -70,17 +70,14 @@ pub fn get_all(
 pub fn get_by_id(pool: &DbPool, id: &str) -> Result<PersonaMessage, AppError> {
     timed_query!("persona_messages", "persona_messages::get_by_id", {
         let conn = pool.get()?;
-        conn.query_row(
-            "SELECT * FROM persona_messages WHERE id = ?1",
-            params![id],
-            row_to_message,
-        )
-        .map_err(|e| match e {
-            rusqlite::Error::QueryReturnedNoRows => {
-                AppError::NotFound(format!("PersonaMessage {id}"))
-            }
-            other => AppError::Database(other),
-        })
+        let mut stmt = conn.prepare_cached("SELECT * FROM persona_messages WHERE id = ?1")?;
+        stmt.query_row(params![id], row_to_message)
+            .map_err(|e| match e {
+                rusqlite::Error::QueryReturnedNoRows => {
+                    AppError::NotFound(format!("PersonaMessage {id}"))
+                }
+                other => AppError::Database(other),
+            })
     })
 }
 
@@ -99,7 +96,7 @@ pub fn get_by_use_case_id(
             let limit = limit.unwrap_or(50);
             let conn = pool.get()?;
 
-            let mut stmt = conn.prepare(
+            let mut stmt = conn.prepare_cached(
                 "SELECT * FROM persona_messages
              WHERE persona_id = ?1 AND use_case_id = ?2
              ORDER BY created_at DESC
@@ -120,7 +117,7 @@ pub fn get_by_persona_id(
         let limit = limit.unwrap_or(50);
         let conn = pool.get()?;
 
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT * FROM persona_messages
              WHERE persona_id = ?1
              ORDER BY created_at DESC
@@ -135,11 +132,9 @@ pub fn get_by_persona_id(
 pub fn get_unread_count(pool: &DbPool) -> Result<i64, AppError> {
     timed_query!("persona_messages", "persona_messages::get_unread_count", {
         let conn = pool.get()?;
-        let count: i64 = conn.query_row(
-            "SELECT COUNT(*) FROM persona_messages WHERE is_read = 0",
-            [],
-            |row| row.get(0),
-        )?;
+        let mut stmt =
+            conn.prepare_cached("SELECT COUNT(*) FROM persona_messages WHERE is_read = 0")?;
+        let count: i64 = stmt.query_row([], |row| row.get(0))?;
         Ok(count)
     })
 }
@@ -147,9 +142,8 @@ pub fn get_unread_count(pool: &DbPool) -> Result<i64, AppError> {
 pub fn get_total_count(pool: &DbPool) -> Result<i64, AppError> {
     timed_query!("persona_messages", "persona_messages::get_total_count", {
         let conn = pool.get()?;
-        let count: i64 = conn.query_row("SELECT COUNT(*) FROM persona_messages", [], |row| {
-            row.get(0)
-        })?;
+        let mut stmt = conn.prepare_cached("SELECT COUNT(*) FROM persona_messages")?;
+        let count: i64 = stmt.query_row([], |row| row.get(0))?;
         Ok(count)
     })
 }
@@ -179,14 +173,14 @@ pub fn create(pool: &DbPool, input: CreateMessageInput) -> Result<PersonaMessage
         // instead so callers (dispatch.rs) get a normal Ok and continue.
         if let Some(ref title) = input.title {
             if !title.trim().is_empty() {
-                let dup: Result<String, _> = conn.query_row(
+                let mut dup_stmt = conn.prepare_cached(
                     "SELECT id FROM persona_messages
                      WHERE persona_id = ?1 AND title = ?2
                        AND date(created_at) = date(?3)
                      ORDER BY created_at DESC LIMIT 1",
-                    params![input.persona_id, title, now],
-                    |row| row.get(0),
-                );
+                )?;
+                let dup: Result<String, _> =
+                    dup_stmt.query_row(params![input.persona_id, title, now], |row| row.get(0));
                 if let Ok(existing_id) = dup {
                     tracing::info!(
                         persona_id = %input.persona_id,
@@ -199,24 +193,24 @@ pub fn create(pool: &DbPool, input: CreateMessageInput) -> Result<PersonaMessage
             }
         }
 
-        conn.execute(
+        let mut stmt = conn.prepare_cached(
             "INSERT INTO persona_messages
              (id, persona_id, execution_id, title, content, content_type, priority, is_read, metadata, created_at, thread_id, use_case_id)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 0, ?8, ?9, ?10, ?11)",
-            params![
-                id,
-                input.persona_id,
-                input.execution_id,
-                input.title,
-                input.content,
-                content_type,
-                priority,
-                input.metadata,
-                now,
-                thread_id,
-                input.use_case_id,
-            ],
         )?;
+        stmt.execute(params![
+            id,
+            input.persona_id,
+            input.execution_id,
+            input.title,
+            input.content,
+            content_type,
+            priority,
+            input.metadata,
+            now,
+            thread_id,
+            input.use_case_id,
+        ])?;
 
         get_by_id(pool, &id)
     })
@@ -225,7 +219,7 @@ pub fn create(pool: &DbPool, input: CreateMessageInput) -> Result<PersonaMessage
 pub fn get_by_thread(pool: &DbPool, thread_id: &str) -> Result<Vec<PersonaMessage>, AppError> {
     timed_query!("persona_messages", "persona_messages::get_by_thread", {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT * FROM persona_messages
              WHERE thread_id = ?1
              ORDER BY created_at ASC",
@@ -456,7 +450,7 @@ pub fn get_deliveries_by_message(
         "persona_messages::get_deliveries_by_message",
         {
             let conn = pool.get()?;
-            let mut stmt = conn.prepare(
+            let mut stmt = conn.prepare_cached(
                 "SELECT * FROM persona_message_deliveries
              WHERE message_id = ?1
              ORDER BY created_at DESC",

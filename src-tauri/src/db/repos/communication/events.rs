@@ -175,23 +175,23 @@ pub fn publish(pool: &DbPool, input: CreatePersonaEventInput) -> Result<PersonaE
         let (stored_payload, payload_iv) = encrypt_optional_payload(&input.payload);
 
         let conn = pool.get()?;
-        conn.execute(
+        let mut stmt = conn.prepare_cached(
             "INSERT INTO persona_events
              (id, project_id, event_type, source_type, source_id, target_persona_id, payload, payload_iv, use_case_id, status, created_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 'pending', ?10)",
-            params![
-                id,
-                project_id,
-                input.event_type,
-                input.source_type,
-                input.source_id,
-                input.target_persona_id,
-                stored_payload,
-                payload_iv,
-                input.use_case_id,
-                now,
-            ],
         )?;
+        stmt.execute(params![
+            id,
+            project_id,
+            input.event_type,
+            input.source_type,
+            input.source_id,
+            input.target_persona_id,
+            stored_payload,
+            payload_iv,
+            input.use_case_id,
+            now,
+        ])?;
 
         get_by_id(pool, &id)
     })
@@ -209,7 +209,7 @@ pub fn get_pending(
         let conn = pool.get()?;
 
         if let Some(pid) = project_id {
-            let mut stmt = conn.prepare(
+            let mut stmt = conn.prepare_cached(
                 "SELECT * FROM persona_events
                  WHERE status = 'pending' AND project_id = ?1
                  ORDER BY created_at ASC, id ASC
@@ -218,7 +218,7 @@ pub fn get_pending(
             let rows = stmt.query_map(params![pid, limit], row_to_event)?;
             Ok(collect_rows(rows, "get_pending"))
         } else {
-            let mut stmt = conn.prepare(
+            let mut stmt = conn.prepare_cached(
                 "SELECT * FROM persona_events
                  WHERE status = 'pending'
                  ORDER BY created_at ASC, id ASC
@@ -237,7 +237,7 @@ pub fn get_pending(
 pub fn claim_pending(pool: &DbPool, limit: i64) -> Result<Vec<PersonaEvent>, AppError> {
     timed_query!("persona_events", "persona_events::claim_pending", {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "UPDATE persona_events
              SET status = 'processing'
              WHERE id IN (
@@ -263,12 +263,10 @@ pub fn update_status(
         let conn = pool.get()?;
 
         // Validate transition: read current status and check legality.
-        let current_str: String = conn
-            .query_row(
-                "SELECT status FROM persona_events WHERE id = ?1",
-                params![id],
-                |row| row.get(0),
-            )
+        let mut select_stmt =
+            conn.prepare_cached("SELECT status FROM persona_events WHERE id = ?1")?;
+        let current_str: String = select_stmt
+            .query_row(params![id], |row| row.get(0))
             .map_err(|_| AppError::NotFound(format!("PersonaEvent {id}")))?;
         let current = PersonaEventStatus::from_db(&current_str);
 
@@ -289,12 +287,18 @@ pub fn update_status(
         // Use WHERE status = current to close the TOCTOU gap: if another thread
         // changed the status between our SELECT and this UPDATE, rows_affected
         // will be 0 and we reject the stale transition.
-        let rows = conn.execute(
+        let mut update_stmt = conn.prepare_cached(
             "UPDATE persona_events
              SET status = ?1, error_message = ?2, processed_at = ?3
              WHERE id = ?4 AND status = ?5",
-            params![status_str, error_message, processed_at, id, current_str],
         )?;
+        let rows = update_stmt.execute(params![
+            status_str,
+            error_message,
+            processed_at,
+            id,
+            current_str
+        ])?;
 
         if rows == 0 {
             return Err(AppError::Validation(format!(
@@ -316,7 +320,7 @@ pub fn get_recent(
         let conn = pool.get()?;
 
         if let Some(pid) = project_id {
-            let mut stmt = conn.prepare(
+            let mut stmt = conn.prepare_cached(
                 "SELECT * FROM persona_events
                  WHERE project_id = ?1
                  ORDER BY created_at DESC, id DESC
@@ -325,7 +329,7 @@ pub fn get_recent(
             let rows = stmt.query_map(params![pid, limit], row_to_event)?;
             Ok(collect_rows(rows, "get_recent"))
         } else {
-            let mut stmt = conn.prepare(
+            let mut stmt = conn.prepare_cached(
                 "SELECT * FROM persona_events
                  ORDER BY created_at DESC, id DESC
                  LIMIT ?1",
@@ -356,7 +360,7 @@ pub fn get_in_range(
         let limit = limit.unwrap_or(1000).max(1);
         let fetch = limit + 1; // fetch one extra to detect has_more
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT * FROM persona_events
              WHERE created_at >= ?1 AND created_at <= ?2
              ORDER BY created_at ASC, id ASC
@@ -376,11 +380,9 @@ pub fn get_in_range(
 pub fn count_by_source(pool: &DbPool, persona_id: &str) -> Result<i64, AppError> {
     timed_query!("persona_events", "persona_events::count_by_source", {
         let conn = pool.get()?;
-        let count: i64 = conn.query_row(
-            "SELECT COUNT(*) FROM persona_events WHERE source_id = ?1",
-            params![persona_id],
-            |row| row.get(0),
-        )?;
+        let mut stmt =
+            conn.prepare_cached("SELECT COUNT(*) FROM persona_events WHERE source_id = ?1")?;
+        let count: i64 = stmt.query_row(params![persona_id], |row| row.get(0))?;
         Ok(count)
     })
 }
@@ -392,12 +394,12 @@ pub fn cleanup(pool: &DbPool, older_than_days: Option<i64>) -> Result<i64, AppEr
 
         // Use chrono for the cutoff date to match the timestamp format used in publish().
         let cutoff = (chrono::Utc::now() - chrono::Duration::days(days)).to_rfc3339();
-        let rows = conn.execute(
+        let mut stmt = conn.prepare_cached(
             "DELETE FROM persona_events
              WHERE status IN ('completed', 'skipped', 'failed', 'discarded')
                AND created_at < ?1",
-            params![cutoff],
         )?;
+        let rows = stmt.execute(params![cutoff])?;
 
         Ok(rows as i64)
     })
@@ -412,10 +414,9 @@ pub fn delete_events_by_source_id(pool: &DbPool, source_id: &str) -> Result<u32,
         "persona_events::delete_events_by_source_id",
         {
             let conn = pool.get()?;
-            let rows = conn.execute(
-                "DELETE FROM persona_events WHERE source_id = ?1",
-                params![source_id],
-            )?;
+            let mut stmt =
+                conn.prepare_cached("DELETE FROM persona_events WHERE source_id = ?1")?;
+            let rows = stmt.execute(params![source_id])?;
             Ok(rows as u32)
         }
     )
@@ -434,15 +435,15 @@ pub fn delete_orphaned_trigger_events(pool: &DbPool) -> Result<u32, AppError> {
             // Events where source_type == 'trigger' but source_id no longer exists
             // in persona_triggers. Left-join would be cleaner but sqlite's DELETE
             // doesn't allow JOIN syntax — use NOT EXISTS instead.
-            let rows = conn.execute(
+            let mut stmt = conn.prepare_cached(
                 "DELETE FROM persona_events
              WHERE source_type = 'trigger'
                AND source_id IS NOT NULL
                AND NOT EXISTS (
                  SELECT 1 FROM persona_triggers t WHERE t.id = persona_events.source_id
                )",
-                [],
             )?;
+            let rows = stmt.execute([])?;
             Ok(rows as u32)
         }
     )
@@ -466,7 +467,7 @@ pub fn get_dead_letter_events(
         {
             let limit = limit.unwrap_or(100);
             let conn = pool.get()?;
-            let mut stmt = conn.prepare(
+            let mut stmt = conn.prepare_cached(
                 "SELECT * FROM persona_events
              WHERE status = 'dead_letter'
              ORDER BY processed_at DESC, created_at DESC, id DESC
@@ -713,7 +714,7 @@ pub fn get_retry_eligible(
 ) -> Result<Vec<PersonaEvent>, AppError> {
     timed_query!("persona_events", "persona_events::get_retry_eligible", {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT * FROM persona_events
              WHERE status = 'failed'
                AND retry_count < ?1
@@ -797,17 +798,15 @@ pub fn get_subscription_by_id(
         "event_subscriptions::get_subscription_by_id",
         {
             let conn = pool.get()?;
-            conn.query_row(
-                "SELECT * FROM persona_event_subscriptions WHERE id = ?1",
-                params![id],
-                row_to_subscription,
-            )
-            .map_err(|e| match e {
-                rusqlite::Error::QueryReturnedNoRows => {
-                    AppError::NotFound(format!("PersonaEventSubscription {id}"))
-                }
-                other => AppError::Database(other),
-            })
+            let mut stmt =
+                conn.prepare_cached("SELECT * FROM persona_event_subscriptions WHERE id = ?1")?;
+            stmt.query_row(params![id], row_to_subscription)
+                .map_err(|e| match e {
+                    rusqlite::Error::QueryReturnedNoRows => {
+                        AppError::NotFound(format!("PersonaEventSubscription {id}"))
+                    }
+                    other => AppError::Database(other),
+                })
         }
     )
 }
@@ -821,7 +820,7 @@ pub fn get_subscriptions_by_persona(
         "event_subscriptions::get_subscriptions_by_persona",
         {
             let conn = pool.get()?;
-            let mut stmt = conn.prepare(
+            let mut stmt = conn.prepare_cached(
                 "SELECT * FROM persona_event_subscriptions
              WHERE persona_id = ?1
              ORDER BY created_at DESC",
@@ -871,8 +870,9 @@ pub fn get_all_subscriptions(pool: &DbPool) -> Result<Vec<PersonaEventSubscripti
         "event_subscriptions::get_all_subscriptions",
         {
             let conn = pool.get()?;
-            let mut stmt =
-                conn.prepare("SELECT * FROM persona_event_subscriptions ORDER BY created_at DESC")?;
+            let mut stmt = conn.prepare_cached(
+                "SELECT * FROM persona_event_subscriptions ORDER BY created_at DESC",
+            )?;
             let rows = stmt.query_map([], row_to_subscription)?;
             Ok(collect_rows(rows, "get_all_subscriptions"))
         }
@@ -888,7 +888,7 @@ pub fn get_subscriptions_by_event_type(
         "event_subscriptions::get_subscriptions_by_event_type",
         {
             let conn = pool.get()?;
-            let mut stmt = conn.prepare(
+            let mut stmt = conn.prepare_cached(
                 "SELECT * FROM persona_event_subscriptions
              WHERE event_type = ?1 AND enabled = 1
              ORDER BY created_at DESC",

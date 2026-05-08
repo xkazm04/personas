@@ -54,7 +54,7 @@ pub fn get_by_persona_id(
             let conn = pool.get()?;
             // Exclude ops chat executions (input_data contains "_ops") — those are
             // conversational queries from the Chat tab, not real agent executions.
-            let mut stmt = conn.prepare(
+            let mut stmt = conn.prepare_cached(
                 "SELECT * FROM persona_executions
              WHERE persona_id = ?1
                AND (input_data IS NULL OR input_data NOT LIKE '%\"_ops\"%')
@@ -205,15 +205,14 @@ pub fn count_all_global(
 pub fn get_by_id(pool: &DbPool, id: &str) -> Result<PersonaExecution, AppError> {
     timed_query!("persona_executions", "persona_executions::get_by_id", {
         let conn = pool.get()?;
-        conn.query_row(
-            "SELECT * FROM persona_executions WHERE id = ?1",
-            params![id],
-            row_to_execution,
-        )
-        .map_err(|e| match e {
-            rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Execution {id}")),
-            other => AppError::Database(other),
-        })
+        let mut stmt = conn.prepare_cached("SELECT * FROM persona_executions WHERE id = ?1")?;
+        stmt.query_row(params![id], row_to_execution)
+            .map_err(|e| match e {
+                rusqlite::Error::QueryReturnedNoRows => {
+                    AppError::NotFound(format!("Execution {id}"))
+                }
+                other => AppError::Database(other),
+            })
     })
 }
 
@@ -276,12 +275,22 @@ pub fn create_with_idempotency(
             let now = chrono::Utc::now().to_rfc3339();
 
             let conn = pool.get()?;
-            conn.execute(
+            let mut stmt = conn.prepare_cached(
             "INSERT INTO persona_executions
              (id, persona_id, trigger_id, status, input_data, model_used, input_tokens, output_tokens, cost_usd, use_case_id, idempotency_key, is_simulation, created_at)
              VALUES (?1, ?2, ?3, 'queued', ?4, ?5, 0, 0, 0, ?6, ?7, ?8, ?9)",
-            params![id, persona_id, trigger_id, input_data, model_used, use_case_id, idempotency_key, is_simulation as i64, now],
-        )?;
+            )?;
+            stmt.execute(params![
+                id,
+                persona_id,
+                trigger_id,
+                input_data,
+                model_used,
+                use_case_id,
+                idempotency_key,
+                is_simulation as i64,
+                now
+            ])?;
 
             get_by_id(pool, &id)
         }
@@ -298,11 +307,9 @@ pub fn get_by_idempotency_key(
         "persona_executions::get_by_idempotency_key",
         {
             let conn = pool.get()?;
-            match conn.query_row(
-                "SELECT * FROM persona_executions WHERE idempotency_key = ?1",
-                params![key],
-                row_to_execution,
-            ) {
+            let mut stmt =
+                conn.prepare_cached("SELECT * FROM persona_executions WHERE idempotency_key = ?1")?;
+            match stmt.query_row(params![key], row_to_execution) {
                 Ok(exec) => Ok(Some(exec)),
                 Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
                 Err(e) => Err(AppError::Database(e)),
@@ -322,7 +329,7 @@ pub fn get_by_trigger_id(
         {
             let limit = limit.unwrap_or(10);
             let conn = pool.get()?;
-            let mut stmt = conn.prepare(
+            let mut stmt = conn.prepare_cached(
             "SELECT * FROM persona_executions WHERE trigger_id = ?1 ORDER BY created_at DESC LIMIT ?2",
         )?;
             let rows = stmt.query_map(params![trigger_id, limit], row_to_execution)?;
@@ -344,7 +351,7 @@ pub fn get_by_use_case_id(
         {
             let limit = limit.unwrap_or(20);
             let conn = pool.get()?;
-            let mut stmt = conn.prepare(
+            let mut stmt = conn.prepare_cached(
             "SELECT * FROM persona_executions WHERE persona_id = ?1 AND use_case_id = ?2 ORDER BY created_at DESC LIMIT ?3",
         )?;
             let rows = stmt.query_map(params![persona_id, use_case_id, limit], row_to_execution)?;
@@ -378,7 +385,7 @@ pub fn update_status(
         // Serialize ExecutionState to its DB string form
         let status_str = input.status.as_str();
 
-        conn.execute(
+        let mut stmt = conn.prepare_cached(
             "UPDATE persona_executions SET
                 status = ?1,
                 output_data = COALESCE(?2, output_data),
@@ -396,25 +403,25 @@ pub fn update_status(
                 execution_config = COALESCE(?15, execution_config),
                 log_truncated = ?16
              WHERE id = ?12",
-            params![
-                status_str,
-                input.output_data,
-                input.error_message,
-                input.duration_ms,
-                input.log_file_path,
-                input.execution_flows,
-                input.input_tokens,
-                input.output_tokens,
-                input.cost_usd,
-                started_at,
-                completed_at,
-                id,
-                input.tool_steps,
-                input.claude_session_id,
-                input.execution_config,
-                input.log_truncated,
-            ],
         )?;
+        stmt.execute(params![
+            status_str,
+            input.output_data,
+            input.error_message,
+            input.duration_ms,
+            input.log_file_path,
+            input.execution_flows,
+            input.input_tokens,
+            input.output_tokens,
+            input.cost_usd,
+            started_at,
+            completed_at,
+            id,
+            input.tool_steps,
+            input.claude_session_id,
+            input.execution_config,
+            input.log_truncated,
+        ])?;
 
         Ok(())
     })
@@ -452,7 +459,7 @@ pub fn update_status_if_running(
 
             let status_str = input.status.as_str();
 
-            let rows_changed = conn.execute(
+            let mut stmt = conn.prepare_cached(
                 "UPDATE persona_executions SET
                 status = ?1,
                 output_data = COALESCE(?2, output_data),
@@ -470,25 +477,25 @@ pub fn update_status_if_running(
                 execution_config = COALESCE(?15, execution_config),
                 log_truncated = ?16
              WHERE id = ?12 AND status = 'running'",
-                params![
-                    status_str,
-                    input.output_data,
-                    input.error_message,
-                    input.duration_ms,
-                    input.log_file_path,
-                    input.execution_flows,
-                    input.input_tokens,
-                    input.output_tokens,
-                    input.cost_usd,
-                    started_at,
-                    completed_at,
-                    id,
-                    input.tool_steps,
-                    input.claude_session_id,
-                    input.execution_config,
-                    input.log_truncated,
-                ],
             )?;
+            let rows_changed = stmt.execute(params![
+                status_str,
+                input.output_data,
+                input.error_message,
+                input.duration_ms,
+                input.log_file_path,
+                input.execution_flows,
+                input.input_tokens,
+                input.output_tokens,
+                input.cost_usd,
+                started_at,
+                completed_at,
+                id,
+                input.tool_steps,
+                input.claude_session_id,
+                input.execution_config,
+                input.log_truncated,
+            ])?;
 
             Ok(rows_changed > 0)
         }
@@ -529,7 +536,7 @@ pub fn update_status_if_not_final(
 
             // Allow overwrite when status is 'running' (normal path) or 'cancelled'
             // (safety-net wrote a bare cancel that we can now enrich with metrics).
-            let rows_changed = conn.execute(
+            let mut stmt = conn.prepare_cached(
                 "UPDATE persona_executions SET
                 status = ?1,
                 output_data = COALESCE(?2, output_data),
@@ -547,25 +554,25 @@ pub fn update_status_if_not_final(
                 execution_config = COALESCE(?15, execution_config),
                 log_truncated = ?16
              WHERE id = ?12 AND status IN ('running', 'cancelled')",
-                params![
-                    status_str,
-                    input.output_data,
-                    input.error_message,
-                    input.duration_ms,
-                    input.log_file_path,
-                    input.execution_flows,
-                    input.input_tokens,
-                    input.output_tokens,
-                    input.cost_usd,
-                    started_at,
-                    completed_at,
-                    id,
-                    input.tool_steps,
-                    input.claude_session_id,
-                    input.execution_config,
-                    input.log_truncated,
-                ],
             )?;
+            let rows_changed = stmt.execute(params![
+                status_str,
+                input.output_data,
+                input.error_message,
+                input.duration_ms,
+                input.log_file_path,
+                input.execution_flows,
+                input.input_tokens,
+                input.output_tokens,
+                input.cost_usd,
+                started_at,
+                completed_at,
+                id,
+                input.tool_steps,
+                input.claude_session_id,
+                input.execution_config,
+                input.log_truncated,
+            ])?;
 
             Ok(rows_changed > 0)
         }
@@ -576,8 +583,8 @@ pub fn get_recent(pool: &DbPool, limit: Option<i64>) -> Result<Vec<PersonaExecut
     timed_query!("persona_executions", "persona_executions::get_recent", {
         let limit = limit.unwrap_or(20);
         let conn = pool.get()?;
-        let mut stmt =
-            conn.prepare("SELECT * FROM persona_executions ORDER BY created_at DESC LIMIT ?1")?;
+        let mut stmt = conn
+            .prepare_cached("SELECT * FROM persona_executions ORDER BY created_at DESC LIMIT ?1")?;
         let rows = stmt.query_map(params![limit], row_to_execution)?;
         rows.collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)
@@ -594,7 +601,7 @@ pub fn get_recent_failures(
         "persona_executions::get_recent_failures",
         {
             let conn = pool.get()?;
-            let mut stmt = conn.prepare(
+            let mut stmt = conn.prepare_cached(
             "SELECT * FROM persona_executions WHERE persona_id = ?1 AND status = 'failed' ORDER BY created_at DESC LIMIT ?2",
         )?;
             let rows = stmt.query_map(params![persona_id, limit], row_to_execution)?;
@@ -607,7 +614,7 @@ pub fn get_recent_failures(
 pub fn get_running(pool: &DbPool) -> Result<Vec<PersonaExecution>, AppError> {
     timed_query!("persona_executions", "persona_executions::get_running", {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT * FROM persona_executions WHERE status IN ('queued', 'running') ORDER BY created_at ASC",
         )?;
         let rows = stmt.query_map([], row_to_execution)?;
@@ -716,10 +723,10 @@ pub fn touch_last_heartbeat(pool: &DbPool, execution_id: &str) -> Result<(), App
         {
             let conn = pool.get()?;
             let now = chrono::Utc::now().to_rfc3339();
-            conn.execute(
+            let mut stmt = conn.prepare_cached(
                 "UPDATE persona_executions SET last_heartbeat_at = ?1 WHERE id = ?2",
-                params![now, execution_id],
             )?;
+            stmt.execute(params![now, execution_id])?;
             Ok(())
         }
     )
@@ -739,7 +746,7 @@ pub fn find_silent_running(
         "persona_executions::find_silent_running",
         {
             let conn = pool.get()?;
-            let mut stmt = conn.prepare(
+            let mut stmt = conn.prepare_cached(
                 "SELECT id FROM persona_executions
              WHERE status = 'running'
                AND last_heartbeat_at IS NOT NULL
@@ -768,12 +775,12 @@ pub fn create_retry(
         let now = chrono::Utc::now().to_rfc3339();
 
         let conn = pool.get()?;
-        conn.execute(
+        let mut stmt = conn.prepare_cached(
             "INSERT INTO persona_executions
              (id, persona_id, status, input_tokens, output_tokens, cost_usd, retry_of_execution_id, retry_count, created_at)
              VALUES (?1, ?2, 'queued', 0, 0, 0, ?3, ?4, ?5)",
-            params![id, persona_id, original_exec_id, retry_count, now],
         )?;
+        stmt.execute(params![id, persona_id, original_exec_id, retry_count, now])?;
 
         get_by_id(pool, &id)
     })
@@ -787,7 +794,7 @@ pub fn get_consecutive_failure_count(pool: &DbPool, persona_id: &str) -> Result<
         "persona_executions::get_consecutive_failure_count",
         {
             let conn = pool.get()?;
-            let mut stmt = conn.prepare(
+            let mut stmt = conn.prepare_cached(
                 "SELECT status FROM persona_executions
              WHERE persona_id = ?1
              ORDER BY created_at DESC
@@ -824,7 +831,7 @@ pub fn get_retry_chain(
                 .unwrap_or(execution_id);
 
             let conn = pool.get()?;
-            let mut stmt = conn.prepare(
+            let mut stmt = conn.prepare_cached(
                 "SELECT * FROM persona_executions
              WHERE id = ?1 OR retry_of_execution_id = ?1
              ORDER BY retry_count ASC, created_at ASC",
@@ -1010,7 +1017,7 @@ pub fn sweep_zombie_executions(pool: &DbPool) -> Result<Vec<String>, AppError> {
             let threshold_secs = DEFAULT_ZOMBIE_THRESHOLD_SECS;
 
             // Find running executions whose started_at is older than the threshold
-            let mut stmt = conn.prepare(
+            let mut stmt = conn.prepare_cached(
                 "SELECT id, started_at FROM persona_executions WHERE status = 'running'",
             )?;
             let candidates: Vec<(String, Option<String>)> = stmt
@@ -1040,22 +1047,22 @@ pub fn sweep_zombie_executions(pool: &DbPool) -> Result<Vec<String>, AppError> {
 
                 if is_zombie {
                     let elapsed_str = started_at.as_deref().unwrap_or("unknown");
-                    conn.execute(
+                    let mut update_stmt = conn.prepare_cached(
                         "UPDATE persona_executions SET
                     status = 'incomplete',
                     error_message = ?1,
                     completed_at = ?2
                  WHERE id = ?3 AND status = 'running'",
-                        params![
-                            format!(
-                                "Execution stalled: running since {} (>{} min) — marked as zombie",
-                                elapsed_str,
-                                threshold_secs / 60,
-                            ),
-                            now.to_rfc3339(),
-                            id,
-                        ],
                     )?;
+                    update_stmt.execute(params![
+                        format!(
+                            "Execution stalled: running since {} (>{} min) — marked as zombie",
+                            elapsed_str,
+                            threshold_secs / 60,
+                        ),
+                        now.to_rfc3339(),
+                        id,
+                    ])?;
                     zombie_ids.push(id);
                 }
             }
@@ -1091,7 +1098,7 @@ pub fn cleanup_old_executions(
             let cutoff = format!("-{retention_days} days");
 
             // Get distinct persona_ids with old terminal executions
-            let mut persona_stmt = conn.prepare(
+            let mut persona_stmt = conn.prepare_cached(
                 "SELECT DISTINCT persona_id FROM persona_executions
          WHERE status IN ('completed', 'failed', 'incomplete', 'cancelled')
            AND created_at < datetime('now', ?1)",

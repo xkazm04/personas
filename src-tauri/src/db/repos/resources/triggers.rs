@@ -53,7 +53,7 @@ crud_delete!("persona_triggers");
 pub fn get_by_persona_id(pool: &DbPool, persona_id: &str) -> Result<Vec<PersonaTrigger>, AppError> {
     timed_query!("persona_triggers", "persona_triggers::get_by_persona_id", {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT * FROM persona_triggers WHERE persona_id = ?1 ORDER BY created_at DESC",
         )?;
         let rows = stmt.query_map(params![persona_id], row_to_trigger)?;
@@ -937,7 +937,7 @@ pub fn event_type_in_use(pool: &DbPool, event_type: &str) -> Result<bool, AppErr
         // every persona with a non-null handlers map and membership-check
         // in Rust. The personas table is small (typically < 20 rows).
         let sps: Vec<String> = {
-            let mut stmt = conn.prepare(
+            let mut stmt = conn.prepare_cached(
                 "SELECT structured_prompt FROM personas
                  WHERE structured_prompt IS NOT NULL
                    AND json_extract(structured_prompt, '$.eventHandlers') IS NOT NULL",
@@ -1156,7 +1156,7 @@ pub fn backfill_auto_listeners(pool: &DbPool) -> Result<(u32, u32), AppError> {
             // 1. Load all source triggers that need auto-listeners.
             let candidates: Vec<PersonaTrigger> = {
                 let conn = pool.get()?;
-                let mut stmt = conn.prepare(
+                let mut stmt = conn.prepare_cached(
                     "SELECT * FROM persona_triggers
                  WHERE trigger_type IN ('schedule', 'polling', 'webhook')
                  ORDER BY created_at",
@@ -1178,7 +1178,7 @@ pub fn backfill_auto_listeners(pool: &DbPool) -> Result<(u32, u32), AppError> {
             //    (we just skip them — if decrypt is needed, user already created it).
             let existing_pairs: std::collections::HashSet<String> = {
                 let conn = pool.get()?;
-                let mut stmt = conn.prepare(
+                let mut stmt = conn.prepare_cached(
                     "SELECT json_extract(config, '$._auto_for_trigger')
                  FROM persona_triggers
                  WHERE trigger_type = 'event_listener'
@@ -1220,7 +1220,7 @@ pub fn get_chain_triggers_for_source(
         "persona_triggers::get_chain_triggers_for_source",
         {
             let conn = pool.get()?;
-            let mut stmt = conn.prepare(
+            let mut stmt = conn.prepare_cached(
                 "SELECT * FROM persona_triggers
              WHERE trigger_type = 'chain'
                AND status = 'active'
@@ -1245,7 +1245,7 @@ pub fn get_event_listeners_for_event_type(
         "persona_triggers::get_event_listeners_for_event_type",
         {
             let conn = pool.get()?;
-            let mut stmt = conn.prepare(
+            let mut stmt = conn.prepare_cached(
                 "SELECT * FROM persona_triggers
              WHERE trigger_type = 'event_listener'
                AND status = 'active'
@@ -1309,7 +1309,7 @@ pub fn get_enabled_by_type(
         "persona_triggers::get_enabled_by_type",
         {
             let conn = pool.get()?;
-            let mut stmt = conn.prepare(
+            let mut stmt = conn.prepare_cached(
                 "SELECT * FROM persona_triggers
              WHERE trigger_type = ?1 AND status = 'active'
              ORDER BY created_at DESC",
@@ -1329,7 +1329,7 @@ pub fn get_due(pool: &DbPool, now: &str) -> Result<Vec<PersonaTrigger>, AppError
         // header toggle was purely cosmetic — `personas.enabled = 0` was
         // never read by the dispatch path, and cron continued to fire
         // executions after the user "switched the agent off".
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT t.* FROM persona_triggers t
              INNER JOIN personas p ON p.id = t.persona_id
              WHERE t.status = 'active'
@@ -1355,7 +1355,7 @@ pub fn get_health_map(
         let conn = pool.get()?;
         // For each trigger, get the 3 most recent executions (ranked by created_at DESC).
         // Then aggregate: count failures in top 3, check if top 2 are both non-completed.
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "WITH ranked AS (
                SELECT
                  e.trigger_id,
@@ -1416,7 +1416,7 @@ pub fn get_chain_links(
 ) -> Result<Vec<(String, String, String, String, String, String, bool)>, AppError> {
     timed_query!("persona_triggers", "persona_triggers::get_chain_links", {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT
                t.id,
                COALESCE(json_extract(t.config, '$.source_persona_id'), '') AS source_persona_id,
@@ -1582,10 +1582,15 @@ pub fn set_status(
     timed_query!("persona_triggers", "persona_triggers::set_status", {
         let now = chrono::Utc::now().to_rfc3339();
         let conn = pool.get()?;
-        conn.execute(
+        let mut stmt = conn.prepare_cached(
             "UPDATE persona_triggers SET status = ?1, enabled = ?2, updated_at = ?3 WHERE id = ?4",
-            params![status.as_str(), status.is_enabled() as i32, now, id],
         )?;
+        stmt.execute(params![
+            status.as_str(),
+            status.is_enabled() as i32,
+            now,
+            id
+        ])?;
         Ok(())
     })
 }
@@ -1598,7 +1603,8 @@ pub fn set_status(
 pub fn load_composite_fires(pool: &DbPool) -> Result<Vec<(String, String)>, AppError> {
     timed_query!("composite_trigger_fires", "composite_fires::load_all", {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare("SELECT trigger_id, fired_at FROM composite_trigger_fires")?;
+        let mut stmt =
+            conn.prepare_cached("SELECT trigger_id, fired_at FROM composite_trigger_fires")?;
         let rows = stmt.query_map([], |row| {
             Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
         })?;
@@ -1618,12 +1624,12 @@ pub fn upsert_composite_fire(
 ) -> Result<(), AppError> {
     timed_query!("composite_trigger_fires", "composite_fires::upsert", {
         let conn = pool.get()?;
-        conn.execute(
+        let mut stmt = conn.prepare_cached(
             "INSERT INTO composite_trigger_fires (trigger_id, fired_at)
              VALUES (?1, ?2)
              ON CONFLICT(trigger_id) DO UPDATE SET fired_at = excluded.fired_at",
-            params![trigger_id, fired_at],
         )?;
+        stmt.execute(params![trigger_id, fired_at])?;
         Ok(())
     })
 }
