@@ -5,6 +5,20 @@ use crate::db::models::{PersonaTrigger, TriggerConfig};
 
 use super::cron;
 
+pub(crate) fn invalid_schedule_timezone(cfg: &TriggerConfig) -> Option<(String, String, String)> {
+    match cfg {
+        TriggerConfig::Schedule {
+            cron: Some(cron_expr),
+            timezone: Some(raw),
+            ..
+        } => raw
+            .parse::<Tz>()
+            .err()
+            .map(|err| (cron_expr.clone(), raw.clone(), err.to_string())),
+        _ => None,
+    }
+}
+
 /// Compute the next trigger time from an already-parsed `TriggerConfig`.
 /// Called by `compute_next_trigger_at` and also directly from `background.rs`
 /// when `parse_config()` has already been called for other purposes.
@@ -21,19 +35,13 @@ pub(crate) fn compute_next_from_config(cfg: &TriggerConfig, now: DateTime<Utc>) 
                 Some(raw) => match raw.parse::<Tz>() {
                     Ok(tz) => Some(tz),
                     Err(err) => {
-                        // The schedule has an explicit timezone string but it failed
-                        // to parse as IANA. Falling back to system-local means the
-                        // trigger will fire at the host machine's local hour, not
-                        // the user's intended zone — historical incident path
-                        // (see test_compute_next_schedule_with_timezone_summer at
-                        // line 75-89). Surface this as a warning, not silent.
                         tracing::warn!(
                             cron = %cron_expr,
                             timezone_raw = %raw,
                             error = %err,
-                            "schedule timezone failed to parse; falling back to system-local — trigger will fire at the host's local hour, not the intended zone"
+                            "schedule timezone failed to parse; refusing to compute next fire time"
                         );
-                        None
+                        return None;
                     }
                 },
             };
@@ -135,15 +143,15 @@ mod tests {
     }
 
     #[test]
-    fn test_compute_next_schedule_with_invalid_timezone_falls_back_to_local() {
-        // Garbage timezone should not crash; the cron still produces a result
-        // by falling back to system local.
+    fn test_compute_next_schedule_with_invalid_timezone_refuses_schedule() {
+        // Garbage timezone should not crash, but it must not silently fall back
+        // to host-local time and fire at the wrong wall-clock hour.
         let trigger = make_trigger(
             "schedule",
             Some(r#"{"cron": "0 * * * *", "timezone": "Not/A_Real_Zone"}"#),
         );
         let now = Utc.with_ymd_and_hms(2026, 1, 15, 10, 30, 0).unwrap();
-        assert!(compute_next_trigger_at(&trigger, now).is_some());
+        assert!(compute_next_trigger_at(&trigger, now).is_none());
     }
 
     #[test]

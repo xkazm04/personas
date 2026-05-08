@@ -1,4 +1,4 @@
-use rusqlite::params;
+use rusqlite::{params, OptionalExtension};
 
 use crate::db::models::{CreateTriggerInput, PersonaTrigger, TriggerConfig, UpdateTriggerInput};
 use crate::db::DbPool;
@@ -135,6 +135,7 @@ pub fn create(pool: &DbPool, mut input: CreateTriggerInput) -> Result<PersonaTri
         // atomically in the same transaction as the INSERT.
         let parsed_cfg = TriggerConfig::from_raw(&input.trigger_type, input.config.as_deref());
         let next_trigger_at = scheduler::compute_next_from_config(&parsed_cfg, chrono::Utc::now());
+        let invalid_timezone = scheduler::invalid_schedule_timezone(&parsed_cfg);
 
         // Fix 4a: for schedule / polling / webhook source triggers, auto-create a
         // paired event_listener inside the same transaction so the target persona
@@ -164,6 +165,17 @@ pub fn create(pool: &DbPool, mut input: CreateTriggerInput) -> Result<PersonaTri
             }
 
             tx.commit().map_err(AppError::Database)?;
+        }
+
+        if let Some((cron_expr, timezone, error)) = invalid_timezone {
+            record_invalid_timezone_issue(
+                pool,
+                &id,
+                &input.persona_id,
+                &cron_expr,
+                &timezone,
+                &error,
+            );
         }
 
         get_by_id(pool, &id)
@@ -280,10 +292,79 @@ pub fn update(
                 "UPDATE persona_triggers SET next_trigger_at = ?1, updated_at = ?2 WHERE id = ?3",
                 params![next_at, chrono::Utc::now().to_rfc3339(), id],
             )?;
+            if let Some((cron_expr, timezone, error)) =
+                scheduler::invalid_schedule_timezone(&updated.parse_config())
+            {
+                record_invalid_timezone_issue(
+                    pool,
+                    &updated.id,
+                    &updated.persona_id,
+                    &cron_expr,
+                    &timezone,
+                    &error,
+                );
+            }
         }
 
         get_by_id(pool, id)
     })
+}
+
+fn record_invalid_timezone_issue(
+    pool: &DbPool,
+    trigger_id: &str,
+    persona_id: &str,
+    cron_expr: &str,
+    timezone: &str,
+    error: &str,
+) {
+    let title = "Fix schedule timezone";
+    let description = format!(
+        "Scheduled trigger `{trigger_id}` uses invalid timezone `{timezone}` for cron `{cron_expr}` ({error}). \
+         The trigger is paused until the timezone is corrected so it does not fire at the host machine's local time."
+    );
+
+    let already_open = match pool.get() {
+        Ok(conn) => conn
+            .query_row(
+                "SELECT 1 FROM persona_healing_issues
+                 WHERE persona_id = ?1
+                   AND status = 'open'
+                   AND category = 'schedule_timezone'
+                   AND description LIKE ?2
+                 LIMIT 1",
+                params![persona_id, format!("%`{trigger_id}`%")],
+                |_| Ok(()),
+            )
+            .optional()
+            .map(|row| row.is_some())
+            .unwrap_or(false),
+        Err(_) => false,
+    };
+
+    if already_open {
+        return;
+    }
+
+    if let Err(e) = crate::db::repos::execution::healing::create(
+        pool,
+        persona_id,
+        title,
+        &description,
+        true,
+        Some("medium"),
+        Some("schedule_timezone"),
+        None,
+        Some("Edit the schedule and choose a valid IANA timezone such as `America/New_York`, `Europe/Prague`, or `UTC`."),
+    ) {
+        tracing::warn!(
+            trigger_id,
+            persona_id,
+            timezone,
+            error = %e,
+            "failed to create invalid schedule timezone healing issue"
+        );
+    }
 }
 
 // ============================================================================
