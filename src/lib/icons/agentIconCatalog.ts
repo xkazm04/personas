@@ -3,11 +3,14 @@
  *
  * Registry of built-in agent icons with dark/light theme variants.
  * Icons are stored as PNGs in /public/agent_icons/{id}-dark.png and {id}-light.png.
+ * The hot renderer uses a generated WebP sprite sheet with PNG fallback paths.
  *
  * Convention:
  *   persona.icon = "agent-icon:{id}"   (e.g. "agent-icon:code")
  *   Rendering resolves to the correct variant based on current theme mode.
  */
+
+import { AGENT_ICON_SPRITES } from './agentIconSprite.generated';
 
 export interface AgentIconEntry {
   id: string;
@@ -73,6 +76,18 @@ export function agentIconPath(id: string, mode: 'dark' | 'light'): string {
 export function resolveAgentIconSrc(icon: string, isDark: boolean): string {
   const id = parseAgentIconId(icon);
   return agentIconPath(id, isDark ? 'dark' : 'light');
+}
+
+export function resolveAgentIconSprite(icon: string, isDark: boolean) {
+  const id = parseAgentIconId(icon);
+  const sprite = AGENT_ICON_SPRITES[isDark ? 'dark' : 'light'];
+  const index = sprite.cells[id as keyof typeof sprite.cells];
+  if (index === undefined) return null;
+  return {
+    src: sprite.src,
+    columns: sprite.columns,
+    index,
+  };
 }
 
 // ── Category Mapping ──────────────────────────────────────────────────────────

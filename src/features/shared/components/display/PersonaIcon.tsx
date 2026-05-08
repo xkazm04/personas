@@ -1,5 +1,5 @@
 import { Bot } from 'lucide-react';
-import { isAgentIcon, resolveAgentIconSrc } from '@/lib/icons/agentIconCatalog';
+import { isAgentIcon, resolveAgentIconSprite, resolveAgentIconSrc } from '@/lib/icons/agentIconCatalog';
 import { useIsDarkTheme } from '@/stores/themeStore';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -103,7 +103,18 @@ export function PersonaIcon({
   let inner: React.ReactNode;
 
   if (isAgentIcon(icon)) {
-    inner = (
+    const sprite = resolveAgentIconSprite(icon!, isDark);
+    inner = sprite ? (
+      <div
+        aria-hidden="true"
+        className={isWrapped ? 'agent-icon-sprite' : `agent-icon-sprite ${size} flex-shrink-0 ${className}`.trim()}
+        style={{
+          backgroundImage: `url(${sprite.src})`,
+          backgroundSize: `${sprite.columns * 100}% 100%`,
+          backgroundPosition: `${sprite.columns <= 1 ? 0 : (sprite.index / (sprite.columns - 1)) * 100}% 0%`,
+        }}
+      />
+    ) : (
       <img
         src={resolveAgentIconSrc(icon!, isDark)}
         alt=""

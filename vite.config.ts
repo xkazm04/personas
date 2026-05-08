@@ -42,6 +42,7 @@ export default defineConfig(async () => ({
         for (const script of [
           "scripts/generate-template-checksums.mjs",
           "scripts/generate-connector-seed.mjs",
+          "scripts/generate-agent-icon-sprites.mjs",
           "scripts/i18n/split-locales.mjs",
         ]) {
           execSync(`node ${script}`, { cwd, stdio: "inherit" });
