@@ -1232,6 +1232,42 @@ pub fn upsert_field_on_conn(
     Ok(())
 }
 
+/// Verify a just-written credential field can be read and decrypted on the
+/// same connection/transaction before the caller commits.
+pub fn verify_field_roundtrip_on_conn(
+    conn: &rusqlite::Connection,
+    credential_id: &str,
+    field_key: &str,
+    expected_value: &str,
+) -> Result<(), AppError> {
+    let (encrypted_value, iv): (String, String) = conn
+        .query_row(
+            "SELECT encrypted_value, iv
+             FROM credential_fields
+             WHERE credential_id = ?1 AND field_key = ?2",
+            params![credential_id, field_key],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )
+        .map_err(|e| match e {
+            rusqlite::Error::QueryReturnedNoRows => AppError::Internal(format!(
+                "Credential field '{field_key}' was not persisted for credential '{credential_id}'"
+            )),
+            e => AppError::Database(e),
+        })?;
+
+    let decrypted = crypto::decrypt_field(&encrypted_value, &iv).map_err(|e| {
+        AppError::Internal(format!(
+            "Credential field '{field_key}' failed post-write decrypt verification: {e}"
+        ))
+    })?;
+    if decrypted != expected_value {
+        return Err(AppError::Internal(format!(
+            "Credential field '{field_key}' failed post-write round-trip verification"
+        )));
+    }
+    Ok(())
+}
+
 /// Update a single credential field. If the field doesn't exist, inserts it.
 pub fn upsert_field(
     pool: &DbPool,

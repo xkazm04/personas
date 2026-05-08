@@ -422,6 +422,7 @@ pub async fn refresh_single_credential(
         let tx = conn.transaction()?;
 
         cred_repo::upsert_field_on_conn(&tx, &cred.id, "access_token", &resolved.token, true)?;
+        cred_repo::verify_field_roundtrip_on_conn(&tx, &cred.id, "access_token", &resolved.token)?;
         cred_repo::upsert_field_on_conn(
             &tx,
             &cred.id,
@@ -437,6 +438,12 @@ pub async fn refresh_single_credential(
                 "refresh_token",
                 new_refresh_token,
                 true,
+            )?;
+            cred_repo::verify_field_roundtrip_on_conn(
+                &tx,
+                &cred.id,
+                "refresh_token",
+                new_refresh_token,
             )?;
         }
 
