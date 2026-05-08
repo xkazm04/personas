@@ -86,18 +86,19 @@ pub(super) async fn run_fix_pass(
 
     let response_text = invoke_claude_print(&prompt).await?;
 
-    let corrected_ir_str = extract_agent_ir_json(&response_text).ok_or_else(|| {
-        tracing::warn!(
-            session_id = %session_id,
-            attempt,
-            response_preview = %response_text.chars().take(400).collect::<String>(),
-            "fix_pass: LLM response had no parseable agent_ir block"
-        );
-        AppError::Internal(
-            "fix_pass: LLM did not emit a valid agent_ir JSON block — keeping previous IR"
-                .to_string(),
-        )
-    })?;
+    let corrected_ir_str =
+        extract_agent_ir_json(&response_text, &current_ir_str).ok_or_else(|| {
+            tracing::warn!(
+                session_id = %session_id,
+                attempt,
+                response_preview = %response_text.chars().take(400).collect::<String>(),
+                "fix_pass: LLM response had no parseable agent_ir block"
+            );
+            AppError::Internal(
+                "fix_pass: LLM did not emit a valid agent_ir JSON block — keeping previous IR"
+                    .to_string(),
+            )
+        })?;
 
     // Validate before persisting so a structurally broken response can't
     // poison the session row (and trip the next test pass before the
@@ -302,20 +303,12 @@ async fn invoke_claude_print(prompt: &str) -> Result<String, AppError> {
 ///      object that contains it.
 ///
 /// Returns `None` if neither strategy yields a parseable IR.
-fn extract_agent_ir_json(response: &str) -> Option<String> {
-    if let Some(json_text) = extract_fenced_json(response) {
-        if let Ok(value) = serde_json::from_str::<serde_json::Value>(&json_text) {
-            if let Some(ir) = value.get("agent_ir") {
-                return serde_json::to_string(ir).ok();
-            }
-            // Fenced block was the IR directly (no `agent_ir` wrapper).
-            // Require both a `name` and at least one agent_ir-specific
-            // marker — otherwise a fenced tool definition / connector
-            // spec / debug payload that happens to have a `name` would
-            // get accepted and poison the session row.
-            if looks_like_bare_agent_ir(&value) {
-                return Some(json_text);
-            }
+fn extract_agent_ir_json(response: &str, prior_agent_ir: &str) -> Option<String> {
+    let prior_value = serde_json::from_str::<serde_json::Value>(prior_agent_ir).ok();
+
+    for json_text in extract_fenced_json_blocks(response).into_iter().rev() {
+        if let Some(candidate) = candidate_agent_ir_json(&json_text, prior_value.as_ref()) {
+            return Some(candidate);
         }
     }
 
@@ -342,14 +335,30 @@ fn extract_agent_ir_json(response: &str) -> Option<String> {
         }
         let end = object_end?;
         let candidate = &response[object_start..end];
-        if let Ok(value) = serde_json::from_str::<serde_json::Value>(candidate) {
-            if let Some(ir) = value.get("agent_ir") {
-                return serde_json::to_string(ir).ok();
-            }
+        if let Some(candidate) = candidate_agent_ir_json(candidate, prior_value.as_ref()) {
+            return Some(candidate);
         }
     }
 
     None
+}
+
+fn candidate_agent_ir_json(
+    json_text: &str,
+    prior_value: Option<&serde_json::Value>,
+) -> Option<String> {
+    let value = serde_json::from_str::<serde_json::Value>(json_text).ok()?;
+    let ir_value = value.get("agent_ir").unwrap_or(&value);
+
+    if value.get("agent_ir").is_none() && !looks_like_bare_agent_ir(ir_value) {
+        return None;
+    }
+
+    if prior_value.is_some_and(|prior| prior == ir_value) {
+        return None;
+    }
+
+    serde_json::to_string(ir_value).ok()
 }
 
 /// Heuristic for accepting an unwrapped fenced object as the agent_ir.
@@ -388,32 +397,37 @@ fn looks_like_bare_agent_ir(value: &serde_json::Value) -> bool {
     IR_MARKERS.iter().any(|k| value.get(*k).is_some())
 }
 
-fn extract_fenced_json(response: &str) -> Option<String> {
-    // Look for ```json ... ``` first, then any ``` ... ``` as a fallback.
-    let needles = ["```json", "```JSON", "```"];
-    for n in &needles {
-        if let Some(start) = response.find(n) {
-            let after_open = start + n.len();
-            // Skip the rest of the opening line (language tag / whitespace).
-            let body_start = response[after_open..]
-                .find('\n')
-                .map(|nl| after_open + nl + 1)
-                .unwrap_or(after_open);
-            if let Some(close_rel) = response[body_start..].find("```") {
-                let body = &response[body_start..body_start + close_rel];
-                let trimmed = body.trim();
-                if !trimmed.is_empty() {
-                    return Some(trimmed.to_string());
-                }
-            }
+fn extract_fenced_json_blocks(response: &str) -> Vec<String> {
+    let mut blocks = Vec::new();
+    let mut cursor = 0usize;
+
+    while let Some(open_rel) = response[cursor..].find("```") {
+        let open = cursor + open_rel;
+        let after_open = open + 3;
+        let body_start = response[after_open..]
+            .find('\n')
+            .map(|nl| after_open + nl + 1)
+            .unwrap_or(after_open);
+
+        let Some(close_rel) = response[body_start..].find("```") else {
+            break;
+        };
+        let close = body_start + close_rel;
+        let trimmed = response[body_start..close].trim();
+        if !trimmed.is_empty() {
+            blocks.push(trimmed.to_string());
         }
+        cursor = close + 3;
     }
-    None
+
+    blocks
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    const PRIOR_IR: &str = r#"{"name":"Prior","description":"broken","system_prompt":"old"}"#;
 
     #[test]
     fn extract_fenced_agent_ir() {
@@ -429,7 +443,7 @@ mod tests {
 ```
 
 Done."#;
-        let extracted = extract_agent_ir_json(response).expect("should extract");
+        let extracted = extract_agent_ir_json(response, PRIOR_IR).expect("should extract");
         let value: serde_json::Value = serde_json::from_str(&extracted).unwrap();
         assert_eq!(value["name"], "Test");
     }
@@ -437,7 +451,7 @@ Done."#;
     #[test]
     fn extract_unfenced_agent_ir() {
         let response = r#"OK. {"agent_ir": {"name": "X", "description": "y"}} that should work."#;
-        let extracted = extract_agent_ir_json(response).expect("should extract");
+        let extracted = extract_agent_ir_json(response, PRIOR_IR).expect("should extract");
         let value: serde_json::Value = serde_json::from_str(&extracted).unwrap();
         assert_eq!(value["name"], "X");
     }
@@ -445,7 +459,7 @@ Done."#;
     #[test]
     fn returns_none_when_no_agent_ir() {
         let response = "I cannot fix this — credentials are missing entirely.";
-        assert!(extract_agent_ir_json(response).is_none());
+        assert!(extract_agent_ir_json(response, PRIOR_IR).is_none());
     }
 
     #[test]
@@ -453,7 +467,7 @@ Done."#;
         let response = r#"```json
 {"name": "X", "description": "y", "system_prompt": "z"}
 ```"#;
-        let extracted = extract_agent_ir_json(response).expect("should extract bare IR");
+        let extracted = extract_agent_ir_json(response, PRIOR_IR).expect("should extract bare IR");
         let value: serde_json::Value = serde_json::from_str(&extracted).unwrap();
         assert_eq!(value["name"], "X");
     }
@@ -474,7 +488,7 @@ Done."#;
 }
 ```"#;
         assert!(
-            extract_agent_ir_json(response).is_none(),
+            extract_agent_ir_json(response, PRIOR_IR).is_none(),
             "tool definition without IR markers must not be accepted as agent_ir"
         );
     }
@@ -491,7 +505,7 @@ Done."#;
 }
 ```"#;
         assert!(
-            extract_agent_ir_json(response).is_none(),
+            extract_agent_ir_json(response, PRIOR_IR).is_none(),
             "connector spec must not be accepted as agent_ir"
         );
     }
@@ -505,7 +519,7 @@ Done."#;
 {"name": "X", "description": "y"}
 ```"#;
         assert!(
-            extract_agent_ir_json(response).is_none(),
+            extract_agent_ir_json(response, PRIOR_IR).is_none(),
             "minimal name+description must not be accepted as agent_ir"
         );
     }
@@ -517,8 +531,45 @@ Done."#;
         let response = r#"```json
 {"name": "X", "description": "y", "use_cases": [{"id": "uc_a", "title": "A"}]}
 ```"#;
-        let extracted = extract_agent_ir_json(response).expect("should extract bare IR");
+        let extracted = extract_agent_ir_json(response, PRIOR_IR).expect("should extract bare IR");
         let value: serde_json::Value = serde_json::from_str(&extracted).unwrap();
         assert_eq!(value["name"], "X");
+    }
+
+    #[test]
+    fn prefers_last_valid_fenced_agent_ir() {
+        let response = r#"The first block is the broken input:
+```json
+{"agent_ir":{"name":"Broken","description":"old","system_prompt":"bad"}}
+```
+
+The corrected IR is:
+```json
+{"agent_ir":{"name":"Fixed","description":"new","system_prompt":"good"}}
+```"#;
+        let extracted = extract_agent_ir_json(response, PRIOR_IR).expect("should extract last IR");
+        let value: serde_json::Value = serde_json::from_str(&extracted).unwrap();
+        assert_eq!(value["name"], "Fixed");
+    }
+
+    #[test]
+    fn skips_echoed_prior_ir_and_uses_real_correction() {
+        let response = r#"```json
+{"agent_ir":{"name":"Prior","description":"broken","system_prompt":"old"}}
+```
+```json
+{"agent_ir":{"name":"Fixed","description":"new","system_prompt":"good"}}
+```"#;
+        let extracted = extract_agent_ir_json(response, PRIOR_IR).expect("should skip prior IR");
+        let value: serde_json::Value = serde_json::from_str(&extracted).unwrap();
+        assert_eq!(value["name"], "Fixed");
+    }
+
+    #[test]
+    fn rejects_only_echoed_prior_ir() {
+        let response = r#"```json
+{"agent_ir":{"name":"Prior","description":"broken","system_prompt":"old"}}
+```"#;
+        assert!(extract_agent_ir_json(response, PRIOR_IR).is_none());
     }
 }
