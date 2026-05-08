@@ -172,12 +172,32 @@ pub(super) async fn run_session(
     // Register run in ActiveProcessRegistry
     let _reg_flag = registry.register_run("build_session", &session_id);
 
+    macro_rules! cancel_if_emit_dropped {
+        ($ok:expr) => {
+            if !$ok {
+                cancel_flag.store(true, Ordering::Release);
+                tracing::warn!(
+                    session_id = %session_id,
+                    "Build session cancelled because the frontend event Channel was dropped"
+                );
+                cleanup_session(&sessions_map, &registry, &session_id, handle_generation);
+                return;
+            }
+        };
+    }
+
+    macro_rules! dual_emit_or_cancel {
+        ($event:expr) => {
+            cancel_if_emit_dropped!(dual_emit(&pool, &channel, &app_handle, &$event));
+        };
+    }
+
     // Note: process activity for agent builds is tracked frontend-side via 'agent_build' domain
     // (see UnifiedMatrixEntry/MatrixAdoptionView). No backend emission needed here.
 
     // Update phase to Analyzing
     let _ = update_phase(&pool, &session_id, BuildPhase::Analyzing);
-    emit_session_status(
+    cancel_if_emit_dropped!(emit_session_status(
         &pool,
         &channel,
         &app_handle,
@@ -185,7 +205,7 @@ pub(super) async fn run_session(
         BuildPhase::Analyzing,
         0,
         0,
-    );
+    ));
 
     // Build initial prompt with optional workflow context
     let initial_prompt: Arc<str> =
@@ -335,7 +355,7 @@ pub(super) async fn run_session(
                 )
             }),
         };
-        dual_emit(&pool, &channel, &app_handle, &progress);
+        dual_emit_or_cancel!(progress);
 
         // On turn 1+, add --continue to resume the previous Claude session
         // instead of re-sending the full system prompt (~1100 lines).
@@ -937,9 +957,9 @@ pub(super) async fn run_session(
                                 cell_key
                             )),
                         };
-                        dual_emit(&pool, &channel, &app_handle, &activity_event);
+                        dual_emit_or_cancel!(activity_event);
                     }
-                    dual_emit(&pool, &channel, &app_handle, &event);
+                    dual_emit_or_cancel!(event);
                 }
                 BuildEvent::Question {
                     question,
@@ -968,11 +988,11 @@ pub(super) async fn run_session(
                         percent: None,
                         activity: Some(format!("Needs your input on: {}", cell_key)),
                     };
-                    dual_emit(&pool, &channel, &app_handle, &activity_event);
-                    dual_emit(&pool, &channel, &app_handle, &event);
+                    dual_emit_or_cancel!(activity_event);
+                    dual_emit_or_cancel!(event);
                 }
                 _ => {
-                    dual_emit(&pool, &channel, &app_handle, &event);
+                    dual_emit_or_cancel!(event);
                 }
             }
         }
@@ -1006,7 +1026,7 @@ pub(super) async fn run_session(
                         data: data.clone(),
                         status: "resolved".to_string(),
                     };
-                    dual_emit(&pool, &channel, &app_handle, &confirm_event);
+                    dual_emit_or_cancel!(confirm_event);
                     tracing::info!(session_id = %session_id, cell_key = %answered_key, "Re-emitted resolved for answered cell");
                 }
             }
@@ -1015,7 +1035,7 @@ pub(super) async fn run_session(
 
         // If question asked: wait for user answer, then continue to next turn
         if got_question {
-            emit_session_status(
+            cancel_if_emit_dropped!(emit_session_status(
                 &pool,
                 &channel,
                 &app_handle,
@@ -1023,7 +1043,7 @@ pub(super) async fn run_session(
                 BuildPhase::AwaitingInput,
                 resolved_count,
                 9,
-            );
+            ));
             notifications::send(
                 &app_handle,
                 "Input Required",
@@ -1043,7 +1063,7 @@ pub(super) async fn run_session(
                             ..Default::default()
                         },
                     );
-                    emit_session_status(
+                    cancel_if_emit_dropped!(emit_session_status(
                         &pool,
                         &channel,
                         &app_handle,
@@ -1051,7 +1071,7 @@ pub(super) async fn run_session(
                         BuildPhase::Resolving,
                         resolved_count,
                         9,
-                    );
+                    ));
 
                     // Flip any pending gate to Open. The UI only permits one
                     // pending question at a time, so a reply is unambiguous.
@@ -1229,8 +1249,8 @@ pub(super) async fn run_session(
                 percent: Some(100.0),
                 activity: Some("Draft ready for review".to_string()),
             };
-            dual_emit(&pool, &channel, &app_handle, &draft_activity);
-            emit_session_status(
+            dual_emit_or_cancel!(draft_activity);
+            cancel_if_emit_dropped!(emit_session_status(
                 &pool,
                 &channel,
                 &app_handle,
@@ -1238,7 +1258,7 @@ pub(super) async fn run_session(
                 BuildPhase::DraftReady,
                 resolved_count,
                 9,
-            );
+            ));
             // OS notification + Glyph banner only for interactive mode —
             // OneShot fires its own terminal notification post-promote so we
             // don't double-ping the user mid-flight.
@@ -1288,7 +1308,7 @@ pub(super) async fn run_session(
                                 ..Default::default()
                             },
                         );
-                        emit_session_status(
+                        cancel_if_emit_dropped!(emit_session_status(
                             &pool,
                             &channel,
                             &app_handle,
@@ -1296,7 +1316,7 @@ pub(super) async fn run_session(
                             BuildPhase::Testing,
                             resolved_count,
                             9,
-                        );
+                        ));
                         conversation.push((
                             "user",
                             "Test this agent. Report any issues via test_report JSON.".into(),
@@ -1310,7 +1330,7 @@ pub(super) async fn run_session(
                                 ..Default::default()
                             },
                         );
-                        emit_session_status(
+                        cancel_if_emit_dropped!(emit_session_status(
                             &pool,
                             &channel,
                             &app_handle,
@@ -1318,7 +1338,7 @@ pub(super) async fn run_session(
                             BuildPhase::Resolving,
                             resolved_count,
                             9,
-                        );
+                        ));
                         conversation.push((
                             "user",
                             format!("Refinement: {}. Update affected dimensions.", answer.answer)
@@ -1376,7 +1396,7 @@ pub(super) async fn run_session(
         },
     );
 
-    emit_session_status(
+    cancel_if_emit_dropped!(emit_session_status(
         &pool,
         &channel,
         &app_handle,
@@ -1384,6 +1404,6 @@ pub(super) async fn run_session(
         final_phase,
         resolved_count,
         9,
-    );
+    ));
     cleanup_session(&sessions_map, &registry, &session_id, handle_generation);
 }

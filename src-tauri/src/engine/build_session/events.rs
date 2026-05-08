@@ -75,17 +75,14 @@ pub(super) fn update_phase_with_error(
 /// Dual-emit a BuildEvent via both Channel (component-scoped) and Tauri events (global).
 /// Channel delivers to the attached component; Tauri event reaches the global listener.
 ///
-/// The dual-channel design assumes at-least-one delivery. If BOTH paths fail
-/// (Channel dropped because the component unmounted AND no global listener
-/// bound), the runner will keep advancing phases while the frontend has no
-/// idea anything happened — the user sees a frozen build. Log a warning in
-/// that case so the loss is at least visible in tracing output.
+/// Returns `false` when the component Channel is dropped. The runner treats
+/// that as cancellation because the user can no longer observe progress.
 pub(super) fn dual_emit(
     pool: &DbPool,
     channel: &Channel<Value>,
     app: &tauri::AppHandle,
     event: &BuildEvent,
-) {
+) -> bool {
     let (session_id, variant) = event_meta(event);
     let payload = match serde_json::to_value(event) {
         Ok(payload) => payload,
@@ -96,9 +93,30 @@ pub(super) fn dual_emit(
                 error = ?error,
                 "BuildSession dual_emit: failed to serialize build event"
             );
-            return;
+            return true;
         }
     };
+
+    let channel_result = channel.send(payload.clone());
+    if let Err(error) = &channel_result {
+        warn_emit_failure_once(
+            session_id,
+            "channel",
+            variant,
+            format_args!("{error:?}"),
+            "BuildSession dual_emit: component Channel send failed",
+        );
+        if let Err(touch_error) = build_session_repo::update(pool, session_id, &Default::default())
+        {
+            tracing::warn!(
+                session_id = %session_id,
+                event_variant = variant,
+                error = ?touch_error,
+                "BuildSession dual_emit: failed to stamp session after Channel send error"
+            );
+        }
+        return false;
+    }
 
     let emit_result = app.emit(event_name::BUILD_SESSION_EVENT, &payload);
     if let Err(error) = &emit_result {
@@ -119,27 +137,7 @@ pub(super) fn dual_emit(
             );
         }
     }
-
-    let channel_result = channel.send(payload);
-    if let Err(error) = &channel_result {
-        warn_emit_failure_once(
-            session_id,
-            "channel",
-            variant,
-            format_args!("{error:?}"),
-            "BuildSession dual_emit: component Channel send failed",
-        );
-    }
-
-    if channel_result.is_err() && emit_result.is_err() {
-        tracing::warn!(
-            session_id = %session_id,
-            event_variant = variant,
-            channel_error = ?channel_result.err(),
-            emit_error = ?emit_result.err(),
-            "BuildSession dual_emit: both Channel and Tauri emit failed — frontend will not learn about this event"
-        );
-    }
+    true
 }
 
 fn warn_emit_failure_once(
@@ -211,14 +209,14 @@ pub(super) fn emit_session_status(
     phase: BuildPhase,
     resolved_count: usize,
     total_count: usize,
-) {
+) -> bool {
     let event = BuildEvent::SessionStatus {
         session_id: session_id.to_string(),
         phase: phase.as_str().to_string(),
         resolved_count,
         total_count,
     };
-    dual_emit(pool, channel, app, &event);
+    dual_emit(pool, channel, app, &event)
 }
 
 /// Emit an Error event via Channel + Tauri.
@@ -229,14 +227,14 @@ pub(super) fn emit_error(
     session_id: &str,
     message: &str,
     retryable: bool,
-) {
+) -> bool {
     let event = BuildEvent::Error {
         session_id: session_id.to_string(),
         cell_key: None,
         message: message.to_string(),
         retryable,
     };
-    dual_emit(pool, channel, app, &event);
+    dual_emit(pool, channel, app, &event)
 }
 
 /// Fire the one-shot terminal notification trio: OS notification (via
