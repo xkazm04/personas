@@ -12,6 +12,7 @@
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 use tauri::ipc::Channel;
 use tokio::sync::mpsc;
@@ -38,6 +39,8 @@ use super::parser::{
     parse_build_line,
 };
 use super::SessionHandle;
+
+const CANCEL_POLL_INTERVAL: Duration = Duration::from_millis(100);
 
 // =============================================================================
 // SessionExecDir -- RAII guard for the per-session temp workspace
@@ -91,6 +94,42 @@ impl Drop for SessionExecDir {
                     "SessionExecDir: failed to remove temp dir on drop"
                 );
             }
+        }
+    }
+}
+
+async fn wait_for_cancel_flag(cancel_flag: Arc<AtomicBool>) {
+    while !cancel_flag.load(Ordering::Acquire) {
+        tokio::time::sleep(CANCEL_POLL_INTERVAL).await;
+    }
+}
+
+async fn kill_cancelled_turn(
+    driver: &mut CliProcessDriver,
+    registry: &ActiveProcessRegistry,
+    session_id: &str,
+    turn: usize,
+) {
+    tracing::info!(
+        session_id = %session_id,
+        turn = turn + 1,
+        "Build session cancelled mid-turn; killing CLI child"
+    );
+    driver.kill().await;
+    registry.clear_run_pid("build_session", session_id);
+}
+
+async fn wait_for_driver_or_cancel(
+    driver: &mut CliProcessDriver,
+    cancel_flag: &Arc<AtomicBool>,
+) -> std::io::Result<bool> {
+    loop {
+        if cancel_flag.load(Ordering::Acquire) {
+            return Ok(false);
+        }
+        match tokio::time::timeout(CANCEL_POLL_INTERVAL, driver.wait()).await {
+            Ok(result) => return result.map(|_| true),
+            Err(_) => {}
         }
     }
 }
@@ -185,8 +224,7 @@ pub(super) async fn run_session(
     //     credential picker fires — without this an intent like "GitHub"
     //     against a vault with 4 GitHub PATs would silently pick the
     //     newest one with no user input.
-    let registry_keywords: Vec<String> =
-        crate::engine::api_proxy::connector_keyword_snapshot();
+    let registry_keywords: Vec<String> = crate::engine::api_proxy::connector_keyword_snapshot();
     let ambiguous_services =
         crate::db::repos::resources::credentials::get_ambiguous_service_types(&pool);
     if !ambiguous_services.is_empty() {
@@ -305,27 +343,26 @@ pub(super) async fn run_session(
 
         // Spawn CLI in the shared session dir so --continue can find the
         // previous conversation state.
-        let mut driver =
-            match CliProcessDriver::spawn(&turn_args, session_exec_dir.path().to_path_buf()) {
-                Ok(d) => d,
-                Err(e) => {
-                    tracing::error!(session_id = %session_id, error = %e, "CLI spawn failed on turn {}", turn);
-                    let _ = update_phase_with_error(
-                        &pool,
-                        &session_id,
-                        &format!("CLI spawn failed: {e}"),
-                    );
-                    emit_error(
-                        &channel,
-                        &app_handle,
-                        &session_id,
-                        &format!("Failed to start build: {e}"),
-                        false,
-                    );
-                    cleanup_session(&sessions_map, &registry, &session_id);
-                    return;
-                }
-            };
+        let mut driver = match CliProcessDriver::spawn(
+            &turn_args,
+            session_exec_dir.path().to_path_buf(),
+        ) {
+            Ok(d) => d,
+            Err(e) => {
+                tracing::error!(session_id = %session_id, error = %e, "CLI spawn failed on turn {}", turn);
+                let _ =
+                    update_phase_with_error(&pool, &session_id, &format!("CLI spawn failed: {e}"));
+                emit_error(
+                    &channel,
+                    &app_handle,
+                    &session_id,
+                    &format!("Failed to start build: {e}"),
+                    false,
+                );
+                cleanup_session(&sessions_map, &registry, &session_id);
+                return;
+            }
+        };
 
         if let Some(pid) = driver.pid() {
             registry.set_run_pid("build_session", &session_id, pid);
@@ -335,6 +372,7 @@ pub(super) async fn run_session(
         if let Err(e) = driver.write_stdin_line(turn_prompt.as_bytes()).await {
             tracing::error!(session_id = %session_id, error = %e, "Failed to write prompt on turn {}", turn);
             let _ = driver.kill().await;
+            registry.clear_run_pid("build_session", &session_id);
             let _ =
                 update_phase_with_error(&pool, &session_id, &format!("Failed to send prompt: {e}"));
             emit_error(
@@ -353,22 +391,48 @@ pub(super) async fn run_session(
         let mut turn_raw = String::new();
 
         if let Some(mut reader) = driver.take_stdout_reader() {
+            let cancel_wait = wait_for_cancel_flag(cancel_flag.clone());
+            tokio::pin!(cancel_wait);
             loop {
-                match read_line_limited(&mut reader).await {
-                    Ok(Some(line)) => {
-                        turn_raw.push_str(&line);
-                        turn_raw.push('\n');
-                        turn_events.extend(parse_build_line(&line, &session_id));
+                tokio::select! {
+                    _ = &mut cancel_wait => {
+                        kill_cancelled_turn(&mut driver, &registry, &session_id, turn).await;
+                        cleanup_session(&sessions_map, &registry, &session_id);
+                        return;
                     }
-                    Ok(None) => break,
-                    Err(_) => break,
+                    line_result = read_line_limited(&mut reader) => {
+                        match line_result {
+                            Ok(Some(line)) => {
+                                turn_raw.push_str(&line);
+                                turn_raw.push('\n');
+                                turn_events.extend(parse_build_line(&line, &session_id));
+                            }
+                            Ok(None) => break,
+                            Err(_) => break,
+                        }
+                    }
                 }
             }
         }
 
         // Wait for the CLI process to exit (don't use finish() which would
         // attempt dir cleanup — we reuse session_exec_dir across turns).
-        let _ = driver.wait().await;
+        match wait_for_driver_or_cancel(&mut driver, &cancel_flag).await {
+            Ok(true) => registry.clear_run_pid("build_session", &session_id),
+            Ok(false) => {
+                kill_cancelled_turn(&mut driver, &registry, &session_id, turn).await;
+                cleanup_session(&sessions_map, &registry, &session_id);
+                return;
+            }
+            Err(e) => {
+                tracing::warn!(
+                    session_id = %session_id,
+                    error = %e,
+                    "Failed while waiting for CLI process to exit"
+                );
+                registry.clear_run_pid("build_session", &session_id);
+            }
+        }
 
         // Deduplicate events by cell_key (CLI sends both `assistant` and `result` envelopes
         // containing the same content, which produces duplicate CellUpdate/Question events)
@@ -529,8 +593,11 @@ pub(super) async fn run_session(
                         ..
                     } => {
                         ensure_capability_in_coverage_with_context(
-                            &mut coverage, capability_id, &raw_user_intent,
-                            &registry_keywords, &ambiguous_services,
+                            &mut coverage,
+                            capability_id,
+                            &raw_user_intent,
+                            &registry_keywords,
+                            &ambiguous_services,
                         );
                         // Opportunistically harvest a title from the
                         // resolution payload. Some LLMs include `title`
@@ -607,9 +674,9 @@ pub(super) async fn run_session(
                                     capability_id,
                                     &mut coverage,
                                     &capability_titles,
-                                     value,
-                                     &pool,
-                                     &session_id,
+                                    value,
+                                    &pool,
+                                    &session_id,
                                 );
                                 if !synth.is_empty() {
                                     pending_gate = Some(PendingGate {
@@ -651,7 +718,9 @@ pub(super) async fn run_session(
                                 .or_else(|| data.get("use_cases").and_then(|v| v.as_array()))
                             {
                                 let seed = gate_seed_for_intent_with_context(
-                                    &raw_user_intent, &registry_keywords, &ambiguous_services,
+                                    &raw_user_intent,
+                                    &registry_keywords,
+                                    &ambiguous_services,
                                 );
                                 for cap in caps {
                                     let id = cap.get("id").and_then(|v| v.as_str()).or_else(|| {
@@ -677,7 +746,9 @@ pub(super) async fn run_session(
                                 coverage.insert(
                                     "uc_default".to_string(),
                                     gate_seed_for_intent_with_context(
-                                        &raw_user_intent, &registry_keywords, &ambiguous_services,
+                                        &raw_user_intent,
+                                        &registry_keywords,
+                                        &ambiguous_services,
                                     ),
                                 );
                                 capability_titles
@@ -707,9 +778,9 @@ pub(super) async fn run_session(
                                     &cap_id,
                                     &mut coverage,
                                     &capability_titles,
-                                     &serde_json::Value::Null,
-                                     &pool,
-                                     &session_id,
+                                    &serde_json::Value::Null,
+                                    &pool,
+                                    &session_id,
                                 );
                                 if !synth.is_empty() {
                                     pending_gate = Some(PendingGate {
@@ -1001,7 +1072,9 @@ pub(super) async fn run_session(
                         for line in answer.answer.lines() {
                             if let Some(start) = line.find('[') {
                                 if let Some(end) = line.find("]:") {
-                                    if let Some(key) = line.get(start + 1..end).map(|s| s.trim().to_string()) {
+                                    if let Some(key) =
+                                        line.get(start + 1..end).map(|s| s.trim().to_string())
+                                    {
                                         if !key.is_empty() {
                                             keys.push(key);
                                         }
@@ -1037,10 +1110,11 @@ pub(super) async fn run_session(
                     // sees it on the next turn, and the user gets the same
                     // memory question re-asked. This was directly observed
                     // in the rapid-validation R02 trace post-batched-fix.
-                    let answered_v3_fields: std::collections::HashSet<&'static str> = last_answered_cells
-                        .iter()
-                        .filter_map(|cell| legacy_cell_to_v3_field(cell))
-                        .collect();
+                    let answered_v3_fields: std::collections::HashSet<&'static str> =
+                        last_answered_cells
+                            .iter()
+                            .filter_map(|cell| legacy_cell_to_v3_field(cell))
+                            .collect();
                     for cap_gates in coverage.values_mut() {
                         for field in &answered_v3_fields {
                             if !cap_gates.is_gate_open(field) {
