@@ -399,6 +399,58 @@ pub(crate) async fn execute_persona_inner(
     repo::get_by_id(&state.db, &execution.id)
 }
 
+/// Assemble and cache the stable execution prompt while the editor is idle.
+///
+/// This intentionally prepares the same no-input, no-credential base prompt
+/// that a manual Run can reuse before memory injection. Credential and connector
+/// hints are still resolved at execution time, so runs that need them bypass the
+/// speculative blob.
+#[tauri::command]
+pub fn prepare_persona_execution(
+    state: State<'_, Arc<AppState>>,
+    persona_id: String,
+) -> Result<String, AppError> {
+    require_auth_sync(&state)?;
+    use crate::db::repos::core::memories as mem_repo;
+    use crate::engine::{prepared_run_cache, prompt};
+
+    let persona = persona_repo::get_by_id(&state.db, &persona_id)?;
+    let mut tools = tool_repo::get_tools_for_persona(&state.db, &persona_id)?;
+    if let Ok(automations) = automation_repo::get_by_persona(&state.db, &persona_id) {
+        for auto in &automations {
+            if auto.deployment_status.is_runnable() {
+                tools.push(automation_to_virtual_tool(auto));
+            }
+        }
+    }
+
+    let mut prompt_text = prompt::assemble_prompt(
+        &persona,
+        &tools,
+        None,
+        None,
+        None,
+        None,
+        #[cfg(feature = "desktop")]
+        None,
+    );
+    let mut memory_ids = Vec::new();
+    if let Ok(tiered) = mem_repo::get_for_injection_v2(&state.db, &persona_id, None, 10, 40) {
+        let (with_memories, ids, _, _) = prepared_run_cache::append_memories(prompt_text, &tiered);
+        prompt_text = with_memories;
+        memory_ids = ids;
+    }
+    let key = prepared_run_cache::cache_key(&persona, &tools, None, None);
+    prepared_run_cache::insert(
+        key.clone(),
+        prepared_run_cache::PreparedRunBlob {
+            prompt_text,
+            memory_ids,
+        },
+    );
+    Ok(key)
+}
+
 #[tauri::command]
 pub fn list_executions_by_trigger(
     state: State<'_, Arc<AppState>>,

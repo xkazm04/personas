@@ -837,6 +837,7 @@ export type CommandName =
   | "preview_cron_schedule"
   | "preview_digest"
   | "preview_execution"
+  | "prepare_persona_execution"
   | "preview_prompt"
   | "preview_share_link"
   | "promote_build_draft"

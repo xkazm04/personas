@@ -532,6 +532,19 @@ pub async fn run_execution(
         } else {
             Some(&connector_usage_hints)
         };
+    let prepared_run_key = if !is_session_resume
+        && hint_refs.is_empty()
+        && connector_hints_opt.is_none()
+        && input_data.is_none()
+        && workspace_instructions.is_none()
+    {
+        Some(super::prepared_run_cache::cache_key(
+            &persona, &tools, None, None,
+        ))
+    } else {
+        None
+    };
+    let mut prepared_memory_ids: Option<Vec<String>> = None;
     let prompt_text = if is_session_resume {
         // For session resume, send a lighter prompt -- the session already has context
         prompt::assemble_resume_prompt(
@@ -543,6 +556,23 @@ pub async fn run_execution(
             },
             connector_hints_opt,
         )
+    } else if let Some(ref key) = prepared_run_key {
+        if let Some(blob) = super::prepared_run_cache::get(key) {
+            logger.log("[PREPARE] Reused speculative prepared prompt");
+            prepared_memory_ids = Some(blob.memory_ids);
+            blob.prompt_text
+        } else {
+            prompt::assemble_prompt(
+                &persona,
+                &tools,
+                None,
+                None,
+                None,
+                None,
+                #[cfg(feature = "desktop")]
+                None,
+            )
+        }
     } else {
         prompt::assemble_prompt(
             &persona,
@@ -568,71 +598,87 @@ pub async fn run_execution(
     // is set — so capability-attributed learnings only surface under their
     // own capability, while persona-wide memories surface everywhere.
     let prompt_text = if !is_session_resume {
-        match mem_repo::get_for_injection_v2(
-            &pool,
-            &persona.id,
-            execution_use_case_id.as_deref(),
-            10,
-            40,
-        ) {
-            Ok(tiered) if !tiered.core.is_empty() || !tiered.active.is_empty() => {
-                let mut mem_section = String::new();
-
-                // Core beliefs — always present, define agent identity
-                if !tiered.core.is_empty() {
-                    mem_section.push_str("\n\n## Agent Memory — Core Beliefs\n\n");
-                    mem_section.push_str("These are your established principles and preferences learned over many interactions. Treat them as strong defaults.\n\n");
-                    for m in &tiered.core {
-                        mem_section.push_str(&format!(
-                            "- **{}** [{}]: {}\n",
-                            m.title, m.category, m.content
-                        ));
-                    }
-                }
-
-                // Active knowledge — recent learnings, contextual facts
-                if !tiered.active.is_empty() {
-                    mem_section.push_str("\n\n## Agent Memory — Recent Learnings\n\n");
-                    mem_section.push_str("Context from recent work. Use to inform your analysis and avoid repeating past mistakes.\n\n");
-                    for m in &tiered.active {
-                        mem_section.push_str(&format!(
-                            "- **{}** [{}] (importance: {}): {}\n",
-                            m.title, m.category, m.importance, m.content
-                        ));
-                    }
-                }
-
-                mem_section.push('\n');
-                let total = tiered.core.len() + tiered.active.len();
+        if let Some(memory_ids) = prepared_memory_ids {
+            if !memory_ids.is_empty() {
                 logger.log(&format!(
-                    "[MEMORY] Injected {} memories ({} core, {} active)",
-                    total,
-                    tiered.core.len(),
-                    tiered.active.len()
+                    "[MEMORY] Reused {} prepared memories",
+                    memory_ids.len()
                 ));
-
-                // Track access: increment counters for all injected memories
-                let all_ids: Vec<String> = tiered
-                    .core
-                    .iter()
-                    .chain(tiered.active.iter())
-                    .map(|m| m.id.clone())
-                    .collect();
-                if let Err(e) = mem_repo::increment_access_batch(&pool, &all_ids) {
+                if let Err(e) = mem_repo::increment_access_batch(&pool, &memory_ids) {
                     logger.log(&format!("[MEMORY] Failed to update access counts: {e}"));
                 }
-
-                // Run lifecycle transitions (promote/archive) after access update
                 if let Err(e) = mem_repo::run_lifecycle(&pool, &persona.id) {
                     logger.log(&format!("[MEMORY] Lifecycle transition failed: {e}"));
                 }
-
-                format!("{prompt_text}{mem_section}")
             }
-            Ok(_) => prompt_text, // no memories yet
-            Err(e) => {
-                logger.log(&format!("[MEMORY] Failed to load memories: {e}"));
-                prompt_text
+            prompt_text
+        } else {
+            match mem_repo::get_for_injection_v2(
+                &pool,
+                &persona.id,
+                execution_use_case_id.as_deref(),
+                10,
+                40,
+            ) {
+                Ok(tiered) if !tiered.core.is_empty() || !tiered.active.is_empty() => {
+                    let mut mem_section = String::new();
+
+                    // Core beliefs — always present, define agent identity
+                    if !tiered.core.is_empty() {
+                        mem_section.push_str("\n\n## Agent Memory — Core Beliefs\n\n");
+                        mem_section.push_str("These are your established principles and preferences learned over many interactions. Treat them as strong defaults.\n\n");
+                        for m in &tiered.core {
+                            mem_section.push_str(&format!(
+                                "- **{}** [{}]: {}\n",
+                                m.title, m.category, m.content
+                            ));
+                        }
+                    }
+
+                    // Active knowledge — recent learnings, contextual facts
+                    if !tiered.active.is_empty() {
+                        mem_section.push_str("\n\n## Agent Memory — Recent Learnings\n\n");
+                        mem_section.push_str("Context from recent work. Use to inform your analysis and avoid repeating past mistakes.\n\n");
+                        for m in &tiered.active {
+                            mem_section.push_str(&format!(
+                                "- **{}** [{}] (importance: {}): {}\n",
+                                m.title, m.category, m.importance, m.content
+                            ));
+                        }
+                    }
+
+                    mem_section.push('\n');
+                    let total = tiered.core.len() + tiered.active.len();
+                    logger.log(&format!(
+                        "[MEMORY] Injected {} memories ({} core, {} active)",
+                        total,
+                        tiered.core.len(),
+                        tiered.active.len()
+                    ));
+
+                    // Track access: increment counters for all injected memories
+                    let all_ids: Vec<String> = tiered
+                        .core
+                        .iter()
+                        .chain(tiered.active.iter())
+                        .map(|m| m.id.clone())
+                        .collect();
+                    if let Err(e) = mem_repo::increment_access_batch(&pool, &all_ids) {
+                        logger.log(&format!("[MEMORY] Failed to update access counts: {e}"));
+                    }
+
+                    // Run lifecycle transitions (promote/archive) after access update
+                    if let Err(e) = mem_repo::run_lifecycle(&pool, &persona.id) {
+                        logger.log(&format!("[MEMORY] Lifecycle transition failed: {e}"));
+                    }
+
+                    format!("{prompt_text}{mem_section}")
+                }
+                Ok(_) => prompt_text, // no memories yet
+                Err(e) => {
+                    logger.log(&format!("[MEMORY] Failed to load memories: {e}"));
+                    prompt_text
+                }
             }
         }
     } else {

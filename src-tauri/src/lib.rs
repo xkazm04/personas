@@ -1127,6 +1127,7 @@ pub fn run() {
             commands::execution::executions::get_execution,
             commands::execution::executions::create_execution,
             commands::execution::executions::execute_persona,
+            commands::execution::executions::prepare_persona_execution,
             commands::execution::executions::cancel_execution,
             commands::execution::executions::list_executions_by_trigger,
             commands::execution::executions::list_executions_for_use_case,

@@ -112,6 +112,7 @@ pub mod pipeline_executor;
 pub mod platform_rules;
 pub mod platforms;
 pub mod polling;
+pub mod prepared_run_cache;
 pub mod process_activity;
 pub mod process_session;
 pub mod prompt;

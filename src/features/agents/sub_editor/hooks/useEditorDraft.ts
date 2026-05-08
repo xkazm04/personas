@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { preparePersonaExecution } from '@/api/agents/executions';
 import { useAgentStore } from '@/stores/agentStore';
 import { useEditorDirtyState, useEditorHistory } from '../libs/EditorDocument';
 import { useEditorSave } from '../libs/useEditorSave';
@@ -8,6 +9,7 @@ const emptyDraft = () => buildDraft({ name: '', enabled: false });
 
 export function useEditorDraft() {
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
+  const selectedPersonaId = selectedPersona?.id;
   const pendingPersonaId = useAgentStore((s) => s.pendingSelectPersonaId);
   const cancelPendingSwitch = useAgentStore((s) => s.cancelPendingSwitch);
 
@@ -42,6 +44,24 @@ export function useEditorDraft() {
   });
   const { isDirty, dirtyTabs: allDirtyTabs, saveAll: saveAllTabs, cancelAll: cancelAllDebouncedSaves, clearAll: clearAllDirty } = useEditorDirtyState();
   const { undo, redo, clearHistory } = useEditorHistory();
+
+  const preparationFingerprint = selectedPersona ? JSON.stringify({
+    id: selectedPersona.id,
+    systemPrompt: selectedPersona.system_prompt ?? '',
+    structuredPrompt: selectedPersona.structured_prompt ?? '',
+    designContext: selectedPersona.design_context ?? '',
+    modelProfile: selectedPersona.model_profile ?? '',
+    tools: selectedPersona.tools?.map((tool) => tool.id).sort() ?? [],
+    automations: selectedPersona.automations?.map((automation) => automation.id).sort() ?? [],
+  }) : '';
+
+  useEffect(() => {
+    if (!selectedPersonaId || pendingPersonaId || isSaving) return;
+    const handle = window.setTimeout(() => {
+      void preparePersonaExecution(selectedPersonaId).catch(() => undefined);
+    }, 800);
+    return () => window.clearTimeout(handle);
+  }, [selectedPersonaId, pendingPersonaId, isSaving, preparationFingerprint]);
 
   // Reset draft when persona changes (not during a pending switch)
   useEffect(() => {

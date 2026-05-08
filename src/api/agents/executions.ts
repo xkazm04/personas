@@ -51,6 +51,9 @@ export const executePersona = (
     idempotencyKey: idempotencyKey,
   }, idempotencyKey ? { idempotencyKey } : undefined);
 
+export const preparePersonaExecution = (personaId: string) =>
+  invoke<string>("prepare_persona_execution", { personaId });
+
 export const listExecutionsByTrigger = (triggerId: string, limit?: number) =>
   invoke<PersonaExecution[]>("list_executions_by_trigger", {
     triggerId,
