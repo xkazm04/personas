@@ -17,6 +17,7 @@ import { initPseudoLocale } from '@/i18n/pseudoLocale';
 import { useI18nStore } from '@/stores/i18nStore';
 import { useToastStore } from '@/stores/toastStore';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
+import { useDocumentVisibility } from '@/hooks/utility/useDocumentVisibility';
 import { createLogger } from "@/lib/log";
 import { idlePrefetch } from "@/lib/idlePrefetch";
 
@@ -169,6 +170,14 @@ export default function App() {
   const language = useI18nStore((s) => s.language);
   const fontReady = useI18nStore((s) => s.fontReady);
   const { shouldAnimate } = useMotion();
+  const isDocumentVisible = useDocumentVisibility();
+
+  useEffect(() => {
+    document.documentElement.dataset.documentVisible = String(isDocumentVisible);
+    return () => {
+      delete document.documentElement.dataset.documentVisible;
+    };
+  }, [isDocumentVisible]);
 
   // Toast a localized confirmation when the language changes (skip initial mount).
   const prevLanguageRef = useRef(language);
@@ -195,7 +204,7 @@ export default function App() {
 
   return (
     <VibeThemeProvider>
-      <MotionConfig reducedMotion="user">
+      <MotionConfig reducedMotion={isDocumentVisible ? "user" : "always"}>
         <AriaLiveProvider>
         <div
           className={`flex flex-col h-screen w-screen overflow-hidden bg-background text-foreground transition-opacity duration-150 ease-out ${fontReady ? 'opacity-100' : 'opacity-60'}`}

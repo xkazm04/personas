@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { openExternalUrl } from "@/api/system/system";
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
+import { useDocumentVisibility } from '@/hooks/utility/useDocumentVisibility';
 
 
 /** Result returned by the generic start function. */
@@ -71,6 +72,7 @@ export function useOAuthPolling<
   const [isAuthorizing, setIsAuthorizing] = useState(false);
   const [completedAt, setCompletedAt] = useState<string | null>(null);
   const [message, setMessage] = useState<{ success: boolean; message: string } | null>(null);
+  const isDocumentVisible = useDocumentVisibility();
 
   // Stable refs so the poll effect doesn't re-trigger on config changes
   const configRef = useRef(config);
@@ -98,7 +100,7 @@ export function useOAuthPolling<
 
   // Poll for session completion
   useEffect(() => {
-    if (!sessionId) return;
+    if (!sessionId || !isDocumentVisible) return;
 
     // Abort any previous polling loop before starting a new one
     abortRef.current?.abort();
@@ -173,7 +175,7 @@ export function useOAuthPolling<
       controller.abort();
       if (timer) window.clearTimeout(timer);
     };
-  }, [sessionId]);
+  }, [sessionId, isDocumentVisible]);
 
   const startConsent = useCallback((...args: TStartArgs) => {
     // Prevent concurrent re-entry (e.g. double-click). The ref is used instead

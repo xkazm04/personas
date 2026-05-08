@@ -3737,6 +3737,13 @@ body[data-drag-active="true"] * {
   }
 }
 
+html[data-document-visible='false'] *,
+html[data-document-visible='false'] *::before,
+html[data-document-visible='false'] *::after {
+  animation-play-state: paused !important;
+  transition-duration: 0ms !important;
+}
+
 /* ==========================================================================
    Glow System -- CSS keyframes, pseudo-element glow, edge shimmer, colors
    ========================================================================== */

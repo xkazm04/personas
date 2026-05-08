@@ -7,6 +7,7 @@ import { classifyErrorFull } from '@/lib/errors/errorPipeline';
 import { friendlySeverity } from '@/lib/errors/errorRegistry';
 import { formatElapsed } from '@/lib/utils/formatters';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useDocumentVisibility } from '@/hooks/utility/useDocumentVisibility';
 
 // ---------------------------------------------------------------------------
 // Severity styles (healing toasts)
@@ -46,11 +47,13 @@ const SEVERITY_STYLES: Record<string, { border: string; icon: string; badge: str
 function StandardToastItem({ toast, onDismiss }: { toast: StandardToast; onDismiss: (id: string) => void }) {
   const { t } = useTranslation();
   const [paused, setPaused] = useState(false);
+  const isDocumentVisible = useDocumentVisibility();
   const [elapsedLabel, setElapsedLabel] = useState('');
   const elapsedRef = useRef(0);
   const lastTickRef = useRef(Date.now());
   const pausedRef = useRef(false);
-  pausedRef.current = paused;
+  const isPaused = paused || !isDocumentVisible;
+  pausedRef.current = isPaused;
 
   const classified = toast.type === 'error' ? classifyErrorFull(toast.message) : null;
   const friendly = classified?.friendly ?? null;
@@ -85,9 +88,10 @@ function StandardToastItem({ toast, onDismiss }: { toast: StandardToast; onDismi
     };
 
     setElapsedLabel(formatElapsed(Date.now() - toast.timestamp));
+    if (!isDocumentVisible) return;
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
-  }, [toast.duration, toast.id, toast.timestamp, onDismiss]);
+  }, [toast.duration, toast.id, toast.timestamp, onDismiss, isDocumentVisible]);
 
   return (
     <div
@@ -127,7 +131,7 @@ function StandardToastItem({ toast, onDismiss }: { toast: StandardToast; onDismi
       {/* Auto-dismiss progress bar — CSS animation so pause/resume is smooth */}
       <div className="h-0.5 bg-black/20">
         <div
-          data-paused={paused ? 'true' : 'false'}
+          data-paused={isPaused ? 'true' : 'false'}
           className={`animate-toast-progress h-full ${
             toast.type === 'success' ? 'bg-emerald-400/50' : 'bg-red-400/50'
           }`}
@@ -146,11 +150,13 @@ function HealingToastItem({ toast, onDismiss }: { toast: HealingToast; onDismiss
   const { t } = useTranslation();
   const styles = SEVERITY_STYLES[toast.severity] ?? SEVERITY_STYLES.medium!;
   const [paused, setPaused] = useState(false);
+  const isDocumentVisible = useDocumentVisibility();
   const [elapsedLabel, setElapsedLabel] = useState('');
   const elapsedRef = useRef(0);
   const lastTickRef = useRef(Date.now());
   const pausedRef = useRef(false);
-  pausedRef.current = paused;
+  const isPaused = paused || !isDocumentVisible;
+  pausedRef.current = isPaused;
 
   useEffect(() => {
     let rafId: number;
@@ -178,9 +184,10 @@ function HealingToastItem({ toast, onDismiss }: { toast: HealingToast; onDismiss
     };
 
     setElapsedLabel(formatElapsed(Date.now() - toast.timestamp));
+    if (!isDocumentVisible) return;
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
-  }, [toast.duration, toast.id, toast.timestamp, onDismiss]);
+  }, [toast.duration, toast.id, toast.timestamp, onDismiss, isDocumentVisible]);
 
   const handleResolve = useCallback(async () => {
     const { useOverviewStore } = await import("@/stores/overviewStore");
@@ -246,7 +253,7 @@ function HealingToastItem({ toast, onDismiss }: { toast: HealingToast; onDismiss
       {/* Auto-dismiss progress bar — CSS animation so pause/resume is smooth */}
       <div className="h-0.5 bg-secondary/30">
         <div
-          data-paused={paused ? 'true' : 'false'}
+          data-paused={isPaused ? 'true' : 'false'}
           className={`animate-toast-progress h-full ${styles.progress}`}
           style={{ '--toast-duration': `${toast.duration}ms` } as CSSProperties}
         />

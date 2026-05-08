@@ -35,6 +35,7 @@ export * from "./design/template/useAiArtifactFlow";
 
 // Execution hooks
 export * from "./execution/usePersonaExecution";
+export * from "./utility/useDocumentVisibility";
 export * from "./execution/useCorrelatedCliStream";
 export * from "./execution/useActivityMonitor";
 export * from "./execution/useFileChanges";

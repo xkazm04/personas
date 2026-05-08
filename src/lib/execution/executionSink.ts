@@ -7,6 +7,11 @@
  * reference and delegates append/clear to it.
  */
 
+import {
+  getDocumentVisible,
+  subscribeDocumentVisibility,
+} from '@/lib/documentVisibility';
+
 /** Maximum terminal output lines kept in memory to prevent OOM on long executions. */
 const MAX_TERMINAL_LINES = 10_000;
 /** Maximum length of a single terminal line in characters. */
@@ -105,6 +110,7 @@ export class ExecutionSink {
   private totalBytes = 0;
   private lastTailFlushTime = 0;
   private tailFlushScheduled = false;
+  private tailVisibilityUnsubscribe: (() => void) | null = null;
   private onFlush: SinkFlushCallback | null = null;
 
   /** Bind the flush callback. Called once when the slice is created. */
@@ -143,6 +149,8 @@ export class ExecutionSink {
     this.totalBytes = 0;
     this.lastTailFlushTime = 0;
     this.tailFlushScheduled = false;
+    this.tailVisibilityUnsubscribe?.();
+    this.tailVisibilityUnsubscribe = null;
     this.ring.clear();
     this.tailRing.clear();
   }
@@ -157,6 +165,8 @@ export class ExecutionSink {
     this.totalBytes = 0;
     this.lastTailFlushTime = 0;
     this.tailFlushScheduled = false;
+    this.tailVisibilityUnsubscribe?.();
+    this.tailVisibilityUnsubscribe = null;
     this.ring.clear();
     this.tailRing.clear();
   }
@@ -228,7 +238,7 @@ export class ExecutionSink {
     const delay = Math.max(0, TAIL_FLUSH_INTERVAL_MS - elapsed);
     const gen = this.generation;
 
-    setTimeout(() => {
+    const flushTail = () => {
       this.tailFlushScheduled = false;
       if (gen !== this.generation || !this.onFlush) return;
 
@@ -242,7 +252,20 @@ export class ExecutionSink {
         ...tailLines,
       ];
       this.onFlush(output, this.totalBytes);
-    }, delay);
+    };
+
+    if (!getDocumentVisible()) {
+      this.tailVisibilityUnsubscribe?.();
+      this.tailVisibilityUnsubscribe = subscribeDocumentVisibility((visible) => {
+        if (!visible) return;
+        this.tailVisibilityUnsubscribe?.();
+        this.tailVisibilityUnsubscribe = null;
+        flushTail();
+      });
+      return;
+    }
+
+    setTimeout(flushTail, delay);
   }
 }
 

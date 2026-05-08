@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { useDocumentVisibility } from '@/hooks/utility/useDocumentVisibility';
 
 // -- Polling configuration registry --------------------------------------
 export const POLLING_CONFIG = {
@@ -45,6 +46,7 @@ export function usePolling(
   { interval, enabled, maxBackoff }: PollingOptions,
 ): PollingState {
   const [lastRefreshed, setLastRefreshed] = useState<number | null>(null);
+  const isDocumentVisible = useDocumentVisibility();
   const errorCountRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const fetchRef = useRef<() => unknown | Promise<unknown>>(fetchFn);
@@ -63,7 +65,7 @@ export function usePolling(
   }, []);
 
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || !isDocumentVisible) return;
 
     const getDelay = () => {
       if (errorCountRef.current === 0) return interval;
@@ -72,7 +74,6 @@ export function usePolling(
     };
 
     let stopped = false;
-    let visible = typeof document === 'undefined' || document.visibilityState === 'visible';
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
     // Recursive setTimeout instead of setInterval. setInterval evaluated
@@ -83,7 +84,7 @@ export function usePolling(
     // each tick awaits runFetch() then recomputes the delay against the
     // current errorCountRef before scheduling the next tick.
     const tick = async () => {
-      if (stopped || !visible) return;
+      if (stopped) return;
       await runFetch();
       if (stopped) return;
       timeoutId = setTimeout(() => { void tick(); }, getDelay());
@@ -100,24 +101,13 @@ export function usePolling(
       timerRef.current = null;
     };
 
-    const onVisibility = () => {
-      visible = document.visibilityState === 'visible';
-      if (visible) {
-        void tick();
-      } else {
-        clear();
-      }
-    };
-
-    document.addEventListener('visibilitychange', onVisibility);
-    if (visible) void tick();
+    void tick();
 
     return () => {
       stopped = true;
       clear();
-      document.removeEventListener('visibilitychange', onVisibility);
     };
-  }, [enabled, interval, effectiveMaxBackoff, runFetch]);
+  }, [enabled, isDocumentVisible, interval, effectiveMaxBackoff, runFetch]);
 
-  return { isPolling: enabled, lastRefreshed };
+  return { isPolling: enabled && isDocumentVisible, lastRefreshed };
 }
