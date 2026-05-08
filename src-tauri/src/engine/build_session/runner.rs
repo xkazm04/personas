@@ -1313,9 +1313,11 @@ pub(super) async fn run_session(
                 );
             }
 
-            // OneShot: spawn the post-draft orchestrator and exit the runner.
-            // The orchestrator owns Testing → TestComplete → Promoted (or
-            // Failed) and fires the terminal notification when done.
+            // OneShot: hand off to the post-draft orchestrator. The build CLI
+            // process is finished at this point, but the runner task stays
+            // alive so BuildSessionManager can still cancel the post-draft
+            // test → fix-pass → retest loop before it reaches a terminal DB
+            // write.
             if one_shot {
                 tracing::info!(
                     session_id = %session_id,
@@ -1330,10 +1332,14 @@ pub(super) async fn run_session(
                 // cancel), leaving the session stuck in DraftReady forever
                 // with no terminal notification.
                 let oneshot_persona_id = persona_id.clone();
-                tokio::spawn(async move {
-                    super::oneshot::run_post_draft(oneshot_app, oneshot_sid, oneshot_persona_id)
-                        .await;
-                });
+                super::oneshot::run_post_draft(
+                    oneshot_app,
+                    oneshot_sid,
+                    oneshot_persona_id,
+                    cancel_flag.clone(),
+                    registry.clone(),
+                )
+                .await;
                 cleanup_session(&sessions_map, &registry, &session_id, handle_generation);
                 return;
             }

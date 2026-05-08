@@ -337,8 +337,11 @@ impl BuildSessionManager {
             }
         }
 
-        // Cancel in the process registry
+        // Cancel in the process registry. One-shot post-draft work runs after
+        // the build CLI exits, so it has its own synthetic run entry while
+        // sharing the session handle's cancel flag above.
         registry.cancel_run("build_session", session_id);
+        registry.cancel_run("build_session_oneshot", session_id);
         if let Some(pid) = registry.take_run_pid("build_session", session_id) {
             super::kill_process(pid);
         }

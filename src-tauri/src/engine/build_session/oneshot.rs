@@ -35,6 +35,7 @@
 //!   - The notifications-store `titlebar-notification` event with a
 //!     persona deep-link so the in-app bell badge updates.
 
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
 use tauri::Manager;
@@ -43,7 +44,7 @@ use crate::db::models::{BuildPhase, UpdateBuildSession};
 use crate::db::repos::core::build_sessions as build_session_repo;
 use crate::db::repos::core::personas as persona_repo;
 use crate::error::AppError;
-use crate::AppState;
+use crate::{ActiveProcessRegistry, AppState};
 
 /// Maximum LLM-driven fix passes to attempt on test failure. After this,
 /// the session is marked `Failed` and the user is notified.
@@ -64,7 +65,12 @@ pub(super) async fn run_post_draft(
     app_handle: tauri::AppHandle,
     session_id: String,
     persona_id: String,
+    cancel_flag: Arc<AtomicBool>,
+    registry: Arc<ActiveProcessRegistry>,
 ) {
+    let (oneshot_cancel_flag, _oneshot_guard) =
+        registry.register_run_guarded("build_session_oneshot", &session_id);
+
     // `state::<T>()` returns the registered State guard. AppState is set
     // up at app boot (lib.rs `manage(...)`), so by the time a build
     // reaches DraftReady the state is always present.
@@ -75,6 +81,10 @@ pub(super) async fn run_post_draft(
         persona_id = %persona_id,
         "OneShot: starting post-draft orchestrator (test → promote)"
     );
+
+    if is_cancelled(&cancel_flag, &oneshot_cancel_flag, &session_id) {
+        return;
+    }
 
     // Phase: Testing
     if let Err(e) = update_phase(&state, &session_id, BuildPhase::Testing).await {
@@ -89,6 +99,10 @@ pub(super) async fn run_post_draft(
     let mut next_agent_ir: Option<crate::db::models::AgentIr> = None;
 
     loop {
+        if is_cancelled(&cancel_flag, &oneshot_cancel_flag, &session_id) {
+            return;
+        }
+
         attempts += 1;
 
         match run_test_pass(
@@ -101,6 +115,9 @@ pub(super) async fn run_post_draft(
         .await
         {
             Ok(TestPassOutcome::Passed) => {
+                if is_cancelled(&cancel_flag, &oneshot_cancel_flag, &session_id) {
+                    return;
+                }
                 tracing::info!(
                     session_id = %session_id,
                     attempts,
@@ -109,6 +126,9 @@ pub(super) async fn run_post_draft(
                 break;
             }
             Ok(TestPassOutcome::Failed { summary }) => {
+                if is_cancelled(&cancel_flag, &oneshot_cancel_flag, &session_id) {
+                    return;
+                }
                 tracing::warn!(
                     session_id = %session_id,
                     attempts,
@@ -151,6 +171,9 @@ pub(super) async fn run_post_draft(
 
                 match super::fix_pass::run_fix_pass(&state, &session_id, &summary, attempts).await {
                     Ok(corrected_ir) => {
+                        if is_cancelled(&cancel_flag, &oneshot_cancel_flag, &session_id) {
+                            return;
+                        }
                         next_agent_ir = Some(corrected_ir);
                         // Push phase back to Testing for the next loop
                         // iteration so the UI's read-only progress reflects
@@ -160,6 +183,9 @@ pub(super) async fn run_post_draft(
                         let _ = update_phase(&state, &session_id, BuildPhase::Testing).await;
                     }
                     Err(fix_err) => {
+                        if is_cancelled(&cancel_flag, &oneshot_cancel_flag, &session_id) {
+                            return;
+                        }
                         tracing::error!(
                             session_id = %session_id,
                             attempts,
@@ -185,6 +211,9 @@ pub(super) async fn run_post_draft(
                 }
             }
             Err(e) => {
+                if is_cancelled(&cancel_flag, &oneshot_cancel_flag, &session_id) {
+                    return;
+                }
                 // Catastrophic test failure (DB error, missing agent_ir,
                 // adoption-answers parse error, etc.). Not something a fix
                 // pass can address — surface to the user immediately.
@@ -208,6 +237,9 @@ pub(super) async fn run_post_draft(
     }
 
     // Test complete → promote
+    if is_cancelled(&cancel_flag, &oneshot_cancel_flag, &session_id) {
+        return;
+    }
     if let Err(e) = update_phase(&state, &session_id, BuildPhase::TestComplete).await {
         tracing::warn!(
             session_id = %session_id,
@@ -225,6 +257,9 @@ pub(super) async fn run_post_draft(
     .await
     {
         Ok(_) => {
+            if is_cancelled(&cancel_flag, &oneshot_cancel_flag, &session_id) {
+                return;
+            }
             tracing::info!(
                 session_id = %session_id,
                 persona_id = %persona_id,
@@ -233,6 +268,9 @@ pub(super) async fn run_post_draft(
             finalize_promoted(&state, &app_handle, &session_id, &persona_id).await;
         }
         Err(e) => {
+            if is_cancelled(&cancel_flag, &oneshot_cancel_flag, &session_id) {
+                return;
+            }
             tracing::error!(
                 session_id = %session_id,
                 error = %e,
@@ -248,6 +286,22 @@ pub(super) async fn run_post_draft(
             .await;
         }
     }
+}
+
+fn is_cancelled(
+    session_cancel_flag: &AtomicBool,
+    oneshot_cancel_flag: &AtomicBool,
+    session_id: &str,
+) -> bool {
+    let cancelled =
+        session_cancel_flag.load(Ordering::Acquire) || oneshot_cancel_flag.load(Ordering::Acquire);
+    if cancelled {
+        tracing::info!(
+            session_id = %session_id,
+            "OneShot: cancellation requested — stopping post-draft orchestrator"
+        );
+    }
+    cancelled
 }
 
 /// Result of a single tool-test run inside the autonomous loop.
