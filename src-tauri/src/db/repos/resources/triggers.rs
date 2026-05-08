@@ -1678,9 +1678,9 @@ mod tests {
                 "webhook" => Decision::Auto,
 
                 // No listener — each carries an explicit reason:
-                "manual" => Decision::NoListener(
-                    "user-initiated; firing is direct, no event published",
-                ),
+                "manual" => {
+                    Decision::NoListener("user-initiated; firing is direct, no event published")
+                }
                 "chain" => Decision::NoListener(
                     "downstream of another execution; the upstream's listener \
                      owns the wakeup",
@@ -1695,9 +1695,9 @@ mod tests {
                 "clipboard" => Decision::NoListener(
                     "OS-level clipboard event source; no event-bus publication",
                 ),
-                "app_focus" => Decision::NoListener(
-                    "OS-level focus event source; no event-bus publication",
-                ),
+                "app_focus" => {
+                    Decision::NoListener("OS-level focus event source; no event-bus publication")
+                }
                 "composite" => Decision::NoListener(
                     "aggregates other triggers; pairings are owned by the inner triggers",
                 ),

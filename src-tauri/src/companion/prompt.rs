@@ -22,8 +22,8 @@ use crate::companion::brain::retrieval::{self, DoctrineHit, Recall};
 use crate::companion::brain::semantic::Fact;
 use crate::companion::connectors;
 use crate::companion::disk;
-use crate::companion::plugins;
 use crate::companion::observability;
+use crate::companion::plugins;
 use crate::db::{DbPool, UserDbPool};
 #[cfg(feature = "ml")]
 use crate::engine::embedder::EmbeddingManager;
@@ -77,8 +77,7 @@ pub async fn build_system_prompt(
 
     let onboarding_md = onboarding_addendum_if_needed(&identity, &recall.episodes);
     let voice_md = voice_addendum_if_needed(voice_enabled);
-    let connector_names =
-        connectors::list_enabled_for_prompt(user_db).unwrap_or_default();
+    let connector_names = connectors::list_enabled_for_prompt(user_db).unwrap_or_default();
     let connectors_md = format_connectors(&connector_names);
     let plugin_names = plugins::list_enabled(user_db).unwrap_or_default();
     let projects = crate::companion::projects::list(user_db).unwrap_or_default();
@@ -134,8 +133,7 @@ pub async fn build_system_prompt(
 
     let onboarding_md = onboarding_addendum_if_needed(&identity, &recall.episodes);
     let voice_md = voice_addendum_if_needed(voice_enabled);
-    let connector_names =
-        connectors::list_enabled_for_prompt(user_db).unwrap_or_default();
+    let connector_names = connectors::list_enabled_for_prompt(user_db).unwrap_or_default();
     let connectors_md = format_connectors(&connector_names);
     let plugin_names = plugins::list_enabled(user_db).unwrap_or_default();
     let projects = crate::companion::projects::list(user_db).unwrap_or_default();
@@ -350,9 +348,8 @@ fn format_plugins(
     if enabled.is_empty() {
         return String::new();
     }
-    let mut s = String::from(
-        "\n\n# Plugins enabled (capabilities Michal has turned on for you)\n\n",
-    );
+    let mut s =
+        String::from("\n\n# Plugins enabled (capabilities Michal has turned on for you)\n\n");
     for name in enabled {
         match name.as_str() {
             "dev_tools" => {
@@ -439,9 +436,8 @@ fn format_connectors(names: &[String]) -> String {
     if names.is_empty() {
         return String::new();
     }
-    let mut s = String::from(
-        "\n\n# Connector tools (the user has pinned these in your sidebar)\n\n",
-    );
+    let mut s =
+        String::from("\n\n# Connector tools (the user has pinned these in your sidebar)\n\n");
     s.push_str(
         "Each entry below is *active* — the user enabled it and you can \
          act on it via the `use_connector` op. Capabilities are \

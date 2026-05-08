@@ -56,7 +56,10 @@ pub fn register_router(prefix: &str, router: Router) {
         Err(p) => p.into_inner(),
     };
     if PORT.get().is_some() {
-        tracing::warn!(prefix, "local_http server already running; ignoring late router registration");
+        tracing::warn!(
+            prefix,
+            "local_http server already running; ignoring late router registration"
+        );
         return;
     }
     guard.push((prefix.to_string(), router));
@@ -74,7 +77,9 @@ pub fn start() -> Result<u16, String> {
     // Snapshot pending routers and clear the pending list so any further
     // late calls warn instead of silently appending.
     let routers = {
-        let mut guard = pending_routers().write().map_err(|e| format!("router lock poisoned: {e}"))?;
+        let mut guard = pending_routers()
+            .write()
+            .map_err(|e| format!("router lock poisoned: {e}"))?;
         std::mem::take(&mut *guard)
     };
 

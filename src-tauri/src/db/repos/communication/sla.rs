@@ -782,21 +782,46 @@ mod tests {
 
         // Old issues (>90 days back, outside every selectable window).
         insert_healing_issue(
-            &pool, &persona_id, "open", false, false, "2025-01-01 12:00:00",
+            &pool,
+            &persona_id,
+            "open",
+            false,
+            false,
+            "2025-01-01 12:00:00",
         );
         insert_healing_issue(
-            &pool, &persona_id, "open", false, true, "2025-01-02 12:00:00",
+            &pool,
+            &persona_id,
+            "open",
+            false,
+            true,
+            "2025-01-02 12:00:00",
         );
         insert_healing_issue(
-            &pool, &persona_id, "resolved", true, false, "2025-01-03 12:00:00",
+            &pool,
+            &persona_id,
+            "resolved",
+            true,
+            false,
+            "2025-01-03 12:00:00",
         );
 
         // Recent issues (well inside the 7d window).
         insert_healing_issue(
-            &pool, &persona_id, "open", false, false, "2026-05-04 12:00:00",
+            &pool,
+            &persona_id,
+            "open",
+            false,
+            false,
+            "2026-05-04 12:00:00",
         );
         insert_healing_issue(
-            &pool, &persona_id, "resolved", true, false, "2026-05-04 13:00:00",
+            &pool,
+            &persona_id,
+            "resolved",
+            true,
+            false,
+            "2026-05-04 13:00:00",
         );
 
         // A pattern that's also "old".

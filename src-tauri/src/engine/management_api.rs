@@ -1737,7 +1737,9 @@ async fn build_test(
         Ok(None) => {
             return err_json(StatusCode::NOT_FOUND, "build session not found").into_response();
         }
-        Err(e) => return err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response(),
+        Err(e) => {
+            return err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response()
+        }
     };
     let agent_ir_str = match session.agent_ir.clone() {
         Some(s) => s,
@@ -1760,9 +1762,9 @@ async fn build_test(
         }
     };
     if let Some(ref raw_answers) = session.adoption_answers {
-        if let Ok(answers) = serde_json::from_str::<crate::engine::adoption_answers::AdoptionAnswers>(
-            raw_answers,
-        ) {
+        if let Ok(answers) =
+            serde_json::from_str::<crate::engine::adoption_answers::AdoptionAnswers>(raw_answers)
+        {
             crate::engine::adoption_answers::substitute_variables(&mut agent_ir, &answers);
             crate::engine::adoption_answers::inject_configuration_section(&mut agent_ir, &answers);
             crate::engine::adoption_answers::apply_credential_bindings_to_connectors(

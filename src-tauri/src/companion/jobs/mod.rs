@@ -68,7 +68,10 @@ pub fn recover_orphans(pool: &UserDbPool) -> Result<usize, AppError> {
         params![now],
     )?;
     if n > 0 {
-        tracing::info!(orphans = n, "background-job worker: recovered orphaned running jobs");
+        tracing::info!(
+            orphans = n,
+            "background-job worker: recovered orphaned running jobs"
+        );
     }
     Ok(n)
 }
@@ -168,11 +171,7 @@ fn pop_next_queued(pool: &UserDbPool) -> Result<Option<BackgroundJob>, AppError>
     }))
 }
 
-fn mark_completed(
-    pool: &UserDbPool,
-    id: &str,
-    result: &str,
-) -> Result<(), AppError> {
+fn mark_completed(pool: &UserDbPool, id: &str, result: &str) -> Result<(), AppError> {
     let now = Utc::now().to_rfc3339();
     let conn = pool.get()?;
     conn.execute(
@@ -269,10 +268,7 @@ pub async fn worker_tick(
     Ok(())
 }
 
-async fn dispatch_handler(
-    pool: &UserDbPool,
-    job: &BackgroundJob,
-) -> Result<String, AppError> {
+async fn dispatch_handler(pool: &UserDbPool, job: &BackgroundJob) -> Result<String, AppError> {
     let params: serde_json::Value =
         serde_json::from_str(&job.params_json).unwrap_or(serde_json::json!({}));
     match job.kind.as_str() {
@@ -310,7 +306,8 @@ async fn append_system_episode(
 
 #[cfg(not(feature = "ml"))]
 async fn append_system_episode(pool: &UserDbPool, content: &str) {
-    if let Err(e) = episodic::append_episode(pool, DEFAULT_SESSION_ID, EpisodeRole::System, content) {
+    if let Err(e) = episodic::append_episode(pool, DEFAULT_SESSION_ID, EpisodeRole::System, content)
+    {
         tracing::warn!(error = %e, "job: failed to append system episode");
     }
 }
@@ -331,5 +328,10 @@ fn map_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<BackgroundJob> {
 }
 
 fn short_uuid() -> String {
-    Uuid::new_v4().simple().to_string().chars().take(10).collect()
+    Uuid::new_v4()
+        .simple()
+        .to_string()
+        .chars()
+        .take(10)
+        .collect()
 }

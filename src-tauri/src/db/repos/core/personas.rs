@@ -563,7 +563,12 @@ pub fn create(pool: &DbPool, mut input: CreatePersonaInput) -> Result<Persona, A
                 if !exists {
                     break;
                 }
-                let base = input.name.trim_end_matches(|c: char| c.is_ascii_digit() || c == ' ' || c == '(' || c == ')').to_string();
+                let base = input
+                    .name
+                    .trim_end_matches(|c: char| {
+                        c.is_ascii_digit() || c == ' ' || c == '(' || c == ')'
+                    })
+                    .to_string();
                 input.name = format!("{} ({})", base.trim_end(), suffix);
                 suffix += 1;
                 if suffix > 99 {
@@ -723,21 +728,126 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
         );
         push_field_param!(input.icon, "icon", sets, param_idx, param_values, clone);
         push_field_param!(input.color, "color", sets, param_idx, param_values, clone);
-        push_field_param!(input.enabled, "enabled", sets, param_idx, param_values, bool);
-        push_field_param!(input.sensitive, "sensitive", sets, param_idx, param_values, bool);
-        push_field_param!(input.headless, "headless", sets, param_idx, param_values, bool);
-        push_field_param!(input.max_concurrent, "max_concurrent", sets, param_idx, param_values, copy);
-        push_field_param!(input.timeout_ms, "timeout_ms", sets, param_idx, param_values, copy);
-        push_field_param!(encrypted_channels, "notification_channels", sets, param_idx, param_values, clone);
-        push_field_param!(input.last_design_result, "last_design_result", sets, param_idx, param_values, clone);
-        push_field_param!(input.last_test_report, "last_test_report", sets, param_idx, param_values, clone);
-        push_field_param!(encrypted_profile, "model_profile", sets, param_idx, param_values, clone);
-        push_field_param!(input.max_budget_usd, "max_budget_usd", sets, param_idx, param_values, copy);
-        push_field_param!(input.max_turns, "max_turns", sets, param_idx, param_values, copy);
-        push_field_param!(input.design_context, "design_context", sets, param_idx, param_values, clone);
-        push_field_param!(input.group_id, "group_id", sets, param_idx, param_values, clone);
-        push_field_param!(input.parameters, "parameters", sets, param_idx, param_values, clone);
-        push_field_param!(input.gateway_exposure, "gateway_exposure", sets, param_idx, param_values, as_str);
+        push_field_param!(
+            input.enabled,
+            "enabled",
+            sets,
+            param_idx,
+            param_values,
+            bool
+        );
+        push_field_param!(
+            input.sensitive,
+            "sensitive",
+            sets,
+            param_idx,
+            param_values,
+            bool
+        );
+        push_field_param!(
+            input.headless,
+            "headless",
+            sets,
+            param_idx,
+            param_values,
+            bool
+        );
+        push_field_param!(
+            input.max_concurrent,
+            "max_concurrent",
+            sets,
+            param_idx,
+            param_values,
+            copy
+        );
+        push_field_param!(
+            input.timeout_ms,
+            "timeout_ms",
+            sets,
+            param_idx,
+            param_values,
+            copy
+        );
+        push_field_param!(
+            encrypted_channels,
+            "notification_channels",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            input.last_design_result,
+            "last_design_result",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            input.last_test_report,
+            "last_test_report",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            encrypted_profile,
+            "model_profile",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            input.max_budget_usd,
+            "max_budget_usd",
+            sets,
+            param_idx,
+            param_values,
+            copy
+        );
+        push_field_param!(
+            input.max_turns,
+            "max_turns",
+            sets,
+            param_idx,
+            param_values,
+            copy
+        );
+        push_field_param!(
+            input.design_context,
+            "design_context",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            input.group_id,
+            "group_id",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            input.parameters,
+            "parameters",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            input.gateway_exposure,
+            "gateway_exposure",
+            sets,
+            param_idx,
+            param_values,
+            as_str
+        );
 
         let sql = format!(
             "UPDATE personas SET {} WHERE id = ?{} RETURNING *",

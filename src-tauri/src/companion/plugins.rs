@@ -41,9 +41,8 @@ pub struct PluginToggle {
 /// frontend learns about it.
 pub fn list(pool: &UserDbPool) -> Result<Vec<PluginToggle>, AppError> {
     let conn = pool.get()?;
-    let mut stmt = conn.prepare(
-        "SELECT plugin_name, enabled, updated_at FROM companion_plugin_toggle",
-    )?;
+    let mut stmt =
+        conn.prepare("SELECT plugin_name, enabled, updated_at FROM companion_plugin_toggle")?;
     let rows = stmt
         .query_map([], |row| {
             Ok(PluginToggle {
@@ -68,11 +67,7 @@ pub fn list(pool: &UserDbPool) -> Result<Vec<PluginToggle>, AppError> {
     Ok(out)
 }
 
-pub fn set_enabled(
-    pool: &UserDbPool,
-    plugin_name: &str,
-    enabled: bool,
-) -> Result<(), AppError> {
+pub fn set_enabled(pool: &UserDbPool, plugin_name: &str, enabled: bool) -> Result<(), AppError> {
     let now = Utc::now().to_rfc3339();
     let conn = pool.get()?;
     conn.execute(
@@ -88,9 +83,8 @@ pub fn set_enabled(
 /// prompt builder.
 pub fn list_enabled(pool: &UserDbPool) -> Result<Vec<String>, AppError> {
     let conn = pool.get()?;
-    let mut stmt = conn.prepare(
-        "SELECT plugin_name FROM companion_plugin_toggle WHERE enabled = 1",
-    )?;
+    let mut stmt =
+        conn.prepare("SELECT plugin_name FROM companion_plugin_toggle WHERE enabled = 1")?;
     let rows = stmt
         .query_map([], |row| row.get::<_, String>(0))?
         .collect::<Result<Vec<_>, _>>()?;

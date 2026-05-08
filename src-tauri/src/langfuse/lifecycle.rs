@@ -192,7 +192,14 @@ pub fn spawn_start(app: AppHandle) -> Result<String, AppError> {
         let _g = guard; // hold for the lifetime of the task
         let result = run_start(&app, &job_id_for_task).await;
         match result {
-            Ok(()) => emit_done(&app, &job_id_for_task, LangfuseJobKind::Start, true, None, None),
+            Ok(()) => emit_done(
+                &app,
+                &job_id_for_task,
+                LangfuseJobKind::Start,
+                true,
+                None,
+                None,
+            ),
             Err(e) => emit_done(
                 &app,
                 &job_id_for_task,
@@ -219,7 +226,14 @@ pub fn spawn_stop(app: AppHandle) -> Result<String, AppError> {
         let _g = guard;
         let result = run_stop(&app, &job_id_for_task).await;
         match result {
-            Ok(()) => emit_done(&app, &job_id_for_task, LangfuseJobKind::Stop, true, None, None),
+            Ok(()) => emit_done(
+                &app,
+                &job_id_for_task,
+                LangfuseJobKind::Stop,
+                true,
+                None,
+                None,
+            ),
             Err(e) => emit_done(
                 &app,
                 &job_id_for_task,
@@ -458,14 +472,7 @@ async fn run_stop(app: &AppHandle, job_id: &str) -> Result<(), AppError> {
 
     docker::down(&stack_dir, &compose_cmd, false).await?;
 
-    emit_progress(
-        app,
-        job_id,
-        LangfuseJobKind::Stop,
-        None,
-        1.0,
-        "Stopped.",
-    );
+    emit_progress(app, job_id, LangfuseJobKind::Stop, None, 1.0, "Stopped.");
 
     Ok(())
 }
@@ -556,9 +563,15 @@ fn installer_url() -> Option<(&'static str, &'static str)> {
         ))
     } else if cfg!(target_os = "macos") {
         if cfg!(target_arch = "aarch64") {
-            Some(("https://desktop.docker.com/mac/main/arm64/Docker.dmg", "Docker.dmg"))
+            Some((
+                "https://desktop.docker.com/mac/main/arm64/Docker.dmg",
+                "Docker.dmg",
+            ))
         } else {
-            Some(("https://desktop.docker.com/mac/main/amd64/Docker.dmg", "Docker.dmg"))
+            Some((
+                "https://desktop.docker.com/mac/main/amd64/Docker.dmg",
+                "Docker.dmg",
+            ))
         }
     } else {
         // Linux: the install path varies by distro, no single installer.
@@ -603,7 +616,9 @@ async fn run_installer_download(app: &AppHandle, job_id: &str) -> Result<PathBuf
     }
 
     let total_bytes = resp.content_length().unwrap_or(0);
-    let mut file = tokio::fs::File::create(&target).await.map_err(AppError::Io)?;
+    let mut file = tokio::fs::File::create(&target)
+        .await
+        .map_err(AppError::Io)?;
     let mut stream = resp.bytes_stream();
     let mut downloaded: u64 = 0;
     let mut last_emit = Instant::now();
@@ -659,7 +674,6 @@ async fn run_installer_download(app: &AppHandle, job_id: &str) -> Result<PathBuf
 /// Open the downloaded installer file via the OS handler. Triggers the
 /// platform's normal install UX (UAC on Windows, .dmg mount on macOS).
 pub fn run_installer(path: &std::path::Path) -> Result<(), AppError> {
-    open::that(path)
-        .map_err(|e| AppError::Langfuse(format!("Failed to launch installer: {e}")))?;
+    open::that(path).map_err(|e| AppError::Langfuse(format!("Failed to launch installer: {e}")))?;
     Ok(())
 }

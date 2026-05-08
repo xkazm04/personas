@@ -1485,13 +1485,14 @@ mod tests {
 
         let result = batch_create(&pool, inputs).unwrap();
         assert_eq!(result.inserted, 2, "two valid rows should be inserted");
-        assert_eq!(result.skipped.len(), 2, "two rows should be reported as skipped");
+        assert_eq!(
+            result.skipped.len(),
+            2,
+            "two rows should be reported as skipped"
+        );
 
-        let by_index: std::collections::HashMap<usize, &'static str> = result
-            .skipped
-            .iter()
-            .map(|s| (s.index, s.reason))
-            .collect();
+        let by_index: std::collections::HashMap<usize, &'static str> =
+            result.skipped.iter().map(|s| (s.index, s.reason)).collect();
         assert_eq!(by_index.get(&1).copied(), Some("empty_title_or_content"));
         assert_eq!(by_index.get(&2).copied(), Some("invalid_category"));
     }
@@ -1571,14 +1572,8 @@ mod tests {
         // 2. Capability-scoped injection for a DIFFERENT use_case must not
         //    surface the orphan. The persona-wide memory must surface (it has
         //    use_case_id IS NULL).
-        let scoped = get_for_injection_v2(
-            &pool,
-            &persona.id,
-            Some("uc-something-else"),
-            10,
-            10,
-        )
-        .unwrap();
+        let scoped =
+            get_for_injection_v2(&pool, &persona.id, Some("uc-something-else"), 10, 10).unwrap();
         let active_ids: Vec<_> = scoped.active.iter().map(|m| m.id.as_str()).collect();
         assert!(
             !active_ids.contains(&orphan.id.as_str()),

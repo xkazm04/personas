@@ -121,15 +121,12 @@ async fn auto_login(Query(q): Query<AutoLoginQuery>) -> Response {
     // Re-set the CSRF cookie with Domain=localhost so it's sent on the
     // cross-port form POST. Without Domain, the cookie is scoped to our
     // server's origin and the browser drops it on the way to Langfuse.
-    let cookie_header = format!(
-        "next-auth.csrf-token={csrf_cookie}; Domain=localhost; Path=/; SameSite=Lax"
-    );
+    let cookie_header =
+        format!("next-auth.csrf-token={csrf_cookie}; Domain=localhost; Path=/; SameSite=Lax");
     if let Ok(v) = HeaderValue::from_str(&cookie_header) {
         headers.append(header::SET_COOKIE, v);
     } else {
-        tracing::warn!(
-            "Skipping csrf-token cookie — value contains invalid header characters"
-        );
+        tracing::warn!("Skipping csrf-token cookie — value contains invalid header characters");
     }
 
     (StatusCode::OK, headers, html).into_response()

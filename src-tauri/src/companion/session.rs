@@ -357,9 +357,7 @@ pub async fn send_turn(
     // one turn (rare — Athena should pick the latest), we save and
     // emit for each, but the singleton write naturally collapses.
     for spec_json in &dispatched.dashboards {
-        if let Err(e) =
-            crate::companion::brain::dashboard::save_dashboard(&user_db, spec_json)
-        {
+        if let Err(e) = crate::companion::brain::dashboard::save_dashboard(&user_db, spec_json) {
             tracing::warn!(error = %e, "companion compose_dashboard save failed");
             continue;
         }

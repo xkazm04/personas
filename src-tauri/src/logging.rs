@@ -451,8 +451,13 @@ mod tests {
     fn prune_crash_logs_keeps_newest() {
         let dir = tempdir().unwrap();
         // 5 timestamp-named crash files
-        for ts in ["20260101_120000", "20260102_120000", "20260103_120000",
-                   "20260104_120000", "20260105_120000"] {
+        for ts in [
+            "20260101_120000",
+            "20260102_120000",
+            "20260103_120000",
+            "20260104_120000",
+            "20260105_120000",
+        ] {
             std::fs::write(dir.path().join(format!("crash_{ts}.log")), b"x").unwrap();
         }
         // unrelated file should survive
@@ -479,9 +484,17 @@ mod tests {
     #[test]
     fn prune_orphan_personas_logs_ignores_other_files() {
         let dir = tempdir().unwrap();
-        for date in ["2026-01-01", "2026-01-02", "2026-01-03",
-                     "2026-01-04", "2026-01-05", "2026-01-06",
-                     "2026-01-07", "2026-01-08", "2026-01-09"] {
+        for date in [
+            "2026-01-01",
+            "2026-01-02",
+            "2026-01-03",
+            "2026-01-04",
+            "2026-01-05",
+            "2026-01-06",
+            "2026-01-07",
+            "2026-01-08",
+            "2026-01-09",
+        ] {
             std::fs::write(dir.path().join(format!("personas.{date}.log")), b"x").unwrap();
         }
         std::fs::write(dir.path().join("last_boot.log"), b"boot").unwrap();

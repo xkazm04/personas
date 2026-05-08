@@ -263,11 +263,7 @@ fn cadence_dedupe_window_min(schedule: &Value) -> i64 {
     raw.max(1)
 }
 
-fn recently_nudged(
-    pool: &UserDbPool,
-    ritual_id: &str,
-    window_min: i64,
-) -> Result<bool, AppError> {
+fn recently_nudged(pool: &UserDbPool, ritual_id: &str, window_min: i64) -> Result<bool, AppError> {
     let conn = pool.get()?;
     let cutoff = (Utc::now() - Duration::minutes(window_min)).to_rfc3339();
     let count: i64 = conn.query_row(
@@ -598,10 +594,7 @@ mod cadence_prop_tests {
     fn dedupe_window_defaults_to_match_window() {
         // Contract point 4: missing duration_min → default 30.
         let sched = serde_json::json!({"at": "09:00"});
-        assert_eq!(
-            cadence_dedupe_window_min(&sched),
-            CADENCE_MATCH_WINDOW_MIN
-        );
+        assert_eq!(cadence_dedupe_window_min(&sched), CADENCE_MATCH_WINDOW_MIN);
     }
 
     #[test]

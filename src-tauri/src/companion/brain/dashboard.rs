@@ -28,7 +28,10 @@ pub fn save_dashboard(pool: &UserDbPool, spec_json: &str) -> Result<(), AppError
     let now = Utc::now().to_rfc3339();
     let abs_path = disk::brain_root()?.join(DASHBOARD_REL_PATH);
     fs::write(&abs_path, spec_json)?;
-    let hash = format!("sha256:{}", hex::encode(Sha256::digest(spec_json.as_bytes())));
+    let hash = format!(
+        "sha256:{}",
+        hex::encode(Sha256::digest(spec_json.as_bytes()))
+    );
     let excerpt = excerpt_500(spec_json);
 
     let conn = pool.get()?;
@@ -69,7 +72,10 @@ pub fn load_dashboard(pool: &UserDbPool) -> Result<Option<Dashboard>, AppError> 
     if spec_json.is_empty() {
         return Ok(None);
     }
-    Ok(Some(Dashboard { spec_json, updated_at }))
+    Ok(Some(Dashboard {
+        spec_json,
+        updated_at,
+    }))
 }
 
 fn excerpt_500(s: &str) -> String {

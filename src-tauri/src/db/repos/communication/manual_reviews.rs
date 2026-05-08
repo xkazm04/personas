@@ -349,10 +349,7 @@ pub fn gc_stale_pending(
     })
 }
 
-pub fn get_pending_count(
-    pool: &DbPool,
-    persona_id: Option<&str>,
-) -> Result<i64, AppError> {
+pub fn get_pending_count(pool: &DbPool, persona_id: Option<&str>) -> Result<i64, AppError> {
     timed_query!("manual_reviews", "manual_reviews::get_pending_count", {
         let conn = pool.get()?;
 

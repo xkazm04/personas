@@ -373,17 +373,9 @@ fn serialize_otlp(trace: &ExecutionTrace, redact: bool) -> Value {
     })
 }
 
-fn serialize_span(
-    span: &TraceSpan,
-    trace_id_hex: &str,
-    exec_start_ns: u64,
-    redact: bool,
-) -> Value {
+fn serialize_span(span: &TraceSpan, trace_id_hex: &str, exec_start_ns: u64, redact: bool) -> Value {
     let span_id_hex = uuid_to_span_id_hex(&span.span_id);
-    let parent_span_id_hex = span
-        .parent_span_id
-        .as_ref()
-        .map(|p| uuid_to_span_id_hex(p));
+    let parent_span_id_hex = span.parent_span_id.as_ref().map(|p| uuid_to_span_id_hex(p));
 
     let start_ns = exec_start_ns.saturating_add(span.start_ms.saturating_mul(1_000_000));
     let end_ns = exec_start_ns.saturating_add(
@@ -392,7 +384,10 @@ fn serialize_span(
             .saturating_mul(1_000_000),
     );
 
-    let mut attrs = vec![attr_str("personas.span_type", span_type_str(&span.span_type))];
+    let mut attrs = vec![attr_str(
+        "personas.span_type",
+        span_type_str(&span.span_type),
+    )];
 
     // Map our typed span enum to Langfuse's observation type so the trace
     // tree renders correctly in the Langfuse UI.
@@ -646,12 +641,16 @@ mod tests {
     fn redact_drops_metadata_attributes() {
         let payload = serialize_otlp(&fake_trace(), true);
         let attrs = &payload["resourceSpans"][0]["scopeSpans"][0]["spans"][1]["attributes"];
-        let has_metadata = attrs
-            .as_array()
-            .unwrap()
-            .iter()
-            .any(|a| a["key"].as_str().unwrap_or("").starts_with("personas.meta."));
-        assert!(!has_metadata, "redacted export must not include metadata.* attributes");
+        let has_metadata = attrs.as_array().unwrap().iter().any(|a| {
+            a["key"]
+                .as_str()
+                .unwrap_or("")
+                .starts_with("personas.meta.")
+        });
+        assert!(
+            !has_metadata,
+            "redacted export must not include metadata.* attributes"
+        );
     }
 
     #[test]

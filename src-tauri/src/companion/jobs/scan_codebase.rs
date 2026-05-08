@@ -117,8 +117,9 @@ pub async fn run(
     let target_path = if let Some(p) = params.get("path").and_then(|v| v.as_str()) {
         PathBuf::from(p)
     } else if let Some(pid) = project_id {
-        let project = projects::get(pool, pid)?
-            .ok_or_else(|| AppError::Internal(format!("scan_codebase: project `{pid}` not found")))?;
+        let project = projects::get(pool, pid)?.ok_or_else(|| {
+            AppError::Internal(format!("scan_codebase: project `{pid}` not found"))
+        })?;
         PathBuf::from(project.path)
     } else {
         return Err(AppError::Internal(
@@ -245,7 +246,10 @@ fn walk(root: &Path) -> Result<ScanReport, AppError> {
 }
 
 fn is_source_lang(bucket: &str) -> bool {
-    !matches!(bucket, "JSON" | "Markdown" | "TOML" | "YAML" | "HTML" | "CSS" | "Other")
+    !matches!(
+        bucket,
+        "JSON" | "Markdown" | "TOML" | "YAML" | "HTML" | "CSS" | "Other"
+    )
 }
 
 fn is_skip_dir_by_type(entry: &walkdir::DirEntry) -> bool {

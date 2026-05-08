@@ -569,12 +569,9 @@ pub fn start_loops(
         let pool = pool.clone();
         async move {
             const STALE_REVIEW_THRESHOLD_DAYS: i64 = 7;
-            let cutoff = (chrono::Utc::now()
-                - chrono::Duration::days(STALE_REVIEW_THRESHOLD_DAYS))
-            .to_rfc3339();
-            match crate::commands::design::reviews::gc_stale_manual_reviews_inner(
-                &pool, &cutoff,
-            ) {
+            let cutoff = (chrono::Utc::now() - chrono::Duration::days(STALE_REVIEW_THRESHOLD_DAYS))
+                .to_rfc3339();
+            match crate::commands::design::reviews::gc_stale_manual_reviews_inner(&pool, &cutoff) {
                 Ok(count) if count > 0 => {
                     tracing::info!(
                         count,

@@ -652,8 +652,12 @@ async fn handle_promote_build(
     // Call the promote command directly
     let app_state = state.app_handle.state::<std::sync::Arc<crate::AppState>>();
     let result = crate::commands::design::build_sessions::promote_build_draft_inner(
-        &app_state, session_id.clone(), persona_id.clone(), Vec::new()
-    ).await;
+        &app_state,
+        session_id.clone(),
+        persona_id.clone(),
+        Vec::new(),
+    )
+    .await;
 
     match result {
         Ok(val) => {
@@ -891,9 +895,7 @@ async fn handle_build_start(
         req.companion_session_id,
     ) {
         Ok(sid) => Ok(serde_json::json!({"success": true, "sessionId": sid}).to_string()),
-        Err(e) => Ok(
-            serde_json::json!({"success": false, "error": e.to_string()}).to_string(),
-        ),
+        Err(e) => Ok(serde_json::json!({"success": false, "error": e.to_string()}).to_string()),
     }
 }
 
@@ -938,9 +940,7 @@ async fn handle_build_status(
             "error": format!("Build session {} not found", req.session_id)
         })
         .to_string()),
-        Err(e) => Ok(
-            serde_json::json!({"success": false, "error": e.to_string()}).to_string(),
-        ),
+        Err(e) => Ok(serde_json::json!({"success": false, "error": e.to_string()}).to_string()),
     }
 }
 
@@ -962,9 +962,7 @@ async fn handle_build_list_questions(
             "error": format!("Build session {} not found", req.session_id)
         })
         .to_string()),
-        Err(e) => Ok(
-            serde_json::json!({"success": false, "error": e.to_string()}).to_string(),
-        ),
+        Err(e) => Ok(serde_json::json!({"success": false, "error": e.to_string()}).to_string()),
     }
 }
 
@@ -991,9 +989,7 @@ async fn handle_build_answer(
         .send_answer(&req.session_id, user_answer)
     {
         Ok(_) => Ok(serde_json::json!({"success": true}).to_string()),
-        Err(e) => Ok(
-            serde_json::json!({"success": false, "error": e.to_string()}).to_string(),
-        ),
+        Err(e) => Ok(serde_json::json!({"success": false, "error": e.to_string()}).to_string()),
     }
 }
 
@@ -1012,24 +1008,22 @@ async fn handle_build_test(
     // `test_build_draft` (commands/design/build_sessions.rs:455+) without
     // the agent_ir-landing race window — by the time a build-mcp client
     // calls /build/test the session has been observable via /build/status.
-    let session = match crate::db::repos::core::build_sessions::get_by_id(
-        &app_state.db,
-        &req.session_id,
-    ) {
-        Ok(Some(s)) => s,
-        Ok(None) => {
-            return Ok(serde_json::json!({
-                "success": false,
-                "error": format!("Build session {} not found", req.session_id)
-            })
-            .to_string());
-        }
-        Err(e) => {
-            return Ok(
-                serde_json::json!({"success": false, "error": e.to_string()}).to_string(),
-            );
-        }
-    };
+    let session =
+        match crate::db::repos::core::build_sessions::get_by_id(&app_state.db, &req.session_id) {
+            Ok(Some(s)) => s,
+            Ok(None) => {
+                return Ok(serde_json::json!({
+                    "success": false,
+                    "error": format!("Build session {} not found", req.session_id)
+                })
+                .to_string());
+            }
+            Err(e) => {
+                return Ok(
+                    serde_json::json!({"success": false, "error": e.to_string()}).to_string(),
+                );
+            }
+        };
 
     let agent_ir_str = match session.agent_ir.clone() {
         Some(s) => s,
@@ -1052,9 +1046,9 @@ async fn handle_build_test(
         }
     };
     if let Some(ref raw_answers) = session.adoption_answers {
-        if let Ok(answers) = serde_json::from_str::<crate::engine::adoption_answers::AdoptionAnswers>(
-            raw_answers,
-        ) {
+        if let Ok(answers) =
+            serde_json::from_str::<crate::engine::adoption_answers::AdoptionAnswers>(raw_answers)
+        {
             crate::engine::adoption_answers::substitute_variables(&mut agent_ir, &answers);
             crate::engine::adoption_answers::inject_configuration_section(&mut agent_ir, &answers);
             crate::engine::adoption_answers::apply_credential_bindings_to_connectors(
@@ -1074,9 +1068,7 @@ async fn handle_build_test(
     .await
     {
         Ok(report) => Ok(serde_json::json!({"success": true, "report": report}).to_string()),
-        Err(e) => Ok(
-            serde_json::json!({"success": false, "error": e.to_string()}).to_string(),
-        ),
+        Err(e) => Ok(serde_json::json!({"success": false, "error": e.to_string()}).to_string()),
     }
 }
 
@@ -1091,9 +1083,7 @@ async fn handle_build_cancel(
         &app_state.process_registry,
     ) {
         Ok(_) => Ok(serde_json::json!({"success": true}).to_string()),
-        Err(e) => Ok(
-            serde_json::json!({"success": false, "error": e.to_string()}).to_string(),
-        ),
+        Err(e) => Ok(serde_json::json!({"success": false, "error": e.to_string()}).to_string()),
     }
 }
 

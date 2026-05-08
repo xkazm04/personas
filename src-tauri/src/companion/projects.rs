@@ -114,11 +114,7 @@ pub fn register(
     Ok(final_id)
 }
 
-pub fn record_scan(
-    pool: &UserDbPool,
-    project_id: &str,
-    summary: &str,
-) -> Result<(), AppError> {
+pub fn record_scan(pool: &UserDbPool, project_id: &str, summary: &str) -> Result<(), AppError> {
     let now = Utc::now().to_rfc3339();
     let conn = pool.get()?;
     conn.execute(
@@ -152,5 +148,10 @@ pub fn seed_default_project(pool: &UserDbPool) -> Result<(), AppError> {
 }
 
 fn short_uuid() -> String {
-    Uuid::new_v4().simple().to_string().chars().take(10).collect()
+    Uuid::new_v4()
+        .simple()
+        .to_string()
+        .chars()
+        .take(10)
+        .collect()
 }

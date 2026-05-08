@@ -99,15 +99,11 @@ pub fn companion_init(state: State<'_, Arc<AppState>>, app: AppHandle) -> Result
             tokio::time::sleep(Duration::from_secs(2)).await;
             loop {
                 #[cfg(feature = "ml")]
-                let res = crate::companion::jobs::worker_tick(
-                    &pool,
-                    embedder.as_ref(),
-                    &app_handle,
-                )
-                .await;
-                #[cfg(not(feature = "ml"))]
                 let res =
-                    crate::companion::jobs::worker_tick(&pool, &app_handle).await;
+                    crate::companion::jobs::worker_tick(&pool, embedder.as_ref(), &app_handle)
+                        .await;
+                #[cfg(not(feature = "ml"))]
+                let res = crate::companion::jobs::worker_tick(&pool, &app_handle).await;
                 if let Err(e) = res {
                     tracing::warn!(error = %e, "job worker tick failed");
                 }

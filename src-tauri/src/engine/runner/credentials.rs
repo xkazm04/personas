@@ -289,7 +289,9 @@ pub(super) async fn inject_design_context_credentials(
 
     for name in &connector_names {
         let name_lower = name.to_lowercase();
-        if already_injected.contains(&name_lower) { continue; }
+        if already_injected.contains(&name_lower) {
+            continue;
+        }
 
         // Honour the persona-specific credential link first.
         let linked_cred = credential_links
@@ -301,7 +303,19 @@ pub(super) async fn inject_design_context_credentials(
                 .find(|c| c.name.to_lowercase() == name_lower)
                 .map(|c| c.label.clone())
                 .unwrap_or_else(|| name.clone());
-            if inject_credential(pool, &cred, name, &connector_label, env_vars, hints, persona_id, persona_name).await.is_ok() {
+            if inject_credential(
+                pool,
+                &cred,
+                name,
+                &connector_label,
+                env_vars,
+                hints,
+                persona_id,
+                persona_name,
+            )
+            .await
+            .is_ok()
+            {
                 injected_connector_names.push(name.clone());
             }
             continue;
@@ -309,13 +323,31 @@ pub(super) async fn inject_design_context_credentials(
 
         // No explicit link — fall back to catalog connector lookup, then
         // direct service_type lookup (matches the old behaviour).
-        if let Some(conn) = connectors.iter().find(|c| c.name.to_lowercase() == name_lower) {
-            if let Ok(true) = inject_connector_credentials(pool, conn, env_vars, hints, persona_id, persona_name).await {
+        if let Some(conn) = connectors
+            .iter()
+            .find(|c| c.name.to_lowercase() == name_lower)
+        {
+            if let Ok(true) =
+                inject_connector_credentials(pool, conn, env_vars, hints, persona_id, persona_name)
+                    .await
+            {
                 injected_connector_names.push(conn.name.clone());
             }
         } else if let Ok(creds) = cred_repo::get_by_service_type(pool, name) {
             if let Some(cred) = creds.first() {
-                if inject_credential(pool, cred, name, name, env_vars, hints, persona_id, persona_name).await.is_ok() {
+                if inject_credential(
+                    pool,
+                    cred,
+                    name,
+                    name,
+                    env_vars,
+                    hints,
+                    persona_id,
+                    persona_name,
+                )
+                .await
+                .is_ok()
+                {
                     injected_connector_names.push(name.clone());
                 }
             }
@@ -521,8 +553,12 @@ pub(crate) async fn inject_credential(
         } else {
             None
         };
-        let override_ref = override_client.as_ref().map(|(id, sec)| (id.as_str(), sec.as_str()));
-        if let Some(refresh_ok) = try_refresh_oauth_token(&fields, connector_name, override_ref).await {
+        let override_ref = override_client
+            .as_ref()
+            .map(|(id, sec)| (id.as_str(), sec.as_str()));
+        if let Some(refresh_ok) =
+            try_refresh_oauth_token(&fields, connector_name, override_ref).await
+        {
             fields.insert("access_token".to_string(), refresh_ok.access_token.clone());
             // Persist the refreshed token back to field-level storage
             if let Err(e) = cred_repo::save_fields(pool, &cred.id, &fields) {
@@ -538,8 +574,7 @@ pub(crate) async fn inject_credential(
             // Falls back to 3600s when the provider omits expires_in
             // (mirrors DEFAULT_FALLBACK_LIFETIME_SECS in oauth_refresh.rs).
             let lifetime_secs = refresh_ok.expires_in.unwrap_or(3600);
-            let expires_at = chrono::Utc::now()
-                + chrono::Duration::seconds(lifetime_secs as i64);
+            let expires_at = chrono::Utc::now() + chrono::Duration::seconds(lifetime_secs as i64);
             let mut patch = serde_json::Map::new();
             patch.insert(
                 "oauth_token_expires_at".into(),

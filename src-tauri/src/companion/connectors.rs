@@ -59,7 +59,8 @@ pub fn capabilities_for(service_type: &str) -> Option<&'static [ConnectorCapabil
         "sentry" => Some(&[
             ConnectorCapability {
                 slug: "list_issues",
-                description: "List recent unresolved issues from the user's Sentry project (top N).",
+                description:
+                    "List recent unresolved issues from the user's Sentry project (top N).",
                 args: "limit?: number (default 10)",
             },
             ConnectorCapability {
@@ -80,20 +81,16 @@ pub fn capabilities_for(service_type: &str) -> Option<&'static [ConnectorCapabil
                 args: "owner: string, repo: string",
             },
         ]),
-        "gmail" | "google_workspace" => Some(&[
-            ConnectorCapability {
-                slug: "list_recent_threads",
-                description: "List the most recent N inbox threads (subject + from + snippet).",
-                args: "limit?: number (default 10)",
-            },
-        ]),
-        "slack" => Some(&[
-            ConnectorCapability {
-                slug: "list_channels",
-                description: "List channels the bot user is a member of.",
-                args: "(none)",
-            },
-        ]),
+        "gmail" | "google_workspace" => Some(&[ConnectorCapability {
+            slug: "list_recent_threads",
+            description: "List the most recent N inbox threads (subject + from + snippet).",
+            args: "limit?: number (default 10)",
+        }]),
+        "slack" => Some(&[ConnectorCapability {
+            slug: "list_channels",
+            description: "List channels the bot user is a member of.",
+            args: "(none)",
+        }]),
         _ => None,
     }
 }
@@ -162,11 +159,7 @@ pub fn remove(pool: &UserDbPool, connector_name: &str) -> Result<(), AppError> {
     Ok(())
 }
 
-pub fn set_enabled(
-    pool: &UserDbPool,
-    connector_name: &str,
-    enabled: bool,
-) -> Result<(), AppError> {
+pub fn set_enabled(pool: &UserDbPool, connector_name: &str, enabled: bool) -> Result<(), AppError> {
     let now = Utc::now().to_rfc3339();
     let conn = pool.get()?;
     let updated = conn.execute(

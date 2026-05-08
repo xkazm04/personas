@@ -403,11 +403,7 @@ impl PersistedBuildSession {
                 .and_then(|a| serde_json::from_str(a).ok()),
             intent: s.intent.clone(),
             error_message: s.error_message.clone(),
-            mode: Some(
-                s.mode
-                    .clone()
-                    .unwrap_or_else(|| "interactive".to_string()),
-            ),
+            mode: Some(s.mode.clone().unwrap_or_else(|| "interactive".to_string())),
             companion_session_id: s.companion_session_id.clone(),
             created_at: s.created_at.clone(),
             updated_at: s.updated_at.clone(),

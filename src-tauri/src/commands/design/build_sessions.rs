@@ -581,10 +581,14 @@ pub async fn test_build_draft(
         let ir: crate::db::models::AgentIr = serde_json::from_str(&design_result)
             .map_err(|e| AppError::Validation(format!("Persona design result parse error: {e}")))?;
         // Backfill the session so future calls work
-        if let Err(e) = build_session_repo::update(&state.db, &session_id, &UpdateBuildSession {
-            agent_ir: Some(Some(design_result.clone())),
-            ..Default::default()
-        }) {
+        if let Err(e) = build_session_repo::update(
+            &state.db,
+            &session_id,
+            &UpdateBuildSession {
+                agent_ir: Some(Some(design_result.clone())),
+                ..Default::default()
+            },
+        ) {
             tracing::warn!(
                 session_id = %session_id,
                 error = %e,
@@ -607,10 +611,14 @@ pub async fn test_build_draft(
     // values and dangling credential refs, which produces a cascade of API failures the LLM cannot
     // diagnose because the IR is structurally fine — only the inputs were garbage.
     if let Some(ref raw_answers) = session.adoption_answers {
-        match serde_json::from_str::<crate::engine::adoption_answers::AdoptionAnswers>(raw_answers) {
+        match serde_json::from_str::<crate::engine::adoption_answers::AdoptionAnswers>(raw_answers)
+        {
             Ok(answers) => {
                 crate::engine::adoption_answers::substitute_variables(&mut agent_ir, &answers);
-                crate::engine::adoption_answers::inject_configuration_section(&mut agent_ir, &answers);
+                crate::engine::adoption_answers::inject_configuration_section(
+                    &mut agent_ir,
+                    &answers,
+                );
                 crate::engine::adoption_answers::apply_credential_bindings_to_connectors(
                     &mut agent_ir,
                     &answers,
@@ -740,7 +748,8 @@ pub async fn promote_build_draft(
         session_id,
         persona_id,
         excluded_use_case_ids.unwrap_or_default(),
-    ).await
+    )
+    .await
 }
 
 // ============================================================================
@@ -841,21 +850,24 @@ fn build_structured_use_cases(ir: &crate::db::models::AgentIr) -> UseCaseData {
         // (auto_triage.rs). Without these fields the runtime falls back
         // to permissive defaults regardless of what the build LLM
         // declared per build prompt rules 16d / 21.
-        let (model_override, model_rationale, review_policy, generation_settings, memory_policy) = match uc {
-            crate::db::models::agent_ir::AgentIrUseCase::Structured(d) => (
-                d.model_override.clone(),
-                // Normalize empty rationale strings to None so the UI never
-                // renders an empty tooltip just because the LLM emitted "".
-                d.model_rationale
-                    .as_ref()
-                    .map(|s| s.trim().to_string())
-                    .filter(|s| !s.is_empty()),
-                d.review_policy.clone(),
-                d.generation_settings.clone(),
-                d.memory_policy.clone(),
-            ),
-            crate::db::models::agent_ir::AgentIrUseCase::Simple(_) => (None, None, None, None, None),
-        };
+        let (model_override, model_rationale, review_policy, generation_settings, memory_policy) =
+            match uc {
+                crate::db::models::agent_ir::AgentIrUseCase::Structured(d) => (
+                    d.model_override.clone(),
+                    // Normalize empty rationale strings to None so the UI never
+                    // renders an empty tooltip just because the LLM emitted "".
+                    d.model_rationale
+                        .as_ref()
+                        .map(|s| s.trim().to_string())
+                        .filter(|s| !s.is_empty()),
+                    d.review_policy.clone(),
+                    d.generation_settings.clone(),
+                    d.memory_policy.clone(),
+                ),
+                crate::db::models::agent_ir::AgentIrUseCase::Simple(_) => {
+                    (None, None, None, None, None)
+                }
+            };
 
         structured.push(serde_json::json!({
             "id": uc_id,
@@ -2252,10 +2264,8 @@ pub async fn promote_build_draft_inner(
     // `ir.use_cases` AND any aligned `ir.triggers` slot so the promoted
     // persona doesn't carry phantom trigger rows referencing dropped UCs.
     if !excluded_use_case_ids.is_empty() {
-        let excluded: std::collections::HashSet<&str> = excluded_use_case_ids
-            .iter()
-            .map(|s| s.as_str())
-            .collect();
+        let excluded: std::collections::HashSet<&str> =
+            excluded_use_case_ids.iter().map(|s| s.as_str()).collect();
         let original_count = ir.use_cases.len();
         // Track which indices we drop so the parallel `triggers` array
         // (positionally aligned to use_cases per build_structured_use_cases'

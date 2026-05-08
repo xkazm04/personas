@@ -16,6 +16,7 @@ This folder is only for not-yet-implemented proposals, experiments, and design e
 | [langfuse-observability.md](langfuse-observability.md) | Path A shipped; Path A+ exploration next |
 | [langfuse-lab-score-push.md](langfuse-lab-score-push.md) | Backlog — Path A's known gap; Path 2 (synthesize) recommended |
 | [mobile.md](mobile.md) | Proposal |
+| [personas-as-long-lived-processes.md](personas-as-long-lived-processes.md) | Shelved — kept for future consideration |
 | [real-api-testing.md](real-api-testing.md) | Proposal |
 
 ## Moved out

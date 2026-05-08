@@ -202,7 +202,10 @@ fn cleanup_orphan_rows(conn: &rusqlite::Connection) {
         }
     }
     if total > 0 {
-        tracing::info!(total_orphans_deleted = total, "Startup orphan cleanup complete");
+        tracing::info!(
+            total_orphans_deleted = total,
+            "Startup orphan cleanup complete"
+        );
     }
 }
 

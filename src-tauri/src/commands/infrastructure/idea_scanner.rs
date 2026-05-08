@@ -533,11 +533,7 @@ async fn run_idea_scan(
                     continue;
                 }
                 push_stderr_line(&ring, &line);
-                IDEA_SCAN_JOBS.emit_line(
-                    &app_clone,
-                    &scan_id_clone,
-                    format!("[stderr] {line}"),
-                );
+                IDEA_SCAN_JOBS.emit_line(&app_clone, &scan_id_clone, format!("[stderr] {line}"));
             }
         });
     }

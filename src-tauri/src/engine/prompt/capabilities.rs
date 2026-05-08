@@ -223,12 +223,8 @@ pub fn render_capability_policy_lines(use_case: &serde_json::Value) -> Vec<Strin
     // Track which keys were already covered by generation_settings so the
     // fallback doesn't double-emit.
     let settings = use_case.get("generation_settings");
-    let memories_explicit = settings
-        .and_then(|s| s.get("memories"))
-        .is_some();
-    let reviews_explicit = settings
-        .and_then(|s| s.get("reviews"))
-        .is_some();
+    let memories_explicit = settings.and_then(|s| s.get("memories")).is_some();
+    let reviews_explicit = settings.and_then(|s| s.get("reviews")).is_some();
 
     // memory_policy.enabled fallback
     if !memories_explicit {
@@ -259,7 +255,8 @@ pub fn render_capability_policy_lines(use_case: &serde_json::Value) -> Vec<Strin
             match mode.to_ascii_lowercase().as_str() {
                 "never" => lines.push(
                     "Do not request manual review for this capability. \
-                     Resolve uncertainty with your own best judgment and proceed.".to_string(),
+                     Resolve uncertainty with your own best judgment and proceed."
+                        .to_string(),
                 ),
                 "always" => lines.push(
                     "Always emit a `manual_review` protocol message for every output of \
@@ -267,13 +264,15 @@ pub fn render_capability_policy_lines(use_case: &serde_json::Value) -> Vec<Strin
                      human approval — never skip this step, even for routine completions. \
                      Use severity \"medium\" unless the output is high-impact (severity \"high\"). \
                      Include the proposed output in the description so the reviewer can decide \
-                     without re-running the capability.".to_string(),
+                     without re-running the capability."
+                        .to_string(),
                 ),
                 "auto_triage" | "autotriage" | "auto-triage" => lines.push(
                     "Emit a `manual_review` for outputs you would normally flag. The runtime \
                      spawns an automated triage evaluator that judges each review against the \
                      persona's decision_principles and resolves it without blocking on a human. \
-                     Use this freely — it is not a queue, it is a transparency record.".to_string(),
+                     Use this freely — it is not a queue, it is a transparency record."
+                        .to_string(),
                 ),
                 _ => {}
             }

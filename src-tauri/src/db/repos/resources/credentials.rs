@@ -175,31 +175,33 @@ pub fn get_distinct_service_types(
 /// Cheaper than `get_all` + manual grouping — pushes the GROUP BY into
 /// SQLite. Returns an empty set on error so callers can treat it as
 /// "nothing ambiguous" without unwrap noise.
-pub fn get_ambiguous_service_types(
-    pool: &DbPool,
-) -> std::collections::HashSet<String> {
-    timed_query!("persona_credentials", "persona_credentials::get_ambiguous_service_types", {
-        let conn = match pool.get() {
-            Ok(c) => c,
-            Err(_) => return std::collections::HashSet::new(),
-        };
-        let mut stmt = match conn.prepare(
-            "SELECT service_type FROM persona_credentials \
+pub fn get_ambiguous_service_types(pool: &DbPool) -> std::collections::HashSet<String> {
+    timed_query!(
+        "persona_credentials",
+        "persona_credentials::get_ambiguous_service_types",
+        {
+            let conn = match pool.get() {
+                Ok(c) => c,
+                Err(_) => return std::collections::HashSet::new(),
+            };
+            let mut stmt = match conn.prepare(
+                "SELECT service_type FROM persona_credentials \
              GROUP BY service_type HAVING COUNT(*) >= 2",
-        ) {
-            Ok(s) => s,
-            Err(_) => return std::collections::HashSet::new(),
-        };
-        let rows = match stmt.query_map([], |row| row.get::<_, String>(0)) {
-            Ok(r) => r,
-            Err(_) => return std::collections::HashSet::new(),
-        };
-        let mut set = std::collections::HashSet::new();
-        for row in rows.flatten() {
-            set.insert(row);
+            ) {
+                Ok(s) => s,
+                Err(_) => return std::collections::HashSet::new(),
+            };
+            let rows = match stmt.query_map([], |row| row.get::<_, String>(0)) {
+                Ok(r) => r,
+                Err(_) => return std::collections::HashSet::new(),
+            };
+            let mut set = std::collections::HashSet::new();
+            for row in rows.flatten() {
+                set.insert(row);
+            }
+            set
         }
-        set
-    })
+    )
 }
 
 pub fn get_by_service_type(

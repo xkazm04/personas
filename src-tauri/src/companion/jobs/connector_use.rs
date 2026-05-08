@@ -67,8 +67,7 @@ async fn dispatch_capability(
              can speak to on the next turn. Real API wiring is the next \
              phase — it slots in as a match arm here without changing the \
              surface above.\n",
-            args_pretty = serde_json::to_string_pretty(args)
-                .unwrap_or_else(|_| "{}".into()),
+            args_pretty = serde_json::to_string_pretty(args).unwrap_or_else(|_| "{}".into()),
         )),
     }
 }

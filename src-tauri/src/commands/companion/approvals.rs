@@ -861,9 +861,7 @@ fn execute_resolve_backlog_item(
 /// executor just validates params and emits the action so a single
 /// click on the approval card lands the user on personas/ with the
 /// intent box filled (and optionally launches the build).
-fn execute_prefill_persona_create(
-    params: &serde_json::Value,
-) -> Result<ExecuteResult, AppError> {
+fn execute_prefill_persona_create(params: &serde_json::Value) -> Result<ExecuteResult, AppError> {
     let intent = params
         .get("intent")
         .and_then(|v| v.as_str())
@@ -874,7 +872,10 @@ fn execute_prefill_persona_create(
             "prefill_persona_create: `intent` must not be empty".into(),
         ));
     }
-    let name = params.get("name").and_then(|v| v.as_str()).map(|s| s.trim().to_string());
+    let name = params
+        .get("name")
+        .and_then(|v| v.as_str())
+        .map(|s| s.trim().to_string());
     let auto_launch = params
         .get("auto_launch")
         .and_then(|v| v.as_bool())
@@ -975,10 +976,7 @@ async fn execute_run_arena(
     // we deserialize into Vec<Value> for the parser inside the lab
     // command (which calls `parse_model_configs` next).
     let started_at = chrono::Utc::now().to_rfc3339();
-    let models_vec: Vec<serde_json::Value> = models
-        .as_array()
-        .cloned()
-        .unwrap_or_default();
+    let models_vec: Vec<serde_json::Value> = models.as_array().cloned().unwrap_or_default();
     crate::commands::execution::lab::lab_start_arena(
         state.clone(),
         app.clone(),
@@ -1151,10 +1149,12 @@ fn execute_enqueue_dev_job(
             "enqueue_dev_job: unknown kind `{kind}` (v1 supports: scan_codebase)"
         )));
     }
-    let job_params = params.get("params").cloned().unwrap_or(serde_json::json!({}));
+    let job_params = params
+        .get("params")
+        .cloned()
+        .unwrap_or(serde_json::json!({}));
     let project_id = params.get("project_id").and_then(|v| v.as_str());
-    let job_id =
-        crate::companion::jobs::enqueue(&state.user_db, kind, &job_params, project_id)?;
+    let job_id = crate::companion::jobs::enqueue(&state.user_db, kind, &job_params, project_id)?;
     Ok(ExecuteResult::message(format!(
         "Job `{job_id}` (`{kind}`) queued. The worker will pick it up within a few \
          seconds; results land as a system episode you'll see on your next turn. \

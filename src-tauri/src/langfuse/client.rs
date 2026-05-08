@@ -61,7 +61,10 @@ pub async fn probe(host: &str, public_key: &str, secret_key: &str) -> LangfuseTe
         Ok(r) => r,
         Err(e) => {
             let msg = if e.is_timeout() {
-                format!("Connection to {host} timed out after {}s.", PROBE_TIMEOUT.as_secs())
+                format!(
+                    "Connection to {host} timed out after {}s.",
+                    PROBE_TIMEOUT.as_secs()
+                )
             } else if e.is_connect() {
                 format!("Could not reach {host}. Check the host URL.")
             } else {
@@ -99,7 +102,9 @@ pub async fn probe(host: &str, public_key: &str, secret_key: &str) -> LangfuseTe
     let message = match status.as_u16() {
         401 | 403 => "Authentication failed. Double-check the public and secret keys.".to_string(),
         404 => "Endpoint not found at this host. Is this a Langfuse instance?".to_string(),
-        s if (500..600).contains(&s) => format!("Langfuse returned {s}. Try again or check the host status."),
+        s if (500..600).contains(&s) => {
+            format!("Langfuse returned {s}. Try again or check the host status.")
+        }
         s => format!("Langfuse returned HTTP {s}."),
     };
 

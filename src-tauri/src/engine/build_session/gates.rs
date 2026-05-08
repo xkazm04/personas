@@ -320,12 +320,30 @@ fn intent_implies_sample_output(intent_lower: &str) -> Gate {
     // way. Keep this list narrow — generic verbs like "send" / "save" /
     // "write" don't imply content shape on their own; they're carriers.
     const CONTENT_KW: &[&str] = &[
-        "digest", "summary", "summarize", "summarise", "summari",
-        "report on", " report ", "brief", "briefing",
-        "list ", "list my", "list of", "overview", "snapshot",
-        "weekly review", "daily review", "monthly review",
-        "rundown", "round-up", "roundup", "recap",
-        "compile", "aggregate", "consolidate",
+        "digest",
+        "summary",
+        "summarize",
+        "summarise",
+        "summari",
+        "report on",
+        " report ",
+        "brief",
+        "briefing",
+        "list ",
+        "list my",
+        "list of",
+        "overview",
+        "snapshot",
+        "weekly review",
+        "daily review",
+        "monthly review",
+        "rundown",
+        "round-up",
+        "roundup",
+        "recap",
+        "compile",
+        "aggregate",
+        "consolidate",
     ];
     let has_content = CONTENT_KW.iter().any(|k| intent_lower.contains(k));
     if !has_content {
@@ -335,13 +353,27 @@ fn intent_implies_sample_output(intent_lower: &str) -> Gate {
     // Explicit format mentions — user already told us how it should look.
     // Skip the question.
     const FORMAT_KW: &[&str] = &[
-        "markdown", "as markdown", "in markdown",
-        "table", "as a table", "in a table", "grid",
-        "json", "as json", "structured json",
-        "csv", "tsv", "spreadsheet",
-        "one-line", "one line note", "single line",
-        "bullet list", "bullet points", "bulleted",
-        "prose", "paragraph",
+        "markdown",
+        "as markdown",
+        "in markdown",
+        "table",
+        "as a table",
+        "in a table",
+        "grid",
+        "json",
+        "as json",
+        "structured json",
+        "csv",
+        "tsv",
+        "spreadsheet",
+        "one-line",
+        "one line note",
+        "single line",
+        "bullet list",
+        "bullet points",
+        "bulleted",
+        "prose",
+        "paragraph",
     ];
     let has_format = FORMAT_KW.iter().any(|k| intent_lower.contains(k));
     if has_format {
@@ -580,7 +612,9 @@ fn intent_implies_connectors_with_ambiguity(
         }
     }
     for kw in registry_keywords {
-        if kw.is_empty() { continue; }
+        if kw.is_empty() {
+            continue;
+        }
         if intent_lower.contains(kw.as_str()) {
             any_match = true;
             // The registry keyword IS the service_type (or close to it).
@@ -590,7 +624,11 @@ fn intent_implies_connectors_with_ambiguity(
             }
         }
     }
-    if any_match { Gate::Open } else { Gate::Closed }
+    if any_match {
+        Gate::Open
+    } else {
+        Gate::Closed
+    }
 }
 
 /// Map a fuzzy alias (the human-text form) to its canonical
@@ -602,7 +640,9 @@ fn canonical_service_type_for_alias(alias: &str) -> Option<&'static str> {
         "google drive" => Some("google_drive"),
         "google sheets" => Some("google_sheets"),
         "google calendar" => Some("google_calendar"),
-        "local drive" | "local-drive" | "local_drive" | "built-in drive" | "built in drive" => Some("local_drive"),
+        "local drive" | "local-drive" | "local_drive" | "built-in drive" | "built in drive" => {
+            Some("local_drive")
+        }
         _ => None,
     }
 }
@@ -754,19 +794,56 @@ pub(super) fn gate_seed_for_intent_with_context(
     // empty so stand-alone callers (tests, future cold-start paths) behave
     // sanely without a populated connector_definitions table.
     const KNOWN_FALLBACK: &[&str] = &[
-        "gmail", "outlook", "slack", "discord", "teams", "telegram",
-        "whatsapp", "twilio",
-        "github", "gitlab", "bitbucket",
-        "linear", "jira", "notion", "trello", "asana", "clickup", "attio",
-        "monday", "basecamp",
-        "airtable", "supabase", "postgres", "google sheets", "google drive",
+        "gmail",
+        "outlook",
+        "slack",
+        "discord",
+        "teams",
+        "telegram",
+        "whatsapp",
+        "twilio",
+        "github",
+        "gitlab",
+        "bitbucket",
+        "linear",
+        "jira",
+        "notion",
+        "trello",
+        "asana",
+        "clickup",
+        "attio",
+        "monday",
+        "basecamp",
+        "airtable",
+        "supabase",
+        "postgres",
+        "google sheets",
+        "google drive",
         "dropbox",
-        "cal.com", "calcom", "google calendar", "calendly",
-        "hubspot", "salesforce", "pipedrive",
-        "stripe", "alpha vantage", "alpha_vantage", "alphavantage",
-        "sentry", "betterstack", "better stack", "datadog", "pagerduty",
-        "leonardo", "leonardo ai", "leonardo_ai", "openai", "anthropic",
-        "midjourney", "elevenlabs", "gemini",
+        "cal.com",
+        "calcom",
+        "google calendar",
+        "calendly",
+        "hubspot",
+        "salesforce",
+        "pipedrive",
+        "stripe",
+        "alpha vantage",
+        "alpha_vantage",
+        "alphavantage",
+        "sentry",
+        "betterstack",
+        "better stack",
+        "datadog",
+        "pagerduty",
+        "leonardo",
+        "leonardo ai",
+        "leonardo_ai",
+        "openai",
+        "anthropic",
+        "midjourney",
+        "elevenlabs",
+        "gemini",
     ];
     let combined: Vec<String> = if registry_keywords.is_empty() {
         KNOWN_FALLBACK.iter().map(|s| s.to_string()).collect()
@@ -847,15 +924,23 @@ pub(super) fn init_gates_from_enumeration_with_context(
     registry_keywords: &[String],
     ambiguous_services: &std::collections::HashSet<String>,
 ) {
-    let Some(caps) = data.get("capabilities").and_then(|v| v.as_array()) else { return };
+    let Some(caps) = data.get("capabilities").and_then(|v| v.as_array()) else {
+        return;
+    };
     let seed = gate_seed_for_intent_with_context(intent, registry_keywords, ambiguous_services);
 
     for cap in caps {
-        let Some(id) = cap.get("id").and_then(|v| v.as_str()) else { continue };
+        let Some(id) = cap.get("id").and_then(|v| v.as_str()) else {
+            continue;
+        };
         if let Some(title) = cap.get("title").and_then(|v| v.as_str()) {
-            titles.entry(id.to_string()).or_insert_with(|| title.to_string());
+            titles
+                .entry(id.to_string())
+                .or_insert_with(|| title.to_string());
         }
-        coverage.entry(id.to_string()).or_insert_with(|| seed.clone());
+        coverage
+            .entry(id.to_string())
+            .or_insert_with(|| seed.clone());
     }
 }
 
@@ -1028,10 +1113,7 @@ pub(super) fn humanise_capability_id(raw: &str) -> String {
 fn display_title_for_cap<'a>(captured: Option<&'a str>, cap_id: &'a str) -> String {
     if let Some(t) = captured {
         let trimmed = t.trim();
-        if !trimmed.is_empty()
-            && !trimmed.starts_with("uc_")
-            && trimmed != cap_id
-        {
+        if !trimmed.is_empty() && !trimmed.starts_with("uc_") && trimmed != cap_id {
             return trimmed.to_string();
         }
     }
@@ -1099,7 +1181,10 @@ pub(super) fn synthesize_gate_question(
         }
         "memory_policy" => {
             obj.insert("scope".into(), serde_json::Value::String("field".into()));
-            obj.insert("field".into(), serde_json::Value::String("memory_policy".into()));
+            obj.insert(
+                "field".into(),
+                serde_json::Value::String("memory_policy".into()),
+            );
             // Re-shaped 2026-05-03 — the original yes/no question made memory
             // feel optional. With memory enabled, the persona is expected to
             // consult it on every run, so the substantive question is *what*
@@ -1108,12 +1193,15 @@ pub(super) fn synthesize_gate_question(
             obj.insert("question".into(), serde_json::Value::String(
                 format!("What should \"{title}\" remember between runs? (Pick \"Nothing\" if it doesn't need memory.)")
             ));
-            obj.insert("options".into(), serde_json::json!([
-                "User preferences and corrections",
-                "Items I've already approved or rejected",
-                "Recurring context (people, projects, topics I care about)",
-                "Nothing — each run is independent",
-            ]));
+            obj.insert(
+                "options".into(),
+                serde_json::json!([
+                    "User preferences and corrections",
+                    "Items I've already approved or rejected",
+                    "Recurring context (people, projects, topics I care about)",
+                    "Nothing — each run is independent",
+                ]),
+            );
         }
         "connectors" => {
             let category = infer_connector_category(proposed_value, pool)
@@ -1146,20 +1234,27 @@ pub(super) fn synthesize_gate_question(
             // captures format preferences when the user doesn't have a
             // sample handy.
             obj.insert("scope".into(), serde_json::Value::String("field".into()));
-            obj.insert("field".into(), serde_json::Value::String("sample_output".into()));
-            obj.insert("question".into(), serde_json::Value::String(
-                format!(
+            obj.insert(
+                "field".into(),
+                serde_json::Value::String("sample_output".into()),
+            );
+            obj.insert(
+                "question".into(),
+                serde_json::Value::String(format!(
                     "How should \"{title}\" format its output? Paste / attach an example, \
                      or pick a shape:"
-                )
-            ));
-            obj.insert("options".into(), serde_json::json!([
-                "Markdown — bullet list with short headings",
-                "Markdown — table or grid layout",
-                "Prose summary — short paragraphs, no bullets",
-                "JSON — structured payload",
-                "I'll attach an example",
-            ]));
+                )),
+            );
+            obj.insert(
+                "options".into(),
+                serde_json::json!([
+                    "Markdown — bullet list with short headings",
+                    "Markdown — table or grid layout",
+                    "Prose summary — short paragraphs, no bullets",
+                    "JSON — structured payload",
+                    "I'll attach an example",
+                ]),
+            );
             obj.insert("accepts_reference".into(), serde_json::Value::Bool(true));
         }
         _ => return Vec::new(),
@@ -1460,9 +1555,8 @@ mod tests {
     // services; ANY ambiguous hit forces Closed.
     #[test]
     fn connectors_closed_when_any_intent_service_is_ambiguous() {
-        let registry: Vec<String> = vec![
-            "github".into(), "linear".into(), "google_calendar".into(),
-        ];
+        let registry: Vec<String> =
+            vec!["github".into(), "linear".into(), "google_calendar".into()];
         let mut ambiguous = std::collections::HashSet::new();
         ambiguous.insert("github".to_string());
 
@@ -1900,10 +1994,13 @@ mod tests {
             &dummy_pool(),
             "session-1",
         );
-        let v3 = events.iter().find_map(|e| match e {
-            BuildEvent::ClarifyingQuestionV3 { question, .. } => Some(question.clone()),
-            _ => None,
-        }).expect("v3 question emitted");
+        let v3 = events
+            .iter()
+            .find_map(|e| match e {
+                BuildEvent::ClarifyingQuestionV3 { question, .. } => Some(question.clone()),
+                _ => None,
+            })
+            .expect("v3 question emitted");
         assert!(
             v3.contains("\"Weekly Digest\""),
             "humanised title should appear, got: {v3}"
@@ -1922,10 +2019,13 @@ mod tests {
             &dummy_pool(),
             "session-1",
         );
-        let v3 = events.iter().find_map(|e| match e {
-            BuildEvent::ClarifyingQuestionV3 { question, .. } => Some(question.clone()),
-            _ => None,
-        }).expect("v3 question emitted");
+        let v3 = events
+            .iter()
+            .find_map(|e| match e {
+                BuildEvent::ClarifyingQuestionV3 { question, .. } => Some(question.clone()),
+                _ => None,
+            })
+            .expect("v3 question emitted");
         assert!(
             v3.contains("\"Morning Brief\""),
             "humanised title should appear when title==id, got: {v3}"
@@ -1946,10 +2046,13 @@ mod tests {
             &dummy_pool(),
             "session-1",
         );
-        let v3 = events.iter().find_map(|e| match e {
-            BuildEvent::ClarifyingQuestionV3 { question, .. } => Some(question.clone()),
-            _ => None,
-        }).expect("v3 question emitted");
+        let v3 = events
+            .iter()
+            .find_map(|e| match e {
+                BuildEvent::ClarifyingQuestionV3 { question, .. } => Some(question.clone()),
+                _ => None,
+            })
+            .expect("v3 question emitted");
         assert!(v3.contains("\"Weekly Project Digest\""), "got: {v3}");
     }
 
@@ -1971,10 +2074,13 @@ mod tests {
             "session-1",
         );
 
-        let v3_fields: Vec<String> = events.iter().filter_map(|e| match e {
-            BuildEvent::ClarifyingQuestionV3 { field, .. } => field.clone(),
-            _ => None,
-        }).collect();
+        let v3_fields: Vec<String> = events
+            .iter()
+            .filter_map(|e| match e {
+                BuildEvent::ClarifyingQuestionV3 { field, .. } => field.clone(),
+                _ => None,
+            })
+            .collect();
 
         assert_eq!(
             v3_fields,
@@ -2018,10 +2124,13 @@ mod tests {
             "session-1",
         );
 
-        let v3_fields: Vec<String> = events.iter().filter_map(|e| match e {
-            BuildEvent::ClarifyingQuestionV3 { field, .. } => field.clone(),
-            _ => None,
-        }).collect();
+        let v3_fields: Vec<String> = events
+            .iter()
+            .filter_map(|e| match e {
+                BuildEvent::ClarifyingQuestionV3 { field, .. } => field.clone(),
+                _ => None,
+            })
+            .collect();
 
         assert_eq!(
             v3_fields,

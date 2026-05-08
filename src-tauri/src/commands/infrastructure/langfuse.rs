@@ -14,6 +14,7 @@ use tauri::{AppHandle, Manager};
 
 use crate::error::AppError;
 use crate::langfuse::client::probe;
+use crate::langfuse::config;
 use crate::langfuse::docker;
 use crate::langfuse::exporter;
 use crate::langfuse::lifecycle;
@@ -22,7 +23,6 @@ use crate::langfuse::types::{
     LangfuseAdminCredentials, LangfuseConfig, LangfuseJobHandle, LangfuseJobKind,
     LangfuseSaveRequest, LangfuseStackInfo, LangfuseStackState, LangfuseTestResult,
 };
-use crate::langfuse::config;
 
 // ---------------------------------------------------------------------------
 // Manual connection commands
@@ -74,10 +74,14 @@ pub async fn langfuse_save_config(
     config::store_redact(redact_content).map_err(AppError::Langfuse)?;
     config::store_enabled(enabled).map_err(AppError::Langfuse)?;
     config::store_managed(false).map_err(AppError::Langfuse)?;
-    config::store_project_id(project_id.as_deref().map(str::trim).filter(|s| !s.is_empty()))
-        .map_err(AppError::Langfuse)?;
-    config::store_last_test(Utc::now().timestamp(), &result.message)
-        .map_err(AppError::Langfuse)?;
+    config::store_project_id(
+        project_id
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty()),
+    )
+    .map_err(AppError::Langfuse)?;
+    config::store_last_test(Utc::now().timestamp(), &result.message).map_err(AppError::Langfuse)?;
 
     if enabled {
         exporter::install(trimmed_host.clone(), trimmed_pk.clone(), trimmed_sk.clone());
@@ -204,10 +208,7 @@ pub async fn langfuse_stack_get_info(app: AppHandle) -> Result<LangfuseStackInfo
         let env_path = stack_dir.join(templates::ENV_FILE);
         match templates::read_env(&env_path) {
             Ok(s) => (s.port, s.host_url),
-            Err(_) => (
-                preferred_port,
-                format!("http://localhost:{preferred_port}"),
-            ),
+            Err(_) => (preferred_port, format!("http://localhost:{preferred_port}")),
         }
     } else {
         (preferred_port, format!("http://localhost:{preferred_port}"))
@@ -302,10 +303,8 @@ pub async fn langfuse_stack_stop(app: AppHandle) -> Result<LangfuseJobHandle, Ap
 #[tauri::command]
 pub async fn langfuse_stack_get_admin_credentials(
 ) -> Result<Option<LangfuseAdminCredentials>, AppError> {
-    Ok(config::load_admin_credentials().map(|(email, password)| LangfuseAdminCredentials {
-        email,
-        password,
-    }))
+    Ok(config::load_admin_credentials()
+        .map(|(email, password)| LangfuseAdminCredentials { email, password }))
 }
 
 #[tauri::command]
@@ -357,8 +356,7 @@ pub async fn langfuse_open_authenticated_ui(
     let nonce = crate::local_http::mint_nonce();
 
     let url = build_auto_login_url(port, &nonce, return_to.as_deref());
-    open::that(&url)
-        .map_err(|e| AppError::Langfuse(format!("Failed to open browser: {e}")))?;
+    open::that(&url).map_err(|e| AppError::Langfuse(format!("Failed to open browser: {e}")))?;
     Ok(())
 }
 
@@ -392,7 +390,9 @@ pub async fn langfuse_make_authenticated_url(
         ));
     }
     if config::load_admin_credentials().is_none() {
-        return Err(AppError::Langfuse("No admin credentials in keyring.".into()));
+        return Err(AppError::Langfuse(
+            "No admin credentials in keyring.".into(),
+        ));
     }
     let port = crate::local_http::port()
         .ok_or_else(|| AppError::Langfuse("local_http isn't running".into()))?;

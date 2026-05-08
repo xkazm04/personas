@@ -71,15 +71,11 @@ pub(super) async fn run_fix_pass(
 
     // Sanity-parse so we fail fast on a corrupt IR (rather than surfacing
     // a confusing CLI prompt error later).
-    serde_json::from_str::<crate::db::models::AgentIr>(&current_ir_str)
-        .map_err(|e| AppError::Validation(format!("fix_pass: existing agent_ir parse error: {e}")))?;
+    serde_json::from_str::<crate::db::models::AgentIr>(&current_ir_str).map_err(|e| {
+        AppError::Validation(format!("fix_pass: existing agent_ir parse error: {e}"))
+    })?;
 
-    let prompt = build_fix_prompt(
-        &session.intent,
-        &current_ir_str,
-        failure_summary,
-        attempt,
-    );
+    let prompt = build_fix_prompt(&session.intent, &current_ir_str, failure_summary, attempt);
 
     tracing::info!(
         session_id = %session_id,
@@ -138,12 +134,7 @@ pub(super) async fn run_fix_pass(
 /// the failures side by side without scrolling — the model is more
 /// likely to make pinpoint edits than to rewrite from scratch when the
 /// before/after framing is right next to the failure list.
-fn build_fix_prompt(
-    intent: &str,
-    current_ir: &str,
-    failure_summary: &str,
-    attempt: u32,
-) -> String {
+fn build_fix_prompt(intent: &str, current_ir: &str, failure_summary: &str, attempt: u32) -> String {
     format!(
         "You previously generated an `agent_ir` for an autonomous build. The pre-promote test phase \
          FAILED. You must emit a CORRECTED agent_ir that addresses the failures.\n\n\
@@ -445,8 +436,7 @@ Done."#;
 
     #[test]
     fn extract_unfenced_agent_ir() {
-        let response =
-            r#"OK. {"agent_ir": {"name": "X", "description": "y"}} that should work."#;
+        let response = r#"OK. {"agent_ir": {"name": "X", "description": "y"}} that should work."#;
         let extracted = extract_agent_ir_json(response).expect("should extract");
         let value: serde_json::Value = serde_json::from_str(&extracted).unwrap();
         assert_eq!(value["name"], "X");

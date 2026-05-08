@@ -115,9 +115,14 @@ pub async fn run_tool_tests(
     // cover, with the OAuth refresh path running for credentials that
     // store a refresh_token.
     for ir_conn in &agent_ir.required_connectors {
-        let Some(name) = ir_conn.name() else { continue; };
+        let Some(name) = ir_conn.name() else {
+            continue;
+        };
         let name_lower = name.to_lowercase();
-        if injected_connectors.iter().any(|n| n.to_lowercase() == name_lower) {
+        if injected_connectors
+            .iter()
+            .any(|n| n.to_lowercase() == name_lower)
+        {
             continue;
         }
         // Prefer the catalog connector definition (so `connector.label`
@@ -128,25 +133,46 @@ pub async fn run_tool_tests(
             Ok(c) => c,
             Err(_) => Vec::new(),
         };
-        let conn_def = connectors.iter().find(|c| c.name.eq_ignore_ascii_case(name));
+        let conn_def = connectors
+            .iter()
+            .find(|c| c.name.eq_ignore_ascii_case(name));
         let injected = if let Some(conn) = conn_def {
             engine_runner::inject_connector_credentials(
-                pool, conn, &mut env_vars, &mut hints, persona_id, persona_name,
-            ).await.unwrap_or(false)
+                pool,
+                conn,
+                &mut env_vars,
+                &mut hints,
+                persona_id,
+                persona_name,
+            )
+            .await
+            .unwrap_or(false)
         } else {
             match crate::db::repos::resources::credentials::get_by_service_type(pool, name) {
                 Ok(creds) => {
                     if let Some(cred) = creds.first() {
                         engine_runner::inject_credential(
-                            pool, cred, name, name,
-                            &mut env_vars, &mut hints, persona_id, persona_name,
-                        ).await.is_ok()
-                    } else { false }
+                            pool,
+                            cred,
+                            name,
+                            name,
+                            &mut env_vars,
+                            &mut hints,
+                            persona_id,
+                            persona_name,
+                        )
+                        .await
+                        .is_ok()
+                    } else {
+                        false
+                    }
                 }
                 Err(_) => false,
             }
         };
-        if injected { injected_connectors.push(name.to_string()); }
+        if injected {
+            injected_connectors.push(name.to_string());
+        }
     }
 
     // Query ALL credential service types from vault so the LLM can match intelligently

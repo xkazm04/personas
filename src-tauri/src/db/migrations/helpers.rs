@@ -307,7 +307,9 @@ pub(super) fn install_persona_memory_invariants(conn: &Connection) -> Result<(),
     // Skip cleanly if the table doesn't exist yet on this DB (migrations
     // can run in unusual orders during test setup).
     let exists: bool = conn
-        .prepare("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='persona_memories'")?
+        .prepare(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='persona_memories'",
+        )?
         .query_row([], |row| row.get::<_, i64>(0))
         .map(|c| c > 0)
         .unwrap_or(false);

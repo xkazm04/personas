@@ -1100,17 +1100,23 @@ mod tests {
         let p3_audit = list_audit_log(&pool, Some(&p3), 10).unwrap();
 
         assert!(
-            p1_audit.iter().any(|e| e.event_type == "stale_pending_reverted"
-                && e.message.contains("ttl_exceeded")),
+            p1_audit
+                .iter()
+                .any(|e| e.event_type == "stale_pending_reverted"
+                    && e.message.contains("ttl_exceeded")),
             "p1 must have a ttl_exceeded audit row",
         );
         assert!(
-            p2_audit.iter().any(|e| e.event_type == "stale_pending_reverted"
-                && e.message.contains("ttl_exceeded")),
+            p2_audit
+                .iter()
+                .any(|e| e.event_type == "stale_pending_reverted"
+                    && e.message.contains("ttl_exceeded")),
             "p2 must have a ttl_exceeded audit row",
         );
         assert!(
-            !p3_audit.iter().any(|e| e.event_type == "stale_pending_reverted"),
+            !p3_audit
+                .iter()
+                .any(|e| e.event_type == "stale_pending_reverted"),
             "p3 was inside the TTL — must not have a sweep audit entry",
         );
     }

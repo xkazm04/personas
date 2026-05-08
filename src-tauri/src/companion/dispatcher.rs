@@ -106,7 +106,13 @@ const ALLOWED_ACTIONS: &[&str] = &[
 /// Lab modes valid for `open_lab`. Mirrors the `lab-mode-*` testids in
 /// `src/features/agents/sub_lab/components/shared/LabTab.tsx`.
 const ALLOWED_LAB_MODES: &[&str] = &[
-    "arena", "ab", "matrix", "breed", "evolve", "versions", "regression",
+    "arena",
+    "ab",
+    "matrix",
+    "breed",
+    "evolve",
+    "versions",
+    "regression",
 ];
 
 /// Allowed sidebar routes for `open_route`. Mirrors the SidebarSection
@@ -216,9 +222,8 @@ pub fn dispatch(
                 let widgets = env.params.get("widgets");
                 let widgets_arr = widgets.and_then(|v| v.as_array());
                 if widgets_arr.is_none() || widgets_arr.unwrap().is_empty() {
-                    out.warnings.push(
-                        "compose_dashboard: `widgets` must be a non-empty array".into(),
-                    );
+                    out.warnings
+                        .push("compose_dashboard: `widgets` must be a non-empty array".into());
                     cleaned_lines.push(line);
                     continue;
                 }
@@ -247,7 +252,8 @@ pub fn dispatch(
                     .and_then(|v| v.as_str())
                     .unwrap_or("");
                 if persona_id.is_empty() || mode.is_empty() {
-                    out.warnings.push("open_lab: missing `persona_id` or `mode`".into());
+                    out.warnings
+                        .push("open_lab: missing `persona_id` or `mode`".into());
                     cleaned_lines.push(line);
                     continue;
                 }
@@ -258,7 +264,8 @@ pub fn dispatch(
                     cleaned_lines.push(line);
                     continue;
                 }
-                out.lab_opens.push((persona_id.to_string(), mode.to_string()));
+                out.lab_opens
+                    .push((persona_id.to_string(), mode.to_string()));
             }
             // Phase F/G: `use_connector` auto-fires through the
             // background-job worker. No approval card — friction the
@@ -278,9 +285,8 @@ pub fn dispatch(
                     .and_then(|v| v.as_str())
                     .unwrap_or("");
                 if connector_name.is_empty() || capability.is_empty() {
-                    out.warnings.push(
-                        "use_connector: missing `connector_name` or `capability`".into(),
-                    );
+                    out.warnings
+                        .push("use_connector: missing `connector_name` or `capability`".into());
                     cleaned_lines.push(line);
                     continue;
                 }
@@ -336,13 +342,11 @@ pub fn dispatch(
                     "capability": capability,
                     "args": env.params.get("args").cloned().unwrap_or(serde_json::json!({})),
                 });
-                if let Err(e) = crate::companion::jobs::enqueue(
-                    pool,
-                    "connector_use",
-                    &job_params,
-                    None,
-                ) {
-                    out.warnings.push(format!("use_connector: enqueue failed: {e}"));
+                if let Err(e) =
+                    crate::companion::jobs::enqueue(pool, "connector_use", &job_params, None)
+                {
+                    out.warnings
+                        .push(format!("use_connector: enqueue failed: {e}"));
                     cleaned_lines.push(line);
                     continue;
                 }

@@ -61,8 +61,7 @@ static IDENTITY_WRITE_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 /// panicked while writing identity state; the safest move is to surface
 /// the failure to the user rather than silently retry on potentially
 /// torn state.
-fn acquire_write_lock(
-) -> Result<std::sync::MutexGuard<'static, ()>, AppError> {
+fn acquire_write_lock() -> Result<std::sync::MutexGuard<'static, ()>, AppError> {
     IDENTITY_WRITE_LOCK
         .lock()
         .map_err(|e| AppError::Internal(format!("Identity write lock poisoned: {e}")))
@@ -387,7 +386,9 @@ mod tests {
     /// into each other. The write lock is taken to flush any racing
     /// writer that's mid-create.
     fn reset_identity_caches() {
-        let _g = IDENTITY_WRITE_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let _g = IDENTITY_WRITE_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         *IDENTITY_CACHE.write().unwrap() = None;
         *SIGNING_KEY_CACHE.write().unwrap() = None;
     }
@@ -437,7 +438,10 @@ mod tests {
 
         let results: Vec<PeerIdentity> = handles.into_iter().map(|h| h.join().unwrap()).collect();
         for r in &results {
-            assert_eq!(r.peer_id, peer_id, "all racing callers must observe the persisted peer_id");
+            assert_eq!(
+                r.peer_id, peer_id,
+                "all racing callers must observe the persisted peer_id"
+            );
             assert_eq!(r.public_key_b64, results[0].public_key_b64);
         }
 

@@ -247,10 +247,7 @@ pub fn list_fired_alerts(db: &DbPool, limit: Option<i64>) -> Result<Vec<FiredAle
                 rule_id: row.get(1)?,
                 rule_name: row.get(2)?,
                 metric: parse_enum_column::<AlertMetric>(row.get(3)?, "fired_alerts.metric")?,
-                severity: parse_enum_column::<AlertSeverity>(
-                    row.get(4)?,
-                    "fired_alerts.severity",
-                )?,
+                severity: parse_enum_column::<AlertSeverity>(row.get(4)?, "fired_alerts.severity")?,
                 message: row.get(5)?,
                 value: row.get(6)?,
                 threshold: row.get(7)?,

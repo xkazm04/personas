@@ -162,7 +162,11 @@ pub fn update_port(app_data_dir: &Path, new_port: u16) -> Result<StackSecrets, A
 pub fn pick_free_port(preferred: u16) -> Result<u16, AppError> {
     use std::net::{Ipv4Addr, SocketAddrV4, TcpListener};
 
-    let starting = if preferred == 0 { DEFAULT_PORT } else { preferred };
+    let starting = if preferred == 0 {
+        DEFAULT_PORT
+    } else {
+        preferred
+    };
     for offset in 0..PORT_SCAN_LIMIT {
         let port = starting.saturating_add(offset);
         if port == 0 {
@@ -288,10 +292,7 @@ mod tests {
         let original = StackSecrets::generate(3000);
         let rendered = render_env(&original);
         // Write to a temp file and read back
-        let tmp = std::env::temp_dir().join(format!(
-            "langfuse-test-env-{}",
-            random_alnum(8)
-        ));
+        let tmp = std::env::temp_dir().join(format!("langfuse-test-env-{}", random_alnum(8)));
         std::fs::write(&tmp, rendered).unwrap();
         let parsed = read_env(&tmp).unwrap();
         std::fs::remove_file(&tmp).ok();

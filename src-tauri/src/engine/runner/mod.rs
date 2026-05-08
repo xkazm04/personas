@@ -12,10 +12,10 @@ mod stages;
 // Cross-module re-exports. These paths are what external callers (outside
 // `engine::runner`) see — matches the layout before the submodule split so no
 // caller has to change.
-pub(crate) use env::sanitize_env_name;
 pub(crate) use credentials::{
     inject_connector_credentials, inject_credential, resolve_credential_env_vars,
 };
+pub(crate) use env::sanitize_env_name;
 
 use super::events::emit_to;
 use std::collections::HashMap;
@@ -229,10 +229,7 @@ pub async fn run_execution(
     // own listener trigger six times; only the first execution (test fire
     // with explicit useCaseId) had use_case_id propagated to dispatch.
     if execution_use_case_id.is_none() {
-        if let Ok(row) = crate::db::repos::execution::executions::get_by_id(
-            &pool,
-            &execution_id,
-        ) {
+        if let Ok(row) = crate::db::repos::execution::executions::get_by_id(&pool, &execution_id) {
             execution_use_case_id = row.use_case_id;
         }
     }

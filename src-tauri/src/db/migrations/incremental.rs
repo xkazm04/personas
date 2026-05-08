@@ -2006,9 +2006,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Added mode column to build_sessions");
     }
     if !has_column(conn, "build_sessions", "companion_session_id")? {
-        conn.execute_batch(
-            "ALTER TABLE build_sessions ADD COLUMN companion_session_id TEXT;",
-        )?;
+        conn.execute_batch("ALTER TABLE build_sessions ADD COLUMN companion_session_id TEXT;")?;
         tracing::info!("Added companion_session_id column to build_sessions");
     }
 
@@ -2381,7 +2379,9 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     // `docs/concepts/persona-capabilities/13-rapid-validation-personas.md`
     // §"Phase 2 (test-pass visibility)".
     let has_last_test_report: bool = conn
-        .prepare("SELECT COUNT(*) FROM pragma_table_info('personas') WHERE name = 'last_test_report'")?
+        .prepare(
+            "SELECT COUNT(*) FROM pragma_table_info('personas') WHERE name = 'last_test_report'",
+        )?
         .query_row([], |row| row.get::<_, i64>(0))
         .map(|c| c > 0)
         .unwrap_or(false);
