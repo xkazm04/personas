@@ -218,6 +218,14 @@ TOOLS = [
             "properties": {},
         },
     ),
+    types.Tool(
+        name="reset_test_bridge",
+        description="Reset test automation bridge state between scenarios.",
+        inputSchema={
+            "type": "object",
+            "properties": {},
+        },
+    ),
     # ── Workflow macros ──────────────────────────────────────────────────
     types.Tool(
         name="select_agent",
@@ -414,6 +422,8 @@ async def call_tool(name: str, arguments: dict[str, Any] | None) -> list[types.T
         result = await _post("/eval", {"js": arguments["js"]})
     elif name == "health":
         result = await _get("/health")
+    elif name == "reset_test_bridge":
+        result = await _post("/test/reset", {})
     # Workflow macros
     elif name == "select_agent":
         result = await _post("/select-agent", {"name_or_id": arguments["name_or_id"]})

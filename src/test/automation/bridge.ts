@@ -77,6 +77,7 @@ interface TestBridge {
     expiresAt?: string | null;
     error?: string;
   }>;
+  __reset__(): Promise<{ success: boolean; error?: string }>;
   __exec__(id: string, method: string, params: Record<string, unknown>): Promise<void>;
   // -- Build-from-scratch scenario helpers (see /bridge-exec dispatcher) --
   startBuildFromIntent(intent: string, timeoutMs?: number): Promise<{ success: boolean; sessionId?: string; personaId?: string | null; phase?: string; error?: string }>;
@@ -160,6 +161,19 @@ function generateSelector(el: Element): string {
 }
 
 const bridge: TestBridge = {
+  async __reset__() {
+    try {
+      const eventBridge = await import("@/lib/eventBridge");
+      await eventBridge.teardownAllListeners();
+      await eventBridge.initAllListeners();
+      useAgentStore.getState().resetBuildSession();
+      useSystemStore.getState().setSidebarSection("personas");
+      return { success: true };
+    } catch (e) {
+      return { success: false, error: unpackError(e) };
+    }
+  },
+
   navigate(section: string) {
     if (!VALID_SECTIONS.includes(section as SidebarSection)) {
       return { success: false, error: `Invalid section: ${section}. Valid: ${VALID_SECTIONS.join(", ")}` };

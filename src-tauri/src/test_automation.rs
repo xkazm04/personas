@@ -1137,6 +1137,34 @@ async fn handle_bridge_exec(
     eval_bridge_method_with_timeout(&state, &req.method, &params, timeout_secs).await
 }
 
+async fn handle_test_reset(
+    AxumState(state): AxumState<ServerState>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let pending_cleared = {
+        let mut pending = state.pending.lock().await;
+        let count = pending.len();
+        pending.clear();
+        count
+    };
+
+    let bridge_reset = eval_bridge_method_with_timeout(
+        &state,
+        "__reset__",
+        &serde_json::json!({}),
+        BRIDGE_TIMEOUT_DEFAULT,
+    )
+    .await;
+
+    Ok(Json(serde_json::json!({
+        "status": "ok",
+        "pending_cleared": pending_cleared,
+        "bridge_reset": bridge_reset.unwrap_or_else(|e| serde_json::json!({
+            "success": false,
+            "error": e,
+        })),
+    })))
+}
+
 // ── Server startup ──────────────────────────────────────────────────────────
 
 /// Default port for dev mode (`--features test-automation`).
@@ -1209,6 +1237,8 @@ fn build_router(state: ServerState) -> Router {
         .route("/build/cancel", post(handle_build_cancel))
         // Generic dispatcher — forwards to any bridge method on window.__TEST__.
         .route("/bridge-exec", post(handle_bridge_exec))
+        // Test isolation — clears pending HTTP bridge state and frontend event listeners.
+        .route("/test/reset", post(handle_test_reset))
         .with_state(state)
 }
 

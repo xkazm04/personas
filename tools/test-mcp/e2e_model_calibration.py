@@ -169,6 +169,7 @@ def settle_between_rounds() -> None:
     # Best-effort — failures here just degrade to "no settle"; the
     # next round's retry-on-timeout will compensate.
     try:
+        _post("/test/reset", {}, timeout=20)
         bridge("navigate", {"section": "personas"}, timeout_secs=15)
     except Exception:  # noqa: BLE001
         pass
