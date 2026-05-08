@@ -2,6 +2,7 @@ import { useI18nStore, type Language } from '@/stores/i18nStore';
 import { Languages, Check, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/features/shared/components/buttons';
+import { useLanguagePrefetch } from '@/i18n/useTranslation';
 
 type ScriptFamily = 'latin' | 'cjk' | 'indic' | 'arabic' | 'cyrillic';
 
@@ -50,6 +51,7 @@ function langIllustration(code: string) {
 /** Inline card grid for embedding in Welcome page */
 export function LanguageCardGrid() {
   const { language, setLanguage } = useI18nStore();
+  const { prefetchNow, prefetchWithIntent, cancelPrefetch } = useLanguagePrefetch();
   const sorted = sortLanguages(language);
   return (
     <div>
@@ -60,6 +62,11 @@ export function LanguageCardGrid() {
             <button
               key={lang.code}
               type="button"
+              onFocus={() => prefetchWithIntent(lang.code)}
+              onBlur={cancelPrefetch}
+              onMouseEnter={() => prefetchWithIntent(lang.code)}
+              onMouseLeave={cancelPrefetch}
+              onPointerDown={() => prefetchNow(lang.code)}
               onClick={() => setLanguage(lang.code)}
               className={`group relative overflow-hidden rounded-modal border transition-all ${
                 isActive ? 'ring-2 ring-primary/60 border-primary/30 shadow-elevation-2' : 'border-primary/10 hover:border-primary/25 hover:ring-1 hover:ring-primary/20'
@@ -98,6 +105,7 @@ export default function LanguageSwitcher() {
   const { language, setLanguage } = useI18nStore();
   const fontReady = useI18nStore((s) => s.fontReady);
   const [isOpen, setIsOpen] = useState(false);
+  const { prefetchNow, prefetchWithIntent, cancelPrefetch } = useLanguagePrefetch();
   const sorted = sortLanguages(language);
 
   return (
@@ -135,6 +143,11 @@ export default function LanguageSwitcher() {
                       key={lang.code}
                       variant="ghost"
                       size="md"
+                      onFocus={() => prefetchWithIntent(lang.code)}
+                      onBlur={cancelPrefetch}
+                      onMouseEnter={() => prefetchWithIntent(lang.code)}
+                      onMouseLeave={cancelPrefetch}
+                      onPointerDown={() => prefetchNow(lang.code)}
                       onClick={() => {
                         setLanguage(lang.code);
                         setIsOpen(false);

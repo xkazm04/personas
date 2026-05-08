@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 import { useI18nStore, type Language } from '@/stores/i18nStore';
 import type { Translations } from './generated/types';
 import { buildPseudoBundle, isPseudoActive } from './pseudoLocale';
@@ -26,6 +26,7 @@ export type { Translations };
 const sectionLoaders = import.meta.glob<{ default: unknown }>('./section-locales/*/*.json', {
   eager: false,
 });
+type SectionLoader = () => Promise<{ default: unknown }>;
 
 /** Extract `{ lang, section }` from `./section-locales/de/common.json`. */
 function sectionFromPath(path: string): { lang: string; section: string } | null {
@@ -40,6 +41,17 @@ function sectionFromPath(path: string): { lang: string; section: string } | null
 const sectionCache = new Map<Language, Partial<Record<TranslationSection, unknown>>>();
 const bundleCache = new Map<Language, Translations>();
 const loadingPromises = new Map<string, Promise<void>>();
+const sectionLoaderIndex = new Map<string, SectionLoader>();
+
+for (const [path, loader] of Object.entries(sectionLoaders)) {
+  const parsed = sectionFromPath(path);
+  if (parsed && isTranslationSection(parsed.section)) {
+    sectionLoaderIndex.set(
+      sectionLoadKey(parsed.lang as Language, parsed.section),
+      loader as SectionLoader,
+    );
+  }
+}
 
 function sectionLoadKey(lang: Language, section: TranslationSection): string {
   return `${lang}:${section}`;
@@ -75,13 +87,9 @@ function loadSection(lang: Language, section: TranslationSection): Promise<void>
   const existing = loadingPromises.get(key);
   if (existing) return existing;
 
-  const entry = Object.entries(sectionLoaders).find(([path]) => {
-    const parsed = sectionFromPath(path);
-    return parsed?.lang === lang && parsed.section === section;
-  });
-  if (!entry) return Promise.resolve();
+  const loader = sectionLoaderIndex.get(key);
+  if (!loader) return Promise.resolve();
 
-  const [, loader] = entry;
   const promise = loader()
     .catch(
       () =>
@@ -123,11 +131,51 @@ export function preloadSections(lang: Language, sections: readonly TranslationSe
   }
 }
 
+export function preloadLanguage(
+  lang: Language,
+  sections: readonly TranslationSection[] = ['common'],
+): void {
+  preloadSections(lang, sections);
+}
+
 export function preloadSectionsAsync(
   lang: Language,
   sections: readonly TranslationSection[],
 ): Promise<void> {
   return Promise.all(sections.map((section) => loadSection(lang, section))).then(() => undefined);
+}
+
+export function useLanguagePrefetch(delayMs = 100) {
+  const routeSections = useActiveI18nSections();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sections = useMemo(
+    () => Array.from(new Set<TranslationSection>(['common', ...routeSections])),
+    [routeSections],
+  );
+
+  const clearPending = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+  }, []);
+
+  const prefetchNow = useCallback((lang: Language) => {
+    clearPending();
+    preloadLanguage(lang, sections);
+  }, [clearPending, sections]);
+
+  const prefetchWithIntent = useCallback((lang: Language) => {
+    clearPending();
+    timeoutRef.current = setTimeout(() => {
+      timeoutRef.current = null;
+      preloadLanguage(lang, sections);
+    }, delayMs);
+  }, [clearPending, delayMs, sections]);
+
+  useEffect(() => clearPending, [clearPending]);
+
+  return { prefetchNow, prefetchWithIntent, cancelPrefetch: clearPending };
 }
 
 function getBundle(lang: Language): Translations {

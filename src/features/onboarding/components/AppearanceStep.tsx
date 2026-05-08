@@ -1,7 +1,7 @@
 import { Check, Type, Languages } from 'lucide-react';
 import { useThemeStore, THEMES, DARK_BRIGHTNESS_LEVELS, LIGHT_BRIGHTNESS_LEVELS, useIsDarkTheme } from '@/stores/themeStore';
 import { useI18nStore, type Language } from '@/stores/i18nStore';
-import { useTranslation } from '@/i18n/useTranslation';
+import { useLanguagePrefetch, useTranslation } from '@/i18n/useTranslation';
 import {
   TextScalePicker,
   BrightnessPicker,
@@ -33,6 +33,7 @@ export function AppearanceStep() {
   const isDark = useIsDarkTheme();
   const brightnessLevels = isDark ? DARK_BRIGHTNESS_LEVELS : LIGHT_BRIGHTNESS_LEVELS;
   const { language, setLanguage } = useI18nStore();
+  const { prefetchNow, prefetchWithIntent, cancelPrefetch } = useLanguagePrefetch();
 
   const darkThemes = THEMES.filter((t) => !t.isLight);
   const lightThemes = THEMES.filter((t) => t.isLight);
@@ -58,6 +59,11 @@ export function AppearanceStep() {
             return (
               <button
                 key={lang.code}
+                onFocus={() => prefetchWithIntent(lang.code)}
+                onBlur={cancelPrefetch}
+                onMouseEnter={() => prefetchWithIntent(lang.code)}
+                onMouseLeave={cancelPrefetch}
+                onPointerDown={() => prefetchNow(lang.code)}
                 onClick={() => setLanguage(lang.code)}
                 className={`flex items-center gap-2 px-3 py-2 rounded-modal border transition-colors typo-body ${
                   isActive
