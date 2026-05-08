@@ -394,11 +394,17 @@ fn execute_update_identity(params: &serde_json::Value) -> Result<ExecuteResult, 
     let root = crate::companion::disk::brain_root()?;
     let identity_path = root.join("identity.md");
     let backup_path = root.join(format!(
-        "identity.bak-{}.md",
-        chrono::Utc::now().format("%Y%m%dT%H%M%S")
+        "identity.bak-{}-{}.md",
+        chrono::Utc::now().format("%Y%m%dT%H%M%S%.3f"),
+        uuid::Uuid::new_v4()
     ));
     if identity_path.exists() {
-        let _ = std::fs::copy(&identity_path, &backup_path);
+        std::fs::copy(&identity_path, &backup_path).map_err(|e| {
+            AppError::Internal(format!(
+                "update_identity: failed to back up identity.md to {}: {e}",
+                backup_path.display()
+            ))
+        })?;
     }
     std::fs::write(&identity_path, content)?;
     Ok(ExecuteResult::message(format!(
