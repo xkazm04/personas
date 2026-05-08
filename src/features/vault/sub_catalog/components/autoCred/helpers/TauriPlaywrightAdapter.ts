@@ -8,6 +8,13 @@ import { startAutoCredBrowser, getPlaywrightProcedure, cancelAutoCredBrowser } f
 import { openExternalUrl } from '@/api/system/system';
 import { silentCatch } from '@/lib/silentCatch';
 
+type AutoCredProgressFrame = {
+  session_id: string;
+  type: 'info' | 'action' | 'warning' | 'error' | 'url' | 'input_request';
+  message: string;
+  url?: string;
+};
+
 /**
  * Tauri-backed PlaywrightAdapter.
  *
@@ -56,20 +63,22 @@ export class TauriPlaywrightAdapter implements PlaywrightAdapter {
     }
 
     // Set up event listener for progress
-    const unlisten = await listen<{
-      session_id: string;
-      type: 'info' | 'action' | 'warning' | 'error' | 'url' | 'input_request';
-      message: string;
-      url?: string;
-    }>('auto-cred-browser-progress', (event) => {
-      if (event.payload.session_id !== sessionId) return;
-      onLog({
-        ts: Date.now(),
-        message: event.payload.message,
-        type: event.payload.type,
-        url: event.payload.url,
-      });
-    });
+    const unlisten = await listen<AutoCredProgressFrame | AutoCredProgressFrame[]>(
+      'auto-cred-browser-progress',
+      (event) => {
+        const frames = Array.isArray(event.payload) ? event.payload : [event.payload];
+        const ts = Date.now();
+        for (const frame of frames) {
+          if (frame.session_id !== sessionId) continue;
+          onLog({
+            ts,
+            message: frame.message,
+            type: frame.type,
+            url: frame.url,
+          });
+        }
+      },
+    );
 
     // Layer 2: Listen for URL open events and open in default browser
     const unlistenUrl = await listen<{

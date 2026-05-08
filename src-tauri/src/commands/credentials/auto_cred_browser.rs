@@ -12,6 +12,7 @@ use std::sync::{Arc, Mutex};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tauri::{Emitter, Manager, State};
+use tokio::sync::mpsc;
 use ts_rs::TS;
 
 use crate::commands::credentials::ai_artifact_flow::spawn_claude_and_collect;
@@ -46,6 +47,85 @@ const USER_INPUT_PREFIX: &str = "USER_INPUT:";
 /// Maximum number of tool invocations per session to prevent infinite loops
 /// from a misbehaving MCP server or looping browser automation.
 const MAX_TOOL_INVOCATIONS: u32 = 500;
+
+const PROGRESS_FLUSH_INTERVAL_MS: u64 = 16;
+
+#[derive(Debug, Clone, Serialize)]
+struct AutoCredProgressFrame {
+    session_id: String,
+    #[serde(rename = "type")]
+    kind: String,
+    message: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    url: Option<String>,
+}
+
+impl AutoCredProgressFrame {
+    fn new(
+        session_id: impl Into<String>,
+        kind: impl Into<String>,
+        message: impl Into<String>,
+    ) -> Self {
+        Self {
+            session_id: session_id.into(),
+            kind: kind.into(),
+            message: message.into(),
+            url: None,
+        }
+    }
+
+    fn with_url(
+        session_id: impl Into<String>,
+        kind: impl Into<String>,
+        message: impl Into<String>,
+        url: impl Into<String>,
+    ) -> Self {
+        Self {
+            session_id: session_id.into(),
+            kind: kind.into(),
+            message: message.into(),
+            url: Some(url.into()),
+        }
+    }
+}
+
+type ProgressSender = mpsc::UnboundedSender<AutoCredProgressFrame>;
+
+fn queue_progress(sender: &ProgressSender, frame: AutoCredProgressFrame) {
+    let _ = sender.send(frame);
+}
+
+fn spawn_progress_coalescer(
+    app: tauri::AppHandle,
+) -> (ProgressSender, tokio::task::JoinHandle<()>) {
+    let (tx, mut rx) = mpsc::unbounded_channel::<AutoCredProgressFrame>();
+    let handle = tokio::spawn(async move {
+        let mut frames = Vec::new();
+        let mut interval =
+            tokio::time::interval(std::time::Duration::from_millis(PROGRESS_FLUSH_INTERVAL_MS));
+        interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+
+        loop {
+            tokio::select! {
+                maybe_frame = rx.recv() => {
+                    match maybe_frame {
+                        Some(frame) => frames.push(frame),
+                        None => {
+                            if !frames.is_empty() {
+                                let _ = app.emit(PROGRESS_EVENT, std::mem::take(&mut frames));
+                            }
+                            break;
+                        }
+                    }
+                }
+                _ = interval.tick(), if !frames.is_empty() => {
+                    let _ = app.emit(PROGRESS_EVENT, std::mem::take(&mut frames));
+                }
+            }
+        }
+    });
+    (tx, handle)
+}
 
 #[derive(Debug, Deserialize, TS)]
 #[ts(export)]
@@ -695,20 +775,31 @@ pub async fn start_auto_cred_browser(
             "mode": mode,
         }),
     );
-    let _ = app.emit(PROGRESS_EVENT, json!({
-        "session_id": session_id,
-        "type": "info",
-        "message": match mode {
-            AutoCredMode::Playwright => format!("Starting browser automation for {}...", request.connector_label),
-            AutoCredMode::Guided => format!("Starting guided setup for {} (no browser automation available)...", request.connector_label),
-        },
-    }));
+    let (progress_tx, progress_task) = spawn_progress_coalescer(app.clone());
+    queue_progress(
+        &progress_tx,
+        AutoCredProgressFrame::new(
+            session_id.clone(),
+            "info",
+            match mode {
+                AutoCredMode::Playwright => format!(
+                    "Starting browser automation for {}...",
+                    request.connector_label
+                ),
+                AutoCredMode::Guided => format!(
+                    "Starting guided setup for {} (no browser automation available)...",
+                    request.connector_label
+                ),
+            },
+        ),
+    );
 
     // Collect field keys for partial extraction fallback
     let field_keys: Vec<String> = request.fields.iter().map(|f| f.key.clone()).collect();
 
     let app_clone = app.clone();
     let sid = session_id.clone();
+    let progress_tx_ref = progress_tx.clone();
 
     // Session context accumulator -- shared with the streaming callback
     let ctx_acc = Arc::new(Mutex::new(SessionContext::default()));
@@ -732,11 +823,14 @@ pub async fn start_auto_cred_browser(
                             return; // already emitted
                         }
                     }
-                    let _ = app_clone.emit(PROGRESS_EVENT, json!({
-                        "session_id": sid,
-                        "type": "info",
-                        "message": format!("Connected to Claude ({})", model),
-                    }));
+                    queue_progress(
+                        &progress_tx_ref,
+                        AutoCredProgressFrame::new(
+                            sid.clone(),
+                            "info",
+                            format!("Connected to Claude ({model})"),
+                        ),
+                    );
                 }
                 StreamLineType::AssistantText { text } => {
                     // Capture last meaningful assistant text for error context
@@ -769,7 +863,9 @@ pub async fn start_auto_cred_browser(
                             }
 
                             // Skip trivially short deltas (just punctuation from cumulative streaming)
-                            if trimmed.len() <= 3 && trimmed.chars().all(|c| c.is_ascii_punctuation()) {
+                            if trimmed.len() <= 3
+                                && trimmed.chars().all(|c| c.is_ascii_punctuation())
+                            {
                                 continue;
                             }
 
@@ -777,29 +873,40 @@ pub async fn start_auto_cred_browser(
                             if let Some(url_start) = trimmed.find(OPEN_URL_PREFIX) {
                                 let url = trimmed[url_start + OPEN_URL_PREFIX.len()..].trim();
                                 // The URL may have trailing text; extract just the URL part
-                                let url_end = url.find(|c: char| c.is_whitespace()).unwrap_or(url.len());
-                                let url = url[..url_end].trim_end_matches(['.', ',', ';', ')', ']']);
+                                let url_end =
+                                    url.find(|c: char| c.is_whitespace()).unwrap_or(url.len());
+                                let url =
+                                    url[..url_end].trim_end_matches(['.', ',', ';', ')', ']']);
                                 if url.starts_with("http://") || url.starts_with("https://") {
-                                    let _ = app_clone.emit(OPEN_URL_EVENT, json!({
-                                        "session_id": sid,
-                                        "url": url,
-                                        "auto_open": true,
-                                    }));
-                                    let _ = app_clone.emit(PROGRESS_EVENT, json!({
-                                        "session_id": sid,
-                                        "type": "url",
-                                        "message": format!("Opening: {}", url),
-                                        "url": url,
-                                    }));
+                                    let _ = app_clone.emit(
+                                        OPEN_URL_EVENT,
+                                        json!({
+                                            "session_id": sid,
+                                            "url": url,
+                                            "auto_open": true,
+                                        }),
+                                    );
+                                    queue_progress(
+                                        &progress_tx_ref,
+                                        AutoCredProgressFrame::with_url(
+                                            sid.clone(),
+                                            "url",
+                                            format!("Opening: {url}"),
+                                            url,
+                                        ),
+                                    );
                                     // If there was text before OPEN_URL:, emit it as action
                                     if url_start > 0 {
                                         let prefix_text = trimmed[..url_start].trim();
                                         if !prefix_text.is_empty() {
-                                            let _ = app_clone.emit(PROGRESS_EVENT, json!({
-                                                "session_id": sid,
-                                                "type": "action",
-                                                "message": prefix_text,
-                                            }));
+                                            queue_progress(
+                                                &progress_tx_ref,
+                                                AutoCredProgressFrame::new(
+                                                    sid.clone(),
+                                                    "action",
+                                                    prefix_text,
+                                                ),
+                                            );
                                         }
                                     }
                                     continue;
@@ -810,31 +917,35 @@ pub async fn start_auto_cred_browser(
                                 if let Ok(mut ctx) = ctx_ref.lock() {
                                     ctx.had_waiting_prompt = true;
                                 }
-                                let _ = app_clone.emit(PROGRESS_EVENT, json!({
-                                    "session_id": sid,
-                                    "type": "warning",
-                                    "message": trimmed,
-                                }));
+                                queue_progress(
+                                    &progress_tx_ref,
+                                    AutoCredProgressFrame::new(sid.clone(), "warning", trimmed),
+                                );
                             } else if trimmed.starts_with(USER_INPUT_PREFIX) {
-                                let _ = app_clone.emit(PROGRESS_EVENT, json!({
-                                    "session_id": sid,
-                                    "type": "input_request",
-                                    "message": trimmed.strip_prefix(USER_INPUT_PREFIX).unwrap().trim(),
-                                }));
+                                queue_progress(
+                                    &progress_tx_ref,
+                                    AutoCredProgressFrame::new(
+                                        sid.clone(),
+                                        "input_request",
+                                        trimmed.strip_prefix(USER_INPUT_PREFIX).unwrap().trim(),
+                                    ),
+                                );
                             } else {
-                                let _ = app_clone.emit(PROGRESS_EVENT, json!({
-                                    "session_id": sid,
-                                    "type": "action",
-                                    "message": trimmed,
-                                }));
+                                queue_progress(
+                                    &progress_tx_ref,
+                                    AutoCredProgressFrame::new(sid.clone(), "action", trimmed),
+                                );
 
                                 // Extract any inline URLs and emit open-url events (auto_open for these)
                                 for url in extract_urls(trimmed) {
-                                    let _ = app_clone.emit(OPEN_URL_EVENT, json!({
-                                        "session_id": sid,
-                                        "url": url,
-                                        "auto_open": false,
-                                    }));
+                                    let _ = app_clone.emit(
+                                        OPEN_URL_EVENT,
+                                        json!({
+                                            "session_id": sid,
+                                            "url": url,
+                                            "auto_open": false,
+                                        }),
+                                    );
                                 }
                             }
                         }
@@ -847,11 +958,17 @@ pub async fn start_auto_cred_browser(
                         ctx.tool_call_count += 1;
                         // Guard against infinite browser automation loops
                         if ctx.tool_call_count >= MAX_TOOL_INVOCATIONS {
-                            let _ = app_clone.emit(PROGRESS_EVENT, json!({
-                                "session_id": sid,
-                                "type": "warning",
-                                "message": format!("Tool invocation limit reached ({}). Stopping session.", MAX_TOOL_INVOCATIONS),
-                            }));
+                            queue_progress(
+                                &progress_tx_ref,
+                                AutoCredProgressFrame::new(
+                                    sid.clone(),
+                                    "warning",
+                                    format!(
+                                        "Tool invocation limit reached ({}). Stopping session.",
+                                        MAX_TOOL_INVOCATIONS
+                                    ),
+                                ),
+                            );
                         }
 
                         let action = match tool_name.as_str() {
@@ -888,7 +1005,11 @@ pub async fn start_auto_cred_browser(
                         dd.reset_turn();
                     }
                 }
-                StreamLineType::Result { duration_ms, total_cost_usd, .. } => {
+                StreamLineType::Result {
+                    duration_ms,
+                    total_cost_usd,
+                    ..
+                } => {
                     if let Some(ms) = duration_ms {
                         if let Ok(mut ctx) = ctx_ref.lock() {
                             ctx.duration_secs = Some(*ms as f64 / 1000.0);
@@ -903,11 +1024,10 @@ pub async fn start_auto_cred_browser(
                         }
                         msg.push(')');
                     }
-                    let _ = app_clone.emit(PROGRESS_EVENT, json!({
-                        "session_id": sid,
-                        "type": "info",
-                        "message": msg,
-                    }));
+                    queue_progress(
+                        &progress_tx_ref,
+                        AutoCredProgressFrame::new(sid.clone(), "info", msg),
+                    );
                 }
                 _ => {}
             }
@@ -915,6 +1035,10 @@ pub async fn start_auto_cred_browser(
         Some((&registry, "auto_cred")),
     )
     .await;
+
+    drop(progress_tx_ref);
+    drop(progress_tx);
+    let _ = progress_task.await;
 
     // Clear PID on completion
     registry.clear_pid("auto_cred");
