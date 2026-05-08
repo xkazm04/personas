@@ -10,6 +10,7 @@
  * Replaces useMatrixOrchestration for the unified matrix build surface.
  */
 import { useCallback, useMemo } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useBuildSession } from "@/hooks/build/useBuildSession";
 import { useAgentStore } from "@/stores/agentStore";
 import { ALL_CELL_KEYS } from "@/lib/constants/dimensionMapping";
@@ -31,17 +32,33 @@ export function useMatrixBuild({ personaId }: UseMatrixBuildOptions) {
 
   // -- Read build state from Zustand selectors ----------------------------
 
-  const buildPhase = useAgentStore((s) => s.buildPhase);
-  const cellStates = useAgentStore((s) => s.buildCellStates);
-  const cellData = useAgentStore((s) => s.buildCellData);
-  const pendingQuestions = useAgentStore((s) => s.buildPendingQuestions);
-  const outputLines = useAgentStore((s) => s.buildOutputLines);
-  const buildError = useAgentStore((s) => s.buildError);
-  const buildTestPassed = useAgentStore((s) => s.buildTestPassed);
-  const buildTestOutputLines = useAgentStore((s) => s.buildTestOutputLines);
-  const buildTestError = useAgentStore((s) => s.buildTestError);
-  const buildActivity = useAgentStore((s) => s.buildActivity);
-  const pendingAnswerCount = useAgentStore((s) => Object.keys(s.buildPendingAnswers).length);
+  const {
+    buildPhase,
+    cellStates,
+    cellData,
+    pendingQuestions,
+    outputLines,
+    buildError,
+    buildTestPassed,
+    buildTestOutputLines,
+    buildTestError,
+    buildActivity,
+    pendingAnswerCount,
+    buildSessionId,
+  } = useAgentStore(useShallow((s) => ({
+    buildPhase: s.buildPhase,
+    cellStates: s.buildCellStates,
+    cellData: s.buildCellData,
+    pendingQuestions: s.buildPendingQuestions,
+    outputLines: s.buildOutputLines,
+    buildError: s.buildError,
+    buildTestPassed: s.buildTestPassed,
+    buildTestOutputLines: s.buildTestOutputLines,
+    buildTestError: s.buildTestError,
+    buildActivity: s.buildActivity,
+    pendingAnswerCount: Object.keys(s.buildPendingAnswers).length,
+    buildSessionId: s.buildSessionId,
+  })));
 
   // -- Derived state ------------------------------------------------------
 
@@ -67,7 +84,7 @@ export function useMatrixBuild({ personaId }: UseMatrixBuildOptions) {
    */
   const isIdle =
     buildPhase === "initializing" &&
-    !useAgentStore.getState().buildSessionId;
+    !buildSessionId;
 
   // -- Action wrappers ----------------------------------------------------
 

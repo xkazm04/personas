@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { usePipelineStore } from "@/stores/pipelineStore";
 import { executePersona, listExecutionsByTrigger } from "@/api/agents/executions";
 import { dryRunTrigger, validateTrigger } from "@/api/pipeline/triggers";
@@ -31,9 +32,11 @@ export interface TestFireResult {
  */
 export function useTriggerOperations(personaId: string) {
   const { t, tx } = useTranslation();
-  const storeCreate = usePipelineStore((s) => s.createTrigger);
-  const storeUpdate = usePipelineStore((s) => s.updateTrigger);
-  const storeDelete = usePipelineStore((s) => s.deleteTrigger);
+  const { storeCreate, storeUpdate, storeDelete } = usePipelineStore(useShallow((s) => ({
+    storeCreate: s.createTrigger,
+    storeUpdate: s.updateTrigger,
+    storeDelete: s.deleteTrigger,
+  })));
 
   // -- Create -------------------------------------------------------------
 

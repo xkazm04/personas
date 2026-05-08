@@ -1,5 +1,6 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
+import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from "@/stores/agentStore";
 import { createLogger } from "@/lib/log";
 
@@ -14,9 +15,11 @@ import { getExecutionLogLines } from '@/api/agents/executions';
 import { checkNewHumanReviews } from '@/lib/notifications/checkHumanReviews';
 
 export function usePersonaExecution() {
-  const clearOutput = useAgentStore((s) => s.clearExecutionOutput);
-  const activeExecutionId = useAgentStore((s) => s.activeExecutionId);
-  const selectedPersonaId = useAgentStore((s) => s.selectedPersonaId);
+  const { clearOutput, activeExecutionId, selectedPersonaId } = useAgentStore(useShallow((s) => ({
+    clearOutput: s.clearExecutionOutput,
+    activeExecutionId: s.activeExecutionId,
+    selectedPersonaId: s.selectedPersonaId,
+  })));
   const prevExecIdRef = useRef<string | null>(null);
   const prevPersonaIdRef = useRef<string | null>(null);
   const streamTracedRef = useRef(false);
