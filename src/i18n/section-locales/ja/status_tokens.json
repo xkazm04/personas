@@ -1,0 +1,94 @@
+{
+  "execution": {
+    "queued": "キュー待ち",
+    "running": "実行中",
+    "completed": "完了",
+    "failed": "失敗",
+    "cancelled": "キャンセル済み",
+    "error": "エラー"
+  },
+  "event": {
+    "pending": "保留中",
+    "processing": "処理中",
+    "processed": "処理済み",
+    "failed": "失敗",
+    "retrying": "再試行中"
+  },
+  "automation": {
+    "pending": "保留中",
+    "running": "実行中",
+    "completed": "完了",
+    "failed": "失敗",
+    "timeout": "タイムアウト"
+  },
+  "severity": {
+    "info": "情報",
+    "low": "低",
+    "medium": "中",
+    "high": "高",
+    "critical": "重大"
+  },
+  "priority": {
+    "low": "低",
+    "normal": "通常",
+    "high": "高",
+    "urgent": "緊急"
+  },
+  "healing_status": {
+    "open": "オープン",
+    "auto_fixed": "自動修正済み",
+    "acknowledged": "確認済み",
+    "resolved": "解決済み"
+  },
+  "healing_category": {
+    "config": "設定",
+    "auth": "認証",
+    "network": "ネットワーク",
+    "timeout": "タイムアウト",
+    "quota": "クォータ"
+  },
+  "connector_status": {
+    "ready": "準備完了",
+    "untested": "未テスト",
+    "failed": "失敗",
+    "no_credential": "認証情報なし",
+    "testing": "テスト中"
+  },
+  "task_phase": {
+    "analyzing": "Analyzing",
+    "planning": "Planning",
+    "implementing": "Implementing",
+    "validating": "Validating",
+    "complete": "Complete"
+  },
+  "goal_state": {
+    "pending": "Pending",
+    "review": "Review",
+    "blocked": "Blocked",
+    "in_progress": "In Progress",
+    "running": "Running",
+    "completed": "Done",
+    "done": "Done"
+  },
+  "test": {
+    "generating": "生成中",
+    "running": "実行中",
+    "completed": "完了",
+    "failed": "失敗",
+    "pending": "保留中"
+  },
+  "dev": {
+    "open": "オープン",
+    "in_progress": "進行中",
+    "completed": "完了",
+    "blocked": "ブロック中",
+    "queued": "キュー待ち",
+    "running": "実行中",
+    "failed": "失敗"
+  },
+  "circuit_breaker": {
+    "provider_claude_code": "Claude",
+    "provider_codex_cli": "Codex",
+    "provider_global": "Global"
+  }
+}

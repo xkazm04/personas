@@ -1,0 +1,16 @@
+{
+  "metric_error_rate": "Процент ошибок",
+  "metric_success_rate": "Процент успеха",
+  "metric_cost": "Общая стоимость",
+  "metric_cost_spike": "Стоимость vs среднее",
+  "metric_executions": "Запуски",
+  "severity_info": "Инфо",
+  "severity_warning": "Предупреждение",
+  "severity_critical": "Критический",
+  "error_create_rule": "Не удалось создать правило оповещения:",
+  "error_update_rule": "Не удалось обновить правило оповещения:",
+  "error_delete_rule": "Не удалось удалить правило оповещения:",
+  "error_toggle_rule": "Не удалось переключить правило оповещения:",
+  "error_dismiss": "Не удалось закрыть оповещение:",
+  "error_clear_history": "Не удалось очистить историю оповещений:"
+}

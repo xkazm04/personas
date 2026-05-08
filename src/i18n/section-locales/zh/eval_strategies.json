@@ -1,0 +1,12 @@
+{
+  "keyword_match_label": "输出质量",
+  "keyword_match_description": "检查代理输出中的预期行为词",
+  "tool_accuracy_label": "工具准确性",
+  "tool_accuracy_description": "比较预期与实际工具调用",
+  "protocol_compliance_label": "协议合规性",
+  "protocol_compliance_description": "检查预期的协议消息模式",
+  "confusion_detect_label": "混淆检测",
+  "confusion_detect_description": "检查已知的混淆/失败短语",
+  "composite_label": "综合",
+  "composite_description": "所有策略的加权组合"
+}

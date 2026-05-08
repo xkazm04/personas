@@ -1,0 +1,20 @@
+{
+  "credentials_title": "Tus agentes necesitan credenciales para ejecutarse",
+  "credentials_subtitle": "Agrega claves de API y conexiones de servicio para que tus agentes puedan interactuar con herramientas externas.",
+  "triggers_title": "Este agente solo se ejecuta manualmente",
+  "triggers_subtitle": "Agrega un disparador para automatizarlo -- programaciones, webhooks o basado en eventos.",
+  "executions_title": "Aún no hay ejecuciones",
+  "executions_subtitle": "Comienza en tres pasos para ver actividad aquí.",
+  "step_create": "Crear un agente",
+  "step_credential": "Agregar una credencial",
+  "step_run": "Ejecutar tu agente",
+  "events_title": "Aún no hay suscripciones a eventos",
+  "events_subtitle": "Suscríbete a eventos para que este agente reaccione automáticamente cuando ocurran cosas.",
+  "tools_title": "No hay herramientas ni conectores configurados",
+  "tools_subtitle": "Vincula servicios externos para que tu agente pueda realizar acciones y acceder a datos.",
+  "use_cases_title": "Aún no se han definido casos de uso",
+  "use_cases_subtitle": "Define qué debe hacer este agente -- importa desde un flujo de trabajo o descríbelo en lenguaje natural.",
+  "no_results_title": "No matches for your filters",
+  "no_results_subtitle": "Try adjusting or clearing your filters to see more results.",
+  "reset_filters": "Reset filters"
+}

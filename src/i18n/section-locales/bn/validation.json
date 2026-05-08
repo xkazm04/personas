@@ -1,0 +1,11 @@
+{
+  "required": "{field} আবশ্যক",
+  "min_length": "{field} কমপক্ষে {min} অক্ষর হতে হবে",
+  "min_value": "{field} কমপক্ষে {min} হতে হবে",
+  "invalid_cron": "অবৈধ cron এক্সপ্রেশন",
+  "invalid_separator": "উৎস ফিল্টারে অবৈধ বিভাজক সিকোয়েন্স",
+  "passphrase_min": "পাসফ্রেজ কমপক্ষে ৮ অক্ষর হতে হবে",
+  "passphrase_prompt": "এক্সপোর্টে ব্যবহৃত পাসফ্রেজ দিন",
+  "at_least_one": "অন্তত একটি {field} আবশ্যক",
+  "fill_one_field": "সংরক্ষণে অন্তত একটি ক্ষেত্র পূরণ করুন"
+}

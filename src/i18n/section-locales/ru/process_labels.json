@@ -1,0 +1,18 @@
+{
+  "n8n_transform": "Трансформация n8n",
+  "template_adopt": "Принятие шаблона",
+  "rebuild": "Перестроение агента",
+  "template_test": "Тест шаблона",
+  "context_scan": "Сканирование карты контекста",
+  "idea_scan": "Сканирование идей",
+  "execution": "Запуск агента",
+  "matrix_build": "Создание матрицы",
+  "lab_run": "Запуск лаборатории",
+  "connector_test": "Тест коннектора",
+  "creative_session": "Творческая сессия",
+  "feedback_chat": "Чат обратной связи",
+  "complete_suffix": "Завершено",
+  "failed_suffix": "Не удалось",
+  "pending_reviews_one": "{count} ожидающая проверка",
+  "pending_reviews_other": "{count} ожидающих проверок"
+}

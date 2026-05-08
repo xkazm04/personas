@@ -1,0 +1,141 @@
+{
+  "welcome": "Vítejte",
+  "greeting_morning": "Dobré ráno",
+  "greeting_afternoon": "Dobré odpoledne",
+  "greeting_evening": "Dobrý večer",
+  "operator": "Operátor",
+  "summary_empty": "Začněte vytvořením prvního agenta nebo prozkoumáním platformy.",
+  "summary_stats": "Máte {personasCount} agent{personasPlural} a {credentialsCount} přihlašovací{credentialsPlural} údaj{credentialsPlural} nakonfigurováno.",
+  "quick_navigation": "Rychlá navigace",
+  "platform_label": "platforma personas",
+  "roadmap": {
+    "title": "Plán vývoje produktu",
+    "subtitle": "Na čem pracujeme nyní a co přijde příště.",
+    "unavailable": "Plán vývoje není k dispozici",
+    "unavailable_hint": "Nepodařilo se načíst plán vývoje. Zkontrolujte připojení a zkuste to znovu.",
+    "status_in_progress": "V řešení",
+    "status_next": "Další na řadě",
+    "status_planned": "Plánováno",
+    "status_completed": "Dokončeno",
+    "priority_now": "Nyní",
+    "priority_next": "Příště",
+    "priority_later": "Později",
+    "in_progress_count": "{count} v řešení",
+    "next_count": "{count} další"
+  },
+  "setup": {
+    "choose_role": "Vyberte svou roli",
+    "choose_role_hint": "Přizpůsobíme prostředí tomu, jak pracujete.",
+    "pick_tool": "Vyberte svůj oblíbený nástroj",
+    "pick_tool_hint": "Toto bude vaše první připojení ke službě.",
+    "describe_goal": "Co chcete automatizovat?",
+    "describe_goal_hint": "Popište svůj první cíl automatizace – pomůžeme vám jej nastavit.",
+    "goal_placeholder": "např. Automaticky synchronizovat nové Jira tikety do Slack kanálu...",
+    "ready_to_save": "Připraveno k uložení",
+    "step_role": "Vaše role",
+    "step_role_hint": "Řekněte nám svou roli, abychom vám mohli přizpůsobit prostředí.",
+    "step_tool": "Oblíbený nástroj",
+    "step_tool_hint": "Vyberte první službu, kterou chcete připojit.",
+    "step_goal": "Cíl automatizace",
+    "step_goal_hint": "Popište, co byste chtěli automatizovat jako první.",
+    "select_role_first": "Nejprve vyberte roli, abyste odemkli možnosti nástrojů.",
+    "select_tool_first": "Nejprve vyberte nástroj, abyste mohli nastavit svůj cíl.",
+    "get_started": "Začínáme",
+    "role_office_rat": "Kancelářská krysa",
+    "role_office_rat_hint": "Netechnický uživatel",
+    "role_developer": "Vývojář",
+    "role_developer_hint": "Technický uživatel",
+    "role_manager": "Manažer",
+    "role_manager_hint": "Plánování a koordinace",
+    "role": "Role",
+    "tool": "Nástroj",
+    "goal": "Cíl"
+  },
+  "fleet": {
+    "executions_today": "Spuštění dnes",
+    "success_rate": "Úspěšnost",
+    "active_agents": "Aktivní agenti",
+    "credentials": "Přihlašovací údaje"
+  },
+  "nav": {
+    "overview": {
+      "label": "Přehled",
+      "description": "Analytika dashboardu, historie spuštění a monitorování systému v reálném čase napříč agenty"
+    },
+    "personas": {
+      "label": "Agenti",
+      "description": "Vytvářejte, konfigurujte a spravujte AI agenty s vlastním chováním a schopnostmi"
+    },
+    "events": {
+      "label": "Události",
+      "description": "Nastavte spouštěče událostí, webhook listenery a časované automatizace"
+    },
+    "credentials": {
+      "label": "Klíče",
+      "description": "Spravujte API přihlašovací údaje, databázová připojení, OAuth tokeny a šifrované tajné klíče"
+    },
+    "design-reviews": {
+      "label": "Šablony",
+      "description": "Importujte n8n workflow, procházejte galerii šablon a generujte blueprinty agentů"
+    },
+    "team": {
+      "label": "Týmy",
+      "description": "Sestavujte multi-agentní týmové pipeline s drag-and-drop orchestrací a směrováním"
+    },
+    "cloud": {
+      "label": "Cloud",
+      "description": "Nasaďte agenty do cloudové infrastruktury, spravujte plány a integrujte GitLab CI"
+    },
+    "settings": {
+      "label": "Nastavení",
+      "description": "Předvolby účtu, motivy vzhledu, pravidla oznámení a konfigurace engine"
+    },
+    "plugins": {
+      "label": "Pluginy",
+      "description": "Rozšiřte své agenty o pluginy třetích stran a vlastní rozšíření"
+    }
+  },
+  "learning": {
+    "title": "Centrum výuky",
+    "subtitle": "Komentované prohlídky a rychlé tipy, jak ovládnout Personas",
+    "guided_tours": "Průvodci",
+    "tours_completed": "{completed}/{total} dokončeno",
+    "done": "Hotovo",
+    "restart": "Restartovat",
+    "start_tour": "Spustit prohlídku",
+    "steps_count": "{count} kroků",
+    "tricks_tips": "Tipy a triky",
+    "guides_count": "{count} návodů",
+    "how_to_use": "Jak používat",
+    "pro_tip": "Tip odborníka: ",
+    "cat_agent_craft": "Tvorba agentů",
+    "cat_observability": "Pozorovatelnost a události",
+    "cat_platform": "Platforma a nastavení"
+  },
+  "setup_stepper": {
+    "your_profile": "Váš profil",
+    "choose_role": "Vyberte svou roli",
+    "tailor_hint": "Přizpůsobíme prostředí tomu, jak pracujete.",
+    "simple_hint": "Aplikaci jsme nastavili pro běžné kancelářské použití.",
+    "pick_tool": "Vyberte svůj oblíbený nástroj",
+    "tool_hint": "Toto bude vaše první integrace konektoru.",
+    "automate_title": "Co chcete automatizovat?",
+    "automate_hint": "Popište svůj první cíl automatizace – pomůžeme vám jej nastavit.",
+    "automate_placeholder": "např. Automaticky synchronizovat nové Jira tikety do Slack kanálu...",
+    "min_chars": "Minimálně 10 znaků ({current}/10)",
+    "ready_to_save": "Připraveno k uložení",
+    "back": "Zpět",
+    "next": "Další",
+    "finish": "Dokončit"
+  },
+  "welcome_layout": {
+    "get_started": "Začít",
+    "language": "Jazyk"
+  },
+  "icon_showcase": {
+    "lucide_tab": "Lucide (Knihovna)",
+    "personas_tab": "Personas (Animované)",
+    "lucide_footer": "lucide-react – univerzální knihovna ikon – statická",
+    "personas_footer": "9 vlastních ikon – neuronové motivy – CSS animované – adaptivní téma"
+  }
+}

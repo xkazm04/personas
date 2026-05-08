@@ -1,0 +1,16 @@
+{
+  "no_persona": "Není vybrána žádná persona",
+  "conversation_truncated": "Tato konverzace dosáhla limitu zpráv. Starší zprávy byly odstraněny — zvaž začátek nové konverzace pro zachování kontextu.",
+  "stages": {
+    "assembling_label": "Příprava instrukcí",
+    "assembling_desc": "Skládání instrukcí agenta z tvých nastavení",
+    "generating_label": "Generování pomocí AI",
+    "generating_desc": "Spuštění Claude pro vytvoření návrhu agenta",
+    "parsing_label": "Čtení výsledků",
+    "parsing_desc": "Zpracování AI odpovědi do použitelného formátu",
+    "checking_label": "Kontrola, že vše funguje",
+    "checking_desc": "Ověření, že navrhované nástroje a služby jsou k dispozici",
+    "saving_label": "Ukládání výsledku",
+    "saving_desc": "Ukládání dokončeného návrhu"
+  }
+}

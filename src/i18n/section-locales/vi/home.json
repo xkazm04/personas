@@ -1,0 +1,141 @@
+{
+  "welcome": "Chào mừng",
+  "greeting_morning": "Chào buổi sáng",
+  "greeting_afternoon": "Chào buổi chiều",
+  "greeting_evening": "Chào buổi tối",
+  "operator": "Điều hành viên",
+  "summary_empty": "Bắt đầu bằng cách tạo tác tử đầu tiên hoặc khám phá nền tảng.",
+  "summary_stats": "Bạn có {personasCount} tác tử{personasPlural} và {credentialsCount} thông tin xác thực{credentialsPlural} đã cấu hình.",
+  "quick_navigation": "Điều hướng nhanh",
+  "platform_label": "nền tảng Personas",
+  "roadmap": {
+    "title": "Lộ trình sản phẩm",
+    "subtitle": "Những gì chúng tôi đang xây dựng và tiếp theo.",
+    "unavailable": "Lộ trình không khả dụng",
+    "unavailable_hint": "Không thể tải lộ trình sản phẩm. Kiểm tra kết nối và thử lại.",
+    "status_in_progress": "Đang thực hiện",
+    "status_next": "Tiếp theo",
+    "status_planned": "Đã lên kế hoạch",
+    "status_completed": "Đã hoàn thành",
+    "priority_now": "Bây giờ",
+    "priority_next": "Tiếp theo",
+    "priority_later": "Sau này",
+    "in_progress_count": "{count} Đang thực hiện",
+    "next_count": "{count} Tiếp theo"
+  },
+  "setup": {
+    "choose_role": "Chọn vai trò của bạn",
+    "choose_role_hint": "Chúng tôi sẽ tùy chỉnh trải nghiệm phù hợp với cách bạn làm việc.",
+    "pick_tool": "Chọn công cụ yêu thích",
+    "pick_tool_hint": "Đây sẽ là kết nối dịch vụ đầu tiên của bạn.",
+    "describe_goal": "Bạn muốn tự động hóa điều gì?",
+    "describe_goal_hint": "Mô tả mục tiêu tự động hóa đầu tiên -- chúng tôi sẽ giúp bạn thiết lập.",
+    "goal_placeholder": "Ví dụ: Tự động đồng bộ vé Jira mới vào kênh Slack...",
+    "ready_to_save": "Sẵn sàng lưu",
+    "step_role": "Vai trò của bạn",
+    "step_role_hint": "Cho chúng tôi biết vai trò của bạn để tùy chỉnh trải nghiệm.",
+    "step_tool": "Công cụ yêu thích",
+    "step_tool_hint": "Chọn dịch vụ đầu tiên bạn muốn kết nối.",
+    "step_goal": "Mục tiêu tự động hóa",
+    "step_goal_hint": "Mô tả điều bạn muốn tự động hóa đầu tiên.",
+    "select_role_first": "Chọn vai trò trước để mở khóa tùy chọn công cụ.",
+    "select_tool_first": "Chọn công cụ trước để đặt mục tiêu.",
+    "get_started": "Bắt đầu",
+    "role_office_rat": "Nhân viên văn phòng",
+    "role_office_rat_hint": "Người dùng không kỹ thuật",
+    "role_developer": "Nhà phát triển",
+    "role_developer_hint": "Người dùng kỹ thuật",
+    "role_manager": "Quản lý",
+    "role_manager_hint": "Lập kế hoạch & điều phối",
+    "role": "Vai trò",
+    "tool": "Công cụ",
+    "goal": "Mục tiêu"
+  },
+  "fleet": {
+    "executions_today": "Chạy Hôm Nay",
+    "success_rate": "Tỷ Lệ Thành Công",
+    "active_agents": "Agent Hoạt Động",
+    "credentials": "Thông Tin Xác Thực"
+  },
+  "nav": {
+    "overview": {
+      "label": "Tổng quan",
+      "description": "Phân tích bảng điều khiển, lịch sử thực thi và giám sát hệ thống thời gian thực trên tất cả tác tử"
+    },
+    "personas": {
+      "label": "Tác tử",
+      "description": "Tạo, cấu hình và quản lý tác tử AI với hành vi và khả năng tùy chỉnh"
+    },
+    "events": {
+      "label": "Sự kiện",
+      "description": "Cấu hình trình kích hoạt sự kiện, trình lắng nghe webhook và tự động hóa theo lịch trình"
+    },
+    "credentials": {
+      "label": "Khóa",
+      "description": "Quản lý thông tin xác thực API, kết nối cơ sở dữ liệu, mã thông báo OAuth và bí mật được mã hóa"
+    },
+    "design-reviews": {
+      "label": "Mẫu",
+      "description": "Nhập quy trình n8n, duyệt thư viện mẫu và tạo bản thiết kế tác tử"
+    },
+    "team": {
+      "label": "Nhóm",
+      "description": "Xây dựng đường ống tác tử đa tác tử với điều phối kéo thả và định tuyến"
+    },
+    "cloud": {
+      "label": "Đám mây",
+      "description": "Triển khai tác tử lên hạ tầng đám mây, quản lý lịch trình và tích hợp GitLab CI"
+    },
+    "settings": {
+      "label": "Cài đặt",
+      "description": "Tùy chọn tài khoản, giao diện, quy tắc thông báo và cấu hình công cụ xử lý"
+    },
+    "plugins": {
+      "label": "Plugin",
+      "description": "Mở rộng tác nhân với plugin bên thứ ba và tiện ích tùy chỉnh"
+    }
+  },
+  "learning": {
+    "title": "Trung tâm học tập",
+    "subtitle": "Hướng dẫn và mẹo để làm chủ Personas",
+    "guided_tours": "Tham quan hướng dẫn",
+    "tours_completed": "{completed}/{total} đã hoàn thành",
+    "done": "Xong",
+    "restart": "Bắt đầu lại",
+    "start_tour": "Bắt đầu tham quan",
+    "steps_count": "{count} bước",
+    "tricks_tips": "Mẹo & thủ thuật",
+    "guides_count": "{count} hướng dẫn",
+    "how_to_use": "Cách sử dụng",
+    "pro_tip": "Mẹo chuyên gia: ",
+    "cat_agent_craft": "Xây dựng tác nhân",
+    "cat_observability": "Quan sát & Sự kiện",
+    "cat_platform": "Nền tảng & Cài đặt"
+  },
+  "setup_stepper": {
+    "your_profile": "Hồ sơ của bạn",
+    "choose_role": "Chọn vai trò của bạn",
+    "tailor_hint": "Chúng tôi sẽ tùy chỉnh trải nghiệm phù hợp với cách bạn làm việc.",
+    "simple_hint": "Chúng tôi đã thiết lập ứng dụng cho công việc văn phòng hàng ngày.",
+    "pick_tool": "Chọn công cụ yêu thích",
+    "tool_hint": "Đây sẽ là tích hợp trình kết nối đầu tiên của bạn.",
+    "automate_title": "Bạn muốn tự động hóa điều gì?",
+    "automate_hint": "Mô tả mục tiêu tự động hóa đầu tiên -- chúng tôi sẽ giúp bạn thiết lập.",
+    "automate_placeholder": "Ví dụ: Tự động đồng bộ vé Jira mới vào kênh Slack...",
+    "min_chars": "Tối thiểu 10 ký tự ({current}/10)",
+    "ready_to_save": "Sẵn sàng lưu",
+    "back": "Quay lại",
+    "next": "Tiếp theo",
+    "finish": "Hoàn tất"
+  },
+  "welcome_layout": {
+    "get_started": "Bắt đầu",
+    "language": "Ngôn ngữ"
+  },
+  "icon_showcase": {
+    "lucide_tab": "Lucide (Thư viện)",
+    "personas_tab": "Personas (Hoạt hình)",
+    "lucide_footer": "lucide-react -- thư viện biểu tượng chung -- tĩnh",
+    "personas_footer": "9 biểu tượng tùy chỉnh -- motif thần kinh/mạch -- CSS hoạt hình -- thích ứng chủ đề"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "title": "স্যান্ডবক্স টেস্ট রানার",
+  "subtitle": "স্বয়ং-তৈরি দৃশ্যপটে একাধিক LLM মডেলে persona পরীক্ষা করুন",
+  "no_prompt": "এই persona-র কোনো প্রম্পট নেই। আগে প্রম্পট যোগ করুন।",
+  "no_tools": "এই persona-র কোনো টুল নেই। সমৃদ্ধ পরীক্ষায় টুল যোগ করুন।",
+  "focus_label": "ব্যবহারের ক্ষেত্রে ফোকাস",
+  "all_use_cases": "সব ব্যবহারের ক্ষেত্র",
+  "focus_hint": "দৃশ্যপট লক্ষ্য করবে: {description}",
+  "cancel_run": "টেস্ট রান বাতিল",
+  "run_test_one": "টেস্ট চালান ({count} মডেল...)",
+  "run_test_other": "টেস্ট চালান ({count} মডেল...)",
+  "suites": {
+    "title": "সংরক্ষিত টেস্ট স্যুট",
+    "save_button": "দৃশ্যপট সংরক্ষণ",
+    "save_hint": "{count} তৈরি দৃশ্যপট পুনরায় ব্যবহারযোগ্য টেস্ট স্যুট হিসেবে সংরক্ষণ করুন।",
+    "name_placeholder": "স্যুটের নাম (ঐচ্ছিক)",
+    "empty": "কোনো সংরক্ষিত টেস্ট স্যুট নেই",
+    "empty_hint": "দৃশ্যপট তৈরি করতে টেস্ট চালান, তারপর এখানে সংরক্ষণ করুন",
+    "scenario_count_one": "{count} দৃশ্যপট",
+    "scenario_count_other": "{count} দৃশ্যপট",
+    "rerun_tooltip": "এই স্যুট পুনরায় চালান",
+    "rename_tooltip": "পুনঃনামকরণ",
+    "delete_tooltip": "স্যুট মুছুন",
+    "no_scenarios": "এই স্যুটে কোনো দৃশ্যপট নেই"
+  },
+  "progress": {
+    "generating": "টেস্ট দৃশ্যপট তৈরি হচ্ছে...",
+    "testing": "{model} পরীক্ষা -- {scenario}",
+    "tool_prefix": "টুল: ",
+    "output_prefix": "আউটপুট: ",
+    "protocol_prefix": "প্রোটোকল: "
+  }
+}

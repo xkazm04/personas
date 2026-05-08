@@ -1,0 +1,94 @@
+{
+  "execution": {
+    "queued": "Đang chờ",
+    "running": "Đang chạy",
+    "completed": "Hoàn thành",
+    "failed": "Thất bại",
+    "cancelled": "Đã hủy",
+    "error": "Lỗi"
+  },
+  "event": {
+    "pending": "Đang chờ",
+    "processing": "Đang xử lý",
+    "processed": "Đã xử lý",
+    "failed": "Thất bại",
+    "retrying": "Đang thử lại"
+  },
+  "automation": {
+    "pending": "Đang chờ",
+    "running": "Đang chạy",
+    "completed": "Hoàn thành",
+    "failed": "Thất bại",
+    "timeout": "Hết thời gian"
+  },
+  "severity": {
+    "info": "Thông tin",
+    "low": "Thấp",
+    "medium": "Trung bình",
+    "high": "Cao",
+    "critical": "Nghiêm trọng"
+  },
+  "priority": {
+    "low": "Thấp",
+    "normal": "Bình thường",
+    "high": "Cao",
+    "urgent": "Khẩn cấp"
+  },
+  "healing_status": {
+    "open": "Mở",
+    "auto_fixed": "Tự động sửa",
+    "acknowledged": "Đã xác nhận",
+    "resolved": "Đã giải quyết"
+  },
+  "healing_category": {
+    "config": "Cấu hình",
+    "auth": "Xác thực",
+    "network": "Mạng",
+    "timeout": "Hết thời gian",
+    "quota": "Hạn ngạch"
+  },
+  "connector_status": {
+    "ready": "Sẵn sàng",
+    "untested": "Chưa kiểm tra",
+    "failed": "Thất bại",
+    "no_credential": "Không có thông tin xác thực",
+    "testing": "Đang kiểm tra"
+  },
+  "task_phase": {
+    "analyzing": "Analyzing",
+    "planning": "Planning",
+    "implementing": "Implementing",
+    "validating": "Validating",
+    "complete": "Complete"
+  },
+  "goal_state": {
+    "pending": "Pending",
+    "review": "Review",
+    "blocked": "Blocked",
+    "in_progress": "In Progress",
+    "running": "Running",
+    "completed": "Done",
+    "done": "Done"
+  },
+  "test": {
+    "generating": "Đang tạo",
+    "running": "Đang chạy",
+    "completed": "Hoàn thành",
+    "failed": "Thất bại",
+    "pending": "Đang chờ"
+  },
+  "dev": {
+    "open": "Mở",
+    "in_progress": "Đang tiến hành",
+    "completed": "Hoàn thành",
+    "blocked": "Bị chặn",
+    "queued": "Đang chờ",
+    "running": "Đang chạy",
+    "failed": "Thất bại"
+  },
+  "circuit_breaker": {
+    "provider_claude_code": "Claude",
+    "provider_codex_cli": "Codex",
+    "provider_global": "Global"
+  }
+}

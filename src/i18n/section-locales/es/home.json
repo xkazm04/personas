@@ -1,0 +1,141 @@
+{
+  "welcome": "Bienvenido",
+  "greeting_morning": "Buenos días",
+  "greeting_afternoon": "Buenas tardes",
+  "greeting_evening": "Buenas noches",
+  "operator": "Operador",
+  "summary_empty": "Comienza creando tu primer agente o explorando la plataforma.",
+  "summary_stats": "Tienes {personasCount} agente{personasPlural} y {credentialsCount} credencial{credentialsPlural} configurados.",
+  "quick_navigation": "Navegación rápida",
+  "platform_label": "plataforma Personas",
+  "roadmap": {
+    "title": "Hoja de ruta del producto",
+    "subtitle": "Lo que estamos construyendo ahora y lo que viene después.",
+    "unavailable": "Hoja de ruta no disponible",
+    "unavailable_hint": "No se pudo cargar la hoja de ruta. Verifica tu conexión e inténtalo de nuevo.",
+    "status_in_progress": "En progreso",
+    "status_next": "Siguiente",
+    "status_planned": "Planificado",
+    "status_completed": "Completado",
+    "priority_now": "Ahora",
+    "priority_next": "Siguiente",
+    "priority_later": "Después",
+    "in_progress_count": "{count} en progreso",
+    "next_count": "{count} siguiente"
+  },
+  "setup": {
+    "choose_role": "Elige tu rol",
+    "choose_role_hint": "Adaptaremos la experiencia a tu forma de trabajar.",
+    "pick_tool": "Elige tu herramienta favorita",
+    "pick_tool_hint": "Esta será tu primera conexión de servicio.",
+    "describe_goal": "¿Qué quieres automatizar?",
+    "describe_goal_hint": "Describe tu primer objetivo de automatización -- te ayudaremos a configurarlo.",
+    "goal_placeholder": "p. ej. Sincronizar automáticamente nuevos tickets de Jira con un canal de Slack...",
+    "ready_to_save": "Listo para guardar",
+    "step_role": "Tu rol",
+    "step_role_hint": "Indícanos tu rol para adaptar la experiencia.",
+    "step_tool": "Herramienta favorita",
+    "step_tool_hint": "Elige el primer servicio que deseas conectar.",
+    "step_goal": "Objetivo de automatización",
+    "step_goal_hint": "Describe qué te gustaría automatizar primero.",
+    "select_role_first": "Selecciona un rol primero para desbloquear las opciones de herramientas.",
+    "select_tool_first": "Selecciona una herramienta primero para establecer tu objetivo.",
+    "get_started": "Comenzar",
+    "role_office_rat": "Oficinista",
+    "role_office_rat_hint": "Usuario no técnico",
+    "role_developer": "Desarrollador",
+    "role_developer_hint": "Usuario técnico",
+    "role_manager": "Gerente",
+    "role_manager_hint": "Planificación y coordinación",
+    "role": "Rol",
+    "tool": "Herramienta",
+    "goal": "Objetivo"
+  },
+  "fleet": {
+    "executions_today": "Ejecuciones Hoy",
+    "success_rate": "Tasa de Éxito",
+    "active_agents": "Agentes Activos",
+    "credentials": "Credenciales"
+  },
+  "nav": {
+    "overview": {
+      "label": "Resumen",
+      "description": "Analíticas del panel, historial de ejecuciones y monitoreo del sistema en tiempo real de todos los agentes"
+    },
+    "personas": {
+      "label": "Agentes",
+      "description": "Crea, configura y gestiona agentes de IA con comportamientos y capacidades personalizadas"
+    },
+    "events": {
+      "label": "Eventos",
+      "description": "Configura disparadores de eventos, receptores de webhook y automatizaciones programadas"
+    },
+    "credentials": {
+      "label": "Credenciales",
+      "description": "Gestiona credenciales de API, conexiones a bases de datos, tokens OAuth y secretos cifrados"
+    },
+    "design-reviews": {
+      "label": "Plantillas",
+      "description": "Importa flujos de n8n, explora la galería de plantillas y genera planos de agentes"
+    },
+    "team": {
+      "label": "Equipos",
+      "description": "Construye pipelines de equipos multi-agente con orquestación visual y enrutamiento"
+    },
+    "cloud": {
+      "label": "Nube",
+      "description": "Despliega agentes en infraestructura en la nube, gestiona programaciones e integra GitLab CI"
+    },
+    "settings": {
+      "label": "Ajustes",
+      "description": "Preferencias de cuenta, temas de apariencia, reglas de notificación y configuración del motor"
+    },
+    "plugins": {
+      "label": "Plugins",
+      "description": "Amplía tus agentes con plugins de terceros y extensiones personalizadas"
+    }
+  },
+  "learning": {
+    "title": "Centro de aprendizaje",
+    "subtitle": "Recorridos guiados y consejos para dominar Personas",
+    "guided_tours": "Recorridos guiados",
+    "tours_completed": "{completed}/{total} completados",
+    "done": "Listo",
+    "restart": "Reiniciar",
+    "start_tour": "Iniciar recorrido",
+    "steps_count": "{count} pasos",
+    "tricks_tips": "Trucos y consejos",
+    "guides_count": "{count} guías",
+    "how_to_use": "Cómo usar",
+    "pro_tip": "Consejo profesional: ",
+    "cat_agent_craft": "Diseño de agentes",
+    "cat_observability": "Observabilidad y eventos",
+    "cat_platform": "Plataforma y configuración"
+  },
+  "setup_stepper": {
+    "your_profile": "Tu perfil",
+    "choose_role": "Elige tu rol",
+    "tailor_hint": "Adaptaremos la experiencia a tu forma de trabajar.",
+    "simple_hint": "Hemos configurado la aplicación para uso cotidiano en oficina.",
+    "pick_tool": "Elige tu herramienta favorita",
+    "tool_hint": "Esta será tu primera integración de conector.",
+    "automate_title": "¿Qué quieres automatizar?",
+    "automate_hint": "Describe tu primer objetivo de automatización -- te ayudaremos a configurarlo.",
+    "automate_placeholder": "p. ej. Sincronizar automáticamente nuevos tickets de Jira con un canal de Slack...",
+    "min_chars": "Mín. 10 caracteres ({current}/10)",
+    "ready_to_save": "Listo para guardar",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "finish": "Finalizar"
+  },
+  "welcome_layout": {
+    "get_started": "Comenzar",
+    "language": "Idioma"
+  },
+  "icon_showcase": {
+    "lucide_tab": "Lucide (Biblioteca)",
+    "personas_tab": "Personas (Animado)",
+    "lucide_footer": "lucide-react -- biblioteca de íconos genérica -- estático",
+    "personas_footer": "9 íconos personalizados -- motivos neurales/circuitos -- animados con CSS -- adaptativos al tema"
+  }
+}

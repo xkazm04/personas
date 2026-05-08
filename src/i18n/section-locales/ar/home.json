@@ -1,0 +1,141 @@
+{
+  "welcome": "مرحبًا",
+  "greeting_morning": "صباح الخير",
+  "greeting_afternoon": "مساء الخير",
+  "greeting_evening": "مساء الخير",
+  "operator": "المشغّل",
+  "summary_empty": "ابدأ بإنشاء أول وكيل لك أو استكشف المنصة.",
+  "summary_stats": "لديك {personasCount} وكيل{personasPlural} و{credentialsCount} بيانات اعتماد{credentialsPlural} مُعدّة.",
+  "quick_navigation": "التنقل السريع",
+  "platform_label": "منصة Personas",
+  "roadmap": {
+    "title": "خارطة المنتج",
+    "subtitle": "ما نبنيه الآن وما هو قادم.",
+    "unavailable": "خارطة الطريق غير متاحة",
+    "unavailable_hint": "تعذّر تحميل خارطة المنتج. تحقق من اتصالك وأعد المحاولة.",
+    "status_in_progress": "قيد التنفيذ",
+    "status_next": "التالي",
+    "status_planned": "مخطط",
+    "status_completed": "مكتمل",
+    "priority_now": "الآن",
+    "priority_next": "التالي",
+    "priority_later": "لاحقاً",
+    "in_progress_count": "{count} قيد التنفيذ",
+    "next_count": "{count} التالية"
+  },
+  "setup": {
+    "choose_role": "اختر دورك",
+    "choose_role_hint": "سنضبط التجربة لتناسب طريقة عملك.",
+    "pick_tool": "اختر أداتك المفضلة",
+    "pick_tool_hint": "ستكون هذه أول اتصال بخدمة.",
+    "describe_goal": "ماذا تريد أن تُؤتمت؟",
+    "describe_goal_hint": "صف هدفك الأول في الأتمتة — سنساعدك على إعداده.",
+    "goal_placeholder": "مثلاً: مزامنة تذاكر Jira الجديدة تلقائياً مع قناة Slack...",
+    "ready_to_save": "جاهز للحفظ",
+    "step_role": "دورك",
+    "step_role_hint": "أخبرنا بدورك لنضبط التجربة.",
+    "step_tool": "الأداة المفضلة",
+    "step_tool_hint": "اختر أول خدمة تريد توصيلها.",
+    "step_goal": "هدف الأتمتة",
+    "step_goal_hint": "صف ما تريد أتمتته أولاً.",
+    "select_role_first": "اختر دوراً أولاً لإتاحة خيارات الأداة.",
+    "select_tool_first": "اختر أداة أولاً لتحديد هدفك.",
+    "get_started": "ابدأ",
+    "role_office_rat": "موظف مكتبي",
+    "role_office_rat_hint": "مستخدم غير تقني",
+    "role_developer": "مطور",
+    "role_developer_hint": "مستخدم تقني",
+    "role_manager": "مدير",
+    "role_manager_hint": "التخطيط والتنسيق",
+    "role": "الدور",
+    "tool": "الأداة",
+    "goal": "الهدف"
+  },
+  "fleet": {
+    "executions_today": "التشغيلات اليوم",
+    "success_rate": "معدل النجاح",
+    "active_agents": "الوكلاء النشطون",
+    "credentials": "بيانات الاعتماد"
+  },
+  "nav": {
+    "overview": {
+      "label": "نظرة عامة",
+      "description": "تحليلات لوحة المعلومات وسجلّ التنفيذ ومراقبة النظام في الوقت الفعلي لجميع الوكلاء"
+    },
+    "personas": {
+      "label": "الوكلاء",
+      "description": "إنشاء وإعداد وإدارة وكلاء الذكاء الاصطناعي بسلوكيات وقدرات مخصصة"
+    },
+    "events": {
+      "label": "الأحداث",
+      "description": "إعداد مُشغّلات الأحداث ومستمعي webhook والأتمتة المجدولة"
+    },
+    "credentials": {
+      "label": "المفاتيح",
+      "description": "إدارة بيانات اعتماد API واتصالات قواعد البيانات ورموز OAuth والأسرار المشفّرة"
+    },
+    "design-reviews": {
+      "label": "القوالب",
+      "description": "استيراد سير عمل n8n وتصفح معرض القوالب وتوليد مخططات الوكلاء"
+    },
+    "team": {
+      "label": "الفِرَق",
+      "description": "بناء خطوط أنابيب فِرَق الوكلاء المتعددة بالسحب والإفلات والتوجيه"
+    },
+    "cloud": {
+      "label": "السحابة",
+      "description": "نشر الوكلاء على البنية التحتية السحابية وإدارة الجداول ودمج GitLab CI"
+    },
+    "settings": {
+      "label": "الإعدادات",
+      "description": "تفضيلات الحساب وسمات المظهر وقواعد الإشعارات وإعدادات المحرك"
+    },
+    "plugins": {
+      "label": "الإضافات",
+      "description": "وسّع وكلاءك بإضافات طرف ثالث وامتدادات مخصصة"
+    }
+  },
+  "learning": {
+    "title": "مركز التعلم",
+    "subtitle": "جولات إرشادية ونصائح سريعة لإتقان Personas",
+    "guided_tours": "الجولات الإرشادية",
+    "tours_completed": "{completed}/{total} مكتملة",
+    "done": "تم",
+    "restart": "إعادة التشغيل",
+    "start_tour": "ابدأ الجولة",
+    "steps_count": "{count} خطوات",
+    "tricks_tips": "حيل ونصائح",
+    "guides_count": "{count} أدلة",
+    "how_to_use": "طريقة الاستخدام",
+    "pro_tip": "نصيحة احترافية: ",
+    "cat_agent_craft": "بناء الوكلاء",
+    "cat_observability": "المراقبة والأحداث",
+    "cat_platform": "المنصة والإعداد"
+  },
+  "setup_stepper": {
+    "your_profile": "ملفك الشخصي",
+    "choose_role": "اختر دورك",
+    "tailor_hint": "سنضبط التجربة لتناسب طريقة عملك.",
+    "simple_hint": "أعددنا التطبيق للاستخدام المكتبي اليومي.",
+    "pick_tool": "اختر أداتك المفضلة",
+    "tool_hint": "ستكون هذه أول تكامل موصِّل.",
+    "automate_title": "ماذا تريد أن تُؤتمت؟",
+    "automate_hint": "صف هدفك الأول في الأتمتة -- سنساعدك على إعداده.",
+    "automate_placeholder": "مثلاً: مزامنة تذاكر Jira الجديدة تلقائياً مع قناة Slack...",
+    "min_chars": "10 أحرف كحد أدنى ({current}/10)",
+    "ready_to_save": "جاهز للحفظ",
+    "back": "رجوع",
+    "next": "التالي",
+    "finish": "إنهاء"
+  },
+  "welcome_layout": {
+    "get_started": "ابدأ",
+    "language": "اللغة"
+  },
+  "icon_showcase": {
+    "lucide_tab": "Lucide (مكتبة)",
+    "personas_tab": "Personas (متحركة)",
+    "lucide_footer": "lucide-react -- مكتبة أيقونات عامة -- ثابتة",
+    "personas_footer": "9 أيقونات مخصصة -- تصميمات عصبية/دائرية -- CSS متحرك -- متكيف مع المظهر"
+  }
+}

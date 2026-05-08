@@ -1,0 +1,13 @@
+{
+  "accurate_prompt": "موجّه دقيق",
+  "good_tool_selection": "اختيار أدوات جيد",
+  "reliable": "موثوق",
+  "cost_efficient": "فعّال من حيث التكلفة",
+  "wrong_tools": "أدوات خاطئة",
+  "poor_instructions": "تعليمات ضعيفة",
+  "missing_context": "سياق مفقود",
+  "over_engineered": "معقّد بشكل مفرط",
+  "under_specified": "غير محدد بما فيه الكفاية",
+  "wrong_triggers": "مُشغّلات خاطئة",
+  "credential_issues": "مشاكل بيانات الاعتماد"
+}

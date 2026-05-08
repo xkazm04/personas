@@ -1,0 +1,20 @@
+{
+  "credentials_title": "Vos agents ont besoin d'identifiants pour fonctionner",
+  "credentials_subtitle": "Ajoutez des clés API et des connexions de service pour que vos agents puissent interagir avec des outils externes.",
+  "triggers_title": "Cet agent s'exécute manuellement uniquement",
+  "triggers_subtitle": "Ajoutez un déclencheur pour l'automatiser -- planifications, webhooks ou événementiel.",
+  "executions_title": "Aucune exécution pour le moment",
+  "executions_subtitle": "Démarrez en trois étapes pour voir l'activité ici.",
+  "step_create": "Créer un agent",
+  "step_credential": "Ajouter un identifiant",
+  "step_run": "Exécuter votre agent",
+  "events_title": "Aucun abonnement aux événements pour le moment",
+  "events_subtitle": "Abonnez-vous aux événements pour que cet agent réagisse automatiquement quand quelque chose se passe.",
+  "tools_title": "Aucun outil ou connecteur configuré",
+  "tools_subtitle": "Liez des services externes pour que votre agent puisse effectuer des actions et accéder aux données.",
+  "use_cases_title": "Aucun cas d'utilisation défini pour le moment",
+  "use_cases_subtitle": "Définissez ce que cet agent doit faire -- importez depuis un workflow ou décrivez-le en langage naturel.",
+  "no_results_title": "No matches for your filters",
+  "no_results_subtitle": "Try adjusting or clearing your filters to see more results.",
+  "reset_filters": "Reset filters"
+}

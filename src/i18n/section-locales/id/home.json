@@ -1,0 +1,141 @@
+{
+  "welcome": "Selamat Datang",
+  "greeting_morning": "Selamat Pagi",
+  "greeting_afternoon": "Selamat Siang",
+  "greeting_evening": "Selamat Malam",
+  "operator": "Operator",
+  "summary_empty": "Mulai dengan membuat agen pertama Anda atau menjelajahi platform.",
+  "summary_stats": "Anda memiliki {personasCount} agen{personasPlural} dan {credentialsCount} kredensial{credentialsPlural} yang dikonfigurasi.",
+  "quick_navigation": "Navigasi Cepat",
+  "platform_label": "platform Personas",
+  "roadmap": {
+    "title": "Peta Jalan Produk",
+    "subtitle": "Yang sedang kami bangun sekarang dan berikutnya.",
+    "unavailable": "Peta jalan tidak tersedia",
+    "unavailable_hint": "Tidak dapat memuat peta jalan produk. Periksa koneksi Anda dan coba lagi.",
+    "status_in_progress": "Sedang Berjalan",
+    "status_next": "Berikutnya",
+    "status_planned": "Direncanakan",
+    "status_completed": "Selesai",
+    "priority_now": "Sekarang",
+    "priority_next": "Berikutnya",
+    "priority_later": "Nanti",
+    "in_progress_count": "{count} Sedang Berjalan",
+    "next_count": "{count} Berikutnya"
+  },
+  "setup": {
+    "choose_role": "Pilih peran Anda",
+    "choose_role_hint": "Kami akan menyesuaikan pengalaman dengan cara kerja Anda.",
+    "pick_tool": "Pilih alat favorit Anda",
+    "pick_tool_hint": "Ini akan menjadi koneksi layanan pertama Anda.",
+    "describe_goal": "Apa yang ingin Anda otomatisasi?",
+    "describe_goal_hint": "Jelaskan tujuan otomatisasi pertama Anda -- kami akan membantu menyiapkannya.",
+    "goal_placeholder": "mis. Sinkronkan tiket Jira baru ke saluran Slack secara otomatis...",
+    "ready_to_save": "Siap untuk disimpan",
+    "step_role": "Peran Anda",
+    "step_role_hint": "Beri tahu peran Anda agar kami dapat menyesuaikan pengalaman.",
+    "step_tool": "Alat Favorit",
+    "step_tool_hint": "Pilih layanan pertama yang ingin Anda hubungkan.",
+    "step_goal": "Tujuan Otomatisasi",
+    "step_goal_hint": "Jelaskan apa yang ingin Anda otomatisasi pertama.",
+    "select_role_first": "Pilih peran terlebih dahulu untuk membuka opsi alat.",
+    "select_tool_first": "Pilih alat terlebih dahulu untuk menetapkan tujuan.",
+    "get_started": "Mulai",
+    "role_office_rat": "Pekerja Kantoran",
+    "role_office_rat_hint": "Pengguna non-teknis",
+    "role_developer": "Pengembang",
+    "role_developer_hint": "Pengguna teknis",
+    "role_manager": "Manajer",
+    "role_manager_hint": "Perencanaan & koordinasi",
+    "role": "Peran",
+    "tool": "Alat",
+    "goal": "Tujuan"
+  },
+  "fleet": {
+    "executions_today": "Eksekusi Hari Ini",
+    "success_rate": "Tingkat Keberhasilan",
+    "active_agents": "Agen Aktif",
+    "credentials": "Kredensial"
+  },
+  "nav": {
+    "overview": {
+      "label": "Ringkasan",
+      "description": "Analitik dasbor, riwayat eksekusi, dan pemantauan sistem secara real-time di semua agen"
+    },
+    "personas": {
+      "label": "Agen",
+      "description": "Buat, konfigurasi, dan kelola persona agen AI dengan perilaku dan kemampuan khusus"
+    },
+    "events": {
+      "label": "Peristiwa",
+      "description": "Konfigurasi pemicu peristiwa, pendengar webhook, dan otomasi berbasis jadwal"
+    },
+    "credentials": {
+      "label": "Kredensial",
+      "description": "Kelola kredensial API, koneksi basis data, token OAuth, dan rahasia terenkripsi"
+    },
+    "design-reviews": {
+      "label": "Templat",
+      "description": "Impor alur kerja n8n, jelajahi galeri templat, dan hasilkan cetak biru agen"
+    },
+    "team": {
+      "label": "Tim",
+      "description": "Bangun pipeline tim multi-agen dengan orkestrasi dan perutean seret-dan-lepas"
+    },
+    "cloud": {
+      "label": "Cloud",
+      "description": "Deploy agen ke infrastruktur cloud, kelola jadwal, dan integrasikan GitLab CI"
+    },
+    "settings": {
+      "label": "Pengaturan",
+      "description": "Preferensi akun, tema tampilan, aturan notifikasi, dan konfigurasi mesin"
+    },
+    "plugins": {
+      "label": "Plugin",
+      "description": "Perluas agen Anda dengan plugin pihak ketiga dan ekstensi kustom"
+    }
+  },
+  "learning": {
+    "title": "Pusat Pembelajaran",
+    "subtitle": "Tur terpandu dan trik cepat untuk menguasai Personas",
+    "guided_tours": "Tur Terpandu",
+    "tours_completed": "{completed}/{total} selesai",
+    "done": "Selesai",
+    "restart": "Mulai Ulang",
+    "start_tour": "Mulai Tur",
+    "steps_count": "{count} langkah",
+    "tricks_tips": "Trik & Tips",
+    "guides_count": "{count} panduan",
+    "how_to_use": "Cara menggunakan",
+    "pro_tip": "Tips pro: ",
+    "cat_agent_craft": "Pembuatan Agen",
+    "cat_observability": "Observabilitas & Acara",
+    "cat_platform": "Platform & Pengaturan"
+  },
+  "setup_stepper": {
+    "your_profile": "Profil Anda",
+    "choose_role": "Pilih peran Anda",
+    "tailor_hint": "Kami akan menyesuaikan pengalaman dengan cara kerja Anda.",
+    "simple_hint": "Kami telah menyiapkan aplikasi untuk penggunaan kantor sehari-hari.",
+    "pick_tool": "Pilih alat favorit Anda",
+    "tool_hint": "Ini akan menjadi integrasi konektor pertama Anda.",
+    "automate_title": "Apa yang ingin Anda otomatisasi?",
+    "automate_hint": "Jelaskan tujuan otomatisasi pertama Anda -- kami akan membantu menyiapkannya.",
+    "automate_placeholder": "mis. Sinkronkan tiket Jira baru ke saluran Slack secara otomatis...",
+    "min_chars": "Min 10 karakter ({current}/10)",
+    "ready_to_save": "Siap untuk disimpan",
+    "back": "Kembali",
+    "next": "Berikutnya",
+    "finish": "Selesai"
+  },
+  "welcome_layout": {
+    "get_started": "Mulai",
+    "language": "Bahasa"
+  },
+  "icon_showcase": {
+    "lucide_tab": "Lucide (Pustaka)",
+    "personas_tab": "Personas (Animasi)",
+    "lucide_footer": "lucide-react -- pustaka ikon generik -- statis",
+    "personas_footer": "9 ikon kustom -- motif neural/sirkuit -- animasi CSS -- adaptif tema"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "not_reachable": "No se pudo llegar al servidor. Verifica la URL y tu conexión de red.",
+  "timed_out": "Se agotó el tiempo de conexión. El servidor puede estar caído o la URL puede ser incorrecta.",
+  "dns_resolve": "No se pudo resolver el nombre del host. Verifica la URL por errores tipográficos.",
+  "unauthorized": "Credenciales inválidas. Por favor verifica e intenta de nuevo.",
+  "forbidden": "Acceso denegado. Es posible que tus credenciales no tengan los permisos requeridos.",
+  "internal_server_error": "El servidor devolvió un error interno. Intenta de nuevo en unos minutos.",
+  "service_unavailable": "El servidor no está disponible temporalmente. Intenta de nuevo en breve.",
+  "not_connected": "No conectado. Por favor conecta primero.",
+  "keyring": "No se pudo acceder a las credenciales almacenadas. Es posible que necesites volver a conectar.",
+  "oauth_expired": "El token OAuth ha expirado. Por favor vuelve a autorizar.",
+  "url_empty": "Por favor ingresa la URL del orquestador.",
+  "api_key_empty": "Por favor ingresa tu clave de API.",
+  "token_empty": "Por favor ingresa tu token de acceso personal de GitLab."
+}

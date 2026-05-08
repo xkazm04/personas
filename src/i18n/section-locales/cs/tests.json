@@ -1,0 +1,33 @@
+{
+  "title": "Testovací runner",
+  "subtitle": "Otestuj svého agenta s různými AI modely pomocí automaticky generovaných scénářů",
+  "no_prompt": "Tato persona nemá nakonfigurovaný prompt. Nejprve přidej prompt.",
+  "no_tools": "Tato persona nemá přiřazené žádné nástroje. Přidej nástroje pro bohatší testování.",
+  "focus_label": "Zaměřit se na případ užití",
+  "all_use_cases": "Všechny případy užití",
+  "focus_hint": "Scénáře se zaměří na: {description}",
+  "cancel_run": "Zrušit testovací běh",
+  "run_test_one": "Spustit test ({count} model...)",
+  "run_test_other": "Spustit test ({count} modelů...)",
+  "suites": {
+    "title": "Uložené testovací sady",
+    "save_button": "Uložit scénáře",
+    "save_hint": "Ulož {count} vygenerovaných scénářů jako znovupoužitelnou testovací sadu.",
+    "name_placeholder": "Název sady (volitelné)",
+    "empty": "Žádné uložené testovací sady",
+    "empty_hint": "Spusť test pro vygenerování scénářů a pak je zde ulož",
+    "scenario_count_one": "{count} scénář",
+    "scenario_count_other": "{count} scénářů",
+    "rerun_tooltip": "Znovu spustit tuto sadu",
+    "rename_tooltip": "Přejmenovat",
+    "delete_tooltip": "Smazat sadu",
+    "no_scenarios": "Žádné scénáře v této sadě"
+  },
+  "progress": {
+    "generating": "Generování testovacích scénářů...",
+    "testing": "Testování {model} -- {scenario}",
+    "tool_prefix": "Nástroj: ",
+    "output_prefix": "Výstup: ",
+    "protocol_prefix": "Protokol: "
+  }
+}

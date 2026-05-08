@@ -1,0 +1,94 @@
+{
+  "execution": {
+    "queued": "Queued",
+    "running": "Running",
+    "completed": "Completed",
+    "failed": "Failed",
+    "cancelled": "Cancelled",
+    "error": "Error"
+  },
+  "event": {
+    "pending": "Pending",
+    "processing": "Processing",
+    "processed": "Processed",
+    "failed": "Failed",
+    "retrying": "Retrying"
+  },
+  "automation": {
+    "pending": "Pending",
+    "running": "Running",
+    "completed": "Completed",
+    "failed": "Failed",
+    "timeout": "Timed Out"
+  },
+  "severity": {
+    "info": "Info",
+    "low": "Low",
+    "medium": "Medium",
+    "high": "High",
+    "critical": "Critical"
+  },
+  "priority": {
+    "low": "Low",
+    "normal": "Normal",
+    "high": "High",
+    "urgent": "Urgent"
+  },
+  "healing_status": {
+    "open": "Open",
+    "auto_fixed": "Auto-Fixed",
+    "acknowledged": "Acknowledged",
+    "resolved": "Resolved"
+  },
+  "healing_category": {
+    "config": "Configuration",
+    "auth": "Authentication",
+    "network": "Network",
+    "timeout": "Timeout",
+    "quota": "Quota"
+  },
+  "connector_status": {
+    "ready": "Ready",
+    "untested": "Untested",
+    "failed": "Failed",
+    "no_credential": "No Credential",
+    "testing": "Testing"
+  },
+  "task_phase": {
+    "analyzing": "Analyzing",
+    "planning": "Planning",
+    "implementing": "Implementing",
+    "validating": "Validating",
+    "complete": "Complete"
+  },
+  "goal_state": {
+    "pending": "Pending",
+    "review": "Review",
+    "blocked": "Blocked",
+    "in_progress": "In Progress",
+    "running": "Running",
+    "completed": "Done",
+    "done": "Done"
+  },
+  "test": {
+    "generating": "Generating",
+    "running": "Running",
+    "completed": "Completed",
+    "failed": "Failed",
+    "pending": "Pending"
+  },
+  "dev": {
+    "open": "Open",
+    "in_progress": "In Progress",
+    "completed": "Completed",
+    "blocked": "Blocked",
+    "queued": "Queued",
+    "running": "Running",
+    "failed": "Failed"
+  },
+  "circuit_breaker": {
+    "provider_claude_code": "Claude",
+    "provider_codex_cli": "Codex",
+    "provider_global": "Global"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "app_title": "Personas",
+  "skip_to_content": "Перейти к содержимому",
+  "minimize": "Свернуть",
+  "restore": "Восстановить",
+  "maximize": "Развернуть",
+  "close_window": "Закрыть",
+  "update_available": "Доступно обновление: v{version}",
+  "install_and_restart": "Установить и перезапустить",
+  "installing": "Установка...",
+  "update_install_failed": "Не удалось установить обновление",
+  "update_install_retry": "Повторить",
+  "expand_sidebar": "Развернуть панель",
+  "collapse_sidebar": "Свернуть панель",
+  "network_settings": "Настройки сети",
+  "dark": "Тёмная",
+  "light": "Светлая",
+  "sign_in_google": "Войти через Google",
+  "signed_in": "Вы вошли",
+  "sign_out": "Выйти",
+  "offline": "Офлайн"
+}

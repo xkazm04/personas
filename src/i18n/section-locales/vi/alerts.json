@@ -1,0 +1,16 @@
+{
+  "metric_error_rate": "Tỷ lệ lỗi",
+  "metric_success_rate": "Tỷ lệ thành công",
+  "metric_cost": "Tổng chi phí",
+  "metric_cost_spike": "Chi phí so với trung bình",
+  "metric_executions": "Lần thực thi",
+  "severity_info": "Thông tin",
+  "severity_warning": "Cảnh báo",
+  "severity_critical": "Nghiêm trọng",
+  "error_create_rule": "Tạo quy tắc cảnh báo thất bại:",
+  "error_update_rule": "Cập nhật quy tắc cảnh báo thất bại:",
+  "error_delete_rule": "Xóa quy tắc cảnh báo thất bại:",
+  "error_toggle_rule": "Bật/tắt quy tắc cảnh báo thất bại:",
+  "error_dismiss": "Bỏ qua cảnh báo thất bại:",
+  "error_clear_history": "Xóa lịch sử cảnh báo thất bại:"
+}

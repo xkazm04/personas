@@ -1,0 +1,13 @@
+{
+  "accurate_prompt": "Точный промпт",
+  "good_tool_selection": "Хороший выбор инструментов",
+  "reliable": "Надёжный",
+  "cost_efficient": "Экономичный",
+  "wrong_tools": "Неверные инструменты",
+  "poor_instructions": "Плохие инструкции",
+  "missing_context": "Отсутствует контекст",
+  "over_engineered": "Избыточная сложность",
+  "under_specified": "Недостаточная спецификация",
+  "wrong_triggers": "Неверные триггеры",
+  "credential_issues": "Проблемы учётных данных"
+}

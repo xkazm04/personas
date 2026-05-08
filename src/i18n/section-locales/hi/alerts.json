@@ -1,0 +1,16 @@
+{
+  "metric_error_rate": "त्रुटि दर",
+  "metric_success_rate": "सफलता दर",
+  "metric_cost": "कुल लागत",
+  "metric_cost_spike": "लागत बनाम औसत",
+  "metric_executions": "निष्पादन",
+  "severity_info": "जानकारी",
+  "severity_warning": "चेतावनी",
+  "severity_critical": "गंभीर",
+  "error_create_rule": "अलर्ट नियम बनाने में विफल:",
+  "error_update_rule": "अलर्ट नियम अपडेट करने में विफल:",
+  "error_delete_rule": "अलर्ट नियम हटाने में विफल:",
+  "error_toggle_rule": "अलर्ट नियम टॉगल करने में विफल:",
+  "error_dismiss": "अलर्ट हटाने में विफल:",
+  "error_clear_history": "अलर्ट इतिहास साफ़ करने में विफल:"
+}

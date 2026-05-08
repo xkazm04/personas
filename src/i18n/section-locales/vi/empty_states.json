@@ -1,0 +1,20 @@
+{
+  "credentials_title": "Tác tử cần thông tin xác thực để chạy",
+  "credentials_subtitle": "Thêm khóa API và kết nối dịch vụ để tác tử có thể tương tác với các công cụ bên ngoài.",
+  "triggers_title": "Tác tử này chỉ chạy thủ công",
+  "triggers_subtitle": "Thêm trình kích hoạt để tự động hóa -- lịch trình, webhook hoặc theo sự kiện.",
+  "executions_title": "Chưa có thực thi nào",
+  "executions_subtitle": "Bắt đầu trong ba bước để xem hoạt động tại đây.",
+  "step_create": "Tạo tác tử",
+  "step_credential": "Thêm thông tin xác thực",
+  "step_run": "Chạy tác tử",
+  "events_title": "Chưa có đăng ký sự kiện",
+  "events_subtitle": "Đăng ký sự kiện để tác tử tự động phản ứng khi có sự kiện xảy ra.",
+  "tools_title": "Chưa cấu hình công cụ hoặc trình kết nối",
+  "tools_subtitle": "Liên kết dịch vụ bên ngoài để tác tử có thể thực hiện hành động và truy cập dữ liệu.",
+  "use_cases_title": "Chưa định nghĩa trường hợp sử dụng",
+  "use_cases_subtitle": "Xác định tác tử nên làm gì -- nhập từ quy trình hoặc mô tả bằng ngôn ngữ tự nhiên.",
+  "no_results_title": "No matches for your filters",
+  "no_results_subtitle": "Try adjusting or clearing your filters to see more results.",
+  "reset_filters": "Reset filters"
+}

@@ -1,0 +1,16 @@
+{
+  "metric_error_rate": "エラー率",
+  "metric_success_rate": "成功率",
+  "metric_cost": "合計コスト",
+  "metric_cost_spike": "コスト対平均",
+  "metric_executions": "実行",
+  "severity_info": "情報",
+  "severity_warning": "警告",
+  "severity_critical": "重大",
+  "error_create_rule": "アラートルールの作成に失敗しました:",
+  "error_update_rule": "アラートルールの更新に失敗しました:",
+  "error_delete_rule": "アラートルールの削除に失敗しました:",
+  "error_toggle_rule": "アラートルールの切り替えに失敗しました:",
+  "error_dismiss": "アラートの非表示に失敗しました:",
+  "error_clear_history": "アラート履歴のクリアに失敗しました:"
+}

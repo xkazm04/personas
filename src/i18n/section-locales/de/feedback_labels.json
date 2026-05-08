@@ -1,0 +1,13 @@
+{
+  "accurate_prompt": "Genauer Prompt",
+  "good_tool_selection": "Gute Tool-Auswahl",
+  "reliable": "Zuverlässig",
+  "cost_efficient": "Kosteneffizient",
+  "wrong_tools": "Falsche Tools",
+  "poor_instructions": "Schlechte Anweisungen",
+  "missing_context": "Fehlender Kontext",
+  "over_engineered": "Überkonstruiert",
+  "under_specified": "Unzureichend spezifiziert",
+  "wrong_triggers": "Falsche Trigger",
+  "credential_issues": "Zugangsdaten-Probleme"
+}

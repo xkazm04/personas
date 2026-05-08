@@ -1,0 +1,12 @@
+{
+  "keyword_match_label": "Kvalita výstupu",
+  "keyword_match_description": "Kontroluje termíny očekávaného chování ve výstupu agenta",
+  "tool_accuracy_label": "Přesnost nástrojů",
+  "tool_accuracy_description": "Porovnává očekávaná vs. skutečná volání nástrojů",
+  "protocol_compliance_label": "Shoda s protokolem",
+  "protocol_compliance_description": "Kontroluje očekávané vzory zpráv protokolu",
+  "confusion_detect_label": "Detekce zmatení",
+  "confusion_detect_description": "Kontroluje známé fráze zmatení/selhání",
+  "composite_label": "Kompozitní",
+  "composite_description": "Vážená kombinace všech strategií"
+}

@@ -1,0 +1,16 @@
+{
+  "metric_error_rate": "Tasa de Errores",
+  "metric_success_rate": "Tasa de Éxito",
+  "metric_cost": "Costo Total",
+  "metric_cost_spike": "Costo vs. Promedio",
+  "metric_executions": "Ejecuciones",
+  "severity_info": "Info",
+  "severity_warning": "Advertencia",
+  "severity_critical": "Crítico",
+  "error_create_rule": "No se pudo crear la regla de alerta:",
+  "error_update_rule": "No se pudo actualizar la regla de alerta:",
+  "error_delete_rule": "No se pudo eliminar la regla de alerta:",
+  "error_toggle_rule": "No se pudo cambiar el estado de la regla de alerta:",
+  "error_dismiss": "No se pudo descartar la alerta:",
+  "error_clear_history": "No se pudo limpiar el historial de alertas:"
+}

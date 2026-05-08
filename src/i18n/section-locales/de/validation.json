@@ -1,0 +1,11 @@
+{
+  "required": "{field} ist erforderlich",
+  "min_length": "{field} muss mindestens {min} Zeichen lang sein",
+  "min_value": "{field} muss mindestens {min} betragen",
+  "invalid_cron": "Ungültiger Cron-Ausdruck",
+  "invalid_separator": "Quellfilter enthält eine ungültige Trennzeichenfolge",
+  "passphrase_min": "Passphrase muss mindestens 8 Zeichen lang sein",
+  "passphrase_prompt": "Bitte geben Sie die beim Export verwendete Passphrase ein",
+  "at_least_one": "Mindestens ein {field} ist erforderlich",
+  "fill_one_field": "Füllen Sie mindestens ein Feld aus, um zu speichern"
+}

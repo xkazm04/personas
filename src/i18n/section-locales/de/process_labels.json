@@ -1,0 +1,18 @@
+{
+  "n8n_transform": "n8n-Transformation",
+  "template_adopt": "Vorlagenübernahme",
+  "rebuild": "Agent-Neuerstellung",
+  "template_test": "Vorlagentest",
+  "context_scan": "Kontext-Karten-Scan",
+  "idea_scan": "Ideen-Scan",
+  "execution": "Agentenausführung",
+  "matrix_build": "Matrix-Build",
+  "lab_run": "Lab-Ausführung",
+  "connector_test": "Konnektor-Test",
+  "creative_session": "Kreative Sitzung",
+  "feedback_chat": "Feedback-Chat",
+  "complete_suffix": "Abgeschlossen",
+  "failed_suffix": "Fehlgeschlagen",
+  "pending_reviews_one": "{count} ausstehende Überprüfung wartet auf Genehmigung",
+  "pending_reviews_other": "{count} ausstehende Überprüfungen warten auf Genehmigung"
+}

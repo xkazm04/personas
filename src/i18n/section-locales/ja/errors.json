@@ -1,0 +1,22 @@
+{
+  "boundary_title": "{name}で予期しないエラーが発生しました",
+  "boundary_title_generic": "予期しないエラーが発生しました",
+  "boundary_body": "データは安全です。再試行するか、ダッシュボードに戻ってください。",
+  "boundary_retry": "再試行",
+  "boundary_dashboard": "ダッシュボードへ",
+  "boundary_copy": "サポート用レポートをコピー",
+  "boundary_copied": "クリップボードにコピーしました",
+  "boundary_dev": "開発者向け",
+  "boundary_no_stack": "スタックトレースがありません",
+  "go_back": "戻る",
+  "dismiss_error": "エラーを閉じる",
+  "not_found": "リクエストされたリソースが見つかりません",
+  "validation": "入力が無効です: {detail}",
+  "auth": "認証に失敗しました -- 認証情報を確認してください",
+  "rate_limited": "リクエストが多すぎます -- しばらくしてから再試行してください",
+  "network_offline": "インターネット接続がありません",
+  "database": "データベースエラー -- アプリを再起動してください",
+  "internal": "予期しないエラーが発生しました",
+  "cloud_error": "クラウドサービスエラー: {detail}",
+  "gitlab_error": "GitLabエラー: {detail}"
+}

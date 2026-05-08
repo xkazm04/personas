@@ -1,0 +1,141 @@
+{
+  "welcome": "ようこそ",
+  "greeting_morning": "おはようございます",
+  "greeting_afternoon": "こんにちは",
+  "greeting_evening": "こんばんは",
+  "operator": "オペレーター",
+  "summary_empty": "最初のエージェントを作成するか、プラットフォームを探索してみましょう。",
+  "summary_stats": "{personasCount}件のエージェント{personasPlural}と{credentialsCount}件の認証情報{credentialsPlural}が設定されています。",
+  "quick_navigation": "クイックナビゲーション",
+  "platform_label": "Personasプラットフォーム",
+  "roadmap": {
+    "title": "プロダクトロードマップ",
+    "subtitle": "現在構築中と次に予定していること。",
+    "unavailable": "ロードマップ利用不可",
+    "unavailable_hint": "プロダクトロードマップを読み込めませんでした。接続を確認して再試行してください。",
+    "status_in_progress": "進行中",
+    "status_next": "次",
+    "status_planned": "計画済み",
+    "status_completed": "完了",
+    "priority_now": "今",
+    "priority_next": "次",
+    "priority_later": "後で",
+    "in_progress_count": "{count} 件進行中",
+    "next_count": "{count} 件次予定"
+  },
+  "setup": {
+    "choose_role": "役割を選択",
+    "choose_role_hint": "あなたの働き方に合わせた体験をカスタマイズします。",
+    "pick_tool": "お気に入りツールを選択",
+    "pick_tool_hint": "これが最初のサービス接続になります。",
+    "describe_goal": "何を自動化したいですか？",
+    "describe_goal_hint": "最初の自動化目標を説明してください -- セットアップを手伝います。",
+    "goal_placeholder": "例: Jiraの新しいチケットを自動的にSlackチャンネルに同期する...",
+    "ready_to_save": "保存準備完了",
+    "step_role": "あなたの役割",
+    "step_role_hint": "体験をカスタマイズするために役割を教えてください。",
+    "step_tool": "お気に入りツール",
+    "step_tool_hint": "最初に接続したいサービスを選択してください。",
+    "step_goal": "自動化目標",
+    "step_goal_hint": "最初に自動化したいことを説明してください。",
+    "select_role_first": "ツールオプションを解除するには先に役割を選択してください。",
+    "select_tool_first": "目標を設定するには先にツールを選択してください。",
+    "get_started": "はじめる",
+    "role_office_rat": "オフィスワーカー",
+    "role_office_rat_hint": "非技術系ユーザー",
+    "role_developer": "開発者",
+    "role_developer_hint": "技術系ユーザー",
+    "role_manager": "マネージャー",
+    "role_manager_hint": "計画・調整",
+    "role": "役割",
+    "tool": "ツール",
+    "goal": "目標"
+  },
+  "fleet": {
+    "executions_today": "本日の実行",
+    "success_rate": "成功率",
+    "active_agents": "アクティブエージェント",
+    "credentials": "クレデンシャル"
+  },
+  "nav": {
+    "overview": {
+      "label": "概要",
+      "description": "ダッシュボード分析、実行履歴、全エージェントのリアルタイム監視"
+    },
+    "personas": {
+      "label": "エージェント",
+      "description": "カスタム動作と機能を備えたAIエージェントの作成・設定・管理"
+    },
+    "events": {
+      "label": "イベント",
+      "description": "イベントトリガー、webhookリスナー、スケジュール駆動の自動化を設定"
+    },
+    "credentials": {
+      "label": "キー",
+      "description": "API認証情報、DB接続、OAuthトークン、暗号化シークレットの管理"
+    },
+    "design-reviews": {
+      "label": "テンプレート",
+      "description": "n8nワークフローのインポート、テンプレートギャラリー、エージェント設計図の生成"
+    },
+    "team": {
+      "label": "チーム",
+      "description": "ドラッグ&ドロップでマルチエージェントチームパイプラインを構築"
+    },
+    "cloud": {
+      "label": "クラウド",
+      "description": "クラウドへのデプロイ、スケジュール管理、GitLab CI連携"
+    },
+    "settings": {
+      "label": "設定",
+      "description": "アカウント設定、外観テーマ、通知ルール、エンジン構成"
+    },
+    "plugins": {
+      "label": "プラグイン",
+      "description": "サードパーティプラグインとカスタム拡張機能でエージェントを拡張"
+    }
+  },
+  "learning": {
+    "title": "ラーニングセンター",
+    "subtitle": "Personasをマスターするためのガイドツアーとクイックヒント",
+    "guided_tours": "ガイドツアー",
+    "tours_completed": "{completed}/{total} 完了",
+    "done": "完了",
+    "restart": "再スタート",
+    "start_tour": "ツアーを開始",
+    "steps_count": "{count} ステップ",
+    "tricks_tips": "ヒントとコツ",
+    "guides_count": "{count} ガイド",
+    "how_to_use": "使い方",
+    "pro_tip": "プロのヒント: ",
+    "cat_agent_craft": "エージェントクラフト",
+    "cat_observability": "オブザーバビリティとイベント",
+    "cat_platform": "プラットフォームとセットアップ"
+  },
+  "setup_stepper": {
+    "your_profile": "プロフィール",
+    "choose_role": "役割を選択",
+    "tailor_hint": "あなたの働き方に合わせた体験をカスタマイズします。",
+    "simple_hint": "日常的なオフィス利用向けにアプリをセットアップしました。",
+    "pick_tool": "お気に入りツールを選択",
+    "tool_hint": "これが最初のコネクタ統合になります。",
+    "automate_title": "何を自動化したいですか？",
+    "automate_hint": "最初の自動化目標を説明してください -- セットアップを手伝います。",
+    "automate_placeholder": "例: Jiraの新しいチケットを自動的にSlackチャンネルに同期する...",
+    "min_chars": "最低10文字 ({current}/10)",
+    "ready_to_save": "保存準備完了",
+    "back": "戻る",
+    "next": "次へ",
+    "finish": "完了"
+  },
+  "welcome_layout": {
+    "get_started": "はじめる",
+    "language": "言語"
+  },
+  "icon_showcase": {
+    "lucide_tab": "Lucide（ライブラリ）",
+    "personas_tab": "Personas（アニメーション）",
+    "lucide_footer": "lucide-react -- 汎用アイコンライブラリ -- 静的",
+    "personas_footer": "9つのカスタムアイコン -- ニューラル/サーキットモチーフ -- CSSアニメーション -- テーマ適応"
+  }
+}

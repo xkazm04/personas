@@ -1,0 +1,13 @@
+{
+  "accurate_prompt": "准确的提示词",
+  "good_tool_selection": "良好的工具选择",
+  "reliable": "可靠",
+  "cost_efficient": "成本高效",
+  "wrong_tools": "工具错误",
+  "poor_instructions": "指令不清",
+  "missing_context": "缺少上下文",
+  "over_engineered": "过度设计",
+  "under_specified": "规格不足",
+  "wrong_triggers": "触发器错误",
+  "credential_issues": "凭据问题"
+}

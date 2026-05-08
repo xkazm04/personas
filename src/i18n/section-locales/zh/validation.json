@@ -1,0 +1,11 @@
+{
+  "required": "{field}为必填项",
+  "min_length": "{field}至少需要 {min} 个字符",
+  "min_value": "{field}至少为 {min}",
+  "invalid_cron": "无效的 cron 表达式",
+  "invalid_separator": "来源过滤器包含无效的分隔符序列",
+  "passphrase_min": "密码短语至少需要 8 个字符",
+  "passphrase_prompt": "请输入导出时使用的密码短语",
+  "at_least_one": "至少需要一个{field}",
+  "fill_one_field": "至少填写一个字段才能保存"
+}

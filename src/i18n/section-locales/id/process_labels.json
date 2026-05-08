@@ -1,0 +1,18 @@
+{
+  "n8n_transform": "Transformasi n8n",
+  "template_adopt": "Adopsi Templat",
+  "rebuild": "Pembangunan Ulang Agen",
+  "template_test": "Uji Templat",
+  "context_scan": "Pemindaian Peta Konteks",
+  "idea_scan": "Pemindaian Ide",
+  "execution": "Eksekusi Agen",
+  "matrix_build": "Pembangunan Matriks",
+  "lab_run": "Jalankan Lab",
+  "connector_test": "Uji Konektor",
+  "creative_session": "Sesi Kreatif",
+  "feedback_chat": "Chat Umpan Balik",
+  "complete_suffix": "Selesai",
+  "failed_suffix": "Gagal",
+  "pending_reviews_one": "{count} tinjauan tertunda menunggu persetujuan",
+  "pending_reviews_other": "{count} tinjauan tertunda menunggu persetujuan"
+}

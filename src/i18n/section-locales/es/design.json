@@ -1,0 +1,16 @@
+{
+  "no_persona": "Ningún agente seleccionado",
+  "conversation_truncated": "Esta conversación alcanzó el límite de mensajes. Los mensajes antiguos se eliminaron — considera iniciar una nueva conversación para preservar el contexto.",
+  "stages": {
+    "assembling_label": "Ensamblando prompt",
+    "assembling_desc": "Construyendo el prompt del LLM a partir de la configuración e instrucciones del agente",
+    "generating_label": "Generando con IA",
+    "generating_desc": "Ejecutando Claude para producir el diseño del agente",
+    "parsing_label": "Analizando salida",
+    "parsing_desc": "Extrayendo JSON estructurado de la respuesta del LLM",
+    "checking_label": "Verificando viabilidad",
+    "checking_desc": "Validando que las herramientas y conectores sugeridos estén disponibles",
+    "saving_label": "Guardando resultado",
+    "saving_desc": "Escribiendo el diseño compilado en la base de datos"
+  }
+}

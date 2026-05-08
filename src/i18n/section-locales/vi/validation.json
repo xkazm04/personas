@@ -1,0 +1,11 @@
+{
+  "required": "{field} là bắt buộc",
+  "min_length": "{field} phải có ít nhất {min} ký tự",
+  "min_value": "{field} phải ít nhất là {min}",
+  "invalid_cron": "Biểu thức cron không hợp lệ",
+  "invalid_separator": "Bộ lọc nguồn chứa chuỗi phân tách không hợp lệ",
+  "passphrase_min": "Mật khẩu phải có ít nhất 8 ký tự",
+  "passphrase_prompt": "Vui lòng nhập mật khẩu đã sử dụng khi xuất",
+  "at_least_one": "Cần ít nhất một {field}",
+  "fill_one_field": "Điền ít nhất một trường để lưu"
+}

@@ -15,8 +15,8 @@
  * the fix is almost always upstream — map the code, don't hardcode a sentence.
  */
 
-import enData from './locales/en.json';
 import type { Translations as GeneratedTranslations } from './generated/types';
+import { getEnglishTranslations } from './englishSections';
 
-export const en = enData as GeneratedTranslations;
+export const en = getEnglishTranslations();
 export type Translations = GeneratedTranslations;

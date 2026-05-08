@@ -1,0 +1,16 @@
+{
+  "no_persona": "未选择智能体",
+  "conversation_truncated": "此对话已达到消息限制。较旧的消息已被移除——考虑开始新对话以保留上下文。",
+  "stages": {
+    "assembling_label": "组装提示词",
+    "assembling_desc": "根据智能体配置和指令构建 LLM 提示词",
+    "generating_label": "AI 生成中",
+    "generating_desc": "运行 Claude 生成智能体设计",
+    "parsing_label": "解析输出",
+    "parsing_desc": "从 LLM 响应中提取结构化 JSON",
+    "checking_label": "检查可行性",
+    "checking_desc": "验证建议的工具和连接器是否可用",
+    "saving_label": "保存结果",
+    "saving_desc": "将编译后的设计写入数据库"
+  }
+}

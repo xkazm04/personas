@@ -1,0 +1,12 @@
+{
+  "keyword_match_label": "Ausgabequalität",
+  "keyword_match_description": "Prüft erwartete Verhaltenstermini in der Agentenausgabe",
+  "tool_accuracy_label": "Tool-Genauigkeit",
+  "tool_accuracy_description": "Vergleicht erwartete und tatsächliche Tool-Aufrufe",
+  "protocol_compliance_label": "Protokoll-Compliance",
+  "protocol_compliance_description": "Prüft auf erwartete Protokoll-Nachrichtenmuster",
+  "confusion_detect_label": "Verwirrungserkennung",
+  "confusion_detect_description": "Prüft auf bekannte Verwirrungs-/Fehlermeldungen",
+  "composite_label": "Komposit",
+  "composite_description": "Gewichtete Kombination aller Strategien"
+}

@@ -1,0 +1,22 @@
+{
+  "app_title": "Personas",
+  "skip_to_content": "Přejít k obsahu",
+  "minimize": "Minimalizovat",
+  "restore": "Obnovit",
+  "maximize": "Maximalizovat",
+  "close_window": "Zavřít",
+  "update_available": "Dostupná aktualizace: v{version}",
+  "install_and_restart": "Instalovat a restartovat",
+  "installing": "Instalace...",
+  "update_install_failed": "Instalace aktualizace selhala",
+  "update_install_retry": "Zkusit znovu",
+  "expand_sidebar": "Rozbalit boční panel",
+  "collapse_sidebar": "Sbalit boční panel",
+  "network_settings": "Nastavení sítě",
+  "dark": "Tmavý",
+  "light": "Světlý",
+  "sign_in_google": "Přihlásit se přes Google",
+  "signed_in": "Přihlášen",
+  "sign_out": "Odhlásit se",
+  "offline": "Offline"
+}

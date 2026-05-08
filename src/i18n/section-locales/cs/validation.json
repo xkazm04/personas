@@ -1,0 +1,11 @@
+{
+  "required": "{field} je povinné",
+  "min_length": "{field} musí mít alespoň {min} znaků",
+  "min_value": "{field} musí být alespoň {min}",
+  "invalid_cron": "Neplatný plánovací výraz",
+  "invalid_separator": "Filtr obsahuje neplatný oddělovač",
+  "passphrase_min": "Heslo musí mít alespoň 8 znaků",
+  "passphrase_prompt": "Zadej heslo použité při exportu",
+  "at_least_one": "Je potřeba alespoň jedno {field}",
+  "fill_one_field": "Pro uložení vyplň alespoň jedno pole"
+}

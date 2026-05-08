@@ -1,0 +1,16 @@
+{
+  "no_persona": "Aucun agent sélectionné",
+  "conversation_truncated": "Conversation tronquée pour des raisons de performance",
+  "stages": {
+    "assembling_label": "Assemblage du prompt",
+    "assembling_desc": "Construction du prompt LLM à partir de la configuration et des instructions de l'agent",
+    "generating_label": "Génération avec l'IA",
+    "generating_desc": "Exécution de Claude pour produire la conception de l'agent",
+    "parsing_label": "Analyse de la sortie",
+    "parsing_desc": "Extraction du JSON structuré de la réponse du LLM",
+    "checking_label": "Vérification de la faisabilité",
+    "checking_desc": "Validation de la disponibilité des outils et connecteurs suggérés",
+    "saving_label": "Enregistrement du résultat",
+    "saving_desc": "Écriture de la conception compilée dans la base de données"
+  }
+}

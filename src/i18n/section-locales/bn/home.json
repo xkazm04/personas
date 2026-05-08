@@ -1,0 +1,141 @@
+{
+  "welcome": "স্বাগতম",
+  "greeting_morning": "সুপ্রভাত",
+  "greeting_afternoon": "শুভ অপরাহ্ন",
+  "greeting_evening": "শুভ সন্ধ্যা",
+  "operator": "অপারেটর",
+  "summary_empty": "প্রথম এজেন্ট তৈরি করে বা প্ল্যাটফর্ম ঘুরে দেখে শুরু করুন।",
+  "summary_stats": "আপনার {personasCount} এজেন্ট{personasPlural} এবং {credentialsCount} শংসাপত্র{credentialsPlural} কনফিগার করা আছে।",
+  "quick_navigation": "দ্রুত নেভিগেশন",
+  "platform_label": "personas প্ল্যাটফর্ম",
+  "roadmap": {
+    "title": "পণ্য রোডম্যাপ",
+    "subtitle": "আমরা এখন কী তৈরি করছি এবং পরে কী আসবে।",
+    "unavailable": "রোডম্যাপ পাওয়া যাচ্ছে না",
+    "unavailable_hint": "পণ্য রোডম্যাপ লোড করা যায়নি। আপনার সংযোগ চেক করুন এবং আবার চেষ্টা করুন।",
+    "status_in_progress": "চলমান",
+    "status_next": "পরবর্তী",
+    "status_planned": "পরিকল্পিত",
+    "status_completed": "সম্পন্ন",
+    "priority_now": "এখন",
+    "priority_next": "পরবর্তী",
+    "priority_later": "পরে",
+    "in_progress_count": "{count}টি চলমান",
+    "next_count": "{count}টি পরবর্তী"
+  },
+  "setup": {
+    "choose_role": "আপনার ভূমিকা বেছে নিন",
+    "choose_role_hint": "আমরা আপনার কাজের ধরন অনুযায়ী অভিজ্ঞতা কাস্টমাইজ করব।",
+    "pick_tool": "আপনার পছন্দের টুল বেছে নিন",
+    "pick_tool_hint": "এটি আপনার প্রথম সার্ভিস সংযোগ হবে।",
+    "describe_goal": "আপনি কী স্বয়ংক্রিয় করতে চান?",
+    "describe_goal_hint": "আপনার প্রথম অটোমেশন লক্ষ্য বর্ণনা করুন — আমরা সেটআপে সাহায্য করব।",
+    "goal_placeholder": "যেমন: নতুন Jira টিকিট স্বয়ংক্রিয়ভাবে Slack চ্যানেলে সিঙ্ক করুন...",
+    "ready_to_save": "সংরক্ষণের জন্য প্রস্তুত",
+    "step_role": "আপনার ভূমিকা",
+    "step_role_hint": "অভিজ্ঞতা কাস্টমাইজ করতে আমাদের আপনার ভূমিকা জানান।",
+    "step_tool": "পছন্দের টুল",
+    "step_tool_hint": "আপনি যে প্রথম সার্ভিসটি সংযুক্ত করতে চান তা বেছে নিন।",
+    "step_goal": "অটোমেশন লক্ষ্য",
+    "step_goal_hint": "আপনি প্রথমে কী অটোমেট করতে চান তা বর্ণনা করুন।",
+    "select_role_first": "টুল অপশন আনলক করতে প্রথমে একটি ভূমিকা নির্বাচন করুন।",
+    "select_tool_first": "লক্ষ্য নির্ধারণ করতে প্রথমে একটি টুল নির্বাচন করুন।",
+    "get_started": "শুরু করুন",
+    "role_office_rat": "অফিস ব্যবহারকারী",
+    "role_office_rat_hint": "অ-প্রযুক্তিগত ব্যবহারকারী",
+    "role_developer": "ডেভেলপার",
+    "role_developer_hint": "প্রযুক্তিগত ব্যবহারকারী",
+    "role_manager": "ম্যানেজার",
+    "role_manager_hint": "পরিকল্পনা ও সমন্বয়",
+    "role": "ভূমিকা",
+    "tool": "টুল",
+    "goal": "লক্ষ্য"
+  },
+  "fleet": {
+    "executions_today": "আজকের রান",
+    "success_rate": "সাফল্যের হার",
+    "active_agents": "সক্রিয় এজেন্ট",
+    "credentials": "ক্রেডেনশিয়াল"
+  },
+  "nav": {
+    "overview": {
+      "label": "সারসংক্ষেপ",
+      "description": "ড্যাশবোর্ড বিশ্লেষণ, সম্পাদন ইতিহাস এবং রিয়েল-টাইম মনিটরিং"
+    },
+    "personas": {
+      "label": "এজেন্ট",
+      "description": "AI এজেন্ট তৈরি, কনফিগার ও পরিচালনা করুন"
+    },
+    "events": {
+      "label": "ইভেন্ট",
+      "description": "ইভেন্ট ট্রিগার, webhook ও সময়সূচি অটোমেশন কনফিগার করুন"
+    },
+    "credentials": {
+      "label": "কী",
+      "description": "API শংসাপত্র, ডাটাবেস সংযোগ ও এনক্রিপ্টেড সিক্রেট পরিচালনা"
+    },
+    "design-reviews": {
+      "label": "টেমপ্লেট",
+      "description": "n8n ওয়ার্কফ্লো ইম্পোর্ট, টেমপ্লেট গ্যালারি ও এজেন্ট ব্লুপ্রিন্ট তৈরি"
+    },
+    "team": {
+      "label": "দল",
+      "description": "মাল্টি-এজেন্ট টিম পাইপলাইন ড্র্যাগ-অ্যান্ড-ড্রপে তৈরি করুন"
+    },
+    "cloud": {
+      "label": "ক্লাউড",
+      "description": "ক্লাউডে এজেন্ট ডিপ্লয়, সময়সূচি পরিচালনা ও GitLab CI ইন্টিগ্রেশন"
+    },
+    "settings": {
+      "label": "সেটিংস",
+      "description": "অ্যাকাউন্ট, থিম, বিজ্ঞপ্তি ও ইঞ্জিন কনফিগারেশন"
+    },
+    "plugins": {
+      "label": "প্লাগিন",
+      "description": "তৃতীয় পক্ষের প্লাগিন এবং কাস্টম এক্সটেনশন দিয়ে এজেন্ট প্রসারিত করুন"
+    }
+  },
+  "learning": {
+    "title": "লার্নিং সেন্টার",
+    "subtitle": "Personas আয়ত্ত করতে গাইডেড ট্যুর এবং দ্রুত টিপস",
+    "guided_tours": "গাইডেড ট্যুর",
+    "tours_completed": "{completed}/{total} সম্পন্ন",
+    "done": "সম্পন্ন",
+    "restart": "পুনরায় শুরু",
+    "start_tour": "ট্যুর শুরু করুন",
+    "steps_count": "{count}টি ধাপ",
+    "tricks_tips": "টিপস ও ট্রিকস",
+    "guides_count": "{count}টি গাইড",
+    "how_to_use": "কীভাবে ব্যবহার করবেন",
+    "pro_tip": "প্রো টিপ: ",
+    "cat_agent_craft": "এজেন্ট ক্রাফট",
+    "cat_observability": "পর্যবেক্ষণযোগ্যতা ও ইভেন্ট",
+    "cat_platform": "প্ল্যাটফর্ম ও সেটআপ"
+  },
+  "setup_stepper": {
+    "your_profile": "আপনার প্রোফাইল",
+    "choose_role": "আপনার ভূমিকা বেছে নিন",
+    "tailor_hint": "আমরা আপনার কাজের ধরন অনুযায়ী অভিজ্ঞতা কাস্টমাইজ করব।",
+    "simple_hint": "আমরা প্রতিদিনের অফিস ব্যবহারের জন্য অ্যাপ সেট করেছি।",
+    "pick_tool": "আপনার পছন্দের টুল বেছে নিন",
+    "tool_hint": "এটি আপনার প্রথম কানেক্টর ইন্টিগ্রেশন হবে।",
+    "automate_title": "আপনি কী স্বয়ংক্রিয় করতে চান?",
+    "automate_hint": "আপনার প্রথম অটোমেশন লক্ষ্য বর্ণনা করুন -- আমরা সেটআপে সাহায্য করব।",
+    "automate_placeholder": "যেমন: নতুন Jira টিকিট স্বয়ংক্রিয়ভাবে Slack চ্যানেলে সিঙ্ক করুন...",
+    "min_chars": "ন্যূনতম ১০ অক্ষর ({current}/10)",
+    "ready_to_save": "সংরক্ষণের জন্য প্রস্তুত",
+    "back": "পিছনে",
+    "next": "পরবর্তী",
+    "finish": "শেষ করুন"
+  },
+  "welcome_layout": {
+    "get_started": "শুরু করুন",
+    "language": "ভাষা"
+  },
+  "icon_showcase": {
+    "lucide_tab": "Lucide (লাইব্রেরি)",
+    "personas_tab": "Personas (অ্যানিমেটেড)",
+    "lucide_footer": "lucide-react -- সাধারণ আইকন লাইব্রেরি -- স্ট্যাটিক",
+    "personas_footer": "৯টি কাস্টম আইকন -- নিউরাল/সার্কিট মোটিফ -- CSS-অ্যানিমেটেড -- থিম-অ্যাডাপ্টিভ"
+  }
+}

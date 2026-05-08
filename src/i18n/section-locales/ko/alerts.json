@@ -1,0 +1,16 @@
+{
+  "metric_error_rate": "Error Rate",
+  "metric_success_rate": "Success Rate",
+  "metric_cost": "Total Cost",
+  "metric_cost_spike": "Cost vs. Average",
+  "metric_executions": "Executions",
+  "severity_info": "Info",
+  "severity_warning": "Warning",
+  "severity_critical": "Critical",
+  "error_create_rule": "Failed to create alert rule:",
+  "error_update_rule": "Failed to update alert rule:",
+  "error_delete_rule": "Failed to delete alert rule:",
+  "error_toggle_rule": "Failed to toggle alert rule:",
+  "error_dismiss": "Failed to dismiss alert:",
+  "error_clear_history": "Failed to clear alert history:"
+}

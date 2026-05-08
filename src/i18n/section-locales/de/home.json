@@ -1,0 +1,141 @@
+{
+  "welcome": "Willkommen",
+  "greeting_morning": "Guten Morgen",
+  "greeting_afternoon": "Guten Tag",
+  "greeting_evening": "Guten Abend",
+  "operator": "Operator",
+  "summary_empty": "Erstellen Sie Ihren ersten Agenten oder erkunden Sie die Plattform.",
+  "summary_stats": "Sie haben {personasCount} Agent{personasPlural} und {credentialsCount} Zugangsdaten{credentialsPlural} konfiguriert.",
+  "quick_navigation": "Schnellnavigation",
+  "platform_label": "Personas-Plattform",
+  "roadmap": {
+    "title": "Produkt-Roadmap",
+    "subtitle": "Was wir jetzt bauen und was als Nächstes kommt.",
+    "unavailable": "Roadmap nicht verfügbar",
+    "unavailable_hint": "Die Produkt-Roadmap konnte nicht geladen werden. Überprüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
+    "status_in_progress": "In Bearbeitung",
+    "status_next": "Nächste",
+    "status_planned": "Geplant",
+    "status_completed": "Abgeschlossen",
+    "priority_now": "Jetzt",
+    "priority_next": "Nächste",
+    "priority_later": "Später",
+    "in_progress_count": "{count} in Bearbeitung",
+    "next_count": "{count} nächste"
+  },
+  "setup": {
+    "choose_role": "Wählen Sie Ihre Rolle",
+    "choose_role_hint": "Wir passen die Erfahrung an Ihre Arbeitsweise an.",
+    "pick_tool": "Wählen Sie Ihr bevorzugtes Tool",
+    "pick_tool_hint": "Dies wird Ihre erste Dienstverbindung sein.",
+    "describe_goal": "Was möchten Sie automatisieren?",
+    "describe_goal_hint": "Beschreiben Sie Ihr erstes Automatisierungsziel -- wir helfen Ihnen dabei.",
+    "goal_placeholder": "z.B. Neue Jira-Tickets automatisch mit einem Slack-Kanal synchronisieren...",
+    "ready_to_save": "Bereit zum Speichern",
+    "step_role": "Ihre Rolle",
+    "step_role_hint": "Teilen Sie uns Ihre Rolle mit, damit wir die Erfahrung anpassen können.",
+    "step_tool": "Bevorzugtes Tool",
+    "step_tool_hint": "Wählen Sie den ersten Dienst, den Sie verbinden möchten.",
+    "step_goal": "Automatisierungsziel",
+    "step_goal_hint": "Beschreiben Sie, was Sie zuerst automatisieren möchten.",
+    "select_role_first": "Wählen Sie zuerst eine Rolle, um Tool-Optionen freizuschalten.",
+    "select_tool_first": "Wählen Sie zuerst ein Tool, um Ihr Ziel festzulegen.",
+    "get_started": "Loslegen",
+    "role_office_rat": "Büromensch",
+    "role_office_rat_hint": "Nicht-technischer Benutzer",
+    "role_developer": "Entwickler",
+    "role_developer_hint": "Technischer Benutzer",
+    "role_manager": "Manager",
+    "role_manager_hint": "Planung & Koordination",
+    "role": "Rolle",
+    "tool": "Tool",
+    "goal": "Ziel"
+  },
+  "fleet": {
+    "executions_today": "Ausführungen Heute",
+    "success_rate": "Erfolgsrate",
+    "active_agents": "Aktive Agenten",
+    "credentials": "Zugangsdaten"
+  },
+  "nav": {
+    "overview": {
+      "label": "Übersicht",
+      "description": "Dashboard-Analysen, Ausführungsverlauf und Echtzeit-Systemüberwachung aller Agenten"
+    },
+    "personas": {
+      "label": "Agenten",
+      "description": "KI-Agenten mit individuellen Verhaltensweisen und Fähigkeiten erstellen, konfigurieren und verwalten"
+    },
+    "events": {
+      "label": "Ereignisse",
+      "description": "Ereignis-Auslöser, webhook-Listener und zeitgesteuerte Automatisierungen konfigurieren"
+    },
+    "credentials": {
+      "label": "Zugangsdaten",
+      "description": "API-Zugangsdaten, Datenbankverbindungen, OAuth-Token und verschlüsselte Geheimnisse verwalten"
+    },
+    "design-reviews": {
+      "label": "Vorlagen",
+      "description": "n8n-Workflows importieren, Vorlagengalerie durchsuchen und Agenten-Baupläne generieren"
+    },
+    "team": {
+      "label": "Teams",
+      "description": "Multi-Agenten-Team-Pipelines mit Drag-and-Drop-Orchestrierung und Routing erstellen"
+    },
+    "cloud": {
+      "label": "Cloud",
+      "description": "Agenten in der Cloud bereitstellen, Zeitpläne verwalten und GitLab CI integrieren"
+    },
+    "settings": {
+      "label": "Einstellungen",
+      "description": "Kontoeinstellungen, Darstellung, Benachrichtigungsregeln und Engine-Konfiguration"
+    },
+    "plugins": {
+      "label": "Plugins",
+      "description": "Erweitern Sie Ihre Agenten mit Drittanbieter-Plugins und eigenen Erweiterungen"
+    }
+  },
+  "learning": {
+    "title": "Lernzentrum",
+    "subtitle": "Geführte Touren und schnelle Tricks zur Beherrschung von Personas",
+    "guided_tours": "Geführte Touren",
+    "tours_completed": "{completed}/{total} abgeschlossen",
+    "done": "Fertig",
+    "restart": "Neu starten",
+    "start_tour": "Tour starten",
+    "steps_count": "{count} Schritte",
+    "tricks_tips": "Tricks & Tipps",
+    "guides_count": "{count} Anleitungen",
+    "how_to_use": "Verwendung",
+    "pro_tip": "Profi-Tipp: ",
+    "cat_agent_craft": "Agenten-Craft",
+    "cat_observability": "Observability & Ereignisse",
+    "cat_platform": "Plattform & Einrichtung"
+  },
+  "setup_stepper": {
+    "your_profile": "Ihr Profil",
+    "choose_role": "Wählen Sie Ihre Rolle",
+    "tailor_hint": "Wir passen die Erfahrung an Ihre Arbeitsweise an.",
+    "simple_hint": "Wir haben die App für den täglichen Bürogebrauch eingerichtet.",
+    "pick_tool": "Wählen Sie Ihr bevorzugtes Tool",
+    "tool_hint": "Dies wird Ihre erste Konnektor-Integration sein.",
+    "automate_title": "Was möchten Sie automatisieren?",
+    "automate_hint": "Beschreiben Sie Ihr erstes Automatisierungsziel -- wir helfen Ihnen dabei.",
+    "automate_placeholder": "z.B. Neue Jira-Tickets automatisch mit einem Slack-Kanal synchronisieren...",
+    "min_chars": "Min. 10 Zeichen ({current}/10)",
+    "ready_to_save": "Bereit zum Speichern",
+    "back": "Zurück",
+    "next": "Weiter",
+    "finish": "Abschließen"
+  },
+  "welcome_layout": {
+    "get_started": "Loslegen",
+    "language": "Sprache"
+  },
+  "icon_showcase": {
+    "lucide_tab": "Lucide (Bibliothek)",
+    "personas_tab": "Personas (Animiert)",
+    "lucide_footer": "lucide-react -- allgemeine Icon-Bibliothek -- statisch",
+    "personas_footer": "9 benutzerdefinierte Icons -- neuronale/Schaltkreismotive -- CSS-animiert -- themenadaptiv"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "boundary_title": "{name} 中发生了意外错误",
+  "boundary_title_generic": "发生了意外错误",
+  "boundary_body": "请放心 -- 您的数据是安全的。您可以重试或返回仪表盘。",
+  "boundary_retry": "重试",
+  "boundary_dashboard": "前往仪表盘",
+  "boundary_copy": "复制报告以联系支持",
+  "boundary_copied": "已复制到剪贴板",
+  "boundary_dev": "开发者信息",
+  "boundary_no_stack": "无可用堆栈跟踪",
+  "go_back": "返回",
+  "dismiss_error": "忽略错误",
+  "not_found": "请求的资源未找到",
+  "validation": "输入无效：{detail}",
+  "auth": "认证失败 -- 请检查您的凭证",
+  "rate_limited": "请求过多 -- 请稍后重试",
+  "network_offline": "无网络连接",
+  "database": "数据库错误 -- 请重启应用",
+  "internal": "发生了意外错误",
+  "cloud_error": "云端服务错误：{detail}",
+  "gitlab_error": "GitLab 错误：{detail}"
+}

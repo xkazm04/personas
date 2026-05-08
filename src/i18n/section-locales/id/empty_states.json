@@ -1,0 +1,20 @@
+{
+  "credentials_title": "Agen Anda membutuhkan kredensial untuk berjalan",
+  "credentials_subtitle": "Tambahkan API key dan koneksi layanan agar agen Anda dapat berinteraksi dengan alat eksternal.",
+  "triggers_title": "Agen ini hanya berjalan secara manual",
+  "triggers_subtitle": "Tambahkan pemicu untuk mengotomatisasinya -- jadwal, webhook, atau berbasis peristiwa.",
+  "executions_title": "Belum ada eksekusi",
+  "executions_subtitle": "Mulai dalam tiga langkah untuk melihat aktivitas di sini.",
+  "step_create": "Buat agen",
+  "step_credential": "Tambah kredensial",
+  "step_run": "Jalankan agen Anda",
+  "events_title": "Belum ada langganan peristiwa",
+  "events_subtitle": "Berlangganan peristiwa agar agen ini bereaksi otomatis saat sesuatu terjadi.",
+  "tools_title": "Tidak ada alat atau konektor dikonfigurasi",
+  "tools_subtitle": "Hubungkan layanan eksternal agar agen Anda dapat mengambil tindakan dan mengakses data.",
+  "use_cases_title": "Belum ada kasus penggunaan didefinisikan",
+  "use_cases_subtitle": "Tentukan apa yang harus dilakukan agen ini -- impor dari alur kerja atau jelaskan dalam bahasa alami.",
+  "no_results_title": "No matches for your filters",
+  "no_results_subtitle": "Try adjusting or clearing your filters to see more results.",
+  "reset_filters": "Reset filters"
+}

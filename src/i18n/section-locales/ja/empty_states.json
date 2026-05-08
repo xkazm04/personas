@@ -1,0 +1,20 @@
+{
+  "credentials_title": "エージェントの実行には認証情報が必要です",
+  "credentials_subtitle": "APIキーやサービス接続を追加して、エージェントが外部ツールと連携できるようにしてください。",
+  "triggers_title": "このエージェントは手動実行のみです",
+  "triggers_subtitle": "トリガーを追加して自動化 -- スケジュール、webhook、イベント駆動。",
+  "executions_title": "実行履歴はまだありません",
+  "executions_subtitle": "3ステップで開始して、ここにアクティビティを表示しましょう。",
+  "step_create": "エージェントを作成",
+  "step_credential": "認証情報を追加",
+  "step_run": "エージェントを実行",
+  "events_title": "イベントサブスクリプションがまだありません",
+  "events_subtitle": "イベントを購読して、エージェントが自動的に反応するようにしてください。",
+  "tools_title": "ツールやコネクタが未設定です",
+  "tools_subtitle": "外部サービスをリンクして、エージェントがアクションやデータアクセスできるようにしてください。",
+  "use_cases_title": "ユースケースがまだ定義されていません",
+  "use_cases_subtitle": "エージェントの役割を定義 -- ワークフローからインポートするか、自然言語で記述してください。",
+  "no_results_title": "No matches for your filters",
+  "no_results_subtitle": "Try adjusting or clearing your filters to see more results.",
+  "reset_filters": "Reset filters"
+}

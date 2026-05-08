@@ -1,0 +1,33 @@
+{
+  "title": "サンドボックステストランナー",
+  "subtitle": "自動生成シナリオで複数のLLMモデルに対してエージェントをテスト",
+  "no_prompt": "このエージェントにはプロンプトが未設定です。まずプロンプトを追加してください。",
+  "no_tools": "このエージェントにはツールが未割当です。より充実したテストのためにツールを追加してください。",
+  "focus_label": "ユースケースに絞る",
+  "all_use_cases": "全ユースケース",
+  "focus_hint": "シナリオの対象: {description}",
+  "cancel_run": "テスト実行をキャンセル",
+  "run_test_one": "テスト実行（{count}モデル...）",
+  "run_test_other": "テスト実行（{count}モデル...）",
+  "suites": {
+    "title": "保存済テストスイート",
+    "save_button": "シナリオを保存",
+    "save_hint": "生成された{count}件のシナリオを再利用可能なテストスイートとして保存します。",
+    "name_placeholder": "スイート名（任意）",
+    "empty": "保存済テストスイートがありません",
+    "empty_hint": "テストを実行してシナリオを生成し、ここに保存してください",
+    "scenario_count_one": "{count}件のシナリオ",
+    "scenario_count_other": "{count}件のシナリオ",
+    "rerun_tooltip": "このスイートを再実行",
+    "rename_tooltip": "名前を変更",
+    "delete_tooltip": "スイートを削除",
+    "no_scenarios": "このスイートにシナリオがありません"
+  },
+  "progress": {
+    "generating": "テストシナリオを生成中...",
+    "testing": "{model}をテスト中 -- {scenario}",
+    "tool_prefix": "ツール: ",
+    "output_prefix": "出力: ",
+    "protocol_prefix": "プロトコル: "
+  }
+}

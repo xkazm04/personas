@@ -1,0 +1,12 @@
+{
+  "keyword_match_label": "Качество вывода",
+  "keyword_match_description": "Проверяет ожидаемые поведенческие термины в выводе агента",
+  "tool_accuracy_label": "Точность инструментов",
+  "tool_accuracy_description": "Сравнивает ожидаемые и фактические вызовы инструментов",
+  "protocol_compliance_label": "Соответствие протоколу",
+  "protocol_compliance_description": "Проверяет ожидаемые паттерны протокольных сообщений",
+  "confusion_detect_label": "Обнаружение путаницы",
+  "confusion_detect_description": "Проверяет известные фразы путаницы/сбоя",
+  "composite_label": "Составной",
+  "composite_description": "Взвешенная комбинация всех стратегий"
+}

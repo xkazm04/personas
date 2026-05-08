@@ -1,0 +1,16 @@
+{
+  "metric_error_rate": "Chybovost",
+  "metric_success_rate": "Míra úspěšnosti",
+  "metric_cost": "Celkové náklady",
+  "metric_cost_spike": "Náklady vs. průměr",
+  "metric_executions": "Spuštění",
+  "severity_info": "Info",
+  "severity_warning": "Varování",
+  "severity_critical": "Kritické",
+  "error_create_rule": "Vytvoření pravidla upozornění selhalo:",
+  "error_update_rule": "Aktualizace pravidla upozornění selhala:",
+  "error_delete_rule": "Smazání pravidla upozornění selhalo:",
+  "error_toggle_rule": "Přepnutí pravidla upozornění selhalo:",
+  "error_dismiss": "Zavření upozornění selhalo:",
+  "error_clear_history": "Vymazání historie upozornění selhalo:"
+}

@@ -1,0 +1,13 @@
+{
+  "accurate_prompt": "सटीक प्रॉम्प्ट",
+  "good_tool_selection": "अच्छा टूल चयन",
+  "reliable": "विश्वसनीय",
+  "cost_efficient": "लागत कुशल",
+  "wrong_tools": "गलत टूल",
+  "poor_instructions": "खराब निर्देश",
+  "missing_context": "संदर्भ अनुपस्थित",
+  "over_engineered": "अत्यधिक जटिल",
+  "under_specified": "अपर्याप्त विशिष्ट",
+  "wrong_triggers": "गलत ट्रिगर",
+  "credential_issues": "क्रेडेंशियल समस्याएं"
+}

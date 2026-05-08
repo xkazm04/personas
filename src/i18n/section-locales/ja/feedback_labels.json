@@ -1,0 +1,13 @@
+{
+  "accurate_prompt": "正確なプロンプト",
+  "good_tool_selection": "良いツール選択",
+  "reliable": "信頼性が高い",
+  "cost_efficient": "コスト効率が良い",
+  "wrong_tools": "ツールが間違っている",
+  "poor_instructions": "指示が不適切",
+  "missing_context": "コンテキストが不足",
+  "over_engineered": "過剰設計",
+  "under_specified": "仕様不足",
+  "wrong_triggers": "トリガーが間違っている",
+  "credential_issues": "認証情報の問題"
+}

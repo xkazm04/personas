@@ -1,0 +1,13 @@
+{
+  "accurate_prompt": "Accurate Prompt",
+  "good_tool_selection": "Good Tool Selection",
+  "reliable": "Reliable",
+  "cost_efficient": "Cost Efficient",
+  "wrong_tools": "Wrong Tools",
+  "poor_instructions": "Poor Instructions",
+  "missing_context": "Missing Context",
+  "over_engineered": "Over-Engineered",
+  "under_specified": "Under-Specified",
+  "wrong_triggers": "Wrong Triggers",
+  "credential_issues": "Credential Issues"
+}

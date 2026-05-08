@@ -1,0 +1,11 @@
+{
+  "required": "{field} est requis",
+  "min_length": "{field} doit contenir au moins {min} caractères",
+  "min_value": "{field} doit être au moins {min}",
+  "invalid_cron": "Expression cron invalide",
+  "invalid_separator": "Le filtre source contient une séquence de séparation invalide",
+  "passphrase_min": "La phrase secrète doit contenir au moins 8 caractères",
+  "passphrase_prompt": "Veuillez entrer la phrase secrète utilisée lors de l'exportation",
+  "at_least_one": "Au moins un {field} est requis",
+  "fill_one_field": "Remplissez au moins un champ pour enregistrer"
+}

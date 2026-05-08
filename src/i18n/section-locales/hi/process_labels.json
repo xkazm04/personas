@@ -1,0 +1,18 @@
+{
+  "n8n_transform": "n8n रूपांतरण",
+  "template_adopt": "टेम्पलेट अपनाना",
+  "rebuild": "एजेंट पुनर्निर्माण",
+  "template_test": "टेम्पलेट परीक्षण",
+  "context_scan": "संदर्भ मानचित्र स्कैन",
+  "idea_scan": "आइडिया स्कैन",
+  "execution": "एजेंट निष्पादन",
+  "matrix_build": "मैट्रिक्स निर्माण",
+  "lab_run": "लैब रन",
+  "connector_test": "कनेक्टर परीक्षण",
+  "creative_session": "क्रिएटिव सेशन",
+  "feedback_chat": "फीडबैक चैट",
+  "complete_suffix": "पूर्ण",
+  "failed_suffix": "विफल",
+  "pending_reviews_one": "{count} लंबित समीक्षा अनुमोदन की प्रतीक्षा में",
+  "pending_reviews_other": "{count} लंबित समीक्षाएं अनुमोदन की प्रतीक्षा में"
+}

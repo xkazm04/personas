@@ -1,0 +1,16 @@
+{
+  "metric_error_rate": "错误率",
+  "metric_success_rate": "成功率",
+  "metric_cost": "总成本",
+  "metric_cost_spike": "成本与平均值对比",
+  "metric_executions": "执行次数",
+  "severity_info": "信息",
+  "severity_warning": "警告",
+  "severity_critical": "严重",
+  "error_create_rule": "创建告警规则失败：",
+  "error_update_rule": "更新告警规则失败：",
+  "error_delete_rule": "删除告警规则失败：",
+  "error_toggle_rule": "切换告警规则失败：",
+  "error_dismiss": "忽略告警失败：",
+  "error_clear_history": "清除告警历史失败："
+}

@@ -1,0 +1,20 @@
+{
+  "credentials_title": "에이전트에 자격 증명이 필요합니다",
+  "credentials_subtitle": "에이전트가 외부 도구와 상호작용할 수 있도록 API 키와 서비스 연결을 추가하세요.",
+  "triggers_title": "이 에이전트는 수동으로만 실행됩니다",
+  "triggers_subtitle": "스케줄, webhook 또는 이벤트 기반 트리거를 추가하여 자동화하세요.",
+  "executions_title": "아직 실행 기록이 없습니다",
+  "executions_subtitle": "여기서 활동을 보려면 세 단계로 시작하세요.",
+  "step_create": "에이전트 생성",
+  "step_credential": "자격 증명 추가",
+  "step_run": "에이전트 실행",
+  "events_title": "아직 이벤트 구독이 없습니다",
+  "events_subtitle": "이벤트를 구독하면 에이전트가 자동으로 반응합니다.",
+  "tools_title": "도구 또는 커넥터가 설정되지 않았습니다",
+  "tools_subtitle": "외부 서비스를 연결하여 에이전트가 작업을 수행하고 데이터에 접근할 수 있도록 하세요.",
+  "use_cases_title": "아직 사용 사례가 정의되지 않았습니다",
+  "use_cases_subtitle": "이 에이전트가 무엇을 해야 하는지 정의하세요 -- 워크플로에서 가져오거나 자연어로 설명하세요.",
+  "no_results_title": "No matches for your filters",
+  "no_results_subtitle": "Try adjusting or clearing your filters to see more results.",
+  "reset_filters": "Reset filters"
+}

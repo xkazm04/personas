@@ -1,0 +1,20 @@
+{
+  "credentials_title": "এজেন্ট চালাতে শংসাপত্র দরকার",
+  "credentials_subtitle": "API কী ও সেবা সংযোগ যোগ করুন যাতে এজেন্ট বাহ্যিক টুল ব্যবহার করতে পারে।",
+  "triggers_title": "এই এজেন্ট শুধু ম্যানুয়ালি চলে",
+  "triggers_subtitle": "অটোমেটে ট্রিগার যোগ করুন -- সময়সূচি, webhook বা ইভেন্ট-চালিত।",
+  "executions_title": "কোনো সম্পাদন নেই",
+  "executions_subtitle": "তিন ধাপে শুরু করুন।",
+  "step_create": "এজেন্ট তৈরি",
+  "step_credential": "শংসাপত্র যোগ",
+  "step_run": "এজেন্ট চালান",
+  "events_title": "কোনো ইভেন্ট সাবস্ক্রিপশন নেই",
+  "events_subtitle": "ইভেন্টে সাবস্ক্রাইব করুন যাতে এজেন্ট স্বয়ংক্রিয়ভাবে প্রতিক্রিয়া দেয়।",
+  "tools_title": "কোনো টুল বা সংযোগকারী কনফিগার করা নেই",
+  "tools_subtitle": "বাহ্যিক সেবা লিঙ্ক করুন যাতে এজেন্ট কার্য ও ডাটা অ্যাক্সেস করতে পারে।",
+  "use_cases_title": "কোনো ব্যবহারের ক্ষেত্র সংজ্ঞায়িত নয়",
+  "use_cases_subtitle": "এজেন্ট কী করবে সংজ্ঞায়িত করুন -- ওয়ার্কফ্লো ইম্পোর্ট বা সহজ ভাষায় বর্ণনা করুন।",
+  "no_results_title": "No matches for your filters",
+  "no_results_subtitle": "Try adjusting or clearing your filters to see more results.",
+  "reset_filters": "Reset filters"
+}

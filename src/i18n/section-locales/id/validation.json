@@ -1,0 +1,11 @@
+{
+  "required": "{field} wajib diisi",
+  "min_length": "{field} harus minimal {min} karakter",
+  "min_value": "{field} harus minimal {min}",
+  "invalid_cron": "Ekspresi cron tidak valid",
+  "invalid_separator": "Filter sumber mengandung urutan pemisah yang tidak valid",
+  "passphrase_min": "Frasa sandi harus minimal 8 karakter",
+  "passphrase_prompt": "Silakan masukkan frasa sandi yang digunakan saat ekspor",
+  "at_least_one": "Setidaknya satu {field} diperlukan",
+  "fill_one_field": "Isi setidaknya satu kolom untuk menyimpan"
+}

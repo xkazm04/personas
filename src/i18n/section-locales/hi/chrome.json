@@ -1,0 +1,22 @@
+{
+  "app_title": "Personas",
+  "skip_to_content": "सामग्री पर जाएं",
+  "minimize": "छोटा करें",
+  "restore": "पुनर्स्थापित करें",
+  "maximize": "बड़ा करें",
+  "close_window": "बंद करें",
+  "update_available": "अपडेट उपलब्ध: v{version}",
+  "install_and_restart": "इंस्टॉल करें और पुनः प्रारंभ करें",
+  "installing": "इंस्टॉल हो रहा है...",
+  "update_install_failed": "अपडेट इंस्टॉल नहीं हो पाया",
+  "update_install_retry": "फिर से प्रयास करें",
+  "expand_sidebar": "साइडबार विस्तृत करें",
+  "collapse_sidebar": "साइडबार संकुचित करें",
+  "network_settings": "नेटवर्क सेटिंग्स",
+  "dark": "डार्क",
+  "light": "लाइट",
+  "sign_in_google": "Google से साइन इन करें",
+  "signed_in": "साइन इन किया",
+  "sign_out": "साइन आउट करें",
+  "offline": "ऑफ़लाइन"
+}

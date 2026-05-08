@@ -1,0 +1,22 @@
+{
+  "boundary_title": "Quelque chose d'inattendu s'est produit dans {name}",
+  "boundary_title_generic": "Quelque chose d'inattendu s'est produit",
+  "boundary_body": "Ne vous inquiétez pas -- vos données sont en sécurité. Vous pouvez réessayer ou retourner au tableau de bord.",
+  "boundary_retry": "Réessayer",
+  "boundary_dashboard": "Aller au tableau de bord",
+  "boundary_copy": "Copier le rapport pour le support",
+  "boundary_copied": "Copié dans le presse-papiers",
+  "boundary_dev": "Pour les développeurs",
+  "boundary_no_stack": "Aucune trace de pile disponible",
+  "go_back": "Retour",
+  "dismiss_error": "Ignorer l'erreur",
+  "not_found": "La ressource demandée est introuvable",
+  "validation": "Entrée invalide : {detail}",
+  "auth": "Échec de l'authentification -- vérifiez vos identifiants",
+  "rate_limited": "Trop de requêtes -- réessayez dans un instant",
+  "network_offline": "Pas de connexion Internet",
+  "database": "Erreur de base de données -- veuillez redémarrer l'application",
+  "internal": "Une erreur inattendue s'est produite",
+  "cloud_error": "Erreur du service cloud : {detail}",
+  "gitlab_error": "Erreur GitLab : {detail}"
+}

@@ -1,0 +1,141 @@
+{
+  "welcome": "स्वागत है",
+  "greeting_morning": "शुभ प्रभात",
+  "greeting_afternoon": "शुभ अपराह्न",
+  "greeting_evening": "शुभ संध्या",
+  "operator": "ऑपरेटर",
+  "summary_empty": "अपना पहला एजेंट बनाकर या प्लेटफ़ॉर्म एक्सप्लोर करके शुरू करें।",
+  "summary_stats": "आपके पास {personasCount} एजेंट{personasPlural} और {credentialsCount} क्रेडेंशियल{credentialsPlural} कॉन्फ़िगर हैं।",
+  "quick_navigation": "त्वरित नेविगेशन",
+  "platform_label": "Personas प्लेटफ़ॉर्म",
+  "roadmap": {
+    "title": "उत्पाद रोडमैप",
+    "subtitle": "हम अभी क्या बना रहे हैं और आगे क्या आएगा।",
+    "unavailable": "रोडमैप उपलब्ध नहीं",
+    "unavailable_hint": "उत्पाद रोडमैप लोड नहीं हो सका। अपना कनेक्शन जाँचें और पुनः प्रयास करें।",
+    "status_in_progress": "प्रगति में",
+    "status_next": "अगला",
+    "status_planned": "योजनाबद्ध",
+    "status_completed": "पूर्ण",
+    "priority_now": "अभी",
+    "priority_next": "अगला",
+    "priority_later": "बाद में",
+    "in_progress_count": "{count} प्रगति में",
+    "next_count": "{count} अगला"
+  },
+  "setup": {
+    "choose_role": "अपनी भूमिका चुनें",
+    "choose_role_hint": "हम आपके काम करने के तरीके के अनुसार अनुभव तैयार करेंगे।",
+    "pick_tool": "अपना पसंदीदा टूल चुनें",
+    "pick_tool_hint": "यह आपका पहला सेवा कनेक्शन होगा।",
+    "describe_goal": "आप क्या ऑटोमेट करना चाहते हैं?",
+    "describe_goal_hint": "अपना पहला ऑटोमेशन लक्ष्य बताएं -- हम इसे सेट अप करने में आपकी मदद करेंगे।",
+    "goal_placeholder": "उदा. नए Jira टिकट को Slack चैनल में स्वचालित रूप से सिंक करें...",
+    "ready_to_save": "सहेजने के लिए तैयार",
+    "step_role": "आपकी भूमिका",
+    "step_role_hint": "अनुभव तैयार करने के लिए हमें अपनी भूमिका बताएं।",
+    "step_tool": "पसंदीदा टूल",
+    "step_tool_hint": "पहली सेवा चुनें जिसे आप कनेक्ट करना चाहते हैं।",
+    "step_goal": "ऑटोमेशन लक्ष्य",
+    "step_goal_hint": "बताएं कि आप पहले क्या ऑटोमेट करना चाहेंगे।",
+    "select_role_first": "टूल विकल्प अनलॉक करने के लिए पहले एक भूमिका चुनें।",
+    "select_tool_first": "अपना लक्ष्य निर्धारित करने के लिए पहले एक टूल चुनें।",
+    "get_started": "शुरू करें",
+    "role_office_rat": "ऑफिस रैट",
+    "role_office_rat_hint": "गैर-तकनीकी उपयोगकर्ता",
+    "role_developer": "डेवलपर",
+    "role_developer_hint": "तकनीकी उपयोगकर्ता",
+    "role_manager": "मैनेजर",
+    "role_manager_hint": "योजना और समन्वय",
+    "role": "भूमिका",
+    "tool": "टूल",
+    "goal": "लक्ष्य"
+  },
+  "fleet": {
+    "executions_today": "आज के रन",
+    "success_rate": "सफलता दर",
+    "active_agents": "सक्रिय एजेंट",
+    "credentials": "क्रेडेंशियल"
+  },
+  "nav": {
+    "overview": {
+      "label": "अवलोकन",
+      "description": "सभी एजेंटों का डैशबोर्ड एनालिटिक्स, निष्पादन इतिहास और रीयल-टाइम सिस्टम मॉनिटरिंग"
+    },
+    "personas": {
+      "label": "एजेंट",
+      "description": "कस्टम व्यवहार और क्षमताओं के साथ AI एजेंट बनाएँ, कॉन्फ़िगर करें और प्रबंधित करें"
+    },
+    "events": {
+      "label": "इवेंट",
+      "description": "इवेंट ट्रिगर, webhook लिसनर और शेड्यूल-आधारित ऑटोमेशन कॉन्फ़िगर करें"
+    },
+    "credentials": {
+      "label": "कुंजियाँ",
+      "description": "API क्रेडेंशियल, डेटाबेस कनेक्शन, OAuth टोकन और एन्क्रिप्टेड सीक्रेट प्रबंधित करें"
+    },
+    "design-reviews": {
+      "label": "टेम्पलेट",
+      "description": "n8n वर्कफ़्लो आयात करें, टेम्पलेट गैलरी ब्राउज़ करें और एजेंट ब्लूप्रिंट जनरेट करें"
+    },
+    "team": {
+      "label": "टीमें",
+      "description": "ड्रैग-एंड-ड्रॉप ऑर्केस्ट्रेशन और रूटिंग के साथ मल्टी-एजेंट टीम पाइपलाइन बनाएँ"
+    },
+    "cloud": {
+      "label": "क्लाउड",
+      "description": "एजेंट क्लाउड इंफ़्रास्ट्रक्चर पर डिप्लॉय करें, शेड्यूल प्रबंधित करें और GitLab CI इंटीग्रेट करें"
+    },
+    "settings": {
+      "label": "सेटिंग्स",
+      "description": "खाता प्राथमिकताएँ, दिखावट थीम, सूचना नियम और इंजन कॉन्फ़िगरेशन"
+    },
+    "plugins": {
+      "label": "प्लगइन",
+      "description": "थर्ड-पार्टी प्लगइन और कस्टम एक्सटेंशन से अपने एजेंट बढ़ाएं"
+    }
+  },
+  "learning": {
+    "title": "लर्निंग सेंटर",
+    "subtitle": "Personas में माहिर होने के लिए गाइडेड टूर और त्वरित ट्रिक्स",
+    "guided_tours": "गाइडेड टूर",
+    "tours_completed": "{completed}/{total} पूर्ण",
+    "done": "हो गया",
+    "restart": "पुनः प्रारंभ",
+    "start_tour": "टूर शुरू करें",
+    "steps_count": "{count} चरण",
+    "tricks_tips": "ट्रिक्स और टिप्स",
+    "guides_count": "{count} गाइड",
+    "how_to_use": "उपयोग कैसे करें",
+    "pro_tip": "प्रो टिप: ",
+    "cat_agent_craft": "एजेंट क्राफ्ट",
+    "cat_observability": "ऑब्जर्वेबिलिटी और इवेंट",
+    "cat_platform": "प्लेटफ़ॉर्म और सेटअप"
+  },
+  "setup_stepper": {
+    "your_profile": "आपकी प्रोफ़ाइल",
+    "choose_role": "अपनी भूमिका चुनें",
+    "tailor_hint": "हम आपके काम करने के तरीके के अनुसार अनुभव तैयार करेंगे।",
+    "simple_hint": "हमने ऐप को रोजमर्रा के ऑफिस उपयोग के लिए सेट किया है।",
+    "pick_tool": "अपना पसंदीदा टूल चुनें",
+    "tool_hint": "यह आपका पहला कनेक्टर इंटीग्रेशन होगा।",
+    "automate_title": "आप क्या ऑटोमेट करना चाहते हैं?",
+    "automate_hint": "अपना पहला ऑटोमेशन लक्ष्य बताएं -- हम इसे सेट अप करने में आपकी मदद करेंगे।",
+    "automate_placeholder": "उदा. नए Jira टिकट को Slack चैनल में स्वचालित रूप से सिंक करें...",
+    "min_chars": "न्यूनतम 10 अक्षर ({current}/10)",
+    "ready_to_save": "सहेजने के लिए तैयार",
+    "back": "वापस",
+    "next": "अगला",
+    "finish": "समाप्त"
+  },
+  "welcome_layout": {
+    "get_started": "शुरू करें",
+    "language": "भाषा"
+  },
+  "icon_showcase": {
+    "lucide_tab": "Lucide (लाइब्रेरी)",
+    "personas_tab": "Personas (एनिमेटेड)",
+    "lucide_footer": "lucide-react -- जेनेरिक आइकन लाइब्रेरी -- स्टैटिक",
+    "personas_footer": "9 कस्टम आइकन -- न्यूरल/सर्किट मोटिफ -- CSS-एनिमेटेड -- थीम-अनुकूली"
+  }
+}

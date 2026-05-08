@@ -1,0 +1,8 @@
+{
+  "queued": "कतार में",
+  "running": "चल रहा है",
+  "completed": "पूर्ण",
+  "failed": "विफल",
+  "cancelled": "रद्द",
+  "error": "त्रुटि"
+}

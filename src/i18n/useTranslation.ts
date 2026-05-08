@@ -1,78 +1,151 @@
 import { useSyncExternalStore } from 'react';
 import { useI18nStore, type Language } from '@/stores/i18nStore';
-import enBundle from './locales/en.json';
 import type { Translations } from './generated/types';
 import { buildPseudoBundle, isPseudoActive } from './pseudoLocale';
+import {
+  ALL_I18N_SECTIONS,
+  getEnglishSection,
+  getEnglishTranslations,
+  isTranslationSection,
+  type TranslationSection,
+} from './englishSections';
+import { useActiveI18nSections } from './routeSections';
 
 export type { Translations };
 
 /**
- * Per-locale JSON modules, discovered by Vite's import.meta.glob.
- * Each locale is its own async chunk — only the active locale + English
- * ship in the initial bundle.
+ * Per-locale/per-section JSON modules, discovered by Vite's import.meta.glob.
+ * Each non-English top-level section is its own async chunk; English sections
+ * are raw JSON strings parsed on first access so cold start no longer parses
+ * the full 500KB+ English bundle.
  *
  * The `import: 'default'` option returns the JSON's default export
  * directly (rather than a module wrapper). `eager: false` keeps each
  * locale lazily code-split.
  */
-const localeLoaders = import.meta.glob<{ default: Translations }>('./locales/*.json', {
+const sectionLoaders = import.meta.glob<{ default: unknown }>('./section-locales/*/*.json', {
   eager: false,
 });
 
-/** Extract the locale code from a glob path like `./locales/de.json`. */
-function codeFromPath(path: string): string {
-  return path.replace(/^\.\/locales\//, '').replace(/\.json$/, '');
+/** Extract `{ lang, section }` from `./section-locales/de/common.json`. */
+function sectionFromPath(path: string): { lang: string; section: string } | null {
+  const match = /^\.\/section-locales\/([^/]+)\/([^/]+)\.json$/.exec(path);
+  if (!match) return null;
+  const [, lang, section] = match;
+  if (!lang || !section) return null;
+  return { lang, section };
 }
 
-/** Fully-loaded bundles keyed by language code. English is always present. */
-const cache = new Map<Language, Translations>();
-cache.set('en', enBundle as Translations);
+/** Loaded top-level sections keyed by language code. English lives in englishSections.ts. */
+const sectionCache = new Map<Language, Partial<Record<TranslationSection, unknown>>>();
+const bundleCache = new Map<Language, Translations>();
+const loadingSet = new Set<string>();
 
-const loadingSet = new Set<Language>();
+function sectionLoadKey(lang: Language, section: TranslationSection): string {
+  return `${lang}:${section}`;
+}
+
+function getCachedSection(lang: Language, section: TranslationSection): unknown | undefined {
+  if (lang === 'en') {
+    return getEnglishSection(section);
+  }
+  return sectionCache.get(lang)?.[section];
+}
+
+function cacheSection(lang: Language, section: TranslationSection, value: unknown): void {
+  let sections = sectionCache.get(lang);
+  if (!sections) {
+    sections = {};
+    sectionCache.set(lang, sections);
+  }
+  sections[section] = value;
+}
 
 /**
- * Kick off loading a locale if it isn't cached. Fires a listener broadcast
- * once the bundle resolves so useSyncExternalStore re-renders consumers.
+ * Kick off loading route-required translation sections. Fires a listener
+ * broadcast once each section resolves so useSyncExternalStore re-renders
+ * consumers.
  */
-function preload(lang: Language) {
-  if (cache.has(lang) || loadingSet.has(lang)) return;
-
-  const entry = Object.entries(localeLoaders).find(([path]) => codeFromPath(path) === lang);
-  if (!entry) {
-    // Unknown locale — fall back to English silently. The manifest/TS
-    // types should prevent this at compile time.
+export function preloadSections(lang: Language, sections: readonly TranslationSection[]): void {
+  if (lang === 'en') {
+    for (const section of sections) getEnglishSection(section);
     return;
   }
-  const [, loader] = entry;
-  loadingSet.add(lang);
 
-  const attempt = (isRetry: boolean): void => {
-    loader()
-      .then((mod) => {
-        // Locales ship at 100% coverage (enforced by `npm run check:i18n`),
-        // so the raw bundle is cached as-is with no English fallback merge.
-        cache.set(lang, mod.default);
-        bundleVersion++;
-        listeners.forEach((fn) => fn());
-      })
-      .catch((err: unknown) => {
-        if (!isRetry) {
-          setTimeout(() => attempt(true), 1000);
-          return;
-        }
-        import('@/lib/log').then(({ createLogger }) => {
-          createLogger('i18n').error(
-            `Failed to load "${lang}" locale after retry — falling back to English`,
-            { error: err instanceof Error ? err.message : String(err) },
-          );
+  for (const section of sections) {
+    if (getCachedSection(lang, section) !== undefined) continue;
+    const key = sectionLoadKey(lang, section);
+    if (loadingSet.has(key)) continue;
+
+    const entry = Object.entries(sectionLoaders).find(([path]) => {
+      const parsed = sectionFromPath(path);
+      return parsed?.lang === lang && parsed.section === section;
+    });
+    if (!entry) continue;
+
+    const [, loader] = entry;
+    loadingSet.add(key);
+
+    const attempt = (isRetry: boolean): void => {
+      loader()
+        .then((mod) => {
+          cacheSection(lang, section, mod.default);
+          bundleVersion++;
+          listeners.forEach((fn) => fn());
+        })
+        .catch((err: unknown) => {
+          if (!isRetry) {
+            setTimeout(() => attempt(true), 1000);
+            return;
+          }
+          import('@/lib/log').then(({ createLogger }) => {
+            createLogger('i18n').error(
+              `Failed to load "${lang}.${section}" translation section after retry — falling back to English`,
+              { error: err instanceof Error ? err.message : String(err) },
+            );
+          });
+        })
+        .finally(() => {
+          loadingSet.delete(key);
         });
-      })
-      .finally(() => {
-        loadingSet.delete(lang);
-      });
-  };
+    };
 
-  attempt(false);
+    attempt(false);
+  }
+}
+
+function getBundle(lang: Language): Translations {
+  if (import.meta.env.DEV && isPseudoActive()) {
+    return buildPseudoBundle(getEnglishTranslations());
+  }
+
+  if (!bundleCache.has(lang)) {
+    const bundle = new Proxy({}, {
+      get(_target, prop) {
+        if (typeof prop !== 'string' || !isTranslationSection(prop)) {
+          return undefined;
+        }
+        if (lang !== 'en' && getCachedSection(lang, prop) === undefined) {
+          preloadSections(lang, [prop]);
+        }
+        return getCachedSection(lang, prop) ?? getEnglishSection(prop);
+      },
+      has(_target, prop) {
+        return typeof prop === 'string' && isTranslationSection(prop);
+      },
+      ownKeys() {
+        return ALL_I18N_SECTIONS;
+      },
+      getOwnPropertyDescriptor(_target, prop) {
+        if (typeof prop === 'string' && isTranslationSection(prop)) {
+          return { enumerable: true, configurable: true };
+        }
+        return undefined;
+      },
+    }) as Translations;
+    bundleCache.set(lang, bundle);
+  }
+  return bundleCache.get(lang)!;
 }
 
 // -- pub/sub so React re-renders when a bundle finishes loading ----------
@@ -115,23 +188,17 @@ export function interpolate(template: string, vars: Record<string, string | numb
  */
 export function getActiveTranslations(): Translations {
   const { language } = useI18nStore.getState();
-  if (!cache.has(language)) {
-    preload(language);
-  }
-  let bundle = cache.get(language) ?? cache.get('en')!;
-  if (import.meta.env.DEV && isPseudoActive()) {
-    bundle = buildPseudoBundle(cache.get('en')!);
-  }
-  return bundle;
+  preloadSections(language, ['common']);
+  return getBundle(language);
 }
 
 /**
  * Primary translation hook. Returns the full translation tree for the
  * active language plus a helper `tx()` for variable interpolation.
  *
- * Every locale ships a full translation — there is no English-fallback
- * deep-merge. If a locale file is missing keys, the coverage gate in
- * `npm run check:i18n` fails CI.
+ * Non-English locale sections load lazily and temporarily fall back to the
+ * matching English section until the chunk resolves. If a locale file is
+ * missing keys, the coverage gate in `npm run check:i18n` fails CI.
  *
  * Usage:
  *   const { t, tx, language } = useTranslation();
@@ -140,21 +207,11 @@ export function getActiveTranslations(): Translations {
  */
 export function useTranslation() {
   const { language } = useI18nStore();
+  const routeSections = useActiveI18nSections();
   useSyncExternalStore(subscribe, getSnapshot);
 
-  if (!cache.has(language)) {
-    preload(language);
-  }
-
-  // While the async bundle for a non-English locale loads, render English
-  // so the UI doesn't flash empty. Swap in the real bundle once ready.
-  let bundle = cache.get(language) ?? cache.get('en')!;
-
-  // Dev-only pseudo-locale: brackets + accented look-alikes on every
-  // translated string, so any hardcoded English on screen stands out.
-  if (import.meta.env.DEV && isPseudoActive()) {
-    bundle = buildPseudoBundle(cache.get('en')!);
-  }
+  preloadSections(language, routeSections);
+  const bundle = getBundle(language);
 
   return {
     /** Full translation tree for the active language. */

@@ -1,0 +1,22 @@
+{
+  "app_title": "Personas",
+  "skip_to_content": "تخطي إلى المحتوى",
+  "minimize": "تصغير",
+  "restore": "استعادة",
+  "maximize": "تكبير",
+  "close_window": "إغلاق",
+  "update_available": "تحديث متاح: v{version}",
+  "install_and_restart": "تثبيت وإعادة التشغيل",
+  "installing": "جارٍ التثبيت...",
+  "update_install_failed": "فشل تثبيت التحديث",
+  "update_install_retry": "إعادة المحاولة",
+  "expand_sidebar": "توسيع الشريط الجانبي",
+  "collapse_sidebar": "طي الشريط الجانبي",
+  "network_settings": "إعدادات الشبكة",
+  "dark": "داكن",
+  "light": "فاتح",
+  "sign_in_google": "تسجيل الدخول بـ Google",
+  "signed_in": "تم تسجيل الدخول",
+  "sign_out": "تسجيل الخروج",
+  "offline": "غير متصل بالإنترنت"
+}

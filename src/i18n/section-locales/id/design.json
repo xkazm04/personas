@@ -1,0 +1,16 @@
+{
+  "no_persona": "Tidak ada persona dipilih",
+  "conversation_truncated": "Percakapan ini mencapai batas pesan. Pesan lama telah dihapus — pertimbangkan memulai percakapan baru untuk menjaga konteks.",
+  "stages": {
+    "assembling_label": "Merangkai prompt",
+    "assembling_desc": "Membangun prompt LLM dari konfigurasi dan instruksi persona",
+    "generating_label": "Menghasilkan dengan AI",
+    "generating_desc": "Menjalankan Claude untuk menghasilkan desain persona",
+    "parsing_label": "Mengurai keluaran",
+    "parsing_desc": "Mengekstrak JSON terstruktur dari respons LLM",
+    "checking_label": "Memeriksa kelayakan",
+    "checking_desc": "Memvalidasi alat dan konektor yang disarankan tersedia",
+    "saving_label": "Menyimpan hasil",
+    "saving_desc": "Menulis desain yang dikompilasi ke basis data"
+  }
+}

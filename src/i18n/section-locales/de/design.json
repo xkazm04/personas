@@ -1,0 +1,16 @@
+{
+  "no_persona": "Keine Persona ausgewählt",
+  "conversation_truncated": "Diese Unterhaltung hat das Nachrichtenlimit erreicht. Ältere Nachrichten wurden entfernt — erwägen Sie, eine neue Unterhaltung zu beginnen, um den Kontext zu erhalten.",
+  "stages": {
+    "assembling_label": "Prompt zusammenstellen",
+    "assembling_desc": "LLM-Prompt aus Persona-Konfiguration und Anweisungen wird erstellt",
+    "generating_label": "Mit KI generieren",
+    "generating_desc": "Claude wird ausgeführt, um das Persona-Design zu erstellen",
+    "parsing_label": "Ausgabe auswerten",
+    "parsing_desc": "Strukturiertes JSON wird aus der LLM-Antwort extrahiert",
+    "checking_label": "Machbarkeit prüfen",
+    "checking_desc": "Vorgeschlagene Werkzeuge und Konnektoren werden auf Verfügbarkeit geprüft",
+    "saving_label": "Ergebnis speichern",
+    "saving_desc": "Kompiliertes Design wird in die Datenbank geschrieben"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "app_title": "Personas",
+  "skip_to_content": "Zum Inhalt springen",
+  "minimize": "Minimieren",
+  "restore": "Wiederherstellen",
+  "maximize": "Maximieren",
+  "close_window": "Schließen",
+  "update_available": "Update verfügbar: v{version}",
+  "install_and_restart": "Installieren & Neustarten",
+  "installing": "Installieren...",
+  "update_install_failed": "Update-Installation fehlgeschlagen",
+  "update_install_retry": "Erneut versuchen",
+  "expand_sidebar": "Seitenleiste erweitern",
+  "collapse_sidebar": "Seitenleiste einklappen",
+  "network_settings": "Netzwerkeinstellungen",
+  "dark": "Dunkel",
+  "light": "Hell",
+  "sign_in_google": "Mit Google anmelden",
+  "signed_in": "Angemeldet",
+  "sign_out": "Abmelden",
+  "offline": "Offline"
+}

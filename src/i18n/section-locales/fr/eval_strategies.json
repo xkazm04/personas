@@ -1,0 +1,12 @@
+{
+  "keyword_match_label": "Qualité de la sortie",
+  "keyword_match_description": "Vérifie les termes de comportement attendus dans la sortie de l'agent",
+  "tool_accuracy_label": "Précision des outils",
+  "tool_accuracy_description": "Compare les appels d'outils attendus et réels",
+  "protocol_compliance_label": "Conformité au protocole",
+  "protocol_compliance_description": "Vérifie les motifs de messages de protocole attendus",
+  "confusion_detect_label": "Détection de confusion",
+  "confusion_detect_description": "Vérifie les phrases de confusion/échec connues",
+  "composite_label": "Composite",
+  "composite_description": "Combinaison pondérée de toutes les stratégies"
+}

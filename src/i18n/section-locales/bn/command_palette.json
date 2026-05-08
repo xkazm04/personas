@@ -1,0 +1,13 @@
+{
+  "placeholder": "এজেন্ট খুঁজুন, নেভিগেট... (কমান্ডের জন্য \\\\\\\">\\\\\\\" টাইপ করুন)",
+  "commands": "কমান্ড",
+  "recent_agents": "সাম্প্রতিক এজেন্ট",
+  "navigation": "নেভিগেশন",
+  "agents_section": "এজেন্ট",
+  "create_agent": "নতুন এজেন্ট তৈরি",
+  "go_to": "{label}-এ যান",
+  "key_esc": "ESC",
+  "hint_navigate": "নেভিগেট",
+  "hint_select": "নির্বাচন",
+  "hint_commands": "কমান্ড"
+}

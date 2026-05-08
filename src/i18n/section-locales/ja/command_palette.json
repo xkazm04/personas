@@ -1,0 +1,13 @@
+{
+  "placeholder": "エージェント検索、ナビゲーション...（\\\">\\\"でコマンド）",
+  "commands": "コマンド",
+  "recent_agents": "最近のエージェント",
+  "navigation": "ナビゲーション",
+  "agents_section": "エージェント",
+  "create_agent": "新規エージェントを作成",
+  "go_to": "{label}へ移動",
+  "key_esc": "ESC",
+  "hint_navigate": "移動",
+  "hint_select": "選択",
+  "hint_commands": "コマンド"
+}

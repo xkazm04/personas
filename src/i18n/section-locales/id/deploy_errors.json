@@ -1,0 +1,15 @@
+{
+  "not_reachable": "Tidak dapat menjangkau server. Periksa URL dan koneksi jaringan Anda.",
+  "timed_out": "Koneksi habis waktu. Server mungkin sedang mati atau URL mungkin salah.",
+  "dns_resolve": "Tidak dapat menyelesaikan nama host. Periksa kembali URL untuk kesalahan ketik.",
+  "unauthorized": "Kredensial tidak valid. Harap verifikasi dan coba lagi.",
+  "forbidden": "Akses ditolak. Kredensial Anda mungkin tidak memiliki izin yang diperlukan.",
+  "internal_server_error": "Server mengembalikan error internal. Coba lagi dalam beberapa menit.",
+  "service_unavailable": "Server sementara tidak tersedia. Coba lagi sebentar.",
+  "not_connected": "Tidak terhubung. Harap hubungkan terlebih dahulu.",
+  "keyring": "Tidak dapat mengakses kredensial yang tersimpan. Anda mungkin perlu menghubungkan kembali.",
+  "oauth_expired": "Token OAuth telah kedaluwarsa. Harap otorisasi ulang.",
+  "url_empty": "Harap masukkan URL orkestrator.",
+  "api_key_empty": "Harap masukkan kunci API Anda.",
+  "token_empty": "Harap masukkan token akses personal GitLab Anda."
+}

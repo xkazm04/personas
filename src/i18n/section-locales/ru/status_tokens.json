@@ -1,0 +1,94 @@
+{
+  "execution": {
+    "queued": "В очереди",
+    "running": "Выполняется",
+    "completed": "Завершено",
+    "failed": "Сбой",
+    "cancelled": "Отменено",
+    "error": "Ошибка"
+  },
+  "event": {
+    "pending": "Ожидание",
+    "processing": "Обработка",
+    "processed": "Обработано",
+    "failed": "Сбой",
+    "retrying": "Повтор"
+  },
+  "automation": {
+    "pending": "Ожидание",
+    "running": "Выполняется",
+    "completed": "Завершено",
+    "failed": "Сбой",
+    "timeout": "Истекло время"
+  },
+  "severity": {
+    "info": "Инфо",
+    "low": "Низкий",
+    "medium": "Средний",
+    "high": "Высокий",
+    "critical": "Критический"
+  },
+  "priority": {
+    "low": "Низкий",
+    "normal": "Нормальный",
+    "high": "Высокий",
+    "urgent": "Срочный"
+  },
+  "healing_status": {
+    "open": "Открыто",
+    "auto_fixed": "Авто-исправлено",
+    "acknowledged": "Принято",
+    "resolved": "Решено"
+  },
+  "healing_category": {
+    "config": "Конфигурация",
+    "auth": "Аутентификация",
+    "network": "Сеть",
+    "timeout": "Таймаут",
+    "quota": "Квота"
+  },
+  "connector_status": {
+    "ready": "Готов",
+    "untested": "Не проверен",
+    "failed": "Сбой",
+    "no_credential": "Нет учётных данных",
+    "testing": "Тестирование"
+  },
+  "task_phase": {
+    "analyzing": "Analyzing",
+    "planning": "Planning",
+    "implementing": "Implementing",
+    "validating": "Validating",
+    "complete": "Complete"
+  },
+  "goal_state": {
+    "pending": "Pending",
+    "review": "Review",
+    "blocked": "Blocked",
+    "in_progress": "In Progress",
+    "running": "Running",
+    "completed": "Done",
+    "done": "Done"
+  },
+  "test": {
+    "generating": "Генерация",
+    "running": "Выполняется",
+    "completed": "Завершено",
+    "failed": "Сбой",
+    "pending": "Ожидание"
+  },
+  "dev": {
+    "open": "Открыто",
+    "in_progress": "В работе",
+    "completed": "Завершено",
+    "blocked": "Заблокировано",
+    "queued": "В очереди",
+    "running": "Выполняется",
+    "failed": "Сбой"
+  },
+  "circuit_breaker": {
+    "provider_claude_code": "Claude",
+    "provider_codex_cli": "Codex",
+    "provider_global": "Global"
+  }
+}

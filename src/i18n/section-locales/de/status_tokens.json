@@ -1,0 +1,94 @@
+{
+  "execution": {
+    "queued": "Warteschlange",
+    "running": "Läuft",
+    "completed": "Abgeschlossen",
+    "failed": "Fehlgeschlagen",
+    "cancelled": "Abgebrochen",
+    "error": "Fehler"
+  },
+  "event": {
+    "pending": "Ausstehend",
+    "processing": "Verarbeitung",
+    "processed": "Verarbeitet",
+    "failed": "Fehlgeschlagen",
+    "retrying": "Wird wiederholt"
+  },
+  "automation": {
+    "pending": "Ausstehend",
+    "running": "Läuft",
+    "completed": "Abgeschlossen",
+    "failed": "Fehlgeschlagen",
+    "timeout": "Zeitüberschreitung"
+  },
+  "severity": {
+    "info": "Info",
+    "low": "Niedrig",
+    "medium": "Mittel",
+    "high": "Hoch",
+    "critical": "Kritisch"
+  },
+  "priority": {
+    "low": "Niedrig",
+    "normal": "Normal",
+    "high": "Hoch",
+    "urgent": "Dringend"
+  },
+  "healing_status": {
+    "open": "Offen",
+    "auto_fixed": "Automatisch behoben",
+    "acknowledged": "Bestätigt",
+    "resolved": "Gelöst"
+  },
+  "healing_category": {
+    "config": "Konfiguration",
+    "auth": "Authentifizierung",
+    "network": "Netzwerk",
+    "timeout": "Zeitüberschreitung",
+    "quota": "Kontingent"
+  },
+  "connector_status": {
+    "ready": "Bereit",
+    "untested": "Ungetestet",
+    "failed": "Fehlgeschlagen",
+    "no_credential": "Keine Zugangsdaten",
+    "testing": "Teste"
+  },
+  "task_phase": {
+    "analyzing": "Analyzing",
+    "planning": "Planning",
+    "implementing": "Implementing",
+    "validating": "Validating",
+    "complete": "Complete"
+  },
+  "goal_state": {
+    "pending": "Pending",
+    "review": "Review",
+    "blocked": "Blocked",
+    "in_progress": "In Progress",
+    "running": "Running",
+    "completed": "Done",
+    "done": "Done"
+  },
+  "test": {
+    "generating": "Generierung",
+    "running": "Läuft",
+    "completed": "Abgeschlossen",
+    "failed": "Fehlgeschlagen",
+    "pending": "Ausstehend"
+  },
+  "dev": {
+    "open": "Offen",
+    "in_progress": "In Bearbeitung",
+    "completed": "Abgeschlossen",
+    "blocked": "Blockiert",
+    "queued": "Warteschlange",
+    "running": "Läuft",
+    "failed": "Fehlgeschlagen"
+  },
+  "circuit_breaker": {
+    "provider_claude_code": "Claude",
+    "provider_codex_cli": "Codex",
+    "provider_global": "Global"
+  }
+}

@@ -1,0 +1,94 @@
+{
+  "execution": {
+    "queued": "En Cola",
+    "running": "En Ejecución",
+    "completed": "Completado",
+    "failed": "Fallido",
+    "cancelled": "Cancelado",
+    "error": "Error"
+  },
+  "event": {
+    "pending": "Pendiente",
+    "processing": "Procesando",
+    "processed": "Procesado",
+    "failed": "Fallido",
+    "retrying": "Reintentando"
+  },
+  "automation": {
+    "pending": "Pendiente",
+    "running": "En Ejecución",
+    "completed": "Completado",
+    "failed": "Fallido",
+    "timeout": "Tiempo Agotado"
+  },
+  "severity": {
+    "info": "Info",
+    "low": "Bajo",
+    "medium": "Medio",
+    "high": "Alto",
+    "critical": "Crítico"
+  },
+  "priority": {
+    "low": "Bajo",
+    "normal": "Normal",
+    "high": "Alto",
+    "urgent": "Urgente"
+  },
+  "healing_status": {
+    "open": "Abierto",
+    "auto_fixed": "Corregido Automáticamente",
+    "acknowledged": "Reconocido",
+    "resolved": "Resuelto"
+  },
+  "healing_category": {
+    "config": "Configuración",
+    "auth": "Autenticación",
+    "network": "Red",
+    "timeout": "Tiempo Agotado",
+    "quota": "Cuota"
+  },
+  "connector_status": {
+    "ready": "Listo",
+    "untested": "Sin Probar",
+    "failed": "Fallido",
+    "no_credential": "Sin Credencial",
+    "testing": "Probando"
+  },
+  "task_phase": {
+    "analyzing": "Analyzing",
+    "planning": "Planning",
+    "implementing": "Implementing",
+    "validating": "Validating",
+    "complete": "Complete"
+  },
+  "goal_state": {
+    "pending": "Pending",
+    "review": "Review",
+    "blocked": "Blocked",
+    "in_progress": "In Progress",
+    "running": "Running",
+    "completed": "Done",
+    "done": "Done"
+  },
+  "test": {
+    "generating": "Generando",
+    "running": "En Ejecución",
+    "completed": "Completado",
+    "failed": "Fallido",
+    "pending": "Pendiente"
+  },
+  "dev": {
+    "open": "Abierto",
+    "in_progress": "En Progreso",
+    "completed": "Completado",
+    "blocked": "Bloqueado",
+    "queued": "En Cola",
+    "running": "En Ejecución",
+    "failed": "Fallido"
+  },
+  "circuit_breaker": {
+    "provider_claude_code": "Claude",
+    "provider_codex_cli": "Codex",
+    "provider_global": "Global"
+  }
+}

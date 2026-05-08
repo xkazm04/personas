@@ -1,0 +1,8 @@
+{
+  "queued": "En file d'attente",
+  "running": "En cours",
+  "completed": "Terminé",
+  "failed": "Échoué",
+  "cancelled": "Annulé",
+  "error": "Erreur"
+}

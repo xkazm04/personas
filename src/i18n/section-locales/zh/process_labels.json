@@ -1,0 +1,18 @@
+{
+  "n8n_transform": "n8n 转换",
+  "template_adopt": "模板采用",
+  "rebuild": "代理重建",
+  "template_test": "模板测试",
+  "context_scan": "上下文图扫描",
+  "idea_scan": "想法扫描",
+  "execution": "代理执行",
+  "matrix_build": "矩阵构建",
+  "lab_run": "实验室运行",
+  "connector_test": "连接器测试",
+  "creative_session": "创意会话",
+  "feedback_chat": "反馈聊天",
+  "complete_suffix": "完成",
+  "failed_suffix": "失败",
+  "pending_reviews_one": "{count} 条待审核等待批准",
+  "pending_reviews_other": "{count} 条待审核等待批准"
+}

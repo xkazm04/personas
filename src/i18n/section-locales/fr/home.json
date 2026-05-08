@@ -1,0 +1,141 @@
+{
+  "welcome": "Bienvenue",
+  "greeting_morning": "Bonjour",
+  "greeting_afternoon": "Bon après-midi",
+  "greeting_evening": "Bonsoir",
+  "operator": "Opérateur",
+  "summary_empty": "Commencez par créer votre premier agent ou explorez la plateforme.",
+  "summary_stats": "Vous avez {personasCount} agent{personasPlural} et {credentialsCount} identifiant{credentialsPlural} configuré(s).",
+  "quick_navigation": "Navigation rapide",
+  "platform_label": "plateforme Personas",
+  "roadmap": {
+    "title": "Feuille de route produit",
+    "subtitle": "Ce que nous construisons maintenant et ce qui vient ensuite.",
+    "unavailable": "Feuille de route indisponible",
+    "unavailable_hint": "Impossible de charger la feuille de route. Vérifiez votre connexion et réessayez.",
+    "status_in_progress": "En cours",
+    "status_next": "Suivant",
+    "status_planned": "Planifié",
+    "status_completed": "Terminé",
+    "priority_now": "Maintenant",
+    "priority_next": "Suivant",
+    "priority_later": "Plus tard",
+    "in_progress_count": "{count} en cours",
+    "next_count": "{count} suivant"
+  },
+  "setup": {
+    "choose_role": "Choisissez votre rôle",
+    "choose_role_hint": "Nous adapterons l'expérience à votre façon de travailler.",
+    "pick_tool": "Choisissez votre outil préféré",
+    "pick_tool_hint": "Ce sera votre première connexion de service.",
+    "describe_goal": "Que souhaitez-vous automatiser ?",
+    "describe_goal_hint": "Décrivez votre premier objectif d'automatisation — nous vous aiderons à le configurer.",
+    "goal_placeholder": "ex. Synchroniser automatiquement les tickets Jira vers un canal Slack...",
+    "ready_to_save": "Prêt à enregistrer",
+    "step_role": "Votre rôle",
+    "step_role_hint": "Indiquez-nous votre rôle pour adapter l'expérience.",
+    "step_tool": "Outil préféré",
+    "step_tool_hint": "Choisissez le premier service à connecter.",
+    "step_goal": "Objectif d'automatisation",
+    "step_goal_hint": "Décrivez ce que vous souhaitez automatiser en premier.",
+    "select_role_first": "Sélectionnez d'abord un rôle pour débloquer les options d'outils.",
+    "select_tool_first": "Sélectionnez d'abord un outil pour définir votre objectif.",
+    "get_started": "Commencer",
+    "role_office_rat": "Employé de bureau",
+    "role_office_rat_hint": "Utilisateur non technique",
+    "role_developer": "Développeur",
+    "role_developer_hint": "Utilisateur technique",
+    "role_manager": "Manager",
+    "role_manager_hint": "Planification & coordination",
+    "role": "Rôle",
+    "tool": "Outil",
+    "goal": "Objectif"
+  },
+  "fleet": {
+    "executions_today": "Exécutions Aujourd'hui",
+    "success_rate": "Taux de Réussite",
+    "active_agents": "Agents Actifs",
+    "credentials": "Identifiants"
+  },
+  "nav": {
+    "overview": {
+      "label": "Vue d'ensemble",
+      "description": "Analyses du tableau de bord, historique des exécutions et surveillance en temps réel de tous les agents"
+    },
+    "personas": {
+      "label": "Agents",
+      "description": "Créer, configurer et gérer des agents IA avec des comportements et capacités personnalisés"
+    },
+    "events": {
+      "label": "Événements",
+      "description": "Configurer les déclencheurs d'événements, les écouteurs webhook et les automatisations planifiées"
+    },
+    "credentials": {
+      "label": "Identifiants",
+      "description": "Gérer les identifiants API, les connexions aux bases de données, les jetons OAuth et les secrets chiffrés"
+    },
+    "design-reviews": {
+      "label": "Modèles",
+      "description": "Importer des workflows n8n, parcourir la galerie de modèles et générer des plans d'agents"
+    },
+    "team": {
+      "label": "Équipes",
+      "description": "Construire des pipelines multi-agents avec orchestration et routage par glisser-déposer"
+    },
+    "cloud": {
+      "label": "Cloud",
+      "description": "Déployer des agents dans le cloud, gérer les planifications et intégrer GitLab CI"
+    },
+    "settings": {
+      "label": "Paramètres",
+      "description": "Préférences du compte, thèmes d'apparence, règles de notification et configuration du moteur"
+    },
+    "plugins": {
+      "label": "Extensions",
+      "description": "Étendez vos agents avec des extensions tierces et des plugins personnalisés"
+    }
+  },
+  "learning": {
+    "title": "Centre d'apprentissage",
+    "subtitle": "Visites guidées et astuces pour maîtriser Personas",
+    "guided_tours": "Visites guidées",
+    "tours_completed": "{completed}/{total} terminées",
+    "done": "Terminé",
+    "restart": "Recommencer",
+    "start_tour": "Démarrer la visite",
+    "steps_count": "{count} étapes",
+    "tricks_tips": "Astuces & conseils",
+    "guides_count": "{count} guides",
+    "how_to_use": "Comment utiliser",
+    "pro_tip": "Conseil pro : ",
+    "cat_agent_craft": "Création d'agents",
+    "cat_observability": "Observabilité & Événements",
+    "cat_platform": "Plateforme & Configuration"
+  },
+  "setup_stepper": {
+    "your_profile": "Votre profil",
+    "choose_role": "Choisissez votre rôle",
+    "tailor_hint": "Nous adapterons l'expérience à votre façon de travailler.",
+    "simple_hint": "Nous avons configuré l'application pour un usage bureautique quotidien.",
+    "pick_tool": "Choisissez votre outil préféré",
+    "tool_hint": "Ce sera votre première intégration de connecteur.",
+    "automate_title": "Que souhaitez-vous automatiser ?",
+    "automate_hint": "Décrivez votre premier objectif d'automatisation -- nous vous aiderons à le configurer.",
+    "automate_placeholder": "ex. Synchroniser automatiquement les tickets Jira vers un canal Slack...",
+    "min_chars": "Min. 10 caractères ({current}/10)",
+    "ready_to_save": "Prêt à enregistrer",
+    "back": "Retour",
+    "next": "Suivant",
+    "finish": "Terminer"
+  },
+  "welcome_layout": {
+    "get_started": "Commencer",
+    "language": "Langue"
+  },
+  "icon_showcase": {
+    "lucide_tab": "Lucide (Bibliothèque)",
+    "personas_tab": "Personas (Animés)",
+    "lucide_footer": "lucide-react -- bibliothèque icônes générique -- statique",
+    "personas_footer": "9 icônes personnalisées -- motifs neuronaux/circuits -- animées CSS -- adaptatives au thème"
+  }
+}

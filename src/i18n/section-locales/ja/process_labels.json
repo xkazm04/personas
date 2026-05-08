@@ -1,0 +1,18 @@
+{
+  "n8n_transform": "n8n変換",
+  "template_adopt": "テンプレート採用",
+  "rebuild": "エージェント再構築",
+  "template_test": "テンプレートテスト",
+  "context_scan": "コンテキストマップスキャン",
+  "idea_scan": "アイデアスキャン",
+  "execution": "エージェント実行",
+  "matrix_build": "マトリックスビルド",
+  "lab_run": "ラボ実行",
+  "connector_test": "コネクタテスト",
+  "creative_session": "クリエイティブセッション",
+  "feedback_chat": "フィードバックチャット",
+  "complete_suffix": "完了",
+  "failed_suffix": "失敗",
+  "pending_reviews_one": "{count}件の承認待ちレビューがあります",
+  "pending_reviews_other": "{count}件の承認待ちレビューがあります"
+}

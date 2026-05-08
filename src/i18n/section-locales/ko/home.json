@@ -1,0 +1,141 @@
+{
+  "welcome": "환영합니다",
+  "greeting_morning": "좋은 아침입니다",
+  "greeting_afternoon": "좋은 오후입니다",
+  "greeting_evening": "좋은 저녁입니다",
+  "operator": "운영자",
+  "summary_empty": "첫 번째 에이전트를 만들거나 플랫폼을 탐색하여 시작하세요.",
+  "summary_stats": "에이전트 {personasCount}개{personasPlural}와 자격 증명 {credentialsCount}개{credentialsPlural}가 설정되어 있습니다.",
+  "quick_navigation": "빠른 탐색",
+  "platform_label": "Personas 플랫폼",
+  "roadmap": {
+    "title": "제품 로드맵",
+    "subtitle": "지금 구축 중인 것과 다음에 올 것.",
+    "unavailable": "로드맵 이용 불가",
+    "unavailable_hint": "제품 로드맵을 불러올 수 없습니다. 연결을 확인하고 다시 시도하세요.",
+    "status_in_progress": "진행 중",
+    "status_next": "다음",
+    "status_planned": "계획됨",
+    "status_completed": "완료됨",
+    "priority_now": "지금",
+    "priority_next": "다음",
+    "priority_later": "나중에",
+    "in_progress_count": "{count}개 진행 중",
+    "next_count": "{count}개 다음"
+  },
+  "setup": {
+    "choose_role": "역할 선택",
+    "choose_role_hint": "작업 방식에 맞게 경험을 맞춤화합니다.",
+    "pick_tool": "선호 도구 선택",
+    "pick_tool_hint": "첫 번째 서비스 연결이 됩니다.",
+    "describe_goal": "자동화하려는 것은 무엇인가요?",
+    "describe_goal_hint": "첫 번째 자동화 목표를 설명하세요 -- 설정을 도와드립니다.",
+    "goal_placeholder": "예: Jira 새 티켓을 Slack 채널에 자동으로 동기화...",
+    "ready_to_save": "저장 준비 완료",
+    "step_role": "역할",
+    "step_role_hint": "경험을 맞춤화하기 위해 역할을 알려주세요.",
+    "step_tool": "선호 도구",
+    "step_tool_hint": "연결할 첫 번째 서비스를 선택하세요.",
+    "step_goal": "자동화 목표",
+    "step_goal_hint": "먼저 자동화하고 싶은 것을 설명하세요.",
+    "select_role_first": "도구 옵션을 보려면 먼저 역할을 선택하세요.",
+    "select_tool_first": "목표를 설정하려면 먼저 도구를 선택하세요.",
+    "get_started": "시작하기",
+    "role_office_rat": "오피스 워커",
+    "role_office_rat_hint": "비기술 사용자",
+    "role_developer": "개발자",
+    "role_developer_hint": "기술 사용자",
+    "role_manager": "매니저",
+    "role_manager_hint": "기획 및 조율",
+    "role": "역할",
+    "tool": "도구",
+    "goal": "목표"
+  },
+  "fleet": {
+    "executions_today": "오늘 실행",
+    "success_rate": "성공률",
+    "active_agents": "활성 에이전트",
+    "credentials": "자격 증명"
+  },
+  "nav": {
+    "overview": {
+      "label": "개요",
+      "description": "대시보드 분석, 실행 기록, 모든 에이전트의 실시간 시스템 모니터링"
+    },
+    "personas": {
+      "label": "에이전트",
+      "description": "사용자 지정 동작 및 기능을 갖춘 AI 에이전트를 생성, 설정, 관리합니다"
+    },
+    "events": {
+      "label": "이벤트",
+      "description": "이벤트 트리거, webhook 리스너, 스케줄 기반 자동화를 설정합니다"
+    },
+    "credentials": {
+      "label": "자격 증명",
+      "description": "API 자격 증명, 데이터베이스 연결, OAuth 토큰, 암호화된 비밀을 관리합니다"
+    },
+    "design-reviews": {
+      "label": "템플릿",
+      "description": "n8n 워크플로 가져오기, 템플릿 갤러리 탐색, 에이전트 블루프린트 생성"
+    },
+    "team": {
+      "label": "팀",
+      "description": "드래그 앤 드롭 오케스트레이션과 라우팅으로 다중 에이전트 팀 파이프라인을 구성합니다"
+    },
+    "cloud": {
+      "label": "클라우드",
+      "description": "에이전트를 클라우드 인프라에 배포하고, 스케줄을 관리하고, GitLab CI를 통합합니다"
+    },
+    "settings": {
+      "label": "설정",
+      "description": "계정 환경설정, 외관 테마, 알림 규칙, 엔진 설정"
+    },
+    "plugins": {
+      "label": "플러그인",
+      "description": "서드파티 플러그인 및 커스텀 확장으로 에이전트 기능 확장"
+    }
+  },
+  "learning": {
+    "title": "학습 센터",
+    "subtitle": "Personas 마스터를 위한 가이드 투어 및 빠른 팁",
+    "guided_tours": "가이드 투어",
+    "tours_completed": "{completed}/{total} 완료",
+    "done": "완료",
+    "restart": "재시작",
+    "start_tour": "투어 시작",
+    "steps_count": "{count}단계",
+    "tricks_tips": "팁 & 트릭",
+    "guides_count": "{count}개 가이드",
+    "how_to_use": "사용 방법",
+    "pro_tip": "프로 팁: ",
+    "cat_agent_craft": "에이전트 제작",
+    "cat_observability": "관측성 & 이벤트",
+    "cat_platform": "플랫폼 & 설정"
+  },
+  "setup_stepper": {
+    "your_profile": "프로필",
+    "choose_role": "역할 선택",
+    "tailor_hint": "작업 방식에 맞게 경험을 맞춤화합니다.",
+    "simple_hint": "일상적인 사무 작업에 맞게 앱을 설정했습니다.",
+    "pick_tool": "선호 도구 선택",
+    "tool_hint": "첫 번째 커넥터 통합이 됩니다.",
+    "automate_title": "자동화하려는 것은 무엇인가요?",
+    "automate_hint": "첫 번째 자동화 목표를 설명하세요 -- 설정을 도와드립니다.",
+    "automate_placeholder": "예: Jira 새 티켓을 Slack 채널에 자동으로 동기화...",
+    "min_chars": "최소 10자 ({current}/10)",
+    "ready_to_save": "저장 준비 완료",
+    "back": "뒤로",
+    "next": "다음",
+    "finish": "완료"
+  },
+  "welcome_layout": {
+    "get_started": "시작하기",
+    "language": "언어"
+  },
+  "icon_showcase": {
+    "lucide_tab": "Lucide (라이브러리)",
+    "personas_tab": "Personas (애니메이션)",
+    "lucide_footer": "lucide-react -- 일반 아이콘 라이브러리 -- 정적",
+    "personas_footer": "커스텀 아이콘 9개 -- 신경/회로 모티프 -- CSS 애니메이션 -- 테마 적응형"
+  }
+}

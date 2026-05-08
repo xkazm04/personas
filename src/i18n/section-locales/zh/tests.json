@@ -1,0 +1,33 @@
+{
+  "title": "沙箱测试运行器",
+  "subtitle": "使用自动生成的场景在多个 LLM 模型上测试您的智能体",
+  "no_prompt": "此智能体未配置提示词。请先添加提示词。",
+  "no_tools": "此智能体未分配工具。添加工具以进行更丰富的测试。",
+  "focus_label": "聚焦用例",
+  "all_use_cases": "所有用例",
+  "focus_hint": "场景将针对：{description}",
+  "cancel_run": "取消测试运行",
+  "run_test_one": "运行测试（{count} 个模型...）",
+  "run_test_other": "运行测试（{count} 个模型...）",
+  "suites": {
+    "title": "已保存的测试套件",
+    "save_button": "保存场景",
+    "save_hint": "将 {count} 个生成的场景保存为可重用的测试套件。",
+    "name_placeholder": "套件名称（可选）",
+    "empty": "没有已保存的测试套件",
+    "empty_hint": "运行测试以生成场景，然后保存到此处",
+    "scenario_count_one": "{count} 个场景",
+    "scenario_count_other": "{count} 个场景",
+    "rerun_tooltip": "重新运行此套件",
+    "rename_tooltip": "重命名",
+    "delete_tooltip": "删除套件",
+    "no_scenarios": "此套件中没有场景"
+  },
+  "progress": {
+    "generating": "生成测试场景...",
+    "testing": "测试 {model} -- {scenario}",
+    "tool_prefix": "工具：",
+    "output_prefix": "输出：",
+    "protocol_prefix": "协议："
+  }
+}

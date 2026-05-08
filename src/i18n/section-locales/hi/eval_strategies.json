@@ -1,0 +1,12 @@
+{
+  "keyword_match_label": "आउटपुट गुणवत्ता",
+  "keyword_match_description": "एजेंट आउटपुट में अपेक्षित व्यवहार शब्द जांचता है",
+  "tool_accuracy_label": "टूल सटीकता",
+  "tool_accuracy_description": "अपेक्षित बनाम वास्तविक टूल कॉल की तुलना करता है",
+  "protocol_compliance_label": "प्रोटोकॉल अनुपालन",
+  "protocol_compliance_description": "अपेक्षित प्रोटोकॉल संदेश पैटर्न जांचता है",
+  "confusion_detect_label": "भ्रम पहचान",
+  "confusion_detect_description": "ज्ञात भ्रम/विफलता वाक्यांश जांचता है",
+  "composite_label": "कंपोज़िट",
+  "composite_description": "सभी रणनीतियों का भारित संयोजन"
+}

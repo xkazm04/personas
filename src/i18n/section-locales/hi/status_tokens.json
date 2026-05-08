@@ -1,0 +1,94 @@
+{
+  "execution": {
+    "queued": "प्रतीक्षा में",
+    "running": "चल रहा है",
+    "completed": "पूर्ण",
+    "failed": "विफल",
+    "cancelled": "रद्द",
+    "error": "त्रुटि"
+  },
+  "event": {
+    "pending": "लंबित",
+    "processing": "प्रक्रियाधीन",
+    "processed": "प्रसंस्कृत",
+    "failed": "विफल",
+    "retrying": "पुनः प्रयास"
+  },
+  "automation": {
+    "pending": "लंबित",
+    "running": "चल रहा है",
+    "completed": "पूर्ण",
+    "failed": "विफल",
+    "timeout": "समय समाप्त"
+  },
+  "severity": {
+    "info": "जानकारी",
+    "low": "कम",
+    "medium": "मध्यम",
+    "high": "उच्च",
+    "critical": "गंभीर"
+  },
+  "priority": {
+    "low": "कम",
+    "normal": "सामान्य",
+    "high": "उच्च",
+    "urgent": "अत्यावश्यक"
+  },
+  "healing_status": {
+    "open": "खुला",
+    "auto_fixed": "स्वतः ठीक",
+    "acknowledged": "स्वीकृत",
+    "resolved": "हल"
+  },
+  "healing_category": {
+    "config": "कॉन्फ़िगरेशन",
+    "auth": "प्रमाणीकरण",
+    "network": "नेटवर्क",
+    "timeout": "टाइमआउट",
+    "quota": "कोटा"
+  },
+  "connector_status": {
+    "ready": "तैयार",
+    "untested": "अपरीक्षित",
+    "failed": "विफल",
+    "no_credential": "क्रेडेंशियल नहीं",
+    "testing": "परीक्षण हो रहा है"
+  },
+  "task_phase": {
+    "analyzing": "Analyzing",
+    "planning": "Planning",
+    "implementing": "Implementing",
+    "validating": "Validating",
+    "complete": "Complete"
+  },
+  "goal_state": {
+    "pending": "Pending",
+    "review": "Review",
+    "blocked": "Blocked",
+    "in_progress": "In Progress",
+    "running": "Running",
+    "completed": "Done",
+    "done": "Done"
+  },
+  "test": {
+    "generating": "जेनरेट हो रहा है",
+    "running": "चल रहा है",
+    "completed": "पूर्ण",
+    "failed": "विफल",
+    "pending": "लंबित"
+  },
+  "dev": {
+    "open": "खुला",
+    "in_progress": "प्रगति में",
+    "completed": "पूर्ण",
+    "blocked": "अवरुद्ध",
+    "queued": "प्रतीक्षा में",
+    "running": "चल रहा है",
+    "failed": "विफल"
+  },
+  "circuit_breaker": {
+    "provider_claude_code": "Claude",
+    "provider_codex_cli": "Codex",
+    "provider_global": "Global"
+  }
+}

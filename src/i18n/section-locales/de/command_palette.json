@@ -1,0 +1,13 @@
+{
+  "placeholder": "Agenten suchen, navigieren... (\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\">\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"-Eingabe für Befehle)",
+  "commands": "Befehle",
+  "recent_agents": "Letzte Agenten",
+  "navigation": "Navigation",
+  "agents_section": "Agenten",
+  "create_agent": "Neuen Agenten erstellen",
+  "go_to": "Gehe zu {label}",
+  "key_esc": "ESC",
+  "hint_navigate": "navigieren",
+  "hint_select": "auswählen",
+  "hint_commands": "Befehle"
+}

@@ -1,0 +1,22 @@
+{
+  "boundary_title": "Etwas Unerwartetes ist in {name} passiert",
+  "boundary_title_generic": "Etwas Unerwartetes ist passiert",
+  "boundary_body": "Keine Sorge -- Ihre Daten sind sicher. Sie können es erneut versuchen oder zum Dashboard zurückkehren.",
+  "boundary_retry": "Erneut versuchen",
+  "boundary_dashboard": "Zum Dashboard",
+  "boundary_copy": "Bericht für Support kopieren",
+  "boundary_copied": "In die Zwischenablage kopiert",
+  "boundary_dev": "Für Entwickler",
+  "boundary_no_stack": "Kein Stacktrace verfügbar",
+  "go_back": "Zurück",
+  "dismiss_error": "Fehler verwerfen",
+  "not_found": "Die angeforderte Ressource wurde nicht gefunden",
+  "validation": "Ungültige Eingabe: {detail}",
+  "auth": "Authentifizierung fehlgeschlagen -- prüfen Sie Ihre Zugangsdaten",
+  "rate_limited": "Zu viele Anfragen -- versuchen Sie es gleich erneut",
+  "network_offline": "Keine Internetverbindung",
+  "database": "Datenbankfehler -- bitte starten Sie die App neu",
+  "internal": "Ein unerwarteter Fehler ist aufgetreten",
+  "cloud_error": "Cloud-Dienstfehler: {detail}",
+  "gitlab_error": "GitLab-Fehler: {detail}"
+}

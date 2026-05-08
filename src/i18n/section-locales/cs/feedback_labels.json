@@ -1,0 +1,13 @@
+{
+  "accurate_prompt": "Přesný prompt",
+  "good_tool_selection": "Dobrý výběr nástrojů",
+  "reliable": "Spolehlivý",
+  "cost_efficient": "Cenově efektivní",
+  "wrong_tools": "Špatné nástroje",
+  "poor_instructions": "Slabé instrukce",
+  "missing_context": "Chybějící kontext",
+  "over_engineered": "Příliš komplikovaný",
+  "under_specified": "Nedostatečně specifikovaný",
+  "wrong_triggers": "Špatné spouštěče",
+  "credential_issues": "Problémy s přihlašovacími údaji"
+}

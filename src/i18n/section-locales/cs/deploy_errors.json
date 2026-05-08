@@ -1,0 +1,15 @@
+{
+  "not_reachable": "K serveru se nepodařilo dostat. Zkontroluj URL a své síťové připojení.",
+  "timed_out": "Připojení vypršelo. Server může být vypnutý nebo URL může být nesprávná.",
+  "dns_resolve": "Nepodařilo se vyřešit hostname. Zkontroluj URL na překlepy.",
+  "unauthorized": "Neplatné přihlašovací údaje. Prosím ověř a zkus to znovu.",
+  "forbidden": "Přístup odepřen. Tvé přihlašovací údaje nemusí mít potřebná oprávnění.",
+  "internal_server_error": "Server vrátil interní chybu. Zkus to znovu za pár minut.",
+  "service_unavailable": "Server je dočasně nedostupný. Zkus to zanedlouho znovu.",
+  "not_connected": "Nepřipojeno. Nejprve se prosím připoj.",
+  "keyring": "Nepodařilo se přistoupit k uloženým přihlašovacím údajům. Možná se budeš muset znovu připojit.",
+  "oauth_expired": "OAuth token vypršel. Prosím znovu autorizuj.",
+  "url_empty": "Zadej URL orchestrátoru.",
+  "api_key_empty": "Zadej svůj API klíč.",
+  "token_empty": "Zadej svůj GitLab personal access token."
+}

@@ -1,0 +1,22 @@
+{
+  "boundary_title": "حدث شيء غير متوقع في {name}",
+  "boundary_title_generic": "حدث شيء غير متوقع",
+  "boundary_body": "لا تقلق -- بياناتك آمنة. يمكنك المحاولة مرة أخرى أو العودة إلى لوحة المعلومات.",
+  "boundary_retry": "حاول مرة أخرى",
+  "boundary_dashboard": "الذهاب إلى لوحة المعلومات",
+  "boundary_copy": "نسخ التقرير للدعم",
+  "boundary_copied": "تم النسخ إلى الحافظة",
+  "boundary_dev": "للمطورين",
+  "boundary_no_stack": "لا يتوفر تتبع المكدس",
+  "go_back": "رجوع",
+  "dismiss_error": "تجاهل الخطأ",
+  "not_found": "المورد المطلوب غير موجود",
+  "validation": "مُدخل غير صالح: {detail}",
+  "auth": "فشلت المصادقة -- تحقق من بيانات اعتمادك",
+  "rate_limited": "طلبات كثيرة جدًا -- حاول مرة أخرى بعد قليل",
+  "network_offline": "لا يوجد اتصال بالإنترنت",
+  "database": "خطأ في قاعدة البيانات -- يرجى إعادة تشغيل التطبيق",
+  "internal": "حدث خطأ غير متوقع",
+  "cloud_error": "خطأ في الخدمة السحابية: {detail}",
+  "gitlab_error": "خطأ GitLab: {detail}"
+}

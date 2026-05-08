@@ -1,0 +1,22 @@
+{
+  "boundary_title": "{name}-এ অপ্রত্যাশিত সমস্যা",
+  "boundary_title_generic": "অপ্রত্যাশিত সমস্যা",
+  "boundary_body": "চিন্তা নেই -- ডাটা নিরাপদ। আবার চেষ্টা বা ড্যাশবোর্ডে ফিরে যান।",
+  "boundary_retry": "আবার চেষ্টা",
+  "boundary_dashboard": "ড্যাশবোর্ডে যান",
+  "boundary_copy": "সাপোর্টের জন্য রিপোর্ট কপি",
+  "boundary_copied": "ক্লিপবোর্ডে কপি হয়েছে",
+  "boundary_dev": "ডেভেলপারদের জন্য",
+  "boundary_no_stack": "স্ট্যাক ট্রেস নেই",
+  "go_back": "ফিরে যান",
+  "dismiss_error": "ত্রুটি বাতিল",
+  "not_found": "অনুরোধিত রিসোর্স পাওয়া যায়নি",
+  "validation": "অবৈধ ইনপুট: {detail}",
+  "auth": "প্রমাণীকরণ ব্যর্থ -- শংসাপত্র পরীক্ষা করুন",
+  "rate_limited": "অনেক রিকোয়েস্ট -- কিছুক্ষণ পর চেষ্টা করুন",
+  "network_offline": "ইন্টারনেট সংযোগ নেই",
+  "database": "ডাটাবেস ত্রুটি -- অ্যাপ রিস্টার্ট করুন",
+  "internal": "অপ্রত্যাশিত ত্রুটি",
+  "cloud_error": "ক্লাউড সেবা ত্রুটি: {detail}",
+  "gitlab_error": "GitLab ত্রুটি: {detail}"
+}

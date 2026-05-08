@@ -1,0 +1,33 @@
+{
+  "title": "Trình chạy kiểm thử hộp cát",
+  "subtitle": "Kiểm thử tác tử trên nhiều mô hình LLM với kịch bản tự động tạo",
+  "no_prompt": "Tác tử này chưa cấu hình prompt. Thêm prompt trước.",
+  "no_tools": "Tác tử này chưa gán công cụ. Thêm công cụ để kiểm thử phong phú hơn.",
+  "focus_label": "Tập trung vào trường hợp sử dụng",
+  "all_use_cases": "Tất cả trường hợp sử dụng",
+  "focus_hint": "Kịch bản sẽ nhắm đến: {description}",
+  "cancel_run": "Hủy lần chạy kiểm thử",
+  "run_test_one": "Chạy kiểm thử ({count} mô hình...)",
+  "run_test_other": "Chạy kiểm thử ({count} mô hình...)",
+  "suites": {
+    "title": "Bộ kiểm thử đã lưu",
+    "save_button": "Lưu kịch bản",
+    "save_hint": "Lưu {count} kịch bản đã tạo thành bộ kiểm thử có thể tái sử dụng.",
+    "name_placeholder": "Tên bộ kiểm thử (tùy chọn)",
+    "empty": "Chưa có bộ kiểm thử đã lưu",
+    "empty_hint": "Chạy kiểm thử để tạo kịch bản, sau đó lưu tại đây",
+    "scenario_count_one": "{count} kịch bản",
+    "scenario_count_other": "{count} kịch bản",
+    "rerun_tooltip": "Chạy lại bộ kiểm thử này",
+    "rename_tooltip": "Đổi tên",
+    "delete_tooltip": "Xóa bộ kiểm thử",
+    "no_scenarios": "Không có kịch bản trong bộ kiểm thử này"
+  },
+  "progress": {
+    "generating": "Đang tạo kịch bản kiểm thử...",
+    "testing": "Đang kiểm thử {model} -- {scenario}",
+    "tool_prefix": "Công cụ: ",
+    "output_prefix": "Đầu ra: ",
+    "protocol_prefix": "Giao thức: "
+  }
+}

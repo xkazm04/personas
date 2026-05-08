@@ -1,0 +1,15 @@
+{
+  "not_reachable": "Server konnte nicht erreicht werden. URL und Netzwerkverbindung prüfen.",
+  "timed_out": "Verbindung hat sich zeitlich überschritten. Der Server ist möglicherweise nicht erreichbar oder die URL ist falsch.",
+  "dns_resolve": "Hostname konnte nicht aufgelöst werden. URL auf Tippfehler prüfen.",
+  "unauthorized": "Ungültige Zugangsdaten. Bitte überprüfen und erneut versuchen.",
+  "forbidden": "Zugriff verweigert. Ihre Zugangsdaten haben möglicherweise nicht die erforderlichen Berechtigungen.",
+  "internal_server_error": "Der Server hat einen internen Fehler zurückgegeben. In ein paar Minuten erneut versuchen.",
+  "service_unavailable": "Der Server ist vorübergehend nicht verfügbar. Bald erneut versuchen.",
+  "not_connected": "Nicht verbunden. Bitte zuerst verbinden.",
+  "keyring": "Gespeicherte Zugangsdaten konnten nicht abgerufen werden. Möglicherweise muss neu verbunden werden.",
+  "oauth_expired": "OAuth-Token ist abgelaufen. Bitte erneut autorisieren.",
+  "url_empty": "Bitte Orchestrator-URL eingeben.",
+  "api_key_empty": "Bitte API-Schlüssel eingeben.",
+  "token_empty": "Bitte GitLab Personal Access Token eingeben."
+}

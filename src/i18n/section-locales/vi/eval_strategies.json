@@ -1,0 +1,12 @@
+{
+  "keyword_match_label": "Chất lượng đầu ra",
+  "keyword_match_description": "Kiểm tra các thuật ngữ hành vi mong đợi trong đầu ra của tác nhân",
+  "tool_accuracy_label": "Độ chính xác công cụ",
+  "tool_accuracy_description": "So sánh các lời gọi công cụ mong đợi và thực tế",
+  "protocol_compliance_label": "Tuân thủ giao thức",
+  "protocol_compliance_description": "Kiểm tra các mẫu tin nhắn giao thức mong đợi",
+  "confusion_detect_label": "Phát hiện nhầm lẫn",
+  "confusion_detect_description": "Kiểm tra các cụm từ nhầm lẫn/thất bại đã biết",
+  "composite_label": "Tổ hợp",
+  "composite_description": "Kết hợp có trọng số của tất cả chiến lược"
+}

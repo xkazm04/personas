@@ -1,0 +1,8 @@
+{
+  "queued": "Trong hàng đợi",
+  "running": "Đang chạy",
+  "completed": "Hoàn thành",
+  "failed": "Thất bại",
+  "cancelled": "Đã hủy",
+  "error": "Lỗi"
+}

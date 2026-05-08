@@ -1,0 +1,18 @@
+{
+  "n8n_transform": "Transformación n8n",
+  "template_adopt": "Adopción de Plantilla",
+  "rebuild": "Reconstrucción de Agente",
+  "template_test": "Prueba de Plantilla",
+  "context_scan": "Escaneo de Mapa de Contexto",
+  "idea_scan": "Escaneo de Ideas",
+  "execution": "Ejecución de Agente",
+  "matrix_build": "Compilación de Matriz",
+  "lab_run": "Ejecución de Lab",
+  "connector_test": "Prueba de Conector",
+  "creative_session": "Sesión Creativa",
+  "feedback_chat": "Chat de Retroalimentación",
+  "complete_suffix": "Completado",
+  "failed_suffix": "Fallido",
+  "pending_reviews_one": "{count} revisión pendiente esperando aprobación",
+  "pending_reviews_other": "{count} revisiones pendientes esperando aprobación"
+}

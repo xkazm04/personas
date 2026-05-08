@@ -1,0 +1,13 @@
+{
+  "placeholder": "Поиск агентов, навигация... (введите \\\\\\\">\\\\\\\" для команд)",
+  "commands": "Команды",
+  "recent_agents": "Недавние агенты",
+  "navigation": "Навигация",
+  "agents_section": "Агенты",
+  "create_agent": "Создать нового агента",
+  "go_to": "Перейти к {label}",
+  "key_esc": "ESC",
+  "hint_navigate": "навигация",
+  "hint_select": "выбор",
+  "hint_commands": "команды"
+}

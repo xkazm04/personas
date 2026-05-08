@@ -1,0 +1,22 @@
+{
+  "boundary_title": "Terjadi kesalahan tak terduga di {name}",
+  "boundary_title_generic": "Terjadi kesalahan tak terduga",
+  "boundary_body": "Jangan khawatir -- data Anda aman. Anda dapat mencoba lagi atau kembali ke dasbor.",
+  "boundary_retry": "Coba Lagi",
+  "boundary_dashboard": "Ke Dasbor",
+  "boundary_copy": "Salin laporan untuk dukungan",
+  "boundary_copied": "Disalin ke clipboard",
+  "boundary_dev": "Untuk pengembang",
+  "boundary_no_stack": "Tidak ada stack trace tersedia",
+  "go_back": "Kembali",
+  "dismiss_error": "Abaikan kesalahan",
+  "not_found": "Sumber daya yang diminta tidak ditemukan",
+  "validation": "Input tidak valid: {detail}",
+  "auth": "Autentikasi gagal -- periksa kredensial Anda",
+  "rate_limited": "Terlalu banyak permintaan -- coba lagi sebentar",
+  "network_offline": "Tidak ada koneksi internet",
+  "database": "Kesalahan basis data -- silakan mulai ulang aplikasi",
+  "internal": "Terjadi kesalahan tak terduga",
+  "cloud_error": "Kesalahan layanan cloud: {detail}",
+  "gitlab_error": "Kesalahan GitLab: {detail}"
+}

@@ -1,0 +1,94 @@
+{
+  "execution": {
+    "queued": "Dalam Antrean",
+    "running": "Berjalan",
+    "completed": "Selesai",
+    "failed": "Gagal",
+    "cancelled": "Dibatalkan",
+    "error": "Kesalahan"
+  },
+  "event": {
+    "pending": "Tertunda",
+    "processing": "Memproses",
+    "processed": "Diproses",
+    "failed": "Gagal",
+    "retrying": "Mencoba ulang"
+  },
+  "automation": {
+    "pending": "Tertunda",
+    "running": "Berjalan",
+    "completed": "Selesai",
+    "failed": "Gagal",
+    "timeout": "Waktu Habis"
+  },
+  "severity": {
+    "info": "Info",
+    "low": "Rendah",
+    "medium": "Sedang",
+    "high": "Tinggi",
+    "critical": "Kritis"
+  },
+  "priority": {
+    "low": "Rendah",
+    "normal": "Normal",
+    "high": "Tinggi",
+    "urgent": "Mendesak"
+  },
+  "healing_status": {
+    "open": "Terbuka",
+    "auto_fixed": "Diperbaiki Otomatis",
+    "acknowledged": "Diakui",
+    "resolved": "Terselesaikan"
+  },
+  "healing_category": {
+    "config": "Konfigurasi",
+    "auth": "Autentikasi",
+    "network": "Jaringan",
+    "timeout": "Waktu Habis",
+    "quota": "Kuota"
+  },
+  "connector_status": {
+    "ready": "Siap",
+    "untested": "Belum diuji",
+    "failed": "Gagal",
+    "no_credential": "Tidak Ada Kredensial",
+    "testing": "Menguji"
+  },
+  "task_phase": {
+    "analyzing": "Analyzing",
+    "planning": "Planning",
+    "implementing": "Implementing",
+    "validating": "Validating",
+    "complete": "Complete"
+  },
+  "goal_state": {
+    "pending": "Pending",
+    "review": "Review",
+    "blocked": "Blocked",
+    "in_progress": "In Progress",
+    "running": "Running",
+    "completed": "Done",
+    "done": "Done"
+  },
+  "test": {
+    "generating": "Membuat",
+    "running": "Berjalan",
+    "completed": "Selesai",
+    "failed": "Gagal",
+    "pending": "Tertunda"
+  },
+  "dev": {
+    "open": "Terbuka",
+    "in_progress": "Sedang Berlangsung",
+    "completed": "Selesai",
+    "blocked": "Diblokir",
+    "queued": "Dalam Antrean",
+    "running": "Berjalan",
+    "failed": "Gagal"
+  },
+  "circuit_breaker": {
+    "provider_claude_code": "Claude",
+    "provider_codex_cli": "Codex",
+    "provider_global": "Global"
+  }
+}

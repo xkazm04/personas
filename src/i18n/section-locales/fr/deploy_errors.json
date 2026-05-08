@@ -1,0 +1,15 @@
+{
+  "not_reachable": "Impossible d'atteindre le serveur. Vérifiez l'URL et votre connexion réseau.",
+  "timed_out": "Délai de connexion dépassé. Le serveur est peut-être hors service ou l'URL est incorrecte.",
+  "dns_resolve": "Impossible de résoudre le nom d'hôte. Vérifiez les fautes de frappe dans l'URL.",
+  "unauthorized": "Identifiants invalides. Veuillez vérifier et réessayer.",
+  "forbidden": "Accès refusé. Vos identifiants n'ont peut-être pas les permissions requises.",
+  "internal_server_error": "Le serveur a renvoyé une erreur interne. Réessayez dans quelques minutes.",
+  "service_unavailable": "Le serveur est temporairement indisponible. Réessayez bientôt.",
+  "not_connected": "Non connecté. Veuillez d'abord vous connecter.",
+  "keyring": "Impossible d'accéder aux identifiants stockés. Vous devrez peut-être vous reconnecter.",
+  "oauth_expired": "Le jeton OAuth a expiré. Veuillez vous réautoriser.",
+  "url_empty": "Veuillez entrer l'URL de l'orchestrateur.",
+  "api_key_empty": "Veuillez entrer votre clé API.",
+  "token_empty": "Veuillez entrer votre jeton d'accès personnel GitLab."
+}

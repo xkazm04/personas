@@ -1,0 +1,16 @@
+{
+  "no_persona": "Chưa chọn tác tử",
+  "conversation_truncated": "Cuộc hội thoại này đã đạt giới hạn tin nhắn. Các tin nhắn cũ hơn đã bị xóa — hãy cân nhắc bắt đầu cuộc hội thoại mới để duy trì ngữ cảnh.",
+  "stages": {
+    "assembling_label": "Đang lắp ráp prompt",
+    "assembling_desc": "Xây dựng prompt LLM từ cấu hình và chỉ dẫn tác tử",
+    "generating_label": "Đang tạo bằng AI",
+    "generating_desc": "Chạy Claude để tạo thiết kế tác tử",
+    "parsing_label": "Đang phân tích đầu ra",
+    "parsing_desc": "Trích xuất JSON có cấu trúc từ phản hồi LLM",
+    "checking_label": "Đang kiểm tra tính khả thi",
+    "checking_desc": "Xác thực các công cụ và trình kết nối đề xuất có sẵn",
+    "saving_label": "Đang lưu kết quả",
+    "saving_desc": "Ghi thiết kế đã biên dịch vào cơ sở dữ liệu"
+  }
+}

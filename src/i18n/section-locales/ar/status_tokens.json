@@ -1,0 +1,94 @@
+{
+  "execution": {
+    "queued": "في قائمة الانتظار",
+    "running": "جارٍ",
+    "completed": "مكتمل",
+    "failed": "فاشل",
+    "cancelled": "ملغى",
+    "error": "خطأ"
+  },
+  "event": {
+    "pending": "معلّق",
+    "processing": "جارٍ المعالجة",
+    "processed": "تمت المعالجة",
+    "failed": "فاشل",
+    "retrying": "إعادة المحاولة"
+  },
+  "automation": {
+    "pending": "معلّق",
+    "running": "جارٍ",
+    "completed": "مكتمل",
+    "failed": "فاشل",
+    "timeout": "انتهت المهلة"
+  },
+  "severity": {
+    "info": "معلوماتي",
+    "low": "منخفض",
+    "medium": "متوسط",
+    "high": "مرتفع",
+    "critical": "حرج"
+  },
+  "priority": {
+    "low": "منخفض",
+    "normal": "طبيعي",
+    "high": "مرتفع",
+    "urgent": "عاجل"
+  },
+  "healing_status": {
+    "open": "مفتوح",
+    "auto_fixed": "إصلاح تلقائي",
+    "acknowledged": "مؤكَّد",
+    "resolved": "محلول"
+  },
+  "healing_category": {
+    "config": "الإعداد",
+    "auth": "المصادقة",
+    "network": "الشبكة",
+    "timeout": "انتهاء المهلة",
+    "quota": "الحصة"
+  },
+  "connector_status": {
+    "ready": "جاهز",
+    "untested": "لم يُختبَر",
+    "failed": "فاشل",
+    "no_credential": "لا بيانات اعتماد",
+    "testing": "جارٍ الاختبار"
+  },
+  "task_phase": {
+    "analyzing": "Analyzing",
+    "planning": "Planning",
+    "implementing": "Implementing",
+    "validating": "Validating",
+    "complete": "Complete"
+  },
+  "goal_state": {
+    "pending": "Pending",
+    "review": "Review",
+    "blocked": "Blocked",
+    "in_progress": "In Progress",
+    "running": "Running",
+    "completed": "Done",
+    "done": "Done"
+  },
+  "test": {
+    "generating": "جارٍ التوليد",
+    "running": "جارٍ التشغيل",
+    "completed": "مكتمل",
+    "failed": "فاشل",
+    "pending": "معلّق"
+  },
+  "dev": {
+    "open": "مفتوح",
+    "in_progress": "قيد التنفيذ",
+    "completed": "مكتمل",
+    "blocked": "محجوب",
+    "queued": "في قائمة الانتظار",
+    "running": "جارٍ",
+    "failed": "فاشل"
+  },
+  "circuit_breaker": {
+    "provider_claude_code": "Claude",
+    "provider_codex_cli": "Codex",
+    "provider_global": "Global"
+  }
+}

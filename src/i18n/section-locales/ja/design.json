@@ -1,0 +1,16 @@
+{
+  "no_persona": "エージェント未選択",
+  "conversation_truncated": "この会話はメッセージ制限に達しました。古いメッセージは削除されました — コンテキストを保持するため、新しい会話を開始することを検討してください。",
+  "stages": {
+    "assembling_label": "プロンプトを組み立て中",
+    "assembling_desc": "エージェント設定と指示からLLMプロンプトを構築中",
+    "generating_label": "AIで生成中",
+    "generating_desc": "Claudeでエージェントデザインを生成中",
+    "parsing_label": "出力を解析中",
+    "parsing_desc": "LLMレスポンスから構造化JSONを抽出中",
+    "checking_label": "実現可能性を確認中",
+    "checking_desc": "提案されたツールとコネクタが利用可能か検証中",
+    "saving_label": "結果を保存中",
+    "saving_desc": "コンパイル済デザインをデータベースに書き込み中"
+  }
+}

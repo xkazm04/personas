@@ -1,0 +1,20 @@
+{
+  "credentials_title": "Tvoji agenti potřebují ke spuštění přihlašovací údaje",
+  "credentials_subtitle": "Přidej API klíče a připojení ke službám, aby tvoji agenti mohli interagovat s externími nástroji.",
+  "triggers_title": "Tento agent běží pouze ručně",
+  "triggers_subtitle": "Přidej spouštěč pro automatizaci -- běh podle plánu, při příchodu dat nebo při změně.",
+  "executions_title": "Zatím žádná spuštění",
+  "executions_subtitle": "Začni ve třech krocích a uvidíš zde aktivitu.",
+  "step_create": "Vytvoř agenta",
+  "step_credential": "Přidej přihlašovací údaj",
+  "step_run": "Spusť svého agenta",
+  "events_title": "Zatím žádné odběry událostí",
+  "events_subtitle": "Odebírej události, aby tento agent reagoval automaticky, když se něco stane.",
+  "tools_title": "Žádné nástroje ani služby nejsou připojeny",
+  "tools_subtitle": "Připoj externí služby, aby tvůj agent mohl provádět akce a přistupovat k datům.",
+  "use_cases_title": "Zatím nejsou definovány žádné případy užití",
+  "use_cases_subtitle": "Definuj, co má tento agent dělat -- importuj z workflow nebo popiš prostým jazykem.",
+  "no_results_title": "No matches for your filters",
+  "no_results_subtitle": "Try adjusting or clearing your filters to see more results.",
+  "reset_filters": "Reset filters"
+}

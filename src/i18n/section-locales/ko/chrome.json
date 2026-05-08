@@ -1,0 +1,22 @@
+{
+  "app_title": "Personas",
+  "skip_to_content": "본문으로 건너뛰기",
+  "minimize": "최소화",
+  "restore": "복원",
+  "maximize": "최대화",
+  "close_window": "닫기",
+  "update_available": "업데이트 가능: v{version}",
+  "install_and_restart": "설치 및 재시작",
+  "installing": "설치 중...",
+  "update_install_failed": "업데이트 설치 실패",
+  "update_install_retry": "다시 시도",
+  "expand_sidebar": "사이드바 펼치기",
+  "collapse_sidebar": "사이드바 접기",
+  "network_settings": "네트워크 설정",
+  "dark": "다크",
+  "light": "라이트",
+  "sign_in_google": "Google로 로그인",
+  "signed_in": "로그인됨",
+  "sign_out": "로그아웃",
+  "offline": "오프라인"
+}

@@ -1,0 +1,94 @@
+{
+  "execution": {
+    "queued": "Ve frontě",
+    "running": "Běží",
+    "completed": "Dokončeno",
+    "failed": "Selhalo",
+    "cancelled": "Zrušeno",
+    "error": "Chyba"
+  },
+  "event": {
+    "pending": "Čeká",
+    "processing": "Zpracování",
+    "processed": "Zpracováno",
+    "failed": "Selhalo",
+    "retrying": "Opakování"
+  },
+  "automation": {
+    "pending": "Čeká",
+    "running": "Běží",
+    "completed": "Dokončeno",
+    "failed": "Selhalo",
+    "timeout": "Vypršelo"
+  },
+  "severity": {
+    "info": "Info",
+    "low": "Nízká",
+    "medium": "Střední",
+    "high": "Vysoká",
+    "critical": "Kritická"
+  },
+  "priority": {
+    "low": "Nízká",
+    "normal": "Normální",
+    "high": "Vysoká",
+    "urgent": "Urgentní"
+  },
+  "healing_status": {
+    "open": "Otevřeno",
+    "auto_fixed": "Automaticky opraveno",
+    "acknowledged": "Potvrzeno",
+    "resolved": "Vyřešeno"
+  },
+  "healing_category": {
+    "config": "Konfigurace",
+    "auth": "Autentizace",
+    "network": "Síť",
+    "timeout": "Timeout",
+    "quota": "Kvóta"
+  },
+  "connector_status": {
+    "ready": "Připraveno",
+    "untested": "Neotestováno",
+    "failed": "Selhalo",
+    "no_credential": "Bez přihlašovacího údaje",
+    "testing": "Testování"
+  },
+  "task_phase": {
+    "analyzing": "Analyzing",
+    "planning": "Planning",
+    "implementing": "Implementing",
+    "validating": "Validating",
+    "complete": "Complete"
+  },
+  "goal_state": {
+    "pending": "Pending",
+    "review": "Review",
+    "blocked": "Blocked",
+    "in_progress": "In Progress",
+    "running": "Running",
+    "completed": "Done",
+    "done": "Done"
+  },
+  "test": {
+    "generating": "Generování",
+    "running": "Běží",
+    "completed": "Dokončeno",
+    "failed": "Selhalo",
+    "pending": "Čeká"
+  },
+  "dev": {
+    "open": "Otevřeno",
+    "in_progress": "Probíhá",
+    "completed": "Dokončeno",
+    "blocked": "Blokováno",
+    "queued": "Ve frontě",
+    "running": "Běží",
+    "failed": "Selhalo"
+  },
+  "circuit_breaker": {
+    "provider_claude_code": "Claude",
+    "provider_codex_cli": "Codex",
+    "provider_global": "Global"
+  }
+}

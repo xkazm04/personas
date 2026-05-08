@@ -1,0 +1,15 @@
+{
+  "not_reachable": "Không thể kết nối máy chủ. Kiểm tra URL và kết nối mạng.",
+  "timed_out": "Kết nối hết thời gian. Máy chủ có thể đang tắt hoặc URL không đúng.",
+  "dns_resolve": "Không thể phân giải tên miền. Kiểm tra lại URL.",
+  "unauthorized": "Thông tin xác thực không hợp lệ. Vui lòng xác minh và thử lại.",
+  "forbidden": "Truy cập bị từ chối. Thông tin xác thực của bạn có thể thiếu quyền cần thiết.",
+  "internal_server_error": "Máy chủ trả về lỗi nội bộ. Thử lại sau vài phút.",
+  "service_unavailable": "Máy chủ tạm thời không khả dụng. Thử lại sớm.",
+  "not_connected": "Chưa kết nối. Vui lòng kết nối trước.",
+  "keyring": "Không thể truy cập thông tin xác thực đã lưu. Bạn có thể cần kết nối lại.",
+  "oauth_expired": "Token OAuth đã hết hạn. Vui lòng cấp quyền lại.",
+  "url_empty": "Vui lòng nhập URL điều phối.",
+  "api_key_empty": "Vui lòng nhập khóa API của bạn.",
+  "token_empty": "Vui lòng nhập token truy cập cá nhân GitLab."
+}

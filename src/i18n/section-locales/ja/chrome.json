@@ -1,0 +1,22 @@
+{
+  "app_title": "Personas",
+  "skip_to_content": "コンテンツへスキップ",
+  "minimize": "最小化",
+  "restore": "元に戻す",
+  "maximize": "最大化",
+  "close_window": "閉じる",
+  "update_available": "アップデート: v{version}",
+  "install_and_restart": "インストールして再起動",
+  "installing": "インストール中...",
+  "update_install_failed": "アップデートのインストールに失敗しました",
+  "update_install_retry": "再試行",
+  "expand_sidebar": "サイドバーを展開",
+  "collapse_sidebar": "サイドバーを折りたたむ",
+  "network_settings": "ネットワーク設定",
+  "dark": "ダーク",
+  "light": "ライト",
+  "sign_in_google": "Googleでサインイン",
+  "signed_in": "サインイン済み",
+  "sign_out": "サインアウト",
+  "offline": "オフライン"
+}

@@ -1,0 +1,12 @@
+{
+  "keyword_match_label": "Kualitas Keluaran",
+  "keyword_match_description": "Memeriksa istilah perilaku yang diharapkan dalam keluaran agen",
+  "tool_accuracy_label": "Akurasi Alat",
+  "tool_accuracy_description": "Membandingkan panggilan alat yang diharapkan vs aktual",
+  "protocol_compliance_label": "Kepatuhan Protokol",
+  "protocol_compliance_description": "Memeriksa pola pesan protokol yang diharapkan",
+  "confusion_detect_label": "Deteksi Kebingungan",
+  "confusion_detect_description": "Memeriksa frasa kebingungan/kegagalan yang diketahui",
+  "composite_label": "Komposit",
+  "composite_description": "Kombinasi tertimbang dari semua strategi"
+}

@@ -1,0 +1,20 @@
+{
+  "credentials_title": "您的智能体需要凭证才能运行",
+  "credentials_subtitle": "添加 API 凭证和服务连接，以便您的智能体可以与外部工具交互。",
+  "triggers_title": "此智能体仅支持手动运行",
+  "triggers_subtitle": "添加触发器以实现自动化 -- 定时计划、webhook 或事件驱动。",
+  "executions_title": "暂无执行记录",
+  "executions_subtitle": "只需三步即可在此查看活动。",
+  "step_create": "创建智能体",
+  "step_credential": "添加凭证",
+  "step_run": "运行智能体",
+  "events_title": "暂无事件订阅",
+  "events_subtitle": "订阅事件，让此智能体在事件发生时自动响应。",
+  "tools_title": "未配置工具或连接器",
+  "tools_subtitle": "关联外部服务，以便您的智能体可以执行操作和访问数据。",
+  "use_cases_title": "尚未定义用例",
+  "use_cases_subtitle": "定义此智能体的任务 -- 从工作流导入或用自然语言描述。",
+  "no_results_title": "No matches for your filters",
+  "no_results_subtitle": "Try adjusting or clearing your filters to see more results.",
+  "reset_filters": "Reset filters"
+}

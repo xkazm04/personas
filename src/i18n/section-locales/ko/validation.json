@@ -1,0 +1,11 @@
+{
+  "required": "{field}은(는) 필수입니다",
+  "min_length": "{field}은(는) 최소 {min}자 이상이어야 합니다",
+  "min_value": "{field}은(는) 최소 {min} 이상이어야 합니다",
+  "invalid_cron": "유효하지 않은 cron 표현식",
+  "invalid_separator": "소스 필터에 유효하지 않은 구분자 시퀀스가 포함되어 있습니다",
+  "passphrase_min": "암호문은 최소 8자 이상이어야 합니다",
+  "passphrase_prompt": "내보내기 시 사용한 암호문을 입력하세요",
+  "at_least_one": "최소 하나의 {field}이(가) 필요합니다",
+  "fill_one_field": "저장하려면 최소 하나의 필드를 입력하세요"
+}

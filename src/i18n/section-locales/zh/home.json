@@ -1,0 +1,141 @@
+{
+  "welcome": "欢迎",
+  "greeting_morning": "早上好",
+  "greeting_afternoon": "下午好",
+  "greeting_evening": "晚上好",
+  "operator": "操作员",
+  "summary_empty": "开始创建您的第一个智能体或探索平台功能。",
+  "summary_stats": "您已配置 {personasCount} 个智能体{personasPlural}和 {credentialsCount} 个凭证{credentialsPlural}。",
+  "quick_navigation": "快速导航",
+  "platform_label": "Personas 平台",
+  "roadmap": {
+    "title": "产品路线图",
+    "subtitle": "我们正在构建的内容及下一步计划。",
+    "unavailable": "路线图不可用",
+    "unavailable_hint": "无法加载产品路线图。请检查网络连接后重试。",
+    "status_in_progress": "进行中",
+    "status_next": "即将到来",
+    "status_planned": "已计划",
+    "status_completed": "已完成",
+    "priority_now": "现在",
+    "priority_next": "下一步",
+    "priority_later": "之后",
+    "in_progress_count": "{count} 进行中",
+    "next_count": "{count} 即将到来"
+  },
+  "setup": {
+    "choose_role": "选择您的角色",
+    "choose_role_hint": "我们将根据您的工作方式定制体验。",
+    "pick_tool": "选择您最喜欢的工具",
+    "pick_tool_hint": "这将是您的第一个服务连接。",
+    "describe_goal": "您想自动化什么？",
+    "describe_goal_hint": "描述您的第一个自动化目标——我们将帮助您完成设置。",
+    "goal_placeholder": "例如：自动将新的 Jira 工单同步到 Slack 频道...",
+    "ready_to_save": "准备保存",
+    "step_role": "您的角色",
+    "step_role_hint": "告诉我们您的角色，以便定制体验。",
+    "step_tool": "喜爱的工具",
+    "step_tool_hint": "选择您想要连接的第一个服务。",
+    "step_goal": "自动化目标",
+    "step_goal_hint": "描述您首先想要自动化的内容。",
+    "select_role_first": "请先选择角色以解锁工具选项。",
+    "select_tool_first": "请先选择工具以设置目标。",
+    "get_started": "开始",
+    "role_office_rat": "办公室用户",
+    "role_office_rat_hint": "非技术用户",
+    "role_developer": "开发者",
+    "role_developer_hint": "技术用户",
+    "role_manager": "管理者",
+    "role_manager_hint": "规划与协调",
+    "role": "角色",
+    "tool": "工具",
+    "goal": "目标"
+  },
+  "fleet": {
+    "executions_today": "今日运行",
+    "success_rate": "成功率",
+    "active_agents": "活跃代理",
+    "credentials": "凭证"
+  },
+  "nav": {
+    "overview": {
+      "label": "概览",
+      "description": "仪表盘分析、执行历史和所有智能体的实时系统监控"
+    },
+    "personas": {
+      "label": "智能体",
+      "description": "创建、配置和管理具有自定义行为和能力的 AI 智能体"
+    },
+    "events": {
+      "label": "事件",
+      "description": "配置事件触发器、webhook 监听器和定时自动化任务"
+    },
+    "credentials": {
+      "label": "凭证",
+      "description": "管理 API 凭证、数据库连接、OAuth 令牌和加密密钥"
+    },
+    "design-reviews": {
+      "label": "模板",
+      "description": "导入 n8n 工作流、浏览模板库并生成智能体蓝图"
+    },
+    "team": {
+      "label": "团队",
+      "description": "通过拖拽编排和路由构建多智能体团队流水线"
+    },
+    "cloud": {
+      "label": "云端",
+      "description": "将智能体部署到云端基础设施、管理计划任务并集成 GitLab CI"
+    },
+    "settings": {
+      "label": "设置",
+      "description": "账户偏好、外观主题、通知规则和引擎配置"
+    },
+    "plugins": {
+      "label": "插件",
+      "description": "通过第三方插件和自定义扩展扩展您的代理"
+    }
+  },
+  "learning": {
+    "title": "学习中心",
+    "subtitle": "引导教程和快速技巧，帮助您掌握 Personas",
+    "guided_tours": "引导教程",
+    "tours_completed": "{completed}/{total} 已完成",
+    "done": "完成",
+    "restart": "重新开始",
+    "start_tour": "开始教程",
+    "steps_count": "{count} 个步骤",
+    "tricks_tips": "技巧提示",
+    "guides_count": "{count} 个指南",
+    "how_to_use": "如何使用",
+    "pro_tip": "专业提示：",
+    "cat_agent_craft": "代理构建",
+    "cat_observability": "可观测性与事件",
+    "cat_platform": "平台与设置"
+  },
+  "setup_stepper": {
+    "your_profile": "您的个人资料",
+    "choose_role": "选择您的角色",
+    "tailor_hint": "我们将根据您的工作方式定制体验。",
+    "simple_hint": "我们已为日常办公使用设置了应用程序。",
+    "pick_tool": "选择您最喜欢的工具",
+    "tool_hint": "这将是您的第一个连接器集成。",
+    "automate_title": "您想自动化什么？",
+    "automate_hint": "描述您的第一个自动化目标——我们将帮助您完成设置。",
+    "automate_placeholder": "例如：自动将新的 Jira 工单同步到 Slack 频道...",
+    "min_chars": "最少 10 个字符（{current}/10）",
+    "ready_to_save": "准备保存",
+    "back": "返回",
+    "next": "下一步",
+    "finish": "完成"
+  },
+  "welcome_layout": {
+    "get_started": "开始使用",
+    "language": "语言"
+  },
+  "icon_showcase": {
+    "lucide_tab": "Lucide（库）",
+    "personas_tab": "Personas（动画）",
+    "lucide_footer": "lucide-react -- 通用图标库 -- 静态",
+    "personas_footer": "9 个自定义图标 -- 神经/电路主题 -- CSS 动画 -- 主题自适应"
+  }
+}

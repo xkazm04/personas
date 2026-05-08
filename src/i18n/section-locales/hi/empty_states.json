@@ -1,0 +1,20 @@
+{
+  "credentials_title": "आपके एजेंटों को चलने के लिए क्रेडेंशियल चाहिए",
+  "credentials_subtitle": "API कुंजियाँ और सेवा कनेक्शन जोड़ें ताकि आपके एजेंट बाहरी टूल के साथ इंटरैक्ट कर सकें।",
+  "triggers_title": "यह एजेंट केवल मैन्युअली चलता है",
+  "triggers_subtitle": "इसे ऑटोमेट करने के लिए ट्रिगर जोड़ें -- शेड्यूल, webhook, या इवेंट-आधारित।",
+  "executions_title": "अभी कोई निष्पादन नहीं",
+  "executions_subtitle": "यहाँ गतिविधि देखने के लिए तीन चरणों में शुरू करें।",
+  "step_create": "एजेंट बनाएँ",
+  "step_credential": "क्रेडेंशियल जोड़ें",
+  "step_run": "एजेंट चलाएँ",
+  "events_title": "अभी कोई इवेंट सब्सक्रिप्शन नहीं",
+  "events_subtitle": "इवेंट सब्सक्राइब करें ताकि यह एजेंट स्वचालित रूप से प्रतिक्रिया दे।",
+  "tools_title": "कोई टूल या कनेक्टर कॉन्फ़िगर नहीं",
+  "tools_subtitle": "बाहरी सेवाएँ लिंक करें ताकि आपका एजेंट कार्य कर सके और डेटा एक्सेस कर सके।",
+  "use_cases_title": "अभी कोई उपयोग मामला परिभाषित नहीं",
+  "use_cases_subtitle": "परिभाषित करें कि यह एजेंट क्या करे -- वर्कफ़्लो से आयात करें या सरल भाषा में बताएँ।",
+  "no_results_title": "No matches for your filters",
+  "no_results_subtitle": "Try adjusting or clearing your filters to see more results.",
+  "reset_filters": "Reset filters"
+}

@@ -1,0 +1,22 @@
+{
+  "boundary_title": "Đã xảy ra lỗi không mong muốn trong {name}",
+  "boundary_title_generic": "Đã xảy ra lỗi không mong muốn",
+  "boundary_body": "Đừng lo -- dữ liệu của bạn an toàn. Bạn có thể thử lại hoặc quay về bảng điều khiển.",
+  "boundary_retry": "Thử lại",
+  "boundary_dashboard": "Về bảng điều khiển",
+  "boundary_copy": "Sao chép báo cáo để hỗ trợ",
+  "boundary_copied": "Đã sao chép vào bộ nhớ tạm",
+  "boundary_dev": "Dành cho nhà phát triển",
+  "boundary_no_stack": "Không có stack trace",
+  "go_back": "Quay lại",
+  "dismiss_error": "Bỏ qua lỗi",
+  "not_found": "Không tìm thấy tài nguyên yêu cầu",
+  "validation": "Đầu vào không hợp lệ: {detail}",
+  "auth": "Xác thực thất bại -- kiểm tra thông tin xác thực của bạn",
+  "rate_limited": "Quá nhiều yêu cầu -- thử lại sau một chút",
+  "network_offline": "Không có kết nối internet",
+  "database": "Lỗi cơ sở dữ liệu -- vui lòng khởi động lại ứng dụng",
+  "internal": "Đã xảy ra lỗi không mong muốn",
+  "cloud_error": "Lỗi dịch vụ đám mây: {detail}",
+  "gitlab_error": "Lỗi GitLab: {detail}"
+}

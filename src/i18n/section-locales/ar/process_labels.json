@@ -1,0 +1,18 @@
+{
+  "n8n_transform": "تحويل n8n",
+  "template_adopt": "اعتماد القالب",
+  "rebuild": "إعادة بناء الوكيل",
+  "template_test": "اختبار القالب",
+  "context_scan": "مسح خريطة السياق",
+  "idea_scan": "مسح الأفكار",
+  "execution": "تنفيذ الوكيل",
+  "matrix_build": "بناء المصفوفة",
+  "lab_run": "تشغيل المختبر",
+  "connector_test": "اختبار الموصّل",
+  "creative_session": "جلسة إبداعية",
+  "feedback_chat": "محادثة الملاحظات",
+  "complete_suffix": "مكتمل",
+  "failed_suffix": "فاشل",
+  "pending_reviews_one": "{count} مراجعة معلّقة تنتظر الموافقة",
+  "pending_reviews_other": "{count} مراجعة معلّقة تنتظر الموافقة"
+}

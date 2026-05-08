@@ -1,0 +1,16 @@
+{
+  "metric_error_rate": "Fehlerrate",
+  "metric_success_rate": "Erfolgsrate",
+  "metric_cost": "Gesamtkosten",
+  "metric_cost_spike": "Kosten vs. Durchschnitt",
+  "metric_executions": "Ausführungen",
+  "severity_info": "Info",
+  "severity_warning": "Warnung",
+  "severity_critical": "Kritisch",
+  "error_create_rule": "Alarmregel konnte nicht erstellt werden:",
+  "error_update_rule": "Alarmregel konnte nicht aktualisiert werden:",
+  "error_delete_rule": "Alarmregel konnte nicht gelöscht werden:",
+  "error_toggle_rule": "Alarmregel konnte nicht umgeschaltet werden:",
+  "error_dismiss": "Alarm konnte nicht verworfen werden:",
+  "error_clear_history": "Alarmverlauf konnte nicht gelöscht werden:"
+}

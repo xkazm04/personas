@@ -1,0 +1,18 @@
+{
+  "n8n_transform": "n8n transformace",
+  "template_adopt": "Adopce šablony",
+  "rebuild": "Přestavba agenta",
+  "template_test": "Test šablony",
+  "context_scan": "Context Map sken",
+  "idea_scan": "Idea sken",
+  "execution": "Spuštění agenta",
+  "matrix_build": "Sestavení matrixu",
+  "lab_run": "Lab běh",
+  "connector_test": "Test konektoru",
+  "creative_session": "Kreativní relace",
+  "feedback_chat": "Feedback chat",
+  "complete_suffix": "Dokončeno",
+  "failed_suffix": "Selhalo",
+  "pending_reviews_one": "{count} čekající kontrola čeká na schválení",
+  "pending_reviews_other": "{count} čekajících kontrol čeká na schválení"
+}

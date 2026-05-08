@@ -1,0 +1,20 @@
+{
+  "credentials_title": "وكلاؤك يحتاجون بيانات اعتماد للعمل",
+  "credentials_subtitle": "أضف مفاتيح API واتصالات الخدمات حتى يتمكن وكلاؤك من التفاعل مع الأدوات الخارجية.",
+  "triggers_title": "هذا الوكيل يعمل يدويًا فقط",
+  "triggers_subtitle": "أضف مُشغّلًا لأتمتته -- جداول زمنية أو webhooks أو أحداث.",
+  "executions_title": "لا توجد عمليات تنفيذ بعد",
+  "executions_subtitle": "ابدأ بثلاث خطوات لعرض النشاط هنا.",
+  "step_create": "إنشاء وكيل",
+  "step_credential": "إضافة بيانات اعتماد",
+  "step_run": "تشغيل وكيلك",
+  "events_title": "لا توجد اشتراكات أحداث بعد",
+  "events_subtitle": "اشترك في الأحداث حتى يتفاعل هذا الوكيل تلقائيًا عند حدوث شيء ما.",
+  "tools_title": "لم يتم إعداد أدوات أو موصّلات",
+  "tools_subtitle": "اربط الخدمات الخارجية حتى يتمكن وكيلك من اتخاذ إجراءات والوصول إلى البيانات.",
+  "use_cases_title": "لم يتم تعريف حالات استخدام بعد",
+  "use_cases_subtitle": "حدّد ما يجب أن يفعله هذا الوكيل -- استورد من سير عمل أو صِفه بلغة طبيعية.",
+  "no_results_title": "No matches for your filters",
+  "no_results_subtitle": "Try adjusting or clearing your filters to see more results.",
+  "reset_filters": "Reset filters"
+}

@@ -1,0 +1,13 @@
+{
+  "accurate_prompt": "Lời nhắc chính xác",
+  "good_tool_selection": "Chọn công cụ tốt",
+  "reliable": "Đáng tin cậy",
+  "cost_efficient": "Tiết kiệm chi phí",
+  "wrong_tools": "Công cụ sai",
+  "poor_instructions": "Hướng dẫn kém",
+  "missing_context": "Thiếu ngữ cảnh",
+  "over_engineered": "Quá phức tạp",
+  "under_specified": "Thiếu đặc tả",
+  "wrong_triggers": "Trình kích hoạt sai",
+  "credential_issues": "Vấn đề thông tin xác thực"
+}

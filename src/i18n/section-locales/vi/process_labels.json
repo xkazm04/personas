@@ -1,0 +1,18 @@
+{
+  "n8n_transform": "Biến đổi n8n",
+  "template_adopt": "Áp dụng mẫu",
+  "rebuild": "Xây dựng lại tác nhân",
+  "template_test": "Kiểm tra mẫu",
+  "context_scan": "Quét bản đồ ngữ cảnh",
+  "idea_scan": "Quét ý tưởng",
+  "execution": "Thực thi tác nhân",
+  "matrix_build": "Xây dựng ma trận",
+  "lab_run": "Chạy phòng thí nghiệm",
+  "connector_test": "Kiểm tra trình kết nối",
+  "creative_session": "Phiên sáng tạo",
+  "feedback_chat": "Trò chuyện phản hồi",
+  "complete_suffix": "Hoàn thành",
+  "failed_suffix": "Thất bại",
+  "pending_reviews_one": "{count} xem xét đang chờ phê duyệt",
+  "pending_reviews_other": "{count} xem xét đang chờ phê duyệt"
+}

@@ -1,0 +1,16 @@
+{
+  "no_persona": "선택된 에이전트가 없습니다",
+  "conversation_truncated": "이 대화가 메시지 제한에 도달했습니다. 이전 메시지는 제거되었습니다 — 컨텍스트를 보존하려면 새 대화를 시작하는 것을 고려하세요.",
+  "stages": {
+    "assembling_label": "프롬프트 조립",
+    "assembling_desc": "에이전트 설정 및 지침에서 LLM 프롬프트를 구성하고 있습니다",
+    "generating_label": "AI로 생성 중",
+    "generating_desc": "Claude를 실행하여 에이전트 디자인을 생성하고 있습니다",
+    "parsing_label": "출력 파싱 중",
+    "parsing_desc": "LLM 응답에서 구조화된 JSON을 추출하고 있습니다",
+    "checking_label": "실현 가능성 확인 중",
+    "checking_desc": "제안된 도구와 커넥터의 사용 가능 여부를 검증하고 있습니다",
+    "saving_label": "결과 저장 중",
+    "saving_desc": "컴파일된 디자인을 데이터베이스에 저장하고 있습니다"
+  }
+}

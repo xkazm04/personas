@@ -1,0 +1,22 @@
+{
+  "app_title": "Personas",
+  "skip_to_content": "Bỏ qua đến nội dung",
+  "minimize": "Thu nhỏ",
+  "restore": "Khôi phục",
+  "maximize": "Phóng to",
+  "close_window": "Đóng",
+  "update_available": "Có bản cập nhật: v{version}",
+  "install_and_restart": "Cài đặt & Khởi động lại",
+  "installing": "Đang cài đặt...",
+  "update_install_failed": "Cài đặt bản cập nhật thất bại",
+  "update_install_retry": "Thử lại",
+  "expand_sidebar": "Mở rộng thanh bên",
+  "collapse_sidebar": "Thu gọn thanh bên",
+  "network_settings": "Cài đặt mạng",
+  "dark": "Tối",
+  "light": "Sáng",
+  "sign_in_google": "Đăng nhập bằng Google",
+  "signed_in": "Đã đăng nhập",
+  "sign_out": "Đăng xuất",
+  "offline": "Ngoại tuyến"
+}

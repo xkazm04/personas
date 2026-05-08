@@ -1,0 +1,13 @@
+{
+  "accurate_prompt": "Prompt Akurat",
+  "good_tool_selection": "Pemilihan Alat Baik",
+  "reliable": "Andal",
+  "cost_efficient": "Hemat Biaya",
+  "wrong_tools": "Alat Salah",
+  "poor_instructions": "Instruksi Buruk",
+  "missing_context": "Konteks Kurang",
+  "over_engineered": "Terlalu Kompleks",
+  "under_specified": "Kurang Spesifik",
+  "wrong_triggers": "Pemicu Salah",
+  "credential_issues": "Masalah Kredensial"
+}

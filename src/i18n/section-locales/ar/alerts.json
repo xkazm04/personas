@@ -1,0 +1,16 @@
+{
+  "metric_error_rate": "معدل الأخطاء",
+  "metric_success_rate": "معدل النجاح",
+  "metric_cost": "إجمالي التكلفة",
+  "metric_cost_spike": "التكلفة مقابل المتوسط",
+  "metric_executions": "التنفيذات",
+  "severity_info": "معلوماتي",
+  "severity_warning": "تحذير",
+  "severity_critical": "حرج",
+  "error_create_rule": "فشل إنشاء قاعدة التنبيه:",
+  "error_update_rule": "فشل تحديث قاعدة التنبيه:",
+  "error_delete_rule": "فشل حذف قاعدة التنبيه:",
+  "error_toggle_rule": "فشل تبديل قاعدة التنبيه:",
+  "error_dismiss": "فشل رفض التنبيه:",
+  "error_clear_history": "فشل مسح سجل التنبيهات:"
+}

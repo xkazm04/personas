@@ -1,0 +1,13 @@
+{
+  "accurate_prompt": "Indicador Preciso",
+  "good_tool_selection": "Buena Selección de Herramientas",
+  "reliable": "Confiable",
+  "cost_efficient": "Eficiente en Costos",
+  "wrong_tools": "Herramientas Incorrectas",
+  "poor_instructions": "Instrucciones Deficientes",
+  "missing_context": "Contexto Faltante",
+  "over_engineered": "Sobreingeniería",
+  "under_specified": "Insuficientemente Especificado",
+  "wrong_triggers": "Disparadores Incorrectos",
+  "credential_issues": "Problemas de Credenciales"
+}

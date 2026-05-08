@@ -1,0 +1,20 @@
+{
+  "credentials_title": "Ihre Agenten benötigen Zugangsdaten",
+  "credentials_subtitle": "Fügen Sie API-Schlüssel und Dienstverbindungen hinzu, damit Ihre Agenten mit externen Werkzeugen interagieren können.",
+  "triggers_title": "Dieser Agent wird nur manuell ausgeführt",
+  "triggers_subtitle": "Fügen Sie einen Auslöser hinzu -- Zeitpläne, Webhooks oder ereignisgesteuert.",
+  "executions_title": "Noch keine Ausführungen",
+  "executions_subtitle": "Starten Sie in drei Schritten, um hier Aktivitäten zu sehen.",
+  "step_create": "Einen Agenten erstellen",
+  "step_credential": "Zugangsdaten hinzufügen",
+  "step_run": "Ihren Agenten ausführen",
+  "events_title": "Noch keine Ereignisabonnements",
+  "events_subtitle": "Abonnieren Sie Ereignisse, damit dieser Agent automatisch reagiert.",
+  "tools_title": "Keine Werkzeuge oder Konnektoren konfiguriert",
+  "tools_subtitle": "Verknüpfen Sie externe Dienste, damit Ihr Agent Aktionen ausführen und auf Daten zugreifen kann.",
+  "use_cases_title": "Noch keine Anwendungsfälle definiert",
+  "use_cases_subtitle": "Definieren Sie, was dieser Agent tun soll -- importieren Sie einen Workflow oder beschreiben Sie es in natürlicher Sprache.",
+  "no_results_title": "No matches for your filters",
+  "no_results_subtitle": "Try adjusting or clearing your filters to see more results.",
+  "reset_filters": "Reset filters"
+}

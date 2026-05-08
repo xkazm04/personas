@@ -1,0 +1,18 @@
+{
+  "n8n_transform": "n8n Transform",
+  "template_adopt": "Template Adoption",
+  "rebuild": "Agent Rebuild",
+  "template_test": "Template Test",
+  "context_scan": "Context Map Scan",
+  "idea_scan": "Idea Scan",
+  "execution": "Agent Execution",
+  "matrix_build": "Matrix Build",
+  "lab_run": "Lab Run",
+  "connector_test": "Connector Test",
+  "creative_session": "Creative Session",
+  "feedback_chat": "ফিডব্যাক চ্যাট",
+  "complete_suffix": "Complete",
+  "failed_suffix": "Failed",
+  "pending_reviews_one": "{count} pending review awaiting approval",
+  "pending_reviews_other": "{count} pending reviews awaiting approval"
+}

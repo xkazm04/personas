@@ -1,0 +1,94 @@
+{
+  "execution": {
+    "queued": "En file",
+    "running": "En cours",
+    "completed": "Terminé",
+    "failed": "Échoué",
+    "cancelled": "Annulé",
+    "error": "Erreur"
+  },
+  "event": {
+    "pending": "En attente",
+    "processing": "En traitement",
+    "processed": "Traité",
+    "failed": "Échoué",
+    "retrying": "Nouvelle tentative"
+  },
+  "automation": {
+    "pending": "En attente",
+    "running": "En cours",
+    "completed": "Terminé",
+    "failed": "Échoué",
+    "timeout": "Délai dépassé"
+  },
+  "severity": {
+    "info": "Info",
+    "low": "Faible",
+    "medium": "Moyen",
+    "high": "Élevé",
+    "critical": "Critique"
+  },
+  "priority": {
+    "low": "Faible",
+    "normal": "Normal",
+    "high": "Élevé",
+    "urgent": "Urgent"
+  },
+  "healing_status": {
+    "open": "Ouvert",
+    "auto_fixed": "Corrigé auto",
+    "acknowledged": "Reconnu",
+    "resolved": "Résolu"
+  },
+  "healing_category": {
+    "config": "Configuration",
+    "auth": "Authentification",
+    "network": "Réseau",
+    "timeout": "Délai",
+    "quota": "Quota"
+  },
+  "connector_status": {
+    "ready": "Prêt",
+    "untested": "Non testé",
+    "failed": "Échoué",
+    "no_credential": "Aucun identifiant",
+    "testing": "Test"
+  },
+  "task_phase": {
+    "analyzing": "Analyzing",
+    "planning": "Planning",
+    "implementing": "Implementing",
+    "validating": "Validating",
+    "complete": "Complete"
+  },
+  "goal_state": {
+    "pending": "Pending",
+    "review": "Review",
+    "blocked": "Blocked",
+    "in_progress": "In Progress",
+    "running": "Running",
+    "completed": "Done",
+    "done": "Done"
+  },
+  "test": {
+    "generating": "Génération",
+    "running": "En cours",
+    "completed": "Terminé",
+    "failed": "Échoué",
+    "pending": "En attente"
+  },
+  "dev": {
+    "open": "Ouvert",
+    "in_progress": "En cours",
+    "completed": "Terminé",
+    "blocked": "Bloqué",
+    "queued": "En file",
+    "running": "En cours",
+    "failed": "Échoué"
+  },
+  "circuit_breaker": {
+    "provider_claude_code": "Claude",
+    "provider_codex_cli": "Codex",
+    "provider_global": "Global"
+  }
+}

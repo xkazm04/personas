@@ -1,0 +1,22 @@
+{
+  "app_title": "Personas",
+  "skip_to_content": "Lewati ke konten",
+  "minimize": "Perkecil",
+  "restore": "Pulihkan",
+  "maximize": "Perbesar",
+  "close_window": "Tutup",
+  "update_available": "Pembaruan tersedia: v{version}",
+  "install_and_restart": "Instal & Mulai Ulang",
+  "installing": "Menginstal...",
+  "update_install_failed": "Gagal memasang pembaruan",
+  "update_install_retry": "Coba lagi",
+  "expand_sidebar": "Perluas bilah samping",
+  "collapse_sidebar": "Ciutkan bilah samping",
+  "network_settings": "Pengaturan jaringan",
+  "dark": "Gelap",
+  "light": "Terang",
+  "sign_in_google": "Masuk dengan Google",
+  "signed_in": "Sudah masuk",
+  "sign_out": "Keluar",
+  "offline": "Luring"
+}

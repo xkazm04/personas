@@ -1,0 +1,15 @@
+{
+  "not_reachable": "无法访问服务器。检查 URL 和您的网络连接。",
+  "timed_out": "连接超时。服务器可能已关闭或 URL 可能不正确。",
+  "dns_resolve": "无法解析主机名。仔细检查 URL 是否有拼写错误。",
+  "unauthorized": "凭据无效。请验证并重试。",
+  "forbidden": "访问被拒绝。您的凭据可能没有所需权限。",
+  "internal_server_error": "服务器返回内部错误。几分钟后重试。",
+  "service_unavailable": "服务器暂时不可用。稍后重试。",
+  "not_connected": "未连接。请先连接。",
+  "keyring": "无法访问存储的凭据。您可能需要重新连接。",
+  "oauth_expired": "OAuth 令牌已过期。请重新授权。",
+  "url_empty": "请输入编排器 URL。",
+  "api_key_empty": "请输入您的 API 密钥。",
+  "token_empty": "请输入您的 GitLab 个人访问令牌。"
+}
