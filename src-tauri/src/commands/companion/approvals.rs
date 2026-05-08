@@ -9,8 +9,9 @@
 //!      row with status='pending'.
 //!   3. UI renders an approval card with the rationale + params.
 //!   4. User clicks Approve → `companion_approve_action` here →
-//!      action executor → outcome appended as an episode → status='approved'
-//!      or status='approved_failed' when the executor fails after approval.
+//!      status='running' → action executor → outcome appended as an episode →
+//!      status='approved' or status='approved_failed' when the executor fails
+//!      after approval.
 //!   5. User clicks Reject → `companion_reject_action` → status='rejected'
 //!      and an episode is logged with the rejection reason.
 
@@ -30,6 +31,7 @@ use crate::AppState;
 
 const APPROVAL_STATUS_APPROVED: &str = "approved";
 const APPROVAL_STATUS_APPROVED_FAILED: &str = "approved_failed";
+const APPROVAL_STATUS_RUNNING: &str = "running";
 const APPROVAL_STATUS_REJECTED: &str = "rejected";
 
 // ── Tauri-facing types ──────────────────────────────────────────────────
@@ -295,6 +297,25 @@ fn load_pending(
         .ok_or_else(|| AppError::Internal("payload missing `action`".into()))?
         .to_string();
     let params = v.get("params").cloned().unwrap_or(serde_json::json!({}));
+    let changed = conn.execute(
+        "UPDATE companion_approval
+         SET status = ?1
+         WHERE id = ?2 AND status = 'pending'",
+        params![APPROVAL_STATUS_RUNNING, approval_id],
+    )?;
+    if changed == 0 {
+        let latest = conn
+            .query_row(
+                "SELECT status FROM companion_approval WHERE id = ?1",
+                params![approval_id],
+                |r| r.get::<_, String>(0),
+            )
+            .optional()?
+            .unwrap_or_else(|| "missing".to_string());
+        return Err(AppError::Internal(format!(
+            "approval `{approval_id}` is `{latest}`, not pending"
+        )));
+    }
     Ok((action, params))
 }
 
@@ -304,10 +325,25 @@ fn finalize_approval(
     status: &str,
 ) -> Result<(), AppError> {
     let conn = state.user_db.get()?;
-    conn.execute(
-        "UPDATE companion_approval SET status = ?1, resolved_at = datetime('now') WHERE id = ?2",
-        params![status, approval_id],
+    let changed = conn.execute(
+        "UPDATE companion_approval
+         SET status = ?1, resolved_at = datetime('now')
+         WHERE id = ?2 AND status = ?3",
+        params![status, approval_id, APPROVAL_STATUS_RUNNING],
     )?;
+    if changed == 0 {
+        let latest = conn
+            .query_row(
+                "SELECT status FROM companion_approval WHERE id = ?1",
+                params![approval_id],
+                |r| r.get::<_, String>(0),
+            )
+            .optional()?
+            .unwrap_or_else(|| "missing".to_string());
+        return Err(AppError::Internal(format!(
+            "approval `{approval_id}` could not finalize from `{latest}` to `{status}`"
+        )));
+    }
     Ok(())
 }
 
