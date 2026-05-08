@@ -1,5 +1,5 @@
 import { Play } from 'lucide-react';
-import { useOverviewTranslation } from '@/features/overview/i18n/useOverviewTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 
 /**
  * Inline SVG illustration showing a stylised particle flow —
@@ -52,8 +52,8 @@ interface RealtimeWelcomeOverlayProps {
 }
 
 export function RealtimeWelcomeOverlay({ onTestFlow }: RealtimeWelcomeOverlayProps) {
-  const { t } = useOverviewTranslation();
-  const es = t.emptyState;
+  const { t } = useTranslation();
+  const es = t.overview.emptyState;
 
   return (
     <div className="absolute inset-0 flex items-center justify-center z-10">

@@ -1,7 +1,6 @@
 import { useState, useRef } from 'react';
 import { MoreVertical, Eye, Trash2, CheckCircle2, XCircle, GraduationCap, Clock } from 'lucide-react';
 import { TrustBadge } from '../../../shared/TrustBadge';
-import { useTemplatesTranslation } from '@/features/templates/i18n/useTemplatesTranslation';
 import { useTranslation } from '@/i18n/useTranslation';
 import { BUTTON_VARIANTS } from '@/lib/utils/designTokens';
 import type { TemplateVerification } from '@/lib/types/templateTypes';
@@ -40,8 +39,8 @@ export function TemplateCardHeader({
 }: TemplateCardHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const { t } = useTemplatesTranslation();
   const { t: tMain } = useTranslation();
+  const t = tMain.templates;
 
   return (
     <div className="px-4 pt-4 pb-2.5 flex items-start justify-between gap-2">

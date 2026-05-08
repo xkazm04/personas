@@ -8,7 +8,6 @@ import { HealingIssueSummary } from './HealingIssueSummary';
 import { IssuesList } from './IssuesList';
 import { HealingTimeline } from './HealingTimeline';
 import { ErrorRecoveryBanner } from '@/features/shared/components/feedback/ErrorRecoveryBanner';
-import { useOverviewTranslation } from '@/features/overview/i18n/useOverviewTranslation';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { HealingViewMode as ViewMode } from '@/lib/constants/uiModes';
 
@@ -51,7 +50,6 @@ export function HealingIssuesPanel({
   viewMode, setViewMode, timelineEvents, timelineLoading,
   selectedPersonaId,
 }: HealingIssuesPanelProps) {
-  const { t: tOverview } = useOverviewTranslation();
   const { t, tx } = useTranslation();
   const handleTimelineSelectIssue = (issueId: string) => {
     const issue = healingIssues.find(i => i.id === issueId);
@@ -78,11 +76,11 @@ export function HealingIssuesPanel({
       setAuditEntries(entries);
       auditCacheRef.current = { personaId: cacheKey, ts: Date.now() };
     } catch {
-      setAuditError(tOverview.errorRecovery.audit_fetch_failed);
+      setAuditError(t.overview.errorRecovery.audit_fetch_failed);
     } finally {
       setAuditLoading(false);
     }
-  }, [selectedPersonaId, tOverview.errorRecovery.audit_fetch_failed]);
+  }, [selectedPersonaId, t.overview.errorRecovery.audit_fetch_failed]);
 
   useEffect(() => {
     if (auditExpanded) fetchAudit();
@@ -255,9 +253,9 @@ export function HealingIssuesPanel({
                 <ErrorRecoveryBanner
                   severity="warning"
                   message={auditError}
-                  cause={tOverview.errorRecovery.audit_fetch_cause}
+                  cause={t.overview.errorRecovery.audit_fetch_cause}
                   actionType="retry"
-                  actionLabel={tOverview.errorRecovery.action_retry}
+                  actionLabel={t.overview.errorRecovery.action_retry}
                   onAction={() => { auditCacheRef.current = { personaId: null, ts: 0 }; fetchAudit(); }}
                   compact
                 />

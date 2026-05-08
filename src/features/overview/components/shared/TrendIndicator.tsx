@@ -1,6 +1,6 @@
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import type { TrendValue } from '@/features/overview/utils/computeTrends';
-import { useOverviewTranslation } from '@/features/overview/i18n/useOverviewTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface TrendIndicatorProps {
   trend: TrendValue;
@@ -9,13 +9,13 @@ interface TrendIndicatorProps {
 }
 
 export function TrendIndicator({ trend, invertPolarity }: TrendIndicatorProps) {
-  const { t } = useOverviewTranslation();
+  const { t } = useTranslation();
 
   if (trend.direction === 'stable') {
     return (
       <span
         className="inline-flex items-center gap-0.5 text-[11px] text-foreground"
-        title={t.trend.stable}
+        title={t.overview.trend.stable}
       >
         <Minus className="w-3 h-3" />
       </span>
@@ -28,12 +28,12 @@ export function TrendIndicator({ trend, invertPolarity }: TrendIndicatorProps) {
 
   const color = isGood ? 'text-emerald-400' : 'text-red-400';
   const Icon = trend.direction === 'up' ? TrendingUp : TrendingDown;
-  const label = trend.direction === 'up' ? t.trend.up : t.trend.down;
+  const label = trend.direction === 'up' ? t.overview.trend.up : t.overview.trend.down;
 
   return (
     <span
       className={`inline-flex items-center gap-0.5 text-[11px] font-medium ${color}`}
-      title={`${label} ${trend.pctChange.toFixed(1)}% ${t.trend.vs_previous}`}
+      title={`${label} ${trend.pctChange.toFixed(1)}% ${t.overview.trend.vs_previous}`}
     >
       <Icon className="w-3 h-3" />
       {trend.pctChange.toFixed(0)}%

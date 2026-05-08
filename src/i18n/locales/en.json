@@ -5853,6 +5853,24 @@
       "subtitle": "recent Obsidian sync",
       "empty": "No recent sync activity.",
       "view_all": "View sync log"
+    },
+    "trend": {
+      "up": "Up",
+      "down": "Down",
+      "stable": "Stable — no significant change",
+      "vs_previous": "vs previous period"
+    },
+    "errorRecovery": {
+      "audit_fetch_failed": "Could not load the healing audit log.",
+      "audit_fetch_cause": "The log may be temporarily unavailable. Your other data is unaffected.",
+      "action_retry": "Retry"
+    },
+    "emptyState": {
+      "alerts_title": "All clear — no alerts fired",
+      "alerts_subtitle": "Your monitoring rules are watching. If anything needs attention, alerts will surface here automatically.",
+      "realtime_title": "Watch your events flow in real time",
+      "realtime_subtitle": "Animated particles trace each event as it travels from sources to your agents. Every dot is a live event moving through your system.",
+      "realtime_action": "Send a test event"
     }
   },
   "matrix_v3": {
@@ -7017,6 +7035,13 @@
       "friendly_service_error": "The service is currently experiencing issues. This is not a problem with your agent — try again later.",
       "friendly_timeout": "The connection timed out. The service may be slow or unavailable right now.",
       "friendly_missing_credentials": "Missing credentials. Go to **Keys** to add the required service credentials."
+    },
+    "complexity": {
+      "beginner": "Beginner",
+      "intermediate": "Intermediate",
+      "advanced": "Advanced",
+      "minuteShort": "~{minutes}m",
+      "minuteSetup": "~{minutes} min setup"
     }
   },
   "triggers": {

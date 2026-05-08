@@ -28,7 +28,6 @@ import {
   buildFlowLookup,
 } from '@/features/templates/sub_generated/adoption/chronology/useUseCaseChronology';
 import { computeDifficulty, estimateSetupMinutes, DIFFICULTY_META } from '../../shared/templateComplexity';
-import { useTemplatesTranslation } from '@/features/templates/i18n/useTemplatesTranslation';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import { parseJsonSafe } from '@/lib/utils/parseJson';
@@ -67,7 +66,7 @@ export function TemplateDetailModal({
 }: TemplateDetailModalProps) {
   const { t } = useTranslation();
   const { isStarter: isSimple } = useTier();
-  const { t: tpl } = useTemplatesTranslation();
+  const tpl = t.templates;
   const [activeTab, setActiveTab] = useState<DetailTab>('overview');
   const TAB_CONFIG = useTabConfig();
 

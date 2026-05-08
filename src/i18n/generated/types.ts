@@ -5860,6 +5860,24 @@ export type Translations = {
       empty: string;
       view_all: string;
     };
+    trend: {
+      up: string;
+      down: string;
+      stable: string;
+      vs_previous: string;
+    };
+    errorRecovery: {
+      audit_fetch_failed: string;
+      audit_fetch_cause: string;
+      action_retry: string;
+    };
+    emptyState: {
+      alerts_title: string;
+      alerts_subtitle: string;
+      realtime_title: string;
+      realtime_subtitle: string;
+      realtime_action: string;
+    };
   };
   matrix_v3: {
     layout_toggle_legacy: string;
@@ -7023,6 +7041,13 @@ export type Translations = {
       friendly_service_error: string;
       friendly_timeout: string;
       friendly_missing_credentials: string;
+    };
+    complexity: {
+      beginner: string;
+      intermediate: string;
+      advanced: string;
+      minuteShort: string;
+      minuteSetup: string;
     };
   };
   triggers: {
