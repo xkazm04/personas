@@ -2,4 +2,14 @@
 import type { BuildPhase } from "./BuildPhase";
 import type { JsonValue } from "./serde_json/JsonValue";
 
-export type PersistedBuildSession = { id: string, personaId: string, phase: BuildPhase, resolvedCells: JsonValue, pendingQuestion: JsonValue | null, agentIr: JsonValue | null, adoptionAnswers: JsonValue | null, intent: string, errorMessage: string | null, createdAt: string, };
+export type PersistedBuildSession = { id: string, personaId: string, phase: BuildPhase, resolvedCells: JsonValue, pendingQuestion: JsonValue | null, agentIr: JsonValue | null, adoptionAnswers: JsonValue | null, intent: string, errorMessage: string | null, 
+/**
+ * Build mode — `"interactive"` or `"one_shot"`. NULL legacy rows are
+ * surfaced as `Some("interactive")` so the frontend can switch on a
+ * string without dealing with three-state logic.
+ */
+mode: string | null, 
+/**
+ * Companion chat session that originated this build, when applicable.
+ */
+companionSessionId: string | null, createdAt: string, updatedAt: string, };

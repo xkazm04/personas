@@ -5,7 +5,8 @@
  */
 export type ArtistAsset = { id: string, fileName: string, filePath: string, 
 /**
- * "2d" or "3d"
+ * Canonical token: "2d" or "3d". Set via `AssetType::as_str` at every
+ * write site so this column never receives an unexpected value.
  */
 assetType: string, 
 /**

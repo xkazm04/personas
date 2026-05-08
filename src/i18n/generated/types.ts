@@ -10534,6 +10534,10 @@ export type Translations = {
       competition_title_placeholder: string;
       competition_desc_placeholder: string;
       regenerate_strategies_title: string;
+      worktree_base_ref_label: string;
+      worktree_base_ref_head: string;
+      worktree_base_ref_fresh: string;
+      worktree_base_ref_help: string;
       start_dev_server_title: string;
       stop_dev_server_title: string;
       open_worktree_title: string;

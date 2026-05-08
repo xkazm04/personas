@@ -216,6 +216,7 @@ export const startCompetition = (
   sourceIdeaId: string | null,
   sourceGoalId: string | null,
   slots: CompetitionSlotInput[],
+  worktreeBaseRef: 'head' | 'fresh' | null = null,
 ) =>
   invoke<{ competition: DevCompetition; slots: DevCompetitionSlot[] }>(
     "dev_tools_start_competition",
@@ -226,6 +227,7 @@ export const startCompetition = (
       sourceIdeaId: sourceIdeaId,
       sourceGoalId: sourceGoalId,
       slots,
+      worktreeBaseRef: worktreeBaseRef,
     },
   );
 

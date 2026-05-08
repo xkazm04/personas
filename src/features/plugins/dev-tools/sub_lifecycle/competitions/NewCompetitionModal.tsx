@@ -26,6 +26,7 @@ export function NewCompetitionModal({
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [slotCount, setSlotCount] = useState(3);
+  const [baseRef, setBaseRef] = useState<'head' | 'fresh'>('head');
   const [creating, setCreating] = useState(false);
   const [strategies, setStrategies] = useState<StrategyPreset[]>([]);
 
@@ -52,6 +53,7 @@ export function NewCompetitionModal({
       }));
       const result = await startCompetition(
         projectId, title.trim(), description.trim() || null, null, null, slots,
+        baseRef === 'head' ? null : baseRef,
       );
       const taskIds = result.slots.map((s) => s.task_id);
       if (taskIds.length > 0) {
@@ -68,7 +70,7 @@ export function NewCompetitionModal({
     } catch (err) {
       addToast(err instanceof Error ? err.message : dl.competition_failed, 'error');
     } finally { setCreating(false); }
-  }, [title, description, strategies, projectId, addToast, onCreated, onClose, dl, tx]);
+  }, [title, description, strategies, baseRef, projectId, addToast, onCreated, onClose, dl, tx]);
 
   return (
     <BaseModal isOpen={open} onClose={onClose} titleId="new-competition-title" size="lg">
@@ -110,6 +112,24 @@ export function NewCompetitionModal({
                 className="p-1.5 rounded-interactive hover:bg-secondary/40 text-foreground ml-2">
                 <RefreshCw className="w-4 h-4" />
               </button>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <label className="typo-caption text-primary uppercase tracking-wider" title={dl.worktree_base_ref_help}>
+              {dl.worktree_base_ref_label}
+            </label>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setBaseRef('head')}
+                className={`px-3 h-8 rounded-interactive typo-caption transition-colors border ${
+                  baseRef === 'head' ? 'bg-violet-500/15 text-violet-400 border-violet-500/25'
+                  : 'text-foreground hover:bg-secondary/40 border-transparent'
+                }`}>{dl.worktree_base_ref_head}</button>
+              <button onClick={() => setBaseRef('fresh')}
+                className={`px-3 h-8 rounded-interactive typo-caption transition-colors border ${
+                  baseRef === 'fresh' ? 'bg-violet-500/15 text-violet-400 border-violet-500/25'
+                  : 'text-foreground hover:bg-secondary/40 border-transparent'
+                }`}>{dl.worktree_base_ref_fresh}</button>
             </div>
           </div>
 
