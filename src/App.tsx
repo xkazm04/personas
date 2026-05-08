@@ -116,23 +116,19 @@ export default function App() {
   const [bgReady, setBgReady] = useState(false);
   useEffect(() => {
     import('./lib/debug/freezeWatchdog').then(m => m.markAction('appInit:start'));
-    // Dynamic imports: event bridge + middleware + background hooks.
-    // These pull in all 5 domain stores — loading them async keeps
-    // them out of the main bundle (~300 KB savings).
-    // Loaded in parallel (no interdependency) to avoid a boot waterfall.
-    Promise.all([
-      import("@/lib/storeBusWiring").then(m => m.initStoreBus()),
-      import("@/lib/eventBridge").then(m => m.initAllListeners()),
-      import("@/lib/execution/middleware").then(m => m.registerAllMiddleware()),
-    ]).then(() => {
+    // Dynamic imports: sequence bootstrap phases so cold-start IPC does not
+    // contend with first-paint/sidebar data requests.
+    void (async () => {
+      await Promise.all([
+        import("@/lib/storeBusWiring").then(m => m.initStoreBus()),
+        import("@/lib/eventBridge").then(m => m.initAllListeners()),
+      ]);
+      await import("@/lib/execution/middleware").then(m => m.registerAllMiddleware());
+
       // Orphan-draft cleanup: cancels every non-terminal session left over
       // from the previous app run. Deferred behind requestIdleCallback so
       // it never gates first paint — power users with several stale drafts
       // were paying ~500-800ms of additive cancel round-trips on cold start.
-      // Sequenced AFTER eventBridge.initAllListeners (the .then chain above)
-      // so any events that arrive during the cleanup window route through
-      // the store's session-keyed handlers (eventBridge filters on
-      // buildSessions presence — see eventBridge.ts:307).
       const runBootstrap = () => {
         import("@/lib/buildSessionBootstrap")
           .then(m => m.bootstrapActiveBuildSessions())
@@ -142,11 +138,11 @@ export default function App() {
       };
       const ric = (window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number }).requestIdleCallback;
       if (typeof ric === "function") {
-        ric(runBootstrap, { timeout: 2000 });
+        ric(runBootstrap, { timeout: 1000 });
       } else {
-        setTimeout(runBootstrap, 0);
+        setTimeout(runBootstrap, 1000);
       }
-    }).catch((err) => {
+    })().catch((err) => {
       appLogger.error("Critical startup module failed to initialize", { error: err instanceof Error ? err.message : String(err) });
     });
     void useAuthStore.getState().initialize();
