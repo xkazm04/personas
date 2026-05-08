@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { CheckCircle2, XCircle, Timer, DollarSign, ArrowDown, ChevronRight, Clock, Wifi, AlertCircle } from 'lucide-react';
-import { classifyLine, TERMINAL_STYLE_MAP, parseSummaryLine } from '@/lib/utils/terminalColors';
+import { TERMINAL_STYLE_MAP, parseSummaryLine } from '@/lib/utils/terminalColors';
 import type { TerminalLineStyle } from '@/lib/utils/terminalColors';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useTerminalClassification } from '@/hooks/utility/useTerminalClassification';
 /** Terminal empty state describing the current execution context. */
 export type TerminalEmptyState =
   | 'idle'
@@ -57,30 +58,7 @@ export function TerminalBody({
   const lastSeenLineCount = useRef(0);
   const [unseenCount, setUnseenCount] = useState(0);
 
-  // Incrementally classify lines -- only process newly appended entries
-  const classifiedCache = useRef<{ line: string; style: TerminalLineStyle }[]>([]);
-  const classified = useMemo(() => {
-    const cache = classifiedCache.current;
-    // Fast path: lines were only appended (common case during execution)
-    if (lines.length >= cache.length) {
-      let reuseCount = cache.length;
-      // Verify cached prefix still matches (handles full replacement)
-      if (reuseCount > 0 && cache[reuseCount - 1]!.line !== lines[reuseCount - 1]) {
-        reuseCount = 0;
-      }
-      if (reuseCount === lines.length) return cache;
-      const next = reuseCount === 0 ? [] : cache.slice(0, reuseCount);
-      for (let i = reuseCount; i < lines.length; i++) {
-        next.push({ line: lines[i]!, style: classifyLine(lines[i]!) });
-      }
-      classifiedCache.current = next;
-      return next;
-    }
-    // Lines were truncated or replaced -- reclassify all
-    const fresh = lines.map((line) => ({ line, style: classifyLine(line) }));
-    classifiedCache.current = fresh;
-    return fresh;
-  }, [lines]);
+  const classified = useTerminalClassification(lines);
 
   // Total item count: lines + optional cursor row at the end
   const itemCount = classified.length + (showCursor && isRunning ? 1 : 0);
