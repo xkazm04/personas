@@ -51,6 +51,31 @@ pub struct PersonaExecution {
     pub is_simulation: bool,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct ExecutionListItem {
+    pub id: String,
+    pub persona_id: String,
+    pub use_case_id: Option<String>,
+    pub status: String,
+    #[ts(type = "number")]
+    pub input_tokens: i64,
+    #[ts(type = "number")]
+    pub output_tokens: i64,
+    pub cost_usd: f64,
+    pub error_message: Option<String>,
+    #[ts(type = "number | null")]
+    pub duration_ms: Option<i64>,
+    pub retry_of_execution_id: Option<String>,
+    #[ts(type = "number")]
+    pub retry_count: i64,
+    pub started_at: Option<String>,
+    pub completed_at: Option<String>,
+    pub created_at: String,
+    #[serde(default)]
+    pub is_simulation: bool,
+}
+
 /// Execution row with persona metadata included via SQL JOIN.
 /// Eliminates N+1 queries when listing executions across all personas.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]

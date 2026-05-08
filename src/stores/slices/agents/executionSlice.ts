@@ -4,7 +4,7 @@ import { reportError } from "../../storeTypes";
 import { createLogger } from "@/lib/log";
 
 const logger = createLogger("execution");
-import type { PersonaExecution } from "@/lib/types/types";
+import type { ExecutionListItem } from "@/lib/bindings/ExecutionListItem";
 import type { PipelineTrace } from "@/lib/execution/pipeline";
 import {
   createPipelineTrace,
@@ -21,7 +21,7 @@ import type {
 import type { Continuation } from "@/lib/bindings/Continuation";
 import type { DesignDriftEvent } from "@/lib/design/designDrift";
 import { loadDriftEvents, saveDriftEvents } from "@/lib/design/designDrift";
-import { cancelExecution, executePersona, getExecution, listExecutions } from "@/api/agents/executions";
+import { cancelExecution, executePersona, getExecution, listExecutionsSummary } from "@/api/agents/executions";
 
 import { executionSink } from "@/lib/execution/executionSink";
 import { TERMINAL_STATUS_SET } from "@/lib/execution/executionState";
@@ -84,7 +84,7 @@ export interface BackgroundExecution {
 
 export interface ExecutionSlice {
   // State
-  executions: PersonaExecution[];
+  executions: ExecutionListItem[];
   /** Whether the execution list is currently being fetched. */
   executionsLoading: boolean;
   /** The personaId whose executions are currently loaded (for cache coherence). */
@@ -471,7 +471,7 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
     const doFetch = async () => {
       set({ executionsLoading: true });
       try {
-        const executions = await listExecutions(personaId);
+        const executions = await listExecutionsSummary(personaId);
         set({ executions, executionsPersonaId: personaId });
       } catch (err) {
         reportError(err, "Failed to fetch executions", set, { action: "fetchExecutions" });

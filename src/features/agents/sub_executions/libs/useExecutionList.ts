@@ -1,7 +1,7 @@
 import { useEffect, useRef, useMemo } from 'react';
 import { useAgentStore } from '@/stores/agentStore';
 import { getTemplateCatalog } from '@/lib/personas/templates/templateCatalog';
-import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
+import type { ExecutionListItem } from '@/lib/bindings/ExecutionListItem';
 
 export const TEMPLATE_SAMPLE_INPUT: Record<string, object> = {
   'gmail-maestro': { mode: 'process_inbox', max_emails: 5, labels: ['inbox', 'unread'] },
@@ -35,7 +35,7 @@ export function formatTokens(tokens: number): string {
  * All callers share the same Zustand state — no local copies, no redundant API calls.
  */
 export function useExecutionList(personaId: string): {
-  executions: PersonaExecution[];
+  executions: ExecutionListItem[];
   loading: boolean;
   refresh: () => Promise<void>;
   typicalDurationMs: number | null;

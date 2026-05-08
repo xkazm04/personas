@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use tauri::State;
 
-use crate::db::models::{ExecutionCounts, GlobalExecutionRow, PersonaExecution};
+use crate::db::models::{ExecutionCounts, ExecutionListItem, GlobalExecutionRow, PersonaExecution};
 use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::execution::executions as repo;
 use crate::db::repos::resources::automations as automation_repo;
@@ -37,6 +37,16 @@ pub fn list_executions(
 ) -> Result<Vec<PersonaExecution>, AppError> {
     require_auth_sync(&state)?;
     repo::get_by_persona_id(&state.db, &persona_id, limit)
+}
+
+#[tauri::command]
+pub fn list_executions_summary(
+    state: State<'_, Arc<AppState>>,
+    persona_id: String,
+    limit: Option<i64>,
+) -> Result<Vec<ExecutionListItem>, AppError> {
+    require_auth_sync(&state)?;
+    repo::list_items_by_persona_id(&state.db, &persona_id, limit)
 }
 
 #[tauri::command]

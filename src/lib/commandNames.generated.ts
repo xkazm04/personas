@@ -727,6 +727,7 @@ export type CommandName =
   | "list_events_in_range"
   | "list_execution_knowledge"
   | "list_executions"
+  | "list_executions_summary"
   | "list_executions_by_trigger"
   | "list_executions_for_use_case"
   | "list_exposed_resources"

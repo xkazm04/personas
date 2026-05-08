@@ -128,6 +128,7 @@ export type { PersonaEvent } from "./PersonaEvent";
 export type { PersonaEventStatus } from "./PersonaEventStatus";
 export type { PersonaEventSubscription } from "./PersonaEventSubscription";
 export type { PersonaExecution } from "./PersonaExecution";
+export type { ExecutionListItem } from "./ExecutionListItem";
 export type { PersonaGroup } from "./PersonaGroup";
 export type { PersonaHealingIssue } from "./PersonaHealingIssue";
 export type { PersonaHealth } from "./PersonaHealth";

@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
 import { Rocket, Play, Clock } from 'lucide-react';
+import { getExecution } from '@/api/agents/executions';
 import { getRetryChain } from '@/api/overview/healing';
 import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { ExecutionComparison } from './ExecutionComparison';
@@ -15,6 +16,7 @@ import { useSelectedUseCases } from '@/stores/selectors/personaSelectors';
 import { createLogger } from '@/lib/log';
 import { useDensity } from '@/hooks/utility/data/useDensity';
 import { DensityToggle } from '@/features/shared/components/display/DensityToggle';
+import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 
 const logger = createLogger('execution-list');
 
@@ -42,6 +44,7 @@ export function ExecutionList() {
   const [compareLeft, setCompareLeft] = useState<string | null>(null);
   const [compareRight, setCompareRight] = useState<string | null>(null);
   const [showComparison, setShowComparison] = useState(false);
+  const [executionDetails, setExecutionDetails] = useState<Record<string, PersonaExecution>>({});
   const { density, setDensity, tokens: densityTokens } = useDensity('execution-list');
 
   const hasSimulations = useMemo(
@@ -89,12 +92,36 @@ export function ExecutionList() {
 
   const canCompare = compareLeft && compareRight && compareLeft !== compareRight;
 
-  const leftExec = useMemo(() => executions.find(e => e.id === compareLeft) ?? null, [executions, compareLeft]);
-  const rightExec = useMemo(() => executions.find(e => e.id === compareRight) ?? null, [executions, compareRight]);
+  const hydrateExecution = useCallback(async (executionId: string) => {
+    if (executionDetails[executionId]) return executionDetails[executionId];
+    const detail = await getExecution(executionId, personaId);
+    setExecutionDetails((prev) => ({ ...prev, [executionId]: detail }));
+    return detail;
+  }, [executionDetails, personaId]);
+
+  const leftExec = compareLeft ? executionDetails[compareLeft] ?? null : null;
+  const rightExec = compareRight ? executionDetails[compareRight] ?? null : null;
 
   const handleRowClick = (executionId: string) => {
     if (compareMode) { handleCompareSelect(executionId); return; }
-    setExpandedId(expandedId === executionId ? null : executionId);
+    const nextExpandedId = expandedId === executionId ? null : executionId;
+    setExpandedId(nextExpandedId);
+    if (nextExpandedId) {
+      void hydrateExecution(nextExpandedId).catch((err) => {
+        logger.warn('Failed to hydrate execution detail', { executionId: nextExpandedId, error: err });
+      });
+    }
+  };
+
+  const handleShowComparison = async () => {
+    if (!compareLeft || !compareRight) return;
+    try {
+      await Promise.all([hydrateExecution(compareLeft), hydrateExecution(compareRight)]);
+      setShowComparison(true);
+    } catch (err) {
+      logger.warn('Failed to hydrate comparison executions', { error: err });
+      useToastStore.getState().addToast(e.failed_to_load_chain, 'error');
+    }
   };
 
   if (!selectedPersona) {
@@ -124,7 +151,7 @@ export function ExecutionList() {
           compareMode={compareMode} exitCompareMode={exitCompareMode} setCompareMode={setCompareMode}
           hasExecutions={executions.length > 0} hasEnoughToCompare={executions.length >= 2}
           compareLeft={compareLeft} compareRight={compareRight}
-          canCompare={!!canCompare} onShowComparison={() => setShowComparison(true)}
+          canCompare={!!canCompare} onShowComparison={() => { void handleShowComparison(); }}
         />
         <div className="ml-auto">
           <DensityToggle density={density} onChange={setDensity} scopeId="execution-list" />
@@ -158,7 +185,7 @@ export function ExecutionList() {
           {executions.map((execution, execIdx) => (
             <ExecutionListRow
               key={execution.id}
-              execution={execution}
+              execution={executionDetails[execution.id] ?? execution}
               execIdx={execIdx}
               executions={executions}
               compareMode={compareMode}

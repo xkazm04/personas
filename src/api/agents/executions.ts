@@ -1,6 +1,7 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { PersonaExecution } from "@/lib/bindings/PersonaExecution";
+import type { ExecutionListItem } from "@/lib/bindings/ExecutionListItem";
 import type { GlobalExecutionRow } from "@/lib/bindings/GlobalExecutionRow";
 import type { ExecutionCounts } from "@/lib/bindings/ExecutionCounts";
 import type { Continuation } from "@/lib/bindings/Continuation";
@@ -14,6 +15,12 @@ import type { CircuitBreakerStatus } from "@/lib/bindings/CircuitBreakerStatus";
 
 export const listExecutions = (personaId: string, limit?: number) =>
   invoke<PersonaExecution[]>("list_executions", {
+    personaId,
+    limit: limit,
+  });
+
+export const listExecutionsSummary = (personaId: string, limit?: number) =>
+  invoke<ExecutionListItem[]>("list_executions_summary", {
     personaId,
     limit: limit,
   });

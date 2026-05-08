@@ -1,4 +1,5 @@
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
+import type { ExecutionListItem } from '@/lib/bindings/ExecutionListItem';
 import { ChevronDown, ChevronRight, RotateCw, Copy, Check, RefreshCw, ArrowLeftRight, FlaskConical } from 'lucide-react';
 import { formatTimestamp, formatDuration, formatRelativeTime, getStatusEntry, badgeClass, formatCost } from '@/lib/utils/formatters';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
@@ -9,10 +10,12 @@ import { CostSparkline } from './CostSparkline';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DENSITY_TOKENS, type DensityTokens } from '@/lib/density';
 
+type ExecutionRowData = ExecutionListItem & Partial<Pick<PersonaExecution, 'input_data' | 'model_used' | 'output_data' | 'tool_steps' | 'execution_flows' | 'log_file_path' | 'claude_session_id' | 'trigger_id' | 'execution_config' | 'log_truncated'>>;
+
 interface ExecutionListRowProps {
-  execution: PersonaExecution;
+  execution: ExecutionRowData;
   execIdx: number;
-  executions: PersonaExecution[];
+  executions: ExecutionRowData[];
   compareMode: boolean;
   compareLeft: string | null;
   compareRight: string | null;
@@ -155,7 +158,7 @@ export function ExecutionListRow({
                 </div>
               )}
               <div className="flex items-center gap-2 pt-1">
-                <button onClick={(e) => { e.stopPropagation(); onRerun(execution.input_data); }} className="flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-modal bg-primary/10 text-primary/80 border border-primary/20 hover:bg-primary/20 hover:text-primary transition-colors">
+                <button onClick={(e) => { e.stopPropagation(); onRerun(execution.input_data ?? null); }} className="flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-modal bg-primary/10 text-primary/80 border border-primary/20 hover:bg-primary/20 hover:text-primary transition-colors">
                   <RotateCw className="w-3 h-3" />{e.rerun_with_same_input}
                 </button>
                 {execution.retry_count > 0 && (

@@ -1,7 +1,7 @@
 use rusqlite::{params, Row};
 
 use crate::db::models::{
-    ExecutionCounts, GlobalExecutionRow, PersonaExecution, UpdateExecutionStatus,
+    ExecutionCounts, ExecutionListItem, GlobalExecutionRow, PersonaExecution, UpdateExecutionStatus,
 };
 use crate::db::DbPool;
 use crate::engine::types::ExecutionState;
@@ -41,6 +41,28 @@ fn row_to_execution(row: &Row) -> rusqlite::Result<PersonaExecution> {
     })
 }
 
+fn row_to_execution_list_item(row: &Row) -> rusqlite::Result<ExecutionListItem> {
+    Ok(ExecutionListItem {
+        id: row.get("id")?,
+        persona_id: row.get("persona_id")?,
+        use_case_id: row.get("use_case_id")?,
+        status: row.get("status")?,
+        input_tokens: row.get::<_, Option<i64>>("input_tokens")?.unwrap_or(0),
+        output_tokens: row.get::<_, Option<i64>>("output_tokens")?.unwrap_or(0),
+        cost_usd: row.get::<_, Option<f64>>("cost_usd")?.unwrap_or(0.0),
+        error_message: row.get("error_message")?,
+        duration_ms: row.get("duration_ms")?,
+        retry_of_execution_id: row.get("retry_of_execution_id")?,
+        retry_count: row.get::<_, Option<i64>>("retry_count")?.unwrap_or(0),
+        started_at: row.get("started_at")?,
+        completed_at: row.get("completed_at")?,
+        created_at: row.get("created_at")?,
+        is_simulation: row
+            .get::<_, Option<bool>>("is_simulation")?
+            .unwrap_or(false),
+    })
+}
+
 pub fn get_by_persona_id(
     pool: &DbPool,
     persona_id: &str,
@@ -61,6 +83,46 @@ pub fn get_by_persona_id(
              ORDER BY created_at DESC LIMIT ?2",
             )?;
             let rows = stmt.query_map(params![persona_id, limit], row_to_execution)?;
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
+        }
+    )
+}
+
+pub fn list_items_by_persona_id(
+    pool: &DbPool,
+    persona_id: &str,
+    limit: Option<i64>,
+) -> Result<Vec<ExecutionListItem>, AppError> {
+    timed_query!(
+        "persona_executions",
+        "persona_executions::list_items_by_persona_id",
+        {
+            let limit = limit.unwrap_or(50);
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare_cached(
+                "SELECT
+                 id,
+                 persona_id,
+                 use_case_id,
+                 status,
+                 input_tokens,
+                 output_tokens,
+                 cost_usd,
+                 error_message,
+                 duration_ms,
+                 retry_of_execution_id,
+                 retry_count,
+                 started_at,
+                 completed_at,
+                 created_at,
+                 is_simulation
+             FROM persona_executions
+             WHERE persona_id = ?1
+               AND (input_data IS NULL OR input_data NOT LIKE '%\"_ops\"%')
+             ORDER BY created_at DESC LIMIT ?2",
+            )?;
+            let rows = stmt.query_map(params![persona_id, limit], row_to_execution_list_item)?;
             rows.collect::<Result<Vec<_>, _>>()
                 .map_err(AppError::Database)
         }

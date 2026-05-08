@@ -1122,6 +1122,7 @@ pub fn run() {
             commands::core::chat::get_latest_chat_session,
             // Execution -- Executions
             commands::execution::executions::list_executions,
+            commands::execution::executions::list_executions_summary,
             commands::execution::executions::list_all_executions,
             commands::execution::executions::count_executions,
             commands::execution::executions::get_execution,
