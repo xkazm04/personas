@@ -1,8 +1,13 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { getExecutionLog } from '@/api/agents/executions';
 import { useToastStore } from '@/stores/toastStore';
-import { diffLines, jsonDiff } from '../../libs/comparisonHelpers';
+import {
+  computeJsonDiffOffThread,
+  computeLineDiffOffThread,
+  type JsonDiffEntry,
+  type LineDiffEntry,
+} from '../../libs/comparisonDiffWorkerClient';
 import ContentLoader from '@/features/shared/components/progress/ContentLoader';
 import { useTranslation } from '@/i18n/useTranslation';
 import { createLogger } from '@/lib/log';
@@ -24,6 +29,8 @@ export function OutputDiffSection({
   const [logRight, setLogRight] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [diff, setDiff] = useState<LineDiffEntry[]>([]);
+  const [diffLoading, setDiffLoading] = useState(false);
 
   const fetchLogs = useCallback(async () => {
     setLoading(true);
@@ -40,7 +47,7 @@ export function OutputDiffSection({
     } finally {
       setLoading(false);
     }
-  }, [leftId, rightId, personaId]);
+  }, [leftId, rightId, personaId, e.failed_to_load_logs]);
 
   useEffect(() => {
     if (expanded && logLeft === null && logRight === null && !loading) {
@@ -48,12 +55,28 @@ export function OutputDiffSection({
     }
   }, [expanded, logLeft, logRight, loading, fetchLogs]);
 
-  const diff = useMemo(() => {
-    if (!logLeft && !logRight) return [];
-    const linesL = (logLeft ?? '').split('\n').filter(l => l.trim());
-    const linesR = (logRight ?? '').split('\n').filter(l => l.trim());
-    return diffLines(linesL, linesR);
-  }, [logLeft, logRight]);
+  useEffect(() => {
+    if (!expanded || (logLeft === null && logRight === null)) {
+      return undefined;
+    }
+
+    setDiff([]);
+    setDiffLoading(true);
+    const job = computeLineDiffOffThread(logLeft, logRight, (chunk) => {
+      setDiff((prev) => [...prev, ...chunk]);
+    });
+    void job.promise
+      .then((result) => {
+        setDiff(result);
+        setDiffLoading(false);
+      })
+      .catch((err) => {
+        setDiffLoading(false);
+        logger.warn('Failed to compute comparison diff', { error: err });
+      });
+
+    return () => job.cancel();
+  }, [expanded, logLeft, logRight]);
 
   return (
     <div>
@@ -74,7 +97,7 @@ export function OutputDiffSection({
           <div
             className="animate-fade-slide-in mt-2 overflow-hidden"
           >
-            {loading ? (
+            {loading || (diffLoading && diff.length === 0) ? (
               <ContentLoader variant="panel" hint="comparison" />
             ) : diff.length === 0 ? (
               <p className="typo-body text-foreground py-3">{e.no_log_data}</p>
@@ -131,7 +154,18 @@ export function JsonDiffSection({
   const { t, tx } = useTranslation();
   const e = t.agents.executions;
   const [expanded, setExpanded] = useState(false);
-  const diffs = useMemo(() => jsonDiff(leftData, rightData), [leftData, rightData]);
+  const [diffs, setDiffs] = useState<JsonDiffEntry[]>([]);
+
+  useEffect(() => {
+    const job = computeJsonDiffOffThread(leftData, rightData);
+    void job.promise
+      .then(setDiffs)
+      .catch((err) => {
+        setDiffs([]);
+        logger.warn('Failed to compute JSON comparison diff', { error: err });
+      });
+    return () => job.cancel();
+  }, [leftData, rightData]);
 
   if (diffs.length === 0 && !leftData && !rightData) return null;
 
