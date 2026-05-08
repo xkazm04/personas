@@ -812,28 +812,7 @@ pub fn run() {
             );
             st.checkpoint("cdc_drain_task");
 
-            // Periodic WAL checkpoint — prevents unbounded WAL growth.
-            // Without this the WAL file grows indefinitely (observed 82 MB+)
-            // consuming disk and slowing down reads.
-            {
-                let wal_pool = pool.clone();
-                let wal_user_pool = user_db_pool.clone();
-                tauri::async_runtime::spawn(async move {
-                    // Wait for initial boot to settle
-                    tokio::time::sleep(std::time::Duration::from_secs(30)).await;
-                    loop {
-                        for (name, p) in [("personas.db", &wal_pool), ("personas_data.db", &wal_user_pool)] {
-                            if let Ok(conn) = p.get() {
-                                match conn.execute_batch("PRAGMA wal_checkpoint(TRUNCATE);") {
-                                    Ok(_) => tracing::debug!("WAL checkpoint completed for {}", name),
-                                    Err(e) => tracing::warn!("WAL checkpoint failed for {}: {}", name, e),
-                                }
-                            }
-                        }
-                        tokio::time::sleep(std::time::Duration::from_secs(300)).await;
-                    }
-                });
-            }
+            db::spawn_idle_maintenance_task(pool.clone(), user_db_pool.clone());
 
             // Test automation HTTP server.
             //

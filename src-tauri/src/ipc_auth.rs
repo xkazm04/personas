@@ -28,6 +28,7 @@
 
 use std::cell::Cell;
 use std::collections::HashSet;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, LazyLock, OnceLock};
 
 use crate::error::AppError;
@@ -39,6 +40,7 @@ use crate::AppState;
 
 /// Global IPC session token.  Set once during app startup via `init_session_token`.
 static IPC_SESSION_TOKEN: OnceLock<String> = OnceLock::new();
+static IPC_IN_FLIGHT: AtomicUsize = AtomicUsize::new(0);
 
 /// Initialise the global session token.  Panics on double-init (should never happen).
 pub fn init_session_token(token: String) {
@@ -53,6 +55,25 @@ pub fn generate_ipc_session_token() -> String {
     let mut buf = [0u8; 32];
     rand::thread_rng().fill(&mut buf);
     hex::encode(buf)
+}
+
+pub fn ipc_in_flight() -> usize {
+    IPC_IN_FLIGHT.load(Ordering::Acquire)
+}
+
+struct IpcInFlightGuard;
+
+impl IpcInFlightGuard {
+    fn new() -> Self {
+        IPC_IN_FLIGHT.fetch_add(1, Ordering::AcqRel);
+        Self
+    }
+}
+
+impl Drop for IpcInFlightGuard {
+    fn drop(&mut self) {
+        IPC_IN_FLIGHT.fetch_sub(1, Ordering::AcqRel);
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -418,6 +439,7 @@ pub fn wrap_invoke_handler<R: tauri::Runtime>(
     inner: impl Fn(tauri::ipc::Invoke<R>) -> bool + Send + Sync + 'static,
 ) -> impl Fn(tauri::ipc::Invoke<R>) -> bool + Send + Sync + 'static {
     move |invoke: tauri::ipc::Invoke<R>| {
+        let _in_flight = IpcInFlightGuard::new();
         let cmd = invoke.message.command().to_string();
 
         if is_privileged_command(&cmd) {

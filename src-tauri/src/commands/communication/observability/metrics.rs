@@ -137,7 +137,7 @@ fn get_all_monthly_spend_with_conn(
     utc_offset_minutes: Option<i32>,
 ) -> Result<MonthlySpendResult, AppError> {
     let period_start_str = monthly_period_start_utc(utc_offset_minutes);
-    let mut stmt = conn.prepare(
+    let mut stmt = conn.prepare_cached(
         "SELECT p.id, COALESCE(e.spend, 0.0), p.max_budget_usd, p.name
          FROM personas p
          LEFT JOIN (

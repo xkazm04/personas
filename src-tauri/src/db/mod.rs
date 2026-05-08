@@ -82,13 +82,51 @@ impl CustomizeConnection<rusqlite::Connection, rusqlite::Error> for SqlitePragma
         conn.execute_batch(
             "PRAGMA foreign_keys = ON;
              PRAGMA busy_timeout = 5000;
+             PRAGMA page_size = 4096;
              PRAGMA synchronous = NORMAL;
              PRAGMA mmap_size = 268435456;
              PRAGMA temp_store = 2;
+             PRAGMA analysis_limit = 1000;
              PRAGMA cache_size = -2000;",
         )?;
         Ok(())
     }
+}
+
+pub fn spawn_idle_maintenance_task(primary_pool: DbPool, user_pool: UserDbPool) {
+    tauri::async_runtime::spawn(async move {
+        tokio::time::sleep(std::time::Duration::from_secs(30)).await;
+        loop {
+            if crate::ipc_auth::ipc_in_flight() == 0 {
+                for (name, pool) in [
+                    ("personas.db", &primary_pool),
+                    ("personas_data.db", &user_pool),
+                ] {
+                    if let Ok(conn) = pool.get() {
+                        match conn.execute_batch(
+                            "PRAGMA optimize;
+                             PRAGMA wal_checkpoint(TRUNCATE);",
+                        ) {
+                            Ok(_) => {
+                                tracing::debug!(db = name, "SQLite idle maintenance completed")
+                            }
+                            Err(e) => tracing::warn!(
+                                db = name,
+                                error = %e,
+                                "SQLite idle maintenance failed"
+                            ),
+                        }
+                    }
+                }
+            } else {
+                tracing::debug!(
+                    in_flight = crate::ipc_auth::ipc_in_flight(),
+                    "SQLite idle maintenance deferred while IPC is active"
+                );
+            }
+            tokio::time::sleep(std::time::Duration::from_secs(300)).await;
+        }
+    });
 }
 
 /// Initialize the database: create file, enable WAL + foreign keys, run migrations, seed data.

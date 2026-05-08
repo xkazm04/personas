@@ -200,7 +200,7 @@ pub fn get_prompt_versions(
         {
             let limit = limit.unwrap_or(50);
             let conn = pool.get()?;
-            let mut stmt = conn.prepare(
+            let mut stmt = conn.prepare_cached(
             "SELECT * FROM persona_prompt_versions WHERE persona_id = ?1 ORDER BY version_number DESC LIMIT ?2",
         )?;
             let rows = stmt.query_map(params![persona_id, limit], row_to_prompt_version)?;
@@ -503,7 +503,7 @@ pub fn get_chart_data_with_conn(
     let params_ref = qb.params_ref();
 
     let chart_points: Vec<MetricsChartPoint> = {
-        let mut stmt = conn.prepare(&chart_sql)?;
+        let mut stmt = conn.prepare_cached(&chart_sql)?;
         let rows = stmt.query_map(params_ref.as_slice(), |row| {
             Ok(MetricsChartPoint {
                 date: row.get("date")?,
@@ -538,7 +538,7 @@ pub fn get_chart_data_with_conn(
     );
 
     let persona_breakdown = {
-        let mut stmt = conn.prepare(&breakdown_sql)?;
+        let mut stmt = conn.prepare_cached(&breakdown_sql)?;
         let rows = stmt.query_map(params_ref.as_slice(), |row| {
             Ok(MetricsPersonaBreakdown {
                 persona_id: row.get("persona_id")?,
@@ -737,7 +737,7 @@ pub fn get_prompt_performance(
             let date_filter = format!("-{days} days");
 
             // 1) Fetch raw execution rows for this persona
-            let mut stmt = conn.prepare(
+            let mut stmt = conn.prepare_cached(
                 "SELECT
             DATE(created_at) as date,
             COALESCE(duration_ms, 0) as duration_ms,
@@ -835,7 +835,7 @@ pub fn get_prompt_performance(
                 .collect();
 
             // 4) Fetch version markers
-            let mut vstmt = conn.prepare(
+            let mut vstmt = conn.prepare_cached(
         "SELECT id, version_number, COALESCE(tag, 'experimental') as tag, created_at, change_summary
          FROM persona_prompt_versions
          WHERE persona_id = ?1
@@ -905,7 +905,7 @@ pub fn get_execution_dashboard(
 
             // Single query: fetch all rows with persona name, aggregated in Rust.
             // This replaces 4 separate SQL queries that each scanned the same rows.
-            let mut stmt = conn.prepare(
+            let mut stmt = conn.prepare_cached(
                 "SELECT
             DATE(e.created_at) as date,
             e.persona_id,
@@ -1337,7 +1337,7 @@ pub fn get_anomaly_drilldown(
              WHERE created_at BETWEEN ?1 AND ?2
              ORDER BY created_at"
                 };
-                let mut stmt = conn.prepare(query)?;
+                let mut stmt = conn.prepare_cached(query)?;
                 let rows: Vec<(String, String, i32, String, String, Option<String>)> =
                     if let Some(pid) = persona_id {
                         stmt.query_map(params![&window_start, &window_end, pid], |row| {
@@ -1381,7 +1381,7 @@ pub fn get_anomaly_drilldown(
 
             // 2. Credential rotations in window
             {
-                let mut stmt = conn.prepare(
+                let mut stmt = conn.prepare_cached(
             "SELECT r.id, r.credential_id, c.name, r.rotation_type, r.status, r.detail, r.created_at
              FROM credential_rotation_history r
              LEFT JOIN credentials c ON c.id = r.credential_id
@@ -1439,7 +1439,7 @@ pub fn get_anomaly_drilldown(
              WHERE created_at BETWEEN ?1 AND ?2
              ORDER BY created_at"
                 };
-                let mut stmt = conn.prepare(query)?;
+                let mut stmt = conn.prepare_cached(query)?;
                 #[allow(clippy::type_complexity)]
                 let rows: Vec<(
                     String,
@@ -1504,7 +1504,7 @@ pub fn get_anomaly_drilldown(
 
             // 4. Fired alerts in window
             {
-                let mut stmt = conn.prepare(
+                let mut stmt = conn.prepare_cached(
                     "SELECT id, rule_name, metric, severity, message, fired_at
              FROM fired_alerts
              WHERE fired_at BETWEEN ?1 AND ?2
@@ -1857,7 +1857,7 @@ fn compute_execution_heatmap(
         );
 
         let params_ref = qb.params_ref();
-        let mut stmt = conn.prepare(&sql)?;
+        let mut stmt = conn.prepare_cached(&sql)?;
         let rows = stmt.query_map(params_ref.as_slice(), |row| {
             Ok(HeatmapDay {
                 date: row.get("date")?,
