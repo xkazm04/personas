@@ -98,9 +98,8 @@ pub fn apply_worktree_base_ref(project_root: &Path, base_ref: &str) -> Result<()
         })?;
     }
 
-    let serialized = serde_json::to_string_pretty(&root).map_err(|e| {
-        AppError::Internal(format!("worktree_settings: serialize settings: {e}"))
-    })?;
+    let serialized = serde_json::to_string_pretty(&root)
+        .map_err(|e| AppError::Internal(format!("worktree_settings: serialize settings: {e}")))?;
 
     std::fs::write(&settings_path, serialized).map_err(|e| {
         AppError::Internal(format!(
@@ -203,11 +202,11 @@ mod tests {
     fn idempotent_repeated_calls() {
         let tmp = tempfile::tempdir().unwrap();
         apply_worktree_base_ref(tmp.path(), "fresh").unwrap();
-        let first = std::fs::read_to_string(tmp.path().join(".claude").join("settings.json"))
-            .unwrap();
+        let first =
+            std::fs::read_to_string(tmp.path().join(".claude").join("settings.json")).unwrap();
         apply_worktree_base_ref(tmp.path(), "fresh").unwrap();
-        let second = std::fs::read_to_string(tmp.path().join(".claude").join("settings.json"))
-            .unwrap();
+        let second =
+            std::fs::read_to_string(tmp.path().join(".claude").join("settings.json")).unwrap();
         assert_eq!(first, second);
     }
 }
