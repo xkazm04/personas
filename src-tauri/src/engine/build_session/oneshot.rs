@@ -461,14 +461,16 @@ async fn finalize_promoted(
     session_id: &str,
     persona_id: &str,
 ) {
+    let persona_name = resolve_persona_name(state, persona_id);
     super::events::send_terminal_notification(
         app_handle,
         session_id,
         persona_id,
+        persona_name.clone(),
         BuildPhase::Promoted,
         None,
     );
-    post_companion_episode(state, session_id, persona_id, true, None);
+    post_companion_episode(state, session_id, persona_name, true, None);
 }
 
 async fn finalize_failed(
@@ -518,14 +520,22 @@ async fn finalize_failed(
         }
     }
 
+    let persona_name = resolve_persona_name(state, persona_id);
     super::events::send_terminal_notification(
         app_handle,
         session_id,
         persona_id,
+        persona_name.clone(),
         BuildPhase::Failed,
         error.clone(),
     );
-    post_companion_episode(state, session_id, persona_id, false, error);
+    post_companion_episode(state, session_id, persona_name, false, error);
+}
+
+fn resolve_persona_name(state: &Arc<AppState>, persona_id: &str) -> Option<String> {
+    persona_repo::get_by_id(&state.db, persona_id)
+        .ok()
+        .map(|p| p.name)
 }
 
 /// When the OneShot session was started from a Companion chat (the
@@ -540,7 +550,7 @@ async fn finalize_failed(
 fn post_companion_episode(
     state: &Arc<AppState>,
     session_id: &str,
-    persona_id: &str,
+    persona_name: Option<String>,
     success: bool,
     error: Option<String>,
 ) {
@@ -553,9 +563,7 @@ fn post_companion_episode(
         None => return,
     };
 
-    let persona_name = persona_repo::get_by_id(&state.db, persona_id)
-        .map(|p| p.name)
-        .unwrap_or_else(|_| "the draft".to_string());
+    let persona_name = persona_name.unwrap_or_else(|| "the draft".to_string());
 
     let body = if success {
         format!(

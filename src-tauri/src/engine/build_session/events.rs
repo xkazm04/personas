@@ -10,11 +10,10 @@ use std::sync::{Arc, Mutex};
 
 use serde::Serialize;
 use tauri::ipc::Channel;
-use tauri::{Emitter, Manager};
+use tauri::Emitter;
 
 use crate::db::models::{BuildEvent, BuildPhase, UpdateBuildSession};
 use crate::db::repos::core::build_sessions as build_session_repo;
-use crate::db::repos::core::personas as persona_repo;
 use crate::db::DbPool;
 use crate::error::AppError;
 use crate::ActiveProcessRegistry;
@@ -165,19 +164,11 @@ pub(super) fn send_terminal_notification(
     app: &tauri::AppHandle,
     session_id: &str,
     persona_id: &str,
+    persona_name: Option<String>,
     phase: BuildPhase,
     error_message: Option<String>,
 ) {
     let success = matches!(phase, BuildPhase::Promoted);
-
-    // Look up persona name for the notification body. AppState is
-    // registered at app boot, so by the time a build reaches a terminal
-    // phase the state guard is always present. Persona-row absence is
-    // the only realistic miss; fall back to the generic label.
-    let state = app.state::<std::sync::Arc<crate::AppState>>();
-    let persona_name: Option<String> = persona_repo::get_by_id(&state.db, persona_id)
-        .ok()
-        .map(|p| p.name);
 
     let title = if success {
         "Build complete".to_string()
