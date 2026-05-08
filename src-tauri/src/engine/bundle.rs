@@ -391,7 +391,6 @@ pub fn apply_import(
     let mut imported = 0u32;
     let mut skipped = 0u32;
     let mut errors = Vec::new();
-    let mut provenance_batch: Vec<CreateProvenanceInput> = Vec::new();
 
     // Load all existing persona names once before the loop for O(1) conflict checks
     let existing_names: HashSet<String> = persona_repo::get_all(pool)
@@ -437,24 +436,30 @@ pub fn apply_import(
 
             match import_persona_from_value(pool, &persona_value) {
                 Ok(new_id) => {
-                    provenance_batch.push(CreateProvenanceInput {
+                    let provenance = CreateProvenanceInput {
                         resource_type: "persona".into(),
-                        resource_id: new_id,
+                        resource_id: new_id.clone(),
                         source_peer_id: sig.signer_peer_id.clone(),
                         source_display_name: None,
                         bundle_hash: Some(bundle_hash.clone()),
                         signature_verified: true,
-                    });
+                    };
+                    if let Err(e) = exposure_repo::upsert_provenance(pool, provenance) {
+                        let cleanup_result = persona_repo::delete(pool, &new_id);
+                        if let Err(cleanup_err) = cleanup_result {
+                            return Err(AppError::Internal(format!(
+                                "Failed to record provenance for imported persona {new_id}: {e}; cleanup also failed: {cleanup_err}"
+                            )));
+                        }
+                        return Err(AppError::Internal(format!(
+                            "Failed to record provenance for imported persona {new_id}; import rolled back: {e}"
+                        )));
+                    }
                     imported += 1;
                 }
                 Err(e) => errors.push(format!("Import {}: {}", entry.display_name, e)),
             }
         }
-    }
-
-    // Batch-insert all provenance records in a single transaction
-    if let Err(e) = exposure_repo::batch_upsert_provenance(pool, provenance_batch) {
-        tracing::warn!("Failed to batch-record provenance: {}", e);
     }
 
     Ok(BundleImportResult {
