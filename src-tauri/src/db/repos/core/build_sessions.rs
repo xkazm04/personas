@@ -5,6 +5,20 @@ use crate::db::repos::utils::collect_rows;
 use crate::db::DbPool;
 use crate::error::AppError;
 
+const UPDATE_BUILD_SESSION_SQL: &str = "
+    UPDATE build_sessions SET
+        phase = CASE WHEN ?1 THEN ?2 ELSE phase END,
+        resolved_cells = CASE WHEN ?3 THEN ?4 ELSE resolved_cells END,
+        pending_question = CASE WHEN ?5 THEN ?6 ELSE pending_question END,
+        agent_ir = CASE WHEN ?7 THEN ?8 ELSE agent_ir END,
+        adoption_answers = CASE WHEN ?9 THEN ?10 ELSE adoption_answers END,
+        error_message = CASE WHEN ?11 THEN ?12 ELSE error_message END,
+        cli_pid = CASE WHEN ?13 THEN ?14 ELSE cli_pid END,
+        mode = CASE WHEN ?15 THEN ?16 ELSE mode END,
+        companion_session_id = CASE WHEN ?17 THEN ?18 ELSE companion_session_id END,
+        updated_at = ?19
+    WHERE id = ?20";
+
 fn row_to_build_session(row: &Row) -> rusqlite::Result<BuildSession> {
     let phase_str: String = row.get("phase")?;
     let cli_pid: Option<i64> = row.get("cli_pid")?;
@@ -143,65 +157,43 @@ pub fn update(pool: &DbPool, id: &str, updates: &UpdateBuildSession) -> Result<(
     timed_query!("build_sessions", "build_sessions::update", {
         let conn = pool.get()?;
         let now = chrono::Utc::now().to_rfc3339();
+        let cli_pid = updates.cli_pid.map(|value| value.map(|pid| pid as i64));
 
-        let mut set_clauses: Vec<String> = Vec::new();
-        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
-
-        if let Some(ref phase) = updates.phase {
-            set_clauses.push(format!("phase = ?{}", set_clauses.len() + 1));
-            param_values.push(Box::new(phase.clone()));
-        }
-        if let Some(ref resolved_cells) = updates.resolved_cells {
-            set_clauses.push(format!("resolved_cells = ?{}", set_clauses.len() + 1));
-            param_values.push(Box::new(resolved_cells.clone()));
-        }
-        if let Some(ref pending_question) = updates.pending_question {
-            set_clauses.push(format!("pending_question = ?{}", set_clauses.len() + 1));
-            param_values.push(Box::new(pending_question.clone()));
-        }
-        if let Some(ref agent_ir) = updates.agent_ir {
-            set_clauses.push(format!("agent_ir = ?{}", set_clauses.len() + 1));
-            param_values.push(Box::new(agent_ir.clone()));
-        }
-        if let Some(ref adoption_answers) = updates.adoption_answers {
-            set_clauses.push(format!("adoption_answers = ?{}", set_clauses.len() + 1));
-            param_values.push(Box::new(adoption_answers.clone()));
-        }
-        if let Some(ref error_message) = updates.error_message {
-            set_clauses.push(format!("error_message = ?{}", set_clauses.len() + 1));
-            param_values.push(Box::new(error_message.clone()));
-        }
-        if let Some(ref cli_pid) = updates.cli_pid {
-            set_clauses.push(format!("cli_pid = ?{}", set_clauses.len() + 1));
-            param_values.push(Box::new(cli_pid.map(|p| p as i64)));
-        }
-        if let Some(ref mode) = updates.mode {
-            set_clauses.push(format!("mode = ?{}", set_clauses.len() + 1));
-            param_values.push(Box::new(mode.clone()));
-        }
-        if let Some(ref companion_session_id) = updates.companion_session_id {
-            set_clauses.push(format!("companion_session_id = ?{}", set_clauses.len() + 1));
-            param_values.push(Box::new(companion_session_id.clone()));
-        }
-
-        // Always update updated_at
-        set_clauses.push(format!("updated_at = ?{}", set_clauses.len() + 1));
-        param_values.push(Box::new(now));
-
-        // Add the id parameter
-        let id_param_idx = set_clauses.len() + 1;
-        param_values.push(Box::new(id.to_string()));
-
-        let sql = format!(
-            "UPDATE build_sessions SET {} WHERE id = ?{}",
-            set_clauses.join(", "),
-            id_param_idx,
-        );
-
-        let params_ref: Vec<&dyn rusqlite::types::ToSql> =
-            param_values.iter().map(|p| p.as_ref()).collect();
-
-        conn.execute(&sql, params_ref.as_slice())?;
+        let mut stmt = conn.prepare_cached(UPDATE_BUILD_SESSION_SQL)?;
+        stmt.execute(params![
+            updates.phase.is_some(),
+            updates.phase.as_deref(),
+            updates.resolved_cells.is_some(),
+            updates.resolved_cells.as_deref(),
+            updates.pending_question.is_some(),
+            updates
+                .pending_question
+                .as_ref()
+                .and_then(|value| value.as_deref()),
+            updates.agent_ir.is_some(),
+            updates.agent_ir.as_ref().and_then(|value| value.as_deref()),
+            updates.adoption_answers.is_some(),
+            updates
+                .adoption_answers
+                .as_ref()
+                .and_then(|value| value.as_deref()),
+            updates.error_message.is_some(),
+            updates
+                .error_message
+                .as_ref()
+                .and_then(|value| value.as_deref()),
+            updates.cli_pid.is_some(),
+            cli_pid.flatten(),
+            updates.mode.is_some(),
+            updates.mode.as_ref().and_then(|value| value.as_deref()),
+            updates.companion_session_id.is_some(),
+            updates
+                .companion_session_id
+                .as_ref()
+                .and_then(|value| value.as_deref()),
+            now,
+            id,
+        ])?;
         Ok(())
     })
 }
