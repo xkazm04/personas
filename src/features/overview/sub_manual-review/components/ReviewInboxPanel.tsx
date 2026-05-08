@@ -2,6 +2,7 @@ import { useState, useCallback, useRef } from 'react';
 import { CheckSquare, Square, X, MessageSquare, PanelRightClose, PanelRight } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
+import { createRafCoalescer } from '@/lib/utils/interaction/rafCoalescer';
 import type { ManualReviewItem } from '@/lib/types/types';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 import { InboxItem } from './ReviewListItem';
@@ -44,11 +45,15 @@ export function ReviewInboxPanel({
     const minW = 260;
     const maxW = Math.min(containerWidth * 0.6, 600);
 
-    const onMove = (ev: PointerEvent) => {
-      const delta = ev.clientX - startX;
+    const resizeFrame = createRafCoalescer((clientX: number) => {
+      const delta = clientX - startX;
       setSidebarWidth(Math.max(minW, Math.min(maxW, startWidth + delta)));
+    });
+    const onMove = (ev: PointerEvent) => {
+      resizeFrame.schedule(ev.clientX);
     };
     const onUp = () => {
+      resizeFrame.cancel();
       document.removeEventListener('pointermove', onMove);
       document.removeEventListener('pointerup', onUp);
       document.body.style.cursor = '';

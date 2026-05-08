@@ -27,6 +27,7 @@ import { useReasoningTrace } from '@/hooks/execution/useReasoningTrace';
 import { useExecutionSummary } from '@/hooks/execution/useExecutionSummary';
 import { ExecutionSummaryCard } from '@/features/agents/sub_executions/detail/views/ExecutionSummaryCard';
 import ReasoningTrace from '@/features/shared/components/layout/ReasoningTrace';
+import { useRafCoalescedCallback } from '@/hooks/utility/timing/useRafCoalescedCallback';
 
 /** Simplified execution view for Simple mode — progress bar while running, result summary when done. */
 function SimpleExecutionView({
@@ -193,16 +194,20 @@ export default function ExecutionMiniPlayer() {
     [miniPlayerPosition],
   );
 
+  const moveMiniPlayerFrame = useRafCoalescedCallback((clientX: number, clientY: number) => {
+    const dx = clientX - dragStart.current.x;
+    const dy = clientY - dragStart.current.y;
+    setMiniPlayerPosition({
+      x: Math.max(0, Math.min(window.innerWidth - 360, dragStart.current.posX + dx)),
+      y: Math.max(0, Math.min(window.innerHeight - 80, dragStart.current.posY + dy)),
+    });
+  });
+
   useEffect(() => {
     if (!isDragging) return;
 
     const handleMouseMove = (e: MouseEvent) => {
-      const dx = e.clientX - dragStart.current.x;
-      const dy = e.clientY - dragStart.current.y;
-      setMiniPlayerPosition({
-        x: Math.max(0, Math.min(window.innerWidth - 360, dragStart.current.posX + dx)),
-        y: Math.max(0, Math.min(window.innerHeight - 80, dragStart.current.posY + dy)),
-      });
+      moveMiniPlayerFrame(e.clientX, e.clientY);
     };
 
     const handleMouseUp = () => setIsDragging(false);
@@ -213,7 +218,7 @@ export default function ExecutionMiniPlayer() {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, setMiniPlayerPosition]);
+  }, [isDragging, moveMiniPlayerFrame]);
 
   const handleStop = () => {
     if (activeExecutionId) {

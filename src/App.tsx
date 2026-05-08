@@ -20,6 +20,7 @@ import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { useDocumentVisibility } from '@/hooks/utility/useDocumentVisibility';
 import { createLogger } from "@/lib/log";
 import { idlePrefetch } from "@/lib/idlePrefetch";
+import { AppKeyboardProvider, useAppKeyboard } from "@/lib/keyboard/AppKeyboardProvider";
 
 initPseudoLocale();
 
@@ -92,6 +93,18 @@ const LAZY_OVERLAY_IMPORTS = [
   () => import("@/features/plugins/companion/CompanionPanel"),
   () => import("@/features/onboarding/components/OnboardingQuestPill"),
 ] as const;
+
+function DevMobilePreviewShortcut() {
+  useAppKeyboard((e) => {
+    if (!import.meta.env.DEV || !(e.ctrlKey && e.shiftKey && e.key === 'M')) return false;
+    e.preventDefault();
+    toggleMobilePreview();
+    window.location.reload();
+    return true;
+  }, { priority: 100 });
+
+  return null;
+}
 
 export default function App() {
   const [consented, setConsented] = useState(hasUserConsented);
@@ -187,25 +200,14 @@ export default function App() {
     useToastStore.getState().addToast(t.common.language_changed, 'success', 1600);
   }, [language, t]);
 
-  // Dev-mode mobile preview toggle: Ctrl+Shift+M
   const isMobilePreview = useMobilePreview();
-  useEffect(() => {
-    if (!import.meta.env.DEV) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.shiftKey && e.key === 'M') {
-        e.preventDefault();
-        toggleMobilePreview();
-        window.location.reload();
-      }
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, []);
 
   return (
     <VibeThemeProvider>
-      <MotionConfig reducedMotion={isDocumentVisible ? "user" : "always"}>
-        <AriaLiveProvider>
+      <AppKeyboardProvider>
+        <DevMobilePreviewShortcut />
+        <MotionConfig reducedMotion={isDocumentVisible ? "user" : "always"}>
+          <AriaLiveProvider>
         <div
           className={`flex flex-col h-screen w-screen overflow-hidden bg-background text-foreground transition-opacity duration-150 ease-out ${fontReady ? 'opacity-100' : 'opacity-60'}`}
         >
@@ -264,8 +266,9 @@ export default function App() {
             </div>
           )}
         </div>
-        </AriaLiveProvider>
-      </MotionConfig>
+          </AriaLiveProvider>
+        </MotionConfig>
+      </AppKeyboardProvider>
     </VibeThemeProvider>
   );
 }

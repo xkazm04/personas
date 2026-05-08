@@ -7,6 +7,7 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import type { TimeRange, PlaybackSpeed, TimelineReplayState } from '@/hooks/realtime/useTimelineReplay';
 import { useTranslation } from '@/i18n/useTranslation';
 import { TIMELINE_DENSITY } from './TimelinePlayer.constants';
+import { useRafCoalescedCallback } from '@/hooks/utility/timing/useRafCoalescedCallback';
 
 interface Props extends TimelineReplayState {
   onEnterReplay: (range: TimeRange) => Promise<void>;
@@ -86,7 +87,12 @@ const ActiveTimelineBar = memo(function ActiveTimelineBar(props: Props) {
     onSeek(Math.max(0, Math.min(e.clientX - rect.left, rect.width)) / rect.width);
   }, [onSeek]);
 
-  const handleTrackDrag = useCallback((e: React.MouseEvent<HTMLDivElement>) => { if (e.buttons !== 1) return; handleTrackClick(e); }, [handleTrackClick]);
+  const seekFrame = useRafCoalescedCallback((clientX: number) => {
+    const track = trackRef.current; if (!track) return;
+    const rect = track.getBoundingClientRect();
+    onSeek(Math.max(0, Math.min(clientX - rect.left, rect.width)) / rect.width);
+  });
+  const handleTrackDrag = useCallback((e: React.MouseEvent<HTMLDivElement>) => { if (e.buttons !== 1) return; seekFrame(e.clientX); }, [seekFrame]);
   const cycleSpeed = useCallback(() => { const idx = SPEEDS.indexOf(speed); onSetSpeed(SPEEDS[(idx + 1) % SPEEDS.length]!); }, [speed, onSetSpeed]);
   const handleSliderKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
     const step = 0.01;

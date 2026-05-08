@@ -4,6 +4,8 @@ import { useAgentStore } from "@/stores/agentStore";
 import { formatElapsed } from '@/lib/utils/formatters';
 import { getExecution } from "@/api/agents/executions";
 import { useToastStore } from '@/stores/toastStore';
+import { useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
+import { useRafCoalescedCallback } from '@/hooks/utility/timing/useRafCoalescedCallback';
 
 interface UseRunnerExecutionArgs {
   personaId: string;
@@ -109,42 +111,44 @@ export function useRunnerExecution({
   const handleExecuteRef = useRef<(() => void) | null>(null);
   handleExecuteRef.current = handleExecute;
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== 'Enter' || isExecuting) return;
+  useAppKeyboard((e) => {
+    if (e.key !== 'Enter' || isExecuting) return false;
 
-      const target = e.target as HTMLElement;
-      const tag = target?.tagName;
+    const target = e.target as HTMLElement;
+    const tag = target?.tagName;
 
-      // Skip interactive elements that use Enter for their own purposes
-      if (
-        tag === 'INPUT' ||
-        tag === 'TEXTAREA' ||
-        tag === 'SELECT' ||
-        tag === 'BUTTON' ||
-        tag === 'SUMMARY' ||
-        tag === 'A' ||
-        target?.isContentEditable
-      ) return;
+    // Skip interactive elements that use Enter for their own purposes
+    if (
+      tag === 'INPUT' ||
+      tag === 'TEXTAREA' ||
+      tag === 'SELECT' ||
+      tag === 'BUTTON' ||
+      tag === 'SUMMARY' ||
+      tag === 'A' ||
+      target?.isContentEditable
+    ) return false;
 
-      // Skip ARIA interactive roles (combobox dropdowns, custom textboxes, etc.)
-      const role = target?.getAttribute?.('role');
-      if (role === 'textbox' || role === 'combobox' || role === 'listbox' || role === 'option' || role === 'button' || role === 'menuitem') return;
+    // Skip ARIA interactive roles (combobox dropdowns, custom textboxes, etc.)
+    const role = target?.getAttribute?.('role');
+    if (role === 'textbox' || role === 'combobox' || role === 'listbox' || role === 'option' || role === 'button' || role === 'menuitem') return false;
 
-      // Skip when a modal/dialog is open -- Enter likely confirms the dialog, not triggers execution
-      if (target?.closest?.('[role="dialog"], dialog, [data-radix-dialog-content]')) return;
+    // Skip when a modal/dialog is open -- Enter likely confirms the dialog, not triggers execution
+    if (target?.closest?.('[role="dialog"], dialog, [data-radix-dialog-content]')) return false;
 
-      handleExecuteRef.current?.();
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isExecuting]);
+    handleExecuteRef.current?.();
+    return true;
+  }, { priority: 10 });
 
   // Drag-to-resize
   const isDraggingTerminal = useRef(false);
   const dragStartY = useRef(0);
   const dragStartHeight = useRef(0);
   const dragListenersRef = useRef<{ onMove: (e: MouseEvent) => void; onUp: () => void } | null>(null);
+  const resizeTerminalFrame = useRafCoalescedCallback((clientY: number) => {
+    if (!isDraggingTerminal.current) return;
+    const delta = clientY - dragStartY.current;
+    setTerminalHeight(Math.max(120, Math.min(900, dragStartHeight.current + delta)));
+  });
 
   const handleTerminalResizeStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -152,9 +156,7 @@ export function useRunnerExecution({
     dragStartY.current = e.clientY;
     dragStartHeight.current = terminalHeight;
     const onMove = (moveEvent: MouseEvent) => {
-      if (!isDraggingTerminal.current) return;
-      const delta = moveEvent.clientY - dragStartY.current;
-      setTerminalHeight(Math.max(120, Math.min(900, dragStartHeight.current + delta)));
+      resizeTerminalFrame(moveEvent.clientY);
     };
     const onUp = () => {
       isDraggingTerminal.current = false;
@@ -165,7 +167,7 @@ export function useRunnerExecution({
     document.addEventListener('mousemove', onMove);
     document.addEventListener('mouseup', onUp);
     dragListenersRef.current = { onMove, onUp };
-  }, [terminalHeight]);
+  }, [resizeTerminalFrame, terminalHeight]);
 
   useEffect(() => () => {
     if (dragListenersRef.current) {
@@ -176,12 +178,11 @@ export function useRunnerExecution({
 
   const toggleTerminalFullscreen = useCallback(() => setIsTerminalFullscreen(prev => !prev), []);
 
-  useEffect(() => {
-    if (!isTerminalFullscreen) return;
-    const handleKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') setIsTerminalFullscreen(() => false); };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isTerminalFullscreen]);
+  useAppKeyboard((e) => {
+    if (e.key !== 'Escape') return false;
+    setIsTerminalFullscreen(() => false);
+    return true;
+  }, { enabled: isTerminalFullscreen, priority: 20 });
 
   return {
     handleExecute,

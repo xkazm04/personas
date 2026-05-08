@@ -3,6 +3,7 @@ import type { ToolCallStep } from '@/hooks/execution/useReplayTimeline';
 import { formatMs } from '../libs/useReplayState';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
+import { createRafCoalescer } from '@/lib/utils/interaction/rafCoalescer';
 
 /** Timeline scrub bar with tool step markers. */
 export function TimelineScrubber({
@@ -34,8 +35,10 @@ export function TimelineScrubber({
         onScrub(pct * totalMs);
       };
       scrub(e.clientX);
-      const onMove = (ev: PointerEvent) => scrub(ev.clientX);
+      const scrubFrame = createRafCoalescer((clientX: number) => scrub(clientX));
+      const onMove = (ev: PointerEvent) => scrubFrame.schedule(ev.clientX);
       const onUp = () => {
+        scrubFrame.cancel();
         window.removeEventListener('pointermove', onMove);
         window.removeEventListener('pointerup', onUp);
       };

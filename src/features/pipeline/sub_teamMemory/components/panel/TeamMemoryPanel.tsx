@@ -10,6 +10,7 @@ import AddTeamMemoryForm from './AddTeamMemoryForm';
 import MemoryTimeline from '../timeline/MemoryTimeline';
 import RunDiffView from '../diff/RunDiffView';
 import type { TeamMemoryViewMode as ViewMode } from '@/lib/constants/uiModes';
+import { useRafCoalescedCallback } from '@/hooks/utility/timing/useRafCoalescedCallback';
 
 const STORAGE_KEY = 'team-memory-panel-width';
 const MIN_WIDTH = 272;
@@ -60,12 +61,16 @@ export default function TeamMemoryPanel({
     widthRef.current = panelWidth;
   }, [panelWidth]);
 
+  const resizePanelFrame = useRafCoalescedCallback((clientX: number) => {
+    if (!draggingRef.current || !panelRef.current) return;
+    const rect = panelRef.current.getBoundingClientRect();
+    const newWidth = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, clientX - rect.left));
+    setPanelWidth(newWidth);
+  });
+
   useEffect(() => {
     const onMouseMove = (e: MouseEvent) => {
-      if (!draggingRef.current || !panelRef.current) return;
-      const rect = panelRef.current.getBoundingClientRect();
-      const newWidth = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, e.clientX - rect.left));
-      setPanelWidth(newWidth);
+      resizePanelFrame(e.clientX);
     };
     const onMouseUp = () => {
       if (!draggingRef.current) return;
@@ -80,7 +85,7 @@ export default function TeamMemoryPanel({
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('mouseup', onMouseUp);
     };
-  }, []);
+  }, [resizePanelFrame]);
 
   const handleLoadMore = useCallback(async () => {
     setLoadingMore(true);

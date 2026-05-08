@@ -24,6 +24,7 @@ import { systemHealthCheck } from '@/api/system/system';
 import { CommandPaletteResults } from './CommandPaletteResults';
 import { QuickEditPanel } from './QuickEditPanel';
 import type { Persona } from '@/lib/bindings/Persona';
+import { useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 
 // -- Section icons -----------------------------------------------------
 
@@ -59,16 +60,12 @@ export default function CommandPalette() {
   const storeFetchPersonas = useAgentStore((s) => s.fetchPersonas);
   const addToast = useToastStore((s) => s.addToast);
 
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        setOpen(prev => !prev);
-      }
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, []);
+  useAppKeyboard((e) => {
+    if (!((e.metaKey || e.ctrlKey) && e.key === 'k')) return false;
+    e.preventDefault();
+    setOpen(prev => !prev);
+    return true;
+  }, { priority: 90 });
 
   useEffect(() => {
     if (open) {

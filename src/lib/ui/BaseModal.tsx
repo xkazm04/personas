@@ -2,6 +2,7 @@ import { Children, useEffect, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useReducedMotion, type Variants } from 'framer-motion';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
+import { useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 
 const SIZE_CLASSES = {
   sm: 'max-w-md',
@@ -139,37 +140,35 @@ export function BaseModal({
     return () => cancelAnimationFrame(raf);
   }, [isOpen]);
 
-  useEffect(() => {
-    if (!isOpen) return;
+  useAppKeyboard((event) => {
+    if (event.key === 'Escape') {
+      onClose();
+      return true;
+    }
 
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        onClose();
-        return;
-      }
+    if (event.key !== 'Tab' || !modalRef.current) return false;
 
-      if (event.key !== 'Tab' || !modalRef.current) return;
+    const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    );
+    if (focusable.length === 0) return false;
 
-      const focusable = modalRef.current.querySelectorAll<HTMLElement>(
-        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
-      );
-      if (focusable.length === 0) return;
+    const first = focusable[0]!;
+    const last = focusable[focusable.length - 1]!;
 
-      const first = focusable[0]!;
-      const last = focusable[focusable.length - 1]!;
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+      return true;
+    }
+    if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+      return true;
+    }
 
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+    return false;
+  }, { enabled: isOpen, priority: 80 });
 
   useEffect(() => {
     if (isOpen) return;
