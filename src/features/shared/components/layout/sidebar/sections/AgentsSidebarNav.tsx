@@ -6,6 +6,7 @@ import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
 import type { CloudTab } from '@/lib/types/types';
 import { useFavoriteAgents as useFavoriteAgentsInline } from '@/hooks/agents/useFavoriteAgents';
+import { usePrefetchOnHover } from '@/hooks/agents/usePrefetchOnHover';
 import { useRecentAgents } from '@/hooks/agents/useRecentAgents';
 import { useSidebarAgentActivity, type AgentActivityType } from '@/hooks/sidebar/useSidebarAgentActivity';
 import { cloudItems } from '../sidebarData';
@@ -57,6 +58,7 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
   const [recentsCollapsed, setRecentsCollapsed] = useState(false);
   const [progressCollapsed, setProgressCollapsed] = useState(false);
   const isDev = import.meta.env.DEV;
+  const { getPrefetchProps } = usePrefetchOnHover();
 
   // Per-persona activity from the same aggregator powering the L1 orbit dots.
   // Here we group by persona so the list shows each agent with one or more
@@ -263,6 +265,7 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
                 {favoritePersonas.map((p) => (
                   <button
                     key={p.id}
+                    {...getPrefetchProps(p.id)}
                     onClick={() => selectPersona(p.id)}
                     className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg typo-body transition-colors hover:bg-secondary/40 group"
                   >
@@ -308,6 +311,7 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
                   return (
                     <button
                       key={p.id}
+                      {...getPrefetchProps(p.id)}
                       onClick={() => selectPersona(p.id)}
                       aria-current={isActive ? 'page' : undefined}
                       className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg typo-body transition-colors group ${
@@ -374,6 +378,7 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
                   return (
                     <button
                       key={entry.personaId}
+                      {...getPrefetchProps(entry.personaId)}
                       onClick={() => selectPersona(entry.personaId)}
                       aria-current={isActive ? 'page' : undefined}
                       title={tooltip}
@@ -471,4 +476,3 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
 }
 
 // -- Plugins sidebar (extensibility hub) --
-

@@ -40,6 +40,7 @@ const MAX_COMPLETED_SNAPSHOTS = 5;
  * a handful of unconsumed snapshots would otherwise pin tens of MB.
  */
 const COMPLETED_OUTPUT_TTL_MS = 30 * 60 * 1000;
+const EXECUTIONS_CACHE_TTL_MS = 30_000;
 
 /** Finish-time map keyed by executionId. Module-local (not persisted). */
 const completedOutputFinishedAt = new Map<string, number>();
@@ -89,6 +90,8 @@ export interface ExecutionSlice {
   executionsLoading: boolean;
   /** The personaId whose executions are currently loaded (for cache coherence). */
   executionsPersonaId: string | null;
+  executionsCache: Record<string, ExecutionListItem[]>;
+  executionsCacheAt: Record<string, number>;
   activeExecutionId: string | null;
   executionPersonaId: string | null;
   activeUseCaseId: string | null;
@@ -208,18 +211,20 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
   let inflightFetch: { personaId: string; promise: Promise<void> } | null = null;
 
   return ({
-  executions: [],
-  executionsLoading: false,
-  executionsPersonaId: null,
-  activeExecutionId: recoveredState?.activeExecutionId ?? null,
-  executionPersonaId: recoveredState?.executionPersonaId ?? null,
-  activeUseCaseId: null,
-  executionOutput: [],
-  executionOutputBytes: 0,
-  isExecuting: recoveredState?.isExecuting ?? false,
-  executionProgress: null,
-  pipelineTrace: null,
-  queuePosition: null,
+    executions: [],
+    executionsLoading: false,
+    executionsPersonaId: null,
+    executionsCache: {},
+    executionsCacheAt: {},
+    activeExecutionId: recoveredState?.activeExecutionId ?? null,
+    executionPersonaId: recoveredState?.executionPersonaId ?? null,
+    activeUseCaseId: null,
+    executionOutput: [],
+    executionOutputBytes: 0,
+    isExecuting: recoveredState?.isExecuting ?? false,
+    executionProgress: null,
+    pipelineTrace: null,
+    queuePosition: null,
   queueDepth: null,
   designDriftEvents: loadDriftEvents(),
   lastExecutionId: null,
@@ -468,11 +473,26 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
     if (inflightFetch && inflightFetch.personaId === personaId) {
       return inflightFetch.promise;
     }
+    const cached = get().executionsCache[personaId];
+    const cachedAt = get().executionsCacheAt[personaId] ?? 0;
+    if (cached && Date.now() - cachedAt < EXECUTIONS_CACHE_TTL_MS) {
+      set({
+        executions: cached,
+        executionsPersonaId: personaId,
+        executionsLoading: false,
+      });
+      return;
+    }
     const doFetch = async () => {
       set({ executionsLoading: true });
       try {
         const executions = await listExecutionsSummary(personaId);
-        set({ executions, executionsPersonaId: personaId });
+        set((state) => ({
+          executions,
+          executionsPersonaId: personaId,
+          executionsCache: { ...state.executionsCache, [personaId]: executions },
+          executionsCacheAt: { ...state.executionsCacheAt, [personaId]: Date.now() },
+        }));
       } catch (err) {
         reportError(err, "Failed to fetch executions", set, { action: "fetchExecutions" });
       } finally {

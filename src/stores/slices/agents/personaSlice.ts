@@ -14,6 +14,7 @@ import type {
 import type { PersonaAutomation } from "@/lib/bindings/PersonaAutomation";
 import type { PartialPersonaUpdate, PersonaOperation } from "@/api/agents/personas";
 import { buildUpdateInput, operationToPartial } from "@/api/agents/personas";
+import { listExecutionsSummary } from "@/api/agents/executions";
 import type { PersonaHealth } from "@/lib/bindings/PersonaHealth";
 import { createPersona, deletePersona, duplicatePersona, getPersonaDetail, getPersonaSummaries, listPersonas, updatePersona } from "@/api/agents/personas";
 import { trackRecentAgent, removeRecentAgent } from "@/hooks/agents/useRecentAgents";
@@ -72,6 +73,7 @@ export interface PersonaSlice {
   fetchPersonas: () => Promise<void>;
   fetchPersonaSummaries: () => Promise<void>;
   fetchDetail: (id: string) => Promise<void>;
+  prefetchPersona: (id: string, signal?: AbortSignal) => Promise<void>;
   createPersona: (input: { name: string; description?: string; system_prompt: string; icon?: string; color?: string; structured_prompt?: string; design_context?: string }) => Promise<Persona>;
   duplicatePersona: (id: string) => Promise<Persona>;
   updatePersona: (id: string, input: PartialPersonaUpdate) => Promise<void>;
@@ -88,6 +90,7 @@ export interface PersonaSlice {
 
 let fetchDetailSeq = 0;
 let fetchSummariesSeq = 0;
+const prefetchInflight = new Map<string, Promise<void>>();
 
 export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> = (set, get) => ({
   personas: [],
@@ -235,6 +238,81 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
         };
       });
     }
+  },
+
+  prefetchPersona: async (id, signal) => {
+    if (signal?.aborted) return;
+    const existing = prefetchInflight.get(id);
+    if (existing) return existing;
+
+    const promise = (async () => {
+      const state = get();
+      const hasFreshDetail = Boolean(state.detailCache[id]);
+      const executionsAt = state.executionsCacheAt[id] ?? 0;
+      const hasFreshExecutions =
+        Boolean(state.executionsCache[id]) && Date.now() - executionsAt < 30_000;
+
+      const [detailResult, toolsResult, executionsResult] = await Promise.allSettled([
+        hasFreshDetail ? Promise.resolve(null) : getPersonaDetail(id),
+        state.toolDefinitions.length > 0 && Date.now() - state._toolDefsCachedAt < 60_000
+          ? Promise.resolve(null)
+          : state.getToolDefinitions(),
+        hasFreshExecutions ? Promise.resolve(null) : listExecutionsSummary(id),
+      ]);
+
+      if (signal?.aborted) return;
+
+      if (detailResult.status === "fulfilled" && detailResult.value) {
+        const { tools, triggers, subscriptions, automations, warnings, ...baseFields } =
+          detailResult.value;
+        const extras: PersonaDetailExtras = {
+          tools,
+          triggers,
+          subscriptions,
+          automations,
+          warnings,
+        };
+
+        set((state) => {
+          const nextCache = { ...state.detailCache, [id]: extras };
+          const inList = state.personas.some((p) => p.id === id);
+          const nextPersonas = inList
+            ? state.personas.map((p) => (p.id === id ? { ...p, ...baseFields } : p))
+            : [...state.personas, baseFields as Persona];
+          return {
+            personas: nextPersonas,
+            detailCache: nextCache,
+            selectedPersona:
+              state.selectedPersonaId === id
+                ? deriveSelectedPersona(nextPersonas, id, nextCache)
+                : state.selectedPersona,
+          };
+        });
+      } else if (detailResult.status === "rejected") {
+        logger.warn("prefetchPersona detail failed", { personaId: id, error: String(detailResult.reason) });
+      }
+
+      if (toolsResult.status === "rejected") {
+        logger.warn("prefetchPersona tools failed", { personaId: id, error: String(toolsResult.reason) });
+      }
+
+      if (executionsResult.status === "fulfilled" && executionsResult.value) {
+        const executions = executionsResult.value;
+        set((state) => ({
+          executionsCache: { ...state.executionsCache, [id]: executions },
+          executionsCacheAt: { ...state.executionsCacheAt, [id]: Date.now() },
+        }));
+      } else if (executionsResult.status === "rejected") {
+        logger.warn("prefetchPersona executions failed", { personaId: id, error: String(executionsResult.reason) });
+      }
+    })().finally(() => {
+      if (prefetchInflight.get(id) === promise) {
+        prefetchInflight.delete(id);
+      }
+    });
+
+    prefetchInflight.set(id, promise);
+    return promise;
   },
 
   createPersona: async (input) => {
