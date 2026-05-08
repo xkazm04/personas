@@ -192,6 +192,34 @@ pub(super) async fn run_session(
         };
     }
 
+    macro_rules! persist_or_fail {
+        ($result:expr, $context:expr) => {
+            if let Err(error) = $result {
+                let message = format!(
+                    "Build session persistence failed while {}: {error}",
+                    $context
+                );
+                tracing::error!(
+                    session_id = %session_id,
+                    error = ?error,
+                    context = $context,
+                    "Build session persistence failed"
+                );
+                let _ = update_phase_with_error(&pool, &session_id, &message);
+                cancel_if_emit_dropped!(emit_error(
+                    &pool,
+                    &channel,
+                    &app_handle,
+                    &session_id,
+                    &message,
+                    false,
+                ));
+                cleanup_session(&sessions_map, &registry, &session_id, handle_generation);
+                return;
+            }
+        };
+    }
+
     // Note: process activity for agent builds is tracked frontend-side via 'agent_build' domain
     // (see UnifiedMatrixEntry/MatrixAdoptionView). No backend emission needed here.
 
@@ -924,13 +952,16 @@ pub(super) async fn run_session(
                     if cell_key == "agent_ir" {
                         got_agent_ir = true;
                         let ir_str = serde_json::to_string(data).ok();
-                        let _ = build_session_repo::update(
-                            &pool,
-                            &session_id,
-                            &UpdateBuildSession {
-                                agent_ir: Some(ir_str),
-                                ..Default::default()
-                            },
+                        persist_or_fail!(
+                            build_session_repo::update(
+                                &pool,
+                                &session_id,
+                                &UpdateBuildSession {
+                                    agent_ir: Some(ir_str),
+                                    ..Default::default()
+                                },
+                            ),
+                            "saving agent_ir"
                         );
                         // Update persona name from agent_ir
                         if let Some(name) = data.get("name").and_then(|n| n.as_str()) {
@@ -969,16 +1000,19 @@ pub(super) async fn run_session(
                 } => {
                     got_question = true;
                     let question_json = serde_json::json!({ "cell_key": cell_key, "question": question, "options": options });
-                    let _ = build_session_repo::update(
-                        &pool,
-                        &session_id,
-                        &UpdateBuildSession {
-                            phase: Some(BuildPhase::AwaitingInput.as_str().to_string()),
-                            pending_question: Some(Some(
-                                serde_json::to_string(&question_json).unwrap_or_default(),
-                            )),
-                            ..Default::default()
-                        },
+                    persist_or_fail!(
+                        build_session_repo::update(
+                            &pool,
+                            &session_id,
+                            &UpdateBuildSession {
+                                phase: Some(BuildPhase::AwaitingInput.as_str().to_string()),
+                                pending_question: Some(Some(
+                                    serde_json::to_string(&question_json).unwrap_or_default(),
+                                )),
+                                ..Default::default()
+                            },
+                        ),
+                        "saving pending question"
                     );
                     // Emit rich activity for awaiting input
                     let activity_event = BuildEvent::Progress {
@@ -1001,14 +1035,17 @@ pub(super) async fn run_session(
             let resolved_json =
                 serde_json::to_string(&serde_json::Value::Object(resolved_cells.clone()))
                     .unwrap_or_else(|_| "{}".to_string());
-            let _ = build_session_repo::update(
-                &pool,
-                &session_id,
-                &UpdateBuildSession {
-                    phase: (!got_question).then(|| BuildPhase::Resolving.as_str().to_string()),
-                    resolved_cells: Some(resolved_json),
-                    ..Default::default()
-                },
+            persist_or_fail!(
+                build_session_repo::update(
+                    &pool,
+                    &session_id,
+                    &UpdateBuildSession {
+                        phase: (!got_question).then(|| BuildPhase::Resolving.as_str().to_string()),
+                        resolved_cells: Some(resolved_json),
+                        ..Default::default()
+                    },
+                ),
+                "saving resolved cells"
             );
         }
 
@@ -1054,14 +1091,17 @@ pub(super) async fn run_session(
             match input_rx.recv().await {
                 Some(answer) => {
                     tracing::info!(session_id = %session_id, cell_key = %answer.cell_key, "Received user answer");
-                    let _ = build_session_repo::update(
-                        &pool,
-                        &session_id,
-                        &UpdateBuildSession {
-                            phase: Some(BuildPhase::Resolving.as_str().to_string()),
-                            pending_question: Some(None),
-                            ..Default::default()
-                        },
+                    persist_or_fail!(
+                        build_session_repo::update(
+                            &pool,
+                            &session_id,
+                            &UpdateBuildSession {
+                                phase: Some(BuildPhase::Resolving.as_str().to_string()),
+                                pending_question: Some(None),
+                                ..Default::default()
+                            },
+                        ),
+                        "clearing pending question"
                     );
                     cancel_if_emit_dropped!(emit_session_status(
                         &pool,
@@ -1233,14 +1273,17 @@ pub(super) async fn run_session(
             }
         {
             // All done — enter draft_ready and wait for test/refine
-            let _ = build_session_repo::update(
-                &pool,
-                &session_id,
-                &UpdateBuildSession {
-                    phase: Some(BuildPhase::DraftReady.as_str().to_string()),
-                    pending_question: Some(None),
-                    ..Default::default()
-                },
+            persist_or_fail!(
+                build_session_repo::update(
+                    &pool,
+                    &session_id,
+                    &UpdateBuildSession {
+                        phase: Some(BuildPhase::DraftReady.as_str().to_string()),
+                        pending_question: Some(None),
+                        ..Default::default()
+                    },
+                ),
+                "entering draft ready"
             );
             let draft_activity = BuildEvent::Progress {
                 session_id: session_id.clone(),
@@ -1300,13 +1343,16 @@ pub(super) async fn run_session(
             match input_rx.recv().await {
                 Some(answer) => {
                     if answer.cell_key == "_test" {
-                        let _ = build_session_repo::update(
-                            &pool,
-                            &session_id,
-                            &UpdateBuildSession {
-                                phase: Some(BuildPhase::Testing.as_str().to_string()),
-                                ..Default::default()
-                            },
+                        persist_or_fail!(
+                            build_session_repo::update(
+                                &pool,
+                                &session_id,
+                                &UpdateBuildSession {
+                                    phase: Some(BuildPhase::Testing.as_str().to_string()),
+                                    ..Default::default()
+                                },
+                            ),
+                            "entering testing"
                         );
                         cancel_if_emit_dropped!(emit_session_status(
                             &pool,
@@ -1322,13 +1368,16 @@ pub(super) async fn run_session(
                             "Test this agent. Report any issues via test_report JSON.".into(),
                         ));
                     } else if answer.cell_key == "_refine" {
-                        let _ = build_session_repo::update(
-                            &pool,
-                            &session_id,
-                            &UpdateBuildSession {
-                                phase: Some(BuildPhase::Resolving.as_str().to_string()),
-                                ..Default::default()
-                            },
+                        persist_or_fail!(
+                            build_session_repo::update(
+                                &pool,
+                                &session_id,
+                                &UpdateBuildSession {
+                                    phase: Some(BuildPhase::Resolving.as_str().to_string()),
+                                    ..Default::default()
+                                },
+                            ),
+                            "entering refinement"
                         );
                         cancel_if_emit_dropped!(emit_session_status(
                             &pool,
@@ -1379,21 +1428,24 @@ pub(super) async fn run_session(
     };
     let resolved_json = serde_json::to_string(&serde_json::Value::Object(resolved_cells))
         .unwrap_or_else(|_| "{}".to_string());
-    let _ = build_session_repo::update(
-        &pool,
-        &session_id,
-        &UpdateBuildSession {
-            phase: Some(final_phase.as_str().to_string()),
-            resolved_cells: Some(resolved_json),
-            cli_pid: Some(None),
-            pending_question: Some(None),
-            agent_ir: if agent_ir_str.is_some() {
-                Some(agent_ir_str)
-            } else {
-                None
+    persist_or_fail!(
+        build_session_repo::update(
+            &pool,
+            &session_id,
+            &UpdateBuildSession {
+                phase: Some(final_phase.as_str().to_string()),
+                resolved_cells: Some(resolved_json),
+                cli_pid: Some(None),
+                pending_question: Some(None),
+                agent_ir: if agent_ir_str.is_some() {
+                    Some(agent_ir_str)
+                } else {
+                    None
+                },
+                ..Default::default()
             },
-            ..Default::default()
-        },
+        ),
+        "saving final checkpoint"
     );
 
     cancel_if_emit_dropped!(emit_session_status(
