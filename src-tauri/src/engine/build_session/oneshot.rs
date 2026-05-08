@@ -45,7 +45,6 @@ use crate::db::repos::core::personas as persona_repo;
 use crate::error::AppError;
 use crate::AppState;
 
-
 /// Maximum LLM-driven fix passes to attempt on test failure. After this,
 /// the session is marked `Failed` and the user is notified.
 ///
@@ -116,14 +115,8 @@ pub(super) async fn run_post_draft(
                         attempts,
                         "OneShot: exhausted MAX_TEST_RETRIES — finalizing as Failed"
                     );
-                    finalize_failed(
-                        &state,
-                        &app_handle,
-                        &session_id,
-                        &persona_id,
-                        last_error,
-                    )
-                    .await;
+                    finalize_failed(&state, &app_handle, &session_id, &persona_id, last_error)
+                        .await;
                     return;
                 }
 
@@ -142,8 +135,7 @@ pub(super) async fn run_post_draft(
                     )),
                 );
 
-                match super::fix_pass::run_fix_pass(&state, &session_id, &summary, attempts).await
-                {
+                match super::fix_pass::run_fix_pass(&state, &session_id, &summary, attempts).await {
                     Ok(_) => {
                         // Push phase back to Testing for the next loop
                         // iteration so the UI's read-only progress reflects
@@ -164,14 +156,8 @@ pub(super) async fn run_post_draft(
                         last_error = Some(format!(
                             "Test failures couldn't be auto-corrected: {fix_err}"
                         ));
-                        finalize_failed(
-                            &state,
-                            &app_handle,
-                            &session_id,
-                            &persona_id,
-                            last_error,
-                        )
-                        .await;
+                        finalize_failed(&state, &app_handle, &session_id, &persona_id, last_error)
+                            .await;
                         return;
                     }
                 }
@@ -266,8 +252,7 @@ async fn run_test_pass(
 
     let agent_ir_str = session.agent_ir.clone().ok_or_else(|| {
         AppError::Validation(
-            "OneShot: build session reached DraftReady without agent_ir — cannot test"
-                .to_string(),
+            "OneShot: build session reached DraftReady without agent_ir — cannot test".to_string(),
         )
     })?;
 
@@ -278,10 +263,14 @@ async fn run_test_pass(
     // Fail loudly on parse error rather than silently testing against raw template placeholders —
     // see test_build_draft for the full rationale.
     if let Some(ref raw_answers) = session.adoption_answers {
-        match serde_json::from_str::<crate::engine::adoption_answers::AdoptionAnswers>(raw_answers) {
+        match serde_json::from_str::<crate::engine::adoption_answers::AdoptionAnswers>(raw_answers)
+        {
             Ok(answers) => {
                 crate::engine::adoption_answers::substitute_variables(&mut agent_ir, &answers);
-                crate::engine::adoption_answers::inject_configuration_section(&mut agent_ir, &answers);
+                crate::engine::adoption_answers::inject_configuration_section(
+                    &mut agent_ir,
+                    &answers,
+                );
                 crate::engine::adoption_answers::apply_credential_bindings_to_connectors(
                     &mut agent_ir,
                     &answers,
@@ -340,9 +329,18 @@ async fn run_test_pass(
 /// runaway-error days.
 fn build_failure_summary(report: &serde_json::Value) -> String {
     let mut out = String::new();
-    let tools_passed = report.get("tools_passed").and_then(|v| v.as_u64()).unwrap_or(0);
-    let tools_failed = report.get("tools_failed").and_then(|v| v.as_u64()).unwrap_or(0);
-    let tools_skipped = report.get("tools_skipped").and_then(|v| v.as_u64()).unwrap_or(0);
+    let tools_passed = report
+        .get("tools_passed")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(0);
+    let tools_failed = report
+        .get("tools_failed")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(0);
+    let tools_skipped = report
+        .get("tools_skipped")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(0);
 
     out.push_str(&format!(
         "Tool test results: {tools_passed} passed, {tools_failed} failed, {tools_skipped} skipped.\n\n"
@@ -355,7 +353,10 @@ fn build_failure_summary(report: &serde_json::Value) -> String {
             if status == "passed" {
                 continue;
             }
-            let name = result.get("tool_name").and_then(|v| v.as_str()).unwrap_or("?");
+            let name = result
+                .get("tool_name")
+                .and_then(|v| v.as_str())
+                .unwrap_or("?");
             let connector = result
                 .get("connector")
                 .and_then(|v| v.as_str())
