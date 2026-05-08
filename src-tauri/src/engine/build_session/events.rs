@@ -5,8 +5,8 @@
 //! `dual_emit` so listeners on BOTH the per-component Channel and the
 //! global Tauri event bus receive it.
 
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::collections::{HashMap, HashSet};
+use std::sync::{Arc, Mutex, OnceLock};
 
 use serde::Serialize;
 use tauri::ipc::Channel;
@@ -79,12 +79,45 @@ pub(super) fn update_phase_with_error(
 /// bound), the runner will keep advancing phases while the frontend has no
 /// idea anything happened — the user sees a frozen build. Log a warning in
 /// that case so the loss is at least visible in tracing output.
-pub(super) fn dual_emit(channel: &Channel<BuildEvent>, app: &tauri::AppHandle, event: &BuildEvent) {
+pub(super) fn dual_emit(
+    pool: &DbPool,
+    channel: &Channel<BuildEvent>,
+    app: &tauri::AppHandle,
+    event: &BuildEvent,
+) {
+    let (session_id, variant) = event_meta(event);
     let channel_result = channel.send(event.clone());
+    if let Err(error) = &channel_result {
+        warn_emit_failure_once(
+            session_id,
+            "channel",
+            variant,
+            format_args!("{error:?}"),
+            "BuildSession dual_emit: component Channel send failed",
+        );
+    }
+
     let emit_result = app.emit(event_name::BUILD_SESSION_EVENT, event);
+    if let Err(error) = &emit_result {
+        warn_emit_failure_once(
+            session_id,
+            "tauri",
+            variant,
+            format_args!("{error:?}"),
+            "BuildSession dual_emit: global Tauri emit failed",
+        );
+        if let Err(touch_error) = build_session_repo::update(pool, session_id, &Default::default())
+        {
+            tracing::warn!(
+                session_id = %session_id,
+                event_variant = variant,
+                error = ?touch_error,
+                "BuildSession dual_emit: failed to stamp session after Tauri emit error"
+            );
+        }
+    }
 
     if channel_result.is_err() && emit_result.is_err() {
-        let (session_id, variant) = event_meta(event);
         tracing::warn!(
             session_id = %session_id,
             event_variant = variant,
@@ -93,6 +126,32 @@ pub(super) fn dual_emit(channel: &Channel<BuildEvent>, app: &tauri::AppHandle, e
             "BuildSession dual_emit: both Channel and Tauri emit failed — frontend will not learn about this event"
         );
     }
+}
+
+fn warn_emit_failure_once(
+    session_id: &str,
+    channel: &str,
+    variant: &'static str,
+    error: std::fmt::Arguments<'_>,
+    message: &'static str,
+) {
+    static WARNED: OnceLock<Mutex<HashSet<String>>> = OnceLock::new();
+    let key = format!("{session_id}:{channel}");
+    let mut warned = WARNED
+        .get_or_init(|| Mutex::new(HashSet::new()))
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
+    if !warned.insert(key) {
+        return;
+    }
+    tracing::warn!(
+        session_id = %session_id,
+        event_variant = variant,
+        emit_channel = channel,
+        error = %error,
+        "{}",
+        message
+    );
 }
 
 /// Extract `(session_id, variant_token)` from a `BuildEvent` for diagnostic
@@ -114,12 +173,15 @@ fn event_meta(event: &BuildEvent) -> (&str, &'static str) {
         BuildEvent::PersonaResolutionUpdate { session_id, .. } => {
             (session_id, "persona_resolution_update")
         }
-        BuildEvent::ClarifyingQuestionV3 { session_id, .. } => (session_id, "clarifying_question_v3"),
+        BuildEvent::ClarifyingQuestionV3 { session_id, .. } => {
+            (session_id, "clarifying_question_v3")
+        }
     }
 }
 
 /// Emit a SessionStatus event via Channel + Tauri.
 pub(super) fn emit_session_status(
+    pool: &DbPool,
     channel: &Channel<BuildEvent>,
     app: &tauri::AppHandle,
     session_id: &str,
@@ -133,11 +195,12 @@ pub(super) fn emit_session_status(
         resolved_count,
         total_count,
     };
-    dual_emit(channel, app, &event);
+    dual_emit(pool, channel, app, &event);
 }
 
 /// Emit an Error event via Channel + Tauri.
 pub(super) fn emit_error(
+    pool: &DbPool,
     channel: &Channel<BuildEvent>,
     app: &tauri::AppHandle,
     session_id: &str,
@@ -150,7 +213,7 @@ pub(super) fn emit_error(
         message: message.to_string(),
         retryable,
     };
-    dual_emit(channel, app, &event);
+    dual_emit(pool, channel, app, &event);
 }
 
 /// Fire the one-shot terminal notification trio: OS notification (via

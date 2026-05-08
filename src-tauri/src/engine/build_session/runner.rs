@@ -176,6 +176,7 @@ pub(super) async fn run_session(
     // Update phase to Analyzing
     let _ = update_phase(&pool, &session_id, BuildPhase::Analyzing);
     emit_session_status(
+        &pool,
         &channel,
         &app_handle,
         &session_id,
@@ -268,7 +269,7 @@ pub(super) async fn run_session(
              or insufficient permissions. Free up space, exclude the folder from sync, or retry."
         );
         let _ = update_phase_with_error(&pool, &session_id, &user_msg);
-        emit_error(&channel, &app_handle, &session_id, &user_msg, false);
+        emit_error(&pool, &channel, &app_handle, &session_id, &user_msg, false);
         cleanup_session(&sessions_map, &registry, &session_id);
         return;
     }
@@ -332,7 +333,7 @@ pub(super) async fn run_session(
                 )
             }),
         };
-        dual_emit(&channel, &app_handle, &progress);
+        dual_emit(&pool, &channel, &app_handle, &progress);
 
         // On turn 1+, add --continue to resume the previous Claude session
         // instead of re-sending the full system prompt (~1100 lines).
@@ -356,6 +357,7 @@ pub(super) async fn run_session(
                 let _ =
                     update_phase_with_error(&pool, &session_id, &format!("CLI spawn failed: {e}"));
                 emit_error(
+                    &pool,
                     &channel,
                     &app_handle,
                     &session_id,
@@ -379,6 +381,7 @@ pub(super) async fn run_session(
             let _ =
                 update_phase_with_error(&pool, &session_id, &format!("Failed to send prompt: {e}"));
             emit_error(
+                &pool,
                 &channel,
                 &app_handle,
                 &session_id,
@@ -943,9 +946,9 @@ pub(super) async fn run_session(
                                 cell_key
                             )),
                         };
-                        dual_emit(&channel, &app_handle, &activity_event);
+                        dual_emit(&pool, &channel, &app_handle, &activity_event);
                     }
-                    dual_emit(&channel, &app_handle, &event);
+                    dual_emit(&pool, &channel, &app_handle, &event);
                 }
                 BuildEvent::Question {
                     question,
@@ -974,11 +977,11 @@ pub(super) async fn run_session(
                         percent: None,
                         activity: Some(format!("Needs your input on: {}", cell_key)),
                     };
-                    dual_emit(&channel, &app_handle, &activity_event);
-                    dual_emit(&channel, &app_handle, &event);
+                    dual_emit(&pool, &channel, &app_handle, &activity_event);
+                    dual_emit(&pool, &channel, &app_handle, &event);
                 }
                 _ => {
-                    dual_emit(&channel, &app_handle, &event);
+                    dual_emit(&pool, &channel, &app_handle, &event);
                 }
             }
         }
@@ -997,7 +1000,7 @@ pub(super) async fn run_session(
                         data: data.clone(),
                         status: "resolved".to_string(),
                     };
-                    dual_emit(&channel, &app_handle, &confirm_event);
+                    dual_emit(&pool, &channel, &app_handle, &confirm_event);
                     tracing::info!(session_id = %session_id, cell_key = %answered_key, "Re-emitted resolved for answered cell");
                 }
             }
@@ -1007,6 +1010,7 @@ pub(super) async fn run_session(
         // If question asked: wait for user answer, then continue to next turn
         if got_question {
             emit_session_status(
+                &pool,
                 &channel,
                 &app_handle,
                 &session_id,
@@ -1034,6 +1038,7 @@ pub(super) async fn run_session(
                         },
                     );
                     emit_session_status(
+                        &pool,
                         &channel,
                         &app_handle,
                         &session_id,
@@ -1218,8 +1223,9 @@ pub(super) async fn run_session(
                 percent: Some(100.0),
                 activity: Some("Draft ready for review".to_string()),
             };
-            dual_emit(&channel, &app_handle, &draft_activity);
+            dual_emit(&pool, &channel, &app_handle, &draft_activity);
             emit_session_status(
+                &pool,
                 &channel,
                 &app_handle,
                 &session_id,
@@ -1277,6 +1283,7 @@ pub(super) async fn run_session(
                             },
                         );
                         emit_session_status(
+                            &pool,
                             &channel,
                             &app_handle,
                             &session_id,
@@ -1298,6 +1305,7 @@ pub(super) async fn run_session(
                             },
                         );
                         emit_session_status(
+                            &pool,
                             &channel,
                             &app_handle,
                             &session_id,
@@ -1363,6 +1371,7 @@ pub(super) async fn run_session(
     );
 
     emit_session_status(
+        &pool,
         &channel,
         &app_handle,
         &session_id,
