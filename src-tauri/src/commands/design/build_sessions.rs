@@ -1,10 +1,11 @@
 use std::sync::Arc;
 
+use serde_json::Value;
 use tauri::ipc::Channel;
 use tauri::State;
 
 use crate::db::models::{
-    BuildEvent, BuildPhase, ConnectorDefinition, CreateToolDefinitionInput, PersistedBuildSession,
+    BuildPhase, ConnectorDefinition, CreateToolDefinitionInput, PersistedBuildSession,
     UpdateBuildSession, UserAnswer,
 };
 use crate::db::repos::core::build_sessions as build_session_repo;
@@ -111,7 +112,7 @@ fn persona_uses_drive(ir: &crate::db::models::AgentIr) -> bool {
 pub async fn start_build_session(
     app: tauri::AppHandle,
     state: State<'_, Arc<AppState>>,
-    channel: Channel<BuildEvent>,
+    channel: Channel<Value>,
     persona_id: String,
     intent: String,
     workflow_json: Option<String>,
@@ -175,7 +176,7 @@ pub async fn start_build_session_headless(
     // (event_name::BUILD_SESSION_EVENT) still carries every event, so a
     // polling caller can track progress via `get_build_status` and any
     // open Glyph view in the UI keeps updating.
-    let dummy_channel: Channel<BuildEvent> = Channel::new(|_response| Ok(()));
+    let dummy_channel: Channel<Value> = Channel::new(|_response| Ok(()));
 
     state.build_session_manager.start_session(
         session_id.clone(),

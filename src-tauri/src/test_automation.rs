@@ -878,7 +878,7 @@ async fn handle_build_start(
 ) -> Result<String, (StatusCode, String)> {
     let app_state = state.app_handle.state::<std::sync::Arc<crate::AppState>>();
     let session_id = uuid::Uuid::new_v4().to_string();
-    let dummy_channel: tauri::ipc::Channel<crate::db::models::BuildEvent> =
+    let dummy_channel: tauri::ipc::Channel<serde_json::Value> =
         tauri::ipc::Channel::new(|_| Ok(()));
     match app_state.build_session_manager.start_session(
         session_id.clone(),

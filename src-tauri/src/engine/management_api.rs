@@ -1616,7 +1616,7 @@ async fn start_build(
     let session_id = uuid::Uuid::new_v4().to_string();
     // No-op channel — global emits drive the UI / watcher pipelines, the
     // headless caller polls /api/build/{id} for state.
-    let dummy_channel: tauri::ipc::Channel<crate::db::models::BuildEvent> =
+    let dummy_channel: tauri::ipc::Channel<serde_json::Value> =
         tauri::ipc::Channel::new(|_| Ok(()));
     match app_state.build_session_manager.start_session(
         session_id.clone(),

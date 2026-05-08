@@ -14,6 +14,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
+use serde_json::Value;
 use tauri::ipc::Channel;
 use tokio::sync::mpsc;
 
@@ -150,7 +151,7 @@ pub(super) async fn run_session(
     // scaffolding which mentions every keyword we match for. The `intent`
     // parameter above is misnamed — it's actually the full LLM prompt.
     raw_user_intent: String,
-    channel: Channel<BuildEvent>,
+    channel: Channel<Value>,
     mut input_rx: mpsc::Receiver<UserAnswer>,
     pool: DbPool,
     cli_args: CliArgs,

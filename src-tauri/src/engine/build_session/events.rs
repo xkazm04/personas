@@ -9,6 +9,7 @@ use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex, OnceLock};
 
 use serde::Serialize;
+use serde_json::Value;
 use tauri::ipc::Channel;
 use tauri::Emitter;
 
@@ -81,23 +82,25 @@ pub(super) fn update_phase_with_error(
 /// that case so the loss is at least visible in tracing output.
 pub(super) fn dual_emit(
     pool: &DbPool,
-    channel: &Channel<BuildEvent>,
+    channel: &Channel<Value>,
     app: &tauri::AppHandle,
     event: &BuildEvent,
 ) {
     let (session_id, variant) = event_meta(event);
-    let channel_result = channel.send(event.clone());
-    if let Err(error) = &channel_result {
-        warn_emit_failure_once(
-            session_id,
-            "channel",
-            variant,
-            format_args!("{error:?}"),
-            "BuildSession dual_emit: component Channel send failed",
-        );
-    }
+    let payload = match serde_json::to_value(event) {
+        Ok(payload) => payload,
+        Err(error) => {
+            tracing::warn!(
+                session_id = %session_id,
+                event_variant = variant,
+                error = ?error,
+                "BuildSession dual_emit: failed to serialize build event"
+            );
+            return;
+        }
+    };
 
-    let emit_result = app.emit(event_name::BUILD_SESSION_EVENT, event);
+    let emit_result = app.emit(event_name::BUILD_SESSION_EVENT, &payload);
     if let Err(error) = &emit_result {
         warn_emit_failure_once(
             session_id,
@@ -115,6 +118,17 @@ pub(super) fn dual_emit(
                 "BuildSession dual_emit: failed to stamp session after Tauri emit error"
             );
         }
+    }
+
+    let channel_result = channel.send(payload);
+    if let Err(error) = &channel_result {
+        warn_emit_failure_once(
+            session_id,
+            "channel",
+            variant,
+            format_args!("{error:?}"),
+            "BuildSession dual_emit: component Channel send failed",
+        );
     }
 
     if channel_result.is_err() && emit_result.is_err() {
@@ -182,7 +196,7 @@ fn event_meta(event: &BuildEvent) -> (&str, &'static str) {
 /// Emit a SessionStatus event via Channel + Tauri.
 pub(super) fn emit_session_status(
     pool: &DbPool,
-    channel: &Channel<BuildEvent>,
+    channel: &Channel<Value>,
     app: &tauri::AppHandle,
     session_id: &str,
     phase: BuildPhase,
@@ -201,7 +215,7 @@ pub(super) fn emit_session_status(
 /// Emit an Error event via Channel + Tauri.
 pub(super) fn emit_error(
     pool: &DbPool,
-    channel: &Channel<BuildEvent>,
+    channel: &Channel<Value>,
     app: &tauri::AppHandle,
     session_id: &str,
     message: &str,

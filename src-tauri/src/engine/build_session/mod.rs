@@ -37,10 +37,11 @@ use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 
+use serde_json::Value;
 use tauri::ipc::Channel;
 use tokio::sync::mpsc;
 
-use crate::db::models::{BuildEvent, BuildPhase, BuildSession, UpdateBuildSession, UserAnswer};
+use crate::db::models::{BuildPhase, BuildSession, UpdateBuildSession, UserAnswer};
 use crate::db::repos::core::build_sessions as build_session_repo;
 use crate::db::repos::resources::connectors as connector_repo;
 use crate::db::repos::resources::credentials as credential_repo;
@@ -119,7 +120,7 @@ impl BuildSessionManager {
         session_id: String,
         persona_id: String,
         intent: String,
-        channel: Channel<BuildEvent>,
+        channel: Channel<Value>,
         pool: DbPool,
         registry: Arc<ActiveProcessRegistry>,
         workflow_json: Option<String>,
