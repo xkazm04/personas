@@ -12,6 +12,7 @@ use std::time::{Duration, Instant};
 use futures_util::StreamExt;
 use serde::Serialize;
 use tauri::{AppHandle, Emitter};
+use tokio_util::sync::CancellationToken;
 use ts_rs::TS;
 
 use super::event_registry::{emit_event_bus, event_name};
@@ -119,6 +120,7 @@ pub struct SmeeRelayStatus {
 
 struct ActiveRelayTask {
     handle: tokio::task::JoinHandle<()>,
+    cancel: CancellationToken,
     config_key: String,
 }
 
@@ -192,6 +194,7 @@ async fn relay_sse_core(
     pool: &DbPool,
     app: &AppHandle,
     state: &Arc<tokio::sync::Mutex<SmeeRelayState>>,
+    cancel: &CancellationToken,
 ) -> Result<(), String> {
     use crate::db::repos::communication::smee_relays as smee_relay_repo;
 
@@ -245,7 +248,18 @@ async fn relay_sse_core(
     let mut stream = resp.bytes_stream();
     let mut buffer = String::new();
 
-    while let Some(chunk) = stream.next().await {
+    loop {
+        let chunk = tokio::select! {
+            _ = cancel.cancelled() => {
+                tracing::info!(relay_key = %params.relay_key, "Smee relay cancellation requested");
+                return Ok(());
+            }
+            chunk = stream.next() => chunk,
+        };
+
+        let Some(chunk) = chunk else {
+            break;
+        };
         let chunk = chunk.map_err(|e| format!("Stream error: {e}"))?;
         let text = String::from_utf8_lossy(&chunk);
         buffer.push_str(&normalize_line_endings(&text));
@@ -344,6 +358,29 @@ async fn relay_sse_core(
     Ok(())
 }
 
+fn cancel_relay_task(relay_id: String, task: ActiveRelayTask) {
+    task.cancel.cancel();
+    let handle = task.handle;
+    tokio::spawn(async move {
+        let abort_started = Instant::now();
+        tokio::time::sleep(Duration::from_secs(2)).await;
+        if !handle.is_finished() {
+            tracing::warn!(
+                relay_id = %relay_id,
+                elapsed_ms = abort_started.elapsed().as_millis() as u64,
+                "Smee relay task still running after cancellation grace period"
+            );
+            handle.abort();
+        }
+
+        if let Err(error) = handle.await {
+            if !error.is_cancelled() {
+                tracing::warn!(relay_id = %relay_id, error = ?error, "Smee relay task ended with JoinError");
+            }
+        }
+    });
+}
+
 // ---------------------------------------------------------------------------
 // Background task
 // ---------------------------------------------------------------------------
@@ -398,7 +435,7 @@ pub async fn run_smee_relay(
             });
             if should_stop {
                 if let Some(task) = tasks.remove(&id) {
-                    task.handle.abort();
+                    cancel_relay_task(id.clone(), task);
                     let mut s = state.lock().await;
                     s.relays.remove(&id);
                     tracing::info!(relay_id = %id, "Stopped Smee relay task for config sync");
@@ -426,11 +463,17 @@ pub async fn run_smee_relay(
             let event_filter2: Option<Vec<String>> = event_filter
                 .as_deref()
                 .and_then(|filter| serde_json::from_str(filter).ok());
+            let cancel = CancellationToken::new();
+            let cancel_for_task = cancel.clone();
 
             let handle = tokio::spawn(async move {
                 let mut backoff = Duration::from_secs(1);
                 let max_backoff = Duration::from_secs(30);
                 loop {
+                    if cancel_for_task.is_cancelled() {
+                        tracing::info!(relay_id = %relay_id2, "Smee relay task stopped by cancellation");
+                        return;
+                    }
                     let params = RelayParams {
                         relay_key: relay_id2.clone(),
                         channel_url: url2.clone(),
@@ -439,8 +482,12 @@ pub async fn run_smee_relay(
                         event_filter: event_filter2.clone(),
                     };
                     let connected_at = Instant::now();
-                    match relay_sse_core(&params, &pool2, &app2, &state2).await {
+                    match relay_sse_core(&params, &pool2, &app2, &state2, &cancel_for_task).await {
                         Ok(()) => {
+                            if cancel_for_task.is_cancelled() {
+                                tracing::info!(relay_id = %relay_id2, "Smee relay disconnected for cancellation");
+                                return;
+                            }
                             if connected_at.elapsed().as_secs() >= MIN_STABLE_CONNECTION_SECS {
                                 backoff = Duration::from_secs(1);
                             }
@@ -466,7 +513,13 @@ pub async fn run_smee_relay(
                             emit_status(&app2, &mut s);
                         }
                     }
-                    tokio::time::sleep(backoff).await;
+                    tokio::select! {
+                        _ = cancel_for_task.cancelled() => {
+                            tracing::info!(relay_id = %relay_id2, "Smee relay backoff interrupted by cancellation");
+                            return;
+                        }
+                        _ = tokio::time::sleep(backoff) => {}
+                    }
                     backoff = (backoff * 2).min(max_backoff);
 
                     // Check if relay is still active before reconnecting
@@ -479,7 +532,14 @@ pub async fn run_smee_relay(
                 }
             });
 
-            tasks.insert(relay_id.clone(), ActiveRelayTask { handle, config_key });
+            tasks.insert(
+                relay_id.clone(),
+                ActiveRelayTask {
+                    handle,
+                    cancel,
+                    config_key,
+                },
+            );
             tracing::info!(relay_id = %relay_id, url = %channel_url, "Started Smee relay task");
         }
 
