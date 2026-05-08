@@ -85,13 +85,21 @@ pub(super) async fn run_post_draft(
         );
     }
 
-    let mut last_error: Option<String> = None;
     let mut attempts: u32 = 0;
+    let mut next_agent_ir: Option<crate::db::models::AgentIr> = None;
 
     loop {
         attempts += 1;
 
-        match run_test_pass(&state, &app_handle, &session_id, &persona_id).await {
+        match run_test_pass(
+            &state,
+            &app_handle,
+            &session_id,
+            &persona_id,
+            next_agent_ir.take(),
+        )
+        .await
+        {
             Ok(TestPassOutcome::Passed) => {
                 tracing::info!(
                     session_id = %session_id,
@@ -107,7 +115,7 @@ pub(super) async fn run_post_draft(
                     summary_bytes = summary.len(),
                     "OneShot: test pass failed (tool tests reported failures)"
                 );
-                last_error = Some(short_failure_label(&summary));
+                let failure_label = short_failure_label(&summary);
 
                 if attempts >= MAX_TEST_RETRIES {
                     tracing::warn!(
@@ -115,8 +123,14 @@ pub(super) async fn run_post_draft(
                         attempts,
                         "OneShot: exhausted MAX_TEST_RETRIES — finalizing as Failed"
                     );
-                    finalize_failed(&state, &app_handle, &session_id, &persona_id, last_error)
-                        .await;
+                    finalize_failed(
+                        &state,
+                        &app_handle,
+                        &session_id,
+                        &persona_id,
+                        Some(failure_label),
+                    )
+                    .await;
                     return;
                 }
 
@@ -136,10 +150,13 @@ pub(super) async fn run_post_draft(
                 );
 
                 match super::fix_pass::run_fix_pass(&state, &session_id, &summary, attempts).await {
-                    Ok(_) => {
+                    Ok(corrected_ir) => {
+                        next_agent_ir = Some(corrected_ir);
                         // Push phase back to Testing for the next loop
                         // iteration so the UI's read-only progress reflects
-                        // what's actually happening.
+                        // what's actually happening. The corrected IR is fed
+                        // directly into the next test pass while the persisted
+                        // session row remains the recovery source of truth.
                         let _ = update_phase(&state, &session_id, BuildPhase::Testing).await;
                     }
                     Err(fix_err) => {
@@ -153,11 +170,16 @@ pub(super) async fn run_post_draft(
                         // or LLM declined to emit IR). Treat as terminal —
                         // burning retries on a fix pass that can't even
                         // produce a candidate is wasteful.
-                        last_error = Some(format!(
-                            "Test failures couldn't be auto-corrected: {fix_err}"
-                        ));
-                        finalize_failed(&state, &app_handle, &session_id, &persona_id, last_error)
-                            .await;
+                        finalize_failed(
+                            &state,
+                            &app_handle,
+                            &session_id,
+                            &persona_id,
+                            Some(format!(
+                                "Test failures couldn't be auto-corrected: {fix_err}"
+                            )),
+                        )
+                        .await;
                         return;
                     }
                 }
@@ -244,20 +266,27 @@ async fn run_test_pass(
     app_handle: &tauri::AppHandle,
     session_id: &str,
     persona_id: &str,
+    agent_ir_override: Option<crate::db::models::AgentIr>,
 ) -> Result<TestPassOutcome, AppError> {
-    // Re-load the session so we get the latest agent_ir (the fix pass
-    // may have just written a corrected one).
+    // Re-load the session for adoption answers and as the recovery source
+    // when the caller does not have an in-memory corrected IR from a fix pass.
     let session = build_session_repo::get_by_id(&state.db, session_id)?
         .ok_or_else(|| AppError::NotFound(format!("Build session {session_id}")))?;
 
-    let agent_ir_str = session.agent_ir.clone().ok_or_else(|| {
-        AppError::Validation(
-            "OneShot: build session reached DraftReady without agent_ir — cannot test".to_string(),
-        )
-    })?;
+    let mut agent_ir = match agent_ir_override {
+        Some(ir) => ir,
+        None => {
+            let agent_ir_str = session.agent_ir.clone().ok_or_else(|| {
+                AppError::Validation(
+                    "OneShot: build session reached DraftReady without agent_ir — cannot test"
+                        .to_string(),
+                )
+            })?;
 
-    let mut agent_ir: crate::db::models::AgentIr = serde_json::from_str(&agent_ir_str)
-        .map_err(|e| AppError::Validation(format!("OneShot agent_ir parse error: {e}")))?;
+            serde_json::from_str::<crate::db::models::AgentIr>(&agent_ir_str)
+                .map_err(|e| AppError::Validation(format!("OneShot agent_ir parse error: {e}")))?
+        }
+    };
 
     // Apply adoption questionnaire answers if present (mirrors test_build_draft).
     // Fail loudly on parse error rather than silently testing against raw template placeholders —
