@@ -13,7 +13,7 @@ use crate::error::AppError;
 use crate::ipc_auth::{
     require_auth, require_auth_sync, require_privileged, require_privileged_sync,
 };
-use crate::validation::safe_resolve_log_path;
+use crate::validation::open_log_file_safely;
 use crate::AppState;
 
 /// Verify that the execution belongs to the expected persona.
@@ -458,9 +458,11 @@ pub fn get_execution_log(
     let execution = repo::get_by_id(&state.db, &id)?;
     verify_execution_owner(&execution, &caller_persona_id)?;
     if let Some(ref path) = execution.log_file_path {
-        let requested = safe_resolve_log_path(path, state.engine.log_dir())?;
-        match std::fs::read_to_string(&requested) {
-            Ok(content) => Ok(Some(content)),
+        let mut file = open_log_file_safely(path, state.engine.log_dir())?;
+        let mut content = String::new();
+        use std::io::Read;
+        match file.read_to_string(&mut content) {
+            Ok(_) => Ok(Some(content)),
             Err(_) => Ok(None),
         }
     } else {
@@ -485,8 +487,7 @@ pub fn get_execution_log_lines(
     let execution = repo::get_by_id(&state.db, &id)?;
     verify_execution_owner(&execution, &caller_persona_id)?;
     if let Some(ref path) = execution.log_file_path {
-        let requested = safe_resolve_log_path(path, state.engine.log_dir())?;
-        let file = match std::fs::File::open(&requested) {
+        let file = match open_log_file_safely(path, state.engine.log_dir()) {
             Ok(f) => f,
             Err(_) => return Ok(vec![]),
         };
