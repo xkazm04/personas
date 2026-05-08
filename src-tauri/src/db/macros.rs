@@ -430,7 +430,7 @@ macro_rules! lab_crud {
             summary: Option<&str>,
             error: Option<&str>,
             completed_at: Option<&str>,
-        ) -> Result<(), $crate::error::AppError> {
+        ) -> Result<bool, $crate::error::AppError> {
             timed_query!($run_table, concat!($run_table, "::update_run_status"), {
                 let conn = pool.get()?;
                 let current: String = conn
@@ -449,7 +449,7 @@ macro_rules! lab_crud {
                 current_status
                     .validate_transition(status)
                     .map_err($crate::error::AppError::Validation)?;
-                conn.execute(
+                let rows = conn.execute(
                     concat!(
                         "UPDATE ",
                         $run_table,
@@ -470,7 +470,7 @@ macro_rules! lab_crud {
                         id
                     ],
                 )?;
-                Ok(())
+                Ok(rows > 0)
             })
         }
 

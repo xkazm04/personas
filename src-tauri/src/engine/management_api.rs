@@ -598,44 +598,56 @@ async fn cancel_lab_run(
     let now = chrono::Utc::now().to_rfc3339();
 
     // Try cancelling in each lab table (only one will match)
-    let _ = arena_repo::update_run_status(
-        &state.pool,
-        &run_id,
-        LabRunStatus::Cancelled,
-        None,
-        None,
-        None,
-        Some(&now),
-    );
-    let _ = matrix_repo::update_run_status(
-        &state.pool,
-        &run_id,
-        LabRunStatus::Cancelled,
-        None,
-        None,
-        None,
-        Some(&now),
-    );
-    let _ = ab_repo::update_run_status(
-        &state.pool,
-        &run_id,
-        LabRunStatus::Cancelled,
-        None,
-        None,
-        None,
-        Some(&now),
-    );
-    let _ = eval_repo::update_run_status(
-        &state.pool,
-        &run_id,
-        LabRunStatus::Cancelled,
-        None,
-        None,
-        None,
-        Some(&now),
-    );
+    let mut updated = 0usize;
+    let mut errors: Vec<(&'static str, String)> = Vec::new();
 
-    ok_json(serde_json::json!({ "run_id": run_id, "status": "cancelled" }))
+    macro_rules! try_cancel_lab {
+        ($kind:literal, $repo:ident) => {
+            match $repo::update_run_status(
+                &state.pool,
+                &run_id,
+                LabRunStatus::Cancelled,
+                None,
+                None,
+                None,
+                Some(&now),
+            ) {
+                Ok(true) => updated += 1,
+                Ok(false) => {}
+                Err(AppError::NotFound(_)) => {}
+                Err(e) => errors.push(($kind, e.to_string())),
+            }
+        };
+    }
+
+    try_cancel_lab!("arena", arena_repo);
+    try_cancel_lab!("matrix", matrix_repo);
+    try_cancel_lab!("ab", ab_repo);
+    try_cancel_lab!("eval", eval_repo);
+
+    if updated == 0 {
+        if let Some((kind, error)) = errors.first() {
+            tracing::error!(
+                run_id = %run_id,
+                lab_kind = *kind,
+                error = %error,
+                "failed to cancel lab run in any lab table"
+            );
+            return err_json(StatusCode::INTERNAL_SERVER_ERROR, error).into_response();
+        }
+        return err_json(StatusCode::NOT_FOUND, "Lab run not found").into_response();
+    }
+
+    for (kind, error) in errors {
+        tracing::warn!(
+            run_id = %run_id,
+            lab_kind = kind,
+            error = %error,
+            "lab cancel probe failed; ignoring because another lab table was cancelled"
+        );
+    }
+
+    ok_json(serde_json::json!({ "run_id": run_id, "status": "cancelled" })).into_response()
 }
 
 /// Cancel any active background task tied to the run, then delete the run row.
