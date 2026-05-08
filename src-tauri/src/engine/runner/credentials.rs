@@ -173,6 +173,91 @@ pub(crate) async fn resolve_credential_env_vars(
     (env_vars, hints, failures, injected_connector_names)
 }
 
+/// Force-refresh OAuth credentials that would be injected for a direct API
+/// tool. This is used after a provider 401/expired_token response so a long
+/// execution can retry once with a freshly rotated access token.
+pub(crate) async fn force_refresh_credentials_for_tool(
+    pool: &DbPool,
+    tool: &PersonaToolDefinition,
+) -> usize {
+    let connectors = match connector_repo::get_all(pool) {
+        Ok(c) => c,
+        Err(e) => {
+            tracing::warn!("Failed to load connectors for forced OAuth refresh: {e}");
+            return 0;
+        }
+    };
+
+    let mut credential_ids = std::collections::HashSet::new();
+    let mut credentials = Vec::new();
+
+    for connector in &connectors {
+        let services: Vec<serde_json::Value> =
+            serde_json::from_str(&connector.services).unwrap_or_default();
+        let tool_listed = services.iter().any(|s| {
+            s.get("toolName")
+                .and_then(|v| v.as_str())
+                .is_some_and(|name| name == tool.name)
+        });
+
+        let fallback_match = tool
+            .requires_credential_type
+            .as_ref()
+            .is_some_and(|cred_type| {
+                connector.name == *cred_type
+                    || connector.name.starts_with(cred_type)
+                    || cred_type.starts_with(&connector.name)
+            });
+
+        if !(tool_listed || fallback_match) {
+            continue;
+        }
+
+        if let Ok(creds) = cred_repo::get_by_service_type(pool, &connector.name) {
+            if let Some(cred) = creds.first() {
+                if credential_ids.insert(cred.id.clone()) {
+                    credentials.push(cred.clone());
+                }
+            }
+        }
+    }
+
+    if let Some(ref cred_type) = tool.requires_credential_type {
+        if let Ok(creds) = cred_repo::get_by_service_type(pool, cred_type) {
+            if let Some(cred) = creds.first() {
+                if credential_ids.insert(cred.id.clone()) {
+                    credentials.push(cred.clone());
+                }
+            }
+        }
+    }
+
+    let mut refreshed = 0;
+    for cred in credentials {
+        let has_refresh_token = cred_repo::get_decrypted_fields(pool, &cred)
+            .ok()
+            .and_then(|fields| fields.get("refresh_token").cloned())
+            .is_some_and(|token| !token.is_empty());
+        if !has_refresh_token {
+            continue;
+        }
+
+        match crate::engine::oauth_refresh::force_refresh_single_credential(pool, &cred).await {
+            Ok(_) => refreshed += 1,
+            Err(e) => {
+                tracing::warn!(
+                    credential_id = %cred.id,
+                    credential_name = %cred.name,
+                    error = %e,
+                    "Forced OAuth refresh after provider auth failure failed"
+                );
+            }
+        }
+    }
+
+    refreshed
+}
+
 /// Inject credentials for connectors referenced in the persona's design_context.
 /// This ensures that generic tools (http_request, etc.) have access to all
 /// connector credentials even when tool-name-based matching fails.

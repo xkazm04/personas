@@ -111,7 +111,40 @@ pub async fn invoke_tool_direct(
                         tool.name
                     ))
                 })?;
-                Box::pin(invoke_api(tool, guide, input_json, &env_map))
+                Box::pin(async move {
+                    let first = invoke_api(tool, guide, input_json, &env_map).await;
+                    if let Err(ref err) = first {
+                        if is_oauth_auth_failure(&err.to_string()) {
+                            let refreshed =
+                                super::runner::force_refresh_credentials_for_tool(pool, tool).await;
+                            if refreshed > 0 {
+                                tracing::info!(
+                                    tool_id = %tool.id,
+                                    tool_name = %tool.name,
+                                    refreshed,
+                                    "Retrying API tool after forced OAuth refresh"
+                                );
+                                let (retry_env_vars, _hints, cred_failures, _connectors) =
+                                    super::runner::resolve_credential_env_vars(
+                                        pool,
+                                        std::slice::from_ref(tool),
+                                        persona_id,
+                                        persona_name,
+                                    )
+                                    .await;
+                                if cred_failures.is_empty() {
+                                    let retry_env_map: HashMap<&str, &str> = retry_env_vars
+                                        .iter()
+                                        .map(|(k, v)| (k.as_str(), v.as_str()))
+                                        .collect();
+                                    return invoke_api(tool, guide, input_json, &retry_env_map)
+                                        .await;
+                                }
+                            }
+                        }
+                    }
+                    first
+                })
             }
         };
         tokio::time::timeout(DIRECT_TOOL_TIMEOUT, fut)
@@ -274,6 +307,7 @@ async fn invoke_api(
     // Inject --proto to restrict to safe URL schemes (blocks file://, gopher://, etc.)
     let mut cmd = tokio::process::Command::new("curl");
     cmd.arg("--proto").arg("=https,http");
+    cmd.arg("--fail-with-body");
     for token in &resolved_tokens {
         cmd.arg(token);
     }
@@ -305,6 +339,14 @@ async fn invoke_api(
             msg.trim()
         )))
     }
+}
+
+fn is_oauth_auth_failure(error_msg: &str) -> bool {
+    let lower = error_msg.to_ascii_lowercase();
+    lower.contains("401")
+        || lower.contains("unauthorized")
+        || lower.contains("expired_token")
+        || lower.contains("invalid_token")
 }
 
 /// Substitute `$VAR` and `${VAR}` placeholders in a single token with values

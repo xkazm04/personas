@@ -264,6 +264,24 @@ pub async fn refresh_single_credential(
     pool: &DbPool,
     cred: &crate::db::models::PersonaCredential,
 ) -> Result<String, AppError> {
+    refresh_single_credential_inner(pool, cred, false).await
+}
+
+/// Force-refresh a single credential after a provider rejected the cached
+/// access token. Unlike the proactive path, this bypasses the freshness
+/// short-circuit because the provider has already told us the token is stale.
+pub async fn force_refresh_single_credential(
+    pool: &DbPool,
+    cred: &crate::db::models::PersonaCredential,
+) -> Result<String, AppError> {
+    refresh_single_credential_inner(pool, cred, true).await
+}
+
+async fn refresh_single_credential_inner(
+    pool: &DbPool,
+    cred: &crate::db::models::PersonaCredential,
+    force: bool,
+) -> Result<String, AppError> {
     // Acquire per-credential lock to prevent concurrent refresh races.
     // If another task is already refreshing this credential, we wait.
     let _lock = super::oauth_refresh_lock::acquire(&cred.id).await;
@@ -271,18 +289,20 @@ pub async fn refresh_single_credential(
     // After acquiring the lock, re-check whether the token was already refreshed
     // by whichever task held the lock before us. Re-read credential from DB.
     let maybe_fresh = cred_repo::get_by_id(pool, &cred.id).ok();
-    if let Some(ref fresh_cred) = maybe_fresh {
-        let fresh_meta = parse_credential_metadata(fresh_cred);
-        if let Some(ref meta) = fresh_meta {
-            if let Some(expires_at) = extract_expires_at(meta) {
-                let remaining = expires_at.signed_duration_since(chrono::Utc::now());
-                if remaining.num_seconds() > REFRESH_THRESHOLD_SECS {
-                    tracing::info!(
-                        credential_id = %cred.id,
-                        remaining_secs = remaining.num_seconds(),
-                        "Skipping refresh — token was already refreshed by another task"
-                    );
-                    return Ok("Token already refreshed by concurrent task".to_string());
+    if !force {
+        if let Some(ref fresh_cred) = maybe_fresh {
+            let fresh_meta = parse_credential_metadata(fresh_cred);
+            if let Some(ref meta) = fresh_meta {
+                if let Some(expires_at) = extract_expires_at(meta) {
+                    let remaining = expires_at.signed_duration_since(chrono::Utc::now());
+                    if remaining.num_seconds() > REFRESH_THRESHOLD_SECS {
+                        tracing::info!(
+                            credential_id = %cred.id,
+                            remaining_secs = remaining.num_seconds(),
+                            "Skipping refresh — token was already refreshed by another task"
+                        );
+                        return Ok("Token already refreshed by concurrent task".to_string());
+                    }
                 }
             }
         }
