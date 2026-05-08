@@ -83,6 +83,8 @@ impl CustomizeConnection<rusqlite::Connection, rusqlite::Error> for SqlitePragma
             "PRAGMA foreign_keys = ON;
              PRAGMA busy_timeout = 5000;
              PRAGMA synchronous = NORMAL;
+             PRAGMA mmap_size = 268435456;
+             PRAGMA temp_store = 2;
              PRAGMA cache_size = -2000;",
         )?;
         Ok(())

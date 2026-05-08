@@ -179,7 +179,7 @@ pub fn get_all_global(
             qb.limit(limit);
 
             let sql = qb.build_select(base);
-            let mut stmt = conn.prepare(&sql)?;
+            let mut stmt = conn.prepare_cached(&sql)?;
 
             let row_mapper = |row: &Row| -> rusqlite::Result<GlobalExecutionRow> {
                 Ok(GlobalExecutionRow {
@@ -247,7 +247,7 @@ pub fn count_all_global(
             }
             sql.push_str(" GROUP BY status");
 
-            let mut stmt = conn.prepare(&sql)?;
+            let mut stmt = conn.prepare_cached(&sql)?;
             let mut counts = ExecutionCounts::default();
             let map_row = |row: &Row| -> rusqlite::Result<(String, i64)> {
                 Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))
@@ -313,7 +313,7 @@ pub fn search(
             sql.push_str(" ORDER BY bm25(executions_fts) ASC, e.created_at DESC LIMIT ?2");
         }
 
-        let mut stmt = conn.prepare(&sql)?;
+        let mut stmt = conn.prepare_cached(&sql)?;
         let mut rows = if let Some(persona_id) = persona_id {
             stmt.query(params![fts_query, persona_id, limit])?
         } else {
@@ -1036,7 +1036,7 @@ pub fn get_retry_chains_batch(
             let params_ref: Vec<&dyn rusqlite::types::ToSql> =
                 params_boxed.iter().map(|p| p.as_ref()).collect();
 
-            let mut root_stmt = conn.prepare(&root_sql)?;
+            let mut root_stmt = conn.prepare_cached(&root_sql)?;
             let root_rows = root_stmt.query_map(params_ref.as_slice(), |row| {
                 let id: String = row.get(0)?;
                 let retry_of: Option<String> = row.get(1)?;
@@ -1104,7 +1104,7 @@ pub fn get_retry_chains_batch(
             let chain_params_ref: Vec<&dyn rusqlite::types::ToSql> =
                 chain_params_boxed.iter().map(|p| p.as_ref()).collect();
 
-            let mut chain_stmt = conn.prepare(&chain_sql)?;
+            let mut chain_stmt = conn.prepare_cached(&chain_sql)?;
             let chain_rows = chain_stmt.query_map(chain_params_ref.as_slice(), row_to_execution)?;
             let all_executions: Vec<PersonaExecution> =
                 crate::db::repos::utils::collect_rows(chain_rows, "retry_chains_batch");

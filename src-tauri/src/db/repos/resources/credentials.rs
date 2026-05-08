@@ -153,7 +153,8 @@ pub fn get_distinct_service_types(
         "persona_credentials::get_distinct_service_types",
         {
             let conn = pool.get()?;
-            let mut stmt = conn.prepare("SELECT DISTINCT service_type FROM persona_credentials")?;
+            let mut stmt =
+                conn.prepare_cached("SELECT DISTINCT service_type FROM persona_credentials")?;
             let rows = stmt.query_map([], |row| row.get::<_, String>(0))?;
             let mut set = std::collections::HashSet::new();
             for row in rows {
@@ -184,7 +185,7 @@ pub fn get_ambiguous_service_types(pool: &DbPool) -> std::collections::HashSet<S
                 Ok(c) => c,
                 Err(_) => return std::collections::HashSet::new(),
             };
-            let mut stmt = match conn.prepare(
+            let mut stmt = match conn.prepare_cached(
                 "SELECT service_type FROM persona_credentials \
              GROUP BY service_type HAVING COUNT(*) >= 2",
             ) {
@@ -213,7 +214,7 @@ pub fn get_by_service_type(
         "persona_credentials::get_by_service_type",
         {
             let conn = pool.get()?;
-            let mut stmt = conn.prepare(
+            let mut stmt = conn.prepare_cached(
             "SELECT * FROM persona_credentials WHERE service_type = ?1 ORDER BY created_at DESC",
         )?;
             let rows = stmt.query_map(params![service_type], row_to_credential)?;
@@ -511,7 +512,7 @@ pub fn blast_radius(pool: &DbPool, id: &str) -> Result<Vec<(String, String)>, Ap
                 .ok();
 
             if let Some(ref svc) = service_type {
-                let mut stmt = conn.prepare(
+                let mut stmt = conn.prepare_cached(
                     "SELECT DISTINCT p.name FROM personas p
                  INNER JOIN persona_tools pt ON pt.persona_id = p.id
                  INNER JOIN persona_tool_definitions ptd ON ptd.id = pt.tool_id
@@ -880,7 +881,7 @@ pub fn get_events_by_credential(
         "persona_credentials::get_events_by_credential",
         {
             let conn = pool.get()?;
-            let mut stmt = conn.prepare(
+            let mut stmt = conn.prepare_cached(
                 "SELECT * FROM credential_events WHERE credential_id = ?1 ORDER BY created_at DESC",
             )?;
             let rows = stmt.query_map(params![credential_id], row_to_credential_event)?;
@@ -959,7 +960,7 @@ pub fn get_all_events(pool: &DbPool) -> Result<Vec<CredentialEvent>, AppError> {
         "persona_credentials::get_all_events",
         {
             let conn = pool.get()?;
-            let mut stmt = conn.prepare(
+            let mut stmt = conn.prepare_cached(
                 "SELECT * FROM credential_events ORDER BY credential_id, created_at DESC",
             )?;
             let rows = stmt.query_map([], row_to_credential_event)?;
@@ -996,7 +997,7 @@ pub fn get_enabled_events(pool: &DbPool) -> Result<Vec<CredentialEvent>, AppErro
         "persona_credentials::get_enabled_events",
         {
             let conn = pool.get()?;
-            let mut stmt = conn.prepare(
+            let mut stmt = conn.prepare_cached(
                 "SELECT * FROM credential_events WHERE enabled = 1 ORDER BY created_at DESC",
             )?;
             let rows = stmt.query_map([], row_to_credential_event)?;
@@ -1133,7 +1134,7 @@ row_mapper!(row_to_credential_field -> CredentialField {
 pub fn get_fields(pool: &DbPool, credential_id: &str) -> Result<Vec<CredentialField>, AppError> {
     timed_query!("persona_credentials", "persona_credentials::get_fields", {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT * FROM credential_fields WHERE credential_id = ?1 ORDER BY field_key",
         )?;
         let rows = stmt.query_map(params![credential_id], row_to_credential_field)?;

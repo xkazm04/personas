@@ -146,7 +146,7 @@ pub fn get_all(
         qb.offset(offset);
 
         let sql = qb.build_select("SELECT * FROM persona_memories");
-        let mut stmt = conn.prepare(&sql)?;
+        let mut stmt = conn.prepare_cached(&sql)?;
         let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_memory)?;
         let results: Vec<PersonaMemory> = collect_rows(rows, "memories::get_all");
         Ok(results)
@@ -173,7 +173,7 @@ pub fn get_all_by_persona_ids(
             );
             qb.order_by("created_at", "DESC");
             let sql = qb.build_select("SELECT * FROM persona_memories");
-            let mut stmt = conn.prepare(&sql)?;
+            let mut stmt = conn.prepare_cached(&sql)?;
             let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_memory)?;
             Ok(collect_rows(rows, "memories::get_all_by_persona_ids"))
         }
@@ -195,7 +195,7 @@ pub fn get_by_persona(
     timed_query!("persona_memories", "persona_memories::get_by_persona", {
         let limit = limit.unwrap_or(50);
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT * FROM persona_memories WHERE persona_id = ?1
              ORDER BY importance DESC, created_at DESC LIMIT ?2",
         )?;
@@ -208,7 +208,7 @@ pub fn get_by_persona(
 pub fn get_by_execution(pool: &DbPool, execution_id: &str) -> Result<Vec<PersonaMemory>, AppError> {
     timed_query!("persona_memories", "persona_memories::get_by_execution", {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT * FROM persona_memories WHERE source_execution_id = ?1
              ORDER BY created_at ASC",
         )?;
@@ -469,7 +469,7 @@ fn compute_memory_stats(
     let cat_sql = format!(
         "SELECT category, COUNT(*) as cnt FROM persona_memories {where_clause} GROUP BY category ORDER BY cnt DESC"
     );
-    let mut cat_stmt = conn.prepare(&cat_sql)?;
+    let mut cat_stmt = conn.prepare_cached(&cat_sql)?;
     let category_rows = cat_stmt.query_map(params_ref, |row| Ok((row.get(0)?, row.get(1)?)))?;
     let category_counts: Vec<(String, i64)> = collect_rows(
         category_rows,
@@ -480,7 +480,7 @@ fn compute_memory_stats(
     let agent_sql = format!(
         "SELECT persona_id, COUNT(*) as cnt FROM persona_memories {where_clause} GROUP BY persona_id ORDER BY cnt DESC"
     );
-    let mut agent_stmt = conn.prepare(&agent_sql)?;
+    let mut agent_stmt = conn.prepare_cached(&agent_sql)?;
     let agent_rows = agent_stmt.query_map(params_ref, |row| Ok((row.get(0)?, row.get(1)?)))?;
     let agent_counts: Vec<(String, i64)> =
         collect_rows(agent_rows, "memories::compute_memory_stats/agent_counts");
@@ -550,7 +550,7 @@ pub fn get_all_with_stats(
             qb.offset(offset_val);
 
             let mem_sql = qb.build_select("SELECT * FROM persona_memories");
-            let mut mem_stmt = conn.prepare(&mem_sql)?;
+            let mut mem_stmt = conn.prepare_cached(&mem_sql)?;
             let mem_rows = mem_stmt.query_map(qb.params_ref().as_slice(), row_to_memory)?;
             let memories: Vec<PersonaMemory> =
                 collect_rows(mem_rows, "memories::get_all_with_stats");
@@ -820,7 +820,7 @@ pub fn get_for_injection_v2(
              )"
             );
 
-            let mut stmt = conn.prepare(&sql)?;
+            let mut stmt = conn.prepare_cached(&sql)?;
             let all: Vec<PersonaMemory> = if let Some(uc) = active_uc_param {
                 let rows = stmt.query_map(
                     params![persona_id, core_limit, active_limit, uc],
@@ -854,7 +854,7 @@ pub fn get_by_use_case_id(
         {
             let limit = limit.unwrap_or(100);
             let conn = pool.get()?;
-            let mut stmt = conn.prepare(
+            let mut stmt = conn.prepare_cached(
                 "SELECT * FROM persona_memories
              WHERE persona_id = ?1 AND use_case_id = ?2
              ORDER BY importance DESC, created_at DESC
