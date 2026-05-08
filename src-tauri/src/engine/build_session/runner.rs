@@ -896,6 +896,7 @@ pub(super) async fn run_session(
         let mut got_question = false;
         let mut got_agent_ir = false;
         let mut turn_resolved_keys: Vec<String> = Vec::new();
+        let mut resolved_cells_dirty = false;
 
         for event in turn_events {
             match &event {
@@ -924,19 +925,7 @@ pub(super) async fn run_session(
                     } else if cell_key != "_test_report" {
                         resolved_cells.insert(cell_key.clone(), data.clone());
                         turn_resolved_keys.push(cell_key.clone());
-                        let resolved_json = serde_json::to_string(&serde_json::Value::Object(
-                            resolved_cells.clone(),
-                        ))
-                        .unwrap_or_else(|_| "{}".to_string());
-                        let _ = build_session_repo::update(
-                            &pool,
-                            &session_id,
-                            &UpdateBuildSession {
-                                phase: Some(BuildPhase::Resolving.as_str().to_string()),
-                                resolved_cells: Some(resolved_json),
-                                ..Default::default()
-                            },
-                        );
+                        resolved_cells_dirty = true;
                         // Emit rich activity for dimension resolution
                         let activity_event = BuildEvent::Progress {
                             session_id: session_id.clone(),
@@ -986,6 +975,21 @@ pub(super) async fn run_session(
                     dual_emit(&pool, &channel, &app_handle, &event);
                 }
             }
+        }
+
+        if resolved_cells_dirty {
+            let resolved_json =
+                serde_json::to_string(&serde_json::Value::Object(resolved_cells.clone()))
+                    .unwrap_or_else(|_| "{}".to_string());
+            let _ = build_session_repo::update(
+                &pool,
+                &session_id,
+                &UpdateBuildSession {
+                    phase: (!got_question).then(|| BuildPhase::Resolving.as_str().to_string()),
+                    resolved_cells: Some(resolved_json),
+                    ..Default::default()
+                },
+            );
         }
 
         // Use resolved_cells.len() for accurate count (HashMap deduplicates)
