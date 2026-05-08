@@ -667,6 +667,8 @@ CREATE TABLE IF NOT EXISTS companion_background_job (
 );
 CREATE INDEX IF NOT EXISTS idx_companion_background_job_status
     ON companion_background_job(status, created_at);
+CREATE INDEX IF NOT EXISTS idx_companion_job_status_created
+    ON companion_background_job(status, created_at);
 "#;
 
 /// Seed all built-in local credentials if they don't already exist.

@@ -76,6 +76,30 @@ pub fn recover_orphans(pool: &UserDbPool) -> Result<usize, AppError> {
     Ok(n)
 }
 
+/// Delete terminal background-job rows older than the retention window.
+/// The worker polls frequently, so keeping this table bounded prevents
+/// completed history from slowing every queued-job lookup over time.
+pub fn prune_terminal_jobs(pool: &UserDbPool) -> Result<usize, AppError> {
+    const RETENTION_DAYS: i64 = 30;
+
+    let cutoff = (chrono::Utc::now() - chrono::Duration::days(RETENTION_DAYS)).to_rfc3339();
+    let conn = pool.get()?;
+    let n = conn.execute(
+        "DELETE FROM companion_background_job
+         WHERE status IN ('completed', 'failed')
+           AND created_at < ?1",
+        params![cutoff],
+    )?;
+    if n > 0 {
+        tracing::info!(
+            pruned = n,
+            retention_days = RETENTION_DAYS,
+            "background-job worker: pruned terminal job history"
+        );
+    }
+    Ok(n)
+}
+
 pub fn enqueue(
     pool: &UserDbPool,
     kind: &str,

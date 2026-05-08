@@ -126,6 +126,9 @@ pub fn companion_init(state: State<'_, Arc<AppState>>, app: AppHandle) -> Result
     if let Err(e) = crate::companion::jobs::recover_orphans(&state.user_db) {
         tracing::warn!(error = %e, "companion: job orphan recovery failed");
     }
+    if let Err(e) = crate::companion::jobs::prune_terminal_jobs(&state.user_db) {
+        tracing::warn!(error = %e, "companion: job history prune failed");
+    }
 
     // Spawn doctrine ingest in the background. `companion_init` is a sync
     // command, so we use Tauri's async runtime helper rather than
