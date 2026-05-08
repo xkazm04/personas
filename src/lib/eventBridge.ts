@@ -117,12 +117,33 @@ interface EventRegistration {
   priority?: "critical" | "normal";
 }
 
+interface EventBridgeRuntime {
+  attached: boolean;
+  retryGeneration: { aborted: boolean };
+  unlisteners: UnlistenFn[];
+}
+
+declare global {
+  // Persist listener handles across Vite HMR module re-evaluation. The module
+  // local `attached` flag resets under HMR, but Tauri listeners remain active
+  // until their unlisten functions are called.
+  // eslint-disable-next-line no-var
+  var __personasEventBridge: EventBridgeRuntime | undefined;
+}
+
 // ---------------------------------------------------------------------------
 // State
 // ---------------------------------------------------------------------------
 
+const eventBridgeRuntime: EventBridgeRuntime =
+  globalThis.__personasEventBridge ??= {
+    attached: false,
+    retryGeneration: { aborted: false },
+    unlisteners: [],
+  };
+
 let attached = false;
-const unlisteners: UnlistenFn[] = [];
+const unlisteners = eventBridgeRuntime.unlisteners;
 
 /**
  * Generation token for in-flight retry loops. `teardownAllListeners()` flips
@@ -130,7 +151,7 @@ const unlisteners: UnlistenFn[] = [];
  * instead of pushing late unlisteners into a freshly cleared array (which
  * would survive teardown and leak across test isolations / HMR cycles).
  */
-let retryGeneration: { aborted: boolean } = { aborted: false };
+let retryGeneration = eventBridgeRuntime.retryGeneration;
 
 type AttachOutcome =
   | { ok: true; reg: EventRegistration; unlisteners: UnlistenFn[] }
@@ -676,8 +697,13 @@ function tracing(...args: unknown[]) {
  */
 export async function initAllListeners(): Promise<void> {
   if (attached) return;
+  if (eventBridgeRuntime.attached || unlisteners.length > 0) {
+    await teardownAllListeners();
+  }
   attached = true;
+  eventBridgeRuntime.attached = true;
   retryGeneration = { aborted: false };
+  eventBridgeRuntime.retryGeneration = retryGeneration;
   const generation = retryGeneration;
 
   performance.mark("event-bridge:init:start");
@@ -688,6 +714,12 @@ export async function initAllListeners(): Promise<void> {
     const outcomes = await Promise.all(batch.map(tryAttach));
     for (const outcome of outcomes) {
       if (outcome.ok) {
+        if (generation.aborted) {
+          for (const fn of outcome.unlisteners) {
+            try { fn(); } catch { /* best-effort cleanup */ }
+          }
+          continue;
+        }
         unlisteners.push(...outcome.unlisteners);
       } else {
         logger.error("Failed to attach listener", {
@@ -839,6 +871,7 @@ export async function teardownAllListeners(): Promise<void> {
   // sleeping retry could push fresh unlisteners into the array we're about
   // to drop, leaking them past the teardown boundary.
   retryGeneration.aborted = true;
+  eventBridgeRuntime.retryGeneration.aborted = true;
   for (const unlisten of unlisteners) {
     try {
       unlisten();
@@ -848,6 +881,7 @@ export async function teardownAllListeners(): Promise<void> {
   }
   unlisteners.length = 0;
   attached = false;
+  eventBridgeRuntime.attached = false;
 }
 
 /**
