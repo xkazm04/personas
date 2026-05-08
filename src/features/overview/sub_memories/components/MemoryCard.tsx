@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useCallback, useState, useEffect, useRef } from 'react';
 import { Trash2, Layers } from 'lucide-react';
 import type { PersonaMemory } from '@/lib/types/types';
 import { formatRelativeTime } from '@/lib/utils/formatters';
@@ -80,11 +80,49 @@ export function MemoryRow({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const clearConfirmTimer = useCallback(() => {
+    if (confirmTimerRef.current) {
+      clearTimeout(confirmTimerRef.current);
+      confirmTimerRef.current = null;
+    }
+  }, []);
+
   useEffect(() => {
-    if (!confirmDelete) return;
-    confirmTimerRef.current = setTimeout(() => setConfirmDelete(false), 3000);
-    return () => { if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current); };
-  }, [confirmDelete]);
+    clearConfirmTimer();
+    if (!confirmDelete) return undefined;
+    const timer = setTimeout(() => setConfirmDelete(false), 3000);
+    confirmTimerRef.current = timer;
+    return () => {
+      clearTimeout(timer);
+      if (confirmTimerRef.current === timer) {
+        confirmTimerRef.current = null;
+      }
+    };
+  }, [clearConfirmTimer, confirmDelete, memory.id]);
+
+  useEffect(() => {
+    clearConfirmTimer();
+    setConfirmDelete(false);
+    return () => {
+      clearConfirmTimer();
+    };
+  }, [clearConfirmTimer, memory.id]);
+
+  const armDelete = useCallback(() => {
+    clearConfirmTimer();
+    setConfirmDelete(true);
+  }, [clearConfirmTimer]);
+
+  const cancelDelete = useCallback(() => {
+    clearConfirmTimer();
+    setConfirmDelete(false);
+  }, [clearConfirmTimer]);
+
+  const confirmAndDelete = useCallback(() => {
+    clearConfirmTimer();
+    setConfirmDelete(false);
+    onDelete();
+  }, [clearConfirmTimer, onDelete]);
 
   const categoryBadge = (
     <CategoryChip category={memory.category} className="flex-shrink-0" />
@@ -96,11 +134,11 @@ export function MemoryRow({
     <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
       {confirmDelete ? (
         <div key="confirm" className="animate-fade-slide-in flex items-center gap-1">
-          <button onClick={onDelete} className="px-2 py-1 typo-heading rounded-card bg-red-500/15 border border-red-500/25 text-red-400 hover:bg-red-500/25 transition-colors">{t.overview.memory_card.confirm}</button>
-          <button onClick={() => setConfirmDelete(false)} className="px-2 py-1 typo-heading rounded-card bg-secondary/50 text-foreground hover:text-foreground/95 hover:bg-secondary/70 transition-colors">{t.overview.memory_card.cancel}</button>
+          <button onClick={confirmAndDelete} className="px-2 py-1 typo-heading rounded-card bg-red-500/15 border border-red-500/25 text-red-400 hover:bg-red-500/25 transition-colors">{t.overview.memory_card.confirm}</button>
+          <button onClick={cancelDelete} className="px-2 py-1 typo-heading rounded-card bg-secondary/50 text-foreground hover:text-foreground/95 hover:bg-secondary/70 transition-colors">{t.overview.memory_card.cancel}</button>
         </div>
       ) : (
-        <button key="trash" onClick={() => setConfirmDelete(true)} className="animate-fade-slide-in p-1 rounded hover:bg-red-500/10 text-foreground hover:text-red-400 transition-colors">
+        <button key="trash" onClick={armDelete} className="animate-fade-slide-in p-1 rounded hover:bg-red-500/10 text-foreground hover:text-red-400 transition-colors">
           <Trash2 className="w-3.5 h-3.5" />
         </button>
       )}
