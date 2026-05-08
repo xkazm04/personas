@@ -61,6 +61,7 @@ export function useBulkHealthcheck() {
     const results: BulkResult[] = [];
     let doneCount = 0;
     let failedCount = 0;
+    const isCancelled = () => cancelRef.current || !mountedRef.current;
 
     // Batch store updates: collect patched credentials and flush periodically
     const pendingUpdates = new Map<string, CredentialMetadata>();
@@ -68,6 +69,11 @@ export function useBulkHealthcheck() {
 
     const flushStoreUpdates = () => {
       if (pendingUpdates.size === 0) return;
+      if (isCancelled()) {
+        pendingUpdates.clear();
+        updatesSinceFlush = 0;
+        return;
+      }
       const patches = new Map(pendingUpdates);
       pendingUpdates.clear();
       updatesSinceFlush = 0;
@@ -126,6 +132,7 @@ export function useBulkHealthcheck() {
 
           try {
             const hcResult = await credApi.healthcheckCredential(cred.id);
+            if (isCancelled()) return;
             success = hcResult.success;
             message = hcResult.message;
 
@@ -144,19 +151,25 @@ export function useBulkHealthcheck() {
 
             try {
               const updatedRaw = await credApi.patchCredentialMetadata(cred.id, patch);
+              if (isCancelled()) return;
               const updated = toCredentialMetadata(updatedRaw);
               pendingUpdates.set(cred.id, updated);
               updatesSinceFlush++;
               if (updatesSinceFlush >= STORE_FLUSH_INTERVAL) {
                 flushStoreUpdates();
               }
-            } catch { /* intentional: non-critical -- healthcheck metadata persistence is best-effort */ }
+            } catch {
+              if (isCancelled()) return;
+              /* intentional: non-critical -- healthcheck metadata persistence is best-effort */
+            }
           } catch (e) {
+            if (isCancelled()) return;
             success = false;
             message = e instanceof Error ? e.message : 'Healthcheck failed';
           }
         }
 
+        if (isCancelled()) return;
         const durationMs = performance.now() - start;
         results.push({
           credentialId: cred.id,
@@ -176,6 +189,14 @@ export function useBulkHealthcheck() {
     // Launch CONCURRENCY workers
     const workers = Array.from({ length: Math.min(CONCURRENCY, credentials.length) }, () => worker());
     await Promise.all(workers);
+
+    if (isCancelled()) {
+      pendingUpdates.clear();
+      if (mountedRef.current) {
+        setIsRunning(false);
+      }
+      return;
+    }
 
     // Flush any remaining batched store updates
     flushStoreUpdates();
