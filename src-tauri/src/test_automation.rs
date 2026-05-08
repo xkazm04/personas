@@ -1158,10 +1158,9 @@ async fn handle_test_reset(
     Ok(Json(serde_json::json!({
         "status": "ok",
         "pending_cleared": pending_cleared,
-        "bridge_reset": bridge_reset.unwrap_or_else(|e| serde_json::json!({
-            "success": false,
-            "error": e,
-        })),
+        "bridge_reset": bridge_reset.unwrap_or_else(|(status, error)| {
+            format!("reset failed ({}): {}", status.as_u16(), error)
+        }),
     })))
 }
 

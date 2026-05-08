@@ -1,4 +1,5 @@
 use chrono::{Datelike, TimeZone};
+use rusqlite::Connection;
 use serde::Serialize;
 use std::sync::Arc;
 use tauri::State;
@@ -32,6 +33,15 @@ pub struct MonthlySpendResult {
     /// ISO-8601 UTC timestamp of the period start used in the query.
     pub period_start_utc: String,
     pub items: Vec<PersonaMonthlySpend>,
+}
+
+#[derive(Debug, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct OverviewBundle {
+    pub metrics_summary: MetricsSummary,
+    pub metrics_chart_data: MetricsChartData,
+    pub monthly_spend: MonthlySpendResult,
 }
 
 #[tauri::command]
@@ -72,42 +82,61 @@ pub fn get_all_monthly_spend(
 ) -> Result<MonthlySpendResult, AppError> {
     require_auth_sync(&state)?;
     let start = std::time::Instant::now();
-
-    // Compute the start-of-month boundary in the user's local timezone,
-    // expressed as a UTC datetime string for the SQL query.
-    let offset_mins = utc_offset_minutes
-        .map(|m| m.clamp(-840, 840)) // max ±14 hours
-        .unwrap_or(0);
-
-    let now_utc = chrono::Utc::now();
-    let local_offset = chrono::FixedOffset::east_opt(offset_mins * 60)
-        .unwrap_or_else(|| chrono::FixedOffset::east_opt(0).unwrap());
-    let local_now = now_utc.with_timezone(&local_offset);
-    let local_month_start = local_now
-        .date_naive()
-        .with_day(1)
-        .unwrap_or(local_now.date_naive());
-    let local_month_start_dt = local_month_start.and_hms_opt(0, 0, 0).unwrap();
-    // Convert local start-of-month back to UTC.
-    // Use earliest() instead of single() so that DST-ambiguous times resolve
-    // to the earlier UTC instant (guaranteeing period_start <= now).
-    // The fallback manually subtracts the offset rather than misinterpreting
-    // the local naive datetime as UTC.
-    let period_start_utc: chrono::DateTime<chrono::Utc> = local_offset
-        .from_local_datetime(&local_month_start_dt)
-        .earliest()
-        .map(|dt| dt.with_timezone(&chrono::Utc))
-        .unwrap_or_else(|| {
-            // Gap (e.g. spring-forward): subtract the offset manually so the
-            // result is always at-or-before now, never in the future.
-            let offset_secs = chrono::Duration::seconds(offset_mins as i64 * 60);
-            let naive_utc = local_month_start_dt - offset_secs;
-            chrono::DateTime::from_naive_utc_and_offset(naive_utc, chrono::Utc)
-        });
-
-    let period_start_str = period_start_utc.format("%Y-%m-%dT%H:%M:%S").to_string();
-
     let conn = state.db.get()?;
+    let result = get_all_monthly_spend_with_conn(&conn, utc_offset_minutes)?;
+    info!(
+        duration_ms = start.elapsed().as_millis() as u64,
+        rows = result.items.len(),
+        "cmd::get_all_monthly_spend"
+    );
+    Ok(result)
+}
+
+#[tauri::command]
+#[instrument(skip(state), fields(days, persona_id, utc_offset_minutes))]
+pub fn get_overview_bundle(
+    state: State<'_, Arc<AppState>>,
+    days: Option<i64>,
+    persona_id: Option<String>,
+    utc_offset_minutes: Option<i32>,
+) -> Result<OverviewBundle, AppError> {
+    require_auth_sync(&state)?;
+    let start = std::time::Instant::now();
+    let days = days.unwrap_or(30).clamp(1, 365);
+    let conn = state.db.get()?;
+    conn.execute_batch("BEGIN DEFERRED")?;
+    let result = (|| -> Result<OverviewBundle, AppError> {
+        Ok(OverviewBundle {
+            metrics_summary: repo::get_summary_with_conn(&conn, days, persona_id.as_deref())?,
+            metrics_chart_data: repo::get_chart_data_with_conn(&conn, days, persona_id.as_deref())?,
+            monthly_spend: get_all_monthly_spend_with_conn(&conn, utc_offset_minutes)?,
+        })
+    })();
+
+    match result {
+        Ok(bundle) => {
+            conn.execute_batch("COMMIT")?;
+            info!(
+                duration_ms = start.elapsed().as_millis() as u64,
+                days,
+                persona_id = persona_id.as_deref().unwrap_or(""),
+                monthly_rows = bundle.monthly_spend.items.len(),
+                "cmd::get_overview_bundle"
+            );
+            Ok(bundle)
+        }
+        Err(err) => {
+            let _ = conn.execute_batch("ROLLBACK");
+            Err(err)
+        }
+    }
+}
+
+fn get_all_monthly_spend_with_conn(
+    conn: &Connection,
+    utc_offset_minutes: Option<i32>,
+) -> Result<MonthlySpendResult, AppError> {
+    let period_start_str = monthly_period_start_utc(utc_offset_minutes);
     let mut stmt = conn.prepare(
         "SELECT p.id, COALESCE(e.spend, 0.0), p.max_budget_usd, p.name
          FROM personas p
@@ -129,15 +158,39 @@ pub fn get_all_monthly_spend(
         })
     })?;
     let items: Vec<PersonaMonthlySpend> = rows.collect::<Result<Vec<_>, _>>()?;
-    info!(
-        duration_ms = start.elapsed().as_millis() as u64,
-        rows = items.len(),
-        "cmd::get_all_monthly_spend"
-    );
     Ok(MonthlySpendResult {
         period_start_utc: period_start_str,
         items,
     })
+}
+
+fn monthly_period_start_utc(utc_offset_minutes: Option<i32>) -> String {
+    // Compute the start-of-month boundary in the user's local timezone,
+    // expressed as a UTC datetime string for the SQL query.
+    let offset_mins = utc_offset_minutes
+        .map(|m| m.clamp(-840, 840)) // max +/-14 hours
+        .unwrap_or(0);
+
+    let now_utc = chrono::Utc::now();
+    let local_offset = chrono::FixedOffset::east_opt(offset_mins * 60)
+        .unwrap_or_else(|| chrono::FixedOffset::east_opt(0).unwrap());
+    let local_now = now_utc.with_timezone(&local_offset);
+    let local_month_start = local_now
+        .date_naive()
+        .with_day(1)
+        .unwrap_or(local_now.date_naive());
+    let local_month_start_dt = local_month_start.and_hms_opt(0, 0, 0).unwrap();
+    let period_start_utc: chrono::DateTime<chrono::Utc> = local_offset
+        .from_local_datetime(&local_month_start_dt)
+        .earliest()
+        .map(|dt| dt.with_timezone(&chrono::Utc))
+        .unwrap_or_else(|| {
+            let offset_secs = chrono::Duration::seconds(offset_mins as i64 * 60);
+            let naive_utc = local_month_start_dt - offset_secs;
+            chrono::DateTime::from_naive_utc_and_offset(naive_utc, chrono::Utc)
+        });
+
+    period_start_utc.format("%Y-%m-%dT%H:%M:%S").to_string()
 }
 
 /// Returns aggregated prompt performance data for a single persona,

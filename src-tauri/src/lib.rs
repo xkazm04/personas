@@ -1626,6 +1626,7 @@ pub fn run() {
             commands::communication::observability::metrics::get_metrics_summary,
             commands::communication::observability::metrics::get_metrics_chart_data,
             commands::communication::observability::metrics::get_all_monthly_spend,
+            commands::communication::observability::metrics::get_overview_bundle,
             commands::communication::observability::metrics::get_prompt_performance,
             commands::communication::observability::metrics::get_execution_dashboard,
             commands::communication::observability::metrics::get_execution_heatmap,

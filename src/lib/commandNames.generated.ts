@@ -527,6 +527,7 @@ export type CommandName =
   | "get_oauth_token_lifetime_summary"
   | "get_oauth_token_metrics"
   | "get_ocr_document"
+  | "get_overview_bundle"
   | "get_output_assertion"
   | "get_peer_manifest"
   | "get_pending_desktop_capabilities"

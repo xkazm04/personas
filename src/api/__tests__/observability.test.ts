@@ -3,6 +3,7 @@ import { mockInvoke, mockInvokeError, resetInvokeMocks } from "@/test/tauriMock"
 import {
   getMetricsSummary,
   getMetricsChartData,
+  getOverviewBundle,
   getPromptVersions,
   getAllMonthlySpend,
   getPromptPerformance,
@@ -45,6 +46,16 @@ describe("api/overview/observability", () => {
     const result = await getAllMonthlySpend();
     expect(result.items).toEqual([]);
     expect(result.periodStartUtc).toBe("2026-03-01T00:00:00");
+  });
+
+  it("getOverviewBundle returns bundled dashboard data", async () => {
+    const bundle = {
+      metricsSummary: { totalExecutions: 0 },
+      metricsChartData: { chart_points: [], persona_breakdown: [], anomalies: [] },
+      monthlySpend: { periodStartUtc: "2026-03-01T00:00:00", items: [] },
+    };
+    mockInvoke("get_overview_bundle", bundle);
+    await expect(getOverviewBundle(30)).resolves.toEqual(bundle);
   });
 
   it("getPromptPerformance returns performance data", async () => {

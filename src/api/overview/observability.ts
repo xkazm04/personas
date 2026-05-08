@@ -13,6 +13,7 @@ import type { PromptPerformanceData } from "@/lib/bindings/PromptPerformanceData
 import type { ExecutionDashboardData } from "@/lib/bindings/ExecutionDashboardData";
 import type { ExecutionHeatmapData } from "@/lib/bindings/ExecutionHeatmapData";
 import type { AnomalyDrilldownData } from "@/lib/bindings/AnomalyDrilldownData";
+import type { OverviewBundle } from "@/lib/bindings/OverviewBundle";
 
 // ============================================================================
 // Observability
@@ -43,6 +44,30 @@ export const getAllMonthlySpend = () =>
   invoke<import('@/lib/bindings/MonthlySpendResult').MonthlySpendResult>("get_all_monthly_spend", {
     utcOffsetMinutes: -new Date().getTimezoneOffset(),
   });
+
+const overviewBundleCache = new Map<string, { expiresAt: number; promise: Promise<OverviewBundle> }>();
+const OVERVIEW_BUNDLE_CACHE_MS = 1000;
+
+export const getOverviewBundle = (days?: number, personaId?: string) => {
+  const utcOffsetMinutes = -new Date().getTimezoneOffset();
+  const key = `${days ?? 30}|${personaId ?? ""}|${utcOffsetMinutes}`;
+  const now = Date.now();
+  const cached = overviewBundleCache.get(key);
+  if (cached && cached.expiresAt > now) {
+    return cached.promise;
+  }
+
+  const promise = invoke<OverviewBundle>("get_overview_bundle", {
+    days,
+    personaId,
+    utcOffsetMinutes,
+  }).catch((error) => {
+    overviewBundleCache.delete(key);
+    throw error;
+  });
+  overviewBundleCache.set(key, { expiresAt: now + OVERVIEW_BUNDLE_CACHE_MS, promise });
+  return promise;
+};
 
 // ============================================================================
 // Prompt Performance Dashboard

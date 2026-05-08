@@ -7,7 +7,7 @@ import type { DashboardDailyPoint } from "@/lib/bindings/DashboardDailyPoint";
 import type { PersonaCostEntry } from "@/lib/bindings/PersonaCostEntry";
 import type { ByomPolicy, ProviderUsageStats } from "@/api/system/byom";
 import { getByomPolicy, getProviderUsageStats } from "@/api/system/byom";
-import { getAllMonthlySpend } from "@/api/overview/observability";
+import { getOverviewBundle } from "@/api/overview/observability";
 import { listHealingIssues } from "@/api/overview/healing";
 import { log } from "@/lib/log";
 import { measureStoreAction } from "@/lib/utils/storePerf";
@@ -260,7 +260,7 @@ export const createPersonaHealthSlice: StateCreator<OverviewStore, [], [], Perso
         // Fetch supplementary data using allSettled to avoid mutating shared
         // state inside concurrent catch handlers (race when called twice rapidly)
         const settled = await Promise.allSettled([
-          getAllMonthlySpend(),
+          getOverviewBundle(30).then((bundle) => bundle.monthlySpend),
           listHealingIssues(),
           getByomPolicy(),
           getProviderUsageStats(),

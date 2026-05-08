@@ -13,7 +13,7 @@ import type { ExecutionDashboardData } from "@/lib/bindings/ExecutionDashboardDa
 import type { MetricsChartPoint } from "@/lib/bindings/MetricsChartPoint";
 import { listAllExecutions, countExecutions } from "@/api/agents/executions";
 import type { ExecutionCounts } from "@/lib/bindings/ExecutionCounts";
-import { getExecutionDashboard, getMetricsChartData, getMetricsSummary } from "@/api/overview/observability";
+import { getExecutionDashboard, getOverviewBundle } from "@/api/overview/observability";
 import { getPendingReviewCount, listManualReviews, updateManualReviewStatus } from "@/api/overview/reviews";
 
 import { cloudListPendingReviews, cloudRespondToReview } from "@/api/system/cloud";
@@ -324,22 +324,21 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
       const dashboard = get().executionDashboard;
       const canReuseDashboard = !personaId && dashboard && get().executionDashboardDays === days;
 
-      const [summary, chartData] = await withRetry(
-        () => Promise.all([
-          canReuseDashboard
-            ? Promise.resolve({
-                totalExecutions: dashboard.total_executions,
-                successfulExecutions: dashboard.successful_executions,
-                failedExecutions: dashboard.failed_executions,
-                totalCostUsd: dashboard.total_cost,
-                activePersonas: dashboard.active_personas,
-                periodDays: days,
-              })
-            : getMetricsSummary(days, personaId),
-          getMetricsChartData(days, personaId),
-        ]),
+      const bundle = await withRetry(
+        () => getOverviewBundle(days, personaId),
         "Failed to load observability metrics",
       );
+      const summary = canReuseDashboard
+        ? {
+            totalExecutions: dashboard.total_executions,
+            successfulExecutions: dashboard.successful_executions,
+            failedExecutions: dashboard.failed_executions,
+            totalCostUsd: dashboard.total_cost,
+            activePersonas: dashboard.active_personas,
+            periodDays: days,
+          }
+        : bundle.metricsSummary;
+      const chartData = bundle.metricsChartData;
       set({ observabilityMetrics: { summary, chartData }, observabilityError: null });
     } catch (err) {
       const classified = err instanceof ApiError ? err : classifyError(err, "Failed to load observability metrics");

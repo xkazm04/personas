@@ -1,4 +1,4 @@
-use rusqlite::{params, Row};
+use rusqlite::{params, Connection, Row};
 use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, Instant};
@@ -393,34 +393,7 @@ pub fn get_summary(
         let start = std::time::Instant::now();
         let days = days.unwrap_or(30).clamp(1, 365);
         let conn = pool.get()?;
-        let qb = persona_filter_qb(format!("-{days} days"), persona_id);
-        let pid_clause = if qb.has_conditions() {
-            format!(" AND {}", qb.where_clause().trim_start_matches("WHERE "))
-        } else {
-            String::new()
-        };
-
-        let sql = format!(
-            "SELECT
-            COUNT(*) as total_executions,
-            COALESCE(SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END), 0) as successful,
-            COALESCE(SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END), 0) as failed,
-            COALESCE(SUM(cost_usd), 0.0) as total_cost,
-            COUNT(DISTINCT persona_id) as active_personas
-         FROM persona_executions
-         WHERE created_at >= datetime('now', ?1){pid_clause}"
-        );
-
-        let result = conn.query_row(&sql, qb.params_ref().as_slice(), |row| {
-            Ok(crate::db::models::MetricsSummary {
-                total_executions: row.get(0)?,
-                successful_executions: row.get(1)?,
-                failed_executions: row.get(2)?,
-                total_cost_usd: row.get(3)?,
-                active_personas: row.get(4)?,
-                period_days: days,
-            })
-        })?;
+        let result = get_summary_with_conn(&conn, days, persona_id)?;
 
         info!(
             duration_ms = start.elapsed().as_millis() as u64,
@@ -431,6 +404,42 @@ pub fn get_summary(
 
         Ok(result)
     })
+}
+
+pub fn get_summary_with_conn(
+    conn: &Connection,
+    days: i64,
+    persona_id: Option<&str>,
+) -> Result<crate::db::models::MetricsSummary, AppError> {
+    let qb = persona_filter_qb(format!("-{days} days"), persona_id);
+    let pid_clause = if qb.has_conditions() {
+        format!(" AND {}", qb.where_clause().trim_start_matches("WHERE "))
+    } else {
+        String::new()
+    };
+
+    let sql = format!(
+        "SELECT
+            COUNT(*) as total_executions,
+            COALESCE(SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END), 0) as successful,
+            COALESCE(SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END), 0) as failed,
+            COALESCE(SUM(cost_usd), 0.0) as total_cost,
+            COUNT(DISTINCT persona_id) as active_personas
+         FROM persona_executions
+         WHERE created_at >= datetime('now', ?1){pid_clause}"
+    );
+
+    conn.query_row(&sql, qb.params_ref().as_slice(), |row| {
+        Ok(crate::db::models::MetricsSummary {
+            total_executions: row.get(0)?,
+            successful_executions: row.get(1)?,
+            failed_executions: row.get(2)?,
+            total_cost_usd: row.get(3)?,
+            active_personas: row.get(4)?,
+            period_days: days,
+        })
+    })
+    .map_err(AppError::from)
 }
 
 // ============================================================================
@@ -450,16 +459,34 @@ pub fn get_chart_data(
         let start = std::time::Instant::now();
         let days = days.unwrap_or(30).clamp(1, 365);
         let conn = pool.get()?;
-        let qb = persona_filter_qb(format!("-{days} days"), persona_id);
-        let pid_clause = if qb.has_conditions() {
-            format!(" AND {}", qb.where_clause().trim_start_matches("WHERE "))
-        } else {
-            String::new()
-        };
+        let result = get_chart_data_with_conn(&conn, days, persona_id)?;
 
-        // 1) Date-bucketed chart points (GROUP BY date only)
-        let chart_sql = format!(
-            "SELECT
+        info!(
+            duration_ms = start.elapsed().as_millis() as u64,
+            chart_points = result.chart_points.len(),
+            persona_breakdown = result.persona_breakdown.len(),
+            "get_chart_data completed"
+        );
+
+        Ok(result)
+    })
+}
+
+pub fn get_chart_data_with_conn(
+    conn: &Connection,
+    days: i64,
+    persona_id: Option<&str>,
+) -> Result<MetricsChartData, AppError> {
+    let qb = persona_filter_qb(format!("-{days} days"), persona_id);
+    let pid_clause = if qb.has_conditions() {
+        format!(" AND {}", qb.where_clause().trim_start_matches("WHERE "))
+    } else {
+        String::new()
+    };
+
+    // 1) Date-bucketed chart points (GROUP BY date only)
+    let chart_sql = format!(
+        "SELECT
             DATE(created_at) as date,
             COALESCE(SUM(cost_usd), 0.0) as cost,
             COUNT(*) as executions,
@@ -471,36 +498,36 @@ pub fn get_chart_data(
          WHERE created_at >= datetime('now', ?1){pid_clause}
          GROUP BY DATE(created_at)
          ORDER BY date ASC"
-        );
+    );
 
-        let params_ref = qb.params_ref();
+    let params_ref = qb.params_ref();
 
-        let chart_points: Vec<MetricsChartPoint> = {
-            let mut stmt = conn.prepare(&chart_sql)?;
-            let rows = stmt.query_map(params_ref.as_slice(), |row| {
-                Ok(MetricsChartPoint {
-                    date: row.get("date")?,
-                    cost: row.get("cost")?,
-                    executions: row.get("executions")?,
-                    success: row.get("success")?,
-                    failed: row.get("failed")?,
-                    tokens: row.get("tokens")?,
-                    active_personas: row.get("active_personas")?,
-                })
-            })?;
-            rows.filter_map(|r| match r {
-                Ok(v) => Some(v),
-                Err(e) => {
-                    warn!("get_chart_data: chart_points row deserialization failed: {e}");
-                    None
-                }
+    let chart_points: Vec<MetricsChartPoint> = {
+        let mut stmt = conn.prepare(&chart_sql)?;
+        let rows = stmt.query_map(params_ref.as_slice(), |row| {
+            Ok(MetricsChartPoint {
+                date: row.get("date")?,
+                cost: row.get("cost")?,
+                executions: row.get("executions")?,
+                success: row.get("success")?,
+                failed: row.get("failed")?,
+                tokens: row.get("tokens")?,
+                active_personas: row.get("active_personas")?,
             })
-            .collect()
-        };
+        })?;
+        rows.filter_map(|r| match r {
+            Ok(v) => Some(v),
+            Err(e) => {
+                warn!("get_chart_data: chart_points row deserialization failed: {e}");
+                None
+            }
+        })
+        .collect()
+    };
 
-        // 2) Per-persona breakdown (for pie chart)
-        let breakdown_sql = format!(
-            "SELECT
+    // 2) Per-persona breakdown (for pie chart)
+    let breakdown_sql = format!(
+        "SELECT
             persona_id,
             COUNT(*) as executions,
             COALESCE(SUM(cost_usd), 0.0) as cost
@@ -508,44 +535,36 @@ pub fn get_chart_data(
          WHERE created_at >= datetime('now', ?1){pid_clause}
          GROUP BY persona_id
          HAVING executions > 0"
-        );
+    );
 
-        let persona_breakdown = {
-            let mut stmt = conn.prepare(&breakdown_sql)?;
-            let rows = stmt.query_map(params_ref.as_slice(), |row| {
-                Ok(MetricsPersonaBreakdown {
-                    persona_id: row.get("persona_id")?,
-                    executions: row.get("executions")?,
-                    cost: row.get("cost")?,
-                })
-            })?;
-            rows.filter_map(|r| match r {
-                Ok(v) => Some(v),
-                Err(e) => {
-                    warn!("get_chart_data: persona_breakdown row deserialization failed: {e}");
-                    None
-                }
+    let persona_breakdown = {
+        let mut stmt = conn.prepare(&breakdown_sql)?;
+        let rows = stmt.query_map(params_ref.as_slice(), |row| {
+            Ok(MetricsPersonaBreakdown {
+                persona_id: row.get("persona_id")?,
+                executions: row.get("executions")?,
+                cost: row.get("cost")?,
             })
-            .collect()
-        };
+        })?;
+        rows.filter_map(|r| match r {
+            Ok(v) => Some(v),
+            Err(e) => {
+                warn!("get_chart_data: persona_breakdown row deserialization failed: {e}");
+                None
+            }
+        })
+        .collect()
+    };
 
-        let anomalies = detect_chart_anomalies(&chart_points);
+    let anomalies = detect_chart_anomalies(&chart_points);
 
-        let result = MetricsChartData {
-            chart_points,
-            persona_breakdown,
-            anomalies,
-        };
+    let result = MetricsChartData {
+        chart_points,
+        persona_breakdown,
+        anomalies,
+    };
 
-        info!(
-            duration_ms = start.elapsed().as_millis() as u64,
-            chart_points = result.chart_points.len(),
-            persona_breakdown = result.persona_breakdown.len(),
-            "get_chart_data completed"
-        );
-
-        Ok(result)
-    })
+    Ok(result)
 }
 
 // ============================================================================
