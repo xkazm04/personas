@@ -15,6 +15,7 @@ const noHardcodedJsxText = require("./eslint-rules/no-hardcoded-jsx-text.cjs");
 const noUnmanagedEffectResources = require("./eslint-rules/no-unmanaged-effect-resources.cjs");
 const noSilentCatch = require("./eslint-rules/no-silent-catch.cjs");
 const noDirectWhiteColors = require("./eslint-rules/no-direct-white-colors.cjs");
+const roleButtonRequiresKeydown = require("./eslint-rules/role-button-requires-keydown.cjs");
 
 export default tseslint.config(
   { ignores: ["dist", "src-tauri"] },
@@ -40,6 +41,7 @@ export default tseslint.config(
           "no-unmanaged-effect-resources": noUnmanagedEffectResources,
           "no-silent-catch": noSilentCatch,
           "no-direct-white-colors": noDirectWhiteColors,
+          "role-button-requires-keydown": roleButtonRequiresKeydown,
         },
       },
     },
@@ -83,6 +85,7 @@ export default tseslint.config(
       "custom/no-unmanaged-effect-resources": "warn",
       "custom/no-silent-catch": "warn",
       "custom/no-direct-white-colors": "warn",
+      "custom/role-button-requires-keydown": "error",
     },
   },
   // Shared design-system primitives may import Tauri IPC for nothing —

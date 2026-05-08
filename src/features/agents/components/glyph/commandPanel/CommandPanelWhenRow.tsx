@@ -22,6 +22,25 @@ export function CommandPanelWhenRow({
   setFrequency, setSelectedEvents,
   onOpenSchedule, onOpenEvents,
 }: CommandPanelWhenRowProps) {
+  const handleClearSchedule = () => setFrequency(null);
+  const handleClearScheduleKeyDown = (e: React.KeyboardEvent<HTMLSpanElement>) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      e.stopPropagation();
+      handleClearSchedule();
+    }
+  };
+  const removeSelectedEvent = (sub: EventSubscription) => {
+    setSelectedEvents((prev) => prev.filter((e2) => !(e2.personaId === sub.personaId && e2.triggerId === sub.triggerId)));
+  };
+  const handleRemoveEventKeyDown = (e: React.KeyboardEvent<HTMLSpanElement>, sub: EventSubscription) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      e.stopPropagation();
+      removeSelectedEvent(sub);
+    }
+  };
+
   return (
     <CommandPanelRow icon={rowDef.icon} label={rowDef.label} alignTop>
       <div className="flex flex-col gap-2">
@@ -36,7 +55,8 @@ export function CommandPanelWhenRow({
                 <Clock className="w-3 h-3" />
                 {scheduleLabel}
                 <span
-                  onClick={(e) => { e.stopPropagation(); setFrequency(null); }}
+                  onClick={(e) => { e.stopPropagation(); handleClearSchedule(); }}
+                  onKeyDown={handleClearScheduleKeyDown}
                   role="button"
                   tabIndex={0}
                   aria-label="Clear schedule"
@@ -58,8 +78,9 @@ export function CommandPanelWhenRow({
                 <span
                   onClick={(e) => {
                     e.stopPropagation();
-                    setSelectedEvents((prev) => prev.filter((e2) => !(e2.personaId === sub.personaId && e2.triggerId === sub.triggerId)));
+                    removeSelectedEvent(sub);
                   }}
+                  onKeyDown={(e) => handleRemoveEventKeyDown(e, sub)}
                   role="button"
                   tabIndex={0}
                   aria-label="Remove subscription"
