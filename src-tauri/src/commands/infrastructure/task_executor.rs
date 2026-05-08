@@ -725,12 +725,28 @@ async fn run_task_execution(
         });
     }
 
-    // Drain stderr
+    // Capture stderr into a bounded ring buffer so diagnostics from the CLI
+    // (e.g. the improved `--worktree` collision message in 2.1.136) survive
+    // long enough to be surfaced if the process exits non-zero. Capped at
+    // 200 lines to bound memory on verbose error output.
+    let stderr_buf: Arc<std::sync::Mutex<std::collections::VecDeque<String>>> =
+        Arc::new(std::sync::Mutex::new(std::collections::VecDeque::with_capacity(200)));
     if let Some(stderr) = child.stderr.take() {
+        let stderr_buf = Arc::clone(&stderr_buf);
         tokio::spawn(async move {
-            let mut reader = BufReader::new(stderr);
-            let mut buf = String::new();
-            let _ = tokio::io::AsyncReadExt::read_to_string(&mut reader, &mut buf).await;
+            let mut reader = BufReader::new(stderr).lines();
+            while let Ok(Some(line)) = reader.next_line().await {
+                let trimmed = line.trim();
+                if trimmed.is_empty() {
+                    continue;
+                }
+                if let Ok(mut buf) = stderr_buf.lock() {
+                    if buf.len() >= 200 {
+                        buf.pop_front();
+                    }
+                    buf.push_back(trimmed.to_string());
+                }
+            }
         });
     }
 
@@ -843,12 +859,33 @@ async fn run_task_execution(
     })
     .await;
 
-    let _ = child.wait().await;
+    let exit_status = child.wait().await.ok();
+    let exit_code = exit_status.and_then(|s| s.code());
 
     if stream_result.is_err() {
         return Err(AppError::Internal(
             "Task execution timed out after 10 minutes".into(),
         ));
+    }
+
+    // Surface up to the last 10 stderr lines when the CLI exits non-zero.
+    // Without this, a `--worktree` collision (or any other CLI-side error)
+    // surfaces only as `[Complete] Task finished with 0 output lines`.
+    if exit_code.map(|c| c != 0).unwrap_or(false) {
+        if let Ok(buf) = stderr_buf.lock() {
+            let tail: Vec<String> = buf.iter().rev().take(10).rev().cloned().collect();
+            if !tail.is_empty() {
+                TASK_EXEC_JOBS.emit_line(
+                    app,
+                    task_id,
+                    format!(
+                        "[Error] Claude CLI exited with code {}. Last stderr:\n{}",
+                        exit_code.unwrap_or(-1),
+                        tail.join("\n")
+                    ),
+                );
+            }
+        }
     }
 
     TASK_EXEC_JOBS.emit_line(

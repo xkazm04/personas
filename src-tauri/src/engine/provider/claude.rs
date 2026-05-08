@@ -54,8 +54,21 @@ impl CliProvider for ClaudeProvider {
     }
 
     fn minimum_version(&self) -> Option<&str> {
-        // CLI ≥ 2.1.128 — floor advances when a newer CLI fixes the wrapping
+        // CLI ≥ 2.1.136 — floor advances when a newer CLI fixes the wrapping
         // contract personas depends on. Recent floor:
+        // - 2.1.136: parallel-spawn login loop no longer occurs when a
+        //   concurrent credential write overwrites a freshly-rotated OAuth
+        //   token (real for competition / lab fan-out sharing
+        //   `~/.claude/credentials.json`); MCP OAuth refresh tokens no longer
+        //   lost when multiple remote MCP servers refresh concurrently (users
+        //   with several remote MCP gateways stop needing daily re-auth);
+        //   `--resume` / `--continue` now find sessions when the project path
+        //   contains underscores (real for users with `my_project`-style
+        //   paths); CLI emits a clean error message when `--worktree`
+        //   collides with an existing or stale worktree, which the
+        //   `task_executor` stderr-surfacing path now propagates to the user.
+        //   2.1.134 and 2.1.135 were skipped upstream — all changes batched
+        //   into 2.1.136.
         // - 2.1.128: `claude -p` no longer crashes on >10MB stdin (defense for
         //   the `cli_process` stdin-pipe contract); MCP tool results no longer
         //   drop images when the server returns both structured content and
@@ -72,7 +85,7 @@ impl CliProvider for ClaudeProvider {
         // against the 2.1.126 floor lives in `Patterns/descoped-reopenable.md`.
         // The check is advisory: `provider::check_cli_version` returns an Err
         // string below the floor; no caller turns that into a hard refusal.
-        Some("2.1.128")
+        Some("2.1.136")
     }
 }
 
