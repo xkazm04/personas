@@ -1,677 +1,469 @@
-# Template Adoption Test Scenarios
+# Persona Generation Test Scenarios
 
-Comprehensive test plan for validating all 30 persona templates through the
-PersonaMatrix adoption lifecycle. Each template is adopted, built, tested,
-promoted, executed, and scored against 10 criteria.
+End-to-end test plan covering the two persona-generation intake paths plus
+the shared build / promote / execute lifecycle. Renamed from
+"Template Adoption Test Scenarios" on 2026-05-09 — the previous doc
+covered adoption only and assumed legacy commands that were retired in
+the Stage A1 cleanup.
+
+## Coverage matrix
+
+| Intake path | Doc section | Existing harness |
+| --- | --- | --- |
+| Glyph from-scratch (free-form intent) | §4 | `tools/test-mcp/e2e_build_from_scratch.py` |
+| Template adoption (pre-authored blueprint + questionnaire) | §5 | `tools/test-mcp/e2e_30_adoption.py`, `e2e_template_adoption.py`, `e2e_adoption_userflow.py` |
+| Recipe-injected Glyph (planned, Stage D) | §6 | new harness (TBD) |
+| Recipe-as-use-case template adoption (planned, Stage B) | §6 | extend `e2e_30_adoption.py` |
+
+Both intake paths converge on the **shared lifecycle** in §3 — same
+build session machinery, same scoring criteria, same artifact
+verification. The doc is structured to match: intake-specific in
+§§4–6, everything downstream is shared.
 
 ---
 
-## 1. Scoring Criteria (10 points)
+## 1. Scoring criteria (10 points, flow-agnostic)
 
-Every template run is scored out of 10. Some criteria can be **auto-pointed**
-when the template's dimension definitions make a particular artifact
-structurally impossible.
+Every persona produced by either intake path is scored against these
+ten criteria. Auto-pointing applies when the *persona's* dimension
+declarations make a particular artifact structurally impossible —
+this is unchanged from the previous doc and applies regardless of how
+the persona was created.
 
 | # | Criterion | Verification | Auto-Point Rule |
-|---|-----------|-------------|-----------------|
-| 1 | Persona promoted via PersonaMatrix | `buildPhase == "promoted"` | -- |
-| 2 | No untested connectors | `buildTestPassed == true` | -- |
-| 3 | Matrix viewable after promotion | `matrix-tab-container` exists in DOM | -- |
-| 4 | Execution populated | `persona_executions` has a row with `status = "completed"` | -- |
-| 5 | Message populated with user output | `persona_messages` count >= 1 | -- |
-| 6 | Human review generated | `persona_manual_reviews` count >= 1 | Auto-point if `manual_review` is **not** in the template's dimensions |
-| 7 | Event created | `persona_events` count >= 1 | Auto-point if `emit_event` is **not** in the template's dimensions |
-| 8 | Memory generated (no negative) | `persona_memories` count >= 1 **and** content is not error-related | Auto-point if `agent_memory` is **not** in the template's dimensions |
-| 9 | Value evaluation | Message content is meaningful; output has substance | Heuristic check -- flag if output < 50 chars or is generic filler |
-| 10 | Haiku model maintains value | Re-execute with Haiku; output quality maintained | Heuristic check -- compare output length and keyword overlap with primary run |
+| --- | --- | --- | --- |
+| 1 | Persona promoted | `buildPhase == "promoted"` | — |
+| 2 | No untested connectors | `buildTestPassed == true` | — |
+| 3 | Matrix viewable after promotion | `matrix-tab-container` exists in DOM | — |
+| 4 | Execution populated | `persona_executions` row with `status == "completed"` | — |
+| 5 | Message populated | `persona_messages` count ≥ 1 | — |
+| 6 | Human review generated | `persona_manual_reviews` count ≥ 1 | Auto-point if `manual_review` not declared |
+| 7 | Event created | `persona_events` count ≥ 1 | Auto-point if `emit_event` not declared |
+| 8 | Memory generated (no negative) | `persona_memories` count ≥ 1 with non-error content | Auto-point if `agent_memory` not declared |
+| 9 | Value evaluation | Output is substantive; not generic filler | Heuristic — flag if output < 50 chars |
+| 10 | Haiku regression | Re-execute with Haiku, output quality maintained | Heuristic — keyword overlap with primary run |
 
-### Auto-Point Logic
+### Auto-point logic
 
-When a template does **not** declare a dimension (e.g., `manual_review`), the
-corresponding criterion receives an automatic point because the artifact was
-never expected.  All other criteria must be earned by the test run.
+A persona that doesn't declare `manual_review` (etc.) cannot reasonably
+produce that artifact, so the criterion auto-passes. All other criteria
+must be earned.
 
----
-
-## 2. Template Tiers (by connector dependency)
-
-Templates are grouped into tiers so that test runs can be scoped to the
-credentials available in the environment.
-
-### Tier 0 -- Dry Run (infrastructure validation)
-
-| Template | Connectors |
-|----------|-----------|
-| database-performance-monitor | Local Database only |
-
-Use this tier to validate the test harness itself before running real
-templates. No external credentials required.
-
-### Tier 1 -- Database-Only (always available)
-
-| Template | Connectors |
-|----------|-----------|
-| budget-spending-monitor | Local Database |
-| incident-logger | Local Database, In-App Messaging |
-| service-health-reporter | Local Database, In-App Messaging |
-| content-performance-reporter | Local Database, In-App Messaging |
-| research-paper-indexer | Local Database |
-
-### Tier 2 -- Notion-Only (requires Notion credential)
-
-| Template | Connectors |
-|----------|-----------|
-| notion-docs-auditor | Notion |
-| content-schedule-manager | Notion |
-| daily-standup-compiler | Notion |
-| research-knowledge-curator | Notion |
-| technical-decision-tracker | Notion |
-| weekly-review-reporter | Notion |
-
-### Tier 3 -- Gmail-Based (requires Gmail credential)
-
-| Template | Connectors | Notes |
-|----------|-----------|-------|
-| email-morning-digest | Gmail | Listed as "Email" connector |
-| email-support-assistant | Gmail, Local Database | Listed as "Email" connector |
-| email-follow-up-tracker | Gmail, Slack | -- |
-| email-lead-extractor | Gmail, Local Database | -- |
-| email-task-extractor | Gmail, Notion | -- |
-| survey-insights-analyzer | Gmail | -- |
-| expense-receipt-tracker | Gmail, Local Database | -- |
-| invoice-tracker | Gmail, Local Database | -- |
-
-### Tier 4 -- Multi-Connector
-
-| Template | Connectors |
-|----------|-----------|
-| idea-harvester | Gmail, Notion |
-| newsletter-curator | Notion, Gmail |
-| access-request-manager | Gmail, Local Database, In-App Messaging |
-| contact-enrichment-agent | Gmail, Local Database |
-| contact-sync-manager | Gmail, Local Database |
-| support-email-router | Gmail, Notion |
-| onboarding-tracker | Notion, Local Database, In-App Messaging |
-| sales-deal-analyzer | Local Database, Notion |
-| sales-proposal-generator | Local Database, Notion |
-
-### Tier 5 -- Skip (unavailable connectors)
-
-| Template | Connectors | Reason |
-|----------|-----------|--------|
-| sales-deal-tracker | Salesforce | Proprietary CRM -- no test credential available |
-
-Templates in Tier 5 are excluded from automated runs. They can be scored
-manually if the connector becomes available.
+For both intake paths, dimension declarations live in the same place:
+the final `persona_ir` row written by `promote_build_draft`. The
+auto-point evaluator runs after promotion, so the source of truth is
+identical regardless of intake.
 
 ---
 
-## 3. 22-Step Test Lifecycle
+## 2. Tier classification (connector dependency)
 
-Every template follows the same 22-step lifecycle. Parameters in braces
-(`{template_name}`, `{slug}`, `{persona_name}`, `{id}`) are substituted
-per-template.
+Tier assignment is also flow-agnostic — based on which connector
+credentials must be configured for the persona to execute. Tiers help
+scope automated runs to the credentials available in CI / dev.
 
-### Steps 1-7: Navigate and Adopt
+| Tier | Connector requirements | Templates | Glyph scenarios |
+| --- | --- | --- | --- |
+| **0** Dry Run | Local Database only, infrastructure check | `database-performance-monitor` | Local-only intent (e.g. "summarize my SQLite tables") |
+| **1** DB-only | Local Database, In-App Messaging | 5 templates | Local + messaging intents |
+| **2** Notion | Notion required | 6 templates | Intents naming Notion explicitly |
+| **3** Gmail | Gmail required | 8 templates | Intents naming email/Gmail explicitly |
+| **4** Multi-connector | Notion + Gmail + DB combinations | 9 templates | Multi-system intents |
+| **5** Skip | Connector unavailable (e.g. Salesforce) | `sales-deal-tracker` | (skip equivalent intents) |
 
-| Step | Action | Endpoint / Payload |
-|------|--------|-------------------|
-| 1 | Navigate to template gallery | `POST /navigate {"section":"design-reviews"}` |
-| 2 | Wait for template rows to render | `POST /wait {"selector":"[data-testid^='template-row-']","timeout_ms":10000}` |
-| 3 | Locate the target template by name | `POST /find-text {"text":"{template_name}"}` |
-| 4 | Click the template row | `POST /click-testid {"test_id":"template-row-{slug}"}` |
-| 5 | Open context menu -- view details | `POST /click-testid {"test_id":"menu-view-details"}` |
-| 6 | Wait for adopt button | `POST /wait {"selector":"[data-testid='button-adopt-template']","timeout_ms":10000}` |
-| 7 | Click adopt | `POST /click-testid {"test_id":"button-adopt-template"}` |
-
-### Steps 8-14: PersonaMatrix Build and Test
-
-| Step | Action | Details |
-|------|--------|---------|
-| 8 | Poll for draft ready | `GET /state` until `buildPhase == "draft_ready"` (timeout 60 s) |
-| 9 | Verify connector readiness | All connector dots green in the matrix UI |
-| 10 | Start agent test | `POST /click-testid {"test_id":"agent-test-btn"}` |
-| 11 | Poll for test completion | `GET /state` until `buildPhase == "test_complete"` (timeout 180 s) |
-| 12 | Verify test passed | `buildTestPassed == true` --> **Score criterion 2** |
-| 13 | Approve / promote | `POST /click-testid {"test_id":"agent-approve-btn"}` |
-| 14 | Poll for promotion | `GET /state` until `buildPhase == "promoted"` --> **Score criterion 1** |
-
-### Steps 15-17: Post-Promotion Verification
-
-| Step | Action | Details |
-|------|--------|---------|
-| 15 | Navigate to persona list | `POST /navigate {"section":"personas"}` |
-| 16 | Select the adopted persona | `POST /select-agent {"name_or_id":"{persona_name}"}` |
-| 17 | Open matrix tab and verify | `POST /open-editor-tab {"tab":"matrix"}`, assert `matrix-tab-container` exists in DOM --> **Score criterion 3** |
-
-### Steps 18-19: Execution
-
-| Step | Action | Details |
-|------|--------|---------|
-| 18 | Execute the persona | `POST /execute-persona {"name_or_id":"{persona_name}"}` |
-| 19 | Poll database for completion | Query `persona_executions` until `status = "completed"` (timeout 300 s) --> **Score criterion 4** |
-
-### Steps 20-21: Artifact Verification
-
-| Step | Action | Details |
-|------|--------|---------|
-| 20 | Fetch overview counts | `POST /overview-counts {"persona_id":"{id}"}` |
-| 21 | Score artifact criteria | Evaluate counts against dimension definitions --> **Score criteria 5-8** |
-
-Criterion 9 (value evaluation) is scored from the message content retrieved
-during step 20/21.
-
-### Step 22: Haiku Regression
-
-| Step | Action | Details |
-|------|--------|---------|
-| 22 | Switch model to Haiku, re-execute, compare | Re-run execution with `model: "haiku"`, compare output quality --> **Score criterion 10** |
+Per-template tier assignments live in §7. Glyph-equivalent intents per tier are described in §4.
 
 ---
 
-## 4. Per-Template Details
+## 3. Shared lifecycle (post-intake)
 
-Each subsection documents one template's identity, connectors, dimension
-capabilities, auto-point rules, and skip conditions.
+Both intake paths produce a `build_sessions` row that the same
+downstream code drives through promotion, execution, and artifact
+verification. These steps are **identical** for Glyph and adoption —
+diverging only in the polling timeouts (Glyph builds spawn CLI and
+take longer; adoption builds stamp pre-resolved cells and complete
+faster on `draft_ready`).
 
-**Dimension key:**
-- `user_message` -- the persona produces a user-facing message
-- `agent_memory` -- the persona writes to long-term memory
-- `manual_review` -- the persona generates a human review artifact
-- `emit_event` -- the persona emits a trackable event
+### Step S1 — wait for `draft_ready`
 
-All templates have **all four** dimensions unless noted otherwise.
+```
+GET /state until buildPhase == "draft_ready"
+  Glyph timeout: 240 s (CLI must finish behavior_core → capability_resolution → agent_ir)
+  Adoption timeout: 30 s (synchronous DB stamp, near-instant)
+```
 
----
+### Step S2 — verify connector readiness
 
-### 4.1 database-performance-monitor
+All connector dots in the matrix UI are green (means `vault_credential_id`
+is bound for every required connector type). If a connector is missing,
+the test fails at S2 — there's no "test passes anyway" path.
 
-| Field | Value |
-|-------|-------|
-| Slug | `database-performance-monitor` |
-| Name | Database Performance Monitor |
-| Category | Infrastructure |
-| Tier | 0 (Dry Run) |
-| Connectors | Local Database |
-| Dimensions | user_message, agent_memory, manual_review, emit_event |
-| Auto-points | None |
-| Skip conditions | None -- always runnable |
+### Step S3 — start agent test
 
----
+```
+POST /click-testid {"test_id": "agent-test-btn"}
+```
 
-### 4.2 budget-spending-monitor
+### Step S4 — wait for `test_complete`
 
-| Field | Value |
-|-------|-------|
-| Slug | `budget-spending-monitor` |
-| Name | Budget Spending Monitor |
-| Category | Finance |
-| Tier | 1 |
-| Connectors | Local Database |
-| Dimensions | user_message, agent_memory, emit_event |
-| Missing dimensions | **manual_review** |
-| Auto-points | Criterion 6 (human review) |
-| Skip conditions | None |
+```
+GET /state until buildPhase == "test_complete"
+  Both flows timeout: 300 s (test execution dominates regardless of intake)
+```
 
----
+→ **Score criterion 2** (`buildTestPassed == true`)
 
-### 4.3 incident-logger
+### Step S5 — approve & promote
 
-| Field | Value |
-|-------|-------|
-| Slug | `incident-logger` |
-| Name | Incident Logger |
-| Category | Operations |
-| Tier | 1 |
-| Connectors | Local Database, In-App Messaging |
-| Dimensions | user_message, agent_memory, emit_event |
-| Missing dimensions | **manual_review** |
-| Auto-points | Criterion 6 (human review) |
-| Skip conditions | None |
+```
+POST /click-testid {"test_id": "agent-approve-btn"}
+GET /state until buildPhase == "promoted"
+  Timeout: 60 s
+```
 
----
+→ **Score criterion 1** (`buildPhase == "promoted"`)
 
-### 4.4 service-health-reporter
+### Step S6 — verify post-promotion UI
 
-| Field | Value |
-|-------|-------|
-| Slug | `service-health-reporter` |
-| Name | Service Health Reporter |
-| Category | Operations |
-| Tier | 1 |
-| Connectors | Local Database, In-App Messaging |
-| Dimensions | user_message, agent_memory, emit_event |
-| Missing dimensions | **manual_review** |
-| Auto-points | Criterion 6 (human review) |
-| Skip conditions | None |
+```
+POST /navigate {"section": "personas"}
+POST /select-agent {"name_or_id": "{persona_name}"}
+POST /open-editor-tab {"tab": "matrix"}
+assert: matrix-tab-container exists
+```
 
----
+→ **Score criterion 3**
 
-### 4.5 content-performance-reporter
+### Step S7 — execute the persona
 
-| Field | Value |
-|-------|-------|
-| Slug | `content-performance-reporter` |
-| Name | Content Performance Reporter |
-| Category | Content |
-| Tier | 1 |
-| Connectors | Local Database, In-App Messaging |
-| Dimensions | user_message, agent_memory, manual_review, emit_event |
-| Auto-points | None |
-| Skip conditions | None |
+```
+POST /execute-persona {"name_or_id": "{persona_name}"}
+poll: persona_executions where status == "completed"
+  Timeout: 600 s (varies by template — DB-only is fast; Gmail/Notion fetches are slower)
+```
 
----
+→ **Score criterion 4**
 
-### 4.6 research-paper-indexer
+### Step S8 — fetch artifact counts
 
-| Field | Value |
-|-------|-------|
-| Slug | `research-paper-indexer` |
-| Name | Research Paper Indexer |
-| Category | Research |
-| Tier | 1 |
-| Connectors | Local Database |
-| Dimensions | user_message, agent_memory, manual_review, emit_event |
-| Auto-points | None |
-| Skip conditions | None |
+```
+POST /overview-counts {"persona_id": "{id}"}
+```
+
+Compare against dimensions declared in `persona_ir`. Apply auto-point
+rules for `manual_review`, `emit_event`, `agent_memory` if undeclared.
+
+→ **Score criteria 5–8**
+
+Criterion 9 (value evaluation) is scored from the message content
+retrieved during S8.
+
+### Step S9 — Haiku regression
+
+Re-execute with `model: "haiku"`. Compare output length and keyword
+overlap with the primary run. Threshold: > 60% keyword overlap and
+output length within ±50% of primary.
+
+→ **Score criterion 10**
+
+### Step S10 — cleanup
+
+If `--no-persona-cleanup` is not passed, delete the persona via
+`POST /delete-agent` and verify cascade — orphaned records in
+`persona_memories`, `persona_messages`, `persona_events`,
+`persona_healing_issues` must all be removed (regression for the
+known cascade bug fixed in §9).
 
 ---
 
-### 4.7 notion-docs-auditor
+## 4. Glyph from-scratch intake (steps G1–G4)
 
-| Field | Value |
-|-------|-------|
-| Slug | `notion-docs-auditor` |
-| Name | Notion Docs Auditor |
-| Category | Documentation |
-| Tier | 2 |
-| Connectors | Notion |
-| Dimensions | user_message, agent_memory, manual_review, emit_event |
-| Auto-points | None |
-| Skip conditions | Skip if Notion credential is not configured |
+Entry: user clicks "Build from scratch" on the agents page or invokes
+the build flow from the Companion. The orchestration component is
+`GlyphFullLayout` (`src/features/agents/components/glyph/GlyphFullLayout.tsx`).
 
----
+### Step G1 — open composer
 
-### 4.8 content-schedule-manager
+```
+POST /navigate {"section": "agents"}
+POST /click-testid {"test_id": "btn-create-agent"} or POST /start-create-agent
+wait for: [data-testid="command-panel-composer"]
+```
 
-| Field | Value |
-|-------|-------|
-| Slug | `content-schedule-manager` |
-| Name | Content Schedule Manager |
-| Category | Content |
-| Tier | 2 |
-| Connectors | Notion |
-| Dimensions | user_message, agent_memory, manual_review, emit_event |
-| Auto-points | None |
-| Skip conditions | Skip if Notion credential is not configured |
+### Step G2 — fill the five intent rows
 
----
+```
+POST /fill-field {"name": "task", "value": "<intent text>"}
+POST /fill-field {"name": "when", "value": "<schedule or trigger>"}
+POST /fill-field {"name": "output", "value": "<expected output format>"}
+POST /click-testid {"test_id": "tools-picker-add"}  # optional, can pre-select
+POST /click-testid {"test_id": "review-policy-{value}"}  # optional
+```
 
-### 4.9 daily-standup-compiler
+### Step G3 — submit
 
-| Field | Value |
-|-------|-------|
-| Slug | `daily-standup-compiler` |
-| Name | Daily Standup Compiler |
-| Category | Team |
-| Tier | 2 |
-| Connectors | Notion |
-| Dimensions | user_message, agent_memory, emit_event |
-| Missing dimensions | **manual_review** |
-| Auto-points | Criterion 6 (human review) |
-| Skip conditions | Skip if Notion credential is not configured |
+```
+POST /click-testid {"test_id": "command-panel-submit"}
+```
 
----
+This triggers `handleLaunch` (`UnifiedMatrixEntry:357`) → creates a
+draft persona → calls `start_build_session` (`buildSession.ts:33`) →
+backend spawns CLI subprocess.
 
-### 4.10 research-knowledge-curator
+### Step G4 — answer mid-build clarifying questions
 
-| Field | Value |
-|-------|-------|
-| Slug | `research-knowledge-curator` |
-| Name | Research Knowledge Curator |
-| Category | Research |
-| Tier | 2 |
-| Connectors | Notion |
-| Dimensions | user_message, agent_memory, emit_event |
-| Missing dimensions | **manual_review** |
-| Auto-points | Criterion 6 (human review) |
-| Skip conditions | Skip if Notion credential is not configured |
+If the LLM emits clarifying questions across the four dimensions
+(trigger, source, human-review, destination), the test must answer
+them. Existing pattern:
 
----
+```
+poll for: pendingQuestions count > 0
+for each question:
+  POST /answer-question {"answer": "<deterministic answer>"}
+wait for: pendingQuestions count == 0
+```
 
-### 4.11 technical-decision-tracker
+After G4, the flow enters the shared lifecycle at **S1**.
 
-| Field | Value |
-|-------|-------|
-| Slug | `technical-decision-tracker` |
-| Name | Technical Decision Tracker |
-| Category | Engineering |
-| Tier | 2 |
-| Connectors | Notion |
-| Dimensions | user_message, agent_memory, manual_review, emit_event |
-| Auto-points | None |
-| Skip conditions | Skip if Notion credential is not configured |
+### Glyph scenario library
+
+| Scenario name | Intent prompt | Connectors expected | Tier |
+| --- | --- | --- | --- |
+| `glyph-translate-drive` | "Translate every document I drop into my local drive from English to Czech and save the translated copy next to it" | Local Drive | 0 |
+| `glyph-db-summary` | "Summarize my SQLite tables every morning" | Local DB | 0 |
+| `glyph-notion-digest` | "Build me a Notion-page digest summary every Friday" | Notion | 2 |
+| `glyph-email-classify` | "Classify incoming emails into urgent/normal/spam and tag them in Gmail" | Gmail | 3 |
+| `glyph-multi-incident` | "When my service health page reports an incident, log it to Notion and notify me in Slack" | Notion + Slack + DB | 4 |
+
+Each scenario maps to a tier so CI can scope by available credentials.
+The reference harness `e2e_build_from_scratch.py` ships
+`glyph-translate-drive` (the team's acceptance-criterion scenario).
 
 ---
 
-### 4.12 weekly-review-reporter
+## 5. Template adoption intake (steps T1–T7)
 
-| Field | Value |
-|-------|-------|
-| Slug | `weekly-review-reporter` |
-| Name | Weekly Review Reporter |
-| Category | Reporting |
-| Tier | 2 |
-| Connectors | Notion |
-| Dimensions | user_message, agent_memory, emit_event |
-| Missing dimensions | **manual_review** |
-| Auto-points | Criterion 6 (human review) |
-| Skip conditions | Skip if Notion credential is not configured |
+Entry: user navigates to the template gallery (Templates module →
+2nd-level sidebar "Recipes & Templates"). The orchestration is
+`AdoptionWizardModal` → `MatrixAdoptionView`.
 
----
+### Step T1 — navigate to gallery
 
-### 4.13 email-morning-digest
+```
+POST /navigate {"section": "design-reviews"}
+wait for: [data-testid^="template-row-"]
+```
 
-| Field | Value |
-|-------|-------|
-| Slug | `email-morning-digest` |
-| Name | Email Morning Digest |
-| Category | Email |
-| Tier | 3 |
-| Connectors | Gmail (listed as "Email") |
-| Dimensions | user_message, agent_memory, emit_event |
-| Missing dimensions | **manual_review** |
-| Auto-points | Criterion 6 (human review) |
-| Skip conditions | Skip if Gmail credential is not configured |
+### Step T2 — locate target template
 
----
+```
+POST /find-text {"text": "<template_name>"}
+POST /click-testid {"test_id": "template-row-<slug>"}
+```
 
-### 4.14 email-support-assistant
+### Step T3 — open details, click adopt
 
-| Field | Value |
-|-------|-------|
-| Slug | `email-support-assistant` |
-| Name | Email Support Assistant |
-| Category | Support |
-| Tier | 3 |
-| Connectors | Gmail (listed as "Email"), Local Database |
-| Dimensions | user_message, agent_memory, manual_review, emit_event |
-| Auto-points | None |
-| Skip conditions | Skip if Gmail credential is not configured |
+```
+POST /click-testid {"test_id": "menu-view-details"}
+wait for: [data-testid="button-adopt-template"]
+POST /click-testid {"test_id": "button-adopt-template"}
+```
 
----
+This opens `AdoptionWizardModal`.
 
-### 4.15 email-follow-up-tracker
+### Step T4 — use case picker (if shown)
 
-| Field | Value |
-|-------|-------|
-| Slug | `email-follow-up-tracker` |
-| Name | Email Follow-Up Tracker |
-| Category | Email |
-| Tier | 3 |
-| Connectors | Gmail, Slack |
-| Dimensions | user_message, agent_memory, emit_event |
-| Missing dimensions | **manual_review** |
-| Auto-points | Criterion 6 (human review) |
-| Skip conditions | Skip if Gmail credential is not configured; Slack connector may additionally gate execution |
+`MatrixAdoptionView:1078` shows the picker if `showUseCasePicker &&
+!useCasesPicked`. Templates with ≥1 use case land here.
 
----
+```
+for each use_case in template:
+  if scenario specifies adoption (default: all):
+    leave checked
+  else:
+    POST /click-testid {"test_id": "use-case-toggle-<uc_id>"}
+optionally configure per-UC triggers
+POST /click-testid {"test_id": "use-case-picker-continue"}
+```
 
-### 4.16 email-lead-extractor
+### Step T5 — questionnaire
 
-| Field | Value |
-|-------|-------|
-| Slug | `email-lead-extractor` |
-| Name | Email Lead Extractor |
-| Category | Sales |
-| Tier | 3 |
-| Connectors | Gmail, Local Database |
-| Dimensions | user_message, agent_memory, manual_review, emit_event |
-| Auto-points | None |
-| Skip conditions | Skip if Gmail credential is not configured |
+`MatrixAdoptionView:1099` shows the questionnaire if
+`hasFilteredQuestions && !questionsComplete`. Questions are filtered
+by selected UC and by template's `adoption_questions[]`.
 
----
+```
+for each question in filtered set:
+  POST /fill-field {"name": "<question_id>", "value": "<deterministic answer>"}
+POST /click-testid {"test_id": "questionnaire-submit"}
+```
 
-### 4.17 email-task-extractor
+The submit invokes `save_adoption_answers` (still wired post-A1) and
+proceeds to seed the draft persona.
 
-| Field | Value |
-|-------|-------|
-| Slug | `email-task-extractor` |
-| Name | Email Task Extractor |
-| Category | Productivity |
-| Tier | 3 |
-| Connectors | Gmail, Notion |
-| Dimensions | user_message, agent_memory, emit_event |
-| Missing dimensions | **manual_review** |
-| Auto-points | Criterion 6 (human review) |
-| Skip conditions | Skip if Gmail or Notion credential is not configured |
+### Step T6 — seed draft persona (automatic)
+
+Backend creates persona row + calls `create_adoption_session` with
+resolved cells. The flow now waits in `draft_ready` phase.
+
+### Step T7 — auto-test triggers
+
+`useMatrixLifecycle` auto-triggers test on `draft_ready` if no
+pending questions remain.
+
+After T7, the flow enters the shared lifecycle at **S2** (skipping S1
+since `draft_ready` is already entered).
+
+### Per-template scenarios
+
+The 22-step lifecycle that previous doc documented maps to the new structure as:
+- Old steps 1–7 (gallery → adopt button) → **new T1–T3**
+- Old steps 8 (use case picker, undocumented) → **new T4**
+- Old steps 9 (questionnaire, undocumented) → **new T5–T7**
+- Old steps 10–22 → **shared S2–S9**
+
+The slug list and dimension declarations have not changed; the
+existing harness `e2e_30_adoption.py` runs all 30 scenarios.
 
 ---
 
-### 4.18 survey-insights-analyzer
+## 6. Recipe-injection scenarios (Stage B + Stage D, planned)
 
-| Field | Value |
-|-------|-------|
-| Slug | `survey-insights-analyzer` |
-| Name | Survey Insights Analyzer |
-| Category | Analytics |
-| Tier | 3 |
-| Connectors | Gmail |
-| Dimensions | user_message, agent_memory, manual_review, emit_event |
-| Auto-points | None |
-| Skip conditions | Skip if Gmail credential is not configured |
+These scenarios will be authored as Stage B (template→recipe
+migration) and Stage D (Glyph recipe matching) ship.
 
----
+### 6.1 Glyph + recipe match — accept (Stage D, conservative threshold)
 
-### 4.19 expense-receipt-tracker
+```
+G1: open composer
+G2: type intent that closely matches a known recipe
+G2.5 (NEW): wait for similarity match chip with confidence ≥ 0.90
+G2.6 (NEW): POST /click-testid {"test_id": "use-recipe-suggestion"}
+G2.7 (NEW): verify composer is pre-filled from recipe
+G3: submit (build runs with recipe pre-fill as constraint)
+S1–S10: shared lifecycle
+```
 
-| Field | Value |
-|-------|-------|
-| Slug | `expense-receipt-tracker` |
-| Name | Expense Receipt Tracker |
-| Category | Finance |
-| Tier | 3 |
-| Connectors | Gmail, Local Database |
-| Dimensions | user_message, agent_memory, manual_review, emit_event |
-| Auto-points | None |
-| Skip conditions | Skip if Gmail credential is not configured |
+Verification: the resulting persona has a `source_recipe_id` field in
+`adoption_metadata` matching the suggested recipe.
 
----
+### 6.2 Glyph + recipe match — dismiss (no regression)
 
-### 4.20 invoice-tracker
+```
+G2.6 (NEW): POST /click-testid {"test_id": "dismiss-recipe-suggestion"}
+G3: submit (build runs from intent only, no recipe context)
+S1–S10: shared lifecycle (must succeed identically to no-suggestion run)
+```
 
-| Field | Value |
-|-------|-------|
-| Slug | `invoice-tracker` |
-| Name | Invoice Tracker |
-| Category | Finance |
-| Tier | 3 |
-| Connectors | Gmail, Local Database |
-| Dimensions | user_message, agent_memory, manual_review, emit_event |
-| Auto-points | None |
-| Skip conditions | Skip if Gmail credential is not configured |
+Verification: `source_recipe_id` is null. Persona output equivalent to
+the no-suggestion baseline.
 
----
+### 6.3 Glyph + no match — silent fallthrough (≥ 0.90 threshold)
 
-### 4.21 idea-harvester
+```
+G2: type intent that does NOT match any recipe within 0.90 confidence
+G2.5: assert NO suggestion chip appears
+G3: submit (normal flow)
+```
 
-| Field | Value |
-|-------|-------|
-| Slug | `idea-harvester` |
-| Name | Idea Harvester |
-| Category | Ideation |
-| Tier | 4 |
-| Connectors | Gmail, Notion |
-| Dimensions | user_message, agent_memory, manual_review, emit_event |
-| Auto-points | None |
-| Skip conditions | Skip if Gmail or Notion credential is not configured |
+Per the user-specified conservative threshold: when no recipe scores
+≥ 0.90, the matcher must not surface anything.
 
----
+### 6.4 Template adoption + recipe-as-use-case (Stage B)
 
-### 4.22 newsletter-curator
+After Stage B migration, templates reference recipes by `recipe_ref`
+instead of inline use cases.
 
-| Field | Value |
-|-------|-------|
-| Slug | `newsletter-curator` |
-| Name | Newsletter Curator |
-| Category | Content |
-| Tier | 4 |
-| Connectors | Notion, Gmail |
-| Dimensions | user_message, agent_memory, manual_review, emit_event |
-| Auto-points | None |
-| Skip conditions | Skip if Gmail or Notion credential is not configured |
+```
+T1–T3: navigate to gallery, click adopt
+T4 (modified): use-case picker shows recipe-derived UCs with
+              `source_recipe_id` annotations
+T5: questionnaire (unchanged)
+T6: seed draft (unchanged from user POV; backend now resolves
+              recipes by ID instead of reading inline definitions)
+S2–S10: shared lifecycle
+```
 
----
+Verification: each created `persona_use_cases` row carries the
+correct `source_recipe_id`. Re-running the same template should
+produce use cases with the same recipe IDs (idempotent recipe
+derivation per Stage B's stable-key strategy).
 
-### 4.23 access-request-manager
+### 6.5 Negative — recipe versioning drift detection (Stage B+)
 
-| Field | Value |
-|-------|-------|
-| Slug | `access-request-manager` |
-| Name | Access Request Manager |
-| Category | Security |
-| Tier | 4 |
-| Connectors | Gmail, Local Database, In-App Messaging |
-| Dimensions | user_message, agent_memory, manual_review, emit_event |
-| Auto-points | None |
-| Skip conditions | Skip if Gmail credential is not configured |
+```
+T1–T7 with template_v1 → persona created with
+  use_cases[*].source_recipe_version == "1.0.0"
+[recipe catalog updated externally to version 1.1.0]
+re-open the persona detail view
+assert: "newer version available" badge appears on UC card
+```
+
+This scenario is authored only when versioning UI ships (per Stage B
+Phase 2 in the parent plan).
 
 ---
 
-### 4.24 contact-enrichment-agent
+## 7. Per-template details (preserved)
 
-| Field | Value |
-|-------|-------|
-| Slug | `contact-enrichment-agent` |
-| Name | Contact Enrichment Agent |
-| Category | CRM |
-| Tier | 4 |
-| Connectors | Gmail, Local Database |
-| Dimensions | user_message, agent_memory, manual_review, emit_event |
-| Auto-points | None |
-| Skip conditions | Skip if Gmail credential is not configured |
+| Tier | Templates |
+| --- | --- |
+| 0 | `database-performance-monitor` |
+| 1 | `budget-spending-monitor`, `incident-logger`, `service-health-reporter`, `content-performance-reporter`, `research-paper-indexer` |
+| 2 | `notion-docs-auditor`, `content-schedule-manager`, `daily-standup-compiler`, `research-knowledge-curator`, `technical-decision-tracker`, `weekly-review-reporter` |
+| 3 | `email-morning-digest`, `email-support-assistant`, `email-follow-up-tracker`, `email-lead-extractor`, `email-task-extractor`, `survey-insights-analyzer`, `expense-receipt-tracker`, `invoice-tracker` |
+| 4 | `idea-harvester`, `newsletter-curator`, `access-request-manager`, `contact-enrichment-agent`, `contact-sync-manager`, `support-email-router`, `onboarding-tracker`, `sales-deal-analyzer`, `sales-proposal-generator` |
+| 5 (skip) | `sales-deal-tracker` (Salesforce unavailable) |
 
----
+**Auto-point templates** (missing `manual_review` dimension; criterion
+6 always passes for these):
 
-### 4.25 contact-sync-manager
+`budget-spending-monitor`, `incident-logger`, `service-health-reporter`,
+`daily-standup-compiler`, `research-knowledge-curator`,
+`weekly-review-reporter`, `email-morning-digest`,
+`email-follow-up-tracker`, `email-task-extractor`, `sales-deal-tracker`.
 
-| Field | Value |
-|-------|-------|
-| Slug | `contact-sync-manager` |
-| Name | Contact Sync Manager |
-| Category | CRM |
-| Tier | 4 |
-| Connectors | Gmail, Local Database |
-| Dimensions | user_message, agent_memory, manual_review, emit_event |
-| Auto-points | None |
-| Skip conditions | Skip if Gmail credential is not configured |
+If template authoring changes (a new template added, or a dimension
+removed), update this index in place.
 
 ---
 
-### 4.26 support-email-router
+## 8. Results format
 
-| Field | Value |
-|-------|-------|
-| Slug | `support-email-router` |
-| Name | Support Email Router |
-| Category | Support |
-| Tier | 4 |
-| Connectors | Gmail, Notion |
-| Dimensions | user_message, agent_memory, manual_review, emit_event |
-| Auto-points | None |
-| Skip conditions | Skip if Gmail or Notion credential is not configured |
-
----
-
-### 4.27 onboarding-tracker
-
-| Field | Value |
-|-------|-------|
-| Slug | `onboarding-tracker` |
-| Name | Onboarding Tracker |
-| Category | HR |
-| Tier | 4 |
-| Connectors | Notion, Local Database, In-App Messaging |
-| Dimensions | user_message, agent_memory, manual_review, emit_event |
-| Auto-points | None |
-| Skip conditions | Skip if Notion credential is not configured |
-
----
-
-### 4.28 sales-deal-analyzer
-
-| Field | Value |
-|-------|-------|
-| Slug | `sales-deal-analyzer` |
-| Name | Sales Deal Analyzer |
-| Category | Sales |
-| Tier | 4 |
-| Connectors | Local Database, Notion |
-| Dimensions | user_message, agent_memory, manual_review, emit_event |
-| Auto-points | None |
-| Skip conditions | Skip if Notion credential is not configured |
-
----
-
-### 4.29 sales-proposal-generator
-
-| Field | Value |
-|-------|-------|
-| Slug | `sales-proposal-generator` |
-| Name | Sales Proposal Generator |
-| Category | Sales |
-| Tier | 4 |
-| Connectors | Local Database, Notion |
-| Dimensions | user_message, agent_memory, manual_review, emit_event |
-| Auto-points | None |
-| Skip conditions | Skip if Notion credential is not configured |
-
----
-
-### 4.30 sales-deal-tracker
-
-| Field | Value |
-|-------|-------|
-| Slug | `sales-deal-tracker` |
-| Name | Sales Deal Tracker |
-| Category | Sales |
-| Tier | 5 (Skip) |
-| Connectors | Salesforce |
-| Dimensions | user_message, agent_memory, emit_event |
-| Missing dimensions | **manual_review** |
-| Auto-points | Criterion 6 (human review) |
-| Skip conditions | **Always skip** -- Salesforce connector unavailable |
-
----
-
-## 5. Results Format
-
-Each test run produces a JSON result file. The runner collects all template
-results into a single array.
-
-### Single Template Result
+### Per-scenario result
 
 ```json
 {
-  "template_slug": "budget-spending-monitor",
-  "template_name": "Budget Spending Monitor",
-  "tier": 1,
+  "scenario_id": "glyph-translate-drive",
+  "intake_path": "glyph",
+  "tier": 0,
   "persona_id": "uuid-here",
-  "timestamp": "2026-03-23T14:30:00Z",
+  "timestamp": "2026-05-09T14:30:00Z",
   "skipped": false,
   "skip_reason": null,
   "duration_ms": 45230,
+  "intake_steps": {
+    "G1_open_composer": "ok",
+    "G2_fill_intent": "ok",
+    "G3_submit": "ok",
+    "G4_answered_questions": 3
+  },
+  "shared_steps": {
+    "S1_draft_ready": "ok in 89s",
+    "S4_test_complete": "ok in 134s",
+    "S5_promoted": "ok"
+  },
   "scores": {
-    "1_promoted": { "passed": true, "auto_point": false, "detail": "buildPhase == promoted" },
-    "2_connectors_tested": { "passed": true, "auto_point": false, "detail": "buildTestPassed == true" },
-    "3_matrix_viewable": { "passed": true, "auto_point": false, "detail": "matrix-tab-container found" },
-    "4_execution_completed": { "passed": true, "auto_point": false, "detail": "execution completed in 12340 ms" },
-    "5_message_populated": { "passed": true, "auto_point": false, "detail": "persona_messages count = 3" },
-    "6_human_review": { "passed": true, "auto_point": true, "detail": "Auto-point: manual_review not in dimensions" },
-    "7_event_created": { "passed": true, "auto_point": false, "detail": "persona_events count = 2" },
-    "8_memory_generated": { "passed": true, "auto_point": false, "detail": "persona_memories count = 1, no error content" },
-    "9_value_evaluation": { "passed": true, "auto_point": false, "detail": "Output length 847 chars, keywords matched" },
-    "10_haiku_regression": { "passed": true, "auto_point": false, "detail": "Haiku output 712 chars, 78% keyword overlap" }
+    "1_promoted":            { "passed": true, "auto_point": false, "detail": "..." },
+    "2_connectors_tested":   { "passed": true, "auto_point": false, "detail": "..." },
+    "3_matrix_viewable":     { "passed": true, "auto_point": false, "detail": "..." },
+    "4_execution_completed": { "passed": true, "auto_point": false, "detail": "..." },
+    "5_message_populated":   { "passed": true, "auto_point": false, "detail": "..." },
+    "6_human_review":        { "passed": true, "auto_point": true,  "detail": "..." },
+    "7_event_created":       { "passed": true, "auto_point": false, "detail": "..." },
+    "8_memory_generated":    { "passed": true, "auto_point": false, "detail": "..." },
+    "9_value_evaluation":    { "passed": true, "auto_point": false, "detail": "..." },
+    "10_haiku_regression":   { "passed": true, "auto_point": false, "detail": "..." }
   },
   "total_score": 10,
   "max_score": 10,
@@ -679,224 +471,140 @@ results into a single array.
 }
 ```
 
-### Skipped Template Result
+### Aggregate run summary
 
 ```json
 {
-  "template_slug": "sales-deal-tracker",
-  "template_name": "Sales Deal Tracker",
-  "tier": 5,
-  "persona_id": null,
-  "timestamp": "2026-03-23T14:35:00Z",
-  "skipped": true,
-  "skip_reason": "Salesforce connector unavailable",
-  "duration_ms": 0,
-  "scores": {},
-  "total_score": null,
-  "max_score": 10,
-  "errors": []
-}
-```
-
-### Aggregate Summary
-
-```json
-{
-  "run_id": "run-20260323-143000",
-  "started_at": "2026-03-23T14:30:00Z",
-  "finished_at": "2026-03-23T15:12:00Z",
+  "run_id": "run-20260509-143000",
+  "started_at": "2026-05-09T14:30:00Z",
+  "finished_at": "2026-05-09T15:42:00Z",
   "environment": {
     "app_version": "0.5.0",
-    "primary_model": "claude-sonnet-4-20250514",
-    "haiku_model": "claude-haiku-3-20240307",
-    "credentials_available": ["gmail", "notion"]
+    "primary_model": "claude-sonnet-4-6",
+    "haiku_model": "claude-haiku-4-5-20251001",
+    "credentials_available": ["gmail", "notion", "local_drive"]
+  },
+  "intake_summary": {
+    "glyph":    { "scenarios": 5,  "run": 5,  "avg_score": 9.6,  "skipped": 0 },
+    "adoption": { "scenarios": 30, "run": 29, "avg_score": 9.65, "skipped": 1 }
   },
   "tier_summary": {
     "tier_0": { "total": 1, "run": 1, "skipped": 0, "avg_score": 10.0 },
-    "tier_1": { "total": 5, "run": 5, "skipped": 0, "avg_score": 9.6 },
-    "tier_2": { "total": 6, "run": 6, "skipped": 0, "avg_score": 9.8 },
-    "tier_3": { "total": 8, "run": 8, "skipped": 0, "avg_score": 9.5 },
-    "tier_4": { "total": 9, "run": 9, "skipped": 0, "avg_score": 9.7 },
+    "tier_1": { "total": 5, "run": 5, "skipped": 0, "avg_score": 9.6  },
+    "tier_2": { "total": 6, "run": 6, "skipped": 0, "avg_score": 9.8  },
+    "tier_3": { "total": 8, "run": 8, "skipped": 0, "avg_score": 9.5  },
+    "tier_4": { "total": 9, "run": 9, "skipped": 0, "avg_score": 9.7  },
     "tier_5": { "total": 1, "run": 0, "skipped": 1, "avg_score": null }
   },
   "overall": {
-    "total_templates": 30,
-    "templates_run": 29,
-    "templates_skipped": 1,
+    "total_scenarios": 35,
+    "scenarios_run": 34,
+    "scenarios_skipped": 1,
     "average_score": 9.65,
-    "perfect_scores": 22,
+    "perfect_scores": 27,
     "failures": []
-  },
-  "results": [
-    "...array of per-template result objects..."
-  ]
+  }
 }
 ```
 
-### Output File Naming
-
-Results are written to `docs/tests/results/` with the naming convention:
-
-```
-template-adoption-{run_id}.json
-```
-
-Example: `template-adoption-run-20260323-143000.json`
+Output files write to `docs/tests/results/persona-generation-{run_id}.json`.
 
 ---
 
-## Appendix: Quick Reference -- Auto-Point Templates
+## 9. Lessons learned (load-bearing, do not re-litigate)
 
-The following 10 templates are missing the `manual_review` dimension and
-therefore receive an automatic point for criterion 6:
+These bugs were found and fixed during the 2026-03-23/24 adoption test
+run. Most fixes are still in production. New regressions should be
+appended to this section, not re-discovered.
 
-| Template | Tier |
-|----------|------|
-| budget-spending-monitor | 1 |
-| incident-logger | 1 |
-| service-health-reporter | 1 |
-| daily-standup-compiler | 2 |
-| research-knowledge-curator | 2 |
-| weekly-review-reporter | 2 |
-| email-morning-digest | 3 |
-| email-follow-up-tracker | 3 |
-| email-task-extractor | 3 |
-| sales-deal-tracker | 5 |
+### Critical bugs fixed in production
 
-No templates are missing `user_message`, `agent_memory`, or `emit_event`
-dimensions, so criteria 5, 7, and 8 never receive auto-points.
+- **Promote-path agent_ir vs template-payload key mismatch.** `useMatrixLifecycle.handlePromote` checked for `system_prompt`/`tools`/`triggers` but template payloads use `structured_prompt`/`suggested_tools`/`suggested_triggers`. Fixed by also checking for `sessionId` — when a build session exists, always use the Rust promote path. (`src/features/agents/components/matrix/useMatrixLifecycle.ts`)
+- **`promote_build_draft_inner` template-payload mismatches.** Read `use_cases` but templates have `use_case_flows`; filtered events by `direction == "subscribe"` but template events have no `direction`; constructed `design_result` from `required_connectors` but templates use `suggested_connectors`. Fixed with fallback keys for all template formats. (`src-tauri/src/commands/design/build_sessions.rs`)
+- **String tool names dropped silently.** Template payloads use string tool names (`["notion", "gmail"]`) but `tool_def_from_ir` only handled JSON objects. Fixed to handle both. (`src-tauri/src/engine/tool_runner.rs`)
+- **Event source_type validation rejected persona names with spaces.** `format!("persona:{}", persona_name)` failed validator (only alphanumeric/underscore/hyphen/dot/colon/slash allowed) for personas like "Budget Spending Monitor". Fixed by sanitizing persona name. (`src-tauri/src/engine/dispatch.rs`)
+- **Multi-delta protocol messages lost.** `emit_event`/`agent_memory` messages spanning multiple streaming deltas were missed by the mid-stream parser. Fixed with post-mortem scan after CLI exit, with dedup. (`src-tauri/src/engine/runner.rs`)
+
+### Quality gates added
+
+- **Manual reviews must be business decisions, not operational errors.** Quality gate in `dispatch.rs` rejects reviews containing patterns: "no pages shared", "no page access", "audit blocked", "has no", "not shared with".
+- **Memories must be genuine learnings, not credential failures.** Filter rejects content about credential failures, authentication issues, empty workspace problems.
+- **EXECUTION_MODE_DIRECTIVE established.** Constant added at prompt start: autonomous one-shot execution, business-decisions-only for manual_review.
+- **Review-to-Memory link.** When manual review is resolved (approved/rejected), a memory is auto-created recording the decision so the persona learns.
+
+### Test infrastructure pitfalls
+
+- **Persona ID cross-contamination.** Tests reading `selectedPersonaId` from Zustand state could pick up a stale ID across runs. Fix: poll for `buildPersonaId` specifically, with DB fallback by template name.
+- **Stale artifact counts.** Counting all artifacts for a `persona_id` included previous runs. Fix: record `_exec_started_at` timestamp and scope artifact queries to `created_at >= timestamp`.
+- **Cascade gaps on persona delete.** Orphaned records in `persona_memories`, `persona_messages`, `persona_events`, `persona_healing_issues`. Fix: explicit cleanup in `personas.rs` for tables lacking `ON DELETE CASCADE`.
+
+### Operational notes for long runs
+
+- **API rate limits.** Each template requires 2 executions (Sonnet + Haiku). Running all 30 back-to-back can exhaust the Anthropic quota.
+- **Two templates have mismatched gallery slugs:** `email-morning-digest` and `email-support-assistant` may use `seed-email-*` data-testids.
+- **Execution timeout for heavy templates.** `database-performance-monitor` querying all SQLite tables can exceed the default 10-minute poll.
+- **Quality audit beyond counts.** After each template, audit actual content in DB — not just artifact counts.
+
+### Lessons added 2026-05-09 (Stage A1 cleanup)
+
+- **L1 — Legacy adoption-jobs commands deleted.** Tests must not invoke `start_template_adopt_background`, `confirm_template_adopt_draft`, or other retired commands. The modal flow at `MatrixAdoptionView` is the only supported path.
+- **L2 — `instantAdoptTemplate` is dev-only.** It bypasses the questionnaire and matrix entirely; only `useDevCloneAdoption` uses it. Production scenarios must run T1–T7, not Instant Adopt.
 
 ---
 
-## 6. Lessons Learned (Session 2026-03-23/24)
+## 10. Cross-references
 
-### Critical Bugs Found and Fixed
+- **Adoption flow design doc:** [`docs/features/templates/03-adoption-flow.md`](../features/templates/03-adoption-flow.md)
+- **Adoption answer pipeline:** [`docs/features/templates/07-adoption-answer-pipeline.md`](../features/templates/07-adoption-answer-pipeline.md)
+- **Template integrity & security:** [`docs/features/templates/06-integrity-and-security.md`](../features/templates/06-integrity-and-security.md)
+- **Recipe-from-template migration design:** [`docs/concepts/recipe-from-template-migration.md`](../concepts/recipe-from-template-migration.md)
+- **Test automation guide:** [`docs/test-automation-guide.md`](../test-automation-guide.md)
+- **APP context map:** [`tools/test-mcp/APP_CONTEXT_MAP.md`](../../tools/test-mcp/APP_CONTEXT_MAP.md)
+- **Glyph harness:** [`tools/test-mcp/e2e_build_from_scratch.py`](../../tools/test-mcp/e2e_build_from_scratch.py)
+- **Adoption harness:** [`tools/test-mcp/e2e_30_adoption.py`](../../tools/test-mcp/e2e_30_adoption.py)
 
-#### A. Promote Path for Template Adoptions
-**File:** `src/features/agents/components/matrix/useMatrixLifecycle.ts`
+---
 
-The `handlePromote` function checked `hasRichDraft` by looking for agent_ir keys
-(`system_prompt`, `tools`, `triggers`) but template payloads use different names
-(`structured_prompt`, `suggested_tools`, `suggested_triggers`). When the check
-failed, promote used a minimal fallback that only set `enabled=true` without
-saving `last_design_result` or `structured_prompt`. Fix: also check for
-`sessionId` existence -- when a build session exists, always use the Rust
-promote path which reads from the session's `agent_ir`.
+## 11. How to run
 
-#### B. Design Result Dimension Population
-**File:** `src-tauri/src/commands/design/build_sessions.rs`
+### Prerequisites
 
-The Rust `promote_build_draft_inner` had key mismatches:
-- Read `use_cases` but templates have `use_case_flows`
-- Filtered events by `direction == "subscribe"` but template events have no `direction` field
-- Constructed `design_result` from `required_connectors` but templates use `suggested_connectors`
-- Didn't include `use_case_flows`, `service_flow`, or `suggested_event_subscriptions` in `design_result`
+```
+npm run tauri:dev:test
+# Confirm:
+curl http://127.0.0.1:17320/health
+```
 
-Fix: Added fallback keys for all template payload formats and included all
-dimension data in the constructed `design_result`.
+Required for tier-3+ scenarios: configure Gmail / Notion / Slack
+credentials in the vault before the run.
 
-#### C. String Tool Names in tool_def_from_ir
-**File:** `src-tauri/src/engine/tool_runner.rs`
+### Single scenario (Glyph)
 
-Template payloads use string tool names (`["notion", "gmail"]`) but
-`tool_def_from_ir` only handled JSON objects with `"name"` field. String tools
-were silently dropped, preventing credential resolution. Fix: handle both
-string and object formats, set `requires_credential_type` to the tool name.
+```
+uvx --with httpx python tools/test-mcp/e2e_build_from_scratch.py \
+  --intent "Translate every document I drop into my local drive from English to Czech" \
+  --report docs/tests/results/glyph-translate-drive-{run_id}.json
+```
 
-#### D. Event source_type Validation
-**File:** `src-tauri/src/engine/dispatch.rs`
+### Single scenario (template adoption)
 
-`emit_event` dispatch used `format!("persona:{}", persona_name)` as `source_type`
-but persona names with spaces (e.g. "Budget Spending Monitor") failed the
-validator which only allows alphanumeric, underscore, hyphen, dot, colon, slash.
-Fix: sanitize persona name (replace spaces with underscores, filter invalid chars).
+```
+uvx --with httpx python tools/test-mcp/e2e_template_adoption.py \
+  --template incident-logger \
+  --report docs/tests/results/adoption-incident-logger-{run_id}.json
+```
 
-#### E. Post-mortem Protocol Extraction
-**File:** `src-tauri/src/engine/runner.rs`
+### Full 30-template adoption suite
 
-Protocol messages (`emit_event`, `agent_memory`) that spanned multiple streaming
-deltas were missed by the mid-stream parser. Fix: added post-mortem scan of
-accumulated `assistant_text` after CLI process exits, with dedup checks to avoid
-double-creating records already dispatched during streaming.
+```
+uvx --with httpx python tools/test-mcp/e2e_30_adoption.py \
+  --report docs/tests/results/template-adoption-{run_id}.json
+```
 
-### Quality Issues Found and Fixed
+---
 
-#### F. Manual Review Contains Operational Errors
-Reviews like "No pages shared with integration" are infrastructure problems,
-not business decisions. Fix: expanded the review quality gate in `dispatch.rs`
-to reject reviews containing operational error patterns ("no pages shared",
-"no page access", "audit blocked", "has no", "not shared with").
+## Open work
 
-#### G. Memory Contains Negative Scenarios
-Memories like "No Notion API credentials available" provide no learning value.
-Fix: tightened the memory quality filter to reject content about credential
-failures, authentication issues, and empty workspace problems.
-
-#### H. Execution Mode Directive
-The LLM treated executions as conversations ("I'm ready to help..."). Fix:
-added `EXECUTION_MODE_DIRECTIVE` constant at prompt start establishing
-autonomous one-shot execution, with explicit rules about manual_review
-(business decisions only, not operational issues) and protocol requirements.
-
-#### I. Review-to-Memory Link
-When a manual review is resolved (approved/rejected), a memory is now
-automatically created recording the decision for the persona to learn from.
-
-### Test Infrastructure Issues
-
-#### J. Persona ID Cross-Contamination
-The test script read `selectedPersonaId` from Zustand state which persisted
-across test runs. Fix: poll for `buildPersonaId` specifically (the newly
-created persona), with DB fallback query by template name.
-
-#### K. Stale Artifact Counts
-Test scored C5-C9 by counting ALL artifacts for a persona_id including from
-previous runs. Fix: record `_exec_started_at` timestamp, scope all artifact
-queries to `created_at >= timestamp`.
-
-#### L. Persona Deletion Cascade
-Deleting a persona left orphaned records in `persona_memories`,
-`persona_messages`, `persona_events`, `persona_healing_issues`. Fix: explicit
-cleanup in `personas.rs` delete function for tables lacking ON DELETE CASCADE.
-
-### Running Templates 11-30
-
-When continuing the test run for templates 11-30, be aware of:
-
-1. **API Rate Limits**: Running many templates back-to-back may exhaust the
-   Anthropic API quota. Each template requires 2 executions (Sonnet + Haiku).
-   If you see "You've hit your limit" in execution logs, wait for the rate
-   limit window to reset before continuing.
-
-2. **Template Slugs**: Two templates have mismatched slugs in the gallery:
-   - `email-morning-digest` -- gallery row uses `seed-email-morning-digest`
-     but the template ID may differ. Check the gallery data-testid.
-   - `email-support-assistant` -- same issue.
-
-3. **Credential Validation**: The build test now properly fails when tools
-   lack credentials. Templates blocked by this (0/10 with "Build test failed")
-   need their connector credential added in the Keys section, or the template
-   needs alternative tool definitions.
-
-4. **Execution Timeout**: The test polls for 10 minutes (120 iterations x 5s).
-   Some heavy executions (e.g. database-performance-monitor querying all
-   Supabase tables) may exceed this. If C4 fails with "Execution timeout",
-   the execution may still be running in the background.
-
-5. **Quality Audit**: After each template completes, audit the actual content
-   in the database -- not just artifact counts. Check:
-   - Messages have substantive content (not just "I'm ready to help")
-   - Reviews are business decisions (not operational errors)
-   - Memories are genuine learnings (not "missing credentials")
-   - Events match the template's defined event types
-
-### Validated Templates (10/10 confirmed with quality audit)
-
-| # | Template | Connectors | Key Quality Markers |
-|---|----------|------------|---------------------|
-| 1 | Incident Logger | Local DB, Messaging | Structured incident records in messages, low-severity audit reviews, procedure learnings in memories, incident_logged events |
-
-### Templates Pending Retest (previous results invalidated)
-
-Templates 2-10 from Tier 0-2 need retesting with the fixed pipeline.
-Templates 11-30 have never been tested with the correct methodology.
+1. **Extend `e2e_build_from_scratch.py`** to a multi-scenario harness covering the five Glyph scenarios in §4.
+2. **Author Stage D recipe-injection scenarios (§6.1–6.3)** when the matcher ships.
+3. **Author Stage B recipe-as-use-case scenarios (§6.4–6.5)** when the migration script lands. Extend `e2e_30_adoption.py` to assert `source_recipe_id` provenance per use case.
