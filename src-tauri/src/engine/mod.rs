@@ -39,6 +39,7 @@ pub mod connector_strategy;
 #[cfg(feature = "desktop")]
 pub mod context_rules;
 pub mod cost;
+pub mod connector_explorer;
 pub mod credential_design;
 pub mod credential_negotiator;
 pub mod cron;

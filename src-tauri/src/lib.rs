@@ -1812,6 +1812,8 @@ pub fn run() {
             commands::infrastructure::bridge_manifest::bridge_manifest_describe,
             #[cfg(feature = "desktop")]
             commands::infrastructure::bridge_manifest::bridge_manifest_dispatch,
+            // Connector Explorer -- reverse-engineering CLI factory (v1)
+            commands::design::connector_explorer::connector_explorer_explore,
             // Drive -- managed local filesystem plugin
             commands::drive::drive_get_root,
             commands::drive::drive_storage_info,
