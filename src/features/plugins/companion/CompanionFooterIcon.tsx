@@ -42,8 +42,10 @@ export default function CompanionFooterIcon() {
   const markPlaybackPlayed = useCompanionStore((s) => s.markPlaybackPlayed);
   const footerEnabled = useSystemStore((s) => s.companionFooterEnabled);
   const soundEnabled = useSystemStore((s) => s.companionSoundEnabled);
+  const voiceEngine = useSystemStore((s) => s.companionVoiceEngine);
   const voiceCredentialId = useSystemStore((s) => s.companionVoiceCredentialId);
   const voiceId = useSystemStore((s) => s.companionVoiceId);
+  const piperVoiceId = useSystemStore((s) => s.companionPiperVoiceId);
   const voiceSettings = useTtsSettings();
 
   useEffect(() => {
@@ -78,7 +80,16 @@ export default function CompanionFooterIcon() {
   if (!footerEnabled) return null;
 
   const isOpen = state === 'open';
-  const voiceConfigured = Boolean(voiceCredentialId && voiceId);
+  // Per-engine readiness check — same shape as CompanionPanel's
+  // `voiceActive` predicate. Piper needs only a voice id (engine binary
+  // missing-ness surfaces at synth time); ElevenLabs needs both the
+  // credential and the voice id.
+  const voiceConfigured =
+    voiceEngine === 'piper'
+      ? Boolean(piperVoiceId)
+      : Boolean(voiceCredentialId && voiceId);
+  const synthesisCredentialId = voiceEngine === 'piper' ? null : voiceCredentialId;
+  const synthesisVoiceId = voiceEngine === 'piper' ? piperVoiceId : voiceId;
   const hasUnreadPlayback =
     pendingPlayback != null && !pendingPlayback.played;
 
@@ -95,17 +106,18 @@ export default function CompanionFooterIcon() {
       : 'text-foreground/70 hover:text-foreground hover:bg-secondary/50';
 
   const onPlay = async () => {
-    if (!pendingPlayback || !voiceCredentialId || !voiceId) return;
+    if (!pendingPlayback || !synthesisVoiceId) return;
     try {
       // Reuse the cached blob URL when available — replays don't re-hit
-      // ElevenLabs. First play falls through synthesize to populate it.
+      // the engine. First play falls through synthesize to populate it.
       const url =
         pendingPlayback.audioUrl ??
         (await synthesizeTts(
           pendingPlayback.ttsText,
-          voiceCredentialId,
-          voiceId,
+          synthesisCredentialId,
+          synthesisVoiceId,
           voiceSettings,
+          voiceEngine,
         ));
       if (!pendingPlayback.audioUrl) setPlaybackAudioUrl(url);
       const { done } = playAudio(url);

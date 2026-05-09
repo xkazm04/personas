@@ -128,8 +128,10 @@ export default function CompanionPanel() {
   const markPlaybackPlayed = useCompanionStore((s) => s.markPlaybackPlayed);
 
   const voiceEnabled = useSystemStore((s) => s.companionVoiceEnabled);
+  const voiceEngine = useSystemStore((s) => s.companionVoiceEngine);
   const voiceCredentialId = useSystemStore((s) => s.companionVoiceCredentialId);
   const voiceId = useSystemStore((s) => s.companionVoiceId);
+  const piperVoiceId = useSystemStore((s) => s.companionPiperVoiceId);
   const voiceSettings = useTtsSettings();
   const recallSynthesisEnabled = useSystemStore((s) => s.companionRecallSynthesisEnabled);
   const panelCompact = useSystemStore((s) => s.companionPanelCompact);
@@ -248,8 +250,10 @@ export default function CompanionPanel() {
             betaSelfImprove={betaSelfImprove}
             improving={improving}
             voiceEnabled={voiceEnabled}
+            voiceEngine={voiceEngine}
             voiceCredentialId={voiceCredentialId}
             voiceId={voiceId}
+            piperVoiceId={piperVoiceId}
             voiceSettings={voiceSettings}
             recallSynthesisEnabled={recallSynthesisEnabled}
             setMessages={setMessages}
@@ -379,8 +383,10 @@ interface BodyProps {
   betaSelfImprove: boolean;
   improving: boolean;
   voiceEnabled: boolean;
+  voiceEngine: 'elevenlabs' | 'piper';
   voiceCredentialId: string | null;
   voiceId: string | null;
+  piperVoiceId: string | null;
   voiceSettings: ReturnType<typeof useTtsSettings>;
   recallSynthesisEnabled: boolean;
   setMessages: (m: BodyProps['messages']) => void;
@@ -419,8 +425,10 @@ function Body(props: BodyProps) {
     betaSelfImprove,
     improving,
     voiceEnabled,
+    voiceEngine,
     voiceCredentialId,
     voiceId,
+    piperVoiceId,
     voiceSettings,
     recallSynthesisEnabled,
     setMessages,
@@ -587,11 +595,21 @@ function Body(props: BodyProps) {
     el.scrollTop = el.scrollHeight;
   }, [messages, streamingText, streaming]);
 
-  // Voice is "active" only when fully wired: user toggled it on AND has
-  // an ElevenLabs credential + voice id selected. The send pipeline checks
-  // this before asking the backend to emit a TTS line — there's no point
-  // generating a spoken summary we can't synthesize.
-  const voiceActive = voiceEnabled && Boolean(voiceCredentialId && voiceId);
+  // Voice is "active" only when the chosen engine has everything it
+  // needs: ElevenLabs requires a credential + voice id; Piper requires
+  // only a voice id (the engine binary lookup happens at synthesis time
+  // and surfaces a clear install hint if missing). The send pipeline
+  // checks this before asking the backend to emit a TTS line — there's
+  // no point generating a spoken summary we can't synthesize.
+  const voiceActive =
+    voiceEnabled &&
+    (voiceEngine === 'piper'
+      ? Boolean(piperVoiceId)
+      : Boolean(voiceCredentialId && voiceId));
+  // Resolve the engine-specific identifiers for synthesis. Piper passes
+  // null credentialId; ElevenLabs passes null where Piper voice id would go.
+  const synthesisCredentialId = voiceEngine === 'piper' ? null : voiceCredentialId;
+  const synthesisVoiceId = voiceEngine === 'piper' ? piperVoiceId : voiceId;
 
   const send = useCallback(
     async (text: string) => {
@@ -627,8 +645,7 @@ function Body(props: BodyProps) {
         if (
           voiceActive &&
           result.ttsText &&
-          voiceCredentialId &&
-          voiceId
+          synthesisVoiceId
         ) {
           const playback = {
             episodeId: result.assistantEpisodeId,
@@ -637,7 +654,13 @@ function Body(props: BodyProps) {
             audioUrl: null as string | null,
           };
           setPendingPlayback(playback);
-          synthesizeTts(result.ttsText, voiceCredentialId, voiceId, voiceSettings)
+          synthesizeTts(
+            result.ttsText,
+            synthesisCredentialId,
+            synthesisVoiceId,
+            voiceSettings,
+            voiceEngine,
+          )
             .then((url) => {
               setPlaybackAudioUrl(url);
               const { done } = playAudio(url);
@@ -667,8 +690,13 @@ function Body(props: BodyProps) {
       setSendError,
       setStreaming,
       voiceActive,
+      voiceEngine,
       voiceCredentialId,
       voiceId,
+      piperVoiceId,
+      synthesisCredentialId,
+      synthesisVoiceId,
+      voiceSettings,
       recallSynthesisEnabled,
     ],
   );

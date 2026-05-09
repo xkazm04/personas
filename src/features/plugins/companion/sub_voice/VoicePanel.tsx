@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ExternalLink, KeyRound, Mic, RefreshCw, RotateCcw, ShieldCheck } from 'lucide-react';
+import { Cloud, ExternalLink, HardDrive, KeyRound, Mic, RefreshCw, RotateCcw, ShieldCheck } from 'lucide-react';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
@@ -12,13 +12,106 @@ import {
 } from '@/api/credentials/scopedResources';
 import {
   COMPANION_VOICE_MODELS,
+  type CompanionTtsEngine,
   type CompanionVoiceModel,
 } from '@/stores/slices/system/companionPluginSlice';
+import PiperVoicePanel from './PiperVoicePanel';
 
 /**
- * Voice tab — bind ElevenLabs credentials to a voice id, then toggle
- * voice playback on. Playback in chat is downstream; this panel only
- * handles the configuration side.
+ * Voice tab entry point. Owns the engine segmented control at the top
+ * and dispatches to either the ElevenLabs panel (cloud, credential-
+ * gated) or the Piper panel (local, voice-download-gated). Splitting
+ * by engine keeps each panel's state contract narrow — switching
+ * engines doesn't bleed credential picking into Piper or vice versa.
+ */
+export default function VoicePanel() {
+  const engine = useSystemStore((s) => s.companionVoiceEngine);
+  return (
+    <div className="space-y-4 max-w-2xl">
+      <EngineSelectorCard />
+      {engine === 'piper' ? <PiperVoicePanel /> : <ElevenLabsVoicePanel />}
+    </div>
+  );
+}
+
+function EngineSelectorCard() {
+  const { t } = useTranslation();
+  const engine = useSystemStore((s) => s.companionVoiceEngine);
+  const setEngine = useSystemStore((s) => s.setCompanionVoiceEngine);
+  const voiceEnabled = useSystemStore((s) => s.companionVoiceEnabled);
+  const setVoiceEnabled = useSystemStore((s) => s.setCompanionVoiceEnabled);
+
+  // Switching engines invalidates the playback gate — disable until the
+  // new engine reports it's configured. Avoids a state where the toggle
+  // says "on" but the synthesis path silently falls back / errors.
+  const onSwitch = (next: CompanionTtsEngine) => {
+    if (next === engine) return;
+    setEngine(next);
+    if (voiceEnabled) setVoiceEnabled(false);
+  };
+
+  return (
+    <SectionCard
+      title={t.plugins.companion.voice_engine_title}
+      subtitle={t.plugins.companion.voice_engine_desc}
+    >
+      <div className="grid grid-cols-2 gap-2 px-1 py-2">
+        <EngineButton
+          active={engine === 'elevenlabs'}
+          onClick={() => onSwitch('elevenlabs')}
+          icon={<Cloud className="w-4 h-4" />}
+          label={t.plugins.companion.voice_engine_elevenlabs}
+          caption={t.plugins.companion.voice_engine_elevenlabs_caption}
+        />
+        <EngineButton
+          active={engine === 'piper'}
+          onClick={() => onSwitch('piper')}
+          icon={<HardDrive className="w-4 h-4" />}
+          label={t.plugins.companion.voice_engine_piper}
+          caption={t.plugins.companion.voice_engine_piper_caption}
+        />
+      </div>
+    </SectionCard>
+  );
+}
+
+interface EngineButtonProps {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+  caption: string;
+}
+
+function EngineButton({ active, onClick, icon, label, caption }: EngineButtonProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`text-left rounded-card border p-3 transition-colors focus-ring ${
+        active
+          ? 'border-cyan-500/50 bg-cyan-500/10'
+          : 'border-foreground/10 bg-secondary/20 hover:bg-secondary/40'
+      }`}
+    >
+      <div className="flex items-center gap-2">
+        <span className={active ? 'text-cyan-300' : 'text-foreground/70'}>{icon}</span>
+        <span
+          className={`typo-body font-medium ${active ? 'text-cyan-200' : 'text-foreground'}`}
+        >
+          {label}
+        </span>
+      </div>
+      <p className="typo-caption text-foreground/60 mt-1">{caption}</p>
+    </button>
+  );
+}
+
+/**
+ * ElevenLabs voice configuration — credential picker, voice id, tuning
+ * sliders, master enable. Mounted by `VoicePanel` when the engine
+ * selector is on `'elevenlabs'`.
  *
  * Voice picking has three layers, in order of preference:
  *   1. If the selected credential has scoped `voices`, use that pinned set —
@@ -29,7 +122,7 @@ import {
  *   3. As a last resort (or for power users with a voice id from elsewhere),
  *      a "Use a custom voice id" disclosure exposes the raw text input.
  */
-export default function VoicePanel() {
+function ElevenLabsVoicePanel() {
   const { t } = useTranslation();
 
   const credentials = useVaultStore((s) => s.credentials);
@@ -168,7 +261,7 @@ export default function VoicePanel() {
 
   if (elevenlabsCreds.length === 0) {
     return (
-      <div className="max-w-2xl">
+      <div>
         <SectionCard
           title={t.plugins.companion.voice_title}
           subtitle={t.plugins.companion.voice_subtitle}
@@ -204,7 +297,7 @@ export default function VoicePanel() {
   const canEnable = !!credentialId && !!voiceId?.trim();
 
   return (
-    <div className="space-y-4 max-w-2xl">
+    <div className="space-y-4">
       <SectionCard
         title={t.plugins.companion.voice_credential_title}
         subtitle={t.plugins.companion.voice_credential_desc}
