@@ -354,7 +354,11 @@ export function AmbientContextPanel() {
               <div className="space-y-1">
                 <span className="text-[10px] text-foreground">{s.match_sources}</span>
                 <div className="flex gap-1.5">
-                  {(['clipboard', 'file_watcher', 'app_focus'] as const).map((src) => (
+                  {([
+                    { src: 'clipboard' as const, label: s.clipboard },
+                    { src: 'file_watcher' as const, label: s.file_changes },
+                    { src: 'app_focus' as const, label: s.app_focus },
+                  ]).map(({ src, label }) => (
                     <button
                       key={src}
                       onClick={() => toggleSource(src)}
@@ -364,7 +368,7 @@ export function AmbientContextPanel() {
                           : 'border-primary/15 bg-secondary/30 text-foreground'
                       }`}
                     >
-                      {src}
+                      {label}
                     </button>
                   ))}
                 </div>
