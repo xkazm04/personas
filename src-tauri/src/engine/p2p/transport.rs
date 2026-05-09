@@ -27,15 +27,41 @@ impl QuicTransport {
     }
 
     /// Bind the QUIC endpoint to the given port and start listening.
+    ///
+    /// Builds a dual-stack IPv6 UDP socket (V6Only=false) so both IPv4 and
+    /// IPv6 LAN peers can connect. Binding `0.0.0.0:port` directly would
+    /// reject all IPv6 peers, and binding `[::]:port` without the V6Only
+    /// override is IPv6-only on Windows. socket2 normalizes the platform
+    /// difference.
     pub async fn bind(&self, port: u16) -> Result<(), AppError> {
+        use socket2::{Domain, Protocol, Socket, Type};
+
         let (server_config, client_config) = build_tls_configs(&self.peer_id)?;
 
-        let addr: SocketAddr = format!("0.0.0.0:{}", port)
+        let addr: SocketAddr = format!("[::]:{}", port)
             .parse()
             .map_err(|e| AppError::Internal(format!("Invalid bind address: {e}")))?;
 
-        let mut endpoint = quinn::Endpoint::server(server_config, addr)
-            .map_err(|e| AppError::Internal(format!("Failed to create QUIC endpoint: {e}")))?;
+        let socket = Socket::new(Domain::IPV6, Type::DGRAM, Some(Protocol::UDP))
+            .map_err(|e| AppError::Internal(format!("UDP socket creation failed: {e}")))?;
+        socket.set_only_v6(false).map_err(|e| {
+            AppError::Internal(format!("Failed to enable dual-stack socket: {e}"))
+        })?;
+        socket
+            .set_nonblocking(true)
+            .map_err(|e| AppError::Internal(format!("Failed to set non-blocking: {e}")))?;
+        socket
+            .bind(&addr.into())
+            .map_err(|e| AppError::Internal(format!("UDP bind failed: {e}")))?;
+        let std_socket: std::net::UdpSocket = socket.into();
+
+        let mut endpoint = quinn::Endpoint::new(
+            quinn::EndpointConfig::default(),
+            Some(server_config),
+            std_socket,
+            Arc::new(quinn::TokioRuntime),
+        )
+        .map_err(|e| AppError::Internal(format!("Failed to create QUIC endpoint: {e}")))?;
 
         endpoint.set_default_client_config(client_config);
 
@@ -43,7 +69,7 @@ impl QuicTransport {
             .local_addr()
             .map_err(|e| AppError::Internal(format!("Failed to get local addr: {e}")))?;
 
-        tracing::info!(addr = %local, "QUIC endpoint bound");
+        tracing::info!(addr = %local, "QUIC endpoint bound (dual-stack)");
 
         *self.endpoint.write().await = Some(endpoint);
         *self.local_addr.write().await = Some(local);
