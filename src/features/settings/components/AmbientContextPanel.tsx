@@ -151,7 +151,7 @@ export function AmbientContextPanel() {
 
   const toggleSource = useCallback((source: string) => {
     setRuleSources((prev) =>
-      prev.includes(source) ? prev.filter((s) => s !== source) : [...prev, source],
+      prev.includes(source) ? prev.filter((src) => src !== source) : [...prev, source],
     );
   }, []);
 
