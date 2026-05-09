@@ -146,17 +146,64 @@ pub struct AmbientSignalEntry {
     pub age_secs: u64,
 }
 
+/// Per-source capture-gate state, surfaced to the UI via Tauri commands.
+/// The toggles render against the *_enabled fields; the *_signals_in_window
+/// counts populate the "What did Athena see?" view's source headers.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct SensorySourceState {
+    /// Master kill switch (rarely toggled; defaults true).
+    pub global_enabled: bool,
+    /// Per-source capture gate for clipboard signals (default false).
+    pub clipboard_enabled: bool,
+    /// Per-source capture gate for file-watcher signals (default false).
+    pub file_changes_enabled: bool,
+    /// Per-source capture gate for app-focus signals (default false).
+    pub app_focus_enabled: bool,
+    /// Number of clipboard signals currently in the rolling window.
+    pub clipboard_signals_in_window: u32,
+    /// Number of file-watcher signals currently in the rolling window.
+    pub file_changes_signals_in_window: u32,
+    /// Number of app-focus signals currently in the rolling window.
+    pub app_focus_signals_in_window: u32,
+    /// Lifetime total of signals captured since process start (across all sources).
+    pub total_signals_captured: u64,
+}
+
 // ---------------------------------------------------------------------------
 // Core fusion state
 // ---------------------------------------------------------------------------
 
 /// The shared fusion state, protected by a tokio Mutex.
 pub struct AmbientContextFusion {
-    /// Whether ambient context collection is globally enabled.
+    /// Whether ambient context collection is globally enabled. Master kill
+    /// switch — when off, no source captures anything regardless of the
+    /// per-source flags below.
     enabled: bool,
+    /// Per-source capture gate: clipboard signals captured iff true.
+    /// Default false ("OFF until the user opts in"). Combined with `enabled`
+    /// at the start of each `push_*` so capture only happens when both the
+    /// master switch and the source-specific gate are on. See Phase 1 audit
+    /// at `docs/concepts/athena-desktop-aware-phase1-audit.md` — moving the
+    /// per-source gating from consumption to capture is what makes the
+    /// "default OFF per source" UI promise honest.
+    clipboard_enabled: bool,
+    /// Per-source capture gate: file-watcher signals captured iff true.
+    file_changes_enabled: bool,
+    /// Per-source capture gate: app-focus signals captured iff true.
+    /// Window titles are redacted at capture (`redact_window_title`) so
+    /// even when this is on, sensitive content from titles is stripped
+    /// before reaching the rolling window.
+    app_focus_enabled: bool,
     /// Rolling window of recent signals.
     signals: VecDeque<AmbientSignal>,
-    /// Per-persona sensory policies: persona_id -> policy.
+    /// Per-persona sensory policies: persona_id -> policy. These filter
+    /// at *consumption* (when a persona reads the snapshot); the per-source
+    /// gates above filter at *capture*. Both layers exist intentionally —
+    /// capture-time gating enforces the user's privacy promise; consumption-
+    /// time policies let multiple personas with different scopes share the
+    /// same captured stream.
     policies: std::collections::HashMap<String, SensoryPolicy>,
     /// Current foreground app info.
     current_app: Option<String>,
@@ -178,6 +225,12 @@ impl AmbientContextFusion {
         let (stream_tx, _) = tokio::sync::broadcast::channel(CONTEXT_STREAM_CAPACITY);
         Self {
             enabled: true,
+            // All sources OFF by default — the user must opt in per source.
+            // This is the privacy contract: no watcher captures anything
+            // until an explicit toggle from the Companion settings UI.
+            clipboard_enabled: false,
+            file_changes_enabled: false,
+            app_focus_enabled: false,
             signals: VecDeque::with_capacity(64),
             policies: std::collections::HashMap::new(),
             current_app: None,
@@ -216,6 +269,67 @@ impl AmbientContextFusion {
         self.enabled
     }
 
+    /// Source gate read: per-source capture switch. Names mirror the
+    /// `source` strings used in `ContextEvent` and `AmbientSignal`:
+    /// `"clipboard"`, `"file_watcher"`, `"app_focus"`. Unknown sources
+    /// return false (fail closed — don't capture what we don't recognize).
+    pub fn is_source_enabled(&self, source: &str) -> bool {
+        match source {
+            "clipboard" => self.clipboard_enabled,
+            "file_watcher" => self.file_changes_enabled,
+            "app_focus" => self.app_focus_enabled,
+            _ => false,
+        }
+    }
+
+    /// Source gate write: toggle a per-source capture switch. When a
+    /// source is being disabled (`enabled=false`), purge any prior signals
+    /// from that source from the rolling window — the privacy promise is
+    /// "stop capturing AND drop what was captured." Returns the number of
+    /// signals purged (0 when enabling, ≥0 when disabling).
+    pub fn set_source_enabled(&mut self, source: &str, enabled: bool) -> usize {
+        let already = self.is_source_enabled(source);
+        match source {
+            "clipboard" => self.clipboard_enabled = enabled,
+            "file_watcher" => self.file_changes_enabled = enabled,
+            "app_focus" => self.app_focus_enabled = enabled,
+            _ => return 0,
+        }
+        // Purge prior signals from this source on disable. No-op on enable.
+        if already && !enabled {
+            let before = self.signals.len();
+            self.signals.retain(|s| s.source != source);
+            // Clear the cached app/title when app_focus is being disabled
+            // so a future enable doesn't surface stale state.
+            if source == "app_focus" {
+                self.current_app = None;
+                self.current_window_title = None;
+            }
+            before - self.signals.len()
+        } else {
+            0
+        }
+    }
+
+    /// Snapshot the per-source enable state. Used by the UI to render the
+    /// current toggle positions and to surface "what's currently captured"
+    /// counts.
+    pub fn source_state(&self) -> SensorySourceState {
+        let by_source = |src: &str| -> u32 {
+            self.signals.iter().filter(|s| s.source == src).count() as u32
+        };
+        SensorySourceState {
+            global_enabled: self.enabled,
+            clipboard_enabled: self.clipboard_enabled,
+            file_changes_enabled: self.file_changes_enabled,
+            app_focus_enabled: self.app_focus_enabled,
+            clipboard_signals_in_window: by_source("clipboard"),
+            file_changes_signals_in_window: by_source("file_watcher"),
+            app_focus_signals_in_window: by_source("app_focus"),
+            total_signals_captured: self.total_captured,
+        }
+    }
+
     /// Register or update a sensory policy for a persona.
     pub fn set_policy(&mut self, persona_id: String, policy: SensoryPolicy) {
         self.policies.insert(persona_id, policy);
@@ -233,9 +347,10 @@ impl AmbientContextFusion {
             .unwrap_or(&self.default_policy)
     }
 
-    /// Push a clipboard change signal.
+    /// Push a clipboard change signal. Captured iff master `enabled` AND
+    /// the per-source `clipboard_enabled` gate are on.
     pub fn push_clipboard(&mut self, content_type: &str, content_length: usize) {
-        if !self.enabled {
+        if !self.enabled || !self.clipboard_enabled {
             return;
         }
         let summary = format!("Clipboard: {content_type} ({content_length} chars)");
@@ -243,9 +358,10 @@ impl AmbientContextFusion {
         self.push_signal("clipboard", summary);
     }
 
-    /// Push a file change signal.
+    /// Push a file change signal. Captured iff master `enabled` AND the
+    /// per-source `file_changes_enabled` gate are on.
     pub fn push_file_change(&mut self, kind: &str, paths: &[String]) {
-        if !self.enabled {
+        if !self.enabled || !self.file_changes_enabled {
             return;
         }
         let path_display: Vec<&str> = paths
@@ -259,19 +375,25 @@ impl AmbientContextFusion {
     }
 
     /// Push an app focus change signal and update current app state.
+    /// Captured iff master `enabled` AND the per-source `app_focus_enabled`
+    /// gate are on. Window titles are redacted at capture time
+    /// (`redact_window_title`) before being stored or broadcast — file
+    /// paths in titles are reduced to basenames, email-shaped patterns are
+    /// masked, and overall length is capped.
     pub fn push_app_focus(&mut self, app_name: &str, window_title: &str) {
-        if !self.enabled {
+        if !self.enabled || !self.app_focus_enabled {
             return;
         }
+        let redacted_title = redact_window_title(window_title);
         self.current_app = Some(app_name.to_string());
-        self.current_window_title = Some(window_title.to_string());
-        let summary = format!("Focused: {app_name} — {window_title}");
+        self.current_window_title = Some(redacted_title.clone());
+        let summary = format!("Focused: {app_name} — {redacted_title}");
         self.broadcast_event(
             "app_focus",
             &summary,
             Vec::new(),
             Some(app_name.to_string()),
-            Some(window_title.to_string()),
+            Some(redacted_title),
         );
         self.push_signal("app_focus", summary);
     }
@@ -519,6 +641,85 @@ impl AmbientContextFusion {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Capture-time redaction
+// ---------------------------------------------------------------------------
+
+/// Maximum length for a captured window title. Long titles often contain
+/// pasted error messages, URLs with query strings, or document paths —
+/// truncating bounds the per-signal token cost in the rolling window.
+const WINDOW_TITLE_MAX_LEN: usize = 120;
+
+/// Redact a window title before it enters the rolling ambient window.
+///
+/// Window titles routinely leak sensitive content — filenames in editor
+/// tabs (`~/Documents/Confidential proposal.docx — Word`), URLs with
+/// query parameters in browser tabs (`Google Search — paypal login`),
+/// email subject lines (`Re: severance terms — Outlook`). The Sourabh
+/// Sharma blueprint and Phase 1 audit both call out window-title
+/// redaction as Phase 2's mandatory companion to clipboard redaction.
+///
+/// Strategy:
+///   1. Reduce filesystem paths in the title to basenames only —
+///      `C:\Users\foo\secret.docx — Word` becomes `secret.docx — Word`.
+///   2. Mask email-shaped patterns with `[email]`.
+///   3. Mask URL paths beyond the host (preserve domain for context but
+///      drop query strings and path segments).
+///   4. Cap total length to `WINDOW_TITLE_MAX_LEN` chars.
+///
+/// Idempotent: redacting an already-redacted title produces the same
+/// string. Pure (no I/O, no allocations beyond the result string).
+pub fn redact_window_title(title: &str) -> String {
+    let mut out = String::with_capacity(title.len());
+
+    // Step 1: reduce filesystem paths to basenames. Match both Windows
+    // (`C:\…`, `D:\…`) and POSIX (`/…`) absolute path tokens. Heuristic:
+    // a token containing `/` or `\` and at least one path separator is
+    // treated as a path; we keep only the part after the final separator.
+    for token in title.split_whitespace() {
+        if !out.is_empty() {
+            out.push(' ');
+        }
+        let looks_like_path = token.contains('\\')
+            || (token.contains('/') && !token.starts_with("http://") && !token.starts_with("https://"));
+        if looks_like_path {
+            // Take the basename — the last component after the rightmost separator.
+            let basename = token
+                .rsplit(|c| c == '/' || c == '\\')
+                .next()
+                .unwrap_or(token);
+            out.push_str(basename);
+        } else if let Some(at_pos) = token.find('@') {
+            // Email-shaped token: replace anything that looks like an
+            // email with [email]. Conservative: must have `@` and a dot
+            // somewhere after.
+            if token[at_pos..].contains('.') {
+                out.push_str("[email]");
+            } else {
+                out.push_str(token);
+            }
+        } else if token.starts_with("http://") || token.starts_with("https://") {
+            // URL: keep scheme+host, drop path/query.
+            let host_end = token[8..]
+                .find('/')
+                .map(|i| i + 8)
+                .unwrap_or(token.len());
+            out.push_str(&token[..host_end]);
+        } else {
+            out.push_str(token);
+        }
+    }
+
+    // Step 4: cap length. Truncate at a char boundary (chars iterator)
+    // not byte boundary, otherwise we corrupt multi-byte sequences.
+    if out.chars().count() > WINDOW_TITLE_MAX_LEN {
+        let truncated: String = out.chars().take(WINDOW_TITLE_MAX_LEN).collect();
+        format!("{truncated}…")
+    } else {
+        out
+    }
+}
+
 /// Shared handle to the ambient context fusion state.
 pub type AmbientContextHandle = Arc<Mutex<AmbientContextFusion>>;
 
@@ -756,12 +957,27 @@ async fn prune_old_validation_screenshots(
 }
 
 #[cfg(test)]
+impl AmbientContextFusion {
+    /// Test helper: create a fusion with all per-source gates enabled.
+    /// Default `new()` returns all sources OFF (the production privacy
+    /// contract); tests that exercise the push paths and don't care about
+    /// the gate semantics should call this instead.
+    fn new_for_tests() -> Self {
+        let mut f = Self::new();
+        f.set_source_enabled("clipboard", true);
+        f.set_source_enabled("file_watcher", true);
+        f.set_source_enabled("app_focus", true);
+        f
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_push_and_snapshot() {
-        let mut fusion = AmbientContextFusion::new();
+        let mut fusion = AmbientContextFusion::new_for_tests();
         fusion.push_clipboard("text", 42);
         fusion.push_file_change("modify", &["src/main.rs".to_string()]);
         fusion.push_app_focus("Code.exe", "main.rs — personas");
@@ -774,7 +990,7 @@ mod tests {
 
     #[test]
     fn test_policy_filtering() {
-        let mut fusion = AmbientContextFusion::new();
+        let mut fusion = AmbientContextFusion::new_for_tests();
         fusion.set_policy(
             "p1".to_string(),
             SensoryPolicy {
@@ -794,7 +1010,7 @@ mod tests {
 
     #[test]
     fn test_focus_app_filter() {
-        let mut fusion = AmbientContextFusion::new();
+        let mut fusion = AmbientContextFusion::new_for_tests();
         fusion.set_policy(
             "p1".to_string(),
             SensoryPolicy {
@@ -822,7 +1038,7 @@ mod tests {
 
     #[test]
     fn test_disabled() {
-        let mut fusion = AmbientContextFusion::new();
+        let mut fusion = AmbientContextFusion::new_for_tests();
         fusion.set_enabled(false);
         fusion.push_clipboard("text", 10);
         let snap = fusion.snapshot_for_persona("any");
@@ -832,7 +1048,7 @@ mod tests {
 
     #[test]
     fn test_window_eviction() {
-        let mut fusion = AmbientContextFusion::new();
+        let mut fusion = AmbientContextFusion::new_for_tests();
         fusion.default_policy.max_window_size = 5;
         for i in 0..10 {
             fusion.push_clipboard("text", i * 10);
@@ -843,7 +1059,7 @@ mod tests {
 
     #[test]
     fn test_format_for_prompt() {
-        let mut fusion = AmbientContextFusion::new();
+        let mut fusion = AmbientContextFusion::new_for_tests();
         fusion.push_app_focus("Code.exe", "ambient_context.rs");
         fusion.push_file_change("modify", &["ambient_context.rs".to_string()]);
 
@@ -856,7 +1072,7 @@ mod tests {
 
     #[test]
     fn test_file_glob_filter() {
-        let mut fusion = AmbientContextFusion::new();
+        let mut fusion = AmbientContextFusion::new_for_tests();
         fusion.set_policy(
             "p1".to_string(),
             SensoryPolicy {
@@ -898,14 +1114,14 @@ mod tests {
 
     #[test]
     fn test_format_empty_when_disabled() {
-        let mut fusion = AmbientContextFusion::new();
+        let mut fusion = AmbientContextFusion::new_for_tests();
         fusion.set_enabled(false);
         assert!(fusion.format_for_prompt("p1").is_none());
     }
 
     #[test]
     fn test_buffer_adapts_to_registered_policies() {
-        let mut fusion = AmbientContextFusion::new();
+        let mut fusion = AmbientContextFusion::new_for_tests();
         // Register two personas with small windows
         fusion.set_policy(
             "p1".to_string(),
@@ -935,7 +1151,7 @@ mod tests {
 
     #[test]
     fn test_snapshot_clamps_to_persona_window_size() {
-        let mut fusion = AmbientContextFusion::new();
+        let mut fusion = AmbientContextFusion::new_for_tests();
         // p1 wants a small window, p2 a larger one
         fusion.set_policy(
             "p1".to_string(),
@@ -972,7 +1188,7 @@ mod tests {
 
     #[test]
     fn test_buffer_uses_default_when_no_policies() {
-        let mut fusion = AmbientContextFusion::new();
+        let mut fusion = AmbientContextFusion::new_for_tests();
         // No persona policies registered — should fall back to default (30)
         for i in 0..35 {
             fusion.push_clipboard("text", i * 10);
@@ -1024,7 +1240,7 @@ mod tests {
 
     #[test]
     fn test_buffer_shrinks_after_policy_update() {
-        let mut fusion = AmbientContextFusion::new();
+        let mut fusion = AmbientContextFusion::new_for_tests();
         // Start with a large window
         fusion.set_policy(
             "p1".to_string(),
@@ -1052,5 +1268,179 @@ mod tests {
             "buffer should shrink after policy update, got {}",
             fusion.signals.len()
         );
+    }
+
+    // ── Per-source gate (Phase 2 v1) ──────────────────────────────────────
+
+    #[test]
+    fn new_starts_with_all_sources_off() {
+        // Privacy contract: a fresh fusion has every per-source gate OFF
+        // until the user opts in. This is the default-off promise.
+        let fusion = AmbientContextFusion::new();
+        assert!(!fusion.is_source_enabled("clipboard"));
+        assert!(!fusion.is_source_enabled("file_watcher"));
+        assert!(!fusion.is_source_enabled("app_focus"));
+        // Master switch defaults on (the kill-switch shape — present but
+        // rarely toggled). Per-source gates carry the privacy guarantee.
+        assert!(fusion.is_enabled());
+    }
+
+    #[test]
+    fn push_skips_when_per_source_gate_off() {
+        let mut fusion = AmbientContextFusion::new(); // all sources OFF
+        fusion.push_clipboard("text", 100);
+        fusion.push_file_change("modify", &["a.rs".to_string()]);
+        fusion.push_app_focus("Code.exe", "main.rs");
+        assert_eq!(fusion.signals.len(), 0);
+        assert_eq!(fusion.total_captured, 0);
+    }
+
+    #[test]
+    fn push_captures_when_per_source_gate_on() {
+        let mut fusion = AmbientContextFusion::new();
+        fusion.set_source_enabled("clipboard", true);
+        fusion.push_clipboard("text", 50);
+        // file_watcher + app_focus still OFF
+        fusion.push_file_change("modify", &["a.rs".to_string()]);
+        fusion.push_app_focus("Code.exe", "main.rs");
+        assert_eq!(fusion.signals.len(), 1, "only clipboard should land");
+        assert_eq!(fusion.signals[0].source, "clipboard");
+    }
+
+    #[test]
+    fn disable_source_purges_prior_signals() {
+        let mut fusion = AmbientContextFusion::new_for_tests(); // all on
+        fusion.push_clipboard("text", 10);
+        fusion.push_clipboard("text", 20);
+        fusion.push_app_focus("Code.exe", "main.rs");
+        assert_eq!(fusion.signals.len(), 3);
+        // Disable clipboard — its signals must be purged.
+        let purged = fusion.set_source_enabled("clipboard", false);
+        assert_eq!(purged, 2, "should purge 2 clipboard signals");
+        assert_eq!(fusion.signals.len(), 1);
+        assert_eq!(fusion.signals[0].source, "app_focus");
+    }
+
+    #[test]
+    fn disable_app_focus_clears_current_state() {
+        let mut fusion = AmbientContextFusion::new_for_tests();
+        fusion.push_app_focus("Code.exe", "main.rs");
+        assert!(fusion.current_app.is_some());
+        assert!(fusion.current_window_title.is_some());
+        fusion.set_source_enabled("app_focus", false);
+        assert!(
+            fusion.current_app.is_none(),
+            "current_app should clear on app_focus disable"
+        );
+        assert!(
+            fusion.current_window_title.is_none(),
+            "current_window_title should clear on app_focus disable"
+        );
+    }
+
+    #[test]
+    fn enable_source_does_not_replay_signals() {
+        let mut fusion = AmbientContextFusion::new(); // OFF
+        fusion.push_clipboard("text", 10); // dropped
+        fusion.set_source_enabled("clipboard", true); // late opt-in
+        // Enabling AFTER a push must NOT replay the dropped signal —
+        // the user said "start now," not "include the past."
+        assert_eq!(fusion.signals.len(), 0);
+    }
+
+    #[test]
+    fn unknown_source_name_fails_closed() {
+        let mut fusion = AmbientContextFusion::new();
+        // Unknown sources read as false (don't capture) and the setter
+        // is a no-op (doesn't add a new field).
+        assert!(!fusion.is_source_enabled("nonsense"));
+        let purged = fusion.set_source_enabled("nonsense", true);
+        assert_eq!(purged, 0);
+        assert!(!fusion.is_source_enabled("nonsense"));
+    }
+
+    #[test]
+    fn source_state_reports_per_source_counts() {
+        let mut fusion = AmbientContextFusion::new_for_tests();
+        fusion.push_clipboard("text", 10);
+        fusion.push_clipboard("text", 20);
+        fusion.push_file_change("modify", &["a.rs".to_string()]);
+        let state = fusion.source_state();
+        assert!(state.global_enabled);
+        assert!(state.clipboard_enabled);
+        assert!(state.file_changes_enabled);
+        assert!(state.app_focus_enabled);
+        assert_eq!(state.clipboard_signals_in_window, 2);
+        assert_eq!(state.file_changes_signals_in_window, 1);
+        assert_eq!(state.app_focus_signals_in_window, 0);
+        assert_eq!(state.total_signals_captured, 3);
+    }
+
+    // ── Window-title redaction ────────────────────────────────────────────
+
+    #[test]
+    fn redact_title_strips_filesystem_paths_to_basename() {
+        // Editor tabs typically render as `<full path> — <app>`. The
+        // basename is the visible part the user expects to see; the
+        // directory chain is the leak.
+        assert_eq!(
+            redact_window_title("C:\\Users\\foo\\Documents\\secret.docx — Word"),
+            "secret.docx — Word"
+        );
+        assert_eq!(
+            redact_window_title("/home/user/projects/personas/main.rs - Code"),
+            "main.rs - Code"
+        );
+    }
+
+    #[test]
+    fn redact_title_masks_emails() {
+        assert_eq!(
+            redact_window_title("Re: design review john.doe@example.com — Outlook"),
+            "Re: design review [email] — Outlook"
+        );
+    }
+
+    #[test]
+    fn redact_title_strips_url_path_and_query() {
+        // Browser titles often expose the full URL in the tab. Keeping
+        // host but dropping path+query reduces leak surface while
+        // preserving "user is on github.com" context.
+        let out = redact_window_title("Issue #42 — https://github.com/owner/repo/issues/42?token=secret");
+        assert!(out.contains("https://github.com"));
+        assert!(!out.contains("token=secret"));
+        assert!(!out.contains("/owner/repo"));
+    }
+
+    #[test]
+    fn redact_title_truncates_long_input() {
+        let long = "x".repeat(500);
+        let out = redact_window_title(&long);
+        // Truncated to the cap with an ellipsis suffix.
+        assert!(out.chars().count() <= WINDOW_TITLE_MAX_LEN + 1);
+        assert!(out.ends_with('…'));
+    }
+
+    #[test]
+    fn redact_title_idempotent_on_clean_input() {
+        let clean = "main.rs - Code";
+        assert_eq!(redact_window_title(clean), clean);
+    }
+
+    #[test]
+    fn push_app_focus_redacts_before_storing() {
+        let mut fusion = AmbientContextFusion::new_for_tests();
+        fusion.push_app_focus(
+            "Word.exe",
+            "C:\\Users\\foo\\Documents\\Confidential proposal.docx — Word",
+        );
+        // The stored signal summary AND current_window_title must both be redacted.
+        assert!(fusion
+            .current_window_title
+            .as_ref()
+            .map(|t| !t.contains("C:\\Users"))
+            .unwrap_or(false));
+        assert_eq!(fusion.signals.len(), 1);
+        assert!(!fusion.signals[0].summary.contains("C:\\Users"));
     }
 }

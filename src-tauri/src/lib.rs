@@ -1892,6 +1892,12 @@ pub fn run() {
             commands::companion::proactive::companion_list_proactive_messages,
             commands::companion::proactive::companion_engage_proactive,
             commands::companion::proactive::companion_dismiss_proactive,
+            #[cfg(feature = "desktop")]
+            commands::companion::sensory::companion_get_sensory_state,
+            #[cfg(feature = "desktop")]
+            commands::companion::sensory::companion_set_sensory_source_enabled,
+            #[cfg(feature = "desktop")]
+            commands::companion::sensory::companion_purge_sensory_source,
             commands::companion::connectors::companion_list_active_connectors,
             commands::companion::connectors::companion_set_active_connectors,
             commands::companion::connectors::companion_set_connector_enabled,
