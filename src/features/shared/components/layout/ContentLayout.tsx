@@ -69,7 +69,7 @@ export function ContentBox({ children, minWidth, 'data-testid': testId }: Conten
   // xl 1280->952 available, 2xl 1536->1208, 3xl 1920->1592, 4xl 2560->2232
   return (
     <ContentLayoutContext.Provider value={ctxValue}>
-      <div data-testid={testId} className={`flex-1 min-h-0 flex flex-col w-full overflow-hidden ${IS_MOBILE ? '' : 'min-w-[800px] xl:min-w-[920px] 2xl:min-w-[1180px] 3xl:min-w-[1560px] 4xl:min-w-[2200px]'}`}>
+      <div data-testid={testId} className={`flex-1 min-h-0 flex flex-col w-full overflow-hidden ${IS_MOBILE ? '' : 'min-w-[640px] md:min-w-[800px] xl:min-w-[920px] 2xl:min-w-[1180px] 3xl:min-w-[1560px] 4xl:min-w-[2200px]'}`}>
         {children}
       </div>
     </ContentLayoutContext.Provider>
