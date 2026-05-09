@@ -1,19 +1,21 @@
-use std::collections::HashSet;
-use std::sync::{Arc, LazyLock, Mutex};
+use std::sync::{Arc, LazyLock};
 use tauri::State;
 
 use crate::db::models::{
     AutomationRun, CreateAutomationInput, PersonaAutomation, UpdateAutomationInput,
 };
 use crate::db::repos::resources::automations as repo;
+use crate::engine::inflight_guard::InflightGuard;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
 
 use crate::commands::core::personas::BlastRadiusItem;
 
-static INFLIGHT_TRIGGERS: LazyLock<Mutex<HashSet<String>>> =
-    LazyLock::new(|| Mutex::new(HashSet::new()));
+/// Prevents the same automation from being triggered twice concurrently.
+/// See `engine::inflight_guard` — extracted from a bespoke
+/// `LazyLock<Mutex<HashSet<String>>>` so the primitive is reusable.
+static INFLIGHT_TRIGGERS: LazyLock<InflightGuard> = LazyLock::new(InflightGuard::new);
 
 /// Generate a sample payload from a schema definition string.
 ///
@@ -149,30 +151,20 @@ pub async fn trigger_automation(
         )));
     }
 
-    {
-        let mut inflight = INFLIGHT_TRIGGERS.lock().unwrap_or_else(|e| e.into_inner());
-        if !inflight.insert(id.clone()) {
-            return Err(AppError::Validation(format!(
-                "Automation '{}' is already being triggered. Please wait for the current run to complete.",
-                automation.name
-            )));
-        }
-    }
+    let _handle = INFLIGHT_TRIGGERS.guard(&id).ok_or_else(|| {
+        AppError::Validation(format!(
+            "Automation '{}' is already being triggered. Please wait for the current run to complete.",
+            automation.name
+        ))
+    })?;
 
-    let result = crate::engine::automation_runner::invoke_automation(
+    crate::engine::automation_runner::invoke_automation(
         &state.db,
         &automation,
         input_data.as_deref(),
         execution_id.as_deref(),
     )
-    .await;
-
-    {
-        let mut inflight = INFLIGHT_TRIGGERS.lock().unwrap_or_else(|e| e.into_inner());
-        inflight.remove(&id);
-    }
-
-    result
+    .await
 }
 
 #[tauri::command]

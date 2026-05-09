@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
-import { motion, type Variants } from 'framer-motion';
-import { ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Inbox } from 'lucide-react';
+import { motion, AnimatePresence, type Variants } from 'framer-motion';
+import { ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Inbox, X } from 'lucide-react';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -67,6 +67,24 @@ export interface DataGridProps<T> {
   isRowSelected?: (row: T) => boolean;
   /** Row density. Defaults to 'comfortable'. */
   density?: Density;
+  /** Number of currently selected rows. When > 0 and `bulkActions` is provided, the bulk-action toolbar slides up. */
+  selectedCount?: number;
+  /** Per-grid registry of bulk actions shown in the floating toolbar. */
+  bulkActions?: DataGridBulkAction[];
+  /** Called when the user clears the selection (X button or Esc). */
+  onClearSelection?: () => void;
+}
+
+/** Bulk-action descriptor used by the floating toolbar that appears when rows are selected. */
+export interface DataGridBulkAction {
+  id: string;
+  /** Already-translated label. */
+  label: string;
+  icon?: React.ComponentType<{ className?: string }>;
+  onClick: () => void;
+  /** 'danger' tints the button red. Defaults to 'default' (ghost). */
+  variant?: 'default' | 'danger';
+  disabled?: boolean;
 }
 
 /* -- Stagger animation variants --------------------------------------- */
@@ -115,11 +133,14 @@ export function DataGrid<T>({
   onSelectAll,
   isRowSelected,
   density = DEFAULT_DENSITY,
+  selectedCount = 0,
+  bulkActions,
+  onClearSelection,
 }: DataGridProps<T>) {
   const densityTokens = DENSITY_TOKENS[density];
   const headerPadCls = `px-4 ${densityTokens.headerPaddingY}`;
   const rowPadCls = `${densityTokens.rowPaddingX} ${densityTokens.rowPaddingY}`;
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [page, setPage] = useState(1);
   const [internalPageSize, setInternalPageSize] = useState(
     simplified && pageSize === 0 ? 5 : pageSize,
@@ -134,6 +155,20 @@ export function DataGrid<T>({
 
   // Reset page when data length changes significantly (filters changed)
   useEffect(() => { setPage(1); }, [data.length]);
+
+  // Esc clears the active selection — only attached while the toolbar is visible.
+  const showBulkToolbar = selectedCount > 0 && !!bulkActions && bulkActions.length > 0;
+  useEffect(() => {
+    if (!showBulkToolbar || !onClearSelection) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        onClearSelection();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [showBulkToolbar, onClearSelection]);
 
   const gridTemplate = columns.map((c) => c.width).join(' ');
 
@@ -161,7 +196,7 @@ export function DataGrid<T>({
 
   /* -- Grid --------------------------------------------------------- */
   return (
-    <div className={`flex flex-col min-h-0 ${className ?? ''}`}>
+    <div className={`relative flex flex-col min-h-0 ${className ?? ''}`}>
       {/* Header — always visible so filter controls remain accessible */}
       <div
         className="grid gap-0 border-b border-primary/10 bg-background sticky top-0 z-20"
@@ -307,6 +342,67 @@ export function DataGrid<T>({
         })}
       </motion.div>
       )}
+
+      {/* Bulk-action toolbar — slides up when rows are selected */}
+      <AnimatePresence>
+        {showBulkToolbar && (
+          <motion.div
+            key="bulk-toolbar"
+            role="toolbar"
+            aria-label={t.shared.bulk_toolbar_aria}
+            initial={shouldAnimate ? { y: 12, opacity: 0 } : { opacity: 1 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={shouldAnimate ? { y: 12, opacity: 0 } : { opacity: 0 }}
+            transition={shouldAnimate
+              ? { duration: 0.22, ease: EASE_CURVE }
+              : { duration: 0.01 }}
+            className="pointer-events-none absolute left-1/2 z-30 -translate-x-1/2"
+            style={{ bottom: effectivePageSize > 0 ? '52px' : '12px' }}
+          >
+            <div className="pointer-events-auto flex items-center gap-2 px-3 py-2 rounded-modal border border-primary/20 bg-secondary/80 shadow-elevation-3 backdrop-blur-md">
+              <span className="typo-body text-foreground font-medium px-2">
+                {tx(t.shared.bulk_selected, { count: selectedCount })}
+              </span>
+              <div className="w-px h-5 bg-primary/15" />
+              <div className="flex items-center gap-1">
+                {bulkActions!.map((action) => {
+                  const ActionIcon = action.icon;
+                  const isDanger = action.variant === 'danger';
+                  return (
+                    <button
+                      key={action.id}
+                      type="button"
+                      onClick={action.onClick}
+                      disabled={action.disabled}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-label transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                        isDanger
+                          ? 'text-red-400 hover:bg-red-500/15'
+                          : 'text-foreground hover:bg-secondary/60'
+                      }`}
+                    >
+                      {ActionIcon && <ActionIcon className="w-3.5 h-3.5" />}
+                      {action.label}
+                    </button>
+                  );
+                })}
+              </div>
+              {onClearSelection && (
+                <>
+                  <div className="w-px h-5 bg-primary/15" />
+                  <button
+                    type="button"
+                    onClick={onClearSelection}
+                    aria-label={t.shared.bulk_clear_selection}
+                    className="p-1.5 rounded-card text-foreground hover:bg-secondary/60 transition-colors"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Pagination */}
       {effectivePageSize > 0 && (

@@ -62,6 +62,7 @@ export const homeItems: Array<{ id: HomeTab; icon: LucideIcon; label: string }> 
 
 export const overviewItems: Array<{ id: OverviewTab; icon: LucideIcon; label: string; minTier?: Tier; simpleHidden?: boolean }> = [
   { id: 'home', icon: LayoutDashboard, label: 'Dashboard' },
+  { id: 'inbox', icon: Bell, label: 'Inbox' },
   { id: 'executions', icon: Activity, label: 'Activity', minTier: TIERS.TEAM },
   { id: 'manual-review', icon: ClipboardCheck, label: 'Approvals', minTier: TIERS.TEAM },
   { id: 'messages', icon: MessageSquare, label: 'Messages' },

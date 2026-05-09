@@ -12,6 +12,7 @@ use crate::db::models::{CreatePersonaEventInput, TriggerConfig};
 use crate::db::repos::communication::events as event_repo;
 use crate::db::repos::resources::triggers as trigger_repo;
 use crate::db::DbPool;
+use crate::engine::ambient_context::AmbientContextHandle;
 
 /// Shared state: stores the hash of the last known clipboard content to detect changes.
 pub struct ClipboardState {
@@ -49,8 +50,18 @@ fn hash_content(data: &[u8]) -> u64 {
 ///
 /// 1. Read current clipboard content.
 /// 2. Compare hash with last known state.
-/// 3. If changed, check against all enabled `clipboard` triggers and publish matching events.
-pub async fn clipboard_tick(pool: &DbPool, state: &Arc<Mutex<ClipboardState>>) {
+/// 3. If changed AND `ambient_ctx` is Some, push the redacted content
+///    through the ambient context fusion (Phase 3 — clipboard MVP). The
+///    fusion checks its `clipboard_enabled` gate before storing; capture
+///    is a no-op when the user has the toggle off.
+/// 4. Check against all enabled `clipboard` triggers and publish matching
+///    events. Trigger events store ONLY a hash — never plaintext. The
+///    ambient pipeline above carries redacted content separately.
+pub async fn clipboard_tick(
+    pool: &DbPool,
+    state: &Arc<Mutex<ClipboardState>>,
+    ambient_ctx: Option<&AmbientContextHandle>,
+) {
     // Read clipboard on a blocking thread (arboard is not async)
     let clip_result = tokio::task::spawn_blocking(|| {
         match arboard::Clipboard::new() {
@@ -88,6 +99,17 @@ pub async fn clipboard_tick(pool: &DbPool, state: &Arc<Mutex<ClipboardState>>) {
 
     if !changed {
         return;
+    }
+
+    // Phase 3: push the redacted clipboard content into the ambient
+    // context fusion. The fusion's per-source `clipboard_enabled` gate
+    // is checked inside push_clipboard_with_content, so this is a
+    // no-op when the user has the toggle off (no signal entered the
+    // window, no broadcast). Redaction runs at capture; un-redacted
+    // text never crosses into storage.
+    if let Some(handle) = ambient_ctx {
+        let mut ctx = handle.lock().await;
+        ctx.push_clipboard_with_content(&content_type, &content);
     }
 
     // Load enabled clipboard triggers (SQL-filtered)

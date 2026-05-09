@@ -13,6 +13,7 @@ The active tab comes from `useOverviewStore().overviewTab`. Sidebar-visible tabs
 | Tab | Behavior | Implementation |
 | --- | --- | --- |
 | Dashboard | Mission-control home, summary widgets, knowledge/recent change/routine/fleet cards | `components/dashboard/DashboardHome.tsx`, `cards/*`, `widgets/*` |
+| Inbox | Unified triage view that aggregates pending items from four sources (manual-review approvals, unread messages, output artifacts, open healing issues) into Today / This Week / Snoozed / Resolved swimlanes. Keyboard triage (J/K move, Enter open, A approve, R reject/resolve, S snooze, X select, Esc clear), per-row chips, and a floating bulk-action toolbar. Snooze persists in localStorage; resolved is session-local. Reuses `useUnifiedInbox` from simple-mode for the source aggregation. | `sub_inbox/InboxTriagePage.tsx` plus `components/`, `hooks/`, `libs/` |
 | Activity / Executions | Global execution list and metrics | `sub_activity/components/GlobalExecutionList.tsx`, `ExecutionRow.tsx`, `useExecutionMetrics.ts` |
 | Approvals | Manual review inbox, focused decision flow, bulk actions, triage player | `sub_manual-review` |
 | Messages | Message list, thread/detail modal, read/delete/count behavior | `sub_messages`, `commands/communication/messages.rs` |

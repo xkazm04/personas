@@ -87,6 +87,7 @@ pub mod skill_scratchpad;
 pub mod skills_sidecar;
 #[cfg(feature = "p2p")]
 pub mod identity;
+pub mod inflight_guard;
 pub mod intent_compiler;
 pub mod kb_index;
 #[cfg(feature = "ml")]

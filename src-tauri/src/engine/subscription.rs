@@ -377,25 +377,30 @@ impl ReactiveSubscription for ClipboardSubscription {
             s.last_hash()
         };
 
-        super::clipboard_monitor::clipboard_tick(&self.pool, &self.state).await;
+        // Phase 3: clipboard_tick pushes the redacted content directly
+        // through the ambient handle, so the rolling window sees the
+        // actual paste (redacted at capture) instead of the prior
+        // length-only `("text", 0)` placeholder. The fusion's per-source
+        // gate is the privacy contract — capture is a no-op when off.
+        super::clipboard_monitor::clipboard_tick(
+            &self.pool,
+            &self.state,
+            Some(&self.ambient_ctx),
+        )
+        .await;
 
-        // If hash changed, push a signal to ambient context
+        // Hash diff still drives the error-detection / KB search side
+        // path (which is independent of the ambient pipeline).
         let hash_after = {
             let s = self.state.lock().await;
             s.last_hash()
         };
-        if hash_before != hash_after {
-            let mut ctx = self.ambient_ctx.lock().await;
-            ctx.push_clipboard("text", 0); // Length unknown here, but signal is still useful
-            drop(ctx);
-
-            // Clipboard watcher: detect errors and search KB for resolutions
-            if self
+        if hash_before != hash_after
+            && self
                 .watcher_enabled
                 .load(std::sync::atomic::Ordering::Relaxed)
-            {
-                self.run_error_detection().await;
-            }
+        {
+            self.run_error_detection().await;
         }
     }
 }

@@ -16,7 +16,18 @@ export type PersonaDetail = { tools: Array<PersonaToolDefinition>, triggers: Arr
  * Non-empty when one or more sub-resource queries failed.
  * Each entry describes which resource could not be loaded.
  */
-warnings: Array<string>, id: string, project_id: string, name: string, description: string | null, system_prompt: string, structured_prompt: string | null, icon: string | null, color: string | null, enabled: boolean, sensitive: boolean, headless: boolean, max_concurrent: number, timeout_ms: number, notification_channels: string | null, last_design_result: string | null, model_profile: string | null, max_budget_usd: number | null, max_turns: number | null, design_context: string | null, group_id: string | null, source_review_id: string | null, trust_level: PersonaTrustLevel, trust_origin: PersonaTrustOrigin, trust_verified_at: string | null, trust_score: number, 
+warnings: Array<string>, id: string, project_id: string, name: string, description: string | null, system_prompt: string, structured_prompt: string | null, icon: string | null, color: string | null, enabled: boolean, sensitive: boolean, headless: boolean, max_concurrent: number, timeout_ms: number, notification_channels: string | null, last_design_result: string | null, 
+/**
+ * JSON-encoded report from the most recent `test_build_draft` run for
+ * this persona (A-grade Phase 2, 2026-05-03). Shape matches the value
+ * returned from `engine::build_session::run_tool_tests` — see
+ * `tool_tests.rs` for the full schema. The TestReportModal in the
+ * editor reads this so users can see real per-tool / per-connector
+ * results *after* promote, not just during the in-flight build session.
+ * `None` for personas that have never run a test (manual templates,
+ * legacy installs).
+ */
+last_test_report: string | null, model_profile: string | null, max_budget_usd: number | null, max_turns: number | null, design_context: string | null, group_id: string | null, source_review_id: string | null, trust_level: PersonaTrustLevel, trust_origin: PersonaTrustOrigin, trust_verified_at: string | null, trust_score: number, 
 /**
  * Free parameters: JSON array of `PersonaParameter` definitions.
  * Adjustable at runtime without triggering a rebuild.

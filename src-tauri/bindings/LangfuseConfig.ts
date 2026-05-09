@@ -4,4 +4,24 @@
  * Public-facing view of the saved Langfuse config. Never contains the secret
  * key — the caller can only learn whether one is set.
  */
-export type LangfuseConfig = { host: string, publicKey: string, secretKeySet: boolean, redactContent: boolean, enabled: boolean, lastTestedAt: bigint | null, lastTestOutcome: string | null, };
+export type LangfuseConfig = { host: string, publicKey: string, secretKeySet: boolean, redactContent: boolean, enabled: boolean, 
+/**
+ * `true` when the connection points at the Personas-managed local stack
+ * (set automatically by `langfuse_stack_start`). `false` for manual
+ * connections to a Langfuse instance the user runs themselves.
+ */
+managed: boolean, 
+/**
+ * User's preferred port for the local stack. The actual bound port may
+ * differ if the preferred port was busy when starting; check
+ * `LangfuseStackInfo.port` for the live value.
+ */
+preferredPort: number, 
+/**
+ * Langfuse project id used to construct deep-link URLs. For the
+ * managed stack this is always `personas-default` (matches
+ * `LANGFUSE_INIT_PROJECT_ID` in the compose template). For manual
+ * connections the user can supply their project's id so
+ * "Open in Langfuse" links land on the right project.
+ */
+projectId: string | null, lastTestedAt: bigint | null, lastTestOutcome: string | null, };

@@ -42,12 +42,18 @@ pub struct CompanionMessage {
 /// `voice_enabled` controls whether Athena is asked to emit a `TTS:`
 /// line in her reply (frontend toggle in the Voice setup or chat
 /// toolbar).
+///
+/// `recall_synthesis_enabled` controls whether the brain's recall
+/// retrieval is folded through a one-shot Claude call into a focused
+/// briefing when raw recall exceeds the budget threshold. Adds runtime
+/// Claude-call cost on dense-recall turns; off by default.
 #[tauri::command]
 pub async fn companion_send_message(
     state: State<'_, Arc<AppState>>,
     app: AppHandle,
     message: String,
     voice_enabled: Option<bool>,
+    recall_synthesis_enabled: Option<bool>,
 ) -> Result<SendTurnResult, AppError> {
     require_auth(&state).await?;
     let user_db = Arc::new(state.user_db.clone());
@@ -62,6 +68,7 @@ pub async fn companion_send_message(
         embedder,
         message,
         voice_enabled.unwrap_or(false),
+        recall_synthesis_enabled.unwrap_or(false),
     )
     .await?;
     Ok(SendTurnResult {

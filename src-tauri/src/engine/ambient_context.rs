@@ -85,6 +85,15 @@ pub struct AmbientSignal {
     /// Original file paths (only set for file_watcher signals) for glob matching.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub raw_paths: Vec<String>,
+    /// Redacted preview of the captured content. For clipboard signals,
+    /// this carries the redacted clipboard text (capped to a bounded
+    /// length, with credential-shaped substrings replaced by tokens like
+    /// `[REDACTED:jwt]`). `None` for sources that don't capture content
+    /// (file_watcher and app_focus rely on the summary for everything).
+    /// Phase 3 of the Athena desktop-aware roadmap — pairs with
+    /// `redact_clipboard_content` at capture site.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub redacted_content: Option<String>,
 }
 
 /// Sensory policy: declares what ambient signals a persona is interested in.
@@ -154,6 +163,12 @@ pub struct AmbientSignalEntry {
     pub captured_at: u64,
     /// Seconds ago relative to snapshot time.
     pub age_secs: u64,
+    /// Redacted clipboard text (or other captured payload), if any.
+    /// Lets the "What did Athena see?" view show what the user actually
+    /// pasted — with credential-shaped substrings already masked. None
+    /// for sources that don't capture content.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub redacted_content: Option<String>,
 }
 
 /// Per-source capture-gate state, surfaced to the UI via Tauri commands.
@@ -346,6 +361,7 @@ impl AmbientContextFusion {
                 summary: s.summary.clone(),
                 captured_at: s.captured_at,
                 age_secs: now.saturating_sub(s.captured_at),
+                redacted_content: s.redacted_content.clone(),
             })
             .collect()
     }
@@ -396,8 +412,33 @@ impl AmbientContextFusion {
             .unwrap_or(&self.default_policy)
     }
 
-    /// Push a clipboard change signal. Captured iff master `enabled` AND
-    /// the per-source `clipboard_enabled` gate are on.
+    /// Push a clipboard change signal carrying the (redacted) content.
+    /// Captured iff master `enabled` AND the per-source `clipboard_enabled`
+    /// gate are on. Redaction is applied at this capture site
+    /// (`redact_clipboard_content`) before the signal enters the rolling
+    /// window — the un-redacted text never reaches storage. Phase 3 of
+    /// the Athena desktop-aware roadmap.
+    pub fn push_clipboard_with_content(&mut self, content_type: &str, content: &str) {
+        if !self.enabled || !self.clipboard_enabled {
+            return;
+        }
+        let raw_len = content.len();
+        let redacted = redact_clipboard_content(content);
+        let summary = format!("Clipboard: {content_type} ({raw_len} chars)");
+        self.broadcast_event("clipboard", &summary, Vec::new(), None, None);
+        self.push_signal_with_payload(
+            "clipboard",
+            summary,
+            Vec::new(),
+            Some(redacted),
+        );
+    }
+
+    /// Legacy push site for clipboard signals when only metadata is
+    /// available (no content). Kept for backward compatibility with
+    /// existing tests and any caller that has only the length. New code
+    /// should use [`push_clipboard_with_content`] so the redacted
+    /// content reaches the rolling window.
     pub fn push_clipboard(&mut self, content_type: &str, content_length: usize) {
         if !self.enabled || !self.clipboard_enabled {
             return;
@@ -509,6 +550,20 @@ impl AmbientContextFusion {
     }
 
     fn push_signal_with_paths(&mut self, source: &str, summary: String, raw_paths: Vec<String>) {
+        self.push_signal_with_payload(source, summary, raw_paths, None);
+    }
+
+    /// Internal capture site that accepts an optional redacted-content
+    /// payload. Clipboard signals provide the content (post-redaction);
+    /// file-watcher and app-focus signals omit it (they communicate
+    /// everything through `summary`).
+    fn push_signal_with_payload(
+        &mut self,
+        source: &str,
+        summary: String,
+        raw_paths: Vec<String>,
+        redacted_content: Option<String>,
+    ) {
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
@@ -525,6 +580,7 @@ impl AmbientContextFusion {
             summary,
             captured_at: now,
             raw_paths,
+            redacted_content,
         });
         self.total_captured += 1;
 
@@ -619,6 +675,7 @@ impl AmbientContextFusion {
                 summary: s.summary.clone(),
                 captured_at: s.captured_at,
                 age_secs: now.saturating_sub(s.captured_at),
+                redacted_content: s.redacted_content.clone(),
             })
             .collect();
 
@@ -705,6 +762,95 @@ impl AmbientContextFusion {
 /// pasted error messages, URLs with query strings, or document paths —
 /// truncating bounds the per-signal token cost in the rolling window.
 const WINDOW_TITLE_MAX_LEN: usize = 120;
+
+/// Maximum length for redacted clipboard content stored in the rolling
+/// window. Captures the head of the paste — enough for context, bounded
+/// for prompt-token cost. Long clipboard items (code, logs, prose) get
+/// truncated with an ellipsis suffix.
+const CLIPBOARD_CONTENT_MAX_LEN: usize = 256;
+
+/// Redact a clipboard payload before it enters the rolling window.
+///
+/// The Sourabh Sharma blueprint and Phase 1 audit both flagged
+/// credential-shaped clipboard content as the highest-risk leak surface
+/// for an always-listening companion. Pasted secrets routinely include
+/// AWS keys, JWTs, Bearer tokens, and provider-prefixed API keys. This
+/// function masks each known shape with a typed token (e.g. `[REDACTED:jwt]`)
+/// before the content is stored, so the un-redacted secret never reaches
+/// the rolling window OR the broadcast channel.
+///
+/// Strategy:
+///   - JWTs (three base64-url-safe segments separated by `.`)
+///   - Bearer tokens (literal `Bearer <token>`)
+///   - AWS access keys (`AKIA...` + 16 alnum)
+///   - Stripe live/test keys (`sk_live_...` / `pk_live_...`)
+///   - GitHub fine-grained tokens (`ghp_...`, `github_pat_...`)
+///   - Slack bot tokens (`xoxb-...`)
+///   - Email addresses → `[email]`
+///   - Final length cap at `CLIPBOARD_CONTENT_MAX_LEN`
+///
+/// Pure (no I/O). Idempotent on already-redacted input.
+pub fn redact_clipboard_content(content: &str) -> String {
+    use std::sync::OnceLock;
+    static PATTERNS: OnceLock<Vec<(regex::Regex, &'static str)>> = OnceLock::new();
+    let patterns = PATTERNS.get_or_init(|| {
+        vec![
+            // JWT: three base64url segments separated by dots, first starts with eyJ.
+            (
+                regex::Regex::new(r"\beyJ[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+\b")
+                    .unwrap(),
+                "[REDACTED:jwt]",
+            ),
+            // AWS access key id.
+            (
+                regex::Regex::new(r"\bAKIA[0-9A-Z]{16}\b").unwrap(),
+                "[REDACTED:aws-key]",
+            ),
+            // Stripe keys (live and test, public and secret).
+            (
+                regex::Regex::new(r"\b(?:sk|pk)_(?:live|test)_[A-Za-z0-9]{16,}\b").unwrap(),
+                "[REDACTED:stripe-key]",
+            ),
+            // GitHub PATs (classic personal-access tokens + fine-grained).
+            (
+                regex::Regex::new(r"\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{20,}\b").unwrap(),
+                "[REDACTED:github-token]",
+            ),
+            (
+                regex::Regex::new(r"\bgithub_pat_[A-Za-z0-9_]{20,}\b").unwrap(),
+                "[REDACTED:github-token]",
+            ),
+            // Slack bot/user tokens (xoxb / xoxp).
+            (
+                regex::Regex::new(r"\bxox[bpoa]-[A-Za-z0-9\-]{10,}\b").unwrap(),
+                "[REDACTED:slack-token]",
+            ),
+            // Bearer header — match literal `Bearer ` plus a token-shape suffix.
+            (
+                regex::Regex::new(r"\bBearer\s+[A-Za-z0-9_\-\.]{16,}\b").unwrap(),
+                "Bearer [REDACTED]",
+            ),
+            // Email addresses.
+            (
+                regex::Regex::new(r"\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b").unwrap(),
+                "[email]",
+            ),
+        ]
+    });
+
+    let mut out = content.to_string();
+    for (re, replacement) in patterns.iter() {
+        out = re.replace_all(&out, *replacement).into_owned();
+    }
+
+    // Length cap — truncate at char boundary, append ellipsis if cut.
+    if out.chars().count() > CLIPBOARD_CONTENT_MAX_LEN {
+        let truncated: String = out.chars().take(CLIPBOARD_CONTENT_MAX_LEN).collect();
+        format!("{truncated}…")
+    } else {
+        out
+    }
+}
 
 /// Redact a window title before it enters the rolling ambient window.
 ///
@@ -1579,6 +1725,123 @@ mod tests {
         // sig_0 has been evicted; delete is a no-op.
         assert!(!fusion.delete_signal("sig_0"));
         assert!(fusion.delete_signal("sig_1"));
+    }
+
+    // ── Clipboard content capture + redaction (Phase 3 v1) ────────────────
+
+    #[test]
+    fn redact_clipboard_masks_jwt() {
+        let raw = "Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0In0.SflKxwRJSMeKKF2QT4f";
+        let out = redact_clipboard_content(raw);
+        assert!(!out.contains("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"));
+        assert!(out.contains("[REDACTED:jwt]"));
+    }
+
+    #[test]
+    fn redact_clipboard_masks_aws_key() {
+        let raw = "export AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE";
+        let out = redact_clipboard_content(raw);
+        assert!(!out.contains("AKIAIOSFODNN7EXAMPLE"));
+        assert!(out.contains("[REDACTED:aws-key]"));
+    }
+
+    #[test]
+    fn redact_clipboard_masks_stripe_keys() {
+        let raw = "stripe.api_key = sk_live_4eC39HqLyjWDarjtT1zdp7dc";
+        let out = redact_clipboard_content(raw);
+        assert!(!out.contains("sk_live_4eC39HqLyjWDarjtT1zdp7dc"));
+        assert!(out.contains("[REDACTED:stripe-key]"));
+    }
+
+    #[test]
+    fn redact_clipboard_masks_github_pat() {
+        let raw = "git remote set-url origin https://oauth2:ghp_AbCdEfGhIjKlMnOpQrStUvWxYz0123456@github.com/owner/repo";
+        let out = redact_clipboard_content(raw);
+        assert!(!out.contains("ghp_AbCdEfGhIjKlMnOpQrStUvWxYz0123456"));
+        assert!(out.contains("[REDACTED:github-token]"));
+    }
+
+    #[test]
+    fn redact_clipboard_masks_slack_token() {
+        let raw = "slack_bot_token=xoxb-1234567890-1234567890-AbCdEfGhIjKlMnOpQrStUvWx";
+        let out = redact_clipboard_content(raw);
+        assert!(!out.contains("xoxb-1234567890-1234567890-AbCdEfGhIjKlMnOpQrStUvWx"));
+        assert!(out.contains("[REDACTED:slack-token]"));
+    }
+
+    #[test]
+    fn redact_clipboard_masks_bearer_token() {
+        let raw = "curl -H 'Authorization: Bearer abc123def456ghi789jklmnopqr_-.xyz' https://api.example.com";
+        let out = redact_clipboard_content(raw);
+        assert!(!out.contains("abc123def456ghi789jklmnopqr"));
+        assert!(out.contains("Bearer [REDACTED]"));
+    }
+
+    #[test]
+    fn redact_clipboard_masks_emails() {
+        let raw = "Send the report to alice@example.com and bob.smith@company.co.uk by Friday.";
+        let out = redact_clipboard_content(raw);
+        assert!(!out.contains("alice@example.com"));
+        assert!(!out.contains("bob.smith@company.co.uk"));
+        assert!(out.matches("[email]").count() == 2);
+    }
+
+    #[test]
+    fn redact_clipboard_truncates_long_input() {
+        let raw = "x".repeat(2000);
+        let out = redact_clipboard_content(&raw);
+        // Cap at CLIPBOARD_CONTENT_MAX_LEN with ellipsis suffix.
+        assert!(out.chars().count() <= CLIPBOARD_CONTENT_MAX_LEN + 1);
+        assert!(out.ends_with('…'));
+    }
+
+    #[test]
+    fn redact_clipboard_idempotent_on_clean_text() {
+        let clean = "TODO: refactor the cache eviction logic in dedupedStorage.ts";
+        assert_eq!(redact_clipboard_content(clean), clean);
+    }
+
+    #[test]
+    fn redact_clipboard_handles_multiple_secrets() {
+        let raw = "key=AKIAIOSFODNN7EXAMPLE jwt=eyJhbGc.payload.sig and email=foo@bar.com";
+        let out = redact_clipboard_content(raw);
+        assert!(out.contains("[REDACTED:aws-key]"));
+        assert!(out.contains("[REDACTED:jwt]"));
+        assert!(out.contains("[email]"));
+        assert!(!out.contains("AKIAIOSFODNN7EXAMPLE"));
+        assert!(!out.contains("foo@bar.com"));
+    }
+
+    #[test]
+    fn push_clipboard_with_content_redacts_before_storing() {
+        let mut fusion = AmbientContextFusion::new_for_tests();
+        fusion.push_clipboard_with_content(
+            "text",
+            "ghp_SuperSecretGitHubToken123456789012345 — please don't store this",
+        );
+        assert_eq!(fusion.signals.len(), 1);
+        let stored = fusion.signals[0].redacted_content.as_deref();
+        assert!(stored.is_some());
+        let stored = stored.unwrap();
+        assert!(stored.contains("[REDACTED:github-token]"));
+        assert!(!stored.contains("ghp_SuperSecretGitHubToken123456789012345"));
+    }
+
+    #[test]
+    fn push_clipboard_with_content_skips_when_gate_off() {
+        let mut fusion = AmbientContextFusion::new(); // clipboard gate OFF
+        fusion.push_clipboard_with_content("text", "any content");
+        assert_eq!(fusion.signals.len(), 0);
+    }
+
+    #[test]
+    fn push_clipboard_summary_uses_raw_length_not_redacted_length() {
+        let mut fusion = AmbientContextFusion::new_for_tests();
+        let raw = "x".repeat(2000);
+        fusion.push_clipboard_with_content("text", &raw);
+        // Summary shows the original 2000-char length so the user sees
+        // what was actually pasted, even though stored content is capped.
+        assert!(fusion.signals[0].summary.contains("2000 chars"));
     }
 
     // ── push_app_focus redaction (Phase 2 v1) ──────────────────────────────
