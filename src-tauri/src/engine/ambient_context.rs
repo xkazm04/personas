@@ -922,6 +922,70 @@ pub fn redact_window_title(title: &str) -> String {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Persona-execution prefix helpers (Phase 3 c — daemon/runner bridge)
+// ---------------------------------------------------------------------------
+//
+// Building blocks for injecting "what Athena saw" into persona-execution
+// prompts (gap #6 from the Phase 1 audit). The helpers live here because
+// the rolling window is owned by `AmbientContextFusion`; runtime call-site
+// wiring (engine/mod.rs::run_execution_with_ceiling and the daemon's
+// consume_headless_events) is a follow-up commit.
+//
+// Architectural note — daemon process limitation:
+//   The `personas-daemon` binary runs as a separate process from the
+//   windowed Tauri app. The clipboard / file_watcher / app_focus
+//   watchers live in the windowed process; their captured signals
+//   never reach the daemon's address space. So `format_ambient_for_persona`
+//   in the daemon path will always return None today — the daemon's
+//   AppState doesn't construct an ambient handle either.
+//
+//   Closing the cross-process gap requires a separate piece of work
+//   (likely a SQL-persisted projection of the rolling window OR a
+//   tail-able UDS / named-pipe stream the daemon subscribes to). That
+//   work is explicitly deferred — the v1 windowed-app wiring is the
+//   higher-yield target.
+
+/// Render the ambient context snapshot for a specific persona as a
+/// markdown block suitable for prepending to that persona's system
+/// prompt. Returns `None` when:
+///   - the global `enabled` flag is off
+///   - the rolling window is empty after policy filtering
+///   - no per-source signals match the persona's `SensoryPolicy`
+///
+/// Locks the handle for the duration; safe to call from async contexts
+/// where the caller already holds nothing on the fusion. Pairs with
+/// [`prepend_ambient_to_system_prompt`] for the mutate-the-persona
+/// shape that runtime call sites use.
+pub async fn format_ambient_for_persona(
+    ambient_ctx: &AmbientContextHandle,
+    persona_id: &str,
+) -> Option<String> {
+    let guard = ambient_ctx.lock().await;
+    guard.format_for_prompt(persona_id)
+}
+
+/// Prepend a rendered ambient context block to a persona's system
+/// prompt. Caller-owned mutation — works on a `&mut Persona` so the
+/// runtime path can inject without cloning the persona record. The
+/// ambient block lands BEFORE the existing system prompt with a blank
+/// line separator, so persona-authored instructions remain the
+/// recency-weighted last block in the prompt.
+///
+/// No-op when `ambient_md` is empty or whitespace-only — the goal is
+/// to add context, not produce an empty section header.
+pub fn prepend_ambient_to_system_prompt(persona: &mut crate::db::models::Persona, ambient_md: &str) {
+    if ambient_md.trim().is_empty() {
+        return;
+    }
+    let existing = std::mem::take(&mut persona.system_prompt);
+    persona.system_prompt = if existing.trim().is_empty() {
+        ambient_md.to_string()
+    } else {
+        format!("{ambient_md}\n\n{existing}")
+    };
+}
+
 /// Shared handle to the ambient context fusion state.
 pub type AmbientContextHandle = Arc<Mutex<AmbientContextFusion>>;
 
@@ -1725,6 +1789,118 @@ mod tests {
         // sig_0 has been evicted; delete is a no-op.
         assert!(!fusion.delete_signal("sig_0"));
         assert!(fusion.delete_signal("sig_1"));
+    }
+
+    // ── Persona-execution prefix helpers (Phase 3 c) ──────────────────────
+
+    fn make_persona(system_prompt: &str) -> crate::db::models::Persona {
+        // Construct a minimal Persona for prefix-injection tests. The
+        // prepend helper only reads/writes `system_prompt`; the rest
+        // are filled with sensible defaults so the struct compiles.
+        crate::db::models::Persona {
+            id: "p_test".into(),
+            project_id: "proj_test".into(),
+            name: "Test".into(),
+            description: None,
+            system_prompt: system_prompt.to_string(),
+            structured_prompt: None,
+            icon: None,
+            color: None,
+            enabled: true,
+            sensitive: false,
+            headless: false,
+            max_concurrent: 1,
+            timeout_ms: 60_000,
+            notification_channels: None,
+            last_design_result: None,
+            last_test_report: None,
+            model_profile: None,
+            max_budget_usd: None,
+            max_turns: None,
+            design_context: None,
+            group_id: None,
+            source_review_id: None,
+            trust_level: crate::db::models::PersonaTrustLevel::Verified,
+            trust_origin: crate::db::models::PersonaTrustOrigin::default(),
+            trust_verified_at: None,
+            trust_score: 1.0,
+            parameters: None,
+            gateway_exposure: Default::default(),
+            template_category: None,
+            created_at: "2026-05-09T00:00:00Z".into(),
+            updated_at: "2026-05-09T00:00:00Z".into(),
+        }
+    }
+
+    #[test]
+    fn prepend_ambient_to_empty_system_prompt() {
+        let mut p = make_persona("");
+        prepend_ambient_to_system_prompt(&mut p, "## Ambient\nactivity here");
+        assert_eq!(p.system_prompt, "## Ambient\nactivity here");
+    }
+
+    #[test]
+    fn prepend_ambient_to_existing_system_prompt() {
+        let mut p = make_persona("You are a helpful assistant.");
+        prepend_ambient_to_system_prompt(&mut p, "## Ambient\nactivity here");
+        // Ambient lands first, then a blank line, then the original prompt.
+        assert!(p.system_prompt.starts_with("## Ambient\nactivity here"));
+        assert!(p.system_prompt.ends_with("You are a helpful assistant."));
+        assert!(p.system_prompt.contains("\n\nYou are a helpful assistant."));
+    }
+
+    #[test]
+    fn prepend_ambient_noop_on_empty_block() {
+        let mut p = make_persona("Hello");
+        prepend_ambient_to_system_prompt(&mut p, "");
+        assert_eq!(p.system_prompt, "Hello");
+        prepend_ambient_to_system_prompt(&mut p, "   \n\t  ");
+        assert_eq!(p.system_prompt, "Hello");
+    }
+
+    #[tokio::test]
+    async fn format_ambient_for_persona_returns_none_when_empty() {
+        let handle = create_ambient_context();
+        // Empty rolling window → no markdown block.
+        let out = format_ambient_for_persona(&handle, "p_test").await;
+        assert!(out.is_none());
+    }
+
+    #[tokio::test]
+    async fn format_ambient_for_persona_returns_some_when_signals_present() {
+        let handle = create_ambient_context();
+        {
+            let mut g = handle.lock().await;
+            *g = AmbientContextFusion::new_for_tests();
+            g.push_clipboard_with_content("text", "deploy plan for staging");
+        }
+        let out = format_ambient_for_persona(&handle, "p_test").await;
+        assert!(out.is_some());
+        let md = out.unwrap();
+        assert!(md.contains("Ambient Desktop Context"));
+        assert!(md.contains("clipboard"));
+    }
+
+    #[tokio::test]
+    async fn format_then_prepend_round_trip() {
+        // End-to-end: capture a signal, render for persona, inject into
+        // a persona's system prompt. Demonstrates the wiring shape that
+        // future runtime callers (engine/mod.rs) will use.
+        let handle = create_ambient_context();
+        {
+            let mut g = handle.lock().await;
+            *g = AmbientContextFusion::new_for_tests();
+            g.push_app_focus("Code.exe", "main.rs - personas");
+        }
+        let md = format_ambient_for_persona(&handle, "p_test")
+            .await
+            .expect("snapshot should render");
+        let mut persona = make_persona("Be terse.");
+        prepend_ambient_to_system_prompt(&mut persona, &md);
+        assert!(persona.system_prompt.contains("Ambient Desktop Context"));
+        assert!(persona.system_prompt.contains("Be terse."));
+        // Original content preserved at the end.
+        assert!(persona.system_prompt.ends_with("Be terse."));
     }
 
     // ── Clipboard content capture + redaction (Phase 3 v1) ────────────────
