@@ -2329,7 +2329,10 @@
       "status_ready": "Ready",
       "status_blocked": "Blocked",
       "status_partial": "Partial",
-      "checked_at": "Checked {time}"
+      "checked_at": "Checked {time}",
+      "error_no_design_context": "No design context available for this persona",
+      "config_warnings_unavailable": "Could not fetch config warnings — health check may be incomplete.",
+      "subcheck_failed": "Health sub-check did not run: {error}"
     },
     "health_digest": {
       "title": "Agent Health Digest",

@@ -2336,6 +2336,9 @@ export type Translations = {
       status_blocked: string;
       status_partial: string;
       checked_at: string;
+      error_no_design_context: string;
+      config_warnings_unavailable: string;
+      subcheck_failed: string;
     };
     health_digest: {
       title: string;
