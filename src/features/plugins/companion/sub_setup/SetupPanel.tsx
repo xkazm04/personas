@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { AppWindow, Bot, Brain, Clipboard, Eye, FileText, Volume2, Wrench } from 'lucide-react';
+import { AppWindow, Bot, Brain, Clipboard, Eye, FileText, Terminal, Volume2, Wrench } from 'lucide-react';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { useSystemStore } from '@/stores/systemStore';
@@ -174,6 +174,19 @@ export default function SetupPanel() {
                 void toggleSensory(
                   'app_focus',
                   !(sensory?.appFocusEnabled ?? false),
+                )
+              }
+            />
+            <ToggleRow
+              icon={<Terminal className="w-4 h-4 text-cyan-400" />}
+              label={t.plugins.companion.setup_desktop_cli_session_label}
+              description={t.plugins.companion.setup_desktop_cli_session_desc}
+              checked={sensory?.cliSessionEnabled ?? false}
+              disabled={sensory === null}
+              onChange={() =>
+                void toggleSensory(
+                  'cli_session',
+                  !(sensory?.cliSessionEnabled ?? false),
                 )
               }
             />

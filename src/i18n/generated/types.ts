@@ -10486,6 +10486,8 @@ export type Translations = {
       setup_desktop_file_changes_desc: string;
       setup_desktop_app_focus_label: string;
       setup_desktop_app_focus_desc: string;
+      setup_desktop_cli_session_label: string;
+      setup_desktop_cli_session_desc: string;
       setup_desktop_signals_count_one: string;
       setup_desktop_signals_count_other: string;
       setup_desktop_load_failed: string;

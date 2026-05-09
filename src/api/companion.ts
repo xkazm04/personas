@@ -131,13 +131,21 @@ export async function companionTts(
 
 // ── Sensory toggles (Phase 2 v2 — desktop-awareness UI) ─────────────────
 
-export type SensorySource = 'clipboard' | 'file_watcher' | 'app_focus';
+export type SensorySource =
+  | 'clipboard'
+  | 'file_watcher'
+  | 'app_focus'
+  // Phase 5 v1: read-time gate for the user's active Claude CLI session.
+  // Unlike the three above, no signals are captured for this — toggling it
+  // controls whether the runner reads the transcript and injects a prefix.
+  | 'cli_session';
 
 export interface SensorySourceStateView {
   globalEnabled: boolean;
   clipboardEnabled: boolean;
   fileChangesEnabled: boolean;
   appFocusEnabled: boolean;
+  cliSessionEnabled: boolean;
   clipboardSignalsInWindow: number;
   fileChangesSignalsInWindow: number;
   appFocusSignalsInWindow: number;
@@ -161,6 +169,7 @@ export async function companionGetSensoryState(): Promise<SensorySourceStateView
     clipboardEnabled: boolean;
     fileChangesEnabled: boolean;
     appFocusEnabled: boolean;
+    cliSessionEnabled?: boolean;
     clipboardSignalsInWindow: number;
     fileChangesSignalsInWindow: number;
     appFocusSignalsInWindow: number;
@@ -168,6 +177,7 @@ export async function companionGetSensoryState(): Promise<SensorySourceStateView
   }>('companion_get_sensory_state');
   return {
     ...raw,
+    cliSessionEnabled: raw.cliSessionEnabled ?? false,
     totalSignalsCaptured:
       typeof raw.totalSignalsCaptured === 'bigint'
         ? Number(raw.totalSignalsCaptured)
