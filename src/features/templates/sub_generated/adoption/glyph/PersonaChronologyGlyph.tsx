@@ -19,7 +19,7 @@ function PersonaChronologyGlyphImpl(props: Props) {
   });
 
   return (
-    <div className="flex flex-col gap-3 w-full h-full min-w-[900px]">
+    <div className="flex flex-col gap-3 w-full h-full min-w-[640px] md:min-w-[800px] lg:min-w-[920px]">
       <ChronologyCommandHub {...props} />
       <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin">
         <GlyphGrid rows={rows} flowsById={flowsById} templateName={templateName} />

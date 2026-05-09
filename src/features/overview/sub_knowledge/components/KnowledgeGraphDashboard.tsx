@@ -9,6 +9,7 @@ import type { KnowledgeGraphSummary } from '@/lib/bindings/KnowledgeGraphSummary
 import type { ExecutionKnowledge } from '@/lib/bindings/ExecutionKnowledge';
 import { Button } from '@/features/shared/components/buttons';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { ScrollShadowContainer } from '@/features/shared/components/display/ScrollShadowContainer';
 import { PersonaColumnFilter } from '@/features/shared/components/forms/PersonaColumnFilter';
 import { KpiTile } from '@/features/overview/components/shared/KpiTile';
 import { useOverviewFilterValues, useOverviewFilterActions } from '@/features/overview/components/dashboard/OverviewFilterContext';
@@ -277,7 +278,11 @@ export default function KnowledgeGraphDashboard() {
               <p className="typo-body text-foreground">No patterns match current filters</p>
             </div>
           ) : (
-            <div ref={entryListRef} className="overflow-y-auto max-h-[600px] rounded-modal">
+            <ScrollShadowContainer
+              scrollRef={entryListRef}
+              className="overflow-y-auto max-h-[600px] rounded-modal"
+              wrapperClassName="relative"
+            >
               <div style={{ height: `${entryVirtualizer.getTotalSize()}px`, position: 'relative' }}>
                 {entryVirtualizer.getVirtualItems().map((virtualRow) => {
                   const entry = allEntries[virtualRow.index]!;
@@ -294,7 +299,7 @@ export default function KnowledgeGraphDashboard() {
                   );
                 })}
               </div>
-            </div>
+            </ScrollShadowContainer>
           )}
 
           {!selectedPersonaId && summary && summary.recent_learnings.length > 0 && (
@@ -302,7 +307,11 @@ export default function KnowledgeGraphDashboard() {
               <h3 className="flex items-center gap-2 typo-heading font-semibold text-foreground">
                 <RefreshCw className="w-3.5 h-3.5 text-primary/60" /> Recent Learnings
               </h3>
-              <div ref={recentListRef} className="overflow-y-auto max-h-[400px] rounded-modal">
+              <ScrollShadowContainer
+                scrollRef={recentListRef}
+                className="overflow-y-auto max-h-[400px] rounded-modal"
+                wrapperClassName="relative"
+              >
                 <div style={{ height: `${recentVirtualizer.getTotalSize()}px`, position: 'relative' }}>
                   {recentVirtualizer.getVirtualItems().map((virtualRow) => {
                     const entry = recentLearnings[virtualRow.index]!;
@@ -319,7 +328,7 @@ export default function KnowledgeGraphDashboard() {
                     );
                   })}
                 </div>
-              </div>
+              </ScrollShadowContainer>
             </div>
           )}
         </div>

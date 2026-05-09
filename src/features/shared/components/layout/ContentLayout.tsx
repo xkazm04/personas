@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { useScrollShadow } from '@/hooks/utility/interaction/useScrollShadow';
 
@@ -69,7 +69,7 @@ export function ContentBox({ children, minWidth, 'data-testid': testId }: Conten
   // xl 1280->952 available, 2xl 1536->1208, 3xl 1920->1592, 4xl 2560->2232
   return (
     <ContentLayoutContext.Provider value={ctxValue}>
-      <div data-testid={testId} className={`flex-1 min-h-0 flex flex-col w-full overflow-hidden ${IS_MOBILE ? '' : 'min-w-[800px] xl:min-w-[920px] 2xl:min-w-[1180px] 3xl:min-w-[1560px] 4xl:min-w-[2200px]'}`}>
+      <div data-testid={testId} className={`flex-1 min-h-0 flex flex-col w-full overflow-hidden ${IS_MOBILE ? '' : 'min-w-[640px] md:min-w-[800px] xl:min-w-[920px] 2xl:min-w-[1180px] 3xl:min-w-[1560px] 4xl:min-w-[2200px]'}`}>
         {children}
       </div>
     </ContentLayoutContext.Provider>
@@ -87,6 +87,9 @@ interface ContentHeaderProps {
   subtitle?: ReactNode;
   actions?: ReactNode;
   children?: ReactNode;
+  /** Inline style applied to the header root — used to thread CSS custom
+   *  properties (e.g. `--persona-accent`) into descendant components. */
+  style?: CSSProperties;
 }
 
 export function ContentHeader({
@@ -96,6 +99,7 @@ export function ContentHeader({
   subtitle,
   actions,
   children,
+  style,
 }: ContentHeaderProps) {
   const iconElement = iconColor ? (
     <div
@@ -112,6 +116,7 @@ export function ContentHeader({
 
   return (
     <div
+      style={style}
       className={[
         IS_MOBILE ? 'px-3 py-3' : 'px-4 md:px-6 xl:px-8 py-6',
         // bg-card-bg maps to --color-card-bg via @theme; the previous

@@ -113,9 +113,18 @@ function renderIcon(icon: KpiTileProps['icon'], className?: string): ReactNode {
   return icon;
 }
 
-function renderValue(value: string | undefined, numericValue: number | undefined, format: ((n: number) => string) | undefined) {
+function renderValue(
+  value: string | undefined,
+  numericValue: number | undefined,
+  format: ((n: number) => string) | undefined,
+  density: KpiDensity,
+) {
   if (numericValue !== undefined) {
-    return <AnimatedCounter value={numericValue} formatFn={format} />;
+    // Headline card densities get the slot-machine roll for emotional weight;
+    // the dense `console` density keeps the cheaper fade so list rows don't
+    // each fire a 280ms animation when refreshes batch.
+    const mode = density === 'console' ? 'fade' : 'roll';
+    return <AnimatedCounter value={numericValue} formatFn={format} mode={mode} />;
   }
   return value ?? '';
 }
@@ -142,7 +151,7 @@ export const KpiTile = memo(function KpiTile({
         <div className="flex-1 min-w-0">
           <div className="typo-caption uppercase tracking-widest text-foreground/50 font-mono">{label}</div>
           <div className={`font-mono text-xl tabular-nums ${color}`}>
-            {renderValue(value, numericValue, format)}
+            {renderValue(value, numericValue, format, density)}
           </div>
         </div>
       </div>
@@ -158,7 +167,7 @@ export const KpiTile = memo(function KpiTile({
         <div className="min-w-0">
           <p className="typo-body text-foreground truncate">{label}</p>
           <p className={`typo-heading ${palette.text}`}>
-            {renderValue(value, numericValue, format)}
+            {renderValue(value, numericValue, format, density)}
           </p>
         </div>
       </div>
@@ -183,7 +192,7 @@ export const KpiTile = memo(function KpiTile({
         </div>
         <div className="mt-auto">
           <div className="typo-data-lg tracking-tight text-foreground/90">
-            {renderValue(value, numericValue, format)}
+            {renderValue(value, numericValue, format, density)}
           </div>
           <div className="flex items-center gap-2.5 mt-1.5 min-h-[18px]">
             {trendDisplay ? (

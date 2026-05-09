@@ -258,6 +258,19 @@
      Used by the `is-disabled` utility and by [aria-disabled="true"] / :disabled
      selectors throughout the design system. */
   --disabled-opacity: 0.45;
+
+  /* Content min-width tiers — single source for the responsive width floor
+     that desktop content surfaces commit to. Tier ladder:
+       --content-min-width-sm   640px   phone landscape / very narrow split
+       --content-min-width-md   800px   typical 1366×768 laptop / half-screen
+       --content-min-width-lg   920px   primary breakpoint for most surfaces
+       --content-min-width-xl  1180px   spacious 1440+ desktop, dense grids OK
+     Prefer the breakpoint-tiered Tailwind classes — these vars are for
+     surfaces that compute width imperatively (canvas math, virtualizers). */
+  --content-min-width-sm: 640px;
+  --content-min-width-md: 800px;
+  --content-min-width-lg: 920px;
+  --content-min-width-xl: 1180px;
 }
 
 /* Bridge :root tokens into Tailwind's @theme namespace. */
