@@ -250,9 +250,9 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl, shareLink
         <div>
           <h2 id="bundle-import-title" className="typo-body-lg font-semibold text-foreground flex items-center gap-2">
             {isEnclave ? (
-              <Lock className="w-4.5 h-4.5 text-violet-400" />
+              <Lock className="w-4 h-4 text-violet-400" />
             ) : (
-              <Download className="w-4.5 h-4.5 text-emerald-400" />
+              <Download className="w-4 h-4 text-emerald-400" />
             )}
             {isEnclave ? st.verify_enclave_title : st.import_title}
           </h2>

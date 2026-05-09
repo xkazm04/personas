@@ -220,9 +220,9 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
         <div>
           <h2 id="bundle-export-title" className="typo-body-lg font-semibold text-foreground flex items-center gap-2">
             {mode === 'enclave' ? (
-              <Lock className="w-4.5 h-4.5 text-violet-400" />
+              <Lock className="w-4 h-4 text-violet-400" />
             ) : (
-              <Package className="w-4.5 h-4.5 text-cyan-400" />
+              <Package className="w-4 h-4 text-cyan-400" />
             )}
             {mode === 'enclave' ? st.seal_enclave_title : st.export_title}
           </h2>
