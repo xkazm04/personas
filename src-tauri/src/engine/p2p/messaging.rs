@@ -262,23 +262,23 @@ impl MessageRouter {
         }
     }
 
-    /// Background loop for periodic cleanup of stale rate entries.
-    pub async fn receive_loop(&self, connections: Arc<ConnectionManager>) {
-        loop {
-            tokio::time::sleep(std::time::Duration::from_secs(60)).await;
-            // Cleanup old rate tracker entries
-            let now_ms = std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap_or_default()
-                .as_millis() as u64;
-            let mut tracker = self.rate_tracker.lock().unwrap_or_else(|e| {
-                tracing::warn!("rate_tracker mutex was poisoned — recovering");
-                e.into_inner()
-            });
-            tracker.retain(|_, entry| {
-                now_ms.saturating_sub(entry.window_ms.load(Ordering::Relaxed)) < 60_000
-            });
-            let _ = connections; // keep reference alive
-        }
+    /// Run a single rate-tracker cleanup pass: drop entries whose last window
+    /// is older than the rate-limit window (effectively idle peers).
+    ///
+    /// Driven by a PeriodicTask in NetworkService::start so the cancellation
+    /// token shuts it down on NetworkService::stop. Previously this lived
+    /// inside an unbounded `receive_loop` that ignored cancellation entirely.
+    pub fn cleanup_stale_rate_entries(&self) {
+        let now_ms = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_millis() as u64;
+        let mut tracker = self.rate_tracker.lock().unwrap_or_else(|e| {
+            tracing::warn!("rate_tracker mutex was poisoned — recovering");
+            e.into_inner()
+        });
+        tracker.retain(|_, entry| {
+            now_ms.saturating_sub(entry.window_ms.load(Ordering::Relaxed)) < 60_000
+        });
     }
 }

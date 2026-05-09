@@ -207,11 +207,25 @@ impl NetworkService {
             .await;
         });
 
-        // Start message receiver
+        // Start periodic rate-tracker cleanup via PeriodicTask so it honors
+        // the shutdown cancel token (the previous receive_loop ignored cancel
+        // and leaked the task on stop()).
         let messages = self.messages.clone();
-        let connections_msg = self.connections.clone();
+        let cancel = token.clone();
         tokio::spawn(async move {
-            messages.receive_loop(connections_msg).await;
+            PeriodicTask::with_dynamic_interval(
+                "p2p_rate_tracker_cleanup",
+                || Duration::from_secs(60),
+                cancel,
+            )
+            .run(|| {
+                let m = messages.clone();
+                async move {
+                    m.cleanup_stale_rate_entries();
+                    Ok(())
+                }
+            })
+            .await;
         });
 
         // Start periodic snapshot emitter — pushes network state to the frontend
