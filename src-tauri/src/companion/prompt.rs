@@ -18,6 +18,12 @@ use crate::companion::brain::backlog::BacklogItem;
 use crate::companion::brain::episodic::{self, Episode};
 use crate::companion::brain::goals::Goal;
 use crate::companion::brain::procedural::Procedural;
+#[cfg(feature = "ml")]
+use crate::companion::brain::recall_synthesis::{
+    self, Briefing, SYNTHESIS_TOKEN_THRESHOLD,
+};
+#[cfg(not(feature = "ml"))]
+use crate::companion::brain::recall_synthesis::Briefing;
 use crate::companion::brain::retrieval::{self, DoctrineHit, Recall};
 use crate::companion::brain::semantic::Fact;
 use crate::companion::connectors;
@@ -41,6 +47,7 @@ pub async fn build_system_prompt(
     session_id: &str,
     query: &str,
     voice_enabled: bool,
+    recall_synthesis_enabled: bool,
 ) -> Result<String, AppError> {
     let root = disk::brain_root()?;
     let constitution =
@@ -75,6 +82,36 @@ pub async fn build_system_prompt(
         },
     };
 
+    // Recall synthesis: when the user has opted in AND raw recall exceeds
+    // the budget, ask Claude to synthesize a focused briefing that replaces
+    // the raw chunks. Best-effort throughout: any failure (timeout, JSON
+    // parse, non-zero exit) falls through to raw chunks so synthesis never
+    // breaks a chat turn.
+    let briefing: Option<Briefing> = if recall_synthesis_enabled
+        && recall_synthesis::estimate_recall_tokens(&recall) > SYNTHESIS_TOKEN_THRESHOLD
+    {
+        match recall_synthesis::synthesize_recall(&recall, query).await {
+            Ok(b) => {
+                tracing::info!(
+                    summary_chars = b.summary.len(),
+                    key_facts = b.key_facts.len(),
+                    obligations = b.salient_obligations.len(),
+                    "companion: recall synthesis succeeded"
+                );
+                Some(b)
+            }
+            Err(e) => {
+                tracing::warn!(
+                    error = %e,
+                    "companion: recall synthesis failed; falling through to raw chunks"
+                );
+                None
+            }
+        }
+    } else {
+        None
+    };
+
     let onboarding_md = onboarding_addendum_if_needed(&identity, &recall.episodes);
     let voice_md = voice_addendum_if_needed(voice_enabled);
     let connector_names = connectors::list_enabled_for_prompt(user_db).unwrap_or_default();
@@ -88,6 +125,7 @@ pub async fn build_system_prompt(
         &identity,
         &observability_md,
         &recall,
+        briefing.as_ref(),
         &plugins_md,
         &connectors_md,
         &onboarding_md,
@@ -102,6 +140,7 @@ pub async fn build_system_prompt(
     session_id: &str,
     _query: &str,
     voice_enabled: bool,
+    _recall_synthesis_enabled: bool,
 ) -> Result<String, AppError> {
     let root = disk::brain_root()?;
     let constitution =
@@ -144,6 +183,7 @@ pub async fn build_system_prompt(
         &identity,
         &observability_md,
         &recall,
+        None, // synthesis is ml-feature gated; non-ml builds never synthesize
         &plugins_md,
         &connectors_md,
         &onboarding_md,
@@ -490,17 +530,50 @@ fn compose(
     identity: &str,
     observability_md: &str,
     recall: &Recall,
+    briefing: Option<&Briefing>,
     plugins_md: &str,
     connectors_md: &str,
     onboarding_md: &str,
     voice_md: &str,
 ) -> String {
-    let episodes_md = format_episodes(&recall.episodes);
-    let doctrine_md = format_doctrine(&recall.doctrine);
-    let facts_md = format_facts(&recall.facts);
-    let goals_md = format_goals(&recall.goals);
-    let procedurals_md = format_procedurals(&recall.procedurals);
-    let backlog_md = format_backlog(&recall.backlog);
+    // When a synthesized briefing is present, it replaces the raw memory
+    // sections (facts/goals/procedurals/episodes/backlog/doctrine) — the
+    // synthesis prompt fed Claude all of those, so the briefing is the
+    // condensed projection. Doctrine is included in the synthesis input,
+    // so we don't render it raw alongside the briefing either.
+    let synthesized = briefing.map(recall_synthesis_format);
+
+    let episodes_md = if synthesized.is_some() {
+        String::new()
+    } else {
+        format_episodes(&recall.episodes)
+    };
+    let doctrine_md = if synthesized.is_some() {
+        String::new()
+    } else {
+        format_doctrine(&recall.doctrine)
+    };
+    let facts_md = if synthesized.is_some() {
+        String::new()
+    } else {
+        format_facts(&recall.facts)
+    };
+    let goals_md = if synthesized.is_some() {
+        String::new()
+    } else {
+        format_goals(&recall.goals)
+    };
+    let procedurals_md = if synthesized.is_some() {
+        String::new()
+    } else {
+        format_procedurals(&recall.procedurals)
+    };
+    let backlog_md = if synthesized.is_some() {
+        String::new()
+    } else {
+        format_backlog(&recall.backlog)
+    };
+    let synth_md = synthesized.unwrap_or_default();
 
     let mut out = String::with_capacity(
         constitution.len()
@@ -512,6 +585,7 @@ fn compose(
             + goals_md.len()
             + procedurals_md.len()
             + backlog_md.len()
+            + synth_md.len()
             + onboarding_md.len()
             + voice_md.len()
             + 256,
@@ -521,6 +595,10 @@ fn compose(
         out.push_str("\n\n# Identity (live, evolves)\n\n");
         out.push_str(identity);
     }
+    // Synthesized briefing (when present) sits just below identity — same
+    // slot the raw facts block would occupy. It's the projection of facts
+    // + goals + procedurals + episodes + backlog + doctrine for this turn.
+    out.push_str(&synth_md);
     // Facts sit just below identity — enduring knowledge about *who*.
     // Goals + procedurals follow: who he's trying to be (goals) and
     // how she's agreed to behave (procedurals). All three are stable
@@ -552,6 +630,10 @@ fn compose(
     // Voice addendum: only included when the user has voice playback on.
     out.push_str(voice_md);
     out
+}
+
+fn recall_synthesis_format(b: &Briefing) -> String {
+    crate::companion::brain::recall_synthesis::format_briefing_section(b)
 }
 
 /// Voice addendum: only when the user toggled voice playback on. Tells

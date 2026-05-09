@@ -176,6 +176,15 @@ pub async fn send_turn(
     // Read the prior claude session id (if any) for --resume.
     let claude_session_id = read_claude_session_id(&user_db, &session_id)?;
 
+    // Recall synthesis is OFF by default; the parameter exists so the
+    // backend is ready when a UI surface lights up the toggle. To opt in
+    // for testing today, hardcode `true` here and rebuild — synthesis
+    // fires only on dense recall (above SYNTHESIS_TOKEN_THRESHOLD), so
+    // the typical small-recall turn still goes raw at no extra cost.
+    // TODO(recall-synthesis-ui): wire this through `companion_send_message`
+    // IPC alongside `voice_enabled` once a settings toggle ships.
+    let recall_synthesis_enabled = false;
+
     let system_prompt = {
         #[cfg(feature = "ml")]
         {
@@ -186,6 +195,7 @@ pub async fn send_turn(
                 &session_id,
                 &user_message,
                 voice_enabled,
+                recall_synthesis_enabled,
             )
             .await?
         }
@@ -197,6 +207,7 @@ pub async fn send_turn(
                 &session_id,
                 &user_message,
                 voice_enabled,
+                recall_synthesis_enabled,
             )
             .await?
         }
