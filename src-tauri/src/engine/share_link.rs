@@ -245,7 +245,18 @@ pub async fn fetch_share_link(url: &str) -> Result<Vec<u8>, AppError> {
         ));
     }
 
-    let resp = reqwest::get(url)
+    // 30s timeout: a dead or malicious LAN host previously hung the import
+    // dialog indefinitely (it stays in 'previewing' phase from the user's
+    // perspective until the request returns). Generous for LAN bundle bytes
+    // — share bundles are bounded by MAX_DECOMPRESSED_SIZE = 50 MB which
+    // even on a slow link transfers well under 30s.
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(30))
+        .build()
+        .map_err(|e| AppError::Internal(format!("Failed to build HTTP client: {e}")))?;
+    let resp = client
+        .get(url)
+        .send()
         .await
         .map_err(|e| AppError::Internal(format!("Failed to fetch share link: {e}")))?;
 
