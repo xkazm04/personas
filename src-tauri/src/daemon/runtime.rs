@@ -172,6 +172,20 @@ async fn consume_headless_events(
             Arc::new(NoOpEmitter::new());
         let cancelled = Arc::new(AtomicBool::new(false));
 
+        // Phase 3 c v3: inject ambient desktop signals captured by
+        // the windowed app's clipboard/app_focus monitors. Cross-
+        // process bridge — signals reach the daemon via the
+        // ambient_signal SQL projection (see ambient_signal_repo).
+        // Same shadow shape as the windowed runner's injection in
+        // engine/mod.rs::run_execution_with_ceiling, for byte-
+        // identical prompt rendering between the two paths.
+        #[cfg(feature = "desktop")]
+        let persona = {
+            let mut persona = persona;
+            inject_ambient_for_daemon(pool, &mut persona);
+            persona
+        };
+
         // Execute synchronously (Phase 0 — serial, one at a time)
         let result = runner::run_execution(
             emitter,
@@ -228,4 +242,81 @@ async fn consume_headless_events(
     }
 
     executed
+}
+
+/// Phase 3 c v3 — daemon-side ambient context injection.
+///
+/// The windowed app's `AmbientContextFusion` is in-memory only, so
+/// the daemon process can't see signals captured by clipboard / app
+/// focus monitors. The cross-process bridge is the `ambient_signal`
+/// SQL table (see `ambient_signal_repo`): capture-side writes
+/// redacted rows; this function reads them at execution time,
+/// applies the persona's effective `SensoryPolicy`, renders the
+/// prompt block via the shared `format_signals_for_prompt`, and
+/// prepends to the persona's system prompt.
+///
+/// Policy choice: the daemon uses `SensoryPolicy::default()`. Per-
+/// persona policy overrides live in the windowed app's in-process
+/// fusion registry and aren't yet visible cross-process. The
+/// capture-time per-source gates (clipboard_enabled / app_focus_
+/// enabled) already filter what reaches SQL in the first place,
+/// so the daemon's default-policy view is conservative-by-construction.
+///
+/// Failure modes are non-fatal — a SQL load error or a None render
+/// just means this execution runs without ambient context, identical
+/// to the pre-Phase-3-c daemon behavior.
+#[cfg(feature = "desktop")]
+fn inject_ambient_for_daemon(pool: &DbPool, persona: &mut crate::db::models::Persona) {
+    use crate::engine::ambient_context;
+    use crate::engine::ambient_signal_repo;
+
+    let policy = ambient_context::SensoryPolicy::default();
+    let now_secs = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+    let since_secs = now_secs.saturating_sub(policy.max_age_secs);
+
+    let signals = match ambient_signal_repo::recent_signals(
+        pool,
+        since_secs,
+        policy.max_window_size,
+    ) {
+        Ok(s) => s,
+        Err(e) => {
+            tracing::warn!(
+                error = %e,
+                "daemon: failed to load ambient signals; running without ambient context"
+            );
+            return;
+        }
+    };
+
+    // Mirror the per-source policy filter that AmbientContextFusion
+    // applies for in-memory signals. Age + window-size were already
+    // enforced by the SQL query parameters above.
+    let filtered: Vec<_> = signals
+        .into_iter()
+        .filter(|s| match s.source.as_str() {
+            "clipboard" => policy.clipboard,
+            "file_watcher" => policy.file_changes,
+            "app_focus" => policy.app_focus,
+            _ => false,
+        })
+        .collect();
+
+    // Active-app label is omitted in the daemon path: the
+    // AmbientContextFusion's `current_app` / `current_window_title`
+    // fields are in-process state and don't cross to SQL. The most
+    // recent app_focus signal in the rolling list still surfaces the
+    // same information inline. Future enhancement could parse the
+    // newest app_focus summary to reconstruct the label.
+    if let Some(md) = ambient_context::format_signals_for_prompt(&filtered, None) {
+        ambient_context::prepend_ambient_to_system_prompt(persona, &md);
+        tracing::debug!(
+            persona_id = %persona.id,
+            signal_count = filtered.len(),
+            "daemon: ambient context prepended to persona system prompt"
+        );
+    }
 }
