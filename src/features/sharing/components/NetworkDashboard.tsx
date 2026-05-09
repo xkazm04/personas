@@ -195,9 +195,13 @@ function ConnectionMetricsPanel({ m }: { m: ConnectionMetricsSnapshot }) {
 function ManifestSyncPanel({ m }: { m: ManifestSyncMetrics }) {
   const { t } = useTranslation();
   const st = t.sharing;
+  // Per-attempt rate, NOT per-round: each round can produce N successes (one
+  // per connected peer), so dividing successes by rounds yields >100% with
+  // multiple peers. Use total attempts (succ + fail) as the denominator.
+  const totalAttempts = m.syncSuccesses + m.syncFailures;
   const successRate =
-    m.syncRounds > 0
-      ? ((m.syncSuccesses / m.syncRounds) * 100).toFixed(0)
+    totalAttempts > 0
+      ? ((m.syncSuccesses / totalAttempts) * 100).toFixed(0)
       : null;
 
   return (
