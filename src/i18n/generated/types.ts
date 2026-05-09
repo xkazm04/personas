@@ -12839,9 +12839,14 @@ export type Translations = {
     now_playing: string;
     play: string;
     pause: string;
-    skip: string;
+    prev_track: string;
+    next_track: string;
+    prev_track_disabled: string;
+    next_track_disabled: string;
     switch_station: string;
     stations_label: string;
+    kind_youtube: string;
+    kind_stream: string;
     source_prefix: string;
     unavailable_toast: string;
     settings_title: string;

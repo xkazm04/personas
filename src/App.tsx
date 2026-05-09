@@ -78,8 +78,6 @@ const OnboardingQuestPill = lazy(() => import("@/features/onboarding/components/
 const AmbientCockpit = lazy(() =>
   import("@/features/simple-mode/components/AmbientCockpit").then((m) => ({ default: m.AmbientCockpit })),
 );
-const RadioFooter = lazy(() => import("@/features/radio/components/RadioFooter"));
-
 // Idle-prefetch list: same modules as the lazy() declarations above. Hits the
 // V8 module cache so the corresponding lazy() resolves synchronously when the
 // overlays mount (or when the user triggers them via Cmd+K, the floating
@@ -252,7 +250,6 @@ export default function App() {
                 <ShareLinkHandler />
                 <CompanionPanel />
                 <OnboardingQuestPill />
-                <RadioFooter />
               </Suspense>
             </>
           )}

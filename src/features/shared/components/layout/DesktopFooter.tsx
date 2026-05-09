@@ -9,6 +9,7 @@ import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { useTranslation } from '@/i18n/useTranslation';
 
 const CompanionFooterIcon = lazy(() => import('@/features/plugins/companion/CompanionFooterIcon'));
+const RadioFooter = lazy(() => import('@/features/radio/components/RadioFooter'));
 
 /** Custom event name used to toggle sidebar collapse from anywhere. */
 export const SIDEBAR_TOGGLE_EVENT = 'personas:sidebar-toggle';
@@ -304,6 +305,14 @@ export default function DesktopFooter() {
             <NetworkFooterIcon />
           </>
         )}
+      </div>
+
+      {/* Center cluster: radio controls. Absolute-centered so left/right
+          cluster widths don't shift its position. */}
+      <div className="absolute left-1/2 -translate-x-1/2 flex items-center">
+        <Suspense fallback={null}>
+          <RadioFooter />
+        </Suspense>
       </div>
 
       {/* Right cluster: reserved for future status items */}
