@@ -20,6 +20,7 @@ import { usePersonaActions } from './PersonaOverviewActions';
 import { useIsMobile } from './PersonaOverviewResponsive';
 import type { Persona } from '@/lib/bindings/Persona';
 import { useTranslation } from '@/i18n/useTranslation';
+import { ExecutionHeatmap } from '@/features/overview/sub_analytics/components/ExecutionHeatmap';
 
 const DRAFT_PROMPT = 'You are a helpful AI assistant.';
 
@@ -153,6 +154,11 @@ export default function PersonaOverviewPage() {
         }
       />
       <ContentBody>
+        {personas.length > 0 && (
+          <div className="px-3 pt-3 pb-2 border-b border-primary/5">
+            <ExecutionHeatmap compact />
+          </div>
+        )}
         <div className="px-3 py-2 border-b border-primary/5">
           <PersonaOverviewToolbar search={search} onSearchChange={setSearch} view={view} onViewChange={setView} />
         </div>
