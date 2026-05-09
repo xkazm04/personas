@@ -9636,7 +9636,16 @@
       "drop_overlay_subtitle": "Files will be saved into {path}",
       "drop_added_n": "Added {count} file(s) to Drive",
       "drop_too_large_n": "{count} file(s) skipped (over 50 MB)",
-      "drop_failed_n": "{count} file(s) failed to save"
+      "drop_failed_n": "{count} file(s) failed to save",
+      "search_no_local_hits": "No matches for \"{query}\" in this folder",
+      "search_escalate_hint": "Search across the entire Drive sandbox to find files in subfolders.",
+      "search_all_drive_cta": "Search all of Drive",
+      "search_running": "Searching…",
+      "search_results_for": "Results for \"{query}\"",
+      "search_n_hits": "{count} match(es)",
+      "search_back_to_folder": "Back to folder",
+      "search_no_drive_hits": "No matches anywhere in the Drive.",
+      "search_reveal_aria": "Reveal in Drive"
     },
     "artist": {
       "title": "Artist",

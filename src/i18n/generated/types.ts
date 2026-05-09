@@ -9643,6 +9643,15 @@ export type Translations = {
       drop_added_n: string;
       drop_too_large_n: string;
       drop_failed_n: string;
+      search_no_local_hits: string;
+      search_escalate_hint: string;
+      search_all_drive_cta: string;
+      search_running: string;
+      search_results_for: string;
+      search_n_hits: string;
+      search_back_to_folder: string;
+      search_no_drive_hits: string;
+      search_reveal_aria: string;
     };
     artist: {
       title: string;

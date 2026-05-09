@@ -98,6 +98,17 @@ export const driveListTree = (relPath: string, maxDepth?: number) =>
 export const driveStat = (relPath: string) =>
   invoke<DriveEntry>("drive_stat", { relPath: validateRelPath(relPath) });
 
+export interface DriveSearchHit {
+  entry: DriveEntry;
+  parentPath: string;
+}
+
+export const driveSearch = (query: string, maxResults?: number) =>
+  invoke<DriveSearchHit[]>("drive_search", {
+    query,
+    maxResults: maxResults ?? null,
+  });
+
 export const driveRead = (relPath: string) =>
   invoke<number[]>("drive_read", { relPath: validateRelPath(relPath) });
 

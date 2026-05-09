@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   DriveEntry,
+  DriveSearchHit,
   DriveStorageInfo,
   DriveTreeNode,
   driveCopy,
@@ -12,6 +13,7 @@ import {
   driveMove,
   driveParentPath,
   driveRename,
+  driveSearch,
   driveStorageInfo,
   driveWriteText,
 } from "@/api/drive";
@@ -124,6 +126,15 @@ export interface UseDriveResult {
    * cached (caller should fall back to driveList).
    */
   cachedEntriesFor: (path: string) => DriveEntry[] | null;
+
+  // Recursive search across the entire managed drive. The local
+  // `searchQuery` filter is per-folder; when it produces no results, the
+  // UI escalates to this — a backend walk via drive_search.
+  recursiveResults: DriveSearchHit[] | null;
+  recursiveQuery: string | null;
+  recursiveLoading: boolean;
+  runRecursiveSearch: () => Promise<void>;
+  clearRecursiveSearch: () => void;
 }
 
 /**
@@ -151,6 +162,9 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
   const [recentlyWritten, setRecentlyWritten] = useState<Set<string>>(
     new Set(),
   );
+  const [recursiveResults, setRecursiveResults] = useState<DriveSearchHit[] | null>(null);
+  const [recursiveQuery, setRecursiveQuery] = useState<string | null>(null);
+  const [recursiveLoading, setRecursiveLoading] = useState(false);
 
   const lastAnchorRef = useRef<string | null>(null);
   const flashTimersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
@@ -212,6 +226,43 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
     setSelection(new Set());
     lastAnchorRef.current = null;
   }, [currentPath]);
+
+  // Recursive search — escalation path when the local folder filter has
+  // no hits. Driven by the consumer (DriveFileList CTA), not auto-fired.
+  const runRecursiveSearch = useCallback(async () => {
+    const q = searchQuery.trim();
+    if (q.length < 2) return;
+    setRecursiveLoading(true);
+    try {
+      const results = await driveSearch(q);
+      setRecursiveResults(results);
+      setRecursiveQuery(q);
+    } catch (e) {
+      toastCatch("drive:search")(e);
+    } finally {
+      setRecursiveLoading(false);
+    }
+  }, [searchQuery]);
+
+  const clearRecursiveSearch = useCallback(() => {
+    setRecursiveResults(null);
+    setRecursiveQuery(null);
+  }, []);
+
+  // Drop recursive results when the user changes path or clears the query —
+  // the results are tied to "what was the user searching for at the
+  // moment of escalation," and stale results would mislead the next view.
+  useEffect(() => {
+    setRecursiveResults(null);
+    setRecursiveQuery(null);
+  }, [currentPath]);
+
+  useEffect(() => {
+    if (searchQuery.trim() === "") {
+      setRecursiveResults(null);
+      setRecursiveQuery(null);
+    }
+  }, [searchQuery]);
 
   // Navigation
   const navigate = useCallback(
@@ -520,5 +571,11 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
     recentlyWritten,
 
     cachedEntriesFor,
+
+    recursiveResults,
+    recursiveQuery,
+    recursiveLoading,
+    runRecursiveSearch,
+    clearRecursiveSearch,
   };
 }

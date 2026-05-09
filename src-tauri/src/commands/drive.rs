@@ -279,6 +279,18 @@ pub struct DriveTreeNode {
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
+pub struct DriveSearchHit {
+    /// Matched entry (file or folder).
+    pub entry: DriveEntry,
+    /// Parent folder path relative to root, "" for the root itself. Lets the
+    /// UI render a breadcrumb pill next to each result so the user can
+    /// navigate to the result's location.
+    pub parent_path: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct DriveStorageInfo {
     /// Canonical absolute path of the managed root.
     pub root: String,
@@ -737,6 +749,72 @@ fn walk_tree(root: &Path, dir: &Path, depth_remaining: u32) -> DriveTreeNode {
         path,
         children,
         has_more_children: has_more,
+    }
+}
+
+/// Recursive case-insensitive substring search across the managed drive.
+/// Walks the tree, matching entry names against the query. Folders are
+/// returned alongside files so the UI can navigate to the match's parent
+/// for context. The walk skips OS clutter and stops once `max_results`
+/// hits accumulate so a deep tree doesn't blow up the IPC payload.
+#[tauri::command]
+pub fn drive_search(
+    app: AppHandle,
+    query: String,
+    max_results: Option<u32>,
+) -> Result<Vec<DriveSearchHit>, AppError> {
+    let q = query.trim().to_lowercase();
+    if q.len() < 2 {
+        // Below 2 chars the UI should be using the local filter, not this
+        // recursive walk. Reject early so we don't return half the drive.
+        return Ok(vec![]);
+    }
+    let limit = max_results.unwrap_or(200).clamp(1, 1000) as usize;
+    let root = managed_root(&app)?;
+    let mut hits = Vec::new();
+    walk_search(&root, &root, &q, limit, &mut hits);
+    Ok(hits)
+}
+
+fn walk_search(
+    root: &Path,
+    dir: &Path,
+    query: &str,
+    limit: usize,
+    hits: &mut Vec<DriveSearchHit>,
+) {
+    if hits.len() >= limit {
+        return;
+    }
+    let read = match std::fs::read_dir(dir) {
+        Ok(r) => r,
+        Err(_) => return,
+    };
+    for entry in read.flatten() {
+        if hits.len() >= limit {
+            return;
+        }
+        let path = entry.path();
+        let name = entry.file_name().to_string_lossy().to_string();
+        if name == ".DS_Store" || name == "Thumbs.db" || name == "desktop.ini" {
+            continue;
+        }
+        let is_dir = entry.file_type().map(|f| f.is_dir()).unwrap_or(false);
+        if name.to_lowercase().contains(query) {
+            if let Ok(drive_entry) = build_entry(root, &path) {
+                let parent = path
+                    .parent()
+                    .map(|p| to_relative_display(root, p))
+                    .unwrap_or_default();
+                hits.push(DriveSearchHit {
+                    entry: drive_entry,
+                    parent_path: parent,
+                });
+            }
+        }
+        if is_dir {
+            walk_search(root, &path, query, limit, hits);
+        }
     }
 }
 

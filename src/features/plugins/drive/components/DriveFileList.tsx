@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
-import { ChevronUp, ChevronDown, FolderOpen, Sparkles } from "lucide-react";
+import { ChevronUp, ChevronDown, FolderOpen, Sparkles, Search, ArrowUpRight } from "lucide-react";
 
-import type { DriveEntry } from "@/api/drive";
-import { driveFormatBytes, driveList } from "@/api/drive";
+import type { DriveEntry, DriveSearchHit } from "@/api/drive";
+import { driveFormatBytes, driveList, driveParentPath } from "@/api/drive";
 import { silentCatch } from "@/lib/silentCatch";
 import type { UseDriveResult, SortKey } from "../hooks/useDrive";
 import { useTranslation } from "@/i18n/useTranslation";
@@ -188,7 +188,19 @@ function ListView({
       </div>
     );
   }
+
+  // Recursive-search results take over the list when the user has escalated
+  // beyond the local folder filter. Header pill + clear-search CTA.
+  if (drive.recursiveResults !== null) {
+    return (
+      <RecursiveResultsView drive={drive} onOpen={onOpen} />
+    );
+  }
+
   if (drive.visibleEntries.length === 0) {
+    if (drive.searchQuery.trim().length >= 2) {
+      return <SearchEmptyWithCTA drive={drive} />;
+    }
     return <DriveEmptyState drive={drive} onNewFolder={onNewFolder} />;
   }
 
@@ -523,6 +535,138 @@ function AsyncColumnEntries(props: {
       onOpen={props.onOpen}
       onContextMenu={props.onContextMenu}
     />
+  );
+}
+
+// ============================================================================
+// Recursive search — empty CTA + results view
+// ============================================================================
+
+function SearchEmptyWithCTA({ drive }: { drive: UseDriveResult }) {
+  const { t, tx } = useTranslation();
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center gap-4 p-10 text-center">
+      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-sky-500/5 border border-cyan-500/30 flex items-center justify-center">
+        <Search className="w-7 h-7 text-cyan-300" />
+      </div>
+      <div className="space-y-1.5 max-w-sm">
+        <div className="typo-section-title">
+          {tx(t.plugins.drive.search_no_local_hits, { query: drive.searchQuery })}
+        </div>
+        <p className="typo-body text-foreground">
+          {t.plugins.drive.search_escalate_hint}
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={() => drive.runRecursiveSearch()}
+        disabled={drive.recursiveLoading}
+        className="flex items-center gap-1.5 px-4 py-2 rounded-card bg-gradient-to-b from-cyan-500/25 to-cyan-500/10 text-cyan-100 border border-cyan-500/40 typo-body font-semibold hover:from-cyan-500/35 hover:to-cyan-500/15 disabled:opacity-50 transition-all"
+      >
+        <Search className="w-3.5 h-3.5" />
+        {drive.recursiveLoading
+          ? t.plugins.drive.search_running
+          : t.plugins.drive.search_all_drive_cta}
+      </button>
+    </div>
+  );
+}
+
+function RecursiveResultsView({
+  drive,
+  onOpen,
+}: {
+  drive: UseDriveResult;
+  onOpen: (entry: DriveEntry) => void;
+}) {
+  const { t, tx } = useTranslation();
+  const results = drive.recursiveResults ?? [];
+  return (
+    <div className="flex-1 overflow-auto">
+      {/* Header pill */}
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-3 px-4 py-2.5 border-b border-primary/10 bg-background/95 backdrop-blur">
+        <div className="flex items-center gap-2 typo-body text-foreground">
+          <Search className="w-3.5 h-3.5 text-cyan-300" />
+          <span className="font-medium">
+            {tx(t.plugins.drive.search_results_for, {
+              query: drive.recursiveQuery ?? "",
+            })}
+          </span>
+          <span className="text-foreground typo-caption tabular-nums">
+            {tx(t.plugins.drive.search_n_hits, { count: results.length })}
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={() => drive.clearRecursiveSearch()}
+          className="px-2 py-1 rounded-input typo-body text-foreground hover:bg-secondary/60"
+        >
+          {t.plugins.drive.search_back_to_folder}
+        </button>
+      </div>
+      {/* Results */}
+      {results.length === 0 ? (
+        <div className="flex-1 flex items-center justify-center p-10 typo-body text-foreground italic">
+          {t.plugins.drive.search_no_drive_hits}
+        </div>
+      ) : (
+        results.map((hit) => (
+          <RecursiveResultRow key={hit.entry.path} hit={hit} drive={drive} onOpen={onOpen} />
+        ))
+      )}
+    </div>
+  );
+}
+
+function RecursiveResultRow({
+  hit,
+  drive,
+  onOpen,
+}: {
+  hit: DriveSearchHit;
+  drive: UseDriveResult;
+  onOpen: (entry: DriveEntry) => void;
+}) {
+  const { t } = useTranslation();
+  const { entry, parentPath } = hit;
+  return (
+    <div
+      onDoubleClick={() => {
+        if (entry.kind === "folder") {
+          drive.navigate(entry.path);
+          drive.clearRecursiveSearch();
+        } else {
+          onOpen(entry);
+        }
+      }}
+      className="grid grid-cols-[1fr_auto] gap-3 px-4 py-2 border-b border-primary/5 hover:bg-secondary/40 transition-colors cursor-default"
+    >
+      <div className="flex items-center gap-3 min-w-0">
+        <FileChip entry={entry} size={28} />
+        <div className="min-w-0">
+          <div className="typo-body typo-card-label truncate">{entry.name}</div>
+          <div className="typo-caption text-foreground truncate font-mono">
+            {parentPath || "/"}
+          </div>
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={() => {
+          // Reveal: navigate to parent and clear the search.
+          const parent = entry.kind === "folder"
+            ? driveParentPath(entry.path)
+            : parentPath;
+          drive.navigate(parent);
+          drive.clearRecursiveSearch();
+        }}
+        className="self-center p-1.5 rounded-input text-foreground hover:text-cyan-200 hover:bg-cyan-500/15 transition-colors"
+        title={t.plugins.drive.search_reveal_aria}
+        aria-label={t.plugins.drive.search_reveal_aria}
+      >
+        <ArrowUpRight className="w-3.5 h-3.5" />
+      </button>
+    </div>
   );
 }
 

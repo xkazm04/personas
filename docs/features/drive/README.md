@@ -14,6 +14,7 @@ The plugin lives under `Plugins -> Drive` and is implemented by `src/features/pl
 | Clipboard | Copy/cut selected paths, paste into current folder | `hooks/useDrive.ts` |
 | Mutations | Create folder/file, rename, delete, move, copy | `hooks/useDrive.ts`, `src/api/drive.ts` |
 | OS file ingest | OS-native drag-drop into the current folder; cap 50 MB per file | `DrivePage.tsx` |
+| Recursive search | Local folder filter escalates to a backend `drive_search` walk via a "Search all of Drive" CTA when there are no in-folder hits | `hooks/useDrive.ts`, `components/DriveFileList.tsx`, `commands/drive.rs::drive_search` |
 | OCR drawer | Gemini OCR through Vault credentials or Claude CLI OCR through local CLI | `ocr/DriveOcrDrawer.tsx`, `ocr/useOcr.ts`, `src/api/drive.ts` |
 | Signing | Generate/attach/verify document signatures and sidecars | `signing/*`, `src/api/signing` |
 
@@ -50,7 +51,7 @@ UI operations emit events through the Drive command path. The execution engine c
 | Family | Commands |
 | --- | --- |
 | Root/storage | `drive_get_root`, `drive_storage_info` |
-| Listing/stat | `drive_list`, `drive_list_tree`, `drive_stat` |
+| Listing/stat | `drive_list`, `drive_list_tree`, `drive_stat`, `drive_search` |
 | Read/write | `drive_read`, `drive_read_text`, `drive_write`, `drive_write_text` |
 | Mutations | `drive_mkdir`, `drive_delete`, `drive_rename`, `drive_move`, `drive_copy` |
 | OS handoff | `drive_open_in_os`, `drive_reveal_in_os` |
