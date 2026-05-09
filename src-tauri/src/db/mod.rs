@@ -784,11 +784,11 @@ CREATE INDEX IF NOT EXISTS idx_companion_job_status_created
 -- patterns stripped at capture per Phase 3 v1). Eviction is age-based
 -- (default 24h) — the table is a rolling buffer, not durable history.
 CREATE TABLE IF NOT EXISTS ambient_signal (
-    id           TEXT PRIMARY KEY,                  -- 'sig_<n>' (matches in-memory id format)
-    source       TEXT NOT NULL,                     -- 'clipboard' | 'file_watcher' | 'app_focus'
-    captured_at  INTEGER NOT NULL,                  -- unix epoch ms
-    payload      TEXT,                              -- redacted content/title/path; nullable for metadata-only signals
-    metadata     TEXT                               -- optional JSON for source-specific extras (file_event_kind, app_name, etc.)
+    id                TEXT PRIMARY KEY,             -- 'sig_<n>' (matches in-memory id format)
+    source            TEXT NOT NULL,                -- 'clipboard' | 'file_watcher' | 'app_focus'
+    summary           TEXT NOT NULL,                -- prompt-injection-ready short title (matches AmbientSignal::summary)
+    captured_at       INTEGER NOT NULL,             -- unix epoch SECONDS (matches AmbientSignal::captured_at)
+    redacted_content  TEXT                          -- redacted clipboard body or other source-specific payload; NULL for sources that don't capture content
 );
 CREATE INDEX IF NOT EXISTS idx_ambient_signal_captured
     ON ambient_signal(captured_at DESC);
