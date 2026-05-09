@@ -85,7 +85,8 @@ export function ConfigurationPopup({
         })
       );
       onSaved();
-    } catch {
+    } catch (err) {
+      logger.warn('Failed to save configuration settings', { error: err });
       useToastStore.getState().addToast(t.agents.config_popup.failed_to_save, 'error');
     } finally {
       setSaving(false);
