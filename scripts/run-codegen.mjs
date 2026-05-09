@@ -22,6 +22,12 @@ const repoRoot = resolve(__dirname, "..");
 const TASKS = {
   commands:  "scripts/generate-command-names.mjs",
   i18n:      "scripts/i18n/gen-types.mjs",
+  // Splits per-locale JSON into section-scoped JSON chunks under
+  // src/i18n/section-locales/<lang>/<section>.json + regenerates
+  // src/i18n/generated/enSectionStrings.ts. Vite buildStart also runs
+  // this (defense-in-depth); listing it here keeps the documented
+  // codegen surface in sync with what actually runs.
+  "i18n-split": "scripts/i18n/split-locales.mjs",
   connectors:"scripts/generate-connector-seed.mjs",
   checksums: "scripts/generate-template-checksums.mjs",
   "n8n-limits": "scripts/generate-n8n-limits.mjs",
@@ -29,8 +35,8 @@ const TASKS = {
 };
 
 const PRESETS = {
-  predev:   ["commands", "i18n", "connectors", "n8n-limits", "host-check"],
-  prebuild: ["commands", "i18n", "connectors", "n8n-limits", "checksums"],
+  predev:   ["commands", "i18n", "i18n-split", "connectors", "n8n-limits", "host-check"],
+  prebuild: ["commands", "i18n", "i18n-split", "connectors", "n8n-limits", "checksums"],
 };
 
 const TIMEOUT_MS = Number(process.env.CODEGEN_TIMEOUT_MS) || 60_000;

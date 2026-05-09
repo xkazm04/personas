@@ -321,7 +321,7 @@ Registration touchpoints (mirror existing plugins):
 - Add `'langfuse'` to `PluginTab` in `src/lib/types/types`.
 - Add an entry to `PLUGINS` in `src/features/plugins/PluginBrowsePage.tsx` (icon: `Activity` or `LineChart` from lucide; suggested accent `text-orange-400` so it doesn't collide with existing plugin colors).
 - Add an accent to `pluginTheme.ts`.
-- Add i18n keys `plugins.langfuse_label` / `plugins.langfuse_desc` to `src/i18n/en.ts` (per CLAUDE.md i18n rule).
+- Add i18n keys `plugins.langfuse_label` / `plugins.langfuse_desc` to `src/i18n/locales/en.json` (per CLAUDE.md i18n rule).
 - Add the plugin route to wherever sibling plugins resolve their pages.
 
 ### Connection UX
@@ -405,7 +405,7 @@ After 2–4 weeks of Path A in real use, decide:
 - **Two sources of truth for cost.** Langfuse has its own pricing table; our `cost.rs` has another. Our cost authoritative until we reconcile.
 - **PII in prompts.** Persona prompts may include user data, credentials, or internal context. Add a redaction toggle before encouraging adoption.
 - **Outage shadow.** If Path B ships and Langfuse is down, an in-app dashboard surface goes stale. Plan for a degraded-mode banner.
-- **i18n drift.** Plugin label/desc must land in `src/i18n/en.ts`; non-English locales fall back automatically (per CLAUDE.md), but new error strings need the registry bridge.
+- **i18n drift.** Plugin label/desc must land in `src/i18n/locales/en.json`; non-English locales fall back automatically (per CLAUDE.md), but new error strings need the registry bridge.
 - **Plugin discoverability.** Users have to find and toggle the plugin. Consider featuring it on the Plugin Browse page hero strip on first launch when execution count > N.
 
 ## References

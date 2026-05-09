@@ -27,14 +27,14 @@ This document is the implementation contract for **Variant A (Static JSON over C
 ```
 Build time                       Runtime
 ─────────                        ───────
-../../../src/data/releases.json    ─┐
-../../../src/i18n/en.ts            ─┼──>  Vite bundle  ──>  HomeRoadmapView
-                                                    reads via
-                                                    useReleasesTranslation
+../../../src/data/releases.json        ─┐
+../../../src/i18n/locales/en.json       ─┼──>  Vite bundle  ──>  HomeRoadmapView
+                                                       reads via
+                                                       useReleasesTranslation
 ```
 
 - `src/data/releases.json` is the structural source of truth (item ids, type, status, priority, sort_order).
-- `src/i18n/en.ts` → `releases.whats_new.release_roadmap_*` carries titles + descriptions per locale (English authoritative; non-English deep-merge fall back to English).
+- `src/i18n/locales/en.json` → `releases.whats_new.release_roadmap_*` carries titles + descriptions per locale (English authoritative; missing keys fall back to English).
 - Both are imported synchronously at build time. To update the roadmap today, you edit one or both files, push, cut a release.
 
 ---
@@ -175,7 +175,7 @@ A small status pill in the roadmap view shows "Last updated 4m ago" / "Offline �
 
 ### i18n boundary
 
-The fetched payload owns the **content** strings (item titles + descriptions, optional release label + summary). It does NOT own the **chrome** strings (status names like "In Progress", priority names like "Now", summary pill formatters like "{count} In Progress"). Those keep living in `src/i18n/en.ts` because they're tied to the UI shipped with the binary, not to roadmap content.
+The fetched payload owns the **content** strings (item titles + descriptions, optional release label + summary). It does NOT own the **chrome** strings (status names like "In Progress", priority names like "Now", summary pill formatters like "{count} In Progress"). Those keep living in `src/i18n/locales/en.json` because they're tied to the UI shipped with the binary, not to roadmap content.
 
 Practical consequence: a new roadmap status added remotely without a corresponding app release won't break — the existing status enum (`planned | in_progress | completed`) is closed; the validator rejects unknown values and the item is dropped with a console warning.
 
@@ -283,6 +283,6 @@ The desktop-side code that consumes `LiveRoadmap` (`HomeRoadmapView`, the merge 
 
 - Existing data layer: [`src/data/releases.ts`](../../../src/data/releases.ts), [`src/data/releases.json`](../../../src/data/releases.json)
 - Existing view: [`src/features/home/components/releases/HomeRoadmapView.tsx`](../../../src/features/home/components/releases/HomeRoadmapView.tsx)
-- i18n source: [`src/i18n/en.ts`](../../../src/i18n/en.ts) → `releases.whats_new.*`
+- i18n source: [`src/i18n/locales/en.json`](../../../src/i18n/locales/en.json) → `releases.whats_new.*`
 - IPC pattern: [`src/lib/tauriInvoke.ts`](../../../src/lib/tauriInvoke.ts), CLAUDE.md → "Tauri IPC"
 - Integration scaffold pattern: project memory → "Adding a New Integration"

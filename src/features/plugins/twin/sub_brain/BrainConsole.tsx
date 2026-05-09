@@ -1,7 +1,7 @@
 import { Brain, Database, Link, Unlink, FolderTree, RefreshCw, AlertCircle, Terminal, BookOpen, Cpu, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { TwinEmptyState } from '../TwinEmptyState';
-import { useTwinTranslation } from '../i18n/useTwinTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useBrainConnection } from './useBrainConnection';
 
 /* ------------------------------------------------------------------ *
@@ -11,7 +11,7 @@ import { useBrainConnection } from './useBrainConnection';
  * ------------------------------------------------------------------ */
 
 export default function BrainConsole() {
-  const { t } = useTwinTranslation();
+  const t = useTranslation().t.twin;
   const {
     activeTwin, activeTwinId,
     kbInfo, allKbs, kbLoading, createError, creating, pickMode, setPickMode,

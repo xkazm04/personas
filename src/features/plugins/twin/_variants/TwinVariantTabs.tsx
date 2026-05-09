@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { Sparkles, Terminal, Archive } from 'lucide-react';
-import { useTwinTranslation } from '../i18n/useTwinTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export type TwinVariantId = 'atelier' | 'console' | 'baseline';
 
@@ -29,7 +29,7 @@ interface TwinVariantTabsProps {
  * collapsed and only the chosen variant remains.
  */
 export function TwinVariantTabs({ storageKey, children, defaultVariant = 'atelier' }: TwinVariantTabsProps) {
-  const { t } = useTwinTranslation();
+  const t = useTranslation().t.twin;
   const [variant, setVariant] = useState<TwinVariantId>(() => {
     try {
       const raw = localStorage.getItem(`twin-variant:${storageKey}`);

@@ -6,7 +6,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { generateBio } from '@/api/twin/twin';
 import { TwinEmptyState } from '../TwinEmptyState';
-import { useTwinTranslation } from '../i18n/useTwinTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 import { GENDERS, genderFromPronouns, pronounsFromGender, genderDef, type Gender } from '../_shared/gender';
 
 /* ------------------------------------------------------------------ *
@@ -17,7 +17,7 @@ import { GENDERS, genderFromPronouns, pronounsFromGender, genderDef, type Gender
  * ------------------------------------------------------------------ */
 
 export default function IdentityAtelier() {
-  const { t } = useTwinTranslation();
+  const t = useTranslation().t.twin;
   const twinProfiles = useSystemStore((s) => s.twinProfiles);
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const updateTwinProfile = useSystemStore((s) => s.updateTwinProfile);

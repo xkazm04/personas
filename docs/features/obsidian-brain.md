@@ -234,4 +234,4 @@ scripts/mcp-server/
 └── index.mjs                          # MCP server with vault_* tools agents call via Claude Desktop
 ```
 
-All copy lives under `t.plugins.obsidian_brain.*` in `src/i18n/en.ts`. Connector gating filter applied centrally in `src/stores/slices/vault/credentialSlice.ts:fetchConnectorDefinitions`. Prompt-builder hint for the connector lives in `src-tauri/src/engine/build_session.rs` next to the `codebase` connector hint.
+All copy lives under `t.plugins.obsidian_brain.*` in `src/i18n/locales/en.json`. Connector gating filter applied centrally in `src/stores/slices/vault/credentialSlice.ts:fetchConnectorDefinitions`. Prompt-builder hint for the connector lives in `src-tauri/src/engine/build_session.rs` next to the `codebase` connector hint.

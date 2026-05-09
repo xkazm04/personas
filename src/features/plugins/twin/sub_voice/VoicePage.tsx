@@ -5,7 +5,7 @@ import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/compon
 import { Button } from '@/features/shared/components/buttons';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { TwinEmptyState } from '../TwinEmptyState';
-import { useTwinTranslation } from '../i18n/useTwinTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 import { CoachMark } from '../CoachMark';
 import { Radio } from 'lucide-react';
 
@@ -29,7 +29,7 @@ const ELEVENLABS_MODELS = [
 ] as const;
 
 export default function VoicePage() {
-  const { t } = useTwinTranslation();
+  const t = useTranslation().t.twin;
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const voiceProfile = useSystemStore((s) => s.twinVoiceProfile);
   const isLoading = useSystemStore((s) => s.twinVoiceLoading);

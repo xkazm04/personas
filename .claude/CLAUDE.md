@@ -117,27 +117,37 @@ function MyComponent() {
 }
 ```
 
-**Source of truth**: `src/i18n/en.ts` (~1,622 keys across 29 sections)
+**Source of truth**: `src/i18n/locales/en.json` (~11,500 leaf keys across 60 top-level sections — `common`, `agents`, `vault`, `overview`, `triggers`, …)
 **14 languages**: en, zh, ar, hi, ru, id, es, fr, bn, ja, vi, de, ko, cs
-**Fallback**: Non-English bundles are lazy-loaded; English is always synchronous. Missing keys fall back to English via deep merge.
+**Fallback**: Non-English bundles are split per top-level section and lazy-loaded as separate JS chunks. The `t` proxy deep-merges each section over its English counterpart so missing sub-keys resolve to English automatically (translation lag never renders `undefined`); a section that hasn't loaded yet shows English while the chunk is in flight.
+
+### Architecture (section-locales pipeline)
+
+The 500KB+ monolithic locale bundles were retired in May 2026. Today:
+
+1. `src/i18n/locales/<lang>.json` — authoritative human-edited locale files (English is the source; non-English files are partial, with translation teams catching up asynchronously).
+2. `scripts/i18n/split-locales.mjs` — runs in `vite buildStart` (and is also wired into `predev`/`prebuild` via `scripts/run-codegen.mjs`). Splits each non-English locale into `src/i18n/section-locales/<lang>/<section>.json` and emits `src/i18n/generated/enSectionStrings.ts` (English sections stored as parse-on-demand JSON strings).
+3. `src/i18n/useTranslation.ts` discovers section JSON via `import.meta.glob('./section-locales/*/*.json', { eager: false })`, so each section becomes its own async chunk. The `t` value is a `Proxy` that triggers section loading on first property access.
+4. `src/i18n/routeSections.ts` — declares which sections each `SidebarSection` (home/overview/personas/…) needs. The active route's sections preload eagerly; everything else loads on demand. `BASE_SECTIONS` (common, chrome, sidebar, toasts, errors, error_registry, empty_states, status_tokens, process_labels) always preload.
+5. `src/main.tsx` `preloadPersistedLocaleBeforeMount()` — kicks off section loads for the persisted locale + persisted sidebar route before React mounts, so non-English users avoid an English-first-paint flash. Bounded by a 1.2s timeout.
+6. `useLanguagePrefetch()` — hover/intent prefetch used by `LanguageSwitcher` / `AppearanceStep` to warm chunks before a language switch commits.
+
+The English type tree (`src/i18n/generated/types.ts`) is codegen'd from `locales/en.json` by `scripts/i18n/gen-types.mjs` on `predev`/`prebuild`. It gives `t.section.key` autocomplete and catches drift at compile time.
 
 ### When Adding New UI Strings
 
-1. **Add the key to `src/i18n/en.ts`** in the appropriate section (common, agents, vault, etc.)
-2. **Include a translator comment** above the key explaining context:
-   ```typescript
-   // Button label in the agent editor toolbar — keep short (1-2 words)
-   duplicate_agent: "Duplicate",
-   ```
-3. **Use the key in your component** via `t.section.key`
-4. **Do NOT add to non-English locale files** — they fall back to English automatically. Translation teams handle localization separately.
+1. **Add the key to `src/i18n/locales/en.json`** in the appropriate top-level section (`common`, `agents`, `vault`, …). The file is plain JSON.
+2. **Include a translator comment in the PR description or commit message** explaining context for short labels (e.g. "duplicate_agent: button in agent editor toolbar — keep 1-2 words"). JSON does not support inline comments; treat the PR/commit as the translator-facing context.
+3. **Use the key in your component** via `t.section.key` (autocompleted by the generated `Translations` type).
+4. **Do NOT add to non-English locale files** — they fall back to English automatically. Translation teams catch up asynchronously.
+5. After editing `en.json`, the next `npm run dev` / `npm run build` regenerates `generated/types.ts`, `generated/enSectionStrings.ts`, and `section-locales/*/<section>.json`.
 
 ### When Adding New Backend Status Tokens
 
 The Rust backend sends machine tokens (e.g. `"queued"`, `"failed"`, `"critical"`) over IPC. These are **language-agnostic identifiers** — never display them directly to users.
 
-**Pattern (Option A — token-based):**
-1. Add the token label to `src/i18n/en.ts` under `status_tokens.<category>`
+**Pattern (token-based):**
+1. Add the token label to `src/i18n/locales/en.json` under `status_tokens.<category>`.
 2. Use `tokenLabel()` from `src/i18n/tokenMaps.ts` to resolve:
    ```typescript
    import { tokenLabel } from '@/i18n/tokenMaps';
@@ -158,8 +168,8 @@ const { message, suggestion } = resolveErrorTranslated(t, rawError);
 ```
 
 To add a new error pattern:
-1. Add `<key>_message` and `<key>_suggestion` to `en.ts` → `error_registry` section
-2. Add a match rule in `src/i18n/useTranslatedError.ts` → `ERROR_KEY_MAP`
+1. Add `<key>_message` and `<key>_suggestion` to `locales/en.json` → `error_registry` section.
+2. Add a match rule in `src/i18n/useTranslatedError.ts` → `ERROR_KEY_MAP`.
 
 ### Constants with Labels
 
@@ -190,19 +200,25 @@ const FILTERS = [{ id: 'active', labelKey: 'common.active' as const }];
 ### Checking Coverage
 
 ```bash
-node scripts/i18n/check-coverage.mjs           # CI gate — fails if any locale's keyset diverges from en.json
+node scripts/i18n/check-coverage.mjs           # CI gate — fails if any locale's keyset has EXTRAS (stale keys)
 node scripts/i18n/check-coverage.mjs --json    # Machine-readable
-node scripts/i18n-real-coverage.mjs            # Real coverage report across all 13 locales (handles inline-object keys)
+node scripts/i18n/check-coverage.mjs --strict  # Also fail on missing keys (use before a release)
 npm run check:i18n                             # Same as check-coverage above (wired into CI)
 ```
 
-### Feature-Scoped i18n Hooks (Deprecated)
+`check-coverage.mjs` reads `src/i18n/locales/*.json`. Extras always fail (stale keys after a rename). Missing keys warn by default — translation lag is expected and the runtime fall-back to English keeps the app functional.
 
-`src/features/home/i18n/` and `src/features/home/components/releases/i18n/` have their own locale files and hooks. These are **deprecated** — do NOT create new feature-scoped i18n directories. All new translations go into the main `src/i18n/en.ts`.
+### Back-compat shim `src/i18n/en.ts`
+
+Provides `import { en, type Translations } from '@/i18n/en'` for the ~48 modules that bind English values at module scope (Zustand slices like `tourSlice`/`deployTarget`/`alertSlice`/`executionSlice`, helpers in `modelCatalog`/`connectorRoles`/`triggerConstants`, etc.). The `en` export is a `Proxy` that lazy-parses each section on first property access — so `import { en }` is nearly free and `en.alerts.x` only parses the `alerts` section. New code should prefer `useTranslation()` for components and `getActiveTranslations()` (from `@/i18n/useTranslation`) for non-React modules; keep the `en` shim only when you need a stable English snapshot at module-init time.
+
+### Feature-scoped `i18n/` directories
+
+The 2026-04-19 retire pass folded `overview`, `settings`, `templates`, `onboarding`, and `home` into the main bundle, and a 2026-05-08 follow-up resolved `agents/sub_lab/`, `plugins/twin/`, and `recipes/shared/`. The only surviving `i18n/` folder under `src/features/` is `home/components/releases/i18n/useReleasesTranslation.ts`, which is a *display-shape adapter* — it just reshapes flat `t.releases.whats_new.release_X_Y_Z_item_N_title` keys into the nested object that `HomeRoadmapView` and `ReleaseDetailView` consume. It uses the main `useTranslation()` underneath, owns no parallel locale data, and is allowed to stay. **Do NOT create new feature-scoped i18n dirs.** Add strings to `src/i18n/locales/en.json`.
 
 ### i18n Migration Status
 
-~3,800 hardcoded strings remain across ~1,200 files. Migration is in progress. When you encounter hardcoded English while editing a file for other reasons, extract it to en.ts if the fix is small (< 5 strings). Do NOT bulk-migrate files that aren't part of your current task.
+Hardcoded English in JSX is still being extracted incrementally. When you encounter hardcoded strings while editing a file for other reasons, extract them to `locales/en.json` if the fix is small (< 5 strings). Do NOT bulk-migrate files that aren't part of your current task.
 
 ---
 

@@ -7,7 +7,7 @@ import {
 import { useSystemStore } from '@/stores/systemStore';
 import { Button } from '@/features/shared/components/buttons';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
-import { useTwinTranslation } from '../i18n/useTwinTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useProfileDashboards } from '../useProfileDashboards';
 import { genderDefFromPronouns } from '../_shared/gender';
 import { TwinHeaderBand } from '../_shared/TwinHeaderBand';
@@ -82,7 +82,7 @@ function MilestoneRow({ icon: Icon, label, status, meta }: MilestoneRowProps) {
 }
 
 export default function ProfilesAtelier() {
-  const { t } = useTwinTranslation();
+  const t = useTranslation().t.twin;
   const twinProfiles = useSystemStore((s) => s.twinProfiles);
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const isLoading = useSystemStore((s) => s.twinProfilesLoading);
@@ -316,7 +316,7 @@ interface HeroCardProps {
 
 function HeroCard(props: HeroCardProps) {
   const { profile, isActive, isEditing, editDraft, setEditDraft, onStartEdit, onCancelEdit, onSaveEdit, submitting, onSetActive, onDelete, dash } = props;
-  const { t } = useTwinTranslation();
+  const t = useTranslation().t.twin;
   const sigil = genderDefFromPronouns(profile.pronouns ?? null);
   const langs = languagesFrom(profile.languages ?? null);
   const r = dash?.readiness;
@@ -417,7 +417,7 @@ type SatelliteCardProps = Omit<HeroCardProps, 'isActive'>;
 
 function SatelliteCard(props: SatelliteCardProps) {
   const { profile, isEditing, editDraft, setEditDraft, onStartEdit, onCancelEdit, onSaveEdit, submitting, onSetActive, onDelete, dash } = props;
-  const { t } = useTwinTranslation();
+  const t = useTranslation().t.twin;
   const sigil = genderDefFromPronouns(profile.pronouns ?? null);
   const langs = languagesFrom(profile.languages ?? null);
   const r = dash?.readiness;

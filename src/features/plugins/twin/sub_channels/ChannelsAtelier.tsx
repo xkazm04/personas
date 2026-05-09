@@ -9,7 +9,7 @@ import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import type { TwinChannel } from '@/lib/bindings/TwinChannel';
 import type { TwinChannelKind } from '@/api/enums';
 import { TwinEmptyState } from '../TwinEmptyState';
-import { useTwinTranslation } from '../i18n/useTwinTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 import { DEPLOYMENT_CHANNELS, getDeploymentChannelMeta, paletteOf } from '../_shared/channels';
 
 /* ------------------------------------------------------------------ *
@@ -39,7 +39,7 @@ function getChannelMeta(type: string) {
 const channelOptions: ThemedSelectOption[] = CHANNEL_TYPES.map((ct) => ({ value: ct.id, label: ct.label }));
 
 export default function ChannelsAtelier() {
-  const { t } = useTwinTranslation();
+  const t = useTranslation().t.twin;
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const channels = useSystemStore((s) => s.twinChannels);
   const tones = useSystemStore((s) => s.twinTones);

@@ -4,7 +4,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
-import { useTwinTranslation } from '../i18n/useTwinTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useProfileDashboards } from '../useProfileDashboards';
 import { genderDefFromPronouns } from '../_shared/gender';
 import { CreateTwinWizard } from './CreateTwinWizard';
@@ -58,7 +58,7 @@ function Chip({ icon: Icon, label, status }: ChipProps) {
 }
 
 export default function ProfilesBaseline() {
-  const { t } = useTwinTranslation();
+  const t = useTranslation().t.twin;
   const twinProfiles = useSystemStore((s) => s.twinProfiles);
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const isLoading = useSystemStore((s) => s.twinProfilesLoading);

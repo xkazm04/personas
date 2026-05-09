@@ -394,78 +394,35 @@ The app ships with **13 languages**: English (source of truth) + Arabic, Bengali
 
 ### How it layers
 
-- **`src/i18n/en.ts`** is the single source of truth. All user-facing strings live here (~7,595 leaf keys across ~50 sections like `common`, `agents`, `vault`, `overview`, `triggers`, etc.).
-- **`src/i18n/{lang}.ts`** are **partial** locale files. At runtime, each non-English bundle is deep-merged with `en.ts` — any key missing from a locale automatically falls back to the English value. This means locales never break the app even mid-migration.
-- English is loaded synchronously; other bundles lazy-load on language switch. See `src/i18n/useTranslation.ts`.
+- **`src/i18n/locales/en.json`** is the single source of truth. All user-facing strings live here (~11,255 leaf keys across 57 top-level sections like `common`, `agents`, `vault`, `overview`, `triggers`, etc.).
+- **`src/i18n/locales/<lang>.json`** are **partial** locale files (13 non-English bundles). Missing keys fall back to the matching English section automatically — locales never break the app even mid-migration.
+- **`src/i18n/section-locales/<lang>/<section>.json`** are auto-generated splits of the per-locale bundles, one JSON per top-level section. They are produced by `scripts/i18n/split-locales.mjs` (wired into `vite buildStart` and `npm run predev`/`prebuild`) — do not edit by hand.
+- At runtime, `src/i18n/useTranslation.ts` lazy-loads each section as its own JS chunk via `import.meta.glob('./section-locales/*/*.json', { eager: false })`. The `t` value is a `Proxy` that resolves to English while a non-English chunk is in flight.
+- `src/i18n/routeSections.ts` declares which sections each route needs. Active-route sections preload eagerly; everything else loads on demand. `src/main.tsx` also preloads the persisted locale's section set before React mounts so non-English users avoid an English first-paint flash.
 - Strings are looked up via `const { t, tx } = useTranslation()` — e.g. `t.common.save` or `tx(t.common.agent_count_other, { count: 5 })` for interpolation/pluralization.
 - Backend (Rust) sends language-agnostic **status tokens** (`"queued"`, `"failed"`, etc.) over IPC; the frontend maps them via `src/i18n/tokenMaps.ts` → `tokenLabel()`.
+- The TypeScript type tree for `t` (`src/i18n/generated/types.ts`) is codegen'd from `locales/en.json` by `scripts/i18n/gen-types.mjs` on `predev`/`prebuild`. It gives `t.section.key` autocomplete and catches drift at compile time.
 
 ### Checking coverage
 
 ```bash
-node scripts/i18n-real-coverage.mjs   # Real coverage across all 13 locales (handles inline-object keys)
-node scripts/check-locale-parity.mjs  # Legacy parity check (undercounts inline-object keys)
+npm run check:i18n                              # CI gate — wraps check-coverage.mjs
+node scripts/i18n/check-coverage.mjs --strict   # Also fail on missing keys (use before a release)
+node scripts/i18n/check-coverage.mjs --json     # Machine-readable
 ```
 
-The **real coverage** script is the authoritative one — the legacy parity checker doesn't understand inline-object lines like `anomaly_drilldown_extra: { title: "...", value_label: "..." },` so it undercounts. Expected output:
+`check-coverage.mjs` reads `src/i18n/locales/*.json`. Stale (extra) keys always fail — they appear when a key is renamed or removed in `en.json` but not in a locale. Missing keys warn by default, since translation lag is expected and the runtime fall-back to English keeps the UI functional.
 
-```
-en.ts total keys: 7595
+### Populating translations
 
-Lang | Present | Missing | Coverage
------|---------|---------|---------
-ar   |    7595 |       0 | 100.0%
-bn   |    7595 |       0 | 100.0%
-cs   |    2893 |    4702 |  38.1%
-de   |    7595 |       0 | 100.0%
-...
-```
+Translation refresh is driven manually today:
 
-### Populating translations (the pipeline)
+1. New English strings land in `src/i18n/locales/en.json`.
+2. Translation teams (or a one-shot Claude subagent run) fill in the missing keys per locale, mirroring the JSON structure.
+3. `npm run check:i18n` validates that the locales' keysets match `en.json` and have no drift.
+4. The split + section-locales regeneration is automatic on the next `npm run dev` / `npm run build` (via `scripts/i18n/split-locales.mjs`).
 
-When new keys land in `en.ts`, fresh translations are produced by **Claude Code subagents** running under your subscription (no separate API key needed). The full workflow lives in `scripts/`:
-
-1. **Extract missing keys** (union across all locales):
-   ```bash
-   node scripts/i18n-agent-prep.mjs
-   # → writes .planning/i18n/missing-en.json
-   ```
-
-2. **Spawn one translator subagent per language** via the `Agent` tool (Sonnet, background mode). Each agent:
-   - reads `.planning/i18n/missing-en.json` (or `remaining-{lang}.json` for resumes),
-   - translates in ~400-key batches with in-memory accumulation,
-   - writes incremental progress to `.planning/i18n/translated-{lang}.json` after each batch (survives rate-limit interruptions),
-   - follows fixed translation rules: preserve `{variable}` placeholders, never translate brand/technical terms (Claude, OAuth, API, cron, etc.), keep UI labels concise, use consistent terminology (Agent → *Agent*/*代理*/*エージェント*/…, Vault → *Tresor*/*Bóveda*/*保险库*/…).
-
-3. **Resume interrupted agents** — if a subagent hit a rate limit, regenerate per-language work lists:
-   ```bash
-   node scripts/i18n-agent-remaining.mjs
-   # → writes .planning/i18n/remaining-{lang}.json (only untranslated keys)
-   ```
-   Then spawn resume subagents pointing at the smaller `remaining-*` files. Resume agents **merge** into existing `translated-{lang}.json` rather than overwrite.
-
-4. **Merge the translated JSON blobs into TypeScript locale files:**
-   ```bash
-   node scripts/i18n-agent-merge.mjs            # all 12 target languages
-   node scripts/i18n-agent-merge.mjs --lang de  # one language
-   ```
-   This reads each `translated-{lang}.json` plus the existing `src/i18n/{lang}.ts` (existing human-curated translations always win), then emits a complete locale file mirroring `en.ts`'s nested structure. It preserves locale-specific extras (e.g. Arabic `_zero`/`_two`, Czech `_few`/`_many` plural forms that don't exist in English).
-
-5. **Verify:**
-   ```bash
-   npx tsc --noEmit                      # TypeScript compiles clean
-   node scripts/i18n-real-coverage.mjs   # 100% on all target languages
-   ```
-
-### Czech — human-delivered path
-
-Czech translations came from a professional translator via `czech.txt` (CSV: `key,english,czech`). Merging into `src/i18n/cs.ts` is a separate one-shot step:
-
-```bash
-node scripts/merge-czech.mjs
-```
-
-This reads `czech.txt`, the existing `cs.ts`, and `en.ts`, then generates a clean cs.ts with all available Czech translations and Czech-specific plural forms preserved.
+The previous batched subagent pipeline (`i18n-agent-prep` / `i18n-agent-merge` / `translate-locales`) was retired alongside the JSON conversion; reintroducing a similar pipeline is tracked but not in tree.
 
 ### Writing new UI code
 
@@ -485,7 +442,7 @@ function MyComponent() {
 }
 ```
 
-Add new keys to `src/i18n/en.ts` only (with a translator-facing comment explaining context). Non-English bundles catch up via the subagent pipeline above.
+Add new keys to `src/i18n/locales/en.json` only. Translator-facing context goes in the PR or commit message (JSON does not support inline comments). Non-English bundles catch up asynchronously.
 
 ## Troubleshooting
 

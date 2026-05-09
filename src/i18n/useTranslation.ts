@@ -101,6 +101,7 @@ function loadSection(lang: Language, section: TranslationSection): Promise<void>
     )
     .then((mod) => {
       cacheSection(lang, section, mod.default);
+      mergedSectionCache.delete(`${lang}:${section}`);
       bundleVersion++;
       listeners.forEach((fn) => fn());
     })
@@ -178,6 +179,52 @@ export function useLanguagePrefetch(delayMs = 100) {
   return { prefetchNow, prefetchWithIntent, cancelPrefetch: clearPending };
 }
 
+/**
+ * Merge a non-English section over its English counterpart. Locale value wins
+ * when present; English fills any gap (missing sub-objects, missing leaf keys).
+ * Arrays are treated as leaf values (locale array replaces English array
+ * wholesale — partial array merging would corrupt index-addressed content).
+ *
+ * Cached per (lang, section) so the resulting object identity is stable and
+ * the merge cost is paid once per section per language.
+ */
+const mergedSectionCache = new Map<string, unknown>();
+
+function deepMergeSection(base: unknown, override: unknown): unknown {
+  if (
+    base === null ||
+    typeof base !== 'object' ||
+    Array.isArray(base) ||
+    override === null ||
+    typeof override !== 'object' ||
+    Array.isArray(override)
+  ) {
+    return override !== undefined ? override : base;
+  }
+  const out: Record<string, unknown> = { ...(base as Record<string, unknown>) };
+  for (const [key, val] of Object.entries(override as Record<string, unknown>)) {
+    if (val === undefined) continue;
+    out[key] = deepMergeSection(out[key], val);
+  }
+  return out;
+}
+
+function getResolvedSection(lang: Language, section: TranslationSection): unknown {
+  const english = getEnglishSection(section);
+  if (lang === 'en') return english;
+
+  const localized = getCachedSection(lang, section);
+  if (localized === undefined) return english;
+
+  const cacheKey = `${lang}:${section}`;
+  let merged = mergedSectionCache.get(cacheKey);
+  if (merged === undefined) {
+    merged = deepMergeSection(english, localized);
+    mergedSectionCache.set(cacheKey, merged);
+  }
+  return merged;
+}
+
 function getBundle(lang: Language): Translations {
   if (import.meta.env.DEV && isPseudoActive()) {
     return buildPseudoBundle(getEnglishTranslations());
@@ -192,7 +239,7 @@ function getBundle(lang: Language): Translations {
         if (lang !== 'en' && getCachedSection(lang, prop) === undefined) {
           preloadSections(lang, [prop]);
         }
-        return getCachedSection(lang, prop) ?? getEnglishSection(prop);
+        return getResolvedSection(lang, prop);
       },
       has(_target, prop) {
         return typeof prop === 'string' && isTranslationSection(prop);

@@ -6,7 +6,7 @@ import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
 import * as twinApi from '@/api/twin/twin';
 import { Button } from '@/features/shared/components/buttons';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
-import { useTwinTranslation } from '../i18n/useTwinTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 import { GENDERS, pronounsFromGender, type Gender } from '../_shared/gender';
 import { DEPLOYMENT_CHANNELS } from '../_shared/channels';
 
@@ -34,7 +34,7 @@ const CHANNEL_TYPES = DEPLOYMENT_CHANNELS.map((c) => ({
 }));
 
 export function CreateTwinWizard({ onClose }: { onClose: () => void }) {
-  const { t } = useTwinTranslation();
+  const t = useTranslation().t.twin;
   const createTwinProfile = useSystemStore((s) => s.createTwinProfile);
   const setTwinTab = useSystemStore((s) => s.setTwinTab);
   const credentials = useVaultStore((s) => s.credentials);

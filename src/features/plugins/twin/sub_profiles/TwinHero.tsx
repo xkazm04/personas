@@ -1,5 +1,5 @@
 import { Sparkles, User, Brain, Radio, Plus, ExternalLink } from 'lucide-react';
-import { useTwinTranslation } from '../i18n/useTwinTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Button } from '@/features/shared/components/buttons';
 import type { LucideIcon } from 'lucide-react';
 
@@ -9,7 +9,7 @@ import type { LucideIcon } from 'lucide-react';
  * with a three-panel explainer + primary CTA into the creation wizard.
  */
 export function TwinHero({ onCreate }: { onCreate: () => void }) {
-  const { t } = useTwinTranslation();
+  const t = useTranslation().t.twin;
 
   return (
     <div className="h-full w-full flex flex-col items-center justify-center px-6 py-12 overflow-y-auto">

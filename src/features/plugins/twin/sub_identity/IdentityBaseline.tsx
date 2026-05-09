@@ -6,7 +6,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { generateBio } from '@/api/twin/twin';
 import { TwinEmptyState } from '../TwinEmptyState';
-import { useTwinTranslation } from '../i18n/useTwinTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 import { CoachMark } from '../CoachMark';
 import { genderDef, genderFromPronouns, pronounsFromGender, type Gender } from '../_shared/gender';
 
@@ -18,7 +18,7 @@ interface BioGeneratorPanelProps {
 }
 
 function BioGeneratorPanel({ name, role, onBioGenerated, onClose }: BioGeneratorPanelProps) {
-  const { t } = useTwinTranslation();
+  const t = useTranslation().t.twin;
   const [bioKeywords, setBioKeywords] = useState('');
   const [generating, setGenerating] = useState(false);
 
@@ -52,7 +52,7 @@ function BioGeneratorPanel({ name, role, onBioGenerated, onClose }: BioGenerator
 }
 
 export default function IdentityBaseline() {
-  const { t } = useTwinTranslation();
+  const t = useTranslation().t.twin;
   const twinProfiles = useSystemStore((s) => s.twinProfiles);
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const updateTwinProfile = useSystemStore((s) => s.updateTwinProfile);

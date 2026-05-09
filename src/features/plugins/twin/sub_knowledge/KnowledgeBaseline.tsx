@@ -3,13 +3,13 @@ import { BookOpen, CheckCircle2, XCircle, Clock, MessageSquare, ArrowDownLeft, A
 import { useSystemStore } from '@/stores/systemStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { TwinEmptyState } from '../TwinEmptyState';
-import { useTwinTranslation } from '../i18n/useTwinTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 import { CoachMark } from '../CoachMark';
 
 type MemoryFilter = 'pending' | 'approved' | 'rejected';
 
 export default function KnowledgeBaseline() {
-  const { t } = useTwinTranslation();
+  const t = useTranslation().t.twin;
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const activeTwin = useSystemStore((s) => s.twinProfiles).find((tp) => tp.id === activeTwinId);
   const pendingMemories = useSystemStore((s) => s.twinPendingMemories);

@@ -5,7 +5,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { generateBio } from '@/api/twin/twin';
 import { TwinEmptyState } from '../TwinEmptyState';
-import { useTwinTranslation } from '../i18n/useTwinTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 
 /* ------------------------------------------------------------------ *
  *  Console — "Identity Schema"
@@ -30,7 +30,7 @@ function genderToPronouns(g: Gender): string {
 }
 
 export default function IdentityConsole() {
-  const { t } = useTwinTranslation();
+  const t = useTranslation().t.twin;
   const twinProfiles = useSystemStore((s) => s.twinProfiles);
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const updateTwinProfile = useSystemStore((s) => s.updateTwinProfile);

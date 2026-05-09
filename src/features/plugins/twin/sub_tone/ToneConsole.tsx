@@ -4,7 +4,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { Button } from '@/features/shared/components/buttons';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { TwinEmptyState } from '../TwinEmptyState';
-import { useTwinTranslation } from '../i18n/useTwinTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 import { TONE_CHANNELS, paletteOf } from '../_shared/channels';
 import type { TwinTone } from '@/lib/bindings/TwinTone';
 import type { TwinChannelKind } from '@/api/enums';
@@ -32,7 +32,7 @@ function exampleCount(raw: string): number {
 }
 
 export default function ToneConsole() {
-  const { t } = useTwinTranslation();
+  const t = useTranslation().t.twin;
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const twinTones = useSystemStore((s) => s.twinTones);
   const isLoading = useSystemStore((s) => s.twinTonesLoading);

@@ -1,6 +1,6 @@
 import { Sparkles, ChevronDown, AlertCircle, User, Mic, Brain, Volume2, Radio, BookOpen } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
-import { useTwinTranslation } from './i18n/useTwinTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useTwinReadiness, type MilestoneStatus } from './useTwinReadiness';
 import type { TwinTab } from '@/lib/types/types';
 import type { LucideIcon } from 'lucide-react';
@@ -45,7 +45,7 @@ function readinessColor(score: number): string {
 }
 
 export function TwinSelector() {
-  const { t } = useTwinTranslation();
+  const t = useTranslation().t.twin;
   const twinProfiles = useSystemStore((s) => s.twinProfiles);
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const setActiveTwin = useSystemStore((s) => s.setActiveTwin);

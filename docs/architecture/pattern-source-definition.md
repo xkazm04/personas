@@ -82,7 +82,7 @@ Leave the other fields (`options`, `placeholder`, etc.) off — the
 | Question type union          | `src/api/templates/n8nTransform.ts` → `TransformQuestionResponse.type`                        |
 | Questionnaire wiring         | `src/features/templates/sub_generated/adoption/QuestionnaireFormGrid.tsx` → `QuestionCard`    |
 | Live-preview summarization   | `src/features/templates/sub_generated/adoption/QuestionnaireFormFocus.tsx` → `summarizeAnswer`|
-| i18n strings                 | `src/i18n/en.ts` → `templates.adopt_modal.source_*`                                           |
+| i18n strings                 | `src/i18n/locales/en.json` → `templates.adopt_modal.source_*`                                 |
 
 ## Future extensions
 

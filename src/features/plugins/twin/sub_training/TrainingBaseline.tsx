@@ -7,7 +7,7 @@ import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
 import * as twinApi from '@/api/twin/twin';
 import { TwinEmptyState } from '../TwinEmptyState';
-import { useTwinTranslation } from '../i18n/useTwinTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 import { CoachMark } from '../CoachMark';
 
 interface QAPair { id: string; question: string; answer: string; saved: boolean; isFollowup?: boolean; }
@@ -26,7 +26,7 @@ const TOPIC_PRESETS = [
 function wordCount(s: string): number { return s.trim().split(/\s+/).filter(Boolean).length; }
 
 export default function TrainingBaseline() {
-  const { t } = useTwinTranslation();
+  const t = useTranslation().t.twin;
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const activeTwin = useSystemStore((s) => s.twinProfiles).find((tp) => tp.id === activeTwinId);
   const recordTwinInteraction = useSystemStore((s) => s.recordTwinInteraction);

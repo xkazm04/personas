@@ -2,7 +2,7 @@ import { Sparkles, Plus } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
-import { useTwinTranslation } from './i18n/useTwinTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { LucideIcon } from 'lucide-react';
 
 /**
@@ -10,7 +10,7 @@ import type { LucideIcon } from 'lucide-react';
  * Shows the tab icon + title and a CTA to navigate to the Profiles tab.
  */
 export function TwinEmptyState({ icon: Icon, title }: { icon: LucideIcon; title: string }) {
-  const { t } = useTwinTranslation();
+  const t = useTranslation().t.twin;
   const setTwinTab = useSystemStore((s) => s.setTwinTab);
 
   return (

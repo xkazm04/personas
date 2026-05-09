@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
 import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
 import { silentCatch } from '@/lib/silentCatch';
-import { useTwinTranslation } from '../i18n/useTwinTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export interface KbInfo {
   id: string;
@@ -23,7 +23,7 @@ export interface KbInfo {
  * five mutation handlers (refresh/load/create/bind/unbind).
  */
 export function useBrainConnection() {
-  const { t } = useTwinTranslation();
+  const t = useTranslation().t.twin;
   const twinProfiles = useSystemStore((s) => s.twinProfiles);
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const bindTwinKnowledgeBase = useSystemStore((s) => s.bindTwinKnowledgeBase);

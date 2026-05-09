@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { BookOpen, CheckCircle2, XCircle, Clock, MessageSquare, ArrowDownLeft, ArrowUpRight, Inbox, History, Library, Star, Quote } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { TwinEmptyState } from '../TwinEmptyState';
-import { useTwinTranslation } from '../i18n/useTwinTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 
 /* ------------------------------------------------------------------ *
  *  Atelier — "Archive"
@@ -39,7 +39,7 @@ function groupCommsByDay(items: CommGroup['items']): CommGroup[] {
 }
 
 export default function KnowledgeAtelier() {
-  const { t } = useTwinTranslation();
+  const t = useTranslation().t.twin;
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const activeTwin = useSystemStore((s) => s.twinProfiles).find((tp) => tp.id === activeTwinId);
   const pendingMemories = useSystemStore((s) => s.twinPendingMemories);

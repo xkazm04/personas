@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Lightbulb, X } from 'lucide-react';
-import { useTwinTranslation } from './i18n/useTwinTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const STORAGE_PREFIX = 'twin.coachmarks.';
 
@@ -18,7 +18,7 @@ function storageKey(id: string): string {
  * so callers stay type-checked against the dictionary shape.
  */
 export function CoachMark({ id, title, body }: { id: string; title: string; body: string }) {
-  const { t } = useTwinTranslation();
+  const t = useTranslation().t.twin;
   const [dismissed, setDismissed] = useState(true); // start dismissed; hydrate from storage in effect
 
   useEffect(() => {

@@ -10,7 +10,7 @@ import { toastCatch } from '@/lib/silentCatch';
 import type { TwinChannel } from '@/lib/bindings/TwinChannel';
 import type { TwinChannelKind } from '@/api/enums';
 import { TwinEmptyState } from '../TwinEmptyState';
-import { useTwinTranslation } from '../i18n/useTwinTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 import { CoachMark } from '../CoachMark';
 import { DEPLOYMENT_CHANNELS, getDeploymentChannelMeta, paletteOf } from '../_shared/channels';
 
@@ -40,7 +40,7 @@ function ChannelCard({ channel, meta, credential, onToggle, onDelete }: {
   onToggle: (ch: TwinChannel) => void;
   onDelete: (ch: TwinChannel) => void;
 }) {
-  const { t } = useTwinTranslation();
+  const t = useTranslation().t.twin;
   return (
     <div className={`p-4 rounded-card border transition-colors ${channel.is_active ? 'border-violet-500/20 bg-card/60' : 'border-primary/10 bg-card/30 opacity-60'}`}>
       <div className="flex items-center gap-3">
@@ -72,7 +72,7 @@ function ChannelCard({ channel, meta, credential, onToggle, onDelete }: {
 }
 
 export default function ChannelsBaseline() {
-  const { t } = useTwinTranslation();
+  const t = useTranslation().t.twin;
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const channels = useSystemStore((s) => s.twinChannels);
   const isLoading = useSystemStore((s) => s.twinChannelsLoading);

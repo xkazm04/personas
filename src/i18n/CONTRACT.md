@@ -13,7 +13,8 @@ If you are about to render user-facing text, pass a status string across IPC, or
 ```
 ┌───────────────────────────────────────────────────────────────┐
 │  Layer 4 — Translators                                        │
-│  Input:   English strings + translator comments (en.ts)       │
+│  Input:   English strings (locales/en.json) + translator       │
+│          context in PR/commit messages                         │
 │  Output:  locales/<lang>.json                                 │
 │  Knows:   natural language, tone, length budgets              │
 │  Unaware: machine codes, IPC shapes, React                    │
@@ -51,13 +52,13 @@ These are the rules that make the contract enforceable. A violation of any of th
 Rust emits **codes** (`"queued"`, `"rate_limit_exceeded"`, `"critical"`), not sentences. The IPC boundary carries codes. React components resolve codes to prose via `t` / `tokenLabel` / `resolveErrorTranslated`.
 
 **Smell:** a Rust command returns `message: "Rate limit exceeded, retry in 30s"`.
-**Fix:** return `{ code: "rate_limit", params: { retry_after_s: 30 } }`; add the sentence to `en.ts → error_registry.rate_limit_message` with `{retry_after_s}` interpolation.
+**Fix:** return `{ code: "rate_limit", params: { retry_after_s: 30 } }`; add the sentence to `locales/en.json → error_registry.rate_limit_message` with `{retry_after_s}` interpolation.
 
 ### I2 — Every code has exactly one key
 
-One token → one `en.ts` entry. No synonyms, no duplicates, no "there are two places this could live." Duplication is how `en.ts` rots into an unmaintained string heap.
+One token → one `locales/en.json` entry. No synonyms, no duplicates, no "there are two places this could live." Duplication is how `en.json` rots into an unmaintained string heap.
 
-**Enforcement today:** `scripts/check-locale-parity.mjs` catches missing keys per locale; token coverage is caught by the `warnedTokens` dev warning in `src/i18n/tokenMaps.ts`. When adding a new code, grep `en.ts` first.
+**Enforcement today:** `scripts/i18n/check-coverage.mjs` catches stale (extra) keys per locale and warns on missing ones; token coverage is caught by the `warnedTokens` dev warning in `src/i18n/tokenMaps.ts`. When adding a new code, grep `locales/en.json` first.
 
 ### I3 — Params flow as structured data until the final `interpolate()`
 
@@ -80,7 +81,7 @@ The old mental model ("text everywhere, translate as needed") produces predictab
 
 | Old framing | Why it leaks | Contract-based fix |
 |---|---|---|
-| "Add a string when you need one" | No home for codes; Rust invents English on the fly | Emit a code in Rust, add one key in `en.ts` |
+| "Add a string when you need one" | No home for codes; Rust invents English on the fly | Emit a code in Rust, add one key in `locales/en.json` |
 | "Translate Rust error messages" | English crosses IPC; translators receive noise | Rust emits `code`; error registry owns prose |
 | "Use `t.foo` everywhere" | Doesn't address params, pluralization, or tokens | `t` for static prose, `tx` for interpolation, `tokenLabel` for codes, `resolveErrorTranslated` for errors |
 | "i18n = locale files" | Hides that the Rust surface is the *real* source of truth | Locale files are downstream of the code catalog |
@@ -93,7 +94,7 @@ All three subsystems are expressions of the same contract. They are not independ
 
 - **`tokenMaps.ts`** — resolver for Layer-1 status tokens. Category-scoped (`execution`, `severity`, `connector_status`, ...) so codes from different domains cannot collide.
 - **`useTranslatedError.ts` + `error_registry` section** — resolver for Layer-1 error codes. `ERROR_KEY_MAP` is the Layer-1→Layer-4 bridge for errors that originate as Rust `Err` variants or HTTP failures.
-- **`generated/types.ts` + `check-locale-parity.mjs`** — type-level and build-time enforcement of I2 and I4. The coverage script is a contract verifier, not a nice-to-have.
+- **`generated/types.ts` + `scripts/i18n/check-coverage.mjs`** — type-level and build-time enforcement of I2 and I4. The coverage script (run via `npm run check:i18n`) is a contract verifier, not a nice-to-have.
 
 When adding a new user-visible concept (a new execution state, a new error kind, a new healing category), all three subsystems get touched in lockstep. If you only touch one, the contract is broken and a future contributor will paper over it with hardcoded English.
 
@@ -112,7 +113,7 @@ For a given module, grade it on each invariant (✅ / ⚠️ / ❌):
    Does the module define its own status→label map inline (e.g. a local `STATUS_LABELS = { queued: 'Queued', ... }`)? If yes: ❌. Fix by deleting the local map and using `tokenLabel(t, '<category>', token)`.
 
 3. **I3 — Pre-concatenated strings?**
-   Grep for template literals in JSX/props that mix prose and variables (`` `${count} agents` ``, `` `Retry in ${s}s` ``). If yes: ⚠️. Fix by extracting to `en.ts` with interpolation.
+   Grep for template literals in JSX/props that mix prose and variables (`` `${count} agents` ``, `` `Retry in ${s}s` ``). If yes: ⚠️. Fix by extracting to `locales/en.json` with interpolation.
 
 4. **I4 — Key-path typing bypassed?**
    Grep for `t as any`, `t['...']`, or string-indexed access into `t`. If yes: ❌. Fix by using the typed path.

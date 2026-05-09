@@ -5,7 +5,7 @@ import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/compon
 import { Button } from '@/features/shared/components/buttons';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { TwinEmptyState } from '../TwinEmptyState';
-import { useTwinTranslation } from '../i18n/useTwinTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 import { CoachMark } from '../CoachMark';
 import { TONE_CHANNELS, paletteOf } from '../_shared/channels';
 import type { TwinTone } from '@/lib/bindings/TwinTone';
@@ -28,7 +28,7 @@ function toneToForm(tone: TwinTone): ToneForm {
 }
 
 export default function ToneBaseline() {
-  const { t } = useTwinTranslation();
+  const t = useTranslation().t.twin;
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const twinTones = useSystemStore((s) => s.twinTones);
   const isLoading = useSystemStore((s) => s.twinTonesLoading);

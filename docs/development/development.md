@@ -141,17 +141,18 @@ Every user-facing string must go through `t.section.key`. The ESLint rule `custo
 
 When you add a new string:
 
-1. Open `src/i18n/en.ts`.
-2. Find the appropriate section (`common`, `agents`, `vault`, etc.) or add a new one.
-3. Add the key with a short translator comment explaining context:
-   ```typescript
-   // Button label in the agent editor toolbar — keep short (1-2 words)
-   duplicate_agent: "Duplicate",
+1. Open `src/i18n/locales/en.json`.
+2. Find the appropriate top-level section (`common`, `agents`, `vault`, etc.) or add a new one.
+3. Add the key (JSON, no inline comments — put translator-facing context in the PR or commit message):
+   ```json
+   "duplicate_agent": "Duplicate"
    ```
-4. Use it: `t.agents.duplicate_agent`.
-5. **Do not** add to non-English locale files. They fall back to English automatically via deep merge, and translation teams handle localization separately.
+4. Use it in components via the typed proxy: `t.agents.duplicate_agent`.
+5. **Do not** add to non-English locale files. Missing keys fall back to English automatically; translation teams catch up asynchronously.
 
-See the [README i18n section](../README.md#internationalization-i18n) for the full translator pipeline (extract → translate → merge → verify).
+The next `npm run dev` / `npm run build` regenerates `src/i18n/generated/types.ts`, `src/i18n/generated/enSectionStrings.ts`, and the per-section JSON splits under `src/i18n/section-locales/<lang>/<section>.json`. Section chunks are loaded lazily at runtime; the active route's sections preload via `src/i18n/routeSections.ts`.
+
+See the [README i18n section](../../README.md#internationalization-i18n) for coverage tooling and architecture details.
 
 ---
 

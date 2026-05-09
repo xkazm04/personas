@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { FileDown, ClipboardCopy, Check, Loader2 } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 import { LIST_ITEM_GAP, TOOLS_BTN_STANDARD } from '@/lib/utils/designTokens';
-import { useLabTranslation } from '../../i18n/useLabTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 import {
   generateHtmlReport,
   generateMarkdownReport,
@@ -22,7 +22,8 @@ type CopyState = 'idle' | 'copied';
 
 export function ExportReportButton({ mode, run, results }: ExportReportButtonProps) {
   const personaName = useAgentStore((s) => s.selectedPersona?.name) ?? 'Agent';
-  const { t } = useLabTranslation();
+  const { t } = useTranslation();
+  const lab = t.agent_lab;
   const [downloading, setDownloading] = useState(false);
   const [copyState, setCopyState] = useState<CopyState>('idle');
 
@@ -57,7 +58,7 @@ export function ExportReportButton({ mode, run, results }: ExportReportButtonPro
         {downloading
           ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
           : <FileDown className="w-3.5 h-3.5" />}
-        {t.export.downloadHtml}
+        {lab.export_download_html}
       </button>
       <button
         onClick={handleCopyMarkdown}
@@ -67,7 +68,7 @@ export function ExportReportButton({ mode, run, results }: ExportReportButtonPro
         {copyState === 'copied'
           ? <Check className="w-3.5 h-3.5 text-status-success" />
           : <ClipboardCopy className="w-3.5 h-3.5" />}
-        {copyState === 'copied' ? t.export.copied : t.export.copyMarkdown}
+        {copyState === 'copied' ? lab.export_copied : lab.export_copy_markdown}
       </button>
     </div>
   );

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { BookOpen, CheckCircle2, XCircle, Clock, ArrowDownLeft, ArrowUpRight, Inbox, History, Terminal } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { TwinEmptyState } from '../TwinEmptyState';
-import { useTwinTranslation } from '../i18n/useTwinTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 
 /* ------------------------------------------------------------------ *
  *  Console — "Memory Ledger"
@@ -13,7 +13,7 @@ import { useTwinTranslation } from '../i18n/useTwinTranslation';
 type MemoryFilter = 'pending' | 'approved' | 'rejected';
 
 export default function KnowledgeConsole() {
-  const { t } = useTwinTranslation();
+  const t = useTranslation().t.twin;
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const activeTwin = useSystemStore((s) => s.twinProfiles).find((tp) => tp.id === activeTwinId);
   const pendingMemories = useSystemStore((s) => s.twinPendingMemories);

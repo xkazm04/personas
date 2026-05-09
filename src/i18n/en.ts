@@ -2,9 +2,14 @@
  * Back-compat shim. The source of truth is now `src/i18n/locales/en.json`;
  * the `Translations` type is codegen'd to `src/i18n/generated/types.ts`.
  *
- * Keep the `en` and `Translations` named exports here so the ~30 modules
- * that `import { en, type Translations } from '@/i18n/en'` continue to
- * compile without per-file updates.
+ * Keep the `en` and `Translations` named exports here so the modules that
+ * `import { en, type Translations } from '@/i18n/en'` continue to compile
+ * without per-file updates.
+ *
+ * `en` is a `Proxy` that lazy-parses each top-level section on first access
+ * (delegates to `getEnglishSection`). Module-init no longer parses all 57
+ * sections up front — `import { en }` is now nearly free, and accessing
+ * `en.alerts.x` only pays the parse cost for the `alerts` section.
  *
  * To edit an English string: edit `src/i18n/locales/en.json`, then run
  * `node scripts/i18n/gen-types.mjs` (automatic in `npm run prebuild`).
@@ -16,7 +21,29 @@
  */
 
 import type { Translations as GeneratedTranslations } from './generated/types';
-import { getEnglishTranslations } from './englishSections';
+import {
+  ALL_I18N_SECTIONS,
+  getEnglishSection,
+  isTranslationSection,
+} from './englishSections';
 
-export const en = getEnglishTranslations();
+export const en = new Proxy({} as Record<string, unknown>, {
+  get(_target, prop) {
+    if (typeof prop !== 'string' || !isTranslationSection(prop)) return undefined;
+    return getEnglishSection(prop);
+  },
+  has(_target, prop) {
+    return typeof prop === 'string' && isTranslationSection(prop);
+  },
+  ownKeys() {
+    return ALL_I18N_SECTIONS;
+  },
+  getOwnPropertyDescriptor(_target, prop) {
+    if (typeof prop === 'string' && isTranslationSection(prop)) {
+      return { enumerable: true, configurable: true, value: getEnglishSection(prop) };
+    }
+    return undefined;
+  },
+}) as unknown as GeneratedTranslations;
+
 export type Translations = GeneratedTranslations;

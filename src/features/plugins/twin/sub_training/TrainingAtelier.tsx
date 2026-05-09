@@ -4,7 +4,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { Button } from '@/features/shared/components/buttons';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { TwinEmptyState } from '../TwinEmptyState';
-import { useTwinTranslation } from '../i18n/useTwinTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useTrainingSession, TRAINING_TOPIC_PRESETS } from './useTrainingSession';
 
 /* ------------------------------------------------------------------ *
@@ -28,7 +28,7 @@ const TOPIC_TINTS: Record<string, string> = {
 };
 
 export default function TrainingAtelier() {
-  const { t } = useTwinTranslation();
+  const t = useTranslation().t.twin;
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const activeTwin = useSystemStore((s) => s.twinProfiles).find((tp) => tp.id === activeTwinId);
   const setTwinTab = useSystemStore((s) => s.setTwinTab);

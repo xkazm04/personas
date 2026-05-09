@@ -305,4 +305,4 @@ src-tauri/src/
 └── engine/obsidian/                          # called by research_lab_sync_to_obsidian + sync_daily_note
 ```
 
-All copy lives under `t.research_lab.*` in `src/i18n/en.ts` (≈170 keys). Zustand state is in `src/stores/slices/system/researchLabSlice.ts`. The Rust command invoke-handler registrations are in `src-tauri/src/lib.rs`.
+All copy lives under `t.research_lab.*` in `src/i18n/locales/en.json` (≈170 keys). Zustand state is in `src/stores/slices/system/researchLabSlice.ts`. The Rust command invoke-handler registrations are in `src-tauri/src/lib.rs`.

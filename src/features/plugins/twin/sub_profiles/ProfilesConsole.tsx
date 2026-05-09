@@ -6,7 +6,7 @@ import {
 import { useSystemStore } from '@/stores/systemStore';
 import { Button } from '@/features/shared/components/buttons';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
-import { useTwinTranslation } from '../i18n/useTwinTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useProfileDashboards } from '../useProfileDashboards';
 import { CreateTwinWizard } from './CreateTwinWizard';
 import { TwinHero } from './TwinHero';
@@ -63,7 +63,7 @@ interface RowData {
 }
 
 export default function ProfilesConsole() {
-  const { t } = useTwinTranslation();
+  const t = useTranslation().t.twin;
   const twinProfiles = useSystemStore((s) => s.twinProfiles);
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const isLoading = useSystemStore((s) => s.twinProfilesLoading);
