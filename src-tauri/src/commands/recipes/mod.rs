@@ -115,6 +115,7 @@
 
 pub mod crud;
 pub mod recipe_derivation;
+pub mod recipe_eligibility;
 pub mod recipe_execution;
 pub mod recipe_generation;
 pub mod recipe_match;

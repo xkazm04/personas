@@ -1621,6 +1621,9 @@ pub fn run() {
             commands::recipes::recipe_suggestion_log::log_recipe_suggestion_event,
             commands::recipes::recipe_suggestion_log::get_recipe_suggestion_stats,
             commands::recipes::recipe_suggestion_log::list_recipe_suggestion_events,
+            // Recipes -- Stage E.1 eligibility scoring (recipe vs persona)
+            commands::recipes::recipe_eligibility::get_recipe_eligibility,
+            commands::recipes::recipe_eligibility::get_recipe_catalog_for_persona,
             // Communication -- Events
             commands::communication::events::list_events,
             commands::communication::events::list_events_in_range,

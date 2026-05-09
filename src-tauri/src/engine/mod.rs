@@ -133,6 +133,7 @@ pub mod provider;
 pub mod quality_gate;
 pub mod queue;
 pub mod rate_limiter;
+pub mod recipe_eligibility;
 pub mod recipe_matcher;
 pub mod recipe_seed;
 pub mod render_plan;
