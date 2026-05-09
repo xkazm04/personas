@@ -2233,6 +2233,17 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     conn.execute_batch("ALTER TABLE dev_projects ADD COLUMN static_scan_config TEXT;")
         .ok();
 
+    // -- dev_projects: auto-PR-on-success gate + GitHub credential pointer ---
+    // When `auto_pr_on_success = 1` and a task ran inside a worktree, the
+    // task_executor's success branch pushes the worktree branch and opens a
+    // PR via `engine/platforms/github.rs::GitHubClient::create_pull_request`.
+    // The credential is resolved from `pr_credential_id`. Both columns are
+    // nullable / default-off so existing projects are unaffected.
+    conn.execute_batch("ALTER TABLE dev_projects ADD COLUMN auto_pr_on_success INTEGER NOT NULL DEFAULT 0;")
+        .ok();
+    conn.execute_batch("ALTER TABLE dev_projects ADD COLUMN pr_credential_id TEXT;")
+        .ok();
+
     // ── Composition Workflows (persisted DAG definitions) ───────────────
     // Migrates workflows from frontend localStorage to backend SQLite.
     conn.execute_batch(

@@ -26,6 +26,12 @@ fn row_to_project(row: &Row) -> rusqlite::Result<DevProject> {
         monitoring_credential_id: row.get("monitoring_credential_id").unwrap_or(None),
         monitoring_project_slug: row.get("monitoring_project_slug").unwrap_or(None),
         static_scan_config: row.get("static_scan_config").unwrap_or(None),
+        auto_pr_on_success: row
+            .get::<_, Option<i64>>("auto_pr_on_success")
+            .unwrap_or(None)
+            .map(|v| v != 0)
+            .unwrap_or(false),
+        pr_credential_id: row.get("pr_credential_id").unwrap_or(None),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })

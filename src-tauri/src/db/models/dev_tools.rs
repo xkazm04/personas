@@ -95,6 +95,14 @@ pub struct DevProject {
     /// the `static_scan` runner spawns for this project. None disables the
     /// per-project sweep; the runner falls back to package-manager detection.
     pub static_scan_config: Option<String>,
+    /// When true and the task ran inside a worktree, `task_executor` pushes
+    /// the worktree branch and opens a PR after the task succeeds. Failures
+    /// are surfaced in the task log but do NOT mark the task as failed.
+    pub auto_pr_on_success: bool,
+    /// GitHub credential row id used to authorise the auto-PR call. Nullable;
+    /// when None and `auto_pr_on_success` is true the wiring emits a warning
+    /// and skips PR creation.
+    pub pr_credential_id: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }

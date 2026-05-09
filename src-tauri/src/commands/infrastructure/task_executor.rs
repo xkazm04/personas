@@ -894,7 +894,215 @@ async fn run_task_execution(
         format!("[Complete] Task finished with {output_lines} output lines"),
     );
 
+    // Auto-PR hook: opt-in per project. Best-effort — failure is logged as a
+    // warning so the task itself stays "complete" rather than flipping to
+    // "failed" because of a downstream git/GitHub hiccup. Only fires when
+    // (a) the task ran in a worktree (we have a branch to push), (b) the
+    // CLI exited cleanly (exit_code 0 — non-zero already surfaced stderr
+    // above), and (c) the project's project-level gate is on.
+    if exit_code == Some(0) {
+        if let Some(ref wt) = worktree_name {
+            try_auto_pr_after_success(app, task_id, pool, root_path, wt).await;
+        }
+    }
+
     Ok(output_lines)
+}
+
+/// Resolve the project's default branch via `git symbolic-ref`. Falls back
+/// to "main" when the symbolic ref is missing (fresh clone, detached HEAD).
+async fn detect_default_branch(root_path: &str) -> String {
+    let out = tokio::process::Command::new("git")
+        .args(["symbolic-ref", "--short", "refs/remotes/origin/HEAD"])
+        .current_dir(root_path)
+        .output()
+        .await;
+    if let Ok(o) = out {
+        if o.status.success() {
+            let s = String::from_utf8_lossy(&o.stdout).trim().to_string();
+            // Format is "origin/<branch>"; strip the prefix.
+            if let Some(stripped) = s.strip_prefix("origin/") {
+                if !stripped.is_empty() {
+                    return stripped.to_string();
+                }
+            }
+        }
+    }
+    "main".to_string()
+}
+
+/// Parse owner/repo from a GitHub URL of either form:
+///   https://github.com/{owner}/{repo}
+///   git@github.com:{owner}/{repo}.git
+fn parse_github_owner_repo(url: &str) -> Option<(String, String)> {
+    let trimmed = url.trim().trim_end_matches(".git");
+    let after_host = trimmed
+        .strip_prefix("https://github.com/")
+        .or_else(|| trimmed.strip_prefix("http://github.com/"))
+        .or_else(|| trimmed.strip_prefix("git@github.com:"))?;
+    let mut parts = after_host.splitn(2, '/');
+    let owner = parts.next()?.to_string();
+    let repo = parts.next()?.to_string();
+    if owner.is_empty() || repo.is_empty() {
+        return None;
+    }
+    Some((owner, repo))
+}
+
+/// Best-effort auto-PR flow invoked from `run_task_execution` after a clean
+/// CLI exit. All failure modes log a `[Warning]` line and return — the task
+/// itself remains successful regardless of outcome here.
+async fn try_auto_pr_after_success(
+    app: &tauri::AppHandle,
+    task_id: &str,
+    pool: &crate::db::DbPool,
+    root_path: &str,
+    worktree_name: &str,
+) {
+    let task = match repo::get_task_by_id(pool, task_id) {
+        Ok(t) => t,
+        Err(e) => {
+            TASK_EXEC_JOBS.emit_line(
+                app,
+                task_id,
+                format!("[Warning] Auto-PR skipped: failed to load task: {e}"),
+            );
+            return;
+        }
+    };
+
+    let Some(ref project_id) = task.project_id else {
+        return; // tasks without a project can't have a project-level PR config
+    };
+
+    let project = match repo::get_project_by_id(pool, project_id) {
+        Ok(p) => p,
+        Err(e) => {
+            TASK_EXEC_JOBS.emit_line(
+                app,
+                task_id,
+                format!("[Warning] Auto-PR skipped: project lookup failed: {e}"),
+            );
+            return;
+        }
+    };
+
+    if !project.auto_pr_on_success {
+        return; // gate off — silent skip
+    }
+
+    let Some(github_url) = project.github_url.as_deref() else {
+        TASK_EXEC_JOBS.emit_line(
+            app,
+            task_id,
+            "[Warning] Auto-PR skipped: project has no github_url",
+        );
+        return;
+    };
+
+    let Some((owner, repo)) = parse_github_owner_repo(github_url) else {
+        TASK_EXEC_JOBS.emit_line(
+            app,
+            task_id,
+            format!("[Warning] Auto-PR skipped: could not parse owner/repo from {github_url}"),
+        );
+        return;
+    };
+
+    let Some(ref credential_id) = project.pr_credential_id else {
+        TASK_EXEC_JOBS.emit_line(
+            app,
+            task_id,
+            "[Warning] Auto-PR skipped: project has no pr_credential_id set",
+        );
+        return;
+    };
+
+    // Branch name produced by Claude Code's --worktree flag.
+    let branch = format!("worktree-{worktree_name}");
+
+    // Push the branch. If the remote rejects, surface the stderr — common
+    // causes are protected branch rules or stale upstream tracking.
+    let push = tokio::process::Command::new("git")
+        .args(["push", "-u", "origin", &branch])
+        .current_dir(root_path)
+        .output()
+        .await;
+    match push {
+        Err(e) => {
+            TASK_EXEC_JOBS.emit_line(
+                app,
+                task_id,
+                format!("[Warning] Auto-PR push failed to spawn git: {e}"),
+            );
+            return;
+        }
+        Ok(o) if !o.status.success() => {
+            let stderr = String::from_utf8_lossy(&o.stderr).trim().to_string();
+            TASK_EXEC_JOBS.emit_line(
+                app,
+                task_id,
+                format!("[Warning] Auto-PR push failed: {stderr}"),
+            );
+            return;
+        }
+        _ => {
+            TASK_EXEC_JOBS.emit_line(
+                app,
+                task_id,
+                format!("[Milestone] Auto-PR: pushed {branch} to origin"),
+            );
+        }
+    }
+
+    let base = detect_default_branch(root_path).await;
+
+    let client =
+        match crate::engine::platforms::github::build_client_from_credential(pool, credential_id) {
+            Ok(c) => c,
+            Err(e) => {
+                TASK_EXEC_JOBS.emit_line(
+                    app,
+                    task_id,
+                    format!("[Warning] Auto-PR skipped: GitHub credential load failed: {e}"),
+                );
+                return;
+            }
+        };
+
+    let title = task.title.clone();
+    let body = task.description.clone().unwrap_or_default();
+    match client
+        .create_pull_request(&owner, &repo, &branch, &base, &title, Some(&body))
+        .await
+    {
+        Ok(pr) => {
+            TASK_EXEC_JOBS.emit_line(
+                app,
+                task_id,
+                format!(
+                    "[Milestone] Auto-PR created: {} (#{}, {} -> {})",
+                    pr.html_url, pr.number, pr.head_branch, pr.base_branch
+                ),
+            );
+            // Best-effort emit of the json payload for any UI that listens.
+            let _ = app.emit(
+                "task-auto-pr",
+                json!({
+                    "task_id": task_id,
+                    "pr_number": pr.number,
+                    "pr_url": pr.html_url,
+                }),
+            );
+        }
+        Err(e) => {
+            TASK_EXEC_JOBS.emit_line(
+                app,
+                task_id,
+                format!("[Warning] Auto-PR creation failed: {e}"),
+            );
+        }
+    }
 }
 
 // =============================================================================

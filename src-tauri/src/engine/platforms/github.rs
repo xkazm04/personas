@@ -46,6 +46,17 @@ pub struct GitHubPermissions {
     pub scopes: Vec<String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct GitHubPullRequest {
+    pub number: i64,
+    pub html_url: String,
+    pub head_branch: String,
+    pub base_branch: String,
+    pub state: String,
+}
+
 /// Raw GitHub API repo response (subset of fields).
 #[derive(Debug, Deserialize)]
 struct GhRepoRaw {
@@ -54,6 +65,22 @@ struct GhRepoRaw {
     full_name: String,
     private: bool,
     default_branch: String,
+}
+
+/// Raw GitHub API pull-request response (subset of fields).
+#[derive(Debug, Deserialize)]
+struct GhPullRequestRaw {
+    number: i64,
+    html_url: String,
+    state: String,
+    head: GhRefRaw,
+    base: GhRefRaw,
+}
+
+#[derive(Debug, Deserialize)]
+struct GhRefRaw {
+    #[serde(rename = "ref")]
+    ref_name: String,
 }
 
 impl GitHubClient {
@@ -159,6 +186,63 @@ impl GitHubClient {
             has_repo,
             has_workflow,
             scopes,
+        })
+    }
+
+    /// Open a pull request from `head` into `base` on `{owner}/{repo}`.
+    ///
+    /// `head` accepts the canonical GitHub forms: a branch name on the same
+    /// repo (`feature/x`), or a cross-repo reference (`other-user:branch`).
+    /// On success returns the typed `GitHubPullRequest` projection of the
+    /// API response.
+    ///
+    /// GitHub returns 422 when the PR already exists for the same head/base
+    /// pair — callers that want to be idempotent should treat that as a
+    /// recoverable signal and look the existing PR up via list endpoints.
+    pub async fn create_pull_request(
+        &self,
+        owner: &str,
+        repo: &str,
+        head: &str,
+        base: &str,
+        title: &str,
+        body: Option<&str>,
+    ) -> Result<GitHubPullRequest, AppError> {
+        let url = format!("https://api.github.com/repos/{owner}/{repo}/pulls");
+        let payload = serde_json::json!({
+            "title": title,
+            "head": head,
+            "base": base,
+            "body": body.unwrap_or(""),
+        });
+
+        let resp = self
+            .http
+            .post(&url)
+            .headers(self.headers())
+            .json(&payload)
+            .send()
+            .await
+            .map_err(|e| AppError::Execution(format!("GitHub PR create failed: {e}")))?;
+
+        if !resp.status().is_success() {
+            let status = resp.status().as_u16();
+            let resp_body = resp.text().await.unwrap_or_default();
+            return Err(AppError::Execution(format!(
+                "GitHub PR create returned HTTP {status}: {resp_body}"
+            )));
+        }
+
+        let raw: GhPullRequestRaw = resp.json().await.map_err(|e| {
+            AppError::Execution(format!("Failed to parse GitHub PR response: {e}"))
+        })?;
+
+        Ok(GitHubPullRequest {
+            number: raw.number,
+            html_url: raw.html_url,
+            head_branch: raw.head.ref_name,
+            base_branch: raw.base.ref_name,
+            state: raw.state,
         })
     }
 
