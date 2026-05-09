@@ -6,6 +6,9 @@ import { getCircuitBreakerStatus } from '@/api/agents/executions';
 import type { CircuitBreakerStatus } from '@/lib/bindings/CircuitBreakerStatus';
 import type { CircuitTransitionEvent } from '@/lib/bindings/CircuitTransitionEvent';
 import { useTranslation } from '@/i18n/useTranslation';
+import { createLogger } from '@/lib/log';
+
+const logger = createLogger('circuit-breaker-indicator');
 
 const POLL_INTERVAL_MS = 10_000;
 const TRIP_PULSE_DURATION_MS = 1200;
@@ -51,8 +54,12 @@ export function CircuitBreakerIndicator() {
   const fetchStatus = useCallback(async () => {
     try {
       setStatus(await getCircuitBreakerStatus());
-    } catch {
-      // Silently ignore — widget is best-effort
+    } catch (err) {
+      // Widget is best-effort — keep last good state visible — but log so
+      // a chronic IPC failure leaves a Sentry breadcrumb instead of being
+      // silently invisible. Per Patterns/explorer-preferences.md
+      // "partial-silent variant" rule.
+      logger.warn('Failed to fetch circuit-breaker status', { error: err });
     }
   }, []);
 
