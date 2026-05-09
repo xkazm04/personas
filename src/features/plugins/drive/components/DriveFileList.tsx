@@ -412,6 +412,7 @@ function ColumnPane({
           path={levelPath}
           activeChild={activeChild}
           drive={drive}
+          cachedEntriesFor={drive.cachedEntriesFor}
           onOpen={onOpen}
           onContextMenu={onContextMenu}
         />
@@ -482,17 +483,22 @@ function AsyncColumnEntries(props: {
   path: string;
   activeChild: string | null;
   drive: UseDriveResult;
+  // Passed in separately because it's stable (useCallback'd inside useDrive),
+  // whereas `props.drive` itself is a fresh object literal every parent
+  // render. Listing the whole `drive` in this effect's deps re-fired the
+  // fetch on every render — the new identity here makes it a true cache check.
+  cachedEntriesFor: (p: string) => DriveEntry[] | null;
   onOpen: (entry: DriveEntry) => void;
   onContextMenu: (entry: DriveEntry | null, x: number, y: number) => void;
 }) {
   // Seed from useDrive's path cache so columns the user has already navigated
   // through render synchronously instead of flashing a Loading state and
   // round-tripping to the backend.
-  const cached = props.drive.cachedEntriesFor(props.path);
+  const cached = props.cachedEntriesFor(props.path);
   const [entries, setEntries] = useState<DriveEntry[]>(cached ?? []);
   const [loaded, setLoaded] = useState(cached !== null);
   useEffect(() => {
-    const seed = props.drive.cachedEntriesFor(props.path);
+    const seed = props.cachedEntriesFor(props.path);
     if (seed) {
       setEntries(seed);
       setLoaded(true);
@@ -509,7 +515,7 @@ function AsyncColumnEntries(props: {
     return () => {
       cancelled = true;
     };
-  }, [props.path, props.drive]);
+  }, [props.path, props.cachedEntriesFor]);
   if (!loaded) {
     return (
       <div className="px-3 py-6 typo-body text-foreground italic text-center">
