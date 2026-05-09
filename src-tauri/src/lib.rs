@@ -1895,6 +1895,7 @@ pub fn run() {
             commands::companion::voice::companion_tts_list_piper_voices,
             commands::companion::voice::companion_tts_download_piper_voice,
             commands::companion::voice::companion_tts_delete_piper_voice,
+            commands::companion::voice::companion_tts_piper_engine_status,
             commands::companion::consolidate::companion_run_consolidation,
             commands::companion::consolidate::companion_list_consolidation_runs,
             commands::companion::consolidate::companion_get_consolidation_items,

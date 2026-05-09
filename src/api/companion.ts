@@ -216,6 +216,26 @@ export async function companionTtsDeletePiperVoice(voiceId: string): Promise<voi
   return invoke<void>('companion_tts_delete_piper_voice', { voiceId });
 }
 
+/**
+ * Status of the Piper engine binary on disk. The Voice tab uses this to
+ * render an Installed / Not installed badge above the voice catalog and
+ * to surface the exact install path so the user can manually drop the
+ * binary into place.
+ */
+export interface PiperEngineStatus {
+  installed: boolean;
+  /** Resolved binary path when `installed` is true, else null. */
+  binaryPath: string | null;
+  /** Where the user should put the engine if installing manually. */
+  expectedPath: string;
+  /** Filename — `piper.exe` on Windows, `piper` elsewhere. */
+  expectedFilename: string;
+}
+
+export async function companionTtsPiperEngineStatus(): Promise<PiperEngineStatus> {
+  return invoke<PiperEngineStatus>('companion_tts_piper_engine_status');
+}
+
 // ── Sensory toggles (Phase 2 v2 — desktop-awareness UI) ─────────────────
 
 export type SensorySource = 'clipboard' | 'file_watcher' | 'app_focus';

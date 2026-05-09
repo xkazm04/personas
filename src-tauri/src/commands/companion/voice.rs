@@ -122,3 +122,15 @@ pub async fn companion_tts_delete_piper_voice(
     let voice_id = validate_voice_id(&voice_id)?;
     downloader::delete_voice(voice_id)
 }
+
+/// Report whether the Piper engine binary is installed and where it
+/// would be found / where the user should install it. UI uses this to
+/// gate Piper synthesis behind a clear install affordance instead of
+/// surfacing a confusing runtime error from `companion_tts`.
+#[tauri::command]
+pub async fn companion_tts_piper_engine_status(
+    state: State<'_, Arc<AppState>>,
+) -> Result<tts::piper::EngineStatus, AppError> {
+    require_auth(&state).await?;
+    tts::piper::engine_status()
+}
