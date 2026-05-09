@@ -1,18 +1,19 @@
-//! `RadioService` owns the curated stations + runtime playback state. State
-//! mutations go through the `&mut self` methods so the lock scope stays
-//! obvious at call sites.
+//! `RadioService` owns the curated stations + runtime playback state.
+//! Track-level operations (`next` / `prev` / `track_ended`) only act on
+//! `youtubeTracks` stations; `stream` stations error those out so the
+//! renderer can disable the corresponding buttons.
 
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
+use rand::seq::SliceRandom;
 use serde::{Deserialize, Serialize};
 
-use super::{NowPlaying, PlayStatus, RadioState, Station};
+use super::{NowPlaying, PlayStatus, RadioState, Station, StationCursor, StationSource, Track};
 
-/// On-disk shape of `src-tauri/data/radio_stations.json`. Versioned in case
-/// we ever need to migrate. Uses camelCase to match `Station`'s serde
-/// rename (which ts-rs in turn relies on to produce the camelCase TS
-/// bindings consumed by the frontend).
+/// On-disk shape of `src-tauri/data/radio_stations.json`. Versioned in
+/// case we ever need to migrate. Uses camelCase to match `Station`'s
+/// serde rename (which ts-rs in turn relies on for the TS bindings).
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct StationsFile {
@@ -23,11 +24,11 @@ struct StationsFile {
 }
 
 fn default_version() -> u32 {
-    2
+    3
 }
 
 /// Embedded fallback used when the JSON file is missing in dev builds and
-/// when `cargo test` runs from a sandbox. Kept in sync with `radio_stations.json`.
+/// when `cargo test` runs from a sandbox.
 const EMBEDDED_STATIONS_JSON: &str = include_str!("../../data/radio_stations.json");
 
 pub struct RadioService {
@@ -37,16 +38,11 @@ pub struct RadioService {
     persistence_path: PathBuf,
 }
 
-/// Newtype wrapper so Tauri's typed state lookup unambiguously resolves to
-/// the radio service (avoids collisions with other `Arc<Mutex<…>>`-managed
-/// state).
+/// Newtype wrapper so Tauri's typed state lookup unambiguously resolves
+/// to the radio service.
 pub struct RadioServiceHandle(pub Arc<Mutex<RadioService>>);
 
 impl RadioService {
-    /// Boot the service. Loads curated stations from the embedded JSON,
-    /// then attempts to overlay any persisted runtime state from disk.
-    /// Persistence-load failures are logged and ignored — the service always
-    /// boots into a usable state.
     pub fn new(persistence_path: PathBuf) -> Self {
         let parsed: StationsFile = serde_json::from_str(EMBEDDED_STATIONS_JSON)
             .unwrap_or_else(|e| {
@@ -78,6 +74,10 @@ impl RadioService {
                 state.current_station_id = None;
             }
         }
+        // Same hygiene for cursors — drop any pointing at retired stations.
+        state
+            .station_cursors
+            .retain(|id, _| parsed.stations.iter().any(|s| &s.id == id));
 
         Self {
             stations: parsed.stations,
@@ -100,11 +100,26 @@ impl RadioService {
             .or_else(|| self.stations.first().map(|s| s.id.as_str()))
     }
 
-    /// Switch to `station_id`. Live streams have no per-station playback
-    /// cursor, so this is a straight assignment.
+    fn station(&self, id: &str) -> Option<&Station> {
+        self.stations.iter().find(|s| s.id == id)
+    }
+
+    /// Switch to `station_id`. For `youtubeTracks` stations this also
+    /// ensures a fresh shuffle cursor exists.
     pub fn set_station(&mut self, station_id: &str) -> Result<(), String> {
-        if !self.stations.iter().any(|s| s.id == station_id) {
-            return Err(format!("unknown station: {station_id}"));
+        let station = self
+            .station(station_id)
+            .ok_or_else(|| format!("unknown station: {station_id}"))?;
+        if let StationSource::YoutubeTracks { tracks } = &station.source {
+            let track_count = tracks.len() as u32;
+            self.state
+                .station_cursors
+                .entry(station_id.to_string())
+                .or_insert_with(|| StationCursor {
+                    current_track_index: 0,
+                    position_sec: 0,
+                    shuffle_order: generate_shuffle(track_count),
+                });
         }
         self.state.current_station_id = Some(station_id.to_string());
         Ok(())
@@ -132,51 +147,90 @@ impl RadioService {
         self.state.status = status;
     }
 
-    /// Cycle to the next curated station. With live streams there is no
-    /// "next track" concept, so the next button rotates through the catalog.
+    /// Advance to the next track in the current station. Wraps with a
+    /// reshuffle at end-of-order. **Only valid for `youtubeTracks`
+    /// stations** — returns `Err` for `stream` stations so the UI knows
+    /// to disable the button.
     pub fn next(&mut self) -> Result<(), String> {
-        let next_id = self.adjacent_station_id(1)?;
-        self.set_station(&next_id)
+        self.advance_track(1)
     }
 
     pub fn prev(&mut self) -> Result<(), String> {
-        let prev_id = self.adjacent_station_id(-1)?;
-        self.set_station(&prev_id)
+        self.advance_track(-1)
     }
 
-    fn adjacent_station_id(&self, delta: i32) -> Result<String, String> {
-        if self.stations.is_empty() {
-            return Err("no stations configured".to_string());
-        }
-        let len = self.stations.len() as i32;
-        let current_idx = self
+    fn advance_track(&mut self, delta: i32) -> Result<(), String> {
+        let station_id = self
             .state
             .current_station_id
-            .as_ref()
-            .and_then(|id| self.stations.iter().position(|s| &s.id == id))
-            .map(|i| i as i32)
-            .unwrap_or(0);
-        let next_idx = (current_idx + delta).rem_euclid(len) as usize;
-        Ok(self.stations[next_idx].id.clone())
+            .clone()
+            .ok_or_else(|| "no station selected".to_string())?;
+        let station = self
+            .station(&station_id)
+            .ok_or_else(|| format!("unknown station: {station_id}"))?;
+        let track_count = match &station.source {
+            StationSource::YoutubeTracks { tracks } => tracks.len() as u32,
+            StationSource::Stream { .. } => {
+                return Err(format!("station {station_id} has no tracks"));
+            }
+        };
+        if track_count == 0 {
+            return Err(format!("station {station_id} has no tracks"));
+        }
+        let cursor = self
+            .state
+            .station_cursors
+            .entry(station_id)
+            .or_insert_with(|| StationCursor {
+                current_track_index: 0,
+                position_sec: 0,
+                shuffle_order: generate_shuffle(track_count),
+            });
+        let len = track_count as i32;
+        let next = (cursor.current_track_index as i32 + delta).rem_euclid(len) as u32;
+        if delta > 0 && next == 0 {
+            // Wrapped — reshuffle so the user gets a fresh sequence.
+            cursor.shuffle_order = generate_shuffle(track_count);
+        }
+        cursor.current_track_index = next;
+        cursor.position_sec = 0;
+        Ok(())
     }
 
     pub fn set_volume(&mut self, volume: f32) {
         self.state.volume = volume.clamp(0.0, 1.0);
     }
 
-    /// Resolve the current station for emit/payload purposes. Returns `None`
-    /// when no station is selected.
+    pub fn report_position(&mut self, position_sec: u32) {
+        if let Some(station_id) = self.state.current_station_id.clone() {
+            if let Some(cursor) = self.state.station_cursors.get_mut(&station_id) {
+                cursor.position_sec = position_sec;
+            }
+        }
+    }
+
+    /// Resolve the current station + (for YouTube) the current track.
     pub fn now_playing(&self) -> Option<NowPlaying> {
         let station_id = self.state.current_station_id.as_deref()?;
-        let station = self.stations.iter().find(|s| s.id == station_id)?.clone();
+        let station = self.station(station_id)?.clone();
+        let (track, track_index_in_station) = match &station.source {
+            StationSource::YoutubeTracks { tracks } => {
+                let cursor = self.state.station_cursors.get(station_id)?;
+                let track_idx = *cursor.shuffle_order.get(cursor.current_track_index as usize)?;
+                let track = tracks.get(track_idx as usize)?.clone();
+                (Some(track), Some(track_idx))
+            }
+            StationSource::Stream { .. } => (None, None),
+        };
         Some(NowPlaying {
             station,
+            track,
+            track_index_in_station,
             status: self.state.status,
         })
     }
 
-    /// Persist runtime state to disk. Best-effort — failures are logged and
-    /// swallowed so a transient FS error doesn't crash the radio.
+    /// Persist runtime state to disk. Best-effort.
     pub fn persist(&self) {
         let payload = match serde_json::to_vec_pretty(&self.state) {
             Ok(v) => v,
@@ -196,6 +250,13 @@ impl RadioService {
             );
         }
     }
+}
+
+fn generate_shuffle(track_count: u32) -> Vec<u32> {
+    let mut order: Vec<u32> = (0..track_count).collect();
+    let mut rng = rand::thread_rng();
+    order.shuffle(&mut rng);
+    order
 }
 
 #[cfg(test)]
@@ -221,23 +282,38 @@ mod tests {
     }
 
     #[test]
-    fn loads_curated_stations() {
+    fn loads_curated_catalog() {
         let svc = fresh();
-        // The seed file ships with at least Lofi + Focus.
-        assert!(svc.stations().iter().any(|s| s.id == "lofi"));
-        assert!(svc.stations().iter().any(|s| s.id == "focus"));
+        // Seed has at least one of each engine kind.
+        assert!(
+            svc.stations().iter().any(|s| matches!(s.source, StationSource::YoutubeTracks { .. })),
+            "seed must include at least one youtubeTracks station"
+        );
+        assert!(
+            svc.stations().iter().any(|s| matches!(s.source, StationSource::Stream { .. })),
+            "seed must include at least one stream station"
+        );
     }
 
     #[test]
-    fn every_station_has_https_stream_url() {
+    fn streams_have_https_urls_and_youtube_have_video_ids() {
         let svc = fresh();
         for station in svc.stations() {
-            assert!(
-                station.stream_url.starts_with("https://"),
-                "station {} stream_url must be HTTPS, got {}",
-                station.id,
-                station.stream_url
-            );
+            match &station.source {
+                StationSource::Stream { stream_url } => {
+                    assert!(
+                        stream_url.starts_with("https://"),
+                        "stream {} must be HTTPS",
+                        station.id
+                    );
+                }
+                StationSource::YoutubeTracks { tracks } => {
+                    assert!(!tracks.is_empty(), "youtubeTracks station {} has no tracks", station.id);
+                    for track in tracks {
+                        assert!(!track.video_id.is_empty(), "track in {} has empty video_id", station.id);
+                    }
+                }
+            }
         }
     }
 
@@ -250,37 +326,84 @@ mod tests {
     }
 
     #[test]
-    fn next_cycles_through_stations_and_wraps() {
+    fn next_advances_track_in_youtube_station() {
         let mut svc = fresh();
-        let ids: Vec<String> = svc.stations().iter().map(|s| s.id.clone()).collect();
-        assert!(ids.len() >= 2, "test requires at least 2 stations");
-
-        svc.set_station(&ids[0]).unwrap();
+        let yt_station_id = svc
+            .stations()
+            .iter()
+            .find(|s| matches!(s.source, StationSource::YoutubeTracks { .. }))
+            .map(|s| s.id.clone())
+            .expect("seed has a youtubeTracks station");
+        svc.set_station(&yt_station_id).unwrap();
+        let before = svc.state.station_cursors[&yt_station_id].current_track_index;
         svc.next().unwrap();
-        assert_eq!(svc.state.current_station_id.as_deref(), Some(ids[1].as_str()));
+        let after = svc.state.station_cursors[&yt_station_id].current_track_index;
+        assert_ne!(before, after, "next should advance the cursor");
+    }
 
-        // Cycle the rest of the way around — should land back on ids[0].
-        for _ in 0..(ids.len() - 1) {
-            svc.next().unwrap();
+    #[test]
+    fn next_errors_for_stream_station() {
+        let mut svc = fresh();
+        let stream_station_id = svc
+            .stations()
+            .iter()
+            .find(|s| matches!(s.source, StationSource::Stream { .. }))
+            .map(|s| s.id.clone())
+            .expect("seed has a stream station");
+        svc.set_station(&stream_station_id).unwrap();
+        let res = svc.next();
+        assert!(res.is_err(), "next on a stream station must Err");
+    }
+
+    #[test]
+    fn switch_youtube_station_preserves_cursor() {
+        let mut svc = fresh();
+        let yt_ids: Vec<String> = svc
+            .stations()
+            .iter()
+            .filter(|s| matches!(s.source, StationSource::YoutubeTracks { .. }))
+            .map(|s| s.id.clone())
+            .collect();
+        if yt_ids.len() < 2 {
+            return; // single-YouTube-station seeds skip this assertion
         }
-        assert_eq!(svc.state.current_station_id.as_deref(), Some(ids[0].as_str()));
+        svc.set_station(&yt_ids[0]).unwrap();
+        svc.next().unwrap();
+        let first_idx = svc.state.station_cursors[&yt_ids[0]].current_track_index;
+        svc.set_station(&yt_ids[1]).unwrap();
+        svc.set_station(&yt_ids[0]).unwrap();
+        let after = svc.state.station_cursors[&yt_ids[0]].current_track_index;
+        assert_eq!(first_idx, after);
     }
 
     #[test]
-    fn prev_wraps_backwards() {
+    fn now_playing_for_stream_has_no_track() {
         let mut svc = fresh();
-        let ids: Vec<String> = svc.stations().iter().map(|s| s.id.clone()).collect();
-        svc.set_station(&ids[0]).unwrap();
-        svc.prev().unwrap();
-        assert_eq!(svc.state.current_station_id.as_deref(), Some(ids.last().unwrap().as_str()));
+        let stream_station_id = svc
+            .stations()
+            .iter()
+            .find(|s| matches!(s.source, StationSource::Stream { .. }))
+            .map(|s| s.id.clone())
+            .expect("seed has a stream station");
+        svc.set_station(&stream_station_id).unwrap();
+        let np = svc.now_playing().expect("now_playing resolves");
+        assert!(np.track.is_none(), "stream station now_playing has no track");
+        assert!(np.track_index_in_station.is_none());
     }
 
     #[test]
-    fn now_playing_returns_current_station() {
+    fn now_playing_for_youtube_resolves_track() {
         let mut svc = fresh();
-        svc.set_station("lofi").unwrap();
-        let np = svc.now_playing().expect("now playing should resolve");
-        assert_eq!(np.station.id, "lofi");
+        let yt_station_id = svc
+            .stations()
+            .iter()
+            .find(|s| matches!(s.source, StationSource::YoutubeTracks { .. }))
+            .map(|s| s.id.clone())
+            .expect("seed has a youtubeTracks station");
+        svc.set_station(&yt_station_id).unwrap();
+        let np = svc.now_playing().expect("now_playing resolves");
+        let track = np.track.expect("youtubeTracks station resolves a track");
+        assert!(!track.video_id.is_empty());
     }
 
     #[test]
@@ -304,9 +427,17 @@ mod tests {
                 "currentStationId": "nonexistent-station",
                 "status": "playing",
                 "volume": 0.5,
+                "stationCursors": {
+                    "alsoNonexistent": {
+                        "currentTrackIndex": 0,
+                        "positionSec": 0,
+                        "shuffleOrder": [0]
+                    }
+                }
             })).unwrap(),
         ).unwrap();
         let svc = RadioService::new(path);
         assert_eq!(svc.state.current_station_id, None);
+        assert!(svc.state.station_cursors.is_empty(), "stale cursor should be evicted");
     }
 }

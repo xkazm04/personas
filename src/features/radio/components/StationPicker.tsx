@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Check, Radio } from 'lucide-react';
+import { Check, Music, Radio } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Station } from '@/lib/bindings/Station';
 
@@ -39,7 +39,7 @@ export default function StationPicker({
       ref={ref}
       role="dialog"
       aria-label={t.radio.stations_label}
-      className="absolute bottom-full right-0 mb-2 w-64 rounded-card border border-primary/10 bg-card-bg shadow-elevation-3 overflow-hidden"
+      className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-72 rounded-card border border-primary/10 bg-card-bg shadow-elevation-3 overflow-hidden"
     >
       <div className="px-3 py-2 border-b border-primary/8 flex items-center gap-2">
         <Radio className="w-3.5 h-3.5 text-foreground/60" />
@@ -50,6 +50,9 @@ export default function StationPicker({
       <ul className="py-1 max-h-72 overflow-y-auto">
         {stations.map((station) => {
           const active = station.id === currentStationId;
+          const isYt = station.source.kind === 'youtubeTracks';
+          const trackCount =
+            station.source.kind === 'youtubeTracks' ? station.source.tracks.length : null;
           return (
             <li key={station.id}>
               <button
@@ -68,8 +71,18 @@ export default function StationPicker({
                 />
                 <div className="min-w-0 flex-1">
                   <p className="typo-body font-medium truncate">{station.name}</p>
-                  <p className="typo-caption text-foreground/60 truncate">
-                    {station.sourceLabel ?? station.description}
+                  <p className="typo-caption text-foreground/60 truncate flex items-center gap-1.5">
+                    {isYt ? (
+                      <Music className="w-3 h-3 shrink-0 text-foreground/55" />
+                    ) : (
+                      <Radio className="w-3 h-3 shrink-0 text-foreground/55" />
+                    )}
+                    <span className="truncate">
+                      {station.sourceLabel ?? station.description}
+                      {trackCount !== null && (
+                        <span className="text-foreground/45"> · {trackCount}</span>
+                      )}
+                    </span>
                   </p>
                 </div>
                 {active && <Check className="w-4 h-4 text-foreground/80 shrink-0" />}

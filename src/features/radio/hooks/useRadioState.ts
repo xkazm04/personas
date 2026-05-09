@@ -20,10 +20,19 @@ const initial: RadioSnapshot = {
   loaded: false,
 };
 
+/** Identifier used to detect "the underlying source/track changed" so we
+ * know when to refetch `nowPlaying`. For YouTube stations the cursor
+ * advances within the same station, so the station id alone isn't enough. */
+function trackKey(state: RadioState | null): string {
+  if (!state?.currentStationId) return '';
+  const cursor = state.stationCursors?.[state.currentStationId];
+  return `${state.currentStationId}:${cursor?.currentTrackIndex ?? -1}`;
+}
+
 /**
  * Subscribes to `radio:state` events and exposes the latest snapshot.
- * Refetches `nowPlaying` when the current station changes so the footer
- * has fresh station metadata to render.
+ * Refetches `nowPlaying` when station id OR (for YouTube) cursor index
+ * changes so the renderer always has fresh `track` metadata.
  */
 export function useRadioState(): RadioSnapshot {
   const [snap, setSnap] = useState<RadioSnapshot>(initial);
@@ -59,9 +68,7 @@ export function useRadioState(): RadioSnapshot {
         if (cancelled) return;
         setSnap((prev) => {
           const next = { ...prev, state: event.payload };
-          const prevStationId = prev.state?.currentStationId ?? null;
-          const nextStationId = event.payload.currentStationId ?? null;
-          if (prevStationId !== nextStationId || !prev.nowPlaying) {
+          if (trackKey(prev.state) !== trackKey(event.payload) || !prev.nowPlaying) {
             refreshNowPlaying();
           }
           return next;

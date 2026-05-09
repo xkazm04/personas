@@ -12840,12 +12840,17 @@
     "now_playing": "Now playing",
     "play": "Play",
     "pause": "Pause",
-    "skip": "Next station",
+    "prev_track": "Previous track",
+    "next_track": "Next track",
+    "prev_track_disabled": "Previous track (only available for YouTube stations)",
+    "next_track_disabled": "Next track (only available for YouTube stations)",
     "switch_station": "Switch station",
     "stations_label": "Stations",
+    "kind_youtube": "YouTube",
+    "kind_stream": "Stream",
     "source_prefix": "Source:",
     "unavailable_toast": "{station} is unavailable right now. Check your connection or try another station.",
     "settings_title": "Radio",
-    "settings_description": "Curated internet-radio stations that play in the background. Use the controller at the bottom-right of the window to play, pause, switch stations, or change volume."
+    "settings_description": "Curated stations playing in the background. Two kinds: YouTube tracklists (via a hidden IFrame Player — use the prev/next buttons to skip tracks) and direct internet streams (single continuous source — use the picker to switch). The controller lives in the centre of the app footer."
   }
 }

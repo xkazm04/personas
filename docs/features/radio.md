@@ -1,68 +1,89 @@
 # Radio
 
-A small footer-anchored player that streams curated internet-radio
-stations in the background while the app runs. The footer owns an HTML5
-`<audio>` element pointed at the current station's stream URL; the Rust
-backend is the source of truth for `current_station_id` / `status` /
-`volume` and persists those across restarts.
+A compact player rendered in the centre of the app footer
+(`DesktopFooter`). Each curated station has one of two playback engines:
+
+- **`youtubeTracks`** — a curated list of YouTube video IDs played
+  through a hidden IFrame Player. Track-level prev/next buttons + a
+  shuffle cursor that persists per-station.
+- **`stream`** — a direct internet-radio stream URL played through an
+  HTML5 `<audio>` element. Single continuous source, no tracks; the
+  prev/next-track buttons are disabled while a stream station is active.
+
+Backend `RadioState` is the source of truth. The renderer drives the
+appropriate engine and reports state transitions back via
+`radio_report_status` / `radio_track_ended`.
 
 ## What the user sees
 
-- A pill-shaped controller pinned to the bottom-right of the main window
-  (`RadioFooter`) with the current station name + description, an accent
-  dot for the current station, play/pause, "next station", and a
-  station-switch icon.
-- Clicking the station icon opens `StationPicker`, listing every curated
-  station with its provider label as the secondary line.
+- A compact controller in the **centre** of the bottom-of-window footer
+  (`DesktopFooter`): prev-track, play/pause, next-track, station name +
+  current track (truncated), station-picker.
+- The station picker lists every curated station with a YouTube/Radio
+  badge and (for YouTube) a track count.
 - A "Radio" card in **Settings → Account** (`RadioSettingsCard`) that
-  lists the curated stations with provider attribution + a link to the
-  source homepage. Read-only — there is no in-app editor for curation.
-- If a stream fails to start within ~8 seconds (or fires an `error`
-  event), the footer pauses, reports `stopped`, and shows a localized
-  toast ("`<station>` is unavailable right now…").
+  lists the curated catalog. YouTube stations show their tracklist;
+  stream stations show the source label + link.
+- If either engine fails to start within ~8 seconds (or fires an `error`
+  event) the renderer surfaces a localized toast. For YouTube errors
+  100/101/150 (embed disabled / unavailable) the renderer auto-skips to
+  the next track via `radio_track_ended` so a single bad video doesn't
+  deadlock the station.
 
 ## Architecture
 
 ```
 ┌─ Main window ──────────────────────────────────────┐
-│ RadioFooter                                        │
-│   <audio src={station.streamUrl}>                  │
+│ DesktopFooter (centre cluster)                     │
+│   RadioFooter                                      │
+│     ┌─ Hidden YouTube IFrame Player (200×200,     │
+│     │    position: fixed; left: -10000px)         │
+│     │  — used for `youtubeTracks` stations        │
+│     └─ <audio> element (no UI)                    │
+│        — used for `stream` stations               │
 │   ↕ uses radioApi (invoke)                         │
 │   ↕ listens "radio:state"                          │
 │   ↕ reports playing/paused/buffering/stopped       │
 │     via radio_report_status                        │
+│   ↕ skips on natural END or YT onError 100/101/150 │
+│     via radio_track_ended                          │
 └──────────────────────┬─────────────────────────────┘
                        │
                        ▼
        ┌────────────────────────────────────────────────────┐
        │ RadioService (src-tauri/src/radio/)                │
        │   stations: Vec<Station>  (curated, baked in)      │
-       │   state: RadioState       (id + status + volume)   │
+       │   state: RadioState       (id + status + volume +  │
+       │                            station_cursors)        │
        │   persistence: <config>/radio_state.json           │
        └────────────────────────────────────────────────────┘
 ```
 
-- **Curated stations** live in [`src-tauri/data/radio_stations.json`](../../src-tauri/data/radio_stations.json).
-  The JSON is `include_str!`-baked into the binary so users see the same
-  curated catalog the team shipped — no editor surface.
-- **No hidden window.** The previous architecture used a separate
-  `WebviewWindow` running the YouTube IFrame Player API; that was
-  retired because (a) many curated YouTube videos disable embedding
-  ("An error occurred. Please try again later. Playback ID: …") and
-  (b) audio-only YouTube playback is YouTube-ToS-grey.
-- **Stream provider.** The shipped catalog uses [SomaFM](https://somafm.com/),
-  whose terms explicitly permit redistribution from apps and websites.
-  Streams are direct MP3, played through HTML5 `<audio>`; no decoder,
-  no proxy, no DRM.
-- **Watchdog.** `RadioFooter` arms an 8-second timer when it issues
-  `audio.play()`. If the `playing` event hasn't fired by then it treats
-  the stream as unavailable, surfaces a toast, and reports `stopped`.
-  This catches hung streams that don't trigger `error` cleanly.
-- **Persistence** writes runtime state (current station, status, volume)
-  to `<app_data_dir>/radio_state.json` after every mutation. On startup
-  the file is loaded if present so the app resumes the last station; a
-  persisted `current_station_id` that no longer exists in the catalog
-  is silently discarded.
+- **Curated catalog** lives in [`src-tauri/data/radio_stations.json`](../../src-tauri/data/radio_stations.json).
+  Baked into the binary via `include_str!` so users see the same catalog
+  the team shipped — no editor surface.
+- **Hidden YouTube player.** The IFrame Player API requires a real DOM
+  element with non-zero dimensions; `RadioFooter` mounts a 200×200 div
+  off-screen at `position: fixed; left: -10000px; top: -10000px`. Audio
+  plays normally; the video portion is never visible. The player handle
+  is created lazily in `useYouTubePlayer`, which loads
+  `https://www.youtube.com/iframe_api` once and shares the namespace
+  across hook instances.
+- **Stream player** is a vanilla `<audio>` element rendered alongside
+  the YT host; it carries no visible UI either, just its event handlers.
+- **Per-station cursors** are stored in `RadioState.station_cursors`,
+  keyed by station id, and only populated for `youtubeTracks` stations.
+  Switching away and back to a YouTube station resumes its cursor.
+- **Watchdog.** The renderer arms an 8-second timer when it issues a
+  play. If the engine hasn't reported `playing` by then, it surfaces an
+  unavailable toast and (for YouTube) advances the cursor — covering
+  the silent-stall case where YT renders an in-frame error message
+  without firing `onError`.
+- **Persistence** writes runtime state to `<app_data_dir>/radio_state.json`
+  after every mutation. On startup the file is loaded if present so the
+  app resumes the last station; persisted `current_station_id` /
+  cursor entries that no longer exist in the catalog are silently
+  discarded.
 
 ## Tauri command surface
 
@@ -71,16 +92,17 @@ All commands are wrapped via `invokeWithTimeout` in
 
 | Command | Direction | Purpose |
 | --- | --- | --- |
-| `radio_list_stations` | UI → Rust | List curated stations (with stream URL + attribution) |
+| `radio_list_stations` | UI → Rust | List curated stations with their `StationSource` |
 | `radio_get_state` | UI → Rust | Read current `RadioState` |
-| `radio_get_now_playing` | UI → Rust | Resolve current station + status |
+| `radio_get_now_playing` | UI → Rust | Resolve current station + (for YouTube) track |
 | `radio_play` | UI → Rust | Start (auto-picks default station if none selected) |
 | `radio_pause` | UI → Rust | Pause |
-| `radio_next` | UI → Rust | Cycle to next station in the catalog |
-| `radio_prev` | UI → Rust | Cycle to previous station |
+| `radio_next` | UI → Rust | Advance to next track (YouTube only; Err for streams) |
+| `radio_prev` | UI → Rust | Step to previous track (YouTube only; Err for streams) |
 | `radio_set_station` | UI → Rust | Switch to a specific station |
 | `radio_set_volume` | UI → Rust | Volume in [0.0, 1.0] |
-| `radio_report_status` | UI → Rust | Footer reports HTMLMediaElement event transitions |
+| `radio_report_status` | UI → Rust | Engine reports state transitions; optional `position_sec` (YouTube only) |
+| `radio_track_ended` | UI → Rust | YouTube engine reports natural END or skip-on-error |
 
 ## Tauri events
 
@@ -91,33 +113,67 @@ All commands are wrapped via `invokeWithTimeout` in
 ## Adding or curating stations
 
 Edit [`src-tauri/data/radio_stations.json`](../../src-tauri/data/radio_stations.json).
-Each station needs:
+Required fields on every station: `id`, `slug`, `name`, `description`,
+`accentColor`, `source`. Optional: `sourceUrl`, `sourceLabel`.
 
-- `id`, `slug`, `name`, `description`, `accent_color`
-- `stream_url` — direct HTTPS MP3 or HLS URL
-- `source_url` (optional) — provider homepage for attribution
-- `source_label` (optional) — human-readable provider label
+For a `youtubeTracks` station:
+
+```json
+"source": {
+  "kind": "youtubeTracks",
+  "tracks": [
+    { "videoId": "...", "title": "...", "artist": "...", "durationSec": null }
+  ]
+}
+```
+
+For a `stream` station:
+
+```json
+"source": {
+  "kind": "stream",
+  "streamUrl": "https://..."
+}
+```
 
 After editing, the change ships in the next build — the JSON is baked
-into the binary at compile time via `include_str!`. No migration, no
-DB write.
+into the binary at compile time. The seed parses through `serde` with
+`rename_all = "camelCase"` and `rename_all_fields = "camelCase"` on the
+enum, so JSON keys must be camelCase (`streamUrl`, `videoId`,
+`accentColor`, …).
 
-When picking new providers, prefer ones whose terms explicitly permit
-app/site redistribution (SomaFM, Radio Paradise, NPR-style public
-streams). YouTube videos are not appropriate here — embedding is at
-the uploader's discretion and breaks silently.
+When picking new providers:
+
+- **Streams**: prefer providers whose terms permit app/site redistribution
+  (SomaFM, Radio Paradise, NPR/BBC public streams). The `https://*.somafm.com`
+  CSP entry covers SomaFM; new domains need a CSP whitelist update too.
+- **YouTube tracks**: many popular channels (Lofi Girl, the major focus-
+  music streams) disable embedding. The skip-on-error + watchdog handle
+  individual unembeddable videos gracefully, but a station whose entire
+  tracklist is unembeddable will toast on every track. Test new IDs
+  with `https://www.youtube.com/oembed?url=…` (returns 401 if embed is
+  disabled) before shipping.
 
 ## CSP
 
-`tauri.conf.json` whitelists `https://*.somafm.com` in `media-src`
-and `connect-src`. Adding a new provider domain requires an additional
-CSP entry — without it the `<audio>` element will silently refuse to
-load the stream.
+`tauri.conf.json` whitelists:
+
+- YouTube IFrame Player: `script-src https://www.youtube.com https://s.ytimg.com`,
+  `frame-src https://www.youtube.com https://www.youtube-nocookie.com`,
+  `connect-src https://www.youtube.com https://*.googlevideo.com`,
+  `media-src https://*.googlevideo.com`.
+- SomaFM streams: `media-src https://*.somafm.com`,
+  `connect-src https://*.somafm.com`.
+
+Adding a new stream provider requires an additional CSP entry — without
+it the `<audio>` element will silently refuse to load the stream.
 
 ## Files
 
-- [`src-tauri/src/radio/mod.rs`](../../src-tauri/src/radio/mod.rs) — types
+- [`src-tauri/src/radio/mod.rs`](../../src-tauri/src/radio/mod.rs) — types, including the `StationSource` tagged enum
 - [`src-tauri/src/radio/service.rs`](../../src-tauri/src/radio/service.rs) — service + persistence
 - [`src-tauri/src/commands/radio.rs`](../../src-tauri/src/commands/radio.rs) — Tauri command handlers
 - [`src-tauri/data/radio_stations.json`](../../src-tauri/data/radio_stations.json) — curated catalog
 - [`src/features/radio/`](../../src/features/radio/) — frontend feature module
+- [`src/features/radio/hooks/useYouTubePlayer.ts`](../../src/features/radio/hooks/useYouTubePlayer.ts) — IFrame Player wrapper
+- [`src/features/shared/components/layout/DesktopFooter.tsx`](../../src/features/shared/components/layout/DesktopFooter.tsx) — mount point (centre cluster)

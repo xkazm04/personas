@@ -31,5 +31,8 @@ export const radioSetStation = (stationId: string) =>
 export const radioSetVolume = (volume: number) =>
   invokeWithTimeout<RadioState>('radio_set_volume', { volume });
 
-export const radioReportStatus = (status: PlayStatus) =>
-  invokeWithTimeout<RadioState>('radio_report_status', { status });
+export const radioReportStatus = (status: PlayStatus, positionSec: number | null = null) =>
+  invokeWithTimeout<RadioState>('radio_report_status', { status, positionSec });
+
+export const radioTrackEnded = () =>
+  invokeWithTimeout<RadioState>('radio_track_ended');
