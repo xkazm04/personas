@@ -8226,6 +8226,9 @@ export type Translations = {
     };
     quality_gates: {
       title: string;
+      action_reject: string;
+      action_tag: string;
+      action_warn: string;
       loading: string;
       error_loading: string;
       active_rules: string;

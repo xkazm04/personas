@@ -8220,6 +8220,9 @@
     },
     "quality_gates": {
       "title": "Quality Gates",
+      "action_reject": "Reject",
+      "action_tag": "Tag",
+      "action_warn": "Warn",
       "loading": "Loading...",
       "error_loading": "Error loading config",
       "active_rules": "{count} active filter rules",

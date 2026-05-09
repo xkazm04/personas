@@ -7,26 +7,33 @@ import type { QualityGateRule } from '@/lib/bindings/QualityGateRule';
 import type { FilterAction } from '@/lib/bindings/FilterAction';
 import { useTranslation } from '@/i18n/useTranslation';
 
-const ACTION_LABELS: Record<FilterAction, { label: string; color: string; icon: typeof Ban }> = {
-  reject: { label: 'Reject', color: 'text-red-400', icon: Ban },
-  tag:    { label: 'Tag',    color: 'text-amber-400', icon: Tag },
-  warn:   { label: 'Warn',   color: 'text-blue-400', icon: AlertTriangle },
+/**
+ * Filter action → static class table + labelKey under
+ * `t.settings.quality_gates.*`. Strings live in en.json; this table only
+ * routes ids to keys + colors + icons. Per the "Constants with labels live
+ * in en.json" strong-pattern (graduated 2026-05-03).
+ */
+const ACTION_META: Record<FilterAction, { labelKey: 'action_reject' | 'action_tag' | 'action_warn'; color: string; icon: typeof Ban }> = {
+  reject: { labelKey: 'action_reject', color: 'text-red-400', icon: Ban },
+  tag:    { labelKey: 'action_tag',    color: 'text-amber-400', icon: Tag },
+  warn:   { labelKey: 'action_warn',   color: 'text-blue-400', icon: AlertTriangle },
 };
 
 function RuleRow({ rule }: { rule: QualityGateRule }) {
-  const action = ACTION_LABELS[rule.action];
-  const ActionIcon = action.icon;
+  const { t } = useTranslation();
+  const meta = ACTION_META[rule.action];
+  const ActionIcon = meta.icon;
   return (
     <div className="flex items-center gap-3 py-1.5 px-2 rounded hover:bg-secondary/40 transition-colors">
-      <ActionIcon size={13} className={`shrink-0 ${action.color}`} />
+      <ActionIcon size={13} className={`shrink-0 ${meta.color}`} />
       <code className="typo-code font-mono text-foreground bg-secondary/40 px-1.5 py-0.5 rounded min-w-0 truncate">
         {rule.pattern}
       </code>
       <span className="text-[11px] text-foreground shrink-0 ml-auto">
         {rule.label}
       </span>
-      <span className={`text-[10px] font-medium uppercase ${action.color} shrink-0`}>
-        {action.label}
+      <span className={`text-[10px] font-medium uppercase ${meta.color} shrink-0`}>
+        {t.settings.quality_gates[meta.labelKey]}
       </span>
     </div>
   );
