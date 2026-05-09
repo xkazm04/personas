@@ -175,7 +175,20 @@ export const useCompanionStore = create<CompanionStore>((set) => ({
     set((s) => ({ proactive: s.proactive.filter((m) => m.id !== id) })),
 
   pendingPlayback: null,
-  setPendingPlayback: (pendingPlayback) => set({ pendingPlayback }),
+  setPendingPlayback: (pendingPlayback) =>
+    set((s) => {
+      // Revoke the prior blob URL on replacement / clear so long chat
+      // sessions don't accumulate ~50KB-per-reply of un-GC'able blob
+      // memory. Skip when the URL is unchanged (e.g. setPlaybackAudioUrl
+      // routes through this setter is not the case — that uses its own
+      // setter — but defensive equality check costs nothing).
+      const prior = s.pendingPlayback?.audioUrl;
+      const next = pendingPlayback?.audioUrl ?? null;
+      if (prior && prior !== next) {
+        URL.revokeObjectURL(prior);
+      }
+      return { pendingPlayback };
+    }),
   setPlaybackAudioUrl: (audioUrl) =>
     set((s) =>
       s.pendingPlayback
