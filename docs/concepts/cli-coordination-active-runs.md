@@ -274,6 +274,10 @@ The browser-harness `/research` run was in flight when a parallel cli-coordinati
 
 The ledger DID list both sessions as `## Active`. The stashing session DID see the research entry. What was missing was a project-wide rule that **`git stash` is a sweep, not a save**, and another session's in-flight work is right in the way of the broom.
 
+#### Second incident, same day: index pollution
+
+The very commit that codified these primitives (`5e3f9055a`) tripped a second failure mode: 18 files of a concurrent clear-wins/creative session were already pre-staged in the index when this codification ran `git add` on its own 6 files. `git commit` then swept up everything in the index — 24 files in total — under a misleading parallel-safety commit message. No work was lost (both bodies of work landed in `git log master`), but the attribution was wrong and the failure shows that **explicit `git add <path>` is necessary but not sufficient**. The index can already contain another session's staged work before yours starts. The follow-up commit (`<sha>`, this commit) added a guard to rule #5: after `git add` and before `git commit`, run `git diff --cached --stat` and verify the staged-file count matches the count you explicitly added. Anything extra → `git restore --staged <path>` per unrelated file before committing.
+
 ### The three primitives
 
 #### 1. Never `git stash` work that isn't yours

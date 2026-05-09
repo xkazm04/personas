@@ -121,7 +121,9 @@ The active-runs ledger is intent coordination; these are the **never-lose-work**
    ```
    Stale worktrees are not free — they hold a working copy of the repo (gigabytes), confuse `git worktree list`, and a future session may accidentally `cd` into one. Treat worktree cleanup as part of the same Phase 13 ritual that records the commit SHA in the ledger.
 
-5. **`git status` shows everyone's work.** Before any commit, scan `git status --porcelain` and classify each entry: yours / pre-existing drift / another session's in-flight work. Stage only yours. If unsure, ask. The 2026-05-09 stash victim was visible in `git status` to the stashing session — the missing discipline was "what's there that isn't mine?", not "what should I commit?"
+5. **`git status` shows everyone's work — and so does the staged index.** Before any commit, scan `git status --porcelain` and classify each entry: yours / pre-existing drift / another session's in-flight work. Stage only yours. The 2026-05-09 stash victim was visible in `git status` to the stashing session — the missing discipline was "what's there that isn't mine?", not "what should I commit?"
+
+   **AND THEN** — after `git add` but BEFORE `git commit` — run `git diff --cached --stat` and check the staged file count. If it is greater than the number of files you explicitly `git add`-ed, the index already had pre-staged files from another session sitting in it; your `git add` simply layered on top. Run `git restore --staged <path>` per unrelated file before committing. The recovery commit for the 2026-05-09 stash incident itself fell into this trap: the parallel-safety codification was supposed to be 6 files; the index already held 18 pre-staged files from a concurrent clear-wins/creative session and the commit swept everything up under a misleading message. Never trust the index; always verify it matches your intent.
 
 ---
 
