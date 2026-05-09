@@ -9217,6 +9217,8 @@ export type Translations = {
       dismiss: string;
       score_label: string;
       applied_toast: string;
+      run_now: string;
+      run_now_toast: string;
     };
   };
   recipe_shared: {

@@ -1,5 +1,5 @@
 /**
- * ComposerRecipeSuggestion — Stage D Phases 2 / 3 / 4.
+ * ComposerRecipeSuggestion — Stage D Phases 2 / 3 / 4 / 5.
  *
  * Surfaces an existing recipe when the user's typed task closely matches
  * one in the catalog. Calls `match_recipes_to_intent` with a 300ms debounce
@@ -14,15 +14,23 @@
  *   We log impressions exactly once per surfaced match (keyed on recipe_id),
  *   so a single chip stays at one impression even as the user re-types
  *   variations of the same task.
+ * Phase 5: when the server-side `mode_2_eligible` flag is true (≥20 decisive
+ *   events, ≥0.5 accept rate over the last 50), an additional "Run now"
+ *   button appears alongside "Use this recipe" — calling `onRunDirect`
+ *   instead of going through the Glyph build flow. Eligibility is fetched
+ *   lazily once per mount when a match first surfaces (see
+ *   `useRecipeSuggestionEligibility`), so the chip stays cheap when the
+ *   user types but never sees a match.
  */
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, X } from "lucide-react";
+import { Sparkles, X, Zap } from "lucide-react";
 import { invokeWithTimeout } from "@/lib/tauriInvoke";
 import { silentCatch } from "@/lib/silentCatch";
 import { useTranslation } from "@/i18n/useTranslation";
 import type { RecipeMatch } from "@/lib/bindings/RecipeMatch";
 import type { RecipeSuggestionEventType } from "@/lib/bindings/RecipeSuggestionEventType";
+import { useRecipeSuggestionEligibility } from "./useRecipeSuggestionEligibility";
 
 const DEBOUNCE_MS = 300;
 const MIN_TASK_LENGTH = 8; // skip clearly-too-short prompts
@@ -42,15 +50,25 @@ function logSuggestionEvent(
 interface Props {
   task: string;
   onApply?: (match: RecipeMatch) => void;
+  /**
+   * Mode-2 (skip-build) handler — invoked when the user clicks "Run now".
+   * Only rendered when both this prop is supplied AND the server-side
+   * `mode_2_eligible` gate is true. Treated like an accept by the
+   * telemetry pipeline (a click-through is still a click-through).
+   */
+  onRunDirect?: (match: RecipeMatch) => void;
 }
 
-export function ComposerRecipeSuggestion({ task, onApply }: Props) {
+export function ComposerRecipeSuggestion({ task, onApply, onRunDirect }: Props) {
   const { t } = useTranslation();
   const [match, setMatch] = useState<RecipeMatch | null>(null);
   const [dismissed, setDismissed] = useState<string | null>(null);
   // Track which recipe ids we've already logged an impression for in this
   // mount, so re-renders / minor task tweaks don't inflate the count.
   const impressionLoggedRef = useRef<Set<string>>(new Set());
+  // Mode-2 eligibility — fetched lazily after the chip first surfaces.
+  const eligibility = useRecipeSuggestionEligibility(match !== null);
+  const showRunDirect = onRunDirect !== undefined && eligibility === "eligible";
 
   useEffect(() => {
     const trimmed = task.trim();
@@ -121,6 +139,19 @@ export function ComposerRecipeSuggestion({ task, onApply }: Props) {
                 className="rounded-input border border-card-border bg-card-bg px-2 py-0.5 typo-caption font-medium hover:bg-secondary/60 transition-colors"
               >
                 {t.recipes.composer_suggestion.use_button}
+              </button>
+            )}
+            {showRunDirect && (
+              <button
+                type="button"
+                onClick={() => {
+                  logSuggestionEvent(match.recipe_id, "accept", match.score);
+                  onRunDirect!(match);
+                }}
+                className="flex items-center gap-1 rounded-input border border-primary/40 bg-primary/10 px-2 py-0.5 typo-caption font-medium text-primary hover:bg-primary/20 transition-colors"
+              >
+                <Zap className="h-3 w-3" aria-hidden />
+                {t.recipes.composer_suggestion.run_now}
               </button>
             )}
             <button

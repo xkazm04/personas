@@ -14,6 +14,7 @@ export function RecipeManager() {
   const recipes = usePipelineStore((s) => s.recipes);
   const fetchRecipes = usePipelineStore((s) => s.fetchRecipes);
   const deleteRecipe = usePipelineStore((s) => s.deleteRecipe);
+  const consumePendingPlayground = usePipelineStore((s) => s.consumePendingPlayground);
 
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -34,6 +35,20 @@ export function RecipeManager() {
     };
     init();
   }, [fetchRecipes]);
+
+  // Stage D Phase 5 — pick up the Glyph composer's mode-2 handoff. The
+  // composer set `pendingPlaygroundRecipeId` then switched the sidebar to
+  // this route, so the recipe is guaranteed to be in the freshly fetched
+  // catalog. Consume-and-clear so a stale id doesn't re-trigger on the
+  // next mount.
+  useEffect(() => {
+    if (loading) return;
+    const pendingId = consumePendingPlayground();
+    if (!pendingId) return;
+    const exists = recipes.some((r) => r.id === pendingId);
+    if (!exists) return;
+    dispatch({ type: 'GO_PLAYGROUND', recipeId: pendingId });
+  }, [loading, recipes, consumePendingPlayground, dispatch]);
 
   // Cmd/Ctrl+K to focus search
   useEffect(() => {

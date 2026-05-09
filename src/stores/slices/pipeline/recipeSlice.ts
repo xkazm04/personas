@@ -10,6 +10,15 @@ import { createRecipe, deleteRecipe, getPersonaRecipes, linkRecipeToPersona, lis
 export interface RecipeSlice {
   // State
   recipes: RecipeDefinition[];
+  /**
+   * Stage D Phase 5 — handoff slot for the Glyph composer's "Run now"
+   * mode-2 path. The composer sets this id, switches the sidebar to the
+   * design-reviews route, and the RecipeManager consumes it on mount to
+   * jump straight into the playground for that recipe. Cleared by
+   * `consumePendingPlayground` so a stale value from a prior session
+   * doesn't auto-open on the next sidebar switch.
+   */
+  pendingPlaygroundRecipeId: string | null;
 
   // Actions
   fetchRecipes: () => Promise<void>;
@@ -19,10 +28,14 @@ export interface RecipeSlice {
   linkRecipeToPersona: (personaId: string, recipeId: string) => Promise<void>;
   unlinkRecipeFromPersona: (personaId: string, recipeId: string) => Promise<void>;
   fetchPersonaRecipes: (personaId: string) => Promise<RecipeDefinition[]>;
+  setPendingPlayground: (recipeId: string | null) => void;
+  /** Read-and-clear; returns the pending id if any. */
+  consumePendingPlayground: () => string | null;
 }
 
 export const createRecipeSlice: StateCreator<PipelineStore, [], [], RecipeSlice> = (set, get) => ({
   recipes: [],
+  pendingPlaygroundRecipeId: null,
 
   fetchRecipes: async () => {
     try {
@@ -96,5 +109,15 @@ export const createRecipeSlice: StateCreator<PipelineStore, [], [], RecipeSlice>
       reportError(err, "Failed to fetch persona recipes", set);
       throw err;
     }
+  },
+
+  setPendingPlayground: (recipeId) => {
+    set({ pendingPlaygroundRecipeId: recipeId });
+  },
+
+  consumePendingPlayground: () => {
+    const id = get().pendingPlaygroundRecipeId;
+    if (id !== null) set({ pendingPlaygroundRecipeId: null });
+    return id;
   },
 });
