@@ -1,13 +1,13 @@
 //! Tauri command handlers for the radio feature. Commands acquire the
 //! `RadioServiceHandle` mutex, mutate the service, persist state, and emit
-//! a `radio:state` event so the footer's `<audio>` element can react.
+//! a `radio:state` event so the footer can re-render without polling.
 
 use tauri::{AppHandle, Emitter, State};
 
 use crate::radio::{NowPlaying, PlayStatus, RadioService, RadioServiceHandle, RadioState, Station};
 
-/// Tauri event emitted to the main window with the latest `RadioState` after
-/// every mutation, so the footer can re-render without polling.
+/// Tauri event emitted to the main window with the latest `RadioState`
+/// after every mutation, so the footer can re-render without polling.
 const RADIO_STATE_EVENT: &str = "radio:state";
 
 fn with_service<F, R>(state: &State<'_, RadioServiceHandle>, f: F) -> Result<R, String>
@@ -137,19 +137,44 @@ pub fn radio_set_volume(
     Ok(snap)
 }
 
-/// Called by the footer when the `<audio>` element fires play/pause/error/
-/// stalled events, so persisted state matches the renderer's reality.
+/// Renderer reports an HTMLMediaElement / IFrame Player state transition.
+/// `position_sec` is optional — only YouTube tracks expose meaningful
+/// playback positions; live streams pass `None`.
 #[tauri::command]
 pub fn radio_report_status(
     app: AppHandle,
     state: State<'_, RadioServiceHandle>,
     status: PlayStatus,
+    position_sec: Option<u32>,
 ) -> Result<RadioState, String> {
     let snap = with_service(&state, |svc| {
         svc.set_status(status);
+        if let Some(pos) = position_sec {
+            svc.report_position(pos);
+        }
         svc.persist();
         snapshot(svc)
     })?;
+    broadcast(&app, &snap);
+    Ok(snap)
+}
+
+/// Renderer signals end-of-track for a `youtubeTracks` station (natural
+/// ENDED state, or skip-on-error after onError 100/101/150). We advance
+/// the cursor and re-emit so the renderer picks up the next track.
+/// Stream stations should never call this; if they do it returns Err and
+/// the renderer ignores the response.
+#[tauri::command]
+pub fn radio_track_ended(
+    app: AppHandle,
+    state: State<'_, RadioServiceHandle>,
+) -> Result<RadioState, String> {
+    let snap = with_service(&state, |svc| {
+        svc.next()?;
+        svc.set_status(PlayStatus::Playing);
+        svc.persist();
+        Ok::<_, String>(snapshot(svc))
+    })??;
     broadcast(&app, &snap);
     Ok(snap)
 }

@@ -1,36 +1,97 @@
 {
-  "version": 2,
-  "defaultStationId": "lofi",
+  "version": 3,
+  "defaultStationId": "groovesalad",
   "stations": [
+    {
+      "id": "groovesalad",
+      "slug": "groovesalad",
+      "name": "Groove Salad",
+      "description": "A nicely chilled plate of ambient downtempo beats and grooves.",
+      "accentColor": "#a87cf0",
+      "sourceUrl": "https://somafm.com/groovesalad/",
+      "sourceLabel": "SomaFM",
+      "source": {
+        "kind": "stream",
+        "streamUrl": "https://ice1.somafm.com/groovesalad-128-mp3"
+      }
+    },
+    {
+      "id": "dronezone",
+      "slug": "dronezone",
+      "name": "Drone Zone",
+      "description": "Atmospheric textures with minimal beats — for deep focus and concentration.",
+      "accentColor": "#4ec9b0",
+      "sourceUrl": "https://somafm.com/dronezone/",
+      "sourceLabel": "SomaFM",
+      "source": {
+        "kind": "stream",
+        "streamUrl": "https://ice1.somafm.com/dronezone-128-mp3"
+      }
+    },
+    {
+      "id": "lush",
+      "slug": "lush",
+      "name": "Lush",
+      "description": "Sensuous and mellow vocals, mostly female, with an electronic influence.",
+      "accentColor": "#e07ab0",
+      "sourceUrl": "https://somafm.com/lush/",
+      "sourceLabel": "SomaFM",
+      "source": {
+        "kind": "stream",
+        "streamUrl": "https://ice1.somafm.com/lush-128-mp3"
+      }
+    },
     {
       "id": "lofi",
       "slug": "lofi",
       "name": "Lofi",
-      "description": "A nicely chilled plate of ambient downtempo beats and grooves.",
-      "accentColor": "#a87cf0",
-      "streamUrl": "https://ice1.somafm.com/groovesalad-128-mp3",
-      "sourceUrl": "https://somafm.com/groovesalad/",
-      "sourceLabel": "SomaFM Groove Salad"
+      "description": "Curated lo-fi hip hop mixes from YouTube. Skip-on-error if a track is unembeddable.",
+      "accentColor": "#7ac4ff",
+      "sourceUrl": "https://www.youtube.com/",
+      "sourceLabel": "YouTube",
+      "source": {
+        "kind": "youtubeTracks",
+        "tracks": [
+          {
+            "videoId": "CFGLoQIhmow",
+            "title": "lofi hip hop mix - beats to relax/study to (Part 1)",
+            "artist": "Lofi Girl",
+            "durationSec": null
+          },
+          {
+            "videoId": "8b3fqIBrNW0",
+            "title": "lofi hip hop mix - beats to relax/study to (Part 2)",
+            "artist": "Lofi Girl",
+            "durationSec": null
+          }
+        ]
+      }
     },
     {
       "id": "focus",
       "slug": "focus",
       "name": "Focus",
-      "description": "Atmospheric textures with minimal beats — for deep focus and concentration.",
-      "accentColor": "#4ec9b0",
-      "streamUrl": "https://ice1.somafm.com/dronezone-128-mp3",
-      "sourceUrl": "https://somafm.com/dronezone/",
-      "sourceLabel": "SomaFM Drone Zone"
-    },
-    {
-      "id": "chill",
-      "slug": "chill",
-      "name": "Chill",
-      "description": "Sensuous and mellow vocals, mostly female, with an electronic influence.",
-      "accentColor": "#e07ab0",
-      "streamUrl": "https://ice1.somafm.com/lush-128-mp3",
-      "sourceUrl": "https://somafm.com/lush/",
-      "sourceLabel": "SomaFM Lush"
+      "description": "Deep focus instrumental mixes from YouTube. Skip-on-error if a track is unembeddable.",
+      "accentColor": "#ffb86b",
+      "sourceUrl": "https://www.youtube.com/",
+      "sourceLabel": "YouTube",
+      "source": {
+        "kind": "youtubeTracks",
+        "tracks": [
+          {
+            "videoId": "oPVte6aMprI",
+            "title": "Deep Focus - Music For Studying, Concentration and Work",
+            "artist": "Greenred Productions",
+            "durationSec": null
+          },
+          {
+            "videoId": "k7nQt8nB9FQ",
+            "title": "Deep Focus Music for Work | Increase Productivity & Concentration Mix 2026",
+            "artist": "Various",
+            "durationSec": null
+          }
+        ]
+      }
     }
   ]
 }
