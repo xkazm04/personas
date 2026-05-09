@@ -1568,6 +1568,10 @@ pub fn run() {
             commands::recipes::recipe_derivation::list_recipes_by_template,
             // Recipes -- Stage D Phase 1 keyword matcher (composer suggestions)
             commands::recipes::recipe_match::match_recipes_to_intent,
+            // Recipes -- Stage D Phase 4 telemetry (impression/accept/dismiss)
+            commands::recipes::recipe_suggestion_log::log_recipe_suggestion_event,
+            commands::recipes::recipe_suggestion_log::get_recipe_suggestion_stats,
+            commands::recipes::recipe_suggestion_log::list_recipe_suggestion_events,
             // Communication -- Events
             commands::communication::events::list_events,
             commands::communication::events::list_events_in_range,
