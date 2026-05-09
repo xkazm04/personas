@@ -37,6 +37,15 @@ const RELEASE_SUBDIR: &str = "drive";
 /// Folder at the repo root where the dev drive lives. Should be gitignored.
 const DEV_SUBDIR: &str = ".dev-drive";
 
+/// Recoverable-deletes folder under the managed root. drive_delete moves
+/// items here instead of remove_dir_all. Auto-purged after TRASH_TTL_SECS.
+const TRASH_DIRNAME: &str = ".trash";
+
+/// Items in the trash older than this are hard-deleted by the next
+/// `drive_storage_info` cache miss. 7 days matches the OS recycle bin
+/// convention closely enough that users don't need to learn a new policy.
+const TRASH_TTL_SECS: u64 = 7 * 24 * 60 * 60;
+
 /// Cached canonical managed root — resolved lazily on first call.
 static MANAGED_ROOT: OnceLock<PathBuf> = OnceLock::new();
 
@@ -607,7 +616,10 @@ pub fn drive_storage_info(app: AppHandle) -> Result<DriveStorageInfo, AppError> 
         }
     }
 
-    // Slow path: walk the tree, then cache the result.
+    // Slow path: walk the tree, then cache the result. Piggyback the trash
+    // purge here — it's already a tree walk, the housekeeping cost is
+    // negligible, and the 5s cache TTL bounds purge frequency.
+    purge_old_trash(&root);
     let (used_bytes, entry_count) = compute_folder_size(&root)?;
     {
         let mut guard = storage_info_cache().lock().expect("storage cache poisoned");
@@ -949,20 +961,115 @@ pub fn drive_delete(app: AppHandle, rel_path: String) -> Result<(), AppError> {
         return Err(AppError::Validation("Refusing to delete drive root".into()));
     }
     let was_dir = abs.is_dir();
-    if was_dir {
-        std::fs::remove_dir_all(&abs)?;
+
+    // Soft-delete unless the target is already in the trash. Items already
+    // inside .trash/ hard-delete on a second drive_delete — that's the
+    // "Empty Trash" affordance without needing a dedicated command.
+    let in_trash = path_lives_in_trash(&rel_path);
+    if in_trash {
+        if was_dir {
+            std::fs::remove_dir_all(&abs)?;
+        } else {
+            std::fs::remove_file(&abs)?;
+        }
     } else {
-        std::fs::remove_file(&abs)?;
+        move_to_trash(&root, &abs)?;
     }
 
     emit_drive_event(
         &app,
         drive_event::DELETED,
         &rel_path,
-        Some(serde_json::json!({ "was_folder": was_dir })),
+        Some(serde_json::json!({ "was_folder": was_dir, "soft": !in_trash })),
     );
 
     Ok(())
+}
+
+/// True when the rel_path's first segment is the trash directory. Used to
+/// distinguish soft-delete (move to .trash) from hard-delete (already in
+/// .trash, second pass = empty).
+fn path_lives_in_trash(rel_path: &str) -> bool {
+    let normalized = rel_path.replace('\\', "/");
+    let trimmed = normalized.trim_matches('/');
+    trimmed
+        .split('/')
+        .next()
+        .map(|seg| seg == TRASH_DIRNAME)
+        .unwrap_or(false)
+}
+
+/// Move `target` into `<root>/.trash/<UTC timestamp>-<basename>`. If the
+/// destination collides (sub-second deletes of items with the same name),
+/// disambiguate with a numeric suffix.
+fn move_to_trash(root: &Path, target: &Path) -> Result<(), AppError> {
+    let trash_root = root.join(TRASH_DIRNAME);
+    std::fs::create_dir_all(&trash_root)?;
+
+    let basename = target
+        .file_name()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_else(|| "deleted".to_string());
+    let stamp = chrono::Utc::now().format("%Y%m%dT%H%M%S").to_string();
+
+    // First-fit name; bump a counter on collision so a same-second double
+    // delete doesn't overwrite the first item's trash entry.
+    let mut candidate = trash_root.join(format!("{}-{}", stamp, basename));
+    let mut counter: u32 = 2;
+    while candidate.exists() {
+        candidate = trash_root.join(format!("{}-{}-{}", stamp, counter, basename));
+        counter += 1;
+        if counter > 1000 {
+            return Err(AppError::Internal(
+                "trash collision counter overflowed".into(),
+            ));
+        }
+    }
+    std::fs::rename(target, &candidate)?;
+    Ok(())
+}
+
+/// Hard-delete trash entries whose timestamp prefix is older than
+/// TRASH_TTL_SECS. Best-effort — IO errors are logged at debug level and
+/// skipped so the housekeeping pass never fails the storage_info call
+/// that triggered it.
+fn purge_old_trash(root: &Path) {
+    let trash_root = root.join(TRASH_DIRNAME);
+    let read = match std::fs::read_dir(&trash_root) {
+        Ok(r) => r,
+        Err(_) => return,
+    };
+    let now_secs = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+    for entry in read.flatten() {
+        let path = entry.path();
+        let name = entry.file_name();
+        let name_str = name.to_string_lossy();
+        // Trash entries are timestamped `YYYYMMDDTHHMMSS-...`; reject
+        // anything that doesn't match so a hand-placed file can't be
+        // silently purged.
+        let stamp_part = match name_str.split('-').next() {
+            Some(s) if s.len() == 15 && s.contains('T') => s,
+            _ => continue,
+        };
+        let parsed = match chrono::NaiveDateTime::parse_from_str(stamp_part, "%Y%m%dT%H%M%S") {
+            Ok(d) => d.and_utc().timestamp() as u64,
+            Err(_) => continue,
+        };
+        if now_secs.saturating_sub(parsed) > TRASH_TTL_SECS {
+            let is_dir = entry.file_type().map(|f| f.is_dir()).unwrap_or(false);
+            let result = if is_dir {
+                std::fs::remove_dir_all(&path)
+            } else {
+                std::fs::remove_file(&path)
+            };
+            if let Err(e) = result {
+                tracing::debug!(path = %path.display(), "trash purge skipped: {e}");
+            }
+        }
+    }
 }
 
 #[tauri::command]

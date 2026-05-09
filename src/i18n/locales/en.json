@@ -9556,7 +9556,7 @@
       "new_file_title": "New file",
       "new_file_placeholder": "filename.txt",
       "delete_confirm_title": "Delete {count} item(s)?",
-      "delete_confirm_body": "This action cannot be undone. Deleted files are gone permanently.",
+      "delete_confirm_body": "Items move to .trash/ and are removed permanently after 7 days. Deleting again from .trash/ removes them immediately.",
       "confirm": "Confirm",
       "cancel": "Cancel",
       "details_title": "Details",

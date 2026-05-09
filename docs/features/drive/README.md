@@ -29,6 +29,14 @@ The backend root is `app_data_dir/drive` in release and `./.dev-drive` in debug.
 
 `drive_read` and `drive_write` are capped at 50 MB to protect the webview and IPC boundary. Large copy/move operations stay backend-side.
 
+## Trash / soft-delete
+
+`drive_delete` is a **soft delete**: items move into `<root>/.trash/<UTC-stamp>-<basename>/` rather than being removed. The original `drive.document.deleted` event still fires, so triggers behave the same. Items in the trash:
+
+- Surface in `drive_list` of the `.trash/` folder, so users can browse and manually move them out (effectively restoring them).
+- Are hard-deleted by `purge_old_trash` once their timestamp is older than 7 days. The purge piggybacks on the `drive_storage_info` cache-miss path so it has no extra IPC cost.
+- Hard-delete immediately on a second `drive_delete` call when the path is already inside `.trash/` — that's the "Empty Trash" affordance without a dedicated command.
+
 ## Events
 
 Drive publishes document events into the app event bus:
