@@ -1,4 +1,4 @@
-import { companionTts } from '@/api/companion';
+import { companionTts, type TtsSettings } from '@/api/companion';
 
 /**
  * Voice-playback helpers for Athena's spoken summaries.
@@ -22,8 +22,9 @@ export async function synthesize(
   text: string,
   credentialId: string,
   voiceId: string,
+  settings?: TtsSettings,
 ): Promise<string> {
-  const audio = await companionTts(text, credentialId, voiceId);
+  const audio = await companionTts(text, credentialId, voiceId, settings);
   const bytes = base64ToBytes(audio.audioBase64);
   // Cast to BlobPart: TS's lib.dom.d.ts in this project narrows BlobPart's
   // buffer to ArrayBuffer (not SharedArrayBuffer), which Uint8Array's

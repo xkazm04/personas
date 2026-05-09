@@ -58,6 +58,19 @@ export interface CompanionLabJump {
   mode: string;
 }
 
+/**
+ * Allowlist of ElevenLabs models the Voice tab is permitted to write into
+ * `companionVoiceModel`. Mirrored on the backend (`voice.rs::TTS_ALLOWED_MODELS`)
+ * — keep them in lockstep when adding a new model.
+ */
+export const COMPANION_VOICE_MODELS = [
+  'eleven_turbo_v2_5',
+  'eleven_flash_v2_5',
+  'eleven_multilingual_v2',
+  'eleven_v3',
+] as const;
+export type CompanionVoiceModel = (typeof COMPANION_VOICE_MODELS)[number];
+
 export interface CompanionPluginSlice {
   companionPluginTab: CompanionPluginTab;
   companionFooterEnabled: boolean;
@@ -65,6 +78,21 @@ export interface CompanionPluginSlice {
   companionVoiceEnabled: boolean;
   companionVoiceCredentialId: string | null;
   companionVoiceId: string | null;
+  /**
+   * Per-call voice tuning. All five are nullable: `null` means "let the
+   * backend apply its default". The Voice tab exposes these as a Settings
+   * section; advanced users can also leave them at null to inherit
+   * server-side defaults.
+   */
+  companionVoiceModel: CompanionVoiceModel | null;
+  /** 0..1 — `null` falls back to backend default (0.5). */
+  companionVoiceStability: number | null;
+  /** 0..1 — `null` falls back to backend default (0.75). */
+  companionVoiceSimilarity: number | null;
+  /** 0.7..1.2 — `null` omits the field (ElevenLabs default speed). */
+  companionVoiceSpeed: number | null;
+  /** 0..1 — only meaningful on multilingual_v2 / v3. `null` omits. */
+  companionVoiceStyle: number | null;
   /** Phase F: pending prefill from Athena's prefill_persona_create op. */
   companionPrefill: CompanionPrefill | null;
   /** Phase F: pending lab-jump from Athena's open_lab op. */
@@ -75,6 +103,14 @@ export interface CompanionPluginSlice {
    * chat without closing it. Persisted so the preference sticks.
    */
   companionPanelCompact: boolean;
+  /**
+   * Recall synthesis: when true, dense recall (above ~5K tokens) is
+   * folded through a one-shot Claude call into a focused briefing
+   * before reaching Athena's chat session. Adds runtime Claude-call
+   * cost on qualifying turns; off-by-default. Below-threshold turns
+   * skip synthesis cleanly even when this flag is true.
+   */
+  companionRecallSynthesisEnabled: boolean;
 
   setCompanionPluginTab: (tab: CompanionPluginTab) => void;
   setCompanionFooterEnabled: (v: boolean) => void;
@@ -82,9 +118,17 @@ export interface CompanionPluginSlice {
   setCompanionVoiceEnabled: (v: boolean) => void;
   setCompanionVoiceCredentialId: (id: string | null) => void;
   setCompanionVoiceId: (id: string | null) => void;
+  setCompanionVoiceModel: (m: CompanionVoiceModel | null) => void;
+  setCompanionVoiceStability: (v: number | null) => void;
+  setCompanionVoiceSimilarity: (v: number | null) => void;
+  setCompanionVoiceSpeed: (v: number | null) => void;
+  setCompanionVoiceStyle: (v: number | null) => void;
+  /** Reset all 5 tuning fields back to `null` (server-default behaviour). */
+  resetCompanionVoiceSettings: () => void;
   setCompanionPrefill: (p: CompanionPrefill | null) => void;
   setCompanionLabJump: (j: CompanionLabJump | null) => void;
   setCompanionPanelCompact: (v: boolean) => void;
+  setCompanionRecallSynthesisEnabled: (v: boolean) => void;
 }
 
 export const createCompanionPluginSlice: StateCreator<
@@ -99,9 +143,15 @@ export const createCompanionPluginSlice: StateCreator<
   companionVoiceEnabled: false,
   companionVoiceCredentialId: null,
   companionVoiceId: null,
+  companionVoiceModel: null,
+  companionVoiceStability: null,
+  companionVoiceSimilarity: null,
+  companionVoiceSpeed: null,
+  companionVoiceStyle: null,
   companionPrefill: null,
   companionLabJump: null,
   companionPanelCompact: false,
+  companionRecallSynthesisEnabled: false,
 
   setCompanionPluginTab: (companionPluginTab) => set({ companionPluginTab }),
   setCompanionFooterEnabled: (companionFooterEnabled) =>
@@ -113,7 +163,24 @@ export const createCompanionPluginSlice: StateCreator<
   setCompanionVoiceCredentialId: (companionVoiceCredentialId) =>
     set({ companionVoiceCredentialId }),
   setCompanionVoiceId: (companionVoiceId) => set({ companionVoiceId }),
+  setCompanionVoiceModel: (companionVoiceModel) => set({ companionVoiceModel }),
+  setCompanionVoiceStability: (companionVoiceStability) =>
+    set({ companionVoiceStability }),
+  setCompanionVoiceSimilarity: (companionVoiceSimilarity) =>
+    set({ companionVoiceSimilarity }),
+  setCompanionVoiceSpeed: (companionVoiceSpeed) => set({ companionVoiceSpeed }),
+  setCompanionVoiceStyle: (companionVoiceStyle) => set({ companionVoiceStyle }),
+  resetCompanionVoiceSettings: () =>
+    set({
+      companionVoiceModel: null,
+      companionVoiceStability: null,
+      companionVoiceSimilarity: null,
+      companionVoiceSpeed: null,
+      companionVoiceStyle: null,
+    }),
   setCompanionPrefill: (companionPrefill) => set({ companionPrefill }),
   setCompanionLabJump: (companionLabJump) => set({ companionLabJump }),
   setCompanionPanelCompact: (companionPanelCompact) => set({ companionPanelCompact }),
+  setCompanionRecallSynthesisEnabled: (companionRecallSynthesisEnabled) =>
+    set({ companionRecallSynthesisEnabled }),
 });

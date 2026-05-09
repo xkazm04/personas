@@ -12370,6 +12370,17 @@ export type Translations = {
       remove: string;
       removeConfirm: string;
       selectChannel: string;
+      eyebrowAtelier: string;
+      statActive: string;
+      statPaused: string;
+      statSurfaces: string;
+      statNoTone: string;
+      fieldCred: string;
+      fieldTone: string;
+      fieldPersona: string;
+      fieldSignal: string;
+      statusConfigured: string;
+      ctaAddTone: string;
     };
     tone: {
       title: string;

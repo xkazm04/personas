@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ExternalLink, KeyRound, Mic, RefreshCw, ShieldCheck } from 'lucide-react';
+import { ExternalLink, KeyRound, Mic, RefreshCw, RotateCcw, ShieldCheck } from 'lucide-react';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
@@ -10,6 +10,10 @@ import {
   listConnectorResources,
   type ResourceItem,
 } from '@/api/credentials/scopedResources';
+import {
+  COMPANION_VOICE_MODELS,
+  type CompanionVoiceModel,
+} from '@/stores/slices/system/companionPluginSlice';
 
 /**
  * Voice tab — bind ElevenLabs credentials to a voice id, then toggle
@@ -347,6 +351,8 @@ export default function VoicePanel() {
         </div>
       </SectionCard>
 
+      <VoiceSettingsCard />
+
       <SectionCard
         title={t.plugins.companion.voice_enable_title}
         subtitle={t.plugins.companion.voice_enable_desc}
@@ -377,6 +383,175 @@ export default function VoicePanel() {
           </div>
         </div>
       </SectionCard>
+    </div>
+  );
+}
+
+/**
+ * Voice tuning section — model + 4 sliders. Each control writes to a
+ * dedicated systemStore key; `null` means "let the backend apply its
+ * default" so a fresh install (or a user who hits Reset) sends the
+ * smallest possible payload.
+ */
+function VoiceSettingsCard() {
+  const { t } = useTranslation();
+
+  const model = useSystemStore((s) => s.companionVoiceModel);
+  const setModel = useSystemStore((s) => s.setCompanionVoiceModel);
+  const stability = useSystemStore((s) => s.companionVoiceStability);
+  const setStability = useSystemStore((s) => s.setCompanionVoiceStability);
+  const similarity = useSystemStore((s) => s.companionVoiceSimilarity);
+  const setSimilarity = useSystemStore((s) => s.setCompanionVoiceSimilarity);
+  const speed = useSystemStore((s) => s.companionVoiceSpeed);
+  const setSpeed = useSystemStore((s) => s.setCompanionVoiceSpeed);
+  const style = useSystemStore((s) => s.companionVoiceStyle);
+  const setStyle = useSystemStore((s) => s.setCompanionVoiceStyle);
+  const reset = useSystemStore((s) => s.resetCompanionVoiceSettings);
+
+  const isCustomized =
+    model != null || stability != null || similarity != null || speed != null || style != null;
+
+  const modelLabel: Record<CompanionVoiceModel, string> = {
+    eleven_turbo_v2_5: t.plugins.companion.voice_settings_model_turbo,
+    eleven_flash_v2_5: t.plugins.companion.voice_settings_model_flash,
+    eleven_multilingual_v2: t.plugins.companion.voice_settings_model_multilingual,
+    eleven_v3: t.plugins.companion.voice_settings_model_v3,
+  };
+
+  return (
+    <SectionCard
+      title={t.plugins.companion.voice_settings_title}
+      subtitle={t.plugins.companion.voice_settings_desc}
+    >
+      <div className="px-1 py-2 space-y-4">
+        {/* Model dropdown */}
+        <div className="space-y-1">
+          <label className="typo-caption text-foreground/70 font-medium">
+            {t.plugins.companion.voice_settings_model_label}
+          </label>
+          <select
+            value={model ?? ''}
+            onChange={(e) =>
+              setModel(e.target.value === '' ? null : (e.target.value as CompanionVoiceModel))
+            }
+            className="w-full bg-secondary/40 border border-foreground/10 rounded-input px-3 py-2 typo-body focus-ring"
+            aria-label={t.plugins.companion.voice_settings_model_label}
+          >
+            <option value="">{t.plugins.companion.voice_settings_default}</option>
+            {COMPANION_VOICE_MODELS.map((m) => (
+              <option key={m} value={m}>
+                {modelLabel[m]}
+              </option>
+            ))}
+          </select>
+          <p className="typo-caption text-foreground/50">
+            {t.plugins.companion.voice_settings_model_hint}
+          </p>
+        </div>
+
+        <SliderRow
+          label={t.plugins.companion.voice_settings_stability_label}
+          hint={t.plugins.companion.voice_settings_stability_hint}
+          value={stability}
+          onChange={setStability}
+          min={0}
+          max={1}
+          step={0.05}
+          defaultLabel={t.plugins.companion.voice_settings_default}
+        />
+        <SliderRow
+          label={t.plugins.companion.voice_settings_similarity_label}
+          hint={t.plugins.companion.voice_settings_similarity_hint}
+          value={similarity}
+          onChange={setSimilarity}
+          min={0}
+          max={1}
+          step={0.05}
+          defaultLabel={t.plugins.companion.voice_settings_default}
+        />
+        <SliderRow
+          label={t.plugins.companion.voice_settings_speed_label}
+          hint={t.plugins.companion.voice_settings_speed_hint}
+          value={speed}
+          onChange={setSpeed}
+          min={0.7}
+          max={1.2}
+          step={0.05}
+          defaultLabel={t.plugins.companion.voice_settings_default}
+        />
+        <SliderRow
+          label={t.plugins.companion.voice_settings_style_label}
+          hint={t.plugins.companion.voice_settings_style_hint}
+          value={style}
+          onChange={setStyle}
+          min={0}
+          max={1}
+          step={0.05}
+          defaultLabel={t.plugins.companion.voice_settings_default}
+        />
+
+        {isCustomized && (
+          <button
+            type="button"
+            onClick={reset}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-secondary/40 hover:bg-secondary/60 border border-foreground/10 text-foreground/80 hover:text-foreground typo-caption transition-colors focus-ring"
+          >
+            <RotateCcw className="w-3 h-3" />
+            {t.plugins.companion.voice_settings_reset}
+          </button>
+        )}
+      </div>
+    </SectionCard>
+  );
+}
+
+interface SliderRowProps {
+  label: string;
+  hint: string;
+  value: number | null;
+  onChange: (v: number | null) => void;
+  min: number;
+  max: number;
+  step: number;
+  defaultLabel: string;
+}
+
+function SliderRow({ label, hint, value, onChange, min, max, step, defaultLabel }: SliderRowProps) {
+  const display = value == null ? defaultLabel : value.toFixed(2);
+  // Slider value when "default" is selected: render the midpoint of the
+  // band so the user can see where they're starting from before they
+  // commit. The actual stored value stays null until the user moves it.
+  const sliderValue = value ?? (min + max) / 2;
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center justify-between">
+        <label className="typo-caption text-foreground/70 font-medium">{label}</label>
+        <span className="typo-code text-foreground/60 text-[11px]">{display}</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <input
+          type="range"
+          min={min}
+          max={max}
+          step={step}
+          value={sliderValue}
+          onChange={(e) => onChange(Number(e.target.value))}
+          className="flex-1 accent-cyan-400"
+          aria-label={label}
+        />
+        {value != null && (
+          <button
+            type="button"
+            onClick={() => onChange(null)}
+            className="text-foreground/50 hover:text-foreground/80 transition-colors"
+            title={defaultLabel}
+            aria-label={defaultLabel}
+          >
+            <RotateCcw className="w-3 h-3" />
+          </button>
+        )}
+      </div>
+      <p className="typo-caption text-foreground/50">{hint}</p>
     </div>
   );
 }

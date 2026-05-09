@@ -10,16 +10,15 @@
 //!   encrypted vault and never reaches the renderer process.
 //! - Base64 over IPC. Tauri's invoke serializer handles strings well
 //!   but binary is brittle; the ~33% inflation is fine for ~50KB clips.
-//! - `eleven_turbo_v2_5` model — cheaper + lower latency than the
-//!   flagship and good enough for short conversational replies.
-//! - Fixed voice settings (stability 0.5, similarity 0.75); nothing
-//!   user-tunable yet — we surface those in the Voice panel later.
+//! - Defaults are `eleven_turbo_v2_5` + stability 0.5 / similarity 0.75
+//!   — cheap, low-latency, and good enough for short replies. The
+//!   frontend can override any of these per-call via `TtsSettings`.
 
 use std::sync::Arc;
 use std::time::Duration;
 
 use base64::Engine;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use tauri::State;
 
 use crate::db::repos::resources::credentials;
@@ -28,11 +27,41 @@ use crate::ipc_auth::require_auth;
 use crate::AppState;
 
 const TTS_ENDPOINT_PREFIX: &str = "https://api.elevenlabs.io/v1/text-to-speech/";
-const TTS_MODEL: &str = "eleven_turbo_v2_5";
+const TTS_DEFAULT_MODEL: &str = "eleven_turbo_v2_5";
+const TTS_DEFAULT_STABILITY: f32 = 0.5;
+const TTS_DEFAULT_SIMILARITY: f32 = 0.75;
 const TTS_TIMEOUT: Duration = Duration::from_secs(30);
 /// Hard ceiling on the TTS payload — Athena should send 1-3 sentences.
 /// Anything longer is a prompt-following bug, not a real spoken summary.
 const TTS_MAX_CHARS: usize = 1200;
+
+/// Allowlist of ElevenLabs models the Voice tab is allowed to send. Keeping
+/// this server-side prevents a typo'd model id from surfacing as a confusing
+/// 422 from the upstream API; if we add a model the user wants, we add it
+/// here. Order is roughly latency-ascending (turbo < flash < multilingual).
+const TTS_ALLOWED_MODELS: &[&str] = &[
+    "eleven_turbo_v2_5",
+    "eleven_flash_v2_5",
+    "eleven_multilingual_v2",
+    "eleven_v3",
+];
+
+/// Optional per-call voice tuning. Any field left `None` falls back to the
+/// constants above so existing callers (and the auto-init defaults) stay
+/// behaviorally identical.
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TtsSettings {
+    pub model_id: Option<String>,
+    pub stability: Option<f32>,
+    pub similarity_boost: Option<f32>,
+    /// Speech rate. ElevenLabs accepts 0.7..=1.2; values outside the band
+    /// degrade audio quality, so we clamp on the way through.
+    pub speed: Option<f32>,
+    /// Style exaggeration (0..=1). Only meaningful on multilingual_v2 / v3;
+    /// turbo + flash ignore the field.
+    pub style: Option<f32>,
+}
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -49,6 +78,7 @@ pub async fn companion_tts(
     text: String,
     credential_id: String,
     voice_id: String,
+    settings: Option<TtsSettings>,
 ) -> Result<TtsAudio, AppError> {
     require_auth(&state).await?;
 
@@ -99,14 +129,47 @@ pub async fn companion_tts(
         .build()
         .map_err(|e| AppError::Internal(format!("tts http client: {e}")))?;
 
+    let s = settings.unwrap_or_default();
+    let model_id = match s.model_id.as_deref() {
+        Some(m) if !m.is_empty() => {
+            if !TTS_ALLOWED_MODELS.contains(&m) {
+                return Err(AppError::Validation(format!(
+                    "companion_tts: unsupported model_id `{}` (allowed: {})",
+                    m,
+                    TTS_ALLOWED_MODELS.join(", ")
+                )));
+            }
+            m
+        }
+        _ => TTS_DEFAULT_MODEL,
+    };
+    let stability = s
+        .stability
+        .map(|v| v.clamp(0.0, 1.0))
+        .unwrap_or(TTS_DEFAULT_STABILITY);
+    let similarity = s
+        .similarity_boost
+        .map(|v| v.clamp(0.0, 1.0))
+        .unwrap_or(TTS_DEFAULT_SIMILARITY);
+
+    let mut voice_settings = serde_json::json!({
+        "stability": stability,
+        "similarity_boost": similarity,
+    });
+    // Speed and style are only sent when the user opted in — sending defaults
+    // would burn the same band of bytes ElevenLabs would compute server-side.
+    if let Some(speed) = s.speed {
+        voice_settings["speed"] = serde_json::json!(speed.clamp(0.7, 1.2));
+    }
+    if let Some(style) = s.style {
+        voice_settings["style"] = serde_json::json!(style.clamp(0.0, 1.0));
+    }
+
     let url = format!("{TTS_ENDPOINT_PREFIX}{voice_id}");
     let body = serde_json::json!({
         "text": trimmed,
-        "model_id": TTS_MODEL,
-        "voice_settings": {
-            "stability": 0.5,
-            "similarity_boost": 0.75,
-        }
+        "model_id": model_id,
+        "voice_settings": voice_settings,
     });
 
     let resp = client

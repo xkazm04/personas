@@ -7,6 +7,7 @@ import { companionInit } from '@/api/companion';
 import { silentCatch } from '@/lib/silentCatch';
 import { playReplyChime } from './chime';
 import { play as playAudio, synthesize as synthesizeTts } from './voicePlayback';
+import { useTtsSettings } from './useTtsSettings';
 
 /**
  * Athena's footer cluster. Lives in DesktopFooter's left cluster.
@@ -43,6 +44,7 @@ export default function CompanionFooterIcon() {
   const soundEnabled = useSystemStore((s) => s.companionSoundEnabled);
   const voiceCredentialId = useSystemStore((s) => s.companionVoiceCredentialId);
   const voiceId = useSystemStore((s) => s.companionVoiceId);
+  const voiceSettings = useTtsSettings();
 
   useEffect(() => {
     if (initialized) return;
@@ -103,6 +105,7 @@ export default function CompanionFooterIcon() {
           pendingPlayback.ttsText,
           voiceCredentialId,
           voiceId,
+          voiceSettings,
         ));
       if (!pendingPlayback.audioUrl) setPlaybackAudioUrl(url);
       const { done } = playAudio(url);

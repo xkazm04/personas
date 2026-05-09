@@ -46,6 +46,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { silentCatch } from '@/lib/silentCatch';
 import { play as playAudio, synthesize as synthesizeTts } from './voicePlayback';
+import { useTtsSettings } from './useTtsSettings';
 import { useAgentStore } from '@/stores/agentStore';
 
 // Fallback follow-ups for the "What can Athena do?" toolbar preset —
@@ -126,6 +127,8 @@ export default function CompanionPanel() {
   const voiceEnabled = useSystemStore((s) => s.companionVoiceEnabled);
   const voiceCredentialId = useSystemStore((s) => s.companionVoiceCredentialId);
   const voiceId = useSystemStore((s) => s.companionVoiceId);
+  const voiceSettings = useTtsSettings();
+  const recallSynthesisEnabled = useSystemStore((s) => s.companionRecallSynthesisEnabled);
   const panelCompact = useSystemStore((s) => s.companionPanelCompact);
   const setPanelCompact = useSystemStore((s) => s.setCompanionPanelCompact);
 
@@ -244,6 +247,8 @@ export default function CompanionPanel() {
             voiceEnabled={voiceEnabled}
             voiceCredentialId={voiceCredentialId}
             voiceId={voiceId}
+            voiceSettings={voiceSettings}
+            recallSynthesisEnabled={recallSynthesisEnabled}
             setMessages={setMessages}
             appendMessage={appendMessage}
             setStreaming={setStreaming}
@@ -373,6 +378,8 @@ interface BodyProps {
   voiceEnabled: boolean;
   voiceCredentialId: string | null;
   voiceId: string | null;
+  voiceSettings: ReturnType<typeof useTtsSettings>;
+  recallSynthesisEnabled: boolean;
   setMessages: (m: BodyProps['messages']) => void;
   appendMessage: (m: BodyProps['messages'][number]) => void;
   setStreaming: (v: boolean) => void;
@@ -411,6 +418,8 @@ function Body(props: BodyProps) {
     voiceEnabled,
     voiceCredentialId,
     voiceId,
+    voiceSettings,
+    recallSynthesisEnabled,
     setMessages,
     appendMessage,
     setStreaming,
@@ -600,7 +609,7 @@ function Body(props: BodyProps) {
       setStreaming(true);
       resetStreamingText();
       try {
-        const result = await companionSendMessage(trimmed, voiceActive);
+        const result = await companionSendMessage(trimmed, voiceActive, recallSynthesisEnabled);
         // Refresh canonical transcript from backend (replaces the optimistic
         // user bubble with the persisted episode + adds the assistant turn).
         const fresh = await companionListRecentMessages(50);
@@ -625,7 +634,7 @@ function Body(props: BodyProps) {
             audioUrl: null as string | null,
           };
           setPendingPlayback(playback);
-          synthesizeTts(result.ttsText, voiceCredentialId, voiceId)
+          synthesizeTts(result.ttsText, voiceCredentialId, voiceId, voiceSettings)
             .then((url) => {
               setPlaybackAudioUrl(url);
               const { done } = playAudio(url);
@@ -657,6 +666,7 @@ function Body(props: BodyProps) {
       voiceActive,
       voiceCredentialId,
       voiceId,
+      recallSynthesisEnabled,
     ],
   );
 

@@ -78,6 +78,12 @@ export const useSystemStore = create<SystemStore>()(
         companionVoiceEnabled: state.companionVoiceEnabled,
         companionVoiceCredentialId: state.companionVoiceCredentialId,
         companionVoiceId: state.companionVoiceId,
+        companionVoiceModel: state.companionVoiceModel,
+        companionVoiceStability: state.companionVoiceStability,
+        companionVoiceSimilarity: state.companionVoiceSimilarity,
+        companionVoiceSpeed: state.companionVoiceSpeed,
+        companionVoiceStyle: state.companionVoiceStyle,
+        companionRecallSynthesisEnabled: state.companionRecallSynthesisEnabled,
       }),
       onRehydrateStorage: () => (state) => {
         if (!state) return;

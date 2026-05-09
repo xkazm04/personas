@@ -127,17 +127,17 @@ export default function ChannelsAtelier() {
             <Antenna className="w-5 h-5 text-violet-300" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[10px] uppercase tracking-[0.22em] text-violet-300/80 font-medium">Antenna Grid</p>
+            <p className="text-[10px] uppercase tracking-[0.22em] text-violet-300/80 font-medium">{t.channels.eyebrowAtelier}</p>
             <h1 className="typo-heading-lg text-foreground/95">{t.channels.title}</h1>
             <p className="typo-caption text-foreground/65 mt-0.5">{t.channels.subtitle}</p>
           </div>
           <div className="hidden md:flex items-center gap-3 px-3 py-2 rounded-full border border-primary/15 bg-card/40">
-            <Stat label="active" value={stats.active} accent="emerald" />
+            <Stat label={t.channels.statActive} value={stats.active} accent="emerald" />
             <span className="w-px h-6 bg-primary/15" />
-            <Stat label="paused" value={stats.paused} />
+            <Stat label={t.channels.statPaused} value={stats.paused} />
             <span className="w-px h-6 bg-primary/15" />
-            <Stat label="surfaces" value={stats.types} />
-            {stats.missingTone > 0 && (<><span className="w-px h-6 bg-primary/15" /><Stat label="no tone" value={stats.missingTone} accent="amber" /></>)}
+            <Stat label={t.channels.statSurfaces} value={stats.types} />
+            {stats.missingTone > 0 && (<><span className="w-px h-6 bg-primary/15" /><Stat label={t.channels.statNoTone} value={stats.missingTone} accent="amber" /></>)}
           </div>
           {!adding && (
             <Button onClick={() => setAdding(true)} size="sm" variant="accent" accentColor="violet">
@@ -262,30 +262,30 @@ export default function ChannelsAtelier() {
                       <dl className="mt-3 pt-3 border-t border-primary/10 space-y-1.5 text-xs">
                         <div className="flex items-center gap-2">
                           <Key className="w-3 h-3 text-foreground/55 flex-shrink-0" />
-                          <dt className="text-[10px] uppercase tracking-wider text-foreground/55">cred</dt>
+                          <dt className="text-[10px] uppercase tracking-wider text-foreground/55">{t.channels.fieldCred}</dt>
                           <dd className="ml-auto truncate text-foreground/85 max-w-[160px]">{cred ? cred.name : <span className="font-mono text-foreground/55">{ch.credential_id.slice(0, 8)}…</span>}</dd>
                         </div>
                         <div className="flex items-center gap-2">
                           <Mic className="w-3 h-3 text-foreground/55 flex-shrink-0" />
-                          <dt className="text-[10px] uppercase tracking-wider text-foreground/55">tone</dt>
+                          <dt className="text-[10px] uppercase tracking-wider text-foreground/55">{t.channels.fieldTone}</dt>
                           <dd className="ml-auto">
                             {hasTone ? (
-                              <span className="text-emerald-300 text-xs">configured</span>
+                              <span className="text-emerald-300 text-xs">{t.channels.statusConfigured}</span>
                             ) : (
-                              <button onClick={() => setTwinTab('tone')} className="text-amber-300 text-xs hover:text-amber-200 transition-colors">add override →</button>
+                              <button onClick={() => setTwinTab('tone')} className="text-amber-300 text-xs hover:text-amber-200 transition-colors">{t.channels.ctaAddTone}</button>
                             )}
                           </dd>
                         </div>
                         {ch.persona_id && (
                           <div className="flex items-center gap-2">
                             <User className="w-3 h-3 text-foreground/55 flex-shrink-0" />
-                            <dt className="text-[10px] uppercase tracking-wider text-foreground/55">persona</dt>
+                            <dt className="text-[10px] uppercase tracking-wider text-foreground/55">{t.channels.fieldPersona}</dt>
                             <dd className="ml-auto font-mono text-[10px] text-foreground/65">{ch.persona_id.slice(0, 12)}…</dd>
                           </div>
                         )}
                         <div className="flex items-center gap-2">
                           <Wifi className="w-3 h-3 text-foreground/55 flex-shrink-0" />
-                          <dt className="text-[10px] uppercase tracking-wider text-foreground/55">signal</dt>
+                          <dt className="text-[10px] uppercase tracking-wider text-foreground/55">{t.channels.fieldSignal}</dt>
                           <dd className="ml-auto flex items-center gap-0.5">
                             {[0, 1, 2, 3].map((i) => (
                               <span key={i} className={`w-0.5 rounded-full ${i < signalLevels ? meta.dot : 'bg-foreground/15'}`} style={{ height: 4 + i * 2 }} />
