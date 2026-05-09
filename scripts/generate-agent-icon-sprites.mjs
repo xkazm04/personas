@@ -11,6 +11,10 @@ const modes = ["dark", "light"];
 const files = await fs.readdir(iconDir);
 const ids = files
   .filter((name) => name.endsWith("-dark.webp"))
+  // Exclude the script's own output sprite-dark.webp (and any future
+  // -dark.webp output we add). Without this filter the sprite gets
+  // re-fed as a source on the next run and trips the 512x512 check.
+  .filter((name) => !name.startsWith("sprite-"))
   .map((name) => name.replace(/-dark\.webp$/, ""))
   .sort();
 
