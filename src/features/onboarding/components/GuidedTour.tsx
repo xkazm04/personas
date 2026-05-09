@@ -147,7 +147,7 @@ export default function GuidedTour() {
         className={`animate-fade-slide-in fixed left-0 top-[50%] -translate-y-1/2 z-[9999] flex flex-col items-center gap-1.5 px-1.5 py-3 rounded-r-full bg-background/95 backdrop-blur-xl border border-l-0 ${colors.accent} shadow-elevation-3 ${colors.glow} hover:shadow-elevation-3 transition-shadow cursor-pointer group`}
       >
         <MapPin className={`w-4 h-4 ${colors.text}`} />
-        <span className="text-[10px] font-medium text-foreground [writing-mode:vertical-lr]">{completedCount}/{visibleSteps.length}</span>
+        <span className="typo-caption font-medium text-foreground [writing-mode:vertical-lr]">{completedCount}/{visibleSteps.length}</span>
       </button>
     );
   }
