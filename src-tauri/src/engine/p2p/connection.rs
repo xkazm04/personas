@@ -793,15 +793,6 @@ impl ConnectionManager {
         Ok(())
     }
 
-    /// Periodic health check loop (Ping/Pong).
-    /// Prefer using `PeriodicTask` + `run_health_checks` for new code.
-    pub async fn health_check_loop(&self) {
-        loop {
-            tokio::time::sleep(std::time::Duration::from_secs(15)).await;
-            let _ = self.run_health_checks().await;
-        }
-    }
-
     /// Send a Ping and wait for a Pong. Returns latency in milliseconds.
     async fn ping_peer_latency(&self, peer_id: &str) -> Result<u64, AppError> {
         let (mut send, mut recv) = self.open_stream(peer_id).await?;

@@ -381,15 +381,6 @@ impl ManifestSync {
         Ok(())
     }
 
-    /// Periodic manifest sync loop (runs every 30s for all connected peers).
-    /// Prefer using `PeriodicTask` + `run_periodic_sync` for new code.
-    pub async fn periodic_sync_loop(&self) {
-        loop {
-            tokio::time::sleep(std::time::Duration::from_secs(30)).await;
-            let _ = self.run_periodic_sync().await;
-        }
-    }
-
     /// Get peer_ids of currently connected peers.
     fn get_connected_peer_ids(&self) -> Result<Vec<String>, AppError> {
         let conn = self.pool.get()?;
