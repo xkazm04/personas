@@ -12,15 +12,68 @@ pub mod query_builder;
 pub mod repos;
 pub mod settings_keys;
 
-use r2d2::{CustomizeConnection, Pool};
+use r2d2::{CustomizeConnection, Pool, PooledConnection};
 use r2d2_sqlite::SqliteConnectionManager;
 use rusqlite::params;
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
+use std::time::{Duration, Instant};
 
 use crate::error::AppError;
 
 pub type DbPool = Pool<SqliteConnectionManager>;
+
+/// Connection timeout for pool acquisitions. Past this, `pool.get()` fails
+/// with a `r2d2::Error` instead of blocking the IPC worker indefinitely —
+/// the user gets a recoverable error rather than a frozen UI.
+const POOL_ACQUIRE_TIMEOUT: Duration = Duration::from_secs(5);
+
+/// Threshold above which a successful `acquire_logged` call emits a warning.
+/// Tuned to catch the "vector_kb search holding a connection while concurrent
+/// IPC reads pile up" scenario without spamming on the occasional WAL
+/// checkpoint stall.
+#[allow(dead_code)]
+const POOL_STARVATION_WARN_MS: u128 = 250;
+
+/// Acquire a pooled connection with wait-time instrumentation. Logs a warning
+/// when the acquire takes longer than [`POOL_STARVATION_WARN_MS`] so we can
+/// see pool starvation in production logs. `label` identifies the caller in
+/// the warning event (e.g. `"vector_search"`, `"settings_load"`).
+///
+/// Functionally identical to `pool.get()`; safe to swap in at hot paths
+/// without other changes. Cold paths can keep using `pool.get()` directly.
+/// `dead_code` allow handles default-feature builds where the only caller
+/// (vector_store) is gated behind `cfg(feature = "ml")`.
+#[allow(dead_code)]
+pub fn acquire_logged(
+    pool: &DbPool,
+    label: &'static str,
+) -> Result<PooledConnection<SqliteConnectionManager>, r2d2::Error> {
+    let started = Instant::now();
+    let result = pool.get();
+    let waited_ms = started.elapsed().as_millis();
+    match &result {
+        Ok(_) if waited_ms > POOL_STARVATION_WARN_MS => {
+            tracing::warn!(
+                label,
+                waited_ms = waited_ms as u64,
+                idle = pool.state().idle_connections,
+                total = pool.state().connections,
+                "DB pool acquire was slow — possible pool starvation"
+            );
+        }
+        Err(e) => {
+            tracing::error!(
+                label,
+                waited_ms = waited_ms as u64,
+                error = %e,
+                "DB pool acquire failed (likely timeout)"
+            );
+        }
+        _ => {}
+    }
+    result
+}
 
 /// Cached filesystem path of the primary `personas.db` file, set once by
 /// [`init_db`]. Engine subprocesses (MCP sidecar, test automation) read this
@@ -151,8 +204,15 @@ pub fn init_db(
             Some(sender) => Box::new(cdc::CdcCustomizer::new(sender)),
             None => Box::new(SqlitePragmaCustomizer),
         };
+    // Pool sized for concurrent IPC: settings + executions list + healing +
+    // vector search (each can hold a connection for hundreds of ms). At
+    // max_size(4) one vector_kb search would serialize every other read
+    // behind it; bump to 12 so realistic concurrent IPC doesn't starve.
+    // connection_timeout converts hangs into recoverable errors so the
+    // IPC worker fails fast instead of locking the UI.
     let pool = Pool::builder()
-        .max_size(4)
+        .max_size(12)
+        .connection_timeout(POOL_ACQUIRE_TIMEOUT)
         .connection_customizer(customizer)
         .build(manager)?;
 
@@ -289,8 +349,12 @@ pub fn init_user_db(app_data_dir: &Path) -> Result<UserDbPool, AppError> {
     crate::engine::vector_store::ensure_vec_registered_pub();
 
     let manager = SqliteConnectionManager::file(&db_path);
+    // User DB hosts the vector knowledge base; a single search holds a
+    // connection for hundreds of ms. max_size(2) meant a search + any
+    // companion brain read/write blocked each other. Bump to 8.
     let pool = Pool::builder()
-        .max_size(2)
+        .max_size(8)
+        .connection_timeout(POOL_ACQUIRE_TIMEOUT)
         .connection_customizer(Box::new(SqlitePragmaCustomizer))
         .build(manager)?;
 

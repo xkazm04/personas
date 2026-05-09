@@ -64,6 +64,11 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Recently completed (last 14 days)
 
+- **[2026-05-10 ~01:00] manual — unclear-wins db pool starvation**
+  - **Source:** `.claude/commands/unclear-wins/idea-75260df0-db-pool-starvation-freezes-ui.md` — bump db pool sizes, add connection_timeout, instrument starvation
+  - **Paths:** `src-tauri/src/db/mod.rs`, `src-tauri/src/engine/vector_store.rs`, `.claude/active-runs.md`, `.claude/commands/unclear-wins/idea-75260df0-*.md` (deleted, gitignored)
+  - **Status:** completed — primary pool max_size 4→12, user (vector KB) pool max_size 2→8, both now have `connection_timeout(5s)` so callers fail fast instead of blocking the IPC worker. New `db::acquire_logged(pool, label)` helper times the `pool.get()` call and warns at >250ms with idle/total connection counts so starvation is visible in production logs. Wired into `VectorStore::search` (the documented offender). `cargo check --features ml` clean (44 unrelated warnings, none on touched files).
+
 - **[2026-05-10 ~00:35] /research — claude-code-watch-skill (record-only, descoped-reopenable)**
   - **Source:** https://www.youtube.com/watch?v=QZMljuD10sU — Brad/AI&Automation: "My Claude Code Can INSTANTLY Watch Any Video (Here's How)" (8.5 min, 2026-04-29). Composes yt-dlp + ffmpeg + YouTube auto-captions + Groq Whisper Large v3 to give Claude Code multimodal video understanding for ~$1/run.
   - **Paths:** `Obsidian/personas/Research/2026-05-10-claude-code-watch-skill.md` (new, out-of-repo), `Obsidian/personas/Lessons/2026-05-10-research.md` (new, out-of-repo, first run of the day on this machine — sibling /research runs will Edit-append), `Obsidian/personas/Patterns/descoped-reopenable.md` (appended new wave entry, out-of-repo), `.research-cache/QZMljuD10sU.*` (cleaned in Phase 2a), `.claude/active-runs.md` (this deregister).

@@ -10,7 +10,7 @@ use std::sync::Once;
 
 use rusqlite::params;
 
-use crate::db::UserDbPool;
+use crate::db::{acquire_logged, UserDbPool};
 use crate::error::AppError;
 
 /// Register sqlite-vec as a global auto-extension.
@@ -124,7 +124,7 @@ impl SqliteVectorStore {
         query_vec: &[f32],
         k: usize,
     ) -> Result<Vec<(String, f32)>, AppError> {
-        let conn = self.pool.get()?;
+        let conn = acquire_logged(&self.pool, "vector_search")?;
         let table_name = vec_table_name(kb_id)?;
         let blob = vec_f32_to_blob(query_vec);
 
