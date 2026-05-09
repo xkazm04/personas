@@ -398,8 +398,28 @@ pub fn apply_import(
         .unwrap_or_default();
 
     for entry in &manifest.resources {
-        if entry.resource_type == "persona" {
-            let filename = format!("personas/{}.json", entry.resource_id);
+        if entry.resource_type != "persona" {
+            // preview_bundle reports every resource_type to the user, but
+            // apply_import currently only knows how to import personas. Don't
+            // silently drop the rest — surface them in `errors` and skipped
+            // count so the user sees what got left behind. Without this
+            // branch, the dialog showed N resources, the user clicked
+            // Import, and the toast said "Imported M < N" with no
+            // explanation of the missing N - M.
+            tracing::info!(
+                resource_type = %entry.resource_type,
+                resource_id = %entry.resource_id,
+                "Skipping unsupported resource type during bundle import"
+            );
+            skipped += 1;
+            errors.push(format!(
+                "{}: unsupported resource type \"{}\" (only personas are importable today)",
+                entry.display_name, entry.resource_type
+            ));
+            continue;
+        }
+
+        let filename = format!("personas/{}.json", entry.resource_id);
             let persona_json = match read_zip_entry(&mut archive, &filename) {
                 Ok(data) => data,
                 Err(e) => {
@@ -468,7 +488,6 @@ pub fn apply_import(
                 }
                 Err(e) => errors.push(format!("Import {}: {}", entry.display_name, e)),
             }
-        }
     }
 
     Ok(BundleImportResult {
