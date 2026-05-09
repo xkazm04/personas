@@ -146,6 +146,23 @@ pub struct AmbientContextSubscription {
     pub ctx: super::ambient_context::AmbientContextHandle,
 }
 
+/// Ambient signal SQL projection eviction subscription (Phase 3 c v3).
+///
+/// The cross-process bridge table (`ambient_signal`) is a rolling
+/// buffer — without periodic eviction it grows unbounded. This
+/// subscription runs every 30 minutes and deletes rows older than
+/// the TTL cutoff (default 24h). Eviction is the privacy bound:
+/// rows are POST-redaction by contract, but the durability envelope
+/// shouldn't grow indefinitely.
+///
+/// Separate from `AmbientContextSubscription` because the in-memory
+/// fusion ticks at 5s (signal-driven) and the SQL eviction needs
+/// to run on a much slower cadence to avoid hammering the DB.
+#[cfg(feature = "desktop")]
+pub struct AmbientSignalEvictionSubscription {
+    pub pool: DbPool,
+}
+
 /// Context rule engine subscription: evaluates persona-defined rules against
 /// the real-time context stream and triggers actions on matches.
 #[cfg(feature = "desktop")]
@@ -670,6 +687,60 @@ impl ReactiveSubscription for AmbientContextSubscription {
 
     async fn tick(&self) {
         super::ambient_context::ambient_context_tick(&self.ctx).await;
+    }
+}
+
+/// Default TTL for the SQL ambient_signal projection — 24 hours.
+/// Bounded by privacy posture (Phase 3 v1 redaction is the gate;
+/// time is the bound) and by typical "what was I doing recently"
+/// horizon a daemon-fired persona might care about.
+#[cfg(feature = "desktop")]
+const AMBIENT_SIGNAL_TTL_SECS: u64 = 24 * 60 * 60;
+
+#[cfg(feature = "desktop")]
+#[async_trait::async_trait]
+impl ReactiveSubscription for AmbientSignalEvictionSubscription {
+    fn name(&self) -> &'static str {
+        "ambient_signal_eviction"
+    }
+
+    fn interval(&self) -> Duration {
+        // 30 minutes — eviction cadence doesn't need to be tight;
+        // even a brief overshoot of the TTL on a row is harmless
+        // (rows are post-redaction).
+        Duration::from_secs(30 * 60)
+    }
+
+    fn idle_interval(&self) -> Duration {
+        // Same cadence on idle — eviction is a maintenance task,
+        // not user-driven.
+        Duration::from_secs(30 * 60)
+    }
+
+    fn initial_delay(&self) -> Duration {
+        // Wait 60s after startup so the migration + initial pool
+        // setup are settled before the first DELETE fires.
+        Duration::from_secs(60)
+    }
+
+    async fn tick(&self) {
+        let now_secs = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or(0);
+        let cutoff = now_secs.saturating_sub(AMBIENT_SIGNAL_TTL_SECS);
+        match super::ambient_signal_repo::evict_older_than(&self.pool, cutoff) {
+            Ok(0) => {} // common case — quiet
+            Ok(n) => tracing::debug!(
+                rows_deleted = n,
+                ttl_secs = AMBIENT_SIGNAL_TTL_SECS,
+                "ambient_signal: TTL eviction"
+            ),
+            Err(e) => tracing::warn!(
+                error = %e,
+                "ambient_signal: TTL eviction failed"
+            ),
+        }
     }
 }
 
