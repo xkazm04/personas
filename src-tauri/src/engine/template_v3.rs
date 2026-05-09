@@ -59,6 +59,42 @@ where
         return Ok(());
     };
 
+    // Stage B Phase 2.3 — strict mode. Every UC in a v3 payload MUST be a
+    // `recipe_ref`. Inline UCs are a Phase 2.2-or-earlier shape and were
+    // retired by the catalog conversion. Reject them at the boundary so
+    // a malformed or stale template fails loudly here, instead of producing
+    // a half-hydrated `agent_ir` that confuses the downstream pipeline.
+    //
+    // The check fires only when at least one UC IS a recipe_ref — payloads
+    // with zero UCs at all (or pure-v2 payloads that don't look like v3 in
+    // the first place) are still no-ops, so callers can pass arbitrary
+    // payloads without fear of false-positive errors.
+    let any_recipe_ref = use_cases.iter().any(|uc| {
+        uc.as_object()
+            .and_then(|o| o.get("recipe_ref"))
+            .is_some()
+    });
+    if any_recipe_ref {
+        for (idx, uc) in use_cases.iter().enumerate() {
+            let has_ref = uc
+                .as_object()
+                .and_then(|o| o.get("recipe_ref"))
+                .is_some();
+            if !has_ref {
+                let uc_id = uc
+                    .as_object()
+                    .and_then(|o| o.get("id"))
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("<unknown>");
+                return Err(AppError::Validation(format!(
+                    "use_cases[{idx}] (id={uc_id}) is inline-shaped; \
+                     Stage B Phase 2.3 retired inline UCs in mixed templates — \
+                     every UC in a recipe_ref-bearing template must itself be a recipe_ref"
+                )));
+            }
+        }
+    }
+
     for uc in use_cases.iter_mut() {
         let recipe_ref_data = uc
             .as_object()
@@ -67,7 +103,7 @@ where
             .cloned();
 
         let Some(recipe_ref) = recipe_ref_data else {
-            continue; // inline UC, leave as-is
+            continue; // pure-inline payload (no recipe_refs anywhere) — pass through
         };
 
         let recipe_id = recipe_ref
@@ -149,23 +185,25 @@ fn apply_bindings(value: &mut Value, bindings: &Map<String, Value>) -> Result<()
 
 /// Detects whether a payload is v3-shaped.
 ///
-/// Signals:
-/// - `payload.persona` is an object, OR
-/// - `payload.use_cases[i]` has a nested `suggested_trigger` object, OR
-/// - `payload.use_cases[i]` declares `review_policy` / `memory_policy`, OR
-/// - `payload.use_cases[i]` has a `recipe_ref` (Stage B Phase 2 — recipe-ref
-///   UCs are v3-shaped because they hydrate to v3 nested form).
+/// Signals (post Stage B Phase 2.3 retirement):
+/// - `payload.persona` is an object — every canonical template carries one.
+/// - `payload.use_cases[i]` has a `recipe_ref` — converted templates are
+///   recipe_ref-shaped at every UC slot.
+///
+/// The earlier inline-UC field detectors (`suggested_trigger`,
+/// `review_policy`, `memory_policy`) were retired in Phase 2.3 once
+/// the catalog conversion (Phase 2.2) ensured no published template
+/// reaches this code path with inline-only UCs. If a future template
+/// author re-introduces those fields without a `persona` block or a
+/// `recipe_ref`, the payload will be (correctly) treated as legacy
+/// flat-shape and pass through normalize_v3_to_flat as a no-op.
 pub fn is_v3_shape(payload: &Value) -> bool {
     if payload.get("persona").and_then(|v| v.as_object()).is_some() {
         return true;
     }
     if let Some(ucs) = payload.get("use_cases").and_then(|v| v.as_array()) {
         for uc in ucs {
-            if uc.get("suggested_trigger").is_some()
-                || uc.get("review_policy").is_some()
-                || uc.get("memory_policy").is_some()
-                || uc.get("recipe_ref").is_some()
-            {
+            if uc.get("recipe_ref").is_some() {
                 return true;
             }
         }
@@ -1058,11 +1096,19 @@ mod tests {
     }
 
     #[test]
-    fn detects_v3_by_nested_trigger() {
+    fn inline_uc_markers_no_longer_signal_v3_after_retirement() {
+        // Stage B Phase 2.3 — the inline-UC field detectors (suggested_trigger,
+        // review_policy, memory_policy) were dropped from is_v3_shape now that
+        // every published template is recipe_ref-shaped (Phase 2.2). A payload
+        // with ONLY those fields (no persona block, no recipe_ref) is no longer
+        // recognized as v3, and falls through normalize_v3_to_flat as a no-op.
         let payload = json!({
             "use_cases": [{ "id": "uc_x", "suggested_trigger": { "trigger_type": "manual" } }]
         });
-        assert!(is_v3_shape(&payload));
+        assert!(
+            !is_v3_shape(&payload),
+            "post-2.3, inline UC v3 markers without persona/recipe_ref shouldn't register as v3"
+        );
     }
 
     #[test]
@@ -1517,7 +1563,10 @@ mod tests {
 
     #[test]
     fn hydrate_no_recipe_refs_is_noop() {
-        // A v3 payload with only inline UCs should pass through unchanged.
+        // A v3 payload with only inline UCs (no recipe_refs) still passes
+        // through unchanged. The Phase 2.3 strict check fires only on
+        // *mixed* payloads — pure-inline isn't a regression on its own,
+        // it just won't be hydrated.
         let mut payload = json!({
             "use_cases": [{
                 "id": "uc_inline",
@@ -1531,6 +1580,34 @@ mod tests {
         };
         hydrate_recipe_refs(&mut payload, lookup).expect("hydrate ok");
         assert_eq!(payload, before, "inline-only payload must be untouched");
+    }
+
+    #[test]
+    fn hydrate_rejects_mixed_inline_and_recipe_ref_payload() {
+        // Stage B Phase 2.3 strict mode: a payload that mixes recipe_ref
+        // UCs with inline UCs is a malformed-template bug. We hard-error
+        // here rather than half-hydrating and producing a confusing
+        // agent_ir downstream.
+        let mut payload = json!({
+            "use_cases": [
+                { "recipe_ref": { "id": "recipe-a", "version": "1.0.0", "bindings": {} } },
+                { "id": "uc_inline_intruder", "suggested_trigger": { "trigger_type": "manual" } },
+            ]
+        });
+        let lookup = |_id: &str| -> Result<RecipeDefinition, AppError> {
+            panic!("lookup must not be reached when the strict check fires first")
+        };
+        let result = hydrate_recipe_refs(&mut payload, lookup);
+        assert!(result.is_err(), "mixed-shape payload must be rejected");
+        let err = result.unwrap_err().to_string();
+        assert!(
+            err.contains("uc_inline_intruder"),
+            "error must name the offending inline UC for debugging; got: {err}"
+        );
+        assert!(
+            err.contains("Phase 2.3"),
+            "error must reference the retirement phase so future readers find context; got: {err}"
+        );
     }
 
     #[test]
@@ -1574,38 +1651,10 @@ mod tests {
         assert!(ucs[0].get("recipe_ref").is_none(), "recipe_ref should be gone post-hydration");
     }
 
-    #[test]
-    fn hydrate_preserves_inline_ucs_alongside_recipe_refs() {
-        let stored_uc = json!({ "id": "uc_from_recipe", "name": "From Recipe" });
-        let stored_uc_json = serde_json::to_string(&stored_uc).unwrap();
-
-        let mut payload = json!({
-            "use_cases": [
-                { "id": "uc_inline", "name": "Inline" },
-                { "recipe_ref": { "id": "recipe-A", "version": "1.0.0" } },
-                { "id": "uc_other_inline", "name": "Other Inline" }
-            ]
-        });
-
-        let lookup = |id: &str| -> Result<RecipeDefinition, AppError> {
-            Ok(recipe_fixture(id, &stored_uc_json))
-        };
-
-        hydrate_recipe_refs(&mut payload, lookup).expect("hydrate ok");
-
-        let ucs = payload.get("use_cases").and_then(|v| v.as_array()).unwrap();
-        assert_eq!(ucs.len(), 3);
-        assert_eq!(ucs[0].get("id").and_then(|v| v.as_str()), Some("uc_inline"));
-        assert_eq!(
-            ucs[1].get("id").and_then(|v| v.as_str()),
-            Some("uc_from_recipe"),
-            "middle UC should be hydrated"
-        );
-        assert_eq!(
-            ucs[2].get("id").and_then(|v| v.as_str()),
-            Some("uc_other_inline")
-        );
-    }
+    // Test removed in Stage B Phase 2.3: the mixed inline-+-recipe_ref shape
+    // it asserted is now explicitly rejected — see
+    // `hydrate_rejects_mixed_inline_and_recipe_ref_payload` for the inverted
+    // assertion.
 
     #[test]
     fn hydrate_returns_error_when_recipe_not_found() {
