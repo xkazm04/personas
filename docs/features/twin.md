@@ -259,8 +259,7 @@ src/features/plugins/twin/
 ├── sub_knowledge/KnowledgePage.tsx     # pending-memory inbox + conversation history
 ├── sub_voice/VoicePage.tsx             # ElevenLabs voice ID + model + sliders
 ├── sub_channels/ChannelsPage.tsx       # channel deployment cockpit
-├── sub_training/TrainingPage.tsx       # KB-grounded interview with adaptive follow-ups + session summary
-└── i18n/                               # feature-scoped i18n bundle, 15 languages (en + 14)
+└── sub_training/TrainingPage.tsx       # KB-grounded interview with adaptive follow-ups + session summary
 ```
 
 ```
@@ -277,4 +276,4 @@ scripts/connectors/builtin/
 └── twin.json                           # builtin-twin connector seed (no fields, always_active, min_tier: builder)
 ```
 
-All copy lives under `t.twin.*` in `src/features/plugins/twin/i18n/en.ts` (feature-scoped bundle). The `TwinBindingCard` in the persona editor reads/writes `design_context.twinId`, which is typed as `twin_id: Option<String>` in the Rust `DesignContextData` struct (`src-tauri/src/db/models/persona.rs`). Sidebar navigation for the 8 sub-tabs is defined as `twinItems` in `src/features/shared/components/layout/sidebar/sidebarData.ts`.
+All copy lives under `t.twin.*` in the canonical locale bundle at `src/i18n/locales/en.json` (feature-scoped i18n directories were retired in the 2026-05-08 i18n consolidation pass). The `TwinBindingCard` in the persona editor reads/writes `design_context.twinId`, which is typed as `twin_id: Option<String>` in the Rust `DesignContextData` struct (`src-tauri/src/db/models/persona.rs`). Sidebar navigation for the 8 sub-tabs is defined as `twinItems` in `src/features/shared/components/layout/sidebar/sidebarData.ts`.
