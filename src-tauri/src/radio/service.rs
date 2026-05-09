@@ -10,8 +10,11 @@ use serde::{Deserialize, Serialize};
 use super::{NowPlaying, PlayStatus, RadioState, Station};
 
 /// On-disk shape of `src-tauri/data/radio_stations.json`. Versioned in case
-/// we ever need to migrate.
+/// we ever need to migrate. Uses camelCase to match `Station`'s serde
+/// rename (which ts-rs in turn relies on to produce the camelCase TS
+/// bindings consumed by the frontend).
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 struct StationsFile {
     #[serde(default = "default_version")]
     version: u32,
@@ -206,6 +209,15 @@ mod tests {
             uuid::Uuid::new_v4().simple()
         ));
         RadioService::new(path)
+    }
+
+    #[test]
+    fn embedded_json_parses_cleanly() {
+        let parsed: Result<StationsFile, _> =
+            serde_json::from_str(EMBEDDED_STATIONS_JSON);
+        if let Err(e) = &parsed {
+            panic!("embedded radio stations JSON failed to parse: {e}");
+        }
     }
 
     #[test]

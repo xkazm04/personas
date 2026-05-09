@@ -1,36 +1,36 @@
 {
   "version": 2,
-  "default_station_id": "lofi",
+  "defaultStationId": "lofi",
   "stations": [
     {
       "id": "lofi",
       "slug": "lofi",
       "name": "Lofi",
       "description": "A nicely chilled plate of ambient downtempo beats and grooves.",
-      "accent_color": "#a87cf0",
-      "stream_url": "https://ice1.somafm.com/groovesalad-128-mp3",
-      "source_url": "https://somafm.com/groovesalad/",
-      "source_label": "SomaFM Groove Salad"
+      "accentColor": "#a87cf0",
+      "streamUrl": "https://ice1.somafm.com/groovesalad-128-mp3",
+      "sourceUrl": "https://somafm.com/groovesalad/",
+      "sourceLabel": "SomaFM Groove Salad"
     },
     {
       "id": "focus",
       "slug": "focus",
       "name": "Focus",
       "description": "Atmospheric textures with minimal beats — for deep focus and concentration.",
-      "accent_color": "#4ec9b0",
-      "stream_url": "https://ice1.somafm.com/dronezone-128-mp3",
-      "source_url": "https://somafm.com/dronezone/",
-      "source_label": "SomaFM Drone Zone"
+      "accentColor": "#4ec9b0",
+      "streamUrl": "https://ice1.somafm.com/dronezone-128-mp3",
+      "sourceUrl": "https://somafm.com/dronezone/",
+      "sourceLabel": "SomaFM Drone Zone"
     },
     {
       "id": "chill",
       "slug": "chill",
       "name": "Chill",
       "description": "Sensuous and mellow vocals, mostly female, with an electronic influence.",
-      "accent_color": "#e07ab0",
-      "stream_url": "https://ice1.somafm.com/lush-128-mp3",
-      "source_url": "https://somafm.com/lush/",
-      "source_label": "SomaFM Lush"
+      "accentColor": "#e07ab0",
+      "streamUrl": "https://ice1.somafm.com/lush-128-mp3",
+      "sourceUrl": "https://somafm.com/lush/",
+      "sourceLabel": "SomaFM Lush"
     }
   ]
 }
