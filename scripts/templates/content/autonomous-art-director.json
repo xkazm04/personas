@@ -111,6 +111,7 @@
             "storage"
           ],
           "required": false,
+          "fallback_note": "Skip cloud storage to keep generated images and decision logs only in the local Artist gallery and app data folder.",
           "credential_fields": [],
           "setup_instructions": "Attach any storage credential (cloud storage, cloud storage, cloud storage, S3, R2, local drive). Generated images and decision logs are archived here, keyed by brief id + timestamp."
         }

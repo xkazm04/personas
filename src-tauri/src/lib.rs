@@ -1566,6 +1566,8 @@ pub fn run() {
             // Recipes -- Stage B Phase 1b derivation from templates
             commands::recipes::recipe_derivation::derive_recipes_from_template,
             commands::recipes::recipe_derivation::list_recipes_by_template,
+            // Recipes -- Stage D Phase 1 keyword matcher (composer suggestions)
+            commands::recipes::recipe_match::match_recipes_to_intent,
             // Communication -- Events
             commands::communication::events::list_events,
             commands::communication::events::list_events_in_range,

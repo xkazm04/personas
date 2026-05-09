@@ -67,6 +67,7 @@
             "monitoring"
           ],
           "required": false,
+          "fallback_note": "Skip monitoring integration to use manual incident intake only. The incident lifecycle, escalation timers, and post-mortem workflow still run from reported incidents.",
           "credential_fields": [],
           "setup_instructions": "Optional. Attach any monitoring or alerting service (monitoring, monitoring, monitoring, monitoring, monitoring, custom webhook) so production signals can open incidents automatically. Without a source, intake is manual via the messaging channel."
         }

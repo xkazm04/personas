@@ -5,4 +5,4 @@
  * TypeScript via ts-rs. The numeric values themselves are emitted to
  * `src/lib/n8nLimits.generated.ts` by `scripts/generate-n8n-limits.mjs`.
  */
-export type N8nPayloadLimits = { maxWorkflowJsonBytes: bigint, maxTransformPayloadBytes: bigint, };
+export type N8nPayloadLimits = { maxWorkflowJsonBytes: number, maxTransformPayloadBytes: number, };

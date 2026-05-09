@@ -48,18 +48,27 @@ export function getListTablesQuery(serviceType: string): string | null {
  * `WHERE table_name = '...'` against the system catalog), NOT for identifier
  * interpolation. We don't allow control characters either.
  */
+function stripSqlControlChars(value: string): string {
+  return Array.from(value)
+    .filter((char) => {
+      const code = char.charCodeAt(0);
+      return (code > 0x1f && code !== 0x7f);
+    })
+    .join('');
+}
+
 function escapeSqlStringLiteral(value: string): string {
-  return value.replace(/[\x00-\x1F\x7F]/g, '').replace(/'/g, "''");
+  return stripSqlControlChars(value).replace(/'/g, "''");
 }
 
 /** Escape a string for use as a Postgres / SQLite double-quoted identifier. */
 function escapePostgresIdent(value: string): string {
-  return value.replace(/[\x00-\x1F\x7F]/g, '').replace(/"/g, '""');
+  return stripSqlControlChars(value).replace(/"/g, '""');
 }
 
 /** Escape a string for use as a MySQL backtick-quoted identifier. */
 function escapeMysqlIdent(value: string): string {
-  return value.replace(/[\x00-\x1F\x7F]/g, '').replace(/`/g, '``');
+  return stripSqlControlChars(value).replace(/`/g, '``');
 }
 
 /**

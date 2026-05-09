@@ -44,7 +44,9 @@ pub const MAX_TRANSFORM_PAYLOAD_BYTES: usize = 10 * 1024 * 1024;
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct N8nPayloadLimits {
+    #[ts(type = "number")]
     pub max_workflow_json_bytes: u64,
+    #[ts(type = "number")]
     pub max_transform_payload_bytes: u64,
 }
 

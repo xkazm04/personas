@@ -123,6 +123,7 @@ impl<T: ts_rs::TS + 'static> ts_rs::TS for Json<T> {
     }
 
     fn visit_dependencies(v: &mut impl ts_rs::TypeVisitor) {
+        v.visit::<T>();
         T::visit_dependencies(v);
     }
 
