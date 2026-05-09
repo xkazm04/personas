@@ -8412,6 +8412,7 @@
     "scanning_desktop": "Scanning your desktop...",
     "approved": "Approved",
     "approve": "Approve",
+    "app_running_tooltip": "Running",
     "run_first_agent": "Run your first agent",
     "execute_description": "Execute {name} and see real-time output.",
     "agent_ready_hint": "Your agent is ready. Click below to start the first execution and see it in action.",

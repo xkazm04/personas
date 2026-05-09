@@ -137,7 +137,7 @@ export function DesktopDiscoveryStep({
                     {app.label || APP_ICONS[app.connector_name] || app.connector_name}
                   </span>
                   {app.running && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" title="Running" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" title={t.onboarding.app_running_tooltip} />
                   )}
                 </div>
                 <div className="flex items-center gap-2 mt-0.5">

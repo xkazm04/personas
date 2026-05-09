@@ -8418,6 +8418,7 @@ export type Translations = {
     scanning_desktop: string;
     approved: string;
     approve: string;
+    app_running_tooltip: string;
     run_first_agent: string;
     execute_description: string;
     agent_ready_hint: string;
