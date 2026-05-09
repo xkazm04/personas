@@ -289,6 +289,32 @@ pub async fn derive_recipes_from_template(
     derive_recipes_from_template_inner(&state, &template_id, &template_payload_json)
 }
 
+/// Read-only companion to `derive_recipes_from_template`: list every recipe
+/// row that was derived from a given template, ordered by `source_use_case_id`.
+///
+/// Practical uses:
+/// - Verifying Phase 1b ran successfully (count + spot-check expected ids).
+/// - Debugging Phase 2.2 conversion before / after `--apply` — compare what
+///   `convert-templates-to-recipe-refs.py` would write against what's
+///   actually in the DB.
+/// - Future template-editor UI that wants to show "this template
+///   contributes N recipes to the catalog".
+///
+/// Returns `[]` when no recipes have been derived for `template_id` yet.
+/// The caller distinguishes "migration not run" from "template has no UCs"
+/// by checking the template's payload directly.
+#[tauri::command]
+pub async fn list_recipes_by_template(
+    state: State<'_, Arc<AppState>>,
+    template_id: String,
+) -> Result<Vec<RecipeDefinition>, AppError> {
+    require_auth(&state).await?;
+    if template_id.trim().is_empty() {
+        return Err(AppError::Validation("template_id cannot be empty".into()));
+    }
+    recipe_repo::list_by_source_template(&state.db, &template_id)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

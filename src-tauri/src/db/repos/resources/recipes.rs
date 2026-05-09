@@ -253,6 +253,34 @@ pub fn find_by_source(
     })
 }
 
+/// Stage B Phase 1b — list every recipe derived from the given template.
+/// Returns rows ordered by `source_use_case_id` (stable, alphanumeric)
+/// for deterministic output. Useful for:
+///   - Verifying a Phase 1b migration ran successfully (count + spot-check ids).
+///   - Debugging Phase 2.2 conversion output before / after `--apply`.
+///   - Future template-editor UI that wants to show "this template
+///     contributes N recipes to the catalog".
+///
+/// Returns an empty Vec when no recipes have been derived for `template_id`
+/// yet (caller distinguishes "migration not run" vs "template has no UCs").
+pub fn list_by_source_template(
+    pool: &DbPool,
+    template_id: &str,
+) -> Result<Vec<RecipeDefinition>, AppError> {
+    timed_query!("recipes", "recipes::list_by_source_template", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT * FROM recipe_definitions
+             WHERE source_template_id = ?1
+             ORDER BY source_use_case_id ASC",
+        )?;
+        let rows = stmt
+            .query_map(params![template_id], row_to_recipe)?
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(rows)
+    })
+}
+
 // ============================================================================
 // Persona <-> Recipe Link Operations
 // ============================================================================
