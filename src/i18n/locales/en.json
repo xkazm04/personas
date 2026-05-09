@@ -7923,7 +7923,9 @@
       "digest_description": "Weekly notification summarizing health issues across all agents with a total health score",
       "healing_alerts_hint": "Control which auto-fix alerts trigger notifications",
       "healing_severity": "Healing Alert Severity",
-      "notification_hint": "Desktop notifications use the native OS notification system. In-app toasts appear for critical and high severity issues regardless of these settings."
+      "notification_hint": "Desktop notifications use the native OS notification system. In-app toasts appear for critical and high severity issues regardless of these settings.",
+      "severity_toggle_aria": "{level} notifications",
+      "weekly_digest_aria": "Weekly health digest"
     },
     "engine": {
       "title": "Engine",

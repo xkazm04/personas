@@ -7930,6 +7930,8 @@ export type Translations = {
       healing_alerts_hint: string;
       healing_severity: string;
       notification_hint: string;
+      severity_toggle_aria: string;
+      weekly_digest_aria: string;
     };
     engine: {
       title: string;

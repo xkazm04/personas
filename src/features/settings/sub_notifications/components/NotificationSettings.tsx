@@ -86,7 +86,7 @@ export default function NotificationSettings() {
     try { const p = JSON.parse(v); return typeof p === 'object' && p !== null; } catch { /* intentional: non-critical -- JSON parse fallback */ return false; }
   });
   const hasLoadedOnce = useRef(false);
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const s = t.settings.notifications;
 
   // Auto-save whenever value changes (debounced to prevent race conditions from rapid toggles)
@@ -153,7 +153,7 @@ export default function NotificationSettings() {
                   <AccessibleToggle
                     checked={prefs[key]}
                     onChange={() => toggle(key)}
-                    label={`${s[labelKey]} notifications`}
+                    label={tx(s.severity_toggle_aria, { level: s[labelKey] })}
                   />
                 </div>
               ))}
