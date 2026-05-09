@@ -39,7 +39,8 @@ function groupCommsByDay(items: CommGroup['items']): CommGroup[] {
 }
 
 export default function KnowledgeAtelier() {
-  const t = useTranslation().t.twin;
+  const { t: tFull, tx } = useTranslation();
+  const t = tFull.twin;
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const activeTwin = useSystemStore((s) => s.twinProfiles).find((tp) => tp.id === activeTwinId);
   const pendingMemories = useSystemStore((s) => s.twinPendingMemories);
@@ -96,18 +97,18 @@ export default function KnowledgeAtelier() {
             <Library className="w-5 h-5 text-violet-300" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[10px] uppercase tracking-[0.22em] text-violet-300/80 font-medium">Archive</p>
+            <p className="text-[10px] uppercase tracking-[0.22em] text-violet-300/80 font-medium">{t.knowledge.eyebrowAtelier}</p>
             <h1 className="typo-heading-lg text-foreground/95">{t.knowledge.title} — {activeTwin?.name ?? ''}</h1>
             <p className="typo-caption text-foreground/65 mt-0.5">{t.knowledge.subtitle}</p>
           </div>
           <div className="hidden md:flex items-center gap-3 px-3 py-2 rounded-full border border-primary/15 bg-card/40">
-            <Stat label="pending" value={stats.pending} accent={stats.pending > 10 ? 'amber' : 'violet'} />
+            <Stat label={t.knowledge.statPending} value={stats.pending} accent={stats.pending > 10 ? 'amber' : 'violet'} />
             <span className="w-px h-6 bg-primary/15" />
-            <Stat label="approved" value={stats.approved} accent="emerald" />
+            <Stat label={t.knowledge.statApproved} value={stats.approved} accent="emerald" />
             <span className="w-px h-6 bg-primary/15" />
-            <Stat label="rejected" value={stats.rejected} />
+            <Stat label={t.knowledge.statRejected} value={stats.rejected} />
             <span className="w-px h-6 bg-primary/15" />
-            <Stat label="conversations" value={communications.length} />
+            <Stat label={t.knowledge.statConversations} value={communications.length} />
           </div>
         </div>
       </div>
@@ -121,7 +122,7 @@ export default function KnowledgeAtelier() {
             <Inbox className="w-4 h-4 text-violet-300" />
             <h2 className="typo-section-title">{t.knowledge.memoryInbox}</h2>
             <span className={`px-2 py-0.5 text-[10px] font-medium rounded-full border ${stats.pending > 0 ? 'bg-amber-500/15 text-amber-300 border-amber-500/25' : 'bg-secondary/40 text-foreground/55 border-primary/10'}`}>
-              {stats.pending} pending
+              {tx(t.knowledge.pendingCount, { count: stats.pending })}
             </span>
             <div className="ml-auto flex items-center gap-1 rounded-full border border-primary/10 bg-secondary/30 p-0.5">
               {(['pending', 'approved', 'rejected'] as const).map((f) => {
@@ -140,7 +141,7 @@ export default function KnowledgeAtelier() {
             ) : pendingMemories.length === 0 ? (
               <div className="py-12 text-center">
                 <Inbox className="w-10 h-10 text-foreground/30 mx-auto mb-3" />
-                <p className="typo-body text-foreground/65">{filter === 'pending' ? t.knowledge.inboxEmpty : t.knowledge.noFilteredMemories.replace('{filter}', filter)}</p>
+                <p className="typo-body text-foreground/65">{filter === 'pending' ? t.knowledge.inboxEmpty : tx(t.knowledge.noFilteredMemories, { filter })}</p>
                 <p className="typo-caption text-foreground/55 mt-1">{filter === 'pending' ? t.knowledge.newMemoriesHint : t.knowledge.switchToPending}</p>
               </div>
             ) : (
@@ -172,17 +173,17 @@ export default function KnowledgeAtelier() {
                           {mem.channel && <span className="px-1.5 py-0.5 text-[9px] uppercase tracking-wider rounded-full bg-secondary/40 text-foreground/65">{mem.channel}</span>}
                           {mem.importance > 3 && (
                             <span className="flex items-center gap-1 px-1.5 py-0.5 text-[9px] rounded-full bg-violet-500/15 text-violet-300 border border-violet-500/25">
-                              <Star className="w-2.5 h-2.5" /> priority {mem.importance}
+                              <Star className="w-2.5 h-2.5" /> {tx(t.knowledge.priorityWithCount, { count: mem.importance })}
                             </span>
                           )}
                           <span className="typo-caption text-foreground/55">{new Date(mem.created_at).toLocaleDateString()}</span>
                           {isPending && (
                             <div className="ml-auto flex items-center gap-1">
                               <button onClick={() => handleReview(mem.id, true)} disabled={isReviewing} className="px-2 py-1 rounded-interactive text-[11px] font-medium text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors flex items-center gap-1">
-                                <CheckCircle2 className="w-3 h-3" /> approve
+                                <CheckCircle2 className="w-3 h-3" /> {t.knowledge.approveAction}
                               </button>
                               <button onClick={() => handleReview(mem.id, false)} disabled={isReviewing} className="px-2 py-1 rounded-interactive text-[11px] font-medium text-red-300 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 transition-colors flex items-center gap-1">
-                                <XCircle className="w-3 h-3" /> reject
+                                <XCircle className="w-3 h-3" /> {t.knowledge.rejectAction}
                               </button>
                             </div>
                           )}
@@ -204,7 +205,7 @@ export default function KnowledgeAtelier() {
           <div className="px-4 md:px-6 py-4 border-b border-primary/5 flex items-center gap-3">
             <History className="w-4 h-4 text-violet-300" />
             <h2 className="typo-section-title">{t.knowledge.conversationHistory}</h2>
-            <span className="text-[10px] uppercase tracking-wider text-foreground/55 ml-auto">{communications.length} entries</span>
+            <span className="text-[10px] uppercase tracking-wider text-foreground/55 ml-auto">{tx(communications.length === 1 ? t.knowledge.entriesCount_one : t.knowledge.entriesCount_other, { count: communications.length })}</span>
           </div>
           <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4">
             {commsLoading ? (

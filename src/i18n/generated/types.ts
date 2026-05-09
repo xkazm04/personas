@@ -10472,6 +10472,24 @@ export type Translations = {
       voice_pick_unscoped_hint: string;
       voice_pick_custom_toggle: string;
       voice_pick_error: string;
+      voice_settings_title: string;
+      voice_settings_desc: string;
+      voice_settings_model_label: string;
+      voice_settings_model_hint: string;
+      voice_settings_model_turbo: string;
+      voice_settings_model_flash: string;
+      voice_settings_model_multilingual: string;
+      voice_settings_model_v3: string;
+      voice_settings_stability_label: string;
+      voice_settings_stability_hint: string;
+      voice_settings_similarity_label: string;
+      voice_settings_similarity_hint: string;
+      voice_settings_speed_label: string;
+      voice_settings_speed_hint: string;
+      voice_settings_style_label: string;
+      voice_settings_style_hint: string;
+      voice_settings_default: string;
+      voice_settings_reset: string;
     };
     ocr: {
       title: string;
@@ -12459,10 +12477,21 @@ export type Translations = {
     knowledge: {
       title: string;
       subtitle: string;
+      eyebrowAtelier: string;
       memoryInbox: string;
       filterPending: string;
       filterApproved: string;
       filterRejected: string;
+      statPending: string;
+      statApproved: string;
+      statRejected: string;
+      statConversations: string;
+      pendingCount: string;
+      entriesCount_one: string;
+      entriesCount_other: string;
+      priorityWithCount: string;
+      approveAction: string;
+      rejectAction: string;
       memoryExplanation: string;
       inboxEmpty: string;
       noFilteredMemories: string;
