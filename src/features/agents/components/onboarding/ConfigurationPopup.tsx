@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Key } from 'lucide-react';
 import { getAppSetting, setAppSetting } from "@/api/system/settings";
 import { useToastStore } from '@/stores/toastStore';
 import { createLogger } from "@/lib/log";
 import { useTranslation } from '@/i18n/useTranslation';
+import { BaseModal } from '@/lib/ui/BaseModal';
 
 const logger = createLogger("configuration-popup");
 
@@ -96,31 +97,16 @@ export function ConfigurationPopup({
   const styles = ACCENT_STYLES[accent];
   const hasAnyValue = fields.some((f) => values[f.key]?.trim());
 
-  const handleBackdropClick = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      if (e.target === e.currentTarget) onClose();
-    },
-    [onClose]
-  );
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 surface-blur-modal"
-      onClick={handleBackdropClick}
+    <BaseModal
+      isOpen
+      onClose={onClose}
+      titleId="configuration-popup-title"
+      size="sm"
     >
-      <div
-        className="animate-fade-slide-in bg-background border border-primary/20 rounded-2xl shadow-elevation-4 w-full max-w-md mx-4 overflow-hidden"
-      >
+      <div className="bg-background border border-primary/20 rounded-2xl shadow-elevation-4 overflow-hidden">
         <div className="px-4 py-4 border-b border-primary/10">
-          <h3 className="typo-heading font-semibold text-foreground/90 flex items-center gap-2">
+          <h3 id="configuration-popup-title" className="typo-heading font-semibold text-foreground/90 flex items-center gap-2">
             <Key className={`w-4 h-4 ${styles.icon}`} />
             {title}
           </h3>
@@ -183,6 +169,6 @@ export function ConfigurationPopup({
           )}
         </div>
       </div>
-    </div>
+    </BaseModal>
   );
 }
