@@ -108,7 +108,10 @@ export function HealthDigestPanel() {
 
   const handleNavigate = (personaId: string) => {
     selectPersona(personaId);
-    setEditorTab('settings'); // Navigate to settings tab where health check will be accessible
+    // Land on the design tab — the editor's HealthBadge sits in its tab bar
+    // and the design surface is where the per-persona health check actually
+    // runs. Settings shows account / API keys / quality gates, not health.
+    setEditorTab('design');
   };
 
   const handleRunDigest = async () => {
