@@ -37,12 +37,17 @@ timestamp — the next session can recognize it as abandoned.
   - **Paths:** `.claude/active-runs.md`, `.claude/CLAUDE.md`, `.claude/skills/research/skill.md`, `docs/concepts/cli-coordination-active-runs.md`, `docs/concepts/README.md`
   - **Status:** started — overlaps with browser-harness only on `.claude/active-runs.md` (by design — that file is the coordination surface itself)
 
-- **[2026-05-09 ~21:30] manual — clear-wins/creative backlog execution**
-  - **Source:** user request to walk through `.claude/commands/clear-wins/creative/` task by task, working on top of current code state
-  - **Paths:** `src/features/shared/`, `src/features/agents/`, `src/features/vault/`, `src/features/overview/`, `src/features/recipes/`, `src/features/onboarding/`, `src/styles/`, `src/i18n/locales/en.json`, `tailwind.config.*`
-  - **Status:** started — no overlap with active /research sessions (they touch backend/connector/engine paths)
+- **[2026-05-09 ~13:50] /research — companion-persistent-memory-blueprint**
+  - **Source:** Medium "Persistent Memory for AI Coding Agents: An Engineering Blueprint for Cross-Session Continuity" (Sourabh Sharma, Feb 2026)
+  - **Paths:** `Obsidian/personas/Research/`, `Obsidian/personas/Lessons/`, possibly `src-tauri/src/companion/brain/` if findings land
+  - **Status:** started
 
 ## Recently completed (last 14 days)
+
+- **[2026-05-09 ~21:30] manual — clear-wins/creative backlog execution (Tasks #1–#9 of 11)**
+  - **Source:** user request to walk through `.claude/commands/clear-wins/creative/` task by task. 9 of 11 tasks completed; #10 (per-persona quick-action chips, requires DB migration) and #11 (speculative chat dispatch, critical-path) deferred at user direction.
+  - **Paths:** `src/features/shared/{components/buttons/Button.tsx,components/display/{StatusDot,InlineEditableText,AnimatedCounter,ScrollShadowContainer}.tsx,components/forms/{PasswordToggleField,FormFieldGroup,AccessibleToggle}.tsx,components/layout/ContentLayout.tsx}`, `src/features/agents/{components/glyph/{GlyphCoreContent,GlyphFullLayout,GlyphPrototypeLayout,commandPanel/CommandPanelComposer}.tsx,components/persona/PersonaOverviewCells.tsx,sub_editor/components/PersonaEditorHeader.tsx,sub_executions/detail/inspector/TraceInspector.tsx,sub_model_config/components/{ProviderCredentialField,CustomModelConfigForm}.tsx,sub_use_cases/components/detail/UseCaseModelOverrideForm.tsx}`, `src/features/overview/{sub_realtime/components/panels/RealtimeStatsBar.tsx,sub_observability/components/AlertHistoryPanel.tsx,sub_knowledge/components/KnowledgeGraphDashboard.tsx,components/shared/KpiTile.tsx}`, `src/features/{deployment/components/cloud/CloudConnectionForm,plugins/langfuse/ConnectionForm,settings/sub_portability/components/{CredentialPortability,ExportSection,ExportSelectionModal},templates/sub_generated/adoption/glyph/PersonaChronologyGlyph}.tsx`, `src/styles/globals.css`, `src/lib/utils/designTokens.ts`, `src/i18n/locales/en.json`
+  - **Status:** completed (commits: `5e3f9055a` swept Tasks #1–#4 by parallel session; merge commit `f8c929283` brings in Tasks #5–#9 from worktree-clear-wins-creative branch — `b00d34407 b dab6aee9`, `bdf52a755 d1f6cc4e`, `6c48cda79 f70f9677`, `bba22c5c9 0405f14a`, `6b800b47a 6e54974b`). Worktree removed + branch deleted per Phase 13 ritual. Lessons learned: parallel session swept Tasks #1–#4 + my en.json edit into their unrelated commit before I could batch-commit; switched to git worktree for #5–#9 to get physical isolation.
 
 - **[2026-05-09 ~22:00] /research — printing-press cli-factory (Nate Herk)**
   - **Source:** [Printing Press walkthrough](https://www.youtube.com/watch?v=YHk45NEpspE) — 14:45 video by Nate Herk on Peter Steinberger's Claude Code skill + Go-CLI factory + community library
