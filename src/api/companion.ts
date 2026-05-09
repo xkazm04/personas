@@ -98,14 +98,32 @@ export async function companionSendMessage(
  */
 export interface TtsAudio {
   audioBase64: string;
+  /** `audio/mpeg` for ElevenLabs (MP3), `audio/wav` for Piper. */
   mimeType: string;
   byteSize: number;
 }
 
 /**
+ * Identifier for which engine should fulfill a TTS request. Matches the
+ * snake_case wire format the Rust `TtsEngineId` enum serializes to.
+ *
+ * - `'elevenlabs'`: cloud TTS via the ElevenLabs API. Requires a vault
+ *   credential and a voice id from the user's ElevenLabs account.
+ * - `'piper'`: local TTS via ONNX inference (no network, no credential
+ *   needed). Requires a Piper voice model previously downloaded through
+ *   the companion voice manager.
+ */
+export type TtsEngineId = 'elevenlabs' | 'piper';
+
+/**
  * Per-call voice tuning. All fields optional; `undefined` falls back to
- * the backend defaults (turbo_v2_5, stability 0.5, similarity 0.75, no
- * speed/style override).
+ * the per-engine defaults. Some fields only apply to certain engines —
+ * unrelated engines silently ignore them, so it's safe to send the full
+ * union.
+ *
+ * ElevenLabs-only: modelId, stability, similarityBoost, style.
+ * Piper-only: lengthScale, noiseScale.
+ * Shared: speed.
  */
 export interface TtsSettings {
   modelId?: string;
@@ -113,20 +131,109 @@ export interface TtsSettings {
   similarityBoost?: number;
   speed?: number;
   style?: number;
+  lengthScale?: number;
+  noiseScale?: number;
 }
 
+/**
+ * Synthesize speech for the given text.
+ *
+ * `engine` defaults to `'elevenlabs'` so existing callers that only knew
+ * the cloud path keep working. `credentialId` is required for ElevenLabs
+ * and ignored for Piper (pass `null` for local engines).
+ */
 export async function companionTts(
   text: string,
-  credentialId: string,
+  credentialId: string | null,
   voiceId: string,
   settings?: TtsSettings,
+  engine: TtsEngineId = 'elevenlabs',
 ): Promise<TtsAudio> {
   return invoke<TtsAudio>('companion_tts', {
     text,
-    credentialId,
     voiceId,
+    engine,
+    credentialId,
     settings: settings ?? null,
   });
+}
+
+// ── Piper voice catalog + downloads ─────────────────────────────────────
+
+/**
+ * Catalog row + download status. The Voice tab renders these as a
+ * scrollable list of cards grouped by language. `isDownloaded` decides
+ * whether the row's primary action is "Download" or "Select".
+ */
+export interface PiperVoiceListing {
+  voiceId: string;
+  languageCode: string;
+  languageLabel: string;
+  languageNativeLabel: string;
+  speaker: string;
+  gender: 'female' | 'male' | 'neutral';
+  quality: 'x_low' | 'low' | 'medium' | 'high';
+  approxSizeMb: number;
+  description: string;
+  isDownloaded: boolean;
+}
+
+/**
+ * Streaming progress for a single Piper voice download. Frontend
+ * subscribes to the `companion://tts-download` Tauri event channel and
+ * matches by `voiceId`.
+ *
+ * `bytesTotal` is `null` when the upstream doesn't report Content-Length
+ * (rare but possible) — UI should fall back to indeterminate progress.
+ */
+export interface TtsDownloadProgress {
+  voiceId: string;
+  state: 'queued' | 'downloading' | 'completed' | 'failed';
+  bytesDownloaded: number;
+  bytesTotal: number | null;
+  error: string | null;
+}
+
+/**
+ * Tauri event channel name for download progress + terminal states.
+ */
+export const TTS_DOWNLOAD_EVENT = 'companion://tts-download';
+
+export async function companionTtsListPiperVoices(): Promise<PiperVoiceListing[]> {
+  return invoke<PiperVoiceListing[]>('companion_tts_list_piper_voices');
+}
+
+/**
+ * Start a Piper voice download. Resolves once both `.onnx` and `.onnx.json`
+ * are on disk. Progress is reported through `TTS_DOWNLOAD_EVENT` events
+ * which the caller should subscribe to before invoking.
+ */
+export async function companionTtsDownloadPiperVoice(voiceId: string): Promise<void> {
+  return invoke<void>('companion_tts_download_piper_voice', { voiceId });
+}
+
+export async function companionTtsDeletePiperVoice(voiceId: string): Promise<void> {
+  return invoke<void>('companion_tts_delete_piper_voice', { voiceId });
+}
+
+/**
+ * Status of the Piper engine binary on disk. The Voice tab uses this to
+ * render an Installed / Not installed badge above the voice catalog and
+ * to surface the exact install path so the user can manually drop the
+ * binary into place.
+ */
+export interface PiperEngineStatus {
+  installed: boolean;
+  /** Resolved binary path when `installed` is true, else null. */
+  binaryPath: string | null;
+  /** Where the user should put the engine if installing manually. */
+  expectedPath: string;
+  /** Filename — `piper.exe` on Windows, `piper` elsewhere. */
+  expectedFilename: string;
+}
+
+export async function companionTtsPiperEngineStatus(): Promise<PiperEngineStatus> {
+  return invoke<PiperEngineStatus>('companion_tts_piper_engine_status');
 }
 
 // ── Sensory toggles (Phase 2 v2 — desktop-awareness UI) ─────────────────

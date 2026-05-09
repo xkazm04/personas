@@ -1,30 +1,31 @@
-import { companionTts, type TtsSettings } from '@/api/companion';
+import { companionTts, type TtsEngineId, type TtsSettings } from '@/api/companion';
 
 /**
  * Voice-playback helpers for Athena's spoken summaries.
  *
  * Two-step pipeline:
- *   1. `synthesize()` — calls the backend TTS proxy (ElevenLabs) with the
- *      stashed text + the user's chosen voice config, decodes the base64
- *      bytes into a Blob, and returns an object URL suitable for an
- *      `<audio>` element's `src` (or `new Audio(url).play()`).
+ *   1. `synthesize()` — calls the backend TTS dispatcher with the chosen
+ *      engine + voice + tuning, decodes the base64 bytes into a Blob,
+ *      and returns an object URL suitable for an `<audio>` element's
+ *      `src` (or `new Audio(url).play()`).
  *   2. `play()` — drives an Audio element to completion. We deliberately
  *      use a fresh element per play (rather than reusing one global) so
  *      browsers don't reject `play()` calls on rapid successive triggers
  *      due to their "media element already playing" guard.
  *
  * Audio URLs are cached on the playback record (see companionStore) so
- * that "Replay" doesn't re-hit ElevenLabs. Caller is responsible for
+ * that "Replay" doesn't re-hit the engine. Caller is responsible for
  * `URL.revokeObjectURL` when discarding (currently we let the page
- * unload do it — these blobs are ~50KB).
+ * unload do it — ElevenLabs MP3 is ~50KB; Piper WAV is ~150-300KB).
  */
 export async function synthesize(
   text: string,
-  credentialId: string,
+  credentialId: string | null,
   voiceId: string,
   settings?: TtsSettings,
+  engine: TtsEngineId = 'elevenlabs',
 ): Promise<string> {
-  const audio = await companionTts(text, credentialId, voiceId, settings);
+  const audio = await companionTts(text, credentialId, voiceId, settings, engine);
   const bytes = base64ToBytes(audio.audioBase64);
   // Cast to BlobPart: TS's lib.dom.d.ts in this project narrows BlobPart's
   // buffer to ArrayBuffer (not SharedArrayBuffer), which Uint8Array's

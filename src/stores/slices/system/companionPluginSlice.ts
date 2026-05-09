@@ -71,13 +71,32 @@ export const COMPANION_VOICE_MODELS = [
 ] as const;
 export type CompanionVoiceModel = (typeof COMPANION_VOICE_MODELS)[number];
 
+/**
+ * TTS engine the user picked in the Voice tab. Mirrors `TtsEngineId` in
+ * `src/api/companion.ts` and the Rust enum in `companion/tts/mod.rs`.
+ *
+ * Defaults to `'elevenlabs'` for back-compat with existing users — the
+ * Piper engine requires a separate one-time install of the `piper`
+ * binary, so we never quietly route users through it.
+ */
+export type CompanionTtsEngine = 'elevenlabs' | 'piper';
+
 export interface CompanionPluginSlice {
   companionPluginTab: CompanionPluginTab;
   companionFooterEnabled: boolean;
   companionSoundEnabled: boolean;
   companionVoiceEnabled: boolean;
+  /** Which engine handles synthesis. Per-engine voice selection lives in
+   *  `companionVoiceCredentialId` + `companionVoiceId` (ElevenLabs) and
+   *  `companionPiperVoiceId` (Piper). The send pipeline picks the right
+   *  set based on this engine field. */
+  companionVoiceEngine: CompanionTtsEngine;
   companionVoiceCredentialId: string | null;
   companionVoiceId: string | null;
+  /** Currently-selected Piper voice id (e.g. `en_US-amy-medium`).
+   *  Independent of `companionVoiceId` so switching engines doesn't
+   *  clobber either side's last selection. */
+  companionPiperVoiceId: string | null;
   /**
    * Per-call voice tuning. All five are nullable: `null` means "let the
    * backend apply its default". The Voice tab exposes these as a Settings
@@ -116,8 +135,10 @@ export interface CompanionPluginSlice {
   setCompanionFooterEnabled: (v: boolean) => void;
   setCompanionSoundEnabled: (v: boolean) => void;
   setCompanionVoiceEnabled: (v: boolean) => void;
+  setCompanionVoiceEngine: (e: CompanionTtsEngine) => void;
   setCompanionVoiceCredentialId: (id: string | null) => void;
   setCompanionVoiceId: (id: string | null) => void;
+  setCompanionPiperVoiceId: (id: string | null) => void;
   setCompanionVoiceModel: (m: CompanionVoiceModel | null) => void;
   setCompanionVoiceStability: (v: number | null) => void;
   setCompanionVoiceSimilarity: (v: number | null) => void;
@@ -141,8 +162,10 @@ export const createCompanionPluginSlice: StateCreator<
   companionFooterEnabled: true,
   companionSoundEnabled: true,
   companionVoiceEnabled: false,
+  companionVoiceEngine: 'elevenlabs',
   companionVoiceCredentialId: null,
   companionVoiceId: null,
+  companionPiperVoiceId: null,
   companionVoiceModel: null,
   companionVoiceStability: null,
   companionVoiceSimilarity: null,
@@ -160,9 +183,13 @@ export const createCompanionPluginSlice: StateCreator<
     set({ companionSoundEnabled }),
   setCompanionVoiceEnabled: (companionVoiceEnabled) =>
     set({ companionVoiceEnabled }),
+  setCompanionVoiceEngine: (companionVoiceEngine) =>
+    set({ companionVoiceEngine }),
   setCompanionVoiceCredentialId: (companionVoiceCredentialId) =>
     set({ companionVoiceCredentialId }),
   setCompanionVoiceId: (companionVoiceId) => set({ companionVoiceId }),
+  setCompanionPiperVoiceId: (companionPiperVoiceId) =>
+    set({ companionPiperVoiceId }),
   setCompanionVoiceModel: (companionVoiceModel) => set({ companionVoiceModel }),
   setCompanionVoiceStability: (companionVoiceStability) =>
     set({ companionVoiceStability }),
