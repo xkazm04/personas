@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Globe, LogOut, User, AlertCircle, RefreshCw, Activity, Download } from 'lucide-react';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
+import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { useAuthStore } from '@/stores/authStore';
 import { useToastStore } from '@/stores/toastStore';
 import { useAutoUpdater } from '@/hooks/utility/data/useAutoUpdater';
@@ -70,26 +71,16 @@ export default function AccountSettings() {
                 </p>
               )}
             </div>
-            <button
-              onClick={() => {
+            <AccessibleToggle
+              checked={telemetryOn}
+              onChange={() => {
                 const next = !telemetryOn;
                 setTelemetryEnabled(next);
                 setTelemetryOn(next);
                 setTelemetryChanged(true);
               }}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full shrink-0 transition-colors ${
-                telemetryOn ? 'bg-emerald-500/70' : 'bg-secondary/60 border border-primary/15'
-              }`}
-              role="switch"
-              aria-checked={telemetryOn}
-              aria-label={s.telemetry_toggle_aria}
-            >
-              <span
-                className={`inline-block h-4 w-4 rounded-full bg-white shadow-elevation-1 transition-transform ${
-                  telemetryOn ? 'translate-x-6' : 'translate-x-1'
-                }`}
-              />
-            </button>
+              label={s.telemetry_toggle_aria}
+            />
           </div>
         </div>
 
