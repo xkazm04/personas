@@ -2324,6 +2324,7 @@
       "run_now": "Run now",
       "rerun": "Re-run",
       "capabilities": "Capabilities",
+      "issues": "Issues",
       "all_healthy": "All systems healthy",
       "all_healthy_detail": "No issues detected in agent configuration",
       "status_ready": "Ready",

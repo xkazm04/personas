@@ -2330,6 +2330,7 @@ export type Translations = {
       run_now: string;
       rerun: string;
       capabilities: string;
+      issues: string;
       all_healthy: string;
       all_healthy_detail: string;
       status_ready: string;
