@@ -132,8 +132,63 @@ test those helpers directly without any harness:
 This is fine; don't promote those to harness style if the helper is
 genuinely pure.
 
+## Migration tests (`merge` and `onRehydrateStorage`)
+
+Persist migration code is the worst kind to leave untested — only
+users with old persisted state hit it, and they never see an error
+when it silently breaks. **Every store that uses `merge` or
+`onRehydrateStorage` should have a co-located migration test.**
+
+These tests are a deliberate exception to the harness-per-test rule
+because the goal is to exercise the real persist middleware. The
+pattern:
+
+1. Seed `localStorage` with a stale persisted shape (the version a
+   pre-migration build would have written).
+2. Call `useStore.persist.rehydrate()` to re-trigger Zustand's
+   hydration pipeline. This invokes both `merge` and
+   `onRehydrateStorage` against the seeded data.
+3. Read the live store with `getState()` and assert the migration
+   produced the new shape.
+
+**Examples** (the canonical templates for new migration tests):
+
+- `src/stores/__tests__/agentStore.merge.test.ts` — `merge` for the
+  `chatMode: 'ops' → 'advisory'` rename
+- `src/stores/__tests__/systemStore.rehydrate.test.ts` —
+  `onRehydrateStorage` for unknown-onboarding-step sanitization +
+  legacy `editorTab` migration
+- `src/stores/__tests__/themeStore.rehydrate.test.ts` —
+  `onRehydrateStorage` for `textScale` migration + custom-theme
+  re-injection (mocks `@/lib/theme/deriveCustomTheme` so the DOM
+  helper call is observable)
+
+**Required setup** for every migration test file:
+
+```ts
+import { _resetDedupCacheForTests } from '../util/dedupedStorage';
+
+beforeEach(() => {
+  localStorage.clear();
+  _resetDedupCacheForTests();
+  useStore.setState({ /* fields under test, restored to defaults */ });
+});
+```
+
+The `_resetDedupCacheForTests` call clears the module-scoped write-dedup
+cache; without it a previous test's write to localStorage may not
+re-fire on the next `setItem` and you'll get spurious failures.
+
+When a migration triggers a DOM side-effect (themeStore's
+`applyThemeToDOM`, etc.), use `vi.mock` to spy on the helper module
+rather than asserting against jsdom's `document.documentElement` —
+mocking gives you a clean call assertion without coupling to DOM
+implementation details.
+
 ## When in doubt
 
-Default to harness-per-test. The deviation list above is exhaustive —
-if your reason isn't on it, you don't have a deviation, you have a
+Default to harness-per-test for unit tests. Use the migration-test
+pattern above for `merge` / `onRehydrateStorage`. The deviation list
+in "Singleton-with-setState-reset" above is exhaustive — if your
+reason isn't on it, you don't have a deviation, you have a
 default-pattern test.
