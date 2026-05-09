@@ -48,6 +48,11 @@ export default function DrivePage() {
   const [ocrEntry, setOcrEntry] = useState<DriveEntry | null>(null);
   const [signaturesOpen, setSignaturesOpen] = useState(false);
 
+  // Path queued by "Reveal in Drive" — selected once the destination folder's
+  // entries have actually loaded. Replaces the previous `setTimeout(..., 100)`
+  // race that broke on slow disks / large folders.
+  const pendingSelectRef = useRef<string | null>(null);
+
   // Selected entries are the subset of visibleEntries whose path is in the
   // selection set. We pass these into the details pane.
   const selectedEntries = drive.visibleEntries.filter((e) =>
@@ -165,6 +170,21 @@ export default function DrivePage() {
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
   }, []);
+
+  // ---------------------------------------------------------------------
+  // Drain pendingSelectRef once the target file actually appears in
+  // visibleEntries. This runs after refresh(currentPath) resolves AND after
+  // the navigation effect that clears selection — so the selectOnly call
+  // here always wins, regardless of IPC latency.
+  // ---------------------------------------------------------------------
+  useEffect(() => {
+    const pending = pendingSelectRef.current;
+    if (!pending) return;
+    if (drive.visibleEntries.some((e) => e.path === pending)) {
+      drive.selectOnly(pending);
+      pendingSelectRef.current = null;
+    }
+  }, [drive]);
 
   // ---------------------------------------------------------------------
   // Context menu + dialog actions
@@ -310,11 +330,10 @@ export default function DrivePage() {
           signing={signing}
           onClose={() => setSignaturesOpen(false)}
           onRevealInDrive={(drivePath) => {
-            // Navigate into the parent folder and select the file.
-            const parent = driveParentPath(drivePath);
-            drive.navigate(parent);
-            // Defer selection until after the list refreshes.
-            setTimeout(() => drive.selectOnly(drivePath), 100);
+            // Queue the select; the useEffect above commits it once the
+            // entry actually appears in visibleEntries.
+            pendingSelectRef.current = drivePath;
+            drive.navigate(driveParentPath(drivePath));
           }}
         />
       )}
