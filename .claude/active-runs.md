@@ -32,6 +32,11 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+- **[2026-05-10 ~04:00] manual — companion-tts-piper (open-source TTS MVP, Piper engine via piper-rs)**
+  - **Source:** in-session conversation; user request to add open-source TTS as alternative to ElevenLabs in companion plugin. Decisions: piper-rs (focused, reuses existing ort runtime) + download-on-demand only (no installer bundling, evaluate quality first before bundling default voice).
+  - **Paths:** worktree `.claude/worktrees/companion-tts-piper` (branch `worktree-companion-tts-piper`). Planned scope: `src-tauri/src/companion/tts/{mod.rs,engine.rs,elevenlabs.rs,piper.rs,downloader.rs,catalog.rs}` (new module), `src-tauri/src/commands/companion/voice.rs` (refactor to dispatch), `src-tauri/Cargo.toml` (add `piper-rs` + http download deps), `src-tauri/src/lib.rs` (register new commands), `src/features/plugins/companion/{voicePlayback.ts,useTtsSettings.ts,sub_voice/VoicePanel.tsx,sub_voice/PiperVoicePanel.tsx}`, `src/stores/slices/system/companionPluginSlice.ts` (engine field), `src/api/companion-tts.ts` (new), `src/lib/bindings/{TtsEngineId,TtsVoiceCatalogEntry,TtsDownloadProgress}.ts` (regen), `src/i18n/locales/en.json` (append-only, plugins.companion.* keys), `docs/features/companion/README.md`. Also `.claude/active-runs.md` (this entry) on master.
+  - **Status:** started — no overlap with active sessions. /research runs scoped to Obsidian + .research-cache. radio-dual-engine worktree-isolated to `src-tauri/src/radio/`, `src/features/radio/`, `DesktopFooter.tsx`, `radio.json` — only potential overlap is `src/i18n/locales/en.json` (append-via-Edit safe; both add to different sections). User explicitly requested worktree isolation; will NOT merge to master in this session — user wants to test the branch first.
+
 - **[2026-05-09 ~21:15] /research — cli-coordination-active-runs (design + execute)**
   - **Source:** in-session conversation following Claude+CapCut run; user request to design and execute the active-runs ledger right away
   - **Paths:** `.claude/active-runs.md`, `.claude/CLAUDE.md`, `.claude/skills/research/skill.md`, `docs/concepts/cli-coordination-active-runs.md`, `docs/concepts/README.md`
