@@ -773,6 +773,27 @@ CREATE INDEX IF NOT EXISTS idx_companion_background_job_status
     ON companion_background_job(status, created_at);
 CREATE INDEX IF NOT EXISTS idx_companion_job_status_created
     ON companion_background_job(status, created_at);
+
+-- Phase 3 c v3 (Athena desktop awareness): ambient signal projection.
+-- The windowed app's AmbientContextFusion is in-memory only, so the
+-- daemon process can't see signals captured by clipboard/file/app_focus
+-- watchers. This table is the cross-process bridge: capture-side writes
+-- a redacted row after each in-memory push; daemon reads recent rows at
+-- execution time, applies persona policy, renders an ambient prefix.
+-- Payloads are POST-redaction (JWT/AWS/Stripe/GitHub/Slack/Bearer/email
+-- patterns stripped at capture per Phase 3 v1). Eviction is age-based
+-- (default 24h) — the table is a rolling buffer, not durable history.
+CREATE TABLE IF NOT EXISTS ambient_signal (
+    id           TEXT PRIMARY KEY,                  -- 'sig_<n>' (matches in-memory id format)
+    source       TEXT NOT NULL,                     -- 'clipboard' | 'file_watcher' | 'app_focus'
+    captured_at  INTEGER NOT NULL,                  -- unix epoch ms
+    payload      TEXT,                              -- redacted content/title/path; nullable for metadata-only signals
+    metadata     TEXT                               -- optional JSON for source-specific extras (file_event_kind, app_name, etc.)
+);
+CREATE INDEX IF NOT EXISTS idx_ambient_signal_captured
+    ON ambient_signal(captured_at DESC);
+CREATE INDEX IF NOT EXISTS idx_ambient_signal_source_captured
+    ON ambient_signal(source, captured_at DESC);
 "#;
 
 /// Seed all built-in local credentials if they don't already exist.
