@@ -1,9 +1,9 @@
 # Codebase Context Snapshot — personas
 
-> Generated: 2026-05-02T08:43:53.777Z
+> Generated: 2026-05-09T18:41:45.919Z
 > Source: dev_contexts table for project_id=b0c1541f-af08-4912-818e-19ca94f7b6e9
 > Total groups: 8, Total contexts: 32
-> Git HEAD at generation: 4560b79e (architect: refactor VideoLane onto MediaLaneShell)
+> Git HEAD at generation: 93ecd453 (explorer: i18n bundle dialog toasts (4 sites of inline plural suffix))
 >
 > **DO NOT EDIT MANUALLY.** Re-run `/refresh-context` to regenerate.
 > Consumed by `/research` for relevance scoring.
@@ -244,8 +244,6 @@ Orchestrates AI-driven credential schema design where the system analyzes an int
 **Entry points:** src/features/vault/sub_catalog/components/design/CredentialDesignModal.tsx, src/features/vault/sub_catalog/components/design/useCredentialDesignOrchestrator.ts
 
 **Keywords:** credential design, AI schema, recipe confidence, orchestrator, analyzing phase, preview
-
-**API surface:** Tauri: credential_design commands
 
 **Tech stack:** React, TypeScript
 
@@ -516,8 +514,6 @@ The Rust execution engine processes agent runs including prompt templating, chec
 **Entry points:** src-tauri/src/commands/execution/executions.rs, src-tauri/src/engine/test_runner.rs
 
 **Keywords:** execution engine, prompt, test runner, assertions, process activity, rate limiting, cost
-
-**API surface:** Tauri commands: run_execution, run_test_suite
 
 **Tech stack:** Rust, Tauri, SQLite
 
@@ -812,6 +808,7 @@ Provides user-facing settings panels for account configuration, API key manageme
 
 ---
 
+
 ---
 
 <!--
@@ -1049,7 +1046,7 @@ Persona capability-dimension visualization kit (domain-specific, not a generic p
 
 
 <!-- snapshot-meta
-git_head: 4560b79e45765a7e0b73a7bf84e2f120be8566f9
-git_commit_count: 1144
-generated_at: 2026-05-02T08:43:53.777Z
+git_head: 93ecd453f59781a467f938655e7a7eb7624c9711
+git_commit_count: 1646
+generated_at: 2026-05-09T18:41:45.919Z
 -->

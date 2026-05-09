@@ -1,8 +1,8 @@
 # Codebase Catalogs — personas
 
-> Generated: 2026-05-02T08:44:29.627Z
-> Templates: 123 across 14 categories
-> Connectors: 121 across 36 categories
+> Generated: 2026-05-09T18:42:29.073Z
+> Templates: 125 across 14 categories
+> Connectors: 122 across 36 categories
 >
 > **DO NOT EDIT MANUALLY.** Re-run `/refresh-context` to regenerate.
 > Consumed by `/research` for template/credential bucket dedup and gap analysis.
@@ -18,7 +18,7 @@ When an idea is bucketed as a **template** or **credential** proposal:
 
 ---
 
-## Template Catalog (123)
+## Template Catalog (125)
 
 ### content (13)
 
@@ -114,7 +114,7 @@ When an idea is bucketed as a **template** or **credential** proposal:
 - **web-marketing** — Weekly cross-channel marketing intelligence. Pulls paid campaign performance and organic SEO metrics, detects keyword cannibalization between paid and organic, and proposes specific optimizations that persist through human review into a learning memory of what works. — flow: Ad Platform -> Analytics Tool -> Messages
 - **website-conversion-audit** — On-demand website analysis agent specialized in auditing local service business websites (HVAC, plumbing, landscaping, roofing) for conversion optimization gaps. Scrapes and analyzes the target URL, scores gaps across 8 categories, and produces a prioritized recommendations report. Learns which gap types matter most via Memory. — flow: Website URL -> AI Analysis -> Messages
 
-### productivity (12)
+### productivity (13)
 
 - **appointment-orchestrator** — Processes new Calendly bookings end-to-end: enriches CRM contacts and deals, sends personalized confirmation emails with prep materials, notifies the team in the messaging channel, dispatches 24h reminders and post-meeting follow-ups, and handles cancellations gracefully. — flow: Calendly -> CRM -> email -> messaging
 - **daily-standup-compiler** — Personal business OS that starts each day informed, accountable, and focused. Morning briefing consolidates niche news, goal progress, pending work, and a prioritized action plan into one message. On-demand decision support builds weighted matrices with kill criteria. Weekly Sunday retrospective reviews goals and triages the week's captured ideas. — flow: Web Research -> Goals & Tasks -> Messages
@@ -128,6 +128,7 @@ When an idea is bucketed as a **template** or **credential** proposal:
 - **router** — Universal webhook receiver that replaces Zapier for simple automations. Accepts any webhook payload, classifies the event using signature matching + payload analysis + reasoning, and fan-outs to the messaging channel, email, knowledge base, and spreadsheet based on configurable routing rules. — flow: Webhook Ingestion -> messaging -> email -> knowledge base -> spreadsheet
 - **survey-insights-analyzer** — Processes new survey responses from a local database on a cadence, applies sentiment classification and theme clustering, tracks trends across periods, flags anomalies, and delivers structured insight reports with actionable recommendations. — flow: Local Database -> In-App Messaging
 - **survey-processor** — Polls Google Forms for new survey responses, scores answers using a configurable rubric, writes structured records to spreadsheet, posts tier-aware summaries to the messaging channel, and sends personalized tier-based follow-up emails via email. — flow: Google Forms -> spreadsheet -> messaging -> email
+- **vault-grounded-journal-coach** — Reads new daily journal entries in your Obsidian vault, walks the vault for grounded context (past wiki articles, prior journals, meeting notes), detects recurring-struggle patterns across the last N weeks, and writes a tone-controlled reflection back into the same daily note under a `## Coach` section. Backward-looking companion to a daily-standup briefing — never a replacement for the user's own thinking, only a mirror grounded in their own knowledge. — flow: Obsidian Vault -> Personas Memory -> Messages
 
 ### project-management (4)
 
@@ -136,7 +137,7 @@ When an idea is bucketed as a **template** or **credential** proposal:
 - **deadline-synchronizer** — Keeps boards deadlines in lockstep with calendar, fires tiered messaging reminders at 48h / 4h / 15min before due, and moves overdue cards to a 'Blocked' list with an explanatory comment so nothing rots silently. — flow: project management -> calendar -> messaging
 - **technical-decision-tracker** — Architecture Decision Record (ADR) specialist that captures engineering decisions with full context, structured alternatives analysis, stakeholder sign-off, and linked code references in a knowledge base databases — then runs periodic review cycles so decisions don't rot into mysterious legacy. — flow: knowledge base -> Source Control -> Messages
 
-### research (14)
+### research (15)
 
 - **ai-research-report-generator** — Accepts research topics via webhook or chat, searches multiple web sources grounded in user-defined reference sources, synthesizes consultant-quality reports with confidence-scored conclusions, stores them in a knowledge base, and delivers via email and chat with full source citations. — flow: Messaging -> Knowledge Base -> Email
 - **ai-weekly-research** — Weekly AI-domain intelligence digest grounded in the user's own reference sources. Tracks announcements, model releases, policy shifts, and open-source moves — synthesized into one impact-scored briefing with longitudinal trend tracking. — flow: Web Research -> Messaging
@@ -146,6 +147,7 @@ When an idea is bucketed as a **template** or **credential** proposal:
 - **database-performance-monitor** — Continuous database performance monitor that builds adaptive statistical baselines during a silent learning period, then detects anomalies via direction- and correlation-aware thresholds. Severity-tiered alerts: warning context, critical escalation with root cause hypothesis and remediation options. — flow: Database -> Messaging
 - **industry-intelligence-aggregator** — Monitors user-defined industry sources (RSS feeds, URL lists, watched sites), deduplicates articles, AI-summarizes with importance scoring, logs to a knowledge base, posts breaking news to messaging in real-time, and ships a categorized daily briefing via email. — flow: Web Research -> Knowledge Base -> Messaging -> Email
 - **knowledge-base-health-auditor** — Treats your workspace knowledge surface like source code with a periodic test suite. Lints persona memories, vector knowledge bases, and an optional Obsidian vault for staleness, broken wikilinks, contradictions, and orphan pages — every finding routes through manual review so the human owns the prune decision. — flow: Personas Memory -> Personas Vector DB -> Obsidian Vault -> Messages
+- **linkedin-watchlist-scout** — Watches a curated list of LinkedIn company pages via Bright Data's structured LinkedIn scraper. Detects new posts, senior hires, product launches, and headcount shifts. Ships score-≥4 changes via messaging in real time, then ships a weekly digest connecting cross-company patterns. Built to demonstrate Bright Data's 660+ pre-built scrapers in a real agent workflow. — flow: Source List -> Bright Data -> Messaging
 - **product-analytics-briefer** — Daily product intelligence: pulls key metrics from your analytics tool, compares against goals and 7/30-day baselines, flags anomalies, delivers a plain-English briefing, and logs a longitudinal record for trend tracking. Learns which metrics matter from review feedback. — flow: Analytics Tool -> Messages -> Knowledge Base
 - **product-scout** — Scans configured email sources for implementation opportunities (new connectors, API version updates, tooling), enriches findings with web research, holds each for human triage, and learns which topic areas actually ship from accept/reject feedback. — flow: Email -> Web Research -> Messages
 - **product-signal-detector** — Monitors product analytics for statistically significant signals — funnel breakages, feature adoption spikes, retention shifts — and routes them via insight cards with optional auto-ticketing for critical anomalies. Persistent-warning logic escalates slow-burn regressions. — flow: Analytics Tool -> Messages -> Ticketing Tool
@@ -187,7 +189,7 @@ When an idea is bucketed as a **template** or **credential** proposal:
 
 ---
 
-## Connector Catalog (121)
+## Connector Catalog (122)
 
 ### advertising (3)
 
@@ -223,7 +225,7 @@ When an idea is bucketed as a **template** or **credential** proposal:
 
 ### browser_automation (1)
 
-- **desktop_browser** (Local App, ?) — Browser automation via Chrome DevTools Protocol -- navigate pages, extract data, and automate web tasks.
+- **desktop_browser** (Local App, ?) — Browser automation via Chrome DevTools Protocol -- navigate pages, extract data, and automate web tasks. Works with Chrome, Edge, or Lightpanda (Zig-built CDP-compatible headless browser, 9-16x lighter for non-SPA workloads).
 
 ### calendar (2)
 
@@ -413,9 +415,10 @@ When an idea is bucketed as a **template** or **credential** proposal:
 
 - **personas_vector_db** (Built-in (Local), ?) — Local vector knowledge base powered by sqlite-vec. Store documents, create embeddings locally, and run semantic search — entirely offline, no API keys needed.
 
-### web_scraping (2)
+### web_scraping (3)
 
 - **apify** (API Token, freemium) — Apify web scraping and automation platform with actors for YouTube scraping, Twitter/X scraping, and browser automation.
+- **bright_data** (API Token, freemium) — Bright Data web data infrastructure -- SERP API, Web Unlocker (bypass bot detection / CAPTCHAs / geo-blocks), Web Scraper API (660+ pre-built scrapers including LinkedIn, Amazon, Instagram), Scraping Browser (managed Puppeteer/Playwright), and a 400M+ IP proxy network. Distinct from Firecrawl in offering structured per-site scrapers + production-grade unblocking + global proxies.
 - **firecrawl** (API Key, freemium) — Firecrawl agent-friendly web crawling API. Converts any URL into clean markdown or structured JSON, handles JS-rendered sites, and respects robots.txt. Distinct from desktop_browser in that it runs in the cloud with no local headless browser dependency.
 
 ---
@@ -425,11 +428,11 @@ When an idea is bucketed as a **template** or **credential** proposal:
 ### Template categories by density
 
 - development: 28  (well-covered)
-- research: 14  (well-covered)
+- research: 15  (well-covered)
 - sales: 14  (well-covered)
 - content: 13  (well-covered)
+- productivity: 13  (well-covered)
 - finance: 12  (well-covered)
-- productivity: 12  (well-covered)
 - marketing: 6
 - support: 6
 - devops: 5
@@ -460,6 +463,7 @@ When an idea is bucketed as a **template** or **credential** proposal:
 - notifications: 3
 - spreadsheet: 3
 - time_tracking: 3
+- web_scraping: 3
 - automation: 2  ← **sparse, gap candidate**
 - bi: 2  ← **sparse, gap candidate**
 - calendar: 2  ← **sparse, gap candidate**
@@ -471,7 +475,6 @@ When an idea is bucketed as a **template** or **credential** proposal:
 - integration: 2  ← **sparse, gap candidate**
 - monitoring: 2  ← **sparse, gap candidate**
 - scheduling: 2  ← **sparse, gap candidate**
-- web_scraping: 2  ← **sparse, gap candidate**
 - browser_automation: 1  ← **sparse, gap candidate**
 - personalization: 1  ← **sparse, gap candidate**
 - productivity: 1  ← **sparse, gap candidate**
@@ -483,7 +486,7 @@ When an idea is bucketed as a **template** or **credential** proposal:
 - API Key: 32
 - PAT: 26
 - OAuth: 17
-- API Token: 8
+- API Token: 9
 - Built-in: 3
 - Bot Token: 3
 - Service Account: 2
