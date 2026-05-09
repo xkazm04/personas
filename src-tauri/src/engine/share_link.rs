@@ -277,15 +277,38 @@ pub async fn fetch_share_link(url: &str) -> Result<Vec<u8>, AppError> {
 }
 
 /// Check that a host is safe for share link fetching (localhost or LAN).
+///
+/// IPv6 LAN addresses are accepted symmetrically with IPv4: loopback,
+/// link-local (`fe80::/10`), and unique-local (`fc00::/7`). Without this,
+/// IPv6 peers advertised via mDNS (now bracketed correctly after the p2p
+/// run on 2026-05-09) would fail share-link fetches with "must point to a
+/// local or LAN Personas instance". IPv4-mapped IPv6 (`::ffff:a.b.c.d`)
+/// delegates back to the IPv4 rules.
 fn is_safe_share_host(host: &str) -> bool {
     if host == "localhost" || host == "127.0.0.1" || host == "::1" {
         return true;
     }
-    // Allow private network ranges (RFC 1918) and link-local
     if let Ok(ip) = host.parse::<std::net::IpAddr>() {
         return match ip {
             std::net::IpAddr::V4(v4) => v4.is_private() || v4.is_link_local() || v4.is_loopback(),
-            std::net::IpAddr::V6(v6) => v6.is_loopback(),
+            std::net::IpAddr::V6(v6) => {
+                if v6.is_loopback() {
+                    return true;
+                }
+                if let Some(v4) = v6.to_ipv4_mapped() {
+                    return v4.is_private() || v4.is_link_local() || v4.is_loopback();
+                }
+                let segs = v6.segments();
+                // Link-local: fe80::/10 (first 10 bits = 1111_1110_10)
+                if (segs[0] & 0xffc0) == 0xfe80 {
+                    return true;
+                }
+                // Unique-local: fc00::/7 (first 7 bits = 1111_110)
+                if (segs[0] & 0xfe00) == 0xfc00 {
+                    return true;
+                }
+                false
+            }
         };
     }
     false
