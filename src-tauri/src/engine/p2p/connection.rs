@@ -223,23 +223,28 @@ impl ConnectionManager {
     }
 
     /// Attempt to insert a new connection, applying a deterministic tie-breaker
-    /// when a connection to the same peer already exists (simultaneous connect).
+    /// when a connection to the same peer already exists (simultaneous connect),
+    /// and enforcing the max_peers limit atomically with the insert.
     ///
     /// `is_outgoing` – true when we initiated the connection, false for incoming.
     ///
-    /// Returns `true` if the new connection was inserted (caller should spawn
-    /// the inbound dispatch loop), `false` if the new connection lost the
-    /// tie-break and was closed.
+    /// Returns `Ok(true)` if the new connection was inserted (caller should spawn
+    /// the inbound dispatch loop), `Ok(false)` if the new connection lost the
+    /// tie-break and was closed, or `Err(_)` if capacity is full at insert time.
+    /// The capacity check lives here (instead of in is_at_capacity()) because the
+    /// read-then-write split is a TOCTOU race — multiple concurrent connects could
+    /// each see "below capacity" and overshoot max_peers.
     async fn try_insert_connection(
         &self,
         peer_id: &str,
         new_conn: PeerConnection,
         is_outgoing: bool,
-    ) -> bool {
+    ) -> Result<bool, AppError> {
         let mut conns = self.connections.write().await;
 
         if let Some(existing) = conns.get(peer_id) {
             // Simultaneous connect detected — apply tie-breaker.
+            // Capacity is unchanged (replacement, not net-new) so no check needed.
             let dominated = if self.outgoing_wins(peer_id) {
                 // Our outgoing connection wins. If this IS the outgoing one,
                 // replace the existing incoming. Otherwise close the new incoming.
@@ -261,7 +266,7 @@ impl ConnectionManager {
                     quinn::VarInt::from_u32(2),
                     b"simultaneous connect tie-break",
                 );
-                return false;
+                return Ok(false);
             }
 
             // The new connection won — close the existing one before replacing.
@@ -274,10 +279,23 @@ impl ConnectionManager {
                 quinn::VarInt::from_u32(2),
                 b"simultaneous connect tie-break",
             );
+        } else if conns.len() >= self.max_peers {
+            // Net-new insert under the write lock — enforce max_peers atomically
+            // so concurrent connects can't all pass the early check and overshoot.
+            self.metrics
+                .connections_rejected_capacity
+                .fetch_add(1, Ordering::Relaxed);
+            new_conn
+                .quinn_conn
+                .close(quinn::VarInt::from_u32(1), b"capacity exceeded");
+            return Err(AppError::Validation(format!(
+                "Connection limit reached ({} peers). Disconnect a peer first.",
+                self.max_peers
+            )));
         }
 
         conns.insert(peer_id.to_string(), new_conn);
-        true
+        Ok(true)
     }
 
     /// Inner connection logic, separated so `connect_to_peer` can manage the connecting guard.
@@ -375,8 +393,9 @@ impl ConnectionManager {
             quinn_conn,
         };
 
-        // Insert with tie-breaker to handle simultaneous connect race
-        if !self.try_insert_connection(peer_id, conn, true).await {
+        // Insert with tie-breaker (and authoritative capacity check) to handle
+        // simultaneous-connect race + max_peers race in one atomic write.
+        if !self.try_insert_connection(peer_id, conn, true).await? {
             // Lost the tie-break — the incoming connection from this peer wins.
             tracing::debug!(peer_id = %peer_id, "Outgoing connection lost tie-break, aborting");
             return Ok(());
@@ -503,10 +522,11 @@ impl ConnectionManager {
             quinn_conn,
         };
 
-        // Insert with tie-breaker to handle simultaneous connect race
+        // Insert with tie-breaker (and authoritative capacity check) to handle
+        // simultaneous-connect race + max_peers race in one atomic write.
         if !self
             .try_insert_connection(&remote_peer_id, conn, false)
-            .await
+            .await?
         {
             // Lost the tie-break — the outgoing connection to this peer wins.
             tracing::debug!(peer_id = %remote_peer_id, "Incoming connection lost tie-break, closing");
