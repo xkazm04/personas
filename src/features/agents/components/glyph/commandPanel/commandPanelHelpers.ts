@@ -68,6 +68,77 @@ export function parseIntent(text: string): IntentDraft {
 }
 
 // ---------------------------------------------------------------------------
+// Stage D Phase 3 — recipe → draft pre-fill (mode 1)
+// ---------------------------------------------------------------------------
+
+/**
+ * Parse a recipe's `tool_requirements` JSON string into a comma-separated
+ * label suitable for the composer's `tools` row.
+ *
+ * The field is JSON-encoded (per `db::models::recipe::RecipeDefinition`) and
+ * usually a `string[]` like `["http_request", "file_read"]`, but historically
+ * has also been objects with a `name` field. We accept either shape and quietly
+ * drop any element that doesn't match — a malformed tag entry shouldn't block
+ * the entire pre-fill.
+ */
+export function parseRecipeTools(toolRequirements: string | null | undefined): string {
+  if (!toolRequirements) return "";
+  try {
+    const parsed = JSON.parse(toolRequirements);
+    if (!Array.isArray(parsed)) return "";
+    const labels = parsed
+      .map((entry) => {
+        if (typeof entry === "string") return entry;
+        if (entry && typeof entry === "object" && "name" in entry && typeof entry.name === "string") {
+          return entry.name;
+        }
+        return "";
+      })
+      .filter((s) => s.length > 0);
+    return labels.join(", ");
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * Merge a matched recipe's metadata into an in-flight draft (Stage D Phase 3,
+ * mode 1 acceptance).
+ *
+ * Policy:
+ * - `task`: replace with the recipe's description (or name if no description).
+ *   The user explicitly opted in by clicking "Use this recipe", so the
+ *   recipe's own clearer phrasing wins over the typed fragment that triggered
+ *   the suggestion.
+ * - `tools`: pre-fill from `tool_requirements` only when the user hasn't
+ *   already typed tools. Don't clobber explicit user input on this row —
+ *   tools tend to be intentional choices.
+ * - `when`, `output`, `review`: leave unchanged. The recipe schema doesn't
+ *   express schedules or human-review policy; output_contract is usually a
+ *   technical schema rather than a natural-language description.
+ *
+ * Pure function — no I/O, no side effects. Tests live alongside.
+ */
+export interface RecipePrefillSource {
+  name: string;
+  description: string | null;
+  tool_requirements: string | null;
+}
+
+export function mergeRecipeIntoDraft(
+  draft: IntentDraft,
+  recipe: RecipePrefillSource,
+): IntentDraft {
+  const next: IntentDraft = { ...draft };
+  next.task = (recipe.description?.trim() || recipe.name).trim();
+  if (!draft.tools.trim()) {
+    const toolsLabel = parseRecipeTools(recipe.tool_requirements);
+    if (toolsLabel) next.tools = toolsLabel;
+  }
+  return next;
+}
+
+// ---------------------------------------------------------------------------
 // Q&A — cell key -> glyph dimension (drives icon + tint per question)
 // ---------------------------------------------------------------------------
 

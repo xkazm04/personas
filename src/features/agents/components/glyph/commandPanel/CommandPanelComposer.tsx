@@ -10,14 +10,19 @@
  * Outer panel adopts the Q&A card identity: clean `bg-card-bg`, top accent
  * gradient bar, soft primary halo.
  */
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import type { Frequency, QuickConfigState, EventSubscription } from "@/features/agents/components/matrix/quickConfigTypes";
+import type { RecipeMatch } from "@/lib/bindings/RecipeMatch";
+import { getRecipe } from "@/api/recipes/recipes";
+import { useTranslation } from "@/i18n/useTranslation";
+import { useToastStore } from "@/stores/toastStore";
+import { toastCatch } from "@/lib/silentCatch";
 import type { CommandPanelProps } from "./types";
 import { CommandPanelFooter } from "./CommandPanelFooter";
 import { CommandPanelComposeStep } from "./CommandPanelComposeStep";
 import {
-  parseIntent, composeIntent, scheduleSummary,
+  parseIntent, composeIntent, scheduleSummary, mergeRecipeIntoDraft,
   type IntentDraft, type IntentKey,
 } from "./commandPanelHelpers";
 import { ComposerSchedulePickerModal } from "./composer/ComposerSchedulePickerModal";
@@ -29,6 +34,7 @@ export function CommandPanelComposer({
   intentText, onIntentChange, onLaunch, launchDisabled, onKeyDown, onQuickConfigChange,
   isBuilding,
 }: CommandPanelProps) {
+  const { t, tx } = useTranslation();
   const [draft, setDraft] = useState<IntentDraft>(() => parseIntent(intentText));
   const [frequency, setFrequency] = useState<Frequency | null>(null);
   const [time, setTime] = useState("09:00");
@@ -61,6 +67,21 @@ export function CommandPanelComposer({
 
   const setRow = (k: IntentKey, v: string) => setDraft((p) => ({ ...p, [k]: v }));
   const scheduleLabel = scheduleSummary(frequency, days, monthDay, time);
+
+  // Stage D Phase 3 — mode 1 acceptance: fetch the matched recipe and pre-fill
+  // the draft. Async errors land in the standard toast/Sentry pipeline.
+  const handleApplyRecipe = useCallback(async (match: RecipeMatch) => {
+    try {
+      const recipe = await getRecipe(match.recipe_id);
+      setDraft((prev) => mergeRecipeIntoDraft(prev, recipe));
+      useToastStore.getState().addToast(
+        tx(t.recipes.composer_suggestion.applied_toast, { name: recipe.name }),
+        "success",
+      );
+    } catch (err) {
+      toastCatch("CommandPanelComposer.applyRecipe")(err);
+    }
+  }, [t, tx]);
 
   return (
     <div className="w-full min-w-[640px] md:min-w-[800px] lg:min-w-[912px] 2xl:min-w-[1296px] 3xl:min-w-[1608px] max-w-[1800px] relative">
@@ -104,7 +125,7 @@ export function CommandPanelComposer({
           onOpenTools={() => setToolsOpen(true)}
         />
 
-        <ComposerRecipeSuggestion task={draft.task} />
+        <ComposerRecipeSuggestion task={draft.task} onApply={handleApplyRecipe} />
 
         <CommandPanelFooter
           launchDisabled={launchDisabled}

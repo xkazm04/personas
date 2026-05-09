@@ -9216,6 +9216,7 @@ export type Translations = {
       use_button: string;
       dismiss: string;
       score_label: string;
+      applied_toast: string;
     };
   };
   recipe_shared: {

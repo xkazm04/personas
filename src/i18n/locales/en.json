@@ -9209,7 +9209,8 @@
       "label": "We have a recipe for this",
       "use_button": "Use this recipe",
       "dismiss": "Dismiss",
-      "score_label": "Match"
+      "score_label": "Match",
+      "applied_toast": "Applied recipe: {name}"
     }
   },
   "recipe_shared": {
