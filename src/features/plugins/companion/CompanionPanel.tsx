@@ -11,8 +11,8 @@ import {
   Wrench,
   X,
 } from 'lucide-react';
-import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useTauriEvent } from '@/hooks/useTauriEvent';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { useCompanionStore } from './companionStore';
@@ -445,33 +445,23 @@ function Body(props: BodyProps) {
   }, [initialized, setMessages, setApprovals, setProactive]);
 
   // Subscribe to streaming events from the backend.
-  useEffect(() => {
-    let unlisten: UnlistenFn | undefined;
-    let cancelled = false;
-    listen<CompanionStreamEvent>(COMPANION_STREAM_EVENT, (event) => {
-      if (cancelled) return;
-      const ev = event.payload;
-      if (ev.kind === 'cli') {
-        // Try to extract assistant text deltas from stream-json.
-        const text = extractAssistantText(ev.payload);
-        if (text) appendStreamingText(text);
-      } else if (ev.kind === 'error') {
-        setSendError(ev.payload);
-      }
-    })
-      .then((fn) => {
-        if (cancelled) {
-          fn();
-        } else {
-          unlisten = fn;
+  useTauriEvent<CompanionStreamEvent>(
+    COMPANION_STREAM_EVENT,
+    useCallback(
+      (event) => {
+        const ev = event.payload;
+        if (ev.kind === 'cli') {
+          // Try to extract assistant text deltas from stream-json.
+          const text = extractAssistantText(ev.payload);
+          if (text) appendStreamingText(text);
+        } else if (ev.kind === 'error') {
+          setSendError(ev.payload);
         }
-      })
-      .catch(silentCatch('companion_stream_listen'));
-    return () => {
-      cancelled = true;
-      unlisten?.();
-    };
-  }, [appendStreamingText, setSendError]);
+      },
+      [appendStreamingText, setSendError],
+    ),
+    'companion_stream_listen',
+  );
 
   // Subscribe to direct-navigation events fired by Athena's `open_route`
   // op. By design these bypass the approval flow — Athena just switches
@@ -479,38 +469,23 @@ function Body(props: BodyProps) {
   // panel here so the user can keep talking while the destination loads
   // behind it (the explicit goal: "achieve using the chat and seeing
   // how it works with the app").
-  useEffect(() => {
-    let unlisten: UnlistenFn | undefined;
-    let cancelled = false;
-    listen<string>(COMPANION_NAVIGATE_EVENT, (event) => {
-      if (cancelled) return;
+  useTauriEvent<string>(
+    COMPANION_NAVIGATE_EVENT,
+    useCallback((event) => {
       const route = event.payload as SidebarSection;
       if (!VALID_NAV_ROUTES.includes(route)) return;
       useSystemStore.getState().setSidebarSection(route);
-    })
-      .then((fn) => {
-        if (cancelled) {
-          fn();
-        } else {
-          unlisten = fn;
-        }
-      })
-      .catch(silentCatch('companion_navigate_listen'));
-    return () => {
-      cancelled = true;
-      unlisten?.();
-    };
-  }, []);
+    }, []),
+    'companion_navigate_listen',
+  );
 
   // Phase F: subscribe to `open_lab` events. Athena's op auto-fires
   // these (no approval card) — we route to the persona, switch the
   // editor to the lab tab, and stash the requested mode in
   // `companionLabJump` so the LabTab consumes it on mount.
-  useEffect(() => {
-    let unlisten: UnlistenFn | undefined;
-    let cancelled = false;
-    listen<OpenLabEvent>(COMPANION_OPEN_LAB_EVENT, (event) => {
-      if (cancelled) return;
+  useTauriEvent<OpenLabEvent>(
+    COMPANION_OPEN_LAB_EVENT,
+    useCallback((event) => {
       const { personaId, mode } = event.payload;
       if (!personaId || !mode) return;
       // Pre-set the lab jump first; the LabTab effect below reads it
@@ -535,103 +510,56 @@ function Body(props: BodyProps) {
       if (typeof setEditorTab === 'function') {
         setEditorTab('lab' as never);
       }
-    })
-      .then((fn) => {
-        if (cancelled) {
-          fn();
-        } else {
-          unlisten = fn;
-        }
-      })
-      .catch(silentCatch('companion_open_lab_listen'));
-    return () => {
-      cancelled = true;
-      unlisten?.();
-    };
-  }, []);
+    }, []),
+    'companion_open_lab_listen',
+  );
 
   // Phase F: subscribe to `compose_dashboard` events (auto-fire path).
   // The spec is already saved server-side — we just navigate the user
   // to the dashboard tab so they see what Athena built. Same three-
   // store-call pattern as the OpenCompanionTab client action; kept
   // inline because this listener fires *without* an approval card.
-  useEffect(() => {
-    let unlisten: UnlistenFn | undefined;
-    let cancelled = false;
-    listen<unknown>(COMPANION_COMPOSE_DASHBOARD_EVENT, () => {
-      if (cancelled) return;
+  useTauriEvent<unknown>(
+    COMPANION_COMPOSE_DASHBOARD_EVENT,
+    useCallback(() => {
       const sys = useSystemStore.getState();
       sys.setSidebarSection('plugins');
       sys.setPluginTab('companion');
       sys.setCompanionPluginTab('dashboard');
-    })
-      .then((fn) => {
-        if (cancelled) {
-          fn();
-        } else {
-          unlisten = fn;
-        }
-      })
-      .catch(silentCatch('companion_compose_dashboard_listen'));
-    return () => {
-      cancelled = true;
-      unlisten?.();
-    };
-  }, []);
+    }, []),
+    'companion_compose_dashboard_listen',
+  );
 
   // Phase E: subscribe to proactive deliveries from the scheduler.
   // Each event payload carries newly-delivered messages — we append
   // them to the store so the panel pops the "Athena reached out"
   // card without a refetch. Dedupe by id is enforced in the store.
-  useEffect(() => {
-    let unlisten: UnlistenFn | undefined;
-    let cancelled = false;
-    listen<ProactiveDeliveryEvent>(COMPANION_PROACTIVE_EVENT, (event) => {
-      if (cancelled) return;
-      for (const m of event.payload.messages) {
-        appendProactive(m);
-      }
-    })
-      .then((fn) => {
-        if (cancelled) {
-          fn();
-        } else {
-          unlisten = fn;
+  useTauriEvent<ProactiveDeliveryEvent>(
+    COMPANION_PROACTIVE_EVENT,
+    useCallback(
+      (event) => {
+        for (const m of event.payload.messages) {
+          appendProactive(m);
         }
-      })
-      .catch(silentCatch('companion_proactive_listen'));
-    return () => {
-      cancelled = true;
-      unlisten?.();
-    };
-  }, [appendProactive]);
+      },
+      [appendProactive],
+    ),
+    'companion_proactive_listen',
+  );
 
   // Subscribe to approval-creation events. Each event payload is the
   // array of approvals created in the just-finished turn — we refetch
   // canonical pending list to stay in sync (handles edge cases like an
   // approval that finalized in a different surface mid-stream).
-  useEffect(() => {
-    let unlisten: UnlistenFn | undefined;
-    let cancelled = false;
-    listen<CreatedApproval[]>(COMPANION_APPROVALS_EVENT, () => {
-      if (cancelled) return;
+  useTauriEvent<CreatedApproval[]>(
+    COMPANION_APPROVALS_EVENT,
+    useCallback(() => {
       companionListPendingApprovals()
         .then((list) => setApprovals(list))
         .catch(silentCatch('companion_list_pending_approvals'));
-    })
-      .then((fn) => {
-        if (cancelled) {
-          fn();
-        } else {
-          unlisten = fn;
-        }
-      })
-      .catch(silentCatch('companion_approvals_listen'));
-    return () => {
-      cancelled = true;
-      unlisten?.();
-    };
-  }, [setApprovals]);
+    }, [setApprovals]),
+    'companion_approvals_listen',
+  );
 
   // Auto-scroll on new content.
   const scrollRef = useRef<HTMLDivElement>(null);
