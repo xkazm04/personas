@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSystemStore } from "@/stores/systemStore";
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
 import { Clock, RotateCw, ShieldAlert, ExternalLink } from 'lucide-react';
 import type { HealingEventPayload } from '../runnerTypes';
 
@@ -56,7 +57,7 @@ export function HealingCard({
                 {notification.title}
               </span>
               <span className="typo-code px-1.5 py-0.5 rounded bg-secondary/40 text-foreground border border-primary/10">
-                {notification.severity}
+                {tokenLabel(t, 'severity', notification.severity)}
               </span>
             </div>
           </div>
