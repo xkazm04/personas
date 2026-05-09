@@ -156,6 +156,14 @@ pub const COMPANION_CONSTITUTION_VERSION: &str = "companion_constitution_version
 /// the user dismisses the pill or completes a milestone.
 pub const ONBOARDING_QUEST_STATE: &str = "onboarding_quest_state";
 
+/// Phase 5 v1: persisted global gate for the Claude CLI session-resume
+/// awareness feature. Set by the SetupPanel desktop-awareness toggle;
+/// read by both the windowed runner (in-memory `AmbientContextFusion`
+/// state seeded on startup is in-process) and the daemon runner (queries
+/// this row directly because it can't see the in-memory state cross-
+/// process). Stored as `"true"` / `"false"` strings.
+pub const CLI_SESSION_AWARENESS_ENABLED: &str = "cli_session_awareness_enabled";
+
 /// Exact keys allowed in the settings store.
 const ALLOWED_KEYS: &[&str] = &[
     OLLAMA_API_KEY,
@@ -182,6 +190,7 @@ const ALLOWED_KEYS: &[&str] = &[
     DEV_TOOLS_CROSS_PROJECT_METADATA,
     COMPANION_CONSTITUTION_VERSION,
     ONBOARDING_QUEST_STATE,
+    CLI_SESSION_AWARENESS_ENABLED,
 ];
 
 /// Prefix patterns for per-persona dynamic keys (e.g. `auto_rollback:<persona_id>`).
@@ -265,6 +274,12 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         COMPANION_CONSTITUTION_VERSION => value.parse::<u32>().map(|_| ()).map_err(|_| {
             format!("value for '{key}' must be a non-negative integer (version), got {value:?}")
         }),
+        CLI_SESSION_AWARENESS_ENABLED => match value {
+            "true" | "false" => Ok(()),
+            _ => Err(format!(
+                "value for '{key}' must be the literal string 'true' or 'false', got {value:?}"
+            )),
+        },
         _ => Ok(()),
     }
 }

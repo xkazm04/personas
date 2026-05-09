@@ -805,6 +805,30 @@ pub fn run() {
             });
             app.manage(state_arc.clone());
 
+            // Phase 5 v1: seed the cross-process cli_session gate from app_settings
+            // on startup, so a user who toggled it ON in a previous session still
+            // has it ON after restart. Without this, AmbientContextFusion would
+            // default to false on every startup and the windowed runner's gate
+            // check would diverge from the daemon's persisted view. Read-only
+            // best-effort — failure is non-fatal (gate stays at default false).
+            #[cfg(feature = "desktop")]
+            {
+                let ambient = state_arc.ambient_context.clone();
+                let pool = state_arc.db.clone();
+                tauri::async_runtime::spawn(async move {
+                    if let Ok(Some(value)) = db::repos::core::settings::get(
+                        &pool,
+                        db::settings_keys::CLI_SESSION_AWARENESS_ENABLED,
+                    ) {
+                        let enabled = value == "true";
+                        if enabled {
+                            let mut guard = ambient.lock().await;
+                            guard.set_source_enabled("cli_session", true);
+                        }
+                    }
+                });
+            }
+
             // Radio: hidden YouTube IFrame Player + footer controller. Curated
             // stations are baked into the binary; runtime state (current station
             // + per-station shuffle cursors + volume) persists to <config>/radio_state.json.

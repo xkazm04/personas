@@ -69,6 +69,30 @@ pub async fn companion_set_sensory_source_enabled(
     ipc_auth::require_auth(&state).await?;
     let mut guard = state.ambient_context.lock().await;
     let purged = guard.set_source_enabled(&source, enabled);
+    drop(guard);
+
+    // Phase 5 v1: cli_session is a *cross-process* gate — the daemon
+    // binary needs to see it too, and the daemon can't see in-memory
+    // AmbientContextFusion state. Persist to app_settings so daemon
+    // queries can pick it up. (clipboard / file_watcher / app_focus
+    // gates remain in-memory only — those control capture in the
+    // windowed app and aren't relevant to the daemon's read path.)
+    if source == "cli_session" {
+        let pool = state.db.clone();
+        let value = if enabled { "true" } else { "false" };
+        if let Err(e) = crate::db::repos::core::settings::set(
+            &pool,
+            crate::db::settings_keys::CLI_SESSION_AWARENESS_ENABLED,
+            value,
+        ) {
+            tracing::warn!(
+                error = %e,
+                enabled,
+                "cli_session: failed to persist global gate to app_settings"
+            );
+        }
+    }
+
     Ok(purged as u32)
 }
 
