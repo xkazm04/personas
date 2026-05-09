@@ -12446,6 +12446,12 @@ export type Translations = {
       topicValues: string;
       topicExpertise: string;
       topicPersonal: string;
+      topicPromptBackground: string;
+      topicPromptOpinions: string;
+      topicPromptCommunication: string;
+      topicPromptValues: string;
+      topicPromptExpertise: string;
+      topicPromptPersonal: string;
       customTopicPlaceholder: string;
       generatingQuestions: string;
       questionProgress: string;

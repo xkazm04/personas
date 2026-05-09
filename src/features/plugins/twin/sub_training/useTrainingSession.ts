@@ -13,13 +13,19 @@ export interface QAPair {
 export const TRAINING_MIN_RICH_WORDS = 15;
 export const TRAINING_GROUNDING_LIMIT = 12;
 
+/**
+ * The prompt strings shape the LLM's question-generation output, so
+ * non-English locales need translated prompts to get questions in the
+ * user's language. `promptKey` indexes into `t.twin.training.*` —
+ * resolve at call time, not at module init.
+ */
 export const TRAINING_TOPIC_PRESETS = [
-  { id: 'background', labelKey: 'topicBackground', prompt: 'Ask me about my professional background, career history, and current role.' },
-  { id: 'opinions', labelKey: 'topicOpinions', prompt: 'Ask me about my opinions on technology, tools, and frameworks I use or recommend.' },
-  { id: 'communication', labelKey: 'topicCommunication', prompt: 'Ask me how I prefer to communicate — formality, humor, directness, and what I avoid.' },
-  { id: 'values', labelKey: 'topicValues', prompt: 'Ask me about my core values, principles, and what matters most to me professionally.' },
-  { id: 'expertise', labelKey: 'topicExpertise', prompt: 'Ask me deep questions about my areas of expertise and specialized knowledge.' },
-  { id: 'personal', labelKey: 'topicPersonal', prompt: 'Ask me about my interests, hobbies, and things I enjoy outside of work.' },
+  { id: 'background', labelKey: 'topicBackground', promptKey: 'topicPromptBackground' },
+  { id: 'opinions', labelKey: 'topicOpinions', promptKey: 'topicPromptOpinions' },
+  { id: 'communication', labelKey: 'topicCommunication', promptKey: 'topicPromptCommunication' },
+  { id: 'values', labelKey: 'topicValues', promptKey: 'topicPromptValues' },
+  { id: 'expertise', labelKey: 'topicExpertise', promptKey: 'topicPromptExpertise' },
+  { id: 'personal', labelKey: 'topicPersonal', promptKey: 'topicPromptPersonal' },
 ] as const;
 
 function wordCount(s: string): number { return s.trim().split(/\s+/).filter(Boolean).length; }

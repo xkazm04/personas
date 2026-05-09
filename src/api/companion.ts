@@ -188,6 +188,65 @@ export async function companionSetSensorySourceEnabled(
   return invoke<number>('companion_set_sensory_source_enabled', { source, enabled });
 }
 
+/**
+ * One captured ambient signal as the UI sees it. Mirrors the Rust-side
+ * `AmbientSignalEntry` shape but with `bigint` fields coerced to `number`
+ * since the rolling window holds at most ~30 signals — well below the
+ * safe-integer cap.
+ */
+export interface SensorySignalEntry {
+  id: string;
+  source: SensorySource;
+  summary: string;
+  capturedAt: number;
+  ageSecs: number;
+}
+
+/**
+ * List captured ambient signals for the "What did Athena see?" view.
+ * Optional `source` narrows to one of the three known sources; omitting
+ * returns all sources. `limit` is clamped server-side to 200; default is
+ * 50 (comfortably above the ~30 rolling-window cap).
+ *
+ * Returns newest-first.
+ */
+export async function companionListSensorySignals(
+  source?: SensorySource,
+  limit?: number,
+): Promise<SensorySignalEntry[]> {
+  const raw = await invoke<
+    Array<{
+      id: string;
+      source: SensorySource;
+      summary: string;
+      capturedAt: number | bigint;
+      ageSecs: number | bigint;
+    }>
+  >('companion_list_sensory_signals', {
+    source: source ?? null,
+    limit: limit ?? null,
+  });
+  return raw.map((s) => ({
+    id: s.id,
+    source: s.source,
+    summary: s.summary,
+    capturedAt:
+      typeof s.capturedAt === 'bigint' ? Number(s.capturedAt) : s.capturedAt,
+    ageSecs:
+      typeof s.ageSecs === 'bigint' ? Number(s.ageSecs) : s.ageSecs,
+  }));
+}
+
+/**
+ * Delete a specific captured signal by id. Returns true when the signal
+ * was found and removed; false when it was already gone (e.g. evicted
+ * by the rolling-window TTL between the user opening the view and
+ * clicking delete). Idempotent — calling twice is safe.
+ */
+export async function companionDeleteSensorySignal(id: string): Promise<boolean> {
+  return invoke<boolean>('companion_delete_sensory_signal', { id });
+}
+
 export interface CompanionMessage {
   id: string;
   role: string;

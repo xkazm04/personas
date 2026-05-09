@@ -1898,6 +1898,10 @@ pub fn run() {
             commands::companion::sensory::companion_set_sensory_source_enabled,
             #[cfg(feature = "desktop")]
             commands::companion::sensory::companion_purge_sensory_source,
+            #[cfg(feature = "desktop")]
+            commands::companion::sensory::companion_list_sensory_signals,
+            #[cfg(feature = "desktop")]
+            commands::companion::sensory::companion_delete_sensory_signal,
             commands::companion::connectors::companion_list_active_connectors,
             commands::companion::connectors::companion_set_active_connectors,
             commands::companion::connectors::companion_set_connector_enabled,

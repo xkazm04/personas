@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { AppWindow, Bot, Brain, Clipboard, FileText, Volume2, Wrench } from 'lucide-react';
+import { AppWindow, Bot, Brain, Clipboard, Eye, FileText, Volume2, Wrench } from 'lucide-react';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { useSystemStore } from '@/stores/systemStore';
@@ -12,6 +12,7 @@ import {
   type SensorySourceStateView,
 } from '@/api/companion';
 import { silentCatch } from '@/lib/silentCatch';
+import { SensorySignalsModal } from './SensorySignalsModal';
 
 /**
  * Companion plugin — Setup tab.
@@ -82,6 +83,12 @@ export default function SetupPanel() {
     },
     [refreshSensory],
   );
+
+  // "What did Athena see?" modal — lists the captured-signal rolling
+  // window with per-event delete. Refreshes the count badges via
+  // refreshSensory after close so a delete immediately reflects in
+  // the Setup card.
+  const [signalsModalOpen, setSignalsModalOpen] = useState(false);
 
   return (
     <div className="space-y-4 max-w-2xl">
@@ -170,9 +177,26 @@ export default function SetupPanel() {
                 )
               }
             />
+            <div className="px-1 pt-3">
+              <button
+                onClick={() => setSignalsModalOpen(true)}
+                className="inline-flex items-center gap-2 typo-caption font-medium text-primary hover:underline focus-ring rounded"
+              >
+                <Eye className="w-3.5 h-3.5" />
+                {t.plugins.companion.setup_desktop_view_signals}
+              </button>
+            </div>
           </>
         )}
       </SectionCard>
+
+      <SensorySignalsModal
+        open={signalsModalOpen}
+        onClose={() => {
+          setSignalsModalOpen(false);
+          void refreshSensory();
+        }}
+      />
 
       <SectionCard
         title={t.plugins.companion.setup_beta_title}

@@ -100,7 +100,7 @@ export default function TrainingAtelier() {
                   return (
                     <motion.button
                       key={topic.id}
-                      onClick={() => session.generateQuestions(topic.prompt)}
+                      onClick={() => session.generateQuestions(t.training[topic.promptKey])}
                       disabled={session.generating}
                       whileHover={{ y: -2 }}
                       whileTap={{ scale: 0.99 }}
@@ -113,7 +113,7 @@ export default function TrainingAtelier() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="typo-card-label">{t.training[topic.labelKey as keyof typeof t.training] as string}</p>
-                          <p className="typo-caption text-foreground/65 mt-1.5 line-clamp-2 leading-relaxed">{topic.prompt}</p>
+                          <p className="typo-caption text-foreground/65 mt-1.5 line-clamp-2 leading-relaxed">{t.training[topic.promptKey]}</p>
                         </div>
                       </div>
                     </motion.button>

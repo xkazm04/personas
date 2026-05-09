@@ -95,14 +95,14 @@ export default function TrainingConsole() {
                   {TRAINING_TOPIC_PRESETS.map((topic, i) => (
                     <button
                       key={topic.id}
-                      onClick={() => session.generateQuestions(topic.prompt)}
+                      onClick={() => session.generateQuestions(t.training[topic.promptKey])}
                       disabled={session.generating}
                       className="group flex items-start gap-3 p-3 rounded-interactive border border-primary/10 bg-background/60 hover:border-violet-500/30 hover:bg-violet-500/5 transition-colors text-left"
                     >
                       <span className="font-mono text-[10px] text-foreground/55 mt-1">{String(i + 1).padStart(2, '0')}</span>
                       <div className="flex-1 min-w-0">
                         <p className="typo-card-label">{t.training[topic.labelKey as keyof typeof t.training] as string}</p>
-                        <p className="typo-caption text-foreground/65 mt-0.5 line-clamp-2">{topic.prompt}</p>
+                        <p className="typo-caption text-foreground/65 mt-0.5 line-clamp-2">{t.training[topic.promptKey]}</p>
                       </div>
                       <ArrowRight className="w-3.5 h-3.5 text-foreground/40 group-hover:text-violet-300 transition-colors mt-1" />
                     </button>

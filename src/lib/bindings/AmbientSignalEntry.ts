@@ -3,7 +3,13 @@
 /**
  * A single entry in the snapshot (serialisable version of AmbientSignal).
  */
-export type AmbientSignalEntry = { source: string, summary: string, capturedAt: bigint, 
+export type AmbientSignalEntry = { 
+/**
+ * Stable per-signal id (format `sig_<n>`), assigned at capture time.
+ * Used by the "What did Athena see?" view to delete a single row
+ * without timestamp-collision races.
+ */
+id: string, source: string, summary: string, capturedAt: bigint, 
 /**
  * Seconds ago relative to snapshot time.
  */

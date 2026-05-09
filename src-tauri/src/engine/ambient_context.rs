@@ -70,6 +70,12 @@ pub type ContextStreamReceiver = tokio::sync::broadcast::Receiver<ContextEvent>;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AmbientSignal {
+    /// Stable id assigned at capture time, unique per fusion lifetime.
+    /// Format: `sig_<monotonic-counter>`. Lets the "What did Athena see?"
+    /// view target a specific signal for delete without depending on
+    /// timestamp-equality (signals can collide on captured_at when two
+    /// fire in the same second).
+    pub id: String,
     /// Signal source: "clipboard", "file_watcher", or "app_focus".
     pub source: String,
     /// Compact summary suitable for prompt injection (never raw secrets).
@@ -139,6 +145,10 @@ pub struct AmbientContextSnapshot {
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct AmbientSignalEntry {
+    /// Stable per-signal id (format `sig_<n>`), assigned at capture time.
+    /// Used by the "What did Athena see?" view to delete a single row
+    /// without timestamp-collision races.
+    pub id: String,
     pub source: String,
     pub summary: String,
     pub captured_at: u64,
@@ -311,6 +321,45 @@ impl AmbientContextFusion {
         }
     }
 
+    /// List captured signals for the "What did Athena see?" view. Optional
+    /// `source` filter narrows to one of `"clipboard"` / `"file_watcher"` /
+    /// `"app_focus"`. Returns newest-first up to `limit`. Unlike
+    /// `snapshot_for_persona`, this is an admin view — no per-persona
+    /// policy filtering, no app-focus filter; the user has the right to
+    /// see EVERYTHING that was captured to make a real privacy decision.
+    pub fn list_signals(&self, source: Option<&str>, limit: usize) -> Vec<AmbientSignalEntry> {
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+        self.signals
+            .iter()
+            .rev() // newest first
+            .filter(|s| match source {
+                Some(want) => s.source == want,
+                None => true,
+            })
+            .take(limit)
+            .map(|s| AmbientSignalEntry {
+                id: s.id.clone(),
+                source: s.source.clone(),
+                summary: s.summary.clone(),
+                captured_at: s.captured_at,
+                age_secs: now.saturating_sub(s.captured_at),
+            })
+            .collect()
+    }
+
+    /// Delete a specific signal by id. Returns `true` if the signal was
+    /// found and removed, `false` otherwise (e.g. it was already evicted
+    /// by the rolling-window eviction or didn't exist). Used by the
+    /// "What did Athena see?" view's per-event delete button.
+    pub fn delete_signal(&mut self, id: &str) -> bool {
+        let before = self.signals.len();
+        self.signals.retain(|s| s.id != id);
+        before != self.signals.len()
+    }
+
     /// Snapshot the per-source enable state. Used by the UI to render the
     /// current toggle positions and to surface "what's currently captured"
     /// counts.
@@ -465,7 +514,13 @@ impl AmbientContextFusion {
             .unwrap_or_default()
             .as_secs();
 
+        // Pre-compute id from total_captured BEFORE incrementing — gives
+        // each signal a unique stable id (`sig_<n>`) for the lifetime of
+        // this fusion instance. Survives buffer eviction; the counter is
+        // monotonic and never reused.
+        let id = format!("sig_{}", self.total_captured);
         self.signals.push_back(AmbientSignal {
+            id,
             source: source.to_string(),
             summary,
             captured_at: now,
@@ -559,6 +614,7 @@ impl AmbientContextFusion {
             })
             .take(max_count)
             .map(|s| AmbientSignalEntry {
+                id: s.id.clone(),
                 source: s.source.clone(),
                 summary: s.summary.clone(),
                 captured_at: s.captured_at,
@@ -1426,6 +1482,106 @@ mod tests {
         let clean = "main.rs - Code";
         assert_eq!(redact_window_title(clean), clean);
     }
+
+    // ── list_signals + delete_signal (Phase 2 v3) ─────────────────────────
+
+    #[test]
+    fn each_signal_gets_a_unique_stable_id() {
+        let mut fusion = AmbientContextFusion::new_for_tests();
+        fusion.push_clipboard("text", 10);
+        fusion.push_clipboard("text", 20);
+        fusion.push_file_change("modify", &["a.rs".to_string()]);
+        let ids: Vec<String> = fusion.signals.iter().map(|s| s.id.clone()).collect();
+        assert_eq!(ids, vec!["sig_0", "sig_1", "sig_2"]);
+        // Counter is monotonic across pushes; ids never reused.
+        let unique: std::collections::HashSet<_> = ids.iter().collect();
+        assert_eq!(unique.len(), 3);
+    }
+
+    #[test]
+    fn list_signals_returns_newest_first() {
+        let mut fusion = AmbientContextFusion::new_for_tests();
+        fusion.push_clipboard("text", 10);
+        fusion.push_clipboard("text", 20);
+        fusion.push_clipboard("text", 30);
+        let listed = fusion.list_signals(None, 10);
+        assert_eq!(listed.len(), 3);
+        // Newest (sig_2) first.
+        assert_eq!(listed[0].id, "sig_2");
+        assert_eq!(listed[2].id, "sig_0");
+    }
+
+    #[test]
+    fn list_signals_filters_by_source() {
+        let mut fusion = AmbientContextFusion::new_for_tests();
+        fusion.push_clipboard("text", 10);
+        fusion.push_file_change("modify", &["a.rs".to_string()]);
+        fusion.push_app_focus("Code.exe", "main.rs");
+        let clipboard = fusion.list_signals(Some("clipboard"), 10);
+        assert_eq!(clipboard.len(), 1);
+        assert_eq!(clipboard[0].source, "clipboard");
+        let app = fusion.list_signals(Some("app_focus"), 10);
+        assert_eq!(app.len(), 1);
+        assert_eq!(app[0].source, "app_focus");
+    }
+
+    #[test]
+    fn list_signals_respects_limit() {
+        let mut fusion = AmbientContextFusion::new_for_tests();
+        for i in 0..5 {
+            fusion.push_clipboard("text", i * 10);
+        }
+        let listed = fusion.list_signals(None, 3);
+        assert_eq!(listed.len(), 3);
+        // Newest 3.
+        assert_eq!(listed[0].id, "sig_4");
+        assert_eq!(listed[2].id, "sig_2");
+    }
+
+    #[test]
+    fn delete_signal_removes_target() {
+        let mut fusion = AmbientContextFusion::new_for_tests();
+        fusion.push_clipboard("text", 10);
+        fusion.push_clipboard("text", 20);
+        fusion.push_clipboard("text", 30);
+        let removed = fusion.delete_signal("sig_1");
+        assert!(removed);
+        assert_eq!(fusion.signals.len(), 2);
+        let remaining_ids: Vec<&str> = fusion.signals.iter().map(|s| s.id.as_str()).collect();
+        assert_eq!(remaining_ids, vec!["sig_0", "sig_2"]);
+    }
+
+    #[test]
+    fn delete_signal_returns_false_for_unknown_id() {
+        let mut fusion = AmbientContextFusion::new_for_tests();
+        fusion.push_clipboard("text", 10);
+        // Idempotent: calling twice on a non-existent id is safe.
+        assert!(!fusion.delete_signal("sig_999"));
+        assert!(!fusion.delete_signal("sig_999"));
+        assert_eq!(fusion.signals.len(), 1);
+    }
+
+    #[test]
+    fn delete_signal_after_eviction_returns_false() {
+        // Simulate an already-evicted signal: capture, evict by setting a
+        // tiny window cap via policy, then attempt to delete the original.
+        let mut fusion = AmbientContextFusion::new_for_tests();
+        fusion.push_clipboard("text", 10); // sig_0
+        // Force eviction by registering a 0-size policy and pushing more.
+        fusion.set_policy(
+            "p1".to_string(),
+            SensoryPolicy {
+                max_window_size: 1,
+                ..Default::default()
+            },
+        );
+        fusion.push_clipboard("text", 20); // sig_1 — pushes sig_0 out
+        // sig_0 has been evicted; delete is a no-op.
+        assert!(!fusion.delete_signal("sig_0"));
+        assert!(fusion.delete_signal("sig_1"));
+    }
+
+    // ── push_app_focus redaction (Phase 2 v1) ──────────────────────────────
 
     #[test]
     fn push_app_focus_redacts_before_storing() {

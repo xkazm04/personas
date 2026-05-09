@@ -27,10 +27,16 @@ use std::sync::Arc;
 
 use tauri::State;
 
-use crate::engine::ambient_context::SensorySourceState;
+use crate::engine::ambient_context::{AmbientSignalEntry, SensorySourceState};
 use crate::error::AppError;
 use crate::ipc_auth;
 use crate::AppState;
+
+/// Hard cap on signals returned by `companion_list_sensory_signals`.
+/// The rolling window itself is capped at ~30 by the persona-policy
+/// `max_window_size`; the UI's caller-supplied limit is clamped to
+/// this ceiling so a malformed call can't ask for unbounded results.
+const MAX_LIST_LIMIT: u32 = 200;
 
 /// Read the current sensory state — per-source toggles + per-source
 /// signal counts in the rolling window + lifetime total. Pure read;
@@ -88,4 +94,35 @@ pub async fn companion_purge_sensory_source(
         guard.set_source_enabled(&source, true);
     }
     Ok(purged as u32)
+}
+
+/// List captured signals for the "What did Athena see?" view. Optional
+/// `source` filter narrows to one of `"clipboard"` / `"file_watcher"` /
+/// `"app_focus"`. `limit` is clamped to [`MAX_LIST_LIMIT`]; default is
+/// the rolling-window max (50 — comfortably above the 30-signal default).
+/// Returns newest-first.
+#[tauri::command]
+pub async fn companion_list_sensory_signals(
+    state: State<'_, Arc<AppState>>,
+    source: Option<String>,
+    limit: Option<u32>,
+) -> Result<Vec<AmbientSignalEntry>, AppError> {
+    ipc_auth::require_auth(&state).await?;
+    let limit = limit.unwrap_or(50).min(MAX_LIST_LIMIT) as usize;
+    let guard = state.ambient_context.lock().await;
+    Ok(guard.list_signals(source.as_deref(), limit))
+}
+
+/// Delete a specific captured signal by id. Returns `true` when the
+/// signal was found and removed; `false` when it was already gone (e.g.
+/// evicted by the rolling-window TTL between the user opening the view
+/// and clicking delete). Idempotent — calling twice is safe.
+#[tauri::command]
+pub async fn companion_delete_sensory_signal(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+) -> Result<bool, AppError> {
+    ipc_auth::require_auth(&state).await?;
+    let mut guard = state.ambient_context.lock().await;
+    Ok(guard.delete_signal(&id))
 }
