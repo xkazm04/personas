@@ -86,7 +86,7 @@ export function ConfigurationPopup({
       );
       onSaved();
     } catch {
-      useToastStore.getState().addToast('Failed to save configuration', 'error');
+      useToastStore.getState().addToast(t.agents.config_popup.failed_to_save, 'error');
     } finally {
       setSaving(false);
     }
@@ -143,7 +143,7 @@ export function ConfigurationPopup({
                 onChange={(e) =>
                   setValues((prev) => ({ ...prev, [field.key]: e.target.value }))
                 }
-                placeholder={loaded ? field.placeholder : 'Loading\u2026'}
+                placeholder={loaded ? field.placeholder : t.common.loading}
                 disabled={!loaded}
                 autoFocus={field.autoFocus}
                 className={`w-full px-3 py-2 bg-secondary/40 border border-primary/20 rounded-modal typo-body text-foreground placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:ring-2 ${styles.ring} transition-all disabled:opacity-50`}
