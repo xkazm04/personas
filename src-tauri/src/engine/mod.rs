@@ -4,6 +4,8 @@ pub mod ai_healing;
 pub mod ai_helpers;
 #[cfg(feature = "desktop")]
 pub mod ambient_context;
+#[cfg(feature = "desktop")]
+pub mod ambient_signal_repo;
 pub mod api_definition;
 pub mod api_proxy;
 #[cfg(feature = "desktop")]
