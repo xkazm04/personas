@@ -791,7 +791,15 @@ pub async fn run_execution(
     // (plus the existing `personas_*` tools) as first-class MCP tools during
     // its run. Best-effort — a missing binary or unwritable settings.json
     // leaves the execution otherwise untouched.
-    match super::cli_mcp_config::install_mcp_sidecar(&exec_dir, drive_root_for_sync.as_deref()) {
+    // `project_root: None` — the runner's exec_dir is a per-persona scratch
+    // directory under temp_dir(), not the user's project root, so there are
+    // no project-local MCP servers to merge here. Future callers that DO run
+    // an agent inside a user project (e.g. dev-tools task executions) should
+    // pass `Some(project_root)` so tools the user already registered in
+    // `<project>/.claude/settings.json` (e.g. via `npx gitnexus setup`)
+    // surface to the agent automatically. See `cli_mcp_config.rs` for merge
+    // semantics.
+    match super::cli_mcp_config::install_mcp_sidecar(&exec_dir, drive_root_for_sync.as_deref(), None) {
         Ok(true) => logger.log("[mcp] registered personas-mcp in exec_dir/.claude/settings.json"),
         Ok(false) => {}
         Err(e) => logger.log(&format!("[mcp] sidecar install failed (non-fatal): {e}")),
