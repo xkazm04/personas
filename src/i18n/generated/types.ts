@@ -9211,6 +9211,12 @@ export type Translations = {
         label: string;
       };
     };
+    composer_suggestion: {
+      label: string;
+      use_button: string;
+      dismiss: string;
+      score_label: string;
+    };
   };
   recipe_shared: {
     schema_parse_error: string;

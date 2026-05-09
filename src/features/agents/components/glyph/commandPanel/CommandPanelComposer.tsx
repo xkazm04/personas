@@ -23,6 +23,7 @@ import {
 import { ComposerSchedulePickerModal } from "./composer/ComposerSchedulePickerModal";
 import { ComposerConnectorsPickerModal } from "./composer/ComposerConnectorsPickerModal";
 import { ComposerEventPickerModal } from "./composer/ComposerEventPickerModal";
+import { ComposerRecipeSuggestion } from "./composer/ComposerRecipeSuggestion";
 
 export function CommandPanelComposer({
   intentText, onIntentChange, onLaunch, launchDisabled, onKeyDown, onQuickConfigChange,
@@ -102,6 +103,8 @@ export function CommandPanelComposer({
           onOpenEvents={() => setEventsOpen(true)}
           onOpenTools={() => setToolsOpen(true)}
         />
+
+        <ComposerRecipeSuggestion task={draft.task} />
 
         <CommandPanelFooter
           launchDisabled={launchDisabled}
