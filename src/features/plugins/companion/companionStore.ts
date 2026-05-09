@@ -3,10 +3,13 @@ import type { CompanionState } from './types';
 import type {
   BrainKind,
   CompanionConnector,
+  CompanionMessage,
   PendingApproval,
   PluginToggle,
   ProactiveMessage,
 } from '@/api/companion';
+
+export type { CompanionMessage };
 
 /**
  * Brain Viewer mode: hidden when null, otherwise a 3-step wizard:
@@ -19,13 +22,6 @@ export interface BrainViewState {
   open: boolean;
   kind: BrainKind | null;
   id: string | null;
-}
-
-export interface CompanionMessage {
-  id: string;
-  role: string;
-  content: string;
-  createdAt: string;
 }
 
 /**
