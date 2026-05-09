@@ -55,6 +55,10 @@ use rusqlite::params;
 use serde_json::Value;
 
 use crate::companion::brain::{backlog, goals, rituals};
+#[cfg(feature = "desktop")]
+use crate::engine::ambient_context::{AmbientContextHandle, ContextEvent};
+#[cfg(feature = "desktop")]
+use crate::engine::context_rules::ContextRuleEngineHandle;
 use crate::db::UserDbPool;
 use crate::error::AppError;
 
@@ -70,6 +74,76 @@ pub fn collect_all(pool: &UserDbPool) -> Result<Vec<Nudge>, AppError> {
     out.extend(backlog_aging(pool).unwrap_or_default());
     out.extend(cadence_due(pool).unwrap_or_default());
     out.extend(on_this_day(pool).unwrap_or_default());
+    Ok(out)
+}
+
+/// Phase 3 b — ambient → trigger bridge. Reads the rolling ambient
+/// window and runs each captured signal through the
+/// [`ContextRuleEngine`](crate::engine::context_rules::ContextRuleEngine).
+/// Each match becomes a Nudge with `trigger_kind: "ambient_match"` and
+/// `trigger_ref: Some(rule_id)` so the existing dedupe path keeps a
+/// rule from re-firing while its prior nudge is still unresolved.
+///
+/// The rule engine's per-rule cooldown enforces minimum spacing
+/// between matches; the proactive pipeline's daily budget caps total
+/// volume; quiet hours suppress delivery. Three independent guards.
+///
+/// `desktop`-feature gated because it depends on the ambient context
+/// fusion (which lives behind the same gate).
+#[cfg(feature = "desktop")]
+pub async fn ambient_match(
+    ambient_ctx: &AmbientContextHandle,
+    rule_engine: &ContextRuleEngineHandle,
+) -> Result<Vec<Nudge>, AppError> {
+    // Snapshot the rolling window first, then drop the lock before
+    // talking to the rule engine — keeps the two locks acquired
+    // disjointly so a concurrent push_signal can run without waiting
+    // for rule evaluation.
+    let signals = {
+        let guard = ambient_ctx.lock().await;
+        guard.list_signals(None, 30)
+    };
+    if signals.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    let mut engine = rule_engine.lock().await;
+    if engine.all_rules().is_empty() {
+        // No rules registered → nothing to match. Skip the synthesis
+        // step entirely so an empty rule set is zero-cost.
+        return Ok(Vec::new());
+    }
+
+    let mut out = Vec::new();
+    for signal in &signals {
+        // Synthesize a ContextEvent from the captured signal. The
+        // rolling-window `AmbientSignalEntry` doesn't carry app_name or
+        // window_title separately — they're embedded in the summary —
+        // so app-filter rules effectively only apply to app_focus
+        // signals via the summary substring path. Documented limitation;
+        // the streaming pipeline (engine/context_rules.rs subscription)
+        // is the precise path when app/title fidelity matters.
+        let event = ContextEvent {
+            source: signal.source.clone(),
+            summary: signal.summary.clone(),
+            timestamp: signal.captured_at,
+            paths: Vec::new(),
+            app_name: None,
+            window_title: None,
+        };
+        for m in engine.evaluate(&event) {
+            // Fold the rule name into the message so the nudge UI
+            // shows "rule X matched: <signal summary>".
+            out.push(Nudge {
+                trigger_kind: "ambient_match".into(),
+                trigger_ref: Some(m.rule_id),
+                message: format!(
+                    "Athena saw something matching `{}`: {}",
+                    m.rule_name, m.event_summary
+                ),
+            });
+        }
+    }
     Ok(out)
 }
 
@@ -765,5 +839,174 @@ mod cadence_prop_tests {
         assert!(!cadence_fires_now(&sched, local_at(2, 0, Weekday::Sun)));
         // Mid-window at 01:45.
         assert!(cadence_fires_now(&sched, local_at(1, 45, Weekday::Sun)));
+    }
+}
+
+// ── ambient_match (Phase 3 b) ───────────────────────────────────────────
+
+#[cfg(all(test, feature = "desktop"))]
+mod ambient_match_tests {
+    use super::*;
+    use crate::engine::ambient_context::{create_ambient_context, AmbientContextFusion};
+    use crate::engine::context_rules::{
+        create_context_rule_engine, ContextAction, ContextPattern, ContextRule,
+    };
+
+    fn make_rule(id: &str, persona: &str, pattern: ContextPattern) -> ContextRule {
+        ContextRule {
+            id: id.into(),
+            persona_id: persona.into(),
+            name: format!("rule-{id}"),
+            pattern,
+            action: ContextAction::Log,
+            enabled: true,
+            cooldown_secs: 0,
+        }
+    }
+
+    /// Build a fusion with all per-source gates enabled (for tests that
+    /// exercise the push paths). Mirrors `new_for_tests` in
+    /// `engine::ambient_context::tests` but lives here because that's
+    /// private — duplicating the 3-line helper is fine.
+    fn enabled_fusion() -> AmbientContextFusion {
+        let mut f = AmbientContextFusion::new();
+        f.set_source_enabled("clipboard", true);
+        f.set_source_enabled("file_watcher", true);
+        f.set_source_enabled("app_focus", true);
+        f
+    }
+
+    #[tokio::test]
+    async fn no_signals_no_rules_returns_empty() {
+        let ctx = create_ambient_context();
+        let eng = create_context_rule_engine();
+        let nudges = ambient_match(&ctx, &eng).await.unwrap();
+        assert!(nudges.is_empty());
+    }
+
+    #[tokio::test]
+    async fn no_rules_short_circuits_when_signals_present() {
+        let ctx = create_ambient_context();
+        {
+            let mut g = ctx.lock().await;
+            *g = enabled_fusion();
+            g.push_clipboard_with_content("text", "hello world");
+        }
+        let eng = create_context_rule_engine();
+        let nudges = ambient_match(&ctx, &eng).await.unwrap();
+        assert!(nudges.is_empty(), "no rules → no nudges even with signals");
+    }
+
+    #[tokio::test]
+    async fn matching_rule_produces_nudge() {
+        let ctx = create_ambient_context();
+        {
+            let mut g = ctx.lock().await;
+            *g = enabled_fusion();
+            g.push_clipboard_with_content("text", "deploy plan for staging");
+        }
+        let eng = create_context_rule_engine();
+        {
+            let mut e = eng.lock().await;
+            e.add_rule(make_rule(
+                "r1",
+                "p1",
+                ContextPattern {
+                    sources: vec!["clipboard".into()],
+                    summary_contains: "Clipboard".into(), // matches the summary template
+                    ..Default::default()
+                },
+            ));
+        }
+        let nudges = ambient_match(&ctx, &eng).await.unwrap();
+        assert_eq!(nudges.len(), 1);
+        assert_eq!(nudges[0].trigger_kind, "ambient_match");
+        assert_eq!(nudges[0].trigger_ref.as_deref(), Some("r1"));
+        assert!(nudges[0].message.contains("rule-r1"));
+    }
+
+    #[tokio::test]
+    async fn rule_engine_cooldown_blocks_repeat_match() {
+        let ctx = create_ambient_context();
+        {
+            let mut g = ctx.lock().await;
+            *g = enabled_fusion();
+            g.push_clipboard_with_content("text", "first paste");
+            g.push_clipboard_with_content("text", "second paste");
+        }
+        let eng = create_context_rule_engine();
+        {
+            let mut e = eng.lock().await;
+            // Cooldown 60s — within a single tick, only the first match
+            // for a given rule registers.
+            let mut rule = make_rule(
+                "r1",
+                "p1",
+                ContextPattern {
+                    sources: vec!["clipboard".into()],
+                    ..Default::default()
+                },
+            );
+            rule.cooldown_secs = 60;
+            e.add_rule(rule);
+        }
+        let nudges = ambient_match(&ctx, &eng).await.unwrap();
+        // Two signals in window, but rule cooldown collapses to one
+        // nudge. The proactive pipeline's own dedupe is independent.
+        assert_eq!(nudges.len(), 1, "got {nudges:?}");
+    }
+
+    #[tokio::test]
+    async fn source_filter_on_rule_narrows_matches() {
+        let ctx = create_ambient_context();
+        {
+            let mut g = ctx.lock().await;
+            *g = enabled_fusion();
+            g.push_clipboard_with_content("text", "x");
+            g.push_file_change("modify", &["/src/main.rs".into()]);
+            g.push_app_focus("Code.exe", "main.rs");
+        }
+        let eng = create_context_rule_engine();
+        {
+            let mut e = eng.lock().await;
+            // Rule scoped to file_watcher only.
+            e.add_rule(make_rule(
+                "r-files",
+                "p1",
+                ContextPattern {
+                    sources: vec!["file_watcher".into()],
+                    ..Default::default()
+                },
+            ));
+        }
+        let nudges = ambient_match(&ctx, &eng).await.unwrap();
+        assert_eq!(nudges.len(), 1);
+        assert_eq!(nudges[0].trigger_ref.as_deref(), Some("r-files"));
+    }
+
+    #[tokio::test]
+    async fn disabled_rule_never_matches() {
+        let ctx = create_ambient_context();
+        {
+            let mut g = ctx.lock().await;
+            *g = enabled_fusion();
+            g.push_clipboard_with_content("text", "hello");
+        }
+        let eng = create_context_rule_engine();
+        {
+            let mut e = eng.lock().await;
+            let mut rule = make_rule(
+                "r1",
+                "p1",
+                ContextPattern {
+                    sources: vec!["clipboard".into()],
+                    ..Default::default()
+                },
+            );
+            rule.enabled = false;
+            e.add_rule(rule);
+        }
+        let nudges = ambient_match(&ctx, &eng).await.unwrap();
+        assert!(nudges.is_empty());
     }
 }

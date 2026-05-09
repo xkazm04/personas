@@ -73,13 +73,31 @@ pub fn companion_init(state: State<'_, Arc<AppState>>, app: AppHandle) -> Result
     PROACTIVE_SCHEDULER.get_or_init(|| {
         let pool = state.user_db.clone();
         let app_handle = app.clone();
+        // Phase 3 b — clone the ambient + rule-engine handles so the
+        // scheduler can run `ambient_match` candidates alongside the
+        // existing time/state-based triggers. Desktop-feature gated;
+        // non-desktop builds get None and skip the ambient leg.
+        #[cfg(feature = "desktop")]
+        let ambient_ctx = state.ambient_context.clone();
+        #[cfg(feature = "desktop")]
+        let rule_engine = state.context_rule_engine.clone();
         tauri::async_runtime::spawn(async move {
             // Tiny initial delay so first-tick observability doesn't
             // race the rest of `companion_init` (doctrine ingest,
             // orphan recovery). 30s is enough.
             tokio::time::sleep(Duration::from_secs(30)).await;
             loop {
-                if let Err(e) = run_proactive_tick(&pool, &app_handle).await {
+                let res = {
+                    #[cfg(feature = "desktop")]
+                    {
+                        run_proactive_tick(&pool, &app_handle, Some(&ambient_ctx), Some(&rule_engine)).await
+                    }
+                    #[cfg(not(feature = "desktop"))]
+                    {
+                        run_proactive_tick(&pool, &app_handle).await
+                    }
+                };
+                if let Err(e) = res {
                     tracing::warn!(error = %e, "proactive scheduler tick failed");
                 }
                 tokio::time::sleep(PROACTIVE_TICK_INTERVAL).await;
@@ -220,8 +238,48 @@ impl From<doctrine::IngestStats> for DoctrineIngestSummary {
 /// One scheduler tick: evaluate triggers, mark new messages delivered,
 /// emit `companion://proactive` if anything new landed. Errors are
 /// logged inside; the loop keeps running.
+///
+/// Desktop builds also run `ambient_match` (Phase 3 b) so context-rule
+/// matches against the rolling ambient window become Nudges alongside
+/// the time/state-based triggers. Non-desktop builds skip the ambient
+/// leg entirely.
+#[cfg(feature = "desktop")]
+async fn run_proactive_tick(
+    pool: &UserDbPool,
+    app: &AppHandle,
+    ambient_ctx: Option<&crate::engine::ambient_context::AmbientContextHandle>,
+    rule_engine: Option<&crate::engine::context_rules::ContextRuleEngineHandle>,
+) -> Result<(), AppError> {
+    let extra = match (ambient_ctx, rule_engine) {
+        (Some(ctx), Some(eng)) => proactive_engine::triggers::ambient_match(ctx, eng)
+            .await
+            .unwrap_or_else(|e| {
+                tracing::warn!(error = %e, "ambient_match: skipping (non-fatal)");
+                Vec::new()
+            }),
+        _ => Vec::new(),
+    };
+    let new_msgs = proactive_engine::evaluate_with_extra_candidates(pool, extra)?;
+    if new_msgs.is_empty() {
+        return Ok(());
+    }
+    run_proactive_tick_finalize(pool, app, new_msgs).await
+}
+
+#[cfg(not(feature = "desktop"))]
 async fn run_proactive_tick(pool: &UserDbPool, app: &AppHandle) -> Result<(), AppError> {
     let new_msgs = proactive_engine::evaluate(pool)?;
+    if new_msgs.is_empty() {
+        return Ok(());
+    }
+    run_proactive_tick_finalize(pool, app, new_msgs).await
+}
+
+async fn run_proactive_tick_finalize(
+    pool: &UserDbPool,
+    app: &AppHandle,
+    new_msgs: Vec<crate::companion::proactive::ProactiveMessage>,
+) -> Result<(), AppError> {
     if new_msgs.is_empty() {
         return Ok(());
     }

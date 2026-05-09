@@ -68,6 +68,20 @@ pub struct Nudge {
 /// only — anything deduped or budget-skipped is silently swallowed
 /// (still tracked via the existing rows, just not surfaced again).
 pub fn evaluate(pool: &UserDbPool) -> Result<Vec<ProactiveMessage>, AppError> {
+    evaluate_with_extra_candidates(pool, Vec::new())
+}
+
+/// Like [`evaluate`] but accepts a list of pre-built `Nudge`s to merge
+/// into the candidate set after the standard `triggers::collect_all`.
+/// Used by the desktop-feature path to thread `ambient_match` Nudges
+/// (which require async + the ambient_ctx + rule_engine handles) into
+/// the synchronous evaluation pipeline. Quiet hours / budget / dedupe
+/// guards still apply to the merged set — extra candidates aren't
+/// privileged.
+pub fn evaluate_with_extra_candidates(
+    pool: &UserDbPool,
+    extra: Vec<Nudge>,
+) -> Result<Vec<ProactiveMessage>, AppError> {
     if quiet::is_quiet_now(pool).unwrap_or(false) {
         tracing::debug!("proactive: quiet hours — skipping evaluation");
         return Ok(Vec::new());
@@ -75,7 +89,8 @@ pub fn evaluate(pool: &UserDbPool) -> Result<Vec<ProactiveMessage>, AppError> {
     let mut budget = budget::today(pool)?;
 
     let mut new_msgs = Vec::new();
-    let candidates = triggers::collect_all(pool)?;
+    let mut candidates = triggers::collect_all(pool)?;
+    candidates.extend(extra);
     for nudge in candidates {
         if budget.is_exhausted() {
             tracing::info!(
