@@ -133,7 +133,9 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl, shareLink
       });
       if (!selected) return;
 
-      const path = typeof selected === 'string' ? selected : selected;
+      // `multiple: false` above guarantees Tauri's open() returns string | null;
+      // the earlier `if (!selected) return` already narrowed away null.
+      const path = selected;
       setFilePath(path);
       setPhase('previewing');
       setError(null);
