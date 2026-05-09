@@ -185,3 +185,32 @@ pub struct RecipeVersionDraft {
     pub description: Option<String>,
     pub changes_summary: Option<String>,
 }
+
+// ============================================================================
+// Recipe Derivation (Stage B Phase 1b)
+// ============================================================================
+
+/// Outcome of deriving a single use case from a template into a recipe row.
+/// `Created` — no recipe existed for `(template_id, use_case_id)`; a new one was inserted.
+/// `Updated` — a recipe existed but the use case content changed; row was updated and `source_version` bumped.
+/// `Unchanged` — a recipe existed and the use case content is unchanged; nothing written.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "lowercase")]
+pub enum DeriveAction {
+    Created,
+    Updated,
+    Unchanged,
+}
+
+/// Per-use-case result returned by `derive_recipes_from_template`. The caller
+/// can aggregate these into a migration log for idempotency verification.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct DeriveResult {
+    pub use_case_id: String,
+    pub use_case_name: Option<String>,
+    pub recipe_id: String,
+    pub action: DeriveAction,
+    pub source_version: String,
+}

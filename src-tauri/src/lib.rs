@@ -1563,6 +1563,8 @@ pub fn run() {
             commands::recipes::crud::cancel_recipe_versioning,
             commands::recipes::crud::accept_recipe_version,
             commands::recipes::crud::revert_recipe_version,
+            // Recipes -- Stage B Phase 1b derivation from templates
+            commands::recipes::recipe_derivation::derive_recipes_from_template,
             // Communication -- Events
             commands::communication::events::list_events,
             commands::communication::events::list_events_in_range,

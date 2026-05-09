@@ -214,6 +214,32 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     })
 }
 
+/// Stage B Phase 1b — find a derived recipe by its (template_id, use_case_id)
+/// stable key. Returns None if no recipe has been derived for this pair yet.
+/// The (source_template_id, source_use_case_id) pair has a partial unique
+/// index, so at most one row matches.
+pub fn find_by_source(
+    pool: &DbPool,
+    template_id: &str,
+    use_case_id: &str,
+) -> Result<Option<RecipeDefinition>, AppError> {
+    timed_query!("recipes", "recipes::find_by_source", {
+        let conn = pool.get()?;
+        let result = conn.query_row(
+            "SELECT * FROM recipe_definitions
+             WHERE source_template_id = ?1 AND source_use_case_id = ?2
+             LIMIT 1",
+            params![template_id, use_case_id],
+            row_to_recipe,
+        );
+        match result {
+            Ok(recipe) => Ok(Some(recipe)),
+            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+            Err(e) => Err(AppError::Database(e)),
+        }
+    })
+}
+
 // ============================================================================
 // Persona <-> Recipe Link Operations
 // ============================================================================
