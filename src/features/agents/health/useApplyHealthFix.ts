@@ -10,8 +10,8 @@ export function useApplyHealthFix() {
   const applyPersonaOp = useAgentStore((s) => s.applyPersonaOp);
   const addToast = useToastStore((s) => s.addToast);
 
-  const handleApplyFix = useCallback(async (issue: DryRunIssue) => {
-    if (!selectedPersona || !issue.proposal) return;
+  const handleApplyFix = useCallback(async (issue: DryRunIssue): Promise<boolean> => {
+    if (!selectedPersona || !issue.proposal) return false;
 
     try {
       const ctx = parseJsonOrDefault<DesignContextData | null>(selectedPersona.design_context, null) ?? {};
@@ -83,8 +83,10 @@ export function useApplyHealthFix() {
       });
 
       addToast(`Applied fix: ${issue.proposal.label}`, 'success');
+      return true;
     } catch (err) {
       addToast(`Failed to apply fix: ${err instanceof Error ? err.message : String(err)}`, 'error');
+      return false;
     }
   }, [selectedPersona, applyPersonaOp, addToast]);
 

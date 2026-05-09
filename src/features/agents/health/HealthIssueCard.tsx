@@ -22,7 +22,7 @@ const SEVERITY_ICONS: Record<DryRunIssue['severity'], typeof AlertTriangle> = {
 export interface HealthIssueCardProps {
   issue: DryRunIssue;
   personaId: string;
-  onApplyFix: (issue: DryRunIssue) => void;
+  onApplyFix: (issue: DryRunIssue) => Promise<boolean>;
   onResolved: (id: string) => void;
 }
 
@@ -31,9 +31,9 @@ export function HealthIssueCard({ issue, onApplyFix, onResolved }: HealthIssueCa
   const style = SEVERITY_STYLES[issue.severity];
   const Icon = SEVERITY_ICONS[issue.severity];
 
-  const handleApply = () => {
-    onApplyFix(issue);
-    onResolved(issue.id);
+  const handleApply = async () => {
+    const ok = await onApplyFix(issue);
+    if (ok) onResolved(issue.id);
   };
 
   if (issue.resolved) {
