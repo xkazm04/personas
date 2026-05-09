@@ -13,4 +13,11 @@ id: string, source: string, summary: string, capturedAt: bigint,
 /**
  * Seconds ago relative to snapshot time.
  */
-ageSecs: bigint, };
+ageSecs: bigint, 
+/**
+ * Redacted clipboard text (or other captured payload), if any.
+ * Lets the "What did Athena see?" view show what the user actually
+ * pasted — with credential-shaped substrings already masked. None
+ * for sources that don't capture content.
+ */
+redactedContent: string | null, };

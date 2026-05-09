@@ -1,14 +1,44 @@
 # Stage B — Recipe migration: from inline-template-UCs to recipe references
 
-**Status:** Design — ready for Phase 1a implementation. Phase 1b (migration script) and Phase 2 (template payload schema) gated on Phase 1a landing first.
+**Status:** Phase 1a + 1b + 2.1 + 1b/2.2 amendment + round-trip parity tests SHIPPED on `stage-b` branch (worktree at `../personas-stage-b`). Pending: Phase 2.2 actual conversion (run `--apply` on 125 templates after Phase 1b's migration populates the DB) + Phase 2.3 retirement of the inline-UC parsing path.
 
-**Date:** 2026-05-09
+**Date:** 2026-05-09 (initial design); updated 2026-05-09 with implementation summary.
 
-**Owner:** Whoever picks up the next session after Stage A4.
+**Owner:** Whoever picks up the next session after the merge.
 
 **Why this exists:** the Recipe redesign agreed 2026-05-02 (`project_recipe_redesign` memory) defined Recipe as the canonical *shareable* unit, but templates today bake their use cases inline as full capability definitions in `payload.use_cases[]`. Stage B closes that gap by making templates *reference* recipes by ID. This unblocks Stage D (Glyph recipe injection) and the persona-hub signing work in `unclear-wins/idea-728d3714` (which is explicitly waiting on this).
 
 **Note on backward compatibility:** the app is pre-live, so we are NOT keeping inline-UC support after migration. The user's stated direction (2026-05-09) is "we don't need to keep legacy templates always alive ... though we will need proper live tests." Phase 1a's schema is forward-only; the one-time migration converts all 125 existing templates and the inline-UC parsing path is retired in Phase 2.
+
+---
+
+## Implementation status (2026-05-09)
+
+| Phase | Status | Commit |
+|---|---|---|
+| **1a** Schema additions (4 nullable columns + partial unique index) | ✅ **shipped** | `d31a639e4` (with A1 + A4) |
+| **1b** `derive_recipes_from_template` Rust command | ✅ **shipped** | `b6b941746` |
+| **1b/2.2 amendment** Deterministic recipe IDs (UUIDv5) + Python conversion script | ✅ **shipped** | `82594ffb3` |
+| **2.1** `hydrate_recipe_refs` parser pre-pass | ✅ **shipped** | `e987008d2` |
+| **2 round-trip parity tests** (load-bearing safety contract) | ✅ **shipped** | `e0b2e3feb` |
+| **2.2 actual conversion** (run `--apply` on 125 template JSON files) | ⏭ **pending** — gated on Phase 1b migration running against populated DB |
+| **2.3 retirement** of inline-UC parsing path in `template_v3.rs` | ⏭ **pending** — gated on 2.2 in production for ≥ 1 release |
+
+**Cross-language canary value (Rust + Python parity proved):**
+```
+derive_recipe_id("incident-logger", "uc_log_incident")
+  = "8205b2bf-22a9-5821-9783-0e1150d620f5"
+```
+
+If this value ever changes on either side, every previously-derived recipe row is orphaned — coordinated re-key migration required (see `Risks` §5 below + the canary test asserts in both `recipe_derivation.rs` and `convert-templates-to-recipe-refs.py`).
+
+**Verification status:**
+- `cargo test --lib derive_recipe_id` — 5/5 passing
+- `cargo test --lib hydrate` — 8/8 passing
+- `cargo test --lib round_trip` (4 new + 7 unrelated) — 11/11 passing
+- `python scripts/convert-templates-to-recipe-refs.py --self-test` — pass; canary matches Rust byte-for-byte
+- `cargo check` clean (107 pre-existing warnings, zero errors)
+- `npx tsc --noEmit` clean
 
 ---
 
@@ -313,13 +343,86 @@ These ship in a later stage when there's editor work happening anyway.
 
 ---
 
+## Run sequence for Phase 2.2 + 2.3 (idempotent, ordered)
+
+When the parallel master sessions finish and `stage-b` is ready to merge, the
+remaining Phase 2.2 and 2.3 steps run in this order. Every step is
+idempotent — re-running is safe.
+
+```
+# 0. From the worktree (or post-merge from main checkout):
+cd /c/Users/mkdol/dolla/personas-stage-b      # or main checkout
+
+# 1. Start the dev app with the test-automation feature so the migration
+#    script can reach the Tauri command via :17320.
+npm run tauri:dev:test
+#    Confirm: curl http://127.0.0.1:17320/health
+
+# 2. Run Phase 1b migration — populates recipe_definitions rows with
+#    deterministic UUIDv5 ids. Re-running is a no-op on already-derived
+#    recipes (each result reports `Unchanged`).
+python scripts/migrate-template-usecases-to-recipes.py \
+  --report docs/tests/results/recipe-migration-$(date +%Y%m%d-%H%M%S).json
+#    Expected: ~375 recipes created (125 templates × ~3 UCs avg).
+#    Expected: zero failures. If any: investigate before continuing.
+
+# 3. Sanity check: pick one template, query its derived recipes by source.
+sqlite3 ~/.local/share/personas/personas.db \
+  "SELECT id, source_use_case_id, source_version
+     FROM recipe_definitions
+     WHERE source_template_id = 'incident-logger'
+     ORDER BY source_use_case_id;"
+#    Expected: each UC has exactly one recipe; ids are deterministic UUIDv5.
+
+# 4. Run Phase 2.2 conversion — rewrites all 125 template JSON files
+#    in place. Default is --dry-run; pass --apply to actually write.
+python scripts/convert-templates-to-recipe-refs.py --self-test  # canary check
+python scripts/convert-templates-to-recipe-refs.py             # dry-run preview
+python scripts/convert-templates-to-recipe-refs.py --apply     # actual write
+
+# 5. Verify the converted templates still adopt cleanly. Pick a few
+#    representative templates from different tiers:
+#    - Tier 0: incident-logger
+#    - Tier 2: notion-docs-auditor (needs Notion credential)
+#    - Tier 3: email-morning-digest (needs Gmail credential)
+#    Adopt each via the gallery, run through to promotion, verify the
+#    resulting agent_ir matches what the inline-UC version produced.
+#    The round-trip parity tests in template_v3.rs prove this should
+#    work, but live verification is the safety net.
+
+# 6. If verification passes — commit the 125 template JSON file changes.
+git add scripts/templates/
+git commit -m "B Phase 2.2: convert all templates to recipe_ref shape"
+git push  # to whatever branch is ready for merge
+
+# 7. Phase 2.3 retirement — only after step 6 has been in production
+#    for at least one release with no recipe-related bug reports.
+#    Edit src-tauri/src/engine/template_v3.rs:
+#    - Add a runtime check at hydrate_recipe_refs entry that hard-errors
+#      if any UC is missing both `recipe_ref` AND `id` (i.e. legacy
+#      inline UC after the cutoff).
+#    - Update is_v3_shape to no longer treat inline UCs as v3-shaped
+#      (recipe_ref-only after retirement).
+#    - Verify cargo check + cargo test all green.
+#    Commit + ship.
+```
+
+**Idempotency guarantees baked in:**
+- Phase 1b migration: `(source_template_id, source_use_case_id)` partial unique index. Re-running on a populated DB hits the duplicate-key path and falls back to update-or-noop based on content comparison.
+- Phase 2.2 conversion: a UC already in `recipe_ref` shape is left alone. Re-running on already-converted templates is a no-op.
+- Cross-language canary: the Rust `derive_recipe_id_frozen_canary` test and the Python `--self-test` both assert against `8205b2bf-22a9-5821-9783-0e1150d620f5` for `("incident-logger", "uc_log_incident")`. Drift on either side fails CI.
+
 ## Concrete next steps
 
 **This Stage B turn or next:** Phase 1a (schema additions, struct + ts-rs regen + repo updates + verification). Self-contained, mechanical, ~1–2 hours of careful work.
 
-**Next session:** Phase 1b (`derive_recipes_from_template` Rust command + migration script). Run on dev DB, verify idempotency, write the round-trip parity test from risk #3.
+**~~Next session:~~ Phase 1b SHIPPED on `stage-b`** (`derive_recipes_from_template` Rust command + migration script + deterministic UUID amendment). Round-trip parity tests landed under Phase 2.
 
-**Session after that:** Phase 2 (template_v3 parser update + retire inline path + walk JSON files to convert all 125 templates). This is the load-bearing change that's hardest to revert.
+**~~Session after that:~~ Phase 2.1 SHIPPED on `stage-b`** (`hydrate_recipe_refs` parser pre-pass with bindings substitution + 8 unit tests + 4 round-trip parity tests).
+
+**Pending merge + post-merge run-sequence (above):**
+- Phase 2.2 actual conversion — run `migrate-template-usecases-to-recipes.py` then `convert-templates-to-recipe-refs.py --apply`. Mechanical once you have a populated dev DB. ~5 minutes wall-clock.
+- Phase 2.3 retirement of inline-UC parsing — gated on Phase 2.2 in production for ≥ 1 release. Mechanical edit to `template_v3.rs`.
 
 **Don't start Phase 3 until users start requesting it** — authoring UX without authoring volume is empty calories.
 

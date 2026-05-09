@@ -3,11 +3,6 @@ import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 import type { Persona } from "@/lib/bindings/Persona";
 import type { PersonaDesignReview } from "@/lib/bindings/PersonaDesignReview";
 import type { N8nPersonaDraft, TransformQuestionResponse } from "@/api/templates/n8nTransform";
-import type { TemplateAdoptStartResult } from "@/lib/bindings/TemplateAdoptStartResult";
-import type { TemplateAdoptConfirmResult } from "@/lib/bindings/TemplateAdoptConfirmResult";
-
-export type { TemplateAdoptStartResult } from "@/lib/bindings/TemplateAdoptStartResult";
-export type { TemplateAdoptConfirmResult } from "@/lib/bindings/TemplateAdoptConfirmResult";
 
 export interface TemplateAdoptSnapshot {
   adopt_id: string;
@@ -21,58 +16,19 @@ export interface TemplateAdoptSnapshot {
 // ============================================================================
 // Template Adoption -- commands
 // ============================================================================
-
-export const startTemplateAdoptBackground = (
-  adoptId: string,
-  templateName: string,
-  designResultJson: string,
-  adjustmentRequest?: string | null,
-  previousDraftJson?: string | null,
-  userAnswersJson?: string | null,
-  connectorSwapsJson?: string | null,
-) =>
-  invoke<TemplateAdoptStartResult>("start_template_adopt_background", {
-    adoptId,
-    templateName,
-    designResultJson,
-    adjustmentRequest: adjustmentRequest,
-    previousDraftJson: previousDraftJson,
-    userAnswersJson: userAnswersJson,
-    connectorSwapsJson: connectorSwapsJson,
-  });
+//
+// 2026-05-09 — Six legacy adoption-job commands removed (Stage A1):
+//   start_template_adopt_background, clear_template_adopt_snapshot,
+//   cancel_template_adopt, confirm_template_adopt_draft,
+//   generate_template_adopt_questions, continue_template_adopt.
+// The modal flow at MatrixAdoptionView uses inline questionnaire +
+// create_adoption_session instead. The two surviving commands below
+// remain wired:
+//   - getTemplateAdoptSnapshot: polled by useAdoptionCompletionNotifier
+//   - instantAdoptTemplate: dev-tools Dev Clone shortcut
 
 export const getTemplateAdoptSnapshot = (adoptId: string) =>
   invoke<TemplateAdoptSnapshot>("get_template_adopt_snapshot", { adoptId });
-
-export const clearTemplateAdoptSnapshot = (adoptId: string) =>
-  invoke<void>("clear_template_adopt_snapshot", { adoptId });
-
-export const cancelTemplateAdopt = (adoptId: string) =>
-  invoke<void>("cancel_template_adopt", { adoptId });
-
-export const confirmTemplateAdoptDraft = (draftJson: string, templateName?: string) =>
-  invoke<TemplateAdoptConfirmResult>("confirm_template_adopt_draft", {
-    draftJson,
-    templateName: templateName,
-  });
-
-export const generateTemplateAdoptQuestions = (
-  templateName: string,
-  designResultJson: string,
-) =>
-  invoke<TransformQuestionResponse[]>("generate_template_adopt_questions", {
-    templateName,
-    designResultJson,
-  });
-
-export const continueTemplateAdopt = (
-  adoptId: string,
-  userAnswersJson: string,
-) =>
-  invoke<{ adopt_id: string }>("continue_template_adopt", {
-    adoptId,
-    userAnswersJson,
-  });
 
 export const instantAdoptTemplate = (
   templateName: string,

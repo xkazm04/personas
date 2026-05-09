@@ -18,6 +18,7 @@ row_mapper!(row_to_recipe -> RecipeDefinition {
     sample_inputs, tags, icon, color,
     is_builtin [bool],
     created_at, updated_at,
+    source_template_id, source_use_case_id, source_use_case_name, source_version,
 });
 
 row_mapper!(row_to_link -> PersonaRecipeLink {
@@ -42,8 +43,21 @@ crud_get_all!(
 );
 
 pub fn create(pool: &DbPool, input: CreateRecipeInput) -> Result<RecipeDefinition, AppError> {
-    timed_query!("recipes", "recipes::create", {
-        let id = uuid::Uuid::new_v4().to_string();
+    let id = uuid::Uuid::new_v4().to_string();
+    create_with_id(pool, &id, input)
+}
+
+/// Same as `create`, but uses a caller-provided id instead of generating
+/// a fresh v4 UUID. Used by Stage B Phase 1b's `derive_recipes_from_template`
+/// flow, which derives a deterministic v5 UUID from
+/// `(source_template_id, source_use_case_id)` so the conversion script in
+/// Phase 2.2 can pre-compute recipe IDs without DB access.
+pub fn create_with_id(
+    pool: &DbPool,
+    id: &str,
+    input: CreateRecipeInput,
+) -> Result<RecipeDefinition, AppError> {
+    timed_query!("recipes", "recipes::create_with_id", {
         let now = chrono::Utc::now().to_rfc3339();
 
         let conn = pool.get()?;
@@ -51,8 +65,10 @@ pub fn create(pool: &DbPool, input: CreateRecipeInput) -> Result<RecipeDefinitio
             "INSERT INTO recipe_definitions
              (id, project_id, credential_id, use_case_id, name, description, category, prompt_template,
               input_schema, output_contract, tool_requirements, credential_requirements,
-              model_preference, sample_inputs, tags, icon, color, created_at, updated_at)
-             VALUES (?1, 'default', ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?17)
+              model_preference, sample_inputs, tags, icon, color, created_at, updated_at,
+              source_template_id, source_use_case_id, source_use_case_name, source_version)
+             VALUES (?1, 'default', ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?17,
+                     ?18, ?19, ?20, ?21)
              RETURNING *",
             params![
                 id,
@@ -72,6 +88,10 @@ pub fn create(pool: &DbPool, input: CreateRecipeInput) -> Result<RecipeDefinitio
                 input.icon,
                 input.color,
                 now,
+                input.source_template_id,
+                input.source_use_case_id,
+                input.source_use_case_name,
+                input.source_version,
             ],
             row_to_recipe,
         ).map_err(|e| match e {
@@ -116,6 +136,13 @@ pub fn update(
         push_field!(input.tags, "tags", sets, param_idx);
         push_field!(input.icon, "icon", sets, param_idx);
         push_field!(input.color, "color", sets, param_idx);
+        push_field!(
+            input.source_use_case_name,
+            "source_use_case_name",
+            sets,
+            param_idx
+        );
+        push_field!(input.source_version, "source_version", sets, param_idx);
 
         let sql = format!(
             "UPDATE recipe_definitions SET {} WHERE id = ?{} RETURNING *",
@@ -164,6 +191,12 @@ pub fn update(
         if let Some(ref v) = input.color {
             param_values.push(Box::new(v.clone()));
         }
+        if let Some(ref v) = input.source_use_case_name {
+            param_values.push(Box::new(v.clone()));
+        }
+        if let Some(ref v) = input.source_version {
+            param_values.push(Box::new(v.clone()));
+        }
         param_values.push(Box::new(id.to_string()));
 
         let params_ref: Vec<&dyn rusqlite::types::ToSql> =
@@ -191,6 +224,60 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
         let rows = tx.execute("DELETE FROM recipe_definitions WHERE id = ?1", params![id])?;
         tx.commit()?;
         Ok(rows > 0)
+    })
+}
+
+/// Stage B Phase 1b — find a derived recipe by its (template_id, use_case_id)
+/// stable key. Returns None if no recipe has been derived for this pair yet.
+/// The (source_template_id, source_use_case_id) pair has a partial unique
+/// index, so at most one row matches.
+pub fn find_by_source(
+    pool: &DbPool,
+    template_id: &str,
+    use_case_id: &str,
+) -> Result<Option<RecipeDefinition>, AppError> {
+    timed_query!("recipes", "recipes::find_by_source", {
+        let conn = pool.get()?;
+        let result = conn.query_row(
+            "SELECT * FROM recipe_definitions
+             WHERE source_template_id = ?1 AND source_use_case_id = ?2
+             LIMIT 1",
+            params![template_id, use_case_id],
+            row_to_recipe,
+        );
+        match result {
+            Ok(recipe) => Ok(Some(recipe)),
+            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+            Err(e) => Err(AppError::Database(e)),
+        }
+    })
+}
+
+/// Stage B Phase 1b — list every recipe derived from the given template.
+/// Returns rows ordered by `source_use_case_id` (stable, alphanumeric)
+/// for deterministic output. Useful for:
+///   - Verifying a Phase 1b migration ran successfully (count + spot-check ids).
+///   - Debugging Phase 2.2 conversion output before / after `--apply`.
+///   - Future template-editor UI that wants to show "this template
+///     contributes N recipes to the catalog".
+///
+/// Returns an empty Vec when no recipes have been derived for `template_id`
+/// yet (caller distinguishes "migration not run" vs "template has no UCs").
+pub fn list_by_source_template(
+    pool: &DbPool,
+    template_id: &str,
+) -> Result<Vec<RecipeDefinition>, AppError> {
+    timed_query!("recipes", "recipes::list_by_source_template", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT * FROM recipe_definitions
+             WHERE source_template_id = ?1
+             ORDER BY source_use_case_id ASC",
+        )?;
+        let rows = stmt
+            .query_map(params![template_id], row_to_recipe)?
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(rows)
     })
 }
 

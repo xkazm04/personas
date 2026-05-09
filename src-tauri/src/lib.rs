@@ -1277,14 +1277,9 @@ pub fn run() {
             commands::design::n8n_sessions::list_n8n_session_summaries,
             commands::design::n8n_sessions::update_n8n_session,
             commands::design::n8n_sessions::delete_n8n_session,
-            // Design -- Template Adopt
-            commands::design::template_adopt::start_template_adopt_background,
+            // Design -- Template Adopt (legacy adoption-jobs subsystem retired
+            // 2026-05-09; only snapshot poll + instant adopt remain wired)
             commands::design::template_adopt::get_template_adopt_snapshot,
-            commands::design::template_adopt::clear_template_adopt_snapshot,
-            commands::design::template_adopt::cancel_template_adopt,
-            commands::design::template_adopt::confirm_template_adopt_draft,
-            commands::design::template_adopt::generate_template_adopt_questions,
-            commands::design::template_adopt::continue_template_adopt,
             commands::design::template_adopt::instant_adopt_template,
             commands::design::template_adopt::generate_template_background,
             commands::design::template_adopt::get_template_generate_snapshot,
@@ -1568,6 +1563,9 @@ pub fn run() {
             commands::recipes::crud::cancel_recipe_versioning,
             commands::recipes::crud::accept_recipe_version,
             commands::recipes::crud::revert_recipe_version,
+            // Recipes -- Stage B Phase 1b derivation from templates
+            commands::recipes::recipe_derivation::derive_recipes_from_template,
+            commands::recipes::recipe_derivation::list_recipes_by_template,
             // Communication -- Events
             commands::communication::events::list_events,
             commands::communication::events::list_events_in_range,

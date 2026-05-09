@@ -218,8 +218,29 @@ pub async fn create_adoption_session(
     // `use_cases[i]` and hoist persona-wide concerns into `persona`. The
     // downstream pipeline expects the flat v2 shape — flatten in place.
     // No-op for v1/v2 payloads.
+    //
+    // 2026-05-09 — Stage B Phase 2: hydrate any `recipe_ref`-shaped UCs from
+    // the recipe catalog BEFORE normalization. Templates that have been
+    // migrated by Stage B Phase 1b's derive_recipes_from_template have UCs
+    // shaped as `{ recipe_ref: { id, version, bindings } }` — those need the
+    // recipe's stored UC JSON to be inlined before the v3-flatten pipeline
+    // can hoist triggers/connectors/events out of them.
+    let pool_for_lookup = state.db.clone();
     let normalized_agent_ir_json = match serde_json::from_str::<serde_json::Value>(&agent_ir_json) {
         Ok(mut payload) => {
+            // Phase 2 hydration: recipe_ref → inline UC. No-op when no
+            // recipe_refs present.
+            let lookup = |id: &str| -> Result<crate::db::models::RecipeDefinition, crate::error::AppError> {
+                crate::db::repos::resources::recipes::get_by_id(&pool_for_lookup, id)
+            };
+            if let Err(e) = crate::engine::template_v3::hydrate_recipe_refs(&mut payload, lookup) {
+                tracing::warn!(
+                    session_id = %session_id,
+                    error = %e,
+                    "create_adoption_session: recipe_ref hydration failed; proceeding with un-hydrated payload"
+                );
+            }
+
             if crate::engine::template_v3::is_v3_shape(&payload) {
                 crate::engine::template_v3::normalize_v3_to_flat(&mut payload);
                 tracing::info!(
@@ -228,7 +249,7 @@ pub async fn create_adoption_session(
                 );
                 serde_json::to_string(&payload).unwrap_or(agent_ir_json)
             } else {
-                agent_ir_json
+                serde_json::to_string(&payload).unwrap_or(agent_ir_json)
             }
         }
         Err(_) => agent_ir_json,
@@ -2200,6 +2221,20 @@ pub async fn promote_build_draft_inner(
                 tracing::error!(session_id = %session_id, error = %e, "Failed to parse agent_ir as JSON for promotion");
                 AppError::Validation(format!("Build session agent_ir parse error: {e}"))
             })?;
+            // 2026-05-09 — Stage B Phase 2: hydrate recipe_refs before the
+            // existing flatten step. No-op for sessions whose stored agent_ir
+            // is already inline (build-from-scratch, or pre-Phase-2 templates).
+            let pool_for_lookup = state.db.clone();
+            let lookup = |id: &str| -> Result<crate::db::models::RecipeDefinition, AppError> {
+                crate::db::repos::resources::recipes::get_by_id(&pool_for_lookup, id)
+            };
+            if let Err(e) = crate::engine::template_v3::hydrate_recipe_refs(&mut payload, lookup) {
+                tracing::warn!(
+                    session_id = %session_id,
+                    error = %e,
+                    "promote_build_draft: recipe_ref hydration failed; proceeding with un-hydrated payload"
+                );
+            }
             if crate::engine::template_v3::is_v3_shape(&payload) {
                 crate::engine::template_v3::normalize_v3_to_flat(&mut payload);
                 tracing::info!(

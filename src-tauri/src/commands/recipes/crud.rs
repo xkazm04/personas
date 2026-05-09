@@ -358,6 +358,12 @@ pub fn promote_use_case_to_recipe(
             tags: None,
             icon: None,
             color: None,
+            // Stage B Phase 1a — non-template-derived recipe (user/credential
+            // generation path). Provenance fields stay None.
+            source_template_id: None,
+            source_use_case_id: None,
+            source_use_case_name: None,
+            source_version: None,
         },
     )
 }

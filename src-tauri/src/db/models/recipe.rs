@@ -28,6 +28,14 @@ pub struct RecipeDefinition {
     pub is_builtin: bool,
     pub created_at: String,
     pub updated_at: String,
+    // 2026-05-09 — Stage B Phase 1a: provenance for template-derived recipes.
+    // Set by the derive_recipes_from_template flow (Phase 1b); NULL for
+    // user-authored recipes. The (source_template_id, source_use_case_id)
+    // pair is unique-indexed (partial, NULL-tolerant).
+    pub source_template_id: Option<String>,
+    pub source_use_case_id: Option<String>,
+    pub source_use_case_name: Option<String>,
+    pub source_version: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -48,6 +56,12 @@ pub struct CreateRecipeInput {
     pub tags: Option<String>,
     pub icon: Option<String>,
     pub color: Option<String>,
+    // 2026-05-09 — Stage B Phase 1a: only the derive_recipes_from_template
+    // flow should set these; user-facing create paths leave them None.
+    pub source_template_id: Option<String>,
+    pub source_use_case_id: Option<String>,
+    pub source_use_case_name: Option<String>,
+    pub source_version: Option<String>,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
@@ -66,6 +80,12 @@ pub struct UpdateRecipeInput {
     pub tags: Option<String>,
     pub icon: Option<String>,
     pub color: Option<String>,
+    // 2026-05-09 — Stage B Phase 1a: only the derive_recipes_from_template
+    // flow should bump source_version + source_use_case_name when a template
+    // author edits a UC. source_template_id and source_use_case_id should be
+    // immutable post-creation; not exposed here.
+    pub source_use_case_name: Option<String>,
+    pub source_version: Option<String>,
 }
 
 // ============================================================================
@@ -164,4 +184,33 @@ pub struct RecipeVersionDraft {
     pub sample_inputs: Option<String>,
     pub description: Option<String>,
     pub changes_summary: Option<String>,
+}
+
+// ============================================================================
+// Recipe Derivation (Stage B Phase 1b)
+// ============================================================================
+
+/// Outcome of deriving a single use case from a template into a recipe row.
+/// `Created` — no recipe existed for `(template_id, use_case_id)`; a new one was inserted.
+/// `Updated` — a recipe existed but the use case content changed; row was updated and `source_version` bumped.
+/// `Unchanged` — a recipe existed and the use case content is unchanged; nothing written.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "lowercase")]
+pub enum DeriveAction {
+    Created,
+    Updated,
+    Unchanged,
+}
+
+/// Per-use-case result returned by `derive_recipes_from_template`. The caller
+/// can aggregate these into a migration log for idempotency verification.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct DeriveResult {
+    pub use_case_id: String,
+    pub use_case_name: Option<String>,
+    pub recipe_id: String,
+    pub action: DeriveAction,
+    pub source_version: String,
 }

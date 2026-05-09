@@ -10379,6 +10379,17 @@ export type Translations = {
       setup_desktop_signals_count_one: string;
       setup_desktop_signals_count_other: string;
       setup_desktop_load_failed: string;
+      setup_desktop_view_signals: string;
+      sensory_signals_title: string;
+      sensory_signals_subtitle: string;
+      sensory_signals_empty: string;
+      sensory_signals_empty_hint: string;
+      sensory_signals_delete_aria: string;
+      sensory_signals_redacted_label: string;
+      sensory_filter_all: string;
+      sensory_age_seconds: string;
+      sensory_age_minutes: string;
+      sensory_age_hours: string;
       proactive_label: string;
       proactive_engage: string;
       proactive_dismiss: string;

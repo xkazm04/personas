@@ -200,6 +200,15 @@ export interface SensorySignalEntry {
   summary: string;
   capturedAt: number;
   ageSecs: number;
+  /**
+   * Redacted preview of the captured payload (Phase 3 — clipboard MVP).
+   * Present for clipboard signals when the user has the source enabled;
+   * `null` for file-watcher and app-focus signals (which carry
+   * everything in the summary). Credential-shaped substrings are
+   * already masked at capture (`[REDACTED:jwt]`, `[REDACTED:aws-key]`,
+   * `[email]`, etc.).
+   */
+  redactedContent: string | null;
 }
 
 /**
@@ -221,6 +230,7 @@ export async function companionListSensorySignals(
       summary: string;
       capturedAt: number | bigint;
       ageSecs: number | bigint;
+      redactedContent: string | null;
     }>
   >('companion_list_sensory_signals', {
     source: source ?? null,
@@ -234,6 +244,7 @@ export async function companionListSensorySignals(
       typeof s.capturedAt === 'bigint' ? Number(s.capturedAt) : s.capturedAt,
     ageSecs:
       typeof s.ageSecs === 'bigint' ? Number(s.ageSecs) : s.ageSecs,
+    redactedContent: s.redactedContent,
   }));
 }
 

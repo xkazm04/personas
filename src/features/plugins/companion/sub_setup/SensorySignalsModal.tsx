@@ -199,6 +199,16 @@ function SignalRow({
         <div className="typo-caption text-foreground/50 mt-0.5">
           {formatAge(t, signal.ageSecs)}
         </div>
+        {signal.redactedContent ? (
+          <div className="mt-2 px-2.5 py-1.5 rounded-interactive bg-foreground/[0.04] border border-foreground/5">
+            <div className="typo-caption font-medium text-foreground/55 mb-1">
+              {t.plugins.companion.sensory_signals_redacted_label}
+            </div>
+            <div className="typo-caption font-mono text-foreground/75 break-all whitespace-pre-wrap">
+              {signal.redactedContent}
+            </div>
+          </div>
+        ) : null}
       </div>
       <button
         onClick={onDelete}
