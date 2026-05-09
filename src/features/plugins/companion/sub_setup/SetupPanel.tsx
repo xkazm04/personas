@@ -1,10 +1,16 @@
-import { useEffect, useState } from 'react';
-import { Bot, Volume2, Wrench } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { AppWindow, Bot, Brain, Clipboard, FileText, Volume2, Wrench } from 'lucide-react';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
-import { companionBetaFlags } from '@/api/companion';
+import {
+  companionBetaFlags,
+  companionGetSensoryState,
+  companionSetSensorySourceEnabled,
+  type SensorySource,
+  type SensorySourceStateView,
+} from '@/api/companion';
 import { silentCatch } from '@/lib/silentCatch';
 
 /**
@@ -24,6 +30,12 @@ export default function SetupPanel() {
   const setFooterEnabled = useSystemStore((s) => s.setCompanionFooterEnabled);
   const soundEnabled = useSystemStore((s) => s.companionSoundEnabled);
   const setSoundEnabled = useSystemStore((s) => s.setCompanionSoundEnabled);
+  const recallSynthesisEnabled = useSystemStore(
+    (s) => s.companionRecallSynthesisEnabled,
+  );
+  const setRecallSynthesisEnabled = useSystemStore(
+    (s) => s.setCompanionRecallSynthesisEnabled,
+  );
 
   const [selfImprove, setSelfImprove] = useState<boolean | null>(null);
   useEffect(() => {
@@ -37,6 +49,39 @@ export default function SetupPanel() {
       cancelled = true;
     };
   }, []);
+
+  // Desktop-awareness toggles read server-side state (the per-source
+  // capture gates live in the Rust ambient_context fusion, not in
+  // localStorage — the backend is the source of truth so daemon-mode and
+  // window-mode share the same view). Refetch on mount + after every
+  // toggle so the captured-signals count badge stays current.
+  const [sensory, setSensory] = useState<SensorySourceStateView | null>(null);
+  const [sensoryLoadError, setSensoryLoadError] = useState<string | null>(null);
+  const refreshSensory = useCallback(async () => {
+    try {
+      const state = await companionGetSensoryState();
+      setSensory(state);
+      setSensoryLoadError(null);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setSensoryLoadError(msg);
+      silentCatch('companion_get_sensory_state')(err);
+    }
+  }, []);
+  useEffect(() => {
+    void refreshSensory();
+  }, [refreshSensory]);
+  const toggleSensory = useCallback(
+    async (source: SensorySource, next: boolean) => {
+      try {
+        await companionSetSensorySourceEnabled(source, next);
+      } catch (err) {
+        silentCatch('companion_set_sensory_source_enabled')(err);
+      }
+      void refreshSensory();
+    },
+    [refreshSensory],
+  );
 
   return (
     <div className="space-y-4 max-w-2xl">
@@ -58,6 +103,75 @@ export default function SetupPanel() {
           checked={soundEnabled}
           onChange={() => setSoundEnabled(!soundEnabled)}
         />
+      </SectionCard>
+
+      <SectionCard
+        title={t.plugins.companion.setup_memory_title}
+        subtitle={t.plugins.companion.setup_memory_desc}
+      >
+        <ToggleRow
+          icon={<Brain className="w-4 h-4 text-cyan-400" />}
+          label={t.plugins.companion.setup_recall_synthesis_label}
+          description={t.plugins.companion.setup_recall_synthesis_desc}
+          checked={recallSynthesisEnabled}
+          onChange={() => setRecallSynthesisEnabled(!recallSynthesisEnabled)}
+        />
+      </SectionCard>
+
+      <SectionCard
+        title={t.plugins.companion.setup_desktop_title}
+        subtitle={t.plugins.companion.setup_desktop_desc}
+      >
+        {sensoryLoadError ? (
+          <div className="px-1 py-2 typo-caption text-rose-400">
+            {t.plugins.companion.setup_desktop_load_failed}
+          </div>
+        ) : (
+          <>
+            <ToggleRow
+              icon={<Clipboard className="w-4 h-4 text-cyan-400" />}
+              label={t.plugins.companion.setup_desktop_clipboard_label}
+              description={t.plugins.companion.setup_desktop_clipboard_desc}
+              countLabel={signalsCountLabel(t, sensory?.clipboardSignalsInWindow)}
+              checked={sensory?.clipboardEnabled ?? false}
+              disabled={sensory === null}
+              onChange={() =>
+                void toggleSensory(
+                  'clipboard',
+                  !(sensory?.clipboardEnabled ?? false),
+                )
+              }
+            />
+            <ToggleRow
+              icon={<FileText className="w-4 h-4 text-cyan-400" />}
+              label={t.plugins.companion.setup_desktop_file_changes_label}
+              description={t.plugins.companion.setup_desktop_file_changes_desc}
+              countLabel={signalsCountLabel(t, sensory?.fileChangesSignalsInWindow)}
+              checked={sensory?.fileChangesEnabled ?? false}
+              disabled={sensory === null}
+              onChange={() =>
+                void toggleSensory(
+                  'file_watcher',
+                  !(sensory?.fileChangesEnabled ?? false),
+                )
+              }
+            />
+            <ToggleRow
+              icon={<AppWindow className="w-4 h-4 text-cyan-400" />}
+              label={t.plugins.companion.setup_desktop_app_focus_label}
+              description={t.plugins.companion.setup_desktop_app_focus_desc}
+              countLabel={signalsCountLabel(t, sensory?.appFocusSignalsInWindow)}
+              checked={sensory?.appFocusEnabled ?? false}
+              disabled={sensory === null}
+              onChange={() =>
+                void toggleSensory(
+                  'app_focus',
+                  !(sensory?.appFocusEnabled ?? false),
+                )
+              }
+            />
+          </>
+        )}
       </SectionCard>
 
       <SectionCard
@@ -103,13 +217,18 @@ function ToggleRow({
   icon,
   label,
   description,
+  countLabel,
   checked,
+  disabled,
   onChange,
 }: {
   icon: React.ReactNode;
   label: string;
   description: string;
+  /** Optional badge text below the description (e.g. "3 signals in the rolling window"). */
+  countLabel?: string | null;
   checked: boolean;
+  disabled?: boolean;
   onChange: () => void;
 }) {
   return (
@@ -120,10 +239,37 @@ function ToggleRow({
         <div className="typo-caption text-foreground/60 mt-0.5">
           {description}
         </div>
+        {countLabel ? (
+          <div className="typo-caption text-foreground/45 mt-1">
+            {countLabel}
+          </div>
+        ) : null}
       </div>
       <div className="shrink-0">
-        <AccessibleToggle checked={checked} onChange={onChange} label={label} />
+        <AccessibleToggle
+          checked={checked}
+          onChange={onChange}
+          label={label}
+          disabled={disabled}
+        />
       </div>
     </div>
   );
+}
+
+/**
+ * Render the rolling-window count for a sensory source. Returns null when
+ * the source has zero signals in the window (no badge needed) or when
+ * the count is undefined (state hasn't loaded yet).
+ */
+function signalsCountLabel(
+  t: ReturnType<typeof useTranslation>['t'],
+  count: number | undefined,
+): string | null {
+  if (count === undefined || count === 0) return null;
+  const tmpl =
+    count === 1
+      ? t.plugins.companion.setup_desktop_signals_count_one
+      : t.plugins.companion.setup_desktop_signals_count_other;
+  return tmpl.replace('{count}', String(count));
 }

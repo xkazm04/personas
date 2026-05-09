@@ -10368,6 +10368,17 @@ export type Translations = {
       setup_memory_desc: string;
       setup_recall_synthesis_label: string;
       setup_recall_synthesis_desc: string;
+      setup_desktop_title: string;
+      setup_desktop_desc: string;
+      setup_desktop_clipboard_label: string;
+      setup_desktop_clipboard_desc: string;
+      setup_desktop_file_changes_label: string;
+      setup_desktop_file_changes_desc: string;
+      setup_desktop_app_focus_label: string;
+      setup_desktop_app_focus_desc: string;
+      setup_desktop_signals_count_one: string;
+      setup_desktop_signals_count_other: string;
+      setup_desktop_load_failed: string;
       proactive_label: string;
       proactive_engage: string;
       proactive_dismiss: string;

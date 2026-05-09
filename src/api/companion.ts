@@ -78,10 +78,11 @@ const COMPANION_TURN_TIMEOUT_MS = 15 * 60 * 1000;
 export async function companionSendMessage(
   message: string,
   voiceEnabled: boolean = false,
+  recallSynthesisEnabled: boolean = false,
 ): Promise<SendTurnResult> {
   return invoke<SendTurnResult>(
     'companion_send_message',
-    { message, voiceEnabled },
+    { message, voiceEnabled, recallSynthesisEnabled },
     { timeoutMs: COMPANION_TURN_TIMEOUT_MS },
   );
 }
@@ -101,12 +102,90 @@ export interface TtsAudio {
   byteSize: number;
 }
 
+/**
+ * Per-call voice tuning. All fields optional; `undefined` falls back to
+ * the backend defaults (turbo_v2_5, stability 0.5, similarity 0.75, no
+ * speed/style override).
+ */
+export interface TtsSettings {
+  modelId?: string;
+  stability?: number;
+  similarityBoost?: number;
+  speed?: number;
+  style?: number;
+}
+
 export async function companionTts(
   text: string,
   credentialId: string,
   voiceId: string,
+  settings?: TtsSettings,
 ): Promise<TtsAudio> {
-  return invoke<TtsAudio>('companion_tts', { text, credentialId, voiceId });
+  return invoke<TtsAudio>('companion_tts', {
+    text,
+    credentialId,
+    voiceId,
+    settings: settings ?? null,
+  });
+}
+
+// ── Sensory toggles (Phase 2 v2 — desktop-awareness UI) ─────────────────
+
+export type SensorySource = 'clipboard' | 'file_watcher' | 'app_focus';
+
+export interface SensorySourceStateView {
+  globalEnabled: boolean;
+  clipboardEnabled: boolean;
+  fileChangesEnabled: boolean;
+  appFocusEnabled: boolean;
+  clipboardSignalsInWindow: number;
+  fileChangesSignalsInWindow: number;
+  appFocusSignalsInWindow: number;
+  totalSignalsCaptured: number;
+}
+
+/**
+ * Read the current per-source capture-gate state for the companion's
+ * ambient context. Backend defaults all per-source toggles OFF; the
+ * UI flips them ON via {@link companionSetSensorySourceEnabled}.
+ *
+ * `totalSignalsCaptured` is u64 on the Rust side; the ts-rs binding
+ * uses bigint, but we coerce to number here because JS Number is
+ * sufficient for the foreseeable signal counts (a `2^53`-bound is
+ * safely above the 30-signal rolling-window cap × any reasonable
+ * session length).
+ */
+export async function companionGetSensoryState(): Promise<SensorySourceStateView> {
+  const raw = await invoke<{
+    globalEnabled: boolean;
+    clipboardEnabled: boolean;
+    fileChangesEnabled: boolean;
+    appFocusEnabled: boolean;
+    clipboardSignalsInWindow: number;
+    fileChangesSignalsInWindow: number;
+    appFocusSignalsInWindow: number;
+    totalSignalsCaptured: number | bigint;
+  }>('companion_get_sensory_state');
+  return {
+    ...raw,
+    totalSignalsCaptured:
+      typeof raw.totalSignalsCaptured === 'bigint'
+        ? Number(raw.totalSignalsCaptured)
+        : raw.totalSignalsCaptured,
+  };
+}
+
+/**
+ * Toggle a per-source capture gate. Returns the number of signals
+ * purged from the rolling window when transitioning from on → off
+ * (always 0 on the off → on direction). Privacy contract: disabling
+ * a source stops new capture AND drops what was already captured.
+ */
+export async function companionSetSensorySourceEnabled(
+  source: SensorySource,
+  enabled: boolean,
+): Promise<number> {
+  return invoke<number>('companion_set_sensory_source_enabled', { source, enabled });
 }
 
 export interface CompanionMessage {
