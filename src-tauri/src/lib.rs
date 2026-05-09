@@ -805,9 +805,10 @@ pub fn run() {
             });
             app.manage(state_arc.clone());
 
-            // Radio: hidden YouTube IFrame Player + footer controller. Curated
-            // stations are baked into the binary; runtime state (current station
-            // + per-station shuffle cursors + volume) persists to <config>/radio_state.json.
+            // Radio: footer-anchored HTML5 audio player streaming curated
+            // internet-radio stations. Stations are baked into the binary;
+            // runtime state (current station + status + volume) persists to
+            // <config>/radio_state.json.
             {
                 let radio_state_path = app_data_dir.join("radio_state.json");
                 let radio_service = radio::RadioService::new(radio_state_path);
@@ -2378,7 +2379,6 @@ pub fn run() {
             commands::radio::radio_set_station,
             commands::radio::radio_set_volume,
             commands::radio::radio_report_status,
-            commands::radio::radio_track_ended,
         ]))
         .run(tauri::generate_context!())
         .unwrap_or_else(|e| {

@@ -69,9 +69,7 @@ export default function StationPicker({
                 <div className="min-w-0 flex-1">
                   <p className="typo-body font-medium truncate">{station.name}</p>
                   <p className="typo-caption text-foreground/60 truncate">
-                    {station.tracks.length === 1
-                      ? t.radio.track_count_one
-                      : t.radio.track_count_other.replace('{count}', String(station.tracks.length))}
+                    {station.sourceLabel ?? station.description}
                   </p>
                 </div>
                 {active && <Check className="w-4 h-4 text-foreground/80 shrink-0" />}

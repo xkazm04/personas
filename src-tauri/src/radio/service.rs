@@ -5,14 +5,16 @@
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
-use rand::seq::SliceRandom;
 use serde::{Deserialize, Serialize};
 
-use super::{NowPlaying, PlayStatus, RadioState, Station, StationCursor, Track};
+use super::{NowPlaying, PlayStatus, RadioState, Station};
 
 /// On-disk shape of `src-tauri/data/radio_stations.json`. Versioned in case
-/// we ever need to migrate.
+/// we ever need to migrate. Uses camelCase to match `Station`'s serde
+/// rename (which ts-rs in turn relies on to produce the camelCase TS
+/// bindings consumed by the frontend).
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 struct StationsFile {
     #[serde(default = "default_version")]
     version: u32,
@@ -21,7 +23,7 @@ struct StationsFile {
 }
 
 fn default_version() -> u32 {
-    1
+    2
 }
 
 /// Embedded fallback used when the JSON file is missing in dev builds and
@@ -50,13 +52,13 @@ impl RadioService {
             .unwrap_or_else(|e| {
                 tracing::error!("Failed to parse embedded radio stations JSON: {}", e);
                 StationsFile {
-                    version: 1,
+                    version: default_version(),
                     default_station_id: None,
                     stations: Vec::new(),
                 }
             });
 
-        let state = match std::fs::read_to_string(&persistence_path) {
+        let mut state: RadioState = match std::fs::read_to_string(&persistence_path) {
             Ok(text) => serde_json::from_str(&text).unwrap_or_else(|e| {
                 tracing::warn!(
                     "Failed to parse persisted radio state at {}: {} — starting fresh",
@@ -67,6 +69,15 @@ impl RadioService {
             }),
             Err(_) => RadioState::default(),
         };
+
+        // Discard a persisted current_station_id that doesn't exist in the
+        // current catalog (common after a station rename or removal between
+        // releases).
+        if let Some(id) = state.current_station_id.as_ref() {
+            if !parsed.stations.iter().any(|s| &s.id == id) {
+                state.current_station_id = None;
+            }
+        }
 
         Self {
             stations: parsed.stations,
@@ -89,24 +100,12 @@ impl RadioService {
             .or_else(|| self.stations.first().map(|s| s.id.as_str()))
     }
 
-    /// Switch to `station_id`. If the station has no cursor yet, generate
-    /// a fresh shuffle. If a cursor exists, leave it alone — switching back
-    /// to a previously-played station resumes its tracklist position.
+    /// Switch to `station_id`. Live streams have no per-station playback
+    /// cursor, so this is a straight assignment.
     pub fn set_station(&mut self, station_id: &str) -> Result<(), String> {
-        let station = self
-            .stations
-            .iter()
-            .find(|s| s.id == station_id)
-            .ok_or_else(|| format!("unknown station: {station_id}"))?;
-        let track_count = station.tracks.len() as u32;
-        self.state
-            .station_cursors
-            .entry(station_id.to_string())
-            .or_insert_with(|| StationCursor {
-                current_track_index: 0,
-                position_sec: 0,
-                shuffle_order: generate_shuffle(track_count),
-            });
+        if !self.stations.iter().any(|s| s.id == station_id) {
+            return Err(format!("unknown station: {station_id}"));
+        }
         self.state.current_station_id = Some(station_id.to_string());
         Ok(())
     }
@@ -133,97 +132,44 @@ impl RadioService {
         self.state.status = status;
     }
 
-    /// Advance to the next track. Wraps at end of shuffle order with a
-    /// reshuffle so the user gets a fresh sequence rather than a loop.
+    /// Cycle to the next curated station. With live streams there is no
+    /// "next track" concept, so the next button rotates through the catalog.
     pub fn next(&mut self) -> Result<(), String> {
-        let station_id = self
-            .state
-            .current_station_id
-            .clone()
-            .ok_or_else(|| "no station selected".to_string())?;
-        let track_count = self
-            .stations
-            .iter()
-            .find(|s| s.id == station_id)
-            .map(|s| s.tracks.len() as u32)
-            .ok_or_else(|| format!("unknown station: {station_id}"))?;
-        if track_count == 0 {
-            return Err(format!("station {station_id} has no tracks"));
-        }
-        let cursor = self
-            .state
-            .station_cursors
-            .entry(station_id)
-            .or_insert_with(|| StationCursor {
-                current_track_index: 0,
-                position_sec: 0,
-                shuffle_order: generate_shuffle(track_count),
-            });
-        cursor.current_track_index = cursor.current_track_index.saturating_add(1);
-        if cursor.current_track_index >= track_count {
-            cursor.shuffle_order = generate_shuffle(track_count);
-            cursor.current_track_index = 0;
-        }
-        cursor.position_sec = 0;
-        Ok(())
+        let next_id = self.adjacent_station_id(1)?;
+        self.set_station(&next_id)
     }
 
     pub fn prev(&mut self) -> Result<(), String> {
-        let station_id = self
+        let prev_id = self.adjacent_station_id(-1)?;
+        self.set_station(&prev_id)
+    }
+
+    fn adjacent_station_id(&self, delta: i32) -> Result<String, String> {
+        if self.stations.is_empty() {
+            return Err("no stations configured".to_string());
+        }
+        let len = self.stations.len() as i32;
+        let current_idx = self
             .state
             .current_station_id
-            .clone()
-            .ok_or_else(|| "no station selected".to_string())?;
-        let track_count = self
-            .stations
-            .iter()
-            .find(|s| s.id == station_id)
-            .map(|s| s.tracks.len() as u32)
-            .ok_or_else(|| format!("unknown station: {station_id}"))?;
-        if track_count == 0 {
-            return Err(format!("station {station_id} has no tracks"));
-        }
-        let cursor = self
-            .state
-            .station_cursors
-            .entry(station_id)
-            .or_insert_with(|| StationCursor {
-                current_track_index: 0,
-                position_sec: 0,
-                shuffle_order: generate_shuffle(track_count),
-            });
-        cursor.current_track_index = if cursor.current_track_index == 0 {
-            track_count - 1
-        } else {
-            cursor.current_track_index - 1
-        };
-        cursor.position_sec = 0;
-        Ok(())
+            .as_ref()
+            .and_then(|id| self.stations.iter().position(|s| &s.id == id))
+            .map(|i| i as i32)
+            .unwrap_or(0);
+        let next_idx = (current_idx + delta).rem_euclid(len) as usize;
+        Ok(self.stations[next_idx].id.clone())
     }
 
     pub fn set_volume(&mut self, volume: f32) {
         self.state.volume = volume.clamp(0.0, 1.0);
     }
 
-    pub fn report_position(&mut self, position_sec: u32) {
-        if let Some(station_id) = self.state.current_station_id.clone() {
-            if let Some(cursor) = self.state.station_cursors.get_mut(&station_id) {
-                cursor.position_sec = position_sec;
-            }
-        }
-    }
-
-    /// Resolve the current track for emit/payload purposes. Returns `None`
-    /// when no station is selected or the cursor points at an empty list.
+    /// Resolve the current station for emit/payload purposes. Returns `None`
+    /// when no station is selected.
     pub fn now_playing(&self) -> Option<NowPlaying> {
         let station_id = self.state.current_station_id.as_deref()?;
         let station = self.stations.iter().find(|s| s.id == station_id)?.clone();
-        let cursor = self.state.station_cursors.get(station_id)?;
-        let track_idx = *cursor.shuffle_order.get(cursor.current_track_index as usize)?;
-        let track = station.tracks.get(track_idx as usize)?.clone();
         Some(NowPlaying {
-            track_index_in_station: track_idx,
-            track,
             station,
             status: self.state.status,
         })
@@ -252,22 +198,6 @@ impl RadioService {
     }
 }
 
-fn generate_shuffle(track_count: u32) -> Vec<u32> {
-    let mut order: Vec<u32> = (0..track_count).collect();
-    let mut rng = rand::thread_rng();
-    order.shuffle(&mut rng);
-    order
-}
-
-/// Picks the playback track for a station given an existing or fresh cursor.
-/// Used by tests; the runtime path goes through `RadioService::now_playing`.
-#[cfg(test)]
-fn track_at_cursor<'a>(station: &'a Station, cursor: &StationCursor) -> Option<&'a Track> {
-    let order_idx = cursor.current_track_index as usize;
-    let track_idx = *cursor.shuffle_order.get(order_idx)? as usize;
-    station.tracks.get(track_idx)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -282,11 +212,33 @@ mod tests {
     }
 
     #[test]
+    fn embedded_json_parses_cleanly() {
+        let parsed: Result<StationsFile, _> =
+            serde_json::from_str(EMBEDDED_STATIONS_JSON);
+        if let Err(e) = &parsed {
+            panic!("embedded radio stations JSON failed to parse: {e}");
+        }
+    }
+
+    #[test]
     fn loads_curated_stations() {
         let svc = fresh();
         // The seed file ships with at least Lofi + Focus.
         assert!(svc.stations().iter().any(|s| s.id == "lofi"));
         assert!(svc.stations().iter().any(|s| s.id == "focus"));
+    }
+
+    #[test]
+    fn every_station_has_https_stream_url() {
+        let svc = fresh();
+        for station in svc.stations() {
+            assert!(
+                station.stream_url.starts_with("https://"),
+                "station {} stream_url must be HTTPS, got {}",
+                station.id,
+                station.stream_url
+            );
+        }
     }
 
     #[test]
@@ -298,58 +250,37 @@ mod tests {
     }
 
     #[test]
-    fn switch_station_preserves_cursor() {
+    fn next_cycles_through_stations_and_wraps() {
         let mut svc = fresh();
-        svc.set_station("lofi").unwrap();
-        svc.next().unwrap();
-        let lofi_idx = svc
-            .state
-            .station_cursors
-            .get("lofi")
-            .map(|c| c.current_track_index)
-            .unwrap();
-        svc.set_station("focus").unwrap();
-        svc.set_station("lofi").unwrap();
-        let after_switch_back = svc
-            .state
-            .station_cursors
-            .get("lofi")
-            .map(|c| c.current_track_index)
-            .unwrap();
-        assert_eq!(
-            lofi_idx, after_switch_back,
-            "switching away and back must not reset cursor"
-        );
-    }
+        let ids: Vec<String> = svc.stations().iter().map(|s| s.id.clone()).collect();
+        assert!(ids.len() >= 2, "test requires at least 2 stations");
 
-    #[test]
-    fn next_wraps_with_reshuffle_at_end() {
-        let mut svc = fresh();
-        svc.set_station("lofi").unwrap();
-        let track_count = svc
-            .stations()
-            .iter()
-            .find(|s| s.id == "lofi")
-            .unwrap()
-            .tracks
-            .len() as u32;
-        for _ in 0..track_count {
+        svc.set_station(&ids[0]).unwrap();
+        svc.next().unwrap();
+        assert_eq!(svc.state.current_station_id.as_deref(), Some(ids[1].as_str()));
+
+        // Cycle the rest of the way around — should land back on ids[0].
+        for _ in 0..(ids.len() - 1) {
             svc.next().unwrap();
         }
-        // After wrapping, current_track_index is back to 0
-        let cursor = svc.state.station_cursors.get("lofi").unwrap();
-        assert_eq!(cursor.current_track_index, 0);
-        assert_eq!(cursor.shuffle_order.len() as u32, track_count);
+        assert_eq!(svc.state.current_station_id.as_deref(), Some(ids[0].as_str()));
     }
 
     #[test]
-    fn now_playing_returns_correct_track() {
+    fn prev_wraps_backwards() {
+        let mut svc = fresh();
+        let ids: Vec<String> = svc.stations().iter().map(|s| s.id.clone()).collect();
+        svc.set_station(&ids[0]).unwrap();
+        svc.prev().unwrap();
+        assert_eq!(svc.state.current_station_id.as_deref(), Some(ids.last().unwrap().as_str()));
+    }
+
+    #[test]
+    fn now_playing_returns_current_station() {
         let mut svc = fresh();
         svc.set_station("lofi").unwrap();
         let np = svc.now_playing().expect("now playing should resolve");
         assert_eq!(np.station.id, "lofi");
-        // The resolved track must be one of the station's tracks
-        assert!(np.station.tracks.iter().any(|t| t.video_id == np.track.video_id));
     }
 
     #[test]
@@ -362,15 +293,20 @@ mod tests {
     }
 
     #[test]
-    fn track_at_cursor_resolves_through_shuffle() {
-        let svc = fresh();
-        let lofi = svc.stations().iter().find(|s| s.id == "lofi").unwrap();
-        let cursor = StationCursor {
-            current_track_index: 0,
-            position_sec: 0,
-            shuffle_order: vec![1, 0],
-        };
-        let track = track_at_cursor(lofi, &cursor).unwrap();
-        assert_eq!(track.video_id, lofi.tracks[1].video_id);
+    fn unknown_persisted_station_is_discarded_at_boot() {
+        let path = temp_dir().join(format!(
+            "radio_test_{}.json",
+            uuid::Uuid::new_v4().simple()
+        ));
+        std::fs::write(
+            &path,
+            serde_json::to_vec(&serde_json::json!({
+                "currentStationId": "nonexistent-station",
+                "status": "playing",
+                "volume": 0.5,
+            })).unwrap(),
+        ).unwrap();
+        let svc = RadioService::new(path);
+        assert_eq!(svc.state.current_station_id, None);
     }
 }

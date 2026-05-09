@@ -4,8 +4,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useRadioState } from '../hooks/useRadioState';
 
 /**
- * Settings → Account section that introduces the radio feature and previews
- * the curated stations + their tracklists. Read-only — playback control
+ * Settings → Account section that introduces the radio feature and lists
+ * the curated stations + their stream provider. Read-only — playback control
  * lives in the footer.
  */
 export default function RadioSettingsCard() {
@@ -35,26 +35,25 @@ export default function RadioSettingsCard() {
                 style={{ background: station.accentColor }}
               />
               <p className="typo-body font-medium text-foreground/90">{station.name}</p>
-              <span className="typo-caption text-foreground/55 ml-auto">
-                {station.tracks.length === 1
-                  ? t.radio.track_count_one
-                  : t.radio.track_count_other.replace('{count}', String(station.tracks.length))}
-              </span>
             </div>
             <p className="typo-caption text-foreground/60 mb-2">{station.description}</p>
-            <ul className="space-y-1">
-              {station.tracks.map((track) => (
-                <li
-                  key={track.videoId}
-                  className="typo-caption text-foreground/75 truncate flex gap-2"
-                  title={`${track.title} — ${track.artist}`}
-                >
-                  <span className="text-foreground/40 shrink-0">{track.artist}</span>
-                  <span className="text-foreground/40">·</span>
-                  <span className="truncate">{track.title}</span>
-                </li>
-              ))}
-            </ul>
+            {station.sourceLabel && (
+              <p className="typo-caption text-foreground/55">
+                <span className="text-foreground/40">{t.radio.source_prefix} </span>
+                {station.sourceUrl ? (
+                  <a
+                    href={station.sourceUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-foreground/75 hover:text-foreground/90 underline-offset-2 hover:underline"
+                  >
+                    {station.sourceLabel}
+                  </a>
+                ) : (
+                  <span className="text-foreground/75">{station.sourceLabel}</span>
+                )}
+              </p>
+            )}
           </li>
         ))}
       </ul>

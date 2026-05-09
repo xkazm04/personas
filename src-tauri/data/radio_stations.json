@@ -1,48 +1,36 @@
 {
-  "version": 1,
-  "default_station_id": "lofi",
+  "version": 2,
+  "defaultStationId": "lofi",
   "stations": [
     {
       "id": "lofi",
       "slug": "lofi",
       "name": "Lofi",
-      "description": "Lo-fi hip hop beats to relax and study to.",
-      "accent_color": "#a87cf0",
-      "tracks": [
-        {
-          "video_id": "CFGLoQIhmow",
-          "title": "lofi hip hop mix - beats to relax/study to (Part 1)",
-          "artist": "Lofi Girl",
-          "duration_sec": null
-        },
-        {
-          "video_id": "8b3fqIBrNW0",
-          "title": "lofi hip hop mix - beats to relax/study to (Part 2)",
-          "artist": "Lofi Girl",
-          "duration_sec": null
-        }
-      ]
+      "description": "A nicely chilled plate of ambient downtempo beats and grooves.",
+      "accentColor": "#a87cf0",
+      "streamUrl": "https://ice1.somafm.com/groovesalad-128-mp3",
+      "sourceUrl": "https://somafm.com/groovesalad/",
+      "sourceLabel": "SomaFM Groove Salad"
     },
     {
       "id": "focus",
       "slug": "focus",
       "name": "Focus",
-      "description": "Deep focus instrumentals for concentration and work.",
-      "accent_color": "#4ec9b0",
-      "tracks": [
-        {
-          "video_id": "oPVte6aMprI",
-          "title": "Deep Focus - Music For Studying, Concentration and Work",
-          "artist": "Greenred Productions",
-          "duration_sec": null
-        },
-        {
-          "video_id": "k7nQt8nB9FQ",
-          "title": "Deep Focus Music for Work | Increase Productivity & Concentration Mix 2026",
-          "artist": "Various",
-          "duration_sec": null
-        }
-      ]
+      "description": "Atmospheric textures with minimal beats — for deep focus and concentration.",
+      "accentColor": "#4ec9b0",
+      "streamUrl": "https://ice1.somafm.com/dronezone-128-mp3",
+      "sourceUrl": "https://somafm.com/dronezone/",
+      "sourceLabel": "SomaFM Drone Zone"
+    },
+    {
+      "id": "chill",
+      "slug": "chill",
+      "name": "Chill",
+      "description": "Sensuous and mellow vocals, mostly female, with an electronic influence.",
+      "accentColor": "#e07ab0",
+      "streamUrl": "https://ice1.somafm.com/lush-128-mp3",
+      "sourceUrl": "https://somafm.com/lush/",
+      "sourceLabel": "SomaFM Lush"
     }
   ]
 }
