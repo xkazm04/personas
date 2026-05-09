@@ -64,6 +64,10 @@ export type Translations = {
     inactive: string;
     enabled: string;
     disabled: string;
+    show_password: string;
+    hide_password: string;
+    rename: string;
+    rename_to: string;
     off: string;
     enable_item: string;
     disable_item: string;
@@ -10325,6 +10329,11 @@ export type Translations = {
       connectors_add: string;
       connectors_section_label: string;
       connectors_remove_from_sidebar: string;
+      connector_state_enabled: string;
+      connector_state_disabled: string;
+      connector_action_enable: string;
+      connector_action_disable: string;
+      connector_right_click_menu_hint: string;
       proactive_label: string;
       proactive_engage: string;
       proactive_dismiss: string;

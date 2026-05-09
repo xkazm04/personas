@@ -347,6 +347,7 @@ function ConnectorIconButton({
   onToggle: () => void;
   onRemove: () => void;
 }) {
+  const { t } = useTranslation();
   const meta = useMemo(() => getConnectorMeta(name), [name]);
   const [menuOpen, setMenuOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -399,8 +400,16 @@ function ConnectorIconButton({
             : 'bg-foreground/20 hover:bg-foreground/35'
         }`}
         style={{ ...enabledStyle, ...ringStyle }}
-        aria-label={`${meta.label} (${enabled ? 'enabled' : 'disabled'})`}
-        title={`${meta.label} — ${enabled ? 'click to disable' : 'click to enable'} · right-click for menu`}
+        aria-label={`${meta.label} (${
+          enabled
+            ? t.plugins.companion.connector_state_enabled
+            : t.plugins.companion.connector_state_disabled
+        })`}
+        title={`${meta.label} — ${
+          enabled
+            ? t.plugins.companion.connector_action_disable
+            : t.plugins.companion.connector_action_enable
+        } · ${t.plugins.companion.connector_right_click_menu_hint}`}
         aria-pressed={enabled}
       >
         {meta.iconUrl ? (
@@ -422,7 +431,7 @@ function ConnectorIconButton({
             className="w-full text-left px-3 py-1.5 typo-caption text-foreground/85 hover:bg-foreground/5 focus-ring"
             role="menuitem"
           >
-            Remove from sidebar
+            {t.plugins.companion.connectors_remove_from_sidebar}
           </button>
         </div>
       )}
