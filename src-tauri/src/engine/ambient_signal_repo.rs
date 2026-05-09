@@ -249,4 +249,119 @@ mod tests {
         // guarantee.
         assert!(rows[0].age_secs >= 30 && rows[0].age_secs < 60);
     }
+
+    /// End-to-end test of the daemon's cross-process ambient path.
+    ///
+    /// Exercises the contract that motivates the entire Phase 3 c v3
+    /// work: signals captured in process A (windowed app) reach
+    /// process B (daemon) through SQL with the same rendered shape.
+    ///
+    /// Path: insert_signal (capture-side mirror)
+    ///     → recent_signals (daemon-side load)
+    ///     → format_signals_for_prompt (shared renderer, step 4)
+    ///     → prepend_ambient_to_system_prompt (Phase 3 c v1)
+    ///     → assert the persona's system_prompt contains the
+    ///       expected ambient block at the front.
+    ///
+    /// Regression target: anything that breaks this round trip
+    /// silently leaves daemon-fired personas blind to user activity.
+    #[test]
+    fn daemon_path_round_trip_renders_ambient_into_persona_prompt() {
+        use crate::engine::ambient_context::{
+            format_signals_for_prompt, prepend_ambient_to_system_prompt,
+        };
+
+        let pool = test_pool();
+        let now = now_secs();
+
+        // Capture-side: simulate what clipboard_monitor and
+        // AppFocusSubscription would write.
+        insert_signal(
+            &pool,
+            "sig_0",
+            "app_focus",
+            "Focused: Code.exe — main.rs",
+            now - 5,
+            None,
+        )
+        .unwrap();
+        insert_signal(
+            &pool,
+            "sig_1",
+            "clipboard",
+            "Clipboard: text (42 chars)",
+            now - 2,
+            Some("a redacted snippet"),
+        )
+        .unwrap();
+
+        // Daemon-side: load + render + prepend.
+        let signals = recent_signals(&pool, now - 60, 30).unwrap();
+        assert_eq!(signals.len(), 2, "both inserts should be visible");
+        let md = format_signals_for_prompt(&signals, None)
+            .expect("non-empty signal list should render");
+
+        // Sanity-check the rendered shape — same contract the
+        // windowed runner relies on.
+        assert!(md.starts_with("## Ambient Desktop Context"));
+        assert!(md.contains("[clipboard] Clipboard: text (42 chars)"));
+        assert!(md.contains("[app_focus] Focused: Code.exe"));
+
+        // Build a minimal persona and inject. Mirrors what
+        // daemon::runtime::inject_ambient_for_daemon does.
+        let mut persona = crate::db::models::Persona {
+            id: "p_e2e".into(),
+            project_id: "proj_e2e".into(),
+            name: "E2E".into(),
+            description: None,
+            system_prompt: "You are a helpful assistant.".into(),
+            structured_prompt: None,
+            icon: None,
+            color: None,
+            enabled: true,
+            sensitive: false,
+            headless: true,
+            max_concurrent: 1,
+            timeout_ms: 60_000,
+            notification_channels: None,
+            last_design_result: None,
+            last_test_report: None,
+            model_profile: None,
+            max_budget_usd: None,
+            max_turns: None,
+            design_context: None,
+            group_id: None,
+            source_review_id: None,
+            trust_level: crate::db::models::PersonaTrustLevel::Verified,
+            trust_origin: crate::db::models::PersonaTrustOrigin::default(),
+            trust_verified_at: None,
+            trust_score: 1.0,
+            parameters: None,
+            gateway_exposure: Default::default(),
+            template_category: None,
+            created_at: "2026-05-09T00:00:00Z".into(),
+            updated_at: "2026-05-09T00:00:00Z".into(),
+        };
+
+        prepend_ambient_to_system_prompt(&mut persona, &md);
+        assert!(persona.system_prompt.starts_with("## Ambient Desktop Context"));
+        assert!(persona.system_prompt.ends_with("You are a helpful assistant."));
+        assert!(
+            persona.system_prompt.contains("\n\nYou are a helpful assistant."),
+            "ambient block separated from existing prompt by a blank line"
+        );
+    }
+
+    /// Daemon path correctly returns no-injection when nothing was
+    /// captured. Equivalent to the empty-window None case the
+    /// windowed path tests in `format_ambient_for_persona_returns_
+    /// none_when_empty`.
+    #[test]
+    fn daemon_path_renders_none_when_table_empty() {
+        use crate::engine::ambient_context::format_signals_for_prompt;
+        let pool = test_pool();
+        let signals = recent_signals(&pool, 0, 30).unwrap();
+        assert!(signals.is_empty());
+        assert!(format_signals_for_prompt(&signals, None).is_none());
+    }
 }
