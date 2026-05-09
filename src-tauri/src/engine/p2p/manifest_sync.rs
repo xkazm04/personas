@@ -344,7 +344,8 @@ impl ManifestSync {
         }
     }
 
-    /// Run a single manifest sync pass: clean up expired exposures, then sync all connected peers.
+    /// Run a single manifest sync pass: clean up expired exposures, prune the
+    /// hash cache for departed peers, then sync all connected peers.
     pub async fn run_periodic_sync(&self) -> Result<(), AppError> {
         self.counters.sync_rounds.fetch_add(1, Ordering::Relaxed);
         // Clean up expired exposures each cycle
@@ -360,6 +361,18 @@ impl ManifestSync {
 
         // Get list of connected peer IDs from discovered_peers
         let peer_ids = self.get_connected_peer_ids()?;
+
+        // Drop hash-cache entries for peers no longer connected. Without this
+        // the cache grows monotonically — disconnect_peer / prune_stale_peers
+        // never remove entries, so a long-running daemon that sees many
+        // transient peers leaks one String pair per peer forever.
+        {
+            let connected: std::collections::HashSet<&str> =
+                peer_ids.iter().map(|s| s.as_str()).collect();
+            let mut hashes = self.manifest_hashes.write().await;
+            hashes.retain(|peer_id, _| connected.contains(peer_id.as_str()));
+        }
+
         let total = peer_ids.len();
 
         for (i, peer_id) in peer_ids.iter().enumerate() {
