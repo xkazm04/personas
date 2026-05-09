@@ -46,6 +46,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { silentCatch } from '@/lib/silentCatch';
 import { play as playAudio, synthesize as synthesizeTts } from './voicePlayback';
+import { useAgentStore } from '@/stores/agentStore';
 
 // Fallback follow-ups for the "What can Athena do?" toolbar preset —
 // only used when the turn returns no QR chips, so this preset is never
@@ -519,14 +520,13 @@ function Body(props: BodyProps) {
       // render against.)
       useSystemStore.getState().setCompanionLabJump({ personaId, mode });
       try {
-        // Lazy-load to avoid bringing the agent store into Companion's
-        // bundle. The store module is already loaded elsewhere; this
-        // is just a typed handle.
-        void import('@/stores/agentStore').then(({ useAgentStore }) => {
-          useAgentStore.getState().selectPersona(personaId);
-        });
-      } catch {
-        /* best-effort: persona selection can fail silently */
+        useAgentStore.getState().selectPersona(personaId);
+      } catch (err) {
+        // Best-effort: persona selection can fail (e.g. persona was
+        // deleted between Athena's emit and this listener). Swallow
+        // the navigation but leave a Sentry breadcrumb so the missed
+        // selectPersona doesn't disappear silently.
+        silentCatch('companion_open_lab_select_persona')(err);
       }
       useSystemStore.getState().setSidebarSection('personas');
       // Switch the editor tab via the store's custom setter (it
