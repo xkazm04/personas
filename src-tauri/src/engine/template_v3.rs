@@ -1726,4 +1726,162 @@ mod tests {
             "payload with recipe_ref UC must register as v3-shaped"
         );
     }
+
+    // ========================================================================
+    // Stage B Phase 1b ↔ 2.1 round-trip parity tests
+    //
+    // Prove the load-bearing contract for the Phase 2 migration: a template
+    // with INLINE UCs and the same template with `recipe_ref` UCs (whose
+    // recipes hold the original UC JSON in prompt_template, per Phase 1b)
+    // must produce IDENTICAL output through normalize_v3_to_flat. If these
+    // tests fail, the migration is unsafe — adopting a converted template
+    // would produce a different persona than adopting the original.
+    // ========================================================================
+
+    /// Convert a v3 fixture's inline UCs into recipe_ref shape, building an
+    /// in-memory recipe map from the originals. Mirrors what the actual
+    /// migration would do (Phase 1b creates recipe rows with prompt_template
+    /// = serialized UC; Phase 2.2 rewrites template UCs as recipe_refs).
+    fn convert_to_recipe_refs(
+        payload: &Value,
+    ) -> (Value, std::collections::HashMap<String, RecipeDefinition>) {
+        let mut recipe_map = std::collections::HashMap::new();
+        let mut converted = payload.clone();
+        let inline_ucs: Vec<Value> = payload
+            .get("use_cases")
+            .and_then(|v| v.as_array())
+            .cloned()
+            .unwrap_or_default();
+        let new_ucs: Vec<Value> = inline_ucs
+            .iter()
+            .map(|uc| {
+                let uc_id = uc.get("id").and_then(|v| v.as_str()).unwrap();
+                let recipe_id = format!("test-recipe-{uc_id}");
+                let serialized_uc = serde_json::to_string(uc).unwrap();
+                recipe_map.insert(
+                    recipe_id.clone(),
+                    recipe_fixture(&recipe_id, &serialized_uc),
+                );
+                json!({
+                    "recipe_ref": {
+                        "id": recipe_id,
+                        "version": "1.0.0",
+                        "bindings": {}
+                    }
+                })
+            })
+            .collect();
+        converted
+            .as_object_mut()
+            .unwrap()
+            .insert("use_cases".into(), Value::Array(new_ucs));
+        (converted, recipe_map)
+    }
+
+    #[test]
+    fn round_trip_hydrate_yields_byte_equivalent_use_cases() {
+        // Strict pre-normalization parity: hydrated UCs must equal the
+        // original inline UCs byte-for-byte. This catches subtle issues
+        // (key reordering, type coercion) that would only surface during
+        // normalization tests as obscure failures.
+        let original = v3_fixture();
+        let original_ucs = original["use_cases"].clone();
+
+        let (mut converted, recipe_map) = convert_to_recipe_refs(&original);
+        let lookup = |id: &str| -> Result<RecipeDefinition, AppError> {
+            recipe_map
+                .get(id)
+                .cloned()
+                .ok_or_else(|| AppError::NotFound(format!("recipe {id}")))
+        };
+        hydrate_recipe_refs(&mut converted, lookup).expect("hydrate ok");
+
+        assert_eq!(
+            converted["use_cases"], original_ucs,
+            "post-hydrate use_cases must equal pre-conversion inline use_cases"
+        );
+    }
+
+    #[test]
+    fn round_trip_normalize_parity_inline_vs_recipe_ref() {
+        // The load-bearing contract for the Phase 2 migration: a converted
+        // template + hydrate must produce the SAME flat agent_ir as the
+        // original inline template. If this fails, Phase 2.2 cannot ship.
+        let original = v3_fixture();
+
+        // Path 1 — original inline template through normalize.
+        let mut path_inline = original.clone();
+        normalize_v3_to_flat(&mut path_inline);
+
+        // Path 2 — converted template, hydrated, then normalized.
+        let (mut path_recipe_ref, recipe_map) = convert_to_recipe_refs(&original);
+        let lookup = |id: &str| -> Result<RecipeDefinition, AppError> {
+            recipe_map
+                .get(id)
+                .cloned()
+                .ok_or_else(|| AppError::NotFound(format!("recipe {id}")))
+        };
+        hydrate_recipe_refs(&mut path_recipe_ref, lookup).expect("hydrate ok");
+        normalize_v3_to_flat(&mut path_recipe_ref);
+
+        // Both paths must produce identical flat output.
+        assert_eq!(
+            path_inline, path_recipe_ref,
+            "normalize-after-hydrate must equal normalize-of-inline"
+        );
+    }
+
+    #[test]
+    fn round_trip_preserves_flat_triggers() {
+        // Spot-check a load-bearing flatten output: triggers carry use_case_id
+        // through the recipe_ref → hydrate → flatten pipeline.
+        let original = v3_fixture();
+        let (mut converted, recipe_map) = convert_to_recipe_refs(&original);
+        let lookup = |id: &str| -> Result<RecipeDefinition, AppError> {
+            recipe_map
+                .get(id)
+                .cloned()
+                .ok_or_else(|| AppError::NotFound(format!("recipe {id}")))
+        };
+        hydrate_recipe_refs(&mut converted, lookup).unwrap();
+        normalize_v3_to_flat(&mut converted);
+
+        let triggers = converted
+            .get("suggested_triggers")
+            .and_then(|v| v.as_array())
+            .expect("suggested_triggers produced");
+        assert_eq!(triggers.len(), 1);
+        assert_eq!(
+            triggers[0].get("use_case_id").and_then(|v| v.as_str()),
+            Some("uc_morning_digest"),
+            "use_case_id must survive through recipe_ref round-trip"
+        );
+    }
+
+    #[test]
+    fn round_trip_preserves_flat_events() {
+        // Same load-bearing check for event subscriptions.
+        let original = v3_fixture();
+        let (mut converted, recipe_map) = convert_to_recipe_refs(&original);
+        let lookup = |id: &str| -> Result<RecipeDefinition, AppError> {
+            recipe_map
+                .get(id)
+                .cloned()
+                .ok_or_else(|| AppError::NotFound(format!("recipe {id}")))
+        };
+        hydrate_recipe_refs(&mut converted, lookup).unwrap();
+        normalize_v3_to_flat(&mut converted);
+
+        let events = converted
+            .get("suggested_event_subscriptions")
+            .and_then(|v| v.as_array())
+            .expect("event subscriptions produced");
+        assert_eq!(events.len(), 2);
+        for e in events {
+            assert_eq!(
+                e.get("use_case_id").and_then(|v| v.as_str()),
+                Some("uc_morning_digest")
+            );
+        }
+    }
 }
