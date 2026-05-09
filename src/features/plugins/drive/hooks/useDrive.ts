@@ -22,6 +22,35 @@ export type ViewMode = "list" | "icons" | "columns";
 export type SortKey = "name" | "size" | "modified" | "kind";
 export type SortDir = "asc" | "desc";
 
+/**
+ * Run async tasks with a fixed concurrency cap. Each Tauri invoke crosses an
+ * IPC boundary (~5–10ms minimum), so a sequential await loop on N items
+ * compounds linearly. A small cap lets multiple ops fly in parallel without
+ * blowing up the IPC thread pool.
+ */
+const BULK_OP_CONCURRENCY = 8;
+async function runBulk<T>(
+  items: T[],
+  task: (item: T) => Promise<void>,
+): Promise<void> {
+  if (items.length <= 1) {
+    for (const item of items) await task(item);
+    return;
+  }
+  const queue = [...items];
+  const workers = Array.from(
+    { length: Math.min(BULK_OP_CONCURRENCY, queue.length) },
+    async () => {
+      while (queue.length > 0) {
+        const next = queue.shift();
+        if (next === undefined) break;
+        await task(next);
+      }
+    },
+  );
+  await Promise.all(workers);
+}
+
 export interface DriveClipboard {
   mode: ClipboardMode;
   paths: string[];
@@ -335,22 +364,20 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
 
   const pasteHere = useCallback(async () => {
     if (!clipboard) return;
-    for (const src of clipboard.paths) {
+    const mode = clipboard.mode;
+    await runBulk(clipboard.paths, async (src) => {
       const base = src.split("/").pop() ?? "file";
       const dst = currentPath ? `${currentPath}/${base}` : base;
       try {
-        if (clipboard.mode === "copy") {
-          const entry = await driveCopy(src, dst);
-          flashWrite(entry.path);
-        } else {
-          const entry = await driveMove(src, dst);
-          flashWrite(entry.path);
-        }
+        const entry = mode === "copy"
+          ? await driveCopy(src, dst)
+          : await driveMove(src, dst);
+        flashWrite(entry.path);
       } catch (e) {
         toastCatch("drive:paste")(e);
       }
-    }
-    if (clipboard.mode === "cut") setClipboard(null);
+    });
+    if (mode === "cut") setClipboard(null);
     refresh();
     refreshTree();
     refreshStorage();
@@ -406,13 +433,13 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
 
   const remove = useCallback(
     async (paths: string[]) => {
-      for (const path of paths) {
+      await runBulk(paths, async (path) => {
         try {
           await driveDelete(path);
         } catch (e) {
           toastCatch("drive:delete")(e);
         }
-      }
+      });
       clearSelection();
       refresh();
       refreshTree();
