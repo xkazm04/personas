@@ -2,6 +2,7 @@ import type { PersonaExecution } from '@/lib/types/types';
 import { formatDuration } from '@/lib/utils/formatters';
 import { AlertCircle, Activity } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { ScrollShadowContainer } from '@/features/shared/components/display/ScrollShadowContainer';
 import { getSpanTypeConfig } from './traceInspectorTypes';
 import { SpanRow } from './SpanRow';
 import { TraceSummary } from './TraceSummary';
@@ -77,7 +78,7 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
         </div>
 
         {/* Span rows */}
-        <div className="max-h-[500px] overflow-y-auto">
+        <ScrollShadowContainer className="max-h-[500px] overflow-y-auto" wrapperClassName="relative">
           {visibleNodes.map((node) => (
               <div className="animate-fade-slide-in"
                 key={node.span.span_id}
@@ -92,7 +93,7 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
                 />
               </div>
             ))}
-        </div>
+        </ScrollShadowContainer>
       </div>
 
       {/* Error details */}
