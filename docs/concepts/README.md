@@ -17,6 +17,8 @@ This folder is only for not-yet-implemented proposals, experiments, and design e
 | [langfuse-lab-score-push.md](langfuse-lab-score-push.md) | Backlog — Path A's known gap; Path 2 (synthesize) recommended |
 | [mobile.md](mobile.md) | Proposal |
 | [personas-as-long-lived-processes.md](personas-as-long-lived-processes.md) | Shelved — kept for future consideration |
+| [per-persona-claude-code-skills.md](per-persona-claude-code-skills.md) | Proposal — generalization of in-flight `engine/skills_sidecar/` work |
+| [persona-execution-image-attachments.md](persona-execution-image-attachments.md) | Proposal |
 | [persona-hub-marketplace.md](persona-hub-marketplace.md) | Shelved — engineering foundation in active backlog; marketplace pending Recipe redesign + adoption signal |
 | [real-api-testing.md](real-api-testing.md) | Proposal |
 
