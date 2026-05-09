@@ -12891,5 +12891,7 @@ export type Translations = {
     unavailable_toast: string;
     settings_title: string;
     settings_description: string;
+    enable_label: string;
+    enable_description: string;
   };
 };

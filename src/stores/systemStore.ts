@@ -23,6 +23,7 @@ import { createResearchLabSlice } from "./slices/system/researchLabSlice";
 import { createTwinSlice } from "./slices/system/twinSlice";
 import { createSimpleModeSlice } from "./slices/system/simpleModeSlice";
 import { createCompanionPluginSlice } from "./slices/system/companionPluginSlice";
+import { createRadioSlice } from "./slices/system/radioSlice";
 
 export const useSystemStore = create<SystemStore>()(
   persist(
@@ -44,6 +45,7 @@ export const useSystemStore = create<SystemStore>()(
       ...createTwinSlice(...a),
       ...createSimpleModeSlice(...a),
       ...createCompanionPluginSlice(...a),
+      ...createRadioSlice(...a),
     }),
     {
       name: "persona-ui-system",
@@ -86,6 +88,7 @@ export const useSystemStore = create<SystemStore>()(
         companionVoiceSpeed: state.companionVoiceSpeed,
         companionVoiceStyle: state.companionVoiceStyle,
         companionRecallSynthesisEnabled: state.companionRecallSynthesisEnabled,
+        radioEnabled: state.radioEnabled,
       }),
       onRehydrateStorage: () => (state) => {
         if (!state) return;

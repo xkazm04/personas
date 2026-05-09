@@ -43,6 +43,7 @@ import type { ResearchLabSlice } from "./slices/system/researchLabSlice";
 import type { TwinSlice } from "./slices/system/twinSlice";
 import type { SimpleModeSlice } from "./slices/system/simpleModeSlice";
 import type { CompanionPluginSlice } from "./slices/system/companionPluginSlice";
+import type { RadioSlice } from "./slices/system/radioSlice";
 import type { ChatSlice } from "./slices/agents/chatSlice";
 import type { BackgroundChatSlice } from "./slices/agents/backgroundChatSlice";
 import type { MatrixBuildSlice } from "./slices/agents/matrixBuildSlice";
@@ -236,5 +237,6 @@ export type SystemStore = CoreState &
   ResearchLabSlice &
   TwinSlice &
   SimpleModeSlice &
-  CompanionPluginSlice;
+  CompanionPluginSlice &
+  RadioSlice;
 

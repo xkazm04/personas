@@ -1,17 +1,22 @@
 import { Music, Radio } from 'lucide-react';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
+import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useSystemStore } from '@/stores/systemStore';
 import { useRadioState } from '../hooks/useRadioState';
 
 /**
- * Settings → Account section that introduces the radio feature and lists
- * the curated catalog. Each station card shows its provider attribution
- * plus, for YouTube stations, the curated tracklist. Read-only — playback
- * control lives in the footer.
+ * Settings → Account section that introduces the radio feature, lets the
+ * user enable/disable it (default off, persisted), and lists the curated
+ * catalog. Each station card shows its provider attribution plus, for
+ * YouTube stations, the curated tracklist. Read-only — playback control
+ * lives in the footer.
  */
 export default function RadioSettingsCard() {
   const { t } = useTranslation();
   const { stations, loaded } = useRadioState();
+  const radioEnabled = useSystemStore((s) => s.radioEnabled);
+  const setRadioEnabled = useSystemStore((s) => s.setRadioEnabled);
   if (!loaded) return null;
 
   return (
@@ -23,6 +28,19 @@ export default function RadioSettingsCard() {
       <p className="typo-body text-foreground leading-relaxed">
         {t.radio.settings_description}
       </p>
+
+      <div className="flex items-center justify-between gap-4 rounded-card border border-primary/8 bg-secondary/10 p-3">
+        <div className="min-w-0">
+          <p className="typo-body font-medium text-foreground">{t.radio.enable_label}</p>
+          <p className="typo-caption text-foreground/60">{t.radio.enable_description}</p>
+        </div>
+        <AccessibleToggle
+          checked={radioEnabled}
+          onChange={() => setRadioEnabled(!radioEnabled)}
+          label={t.radio.enable_label}
+        />
+      </div>
+
       <ul className="space-y-3">
         {stations.map((station) => {
           const isYt = station.source.kind === 'youtubeTracks';

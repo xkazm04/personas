@@ -285,6 +285,7 @@ function CollapseFooterIcon() {
 
 export default function DesktopFooter() {
   if (IS_MOBILE) return null;
+  const radioEnabled = useSystemStore((s) => s.radioEnabled);
 
   return (
     <div role="contentinfo" className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-between px-4 h-8 border-t border-primary/10 bg-background">
@@ -308,12 +309,15 @@ export default function DesktopFooter() {
       </div>
 
       {/* Center cluster: radio controls. Absolute-centered so left/right
-          cluster widths don't shift its position. */}
-      <div className="absolute left-1/2 -translate-x-1/2 flex items-center">
-        <Suspense fallback={null}>
-          <RadioFooter />
-        </Suspense>
-      </div>
+          cluster widths don't shift its position. Off by default — user
+          opts in via Settings → Account; preference is persisted. */}
+      {radioEnabled && (
+        <div className="absolute left-1/2 -translate-x-1/2 flex items-center">
+          <Suspense fallback={null}>
+            <RadioFooter />
+          </Suspense>
+        </div>
+      )}
 
       {/* Right cluster: reserved for future status items */}
       <div className="flex items-center gap-1.5" />

@@ -39,7 +39,7 @@ export default function StationPicker({
       ref={ref}
       role="dialog"
       aria-label={t.radio.stations_label}
-      className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-72 rounded-card border border-primary/10 bg-card-bg shadow-elevation-3 overflow-hidden"
+      className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-80 rounded-card border border-primary/10 bg-background shadow-elevation-3 overflow-hidden"
     >
       <div className="px-3 py-2 border-b border-primary/8 flex items-center gap-2">
         <Radio className="w-3.5 h-3.5 text-foreground/60" />
@@ -70,19 +70,24 @@ export default function StationPicker({
                   style={{ background: station.accentColor }}
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="typo-body font-medium truncate">{station.name}</p>
-                  <p className="typo-caption text-foreground/60 truncate flex items-center gap-1.5">
-                    {isYt ? (
-                      <Music className="w-3 h-3 shrink-0 text-foreground/55" />
-                    ) : (
-                      <Radio className="w-3 h-3 shrink-0 text-foreground/55" />
+                  <div className="flex items-center gap-2 min-w-0">
+                    <p className="typo-body font-medium truncate">{station.name}</p>
+                    {station.sourceLabel && (
+                      <span className="ml-auto shrink-0 typo-caption text-foreground/60 px-1.5 py-0.5 rounded bg-secondary/30 flex items-center gap-1">
+                        {isYt ? (
+                          <Music className="w-3 h-3 text-foreground/55" />
+                        ) : (
+                          <Radio className="w-3 h-3 text-foreground/55" />
+                        )}
+                        {station.sourceLabel}
+                      </span>
                     )}
-                    <span className="truncate">
-                      {station.sourceLabel ?? station.description}
-                      {trackCount !== null && (
-                        <span className="text-foreground/45"> · {trackCount}</span>
-                      )}
-                    </span>
+                  </div>
+                  <p className="typo-caption text-foreground/60 truncate">
+                    {station.description}
+                    {trackCount !== null && (
+                      <span className="text-foreground/45"> · {trackCount}</span>
+                    )}
                   </p>
                 </div>
                 {active && <Check className="w-4 h-4 text-foreground/80 shrink-0" />}
