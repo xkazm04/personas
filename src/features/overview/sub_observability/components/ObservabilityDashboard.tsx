@@ -11,6 +11,7 @@ import { PersonaSelect } from '@/features/overview/sub_usage/components/PersonaS
 import { MetricsCharts } from './MetricsCharts';
 import { KpiTile } from '@/features/overview/components/shared/KpiTile';
 import IpcPerformancePanel from './IpcPerformancePanel';
+import { ToolPerformancePanel } from '@/features/overview/sub_usage/components/ToolPerformancePanel';
 import HealingIssueModal from './HealingIssueModal';
 import { HealingIssuesPanel } from './HealingIssuesPanel';
 import { AiHealingStreamOverlay } from './AiHealingStreamOverlay';
@@ -246,6 +247,12 @@ export default function ObservabilityDashboard() {
 
       {/* IPC Performance */}
       <IpcPerformancePanel />
+
+      {/* Tool Performance — latency + error rate per tool from tool_execution_audit_log */}
+      <ToolPerformancePanel
+        since={new Date(Date.now() - d.days * 24 * 60 * 60 * 1000).toISOString()}
+        personaId={d.selectedPersonaId ?? undefined}
+      />
 
       {/* System Trace Timeline */}
       <div className="p-4 rounded-modal border border-primary/10 bg-secondary/20 space-y-3">

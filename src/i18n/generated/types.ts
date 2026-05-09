@@ -5114,6 +5114,15 @@ export type Translations = {
       total_traffic: string;
       total_errors: string;
       traffic_errors_chart: string;
+      tool_performance: string;
+      tool_performance_subtitle: string;
+      tool_performance_col_tool: string;
+      tool_performance_col_runs: string;
+      tool_performance_col_avg: string;
+      tool_performance_col_max: string;
+      tool_performance_col_errors: string;
+      tool_performance_empty: string;
+      tool_performance_unit_ms: string;
       top_performers: string;
       metric_help: string;
       how_calculated: string;

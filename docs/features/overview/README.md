@@ -27,7 +27,7 @@ The active tab comes from `useOverviewStore().overviewTab`. Sidebar-visible tabs
 | --- | --- |
 | `sub_incidents` | Incident inbox, taxonomy, filters, actions |
 | `sub_realtime` | Live in-memory event-bus visualization |
-| `sub_observability` | Trace/healing/metrics/alerts dashboards |
+| `sub_observability` | Trace/healing/metrics/alerts dashboards. Includes the `ToolPerformancePanel` (latency + error rate per tool, sourced from `tool_execution_audit_log` via the `get_tool_performance_summary` IPC command). |
 | `sub_sla` | SLA cards and dashboard |
 | `sub_usage` | Usage charts, period comparison, tool usage pivoting |
 | `sub_memories` | Memory list, conflict review, merge actions |
