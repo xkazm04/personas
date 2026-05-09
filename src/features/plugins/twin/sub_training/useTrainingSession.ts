@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
-import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
 import * as twinApi from '@/api/twin/twin';
 
 export interface QAPair {
@@ -80,7 +79,7 @@ export function useTrainingSession(): TrainingSession {
 
   const callAi = async (prompt: string): Promise<string> => {
     if (!activeTwin) throw new Error('no active twin');
-    return invoke<string>('twin_generate_bio', { name: activeTwin.name, role: activeTwin.role ?? null, keywords: prompt });
+    return twinApi.generateBio(activeTwin.name, activeTwin.role ?? null, prompt);
   };
 
   const generateQuestions = useCallback(async (topicPrompt: string) => {

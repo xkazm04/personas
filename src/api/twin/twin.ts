@@ -268,3 +268,29 @@ export const deleteChannel = (id: string) =>
 
 export const generateBio = (name: string, role: string | null, keywords: string) =>
   invoke<string>("twin_generate_bio", { name, role, keywords });
+
+// ============================================================================
+// Wiki commands (Direction 4 — currently surfaced via the Knowledge tab)
+// ============================================================================
+
+/**
+ * Scrape a URL and queue extracted facts as pending memories. Returns a
+ * short summary string the caller can show to the user before the memory
+ * indexing pass runs.
+ */
+export const ingestUrl = (url: string, twinId?: string) =>
+  invoke<string>("twin_ingest_url", { url, twinId });
+
+/**
+ * Compile the full twin (identity, tone, memories, voice, channels) as a
+ * cross-linked markdown wiki.
+ */
+export const compileWiki = (twinId: string) =>
+  invoke<string>("twin_compile_wiki", { twinId });
+
+/**
+ * AI-audit a compiled wiki for gaps and contradictions. Returns the audit
+ * report as markdown.
+ */
+export const auditWiki = (twinId: string) =>
+  invoke<string>("twin_audit_wiki", { twinId });

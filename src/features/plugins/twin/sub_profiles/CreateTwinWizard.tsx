@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { X, ArrowLeft, ArrowRight, Sparkles, User, Radio, GraduationCap, Wand2, Link as LinkIcon, FileText, ChevronRight } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useVaultStore } from '@/stores/vaultStore';
-import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
 import * as twinApi from '@/api/twin/twin';
 import { Button } from '@/features/shared/components/buttons';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
@@ -105,7 +104,7 @@ export function CreateTwinWizard({ onClose }: { onClose: () => void }) {
       // `twin_ingest_url` scrapes a URL and returns a summary the user can
       // trim. Full memory ingestion kicks in once the twin row exists
       // (the backend will queue pending memories there on a later pass).
-      const result = await invoke<string>('twin_ingest_url', { url: bioUrl.trim() });
+      const result = await twinApi.ingestUrl(bioUrl.trim());
       setBio(result);
     } catch {
       setBio(`Bio to be filled — failed to ingest ${bioUrl.trim()}.`);
