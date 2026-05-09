@@ -8,7 +8,8 @@
 //! symlinks that escape the sandbox are also caught.
 
 use std::path::{Component, Path, PathBuf};
-use std::sync::{Arc, OnceLock};
+use std::sync::{Arc, Mutex, OnceLock};
+use std::time::{Duration, Instant};
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -38,6 +39,26 @@ const DEV_SUBDIR: &str = ".dev-drive";
 
 /// Cached canonical managed root — resolved lazily on first call.
 static MANAGED_ROOT: OnceLock<PathBuf> = OnceLock::new();
+
+/// TTL for the cached `drive_storage_info` result. The Drive UI calls
+/// `refreshStorage` on mount and after every paste/createFile/remove —
+/// without throttling, a multi-paste fans out to N full-tree walks of
+/// the managed root. 5s is short enough that user-visible staleness is
+/// trivial and long enough that bulk ops collapse to one walk.
+const STORAGE_INFO_TTL: Duration = Duration::from_secs(5);
+
+#[derive(Default)]
+struct StorageInfoCache {
+    last_computed: Option<Instant>,
+    used_bytes: u64,
+    entry_count: u64,
+}
+
+static STORAGE_INFO_CACHE: OnceLock<Mutex<StorageInfoCache>> = OnceLock::new();
+
+fn storage_info_cache() -> &'static Mutex<StorageInfoCache> {
+    STORAGE_INFO_CACHE.get_or_init(|| Mutex::new(StorageInfoCache::default()))
+}
 
 /// Return the cached managed root if [`managed_root`] has already been
 /// resolved (at least one `drive_*` command has run this session). Lets
@@ -558,7 +579,30 @@ pub fn drive_get_root(app: AppHandle) -> Result<String, AppError> {
 #[tauri::command]
 pub fn drive_storage_info(app: AppHandle) -> Result<DriveStorageInfo, AppError> {
     let root = managed_root(&app)?;
+
+    // Fast path: return cached values if we walked the tree within the TTL.
+    {
+        let guard = storage_info_cache().lock().expect("storage cache poisoned");
+        if let Some(last) = guard.last_computed {
+            if last.elapsed() < STORAGE_INFO_TTL {
+                return Ok(DriveStorageInfo {
+                    root: root.to_string_lossy().to_string(),
+                    used_bytes: guard.used_bytes,
+                    entry_count: guard.entry_count,
+                    is_dev: cfg!(debug_assertions),
+                });
+            }
+        }
+    }
+
+    // Slow path: walk the tree, then cache the result.
     let (used_bytes, entry_count) = compute_folder_size(&root)?;
+    {
+        let mut guard = storage_info_cache().lock().expect("storage cache poisoned");
+        guard.last_computed = Some(Instant::now());
+        guard.used_bytes = used_bytes;
+        guard.entry_count = entry_count;
+    }
     Ok(DriveStorageInfo {
         root: root.to_string_lossy().to_string(),
         used_bytes,
