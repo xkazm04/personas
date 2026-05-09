@@ -4,6 +4,7 @@ import { Radio, Plus, Trash2, Power, PowerOff, X, User, Mic, Antenna, Key, Wifi 
 import { useSystemStore } from '@/stores/systemStore';
 import { useVaultStore } from '@/stores/vaultStore';
 import { Button } from '@/features/shared/components/buttons';
+import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { ThemedSelect, type ThemedSelectOption } from '@/features/shared/components/forms/ThemedSelect';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import type { TwinChannel } from '@/lib/bindings/TwinChannel';
@@ -39,7 +40,8 @@ function getChannelMeta(type: string) {
 const channelOptions: ThemedSelectOption[] = CHANNEL_TYPES.map((ct) => ({ value: ct.id, label: ct.label }));
 
 export default function ChannelsAtelier() {
-  const t = useTranslation().t.twin;
+  const { t: tFull, tx } = useTranslation();
+  const t = tFull.twin;
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const channels = useSystemStore((s) => s.twinChannels);
   const tones = useSystemStore((s) => s.twinTones);
@@ -59,6 +61,7 @@ export default function ChannelsAtelier() {
   const [newLabel, setNewLabel] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [confirmRemove, setConfirmRemove] = useState<TwinChannel | null>(null);
 
   useEffect(() => { if (activeTwinId) fetchChannels(activeTwinId); }, [activeTwinId, fetchChannels]);
   useEffect(() => { fetchCredentials(); }, [fetchCredentials]);
@@ -84,10 +87,11 @@ export default function ChannelsAtelier() {
     finally { setSubmitting(false); }
   };
   const handleToggle = async (ch: TwinChannel) => { try { await updateChannel(ch.id, { isActive: !ch.is_active }); } catch { /* noop */ } };
-  const handleDelete = async (ch: TwinChannel) => {
-    const label = ch.label ?? `${ch.channel_type} channel`;
-    if (!confirm(t.channels.removeConfirm.replace('{label}', label))) return;
-    try { await deleteChannel(ch.id); } catch { /* noop */ }
+  const requestDelete = (ch: TwinChannel) => setConfirmRemove(ch);
+  const performDelete = async () => {
+    if (!confirmRemove) return;
+    try { await deleteChannel(confirmRemove.id); } catch { /* noop */ }
+    setConfirmRemove(null);
   };
 
   const stats = useMemo(() => {
@@ -253,7 +257,7 @@ export default function ChannelsAtelier() {
                           <button onClick={() => handleToggle(ch)} title={ch.is_active ? t.channels.pause : t.channels.activate} className="p-1.5 rounded-interactive text-foreground/65 hover:text-foreground hover:bg-secondary/40 transition-colors">
                             {ch.is_active ? <PowerOff className="w-3.5 h-3.5" /> : <Power className="w-3.5 h-3.5" />}
                           </button>
-                          <button onClick={() => handleDelete(ch)} title={t.channels.remove} className="p-1.5 rounded-interactive text-foreground/65 hover:text-red-400 hover:bg-red-500/10 transition-colors">
+                          <button onClick={() => requestDelete(ch)} title={t.channels.remove} className="p-1.5 rounded-interactive text-foreground/65 hover:text-red-400 hover:bg-red-500/10 transition-colors">
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
@@ -301,6 +305,16 @@ export default function ChannelsAtelier() {
           )}
         </div>
       </div>
+      {confirmRemove && (
+        <ConfirmDialog
+          danger
+          title={tx(t.channels.removeConfirm, {
+            label: confirmRemove.label ?? `${confirmRemove.channel_type} channel`,
+          })}
+          onConfirm={performDelete}
+          onCancel={() => setConfirmRemove(null)}
+        />
+      )}
     </div>
   );
 }

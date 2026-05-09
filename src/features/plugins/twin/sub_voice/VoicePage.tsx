@@ -3,6 +3,7 @@ import { Volume2, Save, Trash2, ExternalLink } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
+import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { TwinEmptyState } from '../TwinEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -51,6 +52,7 @@ export default function VoicePage() {
   const [style, setStyle] = useState(0.0);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [confirmingRemove, setConfirmingRemove] = useState(false);
 
   useEffect(() => {
     if (activeTwinId) fetchVoiceProfile(activeTwinId);
@@ -98,10 +100,17 @@ export default function VoicePage() {
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!activeTwinId) return;
-    if (!confirm(t.voice.removeVoiceConfirm)) return;
+    setConfirmingRemove(true);
+  };
+  const performDelete = async () => {
+    if (!activeTwinId) {
+      setConfirmingRemove(false);
+      return;
+    }
     await deleteVoiceProfile(activeTwinId);
+    setConfirmingRemove(false);
   };
 
   if (!activeTwinId) {
@@ -270,6 +279,14 @@ export default function VoicePage() {
           </div>
         )}
       </ContentBody>
+      {confirmingRemove && (
+        <ConfirmDialog
+          danger
+          title={t.voice.removeVoiceConfirm}
+          onConfirm={performDelete}
+          onCancel={() => setConfirmingRemove(false)}
+        />
+      )}
     </ContentBox>
   );
 }

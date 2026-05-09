@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { Button } from '@/features/shared/components/buttons';
+import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useProfileDashboards } from '../useProfileDashboards';
@@ -82,7 +83,8 @@ function MilestoneRow({ icon: Icon, label, status, meta }: MilestoneRowProps) {
 }
 
 export default function ProfilesAtelier() {
-  const t = useTranslation().t.twin;
+  const { t: tFull, tx } = useTranslation();
+  const t = tFull.twin;
   const twinProfiles = useSystemStore((s) => s.twinProfiles);
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const isLoading = useSystemStore((s) => s.twinProfilesLoading);
@@ -95,6 +97,7 @@ export default function ProfilesAtelier() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState<DraftForm>(EMPTY_DRAFT);
   const [submitting, setSubmitting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => { fetchTwinProfiles(); }, [fetchTwinProfiles]);
 
@@ -137,9 +140,13 @@ export default function ProfilesAtelier() {
       setEditingId(null);
     } finally { setSubmitting(false); }
   };
-  const handleDelete = async (id: string, name: string) => {
-    if (!confirm(t.profiles.deleteConfirm.replace('{name}', name))) return;
-    await deleteTwinProfile(id);
+  const requestDelete = (id: string, name: string) => {
+    setConfirmDelete({ id, name });
+  };
+  const performDelete = async () => {
+    if (!confirmDelete) return;
+    await deleteTwinProfile(confirmDelete.id);
+    setConfirmDelete(null);
   };
 
   if (!isLoading && sorted.length === 0) {
@@ -192,7 +199,7 @@ export default function ProfilesAtelier() {
                 onSaveEdit={handleSaveEdit}
                 submitting={submitting}
                 onSetActive={() => setActiveTwin(heroTwin.id)}
-                onDelete={() => handleDelete(heroTwin.id, heroTwin.name)}
+                onDelete={() => requestDelete(heroTwin.id, heroTwin.name)}
                 dash={dashboards[heroTwin.id]}
               />
             )}
@@ -218,7 +225,7 @@ export default function ProfilesAtelier() {
                       onSaveEdit={handleSaveEdit}
                       submitting={submitting}
                       onSetActive={() => setActiveTwin(p.id)}
-                      onDelete={() => handleDelete(p.id, p.name)}
+                      onDelete={() => requestDelete(p.id, p.name)}
                     />
                   ))}
                 </div>
@@ -267,6 +274,14 @@ export default function ProfilesAtelier() {
       </div>
 
       {wizardOpen && <CreateTwinWizard onClose={() => setWizardOpen(false)} />}
+      {confirmDelete && (
+        <ConfirmDialog
+          danger
+          title={tx(t.profiles.deleteConfirm, { name: confirmDelete.name })}
+          onConfirm={performDelete}
+          onCancel={() => setConfirmDelete(null)}
+        />
+      )}
     </div>
   );
 }
