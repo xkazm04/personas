@@ -420,6 +420,23 @@ npm run build:builder   # builder tier
 - **No Redux, no Context API for global state, no signals libraries.** Don't propose adding alternatives.
 - **No SWR / React Query.** Data fetching goes through the `src/api/` layer which calls Tauri commands directly.
 
+### State management: load-bearing patterns
+
+`/architect` run 2026-05-09 (state-management theme) identified three call-site/slice-author invariants holding across 13 stores, ~50 slices, and ~1900 store consumption sites. Established by [[Architect/decisions/2026-05-09-codify-zustand-discipline]].
+
+1. **Never `use[X]Store()` with no selector.** Whole-store subscriptions cause re-render on every state change across the entire store. Always pass a selector:
+   - `useAgentStore((s) => s.personas)` — single field
+   - `useAgentStore(useShallow((s) => ({ a: s.a, b: s.b })))` — multi-field
+   - `useAgentStore.getState()` — outside React, in event handlers, or for one-shot reads
+   - **Enforced by:** `eslint-rules/no-whole-store-subscription.cjs` (warn; 8 known violations as of 2026-05-09 in `i18n/useTranslation`, `EditorDocument`, `LanguageSwitcher`, `AppearanceStep`, `TranslationContributor` — opportunistic cleanup backlog).
+2. **Every slice uses `StateCreator<Store, [], [], XxxSlice>` typing.** Factories are `(set, get) => ({...})` or `(set) => ({...})` with the StateCreator generic attached; never raw object literals or untyped factories.
+3. **No slice-key collisions within a domain.** Each slice prefixes its keys with a domain marker (`buildPhase`, `chatMode`, `healthCheck*`, `budget*`, etc.) so `...createA(...a), ...createB(...a)` composition can't silently clobber. TS intersection types let later property win silently — collisions don't break the build.
+   - **Enforced by:** `src/__tests__/structural/store-discipline.test.ts` (Vitest structural test that walks `src/stores/slices/**/*.ts` via `import.meta.glob` and asserts both invariants 2 and 3).
+
+**Persist write-dedup.** Stores using `persist` middleware should wrap their storage in `createDedupedJSONStorage()` from `src/stores/util/dedupedStorage.ts`. Zustand re-runs partialize+setItem on every `set()`, so a 25-field partialize tree gets serialized + written on every navigation event regardless of whether the partialized fields moved. The dedup helper skips writes when the serialized payload is unchanged. Applied to `agentStore`, `systemStore`, `themeStore` as of 2026-05-09. Established by [[Architect/decisions/2026-05-09-systemstore-themestore-dedup]].
+
+**`globalThis` for HMR-surviving singletons.** Use the `??=` assignment pattern (`globalThis.__personasFoo ??= initialValue`). Current singletons: `__personasEventBridge` (`src/lib/eventBridge.ts`), `__personasTourStorage*` (`src/stores/slices/system/tourSlice.ts`), `__executionBufferProbe__` (`src/stores/slices/agents/executionSlice.ts`, dev-only). Slice-scoped singletons could ideally consolidate to `src/lib/singletons/` but the scattered locations work in practice.
+
 ### IPC layer
 - All Rust commands live under `src-tauri/src/commands/` grouped by domain (`core/`, `credentials/`, `design/`, `execution/`, `infrastructure/`, `tools/`, `network/`, `recipes/`, `obsidian_brain/`, `ocr/`, `artist/`, `communication/`).
 - Frontend wrapper: `src/api/` mirrors the same grouping. Each `.ts` file calls `invoke('command_name', payload)`.
