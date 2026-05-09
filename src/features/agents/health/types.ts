@@ -31,8 +31,25 @@ export interface DryRunIssue {
   resolved: boolean;
 }
 
+/**
+ * i18n keys for the auto-fix proposal labels surfaced on the "Apply Fix:"
+ * button. The string union is enforced at the rule-construction site
+ * (PROPOSAL_RULES in useHealthCheck.ts) and resolved at render time by
+ * `t.agents.health_proposals[labelKey]`. Adding a new auto-fix means adding
+ * a key here AND under `agents.health_proposals` in en.json.
+ */
+export type HealthProposalLabelKey =
+  | 'link_credential'
+  | 'auto_match_credentials'
+  | 'add_daily_schedule'
+  | 'switch_retry_3x'
+  | 'add_default_use_case'
+  | 'enable_first_run_review';
+
 export interface DryRunProposal {
-  label: string;
+  labelKey: HealthProposalLabelKey;
+  /** Optional interpolation params (e.g. `{ connector: 'slack' }` for `link_credential`). */
+  labelParams?: Record<string, string | number>;
   actions: HealthFixProposalAction[];
 }
 

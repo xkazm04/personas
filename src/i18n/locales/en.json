@@ -2358,7 +2358,19 @@
       "manual_action": "Manual action needed",
       "category_config": "Configuration",
       "category_runtime": "Runtime",
-      "category_policy": "Policy"
+      "category_policy": "Policy",
+      "fix_applied": "Applied fix: {label}",
+      "fix_failed": "Failed to apply fix: {error}",
+      "auto_match_blocked_one": "Auto-match blocked: credential service {services} has multiple credentials. Pick the right one manually before applying.",
+      "auto_match_blocked_other": "Auto-match blocked: credential services {services} have multiple credentials. Pick the right one manually before applying."
+    },
+    "health_proposals": {
+      "link_credential": "Link {connector} credential",
+      "auto_match_credentials": "Auto-match all credentials",
+      "add_daily_schedule": "Add daily 9 AM schedule",
+      "switch_retry_3x": "Switch to retry-3x",
+      "add_default_use_case": "Add default use case",
+      "enable_first_run_review": "Enable first-run review"
     },
     "health_score": {
       "healthy": "Healthy",

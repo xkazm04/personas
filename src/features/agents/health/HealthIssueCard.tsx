@@ -66,7 +66,10 @@ export function HealthIssueCard({ issue, onApplyFix, onResolved }: HealthIssueCa
               className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 typo-body font-medium rounded-modal bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
             >
               <Wrench className="w-3 h-3" />
-              {tx(t.agents.health_issue.apply_fix, { label: issue.proposal.label })}
+              {tx(
+                t.agents.health_issue.apply_fix,
+                { label: tx(t.agents.health_proposals[issue.proposal.labelKey], issue.proposal.labelParams ?? {}) },
+              )}
             </button>
           ) : (
             <p className="mt-1.5 typo-body text-foreground italic">

@@ -2365,6 +2365,18 @@ export type Translations = {
       category_config: string;
       category_runtime: string;
       category_policy: string;
+      fix_applied: string;
+      fix_failed: string;
+      auto_match_blocked_one: string;
+      auto_match_blocked_other: string;
+    };
+    health_proposals: {
+      link_credential: string;
+      auto_match_credentials: string;
+      add_daily_schedule: string;
+      switch_retry_3x: string;
+      add_default_use_case: string;
+      enable_first_run_review: string;
     };
     health_score: {
       healthy: string;
