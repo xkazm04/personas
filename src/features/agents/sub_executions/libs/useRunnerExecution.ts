@@ -6,6 +6,7 @@ import { getExecution } from "@/api/agents/executions";
 import { useToastStore } from '@/stores/toastStore';
 import { useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 import { useRafCoalescedCallback } from '@/hooks/utility/timing/useRafCoalescedCallback';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface UseRunnerExecutionArgs {
   personaId: string;
@@ -42,28 +43,30 @@ export function useRunnerExecution({
   const selectedPersona = useAgentStore((state) => state.selectedPersona);
   const cloudConfig = useSystemStore((s) => s.cloudConfig);
   const cloudExecute = useSystemStore((s) => s.cloudExecute);
+  const { t, tx } = useTranslation();
+  const e = t.agents.executions;
 
   const handleExecute = async () => {
     let parsedInput = {};
     if (inputData.trim()) {
       try { parsedInput = JSON.parse(inputData); }
-      catch (e) { setJsonError(e instanceof SyntaxError ? e.message : 'Invalid JSON input'); return; }
+      catch (err) { setJsonError(err instanceof SyntaxError ? err.message : e.json_input_invalid_fallback); return; }
     }
     setJsonError(null);
     if (cloudConfig?.is_connected) {
       try {
         const executionId = await cloudExecute(personaId, JSON.stringify(parsedInput));
-        appendExecutionOutput('Cloud execution started: ' + executionId);
+        appendExecutionOutput(tx(e.terminal_cloud_started_with_id, { id: executionId }));
       } catch {
-        appendExecutionOutput('ERROR: Failed to start cloud execution');
-        useToastStore.getState().addToast('Failed to start cloud execution', 'error');
+        appendExecutionOutput(e.terminal_cloud_failed_to_start);
+        useToastStore.getState().addToast(e.cloud_failed_to_start_toast, 'error');
       }
     } else {
       const executionId = await executePersona(personaId, parsedInput);
       if (executionId) {
-        appendExecutionOutput('Execution started: ' + executionId);
+        appendExecutionOutput(tx(e.terminal_started_with_id, { id: executionId }));
       } else {
-        appendExecutionOutput('ERROR: Failed to start execution');
+        appendExecutionOutput(e.terminal_failed_to_start);
       }
     }
   };

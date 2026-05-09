@@ -309,6 +309,8 @@ pub enum ChannelSpecV2Type {
     Slack,
     Telegram,
     Email,
+    Discord,
+    Teams,
 }
 
 /// v3.2 — `use_case_ids` is either the sentinel string `"*"` (matches all UCs)

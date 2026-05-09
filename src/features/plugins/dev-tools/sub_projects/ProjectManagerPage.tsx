@@ -129,10 +129,11 @@ export default function ProjectManagerPage() {
         icon={<FolderKanban className="w-5 h-5 text-amber-400" />}
         iconColor="amber"
         title={t.plugins.dev_tools.projects_title}
+        actions={<LifecycleProjectPicker />}
       />
 
       <ContentBody>
-        <ActionRow left={<LifecycleProjectPicker />}>
+        <ActionRow>
           <Button
             variant="accent"
             accentColor="violet"

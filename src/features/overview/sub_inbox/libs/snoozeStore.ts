@@ -15,6 +15,11 @@ export type SnoozeMap = Record<string, string>;
 
 const subscribers = new Set<() => void>();
 
+// `useSyncExternalStore` compares snapshots by reference (`Object.is`), so
+// `getSnoozeMap` must return a stable reference between writes. We cache the
+// last snapshot at module level and only refresh it when `write()` runs.
+let cachedSnapshot: SnoozeMap | null = null;
+
 function read(): SnoozeMap {
   if (typeof window === 'undefined') return {};
   try {
@@ -36,11 +41,13 @@ function write(next: SnoozeMap) {
   } catch (err) {
     silentCatch('inbox.snoozeStore.write')(err);
   }
+  cachedSnapshot = next;
   for (const cb of subscribers) cb();
 }
 
 export function getSnoozeMap(): SnoozeMap {
-  return read();
+  if (cachedSnapshot === null) cachedSnapshot = read();
+  return cachedSnapshot;
 }
 
 export function isSnoozed(id: string, now: number = Date.now()): boolean {

@@ -500,6 +500,12 @@
     "executions": {
       "no_persona_selected": "No persona selected",
       "loading_executions": "Loading executions",
+      "json_input_invalid_fallback": "Invalid JSON input",
+      "cloud_failed_to_start_toast": "Failed to start cloud execution",
+      "terminal_cloud_started_with_id": "Cloud execution started: {id}",
+      "terminal_cloud_failed_to_start": "ERROR: Failed to start cloud execution",
+      "terminal_started_with_id": "Execution started: {id}",
+      "terminal_failed_to_start": "ERROR: Failed to start execution",
       "agent_ready": "Your agent is ready to go",
       "agent_ready_subtitle": "Run it to see results here. Each execution will appear in this timeline.",
       "try_it_now": "Try it now",

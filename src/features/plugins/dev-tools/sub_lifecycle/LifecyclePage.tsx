@@ -116,6 +116,7 @@ export default function LifecyclePage() {
         icon={<GitBranch className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
         title={t.plugins.dev_tools.lifecycle_title}
+        actions={<LifecycleProjectPicker />}
       >
         {/* Tab menu below header */}
         <div className="flex items-center gap-1 mt-3">
@@ -137,7 +138,7 @@ export default function LifecyclePage() {
       </ContentHeader>
 
       <ContentBody centered>
-        <ActionRow left={<LifecycleProjectPicker />}>
+        <ActionRow>
           <Button variant="secondary" size="sm" icon={<RefreshCw className="w-3.5 h-3.5" />} onClick={refresh} disabled={loading}>{t.common.refresh}</Button>
           {allConfigured ? (
             <Button variant="danger" size="sm" onClick={handleTeardown} loading={configuring}>{t.plugins.dev_tools.teardown}</Button>

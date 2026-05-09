@@ -365,13 +365,16 @@ export default function IdeaScannerPage() {
     }
   }, [activeProjectId, autoScanRunning, fetchContexts, runScan, ds, tx]);
 
-  // Group agents by category
+  // Group agents by category, alphabetised by label within each column
   const agentsByCategory = useMemo(() => {
     const map = new Map<string, typeof SCAN_AGENTS[number][]>();
     for (const agent of SCAN_AGENTS) {
       const list = map.get(agent.categoryGroup) ?? [];
       list.push(agent);
       map.set(agent.categoryGroup, list);
+    }
+    for (const list of map.values()) {
+      list.sort((a, b) => a.label.localeCompare(b.label));
     }
     return map;
   }, []);
@@ -389,10 +392,11 @@ export default function IdeaScannerPage() {
         iconColor="amber"
         title={t.plugins.dev_scanner.idea_scanner_title}
         subtitle={t.plugins.dev_scanner.idea_scanner_subtitle}
+        actions={<LifecycleProjectPicker />}
       />
 
       <ContentBody centered>
-        <ActionRow left={<LifecycleProjectPicker />}>
+        <ActionRow>
           <Button
             variant="secondary"
             size="sm"

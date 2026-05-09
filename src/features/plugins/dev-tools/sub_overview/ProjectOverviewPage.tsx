@@ -8,6 +8,7 @@ import {
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { ActionRow } from '@/features/shared/components/layout/ActionRow';
 import { Button } from '@/features/shared/components/buttons';
+import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
@@ -42,8 +43,11 @@ function formatErr(err: unknown): string {
   if (typeof err === 'string') return err;
   if (err && typeof err === 'object') {
     const obj = err as Record<string, unknown>;
+    // Tauri AppError serializes as `{ error: "<message>", kind: "<variant>" }`.
+    // Prefer the explicit `error` field so we don't accidentally surface
+    // `kind` ("validation", "auth", …) as the user-facing message.
+    if (typeof obj.error === 'string') return obj.error;
     if (typeof obj.message === 'string') return obj.message;
-    // Tauri AppError variants are { Variant: "msg" } — surface the inner string.
     for (const v of Object.values(obj)) {
       if (typeof v === 'string') return v;
     }
@@ -653,7 +657,10 @@ export default function ProjectOverviewPage() {
       setRepoState('connected');
     } catch (err) {
       setRepoState('error');
-      setRepoError(formatErr(err));
+      // Surface the credential we tried so the user can tell whether the wrong
+      // credential was auto-picked (common when a workspace has both a generic
+      // PAT and an Actions PAT, only one of which has `repo` scope).
+      setRepoError(`${formatErr(err)} — using credential "${cred.name}" (${cred.serviceType})`);
     }
   }, [activeProject?.github_url, credentials, credLoaded, activeRepoCredId]);
 
@@ -683,11 +690,19 @@ export default function ProjectOverviewPage() {
       const projectSlug = storedProject ?? slug;
 
       // Backfill for legacy entries that only stored the project slug — discover
-      // the org via the API instead of guessing from the credential name.
+      // the org via the API instead of guessing from the credential name. When
+      // the token has 0 or 2+ orgs we can't auto-pick, so drop into the
+      // re-link picker (`unmapped`) instead of dead-ending in an error state
+      // — the picker can resolve this in one click without forcing a manual
+      // SQL fix.
       if (!orgSlug) {
         const orgs = await fetchSentryOrgs(credId);
-        if (orgs.length === 1 && orgs[0]) orgSlug = orgs[0].slug;
-        else throw new Error('Org slug missing — re-link this monitoring connection.');
+        if (orgs.length === 1 && orgs[0]) {
+          orgSlug = orgs[0].slug;
+        } else {
+          setMonitorState('unmapped');
+          return;
+        }
       }
 
       const stats = await fetchSentryStats(credId, orgSlug, projectSlug);
@@ -719,6 +734,7 @@ export default function ProjectOverviewPage() {
           icon={<LayoutDashboard className="w-5 h-5 text-primary" />}
           iconColor="primary"
           title={po.codebase}
+          actions={<LifecycleProjectPicker />}
         />
         <ContentBody centered>
           <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -740,6 +756,7 @@ export default function ProjectOverviewPage() {
         iconColor="primary"
         title={activeProject.name}
         subtitle={activeProject.root_path}
+        actions={<LifecycleProjectPicker />}
       />
 
       <ContentBody>

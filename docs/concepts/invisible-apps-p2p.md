@@ -1,7 +1,7 @@
 # Invisible Apps — Implementation Plan
 
 > Living solution design for peer-to-peer agent orchestration across desktop instances.
-> Last updated: 2026-03-12
+> Last updated: 2026-0
 
 ---
 
@@ -327,6 +327,7 @@ src/features/sharing/
 ```
 
 **UX flow:**
+
 1. User navigates to Settings > Sharing (or a new "Network" section).
 2. Sees list of all local resources (personas, templates, etc.).
 3. Toggles exposure per resource. When enabled, selects:
@@ -337,6 +338,7 @@ src/features/sharing/
 4. Preview panel shows the manifest as peers would see it.
 
 **Integration with existing UI:**
+
 - Add a small "Share" icon/badge on persona cards (`src/features/agents/`) when a persona is exposed.
 - Add exposure toggle to persona detail view.
 
@@ -435,6 +437,7 @@ src/features/sharing/
 ```
 
 **Integration:**
+
 - Add "Export as .persona" to persona context menu (`src/features/agents/`).
 - Add "Import .persona" button to home page and persona list.
 - Register `.persona` file extension with Tauri deep-link plugin for OS-level double-click import.
@@ -467,6 +470,7 @@ src/features/sharing/
 ### 1.6 Phase 1 Implementation Notes
 
 **Implemented files (Rust backend):**
+
 - `src-tauri/src/engine/identity.rs` — Ed25519 keypair generation, OS keyring storage, peer_id derivation (base58(sha256(pubkey))), signing/verification, identity card export/import
 - `src-tauri/src/engine/bundle.rs` — Signed .persona ZIP bundle export/import with SHA-256 content hashing
 - `src-tauri/src/db/models/identity.rs` — PeerIdentity, TrustedPeer, IdentityCard, TrustLevel types
@@ -478,6 +482,7 @@ src/features/sharing/
 - `src-tauri/src/commands/network/bundle.rs` — Tauri commands for bundle export/import
 
 **Implemented files (Frontend):**
+
 - `src/api/network/identity.ts` — Identity API wrappers
 - `src/api/network/exposure.ts` — Exposure API wrappers
 - `src/api/network/bundle.ts` — Bundle API wrappers
@@ -489,6 +494,7 @@ src/features/sharing/
 - `src/stores/slices/network/networkSlice.ts` — Zustand store slice for all network state
 
 **Key design decisions:**
+
 - Used `keyring` crate for OS-level private key storage (same as vault encryption key)
 - peer_id = base58(sha256(ed25519_public_key)) for compact, URL-safe identifiers
 - Bundle format is a ZIP with manifest.json, signature.json, and resource data files
@@ -584,6 +590,7 @@ src/features/network/
 ```
 
 **UX flow:**
+
 1. Network icon in header bar shows discovered peer count.
 2. Click opens Network Dashboard showing LAN peers in real-time.
 3. Each peer shows: display name, PeerId (truncated), capability summary, connection quality.
@@ -837,6 +844,7 @@ pub struct ChainTriggerConfig {
 ```
 
 **Integration with event bus:**
+
 - Remote `AgentEnvelope` messages with `intent: Response` are converted to local `PersonaEvent` entries.
 - The event bus (`engine/bus.rs`) evaluates subscriptions against these events.
 - Matching subscriptions trigger local chain executions.
@@ -870,6 +878,7 @@ Peer A (requestor)                  Peer B (executor)
 ```
 
 **Implementation:**
+
 - Extend `engine/connector_strategy.rs` to check if a capability exists locally OR on a connected peer.
 - If remote: construct `AgentEnvelope`, send via QUIC stream, await response.
 - Timeout handling: if peer doesn't respond within `timeout_ms`, fall back to local execution or fail gracefully.
@@ -987,6 +996,7 @@ src/stores/networkStore.ts
 ### 2.9 Phase 2 Implementation Notes
 
 **Module structure (differs from plan — consolidated under `engine/p2p/`):**
+
 ```
 src-tauri/src/engine/p2p/
 ├── mod.rs              # NetworkService orchestrator (start/stop/accept_loop/config)
@@ -1000,23 +1010,27 @@ src-tauri/src/engine/p2p/
 ```
 
 **Wire protocol:**
+
 - MessagePack serialization via `rmp-serde`
 - 4-byte big-endian length prefix framing
 - Max message size: 16 MB
 - Protocol version: 1
 
 **QUIC transport:**
+
 - Self-signed X.509 certificates generated from node identity using `rcgen` v0.13
 - Custom `SkipServerVerification` — all TLS certs accepted; peer identity verified post-handshake via Hello/HelloAck exchange
 - Default port: 4242 (configurable via NetworkConfig)
 
 **mDNS discovery:**
+
 - Service type: `_personas._tcp.local.`
 - TXT records: `peer_id`, `display_name`, `version`
 - Discovered peers stored in `discovered_peers` SQLite table
 - Stale peer pruning based on configurable timeout (default 60s)
 
 **Connection lifecycle:**
+
 1. Resolve peer address from `discovered_peers` DB
 2. QUIC connect via quinn
 3. Hello/HelloAck handshake (exchange peer_id + display_name + protocol_version)
@@ -1025,28 +1039,34 @@ src-tauri/src/engine/p2p/
 6. Connection state tracking: Disconnected → Connecting → Connected / Failed
 
 **New DB tables:**
+
 - `discovered_peers` — peer_id, display_name, addresses (JSON), last_seen_at, first_seen_at, is_connected, metadata
 - `peer_manifests` — id, peer_id, resource_type, resource_id, display_name, access_level, tags, synced_at (UNIQUE on peer_id + resource_type + resource_id)
 
 **AppState integration:**
+
 - `NetworkService` stored as `Option<Arc<NetworkService>>` in AppState
 - Initialized at app startup after identity is loaded
 - Auto-starts mDNS + QUIC listener as background tokio task (3s delay after startup)
 
 **Tauri commands (10 new):**
+
 - `get_discovered_peers`, `connect_to_peer`, `disconnect_peer`
 - `get_peer_manifest`, `sync_peer_manifest`, `get_connection_status`
 - `get_network_status`, `send_agent_message`, `get_received_messages`
 - `set_network_config`
 
 **Frontend API:**
+
 - `src/api/network/discovery.ts` — Typed wrappers for all 10 commands with TypeScript interfaces
 
 **Frontend store:**
+
 - Extended `networkSlice.ts` with Phase 2 state: `discoveredPeers`, `peerManifests`, `connectionStates`, `networkStatus`
 - Actions: `fetchDiscoveredPeers`, `connectToPeer`, `disconnectPeer`, `fetchPeerManifest`, `syncPeerManifest`, `fetchNetworkStatus`
 
 **Frontend UI components:**
+
 - `NetworkDashboard.tsx` — Real-time network status (online/offline, port, peer counts). Auto-refreshes every 5s.
 - `PeerList.tsx` — Lists discovered LAN peers with connect/disconnect actions, refresh button, 5s polling.
 - `PeerCard.tsx` — Peer card with connection status dot (green/amber/red/grey), display name, trust badge, relative last-seen time, connect/disconnect/detail buttons.
@@ -1054,6 +1074,7 @@ src-tauri/src/engine/p2p/
 - `ExposureManager.tsx` updated — Layout is now: Network Status → Your Identity → Exposed Resources → Discovered Peers.
 
 **Cargo dependencies added:**
+
 ```toml
 mdns-sd = "0.11"
 quinn = "0.11"
@@ -1063,6 +1084,7 @@ rmp-serde = "1.3"
 ```
 
 **Key deviations from original plan:**
+
 - Proxy execution and remote chain triggers deferred to Phase 3/4 (as originally scoped for later phases)
 - UI components placed in `src/features/sharing/components/` (collocated with Phase 1 sharing UI) rather than a separate `src/features/network/` directory, since they share the same settings page
 - Agent messaging uses in-memory ring buffer instead of DB persistence (sufficient for Phase 2; Phase 3 will add persistent offline queue)
@@ -1085,6 +1107,7 @@ rmp-serde = "1.3"
 #### 3.1.1 Why libp2p Over Raw QUIC
 
 Phase 2 uses quinn (raw QUIC) for simplicity on LAN. Phase 3 migrates to libp2p because:
+
 - Built-in NAT traversal (AutoNAT, hole-punching)
 - Built-in relay (Circuit Relay v2)
 - Kademlia DHT for internet-wide peer discovery
@@ -1273,6 +1296,7 @@ const BOOTSTRAP_NODES: &[&str] = &[
 ```
 
 **Bootstrap node binary:**
+
 - Same Rust crate, feature-flagged: `cargo build --features bootstrap-node`
 - Strips all UI, SQLite, vault functionality
 - Runs just: libp2p swarm + Kademlia DHT + Circuit Relay
@@ -1436,6 +1460,7 @@ CREATE INDEX IF NOT EXISTS idx_outbound_queue_peer ON outbound_message_queue(tar
 ```
 
 When a peer comes online:
+
 1. Connection manager detects new connection
 2. Check outbound_message_queue for pending messages to that peer
 3. Deliver in FIFO order
@@ -2045,6 +2070,7 @@ This reuses the `connector_strategy.rs` extension from the original Phase 2 plan
 ### 3.11 Phase 3 Success Criteria
 
 **Internet P2P:**
+
 - [ ] Two instances on different networks (behind NAT) connect successfully (>90% success rate)
 - [ ] DHT-based peer discovery works across the internet
 - [ ] Hole-punching works for cone NAT peers
@@ -2059,6 +2085,7 @@ This reuses the `connector_strategy.rs` extension from the original Phase 2 plan
 - [ ] Network status UI shows NAT type, relay status, connected peers
 
 **Data Exposure:**
+
 - [ ] Admin can create a data exposure policy for any connector type (external + built-in)
 - [ ] Sensitivity auto-detection correctly flags PII/financial/auth columns
 - [ ] Column rules work: allow, deny, redact, hash, truncate, generalize
@@ -2618,6 +2645,7 @@ All new Rust structs with `#[derive(ts_rs::TS)]` auto-generate TypeScript types 
 ### Observability
 
 All network operations integrate with the existing tracing system:
+
 - New span types: `NetworkDiscovery`, `PeerConnection`, `ProtocolMessage`, `AgentConversation`, `LayoutGeneration`
 - Extend `TraceSpan` model with network-specific metadata
 - Cross-instance trace correlation via `conversation_id`

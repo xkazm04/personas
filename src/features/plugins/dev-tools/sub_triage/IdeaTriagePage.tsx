@@ -265,13 +265,13 @@ export default function IdeaTriagePage() {
         iconColor="amber"
         title={dt.triage_title}
         subtitle={dt.triage_subtitle}
+        actions={<LifecycleProjectPicker />}
       />
 
       <ContentBody>
         <ActionRow
           left={
             <>
-              <LifecycleProjectPicker />
               <span className="rounded-full px-2.5 py-0.5 typo-caption font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
                 {tx(dt.accepted_badge, { count: acceptedCount })}
               </span>

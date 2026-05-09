@@ -22,8 +22,27 @@ function writeIfChanged(file, content) {
 }
 
 function removeDir(dir) {
-  if (fs.existsSync(dir)) {
-    fs.rmSync(dir, { recursive: true, force: true });
+  if (!fs.existsSync(dir)) return;
+  // Windows can hold transient locks on locale JSON files (AV scanner,
+  // Search Indexer, recently-closed editor). A single fs.rmSync racing
+  // against those crashes the dev server with EBUSY. Retry a few times
+  // with backoff before giving up — the locks lift in well under a
+  // second in practice.
+  const maxAttempts = 6;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      fs.rmSync(dir, { recursive: true, force: true });
+      return;
+    } catch (err) {
+      const isLast = attempt === maxAttempts;
+      const transient = err && (err.code === "EBUSY" || err.code === "EPERM" || err.code === "ENOTEMPTY");
+      if (!transient || isLast) throw err;
+      // Synchronous backoff — codegen runs at startup, no event loop
+      // pressure. 100/200/300/400/500ms across the 5 retries.
+      const waitMs = 100 * attempt;
+      const end = Date.now() + waitMs;
+      while (Date.now() < end) { /* spin */ }
+    }
   }
 }
 

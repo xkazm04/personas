@@ -32,6 +32,11 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+- **[2026-05-10 ~06:00] manual — messaging-channels-slice-1 (vault-resolved credentials + Discord/Teams adapters)**
+  - **Source:** in-session conversation; user picked Slice 1 of the messaging-pillar design (fan-out routing + plain-text + extend `notification_channels` JSON). Goal: extend the existing dispatcher to read credentials from the vault by `credential_id` and add Discord + Teams adapters, with no UI changes (Slice 2).
+  - **Paths:** `src-tauri/src/notifications.rs`, `src-tauri/src/db/models/persona.rs` (ChannelSpecV2Type enum extension), `src/lib/bindings/ChannelSpecV2Type.ts` (regen), `src/lib/bindings/NotificationDeliveryStats.ts` (regen if shape changes), `.claude/active-runs.md` (this entry)
+  - **Status:** started — no overlap with the two stale entries below (both >24h old, scope: Obsidian/research notes + ledger only)
+
 - **[2026-05-09 ~21:15] /research — cli-coordination-active-runs (design + execute)**
   - **Source:** in-session conversation following Claude+CapCut run; user request to design and execute the active-runs ledger right away
   - **Paths:** `.claude/active-runs.md`, `.claude/CLAUDE.md`, `.claude/skills/research/skill.md`, `docs/concepts/cli-coordination-active-runs.md`, `docs/concepts/README.md`

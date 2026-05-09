@@ -18,6 +18,7 @@ This folder is only for not-yet-implemented proposals, experiments, and design e
 | [invisible-apps-p2p.md](invisible-apps-p2p.md) | **PARTIAL — pending MOVE** to `docs/features/p2p-sharing/` (Phase 1 identity + manifest signing and Phase 2 LAN peer discovery shipped; Phase 3 internet P2P backlog) |
 | [langfuse-observability.md](langfuse-observability.md) | **SHIPPED — pending MOVE** to `docs/features/observability/` (Path A closed: managed self-host stack + OTLP exporter + auto-login + lifecycle); Path A+ exploration next |
 | [langfuse-lab-score-push.md](langfuse-lab-score-push.md) | Backlog — Path A's known gap; Path 2 (synthesize trace) recommended |
+| [matrix-retire-glyph-only.md](matrix-retire-glyph-only.md) | Proposal — retire `<PersonaMatrix>` template-preview surface, default to GlyphGrid; reclaims ~25 files |
 | [mobile.md](mobile.md) | Proposal — Strategy A vs B undecided; ~30% Strategy B scaffolded (Android feature flag, Gradle project, responsive React started); LLM HTTP client + ForegroundService missing |
 | [personas-as-long-lived-processes.md](personas-as-long-lived-processes.md) | Shelved — kept for future consideration |
 | [per-persona-claude-code-skills.md](per-persona-claude-code-skills.md) | Proposal — generalization of in-flight `engine/skills_sidecar/` work |

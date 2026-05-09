@@ -506,6 +506,12 @@ export type Translations = {
     executions: {
       no_persona_selected: string;
       loading_executions: string;
+      json_input_invalid_fallback: string;
+      cloud_failed_to_start_toast: string;
+      terminal_cloud_started_with_id: string;
+      terminal_cloud_failed_to_start: string;
+      terminal_started_with_id: string;
+      terminal_failed_to_start: string;
       agent_ready: string;
       agent_ready_subtitle: string;
       try_it_now: string;
