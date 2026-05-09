@@ -445,15 +445,24 @@ pub fn apply_import(
                         signature_verified: true,
                     };
                     if let Err(e) = exposure_repo::upsert_provenance(pool, provenance) {
-                        let cleanup_result = persona_repo::delete(pool, &new_id);
-                        if let Err(cleanup_err) = cleanup_result {
-                            return Err(AppError::Internal(format!(
-                                "Failed to record provenance for imported persona {new_id}: {e}; cleanup also failed: {cleanup_err}"
-                            )));
-                        }
-                        return Err(AppError::Internal(format!(
-                            "Failed to record provenance for imported persona {new_id}; import rolled back: {e}"
-                        )));
+                        // Roll back the just-imported persona, but DON'T abort
+                        // the whole loop — the user expects a per-resource
+                        // partial-success report (imported / skipped / errors),
+                        // not a cryptic Internal error mid-batch that hides
+                        // what already succeeded above this entry.
+                        let cleanup_msg = match persona_repo::delete(pool, &new_id) {
+                            Ok(_) => format!(
+                                "Failed to record provenance for {} ({}); rolled back: {}",
+                                entry.display_name, new_id, e
+                            ),
+                            Err(cleanup_err) => format!(
+                                "Failed to record provenance for {} ({}): {}; cleanup also failed: {} (orphan persona left in DB)",
+                                entry.display_name, new_id, e, cleanup_err
+                            ),
+                        };
+                        tracing::warn!(persona_id = %new_id, "{}", cleanup_msg);
+                        errors.push(cleanup_msg);
+                        continue;
                     }
                     imported += 1;
                 }
