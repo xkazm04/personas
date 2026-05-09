@@ -90,9 +90,20 @@ const KNOWN_APPS: &[AppDetector] = &[
     },
     AppDetector {
         connector_name: "desktop_browser",
-        label: "Browser (Chrome/Edge)",
+        label: "Browser (Chrome/Edge/Lightpanda)",
         category: "desktop",
-        binaries: &["chrome", "google-chrome", "msedge.exe", "chrome.exe"],
+        // Lightpanda (lightpanda.io) is CDP-compatible and a drop-in for Chrome/Edge
+        // on static/server-rendered pages. No canonical Windows install path -- users
+        // typically install via the Lightpanda CLI or build from source, so we rely
+        // on PATH detection only for the lightpanda binary.
+        binaries: &[
+            "chrome",
+            "google-chrome",
+            "msedge.exe",
+            "chrome.exe",
+            "lightpanda",
+            "lightpanda.exe",
+        ],
         #[cfg(target_os = "windows")]
         install_paths: &[
             r"C:\Program Files\Google\Chrome\Application\chrome.exe",
@@ -293,7 +304,7 @@ fn is_process_in_list(connector_name: &str, processes: &std::collections::HashSe
     let process_names: &[&str] = match connector_name {
         "desktop_docker" => &["docker", "docker desktop.exe", "dockerd"],
         "desktop_obsidian" => &["obsidian", "obsidian.exe"],
-        "desktop_browser" => &["chrome", "chrome.exe", "msedge.exe"],
+        "desktop_browser" => &["chrome", "chrome.exe", "msedge.exe", "lightpanda", "lightpanda.exe"],
         _ => return false,
     };
 

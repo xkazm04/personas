@@ -1,7 +1,7 @@
 {
   "id": "builtin-desktop-browser",
   "name": "desktop_browser",
-  "label": "Browser (Chrome/Edge)",
+  "label": "Browser (Chrome/Edge/Lightpanda)",
   "color": "#4285F4",
   "icon_url": "/icons/connectors/chrome.svg",
   "category": "browser_automation",
@@ -16,7 +16,7 @@
       "type": "text",
       "required": false,
       "placeholder": "chrome",
-      "helpText": "Auto-detected. Path to Chrome or Edge binary.",
+      "helpText": "Auto-detected. Path to Chrome, Edge, or Lightpanda binary.",
       "sensitive": true
     },
     {
@@ -34,7 +34,7 @@
   "events": [],
   "metadata": {
     "template_enabled": true,
-    "summary": "Browser automation via Chrome DevTools Protocol -- navigate pages, extract data, and automate web tasks.",
+    "summary": "Browser automation via Chrome DevTools Protocol -- navigate pages, extract data, and automate web tasks. Works with Chrome, Edge, or Lightpanda (Zig-built CDP-compatible headless browser, 9-16x lighter for non-SPA workloads).",
     "auth_type": "local",
     "auth_type_label": "Local App",
     "is_desktop": true,
@@ -50,6 +50,7 @@
         "is_default": true
       }
     ],
+    "mcp_server": "lightpanda mcp",
     "llm_usage_hint": {
       "overview": "Drives Chrome/Edge via the Chrome DevTools Protocol (CDP). The browser is launched with --remote-debugging-port=$cdp_port (default 9222). Lightweight ops (list/open/close tabs) hit the REST endpoints at http://localhost:$cdp_port/json; everything else (clicks, typing, file upload, screenshots, iframes, drag-and-drop) goes through a CDP websocket. The smallest reliable client is `node -e` with the `chrome-remote-interface` npm package -- far less overhead than spawning Playwright/Puppeteer.",
       "examples": [
@@ -69,7 +70,9 @@
         "Drag-and-drop needs the Input.dispatchDragEvent sequence (dragenter -> dragover -> drop). A single mouse event won't fire HTML5 dragstart handlers, which is what modern web apps actually use.",
         "Downloads need Page.setDownloadBehavior({behavior:'allow',downloadPath:'/abs/dir'}) BEFORE you trigger the download, otherwise files land in the OS default download dir with no callback to know when they finish.",
         "Anti-bot challenges (Cloudflare turnstile, hCaptcha) often pass when you attach to the user's normal Chrome but block fresh CDP-spawned sessions. Prefer attach-to-existing over spawn-headless when the target site has bot detection.",
-        "Don't poll with arbitrary `sleep` -- it causes silent scrape failures. Wait for `Network.loadingFinished` events or poll Runtime.evaluate against a deterministic DOM marker (the selector that proves your target rendered)."
+        "Don't poll with arbitrary `sleep` -- it causes silent scrape failures. Wait for `Network.loadingFinished` events or poll Runtime.evaluate against a deterministic DOM marker (the selector that proves your target rendered).",
+        "Lightpanda (lightpanda.io) is a Zig-built CDP-compatible headless browser that uses 9-16x less memory and runs ~2x faster than headless Chrome on static/server-rendered pages. Start it with `lightpanda serve --port 9222` and connect the same way you would Chrome. BUT: Lightpanda only does language-level JS execution via V8 (async/await/promises/closures) -- it does NOT render single-page apps (Twitter, Airbnb, modern dashboards) and skips service workers, IndexedDB, and WebGL. Use Chrome/Edge for SPA targets; pick Lightpanda for static sites, RSS, server-rendered pages, and high-volume scraping where memory matters.",
+        "Lightpanda also ships a stdio MCP server -- run `lightpanda mcp` and wire via the MCP Gateway connector to expose its `goto`/`evaluate` tools without writing per-tool prompt scaffolding."
       ]
     }
   }

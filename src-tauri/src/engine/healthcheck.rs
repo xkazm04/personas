@@ -263,7 +263,7 @@ async fn run_cli_probe(probe: &CliHealthProbe, deadline: Duration) -> Option<Hea
 const DESKTOP_CONNECTOR_MAP: &[(&str, &str)] = &[
     ("desktop_docker", "Docker"),
     ("desktop_obsidian", "Obsidian"),
-    ("desktop_browser", "Browser (Chrome/Edge)"),
+    ("desktop_browser", "Browser (Chrome/Edge/Lightpanda)"),
 ];
 
 /// Try a desktop-app-based healthcheck by verifying the app binary is installed.
