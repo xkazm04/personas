@@ -335,10 +335,15 @@ impl MdnsService {
                     .unwrap_or_default()
                     .to_string();
 
+                // Use SocketAddr::Display so IPv6 addresses get bracketed
+                // (`[fe80::1]:4242`) — bare `format!("{}:{}", addr, port)` produces
+                // ambiguous strings like `fe80::1:4242` that fail to parse and get
+                // dropped by validate_addresses, silently breaking IPv6 LAN discovery.
+                let port = info.get_port();
                 let raw_addresses: Vec<String> = info
                     .get_addresses()
                     .iter()
-                    .map(|addr| format!("{}:{}", addr, info.get_port()))
+                    .map(|addr| std::net::SocketAddr::new(*addr, port).to_string())
                     .collect();
 
                 // Validate all mDNS data before buffering
