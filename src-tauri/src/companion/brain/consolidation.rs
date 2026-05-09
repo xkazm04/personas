@@ -49,6 +49,19 @@ const CONSOLIDATION_TIMEOUT: Duration = Duration::from_secs(300);
 const DECAY_THRESHOLD_DAYS: i64 = 30;
 const DECAY_DECREMENT: i32 = 1;
 
+/// Hard cap on active facts per scope. Time-based decay alone doesn't
+/// bound disk/vec0 size — facts that get touched periodically never
+/// fall below importance 1 even if the brain has thousands of them. Above
+/// this cap, lowest-value entries (importance ASC, last_seen_at ASC) are
+/// demoted to importance=0 — mirroring the supersedes pattern. Markdown
+/// stays as historical record, SQL row stays for the FK chain
+/// (provenance), and retrieval naturally filters importance > 0.
+///
+/// Sized for ~50K-token corpora at ~100 tokens/fact (typed key + value +
+/// frontmatter). Three scopes × 500 = 1500 facts ≈ 150KB markdown on disk
+/// and a vec0 corpus that searches in <50ms.
+const MAX_FACTS_PER_SCOPE: usize = 500;
+
 /// Persisted summary of a consolidation run.
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -386,6 +399,54 @@ pub fn decay_unused_facts(pool: &UserDbPool) -> Result<i64, AppError> {
         )?;
     }
     Ok(updated as i64)
+}
+
+/// Demote facts above the per-scope cap (importance → 0). Lowest-value
+/// first: order by importance ASC, then last_seen_at ASC. Markdown and
+/// SQL rows stay; only retrieval-eligibility flips. Idempotent — re-running
+/// when the brain is under-cap is a no-op. Returns the number of facts
+/// demoted. The pair `decay_unused_facts` + `prune_low_value_facts` is
+/// the lifecycle pass: time-decay first, size-cap second.
+pub fn prune_low_value_facts(pool: &UserDbPool) -> Result<i64, AppError> {
+    let now = Utc::now().to_rfc3339();
+    let conn = pool.get()?;
+    let mut total_demoted = 0i64;
+
+    for scope in ["user", "project", "world"] {
+        let active_count: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM companion_fact f
+             JOIN companion_node n ON n.id = f.id
+             WHERE n.kind = 'fact' AND n.importance > 0 AND f.scope = ?1",
+            params![scope],
+            |r| r.get(0),
+        )?;
+        let cap = MAX_FACTS_PER_SCOPE as i64;
+        if active_count <= cap {
+            continue;
+        }
+        let to_demote = active_count - cap;
+        let updated = conn.execute(
+            "UPDATE companion_node
+             SET importance = 0, updated_at = ?1
+             WHERE id IN (
+                 SELECT n.id FROM companion_node n
+                 JOIN companion_fact f ON f.id = n.id
+                 WHERE n.kind = 'fact' AND n.importance > 0 AND f.scope = ?2
+                 ORDER BY n.importance ASC, f.last_seen_at ASC
+                 LIMIT ?3
+             )",
+            params![now, scope, to_demote],
+        )?;
+        total_demoted += updated as i64;
+    }
+
+    if total_demoted > 0 {
+        tracing::info!(
+            demoted = total_demoted,
+            "companion: pruned low-value facts above scope cap"
+        );
+    }
+    Ok(total_demoted)
 }
 
 pub fn list_runs(pool: &UserDbPool, limit: u32) -> Result<Vec<ConsolidationSummary>, AppError> {

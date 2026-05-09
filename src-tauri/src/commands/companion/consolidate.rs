@@ -127,6 +127,17 @@ pub fn companion_decay_unused_facts(state: State<'_, Arc<AppState>>) -> Result<i
     consolidation::decay_unused_facts(&state.user_db)
 }
 
+/// Demote facts above the per-scope cap (importance → 0), lowest-value
+/// first. Pairs with `companion_decay_unused_facts`: decay shrinks the
+/// importance distribution; prune enforces a hard size budget so the
+/// brain doesn't grow unboundedly even when every fact gets touched
+/// periodically. Returns the number demoted; callers can report it.
+#[tauri::command]
+pub fn companion_prune_low_value_facts(state: State<'_, Arc<AppState>>) -> Result<i64, AppError> {
+    ipc_auth::require_auth_sync(&state)?;
+    consolidation::prune_low_value_facts(&state.user_db)
+}
+
 // ── Reflection ──────────────────────────────────────────────────────────
 
 #[derive(Debug, Serialize)]

@@ -1882,6 +1882,7 @@ pub fn run() {
             commands::companion::consolidate::companion_apply_consolidation_item,
             commands::companion::consolidate::companion_reject_consolidation_item,
             commands::companion::consolidate::companion_decay_unused_facts,
+            commands::companion::consolidate::companion_prune_low_value_facts,
             commands::companion::consolidate::companion_run_reflection,
             commands::companion::consolidate::companion_list_reflections,
             commands::companion::consolidate::companion_get_reflection,
