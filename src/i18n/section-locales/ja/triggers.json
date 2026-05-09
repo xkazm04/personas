@@ -618,5 +618,15 @@
   "polling_endpoint_placeholder": "https://api.example.com/poll",
   "more_tools_title": "その他のツール",
   "validate_and_fire_title": "トリガー設定を検証してから発火",
-  "simulate_trigger_title": "実行せずにトリガーをシミュレート"
+  "simulate_trigger_title": "実行せずにトリガーをシミュレート",
+  "validation_failed_with_details": "Validation failed — {failures}",
+  "build_validation": {
+    "cron_required": "Cron expression is required.",
+    "cron_invalid": "Invalid cron expression.",
+    "interval_minimum": "Interval must be at least 60 seconds.",
+    "event_type_required": "Event type to listen for is required.",
+    "watch_path_required": "At least one watch path is required.",
+    "composite_min_conditions": "Composite triggers need at least 2 conditions.",
+    "composite_window_minimum": "Time window must be at least 5 seconds."
+  }
 }

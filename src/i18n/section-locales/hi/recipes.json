@@ -81,5 +81,31 @@
   "no_matching": "कोई मेल खाती रेसिपी नहीं मिली।",
   "loading_linked": "लिंक की गई रेसिपी लोड हो रही हैं...",
   "no_linked": "अभी तक कोई रेसिपी लिंक नहीं। लाइब्रेरी से रेसिपी लिंक करने के लिए जोड़ें क्लिक करें।",
-  "run": "चलाएं"
+  "run": "चलाएं",
+  "history_empty_title": "No runs yet",
+  "history_empty_description": "Test the recipe and your runs will land here for replay and review.",
+  "history_empty_action": "Try it now",
+  "editor": {
+    "categories": {
+      "analysis": "Analysis",
+      "automation": "Automation",
+      "generation": "Generation",
+      "transform": "Transform",
+      "monitoring": "Monitoring"
+    }
+  },
+  "schema": {
+    "field_types": {
+      "text": "Text",
+      "number": "Number",
+      "boolean": "Boolean",
+      "select": "Select",
+      "textarea": "Textarea",
+      "json": "JSON"
+    },
+    "placeholders": {
+      "key": "key",
+      "label": "Label"
+    }
+  }
 }

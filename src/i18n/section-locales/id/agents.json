@@ -661,7 +661,10 @@
     "event_system_init": "Inisialisasi sistem",
     "event_result": "Run selesai",
     "event_args_label": "Tampilkan argumen",
-    "event_duration_ms": "+{ms} md"
+    "event_duration_ms": "+{ms} md",
+    "arena_use_case_prefers": "Use case prefers",
+    "arena_add_pinned_to_roster": "Add to roster",
+    "arena_pinned_in_roster": "In roster"
   },
   "design": {
     "select_agent": "Pilih agen untuk memulai analisis desain",

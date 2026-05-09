@@ -144,5 +144,12 @@
   "command_palette_navigate": "导航",
   "command_palette_select": "选择",
   "command_palette_commands": "命令",
-  "loading_label": "加载中"
+  "loading_label": "加载中",
+  "unknown_error": "Unknown error",
+  "imported": "Imported",
+  "import_action": "Import",
+  "show_password": "Show password",
+  "hide_password": "Hide password",
+  "rename": "Rename",
+  "rename_to": "Rename to"
 }

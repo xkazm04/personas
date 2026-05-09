@@ -90,5 +90,15 @@
     "provider_claude_code": "Claude",
     "provider_codex_cli": "Codex",
     "provider_global": "Global"
+  },
+  "forage_confidence": {
+    "high": "High",
+    "medium": "Medium",
+    "low": "Low"
+  },
+  "capability_risk": {
+    "low": "low",
+    "medium": "medium",
+    "high": "high"
   }
 }

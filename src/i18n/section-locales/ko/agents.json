@@ -661,7 +661,10 @@
     "event_system_init": "시스템 초기화",
     "event_result": "실행 완료",
     "event_args_label": "인수 표시",
-    "event_duration_ms": "+{ms}ms"
+    "event_duration_ms": "+{ms}ms",
+    "arena_use_case_prefers": "Use case prefers",
+    "arena_add_pinned_to_roster": "Add to roster",
+    "arena_pinned_in_roster": "In roster"
   },
   "design": {
     "select_agent": "디자인 분석을 시작할 에이전트를 선택하세요",

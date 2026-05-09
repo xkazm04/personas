@@ -661,7 +661,10 @@
     "event_system_init": "システム初期化",
     "event_result": "実行完了",
     "event_args_label": "引数を表示",
-    "event_duration_ms": "+{ms}ミリ秒"
+    "event_duration_ms": "+{ms}ミリ秒",
+    "arena_use_case_prefers": "Use case prefers",
+    "arena_add_pinned_to_roster": "Add to roster",
+    "arena_pinned_in_roster": "In roster"
   },
   "design": {
     "select_agent": "デザイン分析を開始するエージェントを選択",

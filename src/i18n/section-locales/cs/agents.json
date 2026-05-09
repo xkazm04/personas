@@ -661,7 +661,10 @@
     "event_system_init": "Inicializace systému",
     "event_result": "Běh dokončen",
     "event_args_label": "Zobrazit argumenty",
-    "event_duration_ms": "+{ms} ms"
+    "event_duration_ms": "+{ms} ms",
+    "arena_use_case_prefers": "Use case prefers",
+    "arena_add_pinned_to_roster": "Add to roster",
+    "arena_pinned_in_roster": "In roster"
   },
   "design": {
     "select_agent": "Vyberte agenta pro zahájení analýzy návrhu",

@@ -67,5 +67,6 @@
   "unread_messages_sr": "{count} непрочитанное сообщение",
   "unread_messages_sr_other": "{count} непрочитанных сообщений",
   "pending_events_sr": "{count} ожидающее событие",
-  "pending_events_sr_other": "{count} ожидающих событий"
+  "pending_events_sr_other": "{count} ожидающих событий",
+  "cockpit": "Cockpit"
 }

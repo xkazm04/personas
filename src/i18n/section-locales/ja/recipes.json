@@ -81,5 +81,31 @@
   "no_matching": "一致するレシピが見つかりません。",
   "loading_linked": "リンクされたレシピを読み込み中...",
   "no_linked": "レシピがまだリンクされていません。「追加」をクリックしてライブラリからレシピをリンクしてください。",
-  "run": "実行"
+  "run": "実行",
+  "history_empty_title": "No runs yet",
+  "history_empty_description": "Test the recipe and your runs will land here for replay and review.",
+  "history_empty_action": "Try it now",
+  "editor": {
+    "categories": {
+      "analysis": "Analysis",
+      "automation": "Automation",
+      "generation": "Generation",
+      "transform": "Transform",
+      "monitoring": "Monitoring"
+    }
+  },
+  "schema": {
+    "field_types": {
+      "text": "Text",
+      "number": "Number",
+      "boolean": "Boolean",
+      "select": "Select",
+      "textarea": "Textarea",
+      "json": "JSON"
+    },
+    "placeholders": {
+      "key": "key",
+      "label": "Label"
+    }
+  }
 }

@@ -1,1 +1,5 @@
-{}
+{
+  "export_download_html": "Export HTML",
+  "export_copy_markdown": "Copy Markdown",
+  "export_copied": "Copied!"
+}

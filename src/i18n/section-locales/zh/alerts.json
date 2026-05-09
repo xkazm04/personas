@@ -12,5 +12,6 @@
   "error_delete_rule": "删除告警规则失败：",
   "error_toggle_rule": "切换告警规则失败：",
   "error_dismiss": "忽略告警失败：",
-  "error_clear_history": "清除告警历史失败："
+  "error_clear_history": "清除告警历史失败：",
+  "error_load_rules": "Failed to load alert rules:"
 }

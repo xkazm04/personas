@@ -279,5 +279,12 @@
   "json_format_tooltip": "Định dạng JSON",
   "agent_icon_label": "biểu tượng tác nhân",
   "breadcrumb_label": "Breadcrumb",
-  "breadcrumb_show_hidden": "Hiển thị breadcrumb ẩn"
+  "breadcrumb_show_hidden": "Hiển thị breadcrumb ẩn",
+  "density_toggle_aria": "Row density",
+  "density_cozy": "Cozy",
+  "density_comfortable": "Comfortable",
+  "density_compact": "Compact",
+  "bulk_toolbar_aria": "Bulk actions",
+  "bulk_selected": "{count} selected",
+  "bulk_clear_selection": "Clear selection"
 }

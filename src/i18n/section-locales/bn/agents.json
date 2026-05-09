@@ -661,7 +661,10 @@
     "event_system_init": "সিস্টেম শুরু",
     "event_result": "রান শেষ হয়েছে",
     "event_args_label": "আর্গুমেন্ট দেখান",
-    "event_duration_ms": "+{ms} মি.সে."
+    "event_duration_ms": "+{ms} মি.সে.",
+    "arena_use_case_prefers": "Use case prefers",
+    "arena_add_pinned_to_roster": "Add to roster",
+    "arena_pinned_in_roster": "In roster"
   },
   "design": {
     "select_agent": "ডিজাইন বিশ্লেষণ শুরু করতে একটি এজেন্ট নির্বাচন করুন",

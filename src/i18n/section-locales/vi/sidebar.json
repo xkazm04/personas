@@ -67,5 +67,6 @@
   "unread_messages_sr": "{count} tin nhắn chưa đọc",
   "unread_messages_sr_other": "{count} tin nhắn chưa đọc",
   "pending_events_sr": "{count} sự kiện đang chờ",
-  "pending_events_sr_other": "{count} sự kiện đang chờ"
+  "pending_events_sr_other": "{count} sự kiện đang chờ",
+  "cockpit": "Cockpit"
 }

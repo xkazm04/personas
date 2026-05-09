@@ -67,5 +67,6 @@
   "unread_messages_sr": "{count} رسالة غير مقروءة",
   "unread_messages_sr_other": "{count} رسائل غير مقروءة",
   "pending_events_sr": "{count} حدث معلّق",
-  "pending_events_sr_other": "{count} أحداث معلّقة"
+  "pending_events_sr_other": "{count} أحداث معلّقة",
+  "cockpit": "Cockpit"
 }

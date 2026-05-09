@@ -144,5 +144,12 @@
   "command_palette_navigate": "탐색",
   "command_palette_select": "선택",
   "command_palette_commands": "명령",
-  "loading_label": "로딩"
+  "loading_label": "로딩",
+  "unknown_error": "Unknown error",
+  "imported": "Imported",
+  "import_action": "Import",
+  "show_password": "Show password",
+  "hide_password": "Hide password",
+  "rename": "Rename",
+  "rename_to": "Rename to"
 }

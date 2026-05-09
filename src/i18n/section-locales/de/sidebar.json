@@ -67,5 +67,6 @@
   "unread_messages_sr": "{count} ungelesene Nachricht",
   "unread_messages_sr_other": "{count} ungelesene Nachrichten",
   "pending_events_sr": "{count} ausstehendes Ereignis",
-  "pending_events_sr_other": "{count} ausstehende Ereignisse"
+  "pending_events_sr_other": "{count} ausstehende Ereignisse",
+  "cockpit": "Cockpit"
 }

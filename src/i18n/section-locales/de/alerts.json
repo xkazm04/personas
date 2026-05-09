@@ -12,5 +12,6 @@
   "error_delete_rule": "Alarmregel konnte nicht gelöscht werden:",
   "error_toggle_rule": "Alarmregel konnte nicht umgeschaltet werden:",
   "error_dismiss": "Alarm konnte nicht verworfen werden:",
-  "error_clear_history": "Alarmverlauf konnte nicht gelöscht werden:"
+  "error_clear_history": "Alarmverlauf konnte nicht gelöscht werden:",
+  "error_load_rules": "Failed to load alert rules:"
 }

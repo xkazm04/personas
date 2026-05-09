@@ -661,7 +661,10 @@
     "event_system_init": "सिस्टम आरंभ",
     "event_result": "रन समाप्त",
     "event_args_label": "आर्गुमेंट दिखाएँ",
-    "event_duration_ms": "+{ms} मि.से."
+    "event_duration_ms": "+{ms} मि.से.",
+    "arena_use_case_prefers": "Use case prefers",
+    "arena_add_pinned_to_roster": "Add to roster",
+    "arena_pinned_in_roster": "In roster"
   },
   "design": {
     "select_agent": "डिज़ाइन विश्लेषण शुरू करने के लिए एक एजेंट चुनें",

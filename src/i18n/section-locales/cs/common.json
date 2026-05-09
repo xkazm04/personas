@@ -144,5 +144,12 @@
   "command_palette_navigate": "navigovat",
   "command_palette_select": "vybrat",
   "command_palette_commands": "příkazy",
-  "loading_label": "Načítání"
+  "loading_label": "Načítání",
+  "unknown_error": "Unknown error",
+  "imported": "Imported",
+  "import_action": "Import",
+  "show_password": "Show password",
+  "hide_password": "Hide password",
+  "rename": "Rename",
+  "rename_to": "Rename to"
 }

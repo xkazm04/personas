@@ -67,5 +67,6 @@
   "unread_messages_sr": "읽지 않은 메시지 {count}건",
   "unread_messages_sr_other": "읽지 않은 메시지 {count}건",
   "pending_events_sr": "대기 이벤트 {count}건",
-  "pending_events_sr_other": "대기 이벤트 {count}건"
+  "pending_events_sr_other": "대기 이벤트 {count}건",
+  "cockpit": "Cockpit"
 }

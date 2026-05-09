@@ -4534,6 +4534,43 @@
       "confirm_delete_title": "Confirm delete",
       "close_message": "Close message detail"
     },
+    "inbox_triage": {
+      "title": "Inbox triage",
+      "subtitle": "Unified review queue for approvals, unread messages, outputs, and open healing issues",
+      "keyboard_hint": "J/K move, Enter open, X select, S snooze, Esc clear",
+      "lane_today": "Today",
+      "lane_week": "This week",
+      "lane_snoozed": "Snoozed",
+      "lane_resolved": "Resolved",
+      "swimlanes_aria": "Inbox swimlanes",
+      "bulk_toolbar_aria": "Bulk inbox actions",
+      "bulk_selected": "{count} selected",
+      "bulk_resolve_all": "Resolve all",
+      "bulk_snooze_all": "Snooze all",
+      "bulk_clear": "Clear selection",
+      "row_select_aria": "Select inbox item",
+      "row_reason_aria": "Why this item is here",
+      "row_snoozed_label": "Snoozed",
+      "action_approve": "Approve",
+      "action_reject": "Reject",
+      "action_mark_read": "Mark read",
+      "action_resolve": "Resolve",
+      "action_unsnooze": "Unsnooze",
+      "action_snooze": "Snooze",
+      "action_open": "Open",
+      "reason_approval": "This action is waiting for manual approval.",
+      "reason_message": "This persona message is unread.",
+      "reason_output": "This output has not been reviewed yet.",
+      "reason_health": "This healing issue is still open.",
+      "empty_today_title": "Nothing due today",
+      "empty_today_description": "New approvals, unread messages, outputs, and healing issues will appear here.",
+      "empty_week_title": "No items this week",
+      "empty_week_description": "The upcoming lane is clear.",
+      "empty_snoozed_title": "Nothing snoozed",
+      "empty_snoozed_description": "Snoozed items will wait here until their reminder time.",
+      "empty_resolved_title": "Nothing resolved this session",
+      "empty_resolved_description": "Items you clear from this page will appear here temporarily."
+    },
     "realtime": {
       "idle": "Idle -- click {action} to simulate traffic",
       "test_flow": "Test Flow",
@@ -6011,7 +6048,35 @@
       "step_credentials": "Link credentials",
       "step_preferences": "Set preferences",
       "step_generate": "Generate persona",
-      "step_review": "Review & save"
+      "step_review": "Review & save",
+      "matrix_fallbacks": {
+        "not_required": "Not required — fully automated",
+        "stateless_no_memory": "Stateless — no memory between runs",
+        "default_error_handling": "Default error handling",
+        "no_event_subscriptions": "No event subscriptions",
+        "review_required": "Review required",
+        "memory_enabled": "Memory enabled",
+        "event": "event"
+      },
+      "time_presets": {
+        "hourly": "Hourly",
+        "daily": "Daily",
+        "weekly": "Weekly"
+      },
+      "weekdays": {
+        "sun": "Sun",
+        "mon": "Mon",
+        "tue": "Tue",
+        "wed": "Wed",
+        "thu": "Thu",
+        "fri": "Fri",
+        "sat": "Sat"
+      },
+      "cron_descriptions": {
+        "daily_at_local": "Daily at {hour}:00 local",
+        "weekly_on_day_at_local": "Weekly on {day} at {hour}:00 local",
+        "hourly_at_local": "Hourly"
+      }
     },
     "choose": {
       "select_use_cases": "Select Use Cases",
@@ -6462,7 +6527,16 @@
       "next_question": "Next question",
       "go_to_question": "Go to question {number}",
       "question_answered_suffix": " (answered)",
-      "question_unanswered_suffix": " (unanswered)"
+      "question_unanswered_suffix": " (unanswered)",
+      "category_labels": {
+        "credentials": "Credentials",
+        "configuration": "Configuration",
+        "human_in_the_loop": "Human in the Loop",
+        "memory_and_learning": "Memory & Learning",
+        "notifications": "Notifications",
+        "domain": "Domain",
+        "quality": "Quality"
+      }
     },
     "sandbox_banner": {
       "community_sandbox": "Community Template -- Sandbox Mode",
@@ -9101,7 +9175,30 @@
     "no_matching": "No matching recipes found.",
     "loading_linked": "Loading linked recipes...",
     "no_linked": "No recipes linked yet. Click \"Add\" to link recipes from the library.",
-    "run": "Run"
+    "run": "Run",
+    "editor": {
+      "categories": {
+        "analysis": "Analysis",
+        "automation": "Automation",
+        "generation": "Generation",
+        "transform": "Transform",
+        "monitoring": "Monitoring"
+      }
+    },
+    "schema": {
+      "field_types": {
+        "text": "Text",
+        "number": "Number",
+        "boolean": "Boolean",
+        "select": "Select",
+        "textarea": "Textarea",
+        "json": "JSON"
+      },
+      "placeholders": {
+        "key": "key",
+        "label": "Label"
+      }
+    }
   },
   "recipe_shared": {
     "schema_parse_error": "Could not read this recipe's input fields — the stored schema is malformed.",

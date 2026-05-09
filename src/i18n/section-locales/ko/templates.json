@@ -47,7 +47,35 @@
     "step_credentials": "자격 증명 연결",
     "step_preferences": "환경설정",
     "step_generate": "에이전트 생성",
-    "step_review": "검토 및 저장"
+    "step_review": "검토 및 저장",
+    "matrix_fallbacks": {
+      "not_required": "Not required — fully automated",
+      "stateless_no_memory": "Stateless — no memory between runs",
+      "default_error_handling": "Default error handling",
+      "no_event_subscriptions": "No event subscriptions",
+      "review_required": "Review required",
+      "memory_enabled": "Memory enabled",
+      "event": "event"
+    },
+    "time_presets": {
+      "hourly": "Hourly",
+      "daily": "Daily",
+      "weekly": "Weekly"
+    },
+    "weekdays": {
+      "sun": "Sun",
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat"
+    },
+    "cron_descriptions": {
+      "daily_at_local": "Daily at {hour}:00 local",
+      "weekly_on_day_at_local": "Weekly on {day} at {hour}:00 local",
+      "hourly_at_local": "Hourly"
+    }
   },
   "choose": {
     "select_use_cases": "사용 사례 선택",
@@ -498,7 +526,16 @@
     "next_question": "다음 질문",
     "go_to_question": "질문 {number}로 이동",
     "question_answered_suffix": " (답변됨)",
-    "question_unanswered_suffix": " (답변되지 않음)"
+    "question_unanswered_suffix": " (답변되지 않음)",
+    "category_labels": {
+      "credentials": "Credentials",
+      "configuration": "Configuration",
+      "human_in_the_loop": "Human in the Loop",
+      "memory_and_learning": "Memory & Learning",
+      "notifications": "Notifications",
+      "domain": "Domain",
+      "quality": "Quality"
+    }
   },
   "sandbox_banner": {
     "community_sandbox": "커뮤니티 템플릿 -- 샌드박스 모드",
@@ -1075,5 +1112,12 @@
     "friendly_service_error": "The service is currently experiencing issues. This is not a problem with your agent — try again later.",
     "friendly_timeout": "The connection timed out. The service may be slow or unavailable right now.",
     "friendly_missing_credentials": "Missing credentials. Go to **Keys** to add the required service credentials."
+  },
+  "complexity": {
+    "beginner": "Beginner",
+    "intermediate": "Intermediate",
+    "advanced": "Advanced",
+    "minuteShort": "~{minutes}m",
+    "minuteSetup": "~{minutes} min setup"
   }
 }

@@ -67,5 +67,6 @@
   "unread_messages_sr": "{count} अपठित संदेश",
   "unread_messages_sr_other": "{count} अपठित संदेश",
   "pending_events_sr": "{count} लंबित इवेंट",
-  "pending_events_sr_other": "{count} लंबित इवेंट"
+  "pending_events_sr_other": "{count} लंबित इवेंट",
+  "cockpit": "Cockpit"
 }

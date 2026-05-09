@@ -102,5 +102,15 @@
     "relative_hours_other": "{h} ч назад",
     "relative_days_one": "{d} дн назад",
     "relative_days_other": "{d} дн назад"
-  }
+  },
+  "ambient_pop_out": "Ambient mode",
+  "ambient_pop_out_hint": "Always-on display — auto-rotates between Home and Inbox",
+  "ambient_exit": "Exit ambient",
+  "ambient_status_calm": "All calm",
+  "ambient_status_attention": "{n} need attention",
+  "ambient_status_critical": "{n} critical",
+  "ambient_status_attention_one": "{n} needs attention",
+  "ambient_clock_label": "now",
+  "ambient_rotation_paused": "Paused — focus mode",
+  "ambient_rotation_auto": "Auto-rotating"
 }

@@ -67,5 +67,6 @@
   "unread_messages_sr": "{count} 条未读消息",
   "unread_messages_sr_other": "{count} 条未读消息",
   "pending_events_sr": "{count} 个待处理事件",
-  "pending_events_sr_other": "{count} 个待处理事件"
+  "pending_events_sr_other": "{count} 个待处理事件",
+  "cockpit": "Cockpit"
 }

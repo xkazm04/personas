@@ -67,5 +67,6 @@
   "unread_messages_sr": "{count}件の未読メッセージ",
   "unread_messages_sr_other": "{count}件の未読メッセージ",
   "pending_events_sr": "{count}件の保留イベント",
-  "pending_events_sr_other": "{count}件の保留イベント"
+  "pending_events_sr_other": "{count}件の保留イベント",
+  "cockpit": "Cockpit"
 }

@@ -279,5 +279,12 @@
   "json_format_tooltip": "Formater le JSON",
   "agent_icon_label": "icône de l’agent",
   "breadcrumb_label": "Fil d’Ariane",
-  "breadcrumb_show_hidden": "Afficher les éléments masqués du fil d’Ariane"
+  "breadcrumb_show_hidden": "Afficher les éléments masqués du fil d’Ariane",
+  "density_toggle_aria": "Row density",
+  "density_cozy": "Cozy",
+  "density_comfortable": "Comfortable",
+  "density_compact": "Compact",
+  "bulk_toolbar_aria": "Bulk actions",
+  "bulk_selected": "{count} selected",
+  "bulk_clear_selection": "Clear selection"
 }

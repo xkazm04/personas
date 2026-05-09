@@ -661,7 +661,10 @@
     "event_system_init": "系统初始化",
     "event_result": "运行已完成",
     "event_args_label": "显示参数",
-    "event_duration_ms": "+{ms}毫秒"
+    "event_duration_ms": "+{ms}毫秒",
+    "arena_use_case_prefers": "Use case prefers",
+    "arena_add_pinned_to_roster": "Add to roster",
+    "arena_pinned_in_roster": "In roster"
   },
   "design": {
     "select_agent": "选择代理以开始设计分析",

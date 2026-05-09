@@ -661,7 +661,10 @@
     "event_system_init": "Initialisation système",
     "event_result": "Exécution terminée",
     "event_args_label": "Afficher les arguments",
-    "event_duration_ms": "+{ms} ms"
+    "event_duration_ms": "+{ms} ms",
+    "arena_use_case_prefers": "Use case prefers",
+    "arena_add_pinned_to_roster": "Add to roster",
+    "arena_pinned_in_roster": "In roster"
   },
   "design": {
     "select_agent": "Sélectionnez un agent pour démarrer l'analyse de conception",

@@ -144,5 +144,12 @@
   "command_palette_navigate": "naviguer",
   "command_palette_select": "sélectionner",
   "command_palette_commands": "commandes",
-  "loading_label": "Chargement"
+  "loading_label": "Chargement",
+  "unknown_error": "Unknown error",
+  "imported": "Imported",
+  "import_action": "Import",
+  "show_password": "Show password",
+  "hide_password": "Hide password",
+  "rename": "Rename",
+  "rename_to": "Rename to"
 }

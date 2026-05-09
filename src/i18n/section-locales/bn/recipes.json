@@ -81,5 +81,31 @@
   "no_matching": "No matching recipes found.",
   "loading_linked": "Loading linked recipes...",
   "no_linked": "No recipes linked yet. Click \\\\\\\"Add\\\\\\\" to link recipes from the library.",
-  "run": "Run"
+  "run": "Run",
+  "history_empty_title": "No runs yet",
+  "history_empty_description": "Test the recipe and your runs will land here for replay and review.",
+  "history_empty_action": "Try it now",
+  "editor": {
+    "categories": {
+      "analysis": "Analysis",
+      "automation": "Automation",
+      "generation": "Generation",
+      "transform": "Transform",
+      "monitoring": "Monitoring"
+    }
+  },
+  "schema": {
+    "field_types": {
+      "text": "Text",
+      "number": "Number",
+      "boolean": "Boolean",
+      "select": "Select",
+      "textarea": "Textarea",
+      "json": "JSON"
+    },
+    "placeholders": {
+      "key": "key",
+      "label": "Label"
+    }
+  }
 }

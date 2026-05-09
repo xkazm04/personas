@@ -279,5 +279,12 @@
   "json_format_tooltip": "تنسيق JSON",
   "agent_icon_label": "أيقونة الوكيل",
   "breadcrumb_label": "مسار التنقل",
-  "breadcrumb_show_hidden": "إظهار مسارات التنقل المخفية"
+  "breadcrumb_show_hidden": "إظهار مسارات التنقل المخفية",
+  "density_toggle_aria": "Row density",
+  "density_cozy": "Cozy",
+  "density_comfortable": "Comfortable",
+  "density_compact": "Compact",
+  "bulk_toolbar_aria": "Bulk actions",
+  "bulk_selected": "{count} selected",
+  "bulk_clear_selection": "Clear selection"
 }

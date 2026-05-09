@@ -12,5 +12,6 @@
   "error_delete_rule": "Échec de la suppression de la règle d'alerte :",
   "error_toggle_rule": "Échec de la bascule de la règle d'alerte :",
   "error_dismiss": "Échec de l'ignorance de l'alerte :",
-  "error_clear_history": "Échec de l'effacement de l'historique des alertes :"
+  "error_clear_history": "Échec de l'effacement de l'historique des alertes :",
+  "error_load_rules": "Failed to load alert rules:"
 }

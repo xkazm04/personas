@@ -661,7 +661,10 @@
     "event_system_init": "Инициализация системы",
     "event_result": "Запуск завершен",
     "event_args_label": "Показать аргументы",
-    "event_duration_ms": "+{ms} мс"
+    "event_duration_ms": "+{ms} мс",
+    "arena_use_case_prefers": "Use case prefers",
+    "arena_add_pinned_to_roster": "Add to roster",
+    "arena_pinned_in_roster": "In roster"
   },
   "design": {
     "select_agent": "Выберите агента для анализа дизайна",

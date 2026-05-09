@@ -144,5 +144,12 @@
   "command_palette_navigate": "नेविगेट करें",
   "command_palette_select": "चुनें",
   "command_palette_commands": "कमांड",
-  "loading_label": "लोड हो रहा है"
+  "loading_label": "लोड हो रहा है",
+  "unknown_error": "Unknown error",
+  "imported": "Imported",
+  "import_action": "Import",
+  "show_password": "Show password",
+  "hide_password": "Hide password",
+  "rename": "Rename",
+  "rename_to": "Rename to"
 }

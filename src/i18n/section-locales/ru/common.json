@@ -144,5 +144,12 @@
   "command_palette_navigate": "навигация",
   "command_palette_select": "выбрать",
   "command_palette_commands": "команды",
-  "loading_label": "Загрузка"
+  "loading_label": "Загрузка",
+  "unknown_error": "Unknown error",
+  "imported": "Imported",
+  "import_action": "Import",
+  "show_password": "Show password",
+  "hide_password": "Hide password",
+  "rename": "Rename",
+  "rename_to": "Rename to"
 }

@@ -144,5 +144,12 @@
   "command_palette_navigate": "নেভিগেট করুন",
   "command_palette_select": "নির্বাচন করুন",
   "command_palette_commands": "কমান্ড",
-  "loading_label": "লোড হচ্ছে"
+  "loading_label": "লোড হচ্ছে",
+  "unknown_error": "Unknown error",
+  "imported": "Imported",
+  "import_action": "Import",
+  "show_password": "Show password",
+  "hide_password": "Hide password",
+  "rename": "Rename",
+  "rename_to": "Rename to"
 }

@@ -661,7 +661,10 @@
     "event_system_init": "Khởi tạo hệ thống",
     "event_result": "Lần chạy đã xong",
     "event_args_label": "Hiển thị đối số",
-    "event_duration_ms": "+{ms} ms"
+    "event_duration_ms": "+{ms} ms",
+    "arena_use_case_prefers": "Use case prefers",
+    "arena_add_pinned_to_roster": "Add to roster",
+    "arena_pinned_in_roster": "In roster"
   },
   "design": {
     "select_agent": "Chọn tác nhân để bắt đầu phân tích thiết kế",

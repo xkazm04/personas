@@ -81,5 +81,31 @@
   "no_matching": "No se encontraron recetas coincidentes.",
   "loading_linked": "Cargando recetas vinculadas...",
   "no_linked": "Aún no hay recetas vinculadas. Haz clic en \"Agregar\" para vincular recetas de la biblioteca.",
-  "run": "Ejecutar"
+  "run": "Ejecutar",
+  "history_empty_title": "No runs yet",
+  "history_empty_description": "Test the recipe and your runs will land here for replay and review.",
+  "history_empty_action": "Try it now",
+  "editor": {
+    "categories": {
+      "analysis": "Analysis",
+      "automation": "Automation",
+      "generation": "Generation",
+      "transform": "Transform",
+      "monitoring": "Monitoring"
+    }
+  },
+  "schema": {
+    "field_types": {
+      "text": "Text",
+      "number": "Number",
+      "boolean": "Boolean",
+      "select": "Select",
+      "textarea": "Textarea",
+      "json": "JSON"
+    },
+    "placeholders": {
+      "key": "key",
+      "label": "Label"
+    }
+  }
 }

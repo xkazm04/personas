@@ -67,5 +67,6 @@
   "unread_messages_sr": "{count} pesan belum dibaca",
   "unread_messages_sr_other": "{count} pesan belum dibaca",
   "pending_events_sr": "{count} peristiwa tertunda",
-  "pending_events_sr_other": "{count} peristiwa tertunda"
+  "pending_events_sr_other": "{count} peristiwa tertunda",
+  "cockpit": "Cockpit"
 }

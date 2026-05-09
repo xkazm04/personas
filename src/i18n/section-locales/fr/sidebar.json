@@ -67,5 +67,6 @@
   "unread_messages_sr": "{count} message non lu",
   "unread_messages_sr_other": "{count} messages non lus",
   "pending_events_sr": "{count} événement en attente",
-  "pending_events_sr_other": "{count} événements en attente"
+  "pending_events_sr_other": "{count} événements en attente",
+  "cockpit": "Cockpit"
 }

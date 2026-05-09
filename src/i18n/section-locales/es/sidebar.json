@@ -67,5 +67,6 @@
   "unread_messages_sr": "{count} mensaje sin leer",
   "unread_messages_sr_other": "{count} mensajes sin leer",
   "pending_events_sr": "{count} evento pendiente",
-  "pending_events_sr_other": "{count} eventos pendientes"
+  "pending_events_sr_other": "{count} eventos pendientes",
+  "cockpit": "Cockpit"
 }

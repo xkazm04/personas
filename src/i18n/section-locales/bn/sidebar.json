@@ -67,5 +67,6 @@
   "unread_messages_sr": "{count} অপঠিত বার্তা",
   "unread_messages_sr_other": "{count} অপঠিত বার্তা",
   "pending_events_sr": "{count} মুলতুবি ইভেন্ট",
-  "pending_events_sr_other": "{count} মুলতুবি ইভেন্ট"
+  "pending_events_sr_other": "{count} মুলতুবি ইভেন্ট",
+  "cockpit": "Cockpit"
 }

@@ -67,5 +67,6 @@
   "unread_messages_sr": "{count} nepřečtená zpráva",
   "unread_messages_sr_other": "{count} nepřečtených zpráv",
   "pending_events_sr": "{count} čekající událost",
-  "pending_events_sr_other": "{count} čekajících událostí"
+  "pending_events_sr_other": "{count} čekajících událostí",
+  "cockpit": "Cockpit"
 }

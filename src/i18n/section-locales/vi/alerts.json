@@ -12,5 +12,6 @@
   "error_delete_rule": "Xóa quy tắc cảnh báo thất bại:",
   "error_toggle_rule": "Bật/tắt quy tắc cảnh báo thất bại:",
   "error_dismiss": "Bỏ qua cảnh báo thất bại:",
-  "error_clear_history": "Xóa lịch sử cảnh báo thất bại:"
+  "error_clear_history": "Xóa lịch sử cảnh báo thất bại:",
+  "error_load_rules": "Failed to load alert rules:"
 }

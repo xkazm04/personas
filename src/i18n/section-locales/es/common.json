@@ -144,5 +144,12 @@
   "command_palette_navigate": "navegar",
   "command_palette_select": "seleccionar",
   "command_palette_commands": "comandos",
-  "loading_label": "Cargando"
+  "loading_label": "Cargando",
+  "unknown_error": "Unknown error",
+  "imported": "Imported",
+  "import_action": "Import",
+  "show_password": "Show password",
+  "hide_password": "Hide password",
+  "rename": "Rename",
+  "rename_to": "Rename to"
 }

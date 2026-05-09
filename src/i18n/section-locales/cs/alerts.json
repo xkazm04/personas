@@ -12,5 +12,6 @@
   "error_delete_rule": "Smazání pravidla upozornění selhalo:",
   "error_toggle_rule": "Přepnutí pravidla upozornění selhalo:",
   "error_dismiss": "Zavření upozornění selhalo:",
-  "error_clear_history": "Vymazání historie upozornění selhalo:"
+  "error_clear_history": "Vymazání historie upozornění selhalo:",
+  "error_load_rules": "Failed to load alert rules:"
 }

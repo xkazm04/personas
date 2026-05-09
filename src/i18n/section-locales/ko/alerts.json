@@ -12,5 +12,6 @@
   "error_delete_rule": "Failed to delete alert rule:",
   "error_toggle_rule": "Failed to toggle alert rule:",
   "error_dismiss": "Failed to dismiss alert:",
-  "error_clear_history": "Failed to clear alert history:"
+  "error_clear_history": "Failed to clear alert history:",
+  "error_load_rules": "Failed to load alert rules:"
 }

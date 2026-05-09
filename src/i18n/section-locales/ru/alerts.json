@@ -12,5 +12,6 @@
   "error_delete_rule": "Не удалось удалить правило оповещения:",
   "error_toggle_rule": "Не удалось переключить правило оповещения:",
   "error_dismiss": "Не удалось закрыть оповещение:",
-  "error_clear_history": "Не удалось очистить историю оповещений:"
+  "error_clear_history": "Не удалось очистить историю оповещений:",
+  "error_load_rules": "Failed to load alert rules:"
 }

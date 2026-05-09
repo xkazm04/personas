@@ -279,5 +279,12 @@
   "json_format_tooltip": "Formatear JSON",
   "agent_icon_label": "ícono del agente",
   "breadcrumb_label": "Ruta de navegación",
-  "breadcrumb_show_hidden": "Mostrar rutas de navegación ocultas"
+  "breadcrumb_show_hidden": "Mostrar rutas de navegación ocultas",
+  "density_toggle_aria": "Row density",
+  "density_cozy": "Cozy",
+  "density_comfortable": "Comfortable",
+  "density_compact": "Compact",
+  "bulk_toolbar_aria": "Bulk actions",
+  "bulk_selected": "{count} selected",
+  "bulk_clear_selection": "Clear selection"
 }

@@ -144,5 +144,12 @@
   "command_palette_navigate": "ナビゲート",
   "command_palette_select": "選択",
   "command_palette_commands": "コマンド",
-  "loading_label": "読み込み中"
+  "loading_label": "読み込み中",
+  "unknown_error": "Unknown error",
+  "imported": "Imported",
+  "import_action": "Import",
+  "show_password": "Show password",
+  "hide_password": "Hide password",
+  "rename": "Rename",
+  "rename_to": "Rename to"
 }

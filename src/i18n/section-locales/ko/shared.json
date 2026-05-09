@@ -279,5 +279,12 @@
   "json_format_tooltip": "Format JSON",
   "agent_icon_label": "agent icon",
   "breadcrumb_label": "Breadcrumb",
-  "breadcrumb_show_hidden": "Show hidden breadcrumbs"
+  "breadcrumb_show_hidden": "Show hidden breadcrumbs",
+  "density_toggle_aria": "Row density",
+  "density_cozy": "Cozy",
+  "density_comfortable": "Comfortable",
+  "density_compact": "Compact",
+  "bulk_toolbar_aria": "Bulk actions",
+  "bulk_selected": "{count} selected",
+  "bulk_clear_selection": "Clear selection"
 }

@@ -661,7 +661,10 @@
     "event_system_init": "تهيئة النظام",
     "event_result": "انتهى التشغيل",
     "event_args_label": "إظهار الوسائط",
-    "event_duration_ms": "+{ms} مللي ثانية"
+    "event_duration_ms": "+{ms} مللي ثانية",
+    "arena_use_case_prefers": "Use case prefers",
+    "arena_add_pinned_to_roster": "Add to roster",
+    "arena_pinned_in_roster": "In roster"
   },
   "design": {
     "select_agent": "اختر وكيلاً لبدء تحليل التصميم",

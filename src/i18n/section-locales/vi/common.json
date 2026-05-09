@@ -144,5 +144,12 @@
   "command_palette_navigate": "điều hướng",
   "command_palette_select": "chọn",
   "command_palette_commands": "lệnh",
-  "loading_label": "Đang tải"
+  "loading_label": "Đang tải",
+  "unknown_error": "Unknown error",
+  "imported": "Imported",
+  "import_action": "Import",
+  "show_password": "Show password",
+  "hide_password": "Hide password",
+  "rename": "Rename",
+  "rename_to": "Rename to"
 }

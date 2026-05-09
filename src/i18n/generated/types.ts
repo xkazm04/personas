@@ -4540,6 +4540,43 @@ export type Translations = {
       confirm_delete_title: string;
       close_message: string;
     };
+    inbox_triage: {
+      title: string;
+      subtitle: string;
+      keyboard_hint: string;
+      lane_today: string;
+      lane_week: string;
+      lane_snoozed: string;
+      lane_resolved: string;
+      swimlanes_aria: string;
+      bulk_toolbar_aria: string;
+      bulk_selected: string;
+      bulk_resolve_all: string;
+      bulk_snooze_all: string;
+      bulk_clear: string;
+      row_select_aria: string;
+      row_reason_aria: string;
+      row_snoozed_label: string;
+      action_approve: string;
+      action_reject: string;
+      action_mark_read: string;
+      action_resolve: string;
+      action_unsnooze: string;
+      action_snooze: string;
+      action_open: string;
+      reason_approval: string;
+      reason_message: string;
+      reason_output: string;
+      reason_health: string;
+      empty_today_title: string;
+      empty_today_description: string;
+      empty_week_title: string;
+      empty_week_description: string;
+      empty_snoozed_title: string;
+      empty_snoozed_description: string;
+      empty_resolved_title: string;
+      empty_resolved_description: string;
+    };
     realtime: {
       idle: string;
       test_flow: string;
@@ -6018,6 +6055,34 @@ export type Translations = {
       step_preferences: string;
       step_generate: string;
       step_review: string;
+      matrix_fallbacks: {
+        not_required: string;
+        stateless_no_memory: string;
+        default_error_handling: string;
+        no_event_subscriptions: string;
+        review_required: string;
+        memory_enabled: string;
+        event: string;
+      };
+      time_presets: {
+        hourly: string;
+        daily: string;
+        weekly: string;
+      };
+      weekdays: {
+        sun: string;
+        mon: string;
+        tue: string;
+        wed: string;
+        thu: string;
+        fri: string;
+        sat: string;
+      };
+      cron_descriptions: {
+        daily_at_local: string;
+        weekly_on_day_at_local: string;
+        hourly_at_local: string;
+      };
     };
     choose: {
       select_use_cases: string;
@@ -6469,6 +6534,15 @@ export type Translations = {
       go_to_question: string;
       question_answered_suffix: string;
       question_unanswered_suffix: string;
+      category_labels: {
+        credentials: string;
+        configuration: string;
+        human_in_the_loop: string;
+        memory_and_learning: string;
+        notifications: string;
+        domain: string;
+        quality: string;
+      };
     };
     sandbox_banner: {
       community_sandbox: string;
@@ -9108,6 +9182,29 @@ export type Translations = {
     loading_linked: string;
     no_linked: string;
     run: string;
+    editor: {
+      categories: {
+        analysis: string;
+        automation: string;
+        generation: string;
+        transform: string;
+        monitoring: string;
+      };
+    };
+    schema: {
+      field_types: {
+        text: string;
+        number: string;
+        boolean: string;
+        select: string;
+        textarea: string;
+        json: string;
+      };
+      placeholders: {
+        key: string;
+        label: string;
+      };
+    };
   };
   recipe_shared: {
     schema_parse_error: string;

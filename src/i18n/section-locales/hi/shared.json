@@ -279,5 +279,12 @@
   "json_format_tooltip": "JSON फ़ॉर्मेट करें",
   "agent_icon_label": "एजेंट आइकन",
   "breadcrumb_label": "ब्रेडक्रम्ब",
-  "breadcrumb_show_hidden": "छिपे हुए ब्रेडक्रम्ब दिखाएं"
+  "breadcrumb_show_hidden": "छिपे हुए ब्रेडक्रम्ब दिखाएं",
+  "density_toggle_aria": "Row density",
+  "density_cozy": "Cozy",
+  "density_comfortable": "Comfortable",
+  "density_compact": "Compact",
+  "bulk_toolbar_aria": "Bulk actions",
+  "bulk_selected": "{count} selected",
+  "bulk_clear_selection": "Clear selection"
 }

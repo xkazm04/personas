@@ -144,5 +144,12 @@
   "command_palette_navigate": "navigasi",
   "command_palette_select": "pilih",
   "command_palette_commands": "perintah",
-  "loading_label": "Memuat"
+  "loading_label": "Memuat",
+  "unknown_error": "Unknown error",
+  "imported": "Imported",
+  "import_action": "Import",
+  "show_password": "Show password",
+  "hide_password": "Hide password",
+  "rename": "Rename",
+  "rename_to": "Rename to"
 }
