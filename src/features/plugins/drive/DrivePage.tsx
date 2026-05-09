@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { HardDrive } from "lucide-react";
+import { HardDrive, Upload } from "lucide-react";
 
 import { ContentBox, ContentHeader } from "@/features/shared/components/layout/ContentLayout";
 import { useTranslation } from "@/i18n/useTranslation";
@@ -7,9 +7,11 @@ import {
   driveOpenInOs,
   driveRevealInOs,
   driveParentPath,
+  driveWrite,
   type DriveEntry,
 } from "@/api/drive";
 import { silentCatch, toastCatch } from "@/lib/silentCatch";
+import { useToastStore } from "@/stores/toastStore";
 
 import { useDrive } from "./hooks/useDrive";
 import { DriveToolbar } from "./components/DriveToolbar";
@@ -35,11 +37,23 @@ type Dialog =
   | { kind: "delete"; paths: string[] }
   | null;
 
+// Hard limit on a single drag-drop file. Mirrors MAX_WRITE_BYTES on the
+// Rust side — files larger than this are rejected with a toast rather
+// than failing on IPC after a long FileReader round-trip.
+const EXTERNAL_DROP_MAX_BYTES = 50 * 1024 * 1024;
+
 export default function DrivePage() {
   const { t, tx } = useTranslation();
   const drive = useDrive();
   const signing = useSigning();
   const ocr = useOcr();
+  const addToast = useToastStore((s) => s.addToast);
+
+  // OS→Drive drag-drop state. dragCounter handles dragenter/leave on nested
+  // children — the events fire per-element, so a naive boolean would flicker
+  // when the cursor crosses a child boundary.
+  const [externalDragActive, setExternalDragActive] = useState(false);
+  const dragCounterRef = useRef(0);
 
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const [dialog, setDialog] = useState<Dialog>(null);
@@ -229,6 +243,83 @@ export default function DrivePage() {
   );
 
   // ---------------------------------------------------------------------
+  // OS → Drive drag-drop
+  // ---------------------------------------------------------------------
+  const hasFilesPayload = (e: React.DragEvent) =>
+    e.dataTransfer?.types?.includes("Files") ?? false;
+
+  const handleExternalDragEnter = useCallback((e: React.DragEvent) => {
+    if (!hasFilesPayload(e)) return;
+    e.preventDefault();
+    dragCounterRef.current += 1;
+    setExternalDragActive(true);
+  }, []);
+
+  const handleExternalDragOver = useCallback((e: React.DragEvent) => {
+    if (!hasFilesPayload(e)) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+  }, []);
+
+  const handleExternalDragLeave = useCallback((e: React.DragEvent) => {
+    if (!hasFilesPayload(e)) return;
+    dragCounterRef.current = Math.max(0, dragCounterRef.current - 1);
+    if (dragCounterRef.current === 0) setExternalDragActive(false);
+  }, []);
+
+  const handleExternalDrop = useCallback(
+    async (e: React.DragEvent) => {
+      if (!hasFilesPayload(e)) return;
+      e.preventDefault();
+      dragCounterRef.current = 0;
+      setExternalDragActive(false);
+
+      const files = Array.from(e.dataTransfer?.files ?? []);
+      if (files.length === 0) return;
+
+      let success = 0;
+      const tooLarge: string[] = [];
+      const failed: string[] = [];
+      for (const file of files) {
+        if (file.size > EXTERNAL_DROP_MAX_BYTES) {
+          tooLarge.push(file.name);
+          continue;
+        }
+        try {
+          const buf = new Uint8Array(await file.arrayBuffer());
+          const rel = drive.currentPath
+            ? `${drive.currentPath}/${file.name}`
+            : file.name;
+          await driveWrite(rel, buf);
+          success += 1;
+        } catch (err) {
+          failed.push(file.name);
+          silentCatch("drive:external-drop")(err);
+        }
+      }
+      drive.refresh();
+      drive.refreshStorage();
+
+      if (success > 0) {
+        addToast(tx(t.plugins.drive.drop_added_n, { count: success }), "success");
+      }
+      if (tooLarge.length > 0) {
+        addToast(
+          tx(t.plugins.drive.drop_too_large_n, { count: tooLarge.length }),
+          "error",
+        );
+      }
+      if (failed.length > 0) {
+        addToast(
+          tx(t.plugins.drive.drop_failed_n, { count: failed.length }),
+          "error",
+        );
+      }
+    },
+    [drive, addToast, t, tx],
+  );
+
+  // ---------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------
   const statusLine = drive.selection.size > 0
@@ -251,7 +342,13 @@ export default function DrivePage() {
           </div>
         }
       />
-      <div className="flex-1 min-h-0 flex flex-col bg-gradient-to-b from-background via-background to-background/95">
+      <div
+        className="relative flex-1 min-h-0 flex flex-col bg-gradient-to-b from-background via-background to-background/95"
+        onDragEnter={handleExternalDragEnter}
+        onDragOver={handleExternalDragOver}
+        onDragLeave={handleExternalDragLeave}
+        onDrop={handleExternalDrop}
+      >
         <DriveToolbar
           drive={drive}
           onNewFolder={() => setDialog({ kind: "new_folder" })}
@@ -274,6 +371,25 @@ export default function DrivePage() {
             currentPath={drive.currentPath}
           />
         </div>
+
+        {externalDragActive && (
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center bg-cyan-500/15 backdrop-blur-sm border-4 border-dashed border-cyan-400/60 rounded-card"
+          >
+            <div className="flex flex-col items-center gap-2 px-6 py-4 rounded-modal bg-background/85 border border-cyan-500/40 shadow-elevation-3">
+              <Upload className="w-8 h-8 text-cyan-200" />
+              <div className="typo-section-title text-cyan-100">
+                {t.plugins.drive.drop_overlay_title}
+              </div>
+              <div className="typo-body text-foreground">
+                {tx(t.plugins.drive.drop_overlay_subtitle, {
+                  path: drive.currentPath || "/",
+                })}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {contextMenu && (

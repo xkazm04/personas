@@ -9135,6 +9135,16 @@ export type Translations = {
     tab_inbox: string;
     switch_to_power: string;
     open_settings: string;
+    ambient_pop_out: string;
+    ambient_pop_out_hint: string;
+    ambient_exit: string;
+    ambient_status_calm: string;
+    ambient_status_attention: string;
+    ambient_status_critical: string;
+    ambient_status_attention_one: string;
+    ambient_clock_label: string;
+    ambient_rotation_paused: string;
+    ambient_rotation_auto: string;
     greeting_morning: string;
     greeting_afternoon: string;
     greeting_evening: string;
@@ -9628,6 +9638,11 @@ export type Translations = {
       sidebar_folders_label: string;
       sidebar_root_fallback: string;
       search_clear_aria: string;
+      drop_overlay_title: string;
+      drop_overlay_subtitle: string;
+      drop_added_n: string;
+      drop_too_large_n: string;
+      drop_failed_n: string;
     };
     artist: {
       title: string;
@@ -10340,6 +10355,10 @@ export type Translations = {
       connector_action_enable: string;
       connector_action_disable: string;
       connector_right_click_menu_hint: string;
+      setup_memory_title: string;
+      setup_memory_desc: string;
+      setup_recall_synthesis_label: string;
+      setup_recall_synthesis_desc: string;
       proactive_label: string;
       proactive_engage: string;
       proactive_dismiss: string;
@@ -11874,6 +11893,9 @@ export type Translations = {
     grid_rows: string;
     grid_showing: string;
     grid_rows_per_page: string;
+    bulk_toolbar_aria: string;
+    bulk_selected: string;
+    bulk_clear_selection: string;
     empty_chart_heading: string;
     empty_chart_description: string;
     empty_activity_heading: string;

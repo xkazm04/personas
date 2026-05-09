@@ -13,6 +13,7 @@ The plugin lives under `Plugins -> Drive` and is implemented by `src/features/pl
 | Selection | Single, additive, range, select-all | `hooks/useDrive.ts` |
 | Clipboard | Copy/cut selected paths, paste into current folder | `hooks/useDrive.ts` |
 | Mutations | Create folder/file, rename, delete, move, copy | `hooks/useDrive.ts`, `src/api/drive.ts` |
+| OS file ingest | OS-native drag-drop into the current folder; cap 50 MB per file | `DrivePage.tsx` |
 | OCR drawer | Gemini OCR through Vault credentials or Claude CLI OCR through local CLI | `ocr/DriveOcrDrawer.tsx`, `ocr/useOcr.ts`, `src/api/drive.ts` |
 | Signing | Generate/attach/verify document signatures and sidecars | `signing/*`, `src/api/signing` |
 
