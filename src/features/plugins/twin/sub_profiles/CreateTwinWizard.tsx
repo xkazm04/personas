@@ -34,7 +34,8 @@ const CHANNEL_TYPES = DEPLOYMENT_CHANNELS.map((c) => ({
 }));
 
 export function CreateTwinWizard({ onClose }: { onClose: () => void }) {
-  const t = useTranslation().t.twin;
+  const { t: tFull, tx } = useTranslation();
+  const t = tFull.twin;
   const createTwinProfile = useSystemStore((s) => s.createTwinProfile);
   const setTwinTab = useSystemStore((s) => s.setTwinTab);
   const credentials = useVaultStore((s) => s.credentials);
@@ -184,7 +185,7 @@ export function CreateTwinWizard({ onClose }: { onClose: () => void }) {
 
         {/* Step dots */}
         <div className="flex items-center justify-between px-5 py-2.5 border-b border-primary/5 bg-secondary/[0.02]">
-          <span className="typo-caption text-foreground">{t.wizard.step.replace('{current}', String(step)).replace('{total}', '4')}</span>
+          <span className="typo-caption text-foreground">{tx(t.wizard.step, { current: step, total: 4 })}</span>
           <div className="flex items-center gap-1.5" aria-hidden>
             {[1, 2, 3, 4].map((s) => (
               <span

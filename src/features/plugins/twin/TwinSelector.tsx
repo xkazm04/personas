@@ -45,7 +45,8 @@ function readinessColor(score: number): string {
 }
 
 export function TwinSelector() {
-  const t = useTranslation().t.twin;
+  const { t: tFull, tx } = useTranslation();
+  const t = tFull.twin;
   const twinProfiles = useSystemStore((s) => s.twinProfiles);
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const setActiveTwin = useSystemStore((s) => s.setActiveTwin);
@@ -140,7 +141,7 @@ export function TwinSelector() {
           className={`ml-auto px-2 py-1 rounded-full text-[10px] font-medium border ${readinessColor(readiness.score)}`}
           title={`${t.progress.readiness}: ${readiness.score}%`}
         >
-          {t.profiles.readyPercent.replace('{pct}', String(readiness.score))}
+          {tx(t.profiles.readyPercent, { pct: readiness.score })}
         </div>
       </div>
     </div>
