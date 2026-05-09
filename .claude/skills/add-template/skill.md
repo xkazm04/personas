@@ -125,6 +125,19 @@ Before writing the new template JSON or regenerating checksum manifests, registe
 
 Full design rationale: [`docs/concepts/cli-coordination-active-runs.md`](../../../docs/concepts/cli-coordination-active-runs.md).
 
+### Parallel-safety primitives (mandatory)
+
+Per [`CLAUDE.md` → Parallel-safety primitives](../../CLAUDE.md), every CLI session must:
+
+1. **Never `git stash`** other sessions' work — not even with `--keep-index`. Stash sweeps the entire working tree (and untracked files with `-u`) and silently relocates other sessions' in-flight edits. If your commit step needs a clean stage, use `git add <path>` per file (NOT `git add -A` / `git add .` / `git add -u`); leave everything else alone. The 2026-05-09 stash incident burned a `/research` run's working tree.
+2. **Use a worktree for multi-file scope.** `/add-template` always touches multi-file scope (template JSON + frontend checksum + backend checksum + optional Supabase row). Default to:
+   ```bash
+   git worktree add .claude/worktrees/add-template-<id> -b worktree-add-template-<id>
+   cd .claude/worktrees/add-template-<id>
+   ```
+3. **Atomic commits per task** — write the JSON, commit; regen checksums, commit; (Supabase publish if Phase 5 runs, commit). Never accumulate >30 min of uncommitted work.
+4. **Clean up the worktree after merge.** Once the worktree's branch is in `git log master`, from the main checkout: `git worktree remove .claude/worktrees/add-template-<id>` and `git branch -D worktree-add-template-<id>`. Treat as part of the Phase 13 ledger ritual.
+
 ---
 
 ## Phase 1: Research & Service Discovery

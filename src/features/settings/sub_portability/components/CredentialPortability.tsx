@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { PasswordToggleField } from '@/features/shared/components/forms/PasswordToggleField';
 import type { CredentialImportResult } from '@/api/system/dataPortability';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -93,13 +94,12 @@ export function CredentialPortability({
             </button>
           ) : (
             <div className="flex items-center gap-2">
-              <input
-                type="password"
+              <PasswordToggleField
                 placeholder={s.passphrase_min}
                 value={credExportPassphrase}
                 onChange={(e) => setCredExportPassphrase(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && onCredExport()}
-                className="px-3 py-2 rounded-card border border-primary/15 bg-secondary/20 typo-body text-foreground/90 placeholder:text-foreground/45 outline-none focus-visible:border-amber-500/30 w-56"
+                inputClassName="w-56 px-3 py-2 rounded-card border border-primary/15 bg-secondary/20 typo-body text-foreground/90 placeholder:text-foreground/45 outline-none focus-visible:border-amber-500/30"
                 autoFocus
               />
               <button onClick={onCredExport} disabled={credExportStatus === 'loading'}
@@ -130,11 +130,12 @@ export function CredentialPortability({
             </button>
           ) : (
             <div className="flex items-center gap-2">
-              <input
-                type="password" placeholder={s.passphrase_label} value={credImportPassphrase}
+              <PasswordToggleField
+                placeholder={s.passphrase_label}
+                value={credImportPassphrase}
                 onChange={(e) => setCredImportPassphrase(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && onCredImport()}
-                className="px-3 py-2 rounded-card border border-primary/15 bg-secondary/20 typo-body text-foreground/90 placeholder:text-foreground/45 outline-none focus-visible:border-blue-500/30 w-56"
+                inputClassName="w-56 px-3 py-2 rounded-card border border-primary/15 bg-secondary/20 typo-body text-foreground/90 placeholder:text-foreground/45 outline-none focus-visible:border-blue-500/30"
                 autoFocus
               />
               <button onClick={onCredImport} disabled={credImportStatus === 'loading'}

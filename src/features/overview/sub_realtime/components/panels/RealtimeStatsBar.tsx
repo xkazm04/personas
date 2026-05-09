@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { Play, Pause, Zap, Clock, CheckCircle2, TrendingUp, Radio } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { StatusDot } from '@/features/shared/components/display/StatusDot';
 import type { RealtimeStats } from '@/hooks/realtime/useRealtimeEvents';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -30,12 +31,15 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
     <div className="flex items-center justify-between px-3 sm:px-4 md:px-6 py-3 md:py-4 bg-gradient-to-b from-secondary/40 to-secondary/10 border-b border-primary/10 shadow-[0_1px_2px_rgba(0,0,0,0.1)] relative z-20">
       <div className="flex items-center gap-2 sm:gap-3 md:gap-6">
         <div className="flex items-center gap-1.5 sm:gap-2 bg-background/50 px-2 sm:px-3 py-1.5 rounded-modal border border-primary/5 shadow-inner">
-          <div className="relative flex h-2 w-2">
-            {isConnected && !isPaused && (<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>)}
-            <span className={`relative inline-flex rounded-full h-2 w-2 ${isPaused ? 'bg-amber-400' : isConnected ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
-          </div>
-          <span className="typo-heading text-foreground uppercase tracking-widest hidden sm:inline">{isPaused ? 'Paused' : isConnected ? 'Live' : 'Offline'}</span>
-          <span className="sr-only">{isPaused ? t.overview.realtime_page.connection_paused : isConnected ? t.overview.realtime_page.connection_live : t.overview.realtime_page.connection_offline}</span>
+          <StatusDot
+            kind="connection"
+            state={isPaused ? 'paused' : isConnected ? 'live' : 'offline'}
+            label={isPaused ? t.overview.realtime_page.connection_paused : isConnected ? t.overview.realtime_page.connection_live : t.overview.realtime_page.connection_offline}
+          >
+            <span className="typo-heading text-foreground uppercase tracking-widest hidden sm:inline">
+              {isPaused ? t.overview.realtime_page.paused : isConnected ? t.overview.realtime_page.live : t.overview.realtime_page.offline}
+            </span>
+          </StatusDot>
         </div>
 
         <div className="flex items-center gap-1.5 md:gap-3" title={t.overview.realtime_page.events_per_min}>

@@ -3,8 +3,10 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { InlineEditableText } from '@/features/shared/components/display/InlineEditableText';
 import { extractConnectorNames } from '@/lib/personas/utils';
 import { useToastStore } from '@/stores/toastStore';
+import { useAgentStore } from '@/stores/agentStore';
 import type { Persona } from '@/lib/bindings/Persona';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -99,8 +101,9 @@ export function FavoriteCell({
 
 export function NameCell({ persona, onClick }: { persona: Persona; onClick: (p: Persona) => void }) {
   const { t } = useTranslation();
+  const updatePersona = useAgentStore((s) => s.updatePersona);
   return (
-    <div className="flex items-center gap-3 min-w-0 w-full">
+    <div className="flex items-center gap-3 min-w-0 w-full group">
       <div
         className="icon-frame icon-frame-pop bg-primary/10 border border-primary/15 flex-shrink-0"
         style={persona.color ? { borderColor: `${persona.color}30`, backgroundColor: `${persona.color}15` } : undefined}
@@ -108,16 +111,13 @@ export function NameCell({ persona, onClick }: { persona: Persona; onClick: (p: 
         <PersonaIcon icon={persona.icon} color={persona.color} size="w-4 h-4" framed frameSize="lg" />
       </div>
       <div className="min-w-0 flex-1">
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onClick(persona);
-          }}
-          className="text-md font-medium text-foreground/90 truncate block max-w-full text-left hover:text-primary transition-colors"
-        >
-          {persona.name}
-        </button>
+        <InlineEditableText
+          value={persona.name}
+          onCommit={(next) => updatePersona(persona.id, { name: next })}
+          onTextClick={() => onClick(persona)}
+          className="text-md text-foreground/90 max-w-full"
+          parentGroup
+        />
         {persona.description && (
           <Tooltip content={`${persona.description}\n\nClick to copy`} placement="bottom">
             <button

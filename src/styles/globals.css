@@ -24,6 +24,17 @@
   }
 }
 
+/* -- Inert/Disabled Utility --
+   Single-source disabled state. Applies opacity, cursor, AND blocks pointer
+   events so hover/active CSS branches never match while the element is inert.
+   Pair with `aria-disabled="true"` on the element (or use the disabled attr on
+   <button>/<input>) so screen readers also report the state. */
+@utility is-disabled {
+  opacity: var(--disabled-opacity);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 /* -- Custom Title Bar -- */
 .titlebar {
   display: flex;
@@ -242,6 +253,11 @@
   --focus-ring-color: color-mix(in srgb, var(--accent) 60%, transparent);
   --focus-ring-width: 2px;
   --focus-ring-offset: 2px;
+
+  /* Single source of truth for the inert/disabled state's visual weight.
+     Used by the `is-disabled` utility and by [aria-disabled="true"] / :disabled
+     selectors throughout the design system. */
+  --disabled-opacity: 0.45;
 }
 
 /* Bridge :root tokens into Tailwind's @theme namespace. */

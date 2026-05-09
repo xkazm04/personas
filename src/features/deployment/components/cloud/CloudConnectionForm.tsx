@@ -3,6 +3,7 @@ import { Wifi, Stethoscope, CheckCircle2, XCircle, Clock } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { DEPLOYMENT_TOKENS } from '../deploymentTokens';
 import { FormField } from '@/features/shared/components/forms/FormField';
+import { PasswordToggleField } from '@/features/shared/components/forms/PasswordToggleField';
 import { useFieldValidation } from '@/features/shared/components/forms/useFieldValidation';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import type { CloudDiagnostics } from '@/api/system/cloud';
@@ -100,13 +101,12 @@ export function CloudConnectionForm({
 
       <FormField label={t.deployment.api_key}>
         {(inputProps) => (
-          <input
+          <PasswordToggleField
             {...inputProps}
-            type="password"
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
             placeholder={dt.enter_api_key}
-            className={`${INPUT_FIELD} ${isConnecting ? 'border-indigo-500/35 bg-indigo-500/5' : ''}`}
+            inputClassName={`${INPUT_FIELD} ${isConnecting ? 'border-indigo-500/35 bg-indigo-500/5' : ''}`}
           />
         )}
       </FormField>

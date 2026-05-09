@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { CheckCircle2, AlertCircle, KeyRound, Globe, Loader2, Save, TestTube2 } from "lucide-react";
 import { useTranslation } from "@/i18n/useTranslation";
+import { PasswordToggleField } from '@/features/shared/components/forms/PasswordToggleField';
 import type { LangfuseConfig } from "@/lib/bindings/LangfuseConfig";
 import type { LangfuseTestResult } from "@/lib/bindings/LangfuseTestResult";
 import type { UseLangfuseSettings } from "./hooks/useLangfuseSettings";
@@ -112,15 +113,14 @@ export function ConnectionForm({ settings, initial }: ConnectionFormProps) {
             <KeyRound className="w-3 h-3" />
             {t.plugins.langfuse.secret_key_label}
           </span>
-          <input
-            type="password"
+          <PasswordToggleField
             value={secretKey}
             onChange={(e) => {
               setSecretKey(e.target.value);
               setVerifiedFingerprint(null);
             }}
             placeholder={t.plugins.langfuse.secret_key_placeholder}
-            className={inputClass}
+            inputClassName={inputClass}
             spellCheck={false}
             autoComplete="off"
           />

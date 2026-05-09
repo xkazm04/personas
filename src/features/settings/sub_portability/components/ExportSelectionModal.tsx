@@ -12,6 +12,7 @@ import {
 import { BaseModal } from '@/lib/ui/BaseModal';
 import Button from '@/features/shared/components/buttons/Button';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { PasswordToggleField } from '@/features/shared/components/forms/PasswordToggleField';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { listPersonas } from '@/api/agents/personas';
 import { listCredentials } from '@/api/vault/credentials';
@@ -413,17 +414,16 @@ export function ExportSelectionModal({
                 {s.encrypt_passphrase}
                 <span className="typo-caption font-normal text-foreground ml-1">{s.optional}</span>
               </label>
-              <input
-                type="password"
+              <PasswordToggleField
                 placeholder={s.passphrase_placeholder}
                 value={exportPassphrase}
                 onChange={(e) => setExportPassphrase(e.target.value)}
-                className={`px-3 py-2 rounded-card border bg-secondary/20 typo-body
-                  text-foreground/90 placeholder:text-foreground/45 outline-none w-full
-                  ${!passphraseValid
+                hasError={!passphraseValid}
+                inputClassName={`w-full px-3 py-2 rounded-card border bg-secondary/20 typo-body text-foreground/90 placeholder:text-foreground/45 outline-none ${
+                  !passphraseValid
                     ? 'border-red-500/30 focus-visible:border-red-500/50'
                     : 'border-primary/10 focus-visible:border-amber-500/30'
-                  }`}
+                }`}
               />
               {!passphraseValid && (
                 <p className="typo-caption text-red-400/80">{s.passphrase_too_short}</p>

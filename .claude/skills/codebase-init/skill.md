@@ -31,6 +31,19 @@ Wait for their response. Then execute all phases below.
 
 Full design rationale: [`docs/concepts/cli-coordination-active-runs.md`](../../../docs/concepts/cli-coordination-active-runs.md).
 
+### Parallel-safety primitives (mandatory)
+
+Per [`CLAUDE.md` → Parallel-safety primitives](../../CLAUDE.md) on the personas repo (the cross-link applies when this skill runs on personas; for fresh codebases, the rules below are self-contained), every CLI session must:
+
+1. **Never `git stash`** other sessions' work — not even with `--keep-index`. Stash sweeps the entire working tree (and untracked files with `-u`) and silently relocates other sessions' in-flight edits. If your commit step needs a clean stage, use `git add <path>` per file (NOT `git add -A` / `git add .` / `git add -u`); leave everything else alone.
+2. **Use a worktree for multi-file scope.** `/codebase-init` writes 2-4 foundational `.claude/` docs in one run — that's multi-file by definition. Default to:
+   ```bash
+   git worktree add .claude/worktrees/codebase-init -b worktree-codebase-init
+   cd .claude/worktrees/codebase-init
+   ```
+3. **Atomic commits per task** — `CLAUDE.md` is one commit; `codebase-stack.md` is another; `Design.md` is another; `codebase-context-overrides.md` if present is another. Never accumulate >30 min of uncommitted work in one mega-commit.
+4. **Clean up the worktree after merge.** Once the worktree's branch is in `git log master` (or whatever the target branch is on the codebase being initialized), from the main checkout: `git worktree remove .claude/worktrees/codebase-init` and `git branch -D worktree-codebase-init`. Treat as part of the final-summary ledger ritual.
+
 ---
 
 ## Phase 1: Tech Stack Detection

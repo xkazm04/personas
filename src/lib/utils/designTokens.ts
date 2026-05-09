@@ -190,8 +190,9 @@ export const TOOLS_INNER_SPACE = 'space-y-2' as const;
 // LOCKED:   overlay approach for cards requiring prerequisite completion
 // INACTIVE_BORDER: border for non-interactive / disabled elements
 
-/** Standard disabled opacity — ≈ Material 0.38, rounded to Tailwind `opacity-40`. */
-export const STATE_DISABLED_OPACITY = 'disabled:opacity-40' as const;
+/** Standard disabled state — pairs `--disabled-opacity` with cursor + pointer-events-none.
+ *  Source token: `--disabled-opacity` in globals.css. Implemented as the `is-disabled` utility. */
+export const STATE_DISABLED_OPACITY = 'disabled:is-disabled' as const;
 
 /** Locked-card styles — overlay approach avoids compounded opacity illegibility.
  *  `container`:  cursor only (no opacity dimming — the overlay handles the visual).

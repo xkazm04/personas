@@ -26,6 +26,19 @@ Before writing connector JSON, the SVG icon, or modifying Rust seed data and fro
 
 Full design rationale: [`docs/concepts/cli-coordination-active-runs.md`](../../../docs/concepts/cli-coordination-active-runs.md).
 
+### Parallel-safety primitives (mandatory)
+
+Per [`CLAUDE.md` → Parallel-safety primitives](../../CLAUDE.md), every CLI session must:
+
+1. **Never `git stash`** other sessions' work — not even with `--keep-index`. Stash sweeps the entire working tree (and untracked files with `-u`) and silently relocates other sessions' in-flight edits. If your commit step needs a clean stage, use `git add <path>` per file (NOT `git add -A` / `git add .` / `git add -u`); leave everything else alone. The 2026-05-09 stash incident burned a `/research` run's working tree.
+2. **Use a worktree for multi-file scope.** `/add-credential` always touches multi-file scope (connector JSON + SVG icon + Rust seed + frontend imports + optional OAuth registry + optional well-known URLs). Default to:
+   ```bash
+   git worktree add .claude/worktrees/add-credential-<name> -b worktree-add-credential-<name>
+   cd .claude/worktrees/add-credential-<name>
+   ```
+3. **Atomic commits per task** — write the JSON + SVG, commit; regen Rust seed + frontend import, commit; (OAuth or wellKnownBaseUrls edits, separate commit). Never accumulate >30 min of uncommitted work.
+4. **Clean up the worktree after merge.** Once the worktree's branch is in `git log master`, from the main checkout: `git worktree remove .claude/worktrees/add-credential-<name>` and `git branch -D worktree-add-credential-<name>`. Treat as part of the Phase 13 ledger ritual.
+
 ---
 
 ## Step 1: Research the Service

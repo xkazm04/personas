@@ -97,6 +97,32 @@ Rationale and full design space in **[`docs/concepts/cli-coordination-active-run
 
 First adopter is `/research`; cross-skill adoption is the next step. If you're authoring a new skill that materially edits files, add the Phase 0 register + Phase 11 deregister rituals to its spec.
 
+#### Parallel-safety primitives (MANDATORY for every CLI session)
+
+The active-runs ledger is intent coordination; these are the **never-lose-work** guarantees that protect the working tree even when intent coordination fails. On 2026-05-09 a parallel session ran `git stash` to clean its tree before commit and silently swept five files (one untracked) of an in-flight `/research` run; recovery worked but only because the tracked files were in the stash and the untracked file was reproducible from conversation context. Don't assume the next stash victim will be that lucky.
+
+1. **Never `git stash` work that isn't yours.** Not even with `--keep-index`. Stash sweeps the entire working tree — including untracked files (with `-u`) and other sessions' in-flight edits — into a hidden state most agents won't think to look for. If your commit step needs a clean stage, use `git add <path>` per file (NOT `git add -A`/`git add .`/`git add -u`); leave everything else alone. The architect skill's "[Coexist with uncommitted work](./skills/architect/skill.md)" pattern is the canonical reference; mirror its discipline in any new skill.
+
+2. **Use `git worktree` for ALL multi-file work.** When your planned scope is more than a single file, do not work on `master` next to other sessions — create a worktree:
+   ```bash
+   git worktree add .claude/worktrees/<short-slug> -b worktree-<short-slug>
+   cd .claude/worktrees/<short-slug>
+   # work, commit atomically per task
+   ```
+   Single-line/single-file fixes can stay on the main checkout. Anything bigger — a research run that touches a connector + Rust seed + engine module, an architect ADR with multi-file rollout, an `/add-template` that writes JSON + regenerates two checksum manifests — gets its own worktree. Worktrees give physical isolation; the ledger gives logical coordination; together they make the never-lose-work guarantee real.
+
+3. **Atomic commits per task.** Never accumulate more than ~30 minutes of uncommitted work. Each finding, each refactor step, each PR-step in a rollout plan = one commit. If validation fails, fix inline and commit; never stack failing work. The 2026-04-11 merge-loss incident and the 2026-05-09 stash incident both reduce to "too much uncommitted work in flight at once" — atomic commits are the structural fix.
+
+4. **Clean up worktrees after merge.** Once the worktree's branch has been merged (or squashed-merged) into `master` and you've confirmed the work is in `git log master`, remove the worktree:
+   ```bash
+   cd /c/Users/mkdol/dolla/personas       # back to main checkout
+   git worktree remove .claude/worktrees/<short-slug>
+   git branch -D worktree-<short-slug>    # only if branch is merged
+   ```
+   Stale worktrees are not free — they hold a working copy of the repo (gigabytes), confuse `git worktree list`, and a future session may accidentally `cd` into one. Treat worktree cleanup as part of the same Phase 13 ritual that records the commit SHA in the ledger.
+
+5. **`git status` shows everyone's work.** Before any commit, scan `git status --porcelain` and classify each entry: yours / pre-existing drift / another session's in-flight work. Stage only yours. If unsure, ask. The 2026-05-09 stash victim was visible in `git status` to the stashing session — the missing discipline was "what's there that isn't mine?", not "what should I commit?"
+
 ---
 
 ## Internationalization (i18n) — MANDATORY FOR ALL UI CHANGES

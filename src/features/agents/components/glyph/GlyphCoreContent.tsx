@@ -72,7 +72,7 @@ export function GlyphCoreContent(props: GlyphCoreContentProps) {
         whileTap={{ scale: 0.97 }}
         aria-label="Click to begin — open intent composer"
         data-testid="glyph-compose-summon"
-        className="flex flex-col items-center gap-2 px-6 pointer-events-auto cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 group bg-transparent border-none outline-none focus-visible:ring-2 focus-visible:ring-primary/60 rounded-full"
+        className="flex flex-col items-center gap-2 px-6 pointer-events-auto cursor-pointer disabled:is-disabled group bg-transparent border-none outline-none focus-visible:ring-2 focus-visible:ring-primary/60 rounded-full"
       >
         <motion.div
           animate={{ opacity: [0.55, 1, 0.55], scale: [0.96, 1.06, 0.96] }}

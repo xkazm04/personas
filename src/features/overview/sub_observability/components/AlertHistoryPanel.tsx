@@ -1,14 +1,15 @@
-import { CheckCircle2, Trash2, AlertTriangle, Info, XCircle } from 'lucide-react';
+import { CheckCircle2, Trash2 } from 'lucide-react';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useShallow } from 'zustand/react/shallow';
 import type { FiredAlert } from '@/lib/bindings/FiredAlert';
 import { EmptyState } from '@/features/shared/components/display/EmptyState';
+import { StatusDot, type SeverityState } from '@/features/shared/components/display/StatusDot';
 import { useTranslation } from '@/i18n/useTranslation';
 
-const SEVERITY_CONFIG: Record<string, { icon: typeof Info; color: string }> = {
-  info: { icon: Info, color: '#3b82f6' },
-  warning: { icon: AlertTriangle, color: '#f59e0b' },
-  critical: { icon: XCircle, color: '#ef4444' },
+const SEVERITY_BY_KEY: Record<string, SeverityState> = {
+  info: 'info',
+  warning: 'warning',
+  critical: 'critical',
 };
 
 function formatTime(iso: string): string {
@@ -22,8 +23,7 @@ function formatTime(iso: string): string {
 
 function AlertRow({ alert, onDismiss }: { alert: FiredAlert; onDismiss: () => void }) {
   const { t } = useTranslation();
-  const cfg = SEVERITY_CONFIG[alert.severity] ?? SEVERITY_CONFIG.info!;
-  const Icon = cfg.icon;
+  const severity = SEVERITY_BY_KEY[alert.severity] ?? 'info';
 
   return (
     <div
@@ -31,7 +31,9 @@ function AlertRow({ alert, onDismiss }: { alert: FiredAlert; onDismiss: () => vo
         alert.dismissed ? 'border-primary/8 bg-secondary/10 opacity-50' : 'border-primary/15 bg-secondary/20'
       }`}
     >
-      <Icon className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: cfg.color }} />
+      <span className="mt-0.5 shrink-0">
+        <StatusDot kind="severity" state={severity} label={alert.severity} size="sm" />
+      </span>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span className="typo-heading text-foreground truncate">{alert.rule_name}</span>

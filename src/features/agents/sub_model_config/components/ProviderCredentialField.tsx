@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { useAppSetting } from '@/hooks/utility/data/useAppSetting';
 import { SaveConfigButton } from './SaveConfigButton';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
+import { PasswordToggleField } from '@/features/shared/components/forms/PasswordToggleField';
 import { useTranslation } from '@/i18n/useTranslation';
 
 export interface ProviderFieldConfig {
@@ -58,31 +59,56 @@ export function ProviderCredentialField({
 
       {field2 ? (
         <div className="space-y-2">
-          <input
-            type={field1.type ?? 'text'}
-            value={f1.value}
-            onChange={(e) => f1.setValue(e.target.value)}
-            placeholder={field1.placeholder}
-            className={INPUT_FIELD}
-          />
-          <input
-            type={field2.type ?? 'text'}
-            value={f2.value}
-            onChange={(e) => f2.setValue(e.target.value)}
-            placeholder={field2.placeholder}
-            className={INPUT_FIELD}
-          />
+          {field1.type === 'password' ? (
+            <PasswordToggleField
+              value={f1.value}
+              onChange={(e) => f1.setValue(e.target.value)}
+              placeholder={field1.placeholder}
+            />
+          ) : (
+            <input
+              type={field1.type ?? 'text'}
+              value={f1.value}
+              onChange={(e) => f1.setValue(e.target.value)}
+              placeholder={field1.placeholder}
+              className={INPUT_FIELD}
+            />
+          )}
+          {field2.type === 'password' ? (
+            <PasswordToggleField
+              value={f2.value}
+              onChange={(e) => f2.setValue(e.target.value)}
+              placeholder={field2.placeholder}
+            />
+          ) : (
+            <input
+              type={field2.type ?? 'text'}
+              value={f2.value}
+              onChange={(e) => f2.setValue(e.target.value)}
+              placeholder={field2.placeholder}
+              className={INPUT_FIELD}
+            />
+          )}
           <SaveConfigButton onClick={handleSave} disabled={!hasValue} saved={isSaved} label={saveLabel} />
         </div>
       ) : (
         <div className="flex gap-2">
-          <input
-            type={field1.type ?? 'text'}
-            value={f1.value}
-            onChange={(e) => f1.setValue(e.target.value)}
-            placeholder={field1.placeholder}
-            className={`${INPUT_FIELD} flex-1`}
-          />
+          {field1.type === 'password' ? (
+            <PasswordToggleField
+              className="flex-1"
+              value={f1.value}
+              onChange={(e) => f1.setValue(e.target.value)}
+              placeholder={field1.placeholder}
+            />
+          ) : (
+            <input
+              type={field1.type ?? 'text'}
+              value={f1.value}
+              onChange={(e) => f1.setValue(e.target.value)}
+              placeholder={field1.placeholder}
+              className={`${INPUT_FIELD} flex-1`}
+            />
+          )}
           <SaveConfigButton onClick={handleSave} disabled={!f1.value.trim()} saved={isSaved} label={saveLabel} />
         </div>
       )}

@@ -161,11 +161,14 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       variant === 'accent' ? accentClasses : '',
       SIZE_CLASSES[size],
       block ? 'w-full justify-center' : '',
-      // When disabledReason is present, skip pointer-events-none so the tooltip can trigger on hover
+      // When disabledReason is present, skip pointer-events-none so the tooltip can trigger on hover.
+      // `is-disabled` is a project utility (see globals.css) that pairs --disabled-opacity with
+      // cursor-not-allowed + pointer-events-none in one place; the reason variant keeps pointer
+      // events on so the Tooltip can fire and applies opacity from the var directly.
       isDisabled
         ? showReason
-          ? 'opacity-50 cursor-not-allowed'
-          : 'opacity-50 cursor-not-allowed pointer-events-none'
+          ? 'cursor-not-allowed'
+          : 'is-disabled'
         : 'cursor-pointer',
       className,
     ]
@@ -174,7 +177,11 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     const lockedStyle =
       lockedMinWidth != null && !isIconOnly ? { minWidth: `${lockedMinWidth}px` } : undefined;
-    const mergedStyle = lockedStyle || style ? { ...lockedStyle, ...style } : undefined;
+    const reasonOpacityStyle = showReason ? { opacity: 'var(--disabled-opacity)' } : undefined;
+    const mergedStyle =
+      lockedStyle || style || reasonOpacityStyle
+        ? { ...lockedStyle, ...reasonOpacityStyle, ...style }
+        : undefined;
     const labelContent = loading && loadingLabel !== undefined ? loadingLabel : children;
     const dimClass = loading ? 'opacity-60' : '';
 

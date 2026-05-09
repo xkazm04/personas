@@ -1,4 +1,5 @@
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
+import { PasswordToggleField } from '@/features/shared/components/forms/PasswordToggleField';
 import type { ModelProfile } from '@/lib/types/frontendTypes';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -54,12 +55,10 @@ export function UseCaseModelOverrideForm({ visible, customConfig, onFieldChange 
             </div>
             <div>
               <label className="block typo-body font-medium text-foreground mb-1">{mc.auth_token}</label>
-              <input
-                type="password"
+              <PasswordToggleField
                 value={customConfig.auth_token || ''}
                 onChange={(e) => onFieldChange('auth_token', e.target.value)}
                 placeholder="Bearer token"
-                className={INPUT_FIELD}
               />
             </div>
           </div>

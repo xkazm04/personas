@@ -264,6 +264,60 @@ Out of scope for v1. Reconsider when the cross-machine use case is real.
 
 ---
 
+## Parallel-safety primitives (v3 — added after the 2026-05-09 stash incident)
+
+The ledger coordinates **intent**. These three primitives protect the **working tree** even when intent coordination fails. All three are now mandatory across every CLI session per `CLAUDE.md` → "Concurrent CLI sessions → Parallel-safety primitives".
+
+### What happened on 2026-05-09 to motivate this
+
+The browser-harness `/research` run was in flight when a parallel cli-coordination session ran `git stash` to clean its tree before commit. The stash swept five of the research run's files (one untracked) into `stash@{0}`. The cli-coordination session committed cleanly (`27b6d5a3b`); the research session, on returning to its commit step, saw an empty `git status` and had to recover via `git show stash@{0}:<path>` for the four tracked files and rewrite the untracked `skill_scratchpad.rs` from conversation context. Recovery worked, but only by luck — the untracked file's content happened to still be in the active conversation.
+
+The ledger DID list both sessions as `## Active`. The stashing session DID see the research entry. What was missing was a project-wide rule that **`git stash` is a sweep, not a save**, and another session's in-flight work is right in the way of the broom.
+
+### The three primitives
+
+#### 1. Never `git stash` work that isn't yours
+
+Not even with `--keep-index`. Stash captures the entire working tree (and untracked files with `-u`) into a hidden state most agents never look for. If a commit step needs a clean stage, use `git add <path>` per file — explicit, scoped, leaves everything else untouched. The `architect` skill's "Coexist with uncommitted work" pattern (Phase 7c step 2 and the Cadence section) is the canonical reference; mirror its discipline in any new skill.
+
+This rule is also retrofitted into `add-template`, `add-credential`, `refresh-context`, and `codebase-init` per the same 2026-05-09 commit batch.
+
+#### 2. Use `git worktree` for all multi-file work
+
+Single-file fixes can stay on the main checkout. Anything bigger — a research run touching connector + Rust seed + engine module, an architect ADR with multi-file rollout, an `/add-template` writing JSON + regenerating two checksum manifests — gets its own worktree:
+
+```bash
+git worktree add .claude/worktrees/<short-slug> -b worktree-<short-slug>
+cd .claude/worktrees/<short-slug>
+# work, commit atomically per task
+```
+
+Worktrees give physical isolation; the ledger gives logical coordination. Together they make the never-lose-work guarantee real. The 2026-05-09 docs-overhaul session was the first to adopt this — `.claude/worktrees/docs-overhaul-2026-05-09` working on `branch worktree-docs-overhaul-2026-05-09`. Worktrees-on-the-same-checkout are NOT the rejected "branching" approach from the 2026-05-09 v1 design — those were full-fork branches with PR review overhead. Worktrees are local, lightweight, and merge into local `master` as a single squash commit.
+
+#### 3. Atomic commits per task
+
+Never accumulate more than ~30 minutes of uncommitted work. Each finding, each refactor step, each PR-step in a rollout plan = one commit. If validation fails, fix inline and commit; never stack failing work. The 2026-04-11 merge-loss incident and the 2026-05-09 stash incident both reduce to "too much uncommitted work in flight at once" — atomic commits are the structural fix.
+
+### Worktree cleanup (Phase 13 ritual extension)
+
+Stale worktrees are not free — they hold a working copy of the repo (gigabytes), confuse `git worktree list`, and a future session may accidentally `cd` into one. After the worktree's branch is merged (or squash-merged) into `master` AND you've confirmed the work is in `git log master`, remove both:
+
+```bash
+cd /c/Users/mkdol/dolla/personas       # back to main checkout
+git worktree remove .claude/worktrees/<short-slug>
+git branch -D worktree-<short-slug>    # only if branch is merged
+```
+
+Treat worktree cleanup as part of the same Phase 13 ritual that records the commit SHA in the ledger. The deregister step in `## Recently completed` should reference the squash-merge commit on `master`, not the per-task commits inside the worktree.
+
+### How this changes the v1 design
+
+The v1 design (above) explicitly rejected branching and assumed "one machine, one checkout, multiple sessions sharing the same working tree". That assumption was correct for *small* sessions — the ledger alone is enough overhead. For *multi-file* sessions, "sharing the same working tree" turned out to be the failure mode. v3 keeps the ledger for intent coordination AND adds worktrees as the physical-isolation primitive for sessions where the cost of accidental sweep is high.
+
+This is not a contradiction of v1 — it's the resolution of v1's "Discipline-dependent" tradeoff. The discipline that v1 left to "common sense" (don't stash, commit often) is now codified as a project-wide rule.
+
+---
+
 ## Tradeoffs explicitly accepted
 
 - **Discipline-dependent.** A session that forgets to register is invisible

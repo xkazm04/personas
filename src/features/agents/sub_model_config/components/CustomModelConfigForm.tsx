@@ -4,6 +4,7 @@ import { FieldHint } from '@/features/shared/components/display/FieldHint';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import type { CustomModelConfig } from './ModelSelector';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
+import { PasswordToggleField } from '@/features/shared/components/forms/PasswordToggleField';
 import { useTranslation } from '@/i18n/useTranslation';
 
 export function CustomModelConfigForm({
@@ -82,8 +83,7 @@ export function CustomModelConfigForm({
                       example={mc.auth_token_example}
                     />
                   </label>
-                  <input
-                    type="password"
+                  <PasswordToggleField
                     autoComplete="off"
                     value={customConfig.authToken}
                     onChange={(e) => customConfig.onAuthTokenChange(e.target.value)}
@@ -94,7 +94,6 @@ export function CustomModelConfigForm({
                           ? mc.auth_token_placeholder_ollama
                           : mc.auth_token_placeholder_custom
                     }
-                    className={INPUT_FIELD}
                   />
                 </div>
               </div>
