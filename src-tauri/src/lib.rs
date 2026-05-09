@@ -1805,6 +1805,13 @@ pub fn run() {
             commands::infrastructure::skill_files::skill_files_list,
             commands::infrastructure::skill_files::skill_files_read,
             commands::infrastructure::skill_files::skill_files_write,
+            // Bridge Manifest -- declarative desktop bridges
+            #[cfg(feature = "desktop")]
+            commands::infrastructure::bridge_manifest::bridge_manifest_list_all,
+            #[cfg(feature = "desktop")]
+            commands::infrastructure::bridge_manifest::bridge_manifest_describe,
+            #[cfg(feature = "desktop")]
+            commands::infrastructure::bridge_manifest::bridge_manifest_dispatch,
             // Drive -- managed local filesystem plugin
             commands::drive::drive_get_root,
             commands::drive::drive_storage_info,

@@ -1,0 +1,87 @@
+{
+  "id": "gh",
+  "label": "GitHub CLI",
+  "description": "Wraps the gh CLI for GitHub operations (auth status, repo / issue / PR queries). Authentication is held by the gh CLI itself via 'gh auth login' — personas does not store the token.",
+  "binary": "gh",
+  "actions": [
+    {
+      "name": "auth_status",
+      "description": "Show the gh CLI's current authentication status.",
+      "args": ["auth", "status"],
+      "params": {}
+    },
+    {
+      "name": "version",
+      "description": "Print the gh CLI version.",
+      "args": ["--version"],
+      "params": {}
+    },
+    {
+      "name": "issue_list",
+      "description": "List issues in a repository.",
+      "args": ["issue", "list", "--repo", "$repo", "--state", "$state", "--limit", "$limit"],
+      "params": {
+        "repo": {
+          "type": "string",
+          "required": true,
+          "description": "Repository in owner/name form."
+        },
+        "state": {
+          "type": "string",
+          "required": false,
+          "default": "open",
+          "description": "Issue state filter: open|closed|all."
+        },
+        "limit": {
+          "type": "integer",
+          "required": false,
+          "default": 30,
+          "description": "Maximum number of issues to return."
+        }
+      }
+    },
+    {
+      "name": "issue_create",
+      "description": "Create a new issue in a repository.",
+      "args": ["issue", "create", "--repo", "$repo", "--title", "$title", "--body", "$body"],
+      "params": {
+        "repo": {
+          "type": "string",
+          "required": true,
+          "description": "Repository in owner/name form."
+        },
+        "title": {
+          "type": "string",
+          "required": true,
+          "description": "Issue title."
+        },
+        "body": {
+          "type": "string",
+          "required": false,
+          "description": "Issue body. When omitted, gh defaults to opening an editor — provide a body for non-interactive use."
+        }
+      }
+    },
+    {
+      "name": "pr_list",
+      "description": "List pull requests in a repository.",
+      "args": ["pr", "list", "--repo", "$repo", "--state", "$state", "--limit", "$limit"],
+      "params": {
+        "repo": {
+          "type": "string",
+          "required": true
+        },
+        "state": {
+          "type": "string",
+          "required": false,
+          "default": "open"
+        },
+        "limit": {
+          "type": "integer",
+          "required": false,
+          "default": 30
+        }
+      }
+    }
+  ]
+}
