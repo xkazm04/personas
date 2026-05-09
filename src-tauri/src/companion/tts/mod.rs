@@ -10,6 +10,8 @@
 //! `piper.rs` exposing `synthesize(...) -> Result<TtsAudio, AppError>`,
 //! add a variant to `TtsEngineId`, and wire it into `voice.rs` dispatch.
 
+pub mod catalog;
+pub mod downloader;
 pub mod elevenlabs;
 pub mod piper;
 

@@ -158,6 +158,64 @@ export async function companionTts(
   });
 }
 
+// ── Piper voice catalog + downloads ─────────────────────────────────────
+
+/**
+ * Catalog row + download status. The Voice tab renders these as a
+ * scrollable list of cards grouped by language. `isDownloaded` decides
+ * whether the row's primary action is "Download" or "Select".
+ */
+export interface PiperVoiceListing {
+  voiceId: string;
+  languageCode: string;
+  languageLabel: string;
+  languageNativeLabel: string;
+  speaker: string;
+  gender: 'female' | 'male' | 'neutral';
+  quality: 'x_low' | 'low' | 'medium' | 'high';
+  approxSizeMb: number;
+  description: string;
+  isDownloaded: boolean;
+}
+
+/**
+ * Streaming progress for a single Piper voice download. Frontend
+ * subscribes to the `companion://tts-download` Tauri event channel and
+ * matches by `voiceId`.
+ *
+ * `bytesTotal` is `null` when the upstream doesn't report Content-Length
+ * (rare but possible) — UI should fall back to indeterminate progress.
+ */
+export interface TtsDownloadProgress {
+  voiceId: string;
+  state: 'queued' | 'downloading' | 'completed' | 'failed';
+  bytesDownloaded: number;
+  bytesTotal: number | null;
+  error: string | null;
+}
+
+/**
+ * Tauri event channel name for download progress + terminal states.
+ */
+export const TTS_DOWNLOAD_EVENT = 'companion://tts-download';
+
+export async function companionTtsListPiperVoices(): Promise<PiperVoiceListing[]> {
+  return invoke<PiperVoiceListing[]>('companion_tts_list_piper_voices');
+}
+
+/**
+ * Start a Piper voice download. Resolves once both `.onnx` and `.onnx.json`
+ * are on disk. Progress is reported through `TTS_DOWNLOAD_EVENT` events
+ * which the caller should subscribe to before invoking.
+ */
+export async function companionTtsDownloadPiperVoice(voiceId: string): Promise<void> {
+  return invoke<void>('companion_tts_download_piper_voice', { voiceId });
+}
+
+export async function companionTtsDeletePiperVoice(voiceId: string): Promise<void> {
+  return invoke<void>('companion_tts_delete_piper_voice', { voiceId });
+}
+
 // ── Sensory toggles (Phase 2 v2 — desktop-awareness UI) ─────────────────
 
 export type SensorySource = 'clipboard' | 'file_watcher' | 'app_focus';
