@@ -7,6 +7,8 @@ pub mod ambient_context;
 #[cfg(feature = "desktop")]
 pub mod ambient_signal_repo;
 pub mod api_definition;
+#[cfg(feature = "desktop")]
+pub mod cli_session_awareness;
 pub mod api_proxy;
 #[cfg(feature = "desktop")]
 pub mod app_focus;
