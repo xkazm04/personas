@@ -94,6 +94,21 @@ If the user's first message is ambiguous about mode (e.g. just `/architect`), pr
 
 ---
 
+## Coordination — Active-Runs Ledger
+
+Before materially editing the working tree (which `/architect` always does in Phase 7 — Execute), register this session in `.claude/active-runs.md` per the convention in [`CLAUDE.md` → Concurrent CLI sessions](../../CLAUDE.md). Read the file's `## Active` section first; if any `started`-status entry overlaps your area-mode scope and is <2h old, surface the conflict to the user before proceeding. Overlap on `.claude/active-runs.md` itself is expected and is not a conflict.
+
+**Declared paths for `/architect`:**
+- Obsidian: `Architect/scans/<run>.md`, `Architect/decisions/<adr>.md`, `Architect/backlog.md`, `Architect/strong-patterns.md`, `Architect/weak-patterns.md`, `Lessons/{date}-architect.md`
+- Working tree (varies by area mode): typically a subset of `src-tauri/src/<area>/`, `src/features/<area>/`, `.planning/architect/<run>.md`
+- Always: `.claude/active-runs.md`
+
+**At session end** (Phase 7 commit lands, the user closes without execute, or the run aborts): move your entry to the top of `## Recently completed`. Update `Status` to `completed (commit: <sha>)` or `aborted (<reason>)`. Trim entries older than 14 days while you're there.
+
+Full design rationale: [`docs/concepts/cli-coordination-active-runs.md`](../../../docs/concepts/cli-coordination-active-runs.md).
+
+---
+
 ## Phase 0: Resolve vault path
 
 Two machines, one vault per machine. Probe both, use whichever exists.

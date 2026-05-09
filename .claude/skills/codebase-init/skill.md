@@ -16,6 +16,23 @@ Wait for their response. Then execute all phases below.
 
 ---
 
+## Coordination — Active-Runs Ledger
+
+`/codebase-init` writes the project's foundational `.claude/CLAUDE.md` (and possibly `Design.md` / `codebase-stack.md`) — concurrent runs would clobber each other. Register this session in `.claude/active-runs.md` per the convention in [`CLAUDE.md` → Concurrent CLI sessions](../../CLAUDE.md) BEFORE Phase 1 detection starts. Read the file's `## Active` section first; if any `started`-status entry overlaps your planned scope and is <2h old, surface the conflict to the user before proceeding. Overlap on `.claude/active-runs.md` itself is expected and is not a conflict.
+
+**Declared paths for `/codebase-init`:**
+- `.claude/CLAUDE.md` (created or rewritten — single-writer)
+- `.claude/codebase-stack.md` (created — only if not yet present; do not clobber an existing one)
+- `.claude/Design.md` (created — UI projects only)
+- `.claude/codebase-context-overrides.md` (optional, only if hand-curated overrides are seeded)
+- Always: `.claude/active-runs.md`
+
+**At session end** (final summary, after CLAUDE.md is written): move your entry to the top of `## Recently completed`. Update `Status` to `completed (commit: <sha>)` or `aborted (<reason>)`. Trim entries older than 14 days while you're there.
+
+Full design rationale: [`docs/concepts/cli-coordination-active-runs.md`](../../../docs/concepts/cli-coordination-active-runs.md).
+
+---
+
 ## Phase 1: Tech Stack Detection
 
 Automatically detect the project's technology stack by reading configuration files:

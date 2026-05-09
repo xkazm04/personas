@@ -10,7 +10,7 @@ This folder is only for not-yet-implemented proposals, experiments, and design e
 | [agent-operations-hub.md](agent-operations-hub.md) | Proposal |
 | [ambient-context-fusion.md](ambient-context-fusion.md) | Proposal / desktop-gated exploration |
 | [claude-code-routines-integration.md](claude-code-routines-integration.md) | Proposal |
-| [cli-coordination-active-runs.md](cli-coordination-active-runs.md) | Implemented v1 (`.claude/active-runs.md` + `/research` adopter) — cross-skill adoption next |
+| [cli-coordination-active-runs.md](cli-coordination-active-runs.md) | Implemented v1 + v2 priority-five adoption (`/architect`, `/add-template`, `/add-credential`, `/refresh-context`, `/codebase-init`) — long-tail adoption pending |
 | [cloud-deployment.md](cloud-deployment.md) | Proposal |
 | [in-app-http-service.md](in-app-http-service.md) | Implemented (Langfuse auto-login) — pattern doc for re-use |
 | [invisible-apps-p2p.md](invisible-apps-p2p.md) | Proposal |

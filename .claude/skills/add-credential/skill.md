@@ -8,6 +8,26 @@ Ask the user: **"What tool or service would you like to add to the credential ca
 
 Wait for the user's response. Once you have the name, proceed with the following steps.
 
+## Coordination — Active-Runs Ledger
+
+Before writing connector JSON, the SVG icon, or modifying Rust seed data and frontend imports, register this session in `.claude/active-runs.md` per the convention in [`CLAUDE.md` → Concurrent CLI sessions](../../CLAUDE.md). Read the file's `## Active` section first; if any `started`-status entry overlaps your planned scope and is <2h old, surface the conflict to the user before proceeding. Overlap on `.claude/active-runs.md` itself is expected and is not a conflict.
+
+**Declared paths for `/add-credential`:**
+- `scripts/connectors/builtin/<name>.json` (the new connector definition)
+- `public/icons/connectors/<name>.svg` (the icon)
+- `src-tauri/src/db/builtin_connectors.rs` (the Rust seed entry)
+- `src/lib/credentials/builtinConnectors.ts` (the frontend import)
+- `src-tauri/src/commands/credentials/oauth.rs` — only if the connector uses OAuth (`PROVIDER_REGISTRY` entry)
+- `src/lib/credentials/wellKnownBaseUrls.ts` — only when Step 6 applies
+- Phase 7 only: Supabase `connector_catalog` row (out-of-tree, but counts for awareness)
+- Always: `.claude/active-runs.md`
+
+**At session end** (Step 9 summary): move your entry to the top of `## Recently completed`. Update `Status` to `completed (commit: <sha>)` or `aborted (<reason>)`. Trim entries older than 14 days while you're there.
+
+Full design rationale: [`docs/concepts/cli-coordination-active-runs.md`](../../../docs/concepts/cli-coordination-active-runs.md).
+
+---
+
 ## Step 1: Research the Service
 
 Use WebSearch and WebFetch to research the following about the service. **Important: always include the current year (2026) in search queries to get the latest information.**

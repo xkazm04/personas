@@ -1,6 +1,6 @@
 # CLI Coordination via Active-Runs Ledger — Concept
 
-> **Status:** Implemented (v1) 2026-05-09. v1 is `/research`-only; cross-skill adoption is the next step.
+> **Status:** Implemented (v1) 2026-05-09; v2 cross-skill adoption (priority five — `/architect`, `/add-template`, `/add-credential`, `/refresh-context`, `/codebase-init`) shipped same day. Long-tail adoption (more skills) still pending.
 > **Source:** Conversation in `Research/2026-05-09-claude-capcut-motion-graphics.md` follow-up. Triggered by the discovery that three concurrent `/research` runs on 2026-05-09 (Bright Data morning + Matt Wolfe afternoon + Matt Loui evening) overlapped with a fourth in-flight run (Printing Press / Nate Herk) whose `engine/skills_sidecar/` work was not visible to the Matt Loui run until a second-pass grep accidentally surfaced it.
 > **Related:** `.claude/active-runs.md` (the ledger itself), `.claude/skills/research/skill.md` (first adopter).
 
@@ -200,22 +200,38 @@ entry to the user, but the cleanup is a manual or out-of-band concern.
 
 ---
 
-## v2 — cross-skill adoption (not in this commit)
+## v2 — cross-skill adoption
 
-### Skills that should adopt next
+### Priority five (shipped 2026-05-09)
 
-| Skill | Why |
+The five highest-collision-risk skills now carry a "Coordination — Active-Runs Ledger" section near their top, listing the skill's declared paths and the register/deregister contract. Each section is ~15 lines and cross-links the design doc and CLAUDE.md.
+
+| Skill | Why it adopted | Declared paths summary |
+|---|---|---|
+| `/architect` | Material multi-file design work; Phase 7 commits | Obsidian `Architect/`, varies by area mode (`src-tauri/src/<area>/`, `src/features/<area>/`) |
+| `/refresh-context` | Single-writer for `.claude/codebase-context.md` and `.claude/codebase-catalogs.md` | The two context files (regenerated wholesale) |
+| `/add-template` | Writes JSON + regenerates checksum manifests (frontend + backend) | `scripts/templates/<category>/`, both checksum files |
+| `/add-credential` | Writes connector JSON + SVG icon + Rust seed + frontend imports + OAuth registry | `scripts/connectors/builtin/`, `public/icons/connectors/`, Rust seed, frontend imports |
+| `/codebase-init` | First-touch on fresh repos — concurrent init clobbers `CLAUDE.md`, `codebase-stack.md`, `Design.md` | The three foundational `.claude/` docs |
+
+### Long-tail adoption (still pending)
+
+Lower-collision-risk skills that should pick up the convention as they're touched next. Order is rough collision-risk ranking, not strict priority:
+
+| Skill | Reason to adopt |
 |---|---|
-| `/architect` | Material codebase changes, multi-file design work — high collision risk. |
-| `/refresh-context` | Writes `codebase-context.md` and `codebase-catalogs.md` — single-writer concern. |
-| `/refactor` | By definition large-scope file edits. |
-| `/add-template` | Writes JSON to `scripts/templates/` and regenerates checksums. |
-| `/add-credential` | Writes JSON to `scripts/connectors/builtin/`, `db/builtin_connectors.rs`, regenerates seeds. |
-| `/codebase-init` | First-touch on a fresh repo; concurrent init is a footgun. |
+| `/sentry` | Applies code fixes for issues |
+| `/triage-backlog` | Autonomously applies multi-fix waves |
+| `/simplify` | Applies quality fixes |
+| `/frontend-design` | Generates frontend code |
+| `/prototype` | Generates UI variant code |
+| `/code-review` | Mostly read-only but writes review reports |
+| `/cli-quality-check` | Mostly read-only but writes fix-up commits |
+| `/guide-sync` | Modifies the marketing repo (separate checkout, but same machine) |
 
-The pattern is the same for each: Phase 0 register, Phase 11/13
-deregister, conflict-check rule. The skill spec changes are ~10 lines
-per skill.
+Skills explicitly **not** adopting (read-only or non-tree-modifying): `/explorer`, `/prime`, `/reflect` (Obsidian-only, no checkout collision), `/loop`, `/schedule`, `/init` (one-time per repo, redundant with `/codebase-init`), `/update-config`, `/fewer-permission-prompts`, `/keybindings-help`, `/claude-api`, `/review`, `/security-review`, `/record-demo` (generates artifacts that don't get committed).
+
+The pattern is the same for each long-tail skill: insert the "Coordination" block near the start with the skill's declared paths and register/deregister rules. The skill-spec change is ~15 lines per skill.
 
 ### Auto-baseliner integration (open question)
 

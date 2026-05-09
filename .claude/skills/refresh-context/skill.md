@@ -24,6 +24,22 @@ Export the `personas` project's context map from the runtime SQLite DB to a stat
 
 ---
 
+## Coordination — Active-Runs Ledger
+
+`/refresh-context` is a **single-writer** skill — both `.claude/codebase-context.md` and `.claude/codebase-catalogs.md` are regenerated wholesale, so a concurrent run on either file would silently lose changes. Register this session in `.claude/active-runs.md` per the convention in [`CLAUDE.md` → Concurrent CLI sessions](../../CLAUDE.md) BEFORE Phase 2's export starts. Read the file's `## Active` section first; if any `started`-status entry overlaps your planned scope and is <2h old, surface the conflict to the user before proceeding. Overlap on `.claude/active-runs.md` itself is expected and is not a conflict.
+
+**Declared paths for `/refresh-context`:**
+- `.claude/codebase-context.md` (regenerated wholesale — single-writer)
+- `.claude/codebase-catalogs.md` (regenerated wholesale — single-writer)
+- Read-only: the personas SQLite DB at `%APPDATA%/com.personas.desktop/personas.db`, `scripts/templates/**`, `scripts/connectors/builtin/**`
+- Always: `.claude/active-runs.md`
+
+**At session end** (Phase 7 summary, after the snapshot lands): move your entry to the top of `## Recently completed`. Update `Status` to `completed (commit: <sha>)` or `aborted (<reason>)`. Trim entries older than 14 days while you're there.
+
+Full design rationale: [`docs/concepts/cli-coordination-active-runs.md`](../../../docs/concepts/cli-coordination-active-runs.md).
+
+---
+
 ## Phase 1: Verify Personas Project is Registered
 
 Run:
