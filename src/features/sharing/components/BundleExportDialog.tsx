@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Package, Check, AlertTriangle, Lock, Shield, Clipboard, Link2 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { save } from '@tauri-apps/plugin-dialog';
@@ -82,6 +82,19 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
   const [maxTurns, setMaxTurns] = useState('10');
   const [allowPersistence, setAllowPersistence] = useState(false);
 
+  // Track the "copied/linkCopied auto-revert" timers so we can cancel them on
+  // unmount (or back-to-back copies) — without this, closing the dialog
+  // mid-flight fires setState on an unmounted component.
+  const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const linkCopiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
+      if (linkCopiedTimerRef.current) clearTimeout(linkCopiedTimerRef.current);
+    },
+    [],
+  );
+
   useEffect(() => {
     if (isOpen) {
       setSelected(new Set());
@@ -151,7 +164,8 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
       await navigator.clipboard.writeText(result.base64);
       void scheduleSensitiveClipboardClear(result.base64);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
+      if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
+      copiedTimerRef.current = setTimeout(() => setCopied(false), 2500);
       addToast(`Bundle copied: ${result.resource_count} resource${result.resource_count !== 1 ? 's' : ''} (${formatBytes(result.byte_size)})`, 'success');
     } catch (err) {
       const msg = errMsg(err, 'Failed to copy bundle');
@@ -171,7 +185,8 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
       await navigator.clipboard.writeText(result.deep_link);
       void scheduleSensitiveClipboardClear(result.deep_link);
       setLinkCopied(true);
-      setTimeout(() => setLinkCopied(false), 3000);
+      if (linkCopiedTimerRef.current) clearTimeout(linkCopiedTimerRef.current);
+      linkCopiedTimerRef.current = setTimeout(() => setLinkCopied(false), 3000);
       addToast(`Share link copied! ${result.resource_count} resource${result.resource_count !== 1 ? 's' : ''} (expires in 24h, single use)`, 'success');
     } catch (err) {
       const msg = errMsg(err, 'Failed to create share link');
