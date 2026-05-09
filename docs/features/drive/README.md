@@ -33,7 +33,14 @@ Drive publishes document events into the app event bus:
 
 - `drive.document.added`
 - `drive.document.edited`
+- `drive.document.renamed`
 - `drive.document.deleted`
+
+`renamed` fires from `drive_rename` and `drive_move` and carries `from_path` in
+its payload so subscribers can correlate the old and new locations. The
+execution-engine snapshot path (`diff_and_emit_drive_events`) does *not*
+attempt rename detection — a rename observed across a snapshot boundary
+surfaces as `deleted` + `added`.
 
 UI operations emit events through the Drive command path. The execution engine can also snapshot the managed drive before/after a persona run and emit the same event types from `publish_drive_event_from_engine`, so files produced by an execution become triggerable events.
 
