@@ -13,8 +13,10 @@
     ]
   },
   "app": {
+    "withGlobalTauri": true,
     "windows": [
       {
+        "label": "main",
         "title": "Personas",
         "width": 1280,
         "height": 800,
@@ -24,6 +26,20 @@
         "fullscreen": false,
         "center": true,
         "decorations": false
+      },
+      {
+        "label": "radio",
+        "title": "Personas Radio",
+        "url": "radio.html",
+        "width": 320,
+        "height": 180,
+        "visible": false,
+        "skipTaskbar": true,
+        "decorations": false,
+        "resizable": false,
+        "focus": false,
+        "alwaysOnTop": false,
+        "transparent": false
       }
     ],
     "security": {
@@ -33,8 +49,8 @@
           "**"
         ]
       },
-      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' asset: http://asset.localhost https://asset.localhost https://cdn.simpleicons.org https://lh3.googleusercontent.com data: blob:; font-src 'self'; connect-src 'self' asset: http://asset.localhost https://asset.localhost https://raw.githubusercontent.com https://gist.githubusercontent.com https://github.com https://*.ingest.sentry.io https://export.arxiv.org; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; worker-src 'self'; manifest-src 'self'; media-src 'self' asset: http://asset.localhost https://asset.localhost blob:",
-      "devCsp": "default-src 'self' http://localhost:*; script-src 'self' http://localhost:*; style-src 'self' 'unsafe-inline' http://localhost:*; img-src 'self' asset: http://asset.localhost https://asset.localhost https://cdn.simpleicons.org https://*.googleusercontent.com data: blob: http://localhost:*; font-src 'self' data: http://localhost:*; connect-src 'self' asset: http://asset.localhost https://asset.localhost http://localhost:* ws://localhost:* https://raw.githubusercontent.com https://gist.githubusercontent.com https://github.com https://*.ingest.sentry.io https://export.arxiv.org; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; worker-src 'self'; manifest-src 'self'; media-src 'self' asset: http://asset.localhost https://asset.localhost blob: http://localhost:*",
+      "csp": "default-src 'self'; script-src 'self' https://www.youtube.com https://s.ytimg.com; style-src 'self' 'unsafe-inline'; img-src 'self' asset: http://asset.localhost https://asset.localhost https://cdn.simpleicons.org https://lh3.googleusercontent.com https://i.ytimg.com https://yt3.ggpht.com data: blob:; font-src 'self'; connect-src 'self' asset: http://asset.localhost https://asset.localhost https://raw.githubusercontent.com https://gist.githubusercontent.com https://github.com https://*.ingest.sentry.io https://export.arxiv.org https://www.youtube.com https://*.googlevideo.com; frame-src https://www.youtube.com https://www.youtube-nocookie.com; object-src 'none'; base-uri 'self'; form-action 'self'; worker-src 'self'; manifest-src 'self'; media-src 'self' asset: http://asset.localhost https://asset.localhost https://*.googlevideo.com blob:",
+      "devCsp": "default-src 'self' http://localhost:*; script-src 'self' http://localhost:* https://www.youtube.com https://s.ytimg.com; style-src 'self' 'unsafe-inline' http://localhost:*; img-src 'self' asset: http://asset.localhost https://asset.localhost https://cdn.simpleicons.org https://*.googleusercontent.com https://i.ytimg.com https://yt3.ggpht.com data: blob: http://localhost:*; font-src 'self' data: http://localhost:*; connect-src 'self' asset: http://asset.localhost https://asset.localhost http://localhost:* ws://localhost:* https://raw.githubusercontent.com https://gist.githubusercontent.com https://github.com https://*.ingest.sentry.io https://export.arxiv.org https://www.youtube.com https://*.googlevideo.com; frame-src https://www.youtube.com https://www.youtube-nocookie.com; object-src 'none'; base-uri 'self'; form-action 'self'; worker-src 'self'; manifest-src 'self'; media-src 'self' asset: http://asset.localhost https://asset.localhost https://*.googlevideo.com blob: http://localhost:*",
       "freezePrototype": false
     },
     "trayIcon": {
