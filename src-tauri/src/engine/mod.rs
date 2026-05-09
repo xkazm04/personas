@@ -80,6 +80,7 @@ pub mod healing_orchestrator;
 pub mod healing_timeline;
 pub mod healthcheck;
 pub mod hooks_sidecar;
+pub mod skills_sidecar;
 #[cfg(feature = "p2p")]
 pub mod identity;
 pub mod intent_compiler;

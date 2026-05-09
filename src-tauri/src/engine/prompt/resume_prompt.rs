@@ -29,11 +29,25 @@ pub fn assemble_resume_prompt(
     // Resume prompts skip the full Connector Usage Reference header because
     // the resumed session already has that context from the initial run.
     // We re-emit a compact reminder only if any hint has a non-empty overview.
+    //
+    // When `PERSONAS_SKILLS_SIDECAR=1` is set the per-connector body lives in
+    // `.claude/skills/personas-connector-<name>/SKILL.md` files written by the
+    // runner each execution; the reminder shrinks to skill pointers.
     if let Some(connector_hints) = connector_usage_hints {
         if !connector_hints.is_empty() {
+            let shrink = crate::engine::skills_sidecar::is_enabled();
             prompt.push_str("## Connector Usage Reference (reminder)\n");
-            for entry in connector_hints {
-                prompt.push_str(&format!("- **{}**: {}\n", entry.label, entry.hint.overview));
+            if shrink {
+                for entry in connector_hints {
+                    prompt.push_str(&format!(
+                        "- **{}** — see skill `personas-connector-{}`\n",
+                        entry.label, entry.name,
+                    ));
+                }
+            } else {
+                for entry in connector_hints {
+                    prompt.push_str(&format!("- **{}**: {}\n", entry.label, entry.hint.overview));
+                }
             }
             prompt.push('\n');
         }

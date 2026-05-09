@@ -373,6 +373,7 @@ pub async fn run_execution(
                     if let Some(partial) = parsed {
                         if let Some(hint) = partial.llm_usage_hint {
                             resolved.push(prompt::ResolvedConnectorHint {
+                                name: conn.name.clone(),
                                 label: conn.label.clone(),
                                 hint,
                             });
@@ -741,6 +742,19 @@ pub async fn run_execution(
         Ok(true) => logger.log("[hooks] installed Claude Code hooks sidecar in exec_dir"),
         Ok(false) => {} // disabled or skipped
         Err(e) => logger.log(&format!("[hooks] sidecar install failed (non-fatal): {e}")),
+    }
+
+    // Install per-connector SKILL.md sidecar (Printing Press lazy-discovery
+    // pattern). No-op unless PERSONAS_SKILLS_SIDECAR=1 — see
+    // skills_sidecar/DESIGN.md for details. Lockstep with the prompt-section
+    // shrink in `engine/prompt/mod.rs`. Best-effort, never fails execution.
+    match super::skills_sidecar::install_sidecar(&exec_dir, &connector_usage_hints) {
+        Ok(true) => logger.log(&format!(
+            "[skills] wrote {} per-connector SKILL.md file(s) in exec_dir",
+            connector_usage_hints.len()
+        )),
+        Ok(false) => {} // disabled or no hints
+        Err(e) => logger.log(&format!("[skills] sidecar install failed (non-fatal): {e}")),
     }
 
     // Project tiered persona memories into exec_dir/CLAUDE.md so they survive

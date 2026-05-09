@@ -32,11 +32,14 @@ use crate::db::models::{PersonaTrustLevel, PersonaTrustOrigin};
 
 /// Resolved connector usage hint scoped to a single execution.
 ///
-/// `label` is the human-readable connector name (e.g. "GitHub") used to
-/// head the rendered section; `hint` is the structured payload loaded from
+/// `name` is the stable connector slug (e.g. "github") used by
+/// `skills_sidecar` to derive the SKILL.md folder name. `label` is the
+/// human-readable connector name (e.g. "GitHub") used to head the rendered
+/// section; `hint` is the structured payload loaded from
 /// `metadata.llm_usage_hint` in the connector JSON.
 #[derive(Debug, Clone)]
 pub struct ResolvedConnectorHint {
+    pub name: String,
     pub label: String,
     pub hint: LlmUsageHint,
 }
@@ -433,27 +436,53 @@ pub fn assemble_prompt(
     // Connector Usage Reference -- structured metadata loaded from each
     // connector's `metadata.llm_usage_hint` block. Saves tokens by giving the
     // agent the essential API shape up front instead of forcing exploratory calls.
+    //
+    // When `PERSONAS_SKILLS_SIDECAR=1` is set, the per-connector body is
+    // delegated to `.claude/skills/personas-connector-<name>/SKILL.md` files
+    // written by `engine::skills_sidecar` and the section here shrinks to a
+    // list of name + skill pointers. The two halves must be in lockstep —
+    // see `engine/skills_sidecar/DESIGN.md` for the full rationale.
     if let Some(connector_hints) = connector_usage_hints {
         if !connector_hints.is_empty() {
-            prompt.push_str("## Connector Usage Reference\n");
-            prompt.push_str("Quick reference for the connectors above. Use these examples as starting points -- adapt params to your task.\n\n");
-            for entry in connector_hints {
-                prompt.push_str(&format!("### {}\n{}\n\n", entry.label, entry.hint.overview));
-                if !entry.hint.examples.is_empty() {
-                    prompt.push_str("Examples:\n");
-                    for example in &entry.hint.examples {
-                        prompt.push_str(&format!("```\n{}\n```\n", example));
-                    }
-                }
-                if let Some(gotchas) = &entry.hint.gotchas {
-                    if !gotchas.is_empty() {
-                        prompt.push_str("Gotchas:\n");
-                        for g in gotchas {
-                            prompt.push_str(&format!("- {}\n", g));
-                        }
-                    }
+            let shrink = crate::engine::skills_sidecar::is_enabled();
+            if shrink {
+                prompt.push_str("## Connector Usage Reference\n");
+                prompt.push_str(
+                    "Per-connector usage docs live in your skill catalog. Invoke the matching \
+                     `personas-connector-<name>` skill on demand instead of pre-loading every \
+                     connector's body.\n\n",
+                );
+                for entry in connector_hints {
+                    prompt.push_str(&format!(
+                        "- **{}** — see skill `personas-connector-{}`\n",
+                        entry.label,
+                        crate::engine::skills_sidecar::skill_folder_name(&entry.name)
+                            .strip_prefix("personas-connector-")
+                            .unwrap_or(&entry.name),
+                    ));
                 }
                 prompt.push('\n');
+            } else {
+                prompt.push_str("## Connector Usage Reference\n");
+                prompt.push_str("Quick reference for the connectors above. Use these examples as starting points -- adapt params to your task.\n\n");
+                for entry in connector_hints {
+                    prompt.push_str(&format!("### {}\n{}\n\n", entry.label, entry.hint.overview));
+                    if !entry.hint.examples.is_empty() {
+                        prompt.push_str("Examples:\n");
+                        for example in &entry.hint.examples {
+                            prompt.push_str(&format!("```\n{}\n```\n", example));
+                        }
+                    }
+                    if let Some(gotchas) = &entry.hint.gotchas {
+                        if !gotchas.is_empty() {
+                            prompt.push_str("Gotchas:\n");
+                            for g in gotchas {
+                                prompt.push_str(&format!("- {}\n", g));
+                            }
+                        }
+                    }
+                    prompt.push('\n');
+                }
             }
         }
     }
@@ -1168,6 +1197,7 @@ mod tests {
             ]),
         };
         let hints = vec![ResolvedConnectorHint {
+            name: "github".into(),
             label: "GitHub".into(),
             hint,
         }];
@@ -1235,6 +1265,7 @@ mod tests {
             gotchas: None,
         };
         let hints = vec![ResolvedConnectorHint {
+            name: "github".into(),
             label: "GitHub".into(),
             hint,
         }];
