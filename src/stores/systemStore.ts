@@ -5,6 +5,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { SystemStore } from "./storeTypes";
+import { createDedupedJSONStorage } from "./util/dedupedStorage";
 
 import { createUiSlice } from "./slices/system/uiSlice";
 import { createCloudSlice } from "./slices/system/cloudSlice";
@@ -46,6 +47,7 @@ export const useSystemStore = create<SystemStore>()(
     }),
     {
       name: "persona-ui-system",
+      storage: createDedupedJSONStorage(),
       partialize: (state) => ({
         sidebarSection: state.sidebarSection,
         homeTab: state.homeTab,
