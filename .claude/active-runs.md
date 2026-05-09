@@ -44,6 +44,11 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Recently completed (last 14 days)
 
+- **[2026-05-09 ~22:00] /research — printing-press cli-factory (Nate Herk)**
+  - **Source:** [Printing Press walkthrough](https://www.youtube.com/watch?v=YHk45NEpspE) — 14:45 video by Nate Herk on Peter Steinberger's Claude Code skill + Go-CLI factory + community library
+  - **Paths:** `src-tauri/src/engine/{skills_sidecar,bridge_manifest,connector_explorer}/`, `src-tauri/src/engine/{prompt/mod.rs,prompt/resume_prompt.rs,runner/mod.rs,mod.rs}`, `src-tauri/src/commands/{infrastructure/bridge_manifest.rs,design/connector_explorer.rs,infrastructure/mod.rs,design/mod.rs}`, `src-tauri/src/lib.rs`, `scripts/bridges/`, `src/lib/bindings/{BridgeManifestSummary,ConnectorManifestDraft,DiscoveredEndpoint}.ts`, `Obsidian/personas/{Research/2026-05-09-printing-press-cli-factory.md,Lessons/2026-05-09-research.md}`
+  - **Status:** completed (commits `389ba7231` per-connector SKILL.md sidecar, `a37c251cb` declarative bridge manifests + dispatcher, `dca281f8e` connector_explorer v1 reverse-engineering pipeline) — Phase 0 ledger registration was missed; recording at session end. The `pub mod bridge_manifest;` line in `engine/mod.rs` was preempted into commit `6e1194e4f` (parallel browser-harness session) during a `git stash` window — F2 commit ships the module body that line refers to. Lesson appended to Lessons/2026-05-09-research.md and a new memory entry `feedback_atomic_commit_under_parallel_sessions` already captured the rule.
+
 - **[2026-05-09 ~13:45] manual — long-tail active-runs adoption (6 skills)**
   - **Source:** continuation of the parallel-safety codification — propagating Coordination + Parallel-safety blocks to the 8 long-tail skills listed in `docs/concepts/cli-coordination-active-runs.md`. 2 of the 8 (`/simplify`, `/frontend-design`) are plugin-provided not local; updated the 6 local ones.
   - **Paths:** `.claude/skills/{sentry,triage-backlog,prototype,code-review,cli-quality-check,guide-sync}/SKILL.md`, `docs/concepts/cli-coordination-active-runs.md` (long-tail table updated to ✅), `.claude/active-runs.md`
