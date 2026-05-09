@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Personas Radio</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      overflow: hidden;
+      font-family: system-ui, sans-serif;
+      color: #888;
+    }
+    #player {
+      width: 100%;
+      height: 100%;
+    }
+    #status {
+      position: fixed;
+      bottom: 4px;
+      left: 6px;
+      font-size: 9px;
+      opacity: 0.4;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="player"></div>
+  <div id="status">radio</div>
+
+  <script>
+    // Hidden Tauri WebviewWindow that drives the YouTube IFrame Player API.
+    // The main window's footer issues commands via Tauri events; we report
+    // status changes back via radio_report_status and radio_track_ended.
+
+    let player = null;
+    let lastReportedPosition = -1;
+    let lastReportedStatus = null;
+
+    const STATE_MAP = {
+      '-1': 'stopped',
+      '0':  'stopped',   // ended → reported separately via radio_track_ended
+      '1':  'playing',
+      '2':  'paused',
+      '3':  'buffering',
+      '5':  'stopped',   // cued
+    };
+
+    function tauri() {
+      return window.__TAURI__ || null;
+    }
+
+    function statusEl() {
+      return document.getElementById('status');
+    }
+
+    function setStatus(text) {
+      const el = statusEl();
+      if (el) el.textContent = text;
+    }
+
+    // --- IFrame API bootstrap ---------------------------------------------
+    const tag = document.createElement('script');
+    tag.src = 'https://www.youtube.com/iframe_api';
+    document.head.appendChild(tag);
+
+    window.onYouTubeIframeAPIReady = function () {
+      player = new YT.Player('player', {
+        height: '100%',
+        width: '100%',
+        videoId: '',
+        playerVars: {
+          autoplay: 0,
+          controls: 0,
+          disablekb: 1,
+          fs: 0,
+          modestbranding: 1,
+          playsinline: 1,
+          rel: 0,
+          iv_load_policy: 3,
+          enablejsapi: 1,
+          origin: window.location.origin,
+        },
+        events: {
+          onReady: onPlayerReady,
+          onStateChange: onPlayerStateChange,
+          onError: onPlayerError,
+        },
+      });
+    };
+
+    async function onPlayerReady() {
+      const t = tauri();
+      if (!t) {
+        setStatus('no tauri');
+        return;
+      }
+      // Listen for commands from the main window / Rust
+      await t.event.listen('radio:command', function (e) {
+        handleCommand(e.payload).catch(function (err) { console.error(err); });
+      });
+
+      // Initial sync: load current track, set volume, restore status
+      try {
+        const state = await t.core.invoke('radio_get_state');
+        if (typeof state.volume === 'number') {
+          player.setVolume(Math.round(state.volume * 100));
+        }
+        const np = await t.core.invoke('radio_get_now_playing');
+        if (np && np.track && np.track.videoId) {
+          const startSeconds =
+            (state.stationCursors &&
+              state.currentStationId &&
+              state.stationCursors[state.currentStationId] &&
+              state.stationCursors[state.currentStationId].positionSec) || 0;
+          if (state.status === 'playing') {
+            player.loadVideoById({ videoId: np.track.videoId, startSeconds: startSeconds });
+          } else {
+            player.cueVideoById({ videoId: np.track.videoId, startSeconds: startSeconds });
+          }
+          setStatus('ready ' + np.station.name);
+        } else {
+          setStatus('no track');
+        }
+      } catch (err) {
+        console.error('Initial sync failed:', err);
+        setStatus('sync error');
+      }
+    }
+
+    async function reloadCurrentTrack(autoplay) {
+      const t = tauri();
+      if (!t || !player) return;
+      const np = await t.core.invoke('radio_get_now_playing');
+      if (!np || !np.track || !np.track.videoId) return;
+      if (autoplay) {
+        player.loadVideoById(np.track.videoId);
+      } else {
+        player.cueVideoById(np.track.videoId);
+      }
+      setStatus(np.station.name + ' / ' + np.track.title);
+    }
+
+    async function handleCommand(payload) {
+      if (!player || !payload) return;
+      switch (payload.kind) {
+        case 'play':
+          await reloadCurrentTrack(true);
+          break;
+        case 'pause':
+          player.pauseVideo();
+          break;
+        case 'next':
+        case 'prev':
+        case 'set_station':
+          await reloadCurrentTrack(true);
+          break;
+        case 'set_volume':
+          if (typeof payload.volume === 'number') {
+            player.setVolume(Math.round(payload.volume * 100));
+          }
+          break;
+      }
+    }
+
+    function onPlayerStateChange(e) {
+      const t = tauri();
+      if (!t) return;
+      const status = STATE_MAP[String(e.data)] || 'stopped';
+      let positionSec = null;
+      try {
+        if (typeof player.getCurrentTime === 'function') {
+          positionSec = Math.floor(player.getCurrentTime());
+        }
+      } catch (_) {}
+
+      if (status !== lastReportedStatus) {
+        lastReportedStatus = status;
+        t.core.invoke('radio_report_status', { status: status, positionSec: positionSec })
+          .catch(function (err) { console.error('report_status failed:', err); });
+      }
+
+      // YouTube state 0 = ENDED. Ask Rust to advance to the next track.
+      if (e.data === 0) {
+        t.core.invoke('radio_track_ended')
+          .catch(function (err) { console.error('track_ended failed:', err); });
+      }
+    }
+
+    function onPlayerError(e) {
+      // 100 = video not found, 101/150 = embedding disabled.
+      // Skip past unplayable videos so the radio doesn't silently die.
+      console.warn('YouTube player error:', e.data);
+      const t = tauri();
+      if (t && (e.data === 100 || e.data === 101 || e.data === 150 || e.data === 5 || e.data === 2)) {
+        t.core.invoke('radio_track_ended')
+          .catch(function (err) { console.error('skip-on-error failed:', err); });
+      }
+    }
+
+    // Periodic position report so persistence is fresh on close / restart.
+    setInterval(function () {
+      const t = tauri();
+      if (!t || !player || typeof player.getCurrentTime !== 'function') return;
+      try {
+        const positionSec = Math.floor(player.getCurrentTime());
+        if (positionSec !== lastReportedPosition && lastReportedStatus === 'playing') {
+          lastReportedPosition = positionSec;
+          t.core.invoke('radio_report_status', { status: 'playing', positionSec: positionSec })
+            .catch(function () {});
+        }
+      } catch (_) {}
+    }, 5000);
+  </script>
+</body>
+</html>

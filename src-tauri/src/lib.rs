@@ -18,6 +18,7 @@ mod langfuse;
 mod local_http;
 mod logging;
 mod notifications;
+mod radio;
 pub mod startup_timing;
 pub mod test_automation;
 #[cfg(feature = "desktop")]
@@ -803,6 +804,15 @@ pub fn run() {
                 clipboard_watcher_enabled: Arc::new(std::sync::atomic::AtomicBool::new(true)),
             });
             app.manage(state_arc.clone());
+
+            // Radio: hidden YouTube IFrame Player + footer controller. Curated
+            // stations are baked into the binary; runtime state (current station
+            // + per-station shuffle cursors + volume) persists to <config>/radio_state.json.
+            {
+                let radio_state_path = app_data_dir.join("radio_state.json");
+                let radio_service = radio::RadioService::new(radio_state_path);
+                app.manage(radio::RadioServiceHandle(Arc::new(Mutex::new(radio_service))));
+            }
 
             // Spawn CDC drain task: converts SQLite update_hook events into Tauri emits
             db::cdc::spawn_cdc_drain_task(
@@ -2357,6 +2367,18 @@ pub fn run() {
             commands::credentials::vector_kb::kb_list_documents,
             #[cfg(feature = "ml")]
             commands::credentials::vector_kb::kb_delete_document,
+            // Radio
+            commands::radio::radio_list_stations,
+            commands::radio::radio_get_state,
+            commands::radio::radio_get_now_playing,
+            commands::radio::radio_play,
+            commands::radio::radio_pause,
+            commands::radio::radio_next,
+            commands::radio::radio_prev,
+            commands::radio::radio_set_station,
+            commands::radio::radio_set_volume,
+            commands::radio::radio_report_status,
+            commands::radio::radio_track_ended,
         ]))
         .run(tauri::generate_context!())
         .unwrap_or_else(|e| {

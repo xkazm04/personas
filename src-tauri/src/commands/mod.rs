@@ -11,6 +11,7 @@ pub mod live_roadmap;
 pub mod network;
 pub mod obsidian_brain;
 pub mod ocr;
+pub mod radio;
 pub mod recipes;
 #[cfg(feature = "p2p")]
 pub mod signing;

@@ -8,6 +8,7 @@ import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/compon
 import { isTelemetryEnabled, setTelemetryEnabled } from '@/lib/telemetryPreference';
 import { useTranslation } from '@/i18n/useTranslation';
 import Button from '@/features/shared/components/buttons/Button';
+import RadioSettingsCard from '@/features/radio/components/RadioSettingsCard';
 
 export default function AccountSettings() {
   const user = useAuthStore((s) => s.user);
@@ -91,6 +92,9 @@ export default function AccountSettings() {
             </button>
           </div>
         </div>
+
+        {/* Radio */}
+        <RadioSettingsCard />
 
         {/* Updates */}
         <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">

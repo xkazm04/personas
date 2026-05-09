@@ -152,6 +152,16 @@
         "src/features/home/sub_releases/**",
         "src-tauri/src/commands/infrastructure/live_roadmap.rs"
       ]
+    },
+    {
+      "doc": "docs/features/radio.md",
+      "sourceGlobs": [
+        "src/features/radio/**",
+        "src-tauri/src/radio/**",
+        "src-tauri/src/commands/radio.rs",
+        "src-tauri/data/radio_stations.json",
+        "public/radio.html"
+      ]
     }
   ]
 }
