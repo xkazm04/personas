@@ -5,6 +5,15 @@ import { tokenLabel } from '@/i18n/tokenMaps';
 import { Clock, RotateCw, ShieldAlert, ExternalLink } from 'lucide-react';
 import type { HealingEventPayload } from '../runnerTypes';
 
+// TODO(healing-i18n): notification.title / strategy / suggested_fix render
+// raw strings from the backend (verified 2026-05-09 in
+// `engine/execution_engine/persist.rs:88-103` — English literals like
+// "Execution result lost: DB write failed"). Properly fixing this needs
+// backend cooperation: introduce a `healing_messages.<key>` token category
+// where the backend sends a key + params map, frontend resolves via
+// useTranslation. Out of scope for explorer xs; track as architect-grade
+// follow-up. See passes.md or open an /architect ticket if backend churn
+// makes this urgent.
 export function HealingCard({
   notification,
   onDismiss,
