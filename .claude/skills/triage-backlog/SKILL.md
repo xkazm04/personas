@@ -24,6 +24,38 @@ You are a ruthless but fair backlog triage engine for the **personas-desktop** p
 
 ---
 
+## Coordination — Active-Runs Ledger
+
+Before the autonomous execution phase (after the user's one approval gate), register this session in `.claude/active-runs.md` per the convention in [`CLAUDE.md` → Concurrent CLI sessions](../../CLAUDE.md). The earlier triage phases (read, classify, score, present) are read-only and do not need registration; the moment the user approves the execution batch, the session becomes write-mode and MUST register before any code edit. Read the file's `## Active` section first; if any `started`-status entry overlaps your planned scope and is <2h old, surface the conflict to the user before proceeding. Overlap on `.claude/active-runs.md` itself is expected and is not a conflict.
+
+**Declared paths for `/triage-backlog`:** scope is the union of `referenced_files` across the accepted-batch ideas (extracted in Phase 1's metadata pass). Plus:
+- `.claude/triage/TRIAGE-REPORT.md` (the persistent report)
+- `.claude/triage/discarded.md` (the BS log)
+- `.claude/commands/idea-*.md` (only the accepted ones — moved or deleted as part of execution)
+- Always: `.claude/active-runs.md`
+
+If the accepted batch touches >20 files across the codebase, the union may be too broad to be useful — register at directory granularity instead (e.g., `src/features/agents/`, `src-tauri/src/engine/`).
+
+**At session end** (after the final commit + code-review pass): move your entry to the top of `## Recently completed`. Update `Status` to `completed (commit: <last-sha>)` or `aborted (<reason>)`. Trim entries older than 14 days while you're there.
+
+Full design rationale: [`docs/concepts/cli-coordination-active-runs.md`](../../../docs/concepts/cli-coordination-active-runs.md).
+
+### Parallel-safety primitives (mandatory)
+
+Per [`CLAUDE.md` → Parallel-safety primitives](../../CLAUDE.md), every CLI session must:
+
+1. **Never `git stash`** other sessions' work — not even with `--keep-index`. If your commit step needs a clean stage, use `git add <path>` per file (NOT `git add -A` / `git add .` / `git add -u`); leave everything else alone.
+2. **Use a worktree.** `/triage-backlog`'s autonomous execution phase ALWAYS edits multiple files across multiple ideas — by definition multi-file. Default to:
+   ```bash
+   git worktree add .claude/worktrees/triage-backlog-<YYYYMMDD> -b worktree-triage-backlog-<YYYYMMDD>
+   cd .claude/worktrees/triage-backlog-<YYYYMMDD>
+   ```
+3. **Atomic commits per idea.** One commit per accepted idea — never bundle N ideas into one mega-commit. The idea id belongs in the commit subject (`feat(<context>): <idea-id> — <title>`) so each commit traces back to its triage row.
+4. **Verify the staged index before commit.** After `git add` and before `git commit`, run `git diff --cached --stat`. If the staged file count is greater than the number you explicitly added (which should equal the idea's `referenced_files` count), another session pre-staged work in the index — `git restore --staged <path>` per unrelated file, or use `git commit --only <files>` to bypass the shared index entirely.
+5. **Clean up the worktree after merge.** Once all per-idea commits are in `git log master` (typically via squash-merge of the worktree branch), from the main checkout: `git worktree remove .claude/worktrees/triage-backlog-<YYYYMMDD>` and `git branch -D worktree-triage-backlog-<YYYYMMDD>`. Treat as part of the session-end ledger ritual.
+
+---
+
 ## Phase 0: Setup & KB Load
 
 1. **Read the KB** from `C:\Users\kazda\kiro\vibeman\tmp\kb-patterns-personas.json`

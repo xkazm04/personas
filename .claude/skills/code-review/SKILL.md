@@ -14,6 +14,39 @@ You are a senior code reviewer for the **personas-desktop** Tauri app (Rust + Re
 `/code-review <file-or-glob>` — reviews only matching files.
 `/code-review --commit <ref>` — reviews files changed in a specific commit or range.
 
+---
+
+## Coordination — Active-Runs Ledger
+
+`/code-review` is **mostly read-only** but does write a review report (and may suggest fixes the user later applies). Register before writing the report; if you also apply fixes inline, register before the first fix. Per the convention in [`CLAUDE.md` → Concurrent CLI sessions](../../CLAUDE.md): read the file's `## Active` section first; if any `started`-status entry overlaps the files you're about to review/fix and is <2h old, surface the conflict to the user (the other session may be actively editing the very files you're reviewing — your verdict could be stale by commit time).
+
+**Declared paths for `/code-review`:**
+- The files in the review scope (resolved in Step 1 from `git diff --name-only HEAD` or the commit range)
+- `.claude/code-review/REVIEW-<YYYYMMDD-HHMM>.md` (or wherever the report writes)
+- Always: `.claude/active-runs.md`
+
+If review is purely read-only and produces no file outputs (just a chat-rendered verdict), you MAY skip ledger registration — but a review on a hot codebase area still benefits from a registered "I'm reading this for review" entry so concurrent editors know their work is being graded.
+
+**At session end** (after the report is written or the verdict is delivered): move your entry to the top of `## Recently completed`. Update `Status` to `completed (commit: <sha-if-fixes-applied>)` or `completed (review-only, no commit)` or `aborted (<reason>)`. Trim entries older than 14 days while you're there.
+
+Full design rationale: [`docs/concepts/cli-coordination-active-runs.md`](../../../docs/concepts/cli-coordination-active-runs.md).
+
+### Parallel-safety primitives (mandatory)
+
+Per [`CLAUDE.md` → Parallel-safety primitives](../../CLAUDE.md), every CLI session must:
+
+1. **Never `git stash`** other sessions' work — not even with `--keep-index`. If you DO apply fixes during review and your commit step needs a clean stage, use `git add <path>` per file (NOT `git add -A` / `git add .` / `git add -u`); leave everything else alone.
+2. **Use a worktree only if applying multi-file fixes.** Pure read-only review can stay on the main checkout. If the user asks you to apply suggested fixes (typically multi-file), default to:
+   ```bash
+   git worktree add .claude/worktrees/code-review-fix-<short-slug> -b worktree-code-review-fix-<short-slug>
+   cd .claude/worktrees/code-review-fix-<short-slug>
+   ```
+3. **Atomic commits per fix.** One commit per Severity-1 / -2 fix; bundle Severity-3 (style/nit) fixes into one polish commit. Never bundle a critical fix with a polish fix.
+4. **Verify the staged index before commit.** After `git add` and before `git commit`, run `git diff --cached --stat`. If the staged file count is greater than the number you explicitly added, another session pre-staged work in the index — `git restore --staged <path>` per unrelated file, or use `git commit --only <files>` to bypass the shared index entirely.
+5. **Clean up the worktree after merge.** Once the fix commit(s) are in `git log master`, from the main checkout: `git worktree remove .claude/worktrees/code-review-fix-<short-slug>` and `git branch -D worktree-code-review-fix-<short-slug>`. Treat as part of the session-end ledger ritual.
+
+---
+
 ## Step 1: Identify Changed Files
 
 Determine the review scope:

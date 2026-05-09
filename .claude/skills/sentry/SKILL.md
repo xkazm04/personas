@@ -26,6 +26,37 @@ You process **unresolved Sentry issues** for the `personas` project in org `d3v-
 
 ---
 
+## Coordination — Active-Runs Ledger
+
+Before applying any code fix or marking a Sentry issue resolved, register this session in `.claude/active-runs.md` per the convention in [`CLAUDE.md` → Concurrent CLI sessions](../../CLAUDE.md). Read the file's `## Active` section first; if any `started`-status entry overlaps your planned scope and is <2h old, surface the conflict to the user before proceeding. Overlap on `.claude/active-runs.md` itself is expected and is not a conflict.
+
+**Declared paths for `/sentry`:** scope is per-issue, not fixed up front. After Phase 1 fetches issues and the user picks one or a batch, declare:
+- The Rust/TS files referenced in each chosen issue's stack trace (typically `src-tauri/src/**/*.rs` and `src/**/*.{ts,tsx}` files at the top of the trace)
+- `.claude/sentry/TRIAGE-<YYYYMMDD>.md` (the triage report)
+- Always: `.claude/active-runs.md`
+
+If batch-fixing N issues that touch overlapping files, register ONE entry covering the union of paths (not N entries) — the ledger reads as "this session is in flight on those files".
+
+**At session end** (after the final `git commit` for the last fix in the batch + Sentry resolve API call): move your entry to the top of `## Recently completed`. Update `Status` to `completed (commit: <last-sha>)` (or list multiple SHAs if batch) or `aborted (<reason>)`. Trim entries older than 14 days while you're there.
+
+Full design rationale: [`docs/concepts/cli-coordination-active-runs.md`](../../../docs/concepts/cli-coordination-active-runs.md).
+
+### Parallel-safety primitives (mandatory)
+
+Per [`CLAUDE.md` → Parallel-safety primitives](../../CLAUDE.md), every CLI session must:
+
+1. **Never `git stash`** other sessions' work — not even with `--keep-index`. If your commit step needs a clean stage, use `git add <path>` per file (NOT `git add -A` / `git add .` / `git add -u`); leave everything else alone.
+2. **Use a worktree for multi-issue batches.** Single-issue fixes that touch ≤1 file can stay on the main checkout. For batch mode (`/sentry top N`, multiple issues, or any fix touching multiple files):
+   ```bash
+   git worktree add .claude/worktrees/sentry-<YYYYMMDD> -b worktree-sentry-<YYYYMMDD>
+   cd .claude/worktrees/sentry-<YYYYMMDD>
+   ```
+3. **Atomic commits per issue.** One commit per Sentry issue resolution — never bundle N issue fixes into one commit. The Sentry issue ID belongs in the commit message subject (`fix(sentry): <issue-id> — <short title>`) so the resolve API call and the commit are traceable from each other.
+4. **Verify the staged index before commit.** After `git add` and before `git commit`, run `git diff --cached --stat`. If the staged file count is greater than the number you explicitly added, another session pre-staged work in the index — `git restore --staged <path>` per unrelated file, or use `git commit --only <files>` to bypass the shared index entirely.
+5. **Clean up the worktree after merge.** Once the worktree's branch is in `git log master`, from the main checkout: `git worktree remove .claude/worktrees/sentry-<YYYYMMDD>` and `git branch -D worktree-sentry-<YYYYMMDD>`. Treat as part of the session-end ledger ritual.
+
+---
+
 ## Phase 0: Load auth and smoke-test the API
 
 ```bash

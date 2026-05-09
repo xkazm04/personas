@@ -15,6 +15,40 @@ Run after any significant feature work on the personas desktop app — new featu
 
 ---
 
+## Coordination — Active-Runs Ledger
+
+`/guide-sync` is **cross-repo** — it reads from the personas desktop checkout and writes to the personas-web marketing repo. The active-runs ledger lives in the personas desktop repo (`.claude/active-runs.md`); register there since that's the side that has the convention. Per [`CLAUDE.md` → Concurrent CLI sessions](../../CLAUDE.md): read the file's `## Active` section first; if any `started`-status entry overlaps the desktop files you're about to read for change-detection AND is <2h old, surface the conflict to the user (the diff you compute may be incomplete if a sibling session is mid-commit on the same area). Overlap on `.claude/active-runs.md` itself is expected and is not a conflict.
+
+**Declared paths for `/guide-sync`:** scope spans both repos.
+- Read-only in personas: changed files since last sync (resolved in Phase 1 from the marker)
+- Write in personas: `.claude/guide-sync-marker.json` (the marker update at session end)
+- Write in personas-web: `personas-web/src/data/guide/content/*.ts` (the guide content updates), `personas-web/src/data/guide/desktop-modules.ts` (if the mapping needs an update)
+- Always: `.claude/active-runs.md`
+
+Cross-repo note: register at the personas-side ledger, but the actual writes happen in BOTH repos. Treat the personas-web commit as a separate atomic commit from any personas-side marker update — they're two different git histories.
+
+**At session end** (after both commits land — desktop marker update + personas-web content update): move your entry to the top of `## Recently completed`. Update `Status` to `completed (commit: <desktop-sha> + personas-web:<web-sha>)` or `aborted (<reason>)`. Trim entries older than 14 days while you're there.
+
+Full design rationale: [`docs/concepts/cli-coordination-active-runs.md`](../../../docs/concepts/cli-coordination-active-runs.md).
+
+### Parallel-safety primitives (mandatory)
+
+Per [`CLAUDE.md` → Parallel-safety primitives](../../CLAUDE.md), every CLI session must:
+
+1. **Never `git stash`** other sessions' work — in EITHER repo, not even with `--keep-index`. If your commit step needs a clean stage, use `git add <path>` per file (NOT `git add -A` / `git add .` / `git add -u`); leave everything else alone.
+2. **Use a worktree in personas-web for multi-topic guide updates.** Single-topic edits to one guide file can stay on the personas-web main checkout. Multi-topic syncs (typical for any non-trivial sync) get:
+   ```bash
+   cd C:/Users/kazda/kiro/personas-web
+   git worktree add .claude/worktrees/guide-sync-<YYYYMMDD> -b worktree-guide-sync-<YYYYMMDD>
+   cd .claude/worktrees/guide-sync-<YYYYMMDD>
+   ```
+   The personas-side marker update is a single-file commit that can stay on the main checkout (the marker file is gitignored or tracked depending on the repo setup — check before assuming).
+3. **Atomic commits per topic** in personas-web. One commit per guide topic updated (e.g. `docs(guide): update agents/persona-editor for renamed tabs`). The marker update on the desktop side is one separate commit (`chore(guide-sync): bump marker to <new-sha>`).
+4. **Verify the staged index before commit** in BOTH repos. After `git add` and before `git commit`, run `git diff --cached --stat`. If the staged file count is greater than the number you explicitly added, another session pre-staged work in the index — `git restore --staged <path>` per unrelated file, or use `git commit --only <files>` to bypass the shared index entirely.
+5. **Clean up the personas-web worktree after merge.** Once the personas-web commits are in `git log master`, from the personas-web main checkout: `git worktree remove .claude/worktrees/guide-sync-<YYYYMMDD>` and `git branch -D worktree-guide-sync-<YYYYMMDD>`. Treat as part of the session-end ledger ritual.
+
+---
+
 ## Phase 1: Detect changes since last sync
 
 1. Check for the sync marker file at `C:\Users\kazda\kiro\personas\.claude\guide-sync-marker.json`:

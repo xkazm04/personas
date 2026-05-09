@@ -23,6 +23,37 @@ The user says things like "help me master this component", "prototype ideas on t
 
 ---
 
+## Coordination — Active-Runs Ledger
+
+After Phase 1 confirms which file is actually-rendered, but BEFORE Phase 2 generates the first variant, register this session in `.claude/active-runs.md` per the convention in [`CLAUDE.md` → Concurrent CLI sessions](../../CLAUDE.md). Read the file's `## Active` section first; if any `started`-status entry overlaps the target component or its parents and is <2h old, surface the conflict to the user before proceeding (a concurrent edit on the same component would clobber both sessions). Overlap on `.claude/active-runs.md` itself is expected and is not a conflict.
+
+**Declared paths for `/prototype`:** the named component file plus its sibling variant siblings (the variants live next to the original):
+- The actually-rendered component file (resolved in Phase 1)
+- Variant siblings: `<dir>/<Name>Variant{1..N}.tsx` (created during prototyping, removed during consolidation)
+- The tab switcher host file if it lives elsewhere
+- Always: `.claude/active-runs.md`
+
+**At session end** (after the consolidation commit lands and variant files are deleted): move your entry to the top of `## Recently completed`. Update `Status` to `completed (commit: <consolidation-sha>)` or `aborted (<reason>: e.g. user picked no winner)`. Trim entries older than 14 days while you're there.
+
+Full design rationale: [`docs/concepts/cli-coordination-active-runs.md`](../../../docs/concepts/cli-coordination-active-runs.md).
+
+### Parallel-safety primitives (mandatory)
+
+Per [`CLAUDE.md` → Parallel-safety primitives](../../CLAUDE.md), every CLI session must:
+
+1. **Never `git stash`** other sessions' work — not even with `--keep-index`. If your commit step needs a clean stage, use `git add <path>` per file (NOT `git add -A` / `git add .` / `git add -u`); leave everything else alone.
+2. **Use a worktree.** Prototyping ALWAYS creates multiple variant files plus a tab switcher = multi-file by definition. Default to:
+   ```bash
+   git worktree add .claude/worktrees/prototype-<component-name> -b worktree-prototype-<component-name>
+   cd .claude/worktrees/prototype-<component-name>
+   ```
+   The worktree also lets the user open both the main checkout (untouched) and the worktree (with variants) side-by-side in their browser if they're running the dev server in both.
+3. **Atomic commits per round.** One commit per round of variants generated, one per pruning decision, one per consolidation. Never bundle a multi-round prototyping arc into one commit — the per-round history is valuable for understanding what was tried.
+4. **Verify the staged index before commit.** After `git add` and before `git commit`, run `git diff --cached --stat`. If the staged file count is greater than the variants you just generated, another session pre-staged work in the index — `git restore --staged <path>` per unrelated file, or use `git commit --only <files>` to bypass the shared index entirely.
+5. **Clean up the worktree after merge.** Once the consolidation commit (and variant-file deletions) is in `git log master`, from the main checkout: `git worktree remove .claude/worktrees/prototype-<component-name>` and `git branch -D worktree-prototype-<component-name>`. Treat as part of the session-end ledger ritual.
+
+---
+
 ## Step 0: Collect the starting file
 
 The skill takes no arguments. When invoked, immediately ask the user **one short question** and wait for their reply before doing anything else:

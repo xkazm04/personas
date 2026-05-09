@@ -13,6 +13,39 @@ The user can scope tests via arguments or you can ask interactively.
 - `/cli-quality-check --features persona-design,healing-diagnosis` — specific feature areas
 - `/cli-quality-check --tier premium` — only premium-tier models
 
+---
+
+## Coordination — Active-Runs Ledger
+
+`/cli-quality-check` is mostly **integration-test execution** — it reads code and runs tests, with optional fix-up commits when failures are clearly attributable to source bugs. Register only when you intend to commit fix-ups; pure test execution doesn't need registration. Per the convention in [`CLAUDE.md` → Concurrent CLI sessions](../../CLAUDE.md): read the file's `## Active` section first; if any `started`-status entry overlaps the files you're about to fix and is <2h old, surface the conflict to the user (test results from a hot codebase may diverge between consecutive runs as concurrent edits land — record the SHA the run was kicked off against in your test report).
+
+**Declared paths for `/cli-quality-check`:** scope is per-fix-up batch, not the test execution itself.
+- The Rust/TS files modified by fix-ups (varies per run — typically `src-tauri/src/**/*.rs` and `src/**/*.{ts,tsx}` in the feature area being tested)
+- Test result reports (if persisted — wherever the skill writes them)
+- Always: `.claude/active-runs.md`
+
+If the run is read-only test execution with no fix-ups, you MAY skip ledger registration. Record the `git rev-parse HEAD` snapshot in the test report so future runs can compare apples-to-apples.
+
+**At session end** (after the final fix-up commit or test report is written): move your entry to the top of `## Recently completed`. Update `Status` to `completed (commit: <last-sha-if-fix-ups>)` or `completed (test-only, no commit, run against <starting-sha>)` or `aborted (<reason>)`. Trim entries older than 14 days while you're there.
+
+Full design rationale: [`docs/concepts/cli-coordination-active-runs.md`](../../../docs/concepts/cli-coordination-active-runs.md).
+
+### Parallel-safety primitives (mandatory)
+
+Per [`CLAUDE.md` → Parallel-safety primitives](../../CLAUDE.md), every CLI session must:
+
+1. **Never `git stash`** other sessions' work — not even with `--keep-index`. If your commit step needs a clean stage, use `git add <path>` per file (NOT `git add -A` / `git add .` / `git add -u`); leave everything else alone.
+2. **Use a worktree for fix-up batches.** Pure test execution stays on the main checkout. For fix-up commits (especially across multiple feature areas):
+   ```bash
+   git worktree add .claude/worktrees/cli-quality-fix-<YYYYMMDD-HHMM> -b worktree-cli-quality-fix-<YYYYMMDD-HHMM>
+   cd .claude/worktrees/cli-quality-fix-<YYYYMMDD-HHMM>
+   ```
+3. **Atomic commits per failing-feature group.** One commit per feature area's fix bundle (e.g. `fix(persona-design): cli-quality-check failures in Sonnet 4.6`). Never bundle fixes from different feature areas into one commit — failures may have been caused by different upstream changes.
+4. **Verify the staged index before commit.** After `git add` and before `git commit`, run `git diff --cached --stat`. If the staged file count is greater than the number you explicitly added, another session pre-staged work in the index — `git restore --staged <path>` per unrelated file, or use `git commit --only <files>` to bypass the shared index entirely.
+5. **Clean up the worktree after merge.** Once the fix commit(s) are in `git log master`, from the main checkout: `git worktree remove .claude/worktrees/cli-quality-fix-<YYYYMMDD-HHMM>` and `git branch -D worktree-cli-quality-fix-<YYYYMMDD-HHMM>`. Treat as part of the session-end ledger ritual.
+
+---
+
 ## Step 1: Parse Scope
 
 Determine which providers, models, and feature areas to test. Map user input to env vars:

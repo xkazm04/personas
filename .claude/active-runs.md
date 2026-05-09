@@ -42,6 +42,11 @@ timestamp — the next session can recognize it as abandoned.
   - **Paths:** `src/features/shared/`, `src/features/agents/`, `src/features/vault/`, `src/features/overview/`, `src/features/recipes/`, `src/features/onboarding/`, `src/styles/`, `src/i18n/locales/en.json`, `tailwind.config.*`
   - **Status:** started — no overlap with active /research sessions (they touch backend/connector/engine paths)
 
+- **[2026-05-09 ~13:45] manual — long-tail active-runs adoption (6 skills)**
+  - **Source:** continuation of the parallel-safety codification — propagating Coordination + Parallel-safety blocks to the 8 long-tail skills listed in `docs/concepts/cli-coordination-active-runs.md` ("Long-tail adoption (still pending)"). 2 of the 8 (`/simplify`, `/frontend-design`) are plugin-provided not local; updating the 6 local ones.
+  - **Paths:** `.claude/skills/sentry/SKILL.md`, `.claude/skills/triage-backlog/SKILL.md`, `.claude/skills/prototype/SKILL.md`, `.claude/skills/code-review/SKILL.md`, `.claude/skills/cli-quality-check/SKILL.md`, `.claude/skills/guide-sync/skill.md`
+  - **Status:** started — no overlap with the two active sessions (cli-coordination touches `.claude/skills/research/skill.md`; clear-wins touches `src/` only)
+
 ## Recently completed (last 14 days)
 
 - **[2026-05-09 13:24] manual — docs/ overhaul (audit, update, delete, backlog)**
