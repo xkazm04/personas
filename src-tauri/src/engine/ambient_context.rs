@@ -418,20 +418,24 @@ impl AmbientContextFusion {
     /// (`redact_clipboard_content`) before the signal enters the rolling
     /// window — the un-redacted text never reaches storage. Phase 3 of
     /// the Athena desktop-aware roadmap.
-    pub fn push_clipboard_with_content(&mut self, content_type: &str, content: &str) {
+    pub fn push_clipboard_with_content(
+        &mut self,
+        content_type: &str,
+        content: &str,
+    ) -> Option<AmbientSignal> {
         if !self.enabled || !self.clipboard_enabled {
-            return;
+            return None;
         }
         let raw_len = content.len();
         let redacted = redact_clipboard_content(content);
         let summary = format!("Clipboard: {content_type} ({raw_len} chars)");
         self.broadcast_event("clipboard", &summary, Vec::new(), None, None);
-        self.push_signal_with_payload(
+        Some(self.push_signal_with_payload(
             "clipboard",
             summary,
             Vec::new(),
             Some(redacted),
-        );
+        ))
     }
 
     /// Legacy push site for clipboard signals when only metadata is
@@ -439,20 +443,28 @@ impl AmbientContextFusion {
     /// existing tests and any caller that has only the length. New code
     /// should use [`push_clipboard_with_content`] so the redacted
     /// content reaches the rolling window.
-    pub fn push_clipboard(&mut self, content_type: &str, content_length: usize) {
+    pub fn push_clipboard(
+        &mut self,
+        content_type: &str,
+        content_length: usize,
+    ) -> Option<AmbientSignal> {
         if !self.enabled || !self.clipboard_enabled {
-            return;
+            return None;
         }
         let summary = format!("Clipboard: {content_type} ({content_length} chars)");
         self.broadcast_event("clipboard", &summary, Vec::new(), None, None);
-        self.push_signal("clipboard", summary);
+        Some(self.push_signal("clipboard", summary))
     }
 
     /// Push a file change signal. Captured iff master `enabled` AND the
     /// per-source `file_changes_enabled` gate are on.
-    pub fn push_file_change(&mut self, kind: &str, paths: &[String]) {
+    pub fn push_file_change(
+        &mut self,
+        kind: &str,
+        paths: &[String],
+    ) -> Option<AmbientSignal> {
         if !self.enabled || !self.file_changes_enabled {
-            return;
+            return None;
         }
         let path_display: Vec<&str> = paths
             .iter()
@@ -461,7 +473,7 @@ impl AmbientContextFusion {
         let summary = format!("File {kind}: {}", path_display.join(", "));
         let raw_paths = paths.to_vec();
         self.broadcast_event("file_watcher", &summary, raw_paths.clone(), None, None);
-        self.push_signal_with_paths("file_watcher", summary, raw_paths);
+        Some(self.push_signal_with_paths("file_watcher", summary, raw_paths))
     }
 
     /// Push an app focus change signal and update current app state.
@@ -470,9 +482,13 @@ impl AmbientContextFusion {
     /// (`redact_window_title`) before being stored or broadcast — file
     /// paths in titles are reduced to basenames, email-shaped patterns are
     /// masked, and overall length is capped.
-    pub fn push_app_focus(&mut self, app_name: &str, window_title: &str) {
+    pub fn push_app_focus(
+        &mut self,
+        app_name: &str,
+        window_title: &str,
+    ) -> Option<AmbientSignal> {
         if !self.enabled || !self.app_focus_enabled {
-            return;
+            return None;
         }
         let redacted_title = redact_window_title(window_title);
         self.current_app = Some(app_name.to_string());
@@ -485,7 +501,7 @@ impl AmbientContextFusion {
             Some(app_name.to_string()),
             Some(redacted_title),
         );
-        self.push_signal("app_focus", summary);
+        Some(self.push_signal("app_focus", summary))
     }
 
     /// Broadcast a context event to all stream subscribers.
@@ -514,8 +530,8 @@ impl AmbientContextFusion {
         self.total_broadcast += 1;
     }
 
-    fn push_signal(&mut self, source: &str, summary: String) {
-        self.push_signal_with_paths(source, summary, Vec::new());
+    fn push_signal(&mut self, source: &str, summary: String) -> AmbientSignal {
+        self.push_signal_with_paths(source, summary, Vec::new())
     }
 
     /// Effective buffer limit: the maximum `max_window_size` across all
@@ -549,21 +565,32 @@ impl AmbientContextFusion {
         }
     }
 
-    fn push_signal_with_paths(&mut self, source: &str, summary: String, raw_paths: Vec<String>) {
-        self.push_signal_with_payload(source, summary, raw_paths, None);
+    fn push_signal_with_paths(
+        &mut self,
+        source: &str,
+        summary: String,
+        raw_paths: Vec<String>,
+    ) -> AmbientSignal {
+        self.push_signal_with_payload(source, summary, raw_paths, None)
     }
 
     /// Internal capture site that accepts an optional redacted-content
     /// payload. Clipboard signals provide the content (post-redaction);
     /// file-watcher and app-focus signals omit it (they communicate
     /// everything through `summary`).
+    ///
+    /// Returns a clone of the just-pushed signal — capture-side callers
+    /// (clipboard_monitor, app_focus tick) use this to mirror the
+    /// capture into the SQL projection (`ambient_signal_repo`) without
+    /// re-locking the fusion to read the back of the queue. Cheap clone:
+    /// strings + small Vec of paths.
     fn push_signal_with_payload(
         &mut self,
         source: &str,
         summary: String,
         raw_paths: Vec<String>,
         redacted_content: Option<String>,
-    ) {
+    ) -> AmbientSignal {
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
@@ -574,14 +601,15 @@ impl AmbientContextFusion {
         // this fusion instance. Survives buffer eviction; the counter is
         // monotonic and never reused.
         let id = format!("sig_{}", self.total_captured);
-        self.signals.push_back(AmbientSignal {
+        let signal = AmbientSignal {
             id,
             source: source.to_string(),
             summary,
             captured_at: now,
             raw_paths,
             redacted_content,
-        });
+        };
+        self.signals.push_back(signal.clone());
         self.total_captured += 1;
 
         // Evict if over the effective window size (derived from registered
@@ -596,6 +624,8 @@ impl AmbientContextFusion {
             self.evict_old_signals();
             self.last_eviction = Instant::now();
         }
+
+        signal
     }
 
     fn evict_old_signals(&mut self) {

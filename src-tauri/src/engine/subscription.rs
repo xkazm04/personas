@@ -619,8 +619,31 @@ impl ReactiveSubscription for AppFocusSubscription {
         };
         if app_before != app_after || title_before != title_after {
             if let (Some(ref app), Some(ref title)) = (&app_after, &title_after) {
-                let mut ctx = self.ambient_ctx.lock().await;
-                ctx.push_app_focus(app, title);
+                let captured = {
+                    let mut ctx = self.ambient_ctx.lock().await;
+                    ctx.push_app_focus(app, title)
+                };
+
+                // Phase 3 c v3: mirror app-focus capture into the
+                // cross-process SQL projection so daemon-fired
+                // executions can see what window the user was on.
+                // Same fire-and-forget shape as clipboard_monitor.
+                if let Some(sig) = captured {
+                    if let Err(e) = crate::engine::ambient_signal_repo::insert_signal(
+                        &self.pool,
+                        &sig.id,
+                        &sig.source,
+                        &sig.summary,
+                        sig.captured_at,
+                        sig.redacted_content.as_deref(),
+                    ) {
+                        tracing::warn!(
+                            error = %e,
+                            signal_id = %sig.id,
+                            "ambient_signal: app_focus SQL projection failed"
+                        );
+                    }
+                }
             }
         }
     }
