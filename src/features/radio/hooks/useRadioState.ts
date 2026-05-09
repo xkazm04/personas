@@ -21,9 +21,9 @@ const initial: RadioSnapshot = {
 };
 
 /**
- * Subscribes to radio:state events and exposes the latest snapshot. Refreshes
- * `nowPlaying` whenever the current track changes (cursor advance or station
- * switch).
+ * Subscribes to `radio:state` events and exposes the latest snapshot.
+ * Refetches `nowPlaying` when the current station changes so the footer
+ * has fresh station metadata to render.
  */
 export function useRadioState(): RadioSnapshot {
   const [snap, setSnap] = useState<RadioSnapshot>(initial);
@@ -58,16 +58,10 @@ export function useRadioState(): RadioSnapshot {
       const fn = await listen<RadioState>('radio:state', (event) => {
         if (cancelled) return;
         setSnap((prev) => {
-          const prevTrackId = prev.nowPlaying?.track.videoId;
           const next = { ...prev, state: event.payload };
-          // Cursor change ⇒ refetch now-playing. Best-effort fire-and-forget.
-          const cursorKey = (s: RadioState | null) =>
-            s?.currentStationId
-              ? `${s.currentStationId}:${s.stationCursors?.[s.currentStationId]?.currentTrackIndex ?? -1}`
-              : '';
-          if (cursorKey(prev.state) !== cursorKey(event.payload)) {
-            refreshNowPlaying();
-          } else if (!prevTrackId) {
+          const prevStationId = prev.state?.currentStationId ?? null;
+          const nextStationId = event.payload.currentStationId ?? null;
+          if (prevStationId !== nextStationId || !prev.nowPlaying) {
             refreshNowPlaying();
           }
           return next;

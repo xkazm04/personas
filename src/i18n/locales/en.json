@@ -12798,14 +12798,15 @@
     "footer_label": "Radio player",
     "idle_title": "Press play",
     "idle_subtitle": "Curated stations",
+    "now_playing": "Now playing",
     "play": "Play",
     "pause": "Pause",
-    "skip": "Skip to next track",
+    "skip": "Next station",
     "switch_station": "Switch station",
     "stations_label": "Stations",
-    "track_count_one": "1 track",
-    "track_count_other": "{count} tracks",
+    "source_prefix": "Source:",
+    "unavailable_toast": "{station} is unavailable right now. Check your connection or try another station.",
     "settings_title": "Radio",
-    "settings_description": "Curated YouTube stations that play in the background. Use the controller at the bottom-right of the window to play, pause, skip, or switch stations."
+    "settings_description": "Curated internet-radio stations that play in the background. Use the controller at the bottom-right of the window to play, pause, switch stations, or change volume."
   }
 }
