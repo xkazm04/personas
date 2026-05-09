@@ -197,6 +197,100 @@ pub async fn write_fact_and_embed(
     Ok(id)
 }
 
+/// Cosine distance below which two fact values are treated as the same
+/// fact for fold-instead-of-add purposes. Calibrated for AllMiniLML6V2Q
+/// (384-dim): two facts with the same meaning but different wording sit
+/// empirically around 0.05-0.15. Set conservatively — false positives
+/// (folding two genuinely-distinct facts) are harder to spot than false
+/// negatives (the second fact just persists as a near-duplicate). Tune
+/// down (more folding) if review queues fill with obvious duplicates.
+#[cfg(feature = "ml")]
+const FUZZY_DEDUP_THRESHOLD: f32 = 0.15;
+
+/// Top-K candidates inspected for fuzzy dedup. Most duplicates land at
+/// rank 1; the extra slots cover edge cases (same fact's superseded
+/// prior version was indexed under similar wording, etc.).
+#[cfg(feature = "ml")]
+const FUZZY_DEDUP_TOPK: usize = 5;
+
+/// Find a near-duplicate of `value` in the same `scope`. Returns the
+/// existing fact's id if cosine distance falls below
+/// `FUZZY_DEDUP_THRESHOLD`, else None. Excludes superseded facts
+/// (importance = 0). Anti-hallucination contract: only inspects
+/// facts that have at least one provenance source — pure-author
+/// facts can't be the merge target either.
+#[cfg(feature = "ml")]
+pub async fn find_near_duplicate(
+    pool: &UserDbPool,
+    embedder: &Arc<EmbeddingManager>,
+    scope: FactScope,
+    value: &str,
+) -> Result<Option<String>, AppError> {
+    let candidates = embeddings::search_similar(pool, embedder, value, FUZZY_DEDUP_TOPK).await?;
+    if candidates.is_empty() {
+        return Ok(None);
+    }
+    let conn = pool.get()?;
+    let scope_str = scope.as_str();
+    for (node_id, distance) in candidates {
+        // Results are sorted by distance ASC; once we exceed the threshold
+        // all subsequent hits are further still.
+        if distance >= FUZZY_DEDUP_THRESHOLD {
+            break;
+        }
+        let matched: Option<String> = conn
+            .query_row(
+                "SELECT n.id FROM companion_fact f
+                 JOIN companion_node n ON n.id = f.id
+                 WHERE n.id = ?1
+                   AND f.scope = ?2
+                   AND n.kind = 'fact'
+                   AND n.importance > 0",
+                params![node_id, scope_str],
+                |r| r.get(0),
+            )
+            .optional()?;
+        if let Some(id) = matched {
+            return Ok(Some(id));
+        }
+    }
+    Ok(None)
+}
+
+/// Reinforce an existing fact: boost importance by 1 (cap 5), bump
+/// last_seen_at, append any new source episode ids. Used when a near-
+/// duplicate fact is found at consolidation time — the new evidence
+/// strengthens the existing entry instead of producing a redundant row.
+/// The provenance contract is preserved: every reinforce path adds at
+/// least one source (caller passes the proposal's sources).
+pub fn reinforce_fact(
+    pool: &UserDbPool,
+    fact_id: &str,
+    new_sources: &[String],
+) -> Result<(), AppError> {
+    let now = Utc::now().to_rfc3339();
+    let conn = pool.get()?;
+    let tx = conn.unchecked_transaction()?;
+    tx.execute(
+        "UPDATE companion_node
+         SET importance = MIN(5, importance + 1), updated_at = ?1
+         WHERE id = ?2 AND kind = 'fact'",
+        params![now, fact_id],
+    )?;
+    tx.execute(
+        "UPDATE companion_fact SET last_seen_at = ?1 WHERE id = ?2",
+        params![now, fact_id],
+    )?;
+    for src in new_sources {
+        tx.execute(
+            "INSERT OR IGNORE INTO companion_provenance (fact_id, episode_id) VALUES (?1, ?2)",
+            params![fact_id, src],
+        )?;
+    }
+    tx.commit()?;
+    Ok(())
+}
+
 #[cfg(not(feature = "ml"))]
 #[allow(dead_code)]
 pub async fn write_fact_and_embed(

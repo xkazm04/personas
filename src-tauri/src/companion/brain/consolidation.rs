@@ -289,7 +289,50 @@ pub async fn apply_item(
     };
 
     let fact_id = match embedder {
-        Some(emb) => semantic::write_fact_and_embed(pool, emb, &input).await?,
+        Some(emb) => {
+            // Fuzzy dedup: if Athena's proposal closely matches an existing
+            // fact in the same scope, fold the new evidence into the
+            // existing entry instead of writing a redundant row. Skip when
+            // the user marked this as supersedes — that's a deliberate
+            // replacement, not a duplicate. Best-effort: any failure in the
+            // dedup pipeline (embedder, vec0, SQL) falls through to a normal
+            // write so the consolidation pass never breaks because of a
+            // dedup failure.
+            let folded_into: Option<String> = if supersedes.is_none() {
+                match semantic::find_near_duplicate(pool, emb, scope, value).await {
+                    Ok(Some(existing)) => {
+                        if let Err(e) = semantic::reinforce_fact(pool, &existing, &item.sources) {
+                            tracing::warn!(
+                                error = %e,
+                                "consolidation: reinforce_fact failed; falling through to normal write"
+                            );
+                            None
+                        } else {
+                            tracing::info!(
+                                item_id = %item_id,
+                                existing_fact_id = %existing,
+                                "consolidation: folded near-duplicate into existing fact"
+                            );
+                            Some(existing)
+                        }
+                    }
+                    Ok(None) => None,
+                    Err(e) => {
+                        tracing::warn!(
+                            error = %e,
+                            "consolidation: fuzzy dedup check failed; falling through"
+                        );
+                        None
+                    }
+                }
+            } else {
+                None
+            };
+            match folded_into {
+                Some(id) => id,
+                None => semantic::write_fact_and_embed(pool, emb, &input).await?,
+            }
+        }
         None => semantic::write_fact(pool, &input)?,
     };
 
