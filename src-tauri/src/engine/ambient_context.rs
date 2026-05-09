@@ -744,44 +744,88 @@ impl AmbientContextFusion {
     }
 
     /// Build a markdown-formatted context document for prompt injection.
+    /// Thin wrapper: builds the active-app label from the fusion's
+    /// `current_app` / `current_window_title` fields, then delegates to
+    /// the pure renderer [`format_signals_for_prompt`]. The renderer is
+    /// also used by the daemon path (step 5 of Phase 3 c v3) which
+    /// loads signals from SQL — sharing the renderer keeps the
+    /// daemon-rendered prompt byte-identical to the windowed-app one
+    /// for the same data.
     pub fn format_for_prompt(&self, persona_id: &str) -> Option<String> {
         let snapshot = self.snapshot_for_persona(persona_id);
-        if !snapshot.enabled || snapshot.signals.is_empty() {
+        if !snapshot.enabled {
             return None;
         }
-
-        let mut doc = String::with_capacity(512);
-        doc.push_str("## Ambient Desktop Context\n");
-        doc.push_str(
-            "The following is a summary of recent desktop activity observed by the system.\n",
-        );
-        doc.push_str("Use this context to understand what the user is currently working on.\n\n");
-
-        if let Some(ref app) = snapshot.active_app {
-            doc.push_str(&format!("**Active Application**: {app}"));
+        let label = snapshot.active_app.as_ref().map(|app| {
             if let Some(ref title) = snapshot.active_window_title {
-                doc.push_str(&format!(" — {title}"));
-            }
-            doc.push_str("\n\n");
-        }
-
-        doc.push_str("**Recent Activity** (newest first):\n");
-        for entry in &snapshot.signals {
-            let age = if entry.age_secs < 60 {
-                format!("{}s ago", entry.age_secs)
-            } else if entry.age_secs < 3600 {
-                format!("{}m ago", entry.age_secs / 60)
+                format!("{app} — {title}")
             } else {
-                format!("{}h ago", entry.age_secs / 3600)
-            };
-            doc.push_str(&format!(
-                "- [{}] {} ({})\n",
-                entry.source, entry.summary, age
-            ));
-        }
-
-        Some(doc)
+                app.clone()
+            }
+        });
+        format_signals_for_prompt(&snapshot.signals, label.as_deref())
     }
+}
+
+/// Pure renderer for the ambient prompt block.
+///
+/// Takes a pre-filtered slice of signals (the caller is responsible
+/// for applying the persona's `SensoryPolicy` — source filter, age
+/// cutoff, window size — before calling) and an optional already-
+/// formatted "App — Window Title" label, and produces a markdown
+/// document suitable for prepending to a system prompt.
+///
+/// Returns `None` when the signal list is empty — this is the signal
+/// to the caller (`prepend_ambient_to_system_prompt`) that there's
+/// nothing to inject and the no-op path should run.
+///
+/// The two callers are:
+/// - [`AmbientContextFusion::format_for_prompt`] — windowed-app path,
+///   reads from in-memory rolling window.
+/// - The Phase 3 c v3 daemon path — reads from
+///   [`ambient_signal_repo::recent_signals`] and applies the persona
+///   policy explicitly before calling.
+///
+/// Sharing the renderer means the daemon-rendered prompt is byte-
+/// identical to the windowed-app one for the same input data — a
+/// regression in the rendered shape would appear in both code paths
+/// simultaneously and be caught by the existing
+/// `test_format_for_prompt` and the daemon-path tests in step 7.
+pub fn format_signals_for_prompt(
+    signals: &[AmbientSignalEntry],
+    active_app_label: Option<&str>,
+) -> Option<String> {
+    if signals.is_empty() {
+        return None;
+    }
+
+    let mut doc = String::with_capacity(512);
+    doc.push_str("## Ambient Desktop Context\n");
+    doc.push_str(
+        "The following is a summary of recent desktop activity observed by the system.\n",
+    );
+    doc.push_str("Use this context to understand what the user is currently working on.\n\n");
+
+    if let Some(label) = active_app_label {
+        doc.push_str(&format!("**Active Application**: {label}\n\n"));
+    }
+
+    doc.push_str("**Recent Activity** (newest first):\n");
+    for entry in signals {
+        let age = if entry.age_secs < 60 {
+            format!("{}s ago", entry.age_secs)
+        } else if entry.age_secs < 3600 {
+            format!("{}m ago", entry.age_secs / 60)
+        } else {
+            format!("{}h ago", entry.age_secs / 3600)
+        };
+        doc.push_str(&format!(
+            "- [{}] {} ({})\n",
+            entry.source, entry.summary, age
+        ));
+    }
+
+    Some(doc)
 }
 
 // ---------------------------------------------------------------------------
