@@ -21,6 +21,7 @@ import ContentLoader from '@/features/shared/components/progress/ContentLoader';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { useTranslation } from '@/i18n/useTranslation';
 import { formatTimestamp } from '@/lib/utils/formatters';
+import { Button } from '@/features/shared/components/buttons';
 
 // -- Persona row in digest --------------------------------------------
 
@@ -167,14 +168,15 @@ export function HealthDigestPanel() {
         <p className="typo-body text-foreground mb-4">
           {t.agents.health_digest.description}
         </p>
-        <button
+        <Button
           type="button"
           onClick={handleRunDigest}
-          className="inline-flex items-center gap-2 px-4 py-2 typo-body font-medium rounded-modal bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors"
+          variant="primary"
+          size="md"
+          icon={<Activity className="w-4 h-4" aria-hidden="true" />}
         >
-          <Activity className="w-4 h-4" aria-hidden="true" />
           {t.agents.health_digest.run_digest}
-        </button>
+        </Button>
       </div>
     );
   }
@@ -190,14 +192,15 @@ export function HealthDigestPanel() {
           <Activity className="w-5 h-5 text-primary/60" aria-hidden="true" />
           <h3 className="typo-heading font-semibold text-foreground">{t.agents.health_digest.title}</h3>
         </div>
-        <button
+        <Button
           type="button"
           onClick={handleRunDigest}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 typo-caption font-medium rounded-card bg-secondary/60 text-foreground border border-primary/20 hover:bg-secondary/80 transition-colors"
+          variant="secondary"
+          size="sm"
+          icon={<RefreshCw className="w-3 h-3" />}
         >
-          <RefreshCw className="w-3 h-3" />
           {t.agents.health_check.rerun}
-        </button>
+        </Button>
       </div>
 
       {/* Staleness warning */}
