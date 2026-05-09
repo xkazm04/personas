@@ -10693,6 +10693,7 @@ export type Translations = {
       voice_piper_no_voice_selected: string;
       voice_piper_engine_missing_callout: string;
       voice_piper_no_voices_for_language: string;
+      voice_piper_your_language_badge: string;
       dictate_start: string;
       dictate_stop: string;
       dictate_start_hint: string;

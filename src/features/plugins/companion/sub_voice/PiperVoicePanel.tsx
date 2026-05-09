@@ -4,6 +4,7 @@ import {
   CheckCircle2,
   Cpu,
   Download,
+  Globe,
   Loader2,
   RefreshCw,
   Trash2,
@@ -40,7 +41,7 @@ import {
  *      into per-voice progress bars.
  */
 export default function PiperVoicePanel() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
 
   const piperVoiceId = useSystemStore((s) => s.companionPiperVoiceId);
   const setPiperVoiceId = useSystemStore((s) => s.setCompanionPiperVoiceId);
@@ -172,10 +173,18 @@ export default function PiperVoicePanel() {
   // Group voices by language for the catalog rendering. Order matches
   // the catalog order (English first, then alpha). `Map` preserves
   // insertion order in JS so the natural traversal is correct.
+  // Voices whose BCP-47 prefix matches the user's app locale are
+  // promoted to the top so the user sees their language first.
   const groupedVoices = useMemo(() => {
     const groups = new Map<string, { label: string; native: string; voices: PiperVoiceListing[] }>();
     if (!voices) return groups;
-    for (const v of voices) {
+    const userLang = language.toLowerCase();
+    const sorted = [...voices].sort((a, b) => {
+      const aMatch = a.languageCode.toLowerCase().startsWith(userLang) ? 0 : 1;
+      const bMatch = b.languageCode.toLowerCase().startsWith(userLang) ? 0 : 1;
+      return aMatch - bMatch;
+    });
+    for (const v of sorted) {
       const existing = groups.get(v.languageCode);
       if (existing) {
         existing.voices.push(v);
@@ -188,7 +197,15 @@ export default function PiperVoicePanel() {
       }
     }
     return groups;
-  }, [voices]);
+  }, [voices, language]);
+
+  // Detect whether any catalog voice matches the user's locale. Used
+  // to render the fallback callout when there's nothing local for them.
+  const hasVoicesForUserLocale = useMemo(() => {
+    if (!voices) return true; // optimistic — don't flash the warning during load
+    const userLang = language.toLowerCase();
+    return voices.some((v) => v.languageCode.toLowerCase().startsWith(userLang));
+  }, [voices, language]);
 
   return (
     <div className="space-y-4 max-w-2xl">
@@ -203,6 +220,14 @@ export default function PiperVoicePanel() {
         subtitle={t.plugins.companion.voice_piper_voices_desc}
       >
         <div className="px-1 py-2 space-y-3">
+          {!hasVoicesForUserLocale && voices !== null && (
+            <div className="rounded-card border border-amber-500/30 bg-amber-500/5 p-3 flex items-start gap-2">
+              <Globe className="w-4 h-4 mt-0.5 shrink-0 text-amber-400" />
+              <p className="typo-caption text-foreground/80">
+                {t.plugins.companion.voice_piper_no_voices_for_language}
+              </p>
+            </div>
+          )}
           {voicesLoading && voices === null ? (
             <div className="flex items-center gap-3 typo-caption text-foreground/60">
               <LoadingSpinner size="sm" />
@@ -222,6 +247,7 @@ export default function PiperVoicePanel() {
                 onDownload={onDownload}
                 onDelete={onDelete}
                 onSelect={(id) => setPiperVoiceId(id)}
+                userLanguage={language}
                 t={t}
               />
             ))
@@ -306,17 +332,30 @@ interface LanguageGroupProps {
   onDownload: (voiceId: string) => void;
   onDelete: (voiceId: string) => void;
   onSelect: (voiceId: string) => void;
+  userLanguage: string;
   t: ReturnType<typeof useTranslation>['t'];
 }
 
 function LanguageGroup(props: LanguageGroupProps) {
-  const { label, native, voices, selectedVoiceId, progress, onDownload, onDelete, onSelect, t } = props;
+  const { label, native, voices, selectedVoiceId, progress, onDownload, onDelete, onSelect, userLanguage, t } = props;
+  // Match user locale by BCP-47 prefix. `en` matches `en-US` and `en-GB`;
+  // `cs` matches `cs-CZ`. Empty groups won't reach this component, so
+  // it's safe to read the first voice's languageCode for the check.
+  const isUserLanguage = voices[0]
+    ? voices[0].languageCode.toLowerCase().startsWith(userLanguage.toLowerCase())
+    : false;
   return (
     <div className="space-y-2">
       <div className="flex items-baseline gap-2">
         <span className="typo-caption font-semibold text-foreground/80">{label}</span>
         {native && native !== label && (
           <span className="typo-caption text-foreground/50">· {native}</span>
+        )}
+        {isUserLanguage && (
+          <span className="inline-flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300">
+            <Globe className="w-3 h-3" />
+            {t.plugins.companion.voice_piper_your_language_badge}
+          </span>
         )}
       </div>
       <div className="space-y-1.5">
