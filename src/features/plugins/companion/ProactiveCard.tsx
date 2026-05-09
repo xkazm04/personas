@@ -48,7 +48,9 @@ export function ProactiveCard({
     }
   };
 
-  // Trigger-kind specific accent so the card type is glanceable.
+  // Trigger-kind specific accent so the card type is glanceable. Each of
+  // the four known kinds gets its own band; the primary fallback is
+  // reserved for future/unknown kinds so they're still visually anchored.
   const accent =
     message.triggerKind === 'goal_target_approaching'
       ? 'border-amber-500/30 bg-amber-500/[0.06]'
@@ -56,7 +58,9 @@ export function ProactiveCard({
         ? 'border-rose-500/30 bg-rose-500/[0.06]'
         : message.triggerKind === 'on_this_day'
           ? 'border-violet-500/30 bg-violet-500/[0.06]'
-          : 'border-primary/30 bg-primary/[0.06]';
+          : message.triggerKind === 'cadence_due'
+            ? 'border-emerald-500/30 bg-emerald-500/[0.06]'
+            : 'border-primary/30 bg-primary/[0.06]';
 
   return (
     <div
