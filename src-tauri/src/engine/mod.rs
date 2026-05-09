@@ -8,6 +8,8 @@ pub mod ambient_context;
 pub mod ambient_signal_repo;
 pub mod api_definition;
 #[cfg(feature = "desktop")]
+pub mod cli_session_audit_repo;
+#[cfg(feature = "desktop")]
 pub mod cli_session_awareness;
 pub mod api_proxy;
 #[cfg(feature = "desktop")]
@@ -281,6 +283,34 @@ async fn run_execution_with_ceiling(
                             &active, &turns, now,
                         ) {
                             ambient_context::prepend_ambient_to_system_prompt(&mut persona, &md);
+
+                            // Phase 5 v1: write the transparency audit row
+                            // so the user can see what was extracted via
+                            // the "What did Athena see?" modal. Failure
+                            // is non-fatal — the run already happened.
+                            let read_at_secs = now
+                                .duration_since(std::time::UNIX_EPOCH)
+                                .map(|d| d.as_secs())
+                                .unwrap_or(0);
+                            let audit_id = format!(
+                                "cliread_{}",
+                                uuid::Uuid::new_v4().simple()
+                            );
+                            if let Err(e) = cli_session_audit_repo::insert_audit(
+                                &pool,
+                                &audit_id,
+                                &persona.id,
+                                &persona.name,
+                                &active.project_dir_name,
+                                turns.len() as i64,
+                                read_at_secs,
+                            ) {
+                                tracing::warn!(
+                                    error = %e,
+                                    persona_id = %persona.id,
+                                    "cli_session: failed to write audit row"
+                                );
+                            }
                         }
                     }
                 }

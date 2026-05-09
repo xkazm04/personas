@@ -10488,6 +10488,9 @@ export type Translations = {
       setup_desktop_app_focus_desc: string;
       setup_desktop_cli_session_label: string;
       setup_desktop_cli_session_desc: string;
+      sensory_cli_reads_empty: string;
+      sensory_cli_reads_empty_hint: string;
+      sensory_cli_reads_row_summary: string;
       setup_desktop_signals_count_one: string;
       setup_desktop_signals_count_other: string;
       setup_desktop_load_failed: string;

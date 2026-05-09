@@ -1940,6 +1940,8 @@ pub fn run() {
             commands::companion::sensory::companion_list_sensory_signals,
             #[cfg(feature = "desktop")]
             commands::companion::sensory::companion_delete_sensory_signal,
+            #[cfg(feature = "desktop")]
+            commands::companion::sensory::companion_list_cli_session_reads,
             commands::companion::connectors::companion_list_active_connectors,
             commands::companion::connectors::companion_set_active_connectors,
             commands::companion::connectors::companion_set_connector_enabled,

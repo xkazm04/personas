@@ -1569,4 +1569,22 @@ CREATE INDEX IF NOT EXISTS idx_ambient_signal_captured
 CREATE INDEX IF NOT EXISTS idx_ambient_signal_source_captured
     ON ambient_signal(source, captured_at DESC);
 
+-- Phase 5 v1 (Athena CLI session-resume awareness): audit log of when
+-- a persona's execution actually injected a CLI session block. Append-
+-- only; the "What did Athena see?" modal surfaces these rows so the
+-- user can review what was extracted on their behalf. Eviction is
+-- TTL-based (sibling to ambient_signal — same 24h window).
+CREATE TABLE IF NOT EXISTS cli_session_read_audit (
+    id              TEXT PRIMARY KEY,                  -- 'cliread_<n>' (uuid suffix)
+    persona_id      TEXT NOT NULL,
+    persona_name    TEXT NOT NULL,                     -- snapshot at read time (avoid join + handles deletes)
+    project         TEXT NOT NULL,                     -- the project_dir_name from ActiveSession (encoded-cwd)
+    turn_count      INTEGER NOT NULL,                  -- how many turns were extracted
+    read_at         INTEGER NOT NULL                   -- unix epoch seconds
+);
+CREATE INDEX IF NOT EXISTS idx_cli_session_read_audit_read_at
+    ON cli_session_read_audit(read_at DESC);
+CREATE INDEX IF NOT EXISTS idx_cli_session_read_audit_persona
+    ON cli_session_read_audit(persona_id, read_at DESC);
+
 "#;

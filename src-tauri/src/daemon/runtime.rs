@@ -395,5 +395,28 @@ fn inject_cli_session_for_daemon(pool: &DbPool, persona: &mut crate::db::models:
             turn_count = turns.len(),
             "daemon: CLI session prepended to persona system prompt"
         );
+
+        // Phase 5 v1: audit row for the transparency modal. Same
+        // shape as the windowed runner's insert.
+        let read_at_secs = now
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or(0);
+        let audit_id = format!("cliread_{}", uuid::Uuid::new_v4().simple());
+        if let Err(e) = crate::engine::cli_session_audit_repo::insert_audit(
+            pool,
+            &audit_id,
+            &persona.id,
+            &persona.name,
+            &active.project_dir_name,
+            turns.len() as i64,
+            read_at_secs,
+        ) {
+            tracing::warn!(
+                error = %e,
+                persona_id = %persona.id,
+                "daemon cli_session: failed to write audit row"
+            );
+        }
     }
 }
