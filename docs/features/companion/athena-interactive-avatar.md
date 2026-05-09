@@ -1,9 +1,9 @@
 # Athena Interactive Avatar — Layered Architecture
 
-**Status:** Concept / parked for later exploration
-**Author:** Design pass 2026-05-02
+**Status:** Layer A Step 1 shipped; Layers B/C parked for later exploration
+**Author:** Design pass 2026-05-02; status updated 2026-05-09
 **Scope:** Persona avatar surface (Athena baseline), audio/cursor reactivity, UI chrome
-**Decision:** Document the three-layer approach. No code yet.
+**Decision:** Document the three-layer approach. Layer A's crossfade prototype has shipped (`AthenaAvatar.tsx`). Layers B (reactive overlay) and C (Rive UI chrome) remain unshipped.
 
 ## TL;DR
 
@@ -210,7 +210,7 @@ Component sketch (deferred):
 
 In order of cost:
 
-1. **15 min — crossfade prototype.** Two `<video>` elements with state-driven swap, just `idle ↔ thinking`. Confirms the loop quality and crossfade timing of the existing clips.
+1. ✅ **Shipped 2026-05-09 — crossfade prototype.** Two `<video>` elements with state-driven swap, just `idle ↔ thinking`. Lives in `src/features/plugins/companion/AthenaAvatar.tsx`. Loop-boundary swap discipline (manual replay-from-frame-0 instead of `loop`) was added to avoid mid-clip cuts when the user state changed during the dramatic arc of the thinking clip.
 2. **1 hr — audio-reactive chest core.** Single canvas overlay reacting to a stub audio element. Confirms whether the bloom integrates aesthetically with the photoreal base or fights it.
 3. **1 hr — single Rive chrome element.** Listening ring `.riv` driven by a state input. Confirms bundle cost and visual coherence with the avatar.
 4. **2 hr — single image-to-video clip generation.** Generate one new clip (`speaking`) from the baseline, evaluate quality, lock the prompt template.
