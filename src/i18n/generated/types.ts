@@ -12324,6 +12324,19 @@ export type Translations = {
       noTwinSelected: string;
       createFirstTwin: string;
     };
+    wiki: {
+      title: string;
+      subtitle: string;
+      compileCta: string;
+      compiling: string;
+      auditCta: string;
+      auditing: string;
+      auditNeedsCompile: string;
+      compiledLabel: string;
+      auditReportLabel: string;
+      copy: string;
+      copied: string;
+    };
     identity: {
       title: string;
       subtitle: string;

@@ -241,9 +241,9 @@ Per-persona overrides (Direction 3 above) are the next evolution: `design_contex
 | `twin_get_voice_profile` / `twin_upsert_voice_profile` / `twin_delete_voice_profile` | ElevenLabs voice config |
 | `twin_list_channels` / `twin_create_channel` / `twin_update_channel` / `twin_delete_channel` | Channel deployment bindings |
 | `twin_generate_bio` | CLI-backed free-form completion (used for Identity bio generation, training Q generation, follow-ups, session summaries) |
-| `twin_ingest_url` | Scrape a URL and queue extracted facts as pending memories (not yet surfaced in UI) |
-| `twin_compile_wiki` | Compile the full twin as a cross-linked markdown wiki (not yet surfaced in UI) |
-| `twin_audit_wiki` | AI-audit the compiled wiki for gaps / contradictions (not yet surfaced in UI) |
+| `twin_ingest_url` | Scrape a URL and queue extracted facts as pending memories (used in the Create Twin wizard's "Bio from URL" step) |
+| `twin_compile_wiki` | Compile the full twin as a cross-linked markdown wiki (surfaced in the Knowledge tab's collapsible "Twin wiki" panel) |
+| `twin_audit_wiki` | AI-audit the compiled wiki for gaps / contradictions (paired with compile in the Knowledge tab's wiki panel) |
 
 ## Reference: frontend modules
 

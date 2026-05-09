@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { BookOpen, CheckCircle2, XCircle, Clock, MessageSquare, ArrowDownLeft, ArrowUpRight, Inbox, History, Library, Star, Quote } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { TwinEmptyState } from '../TwinEmptyState';
+import { TwinWikiPanel } from '../_shared/TwinWikiPanel';
 import { useTranslation } from '@/i18n/useTranslation';
 
 /* ------------------------------------------------------------------ *
@@ -112,6 +113,9 @@ export default function KnowledgeAtelier() {
           </div>
         </div>
       </div>
+
+      {/* ── Wiki panel (Direction 4 — collapsed by default) ────────── */}
+      <TwinWikiPanel activeTwinId={activeTwinId} />
 
       {/* ── Body ─────────────────────────────────────────────────── */}
       <div className="flex-1 min-h-0 overflow-hidden grid grid-cols-1 lg:grid-cols-2">

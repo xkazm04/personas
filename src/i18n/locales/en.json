@@ -12318,6 +12318,19 @@
       "noTwinSelected": "No twin selected",
       "createFirstTwin": "Create your first twin to get started."
     },
+    "wiki": {
+      "title": "Twin wiki",
+      "subtitle": "Compile a cross-linked snapshot of this twin and audit it for gaps.",
+      "compileCta": "Compile wiki",
+      "compiling": "Compiling…",
+      "auditCta": "Audit wiki",
+      "auditing": "Auditing…",
+      "auditNeedsCompile": "Compile the wiki first.",
+      "compiledLabel": "Compiled wiki",
+      "auditReportLabel": "Audit report",
+      "copy": "Copy",
+      "copied": "Copied to clipboard"
+    },
     "identity": {
       "title": "Identity",
       "subtitle": "Who the twin is. These fields assemble into a prompt fragment injected when a persona adopts this twin.",
