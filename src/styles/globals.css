@@ -1329,6 +1329,42 @@ body[data-drag-active="true"] * {
   }
 }
 
+/* GlyphHeroSigil petal pulse — driven by CSS so the 8 petals don't
+   force a framer-motion reconciliation on every parent re-render
+   during a build (formerly: each parent update at ~30Hz from
+   useMatrixBuild rebuilt 8 inline `animate`/`transition` objects). */
+@keyframes glyph-petal-pulse-pending {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.08); }
+}
+
+@keyframes glyph-petal-pulse-filling {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.025); }
+}
+
+.glyph-petal-pending,
+.glyph-petal-filling {
+  transform-box: fill-box;
+  transform-origin: center;
+  will-change: transform;
+}
+
+.glyph-petal-pending {
+  animation: glyph-petal-pulse-pending 1.2s ease-in-out infinite;
+}
+
+.glyph-petal-filling {
+  animation: glyph-petal-pulse-filling 1.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glyph-petal-pending,
+  .glyph-petal-filling {
+    animation: none;
+  }
+}
+
 @keyframes typing-dot {
 
   0%,
