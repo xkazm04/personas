@@ -2358,6 +2358,15 @@ export type Translations = {
       group_blocked: string;
       group_attention: string;
       group_healthy: string;
+      notification_title: string;
+      notification_body_all_healthy_one: string;
+      notification_body_all_healthy_other: string;
+      notification_body_with_issues: string;
+      notification_issues_one: string;
+      notification_issues_other: string;
+      notification_agents_one: string;
+      notification_agents_other: string;
+      notification_breakdown: string;
     };
     health_issue: {
       apply_fix: string;

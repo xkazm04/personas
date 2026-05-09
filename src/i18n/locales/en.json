@@ -2351,7 +2351,16 @@
       "last_run": "Last run: {time}",
       "group_blocked": "Blocked",
       "group_attention": "Needs attention",
-      "group_healthy": "Healthy"
+      "group_healthy": "Healthy",
+      "notification_title": "{gradeEmoji} Weekly Agent Health Digest",
+      "notification_body_all_healthy_one": "{count} agent is healthy! Score: {score}/100",
+      "notification_body_all_healthy_other": "All {count} agents are healthy! Score: {score}/100",
+      "notification_body_with_issues": "Score: {score}/100 · {issues} across {agents} ({breakdown})",
+      "notification_issues_one": "{count} issue",
+      "notification_issues_other": "{count} issues",
+      "notification_agents_one": "{count} agent",
+      "notification_agents_other": "{count} agents",
+      "notification_breakdown": "{errors} errors, {warnings} warnings"
     },
     "health_issue": {
       "apply_fix": "Apply Fix: {label}",
