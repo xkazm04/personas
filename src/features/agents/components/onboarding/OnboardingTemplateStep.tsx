@@ -7,22 +7,26 @@ import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { iconIdForCategories, toAgentIconValue } from '@/lib/icons/agentIconCatalog';
 import { useTranslation } from '@/i18n/useTranslation';
 
-const CATEGORY_LABELS: Record<string, string> = {
-  all: 'All',
-  devops: 'DevOps',
-  quality: 'Quality',
-  productivity: 'Productivity',
-  communication: 'Communication',
-  security: 'Security',
-  data: 'Data',
-  documentation: 'Docs',
-  testing: 'Testing',
-  monitoring: 'Monitoring',
-  email: 'Email',
-  maintenance: 'Maintenance',
-  automation: 'Automation',
-  project_management: 'PM',
-};
+/**
+ * Category id → labelKey under `t.agents.template_picker.*`. Strings live in
+ * en.json so non-English locales render the localized form; this table only
+ * routes ids to keys.
+ */
+const CATEGORY_LABEL_KEYS = {
+  devops: 'category_devops',
+  quality: 'category_quality',
+  productivity: 'category_productivity',
+  communication: 'category_communication',
+  security: 'category_security',
+  data: 'category_data',
+  documentation: 'category_documentation',
+  testing: 'category_testing',
+  monitoring: 'category_monitoring',
+  email: 'category_email',
+  maintenance: 'category_maintenance',
+  automation: 'category_automation',
+  project_management: 'category_project_management',
+} as const;
 
 function deriveCategories(catalog: TemplateCatalogEntry[]): string[] {
   const counts = new Map<string, number>();
@@ -51,7 +55,12 @@ interface TemplatePickerStepProps {
 }
 
 export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: TemplatePickerStepProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
+  const tp = t.agents.template_picker;
+  const categoryLabel = (cat: string): string => {
+    const key = CATEGORY_LABEL_KEYS[cat as keyof typeof CATEGORY_LABEL_KEYS];
+    return key ? tp[key] : cat;
+  };
   const [activeFilter, setActiveFilter] = useState<string>('all');
   const { templates: catalog, phase, skipped, retry } = useLocalizedTemplateCatalogStatus();
   const [filterCategories, setFilterCategories] = useState<string[]>([]);
@@ -101,7 +110,7 @@ export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: Templa
                 transition={{ type: 'spring', stiffness: 500, damping: 30 }}
               />
             )}
-            <span className="relative z-10">All</span>
+            <span className="relative z-10">{tp.filter_all}</span>
           </button>
           {filterCategories.map((cat) => (
             <button
@@ -119,7 +128,7 @@ export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: Templa
                   transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                 />
               )}
-              <span className="relative z-10">{CATEGORY_LABELS[cat] ?? cat}</span>
+              <span className="relative z-10">{categoryLabel(cat)}</span>
             </button>
           ))}
         </div>
@@ -130,9 +139,9 @@ export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: Templa
           <div className="mb-3 flex items-start gap-2 rounded-card border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-amber-300/90">
             <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
             <div className="min-w-0 typo-body">
-              <p>Some templates could not be verified and were hidden.</p>
+              <p>{tp.partial_load_warning}</p>
               <p className="text-amber-300/70 mt-0.5 truncate">
-                Skipped: {errorSkips.map((s) => s.id ?? s.relPath).join(', ')}
+                {tx(tp.skipped_label, { ids: errorSkips.map((s) => s.id ?? s.relPath).join(', ') })}
               </p>
             </div>
             <button
@@ -140,7 +149,7 @@ export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: Templa
               className="ml-auto flex-shrink-0 inline-flex items-center gap-1 rounded-card border border-amber-500/25 px-2 py-1 text-amber-300 hover:bg-amber-500/10"
             >
               <RefreshCw className="w-3 h-3" />
-              Retry
+              {tp.retry}
             </button>
           </div>
         )}
@@ -148,22 +157,25 @@ export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: Templa
         {/* Discriminated blank states — distinguishes empty catalog from
             loading from every-template-failed so support can triage. */}
         {phase === 'loading' && catalog.length === 0 && (
-          <div className="py-16 text-center text-foreground typo-body">Loading templates…</div>
+          <div className="py-16 text-center text-foreground typo-body">{tp.loading}</div>
         )}
         {phase === 'empty' && (
           <div className="py-16 text-center">
             <FlaskConical className="w-10 h-10 mx-auto text-foreground mb-3" />
-            <p className="typo-body text-foreground">No published templates available.</p>
-            <p className="typo-body text-foreground mt-1">Start from scratch below to create your own.</p>
+            <p className="typo-body text-foreground">{tp.empty_title}</p>
+            <p className="typo-body text-foreground mt-1">{tp.empty_hint}</p>
           </div>
         )}
         {phase === 'failed' && (
           <div className="py-16 text-center">
             <AlertTriangle className="w-10 h-10 mx-auto text-amber-400 mb-3" />
-            <p className="typo-body text-foreground">Could not load the template catalog.</p>
+            <p className="typo-body text-foreground">{tp.failed_title}</p>
             {errorSkips.length > 0 && (
               <p className="typo-body text-foreground/70 mt-1">
-                {errorSkips.length} template{errorSkips.length === 1 ? '' : 's'} failed integrity checks.
+                {tx(
+                  errorSkips.length === 1 ? tp.template_failed_integrity_one : tp.template_failed_integrity_other,
+                  { count: errorSkips.length },
+                )}
               </p>
             )}
             <button
@@ -171,7 +183,7 @@ export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: Templa
               className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 typo-heading rounded-card bg-primary/15 text-foreground border border-primary/25 hover:bg-primary/25"
             >
               <RefreshCw className="w-3.5 h-3.5" />
-              Retry
+              {tp.retry}
             </button>
           </div>
         )}
