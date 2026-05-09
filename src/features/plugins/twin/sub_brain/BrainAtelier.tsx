@@ -38,7 +38,7 @@ export default function BrainAtelier() {
             <span className="w-px h-6 bg-primary/15" />
             <Stat label={t.brain.chunks} value={kbInfo?.chunk_count ?? '—'} />
             <span className="w-px h-6 bg-primary/15" />
-            <Stat label="status" value={kbInfo?.status ?? 'unbound'} accent={kbReady ? 'emerald' : 'amber'} />
+            <Stat label={t.brain.statusLabel} value={kbInfo?.status ?? 'unbound'} accent={kbReady ? 'emerald' : 'amber'} />
           </>
         }
       />
@@ -66,8 +66,8 @@ export default function BrainAtelier() {
               </p>
               <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-interactive border border-primary/10 bg-card/60 font-mono text-xs">
                 <FolderTree className="w-3.5 h-3.5 text-violet-300 flex-shrink-0" />
-                <span className="text-foreground truncate">{activeTwin?.obsidian_subpath || <span className="italic text-foreground/40">no subpath set</span>}</span>
-                <span className="ml-auto text-[10px] text-foreground/55 uppercase tracking-wider">{t.brain.obsidianTwinReadsFrom.replace(/[:.]/g, '').trim()}</span>
+                <span className="text-foreground truncate">{activeTwin?.obsidian_subpath || <span className="italic text-foreground/40">{t.brain.noSubpathSet}</span>}</span>
+                <span className="ml-auto text-[10px] text-foreground/55 uppercase tracking-wider">{t.brain.obsidianTagShort}</span>
               </div>
               <p className="typo-caption text-foreground/65 mt-3">{t.brain.obsidianHint}</p>
             </Layer>
@@ -95,10 +95,10 @@ export default function BrainAtelier() {
               ) : kbInfo ? (
                 <>
                   <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    <KpiPanel label="documents" value={kbInfo.document_count} icon={BookOpen} />
-                    <KpiPanel label="chunks" value={kbInfo.chunk_count} icon={Cpu} />
-                    <KpiPanel label="status" value={kbInfo.status} icon={Sparkles} accent={kbReady ? 'emerald' : 'amber'} />
-                    <KpiPanel label="bound to" value={kbInfo.name} icon={Link} mono />
+                    <KpiPanel label={t.brain.documents} value={kbInfo.document_count} icon={BookOpen} />
+                    <KpiPanel label={t.brain.chunks} value={kbInfo.chunk_count} icon={Cpu} />
+                    <KpiPanel label={t.brain.statusLabel} value={kbInfo.status} icon={Sparkles} accent={kbReady ? 'emerald' : 'amber'} />
+                    <KpiPanel label={t.brain.boundToLabel} value={kbInfo.name} icon={Link} mono />
                   </div>
                   <div className="flex items-center gap-2 mt-4 pt-4 border-t border-primary/5">
                     <Button onClick={refreshKb} variant="ghost" size="sm"><RefreshCw className="w-3.5 h-3.5 mr-1.5" />{t.brain.refresh}</Button>

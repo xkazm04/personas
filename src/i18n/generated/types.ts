@@ -12436,6 +12436,10 @@ export type Translations = {
       loadingKb: string;
       documents: string;
       chunks: string;
+      statusLabel: string;
+      boundToLabel: string;
+      noSubpathSet: string;
+      obsidianTagShort: string;
       refresh: string;
       unbind: string;
       creatingKb: string;
