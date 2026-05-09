@@ -120,11 +120,13 @@ export function CircuitBreakerIndicator() {
 
   // Real-time global breaker trip — auto-expand + amber ring-pulse
   useEffect(() => {
-    const unlisten = listen<CircuitBreakerStatus>(EventName.CIRCUIT_BREAKER_GLOBAL_TRIPPED, (event) => {
+    let cancelled = false;
+    let unlistenFn: (() => void) | null = null;
+    listen<CircuitBreakerStatus>(EventName.CIRCUIT_BREAKER_GLOBAL_TRIPPED, (event) => {
       setStatus(event.payload);
       triggerTripAttention();
-    });
-    return () => { unlisten.then((fn) => fn()); };
+    }).then((fn) => { if (cancelled) fn(); else unlistenFn = fn; });
+    return () => { cancelled = true; unlistenFn?.(); };
   }, [triggerTripAttention]);
 
   // Also fire the attention pulse when polled status flips into globalPaused
@@ -137,10 +139,12 @@ export function CircuitBreakerIndicator() {
 
   // Listen for individual circuit breaker transitions — refresh status on any change
   useEffect(() => {
-    const unlisten = listen<CircuitTransitionEvent>(EventName.CIRCUIT_BREAKER_TRANSITION, () => {
+    let cancelled = false;
+    let unlistenFn: (() => void) | null = null;
+    listen<CircuitTransitionEvent>(EventName.CIRCUIT_BREAKER_TRANSITION, () => {
       fetchStatus();
-    });
-    return () => { unlisten.then((fn) => fn()); };
+    }).then((fn) => { if (cancelled) fn(); else unlistenFn = fn; });
+    return () => { cancelled = true; unlistenFn?.(); };
   }, [fetchStatus]);
 
   // Skeleton reserves the slot during initial load — no layout jump.
