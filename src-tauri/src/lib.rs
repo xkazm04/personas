@@ -546,6 +546,21 @@ pub fn run() {
             }
             st.checkpoint("director_seed");
 
+            // Stage B Phase 2.4 — seed the recipe catalog from the embedded
+            // bundle so adoption of recipe_ref-shaped templates works on a
+            // fresh install. Idempotent: existing rows are left untouched.
+            match engine::recipe_seed::seed_recipes_from_bundle(&pool) {
+                Ok(report) => tracing::info!(
+                    total = report.total,
+                    created = report.created,
+                    skipped = report.skipped_existing,
+                    failed = report.failed,
+                    "Recipe catalog seeded from bundle"
+                ),
+                Err(e) => tracing::warn!("Recipe catalog seed failed: {}", e),
+            }
+            st.checkpoint("recipe_seed");
+
             // Initialize P2P identity (Invisible Apps Phase 1)
             #[cfg(feature = "p2p")]
             match engine::identity::get_or_create_identity(&pool) {

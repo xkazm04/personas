@@ -1,6 +1,6 @@
 # Stage B — Recipe migration: from inline-template-UCs to recipe references
 
-**Status:** All Stage B phases (1a / 1b / 2.1 / 1b–2.2 amendment / round-trip parity / 2.2 conversion / 2.3 retirement) SHIPPED on `master`. Remaining work: Phase 2.4 (auto-derive recipes on app start so adoption succeeds without an external migration script — gated on the next session).
+**Status:** All Stage B phases (1a / 1b / 2.1 / 1b–2.2 amendment / round-trip parity / 2.2 conversion / 2.3 retirement / 2.4 boot-time seed) SHIPPED on `master`. The recipe catalog now seeds itself from an embedded bundle on first boot — adoption works on a fresh install with no external migration step.
 
 **Date:** 2026-05-09 (initial design); updated 2026-05-09 with implementation summary.
 
@@ -22,7 +22,8 @@
 | **2.1** `hydrate_recipe_refs` parser pre-pass | ✅ **shipped** | `e987008d2` |
 | **2 round-trip parity tests** (load-bearing safety contract) | ✅ **shipped** | `e0b2e3feb` |
 | **2.2 actual conversion** (run `--apply` on 125 template JSON files) | ✅ **shipped** | `34f483f1f` |
-| **2.3 retirement** of inline-UC parsing path in `template_v3.rs` | ✅ **shipped** | (next commit) |
+| **2.3 retirement** of inline-UC parsing path in `template_v3.rs` | ✅ **shipped** | `d7513d7fb` |
+| **2.4 boot-time seed bundle** (`scripts/templates/_recipe_seeds.json` + `engine::recipe_seed`) | ✅ **shipped** | (this commit) |
 
 **Cross-language canary value (Rust + Python parity proved):**
 ```
