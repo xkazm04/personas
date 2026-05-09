@@ -37,4 +37,5 @@
 //! - `render` — prompt-block renderer (step 3)
 
 pub mod discovery;
+pub mod render;
 pub mod transcript;
