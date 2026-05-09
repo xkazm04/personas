@@ -39,8 +39,14 @@ export const listProfiles = () =>
 export const getProfile = (id: string) =>
   invoke<TwinProfile>("twin_get_profile", { id });
 
-export const getActiveProfile = () =>
-  invoke<TwinProfile | null>("twin_get_active_profile");
+/**
+ * Resolve the active twin. With `personaId`, returns the persona's
+ * pinned twin (from `design_context.twin_id`) if set and still exists;
+ * otherwise falls back to the globally-active twin. Without
+ * `personaId`, returns the globally-active twin.
+ */
+export const getActiveProfile = (personaId?: string) =>
+  invoke<TwinProfile | null>("twin_get_active_profile", { personaId });
 
 export const createProfile = (
   name: string,

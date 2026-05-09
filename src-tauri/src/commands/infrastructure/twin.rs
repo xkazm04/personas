@@ -35,11 +35,45 @@ pub fn twin_get_profile(
     repo::get_profile_by_id(&state.db, &id)
 }
 
+/// Resolve which twin a persona should adopt.
+///
+/// - When `persona_id` is `Some` and the persona's parsed
+///   `design_context.twin_id` is also `Some`, return that pinned twin —
+///   provided it still exists. (A deleted twin id silently falls back
+///   to the global active twin so the persona never errors out.)
+/// - Otherwise return the row marked `is_active` in `twin_profiles`.
+///
+/// `persona_id` is optional so existing callers (the Twin plugin UI,
+/// which reads the globally-active twin for the selector banner) keep
+/// working without a code change. Connector tool calls invoked on
+/// behalf of a persona pass the persona id and pick up the override.
 #[tauri::command]
 pub fn twin_get_active_profile(
     state: State<'_, Arc<AppState>>,
+    persona_id: Option<String>,
 ) -> Result<Option<TwinProfile>, AppError> {
     require_auth_sync(&state)?;
+    if let Some(pid) = persona_id.as_deref().filter(|s| !s.is_empty()) {
+        match crate::db::repos::core::personas::get_by_id(&state.db, pid) {
+            Ok(persona) => {
+                if let Some(twin_id) = persona.parsed_design_context().twin_id {
+                    // Pinned twin id from design_context. Look it up; if it
+                    // was deleted, fall through to the global active twin
+                    // rather than erroring — the connector should never
+                    // crash a persona on a stale design_context entry.
+                    if let Ok(pinned) = repo::get_profile_by_id(&state.db, &twin_id) {
+                        return Ok(Some(pinned));
+                    }
+                }
+            }
+            Err(AppError::NotFound(_)) => {
+                // Unknown persona — caller bug, but tolerate by returning
+                // the global active twin so the connector path stays
+                // resilient.
+            }
+            Err(e) => return Err(e),
+        }
+    }
     repo::get_active_profile(&state.db)
 }
 

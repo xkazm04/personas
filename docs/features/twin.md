@@ -166,13 +166,9 @@ KnowledgePage already has a full conversation log; Channels needs to become the 
 
 ### 3. Wire per-persona twin resolution in the connector runtime
 
-The **Twin × Persona binding** UI and the `design_context.twinId` field are already live, but `twin_get_active_profile` in `src-tauri/src/commands/infrastructure/twin.rs` still always returns the globally-active twin. Close the loop:
+**Wired in commit 871a82c87→…** `twin_get_active_profile(persona_id)` now accepts an optional `persona_id`. When set, it parses the persona's `design_context.twin_id`; if present and the twin exists, it returns the pinned twin. Else it falls back to the globally-active twin. A deleted twin id silently falls back rather than erroring, so a stale `design_context` entry never crashes a persona.
 
-- Accept an optional `persona_id` argument in the twin-resolution helpers (or add `twin_resolve_for_persona`).
-- If the persona's parsed `design_context.twin_id` is `Some(id)` and that twin exists, return it; else fall back to the active twin.
-- Thread `persona_id` through the connector tool invocation path so every `get_tone` / `recall_memory` / `synthesize_speech` call on behalf of that persona uses the pinned twin.
-
-This is a small, surgical Rust change and it's the difference between "a UI field that stores a preference" and "a feature that actually runs."
+Remaining work for the next pass: thread `persona_id` through the connector tool invocation path so every `get_tone` / `recall_memory` / `synthesize_speech` call on behalf of that persona automatically picks up the override. The frontend `getActiveProfile(personaId?)` wrapper is in place; engine-side wiring of the persona id into the connector context is the follow-up.
 
 ### 4. Surface the hidden Twin wiki flows
 
