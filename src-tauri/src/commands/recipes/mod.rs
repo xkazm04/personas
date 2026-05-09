@@ -114,6 +114,7 @@
 //! `execution_id` is no longer authoritative.
 
 pub mod crud;
+pub mod recipe_adoption;
 pub mod recipe_derivation;
 pub mod recipe_eligibility;
 pub mod recipe_execution;

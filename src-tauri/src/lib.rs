@@ -1624,6 +1624,9 @@ pub fn run() {
             // Recipes -- Stage E.1 eligibility scoring (recipe vs persona)
             commands::recipes::recipe_eligibility::get_recipe_eligibility,
             commands::recipes::recipe_eligibility::get_recipe_catalog_for_persona,
+            // Recipes -- Stage E.2 adoption pipeline (eligibility precheck + link)
+            commands::recipes::recipe_adoption::adopt_recipe_for_persona,
+            commands::recipes::recipe_adoption::unadopt_recipe_from_persona,
             // Communication -- Events
             commands::communication::events::list_events,
             commands::communication::events::list_events_in_range,
