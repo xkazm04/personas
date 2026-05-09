@@ -1,9 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { MOCK_RECIPES } from './mockRecipes';
+import { useShallow } from 'zustand/react/shallow';
+import { usePipelineStore } from '@/stores/pipelineStore';
+import { silentCatch } from '@/lib/silentCatch';
 import { RecipesBrowseList } from './components/RecipesBrowseList';
 import { RecipeDetailPanel } from './components/RecipeDetailPanel';
 import { RecipeAdoptionModal } from './components/RecipeAdoptionModal';
+import { recipeDefinitionsToRecipes } from './libs/recipeAdapter';
 
 /**
  * Recipes catalog top-level page — mounted from `DesignReviewsPage` when
@@ -13,15 +16,32 @@ import { RecipeAdoptionModal } from './components/RecipeAdoptionModal';
  *   - `selectedRecipeId` — null = browse list, otherwise = detail view
  *   - `adoptingRecipeId` — non-null = adoption modal open over the detail
  *
- * Recipe data source is the hand-authored `MOCK_RECIPES` array. When the
- * Rust schema lands, swap that source for a Tauri-backed query without
- * touching this file.
+ * Stage E.3 — wired to live recipes. Pulls from `usePipelineStore` (the
+ * canonical Zustand catalog populated by `list_recipes`, seeded by Stage
+ * B Phase 2.4 on app boot) and adapts each `RecipeDefinition` into the
+ * rich frontend `Recipe` shape via `recipeDefinitionsToRecipes`.
+ * Adoption stays on the existing client-side `useAdoption` hook — that
+ * already writes a fully-substituted `DesignUseCase` into the persona's
+ * `design_context`, which is the canonical adoption surface.
  */
 export function RecipesPage() {
   const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
   const [adoptingRecipeId, setAdoptingRecipeId] = useState<string | null>(null);
 
-  const recipes = MOCK_RECIPES;
+  const { definitions, fetchRecipes } = usePipelineStore(
+    useShallow((s) => ({ definitions: s.recipes, fetchRecipes: s.fetchRecipes })),
+  );
+
+  // Refresh on mount. The boot-time recipe seed (Phase 2.4) populates the
+  // DB before the frontend renders, so this is usually a one-shot fetch
+  // that lands the rows into the store.
+  useEffect(() => {
+    fetchRecipes().catch(silentCatch('RecipesPage.fetchRecipes'));
+  }, [fetchRecipes]);
+
+  // Memoise the adapter pass — the catalog has ~291 entries, and the
+  // adapter parses each prompt_template once per call.
+  const recipes = useMemo(() => recipeDefinitionsToRecipes(definitions), [definitions]);
   const selectedRecipe = selectedRecipeId
     ? recipes.find((r) => r.id === selectedRecipeId) ?? null
     : null;
