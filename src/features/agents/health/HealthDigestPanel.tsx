@@ -106,6 +106,29 @@ export function HealthDigestPanel() {
   const setEditorTab = useSystemStore((s) => s.setEditorTab);
   const isStale = useMemo(() => isTimestampStale(lastDigestAt), [lastDigestAt]);
 
+  // Sort + group personas once per digest (or locale change). Previously this
+  // ran on every render — including unrelated store updates like the running
+  // flag flipping or lastDigestAt ticking — which gets expensive once a user
+  // has 50+ personas.
+  const groups = useMemo<
+    Array<{ key: 'blocked' | 'attention' | 'healthy'; label: string; rows: PersonaHealthCheck[] }>
+  >(() => {
+    if (!digest) return [];
+    const sorted = [...digest.personas].sort((a, b) => {
+      const aIssues = a.result.issues.length;
+      const bIssues = b.result.issues.length;
+      if (a.result.status === 'blocked' && b.result.status !== 'blocked') return -1;
+      if (b.result.status === 'blocked' && a.result.status !== 'blocked') return 1;
+      return bIssues - aIssues;
+    });
+    const allGroups = [
+      { key: 'blocked' as const, label: t.agents.health_digest.group_blocked, rows: sorted.filter((c) => c.result.status === 'blocked') },
+      { key: 'attention' as const, label: t.agents.health_digest.group_attention, rows: sorted.filter((c) => c.result.status === 'partial') },
+      { key: 'healthy' as const, label: t.agents.health_digest.group_healthy, rows: sorted.filter((c) => c.result.status === 'ready') },
+    ];
+    return allGroups.filter((g) => g.rows.length > 0);
+  }, [digest, t]);
+
   const handleNavigate = (personaId: string) => {
     selectPersona(personaId);
     // Land on the design tab — the editor's HealthBadge sits in its tab bar
@@ -152,25 +175,6 @@ export function HealthDigestPanel() {
 
   // Show results
   const { totalScore, totalIssues, errorCount, warningCount, infoCount, personas } = digest;
-
-  // Sort: unhealthy first, then by issue count desc
-  const sorted = [...personas].sort((a, b) => {
-    const aIssues = a.result.issues.length;
-    const bIssues = b.result.issues.length;
-    if (a.result.status === 'blocked' && b.result.status !== 'blocked') return -1;
-    if (b.result.status === 'blocked' && a.result.status !== 'blocked') return 1;
-    return bIssues - aIssues;
-  });
-
-  const blockedRows = sorted.filter((c) => c.result.status === 'blocked');
-  const attentionRows = sorted.filter((c) => c.result.status === 'partial');
-  const healthyRows = sorted.filter((c) => c.result.status === 'ready');
-  const allGroups: Array<{ key: 'blocked' | 'attention' | 'healthy'; label: string; rows: PersonaHealthCheck[] }> = [
-    { key: 'blocked', label: t.agents.health_digest.group_blocked, rows: blockedRows },
-    { key: 'attention', label: t.agents.health_digest.group_attention, rows: attentionRows },
-    { key: 'healthy', label: t.agents.health_digest.group_healthy, rows: healthyRows },
-  ];
-  const groups = allGroups.filter((g) => g.rows.length > 0);
 
   return (
     <div className="rounded-modal border border-primary/20 bg-secondary/40 overflow-hidden">
