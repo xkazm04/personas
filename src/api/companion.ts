@@ -98,14 +98,32 @@ export async function companionSendMessage(
  */
 export interface TtsAudio {
   audioBase64: string;
+  /** `audio/mpeg` for ElevenLabs (MP3), `audio/wav` for Piper. */
   mimeType: string;
   byteSize: number;
 }
 
 /**
+ * Identifier for which engine should fulfill a TTS request. Matches the
+ * snake_case wire format the Rust `TtsEngineId` enum serializes to.
+ *
+ * - `'elevenlabs'`: cloud TTS via the ElevenLabs API. Requires a vault
+ *   credential and a voice id from the user's ElevenLabs account.
+ * - `'piper'`: local TTS via ONNX inference (no network, no credential
+ *   needed). Requires a Piper voice model previously downloaded through
+ *   the companion voice manager.
+ */
+export type TtsEngineId = 'elevenlabs' | 'piper';
+
+/**
  * Per-call voice tuning. All fields optional; `undefined` falls back to
- * the backend defaults (turbo_v2_5, stability 0.5, similarity 0.75, no
- * speed/style override).
+ * the per-engine defaults. Some fields only apply to certain engines —
+ * unrelated engines silently ignore them, so it's safe to send the full
+ * union.
+ *
+ * ElevenLabs-only: modelId, stability, similarityBoost, style.
+ * Piper-only: lengthScale, noiseScale.
+ * Shared: speed.
  */
 export interface TtsSettings {
   modelId?: string;
@@ -113,18 +131,29 @@ export interface TtsSettings {
   similarityBoost?: number;
   speed?: number;
   style?: number;
+  lengthScale?: number;
+  noiseScale?: number;
 }
 
+/**
+ * Synthesize speech for the given text.
+ *
+ * `engine` defaults to `'elevenlabs'` so existing callers that only knew
+ * the cloud path keep working. `credentialId` is required for ElevenLabs
+ * and ignored for Piper (pass `null` for local engines).
+ */
 export async function companionTts(
   text: string,
-  credentialId: string,
+  credentialId: string | null,
   voiceId: string,
   settings?: TtsSettings,
+  engine: TtsEngineId = 'elevenlabs',
 ): Promise<TtsAudio> {
   return invoke<TtsAudio>('companion_tts', {
     text,
-    credentialId,
     voiceId,
+    engine,
+    credentialId,
     settings: settings ?? null,
   });
 }

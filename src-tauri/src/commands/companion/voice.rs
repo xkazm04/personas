@@ -1,210 +1,62 @@
-//! ElevenLabs TTS proxy for Athena's spoken replies.
+//! TTS dispatch IPC for Athena's spoken replies.
 //!
-//! Frontend hands us the credential id + voice id + text; we read the
-//! decrypted API key from the vault, call ElevenLabs, and return the
-//! audio bytes as base64 so it crosses the Tauri IPC boundary cleanly.
-//! Frontend wraps the bytes in a Blob and plays via `<audio>`.
+//! Thin layer over `companion::tts` engines. The frontend sends the text +
+//! engine selector + per-engine identity (credential id for ElevenLabs,
+//! voice id for both); we validate, route to the correct engine, and
+//! return base64 audio + mime metadata.
 //!
-//! Deliberate choices:
-//! - Backend proxy (not direct from JS) so the API key stays in the
-//!   encrypted vault and never reaches the renderer process.
-//! - Base64 over IPC. Tauri's invoke serializer handles strings well
-//!   but binary is brittle; the ~33% inflation is fine for ~50KB clips.
-//! - Defaults are `eleven_turbo_v2_5` + stability 0.5 / similarity 0.75
-//!   — cheap, low-latency, and good enough for short replies. The
-//!   frontend can override any of these per-call via `TtsSettings`.
+//! Backwards compat: `engine` is optional and defaults to ElevenLabs so
+//! pre-Piper callers keep working without code changes. Once the frontend
+//! migrates to always passing `engine`, the default is still safe — it
+//! just becomes a redundant assertion of intent.
 
 use std::sync::Arc;
-use std::time::Duration;
 
-use base64::Engine;
-use serde::{Deserialize, Serialize};
 use tauri::State;
 
-use crate::db::repos::resources::credentials;
+// Re-export the engine-agnostic types so the existing
+// `commands::companion::voice::TtsAudio` import path stays valid for any
+// callers that referenced these via the command module.
+pub use crate::companion::tts::{TtsAudio, TtsEngineId, TtsSettings};
+
+use crate::companion::tts::{
+    self, validate_text, validate_voice_id, TtsSynthesisRequest,
+};
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
 use crate::AppState;
-
-const TTS_ENDPOINT_PREFIX: &str = "https://api.elevenlabs.io/v1/text-to-speech/";
-const TTS_DEFAULT_MODEL: &str = "eleven_turbo_v2_5";
-const TTS_DEFAULT_STABILITY: f32 = 0.5;
-const TTS_DEFAULT_SIMILARITY: f32 = 0.75;
-const TTS_TIMEOUT: Duration = Duration::from_secs(30);
-/// Hard ceiling on the TTS payload — Athena should send 1-3 sentences.
-/// Anything longer is a prompt-following bug, not a real spoken summary.
-const TTS_MAX_CHARS: usize = 1200;
-
-/// Allowlist of ElevenLabs models the Voice tab is allowed to send. Keeping
-/// this server-side prevents a typo'd model id from surfacing as a confusing
-/// 422 from the upstream API; if we add a model the user wants, we add it
-/// here. Order is roughly latency-ascending (turbo < flash < multilingual).
-const TTS_ALLOWED_MODELS: &[&str] = &[
-    "eleven_turbo_v2_5",
-    "eleven_flash_v2_5",
-    "eleven_multilingual_v2",
-    "eleven_v3",
-];
-
-/// Optional per-call voice tuning. Any field left `None` falls back to the
-/// constants above so existing callers (and the auto-init defaults) stay
-/// behaviorally identical.
-#[derive(Debug, Clone, Default, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct TtsSettings {
-    pub model_id: Option<String>,
-    pub stability: Option<f32>,
-    pub similarity_boost: Option<f32>,
-    /// Speech rate. ElevenLabs accepts 0.7..=1.2; values outside the band
-    /// degrade audio quality, so we clamp on the way through.
-    pub speed: Option<f32>,
-    /// Style exaggeration (0..=1). Only meaningful on multilingual_v2 / v3;
-    /// turbo + flash ignore the field.
-    pub style: Option<f32>,
-}
-
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct TtsAudio {
-    /// Base64-encoded audio (`audio/mpeg`).
-    pub audio_base64: String,
-    pub mime_type: String,
-    pub byte_size: usize,
-}
 
 #[tauri::command]
 pub async fn companion_tts(
     state: State<'_, Arc<AppState>>,
     text: String,
-    credential_id: String,
     voice_id: String,
+    engine: Option<TtsEngineId>,
+    credential_id: Option<String>,
     settings: Option<TtsSettings>,
 ) -> Result<TtsAudio, AppError> {
     require_auth(&state).await?;
 
-    let trimmed = text.trim();
-    if trimmed.is_empty() {
-        return Err(AppError::Validation("companion_tts: empty text".into()));
-    }
-    if trimmed.len() > TTS_MAX_CHARS {
-        return Err(AppError::Validation(format!(
-            "companion_tts: text too long ({} chars, max {})",
-            trimmed.len(),
-            TTS_MAX_CHARS
-        )));
-    }
-    let voice_id = voice_id.trim();
-    if voice_id.is_empty() {
-        return Err(AppError::Validation("companion_tts: empty voice_id".into()));
-    }
-    // ElevenLabs voice ids are short alphanumeric strings; reject anything
-    // with shell-or-URL meta-chars to keep the URL we build innocent.
-    if !voice_id
-        .chars()
-        .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
-    {
-        return Err(AppError::Validation(
-            "companion_tts: voice_id has unexpected characters".into(),
-        ));
-    }
+    let trimmed = validate_text(&text)?;
+    let voice_id = validate_voice_id(&voice_id)?;
+    let settings = settings.unwrap_or_default();
+    let engine = engine.unwrap_or_default();
 
-    let cred = credentials::get_by_id(&state.db, &credential_id)?;
-    if cred.service_type.to_lowercase() != "elevenlabs" {
-        return Err(AppError::Validation(format!(
-            "credential `{}` is not an ElevenLabs credential (service_type='{}')",
-            cred.name, cred.service_type
-        )));
-    }
-    let fields = credentials::get_decrypted_fields(&state.db, &cred)?;
-    let api_key = fields
-        .get("api_key")
-        .or_else(|| fields.get("apiKey"))
-        .ok_or_else(|| {
-            AppError::Validation("ElevenLabs credential is missing an `api_key` field".into())
-        })?
-        .clone();
-
-    let client = reqwest::Client::builder()
-        .timeout(TTS_TIMEOUT)
-        .build()
-        .map_err(|e| AppError::Internal(format!("tts http client: {e}")))?;
-
-    let s = settings.unwrap_or_default();
-    let model_id = match s.model_id.as_deref() {
-        Some(m) if !m.is_empty() => {
-            if !TTS_ALLOWED_MODELS.contains(&m) {
-                return Err(AppError::Validation(format!(
-                    "companion_tts: unsupported model_id `{}` (allowed: {})",
-                    m,
-                    TTS_ALLOWED_MODELS.join(", ")
-                )));
-            }
-            m
-        }
-        _ => TTS_DEFAULT_MODEL,
+    let request = TtsSynthesisRequest {
+        text: trimmed,
+        voice_id,
+        settings: &settings,
     };
-    let stability = s
-        .stability
-        .map(|v| v.clamp(0.0, 1.0))
-        .unwrap_or(TTS_DEFAULT_STABILITY);
-    let similarity = s
-        .similarity_boost
-        .map(|v| v.clamp(0.0, 1.0))
-        .unwrap_or(TTS_DEFAULT_SIMILARITY);
 
-    let mut voice_settings = serde_json::json!({
-        "stability": stability,
-        "similarity_boost": similarity,
-    });
-    // Speed and style are only sent when the user opted in — sending defaults
-    // would burn the same band of bytes ElevenLabs would compute server-side.
-    if let Some(speed) = s.speed {
-        voice_settings["speed"] = serde_json::json!(speed.clamp(0.7, 1.2));
+    match engine {
+        TtsEngineId::Elevenlabs => {
+            let cred_id = credential_id.ok_or_else(|| {
+                AppError::Validation(
+                    "companion_tts: ElevenLabs engine requires a credential_id".into(),
+                )
+            })?;
+            tts::elevenlabs::synthesize(&state, &cred_id, &request).await
+        }
+        TtsEngineId::Piper => tts::piper::synthesize(&state, &request).await,
     }
-    if let Some(style) = s.style {
-        voice_settings["style"] = serde_json::json!(style.clamp(0.0, 1.0));
-    }
-
-    let url = format!("{TTS_ENDPOINT_PREFIX}{voice_id}");
-    let body = serde_json::json!({
-        "text": trimmed,
-        "model_id": model_id,
-        "voice_settings": voice_settings,
-    });
-
-    let resp = client
-        .post(&url)
-        .header("xi-api-key", api_key)
-        .header("accept", "audio/mpeg")
-        .header("content-type", "application/json")
-        .json(&body)
-        .send()
-        .await
-        .map_err(|e| AppError::Internal(format!("tts request: {e}")))?;
-
-    if !resp.status().is_success() {
-        let status = resp.status();
-        let body_text = resp.text().await.unwrap_or_default();
-        let snippet = if body_text.len() > 400 {
-            format!("{}…", &body_text[..400])
-        } else {
-            body_text
-        };
-        return Err(AppError::Internal(format!(
-            "ElevenLabs returned {status}: {snippet}"
-        )));
-    }
-
-    let bytes = resp
-        .bytes()
-        .await
-        .map_err(|e| AppError::Internal(format!("tts read body: {e}")))?;
-    let byte_size = bytes.len();
-    let audio_base64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
-
-    Ok(TtsAudio {
-        audio_base64,
-        mime_type: "audio/mpeg".into(),
-        byte_size,
-    })
 }

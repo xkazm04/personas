@@ -20,3 +20,4 @@ pub mod projects;
 pub mod prompt;
 pub mod session;
 pub mod templates;
+pub mod tts;
