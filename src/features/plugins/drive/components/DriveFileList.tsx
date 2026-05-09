@@ -470,11 +470,7 @@ function ColumnEntries({
           </button>
         );
       })}
-      {entries.length === 0 && (
-        <div className="px-3 py-6 typo-body text-foreground italic text-center">
-          Empty
-        </div>
-      )}
+      {entries.length === 0 && <ColumnEmptyLabel />}
     </>
   );
 }
@@ -517,11 +513,7 @@ function AsyncColumnEntries(props: {
     };
   }, [props.path, props.cachedEntriesFor]);
   if (!loaded) {
-    return (
-      <div className="px-3 py-6 typo-body text-foreground italic text-center">
-        Loading...
-      </div>
-    );
+    return <ColumnLoadingLabel />;
   }
   return (
     <ColumnEntries
@@ -537,6 +529,24 @@ function AsyncColumnEntries(props: {
 // ============================================================================
 // Empty + loading states
 // ============================================================================
+
+function ColumnEmptyLabel() {
+  const { t } = useTranslation();
+  return (
+    <div className="px-3 py-6 typo-body text-foreground italic text-center">
+      {t.plugins.drive.empty_column}
+    </div>
+  );
+}
+
+function ColumnLoadingLabel() {
+  const { t } = useTranslation();
+  return (
+    <div className="px-3 py-6 typo-body text-foreground italic text-center">
+      {t.plugins.drive.loading_column}
+    </div>
+  );
+}
 
 function LoadingState() {
   const { t } = useTranslation();

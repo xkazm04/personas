@@ -110,7 +110,7 @@ export function DriveToolbar({
             type="button"
             onClick={() => drive.setSearchQuery("")}
             className="absolute right-1.5 p-0.5 rounded text-foreground hover:text-foreground hover:bg-primary/10"
-            aria-label="clear"
+            aria-label={t.plugins.drive.search_clear_aria}
           >
             <X className="w-3 h-3" />
           </button>

@@ -9622,6 +9622,12 @@ export type Translations = {
       download_aria: string;
       download_title: string;
       sign_reason_placeholder: string;
+      empty_column: string;
+      loading_column: string;
+      sidebar_managed_local: string;
+      sidebar_folders_label: string;
+      sidebar_root_fallback: string;
+      search_clear_aria: string;
     };
     artist: {
       title: string;

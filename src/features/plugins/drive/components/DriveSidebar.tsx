@@ -35,7 +35,7 @@ export function DriveSidebar({ drive }: Props) {
             <div className="typo-caption text-foreground">
               {drive.storage?.isDev
                 ? t.plugins.drive.dev_badge
-                : "Managed local"}
+                : t.plugins.drive.sidebar_managed_local}
             </div>
           </div>
           {drive.storage?.isDev && (
@@ -49,7 +49,7 @@ export function DriveSidebar({ drive }: Props) {
       {/* Folder tree */}
       <div className="flex-1 overflow-y-auto py-2 px-1">
         <div className="px-2 mb-1.5 typo-label text-foreground">
-          Folders
+          {t.plugins.drive.sidebar_folders_label}
         </div>
         {drive.tree ? (
           <TreeNode node={drive.tree} drive={drive} depth={0} initiallyOpen />
@@ -135,6 +135,7 @@ interface TreeNodeProps {
 }
 
 function TreeNode({ node, drive, depth, initiallyOpen = false }: TreeNodeProps) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(initiallyOpen);
   const isActive = drive.currentPath === node.path;
   const hasChildren = node.children.length > 0 || node.hasMoreChildren;
@@ -194,7 +195,7 @@ function TreeNode({ node, drive, depth, initiallyOpen = false }: TreeNodeProps) 
             }`}
           />
         )}
-        <span className="truncate">{node.name || "Drive"}</span>
+        <span className="truncate">{node.name || t.plugins.drive.sidebar_root_fallback}</span>
       </button>
       {expanded &&
         node.children.map((child) => (

@@ -9615,7 +9615,13 @@
       "select_file_or_folder": "Select a file or folder to see its details.",
       "download_aria": "Download",
       "download_title": "Download",
-      "sign_reason_placeholder": "Reason for signing…"
+      "sign_reason_placeholder": "Reason for signing…",
+      "empty_column": "Empty",
+      "loading_column": "Loading...",
+      "sidebar_managed_local": "Managed local",
+      "sidebar_folders_label": "Folders",
+      "sidebar_root_fallback": "Drive",
+      "search_clear_aria": "Clear search"
     },
     "artist": {
       "title": "Artist",
