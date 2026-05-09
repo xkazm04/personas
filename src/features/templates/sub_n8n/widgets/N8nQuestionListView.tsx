@@ -7,13 +7,14 @@ import {
 } from 'lucide-react';
 import { N8nQuestionListbox } from './N8nQuestionListbox';
 import type { TransformQuestion } from '../hooks/useN8nImportReducer';
+import { useTranslation } from '@/i18n/useTranslation';
 
-const DIMENSION_LABELS: Record<string, { label: string; Icon: React.ComponentType<{ className?: string }> }> = {
-  credentials: { label: 'Credentials', Icon: KeyRound },
-  configuration: { label: 'Configuration', Icon: Settings2 },
-  human_in_the_loop: { label: 'Human in the Loop', Icon: ShieldCheck },
-  memory: { label: 'Memory & Learning', Icon: Brain },
-  notifications: { label: 'Notifications', Icon: Bell },
+const DIMENSION_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  credentials:       KeyRound,
+  configuration:     Settings2,
+  human_in_the_loop: ShieldCheck,
+  memory:            Brain,
+  notifications:     Bell,
 };
 
 const QUESTION_TONES = [
@@ -32,19 +33,31 @@ interface N8nQuestionListViewProps {
 }
 
 export function N8nQuestionListView({ questions, userAnswers, onAnswerUpdated }: N8nQuestionListViewProps) {
+  const { t } = useTranslation();
+  const categoryLabels = t.templates.questionnaire.category_labels;
+  const dimensionLabelMap: Record<string, string> = {
+    credentials:       categoryLabels.credentials,
+    configuration:     categoryLabels.configuration,
+    human_in_the_loop: categoryLabels.human_in_the_loop,
+    memory:            categoryLabels.memory_and_learning,
+    notifications:     categoryLabels.notifications,
+  };
+
   return (
     <div className="space-y-3">
       {questions.map((q, i) => {
         const tone = QUESTION_TONES[i % QUESTION_TONES.length]!;
         const prevCategory = i > 0 ? questions[i - 1]!.category : undefined;
         const showSeparator = q.category && q.category !== prevCategory;
-        const dim = q.category ? DIMENSION_LABELS[q.category] : undefined;
+        const dim = q.category
+          ? { label: dimensionLabelMap[q.category] ?? q.category, Icon: DIMENSION_ICONS[q.category] }
+          : undefined;
 
         return (
           <div key={q.id}>
             {showSeparator && dim && (
               <div className="flex items-center gap-2.5 pt-4 pb-1.5">
-                <dim.Icon className="w-4 h-4 text-foreground flex-shrink-0" />
+                {dim.Icon && <dim.Icon className="w-4 h-4 text-foreground flex-shrink-0" />}
                 <span className="typo-heading uppercase tracking-wider text-foreground font-semibold whitespace-nowrap">
                   {dim.label}
                 </span>
@@ -79,7 +92,7 @@ export function N8nQuestionListView({ questions, userAnswers, onAnswerUpdated }:
                   type="text"
                   value={userAnswers[q.id] ?? q.default ?? ''}
                   onChange={(e) => onAnswerUpdated(q.id, e.target.value)}
-                  placeholder={q.default ?? 'Type your answer...'}
+                  placeholder={q.default ?? t.templates.questionnaire.type_your_answer}
                   className="w-full px-3 py-2.5 typo-body rounded-modal border border-primary/15 bg-background/60 text-foreground placeholder-muted-foreground/40 focus-ring focus-visible:border-primary/30 transition-all"
                 />
               )}

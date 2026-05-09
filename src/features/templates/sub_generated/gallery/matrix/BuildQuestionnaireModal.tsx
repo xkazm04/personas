@@ -19,14 +19,14 @@ import { DevToolsProjectDropdown } from '@/features/shared/components/forms/DevT
 import { useTranslation } from '@/i18n/useTranslation';
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
 
-const CATEGORY_META: Record<string, { label: string; Icon: React.ComponentType<{ className?: string }> }> = {
-  credentials:       { label: 'Credentials',       Icon: KeyRound },
-  configuration:     { label: 'Configuration',     Icon: Settings2 },
-  human_in_the_loop: { label: 'Human in the Loop', Icon: ShieldCheck },
-  memory:            { label: 'Memory & Learning',  Icon: Brain },
-  notifications:     { label: 'Notifications',      Icon: Bell },
-  domain:            { label: 'Domain',             Icon: Globe },
-  quality:           { label: 'Quality',            Icon: Gauge },
+const CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  credentials:       KeyRound,
+  configuration:     Settings2,
+  human_in_the_loop: ShieldCheck,
+  memory:            Brain,
+  notifications:     Bell,
+  domain:            Globe,
+  quality:           Gauge,
 };
 
 /*
@@ -117,9 +117,22 @@ export function BuildQuestionnaireModal({
     return () => document.removeEventListener('keydown', handleKey);
   }, [goPrev, goNext, isLast, onSubmit]);
 
+  const categoryLabels = t.templates.questionnaire.category_labels;
+  const categoryLabelMap: Record<string, string> = {
+    credentials:       categoryLabels.credentials,
+    configuration:     categoryLabels.configuration,
+    human_in_the_loop: categoryLabels.human_in_the_loop,
+    memory:            categoryLabels.memory_and_learning,
+    notifications:     categoryLabels.notifications,
+    domain:            categoryLabels.domain,
+    quality:           categoryLabels.quality,
+  };
+
   const q = questions[activeIndex]!;
   const tone = CARD_TONES[activeIndex % CARD_TONES.length]!;
-  const dim = q.category ? CATEGORY_META[q.category] : undefined;
+  const dim = q.category
+    ? { label: categoryLabelMap[q.category] ?? q.category, Icon: CATEGORY_ICONS[q.category] }
+    : undefined;
 
   const answeredCount = questions.filter((qn) => {
     const val = userAnswers[qn.id];
@@ -197,7 +210,7 @@ export function BuildQuestionnaireModal({
               <div className="flex items-center justify-between mb-3">
                 {dim ? (
                   <div className="flex items-center gap-2">
-                    <dim.Icon className={`w-4 h-4 ${tone.accent}`} />
+                    {dim.Icon && <dim.Icon className={`w-4 h-4 ${tone.accent}`} />}
                     <span className={`typo-label font-semibold uppercase tracking-wider ${tone.accent}`}>
                       {dim.label}
                     </span>

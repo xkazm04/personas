@@ -77,18 +77,21 @@ export interface UseCasePickerVariantProps {
 
 export interface TimePresetMeta {
   key: TimePreset;
-  label: string;
   icon: LucideIcon;
 }
 
-/** Time-family sub-presets. Event is its own family (no sub-presets). */
+/** Time-family sub-presets. Event is its own family (no sub-presets).
+ *  Labels are resolved at render time via t.templates.adoption.time_presets[p.key]. */
 export const TIME_PRESETS: TimePresetMeta[] = [
-  { key: 'hourly', label: 'Hourly', icon: Clock },
-  { key: 'daily', label: 'Daily', icon: Calendar },
-  { key: 'weekly', label: 'Weekly', icon: Calendar },
+  { key: 'hourly', icon: Clock },
+  { key: 'daily', icon: Calendar },
+  { key: 'weekly', icon: Calendar },
 ];
 
-export const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
+/** Stable i18n-key identifiers for weekdays (Sun=0 … Sat=6).
+ *  Resolve display labels via t.templates.adoption.weekdays[key]. */
+export const WEEKDAYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
+export type WeekdayKey = typeof WEEKDAYS[number];
 
 /** True when the Time family is enabled on this selection. */
 export function hasTime(sel: TriggerSelection | undefined): boolean {

@@ -88,7 +88,7 @@ export function SchemaFieldBuilder({ fields, onChange }: SchemaFieldBuilderProps
                   type="text"
                   value={field.key}
                   onChange={(e) => updateField(index, { key: e.target.value })}
-                  placeholder="key"
+                  placeholder={t.recipes.schema.placeholders.key}
                   className="w-full rounded-card border border-border/60 bg-background/50 px-2.5 py-1.5 typo-code text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/50 font-mono"
                 />
 
@@ -97,8 +97,8 @@ export function SchemaFieldBuilder({ fields, onChange }: SchemaFieldBuilderProps
                   onChange={(e) => updateField(index, { type: e.target.value })}
                   className="w-full rounded-card border border-border/60 bg-background/50 px-2 py-1.5 typo-body text-foreground focus-visible:outline-none focus-visible:border-primary/50"
                 >
-                  {FIELD_TYPES.map((t) => (
-                    <option key={t} value={t}>{t}</option>
+                  {FIELD_TYPES.map((ft) => (
+                    <option key={ft} value={ft}>{t.recipes.schema.field_types[ft as keyof typeof t.recipes.schema.field_types]}</option>
                   ))}
                 </select>
 
@@ -106,7 +106,7 @@ export function SchemaFieldBuilder({ fields, onChange }: SchemaFieldBuilderProps
                   type="text"
                   value={field.label}
                   onChange={(e) => updateField(index, { label: e.target.value })}
-                  placeholder="Label"
+                  placeholder={t.recipes.schema.placeholders.label}
                   className="w-full rounded-card border border-border/60 bg-background/50 px-2.5 py-1.5 typo-body text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/50"
                 />
               </div>

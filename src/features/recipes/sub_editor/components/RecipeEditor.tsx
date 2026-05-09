@@ -138,7 +138,7 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
           className="flex items-center gap-1.5 typo-body text-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
-          Back
+          {t.common.back}
         </button>
         <div className="flex-1" />
         <button
@@ -187,7 +187,7 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
           >
             <option value="">{t.common.none}</option>
             {CATEGORIES.map((c) => (
-              <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
+              <option key={c} value={c}>{t.recipes.editor.categories[c as keyof typeof t.recipes.editor.categories]}</option>
             ))}
           </select>
         </div>

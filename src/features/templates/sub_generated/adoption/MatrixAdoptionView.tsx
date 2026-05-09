@@ -27,6 +27,7 @@ import { matchVaultToQuestions } from "../shared/vaultAdoptionMatcher";
 import { useDynamicQuestionOptions } from "./useDynamicQuestionOptions";
 import { categoryOrderIndex } from "./questionnaireCategoryOrder";
 import { useTranslation } from '@/i18n/useTranslation';
+import type { Translations } from '@/i18n/generated/types';
 import { QuickAddCredentialModal } from "./QuickAddCredentialModal";
 import type { TriggerSelection } from "./useCasePickerShared";
 
@@ -68,6 +69,7 @@ function extractDimensionData(
   ir: unknown,
   credentialBindings?: Record<string, string>,
   selectedUseCaseIds?: Set<string>,
+  t?: { templates: { adoption: { matrix_fallbacks: { not_required: string; stateless_no_memory: string; default_error_handling: string; no_event_subscriptions: string; review_required: string; memory_enabled: string; event: string } } } },
 ): CellDataMap {
   const d = ir as Record<string, unknown>;
   const data: CellDataMap = {};
@@ -155,11 +157,11 @@ function extractDimensionData(
   // Human review
   const caps = ((d.protocol_capabilities ?? []) as unknown[]);
   const reviewCaps = caps.filter((c) => (c as Record<string, unknown>).type === "manual_review");
-  data["human-review"] = { items: reviewCaps.length > 0 ? reviewCaps.map((c) => String((c as Record<string, unknown>).context ?? "Review required")) : ["Not required — fully automated"] };
+  data["human-review"] = { items: reviewCaps.length > 0 ? reviewCaps.map((c) => String((c as Record<string, unknown>).context ?? (t?.templates.adoption.matrix_fallbacks.review_required ?? "Review required"))) : [t?.templates.adoption.matrix_fallbacks.not_required ?? "Not required — fully automated"] };
 
   // Memory
   const memoryCaps = caps.filter((c) => (c as Record<string, unknown>).type === "agent_memory");
-  data["memory"] = { items: memoryCaps.length > 0 ? memoryCaps.map((c) => String((c as Record<string, unknown>).context ?? "Memory enabled")) : ["Stateless — no memory between runs"] };
+  data["memory"] = { items: memoryCaps.length > 0 ? memoryCaps.map((c) => String((c as Record<string, unknown>).context ?? (t?.templates.adoption.matrix_fallbacks.memory_enabled ?? "Memory enabled"))) : [t?.templates.adoption.matrix_fallbacks.stateless_no_memory ?? "Stateless — no memory between runs"] };
 
   // Error handling — parse structured sections with title: description syntax
   const sp = d.structured_prompt as Record<string, unknown> | undefined;
@@ -186,9 +188,9 @@ function extractDimensionData(
         parsed.push(line.replace(/^[\s\-*]+/, "").trim());
       }
     }
-    data["error-handling"] = { items: parsed.length > 0 ? parsed : ["Default error handling"] };
+    data["error-handling"] = { items: parsed.length > 0 ? parsed : [t?.templates.adoption.matrix_fallbacks.default_error_handling ?? "Default error handling"] };
   } else {
-    data["error-handling"] = { items: ["Default error handling"] };
+    data["error-handling"] = { items: [t?.templates.adoption.matrix_fallbacks.default_error_handling ?? "Default error handling"] };
   }
 
   // Events — drop subscriptions tied to a disabled use case
@@ -196,7 +198,7 @@ function extractDimensionData(
   const events = ucFilterActive
     ? eventsRaw.filter((e) => matchesUseCaseFilter((e as Record<string, unknown>).use_case_id))
     : eventsRaw;
-  data["events"] = { items: events.length > 0 ? events.map((e) => { const o = e as Record<string, unknown>; return `${o.event_type ?? "event"}: ${o.description ?? ""}`; }) : ["No event subscriptions"] };
+  data["events"] = { items: events.length > 0 ? events.map((e) => { const o = e as Record<string, unknown>; return `${o.event_type ?? (t?.templates.adoption.matrix_fallbacks.event ?? "event")}: ${o.description ?? ""}`; }) : [t?.templates.adoption.matrix_fallbacks.no_event_subscriptions ?? "No event subscriptions"] };
 
   return data;
 }
@@ -244,33 +246,48 @@ type TriggerIR = { trigger_type: string; config: Record<string, string>; descrip
  * array lands on the flat-IR suggested_triggers list so the runtime
  * scheduler can register every trigger the user wanted.
  */
-function triggerSelectionToTriggers(sel: TriggerSelection): TriggerIR[] {
+function triggerSelectionToTriggers(
+  sel: TriggerSelection,
+  translations?: Pick<Translations, "templates">,
+  tx?: (template: string, vars: Record<string, string | number>) => string,
+): TriggerIR[] {
   const out: TriggerIR[] = [];
 
   if (sel.time) {
-    const t = sel.time;
-    const h = Math.max(0, Math.min(23, t.hourOfDay ?? 9));
-    if (t.preset === "daily") {
+    const timeSel = sel.time;
+    const h = Math.max(0, Math.min(23, timeSel.hourOfDay ?? 9));
+    if (timeSel.preset === "daily") {
+      const hourStr = String(h).padStart(2, "0");
+      const desc = translations && tx
+        ? tx(translations.templates.adoption.cron_descriptions.daily_at_local, { hour: hourStr })
+        : `Daily at ${hourStr}:00 local`;
       out.push({
         trigger_type: "schedule",
         config: { cron: `0 ${h} * * *`, timezone: "local" },
-        description: `Daily at ${String(h).padStart(2, "0")}:00 local.`,
+        description: `${desc}.`,
       });
-    } else if (t.preset === "weekly") {
-      const d = Math.max(0, Math.min(6, t.weekday ?? 1));
-      const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    } else if (timeSel.preset === "weekly") {
+      const d = Math.max(0, Math.min(6, timeSel.weekday ?? 1));
+      const weekdayKeys = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
+      const dayKey = weekdayKeys[d] ?? "mon";
+      const dayName = translations?.templates.adoption.weekdays[dayKey] ?? dayKey.charAt(0).toUpperCase() + dayKey.slice(1);
+      const hourStr = String(h).padStart(2, "0");
+      const desc = translations && tx
+        ? tx(translations.templates.adoption.cron_descriptions.weekly_on_day_at_local, { day: dayName, hour: hourStr })
+        : `Weekly on ${dayName} at ${hourStr}:00 local`;
       out.push({
         trigger_type: "schedule",
         config: { cron: `0 ${h} * * ${d}`, timezone: "local" },
-        description: `Weekly on ${dayNames[d]} at ${String(h).padStart(2, "0")}:00 local.`,
+        description: `${desc}.`,
       });
     } else {
       // hourly — hour/weekday are preserved on the selection for
       // round-trip UX, but the cron itself ignores them.
+      const desc = translations?.templates.adoption.cron_descriptions.hourly_at_local ?? "Hourly";
       out.push({
         trigger_type: "schedule",
         config: { cron: "0 * * * *", timezone: "local" },
-        description: "Hourly.",
+        description: `${desc}.`,
       });
     }
   }
@@ -320,6 +337,8 @@ function triggerSelectionToTriggers(sel: TriggerSelection): TriggerIR[] {
 function applyTriggerSelections(
   designResult: Record<string, unknown>,
   perUseCase: Record<string, TriggerSelection>,
+  t?: Parameters<typeof triggerSelectionToTriggers>[1],
+  tx?: Parameters<typeof triggerSelectionToTriggers>[2],
 ): Record<string, unknown> {
   if (Object.keys(perUseCase).length === 0) return designResult;
   const ucRaw = (designResult.use_cases ?? []) as Array<Record<string, unknown>>;
@@ -332,7 +351,7 @@ function applyTriggerSelections(
     const id = String(uc.id ?? "");
     const sel = perUseCase[id];
     if (!sel) return uc;
-    const triggers = triggerSelectionToTriggers(sel);
+    const triggers = triggerSelectionToTriggers(sel, t, tx);
     return {
       ...uc,
       suggested_trigger: triggers[0],
@@ -353,7 +372,7 @@ function applyTriggerSelections(
       if (trig) nextSuggestedTriggers.push({ ...trig, use_case_id: uc.id });
       continue;
     }
-    for (const trig of triggerSelectionToTriggers(sel)) {
+    for (const trig of triggerSelectionToTriggers(sel, t, tx)) {
       nextSuggestedTriggers.push({ ...trig, use_case_id: uc.id });
     }
   }
@@ -365,7 +384,7 @@ function applyTriggerSelections(
 }
 
 export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: MatrixAdoptionViewProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [seeded, setSeeded] = useState(false);
   const [personaId, setPersonaId] = useState<string | null>(null);
   const [fadeOut, setFadeOut] = useState(false);
@@ -784,12 +803,13 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
     // the template's default cadences and the user's choices in the
     // trigger-composition step evaporate.
     const effectiveDesignResult = triggerSelections?.perUseCase
-      ? applyTriggerSelections(designResult, triggerSelections.perUseCase)
+      ? applyTriggerSelections(designResult, triggerSelections.perUseCase, t, tx)
       : designResult;
     const dimensionData = extractDimensionData(
       effectiveDesignResult,
       credentialBindings,
       showUseCasePicker ? selectedUseCaseIds : undefined,
+      t,
     );
     const cellStates: Record<string, CellBuildStatus> = {};
     for (const key of Object.keys(dimensionData)) {
@@ -1060,12 +1080,13 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
     // reintroducing disabled use cases or template-default cadence.
     if (designResult) {
       const effective = triggerSelections?.perUseCase
-        ? applyTriggerSelections(designResult, triggerSelections.perUseCase)
+        ? applyTriggerSelections(designResult, triggerSelections.perUseCase, t, tx)
         : designResult;
       const dimensionData = extractDimensionData(
         effective,
         undefined,
         showUseCasePicker ? selectedUseCaseIds : undefined,
+        t,
       );
       store.patchActiveSession({ cellData: dimensionData, draft: effective });
     }

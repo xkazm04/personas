@@ -10,6 +10,7 @@ import {
   updateTime,
   type TriggerSelection,
 } from '../useCasePickerShared';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function TimeControls({
   selection,
@@ -18,6 +19,7 @@ export function TimeControls({
   selection: TriggerSelection;
   onChange: (next: TriggerSelection) => void;
 }) {
+  const { t } = useTranslation();
   const time = selection.time;
   const sub = time?.preset ?? 'daily';
   const hourOfDay = time?.hourOfDay ?? 9;
@@ -40,7 +42,7 @@ export function TimeControls({
               }`}
             >
               <Icon className="w-3 h-3" />
-              {p.label}
+              {t.templates.adoption.time_presets[p.key]}
             </button>
           );
         })}
@@ -58,7 +60,7 @@ export function TimeControls({
                     weekday === i ? 'bg-primary/25 text-primary' : 'text-foreground/55 hover:text-foreground hover:bg-foreground/[0.05]'
                   }`}
                 >
-                  {d}
+                  {t.templates.adoption.weekdays[d]}
                 </button>
               ))}
             </div>
