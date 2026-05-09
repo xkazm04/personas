@@ -4,6 +4,8 @@ import {
   BookOpen,
   Bot,
   Loader2,
+  Mic,
+  MicOff,
   PanelRightClose,
   PanelRightOpen,
   RotateCcw,
@@ -47,6 +49,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { silentCatch } from '@/lib/silentCatch';
 import { play as playAudio, synthesize as synthesizeTts } from './voicePlayback';
 import { useTtsSettings } from './useTtsSettings';
+import { useDictation } from './useDictation';
 import { useAgentStore } from '@/stores/agentStore';
 
 // Fallback follow-ups for the "What can Athena do?" toolbar preset —
@@ -950,6 +953,18 @@ function Composer({
   const { t } = useTranslation();
   const [draft, setDraft] = useState('');
   const taRef = useRef<HTMLTextAreaElement>(null);
+  const dictation = useDictation();
+
+  // Splice dictation results into the draft. Final chunks become permanent;
+  // interim text is shown live as a tail so the user can see what's being
+  // recognized before stopping.
+  useEffect(() => {
+    if (!dictation.finalText) return;
+    setDraft((prev) => (prev ? `${prev.replace(/\s+$/, '')} ${dictation.finalText}` : dictation.finalText));
+    // Reset so the next final chunk replaces this one cleanly rather than
+    // accumulating across appends.
+    dictation.reset();
+  }, [dictation.finalText, dictation]);
 
   const submit = useCallback(() => {
     if (disabled || !draft.trim()) return;
@@ -986,12 +1001,19 @@ function Composer({
     [t.plugins.companion.composer_placeholder],
   );
 
+  // Visual indicator for what's currently being recognized — appended to the
+  // textarea's value while listening. Kept in a separate variable so we don't
+  // overwrite the user's draft; it's purely a display tail.
+  const displayValue = dictation.listening && dictation.interimText
+    ? `${draft}${draft ? ' ' : ''}${dictation.interimText}`
+    : draft;
+
   return (
     <div className="border-t border-foreground/10 px-3 py-3 shrink-0">
       <div className="flex items-end gap-2 rounded-card bg-foreground/5 px-3 py-2">
         <textarea
           ref={taRef}
-          value={draft}
+          value={displayValue}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={onKeyDown}
           placeholder={placeholder}
@@ -1001,6 +1023,39 @@ function Composer({
           className="flex-1 bg-transparent border-0 outline-none resize-none typo-body text-foreground placeholder:text-foreground/40 disabled:opacity-50"
           aria-label={placeholder}
         />
+        {dictation.supported && (
+          <button
+            type="button"
+            onClick={() => (dictation.listening ? dictation.stop() : dictation.start())}
+            disabled={disabled}
+            className={`p-2 rounded-interactive transition-colors focus-ring disabled:opacity-40 disabled:cursor-not-allowed ${
+              dictation.listening
+                ? 'bg-red-500/15 text-red-400 hover:bg-red-500/25'
+                : dictation.error
+                  ? 'bg-amber-500/10 text-amber-400 hover:bg-amber-500/20'
+                  : 'bg-foreground/5 text-foreground/70 hover:bg-foreground/10 hover:text-foreground'
+            }`}
+            aria-label={
+              dictation.listening
+                ? t.plugins.companion.dictate_stop
+                : t.plugins.companion.dictate_start
+            }
+            title={
+              dictation.error
+                ? t.plugins.companion.dictate_error
+                : dictation.listening
+                  ? t.plugins.companion.dictate_listening_hint
+                  : t.plugins.companion.dictate_start_hint
+            }
+            aria-pressed={dictation.listening}
+          >
+            {dictation.listening ? (
+              <MicOff className="w-4 h-4" />
+            ) : (
+              <Mic className="w-4 h-4" />
+            )}
+          </button>
+        )}
         {improveEnabled && (
           <button
             onClick={submitImprove}

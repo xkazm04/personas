@@ -10501,6 +10501,11 @@ export type Translations = {
       voice_settings_style_hint: string;
       voice_settings_default: string;
       voice_settings_reset: string;
+      dictate_start: string;
+      dictate_stop: string;
+      dictate_start_hint: string;
+      dictate_listening_hint: string;
+      dictate_error: string;
     };
     ocr: {
       title: string;

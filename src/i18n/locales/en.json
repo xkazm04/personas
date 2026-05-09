@@ -10494,7 +10494,12 @@
       "voice_settings_style_label": "Style exaggeration",
       "voice_settings_style_hint": "Only meaningful on Multilingual v2 and v3. Higher values amplify expressive cues at the cost of consistency.",
       "voice_settings_default": "Default",
-      "voice_settings_reset": "Reset to defaults"
+      "voice_settings_reset": "Reset to defaults",
+      "dictate_start": "Dictate",
+      "dictate_stop": "Stop dictation",
+      "dictate_start_hint": "Press to talk. Audio is sent to the browser's cloud speech-to-text service while listening.",
+      "dictate_listening_hint": "Listening… click again to stop.",
+      "dictate_error": "Dictation failed. Check microphone permission and try again."
     },
     "ocr": {
       "title": "OCR",
