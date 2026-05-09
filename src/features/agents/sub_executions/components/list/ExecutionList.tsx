@@ -58,7 +58,10 @@ export function ExecutionList() {
 
   const [sampleInput, setSampleInput] = useState('{}');
   useEffect(() => {
-    getSampleInput(selectedPersona?.name).then(setSampleInput);
+    getSampleInput(selectedPersona?.name).then(setSampleInput, (err) => {
+      // Keep the '{}' default — sample input is hint-only, not load-bearing.
+      logger.warn('getSampleInput failed', { error: err });
+    });
   }, [selectedPersona?.name]);
 
   const handleTryIt = () => {
