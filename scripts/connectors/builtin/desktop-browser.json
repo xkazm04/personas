@@ -49,6 +49,28 @@
         "type": "credential",
         "is_default": true
       }
-    ]
+    ],
+    "llm_usage_hint": {
+      "overview": "Drives Chrome/Edge via the Chrome DevTools Protocol (CDP). The browser is launched with --remote-debugging-port=$cdp_port (default 9222). Lightweight ops (list/open/close tabs) hit the REST endpoints at http://localhost:$cdp_port/json; everything else (clicks, typing, file upload, screenshots, iframes, drag-and-drop) goes through a CDP websocket. The smallest reliable client is `node -e` with the `chrome-remote-interface` npm package -- far less overhead than spawning Playwright/Puppeteer.",
+      "examples": [
+        "# List open tabs (and their webSocketDebuggerUrl)\ncurl -s http://localhost:9222/json/list",
+        "# Open a new tab at a URL\ncurl -s 'http://localhost:9222/json/new?https://example.com'",
+        "# Close a tab by id\ncurl -s -X PUT http://localhost:9222/json/close/<tab_id>",
+        "# Click an element by CSS selector (Runtime.evaluate over CDP websocket)\nnode -e 'const CDP=require(\"chrome-remote-interface\");(async()=>{const c=await CDP({port:9222});const {Runtime}=c;await Runtime.enable();await Runtime.evaluate({expression:`document.querySelector(\"#reveal-email\").click()`});await c.close();})();'",
+        "# Upload a file into an <input type=file> (DOM.setFileInputFiles -- the only reliable upload path over CDP)\nnode -e 'const CDP=require(\"chrome-remote-interface\");(async()=>{const c=await CDP({port:9222});const {DOM}=c;const {root}=await DOM.getDocument();const {nodeId}=await DOM.querySelector({nodeId:root.nodeId,selector:\"input[type=file]\"});await DOM.setFileInputFiles({nodeId,files:[\"/abs/path/to/file.pdf\"]});await c.close();})();'",
+        "# Take a screenshot of the current viewport\nnode -e 'const CDP=require(\"chrome-remote-interface\");(async()=>{const c=await CDP({port:9222});const {Page}=c;await Page.enable();const {data}=await Page.captureScreenshot({format:\"png\"});require(\"fs\").writeFileSync(\"shot.png\",Buffer.from(data,\"base64\"));await c.close();})();'",
+        "# Wait for a selector to appear (poll Runtime.evaluate against a deterministic DOM marker)\nnode -e 'const CDP=require(\"chrome-remote-interface\");(async()=>{const c=await CDP({port:9222});const {Runtime}=c;await Runtime.enable();for(let i=0;i<60;i++){const {result}=await Runtime.evaluate({expression:`!!document.querySelector(\"#target\")`,returnByValue:true});if(result.value)break;await new Promise(r=>setTimeout(r,500));}await c.close();})();'"
+      ],
+      "gotchas": [
+        "User must launch Chrome with --remote-debugging-port=$cdp_port BEFORE you connect. ECONNREFUSED on http://localhost:9222 means the browser isn't running with debugging enabled -- the connector setup launches it, but a user-killed Chrome session needs a re-launch.",
+        "CDP attaches per-TAB, not per-browser. Each tab has its own webSocketDebuggerUrl returned by /json/list. chrome-remote-interface defaults to the most recently active tab -- pass `target` explicitly when you need a specific one.",
+        "Iframes are separate execution contexts. Runtime.evaluate against the top page can't reach an iframe's DOM. Enumerate frames via Page.getFrameTree and run with the matching executionContextId, or navigate INSIDE the iframe via Frame.navigate.",
+        "File uploads MUST use DOM.setFileInputFiles directly on the <input type=file>. Click-simulating the visible 'Upload' button won't open an OS dialog over CDP -- there's no native dialog handler in the protocol.",
+        "Drag-and-drop needs the Input.dispatchDragEvent sequence (dragenter -> dragover -> drop). A single mouse event won't fire HTML5 dragstart handlers, which is what modern web apps actually use.",
+        "Downloads need Page.setDownloadBehavior({behavior:'allow',downloadPath:'/abs/dir'}) BEFORE you trigger the download, otherwise files land in the OS default download dir with no callback to know when they finish.",
+        "Anti-bot challenges (Cloudflare turnstile, hCaptcha) often pass when you attach to the user's normal Chrome but block fresh CDP-spawned sessions. Prefer attach-to-existing over spawn-headless when the target site has bot detection.",
+        "Don't poll with arbitrary `sleep` -- it causes silent scrape failures. Wait for `Network.loadingFinished` events or poll Runtime.evaluate against a deterministic DOM marker (the selector that proves your target rendered)."
+      ]
+    }
   }
 }

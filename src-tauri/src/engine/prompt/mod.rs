@@ -405,6 +405,41 @@ pub fn assemble_prompt(
          - For authenticated API calls, use the credential proxy (see below) -- do NOT look for secret env vars\n\n"
     );
 
+    // Skill Scratchpad — per-persona durable technique notes the agent itself
+    // appends to during execution. Opt-in via PERSONAS_SKILL_SCRATCHPAD=1
+    // (see engine/skill_scratchpad.rs). When the env var is unset, this is
+    // a complete no-op. When set and the persona has a non-empty scratchpad
+    // file, inject the contents and tell the agent how to append more.
+    //
+    // Inspired by browser-use's helpers.py self-annealing pattern surfaced in
+    // /research run 2026-05-09 (browser harness walkthrough).
+    if let Some((scratchpad_path, scratchpad_body)) =
+        crate::engine::skill_scratchpad::read_for_prompt(&persona.id)
+    {
+        prompt.push_str("## Learned Skills (your scratchpad)\n");
+        prompt.push_str(
+            "Persistent technique notes you have authored across past runs. \
+             Treat them as your own working knowledge — they survive this run.\n\n",
+        );
+        prompt.push_str(&format!("File: `{}`\n\n", scratchpad_path));
+        prompt.push_str(&scratchpad_body);
+        if !scratchpad_body.ends_with('\n') {
+            prompt.push('\n');
+        }
+        prompt.push_str(&format!(
+            "\nTo remember a new technique for future runs, append to this file:\n\
+             ```bash\n\
+             cat >> \"{}\" <<'EOF'\n\
+             ## How to <skill name>\n\
+             <step-by-step or curl/node snippet — keep it concise and concrete>\n\
+             EOF\n\
+             ```\n\
+             Only record techniques that proved correct AND would save time on a future run. \
+             Don't log one-off observations or experimental code that didn't work.\n\n",
+            scratchpad_path
+        ));
+    }
+
     // Available Credentials (via proxy)
     if let Some(hints) = credential_hints {
         if !hints.is_empty() {

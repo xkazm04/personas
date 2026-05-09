@@ -47,6 +47,8 @@ pub mod db_query;
 pub mod design;
 pub mod design_context;
 #[cfg(feature = "desktop")]
+pub mod bridge_manifest;
+#[cfg(feature = "desktop")]
 pub mod desktop_bridges;
 #[cfg(feature = "desktop")]
 pub mod desktop_discovery;
@@ -80,6 +82,7 @@ pub mod healing_orchestrator;
 pub mod healing_timeline;
 pub mod healthcheck;
 pub mod hooks_sidecar;
+pub mod skill_scratchpad;
 pub mod skills_sidecar;
 #[cfg(feature = "p2p")]
 pub mod identity;
