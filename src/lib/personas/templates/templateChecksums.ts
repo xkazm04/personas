@@ -85,6 +85,7 @@ export const TEMPLATE_CHECKSUMS: Record<string, string> = {
   'research/database-performance-monitor.json': '000476cbbe9ba656',
   'research/industry-intelligence-aggregator.json': '001825c2f54254b8',
   'research/knowledge-base-health-auditor.json': '001bf4d7f7ea865a',
+  'research/linkedin-watchlist-scout.json': '00047af5ae35a45b',
   'research/product-analytics-briefer.json': '000d0a629de1eb79',
   'research/product-scout.json': '000e7e5f002b78d2',
   'research/product-signal-detector.json': '0018c01a50eeb8a4',
