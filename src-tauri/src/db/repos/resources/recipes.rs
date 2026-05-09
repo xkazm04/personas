@@ -43,8 +43,21 @@ crud_get_all!(
 );
 
 pub fn create(pool: &DbPool, input: CreateRecipeInput) -> Result<RecipeDefinition, AppError> {
-    timed_query!("recipes", "recipes::create", {
-        let id = uuid::Uuid::new_v4().to_string();
+    let id = uuid::Uuid::new_v4().to_string();
+    create_with_id(pool, &id, input)
+}
+
+/// Same as `create`, but uses a caller-provided id instead of generating
+/// a fresh v4 UUID. Used by Stage B Phase 1b's `derive_recipes_from_template`
+/// flow, which derives a deterministic v5 UUID from
+/// `(source_template_id, source_use_case_id)` so the conversion script in
+/// Phase 2.2 can pre-compute recipe IDs without DB access.
+pub fn create_with_id(
+    pool: &DbPool,
+    id: &str,
+    input: CreateRecipeInput,
+) -> Result<RecipeDefinition, AppError> {
+    timed_query!("recipes", "recipes::create_with_id", {
         let now = chrono::Utc::now().to_rfc3339();
 
         let conn = pool.get()?;

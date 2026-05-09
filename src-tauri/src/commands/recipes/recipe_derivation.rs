@@ -14,6 +14,7 @@ use std::sync::Arc;
 
 use serde_json::Value;
 use tauri::State;
+use uuid::Uuid;
 
 use crate::db::models::{
     CreateRecipeInput, DeriveAction, DeriveResult, RecipeDefinition, UpdateRecipeInput,
@@ -22,6 +23,32 @@ use crate::db::repos::resources::recipes as recipe_repo;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
 use crate::AppState;
+
+/// Namespace UUID for Stage B Phase 1b's deterministic recipe ID derivation.
+///
+/// Generated once via `uuid::Uuid::new_v4()` then frozen here. Together with
+/// the name `"<template_id>:<use_case_id>"`, this drives `Uuid::new_v5` to
+/// produce a stable recipe id for every (template, use_case) pair across:
+///   - Rust `derive_recipes_from_template_inner`
+///   - The Phase 2.2 conversion script that rewrites template JSON files
+///   - Any future caller that needs to compute the recipe id without DB access
+///
+/// CRITICAL: this UUID must NEVER change once Phase 1b has run against a
+/// real DB. Changing it would orphan every previously-derived recipe row.
+/// If absolutely necessary, perform a coordinated migration that re-keys
+/// existing rows by their `(source_template_id, source_use_case_id)` pair.
+pub const RECIPE_DERIVATION_NAMESPACE: Uuid =
+    Uuid::from_u128(0x6f8d4f9c_3a07_4b1e_9c9d_8a3f6b2c5e10);
+
+/// Compute the deterministic recipe id for a given (template_id, use_case_id).
+/// Mirrors the Python implementation in
+/// `scripts/convert-templates-to-recipe-refs.py`. Same inputs → same output
+/// across both languages (uuid::v5 is SHA-1 over namespace || name, fully
+/// deterministic).
+pub fn derive_recipe_id(template_id: &str, use_case_id: &str) -> String {
+    let name = format!("{template_id}:{use_case_id}");
+    Uuid::new_v5(&RECIPE_DERIVATION_NAMESPACE, name.as_bytes()).to_string()
+}
 
 /// Bump a semver-shaped string by incrementing the last numeric segment.
 /// "1.0.0" → "1.0.1", "2.4.9" → "2.4.10". Falls back to "1.0.0" for
@@ -149,7 +176,10 @@ pub fn derive_recipes_from_template_inner(
 
         match existing {
             None => {
-                // Created — fresh derivation.
+                // Created — fresh derivation. Use a deterministic v5 UUID so
+                // the Phase 2.2 conversion script can compute the same id
+                // without a DB roundtrip.
+                let recipe_id = derive_recipe_id(template_id, &uc_id);
                 let input = CreateRecipeInput {
                     credential_id: None,
                     use_case_id: None,
@@ -171,7 +201,7 @@ pub fn derive_recipes_from_template_inner(
                     source_use_case_name: uc_name.clone(),
                     source_version: Some("1.0.0".to_string()),
                 };
-                let created = recipe_repo::create(&state.db, input)?;
+                let created = recipe_repo::create_with_id(&state.db, &recipe_id, input)?;
                 results.push(DeriveResult {
                     use_case_id: uc_id,
                     use_case_name: uc_name,
@@ -305,5 +335,64 @@ mod tests {
         let uc = serde_json::json!({ "description": long });
         let result = extract_uc_description(&uc).unwrap();
         assert_eq!(result.chars().count(), 500); // 499 chars + ellipsis
+    }
+
+    // ========================================================================
+    // Phase 1b deterministic ID amendment — same inputs ALWAYS yield same id.
+    // The Python conversion script in scripts/convert-templates-to-recipe-refs.py
+    // reproduces this computation; if either side changes, both must change
+    // together AND a coordinated re-keying migration must run.
+    // ========================================================================
+
+    #[test]
+    fn derive_recipe_id_is_deterministic() {
+        let a = derive_recipe_id("incident-logger", "uc_log_incident");
+        let b = derive_recipe_id("incident-logger", "uc_log_incident");
+        assert_eq!(a, b, "same inputs must produce same id");
+    }
+
+    #[test]
+    fn derive_recipe_id_distinguishes_template_id() {
+        let a = derive_recipe_id("incident-logger", "uc_log_incident");
+        let b = derive_recipe_id("notion-docs-auditor", "uc_log_incident");
+        assert_ne!(a, b, "different template_ids must produce different ids");
+    }
+
+    #[test]
+    fn derive_recipe_id_distinguishes_use_case_id() {
+        let a = derive_recipe_id("incident-logger", "uc_log_incident");
+        let b = derive_recipe_id("incident-logger", "uc_summarize");
+        assert_ne!(a, b, "different use_case_ids must produce different ids");
+    }
+
+    #[test]
+    fn derive_recipe_id_is_valid_uuid_form() {
+        let id = derive_recipe_id("template-foo", "uc_bar");
+        // 8-4-4-4-12 hex with dashes
+        assert_eq!(id.len(), 36);
+        assert_eq!(id.chars().filter(|c| *c == '-').count(), 4);
+        // v5 UUIDs have version=5 in the third group's first hex digit
+        let parts: Vec<&str> = id.split('-').collect();
+        assert_eq!(parts.len(), 5);
+        assert_eq!(parts[2].chars().next(), Some('5'),
+            "expected v5 UUID (version digit 5) but got {id}");
+    }
+
+    /// Frozen-output canary — locks the cross-language parity contract.
+    /// The Phase 2.2 conversion script in
+    /// `scripts/convert-templates-to-recipe-refs.py` MUST produce the same
+    /// id for the same inputs (it does — its test asserts the same value).
+    ///
+    /// If this test fails, the namespace UUID changed or the name format
+    /// changed. Either is a coordinated re-key migration: every recipe row
+    /// derived under the old constant is now orphaned. DO NOT silently
+    /// update the expected value to make this test pass.
+    #[test]
+    fn derive_recipe_id_frozen_canary() {
+        let id = derive_recipe_id("incident-logger", "uc_log_incident");
+        assert_eq!(
+            id, "8205b2bf-22a9-5821-9783-0e1150d620f5",
+            "derive_recipe_id namespace or name format changed — coordinated re-key required"
+        );
     }
 }
