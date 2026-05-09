@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import {
   Activity,
   AlertTriangle,
@@ -98,9 +99,14 @@ function PersonaDigestRow({
 
 export function HealthDigestPanel() {
   const { t, tx } = useTranslation();
-  const digest = useAgentStore((s) => s.healthDigest);
-  const running = useAgentStore((s) => s.healthDigestRunning);
-  const lastDigestAt = useAgentStore((s) => s.lastDigestAt);
+  // State reads batched through useShallow (multi-field pattern); action
+  // setters stay as single-field selectors since their references are
+  // stable across renders.
+  const { digest, running, lastDigestAt } = useAgentStore(useShallow((s) => ({
+    digest: s.healthDigest,
+    running: s.healthDigestRunning,
+    lastDigestAt: s.lastDigestAt,
+  })));
   const runFullHealthDigest = useAgentStore((s) => s.runFullHealthDigest);
   const selectPersona = useAgentStore((s) => s.selectPersona);
   const setEditorTab = useSystemStore((s) => s.setEditorTab);
