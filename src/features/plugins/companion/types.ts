@@ -1,6 +1,7 @@
 // Companion (Athena) — shared TypeScript types.
 //
-// Phase 0 ships only what the shell needs. Chat / brain / approval types
-// land in Phase 1+ alongside their backend commands.
+// Most companion types live alongside the API surface in @/api/companion
+// (chat / brain / approval / proactive / connectors). This file keeps
+// types that are purely UI-shape concerns and don't cross the IPC boundary.
 
 export type CompanionState = 'closed' | 'collapsed' | 'open';
