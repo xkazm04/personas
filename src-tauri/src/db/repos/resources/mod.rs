@@ -18,6 +18,7 @@ pub mod oauth_token_metrics;
 pub mod obsidian_brain;
 pub mod ocr;
 pub mod playwright_procedures;
+pub mod recipe_suggestions;
 pub mod recipes;
 pub mod rotation;
 #[cfg(feature = "p2p")]

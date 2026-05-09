@@ -498,6 +498,11 @@ pub fn start_loops(
         subscriptions.push(Box::new(subscription::AmbientContextSubscription {
             ctx: ambient_ctx.clone(),
         }));
+        // Phase 3 c v3: TTL eviction for the cross-process ambient_signal
+        // SQL projection. Runs every 30 min, drops rows older than 24h.
+        subscriptions.push(Box::new(subscription::AmbientSignalEvictionSubscription {
+            pool: pool.clone(),
+        }));
         // Context rule engine: subscribes to the context stream and evaluates
         // persona-defined rules for proactive actions.
         let stream_rx = {

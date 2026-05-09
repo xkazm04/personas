@@ -2080,6 +2080,27 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         );
     }
 
+    // 2026-05-09 — Stage D Phase 4: telemetry for the Glyph composer's recipe
+    // suggestion chip. Append-only events log impression/accept/dismiss with
+    // the match score for later eligibility analysis (Phase 5 mode-2 gate).
+    // No FK to recipe_definitions — recipe deletes shouldn't cascade-delete
+    // this audit trail. Index keyed on created_at DESC because every read is
+    // a "last N events" query.
+    if !has_table(conn, "recipe_suggestion_events")? {
+        conn.execute_batch(
+            "CREATE TABLE recipe_suggestion_events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                recipe_id TEXT NOT NULL,
+                event_type TEXT NOT NULL CHECK(event_type IN ('impression','accept','dismiss')),
+                score REAL NOT NULL,
+                created_at TEXT NOT NULL DEFAULT (datetime('now'))
+             );
+             CREATE INDEX IF NOT EXISTS idx_recipe_suggestion_events_created_at
+               ON recipe_suggestion_events(created_at DESC);",
+        )?;
+        tracing::info!("Created recipe_suggestion_events table + idx_recipe_suggestion_events_created_at");
+    }
+
     Ok(())
 }
 

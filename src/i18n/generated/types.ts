@@ -9216,6 +9216,7 @@ export type Translations = {
       use_button: string;
       dismiss: string;
       score_label: string;
+      applied_toast: string;
     };
   };
   recipe_shared: {
@@ -12798,5 +12799,19 @@ export type Translations = {
       trainingTitle: string;
       trainingBody: string;
     };
+  };
+  radio: {
+    footer_label: string;
+    idle_title: string;
+    idle_subtitle: string;
+    play: string;
+    pause: string;
+    skip: string;
+    switch_station: string;
+    stations_label: string;
+    track_count_one: string;
+    track_count_other: string;
+    settings_title: string;
+    settings_description: string;
   };
 };

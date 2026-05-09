@@ -418,20 +418,24 @@ impl AmbientContextFusion {
     /// (`redact_clipboard_content`) before the signal enters the rolling
     /// window — the un-redacted text never reaches storage. Phase 3 of
     /// the Athena desktop-aware roadmap.
-    pub fn push_clipboard_with_content(&mut self, content_type: &str, content: &str) {
+    pub fn push_clipboard_with_content(
+        &mut self,
+        content_type: &str,
+        content: &str,
+    ) -> Option<AmbientSignal> {
         if !self.enabled || !self.clipboard_enabled {
-            return;
+            return None;
         }
         let raw_len = content.len();
         let redacted = redact_clipboard_content(content);
         let summary = format!("Clipboard: {content_type} ({raw_len} chars)");
         self.broadcast_event("clipboard", &summary, Vec::new(), None, None);
-        self.push_signal_with_payload(
+        Some(self.push_signal_with_payload(
             "clipboard",
             summary,
             Vec::new(),
             Some(redacted),
-        );
+        ))
     }
 
     /// Legacy push site for clipboard signals when only metadata is
@@ -439,20 +443,28 @@ impl AmbientContextFusion {
     /// existing tests and any caller that has only the length. New code
     /// should use [`push_clipboard_with_content`] so the redacted
     /// content reaches the rolling window.
-    pub fn push_clipboard(&mut self, content_type: &str, content_length: usize) {
+    pub fn push_clipboard(
+        &mut self,
+        content_type: &str,
+        content_length: usize,
+    ) -> Option<AmbientSignal> {
         if !self.enabled || !self.clipboard_enabled {
-            return;
+            return None;
         }
         let summary = format!("Clipboard: {content_type} ({content_length} chars)");
         self.broadcast_event("clipboard", &summary, Vec::new(), None, None);
-        self.push_signal("clipboard", summary);
+        Some(self.push_signal("clipboard", summary))
     }
 
     /// Push a file change signal. Captured iff master `enabled` AND the
     /// per-source `file_changes_enabled` gate are on.
-    pub fn push_file_change(&mut self, kind: &str, paths: &[String]) {
+    pub fn push_file_change(
+        &mut self,
+        kind: &str,
+        paths: &[String],
+    ) -> Option<AmbientSignal> {
         if !self.enabled || !self.file_changes_enabled {
-            return;
+            return None;
         }
         let path_display: Vec<&str> = paths
             .iter()
@@ -461,7 +473,7 @@ impl AmbientContextFusion {
         let summary = format!("File {kind}: {}", path_display.join(", "));
         let raw_paths = paths.to_vec();
         self.broadcast_event("file_watcher", &summary, raw_paths.clone(), None, None);
-        self.push_signal_with_paths("file_watcher", summary, raw_paths);
+        Some(self.push_signal_with_paths("file_watcher", summary, raw_paths))
     }
 
     /// Push an app focus change signal and update current app state.
@@ -470,9 +482,13 @@ impl AmbientContextFusion {
     /// (`redact_window_title`) before being stored or broadcast — file
     /// paths in titles are reduced to basenames, email-shaped patterns are
     /// masked, and overall length is capped.
-    pub fn push_app_focus(&mut self, app_name: &str, window_title: &str) {
+    pub fn push_app_focus(
+        &mut self,
+        app_name: &str,
+        window_title: &str,
+    ) -> Option<AmbientSignal> {
         if !self.enabled || !self.app_focus_enabled {
-            return;
+            return None;
         }
         let redacted_title = redact_window_title(window_title);
         self.current_app = Some(app_name.to_string());
@@ -485,7 +501,7 @@ impl AmbientContextFusion {
             Some(app_name.to_string()),
             Some(redacted_title),
         );
-        self.push_signal("app_focus", summary);
+        Some(self.push_signal("app_focus", summary))
     }
 
     /// Broadcast a context event to all stream subscribers.
@@ -514,8 +530,8 @@ impl AmbientContextFusion {
         self.total_broadcast += 1;
     }
 
-    fn push_signal(&mut self, source: &str, summary: String) {
-        self.push_signal_with_paths(source, summary, Vec::new());
+    fn push_signal(&mut self, source: &str, summary: String) -> AmbientSignal {
+        self.push_signal_with_paths(source, summary, Vec::new())
     }
 
     /// Effective buffer limit: the maximum `max_window_size` across all
@@ -549,21 +565,32 @@ impl AmbientContextFusion {
         }
     }
 
-    fn push_signal_with_paths(&mut self, source: &str, summary: String, raw_paths: Vec<String>) {
-        self.push_signal_with_payload(source, summary, raw_paths, None);
+    fn push_signal_with_paths(
+        &mut self,
+        source: &str,
+        summary: String,
+        raw_paths: Vec<String>,
+    ) -> AmbientSignal {
+        self.push_signal_with_payload(source, summary, raw_paths, None)
     }
 
     /// Internal capture site that accepts an optional redacted-content
     /// payload. Clipboard signals provide the content (post-redaction);
     /// file-watcher and app-focus signals omit it (they communicate
     /// everything through `summary`).
+    ///
+    /// Returns a clone of the just-pushed signal — capture-side callers
+    /// (clipboard_monitor, app_focus tick) use this to mirror the
+    /// capture into the SQL projection (`ambient_signal_repo`) without
+    /// re-locking the fusion to read the back of the queue. Cheap clone:
+    /// strings + small Vec of paths.
     fn push_signal_with_payload(
         &mut self,
         source: &str,
         summary: String,
         raw_paths: Vec<String>,
         redacted_content: Option<String>,
-    ) {
+    ) -> AmbientSignal {
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
@@ -574,14 +601,15 @@ impl AmbientContextFusion {
         // this fusion instance. Survives buffer eviction; the counter is
         // monotonic and never reused.
         let id = format!("sig_{}", self.total_captured);
-        self.signals.push_back(AmbientSignal {
+        let signal = AmbientSignal {
             id,
             source: source.to_string(),
             summary,
             captured_at: now,
             raw_paths,
             redacted_content,
-        });
+        };
+        self.signals.push_back(signal.clone());
         self.total_captured += 1;
 
         // Evict if over the effective window size (derived from registered
@@ -596,6 +624,8 @@ impl AmbientContextFusion {
             self.evict_old_signals();
             self.last_eviction = Instant::now();
         }
+
+        signal
     }
 
     fn evict_old_signals(&mut self) {
@@ -714,44 +744,88 @@ impl AmbientContextFusion {
     }
 
     /// Build a markdown-formatted context document for prompt injection.
+    /// Thin wrapper: builds the active-app label from the fusion's
+    /// `current_app` / `current_window_title` fields, then delegates to
+    /// the pure renderer [`format_signals_for_prompt`]. The renderer is
+    /// also used by the daemon path (step 5 of Phase 3 c v3) which
+    /// loads signals from SQL — sharing the renderer keeps the
+    /// daemon-rendered prompt byte-identical to the windowed-app one
+    /// for the same data.
     pub fn format_for_prompt(&self, persona_id: &str) -> Option<String> {
         let snapshot = self.snapshot_for_persona(persona_id);
-        if !snapshot.enabled || snapshot.signals.is_empty() {
+        if !snapshot.enabled {
             return None;
         }
-
-        let mut doc = String::with_capacity(512);
-        doc.push_str("## Ambient Desktop Context\n");
-        doc.push_str(
-            "The following is a summary of recent desktop activity observed by the system.\n",
-        );
-        doc.push_str("Use this context to understand what the user is currently working on.\n\n");
-
-        if let Some(ref app) = snapshot.active_app {
-            doc.push_str(&format!("**Active Application**: {app}"));
+        let label = snapshot.active_app.as_ref().map(|app| {
             if let Some(ref title) = snapshot.active_window_title {
-                doc.push_str(&format!(" — {title}"));
-            }
-            doc.push_str("\n\n");
-        }
-
-        doc.push_str("**Recent Activity** (newest first):\n");
-        for entry in &snapshot.signals {
-            let age = if entry.age_secs < 60 {
-                format!("{}s ago", entry.age_secs)
-            } else if entry.age_secs < 3600 {
-                format!("{}m ago", entry.age_secs / 60)
+                format!("{app} — {title}")
             } else {
-                format!("{}h ago", entry.age_secs / 3600)
-            };
-            doc.push_str(&format!(
-                "- [{}] {} ({})\n",
-                entry.source, entry.summary, age
-            ));
-        }
-
-        Some(doc)
+                app.clone()
+            }
+        });
+        format_signals_for_prompt(&snapshot.signals, label.as_deref())
     }
+}
+
+/// Pure renderer for the ambient prompt block.
+///
+/// Takes a pre-filtered slice of signals (the caller is responsible
+/// for applying the persona's `SensoryPolicy` — source filter, age
+/// cutoff, window size — before calling) and an optional already-
+/// formatted "App — Window Title" label, and produces a markdown
+/// document suitable for prepending to a system prompt.
+///
+/// Returns `None` when the signal list is empty — this is the signal
+/// to the caller (`prepend_ambient_to_system_prompt`) that there's
+/// nothing to inject and the no-op path should run.
+///
+/// The two callers are:
+/// - [`AmbientContextFusion::format_for_prompt`] — windowed-app path,
+///   reads from in-memory rolling window.
+/// - The Phase 3 c v3 daemon path — reads from
+///   [`ambient_signal_repo::recent_signals`] and applies the persona
+///   policy explicitly before calling.
+///
+/// Sharing the renderer means the daemon-rendered prompt is byte-
+/// identical to the windowed-app one for the same input data — a
+/// regression in the rendered shape would appear in both code paths
+/// simultaneously and be caught by the existing
+/// `test_format_for_prompt` and the daemon-path tests in step 7.
+pub fn format_signals_for_prompt(
+    signals: &[AmbientSignalEntry],
+    active_app_label: Option<&str>,
+) -> Option<String> {
+    if signals.is_empty() {
+        return None;
+    }
+
+    let mut doc = String::with_capacity(512);
+    doc.push_str("## Ambient Desktop Context\n");
+    doc.push_str(
+        "The following is a summary of recent desktop activity observed by the system.\n",
+    );
+    doc.push_str("Use this context to understand what the user is currently working on.\n\n");
+
+    if let Some(label) = active_app_label {
+        doc.push_str(&format!("**Active Application**: {label}\n\n"));
+    }
+
+    doc.push_str("**Recent Activity** (newest first):\n");
+    for entry in signals {
+        let age = if entry.age_secs < 60 {
+            format!("{}s ago", entry.age_secs)
+        } else if entry.age_secs < 3600 {
+            format!("{}m ago", entry.age_secs / 60)
+        } else {
+            format!("{}h ago", entry.age_secs / 3600)
+        };
+        doc.push_str(&format!(
+            "- [{}] {} ({})\n",
+            entry.source, entry.summary, age
+        ));
+    }
+
+    Some(doc)
 }
 
 // ---------------------------------------------------------------------------
@@ -920,6 +994,70 @@ pub fn redact_window_title(title: &str) -> String {
     } else {
         out
     }
+}
+
+// ---------------------------------------------------------------------------
+// Persona-execution prefix helpers (Phase 3 c — daemon/runner bridge)
+// ---------------------------------------------------------------------------
+//
+// Building blocks for injecting "what Athena saw" into persona-execution
+// prompts (gap #6 from the Phase 1 audit). The helpers live here because
+// the rolling window is owned by `AmbientContextFusion`; runtime call-site
+// wiring (engine/mod.rs::run_execution_with_ceiling and the daemon's
+// consume_headless_events) is a follow-up commit.
+//
+// Architectural note — daemon process limitation:
+//   The `personas-daemon` binary runs as a separate process from the
+//   windowed Tauri app. The clipboard / file_watcher / app_focus
+//   watchers live in the windowed process; their captured signals
+//   never reach the daemon's address space. So `format_ambient_for_persona`
+//   in the daemon path will always return None today — the daemon's
+//   AppState doesn't construct an ambient handle either.
+//
+//   Closing the cross-process gap requires a separate piece of work
+//   (likely a SQL-persisted projection of the rolling window OR a
+//   tail-able UDS / named-pipe stream the daemon subscribes to). That
+//   work is explicitly deferred — the v1 windowed-app wiring is the
+//   higher-yield target.
+
+/// Render the ambient context snapshot for a specific persona as a
+/// markdown block suitable for prepending to that persona's system
+/// prompt. Returns `None` when:
+///   - the global `enabled` flag is off
+///   - the rolling window is empty after policy filtering
+///   - no per-source signals match the persona's `SensoryPolicy`
+///
+/// Locks the handle for the duration; safe to call from async contexts
+/// where the caller already holds nothing on the fusion. Pairs with
+/// [`prepend_ambient_to_system_prompt`] for the mutate-the-persona
+/// shape that runtime call sites use.
+pub async fn format_ambient_for_persona(
+    ambient_ctx: &AmbientContextHandle,
+    persona_id: &str,
+) -> Option<String> {
+    let guard = ambient_ctx.lock().await;
+    guard.format_for_prompt(persona_id)
+}
+
+/// Prepend a rendered ambient context block to a persona's system
+/// prompt. Caller-owned mutation — works on a `&mut Persona` so the
+/// runtime path can inject without cloning the persona record. The
+/// ambient block lands BEFORE the existing system prompt with a blank
+/// line separator, so persona-authored instructions remain the
+/// recency-weighted last block in the prompt.
+///
+/// No-op when `ambient_md` is empty or whitespace-only — the goal is
+/// to add context, not produce an empty section header.
+pub fn prepend_ambient_to_system_prompt(persona: &mut crate::db::models::Persona, ambient_md: &str) {
+    if ambient_md.trim().is_empty() {
+        return;
+    }
+    let existing = std::mem::take(&mut persona.system_prompt);
+    persona.system_prompt = if existing.trim().is_empty() {
+        ambient_md.to_string()
+    } else {
+        format!("{ambient_md}\n\n{existing}")
+    };
 }
 
 /// Shared handle to the ambient context fusion state.
@@ -1725,6 +1863,118 @@ mod tests {
         // sig_0 has been evicted; delete is a no-op.
         assert!(!fusion.delete_signal("sig_0"));
         assert!(fusion.delete_signal("sig_1"));
+    }
+
+    // ── Persona-execution prefix helpers (Phase 3 c) ──────────────────────
+
+    fn make_persona(system_prompt: &str) -> crate::db::models::Persona {
+        // Construct a minimal Persona for prefix-injection tests. The
+        // prepend helper only reads/writes `system_prompt`; the rest
+        // are filled with sensible defaults so the struct compiles.
+        crate::db::models::Persona {
+            id: "p_test".into(),
+            project_id: "proj_test".into(),
+            name: "Test".into(),
+            description: None,
+            system_prompt: system_prompt.to_string(),
+            structured_prompt: None,
+            icon: None,
+            color: None,
+            enabled: true,
+            sensitive: false,
+            headless: false,
+            max_concurrent: 1,
+            timeout_ms: 60_000,
+            notification_channels: None,
+            last_design_result: None,
+            last_test_report: None,
+            model_profile: None,
+            max_budget_usd: None,
+            max_turns: None,
+            design_context: None,
+            group_id: None,
+            source_review_id: None,
+            trust_level: crate::db::models::PersonaTrustLevel::Verified,
+            trust_origin: crate::db::models::PersonaTrustOrigin::default(),
+            trust_verified_at: None,
+            trust_score: 1.0,
+            parameters: None,
+            gateway_exposure: Default::default(),
+            template_category: None,
+            created_at: "2026-05-09T00:00:00Z".into(),
+            updated_at: "2026-05-09T00:00:00Z".into(),
+        }
+    }
+
+    #[test]
+    fn prepend_ambient_to_empty_system_prompt() {
+        let mut p = make_persona("");
+        prepend_ambient_to_system_prompt(&mut p, "## Ambient\nactivity here");
+        assert_eq!(p.system_prompt, "## Ambient\nactivity here");
+    }
+
+    #[test]
+    fn prepend_ambient_to_existing_system_prompt() {
+        let mut p = make_persona("You are a helpful assistant.");
+        prepend_ambient_to_system_prompt(&mut p, "## Ambient\nactivity here");
+        // Ambient lands first, then a blank line, then the original prompt.
+        assert!(p.system_prompt.starts_with("## Ambient\nactivity here"));
+        assert!(p.system_prompt.ends_with("You are a helpful assistant."));
+        assert!(p.system_prompt.contains("\n\nYou are a helpful assistant."));
+    }
+
+    #[test]
+    fn prepend_ambient_noop_on_empty_block() {
+        let mut p = make_persona("Hello");
+        prepend_ambient_to_system_prompt(&mut p, "");
+        assert_eq!(p.system_prompt, "Hello");
+        prepend_ambient_to_system_prompt(&mut p, "   \n\t  ");
+        assert_eq!(p.system_prompt, "Hello");
+    }
+
+    #[tokio::test]
+    async fn format_ambient_for_persona_returns_none_when_empty() {
+        let handle = create_ambient_context();
+        // Empty rolling window → no markdown block.
+        let out = format_ambient_for_persona(&handle, "p_test").await;
+        assert!(out.is_none());
+    }
+
+    #[tokio::test]
+    async fn format_ambient_for_persona_returns_some_when_signals_present() {
+        let handle = create_ambient_context();
+        {
+            let mut g = handle.lock().await;
+            *g = AmbientContextFusion::new_for_tests();
+            g.push_clipboard_with_content("text", "deploy plan for staging");
+        }
+        let out = format_ambient_for_persona(&handle, "p_test").await;
+        assert!(out.is_some());
+        let md = out.unwrap();
+        assert!(md.contains("Ambient Desktop Context"));
+        assert!(md.contains("clipboard"));
+    }
+
+    #[tokio::test]
+    async fn format_then_prepend_round_trip() {
+        // End-to-end: capture a signal, render for persona, inject into
+        // a persona's system prompt. Demonstrates the wiring shape that
+        // future runtime callers (engine/mod.rs) will use.
+        let handle = create_ambient_context();
+        {
+            let mut g = handle.lock().await;
+            *g = AmbientContextFusion::new_for_tests();
+            g.push_app_focus("Code.exe", "main.rs - personas");
+        }
+        let md = format_ambient_for_persona(&handle, "p_test")
+            .await
+            .expect("snapshot should render");
+        let mut persona = make_persona("Be terse.");
+        prepend_ambient_to_system_prompt(&mut persona, &md);
+        assert!(persona.system_prompt.contains("Ambient Desktop Context"));
+        assert!(persona.system_prompt.contains("Be terse."));
+        // Original content preserved at the end.
+        assert!(persona.system_prompt.ends_with("Be terse."));
     }
 
     // ── Clipboard content capture + redaction (Phase 3 v1) ────────────────

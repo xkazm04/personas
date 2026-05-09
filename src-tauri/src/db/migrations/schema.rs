@@ -1545,4 +1545,28 @@ CREATE INDEX IF NOT EXISTS idx_evolution_cycles_policy ON evolution_cycles(polic
 CREATE INDEX IF NOT EXISTS idx_evolution_cycles_persona ON evolution_cycles(persona_id);
 CREATE INDEX IF NOT EXISTS idx_evolution_cycles_started ON evolution_cycles(started_at DESC);
 
+-- Phase 3 c v3 (Athena desktop awareness): ambient signal projection.
+-- The windowed app's AmbientContextFusion is in-memory only, so the
+-- daemon process can't see signals captured by clipboard/file/app_focus
+-- watchers. This table is the cross-process bridge: capture-side writes
+-- a redacted row after each in-memory push; daemon reads recent rows at
+-- execution time, applies persona policy, renders an ambient prefix.
+-- Lives in the main DB (alongside execution + persona tables) — not the
+-- per-user companion DB — because both clipboard_monitor and the daemon
+-- runner already use the main DbPool.
+-- Payloads are POST-redaction (JWT/AWS/Stripe/GitHub/Slack/Bearer/email
+-- patterns stripped at capture per Phase 3 v1). Eviction is age-based
+-- (default 24h) — the table is a rolling buffer, not durable history.
+CREATE TABLE IF NOT EXISTS ambient_signal (
+    id                TEXT PRIMARY KEY,             -- 'sig_<n>' (matches in-memory id format)
+    source            TEXT NOT NULL,                -- 'clipboard' | 'file_watcher' | 'app_focus'
+    summary           TEXT NOT NULL,                -- prompt-injection-ready short title (matches AmbientSignal::summary)
+    captured_at       INTEGER NOT NULL,             -- unix epoch SECONDS (matches AmbientSignal::captured_at)
+    redacted_content  TEXT                          -- redacted clipboard body or other source-specific payload; NULL for sources that don't capture content
+);
+CREATE INDEX IF NOT EXISTS idx_ambient_signal_captured
+    ON ambient_signal(captured_at DESC);
+CREATE INDEX IF NOT EXISTS idx_ambient_signal_source_captured
+    ON ambient_signal(source, captured_at DESC);
+
 "#;

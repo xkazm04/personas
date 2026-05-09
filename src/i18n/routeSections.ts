@@ -13,6 +13,7 @@ const BASE_SECTIONS: readonly TranslationSection[] = [
   'empty_states',
   'status_tokens',
   'process_labels',
+  'radio',
 ];
 
 const ROUTE_SECTIONS: Record<SidebarSection, readonly TranslationSection[]> = {

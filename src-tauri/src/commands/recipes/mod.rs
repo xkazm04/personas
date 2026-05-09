@@ -118,4 +118,5 @@ pub mod recipe_derivation;
 pub mod recipe_execution;
 pub mod recipe_generation;
 pub mod recipe_match;
+pub mod recipe_suggestion_log;
 pub mod recipe_versioning;

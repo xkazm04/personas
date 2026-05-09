@@ -107,9 +107,35 @@ pub async fn clipboard_tick(
     // no-op when the user has the toggle off (no signal entered the
     // window, no broadcast). Redaction runs at capture; un-redacted
     // text never crosses into storage.
-    if let Some(handle) = ambient_ctx {
+    let captured = if let Some(handle) = ambient_ctx {
         let mut ctx = handle.lock().await;
-        ctx.push_clipboard_with_content(&content_type, &content);
+        ctx.push_clipboard_with_content(&content_type, &content)
+    } else {
+        None
+    };
+
+    // Phase 3 c v3: mirror the capture into the cross-process SQL
+    // projection so the daemon binary can see this signal at
+    // execution time. Sync write because the surrounding tick already
+    // does sync DB calls (e.g., trigger_repo::get_enabled_by_type
+    // below); this preserves the existing latency profile. Failure
+    // is non-fatal — a warning logs to Sentry-equivalent and the
+    // daemon simply misses this one signal.
+    if let Some(sig) = captured {
+        if let Err(e) = crate::engine::ambient_signal_repo::insert_signal(
+            pool,
+            &sig.id,
+            &sig.source,
+            &sig.summary,
+            sig.captured_at,
+            sig.redacted_content.as_deref(),
+        ) {
+            tracing::warn!(
+                error = %e,
+                signal_id = %sig.id,
+                "ambient_signal: clipboard SQL projection failed"
+            );
+        }
     }
 
     // Load enabled clipboard triggers (SQL-filtered)

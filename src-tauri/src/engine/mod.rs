@@ -4,7 +4,11 @@ pub mod ai_healing;
 pub mod ai_helpers;
 #[cfg(feature = "desktop")]
 pub mod ambient_context;
+#[cfg(feature = "desktop")]
+pub mod ambient_signal_repo;
 pub mod api_definition;
+#[cfg(feature = "desktop")]
+pub mod cli_session_awareness;
 pub mod api_proxy;
 #[cfg(feature = "desktop")]
 pub mod app_focus;
@@ -223,6 +227,26 @@ async fn run_execution_with_ceiling(
     circuit_breaker: Arc<failover::ProviderCircuitBreaker>,
 ) -> ExecutionResult {
     let ceiling = std::time::Duration::from_secs(ENGINE_MAX_EXECUTION_SECS);
+
+    // Phase 3 c: inject ambient desktop signals into the persona's
+    // system_prompt before execution. Persona-authored instructions
+    // remain the recency-weighted last block; ambient prepends with a
+    // blank-line separator. Non-desktop builds skip this entirely
+    // (the AmbientContextFusion machinery is desktop-feature gated).
+    // Failures are non-fatal: a None result simply means the rolling
+    // window is empty for this persona's policy and we pass through.
+    #[cfg(feature = "desktop")]
+    let persona = {
+        let mut persona = persona;
+        let state = app.state::<Arc<crate::AppState>>();
+        let ambient_ctx = state.ambient_context.clone();
+        if let Some(md) =
+            ambient_context::format_ambient_for_persona(&ambient_ctx, &persona.id).await
+        {
+            ambient_context::prepend_ambient_to_system_prompt(&mut persona, &md);
+        }
+        persona
+    };
 
     // Wrap the AppHandle in a TauriEmitter so runner::run_execution
     // works through the abstracted ExecutionEventEmitter trait.

@@ -9209,7 +9209,8 @@
       "label": "We have a recipe for this",
       "use_button": "Use this recipe",
       "dismiss": "Dismiss",
-      "score_label": "Match"
+      "score_label": "Match",
+      "applied_toast": "Applied recipe: {name}"
     }
   },
   "recipe_shared": {
@@ -12792,5 +12793,19 @@
       "trainingTitle": "Interview yourself",
       "trainingBody": "Pick a topic — AI asks 5 questions — answer in your voice. The session summary becomes a high-signal memory."
     }
+  },
+  "radio": {
+    "footer_label": "Radio player",
+    "idle_title": "Press play",
+    "idle_subtitle": "Curated stations",
+    "play": "Play",
+    "pause": "Pause",
+    "skip": "Skip to next track",
+    "switch_station": "Switch station",
+    "stations_label": "Stations",
+    "track_count_one": "1 track",
+    "track_count_other": "{count} tracks",
+    "settings_title": "Radio",
+    "settings_description": "Curated YouTube stations that play in the background. Use the controller at the bottom-right of the window to play, pause, skip, or switch stations."
   }
 }

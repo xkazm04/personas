@@ -37,6 +37,8 @@ Async generation/execution/versioning commands use active-process registration a
 
 `match_recipes_to_intent` powers the Glyph composer's recipe-suggestion chip (`ComposerRecipeSuggestion`). The frontend debounces the user's typed task by 300ms and queries this command with `top_k = 1`. The chip is shown only when the top match's `above_threshold` is `true` — i.e. the score clears `engine::recipe_matcher::SUGGESTION_THRESHOLD` (0.90, conservative). Below-threshold matches and zero-overlap recipes are silently dropped, so the suggestion never gets in the user's way during normal authoring.
 
+When the user clicks the chip's "Use this recipe" button, the composer fetches the full recipe via `get_recipe` and pre-fills the in-flight draft (Stage D Phase 3, mode 1 acceptance). Pre-fill policy lives in `mergeRecipeIntoDraft` (`commandPanelHelpers.ts`): replace `draft.task` with the recipe's description (or name if missing); pre-fill `draft.tools` from `tool_requirements` only when the user hasn't typed any; leave `when`/`output`/`review` untouched. Acceptance is intentionally opt-in — the chip is hidden by default until the matcher's score crosses threshold, and the apply action shows a success toast naming the applied recipe.
+
 ## Relationship to templates and personas
 
 Templates create personas; recipes are reusable operational workflows. A persona can be linked to multiple recipes, and use cases can be promoted into recipes when a repeated workflow emerges from a design/use-case flow.
