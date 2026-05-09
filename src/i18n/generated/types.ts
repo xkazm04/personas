@@ -12204,6 +12204,8 @@ export type Translations = {
       release_0_0_2_item_19_description: string;
       release_0_0_2_item_20_title: string;
       release_0_0_2_item_20_description: string;
+      release_0_0_2_item_21_title: string;
+      release_0_0_2_item_21_description: string;
       release_roadmap_label: string;
       release_roadmap_summary: string;
       release_roadmap_item_2_title: string;

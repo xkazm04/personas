@@ -73,6 +73,7 @@ export const TEMPLATE_CHECKSUMS: Record<string, string> = {
   'productivity/router.json': '0019c0f8d207c343',
   'productivity/survey-insights-analyzer.json': '000ab234ea960386',
   'productivity/survey-processor.json': '000ae55cfa2a0e9e',
+  'productivity/vault-grounded-journal-coach.json': '000e8c5331a1ef6e',
   'project-management/agency-client-retainer-manager.json': '00047d954b9ea3d7',
   'project-management/client-portal-orchestrator.json': '000df4db709c4315',
   'project-management/deadline-synchronizer.json': '0017b8f142ccd5e3',
