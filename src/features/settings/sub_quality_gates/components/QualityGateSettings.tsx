@@ -32,13 +32,14 @@ function RuleRow({ rule }: { rule: QualityGateRule }) {
   );
 }
 
-function RuleSection({ title, icon: Icon, description, rules, categories, rejectedLabel }: {
+function RuleSection({ title, icon: Icon, description, rules, categories, rejectedLabel, ruleCountLabel }: {
   title: string;
   icon: typeof Brain;
   description: string;
   rules: QualityGateRule[];
   categories?: string[];
   rejectedLabel?: string;
+  ruleCountLabel: string;
 }) {
   return (
     <div className="space-y-2">
@@ -46,7 +47,7 @@ function RuleSection({ title, icon: Icon, description, rules, categories, reject
         <Icon size={14} className="text-foreground" />
         <h3 className="typo-body font-medium text-foreground">{title}</h3>
         <span className="text-[10px] text-foreground bg-secondary/40 px-1.5 py-0.5 rounded">
-          {rules.length} rule{rules.length !== 1 ? 's' : ''}
+          {ruleCountLabel}
         </span>
       </div>
       <p className="text-[11px] text-foreground pl-[22px]">{description}</p>
@@ -150,6 +151,10 @@ export default function QualityGateSettings() {
               rules={config.memoryRules}
               categories={config.memoryRejectCategories}
               rejectedLabel={s.rejected_categories}
+              ruleCountLabel={tx(
+                config.memoryRules.length === 1 ? s.rules_count : s.rules_count_plural,
+                { count: config.memoryRules.length },
+              )}
             />
 
             <div className="border-t border-border/30" />
@@ -159,6 +164,10 @@ export default function QualityGateSettings() {
               icon={FileSearch}
               description={s.review_filters_desc}
               rules={config.reviewRules}
+              ruleCountLabel={tx(
+                config.reviewRules.length === 1 ? s.rules_count : s.rules_count_plural,
+                { count: config.reviewRules.length },
+              )}
             />
 
             <div className="border-t border-border/30" />
