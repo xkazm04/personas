@@ -2054,6 +2054,32 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Added companion_session_id column to build_sessions");
     }
 
+    // 2026-05-09 — Stage B Phase 1a: Recipe provenance for template-derived
+    // recipes. Allows linking a recipe back to the (template, use_case_id) it
+    // was derived from, so re-imports stay idempotent (Stage B Phase 1b's
+    // derive_recipes_from_template can detect existing rows and update vs
+    // create) and downstream UX can surface "newer version available" badges
+    // when a template author bumps a recipe.
+    //
+    // All four columns are nullable: existing recipes (none of which are
+    // template-derived today) keep NULL provenance and behave unchanged.
+    // The unique index is partial — only enforced when source_template_id is
+    // NOT NULL — so user-authored recipes with NULL provenance don't collide.
+    if !has_column(conn, "recipe_definitions", "source_template_id")? {
+        conn.execute_batch(
+            "ALTER TABLE recipe_definitions ADD COLUMN source_template_id TEXT;
+             ALTER TABLE recipe_definitions ADD COLUMN source_use_case_id TEXT;
+             ALTER TABLE recipe_definitions ADD COLUMN source_use_case_name TEXT;
+             ALTER TABLE recipe_definitions ADD COLUMN source_version TEXT;
+             CREATE UNIQUE INDEX IF NOT EXISTS idx_recipe_definitions_source
+               ON recipe_definitions(source_template_id, source_use_case_id)
+               WHERE source_template_id IS NOT NULL;",
+        )?;
+        tracing::info!(
+            "Added provenance columns (source_template_id, source_use_case_id, source_use_case_name, source_version) + unique index to recipe_definitions"
+        );
+    }
+
     Ok(())
 }
 

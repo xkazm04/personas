@@ -114,9 +114,14 @@ fails if code signing is enabled.
 ### Where layer 2 is enforced
 
 1. **`check_template_integrity` in `template_adopt.rs`** — called at
-   the start of every adoption command (`start_template_adopt_background`,
-   `instant_adopt_template_inner`, `generate_template_adopt_questions`).
-   A mismatch returns `AppError::Validation` and aborts the adoption.
+   the start of `instant_adopt_template_inner`. A mismatch returns
+   `AppError::Validation` and aborts the adoption. (Pre-2026-05-09 the
+   integrity check also ran in `start_template_adopt_background` and
+   `generate_template_adopt_questions`; both commands were retired in
+   the Stage A1 cleanup. The interactive adoption path now goes through
+   `create_adoption_session` + `save_adoption_answers`, where integrity
+   is enforced earlier in the gallery layer when templates are loaded
+   from `templateCatalog.ts`.)
 
 2. **`verify_templates_integrity` Tauri command** — called by the
    frontend after `getTemplateCatalog()` for a global sanity check at
@@ -131,17 +136,19 @@ User clicks Adopt
 Frontend reads review.design_result from DB
    │
    ▼
-Tauri IPC: start_template_adopt_background(template_name, design_result_json)
-   │
+Tauri IPC: instant_adopt_template(template_name, design_result_json)
+   │      (or interactive path: create_adoption_session, where the
+   │       template catalog at gallery load time has already verified
+   │       integrity via verify_templates_integrity)
    ▼
-template_adopt.rs line 195:
+template_adopt.rs (instant path):
    check_template_integrity(&template_name, &design_result_json)?
    │
-   ├── valid? → continue to run_unified_adopt_turn1 or direct path
+   ├── valid? → instant_adopt_template_inner creates persona atomically
    └── invalid? → AppError::Validation returned to frontend
    │
    ▼
-create_adoption_session (separate Tauri command)
+create_adoption_session (interactive path; separate Tauri command)
    │
    ▼
 build_session row inserted, adoption proceeds
