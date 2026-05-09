@@ -27,3 +27,7 @@ Implementation contract: [live-roadmap/live-roadmap.md](live-roadmap/live-roadma
 ## Simple Mode
 
 Simple Mode is a separate starter-tier experience under `src/features/simple-mode`. It has a shell (`SimpleHomeShell.tsx`), variant views (`components/variants`), and system state in `simpleModeSlice.ts`. Tier visibility is controlled by `TIERS` and `isTierVisible`.
+
+### Ambient mode
+
+A fullscreen, always-on display variant of Simple Mode designed for second monitors and kitchen-tablet-style ambient surfaces. Triggered from the Maximize button in `SimpleHomeShell` (sets `simpleModeSlice.ambientMode = true` and best-effort maximizes the Tauri window) or by booting with a `#ambient` URL hash. The overlay is rendered globally by `AmbientCockpit.tsx` mounted at App root, and auto-rotates between Mosaic (when no critical/warning items in `useUnifiedInbox`) and Inbox (when items need attention). Auto-rotation pauses for 30s after any pointer/keyboard interaction. Esc or the X button exits.

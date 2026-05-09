@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
-import { Gauge, Inbox, LayoutGrid, Settings } from 'lucide-react';
+import { Gauge, Inbox, LayoutGrid, Maximize2, Settings } from 'lucide-react';
 import { useRovingTabIndex } from '@/hooks/utility/interaction/useRovingTabIndex';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useSystemStore } from '@/stores/systemStore';
 import type { SimpleTab } from '@/stores/slices/system/simpleModeSlice';
 
 interface SimpleHomeShellProps {
@@ -33,6 +34,26 @@ const FOCUS_RING =
  *
  * All user-facing strings route through `useTranslation()` per CLAUDE.md.
  */
+/**
+ * Enter ambient mode: full-screen always-on display that auto-rotates
+ * between Mosaic and Inbox driven by inbox severity. Best-effort maximizes
+ * the Tauri window so the surface fills the screen; on web/non-Tauri the
+ * overlay still covers the viewport via fixed positioning.
+ */
+async function enterAmbientMode(setAmbient: (on: boolean) => void) {
+  setAmbient(true);
+  try {
+    const { IS_DESKTOP } = await import('@/lib/utils/platform/platform');
+    if (!IS_DESKTOP) return;
+    const { getCurrentWindow } = await import('@tauri-apps/api/window');
+    const win = getCurrentWindow();
+    const isMax = await win.isMaximized().catch(() => true);
+    if (!isMax) await win.maximize().catch(() => {});
+  } catch {
+    // Non-Tauri or platform not loaded — overlay still works.
+  }
+}
+
 export function SimpleHomeShell({
   activeTab,
   onTabChange,
@@ -40,6 +61,7 @@ export function SimpleHomeShell({
   children,
 }: SimpleHomeShellProps) {
   const { t } = useTranslation();
+  const setAmbientMode = useSystemStore((s) => s.setAmbientMode);
   const activeIndex = Math.max(
     0,
     TABS.findIndex((tab) => tab.id === activeTab),
@@ -100,8 +122,17 @@ export function SimpleHomeShell({
           })}
         </nav>
 
-        {/* Right: settings gear */}
+        {/* Right: ambient pop-out + settings gear */}
         <div className="flex items-center gap-2 flex-shrink-0">
+          <button
+            type="button"
+            onClick={() => void enterAmbientMode(setAmbientMode)}
+            aria-label={t.simple_mode.ambient_pop_out}
+            title={t.simple_mode.ambient_pop_out_hint}
+            className={`w-9 h-9 rounded-xl flex items-center justify-center text-foreground/70 hover:text-foreground hover:bg-foreground/[0.04] transition-colors ${FOCUS_RING}`}
+          >
+            <Maximize2 className="w-4 h-4" />
+          </button>
           <button
             type="button"
             onClick={onOpenSettings}

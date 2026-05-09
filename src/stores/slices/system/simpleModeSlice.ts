@@ -8,6 +8,10 @@ export interface SimpleModeSlice {
   /** Persisted active tab in Simple mode. Survives Simple↔Power toggles and app reloads. */
   activeSimpleTab: SimpleTab;
   setActiveSimpleTab: (tab: SimpleTab) => void;
+  /** Ambient mode = fullscreen always-on display that auto-rotates between
+   *  Mosaic (calm) and Inbox (attention) driven by inbox severity. */
+  ambientMode: boolean;
+  setAmbientMode: (on: boolean) => void;
 }
 
 /**
@@ -23,4 +27,6 @@ export const createSimpleModeSlice: StateCreator<
 > = (set) => ({
   activeSimpleTab: 'mosaic',
   setActiveSimpleTab: (tab) => set({ activeSimpleTab: tab }),
+  ambientMode: false,
+  setAmbientMode: (on) => set({ ambientMode: on }),
 });

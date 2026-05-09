@@ -37,12 +37,32 @@ timestamp — the next session can recognize it as abandoned.
   - **Paths:** `.claude/active-runs.md`, `.claude/CLAUDE.md`, `.claude/skills/research/skill.md`, `docs/concepts/cli-coordination-active-runs.md`, `docs/concepts/README.md`
   - **Status:** started — overlaps with browser-harness only on `.claude/active-runs.md` (by design — that file is the coordination surface itself)
 
-- **[2026-05-09 ~13:50] /research — companion-persistent-memory-blueprint**
-  - **Source:** Medium "Persistent Memory for AI Coding Agents: An Engineering Blueprint for Cross-Session Continuity" (Sourabh Sharma, Feb 2026)
-  - **Paths:** `Obsidian/personas/Research/`, `Obsidian/personas/Lessons/`, possibly `src-tauri/src/companion/brain/` if findings land
-  - **Status:** started
+- **[2026-05-09 ~23:30] manual — unclear-wins reactions (scoped to inflight-guard)**
+  - **Source:** `.claude/commands/unclear-wins/idea-6157bb9b-reactions-collapse-events-trig.md` — original idea was a 7-system rewrite; user redirected to a single-subsystem win: extract the bespoke `INFLIGHT_TRIGGERS` mutex from `commands/tools/automations.rs` into a reusable `engine/inflight_guard` primitive
+  - **Paths:** `src-tauri/src/engine/inflight_guard.rs` (new), `src-tauri/src/engine/mod.rs` (one-line module declaration), `src-tauri/src/commands/tools/automations.rs` (replace 2 inline lock callsites + remove `INFLIGHT_TRIGGERS` static), `.claude/commands/unclear-wins/idea-6157bb9b-*.md` (delete)
+  - **Status:** started — Rust-only under `src-tauri/`; no overlap with active sessions
+
+- **[2026-05-09 ~23:50] /architect resume — slice-test pattern + persist migration tests (decisions 1 + 2 of 3)**
+  - **Source:** `Architect/decisions/2026-05-09-slice-test-pattern.md` + `Architect/decisions/2026-05-09-persist-migration-tests.md` — both queued from the 2026-05-09 state-management scan; resume-mode session
+  - **Paths:** `src/stores/__tests__/README.md` (new), `src/stores/__tests__/agentStore.merge.test.ts` (new), `src/stores/__tests__/systemStore.rehydrate.test.ts` (new), `src/stores/__tests__/themeStore.rehydrate.test.ts` (new); read-only on `src/stores/agentStore.ts`, `src/stores/systemStore.ts`, `src/stores/themeStore.ts`; vault: `Architect/decisions/2026-05-09-{slice-test-pattern,persist-migration-tests}.md`, `Architect/backlog.md`, `Architect/scans/2026-05-09-state-management.md`, `Architect/weak-patterns.md`, `Architect/coverage.md`, `Lessons/2026-05-09-architect.md`
+  - **Status:** started — test-only + a single README; no overlap with `unclear-wins reactions` (Rust) or with the ambient-simple-mode session's `src/App.tsx`/`stores/systemStore.ts` modifications (read-only on systemStore.ts here, no edit)
 
 ## Recently completed (last 14 days)
+
+- **[2026-05-09 ~23:15] manual — unclear-wins stacked-modal depth**
+  - **Source:** `.claude/commands/unclear-wins/idea-00838d36-stacked-modal-depth-progressiv.md` — ModalStackContext for topmost-only Escape, progressive blur, depth-based z-index
+  - **Paths:** `src/lib/ui/BaseModal.tsx`, `src/lib/ui/ModalStackContext.tsx` (new), `src/App.tsx` (provider wrapper), `.claude/commands/unclear-wins/idea-00838d36-*.md` (deleted)
+  - **Status:** completed (commit `61167b1d3`). `tsc --noEmit` clean. Worked in a worktree to coexist with the ambient-simple-mode session's uncommitted `src/App.tsx` edits; merged my 3 hunks back into master via `git apply --cached` against a hand-written patch so my commit excluded the parallel session's `AmbientCockpit` lazy-import + Suspense mount (those edits remain uncommitted in working tree, untouched). Worktree removed and branch deleted. Idea file deleted.
+
+- **[2026-05-09 ~22:30] manual — unclear-wins ambient simple mode**
+  - **Source:** `.claude/commands/unclear-wins/idea-5bd6ecb5-ambient-simple-mode-fleet-stat.md` — full-screen always-on Simple Mode with auto-rotation between Mosaic (calm) and Inbox (attention) plus Pop-out button
+  - **Paths:** `src/features/simple-mode/components/AmbientCockpit.tsx` (new), `src/features/simple-mode/components/SimpleHomeShell.tsx`, `src/stores/slices/system/simpleModeSlice.ts`, `src/App.tsx`, `docs/features/home.md`, `.claude/commands/unclear-wins/idea-5bd6ecb5-*.md` (deleted); plus i18n surface hijacked into commit `0b678344a`
+  - **Status:** completed — `tsc --noEmit` clean, lint 0 errors. Functional behavior shipped across two commits: (a) the i18n surface (`src/i18n/locales/en.json` + `generated/types.ts` + `generated/enSectionStrings.ts`) was hijacked into commit `0b678344a` ("explorer(drive): OS→Drive drag-drop ingest") — third occurrence of the parallel-commit hijacking pattern (memory `feedback_atomic_commit_under_parallel_sessions`); (b) the rest lands in the followup commit. The stacked-modal session committing in `61167b1d3` between my edits did NOT sweep my work — they used `git apply --cached` selectively per their ledger note. Searching `git log --grep="ambient"` finds only the followup commit; the i18n + types wiring is in `0b678344a`.
+
+- **[2026-05-09 ~13:50] /research — companion-persistent-memory-blueprint**
+  - **Source:** Medium "Persistent Memory for AI Coding Agents: An Engineering Blueprint for Cross-Session Continuity" (Sourabh Sharma, Feb 2026)
+  - **Paths:** `src-tauri/src/companion/brain/{consolidation.rs,semantic.rs,recall_synthesis.rs,mod.rs}`, `src-tauri/src/companion/{prompt.rs,session.rs}`, `src-tauri/src/commands/companion/consolidate.rs`, `src-tauri/src/lib.rs`, `Obsidian/personas/{Research/2026-05-09-companion-persistent-memory-blueprint.md,Lessons/2026-05-09-research.md}`, `.planning/handoffs/2026-05-09-companion-recall-synthesis.md` (gitignored, local only)
+  - **Status:** completed (commits: `c5a549ec0` token-cap pruning, `639b062c9` fuzzy dedup at consolidation, `6bc205086` synthesis layer at retrieval). All 3 findings shipped in-session; the synthesis handoff was executed at the user's follow-up direction rather than left as a deferred plan. 3 findings + 9 catches against a richer-than-expected brain (13 modules — `ls` of the module dir would have caught the over-richness before I assumed a 3-file mental model from codebase-context.md). Follow-up UI wiring (`recall_synthesis_enabled` propagated through `companion_send_message` IPC + Setup toggle in SetupPanel.tsx) was hijacked into commit `ba821b2f7` ("explorer(drive): cache drive_storage_info with 5-second TTL") by a concurrent drive-plugin session that committed between my `git add` and `git commit` — second occurrence of the pattern documented in memory `feedback_atomic_commit_under_parallel_sessions`. Functional behavior is shipped correctly under that misnamed commit; searching `git log --grep="recall_synthesis"` will not find this work — look in `ba821b2f7` instead.
 
 - **[2026-05-09 ~21:30] manual — clear-wins/creative backlog execution (Tasks #1–#9 of 11)**
   - **Source:** user request to walk through `.claude/commands/clear-wins/creative/` task by task. 9 of 11 tasks completed; #10 (per-persona quick-action chips, requires DB migration) and #11 (speculative chat dispatch, critical-path) deferred at user direction.
