@@ -32,11 +32,6 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
-- **[2026-05-09 ~21:00] /research — browser-harness (browser-use)**
-  - **Source:** [Browser Harness walkthrough](https://www.youtube.com/watch?v=YDqqRqqlnJU) (browser-use folks)
-  - **Paths:** `scripts/connectors/builtin/desktop-browser.json`, `src-tauri/src/db/builtin_connectors.rs`, `src-tauri/src/engine/skill_scratchpad.rs` (new), `src-tauri/src/engine/mod.rs`, `src-tauri/src/engine/prompt/mod.rs`, `.claude/active-runs.md`, `Obsidian/personas/Research/`, `Obsidian/personas/Lessons/`
-  - **Status:** started
-
 - **[2026-05-09 ~21:15] /research — cli-coordination-active-runs (design + execute)**
   - **Source:** in-session conversation following Claude+CapCut run; user request to design and execute the active-runs ledger right away
   - **Paths:** `.claude/active-runs.md`, `.claude/CLAUDE.md`, `.claude/skills/research/skill.md`, `docs/concepts/cli-coordination-active-runs.md`, `docs/concepts/README.md`
@@ -48,6 +43,11 @@ timestamp — the next session can recognize it as abandoned.
   - **Status:** started — no overlap with active /research sessions (they touch backend/connector/engine paths)
 
 ## Recently completed (last 14 days)
+
+- **[2026-05-09 ~21:00] /research — browser-harness (browser-use)**
+  - **Source:** [Browser Harness walkthrough](https://www.youtube.com/watch?v=YDqqRqqlnJU) (browser-use folks)
+  - **Paths:** `scripts/connectors/builtin/desktop-browser.json`, `src-tauri/src/db/builtin_connectors.rs`, `src-tauri/src/engine/skill_scratchpad.rs` (new), `src-tauri/src/engine/mod.rs`, `src-tauri/src/engine/prompt/mod.rs`, `Obsidian/personas/Research/2026-05-09-browser-harness-browser-use.md`, `Obsidian/personas/Lessons/2026-05-09-research.md`
+  - **Status:** completed (commit `6e1194e4f`) — recovery note: working-tree was stashed mid-session by the parallel cli-coordination commit; restored my 4 tracked files via `git show stash@{0}:<path>` and recreated the untracked `skill_scratchpad.rs` from conversation context
 
 - **[2026-05-09 13:10] /research — claude-blender (defer-all-reopenable)**
   - **Source:** [Claude + Blender Is Insane Now](https://www.youtube.com/watch?v=wSY1kHXSap0); also extended `/research` skill with Phase 2.5 web augmentation + on-demand `docs/features/` lookup (skill edits already landed in commit `27b6d5a3b` via baseliner; ledger entry registered retroactively)
