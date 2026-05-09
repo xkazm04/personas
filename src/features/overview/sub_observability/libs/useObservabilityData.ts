@@ -3,7 +3,7 @@ import { useOverviewStore } from "@/stores/overviewStore";
 import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from "@/stores/agentStore";
 import { useVaultStore } from "@/stores/vaultStore";
-import { useOverviewFilters } from '@/features/overview/components/dashboard/OverviewFilterContext';
+import { useOverviewFilterValues, useOverviewFilterActions } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import type { PieDataPoint } from '../components/MetricsCharts';
 import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
 import { useAnnotationData } from './useAnnotationData';
@@ -29,14 +29,16 @@ export function useObservabilityData() {
 
   const {
     dayRange: days,
-    setDayRange: setDays,
     selectedPersonaId,
+    customDateRange,
+    effectiveDays,
+  } = useOverviewFilterValues();
+  const {
+    setDayRange: setDays,
     setSelectedPersonaId,
     setFailureDrilldownDate,
-    customDateRange,
     setCustomDateRange,
-    effectiveDays,
-  } = useOverviewFilters();
+  } = useOverviewFilterActions();
 
   const [autoRefresh, setAutoRefresh] = useState(false);
   const {

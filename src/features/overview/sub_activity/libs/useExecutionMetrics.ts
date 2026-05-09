@@ -2,7 +2,7 @@ import { useMemo, useCallback } from 'react';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useShallow } from 'zustand/react/shallow';
 import { resolveMetricPercent, SUCCESS_RATE_IDENTITIES } from '@/features/overview/utils/metricIdentity';
-import { useOverviewFilters } from '@/features/overview/components/dashboard/OverviewFilterContext';
+import { useOverviewFilterValues, useOverviewFilterActions } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { mergePreviousPeriod } from '@/features/overview/sub_usage/libs/periodComparison';
 import { computePeriodTrends } from '@/features/overview/utils/computeTrends';
 import { resolveTimeRange, type TimeRange } from '@/lib/types/timeRange';
@@ -26,7 +26,8 @@ type TimeWindow = 1 | 7 | 30 | 90;
  *   `trends` (null when compare is disabled or chart data is empty).
  */
 export function useExecutionMetrics() {
-  const { dayRange, setDayRange, customDateRange, setCustomDateRange, effectiveDays, compareEnabled, setCompareEnabled, previousPeriodDays } = useOverviewFilters();
+  const { dayRange, customDateRange, effectiveDays, compareEnabled, previousPeriodDays } = useOverviewFilterValues();
+  const { setDayRange, setCustomDateRange, setCompareEnabled } = useOverviewFilterActions();
   const { data, loading, error, fetchExecutionDashboard } = useOverviewStore(useShallow((s) => ({
     data: s.executionDashboard,
     loading: s.executionDashboardLoading,

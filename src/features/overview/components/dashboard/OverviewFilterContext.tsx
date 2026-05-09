@@ -32,9 +32,6 @@ export interface OverviewFilterActions {
   setCompareEnabled: (enabled: boolean) => void;
 }
 
-/** @deprecated Use {@link OverviewFilterValues} & {@link OverviewFilterActions} separately. */
-export type OverviewFilterContextValue = OverviewFilterValues & OverviewFilterActions;
-
 const OverviewFilterValuesContext = createContext<OverviewFilterValues | null>(null);
 const OverviewFilterActionsContext = createContext<OverviewFilterActions | null>(null);
 
@@ -128,9 +125,3 @@ export function useOverviewFilterActions(): OverviewFilterActions {
   return ctx;
 }
 
-/** Returns both values and actions. Prefer the split hooks when possible. */
-export function useOverviewFilters(): OverviewFilterContextValue {
-  const values = useOverviewFilterValues();
-  const actions = useOverviewFilterActions();
-  return useMemo(() => ({ ...values, ...actions }), [values, actions]);
-}
