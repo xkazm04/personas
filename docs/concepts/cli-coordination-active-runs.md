@@ -1,0 +1,317 @@
+# CLI Coordination via Active-Runs Ledger — Concept
+
+> **Status:** Implemented (v1) 2026-05-09. v1 is `/research`-only; cross-skill adoption is the next step.
+> **Source:** Conversation in `Research/2026-05-09-claude-capcut-motion-graphics.md` follow-up. Triggered by the discovery that three concurrent `/research` runs on 2026-05-09 (Bright Data morning + Matt Wolfe afternoon + Matt Loui evening) overlapped with a fourth in-flight run (Printing Press / Nate Herk) whose `engine/skills_sidecar/` work was not visible to the Matt Loui run until a second-pass grep accidentally surfaced it.
+> **Related:** `.claude/active-runs.md` (the ledger itself), `.claude/skills/research/skill.md` (first adopter).
+
+---
+
+## What this is
+
+A small, low-ceremony coordination surface for multiple CLIs (Claude Code
+agents, manual sessions, skill invocations) operating concurrently on the
+same git checkout, on the same branch, without branching for isolation.
+
+A single git-tracked file at `.claude/active-runs.md` serves as a shared
+ledger:
+
+- **Phase 0** of each session reads it, scans for in-progress entries
+  whose declared paths overlap with the new session's planned scope, and
+  surfaces conflicts to the user.
+- **Phase 11/13** of each session moves its entry to "completed" and
+  records the commit SHA.
+
+That's it. No locks, no daemon, no queue, no branching.
+
+---
+
+## Why this exists
+
+### What was actually observed
+
+On 2026-05-09 four `/research` runs happened on the same checkout, on
+`master`, within ~12 hours:
+
+1. Morning — Bright Data hackathon (`Research/2026-05-09-brightdata-hackathon.md`)
+2. Afternoon — Matt Wolfe second-brain video (`Research/2026-05-09-second-brain-matt-wolfe.md`)
+3. Late afternoon / evening — "Printing Press" walkthrough by Nate Herk
+   (no Lessons entry written; produced uncommitted `engine/skills_sidecar/`
+   directory)
+4. Evening — Matt Loui CapCut tutorial (this concept doc's parent run,
+   produced `docs/concepts/per-persona-claude-code-skills.md` + `…image-attachments.md`)
+
+Run #4's F1 finding was **about to propose** building exactly the
+infrastructure run #3 had already drafted. The collision was caught
+reactively: a second-pass `grep` against `\.claude/skills` happened to
+turn up the in-flight `DESIGN.md` + `mod.rs`. Without that grep, run #4
+would have shipped a duplicate concept doc.
+
+Run #3 also left a stray `.research-cache/YDqqRqqlnJU.en.vtt` cache file
+behind — its Phase 2a cleanup never ran, presumably because the run
+didn't reach Phase 11.
+
+Both failures are coordination failures: not "broken code", but "two
+agents working on the same branch, same checkout, with no view of each
+other's in-flight intent".
+
+### The chronic version of this problem
+
+As more skills run concurrently and more tasks are delegated to the CLI
+in parallel, the cost of these collisions grows. Two skills writing the
+same file. Two skills proposing the same finding. Two skills committing
+in close succession with messages that read as if either was working
+solo. The auto-baseliner observed in the 2026-05-08 morning run
+compounds this — it commits in-progress changes opportunistically, so
+"my session's work" and "the other session's work" interleave at git
+granularity.
+
+The user's framing was apt: *"many CLIs are working in parallel on one
+machine in one branch in separate commits — please propose how to make
+order in the chaos, without branching."*
+
+---
+
+## Approaches considered
+
+Five shapes were on the table. Ranked from most invasive to least:
+
+### 1. Branching (rejected by premise)
+
+Each CLI works on its own branch; merges back via PR. **Rejected:** the
+user explicitly said "without branching". Branching also defeats the
+"multiple CLIs share a working tree" model that makes parallel work
+cheap in this codebase.
+
+### 2. Queue / dispatcher daemon
+
+A background process accepts session requests, queues them, runs them
+serially or with explicit concurrency limits. **Rejected:** defeats
+parallelism entirely; significant infrastructure to build and maintain;
+introduces a single point of failure.
+
+### 3. Lock files per domain
+
+`.locks/<domain>.lock` files (engine, prompt, db migrations, …). Each
+CLI acquires advisory locks before touching that domain. **Rejected:**
+domain granularity is impossible to get right. "Engine" is too broad,
+per-file is too narrow. Stale locks need a lifecycle. The mental model
+is heavier than what the actual problem warrants.
+
+### 4. Git-only coordination (rebase-on-merge)
+
+Each CLI commits more granularly; pulls and rebases before its own
+commit lands; conflicts surface at merge time. **Partially rejected:**
+git already does some of this. But conflicts only surface AFTER both
+runs have written code — too late. The most expensive failure mode
+(duplicate proposed concept docs) doesn't even produce a git conflict
+because the files are at different paths.
+
+### 5. Active-runs ledger (chosen)
+
+A single file documenting in-progress sessions. CLIs declare scope at
+start; check overlap; mark complete at end. **Chosen.** Reasons:
+
+- **Cheap:** one file, ~10 lines of skill-spec changes per adopter.
+- **Catches intent before code:** the conflict check fires at Phase 0,
+  before either session has written anything.
+- **Human-readable:** plain markdown, browseable, grep-able, version-controlled.
+- **Discipline-dependent but bounded:** if a session forgets to register,
+  the worst outcome is duplicate work — same shape as the failure that
+  motivated this concept. No new failure modes introduced.
+- **Self-discoverable via CLAUDE.md:** the project's CLAUDE.md references
+  the ledger, so any agent loading project context sees it without each
+  skill having to spec it.
+
+---
+
+## Implementation v1 (this commit)
+
+### The file: `.claude/active-runs.md`
+
+Three sections:
+
+```
+# Active Runs Ledger
+
+[brief explanation of the contract]
+
+## Conventions
+
+- timestamps, path declaration, edit-conflict resolution rules
+
+## Active
+
+[in-progress entries, format below]
+
+## Recently completed (last 14 days)
+
+[completed entries, oldest at bottom]
+```
+
+Each entry shape:
+
+```markdown
+- **[YYYY-MM-DD HH:MM] /<skill-name> — <slug>**
+  - **Source:** <where the run came from — URL, conversation, etc.>
+  - **Paths:** `path1/`, `path2/`, `glob/**`
+  - **Status:** started | completed (commit: <sha>) | aborted (<reason>)
+```
+
+### Self-discoverability via `CLAUDE.md`
+
+The project's `CLAUDE.md` was updated this commit with a one-line entry
+under "Important Conventions" pointing at `.claude/active-runs.md` and
+describing the contract. CLAUDE.md is auto-loaded into every Claude Code
+conversation in this repo, so any session sees the convention without
+having to be told.
+
+### First adopter: `/research`
+
+`.claude/skills/research/skill.md` now wires:
+
+- **Phase 0:** read the ledger, conflict-check against planned scope,
+  append a `started` entry under `## Active`.
+- **Phase 11 / 13:** Move the entry to the top of `## Recently completed`
+  with the commit SHA from Phase 13.
+
+### Conflict detection rule
+
+A planned-path-vs-active-path overlap exists when EITHER:
+
+- A planned path is a prefix of an active path (broader to narrower).
+- An active path is a prefix of a planned path (narrower to broader).
+- The two paths are equal.
+
+When overlap exists AND the active entry is `started`-status AND the
+entry's `started` timestamp is less than 2 hours old, surface the
+conflict to the user. The user can:
+
+- **Abort:** the new session stops, no entry written.
+- **Coordinate:** the new session writes a different scope (e.g. picks a
+  different finding, narrower paths) and the user manually de-conflicts
+  with the other session.
+- **Proceed-with-awareness:** the new session continues with the conflict
+  noted in its run record. The other session may or may not still be live.
+
+When the active entry is `started`-status AND older than 2 hours, the
+new session presumes the other session is abandoned. It should NOT
+silently rewrite the other session's entry — it can mention the stale
+entry to the user, but the cleanup is a manual or out-of-band concern.
+
+---
+
+## v2 — cross-skill adoption (not in this commit)
+
+### Skills that should adopt next
+
+| Skill | Why |
+|---|---|
+| `/architect` | Material codebase changes, multi-file design work — high collision risk. |
+| `/refresh-context` | Writes `codebase-context.md` and `codebase-catalogs.md` — single-writer concern. |
+| `/refactor` | By definition large-scope file edits. |
+| `/add-template` | Writes JSON to `scripts/templates/` and regenerates checksums. |
+| `/add-credential` | Writes JSON to `scripts/connectors/builtin/`, `db/builtin_connectors.rs`, regenerates seeds. |
+| `/codebase-init` | First-touch on a fresh repo; concurrent init is a footgun. |
+
+The pattern is the same for each: Phase 0 register, Phase 11/13
+deregister, conflict-check rule. The skill spec changes are ~10 lines
+per skill.
+
+### Auto-baseliner integration (open question)
+
+The 2026-05-08 morning run observed an auto-baselining commit hook on
+this repo that opportunistically commits in-progress changes with a
+`Baseline ...` prefix. Phase 13 of `/research` had to learn to detect it
+and capture the auto-generated SHA in the Research note. The same
+detection should also apply to the active-runs ledger: when an
+auto-baseline commit lands during an in-flight run, the ledger entry's
+final SHA should reflect whichever commit actually contains the run's
+work — not the run's planned `research:`-prefix commit that may or may
+not have fired.
+
+For v1: leave the SHA-recording manual. If auto-baseliner-driven SHA
+mismatches become a recurring confusion, codify a Phase 13 sub-rule.
+
+### Multi-machine / multi-worktree coordination (out of v1 scope)
+
+The current design assumes "one machine, one checkout, multiple sessions
+sharing the same working tree". If a future workflow runs sessions
+across multiple machines or multiple git worktrees, the ledger must
+either:
+
+- live in a non-working-tree location (a daemon, a remote service); or
+- be committed as part of every session start (so other machines see it
+  via `git fetch`); or
+- be replaced with a stronger primitive (queue, lock service).
+
+Out of scope for v1. Reconsider when the cross-machine use case is real.
+
+---
+
+## Tradeoffs explicitly accepted
+
+- **Discipline-dependent.** A session that forgets to register is invisible
+  to others. Mitigated by: CLAUDE.md self-discoverability, skill-spec
+  enforcement at the Phase 0 / Phase 11 ritual moments. Not a new failure
+  mode — it's the same shape as the cache-cleanup contract that already
+  exists.
+- **Single-machine assumption.** Multi-machine = future work, not v1.
+- **Edit-conflict retries.** When two sessions race on the file at the
+  same instant, one Edit succeeds and the other must re-read and retry.
+  Acceptable; the skill spec includes a retry rule.
+- **Manual SHA recording.** Auto-baseliner-aware SHA capture is a v2
+  concern. v1 asks the human / agent to record the SHA at Phase 13.
+
+---
+
+## Reconsideration triggers
+
+- **Multiple machines / worktrees become routine.** Single-machine
+  assumption breaks; ledger needs to be daemonized or moved off the
+  working tree. Watch for: any new dev who uses `git worktree`, any
+  cloud-deployment work that adds a second checkout location.
+- **Session-density grows past ~5/day per project.** v1 ledger format
+  works fine at today's 3-runs/day cadence. At 10+/day the manual
+  scrolling and stale-entry cleanup may need automation.
+- **A non-`/research` skill duplicates work without registering.**
+  Concrete signal that v2 (cross-skill adoption) is overdue. The first
+  observation is one (this concept doc was triggered by exactly that
+  shape on 2026-05-09 between the Printing Press and Matt Loui runs).
+- **The auto-baseliner produces SHA confusion in Phase 13.** v2 task to
+  codify SHA-detection.
+- **The ledger file itself becomes a git-conflict hotspot.** If two
+  sessions consistently race on appending entries and the retries pile
+  up, the format may need a more conflict-resistant shape (one entry per
+  file under `.claude/active-runs/<id>.md`, or YAML frontmatter with
+  per-entry IDs).
+
+---
+
+## Out of scope
+
+- **Authentication of who's running.** v1 trusts entries; no signing,
+  no agent-identity column. The "agent X claims to be working on Y" is
+  taken at face value.
+- **Real-time conflict prevention.** v1 is best-effort; nothing
+  prevents two sessions from writing the same file in parallel if both
+  somehow miss the ledger.
+- **Audit trail beyond 14 days.** Older entries are trimmed. The git
+  history of `.claude/active-runs.md` is the long-term record.
+- **Notifications.** No "your session conflicts" Slack ping or desktop
+  notification. The Phase 0 conflict-check is the human-visible event.
+
+---
+
+## Cross-references
+
+- `.claude/active-runs.md` — the ledger this concept implements.
+- `.claude/CLAUDE.md` → "Important Conventions" — project-wide pointer
+  added this commit.
+- `.claude/skills/research/skill.md` — first adopter; Phase 0 + Phase 11
+  rituals added this commit.
+- `Research/2026-05-09-claude-capcut-motion-graphics.md` (Obsidian vault)
+  — the run that triggered this concept; documents the discovery of
+  in-flight `engine/skills_sidecar/` work.
+- `Lessons/2026-05-09-research.md` — discovery-of-concurrent-WIP
+  heuristic noted under the evening run's self-reflection (the
+  predecessor of this concept).

@@ -21,6 +21,10 @@ Wait for both answers before proceeding. Do NOT ask anything else upfront — fu
   - `codebase-context.md` — DB-derived feature map (8 groups, 34 contexts, file paths, keywords). Always loaded.
   - `codebase-stack.md` — hand-curated architecture, **Claude Code CLI engine wrapping**, persona schema, tech stack, conventions. Always loaded.
   - `codebase-catalogs.md` — current 92 templates + 87 connectors with coverage gaps. Loaded only when bucket B or C is in scope.
+- **Feature reference docs (`docs/features/`)** — implemented-product reference kept in sync with source via the Stop hook described in `.claude/CLAUDE.md` → "Documentation Sync". Use these on demand in Phase 6 when `codebase-context.md`'s keywords / file lists are too coarse to anchor a finding precisely. The README at `docs/features/README.md` indexes every area + plugin to its implementation roots:
+  - Core areas: `home.md`, `onboarding.md`, `overview/`, `personas/`, `templates/`, `execution/`, `connections/`, `events/`, `recipes/`, `settings/`
+  - Plugins: `artist.md` + `artist/`, `companion/`, `dev-tools.md`, `drive/`, `obsidian-brain.md`, `research-lab.md`, `twin.md`
+  - Read the relevant feature doc before deep-greping when a finding lands inside one of those areas — the doc's "primary user flows / backend command surface / data model / known gaps" sections often surface the exact attachment point and pre-existing infrastructure faster than a wide grep.
 - **Obsidian vault:** `C:/Users/mkdol/Documents/Obsidian/personas`
   - `Research/` — one note per run
   - `Lessons/` — self-reflection notes
@@ -128,6 +132,67 @@ These inform extraction priorities and what to deprioritize.
 
 ---
 
+## Phase 1.5: Register in the Active-Runs Ledger
+
+Multiple CLI sessions often work in parallel on this checkout, on the same branch, without branching. The `.claude/active-runs.md` ledger is the coordination surface for them. Touch it twice: once here at session start, once in Phase 13.
+
+Full design and rationale: [`docs/concepts/cli-coordination-active-runs.md`](../../../docs/concepts/cli-coordination-active-runs.md). Format conventions live at the top of the ledger file itself.
+
+### 1.5a. Read the ledger and check for conflicts
+
+Read `.claude/active-runs.md`. Scan the `## Active` section. For each entry:
+
+- **Live conflict:** entry status is `started` AND timestamp is **less than 2 hours old** AND any of its declared `Paths` overlaps your planned scope.
+- **Overlap rule:** a planned path is a prefix of an active path, an active path is a prefix of a planned path, OR the two are equal.
+- **Stale (`started` >2h ago):** mention to the user in your next text update; do NOT silently rewrite the other session's entry.
+
+Your **planned scope** for `/research` is approximately:
+- `Obsidian/personas/Lessons/{date}-research.md` (always — shared-by-date file, but Edit-not-Write rule already handles concurrent writers)
+- `Obsidian/personas/Research/{date}-{slug}.md` (always — per-run slug, no collision risk)
+- The directories of accepted findings' file anchors (varies — `docs/concepts/`, `src-tauri/src/...`, `scripts/templates/`, etc.)
+- For Phase 12 (release log): `src/data/releases.json` + `src/features/home/components/releases/i18n/`
+- `.claude/active-runs.md` itself (always — coordination surface, expected overlap)
+
+You don't know all final paths until Phase 6/8. The Phase 1.5 declaration should be a conservative best guess based on the source type and focus hint; update later via Edit if scope changes materially in Phase 6.
+
+### 1.5b. Conflict resolution
+
+If a live conflict exists (overlap on something other than `.claude/active-runs.md`), ask the user:
+
+```
+Active session conflict detected:
+
+  [<their-timestamp>] <their-skill> — <their-slug>
+  Paths: <their-paths>
+  Overlap with your plan: <overlapping-path(s)>
+
+Options:
+  1. Abort this run.
+  2. Coordinate manually — you'll resolve before continuing.
+  3. Proceed with awareness — both runs in flight, you accept the merge risk.
+```
+
+Honor the user's pick. Default behavior on no answer: ask once more, then proceed-with-awareness rather than aborting silently.
+
+Overlap on `.claude/active-runs.md` alone is **expected** — it's the coordination surface. Do not flag that as a conflict.
+
+### 1.5c. Append your entry under `## Active`
+
+Use the entry format from the top of the ledger:
+
+```markdown
+- **[YYYY-MM-DD HH:MM] /research — <slug>**
+  - **Source:** <url-or-pasted-or-text-hint>
+  - **Paths:** <best-guess directories or globs>
+  - **Status:** started
+```
+
+The `<slug>` should match the one you'll use in Phase 9's Research note path (kebab-case from the source title, ≤40 chars). Timestamp is local time.
+
+If your Edit fails because the ledger has changed (another session edited it between your Read and Edit), re-read and retry. The Edit tool's unique-old-string rule prevents silent clobbers — a failed Edit is a hint to re-check for conflicts before retrying.
+
+---
+
 ## Phase 2: Source Ingestion
 
 Detect source type from the user's first answer:
@@ -192,6 +257,68 @@ Use as-is.
 **Sanity check:** if the resulting text is <300 words, report it's too thin to harvest meaningful ideas and stop.
 
 > **Source-type agnosticism confirmed.** Runs 1-5 used YouTube videos (Phase 2a); run 6 used a blog article (Phase 2b WebFetch). Both paths produced the same downstream shape — same frontmatter, same Phase 6 rules, same output formats. The skill is source-type agnostic; do not special-case downstream phases based on whether the source came from 2a, 2b, or 2c.
+
+---
+
+## Phase 2.5: Web Augmentation (technique/tooling lookup)
+
+YouTube transcripts (and many talks/articles) name a tool or technique without explaining how it actually works. A speaker says "we use Sieve for the video step", "we agentic-RAG the docs", "we route through OpenRouter" and moves on — leaving the cleaned text technique-shaped without enough depth for a clean Phase 6 evidence pass. This phase fills that gap with a **bounded** web round.
+
+### 2.5a. Decide whether to run
+
+Run web augmentation when **all** of these hold:
+- The cleaned source text references at least one **named tool, framework, model, library, protocol, technique, or workflow pattern** that is non-obvious from the transcript alone
+- A correct Phase 6 evidence pass would benefit from knowing how that thing actually works (API shape, key concepts, integration points, current pricing/auth model)
+- The reference is not already deeply documented inside the codebase or in `codebase-stack.md`
+
+**Skip the phase** when the source is fully self-contained (e.g. a philosophical article, a product launch where the post itself IS the spec, or raw text the user already curated for the run). Don't run web augmentation on every source — it costs tool calls and can drift into rabbit-holes.
+
+### 2.5b. Build the lookup list
+
+From the cleaned text, list the candidate names — typically 1-5 items. For each, record:
+- `name` — exact spelling as it appears in the source
+- `kind` — `tool` | `framework` | `model` | `library` | `protocol` | `technique` | `workflow_pattern`
+- `why_useful` — one line on how a deeper definition would change Phase 6 framing
+
+Drop items that are:
+- Already in `codebase-catalogs.md` (Phase 1c will have loaded it for the relevant focus) — those are catalog hits, not augmentation candidates
+- Generic primitives (`HTTP`, `JSON`, `webhook`) — no augmentation value
+- Brand names of commodities the speaker only name-drops without using (`AWS`, `npm`, etc.)
+
+### 2.5c. Run the lookup (bounded)
+
+For each surviving candidate, prefer one focused query over many shallow ones. Cap at **3 web calls total** for the phase — this is augmentation, not full research.
+
+- **First** try `WebSearch` with `<name> <kind> <year>` (e.g. `Sieve video API 2026`). One query is usually enough to surface the canonical product page or docs URL.
+- **Then** `WebFetch` the single most authoritative result (vendor docs, RFC, GitHub README) with a prompt like: *"Extract the core concept, API surface, auth model, and how it would integrate with a desktop AI agent app. Skip marketing copy."*
+- If the candidate is a YouTube creator's house technique (no canonical doc page), search for `<creator name> <technique>` and pick the best blog-post or follow-up video transcript.
+
+Stop early once the technique is understood. Do NOT fetch every result.
+
+### 2.5d. Capture the augmentation note
+
+For each looked-up item, write a 2-4 sentence note in working memory:
+- **What it is** (one sentence)
+- **How it works at a high level** (one sentence — the load-bearing technical fact)
+- **Integration shape** (one sentence on auth model / API surface / boundary of responsibility)
+- **Why it matters for personas** (one sentence — does it suggest a credential, a template, a code pattern?)
+
+These notes are scratch — they feed Phase 3 (better extracted-idea quality), Phase 5 (better bucket assignment, especially separating "credential candidate" from "library to wrap"), and Phase 6 (better grep terms — knowing the protocol name lets you grep for the right thing).
+
+### 2.5e. Write the cited URLs into the Research note
+
+In Phase 9, the Research note frontmatter gets a new optional list:
+```yaml
+web_augmentations:
+  - { name: "Sieve", url: "https://www.sievedata.com/...", kind: "tool" }
+```
+This makes the augmentation traceable on future re-reads and prevents re-fetching on Phase 3 cross-checks of `descoped-reopenable.md`.
+
+### 2.5f. Anti-patterns
+
+- **Don't run augmentation to validate the speaker's claims.** That's `/research`'s next phase (Phase 6 evidence against the codebase). The web round is for technique definition, not opinion-checking.
+- **Don't quote the augmentation source as a Phase 7 source anchor.** The source anchor still belongs to the original transcript/article — augmentation only sharpens framing.
+- **Don't escalate a web-augmentation discovery into a finding on its own.** If WebSearch surfaces "this product also has a credential-relevant API the speaker didn't mention", that's a candidate idea for the original source's surface area, not a new source. Add it as an extracted idea in Phase 3 with `source_anchor: "(web augmentation, not in transcript)"`.
 
 ---
 
@@ -301,6 +428,10 @@ If the finding's premise depends on catalog count = runtime count, **the finding
 **Step 2 — Then search for the specific feature.** Now grep for the actual thing the idea proposes (function name, env var, flag, table name).
 
 **Step 3 — Read the anchor file.** `Read` the most relevant file(s) — limit to ~100 lines. Identify the exact `file_path:line_number` where the change would land. **For host-infrastructure verification, read enough to confirm the public API (~30 lines), not the implementation (~500 lines)** — token efficiency matters.
+
+**Step 3a — Consult `docs/features/` when context is too coarse.** `codebase-context.md` is DB-derived and intentionally shallow — it gives keyword groups and file lists, not flow descriptions. When a finding lands inside a documented feature area (Home, Overview, Personas, Templates, Execution, Connections, Events, Recipes, Settings) or a plugin (Artist, Companion, Dev Tools, Drive, Obsidian Brain, Research Lab, Twin), open the matching `docs/features/<area>/README.md` (or `docs/features/<plugin>.md`) before doing wider greps. The doc names the UI entry point, primary user flows, backend command surface, and known gaps — frequently the exact attachment point is named there in one sentence and the grep round can be reduced or skipped. The doc-sync Stop hook in `.claude/CLAUDE.md` keeps these aligned with source within one PR, so they're current; do not infer staleness without a `git log` check.
+
+When the finding spans multiple feature areas (e.g. an execution-runtime change that surfaces in Overview), read both relevant docs — the framing in one is rarely sufficient for cross-area work.
 
 **Step 4 — Drop if redundant.** If the gap doesn't actually exist (the codebase already does this), drop the idea.
 
@@ -503,6 +634,8 @@ total_after_relevance: 7
 accepted: [1, 3, 4]
 declined: [2, 5, 6, 7]
 buckets: { code: 4, template: 2, credential: 1 }
+web_augmentations:        # Phase 2.5 — omit if phase did not run
+  - { name: "ToolName", url: "https://...", kind: "tool" }
 ---
 
 # {Source title}
@@ -990,6 +1123,21 @@ Append a `Commit:` line to the final printout (re-print the summary so it stays 
 
 This gives the user one line to verify the whole run is safely captured in git before they close the session.
 
+### 13h. Deregister from the Active-Runs Ledger
+
+Move your `## Active` entry in `.claude/active-runs.md` to the top of `## Recently completed`. Update its `Status` to one of:
+
+- `completed (commit: <short-sha>)` — Phase 13 successfully committed.
+- `aborted (skip 1: no changes)` — Phase 13a found no changes.
+- `aborted (skip 2: user opted out)` — Phase 13f skip 2 fired.
+- `aborted (commit failed — see Phase 13e)` — commit failed and was not recovered in this session.
+
+If your edit to `active-runs.md` happens AFTER Phase 13's commit, that's fine — the ledger update lands as an uncommitted file in the working tree, ready to be committed by the next session that ships work. (This avoids a chicken-and-egg of "needing to commit the deregister before the commit it references exists".)
+
+If you spot entries older than 14 days under `## Recently completed` while editing, trim them — keep the ledger focused on the recent rolling window.
+
+If your run aborted before reaching Phase 13 (e.g., the user terminated mid-run), your `## Active` entry stays — the next session reads it as stale (>2h old) and surfaces it to its user. That's the recovery path; don't try to write a deregister from a half-finished state.
+
 ---
 
 ## Error Handling
@@ -1337,3 +1485,26 @@ Failures must be fixed inline before moving to the next task. No stacking failin
 - Will the gitignore + the labeled Phase 2a block be enough to keep the directory clean over the next 5-10 runs? If a sweep is needed again, the failure mode wasn't visibility — it was something else (race, working-dir confusion, etc.) and the rule needs another iteration.
 - Does the `Cache:` line in Phase 11 actually fire for Phase 2b/c sources? Today only Phase 2a creates files; if Phase 2b WebFetch ever caches body text, the `n/a` value would become wrong.
 - Should `transcript.txt` (no run-id prefix, observed in the 2026-05-01 sweep) be a documented anti-pattern? It was created by some prior run that mis-named its output. If it appears again, codify "all cache files MUST be `<id>.<ext>` — never bare names".
+
+### 2026-05-09 — Phase 2.5 web augmentation + `docs/features/` reference added
+
+**Context:** Earlier runs treated the cleaned transcript as the only source. When a YouTube speaker name-dropped a tool or technique without explaining it, Phase 6 framing went vague — the skill couldn't grep for the right concept because it didn't know what concept to grep for. Separately, `codebase-context.md` is DB-derived and intentionally shallow (keywords + file lists), which made certain code-bucket findings hand-wave the attachment point. The implemented-product feature docs at `docs/features/` (kept current via a Stop hook described in CLAUDE.md → "Documentation Sync") were never referenced.
+
+**Rules added:**
+
+- **Phase 2.5 — Web Augmentation.** Bounded round (≤3 web calls) where the skill defines named tools/techniques/protocols/workflow patterns surfaced in the transcript so Phase 6 can grep for the right thing. Triggers when the source names something non-obvious AND not already in `codebase-catalogs.md`. Anti-patterns codified: do not use augmentation to validate speaker claims (that's Phase 6 against the codebase), do not cite augmentation URLs as Phase 7 source anchors (the original transcript is still the anchor), do not escalate a web finding into a separate source.
+- **`docs/features/` added to Constants.** The feature reference docs are now a first-class lookup target. Phase 6 Step 3a tells the skill to read the matching `docs/features/<area>/README.md` (or `<plugin>.md`) before doing wider greps when a finding lands in a documented area. This usually surfaces the exact attachment point in one sentence and shortens the grep round.
+- **Frontmatter extension.** Phase 9's Research note frontmatter gains an optional `web_augmentations` list so future re-reads can trace which canonical sources sharpened framing without re-fetching.
+
+**Why both rules at once:** they pair naturally — Phase 2.5 sharpens *what* to grep for; `docs/features/` sharpens *where* the grep should land. Adding either alone leaves half the framing problem unsolved.
+
+**Rules considered but not added:**
+
+- "Run web augmentation on every source unconditionally." Rejected — many sources are self-contained (philosophical articles, product launches where the post IS the spec) and the augmentation round would be net-negative tool calls.
+- "Auto-add the augmented tools as credential candidates." Rejected — that's the Phase 5 bucket-classification job. Augmentation feeds into it; it doesn't bypass it.
+- "Always read every `docs/features/<area>` README at Phase 1." Rejected — token cost would explode. On-demand is the right shape; the README index in `docs/features/README.md` lets the skill navigate without preloading.
+
+**Open questions for future runs:**
+
+- Does the bounded `≤3 web calls` cap hold under wide-surface-area sources (e.g. a video that name-drops 8 tools)? If yes, the cap forces good prioritization. If runs blow past it, raise the cap to 5 or add a triage step that picks the 3 most load-bearing names.
+- Will the `docs/features/` lookup catch findings that wide-greps would miss, or vice versa? First-pass guess: docs win for "is this implemented yet" questions, greps win for "what's the exact line". Confirm across the next 3 code-bucket runs.

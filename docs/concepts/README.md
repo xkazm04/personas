@@ -10,6 +10,7 @@ This folder is only for not-yet-implemented proposals, experiments, and design e
 | [agent-operations-hub.md](agent-operations-hub.md) | Proposal |
 | [ambient-context-fusion.md](ambient-context-fusion.md) | Proposal / desktop-gated exploration |
 | [claude-code-routines-integration.md](claude-code-routines-integration.md) | Proposal |
+| [cli-coordination-active-runs.md](cli-coordination-active-runs.md) | Implemented v1 (`.claude/active-runs.md` + `/research` adopter) — cross-skill adoption next |
 | [cloud-deployment.md](cloud-deployment.md) | Proposal |
 | [in-app-http-service.md](in-app-http-service.md) | Implemented (Langfuse auto-login) — pattern doc for re-use |
 | [invisible-apps-p2p.md](invisible-apps-p2p.md) | Proposal |
@@ -20,6 +21,7 @@ This folder is only for not-yet-implemented proposals, experiments, and design e
 | [per-persona-claude-code-skills.md](per-persona-claude-code-skills.md) | Proposal — generalization of in-flight `engine/skills_sidecar/` work |
 | [persona-execution-image-attachments.md](persona-execution-image-attachments.md) | Proposal |
 | [persona-hub-marketplace.md](persona-hub-marketplace.md) | Shelved — engineering foundation in active backlog; marketplace pending Recipe redesign + adoption signal |
+| [recipe-from-template-migration.md](recipe-from-template-migration.md) | Design — Stage B in flight; Phase 1a (schema additions) ready to implement |
 | [real-api-testing.md](real-api-testing.md) | Proposal |
 
 ## Moved out

@@ -49,6 +49,7 @@ recordings/
 # Claude Code (allow commands, skills, context docs, and CLAUDE.md to be tracked)
 .claude/*
 !.claude/CLAUDE.md
+!.claude/active-runs.md
 !.claude/skills/
 !.claude/codebase-catalogs.md
 !.claude/codebase-context.md
