@@ -83,6 +83,11 @@ export function CredentialRecipesTab({ credentialId }: CredentialRecipesTabProps
         tags: draft.tags,
         icon: null,
         color: null,
+        // Stage B Phase 1a — provenance fields, only set by derive flow.
+        source_template_id: null,
+        source_use_case_id: null,
+        source_use_case_name: null,
+        source_version: null,
       });
       generator.reset();
       setCreating(false);

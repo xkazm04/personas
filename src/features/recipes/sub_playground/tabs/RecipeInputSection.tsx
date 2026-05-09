@@ -56,6 +56,7 @@ export function RecipeInputSection({
       input_schema: null, output_contract: null, tool_requirements: null,
       credential_requirements: null, model_preference: null,
       sample_inputs: mockJson, tags: null, icon: null, color: null,
+      source_use_case_name: null, source_version: null,
     });
     setMockSaved(true);
     setTimeout(() => setMockSaved(false), 2000);

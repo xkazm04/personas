@@ -93,6 +93,10 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
       tags: serializeTags(tags),
       icon: null,
       color: null,
+      // Stage B Phase 1a — provenance fields. Manual recipe authoring
+      // doesn't set these (only the derive_recipes_from_template flow does).
+      source_use_case_name: null,
+      source_version: null,
     };
     try {
       if (recipe) {
@@ -101,6 +105,8 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
         await createRecipe({
           credential_id: null,
           use_case_id: null,
+          source_template_id: null,
+          source_use_case_id: null,
           ...payload,
         });
       }
