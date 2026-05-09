@@ -327,7 +327,14 @@ impl NetworkService {
                         }
                         Err(e) => {
                             tracing::error!("QUIC accept error: {}", e);
-                            tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+                            // Honor cancellation during the 1s back-off so shutdown is snappy.
+                            tokio::select! {
+                                _ = tokio::time::sleep(std::time::Duration::from_secs(1)) => {}
+                                _ = cancel.cancelled() => {
+                                    tracing::info!("accept_loop shutting down during accept-error backoff");
+                                    break;
+                                }
+                            }
                         }
                     }
                 }
