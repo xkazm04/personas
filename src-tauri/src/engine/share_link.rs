@@ -218,6 +218,7 @@ pub fn resolve_deep_link(url: &str) -> Result<ResolvedShareLink, AppError> {
 #[allow(dead_code)]
 pub fn revoke_share_link(token: &str) -> bool {
     let mut store = SHARE_STORE.lock().unwrap();
+    evict_expired(&mut store);
     store.remove(token).is_some()
 }
 

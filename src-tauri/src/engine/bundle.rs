@@ -55,6 +55,10 @@ fn cache_preview(preview_id: &str, bytes: Vec<u8>, bundle_hash: String) {
 /// Returns `(bytes, bundle_hash)` if the cache entry exists and hasn't expired.
 pub fn take_cached_preview_bytes(preview_id: &str) -> Option<(Vec<u8>, String)> {
     let mut cache = PREVIEW_CACHE.lock().unwrap();
+    // Trim expired entries on the read path too — without this, an import flow
+    // that doesn't first call cache_preview (e.g. expected_bundle_hash-only)
+    // never gives the cache a chance to drop stale ~50MB-each entries.
+    cache.retain(|_, v| v.created_at.elapsed().as_secs() < PREVIEW_TTL_SECS);
     if let Some(entry) = cache.remove(preview_id) {
         if entry.created_at.elapsed().as_secs() < PREVIEW_TTL_SECS {
             return Some((entry.bytes, entry.bundle_hash));
