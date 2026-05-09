@@ -8,7 +8,7 @@ use std::net::SocketAddr;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 
-use tokio::sync::{Mutex, RwLock};
+use tokio::sync::RwLock;
 
 use super::manifest_sync::ManifestSync;
 use super::messaging::MessageRouter;
@@ -20,6 +20,21 @@ use super::types::{
 };
 use crate::db::DbPool;
 use crate::error::AppError;
+
+/// RAII guard that removes a peer_id from the `connecting` set when dropped,
+/// keeping `connect_to_peer` cancellation-safe.
+struct ConnectingGuard<'a> {
+    set: &'a std::sync::Mutex<HashSet<String>>,
+    peer_id: String,
+}
+
+impl Drop for ConnectingGuard<'_> {
+    fn drop(&mut self) {
+        if let Ok(mut s) = self.set.lock() {
+            s.remove(&self.peer_id);
+        }
+    }
+}
 
 /// Atomic counters for connection lifecycle observability.
 pub struct ConnectionMetrics {
@@ -107,7 +122,9 @@ pub struct ConnectionManager {
     local_display_name: String,
     connections: RwLock<HashMap<String, PeerConnection>>,
     /// Tracks peer_ids with in-progress connection attempts to prevent duplicates.
-    connecting: Mutex<HashSet<String>>,
+    /// `std::sync::Mutex` (not tokio's) so a Drop guard can release entries
+    /// synchronously if `connect_to_peer`'s future is cancelled mid-connect.
+    connecting: std::sync::Mutex<HashSet<String>>,
     max_peers: usize,
     #[allow(dead_code)]
     max_retries: u32,
@@ -128,7 +145,7 @@ impl ConnectionManager {
             local_peer_id,
             local_display_name,
             connections: RwLock::new(HashMap::new()),
-            connecting: Mutex::new(HashSet::new()),
+            connecting: std::sync::Mutex::new(HashSet::new()),
             max_peers,
             max_retries: 3,
             metrics: ConnectionMetrics::new(),
@@ -177,24 +194,24 @@ impl ConnectionManager {
             )));
         }
 
-        // Serialize concurrent connect attempts for the same peer_id.
-        // If another task is already connecting, return early.
-        {
-            let mut connecting = self.connecting.lock().await;
+        // Serialize concurrent connect attempts for the same peer_id, and arrange
+        // for the entry to be removed even if the future below is cancelled
+        // mid-connect (otherwise the peer_id leaks in the set and silently blocks
+        // every future connect attempt to that peer).
+        let _guard = {
+            let mut connecting = self.connecting.lock().expect("connecting set poisoned");
             if !connecting.insert(peer_id.to_string()) {
                 tracing::debug!(peer_id = %peer_id, "Connection attempt already in progress, skipping");
                 return Ok(());
             }
-        }
+            ConnectingGuard {
+                set: &self.connecting,
+                peer_id: peer_id.to_string(),
+            }
+        };
 
-        let result = self
-            .connect_to_peer_inner(peer_id, manifest_sync, messages)
-            .await;
-
-        // Always remove from connecting set
-        self.connecting.lock().await.remove(peer_id);
-
-        result
+        self.connect_to_peer_inner(peer_id, manifest_sync, messages)
+            .await
     }
 
     /// Determine whether an outgoing (local-initiated) connection should win
