@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo, useCallback, useEffect } from 'react';
+import { useState, useRef, useMemo, useCallback, useEffect, type CSSProperties } from 'react';
 import { AlertCircle, X } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -6,6 +6,7 @@ import { PersonaAvatar } from '@/features/shared/components/display/PersonaAvata
 import { useAgentStore } from "@/stores/agentStore";
 import { useVaultStore } from "@/stores/vaultStore";
 import { toastCatch } from '@/lib/silentCatch';
+import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import { ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { LabQualityBadge } from '@/features/agents/sub_lab/components/shared/LabQualityBadge';
@@ -96,10 +97,28 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
     <PersonaAvatar icon={effective.icon} name={effective.name} color={effective.color} size="sm" />
   );
 
+  // Thread persona.color into the editor surface as a CSS var so child styles
+  // (active toggle glow, focus rings, gradient sweeps) can react to it without
+  // each surface re-deriving the color. `--persona-accent-glow` is a pre-baked
+  // 0.25-alpha tint suitable for shadow rings; for hover/border tints, the
+  // raw `--persona-accent` is also exposed for inline `colorWithAlpha` use.
+  const accent = effective.color;
+  const accentStyle: CSSProperties | undefined = accent
+    ? ({
+        '--persona-accent': accent,
+        '--persona-accent-glow': colorWithAlpha(accent, 0.25),
+      } as CSSProperties)
+    : undefined;
+  const activeGlowStyle: CSSProperties | undefined =
+    effective.enabled && accent
+      ? { boxShadow: `0 0 12px var(--persona-accent-glow)` }
+      : undefined;
+
   return (
     <ContentHeader
       icon={personaIcon}
       title={effective.name}
+      style={accentStyle}
       subtitle={
         <span className="flex items-center gap-2">
           {effective.description && <span>{effective.description}</span>}
@@ -110,7 +129,10 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
         <div className="relative flex flex-col items-end gap-1.5 flex-shrink-0">
           {/* Active toggle — governance only. Per-capability Run/Simulate lives in the Use Case tab. */}
           <div className="flex items-center gap-2">
-            <span className={`typo-heading transition-colors ${effective.enabled ? 'text-emerald-400' : 'text-foreground'}`}>
+            <span
+              className={`typo-heading transition-colors ${effective.enabled ? '' : 'text-foreground'}`}
+              style={effective.enabled ? { color: accent ?? undefined } : undefined}
+            >
               {effective.enabled ? t.common.active : t.common.off}
             </span>
             <AccessibleToggle
@@ -119,7 +141,8 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
               label={`${effective.enabled ? 'Disable' : 'Enable'} ${effective.name}`}
               disabled={!effective.enabled && !readiness.canEnable}
               size="md"
-              className={effective.enabled ? 'shadow-[0_0_12px_rgba(16,185,129,0.25)]' : ''}
+              className={effective.enabled && !accent ? 'shadow-[0_0_12px_rgba(16,185,129,0.25)]' : ''}
+              style={activeGlowStyle}
             />
           </div>
           <AnimatePresence>

@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, type CSSProperties } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface AccessibleToggleProps {
@@ -9,6 +9,8 @@ interface AccessibleToggleProps {
   /** Size variant: 'sm' = w-8 h-5, 'md' = w-10 h-6 (default) */
   size?: 'sm' | 'md';
   className?: string;
+  /** Inline style — used for persona-accent box-shadow glow on the active state. */
+  style?: CSSProperties;
   'data-testid'?: string;
 }
 
@@ -19,6 +21,7 @@ export function AccessibleToggle({
   disabled = false,
   size = 'md',
   className = '',
+  style,
   'data-testid': dataTestId,
 }: AccessibleToggleProps) {
   const { t } = useTranslation();
@@ -42,6 +45,7 @@ export function AccessibleToggle({
       onClick={onChange}
       onKeyDown={handleKeyDown}
       data-testid={dataTestId}
+      style={style}
       className={`${size === 'sm' ? 'w-8 h-5' : 'w-10 h-6'} rounded-full relative transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
         checked ? 'bg-emerald-500/80' : 'bg-muted-foreground/20'
       } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${className}`}

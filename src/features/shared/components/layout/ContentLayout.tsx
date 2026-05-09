@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { useScrollShadow } from '@/hooks/utility/interaction/useScrollShadow';
 
@@ -87,6 +87,9 @@ interface ContentHeaderProps {
   subtitle?: ReactNode;
   actions?: ReactNode;
   children?: ReactNode;
+  /** Inline style applied to the header root — used to thread CSS custom
+   *  properties (e.g. `--persona-accent`) into descendant components. */
+  style?: CSSProperties;
 }
 
 export function ContentHeader({
@@ -96,6 +99,7 @@ export function ContentHeader({
   subtitle,
   actions,
   children,
+  style,
 }: ContentHeaderProps) {
   const iconElement = iconColor ? (
     <div
@@ -112,6 +116,7 @@ export function ContentHeader({
 
   return (
     <div
+      style={style}
       className={[
         IS_MOBILE ? 'px-3 py-3' : 'px-4 md:px-6 xl:px-8 py-6',
         // bg-card-bg maps to --color-card-bg via @theme; the previous
