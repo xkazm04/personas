@@ -75,23 +75,3 @@ export interface AgentHealthDigest {
   infoCount: number;
 }
 
-// -- Health Check actions for applying fixes to existing personas ------
-
-export interface HealthFixAction {
-  /** Type of fix to apply */
-  kind:
-    | 'link_credential'
-    | 'add_trigger'
-    | 'set_error_strategy'
-    | 'set_review_policy'
-    | 'add_use_case';
-  /** Human-readable label */
-  label: string;
-  /** Payload depends on kind */
-  payload: Record<string, unknown>;
-}
-
-export interface HealthCheckProposal {
-  label: string;
-  actions: HealthFixAction[];
-}

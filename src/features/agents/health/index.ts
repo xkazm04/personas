@@ -9,6 +9,4 @@ export type {
   AgentHealthDigest,
   HealthScore,
   HealthGrade,
-  HealthFixAction,
-  HealthCheckProposal,
 } from './types';
