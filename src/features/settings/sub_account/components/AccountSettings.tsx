@@ -166,7 +166,7 @@ export default function AccountSettings() {
                     <RefreshCw className="w-4 h-4 animate-spin" />
                     {s.waiting_sign_in}
                   </div>
-                  <p className="text-[11px] text-foreground">{s.complete_sign_in}</p>
+                  <p className="typo-caption text-foreground">{s.complete_sign_in}</p>
                   <Button variant="link" size="xs" onClick={() => useAuthStore.setState({ isLoading: false, error: null })}>
                     {s.cancel}
                   </Button>

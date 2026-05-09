@@ -29,10 +29,10 @@ function RuleRow({ rule }: { rule: QualityGateRule }) {
       <code className="typo-code font-mono text-foreground bg-secondary/40 px-1.5 py-0.5 rounded min-w-0 truncate">
         {rule.pattern}
       </code>
-      <span className="text-[11px] text-foreground shrink-0 ml-auto">
+      <span className="typo-caption text-foreground shrink-0 ml-auto">
         {rule.label}
       </span>
-      <span className={`text-[10px] font-medium uppercase ${meta.color} shrink-0`}>
+      <span className={`typo-caption font-medium uppercase ${meta.color} shrink-0`}>
         {t.settings.quality_gates[meta.labelKey]}
       </span>
     </div>
@@ -53,18 +53,18 @@ function RuleSection({ title, icon: Icon, description, rules, categories, reject
       <div className="flex items-center gap-2">
         <Icon size={14} className="text-foreground" />
         <h3 className="typo-body font-medium text-foreground">{title}</h3>
-        <span className="text-[10px] text-foreground bg-secondary/40 px-1.5 py-0.5 rounded">
+        <span className="typo-caption text-foreground bg-secondary/40 px-1.5 py-0.5 rounded">
           {ruleCountLabel}
         </span>
       </div>
-      <p className="text-[11px] text-foreground pl-[22px]">{description}</p>
+      <p className="typo-caption text-foreground pl-[22px]">{description}</p>
 
       {categories && categories.length > 0 && (
         <div className="pl-[22px] space-y-1">
-          <span className="text-[10px] text-foreground uppercase tracking-wide">{rejectedLabel}</span>
+          <span className="typo-caption text-foreground uppercase tracking-wide">{rejectedLabel}</span>
           <div className="flex gap-1.5 flex-wrap">
             {categories.map((cat) => (
-              <span key={cat} className="text-[10px] font-mono text-red-400 bg-red-400/10 px-1.5 py-0.5 rounded">
+              <span key={cat} className="typo-caption font-mono text-red-400 bg-red-400/10 px-1.5 py-0.5 rounded">
                 {cat}
               </span>
             ))}
@@ -147,7 +147,7 @@ export default function QualityGateSettings() {
 
         {config && (
           <div className="space-y-6">
-            <div className="text-[11px] text-foreground bg-secondary/30 rounded p-3 leading-relaxed">
+            <div className="typo-caption text-foreground bg-secondary/30 rounded p-3 leading-relaxed">
               {s.description}
             </div>
 
@@ -180,12 +180,12 @@ export default function QualityGateSettings() {
             <div className="border-t border-border/30" />
 
             <div className="flex items-center justify-between pt-1">
-              <span className="text-[11px] text-foreground">
+              <span className="typo-caption text-foreground">
                 {s.rules_hint}
               </span>
               <button
                 onClick={handleReset}
-                className={`flex items-center gap-1.5 text-[11px] transition-colors ${
+                className={`flex items-center gap-1.5 typo-caption transition-colors ${
                   confirmReset
                     ? 'text-red-400 hover:text-red-300'
                     : 'text-foreground hover:text-foreground/80'

@@ -279,7 +279,7 @@ export function AmbientContextPanel() {
           {/* Focus App Filter */}
           <div className="space-y-1.5">
             <span className="typo-caption text-foreground">{s.focus_filter}</span>
-            <p className="text-[10px] text-foreground">
+            <p className="typo-caption text-foreground">
               {s.focus_filter_hint}
             </p>
             <div className="flex gap-1.5">
@@ -337,7 +337,7 @@ export function AmbientContextPanel() {
             </button>
           </div>
 
-          <p className="text-[10px] text-foreground">
+          <p className="typo-caption text-foreground">
             {s.context_rules_hint}
           </p>
 
@@ -352,7 +352,7 @@ export function AmbientContextPanel() {
               />
 
               <div className="space-y-1">
-                <span className="text-[10px] text-foreground">{s.match_sources}</span>
+                <span className="typo-caption text-foreground">{s.match_sources}</span>
                 <div className="flex gap-1.5">
                   {([
                     { src: 'clipboard' as const, label: s.clipboard },
@@ -362,7 +362,7 @@ export function AmbientContextPanel() {
                     <button
                       key={src}
                       onClick={() => toggleSource(src)}
-                      className={`px-2 py-0.5 rounded text-[10px] border transition-colors ${
+                      className={`px-2 py-0.5 rounded typo-caption border transition-colors ${
                         ruleSources.includes(src)
                           ? 'border-amber-500/30 bg-amber-500/10 text-amber-400'
                           : 'border-primary/15 bg-secondary/30 text-foreground'
@@ -398,7 +398,7 @@ export function AmbientContextPanel() {
 
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-0.5">
-                  <span className="text-[10px] text-foreground">{s.action}</span>
+                  <span className="typo-caption text-foreground">{s.action}</span>
                   <select
                     value={ruleAction}
                     onChange={(e) => setRuleAction(e.target.value as ContextAction)}
@@ -410,7 +410,7 @@ export function AmbientContextPanel() {
                   </select>
                 </div>
                 <div className="space-y-0.5">
-                  <span className="text-[10px] text-foreground">{s.cooldown}</span>
+                  <span className="typo-caption text-foreground">{s.cooldown}</span>
                   <input
                     type="number"
                     min={0}
@@ -453,7 +453,7 @@ export function AmbientContextPanel() {
                     <Zap className={`w-3 h-3 shrink-0 ${rule.enabled ? 'text-amber-400' : 'text-foreground'}`} />
                     <div className="min-w-0">
                       <span className="typo-caption text-foreground block truncate">{rule.name}</span>
-                      <span className="text-[10px] text-foreground block truncate">
+                      <span className="typo-caption text-foreground block truncate">
                         {rule.pattern.sources.length > 0 ? rule.pattern.sources.join(', ') : s.all_sources}
                         {rule.pattern.summaryContains && ` / "${rule.pattern.summaryContains}"`}
                         {' '}&rarr; {s[ACTION_LABEL_KEYS[rule.action]]}
