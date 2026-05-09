@@ -7973,6 +7973,7 @@
     "ambient": {
       "title": "Ambient Context Fusion",
       "description": "Ambient context captures clipboard, file changes, and app focus signals to give personas awareness of your desktop workflow.",
+      "toggle_aria": "Ambient context fusion",
       "events_broadcast": "{count} events broadcast",
       "subscribers": "{count} subscriber",
       "subscribers_plural": "{count} subscribers",

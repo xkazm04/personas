@@ -7979,6 +7979,7 @@ export type Translations = {
     ambient: {
       title: string;
       description: string;
+      toggle_aria: string;
       events_broadcast: string;
       subscribers: string;
       subscribers_plural: string;

@@ -74,7 +74,7 @@ function WeeklyDigestToggle() {
         <AccessibleToggle
           checked={enabled}
           onChange={handleToggle}
-          label="Weekly health digest"
+          label={s.weekly_digest_aria}
         />
       </div>
     </div>

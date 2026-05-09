@@ -166,7 +166,7 @@ export function AmbientContextPanel() {
         <AccessibleToggle
           checked={ambientEnabled}
           onChange={handleToggleEnabled}
-          label="Ambient context fusion"
+          label={s.toggle_aria}
         />
       </div>
 
