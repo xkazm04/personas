@@ -3,6 +3,11 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useReducedMotion, type Variants } from 'framer-motion';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
+import { useModalStackPosition } from '@/lib/ui/ModalStackContext';
+
+const Z_INDEX_BASE = 50;
+const Z_INDEX_PORTAL_BASE = 10000;
+const Z_INDEX_PER_DEPTH = 10;
 
 const SIZE_CLASSES = {
   sm: 'max-w-md',
@@ -117,6 +122,9 @@ export function BaseModal({
   const modalRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
   const reduceMotion = useReducedMotion() ?? false;
+  const stackPosition = useModalStackPosition(isOpen && !embedded);
+  const isTopmost = stackPosition?.isTopmost ?? true;
+  const depth = stackPosition?.depth ?? 0;
 
   const backdropVariants = reduceMotion ? REDUCED_BACKDROP : FULL_BACKDROP;
   const panelVariants = reduceMotion ? REDUCED_PANEL : FULL_PANEL;
@@ -124,6 +132,12 @@ export function BaseModal({
   const renderedChildren = staggeredChildren(children, childVariants);
 
   const resolvedMaxWidth = maxWidthClass ?? (size ? SIZE_CLASSES[size] : 'max-w-4xl');
+
+  const baseZ = portal ? Z_INDEX_PORTAL_BASE : Z_INDEX_BASE;
+  const overlayZIndex = baseZ + depth * Z_INDEX_PER_DEPTH;
+  const backdropClass = isTopmost
+    ? 'absolute inset-0 bg-black/60 surface-blur-modal'
+    : 'absolute inset-0 bg-black/30 surface-blur-popover';
 
   useEffect(() => {
     if (!isOpen) return;
@@ -142,6 +156,7 @@ export function BaseModal({
 
   useAppKeyboard((event) => {
     if (event.key === 'Escape') {
+      if (!isTopmost) return false;
       onClose();
       return true;
     }
@@ -203,12 +218,13 @@ export function BaseModal({
       initial="initial"
       animate="animate"
       exit="exit"
-      className={containerClassName ?? `fixed inset-0 ${portal ? 'z-[10000]' : 'z-50'} flex items-center justify-center ${IS_MOBILE ? 'p-0' : 'p-4'}`}
+      style={containerClassName ? undefined : { zIndex: overlayZIndex }}
+      className={containerClassName ?? `fixed inset-0 flex items-center justify-center ${IS_MOBILE ? 'p-0' : 'p-4'}`}
     >
       <motion.div
         variants={backdropVariants}
         onClick={onClose}
-        className="absolute inset-0 bg-black/60 surface-blur-modal"
+        className={backdropClass}
       />
       <motion.div
         ref={modalRef}

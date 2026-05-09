@@ -21,6 +21,7 @@ import { useDocumentVisibility } from '@/hooks/utility/useDocumentVisibility';
 import { createLogger } from "@/lib/log";
 import { idlePrefetch } from "@/lib/idlePrefetch";
 import { AppKeyboardProvider, useAppKeyboard } from "@/lib/keyboard/AppKeyboardProvider";
+import { ModalStackProvider } from "@/lib/ui/ModalStackContext";
 
 initPseudoLocale();
 
@@ -201,6 +202,7 @@ export default function App() {
   return (
     <VibeThemeProvider>
       <AppKeyboardProvider>
+        <ModalStackProvider>
         <DevMobilePreviewShortcut />
         <MotionConfig reducedMotion={isDocumentVisible ? "user" : "always"}>
           <AriaLiveProvider>
@@ -264,6 +266,7 @@ export default function App() {
         </div>
           </AriaLiveProvider>
         </MotionConfig>
+        </ModalStackProvider>
       </AppKeyboardProvider>
     </VibeThemeProvider>
   );
