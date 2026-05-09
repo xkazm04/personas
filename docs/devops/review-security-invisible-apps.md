@@ -2,6 +2,13 @@
 
 > P2P networking implementation — LAN discovery, QUIC transport, wire protocol, bundle import/export
 > Reviewed: 2026-03-12
+> **Re-audit needed (2026-05-09):** the three HIGH findings below have not been re-verified since the original review. Status of each must be checked before P2P ships in a default build.
+
+## Status snapshot (as of 2026-05-09)
+
+- **Feature gate:** P2P networking is compiled in only when the `p2p` Cargo feature is active. The default `desktop` feature set does **not** include `p2p`; only `desktop-full` does (used by `tauri:build:stable` / signed release pipelines). Verify in `src-tauri/Cargo.toml` before assuming exposure.
+- **Findings remediation status:** UNVERIFIED in this audit pass. Re-check each finding (TLS verification, handshake cryptographic binding, bundle signature enforcement) against the current code in `src-tauri/src/engine/p2p/` and `src-tauri/src/engine/bundle.rs`. If still unfixed, treat as **release-blocking for any build that ships with the `p2p` feature enabled**.
+- **Recommended action:** before bumping the version to a release that includes P2P, run a fresh review pass and update this document with `Status: Resolved (commit <sha>)` or `Status: Open — tracked in <issue>` for each finding.
 
 ---
 

@@ -77,6 +77,10 @@ The request body is a JSON object built from the persona:
   "description": "Monitors CI pipelines and reports failures",
   "system_prompt": "# Persona: My Agent\n\n## Identity\n...",
   "model": "claude-sonnet-4-5-20250929",
+  // ↑ illustrative: the model identifier shown is whatever the deploying user
+  //   configured for their GitLab Duo Agent. Personas Desktop's own internal
+  //   build sessions force `claude-sonnet-4-20250514` (see persona-matrix-build.md);
+  //   that constraint does NOT carry over to deployed agents.
   "tools": [
     {
       "name": "read_file",

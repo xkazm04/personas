@@ -221,7 +221,7 @@ Because the agent key is stored as a string, *adding a new agent is a single-fil
 
 ### Auto-match rules
 
-The Scanner has an **Auto-Scan** mode that loops every mapped context and picks agents by regex match over the context's name, description, keywords, tech stack, API surface, and file paths (see `SCAN_MATCH_RULES` in `sub_scanner/IdeaScannerPage.tsx`). Example: a context whose keywords include `auth|login|token|secret` gets Security Auditor, a context tagged `mobile|responsive|viewport` gets Mobile Specialist. Contexts with no match fall back to Architecture Analyst + Code Optimizer as a sensible baseline.
+The Scanner has an **Auto-Scan** mode that loops every mapped context and picks agents by regex match over the context's name, description, keywords, tech stack, API surface, and file paths (see `SCAN_MATCH_RULES` in `sub_scanner/ideaScannerHelpers.ts`). Example: a context whose keywords include `auth|login|token|secret` gets Security Auditor, a context tagged `mobile|responsive|viewport` gets Mobile Specialist. Contexts with no match fall back to Architecture Analyst + Code Optimizer as a sensible baseline.
 
 ### Agent Scoreboard (Proposal B)
 

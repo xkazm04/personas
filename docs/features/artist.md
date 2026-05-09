@@ -261,7 +261,10 @@ Backend:
 ```
 src-tauri/src/commands/artist/
 ├── mod.rs                                # Blender MCP, assets, creative session
-└── ffmpeg.rs                             # detection, probe, export, one-shots
+├── ffmpeg.rs                             # detection, probe, export, one-shots
+├── persistence.rs                        # creative session row I/O
+├── schema_policy.rs                      # session payload schema versioning
+└── transcribe.rs                         # voiceover/audio transcription
 ```
 
 State lives in `src/stores/slices/system/artistSlice.ts` (tab, folder, gallery mode, cached Blender status, creative sessions, pending Media-Studio asset queue, connector info). Persisted subset (artist tab, artist folder, creative session history) partialized in `src/stores/systemStore.ts`. All copy lives under `t.plugins.artist.*` and `t.media_studio.*` in `src/i18n/locales/en.json`.

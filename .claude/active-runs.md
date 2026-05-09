@@ -44,6 +44,11 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Recently completed (last 14 days)
 
+- **[2026-05-09 13:24] manual — docs/ overhaul (audit, update, delete, backlog)**
+  - **Source:** user request to audit `docs/` end-to-end, update where outdated, delete dead docs, and produce a backlog of extension ideas
+  - **Paths:** `docs/README.md` (updated), `docs/BACKLOG.md` (new), `docs/concepts/README.md`, `docs/architecture/gitlab-integration.md`, `docs/devops/review-security-invisible-apps.md`, `docs/features/{artist,dev-tools,connections/README,events/event-routing}.md`, plus deletion of 4 harness wave-report subdirs and `docs/operations/`
+  - **Status:** completed (commit pending — this commit) — three parallel Explore agents audited features/, architecture+development+devops/, concepts+tests+harness/ (~600–1000 lines per report). Edits + deletions + BACKLOG.md applied in-place; refactor/* and harness/{followups,typography-mapping,harness-learnings,simple-mode-roadmap} preserved with move/archive plans queued in BACKLOG.md. Worktree isolation attempted but absolute-path edits landed on master directly; worktree branch contained only duplicate deletions and was abandoned.
+
 - **[2026-05-09 ~21:00] /research — browser-harness (browser-use)**
   - **Source:** [Browser Harness walkthrough](https://www.youtube.com/watch?v=YDqqRqqlnJU) (browser-use folks)
   - **Paths:** `scripts/connectors/builtin/desktop-browser.json`, `src-tauri/src/db/builtin_connectors.rs`, `src-tauri/src/engine/skill_scratchpad.rs` (new), `src-tauri/src/engine/mod.rs`, `src-tauri/src/engine/prompt/mod.rs`, `Obsidian/personas/Research/2026-05-09-browser-harness-browser-use.md`, `Obsidian/personas/Lessons/2026-05-09-research.md`

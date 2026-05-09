@@ -1,8 +1,14 @@
 # Reliable Event Routing in the Builder — Design Proposal
 
-**Status:** Proposal
+**Status:** Partially shipped — Change A (runtime injects `event_type` + source) landed; Change B (`eventHandlers` prompt section) and Change C (`link_persona_to_event` write path) still pending.
 **Author:** Triggers Builder iteration
 **Scope:** Persona build process, prompt assembly, event dispatch, Triggers Builder UI
+
+> **What shipped (verified 2026-05-09):** `engine/background.rs` now wraps the payload with `_event` metadata (`event_type`, `source_id`, `source_type`, `source_persona_id`, `target_persona_id`) before calling `start_execution` — gap 1.1 below is closed. Personas built with the new prompt scaffolding can route on `_event.event_type`.
+>
+> **What still applies (audit 2026-05-09):** The `eventHandlers` structured prompt section (Change B) and the atomic `link_persona_to_event` write path (Change C) have NOT shipped. The Builder still updates triggers without touching the persona's prompt sections, so personas added to events post-build still fire without per-event-type instructions. Sections 1.2–1.4 below describe gaps that remain.
+>
+> **Stale citations:** Line numbers below were captured during the original proposal write-up; `engine/background.rs` and friends have moved since then. Treat the citations as "the right module, look for the matching pattern" rather than exact ranges.
 
 ## TL;DR
 
