@@ -214,24 +214,28 @@ The five highest-collision-risk skills now carry a "Coordination — Active-Runs
 | `/add-credential` | Writes connector JSON + SVG icon + Rust seed + frontend imports + OAuth registry | `scripts/connectors/builtin/`, `public/icons/connectors/`, Rust seed, frontend imports |
 | `/codebase-init` | First-touch on fresh repos — concurrent init clobbers `CLAUDE.md`, `codebase-stack.md`, `Design.md` | The three foundational `.claude/` docs |
 
-### Long-tail adoption (still pending)
+### Long-tail adoption (shipped 2026-05-09 in commit 605cf0bc6)
 
-Lower-collision-risk skills that should pick up the convention as they're touched next. Order is rough collision-risk ranking, not strict priority:
+The eight skills below were the original long-tail target. Six were updated; two are plugin-provided and have no local skill.md to edit.
 
-| Skill | Reason to adopt |
-|---|---|
-| `/sentry` | Applies code fixes for issues |
-| `/triage-backlog` | Autonomously applies multi-fix waves |
-| `/simplify` | Applies quality fixes |
-| `/frontend-design` | Generates frontend code |
-| `/prototype` | Generates UI variant code |
-| `/code-review` | Mostly read-only but writes review reports |
-| `/cli-quality-check` | Mostly read-only but writes fix-up commits |
-| `/guide-sync` | Modifies the marketing repo (separate checkout, but same machine) |
+| Skill | Reason to adopt | Status |
+|---|---|---|
+| `/sentry` | Applies code fixes for issues | ✅ adopted (per-issue paths, batch worktree, atomic-commit-per-issue) |
+| `/triage-backlog` | Autonomously applies multi-fix waves | ✅ adopted (autonomous-execution registration, atomic-commit-per-idea) |
+| `/simplify` | Applies quality fixes | ⏸ skipped (plugin-provided — no local skill.md) |
+| `/frontend-design` | Generates frontend code | ⏸ skipped (plugin-provided — no local skill.md) |
+| `/prototype` | Generates UI variant code | ✅ adopted (variant-files-as-multi-file by definition, per-round commits) |
+| `/code-review` | Mostly read-only but writes review reports | ✅ adopted (read-only-by-default, optional fix-up worktree) |
+| `/cli-quality-check` | Mostly read-only but writes fix-up commits | ✅ adopted (fix-up batch worktree, per-feature-area commits) |
+| `/guide-sync` | Modifies the marketing repo (separate checkout, but same machine) | ✅ adopted (cross-repo, per-topic commits in personas-web) |
+
+Each adopter now declares paths, an end-of-session deregister phase, and the five parallel-safety primitives (no stash; worktree for multi-file scope; atomic commits per logical unit; verify staged index before commit; worktree cleanup after merge).
+
+If `/simplify` or `/frontend-design` ever ships as a local skill (vs plugin-provided), they should pick up the same block when they land.
 
 Skills explicitly **not** adopting (read-only or non-tree-modifying): `/explorer`, `/prime`, `/reflect` (Obsidian-only, no checkout collision), `/loop`, `/schedule`, `/init` (one-time per repo, redundant with `/codebase-init`), `/update-config`, `/fewer-permission-prompts`, `/keybindings-help`, `/claude-api`, `/review`, `/security-review`, `/record-demo` (generates artifacts that don't get committed).
 
-The pattern is the same for each long-tail skill: insert the "Coordination" block near the start with the skill's declared paths and register/deregister rules. The skill-spec change is ~15 lines per skill.
+The pattern is the same for each adopter: insert the "Coordination — Active-Runs Ledger" block + the "Parallel-safety primitives" sub-section near the start (after the input/trigger section, before the first phase/step header) with the skill's declared paths, register/deregister rules, and a skill-specific worktree slug pattern. The skill-spec change is ~30 lines per skill.
 
 ### Auto-baseliner integration (open question)
 
