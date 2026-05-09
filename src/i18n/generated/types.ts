@@ -772,6 +772,7 @@ export type Translations = {
       status_reconnecting: string;
       failed_to_load_logs: string;
       failed_to_load_chain: string;
+      failed_to_hydrate_comparison: string;
       running_state: string;
       execution_started: string;
       rerun_failed: string;

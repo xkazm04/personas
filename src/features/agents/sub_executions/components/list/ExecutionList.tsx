@@ -123,7 +123,7 @@ export function ExecutionList() {
       setShowComparison(true);
     } catch (err) {
       logger.warn('Failed to hydrate comparison executions', { error: err });
-      useToastStore.getState().addToast(e.failed_to_load_chain, 'error');
+      useToastStore.getState().addToast(e.failed_to_hydrate_comparison, 'error');
     }
   };
 

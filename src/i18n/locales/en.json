@@ -766,6 +766,7 @@
       "status_reconnecting": "Reconnecting",
       "failed_to_load_logs": "Failed to load execution logs for comparison",
       "failed_to_load_chain": "Failed to load retry chain for comparison",
+      "failed_to_hydrate_comparison": "Couldn't load execution details for comparison",
       "running_state": "Running...",
       "execution_started": "Execution started",
       "rerun_failed": "Re-run failed",
