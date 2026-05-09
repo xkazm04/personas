@@ -7805,6 +7805,7 @@
     "account": {
       "title": "Account",
       "subtitle": "Manage your sign-in and profile",
+      "avatar_alt": "Profile picture",
       "offline": "Offline",
       "sign_out": "Sign out",
       "sign_in_prompt": "Sign in to sync your data across devices",

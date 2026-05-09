@@ -7811,6 +7811,7 @@ export type Translations = {
     account: {
       title: string;
       subtitle: string;
+      avatar_alt: string;
       offline: string;
       sign_out: string;
       sign_in_prompt: string;

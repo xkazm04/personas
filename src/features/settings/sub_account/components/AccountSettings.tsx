@@ -119,7 +119,7 @@ export default function AccountSettings() {
                 {user.avatar_url ? (
                   <img
                     src={user.avatar_url}
-                    alt={user.display_name ?? s.title}
+                    alt={user.display_name ?? s.avatar_alt}
                     className="w-14 h-14 rounded-full border-2 border-primary/20"
                   />
                 ) : (
