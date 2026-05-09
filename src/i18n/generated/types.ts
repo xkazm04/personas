@@ -4343,6 +4343,14 @@ export type Translations = {
     select_all: string;
     deselect_all: string;
     selected_of_total: string;
+    exported_bundle_one: string;
+    exported_bundle_other: string;
+    copied_bundle_one: string;
+    copied_bundle_other: string;
+    share_link_copied_one: string;
+    share_link_copied_other: string;
+    imported_resources_one: string;
+    imported_resources_other: string;
     cancel: string;
     share_link: string;
     creating_link: string;

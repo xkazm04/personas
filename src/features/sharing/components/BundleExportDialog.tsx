@@ -144,7 +144,8 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
 
       setExporting(true);
       const result = await exportBundle(Array.from(selected), savePath);
-      addToast(`Bundle exported: ${result.resource_count} resource${result.resource_count !== 1 ? 's' : ''} (${formatBytes(result.byte_size)})`, 'success');
+      const exportedKey = result.resource_count === 1 ? st.exported_bundle_one : st.exported_bundle_other;
+      addToast(tx(exportedKey, { count: result.resource_count, size: formatBytes(result.byte_size) }), 'success');
       onClose();
     } catch (err) {
       const msg = errMsg(err, 'Failed to export bundle');
@@ -166,7 +167,8 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
       setCopied(true);
       if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
       copiedTimerRef.current = setTimeout(() => setCopied(false), 2500);
-      addToast(`Bundle copied: ${result.resource_count} resource${result.resource_count !== 1 ? 's' : ''} (${formatBytes(result.byte_size)})`, 'success');
+      const copiedKey = result.resource_count === 1 ? st.copied_bundle_one : st.copied_bundle_other;
+      addToast(tx(copiedKey, { count: result.resource_count, size: formatBytes(result.byte_size) }), 'success');
     } catch (err) {
       const msg = errMsg(err, 'Failed to copy bundle');
       logger.warn('Failed to copy bundle to clipboard', { selectedCount: selected.size, error: msg });
@@ -187,7 +189,8 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
       setLinkCopied(true);
       if (linkCopiedTimerRef.current) clearTimeout(linkCopiedTimerRef.current);
       linkCopiedTimerRef.current = setTimeout(() => setLinkCopied(false), 3000);
-      addToast(`Share link copied! ${result.resource_count} resource${result.resource_count !== 1 ? 's' : ''} (expires in 24h, single use)`, 'success');
+      const linkCopiedKey = result.resource_count === 1 ? st.share_link_copied_one : st.share_link_copied_other;
+      addToast(tx(linkCopiedKey, { count: result.resource_count }), 'success');
     } catch (err) {
       const msg = errMsg(err, 'Failed to create share link');
       logger.warn('Failed to create share link', { selectedCount: selected.size, error: msg });

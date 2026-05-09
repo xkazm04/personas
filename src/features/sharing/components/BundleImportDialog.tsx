@@ -39,7 +39,7 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl, shareLink
   const importFromShareLink = useSystemStore((s) => s.importFromShareLink);
   const verifyEnclave = useSystemStore((s) => s.verifyEnclave);
   const addToast = useToastStore((s) => s.addToast);
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const st = t.sharing;
 
   const [phase, setPhase] = useState<Phase>('pick');
@@ -235,7 +235,8 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl, shareLink
 
       setImportResult(result);
       setPhase('done');
-      addToast(`Imported ${result.imported} resource${result.imported !== 1 ? 's' : ''}`, 'success');
+      const importedKey = result.imported === 1 ? st.imported_resources_one : st.imported_resources_other;
+      addToast(tx(importedKey, { count: result.imported }), 'success');
     } catch (err) {
       const msg = errMsg(err, 'Failed to import bundle');
       logger.warn('Failed to import bundle', { filePath, clipboard: !!clipboardData, error: msg });
