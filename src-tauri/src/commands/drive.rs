@@ -933,7 +933,8 @@ pub fn drive_copy(
     if let Some(parent) = dst.parent() {
         std::fs::create_dir_all(parent)?;
     }
-    if src.is_dir() {
+    let was_dir = src.is_dir();
+    if was_dir {
         if dst.starts_with(&src) {
             return Err(AppError::Validation(
                 "Cannot copy a folder inside itself".into(),
@@ -955,7 +956,71 @@ pub fn drive_copy(
         Some(serde_json::json!({ "from_path": src_rel, "copied": true })),
     );
 
+    // Folder copy: fan out per-file ADDED events for every leaf inside the
+    // copied subtree. Without this, triggers with file-level filters
+    // (e.g. `source_filter: "inbox/*.pdf"`) would miss every file copied
+    // inside a folder — only the destination folder root would surface.
+    if was_dir {
+        emit_added_for_subtree(&app, &root, &dst, &src_rel);
+    }
+
     Ok(entry)
+}
+
+/// Walk a freshly-copied folder and emit `drive.document.added` for every
+/// leaf file inside. Best-effort — IO errors during the walk are skipped so
+/// a partially-copied tree still surfaces what made it through. Skips OS
+/// clutter (`.DS_Store` / `Thumbs.db` / `desktop.ini`) to match `drive_list`.
+fn emit_added_for_subtree(app: &AppHandle, root: &Path, subtree_root: &Path, src_rel: &str) {
+    let mut stack = vec![subtree_root.to_path_buf()];
+    while let Some(dir) = stack.pop() {
+        let read = match std::fs::read_dir(&dir) {
+            Ok(r) => r,
+            Err(_) => continue,
+        };
+        for entry in read.flatten() {
+            let path = entry.path();
+            let ft = match entry.file_type() {
+                Ok(f) => f,
+                Err(_) => continue,
+            };
+            if ft.is_dir() {
+                stack.push(path);
+                continue;
+            }
+            if !ft.is_file() {
+                continue;
+            }
+            let name = path
+                .file_name()
+                .map(|s| s.to_string_lossy().to_string())
+                .unwrap_or_default();
+            if name == ".DS_Store" || name == "Thumbs.db" || name == "desktop.ini" {
+                continue;
+            }
+            let Ok(meta) = entry.metadata() else { continue };
+            let rel = to_relative_display(root, &path);
+            let ext = path
+                .extension()
+                .and_then(|s| s.to_str())
+                .map(|s| s.to_ascii_lowercase());
+            let mime = ext
+                .as_deref()
+                .and_then(mime_for_extension)
+                .map(|s| s.to_string());
+            emit_drive_event(
+                app,
+                drive_event::ADDED,
+                &rel,
+                Some(serde_json::json!({
+                    "size": meta.len(),
+                    "mime": mime,
+                    "from_path": src_rel,
+                    "copied": true,
+                })),
+            );
+        }
+    }
 }
 
 fn copy_dir_recursive(src: &Path, dst: &Path) -> Result<(), AppError> {
