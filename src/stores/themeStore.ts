@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import type { CustomThemeConfig } from '@/lib/theme/deriveCustomTheme';
 import { deriveCustomThemeVars, injectCustomThemeStyle, removeCustomThemeStyle } from '@/lib/theme/deriveCustomTheme';
 import { storeBus } from '@/lib/storeBus';
+import { createDedupedJSONStorage } from './util/dedupedStorage';
 
 export type { CustomThemeConfig } from '@/lib/theme/deriveCustomTheme';
 
@@ -260,6 +261,7 @@ export const useThemeStore = create<ThemeState>()(
     }),
     {
       name: 'persona-theme',
+      storage: createDedupedJSONStorage(),
       onRehydrateStorage: () => (state) => {
         if (state) {
           // Migrate removed 'default' scale to 'large' (new "Small")
