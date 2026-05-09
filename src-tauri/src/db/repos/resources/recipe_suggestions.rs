@@ -148,6 +148,9 @@ mod tests {
             let conn = pool.get().unwrap();
             conn.execute_batch("PRAGMA foreign_keys = ON;").unwrap();
             crate::db::migrations::run(&conn).unwrap();
+            // Phase 4's recipe_suggestion_events table is added in the
+            // incremental pass — initial::run() alone would leave it absent.
+            crate::db::migrations::run_incremental(&conn).unwrap();
         }
         pool
     }
