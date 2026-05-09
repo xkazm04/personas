@@ -20,14 +20,14 @@ const APP_ICONS: Record<string, string> = {
 function riskBadge(hasHighRisk: boolean, labels: { review: string; reviewTooltip: string; safe: string; safeTooltip: string }) {
   if (hasHighRisk) {
     return (
-      <span className="flex items-center gap-1 text-[11px] text-amber-400/80" title={labels.reviewTooltip}>
+      <span className="flex items-center gap-1 typo-caption text-amber-400/80" title={labels.reviewTooltip}>
         <AlertTriangle className="w-3 h-3" />
         {labels.review}
       </span>
     );
   }
   return (
-    <span className="flex items-center gap-1 text-[11px] text-emerald-400/80" title={labels.safeTooltip}>
+    <span className="flex items-center gap-1 typo-caption text-emerald-400/80" title={labels.safeTooltip}>
       <ShieldCheck className="w-3 h-3" />
       {labels.safe}
     </span>
@@ -142,7 +142,7 @@ export function DesktopDiscoveryStep({
                 </div>
                 <div className="flex items-center gap-2 mt-0.5">
                   {app.version && (
-                    <span className="text-[11px] text-foreground">v{app.version}</span>
+                    <span className="typo-caption text-foreground">v{app.version}</span>
                   )}
                   {riskBadge(hasHighRisk, riskLabels)}
                 </div>
