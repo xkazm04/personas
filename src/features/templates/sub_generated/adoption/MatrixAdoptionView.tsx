@@ -294,10 +294,15 @@ function triggerSelectionToTriggers(
 
   if (sel.event) {
     const eventType = sel.event.eventType;
+    const description = eventType
+      ? (tx
+          ? tx(translations!.templates.adoption.trigger_descriptions.listens_for, { event_type: eventType })
+          : `Listens for ${eventType}.`)
+      : (translations?.templates.adoption.trigger_descriptions.event_driven ?? "Event-driven.");
     out.push({
       trigger_type: "event_listener",
       config: { event_type: eventType ?? "" },
-      description: eventType ? `Listens for ${eventType}.` : "Event-driven.",
+      description,
     });
   }
 
@@ -306,16 +311,21 @@ function triggerSelectionToTriggers(
     // present, else Manual. Preserves the Custom escape hatch.
     const custom = sel.customCron?.trim();
     if (custom) {
+      const description = tx
+        ? tx(translations!.templates.adoption.trigger_descriptions.custom_cron, { cron: custom })
+        : `Custom cron: ${custom}.`;
       out.push({
         trigger_type: "schedule",
         config: { cron: custom, timezone: "local" },
-        description: `Custom cron: ${custom}.`,
+        description,
       });
     } else {
       out.push({
         trigger_type: "manual",
         config: {},
-        description: "Manual — user invokes on demand.",
+        description:
+          translations?.templates.adoption.trigger_descriptions.manual_on_demand
+          ?? "Manual — user invokes on demand.",
       });
     }
   }

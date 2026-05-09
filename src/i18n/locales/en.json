@@ -6076,6 +6076,12 @@
         "daily_at_local": "Daily at {hour}:00 local",
         "weekly_on_day_at_local": "Weekly on {day} at {hour}:00 local",
         "hourly_at_local": "Hourly"
+      },
+      "trigger_descriptions": {
+        "event_driven": "Event-driven.",
+        "listens_for": "Listens for {event_type}.",
+        "manual_on_demand": "Manual — user invokes on demand.",
+        "custom_cron": "Custom cron: {cron}."
       }
     },
     "choose": {

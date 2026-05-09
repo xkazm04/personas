@@ -6083,6 +6083,12 @@ export type Translations = {
         weekly_on_day_at_local: string;
         hourly_at_local: string;
       };
+      trigger_descriptions: {
+        event_driven: string;
+        listens_for: string;
+        manual_on_demand: string;
+        custom_cron: string;
+      };
     };
     choose: {
       select_use_cases: string;
