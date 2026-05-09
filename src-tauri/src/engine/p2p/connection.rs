@@ -365,6 +365,18 @@ impl ConnectionManager {
             return Ok(());
         }
 
+        // Persist DB state BEFORE bumping success metrics. If the DB write fails,
+        // roll back the in-memory insert so observers don't see a phantom-connected
+        // peer that disagrees with discovered_peers.is_connected.
+        if let Err(e) = self.update_connection_status(peer_id, true) {
+            if let Some(displaced) = self.connections.write().await.remove(peer_id) {
+                displaced
+                    .quinn_conn
+                    .close(quinn::VarInt::from_u32(4), b"db update failed");
+            }
+            return Err(e);
+        }
+
         let connect_duration_ms = connect_start.elapsed().as_millis() as u64;
         self.metrics
             .connections_established
@@ -372,9 +384,6 @@ impl ConnectionManager {
         self.metrics
             .total_connect_duration_ms
             .fetch_add(connect_duration_ms, Ordering::Relaxed);
-
-        // Update discovered_peers DB
-        self.update_connection_status(peer_id, true)?;
 
         tracing::info!(peer_id = %peer_id, connect_duration_ms = connect_duration_ms, "Connected to peer");
 
@@ -487,11 +496,21 @@ impl ConnectionManager {
             return Ok(());
         }
 
+        // Persist DB state BEFORE bumping success metrics. If the DB write fails,
+        // roll back the in-memory insert so observers don't see a phantom-connected
+        // peer that disagrees with discovered_peers.is_connected.
+        if let Err(e) = self.update_connection_status(&remote_peer_id, true) {
+            if let Some(displaced) = self.connections.write().await.remove(&remote_peer_id) {
+                displaced
+                    .quinn_conn
+                    .close(quinn::VarInt::from_u32(4), b"db update failed");
+            }
+            return Err(e);
+        }
+
         self.metrics
             .connections_established
             .fetch_add(1, Ordering::Relaxed);
-
-        self.update_connection_status(&remote_peer_id, true)?;
 
         tracing::info!(peer_id = %remote_peer_id, "Accepted incoming connection");
 
