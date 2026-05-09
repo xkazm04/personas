@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "default_station_id": "lofi",
+  "stations": [
+    {
+      "id": "lofi",
+      "slug": "lofi",
+      "name": "Lofi",
+      "description": "Lo-fi hip hop beats to relax and study to.",
+      "accent_color": "#a87cf0",
+      "tracks": [
+        {
+          "video_id": "CFGLoQIhmow",
+          "title": "lofi hip hop mix - beats to relax/study to (Part 1)",
+          "artist": "Lofi Girl",
+          "duration_sec": null
+        },
+        {
+          "video_id": "8b3fqIBrNW0",
+          "title": "lofi hip hop mix - beats to relax/study to (Part 2)",
+          "artist": "Lofi Girl",
+          "duration_sec": null
+        }
+      ]
+    },
+    {
+      "id": "focus",
+      "slug": "focus",
+      "name": "Focus",
+      "description": "Deep focus instrumentals for concentration and work.",
+      "accent_color": "#4ec9b0",
+      "tracks": [
+        {
+          "video_id": "oPVte6aMprI",
+          "title": "Deep Focus - Music For Studying, Concentration and Work",
+          "artist": "Greenred Productions",
+          "duration_sec": null
+        },
+        {
+          "video_id": "k7nQt8nB9FQ",
+          "title": "Deep Focus Music for Work | Increase Productivity & Concentration Mix 2026",
+          "artist": "Various",
+          "duration_sec": null
+        }
+      ]
+    }
+  ]
+}
