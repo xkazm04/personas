@@ -125,7 +125,7 @@ export function HealingCard({
 
         {/* Suggested fix */}
         {notification.suggested_fix && (
-          <p className="typo-body text-foreground leading-relaxed pl-6.5">
+          <p className="typo-body text-foreground leading-relaxed pl-7">
             {notification.suggested_fix}
           </p>
         )}
