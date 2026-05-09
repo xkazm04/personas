@@ -3,8 +3,9 @@
  * health-checks, budget enforcement, and chat.
  */
 import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
+import { persist } from "zustand/middleware";
 import type { AgentStore } from "./storeTypes";
+import { createDedupedJSONStorage } from "./util/dedupedStorage";
 
 import { createPersonaSlice } from "./slices/agents/personaSlice";
 import { createToolSlice } from "./slices/agents/toolSlice";
@@ -17,27 +18,6 @@ import { createBudgetEnforcementSlice } from "./slices/agents/budgetEnforcementS
 import { createChatSlice } from "./slices/agents/chatSlice";
 import { createBackgroundChatSlice } from "./slices/agents/backgroundChatSlice";
 import { createMatrixBuildSlice } from "./slices/agents/matrixBuildSlice";
-
-/**
- * localStorage wrapper that skips writes when the serialized payload is
- * unchanged. Zustand's persist middleware re-runs partialize + setItem on
- * every set(), even when the partialized fields haven't moved. With ~1000
- * sets/sec under load that's 1000 sync localStorage writes/sec for the same
- * 3 persisted fields. The dedupe cuts that to one write per actual change.
- */
-const lastWritten = new Map<string, string>();
-const dedupedStorage = createJSONStorage(() => ({
-  getItem: (key) => localStorage.getItem(key),
-  setItem: (key, value) => {
-    if (lastWritten.get(key) === value) return;
-    lastWritten.set(key, value);
-    localStorage.setItem(key, value);
-  },
-  removeItem: (key) => {
-    lastWritten.delete(key);
-    localStorage.removeItem(key);
-  },
-}));
 
 export const useAgentStore = create<AgentStore>()(
   persist(
@@ -60,7 +40,7 @@ export const useAgentStore = create<AgentStore>()(
     }),
     {
       name: "persona-ui-agents",
-      storage: dedupedStorage,
+      storage: createDedupedJSONStorage(),
       partialize: (state) => ({
         selectedPersonaId: state.selectedPersonaId,
         activeChatSessionId: state.activeChatSessionId,
