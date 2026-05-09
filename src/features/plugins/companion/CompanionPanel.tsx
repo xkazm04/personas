@@ -97,6 +97,12 @@ export default function CompanionPanel() {
   const brainView = useCompanionStore((s) => s.brainView);
   const betaSelfImprove = useCompanionStore((s) => s.betaSelfImprove);
   const improving = useCompanionStore((s) => s.improving);
+  // Speaking state: TTS audio synthesized AND not yet finished. Until
+  // a `speaking` clip ships, the avatar falls back to the idle loop —
+  // the `speaking` value is the signal carrier, not the visual.
+  const isSpeaking = useCompanionStore(
+    (s) => !!s.pendingPlayback?.audioUrl && !s.pendingPlayback.played,
+  );
 
   const setMessages = useCompanionStore((s) => s.setMessages);
   const appendMessage = useCompanionStore((s) => s.appendMessage);
@@ -166,7 +172,7 @@ export default function CompanionPanel() {
           */}
           <AthenaAvatar
             fill
-            state={streaming ? 'thinking' : 'idle'}
+            state={isSpeaking ? 'speaking' : streaming ? 'thinking' : 'idle'}
             className="absolute inset-0 -z-10 opacity-[0.05]"
           />
           <Header

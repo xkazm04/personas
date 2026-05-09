@@ -39,7 +39,22 @@ import { useCallback, useEffect, useRef, useState } from 'react';
  *     stretches them but that's still a single hardware-accelerated
  *     decode.
  */
-export type AthenaState = 'idle' | 'thinking';
+export type AthenaState = 'idle' | 'thinking' | 'speaking';
+
+/**
+ * Internal state — which clip is actually rendered. `speaking` is part of
+ * the public {@link AthenaState} surface but no `athena_speaking_loop.mp4`
+ * exists in the asset library yet (see
+ * `docs/features/companion/athena-interactive-avatar.md` §Part 2.1). Until
+ * the clip ships, `speaking` falls back to the idle clip so the prop is
+ * accepted without runtime error. Once the clip lands, expand `ClipState`
+ * to include `'speaking'` and add a third `<video>` ref.
+ */
+type ClipState = 'idle' | 'thinking';
+
+function clipFor(state: AthenaState): ClipState {
+  return state === 'speaking' ? 'idle' : state;
+}
 
 export function AthenaAvatar({
   state,
@@ -68,23 +83,24 @@ export function AthenaAvatar({
   const idleRef = useRef<HTMLVideoElement>(null);
   const thinkingRef = useRef<HTMLVideoElement>(null);
 
-  // What the caller wants. Captured via ref so the `onEnded` handler
-  // (created once per render) sees the latest value without churn.
-  const pendingRef = useRef<AthenaState>(state);
+  // What the caller wants, narrowed to a renderable clip. Captured via
+  // ref so the `onEnded` handler (created once per render) sees the
+  // latest value without churn.
+  const pendingRef = useRef<ClipState>(clipFor(state));
   useEffect(() => {
-    pendingRef.current = state;
+    pendingRef.current = clipFor(state);
   }, [state]);
 
   // What's actually visible right now. Flips on the active video's
   // `ended` event; never mid-clip.
-  const [displayState, setDisplayState] = useState<AthenaState>(state);
+  const [displayState, setDisplayState] = useState<ClipState>(clipFor(state));
 
   /**
    * Drive the active/inactive split. The active clip plays from where
    * it is (or from frame 0 on a fresh swap); the inactive clip pauses
    * at frame 0 so it's pre-rolled for the next swap.
    */
-  const playActive = useCallback((which: AthenaState) => {
+  const playActive = useCallback((which: ClipState) => {
     const active = which === 'idle' ? idleRef.current : thinkingRef.current;
     const inactive = which === 'idle' ? thinkingRef.current : idleRef.current;
     if (active) {
@@ -117,7 +133,7 @@ export function AthenaAvatar({
    * the same clip from frame 0 (manual loop).
    */
   const onEnded = useCallback(
-    (which: AthenaState) => {
+    (which: ClipState) => {
       // Hidden clip's `ended` is irrelevant — only act for the active.
       if (which !== displayState) return;
       const target = pendingRef.current;
