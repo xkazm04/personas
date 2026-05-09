@@ -19,12 +19,142 @@
 
 use serde_json::{json, Map, Value};
 
+use crate::db::models::RecipeDefinition;
+use crate::error::AppError;
+
+/// Stage B Phase 2 — hydrate any `recipe_ref` shaped use cases in `payload`
+/// in place by looking up the referenced recipe and replacing the
+/// `recipe_ref` UC with the inline UC shape stored in the recipe's
+/// `prompt_template` field (which holds the serialized UC JSON, set by
+/// `derive_recipes_from_template_inner` in Phase 1b).
+///
+/// `lookup_recipe` is a closure taking a recipe id and returning either the
+/// recipe row or an `AppError` (typically `AppError::NotFound`). The closure
+/// abstraction keeps this function testable without a live DB — the
+/// production caller wires it to `recipe_repo::get_by_id`.
+///
+/// **Hydration is destructive on mismatched prompt_template:** if a recipe's
+/// `prompt_template` is not valid JSON (e.g. a hand-edited recipe stored a
+/// raw LLM prompt instead of a serialized UC), this returns
+/// `AppError::Validation` rather than silently producing a malformed
+/// `agent_ir`. That error surfaces to the user with the offending recipe id.
+///
+/// **Bindings substitution** is text-based for v1: each `{{<key>}}` token
+/// inside the hydrated UC's serialized form is replaced with the
+/// corresponding binding value. Phase 1b's migration leaves bindings empty,
+/// so the substitution is a no-op for derived recipes today; the path is
+/// here for future template authors who introduce parameterization.
+pub fn hydrate_recipe_refs<F>(
+    payload: &mut Value,
+    lookup_recipe: F,
+) -> Result<(), AppError>
+where
+    F: Fn(&str) -> Result<RecipeDefinition, AppError>,
+{
+    let Some(obj) = payload.as_object_mut() else {
+        return Ok(());
+    };
+    let Some(use_cases) = obj.get_mut("use_cases").and_then(|v| v.as_array_mut())
+    else {
+        return Ok(());
+    };
+
+    for uc in use_cases.iter_mut() {
+        let recipe_ref_data = uc
+            .as_object()
+            .and_then(|uc_obj| uc_obj.get("recipe_ref"))
+            .and_then(|v| v.as_object())
+            .cloned();
+
+        let Some(recipe_ref) = recipe_ref_data else {
+            continue; // inline UC, leave as-is
+        };
+
+        let recipe_id = recipe_ref
+            .get("id")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| {
+                AppError::Validation(
+                    "use_case.recipe_ref is missing required `id` field".into(),
+                )
+            })?
+            .to_string();
+
+        let bindings = recipe_ref
+            .get("bindings")
+            .and_then(|v| v.as_object())
+            .cloned()
+            .unwrap_or_default();
+
+        // Look up the recipe row.
+        let recipe = lookup_recipe(&recipe_id)?;
+
+        // Deserialize the recipe's prompt_template back into a UC value.
+        // Phase 1b stores the original UC JSON here verbatim, so this round-trip
+        // restores the inline UC shape that downstream normalize_v3_to_flat()
+        // expects.
+        let mut hydrated: Value = serde_json::from_str(&recipe.prompt_template)
+            .map_err(|e| {
+                AppError::Validation(format!(
+                    "recipe {recipe_id} has malformed prompt_template (expected serialized UC JSON): {e}"
+                ))
+            })?;
+
+        // Apply bindings substitutions if any.
+        if !bindings.is_empty() {
+            apply_bindings(&mut hydrated, &bindings)?;
+        }
+
+        // Replace the recipe_ref UC with the hydrated inline shape.
+        *uc = hydrated;
+    }
+
+    Ok(())
+}
+
+/// Replace `{{<key>}}` placeholders inside `value`'s serialized form with
+/// the corresponding binding value, then deserialize. v1 implementation:
+/// string-level find-and-replace, slow-but-correct.
+///
+/// String bindings substitute as-is. Non-string bindings (numbers, bools,
+/// arrays, objects) substitute as their JSON serialization — so a binding
+/// `count: 5` replaces `{{count}}` with `5` in the serialized form, which
+/// will deserialize back as the number 5 if the placeholder was the entire
+/// JSON value. Mixed substitutions (`"prefix-{{count}}-suffix"`) produce
+/// strings.
+fn apply_bindings(value: &mut Value, bindings: &Map<String, Value>) -> Result<(), AppError> {
+    if bindings.is_empty() {
+        return Ok(());
+    }
+
+    let mut serialized = serde_json::to_string(value).map_err(|e| {
+        AppError::Internal(format!("hydrate apply_bindings serialize: {e}"))
+    })?;
+
+    for (key, binding_value) in bindings.iter() {
+        let placeholder = format!("{{{{{}}}}}", key); // produces literal {{key}}
+        let replacement = match binding_value {
+            Value::String(s) => s.clone(),
+            other => serde_json::to_string(other).unwrap_or_default(),
+        };
+        serialized = serialized.replace(&placeholder, &replacement);
+    }
+
+    *value = serde_json::from_str(&serialized).map_err(|e| {
+        AppError::Internal(format!("hydrate apply_bindings deserialize: {e}"))
+    })?;
+
+    Ok(())
+}
+
 /// Detects whether a payload is v3-shaped.
 ///
 /// Signals:
 /// - `payload.persona` is an object, OR
 /// - `payload.use_cases[i]` has a nested `suggested_trigger` object, OR
-/// - `payload.use_cases[i]` declares `review_policy` / `memory_policy`.
+/// - `payload.use_cases[i]` declares `review_policy` / `memory_policy`, OR
+/// - `payload.use_cases[i]` has a `recipe_ref` (Stage B Phase 2 — recipe-ref
+///   UCs are v3-shaped because they hydrate to v3 nested form).
 pub fn is_v3_shape(payload: &Value) -> bool {
     if payload.get("persona").and_then(|v| v.as_object()).is_some() {
         return true;
@@ -34,6 +164,7 @@ pub fn is_v3_shape(payload: &Value) -> bool {
             if uc.get("suggested_trigger").is_some()
                 || uc.get("review_policy").is_some()
                 || uc.get("memory_policy").is_some()
+                || uc.get("recipe_ref").is_some()
             {
                 return true;
             }
@@ -1346,6 +1477,253 @@ mod tests {
         assert!(
             parsed.is_err(),
             "unknown format must fail at serde layer (D-01)"
+        );
+    }
+
+    // ========================================================================
+    // Stage B Phase 2: hydrate_recipe_refs tests
+    // ========================================================================
+
+    /// Build a minimal RecipeDefinition fixture with the given prompt_template
+    /// (which Phase 1b sets to the serialized UC JSON).
+    fn recipe_fixture(id: &str, prompt_template: &str) -> RecipeDefinition {
+        RecipeDefinition {
+            id: id.to_string(),
+            project_id: "default".to_string(),
+            credential_id: None,
+            use_case_id: None,
+            name: "test recipe".to_string(),
+            description: None,
+            category: None,
+            prompt_template: prompt_template.to_string(),
+            input_schema: None,
+            output_contract: None,
+            tool_requirements: None,
+            credential_requirements: None,
+            model_preference: None,
+            sample_inputs: None,
+            tags: None,
+            icon: None,
+            color: None,
+            is_builtin: true,
+            created_at: "2026-05-09T00:00:00Z".to_string(),
+            updated_at: "2026-05-09T00:00:00Z".to_string(),
+            source_template_id: Some("test-template".to_string()),
+            source_use_case_id: Some("uc_x".to_string()),
+            source_use_case_name: Some("Test UC".to_string()),
+            source_version: Some("1.0.0".to_string()),
+        }
+    }
+
+    #[test]
+    fn hydrate_no_recipe_refs_is_noop() {
+        // A v3 payload with only inline UCs should pass through unchanged.
+        let mut payload = json!({
+            "use_cases": [{
+                "id": "uc_inline",
+                "name": "Inline UC",
+                "suggested_trigger": { "trigger_type": "manual" }
+            }]
+        });
+        let before = payload.clone();
+        let lookup = |_id: &str| -> Result<RecipeDefinition, AppError> {
+            panic!("lookup must not be called for inline-only payloads")
+        };
+        hydrate_recipe_refs(&mut payload, lookup).expect("hydrate ok");
+        assert_eq!(payload, before, "inline-only payload must be untouched");
+    }
+
+    #[test]
+    fn hydrate_replaces_recipe_ref_with_inline_uc() {
+        let stored_uc = json!({
+            "id": "uc_x",
+            "name": "Hydrated UC",
+            "suggested_trigger": { "trigger_type": "schedule" },
+            "tools": ["http_request"]
+        });
+        let stored_uc_json = serde_json::to_string(&stored_uc).unwrap();
+
+        let mut payload = json!({
+            "use_cases": [{
+                "recipe_ref": {
+                    "id": "recipe-123",
+                    "version": "1.0.0",
+                    "bindings": {}
+                }
+            }]
+        });
+
+        let lookup = |id: &str| -> Result<RecipeDefinition, AppError> {
+            assert_eq!(id, "recipe-123", "lookup called with wrong recipe id");
+            Ok(recipe_fixture("recipe-123", &stored_uc_json))
+        };
+
+        hydrate_recipe_refs(&mut payload, lookup).expect("hydrate ok");
+
+        let ucs = payload
+            .get("use_cases")
+            .and_then(|v| v.as_array())
+            .unwrap();
+        assert_eq!(ucs.len(), 1);
+        // The recipe_ref UC was replaced with the stored inline shape.
+        assert_eq!(ucs[0].get("id").and_then(|v| v.as_str()), Some("uc_x"));
+        assert_eq!(
+            ucs[0].get("name").and_then(|v| v.as_str()),
+            Some("Hydrated UC")
+        );
+        assert!(ucs[0].get("recipe_ref").is_none(), "recipe_ref should be gone post-hydration");
+    }
+
+    #[test]
+    fn hydrate_preserves_inline_ucs_alongside_recipe_refs() {
+        let stored_uc = json!({ "id": "uc_from_recipe", "name": "From Recipe" });
+        let stored_uc_json = serde_json::to_string(&stored_uc).unwrap();
+
+        let mut payload = json!({
+            "use_cases": [
+                { "id": "uc_inline", "name": "Inline" },
+                { "recipe_ref": { "id": "recipe-A", "version": "1.0.0" } },
+                { "id": "uc_other_inline", "name": "Other Inline" }
+            ]
+        });
+
+        let lookup = |id: &str| -> Result<RecipeDefinition, AppError> {
+            Ok(recipe_fixture(id, &stored_uc_json))
+        };
+
+        hydrate_recipe_refs(&mut payload, lookup).expect("hydrate ok");
+
+        let ucs = payload.get("use_cases").and_then(|v| v.as_array()).unwrap();
+        assert_eq!(ucs.len(), 3);
+        assert_eq!(ucs[0].get("id").and_then(|v| v.as_str()), Some("uc_inline"));
+        assert_eq!(
+            ucs[1].get("id").and_then(|v| v.as_str()),
+            Some("uc_from_recipe"),
+            "middle UC should be hydrated"
+        );
+        assert_eq!(
+            ucs[2].get("id").and_then(|v| v.as_str()),
+            Some("uc_other_inline")
+        );
+    }
+
+    #[test]
+    fn hydrate_returns_error_when_recipe_not_found() {
+        let mut payload = json!({
+            "use_cases": [{
+                "recipe_ref": { "id": "missing-recipe" }
+            }]
+        });
+        let lookup = |_id: &str| -> Result<RecipeDefinition, AppError> {
+            Err(AppError::NotFound("recipe missing-recipe".into()))
+        };
+        let result = hydrate_recipe_refs(&mut payload, lookup);
+        assert!(result.is_err(), "missing recipe should surface as error");
+    }
+
+    #[test]
+    fn hydrate_errors_when_prompt_template_is_not_valid_json() {
+        let mut payload = json!({
+            "use_cases": [{
+                "recipe_ref": { "id": "broken-recipe" }
+            }]
+        });
+        let lookup = |_id: &str| -> Result<RecipeDefinition, AppError> {
+            Ok(recipe_fixture("broken-recipe", "not valid json {{{"))
+        };
+        let result = hydrate_recipe_refs(&mut payload, lookup);
+        assert!(result.is_err(), "malformed prompt_template should error");
+        let msg = format!("{}", result.unwrap_err());
+        assert!(
+            msg.contains("malformed prompt_template"),
+            "error should mention malformed prompt_template: {msg}"
+        );
+    }
+
+    #[test]
+    fn hydrate_recipe_ref_missing_id_errors() {
+        let mut payload = json!({
+            "use_cases": [{
+                "recipe_ref": { "version": "1.0.0" } // missing `id`
+            }]
+        });
+        let lookup = |_id: &str| -> Result<RecipeDefinition, AppError> {
+            panic!("should not call lookup when recipe_ref id is missing")
+        };
+        let result = hydrate_recipe_refs(&mut payload, lookup);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn hydrate_with_string_bindings_substitutes_placeholders() {
+        let stored_uc = json!({
+            "id": "uc_x",
+            "description": "Send to {{platform}} every {{frequency}}"
+        });
+        let stored_uc_json = serde_json::to_string(&stored_uc).unwrap();
+
+        let mut payload = json!({
+            "use_cases": [{
+                "recipe_ref": {
+                    "id": "recipe-Y",
+                    "bindings": {
+                        "platform": "Slack",
+                        "frequency": "morning"
+                    }
+                }
+            }]
+        });
+
+        let lookup = |_id: &str| Ok(recipe_fixture("recipe-Y", &stored_uc_json));
+        hydrate_recipe_refs(&mut payload, lookup).expect("hydrate ok");
+
+        let desc = payload
+            .pointer("/use_cases/0/description")
+            .and_then(|v| v.as_str())
+            .expect("description present");
+        assert_eq!(desc, "Send to Slack every morning");
+    }
+
+    #[test]
+    fn hydrate_with_empty_bindings_is_passthrough() {
+        // Empty bindings (the Phase 1b default) should not trigger the
+        // serialize-replace-deserialize cycle. We can't assert that directly,
+        // but we can confirm correctness on a complex structure.
+        let stored_uc = json!({
+            "id": "uc_x",
+            "tools": ["http_request"],
+            "tags": [{"k": "v"}],
+            "config": { "deeply": { "nested": "value" } }
+        });
+        let stored_uc_json = serde_json::to_string(&stored_uc).unwrap();
+
+        let mut payload = json!({
+            "use_cases": [{
+                "recipe_ref": {
+                    "id": "recipe-empty",
+                    "bindings": {}
+                }
+            }]
+        });
+
+        let lookup = |_id: &str| Ok(recipe_fixture("recipe-empty", &stored_uc_json));
+        hydrate_recipe_refs(&mut payload, lookup).expect("hydrate ok");
+
+        let hydrated_uc = payload
+            .pointer("/use_cases/0")
+            .expect("first UC present")
+            .clone();
+        assert_eq!(hydrated_uc, stored_uc, "empty bindings = exact passthrough");
+    }
+
+    #[test]
+    fn is_v3_shape_detects_recipe_ref() {
+        let payload = json!({
+            "use_cases": [{ "recipe_ref": { "id": "x" } }]
+        });
+        assert!(
+            is_v3_shape(&payload),
+            "payload with recipe_ref UC must register as v3-shaped"
         );
     }
 }
