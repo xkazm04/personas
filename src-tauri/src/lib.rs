@@ -401,6 +401,11 @@ pub struct AppState {
     /// Whether the clipboard error watcher is enabled (toggled from system tray).
     #[cfg(feature = "desktop")]
     pub clipboard_watcher_enabled: Arc<std::sync::atomic::AtomicBool>,
+    /// Project tracking subsystem — absorbs CLI activity (git commits,
+    /// active-runs ledger, optional Obsidian notes) into per-project
+    /// pulses consumed by Companion's brain. Always present; the master
+    /// enable gate inside controls whether ticks do work.
+    pub project_tracking: Arc<engine::project_tracking::ProjectTracker>,
 }
 
 /// Hello world IPC command -- verifies the Rust <-> React bridge works.
@@ -817,6 +822,7 @@ pub fn run() {
                 smee_relay_notifier: smee_notifier,
                 #[cfg(feature = "desktop")]
                 clipboard_watcher_enabled: Arc::new(std::sync::atomic::AtomicBool::new(true)),
+                project_tracking: Arc::new(engine::project_tracking::ProjectTracker::new()),
             });
             app.manage(state_arc.clone());
 

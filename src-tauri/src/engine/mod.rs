@@ -128,6 +128,7 @@ pub mod polling;
 pub mod prepared_run_cache;
 pub mod process_activity;
 pub mod process_session;
+pub mod project_tracking;
 pub mod prompt;
 pub mod protocol;
 pub mod provider;
