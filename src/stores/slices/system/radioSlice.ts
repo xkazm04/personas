@@ -4,18 +4,35 @@ import type { SystemStore } from '../../storeTypes';
 /**
  * Radio plugin state.
  *
- * `radioEnabled` controls whether the centre cluster of `DesktopFooter`
- * renders the radio controller. Off by default — the radio is opt-in
- * because not every user wants background music. Toggling lives in
- * Settings → Account (`RadioSettingsCard`); the choice is persisted
- * via `systemStore`'s `partialize` so it survives restarts.
+ * - `radioEnabled` — master switch. When false, `DesktopFooter` doesn't
+ *   render the centre-cluster controller at all. Off by default — the
+ *   radio is opt-in because not every user wants background music.
+ * - `disabledStationIds` — per-station hide-from-picker list. Stations
+ *   in this list don't appear in `StationPicker`. Stored as a list of
+ *   ids (not a Set) so persistence round-trips cleanly through the
+ *   systemStore JSON storage. New stations added to the curated catalog
+ *   default to enabled (absent from the list).
+ *
+ * Both fields are persisted via `systemStore`'s `partialize`, so user
+ * choices survive restarts. The toggles live in Settings → Account
+ * (`RadioSettingsCard`).
  */
 export interface RadioSlice {
   radioEnabled: boolean;
+  disabledStationIds: string[];
   setRadioEnabled: (radioEnabled: boolean) => void;
+  setStationDisabled: (stationId: string, disabled: boolean) => void;
 }
 
 export const createRadioSlice: StateCreator<SystemStore, [], [], RadioSlice> = (set) => ({
   radioEnabled: false,
+  disabledStationIds: [],
   setRadioEnabled: (radioEnabled) => set({ radioEnabled }),
+  setStationDisabled: (stationId, disabled) =>
+    set((state) => {
+      const current = new Set(state.disabledStationIds);
+      if (disabled) current.add(stationId);
+      else current.delete(stationId);
+      return { disabledStationIds: Array.from(current) };
+    }),
 });

@@ -12934,6 +12934,8 @@
     "settings_title": "Radio",
     "settings_description": "Curated stations playing in the background. Two kinds: YouTube tracklists (via a hidden IFrame Player — use the prev/next buttons to skip tracks) and direct internet streams (single continuous source — use the picker to switch). The controller lives in the centre of the app footer.",
     "enable_label": "Show radio in app footer",
-    "enable_description": "Off by default. When on, a compact controller appears in the centre of the footer. Your choice is remembered across restarts."
+    "enable_description": "Off by default. When on, a compact controller appears in the centre of the footer. Your choice is remembered across restarts.",
+    "station_toggle_label": "Show in picker",
+    "picker_empty": "All stations are hidden. Enable some in Settings → Account."
   }
 }

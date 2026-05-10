@@ -1,6 +1,7 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { Check, Music, Radio } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useSystemStore } from '@/stores/systemStore';
 import type { Station } from '@/lib/bindings/Station';
 
 interface StationPickerProps {
@@ -18,6 +19,16 @@ export default function StationPicker({
 }: StationPickerProps) {
   const { t } = useTranslation();
   const ref = useRef<HTMLDivElement>(null);
+  const disabledStationIds = useSystemStore((s) => s.disabledStationIds);
+
+  // Hide stations the user has disabled in Settings → Account. Currently
+  // playing stations stay playing even if disabled — the picker just hides
+  // them; user can stop manually or re-enable in settings.
+  const visibleStations = useMemo(() => {
+    if (disabledStationIds.length === 0) return stations;
+    const disabled = new Set(disabledStationIds);
+    return stations.filter((s) => !disabled.has(s.id));
+  }, [stations, disabledStationIds]);
 
   useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
@@ -48,7 +59,12 @@ export default function StationPicker({
         </span>
       </div>
       <ul className="py-1 max-h-72 overflow-y-auto">
-        {stations.map((station) => {
+        {visibleStations.length === 0 && (
+          <li className="px-3 py-3 typo-caption text-foreground/55 text-center">
+            {t.radio.picker_empty}
+          </li>
+        )}
+        {visibleStations.map((station) => {
           const active = station.id === currentStationId;
           const isYt = station.source.kind === 'youtubeTracks';
           const trackCount =

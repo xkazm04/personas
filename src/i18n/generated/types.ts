@@ -12941,5 +12941,7 @@ export type Translations = {
     settings_description: string;
     enable_label: string;
     enable_description: string;
+    station_toggle_label: string;
+    picker_empty: string;
   };
 };
