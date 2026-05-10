@@ -51,6 +51,10 @@ Three Tauri configs in `src-tauri/`:
 | `tauri.lite.conf.json`   | `desktop`                              | nsis only         | fast Windows iteration |
 | `tauri.stable.conf.json` | `desktop-full`                         | nsis + msi        | Windows release |
 
+The canonical config's `security.csp` is documented per-domain in
+[`csp-inventory.md`](csp-inventory.md) — update that file in the same change
+when you add or remove a network-using feature.
+
 Cargo features in `src-tauri/Cargo.toml`:
 
 | Feature | Implies | What it adds |
