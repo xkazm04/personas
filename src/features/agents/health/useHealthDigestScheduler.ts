@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
+import { sendAppNotification } from "@/api/system/system";
 import { getAppSetting, setAppSetting } from '@/api/system/settings';
 import { silentCatchNull } from "@/lib/silentCatch";
 import { useAgentStore } from "@/stores/agentStore";
@@ -113,7 +113,7 @@ export function useHealthDigestScheduler() {
           });
         }
 
-        await invoke<void>('send_app_notification', { title, body }).catch(() => {
+        await sendAppNotification(title, body).catch(() => {
           // Notification permission may not be granted -- silently ignore
         });
       } finally {

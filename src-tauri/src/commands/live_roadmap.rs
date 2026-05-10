@@ -19,6 +19,8 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
 use ts_rs::TS;
 
+use crate::error::AppError;
+
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
@@ -159,8 +161,9 @@ struct CachedRoadmap {
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
-pub async fn fetch_roadmap(app: AppHandle, force: bool) -> Result<LiveRoadmapResult, String> {
-    let cache_path = cache_path(&app).map_err(|e| e.to_string())?;
+pub async fn fetch_roadmap(app: AppHandle, force: bool) -> Result<LiveRoadmapResult, AppError> {
+    let cache_path =
+        cache_path(&app).map_err(|e| AppError::Internal(format!("roadmap cache path: {e}")))?;
     let cached = read_cache(&cache_path);
 
     // Fresh-enough cache? Skip the network entirely.
@@ -212,8 +215,9 @@ pub async fn fetch_roadmap(app: AppHandle, force: bool) -> Result<LiveRoadmapRes
         }
         Ok(FetchOutcome::NotModified) => {
             // 304 → bump freshness on the existing cache and return it.
-            let mut c =
-                cached.ok_or_else(|| "304 Not Modified but no cache available".to_string())?;
+            let mut c = cached.ok_or_else(|| {
+                AppError::External("304 Not Modified but no cache available".into())
+            })?;
             let now = Utc::now();
             c.cached_at = now;
             let _ = write_cache(&cache_path, &c);
@@ -236,7 +240,7 @@ pub async fn fetch_roadmap(app: AppHandle, force: bool) -> Result<LiveRoadmapRes
                     source: LiveRoadmapSource::Stale,
                 });
             }
-            Err(err)
+            Err(AppError::External(err))
         }
     }
 }

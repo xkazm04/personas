@@ -4,20 +4,21 @@
 
 use tauri::{AppHandle, Emitter, State};
 
+use crate::error::AppError;
 use crate::radio::{NowPlaying, PlayStatus, RadioService, RadioServiceHandle, RadioState, Station};
 
 /// Tauri event emitted to the main window with the latest `RadioState`
 /// after every mutation, so the footer can re-render without polling.
 const RADIO_STATE_EVENT: &str = "radio:state";
 
-fn with_service<F, R>(state: &State<'_, RadioServiceHandle>, f: F) -> Result<R, String>
+fn with_service<F, R>(state: &State<'_, RadioServiceHandle>, f: F) -> Result<R, AppError>
 where
     F: FnOnce(&mut RadioService) -> R,
 {
     let mut svc = state
         .0
         .lock()
-        .map_err(|e| format!("radio service mutex poisoned: {e}"))?;
+        .map_err(|e| AppError::Internal(format!("radio service mutex poisoned: {e}")))?;
     Ok(f(&mut svc))
 }
 
@@ -32,19 +33,21 @@ fn broadcast(app: &AppHandle, state: &RadioState) {
 }
 
 #[tauri::command]
-pub fn radio_list_stations(state: State<'_, RadioServiceHandle>) -> Result<Vec<Station>, String> {
+pub fn radio_list_stations(
+    state: State<'_, RadioServiceHandle>,
+) -> Result<Vec<Station>, AppError> {
     with_service(&state, |svc| svc.stations().to_vec())
 }
 
 #[tauri::command]
-pub fn radio_get_state(state: State<'_, RadioServiceHandle>) -> Result<RadioState, String> {
+pub fn radio_get_state(state: State<'_, RadioServiceHandle>) -> Result<RadioState, AppError> {
     with_service(&state, |svc| snapshot(svc))
 }
 
 #[tauri::command]
 pub fn radio_get_now_playing(
     state: State<'_, RadioServiceHandle>,
-) -> Result<Option<NowPlaying>, String> {
+) -> Result<Option<NowPlaying>, AppError> {
     with_service(&state, |svc| svc.now_playing())
 }
 
@@ -52,11 +55,11 @@ pub fn radio_get_now_playing(
 pub fn radio_play(
     app: AppHandle,
     state: State<'_, RadioServiceHandle>,
-) -> Result<RadioState, String> {
+) -> Result<RadioState, AppError> {
     let snap = with_service(&state, |svc| {
-        svc.play()?;
+        svc.play().map_err(AppError::Execution)?;
         svc.persist();
-        Ok::<_, String>(snapshot(svc))
+        Ok::<_, AppError>(snapshot(svc))
     })??;
     broadcast(&app, &snap);
     Ok(snap)
@@ -66,7 +69,7 @@ pub fn radio_play(
 pub fn radio_pause(
     app: AppHandle,
     state: State<'_, RadioServiceHandle>,
-) -> Result<RadioState, String> {
+) -> Result<RadioState, AppError> {
     let snap = with_service(&state, |svc| {
         svc.pause();
         svc.persist();
@@ -80,12 +83,12 @@ pub fn radio_pause(
 pub fn radio_next(
     app: AppHandle,
     state: State<'_, RadioServiceHandle>,
-) -> Result<RadioState, String> {
+) -> Result<RadioState, AppError> {
     let snap = with_service(&state, |svc| {
-        svc.next()?;
+        svc.next().map_err(AppError::Execution)?;
         svc.set_status(PlayStatus::Playing);
         svc.persist();
-        Ok::<_, String>(snapshot(svc))
+        Ok::<_, AppError>(snapshot(svc))
     })??;
     broadcast(&app, &snap);
     Ok(snap)
@@ -95,12 +98,12 @@ pub fn radio_next(
 pub fn radio_prev(
     app: AppHandle,
     state: State<'_, RadioServiceHandle>,
-) -> Result<RadioState, String> {
+) -> Result<RadioState, AppError> {
     let snap = with_service(&state, |svc| {
-        svc.prev()?;
+        svc.prev().map_err(AppError::Execution)?;
         svc.set_status(PlayStatus::Playing);
         svc.persist();
-        Ok::<_, String>(snapshot(svc))
+        Ok::<_, AppError>(snapshot(svc))
     })??;
     broadcast(&app, &snap);
     Ok(snap)
@@ -111,12 +114,12 @@ pub fn radio_set_station(
     app: AppHandle,
     state: State<'_, RadioServiceHandle>,
     station_id: String,
-) -> Result<RadioState, String> {
+) -> Result<RadioState, AppError> {
     let snap = with_service(&state, |svc| {
-        svc.set_station(&station_id)?;
+        svc.set_station(&station_id).map_err(AppError::Execution)?;
         svc.set_status(PlayStatus::Playing);
         svc.persist();
-        Ok::<_, String>(snapshot(svc))
+        Ok::<_, AppError>(snapshot(svc))
     })??;
     broadcast(&app, &snap);
     Ok(snap)
@@ -127,7 +130,7 @@ pub fn radio_set_volume(
     app: AppHandle,
     state: State<'_, RadioServiceHandle>,
     volume: f32,
-) -> Result<RadioState, String> {
+) -> Result<RadioState, AppError> {
     let snap = with_service(&state, |svc| {
         svc.set_volume(volume);
         svc.persist();
@@ -146,7 +149,7 @@ pub fn radio_report_status(
     state: State<'_, RadioServiceHandle>,
     status: PlayStatus,
     position_sec: Option<u32>,
-) -> Result<RadioState, String> {
+) -> Result<RadioState, AppError> {
     let snap = with_service(&state, |svc| {
         svc.set_status(status);
         if let Some(pos) = position_sec {
@@ -168,12 +171,12 @@ pub fn radio_report_status(
 pub fn radio_track_ended(
     app: AppHandle,
     state: State<'_, RadioServiceHandle>,
-) -> Result<RadioState, String> {
+) -> Result<RadioState, AppError> {
     let snap = with_service(&state, |svc| {
-        svc.next()?;
+        svc.next().map_err(AppError::Execution)?;
         svc.set_status(PlayStatus::Playing);
         svc.persist();
-        Ok::<_, String>(snapshot(svc))
+        Ok::<_, AppError>(snapshot(svc))
     })??;
     broadcast(&app, &snap);
     Ok(snap)
