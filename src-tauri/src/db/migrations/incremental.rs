@@ -2173,6 +2173,34 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // Per-persona curation schedule — F-CRON. Drives nightly memory
+    // curation runs via `engine::curation_scheduler::tick`. One row
+    // per persona at most. cron_expr is a 5-field cron expression
+    // validated against `engine::cron::parse_cron` at the IPC
+    // boundary. NULL `last_curation_at` = never run yet (scheduler
+    // uses created_at as the reference point on first fire).
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "persona_curation_schedule",
+            description: "Create persona_curation_schedule table for scheduled memory curation",
+            already_applied: |conn| has_table(conn, "persona_curation_schedule"),
+            apply: |conn| {
+                conn.execute_batch(
+                    "CREATE TABLE IF NOT EXISTS persona_curation_schedule (
+                        persona_id        TEXT PRIMARY KEY
+                                          REFERENCES personas(id) ON DELETE CASCADE,
+                        cron_expr         TEXT NOT NULL,
+                        last_curation_at  TEXT,
+                        created_at        TEXT NOT NULL DEFAULT (datetime('now')),
+                        updated_at        TEXT NOT NULL DEFAULT (datetime('now'))
+                    );",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 
