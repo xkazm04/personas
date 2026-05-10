@@ -459,10 +459,21 @@ npm run build:builder   # builder tier
 - Adding a FK to an existing table requires the `recreate_with_fk` helper in `migrations/fk_hygiene.rs` — SQLite has no `ALTER TABLE ADD CONSTRAINT`. The helper handles idempotency, orphan cleanup, row-count assertion, and `pragma_foreign_key_check` verification.
 - Established by [[Architect/decisions/2026-05-02-fk-hygiene-cascade]] (8 tables retrofitted, 5 manual cleanup lines collapsed).
 
-### Error handling
-- `AppError` enum in `src-tauri/src/error.rs` — all command results return `Result<T, AppError>`.
-- Frontend treats commands as throwable; catches in API layer.
-- Sentry telemetry on both sides.
+### Error handling (load-bearing discipline — established 2026-05-10)
+
+The codebase enforces a layered error-handling discipline. Established as a strong-pattern by `/architect` run 2026-05-10 (error-handling theme); see [[Architect/decisions/2026-05-10-codify-error-discipline-helpers]]. The four invariants that survive across `~1300+ Rust commands + ~150 frontend catch sites`:
+
+1. **Rust commands return `Result<T, AppError>`.** `AppError` is the single error type for the IPC boundary; defined in `src-tauri/src/error.rs` (21 variants as of 2026-05-10, all Serialize-covered with PII-scrubbing on Database/Io/Internal). At time of codification, ~91% of `#[tauri::command]` functions comply (1293 sites); the remaining 9% (~134 commands across 54 files including `radio.rs`, `live_roadmap.rs`, `auto_cred_browser.rs`) return `Result<T, String>` and are tracked for migration in [[Architect/backlog]] under the error-handling theme. The 100%-compliance enforcement vehicle (a `[lints.clippy]` block + structural test asserting every `#[tauri::command]` returns `Result<_, AppError>`) ships when the migration backlog item lands.
+
+2. **Frontend `.catch()` handlers wrap with `silentCatch()` or `toastCatch()`.** From `src/lib/silentCatch.ts`: `toastCatch()` records a Sentry breadcrumb + shows a toast for user-facing errors; `silentCatch()` records a Sentry breadcrumb + console-logs for background errors. `silentCatchNull()` is the variant that returns `null` on error (data-fetch fallback). At time of codification ~152 sites use a helper, ~58 raw `.catch((err) => ...)` sites bypass them. ESLint rule `custom/no-silent-catch` (warn) flags empty catches; the wider rule covering "raw catch without helper" is queued at [[Architect/backlog]] as a rule addition.
+
+3. **User-facing error rendering goes through `resolveErrorTranslated()` from `src/i18n/useTranslatedError.ts`.** Backed by `ERROR_KEY_MAP` (34 patterns as of 2026-05-10) and `error_registry` keys in `src/i18n/locales/en.json`. Locale parity is 100% (CI gate `npm run check:error-registry` enforces ERROR_KEY_MAP ↔ en.json key existence; `npm run check:i18n` enforces locale-keyset parity). When `resolveErrorTranslated` (or `resolveError`) rewrites a raw error, both helpers record a Sentry breadcrumb (`category: 'error.resolved'`, `level: 'warning'`) with the raw error string + resolved keyPrefix BEFORE returning — so operators reviewing user-report tickets see the raw underlying error, not only the friendly rewrite. Established by [[Architect/decisions/2026-05-10-resolveerror-breadcrumb-spawn-tracing]].
+
+4. **Rust-side errors that should reach Sentry use `tracing::error!()`.** The sentry_tracing layer in `src-tauri/src/logging.rs` captures `Level::ERROR` as a full Sentry event and `Level::WARN` as a breadcrumb. Disk-only `logger.log("[ERROR] ...")` calls bypass Sentry — they are correct as a per-execution local trace (kept alongside `tracing::error!`), not as the sole observability surface. The canonical example is `engine/runner/mod.rs` spawn-failure path, which calls both: `tracing::error!` for production observability + `logger.log` for the local execution trace.
+
+**Why this matters:** Sentry breadcrumb coverage is a function of helper adoption; structured IPC error metadata is a function of `Result<T, AppError>`; operator-debugging quality is a function of the raw-before-rewrite breadcrumb. The four invariants together ensure that an error visible in a user report has a fully-correlated trace from the raw Rust origin through to the friendly user copy.
+
+**Risk to losing:** if helper adoption drifts below ~80% or Rust commands start returning `Result<T, String>` again, Sentry breadcrumb coverage gets patchy and operators lose the ability to correlate user reports with backend logs. The CI gate from invariant 3 + the queued `[lints.clippy]` + the queued lint-rule for invariant 2 are the planned mechanical defenses; until those ship, the discipline is held by social convention + this docs-stack section + per-PR review.
 
 ### Plugins
 - The app has a plugin architecture under `src/features/plugins/` (dev-tools, gitlab, etc.).
