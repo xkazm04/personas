@@ -276,6 +276,27 @@ impl TraceCollector {
         let span_id = uuid::Uuid::new_v4().to_string();
         let start_ms = self.epoch.elapsed().as_millis() as u64;
 
+        // Emit a Sentry breadcrumb at every PipelineStage boundary so
+        // operators see the runner pipeline progression (Validate → Spawn →
+        // Stream → Finalize) in the breadcrumb trail of any subsequent error.
+        // Gated on PipelineStage so tool/dispatch/prompt spans don't flood the
+        // breadcrumb buffer.
+        if matches!(span_type, SpanType::PipelineStage) {
+            let mut data = sentry::protocol::Map::new();
+            data.insert(
+                "execution_id".into(),
+                self.execution_id.clone().into(),
+            );
+            data.insert("persona_id".into(), self.persona_id.clone().into());
+            sentry::add_breadcrumb(sentry::Breadcrumb {
+                category: Some("execution.stage".into()),
+                message: Some(name.to_string()),
+                level: sentry::Level::Info,
+                data,
+                ..Default::default()
+            });
+        }
+
         let span = TraceSpan {
             span_id: span_id.clone(),
             parent_span_id: Some(parent_span_id.unwrap_or(&self.root_span_id).to_string()),
