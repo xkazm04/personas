@@ -20,6 +20,8 @@ const SIZE_CLASSES = {
 
 export type BaseModalSize = keyof typeof SIZE_CLASSES;
 
+export type BaseModalPlacement = 'center' | 'right-drawer';
+
 interface BaseModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -31,6 +33,8 @@ interface BaseModalProps {
   embedded?: boolean;
   /** Render via createPortal to document.body — escapes parent transforms/stacking contexts */
   portal?: boolean;
+  /** Centered overlay (default) or full-height right-edge drawer with slide-in animation. */
+  placement?: BaseModalPlacement;
   children: React.ReactNode;
 }
 
@@ -97,6 +101,26 @@ const REDUCED_PANEL_CHILD: Variants = {
   exit: { opacity: 1 },
 };
 
+const DRAWER_PANEL: Variants = {
+  initial: { x: '100%', opacity: 0 },
+  animate: {
+    x: 0,
+    opacity: 1,
+    transition: { duration: 0.24, ease: EASE_OUT_EXPO },
+  },
+  exit: {
+    x: '100%',
+    opacity: 0,
+    transition: { duration: 0.18, ease: 'easeIn' },
+  },
+};
+
+const REDUCED_DRAWER_PANEL: Variants = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1, transition: { duration: 0.1 } },
+  exit: { opacity: 0, transition: { duration: 0.1 } },
+};
+
 function staggeredChildren(children: ReactNode, childVariants: Variants): ReactNode {
   const arr = Children.toArray(children);
   if (arr.length <= 1) return children;
@@ -117,6 +141,7 @@ export function BaseModal({
   containerClassName,
   embedded = false,
   portal = false,
+  placement = 'center',
   children,
 }: BaseModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
@@ -125,11 +150,17 @@ export function BaseModal({
   const stackPosition = useModalStackPosition(isOpen && !embedded);
   const isTopmost = stackPosition?.isTopmost ?? true;
   const depth = stackPosition?.depth ?? 0;
+  const isDrawer = placement === 'right-drawer';
 
   const backdropVariants = reduceMotion ? REDUCED_BACKDROP : FULL_BACKDROP;
-  const panelVariants = reduceMotion ? REDUCED_PANEL : FULL_PANEL;
+  const panelVariants = isDrawer
+    ? (reduceMotion ? REDUCED_DRAWER_PANEL : DRAWER_PANEL)
+    : (reduceMotion ? REDUCED_PANEL : FULL_PANEL);
   const childVariants = reduceMotion ? REDUCED_PANEL_CHILD : FULL_PANEL_CHILD;
-  const renderedChildren = staggeredChildren(children, childVariants);
+  // Child stagger applies to centered modals only; drawer panels animate as
+  // one slide-in unit, and stagger-wrapping disrupts the flex column layout
+  // (header / body / footer) that drawers typically use.
+  const renderedChildren = isDrawer ? children : staggeredChildren(children, childVariants);
 
   const resolvedMaxWidth = maxWidthClass ?? (size ? SIZE_CLASSES[size] : 'max-w-4xl');
 
@@ -212,6 +243,22 @@ export function BaseModal({
     );
   }
 
+  const defaultContainerClass = isDrawer
+    ? 'fixed inset-0 flex items-start justify-end p-0'
+    : `fixed inset-0 flex items-center justify-center ${IS_MOBILE ? 'p-0' : 'p-4'}`;
+
+  const defaultPanelClass = isDrawer
+    ? (IS_MOBILE
+      ? 'relative h-full w-full bg-background/95 border-l border-primary/20 shadow-elevation-4 overflow-hidden flex flex-col'
+      : 'relative h-full w-[480px] bg-background/95 border-l border-primary/20 shadow-elevation-4 overflow-hidden flex flex-col')
+    : (IS_MOBILE
+      ? 'h-full bg-background overflow-hidden'
+      : 'max-h-[85vh] glass-md rounded-2xl shadow-elevation-4 overflow-hidden');
+
+  const panelWidthPrefix = isDrawer
+    ? ''
+    : `relative w-full ${IS_MOBILE ? 'max-w-full' : resolvedMaxWidth} `;
+
   const overlay = isOpen ? (
     <motion.div
       key="modal-overlay"
@@ -219,7 +266,7 @@ export function BaseModal({
       animate="animate"
       exit="exit"
       style={containerClassName ? undefined : { zIndex: overlayZIndex }}
-      className={containerClassName ?? `fixed inset-0 flex items-center justify-center ${IS_MOBILE ? 'p-0' : 'p-4'}`}
+      className={containerClassName ?? defaultContainerClass}
     >
       <motion.div
         variants={backdropVariants}
@@ -232,7 +279,7 @@ export function BaseModal({
         aria-modal="true"
         aria-labelledby={titleId}
         variants={panelVariants}
-        className={`relative w-full ${IS_MOBILE ? 'max-w-full' : resolvedMaxWidth} ${panelClassName ?? (IS_MOBILE ? 'h-full bg-background overflow-hidden' : 'max-h-[85vh] glass-md rounded-2xl shadow-elevation-4 overflow-hidden')}`}
+        className={`${panelWidthPrefix}${panelClassName ?? defaultPanelClass}`}
       >
         {renderedChildren}
       </motion.div>
