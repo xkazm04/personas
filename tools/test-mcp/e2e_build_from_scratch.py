@@ -44,12 +44,10 @@ from __future__ import annotations
 
 import argparse
 import json
-import sys
 import time
 from datetime import datetime, timezone
-from pathlib import Path
 
-import httpx
+from lib import Bridge, Client, EventLog
 
 
 # ---- CLI ---------------------------------------------------------------
@@ -85,58 +83,18 @@ parser.add_argument("--report", type=str, default=None)
 args = parser.parse_args()
 
 
-BASE = f"http://127.0.0.1:{args.port}"
-client = httpx.Client(base_url=BASE, timeout=240)
-
-
-# ---- HTTP helpers ------------------------------------------------------
-
-
-def post(path: str, body: dict | None = None, timeout: int | None = None) -> dict:
-    r = client.post(path, json=body or {}, timeout=timeout or 120)
-    try:
-        return json.loads(r.text)
-    except json.JSONDecodeError:
-        return {"_raw": r.text, "_status": r.status_code}
-
-
-def get(path: str) -> dict:
-    return json.loads(client.get(path).text)
+client = Client(port=args.port, default_timeout=240)
+_bridge = Bridge(client)
+log = EventLog()
 
 
 def bridge(method: str, params: dict | None = None, timeout_secs: int = 180) -> dict:
-    """Dispatch to any bridge method via the generic /bridge-exec route."""
-    raw = post(
-        "/bridge-exec",
-        {"method": method, "params": params or {}, "timeout_secs": timeout_secs},
-        timeout=timeout_secs + 20,
-    )
-    # The generic handler returns the bridge's own JSON as a string; the HTTP
-    # layer already parsed it once. Some methods wrap in {error: ...} on
-    # failure; callers handle both shapes.
-    return raw
-
-
-# ---- Scenario event log ----------------------------------------------
-
-log: list[dict] = []
+    """Local alias preserving the legacy `bridge(method, params, timeout)` shape."""
+    return _bridge.exec(method, params, timeout_secs)
 
 
 def record(step: str, outcome: str, **kw) -> dict:
-    entry = {"ts": datetime.now(timezone.utc).isoformat(), "step": step, "outcome": outcome}
-    entry.update(kw)
-    log.append(entry)
-    # ASCII-only markers — some Windows consoles default to cp1250 which
-    # can't encode the pretty Unicode glyphs and crashes sys.stdout.write.
-    marker = "[OK]" if outcome == "ok" else ("[..]" if outcome == "info" else "[XX]")
-    sys.stdout.write(f"  {marker} {step}: {outcome}")
-    if kw:
-        brief = {k: v for k, v in kw.items() if k not in ("detail",) and not isinstance(v, (dict, list))}
-        if brief:
-            sys.stdout.write(f"  {brief}")
-    sys.stdout.write("\n")
-    sys.stdout.flush()
-    return entry
+    return log.record(step, outcome, **kw)
 
 
 # ---- Scenario steps --------------------------------------------------
@@ -145,7 +103,7 @@ def record(step: str, outcome: str, **kw) -> dict:
 def step_preflight() -> None:
     print("\n[1/7] Preflight")
     try:
-        h = get("/health")
+        h = client.get("/health")
     except Exception as e:
         record("preflight.health", "fail", error=str(e))
         raise SystemExit(
@@ -490,18 +448,7 @@ def main() -> None:
         raise
     finally:
         finished = datetime.now(timezone.utc)
-        summary = {
-            "started": started.isoformat(),
-            "finished": finished.isoformat(),
-            "duration_s": (finished - started).total_seconds(),
-            "log": log,
-        }
-        if args.report:
-            Path(args.report).write_text(json.dumps(summary, indent=2))
-            print(f"\nWrote {args.report}")
-        else:
-            print("\n── summary ──")
-            print(json.dumps(summary, indent=2))
+        log.dump(args.report, started=started, finished=finished)
 
 
 if __name__ == "__main__":
