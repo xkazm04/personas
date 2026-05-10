@@ -1,5 +1,7 @@
 # Invisible Apps — Implementation Plan
 
+> 📦 **Phases 1-2 are shipped.** The implemented-product reference for the bundle export/import, share-link deep-link, P2P peer discovery, exposure manager, identity/trust, and enclave attestation surfaces lives at **[`docs/features/sharing/README.md`](../features/sharing/README.md)** (frontend `src/features/sharing/` + backend `src-tauri/src/commands/network/` + engine `src/engine/{bundle,share_link,p2p}`). Read this 117KB design archive only when you need the Phase 3+ roadmap or the historical "why we picked QUIC over libp2p" reasoning.
+
 > Living solution design for peer-to-peer agent orchestration across desktop instances.
 > Last updated: 2026-0
 
