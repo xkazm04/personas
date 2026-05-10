@@ -4787,7 +4787,23 @@
         "importance": "Importance",
         "tags": "Tags",
         "tags_hint": "(comma-separated)"
-      }
+      },
+      "curation_schedule_button": "Schedule",
+      "curation_schedule_button_hint": "Schedule automatic memory curation",
+      "curation_schedule_button_no_persona": "Pick an agent to schedule curation",
+      "curation_schedule_title": "Schedule memory curation",
+      "curation_schedule_description": "Run a memory review automatically on a recurring schedule. The result lands as a proposal you can apply or discard — your live memories are never touched without your confirmation.",
+      "curation_schedule_cron_label": "Schedule (cron)",
+      "curation_schedule_cron_hint": "5-field cron expression: minutes hours day-of-month month day-of-week.",
+      "curation_schedule_presets_label": "Quick picks",
+      "preset_weekly_sunday": "Weekly · Sun 3am",
+      "preset_daily_3am": "Daily · 3am",
+      "preset_weekly_monday": "Weekly · Mon 9am",
+      "preset_monthly": "Monthly · 1st",
+      "curation_schedule_last_run_label": "Last run",
+      "curation_schedule_disabled_state": "Curation is disabled for this agent",
+      "curation_schedule_disable": "Disable schedule",
+      "curation_schedule_save": "Save schedule"
     },
     "memory_review": {
       "all_conflicts_resolved": "All conflicts resolved",
