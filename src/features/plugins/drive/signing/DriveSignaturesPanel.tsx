@@ -11,8 +11,16 @@ import {
 import { useTranslation } from "@/i18n/useTranslation";
 import { toastCatch } from "@/lib/silentCatch";
 import { useToastStore } from "@/stores/toastStore";
+import { BaseModal } from "@/features/shared/components/modals";
 
 import type { useSigning } from "./useSigning";
+
+const TITLE_ID = "drive-signatures-panel-title";
+
+// Width override — BaseModal's right-drawer default is 480px; this panel
+// uses a tighter 420px footprint so it matches the original Phase-1 design.
+const PANEL_CLASS =
+  "relative h-full w-[420px] bg-background/95 border-l border-primary/25 shadow-elevation-4 overflow-hidden flex flex-col";
 
 interface Props {
   signing: ReturnType<typeof useSigning>;
@@ -37,12 +45,7 @@ export function DriveSignaturesPanel({
     refreshSignatures().catch(() => {
       /* toasts handled in hook */
     });
-    const esc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", esc);
-    return () => document.removeEventListener("keydown", esc);
-  }, [refreshSignatures, onClose]);
+  }, [refreshSignatures]);
 
   const handleExport = async (id: string) => {
     try {
@@ -63,16 +66,18 @@ export function DriveSignaturesPanel({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-[9998] flex items-start justify-end bg-background/50 surface-blur-modal"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
+    <BaseModal
+      isOpen
+      onClose={onClose}
+      titleId={TITLE_ID}
+      placement="right-drawer"
+      portal
+      panelClassName={PANEL_CLASS}
     >
-      <aside className="w-[420px] h-full flex flex-col bg-background/95 border-l border-primary/25 shadow-elevation-4">
+      <div className="contents">
         <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/15">
           <FileSignature className="w-4 h-4 text-rose-300" />
-          <div className="typo-section-title flex-1">
+          <div id={TITLE_ID} className="typo-section-title flex-1">
             {t.plugins.doc_signing.history_heading}
           </div>
           <button
@@ -161,7 +166,7 @@ export function DriveSignaturesPanel({
             </div>
           ))}
         </div>
-      </aside>
-    </div>
+      </div>
+    </BaseModal>
   );
 }
