@@ -20,8 +20,11 @@ import {
 import { useTranslation } from "@/i18n/useTranslation";
 import { silentCatch, toastCatch } from "@/lib/silentCatch";
 import { useToastStore } from "@/stores/toastStore";
+import { BaseModal } from "@/features/shared/components/modals";
 
 import type { useOcr } from "./useOcr";
+
+const TITLE_ID = "drive-ocr-drawer-title";
 
 interface Props {
   entry: DriveEntry;
@@ -64,17 +67,6 @@ export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
     cancelInFlight();
     onClose();
   };
-
-  useEffect(() => {
-    const esc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") handleClose();
-    };
-    document.addEventListener("keydown", esc);
-    return () => document.removeEventListener("keydown", esc);
-    // handleClose is stable for this component's lifetime; refs don't
-    // need a dep entry.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onClose]);
 
   // Best-effort cleanup if the drawer unmounts for any other reason
   // (parent re-render, route change). Mirrors the manual close path.
@@ -145,13 +137,14 @@ export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
   };
 
   return (
-    <div
-      className="fixed inset-0 z-[9998] flex items-start justify-end bg-background/50 surface-blur-modal"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) handleClose();
-      }}
+    <BaseModal
+      isOpen
+      onClose={handleClose}
+      titleId={TITLE_ID}
+      placement="right-drawer"
+      portal
     >
-      <aside className="w-[480px] h-full flex flex-col bg-background/95 border-l border-primary/20 shadow-elevation-4">
+      <div className="contents">
         {/* Header */}
         <div className="relative px-5 py-4 border-b border-primary/10 overflow-hidden">
           <div
@@ -163,7 +156,7 @@ export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
               <ScanLine className="w-5 h-5 text-violet-100" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="typo-section-title">
+              <div id={TITLE_ID} className="typo-section-title">
                 {backend === "claude"
                   ? t.plugins.drive.ocr_title_claude
                   : t.plugins.drive.ocr_title}
@@ -362,7 +355,7 @@ export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
             </>
           )}
         </div>
-      </aside>
-    </div>
+      </div>
+    </BaseModal>
   );
 }
