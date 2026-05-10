@@ -17,7 +17,7 @@ import type { SidebarSection } from "@/lib/types/types";
 
 const VALID_SECTIONS: SidebarSection[] = [
   "home", "overview", "personas", "events", "credentials",
-  "design-reviews", "plugins", "settings",
+  "design-reviews", "plugins", "schedules", "settings",
 ];
 
 /**
@@ -89,6 +89,13 @@ interface TestBridge {
   driveReadText(relPath: string): Promise<{ success: boolean; content?: string; error?: string }>;
   driveList(relPath?: string): Promise<{ success: boolean; count?: number; entries?: unknown[]; error?: string }>;
   waitForPersonaExecution(personaId: string, sinceIso: string, timeoutMs?: number): Promise<{ success: boolean; execution?: Record<string, unknown>; seen?: number; error?: string }>;
+  /**
+   * Generic Tauri IPC passthrough — for test scripts that need to call a
+   * command without a dedicated bridge wrapper. The script gets full
+   * control of params shape and is responsible for adapting to the
+   * command's contract.
+   */
+  invokeCommand(command: string, params?: Record<string, unknown>): Promise<{ success: boolean; result?: unknown; error?: string }>;
   [key: string]: unknown;
 }
 
@@ -460,6 +467,21 @@ const bridge: TestBridge = {
       personasByStatus,
       personaCountByStatus: personasByStatus,
     };
+  },
+
+  /**
+   * Generic Tauri IPC passthrough. Test scripts that don't have a
+   * dedicated bridge wrapper for the command they need can call this.
+   * Returns the same {success, result, error} envelope the rest of the
+   * bridge uses.
+   */
+  async invokeCommand(command: string, params?: Record<string, unknown>) {
+    try {
+      const result = await invoke(command, params ?? {});
+      return { success: true, result };
+    } catch (e) {
+      return { success: false, error: _fmtBridgeErr(e) };
+    }
   },
 
   /** Type into a field identified by data-testid */
