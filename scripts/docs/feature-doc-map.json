@@ -147,6 +147,67 @@
       ]
     },
     {
+      "doc": "docs/features/gitlab.md",
+      "sourceGlobs": [
+        "src/features/plugins/gitlab/**",
+        "src-tauri/src/commands/infrastructure/gitlab.rs",
+        "src-tauri/src/gitlab/**"
+      ]
+    },
+    {
+      "doc": "docs/features/langfuse.md",
+      "sourceGlobs": [
+        "src/features/plugins/langfuse/**",
+        "src-tauri/src/commands/infrastructure/langfuse.rs",
+        "src-tauri/src/langfuse/**",
+        "src-tauri/src/local_http/langfuse_routes.rs"
+      ]
+    },
+    {
+      "doc": "docs/features/deployment/README.md",
+      "sourceGlobs": [
+        "src/features/deployment/**",
+        "src/api/system/cloud.ts",
+        "src-tauri/src/cloud/**"
+      ]
+    },
+    {
+      "doc": "docs/features/sharing/README.md",
+      "sourceGlobs": [
+        "src/features/sharing/**",
+        "src-tauri/src/commands/network/**",
+        "src-tauri/src/engine/bundle.rs",
+        "src-tauri/src/engine/share_link.rs",
+        "src-tauri/src/engine/p2p/**"
+      ]
+    },
+    {
+      "doc": "docs/features/schedules.md",
+      "sourceGlobs": [
+        "src/features/schedules/**"
+      ]
+    },
+    {
+      "doc": "docs/features/pipeline/README.md",
+      "sourceGlobs": [
+        "src/features/pipeline/**",
+        "src-tauri/src/commands/teams/**",
+        "src-tauri/src/db/repos/core/teams.rs",
+        "src-tauri/src/db/repos/core/groups.rs"
+      ]
+    },
+    {
+      "doc": "docs/features/automation-tools.md",
+      "sourceGlobs": [
+        "src-tauri/src/commands/tools/automation_design.rs",
+        "src-tauri/src/commands/tools/automations.rs",
+        "src-tauri/src/commands/tools/deploy_automation.rs",
+        "src-tauri/src/commands/tools/github_platform.rs",
+        "src-tauri/src/commands/tools/n8n_platform.rs",
+        "src-tauri/src/commands/tools/tools.rs"
+      ]
+    },
+    {
       "doc": "docs/features/live-roadmap/live-roadmap.md",
       "sourceGlobs": [
         "src/features/home/sub_releases/**",
