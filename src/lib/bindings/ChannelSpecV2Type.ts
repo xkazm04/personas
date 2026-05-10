@@ -4,4 +4,4 @@
  * v3.2 — Channel type discriminator for shape v2. Kebab-case on the wire
  * (`"built-in"`) to match the prototype + handoff doc spec.
  */
-export type ChannelSpecV2Type = "built-in" | "titlebar" | "slack" | "telegram" | "email";
+export type ChannelSpecV2Type = "built-in" | "titlebar" | "slack" | "telegram" | "email" | "discord" | "teams";

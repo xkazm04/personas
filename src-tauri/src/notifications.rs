@@ -237,6 +237,8 @@ struct DeliveryMetrics {
     telegram: ChannelMetrics,
     email: ChannelMetrics,
     titlebar: ChannelMetrics,
+    discord: ChannelMetrics,
+    teams: ChannelMetrics,
 }
 
 impl DeliveryMetrics {
@@ -246,6 +248,8 @@ impl DeliveryMetrics {
             "telegram" => &self.telegram,
             "email" => &self.email,
             "titlebar" => &self.titlebar,
+            "discord" => &self.discord,
+            "teams" => &self.teams,
             // Unknown channels fall back to slack (won't be reached in practice)
             _ => &self.slack,
         }
@@ -257,6 +261,8 @@ static DELIVERY_METRICS: DeliveryMetrics = DeliveryMetrics {
     telegram: ChannelMetrics::new(),
     email: ChannelMetrics::new(),
     titlebar: ChannelMetrics::new(),
+    discord: ChannelMetrics::new(),
+    teams: ChannelMetrics::new(),
 };
 
 /// Per-channel stats returned to the frontend.
@@ -280,6 +286,8 @@ pub struct NotificationDeliveryStats {
     pub slack: ChannelDeliveryStats,
     pub telegram: ChannelDeliveryStats,
     pub email: ChannelDeliveryStats,
+    pub discord: ChannelDeliveryStats,
+    pub teams: ChannelDeliveryStats,
 }
 
 /// Payload emitted via Tauri event after each delivery attempt.
@@ -344,6 +352,98 @@ pub(crate) fn apply_event_filter(
 }
 
 // ---------------------------------------------------------------------------
+// Vault credential resolution (Slice 1: bridge spec.credential_id → vault)
+// ---------------------------------------------------------------------------
+
+/// Fetch a credential by ID and return its decrypted fields, plus the first
+/// item from each `scoped_resources` group surfaced as `selected_<resource_id>`.
+///
+/// Returns an empty map (with a `tracing::warn`) when the credential is missing
+/// or fails to decrypt — callers fall through to `spec.config` which may still
+/// carry inline auth (legacy path).
+async fn resolve_credential_fields(
+    app: &AppHandle,
+    credential_id: &str,
+) -> HashMap<String, String> {
+    use crate::db::repos::resources::credentials;
+
+    use tauri::Manager;
+    let state = match app.try_state::<std::sync::Arc<crate::AppState>>() {
+        Some(s) => s,
+        None => {
+            tracing::warn!(%credential_id, "AppState unavailable; cannot resolve credential");
+            return HashMap::new();
+        }
+    };
+
+    let cred = match credentials::get_by_id(&state.db, credential_id) {
+        Ok(c) => c,
+        Err(e) => {
+            tracing::warn!(%credential_id, error = %e, "credential lookup failed");
+            return HashMap::new();
+        }
+    };
+
+    let mut merged = match credentials::get_decrypted_fields(&state.db, &cred) {
+        Ok(m) => m,
+        Err(e) => {
+            tracing::warn!(%credential_id, error = %e, "failed to decrypt credential fields");
+            return HashMap::new();
+        }
+    };
+
+    // Surface the first selected item from each scoped resource as
+    // `selected_<resource_id>` so an adapter can pick a default destination
+    // (e.g. Slack channel, Discord guild) without forcing the picker to
+    // copy the ID into spec.config. spec.config still wins on collision.
+    if let Some(scoped_json) = cred.scoped_resources.as_deref() {
+        if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(scoped_json) {
+            if let Some(obj) = parsed.as_object() {
+                for (resource_id, items) in obj {
+                    if let Some(first_id) = items
+                        .as_array()
+                        .and_then(|a| a.first())
+                        .and_then(|item| item.get("id"))
+                        .and_then(|v| v.as_str())
+                    {
+                        merged
+                            .entry(format!("selected_{}", resource_id))
+                            .or_insert_with(|| first_id.to_string());
+                    }
+                }
+            }
+        }
+    }
+
+    merged
+}
+
+/// Build the merged config map for an external delivery: vault-resolved
+/// credential fields layered under `spec.config` (config wins on collision so
+/// the per-channel destination — Slack channel, Discord channel_id, Telegram
+/// chat_id — set in the picker can override anything in the credential).
+async fn merged_channel_config(
+    app: &AppHandle,
+    spec: &ChannelSpecV2,
+) -> HashMap<String, String> {
+    let mut merged = if let Some(cred_id) = spec.credential_id.as_deref() {
+        resolve_credential_fields(app, cred_id).await
+    } else {
+        HashMap::new()
+    };
+    if let Some(obj) = spec.config.as_ref().and_then(|c| c.as_object()) {
+        for (k, v) in obj {
+            let s = match v {
+                serde_json::Value::String(s) => s.clone(),
+                other => other.to_string(),
+            };
+            merged.insert(k.clone(), s);
+        }
+    }
+    merged
+}
+
+// ---------------------------------------------------------------------------
 // Shape-v2 channel delivery
 // ---------------------------------------------------------------------------
 
@@ -380,41 +480,33 @@ fn deliver_v2_channels(
                 emit_event(app, event_name::TITLEBAR_NOTIFICATION, &payload);
                 DELIVERY_METRICS.for_channel("titlebar").record_success(0);
             }
-            ChannelSpecV2Type::Slack | ChannelSpecV2Type::Telegram | ChannelSpecV2Type::Email => {
-                // Translate ChannelSpecV2 config to the ExternalChannel form expected by
-                // the existing async deliver_* functions.
-                let ch_type = match ch.channel_type {
-                    ChannelSpecV2Type::Slack => "slack",
-                    ChannelSpecV2Type::Telegram => "telegram",
-                    ChannelSpecV2Type::Email => "email",
-                    _ => unreachable!(),
-                };
-                // Build config map from serde_json::Value (shape-v2 config is Value)
-                let config: HashMap<String, String> = ch
-                    .config
-                    .as_ref()
-                    .and_then(|v| v.as_object())
-                    .map(|obj| {
-                        obj.iter()
-                            .filter_map(|(k, v)| v.as_str().map(|s| (k.clone(), s.to_string())))
-                            .collect()
-                    })
-                    .unwrap_or_default();
-                let external = ExternalChannel {
-                    channel_type: ch_type.to_string(),
-                    enabled: ch.enabled,
-                    credential_id: ch.credential_id.clone(),
-                    config,
-                };
-                let _app = app.clone();
+            ChannelSpecV2Type::Slack
+            | ChannelSpecV2Type::Telegram
+            | ChannelSpecV2Type::Email
+            | ChannelSpecV2Type::Discord
+            | ChannelSpecV2Type::Teams => {
+                let ch_type_str = channel_type_str(&ch.channel_type).to_string();
+                let app_clone = app.clone();
                 let title = title.to_string();
                 let body = body.to_string();
+                let spec = ch.clone();
                 tokio::spawn(async move {
                     let start = std::time::Instant::now();
+                    // Slice 1: resolve credential_id → decrypted vault fields,
+                    // overlay spec.config on top.
+                    let cfg = merged_channel_config(&app_clone, &spec).await;
+                    let external = ExternalChannel {
+                        channel_type: ch_type_str.clone(),
+                        enabled: spec.enabled,
+                        credential_id: spec.credential_id.clone(),
+                        config: cfg,
+                    };
                     let result = match external.channel_type.as_str() {
                         "slack" => deliver_slack(&external, &title, &body).await,
                         "telegram" => deliver_telegram(&external, &title, &body).await,
                         "email" => deliver_email(&external, &title, &body).await,
+                        "discord" => deliver_discord(&external, &title, &body).await,
+                        "teams" => deliver_teams(&external, &title, &body).await,
                         other => {
                             tracing::debug!(channel_type = %other, "unknown shape-v2 external type");
                             Ok(())
@@ -479,6 +571,8 @@ pub(crate) fn deliver_to_channels(
                 "slack" => deliver_slack(&ch, &title, &body).await,
                 "telegram" => deliver_telegram(&ch, &title, &body).await,
                 "email" => deliver_email(&ch, &title, &body).await,
+                "discord" => deliver_discord(&ch, &title, &body).await,
+                "teams" => deliver_teams(&ch, &title, &body).await,
                 other => {
                     tracing::debug!("Unknown channel type: {}", other);
                     Ok(())
@@ -515,13 +609,64 @@ pub(crate) fn deliver_to_channels(
     });
 }
 
-/// POST to Slack incoming webhook URL.
+/// Deliver to Slack. Two paths:
+///   - `bot_token` present (vault-resolved) → `chat.postMessage` API to a
+///     channel set in `channel`/`channel_id`/`selected_channels` (Slice 1).
+///   - `webhook_url` present (legacy inline config) → POST to the Incoming
+///     Webhook URL.
 async fn deliver_slack(ch: &ExternalChannel, title: &str, body: &str) -> Result<(), String> {
+    // Path A: vault credential with bot_token + a destination channel.
+    if let Some(bot_token) = ch.config.get("bot_token").filter(|t| !t.is_empty()) {
+        let channel = ch
+            .config
+            .get("channel")
+            .or_else(|| ch.config.get("channel_id"))
+            .or_else(|| ch.config.get("selected_channels"))
+            .filter(|c| !c.is_empty())
+            .ok_or(
+                "Slack: vault credential resolved but no channel set — \
+                 set 'channel' in spec.config or pick a channel resource on the credential",
+            )?;
+        let token = SecureString::new(bot_token.clone());
+        let text = format!("*{}*\n{}", title, body);
+        let resp = crate::SHARED_HTTP
+            .post("https://slack.com/api/chat.postMessage")
+            .bearer_auth(token.expose_secret())
+            .json(&serde_json::json!({ "channel": channel, "text": text }))
+            .timeout(std::time::Duration::from_secs(10))
+            .send()
+            .await
+            .map_err(|e| format!("Slack request failed: {e}"))?;
+        drop(token);
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let body = resp.text().await.unwrap_or_default();
+            return Err(format!("Slack returned {status}: {body}"));
+        }
+        // Slack returns HTTP 200 with `{"ok":false,"error":"..."}` for app-level errors.
+        let payload: serde_json::Value = resp
+            .json()
+            .await
+            .map_err(|e| format!("Slack response parse failed: {e}"))?;
+        if !payload.get("ok").and_then(|v| v.as_bool()).unwrap_or(false) {
+            let err = payload
+                .get("error")
+                .and_then(|v| v.as_str())
+                .unwrap_or("unknown");
+            return Err(format!("Slack chat.postMessage error: {err}"));
+        }
+        return Ok(());
+    }
+
+    // Path B: inline webhook URL.
     let webhook_url = SecureString::new(
         ch.config
             .get("webhook_url")
             .filter(|u| !u.is_empty())
-            .ok_or("Slack webhook_url not configured")?
+            .ok_or(
+                "Slack: configure either bot_token+channel (vault credential) \
+                 or webhook_url (inline config)",
+            )?
             .clone(),
     );
 
@@ -684,6 +829,123 @@ async fn send_via_resend(
         return Err(format!("Resend returned {status}: {text}"));
     }
     Ok(())
+}
+
+/// Deliver to Discord. Two paths:
+///   - `bot_token` present (vault-resolved) + `channel_id` in spec.config →
+///     `POST /channels/{channel_id}/messages` with `Authorization: Bot <token>`.
+///   - `webhook_url` present (inline config) → POST to the Discord webhook.
+///
+/// Slice 1 is plain-text only (`content` field); embeds/components deferred.
+async fn deliver_discord(ch: &ExternalChannel, title: &str, body: &str) -> Result<(), String> {
+    let content = format!("**{}**\n{}", title, body);
+
+    if let Some(webhook_url) = ch.config.get("webhook_url").filter(|u| !u.is_empty()) {
+        let url = SecureString::new(webhook_url.clone());
+        let resp = crate::SHARED_HTTP
+            .post(url.expose_secret())
+            .json(&serde_json::json!({ "content": content }))
+            .timeout(std::time::Duration::from_secs(10))
+            .send()
+            .await
+            .map_err(|e| format!("Discord request failed: {e}"))?;
+        drop(url);
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let body = resp.text().await.unwrap_or_default();
+            return Err(format!("Discord returned {status}: {body}"));
+        }
+        return Ok(());
+    }
+
+    let bot_token = ch
+        .config
+        .get("bot_token")
+        .filter(|t| !t.is_empty())
+        .ok_or(
+            "Discord: configure either webhook_url (inline) or \
+             bot_token+channel_id (vault credential + spec.config)",
+        )?;
+    let channel_id = ch
+        .config
+        .get("channel_id")
+        .filter(|c| !c.is_empty())
+        .ok_or(
+            "Discord channel_id not configured — guild scoping on the \
+             credential narrows which servers the bot may post to but does \
+             not pick a target channel; set 'channel_id' in spec.config",
+        )?;
+
+    let token = SecureString::new(bot_token.clone());
+    let url = format!(
+        "https://discord.com/api/v10/channels/{}/messages",
+        channel_id
+    );
+    let resp = crate::SHARED_HTTP
+        .post(&url)
+        .header(
+            "Authorization",
+            format!("Bot {}", token.expose_secret()),
+        )
+        .json(&serde_json::json!({ "content": content }))
+        .timeout(std::time::Duration::from_secs(10))
+        .send()
+        .await
+        .map_err(|e| format!("Discord request failed: {e}"))?;
+    drop(token);
+    if !resp.status().is_success() {
+        let status = resp.status();
+        let body = resp.text().await.unwrap_or_default();
+        return Err(format!("Discord returned {status}: {body}"));
+    }
+    Ok(())
+}
+
+/// Deliver to Microsoft Teams. Slice 1 supports the Incoming Webhook URL
+/// path only (MessageCard payload). The OAuth/Graph path — sending into a
+/// Teams channel via a `microsoft_teams` vault credential — needs
+/// connector_strategy access-token refresh and is deferred to a follow-up;
+/// detected here and surfaced as an actionable error.
+async fn deliver_teams(ch: &ExternalChannel, title: &str, body: &str) -> Result<(), String> {
+    if let Some(webhook_url) = ch.config.get("webhook_url").filter(|u| !u.is_empty()) {
+        let url = SecureString::new(webhook_url.clone());
+        let payload = serde_json::json!({
+            "@type": "MessageCard",
+            "@context": "https://schema.org/extensions",
+            "summary": title,
+            "title": title,
+            "text": body,
+        });
+        let resp = crate::SHARED_HTTP
+            .post(url.expose_secret())
+            .json(&payload)
+            .timeout(std::time::Duration::from_secs(10))
+            .send()
+            .await
+            .map_err(|e| format!("Teams request failed: {e}"))?;
+        drop(url);
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let body = resp.text().await.unwrap_or_default();
+            return Err(format!("Teams returned {status}: {body}"));
+        }
+        return Ok(());
+    }
+
+    if ch.config.contains_key("access_token") {
+        return Err(
+            "Teams via Microsoft Graph OAuth is not yet wired into the \
+             dispatcher (Slice 1 supports incoming-webhook URLs only). \
+             Set webhook_url in the channel config or wait for the Graph \
+             adapter follow-up."
+                .to_string(),
+        );
+    }
+    Err(
+        "Teams: webhook_url not configured. See \
+         https://learn.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook"
+            .to_string(),
+    )
 }
 
 // ---------------------------------------------------------------------------
@@ -900,6 +1162,8 @@ fn channel_type_str(t: &ChannelSpecV2Type) -> &'static str {
         ChannelSpecV2Type::Slack => "slack",
         ChannelSpecV2Type::Telegram => "telegram",
         ChannelSpecV2Type::Email => "email",
+        ChannelSpecV2Type::Discord => "discord",
+        ChannelSpecV2Type::Teams => "teams",
     }
 }
 
@@ -989,8 +1253,12 @@ pub async fn test_channel_delivery(
                     rate_limited: None,
                 }
             }
-            ChannelSpecV2Type::Slack | ChannelSpecV2Type::Telegram | ChannelSpecV2Type::Email => {
-                test_deliver_external(spec, &sample_title, &sample_body).await
+            ChannelSpecV2Type::Slack
+            | ChannelSpecV2Type::Telegram
+            | ChannelSpecV2Type::Email
+            | ChannelSpecV2Type::Discord
+            | ChannelSpecV2Type::Teams => {
+                test_deliver_external(&app, spec, &sample_title, &sample_body).await
             }
         };
 
@@ -1042,6 +1310,7 @@ fn test_deliver_titlebar(app: &tauri::AppHandle, spec: &ChannelSpecV2, title: &s
 }
 
 async fn test_deliver_external(
+    app: &AppHandle,
     spec: &ChannelSpecV2,
     title: &str,
     body: &str,
@@ -1049,18 +1318,9 @@ async fn test_deliver_external(
     let ch_type = channel_type_str(&spec.channel_type).to_string();
     let start = std::time::Instant::now();
 
-    // Convert ChannelSpecV2 → ExternalChannel so we can call the existing deliver_* helpers.
-    // ExternalChannel.config is HashMap<String,String>; ChannelSpecV2.config is Option<serde_json::Value>.
-    let mut cfg: std::collections::HashMap<String, String> = std::collections::HashMap::new();
-    if let Some(v) = spec.config.as_ref().and_then(|c| c.as_object()) {
-        for (k, val) in v {
-            let s = match val {
-                serde_json::Value::String(s) => s.clone(),
-                other => other.to_string(),
-            };
-            cfg.insert(k.clone(), s);
-        }
-    }
+    // Slice 1: resolve credential_id from vault and overlay spec.config so the
+    // test path mirrors what real delivery sees.
+    let cfg = merged_channel_config(app, spec).await;
     let ext = ExternalChannel {
         channel_type: ch_type.clone(),
         enabled: spec.enabled,
@@ -1068,11 +1328,12 @@ async fn test_deliver_external(
         config: cfg,
     };
 
-    // deliver_slack/_telegram/_email all return Result<(), String>.
     let outcome: Result<(), String> = match spec.channel_type {
         ChannelSpecV2Type::Slack => deliver_slack(&ext, title, body).await,
         ChannelSpecV2Type::Telegram => deliver_telegram(&ext, title, body).await,
         ChannelSpecV2Type::Email => deliver_email(&ext, title, body).await,
+        ChannelSpecV2Type::Discord => deliver_discord(&ext, title, body).await,
+        ChannelSpecV2Type::Teams => deliver_teams(&ext, title, body).await,
         _ => Err("not_external".into()),
     };
     let latency_ms = start.elapsed().as_millis() as u64;
@@ -1110,6 +1371,8 @@ pub async fn test_notification_channel(channel_json: String) -> Result<String, S
         "slack" => deliver_slack(&channel, title, body).await?,
         "telegram" => deliver_telegram(&channel, title, body).await?,
         "email" => deliver_email(&channel, title, body).await?,
+        "discord" => deliver_discord(&channel, title, body).await?,
+        "teams" => deliver_teams(&channel, title, body).await?,
         other => return Err(format!("Unknown channel type: {other}")),
     }
 
@@ -1126,6 +1389,8 @@ pub fn get_notification_delivery_stats() -> NotificationDeliveryStats {
         slack: DELIVERY_METRICS.slack.snapshot(),
         telegram: DELIVERY_METRICS.telegram.snapshot(),
         email: DELIVERY_METRICS.email.snapshot(),
+        discord: DELIVERY_METRICS.discord.snapshot(),
+        teams: DELIVERY_METRICS.teams.snapshot(),
     }
 }
 
@@ -1153,6 +1418,8 @@ pub async fn deliver_to_external_channels(
             "slack" => deliver_slack(&ch, title, body).await,
             "telegram" => deliver_telegram(&ch, title, body).await,
             "email" => deliver_email(&ch, title, body).await,
+            "discord" => deliver_discord(&ch, title, body).await,
+            "teams" => deliver_teams(&ch, title, body).await,
             other => {
                 tracing::debug!("Unknown channel type: {}", other);
                 Ok(())
@@ -1521,5 +1788,159 @@ mod tests {
             "slack"
         )
         .is_none());
+    }
+
+    // ---- Slice 1: Discord/Teams enum + dispatch coverage ----
+
+    #[test]
+    fn test_channel_type_str_includes_discord_and_teams() {
+        assert_eq!(channel_type_str(&ChannelSpecV2Type::Discord), "discord");
+        assert_eq!(channel_type_str(&ChannelSpecV2Type::Teams), "teams");
+    }
+
+    #[test]
+    fn test_metrics_for_channel_resolves_discord_and_teams() {
+        // for_channel must return distinct ChannelMetrics for the two new
+        // channel types — otherwise stats would silently bucket failures
+        // into Slack's counters.
+        let discord = DELIVERY_METRICS.for_channel("discord");
+        let teams = DELIVERY_METRICS.for_channel("teams");
+        let slack = DELIVERY_METRICS.for_channel("slack");
+        assert!(!std::ptr::eq(discord, slack));
+        assert!(!std::ptr::eq(teams, slack));
+        assert!(!std::ptr::eq(discord, teams));
+    }
+
+    #[test]
+    fn test_parse_channels_v2_accepts_discord_and_teams() {
+        let json = r#"[
+            {"type":"discord","enabled":true,"credential_id":"cred_d","use_case_ids":"*","config":{"channel_id":"C123"}},
+            {"type":"teams","enabled":true,"use_case_ids":"*","config":{"webhook_url":"https://outlook.office.com/webhook/abc"}}
+        ]"#;
+        let parsed = parse_channels_v2(Some(json)).expect("parses");
+        assert_eq!(parsed.len(), 2);
+        assert_eq!(parsed[0].channel_type, ChannelSpecV2Type::Discord);
+        assert_eq!(parsed[0].credential_id.as_deref(), Some("cred_d"));
+        assert_eq!(parsed[1].channel_type, ChannelSpecV2Type::Teams);
+        assert!(parsed[1].credential_id.is_none());
+    }
+
+    #[test]
+    fn test_channel_spec_v2_discord_serializes_kebab_case() {
+        // Round-trip: ChannelSpecV2Type::Discord serializes as "discord" on the wire
+        // (kebab-case rename). This is what dispatcher match arms key on.
+        let spec = ChannelSpecV2 {
+            channel_type: ChannelSpecV2Type::Discord,
+            enabled: true,
+            credential_id: Some("cred-1".into()),
+            use_case_ids: ChannelScopeV2::All("*".into()),
+            event_filter: None,
+            config: Some(serde_json::json!({"channel_id": "C123"})),
+        };
+        let json = serde_json::to_value(&spec).unwrap();
+        assert_eq!(json.get("type").and_then(|v| v.as_str()), Some("discord"));
+    }
+
+    #[test]
+    fn test_channel_spec_v2_teams_serializes_kebab_case() {
+        let spec = ChannelSpecV2 {
+            channel_type: ChannelSpecV2Type::Teams,
+            enabled: true,
+            credential_id: None,
+            use_case_ids: ChannelScopeV2::All("*".into()),
+            event_filter: None,
+            config: Some(serde_json::json!({"webhook_url": "https://x"})),
+        };
+        let json = serde_json::to_value(&spec).unwrap();
+        assert_eq!(json.get("type").and_then(|v| v.as_str()), Some("teams"));
+    }
+
+    #[tokio::test]
+    async fn test_deliver_discord_missing_config_actionable_error() {
+        // No webhook_url AND no bot_token → user-facing error must point at both paths.
+        let ch = ExternalChannel {
+            channel_type: "discord".into(),
+            enabled: true,
+            credential_id: None,
+            config: HashMap::new(),
+        };
+        let err = deliver_discord(&ch, "t", "b").await.unwrap_err();
+        assert!(err.contains("webhook_url"));
+        assert!(err.contains("bot_token"));
+    }
+
+    #[tokio::test]
+    async fn test_deliver_discord_bot_token_without_channel_id_errors() {
+        // Vault gives bot_token but channel_id wasn't supplied — must not
+        // silently use a guild ID or default channel.
+        let mut config = HashMap::new();
+        config.insert("bot_token".into(), "fake-token".into());
+        let ch = ExternalChannel {
+            channel_type: "discord".into(),
+            enabled: true,
+            credential_id: Some("cred_d".into()),
+            config,
+        };
+        let err = deliver_discord(&ch, "t", "b").await.unwrap_err();
+        assert!(err.contains("channel_id"));
+    }
+
+    #[tokio::test]
+    async fn test_deliver_teams_oauth_path_returns_actionable_error() {
+        // access_token present but no webhook_url — Slice 1 deferred path
+        // surfaces a clear error rather than silently dropping.
+        let mut config = HashMap::new();
+        config.insert("access_token".into(), "fake-token".into());
+        let ch = ExternalChannel {
+            channel_type: "teams".into(),
+            enabled: true,
+            credential_id: Some("cred_t".into()),
+            config,
+        };
+        let err = deliver_teams(&ch, "t", "b").await.unwrap_err();
+        assert!(err.to_lowercase().contains("graph") || err.to_lowercase().contains("oauth"));
+        assert!(err.contains("webhook_url"));
+    }
+
+    #[tokio::test]
+    async fn test_deliver_teams_no_config_errors_with_setup_link() {
+        let ch = ExternalChannel {
+            channel_type: "teams".into(),
+            enabled: true,
+            credential_id: None,
+            config: HashMap::new(),
+        };
+        let err = deliver_teams(&ch, "t", "b").await.unwrap_err();
+        assert!(err.contains("webhook_url"));
+        assert!(err.contains("microsoft.com"));
+    }
+
+    #[tokio::test]
+    async fn test_deliver_slack_credential_path_requires_channel() {
+        // bot_token present but no channel set → must error rather than
+        // silently fall through to webhook URL or pick a random channel.
+        let mut config = HashMap::new();
+        config.insert("bot_token".into(), "fake-xoxb".into());
+        let ch = ExternalChannel {
+            channel_type: "slack".into(),
+            enabled: true,
+            credential_id: Some("cred_s".into()),
+            config,
+        };
+        let err = deliver_slack(&ch, "t", "b").await.unwrap_err();
+        assert!(err.contains("channel"));
+    }
+
+    #[test]
+    fn test_notification_delivery_stats_includes_discord_and_teams() {
+        // get_notification_delivery_stats returns a NotificationDeliveryStats
+        // with discord+teams populated (smoke test that we wired the new
+        // ChannelMetrics into the stats command).
+        let stats = get_notification_delivery_stats();
+        // attempted is u64; this just ensures the field exists at compile time
+        // and reads zero for a fresh process. (Other tests may have advanced
+        // the slack/email/etc counters.)
+        let _ = stats.discord.attempted;
+        let _ = stats.teams.attempted;
     }
 }
