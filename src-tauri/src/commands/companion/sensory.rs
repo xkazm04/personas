@@ -69,6 +69,30 @@ pub async fn companion_set_sensory_source_enabled(
     ipc_auth::require_auth(&state).await?;
     let mut guard = state.ambient_context.lock().await;
     let purged = guard.set_source_enabled(&source, enabled);
+    drop(guard);
+
+    // Phase 5 v1: cli_session is a *cross-process* gate — the daemon
+    // binary needs to see it too, and the daemon can't see in-memory
+    // AmbientContextFusion state. Persist to app_settings so daemon
+    // queries can pick it up. (clipboard / file_watcher / app_focus
+    // gates remain in-memory only — those control capture in the
+    // windowed app and aren't relevant to the daemon's read path.)
+    if source == "cli_session" {
+        let pool = state.db.clone();
+        let value = if enabled { "true" } else { "false" };
+        if let Err(e) = crate::db::repos::core::settings::set(
+            &pool,
+            crate::db::settings_keys::CLI_SESSION_AWARENESS_ENABLED,
+            value,
+        ) {
+            tracing::warn!(
+                error = %e,
+                enabled,
+                "cli_session: failed to persist global gate to app_settings"
+            );
+        }
+    }
+
     Ok(purged as u32)
 }
 
@@ -125,4 +149,24 @@ pub async fn companion_delete_sensory_signal(
     ipc_auth::require_auth(&state).await?;
     let mut guard = state.ambient_context.lock().await;
     Ok(guard.delete_signal(&id))
+}
+
+/// Phase 5 v1: list recent CLI session read audit rows for the
+/// "What did Athena see?" modal. Each row records when a persona
+/// execution actually injected a CLI session block — capped at
+/// `limit` (default 50, hard-clamped to MAX_LIST_LIMIT), newest
+/// first.
+///
+/// The audit table is append-only by design — there's no delete
+/// counterpart because the read already happened. TTL eviction
+/// (24h, sibling tick to ambient_signal eviction) keeps the
+/// footprint bounded.
+#[tauri::command]
+pub async fn companion_list_cli_session_reads(
+    state: State<'_, Arc<AppState>>,
+    limit: Option<u32>,
+) -> Result<Vec<crate::engine::cli_session_audit_repo::CliSessionReadAudit>, AppError> {
+    ipc_auth::require_auth(&state).await?;
+    let limit = limit.unwrap_or(50).min(MAX_LIST_LIMIT);
+    crate::engine::cli_session_audit_repo::list_recent(&state.db, limit)
 }

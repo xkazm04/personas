@@ -23,6 +23,14 @@ fileChangesEnabled: boolean,
  */
 appFocusEnabled: boolean, 
 /**
+ * Phase 5 v1: read-time gate for the user's active Claude CLI
+ * session (default false). Unlike the three above, no signals are
+ * captured for this — it controls whether the runner will read the
+ * transcript and inject a prompt prefix. Pairs with the per-persona
+ * `cli_awareness_enabled` flag.
+ */
+cliSessionEnabled: boolean, 
+/**
  * Number of clipboard signals currently in the rolling window.
  */
 clipboardSignalsInWindow: number, 

@@ -238,13 +238,21 @@ export async function companionTtsPiperEngineStatus(): Promise<PiperEngineStatus
 
 // ── Sensory toggles (Phase 2 v2 — desktop-awareness UI) ─────────────────
 
-export type SensorySource = 'clipboard' | 'file_watcher' | 'app_focus';
+export type SensorySource =
+  | 'clipboard'
+  | 'file_watcher'
+  | 'app_focus'
+  // Phase 5 v1: read-time gate for the user's active Claude CLI session.
+  // Unlike the three above, no signals are captured for this — toggling it
+  // controls whether the runner reads the transcript and injects a prefix.
+  | 'cli_session';
 
 export interface SensorySourceStateView {
   globalEnabled: boolean;
   clipboardEnabled: boolean;
   fileChangesEnabled: boolean;
   appFocusEnabled: boolean;
+  cliSessionEnabled: boolean;
   clipboardSignalsInWindow: number;
   fileChangesSignalsInWindow: number;
   appFocusSignalsInWindow: number;
@@ -268,6 +276,7 @@ export async function companionGetSensoryState(): Promise<SensorySourceStateView
     clipboardEnabled: boolean;
     fileChangesEnabled: boolean;
     appFocusEnabled: boolean;
+    cliSessionEnabled?: boolean;
     clipboardSignalsInWindow: number;
     fileChangesSignalsInWindow: number;
     appFocusSignalsInWindow: number;
@@ -275,11 +284,60 @@ export async function companionGetSensoryState(): Promise<SensorySourceStateView
   }>('companion_get_sensory_state');
   return {
     ...raw,
+    cliSessionEnabled: raw.cliSessionEnabled ?? false,
     totalSignalsCaptured:
       typeof raw.totalSignalsCaptured === 'bigint'
         ? Number(raw.totalSignalsCaptured)
         : raw.totalSignalsCaptured,
   };
+}
+
+// ── Phase 5 v1: CLI session-resume awareness audit ────────────────────────
+
+/**
+ * One row from the `cli_session_read_audit` table — represents a single
+ * time a persona execution injected a Claude CLI session block into its
+ * prompt prefix. Surfaced in the "What did Athena see?" modal so the
+ * user can review what was extracted on their behalf.
+ */
+export interface CliSessionReadAuditView {
+  id: string;
+  personaId: string;
+  personaName: string;
+  project: string;
+  /** Number of conversation turns extracted (capped at 8). */
+  turnCount: number;
+  /** Unix epoch seconds when the read happened. */
+  readAt: number;
+}
+
+/**
+ * List recent CLI session read audit rows. Newest first, capped at
+ * `limit` (default 50, hard-clamped server-side at 200). The audit
+ * is append-only — there's no delete counterpart because the read
+ * already happened. TTL eviction (24h) keeps the table bounded.
+ */
+export async function companionListCliSessionReads(
+  limit?: number,
+): Promise<CliSessionReadAuditView[]> {
+  const raw = await invoke<
+    Array<{
+      id: string;
+      personaId: string;
+      personaName: string;
+      project: string;
+      turnCount: number | bigint;
+      readAt: number | bigint;
+    }>
+  >('companion_list_cli_session_reads', { limit });
+  return raw.map((r) => ({
+    id: r.id,
+    personaId: r.personaId,
+    personaName: r.personaName,
+    project: r.project,
+    turnCount: typeof r.turnCount === 'bigint' ? Number(r.turnCount) : r.turnCount,
+    readAt: typeof r.readAt === 'bigint' ? Number(r.readAt) : r.readAt,
+  }));
 }
 
 /**

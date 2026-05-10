@@ -369,25 +369,68 @@ G3: submit (normal flow)
 Per the user-specified conservative threshold: when no recipe scores
 ≥ 0.90, the matcher must not surface anything.
 
-### 6.4 Template adoption + recipe-as-use-case (Stage B)
+### 6.4 Template adoption + recipe-as-use-case (Stage B) — **shipped**
 
 After Stage B migration, templates reference recipes by `recipe_ref`
-instead of inline use cases.
+instead of inline use cases. The hydration pipeline lives in
+`engine::template_v3::hydrate_recipe_refs` and runs inside
+`create_adoption_session` before the v3-flatten pass.
+
+The load-bearing question for this migration is: **does
+`create_adoption_session` produce a coherent `agent_ir` from a
+recipe_ref-shaped template payload?** If yes, the rest of the
+adoption lifecycle (S2–S10 above) is unaffected by the migration.
+The wizard's questionnaire is just answer-collection — orthogonal
+to whether recipes hydrate.
+
+**Two-layer harness:** [`tools/test-mcp/e2e_recipe_pipeline.py`](../../tools/test-mcp/e2e_recipe_pipeline.py)
+
+- **Layer A — schema-level catalog audit.** For every bundled
+  template (~112 today), walks `payload.use_cases[i].recipe_ref.id`
+  and verifies each resolves to a recipe in the live catalog (seeded
+  by Stage B Phase 2.4 on app boot). Also verifies each recipe's
+  `prompt_template` round-trips as JSON — the contract
+  `hydrate_recipe_refs` relies on. ~3 seconds total.
+- **Layer B — direct-IPC adoption.** Calls
+  `get_design_review` → `create_persona` → `create_adoption_session`
+  for each scenario in `LAYER_B_TEMPLATES_DEFAULT` (21 templates by
+  default, spanning every category folder). Verifies the resulting
+  `build_sessions.agent_ir` has hydrated `use_cases[]` with non-empty
+  `id` + `title`/`name`, and that v3-flatten hoisted at least one
+  `suggested_triggers[]` / `suggested_connectors[]` entry. Skips the
+  wizard UI on purpose — the wizard's `createPersona` +
+  `create_adoption_session` invocations gate on `useCaseStepDone +
+  questionsComplete` (`MatrixAdoptionView:792-794`), so UI-driven
+  Layer B can't reach `create_adoption_session` without per-template
+  questionnaire knowledge. The IPC path exercises the same Rust
+  hydration code with no UI overhead. ~1.2 seconds per scenario.
+
+**Why two layers:** Layer A is wide (every template) and proves the
+catalog is internally consistent. Layer B is narrower (sample of 21)
+but proves the runtime pipeline actually executes the hydration —
+schema validity alone doesn't guarantee `hydrate_recipe_refs +
+normalize_v3_to_flat` work in production. Together they answer "is
+the migration sound at rest AND in motion?"
+
+**Reference run** (2026-05-09, full 112-template Layer A + 21-template
+Layer B): `docs/tests/results/recipe-pipeline-20260509-221004.json`
 
 ```
-T1–T3: navigate to gallery, click adopt
-T4 (modified): use-case picker shows recipe-derived UCs with
-              `source_recipe_id` annotations
-T5: questionnaire (unchanged)
-T6: seed draft (unchanged from user POV; backend now resolves
-              recipes by ID instead of reading inline definitions)
-S2–S10: shared lifecycle
+Layer A: templates=112  recipes=291  refs_checked=291  missing=0  malformed=0
+Layer B: 21/21 passed (avg 1.22s per scenario, 26s total)
+         each scenario: 1–3 hydrated use_cases, 1–3 hoisted triggers,
+                        ≥1 hoisted connector
 ```
 
-Verification: each created `persona_use_cases` row carries the
-correct `source_recipe_id`. Re-running the same template should
-produce use cases with the same recipe IDs (idempotent recipe
-derivation per Stage B's stable-key strategy).
+Verification per scenario stops short of execute/promote/Haiku
+regression — those still belong to `e2e_30_adoption.py`'s full
+lifecycle suite. The recipe-pipeline harness only proves the
+hydration boundary holds; the existing harness proves the
+lifecycle still works end-to-end.
+
+Per-template `source_recipe_id` annotation on `persona_use_cases`
+rows lands in a follow-up phase (provenance metadata, see Stage B
+docs §3); current verification stops at the build_session boundary.
 
 ### 6.5 Negative — recipe versioning drift detection (Stage B+)
 
@@ -599,6 +642,24 @@ uvx --with httpx python tools/test-mcp/e2e_template_adoption.py \
 ```
 uvx --with httpx python tools/test-mcp/e2e_30_adoption.py \
   --report docs/tests/results/template-adoption-{run_id}.json
+```
+
+### Recipe-pipeline E2E (Stage B+D+E migration verification)
+
+Validates that post-Phase-2.2 templates still adopt cleanly via the
+new recipe_ref → inline UC hydration path. Two layers; ~30 seconds
+end-to-end against a stock dev install.
+
+```
+# Run both layers (default):
+uvx --with httpx python tools/test-mcp/e2e_recipe_pipeline.py
+
+# Layer A only (schema audit, ~3 s, every template):
+uvx --with httpx python tools/test-mcp/e2e_recipe_pipeline.py --layer a
+
+# Layer B against a single template (1–2 s):
+uvx --with httpx python tools/test-mcp/e2e_recipe_pipeline.py \
+  --layer b --template incident-logger
 ```
 
 ---

@@ -179,10 +179,18 @@ async fn consume_headless_events(
         // Same shadow shape as the windowed runner's injection in
         // engine/mod.rs::run_execution_with_ceiling, for byte-
         // identical prompt rendering between the two paths.
+        //
+        // Phase 5 v1: After ambient injection, also try to inject
+        // the user's active Claude CLI session — gated by both the
+        // persona's `cli_awareness_enabled` and the persisted global
+        // `cli_session_awareness_enabled` flag in app_settings. The
+        // daemon reads the global gate from SQL because it has no
+        // access to AmbientContextFusion's in-memory state.
         #[cfg(feature = "desktop")]
         let persona = {
             let mut persona = persona;
             inject_ambient_for_daemon(pool, &mut persona);
+            inject_cli_session_for_daemon(pool, &mut persona);
             persona
         };
 
@@ -318,5 +326,97 @@ fn inject_ambient_for_daemon(pool: &DbPool, persona: &mut crate::db::models::Per
             signal_count = filtered.len(),
             "daemon: ambient context prepended to persona system prompt"
         );
+    }
+}
+
+/// Phase 5 v1 — daemon-side Claude CLI session-resume injection.
+///
+/// The daemon binary cannot see AmbientContextFusion's in-memory
+/// `cli_session_enabled` flag — it lives in the windowed app's
+/// process. The bridge is the `app_settings` row keyed by
+/// `CLI_SESSION_AWARENESS_ENABLED`: the windowed-app toggle command
+/// writes there, the daemon reads from there. Both gates must be true:
+/// per-persona `cli_awareness_enabled` AND the persisted global flag.
+///
+/// Failure modes (all non-fatal):
+/// - `app_settings` row missing → treated as `false` (privacy-conservative).
+/// - Settings query error → logged, treated as `false`.
+/// - `dirs::home_dir()` returns None → no transcript discovery, no-op.
+/// - Discovery returns None (no fresh session, or no .claude/projects/) → no-op.
+/// - Empty transcript → renderer returns None → no-op.
+#[cfg(feature = "desktop")]
+fn inject_cli_session_for_daemon(pool: &DbPool, persona: &mut crate::db::models::Persona) {
+    use crate::engine::cli_session_awareness::{discovery, render, transcript};
+
+    if !persona.cli_awareness_enabled {
+        return;
+    }
+
+    // Cross-process gate read.
+    let global_enabled = match crate::db::repos::core::settings::get(
+        pool,
+        crate::db::settings_keys::CLI_SESSION_AWARENESS_ENABLED,
+    ) {
+        Ok(Some(v)) => v == "true",
+        Ok(None) => false,
+        Err(e) => {
+            tracing::warn!(
+                error = %e,
+                "daemon: failed to read cli_session_awareness_enabled; treating as off"
+            );
+            false
+        }
+    };
+    if !global_enabled {
+        return;
+    }
+
+    let home = match dirs::home_dir() {
+        Some(h) => h,
+        None => return,
+    };
+
+    let now = std::time::SystemTime::now();
+    let active = match discovery::discover_active_session(
+        &home,
+        now,
+        discovery::DEFAULT_FRESHNESS_CUTOFF,
+    ) {
+        Some(a) => a,
+        None => return,
+    };
+
+    let turns = transcript::read_recent_turns(&active.path, 8);
+    if let Some(md) = render::render_cli_session_for_prompt(&active, &turns, now) {
+        crate::engine::ambient_context::prepend_ambient_to_system_prompt(persona, &md);
+        tracing::debug!(
+            persona_id = %persona.id,
+            project = %active.project_dir_name,
+            turn_count = turns.len(),
+            "daemon: CLI session prepended to persona system prompt"
+        );
+
+        // Phase 5 v1: audit row for the transparency modal. Same
+        // shape as the windowed runner's insert.
+        let read_at_secs = now
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or(0);
+        let audit_id = format!("cliread_{}", uuid::Uuid::new_v4().simple());
+        if let Err(e) = crate::engine::cli_session_audit_repo::insert_audit(
+            pool,
+            &audit_id,
+            &persona.id,
+            &persona.name,
+            &active.project_dir_name,
+            turns.len() as i64,
+            read_at_secs,
+        ) {
+            tracing::warn!(
+                error = %e,
+                persona_id = %persona.id,
+                "daemon cli_session: failed to write audit row"
+            );
+        }
     }
 }

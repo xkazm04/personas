@@ -136,228 +136,17 @@
     },
     "use_cases": [
       {
-        "id": "uc_skill_audit",
-        "title": "Skill Audit & Proposal",
-        "description": "Scheduled + manual capability. Diffs codebase since last_scan_at, reads every `.claude/skills/<slug>/SKILL.md`, computes per-slug usage from `Skill-Ref:` commit markers, and surfaces up to `max_proposals_per_run` edit or retirement proposals as manual_review items with full diffs in context_data. Default cadence Monday 09:00 local — final cadence set at the trigger-composition step.",
-        "capability_summary": "Weekly audit — propose skill edits and retirements as reviewable diffs.",
-        "category": "development",
-        "enabled_by_default": true,
-        "execution_mode": "e2e",
-        "model_override": null,
-        "suggested_trigger": {
-          "trigger_type": "schedule",
-          "config": {
-            "cron": "0 9 * * 1"
-          },
-          "description": "Default Mondays 09:00 local. Also runs on manual invocation from the persona detail page."
-        },
-        "connectors": [
-          "codebase"
-        ],
-        "notification_channels": [
-          {
-            "type": "messaging",
-            "description": "Single audit summary per run listing proposal counts and a review queue link. Silent on zero proposals."
-          }
-        ],
-        "review_policy": {
-          "mode": "always",
-          "context": "Every edit / retirement proposal requires human approval. Rejected proposals land in rejected_patterns for a 30-day cooldown."
-        },
-        "memory_policy": {
-          "enabled": true,
-          "context": "Writes `last_scan_at` marker and (slug, change_signature) rejection records. Reads Phase-2 review memories injected by the platform to deprioritize patterns the user has previously declined."
-        },
-        "event_subscriptions": [],
-        "error_handling": "See persona.error_handling § UC1.",
-        "input_schema": [
-          {
-            "name": "scan_window_days",
-            "type": "number",
-            "default": 14,
-            "min": 1,
-            "max": 90,
-            "description": "Look-back window for codebase changes since last audit."
-          },
-          {
-            "name": "strength_window_days",
-            "type": "number",
-            "default": 30,
-            "min": 7,
-            "max": 365,
-            "description": "Git-log window for counting `Skill-Ref: <slug>` commit references."
-          },
-          {
-            "name": "weak_skill_threshold",
-            "type": "number",
-            "default": 0,
-            "min": 0,
-            "max": 50,
-            "description": "Max refs in the strength window at or below which a skill becomes a retirement candidate."
-          },
-          {
-            "name": "max_proposals_per_run",
-            "type": "number",
-            "default": 5,
-            "min": 1,
-            "max": 20,
-            "description": "Hard cap on manual_review items surfaced per audit run. Prevents flooding."
-          }
-        ],
-        "sample_input": {
-          "scan_window_days": 14,
-          "strength_window_days": 30,
-          "weak_skill_threshold": 0,
-          "max_proposals_per_run": 5
-        },
-        "tool_hints": [
-          "file_read",
-          "file_write"
-        ],
-        "test_fixtures": [],
-        "use_case_flow": {
-          "nodes": [
-            { "id": "a1", "type": "start", "label": "Schedule or manual run" },
-            { "id": "a2", "type": "action", "label": "Read last_scan_at memory" },
-            { "id": "a3", "type": "connector", "label": "codebase: changed files + git log Skill-Ref counts", "connector": "codebase" },
-            { "id": "a4", "type": "action", "label": "skill_files::list_skills + read each SKILL.md" },
-            { "id": "a5", "type": "action", "label": "For each skill: compute overlap + usage" },
-            { "id": "a6", "type": "decision", "label": "Any proposals?" },
-            { "id": "a7", "type": "action", "label": "Cap at max_proposals_per_run; draft diffs" },
-            { "id": "a8", "type": "action", "label": "Emit manual_review per proposal (context_data = diff)" },
-            { "id": "a9", "type": "action", "label": "Send audit summary message" },
-            { "id": "a10", "type": "action", "label": "Update last_scan_at" },
-            { "id": "a11", "type": "end", "label": "Audit complete" },
-            { "id": "a12", "type": "end", "label": "Silent exit (0 proposals)" }
-          ],
-          "edges": [
-            { "source": "a1", "target": "a2" },
-            { "source": "a2", "target": "a3" },
-            { "source": "a3", "target": "a4" },
-            { "source": "a4", "target": "a5" },
-            { "source": "a5", "target": "a6" },
-            { "source": "a6", "target": "a12", "variant": "no", "label": "None" },
-            { "source": "a6", "target": "a7", "variant": "yes", "label": "Some" },
-            { "source": "a7", "target": "a8" },
-            { "source": "a8", "target": "a9" },
-            { "source": "a9", "target": "a10" },
-            { "source": "a10", "target": "a11" }
-          ]
+        "recipe_ref": {
+          "id": "c1422775-da51-512b-a3bd-de049b2c3f82",
+          "version": "1.0.0",
+          "bindings": {}
         }
       },
       {
-        "id": "uc_issue_writer",
-        "title": "Skill-Update Issue Writer",
-        "description": "Event-driven capability. Subscribes to `review_decision.approved` (filtered to this persona's own reviews). Fetches the review's context_data via IPC callback, builds a unified diff, and POSTs an issue to GitHub or GitLab (selected by issue_platform) with labels and a `Skill-Ref: <slug>` footer. Emits `skill.update.issue_created` on success.",
-        "capability_summary": "On approve → fetch review body → file GitHub/GitLab issue with diff and slug marker.",
-        "category": "development",
-        "enabled_by_default": true,
-        "execution_mode": "e2e",
-        "model_override": null,
-        "suggested_trigger": {
-          "trigger_type": "event_listener",
-          "config": {
-            "event_type": "review_decision.approved"
-          },
-          "description": "Fires when the user approves a manual_review surfaced by this persona. Event-driven — not configurable at the trigger-composition step."
-        },
-        "connectors": [
-          "github",
-          "gitlab"
-        ],
-        "notification_channels": [
-          {
-            "type": "messaging",
-            "description": "One message per created issue with the issue URL. Suppressed when issue_platform: none (memory-only mode)."
-          }
-        ],
-        "review_policy": {
-          "mode": "never",
-          "context": null
-        },
-        "memory_policy": {
-          "enabled": true,
-          "context": "Saves an `[approved, skill-librarian]` memory per issue with slug + reviewer_notes — Phase-2 learning that shapes future UC1 proposals."
-        },
-        "event_subscriptions": [
-          {
-            "event_type": "review_decision.approved",
-            "direction": "listen",
-            "description": "Triggers UC2. Must filter by source_persona_id = this persona's id to ignore other personas' approvals."
-          },
-          {
-            "event_type": "review_decision.rejected",
-            "direction": "listen",
-            "description": "Triggers a short path that saves rejected_patterns memory, then exits. No issue is created."
-          },
-          {
-            "event_type": "skill.update.issue_created",
-            "direction": "emit",
-            "description": "Payload: { skill_slug, kind: 'edit'|'retire', issue_url, review_id }. Emitted after a successful issue POST."
-          }
-        ],
-        "error_handling": "See persona.error_handling § UC2. Key cases: review-fetch IPC failure → fallback manual_review; platform connector missing → manual_review asking for it; API error → retry once then manual_review with the error body.",
-        "input_schema": [
-          {
-            "name": "issue_platform",
-            "type": "string",
-            "default": "github",
-            "description": "One of `github`, `gitlab`, or `none`. `none` keeps approvals as memory-only records with no external issue."
-          },
-          {
-            "name": "issue_repo",
-            "type": "string",
-            "default": "",
-            "description": "`owner/repo` for GitHub or `group/project` for GitLab. Ignored when issue_platform: none."
-          },
-          {
-            "name": "issue_labels",
-            "type": "string",
-            "default": "skill-maintenance,documentation",
-            "description": "Comma-separated labels applied to each created issue."
-          }
-        ],
-        "sample_input": {
-          "issue_platform": "github",
-          "issue_repo": "acme/devtools",
-          "issue_labels": "skill-maintenance,documentation"
-        },
-        "tool_hints": [
-          "http_request"
-        ],
-        "test_fixtures": [],
-        "use_case_flow": {
-          "nodes": [
-            { "id": "b1", "type": "start", "label": "review_decision.approved" },
-            { "id": "b2", "type": "decision", "label": "source_persona_id == self?" },
-            { "id": "b3", "type": "action", "label": "Fetch review row via IPC (context_data)" },
-            { "id": "b4", "type": "decision", "label": "issue_platform == none?" },
-            { "id": "b5", "type": "action", "label": "Record memory; emit skill.update.issue_created (no URL)" },
-            { "id": "b6", "type": "decision", "label": "Required connector attached?" },
-            { "id": "b7", "type": "connector", "label": "github / gitlab: POST issue", "connector": "github" },
-            { "id": "b8", "type": "event", "label": "Emit skill.update.issue_created" },
-            { "id": "b9", "type": "action", "label": "Send issue-URL message; save learning memory" },
-            { "id": "b10", "type": "error", "label": "manual_review: attach missing connector" },
-            { "id": "b11", "type": "error", "label": "manual_review: API error / review-fetch failed" },
-            { "id": "b12", "type": "end", "label": "Done" },
-            { "id": "b13", "type": "end", "label": "Ignored (other persona)" }
-          ],
-          "edges": [
-            { "source": "b1", "target": "b2" },
-            { "source": "b2", "target": "b13", "variant": "no" },
-            { "source": "b2", "target": "b3", "variant": "yes" },
-            { "source": "b3", "target": "b4" },
-            { "source": "b3", "target": "b11", "variant": "error", "label": "IPC failure" },
-            { "source": "b4", "target": "b5", "variant": "yes" },
-            { "source": "b5", "target": "b12" },
-            { "source": "b4", "target": "b6", "variant": "no" },
-            { "source": "b6", "target": "b10", "variant": "no" },
-            { "source": "b6", "target": "b7", "variant": "yes" },
-            { "source": "b7", "target": "b8" },
-            { "source": "b7", "target": "b11", "variant": "error", "label": "API error" },
-            { "source": "b8", "target": "b9" },
-            { "source": "b9", "target": "b12" }
-          ]
+        "recipe_ref": {
+          "id": "14a1f250-19f9-524e-b031-1da3bce5e684",
+          "version": "1.0.0",
+          "bindings": {}
         }
       }
     ],
@@ -434,7 +223,11 @@
         "default_value": "github",
         "value": "github",
         "description": "Where approved proposals are filed as issues.",
-        "options": ["github", "gitlab", "none"]
+        "options": [
+          "github",
+          "gitlab",
+          "none"
+        ]
       },
       {
         "key": "issue_repo",
@@ -469,8 +262,13 @@
           }
         ],
         "setup_instructions": "Register the project in the dev-tools Projects page, then select it here. The persona will read `.claude/skills/` and git history from the project root — no network egress.",
-        "related_tools": ["file_read", "file_write"],
-        "related_triggers": [0],
+        "related_tools": [
+          "file_read",
+          "file_write"
+        ],
+        "related_triggers": [
+          0
+        ],
         "api_base_url": "local://codebase",
         "role": "context_source",
         "category": "development"
@@ -490,8 +288,12 @@
           }
         ],
         "setup_instructions": "Create a PAT at github.com/settings/tokens with `repo` scope. Paste here. Required only when issue_platform is `github`.",
-        "related_tools": ["http_request"],
-        "related_triggers": [1],
+        "related_tools": [
+          "http_request"
+        ],
+        "related_triggers": [
+          1
+        ],
         "api_base_url": "https://api.github.com",
         "role": "issue_tracker",
         "category": "devops"
@@ -511,8 +313,12 @@
           }
         ],
         "setup_instructions": "Create a PAT in GitLab under User Settings → Access Tokens with `api` scope. Paste here. Required only when issue_platform is `gitlab`.",
-        "related_tools": ["http_request"],
-        "related_triggers": [1],
+        "related_tools": [
+          "http_request"
+        ],
+        "related_triggers": [
+          1
+        ],
         "api_base_url": "https://gitlab.com/api/v4",
         "role": "issue_tracker",
         "category": "devops"
@@ -548,29 +354,118 @@
         "name": "Weekly skill audit",
         "description": "UC1 — scan codebase, evaluate each skill, surface up to N proposals via manual review.",
         "nodes": [
-          { "id": "n1", "type": "start", "label": "Mondays 09:00 or manual" },
-          { "id": "n2", "type": "action", "label": "Read last_scan_at" },
-          { "id": "n3", "type": "connector", "label": "codebase: changed files + git log", "connector": "codebase" },
-          { "id": "n4", "type": "action", "label": "List skills + read SKILL.md files" },
-          { "id": "n5", "type": "action", "label": "Score overlap + strength per skill" },
-          { "id": "n6", "type": "decision", "label": "Any proposals above threshold?" },
-          { "id": "n7", "type": "action", "label": "Cap at max_proposals_per_run; draft diffs" },
-          { "id": "n8", "type": "action", "label": "Emit manual_review items with context_data diffs" },
-          { "id": "n9", "type": "action", "label": "Send audit summary; update last_scan_at" },
-          { "id": "n10", "type": "end", "label": "Audit complete" },
-          { "id": "n11", "type": "end", "label": "Silent exit" }
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Mondays 09:00 or manual"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Read last_scan_at"
+          },
+          {
+            "id": "n3",
+            "type": "connector",
+            "label": "codebase: changed files + git log",
+            "connector": "codebase"
+          },
+          {
+            "id": "n4",
+            "type": "action",
+            "label": "List skills + read SKILL.md files"
+          },
+          {
+            "id": "n5",
+            "type": "action",
+            "label": "Score overlap + strength per skill"
+          },
+          {
+            "id": "n6",
+            "type": "decision",
+            "label": "Any proposals above threshold?"
+          },
+          {
+            "id": "n7",
+            "type": "action",
+            "label": "Cap at max_proposals_per_run; draft diffs"
+          },
+          {
+            "id": "n8",
+            "type": "action",
+            "label": "Emit manual_review items with context_data diffs"
+          },
+          {
+            "id": "n9",
+            "type": "action",
+            "label": "Send audit summary; update last_scan_at"
+          },
+          {
+            "id": "n10",
+            "type": "end",
+            "label": "Audit complete"
+          },
+          {
+            "id": "n11",
+            "type": "end",
+            "label": "Silent exit"
+          }
         ],
         "edges": [
-          { "id": "e1", "source": "n1", "target": "n2" },
-          { "id": "e2", "source": "n2", "target": "n3" },
-          { "id": "e3", "source": "n3", "target": "n4" },
-          { "id": "e4", "source": "n4", "target": "n5" },
-          { "id": "e5", "source": "n5", "target": "n6" },
-          { "id": "e6", "source": "n6", "target": "n11", "variant": "no", "label": "None" },
-          { "id": "e7", "source": "n6", "target": "n7", "variant": "yes", "label": "Some" },
-          { "id": "e8", "source": "n7", "target": "n8" },
-          { "id": "e9", "source": "n8", "target": "n9" },
-          { "id": "e10", "source": "n9", "target": "n10" }
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4"
+          },
+          {
+            "id": "e4",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e5",
+            "source": "n5",
+            "target": "n6"
+          },
+          {
+            "id": "e6",
+            "source": "n6",
+            "target": "n11",
+            "variant": "no",
+            "label": "None"
+          },
+          {
+            "id": "e7",
+            "source": "n6",
+            "target": "n7",
+            "variant": "yes",
+            "label": "Some"
+          },
+          {
+            "id": "e8",
+            "source": "n7",
+            "target": "n8"
+          },
+          {
+            "id": "e9",
+            "source": "n8",
+            "target": "n9"
+          },
+          {
+            "id": "e10",
+            "source": "n9",
+            "target": "n10"
+          }
         ]
       },
       {
@@ -578,35 +473,154 @@
         "name": "Approval → issue creation",
         "description": "UC2 — on approved review, fetch context_data, POST GitHub/GitLab issue with diff, emit event.",
         "nodes": [
-          { "id": "m1", "type": "start", "label": "review_decision.approved" },
-          { "id": "m2", "type": "decision", "label": "Source persona == self?" },
-          { "id": "m3", "type": "action", "label": "Fetch review context_data (IPC)" },
-          { "id": "m4", "type": "decision", "label": "issue_platform == none?" },
-          { "id": "m5", "type": "action", "label": "Record memory only" },
-          { "id": "m6", "type": "decision", "label": "Correct connector attached?" },
-          { "id": "m7", "type": "connector", "label": "POST issue", "connector": "github" },
-          { "id": "m8", "type": "event", "label": "Emit skill.update.issue_created" },
-          { "id": "m9", "type": "action", "label": "Send issue URL; save learning memory" },
-          { "id": "m10", "type": "error", "label": "manual_review: attach missing connector" },
-          { "id": "m11", "type": "error", "label": "manual_review: API or IPC error" },
-          { "id": "m12", "type": "end", "label": "Done" },
-          { "id": "m13", "type": "end", "label": "Ignored" }
+          {
+            "id": "m1",
+            "type": "start",
+            "label": "review_decision.approved"
+          },
+          {
+            "id": "m2",
+            "type": "decision",
+            "label": "Source persona == self?"
+          },
+          {
+            "id": "m3",
+            "type": "action",
+            "label": "Fetch review context_data (IPC)"
+          },
+          {
+            "id": "m4",
+            "type": "decision",
+            "label": "issue_platform == none?"
+          },
+          {
+            "id": "m5",
+            "type": "action",
+            "label": "Record memory only"
+          },
+          {
+            "id": "m6",
+            "type": "decision",
+            "label": "Correct connector attached?"
+          },
+          {
+            "id": "m7",
+            "type": "connector",
+            "label": "POST issue",
+            "connector": "github"
+          },
+          {
+            "id": "m8",
+            "type": "event",
+            "label": "Emit skill.update.issue_created"
+          },
+          {
+            "id": "m9",
+            "type": "action",
+            "label": "Send issue URL; save learning memory"
+          },
+          {
+            "id": "m10",
+            "type": "error",
+            "label": "manual_review: attach missing connector"
+          },
+          {
+            "id": "m11",
+            "type": "error",
+            "label": "manual_review: API or IPC error"
+          },
+          {
+            "id": "m12",
+            "type": "end",
+            "label": "Done"
+          },
+          {
+            "id": "m13",
+            "type": "end",
+            "label": "Ignored"
+          }
         ],
         "edges": [
-          { "id": "f1", "source": "m1", "target": "m2" },
-          { "id": "f2", "source": "m2", "target": "m13", "variant": "no" },
-          { "id": "f3", "source": "m2", "target": "m3", "variant": "yes" },
-          { "id": "f4", "source": "m3", "target": "m4" },
-          { "id": "f5", "source": "m3", "target": "m11", "variant": "error", "label": "IPC fail" },
-          { "id": "f6", "source": "m4", "target": "m5", "variant": "yes" },
-          { "id": "f7", "source": "m5", "target": "m12" },
-          { "id": "f8", "source": "m4", "target": "m6", "variant": "no" },
-          { "id": "f9", "source": "m6", "target": "m10", "variant": "no" },
-          { "id": "f10", "source": "m6", "target": "m7", "variant": "yes" },
-          { "id": "f11", "source": "m7", "target": "m8" },
-          { "id": "f12", "source": "m7", "target": "m11", "variant": "error", "label": "API error" },
-          { "id": "f13", "source": "m8", "target": "m9" },
-          { "id": "f14", "source": "m9", "target": "m12" }
+          {
+            "id": "f1",
+            "source": "m1",
+            "target": "m2"
+          },
+          {
+            "id": "f2",
+            "source": "m2",
+            "target": "m13",
+            "variant": "no"
+          },
+          {
+            "id": "f3",
+            "source": "m2",
+            "target": "m3",
+            "variant": "yes"
+          },
+          {
+            "id": "f4",
+            "source": "m3",
+            "target": "m4"
+          },
+          {
+            "id": "f5",
+            "source": "m3",
+            "target": "m11",
+            "variant": "error",
+            "label": "IPC fail"
+          },
+          {
+            "id": "f6",
+            "source": "m4",
+            "target": "m5",
+            "variant": "yes"
+          },
+          {
+            "id": "f7",
+            "source": "m5",
+            "target": "m12"
+          },
+          {
+            "id": "f8",
+            "source": "m4",
+            "target": "m6",
+            "variant": "no"
+          },
+          {
+            "id": "f9",
+            "source": "m6",
+            "target": "m10",
+            "variant": "no"
+          },
+          {
+            "id": "f10",
+            "source": "m6",
+            "target": "m7",
+            "variant": "yes"
+          },
+          {
+            "id": "f11",
+            "source": "m7",
+            "target": "m8"
+          },
+          {
+            "id": "f12",
+            "source": "m7",
+            "target": "m11",
+            "variant": "error",
+            "label": "API error"
+          },
+          {
+            "id": "f13",
+            "source": "m8",
+            "target": "m9"
+          },
+          {
+            "id": "f14",
+            "source": "m9",
+            "target": "m12"
+          }
         ]
       }
     ],
@@ -660,7 +674,9 @@
       {
         "id": "aq_target_codebase",
         "scope": "connector",
-        "connector_names": ["codebase"],
+        "connector_names": [
+          "codebase"
+        ],
         "category": "configuration",
         "question": "Which registered codebase should this persona audit?",
         "type": "select",
@@ -672,7 +688,9 @@
         "dimension": "connectors",
         "ui_component": "CodebaseSelector",
         "connector_ref": "codebase",
-        "option_service_types": ["codebase"],
+        "option_service_types": [
+          "codebase"
+        ],
         "dynamic_source": {
           "service_type": "development",
           "operation": "list_codebases"
@@ -684,7 +702,11 @@
         "category": "configuration",
         "question": "Where should approved skill updates be filed?",
         "type": "select",
-        "options": ["github", "gitlab", "none"],
+        "options": [
+          "github",
+          "gitlab",
+          "none"
+        ],
         "default": "github",
         "maps_to": "parameters.issue_platform",
         "variable_name": "issue_platform",
@@ -709,7 +731,12 @@
         "category": "quality",
         "question": "How many days of git history define a skill's usage strength?",
         "type": "select",
-        "options": ["14", "30", "60", "90"],
+        "options": [
+          "14",
+          "30",
+          "60",
+          "90"
+        ],
         "default": "30",
         "maps_to": "parameters.strength_window_days",
         "variable_name": "strength_window_days",
@@ -722,7 +749,12 @@
         "category": "boundaries",
         "question": "Max proposals per audit run?",
         "type": "select",
-        "options": ["3", "5", "10", "20"],
+        "options": [
+          "3",
+          "5",
+          "10",
+          "20"
+        ],
         "default": "5",
         "maps_to": "parameters.max_proposals_per_run",
         "variable_name": "max_proposals_per_run",

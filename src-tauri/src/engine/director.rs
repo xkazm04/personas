@@ -817,6 +817,7 @@ mod tests {
             source_review_id: None,
             template_category: None,
             group_id: None,
+            cli_awareness_enabled: false,
             created_at: "2026-01-01T00:00:00Z".into(),
             updated_at: "2026-01-01T00:00:00Z".into(),
         }

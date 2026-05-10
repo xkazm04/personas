@@ -504,6 +504,15 @@ pub struct Persona {
     /// Simple-mode's illustration resolver tier-3 (see `useIllustration.ts`).
     #[serde(default)]
     pub template_category: Option<String>,
+    /// Phase 5 v1: per-persona gate for the Claude CLI session-resume
+    /// awareness feature. When `true` AND the global cli_session toggle on
+    /// `AmbientContextFusion` is also `true`, the runner injects a `## Active
+    /// Claude CLI Session` block into the persona's system prompt before
+    /// `runner::run_execution`. Defaults to `false` — explicit opt-in per
+    /// persona. See `docs/concepts/athena-desktop-aware-cli-session-
+    /// awareness.md`.
+    #[serde(default)]
+    pub cli_awareness_enabled: bool,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -691,4 +700,6 @@ pub struct UpdatePersonaInput {
     pub group_id: Option<Option<String>>,
     pub parameters: Option<Option<String>>,
     pub gateway_exposure: Option<PersonaGatewayExposure>,
+    /// Phase 5 v1: per-persona Claude CLI session-resume awareness gate.
+    pub cli_awareness_enabled: Option<bool>,
 }

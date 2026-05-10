@@ -32,12 +32,17 @@ For template authoring conventions, see [recipe-templates.md](recipe-templates.m
 | Versioning | `get_recipe_versions`, `start_recipe_versioning`, `cancel_recipe_versioning`, `accept_recipe_version`, `revert_recipe_version` |
 | Derivation | `derive_recipes_from_template`, `list_recipes_by_template` |
 | Suggestions | `match_recipes_to_intent` |
+| Suggestion telemetry | `log_recipe_suggestion_event`, `get_recipe_suggestion_stats`, `list_recipe_suggestion_events` |
 
 Async generation/execution/versioning commands use active-process registration and can be cancelled. Synchronous `execute_recipe` is for direct test-style execution; `start_recipe_execution` returns an execution id for longer runs.
 
 `match_recipes_to_intent` powers the Glyph composer's recipe-suggestion chip (`ComposerRecipeSuggestion`). The frontend debounces the user's typed task by 300ms and queries this command with `top_k = 1`. The chip is shown only when the top match's `above_threshold` is `true` — i.e. the score clears `engine::recipe_matcher::SUGGESTION_THRESHOLD` (0.90, conservative). Below-threshold matches and zero-overlap recipes are silently dropped, so the suggestion never gets in the user's way during normal authoring.
 
 When the user clicks the chip's "Use this recipe" button, the composer fetches the full recipe via `get_recipe` and pre-fills the in-flight draft (Stage D Phase 3, mode 1 acceptance). Pre-fill policy lives in `mergeRecipeIntoDraft` (`commandPanelHelpers.ts`): replace `draft.task` with the recipe's description (or name if missing); pre-fill `draft.tools` from `tool_requirements` only when the user hasn't typed any; leave `when`/`output`/`review` untouched. Acceptance is intentionally opt-in — the chip is hidden by default until the matcher's score crosses threshold, and the apply action shows a success toast naming the applied recipe.
+
+Stage D Phase 4 instruments the chip with append-only telemetry. Every visible chip logs one `impression` event (deduped per `recipe_id` per mount); clicking "Use this recipe" logs an `accept`; clicking the dismiss X logs a `dismiss`. Events live in `recipe_suggestion_events` and roll up via `get_recipe_suggestion_stats` into a `RecipeSuggestionStats { impressions, accepts, dismisses, accept_rate, decisive_count, sample_size, mode_2_eligible }`. The `mode_2_eligible` gate (`accept_rate ≥ 0.5` and `decisive_count ≥ 20` over the last 50 events) is what Phase 5 reads to decide whether to enable the "skip build" shortcut. Thresholds live as constants in `db::repos::resources::recipe_suggestions` so they can be tuned without touching the type binding.
+
+Stage D Phase 5 adds the mode-2 affordance. When the chip first surfaces, the composer fetches stats once via `useRecipeSuggestionEligibility` and only renders the "Run now" button if `mode_2_eligible` is true. The handler stashes the recipe id in `pipelineStore.pendingPlaygroundRecipeId`, switches the sidebar to `design-reviews`, and shows a toast. The recipes panel's `RecipeManager` reads `consumePendingPlayground` on mount and dispatches `GO_PLAYGROUND` for that id, jumping the user straight into the recipe's playground modal — bypassing the entire Glyph build flow. The button stays dormant on fresh installs until ~20 decisive events have crossed the gate, so first-time users see only the conservative mode-1 chip.
 
 ## Relationship to templates and personas
 

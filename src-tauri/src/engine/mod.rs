@@ -8,6 +8,8 @@ pub mod ambient_context;
 pub mod ambient_signal_repo;
 pub mod api_definition;
 #[cfg(feature = "desktop")]
+pub mod cli_session_audit_repo;
+#[cfg(feature = "desktop")]
 pub mod cli_session_awareness;
 pub mod api_proxy;
 #[cfg(feature = "desktop")]
@@ -131,7 +133,9 @@ pub mod provider;
 pub mod quality_gate;
 pub mod queue;
 pub mod rate_limiter;
+pub mod recipe_eligibility;
 pub mod recipe_matcher;
+pub mod recipe_seed;
 pub mod render_plan;
 pub mod resource_listing;
 pub mod rotation;
@@ -235,6 +239,15 @@ async fn run_execution_with_ceiling(
     // (the AmbientContextFusion machinery is desktop-feature gated).
     // Failures are non-fatal: a None result simply means the rolling
     // window is empty for this persona's policy and we pass through.
+    //
+    // Phase 5 v1: AFTER ambient injection (so ambient lands closer to
+    // the persona prompt and CLI session lands further from it — the
+    // model reads ambient as "right now" context and CLI as "what I
+    // was discussing earlier"), inject the user's active Claude CLI
+    // session if BOTH gates are on (per-persona `cli_awareness_enabled`
+    // AND in-memory global `cli_session_enabled`). Same shadow shape
+    // as ambient — no-op if gates off, empty discovery, or empty
+    // transcript.
     #[cfg(feature = "desktop")]
     let persona = {
         let mut persona = persona;
@@ -245,6 +258,67 @@ async fn run_execution_with_ceiling(
         {
             ambient_context::prepend_ambient_to_system_prompt(&mut persona, &md);
         }
+
+        // Phase 5 v1: CLI session injection (windowed path).
+        if persona.cli_awareness_enabled {
+            let global_enabled = {
+                let guard = ambient_ctx.lock().await;
+                guard.is_source_enabled("cli_session")
+            };
+            if global_enabled {
+                if let Some(home) = dirs::home_dir() {
+                    let now = std::time::SystemTime::now();
+                    if let Some(active) =
+                        cli_session_awareness::discovery::discover_active_session(
+                            &home,
+                            now,
+                            cli_session_awareness::discovery::DEFAULT_FRESHNESS_CUTOFF,
+                        )
+                    {
+                        // Cap at 8 turns total (~4 user + 4 assistant; the
+                        // tail-N is role-agnostic so the boundary is
+                        // approximate). 500-char/turn cap is enforced
+                        // inside the reader.
+                        let turns =
+                            cli_session_awareness::transcript::read_recent_turns(&active.path, 8);
+                        if let Some(md) = cli_session_awareness::render::render_cli_session_for_prompt(
+                            &active, &turns, now,
+                        ) {
+                            ambient_context::prepend_ambient_to_system_prompt(&mut persona, &md);
+
+                            // Phase 5 v1: write the transparency audit row
+                            // so the user can see what was extracted via
+                            // the "What did Athena see?" modal. Failure
+                            // is non-fatal — the run already happened.
+                            let read_at_secs = now
+                                .duration_since(std::time::UNIX_EPOCH)
+                                .map(|d| d.as_secs())
+                                .unwrap_or(0);
+                            let audit_id = format!(
+                                "cliread_{}",
+                                uuid::Uuid::new_v4().simple()
+                            );
+                            if let Err(e) = cli_session_audit_repo::insert_audit(
+                                &pool,
+                                &audit_id,
+                                &persona.id,
+                                &persona.name,
+                                &active.project_dir_name,
+                                turns.len() as i64,
+                                read_at_secs,
+                            ) {
+                                tracing::warn!(
+                                    error = %e,
+                                    persona_id = %persona.id,
+                                    "cli_session: failed to write audit row"
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         persona
     };
 

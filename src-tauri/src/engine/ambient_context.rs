@@ -186,6 +186,13 @@ pub struct SensorySourceState {
     pub file_changes_enabled: bool,
     /// Per-source capture gate for app-focus signals (default false).
     pub app_focus_enabled: bool,
+    /// Phase 5 v1: read-time gate for the user's active Claude CLI
+    /// session (default false). Unlike the three above, no signals are
+    /// captured for this — it controls whether the runner will read the
+    /// transcript and inject a prompt prefix. Pairs with the per-persona
+    /// `cli_awareness_enabled` flag.
+    #[serde(default)]
+    pub cli_session_enabled: bool,
     /// Number of clipboard signals currently in the rolling window.
     pub clipboard_signals_in_window: u32,
     /// Number of file-watcher signals currently in the rolling window.
@@ -221,6 +228,15 @@ pub struct AmbientContextFusion {
     /// even when this is on, sensitive content from titles is stripped
     /// before reaching the rolling window.
     app_focus_enabled: bool,
+    /// Phase 5 v1: read-time gate for the user's active Claude CLI
+    /// session. Unlike the three above, this gate does NOT control
+    /// capture (no signals enter the rolling window from CLI session
+    /// reads). It controls READ — the runner only fetches and renders
+    /// the user's active CLI transcript when this is true. Pairs with
+    /// the per-persona `cli_awareness_enabled` flag; both must be true.
+    /// Default false ("OFF until the user opts in"), same posture as
+    /// the other source gates.
+    cli_session_enabled: bool,
     /// Rolling window of recent signals.
     signals: VecDeque<AmbientSignal>,
     /// Per-persona sensory policies: persona_id -> policy. These filter
@@ -256,6 +272,7 @@ impl AmbientContextFusion {
             clipboard_enabled: false,
             file_changes_enabled: false,
             app_focus_enabled: false,
+            cli_session_enabled: false,
             signals: VecDeque::with_capacity(64),
             policies: std::collections::HashMap::new(),
             current_app: None,
@@ -296,13 +313,15 @@ impl AmbientContextFusion {
 
     /// Source gate read: per-source capture switch. Names mirror the
     /// `source` strings used in `ContextEvent` and `AmbientSignal`:
-    /// `"clipboard"`, `"file_watcher"`, `"app_focus"`. Unknown sources
-    /// return false (fail closed — don't capture what we don't recognize).
+    /// `"clipboard"`, `"file_watcher"`, `"app_focus"`, plus the Phase 5 v1
+    /// read-time gate `"cli_session"`. Unknown sources return false (fail
+    /// closed — don't capture/read what we don't recognize).
     pub fn is_source_enabled(&self, source: &str) -> bool {
         match source {
             "clipboard" => self.clipboard_enabled,
             "file_watcher" => self.file_changes_enabled,
             "app_focus" => self.app_focus_enabled,
+            "cli_session" => self.cli_session_enabled,
             _ => false,
         }
     }
@@ -312,12 +331,22 @@ impl AmbientContextFusion {
     /// from that source from the rolling window — the privacy promise is
     /// "stop capturing AND drop what was captured." Returns the number of
     /// signals purged (0 when enabling, ≥0 when disabling).
+    ///
+    /// `"cli_session"` (Phase 5 v1) is a read-time gate, not a capture-
+    /// time gate — no signals are stored for it, so the disable-purge
+    /// branch is a no-op for that source. The toggle still flows through
+    /// here for UI symmetry (same Tauri command surface as the others).
     pub fn set_source_enabled(&mut self, source: &str, enabled: bool) -> usize {
         let already = self.is_source_enabled(source);
         match source {
             "clipboard" => self.clipboard_enabled = enabled,
             "file_watcher" => self.file_changes_enabled = enabled,
             "app_focus" => self.app_focus_enabled = enabled,
+            "cli_session" => {
+                self.cli_session_enabled = enabled;
+                // No rolling-window state to purge — return early.
+                return 0;
+            }
             _ => return 0,
         }
         // Purge prior signals from this source on disable. No-op on enable.
@@ -388,6 +417,7 @@ impl AmbientContextFusion {
             clipboard_enabled: self.clipboard_enabled,
             file_changes_enabled: self.file_changes_enabled,
             app_focus_enabled: self.app_focus_enabled,
+            cli_session_enabled: self.cli_session_enabled,
             clipboard_signals_in_window: by_source("clipboard"),
             file_changes_signals_in_window: by_source("file_watcher"),
             app_focus_signals_in_window: by_source("app_focus"),
@@ -1901,6 +1931,7 @@ mod tests {
             parameters: None,
             gateway_exposure: Default::default(),
             template_category: None,
+            cli_awareness_enabled: false,
             created_at: "2026-05-09T00:00:00Z".into(),
             updated_at: "2026-05-09T00:00:00Z".into(),
         }

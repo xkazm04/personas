@@ -741,6 +741,22 @@ impl ReactiveSubscription for AmbientSignalEvictionSubscription {
                 "ambient_signal: TTL eviction failed"
             ),
         }
+
+        // Phase 5 v1: same 24h cutoff also evicts the CLI session
+        // read audit table. Sibling concern, sibling cadence — keeps
+        // both transparency footprints bounded under one tick.
+        match super::cli_session_audit_repo::evict_older_than(&self.pool, cutoff) {
+            Ok(0) => {}
+            Ok(n) => tracing::debug!(
+                rows_deleted = n,
+                ttl_secs = AMBIENT_SIGNAL_TTL_SECS,
+                "cli_session_audit: TTL eviction"
+            ),
+            Err(e) => tracing::warn!(
+                error = %e,
+                "cli_session_audit: TTL eviction failed"
+            ),
+        }
     }
 }
 

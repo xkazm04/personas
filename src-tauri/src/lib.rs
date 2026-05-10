@@ -546,6 +546,21 @@ pub fn run() {
             }
             st.checkpoint("director_seed");
 
+            // Stage B Phase 2.4 — seed the recipe catalog from the embedded
+            // bundle so adoption of recipe_ref-shaped templates works on a
+            // fresh install. Idempotent: existing rows are left untouched.
+            match engine::recipe_seed::seed_recipes_from_bundle(&pool) {
+                Ok(report) => tracing::info!(
+                    total = report.total,
+                    created = report.created,
+                    skipped = report.skipped_existing,
+                    failed = report.failed,
+                    "Recipe catalog seeded from bundle"
+                ),
+                Err(e) => tracing::warn!("Recipe catalog seed failed: {}", e),
+            }
+            st.checkpoint("recipe_seed");
+
             // Initialize P2P identity (Invisible Apps Phase 1)
             #[cfg(feature = "p2p")]
             match engine::identity::get_or_create_identity(&pool) {
@@ -805,9 +820,34 @@ pub fn run() {
             });
             app.manage(state_arc.clone());
 
-            // Radio: footer-anchored HTML5 audio player streaming curated
-            // internet-radio stations. Stations are baked into the binary;
-            // runtime state (current station + status + volume) persists to
+            // Phase 5 v1: seed the cross-process cli_session gate from app_settings
+            // on startup, so a user who toggled it ON in a previous session still
+            // has it ON after restart. Without this, AmbientContextFusion would
+            // default to false on every startup and the windowed runner's gate
+            // check would diverge from the daemon's persisted view. Read-only
+            // best-effort — failure is non-fatal (gate stays at default false).
+            #[cfg(feature = "desktop")]
+            {
+                let ambient = state_arc.ambient_context.clone();
+                let pool = state_arc.db.clone();
+                tauri::async_runtime::spawn(async move {
+                    if let Ok(Some(value)) = db::repos::core::settings::get(
+                        &pool,
+                        db::settings_keys::CLI_SESSION_AWARENESS_ENABLED,
+                    ) {
+                        let enabled = value == "true";
+                        if enabled {
+                            let mut guard = ambient.lock().await;
+                            guard.set_source_enabled("cli_session", true);
+                        }
+                    }
+                });
+            }
+
+            // Radio: footer-anchored dual-engine player (YouTube IFrame for
+            // curated tracklists, HTML5 audio for internet-radio streams).
+            // Stations are baked into the binary; runtime state (current
+            // station + per-station cursors + status + volume) persists to
             // <config>/radio_state.json.
             {
                 let radio_state_path = app_data_dir.join("radio_state.json");
@@ -1583,6 +1623,12 @@ pub fn run() {
             commands::recipes::recipe_suggestion_log::log_recipe_suggestion_event,
             commands::recipes::recipe_suggestion_log::get_recipe_suggestion_stats,
             commands::recipes::recipe_suggestion_log::list_recipe_suggestion_events,
+            // Recipes -- Stage E.1 eligibility scoring (recipe vs persona)
+            commands::recipes::recipe_eligibility::get_recipe_eligibility,
+            commands::recipes::recipe_eligibility::get_recipe_catalog_for_persona,
+            // Recipes -- Stage E.2 adoption pipeline (eligibility precheck + link)
+            commands::recipes::recipe_adoption::adopt_recipe_for_persona,
+            commands::recipes::recipe_adoption::unadopt_recipe_from_persona,
             // Communication -- Events
             commands::communication::events::list_events,
             commands::communication::events::list_events_in_range,
@@ -1701,6 +1747,7 @@ pub fn run() {
             commands::tools::tools::get_tool_usage_summary,
             commands::tools::tools::get_tool_usage_over_time,
             commands::tools::tools::get_tool_usage_by_persona,
+            commands::tools::tools::get_tool_performance_summary,
             commands::tools::tools::invoke_tool_direct,
             // Tools -- Automations
             commands::tools::automations::list_automations,
@@ -1921,6 +1968,8 @@ pub fn run() {
             commands::companion::sensory::companion_list_sensory_signals,
             #[cfg(feature = "desktop")]
             commands::companion::sensory::companion_delete_sensory_signal,
+            #[cfg(feature = "desktop")]
+            commands::companion::sensory::companion_list_cli_session_reads,
             commands::companion::connectors::companion_list_active_connectors,
             commands::companion::connectors::companion_set_active_connectors,
             commands::companion::connectors::companion_set_connector_enabled,

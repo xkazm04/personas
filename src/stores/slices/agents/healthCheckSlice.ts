@@ -12,6 +12,7 @@ import type { PersonaHealthCheck, AgentHealthDigest } from "@/features/agents/he
 import type { Persona } from "@/lib/bindings/Persona";
 import type { DesignContextData } from "@/lib/types/frontendTypes";
 import { silentCatch } from "@/lib/silentCatch";
+import { getActiveTranslations, interpolate } from "@/i18n/useTranslation";
 
 // -- Staleness threshold ----------------------------------------------
 
@@ -83,7 +84,10 @@ async function checkSinglePersona(persona: Persona): Promise<PersonaHealthCheck>
     // visible "score is incomplete" signal.
     silentCatch(`healthCheckSlice:checkSinglePersona[${persona.id}]`)(err);
     const errMsg = err instanceof Error ? err.message : String(err);
-    const fallbackText = `Health sub-check did not run: ${errMsg}`;
+    const fallbackText = interpolate(
+      getActiveTranslations().agents.health_check.subcheck_failed,
+      { error: errMsg },
+    );
     return {
       personaId: persona.id,
       personaName: persona.name,

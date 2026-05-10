@@ -17,6 +17,8 @@ import type { RecipeMatch } from "@/lib/bindings/RecipeMatch";
 import { getRecipe } from "@/api/recipes/recipes";
 import { useTranslation } from "@/i18n/useTranslation";
 import { useToastStore } from "@/stores/toastStore";
+import { useSystemStore } from "@/stores/systemStore";
+import { usePipelineStore } from "@/stores/pipelineStore";
 import { toastCatch } from "@/lib/silentCatch";
 import type { CommandPanelProps } from "./types";
 import { CommandPanelFooter } from "./CommandPanelFooter";
@@ -83,6 +85,21 @@ export function CommandPanelComposer({
     }
   }, [t, tx]);
 
+  // Stage D Phase 5 — mode 2 acceptance ("Run now" / skip-build).
+  // Hands off to the recipes panel: stash the recipe id, switch the
+  // sidebar to design-reviews, and let RecipeManager auto-open the
+  // playground. The chip never gets here unless the server-side
+  // mode_2_eligible gate has flipped, so this is the explicit
+  // skip-build path the gate authorises.
+  const handleRunDirect = useCallback((match: RecipeMatch) => {
+    usePipelineStore.getState().setPendingPlayground(match.recipe_id);
+    useSystemStore.getState().setSidebarSection("design-reviews");
+    useToastStore.getState().addToast(
+      tx(t.recipes.composer_suggestion.run_now_toast, { name: match.recipe_name }),
+      "success",
+    );
+  }, [t, tx]);
+
   return (
     <div className="w-full min-w-[640px] md:min-w-[800px] lg:min-w-[912px] 2xl:min-w-[1296px] 3xl:min-w-[1608px] max-w-[1800px] relative">
       <div
@@ -125,7 +142,11 @@ export function CommandPanelComposer({
           onOpenTools={() => setToolsOpen(true)}
         />
 
-        <ComposerRecipeSuggestion task={draft.task} onApply={handleApplyRecipe} />
+        <ComposerRecipeSuggestion
+          task={draft.task}
+          onApply={handleApplyRecipe}
+          onRunDirect={handleRunDirect}
+        />
 
         <CommandPanelFooter
           launchDisabled={launchDisabled}

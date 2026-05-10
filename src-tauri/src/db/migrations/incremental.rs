@@ -2493,6 +2493,25 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Added last_test_report column to personas");
     }
 
+    // -- Phase 5 v1: CLI session-resume awareness opt-in -----------------------
+    // Per-persona gate for reading the user's active Claude CLI transcript and
+    // injecting recent turns as a prompt prefix (alongside Phase 3 c ambient
+    // context). Defaults to 0 (OFF) — must be paired with the global
+    // cli_session toggle on AmbientContextFusion to actually fire.
+    // See docs/concepts/athena-desktop-aware-cli-session-awareness.md.
+    let has_cli_awareness: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('personas') WHERE name = 'cli_awareness_enabled'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_cli_awareness {
+        conn.execute_batch(
+            "ALTER TABLE personas ADD COLUMN cli_awareness_enabled INTEGER NOT NULL DEFAULT 0;",
+        )?;
+        tracing::info!("Added cli_awareness_enabled column to personas (Phase 5 v1)");
+    }
+
     // -- Drop retired desktop-bridge catalog entries -----------------------------
     // `desktop_terminal` and `desktop_vscode` were removed from the credential
     // catalog; existing installs may still have the seeded rows. Remove them so

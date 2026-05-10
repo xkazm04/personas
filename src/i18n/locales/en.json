@@ -2354,12 +2354,16 @@
       "run_now": "Run now",
       "rerun": "Re-run",
       "capabilities": "Capabilities",
+      "issues": "Issues",
       "all_healthy": "All systems healthy",
       "all_healthy_detail": "No issues detected in agent configuration",
       "status_ready": "Ready",
       "status_blocked": "Blocked",
       "status_partial": "Partial",
-      "checked_at": "Checked {time}"
+      "checked_at": "Checked {time}",
+      "error_no_design_context": "No design context available for this persona",
+      "config_warnings_unavailable": "Could not fetch config warnings — health check may be incomplete.",
+      "subcheck_failed": "Health sub-check did not run: {error}"
     },
     "health_digest": {
       "title": "Agent Health Digest",
@@ -2377,14 +2381,35 @@
       "last_run": "Last run: {time}",
       "group_blocked": "Blocked",
       "group_attention": "Needs attention",
-      "group_healthy": "Healthy"
+      "group_healthy": "Healthy",
+      "notification_title": "{gradeEmoji} Weekly Agent Health Digest",
+      "notification_body_all_healthy_one": "{count} agent is healthy! Score: {score}/100",
+      "notification_body_all_healthy_other": "All {count} agents are healthy! Score: {score}/100",
+      "notification_body_with_issues": "Score: {score}/100 · {issues} across {agents} ({breakdown})",
+      "notification_issues_one": "{count} issue",
+      "notification_issues_other": "{count} issues",
+      "notification_agents_one": "{count} agent",
+      "notification_agents_other": "{count} agents",
+      "notification_breakdown": "{errors} errors, {warnings} warnings"
     },
     "health_issue": {
       "apply_fix": "Apply Fix: {label}",
       "manual_action": "Manual action needed",
       "category_config": "Configuration",
       "category_runtime": "Runtime",
-      "category_policy": "Policy"
+      "category_policy": "Policy",
+      "fix_applied": "Applied fix: {label}",
+      "fix_failed": "Failed to apply fix: {error}",
+      "auto_match_blocked_one": "Auto-match blocked: credential service {services} has multiple credentials. Pick the right one manually before applying.",
+      "auto_match_blocked_other": "Auto-match blocked: credential services {services} have multiple credentials. Pick the right one manually before applying."
+    },
+    "health_proposals": {
+      "link_credential": "Link {connector} credential",
+      "auto_match_credentials": "Auto-match all credentials",
+      "add_daily_schedule": "Add daily 9 AM schedule",
+      "switch_retry_3x": "Switch to retry-3x",
+      "add_default_use_case": "Add default use case",
+      "enable_first_run_review": "Enable first-run review"
     },
     "health_score": {
       "healthy": "Healthy",
@@ -5183,6 +5208,15 @@
       "total_traffic": "Total Traffic",
       "total_errors": "Total Errors",
       "traffic_errors_chart": "Traffic & Errors",
+      "tool_performance": "Tool Performance",
+      "tool_performance_subtitle": "Latency & error rate per tool",
+      "tool_performance_col_tool": "Tool",
+      "tool_performance_col_runs": "Runs",
+      "tool_performance_col_avg": "Avg",
+      "tool_performance_col_max": "Max",
+      "tool_performance_col_errors": "Errors",
+      "tool_performance_empty": "No tool runs in this window",
+      "tool_performance_unit_ms": "ms",
       "top_performers": "Top Performers",
       "metric_help": "Metric Help",
       "how_calculated": "How is this calculated?",
@@ -9256,7 +9290,9 @@
       "use_button": "Use this recipe",
       "dismiss": "Dismiss",
       "score_label": "Match",
-      "applied_toast": "Applied recipe: {name}"
+      "applied_toast": "Applied recipe: {name}",
+      "run_now": "Run now",
+      "run_now_toast": "Opening {name} in the recipe playground"
     }
   },
   "recipe_shared": {
@@ -10526,6 +10562,11 @@
       "setup_desktop_file_changes_desc": "Watch declared work-roots for create / modify / delete events.",
       "setup_desktop_app_focus_label": "App focus",
       "setup_desktop_app_focus_desc": "Track which app is in the foreground. Window titles redacted at capture (paths reduced to filenames, emails masked).",
+      "setup_desktop_cli_session_label": "Active Claude CLI session",
+      "setup_desktop_cli_session_desc": "Let opted-in personas read your most recent Claude CLI conversation as prompt context. Per-persona opt-in required; only the last 8 turns are extracted, capped to 500 chars each.",
+      "sensory_cli_reads_empty": "No CLI session reads yet.",
+      "sensory_cli_reads_empty_hint": "When a persona with CLI awareness opted in fires while you're mid-conversation in `claude`, the read will be logged here.",
+      "sensory_cli_reads_row_summary": "{persona} read {count} turns",
       "setup_desktop_signals_count_one": "{count} signal in the rolling window",
       "setup_desktop_signals_count_other": "{count} signals in the rolling window",
       "setup_desktop_load_failed": "Couldn't load desktop-awareness state — check the backend connection.",

@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { AppWindow, Clipboard, FileText, Trash2, X } from 'lucide-react';
+import { AppWindow, Clipboard, FileText, Terminal, Trash2, X } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { useTranslation } from '@/i18n/useTranslation';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import {
   companionDeleteSensorySignal,
+  companionListCliSessionReads,
   companionListSensorySignals,
+  type CliSessionReadAuditView,
   type SensorySignalEntry,
   type SensorySource,
 } from '@/api/companion';
@@ -37,20 +39,32 @@ export function SensorySignalsModal({
   const { t } = useTranslation();
   const [filter, setFilter] = useState<SensorySource | 'all'>('all');
   const [signals, setSignals] = useState<SensorySignalEntry[] | null>(null);
+  const [cliReads, setCliReads] = useState<CliSessionReadAuditView[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     try {
-      const list = await companionListSensorySignals(
-        filter === 'all' ? undefined : filter,
-        100,
-      );
-      setSignals(list);
+      if (filter === 'cli_session') {
+        const list = await companionListCliSessionReads(100);
+        setCliReads(list);
+        setSignals(null);
+      } else {
+        const list = await companionListSensorySignals(
+          filter === 'all' ? undefined : filter,
+          100,
+        );
+        setSignals(list);
+        setCliReads(null);
+      }
       setLoadError(null);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setLoadError(msg);
-      silentCatch('companion_list_sensory_signals')(err);
+      silentCatch(
+        filter === 'cli_session'
+          ? 'companion_list_cli_session_reads'
+          : 'companion_list_sensory_signals',
+      )(err);
     }
   }, [filter]);
 
@@ -59,6 +73,7 @@ export function SensorySignalsModal({
   useEffect(() => {
     if (!open) {
       setSignals(null);
+      setCliReads(null);
       return;
     }
     void refresh();
@@ -87,6 +102,10 @@ export function SensorySignalsModal({
       {
         id: 'app_focus',
         label: t.plugins.companion.setup_desktop_app_focus_label,
+      },
+      {
+        id: 'cli_session',
+        label: t.plugins.companion.setup_desktop_cli_session_label,
       },
     ],
     [t],
@@ -148,6 +167,28 @@ export function SensorySignalsModal({
             <div className="px-3 py-6 typo-body text-rose-400">
               {t.plugins.companion.setup_desktop_load_failed}
             </div>
+          ) : filter === 'cli_session' ? (
+            cliReads === null ? (
+              <div className="flex items-center gap-3 px-3 py-6 typo-body text-foreground/60">
+                <LoadingSpinner size="sm" />
+                <span>{t.plugins.companion.loading}</span>
+              </div>
+            ) : cliReads.length === 0 ? (
+              <div className="px-3 py-10 text-center">
+                <div className="typo-body text-foreground/60">
+                  {t.plugins.companion.sensory_cli_reads_empty}
+                </div>
+                <div className="typo-caption text-foreground/45 mt-1">
+                  {t.plugins.companion.sensory_cli_reads_empty_hint}
+                </div>
+              </div>
+            ) : (
+              <ul className="divide-y divide-foreground/5">
+                {cliReads.map((r) => (
+                  <CliReadRow key={r.id} audit={r} />
+                ))}
+              </ul>
+            )
           ) : signals === null ? (
             <div className="flex items-center gap-3 px-3 py-6 typo-body text-foreground/60">
               <LoadingSpinner size="sm" />
@@ -238,5 +279,29 @@ function formatAge(
   return t.plugins.companion.sensory_age_hours.replace(
     '{n}',
     String(Math.floor(ageSecs / 3600)),
+  );
+}
+
+function CliReadRow({ audit }: { audit: CliSessionReadAuditView }) {
+  const { t } = useTranslation();
+  const nowSecs = Math.floor(Date.now() / 1000);
+  const ageSecs = Math.max(0, nowSecs - audit.readAt);
+  return (
+    <li className="flex items-start gap-3 px-3 py-2.5">
+      <Terminal
+        className="w-4 h-4 mt-0.5 text-cyan-400 shrink-0"
+        aria-hidden
+      />
+      <div className="flex-1 min-w-0">
+        <div className="typo-body text-foreground break-words">
+          {t.plugins.companion.sensory_cli_reads_row_summary
+            .replace('{persona}', audit.personaName)
+            .replace('{count}', String(audit.turnCount))}
+        </div>
+        <div className="typo-caption text-foreground/50 mt-0.5">
+          {audit.project} · {formatAge(t, ageSecs)}
+        </div>
+      </div>
+    </li>
   );
 }
