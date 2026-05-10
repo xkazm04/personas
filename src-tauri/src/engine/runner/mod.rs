@@ -1103,6 +1103,17 @@ pub async fn run_execution(
         let _ = crate::db::repos::execution::traces::save(&pool, &final_trace);
         crate::langfuse::exporter::export_trace(&final_trace);
 
+        // tracing::error! goes to the sentry_tracing layer (src/logging.rs) as
+        // a full Sentry event; logger.log() writes to the per-execution disk
+        // log. Both wanted: Sentry for production diagnostics, disk log for
+        // local trace browsing. Architect ADR:
+        // 2026-05-10-resolveerror-breadcrumb-spawn-tracing.
+        tracing::error!(
+            execution_id = %execution_id,
+            persona_id = %persona.id,
+            "All CLI providers failed to spawn: {}",
+            error_msg
+        );
         logger.log(&format!("[ERROR] {error_msg}"));
         logger.close();
 

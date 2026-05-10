@@ -11,8 +11,40 @@
  *   const { message, suggestion } = resolveErrorT(rawError);
  *   const label = friendlySeverityT('critical'); // "Needs immediate attention" (translated)
  */
+import * as Sentry from '@sentry/react';
 import type { Translations } from './en';
 import { resolveError, type FriendlyErrorCategory } from '@/lib/errors/errorRegistry';
+
+// Breadcrumb dedupe window — when the same raw error gets rendered repeatedly
+// (e.g. a hook firing on every render until the error clears), avoid flooding
+// Sentry's breadcrumb buffer with duplicates. The first occurrence wins.
+const BREADCRUMB_DEDUP_MS = 1000;
+let _lastBreadcrumbKey = '';
+let _lastBreadcrumbAt = 0;
+
+function recordResolveBreadcrumb(raw: string, keyPrefix: string | null) {
+  const now = Date.now();
+  // Dedupe key includes prefix so a re-classification (same raw → different
+  // resolved key) still surfaces.
+  const dedupeKey = `${keyPrefix ?? '_unmatched'}::${raw}`;
+  if (dedupeKey === _lastBreadcrumbKey && now - _lastBreadcrumbAt < BREADCRUMB_DEDUP_MS) {
+    return;
+  }
+  _lastBreadcrumbKey = dedupeKey;
+  _lastBreadcrumbAt = now;
+
+  // Sentry's before_breadcrumb hook (src/lib/sentry.ts) already scrubs PII
+  // from the message field and from data fields. Calling addBreadcrumb is
+  // safe before Sentry.init (no-op) and after (recorded on the active scope).
+  Sentry.addBreadcrumb({
+    category: 'error.resolved',
+    level: 'warning',
+    message: raw,
+    data: {
+      keyPrefix: keyPrefix ?? '_unmatched',
+    },
+  });
+}
 
 export interface TranslatedError {
   message: string;
@@ -90,6 +122,12 @@ export function resolveErrorTranslated(t: Translations, raw: string | null | und
         ? raw.includes(rule.match)
         : rule.match.test(raw);
     if (matches) {
+      // Record a Sentry breadcrumb with the raw error BEFORE the rewrite,
+      // so an operator looking at a Sentry user-report ticket sees the
+      // raw "Failed to build HTTP client: connect: certificate verify
+      // failed" rather than only the friendly "Network is offline" copy.
+      // Architect ADR: 2026-05-10-resolveerror-breadcrumb-spawn-tracing.
+      recordResolveBreadcrumb(raw, rule.keyPrefix);
       return {
         message: getRegistryString(registry, `${rule.keyPrefix}_message`) ?? raw,
         suggestion: getRegistryString(registry, `${rule.keyPrefix}_suggestion`) ?? '',
@@ -108,9 +146,15 @@ export function resolveErrorTranslated(t: Translations, raw: string | null | und
   // is strictly better than the raw Rust error string.
   const englishFriendly = resolveError(raw);
   if (englishFriendly.category !== 'unclassified') {
+    // englishFriendly already records its own breadcrumb inside
+    // resolveError() — don't double-record from here.
     return englishFriendly;
   }
 
+  // Unmatched: still record the raw error so an unknown shape doesn't
+  // disappear silently. The unclassified fallback returned to the user
+  // is generic; Sentry needs the raw string for the operator's sake.
+  recordResolveBreadcrumb(raw, null);
   return fallback;
 }
 

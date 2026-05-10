@@ -4,6 +4,8 @@
 // with recovery suggestions.
 // ---------------------------------------------------------------------------
 
+import * as Sentry from '@sentry/react';
+
 /**
  * High-level intent class for a friendly error. Surfaces to UI so transient,
  * self-healing failures can be presented as "we caught that for you" rather
@@ -524,6 +526,13 @@ const GENERIC_FALLBACK: FriendlyError = {
 /**
  * Resolve a raw error string to a user-friendly message + recovery suggestion.
  * Returns a generic fallback for unrecognised errors.
+ *
+ * Records a Sentry breadcrumb with the raw error before the rewrite so
+ * operators reviewing user-report tickets see the raw error string, not
+ * only the friendly copy. Dedup window is 1s — a hook firing every render
+ * with the same raw error doesn't flood the breadcrumb buffer.
+ *
+ * Architect ADR: 2026-05-10-resolveerror-breadcrumb-spawn-tracing.
  */
 export function resolveError(raw: string | null | undefined): FriendlyError {
   if (!raw) return GENERIC_FALLBACK;
@@ -533,10 +542,45 @@ export function resolveError(raw: string | null | undefined): FriendlyError {
       typeof rule.match === 'string'
         ? raw.includes(rule.match)
         : rule.match.test(raw);
-    if (matches) return rule.error;
+    if (matches) {
+      recordRegistryBreadcrumb(raw, rule.error.category);
+      return rule.error;
+    }
   }
 
+  recordRegistryBreadcrumb(raw, 'unclassified');
   return GENERIC_FALLBACK;
+}
+
+// Local breadcrumb dedupe — same shape as useTranslatedError, but the two
+// helpers track independent state because they are independent entry
+// points. Calling resolveErrorTranslated chains into resolveError ONLY for
+// unmatched-translated cases, so cross-helper dedup would risk dropping a
+// breadcrumb when a different render triggers a different code path.
+const REGISTRY_BREADCRUMB_DEDUP_MS = 1000;
+let _lastRegistryBreadcrumbKey = '';
+let _lastRegistryBreadcrumbAt = 0;
+
+function recordRegistryBreadcrumb(raw: string, category: FriendlyErrorCategory) {
+  const now = Date.now();
+  const dedupeKey = `${category}::${raw}`;
+  if (
+    dedupeKey === _lastRegistryBreadcrumbKey &&
+    now - _lastRegistryBreadcrumbAt < REGISTRY_BREADCRUMB_DEDUP_MS
+  ) {
+    return;
+  }
+  _lastRegistryBreadcrumbKey = dedupeKey;
+  _lastRegistryBreadcrumbAt = now;
+
+  // Sentry's before_breadcrumb hook (src/lib/sentry.ts) already scrubs PII.
+  // Safe to call before Sentry.init (no-op).
+  Sentry.addBreadcrumb({
+    category: 'error.resolved',
+    level: 'warning',
+    message: raw,
+    data: { resolvedCategory: category },
+  });
 }
 
 // ---------------------------------------------------------------------------
