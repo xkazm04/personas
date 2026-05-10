@@ -7,7 +7,7 @@ import {
   runDirectorOnPersona,
   type DirectorVerdictRow,
 } from '@/api/director';
-import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
+import { updateManualReviewStatus } from '@/api/overview/reviews';
 
 // Panel that shows the Director's coaching verdicts for one persona and lets
 // the user trigger a fresh evaluation. Each verdict renders as a card with
@@ -50,10 +50,10 @@ export default function OpsDirectorPanel({ personaId }: { personaId: string }) {
   const handleResolve = useCallback(
     async (reviewId: string, outcome: 'accepted' | 'rejected') => {
       try {
-        await invoke('update_manual_review_status', {
-          id: reviewId,
-          status: outcome === 'accepted' ? 'resolved' : 'dismissed',
-        });
+        await updateManualReviewStatus(
+          reviewId,
+          outcome === 'accepted' ? 'resolved' : 'rejected',
+        );
         await refresh();
       } catch (e) {
         toastCatch('OpsDirectorPanel:resolve')(e);
