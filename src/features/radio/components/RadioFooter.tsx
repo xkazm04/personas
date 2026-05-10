@@ -43,6 +43,18 @@ function isFatalYouTubeError(code: number): boolean {
 }
 
 /**
+ * YouTube video IDs are exactly 11 chars from `[A-Za-z0-9_-]`. Anything
+ * outside that shape is guaranteed-broken (typoed paste, accidentally a
+ * full URL, empty, etc.) — the IFrame Player would still eventually
+ * fire `onError 2`, but we'd burn ~1-2s waiting for that round-trip.
+ * Validate up front so we can skip instantly.
+ */
+const YT_VIDEO_ID_RE = /^[A-Za-z0-9_-]{11}$/;
+function isValidYouTubeVideoId(videoId: string): boolean {
+  return YT_VIDEO_ID_RE.test(videoId);
+}
+
+/**
  * Radio controller. Renders inside `DesktopFooter` as a centered child.
  * Owns two playback engines:
  *
@@ -213,11 +225,22 @@ export default function RadioFooter() {
 
     if (currentVideoIdRef.current !== videoId) {
       currentVideoIdRef.current = videoId;
+      cancelWatchdog();
+      lastReportedRef.current = 'stopped';
+
+      // Fast path: malformed videoId (typoed paste, accidentally a full
+      // URL, etc.) — skip without round-tripping through the IFrame
+      // Player's onError. The backend's `next` will reshuffle on wrap,
+      // and the (rare) all-tracks-broken case still terminates because
+      // each skip advances the cursor.
+      if (!isValidYouTubeVideoId(videoId)) {
+        radioTrackEnded().catch(silentCatch('radio:track-ended-malformed'));
+        return;
+      }
+
       const startSeconds =
         (state?.currentStationId &&
           state.stationCursors?.[state.currentStationId]?.positionSec) || 0;
-      cancelWatchdog();
-      lastReportedRef.current = 'stopped';
       player.loadVideo(videoId, { startSeconds, autoplay: desiredPlaying });
       if (desiredPlaying) {
         armWatchdog(nowPlaying.station.name, () => {

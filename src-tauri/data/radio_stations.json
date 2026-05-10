@@ -45,25 +45,37 @@
       "id": "lofi",
       "slug": "lofi",
       "name": "Lofi",
-      "description": "Curated lo-fi hip hop mixes from YouTube. Skip-on-error if a track is unembeddable.",
+      "description": "Curated lo-fi hip hop mixes from YouTube. Skip-on-error if a track is unembeddable or malformed.",
       "accentColor": "#7ac4ff",
       "sourceUrl": "https://www.youtube.com/",
       "sourceLabel": "YouTube",
       "source": {
         "kind": "youtubeTracks",
         "tracks": [
-          {
-            "videoId": "CFGLoQIhmow",
-            "title": "lofi hip hop mix - beats to relax/study to (Part 1)",
-            "artist": "Lofi Girl",
-            "durationSec": null
-          },
-          {
-            "videoId": "8b3fqIBrNW0",
-            "title": "lofi hip hop mix - beats to relax/study to (Part 2)",
-            "artist": "Lofi Girl",
-            "durationSec": null
-          }
+          { "videoId": "g7QdQjYqE5c", "title": "Lofi Mix 01", "artist": "Lofi", "durationSec": null },
+          { "videoId": "5xkmrH302iw", "title": "Lofi Mix 02", "artist": "Lofi", "durationSec": null },
+          { "videoId": "j2laaDrPXwk", "title": "Lofi Mix 03", "artist": "Lofi", "durationSec": null },
+          { "videoId": "HZY5JVXJKZE", "title": "Lofi Mix 04", "artist": "Lofi", "durationSec": null },
+          { "videoId": "e5hJ0i2w558", "title": "Lofi Mix 05", "artist": "Lofi", "durationSec": null },
+          { "videoId": "rBV2DFYjKLM", "title": "Lofi Mix 06", "artist": "Lofi", "durationSec": null },
+          { "videoId": "e3Wyhc6aYew", "title": "Lofi Mix 07", "artist": "Lofi", "durationSec": null },
+          { "videoId": "RZAHTi4cR8s", "title": "Lofi Mix 08", "artist": "Lofi", "durationSec": null },
+          { "videoId": "CG0MPrBylg8", "title": "Lofi Mix 09", "artist": "Lofi", "durationSec": null },
+          { "videoId": "eCbuk3M_I5g", "title": "Lofi Mix 10", "artist": "Lofi", "durationSec": null },
+          { "videoId": "sa1ntltm1xs", "title": "Lofi Mix 11", "artist": "Lofi", "durationSec": null },
+          { "videoId": "https://broken-not-an-id", "title": "Lofi Mix 12 (broken — should auto-skip)", "artist": "Lofi", "durationSec": null },
+          { "videoId": "GSREE8dawd0", "title": "Lofi Mix 13", "artist": "Lofi", "durationSec": null },
+          { "videoId": "iJKz5WQXZv4", "title": "Lofi Mix 14", "artist": "Lofi", "durationSec": null },
+          { "videoId": "LXImVTlyANk", "title": "Lofi Mix 15", "artist": "Lofi", "durationSec": null },
+          { "videoId": "bF_w7mGjwB4", "title": "Lofi Mix 16", "artist": "Lofi", "durationSec": null },
+          { "videoId": "-6mVnS516HM", "title": "Lofi Mix 17", "artist": "Lofi", "durationSec": null },
+          { "videoId": "FQ3kO6wjGOc", "title": "Lofi Mix 18", "artist": "Lofi", "durationSec": null },
+          { "videoId": "8uOUPEHsyN8", "title": "Lofi Mix 19", "artist": "Lofi", "durationSec": null },
+          { "videoId": "eBvPEc_F1LA", "title": "Lofi Mix 20", "artist": "Lofi", "durationSec": null },
+          { "videoId": "9nvytHNsz5M", "title": "Lofi Mix 21", "artist": "Lofi", "durationSec": null },
+          { "videoId": "t7RC4jiQVio", "title": "Lofi Mix 22", "artist": "Lofi", "durationSec": null },
+          { "videoId": "a11Tu0w5iek", "title": "Lofi Mix 23", "artist": "Lofi", "durationSec": null },
+          { "videoId": "ihPTNp7370s", "title": "Lofi Mix 24", "artist": "Lofi", "durationSec": null }
         ]
       }
     },
