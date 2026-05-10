@@ -243,6 +243,10 @@ pub const PRIVILEGED_COMMANDS: &[&str] = &[
     // Signing
     "sign_document",
     "verify_document",
+    // Artist -- Transcription (reads/writes user-supplied media paths; gated to
+    // catch renderer-context exploits steering the file_path arg at sensitive files)
+    "artist_transcribe_media",
+    "artist_load_transcript",
     // Data Portability — NOT in PRIVILEGED_COMMANDS because the wrapper-level
     // header check fails intermittently on Windows WebView2 (the monkey-patch
     // may not reliably forward headers for commands that open native file dialogs).
