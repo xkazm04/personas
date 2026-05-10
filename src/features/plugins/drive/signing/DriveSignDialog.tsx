@@ -5,8 +5,11 @@ import type { DriveEntry } from "@/api/drive";
 import { useTranslation } from "@/i18n/useTranslation";
 import { toastCatch } from "@/lib/silentCatch";
 import { useToastStore } from "@/stores/toastStore";
+import { BaseModal } from "@/features/shared/components/modals";
 
 import type { useSigning } from "./useSigning";
+
+const TITLE_ID = "drive-sign-dialog-title";
 
 interface Props {
   entry: DriveEntry;
@@ -35,12 +38,7 @@ export function DriveSignDialog({
     ensureIdentity().catch(() => {
       /* surfaced inline below */
     });
-    const esc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", esc);
-    return () => document.removeEventListener("keydown", esc);
-  }, [ensureIdentity, onClose]);
+  }, [ensureIdentity]);
 
   const handleSign = async () => {
     setPhase("signing");
@@ -80,16 +78,18 @@ export function DriveSignDialog({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-[9998] flex items-center justify-center bg-background/60 surface-blur-modal"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
+    <BaseModal
+      isOpen
+      onClose={onClose}
+      titleId={TITLE_ID}
+      portal
+      maxWidthClass="max-w-none"
+      panelClassName="w-[520px] max-h-[80vh] flex flex-col rounded-modal border border-primary/25 bg-background/95 shadow-elevation-3"
     >
-      <div className="w-[520px] max-h-[80vh] flex flex-col rounded-modal border border-primary/25 bg-background/95 shadow-elevation-3">
+      <div className="contents">
         <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/15">
           <FileSignature className="w-4 h-4 text-rose-300" />
-          <div className="typo-section-title flex-1 truncate">
+          <div id={TITLE_ID} className="typo-section-title flex-1 truncate">
             {t.plugins.doc_signing.sign_heading}
           </div>
           <button
@@ -211,6 +211,6 @@ export function DriveSignDialog({
           )}
         </div>
       </div>
-    </div>
+    </BaseModal>
   );
 }
