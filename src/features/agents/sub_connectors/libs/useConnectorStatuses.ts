@@ -6,10 +6,12 @@ import { sendAppNotification } from '@/api/system/system';
 import { silentCatch, toastCatch } from "@/lib/silentCatch";
 import { useSelectedCredentialLinks } from '@/stores/selectors/personaSelectors';
 import { mutateCredentialLink } from '@/hooks/design/core/useDesignContextMutator';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { ConnectorStatus, ConnectorReadiness } from './connectorTypes';
 import { deriveReadiness } from './connectorTypes';
 
 export function useConnectorStatuses() {
+  const { t, tx } = useTranslation();
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const credentials = useVaultStore((s) => s.credentials);
   const fetchCredentials = useVaultStore((s) => s.fetchCredentials);
@@ -95,12 +97,12 @@ export function useConnectorStatuses() {
     } catch (err) {
       updateStatus(name, {
         testing: false,
-        result: { success: false, message: err instanceof Error ? err.message : 'Healthcheck failed' },
+        result: { success: false, message: err instanceof Error ? err.message : t.agents.connectors.test_healthcheck_failed_default },
       });
     } finally {
       inFlightTestsRef.current.delete(name);
     }
-  }, [healthcheckCredential, updateStatus]);
+  }, [healthcheckCredential, updateStatus, t]);
 
   // Reset auto-test guard when credentialId changes so re-linking triggers a fresh test.
   const prevCredentialIdsRef = useRef<Map<string, string | null>>(new Map());
@@ -146,10 +148,10 @@ export function useConnectorStatuses() {
       await Promise.allSettled(
         testable.map((status) => testConnector(status.name, status.credentialId!)),
       );
-      const persona = selectedPersona?.name ?? 'Persona';
+      const persona = selectedPersona?.name ?? t.agents.connectors.test_persona_fallback;
       sendAppNotification(
-        'Connector Tests Complete',
-        `${persona}: All ${testable.length} connector tests finished.`,
+        t.agents.connectors.test_complete_notification_title,
+        tx(t.agents.connectors.test_complete_notification_body, { persona, count: testable.length }),
       ).catch(silentCatch("useConnectorStatuses:sendTestCompleteNotification"));
     } finally {
       testAllActiveRef.current = false;
@@ -174,7 +176,7 @@ export function useConnectorStatuses() {
         setStatuses((prev) =>
           prev.map((s) =>
             s.name === connectorName
-              ? { ...s, credentialId: null, credentialName: null, result: null, linkError: `Link failed: ${errorMsg}` }
+              ? { ...s, credentialId: null, credentialName: null, result: null, linkError: tx(t.agents.connectors.test_link_failed, { error: errorMsg }) }
               : s,
           ),
         );
@@ -183,7 +185,7 @@ export function useConnectorStatuses() {
     }
     await testConnector(connectorName, credentialId);
     return true;
-  }, [selectedPersona, testConnector]);
+  }, [selectedPersona, testConnector, t, tx]);
 
   const clearLinkError = useCallback((connectorName: string) => {
     updateStatus(connectorName, { linkError: null });

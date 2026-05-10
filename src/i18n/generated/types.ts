@@ -1318,6 +1318,20 @@ export type Translations = {
       sub_triggers_title: string;
       sub_suggested: string;
       sub_filter: string;
+      lifecycle_error_load_triggers: string;
+      lifecycle_error_load_subscriptions: string;
+      lifecycle_error_activate_trigger: string;
+      lifecycle_error_activate_subscription: string;
+      lifecycle_error_retire_trigger: string;
+      lifecycle_error_retire_subscription: string;
+      lifecycle_error_delete_persists: string;
+      auto_error_deploy_check_credentials: string;
+      auto_error_deploy_generic: string;
+      test_healthcheck_failed_default: string;
+      test_link_failed: string;
+      test_persona_fallback: string;
+      test_complete_notification_title: string;
+      test_complete_notification_body: string;
     };
     editor_chrome: {
       tab_activity: string;
@@ -2637,6 +2651,43 @@ export type Translations = {
       last_run: string;
       rank: string;
       view_in_leaderboard: string;
+    };
+    messaging_picker: {
+      title: string;
+      subtitle_inbox_only: string;
+      subtitle_with_count: string;
+      apply_inbox_only: string;
+      apply_with_count: string;
+      builtin_label: string;
+      builtin_help: string;
+      builtin_always_on: string;
+      titlebar_label: string;
+      empty_title: string;
+      empty_help: string;
+      section_external: string;
+      section_configured: string;
+      section_available: string;
+      fanout_help: string;
+      fallback_hint: string;
+      incomplete_warning: string;
+      remove_chip: string;
+      attach_inbox_only: string;
+      attach_with_count: string;
+      attach_needs_setup: string;
+      field_labels: {
+        channel: string;
+        chat_id: string;
+        channel_id: string;
+        team_id: string;
+        to: string;
+      };
+      field_placeholders: {
+        channel: string;
+        chat_id: string;
+        channel_id: string;
+        team_id: string;
+        to: string;
+      };
     };
   };
   vault: {

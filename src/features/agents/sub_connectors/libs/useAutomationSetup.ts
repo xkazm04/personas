@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { errMsg } from '@/stores/storeTypes';
 import { useVaultStore } from "@/stores/vaultStore";
 import { useAgentStore } from '@/stores/agentStore';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useAutomationDesign } from '@/hooks/design/core/useAutomationDesign';
 import type { AutomationPlatform } from '@/lib/bindings/AutomationPlatform';
 import type { AutomationFallbackMode } from '@/lib/bindings/AutomationFallbackMode';
@@ -60,6 +61,7 @@ export function deriveStageIndex(lines: string[]): number {
 }
 
 export function useAutomationSetup(personaId: string, editAutomationId?: string | null) {
+  const { t } = useTranslation();
   const design = useAutomationDesign();
   const automations = useVaultStore((s) => s.automations);
   const editAutomation = editAutomationId
@@ -200,8 +202,8 @@ export function useAutomationSetup(personaId: string, editAutomationId?: string 
         useCaseId,
       });
       if (result) { setDeployResult(result); setLocalPhase('success'); void fetchAutomations(personaId); }
-      else { setLocalPhase(null); setDeployError('Deployment failed. Check your platform credentials and try again.'); }
-    } catch (err) { setLocalPhase(null); setDeployError(errMsg(err, 'Automation deployment failed')); }
+      else { setLocalPhase(null); setDeployError(t.agents.connectors.auto_error_deploy_check_credentials); }
+    } catch (err) { setLocalPhase(null); setDeployError(errMsg(err, t.agents.connectors.auto_error_deploy_generic)); }
     finally { deployInFlightRef.current = false; }
   };
 

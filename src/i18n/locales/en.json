@@ -1311,7 +1311,21 @@
       "sub_confirm": "Confirm?",
       "sub_triggers_title": "Triggers & Subscriptions",
       "sub_suggested": "{count} suggested",
-      "sub_filter": "filter: {filter}"
+      "sub_filter": "filter: {filter}",
+      "lifecycle_error_load_triggers": "Failed to load triggers: {error}",
+      "lifecycle_error_load_subscriptions": "Failed to load subscriptions: {error}",
+      "lifecycle_error_activate_trigger": "Failed to activate trigger",
+      "lifecycle_error_activate_subscription": "Failed to activate subscription",
+      "lifecycle_error_retire_trigger": "Failed to delete trigger",
+      "lifecycle_error_retire_subscription": "Failed to delete subscription",
+      "lifecycle_error_delete_persists": "Delete failed. Subscription may still exist.",
+      "auto_error_deploy_check_credentials": "Deployment failed. Check your platform credentials and try again.",
+      "auto_error_deploy_generic": "Automation deployment failed",
+      "test_healthcheck_failed_default": "Healthcheck failed",
+      "test_link_failed": "Link failed: {error}",
+      "test_persona_fallback": "Persona",
+      "test_complete_notification_title": "Connector Tests Complete",
+      "test_complete_notification_body": "{persona}: All {count} connector tests finished."
     },
     "editor_chrome": {
       "tab_activity": "Activity",
@@ -2631,6 +2645,43 @@
       "last_run": "Last run",
       "rank": "Rank",
       "view_in_leaderboard": "View in Leaderboard"
+    },
+    "messaging_picker": {
+      "title": "Send messages where?",
+      "subtitle_inbox_only": "Only the persona inbox is selected — pick from the vault to also send to Slack, Telegram, Discord, or Teams",
+      "subtitle_with_count": "Persona inbox + {count} external — fan-out, every selected channel fires",
+      "apply_inbox_only": "Use persona inbox only",
+      "apply_with_count": "Use {count} channel(s)",
+      "builtin_label": "Persona inbox",
+      "builtin_help": "Always on — the in-app inbox always receives this persona's messages",
+      "builtin_always_on": "Always selected",
+      "titlebar_label": "Titlebar notification",
+      "empty_title": "No messaging connectors in the vault yet",
+      "empty_help": "Add a Slack, Telegram, Discord, or Teams credential in the vault, then come back here to attach it as a delivery channel.",
+      "section_external": "Also send to",
+      "section_configured": "Configured channels",
+      "section_available": "Add another",
+      "fanout_help": "All selected channels fire in parallel — failures on one don't block the others.",
+      "fallback_hint": "Set a destination here, or leave blank to fall back to the credential's selected resource at delivery time. If neither is set, the first message will surface a clear error.",
+      "incomplete_warning": "{count} need destination",
+      "remove_chip": "Remove {name}",
+      "attach_inbox_only": "Pick from vault",
+      "attach_with_count": "{count} channel(s)",
+      "attach_needs_setup": "{count} need setup",
+      "field_labels": {
+        "channel": "Slack channel",
+        "chat_id": "Telegram chat",
+        "channel_id": "Discord/Teams channel ID",
+        "team_id": "Teams team ID",
+        "to": "Recipient address"
+      },
+      "field_placeholders": {
+        "channel": "#general or C0123ABC",
+        "chat_id": "@username or 123456789",
+        "channel_id": "Numeric channel ID",
+        "team_id": "Microsoft Teams team ID",
+        "to": "user@example.com"
+      }
     }
   },
   "vault": {

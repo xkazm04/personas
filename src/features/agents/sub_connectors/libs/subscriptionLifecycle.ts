@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { parseDesignContext } from '@/features/shared/components/use-cases/UseCasesList';
 import { createLogger } from "@/lib/log";
+import { useTranslation } from '@/i18n/useTranslation';
 
 const logger = createLogger("subscription-lifecycle");
 import { mutateSingleUseCase } from '@/hooks/design/core/useDesignContextMutator';
@@ -40,6 +41,7 @@ export interface SubscriptionManagerActions {
 export function useSubscriptionManager(
   persona: PersonaWithDetails | null,
 ): SubscriptionManagerState & SubscriptionManagerActions {
+  const { t, tx } = useTranslation();
   const personaIdRef = useRef<string | null>(persona?.id ?? null);
   useEffect(() => { personaIdRef.current = persona?.id ?? null; }, [persona?.id]);
 
@@ -67,12 +69,12 @@ export function useSubscriptionManager(
     setLoading(true);
 
     const loadTriggers = listTriggers(persona.id)
-      .then((t) => { if (!cancelled) setDbTriggers(t); })
-      .catch((e) => { if (!cancelled) setError((prev) => prev ?? `Failed to load triggers: ${e instanceof Error ? e.message : 'unknown error'}`); });
+      .then((triggers) => { if (!cancelled) setDbTriggers(triggers); })
+      .catch((e) => { if (!cancelled) setError((prev) => prev ?? tx(t.agents.connectors.lifecycle_error_load_triggers, { error: e instanceof Error ? e.message : 'unknown error' })); });
 
     const loadSubs = listSubscriptions(persona.id)
       .then((s) => { if (!cancelled) setDbSubscriptions(s); })
-      .catch((e) => { if (!cancelled) setError((prev) => prev ?? `Failed to load subscriptions: ${e instanceof Error ? e.message : 'unknown error'}`); });
+      .catch((e) => { if (!cancelled) setError((prev) => prev ?? tx(t.agents.connectors.lifecycle_error_load_subscriptions, { error: e instanceof Error ? e.message : 'unknown error' })); });
 
     Promise.allSettled([loadTriggers, loadSubs]).then(() => {
       if (!cancelled) setLoading(false);
@@ -137,12 +139,12 @@ export function useSubscriptionManager(
     } catch (e) {
       if (controller.signal.aborted) return;
       logger.error('Failed to activate subscription', { error: e });
-      setError(`Failed to activate ${item.kind === 'trigger' ? 'trigger' : 'subscription'}`);
+      setError(item.kind === 'trigger' ? t.agents.connectors.lifecycle_error_activate_trigger : t.agents.connectors.lifecycle_error_activate_subscription);
     } finally {
       controllersRef.current.delete(item.key);
       setActivating((prev) => { const next = new Set(prev); next.delete(item.key); return next; });
     }
-  }, [persona]);
+  }, [persona, t, tx]);
 
   const retire = useCallback(async (item: UnifiedSubscription) => {
     if (!persona) return;
@@ -153,14 +155,14 @@ export function useSubscriptionManager(
         setDbTriggers((prev) => prev.filter((t) => t.id !== item.dbTriggerId));
       } else if (item.dbSubscriptionId) {
         const deleted = await deleteSubscription(item.dbSubscriptionId);
-        if (!deleted) { setError('Delete failed. Subscription may still exist.'); return; }
+        if (!deleted) { setError(t.agents.connectors.lifecycle_error_delete_persists); return; }
         setDbSubscriptions((prev) => prev.filter((s) => s.id !== item.dbSubscriptionId));
       }
     } catch (e) {
       logger.error('Failed to retire subscription', { error: e });
-      setError(`Failed to delete ${item.kind === 'trigger' ? 'trigger' : 'subscription'}`);
+      setError(item.kind === 'trigger' ? t.agents.connectors.lifecycle_error_retire_trigger : t.agents.connectors.lifecycle_error_retire_subscription);
     }
-  }, [persona]);
+  }, [persona, t]);
 
   const addSuggested = useCallback((useCaseId: string, sub: UseCaseEventSubscription) => {
     if (!persona) return;
