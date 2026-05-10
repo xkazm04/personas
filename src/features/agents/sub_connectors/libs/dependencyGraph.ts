@@ -1,6 +1,7 @@
 import type { CredentialMetadata } from '@/lib/types/types';
 import type { PersonaToolDefinition } from '@/lib/bindings/PersonaToolDefinition';
 import type { PersonaAutomation } from '@/lib/bindings/PersonaAutomation';
+import { silentCatch } from "@/lib/silentCatch";
 import type { ConnectorStatus } from './connectorTypes';
 import { deriveReadiness } from './connectorTypes';
 
@@ -194,8 +195,8 @@ export function buildPersonaDependencyGraph(
             }
           }
         }
-      } catch {
-        // ignore invalid JSON
+      } catch (err) {
+        silentCatch("dependencyGraph:credentialMapping-parse")(err);
       }
     }
   }

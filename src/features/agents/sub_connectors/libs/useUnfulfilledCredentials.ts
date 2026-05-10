@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useAgentStore } from "@/stores/agentStore";
 import { useVaultStore } from "@/stores/vaultStore";
+import { silentCatch } from "@/lib/silentCatch";
 import type { CredentialMetadata, ConnectorDefinition, PersonaWithDetails } from '@/lib/types/types';
 
 // ---------------------------------------------------------------------------
@@ -101,8 +102,8 @@ export function useUnfulfilledCredentials(persona?: PersonaWithDetails | null) {
     try {
       const ctx = target.design_context ? JSON.parse(target.design_context) : {};
       if (ctx.credentialLinks) credentialLinks.set(target.id, ctx.credentialLinks);
-    } catch {
-      // intentional: non-critical -- design_context may not be valid JSON
+    } catch (err) {
+      silentCatch("useUnfulfilledCredentials:design_context-parse")(err);
     }
 
     const demands = computeUnfulfilled(personas, credentials, connectors, credentialLinks);
