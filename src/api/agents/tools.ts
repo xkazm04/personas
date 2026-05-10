@@ -7,6 +7,7 @@ import type { PersonaTool } from "@/lib/bindings/PersonaTool";
 import type { ToolUsageSummary } from "@/lib/bindings/ToolUsageSummary";
 import type { ToolUsageOverTime } from "@/lib/bindings/ToolUsageOverTime";
 import type { PersonaUsageSummary } from "@/lib/bindings/PersonaUsageSummary";
+import type { ToolPerformanceSummary } from "@/lib/bindings/ToolPerformanceSummary";
 
 // ============================================================================
 // Tool Definitions & Assignments
@@ -60,6 +61,17 @@ export const getToolUsageOverTime = (since: string, personaId?: string) =>
 
 export const getToolUsageByPersona = (since: string) =>
   invoke<PersonaUsageSummary[]>("get_tool_usage_by_persona", { since });
+
+export const getToolPerformanceSummary = (
+  since: string,
+  personaId?: string,
+  limit?: number,
+) =>
+  invoke<ToolPerformanceSummary[]>("get_tool_performance_summary", {
+    since,
+    personaId,
+    limit,
+  });
 
 // -- Direct Tool Invocation ----------------------------------------------
 

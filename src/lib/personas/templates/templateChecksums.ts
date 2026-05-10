@@ -108,6 +108,7 @@ export const TEMPLATE_CHECKSUMS: Record<string, string> = {
   'sales/sheets-e-commerce-command-center.json': '0014524b183ba87a',
   'sales/website-conversion-auditor.json': '001731b1ba284dd4',
   'security/access-request-manager.json': '0011f96a7d410e51',
+  'security/ai-environment-posture-audit.json': '0009880f50d306fe',
   'security/brand-protection-sentinel.json': '001633d4c2603c68',
   'security/security-vulnerability-pipeline.json': '00153295eea188aa',
   'support/customer-feedback-router.json': '0004d661f3276519',

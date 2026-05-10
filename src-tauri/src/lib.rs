@@ -1745,6 +1745,7 @@ pub fn run() {
             commands::tools::tools::get_tool_usage_summary,
             commands::tools::tools::get_tool_usage_over_time,
             commands::tools::tools::get_tool_usage_by_persona,
+            commands::tools::tools::get_tool_performance_summary,
             commands::tools::tools::invoke_tool_direct,
             // Tools -- Automations
             commands::tools::automations::list_automations,

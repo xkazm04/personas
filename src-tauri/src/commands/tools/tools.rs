@@ -3,10 +3,11 @@ use tauri::State;
 
 use crate::db::models::{
     CreateToolDefinitionInput, PersonaTool, PersonaToolDefinition, PersonaUsageSummary,
-    ToolUsageOverTime, ToolUsageSummary, UpdateToolDefinitionInput,
+    ToolPerformanceSummary, ToolUsageOverTime, ToolUsageSummary, UpdateToolDefinitionInput,
 };
 use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::execution::tool_usage;
+use crate::db::repos::resources::tool_audit_log;
 use crate::db::repos::resources::tools as repo;
 use crate::engine::tool_runner::{self, ToolInvocationResult};
 use crate::error::AppError;
@@ -135,6 +136,24 @@ pub fn get_tool_usage_by_persona(
 ) -> Result<Vec<PersonaUsageSummary>, AppError> {
     require_auth_sync(&state)?;
     tool_usage::get_usage_by_persona(&state.db, &since)
+}
+
+/// Per-tool performance summary (mean/max latency + error rate) over a time
+/// window. Powers the Overview tool-performance panel.
+#[tauri::command]
+pub fn get_tool_performance_summary(
+    state: State<'_, Arc<AppState>>,
+    since: String,
+    persona_id: Option<String>,
+    limit: Option<u32>,
+) -> Result<Vec<ToolPerformanceSummary>, AppError> {
+    require_auth_sync(&state)?;
+    tool_audit_log::get_performance_summary(
+        &state.db,
+        &since,
+        persona_id.as_deref(),
+        limit.unwrap_or(50),
+    )
 }
 
 #[tauri::command]

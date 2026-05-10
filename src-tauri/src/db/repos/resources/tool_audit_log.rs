@@ -1,6 +1,6 @@
 use rusqlite::params;
 
-use crate::db::models::ToolExecutionAuditEntry;
+use crate::db::models::{ToolExecutionAuditEntry, ToolPerformanceSummary};
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -92,6 +92,72 @@ pub fn get_recent(pool: &DbPool, limit: u32) -> Result<Vec<ToolExecutionAuditEnt
             })?
             .filter_map(|r| r.ok())
             .collect();
+        Ok(rows)
+    })
+}
+
+/// Aggregate tool performance metrics over a time window.
+///
+/// Groups by `(tool_name, tool_type)` and surfaces total runs, error count,
+/// mean duration, and max duration. Drives the Overview tool-performance panel.
+/// Median/p95 are deferred — SQLite has no native percentile function and the
+/// caller doesn't need them for the v1 panel; total + mean + max + error rate
+/// is enough to identify slow tools and flaky tools.
+pub fn get_performance_summary(
+    pool: &DbPool,
+    since: &str,
+    persona_id: Option<&str>,
+    limit: u32,
+) -> Result<Vec<ToolPerformanceSummary>, AppError> {
+    timed_query!("tool_audit_log", "tool_audit_log::get_performance_summary", {
+        let conn = pool.get()?;
+        let sql = match persona_id {
+            Some(_) => {
+                "SELECT tool_name, tool_type,
+                        COUNT(*) AS total_runs,
+                        SUM(CASE WHEN result_status = 'error' THEN 1 ELSE 0 END) AS error_runs,
+                        AVG(duration_ms) AS avg_duration_ms,
+                        MAX(duration_ms) AS max_duration_ms
+                 FROM tool_execution_audit_log
+                 WHERE created_at >= ?1 AND persona_id = ?2
+                 GROUP BY tool_name, tool_type
+                 ORDER BY total_runs DESC
+                 LIMIT ?3"
+            }
+            None => {
+                "SELECT tool_name, tool_type,
+                        COUNT(*) AS total_runs,
+                        SUM(CASE WHEN result_status = 'error' THEN 1 ELSE 0 END) AS error_runs,
+                        AVG(duration_ms) AS avg_duration_ms,
+                        MAX(duration_ms) AS max_duration_ms
+                 FROM tool_execution_audit_log
+                 WHERE created_at >= ?1
+                 GROUP BY tool_name, tool_type
+                 ORDER BY total_runs DESC
+                 LIMIT ?2"
+            }
+        };
+        let mut stmt = conn.prepare(sql)?;
+        let map_row = |row: &rusqlite::Row<'_>| -> rusqlite::Result<ToolPerformanceSummary> {
+            Ok(ToolPerformanceSummary {
+                tool_name: row.get(0)?,
+                tool_type: row.get(1)?,
+                total_runs: row.get(2)?,
+                error_runs: row.get(3)?,
+                avg_duration_ms: row.get(4)?,
+                max_duration_ms: row.get(5)?,
+            })
+        };
+        let rows: Vec<ToolPerformanceSummary> = match persona_id {
+            Some(pid) => stmt
+                .query_map(params![since, pid, limit], map_row)?
+                .filter_map(|r| r.ok())
+                .collect(),
+            None => stmt
+                .query_map(params![since, limit], map_row)?
+                .filter_map(|r| r.ok())
+                .collect(),
+        };
         Ok(rows)
     })
 }
