@@ -4794,6 +4794,22 @@ export type Translations = {
         tags: string;
         tags_hint: string;
       };
+      curation_schedule_button: string;
+      curation_schedule_button_hint: string;
+      curation_schedule_button_no_persona: string;
+      curation_schedule_title: string;
+      curation_schedule_description: string;
+      curation_schedule_cron_label: string;
+      curation_schedule_cron_hint: string;
+      curation_schedule_presets_label: string;
+      preset_weekly_sunday: string;
+      preset_daily_3am: string;
+      preset_weekly_monday: string;
+      preset_monthly: string;
+      curation_schedule_last_run_label: string;
+      curation_schedule_disabled_state: string;
+      curation_schedule_disable: string;
+      curation_schedule_save: string;
     };
     memory_review: {
       all_conflicts_resolved: string;
