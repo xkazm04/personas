@@ -824,6 +824,12 @@ pub fn run() {
                 clipboard_watcher_enabled: Arc::new(std::sync::atomic::AtomicBool::new(true)),
                 project_tracking: Arc::new(engine::project_tracking::ProjectTracker::new()),
             });
+            // Phase 1: spawn the project_tracking scheduler. The master
+            // enable flag inside the tracker starts at false; the
+            // scheduler ticks every hour but short-circuits each tick
+            // when the flag is off. Phase 5 wires the master toggle
+            // command that flips the flag.
+            state_arc.project_tracking.start(state_arc.user_db.clone());
             app.manage(state_arc.clone());
 
             // Phase 5 v1: seed the cross-process cli_session gate from app_settings
