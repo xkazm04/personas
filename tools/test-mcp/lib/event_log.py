@@ -36,14 +36,23 @@ class EventLog:
 
     def _print(self, step: str, outcome: str, kw: dict[str, Any]) -> None:
         marker = _MARKERS.get(outcome, "[XX]")
-        sys.stdout.write(f"  {marker} {step}: {outcome}")
+        # cp1252 console (Windows default) can't encode non-Latin-1
+        # characters that may leak in from caller-supplied values. Encode
+        # with errors='replace' so the stdout write never crashes —
+        # JSON report file preserves full unicode.
+        encoding = sys.stdout.encoding or "utf-8"
+
+        def safe(s: str) -> str:
+            return s.encode(encoding, errors="replace").decode(encoding)
+
+        sys.stdout.write(safe(f"  {marker} {step}: {outcome}"))
         brief = {
             k: v
             for k, v in kw.items()
             if k != "detail" and not isinstance(v, (dict, list))
         }
         if brief:
-            sys.stdout.write(f"  {brief}")
+            sys.stdout.write(safe(f"  {brief}"))
         sys.stdout.write("\n")
         sys.stdout.flush()
 
@@ -66,5 +75,8 @@ class EventLog:
             Path(path).write_text(body)
             print(f"\nWrote {path}")
         else:
-            print("\n── summary ──")
+            # ASCII-only marker — entry markers above are deliberately
+            # ASCII for cp1252 console compat on Windows; keep the
+            # summary delimiter the same shape.
+            print("\n-- summary --")
             print(body)
