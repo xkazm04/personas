@@ -40,6 +40,7 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
     onStartTest, onPromote, onPromoteForce, onRejectTest, onRefine, onViewAgent,
     buildError, testOutputLines, testPassed, testError, toolTestResults, testSummary, cliOutputLines,
     onQuickConfigChange,
+    initialNotificationChannels,
   } = props;
 
   const [face, setFace] = useState<"glyph" | "edit">("glyph");
@@ -359,6 +360,7 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
                 onKeyDown={handleLaunchKey}
                 onQuickConfigChange={onQuickConfigChange}
                 isBuilding={isBuilding}
+                initialNotificationChannels={initialNotificationChannels}
               />
             </motion.div>
           </motion.div>

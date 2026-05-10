@@ -901,11 +901,18 @@ async fn deliver_discord(ch: &ExternalChannel, title: &str, body: &str) -> Resul
     Ok(())
 }
 
-/// Deliver to Microsoft Teams. Slice 1 supports the Incoming Webhook URL
-/// path only (MessageCard payload). The OAuth/Graph path — sending into a
-/// Teams channel via a `microsoft_teams` vault credential — needs
-/// connector_strategy access-token refresh and is deferred to a follow-up;
-/// detected here and surfaced as an actionable error.
+/// Deliver to Microsoft Teams. Three paths:
+///   - `webhook_url` (inline) → Incoming Webhook MessageCard.
+///   - `access_token` + `team_id` + `channel_id` (vault OAuth credential
+///     + spec.config or `selected_teams`/`selected_channels` fallback) →
+///     `POST /teams/{team_id}/channels/{channel_id}/messages` on Graph.
+///   - Otherwise → actionable error explaining which fields are missing.
+///
+/// Slice 4 ships the Graph path WITHOUT proactive token refresh — if the
+/// stored `access_token` has expired, Graph returns 401 and the dispatcher's
+/// failure metric surfaces; the user re-authorises via Settings → Vault.
+/// A future slice can plumb `connector_strategy::resolve_auth_token` here
+/// for transparent refresh.
 async fn deliver_teams(ch: &ExternalChannel, title: &str, body: &str) -> Result<(), String> {
     if let Some(webhook_url) = ch.config.get("webhook_url").filter(|u| !u.is_empty()) {
         let url = SecureString::new(webhook_url.clone());
@@ -932,18 +939,75 @@ async fn deliver_teams(ch: &ExternalChannel, title: &str, body: &str) -> Result<
         return Ok(());
     }
 
-    if ch.config.contains_key("access_token") {
-        return Err(
-            "Teams via Microsoft Graph OAuth is not yet wired into the \
-             dispatcher (Slice 1 supports incoming-webhook URLs only). \
-             Set webhook_url in the channel config or wait for the Graph \
-             adapter follow-up."
-                .to_string(),
+    // Graph API path: requires access_token + team_id + channel_id.
+    // team_id and channel_id may come from spec.config (set in the picker)
+    // or from the credential's scoped_resources fallback (surfaced as
+    // `selected_teams` / `selected_channels` by `merged_channel_config`).
+    if let Some(access_token) = ch
+        .config
+        .get("access_token")
+        .filter(|t| !t.is_empty())
+    {
+        let team_id = ch
+            .config
+            .get("team_id")
+            .or_else(|| ch.config.get("selected_teams"))
+            .filter(|t| !t.is_empty())
+            .ok_or(
+                "Teams Graph: team_id not configured \
+                 (set 'team_id' in spec.config or pick a team resource on the credential)",
+            )?;
+        let channel_id = ch
+            .config
+            .get("channel_id")
+            .or_else(|| ch.config.get("selected_channels"))
+            .filter(|c| !c.is_empty())
+            .ok_or(
+                "Teams Graph: channel_id not configured \
+                 (set 'channel_id' in spec.config or pick a channel resource on the credential)",
+            )?;
+        let token = SecureString::new(access_token.clone());
+        // Plain text content — Graph accepts content_type "text" or "html";
+        // Slice 4 stays plain to match the LCD richness pick from the design
+        // conversation. Future richness can switch to "html" with markdown→HTML.
+        let url = format!(
+            "https://graph.microsoft.com/v1.0/teams/{}/channels/{}/messages",
+            team_id, channel_id
         );
+        let content = format!("{}\n\n{}", title, body);
+        let resp = crate::SHARED_HTTP
+            .post(&url)
+            .bearer_auth(token.expose_secret())
+            .json(&serde_json::json!({
+                "body": { "contentType": "text", "content": content }
+            }))
+            .timeout(std::time::Duration::from_secs(10))
+            .send()
+            .await
+            .map_err(|e| format!("Teams Graph request failed: {e}"))?;
+        drop(token);
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let body = resp.text().await.unwrap_or_default();
+            // 401 is the canonical "token expired" case — flag it so the
+            // user knows to re-authorise the Microsoft Teams credential
+            // in the vault rather than fight a generic Graph error.
+            if status.as_u16() == 401 {
+                return Err(format!(
+                    "Teams Graph 401 — access token expired or revoked. \
+                     Re-authorise the Microsoft Teams credential in Settings → Vault. \
+                     Server: {body}"
+                ));
+            }
+            return Err(format!("Teams Graph returned {status}: {body}"));
+        }
+        return Ok(());
     }
+
     Err(
-        "Teams: webhook_url not configured. See \
-         https://learn.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook"
+        "Teams: configure either webhook_url (inline) or \
+         access_token + team_id + channel_id (vault credential + picker destination). \
+         See https://learn.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook"
             .to_string(),
     )
 }
@@ -1886,9 +1950,10 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_deliver_teams_oauth_path_returns_actionable_error() {
-        // access_token present but no webhook_url — Slice 1 deferred path
-        // surfaces a clear error rather than silently dropping.
+    async fn test_deliver_teams_graph_requires_team_id() {
+        // Slice 4: access_token present but no team_id — must error with
+        // a clear pointer at the missing field instead of attempting a
+        // malformed Graph URL.
         let mut config = HashMap::new();
         config.insert("access_token".into(), "fake-token".into());
         let ch = ExternalChannel {
@@ -1898,8 +1963,23 @@ mod tests {
             config,
         };
         let err = deliver_teams(&ch, "t", "b").await.unwrap_err();
-        assert!(err.to_lowercase().contains("graph") || err.to_lowercase().contains("oauth"));
-        assert!(err.contains("webhook_url"));
+        assert!(err.contains("team_id"));
+    }
+
+    #[tokio::test]
+    async fn test_deliver_teams_graph_requires_channel_id() {
+        // Slice 4: access_token + team_id present, but no channel_id.
+        let mut config = HashMap::new();
+        config.insert("access_token".into(), "fake-token".into());
+        config.insert("team_id".into(), "T-123".into());
+        let ch = ExternalChannel {
+            channel_type: "teams".into(),
+            enabled: true,
+            credential_id: Some("cred_t".into()),
+            config,
+        };
+        let err = deliver_teams(&ch, "t", "b").await.unwrap_err();
+        assert!(err.contains("channel_id"));
     }
 
     #[tokio::test]

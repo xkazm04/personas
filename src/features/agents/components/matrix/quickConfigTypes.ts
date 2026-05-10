@@ -1,4 +1,5 @@
 import type { HealthyConnector } from './useHealthyConnectors';
+import type { ChannelSpecV2 } from '@/lib/bindings/ChannelSpecV2';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -42,6 +43,15 @@ export interface QuickConfigState {
   connectorTables: Record<string, string>;
   /** Event subscriptions from other personas' event_listener triggers */
   selectedEvents: EventSubscription[];
+  /**
+   * Slice 2 — channel specs picked in the Glyph composer's Messaging row.
+   * Always includes the built-in inbox; external channels (Slack, Telegram,
+   * Discord, Teams, Email) carry a `credential_id` that the Slice 1
+   * dispatcher resolves to vault fields at delivery time. Empty array
+   * means "no UI selection yet" — fall back to the persona's existing
+   * `notification_channels` value (set elsewhere in Settings).
+   */
+  notificationChannels: ChannelSpecV2[];
 }
 
 export function serializeQuickConfig(state: QuickConfigState): string {
@@ -71,6 +81,17 @@ export function serializeQuickConfig(state: QuickConfigState): string {
   if (state.selectedEvents.length > 0) {
     const eventDescs = state.selectedEvents.map((e) => `${e.description} (from ${e.personaName})`);
     parts.push(`Event triggers: ${eventDescs.join(', ')}`);
+  }
+
+  // Slice 2 — surface picked delivery channels in the build prompt so the
+  // session understands the user's intent (the structured value also flows
+  // through to `personas.notification_channels` separately in Slice 3).
+  const externalChannels = state.notificationChannels.filter(
+    (c) => c.type !== 'built-in' && c.type !== 'titlebar',
+  );
+  if (externalChannels.length > 0) {
+    const labels = externalChannels.map((c) => c.type);
+    parts.push(`Delivery channels: persona inbox, ${labels.join(', ')} (fan-out)`);
   }
 
   return parts.length > 0 ? `\n---\n${parts.join('\n')}` : '';

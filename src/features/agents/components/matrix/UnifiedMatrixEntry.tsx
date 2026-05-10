@@ -21,6 +21,12 @@ import {
 } from "@/features/agents/components/matrix/quickConfigTypes";
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
+import {
+  updatePersona,
+  buildUpdateInput,
+  getPersona,
+} from "@/api/agents/personas";
+import type { ChannelSpecV2 } from "@/lib/bindings/ChannelSpecV2";
 import type { ActiveProcess } from "@/stores/slices/processActivitySlice";
 import { createLogger } from "@/lib/log";
 import { useTranslation } from '@/i18n/useTranslation';
@@ -143,6 +149,14 @@ export function UnifiedMatrixEntry() {
   const [launchError, setLaunchError] = useState<string | null>(null);
   const [isLaunching, setIsLaunching] = useState(false);
   const [fadeOut, setFadeOut] = useState(false);
+  // Slice 4 — picker hydration source. Populated on mount when the build
+  // flow is resumed for an existing draft persona, so the messaging picker
+  // shows the user's prior selections instead of starting from the
+  // built-in inbox default. `null` = "no hydration source" (fresh build).
+  const [
+    initialNotificationChannels,
+    setInitialNotificationChannels,
+  ] = useState<ChannelSpecV2[] | null>(null);
 
   // Phase F: pending auto-launch from Athena's prefill_persona_create.
   // Captured at mount time (so a prefill landing later doesn't surprise
@@ -221,6 +235,55 @@ export function UnifiedMatrixEntry() {
   }, [buildPhaseForRedirect, draftPersonaId, fadeOut, handleViewPromotedAgent]);
 
   // -- Build orchestration ------------------------------------------------
+
+  // Slice 4 — hydrate the picker from the persona's persisted
+  // notification_channels JSON whenever the build flow resumes for an
+  // existing draft. Effect is a noop on fresh builds (draftPersonaId is
+  // null until createPersona returns). On parse errors we fall back to
+  // null (treated as "no prior choices") so a malformed JSON doesn't
+  // crash the build surface.
+  useEffect(() => {
+    if (!draftPersonaId) {
+      setInitialNotificationChannels(null);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const persona = await getPersona(draftPersonaId);
+        if (cancelled) return;
+        const raw = persona.notification_channels;
+        if (!raw || typeof raw !== "string" || raw.trim() === "") {
+          setInitialNotificationChannels(null);
+          return;
+        }
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) {
+          setInitialNotificationChannels(null);
+          return;
+        }
+        // Only honour shape-v2 entries (objects with `use_case_ids`).
+        // Legacy shape-A/B don't fit the picker's contract.
+        const v2: ChannelSpecV2[] = parsed.filter(
+          (e): e is ChannelSpecV2 =>
+            e !== null &&
+            typeof e === "object" &&
+            "use_case_ids" in e &&
+            "type" in e,
+        );
+        setInitialNotificationChannels(v2.length > 0 ? v2 : null);
+      } catch (err) {
+        logger.warn("Failed to hydrate notification channels", {
+          personaId: draftPersonaId,
+          error: err,
+        });
+        if (!cancelled) setInitialNotificationChannels(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [draftPersonaId]);
 
   const build = useMatrixBuild({ personaId: draftPersonaId });
   const lifecycle = useMatrixLifecycle({
@@ -367,6 +430,7 @@ export function UnifiedMatrixEntry() {
     setIsLaunching(true);
     setLaunchError(null);
 
+    const wasFreshCreate = !draftPersonaId;
     let personaId = draftPersonaId;
     if (!personaId) {
       try {
@@ -382,6 +446,28 @@ export function UnifiedMatrixEntry() {
         setLaunchError(t.agents.matrix_entry.failed_to_create);
         logger.error("Failed to create draft persona", { error: err });
         return;
+      }
+    }
+
+    // Slice 3 — persist the picker's notification_channels onto the persona row
+    // so the dispatcher resolves credential_id from the vault on the very
+    // first execution. Only on a fresh create — re-builds keep whatever
+    // Settings has configured. Best-effort: a failure here doesn't block
+    // the build (the persona still exists; channels can be set later via
+    // Settings → Notifications).
+    if (wasFreshCreate) {
+      const channels = glyphQuickConfigRef.current.notificationChannels;
+      if (channels.length > 0) {
+        try {
+          await updatePersona(
+            personaId,
+            buildUpdateInput({
+              notification_channels: JSON.stringify(channels),
+            }),
+          );
+        } catch (err) {
+          logger.warn("Failed to persist notification channels", { error: err });
+        }
       }
     }
 
@@ -496,10 +582,12 @@ export function UnifiedMatrixEntry() {
   const [, setGlyphQuickConfig] = useState<QuickConfigState>({
     frequency: null, days: ['mon'], monthDay: 1, time: '09:00',
     selectedConnectors: [], connectorTables: {}, selectedEvents: [],
+    notificationChannels: [],
   });
   const glyphQuickConfigRef = useRef<QuickConfigState>({
     frequency: null, days: ['mon'], monthDay: 1, time: '09:00',
     selectedConnectors: [], connectorTables: {}, selectedEvents: [],
+    notificationChannels: [],
   });
   const handleLaunchGlyph = useCallback(() => {
     const hint = serializeQuickConfig(glyphQuickConfigRef.current);
@@ -613,6 +701,7 @@ export function UnifiedMatrixEntry() {
           onQuickConfigChange={handleQuickConfigChange}
           onViewAgent={handleViewPromotedAgent}
           buildError={build.buildError}
+          initialNotificationChannels={initialNotificationChannels ?? undefined}
         />
       ) : (
         <GlyphFullLayout
@@ -644,6 +733,7 @@ export function UnifiedMatrixEntry() {
           onQuickConfigChange={handleQuickConfigChange}
           onViewAgent={handleViewPromotedAgent}
           buildError={build.buildError}
+          initialNotificationChannels={initialNotificationChannels ?? undefined}
         />
       )}
 

@@ -13,6 +13,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import type { Frequency, QuickConfigState, EventSubscription } from "@/features/agents/components/matrix/quickConfigTypes";
+import type { ChannelSpecV2 } from "@/lib/bindings/ChannelSpecV2";
 import type { RecipeMatch } from "@/lib/bindings/RecipeMatch";
 import { getRecipe } from "@/api/recipes/recipes";
 import { useTranslation } from "@/i18n/useTranslation";
@@ -30,11 +31,23 @@ import {
 import { ComposerSchedulePickerModal } from "./composer/ComposerSchedulePickerModal";
 import { ComposerConnectorsPickerModal } from "./composer/ComposerConnectorsPickerModal";
 import { ComposerEventPickerModal } from "./composer/ComposerEventPickerModal";
+import { ComposerMessagingPickerModal } from "./composer/ComposerMessagingPickerModal";
 import { ComposerRecipeSuggestion } from "./composer/ComposerRecipeSuggestion";
+
+// Built-in inbox is always present in notificationChannels; the picker can't
+// remove it but a fresh persona starts with just this entry.
+const BUILT_IN_INBOX: ChannelSpecV2 = {
+  type: "built-in",
+  enabled: true,
+  credential_id: null,
+  use_case_ids: "*",
+  event_filter: null,
+  config: null,
+};
 
 export function CommandPanelComposer({
   intentText, onIntentChange, onLaunch, launchDisabled, onKeyDown, onQuickConfigChange,
-  isBuilding,
+  isBuilding, initialNotificationChannels,
 }: CommandPanelProps) {
   const { t, tx } = useTranslation();
   const [draft, setDraft] = useState<IntentDraft>(() => parseIntent(intentText));
@@ -44,10 +57,28 @@ export function CommandPanelComposer({
   const [monthDay, setMonthDay] = useState(1);
   const [selectedConnectors, setSelectedConnectors] = useState<string[]>([]);
   const [selectedEvents, setSelectedEvents] = useState<EventSubscription[]>([]);
+  // Slice 4 — hydrate from a parent-supplied snapshot when re-entering the
+  // build flow for an existing persona. `[BUILT_IN_INBOX]` is the
+  // fresh-build default. We only honour the prop on initial mount so a
+  // later parent re-render can't clobber the user's in-flight edits.
+  const [selectedChannels, setSelectedChannels] = useState<ChannelSpecV2[]>(
+    () => {
+      if (!initialNotificationChannels || initialNotificationChannels.length === 0) {
+        return [BUILT_IN_INBOX];
+      }
+      const hasBuiltIn = initialNotificationChannels.some(
+        (s) => s.type === "built-in",
+      );
+      return hasBuiltIn
+        ? initialNotificationChannels
+        : [BUILT_IN_INBOX, ...initialNotificationChannels];
+    },
+  );
 
   const [schedOpen, setSchedOpen] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
   const [eventsOpen, setEventsOpen] = useState(false);
+  const [messagingOpen, setMessagingOpen] = useState(false);
 
   // Propagate composed intent upward (skip first run).
   const isFirstRun = useRef(true);
@@ -63,9 +94,10 @@ export function CommandPanelComposer({
       frequency, days, monthDay, time,
       selectedConnectors, connectorTables: {},
       selectedEvents,
+      notificationChannels: selectedChannels,
     };
     onQuickConfigChange(next);
-  }, [frequency, days, monthDay, time, selectedConnectors, selectedEvents, onQuickConfigChange]);
+  }, [frequency, days, monthDay, time, selectedConnectors, selectedEvents, selectedChannels, onQuickConfigChange]);
 
   const setRow = (k: IntentKey, v: string) => setDraft((p) => ({ ...p, [k]: v }));
   const scheduleLabel = scheduleSummary(frequency, days, monthDay, time);
@@ -134,12 +166,15 @@ export function CommandPanelComposer({
           scheduleLabel={scheduleLabel}
           selectedEvents={selectedEvents}
           selectedConnectors={selectedConnectors}
+          selectedChannels={selectedChannels}
           setFrequency={setFrequency}
           setSelectedEvents={setSelectedEvents}
           setSelectedConnectors={setSelectedConnectors}
+          setSelectedChannels={setSelectedChannels}
           onOpenSchedule={() => setSchedOpen(true)}
           onOpenEvents={() => setEventsOpen(true)}
           onOpenTools={() => setToolsOpen(true)}
+          onOpenMessaging={() => setMessagingOpen(true)}
         />
 
         <ComposerRecipeSuggestion
@@ -186,6 +221,17 @@ export function CommandPanelComposer({
         onApply={(next) => {
           setSelectedEvents(next);
           setEventsOpen(false);
+        }}
+      />
+      <ComposerMessagingPickerModal
+        open={messagingOpen}
+        onClose={() => setMessagingOpen(false)}
+        selected={selectedChannels}
+        onApply={(next) => {
+          // Always preserve the built-in inbox row regardless of picker output.
+          const hasBuiltIn = next.some((s) => s.type === "built-in");
+          setSelectedChannels(hasBuiltIn ? next : [BUILT_IN_INBOX, ...next]);
+          setMessagingOpen(false);
         }}
       />
     </div>

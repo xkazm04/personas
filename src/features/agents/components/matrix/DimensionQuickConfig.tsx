@@ -35,7 +35,7 @@ export function DimensionQuickConfig({ onChange }: DimensionQuickConfigProps) {
 
   // Notify parent on change
   useEffect(() => {
-    onChange({ frequency, days, monthDay, time, selectedConnectors, connectorTables, selectedEvents });
+    onChange({ frequency, days, monthDay, time, selectedConnectors, connectorTables, selectedEvents, notificationChannels: [] });
   }, [frequency, days, monthDay, time, selectedConnectors, connectorTables, selectedEvents, onChange]);
 
   const toggleConnector = useCallback((name: string) => {

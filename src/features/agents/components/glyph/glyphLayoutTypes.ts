@@ -1,6 +1,7 @@
 import type { GlyphDimension, GlyphRow } from "@/features/shared/glyph";
 import type { BuildQuestion, CellBuildStatus, BuildPhase, ToolTestResult } from "@/lib/types/buildTypes";
 import type { QuickConfigState } from "@/features/agents/components/matrix/quickConfigTypes";
+import type { ChannelSpecV2 } from "@/lib/bindings/ChannelSpecV2";
 
 export type PetalState = "idle" | "filling" | "resolved" | "pending" | "error";
 
@@ -38,6 +39,9 @@ export interface GlyphFullLayoutProps {
   testSummary?: string | null;
   cliOutputLines?: string[];
   onQuickConfigChange?: (c: QuickConfigState) => void;
+  /** Slice 4 — initial messaging channels for picker hydration when the
+   *  build flow resumes for an existing persona. */
+  initialNotificationChannels?: ChannelSpecV2[];
 }
 
 export type { GlyphDimension, GlyphRow, BuildQuestion, CellBuildStatus, BuildPhase, QuickConfigState };

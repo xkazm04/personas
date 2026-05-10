@@ -1,8 +1,10 @@
 import { motion } from "framer-motion";
 import type { Frequency, EventSubscription } from "@/features/agents/components/matrix/quickConfigTypes";
+import type { ChannelSpecV2 } from "@/lib/bindings/ChannelSpecV2";
 import { CommandPanelRow } from "./CommandPanelRow";
 import { CommandPanelWhenRow } from "./CommandPanelWhenRow";
 import { CommandPanelToolsRow } from "./CommandPanelToolsRow";
+import { CommandPanelMessagingRow } from "./CommandPanelMessagingRow";
 import { INTENT_ROWS, type IntentDraft, type IntentKey } from "./commandPanelHelpers";
 
 interface CommandPanelComposeStepProps {
@@ -12,19 +14,22 @@ interface CommandPanelComposeStepProps {
   scheduleLabel: string | null;
   selectedEvents: EventSubscription[];
   selectedConnectors: string[];
+  selectedChannels: ChannelSpecV2[];
   setFrequency: (f: Frequency | null) => void;
   setSelectedEvents: React.Dispatch<React.SetStateAction<EventSubscription[]>>;
   setSelectedConnectors: React.Dispatch<React.SetStateAction<string[]>>;
+  setSelectedChannels: React.Dispatch<React.SetStateAction<ChannelSpecV2[]>>;
   onOpenSchedule: () => void;
   onOpenEvents: () => void;
   onOpenTools: () => void;
+  onOpenMessaging: () => void;
 }
 
 export function CommandPanelComposeStep({
   draft, setRow, onKeyDown,
-  scheduleLabel, selectedEvents, selectedConnectors,
-  setFrequency, setSelectedEvents, setSelectedConnectors,
-  onOpenSchedule, onOpenEvents, onOpenTools,
+  scheduleLabel, selectedEvents, selectedConnectors, selectedChannels,
+  setFrequency, setSelectedEvents, setSelectedConnectors, setSelectedChannels,
+  onOpenSchedule, onOpenEvents, onOpenTools, onOpenMessaging,
 }: CommandPanelComposeStepProps) {
   return (
     <motion.div
@@ -65,6 +70,21 @@ export function CommandPanelComposeStep({
               selectedConnectors={selectedConnectors}
               setSelectedConnectors={setSelectedConnectors}
               onOpenTools={onOpenTools}
+            />
+          );
+        }
+
+        if (row.key === "messaging") {
+          return (
+            <CommandPanelMessagingRow
+              key={row.key}
+              rowDef={row}
+              draftValue={draft.messaging}
+              onChange={(v) => setRow("messaging", v)}
+              onKeyDown={onKeyDown}
+              selectedChannels={selectedChannels}
+              setSelectedChannels={setSelectedChannels}
+              onOpenMessaging={onOpenMessaging}
             />
           );
         }

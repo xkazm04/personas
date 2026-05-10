@@ -38,7 +38,18 @@ import { useGlyphLayoutState } from "./useGlyphLayoutState";
 import { ComposerEventPickerModal } from "./commandPanel/composer/ComposerEventPickerModal";
 import { ComposerConnectorsPickerModal } from "./commandPanel/composer/ComposerConnectorsPickerModal";
 import { ComposerSchedulePickerModal } from "./commandPanel/composer/ComposerSchedulePickerModal";
+import { ComposerMessagingPickerModal } from "./commandPanel/composer/ComposerMessagingPickerModal";
+import type { ChannelSpecV2 } from "@/lib/bindings/ChannelSpecV2";
 import type { GlyphFullLayoutProps } from "./glyphLayoutTypes";
+
+const BUILT_IN_INBOX: ChannelSpecV2 = {
+  type: "built-in",
+  enabled: true,
+  credential_id: null,
+  use_case_ids: "*",
+  event_filter: null,
+  config: null,
+};
 
 const SIZE = 640;
 
@@ -50,7 +61,7 @@ export function GlyphPrototypeLayout(props: GlyphFullLayoutProps) {
     hasDesignResult, glyphRows,
     onStartTest, onPromote, onPromoteForce, onRejectTest, onRefine, onViewAgent,
     buildError, testOutputLines, testPassed, testError, toolTestResults, testSummary, cliOutputLines,
-    onQuickConfigChange,
+    onQuickConfigChange, initialNotificationChannels,
   } = props;
 
   const buildSessionId = useAgentStore((s) => s.buildSessionId);
@@ -84,6 +95,23 @@ export function GlyphPrototypeLayout(props: GlyphFullLayoutProps) {
   const [eventsModalOpen, setEventsModalOpen] = useState(false);
   const [connectorsModalOpen, setConnectorsModalOpen] = useState(false);
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
+  // Slice 4 — messaging picker state. Hydrate from the parent-supplied
+  // snapshot when the build flow resumes for an existing persona;
+  // otherwise default to just the built-in inbox.
+  const [messagingModalOpen, setMessagingModalOpen] = useState(false);
+  const [selectedChannels, setSelectedChannels] = useState<ChannelSpecV2[]>(
+    () => {
+      if (!initialNotificationChannels || initialNotificationChannels.length === 0) {
+        return [BUILT_IN_INBOX];
+      }
+      const hasBuiltIn = initialNotificationChannels.some(
+        (s) => s.type === "built-in",
+      );
+      return hasBuiltIn
+        ? initialNotificationChannels
+        : [BUILT_IN_INBOX, ...initialNotificationChannels];
+    },
+  );
   // Post-launch state — mirrors GlyphFullLayout so the prototype's
   // refine / build / test surfaces have full feature parity with the
   // flagship view.
@@ -148,6 +176,7 @@ export function GlyphPrototypeLayout(props: GlyphFullLayoutProps) {
           return describeTriggerConfig({
             frequency, days, monthDay, time,
             selectedConnectors: [], connectorTables: {}, selectedEvents: [],
+            notificationChannels: [],
           });
         }
         return ["Manual run — no schedule set"];
@@ -168,6 +197,7 @@ export function GlyphPrototypeLayout(props: GlyphFullLayoutProps) {
           ? describeSelectedConnectors({
               frequency: null, days: ["mon"], monthDay: 1, time: "09:00",
               selectedConnectors, connectorTables: {}, selectedEvents: [],
+              notificationChannels: [],
             }, healthyConnectors)
           : ["No tools selected"];
       case "event":
@@ -235,9 +265,13 @@ export function GlyphPrototypeLayout(props: GlyphFullLayoutProps) {
       selectedConnectors,
       connectorTables: {},
       selectedEvents,
+      // Slice 4 — propagate the messaging picker's selection so the
+      // launch path persists it onto the persona row alongside what
+      // CommandPanelComposer would have produced.
+      notificationChannels: selectedChannels,
     };
     onQuickConfigChange(next);
-  }, [frequency, days, monthDay, time, selectedConnectors, selectedEvents, onQuickConfigChange]);
+  }, [frequency, days, monthDay, time, selectedConnectors, selectedEvents, selectedChannels, onQuickConfigChange]);
 
   const closeActiveDim = () => setActiveDim(null);
   const onClickDim = (d: GlyphDimension) => {
@@ -272,6 +306,10 @@ export function GlyphPrototypeLayout(props: GlyphFullLayoutProps) {
       }
       if (d === "event") {
         setEventsModalOpen(true);
+        return;
+      }
+      if (d === "message") {
+        setMessagingModalOpen(true);
         return;
       }
     }
@@ -508,6 +546,17 @@ export function GlyphPrototypeLayout(props: GlyphFullLayoutProps) {
           setMonthDay(next.monthDay);
           setTime(next.time);
           setScheduleModalOpen(false);
+        }}
+      />
+      <ComposerMessagingPickerModal
+        open={messagingModalOpen}
+        onClose={() => setMessagingModalOpen(false)}
+        selected={selectedChannels}
+        onApply={(next) => {
+          // Always preserve the built-in inbox row regardless of picker output.
+          const hasBuiltIn = next.some((s) => s.type === "built-in");
+          setSelectedChannels(hasBuiltIn ? next : [BUILT_IN_INBOX, ...next]);
+          setMessagingModalOpen(false);
         }}
       />
 

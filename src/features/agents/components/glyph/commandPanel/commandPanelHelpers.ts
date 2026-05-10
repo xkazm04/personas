@@ -1,4 +1,4 @@
-import { ListTodo, Calendar, MessageSquare, Plug, UserCheck } from "lucide-react";
+import { ListTodo, Calendar, MessageSquare, Plug, UserCheck, Send } from "lucide-react";
 import type { GlyphDimension } from "@/features/shared/glyph";
 import type { Frequency } from "@/features/agents/components/matrix/quickConfigTypes";
 
@@ -6,7 +6,13 @@ import type { Frequency } from "@/features/agents/components/matrix/quickConfigT
 // Prompt rows
 // ---------------------------------------------------------------------------
 
-export type IntentKey = "task" | "when" | "output" | "tools" | "review";
+export type IntentKey =
+  | "task"
+  | "when"
+  | "output"
+  | "tools"
+  | "review"
+  | "messaging";
 export type IntentDraft = Record<IntentKey, string>;
 
 export interface IntentRowDef {
@@ -19,14 +25,22 @@ export interface IntentRowDef {
 }
 
 export const INTENT_ROWS: IntentRowDef[] = [
-  { key: "task",   label: "Task",   icon: ListTodo,     placeholder: "Summarize incoming support emails and extract customer intent.",        multiline: true,  composeLabel: "Task" },
-  { key: "when",   label: "When",   icon: Calendar,     placeholder: "Every weekday at 9am — or when a new Slack message mentions @support.", multiline: false, composeLabel: "When" },
-  { key: "output", label: "Output", icon: MessageSquare, placeholder: "A ranked list of issues posted to the engineering Slack channel.",     multiline: true,  composeLabel: "Output" },
-  { key: "tools",  label: "Tools",  icon: Plug,         placeholder: "Gmail, Slack, Notion.",                                                 multiline: false, composeLabel: "Tools" },
-  { key: "review", label: "Review", icon: UserCheck,    placeholder: "Only items marked high priority or containing customer PII.",          multiline: false, composeLabel: "Human review" },
+  { key: "task",      label: "Task",      icon: ListTodo,      placeholder: "Summarize incoming support emails and extract customer intent.",        multiline: true,  composeLabel: "Task" },
+  { key: "when",      label: "When",      icon: Calendar,      placeholder: "Every weekday at 9am — or when a new Slack message mentions @support.", multiline: false, composeLabel: "When" },
+  { key: "output",    label: "Output",    icon: MessageSquare, placeholder: "A ranked list of issues posted to the engineering Slack channel.",     multiline: true,  composeLabel: "Output" },
+  { key: "tools",     label: "Tools",     icon: Plug,          placeholder: "Gmail, Slack, Notion.",                                                 multiline: false, composeLabel: "Tools" },
+  { key: "messaging", label: "Messaging", icon: Send,          placeholder: "Persona inbox by default — pick from vault to also send to Slack/Telegram/Discord/Teams.", multiline: false, composeLabel: "Messaging" },
+  { key: "review",    label: "Review",    icon: UserCheck,     placeholder: "Only items marked high priority or containing customer PII.",          multiline: false, composeLabel: "Human review" },
 ];
 
-export const EMPTY_DRAFT: IntentDraft = { task: "", when: "", output: "", tools: "", review: "" };
+export const EMPTY_DRAFT: IntentDraft = {
+  task: "",
+  when: "",
+  output: "",
+  tools: "",
+  review: "",
+  messaging: "",
+};
 
 export function composeIntent(draft: IntentDraft): string {
   const parts: string[] = [];
