@@ -20,7 +20,7 @@ use std::time::Duration;
 
 use chrono::Utc;
 use tauri::AppHandle;
-use tokio::task::JoinHandle;
+use tauri::async_runtime::JoinHandle;
 use tokio::time::interval;
 use tracing::{info, warn};
 
@@ -44,7 +44,10 @@ pub fn spawn(
     enabled: Arc<AtomicBool>,
     app_handle: AppHandle,
 ) -> JoinHandle<()> {
-    tokio::spawn(async move {
+    // Use tauri::async_runtime::spawn rather than tokio::spawn — the Tauri
+    // setup() closure runs synchronously outside any tokio runtime context,
+    // so a raw tokio::spawn here panics with "no reactor running".
+    tauri::async_runtime::spawn(async move {
         let mut ticker = interval(TICK_INTERVAL);
         // The first `tick()` fires immediately; we want to wait one full
         // interval before the first poll so the app has a chance to

@@ -37,7 +37,7 @@ pub mod watchers;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use tauri::AppHandle;
-use tokio::task::JoinHandle;
+use tauri::async_runtime::JoinHandle;
 
 use crate::db::UserDbPool;
 
