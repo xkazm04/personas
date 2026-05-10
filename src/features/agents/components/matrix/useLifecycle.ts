@@ -29,9 +29,9 @@ const logger = createLogger("matrix-lifecycle");
 // Types
 // ---------------------------------------------------------------------------
 
-interface UseMatrixLifecycleOptions {
+interface UseLifecycleOptions {
   personaId: string | null;
-  /** Callback to start a new build session (from useMatrixBuild.handleGenerate). */
+  /** Callback to start a new build session (from useBuild.handleGenerate). */
   handleGenerate?: (intent: string, overridePersonaId?: string) => Promise<void>;
 }
 
@@ -59,9 +59,9 @@ export interface PromoteResult {
 // Hook
 // ---------------------------------------------------------------------------
 
-export function useMatrixLifecycle({
+export function useLifecycle({
   personaId,
-}: UseMatrixLifecycleOptions) {
+}: UseLifecycleOptions) {
   // -- Read build slice state from Zustand selectors -------------------------
 
   const buildPhase = useAgentStore((s) => s.buildPhase);

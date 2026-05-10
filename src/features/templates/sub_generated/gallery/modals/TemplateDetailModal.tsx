@@ -21,7 +21,6 @@ import { PromptTabsPreview } from '@/features/shared/components/editors/PromptTa
 import { DesignConnectorGrid } from '@/features/shared/components/display/DesignConnectorGrid';
 import { BaseModal } from '../../shared/BaseModal';
 import { TabTransition } from '../../shared/TabTransition';
-import { PersonaMatrix } from '../matrix/PersonaMatrix';
 import { GlyphGrid } from '@/features/shared/glyph';
 import {
   buildChronology,
@@ -243,7 +242,7 @@ export function TemplateDetailModal({
               <PromptTabsPreview designResult={designResult} />
             )}
             {activeTab === 'connectors' && designResult && (
-              <ConnectorsTabBody designResult={designResult} flows={flows} />
+              <ConnectorsTabBody designResult={designResult} />
             )}
             {!designResult && (
               <div className="flex flex-col items-center justify-center py-20 typo-body text-foreground gap-3">
@@ -308,17 +307,13 @@ export function TemplateDetailModal({
   );
 }
 
-/** Body of the "connectors" tab — shows either the full PersonaMatrix or the
- *  sigil-based Glyph grid, driven by an in-tab toggle. The DesignConnectorGrid
- *  below stays visible in both modes so users can always see the flat list. */
+/** Body of the "connectors" tab — sigil-first per-use-case capability view
+ *  (GlyphGrid) followed by the flat connector list (DesignConnectorGrid). */
 function ConnectorsTabBody({
   designResult,
-  flows,
 }: {
   designResult: import('@/lib/types/designTypes').AgentIR;
-  flows: UseCaseFlow[];
 }) {
-  const [view, setView] = useState<'matrix' | 'glyph'>('matrix');
   const ir = designResult as unknown as Record<string, unknown>;
   const { rows, flowsById } = useMemo(() => ({
     rows: buildChronology(ir),
@@ -327,34 +322,7 @@ function ConnectorsTabBody({
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-end">
-        <div className="inline-flex rounded-full border border-border/30 bg-secondary/20 p-0.5">
-          <button
-            type="button"
-            onClick={() => setView('matrix')}
-            className={`rounded-full px-3 py-1 typo-caption transition ${
-              view === 'matrix' ? 'bg-primary/20 text-primary' : 'text-foreground/60 hover:text-foreground'
-            }`}
-          >
-            Matrix
-          </button>
-          <button
-            type="button"
-            onClick={() => setView('glyph')}
-            className={`rounded-full px-3 py-1 typo-caption transition ${
-              view === 'glyph' ? 'bg-primary/20 text-primary' : 'text-foreground/60 hover:text-foreground'
-            }`}
-            title="Glyph — sigil-first capability view"
-          >
-            Glyph
-          </button>
-        </div>
-      </div>
-      {view === 'matrix' ? (
-        <PersonaMatrix designResult={designResult} flows={flows} />
-      ) : (
-        <GlyphGrid rows={rows} flowsById={flowsById} />
-      )}
+      <GlyphGrid rows={rows} flowsById={flowsById} />
       <DesignConnectorGrid designResult={designResult} hideConnectorsTools />
     </div>
   );

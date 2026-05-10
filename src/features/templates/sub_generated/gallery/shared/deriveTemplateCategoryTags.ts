@@ -18,7 +18,7 @@
  * this is the "typo catcher" audit mechanism for the 107-template review.
  */
 import { connectorCategoryTags, BUILTIN_CONNECTORS } from '@/lib/credentials/builtinConnectors';
-import { ARCH_CATEGORIES, type ArchCategory } from '../matrix/architecturalCategories';
+import { ARCH_CATEGORIES, type ArchCategory } from '../../shared/architecturalCategories';
 
 export interface TemplateCategoryPill {
   /** Canonical category key (from connector-categories.json or the raw tag). */

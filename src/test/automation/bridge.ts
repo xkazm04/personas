@@ -662,7 +662,7 @@ const bridge: TestBridge = {
 
   /** Open the adoption modal for a template in Matrix mode.
    *  This navigates to Templates, finds the template, and opens the adoption wizard.
-   *  Returns when the MatrixAdoptionView is mounted. */
+   *  Returns when the ChronologyAdoptionView is mounted. */
   async openMatrixAdoption(reviewId: string) {
     // Navigate to templates section
     useSystemStore.getState().setSidebarSection('design-reviews');
@@ -705,7 +705,7 @@ const bridge: TestBridge = {
     adoptBtn.click();
     await new Promise((r) => setTimeout(r, 1000));
 
-    // Mode already defaults to 'matrix' so MatrixAdoptionView should mount automatically.
+    // Mode already defaults to 'matrix' so ChronologyAdoptionView should mount automatically.
     // Return immediately — the caller should poll /state for buildSessionId to appear.
     return { success: true, reviewId };
   },
@@ -1291,7 +1291,7 @@ const bridge: TestBridge = {
   //   waitForPersonaExecution(personaId, sinceIso, timeoutMs)
 
   /**
-   * Type intent into UnifiedMatrixEntry's textarea and click Launch.
+   * Type intent into UnifiedBuildEntry's textarea and click Launch.
    * Returns once startBuildSession resolves (buildSessionId set in store).
    */
   async startBuildFromIntent(intent: string, timeoutMs: number = 30000) {

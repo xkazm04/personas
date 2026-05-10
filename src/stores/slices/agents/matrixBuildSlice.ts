@@ -39,8 +39,28 @@ import type {
   PersonaResolution,
 } from "@/lib/types/buildTypes";
 import { isBuildPhase, isCellBuildStatus } from "@/lib/types/buildTypes";
-import type { MatrixEditState } from "@/features/templates/sub_generated/gallery/matrix/matrixEditTypes";
 import { storeBus } from "@/lib/storeBus";
+
+// Inlined from the retired gallery/matrix/matrixEditTypes.ts.
+// All UI consumers (the *EditCell components) were deleted with the matrix
+// retirement; the slice still exposes editState for any future build-flow
+// edit surface to wire into without redefining the shape.
+export interface MatrixEditState {
+  connectorCredentialMap: Record<string, string>;
+  connectorSwaps: Record<string, string>;
+  triggerConfigs: Record<number, Record<string, string>>;
+  requireApproval: boolean;
+  autoApproveSeverity: string;
+  reviewTimeout: string;
+  memoryEnabled: boolean;
+  memoryScope: string;
+  messagePreset: string;
+  databaseMode?: 'create' | 'existing';
+  databaseTable?: string;
+  databaseSchema?: string;
+  errorStrategy?: string;
+  useCases?: Array<{ id: string; title: string; category: string }>;
+}
 
 // -- Per-session build state ------------------------------------------------
 

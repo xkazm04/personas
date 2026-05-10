@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import type { CellBuildStatus } from '@/lib/types/buildTypes';
 
 /**
- * Completeness calculation logic (mirrors useMatrixBuild's derivation).
+ * Completeness calculation logic (mirrors useBuild's derivation).
  *
  * Completeness = (resolved cells / total cells) * 100
  * Total cells = 8 (the 8 matrix dimensions)

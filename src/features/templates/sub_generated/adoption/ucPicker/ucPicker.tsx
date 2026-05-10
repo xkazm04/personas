@@ -1,6 +1,6 @@
 // Production use-case picker — dual-mode (Cockpit view + Forge edit)
 // card list with a Continue button footer. Accepts standard
-// UseCasePickerVariantProps so MatrixAdoptionView can plumb real
+// UseCasePickerVariantProps so ChronologyAdoptionView can plumb real
 // template data; falls back to fixture use cases for standalone demos.
 
 import { AnimatePresence } from 'framer-motion';

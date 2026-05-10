@@ -4,7 +4,7 @@ import {
 } from 'lucide-react';
 import { highlightMatch } from '@/lib/ui/highlightMatch';
 import { getCachedLightFields } from './reviewParseCache';
-import { deriveArchCategories, userHasCategoryCredential } from '../matrix/architecturalCategories';
+import { deriveArchCategories, userHasCategoryCredential } from '../../shared/architecturalCategories';
 import { TemplateCategoryPills } from './TemplateCategoryPills';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { TemplateModal } from './reviewParseCache';

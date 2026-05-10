@@ -7,7 +7,7 @@ import { useVaultStore } from "@/stores/vaultStore";
 import { deleteDesignReview, cleanupDuplicateReviews, backfillServiceFlow, backfillRelatedTools } from '@/api/overview/reviews';
 import { computeAdoptionReadiness } from '../../shared/adoptionReadiness';
 import { computeDifficulty, computeSetupLevel } from '../../shared/templateComplexity';
-import { deriveArchCategories } from '../matrix/architecturalCategories';
+import { deriveArchCategories } from '../../shared/architecturalCategories';
 import { getCachedDesignResult, getCachedLightFields } from './reviewParseCache';
 import type { CredentialModalTarget } from '../modals/TemplateModals';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';

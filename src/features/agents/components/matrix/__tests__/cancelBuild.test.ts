@@ -39,7 +39,7 @@ vi.mock("@/stores/agentStore", () => {
 // Import under test (AFTER mocks)
 // ---------------------------------------------------------------------------
 
-import { useMatrixBuild } from "../useMatrixBuild";
+import { useBuild } from "../useBuild";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -81,7 +81,7 @@ describe("cancelBuild (MTRX-09)", () => {
     });
 
     const { result } = renderHook(() =>
-      useMatrixBuild({ personaId: "persona-1" }),
+      useBuild({ personaId: "persona-1" }),
     );
 
     await act(async () => {
@@ -95,7 +95,7 @@ describe("cancelBuild (MTRX-09)", () => {
     // Simulate the post-cancel store state that resetBuildSession produces.
     // The real resetBuildSession (in matrixBuildSlice) sets buildPhase to
     // "initializing" and buildPendingQuestions to []. Here we verify that
-    // useMatrixBuild exposes these reset values correctly.
+    // useBuild exposes these reset values correctly.
     setStoreState({
       buildPhase: "initializing",
       buildPendingQuestions: [],
@@ -103,7 +103,7 @@ describe("cancelBuild (MTRX-09)", () => {
     });
 
     const { result } = renderHook(() =>
-      useMatrixBuild({ personaId: "persona-1" }),
+      useBuild({ personaId: "persona-1" }),
     );
 
     expect(result.current.buildPhase).toBe("initializing");
@@ -115,7 +115,7 @@ describe("cancelBuild (MTRX-09)", () => {
     setStoreState({ buildPhase: "initializing", buildSessionId: null });
 
     const { result } = renderHook(() =>
-      useMatrixBuild({ personaId: "persona-1" }),
+      useBuild({ personaId: "persona-1" }),
     );
 
     // Should not throw

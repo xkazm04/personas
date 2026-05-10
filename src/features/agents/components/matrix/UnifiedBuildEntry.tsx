@@ -1,17 +1,17 @@
 /**
- * UnifiedMatrixEntry -- unified matrix build surface for persona creation and editing.
+ * UnifiedBuildEntry -- unified matrix build surface for persona creation and editing.
  *
  * This component renders PersonaMatrix with variant="creation" directly,
  * with no mode tabs and no wizard step navigation.
  * The matrix IS the creation surface.
  *
- * It uses useMatrixBuild for build orchestration and manages local state
+ * It uses useBuild for build orchestration and manages local state
  * for intent text and agent name. Draft persona creation calls createPersona
  * via agentStore before starting the build session.
  */
 import { useState, useCallback, useEffect, useRef } from "react";
-import { useMatrixBuild } from "@/features/agents/components/matrix/useMatrixBuild";
-import { useMatrixLifecycle } from "@/features/agents/components/matrix/useMatrixLifecycle";
+import { useBuild } from "@/features/agents/components/matrix/useBuild";
+import { useLifecycle } from "@/features/agents/components/matrix/useLifecycle";
 import { GlyphFullLayout } from "@/features/agents/components/glyph/GlyphFullLayout";
 import { GlyphPrototypeLayout } from "@/features/agents/components/glyph/GlyphPrototypeLayout";
 import { useUseCaseChronology } from "@/features/templates/sub_generated/adoption/chronology/useUseCaseChronology";
@@ -91,7 +91,7 @@ function generateAgentName(intent: string): string {
 // Component
 // ---------------------------------------------------------------------------
 
-export function UnifiedMatrixEntry() {
+export function UnifiedBuildEntry() {
   const { t } = useTranslation();
   const createPersona = useAgentStore((s) => s.createPersona);
   const deletePersona = useAgentStore((s) => s.deletePersona);
@@ -285,8 +285,8 @@ export function UnifiedMatrixEntry() {
     };
   }, [draftPersonaId]);
 
-  const build = useMatrixBuild({ personaId: draftPersonaId });
-  const lifecycle = useMatrixLifecycle({
+  const build = useBuild({ personaId: draftPersonaId });
+  const lifecycle = useLifecycle({
     personaId: draftPersonaId,
   });
 

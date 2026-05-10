@@ -1,7 +1,7 @@
 import { CheckCircle2, AlertCircle, X } from 'lucide-react';
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { getCategoryMeta } from './searchConstants';
-import { ARCH_CATEGORIES } from '../../matrix/architecturalCategories';
+import { ARCH_CATEGORIES } from '../../../shared/architecturalCategories';
 import { useTranslation } from '@/i18n/useTranslation';
 
 export function FilterChips({

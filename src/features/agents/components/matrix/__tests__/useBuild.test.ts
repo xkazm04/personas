@@ -40,7 +40,7 @@ vi.mock("@/stores/agentStore", () => {
 // Import under test (AFTER mocks)
 // ---------------------------------------------------------------------------
 
-import { useMatrixBuild } from "../useMatrixBuild";
+import { useBuild } from "../useBuild";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -69,7 +69,7 @@ function setStoreState(overrides: Partial<Record<string, unknown>> = {}) {
 // Tests
 // ---------------------------------------------------------------------------
 
-describe("useMatrixBuild", () => {
+describe("useBuild", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     setStoreState();
@@ -81,7 +81,7 @@ describe("useMatrixBuild", () => {
     it("returns 0 when no cells are resolved", () => {
       setStoreState({ buildCellStates: {} });
       const { result } = renderHook(() =>
-        useMatrixBuild({ personaId: "p1" }),
+        useBuild({ personaId: "p1" }),
       );
       expect(result.current.completeness).toBe(0);
     });
@@ -100,7 +100,7 @@ describe("useMatrixBuild", () => {
         },
       });
       const { result } = renderHook(() =>
-        useMatrixBuild({ personaId: "p1" }),
+        useBuild({ personaId: "p1" }),
       );
       expect(result.current.completeness).toBe(50);
     });
@@ -119,7 +119,7 @@ describe("useMatrixBuild", () => {
         },
       });
       const { result } = renderHook(() =>
-        useMatrixBuild({ personaId: "p1" }),
+        useBuild({ personaId: "p1" }),
       );
       expect(result.current.completeness).toBe(100);
     });
@@ -134,7 +134,7 @@ describe("useMatrixBuild", () => {
         },
       });
       const { result } = renderHook(() =>
-        useMatrixBuild({ personaId: "p1" }),
+        useBuild({ personaId: "p1" }),
       );
       expect(result.current.completeness).toBe(38);
     });
@@ -146,7 +146,7 @@ describe("useMatrixBuild", () => {
     it("is true when buildPhase is 'analyzing'", () => {
       setStoreState({ buildPhase: "analyzing" });
       const { result } = renderHook(() =>
-        useMatrixBuild({ personaId: "p1" }),
+        useBuild({ personaId: "p1" }),
       );
       expect(result.current.isBuilding).toBe(true);
     });
@@ -154,7 +154,7 @@ describe("useMatrixBuild", () => {
     it("is true when buildPhase is 'resolving'", () => {
       setStoreState({ buildPhase: "resolving" });
       const { result } = renderHook(() =>
-        useMatrixBuild({ personaId: "p1" }),
+        useBuild({ personaId: "p1" }),
       );
       expect(result.current.isBuilding).toBe(true);
     });
@@ -162,7 +162,7 @@ describe("useMatrixBuild", () => {
     it("is false when buildPhase is 'initializing'", () => {
       setStoreState({ buildPhase: "initializing" });
       const { result } = renderHook(() =>
-        useMatrixBuild({ personaId: "p1" }),
+        useBuild({ personaId: "p1" }),
       );
       expect(result.current.isBuilding).toBe(false);
     });
@@ -170,7 +170,7 @@ describe("useMatrixBuild", () => {
     it("is false when buildPhase is 'completed'", () => {
       setStoreState({ buildPhase: "completed" });
       const { result } = renderHook(() =>
-        useMatrixBuild({ personaId: "p1" }),
+        useBuild({ personaId: "p1" }),
       );
       expect(result.current.isBuilding).toBe(false);
     });
@@ -178,7 +178,7 @@ describe("useMatrixBuild", () => {
     it("is false when buildPhase is 'awaiting_input'", () => {
       setStoreState({ buildPhase: "awaiting_input" });
       const { result } = renderHook(() =>
-        useMatrixBuild({ personaId: "p1" }),
+        useBuild({ personaId: "p1" }),
       );
       expect(result.current.isBuilding).toBe(false);
     });
@@ -190,7 +190,7 @@ describe("useMatrixBuild", () => {
     it("is true when phase is 'initializing' and no session ID", () => {
       setStoreState({ buildPhase: "initializing", buildSessionId: null });
       const { result } = renderHook(() =>
-        useMatrixBuild({ personaId: "p1" }),
+        useBuild({ personaId: "p1" }),
       );
       expect(result.current.isIdle).toBe(true);
     });
@@ -201,7 +201,7 @@ describe("useMatrixBuild", () => {
         buildSessionId: "session-123",
       });
       const { result } = renderHook(() =>
-        useMatrixBuild({ personaId: "p1" }),
+        useBuild({ personaId: "p1" }),
       );
       expect(result.current.isIdle).toBe(false);
     });
@@ -209,7 +209,7 @@ describe("useMatrixBuild", () => {
     it("is false when phase is 'analyzing'", () => {
       setStoreState({ buildPhase: "analyzing", buildSessionId: null });
       const { result } = renderHook(() =>
-        useMatrixBuild({ personaId: "p1" }),
+        useBuild({ personaId: "p1" }),
       );
       expect(result.current.isIdle).toBe(false);
     });
@@ -220,7 +220,7 @@ describe("useMatrixBuild", () => {
   describe("handleGenerate", () => {
     it("calls session.startSession with the intent text", async () => {
       const { result } = renderHook(() =>
-        useMatrixBuild({ personaId: "p1" }),
+        useBuild({ personaId: "p1" }),
       );
 
       await act(async () => {
@@ -234,7 +234,7 @@ describe("useMatrixBuild", () => {
   describe("handleAnswer", () => {
     it("calls session.answerQuestion with cellKey and answer", async () => {
       const { result } = renderHook(() =>
-        useMatrixBuild({ personaId: "p1" }),
+        useBuild({ personaId: "p1" }),
       );
 
       await act(async () => {
@@ -251,7 +251,7 @@ describe("useMatrixBuild", () => {
   describe("handleCancel", () => {
     it("calls session.cancelSession", async () => {
       const { result } = renderHook(() =>
-        useMatrixBuild({ personaId: "p1" }),
+        useBuild({ personaId: "p1" }),
       );
 
       await act(async () => {
@@ -268,7 +268,7 @@ describe("useMatrixBuild", () => {
     it("exposes buildPhase from store", () => {
       setStoreState({ buildPhase: "resolving" });
       const { result } = renderHook(() =>
-        useMatrixBuild({ personaId: "p1" }),
+        useBuild({ personaId: "p1" }),
       );
       expect(result.current.buildPhase).toBe("resolving");
     });
@@ -277,7 +277,7 @@ describe("useMatrixBuild", () => {
       const states = { "use-cases": "resolved", connectors: "filling" };
       setStoreState({ buildCellStates: states });
       const { result } = renderHook(() =>
-        useMatrixBuild({ personaId: "p1" }),
+        useBuild({ personaId: "p1" }),
       );
       expect(result.current.cellStates).toEqual(states);
     });
@@ -288,7 +288,7 @@ describe("useMatrixBuild", () => {
       ];
       setStoreState({ buildPendingQuestions: questions });
       const { result } = renderHook(() =>
-        useMatrixBuild({ personaId: "p1" }),
+        useBuild({ personaId: "p1" }),
       );
       expect(result.current.pendingQuestions).toEqual(questions);
     });
@@ -296,7 +296,7 @@ describe("useMatrixBuild", () => {
     it("exposes outputLines from store", () => {
       setStoreState({ buildOutputLines: ["line 1", "line 2"] });
       const { result } = renderHook(() =>
-        useMatrixBuild({ personaId: "p1" }),
+        useBuild({ personaId: "p1" }),
       );
       expect(result.current.outputLines).toEqual(["line 1", "line 2"]);
     });
@@ -304,7 +304,7 @@ describe("useMatrixBuild", () => {
     it("exposes buildError from store", () => {
       setStoreState({ buildError: "Something broke" });
       const { result } = renderHook(() =>
-        useMatrixBuild({ personaId: "p1" }),
+        useBuild({ personaId: "p1" }),
       );
       expect(result.current.buildError).toBe("Something broke");
     });

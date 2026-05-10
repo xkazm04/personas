@@ -21,7 +21,7 @@ export interface TemplateAdoptSnapshot {
 //   start_template_adopt_background, clear_template_adopt_snapshot,
 //   cancel_template_adopt, confirm_template_adopt_draft,
 //   generate_template_adopt_questions, continue_template_adopt.
-// The modal flow at MatrixAdoptionView uses inline questionnaire +
+// The modal flow at ChronologyAdoptionView uses inline questionnaire +
 // create_adoption_session instead. The two surviving commands below
 // remain wired:
 //   - getTemplateAdoptSnapshot: polled by useAdoptionCompletionNotifier

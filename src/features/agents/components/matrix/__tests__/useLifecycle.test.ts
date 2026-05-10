@@ -139,7 +139,7 @@ vi.mock("@/stores/agentStore", () => {
 // Import under test (AFTER mocks)
 // ---------------------------------------------------------------------------
 
-import { useMatrixLifecycle } from "../useMatrixLifecycle";
+import { useLifecycle } from "../useLifecycle";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -172,7 +172,7 @@ function simulateEvent(eventName: string, payload: Record<string, unknown>) {
 // Tests
 // ---------------------------------------------------------------------------
 
-describe("useMatrixLifecycle", () => {
+describe("useLifecycle", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     listenerMap.clear();
@@ -193,7 +193,7 @@ describe("useMatrixLifecycle", () => {
       });
 
       const { result } = renderHook(() =>
-        useMatrixLifecycle({ personaId: "persona-1" }),
+        useLifecycle({ personaId: "persona-1" }),
       );
 
       await act(async () => {
@@ -212,7 +212,7 @@ describe("useMatrixLifecycle", () => {
       });
 
       const { result } = renderHook(() =>
-        useMatrixLifecycle({ personaId: "persona-1" }),
+        useLifecycle({ personaId: "persona-1" }),
       );
 
       await act(async () => {
@@ -229,7 +229,7 @@ describe("useMatrixLifecycle", () => {
       });
 
       const { result } = renderHook(() =>
-        useMatrixLifecycle({ personaId: "persona-1" }),
+        useLifecycle({ personaId: "persona-1" }),
       );
 
       await act(async () => {
@@ -243,7 +243,7 @@ describe("useMatrixLifecycle", () => {
       setStoreState({ buildPhase: "testing", buildSessionId: "session-123" });
 
       const { result } = renderHook(() =>
-        useMatrixLifecycle({ personaId: "persona-1" }),
+        useLifecycle({ personaId: "persona-1" }),
       );
 
       await act(async () => {
@@ -262,7 +262,7 @@ describe("useMatrixLifecycle", () => {
       });
 
       const { result } = renderHook(() =>
-        useMatrixLifecycle({ personaId: "persona-1" }),
+        useLifecycle({ personaId: "persona-1" }),
       );
 
       await act(async () => {
@@ -288,7 +288,7 @@ describe("useMatrixLifecycle", () => {
       });
 
       const { result } = renderHook(() =>
-        useMatrixLifecycle({ personaId: "persona-1" }),
+        useLifecycle({ personaId: "persona-1" }),
       );
 
       await act(async () => {
@@ -311,7 +311,7 @@ describe("useMatrixLifecycle", () => {
         buildSessionId: "session-123",
       });
 
-      renderHook(() => useMatrixLifecycle({ personaId: "persona-1" }));
+      renderHook(() => useLifecycle({ personaId: "persona-1" }));
 
       await act(async () => {});
 
@@ -324,7 +324,7 @@ describe("useMatrixLifecycle", () => {
         buildSessionId: "session-123",
       });
 
-      renderHook(() => useMatrixLifecycle({ personaId: "persona-1" }));
+      renderHook(() => useLifecycle({ personaId: "persona-1" }));
 
       await act(async () => {});
 
@@ -346,7 +346,7 @@ describe("useMatrixLifecycle", () => {
         buildSessionId: "session-123",
       });
 
-      renderHook(() => useMatrixLifecycle({ personaId: "persona-1" }));
+      renderHook(() => useLifecycle({ personaId: "persona-1" }));
 
       await act(async () => {});
 
@@ -380,7 +380,7 @@ describe("useMatrixLifecycle", () => {
       });
 
       const { result } = renderHook(() =>
-        useMatrixLifecycle({ personaId: "persona-1" }),
+        useLifecycle({ personaId: "persona-1" }),
       );
 
       await act(async () => {
@@ -401,7 +401,7 @@ describe("useMatrixLifecycle", () => {
       });
 
       const { result } = renderHook(() =>
-        useMatrixLifecycle({ personaId: "persona-1" }),
+        useLifecycle({ personaId: "persona-1" }),
       );
 
       await act(async () => {
@@ -418,7 +418,7 @@ describe("useMatrixLifecycle", () => {
       });
 
       const { result } = renderHook(() =>
-        useMatrixLifecycle({ personaId: "persona-1" }),
+        useLifecycle({ personaId: "persona-1" }),
       );
 
       await act(async () => {
@@ -442,7 +442,7 @@ describe("useMatrixLifecycle", () => {
       });
 
       const { result } = renderHook(() =>
-        useMatrixLifecycle({ personaId: "persona-1" }),
+        useLifecycle({ personaId: "persona-1" }),
       );
 
       await act(async () => {
@@ -462,7 +462,7 @@ describe("useMatrixLifecycle", () => {
       });
 
       const { result } = renderHook(() =>
-        useMatrixLifecycle({ personaId: "persona-1" }),
+        useLifecycle({ personaId: "persona-1" }),
       );
 
       await act(async () => {
@@ -482,7 +482,7 @@ describe("useMatrixLifecycle", () => {
       });
 
       const { result } = renderHook(() =>
-        useMatrixLifecycle({ personaId: "persona-1" }),
+        useLifecycle({ personaId: "persona-1" }),
       );
 
       await act(async () => {
@@ -507,7 +507,7 @@ describe("useMatrixLifecycle", () => {
       });
 
       const { result } = renderHook(() =>
-        useMatrixLifecycle({ personaId: "persona-1" }),
+        useLifecycle({ personaId: "persona-1" }),
       );
 
       let promoteResult: { success: boolean; triggersCreated: number; toolsCreated: number } | undefined;
@@ -529,7 +529,7 @@ describe("useMatrixLifecycle", () => {
       });
 
       const { result } = renderHook(() =>
-        useMatrixLifecycle({ personaId: "persona-1" }),
+        useLifecycle({ personaId: "persona-1" }),
       );
 
       let promoteResult: { success: boolean } | undefined;
@@ -551,7 +551,7 @@ describe("useMatrixLifecycle", () => {
       });
 
       const { result } = renderHook(() =>
-        useMatrixLifecycle({ personaId: "persona-1" }),
+        useLifecycle({ personaId: "persona-1" }),
       );
 
       let promoteResult: { success: boolean } | undefined;
@@ -576,7 +576,7 @@ describe("useMatrixLifecycle", () => {
       });
 
       const { result } = renderHook(() =>
-        useMatrixLifecycle({ personaId: "persona-1" }),
+        useLifecycle({ personaId: "persona-1" }),
       );
 
       await act(async () => {
@@ -599,7 +599,7 @@ describe("useMatrixLifecycle", () => {
       setStoreState({ buildPhase: "testing" });
 
       const { result } = renderHook(() =>
-        useMatrixLifecycle({ personaId: "persona-1" }),
+        useLifecycle({ personaId: "persona-1" }),
       );
 
       expect(result.current.isTesting).toBe(true);
@@ -609,7 +609,7 @@ describe("useMatrixLifecycle", () => {
       setStoreState({ buildPhase: "test_complete" });
 
       const { result } = renderHook(() =>
-        useMatrixLifecycle({ personaId: "persona-1" }),
+        useLifecycle({ personaId: "persona-1" }),
       );
 
       expect(result.current.isTestComplete).toBe(true);
@@ -619,7 +619,7 @@ describe("useMatrixLifecycle", () => {
       setStoreState({ buildTestPassed: true });
 
       const { result } = renderHook(() =>
-        useMatrixLifecycle({ personaId: "persona-1" }),
+        useLifecycle({ personaId: "persona-1" }),
       );
 
       expect(result.current.buildTestPassed).toBe(true);
@@ -629,7 +629,7 @@ describe("useMatrixLifecycle", () => {
       setStoreState({ buildTestError: "Something failed" });
 
       const { result } = renderHook(() =>
-        useMatrixLifecycle({ personaId: "persona-1" }),
+        useLifecycle({ personaId: "persona-1" }),
       );
 
       expect(result.current.buildTestError).toBe("Something failed");
@@ -641,7 +641,7 @@ describe("useMatrixLifecycle", () => {
       });
 
       const { result } = renderHook(() =>
-        useMatrixLifecycle({ personaId: "persona-1" }),
+        useLifecycle({ personaId: "persona-1" }),
       );
 
       expect(result.current.buildTestOutputLines).toEqual([
@@ -655,7 +655,7 @@ describe("useMatrixLifecycle", () => {
       setStoreState({ buildToolTestResults: results });
 
       const { result } = renderHook(() =>
-        useMatrixLifecycle({ personaId: "persona-1" }),
+        useLifecycle({ personaId: "persona-1" }),
       );
 
       expect(result.current.buildToolTestResults).toEqual(results);
@@ -665,7 +665,7 @@ describe("useMatrixLifecycle", () => {
       setStoreState({ buildTestSummary: "3 passed, 0 failed" });
 
       const { result } = renderHook(() =>
-        useMatrixLifecycle({ personaId: "persona-1" }),
+        useLifecycle({ personaId: "persona-1" }),
       );
 
       expect(result.current.buildTestSummary).toBe("3 passed, 0 failed");

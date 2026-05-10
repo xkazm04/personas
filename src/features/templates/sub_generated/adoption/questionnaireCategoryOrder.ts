@@ -1,7 +1,7 @@
 /**
  * Canonical questionnaire category order.
  *
- * Shared by the adoption flow's sort (MatrixAdoptionView → filteredAdoptionQuestions)
+ * Shared by the adoption flow's sort (ChronologyAdoptionView → filteredAdoptionQuestions)
  * and the Live Preview sidebar bucket walk (QuestionnaireFormFocus). Keeping
  * both surfaces on this one constant prevents the "questionnaire says step 1/6
  * Configuration but the preview sidebar's first bucket is Domain" drift that
