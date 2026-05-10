@@ -232,6 +232,24 @@ pub fn companion_get_reflection(
     })
 }
 
+/// Discard an entire consolidation run: reject every still-pending
+/// item and mark the run as `discarded`. Already-applied items keep
+/// their applied facts. Returns the number of items newly rejected.
+///
+/// Pairs with the per-item `companion_reject_consolidation_item` to
+/// give users a batch-level discard for runs they decide aren't worth
+/// walking item-by-item — same gesture as Anthropic Managed Agents'
+/// "discard the dream output store" at the batch granularity personas
+/// already supports per-item.
+#[tauri::command]
+pub fn companion_discard_consolidation_run(
+    state: State<'_, Arc<AppState>>,
+    run_id: String,
+) -> Result<i64, AppError> {
+    ipc_auth::require_auth_sync(&state)?;
+    consolidation::discard_run(&state.user_db, &run_id)
+}
+
 // ── Curation runs (job-shaped async curation) ──────────────────────────
 
 /// Enqueue a memory-curation run as a `BackgroundJob`. Returns the job
