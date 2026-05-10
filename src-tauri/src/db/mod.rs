@@ -773,6 +773,71 @@ CREATE INDEX IF NOT EXISTS idx_companion_background_job_status
     ON companion_background_job(status, created_at);
 CREATE INDEX IF NOT EXISTS idx_companion_job_status_created
     ON companion_background_job(status, created_at);
+
+-- Project tracking: per-project subscription owned by the Dev Tools plugin.
+-- One row per row in `companion_known_project`. Watch flags decide which
+-- sources the engine project_tracking subsystem polls; `enabled` is the
+-- per-project on/off (the Companion master toggle in plugin setup is a
+-- separate global gate). Phase 7 auto-creates a row with enabled=false
+-- whenever a project is registered; Phase 0 just lays the schema.
+CREATE TABLE IF NOT EXISTS dev_tools_project_subscription (
+    project_id           TEXT PRIMARY KEY,
+    watch_git            INTEGER NOT NULL DEFAULT 1,
+    watch_active_runs    INTEGER NOT NULL DEFAULT 1,
+    watch_obsidian       INTEGER NOT NULL DEFAULT 0,
+    obsidian_vault_path  TEXT,
+    enabled              INTEGER NOT NULL DEFAULT 0,
+    last_pulse_at        TEXT,
+    created_at           TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at           TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (project_id) REFERENCES companion_known_project(id) ON DELETE CASCADE
+);
+
+-- Project tracking: raw event log. Insert-only, no LLM, no embedding.
+-- Pruned to the last 7 days on each scheduler tick (Phase 1). Aggregated
+-- into `engine_project_pulse` rows by the consolidator (Phase 2).
+-- `kind` is one of: 'commit' | 'run_started' | 'run_completed' | 'note'.
+-- `payload_json` carries source-specific fields (commit hash + author +
+-- subject + files for 'commit'; run slug + paths for 'run_*'; note path +
+-- title + summary for 'note').
+CREATE TABLE IF NOT EXISTS engine_cli_event (
+    id            TEXT PRIMARY KEY,
+    project_id    TEXT NOT NULL,
+    kind          TEXT NOT NULL,
+    payload_json  TEXT NOT NULL,
+    created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (project_id) REFERENCES companion_known_project(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_engine_cli_event_project_created
+    ON engine_cli_event(project_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_engine_cli_event_kind_created
+    ON engine_cli_event(project_id, kind, created_at);
+
+-- Project tracking: consolidated picture. One row per (project, day),
+-- upserted across the day's ticks. `narrative_md` is a single short
+-- paragraph, `directions_json` is 3-5 named hypotheses about where work
+-- is heading, `tensions_json` is 0-3 bullets flagging drift /
+-- half-finished work / contradictions. Aggregates support drill-in
+-- queries from chat without re-counting. Token telemetry tracks
+-- consolidator cost.
+CREATE TABLE IF NOT EXISTS engine_project_pulse (
+    project_id        TEXT NOT NULL,
+    day               TEXT NOT NULL,                  -- ISO date (YYYY-MM-DD)
+    narrative_md      TEXT NOT NULL DEFAULT '',
+    directions_json   TEXT NOT NULL DEFAULT '[]',
+    tensions_json     TEXT NOT NULL DEFAULT '[]',
+    commit_count      INTEGER NOT NULL DEFAULT 0,
+    run_count         INTEGER NOT NULL DEFAULT 0,
+    note_count        INTEGER NOT NULL DEFAULT 0,
+    tokens_in         INTEGER NOT NULL DEFAULT 0,
+    tokens_out        INTEGER NOT NULL DEFAULT 0,
+    created_at        TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at        TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (project_id, day),
+    FOREIGN KEY (project_id) REFERENCES companion_known_project(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_engine_project_pulse_recent
+    ON engine_project_pulse(project_id, day DESC);
 "#;
 
 /// Seed all built-in local credentials if they don't already exist.
