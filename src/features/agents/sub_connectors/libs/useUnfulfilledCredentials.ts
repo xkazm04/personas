@@ -125,24 +125,18 @@ export function useUnfulfilledCredentials(persona?: PersonaWithDetails | null) {
 // ---------------------------------------------------------------------------
 
 export function useGlobalUnfulfilledCredentials() {
-  const personas = useAgentStore((s) => s.personas);
   const credentials = useVaultStore((s) => s.credentials);
   const connectors = useVaultStore((s) => s.connectorDefinitions);
 
   return useMemo((): CredentialDemandSummary => {
-    // Persona doesn't have tools directly -- we'd need PersonaWithDetails for each.
-    // For the global view, we approximate by matching personas' design_context credentialLinks
-    // against the credential store. This is a lighter query since we don't fetch full details.
-    // The actual demand detection happens per-persona in the agent editor.
-    // Global view shows: credentials that exist but are unused, and connectors with no credentials.
-
-    const allConnectorNames = new Set<string>();
-    for (const c of connectors) allConnectorNames.add(c.name);
+    // For the global view we approximate by matching the credential store's
+    // service_types against the connector catalog. The actual demand detection
+    // happens per-persona in the agent editor (see useUnfulfilledCredentials).
+    // Global view shows: connectors with no matching credentials.
 
     const credServiceTypes = new Set<string>();
     for (const c of credentials) credServiceTypes.add(c.service_type);
 
-    // Connectors with no matching credentials
     const uncoveredConnectors = connectors.filter((c) => !credServiceTypes.has(c.name));
 
     const demands: UnfulfilledCredential[] = uncoveredConnectors.map((c) => ({
@@ -163,5 +157,5 @@ export function useGlobalUnfulfilledCredentials() {
       reusableCount: 0,
       demands,
     };
-  }, [personas, credentials, connectors]);
+  }, [credentials, connectors]);
 }
