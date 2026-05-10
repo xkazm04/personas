@@ -2,7 +2,6 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
-import { execSync } from "child_process";
 import { visualizer } from "rollup-plugin-visualizer";
 import {
   needsTransform,
@@ -30,25 +29,17 @@ export default defineConfig(async () => ({
   // Use relative paths so assets resolve under tauri:// protocol in production
   base: "./",
   plugins: [
-    // Auto-regenerate template checksums and connector seed so DB seeding
-    // always works on any device after clone + build. Fail loud — predev/prebuild
-    // run the same scripts upstream, so a failure here is not a transient hiccup
-    // worth swallowing; it means codegen is genuinely broken and the build would
-    // otherwise ship with stale artifacts.
-    {
-      name: "catalog-codegen",
-      buildStart() {
-        const cwd = path.resolve(__dirname);
-        for (const script of [
-          "scripts/generate-template-checksums.mjs",
-          "scripts/generate-connector-seed.mjs",
-          "scripts/generate-agent-icon-sprites.mjs",
-          "scripts/i18n/split-locales.mjs",
-        ]) {
-          execSync(`node ${script}`, { cwd, stdio: "inherit" });
-        }
-      },
-    },
+    // Codegen (template checksums, connector seed, agent icon sprites,
+    // i18n locale split, command names, ts-rs binding regen, n8n limits,
+    // host-triple cache check) is owned by `scripts/run-codegen.mjs` via
+    // the `predev` and `prebuild` npm hooks. The earlier `catalog-codegen`
+    // buildStart plugin re-ran 4 of those scripts redundantly on every
+    // vite build, costing ~600ms per dev start AND silently diverging
+    // when a script was added to buildStart only (e.g., agent-icon-sprites
+    // never made it into run-codegen.mjs until 2026-05-10). Removed
+    // 2026-05-10 — if you bypass `npm run dev` / `npm run build` (e.g.,
+    // by running `vite build` directly), regenerate codegen first via
+    // `node scripts/run-codegen.mjs prebuild`.
     react(),
     tailwindcss(),
     // Bundle analysis: run `ANALYZE=true npm run build` then open dist/bundle-report.html

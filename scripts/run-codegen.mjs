@@ -24,19 +24,22 @@ const TASKS = {
   i18n:      "scripts/i18n/gen-types.mjs",
   // Splits per-locale JSON into section-scoped JSON chunks under
   // src/i18n/section-locales/<lang>/<section>.json + regenerates
-  // src/i18n/generated/enSectionStrings.ts. Vite buildStart also runs
-  // this (defense-in-depth); listing it here keeps the documented
-  // codegen surface in sync with what actually runs.
+  // src/i18n/generated/enSectionStrings.ts.
   "i18n-split": "scripts/i18n/split-locales.mjs",
   connectors:"scripts/generate-connector-seed.mjs",
   checksums: "scripts/generate-template-checksums.mjs",
   "n8n-limits": "scripts/generate-n8n-limits.mjs",
   "host-check": "scripts/check-build-cache.mjs",
+  // Composes per-agent WebP icons into sprite sheets. Previously orphaned
+  // in vite buildStart only (asymmetric: `npm run dev` regenerated, plain
+  // `npm run predev` did not). Listing here keeps the documented codegen
+  // surface in sync with what actually runs.
+  sprites:   "scripts/generate-agent-icon-sprites.mjs",
 };
 
 const PRESETS = {
-  predev:   ["commands", "i18n", "i18n-split", "connectors", "n8n-limits", "host-check"],
-  prebuild: ["commands", "i18n", "i18n-split", "connectors", "n8n-limits", "checksums"],
+  predev:   ["commands", "i18n", "i18n-split", "connectors", "n8n-limits", "host-check", "sprites"],
+  prebuild: ["commands", "i18n", "i18n-split", "connectors", "n8n-limits", "checksums", "sprites"],
 };
 
 const TIMEOUT_MS = Number(process.env.CODEGEN_TIMEOUT_MS) || 60_000;
