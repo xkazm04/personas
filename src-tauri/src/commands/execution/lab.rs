@@ -1,5 +1,7 @@
+use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
 
+use futures_util::FutureExt;
 use rusqlite::{params, OptionalExtension};
 use tauri::State;
 
@@ -20,6 +22,18 @@ use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::validation;
 use crate::AppState;
+
+/// Extract a printable message from a panic payload returned by `catch_unwind`.
+/// Mirrors the canonical pattern at `engine/mod.rs::run_persona_with_concurrency_tracking`.
+fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
+    if let Some(s) = panic.downcast_ref::<&str>() {
+        return s.to_string();
+    }
+    if let Some(s) = panic.downcast_ref::<String>() {
+        return s.clone();
+    }
+    "unknown panic".to_string()
+}
 
 /// Cancel an active run (if registered) and wait briefly for the background task to wind down
 /// before proceeding with deletion. All lab run types use the "test" domain.
@@ -77,7 +91,8 @@ pub async fn lab_start_arena(
 
     tokio::spawn(async move {
         let _guard = run_guard;
-        test_runner::run_arena_test(
+        let pool_for_panic = pool.clone();
+        let work = AssertUnwindSafe(test_runner::run_arena_test(
             app,
             pool,
             run_id_clone.clone(),
@@ -86,8 +101,23 @@ pub async fn lab_start_arena(
             std::env::temp_dir(),
             cancelled_clone,
             use_case_filter,
-        )
+        ))
+        .catch_unwind()
         .await;
+        if let Err(panic) = work {
+            let msg = extract_panic_message(panic);
+            tracing::error!(run_id = %run_id_clone, panic = %msg, "lab arena test panicked");
+            let now = chrono::Utc::now().to_rfc3339();
+            let _ = arena_repo::update_run_status(
+                &pool_for_panic,
+                &run_id_clone,
+                LabRunStatus::Failed,
+                None,
+                None,
+                None,
+                Some(&now),
+            );
+        }
     });
 
     Ok(run)
@@ -263,7 +293,8 @@ pub async fn lab_start_ab(
 
     tokio::spawn(async move {
         let _guard = run_guard;
-        test_runner::run_ab_test(
+        let pool_for_panic = pool.clone();
+        let work = AssertUnwindSafe(test_runner::run_ab_test(
             app,
             pool,
             run_id_clone.clone(),
@@ -272,8 +303,23 @@ pub async fn lab_start_ab(
             model_configs,
             cancelled_clone,
             use_case_filter,
-        )
+        ))
+        .catch_unwind()
         .await;
+        if let Err(panic) = work {
+            let msg = extract_panic_message(panic);
+            tracing::error!(run_id = %run_id_clone, panic = %msg, "lab ab test panicked");
+            let now = chrono::Utc::now().to_rfc3339();
+            let _ = ab_repo::update_run_status(
+                &pool_for_panic,
+                &run_id_clone,
+                LabRunStatus::Failed,
+                None,
+                None,
+                None,
+                Some(&now),
+            );
+        }
     });
 
     Ok(run)
@@ -366,7 +412,8 @@ pub async fn lab_start_matrix(
 
     tokio::spawn(async move {
         let _guard = run_guard;
-        test_runner::run_matrix_test(
+        let pool_for_panic = pool.clone();
+        let work = AssertUnwindSafe(test_runner::run_matrix_test(
             app,
             pool,
             run_id_clone.clone(),
@@ -375,8 +422,23 @@ pub async fn lab_start_matrix(
             model_configs,
             cancelled_clone,
             use_case_filter,
-        )
+        ))
+        .catch_unwind()
         .await;
+        if let Err(panic) = work {
+            let msg = extract_panic_message(panic);
+            tracing::error!(run_id = %run_id_clone, panic = %msg, "lab matrix test panicked");
+            let now = chrono::Utc::now().to_rfc3339();
+            let _ = matrix_repo::update_run_status(
+                &pool_for_panic,
+                &run_id_clone,
+                LabRunStatus::Failed,
+                None,
+                None,
+                None,
+                Some(&now),
+            );
+        }
     });
 
     Ok(run)
@@ -591,7 +653,8 @@ pub async fn lab_start_eval(
 
     tokio::spawn(async move {
         let _guard = run_guard;
-        test_runner::run_eval_test(
+        let pool_for_panic = pool.clone();
+        let work = AssertUnwindSafe(test_runner::run_eval_test(
             app,
             pool,
             run_id_clone.clone(),
@@ -600,8 +663,23 @@ pub async fn lab_start_eval(
             model_configs,
             cancelled_clone,
             use_case_filter,
-        )
+        ))
+        .catch_unwind()
         .await;
+        if let Err(panic) = work {
+            let msg = extract_panic_message(panic);
+            tracing::error!(run_id = %run_id_clone, panic = %msg, "lab eval test panicked");
+            let now = chrono::Utc::now().to_rfc3339();
+            let _ = eval_repo::update_run_status(
+                &pool_for_panic,
+                &run_id_clone,
+                LabRunStatus::Failed,
+                None,
+                None,
+                None,
+                Some(&now),
+            );
+        }
     });
 
     Ok(run)
