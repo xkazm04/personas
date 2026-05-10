@@ -11,6 +11,9 @@ This folder is only for not-yet-implemented proposals, experiments, and design e
 | [adoption-creation-unification.md](adoption-creation-unification.md) | Proposal — verify whether `matrixEditSlice` shipped before reclassifying |
 | [agent-operations-hub.md](agent-operations-hub.md) | **SHIPPED — pending MOVE** to `docs/features/agents/operations-hub.md` (Phase 1 chat ops dispatch + sidebar panels live in `src/features/agents/sub_chat/`) |
 | [ambient-context-fusion.md](ambient-context-fusion.md) | Partial (~60% wired) — signal collection + rules engine + UI panel shipped; `format_for_prompt` not yet called from `assemble_prompt` |
+| [athena-desktop-aware-cli-session-awareness.md](athena-desktop-aware-cli-session-awareness.md) | **Shipped 2026-05-09** (Phase 5 v1) — read-aware persona executions can see the user's interactive Claude CLI session as additional prompt context |
+| [athena-desktop-aware-daemon-bridge.md](athena-desktop-aware-daemon-bridge.md) | **Shipped 2026-05-09** (Phase 3 c v3) — `ambient_signal` SQL table bridges in-memory ambient signals from windowed app to the personas-daemon process |
+| [athena-desktop-aware-phase1-audit.md](athena-desktop-aware-phase1-audit.md) | Phase 1 audit complete (2026-05-09) — Decision gate **GO** with two scope corrections; Phases 2-6 follow as separate sessions |
 | [claude-code-routines-integration.md](claude-code-routines-integration.md) | Proposal — descoped-reopenable (2026-04-15); blockers tracked |
 | [cli-coordination-active-runs.md](cli-coordination-active-runs.md) | **SHIPPED — pending MOVE** to `docs/architecture/cli-coordination.md` (v1 + v2 priority-five adoption — `/architect`, `/add-template`, `/add-credential`, `/refresh-context`, `/codebase-init`); long-tail adoption pending |
 | [cloud-deployment.md](cloud-deployment.md) | Proposal — design spec for *optional* server-side orchestrator deployment, not the Desktop app |
