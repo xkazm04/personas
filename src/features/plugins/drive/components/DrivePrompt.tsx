@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "@/i18n/useTranslation";
+import { BaseModal } from "@/features/shared/components/modals";
 
 interface TextPromptProps {
   title: string;
@@ -17,17 +18,14 @@ export function DriveTextPrompt({
   onCancel,
 }: TextPromptProps) {
   const { t } = useTranslation();
+  const titleId = useId();
   const [value, setValue] = useState(initialValue);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    setTimeout(() => inputRef.current?.focus(), 10);
-    const esc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onCancel();
-    };
-    document.addEventListener("keydown", esc);
-    return () => document.removeEventListener("keydown", esc);
-  }, [onCancel]);
+    const raf = requestAnimationFrame(() => inputRef.current?.focus());
+    return () => cancelAnimationFrame(raf);
+  }, []);
 
   const submit = () => {
     const trimmed = value.trim();
@@ -35,14 +33,16 @@ export function DriveTextPrompt({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-[9998] flex items-center justify-center bg-background/60 surface-blur-modal"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onCancel();
-      }}
+    <BaseModal
+      isOpen
+      onClose={onCancel}
+      titleId={titleId}
+      portal
+      maxWidthClass="max-w-none"
+      panelClassName="w-[360px] rounded-modal border border-primary/25 bg-background/95 shadow-elevation-3 p-4"
     >
-      <div className="w-[360px] rounded-modal border border-primary/25 bg-background/95 shadow-elevation-3 p-4">
-        <div className="typo-section-title mb-3">{title}</div>
+      <div className="contents">
+        <div id={titleId} className="typo-section-title mb-3">{title}</div>
         <input
           ref={inputRef}
           value={value}
@@ -71,7 +71,7 @@ export function DriveTextPrompt({
           </button>
         </div>
       </div>
-    </div>
+    </BaseModal>
   );
 }
 
@@ -91,24 +91,19 @@ export function DriveConfirm({
   onCancel,
 }: ConfirmPromptProps) {
   const { t } = useTranslation();
-
-  useEffect(() => {
-    const esc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onCancel();
-    };
-    document.addEventListener("keydown", esc);
-    return () => document.removeEventListener("keydown", esc);
-  }, [onCancel]);
+  const titleId = useId();
 
   return (
-    <div
-      className="fixed inset-0 z-[9998] flex items-center justify-center bg-background/60 surface-blur-modal"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onCancel();
-      }}
+    <BaseModal
+      isOpen
+      onClose={onCancel}
+      titleId={titleId}
+      portal
+      maxWidthClass="max-w-none"
+      panelClassName="w-[400px] rounded-modal border border-primary/25 bg-background/95 shadow-elevation-3 p-4"
     >
-      <div className="w-[400px] rounded-modal border border-primary/25 bg-background/95 shadow-elevation-3 p-4">
-        <div className="typo-section-title mb-2">{title}</div>
+      <div className="contents">
+        <div id={titleId} className="typo-section-title mb-2">{title}</div>
         {body && (
           <div className="typo-body text-foreground mb-4 leading-relaxed">{body}</div>
         )}
@@ -133,6 +128,6 @@ export function DriveConfirm({
           </button>
         </div>
       </div>
-    </div>
+    </BaseModal>
   );
 }
