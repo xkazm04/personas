@@ -504,7 +504,35 @@ The codebase enforces a layered error-handling discipline. Established as a stro
 ### Memory layers (don't confuse them)
 - **Agent memory** — `memories` table, episodic facts the *agent* learned during executions. Per-persona. Used by personas at runtime.
 - **Persona memory store** — frontend Zustand store mirroring the above for UI display.
+- **Companion brain** — Athena's personal memory. Lives at `src-tauri/src/companion/brain/` (17 files, 5-tier cognitive memory model: working/episodic/semantic/procedural/identity + relations graph + provenance). Submodules: `consolidation` (token-cap pruning + fuzzy dedup + per-item review with apply/reject), `reflection` (prose journaling, NOT in retrieval), `recall_synthesis` (synthesis at retrieval, shipped 2026-05-09), `doctrine`, `episodic`, `procedural`, `semantic`, `rituals`, `goals`, `identity`, `dashboard`, `retrieval`, `embeddings`, `graph`, `backlog`. The `mod.rs` doc-comment is the canonical 5-tier-model overview. Companion-only, separate user_db pool. Documented from /research run 2026-05-10 (Claude Managed Agents dreaming).
 - **Obsidian vault** (`C:/Users/kazda/Documents/Obsidian/personas` on this machine; path is user-specific and should be treated as a variable in docs) — *user* memory for the `/research` skill, NOT exposed to runtime personas. Documented in `obsidian-integration` context group of `codebase-context.md`. Note: older copies of `skill.md` reference a stale `mkdol` username for the same path — that is a skill-file bug, not a codebase fact. Cleanup tracked separately.
+
+### Background-job frameworks (companion + user-personas, parallel implementations)
+
+Personas runs two **structurally-identical background-job frameworks** — one per DB pool — for async curation work that must not block the IPC caller:
+
+| Surface | Module | Table | Event channel | Worker spawn |
+|---|---|---|---|---|
+| Companion (Athena) | `src-tauri/src/companion/jobs/{mod,curation_run,scan_codebase,connector_use}.rs` | `companion_background_job` (user_db) | `companion://job` | `companion_init` Tauri command (3s tick) |
+| User-personas | `src-tauri/src/engine/persona_jobs.rs` (single-file, 685 LOC) | `persona_background_job` (db) | `persona://job` | `lib.rs` setup callback (5s tick, 3s startup delay) |
+
+Lifecycle (both): `queued → running → completed | failed | canceled`. Both expose `enqueue / get / list / request_cancel / recover_orphans`. Both dispatch by `kind` string (companion: scan_codebase, connector_use, memory_curation_run; user-personas: memory_curation_run). Both append/emit on completion (companion appends a system episode for Athena's next turn; user-personas just emits the event).
+
+**The user-persona side is intentionally a parallel implementation rather than a generic shared abstraction** — different DB pools, different UIs, different consumers. A future architect pass can DRY them up if divergence stays small. Adding a new job kind on either side is "match arm + sibling module" — no scaffolding needed.
+
+`engine/scheduler.rs` (cron / trigger scheduler) is unrelated to these frameworks — it fires persona executions on schedule via the `triggers` table; it does NOT schedule background jobs. For scheduled curation, see `engine/curation_scheduler.rs` (added 2026-05-10).
+
+Documented from /research run 2026-05-10 (Claude Managed Agents dreaming + follow-ups).
+
+### `engine/dream_replay.rs` is execution-trace replay, NOT memory curation
+
+`src-tauri/src/engine/dream_replay.rs` is a deterministic VCR-style replay engine that reconstructs execution state frame-by-frame from stored trace spans, **without consuming LLM tokens**. Each `DreamFrame` carries the active spans, completed spans, cumulative cost/tokens, depth, and error state at a specific millisecond boundary. Used for time-travel debugging of past executions.
+
+**Distinct concept from Anthropic Managed Agents' "dreaming" memory pipeline.** The metaphor name is the same; the contract is different. Memory curation (Anthropic's dreaming) reads memory + sessions and produces a curated output store; trace replay reads execution spans and produces frame snapshots for UI scrubbing.
+
+**Naming constraint for new modules:** avoid bare `dream` to prevent the cognitive collision. Memory curation work lives under `companion::brain::consolidation`, `companion::jobs::curation_run`, `engine::persona_jobs::memory_curation_run`, `engine::curation_scheduler` — never `dream_*`.
+
+Discovered as a Phase 6 namespace clash during /research run 2026-05-10 (Claude Managed Agents dreaming).
 
 ### Testing
 - Unit tests live alongside source as `#[cfg(test)] mod tests` (Rust) or `*.test.ts` (TS).
