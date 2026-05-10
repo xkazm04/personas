@@ -160,13 +160,16 @@ pub fn verify_document(
         }
     };
 
-    // Check file hash
-    let current_hash = hash_file(&path)?;
-    let file_hash_match = current_hash == sidecar.document_hash;
-
-    // Verify cryptographic signature
+    // Read the file ONCE and run both hash and signature-verify against the
+    // same buffer. Reading twice opens a TOCTOU window where a swapped file
+    // could pass the hash check (against the old content) and signature
+    // check (against the new content) -- making `valid = file_hash_match &&
+    // signature_valid` true for a file that matches neither end-to-end.
     let file_bytes = std::fs::read(&path)
         .map_err(|e| AppError::Internal(format!("Cannot read file for verification: {e}")))?;
+    let current_hash = hash_bytes(&file_bytes);
+    let file_hash_match = current_hash == sidecar.document_hash;
+
     let signature_valid =
         identity::verify_signature(&sidecar.signer.public_key, &file_bytes, &sidecar.signature)
             .unwrap_or(false);
