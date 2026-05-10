@@ -136,6 +136,11 @@ pub const PRIVILEGED_COMMANDS: &[&str] = &[
     "create_connector",
     "update_connector",
     "delete_connector",
+    // Credentials -- Healthcheck (uses live secrets to perform outbound HTTP;
+    // not a startup-required read-only command, so safe to gate at the
+    // wrapper level — also has body-level require_privileged for audit/depth)
+    "healthcheck_credential",
+    "healthcheck_credential_preview",
     // Credentials -- Credential Design
     "start_credential_design",
     "cancel_credential_design",
@@ -684,6 +689,17 @@ mod tests {
         );
         assert_eq!(command_tier("execute_api_request"), AuthTier::Privileged);
         assert_eq!(command_tier("sign_document"), AuthTier::Privileged);
+        // Healthcheck commands trigger outbound HTTP using live secrets,
+        // so they require the IPC session token even though their callers
+        // (status pages) feel read-only.
+        assert_eq!(
+            command_tier("healthcheck_credential"),
+            AuthTier::Privileged
+        );
+        assert_eq!(
+            command_tier("healthcheck_credential_preview"),
+            AuthTier::Privileged
+        );
     }
 
     #[test]
@@ -692,7 +708,6 @@ mod tests {
         assert_eq!(command_tier("list_credentials"), AuthTier::Public);
         assert_eq!(command_tier("list_connectors"), AuthTier::Public);
         assert_eq!(command_tier("vault_status"), AuthTier::Public);
-        assert_eq!(command_tier("healthcheck_credential"), AuthTier::Public);
         assert_eq!(command_tier("gitlab_get_config"), AuthTier::Public);
     }
 

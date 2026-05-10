@@ -12,7 +12,7 @@ use crate::db::repos::resources::credentials as repo;
 use crate::engine::crypto;
 use crate::engine::healthcheck::HealthcheckResult;
 use crate::error::AppError;
-use crate::ipc_auth::require_privileged_sync;
+use crate::ipc_auth::{require_privileged, require_privileged_sync};
 use crate::AppState;
 
 #[tauri::command]
@@ -241,6 +241,7 @@ pub async fn healthcheck_credential(
     state: State<'_, Arc<AppState>>,
     credential_id: String,
 ) -> Result<HealthcheckResult, AppError> {
+    require_privileged(&state, "healthcheck_credential").await?;
     let result = crate::engine::healthcheck::run_healthcheck(&state.db, &credential_id).await?;
     let cred = repo::get_by_id(&state.db, &credential_id).ok();
     let name = cred
@@ -286,6 +287,7 @@ pub async fn healthcheck_credential_preview(
     service_type: String,
     session_encrypted_data: String,
 ) -> Result<HealthcheckResult, AppError> {
+    require_privileged(&state, "healthcheck_credential_preview").await?;
     // Decrypt mandatory session-encrypted field values (RSA-OAEP + AES-GCM transit encryption)
     let field_values: HashMap<String, String> =
         match state.session_key.decrypt(&session_encrypted_data) {
