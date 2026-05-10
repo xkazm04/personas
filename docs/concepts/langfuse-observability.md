@@ -1,5 +1,7 @@
 # Langfuse Observability — Solution Design
 
+> 📦 **Path A is shipped.** The implemented-product reference for the Langfuse plugin lives at **[`docs/features/langfuse.md`](../features/langfuse.md)** (managed Docker stack + manual mode + auto-login flow + backend command surface). This document remains the **design archive** — it's where the Path A → A+ → B reasoning lives, plus the supersedence history of Cloud → Self-host. Read it when you want the *why*; read `features/langfuse.md` when you want the *what is*.
+
 **Status:** **Path A closed 2026-05-07.** Managed self-host plugin shipped, traces flow into Langfuse, zero-click sign-in works, browser deep-links go straight to traces. Path A+ exploration is the next step. Path B vs "master Langfuse" decision deferred until A+ findings land.
 **Known backlog:** Lab `score_result` → Langfuse Scores API — see [`langfuse-lab-score-push.md`](./langfuse-lab-score-push.md). Pick up before Path B work, or earlier if A+ surfaces it as a need.
 **Owners:** TBD
