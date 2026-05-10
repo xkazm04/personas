@@ -21,7 +21,50 @@
 #![allow(dead_code, private_interfaces)]
 
 use std::collections::HashMap;
-use std::path::Path;
+use std::path::{Component, Path};
+
+/// Validate that a Google Drive `file.name` is safe to use as a local filename.
+///
+/// The Drive API returns the user-supplied name verbatim, and Drive does not
+/// restrict the bytes a file name may contain. A malicious file shared into
+/// the synced folder can name itself
+/// `..\..\..\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\evil.lnk`
+/// (or any other escape sequence). `Path::join` does not normalise `..`
+/// segments, so a naive `local_folder.join(&df.name)` resolves to a path
+/// outside the vault and `std::fs::write` happily lands the attacker payload
+/// there -- e.g. RCE on Windows via the Startup folder.
+///
+/// This validator accepts only names that parse as a single Normal path
+/// component, free of separators, NUL bytes, drive letters, and traversal
+/// sequences.
+fn safe_drive_filename(name: &str) -> Result<&str, String> {
+    let trimmed = name.trim();
+    if trimmed.is_empty() {
+        return Err("empty filename".into());
+    }
+    if trimmed.contains('\0') {
+        return Err("filename contains NUL byte".into());
+    }
+    if trimmed.contains('/') || trimmed.contains('\\') {
+        return Err(format!("filename contains path separator: {trimmed:?}"));
+    }
+    // Reject Windows drive letters (`C:foo.txt`) and stream-name suffixes
+    // (`foo.txt:stream`) which on NTFS write to alternate data streams.
+    if trimmed.contains(':') {
+        return Err(format!("filename contains ':' (Windows drive/stream): {trimmed:?}"));
+    }
+    let p = Path::new(trimmed);
+    if p.is_absolute() {
+        return Err(format!("filename is absolute: {trimmed:?}"));
+    }
+    let mut comps = p.components();
+    match (comps.next(), comps.next()) {
+        (Some(Component::Normal(_)), None) => Ok(trimmed),
+        _ => Err(format!(
+            "filename must be a single normal path component: {trimmed:?}"
+        )),
+    }
+}
 
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
@@ -562,8 +605,23 @@ pub async fn pull_from_drive(
                 continue; // Skip subdirectories for now
             }
 
-            let file_key = format!("{folder_name}/{}", df.name);
-            let local_path = local_folder.join(&df.name);
+            // Reject names that would escape the local sync folder before
+            // joining. The Drive API returns user-controlled names verbatim;
+            // `Path::join` doesn't normalise `..` so a naive join against
+            // `df.name = "..\\..\\.ssh\\authorized_keys"` would write outside
+            // the vault.
+            let safe_name = match safe_drive_filename(&df.name) {
+                Ok(s) => s,
+                Err(reason) => {
+                    result
+                        .errors
+                        .push(format!("rejected unsafe Drive filename: {reason}"));
+                    continue;
+                }
+            };
+
+            let file_key = format!("{folder_name}/{}", safe_name);
+            let local_path = local_folder.join(safe_name);
 
             // Check if local file is already up-to-date
             if local_path.exists() {
