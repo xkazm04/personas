@@ -112,7 +112,7 @@ Three slices in `src/stores/slices/system/` cover overlapping-but-distinct first
 | `tourSlice` | **Guided spotlight tours** (`GuidedTour.tsx`) — coach-marks over the chrome (this README) | `src/features/onboarding/components/` |
 | `setupSlice` | Home **"Role → Tool → Goal" Setup Cards** (`SetupCards.tsx`) — captures user profile and bridges into agent creation via `setupGoal` | `src/features/home/` |
 
-`setupSlice` is owned by Home, not Onboarding, but the bridge into `UnifiedMatrixEntry` (pre-fill build intent) only fires while `onboardingActive || tourActive`, which is why it's listed here. See the docstring at the top of `setupSlice.ts` for the full consumer map.
+`setupSlice` is owned by Home, not Onboarding, but the bridge into `UnifiedBuildEntry` (pre-fill build intent) only fires while `onboardingActive || tourActive`, which is why it's listed here. See the docstring at the top of `setupSlice.ts` for the full consumer map.
 
 ## Onboarding modal vs Guided Tour — precedence contract
 

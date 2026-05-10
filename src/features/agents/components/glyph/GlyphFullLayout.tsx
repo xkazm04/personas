@@ -84,7 +84,7 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
   const isBuildingOnly = isBuilding && !hasPending;
 
   // Auto-close the overlay once a session actually starts. handleLaunch
-  // (the underlying onLaunch from UnifiedMatrixEntry) is async — the
+  // (the underlying onLaunch from UnifiedBuildEntry) is async — the
   // overlay should hide as soon as the phase transitions out of compose
   // so the glyph's loading sequence is visible immediately.
   useEffect(() => {

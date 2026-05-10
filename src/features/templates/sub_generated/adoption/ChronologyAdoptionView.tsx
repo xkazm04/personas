@@ -14,8 +14,8 @@ const logger = createLogger("template-adoption");
 import { PersonaChronologyGlyph } from "./glyph";
 import { QuestionnaireForm } from "./questionnaire";
 import { UseCasePickerStep, type UseCaseOption } from "./ucPicker";
-import { useMatrixBuild } from "@/features/agents/components/matrix/useMatrixBuild";
-import { useMatrixLifecycle } from "@/features/agents/components/matrix/useMatrixLifecycle";
+import { useBuild } from "@/features/agents/components/matrix/useBuild";
+import { useLifecycle } from "@/features/agents/components/matrix/useLifecycle";
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
 import { useToastStore } from "@/stores/toastStore";
@@ -31,7 +31,7 @@ import type { Translations } from '@/i18n/generated/types';
 import { QuickAddCredentialModal } from "./QuickAddCredentialModal";
 import type { TriggerSelection } from "./useCasePickerShared";
 
-interface MatrixAdoptionViewProps {
+interface ChronologyAdoptionViewProps {
   review: PersonaDesignReview;
   onClose: () => void;
   /** Called with the promoted persona's ID once adoption completes. */
@@ -393,7 +393,7 @@ function applyTriggerSelections(
   };
 }
 
-export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: MatrixAdoptionViewProps) {
+export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: ChronologyAdoptionViewProps) {
   const { t, tx } = useTranslation();
   const [seeded, setSeeded] = useState(false);
   const [personaId, setPersonaId] = useState<string | null>(null);
@@ -920,8 +920,8 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
     })();
   }, [designResult, templateName, review.instruction, createPersona, hasFilteredQuestions, questionsComplete, useCaseStepDone, showUseCasePicker, selectedUseCaseIds, filteredAdoptionQuestions, adoptionAnswers, triggerSelections]);
 
-  const build = useMatrixBuild({ personaId });
-  const lifecycle = useMatrixLifecycle({ personaId });
+  const build = useBuild({ personaId });
+  const lifecycle = useLifecycle({ personaId });
 
   // -- Sync build phase → process activity status --
   const currentBuildPhase = useAgentStore((s) => s.buildPhase);
@@ -1060,7 +1060,7 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
     }, 400);
   }, [personaId, onPersonaCreated]);
 
-  // Auto-redirect after promotion (matches UnifiedMatrixEntry behavior)
+  // Auto-redirect after promotion (matches UnifiedBuildEntry behavior)
   const buildPhaseForRedirect = useAgentStore((s) => s.buildPhase);
   useEffect(() => {
     if (buildPhaseForRedirect === 'promoted' && personaId && !fadeOut) {

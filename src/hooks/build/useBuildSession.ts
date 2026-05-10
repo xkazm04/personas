@@ -62,7 +62,7 @@ const logger = createLogger("build-session");
 // EventBridge checks this to decide whether to skip a given event (if the
 // Channel is already processing it, EventBridge must stay out of the way to
 // avoid double-processing). A per-session Set replaces the previous global
-// boolean flag, which had a bug: unmounting one UnifiedMatrixEntry instance
+// boolean flag, which had a bug: unmounting one UnifiedBuildEntry instance
 // cleared the flag even when another instance still had a live Channel,
 // causing EventBridge to double-process events for the still-active session.
 const ACTIVE_SET_KEY = "__BUILD_CHANNEL_ACTIVE_SESSIONS__";

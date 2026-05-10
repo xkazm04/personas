@@ -497,7 +497,7 @@ export interface ApprovalOutcome {
  *
  * - `navigate`: switch the sidebar to a top-level section.
  * - `prefill_persona_create`: stash a prefill payload + route to
- *   `personas`. UnifiedMatrixEntry reads it and (if `auto_launch`)
+ *   `personas`. UnifiedBuildEntry reads it and (if `auto_launch`)
  *   kicks off the build.
  */
 export type ClientAction =

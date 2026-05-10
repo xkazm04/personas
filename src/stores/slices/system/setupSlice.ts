@@ -9,7 +9,7 @@ import type { SystemStore } from '../../storeTypes';
  * Live consumers (verified 2026-05-05):
  * - `SetupCards.tsx` reads all four fields and calls every action; it is
  *   the primary UI surface for this slice.
- * - `UnifiedMatrixEntry.tsx` reads `setupGoal` once on mount as a bridge
+ * - `UnifiedBuildEntry.tsx` reads `setupGoal` once on mount as a bridge
  *   to pre-fill the agent-build intent textarea when the user opened
  *   persona creation while onboarding/tour is active; it also calls
  *   `setSetupGoal('')` after promotion to prevent the goal from leaking
@@ -34,7 +34,7 @@ export interface SetupSlice {
    *  hasn't completed (or was invalidated by a role change). */
   setupTool: string | null;
   /** Free-text intent string typed in step 3, also bridged to the
-   *  agent-build intent textarea by `UnifiedMatrixEntry`. The stepper
+   *  agent-build intent textarea by `UnifiedBuildEntry`. The stepper
    *  enforces a 10-character minimum before "Finish"; consumers should
    *  not assume non-empty here. */
   setupGoal: string | null;

@@ -21,7 +21,7 @@ export type CompanionPluginTab = 'setup' | 'memory' | 'voice' | 'dashboard';
 /**
  * Phase F prefill payload — Athena's `prefill_persona_create` op
  * stashes a tuple here, then triggers navigation to `personas`.
- * `UnifiedMatrixEntry` reads it on mount, applies it, and clears it
+ * `UnifiedBuildEntry` reads it on mount, applies it, and clears it
  * via `clearCompanionPrefill()` so it's a one-shot bridge.
  *
  * Not persisted (intentionally — leaving a prefill in localStorage

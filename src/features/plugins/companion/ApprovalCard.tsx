@@ -34,7 +34,7 @@ function applyClientAction(action: ClientAction) {
   }
   if (action.type === 'prefill_persona_create') {
     // Phase F: stash the prefill payload, then switch to the personas
-    // section. UnifiedMatrixEntry consumes the payload on mount (or on
+    // section. UnifiedBuildEntry consumes the payload on mount (or on
     // next render if it's already mounted) and clears it.
     useSystemStore.getState().setCompanionPrefill({
       intent: action.intent,

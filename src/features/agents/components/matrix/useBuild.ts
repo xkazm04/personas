@@ -19,7 +19,7 @@ import { ALL_CELL_KEYS } from "@/lib/constants/dimensionMapping";
 // Types
 // ---------------------------------------------------------------------------
 
-interface UseMatrixBuildOptions {
+interface UseBuildOptions {
   personaId: string | null;
 }
 
@@ -27,7 +27,7 @@ interface UseMatrixBuildOptions {
 // Hook
 // ---------------------------------------------------------------------------
 
-export function useMatrixBuild({ personaId }: UseMatrixBuildOptions) {
+export function useBuild({ personaId }: UseBuildOptions) {
   const session = useBuildSession({ personaId });
 
   // -- Read build state from Zustand selectors ----------------------------

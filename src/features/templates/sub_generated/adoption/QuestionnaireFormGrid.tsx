@@ -53,7 +53,7 @@ interface QuestionnaireFormGridProps {
   onClose: () => void;
   /**
    * When true, render the questionnaire as inline content (no BaseModal
-   * wrapper). Used by `MatrixAdoptionView` to embed the questionnaire as the
+   * wrapper). Used by `ChronologyAdoptionView` to embed the questionnaire as the
    * primary view of the Adoption Wizard, avoiding the stacked-portal /
    * loading-screen confusion that happened when this rendered its own modal
    * on top of the wizard.

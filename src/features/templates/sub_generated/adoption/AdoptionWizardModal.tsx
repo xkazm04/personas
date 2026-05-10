@@ -4,7 +4,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
-import { MatrixAdoptionView } from './MatrixAdoptionView';
+import { ChronologyAdoptionView } from './ChronologyAdoptionView';
 import { BaseModal } from '../shared/BaseModal';
 import {
   ConfirmDestructiveModal,
@@ -58,7 +58,7 @@ export default function AdoptionWizardModal({
       onConfirm: () => {
         setConfirmConfig(null);
         // Clean up the draft persona and build session — mirrors
-        // MatrixAdoptionView.handleDeleteDraft so we don't leave orphaned
+        // ChronologyAdoptionView.handleDeleteDraft so we don't leave orphaned
         // agents in the database when the user discards via the X button.
         const agent = useAgentStore.getState();
         const sys = useSystemStore.getState();
@@ -111,7 +111,7 @@ export default function AdoptionWizardModal({
             <X className="w-4 h-4" />
           </button>
         </div>
-        <MatrixAdoptionView
+        <ChronologyAdoptionView
           review={review}
           onClose={handleCloseAttempt}
           onPersonaCreated={onPersonaCreated}

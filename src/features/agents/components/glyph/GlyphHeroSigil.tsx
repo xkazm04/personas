@@ -44,7 +44,7 @@ const STROKE_WIDTH: Record<PetalState, number> = {
 };
 
 /** Single petal — memoized so a parent re-render (e.g. matrix build progress
- *  ticking via useMatrixBuild) does not reconcile all 8 petals. Animation
+ *  ticking via useBuild) does not reconcile all 8 petals. Animation
  *  runs entirely in CSS via `glyph-petal-{pending,filling}` keyframes. */
 const HeroPetal = memo(function HeroPetal({
   dim, angle, petalPath, state, isActive, dimOther, center, onHover, onClick,

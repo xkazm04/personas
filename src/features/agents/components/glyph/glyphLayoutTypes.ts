@@ -29,7 +29,7 @@ export interface GlyphFullLayoutProps {
   testOutputLines?: string[];
   testPassed?: boolean | null;
   testError?: string | null;
-  /** Structured tool-test outcomes (populated by useMatrixLifecycle).
+  /** Structured tool-test outcomes (populated by useLifecycle).
    *  Drives the rich split-pane TestReportModal that the legacy
    *  matrix view also uses. */
   toolTestResults?: ToolTestResult[];
