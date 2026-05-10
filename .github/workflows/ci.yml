@@ -76,6 +76,14 @@ jobs:
         # which crashes the UI at runtime via the deep-merge fallback.
         run: npm run check:i18n
 
+      - name: Check ERROR_KEY_MAP ↔ en.json error_registry parity
+        # Asserts every keyPrefix in src/i18n/useTranslatedError.ts has both
+        # <prefix>_message and <prefix>_suggestion under error_registry in
+        # en.json. Without these, runtime falls back to the raw error string
+        # and the user sees a degraded message. Wired by the error-handling
+        # architect run 2026-05-10.
+        run: npm run check:error-registry
+
       - name: Validate Tauri config overlays
         # Catches: drift in $schema across the three configs, overlays
         # touching unexpected keys (so the overlay surface stays small),

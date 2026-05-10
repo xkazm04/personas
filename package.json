@@ -32,6 +32,7 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "check:i18n": "node scripts/i18n/check-coverage.mjs",
+    "check:error-registry": "node scripts/i18n/check-error-registry-parity.mjs",
     "check:contracts": "node scripts/check-command-contract.mjs && node scripts/check-event-registry.mjs",
     "check:tiers": "node scripts/check-tiers.mjs",
     "check:tauri-configs": "node scripts/check-tauri-configs.mjs",
