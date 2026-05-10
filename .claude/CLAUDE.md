@@ -18,9 +18,9 @@ node scripts/i18n/check-coverage.mjs   # i18n coverage report (CI gate)
 
 ### Build & packaging
 
-End-to-end build documentation lives in **[`docs/BUILD.md`](../docs/BUILD.md)**
+End-to-end build documentation lives in **[`docs/development/build.md`](../docs/development/build.md)**
 (architecture differences, ARM64 vs x64 on Windows, codegen pipeline,
-profiles, ONNX bundling). For Android setup, see [`docs/ANDROID-BUILD.md`](../docs/ANDROID-BUILD.md).
+profiles, ONNX bundling). For Android setup, see [`docs/development/android-build.md`](../docs/development/android-build.md).
 
 Quick reference of the most common scripts:
 - Tier-specific frontend bundles: `npm run build:starter` / `build:team` / `build:builder`. Locally validate all three with `npm run check:tiers` (CI also runs this).
