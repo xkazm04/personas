@@ -189,13 +189,19 @@ pub async fn synthesize(
             .arg(noise_scale.clamp(0.0, 1.5).to_string());
     }
 
-    // Hide the console window on Windows release builds so spawning the
-    // engine doesn't flash a black box behind the app.
+    // Hide the console window on Windows so spawning the engine doesn't
+    // flash a black box behind the app. We use DETACHED_PROCESS rather
+    // than the otherwise-canonical CREATE_NO_WINDOW because in some
+    // environments (Windows Terminal, npm/cargo dev shells, certain AV
+    // hooks) CREATE_NO_WINDOW lets a stub conhost/cmd.exe flash for the
+    // spawn duration. DETACHED_PROCESS gives the child no console
+    // association at all — and since all three stdio streams above are
+    // piped, the child has no legitimate need for one.
     #[cfg(windows)]
     {
         use std::os::windows::process::CommandExt;
-        const CREATE_NO_WINDOW: u32 = 0x08000000;
-        cmd.creation_flags(CREATE_NO_WINDOW);
+        const DETACHED_PROCESS: u32 = 0x00000008;
+        cmd.creation_flags(DETACHED_PROCESS);
     }
 
     let mut child = cmd
