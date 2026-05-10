@@ -182,19 +182,32 @@ def step_drive_write_to_fire(persona_id: str) -> None:
 
 def step_verify_message_dispatch(persona_id: str) -> None:
     print("\n[5/5] Verify a UserMessage row landed in the inbox")
-    # The messaging dispatcher writes to persona_messages on UserMessage emit;
-    # the inbox is the built-in channel that always receives.
+    # Messages live in persona_messages (the inbox row) and the per-channel
+    # dispatch outcome lives in persona_message_deliveries (joined by
+    # message_id). Drive-event triggers fire asynchronously through the
+    # event bus -> engine runner -> CLI execution -> UserMessage emit, so 0
+    # rows immediately after drive-write is normal — that's info, not fail.
     rows = db.query(
-        "SELECT id, channel_type, status, error_message FROM persona_messages "
-        "WHERE persona_id = ? ORDER BY created_at DESC LIMIT 5",
+        "SELECT m.id AS message_id, m.title, m.created_at, "
+        "       d.channel_type, d.status, d.error_message "
+        "FROM persona_messages m "
+        "LEFT JOIN persona_message_deliveries d ON d.message_id = m.id "
+        "WHERE m.persona_id = ? ORDER BY m.created_at DESC LIMIT 5",
         (persona_id,),
     )
     log.record(
         "dispatch.messages",
         "ok" if rows else "info",
         count=len(rows),
-        recent_channels=[r.get("channel_type") for r in rows],
-        recent_statuses=[r.get("status") for r in rows],
+        recent_channels=[r.get("channel_type") for r in rows if r.get("channel_type")],
+        recent_statuses=[r.get("status") for r in rows if r.get("status")],
+        note=(
+            "0 messages yet — drive->event->execution->UserMessage is async; "
+            "this step verifies the build/promotion path succeeded, not "
+            "the eventual delivery."
+            if not rows
+            else None
+        ),
     )
 
 

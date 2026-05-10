@@ -71,78 +71,90 @@ def step_navigate_to_companion() -> None:
 
 
 def step_toggle_master() -> None:
+    # The Companion master toggle does not yet have a data-testid.
+    # Tracked as a follow-up: add testid to the SetupPanel toggle so this
+    # step can flip the gate. For now we assume the user has already
+    # enabled the toggle (or run with --skip-toggle which is now default).
     if args.skip_toggle:
-        log.record("toggle.master", "info", note="skipped via --skip-toggle")
+        log.record(
+            "toggle.master",
+            "info",
+            note="skipped — companion-master-toggle testid not yet wired; "
+            "see follow-up backlog item for adding it to SetupPanel.",
+        )
         return
-    print("\n[3/5] Toggle Companion master switch")
-    # The master toggle lives at data-testid="companion-master-toggle" in the
-    # Companion setup panel. The bridge's clickTestId macro routes the click
-    # through React's synthetic event system.
-    r = bridge.exec(
-        "clickTestId",
-        {"testId": "companion-master-toggle"},
-        timeout_secs=15,
-    )
     log.record(
         "toggle.master",
-        "ok" if r.get("success") else "info",
-        error=r.get("error"),
+        "fail",
+        error="companion-master-toggle testid not present in DOM — add it to SetupPanel first",
     )
 
 
 def step_inspect_brain() -> dict:
     print("\n[4/5] Inspect companion brain state")
-    # companionInspect is the previously-orphan bridge macro that reads the
-    # companion brain context (active subscriptions, recent pulses, master
-    # toggle state). It existed in bridge.ts before this script consumed it.
+    # companionInspect returns { panelVisible, streaming, messages,
+    # streamingText, approvals, brain: { episodes, reflections, facts,
+    # procedurals, goals, rituals, backlog } } — NOT wrapped in
+    # {success, error}. Brain counts are populated even when panel is not
+    # visible.
     r = bridge.exec("companionInspect", {}, timeout_secs=20)
-    if not r.get("success"):
-        log.record("brain.inspect", "fail", error=r.get("error"))
+    brain = r.get("brain") or {}
+    if not isinstance(brain, dict):
+        log.record("brain.inspect", "fail", error="brain field missing or malformed", raw=r)
         return {}
     log.record(
         "brain.inspect",
         "ok",
-        master_enabled=r.get("masterEnabled"),
-        subscriptions=r.get("subscriptionCount"),
-        recent_pulses=r.get("recentPulseCount"),
+        panel_visible=r.get("panelVisible"),
+        streaming=r.get("streaming"),
+        message_count=len(r.get("messages") or []),
+        approvals=r.get("approvals"),
+        brain_episodes=brain.get("episodes"),
+        brain_reflections=brain.get("reflections"),
+        brain_facts_user=(brain.get("facts") or {}).get("user"),
     )
     return r
 
 
 def step_chat_send() -> None:
     print("\n[5/5] Send a chat message via the companion surface")
-    # The companion chat surface mounts on the plugin page. Use fillField +
-    # the chat-send testid the way the build harness does for question
-    # answers — same React synthetic-event path.
+    # Real testids: companion-composer (textarea), companion-send (button).
+    # If the companion panel is collapsed or not mounted, fillField will
+    # return success=false; that's informational, not a hard failure.
     fill = bridge.exec(
         "fillField",
-        {"testId": "companion-chat-input", "value": args.message},
+        {"testId": "companion-composer", "value": args.message},
         timeout_secs=15,
     )
-    log.record("chat.fill", "ok" if fill.get("success") else "info", error=fill.get("error"))
+    log.record(
+        "chat.fill",
+        "ok" if fill.get("success") else "info",
+        error=fill.get("error"),
+        note=(
+            "companion-composer not on page — companion panel likely "
+            "collapsed; expand it manually or via a separate step"
+            if not fill.get("success")
+            else None
+        ),
+    )
     if not fill.get("success"):
         return
     submit = bridge.exec(
         "clickTestId",
-        {"testId": "companion-chat-send"},
+        {"testId": "companion-send"},
         timeout_secs=15,
     )
     log.record("chat.submit", "ok" if submit.get("success") else "info", error=submit.get("error"))
 
 
 def step_cleanup() -> None:
+    # No cleanup needed — this script doesn't create persistent state
+    # (master toggle is skipped; sending a chat message persists a
+    # companion message but that's expected demo content).
     if args.no_cleanup:
         log.record("cleanup", "info", note="skipped via --no-cleanup")
         return
-    if args.skip_toggle:
-        return  # didn't flip it; nothing to revert
-    print("\n[cleanup] Restore master toggle")
-    r = bridge.exec(
-        "clickTestId",
-        {"testId": "companion-master-toggle"},
-        timeout_secs=15,
-    )
-    log.record("cleanup.toggle", "ok" if r.get("success") else "info", error=r.get("error"))
+    log.record("cleanup", "info", note="nothing to clean up (master toggle was not flipped)")
 
 
 def main() -> None:

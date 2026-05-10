@@ -48,13 +48,23 @@ log = EventLog()
 def pick_persona() -> str:
     if args.persona_id:
         return args.persona_id
+    # Prefer a persona that already has memories (the curator has
+    # something to review). Fall back to any enabled persona.
     rows = db.query(
-        "SELECT id FROM personas WHERE status = 'promoted' "
-        "ORDER BY created_at ASC LIMIT 1"
+        "SELECT p.id FROM personas p "
+        "WHERE p.enabled = 1 "
+        "  AND EXISTS (SELECT 1 FROM persona_memories pm WHERE pm.persona_id = p.id) "
+        "ORDER BY p.created_at DESC LIMIT 1"
     )
     if not rows:
+        rows = db.query(
+            "SELECT id FROM personas WHERE enabled = 1 "
+            "  AND last_design_result IS NOT NULL "
+            "ORDER BY created_at DESC LIMIT 1"
+        )
+    if not rows:
         raise SystemExit(
-            "No promoted persona found. Run e2e_build_from_scratch.py first "
+            "No enabled persona found. Run e2e_build_from_scratch.py first "
             "or pass --persona-id <uuid>."
         )
     return rows[0]["id"]
@@ -68,15 +78,25 @@ def step_preflight(persona_id: str) -> None:
 
 def step_enqueue_job(persona_id: str) -> str:
     print("\n[2/4] Enqueue persona memory curation run")
-    params = {"personaId": persona_id, "autoApply": False}
+    params: dict = {"personaId": persona_id, "autoApply": False}
     if args.instructions:
         params["instructions"] = args.instructions
-    r = bridge.exec("enqueuePersonaMemoryCuration", params, timeout_secs=30)
+    # Use the generic invokeCommand passthrough — no dedicated bridge
+    # wrapper for this command yet; following the 3-layer pattern future
+    # contributors should add one if this script proves load-bearing.
+    r = bridge.exec(
+        "invokeCommand",
+        {"command": "enqueue_persona_memory_curation", "params": params},
+        timeout_secs=30,
+    )
     if not r.get("success"):
         log.record("enqueue.curation", "fail", error=r.get("error"))
-        raise SystemExit(f"enqueuePersonaMemoryCuration failed: {r.get('error')}")
-    job_id = r.get("jobId") or r.get("id")
-    log.record("enqueue.curation", "ok", job_id=job_id)
+        raise SystemExit(f"enqueue_persona_memory_curation failed: {r.get('error')}")
+    result = r.get("result") or {}
+    job_id = result if isinstance(result, str) else (result.get("jobId") or result.get("id") if isinstance(result, dict) else None)
+    log.record("enqueue.curation", "ok", job_id=job_id, raw=result)
+    if not job_id:
+        raise SystemExit(f"No job_id returned from enqueue: {result}")
     return job_id
 
 
@@ -85,7 +105,7 @@ def step_wait_for_job_completion(job_id: str) -> dict:
 
     def check() -> dict | None:
         rows = db.query(
-            "SELECT id, status, kind, error_message FROM persona_background_job "
+            "SELECT id, status, kind, error_text FROM persona_background_job "
             "WHERE id = ? LIMIT 1",
             (job_id,),
         )
@@ -116,7 +136,7 @@ def step_wait_for_job_completion(job_id: str) -> dict:
         "ok",
         status=terminal["status"],
         kind=terminal.get("kind"),
-        error_message=terminal.get("error_message"),
+        error_text=terminal.get("error_text"),
     )
     return terminal
 
@@ -139,17 +159,22 @@ def step_apply_or_discard(persona_id: str) -> None:
     proposal_id = proposals[0]["id"]
     log.record("proposal.found", "ok", proposal_id=proposal_id)
 
-    method = (
-        "discardPersonaMemoryReviewProposal"
+    command = (
+        "discard_persona_memory_review_proposal"
         if args.discard
-        else "applyPersonaMemoryReviewProposal"
+        else "apply_persona_memory_review_proposal"
     )
-    r = bridge.exec(method, {"proposalId": proposal_id}, timeout_secs=30)
+    r = bridge.exec(
+        "invokeCommand",
+        {"command": command, "params": {"proposalId": proposal_id}},
+        timeout_secs=30,
+    )
     log.record(
         "proposal.resolve",
         "ok" if r.get("success") else "fail",
         action="discard" if args.discard else "apply",
         error=r.get("error"),
+        result=r.get("result"),
     )
 
 
