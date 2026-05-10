@@ -93,7 +93,7 @@ Multiple CLI sessions (Claude Code agents, manual sessions, skill invocations) o
 1. **At session start (Phase 0):** read the ledger; if any `## Active` entry's declared paths overlap your planned scope and the entry is `started`-status and less than 2 hours old, surface the conflict to the user before proceeding. Append your own entry to `## Active`.
 2. **At session end (Phase 11/13):** move your entry to the top of `## Recently completed` with the resulting commit SHA (or `aborted (<reason>)` / `handoff: <path>`).
 
-Rationale and full design space in **[`docs/concepts/cli-coordination-active-runs.md`](../docs/concepts/cli-coordination-active-runs.md)**. Ledger format conventions (timestamps, path declaration granularity, edit-conflict retries) live at the top of `active-runs.md` itself.
+Rationale and full design space in **[`docs/architecture/cli-coordination.md`](../docs/architecture/cli-coordination.md)**. Ledger format conventions (timestamps, path declaration granularity, edit-conflict retries) live at the top of `active-runs.md` itself.
 
 First adopter is `/research`; cross-skill adoption is the next step. If you're authoring a new skill that materially edits files, add the Phase 0 register + Phase 11 deregister rituals to its spec.
 
