@@ -400,7 +400,41 @@ function _invokeCore<T>(
     },
     (err) => {
       recordIpcCall({ command: cmd, durationMs: performance.now() - start, ok: false, timestamp: Date.now() });
+      // One-shot recovery for the WebView2 race where the IPC session token
+      // monkey-patch hasn't propagated by the time the first privileged call
+      // fires. The wrapper already injects `x-ipc-token` from window.__IPC_TOKEN,
+      // but on cold-start the global may be transiently undefined, producing a
+      // header-less invoke that the backend rejects. Re-read the token, wait one
+      // event-loop tick, and retry once before bubbling the error to the caller.
+      if (_retryDepth < 1 && isIpcAuthFailure(err)) {
+        const refreshedToken = (globalThis as Record<string, unknown>).__IPC_TOKEN as string | undefined;
+        if (refreshedToken) {
+          return new Promise<T>((resolve, reject) => {
+            setTimeout(() => {
+              _invokeCore<T>(cmd, args, options, timeoutMs, _retryDepth + 1).then(resolve, reject);
+            }, 50);
+          });
+        }
+      }
       throw err;
     },
   );
+}
+
+/**
+ * Returns true when an IPC rejection is the backend's "invalid session token"
+ * response. Tauri serialises `AppError` as `{ error, kind }` so we match on
+ * either the explicit message string or the JSON-stringified payload.
+ */
+function isIpcAuthFailure(err: unknown): boolean {
+  if (!err) return false;
+  const probe = (s: string) => s.includes("IPC authentication failed");
+  if (typeof err === "string") return probe(err);
+  if (err instanceof Error) return probe(err.message);
+  if (typeof err === "object") {
+    const obj = err as Record<string, unknown>;
+    if (typeof obj.error === "string" && probe(obj.error)) return true;
+    if (typeof obj.message === "string" && probe(obj.message)) return true;
+  }
+  return false;
 }
