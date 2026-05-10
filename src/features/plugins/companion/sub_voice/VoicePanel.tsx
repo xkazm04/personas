@@ -16,78 +16,15 @@ import {
   type CompanionVoiceModel,
 } from '@/stores/slices/system/companionPluginSlice';
 import PiperVoicePanel from './PiperVoicePanel';
-import VoicePanelVariantA from './VoicePanelVariantA';
-import VoicePanelVariantB from './VoicePanelVariantB';
-
-type Variant = 'baseline' | 'a' | 'b';
-
-const VARIANT_TABS: { id: Variant; label: string; subtitle: string }[] = [
-  { id: 'baseline', label: 'Baseline', subtitle: 'Today, on master' },
-  { id: 'a', label: 'Variant A', subtitle: 'Wizard (4 stepped cards)' },
-  { id: 'b', label: 'Variant B', subtitle: 'Live console + sticky preview' },
-];
 
 /**
- * Voice tab — currently in /prototype mode. A tab strip lets the
- * user A/B between the production baseline and two directional
- * variants. Once a winner is picked, the strip is removed and the
- * winning body replaces this wrapper directly. See
- * VoicePanelVariantA.tsx / VoicePanelVariantB.tsx for variant notes.
+ * Voice tab entry point. Owns the engine segmented control at the top
+ * and dispatches to either the ElevenLabs panel (cloud, credential-
+ * gated) or the Piper panel (local, voice-download-gated). Splitting
+ * by engine keeps each panel's state contract narrow — switching
+ * engines doesn't bleed credential picking into Piper or vice versa.
  */
 export default function VoicePanel() {
-  const [variant, setVariant] = useState<Variant>('baseline');
-  return (
-    <div className="space-y-4">
-      <PrototypeTabs active={variant} onChange={setVariant} />
-      {variant === 'baseline' && <VoicePanelBaseline />}
-      {variant === 'a' && <VoicePanelVariantA />}
-      {variant === 'b' && <VoicePanelVariantB />}
-    </div>
-  );
-}
-
-function PrototypeTabs({
-  active,
-  onChange,
-}: {
-  active: Variant;
-  onChange: (v: Variant) => void;
-}) {
-  return (
-    <div className="flex gap-1 p-1 rounded-card border border-foreground/10 bg-secondary/40 max-w-2xl">
-      {VARIANT_TABS.map((tab) => {
-        const isActive = active === tab.id;
-        return (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => onChange(tab.id)}
-            className={`flex-1 px-3 py-2 rounded-interactive text-left transition-colors focus-ring ${
-              isActive ? 'bg-card-bg shadow-elevation-1' : 'hover:bg-foreground/5'
-            }`}
-          >
-            <div
-              className={`typo-body font-medium ${
-                isActive ? 'text-foreground' : 'text-foreground/70'
-              }`}
-            >
-              {tab.label}
-            </div>
-            <div
-              className={`typo-caption ${
-                isActive ? 'text-foreground/65' : 'text-foreground/45'
-              }`}
-            >
-              {tab.subtitle}
-            </div>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-function VoicePanelBaseline() {
   const engine = useSystemStore((s) => s.companionVoiceEngine);
   return (
     <div className="space-y-4 max-w-2xl">
@@ -548,12 +485,8 @@ function ElevenLabsVoicePanel() {
  * dedicated systemStore key; `null` means "let the backend apply its
  * default" so a fresh install (or a user who hits Reset) sends the
  * smallest possible payload.
- *
- * Exported (along with `SliderRow`) so prototyping variants can
- * reuse the same tuning UI without duplicating ~120 lines of slider
- * scaffolding. Hoist out of this file when consolidation lands.
  */
-export function VoiceSettingsCard() {
+function VoiceSettingsCard() {
   const { t } = useTranslation();
 
   const model = useSystemStore((s) => s.companionVoiceModel);

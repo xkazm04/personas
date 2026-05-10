@@ -13,81 +13,19 @@ import {
 } from '@/api/companion';
 import { silentCatch } from '@/lib/silentCatch';
 import { SensorySignalsModal } from './SensorySignalsModal';
-import SetupPanelVariantA from './SetupPanelVariantA';
-import SetupPanelVariantB from './SetupPanelVariantB';
 
 /**
  * Companion plugin — Setup tab.
  *
- * Currently in /prototype mode: a tab strip at the top lets the user
- * compare the production baseline against directional variants A
- * (compact list shelf) and B (sectioned blueprint with left rail).
- * Once a winner is picked, the strip is removed and the winning body
- * replaces this wrapper directly. See SetupPanelVariantA.tsx /
- * SetupPanelVariantB.tsx for variant-specific notes.
+ * Three settings:
+ *   1. Footer icon — show/hide the bot button in DesktopFooter
+ *   2. Sound chime — play subtle Web Audio chime when a reply finishes
+ *   3. Self-improve loop — read-only display of the backend beta flag
+ *      (toggle would require a build flip; surfacing it here lets the user
+ *      know whether the feature is currently active without them having
+ *      to dig through dev logs).
  */
-type Variant = 'baseline' | 'a' | 'b';
-
-const VARIANT_TABS: { id: Variant; label: string; subtitle: string }[] = [
-  { id: 'baseline', label: 'Baseline', subtitle: 'Today, on master' },
-  { id: 'a', label: 'Variant A', subtitle: 'Compact list shelf' },
-  { id: 'b', label: 'Variant B', subtitle: 'Sectioned blueprint' },
-];
-
 export default function SetupPanel() {
-  const [variant, setVariant] = useState<Variant>('baseline');
-  return (
-    <div className="space-y-4">
-      <PrototypeTabs active={variant} onChange={setVariant} />
-      {variant === 'baseline' && <SetupPanelBaseline />}
-      {variant === 'a' && <SetupPanelVariantA />}
-      {variant === 'b' && <SetupPanelVariantB />}
-    </div>
-  );
-}
-
-function PrototypeTabs({
-  active,
-  onChange,
-}: {
-  active: Variant;
-  onChange: (v: Variant) => void;
-}) {
-  return (
-    <div className="flex gap-1 p-1 rounded-card border border-foreground/10 bg-secondary/40 max-w-2xl">
-      {VARIANT_TABS.map((tab) => {
-        const isActive = active === tab.id;
-        return (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => onChange(tab.id)}
-            className={`flex-1 px-3 py-2 rounded-interactive text-left transition-colors focus-ring ${
-              isActive ? 'bg-card-bg shadow-elevation-1' : 'hover:bg-foreground/5'
-            }`}
-          >
-            <div
-              className={`typo-body font-medium ${
-                isActive ? 'text-foreground' : 'text-foreground/70'
-              }`}
-            >
-              {tab.label}
-            </div>
-            <div
-              className={`typo-caption ${
-                isActive ? 'text-foreground/65' : 'text-foreground/45'
-              }`}
-            >
-              {tab.subtitle}
-            </div>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-function SetupPanelBaseline() {
   const { t } = useTranslation();
   const footerEnabled = useSystemStore((s) => s.companionFooterEnabled);
   const setFooterEnabled = useSystemStore((s) => s.setCompanionFooterEnabled);
