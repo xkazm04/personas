@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  GitBranch, Zap, RefreshCw, Settings, Target, Swords,
+  GitBranch, Zap, RefreshCw, Settings, Target, Swords, Activity,
 } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { ActionRow } from '@/features/shared/components/layout/ActionRow';
@@ -16,17 +16,19 @@ import { LifecycleProjectPicker } from './LifecycleProjectPicker';
 import { SetupTab } from './tabs/SetupTab';
 import { GoalsTab } from './tabs/GoalsTab';
 import { CompetitionsTab } from './tabs/CompetitionsTab';
+import { ProjectTrackingTab } from './tabs/ProjectTrackingTab';
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
-type LifecycleTab = 'setup' | 'goals' | 'competitions';
+type LifecycleTab = 'setup' | 'goals' | 'competitions' | 'tracking';
 
-const TAB_DEFS: { id: LifecycleTab; labelKey: 'tab_setup' | 'tab_goals' | 'tab_competitions'; icon: typeof Settings }[] = [
+const TAB_DEFS: { id: LifecycleTab; labelKey: 'tab_setup' | 'tab_goals' | 'tab_competitions' | 'tab_tracking'; icon: typeof Settings }[] = [
   { id: 'setup', labelKey: 'tab_setup', icon: Settings },
   { id: 'goals', labelKey: 'tab_goals', icon: Target },
   { id: 'competitions', labelKey: 'tab_competitions', icon: Swords },
+  { id: 'tracking', labelKey: 'tab_tracking', icon: Activity },
 ];
 
 const REVIEW_APPROVED_EVENT = 'review_decision.approved';
@@ -167,6 +169,7 @@ export default function LifecyclePage() {
             )}
             {tab === 'goals' && <GoalsTab />}
             {tab === 'competitions' && <CompetitionsTab />}
+            {tab === 'tracking' && <ProjectTrackingTab />}
           </>
         )}
       </ContentBody>

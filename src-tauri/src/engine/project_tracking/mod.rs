@@ -17,18 +17,29 @@
 //! - **Companion:** master toggle in plugin setup, brain integration
 //!   (`companion::project_pulse_consumer`), prompt injection in chat.
 //!
-//! ## Phase 0 (this commit)
+//! ## Phases
 //!
-//! Lays the namespace + the [`ProjectTracker`] placeholder struct so the
-//! AppState slot compiles. Submodules land in subsequent phases:
-//!
-//! - Phase 1: `watchers/{git,ledger}`, `events`, `scheduler` (no LLM).
-//! - Phase 2: `consolidator`, `pulse`, emits `project-tracking://pulse-updated`.
+//! - **Phase 0:** namespace + [`ProjectTracker`] placeholder + AppState slot.
+//! - **Phase 1 (this commit):** `events`, `subscription`, `watchers/{git,ledger}`,
+//!   `scheduler`. 1h tick driver, no LLM yet — just ingestion.
+//! - Phase 2: `consolidator`, `pulse`; emits `project-tracking://pulse-updated`.
 //! - Phase 3: `push` — out-of-cadence trigger from local_http.
-//! - Phase 6: `watchers/obsidian` (when an Obsidian credential is detected).
+//! - Phase 6: `watchers/obsidian` (gated on Obsidian credential detection).
 
-use std::sync::atomic::AtomicBool;
+pub mod consolidator;
+pub mod events;
+pub mod pulse;
+pub mod push;
+pub mod scheduler;
+pub mod subscription;
+pub mod watchers;
+
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use tauri::AppHandle;
+use tokio::task::JoinHandle;
+
+use crate::db::UserDbPool;
 
 /// Engine project tracking subsystem.
 ///
@@ -37,19 +48,50 @@ use std::sync::Arc;
 /// scheduler tick is doing work. This avoids the lifecycle complexity of
 /// replacing an `Option<Arc<...>>` at runtime — the watcher loop checks
 /// the flag each tick and short-circuits when off.
-///
-/// Phase 0 is a placeholder; Phase 1 wires the scheduler.
 pub struct ProjectTracker {
     /// Master enable gate. Flipped from the Companion plugin's "Track
     /// development activity" toggle in setup.
     pub enabled: Arc<AtomicBool>,
+    /// JoinHandle for the spawned scheduler loop. None until [`start`]
+    /// is called from the Tauri setup hook.
+    scheduler_handle: std::sync::Mutex<Option<JoinHandle<()>>>,
 }
 
 impl ProjectTracker {
     pub fn new() -> Self {
         Self {
             enabled: Arc::new(AtomicBool::new(false)),
+            scheduler_handle: std::sync::Mutex::new(None),
         }
+    }
+
+    /// Spawn the scheduler tokio task. Called once from Tauri's setup
+    /// hook after `AppState` is built. Idempotent: a second call is a
+    /// no-op (we don't want to multi-spawn the loop on accidental
+    /// re-init paths like Tauri dev hot-reload).
+    pub fn start(&self, pool: UserDbPool, app_handle: AppHandle) {
+        let mut guard = match self.scheduler_handle.lock() {
+            Ok(g) => g,
+            Err(poisoned) => poisoned.into_inner(),
+        };
+        if guard.is_some() {
+            tracing::debug!(
+                "project_tracking: scheduler already started; ignoring duplicate start()"
+            );
+            return;
+        }
+        let handle = scheduler::spawn(pool, self.enabled.clone(), app_handle);
+        *guard = Some(handle);
+    }
+
+    /// Flip the master enable gate. The next scheduler tick observes
+    /// the new value and acts accordingly.
+    pub fn set_enabled(&self, on: bool) {
+        self.enabled.store(on, Ordering::Relaxed);
+    }
+
+    pub fn is_enabled(&self) -> bool {
+        self.enabled.load(Ordering::Relaxed)
     }
 }
 

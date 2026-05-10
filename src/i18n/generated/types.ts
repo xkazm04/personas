@@ -10474,6 +10474,11 @@ export type Translations = {
     companion: {
       name: string;
       role: string;
+      tracking_title: string;
+      tracking_subtitle: string;
+      tracking_master_label: string;
+      tracking_master_on: string;
+      tracking_master_off: string;
       open_label: string;
       panel_label: string;
       initializing: string;
@@ -10880,6 +10885,26 @@ export type Translations = {
       tab_setup: string;
       tab_goals: string;
       tab_competitions: string;
+      tab_tracking: string;
+      tracking_title: string;
+      tracking_subtitle: string;
+      tracking_master_disabled_hint: string;
+      tracking_master_enabled_hint: string;
+      tracking_no_projects: string;
+      tracking_column_project: string;
+      tracking_column_path: string;
+      tracking_column_enabled: string;
+      tracking_column_watch_git: string;
+      tracking_column_watch_active_runs: string;
+      tracking_column_watch_obsidian: string;
+      tracking_column_last_pulse: string;
+      tracking_obsidian_disabled_hint: string;
+      tracking_obsidian_no_credential: string;
+      tracking_obsidian_vault_label: string;
+      tracking_save: string;
+      tracking_save_failed: string;
+      tracking_saved: string;
+      tracking_never_pulsed: string;
       adopt_first_period: string;
       auto_setup_complete: string;
       setup_failed: string;

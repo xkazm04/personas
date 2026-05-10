@@ -111,6 +111,17 @@ pub fn register(
         params![path],
         |r| r.get(0),
     )?;
+    // Phase 7: auto-create a tracking subscription with safe defaults
+    // (watch_git=true, watch_active_runs=true, watch_obsidian=false,
+    // enabled=false). The user opts in via the Dev Tools editor. INSERT
+    // OR IGNORE so re-registering the same project doesn't overwrite an
+    // existing subscription's watch flags or enable state.
+    conn.execute(
+        "INSERT OR IGNORE INTO dev_tools_project_subscription
+            (project_id, watch_git, watch_active_runs, watch_obsidian, enabled)
+         VALUES (?1, 1, 1, 0, 0)",
+        params![final_id],
+    )?;
     Ok(final_id)
 }
 

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { AppWindow, Bot, Brain, Clipboard, Eye, FileText, Terminal, Volume2, Wrench } from 'lucide-react';
+import { Activity, AppWindow, Bot, Brain, Clipboard, Eye, FileText, Terminal, Volume2, Wrench } from 'lucide-react';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { useSystemStore } from '@/stores/systemStore';
@@ -11,7 +11,12 @@ import {
   type SensorySource,
   type SensorySourceStateView,
 } from '@/api/companion';
-import { silentCatch } from '@/lib/silentCatch';
+import {
+  projectTrackingIsMasterEnabled,
+  projectTrackingSetMasterEnabled,
+  projectTrackingRunNow,
+} from '@/api/companion/projectTracking';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { SensorySignalsModal } from './SensorySignalsModal';
 
 /**
@@ -36,6 +41,40 @@ export default function SetupPanel() {
   );
   const setRecallSynthesisEnabled = useSystemStore(
     (s) => s.setCompanionRecallSynthesisEnabled,
+  );
+
+  const [trackingEnabled, setTrackingEnabled] = useState<boolean | null>(null);
+  const [trackingBusy, setTrackingBusy] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    projectTrackingIsMasterEnabled()
+      .then((v) => {
+        if (!cancelled) setTrackingEnabled(v);
+      })
+      .catch(silentCatch('project_tracking_is_master_enabled'));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const onToggleTracking = useCallback(
+    async (next: boolean) => {
+      setTrackingBusy(true);
+      try {
+        await projectTrackingSetMasterEnabled(next);
+        setTrackingEnabled(next);
+        if (next) {
+          // First-run backfill: fire one tick out-of-cadence so the
+          // user sees a pulse immediately instead of waiting an hour.
+          projectTrackingRunNow().catch(silentCatch('project_tracking_run_now'));
+        }
+      } catch (err) {
+        toastCatch('project_tracking_set_master_enabled')(err);
+      } finally {
+        setTrackingBusy(false);
+      }
+    },
+    [],
   );
 
   const [selfImprove, setSelfImprove] = useState<boolean | null>(null);
@@ -244,6 +283,35 @@ export default function SetupPanel() {
                 ? t.plugins.companion.setup_self_improve_active
                 : t.plugins.companion.setup_self_improve_inactive}
           </span>
+        </div>
+      </SectionCard>
+
+      <SectionCard
+        title={t.plugins.companion.tracking_title}
+        subtitle={t.plugins.companion.tracking_subtitle}
+      >
+        <div className="flex items-start gap-3 px-1 py-2">
+          <Activity
+            className={`w-4 h-4 mt-0.5 ${trackingEnabled ? 'text-emerald-400' : 'text-foreground/40'}`}
+          />
+          <div className="flex-1 min-w-0">
+            <div className="typo-body font-medium">
+              {t.plugins.companion.tracking_master_label}
+            </div>
+            <div className="typo-caption text-foreground/60 mt-0.5">
+              {trackingEnabled === null
+                ? t.plugins.companion.loading
+                : trackingEnabled
+                  ? t.plugins.companion.tracking_master_on
+                  : t.plugins.companion.tracking_master_off}
+            </div>
+          </div>
+          <AccessibleToggle
+            checked={trackingEnabled === true}
+            onChange={() => void onToggleTracking(!(trackingEnabled === true))}
+            disabled={trackingBusy || trackingEnabled === null}
+            label={t.plugins.companion.tracking_master_label}
+          />
         </div>
       </SectionCard>
     </div>

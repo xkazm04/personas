@@ -14,6 +14,7 @@ pub mod jobs;
 pub mod observability;
 pub mod plugins;
 pub mod proactive;
+pub mod project_tracking;
 #[cfg(feature = "desktop")]
 pub mod sensory;
 pub mod voice;

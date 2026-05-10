@@ -715,6 +715,10 @@ pub fn run() {
             // shim. Register routers BEFORE starting; later registrations
             // are dropped with a warn.
             local_http::register_router("langfuse", local_http::langfuse_routes::router());
+            local_http::register_router(
+                "project-tracking",
+                engine::project_tracking::push::router(),
+            );
             match local_http::start() {
                 Ok(port) => tracing::info!(port, "local_http server started"),
                 Err(e) => tracing::warn!(error = %e, "local_http server failed to start"),
@@ -824,6 +828,21 @@ pub fn run() {
                 clipboard_watcher_enabled: Arc::new(std::sync::atomic::AtomicBool::new(true)),
                 project_tracking: Arc::new(engine::project_tracking::ProjectTracker::new()),
             });
+            // Phase 1: spawn the project_tracking scheduler. The master
+            // enable flag inside the tracker starts at false; the
+            // scheduler ticks every hour but short-circuits each tick
+            // when the flag is off. Phase 5 wires the master toggle
+            // command that flips the flag.
+            state_arc
+                .project_tracking
+                .start(state_arc.user_db.clone(), app.handle().clone());
+            // Phase 3: initialize the push handle so the local_http
+            // /project-tracking/cli-event route can resolve projects,
+            // insert events, and fire out-of-cadence consolidator runs.
+            engine::project_tracking::push::init(
+                state_arc.user_db.clone(),
+                app.handle().clone(),
+            );
             app.manage(state_arc.clone());
 
             // Phase 5 v1: seed the cross-process cli_session gate from app_settings
@@ -2066,6 +2085,12 @@ pub fn run() {
             commands::companion::plugins::companion_set_plugin_enabled,
             commands::companion::jobs::companion_list_projects,
             commands::companion::jobs::companion_register_project,
+            commands::companion::project_tracking::project_tracking_list_subscriptions,
+            commands::companion::project_tracking::project_tracking_set_subscription,
+            commands::companion::project_tracking::project_tracking_set_master_enabled,
+            commands::companion::project_tracking::project_tracking_is_master_enabled,
+            commands::companion::project_tracking::project_tracking_run_now,
+            commands::companion::project_tracking::project_tracking_get_obsidian_vault,
             commands::companion::jobs::companion_list_jobs,
             commands::companion::jobs::companion_get_job,
             commands::companion::jobs::companion_enqueue_job,
