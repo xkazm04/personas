@@ -18,6 +18,7 @@ use serde::Serialize;
 use tauri::State;
 
 use crate::companion::brain::{consolidation, dashboard, reflection};
+use crate::companion::jobs::{self, curation_run};
 use crate::error::AppError;
 use crate::ipc_auth;
 use crate::AppState;
@@ -229,6 +230,44 @@ pub fn companion_get_reflection(
         body: r.body,
         created_at: r.created_at,
     })
+}
+
+// ── Curation runs (job-shaped async curation) ──────────────────────────
+
+/// Enqueue a memory-curation run as a `BackgroundJob`. Returns the job
+/// id immediately; the worker picks it up on the next ~3s tick, runs
+/// the inner curator (`consolidate` or `reflect`), and emits status
+/// transitions on the `companion://job` event channel.
+///
+/// Concept borrowed from Anthropic Managed Agents' dream pipeline —
+/// async lifecycle (queued → running → completed | failed), optional
+/// `instructions` steering. Personas's existing `BackgroundJob`
+/// framework (`companion::jobs`) provides the lifecycle; the existing
+/// `consolidation`/`reflection` curators provide the work.
+///
+/// For synchronous (blocking) execution use the existing
+/// `companion_run_consolidation` / `companion_run_reflection` shims —
+/// both remain available for back-compat with existing UI paths.
+#[tauri::command]
+pub fn companion_enqueue_curation_run(
+    state: State<'_, Arc<AppState>>,
+    scope: String,
+    instructions: Option<String>,
+) -> Result<String, AppError> {
+    ipc_auth::require_auth_sync(&state)?;
+    validate_instructions(instructions.as_deref())?;
+    if !matches!(scope.as_str(), "consolidate" | "reflect") {
+        return Err(AppError::Validation(format!(
+            "scope must be `consolidate` or `reflect`, got `{scope}`"
+        )));
+    }
+    let mut params = serde_json::Map::new();
+    params.insert("scope".to_string(), serde_json::Value::String(scope));
+    if let Some(s) = instructions {
+        params.insert("instructions".to_string(), serde_json::Value::String(s));
+    }
+    let params_value = serde_json::Value::Object(params);
+    jobs::enqueue(&state.user_db, curation_run::KIND, &params_value, None)
 }
 
 // ── Dashboard (Phase F) ─────────────────────────────────────────────────
