@@ -5,6 +5,7 @@ pub mod groups;
 pub mod import_export;
 pub mod memories;
 pub mod memory_compile;
+pub mod persona_jobs;
 pub mod personas;
 pub mod saved_views;
 pub mod use_cases;

@@ -2137,6 +2137,42 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // User-persona background-job table — projects the dream-job shape
+    // (queued → running → completed | failed | canceled) onto the
+    // user-personas side, mirroring `companion_background_job` for the
+    // companion side. Worker lives in `engine::persona_jobs`. v1 ships
+    // one kind: `memory_curation_run`.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "persona_background_job",
+            description: "Create persona_background_job table for async memory curation runs",
+            already_applied: |conn| has_table(conn, "persona_background_job"),
+            apply: |conn| {
+                conn.execute_batch(
+                    "CREATE TABLE IF NOT EXISTS persona_background_job (
+                        id                TEXT PRIMARY KEY,
+                        kind              TEXT NOT NULL,
+                        status            TEXT NOT NULL DEFAULT 'queued',
+                        params_json       TEXT NOT NULL DEFAULT '{}',
+                        persona_id        TEXT,
+                        result_text       TEXT,
+                        error_text        TEXT,
+                        cancel_requested  INTEGER NOT NULL DEFAULT 0,
+                        created_at        TEXT NOT NULL DEFAULT (datetime('now')),
+                        started_at        TEXT,
+                        completed_at      TEXT
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_persona_background_job_status
+                        ON persona_background_job(status, created_at DESC);
+                    CREATE INDEX IF NOT EXISTS idx_persona_background_job_persona
+                        ON persona_background_job(persona_id, created_at DESC);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 

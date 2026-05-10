@@ -865,6 +865,38 @@ pub fn run() {
 
             db::spawn_idle_maintenance_task(pool.clone(), user_db_pool.clone());
 
+            // Persona-jobs worker — projects the dream-job shape onto
+            // user-created personas (queued → running → completed |
+            // failed | canceled). v1 ships one kind: memory_curation_run,
+            // which writes proposals to persona_memory_review_proposal
+            // for the user to apply or discard. Concept borrowed from
+            // Anthropic Managed Agents' dream pipeline; implementation
+            // is local IPC + Tauri events.
+            {
+                if let Err(e) = engine::persona_jobs::recover_orphans(&pool) {
+                    tracing::warn!(error = %e, "persona-jobs: orphan recovery failed");
+                }
+                let pool_for_worker = pool.clone();
+                let app_handle = app.handle().clone();
+                tauri::async_runtime::spawn(async move {
+                    use std::time::Duration;
+                    // Brief startup delay so other init logs land first.
+                    tokio::time::sleep(Duration::from_secs(3)).await;
+                    loop {
+                        let res = engine::persona_jobs::worker_tick(
+                            &pool_for_worker,
+                            &app_handle,
+                        )
+                        .await;
+                        if let Err(e) = res {
+                            tracing::warn!(error = %e, "persona-jobs worker tick failed");
+                        }
+                        tokio::time::sleep(Duration::from_secs(5)).await;
+                    }
+                });
+            }
+            st.checkpoint("persona_jobs_worker");
+
             // Test automation HTTP server.
             //
             // Bind happens synchronously here so an EADDRINUSE failure is logged
@@ -1126,6 +1158,11 @@ pub fn run() {
             commands::core::memories::update_memory_tier,
             commands::core::memories::run_memory_lifecycle,
             commands::core::memory_compile::compile_persona_memories,
+            // Core -- Memory curation runs (persona_background_job framework)
+            commands::core::persona_jobs::enqueue_persona_memory_curation,
+            commands::core::persona_jobs::list_persona_jobs,
+            commands::core::persona_jobs::get_persona_job,
+            commands::core::persona_jobs::cancel_persona_job,
             // Core -- Import/Export
             commands::core::import_export::export_persona,
             commands::core::import_export::import_persona,
