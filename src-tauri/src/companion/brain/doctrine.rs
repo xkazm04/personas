@@ -65,7 +65,7 @@ const INCLUDED_DOCS: &[&str] = &[
     "features/live-roadmap/live-roadmap.md",
     // Top-level concepts — design philosophy.
     "concepts/adoption-creation-unification.md",
-    "concepts/agent-operations-hub.md",
+    "features/agents/operations-hub.md",
     "concepts/ambient-context-fusion.md",
     "concepts/claude-code-routines-integration.md",
     "concepts/cloud-deployment.md",
@@ -168,8 +168,8 @@ const EMBEDDED_DOCS: &[(&str, &str)] = &[
         include_str!("../../../../docs/concepts/adoption-creation-unification.md"),
     ),
     (
-        "concepts/agent-operations-hub.md",
-        include_str!("../../../../docs/concepts/agent-operations-hub.md"),
+        "features/agents/operations-hub.md",
+        include_str!("../../../../docs/features/agents/operations-hub.md"),
     ),
     (
         "concepts/ambient-context-fusion.md",
