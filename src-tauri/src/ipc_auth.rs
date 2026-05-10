@@ -267,6 +267,18 @@ pub const PRIVILEGED_COMMANDS: &[&str] = &[
     // catch renderer-context exploits steering the file_path arg at sensitive files)
     "artist_transcribe_media",
     "artist_load_transcript",
+    // Artist -- ffmpeg surface (every command spawns ffmpeg/ffprobe with
+    // user-controllable paths and is therefore a subprocess-spawn + arbitrary-
+    // path read/write primitive; must require IPC privilege)
+    "artist_check_ffmpeg",
+    "artist_probe_media",
+    "artist_compile_render_plan",
+    "artist_export_composition",
+    "artist_extract_audio",
+    "artist_save_thumbnail",
+    "artist_measure_loudness",
+    "artist_trim_file",
+    "artist_cancel_export",
     // Data Portability — NOT in PRIVILEGED_COMMANDS because the wrapper-level
     // header check fails intermittently on Windows WebView2 (the monkey-patch
     // may not reliably forward headers for commands that open native file dialogs).

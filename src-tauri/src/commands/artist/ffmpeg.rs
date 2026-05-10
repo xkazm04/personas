@@ -24,7 +24,7 @@ use crate::engine::render_plan::{
     compile as render_plan_compile, AudioStage, OverlayStage, RenderPlan, SourceEntry, VideoStage,
 };
 use crate::error::AppError;
-use crate::ipc_auth::require_auth;
+use crate::ipc_auth::require_privileged;
 use crate::AppState;
 
 // =============================================================================
@@ -148,7 +148,10 @@ async fn get_ffmpeg_version_async(ffmpeg_path: &Path) -> Result<String, AppError
 // =============================================================================
 
 #[tauri::command]
-pub async fn artist_check_ffmpeg() -> Result<FfmpegStatus, AppError> {
+pub async fn artist_check_ffmpeg(
+    state: State<'_, Arc<AppState>>,
+) -> Result<FfmpegStatus, AppError> {
+    require_privileged(&state, "artist_check_ffmpeg").await?;
     match find_ffmpeg_path().await {
         Some(p) => {
             let version = get_ffmpeg_version_async(&p).await.ok();
@@ -168,7 +171,11 @@ pub async fn artist_check_ffmpeg() -> Result<FfmpegStatus, AppError> {
 
 /// Probe a media file using ffprobe to get duration, dimensions, codecs.
 #[tauri::command]
-pub async fn artist_probe_media(file_path: String) -> Result<MediaProbeResult, AppError> {
+pub async fn artist_probe_media(
+    state: State<'_, Arc<AppState>>,
+    file_path: String,
+) -> Result<MediaProbeResult, AppError> {
+    require_privileged(&state, "artist_probe_media").await?;
     let ffprobe_path = find_ffprobe_path()
         .await
         .ok_or_else(|| AppError::NotFound("ffprobe not found (install ffmpeg)".into()))?;
@@ -254,11 +261,16 @@ async fn find_ffprobe_path() -> Option<PathBuf> {
 /// Compile a Composition JSON blob to a RenderPlan IR.
 ///
 /// Exposed so the browser preview can share the Rust compiler instead of
-/// maintaining a parallel TypeScript port. Pure function — no I/O — so it
-/// needs no auth guard. Preview mode uses Fold + frame-snap + !for_export;
-/// export still calls `render_plan::compile` directly in its own command.
+/// maintaining a parallel TypeScript port. Preview mode uses Fold + frame-snap
+/// + !for_export; export still calls `render_plan::compile` directly in its
+/// own command. Auth-gated because the parser is reachable from any IPC
+/// caller and unbounded composition_json size is a CPU-DoS vector.
 #[tauri::command]
-pub async fn artist_compile_render_plan(composition_json: String) -> Result<RenderPlan, AppError> {
+pub async fn artist_compile_render_plan(
+    state: State<'_, Arc<AppState>>,
+    composition_json: String,
+) -> Result<RenderPlan, AppError> {
+    require_privileged(&state, "artist_compile_render_plan").await?;
     let composition: RpComposition = serde_json::from_str(&composition_json)
         .map_err(|e| AppError::Validation(format!("Invalid composition: {e}")))?;
 
@@ -281,7 +293,7 @@ pub async fn artist_export_composition(
     composition_json: String,
     output_path: String,
 ) -> Result<serde_json::Value, AppError> {
-    require_auth(&state).await?;
+    require_privileged(&state, "artist_export_composition").await?;
 
     let ffmpeg = find_ffmpeg_path()
         .await
@@ -354,9 +366,11 @@ pub async fn artist_export_composition(
 /// Uses stream-copy (no re-encode) when possible.
 #[tauri::command]
 pub async fn artist_extract_audio(
+    state: State<'_, Arc<AppState>>,
     input_path: String,
     output_path: String,
 ) -> Result<String, AppError> {
+    require_privileged(&state, "artist_extract_audio").await?;
     let ffmpeg = find_ffmpeg_path()
         .await
         .ok_or_else(|| AppError::NotFound("ffmpeg not found".into()))?;
@@ -397,10 +411,12 @@ pub async fn artist_extract_audio(
 /// it's near-instant even on long files.
 #[tauri::command]
 pub async fn artist_save_thumbnail(
+    state: State<'_, Arc<AppState>>,
     input_path: String,
     time_seconds: f64,
     output_path: String,
 ) -> Result<String, AppError> {
+    require_privileged(&state, "artist_save_thumbnail").await?;
     let ffmpeg = find_ffmpeg_path()
         .await
         .ok_or_else(|| AppError::NotFound("ffmpeg not found".into()))?;
@@ -440,7 +456,11 @@ pub async fn artist_save_thumbnail(
 /// returned `integrated` LUFS to apply a true linear gain equivalent to what
 /// the export's loudnorm pass will produce.
 #[tauri::command]
-pub async fn artist_measure_loudness(file_path: String) -> Result<LoudnessStats, AppError> {
+pub async fn artist_measure_loudness(
+    state: State<'_, Arc<AppState>>,
+    file_path: String,
+) -> Result<LoudnessStats, AppError> {
+    require_privileged(&state, "artist_measure_loudness").await?;
     let ffmpeg = find_ffmpeg_path()
         .await
         .ok_or_else(|| AppError::NotFound("ffmpeg not found".into()))?;
@@ -501,11 +521,13 @@ pub async fn artist_measure_loudness(file_path: String) -> Result<LoudnessStats,
 /// range (e.g. not on a keyframe).
 #[tauri::command]
 pub async fn artist_trim_file(
+    state: State<'_, Arc<AppState>>,
     input_path: String,
     start_seconds: f64,
     end_seconds: f64,
     output_path: String,
 ) -> Result<String, AppError> {
+    require_privileged(&state, "artist_trim_file").await?;
     let ffmpeg = find_ffmpeg_path()
         .await
         .ok_or_else(|| AppError::NotFound("ffmpeg not found".into()))?;
@@ -584,7 +606,7 @@ pub async fn artist_cancel_export(
     state: State<'_, Arc<AppState>>,
     job_id: String,
 ) -> Result<bool, AppError> {
-    require_auth(&state).await?;
+    require_privileged(&state, "artist_cancel_export").await?;
     MEDIA_EXPORT_JOBS.cancel(&app, &job_id)?;
     Ok(true)
 }
