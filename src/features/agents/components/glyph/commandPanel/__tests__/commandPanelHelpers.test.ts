@@ -103,6 +103,7 @@ describe("mergeRecipeIntoDraft", () => {
       output: "JSON list",
       tools: "",
       review: "manager",
+      messaging: "",
     };
     const out = mergeRecipeIntoDraft(filled, {
       name: "Recipe",
