@@ -1052,17 +1052,48 @@ pub fn obsidian_brain_read_vault_note(
     require_auth_sync(&state)?;
     let config = get_config_or_err(&state.db)?;
 
-    // Safety: ensure the path is within the vault
+    // Safety: confine the read to the configured vault. Path::starts_with does
+    // string-segment matching only -- it does not normalise `..` segments and
+    // is case-sensitive on Windows, where the filesystem isn't. An absolute
+    // path like `C:\Users\x\.ssh\id_rsa` was caught by the previous check, but
+    // a relative path like `..\..\.ssh\id_rsa` joined naively would escape,
+    // and a literal `C:\Users\X\Documents\Vault\..\..\.ssh\id_rsa` could
+    // textually start with vault_base while resolving outside it.
+    //
+    // The robust shape: treat input as relative-only, reject `..` components
+    // up front, then canonicalise both sides and verify containment. The
+    // double belt covers symlink escapes (canonicalize resolves them) and
+    // Windows case-folding (canonicalize normalises case).
     let vault_base = Path::new(&config.vault_path);
-    let target = Path::new(&file_path);
+    let candidate = Path::new(&file_path);
 
-    if !target.starts_with(vault_base) && !target.starts_with(&config.vault_path) {
+    if candidate.is_absolute() {
         return Err(AppError::Validation(
-            "File path is outside the configured vault".into(),
+            "File path must be relative to the vault root".into(),
+        ));
+    }
+    if candidate
+        .components()
+        .any(|c| matches!(c, std::path::Component::ParentDir))
+    {
+        return Err(AppError::Validation(
+            "File path must not contain `..` segments".into(),
         ));
     }
 
-    std::fs::read_to_string(target)
+    let vault_canon = vault_base.canonicalize().map_err(|e| {
+        AppError::Validation(format!("Vault path is not accessible: {e}"))
+    })?;
+    let target_canon = vault_canon.join(candidate).canonicalize().map_err(|e| {
+        AppError::Validation(format!("Vault note not found: {e}"))
+    })?;
+    if !target_canon.starts_with(&vault_canon) {
+        return Err(AppError::Validation(
+            "File path resolves outside the configured vault".into(),
+        ));
+    }
+
+    std::fs::read_to_string(&target_canon)
         .map_err(|e| AppError::Validation(format!("Failed to read file: {e}")))
 }
 
