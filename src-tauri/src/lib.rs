@@ -903,6 +903,43 @@ pub fn run() {
             }
             st.checkpoint("persona_jobs_worker");
 
+            // F-CRON: scheduled-curation worker. Ticks every 60s,
+            // reads `persona_curation_schedule` rows, evaluates the
+            // cron expression vs `last_curation_at` (or `created_at`
+            // on first fire), and enqueues a memory_curation_run job
+            // when a persona is due. The persona-jobs worker above
+            // picks the queued job up on its next 5s tick.
+            //
+            // Distinct from `engine::scheduler` (cron evaluator that
+            // fires persona EXECUTIONS via the triggers table) — this
+            // scheduler operates on a different table with different
+            // semantics (curation vs execution).
+            {
+                let pool_for_curation = pool.clone();
+                tauri::async_runtime::spawn(async move {
+                    // Slightly longer startup delay than the persona-jobs
+                    // worker so the first scheduler tick sees a settled
+                    // job table (no orphan-recovery races).
+                    tokio::time::sleep(std::time::Duration::from_secs(8)).await;
+                    loop {
+                        match engine::curation_scheduler::tick(&pool_for_curation) {
+                            Ok(0) => {} // quiet path; nothing due
+                            Ok(n) => tracing::debug!(
+                                enqueued = n,
+                                "curation_scheduler: enqueued scheduled jobs"
+                            ),
+                            Err(e) => tracing::warn!(
+                                error = %e,
+                                "curation_scheduler tick failed"
+                            ),
+                        }
+                        tokio::time::sleep(engine::curation_scheduler::SCHEDULER_TICK_INTERVAL)
+                            .await;
+                    }
+                });
+            }
+            st.checkpoint("curation_scheduler");
+
             // Test automation HTTP server.
             //
             // Bind happens synchronously here so an EADDRINUSE failure is logged
@@ -1169,6 +1206,8 @@ pub fn run() {
             commands::core::persona_jobs::list_persona_jobs,
             commands::core::persona_jobs::get_persona_job,
             commands::core::persona_jobs::cancel_persona_job,
+            commands::core::persona_jobs::set_persona_curation_schedule,
+            commands::core::persona_jobs::get_persona_curation_schedule,
             // Core -- Import/Export
             commands::core::import_export::export_persona,
             commands::core::import_export::import_persona,

@@ -372,14 +372,11 @@ async fn memory_curation_run(
     pool: &DbPool,
     params: &serde_json::Value,
 ) -> Result<String, AppError> {
-    use std::collections::HashMap;
-    use std::process::Stdio;
-    use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
-    use tokio::process::Command;
-
-    use crate::db::repos::core::memories as memories_repo;
+    use crate::commands::core::memories::{
+        run_memory_review_pipeline, MemoryReviewPipelineOpts,
+    };
     use crate::db::repos::core::memory_review_proposal::{
-        self as proposal_repo, CreateProposalInput, ProposalEntry,
+        self as proposal_repo, CreateProposalInput,
     };
 
     let persona_id = params.get("persona_id").and_then(|v| v.as_str());
@@ -397,204 +394,30 @@ async fn memory_curation_run(
         }
     }
 
-    // 1. Fetch memories — same shape as IPC command.
-    let memories = memories_repo::get_all(
+    // F-DRY: shared pipeline helper does fetch + prompt + CLI + parse
+    // + classify. Worker default for execution-context window is
+    // Some(20) (smaller than Anthropic's 100-session cap because
+    // personas execution traces tend to be denser per-row than chat
+    // session transcripts).
+    let pipeline = match run_memory_review_pipeline(
         pool,
-        persona_id,
-        None,
-        None,
-        Some(200),
-        Some(0),
-        None,
-        None,
-    )?;
-    if memories.is_empty() {
-        return Ok("No memories to review (empty pool).".to_string());
-    }
-
-    // 2. Build prompt.
-    let memory_entries: Vec<serde_json::Value> = memories
-        .iter()
-        .map(|m| {
-            serde_json::json!({
-                "id": m.id,
-                "title": m.title,
-                "content": m.content,
-                "category": m.category,
-                "importance": m.importance,
-            })
-        })
-        .collect();
-    let memories_json = serde_json::to_string_pretty(&memory_entries)
-        .map_err(|e| AppError::Internal(format!("Serialize: {e}")))?;
-    let guidance_block = instructions
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
-        .map(|s| format!("\n\nAdditional guidance from operator:\n{s}\n"))
-        .unwrap_or_default();
-    let prompt = format!(
-        r#"You are reviewing agent memories from Personas, an AI agent management platform where autonomous agents execute tasks, use tools, handle events, and store memories to retain knowledge across executions.
-
-Evaluate each memory for relevance to agent operations. Score 1-10:
-- 9-10: Critical operational knowledge essential for agent tasks
-- 7-8: Useful context that meaningfully aids agent performance
-- 4-6: Marginal value, possibly outdated or vague
-- 1-3: Noise, trivial, redundant, or no longer applicable
-
-Respond with ONLY a JSON array. No markdown fences, no explanation, no surrounding text.
-Example: [{{"id":"abc-123","score":8,"reason":"Core operational context"}}]
-{guidance_block}
-Memories to review:
-{memories_json}"#
-    );
-
-    // 3. Spawn Claude CLI — mirrors review_memories_with_cli's args.
-    let (program, mut args) = if cfg!(windows) {
-        (
-            "cmd".to_string(),
-            vec!["/C".to_string(), "claude.cmd".to_string()],
-        )
-    } else {
-        ("claude".to_string(), vec![])
-    };
-    args.extend(
-        [
-            "-p",
-            "-",
-            "--max-turns",
-            "1",
-            "--dangerously-skip-permissions",
-        ]
-        .iter()
-        .map(|s| s.to_string()),
-    );
-    let mut cmd = Command::new(&program);
-    cmd.args(&args)
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped());
-    #[cfg(windows)]
+        MemoryReviewPipelineOpts {
+            persona_id,
+            threshold,
+            instructions,
+            include_recent_executions: Some(20),
+        },
+    )
+    .await?
     {
-        #[allow(unused_imports)]
-        use std::os::windows::process::CommandExt;
-        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
-    }
-    cmd.env_remove("CLAUDECODE");
-    cmd.env_remove("CLAUDE_CODE");
+        Some(p) => p,
+        None => return Ok("No memories to review (empty pool).".to_string()),
+    };
 
-    let mut child = cmd.spawn().map_err(|e| {
-        if e.kind() == std::io::ErrorKind::NotFound {
-            AppError::Internal(
-                "Claude CLI not found. Install from https://docs.anthropic.com/en/docs/claude-code"
-                    .into(),
-            )
-        } else {
-            AppError::Internal(format!("Failed to spawn CLI: {e}"))
-        }
-    })?;
-
-    if let Some(mut stdin) = child.stdin.take() {
-        stdin.write_all(prompt.as_bytes()).await.map_err(|e| {
-            AppError::Internal(format!("Failed to write prompt to CLI stdin: {e}"))
-        })?;
-        stdin
-            .shutdown()
-            .await
-            .map_err(|e| AppError::Internal(format!("Failed to close CLI stdin: {e}")))?;
-    }
-
-    let stdout = child
-        .stdout
-        .take()
-        .ok_or_else(|| AppError::Internal("No stdout".into()))?;
-    let mut reader = BufReader::new(stdout);
-    let mut full_output = String::new();
-
-    let cli_timeout = std::time::Duration::from_secs(180);
-    let read_result = tokio::time::timeout(cli_timeout, async {
-        let mut line = String::new();
-        while reader.read_line(&mut line).await.unwrap_or(0) > 0 {
-            full_output.push_str(&line);
-            line.clear();
-        }
-    })
-    .await;
-    if read_result.is_err() {
-        let _ = child.kill().await;
-        let _ = child.wait().await;
-        return Err(AppError::Internal(
-            "Memory review timed out after 3 minutes".into(),
-        ));
-    }
-    let _ = child.wait().await;
-
-    if full_output.trim().is_empty() {
-        return Err(AppError::Internal("CLI produced no output".into()));
-    }
-
-    // 4. Parse + classify (same shape as IPC command).
-    let json_str = extract_json_array(&full_output)
-        .ok_or_else(|| AppError::Internal("Failed to parse review output as JSON".into()))?;
-    let reviews: Vec<serde_json::Value> = serde_json::from_str(&json_str)
-        .map_err(|e| AppError::Internal(format!("Invalid JSON in review output: {e}")))?;
-
-    let title_map: HashMap<&str, &str> = memories
-        .iter()
-        .map(|m| (m.id.as_str(), m.title.as_str()))
-        .collect();
-
-    let mut entries: Vec<ProposalEntry> = Vec::new();
-    let mut proposed_changes = 0usize;
-    for review in &reviews {
-        let id = review.get("id").and_then(|v| v.as_str()).unwrap_or("");
-        if id.is_empty() {
-            continue;
-        }
-        let title = match title_map.get(id) {
-            Some(t) => t.to_string(),
-            None => continue,
-        };
-        let score = match review.get("score").and_then(|v| v.as_i64()) {
-            Some(s) => s as i32,
-            None => continue,
-        };
-        let reason = review
-            .get("reason")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .to_string();
-        if score < threshold {
-            entries.push(ProposalEntry {
-                memory_id: id.to_string(),
-                title,
-                score,
-                reason,
-                action: "delete".to_string(),
-                new_importance: None,
-            });
-            proposed_changes += 1;
-        } else {
-            let new_importance = match score {
-                7 => 3,
-                8 => 4,
-                9..=10 => 5,
-                _ => 3,
-            };
-            entries.push(ProposalEntry {
-                memory_id: id.to_string(),
-                title,
-                score,
-                reason,
-                action: "update_importance".to_string(),
-                new_importance: Some(new_importance),
-                });
-            proposed_changes += 1;
-        }
-    }
-
+    let proposed_changes = pipeline.entries.iter().filter(|e| e.action != "keep").count();
     let summary = format!(
         "Reviewed {n} memories; proposed {p} change(s) for review.",
-        n = reviews.len(),
+        n = pipeline.reviews_count,
         p = proposed_changes
     );
     let proposal_id = proposal_repo::create(
@@ -603,7 +426,7 @@ Memories to review:
             persona_id,
             threshold,
             instructions,
-            entries: &entries,
+            entries: &pipeline.entries,
             summary: Some(&summary),
         },
     )?;
@@ -612,54 +435,22 @@ Memories to review:
     // counts without parsing prose.
     let result = serde_json::json!({
         "proposal_id": proposal_id,
-        "reviewed": reviews.len(),
+        "reviewed": pipeline.reviews_count,
         "proposed_changes": proposed_changes,
         "summary": summary,
     });
     Ok(result.to_string())
 }
 
-fn extract_json_array(s: &str) -> Option<String> {
-    let start = s.find('[')?;
-    let mut depth = 0i32;
-    let bytes = s.as_bytes();
-    for (i, &b) in bytes.iter().enumerate().skip(start) {
-        match b {
-            b'[' => depth += 1,
-            b']' => {
-                depth -= 1;
-                if depth == 0 {
-                    return Some(s[start..=i].to_string());
-                }
-            }
-            _ => {}
-        }
-    }
-    None
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    #[test]
-    fn extract_json_array_finds_outermost() {
-        let s = "preamble [{ \"id\": \"a\" }, { \"id\": \"b\" }] trailing";
-        let extracted = extract_json_array(s).unwrap();
-        assert_eq!(extracted, "[{ \"id\": \"a\" }, { \"id\": \"b\" }]");
-    }
-
-    #[test]
-    fn extract_json_array_handles_nested() {
-        let s = "[{\"x\": [1,2,3]}, {\"y\": [4,5]}]";
-        let extracted = extract_json_array(s).unwrap();
-        assert_eq!(extracted, s);
-    }
-
-    #[test]
-    fn extract_json_array_returns_none_when_no_array() {
-        assert!(extract_json_array("no array here").is_none());
-    }
+    // F-DRY (2026-05-10): the extract_json_array tests previously here were
+    // duplicates of the suite in `commands::core::memories::tests`
+    // (extract_json_array_{simple,brackets_in_strings,escaped_quotes,
+    // nested,no_array,unclosed}). After the pipeline extraction the
+    // function lives only in memories.rs; redundant duplicates removed.
 
     #[test]
     fn instructions_cap_matches_ipc_boundary() {

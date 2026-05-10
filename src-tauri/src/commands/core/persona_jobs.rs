@@ -112,3 +112,43 @@ pub fn cancel_persona_job(
     require_auth_sync(&state)?;
     persona_jobs::request_cancel(&state.db, &job_id)
 }
+
+// ── Curation schedule (F-CRON) ─────────────────────────────────────────
+
+/// Set or update the per-persona curation schedule. cron_expr is a
+/// 5-field cron expression (`minutes hours dom month dow`); parsed and
+/// validated via `engine::cron::parse_cron` before persisting. The
+/// scheduler tick (`engine::curation_scheduler::tick`) reads this
+/// table every 60 seconds and enqueues a memory_curation_run job when
+/// a persona is due to fire.
+///
+/// Pass an empty/whitespace cron_expr to delete the schedule (curation
+/// disabled for this persona).
+#[tauri::command]
+pub fn set_persona_curation_schedule(
+    state: State<'_, Arc<AppState>>,
+    persona_id: String,
+    cron_expr: String,
+) -> Result<Option<crate::db::repos::core::curation_schedule::PersonaCurationSchedule>, AppError> {
+    require_auth_sync(&state)?;
+    let trimmed = cron_expr.trim();
+    if trimmed.is_empty() {
+        crate::db::repos::core::curation_schedule::delete(&state.db, &persona_id)?;
+        return Ok(None);
+    }
+    crate::engine::cron::parse_cron(trimmed)
+        .map_err(|e| AppError::Validation(format!("invalid cron expression: {e}")))?;
+    let row = crate::db::repos::core::curation_schedule::upsert(&state.db, &persona_id, trimmed)?;
+    Ok(Some(row))
+}
+
+/// Read the current curation schedule for a persona. Returns `None`
+/// when no schedule is set (curation disabled for this persona).
+#[tauri::command]
+pub fn get_persona_curation_schedule(
+    state: State<'_, Arc<AppState>>,
+    persona_id: String,
+) -> Result<Option<crate::db::repos::core::curation_schedule::PersonaCurationSchedule>, AppError> {
+    require_auth_sync(&state)?;
+    crate::db::repos::core::curation_schedule::get(&state.db, &persona_id)
+}

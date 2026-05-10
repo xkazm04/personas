@@ -227,6 +227,352 @@ pub struct MemoryReviewResult {
 /// prompts into the steering field.
 pub(crate) const MAX_INSTRUCTIONS_CHARS: usize = 4096;
 
+// -- Shared memory-review pipeline helper ----------------------------------
+//
+// Used by:
+//   - `review_memories_with_cli` (IPC command, sync auto_apply path or
+//     proposal-mode path)
+//   - `engine::persona_jobs::memory_curation_run` (background-job worker
+//     that always uses proposal mode)
+//
+// Concept: fetch memories + (optionally) recent executions → build a
+// scoring prompt → spawn the Claude CLI → parse the JSON output →
+// classify into deletes / importance bumps / detail rows. Returns a
+// `MemoryReviewPipeline` the caller branches on.
+//
+// Returns `Ok(None)` when no memories exist for the persona/scope —
+// callers treat this as "nothing to do" rather than an error.
+
+pub(crate) struct MemoryReviewPipelineOpts<'a> {
+    pub persona_id: Option<&'a str>,
+    pub threshold: i32,
+    pub instructions: Option<&'a str>,
+    /// F-SESSIONS: include up to N recent executions for the persona as
+    /// session context in the prompt. `None` = no executions (legacy
+    /// behavior, used by the IPC command). `Some(n)` = prepend a
+    /// "Recent agent executions" section with up to n executions,
+    /// each clamped to ~1KB of input + ~1KB of output.
+    pub include_recent_executions: Option<usize>,
+}
+
+pub(crate) struct MemoryReviewPipeline {
+    pub reviews_count: usize,
+    pub entries: Vec<ProposalEntry>,
+    pub details: Vec<MemoryReviewDetail>,
+    pub ids_to_delete: Vec<String>,
+    pub importance_updates: Vec<(String, i32)>,
+}
+
+/// Run the LLM-driven memory review pipeline. See module-level comment
+/// for the contract. Caller responsible for downstream apply / write-
+/// proposal work.
+pub(crate) async fn run_memory_review_pipeline(
+    pool: &crate::db::DbPool,
+    opts: MemoryReviewPipelineOpts<'_>,
+) -> Result<Option<MemoryReviewPipeline>, AppError> {
+    use crate::db::repos::execution::executions as executions_repo;
+
+    let MemoryReviewPipelineOpts {
+        persona_id,
+        threshold,
+        instructions,
+        include_recent_executions,
+    } = opts;
+
+    // 1. Fetch memories.
+    let memories = repo::get_all(pool, persona_id, None, None, Some(200), Some(0), None, None)?;
+    if memories.is_empty() {
+        return Ok(None);
+    }
+
+    // 1b. F-SESSIONS: optionally fetch recent executions as session context.
+    //
+    // Anthropic's dreams take a memory store + up to 100 sessions. Personas's
+    // analog: feed the curator recent execution traces so it can spot
+    // memories that are stale relative to what the agent actually did.
+    // Only meaningful when persona_id is set (workspace-wide curation
+    // would mix execution traces from many personas, which the LLM
+    // can't sensibly correlate to memory entries).
+    //
+    // Per-execution clamps prevent prompt blowup: input_data and
+    // output_data are each truncated to 1024 chars with a `…[truncated]`
+    // marker; error_message stays as-is (typically short).
+    let executions_block = match (include_recent_executions, persona_id) {
+        (Some(n), Some(pid)) if n > 0 => {
+            let execs = executions_repo::get_by_persona_id(pool, pid, Some(n as i64))?;
+            if execs.is_empty() {
+                String::new()
+            } else {
+                let mut block = String::from("\n\n## Recent agent executions (oldest first)\n\n");
+                // Reverse to oldest-first so the LLM reads them in chronological
+                // order, matching how a human would scan a session log.
+                for ex in execs.iter().rev() {
+                    block.push_str(&format!(
+                        "### {created} — status: {status}\n",
+                        created = ex.created_at,
+                        status = ex.status,
+                    ));
+                    if let Some(input) = ex.input_data.as_deref() {
+                        block.push_str("**input:** ");
+                        block.push_str(&truncate_for_prompt(input, 1024));
+                        block.push('\n');
+                    }
+                    if let Some(output) = ex.output_data.as_deref() {
+                        block.push_str("**output:** ");
+                        block.push_str(&truncate_for_prompt(output, 1024));
+                        block.push('\n');
+                    }
+                    if let Some(err) = ex.error_message.as_deref() {
+                        block.push_str("**error:** ");
+                        block.push_str(err);
+                        block.push('\n');
+                    }
+                    block.push('\n');
+                }
+                block
+            }
+        }
+        _ => String::new(),
+    };
+
+    // 2. Build prompt.
+    let memory_entries: Vec<serde_json::Value> = memories
+        .iter()
+        .map(|m| {
+            serde_json::json!({
+                "id": m.id,
+                "title": m.title,
+                "content": m.content,
+                "category": m.category,
+                "importance": m.importance,
+            })
+        })
+        .collect();
+    let memories_json = serde_json::to_string_pretty(&memory_entries)
+        .map_err(|e| AppError::Internal(format!("Serialize: {e}")))?;
+    let guidance_block = instructions
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(|s| format!("\n\nAdditional guidance from operator:\n{s}\n"))
+        .unwrap_or_default();
+
+    let prompt = format!(
+        r#"You are reviewing agent memories from Personas, an AI agent management platform where autonomous agents execute tasks, use tools, handle events, and store memories to retain knowledge across executions.
+
+Evaluate each memory for relevance to agent operations. Score 1-10:
+- 9-10: Critical operational knowledge essential for agent tasks
+- 7-8: Useful context that meaningfully aids agent performance
+- 4-6: Marginal value, possibly outdated or vague
+- 1-3: Noise, trivial, redundant, or no longer applicable
+
+Respond with ONLY a JSON array. No markdown fences, no explanation, no surrounding text.
+Example: [{{"id":"abc-123","score":8,"reason":"Core operational context"}}]
+{guidance_block}{executions_block}
+Memories to review:
+{memories_json}"#
+    );
+
+    // 3. Build CLI args.
+    let (program, mut args) = if cfg!(windows) {
+        (
+            "cmd".to_string(),
+            vec!["/C".to_string(), "claude.cmd".to_string()],
+        )
+    } else {
+        ("claude".to_string(), vec![])
+    };
+    args.extend(
+        [
+            "-p",
+            "-",
+            "--max-turns",
+            "1",
+            "--dangerously-skip-permissions",
+        ]
+        .iter()
+        .map(|s| s.to_string()),
+    );
+
+    // 4. Spawn CLI.
+    let mut cmd = Command::new(&program);
+    cmd.args(&args)
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped());
+    #[cfg(windows)]
+    {
+        #[allow(unused_imports)]
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    }
+    cmd.env_remove("CLAUDECODE");
+    cmd.env_remove("CLAUDE_CODE");
+    let mut child = cmd.spawn().map_err(|e| {
+        if e.kind() == std::io::ErrorKind::NotFound {
+            AppError::Internal(
+                "Claude CLI not found. Install from https://docs.anthropic.com/en/docs/claude-code"
+                    .into(),
+            )
+        } else {
+            AppError::Internal(format!("Failed to spawn CLI: {e}"))
+        }
+    })?;
+    if let Some(mut stdin) = child.stdin.take() {
+        stdin
+            .write_all(prompt.as_bytes())
+            .await
+            .map_err(|e| AppError::Internal(format!("Failed to write prompt to CLI stdin: {e}")))?;
+        stdin
+            .shutdown()
+            .await
+            .map_err(|e| AppError::Internal(format!("Failed to close CLI stdin: {e}")))?;
+    }
+
+    // 5. Read stdout.
+    let stdout = child
+        .stdout
+        .take()
+        .ok_or_else(|| AppError::Internal("No stdout".into()))?;
+    let mut reader = BufReader::new(stdout);
+    let mut full_output = String::new();
+    let cli_timeout = std::time::Duration::from_secs(180);
+    let read_result = tokio::time::timeout(cli_timeout, async {
+        let mut line = String::new();
+        while reader.read_line(&mut line).await.unwrap_or(0) > 0 {
+            full_output.push_str(&line);
+            line.clear();
+        }
+    })
+    .await;
+    if read_result.is_err() {
+        let _ = child.kill().await;
+        let _ = child.wait().await;
+        return Err(AppError::Internal(
+            "Memory review timed out after 3 minutes".into(),
+        ));
+    }
+    let _ = child.wait().await;
+    if full_output.trim().is_empty() {
+        return Err(AppError::Internal("CLI produced no output".into()));
+    }
+
+    // 6. Parse JSON array from output.
+    let json_str = extract_json_array(&full_output)
+        .ok_or_else(|| AppError::Internal("Failed to parse review output as JSON".into()))?;
+    let reviews: Vec<serde_json::Value> = serde_json::from_str(&json_str)
+        .map_err(|e| AppError::Internal(format!("Invalid JSON in review output: {e}")))?;
+
+    // 7. Classify into deletes / importance bumps / details / proposal entries.
+    let mut ids_to_delete = Vec::new();
+    let mut importance_updates = Vec::new();
+    let mut details = Vec::new();
+    let mut entries: Vec<ProposalEntry> = Vec::new();
+
+    let title_map: std::collections::HashMap<&str, &str> = memories
+        .iter()
+        .map(|m| (m.id.as_str(), m.title.as_str()))
+        .collect();
+
+    for review in &reviews {
+        let id = review.get("id").and_then(|v| v.as_str()).unwrap_or("");
+        if id.is_empty() {
+            continue;
+        }
+        let title = match title_map.get(id) {
+            Some(t) => t.to_string(),
+            None => continue,
+        };
+        let score = match review.get("score").and_then(|v| v.as_i64()) {
+            Some(s) => s as i32,
+            None => continue,
+        };
+        let reason = review
+            .get("reason")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        if score < threshold {
+            ids_to_delete.push(id.to_string());
+            details.push(MemoryReviewDetail {
+                id: id.to_string(),
+                title: title.clone(),
+                score,
+                reason: reason.clone(),
+                action: "deleted".to_string(),
+                error: None,
+            });
+            entries.push(ProposalEntry {
+                memory_id: id.to_string(),
+                title,
+                score,
+                reason,
+                action: "delete".to_string(),
+                new_importance: None,
+            });
+        } else {
+            let new_importance = match score {
+                7 => 3,
+                8 => 4,
+                9..=10 => 5,
+                _ => 3,
+            };
+            importance_updates.push((id.to_string(), new_importance));
+            details.push(MemoryReviewDetail {
+                id: id.to_string(),
+                title: title.clone(),
+                score,
+                reason: reason.clone(),
+                action: "kept".to_string(),
+                error: None,
+            });
+            entries.push(ProposalEntry {
+                memory_id: id.to_string(),
+                title,
+                score,
+                reason,
+                action: "update_importance".to_string(),
+                new_importance: Some(new_importance),
+            });
+        }
+    }
+
+    Ok(Some(MemoryReviewPipeline {
+        reviews_count: reviews.len(),
+        entries,
+        details,
+        ids_to_delete,
+        importance_updates,
+    }))
+}
+
+/// Extract the outermost JSON array from a string. Public for cross-module
+/// reuse (worker pipeline in `engine::persona_jobs` was duplicating this
+/// logic before F-DRY).
+pub(crate) fn extract_json_array_from(s: &str) -> Option<String> {
+    extract_json_array(s)
+}
+
+/// Clamp a free-form text field to `max_chars` characters for inclusion in
+/// an LLM prompt. Char-boundary-aware so we never split a multi-byte UTF-8
+/// codepoint. Adds a `…[truncated]` marker when content was clipped so the
+/// model knows it's looking at a partial.
+fn truncate_for_prompt(s: &str, max_chars: usize) -> String {
+    if s.chars().count() <= max_chars {
+        return s.to_string();
+    }
+    let mut end = 0usize;
+    for (i, _) in s.char_indices().take(max_chars) {
+        end = i;
+    }
+    // `end` now points at the last kept-char's start; advance to its end.
+    if let Some((next_idx, _)) = s.char_indices().nth(max_chars) {
+        end = next_idx;
+    } else {
+        end = s.len();
+    }
+    format!("{}…[truncated]", &s[..end])
+}
+
 /// Run an LLM-driven relevance review across persona memories.
 ///
 /// Two modes, controlled by `auto_apply`:
@@ -270,266 +616,50 @@ pub async fn review_memories_with_cli(
     // UI. New callers opt into proposal mode by passing `false`.
     let auto_apply = auto_apply.unwrap_or(true);
 
-    // 1. Fetch memories
-    let memories = repo::get_all(
+    // F-DRY: delegate the heavy lifting (fetch + prompt + CLI + parse +
+    // classify) to the shared pipeline helper. The persona_jobs worker
+    // calls the same helper with `include_recent_executions: Some(20)`.
+    let pipeline = match run_memory_review_pipeline(
         &db,
-        persona_id.as_deref(),
-        None,
-        None,
-        Some(200),
-        Some(0),
-        None,
-        None,
-    )?;
-
-    if memories.is_empty() {
-        return Ok(MemoryReviewResult {
-            reviewed: 0,
-            deleted: 0,
-            updated: 0,
-            details: vec![],
-            proposal_id: None,
-        });
-    }
-
-    // 2. Build prompt
-    let memory_entries: Vec<serde_json::Value> = memories
-        .iter()
-        .map(|m| {
-            serde_json::json!({
-                "id": m.id,
-                "title": m.title,
-                "content": m.content,
-                "category": m.category,
-                "importance": m.importance,
-            })
-        })
-        .collect();
-
-    let memories_json = serde_json::to_string_pretty(&memory_entries)
-        .map_err(|e| AppError::Internal(format!("Serialize: {e}")))?;
-
-    let guidance_block = instructions
-        .as_deref()
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
-        .map(|s| format!("\n\nAdditional guidance from operator:\n{s}\n"))
-        .unwrap_or_default();
-
-    let prompt = format!(
-        r#"You are reviewing agent memories from Personas, an AI agent management platform where autonomous agents execute tasks, use tools, handle events, and store memories to retain knowledge across executions.
-
-Evaluate each memory for relevance to agent operations. Score 1-10:
-- 9-10: Critical operational knowledge essential for agent tasks
-- 7-8: Useful context that meaningfully aids agent performance
-- 4-6: Marginal value, possibly outdated or vague
-- 1-3: Noise, trivial, redundant, or no longer applicable
-
-Respond with ONLY a JSON array. No markdown fences, no explanation, no surrounding text.
-Example: [{{"id":"abc-123","score":8,"reason":"Core operational context"}}]
-{guidance_block}
-Memories to review:
-{memories_json}"#
-    );
-
-    // 3. Build CLI args
-    let (command, mut args) = if cfg!(windows) {
-        (
-            "cmd".to_string(),
-            vec!["/C".to_string(), "claude.cmd".to_string()],
-        )
-    } else {
-        ("claude".to_string(), vec![])
-    };
-    args.extend(
-        [
-            "-p",
-            "-",
-            "--max-turns",
-            "1",
-            "--dangerously-skip-permissions",
-        ]
-        .iter()
-        .map(|s| s.to_string()),
-    );
-
-    // 4. Spawn CLI
-    let mut cmd = Command::new(&command);
-    cmd.args(&args)
-        .stdin(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::piped());
-
-    #[cfg(windows)]
+        MemoryReviewPipelineOpts {
+            persona_id: persona_id.as_deref(),
+            threshold,
+            instructions: instructions.as_deref(),
+            // IPC default: no execution context. Keeps this command's
+            // legacy behavior byte-identical for back-compat. The
+            // worker uses Some(20) to enrich curation runs.
+            include_recent_executions: None,
+        },
+    )
+    .await?
     {
-        #[allow(unused_imports)]
-        use std::os::windows::process::CommandExt;
-        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
-    }
-
-    cmd.env_remove("CLAUDECODE");
-    cmd.env_remove("CLAUDE_CODE");
-
-    let mut child = cmd.spawn().map_err(|e| {
-        if e.kind() == std::io::ErrorKind::NotFound {
-            AppError::Internal(
-                "Claude CLI not found. Install from https://docs.anthropic.com/en/docs/claude-code"
-                    .into(),
-            )
-        } else {
-            AppError::Internal(format!("Failed to spawn CLI: {e}"))
-        }
-    })?;
-
-    // Write prompt to stdin
-    if let Some(mut stdin) = child.stdin.take() {
-        stdin
-            .write_all(prompt.as_bytes())
-            .await
-            .map_err(|e| AppError::Internal(format!("Failed to write prompt to CLI stdin: {e}")))?;
-        stdin
-            .shutdown()
-            .await
-            .map_err(|e| AppError::Internal(format!("Failed to close CLI stdin: {e}")))?;
-    }
-
-    // Read stdout
-    let stdout = child
-        .stdout
-        .take()
-        .ok_or_else(|| AppError::Internal("No stdout".into()))?;
-    let mut reader = BufReader::new(stdout);
-    let mut full_output = String::new();
-
-    let timeout = std::time::Duration::from_secs(180);
-    let read_result = tokio::time::timeout(timeout, async {
-        let mut line = String::new();
-        while reader.read_line(&mut line).await.unwrap_or(0) > 0 {
-            full_output.push_str(&line);
-            line.clear();
-        }
-    })
-    .await;
-
-    if read_result.is_err() {
-        let _ = child.kill().await;
-        let _ = child.wait().await;
-        return Err(AppError::Internal(
-            "Memory review timed out after 3 minutes".into(),
-        ));
-    }
-
-    let _ = child.wait().await;
-
-    if full_output.trim().is_empty() {
-        return Err(AppError::Internal("CLI produced no output".into()));
-    }
-
-    // 5. Parse JSON from output
-    let json_str = extract_json_array(&full_output)
-        .ok_or_else(|| AppError::Internal("Failed to parse review output as JSON".into()))?;
-
-    let reviews: Vec<serde_json::Value> = serde_json::from_str(&json_str)
-        .map_err(|e| AppError::Internal(format!("Invalid JSON in review output: {e}")))?;
-
-    // 6. Collect changes (deferred application — see auto_apply branch
-    //    further down). In proposal mode we serialize these into a
-    //    persona_memory_review_proposal row and return without
-    //    mutating; in auto-apply mode we proceed to the per-id batch
-    //    operations.
-    let mut ids_to_delete = Vec::new();
-    let mut importance_updates = Vec::new();
-    let mut details = Vec::new();
-
-    let title_map: std::collections::HashMap<&str, &str> = memories
-        .iter()
-        .map(|m| (m.id.as_str(), m.title.as_str()))
-        .collect();
-
-    for review in &reviews {
-        let id = review.get("id").and_then(|v| v.as_str()).unwrap_or("");
-
-        if id.is_empty() {
-            continue;
-        }
-
-        // Only act on IDs that exist in the fetched batch — reject hallucinated IDs
-        let title = match title_map.get(id) {
-            Some(t) => t.to_string(),
-            None => continue,
-        };
-
-        // Reject reviews with missing scores instead of defaulting to a low value
-        let score = match review.get("score").and_then(|v| v.as_i64()) {
-            Some(s) => s as i32,
-            None => continue,
-        };
-
-        let reason = review
-            .get("reason")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .to_string();
-
-        if score < threshold {
-            ids_to_delete.push(id.to_string());
-            details.push(MemoryReviewDetail {
-                id: id.to_string(),
-                title,
-                score,
-                reason,
-                action: "deleted".to_string(),
-                error: None,
-            });
-        } else {
-            // Map 7-10 to importance 3-5
-            let new_importance = match score {
-                7 => 3,
-                8 => 4,
-                9..=10 => 5,
-                _ => 3,
-            };
-            importance_updates.push((id.to_string(), new_importance));
-            details.push(MemoryReviewDetail {
-                id: id.to_string(),
-                title,
-                score,
-                reason,
-                action: "kept".to_string(),
-                error: None,
+        Some(p) => p,
+        None => {
+            return Ok(MemoryReviewResult {
+                reviewed: 0,
+                deleted: 0,
+                updated: 0,
+                details: vec![],
+                proposal_id: None,
             });
         }
-    }
+    };
 
-    // 6b. Proposal-mode short-circuit. When auto_apply is false we
+    let MemoryReviewPipeline {
+        reviews_count,
+        entries,
+        mut details,
+        ids_to_delete,
+        importance_updates,
+    } = pipeline;
+
+    // Proposal-mode short-circuit. When auto_apply is false we
     // serialize the (id, score, action) entries into a row in
     // persona_memory_review_proposal and return without touching live
     // memory data. The user reviews the proposal and either applies
     // it (executes the same per-id batch operations transactionally
     // via apply_persona_memory_review_proposal) or discards it.
     if !auto_apply {
-        let entries: Vec<ProposalEntry> = details
-            .iter()
-            .map(|d| {
-                let action = if d.action == "deleted" {
-                    "delete".to_string()
-                } else {
-                    "update_importance".to_string()
-                };
-                let new_importance = importance_updates
-                    .iter()
-                    .find(|(id, _)| id == &d.id)
-                    .map(|(_, imp)| *imp);
-                ProposalEntry {
-                    memory_id: d.id.clone(),
-                    title: d.title.clone(),
-                    score: d.score,
-                    reason: d.reason.clone(),
-                    action,
-                    new_importance,
-                }
-            })
-            .collect();
         let summary = format!(
             "Reviewed {n} memories; proposed {p} change(s).",
             n = details.len(),
@@ -556,7 +686,7 @@ Memories to review:
             }
         }
         return Ok(MemoryReviewResult {
-            reviewed: reviews.len(),
+            reviewed: reviews_count,
             deleted: 0,
             updated: 0,
             details,
@@ -611,7 +741,7 @@ Memories to review:
     }
 
     Ok(MemoryReviewResult {
-        reviewed: reviews.len(),
+        reviewed: reviews_count,
         deleted: deleted_count,
         updated: updated_count,
         details,
@@ -854,6 +984,36 @@ fn extract_json_array(text: &str) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn truncate_for_prompt_short_string_unchanged() {
+        let s = "hello";
+        assert_eq!(truncate_for_prompt(s, 10), "hello");
+    }
+
+    #[test]
+    fn truncate_for_prompt_at_boundary_unchanged() {
+        let s = "hello";
+        assert_eq!(truncate_for_prompt(s, 5), "hello");
+    }
+
+    #[test]
+    fn truncate_for_prompt_long_string_clipped() {
+        let s = "abcdefghij";
+        let out = truncate_for_prompt(s, 5);
+        assert_eq!(out, "abcde…[truncated]");
+    }
+
+    #[test]
+    fn truncate_for_prompt_handles_multibyte_safely() {
+        // 5 grinning-face emoji = 5 chars, 20 bytes. Asking for 3 chars
+        // must not split a codepoint mid-byte.
+        let s = "😀😀😀😀😀";
+        let out = truncate_for_prompt(s, 3);
+        assert_eq!(out, "😀😀😀…[truncated]");
+        // And a request equal to the char count is a pass-through.
+        assert_eq!(truncate_for_prompt(s, 5), s);
+    }
 
     #[test]
     fn extract_json_array_simple() {
