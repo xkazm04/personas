@@ -32,6 +32,11 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+- **[2026-05-10 ~17:30] /prototype — dev-tools Overview (codebase + monitoring dashboard, 2 directional variants)**
+  - **Source:** in-session conversation; user asked for two UI alternatives for `src/features/plugins/dev-tools/sub_overview/ProjectOverviewPage.tsx` to improve visual hierarchy + information density. Skills (`sub_skills/SkillBrowserPage.tsx`) deferred to a separate prototype run after this one lands.
+  - **Paths:** worktree `.claude/worktrees/prototype-overview-dashboard` (branch `worktree-prototype-overview-dashboard`). Will touch: `src/features/plugins/dev-tools/sub_overview/ProjectOverviewPage.tsx` (becomes a tab-switcher around the existing baseline + 2 sibling `ProjectOverviewVariant{1,2}.tsx` files), possibly `sub_overview/adapters.ts` if shared helpers need extracting. Also `.claude/active-runs.md` (this entry) on master.
+  - **Status:** started — no overlap with other Active sessions (companion-panels is `plugins/companion/`, /research entries are out-of-repo or `companion/brain/`, cli-coordination is `.claude/`).
+
 - **[2026-05-10 ~17:00] /prototype — companion settings panels (Setup, Memory, Voice — 2 directional variants each)**
   - **Source:** in-session conversation; user asked to A/B-prototype the three settings panels under `src/features/plugins/companion/`. Directional suggestions provided (Setup: airy-cards vs compact-list; Memory: tabbed-sticky-toolbar vs split-rail; Voice: wizard vs single-page-with-pinned-preview).
   - **Paths:** worktree `.claude/worktrees/prototype-companion-panels` (branch `worktree-prototype-companion-panels`). Will touch: `src/features/plugins/companion/{sub_setup,sub_memory,sub_voice}/*.tsx` (each panel becomes a tab-switcher wrapper around the existing baseline + 2 sibling `*VariantA.tsx` / `*VariantB.tsx` files), `src/i18n/locales/en.json` (new `t.plugins.companion.*` keys for variant copy), `src/i18n/generated/{types.ts,enSectionStrings.ts}` (regen). Also `.claude/active-runs.md` (this entry) on master.
