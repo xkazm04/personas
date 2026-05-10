@@ -62,7 +62,7 @@ export function AutomationCard({
             <AutomationStatusBadge automationId={automation.id} status={automation.deploymentStatus} />
           </div>
           <div className="flex items-center gap-2 mt-0.5">
-            <span className={`inline-flex items-center px-1.5 py-0 typo-body font-medium rounded border ${platformConfig.bg} ${platformConfig.color}`}>{platformConfig.label}</span>
+            <span className={`inline-flex items-center px-1.5 py-0 typo-body font-medium rounded border ${platformConfig.bg} ${platformConfig.color}`}>{t.agents.connectors[platformConfig.labelKey]}</span>
             {capabilityTitle && (
               <span
                 className="inline-flex items-center gap-1 px-1.5 py-0 typo-body font-medium rounded border border-cyan-500/20 bg-cyan-500/10 text-cyan-400"
@@ -97,7 +97,7 @@ export function AutomationCard({
           {sanitizeExternalUrl(automation.platformUrl) && (
             <a href={sanitizeExternalUrl(automation.platformUrl)!} target="_blank" rel="noopener noreferrer"
               className={`flex items-center gap-1 ${TOOLS_BTN_COMPACT} typo-body rounded-card border border-border text-foreground hover:bg-secondary/50 hover:text-foreground transition-colors`}
-              title={`Open in ${platformConfig.label}`}><ExternalLink className="w-3 h-3" /></a>
+              title={`Open in ${t.agents.connectors[platformConfig.labelKey]}`}><ExternalLink className="w-3 h-3" /></a>
           )}
           <AutomationCardActions automation={automation} onEdit={onEdit} onToggleStatus={onToggleStatus} onDelete={onDelete} />
         </div>

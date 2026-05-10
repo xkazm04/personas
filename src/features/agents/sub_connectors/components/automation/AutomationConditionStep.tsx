@@ -65,7 +65,7 @@ export function AutomationConditionStep({
             <label className="typo-body font-medium text-foreground uppercase tracking-wider">{t.agents.connectors.auto_platform_label}</label>
             <div className="mt-1.5">
               <span className={`inline-flex items-center px-2.5 py-1 typo-body font-medium rounded-modal border ${PLATFORM_CONFIG[platform]?.bg ?? ''} ${PLATFORM_CONFIG[platform]?.color ?? ''}`}>
-                {PLATFORM_CONFIG[platform]?.label ?? platform}
+                {PLATFORM_CONFIG[platform] ? t.agents.connectors[PLATFORM_CONFIG[platform].labelKey] : platform}
               </span>
             </div>
           </div>

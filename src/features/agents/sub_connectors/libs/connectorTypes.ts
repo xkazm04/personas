@@ -33,13 +33,20 @@ export function isExecutionReady(status: ConnectorStatus): boolean {
 }
 
 // -- UI status config -------------------------------------------------
+//
+// `labelKey` is the trailing segment of `t.agents.connectors.<labelKey>`.
+// Consumers read the localized label via
+// `t.agents.connectors[STATUS_CONFIG[key].labelKey]` rather than the raw
+// English string. Keeps display labels in en.json (per the
+// "Constants-with-labels" graduated rule from
+// Patterns/explorer-preferences.md).
 
 export const STATUS_CONFIG = {
-  ready: { color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20', label: 'Ready' },
-  untested: { color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20', label: 'Untested' },
-  failed: { color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/20', label: 'Failed' },
-  missing: { color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20', label: 'No credential' },
-  testing: { color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20', label: 'Testing...' },
+  ready: { color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20', labelKey: 'status_ready' },
+  untested: { color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20', labelKey: 'status_untested' },
+  failed: { color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/20', labelKey: 'status_failed' },
+  missing: { color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20', labelKey: 'status_missing' },
+  testing: { color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20', labelKey: 'status_testing' },
 } as const;
 
 export function getStatusKey(status: ConnectorStatus): keyof typeof STATUS_CONFIG {

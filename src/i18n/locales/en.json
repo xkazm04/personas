@@ -1325,7 +1325,20 @@
       "test_link_failed": "Link failed: {error}",
       "test_persona_fallback": "Persona",
       "test_complete_notification_title": "Connector Tests Complete",
-      "test_complete_notification_body": "{persona}: All {count} connector tests finished."
+      "test_complete_notification_body": "{persona}: All {count} connector tests finished.",
+      "status_ready": "Ready",
+      "status_untested": "Untested",
+      "status_failed": "Failed",
+      "status_missing": "No credential",
+      "status_testing": "Testing...",
+      "auto_status_active": "Active",
+      "auto_status_draft": "Draft",
+      "auto_status_paused": "Paused",
+      "auto_status_error": "Error",
+      "platform_n8n": "n8n",
+      "platform_github_actions": "GitHub Actions",
+      "platform_zapier": "Zapier",
+      "platform_custom": "Custom"
     },
     "editor_chrome": {
       "tab_activity": "Activity",

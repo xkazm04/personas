@@ -4,6 +4,7 @@ import {
   CheckCircle2, XCircle, AlertCircle, Pause,
 } from 'lucide-react';
 import type { AutomationDeployStatus as AutomationDeploymentStatus } from '@/lib/bindings/AutomationDeployStatus';
+import { useTranslation } from '@/i18n/useTranslation';
 import { AUTOMATION_STATUS_CONFIG } from '../../libs/automationTypes';
 
 const STATUS_ICON = {
@@ -56,6 +57,7 @@ interface AutomationStatusBadgeProps {
 }
 
 export function AutomationStatusBadge({ automationId, status }: AutomationStatusBadgeProps) {
+  const { t } = useTranslation();
   const prevStatusRef = useRef(status);
   const [shouldPulse, setShouldPulse] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
@@ -99,7 +101,7 @@ export function AutomationStatusBadge({ automationId, status }: AutomationStatus
       // @ts-expect-error framer-motion animate duration
       transitionDuration={shouldPulse ? pulseDuration : undefined}
     >
-      <StatusIcon className="w-2.5 h-2.5" /> {statusConfig.label}
+      <StatusIcon className="w-2.5 h-2.5" /> {t.agents.connectors[statusConfig.labelKey]}
       {showConfetti && <ConfettiBurst />}
     </motion.span>
   );

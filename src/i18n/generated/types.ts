@@ -1332,6 +1332,19 @@ export type Translations = {
       test_persona_fallback: string;
       test_complete_notification_title: string;
       test_complete_notification_body: string;
+      status_ready: string;
+      status_untested: string;
+      status_failed: string;
+      status_missing: string;
+      status_testing: string;
+      auto_status_active: string;
+      auto_status_draft: string;
+      auto_status_paused: string;
+      auto_status_error: string;
+      platform_n8n: string;
+      platform_github_actions: string;
+      platform_zapier: string;
+      platform_custom: string;
     };
     editor_chrome: {
       tab_activity: string;

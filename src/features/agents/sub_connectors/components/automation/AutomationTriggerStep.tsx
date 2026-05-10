@@ -73,7 +73,7 @@ export function AutomationTriggerStep({
         <label className="typo-body text-foreground">{t.agents.connectors.auto_target_platform}</label>
         {editAutomation ? (
           <span className={`inline-flex items-center px-2.5 py-1 typo-body font-medium rounded-modal border ${PLATFORM_CONFIG[platform]?.bg ?? ''} ${PLATFORM_CONFIG[platform]?.color ?? ''}`}>
-            {PLATFORM_CONFIG[platform]?.label ?? platform}
+            {PLATFORM_CONFIG[platform] ? t.agents.connectors[PLATFORM_CONFIG[platform].labelKey] : platform}
           </span>
         ) : (
           <div className="flex items-center gap-1.5">
@@ -87,7 +87,7 @@ export function AutomationTriggerStep({
                     : 'border-border/60 text-foreground hover:text-muted-foreground hover:border-border'
                 }`}
               >
-                {PLATFORM_CONFIG[p]?.label ?? p}
+                {PLATFORM_CONFIG[p] ? t.agents.connectors[PLATFORM_CONFIG[p].labelKey] : p}
               </button>
             ))}
           </div>
@@ -116,15 +116,15 @@ export function AutomationTriggerStep({
         <div className="flex items-start gap-3 p-3.5 rounded-modal bg-brand-amber/5 border border-brand-amber/15">
           <KeyRound className="w-4 h-4 text-brand-amber/70 flex-shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
-            <p className="typo-body font-medium text-foreground">{tx(t.agents.connectors.auto_creds_required, { label: PLATFORM_CONFIG[platform]?.label ?? '' })}</p>
-            <p className="typo-body text-foreground mt-0.5">{tx(t.agents.connectors.auto_add_key_hint, { label: PLATFORM_CONFIG[platform]?.label ?? '' })}</p>
+            <p className="typo-body font-medium text-foreground">{tx(t.agents.connectors.auto_creds_required, { label: PLATFORM_CONFIG[platform] ? t.agents.connectors[PLATFORM_CONFIG[platform].labelKey] : '' })}</p>
+            <p className="typo-body text-foreground mt-0.5">{tx(t.agents.connectors.auto_add_key_hint, { label: PLATFORM_CONFIG[platform] ? t.agents.connectors[PLATFORM_CONFIG[platform].labelKey] : '' })}</p>
             {platformConnector && (
               <button
                 onClick={() => { window.dispatchEvent(new CustomEvent('open-vault-connector', { detail: { connectorId: platformConnector.id } })); }}
                 className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 typo-body font-medium rounded-modal bg-brand-amber/15 border border-brand-amber/25 text-foreground hover:bg-brand-amber/25 transition-colors"
               >
                 <KeyRound className="w-3 h-3" />
-                {tx(t.agents.connectors.auto_add_creds, { label: PLATFORM_CONFIG[platform]?.label ?? '' })}
+                {tx(t.agents.connectors.auto_add_creds, { label: PLATFORM_CONFIG[platform] ? t.agents.connectors[PLATFORM_CONFIG[platform].labelKey] : '' })}
                 <ExternalLink className="w-3 h-3" />
               </button>
             )}
@@ -138,7 +138,7 @@ export function AutomationTriggerStep({
           <CheckCircle2 className="w-4 h-4 text-brand-emerald/70 flex-shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="typo-body text-foreground">
-              <span className="font-medium text-brand-emerald">{tx(t.agents.connectors.auto_connected, { label: PLATFORM_CONFIG[platform]?.label ?? '' })}</span>
+              <span className="font-medium text-brand-emerald">{tx(t.agents.connectors.auto_connected, { label: PLATFORM_CONFIG[platform] ? t.agents.connectors[PLATFORM_CONFIG[platform].labelKey] : '' })}</span>
               {' -- '}
               <span className="text-foreground">{platformCredentials[0]?.name}</span>
             </p>

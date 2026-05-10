@@ -29,7 +29,7 @@ export function AutomationReviewStep({
         </div>
         <div className="text-center">
           <p className="typo-body font-medium text-foreground/90">
-            {t.agents.connectors.auto_deploying_to.replace('{platform}', PLATFORM_CONFIG[platform]?.label ?? platform)}
+            {t.agents.connectors.auto_deploying_to.replace('{platform}', PLATFORM_CONFIG[platform] ? t.agents.connectors[PLATFORM_CONFIG[platform].labelKey] : platform)}
           </p>
           <p className="typo-body text-foreground mt-1">
             {platform === 'n8n' && t.agents.connectors.auto_deploy_n8n}
@@ -70,7 +70,7 @@ export function AutomationReviewStep({
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 typo-body font-medium rounded-modal bg-accent/15 border border-accent/25 text-foreground hover:bg-accent/25 transition-colors"
           >
-            {t.agents.connectors.auto_view_on.replace('{platform}', PLATFORM_CONFIG[platform]?.label ?? platform)}
+            {t.agents.connectors.auto_view_on.replace('{platform}', PLATFORM_CONFIG[platform] ? t.agents.connectors[PLATFORM_CONFIG[platform].labelKey] : platform)}
             <ExternalLink className="w-3 h-3" />
           </a>
         )}
