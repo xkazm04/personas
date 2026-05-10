@@ -33,11 +33,12 @@ from lib import Client, Bridge, DB, wait_until, WaitTimeout, EventLog
 | `wait_until(predicate, timeout, interval, message)` | Deadline-based polling. Returns truthy value or raises `WaitTimeout` with `last_value`. |
 | `EventLog()` | Step-log replacement for the inline `record()` pattern. ASCII markers, optional stdout mirror, JSON summary dump. |
 
-## Snapshot helper (added with F6)
+## Snapshot helper
 
-When the `/test/snapshot` route lands, `lib/snapshot.py` will expose
-`snapshot(client, include=...)` returning the rich-state JSON. Until then,
-use `bridge.exec("getSnapshot", {})` (the existing coarse macro).
+`lib/snapshot.py` exposes `snapshot(client)` which calls `GET /test/snapshot`
+and returns rich state: `route`, `editorTab`, `personaCountByStatus`,
+`buildSession`, `modals`, `toasts`, `errors`, `forms`. Use this in failure
+paths instead of writing one-off `_check_*.py` scripts.
 
 ## Migration policy
 

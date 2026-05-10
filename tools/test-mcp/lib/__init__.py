@@ -23,5 +23,6 @@ from .bridge import Bridge
 from .db import DB
 from .wait import wait_until, WaitTimeout
 from .event_log import EventLog
+from .snapshot import snapshot
 
-__all__ = ["Client", "Bridge", "DB", "wait_until", "WaitTimeout", "EventLog"]
+__all__ = ["Client", "Bridge", "DB", "wait_until", "WaitTimeout", "EventLog", "snapshot"]
