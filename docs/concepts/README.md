@@ -9,17 +9,14 @@ This folder is only for not-yet-implemented proposals, experiments, and design e
 | Concept | Status |
 | --- | --- |
 | [adoption-creation-unification.md](adoption-creation-unification.md) | Proposal — verify whether `matrixEditSlice` shipped before reclassifying |
-| [agent-operations-hub.md](agent-operations-hub.md) | **SHIPPED — pending MOVE** to `docs/features/agents/operations-hub.md` (Phase 1 chat ops dispatch + sidebar panels live in `src/features/agents/sub_chat/`) |
 | [ambient-context-fusion.md](ambient-context-fusion.md) | Partial (~60% wired) — signal collection + rules engine + UI panel shipped; `format_for_prompt` not yet called from `assemble_prompt` |
 | [athena-desktop-aware-cli-session-awareness.md](athena-desktop-aware-cli-session-awareness.md) | **Shipped 2026-05-09** (Phase 5 v1) — read-aware persona executions can see the user's interactive Claude CLI session as additional prompt context |
 | [athena-desktop-aware-daemon-bridge.md](athena-desktop-aware-daemon-bridge.md) | **Shipped 2026-05-09** (Phase 3 c v3) — `ambient_signal` SQL table bridges in-memory ambient signals from windowed app to the personas-daemon process |
 | [athena-desktop-aware-phase1-audit.md](athena-desktop-aware-phase1-audit.md) | Phase 1 audit complete (2026-05-09) — Decision gate **GO** with two scope corrections; Phases 2-6 follow as separate sessions |
 | [claude-code-routines-integration.md](claude-code-routines-integration.md) | Proposal — descoped-reopenable (2026-04-15); blockers tracked |
-| [cli-coordination-active-runs.md](cli-coordination-active-runs.md) | **SHIPPED — pending MOVE** to `docs/architecture/cli-coordination.md` (v1 + v2 priority-five adoption — `/architect`, `/add-template`, `/add-credential`, `/refresh-context`, `/codebase-init`); long-tail adoption pending |
 | [cloud-deployment.md](cloud-deployment.md) | Proposal — design spec for *optional* server-side orchestrator deployment, not the Desktop app |
-| [in-app-http-service.md](in-app-http-service.md) | **SHIPPED — pending MOVE** to `docs/architecture/in-app-http-service.md` (generic in-app HTTP router + Langfuse auto-login route live; pattern reusable for OAuth/webhook callbacks) |
-| [invisible-apps-p2p.md](invisible-apps-p2p.md) | **PARTIAL — pending MOVE** to `docs/features/p2p-sharing/` (Phase 1 identity + manifest signing and Phase 2 LAN peer discovery shipped; Phase 3 internet P2P backlog) |
-| [langfuse-observability.md](langfuse-observability.md) | **SHIPPED — pending MOVE** to `docs/features/observability/` (Path A closed: managed self-host stack + OTLP exporter + auto-login + lifecycle); Path A+ exploration next |
+| [invisible-apps-p2p.md](invisible-apps-p2p.md) | **Phases 1-2 shipped** → see [`features/sharing/README.md`](../features/sharing/README.md). Doc retained as Phase 3+ design archive (banner cross-linked 2026-05-10) |
+| [langfuse-observability.md](langfuse-observability.md) | **Path A shipped** → see [`features/langfuse.md`](../features/langfuse.md). Doc retained as Path A+ design archive (banner cross-linked 2026-05-10) |
 | [langfuse-lab-score-push.md](langfuse-lab-score-push.md) | Backlog — Path A's known gap; Path 2 (synthesize trace) recommended |
 | [matrix-retire-glyph-only.md](matrix-retire-glyph-only.md) | Proposal — retire `<PersonaMatrix>` template-preview surface, default to GlyphGrid; reclaims ~25 files |
 | [mobile.md](mobile.md) | Proposal — Strategy A vs B undecided; ~30% Strategy B scaffolded (Android feature flag, Gradle project, responsive React started); LLM HTTP client + ForegroundService missing |
@@ -32,6 +29,10 @@ This folder is only for not-yet-implemented proposals, experiments, and design e
 
 ## Moved out
 
+- **agent-operations-hub** — moved 2026-05-10 to [`../features/agents/operations-hub.md`](../features/agents/operations-hub.md) (Phase 1 chat ops dispatch shipped; Phases 2-3 tracked under Future work in the new doc).
+- **cli-coordination-active-runs** — moved 2026-05-10 to [`../architecture/cli-coordination.md`](../architecture/cli-coordination.md) (v1 + v2 cross-skill adoption + v3 parallel-safety primitives shipped).
+- **in-app-http-service** — moved 2026-05-10 to [`../architecture/in-app-http-service.md`](../architecture/in-app-http-service.md) (reusable infrastructure pattern; first consumer is Langfuse auto-login).
+- **simple-mode-roadmap** — moved 2026-05-10 from `harness/` to [`../features/interface-modes/simple-mode.md`](../features/interface-modes/simple-mode.md) (all 4 phases shipped).
 - Implemented event routing docs moved to [../features/events/event-routing.md](../features/events/event-routing.md).
 - Implemented live roadmap docs moved to [../features/live-roadmap/live-roadmap.md](../features/live-roadmap/live-roadmap.md).
 - Implemented Media Studio architecture and render-plan docs moved to [../features/artist/](../features/artist/).
