@@ -715,6 +715,10 @@ pub fn run() {
             // shim. Register routers BEFORE starting; later registrations
             // are dropped with a warn.
             local_http::register_router("langfuse", local_http::langfuse_routes::router());
+            local_http::register_router(
+                "project-tracking",
+                engine::project_tracking::push::router(),
+            );
             match local_http::start() {
                 Ok(port) => tracing::info!(port, "local_http server started"),
                 Err(e) => tracing::warn!(error = %e, "local_http server failed to start"),
@@ -832,6 +836,13 @@ pub fn run() {
             state_arc
                 .project_tracking
                 .start(state_arc.user_db.clone(), app.handle().clone());
+            // Phase 3: initialize the push handle so the local_http
+            // /project-tracking/cli-event route can resolve projects,
+            // insert events, and fire out-of-cadence consolidator runs.
+            engine::project_tracking::push::init(
+                state_arc.user_db.clone(),
+                app.handle().clone(),
+            );
             app.manage(state_arc.clone());
 
             // Phase 5 v1: seed the cross-process cli_session gate from app_settings
