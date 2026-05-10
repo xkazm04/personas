@@ -2330,12 +2330,16 @@ export type Translations = {
       run_now: string;
       rerun: string;
       capabilities: string;
+      issues: string;
       all_healthy: string;
       all_healthy_detail: string;
       status_ready: string;
       status_blocked: string;
       status_partial: string;
       checked_at: string;
+      error_no_design_context: string;
+      config_warnings_unavailable: string;
+      subcheck_failed: string;
     };
     health_digest: {
       title: string;
@@ -2354,6 +2358,15 @@ export type Translations = {
       group_blocked: string;
       group_attention: string;
       group_healthy: string;
+      notification_title: string;
+      notification_body_all_healthy_one: string;
+      notification_body_all_healthy_other: string;
+      notification_body_with_issues: string;
+      notification_issues_one: string;
+      notification_issues_other: string;
+      notification_agents_one: string;
+      notification_agents_other: string;
+      notification_breakdown: string;
     };
     health_issue: {
       apply_fix: string;
@@ -2361,6 +2374,18 @@ export type Translations = {
       category_config: string;
       category_runtime: string;
       category_policy: string;
+      fix_applied: string;
+      fix_failed: string;
+      auto_match_blocked_one: string;
+      auto_match_blocked_other: string;
+    };
+    health_proposals: {
+      link_credential: string;
+      auto_match_credentials: string;
+      add_daily_schedule: string;
+      switch_retry_3x: string;
+      add_default_use_case: string;
+      enable_first_run_review: string;
     };
     health_score: {
       healthy: string;

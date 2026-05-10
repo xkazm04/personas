@@ -229,7 +229,7 @@ export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
 
       {dryRun.issues.length > 0 && (
           <div className="space-y-1.5">
-            <p className="typo-body font-medium text-foreground uppercase tracking-wider">{t.agents.ops_health.issues}</p>
+            <p className="typo-body font-medium text-foreground uppercase tracking-wider">{t.agents.health_check.issues}</p>
             <div className="space-y-2">
               {dryRun.issues.map((issue: DryRunIssue) => (
                 <HealthIssueCard key={issue.id} issue={issue} personaId={result.personaId}

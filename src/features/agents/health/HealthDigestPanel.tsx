@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import {
   Activity,
   AlertTriangle,
@@ -20,6 +21,7 @@ import ContentLoader from '@/features/shared/components/progress/ContentLoader';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { useTranslation } from '@/i18n/useTranslation';
 import { formatTimestamp } from '@/lib/utils/formatters';
+import { Button } from '@/features/shared/components/buttons';
 
 // -- Persona row in digest --------------------------------------------
 
@@ -98,17 +100,48 @@ function PersonaDigestRow({
 
 export function HealthDigestPanel() {
   const { t, tx } = useTranslation();
-  const digest = useAgentStore((s) => s.healthDigest);
-  const running = useAgentStore((s) => s.healthDigestRunning);
-  const lastDigestAt = useAgentStore((s) => s.lastDigestAt);
+  // State reads batched through useShallow (multi-field pattern); action
+  // setters stay as single-field selectors since their references are
+  // stable across renders.
+  const { digest, running, lastDigestAt } = useAgentStore(useShallow((s) => ({
+    digest: s.healthDigest,
+    running: s.healthDigestRunning,
+    lastDigestAt: s.lastDigestAt,
+  })));
   const runFullHealthDigest = useAgentStore((s) => s.runFullHealthDigest);
   const selectPersona = useAgentStore((s) => s.selectPersona);
   const setEditorTab = useSystemStore((s) => s.setEditorTab);
   const isStale = useMemo(() => isTimestampStale(lastDigestAt), [lastDigestAt]);
 
+  // Sort + group personas once per digest (or locale change). Previously this
+  // ran on every render — including unrelated store updates like the running
+  // flag flipping or lastDigestAt ticking — which gets expensive once a user
+  // has 50+ personas.
+  const groups = useMemo<
+    Array<{ key: 'blocked' | 'attention' | 'healthy'; label: string; rows: PersonaHealthCheck[] }>
+  >(() => {
+    if (!digest) return [];
+    const sorted = [...digest.personas].sort((a, b) => {
+      const aIssues = a.result.issues.length;
+      const bIssues = b.result.issues.length;
+      if (a.result.status === 'blocked' && b.result.status !== 'blocked') return -1;
+      if (b.result.status === 'blocked' && a.result.status !== 'blocked') return 1;
+      return bIssues - aIssues;
+    });
+    const allGroups = [
+      { key: 'blocked' as const, label: t.agents.health_digest.group_blocked, rows: sorted.filter((c) => c.result.status === 'blocked') },
+      { key: 'attention' as const, label: t.agents.health_digest.group_attention, rows: sorted.filter((c) => c.result.status === 'partial') },
+      { key: 'healthy' as const, label: t.agents.health_digest.group_healthy, rows: sorted.filter((c) => c.result.status === 'ready') },
+    ];
+    return allGroups.filter((g) => g.rows.length > 0);
+  }, [digest, t]);
+
   const handleNavigate = (personaId: string) => {
     selectPersona(personaId);
-    setEditorTab('settings'); // Navigate to settings tab where health check will be accessible
+    // Land on the design tab — the editor's HealthBadge sits in its tab bar
+    // and the design surface is where the per-persona health check actually
+    // runs. Settings shows account / API keys / quality gates, not health.
+    setEditorTab('design');
   };
 
   const handleRunDigest = async () => {
@@ -135,39 +168,21 @@ export function HealthDigestPanel() {
         <p className="typo-body text-foreground mb-4">
           {t.agents.health_digest.description}
         </p>
-        <button
+        <Button
           type="button"
           onClick={handleRunDigest}
-          className="inline-flex items-center gap-2 px-4 py-2 typo-body font-medium rounded-modal bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors"
+          variant="primary"
+          size="md"
+          icon={<Activity className="w-4 h-4" aria-hidden="true" />}
         >
-          <Activity className="w-4 h-4" aria-hidden="true" />
           {t.agents.health_digest.run_digest}
-        </button>
+        </Button>
       </div>
     );
   }
 
   // Show results
   const { totalScore, totalIssues, errorCount, warningCount, infoCount, personas } = digest;
-
-  // Sort: unhealthy first, then by issue count desc
-  const sorted = [...personas].sort((a, b) => {
-    const aIssues = a.result.issues.length;
-    const bIssues = b.result.issues.length;
-    if (a.result.status === 'blocked' && b.result.status !== 'blocked') return -1;
-    if (b.result.status === 'blocked' && a.result.status !== 'blocked') return 1;
-    return bIssues - aIssues;
-  });
-
-  const blockedRows = sorted.filter((c) => c.result.status === 'blocked');
-  const attentionRows = sorted.filter((c) => c.result.status === 'partial');
-  const healthyRows = sorted.filter((c) => c.result.status === 'ready');
-  const allGroups: Array<{ key: 'blocked' | 'attention' | 'healthy'; label: string; rows: PersonaHealthCheck[] }> = [
-    { key: 'blocked', label: t.agents.health_digest.group_blocked, rows: blockedRows },
-    { key: 'attention', label: t.agents.health_digest.group_attention, rows: attentionRows },
-    { key: 'healthy', label: t.agents.health_digest.group_healthy, rows: healthyRows },
-  ];
-  const groups = allGroups.filter((g) => g.rows.length > 0);
 
   return (
     <div className="rounded-modal border border-primary/20 bg-secondary/40 overflow-hidden">
@@ -177,14 +192,15 @@ export function HealthDigestPanel() {
           <Activity className="w-5 h-5 text-primary/60" aria-hidden="true" />
           <h3 className="typo-heading font-semibold text-foreground">{t.agents.health_digest.title}</h3>
         </div>
-        <button
+        <Button
           type="button"
           onClick={handleRunDigest}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 typo-caption font-medium rounded-card bg-secondary/60 text-foreground border border-primary/20 hover:bg-secondary/80 transition-colors"
+          variant="secondary"
+          size="sm"
+          icon={<RefreshCw className="w-3 h-3" />}
         >
-          <RefreshCw className="w-3 h-3" />
           {t.agents.health_check.rerun}
-        </button>
+        </Button>
       </div>
 
       {/* Staleness warning */}

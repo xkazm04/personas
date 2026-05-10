@@ -4,14 +4,16 @@ import { useToastStore } from '@/stores/toastStore';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import type { DryRunIssue } from './types';
 import type { DesignContextData } from '@/lib/types/frontendTypes';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function useApplyHealthFix() {
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const applyPersonaOp = useAgentStore((s) => s.applyPersonaOp);
   const addToast = useToastStore((s) => s.addToast);
+  const { t, tx } = useTranslation();
 
-  const handleApplyFix = useCallback(async (issue: DryRunIssue) => {
-    if (!selectedPersona || !issue.proposal) return;
+  const handleApplyFix = useCallback(async (issue: DryRunIssue): Promise<boolean> => {
+    if (!selectedPersona || !issue.proposal) return false;
 
     try {
       const ctx = parseJsonOrDefault<DesignContextData | null>(selectedPersona.design_context, null) ?? {};
@@ -45,8 +47,12 @@ export function useApplyHealthFix() {
             }
             if (ambiguous.length > 0) {
               throw new Error(
-                `Auto-match blocked: ${ambiguous.length === 1 ? 'credential service' : 'credential services'} ` +
-                  `${ambiguous.join(', ')} have multiple credentials. Pick the right one manually before applying.`,
+                tx(
+                  ambiguous.length === 1
+                    ? t.agents.health_issue.auto_match_blocked_one
+                    : t.agents.health_issue.auto_match_blocked_other,
+                  { services: ambiguous.join(', ') },
+                ),
               );
             }
             const links = { ...updated.credentialLinks };
@@ -82,11 +88,15 @@ export function useApplyHealthFix() {
         design_context: JSON.stringify(updated),
       });
 
-      addToast(`Applied fix: ${issue.proposal.label}`, 'success');
+      const proposalLabel = tx(t.agents.health_proposals[issue.proposal.labelKey], issue.proposal.labelParams ?? {});
+      addToast(tx(t.agents.health_issue.fix_applied, { label: proposalLabel }), 'success');
+      return true;
     } catch (err) {
-      addToast(`Failed to apply fix: ${err instanceof Error ? err.message : String(err)}`, 'error');
+      const errMsg = err instanceof Error ? err.message : String(err);
+      addToast(tx(t.agents.health_issue.fix_failed, { error: errMsg }), 'error');
+      return false;
     }
-  }, [selectedPersona, applyPersonaOp, addToast]);
+  }, [selectedPersona, applyPersonaOp, addToast, t, tx]);
 
   return handleApplyFix;
 }

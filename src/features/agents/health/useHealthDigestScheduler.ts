@@ -3,6 +3,7 @@ import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 import { getAppSetting, setAppSetting } from '@/api/system/settings';
 import { silentCatchNull } from "@/lib/silentCatch";
 import { useAgentStore } from "@/stores/agentStore";
+import { getActiveTranslations, interpolate } from "@/i18n/useTranslation";
 
 const LAST_DIGEST_KEY = 'health_digest_last_run';
 const DIGEST_ENABLED_KEY = 'health_digest_enabled';
@@ -81,13 +82,36 @@ export function useHealthDigestScheduler() {
         // Digest succeeded — latch so we don't re-run this session
         ran.current = true;
 
-        // Send native notification
+        // Send native notification (translated via getActiveTranslations
+        // since this lives outside React's render cycle).
         const { totalScore, totalIssues, errorCount, warningCount } = digest;
+        const personaCount = digest.personas.length;
         const gradeEmoji = totalScore.grade === 'healthy' ? '\u2705' : totalScore.grade === 'degraded' ? '\u26A0\uFE0F' : '\u274C';
-        const title = `${gradeEmoji} Weekly Agent Health Digest`;
-        const body = totalIssues === 0
-          ? `All ${digest.personas.length} agents are healthy! Score: ${totalScore.value}/100`
-          : `Score: ${totalScore.value}/100 \u00b7 ${totalIssues} issue${totalIssues !== 1 ? 's' : ''} across ${digest.personas.length} agent${digest.personas.length !== 1 ? 's' : ''} (${errorCount} errors, ${warningCount} warnings)`;
+        const notif = getActiveTranslations().agents.health_digest;
+        const title = interpolate(notif.notification_title, { gradeEmoji });
+        let body: string;
+        if (totalIssues === 0) {
+          const tmpl = personaCount === 1
+            ? notif.notification_body_all_healthy_one
+            : notif.notification_body_all_healthy_other;
+          body = interpolate(tmpl, { count: personaCount, score: totalScore.value });
+        } else {
+          const issuesText = interpolate(
+            totalIssues === 1 ? notif.notification_issues_one : notif.notification_issues_other,
+            { count: totalIssues },
+          );
+          const agentsText = interpolate(
+            personaCount === 1 ? notif.notification_agents_one : notif.notification_agents_other,
+            { count: personaCount },
+          );
+          const breakdown = interpolate(notif.notification_breakdown, { errors: errorCount, warnings: warningCount });
+          body = interpolate(notif.notification_body_with_issues, {
+            score: totalScore.value,
+            issues: issuesText,
+            agents: agentsText,
+            breakdown,
+          });
+        }
 
         await invoke<void>('send_app_notification', { title, body }).catch(() => {
           // Notification permission may not be granted -- silently ignore
