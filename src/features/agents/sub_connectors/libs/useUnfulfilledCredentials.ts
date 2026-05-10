@@ -4,6 +4,16 @@ import { useVaultStore } from "@/stores/vaultStore";
 import { silentCatch } from "@/lib/silentCatch";
 import type { CredentialMetadata, ConnectorDefinition, PersonaWithDetails } from '@/lib/types/types';
 
+// Hex fallbacks for unknown / placeholder entries. Consumed by callers
+// that pass `connectorColor` / `personaColor` into inline styles, so we
+// keep raw hex values rather than Tailwind classes (mirrors dependencyGraph's
+// NODE_COLOR convention). Tweak in one place if theme work touches these.
+const FALLBACK_COLOR = {
+  unknownConnector: '#8b5cf6',  // violet — connector with no catalog entry
+  unknownPersona: '#3b82f6',    // blue   — persona with no `color` set
+  placeholderPersona: '#6b7280', // gray   — global view's "any agent" row
+} as const;
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -63,7 +73,7 @@ function computeUnfulfilled(
       result.push({
         connectorName: credType,
         connectorLabel: connector?.label ?? credType,
-        connectorColor: connector?.color ?? '#8b5cf6',
+        connectorColor: connector?.color ?? FALLBACK_COLOR.unknownConnector,
         connectorCategory: connector?.category ?? 'unknown',
         personaId: persona.id,
         personaName: persona.name,
@@ -93,7 +103,7 @@ export function useUnfulfilledCredentials(persona?: PersonaWithDetails | null) {
     const personas = [{
       id: target.id,
       name: target.name,
-      color: target.color ?? '#3b82f6',
+      color: target.color ?? FALLBACK_COLOR.unknownPersona,
       tools: target.tools,
     }];
 
@@ -147,7 +157,7 @@ export function useGlobalUnfulfilledCredentials() {
       connectorCategory: c.category,
       personaId: '',
       personaName: 'Any agent using this connector',
-      personaColor: '#6b7280',
+      personaColor: FALLBACK_COLOR.placeholderPersona,
       matchingCredentials: [],
     }));
 

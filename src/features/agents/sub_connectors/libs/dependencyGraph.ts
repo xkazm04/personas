@@ -2,8 +2,33 @@ import type { CredentialMetadata } from '@/lib/types/types';
 import type { PersonaToolDefinition } from '@/lib/bindings/PersonaToolDefinition';
 import type { PersonaAutomation } from '@/lib/bindings/PersonaAutomation';
 import { silentCatch } from "@/lib/silentCatch";
-import type { ConnectorStatus } from './connectorTypes';
+import type { ConnectorStatus, ConnectorReadiness } from './connectorTypes';
 import { deriveReadiness } from './connectorTypes';
+
+// ---------------------------------------------------------------------------
+// Color palette — hex values consumed by inline `style={{ background, border, color }}`
+// in `DependencyGraphPanel.tsx`. Inline hex (rather than Tailwind classes) is
+// load-bearing here because the panel appends opacity suffixes ("20" = 12%,
+// "40" = 25%) to build chip backgrounds. Hoisted into one block so future
+// theme work has a single grep target.
+// ---------------------------------------------------------------------------
+
+const NODE_COLOR = {
+  healthyCred: '#10b981',    // emerald — healthy credential
+  unhealthyCred: '#ef4444',  // red     — unhealthy credential
+  unlinkedCred: '#f59e0b',   // amber   — credential type with no link
+  untestedCred: '#6b7280',   // gray    — credential of unknown readiness
+  tool: '#3b82f6',           // blue
+  automationActive: '#8b5cf6',  // violet — automation healthy
+  automationError: '#ef4444',   // red    — automation in error state
+} as const;
+
+function colorForReadiness(readiness: ConnectorReadiness): string {
+  return readiness === 'healthy' ? NODE_COLOR.healthyCred
+    : readiness === 'unhealthy' ? NODE_COLOR.unhealthyCred
+    : readiness === 'unlinked' ? NODE_COLOR.unlinkedCred
+    : NODE_COLOR.untestedCred;
+}
 
 // ---------------------------------------------------------------------------
 // Node / edge types
@@ -107,7 +132,7 @@ export function buildPersonaDependencyGraph(
       id: nodeId,
       kind: 'credential',
       label: cred?.name ?? status.name,
-      color: readiness === 'healthy' ? '#10b981' : readiness === 'unhealthy' ? '#ef4444' : readiness === 'unlinked' ? '#f59e0b' : '#6b7280',
+      color: colorForReadiness(readiness),
       healthy,
     });
     nodeIds.add(nodeId);
@@ -121,7 +146,7 @@ export function buildPersonaDependencyGraph(
       id: toolNodeId,
       kind: 'tool',
       label: tool.name,
-      color: '#3b82f6',
+      color: NODE_COLOR.tool,
       healthy: null,
     });
     nodeIds.add(toolNodeId);
@@ -150,7 +175,7 @@ export function buildPersonaDependencyGraph(
       id: autoNodeId,
       kind: 'automation',
       label: auto.name,
-      color: isHealthy ? '#8b5cf6' : '#ef4444',
+      color: isHealthy ? NODE_COLOR.automationActive : NODE_COLOR.automationError,
       healthy: isHealthy ? true : auto.deploymentStatus === 'error' ? false : null,
     });
     nodeIds.add(autoNodeId);
