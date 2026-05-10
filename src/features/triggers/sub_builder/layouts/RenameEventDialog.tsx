@@ -15,6 +15,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Pencil, X, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { BaseModal } from '@/features/shared/components/modals';
+
+const TITLE_ID = 'rename-event-dialog-title';
 
 // Mirrors `RESERVED_EVENT_TYPES` in src-tauri/src/db/repos/resources/triggers.rs.
 // Kept in sync manually; the backend still rejects these authoritatively.
@@ -112,8 +115,6 @@ export function RenameEventDialog({
     return null;
   }, [newEventType, oldEventType, reserved]);
 
-  if (!open) return null;
-
   const disabled = busy || clientError !== null;
 
   async function handleConfirm() {
@@ -130,19 +131,21 @@ export function RenameEventDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onCancel}>
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-      <div
-        className="relative w-[460px] rounded-2xl bg-background border border-primary/15 shadow-elevation-4 overflow-hidden"
-        onClick={e => e.stopPropagation()}
-      >
+    <BaseModal
+      isOpen={open}
+      onClose={onCancel}
+      titleId={TITLE_ID}
+      maxWidthClass="max-w-none"
+      panelClassName="w-[460px] rounded-2xl bg-background border border-primary/15 shadow-elevation-4 overflow-hidden"
+    >
+      <div className="contents">
         {/* Header */}
         <div className="flex items-start gap-3 px-4 py-4">
           <div className="w-9 h-9 rounded-modal flex items-center justify-center bg-cyan-500/10 border border-cyan-400/20 flex-shrink-0">
             <Pencil className="w-4 h-4 text-cyan-400" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="typo-heading font-semibold text-foreground mb-1">{t.triggers.builder.rename_event_type}</h3>
+            <h3 id={TITLE_ID} className="typo-heading font-semibold text-foreground mb-1">{t.triggers.builder.rename_event_type}</h3>
             <p className="typo-caption text-foreground leading-relaxed">
               {t.triggers.builder.rename_event_desc}
             </p>
@@ -248,6 +251,6 @@ export function RenameEventDialog({
           </button>
         </div>
       </div>
-    </div>
+    </BaseModal>
   );
 }

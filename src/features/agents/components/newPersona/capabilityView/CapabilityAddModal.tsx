@@ -2,7 +2,10 @@ import { useCallback, useState } from "react";
 import { Sparkles, X } from "lucide-react";
 import { useTranslation } from "@/i18n/useTranslation";
 import { useAgentStore } from "@/stores/agentStore";
+import { BaseModal } from "@/features/shared/components/modals";
 import { slugify } from "./capabilityHelpers";
+
+const TITLE_ID = "capability-add-modal-heading";
 
 interface Props {
   open: boolean;
@@ -100,27 +103,22 @@ export function CapabilityAddModal({ open, onClose }: Props) {
     onClose();
   }, [reset, onClose]);
 
-  if (!open) return null;
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      role="dialog"
-      aria-modal="true"
-      data-testid="capability-add-modal"
-      onClick={handleClose}
+    <BaseModal
+      isOpen={open}
+      onClose={handleClose}
+      titleId={TITLE_ID}
+      maxWidthClass="max-w-lg"
+      panelClassName="rounded-2xl border border-border/40 bg-background shadow-xl"
     >
-      <div
-        className="w-full max-w-lg rounded-2xl border border-border/40 bg-background shadow-xl"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div data-testid="capability-add-modal" className="contents">
         <header className="flex items-start justify-between gap-4 border-b border-border/20 p-5">
           <div className="flex items-start gap-3">
             <div className="rounded-xl bg-primary/15 p-2 text-primary">
               <Sparkles className="h-4 w-4" />
             </div>
             <div>
-              <h2 className="typo-heading-sm text-foreground">
+              <h2 id={TITLE_ID} className="typo-heading-sm text-foreground">
                 {t.matrix_v3.add_capability_modal_title}
               </h2>
               <p className="mt-1 typo-body-sm text-foreground/60">
@@ -187,6 +185,6 @@ export function CapabilityAddModal({ open, onClose }: Props) {
           </button>
         </footer>
       </div>
-    </div>
+    </BaseModal>
   );
 }
