@@ -62,6 +62,11 @@ timestamp — the next session can recognize it as abandoned.
   - **Paths:** `Obsidian/personas/Research/2026-05-10-claude-managed-agents-dreaming.md`, `Obsidian/personas/Lessons/2026-05-10-research.md` (Edit-append; existing Archon + tim-kellogg + claude-creative-work entries preserved), `.claude/active-runs.md`. Code-bucket anchors likely under `src-tauri/src/companion/brain/{reflection,consolidation,rituals}.rs`, `src-tauri/src/db/repos/core/memories.rs`, `src-tauri/src/db/migrations/` for new dream/job tables, possibly `src-tauri/src/commands/core/memories.rs` for an offline curation command. Will update via Edit if Phase 6 surfaces other areas.
   - **Status:** started — **LIVE OVERLAP** with `memory-patterns-tim-kellogg` (started 14:05, ~3 min old) on `companion/brain/` + `memories.rs`. Surfaced to user; awaiting direction (abort / coordinate / proceed-with-awareness). Default if no answer = proceed-with-awareness with read-only Phase 6 (no code edits until tim-kellogg deregisters).
 
+- **[2026-05-10 ~16:30] manual — npm-bulk-updates (4 waves in one commit: patches + Tailwind 4.3 + Tauri 2.11 + remove unused @anthropic-ai/sdk)**
+  - **Source:** in-session conversation following /npm-updates report. User picked: do all 4 waves in one commit, in a worktree, then merge to master and remove worktree.
+  - **Paths:** worktree `.claude/worktrees/npm-bulk-updates` (branch `worktree-npm-bulk-updates`). Touched: `package.json`, `package-lock.json`. Also `.claude/active-runs.md` (this entry) on master.
+  - **Status:** started — no overlap with active sessions: architect modal-migration is in `src/lib/ui/` + drive plugin; radio-station-toggles is radio slice + en.json; /research entries are out-of-repo + companion/brain + memories.rs. None touch `package.json` / `package-lock.json`.
+
 ## Recently completed (last 14 days)
 
 - **[2026-05-10 ~14:30 → ~15:00] manual — radio-lofi-tracklist (24-track lofi station + fast-path skip on malformed YT videoIds)**
