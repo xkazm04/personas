@@ -15,6 +15,7 @@
 //! `dispatch_handler` + a sibling module here.
 
 pub mod connector_use;
+pub mod curation_run;
 pub mod scan_codebase;
 
 use std::sync::Arc;
@@ -298,6 +299,7 @@ async fn dispatch_handler(pool: &UserDbPool, job: &BackgroundJob) -> Result<Stri
     match job.kind.as_str() {
         "scan_codebase" => scan_codebase::run(pool, job.project_id.as_deref(), &params).await,
         "connector_use" => connector_use::run(pool, &params).await,
+        curation_run::KIND => curation_run::run(pool, &params).await,
         other => Err(AppError::Internal(format!(
             "unknown background job kind `{other}`"
         ))),

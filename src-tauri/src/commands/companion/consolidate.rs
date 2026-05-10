@@ -18,11 +18,33 @@ use serde::Serialize;
 use tauri::State;
 
 use crate::companion::brain::{consolidation, dashboard, reflection};
+use crate::companion::jobs::{self, curation_run};
 use crate::error::AppError;
 use crate::ipc_auth;
 use crate::AppState;
 
 // ── Consolidation ───────────────────────────────────────────────────────
+
+/// Maximum instructions length in characters. Mirrors Anthropic Managed
+/// Agents' dream `instructions` cap; large enough for a paragraph of
+/// guidance, small enough to prevent operators from stuffing whole
+/// prompts into the steering field.
+pub(crate) const MAX_INSTRUCTIONS_CHARS: usize = 4096;
+
+/// Validate optional instructions length at the IPC boundary. Returns
+/// `AppError::Validation` if `Some` and exceeds `MAX_INSTRUCTIONS_CHARS`.
+/// Empty/whitespace strings are accepted (the prompt-assembly layer
+/// trims and skips empties).
+pub(crate) fn validate_instructions(s: Option<&str>) -> Result<(), AppError> {
+    if let Some(s) = s {
+        if s.chars().count() > MAX_INSTRUCTIONS_CHARS {
+            return Err(AppError::Validation(format!(
+                "instructions must be ≤{MAX_INSTRUCTIONS_CHARS} characters"
+            )));
+        }
+    }
+    Ok(())
+}
 
 /// Run a consolidation pass synchronously (the command awaits the CLI
 /// call). On success returns the new run id; the UI follows up with
@@ -30,12 +52,19 @@ use crate::AppState;
 ///
 /// Long-running — the user's UI shows a spinner. A timeout of 5 minutes
 /// is enforced inside the brain module.
+///
+/// `instructions` is optional natural-language steering (≤4096 chars)
+/// folded into the consolidation prompt. Concept borrowed from
+/// Anthropic Managed Agents' dream `instructions` field, applied to
+/// personas's existing curation pipeline.
 #[tauri::command]
 pub async fn companion_run_consolidation(
     state: State<'_, Arc<AppState>>,
+    instructions: Option<String>,
 ) -> Result<String, AppError> {
     ipc_auth::require_auth(&state).await?;
-    consolidation::run_consolidation(&state.user_db).await
+    validate_instructions(instructions.as_deref())?;
+    consolidation::run_consolidation(&state.user_db, instructions.as_deref()).await
 }
 
 #[tauri::command]
@@ -158,10 +187,18 @@ pub struct ReflectionDetail {
 
 /// Generate and persist a reflection. Returns the new node id; the UI
 /// switches to the detail view immediately to show the result.
+///
+/// `instructions` is optional natural-language steering (≤4096 chars)
+/// folded into the reflection prompt — same shape as
+/// `companion_run_consolidation`'s instructions.
 #[tauri::command]
-pub async fn companion_run_reflection(state: State<'_, Arc<AppState>>) -> Result<String, AppError> {
+pub async fn companion_run_reflection(
+    state: State<'_, Arc<AppState>>,
+    instructions: Option<String>,
+) -> Result<String, AppError> {
     ipc_auth::require_auth(&state).await?;
-    reflection::run_reflection(&state.user_db).await
+    validate_instructions(instructions.as_deref())?;
+    reflection::run_reflection(&state.user_db, instructions.as_deref()).await
 }
 
 #[tauri::command]
@@ -193,6 +230,62 @@ pub fn companion_get_reflection(
         body: r.body,
         created_at: r.created_at,
     })
+}
+
+/// Discard an entire consolidation run: reject every still-pending
+/// item and mark the run as `discarded`. Already-applied items keep
+/// their applied facts. Returns the number of items newly rejected.
+///
+/// Pairs with the per-item `companion_reject_consolidation_item` to
+/// give users a batch-level discard for runs they decide aren't worth
+/// walking item-by-item — same gesture as Anthropic Managed Agents'
+/// "discard the dream output store" at the batch granularity personas
+/// already supports per-item.
+#[tauri::command]
+pub fn companion_discard_consolidation_run(
+    state: State<'_, Arc<AppState>>,
+    run_id: String,
+) -> Result<i64, AppError> {
+    ipc_auth::require_auth_sync(&state)?;
+    consolidation::discard_run(&state.user_db, &run_id)
+}
+
+// ── Curation runs (job-shaped async curation) ──────────────────────────
+
+/// Enqueue a memory-curation run as a `BackgroundJob`. Returns the job
+/// id immediately; the worker picks it up on the next ~3s tick, runs
+/// the inner curator (`consolidate` or `reflect`), and emits status
+/// transitions on the `companion://job` event channel.
+///
+/// Concept borrowed from Anthropic Managed Agents' dream pipeline —
+/// async lifecycle (queued → running → completed | failed), optional
+/// `instructions` steering. Personas's existing `BackgroundJob`
+/// framework (`companion::jobs`) provides the lifecycle; the existing
+/// `consolidation`/`reflection` curators provide the work.
+///
+/// For synchronous (blocking) execution use the existing
+/// `companion_run_consolidation` / `companion_run_reflection` shims —
+/// both remain available for back-compat with existing UI paths.
+#[tauri::command]
+pub fn companion_enqueue_curation_run(
+    state: State<'_, Arc<AppState>>,
+    scope: String,
+    instructions: Option<String>,
+) -> Result<String, AppError> {
+    ipc_auth::require_auth_sync(&state)?;
+    validate_instructions(instructions.as_deref())?;
+    if !matches!(scope.as_str(), "consolidate" | "reflect") {
+        return Err(AppError::Validation(format!(
+            "scope must be `consolidate` or `reflect`, got `{scope}`"
+        )));
+    }
+    let mut params = serde_json::Map::new();
+    params.insert("scope".to_string(), serde_json::Value::String(scope));
+    if let Some(s) = instructions {
+        params.insert("instructions".to_string(), serde_json::Value::String(s));
+    }
+    let params_value = serde_json::Value::Object(params);
+    jobs::enqueue(&state.user_db, curation_run::KIND, &params_value, None)
 }
 
 // ── Dashboard (Phase F) ─────────────────────────────────────────────────

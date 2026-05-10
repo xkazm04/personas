@@ -2101,6 +2101,78 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Created recipe_suggestion_events table + idx_recipe_suggestion_events_created_at");
     }
 
+    // Memory curation review proposals — concept borrowed from Anthropic
+    // Managed Agents' dream pipeline (immutable input, separate output
+    // store, review-and-discard). Personas's `review_memories_with_cli`
+    // can write a proposal here instead of mutating directly; the user
+    // explicitly applies or discards the proposal in a second step.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "persona_memory_review_proposal",
+            description: "Create persona_memory_review_proposal table for review-and-discard memory curation",
+            already_applied: |conn| has_table(conn, "persona_memory_review_proposal"),
+            apply: |conn| {
+                conn.execute_batch(
+                    "CREATE TABLE IF NOT EXISTS persona_memory_review_proposal (
+                        id              TEXT PRIMARY KEY,
+                        persona_id      TEXT,
+                        threshold       INTEGER NOT NULL,
+                        instructions    TEXT,
+                        proposal_json   TEXT NOT NULL,
+                        summary         TEXT,
+                        reviewed_count  INTEGER NOT NULL DEFAULT 0,
+                        proposed_changes INTEGER NOT NULL DEFAULT 0,
+                        status          TEXT NOT NULL DEFAULT 'pending_review',
+                        created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+                        decided_at      TEXT
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_persona_memory_review_proposal_status
+                        ON persona_memory_review_proposal(status, created_at DESC);
+                    CREATE INDEX IF NOT EXISTS idx_persona_memory_review_proposal_persona
+                        ON persona_memory_review_proposal(persona_id, created_at DESC);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
+    // User-persona background-job table — projects the dream-job shape
+    // (queued → running → completed | failed | canceled) onto the
+    // user-personas side, mirroring `companion_background_job` for the
+    // companion side. Worker lives in `engine::persona_jobs`. v1 ships
+    // one kind: `memory_curation_run`.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "persona_background_job",
+            description: "Create persona_background_job table for async memory curation runs",
+            already_applied: |conn| has_table(conn, "persona_background_job"),
+            apply: |conn| {
+                conn.execute_batch(
+                    "CREATE TABLE IF NOT EXISTS persona_background_job (
+                        id                TEXT PRIMARY KEY,
+                        kind              TEXT NOT NULL,
+                        status            TEXT NOT NULL DEFAULT 'queued',
+                        params_json       TEXT NOT NULL DEFAULT '{}',
+                        persona_id        TEXT,
+                        result_text       TEXT,
+                        error_text        TEXT,
+                        cancel_requested  INTEGER NOT NULL DEFAULT 0,
+                        created_at        TEXT NOT NULL DEFAULT (datetime('now')),
+                        started_at        TEXT,
+                        completed_at      TEXT
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_persona_background_job_status
+                        ON persona_background_job(status, created_at DESC);
+                    CREATE INDEX IF NOT EXISTS idx_persona_background_job_persona
+                        ON persona_background_job(persona_id, created_at DESC);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 

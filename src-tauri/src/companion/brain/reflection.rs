@@ -35,7 +35,14 @@ const REFLECTION_TIMEOUT: Duration = Duration::from_secs(180);
 
 /// Generate a reflection from recent episodes. Writes the markdown to
 /// disk and inserts a `companion_node` row. Returns the new node id.
-pub async fn run_reflection(pool: &UserDbPool) -> Result<String, AppError> {
+///
+/// `instructions` is optional natural-language steering (≤4096 chars)
+/// folded into the prompt as an "Additional guidance from operator"
+/// block. Validated at the IPC boundary, not here.
+pub async fn run_reflection(
+    pool: &UserDbPool,
+    instructions: Option<&str>,
+) -> Result<String, AppError> {
     let episodes = episodic::list_recent(pool, DEFAULT_SESSION_ID, EPISODE_WINDOW)?;
     if episodes.is_empty() {
         return Err(AppError::Internal(
@@ -43,7 +50,7 @@ pub async fn run_reflection(pool: &UserDbPool) -> Result<String, AppError> {
         ));
     }
 
-    let prompt = build_reflection_prompt(&episodes);
+    let prompt = build_reflection_prompt(&episodes, instructions);
     let reflection_text = call_claude_oneshot(&prompt).await?;
 
     let id = format!("ref_{}", short_uuid());
@@ -133,7 +140,7 @@ pub struct ReflectionDetail {
 
 // ── helpers ─────────────────────────────────────────────────────────────
 
-fn build_reflection_prompt(episodes: &[episodic::Episode]) -> String {
+fn build_reflection_prompt(episodes: &[episodic::Episode], instructions: Option<&str>) -> String {
     let mut p = String::new();
     p.push_str(
         "You are Athena, reflecting on recent conversations with Michal. \
@@ -156,6 +163,12 @@ fn build_reflection_prompt(episodes: &[episodic::Episode]) -> String {
          of what the relationship has been about.\n\n",
     );
     p.push_str("Output: ONLY the prose. No frontmatter, no preface. Begin directly.\n\n");
+
+    if let Some(extra) = instructions.map(str::trim).filter(|s| !s.is_empty()) {
+        p.push_str("## Additional guidance from operator\n\n");
+        p.push_str(extra);
+        p.push_str("\n\n");
+    }
 
     p.push_str("# Recent episodes (oldest first):\n\n");
     for ep in episodes {

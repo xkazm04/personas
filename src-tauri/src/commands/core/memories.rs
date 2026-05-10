@@ -7,6 +7,9 @@ use ts_rs::TS;
 
 use crate::db::models::{CreatePersonaMemoryInput, MemoryCategoryInfo, PersonaMemory};
 use crate::db::repos::core::memories as repo;
+use crate::db::repos::core::memory_review_proposal::{
+    self as proposal_repo, CreateProposalInput, MemoryReviewProposal, ProposalEntry,
+};
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
@@ -208,17 +211,64 @@ pub struct MemoryReviewResult {
     pub deleted: usize,
     pub updated: usize,
     pub details: Vec<MemoryReviewDetail>,
+    /// Set when the call was made in proposal mode (`auto_apply: false`).
+    /// Points at a `persona_memory_review_proposal` row that the user
+    /// can later apply via `apply_persona_memory_review_proposal` or
+    /// discard via `discard_persona_memory_review_proposal`. `None` in
+    /// auto-apply mode (the legacy direct-mutation path).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub proposal_id: Option<String>,
 }
 
+/// Maximum instructions length in characters. Mirrors Anthropic Managed
+/// Agents' dream `instructions` cap; large enough for a paragraph of
+/// guidance, small enough to prevent operators from stuffing whole
+/// prompts into the steering field.
+pub(crate) const MAX_INSTRUCTIONS_CHARS: usize = 4096;
+
+/// Run an LLM-driven relevance review across persona memories.
+///
+/// Two modes, controlled by `auto_apply`:
+///
+/// - `auto_apply = Some(true)` (default for back-compat with existing
+///   UI callers): the legacy direct-mutation path. Low-score memories
+///   are deleted, high-score memories get an importance bump, the
+///   `MemoryReviewResult` reports counts and per-id detail. `proposal_id`
+///   is `None`.
+///
+/// - `auto_apply = Some(false)` (new path, mirrors Anthropic Managed
+///   Agents' dream review-and-discard semantics): no live memory rows
+///   are touched. The proposed (id, score, action) entries are written
+///   to `persona_memory_review_proposal`. The returned result carries
+///   the `proposal_id`; `deleted` and `updated` are 0. The user later
+///   calls `apply_persona_memory_review_proposal` (executes the
+///   proposal transactionally) or `discard_persona_memory_review_proposal`
+///   (marks discarded; nothing applied).
+///
+/// `instructions` is optional natural-language steering (≤4096 chars)
+/// folded into the LLM prompt. Validated at the IPC boundary.
 #[tauri::command]
 pub async fn review_memories_with_cli(
     state: State<'_, Arc<AppState>>,
     persona_id: Option<String>,
     threshold: Option<i32>,
+    instructions: Option<String>,
+    auto_apply: Option<bool>,
 ) -> Result<MemoryReviewResult, AppError> {
     require_auth(&state).await?;
+    if let Some(ref s) = instructions {
+        if s.chars().count() > MAX_INSTRUCTIONS_CHARS {
+            return Err(AppError::Validation(format!(
+                "instructions must be ≤{MAX_INSTRUCTIONS_CHARS} characters"
+            )));
+        }
+    }
     let db = state.db.clone();
     let threshold = threshold.unwrap_or(7);
+    // Default to true to preserve back-compat with existing review-button
+    // UI. New callers opt into proposal mode by passing `false`.
+    let auto_apply = auto_apply.unwrap_or(true);
 
     // 1. Fetch memories
     let memories = repo::get_all(
@@ -238,6 +288,7 @@ pub async fn review_memories_with_cli(
             deleted: 0,
             updated: 0,
             details: vec![],
+            proposal_id: None,
         });
     }
 
@@ -258,6 +309,13 @@ pub async fn review_memories_with_cli(
     let memories_json = serde_json::to_string_pretty(&memory_entries)
         .map_err(|e| AppError::Internal(format!("Serialize: {e}")))?;
 
+    let guidance_block = instructions
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(|s| format!("\n\nAdditional guidance from operator:\n{s}\n"))
+        .unwrap_or_default();
+
     let prompt = format!(
         r#"You are reviewing agent memories from Personas, an AI agent management platform where autonomous agents execute tasks, use tools, handle events, and store memories to retain knowledge across executions.
 
@@ -269,7 +327,7 @@ Evaluate each memory for relevance to agent operations. Score 1-10:
 
 Respond with ONLY a JSON array. No markdown fences, no explanation, no surrounding text.
 Example: [{{"id":"abc-123","score":8,"reason":"Core operational context"}}]
-
+{guidance_block}
 Memories to review:
 {memories_json}"#
     );
@@ -374,7 +432,11 @@ Memories to review:
     let reviews: Vec<serde_json::Value> = serde_json::from_str(&json_str)
         .map_err(|e| AppError::Internal(format!("Invalid JSON in review output: {e}")))?;
 
-    // 6. Collect changes, then apply as batch operations
+    // 6. Collect changes (deferred application — see auto_apply branch
+    //    further down). In proposal mode we serialize these into a
+    //    persona_memory_review_proposal row and return without
+    //    mutating; in auto-apply mode we proceed to the per-id batch
+    //    operations.
     let mut ids_to_delete = Vec::new();
     let mut importance_updates = Vec::new();
     let mut details = Vec::new();
@@ -439,6 +501,69 @@ Memories to review:
         }
     }
 
+    // 6b. Proposal-mode short-circuit. When auto_apply is false we
+    // serialize the (id, score, action) entries into a row in
+    // persona_memory_review_proposal and return without touching live
+    // memory data. The user reviews the proposal and either applies
+    // it (executes the same per-id batch operations transactionally
+    // via apply_persona_memory_review_proposal) or discards it.
+    if !auto_apply {
+        let entries: Vec<ProposalEntry> = details
+            .iter()
+            .map(|d| {
+                let action = if d.action == "deleted" {
+                    "delete".to_string()
+                } else {
+                    "update_importance".to_string()
+                };
+                let new_importance = importance_updates
+                    .iter()
+                    .find(|(id, _)| id == &d.id)
+                    .map(|(_, imp)| *imp);
+                ProposalEntry {
+                    memory_id: d.id.clone(),
+                    title: d.title.clone(),
+                    score: d.score,
+                    reason: d.reason.clone(),
+                    action,
+                    new_importance,
+                }
+            })
+            .collect();
+        let summary = format!(
+            "Reviewed {n} memories; proposed {p} change(s).",
+            n = details.len(),
+            p = ids_to_delete.len() + importance_updates.len()
+        );
+        let proposal_id = proposal_repo::create(
+            &db,
+            CreateProposalInput {
+                persona_id: persona_id.as_deref(),
+                threshold,
+                instructions: instructions.as_deref(),
+                entries: &entries,
+                summary: Some(&summary),
+            },
+        )?;
+        // Refresh details to surface the proposal action so the UI
+        // can render "proposed: delete" vs "proposed: keep" without
+        // assuming a deletion has already happened.
+        for d in details.iter_mut() {
+            if d.action == "deleted" {
+                d.action = "proposed_delete".to_string();
+            } else if d.action == "kept" {
+                d.action = "proposed_update_importance".to_string();
+            }
+        }
+        return Ok(MemoryReviewResult {
+            reviewed: reviews.len(),
+            deleted: 0,
+            updated: 0,
+            details,
+            proposal_id: Some(proposal_id),
+        });
+    }
+
     // Apply deletes per-id so a single failure does not mask successful writes
     // and so the UI can show exactly which IDs failed (FK violation, row gone,
     // etc.) without losing partial-success reporting.
@@ -490,7 +615,126 @@ Memories to review:
         deleted: deleted_count,
         updated: updated_count,
         details,
+        proposal_id: None,
     })
+}
+
+// -- Memory review proposals (review-and-discard) --------------------------------
+
+#[derive(Debug, serde::Serialize, TS)]
+#[ts(export)]
+pub struct ApplyMemoryReviewProposalResult {
+    pub proposal_id: String,
+    pub deleted: usize,
+    pub updated: usize,
+    pub errors: Vec<String>,
+}
+
+/// Apply a `pending_review` memory-review proposal: delete each
+/// `delete` entry and bump importance for each `update_importance`
+/// entry. Marks the proposal `applied` only if the status flip
+/// succeeds (idempotent — re-applying an already-applied proposal
+/// returns a 0-count result without re-mutating).
+#[tauri::command]
+pub fn apply_persona_memory_review_proposal(
+    state: State<'_, Arc<AppState>>,
+    proposal_id: String,
+) -> Result<ApplyMemoryReviewProposalResult, AppError> {
+    require_auth_sync(&state)?;
+    let proposal = proposal_repo::get(&state.db, &proposal_id)?
+        .ok_or_else(|| AppError::NotFound(format!("proposal `{proposal_id}` not found")))?;
+    if proposal.status != "pending_review" {
+        return Ok(ApplyMemoryReviewProposalResult {
+            proposal_id,
+            deleted: 0,
+            updated: 0,
+            errors: vec![format!(
+                "proposal already in status `{}` — no action taken",
+                proposal.status
+            )],
+        });
+    }
+
+    let mut deleted = 0usize;
+    let mut updated = 0usize;
+    let mut errors: Vec<String> = Vec::new();
+
+    for entry in &proposal.entries {
+        match entry.action.as_str() {
+            "delete" => match repo::delete(&state.db, &entry.memory_id) {
+                Ok(true) => deleted += 1,
+                Ok(false) => errors.push(format!(
+                    "memory `{}` not found (already deleted?)",
+                    entry.memory_id
+                )),
+                Err(e) => errors.push(format!("memory `{}` delete: {}", entry.memory_id, e)),
+            },
+            "update_importance" => {
+                let importance = entry.new_importance.unwrap_or(3).clamp(1, 5);
+                match repo::update_importance(&state.db, &entry.memory_id, importance) {
+                    Ok(true) => updated += 1,
+                    Ok(false) => errors.push(format!(
+                        "memory `{}` not found for importance bump",
+                        entry.memory_id
+                    )),
+                    Err(e) => errors.push(format!(
+                        "memory `{}` update_importance: {}",
+                        entry.memory_id, e
+                    )),
+                }
+            }
+            "keep" => {} // no-op
+            other => errors.push(format!(
+                "unknown action `{other}` on memory `{}`; skipped",
+                entry.memory_id
+            )),
+        }
+    }
+
+    proposal_repo::mark_applied(&state.db, &proposal_id)?;
+    Ok(ApplyMemoryReviewProposalResult {
+        proposal_id,
+        deleted,
+        updated,
+        errors,
+    })
+}
+
+/// Mark a `pending_review` memory-review proposal as `discarded`. No
+/// live memory data is touched. Idempotent — re-discarding an
+/// already-decided proposal returns false.
+#[tauri::command]
+pub fn discard_persona_memory_review_proposal(
+    state: State<'_, Arc<AppState>>,
+    proposal_id: String,
+) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
+    proposal_repo::mark_discarded(&state.db, &proposal_id)
+}
+
+#[tauri::command]
+pub fn list_persona_memory_review_proposals(
+    state: State<'_, Arc<AppState>>,
+    persona_id: Option<String>,
+    only_pending: Option<bool>,
+    limit: Option<u32>,
+) -> Result<Vec<MemoryReviewProposal>, AppError> {
+    require_auth_sync(&state)?;
+    proposal_repo::list(
+        &state.db,
+        persona_id.as_deref(),
+        only_pending.unwrap_or(false),
+        limit.unwrap_or(50),
+    )
+}
+
+#[tauri::command]
+pub fn get_persona_memory_review_proposal(
+    state: State<'_, Arc<AppState>>,
+    proposal_id: String,
+) -> Result<Option<MemoryReviewProposal>, AppError> {
+    require_auth_sync(&state)?;
+    proposal_repo::get(&state.db, &proposal_id)
 }
 
 // -- Dev seed: mock memory (debug builds only) -----------------------------------
