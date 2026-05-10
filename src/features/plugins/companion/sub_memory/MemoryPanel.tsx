@@ -10,24 +10,82 @@ import {
 import { BrainViewer } from '../BrainViewer';
 import { useCompanionStore } from '../companionStore';
 import { ConsolidationReview } from './ConsolidationReview';
+import MemoryPanelVariantA from './MemoryPanelVariantA';
+import MemoryPanelVariantB from './MemoryPanelVariantB';
 
 type MemoryView = 'brain' | 'consolidation';
 
+type Variant = 'baseline' | 'a' | 'b';
+
+const VARIANT_TABS: { id: Variant; label: string; subtitle: string }[] = [
+  { id: 'baseline', label: 'Baseline', subtitle: 'Today, on master' },
+  { id: 'a', label: 'Variant A', subtitle: 'Split rail (left actions, right inspector)' },
+  { id: 'b', label: 'Variant B', subtitle: 'Action dashboard (top cards, inspector below)' },
+];
+
 /**
- * Memory tab — three concerns share this surface:
- *   - **Bulk-action toolbar** at the top: run consolidation, generate
- *     reflection, decay unused facts. These are manual maintenance
- *     passes; nothing here runs on a schedule.
- *   - **Brain inspector** (default view): the same `BrainViewer` the
- *     chat panel uses, in inline mode.
- *   - **Consolidation review** (drill-in): the diff-review surface for
- *     proposals that came out of a consolidation pass.
- *
- * Toggle between the two views with the toolbar; back arrow returns to
- * the brain inspector. The brain viewer's nested state is preserved
- * via the companion store, so flipping doesn't lose the user's place.
+ * Memory tab — currently in /prototype mode. A tab strip lets the
+ * user A/B between the production baseline and two directional
+ * variants. Once a winner is picked, the strip is removed and the
+ * winning body replaces this wrapper directly. See
+ * MemoryPanelVariantA.tsx / MemoryPanelVariantB.tsx for variant notes.
  */
 export default function MemoryPanel() {
+  const [variant, setVariant] = useState<Variant>('baseline');
+  return (
+    <div className="h-full flex flex-col gap-3 min-h-0">
+      <PrototypeTabs active={variant} onChange={setVariant} />
+      <div className="flex-1 min-h-0">
+        {variant === 'baseline' && <MemoryPanelBaseline />}
+        {variant === 'a' && <MemoryPanelVariantA />}
+        {variant === 'b' && <MemoryPanelVariantB />}
+      </div>
+    </div>
+  );
+}
+
+function PrototypeTabs({
+  active,
+  onChange,
+}: {
+  active: Variant;
+  onChange: (v: Variant) => void;
+}) {
+  return (
+    <div className="flex gap-1 p-1 rounded-card border border-foreground/10 bg-secondary/40 shrink-0">
+      {VARIANT_TABS.map((tab) => {
+        const isActive = active === tab.id;
+        return (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => onChange(tab.id)}
+            className={`flex-1 px-3 py-2 rounded-interactive text-left transition-colors focus-ring ${
+              isActive ? 'bg-card-bg shadow-elevation-1' : 'hover:bg-foreground/5'
+            }`}
+          >
+            <div
+              className={`typo-body font-medium ${
+                isActive ? 'text-foreground' : 'text-foreground/70'
+              }`}
+            >
+              {tab.label}
+            </div>
+            <div
+              className={`typo-caption ${
+                isActive ? 'text-foreground/65' : 'text-foreground/45'
+              }`}
+            >
+              {tab.subtitle}
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function MemoryPanelBaseline() {
   const { t } = useTranslation();
   const [view, setView] = useState<MemoryView>('brain');
   const [reflecting, setReflecting] = useState(false);
