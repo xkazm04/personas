@@ -75,6 +75,21 @@ pub fn skill_folder_name(connector_name: &str) -> String {
 /// tests; the writer is a thin wrapper.
 pub fn build_skill_md(hint: &ResolvedConnectorHint) -> String {
     let mut out = String::new();
+
+    // YAML frontmatter — Claude Code's native skill discovery reads `name`
+    // and `description` to enrol the skill into the system prompt's skill
+    // catalog, so the agent can match it by relevance. Without frontmatter,
+    // the SKILL.md is loadable but loses the auto-trigger affordance.
+    let folder = skill_folder_name(&hint.name);
+    let description = build_skill_description(hint);
+    out.push_str("---\n");
+    out.push_str(&format!("name: {folder}\n"));
+    out.push_str(&format!(
+        "description: \"{}\"\n",
+        escape_yaml_double_quoted(&description)
+    ));
+    out.push_str("---\n\n");
+
     out.push_str(&format!("# {}\n\n", hint.label));
     out.push_str(&format!(
         "Use this skill when the persona's task involves **{}**.\n\n",
@@ -199,6 +214,43 @@ fn install_sidecar_inner(
     Ok(wrote_any)
 }
 
+/// Compose a one-line description for the YAML frontmatter. Seeds from
+/// `hint.label` and the first sentence of `hint.hint.overview`. Capped at
+/// ~140 chars so the skill catalog stays readable in the system prompt.
+fn build_skill_description(hint: &ResolvedConnectorHint) -> String {
+    let overview = hint.hint.overview.trim();
+    let first_sentence = overview
+        .split(&['.', '\n'][..])
+        .next()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| hint.label.as_str());
+    let raw = format!("Use when working with {}: {}.", hint.label, first_sentence);
+
+    if raw.chars().count() <= 140 {
+        raw
+    } else {
+        let truncated: String = raw.chars().take(137).collect();
+        format!("{truncated}...")
+    }
+}
+
+/// Escape a string for use as a YAML double-quoted scalar value. Only the
+/// two YAML-meaningful characters need escaping (`\` and `"`); newlines
+/// collapse to spaces so the description stays on one line.
+fn escape_yaml_double_quoted(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    for ch in s.chars() {
+        match ch {
+            '\\' => out.push_str("\\\\"),
+            '"' => out.push_str("\\\""),
+            '\n' | '\r' | '\t' => out.push(' '),
+            other => out.push(other),
+        }
+    }
+    out
+}
+
 /// Convenience: where a given connector's SKILL.md would live for an
 /// `exec_dir`. Used by the test suite and available for direct callers.
 #[allow(dead_code)]
@@ -256,7 +308,8 @@ mod tests {
     #[test]
     fn build_skill_md_renders_full_body() {
         let body = build_skill_md(&sample_hint());
-        assert!(body.starts_with("# GitHub\n"));
+        assert!(body.starts_with("---\n"), "body must open with YAML frontmatter");
+        assert!(body.contains("\n# GitHub\n"));
         assert!(body.contains("## Overview"));
         assert!(body.contains("GitHub REST API v3"));
         assert!(body.contains("## Examples"));
@@ -265,6 +318,68 @@ mod tests {
         assert!(body.contains("Pagination defaults to 30"));
         assert!(body.contains("## How to invoke"));
         assert!(body.contains("$PERSONAS_PROXY_URL"));
+    }
+
+    #[test]
+    fn build_skill_md_emits_yaml_frontmatter_with_name_and_description() {
+        let body = build_skill_md(&sample_hint());
+
+        // Frontmatter is a closed --- ... --- block before any heading
+        let opening = body.find("---\n").expect("opening fence");
+        assert_eq!(opening, 0, "frontmatter must be the first line");
+        let after_opening = &body[4..];
+        let closing_offset = after_opening.find("\n---\n").expect("closing fence");
+        let frontmatter = &after_opening[..closing_offset];
+
+        assert!(
+            frontmatter.contains("name: personas-connector-github"),
+            "frontmatter should set name to the skill folder name; got: {frontmatter:?}"
+        );
+        // Description encourages auto-trigger by relevance — the article's
+        // load-bearing point is "description encourages the agent to use the
+        // skill in the right circumstance."
+        assert!(
+            frontmatter.contains("description: \""),
+            "frontmatter should set a quoted description; got: {frontmatter:?}"
+        );
+        assert!(
+            frontmatter.contains("GitHub"),
+            "description should mention the connector label; got: {frontmatter:?}"
+        );
+
+        // Heading appears after the closing fence, not before
+        let heading_pos = body.find("# GitHub\n").expect("heading present");
+        let final_fence_pos = body.find("\n---\n").unwrap();
+        assert!(heading_pos > final_fence_pos);
+    }
+
+    #[test]
+    fn build_skill_description_caps_long_overviews() {
+        let mut h = sample_hint();
+        h.hint.overview =
+            "X".repeat(400) + ". A trailing sentence that should be cut off entirely.";
+        let desc = build_skill_description(&h);
+        assert!(desc.chars().count() <= 140, "description must cap at 140 chars; got {} chars", desc.chars().count());
+        assert!(desc.ends_with("..."), "long descriptions get a truncation marker");
+    }
+
+    #[test]
+    fn build_skill_description_falls_back_to_label_when_overview_empty() {
+        let mut h = sample_hint();
+        h.hint.overview = String::new();
+        let desc = build_skill_description(&h);
+        // Falls back to label as the "first sentence" so we still produce
+        // a usable description rather than "Use when working with GitHub: ."
+        assert!(desc.contains("GitHub"));
+        assert!(!desc.contains(": ."));
+    }
+
+    #[test]
+    fn escape_yaml_double_quoted_handles_specials() {
+        assert_eq!(escape_yaml_double_quoted("plain"), "plain");
+        assert_eq!(escape_yaml_double_quoted("a\"b"), "a\\\"b");
+        assert_eq!(escape_yaml_double_quoted("path\\to"), "path\\\\to");
+        assert_eq!(escape_yaml_double_quoted("line1\nline2"), "line1 line2");
     }
 
     #[test]

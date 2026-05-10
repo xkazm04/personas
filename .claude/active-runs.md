@@ -42,6 +42,11 @@ timestamp — the next session can recognize it as abandoned.
   - **Paths:** `.claude/active-runs.md`, `.claude/CLAUDE.md`, `.claude/skills/research/skill.md`, `docs/concepts/cli-coordination-active-runs.md`, `docs/concepts/README.md`
   - **Status:** started — overlaps with browser-harness only on `.claude/active-runs.md` (by design — that file is the coordination surface itself)
 
+- **[2026-05-10 ~15:30] manual — radio-station-toggles (compact one-row station list in Settings + per-station enable/disable hides from picker)**
+  - **Source:** in-session conversation following the radio-lofi-tracklist merge (`49f111f52`). User wants Settings → Account station list to be more efficient: one row per station (no description, no per-track listing, no source link), with a toggle that hides the station from the footer picker.
+  - **Paths:** worktree `.claude/worktrees/radio-station-toggles` (branch `worktree-radio-station-toggles`). Touched: `src/stores/slices/system/radioSlice.ts` (extend with `disabledStationIds: string[]` default empty + `setStationDisabled(id, disabled)` setter), `src/stores/systemStore.ts` (add to partialize allow-list), `src/features/radio/components/RadioSettingsCard.tsx` (replace per-station card with compact row layout: dot + name + kind chip + AccessibleToggle), `src/features/radio/components/StationPicker.tsx` (filter out stations whose id is in disabledStationIds), `src/i18n/locales/en.json` (add `station_toggle_label`). Also `.claude/active-runs.md` (this entry) on master.
+  - **Status:** started — no overlap with active sessions: /architect modal-migration touches `src/lib/ui/BaseModal.tsx` + drive plugin (different files); /research entries are out-of-repo. `.claude/active-runs.md` overlap is the expected coordination-surface case.
+
 - **[2026-05-10 ~00:40] /research — youtube dITtLiC9FzM (focus: all)**
   - **Source:** https://www.youtube.com/watch?v=dITtLiC9FzM
   - **Paths:** `Obsidian/personas/Research/{date}-{slug}.md`, `Obsidian/personas/Lessons/2026-05-10-research.md`, `.research-cache/dITtLiC9FzM.*`, `.claude/active-runs.md`. Finding anchors TBD after Phase 6 — will update if scope clarifies into a specific code/template/credential area.
