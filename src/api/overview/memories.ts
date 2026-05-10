@@ -121,7 +121,17 @@ export interface MemoryReviewDetail {
   title: string;
   score: number;
   reason: string;
-  action: 'kept' | 'deleted' | 'error';
+  /**
+   * Auto-apply mode actions: 'kept' (importance bumped), 'deleted', 'error'.
+   * Proposal mode actions: 'proposed_delete', 'proposed_update_importance' —
+   * the live memory rows are untouched until the user explicitly applies.
+   */
+  action:
+    | 'kept'
+    | 'deleted'
+    | 'error'
+    | 'proposed_delete'
+    | 'proposed_update_importance';
   error?: string;
 }
 
@@ -130,12 +140,97 @@ export interface MemoryReviewResult {
   deleted: number;
   updated: number;
   details: MemoryReviewDetail[];
+  /**
+   * Set when the call was made in proposal mode (`autoApply: false`).
+   * Points at a `persona_memory_review_proposal` row that the user can
+   * later apply via `applyPersonaMemoryReviewProposal` or discard via
+   * `discardPersonaMemoryReviewProposal`. `null`/`undefined` in
+   * auto-apply mode (the legacy direct-mutation path).
+   */
+  proposal_id?: string;
 }
 
-export const reviewMemoriesWithCli = (personaId?: string, threshold?: number) =>
+/**
+ * Run an LLM-driven relevance review across persona memories.
+ *
+ * Modes (controlled by `autoApply`):
+ * - `true` (default for back-compat): legacy direct-mutation path.
+ *   Low-score memories are deleted, high-score memories get an
+ *   importance bump.
+ * - `false`: proposal mode (mirrors Anthropic Managed Agents'
+ *   review-and-discard semantics). No live rows are touched; the
+ *   proposed (id, score, action) entries are written to a
+ *   `persona_memory_review_proposal` row. Returned `proposal_id`
+ *   is the handle the user later applies or discards.
+ *
+ * `instructions` is optional natural-language steering (≤4096 chars)
+ * folded into the LLM prompt.
+ */
+export const reviewMemoriesWithCli = (
+  personaId?: string,
+  threshold?: number,
+  instructions?: string,
+  autoApply?: boolean,
+) =>
   invoke<MemoryReviewResult>("review_memories_with_cli", {
     personaId: personaId,
     threshold: threshold,
+    instructions: instructions,
+    autoApply: autoApply,
+  });
+
+// -- Memory Review Proposals (review-and-discard, F4b + F-UI) -----------------
+
+export type { MemoryReviewProposal } from "@/lib/bindings/MemoryReviewProposal";
+export type { ProposalEntry } from "@/lib/bindings/ProposalEntry";
+import type { MemoryReviewProposal } from "@/lib/bindings/MemoryReviewProposal";
+import type { ApplyMemoryReviewProposalResult } from "@/lib/bindings/ApplyMemoryReviewProposalResult";
+export type { ApplyMemoryReviewProposalResult } from "@/lib/bindings/ApplyMemoryReviewProposalResult";
+
+/** Apply a pending proposal: execute deletes + importance bumps. */
+export const applyPersonaMemoryReviewProposal = (proposalId: string) =>
+  invoke<ApplyMemoryReviewProposalResult>("apply_persona_memory_review_proposal", {
+    proposalId,
+  });
+
+/** Mark a pending proposal as discarded. No DB mutation to memories. */
+export const discardPersonaMemoryReviewProposal = (proposalId: string) =>
+  invoke<boolean>("discard_persona_memory_review_proposal", { proposalId });
+
+export const listPersonaMemoryReviewProposals = (
+  personaId?: string,
+  onlyPending?: boolean,
+  limit?: number,
+) =>
+  invoke<MemoryReviewProposal[]>("list_persona_memory_review_proposals", {
+    personaId: personaId,
+    onlyPending: onlyPending,
+    limit: limit,
+  });
+
+export const getPersonaMemoryReviewProposal = (proposalId: string) =>
+  invoke<MemoryReviewProposal | null>("get_persona_memory_review_proposal", {
+    proposalId,
+  });
+
+// -- Curation schedule (F-CRON) -----------------------------------------------
+
+export type { PersonaCurationSchedule } from "@/lib/bindings/PersonaCurationSchedule";
+import type { PersonaCurationSchedule } from "@/lib/bindings/PersonaCurationSchedule";
+
+/**
+ * Set or update the per-persona curation schedule. Pass an empty/whitespace
+ * cronExpr to delete the schedule (curation disabled).
+ */
+export const setPersonaCurationSchedule = (personaId: string, cronExpr: string) =>
+  invoke<PersonaCurationSchedule | null>("set_persona_curation_schedule", {
+    personaId,
+    cronExpr,
+  });
+
+export const getPersonaCurationSchedule = (personaId: string) =>
+  invoke<PersonaCurationSchedule | null>("get_persona_curation_schedule", {
+    personaId,
   });
 
 // -- Memory Tiers -------------------------------------------------------------
