@@ -2201,6 +2201,22 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // Smee relay origin allowlist. JSON-encoded array of `owner/repo` strings.
+    // When populated, the SSE relay drops events whose body.repository.full_name
+    // is not in the list. NULL = back-compat (accept any repo, log warning).
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "smee_relays_allowed_repos",
+            description: "Add allowed_repos column to smee_relays for origin authentication",
+            already_applied: |conn| has_column(conn, "smee_relays", "allowed_repos"),
+            apply: |conn| {
+                conn.execute_batch("ALTER TABLE smee_relays ADD COLUMN allowed_repos TEXT;")?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 

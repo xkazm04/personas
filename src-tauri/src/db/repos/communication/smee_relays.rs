@@ -50,7 +50,7 @@ fn validate_channel_url(channel_url: &str) -> Result<(), AppError> {
 row_mapper!(row_to_relay -> SmeeRelay {
     id, label, channel_url, status, event_filter,
     target_persona_id, events_relayed, last_event_at,
-    error, created_at, updated_at,
+    error, created_at, updated_at, allowed_repos,
 });
 
 pub fn list(pool: &DbPool) -> Result<Vec<SmeeRelay>, AppError> {
@@ -87,9 +87,9 @@ pub fn create(pool: &DbPool, input: CreateSmeeRelayInput) -> Result<SmeeRelay, A
         let now = chrono::Utc::now().to_rfc3339();
         let conn = pool.get()?;
         conn.execute(
-            "INSERT INTO smee_relays (id, label, channel_url, status, event_filter, target_persona_id, created_at, updated_at)
-             VALUES (?1, ?2, ?3, 'active', ?4, ?5, ?6, ?6)",
-            params![id, input.label, input.channel_url, input.event_filter, input.target_persona_id, now],
+            "INSERT INTO smee_relays (id, label, channel_url, status, event_filter, target_persona_id, allowed_repos, created_at, updated_at)
+             VALUES (?1, ?2, ?3, 'active', ?4, ?5, ?6, ?7, ?7)",
+            params![id, input.label, input.channel_url, input.event_filter, input.target_persona_id, input.allowed_repos, now],
         )?;
         get(pool, &id)
     })
@@ -102,10 +102,11 @@ pub fn update(pool: &DbPool, id: &str, input: UpdateSmeeRelayInput) -> Result<Sm
         let label = input.label.unwrap_or(existing.label);
         let event_filter = input.event_filter.or(existing.event_filter);
         let target_persona_id = input.target_persona_id.or(existing.target_persona_id);
+        let allowed_repos = input.allowed_repos.or(existing.allowed_repos);
         let conn = pool.get()?;
         conn.execute(
-            "UPDATE smee_relays SET label = ?2, event_filter = ?3, target_persona_id = ?4, updated_at = ?5 WHERE id = ?1",
-            params![id, label, event_filter, target_persona_id, now],
+            "UPDATE smee_relays SET label = ?2, event_filter = ?3, target_persona_id = ?4, allowed_repos = ?5, updated_at = ?6 WHERE id = ?1",
+            params![id, label, event_filter, target_persona_id, allowed_repos, now],
         )?;
         // Construct the return value from known data instead of a redundant SELECT.
         Ok(SmeeRelay {
@@ -120,6 +121,7 @@ pub fn update(pool: &DbPool, id: &str, input: UpdateSmeeRelayInput) -> Result<Sm
             error: existing.error,
             created_at: existing.created_at,
             updated_at: now,
+            allowed_repos,
         })
     })
 }
@@ -208,11 +210,11 @@ pub fn list_active_urls(pool: &DbPool) -> Result<Vec<(String, String)>, AppError
 /// when edited.
 pub fn list_active_configs(
     pool: &DbPool,
-) -> Result<Vec<(String, String, Option<String>, Option<String>)>, AppError> {
+) -> Result<Vec<(String, String, Option<String>, Option<String>, Option<String>)>, AppError> {
     timed_query!("smee_relays", "smee_relays::list_active_configs", {
         let conn = pool.get()?;
         let mut stmt = conn.prepare(
-            "SELECT id, channel_url, target_persona_id, event_filter
+            "SELECT id, channel_url, target_persona_id, event_filter, allowed_repos
              FROM smee_relays
              WHERE status = 'active'",
         )?;
@@ -222,6 +224,7 @@ pub fn list_active_configs(
                 row.get::<_, String>("channel_url")?,
                 row.get::<_, Option<String>>("target_persona_id")?,
                 row.get::<_, Option<String>>("event_filter")?,
+                row.get::<_, Option<String>>("allowed_repos")?,
             ))
         })?;
         Ok(rows.filter_map(|r| r.ok()).collect())

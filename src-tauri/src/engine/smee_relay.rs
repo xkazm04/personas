@@ -128,11 +128,13 @@ fn relay_config_key(
     channel_url: &str,
     target_persona_id: Option<&str>,
     event_filter: Option<&str>,
+    allowed_repos: Option<&str>,
 ) -> String {
     serde_json::json!({
         "channel_url": channel_url,
         "target_persona_id": target_persona_id,
         "event_filter": event_filter,
+        "allowed_repos": allowed_repos,
     })
     .to_string()
 }
@@ -185,6 +187,11 @@ struct RelayParams {
     source_id: Option<String>,
     target_persona_id: Option<String>,
     event_filter: Option<Vec<String>>,
+    /// Origin allowlist (parsed from allowed_repos column). When `Some`,
+    /// only events whose `body.repository.full_name` matches an entry are
+    /// relayed. `None` accepts any origin (back-compat) but logs a WARN
+    /// once per relay session so the operator notices.
+    allowed_repos: Option<Vec<String>>,
 }
 
 /// SSE relay loop: connects to a smee.io channel, streams SSE events,
@@ -326,6 +333,36 @@ async fn relay_sse_core(
                 .cloned()
                 .unwrap_or(payload_json.clone());
 
+            // Apply origin allowlist if configured. Drops events whose
+            // body.repository.full_name is not in the configured list.
+            // smee.io provides no authenticity guarantee on inbound payloads;
+            // anyone who learns the channel URL can POST to it. The allowlist
+            // is a defense-in-depth check that only events from expected
+            // GitHub repos reach the local event bus. (HMAC verification over
+            // the raw body is tracked as a separate follow-up — smee envelopes
+            // ship parsed JSON which makes byte-exact HMAC reconstruction
+            // unreliable.)
+            if let Some(ref allow) = params.allowed_repos {
+                let repo_full_name = body
+                    .get("repository")
+                    .and_then(|r| r.get("full_name"))
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string());
+                let accepted = match &repo_full_name {
+                    Some(name) => allow.iter().any(|allowed| allowed == name),
+                    None => false,
+                };
+                if !accepted {
+                    tracing::warn!(
+                        relay_id = %params.relay_key,
+                        event_type = %event_type,
+                        repo = ?repo_full_name,
+                        "Smee relay: dropped event whose repository.full_name is not in allowed_repos"
+                    );
+                    continue;
+                }
+            }
+
             let input = CreatePersonaEventInput {
                 event_type,
                 source_type: "smee_relay".to_string(),
@@ -409,16 +446,19 @@ pub async fn run_smee_relay(
 
         let desired_configs: HashMap<String, String> = active_relays
             .iter()
-            .map(|(id, channel_url, target_persona_id, event_filter)| {
-                (
-                    id.clone(),
-                    relay_config_key(
-                        channel_url,
-                        target_persona_id.as_deref(),
-                        event_filter.as_deref(),
-                    ),
-                )
-            })
+            .map(
+                |(id, channel_url, target_persona_id, event_filter, allowed_repos)| {
+                    (
+                        id.clone(),
+                        relay_config_key(
+                            channel_url,
+                            target_persona_id.as_deref(),
+                            event_filter.as_deref(),
+                            allowed_repos.as_deref(),
+                        ),
+                    )
+                },
+            )
             .collect();
 
         let mut tasks = active_tasks.lock().await;
@@ -444,7 +484,9 @@ pub async fn run_smee_relay(
         }
 
         // Start tasks for new active relays
-        for (relay_id, channel_url, target_persona_id, event_filter) in &active_relays {
+        for (relay_id, channel_url, target_persona_id, event_filter, allowed_repos) in
+            &active_relays
+        {
             if tasks.contains_key(relay_id) {
                 continue; // already running
             }
@@ -453,6 +495,7 @@ pub async fn run_smee_relay(
                 channel_url,
                 target_persona_id.as_deref(),
                 event_filter.as_deref(),
+                allowed_repos.as_deref(),
             );
             let pool2 = pool.clone();
             let app2 = app.clone();
@@ -463,10 +506,22 @@ pub async fn run_smee_relay(
             let event_filter2: Option<Vec<String>> = event_filter
                 .as_deref()
                 .and_then(|filter| serde_json::from_str(filter).ok());
+            let allowed_repos2: Option<Vec<String>> = allowed_repos
+                .as_deref()
+                .and_then(|raw| serde_json::from_str::<Vec<String>>(raw).ok())
+                .filter(|list| !list.is_empty());
             let cancel = CancellationToken::new();
             let cancel_for_task = cancel.clone();
 
             let handle = tokio::spawn(async move {
+                if allowed_repos2.is_none() {
+                    tracing::warn!(
+                        relay_id = %relay_id2,
+                        "Smee relay has no allowed_repos configured; will accept events from \
+                         any GitHub repo that learns the channel URL. Configure an allowlist \
+                         to restrict origins."
+                    );
+                }
                 let mut backoff = Duration::from_secs(1);
                 let max_backoff = Duration::from_secs(30);
                 loop {
@@ -480,6 +535,7 @@ pub async fn run_smee_relay(
                         source_id: Some(relay_id2.clone()),
                         target_persona_id: target_persona_id2.clone(),
                         event_filter: event_filter2.clone(),
+                        allowed_repos: allowed_repos2.clone(),
                     };
                     let connected_at = Instant::now();
                     match relay_sse_core(&params, &pool2, &app2, &state2, &cancel_for_task).await {

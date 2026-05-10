@@ -2551,6 +2551,7 @@ fn auto_create_smee_relays(
             channel_url: channel_url.to_string(),
             event_filter,
             target_persona_id: Some(persona_id.to_string()),
+            allowed_repos: None,
         };
 
         match smee_repo::create(pool, input) {
