@@ -1,7 +1,7 @@
 # In-App HTTP Service — Browser-Reachable Endpoints
 
-**Status:** Implemented in `src-tauri/src/local_http/` for the Langfuse auto-login flow (Phase 1d). This doc captures the pattern for future re-use.
-**Last updated:** 2026-05-07
+> **Status:** Architecture pattern — shipped as `src-tauri/src/local_http/` for the Langfuse auto-login flow (Phase 1d). Moved from `docs/concepts/in-app-http-service.md` to `docs/architecture/` on 2026-05-10.
+> **Last updated:** 2026-05-07
 
 ---
 
@@ -73,6 +73,8 @@ Two things were load-bearing:
 
 - **Serve from `localhost:<port>`, not `127.0.0.1:<port>`.** Setting `Domain=localhost` from a `127.0.0.1` response is rejected by spec-compliant clients (Domain must match or be a parent of the request host), which silently drops the cookie and breaks the cross-port share.
 - **Same-site, different-origin shape.** `localhost:<our-port>` and `localhost:3000` resolve to the same eTLD+1, so SameSite=Lax permits the cross-port form POST. The pattern works for any other localhost-only service we'd integrate with.
+
+See [`docs/features/langfuse.md`](../features/langfuse.md) for the user-facing documentation of this flow.
 
 ---
 
