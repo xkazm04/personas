@@ -271,13 +271,20 @@ Clyjs finding) discovered the existing bridge layer was hand-coded.
 - `update_config` — change timeout_ms (1000-1800000), max_turns (1-100), enabled (true only)
 - `modify_file` — file edit performed by the CLI's own tool use (logged only)
 - `run_command` — command run by the CLI's own tool use (logged only)
-- `instrument_and_reproduce` — *deferred fix*: propose log points to inject and
-  request a re-execution. Used when the healer doesn't have enough evidence to
-  write a confident fix. Recorded in `healing_audit_log` with subsystem
-  `ai_heal_instrument_proposed`. As of 2026-04-12 the actual injection and
-  re-execution orchestration is NOT implemented — the v1 records the proposal
-  so the AI healer can start producing reproduce-and-verify suggestions on real
-  failures, generating data for the future orchestrator design.
+
+**Removed 2026-05-10:** `instrument_and_reproduce` (proposed log-point
+injection + re-execution). The orchestrator that would actually inject log
+points and trigger the re-run never shipped, and the healer kept proposing
+the variant into a phantom `ai_heal_instrument_proposed` audit row that no
+consumer acted on. Architect ADR
+[[Architect/decisions/2026-05-10-instrument-and-reproduce-phantom]] applied
+the cheap-path resolution: the healer prompt no longer advertises the
+variant, the dispatch arm was removed (legacy healer output falls through
+to the unknown-fix-type warn arm), and the parser is left intact so any
+legacy emitter still parses without crashing. The original 2026-04-12
+introduction (from a `/research` run on Debug Agent) is the prerequisite
+context if anyone wants to re-introduce it together with a real
+orchestrator.
 
 This was added after `/research` run on 2026-04-12 (Debug Agent finding from
 GitHub Trending Weekly #30). Future runs proposing additional healing fix types
