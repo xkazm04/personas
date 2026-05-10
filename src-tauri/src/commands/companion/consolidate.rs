@@ -24,18 +24,46 @@ use crate::AppState;
 
 // ── Consolidation ───────────────────────────────────────────────────────
 
+/// Maximum instructions length in characters. Mirrors Anthropic Managed
+/// Agents' dream `instructions` cap; large enough for a paragraph of
+/// guidance, small enough to prevent operators from stuffing whole
+/// prompts into the steering field.
+pub(crate) const MAX_INSTRUCTIONS_CHARS: usize = 4096;
+
+/// Validate optional instructions length at the IPC boundary. Returns
+/// `AppError::Validation` if `Some` and exceeds `MAX_INSTRUCTIONS_CHARS`.
+/// Empty/whitespace strings are accepted (the prompt-assembly layer
+/// trims and skips empties).
+pub(crate) fn validate_instructions(s: Option<&str>) -> Result<(), AppError> {
+    if let Some(s) = s {
+        if s.chars().count() > MAX_INSTRUCTIONS_CHARS {
+            return Err(AppError::Validation(format!(
+                "instructions must be ≤{MAX_INSTRUCTIONS_CHARS} characters"
+            )));
+        }
+    }
+    Ok(())
+}
+
 /// Run a consolidation pass synchronously (the command awaits the CLI
 /// call). On success returns the new run id; the UI follows up with
 /// `companion_get_consolidation_items` to render the diff.
 ///
 /// Long-running — the user's UI shows a spinner. A timeout of 5 minutes
 /// is enforced inside the brain module.
+///
+/// `instructions` is optional natural-language steering (≤4096 chars)
+/// folded into the consolidation prompt. Concept borrowed from
+/// Anthropic Managed Agents' dream `instructions` field, applied to
+/// personas's existing curation pipeline.
 #[tauri::command]
 pub async fn companion_run_consolidation(
     state: State<'_, Arc<AppState>>,
+    instructions: Option<String>,
 ) -> Result<String, AppError> {
     ipc_auth::require_auth(&state).await?;
-    consolidation::run_consolidation(&state.user_db).await
+    validate_instructions(instructions.as_deref())?;
+    consolidation::run_consolidation(&state.user_db, instructions.as_deref()).await
 }
 
 #[tauri::command]
@@ -158,10 +186,18 @@ pub struct ReflectionDetail {
 
 /// Generate and persist a reflection. Returns the new node id; the UI
 /// switches to the detail view immediately to show the result.
+///
+/// `instructions` is optional natural-language steering (≤4096 chars)
+/// folded into the reflection prompt — same shape as
+/// `companion_run_consolidation`'s instructions.
 #[tauri::command]
-pub async fn companion_run_reflection(state: State<'_, Arc<AppState>>) -> Result<String, AppError> {
+pub async fn companion_run_reflection(
+    state: State<'_, Arc<AppState>>,
+    instructions: Option<String>,
+) -> Result<String, AppError> {
     ipc_auth::require_auth(&state).await?;
-    reflection::run_reflection(&state.user_db).await
+    validate_instructions(instructions.as_deref())?;
+    reflection::run_reflection(&state.user_db, instructions.as_deref()).await
 }
 
 #[tauri::command]

@@ -210,13 +210,27 @@ pub struct MemoryReviewResult {
     pub details: Vec<MemoryReviewDetail>,
 }
 
+/// Maximum instructions length in characters. Mirrors Anthropic Managed
+/// Agents' dream `instructions` cap; large enough for a paragraph of
+/// guidance, small enough to prevent operators from stuffing whole
+/// prompts into the steering field.
+pub(crate) const MAX_INSTRUCTIONS_CHARS: usize = 4096;
+
 #[tauri::command]
 pub async fn review_memories_with_cli(
     state: State<'_, Arc<AppState>>,
     persona_id: Option<String>,
     threshold: Option<i32>,
+    instructions: Option<String>,
 ) -> Result<MemoryReviewResult, AppError> {
     require_auth(&state).await?;
+    if let Some(ref s) = instructions {
+        if s.chars().count() > MAX_INSTRUCTIONS_CHARS {
+            return Err(AppError::Validation(format!(
+                "instructions must be ≤{MAX_INSTRUCTIONS_CHARS} characters"
+            )));
+        }
+    }
     let db = state.db.clone();
     let threshold = threshold.unwrap_or(7);
 
@@ -258,6 +272,13 @@ pub async fn review_memories_with_cli(
     let memories_json = serde_json::to_string_pretty(&memory_entries)
         .map_err(|e| AppError::Internal(format!("Serialize: {e}")))?;
 
+    let guidance_block = instructions
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(|s| format!("\n\nAdditional guidance from operator:\n{s}\n"))
+        .unwrap_or_default();
+
     let prompt = format!(
         r#"You are reviewing agent memories from Personas, an AI agent management platform where autonomous agents execute tasks, use tools, handle events, and store memories to retain knowledge across executions.
 
@@ -269,7 +290,7 @@ Evaluate each memory for relevance to agent operations. Score 1-10:
 
 Respond with ONLY a JSON array. No markdown fences, no explanation, no surrounding text.
 Example: [{{"id":"abc-123","score":8,"reason":"Core operational context"}}]
-
+{guidance_block}
 Memories to review:
 {memories_json}"#
     );

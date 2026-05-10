@@ -136,7 +136,16 @@ fn default_confidence() -> f32 {
 /// the JSON envelope, persists each proposal as an item row, and
 /// finishes by setting the run to `review` (or `failed`). The user
 /// then walks the items in the review UI.
-pub async fn run_consolidation(pool: &UserDbPool) -> Result<String, AppError> {
+///
+/// `instructions` is optional natural-language steering (≤4096 chars)
+/// folded into the prompt as an "Additional guidance from operator"
+/// block. Mirrors the concept of Anthropic Managed Agents' dream
+/// `instructions` field, applied to personas's existing curation
+/// pipeline. Validation happens at the IPC boundary, not here.
+pub async fn run_consolidation(
+    pool: &UserDbPool,
+    instructions: Option<&str>,
+) -> Result<String, AppError> {
     let id = format!("cons_{}", short_uuid());
     let now = Utc::now().to_rfc3339();
 
@@ -170,7 +179,7 @@ pub async fn run_consolidation(pool: &UserDbPool) -> Result<String, AppError> {
         )?;
     }
 
-    let prompt = build_consolidation_prompt(&episodes, &existing_facts);
+    let prompt = build_consolidation_prompt(&episodes, &existing_facts, instructions);
 
     let envelope_result = call_claude_oneshot(&prompt).await;
 
@@ -650,7 +659,11 @@ fn is_valid_scope(s: &str) -> bool {
     matches!(s, "user" | "project" | "world")
 }
 
-fn build_consolidation_prompt(episodes: &[episodic::Episode], facts: &[semantic::Fact]) -> String {
+fn build_consolidation_prompt(
+    episodes: &[episodic::Episode],
+    facts: &[semantic::Fact],
+    instructions: Option<&str>,
+) -> String {
     let mut p = String::new();
     p.push_str(
         "You are running a memory consolidation pass for Athena, a long-term \
@@ -737,6 +750,12 @@ fn build_consolidation_prompt(episodes: &[episodic::Episode], facts: &[semantic:
                 content = ep.content.trim(),
             ));
         }
+    }
+
+    if let Some(extra) = instructions.map(str::trim).filter(|s| !s.is_empty()) {
+        p.push_str("\n# Additional guidance from operator\n\n");
+        p.push_str(extra);
+        p.push('\n');
     }
 
     p.push_str(
