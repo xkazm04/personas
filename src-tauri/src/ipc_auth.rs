@@ -238,6 +238,16 @@ pub const PRIVILEGED_COMMANDS: &[&str] = &[
     "register_claude_desktop_mcp",
     "unregister_claude_desktop_mcp",
     "check_claude_desktop_mcp",
+    // System -- Crash telemetry (read surfaces leak React error-boundary
+    // stacks that often contain BYOM keys / passphrases; clear surfaces
+    // can be used to wipe forensic evidence)
+    "get_crash_logs",
+    "clear_crash_logs",
+    "get_log_directory_stats",
+    "report_frontend_crash",
+    "get_frontend_crashes",
+    "clear_frontend_crashes",
+    "get_frontend_crash_count",
     // Credentials -- Desktop Bridges
     "execute_desktop_bridge",
     "execute_desktop_plan",
