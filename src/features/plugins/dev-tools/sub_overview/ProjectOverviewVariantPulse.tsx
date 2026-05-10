@@ -1,0 +1,432 @@
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import {
+  GitBranch, RefreshCw,
+  CircleDot, GitPullRequest, GitCommitHorizontal,
+  Bug, Activity, BarChart3, Shield, Key,
+  Code2, AlertCircle, CheckCircle2, ExternalLink, LayoutDashboard,
+  Settings,
+} from 'lucide-react';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { Button } from '@/features/shared/components/buttons';
+import { useSystemStore } from '@/stores/systemStore';
+import { useTranslation } from '@/i18n/useTranslation';
+import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker';
+import { splitSentrySlug } from './adapters';
+import {
+  ConnectorChain, MonitoringChain, SentryProjectPicker,
+} from './OverviewParts';
+import { type OverviewData } from './useOverviewData';
+
+/**
+ * VARIANT — "Pulse": glance-first health dashboard.
+ *
+ * Mental model: mission-control panel. The user answers "is my project OK
+ * right now?" in <2 seconds.
+ *
+ * Layout:
+ *   - Header: project identity + LifecycleProjectPicker + an animated
+ *     "vital sign" status dot + global Refresh in actions row.
+ *   - Hero strip (top): 6 vital-signs tiles in a single row using large
+ *     numerals (typo-data-lg) with status-token tinting based on threshold.
+ *   - Connections rail (below): one compact row per integration showing
+ *     the credential + key context inline. The full connection chain is
+ *     hidden behind a per-row expand caret so it's available without
+ *     dominating the layout.
+ *
+ * Differs from baseline:
+ *   - Stats first, chain second (baseline puts chain on top of every panel).
+ *   - One full-width row of 6 numbers instead of two 4-tile grids stacked
+ *     side-by-side; the eye scans left-to-right once instead of zig-zagging.
+ *   - Status tinting derives from real values (open issues > 0 → amber,
+ *     unresolved errors > 0 → red, last-push > 14 days → amber).
+ *   - Chain UI is opt-in per row, not always-on.
+ */
+export function ProjectOverviewVariantPulse({ data }: { data: OverviewData }) {
+  const { t } = useTranslation();
+  const po = t.project_overview;
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
+  const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
+
+  const {
+    activeProjectId, activeProject, credentials, repoCreds, sentryCreds,
+    repoState, repoProvider, repoStats, repoError,
+    activeRepoCredId, setActiveRepoCredId,
+    monitorState, monitorStats, monitorError,
+    loadRepoStats, loadMonitorStats, refresh,
+  } = data;
+
+  const [showRepoChain, setShowRepoChain] = useState(false);
+  const [showMonitorChain, setShowMonitorChain] = useState(false);
+
+  if (!activeProjectId || !activeProject) {
+    return (
+      <ContentBox>
+        <ContentHeader
+          icon={<LayoutDashboard className="w-5 h-5 text-primary" />}
+          iconColor="primary"
+          title={po.codebase}
+          actions={<LifecycleProjectPicker />}
+        />
+        <ContentBody centered>
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <LayoutDashboard className="w-10 h-10 text-foreground mb-3" />
+            <p className="typo-section-title">{po.no_project_selected}</p>
+            <p className="typo-body text-foreground mt-1">{po.select_project_hint}</p>
+          </div>
+        </ContentBody>
+      </ContentBox>
+    );
+  }
+
+  const isGitLab = repoProvider === 'gitlab';
+
+  // Vital-signs tinting — threshold-derived. The baseline assigns colours by
+  // semantic role ("open issues are always amber"); here we use status tokens
+  // because the user's actual question is "is this number good or bad?"
+  const issueTone = !repoStats || repoStats.openIssues === 0 ? 'neutral' : repoStats.openIssues > 50 ? 'error' : 'warning';
+  const prTone = !repoStats || repoStats.openPullRequests === 0 ? 'neutral' : 'info';
+  const commitsTone = !repoStats || repoStats.commitsLastWeek === 0 ? 'warning' : 'success';
+  const unresolvedTone = !monitorStats || monitorStats.unresolvedIssues === 0 ? 'success' : monitorStats.unresolvedIssues > 5 ? 'error' : 'warning';
+  const events24Tone = !monitorStats || monitorStats.eventsLast24h === 0 ? 'success' : monitorStats.eventsLast24h > 100 ? 'error' : 'warning';
+  const events7Tone = !monitorStats || monitorStats.eventsLastWeek === 0 ? 'success' : 'info';
+
+  const repoLinked = repoState === 'connected' && repoStats !== null;
+  const monitorLinked = monitorState === 'connected' && monitorStats !== null;
+
+  // Overall pulse signal — green if both green, amber if any warning, red if any error
+  const overallTone =
+    (issueTone === 'error' || unresolvedTone === 'error' || events24Tone === 'error') ? 'error' :
+      (issueTone === 'warning' || commitsTone === 'warning' || unresolvedTone === 'warning' || events24Tone === 'warning') ? 'warning' :
+        (repoLinked && monitorLinked) ? 'success' : 'neutral';
+
+  const monitoringCred = activeProject.monitoring_credential_id
+    ? credentials.find((c) => c.id === activeProject.monitoring_credential_id) ?? null
+    : null;
+
+  return (
+    <ContentBox>
+      <ContentHeader
+        icon={
+          <div className="relative">
+            <LayoutDashboard className="w-5 h-5 text-primary" />
+            <PulseDot tone={overallTone} />
+          </div>
+        }
+        iconColor="primary"
+        title={activeProject.name}
+        subtitle={activeProject.root_path}
+        actions={
+          <div className="flex items-center gap-2">
+            <LifecycleProjectPicker />
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={<RefreshCw className="w-3.5 h-3.5" />}
+              onClick={refresh}
+            >
+              {po.retry}
+            </Button>
+          </div>
+        }
+      />
+
+      <ContentBody>
+        {/* ==================== Vital signs strip ==================== */}
+        <section className="mb-6">
+          <div className="flex items-baseline justify-between mb-3">
+            <h2 className="typo-label text-foreground/70">VITAL SIGNS</h2>
+            <span className="typo-caption text-foreground/50">Last refresh just now</span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+            <VitalTile icon={CircleDot} value={repoStats?.openIssues ?? '—'} label={po.open_issues} tone={issueTone} loading={repoState === 'loading'} />
+            <VitalTile icon={GitPullRequest} value={repoStats?.openPullRequests ?? '—'} label={isGitLab ? po.open_mrs : po.open_prs} tone={prTone} loading={repoState === 'loading'} />
+            <VitalTile icon={GitCommitHorizontal} value={repoStats?.commitsLastWeek ?? '—'} label={po.commits_this_week} tone={commitsTone} loading={repoState === 'loading'} />
+            <VitalTile icon={Bug} value={monitorStats?.unresolvedIssues ?? '—'} label={po.unresolved_issues} tone={unresolvedTone} loading={monitorState === 'loading'} />
+            <VitalTile icon={Activity} value={monitorStats?.eventsLast24h ?? '—'} label={po.events_24h} tone={events24Tone} loading={monitorState === 'loading'} />
+            <VitalTile icon={BarChart3} value={monitorStats?.eventsLastWeek ?? '—'} label={po.events_7d} tone={events7Tone} loading={monitorState === 'loading'} />
+          </div>
+        </section>
+
+        {/* ==================== Connections rail ==================== */}
+        <section>
+          <h2 className="typo-label text-foreground/70 mb-3">CONNECTIONS</h2>
+          <div className="rounded-card border border-primary/10 bg-card/30 divide-y divide-primary/5">
+            {/* --- Codebase row --- */}
+            <ConnectionRow
+              icon={Code2}
+              brandColor="text-foreground"
+              title={isGitLab ? 'GitLab' : 'GitHub'}
+              status={repoState}
+              statusError={repoError}
+              meta={
+                repoStats ? (
+                  <>
+                    <MetaPill icon={GitBranch} text={repoStats.defaultBranch} />
+                    {repoStats.lastPushAt && (
+                      <MetaPill text={`pushed ${relativeTime(repoStats.lastPushAt)}`} />
+                    )}
+                    {activeRepoCredId && credentials.find((c) => c.id === activeRepoCredId) && (
+                      <MetaPill icon={Key} text={credentials.find((c) => c.id === activeRepoCredId)!.name} dim />
+                    )}
+                  </>
+                ) : repoState === 'unmapped' && repoCreds.length > 0 ? (
+                  <MetaPill icon={Key} text={`${repoCreds.length} credential(s) found — needs repo URL`} tone="warning" />
+                ) : repoState === 'empty' ? (
+                  <MetaPill text="No GitHub/GitLab credential" tone="neutral" />
+                ) : null
+              }
+              actions={
+                <div className="flex items-center gap-1">
+                  {(repoState === 'unmapped' || repoState === 'empty') && (
+                    <Button
+                      variant="ghost"
+                      size="xs"
+                      onClick={() => repoState === 'empty' ? setSidebarSection('credentials') : setDevToolsTab('projects')}
+                    >
+                      {repoState === 'empty' ? po.go_to_connections : po.go_to_projects}
+                    </Button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setShowRepoChain((v) => !v)}
+                    className="p-1 rounded-interactive hover:bg-primary/10 transition-colors"
+                    title="Show connection chain"
+                  >
+                    <Settings className="w-3.5 h-3.5 text-foreground/60" />
+                  </button>
+                </div>
+              }
+            />
+            {showRepoChain && (
+              <div className="px-4 py-3 bg-primary/[0.03]">
+                {(repoState === 'connected' || repoState === 'error' || repoState === 'unmapped') ? (
+                  <ConnectorChain
+                    projectName={activeProject.name}
+                    url={activeProject.github_url ?? null}
+                    credentials={repoCreds}
+                    activeCredId={activeRepoCredId}
+                    onPickCred={(id) => { setActiveRepoCredId(id); }}
+                    onEditUrl={() => setDevToolsTab('projects')}
+                  />
+                ) : (
+                  <p className="typo-caption text-foreground/60">Set a repo URL on this project to see the connection chain.</p>
+                )}
+                {repoState === 'unmapped' && repoCreds.length > 0 && (
+                  <p className="typo-caption text-foreground mt-2">{po.set_repo_url}</p>
+                )}
+                {repoState === 'error' && (
+                  <Button variant="secondary" size="xs" className="mt-2" onClick={loadRepoStats}>{po.retry}</Button>
+                )}
+              </div>
+            )}
+
+            {/* --- Monitoring row --- */}
+            <ConnectionRow
+              icon={Shield}
+              brandColor="text-red-400"
+              title="Sentry"
+              status={monitorState}
+              statusError={monitorError}
+              meta={
+                monitorLinked ? (
+                  <>
+                    <MetaPill icon={Bug} text={`${monitorStats!.unresolvedIssues} unresolved`} tone={unresolvedTone} />
+                    <MetaPill text={splitSentrySlug(activeProject.monitoring_project_slug)[1] ?? '-'} dim />
+                    {monitoringCred && <MetaPill icon={Key} text={monitoringCred.name} dim />}
+                  </>
+                ) : monitorState === 'unmapped' ? (
+                  <MetaPill text="needs project link" tone="warning" />
+                ) : monitorState === 'empty' ? (
+                  <MetaPill text="No Sentry credential" tone="neutral" />
+                ) : null
+              }
+              actions={
+                <div className="flex items-center gap-1">
+                  {monitorState === 'empty' && (
+                    <Button variant="ghost" size="xs" onClick={() => setSidebarSection('credentials')}>
+                      {po.go_to_connections}
+                    </Button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setShowMonitorChain((v) => !v)}
+                    className="p-1 rounded-interactive hover:bg-primary/10 transition-colors"
+                    title="Show connection chain"
+                  >
+                    <Settings className="w-3.5 h-3.5 text-foreground/60" />
+                  </button>
+                </div>
+              }
+            />
+            {showMonitorChain && (
+              <div className="px-4 py-3 bg-primary/[0.03]">
+                {(monitorState === 'connected' || monitorState === 'error' || monitorState === 'unmapped') && (
+                  <MonitoringChain
+                    projectName={activeProject.name}
+                    credential={monitoringCred}
+                    slug={activeProject.monitoring_project_slug ?? null}
+                  />
+                )}
+                {monitorState === 'unmapped' && (
+                  <SentryProjectPicker
+                    credentials={sentryCreds}
+                    projectId={activeProject.id}
+                    onLinked={() => {
+                      refresh();
+                      setTimeout(() => loadMonitorStats(), 500);
+                    }}
+                  />
+                )}
+                {monitorState === 'error' && (
+                  <Button variant="secondary" size="xs" className="mt-2" onClick={loadMonitorStats}>{po.retry}</Button>
+                )}
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* Subtle inline hint at the bottom — keeps the page feeling alive */}
+        {(!repoLinked || !monitorLinked) && (
+          <p className="typo-caption text-foreground/50 mt-4 flex items-center gap-1.5">
+            <ExternalLink className="w-3 h-3" />
+            Connect more sources to enrich the dashboard. Use the cog on each row to inspect or fix the chain.
+          </p>
+        )}
+      </ContentBody>
+    </ContentBox>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Sub-components — extractable
+// ---------------------------------------------------------------------------
+
+type Tone = 'success' | 'warning' | 'error' | 'info' | 'neutral';
+
+const TONE_BG: Record<Tone, string> = {
+  success: 'bg-status-success/10 border-status-success/25',
+  warning: 'bg-status-warning/10 border-status-warning/25',
+  error: 'bg-status-error/10 border-status-error/25',
+  info: 'bg-status-info/10 border-status-info/25',
+  neutral: 'bg-card/40 border-primary/10',
+};
+const TONE_TEXT: Record<Tone, string> = {
+  success: 'text-status-success',
+  warning: 'text-status-warning',
+  error: 'text-status-error',
+  info: 'text-status-info',
+  neutral: 'text-foreground/70',
+};
+
+function VitalTile({
+  icon: Icon, value, label, tone, loading,
+}: {
+  icon: typeof CircleDot;
+  value: string | number;
+  label: string;
+  tone: Tone;
+  loading?: boolean;
+}) {
+  return (
+    <div className={`rounded-card border ${TONE_BG[tone]} px-3 py-2.5 transition-colors`}>
+      <div className="flex items-center justify-between mb-1.5">
+        <Icon className={`w-3.5 h-3.5 ${TONE_TEXT[tone]}`} />
+        {loading && <RefreshCw className="w-3 h-3 animate-spin text-foreground/30" />}
+      </div>
+      <p className={`typo-data-lg leading-none ${TONE_TEXT[tone]}`}>{value}</p>
+      <p className="typo-caption text-foreground/60 truncate mt-1">{label}</p>
+    </div>
+  );
+}
+
+function PulseDot({ tone }: { tone: Tone }) {
+  const colour = tone === 'success' ? 'bg-status-success' : tone === 'warning' ? 'bg-status-warning' : tone === 'error' ? 'bg-status-error' : 'bg-status-neutral';
+  return (
+    <span className="absolute -top-0.5 -right-0.5 flex w-2.5 h-2.5">
+      <motion.span
+        className={`absolute inline-flex h-full w-full rounded-full ${colour} opacity-75`}
+        animate={{ scale: [1, 2, 1], opacity: [0.75, 0, 0.75] }}
+        transition={{ duration: 2.4, repeat: Infinity, ease: 'easeOut' }}
+      />
+      <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${colour}`} />
+    </span>
+  );
+}
+
+function ConnectionRow({
+  icon: Icon, brandColor, title, status, statusError, meta, actions,
+}: {
+  icon: typeof Code2;
+  brandColor: string;
+  title: string;
+  status: string;
+  statusError: string | null;
+  meta: React.ReactNode;
+  actions: React.ReactNode;
+}) {
+  const statusIcon = status === 'connected' ? CheckCircle2
+    : status === 'loading' ? RefreshCw
+      : status === 'error' ? AlertCircle
+        : Key;
+  const statusTone = status === 'connected' ? 'text-status-success'
+    : status === 'loading' ? 'text-foreground/40 animate-spin'
+      : status === 'error' ? 'text-status-error'
+        : 'text-status-warning';
+  const StatusIcon = statusIcon;
+  return (
+    <div className="px-4 py-3 flex items-center gap-3">
+      <Icon className={`w-5 h-5 shrink-0 ${brandColor}`} />
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="typo-body font-medium text-foreground">{title}</span>
+          <StatusIcon className={`w-3.5 h-3.5 ${statusTone}`} />
+        </div>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {meta}
+        </div>
+        {status === 'error' && statusError && (
+          <p className="typo-caption text-status-error/80 mt-1 break-words">{statusError}</p>
+        )}
+      </div>
+      {actions}
+    </div>
+  );
+}
+
+function MetaPill({
+  icon: Icon, text, tone, dim,
+}: {
+  icon?: typeof Code2;
+  text: string;
+  tone?: Tone;
+  dim?: boolean;
+}) {
+  const cls = tone
+    ? `${TONE_BG[tone]} ${TONE_TEXT[tone]}`
+    : dim
+      ? 'border-primary/5 bg-card/40 text-foreground/50'
+      : 'border-primary/10 bg-card/30 text-foreground/80';
+  return (
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-pill border typo-caption ${cls}`}>
+      {Icon && <Icon className="w-3 h-3" />}
+      <span className="truncate max-w-[200px]">{text}</span>
+    </span>
+  );
+}
+
+// Quick relative-time formatter — keeps the dashboard recent-aware without
+// pulling in date-fns. Resolution: minute / hour / day / week.
+function relativeTime(iso: string): string {
+  const ms = Date.now() - new Date(iso).getTime();
+  const m = Math.round(ms / 60_000);
+  if (m < 1) return 'just now';
+  if (m < 60) return `${m}m ago`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.round(h / 24);
+  if (d < 7) return `${d}d ago`;
+  const w = Math.round(d / 7);
+  return `${w}w ago`;
+}
+
