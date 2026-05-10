@@ -1,4 +1,5 @@
 import { invoke, type InvokeArgs, type InvokeOptions } from "@tauri-apps/api/core";
+import * as Sentry from "@sentry/react";
 import { recordIpcCall } from "./ipcMetrics";
 import type { CommandName as RegisteredCommand } from "./commandNames.generated";
 import type { UnregisteredCommand } from "./commandNames.overrides";
@@ -367,6 +368,12 @@ function _invokeCore<T>(
   const h = new Headers(opts.headers);
   if (token) h.set("x-ipc-token", token);
   options = { ...opts, headers: h };
+
+  // Gate on _retryDepth === 0 so token-wait + auth-retry recursion don't
+  // triple the breadcrumb count for a single user-initiated call.
+  if (_retryDepth === 0) {
+    Sentry.addBreadcrumb({ category: 'ipc.invoke', message: cmd, level: 'info' });
+  }
 
   const invocation = invoke<T>(cmd, args ? coerceArgs(args) : undefined, options);
 
