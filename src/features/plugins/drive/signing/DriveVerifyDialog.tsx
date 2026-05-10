@@ -11,8 +11,11 @@ import type { DriveEntry } from "@/api/drive";
 import { useTranslation } from "@/i18n/useTranslation";
 import { toastCatch } from "@/lib/silentCatch";
 import type { VerifyDocumentResult } from "@/api/signing";
+import { BaseModal } from "@/features/shared/components/modals";
 
 import type { useSigning } from "./useSigning";
+
+const TITLE_ID = "drive-verify-dialog-title";
 
 interface Props {
   entry: DriveEntry;
@@ -46,15 +49,10 @@ export function DriveVerifyDialog({ entry, signing, onClose }: Props) {
       })
       .catch(() => setSidecarFound(false));
 
-    const esc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", esc);
     return () => {
       cancelled = true;
-      document.removeEventListener("keydown", esc);
     };
-  }, [entry.path, findSidecarInDrive, onClose]);
+  }, [entry.path, findSidecarInDrive]);
 
   const handleVerify = async () => {
     if (!sidecarJson.trim()) return;
@@ -70,16 +68,18 @@ export function DriveVerifyDialog({ entry, signing, onClose }: Props) {
   };
 
   return (
-    <div
-      className="fixed inset-0 z-[9998] flex items-center justify-center bg-background/60 surface-blur-modal"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
+    <BaseModal
+      isOpen
+      onClose={onClose}
+      titleId={TITLE_ID}
+      portal
+      maxWidthClass="max-w-none"
+      panelClassName="w-[560px] max-h-[85vh] flex flex-col rounded-modal border border-primary/25 bg-background/95 shadow-elevation-3"
     >
-      <div className="w-[560px] max-h-[85vh] flex flex-col rounded-modal border border-primary/25 bg-background/95 shadow-elevation-3">
+      <div className="contents">
         <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/15">
           <ShieldCheck className="w-4 h-4 text-sky-300" />
-          <div className="typo-section-title flex-1 truncate">
+          <div id={TITLE_ID} className="typo-section-title flex-1 truncate">
             {t.plugins.doc_signing.verify_heading}
           </div>
           <button
@@ -173,7 +173,7 @@ export function DriveVerifyDialog({ entry, signing, onClose }: Props) {
           )}
         </div>
       </div>
-    </div>
+    </BaseModal>
   );
 }
 
