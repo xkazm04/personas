@@ -39,7 +39,18 @@ pub async fn probe(host: &str, public_key: &str, secret_key: &str) -> LangfuseTe
     let url = format!("{host}{PROBE_PATH}");
     let auth = B64.encode(format!("{}:{}", public_key.trim(), secret_key.trim()));
 
-    let client = match reqwest::Client::builder().timeout(PROBE_TIMEOUT).build() {
+    // Use the SSRF-safe DNS resolver so a hostname that looks public but
+    // resolves to a private/loopback IP at request time (DNS rebinding) is
+    // blocked at the transport layer. The host-string validation in the
+    // command layer covers the static cases (file://, http remote, etc.);
+    // this covers the dynamic ones.
+    let client = match reqwest::Client::builder()
+        .timeout(PROBE_TIMEOUT)
+        .dns_resolver(std::sync::Arc::new(
+            crate::engine::ssrf_safe_dns::SsrfSafeDnsResolver,
+        ))
+        .build()
+    {
         Ok(c) => c,
         Err(e) => {
             return LangfuseTestResult {

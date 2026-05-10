@@ -9,10 +9,14 @@
 //! - **Manual** (advanced): `langfuse_test_connection` + `langfuse_save_config`
 //!   for users who already run a Langfuse instance somewhere else.
 
+use std::sync::Arc;
+
 use chrono::Utc;
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Manager, State};
+use url::Url;
 
 use crate::error::AppError;
+use crate::ipc_auth::require_privileged;
 use crate::langfuse::client::probe;
 use crate::langfuse::config;
 use crate::langfuse::docker;
@@ -23,6 +27,41 @@ use crate::langfuse::types::{
     LangfuseAdminCredentials, LangfuseConfig, LangfuseJobHandle, LangfuseJobKind,
     LangfuseSaveRequest, LangfuseStackInfo, LangfuseStackState, LangfuseTestResult,
 };
+use crate::AppState;
+
+/// Validate a Langfuse host URL. Mirrors the cloud-orchestrator policy: HTTPS
+/// for remote hosts; HTTP only for loopback (so users can test against a
+/// locally-running self-host). The DNS-rebinding defense in
+/// [`crate::engine::ssrf_safe_dns`] handles the case where a public hostname
+/// resolves to a private IP at request time.
+fn validate_langfuse_host(raw: &str) -> Result<Url, AppError> {
+    let trimmed = raw.trim();
+    if trimmed.is_empty() {
+        return Err(AppError::Validation("Host URL must not be empty".into()));
+    }
+
+    let parsed = Url::parse(trimmed)
+        .map_err(|e| AppError::Validation(format!("Invalid Langfuse host URL: {e}")))?;
+
+    match parsed.scheme() {
+        "https" => Ok(parsed),
+        "http" => {
+            let host = parsed.host_str().unwrap_or("");
+            if host == "localhost" || host == "127.0.0.1" || host == "[::1]" {
+                Ok(parsed)
+            } else {
+                Err(AppError::Validation(
+                    "HTTP is only allowed for localhost. Use HTTPS for remote Langfuse \
+                     instances to protect your secret key in transit."
+                        .into(),
+                ))
+            }
+        }
+        other => Err(AppError::Validation(format!(
+            "Unsupported URL scheme \"{other}://\". Use HTTPS (or HTTP for localhost)."
+        ))),
+    }
+}
 
 // ---------------------------------------------------------------------------
 // Manual connection commands
@@ -30,17 +69,25 @@ use crate::langfuse::types::{
 
 #[tauri::command]
 pub async fn langfuse_test_connection(
+    state: State<'_, Arc<AppState>>,
     host: String,
     public_key: String,
     secret_key: String,
 ) -> Result<LangfuseTestResult, AppError> {
+    require_privileged(&state, "langfuse_test_connection").await?;
+    // Reject obviously bad hosts (non-https remote, file://, gopher://, etc.)
+    // before we hand the URL + Basic-auth credentials to reqwest.
+    validate_langfuse_host(&host)?;
     Ok(probe(&host, &public_key, &secret_key).await)
 }
 
 #[tauri::command]
 pub async fn langfuse_save_config(
+    state: State<'_, Arc<AppState>>,
     request: LangfuseSaveRequest,
 ) -> Result<LangfuseTestResult, AppError> {
+    require_privileged(&state, "langfuse_save_config").await?;
+
     let LangfuseSaveRequest {
         host,
         public_key,
@@ -54,9 +101,10 @@ pub async fn langfuse_save_config(
     let trimmed_pk = public_key.trim().to_string();
     let trimmed_sk = secret_key.trim().to_string();
 
-    if trimmed_host.is_empty() {
-        return Err(AppError::Validation("Host URL must not be empty".into()));
-    }
+    // Validate the host BEFORE keyring writes -- avoids storing credentials
+    // alongside an URL we'd refuse to use.
+    validate_langfuse_host(&trimmed_host)?;
+
     if trimmed_pk.is_empty() || trimmed_sk.is_empty() {
         return Err(AppError::Validation(
             "Public and secret keys must not be empty".into(),
