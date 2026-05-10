@@ -11,6 +11,7 @@ import {
   type DiscoveredApp,
 } from '@/api/system/desktop';
 import { toastCatch, silentCatch } from '@/lib/silentCatch';
+import { trackInteraction } from '@/lib/sentry';
 import * as Sentry from '@sentry/react';
 
 /** Observable load state for the onboarding template list. */
@@ -152,11 +153,13 @@ export function useOnboardingState() {
   }, []);
 
   const handleNextFromAppearance = useCallback(() => {
+    trackInteraction('onboarding', 'step_complete', 'appearance');
     completeOnboardingStep('appearance');
     setOnboardingStep('discover');
   }, [completeOnboardingStep, setOnboardingStep]);
 
   const handleNextFromDiscover = useCallback(() => {
+    trackInteraction('onboarding', 'step_complete', 'discover');
     completeOnboardingStep('discover');
     setOnboardingStep('pick-template');
   }, [completeOnboardingStep, setOnboardingStep]);
@@ -250,6 +253,7 @@ export function useOnboardingState() {
     if (last && last.reviewId === onboardingSelectedReviewId && now - last.at < 1000) return;
     adoptionDedupeRef.current = { reviewId: onboardingSelectedReviewId, at: now };
     setIsAdopting(true);
+    trackInteraction('onboarding', 'step_complete', 'pick-template');
     completeOnboardingStep('pick-template');
     setOnboardingStep('adopt');
     setShowAdoptionWizard(true);
@@ -258,6 +262,7 @@ export function useOnboardingState() {
   const handleAdoptionComplete = async (personaId: string) => {
     setShowAdoptionWizard(false);
     setIsAdopting(false);
+    trackInteraction('onboarding', 'step_complete', 'adopt');
     completeOnboardingStep('adopt');
     // Explicit ID from the adoption wizard — no more guessing the newest
     // persona by created_at (which was racy against concurrent creates and
@@ -283,6 +288,7 @@ export function useOnboardingState() {
   };
 
   const handleExecutionComplete = useCallback(() => {
+    trackInteraction('onboarding', 'step_complete', 'execute');
     completeOnboardingStep('execute');
   }, [completeOnboardingStep]);
 
