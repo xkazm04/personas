@@ -40,3 +40,11 @@ export const projectTrackingIsMasterEnabled = (): Promise<boolean> =>
  */
 export const projectTrackingRunNow = (): Promise<void> =>
   invoke('project_tracking_run_now');
+
+/**
+ * Detect whether an Obsidian credential exists and return its
+ * configured vault path. Returns null when no credential is registered
+ * (the watch_obsidian checkbox stays disabled in that case).
+ */
+export const projectTrackingGetObsidianVault = (): Promise<string | null> =>
+  invoke('project_tracking_get_obsidian_vault');

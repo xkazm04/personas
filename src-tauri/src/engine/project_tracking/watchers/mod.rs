@@ -11,3 +11,4 @@
 
 pub mod git;
 pub mod ledger;
+pub mod obsidian;

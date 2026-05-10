@@ -10897,6 +10897,8 @@
       "tracking_column_watch_obsidian": "Obsidian",
       "tracking_column_last_pulse": "Last pulse",
       "tracking_obsidian_disabled_hint": "Obsidian opt-in lands in Phase 6 once a vault credential is detected.",
+      "tracking_obsidian_no_credential": "Add an Obsidian credential in Connections to enable note watching.",
+      "tracking_obsidian_vault_label": "Watching",
       "tracking_save": "Save",
       "tracking_save_failed": "Failed to save subscription",
       "tracking_saved": "Subscription saved",

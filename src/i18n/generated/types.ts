@@ -10903,6 +10903,8 @@ export type Translations = {
       tracking_column_watch_obsidian: string;
       tracking_column_last_pulse: string;
       tracking_obsidian_disabled_hint: string;
+      tracking_obsidian_no_credential: string;
+      tracking_obsidian_vault_label: string;
       tracking_save: string;
       tracking_save_failed: string;
       tracking_saved: string;

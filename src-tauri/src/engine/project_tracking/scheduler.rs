@@ -128,8 +128,19 @@ async fn run_project(
         }
     }
 
-    // Phase 6 will add the obsidian watcher here, gated on
-    // `sub.watch_obsidian` and `sub.obsidian_vault_path`.
+    if sub.watch_obsidian {
+        if let Some(vault_path_str) = &sub.obsidian_vault_path {
+            let vault_path = PathBuf::from(vault_path_str);
+            match watchers::obsidian::poll(&vault_path, since).await {
+                Ok(events) => all_events.extend(events),
+                Err(e) => warn!(
+                    project_id = %sub.project_id,
+                    error = %e,
+                    "obsidian watcher failed",
+                ),
+            }
+        }
+    }
 
     let event_count = all_events.len();
     for payload in &all_events {

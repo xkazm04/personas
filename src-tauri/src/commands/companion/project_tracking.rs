@@ -72,3 +72,41 @@ pub async fn project_tracking_run_now(
     ipc_auth::require_auth(&state).await?;
     scheduler::run_tick(&state.user_db, &app_handle).await
 }
+
+/// Detect whether an Obsidian credential exists in the vault and
+/// return its configured vault path. Used by the Dev Tools Phase 4
+/// editor to un-grey the watch_obsidian checkbox and pre-fill the
+/// path. Returns None when no Obsidian credential is registered.
+#[tauri::command]
+pub fn project_tracking_get_obsidian_vault(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Option<String>, AppError> {
+    ipc_auth::require_auth_sync(&state)?;
+    let conn = state.db.get()?;
+    // Obsidian credentials are stored with service_type='desktop_obsidian'.
+    // The vault path lives inside `config_data` JSON under the
+    // `vault_path` key. We pick the most-recently-created one when
+    // multiple exist.
+    let mut stmt = conn.prepare(
+        "SELECT config_data FROM persona_credentials
+         WHERE service_type = 'desktop_obsidian'
+         ORDER BY created_at DESC
+         LIMIT 1",
+    )?;
+    let row: Option<String> = stmt
+        .query_row([], |r| r.get(0))
+        .ok();
+    let Some(config_data) = row else {
+        return Ok(None);
+    };
+    let parsed: serde_json::Value = match serde_json::from_str(&config_data) {
+        Ok(v) => v,
+        Err(_) => return Ok(None),
+    };
+    let path = parsed
+        .get("vault_path")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .map(|s| s.to_string());
+    Ok(path)
+}

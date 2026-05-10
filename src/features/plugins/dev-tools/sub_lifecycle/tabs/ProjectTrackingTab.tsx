@@ -9,6 +9,7 @@ import {
   projectTrackingListSubscriptions,
   projectTrackingSetSubscription,
   projectTrackingIsMasterEnabled,
+  projectTrackingGetObsidianVault,
 } from '@/api/companion/projectTracking';
 import type { SubscriptionWithProject } from '@/lib/bindings/SubscriptionWithProject';
 
@@ -38,18 +39,21 @@ export function ProjectTrackingTab() {
   const [rows, setRows] = useState<SubscriptionWithProject[]>([]);
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
   const [masterEnabled, setMasterEnabled] = useState<boolean>(false);
+  const [obsidianVault, setObsidianVault] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      const [list, master] = await Promise.all([
+      const [list, master, vault] = await Promise.all([
         projectTrackingListSubscriptions(),
         projectTrackingIsMasterEnabled(),
+        projectTrackingGetObsidianVault(),
       ]);
       setRows(list);
       setDrafts(Object.fromEntries(list.map((r) => [r.projectId, rowToDraft(r)])));
       setMasterEnabled(master);
+      setObsidianVault(vault);
     } finally {
       setLoading(false);
     }
@@ -64,13 +68,21 @@ export function ProjectTrackingTab() {
       setDrafts((prev) => {
         const current = prev[projectId];
         if (!current) return prev;
-        return {
-          ...prev,
-          [projectId]: { ...current, ...patch, dirty: true },
-        };
+        const next = { ...current, ...patch, dirty: true };
+        // When the user enables watch_obsidian and no vault path is set
+        // yet, auto-fill from the detected Obsidian credential.
+        if (
+          patch.watchObsidian === true &&
+          !current.watchObsidian &&
+          !next.obsidianVaultPath &&
+          obsidianVault
+        ) {
+          next.obsidianVaultPath = obsidianVault;
+        }
+        return { ...prev, [projectId]: next };
       });
     },
-    [],
+    [obsidianVault],
   );
 
   const save = useCallback(
@@ -180,12 +192,18 @@ export function ProjectTrackingTab() {
                       onChange={(next) =>
                         updateDraft(row.projectId, { watchObsidian: next })
                       }
-                      disabled
+                      disabled={obsidianVault === null}
                     />
                   </div>
-                  <div className="typo-micro text-foreground/45 mt-2">
-                    {t.plugins.dev_lifecycle.tracking_obsidian_disabled_hint}
-                  </div>
+                  {obsidianVault === null ? (
+                    <div className="typo-micro text-foreground/45 mt-2">
+                      {t.plugins.dev_lifecycle.tracking_obsidian_no_credential}
+                    </div>
+                  ) : draft.watchObsidian ? (
+                    <div className="typo-micro text-foreground/55 mt-2">
+                      {t.plugins.dev_lifecycle.tracking_obsidian_vault_label}: <code>{draft.obsidianVaultPath ?? obsidianVault}</code>
+                    </div>
+                  ) : null}
 
                   <div className="flex items-center justify-between mt-3 pt-3 border-t border-primary/10">
                     <div className="typo-caption text-foreground/55">

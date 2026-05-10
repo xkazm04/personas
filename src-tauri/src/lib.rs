@@ -2051,6 +2051,7 @@ pub fn run() {
             commands::companion::project_tracking::project_tracking_set_master_enabled,
             commands::companion::project_tracking::project_tracking_is_master_enabled,
             commands::companion::project_tracking::project_tracking_run_now,
+            commands::companion::project_tracking::project_tracking_get_obsidian_vault,
             commands::companion::jobs::companion_list_jobs,
             commands::companion::jobs::companion_get_job,
             commands::companion::jobs::companion_enqueue_job,
