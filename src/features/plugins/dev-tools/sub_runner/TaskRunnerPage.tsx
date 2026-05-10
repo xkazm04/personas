@@ -12,6 +12,7 @@ import { ActionRow } from '@/features/shared/components/layout/ActionRow';
 import { Button } from '@/features/shared/components/buttons';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { useDevToolsActions } from '../hooks/useDevToolsActions';
+import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker';
 import { useSystemStore } from '@/stores/systemStore';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { TaskOutputPanel } from './TaskOutputPanel';
@@ -530,6 +531,7 @@ export default function TaskRunnerPage() {
         iconColor="amber"
         title={t.plugins.dev_tools.task_runner_title}
         subtitle={t.plugins.dev_tools.task_runner_subtitle}
+        actions={<LifecycleProjectPicker />}
       />
 
       <ContentBody>
