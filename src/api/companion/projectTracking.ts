@@ -31,3 +31,12 @@ export const projectTrackingSetMasterEnabled = (enabled: boolean): Promise<void>
  */
 export const projectTrackingIsMasterEnabled = (): Promise<boolean> =>
   invoke('project_tracking_is_master_enabled');
+
+/**
+ * Fire one tick out-of-cadence — used as the "first-run backfill" path
+ * when the user flips the master toggle ON. Per the locked design:
+ * consume the last 24h of git/ledger activity and produce one immediate
+ * pulse instead of waiting an hour.
+ */
+export const projectTrackingRunNow = (): Promise<void> =>
+  invoke('project_tracking_run_now');

@@ -118,7 +118,8 @@ pub async fn build_system_prompt(
     let connectors_md = format_connectors(&connector_names);
     let plugin_names = plugins::list_enabled(user_db).unwrap_or_default();
     let projects = crate::companion::projects::list(user_db).unwrap_or_default();
-    let plugins_md = format_plugins(&plugin_names, &projects);
+    let tracking_pulses_md = format_project_tracking_pulses(user_db, &plugin_names);
+    let plugins_md = format_plugins(&plugin_names, &projects, &tracking_pulses_md);
 
     Ok(compose(
         &constitution,
@@ -176,7 +177,8 @@ pub async fn build_system_prompt(
     let connectors_md = format_connectors(&connector_names);
     let plugin_names = plugins::list_enabled(user_db).unwrap_or_default();
     let projects = crate::companion::projects::list(user_db).unwrap_or_default();
-    let plugins_md = format_plugins(&plugin_names, &projects);
+    let tracking_pulses_md = format_project_tracking_pulses(user_db, &plugin_names);
+    let plugins_md = format_plugins(&plugin_names, &projects, &tracking_pulses_md);
 
     Ok(compose(
         &constitution,
@@ -381,9 +383,15 @@ fn format_doctrine(doctrine: &[DoctrineHit]) -> String {
 /// `projects` is forwarded into the dev_tools block so Athena always
 /// sees the live project registry (with their scan status) — passed
 /// in rather than read here so the function stays sync + testable.
+///
+/// `tracking_pulses` carries today's per-project pulse blocks
+/// (rendered Markdown). Empty unless the project_tracking master
+/// toggle is on AND `dev_tools` is among `enabled`. Phase 5 wires
+/// this; before then it's always empty.
 fn format_plugins(
     enabled: &[String],
     projects: &[crate::companion::projects::KnownProject],
+    tracking_pulses: &str,
 ) -> String {
     if enabled.is_empty() {
         return String::new();
@@ -422,6 +430,19 @@ fn format_plugins(
                         ));
                     }
                     s.push('\n');
+                }
+
+                if !tracking_pulses.is_empty() {
+                    s.push_str("### Today's project pulses\n\n");
+                    s.push_str(tracking_pulses);
+                    s.push_str(
+                        "\n_These pulses are produced once an hour by the project-tracking \
+                         consolidator (Sonnet 4.6) over git commits and the active-runs \
+                         ledger. When Michal asks 'what's happening on X' or 'what's drifting', \
+                         lean on these directions and tensions; cite specifics, don't invent. \
+                         For deeper drill-in (recent commits behind a direction), say so and \
+                         offer to dig — don't fabricate hashes._\n\n",
+                    );
                 }
 
                 s.push_str(
@@ -634,6 +655,79 @@ fn compose(
 
 fn recall_synthesis_format(b: &Briefing) -> String {
     crate::companion::brain::recall_synthesis::format_briefing_section(b)
+}
+
+/// Render today's project_tracking pulses as a Markdown block. Returns
+/// empty when:
+/// - `dev_tools` plugin is not in the enabled set (the user hasn't
+///   asked Athena to lead lifecycle), OR
+/// - no enabled subscriptions have a pulse for today.
+///
+/// Each project gets: name + narrative paragraph + 3-5 directions +
+/// 0-3 tensions. Per the locked design decision (Phase 5 token budget),
+/// soft cap at 5 projects — beyond that, summarize the tail to one
+/// line each.
+fn format_project_tracking_pulses(user_db: &UserDbPool, plugin_names: &[String]) -> String {
+    if !plugin_names.iter().any(|n| n == "dev_tools") {
+        return String::new();
+    }
+
+    let subs = match crate::engine::project_tracking::subscription::list_enabled(user_db) {
+        Ok(s) => s,
+        Err(e) => {
+            tracing::warn!(error = %e, "project_tracking: list_enabled failed for prompt");
+            return String::new();
+        }
+    };
+    if subs.is_empty() {
+        return String::new();
+    }
+
+    let mut blocks: Vec<(String, crate::engine::project_tracking::pulse::PulseRow)> = Vec::new();
+    for sub in &subs {
+        match crate::engine::project_tracking::pulse::load_today(user_db, &sub.project_id) {
+            Ok(Some(pulse_row)) => {
+                let project_name = sub
+                    .project_path
+                    .rsplit(['/', '\\'])
+                    .next()
+                    .unwrap_or(&sub.project_path)
+                    .to_string();
+                blocks.push((project_name, pulse_row));
+            }
+            Ok(None) => {} // no pulse for today yet
+            Err(e) => {
+                tracing::warn!(
+                    project_id = %sub.project_id,
+                    error = %e,
+                    "project_tracking: pulse load failed for prompt",
+                );
+            }
+        }
+    }
+
+    if blocks.is_empty() {
+        return String::new();
+    }
+
+    let mut out = String::new();
+    let cap = 5usize;
+    for (project_name, pulse_row) in blocks.iter().take(cap) {
+        out.push_str(
+            &crate::engine::project_tracking::consolidator::render_for_prompt(
+                pulse_row,
+                project_name,
+            ),
+        );
+        out.push('\n');
+    }
+    if blocks.len() > cap {
+        out.push_str(&format!(
+            "_…and {} more tracked project(s) — ask for them by name._\n\n",
+            blocks.len() - cap
+        ));
+    }
+    out
 }
 
 /// Voice addendum: only when the user toggled voice playback on. Tells

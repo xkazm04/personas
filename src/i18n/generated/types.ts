@@ -10478,6 +10478,11 @@ export type Translations = {
     companion: {
       name: string;
       role: string;
+      tracking_title: string;
+      tracking_subtitle: string;
+      tracking_master_label: string;
+      tracking_master_on: string;
+      tracking_master_off: string;
       open_label: string;
       panel_label: string;
       initializing: string;

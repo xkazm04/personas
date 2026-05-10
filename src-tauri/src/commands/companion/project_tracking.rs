@@ -5,8 +5,9 @@
 
 use std::sync::Arc;
 
-use tauri::State;
+use tauri::{AppHandle, State};
 
+use crate::engine::project_tracking::scheduler;
 use crate::engine::project_tracking::subscription::{
     self, SubscriptionUpdate, SubscriptionWithProject,
 };
@@ -57,4 +58,17 @@ pub fn project_tracking_is_master_enabled(
 ) -> Result<bool, AppError> {
     ipc_auth::require_auth_sync(&state)?;
     Ok(state.project_tracking.is_enabled())
+}
+
+/// Fire a single tick out-of-cadence. Used by the master toggle on its
+/// "first enable" path so the user gets an immediate pulse instead of
+/// waiting an hour. Per the locked first-run experience: backfill
+/// consumes the last 24h and produces one initial pulse.
+#[tauri::command]
+pub async fn project_tracking_run_now(
+    state: State<'_, Arc<AppState>>,
+    app_handle: AppHandle,
+) -> Result<(), AppError> {
+    ipc_auth::require_auth(&state).await?;
+    scheduler::run_tick(&state.user_db, &app_handle).await
 }

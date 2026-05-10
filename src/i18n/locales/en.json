@@ -10472,6 +10472,11 @@
     "companion": {
       "name": "Athena",
       "role": "thinking partner",
+      "tracking_title": "Project tracking",
+      "tracking_subtitle": "Athena absorbs CLI activity (git commits + active-runs ledger) into hourly per-project pulses she'll discuss with you when Dev Tools is on. Per-project flags live in Dev Tools → Lifecycle → Project Tracking.",
+      "tracking_master_label": "Track development activity",
+      "tracking_master_on": "ON — Sonnet consolidator runs every hour for enabled projects.",
+      "tracking_master_off": "OFF — no ingestion, no LLM, no brain writes.",
       "open_label": "Open Athena",
       "panel_label": "Athena — companion panel",
       "initializing": "Waking up…",

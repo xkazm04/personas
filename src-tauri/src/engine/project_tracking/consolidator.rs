@@ -21,7 +21,8 @@ use tokio::process::Command;
 use tokio::time::timeout;
 use tracing::{debug, warn};
 
-use crate::companion::session::base_cli_invocation;
+use crate::companion::brain::episodic::{self, EpisodeRole};
+use crate::companion::session::{base_cli_invocation, DEFAULT_SESSION_ID};
 use crate::db::UserDbPool;
 use crate::engine::project_tracking::events::EventPayload;
 use crate::engine::project_tracking::pulse::{
@@ -174,6 +175,43 @@ pub async fn run_for_project(
                 "projectId": sub.project_id,
                 "day": pulse::today_iso(),
             }),
+        );
+    }
+
+    // Phase 5: append a one-line system episode to companion's episodic
+    // memory so the chat-history retrieval path can surface "ran a
+    // pulse on X at Y" without reading engine_project_pulse directly.
+    // Best-effort — pulse already shipped; episodic write failure
+    // shouldn't escalate.
+    let directions_summary = if envelope.directions.is_empty() {
+        "no active directions".to_string()
+    } else {
+        envelope
+            .directions
+            .iter()
+            .take(3)
+            .cloned()
+            .collect::<Vec<_>>()
+            .join("; ")
+    };
+    let episode_body = format!(
+        "[project-tracking] {project_name}: pulse refreshed ({commits} commits, {runs} runs). \
+         Directions: {directions_summary}.",
+        project_name = project_name,
+        commits = commits,
+        runs = runs,
+        directions_summary = directions_summary,
+    );
+    if let Err(e) = episodic::append_episode(
+        pool,
+        DEFAULT_SESSION_ID,
+        EpisodeRole::System,
+        &episode_body,
+    ) {
+        warn!(
+            project_id = %sub.project_id,
+            error = %e,
+            "consolidator: episodic append failed; pulse upserted but no episode written",
         );
     }
 
