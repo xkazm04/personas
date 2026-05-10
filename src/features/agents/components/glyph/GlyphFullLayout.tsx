@@ -13,7 +13,7 @@ import { BuildSimulatePanel } from "@/features/agents/components/matrix/BuildSim
 // and parsed LLM summary sections on the right (with credential-add
 // flow integration). The Glyph variant gets parity automatically; no
 // reason to maintain a parallel report surface.
-import { TestReportModal } from "@/features/templates/sub_generated/gallery/matrix/TestReportModal";
+import { TestReportModal } from "@/features/templates/sub_generated/adoption/chronology/TestReportModal";
 import type { GlyphDimension } from "@/features/shared/glyph";
 import { useAgentStore } from "@/stores/agentStore";
 import { CapabilityAddModal } from "@/features/agents/components/newPersona/capabilityView";

@@ -23,7 +23,7 @@ import {
   TestRunningIndicator,
   TestResultsPanel,
   PromotionSuccessIndicator,
-} from '../../gallery/matrix/MatrixCommandCenterParts';
+} from './commandCenterParts';
 import { GlyphQuestionPanel } from '@/features/shared/glyph';
 
 export interface ChronologyCommandHubProps {
