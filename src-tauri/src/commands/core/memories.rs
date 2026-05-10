@@ -270,11 +270,13 @@ pub(crate) async fn run_memory_review_pipeline(
     pool: &crate::db::DbPool,
     opts: MemoryReviewPipelineOpts<'_>,
 ) -> Result<Option<MemoryReviewPipeline>, AppError> {
+    use crate::db::repos::execution::executions as executions_repo;
+
     let MemoryReviewPipelineOpts {
         persona_id,
         threshold,
         instructions,
-        include_recent_executions: _include_recent_executions,
+        include_recent_executions,
     } = opts;
 
     // 1. Fetch memories.
@@ -282,6 +284,56 @@ pub(crate) async fn run_memory_review_pipeline(
     if memories.is_empty() {
         return Ok(None);
     }
+
+    // 1b. F-SESSIONS: optionally fetch recent executions as session context.
+    //
+    // Anthropic's dreams take a memory store + up to 100 sessions. Personas's
+    // analog: feed the curator recent execution traces so it can spot
+    // memories that are stale relative to what the agent actually did.
+    // Only meaningful when persona_id is set (workspace-wide curation
+    // would mix execution traces from many personas, which the LLM
+    // can't sensibly correlate to memory entries).
+    //
+    // Per-execution clamps prevent prompt blowup: input_data and
+    // output_data are each truncated to 1024 chars with a `…[truncated]`
+    // marker; error_message stays as-is (typically short).
+    let executions_block = match (include_recent_executions, persona_id) {
+        (Some(n), Some(pid)) if n > 0 => {
+            let execs = executions_repo::get_by_persona_id(pool, pid, Some(n as i64))?;
+            if execs.is_empty() {
+                String::new()
+            } else {
+                let mut block = String::from("\n\n## Recent agent executions (oldest first)\n\n");
+                // Reverse to oldest-first so the LLM reads them in chronological
+                // order, matching how a human would scan a session log.
+                for ex in execs.iter().rev() {
+                    block.push_str(&format!(
+                        "### {created} — status: {status}\n",
+                        created = ex.created_at,
+                        status = ex.status,
+                    ));
+                    if let Some(input) = ex.input_data.as_deref() {
+                        block.push_str("**input:** ");
+                        block.push_str(&truncate_for_prompt(input, 1024));
+                        block.push('\n');
+                    }
+                    if let Some(output) = ex.output_data.as_deref() {
+                        block.push_str("**output:** ");
+                        block.push_str(&truncate_for_prompt(output, 1024));
+                        block.push('\n');
+                    }
+                    if let Some(err) = ex.error_message.as_deref() {
+                        block.push_str("**error:** ");
+                        block.push_str(err);
+                        block.push('\n');
+                    }
+                    block.push('\n');
+                }
+                block
+            }
+        }
+        _ => String::new(),
+    };
 
     // 2. Build prompt.
     let memory_entries: Vec<serde_json::Value> = memories
@@ -315,7 +367,7 @@ Evaluate each memory for relevance to agent operations. Score 1-10:
 
 Respond with ONLY a JSON array. No markdown fences, no explanation, no surrounding text.
 Example: [{{"id":"abc-123","score":8,"reason":"Core operational context"}}]
-{guidance_block}
+{guidance_block}{executions_block}
 Memories to review:
 {memories_json}"#
     );
@@ -498,6 +550,27 @@ Memories to review:
 /// logic before F-DRY).
 pub(crate) fn extract_json_array_from(s: &str) -> Option<String> {
     extract_json_array(s)
+}
+
+/// Clamp a free-form text field to `max_chars` characters for inclusion in
+/// an LLM prompt. Char-boundary-aware so we never split a multi-byte UTF-8
+/// codepoint. Adds a `…[truncated]` marker when content was clipped so the
+/// model knows it's looking at a partial.
+fn truncate_for_prompt(s: &str, max_chars: usize) -> String {
+    if s.chars().count() <= max_chars {
+        return s.to_string();
+    }
+    let mut end = 0usize;
+    for (i, _) in s.char_indices().take(max_chars) {
+        end = i;
+    }
+    // `end` now points at the last kept-char's start; advance to its end.
+    if let Some((next_idx, _)) = s.char_indices().nth(max_chars) {
+        end = next_idx;
+    } else {
+        end = s.len();
+    }
+    format!("{}…[truncated]", &s[..end])
 }
 
 /// Run an LLM-driven relevance review across persona memories.
@@ -911,6 +984,36 @@ fn extract_json_array(text: &str) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn truncate_for_prompt_short_string_unchanged() {
+        let s = "hello";
+        assert_eq!(truncate_for_prompt(s, 10), "hello");
+    }
+
+    #[test]
+    fn truncate_for_prompt_at_boundary_unchanged() {
+        let s = "hello";
+        assert_eq!(truncate_for_prompt(s, 5), "hello");
+    }
+
+    #[test]
+    fn truncate_for_prompt_long_string_clipped() {
+        let s = "abcdefghij";
+        let out = truncate_for_prompt(s, 5);
+        assert_eq!(out, "abcde…[truncated]");
+    }
+
+    #[test]
+    fn truncate_for_prompt_handles_multibyte_safely() {
+        // 5 grinning-face emoji = 5 chars, 20 bytes. Asking for 3 chars
+        // must not split a codepoint mid-byte.
+        let s = "😀😀😀😀😀";
+        let out = truncate_for_prompt(s, 3);
+        assert_eq!(out, "😀😀😀…[truncated]");
+        // And a request equal to the char count is a pass-through.
+        assert_eq!(truncate_for_prompt(s, 5), s);
+    }
 
     #[test]
     fn extract_json_array_simple() {
