@@ -129,24 +129,22 @@ in `result.errors` so the operator sees the rejection.
 
 Pattern catalogue: 9 items.
 
-## Remaining critical themes (handed off to fresh session)
+## Backlog retired (2026-05-10)
 
-The remaining ~38 criticals across the INDEX should be tackled in a
-fresh conversation to avoid context-budget quality decay. Suggested
-next-up by priority:
+At the end of this session the user directed: close out the remaining
+backlog rather than continue. The INDEX.md, the 25 per-context bug
+reports, and the provenance JSON files (`_contexts-raw.json`,
+`_dispatch.json`, `_findings.json`) have been removed from the repo
+in the same commit that retires this wave.
 
-- **Wave 2B** — Subprocess argv-injection (artist #1, #3 + twin #1 +
-  connector-catalog #1). 4 criticals, single mental model: shell-arg
-  sanitisation and `--`-separator discipline.
-- **Wave 3** — Execution-engine cancel/retry/tick (4 criticals). All
-  in `engine/runner.rs` + `scheduler.rs`. Cancellation tokens,
-  `MissedTickBehavior::Delay`, watchdog return-value disambiguation.
-- **Wave 4** — Idempotency on CRUD & import (5 criticals).
-  `confirm_n8n_persona_draft`, `instant_adopt_template`, Studio
-  import IDs, `delete_persona`, composition cycle validation.
-- **Wave 5** — Save-race in editing surfaces (5 criticals). Pipeline
-  Canvas, Persona Editor, Chat & Lab.
-- **Wave 6** — Async/concurrency in IPC + chat send + onboarding
-  persistence (6 criticals).
-- **Wave 7** — Silent-failure observability (10 criticals, paced
-  across two sub-sessions).
+The full content is preserved in git history. To recover the original
+scan output, check out the commit that introduced the directory:
+
+```
+git show 47c8afe75 -- docs/harness/bug-hunt-2026-05-10/
+```
+
+The 38 criticals not closed in waves 1, 1B, and 2A are documented in
+that commit if anyone ever wants to resume. The three wave-summary
+docs in this directory (this file, FIXES-WAVE-1.md, FIXES-WAVE-1B.md)
+are kept as the durable record of what *was* shipped.
