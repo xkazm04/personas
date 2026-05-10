@@ -24,6 +24,10 @@ Home tabs are declared in `homeItems` in `src/features/shared/components/layout/
 
 Implementation contract: [live-roadmap/live-roadmap.md](live-roadmap/live-roadmap.md).
 
+## Activation Quest
+
+A persistent bottom-right pill (`OnboardingQuestPill`) tracks 7 first-run milestones and is rendered globally so it remains visible while the user navigates away from Home. It is owned by the onboarding feature — see [onboarding.md](onboarding.md) for the milestone list, store, and event listeners.
+
 ## Simple Mode
 
 Simple Mode is a separate starter-tier experience under `src/features/simple-mode`. It has a shell (`SimpleHomeShell.tsx`), variant views (`components/variants`), and system state in `simpleModeSlice.ts`. Tier visibility is controlled by `TIERS` and `isTierVisible`.
