@@ -26,13 +26,16 @@
 //! - Phase 3: `push` — out-of-cadence trigger from local_http.
 //! - Phase 6: `watchers/obsidian` (gated on Obsidian credential detection).
 
+pub mod consolidator;
 pub mod events;
+pub mod pulse;
 pub mod scheduler;
 pub mod subscription;
 pub mod watchers;
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use tauri::AppHandle;
 use tokio::task::JoinHandle;
 
 use crate::db::UserDbPool;
@@ -65,7 +68,7 @@ impl ProjectTracker {
     /// hook after `AppState` is built. Idempotent: a second call is a
     /// no-op (we don't want to multi-spawn the loop on accidental
     /// re-init paths like Tauri dev hot-reload).
-    pub fn start(&self, pool: UserDbPool) {
+    pub fn start(&self, pool: UserDbPool, app_handle: AppHandle) {
         let mut guard = match self.scheduler_handle.lock() {
             Ok(g) => g,
             Err(poisoned) => poisoned.into_inner(),
@@ -76,7 +79,7 @@ impl ProjectTracker {
             );
             return;
         }
-        let handle = scheduler::spawn(pool, self.enabled.clone());
+        let handle = scheduler::spawn(pool, self.enabled.clone(), app_handle);
         *guard = Some(handle);
     }
 

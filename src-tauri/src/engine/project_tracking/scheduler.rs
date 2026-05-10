@@ -19,11 +19,13 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use chrono::Utc;
+use tauri::AppHandle;
 use tokio::task::JoinHandle;
 use tokio::time::interval;
 use tracing::{info, warn};
 
 use crate::db::UserDbPool;
+use crate::engine::project_tracking::consolidator::{self, TickSnapshot};
 use crate::engine::project_tracking::events::{
     insert_event, prune_old_events, EventPayload,
 };
@@ -37,14 +39,18 @@ pub const TICK_INTERVAL: Duration = Duration::from_secs(3600);
 
 /// Spawn the scheduler loop. Returns the JoinHandle so a future
 /// shutdown path can abort it; for v1 we just spawn-and-forget.
-pub fn spawn(pool: UserDbPool, enabled: Arc<AtomicBool>) -> JoinHandle<()> {
+pub fn spawn(
+    pool: UserDbPool,
+    enabled: Arc<AtomicBool>,
+    app_handle: AppHandle,
+) -> JoinHandle<()> {
     tokio::spawn(async move {
         let mut ticker = interval(TICK_INTERVAL);
         // The first `tick()` fires immediately; we want to wait one full
         // interval before the first poll so the app has a chance to
-        // settle. (Phase 2's "first-run backfill" path runs out-of-band
-        // when the subscription is first toggled enabled, not from this
-        // loop.)
+        // settle. The "first-run backfill" path runs out-of-band when
+        // the subscription is first toggled enabled (Phase 5 wires it
+        // through the master toggle command), not from this loop.
         ticker.tick().await;
 
         loop {
@@ -52,7 +58,7 @@ pub fn spawn(pool: UserDbPool, enabled: Arc<AtomicBool>) -> JoinHandle<()> {
             if !enabled.load(Ordering::Relaxed) {
                 continue;
             }
-            if let Err(e) = run_tick(&pool).await {
+            if let Err(e) = run_tick(&pool, &app_handle).await {
                 warn!(error = %e, "project_tracking: tick failed");
             }
         }
@@ -60,15 +66,20 @@ pub fn spawn(pool: UserDbPool, enabled: Arc<AtomicBool>) -> JoinHandle<()> {
 }
 
 /// One tick worth of work. Public for the push accelerator (Phase 3) to
-/// call out-of-band when a CLI signals an interesting event.
-pub async fn run_tick(pool: &UserDbPool) -> Result<(), crate::error::AppError> {
+/// call out-of-band when a CLI signals an interesting event, and for
+/// the master toggle command (Phase 5) to fire the first-run backfill
+/// pulse on enable.
+pub async fn run_tick(
+    pool: &UserDbPool,
+    app_handle: &AppHandle,
+) -> Result<(), crate::error::AppError> {
     let subs = list_enabled(pool)?;
     if subs.is_empty() {
         return Ok(());
     }
 
     for sub in &subs {
-        if let Err(e) = run_project(pool, sub).await {
+        if let Err(e) = run_project(pool, sub, app_handle).await {
             warn!(
                 project_id = %sub.project_id,
                 error = %e,
@@ -88,6 +99,7 @@ pub async fn run_tick(pool: &UserDbPool) -> Result<(), crate::error::AppError> {
 async fn run_project(
     pool: &UserDbPool,
     sub: &Subscription,
+    app_handle: &AppHandle,
 ) -> Result<(), crate::error::AppError> {
     let project_path = PathBuf::from(&sub.project_path);
     let since = watch_since(sub);
@@ -120,8 +132,8 @@ async fn run_project(
     // `sub.watch_obsidian` and `sub.obsidian_vault_path`.
 
     let event_count = all_events.len();
-    for payload in all_events {
-        if let Err(e) = insert_event(pool, &sub.project_id, &payload) {
+    for payload in &all_events {
+        if let Err(e) = insert_event(pool, &sub.project_id, payload) {
             warn!(
                 project_id = %sub.project_id,
                 kind = payload.kind(),
@@ -135,9 +147,24 @@ async fn run_project(
         info!(
             project_id = %sub.project_id,
             event_count,
-            "project_tracking: ingested events",
+            "project_tracking: ingested events; running consolidator",
         );
-        // Phase 2 will fire the consolidator here.
+        let project_name = sub
+            .project_path
+            .rsplit(['/', '\\'])
+            .next()
+            .unwrap_or(&sub.project_path)
+            .to_string();
+        let snapshot = TickSnapshot::from_events(project_name, &all_events);
+        if let Err(e) =
+            consolidator::run_for_project(pool, sub, snapshot, Some(app_handle)).await
+        {
+            warn!(
+                project_id = %sub.project_id,
+                error = %e,
+                "project_tracking: consolidator failed; pulse not updated this tick",
+            );
+        }
     }
 
     update_last_pulse_at(pool, &sub.project_id, Utc::now())?;
