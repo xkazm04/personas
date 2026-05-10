@@ -1,4 +1,4 @@
-import { deriveArchCategories, userHasCategoryCredential } from '../matrix/architecturalCategories';
+import { deriveArchCategories, userHasCategoryCredential } from '../../shared/architecturalCategories';
 
 interface ArchCategoryIconsProps {
   connectors: string[];

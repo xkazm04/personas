@@ -3,7 +3,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { Play, Download, Workflow, Server, Zap, UserCheck, Bell } from 'lucide-react';
 import { parseJsonOrDefault as parseJsonSafe } from '@/lib/utils/parseJson';
 import { BUTTON_VARIANTS } from '@/lib/utils/designTokens';
-import { deriveArchCategories } from './architecturalCategories';
+import { deriveArchCategories } from '../../shared/architecturalCategories';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { AgentIR, ConnectorReadinessStatus, ProtocolCapability } from '@/lib/types/designTypes';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';

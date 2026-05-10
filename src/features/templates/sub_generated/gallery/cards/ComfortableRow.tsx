@@ -10,7 +10,7 @@ import { deriveConnectorReadiness } from '../../shared/ConnectorReadiness';
 import { RowActionMenu } from './RowActionMenu';
 import { ArchCategoryIcons } from './ArchCategoryIcons';
 import { TemplateCategoryPills } from './TemplateCategoryPills';
-import { ExpandedRowContent } from '../matrix/ExpandedRowContent';
+import { ExpandedRowContent } from './ExpandedRowContent';
 import { getCachedLightFields, getCachedDesignResult } from './reviewParseCache';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { TemplateModal } from './reviewParseCache';

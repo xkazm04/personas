@@ -1,6 +1,6 @@
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import { parseJsonSafe } from '@/lib/utils/parseJson';
-import { ARCH_CATEGORIES, computeCategoryReadiness, userHasCategoryCredential } from '../gallery/matrix/architecturalCategories';
+import { ARCH_CATEGORIES, computeCategoryReadiness, userHasCategoryCredential } from './architecturalCategories';
 
 interface SuggestedConnectorShape {
   name?: string;

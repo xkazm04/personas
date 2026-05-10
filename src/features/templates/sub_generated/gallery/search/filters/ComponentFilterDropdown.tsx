@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Search, Layers, ChevronDown, CheckCircle2 } from 'lucide-react';
-import { ARCH_CATEGORIES, type ArchCategory } from '../../matrix/architecturalCategories';
+import { ARCH_CATEGORIES, type ArchCategory } from '../../../shared/architecturalCategories';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { useViewportClampAbsolute } from '@/hooks/utility/interaction/useViewportClamp';
 import { useDebounce } from '@/hooks/utility/timing/useDebounce';
