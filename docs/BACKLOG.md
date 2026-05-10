@@ -4,6 +4,47 @@ A single source for everything the docs tree should grow into: shipped concepts 
 
 > **Created:** 2026-05-09 from a deep audit of all 145 live docs against the current codebase. The audit verdicts (per-file OK / minor-drift / major-drift / move) are not duplicated here — they were applied in-place during the same pass. This file lists only the *forward* work.
 
+## 2026-05-10 progress sweep
+
+Two `/explorer` doc-coverage runs landed across the day:
+
+**Morning sweep — features/ coverage** (`exp-df8m`, 10 commits `b6b5b27b9 → 9816c3413`):
+- ✅ `features/langfuse.md` (P1 plugin gap)
+- ✅ `features/gitlab.md` (P1 plugin gap)
+- ✅ `features/deployment/README.md` (P1 — undocumented `src/features/deployment/`)
+- ✅ `features/sharing/README.md` (P1 — undocumented `src/features/sharing/` + backend `commands/network/`)
+- ✅ `features/pipeline/README.md` (P1 — undocumented `src/features/pipeline/`)
+- ✅ `features/schedules.md` (P1 — undocumented `src/features/schedules/`)
+- ✅ `features/automation-tools.md` (`commands/tools/` 7-file module)
+- ✅ `features/onboarding.md` + `home.md` thin-doc augmentation
+- ✅ `features/README.md` index updated with 8 new rows
+- ✅ `feature-doc-map.json` 7 new entries (closes P0 plugin-map-gap)
+
+**Afternoon sweep — concepts/ audit** (`exp-dc7n`, 10 commits `5433edd64 → ea0996e08`):
+- ✅ `CLAUDE.md` broken `BUILD.md` / `ANDROID-BUILD.md` links fixed (P0)
+- ✅ `concepts/README.md` indexed 3 missing athena-desktop-aware docs
+- ✅ `concepts/langfuse-observability.md` banner-reframed → cross-links `features/langfuse.md`
+- ✅ `concepts/invisible-apps-p2p.md` banner-reframed → cross-links `features/sharing/`
+- ✅ MOVE `concepts/agent-operations-hub.md` → `features/agents/operations-hub.md` (P0)
+- ✅ MOVE `concepts/cli-coordination-active-runs.md` → `architecture/cli-coordination.md` (P0; CLAUDE.md inbound link updated)
+- ✅ MOVE `concepts/in-app-http-service.md` → `architecture/in-app-http-service.md` (P0)
+- ✅ MOVE `harness/simple-mode-roadmap.md` → `features/interface-modes/simple-mode.md` (P0)
+- ✅ `concepts/README.md` close-out (Active table trimmed, Moved out expanded)
+
+**Status of P0 list after 2026-05-10:**
+- ✅ All 5 concept-and-harness moves done
+- ✅ Plugin map-entry gap closed (gitlab + langfuse)
+- ✅ CLAUDE.md broken doc links fixed
+- ⏳ `langfuse-observability.md` and `invisible-apps-p2p.md` are banner-reframed (cross-link to shipped feature doc) but not full-moved — defer until Path A+ exploration concludes / Phase 3 internet P2P scopes
+- ⏳ `refactor/` resolution still pending (Are these still active? archive vs `architecture/refactoring/`)
+
+**Status of P1 list after 2026-05-10:**
+- ✅ All 4 undocumented `src/features/` areas covered (deployment, pipeline, schedules, sharing)
+- ✅ Both plugin docs landed (gitlab, langfuse)
+- ⏳ Architecture-level coverage gaps unchanged (CI workflow doc, codegen orchestration expansion, MCP user/troubleshooting docs)
+
+P2 (recommended-practice docs) and P3 (polish) untouched this sweep.
+
 Tag legend: **[S]** ≤ 30 min, **[M]** half a day, **[L]** full day or more.
 
 ---
