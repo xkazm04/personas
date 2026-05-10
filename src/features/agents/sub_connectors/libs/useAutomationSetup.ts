@@ -230,34 +230,6 @@ export function useAutomationSetup(personaId: string, editAutomationId?: string 
     && (!needsCredential || hasPlatformCredential)
     && (platform !== 'github_actions' || !!githubRepo);
 
-  // --- Focus trap & restore ---
-  const dialogRef = useRef<HTMLDivElement>(null);
-  const returnFocusRef = useRef<HTMLElement | null>(null);
-
-  const handleFocusTrap = useCallback((e: React.KeyboardEvent) => {
-    if (e.key !== 'Tab' || !dialogRef.current) return;
-
-    const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-    );
-    if (focusable.length === 0) return;
-
-    const first = focusable[0]!;
-    const last = focusable[focusable.length - 1]!;
-
-    if (e.shiftKey) {
-      if (document.activeElement === first) {
-        e.preventDefault();
-        last.focus();
-      }
-    } else {
-      if (document.activeElement === last) {
-        e.preventDefault();
-        first.focus();
-      }
-    }
-  }, []);
-
   return {
     design, editAutomation, description, setDescription, showAdvanced, setShowAdvanced,
     name, setName, platform, setPlatform, inputSchema, setInputSchema,
@@ -273,6 +245,5 @@ export function useAutomationSetup(personaId: string, editAutomationId?: string 
     timeoutSecsInvalid,
     /** Disable the Deploy button while a deploy is in flight or inputs are invalid. */
     canDeploy: !!name.trim() && !!platformCredentialId && !timeoutSecsInvalid && localPhase !== 'deploying',
-    dialogRef, returnFocusRef, handleFocusTrap,
   };
 }
