@@ -36,6 +36,34 @@ use self::markdown::{
 
 const SETTINGS_KEY: &str = "obsidian_brain_config";
 
+/// Atomically write `content` to `path` via temp-file + rename.
+///
+/// `std::fs::write` truncates the destination first and then streams bytes,
+/// so a process kill (OS reboot, OOM, taskkill) mid-write leaves a
+/// zero-byte or partial file on disk -- and any code that records sync
+/// progress *after* the write would treat that corrupted state as the
+/// new canonical content. Writing to `<path>.tmp` then renaming over
+/// `<path>` is atomic on the same filesystem (POSIX rename semantics;
+/// Windows MoveFileEx-equivalent), so the destination either contains
+/// the old bytes or the full new bytes -- never a torn write.
+///
+/// On rename failure (e.g. target file is open elsewhere on Windows),
+/// the temp file is best-effort cleaned up so we don't accumulate
+/// `.tmp` siblings under the vault.
+fn atomic_write(path: &Path, content: &[u8]) -> std::io::Result<()> {
+    let mut tmp_os = path.as_os_str().to_owned();
+    tmp_os.push(".tmp");
+    let tmp_path = std::path::PathBuf::from(tmp_os);
+    std::fs::write(&tmp_path, content)?;
+    match std::fs::rename(&tmp_path, path) {
+        Ok(()) => Ok(()),
+        Err(e) => {
+            let _ = std::fs::remove_file(&tmp_path);
+            Err(e)
+        }
+    }
+}
+
 // ── Phase 1: Vault Discovery & Config ────────────────────────────────
 
 #[tauri::command]
@@ -285,8 +313,9 @@ pub fn obsidian_brain_push_sync(
                     continue;
                 }
 
-                // Write file
-                if let Err(e) = std::fs::write(&file_path, &md_content) {
+                // Write file atomically so a kill mid-write doesn't corrupt
+                // an existing vault note (and advance sync state below).
+                if let Err(e) = atomic_write(&file_path, md_content.as_bytes()) {
                     result
                         .errors
                         .push(format!("Failed to write {}: {e}", file_path.display()));
@@ -364,7 +393,7 @@ pub fn obsidian_brain_push_sync(
                 continue;
             }
 
-            if let Err(e) = std::fs::write(&file_path, &md_content) {
+            if let Err(e) = atomic_write(&file_path, md_content.as_bytes()) {
                 result.errors.push(format!("Failed to write profile: {e}"));
                 continue;
             }
@@ -426,7 +455,7 @@ pub fn obsidian_brain_push_sync(
                 }
             }
 
-            if let Err(e) = std::fs::write(&file_path, &md_content) {
+            if let Err(e) = atomic_write(&file_path, md_content.as_bytes()) {
                 result
                     .errors
                     .push(format!("Failed to write connector: {e}"));
@@ -536,7 +565,7 @@ pub fn obsidian_brain_pull_sync(
             ThreeWayResult::AppChanged => {
                 // App changed, vault didn't — push update
                 let new_hash = compute_content_hash(&app_md);
-                let _ = std::fs::write(&file_path, &app_md);
+                let _ = atomic_write(&file_path, app_md.as_bytes());
                 let ss = SyncState {
                     id: tracked.id.clone(),
                     entity_type: "memory".into(),
@@ -862,7 +891,7 @@ pub fn obsidian_brain_resolve_conflict(
         "use_app" => {
             // Overwrite vault file with app content
             let file_path = vault_base.join(&conflict.file_path);
-            std::fs::write(&file_path, &conflict.app_content)
+            atomic_write(&file_path, conflict.app_content.as_bytes())
                 .map_err(|e| AppError::Internal(format!("Failed to write: {e}")))?;
             let new_hash = compute_content_hash(&conflict.app_content);
             let ss = SyncState {
@@ -1205,7 +1234,7 @@ pub fn obsidian_brain_push_goals(
             }
         }
 
-        match std::fs::write(&file_path, &content) {
+        match atomic_write(&file_path, content.as_bytes()) {
             Ok(()) => {
                 let _ = sync_repo::upsert_sync_state(
                     &state.db,
@@ -1479,7 +1508,7 @@ created: "{now}"
     );
 
     let file_path = folder.join(&filename);
-    match std::fs::write(&file_path, &content) {
+    match atomic_write(&file_path, content.as_bytes()) {
         Ok(()) => {
             tracing::info!("Pushed competition insight to Obsidian: {}", filename);
             Ok(true)
