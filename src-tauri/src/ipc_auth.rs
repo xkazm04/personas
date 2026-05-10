@@ -233,6 +233,11 @@ pub const PRIVILEGED_COMMANDS: &[&str] = &[
     "revoke_desktop_approvals",
     "is_desktop_connector_approved",
     "register_imported_mcp_server",
+    // System -- Claude Desktop MCP integration (writes attacker-controllable
+    // JSON into Claude Desktop's global config; must be gated)
+    "register_claude_desktop_mcp",
+    "unregister_claude_desktop_mcp",
+    "check_claude_desktop_mcp",
     // Credentials -- Desktop Bridges
     "execute_desktop_bridge",
     "execute_desktop_plan",
@@ -698,6 +703,16 @@ mod tests {
         );
         assert_eq!(
             command_tier("healthcheck_credential_preview"),
+            AuthTier::Privileged
+        );
+        // Writing into Claude Desktop's global mcpServers config is a host-level
+        // change that must require IPC privilege.
+        assert_eq!(
+            command_tier("register_claude_desktop_mcp"),
+            AuthTier::Privileged
+        );
+        assert_eq!(
+            command_tier("unregister_claude_desktop_mcp"),
             AuthTier::Privileged
         );
     }

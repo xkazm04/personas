@@ -1,4 +1,8 @@
 use crate::error::AppError;
+use crate::ipc_auth::require_privileged_sync;
+use crate::AppState;
+use std::sync::Arc;
+use tauri::State;
 
 /// Path to the Personas MCP server script relative to the app resources.
 pub fn resolve_mcp_server_path() -> Option<std::path::PathBuf> {
@@ -73,7 +77,10 @@ pub(crate) fn is_personas_mcp_registered() -> bool {
 }
 
 #[tauri::command]
-pub fn register_claude_desktop_mcp() -> Result<String, AppError> {
+pub fn register_claude_desktop_mcp(
+    state: State<'_, Arc<AppState>>,
+) -> Result<String, AppError> {
+    require_privileged_sync(&state, "register_claude_desktop_mcp")?;
     let mcp_server_path = resolve_mcp_server_path()
         .ok_or_else(|| AppError::NotFound("Personas MCP server script not found".into()))?;
 
@@ -128,7 +135,10 @@ pub fn register_claude_desktop_mcp() -> Result<String, AppError> {
 }
 
 #[tauri::command]
-pub fn unregister_claude_desktop_mcp() -> Result<String, AppError> {
+pub fn unregister_claude_desktop_mcp(
+    state: State<'_, Arc<AppState>>,
+) -> Result<String, AppError> {
+    require_privileged_sync(&state, "unregister_claude_desktop_mcp")?;
     let config_path = claude_desktop_config_path()
         .ok_or_else(|| AppError::NotFound("Claude Desktop config path not found".into()))?;
 
@@ -157,6 +167,9 @@ pub fn unregister_claude_desktop_mcp() -> Result<String, AppError> {
 }
 
 #[tauri::command]
-pub fn check_claude_desktop_mcp() -> Result<bool, AppError> {
+pub fn check_claude_desktop_mcp(
+    state: State<'_, Arc<AppState>>,
+) -> Result<bool, AppError> {
+    require_privileged_sync(&state, "check_claude_desktop_mcp")?;
     Ok(is_personas_mcp_registered())
 }
