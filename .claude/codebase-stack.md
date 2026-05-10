@@ -536,8 +536,65 @@ Discovered as a Phase 6 namespace clash during /research run 2026-05-10 (Claude 
 
 ### Testing
 - Unit tests live alongside source as `#[cfg(test)] mod tests` (Rust) or `*.test.ts` (TS).
-- E2E uses Playwright via `vitest.e2e.config.ts`.
-- Custom MCP-driven test automation framework also exists for Tauri IPC testing (~126ms/op, see memory `project_test_automation_framework`).
+- E2E (vitest layer) uses Playwright via `vitest.e2e.config.ts` for cli-stream contract tests.
+- **Live-app e2e** is a separate, custom 3-layer framework — see below.
+
+### Test automation: 3-layer pattern (load-bearing — codified 2026-05-10)
+
+Live-app e2e tests drive the running Tauri app through three coordinated layers. **Every new test affordance MUST flow through all three** — bypassing via `eval_js` is the failure mode this pattern prevents.
+
+```
+                   ┌─────────────────────────┐
+   Python script ──▶│ MCP tool                │  tools/test-mcp/server.py
+   (e2e_*.py)       │   28 tools mapping 1:1   │  (uvx-runnable)
+                   │   to HTTP routes        │
+                   └────────────┬────────────┘
+                                │ HTTP
+                                ▼
+                   ┌─────────────────────────┐
+                   │ Rust HTTP server         │  src-tauri/src/test_automation.rs
+                   │   38 routes on :17320   │  (axum, feature-gated `test-automation`)
+                   │   ↓ WebView eval()      │
+                   └────────────┬────────────┘
+                                │ JS eval
+                                ▼
+                   ┌─────────────────────────┐
+                   │ JS bridge                │  src/test/automation/bridge.ts
+                   │   ~60 macros on         │  (loaded only in dev mode)
+                   │   window.__TEST__       │
+                   └─────────────────────────┘
+```
+
+**Rule when adding a test affordance:**
+
+1. Add a method to the JS bridge (`src/test/automation/bridge.ts`) — declare it on the `TestBridge` interface and implement on the bridge object.
+2. Add an HTTP route in `src-tauri/src/test_automation.rs` that calls `eval_bridge_method(&state, "yourMethod", &params)` and register it in the `Router::new()` block.
+3. Add an MCP tool in `tools/test-mcp/server.py` exposing the route.
+4. Use it from a `tools/test-mcp/e2e_*.py` script. New scripts import shared helpers from `tools/test-mcp/lib/` (Client, Bridge, DB, wait_until, EventLog, snapshot) — do not copy-paste the legacy inline helpers.
+
+**Anti-pattern (avoid):** adding a bridge method without HTTP/MCP counterparts and reaching it via `bridge.exec("yourMethod", {})` over `/bridge-exec`. That works mechanically (the dispatcher exists) but erodes the layered model — within a few iterations every method becomes a one-off `eval_js` call. Eleven such orphan macros existed before 2026-05-10; track follow-up cleanup in [[Architect/backlog#orphan-bridge-macros]].
+
+### Test automation: build-from-intent canonical scenario (load-bearing — codified 2026-05-10)
+
+Building a test persona always follows this sequence. 13+ scripts already use it; new persona-building scripts MUST mirror this shape:
+
+```
+1. startBuildFromIntent({ intent, timeoutMs })       → returns { sessionId, personaId }
+2. loop:
+     waitForBuildPhase({ phases: [awaiting_input, draft_ready, …] })
+     listPendingBuildQuestions() → questions[]
+     answerPendingBuildQuestions({ answers: { cellKey: text, … } })
+   until phase ∈ {draft_ready, test_complete, promoted}
+3. triggerBuildTest()         → runs the draft against its scenario
+4. promoteBuildDraft()        → moves persona to `promoted` status
+5. executePersona({ id })     → fires a real execution
+```
+
+**Why it works:** answers are keyed by stable `cellKey` (e.g. `"behavior_core"`, `"connectors"`), not by question text — so LLM rewrites of the question phrasing don't break tests. The cellKey contract is the load-bearing thing; preserve it when refactoring `engine/build_session/`.
+
+**Canonical reference:** `tools/test-mcp/e2e_build_from_scratch.py`. New scripts should import the shared helpers from `tools/test-mcp/lib/` rather than reinventing the boilerplate; before 2026-05-10 ~1,360 LOC of duplicated post/bridge/db/poll helpers existed across 34 scripts.
+
+**Anti-pattern (avoid):** hardcoding answer dicts inline in each script (the Phase A-K scripts inherited this from before the lib existed). Extract scenario-specific recipes into a shared registry only when the same recipe is used in 3+ scripts; meanwhile the inline dict is fine for single-purpose scripts.
 
 ### Frontend conventions
 - **All UI conventions live in `.claude/CLAUDE.md` → "Important Conventions"** (auto-loaded into every conversation in this repo). Read that section before producing handoff plans that touch frontend code.

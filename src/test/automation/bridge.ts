@@ -58,6 +58,7 @@ interface TestBridge {
   openEditorTab(tab: string): { success: boolean; tab?: string; error?: string };
   startCreateAgent(): { success: boolean };
   getSnapshot(): Record<string, unknown>;
+  getRichSnapshot(): Record<string, unknown>;
   fillField(testId: string, value: string): { success: boolean; testId?: string; value?: string; error?: string };
   clickTestId(testId: string): { success: boolean; testId?: string; error?: string };
   waitForToast(text: string, timeoutMs?: number): Promise<{ success: boolean; text?: string; error?: string }>;
@@ -426,6 +427,38 @@ const bridge: TestBridge = {
       toasts,
       errors,
       forms,
+    };
+  },
+
+  /**
+   * Rich snapshot used by lib/snapshot.py to replace ad-hoc `_check_*.py`
+   * diagnostic scripts. Extends getSnapshot with build-session state and
+   * persona-count-by-status grouping. Delegates to getSnapshot for the
+   * shared DOM-traversal fields.
+   */
+  getRichSnapshot() {
+    const w = window as unknown as { __TEST__?: { getSnapshot?: () => Record<string, unknown> } };
+    const base = w.__TEST__?.getSnapshot?.() ?? {};
+    const agent = useAgentStore.getState();
+
+    const personasByStatus: Record<string, number> = {};
+    for (const p of agent.personas) {
+      const key = (p as unknown as { status?: string }).status || "unknown";
+      personasByStatus[key] = (personasByStatus[key] || 0) + 1;
+    }
+
+    return {
+      ...base,
+      buildSession: {
+        phase: agent.buildPhase ?? null,
+        sessionId: agent.buildSessionId ?? null,
+        personaId: agent.buildPersonaId ?? null,
+        error: agent.buildError ?? null,
+        outputLineCount: agent.buildOutputLines?.length ?? 0,
+        testPassed: agent.buildTestPassed ?? null,
+      },
+      personasByStatus,
+      personaCountByStatus: personasByStatus,
     };
   },
 
