@@ -31,4 +31,24 @@ gateway_exposure: PersonaGatewayExposure,
  * adoption. `None` for manually-created or pre-Phase-17 personas. Used by
  * Simple-mode's illustration resolver tier-3 (see `useIllustration.ts`).
  */
-template_category: string | null, created_at: string, updated_at: string, };
+template_category: string | null, 
+/**
+ * Phase 5 v1: per-persona gate for the Claude CLI session-resume
+ * awareness feature. When `true` AND the global cli_session toggle on
+ * `AmbientContextFusion` is also `true`, the runner injects a `## Active
+ * Claude CLI Session` block into the persona's system prompt before
+ * `runner::run_execution`. Defaults to `false` — explicit opt-in per
+ * persona. See `docs/features/companion/athena-cli-session-
+ * awareness.md`.
+ */
+cli_awareness_enabled: boolean, 
+/**
+ * Adoption pre-flight signal. `ready` (default) means every declared
+ * connector has a matching vault credential or is a built-in local
+ * resource. `needs_credentials` means the persona was created but one
+ * or more declared connectors have no vault entry — the UI shows a
+ * "Setup required" badge and the runtime scheduler should skip
+ * auto-execution until the user fixes it. Set by
+ * `instant_adopt_template_inner` and `promote_build_draft_inner`.
+ */
+setup_status: string, created_at: string, updated_at: string, };

@@ -2663,7 +2663,7 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     // injecting recent turns as a prompt prefix (alongside Phase 3 c ambient
     // context). Defaults to 0 (OFF) — must be paired with the global
     // cli_session toggle on AmbientContextFusion to actually fire.
-    // See docs/concepts/athena-desktop-aware-cli-session-awareness.md.
+    // See docs/features/companion/athena-cli-session-awareness.md.
     let has_cli_awareness: bool = conn
         .prepare("SELECT COUNT(*) FROM pragma_table_info('personas') WHERE name = 'cli_awareness_enabled'")?
         .query_row([], |row| row.get::<_, i64>(0))

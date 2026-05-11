@@ -42,7 +42,8 @@ personas (table)
   ├── timeout_ms              ← per-execution timeout (default 5m)
   ├── max_budget_usd          ← optional monthly cost cap
   ├── max_turns               ← optional agentic-loop turn cap
-  └── gateway_exposure        ← local_only | invite_only | public
+  ├── gateway_exposure        ← local_only | invite_only | public
+  └── cli_awareness_enabled   ← per-persona gate for Athena CLI session-resume awareness (Phase 5 v1, default OFF)
 
  Join tables (FK persona_id):
   ├── persona_tools + persona_tool_definitions      ← what the persona can CALL

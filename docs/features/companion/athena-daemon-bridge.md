@@ -1,7 +1,7 @@
-# Athena Desktop-Aware — Phase 3 c v3: Daemon Ambient Bridge
+# Athena Daemon Ambient Bridge (Phase 3 c v3)
 
-**Status:** Shipped 2026-05-09 across 7 atomic commits (`3a44b8360` → `44894728a` + step 7 e2e tests).
-**Pairs with:** [`ambient-context-fusion.md`](./ambient-context-fusion.md) (in-memory model), [`athena-desktop-aware-phase1-audit.md`](./athena-desktop-aware-phase1-audit.md) (foundation audit).
+**Status:** Shipped 2026-05-09 across 7 atomic commits (`3a44b8360` → `44894728a` + step 7 e2e tests). File-watcher producer wired 2026-05-11 (`8b7cdd7d`).
+**Pairs with:** [`ambient-context-fusion.md`](../../concepts/ambient-context-fusion.md) (in-memory model — partial; Fix A closed by the 2026-05-11 producer), [`../../architecture/athena-phase1-audit.md`](../../architecture/athena-phase1-audit.md) (foundation audit), [`./athena-cli-session-awareness.md`](./athena-cli-session-awareness.md) (sibling Phase 5).
 **Source roots:** `src-tauri/src/engine/ambient_signal_repo.rs`, `src-tauri/src/daemon/runtime.rs::inject_ambient_for_daemon`, schema in `src-tauri/src/db/migrations/schema.rs` (`ambient_signal` table).
 
 ---
@@ -100,7 +100,7 @@ The TTL is a single constant (`AMBIENT_SIGNAL_TTL_SECS` in `subscription.rs`) �
 
 ## Known limitations / future work
 
-1. **`file_watcher` signals not yet captured.** No external caller of `push_file_change` exists outside tests. When a file-watcher → ambient hook lands, the SQL mirror will be the same shape as the two existing sites.
-2. **macOS / Linux active-window watchers.** Windows is the only implemented platform for `app_focus`; Phase 4 will close that.
+1. ~~**`file_watcher` signals not yet captured.**~~ **CLOSED 2026-05-11 (`8b7cdd7d`).** `engine/file_watcher.rs::file_watcher_tick` now takes an `Option<&AmbientContextHandle>` and pushes each coalesced + debounced event through `AmbientContextFusion::push_file_change`. The capture-time `file_changes_enabled` gate (Phase 2) decides whether the row reaches the in-memory window AND the SQL mirror — file activity now flows to daemon-fired personas for free, no separate plumbing needed. `FileWatcherSubscription`'s previously-`#[allow(dead_code)]` `ambient_ctx` field is now load-bearing.
+2. **macOS / Linux active-window watchers.** Windows is the only implemented platform for `app_focus`; Phase 4 will close that. (Out of scope for the 2026-05-11 completion pass — needs platform-specific testing infrastructure not available from the Windows host.)
 3. **Per-persona policy projection.** Daemon path uses default policy; per-persona overrides aren't visible cross-process.
 4. **Active-app label parsing.** Daemon-rendered prompts omit the header; future enhancement could parse the newest `app_focus` summary.

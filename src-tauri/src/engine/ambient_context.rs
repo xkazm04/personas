@@ -217,7 +217,7 @@ pub struct AmbientContextFusion {
     /// Default false ("OFF until the user opts in"). Combined with `enabled`
     /// at the start of each `push_*` so capture only happens when both the
     /// master switch and the source-specific gate are on. See Phase 1 audit
-    /// at `docs/concepts/athena-desktop-aware-phase1-audit.md` — moving the
+    /// at `docs/architecture/athena-phase1-audit.md` — moving the
     /// per-source gating from consumption to capture is what makes the
     /// "default OFF per source" UI promise honest.
     clipboard_enabled: bool,

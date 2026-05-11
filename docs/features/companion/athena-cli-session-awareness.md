@@ -1,8 +1,8 @@
-# Athena Desktop-Aware — Phase 5 v1: Claude CLI Session-Resume Awareness
+# Athena CLI Session Awareness (Phase 5 v1)
 
-**Status:** Shipped 2026-05-09 across 8 atomic commits (steps 1, 2, 3, 4, 4b, 5, 6, 7).
-**Pairs with:** [`ambient-context-fusion.md`](./ambient-context-fusion.md), [`athena-desktop-aware-phase1-audit.md`](./athena-desktop-aware-phase1-audit.md), [`athena-desktop-aware-daemon-bridge.md`](./athena-desktop-aware-daemon-bridge.md).
-**Source roots:** `src-tauri/src/engine/cli_session_awareness/{discovery,transcript,render}.rs`, `src-tauri/src/engine/cli_session_audit_repo.rs`, runner wiring in `engine/mod.rs::run_execution_with_ceiling` and `daemon/runtime.rs::inject_cli_session_for_daemon`.
+**Status:** Shipped 2026-05-09 across 8 atomic commits (steps 1, 2, 3, 4, 4b, 5, 6, 7). Persona-editor UI shipped 2026-05-11 (`4c08b020`).
+**Pairs with:** [`ambient-context-fusion.md`](../../concepts/ambient-context-fusion.md), [`../../architecture/athena-phase1-audit.md`](../../architecture/athena-phase1-audit.md), [`./athena-daemon-bridge.md`](./athena-daemon-bridge.md).
+**Source roots:** `src-tauri/src/engine/cli_session_awareness/{discovery,transcript,render}.rs`, `src-tauri/src/engine/cli_session_audit_repo.rs`, runner wiring in `engine/mod.rs::run_execution_with_ceiling` and `daemon/runtime.rs::inject_cli_session_for_daemon`. Editor UI in `src/features/agents/sub_settings/components/PersonaSettingsTab.tsx`.
 
 ---
 
@@ -118,7 +118,7 @@ A persona authored by an external party (downloaded from a marketplace) inherits
 
 ## Known limitations / future work
 
-1. **No persona-editor UI yet for `cli_awareness_enabled`.** Column exists, repo round-trip works, but the editor doesn't currently render a checkbox. Personas can be flipped via `companion_update_persona` IPC or the "duplicate and edit JSON" workaround. Editor surface is a v1.5 follow-up.
+1. ~~**No persona-editor UI yet for `cli_awareness_enabled`.**~~ **CLOSED 2026-05-11 (`4c08b020`).** Toggle now lives in the Settings tab (Execution group, hidden in Simple mode), threaded through the canonical `UpdateSettings` → `PartialPersonaUpdate` → `UpdatePersonaInput` save funnel. `PersonaDraft.cliAwarenessEnabled` joins `SETTINGS_KEYS`; the compile-time exhaustiveness check will catch future drift. `data-testid="agent-cli-awareness"` for e2e harness reach. Defaults to OFF — no behavior change for existing personas.
 2. **Global gate persistence on startup is async.** The seed-from-app_settings runs in a `tauri::async_runtime::spawn`, so a persona execution that fires within ~50ms of app launch could see the gate at its default false. This is a near-zero-impact issue in practice (executions don't fire immediately at startup).
 3. **Active-app cwd binding.** The discovery picks "newest jsonl globally"; a v2 could use Phase 3 c app_focus to prefer the project whose cwd matches the user's foreground claude window.
 4. **No per-turn timestamps in the rendered prefix.** Claude Code's transcript format doesn't always include them on user/assistant lines (queue-operation lines do). The prefix omits "Nm ago" qualifiers per turn; the file-mtime-derived "Last activity: Nm ago" header gives session-level recency.

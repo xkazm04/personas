@@ -1,7 +1,7 @@
 //! Tauri commands for the companion's sensory layer (per-source capture
 //! gates over the ambient context window). Phase 2 v1 of the Athena
 //! desktop-aware roadmap — see
-//! `docs/concepts/athena-desktop-aware-phase1-audit.md` for the audit
+//! `docs/architecture/athena-phase1-audit.md` for the audit
 //! that surfaced capture-time gating as a requirement.
 //!
 //! ## Privacy contract

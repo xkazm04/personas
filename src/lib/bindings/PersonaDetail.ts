@@ -51,7 +51,7 @@ template_category: string | null,
  * `AmbientContextFusion` is also `true`, the runner injects a `## Active
  * Claude CLI Session` block into the persona's system prompt before
  * `runner::run_execution`. Defaults to `false` — explicit opt-in per
- * persona. See `docs/concepts/athena-desktop-aware-cli-session-
+ * persona. See `docs/features/companion/athena-cli-session-
  * awareness.md`.
  */
 cli_awareness_enabled: boolean, 

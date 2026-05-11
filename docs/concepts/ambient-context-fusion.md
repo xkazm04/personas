@@ -1,9 +1,11 @@
-# Ambient Context Fusion — Half-Wired Feature
+# Ambient Context Fusion — Mostly-Wired Feature
 
-**Status:** Concept / parked
-**Author:** Investigation 2026-04-27
+**Status:** Concept / partially shipped (Phase 3 c v1/v3 + Fix A)
+**Author:** Investigation 2026-04-27; revised 2026-05-11
 **Scope:** Settings.Engine "Ambient Context Fusion" panel, `engine/ambient_context.rs`, `engine/context_rules.rs`, build-session gates, prompt assembly, event wrapping
-**Decision:** Document for later. Not finishing the wiring now.
+**Update history:**
+- 2026-05-09: Fix B (runner injection) shipped via the Athena Phase 3 c v1 → v3 lineage — see [`../features/companion/athena-daemon-bridge.md`](../features/companion/athena-daemon-bridge.md). Capture-time per-source gates + window-title redaction landed in the same wave (Phase 2 expansion).
+- 2026-05-11: **Fix A (file_watcher producer) shipped (`8b7cdd7d`)** — `file_watcher_tick` now pushes coalesced+debounced FS events through `push_file_change`, mirrored to the SQL projection, daemon picks them up automatically. The "two-thirds wired" framing of Part 1 is now "fully wired"; Cases 1/3/4 in Part 3 remain the open leverage points.
 
 ## TL;DR
 

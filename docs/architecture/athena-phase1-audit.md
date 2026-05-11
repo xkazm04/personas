@@ -1,10 +1,11 @@
-# Athena Desktop-Aware — Phase 1 Audit Completion
+# Athena Desktop-Aware — Phase 1 Audit (Decision-Gate Record)
 
 **Source:** `idea-40cffac7-os-level-athena-desktop-aware.md` (deleted on completion of this audit, 2026-05-09).
 **Status:** Phase 1 complete. Decision gate: **GO** with two scope corrections (see below).
-**Out of scope:** Phases 2-6 follow this gate; each is its own session per the requirement's phased plan.
+**Phase status snapshot (2026-05-11):** Phase 2 (privacy UX), Phase 3 c (clipboard MVP + daemon bridge + file_watcher producer), Phase 5 (CLI session awareness with persona-editor UI) all shipped. Phase 4 (macOS / Linux active-window) is the only outstanding multi-session phase.
+**Sibling deliverables:** [`../features/companion/athena-daemon-bridge.md`](../features/companion/athena-daemon-bridge.md), [`../features/companion/athena-cli-session-awareness.md`](../features/companion/athena-cli-session-awareness.md).
 
-This document is the durable Phase-1 deliverable the requirement called for. It sits next to its sibling concept docs (`docs/concepts/cli-coordination-active-runs.md` and `docs/concepts/recipe-from-template-migration.md`) so future sessions implementing Phase 2+ start from a verified baseline rather than re-running the same audit.
+This document is the durable Phase-1 deliverable the requirement called for. It is preserved verbatim as the decision-gate record — the gaps it called out and the scope corrections it made are referenced by every subsequent Athena phase doc.
 
 ---
 
