@@ -5,7 +5,7 @@ import HomeWelcome from '@/features/home/components/HomeWelcome';
 
 const HomeReleases = lazy(() => import('@/features/home/components/releases/HomeReleases'));
 const HomeLearning = lazy(() => import('@/features/home/components/HomeLearning'));
-const Cockpit = lazy(() => import('@/features/simple-mode'));
+const Cockpit = lazy(() => import('@/features/home/components/cockpit/CockpitPanel'));
 
 
 export default function HomePage() {

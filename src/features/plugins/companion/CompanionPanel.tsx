@@ -20,6 +20,7 @@ import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownR
 import { useCompanionStore } from './companionStore';
 import {
   COMPANION_APPROVALS_EVENT,
+  COMPANION_COMPOSE_COCKPIT_EVENT,
   COMPANION_COMPOSE_DASHBOARD_EVENT,
   COMPANION_NAVIGATE_EVENT,
   COMPANION_OPEN_LAB_EVENT,
@@ -554,6 +555,19 @@ function Body(props: BodyProps) {
       sys.setCompanionPluginTab('dashboard');
     }, []),
     'companion_compose_dashboard_listen',
+  );
+
+  // compose_cockpit auto-fire — same shape as compose_dashboard but
+  // destinations are Home → Cockpit. Spec is already persisted server-side;
+  // we just navigate the user there so they see what Athena built.
+  useTauriEvent<unknown>(
+    COMPANION_COMPOSE_COCKPIT_EVENT,
+    useCallback(() => {
+      const sys = useSystemStore.getState();
+      sys.setSidebarSection('home');
+      sys.setHomeTab('cockpit');
+    }, []),
+    'companion_compose_cockpit_listen',
   );
 
   // Phase E: subscribe to proactive deliveries from the scheduler.

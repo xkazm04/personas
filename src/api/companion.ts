@@ -868,6 +868,40 @@ export async function companionGetDashboard(): Promise<CompanionDashboardSpec | 
   return invoke<CompanionDashboardSpec | null>('companion_get_dashboard');
 }
 
+// ── Cockpit (compose_cockpit op) ─────────────────────────────────────
+
+export type CompanionCockpitWidgetKind =
+  | 'persona_overview'
+  | 'connected_services'
+  | 'decisions_panel';
+
+export interface CompanionCockpitWidget {
+  id: string;
+  kind: CompanionCockpitWidgetKind | string;
+  title?: string;
+  span?: number;
+  config?: Record<string, unknown>;
+}
+
+export interface CompanionCockpitSpecBody {
+  title?: string;
+  widgets: CompanionCockpitWidget[];
+  updatedAt?: string;
+}
+
+/** Wire shape returned by `companion_get_cockpit`. `null` when unset. */
+export interface CompanionCockpitSpec {
+  specJson: string;
+  updatedAt: string;
+}
+
+export async function companionGetCockpit(): Promise<CompanionCockpitSpec | null> {
+  return invoke<CompanionCockpitSpec | null>('companion_get_cockpit');
+}
+
+/** Tauri event for `compose_cockpit` auto-fire. Payload is empty. */
+export const COMPANION_COMPOSE_COCKPIT_EVENT = 'companion://compose-cockpit';
+
 // ── Phase F: connectors pinned in the chat sidebar ────────────────────
 
 export interface CompanionConnector {
