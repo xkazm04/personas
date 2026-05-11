@@ -20,9 +20,12 @@ import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownR
 import { useCompanionStore } from './companionStore';
 import {
   COMPANION_APPROVALS_EVENT,
+  COMPANION_CHAT_CARDS_EVENT,
   COMPANION_COMPOSE_COCKPIT_EVENT,
   COMPANION_COMPOSE_DASHBOARD_EVENT,
   COMPANION_NAVIGATE_EVENT,
+  type ChatCard,
+  type CompanionChatCardsEvent,
   COMPANION_OPEN_LAB_EVENT,
   COMPANION_PROACTIVE_EVENT,
   COMPANION_STREAM_EVENT,
@@ -41,6 +44,7 @@ import {
 } from '@/api/companion';
 import type { SidebarSection } from '@/lib/types/types';
 import { ApprovalCard } from './ApprovalCard';
+import { InlineChatCard } from './InlineChatCard';
 import { ProactiveCard } from './ProactiveCard';
 import { AthenaAvatar } from './AthenaAvatar';
 import { BrainViewer } from './BrainViewer';
@@ -121,6 +125,8 @@ export default function CompanionPanel() {
   const appendProactive = useCompanionStore((s) => s.appendProactive);
   const removeProactive = useCompanionStore((s) => s.removeProactive);
   const setQuickReplies = useCompanionStore((s) => s.setQuickReplies);
+  const chatCards = useCompanionStore((s) => s.chatCards);
+  const setChatCards = useCompanionStore((s) => s.setChatCards);
   const setBrainView = useCompanionStore((s) => s.setBrainView);
   const setBetaSelfImprove = useCompanionStore((s) => s.setBetaSelfImprove);
   const setImproving = useCompanionStore((s) => s.setImproving);
@@ -196,6 +202,7 @@ export default function CompanionPanel() {
               setMessages([]);
               setApprovals([]);
               setQuickReplies([]);
+              setChatCards([]);
               setPendingPlayback(null);
               // Reset is the user's "make this go away" button — make
               // sure the prior turn's error chip vanishes too. Without
@@ -247,6 +254,7 @@ export default function CompanionPanel() {
             approvals={approvals}
             proactive={proactive}
             quickReplies={quickReplies}
+            chatCards={chatCards}
             brainView={brainView}
             betaSelfImprove={betaSelfImprove}
             improving={improving}
@@ -269,6 +277,7 @@ export default function CompanionPanel() {
             appendProactive={appendProactive}
             removeProactive={removeProactive}
             setQuickReplies={setQuickReplies}
+            setChatCards={setChatCards}
             setBrainView={setBrainView}
             setImproving={setImproving}
             setPendingPlayback={setPendingPlayback}
@@ -380,6 +389,7 @@ interface BodyProps {
   approvals: ReturnType<typeof useCompanionStore.getState>['approvals'];
   proactive: ReturnType<typeof useCompanionStore.getState>['proactive'];
   quickReplies: string[];
+  chatCards: ReturnType<typeof useCompanionStore.getState>['chatCards'];
   brainView: ReturnType<typeof useCompanionStore.getState>['brainView'];
   betaSelfImprove: boolean;
   improving: boolean;
@@ -402,6 +412,7 @@ interface BodyProps {
   appendProactive: (m: BodyProps['proactive'][number]) => void;
   removeProactive: (id: string) => void;
   setQuickReplies: (q: string[]) => void;
+  setChatCards: (c: ChatCard[]) => void;
   setBrainView: (next: BodyProps['brainView']) => void;
   setImproving: (v: boolean) => void;
   setPendingPlayback: (
@@ -422,6 +433,7 @@ function Body(props: BodyProps) {
     approvals,
     proactive,
     quickReplies,
+    chatCards,
     brainView,
     betaSelfImprove,
     improving,
@@ -444,6 +456,7 @@ function Body(props: BodyProps) {
     appendProactive,
     removeProactive,
     setQuickReplies,
+    setChatCards,
     setBrainView,
     setImproving,
     setPendingPlayback,
@@ -570,6 +583,20 @@ function Body(props: BodyProps) {
     'companion_compose_cockpit_listen',
   );
 
+  // Inline chat-cards (show_persona_overview / show_connected_services /
+  // show_decisions). One-shot — companion emits them per turn when she
+  // judges a UI snippet beats prose. Cleared on next send / reset above.
+  useTauriEvent<CompanionChatCardsEvent>(
+    COMPANION_CHAT_CARDS_EVENT,
+    useCallback((event) => {
+      const cards = event.payload?.cards;
+      if (cards && cards.length > 0) {
+        useCompanionStore.getState().setChatCards(cards);
+      }
+    }, []),
+    'companion_chat_cards_listen',
+  );
+
   // Phase E: subscribe to proactive deliveries from the scheduler.
   // Each event payload carries newly-delivered messages — we append
   // them to the store so the panel pops the "Athena reached out"
@@ -630,9 +657,11 @@ function Body(props: BodyProps) {
       const trimmed = text.trim();
       if (!trimmed) return;
       setSendError(null);
-      // Quick-replies are one-shot — clear before the new turn so they
-      // don't linger if Athena's reply doesn't offer fresh ones.
+      // Quick-replies + inline chat-cards are one-shot — clear before the
+      // new turn so they don't linger if Athena's reply doesn't offer fresh
+      // ones.
       setQuickReplies([]);
+      setChatCards([]);
       // Optimistic user bubble.
       const optimistic = {
         id: `optim_${Date.now()}`,
@@ -701,6 +730,7 @@ function Body(props: BodyProps) {
       setPendingPlayback,
       setPlaybackAudioUrl,
       setQuickReplies,
+      setChatCards,
       setSendError,
       setStreaming,
       voiceActive,
@@ -834,6 +864,9 @@ function Body(props: BodyProps) {
                   .catch(silentCatch('companion_list_recent_messages'));
               }}
             />
+          ))}
+          {chatCards.map((card, idx) => (
+            <InlineChatCard key={`${card.kind}-${idx}`} card={card} />
           ))}
           {sendError && (
             <div className="rounded-card border border-rose-500/30 bg-rose-500/10 px-3 py-2 typo-caption text-rose-400">

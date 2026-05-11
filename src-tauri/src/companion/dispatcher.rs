@@ -47,6 +47,11 @@ pub struct Dispatched {
     /// event to Home → Cockpit. Auto-fire for the same reason as dashboards:
     /// the user already asked for the surface.
     pub cockpits: Vec<String>,
+    /// Inline chat cards from `show_persona_overview` / `show_connected_services`
+    /// / `show_decisions`. Auto-fire (no approval) — companion uses these to
+    /// surface contextual info inside the chat transcript when she judges it
+    /// useful for the current turn. Each entry is `(kind, config_json)`.
+    pub chat_cards: Vec<ChatCard>,
     /// Quick-reply option labels Athena offered for this turn. Each entry
     /// is the literal user message that gets sent on click. Not persisted
     /// — the UI shows them on the latest assistant bubble until the next
@@ -61,6 +66,19 @@ pub struct Dispatched {
     /// Any malformed op blocks we encountered. Logged but otherwise
     /// silent — never block the turn for a syntax error.
     pub warnings: Vec<String>,
+}
+
+/// One inline chat-card request. `config` is widget-specific JSON the
+/// frontend forwards to the matching cockpit widget component.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChatCard {
+    /// Widget kind: `persona_overview` | `connected_services` | `decisions_panel`.
+    pub kind: String,
+    /// Optional title override.
+    pub title: Option<String>,
+    /// Free-form config block — serialized verbatim for the frontend.
+    pub config: serde_json::Value,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -244,6 +262,37 @@ pub fn dispatch(
                     "updated_at": now,
                 });
                 out.dashboards.push(spec.to_string());
+            }
+            Ok(env)
+                if env.op == "propose_action"
+                    && matches!(
+                        env.action.as_str(),
+                        "show_persona_overview" | "show_connected_services" | "show_decisions"
+                    ) =>
+            {
+                // Inline chat-cards. Map the action name to a cockpit widget kind
+                // and forward the params blob as `config`. Auto-fire; no approval.
+                let kind = match env.action.as_str() {
+                    "show_persona_overview" => "persona_overview",
+                    "show_connected_services" => "connected_services",
+                    "show_decisions" => "decisions_panel",
+                    _ => unreachable!(),
+                };
+                let title = env
+                    .params
+                    .get("title")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string());
+                let config = env
+                    .params
+                    .get("config")
+                    .cloned()
+                    .unwrap_or_else(|| serde_json::json!({}));
+                out.chat_cards.push(ChatCard {
+                    kind: kind.to_string(),
+                    title,
+                    config,
+                });
             }
             Ok(env) if env.op == "propose_action" && env.action == "compose_cockpit" => {
                 let widgets = env.params.get("widgets");

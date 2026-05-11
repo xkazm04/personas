@@ -60,6 +60,12 @@ pub const COMPOSE_DASHBOARD_EVENT: &str = "companion://compose-dashboard";
 /// persisted; the frontend navigates to Home → Cockpit on receipt.
 pub const COMPOSE_COCKPIT_EVENT: &str = "companion://compose-cockpit";
 
+/// Tauri event for inline chat-cards emitted via `show_persona_overview`,
+/// `show_connected_services`, `show_decisions`. Payload is the list of cards
+/// for this turn; the frontend appends them to the latest assistant bubble.
+/// Auto-fire — no approval, no server-side persistence (transient UI).
+pub const CHAT_CARDS_EVENT: &str = "companion://chat-cards";
+
 /// What `send_turn` returns to the chat command. The IDs let the UI
 /// reconcile the optimistic bubble with persisted episodes; the
 /// `quick_replies` carry Athena's QR offerings for this specific turn
@@ -289,6 +295,7 @@ pub async fn send_turn(
                     lab_opens: Vec::new(),
                     dashboards: Vec::new(),
                     cockpits: Vec::new(),
+                    chat_cards: Vec::new(),
                     quick_replies: Vec::new(),
                     tts_text: None,
                     warnings: vec![format!("dispatcher error: {e}")],
@@ -385,6 +392,18 @@ pub async fn send_turn(
         }
         if let Err(e) = app.emit(COMPOSE_COCKPIT_EVENT, serde_json::json!({})) {
             tracing::warn!(error = %e, "companion compose_cockpit event emit failed");
+        }
+    }
+
+    // Inline chat-cards. Transient (no persistence) — emit once per turn
+    // with the full list so the frontend appends to the latest bubble.
+    if !dispatched.chat_cards.is_empty() {
+        let payload = serde_json::json!({
+            "turnId": turn_id.clone(),
+            "cards": dispatched.chat_cards,
+        });
+        if let Err(e) = app.emit(CHAT_CARDS_EVENT, payload) {
+            tracing::warn!(error = %e, "companion chat_cards event emit failed");
         }
     }
 

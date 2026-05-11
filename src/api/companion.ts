@@ -902,6 +902,29 @@ export async function companionGetCockpit(): Promise<CompanionCockpitSpec | null
 /** Tauri event for `compose_cockpit` auto-fire. Payload is empty. */
 export const COMPANION_COMPOSE_COCKPIT_EVENT = 'companion://compose-cockpit';
 
+// ── Inline chat-cards (show_* ops) ───────────────────────────────────
+
+/**
+ * One inline chat-card emitted via `show_persona_overview`,
+ * `show_connected_services`, or `show_decisions`. The frontend renders these
+ * inside the latest assistant bubble (alongside ApprovalCards / QuickReplies).
+ */
+export interface ChatCard {
+  /** Widget kind from the cockpit registry — currently
+   *  `persona_overview` | `connected_services` | `decisions_panel`. */
+  kind: string;
+  title?: string;
+  config?: Record<string, unknown>;
+}
+
+/** Tauri event for chat-card delivery. Auto-fire, no approval. */
+export const COMPANION_CHAT_CARDS_EVENT = 'companion://chat-cards';
+
+export interface CompanionChatCardsEvent {
+  turnId: string;
+  cards: ChatCard[];
+}
+
 // ── Phase F: connectors pinned in the chat sidebar ────────────────────
 
 export interface CompanionConnector {

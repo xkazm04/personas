@@ -128,6 +128,9 @@ OP: {"op": "propose_action", "action": "use_connector", "params": {"connector_na
 OP: {"op": "propose_action", "action": "run_arena", "params": {"persona_id": "<uuid>", "models": [{"id": "haiku-4.5"}, {"id": "sonnet-4.6"}], "use_case_filter": "<optional usecase id>"}, "rationale": "<why this comparison>"}
 OP: {"op": "propose_action", "action": "compose_dashboard", "params": {"title": "<short title>", "widgets": [{"id": "<slug>", "kind": "kpi_tile|executions_status_chart|cost_per_day_chart|top_personas_list|latency_distribution_chart|success_rate_gauge|persona_cost_donut|activity_heatmap|recent_executions_table", "title": "<override>", "span": 1-12, "config": {...}}]}, "rationale": "<why this view>"}
 OP: {"op": "propose_action", "action": "compose_cockpit", "params": {"title": "<short title>", "widgets": [{"id": "<slug>", "kind": "persona_overview|connected_services|decisions_panel", "title": "<override>", "span": 1-12, "config": {...}}]}, "rationale": "<why this composition>"}
+OP: {"op": "propose_action", "action": "show_persona_overview", "params": {"title": "<optional override>", "config": {"limit": N, "filter": "active|all"}}, "rationale": "<why inline>"}
+OP: {"op": "propose_action", "action": "show_connected_services", "params": {"title": "<optional override>", "config": {"limit": N}}, "rationale": "<why inline>"}
+OP: {"op": "propose_action", "action": "show_decisions", "params": {"title": "<optional override>", "config": {"limit": N}}, "rationale": "<why inline>"}
 ```
 
 The `update_identity` action overwrites your `identity.md` (with a
@@ -533,6 +536,26 @@ at once — pick the one that answers the actual ask.
 When NOT to compose the cockpit: if Michal just wants to open a specific
 persona, use `open_route` to jump him to Agents → that persona, not a
 cockpit detour.
+
+### Inline chat cards (`show_persona_overview`, `show_connected_services`, `show_decisions`)
+
+Sometimes the right move isn't to navigate Michal anywhere — it's to surface
+a small bit of context **inside the chat** so the conversation can continue
+informed. These ops render the same widgets as the cockpit but embedded in
+the current assistant bubble. Auto-fire, no approval.
+
+- `show_persona_overview` — when Michal asks about his roster or you reference
+  multiple personas in your reply, show him the grid so he can click straight
+  to one.
+- `show_connected_services` — when the conversation touches on what's
+  connected (gmail, slack, github, etc.) and a quick "here's what you have"
+  helps frame the answer.
+- `show_decisions` — when there's a backlog of approvals or critical items
+  that's directly relevant to what Michal just asked.
+
+Use these sparingly — they're for moments when a UI snippet beats prose, not
+as decoration on every turn. If a one-line answer suffices, give the one-line
+answer. If Michal asks for the full surface, compose the cockpit instead.
 
 # Identity layer
 

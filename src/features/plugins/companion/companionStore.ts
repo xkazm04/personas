@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { CompanionState } from './types';
 import type {
   BrainKind,
+  ChatCard,
   CompanionConnector,
   CompanionMessage,
   PendingApproval,
@@ -78,6 +79,12 @@ interface CompanionStore {
   quickReplies: string[];
   setQuickReplies: (q: string[]) => void;
 
+  // Inline chat-cards emitted by `show_persona_overview` etc. One-shot, like
+  // quickReplies — cleared on next send / reset. Rendered in the chat body
+  // alongside ApprovalCards on the latest assistant turn.
+  chatCards: ChatCard[];
+  setChatCards: (cards: ChatCard[]) => void;
+
   // Brain Viewer state
   brainView: BrainViewState;
   setBrainView: (next: BrainViewState) => void;
@@ -143,6 +150,9 @@ export const useCompanionStore = create<CompanionStore>((set) => ({
 
   quickReplies: [],
   setQuickReplies: (quickReplies) => set({ quickReplies }),
+
+  chatCards: [],
+  setChatCards: (chatCards) => set({ chatCards }),
 
   brainView: { open: false, kind: null, id: null },
   setBrainView: (brainView) => set({ brainView }),
