@@ -54,38 +54,37 @@ impl CliProvider for ClaudeProvider {
     }
 
     fn minimum_version(&self) -> Option<&str> {
-        // CLI ≥ 2.1.136 — floor advances when a newer CLI fixes the wrapping
+        // CLI ≥ 2.1.139 — floor advances when a newer CLI fixes the wrapping
         // contract personas depends on. Recent floor:
-        // - 2.1.136: parallel-spawn login loop no longer occurs when a
-        //   concurrent credential write overwrites a freshly-rotated OAuth
-        //   token (real for competition / lab fan-out sharing
-        //   `~/.claude/credentials.json`); MCP OAuth refresh tokens no longer
-        //   lost when multiple remote MCP servers refresh concurrently (users
-        //   with several remote MCP gateways stop needing daily re-auth);
-        //   `--resume` / `--continue` now find sessions when the project path
-        //   contains underscores (real for users with `my_project`-style
-        //   paths); CLI emits a clean error message when `--worktree`
-        //   collides with an existing or stale worktree, which the
-        //   `task_executor` stderr-surfacing path now propagates to the user.
-        //   2.1.134 and 2.1.135 were skipped upstream — all changes batched
-        //   into 2.1.136.
-        // - 2.1.128: `claude -p` no longer crashes on >10MB stdin (defense for
-        //   the `cli_process` stdin-pipe contract); MCP tool results no longer
-        //   drop images when the server returns both structured content and
-        //   content blocks (matters for personas-mcp `drive_*` returning
-        //   binary content alongside metadata); sub-agent progress summaries
-        //   now hit the prompt cache (~3× `cache_creation` reduction) and no
-        //   longer fire repeatedly on static transcripts (worst-case token
-        //   cap); parallel shell tool calls no longer cancel siblings on a
-        //   single read-only failure. Version 2.1.127 was skipped upstream —
-        //   all changes batched into 2.1.128.
+        // - 2.1.139: stream watchdog no longer fires a spurious "stream idle
+        //   timeout" 5 minutes after a response completed (real defect — the
+        //   timer wasn't being cleared on stream cancellation, false-aborting
+        //   long-running personas via `engine/runner/mod.rs`); silent `exit 1`
+        //   on 10+ MCP servers + unwritable cache dir now surfaces the
+        //   underlying cause (matters for personas users wiring many INBOUND
+        //   MCP gateways via `mcp_gateway` connector); HTTP/SSE MCP response
+        //   bodies capped at 16 MB per SSE frame to defend `engine/mcp_tools.rs`
+        //   INBOUND consumers against misbehaving servers streaming
+        //   non-protocol data; hooks now run without terminal access so a
+        //   hook writing to the terminal can no longer corrupt an interactive
+        //   prompt (hardens the `hooks_sidecar.rs` contract); new hook
+        //   `args: string[]` exec-form field eliminates shell quoting (see
+        //   sibling commit converting `build_settings_json` to use it).
+        //   2.1.134 and 2.1.135 were skipped upstream; 2.1.130 was also skipped.
+        //   Earlier 2.1.136 narrative (OAuth parallel-spawn, MCP refresh, path
+        //   underscores, worktree errors) — see git history of this file.
+        // - 2.1.128: `claude -p` no longer crashes on >10MB stdin; MCP tool
+        //   results preserve images when servers return mixed content blocks;
+        //   sub-agent progress summaries hit prompt cache; parallel shell
+        //   tool-call siblings survive single-failure cancellation. 2.1.127
+        //   was skipped upstream.
         // Earlier floors (2.1.121–2.1.126) elided — see git history of this
         // file for the alwaysLoad / hooks-sidecar / sandbox-scope / OAuth
         // narrative. The 2026-05-01 sandbox-erosion threat model recorded
         // against the 2.1.126 floor lives in `Patterns/descoped-reopenable.md`.
         // The check is advisory: `provider::check_cli_version` returns an Err
         // string below the floor; no caller turns that into a hard refusal.
-        Some("2.1.136")
+        Some("2.1.139")
     }
 }
 
@@ -172,6 +171,6 @@ mod tests {
         let provider = ClaudeProvider;
         let min = provider.minimum_version();
         assert!(min.is_some());
-        assert_eq!(min.unwrap(), "2.1.128");
+        assert_eq!(min.unwrap(), "2.1.139");
     }
 }
