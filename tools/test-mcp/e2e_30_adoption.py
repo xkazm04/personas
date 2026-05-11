@@ -79,16 +79,23 @@ def db_query(sql, params=()):
 # ═══════════════════════════════════════════════════════════════════════════════
 
 OUR_TEMPLATE_SLUGS = {
-    "access-request-manager", "budget-spending-monitor", "contact-enrichment-agent",
-    "contact-sync-manager", "content-performance-reporter", "content-schedule-manager",
-    "daily-standup-compiler", "database-performance-monitor", "email-follow-up-tracker",
-    "email-lead-extractor", "email-task-extractor", "expense-receipt-tracker",
-    "gmail-morning-digest", "gmail-support-assistant", "idea-harvester",
-    "incident-logger", "invoice-tracker", "newsletter-curator",
-    "notion-docs-auditor", "onboarding-tracker", "research-knowledge-curator",
-    "research-paper-indexer", "sales-deal-analyzer", "sales-deal-tracker",
-    "sales-proposal-generator", "service-health-reporter", "support-email-router",
-    "survey-insights-analyzer", "technical-decision-tracker", "weekly-review-reporter",
+    # Tier 0 — local-only
+    "database-performance-monitor",
+    # Tier 1 — local DB + messaging
+    "budget-spending-monitor", "incident-logger", "content-performance-reporter",
+    "research-paper-indexer",
+    # Tier 2 — Notion
+    "daily-standup-compiler", "research-knowledge-curator", "technical-decision-tracker",
+    "knowledge-base-health-auditor",
+    # Tier 3 — Gmail
+    "email-morning-digest", "email-support-assistant", "email-follow-up-tracker",
+    "email-lead-extractor", "email-task-extractor",
+    "survey-insights-analyzer", "expense-receipt-processor", "invoice-tracker",
+    # Tier 4 — multi-connector
+    "idea-harvester", "newsletter-curator", "access-request-manager",
+    "contact-enrichment-agent", "contact-sync-manager", "support-email-router",
+    "onboarding-tracker", "sales-deal-analyzer", "sales-proposal-generator",
+    # Skip Salesforce-only: sales-deal-tracker (Tier 5)
 }
 
 def discover_templates():

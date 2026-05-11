@@ -34,6 +34,19 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Recently completed (last 14 days)
 
+- **[2026-05-11 00:30 → ~07:30] overnight-test — template-adoption + glyph-from-scratch sweep (both intakes hit 20-persona target)**
+  - **Source:** in-session conversation; user kicking off long overnight testing/finetuning run while asleep
+  - **Paths shipped:**
+    - `2dcef1f71` (master): fix `src-tauri/src/engine/project_tracking/{scheduler.rs,mod.rs}` — `tokio::spawn` from synchronous Tauri `setup()` panicked with "no reactor running"; switched to `tauri::async_runtime::spawn`. Real startup regression introduced by the 2026-05-10 project_tracking merge.
+    - `tools/test-mcp/e2e_glyph_20_intents.py` (NEW, uncommitted): multi-intent Glyph from-scratch harness covering tiers 0-4. Includes promote-race fix (waitForBuildPhase between triggerBuildTest and promote when phase landed at draft_ready). Default exec timeout 600 s.
+    - `tools/test-mcp/aggregate_run_report.py` (NEW, uncommitted): combines adoption + glyph JSON into one §8-format summary.
+    - `tools/test-mcp/e2e_30_adoption.py` (uncommitted): `OUR_TEMPLATE_SLUGS` refreshed for post-Stage A1 renames (gmail-* → email-*, expense-receipt-tracker → -processor, etc.). Targets 26 templates, picks up tiers 0-4 with the user's vault credentials.
+    - `docs/tests/results/persona-generation-overnight-20260511.md` (NEW, uncommitted): write-up of the run.
+    - `docs/tests/results/persona-roster-overnight-20260511.csv` (NEW, uncommitted): 52-row roster of every persona with exec/msg/mem/event counts + cost.
+    - `docs/tests/results/adoption_20260511_004216.json`, `adoption_20260511_005156.json`, `glyph-sweep-20260511_005858.json` (NEW, harness-written).
+  - **Status:** completed (commit `2dcef1f71` on master for the scheduler-panic fix; rest is harness + result files, intentionally left uncommitted for the user to review on wake-up).
+  - **Headline:** Adoption 27/27 (100%) executed; Glyph 20/25 (80%) executed. $8.70 total spend. No architectural blockers surfaced. Three harness bugs found + fixed inline (phase-race, exec timeout, summary-print crash). All personas + their messages/memories/events kept in the DB per user request — no `delete-agent` calls issued. Full details in `persona-generation-overnight-20260511.md`.
+
 - **[2026-05-10 17:35 → ~19:30] /architect scan — Sentry coverage breadth (theme, 4 findings shipped on master)**
   - **Source:** in-session; user picked `scan` mode + free-form theme "Sentry coverage" + scope "complete codebase". Reframed from error-routing (already covered by 2026-05-10 error-handling scan) to breadth.
   - **Paths shipped (4 atomic commits on master):**
