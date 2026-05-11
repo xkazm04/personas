@@ -421,27 +421,124 @@ pub fn instant_adopt_template_inner(
     let draft = super::n8n_transform::types::normalize_n8n_persona_draft(draft, &template_name);
 
     // Atomic create: persona + tools + triggers in one transaction
-    let (response, _import_result) =
+    let (mut response, _import_result) =
         super::n8n_transform::confirmation::create_persona_atomically(&state.db, &draft, None)?;
 
     // Track adoption count
     let created_persona_id = response
         .get("persona")
         .and_then(|p| p.get("id"))
-        .and_then(|v| v.as_str());
-    if let Err(e) =
-        reviews_repo::increment_adoption_count(&state.db, &template_name, created_persona_id)
-    {
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    if let Err(e) = reviews_repo::increment_adoption_count(
+        &state.db,
+        &template_name,
+        created_persona_id.as_deref(),
+    ) {
         tracing::warn!(template = %template_name, error = %e, "Failed to increment adoption count");
+    }
+
+    // Adoption pre-flight (C1): if the persona declares connectors that have
+    // no matching vault credential, mark setup_status='needs_credentials' so
+    // the dashboard surfaces a "Setup required" badge and the user knows the
+    // persona can't run yet. Built-in local connectors (local_drive,
+    // personas_database, personas_messages, personas_vector_db) are always
+    // considered satisfied. Failure is best-effort — a stuck setup_status
+    // write must not block the adoption response.
+    if let Some(pid) = created_persona_id.as_deref() {
+        match check_persona_runnability(&state.db, &draft.required_connectors) {
+            Ok(missing) if !missing.is_empty() => {
+                tracing::info!(
+                    persona_id = %pid,
+                    missing_count = missing.len(),
+                    missing = ?missing,
+                    "adoption pre-flight: persona declares connectors without vault credentials",
+                );
+                if let Err(e) = set_persona_setup_status(&state.db, pid, "needs_credentials") {
+                    tracing::warn!(persona_id = %pid, error = %e, "Failed to write setup_status");
+                }
+                // Surface to caller so UI can display the warning immediately.
+                if let serde_json::Value::Object(ref mut map) = response {
+                    map.insert(
+                        "setup_status".to_string(),
+                        serde_json::json!("needs_credentials"),
+                    );
+                    map.insert(
+                        "missing_credentials".to_string(),
+                        serde_json::json!(missing),
+                    );
+                }
+            }
+            Ok(_) => {
+                // No missing creds — column default 'ready' is correct, no write needed.
+            }
+            Err(e) => {
+                tracing::warn!(persona_id = %pid, error = %e, "adoption pre-flight check failed");
+            }
+        }
     }
 
     tracing::info!(
         template_id = %template_name,
-        persona_id = %created_persona_id.unwrap_or("?"),
+        persona_id = %created_persona_id.as_deref().unwrap_or("?"),
         outcome = "success",
         "instant_adopt_template: completed with tools + triggers"
     );
     Ok(response)
+}
+
+/// Built-in local connectors that don't need a vault credential — they're
+/// resources the app provides directly.
+const BUILTIN_LOCAL_CONNECTORS: &[&str] = &[
+    "local_drive",
+    "personas_database",
+    "personas_messages",
+    "personas_vector_db",
+];
+
+/// Walk the persona's declared connector list and return the names of any
+/// that don't have a matching vault credential. Returns an empty list if
+/// every required connector is either built-in or has a credential bound.
+fn check_persona_runnability(
+    pool: &crate::db::DbPool,
+    required: &Option<Vec<super::n8n_transform::types::N8nConnectorRef>>,
+) -> Result<Vec<String>, AppError> {
+    let required = match required {
+        Some(r) if !r.is_empty() => r,
+        _ => return Ok(Vec::new()),
+    };
+    let conn = pool.get()?;
+    let mut missing = Vec::new();
+    for c in required {
+        let name = c.name.trim();
+        if name.is_empty() || BUILTIN_LOCAL_CONNECTORS.iter().any(|b| b.eq_ignore_ascii_case(name)) {
+            continue;
+        }
+        let exists: bool = conn
+            .query_row(
+                "SELECT 1 FROM persona_credentials WHERE LOWER(service_type) = LOWER(?1) LIMIT 1",
+                rusqlite::params![name],
+                |_| Ok(true),
+            )
+            .unwrap_or(false);
+        if !exists {
+            missing.push(name.to_string());
+        }
+    }
+    Ok(missing)
+}
+
+fn set_persona_setup_status(
+    pool: &crate::db::DbPool,
+    persona_id: &str,
+    status: &str,
+) -> Result<(), AppError> {
+    let conn = pool.get()?;
+    conn.execute(
+        "UPDATE personas SET setup_status = ?1, updated_at = ?2 WHERE id = ?3",
+        rusqlite::params![status, chrono::Utc::now().to_rfc3339(), persona_id],
+    )?;
+    Ok(())
 }
 
 

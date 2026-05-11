@@ -1534,6 +1534,52 @@ fn find_connectors_needing_setup(ir: &crate::db::models::AgentIr) -> Vec<String>
         .collect()
 }
 
+/// Built-in local connectors that don't require a vault credential.
+/// Mirrors the same list in commands::design::template_adopt.
+const BUILTIN_LOCAL_CONNECTORS: &[&str] = &[
+    "local_drive",
+    "personas_database",
+    "personas_messages",
+    "personas_vector_db",
+];
+
+/// Given a list of connector names flagged as needing setup, prune those
+/// that are either built-in locals OR have a matching vault credential.
+/// Returns the actually-missing set so the promote step can decide whether
+/// to mark the persona as `needs_credentials`. A vault lookup failure is
+/// treated as "missing" — better to surface a warning than silently allow
+/// a misconfigured persona to run.
+fn vault_missing_connectors(
+    pool: &crate::db::DbPool,
+    flagged: &[String],
+) -> Vec<String> {
+    let conn = match pool.get() {
+        Ok(c) => c,
+        Err(_) => return flagged.to_vec(),
+    };
+    let mut missing = Vec::new();
+    for name in flagged {
+        let n = name.trim();
+        if n.is_empty() {
+            continue;
+        }
+        if BUILTIN_LOCAL_CONNECTORS.iter().any(|b| b.eq_ignore_ascii_case(n)) {
+            continue;
+        }
+        let exists: bool = conn
+            .query_row(
+                "SELECT 1 FROM persona_credentials WHERE LOWER(service_type) = LOWER(?1) LIMIT 1",
+                rusqlite::params![n],
+                |_| Ok(true),
+            )
+            .unwrap_or(false);
+        if !exists {
+            missing.push(n.to_string());
+        }
+    }
+    missing
+}
+
 // ============================================================================
 // Transaction: create tool definitions + assign to persona
 // ============================================================================
@@ -2413,6 +2459,28 @@ pub async fn promote_build_draft_inner(
     // COMMIT — all entities are persisted atomically
     // ================================================================
     tx.commit().map_err(AppError::Database)?;
+
+    // C1 (Glyph side) — if any connector lacks a credential AND lacks a
+    // built-in fallback, mark setup_status='needs_credentials' so the
+    // dashboard surfaces a warning. The IR's `has_credential` flag is the
+    // primary signal (carried through from the build conversation), and
+    // we also verify against the vault directly in case the user's
+    // credential was deleted after the build session started.
+    let runtime_missing = vault_missing_connectors(&state.db, &connectors_needing_setup);
+    if !runtime_missing.is_empty() {
+        if let Ok(conn) = state.db.get() {
+            let _ = conn.execute(
+                "UPDATE personas SET setup_status = ?1, updated_at = ?2 WHERE id = ?3",
+                rusqlite::params!["needs_credentials", chrono::Utc::now().to_rfc3339(), persona_id],
+            );
+            tracing::info!(
+                persona_id = %persona_id,
+                missing_count = runtime_missing.len(),
+                missing = ?runtime_missing,
+                "promote: persona marked needs_credentials"
+            );
+        }
+    }
 
     // Post-transaction: best-effort scheduler updates
     update_trigger_schedules(&state.db, &created_trigger_ids);
