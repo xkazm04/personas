@@ -39,6 +39,10 @@ export interface PipelineNotification {
   /** Optional persona id — used by feedback-chat notifications to select the
    *  correct persona before restoring the chat session. */
   personaId?: string;
+  /** Optional execution id — used by execution-type notifications so the
+   *  redirect can open the matching ExecutionDetailModal on Overview ›
+   *  Activity instead of dumping the user on the Personas list. */
+  executionId?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -89,6 +93,9 @@ interface NotificationCenterStore {
     redirectTab: string | null;
     /** When present, clicking the redirect will restore this specific chat session */
     chatSessionId?: string;
+    /** When present, clicking the redirect will open this specific execution's
+     *  detail modal on Overview › Activity. */
+    executionId?: string;
   }) => void;
   markRead: (id: string) => void;
   markAllRead: () => void;
@@ -139,6 +146,7 @@ export const useNotificationCenterStore = create<NotificationCenterStore>((set, 
         message: n.summary,
         ...(n.chatSessionId ? { chatSessionId: n.chatSessionId } : {}),
         ...(n.personaId ? { personaId: n.personaId } : {}),
+        ...(n.executionId ? { executionId: n.executionId } : {}),
       };
       const updated = [notification, ...get().notifications].slice(0, MAX_NOTIFICATIONS);
       saveNotifications(updated);

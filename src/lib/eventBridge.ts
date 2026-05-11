@@ -484,8 +484,16 @@ const registry: EventRegistration[] = [
             personaName: proc?.label ?? null,
             status: notificationStatus,
             summary: error ?? fallbackSummary,
-            redirectSection: "agents",
-            redirectTab: null,
+            // Click handler in NotificationCenter looks up
+            // `executionId` and, after navigating, writes it to
+            // `pendingExecutionFocus` so GlobalExecutionList can pop the
+            // ExecutionDetailModal for that specific run.
+            redirectSection: "overview",
+            // OverviewTab key for the Activity / Executions sub-tab —
+            // matches the literal in `src/lib/types/types.ts::OverviewTab`
+            // and the conditional in `OverviewPage.tsx:37`.
+            redirectTab: "executions",
+            executionId: execution_id,
           });
         },
       );

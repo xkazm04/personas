@@ -52,6 +52,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
     globalExecutions, globalExecutionsHasMore,
     globalExecutionsWarning, fetchGlobalExecutions,
     globalExecutionCounts, fetchGlobalExecutionCounts,
+    pendingExecutionFocus, setPendingExecutionFocus,
   } = useOverviewStore(useShallow((s) => ({
     globalExecutions: s.globalExecutions,
     globalExecutionsHasMore: s.globalExecutionsHasMore,
@@ -59,6 +60,8 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
     fetchGlobalExecutions: s.fetchGlobalExecutions,
     globalExecutionCounts: s.globalExecutionCounts,
     fetchGlobalExecutionCounts: s.fetchGlobalExecutionCounts,
+    pendingExecutionFocus: s.pendingExecutionFocus,
+    setPendingExecutionFocus: s.setPendingExecutionFocus,
   })));
   const personas = useAgentStore((s) => s.personas);
 
@@ -128,6 +131,23 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
     load();
     return () => { active = false; };
   }, [filter, fetchGlobalExecutions, fetchGlobalExecutionCounts, selectedPersonaId]);
+
+  // Pop the ExecutionDetailModal when a notification click parks an
+  // execution id in `pendingExecutionFocus`. If the row isn't loaded yet
+  // we trigger a fresh fetch; the next render that includes the row will
+  // re-fire this effect and open the modal. The focus is cleared once
+  // the modal opens so the same id can't loop on remount.
+  useEffect(() => {
+    if (!pendingExecutionFocus) return;
+    const match = globalExecutions.find((e) => e.id === pendingExecutionFocus);
+    if (match) {
+      setSelectedExec(match);
+      setPendingExecutionFocus(null);
+      return;
+    }
+    // Not loaded yet — kick a one-off fetch and let the next render handle it.
+    void fetchGlobalExecutions(true).catch(() => {});
+  }, [pendingExecutionFocus, globalExecutions, fetchGlobalExecutions, setPendingExecutionFocus]);
 
   const hasRunning = useMemo(
     () => globalExecutions.some((e) => e.status === 'running' || e.status === 'pending'),

@@ -86,17 +86,31 @@ function ProcessNotificationItem({ notification }: { notification: PipelineNotif
         setPluginTab('dev-tools' as never);
         setDevToolsTab(redirectTab as never);
       } else {
-        // overview section uses overviewTab
+        // overview section uses overviewTab. Execution notifications
+        // additionally pass the executionId so GlobalExecutionList can
+        // pop the ExecutionDetailModal for that specific run via the
+        // `pendingExecutionFocus` signal.
         void import('@/stores/overviewStore').then(({ useOverviewStore }) => {
           useOverviewStore.getState().setOverviewTab(redirectTab as never);
+          if (notification.executionId) {
+            useOverviewStore.getState().setPendingExecutionFocus(notification.executionId);
+          }
         });
       }
     }
   }, [notification, markRead, setOpen, setSidebarSection, setPluginTab, setDevToolsTab, redirectSection, redirectTab]);
 
   const handleClick = useCallback(() => {
-    if (!notification.read) markRead(notification.id);
-  }, [notification, markRead]);
+    // For notifications with a known redirect target (execution, review,
+    // chat, process), clicking the whole row navigates — same effect as
+    // the hover-revealed "Open →" button. Without a destination, just
+    // mark as read.
+    if (redirectSection) {
+      handleRedirect();
+    } else if (!notification.read) {
+      markRead(notification.id);
+    }
+  }, [notification, markRead, redirectSection, handleRedirect]);
 
   // Compose body lines: prefer message if present, fall back to status label.
   const headerTitle = notification.title ?? (hasReviewRedirect ? t.gitlab.human_review : processLabel);

@@ -73,8 +73,15 @@ export interface OverviewSlice {
   // State -- per-source last-successful-fetch timestamps (epoch ms)
   pipelineFetchedAt: Record<string, number>;
 
+  /** Cross-component focus signal for opening a specific execution's detail
+   *  modal on Overview › Activity. Set by the NotificationCenter when the
+   *  user clicks an execution notification; cleared by `GlobalExecutionList`
+   *  once the modal is open so the same id doesn't re-trigger on remount. */
+  pendingExecutionFocus: string | null;
+
   // Actions
   setOverviewTab: (tab: OverviewTab) => void;
+  setPendingExecutionFocus: (executionId: string | null) => void;
   setPipelineError: (source: string, error: string | null) => void;
   setPipelineFetchedAt: (source: string) => void;
   clearPipelineErrors: () => void;
@@ -149,6 +156,7 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
   executionDashboardError: null,
   pipelineErrors: {},
   pipelineFetchedAt: {},
+  pendingExecutionFocus: null,
 
   // Note: do NOT wrap this in startTransition. Sidebar nav clicks must be
   // a synchronous, deterministic state update — the OverviewPage uses
@@ -156,6 +164,7 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
   // deferred transition can be interrupted by higher-priority renders so
   // the content never swaps even though the sidebar highlight updated.
   setOverviewTab: (tab) => set({ overviewTab: tab }),
+  setPendingExecutionFocus: (executionId) => set({ pendingExecutionFocus: executionId }),
   setPipelineError: (source, error) => set((prev) => {
     const next = { ...prev.pipelineErrors };
     if (error) next[source] = error;
