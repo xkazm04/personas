@@ -17,7 +17,7 @@ use std::sync::Arc;
 use serde::Serialize;
 use tauri::State;
 
-use crate::companion::brain::{consolidation, dashboard, reflection};
+use crate::companion::brain::{cockpit, consolidation, dashboard, reflection};
 use crate::companion::jobs::{self, curation_run};
 use crate::error::AppError;
 use crate::ipc_auth;
@@ -310,5 +310,30 @@ pub fn companion_get_dashboard(
     Ok(d.map(|d| DashboardSpec {
         spec_json: d.spec_json,
         updated_at: d.updated_at,
+    }))
+}
+
+// ── Cockpit ────────────────────────────────────────────────────────────
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CockpitSpec {
+    /// JSON spec the frontend parses into widgets. Stored verbatim so
+    /// composition shape can evolve without a backend migration.
+    pub spec_json: String,
+    pub updated_at: String,
+}
+
+/// Read the current cockpit composition (singleton). Returns null when
+/// Athena hasn't composed one yet — the Cockpit page shows an empty state.
+#[tauri::command]
+pub fn companion_get_cockpit(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Option<CockpitSpec>, AppError> {
+    ipc_auth::require_auth_sync(&state)?;
+    let c = cockpit::load_cockpit(&state.user_db)?;
+    Ok(c.map(|c| CockpitSpec {
+        spec_json: c.spec_json,
+        updated_at: c.updated_at,
     }))
 }

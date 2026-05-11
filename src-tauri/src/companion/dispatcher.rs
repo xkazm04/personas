@@ -42,6 +42,11 @@ pub struct Dispatched {
     /// (no approval) because the user already asked for the dashboard;
     /// the click would just be friction.
     pub dashboards: Vec<String>,
+    /// `compose_cockpit` payloads — same shape as `dashboards`. session.rs
+    /// persists each via `cockpit::save_cockpit` and emits a navigate
+    /// event to Home → Cockpit. Auto-fire for the same reason as dashboards:
+    /// the user already asked for the surface.
+    pub cockpits: Vec<String>,
     /// Quick-reply option labels Athena offered for this turn. Each entry
     /// is the literal user message that gets sent on click. Not persisted
     /// — the UI shows them on the latest assistant bubble until the next
@@ -239,6 +244,28 @@ pub fn dispatch(
                     "updated_at": now,
                 });
                 out.dashboards.push(spec.to_string());
+            }
+            Ok(env) if env.op == "propose_action" && env.action == "compose_cockpit" => {
+                let widgets = env.params.get("widgets");
+                let widgets_arr = widgets.and_then(|v| v.as_array());
+                if widgets_arr.is_none() || widgets_arr.unwrap().is_empty() {
+                    out.warnings
+                        .push("compose_cockpit: `widgets` must be a non-empty array".into());
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                let title = env
+                    .params
+                    .get("title")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("Cockpit");
+                let now = chrono::Utc::now().to_rfc3339();
+                let spec = serde_json::json!({
+                    "title": title,
+                    "widgets": widgets,
+                    "updated_at": now,
+                });
+                out.cockpits.push(spec.to_string());
             }
             Ok(env) if env.op == "propose_action" && env.action == "open_lab" => {
                 let persona_id = env

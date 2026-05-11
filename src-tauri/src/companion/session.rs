@@ -55,6 +55,11 @@ pub const OPEN_LAB_EVENT: &str = "companion://open-lab";
 /// to navigate to the Companion → Dashboard tab so the user sees it.
 pub const COMPOSE_DASHBOARD_EVENT: &str = "companion://compose-dashboard";
 
+/// Tauri event for `compose_cockpit` auto-fire. Same shape as
+/// `COMPOSE_DASHBOARD_EVENT` — empty payload; the spec is already
+/// persisted; the frontend navigates to Home → Cockpit on receipt.
+pub const COMPOSE_COCKPIT_EVENT: &str = "companion://compose-cockpit";
+
 /// What `send_turn` returns to the chat command. The IDs let the UI
 /// reconcile the optimistic bubble with persisted episodes; the
 /// `quick_replies` carry Athena's QR offerings for this specific turn
@@ -283,6 +288,7 @@ pub async fn send_turn(
                     navigations: Vec::new(),
                     lab_opens: Vec::new(),
                     dashboards: Vec::new(),
+                    cockpits: Vec::new(),
                     quick_replies: Vec::new(),
                     tts_text: None,
                     warnings: vec![format!("dispatcher error: {e}")],
@@ -366,6 +372,19 @@ pub async fn send_turn(
         }
         if let Err(e) = app.emit(COMPOSE_DASHBOARD_EVENT, serde_json::json!({})) {
             tracing::warn!(error = %e, "companion compose_dashboard event emit failed");
+        }
+    }
+
+    // compose_cockpit auto-fire. Same shape as dashboards above — persist
+    // each spec then emit the navigate event so the frontend jumps to
+    // Home → Cockpit on receipt.
+    for spec_json in &dispatched.cockpits {
+        if let Err(e) = crate::companion::brain::cockpit::save_cockpit(&user_db, spec_json) {
+            tracing::warn!(error = %e, "companion compose_cockpit save failed");
+            continue;
+        }
+        if let Err(e) = app.emit(COMPOSE_COCKPIT_EVENT, serde_json::json!({})) {
+            tracing::warn!(error = %e, "companion compose_cockpit event emit failed");
         }
     }
 

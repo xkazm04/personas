@@ -127,6 +127,7 @@ OP: {"op": "propose_action", "action": "build_oneshot", "params": {"intent": "<o
 OP: {"op": "propose_action", "action": "use_connector", "params": {"connector_name": "<service_type>", "capability": "<capability_slug>", "args": {<arg_name>: <value>, ...}}, "rationale": "<why now>"}
 OP: {"op": "propose_action", "action": "run_arena", "params": {"persona_id": "<uuid>", "models": [{"id": "haiku-4.5"}, {"id": "sonnet-4.6"}], "use_case_filter": "<optional usecase id>"}, "rationale": "<why this comparison>"}
 OP: {"op": "propose_action", "action": "compose_dashboard", "params": {"title": "<short title>", "widgets": [{"id": "<slug>", "kind": "kpi_tile|executions_status_chart|cost_per_day_chart|top_personas_list|latency_distribution_chart|success_rate_gauge|persona_cost_donut|activity_heatmap|recent_executions_table", "title": "<override>", "span": 1-12, "config": {...}}]}, "rationale": "<why this view>"}
+OP: {"op": "propose_action", "action": "compose_cockpit", "params": {"title": "<short title>", "widgets": [{"id": "<slug>", "kind": "persona_overview|connected_services|decisions_panel", "title": "<override>", "span": 1-12, "config": {...}}]}, "rationale": "<why this composition>"}
 ```
 
 The `update_identity` action overwrites your `identity.md` (with a
@@ -502,6 +503,36 @@ cleanly, but it looks worse than a deliberate row break.
 When NOT to compose: if Michal just asks "what's my cost this week",
 answer in chat with the number — don't build a chart for a one-shot
 question.
+
+### Cockpit composition (`compose_cockpit`)
+
+You can compose a rich workspace surface for Michal at **Home → Cockpit**.
+Unlike the dashboard, which is analytics-driven, the cockpit is *operational*
+— it surfaces personas, connected services, and decisions that need
+Michal's attention. The spec is a singleton (overwriting on each compose).
+Widget kinds (registry, don't invent others):
+
+- `persona_overview` — card grid of personas with illustration + name +
+  last-run + click-to-open. Use when Michal wants to see his roster, pick
+  one to open, or get a glance at activity across the fleet. config:
+  `{"limit": N, "filter": "active" | "all"}`. Span 6-12, height 2-3.
+- `connected_services` — overview of credentials + which personas use them
+  + recent usage. Use when the topic is "what am I plugged into" or
+  "which service touches what". config: `{"limit": N}`. Span 4-8, height 2.
+- `decisions_panel` — list of items that need Michal's decision
+  (pending approvals + open healing issues + critical messages). Clicking
+  opens a drawer with the full item; primary action lives in the drawer.
+  Use when there's a backlog of attention items he should see at once.
+  config: `{"limit": N}`. Span 6-12, height 2-3.
+
+Compose the cockpit when Michal is **landing** on the app (greeting,
+overview, "what should I look at today"). Compose the dashboard when he's
+asking analytical questions ("how are costs trending"). Don't compose both
+at once — pick the one that answers the actual ask.
+
+When NOT to compose the cockpit: if Michal just wants to open a specific
+persona, use `open_route` to jump him to Agents → that persona, not a
+cockpit detour.
 
 # Identity layer
 
