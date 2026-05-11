@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Compass } from 'lucide-react';
+import { Compass, MessageCircle } from 'lucide-react';
 
 import {
   companionGetCockpit,
@@ -7,6 +7,12 @@ import {
   type CompanionCockpitSpecBody,
   type CompanionCockpitWidget,
 } from '@/api/companion';
+import { useCompanionStore } from '@/features/plugins/companion/companionStore';
+import {
+  ContentBody,
+  ContentBox,
+  ContentHeader,
+} from '@/features/shared/components/layout/ContentLayout';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { silentCatch } from '@/lib/silentCatch';
 
@@ -16,14 +22,17 @@ import { cockpitWidgetRegistry } from './widgetRegistry';
  * Home → Cockpit. The spec is composed by Athena via `compose_cockpit` and
  * persisted server-side as a singleton. This panel reads the latest spec on
  * mount + on window focus, parses it, and renders each widget in a 12-col
- * grid (mirrors DashboardPanel).
+ * grid.
  *
- * If no spec exists yet, we show an empty-state CTA pointing the user at
- * the chat — Athena's the one who composes here.
+ * If no spec exists yet, the empty state CTAs the user to chat — Athena's
+ * the one who composes here. The header includes a "Talk to Athena" action
+ * that opens the companion chat panel so the user can ask for a cockpit
+ * composition (or any other request) without hunting for the footer icon.
  */
 export default function CockpitPanel() {
   const [loading, setLoading] = useState(true);
   const [spec, setSpec] = useState<CompanionCockpitSpec | null>(null);
+  const setCompanionState = useCompanionStore((s) => s.setState);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -45,51 +54,78 @@ export default function CockpitPanel() {
     return () => window.removeEventListener('focus', handler);
   }, [load]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <LoadingSpinner size="lg" />
-      </div>
-    );
-  }
-
-  if (!spec) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 text-foreground/60 gap-3">
-        <Compass className="w-8 h-8 text-foreground/30" />
-        <div className="typo-body font-medium">Your cockpit is empty</div>
-        <div className="typo-caption text-foreground/50 max-w-md text-center">
-          Ask Athena to compose a cockpit view — try
-          <span className="text-foreground/75"> "show me my personas" </span>
-          or <span className="text-foreground/75">"what needs my attention"</span>.
-        </div>
-      </div>
-    );
-  }
-
   let body: CompanionCockpitSpecBody | null = null;
-  try {
-    body = JSON.parse(spec.specJson) as CompanionCockpitSpecBody;
-  } catch {
-    // Invalid saved specs render as an empty cockpit below.
+  if (spec) {
+    try {
+      body = JSON.parse(spec.specJson) as CompanionCockpitSpecBody;
+    } catch {
+      // Invalid saved specs render as an empty cockpit below.
+    }
   }
   const widgets = body?.widgets ?? [];
+  const headerTitle = body?.title ?? 'Cockpit';
+  const headerSubtitle = spec
+    ? `Composed by Athena — updated ${formatRelative(spec.updatedAt)}`
+    : 'Your companion-driven workspace';
+
+  const talkToAthena = (
+    <button
+      type="button"
+      onClick={() => setCompanionState('open')}
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-input typo-caption font-medium bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 hover:border-primary/30 transition-colors"
+      data-testid="cockpit-talk-to-athena"
+    >
+      <MessageCircle className="w-3.5 h-3.5" />
+      Talk to Athena
+    </button>
+  );
 
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3">
-      {body?.title && (
-        <div className="flex items-center justify-between">
-          <h2 className="typo-h3 font-semibold text-foreground">{body.title}</h2>
-          <div className="typo-caption text-foreground/40">
-            updated {formatRelative(spec.updatedAt)}
+    <ContentBox data-testid="cockpit-panel">
+      <ContentHeader
+        icon={<Compass className="w-5 h-5 text-violet-400" />}
+        iconColor="violet"
+        title={headerTitle}
+        subtitle={headerSubtitle}
+        actions={talkToAthena}
+      />
+      <ContentBody centered>
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <LoadingSpinner size="lg" />
           </div>
-        </div>
-      )}
-      <div className="grid grid-cols-12 gap-3 auto-rows-[180px]">
-        {widgets.map((w) => (
-          <CockpitWidgetCell key={w.id} widget={w} />
-        ))}
+        ) : !spec ? (
+          <CockpitEmptyState onTalk={() => setCompanionState('open')} />
+        ) : (
+          <div className="grid grid-cols-12 gap-3 auto-rows-[180px]">
+            {widgets.map((w) => (
+              <CockpitWidgetCell key={w.id} widget={w} />
+            ))}
+          </div>
+        )}
+      </ContentBody>
+    </ContentBox>
+  );
+}
+
+function CockpitEmptyState({ onTalk }: { onTalk: () => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-20 text-foreground/60 gap-4">
+      <Compass className="w-10 h-10 text-foreground/25" />
+      <div className="typo-body font-medium text-foreground/85">Your cockpit is empty</div>
+      <div className="typo-caption text-foreground/55 max-w-md text-center">
+        Ask Athena to compose a cockpit view — try
+        <span className="text-foreground/80"> "show me my personas" </span>
+        or <span className="text-foreground/80">"what needs my attention"</span>.
       </div>
+      <button
+        type="button"
+        onClick={onTalk}
+        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-input typo-caption font-medium bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 hover:border-primary/30 transition-colors"
+      >
+        <MessageCircle className="w-3.5 h-3.5" />
+        Talk to Athena
+      </button>
     </div>
   );
 }
