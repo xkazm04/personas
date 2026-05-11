@@ -32,12 +32,13 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
-- **[2026-05-10 22:30] tauri:build:lite production installer + silent install**
-  - **Source:** in-session conversation; user "Please prepare silent production installer per personas\docs\devops\guide-publishing-flow.md, and run"
-  - **Paths:** read-only (no source edits). Build outputs land in `src-tauri/target/release/bundle/nsis/`. Will run the produced NSIS `.exe` with `/S` to install Personas locally on this machine.
-  - **Status:** started
-
 ## Recently completed (last 14 days)
+
+- **[2026-05-10 22:30 → 23:10] tauri:build:lite production installer + silent install + crash triage**
+  - **Source:** in-session conversation; user "Please prepare silent production installer per personas\docs\devops\guide-publishing-flow.md, and run". User redirected mid-build: "let it finish, analyze afterwards whether it should be such consuming process, the app crashes immediately ater run".
+  - **Paths:** read-only (no source edits). Built `Personas_0.1.0-1_arm64-setup.exe` (44 MB), silent-installed to `C:\Users\mkdol\AppData\Local\Personas\`.
+  - **Status:** completed (read-only). **Crash root cause identified:** `src/engine/project_tracking/scheduler.rs:51` calls `tokio::time::interval(TICK_INTERVAL)` from inside `tauri::async_runtime::spawn`, but the spawn happens during Tauri setup before the tokio runtime is entered for the spawned task, so the `interval()` constructor's runtime probe panics with "there is no reactor running". Confirmed via `crash_logs/crash_20260510_173838.log` panic backtrace + 4 boot attempts today all dying at `lib.rs:723 local_http listening` in `personas.2026-05-10.log`. Introduced by commit `76635e649` (companion-project-tracking subsystem merge).
+  - **Build resource notes:** vite frontend 17m54s (88% in plugins — tailwind/css/worker-import-meta-url dominate), cargo release 147m49s, total wall ~2h47m. ARM64 host, ARM64 binary. Two-stage codegen (lib then bin) with thin LTO, peak rustc RSS 6GB+3.6GB parallel. High but consistent with Tauri 2 + sqlx + sentry + ~700-dep graph under thin LTO on aarch64-pc-windows-msvc.
 
 - **[2026-05-10 18:10 → ~20:05] /architect scan — e2e-test-coverage-live-app theme (8 findings, 4 executed + 2 codified + 2 queued, merged to master)**
   - **Source:** in-session conversation; user redirect from `resume` to scan with custom theme "e2e test coverage using live app". 4 sub-agent angles (coverage-map, harness-reach, fixtures, ci-flakiness).
