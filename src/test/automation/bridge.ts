@@ -781,17 +781,32 @@ const bridge: TestBridge = {
   },
 
   /** Execute a persona by ID or name. Returns the execution result. */
-  async executePersona(nameOrId: string, useCaseId?: string | null) {
+  async executePersona(nameOrId: string, useCaseId?: string | null, inputData?: unknown) {
     const store = useAgentStore.getState();
     const match = store.personas.find(
       p => p.id === nameOrId || p.name.toLowerCase().includes(nameOrId.toLowerCase()),
     );
     if (!match) return { success: false, error: `No agent matching: ${nameOrId}` };
+    // The Tauri command takes `inputData: Option<String>` (a JSON-encoded
+    // string), so callers passing a structured object get auto-stringified
+    // here. Plain strings pass through untouched.
+    let serializedInput: string | null = null;
+    if (inputData !== undefined && inputData !== null) {
+      if (typeof inputData === 'string') {
+        serializedInput = inputData;
+      } else {
+        try {
+          serializedInput = JSON.stringify(inputData);
+        } catch {
+          return { success: false, error: 'inputData is not JSON-serializable' };
+        }
+      }
+    }
     try {
       const result = await invoke('execute_persona', {
         personaId: match.id,
         triggerId: null,
-        inputData: null,
+        inputData: serializedInput,
         useCaseId: useCaseId ?? null,
         continuation: null,
       });

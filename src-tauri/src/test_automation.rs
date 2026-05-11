@@ -693,15 +693,35 @@ async fn handle_promote_build(
 #[derive(Deserialize)]
 struct ExecutePersonaRequest {
     name_or_id: String,
+    /// Optional payload threaded into the persona's first turn so callers
+    /// can give it something concrete to work on (sample doc, question,
+    /// synthetic dataset). Maps to `inputData` on the bridge → the
+    /// `execute_persona` Tauri command's `inputData` argument.
+    #[serde(default)]
+    input_data: Option<serde_json::Value>,
+    #[serde(default)]
+    use_case_id: Option<String>,
 }
 
 async fn handle_execute_persona(
     AxumState(state): AxumState<ServerState>,
     Json(req): Json<ExecutePersonaRequest>,
 ) -> Result<String, (StatusCode, String)> {
-    let params = serde_json::json!({ "nameOrId": req.name_or_id });
-    eval_bridge_method_with_timeout(&state, "executePersona", &params, BRIDGE_TIMEOUT_MUTATION)
-        .await
+    let mut params = serde_json::Map::new();
+    params.insert("nameOrId".into(), serde_json::Value::String(req.name_or_id));
+    if let Some(uc) = req.use_case_id {
+        params.insert("useCaseId".into(), serde_json::Value::String(uc));
+    }
+    if let Some(d) = req.input_data {
+        params.insert("inputData".into(), d);
+    }
+    eval_bridge_method_with_timeout(
+        &state,
+        "executePersona",
+        &serde_json::Value::Object(params),
+        BRIDGE_TIMEOUT_MUTATION,
+    )
+    .await
 }
 
 #[derive(Deserialize)]
