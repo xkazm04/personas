@@ -32,6 +32,11 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+- **[2026-05-11 ~10:00] simple-mode-to-cockpit — delete simple-mode + companion-driven Cockpit + inline chat cards**
+  - **Source:** in-session conversation; user asked to (1) delete `src/features/simple-mode/`, (2) extract Console/Inbox concepts into companion chat dynamic UI (auto-fire), (3) redesign Home→Cockpit 2nd-level item to be a companion-driven `compose_cockpit` surface mirroring how `compose_dashboard` drives the Dashboard tab.
+  - **Paths:** `src/features/simple-mode/**` (delete), `src/features/plugins/companion/inbox/` (NEW, adapters moved from simple-mode), `src/features/home/components/cockpit/` (NEW), `src/features/plugins/companion/CompanionPanel.tsx`, `src-tauri/src/companion/{session.rs,dispatcher.rs}`, `src-tauri/src/companion/brain/cockpit.rs` (NEW mirroring dashboard.rs), `src-tauri/src/commands/companion/`, `src/stores/slices/system/simpleModeSlice.ts` (delete), `src/stores/{storeTypes.ts,systemStore.ts}`, `src/App.tsx` (drop AmbientCockpit), `src/features/home/components/HomePage.tsx`, `src/features/shared/components/layout/sidebar/sidebarData.ts`, `src/features/overview/sub_inbox/libs/swimlane.ts` + adjacent (update imports), `src/i18n/locales/en.json` (rename `simple_mode.*` → `cockpit.*`), `src/i18n/routeSections.ts`, `src/styles/globals.css` (drop simple-mode.css import), `src-tauri/src/companion/templates/constitution.md` (doctrine updates for new ops), `docs/features/cockpit.md` (NEW), `docs/features/home.md`, `scripts/docs/feature-doc-map.json`.
+  - **Status:** started
+
 ## Recently completed (last 14 days)
 
 - **[2026-05-11 00:30 → ~07:30] overnight-test — template-adoption + glyph-from-scratch sweep (both intakes hit 20-persona target)**

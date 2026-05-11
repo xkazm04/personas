@@ -1,0 +1,460 @@
+/**
+ * Unit tests for the unified inbox normalization layer.
+ *
+ * Covers:
+ *  - normalizeSeverity() parametric cases
+ *  - each adapter's output shape
+ *  - useUnifiedInbox() merge / filter / sort / cap behavior
+ */
+import { describe, it, expect, beforeEach } from 'vitest';
+import { renderHook } from '@testing-library/react';
+
+import type { PersonaMessage } from '@/lib/bindings/PersonaMessage';
+import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
+import type { Persona } from '@/lib/bindings/Persona';
+import type { ManualReviewItem } from '@/lib/types/types';
+import { useAgentStore } from '@/stores/agentStore';
+import { useOverviewStore } from '@/stores/overviewStore';
+
+import { normalizeSeverity } from '../types';
+import { adaptApproval, adaptMessage, adaptHealing, adaptOutput, isMessageOutput } from './adapters';
+import { useUnifiedInbox } from './useUnifiedInbox';
+
+const PERSONA_SUMMARY = {
+  personaName: 'Weather Bot',
+  personaIcon: '🌦',
+  personaColor: '#abcdef',
+};
+
+function approvalRecord(o: Partial<ManualReviewItem> = {}): ManualReviewItem {
+  return {
+    id: 'rev-1',
+    persona_id: 'p-1',
+    execution_id: 'exec-1',
+    review_type: 'build_output',
+    content: 'Body of the approval',
+    severity: 'warning',
+    status: 'pending',
+    reviewer_notes: null,
+    context_data: null,
+    suggested_actions: null,
+    title: 'Approve deployment?',
+    created_at: '2026-04-20T10:00:00.000Z',
+    resolved_at: null,
+    source: 'local',
+    persona_name: 'Weather Bot',
+    persona_icon: '🌦',
+    persona_color: '#abcdef',
+    ...o,
+  } as ManualReviewItem;
+}
+
+function messageRecord(o: Partial<PersonaMessage> = {}): PersonaMessage {
+  return {
+    id: 'msg-1',
+    persona_id: 'p-1',
+    execution_id: 'exec-1',
+    title: 'Hello there',
+    content: 'Message body',
+    content_type: 'text',
+    priority: 'normal',
+    is_read: false,
+    metadata: null,
+    created_at: '2026-04-20T11:00:00.000Z',
+    read_at: null,
+    thread_id: null,
+    use_case_id: null,
+    ...o,
+  };
+}
+
+function healingRecord(o: Partial<PersonaHealingIssue> = {}): PersonaHealingIssue {
+  return {
+    id: 'heal-1',
+    persona_id: 'p-1',
+    execution_id: null,
+    title: 'Disk nearly full',
+    description: 'Cleanup old logs',
+    is_circuit_breaker: false,
+    severity: 'critical',
+    category: 'infra',
+    suggested_fix: 'Delete logs older than 7 days',
+    auto_fixed: false,
+    status: 'open',
+    created_at: '2026-04-20T09:00:00.000Z',
+    resolved_at: null,
+    ...o,
+  };
+}
+
+function personaRecord(o: Partial<Persona> = {}): Persona {
+  return {
+    id: 'p-1',
+    name: 'Weather Bot',
+    icon: '🌦',
+    color: '#abcdef',
+    ...o,
+  } as unknown as Persona;
+}
+
+describe('normalizeSeverity', () => {
+  const cases: Array<[string | null | undefined, 'critical' | 'warning' | 'info']> = [
+    ['critical', 'critical'],
+    ['CRITICAL', 'critical'],
+    ['error', 'critical'],
+    ['ERROR', 'critical'],
+    ['fatal', 'critical'],
+    ['warning', 'warning'],
+    ['WARN', 'warning'],
+    ['warn', 'warning'],
+    ['high', 'warning'],
+    ['info', 'info'],
+    ['INFO', 'info'],
+    ['debug', 'info'],
+    ['unknown', 'info'],
+    ['', 'info'],
+    [null, 'info'],
+    [undefined, 'info'],
+  ];
+
+  it.each(cases)('maps %p -> %p', (input, expected) => {
+    expect(normalizeSeverity(input)).toBe(expected);
+  });
+});
+
+describe('adaptApproval', () => {
+  it('produces a kind=approval item with id prefix and mapped fields', () => {
+    const out = adaptApproval(approvalRecord(), PERSONA_SUMMARY);
+    expect(out.kind).toBe('approval');
+    expect(out.id).toBe('approval:rev-1');
+    expect(out.source).toBe('rev-1');
+    expect(out.personaId).toBe('p-1');
+    expect(out.personaName).toBe('Weather Bot');
+    expect(out.severity).toBe('warning');
+    expect(out.title).toBe('Approve deployment?');
+    expect(out.body).toBe('Body of the approval');
+    expect(out.data.executionId).toBe('exec-1');
+    expect(out.data.reviewType).toBe('build_output');
+    expect(out.data.origin).toBe('local');
+  });
+
+  it('normalizes severity=critical raw strings', () => {
+    const out = adaptApproval(approvalRecord({ severity: 'fatal' }), PERSONA_SUMMARY);
+    expect(out.severity).toBe('critical');
+  });
+
+  it('defaults origin to local when source is undefined', () => {
+    const out = adaptApproval(approvalRecord({ source: undefined }), PERSONA_SUMMARY);
+    expect(out.data.origin).toBe('local');
+  });
+
+  it('preserves origin=cloud when source is cloud', () => {
+    const out = adaptApproval(approvalRecord({ source: 'cloud' }), PERSONA_SUMMARY);
+    expect(out.data.origin).toBe('cloud');
+  });
+});
+
+describe('adaptMessage', () => {
+  it('produces a kind=message item with id prefix', () => {
+    const out = adaptMessage(messageRecord(), PERSONA_SUMMARY);
+    expect(out.kind).toBe('message');
+    expect(out.id).toBe('message:msg-1');
+    expect(out.source).toBe('msg-1');
+    expect(out.title).toBe('Hello there');
+    expect(out.body).toBe('Message body');
+    expect(out.data.priority).toBe('normal');
+    expect(out.data.contentType).toBe('text');
+  });
+
+  it('maps priority=high -> severity=warning', () => {
+    const out = adaptMessage(messageRecord({ priority: 'high' }), PERSONA_SUMMARY);
+    expect(out.severity).toBe('warning');
+  });
+
+  it('maps priority=normal -> severity=info', () => {
+    const out = adaptMessage(messageRecord({ priority: 'normal' }), PERSONA_SUMMARY);
+    expect(out.severity).toBe('info');
+  });
+
+  it('maps priority=low -> severity=info', () => {
+    const out = adaptMessage(messageRecord({ priority: 'low' }), PERSONA_SUMMARY);
+    expect(out.severity).toBe('info');
+  });
+
+  it('falls back to personaName-based title when msg.title is null', () => {
+    const out = adaptMessage(messageRecord({ title: null }), PERSONA_SUMMARY);
+    expect(out.title).toBe('Weather Bot sent you a message');
+  });
+});
+
+describe('adaptHealing', () => {
+  it('produces a kind=health item with id prefix and category payload', () => {
+    const out = adaptHealing(healingRecord(), PERSONA_SUMMARY);
+    expect(out.kind).toBe('health');
+    expect(out.id).toBe('health:heal-1');
+    expect(out.source).toBe('heal-1');
+    expect(out.severity).toBe('critical');
+    expect(out.title).toBe('Disk nearly full');
+    expect(out.body).toBe('Cleanup old logs');
+    expect(out.data.category).toBe('infra');
+    expect(out.data.suggestedFix).toBe('Delete logs older than 7 days');
+    expect(out.data.isCircuitBreaker).toBe(false);
+  });
+
+  it('normalizes severity=warning for raw "warn"', () => {
+    const out = adaptHealing(healingRecord({ severity: 'warn' }), PERSONA_SUMMARY);
+    expect(out.severity).toBe('warning');
+  });
+});
+
+describe('useUnifiedInbox', () => {
+  beforeEach(() => {
+    useOverviewStore.setState({
+      manualReviews: [],
+      messages: [],
+      healingIssues: [],
+    });
+    useAgentStore.setState({ personas: [personaRecord()] });
+  });
+
+  it('returns an empty array when all three sources are empty', () => {
+    const { result } = renderHook(() => useUnifiedInbox());
+    expect(result.current).toEqual([]);
+  });
+
+  it('merges three sources into one array (approvals + messages + healing)', () => {
+    useOverviewStore.setState({
+      manualReviews: [approvalRecord({ id: 'rev-1' })],
+      messages: [messageRecord({ id: 'msg-1' })],
+      healingIssues: [healingRecord({ id: 'heal-1' })],
+    });
+    const { result } = renderHook(() => useUnifiedInbox());
+    expect(result.current).toHaveLength(3);
+    const kinds = result.current.map((x) => x.kind).sort();
+    expect(kinds).toEqual(['approval', 'health', 'message']);
+  });
+
+  it('filters out non-pending approvals', () => {
+    useOverviewStore.setState({
+      manualReviews: [
+        approvalRecord({ id: 'rev-pending', status: 'pending' }),
+        approvalRecord({ id: 'rev-approved', status: 'approved' }),
+        approvalRecord({ id: 'rev-rejected', status: 'rejected' }),
+      ],
+    });
+    const { result } = renderHook(() => useUnifiedInbox());
+    expect(result.current).toHaveLength(1);
+    expect(result.current[0]?.source).toBe('rev-pending');
+  });
+
+  it('filters out read messages', () => {
+    useOverviewStore.setState({
+      messages: [
+        messageRecord({ id: 'msg-unread', is_read: false }),
+        messageRecord({ id: 'msg-read', is_read: true }),
+      ],
+    });
+    const { result } = renderHook(() => useUnifiedInbox());
+    expect(result.current).toHaveLength(1);
+    expect(result.current[0]?.source).toBe('msg-unread');
+  });
+
+  it('filters out resolved and auto-fixed healing issues', () => {
+    useOverviewStore.setState({
+      healingIssues: [
+        healingRecord({ id: 'heal-open', status: 'open', auto_fixed: false }),
+        healingRecord({ id: 'heal-resolved', status: 'resolved', auto_fixed: false }),
+        healingRecord({ id: 'heal-auto', status: 'open', auto_fixed: true }),
+      ],
+    });
+    const { result } = renderHook(() => useUnifiedInbox());
+    expect(result.current).toHaveLength(1);
+    expect(result.current[0]?.source).toBe('heal-open');
+  });
+
+  it('sorts items newest-first by createdAt', () => {
+    useOverviewStore.setState({
+      manualReviews: [approvalRecord({ id: 'old', created_at: '2026-04-18T00:00:00.000Z' })],
+      messages: [messageRecord({ id: 'mid', created_at: '2026-04-19T00:00:00.000Z' })],
+      healingIssues: [healingRecord({ id: 'new', created_at: '2026-04-20T00:00:00.000Z' })],
+    });
+    const { result } = renderHook(() => useUnifiedInbox());
+    expect(result.current.map((x) => x.source)).toEqual(['new', 'mid', 'old']);
+  });
+
+  it('caps the merged result at 50 items when given 100', () => {
+    const approvals = Array.from({ length: 40 }, (_, i) =>
+      approvalRecord({
+        id: `rev-${i}`,
+        created_at: `2026-04-01T00:00:${i.toString().padStart(2, '0')}.000Z`,
+      }),
+    );
+    const msgs = Array.from({ length: 40 }, (_, i) =>
+      messageRecord({
+        id: `msg-${i}`,
+        created_at: `2026-04-02T00:00:${i.toString().padStart(2, '0')}.000Z`,
+      }),
+    );
+    const healing = Array.from({ length: 20 }, (_, i) =>
+      healingRecord({
+        id: `heal-${i}`,
+        created_at: `2026-04-03T00:00:${i.toString().padStart(2, '0')}.000Z`,
+      }),
+    );
+    useOverviewStore.setState({
+      manualReviews: approvals,
+      messages: msgs,
+      healingIssues: healing,
+    });
+    const { result } = renderHook(() => useUnifiedInbox());
+    expect(result.current).toHaveLength(50);
+    const top20Kinds = result.current.slice(0, 20).map((x) => x.kind);
+    expect(top20Kinds.every((k) => k === 'health')).toBe(true);
+  });
+
+  it('resolves persona name/icon/color from the agent store', () => {
+    useAgentStore.setState({
+      personas: [personaRecord({ id: 'p-1', name: 'Storm Caller', icon: '⚡', color: '#ff0000' })],
+    });
+    useOverviewStore.setState({
+      manualReviews: [approvalRecord({ persona_id: 'p-1' })],
+    });
+    const { result } = renderHook(() => useUnifiedInbox());
+    expect(result.current[0]?.personaName).toBe('Storm Caller');
+    expect(result.current[0]?.personaIcon).toBe('⚡');
+    expect(result.current[0]?.personaColor).toBe('#ff0000');
+  });
+
+  it('falls back to "Unknown assistant" when persona is missing', () => {
+    useAgentStore.setState({ personas: [] });
+    useOverviewStore.setState({
+      manualReviews: [approvalRecord({ persona_id: 'p-missing' })],
+    });
+    const { result } = renderHook(() => useUnifiedInbox());
+    expect(result.current[0]?.personaName).toBe('Unknown assistant');
+    expect(result.current[0]?.personaIcon).toBeNull();
+    expect(result.current[0]?.personaColor).toBeNull();
+  });
+});
+
+describe('isMessageOutput', () => {
+  it('returns true for content_type=markdown regardless of title/content', () => {
+    expect(isMessageOutput(messageRecord({ content_type: 'markdown', title: 'hi' }))).toBe(true);
+  });
+
+  it('returns true when title contains an output keyword (case-insensitive)', () => {
+    expect(isMessageOutput(messageRecord({ title: 'Weekly DRAFT is ready' }))).toBe(true);
+  });
+
+  it('returns true when first 80 chars of content contain an output keyword', () => {
+    expect(
+      isMessageOutput(
+        messageRecord({ title: null, content: 'Please review the weekly report below.' }),
+      ),
+    ).toBe(true);
+  });
+
+  it('returns false for plain conversational messages', () => {
+    expect(
+      isMessageOutput(messageRecord({ title: 'Quick question', content: 'Hey you around?' })),
+    ).toBe(false);
+  });
+
+  it('only scans the first 80 chars of content — late keyword does NOT trigger', () => {
+    const longPrefix = 'x'.repeat(80);
+    expect(
+      isMessageOutput(messageRecord({ title: null, content: `${longPrefix} draft comes later` })),
+    ).toBe(false);
+  });
+});
+
+describe('adaptOutput', () => {
+  it('produces a kind=output item with id prefix and summary slice', () => {
+    const out = adaptOutput(
+      messageRecord({ id: 'm-1', content: 'a'.repeat(500), execution_id: 'exec-1' }),
+      PERSONA_SUMMARY,
+    );
+    expect(out.kind).toBe('output');
+    expect(out.id).toBe('output:m-1');
+    expect(out.source).toBe('m-1');
+    expect(out.severity).toBe('info');
+    expect(out.data.executionId).toBe('exec-1');
+    expect(out.data.summary).toHaveLength(200);
+  });
+
+  it('falls back to personaName-based title when msg.title is null', () => {
+    const out = adaptOutput(messageRecord({ title: null }), PERSONA_SUMMARY);
+    expect(out.title).toBe('Weather Bot produced an output');
+  });
+
+  it('falls back to empty-string executionId when message has no execution', () => {
+    const out = adaptOutput(messageRecord({ execution_id: null }), PERSONA_SUMMARY);
+    expect(out.data.executionId).toBe('');
+  });
+});
+
+describe('useUnifiedInbox — output-kind emission', () => {
+  beforeEach(() => {
+    useOverviewStore.setState({
+      manualReviews: [],
+      messages: [],
+      healingIssues: [],
+    });
+    useAgentStore.setState({ personas: [personaRecord()] });
+  });
+
+  it('markdown messages are emitted as output kind', () => {
+    useOverviewStore.setState({
+      messages: [messageRecord({ id: 'md-1', content_type: 'markdown' })],
+    });
+    const { result } = renderHook(() => useUnifiedInbox());
+    expect(result.current).toHaveLength(1);
+    expect(result.current[0]?.kind).toBe('output');
+    expect(result.current[0]?.id).toBe('output:md-1');
+  });
+
+  it('messages with output keywords in title are emitted as output', () => {
+    useOverviewStore.setState({
+      messages: [
+        messageRecord({
+          id: 'kw-1',
+          content_type: 'text',
+          title: 'Weekly draft is ready',
+        }),
+      ],
+    });
+    const { result } = renderHook(() => useUnifiedInbox());
+    expect(result.current[0]?.kind).toBe('output');
+  });
+
+  it('plain text messages without output keywords stay message kind', () => {
+    useOverviewStore.setState({
+      messages: [
+        messageRecord({
+          id: 'plain-1',
+          content_type: 'text',
+          title: 'Quick question',
+          content: 'Hey you around?',
+        }),
+      ],
+    });
+    const { result } = renderHook(() => useUnifiedInbox());
+    expect(result.current[0]?.kind).toBe('message');
+  });
+
+  it('a given message is emitted exactly once (no double-emission)', () => {
+    useOverviewStore.setState({
+      messages: [
+        messageRecord({
+          id: 'dup-check',
+          content_type: 'markdown',
+          title: 'Weekly report summary',
+        }),
+      ],
+    });
+    const { result } = renderHook(() => useUnifiedInbox());
+    const matching = result.current.filter((x) => x.source === 'dup-check');
+    expect(matching).toHaveLength(1);
+    expect(matching[0]?.kind).toBe('output');
+  });
+});
