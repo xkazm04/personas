@@ -56,7 +56,7 @@ describe('formatRelativeTime', () => {
   });
 
   describe('i18n path — with Translations bundle', () => {
-    it('5-minute-old timestamp resolves via simple_mode.inbox.relative_minutes_other', () => {
+    it('5-minute-old timestamp resolves via cockpit.inbox.relative_minutes_other', () => {
       expect(formatRelativeTime(isoAgo(5 * 60_000), enT, NOW)).toBe('5m ago');
     });
 

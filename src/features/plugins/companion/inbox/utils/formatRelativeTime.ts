@@ -12,9 +12,9 @@
  *   - otherwise                   → "{d}d ago"
  *
  * `t` is optional. When provided, labels come from the active locale via
- * `t.simple_mode.inbox.relative_*` (renamed to `t.cockpit.inbox.relative_*` in
- * Phase 5). When omitted, falls back to English literals — keeps the helper
- * usable from pure utilities without plumbing a translation bundle through.
+ * `t.cockpit.inbox.relative_*`. When omitted, falls back to English literals
+ * — keeps the helper usable from pure utilities without plumbing a
+ * translation bundle through.
  *
  * `now` is injectable for deterministic unit tests.
  */
@@ -34,7 +34,7 @@ export function formatRelativeTime(
   const ts = Date.parse(iso);
   if (!Number.isFinite(ts)) return iso;
   const delta = now - ts;
-  const r = t?.simple_mode?.inbox;
+  const r = t?.cockpit?.inbox;
 
   if (delta < 60_000) {
     return r?.relative_just_now ?? 'just now';

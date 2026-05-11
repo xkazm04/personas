@@ -75,9 +75,6 @@ const NotificationCenter = lazy(() => import("@/features/shared/components/feedb
 const ShareLinkHandler = lazy(() => import("@/features/sharing/components/ShareLinkHandler").then(m => ({ default: m.ShareLinkHandler })));
 const CompanionPanel = lazy(() => import("@/features/plugins/companion/CompanionPanel"));
 const OnboardingQuestPill = lazy(() => import("@/features/onboarding/components/OnboardingQuestPill"));
-const AmbientCockpit = lazy(() =>
-  import("@/features/simple-mode/components/AmbientCockpit").then((m) => ({ default: m.AmbientCockpit })),
-);
 // Idle-prefetch list: same modules as the lazy() declarations above. Hits the
 // V8 module cache so the corresponding lazy() resolves synchronously when the
 // overlays mount (or when the user triggers them via Cmd+K, the floating
@@ -260,9 +257,6 @@ export default function App() {
               when Catalog dispatches GO_LIST, autopilot panels reset,
               or edit forms close after save. */}
           <ResourcePickerHost />
-          <Suspense fallback={null}>
-            <AmbientCockpit />
-          </Suspense>
           {import.meta.env.DEV && isMobilePreview && (
             <div className="fixed top-1 right-1 z-[999] px-2 py-1 rounded-card bg-cyan-500/90 text-white typo-caption font-bold shadow-elevation-3 pointer-events-none select-none">
               MOBILE PREVIEW

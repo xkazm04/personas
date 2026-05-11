@@ -17,7 +17,7 @@ const BASE_SECTIONS: readonly TranslationSection[] = [
 ];
 
 const ROUTE_SECTIONS: Record<SidebarSection, readonly TranslationSection[]> = {
-  home: ['home', 'simple_mode', 'onboarding', 'system_health'],
+  home: ['home', 'onboarding', 'system_health'],
   overview: ['overview', 'execution', 'execution_status', 'event_types', 'alerts', 'models'],
   personas: ['agents', 'matrix_v3', 'design', 'prompt_lab', 'tests', 'execution', 'models', 'templates'],
   events: ['triggers', 'event_types', 'alerts', 'schedules', 'shared'],

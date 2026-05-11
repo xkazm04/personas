@@ -60,7 +60,7 @@ function resolvePersonaFromIndex(
  */
 export function useUnifiedInbox(): UnifiedInboxItem[] {
   const { t } = useTranslation();
-  const unknownLabel = t.simple_mode.unknown_assistant;
+  const unknownLabel = t.cockpit.unknown_assistant;
   const { manualReviews, messages, healingIssues } = useOverviewStore(
     useShallow((s) => ({
       manualReviews: s.manualReviews,

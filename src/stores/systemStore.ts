@@ -21,7 +21,6 @@ import { createArtistSlice } from "./slices/system/artistSlice";
 import { createObsidianBrainSlice } from "./slices/system/obsidianBrainSlice";
 import { createResearchLabSlice } from "./slices/system/researchLabSlice";
 import { createTwinSlice } from "./slices/system/twinSlice";
-import { createSimpleModeSlice } from "./slices/system/simpleModeSlice";
 import { createCompanionPluginSlice } from "./slices/system/companionPluginSlice";
 import { createRadioSlice } from "./slices/system/radioSlice";
 
@@ -43,7 +42,6 @@ export const useSystemStore = create<SystemStore>()(
       ...createObsidianBrainSlice(...a),
       ...createResearchLabSlice(...a),
       ...createTwinSlice(...a),
-      ...createSimpleModeSlice(...a),
       ...createCompanionPluginSlice(...a),
       ...createRadioSlice(...a),
     }),
@@ -72,7 +70,6 @@ export const useSystemStore = create<SystemStore>()(
         obsidianBrainTab: state.obsidianBrainTab,
         obsidianVaultPath: state.obsidianVaultPath,
         twinTab: state.twinTab,
-        activeSimpleTab: state.activeSimpleTab,
         companionPluginTab: state.companionPluginTab,
         companionFooterEnabled: state.companionFooterEnabled,
         companionPanelCompact: state.companionPanelCompact,

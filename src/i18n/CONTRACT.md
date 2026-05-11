@@ -125,7 +125,7 @@ The 20 feature modules under `src/features/`:
 ```
 agents  composition  deployment  execution  gitlab  home  onboarding
 overview  personas  pipeline  plugins  recipes  schedules  settings
-shared  sharing  simple-mode  templates  triggers  vault
+shared  sharing  templates  triggers  vault
 ```
 
 Known hotspots (from CLAUDE.md: ~3,800 hardcoded strings across ~1,200 files):
@@ -133,7 +133,7 @@ Known hotspots (from CLAUDE.md: ~3,800 hardcoded strings across ~1,200 files):
 - **agents, vault, overview, shared** — largest surface, most likely to harbor I1/I2 violations. Prioritize when touched.
 - **home, settings, onboarding** — user-first screens; I3 violations (pluralization, counts) most visible here.
 - **execution, triggers, schedules** — heaviest consumers of Layer-1 tokens; audit for I1 (English on the wire) and I2 (local status maps).
-- **deployment, gitlab, sharing, plugins, recipes, composition, simple-mode, templates, personas, pipeline** — smaller surfaces; spot-check when touched.
+- **deployment, gitlab, sharing, plugins, recipes, composition, templates, personas, pipeline** — smaller surfaces; spot-check when touched.
 
 This snapshot is a starting point, not a finished audit. Fix-as-you-touch (per CLAUDE.md) remains the migration policy; the rubric is the lens.
 

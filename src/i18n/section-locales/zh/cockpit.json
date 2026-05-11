@@ -1,0 +1,12 @@
+{
+  "unknown_assistant": "Unknown assistant",
+  "inbox": {
+    "relative_just_now": "刚刚",
+    "relative_minutes_one": "{m} 分钟前",
+    "relative_minutes_other": "{m} 分钟前",
+    "relative_hours_one": "{h} 小时前",
+    "relative_hours_other": "{h} 小时前",
+    "relative_days_one": "{d} 天前",
+    "relative_days_other": "{d} 天前"
+  }
+}

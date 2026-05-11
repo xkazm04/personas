@@ -1,0 +1,12 @@
+{
+  "unknown_assistant": "Unknown assistant",
+  "inbox": {
+    "relative_just_now": "vừa xong",
+    "relative_minutes_one": "{m} phút trước",
+    "relative_minutes_other": "{m} phút trước",
+    "relative_hours_one": "{h} giờ trước",
+    "relative_hours_other": "{h} giờ trước",
+    "relative_days_one": "{d} ngày trước",
+    "relative_days_other": "{d} ngày trước"
+  }
+}

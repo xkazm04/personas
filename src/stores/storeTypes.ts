@@ -41,7 +41,6 @@ import type { ArtistSlice } from "./slices/system/artistSlice";
 import type { ObsidianBrainSlice } from "./slices/system/obsidianBrainSlice";
 import type { ResearchLabSlice } from "./slices/system/researchLabSlice";
 import type { TwinSlice } from "./slices/system/twinSlice";
-import type { SimpleModeSlice } from "./slices/system/simpleModeSlice";
 import type { CompanionPluginSlice } from "./slices/system/companionPluginSlice";
 import type { RadioSlice } from "./slices/system/radioSlice";
 import type { ChatSlice } from "./slices/agents/chatSlice";
@@ -236,7 +235,6 @@ export type SystemStore = CoreState &
   ObsidianBrainSlice &
   ResearchLabSlice &
   TwinSlice &
-  SimpleModeSlice &
   CompanionPluginSlice &
   RadioSlice;
 

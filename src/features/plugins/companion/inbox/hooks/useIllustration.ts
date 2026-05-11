@@ -2,8 +2,7 @@
  * Illustration resolver for persona tiles in the Cockpit and inline cards.
  *
  * Given any Persona, deterministically returns one of twelve warm watercolor
- * category illustrations staged under `public/illustrations/simple-mode/`.
- * The folder will be renamed to `personas/` in the Phase 5 simple-mode deletion.
+ * category illustrations staged under `public/illustrations/personas/`.
  *
  * Tier cascade (first match wins):
  *   1. **Emoji map** — `persona.icon` first grapheme → EMOJI_MAP
@@ -45,8 +44,7 @@ export type IllustrationCategory = (typeof CATEGORIES)[number];
 
 export interface ResolvedIllustration {
   category: IllustrationCategory;
-  /** Runtime URL beginning with `/illustrations/simple-mode/...` (folder
-   *  rename to `personas/` is queued for Phase 5). */
+  /** Runtime URL beginning with `/illustrations/personas/...` */
   url: string;
 }
 
@@ -114,7 +112,7 @@ export function hashId(id: string): number {
 }
 
 function urlFor(category: IllustrationCategory): string {
-  return `/illustrations/simple-mode/category-${category}.png`;
+  return `/illustrations/personas/category-${category}.png`;
 }
 
 type PersonaLike = Pick<

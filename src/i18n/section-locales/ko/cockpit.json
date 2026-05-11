@@ -1,0 +1,12 @@
+{
+  "unknown_assistant": "Unknown assistant",
+  "inbox": {
+    "relative_just_now": "방금",
+    "relative_minutes_one": "{m}분 전",
+    "relative_minutes_other": "{m}분 전",
+    "relative_hours_one": "{h}시간 전",
+    "relative_hours_other": "{h}시간 전",
+    "relative_days_one": "{d}일 전",
+    "relative_days_other": "{d}일 전"
+  }
+}

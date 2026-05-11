@@ -1,0 +1,12 @@
+{
+  "unknown_assistant": "Unknown assistant",
+  "inbox": {
+    "relative_just_now": "ahora mismo",
+    "relative_minutes_one": "hace {m} min",
+    "relative_minutes_other": "hace {m} min",
+    "relative_hours_one": "hace {h} h",
+    "relative_hours_other": "hace {h} h",
+    "relative_days_one": "hace {d} d",
+    "relative_days_other": "hace {d} d"
+  }
+}

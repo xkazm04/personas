@@ -1,0 +1,12 @@
+{
+  "unknown_assistant": "Unknown assistant",
+  "inbox": {
+    "relative_just_now": "právě teď",
+    "relative_minutes_one": "před {m} min",
+    "relative_minutes_other": "před {m} min",
+    "relative_hours_one": "před {h} h",
+    "relative_hours_other": "před {h} h",
+    "relative_days_one": "před {d} d",
+    "relative_days_other": "před {d} d"
+  }
+}

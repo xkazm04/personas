@@ -1,0 +1,12 @@
+{
+  "unknown_assistant": "Unknown assistant",
+  "inbox": {
+    "relative_just_now": "अभी",
+    "relative_minutes_one": "{m}मि पहले",
+    "relative_minutes_other": "{m}मि पहले",
+    "relative_hours_one": "{h}घं पहले",
+    "relative_hours_other": "{h}घं पहले",
+    "relative_days_one": "{d}दि पहले",
+    "relative_days_other": "{d}दि पहले"
+  }
+}

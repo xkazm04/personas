@@ -1,0 +1,12 @@
+{
+  "unknown_assistant": "Unknown assistant",
+  "inbox": {
+    "relative_just_now": "à l'instant",
+    "relative_minutes_one": "il y a {m} min",
+    "relative_minutes_other": "il y a {m} min",
+    "relative_hours_one": "il y a {h} h",
+    "relative_hours_other": "il y a {h} h",
+    "relative_days_one": "il y a {d} j",
+    "relative_days_other": "il y a {d} j"
+  }
+}

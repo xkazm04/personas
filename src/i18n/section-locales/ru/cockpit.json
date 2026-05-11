@@ -1,0 +1,12 @@
+{
+  "unknown_assistant": "Unknown assistant",
+  "inbox": {
+    "relative_just_now": "только что",
+    "relative_minutes_one": "{m} мин назад",
+    "relative_minutes_other": "{m} мин назад",
+    "relative_hours_one": "{h} ч назад",
+    "relative_hours_other": "{h} ч назад",
+    "relative_days_one": "{d} дн назад",
+    "relative_days_other": "{d} дн назад"
+  }
+}

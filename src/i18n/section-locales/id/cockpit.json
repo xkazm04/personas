@@ -1,0 +1,12 @@
+{
+  "unknown_assistant": "Unknown assistant",
+  "inbox": {
+    "relative_just_now": "baru saja",
+    "relative_minutes_one": "{m} mnt lalu",
+    "relative_minutes_other": "{m} mnt lalu",
+    "relative_hours_one": "{h} jam lalu",
+    "relative_hours_other": "{h} jam lalu",
+    "relative_days_one": "{d} hr lalu",
+    "relative_days_other": "{d} hr lalu"
+  }
+}
