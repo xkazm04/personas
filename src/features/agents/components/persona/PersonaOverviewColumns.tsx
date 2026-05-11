@@ -7,6 +7,7 @@ import { formatRelativeTime } from '@/lib/utils/formatters';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
 import { BuildingBadge, HEALTH_STYLES, StatusBadge, TrustScoreBar } from './PersonaOverviewBadges';
+import { SetupStatusBadge } from '@/features/shared/components/display/SetupStatusBadge';
 import { PersonaOverviewFilterHeader, type FilterOption } from './PersonaOverviewFilterHeader';
 import { ConnectorsCell, FavoriteCell, NameCell, SelectCell } from './PersonaOverviewCells';
 import type { AgentListViewConfig } from './ViewPresetBar';
@@ -101,9 +102,14 @@ export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<P
           />
         ),
         render: (p) =>
-          isBuilding(p.id)
-            ? <BuildingBadge />
-            : <StatusBadge enabled={p.enabled} health={healthMap[p.id]} isDraft={isDraft(p)} />,
+          isBuilding(p.id) ? (
+            <BuildingBadge />
+          ) : (
+            <span className="inline-flex items-center gap-1.5 flex-wrap">
+              <StatusBadge enabled={p.enabled} health={healthMap[p.id]} isDraft={isDraft(p)} />
+              <SetupStatusBadge status={p.setup_status} />
+            </span>
+          ),
       },
       {
         key: 'trust', label: t.agents.overview_columns.trust, width: 'minmax(140px, 1fr)', sortable: true,

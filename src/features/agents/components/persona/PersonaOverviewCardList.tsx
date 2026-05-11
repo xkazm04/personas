@@ -3,6 +3,7 @@ import { Calendar, Clock, Inbox, Plug, Star, Zap } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
+import { SetupStatusBadge } from '@/features/shared/components/display/SetupStatusBadge';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { useToastStore } from '@/stores/toastStore';
 import { useAgentStore } from '@/stores/agentStore';
@@ -195,9 +196,12 @@ const PersonaOverviewCardItem = memo(function PersonaOverviewCardItem({
 
       {/* Meta row */}
       <div className="flex items-center justify-between flex-wrap gap-2 px-3 pb-3">
-        {building
-          ? <BuildingBadge />
-          : <StatusBadge enabled={p.enabled} health={health} isDraft={draft} />}
+        <div className="flex items-center gap-2 flex-wrap">
+          {building
+            ? <BuildingBadge />
+            : <StatusBadge enabled={p.enabled} health={health} isDraft={draft} />}
+          <SetupStatusBadge status={p.setup_status} />
+        </div>
         {p.enabled && !draft && (
           <div className="min-w-[140px] flex-1">
             <TrustScoreBar score={p.trust_score ?? 0} />

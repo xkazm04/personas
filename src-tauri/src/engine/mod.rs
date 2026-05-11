@@ -1646,6 +1646,22 @@ async fn handle_execution_result(
     )
     .await;
 
+    // E1 — circuit breaker. After every successful-CLI run that the LLM
+    // self-classified as non-value-delivering, check whether the persona
+    // has accumulated 3 consecutive such runs. If so, disable the persona
+    // and emit a notification so the user knows to fix the setup. A
+    // single value_delivered (or unknown — back-compat) run resets the
+    // counter on the SQL side via the most-recent-N window. Failure /
+    // crash paths don't trigger this — only LLM self-assessment.
+    if result.success {
+        if matches!(
+            result.business_outcome.as_deref(),
+            Some("no_input_available") | Some("precondition_failed")
+        ) {
+            check_and_apply_circuit_breaker(pool, app, persona_id);
+        }
+    }
+
     // Session pool: cache successful session for warm reuse on next execution.
     if result.success {
         if let Some(ref session_id) = result.claude_session_id {
@@ -1867,6 +1883,150 @@ fn notify_execution_rich(
 }
 
 /// Check if the persona has exceeded its monthly budget and create an alert.
+/// Number of consecutive non-value-delivering runs before the circuit
+/// breaker disables the persona. Tuned for the "user noticed the persona
+/// isn't doing anything useful" feedback: a single fluke shouldn't kill
+/// it, but three runs in a row of "no_input_available" or
+/// "precondition_failed" is a strong signal the setup is broken (missing
+/// connector, dead OAuth token, no data source wired, etc.).
+const CIRCUIT_BREAKER_THRESHOLD: usize = 3;
+
+/// E1 — when a persona accumulates `CIRCUIT_BREAKER_THRESHOLD` consecutive
+/// non-value-delivering executions, disable it and tell the user. The
+/// counter is implicit (windowed over the last N completed runs); a
+/// single `value_delivered` run inside that window clears the trip.
+///
+/// Disabling is automatic but reversible: the user re-enables the
+/// persona from the Personas page and the counter starts fresh on the
+/// next run. We do NOT clear `setup_status` here — if that was the
+/// underlying cause, it stays at `needs_credentials` so the badge is
+/// still visible.
+///
+/// Best-effort: any failure (DB query, persona deleted mid-flight, …)
+/// is logged and skipped so the breaker can never prevent the
+/// surrounding post-exec pipeline from finishing.
+fn check_and_apply_circuit_breaker(pool: &DbPool, app: &AppHandle, persona_id: &str) {
+    let conn = match pool.get() {
+        Ok(c) => c,
+        Err(e) => {
+            tracing::warn!(persona_id, error = %e, "circuit breaker: DB pool unavailable");
+            return;
+        }
+    };
+
+    // Pull the most recent `CIRCUIT_BREAKER_THRESHOLD` completed runs.
+    // We only look at terminal status='completed' rows — running/queued/
+    // failed don't count toward the consecutive streak.
+    let mut stmt = match conn.prepare_cached(
+        "SELECT business_outcome FROM persona_executions
+         WHERE persona_id = ?1 AND status = 'completed'
+         ORDER BY created_at DESC
+         LIMIT ?2",
+    ) {
+        Ok(s) => s,
+        Err(e) => {
+            tracing::warn!(persona_id, error = %e, "circuit breaker: prepare failed");
+            return;
+        }
+    };
+    let outcomes: Vec<String> = match stmt.query_map(
+        rusqlite::params![persona_id, CIRCUIT_BREAKER_THRESHOLD as i64],
+        |row| row.get::<_, String>(0),
+    ) {
+        Ok(rows) => rows.filter_map(|r| r.ok()).collect(),
+        Err(e) => {
+            tracing::warn!(persona_id, error = %e, "circuit breaker: query failed");
+            return;
+        }
+    };
+
+    if outcomes.len() < CIRCUIT_BREAKER_THRESHOLD {
+        return; // not enough history yet
+    }
+    let all_non_delivering = outcomes
+        .iter()
+        .all(|o| matches!(o.as_str(), "no_input_available" | "precondition_failed"));
+    if !all_non_delivering {
+        return;
+    }
+
+    // Check the persona is currently enabled — if a user already
+    // disabled it manually we don't need to emit the notification.
+    let persona = match persona_repo::get_by_id(pool, persona_id) {
+        Ok(p) => p,
+        Err(e) => {
+            tracing::warn!(persona_id, error = %e, "circuit breaker: persona lookup failed");
+            return;
+        }
+    };
+    if !persona.enabled {
+        return;
+    }
+
+    // Disable the persona. Use a direct UPDATE so we don't go through
+    // the full update_persona pipeline (which would touch design_context,
+    // structured_prompt, etc.). Best-effort.
+    if let Err(e) = conn.execute(
+        "UPDATE personas SET enabled = 0, updated_at = ?1 WHERE id = ?2",
+        rusqlite::params![chrono::Utc::now().to_rfc3339(), persona_id],
+    ) {
+        tracing::warn!(persona_id, error = %e, "circuit breaker: disable write failed");
+        return;
+    }
+
+    tracing::warn!(
+        persona_id = %persona_id,
+        persona_name = %persona.name,
+        outcomes = ?outcomes,
+        "circuit breaker: persona disabled after {} consecutive non-value-delivering runs",
+        CIRCUIT_BREAKER_THRESHOLD,
+    );
+
+    // Surface to the user via persona_messages so the notification bell
+    // picks it up. The message carries enough context for them to know
+    // why it was disabled and what to fix.
+    let last_outcome = outcomes.first().map(|s| s.as_str()).unwrap_or("unknown");
+    let hint = match last_outcome {
+        "precondition_failed" => "A required connector or credential is missing or broken. Check Settings → Vault and re-enable the persona once fixed.",
+        "no_input_available" => "The persona had nothing to process across the last three runs. Verify the data source (Gmail / Notion / Drive folder) actually contains new items the persona should act on, then re-enable.",
+        _ => "Check the persona's recent executions for the precise reason, then re-enable manually.",
+    };
+    let content = format!(
+        "Persona auto-disabled after {} consecutive non-value-delivering runs (last outcome: {}).\n\n{}",
+        CIRCUIT_BREAKER_THRESHOLD, last_outcome, hint,
+    );
+    let _ = crate::db::repos::communication::messages::create(
+        pool,
+        crate::db::models::CreateMessageInput {
+            persona_id: persona_id.into(),
+            execution_id: None,
+            title: Some(format!("{} — Setup required", persona.name)),
+            content,
+            content_type: Some("alert".into()),
+            priority: Some("high".into()),
+            metadata: None,
+            thread_id: None,
+            use_case_id: None,
+        },
+    );
+
+    // Emit EXECUTION_STATUS-style notification so the bell picks it up
+    // immediately, without waiting for the next message poll.
+    let _ = app.emit(
+        event_name::EXECUTION_STATUS,
+        types::ExecutionStatusEvent {
+            execution_id: format!("circuit-breaker-{}", persona_id),
+            status: ExecutionState::Failed,
+            error: Some(format!(
+                "{} auto-disabled — {}",
+                persona.name, last_outcome
+            )),
+            duration_ms: None,
+            cost_usd: None,
+        },
+    );
+}
+
 fn check_budget_enforcement(pool: &DbPool, persona_id: &str, exec_id: &str) {
     let monthly_spend = exec_repo::get_monthly_spend(pool, persona_id).unwrap_or(0.0);
     let persona = persona_repo::get_by_id(pool, persona_id).ok();
