@@ -101,51 +101,42 @@ pub fn install_sidecar(exec_dir: &Path) -> Result<bool, AppError> {
 /// project already requires per `codebase-stack.md`) to append the hook
 /// payload (which Claude Code pipes via stdin) to the queue file. Choosing
 /// `node` over a shell-specific construct keeps the hook portable.
+///
+/// Uses Claude Code 2.1.139's exec-form `args: string[]` hook field so the
+/// command is spawned directly without going through a shell — eliminates
+/// the Windows-quoting / JS-string-in-shell-arg double-escape trap that the
+/// previous shell-form `command: "node -e \"...\""` had to defend against.
 fn build_settings_json(queue_path: &Path) -> Result<String, AppError> {
-    // Escape the path for embedding in a JSON string AND for embedding in
-    // a JS string literal inside that JSON. Backslashes need double escape
-    // (Windows paths are full of them) and so do quotes.
     let queue_str = queue_path.display().to_string();
-    let js_escaped = queue_str.replace('\\', "\\\\").replace('"', "\\\"");
 
-    // The hook command:
+    // The hook script:
     //   1. Reads the JSON event payload Claude Code pipes on stdin.
     //   2. Appends it as a single JSONL line to the queue file.
     //   3. Exits 0 so it never blocks the parent execution.
     //
-    // Wrap the whole node script in a single string and let serde_json
-    // emit it as a properly-escaped JSON value.
+    // serde_json escapes the path inside the JS string literal correctly on
+    // all platforms (Windows backslashes included).
+    let queue_str_js = serde_json::to_string(&queue_str)
+        .map_err(|e| AppError::Internal(format!("escape queue path for JS literal: {e}")))?;
     let node_script = format!(
-        "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{{try{{require('fs').appendFileSync(\"{js_escaped}\",d.trim()+'\\n');}}catch(e){{}}process.exit(0);}});"
+        "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{{try{{require('fs').appendFileSync({queue_str_js},d.trim()+'\\n');}}catch(e){{}}process.exit(0);}});"
     );
 
-    // Build the JSON value programmatically so escaping is correct on all
-    // platforms.
+    let hook_entry = serde_json::json!({
+        "type": "command",
+        "command": "node",
+        "args": ["-e", node_script]
+    });
+
     let settings = serde_json::json!({
         "_personas_marker": "Auto-installed by personas hooks_sidecar — do not edit by hand. \
                               Captured session events feed the persona memory compile pipeline.",
         "hooks": {
             "Stop": [
-                {
-                    "matcher": "",
-                    "hooks": [
-                        {
-                            "type": "command",
-                            "command": format!("node -e \"{}\"", node_script.replace('"', "\\\""))
-                        }
-                    ]
-                }
+                { "matcher": "", "hooks": [hook_entry.clone()] }
             ],
             "PreCompact": [
-                {
-                    "matcher": "",
-                    "hooks": [
-                        {
-                            "type": "command",
-                            "command": format!("node -e \"{}\"", node_script.replace('"', "\\\""))
-                        }
-                    ]
-                }
+                { "matcher": "", "hooks": [hook_entry] }
             ]
         }
     });
@@ -328,6 +319,27 @@ mod tests {
             .map(|s| s.contains("personas"))
             .unwrap_or(false));
         assert!(tmp_on.path().join(".personas").exists());
+
+        // Hook entries use Claude Code 2.1.139's `args: string[]` exec form,
+        // not the legacy shell-form `command: "node -e \"...\""`. Verifies on
+        // both Stop and PreCompact so a refactor to one without the other
+        // is caught.
+        for event in ["Stop", "PreCompact"] {
+            let hook = &parsed["hooks"][event][0]["hooks"][0];
+            assert_eq!(
+                hook["command"].as_str(),
+                Some("node"),
+                "{event} hook should spawn 'node' directly, not via a shell"
+            );
+            let args = hook["args"].as_array().unwrap_or_else(|| {
+                panic!("{event} hook missing args[]; legacy shell-form regression?")
+            });
+            assert_eq!(args[0].as_str(), Some("-e"));
+            assert!(args[1]
+                .as_str()
+                .map(|s| s.contains("appendFileSync"))
+                .unwrap_or(false));
+        }
     }
 
     #[test]
