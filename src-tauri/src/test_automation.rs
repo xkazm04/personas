@@ -512,6 +512,16 @@ async fn handle_snapshot(
     eval_bridge_method(&state, "getSnapshot", &serde_json::json!({})).await
 }
 
+/// Rich snapshot for e2e diagnostics — extends `getSnapshot` with
+/// build-session phase, persona-count-by-status, and the legacy fields.
+/// Used by `tools/test-mcp/lib/snapshot.py` to replace the 10+ ad-hoc
+/// `_check_*.py` diagnostic scripts.
+async fn handle_test_snapshot(
+    AxumState(state): AxumState<ServerState>,
+) -> Result<String, (StatusCode, String)> {
+    eval_bridge_method(&state, "getRichSnapshot", &serde_json::json!({})).await
+}
+
 async fn handle_agent_cards(
     AxumState(state): AxumState<ServerState>,
 ) -> Result<String, (StatusCode, String)> {
@@ -1238,6 +1248,7 @@ fn build_router(state: ServerState) -> Router {
         .route("/bridge-exec", post(handle_bridge_exec))
         // Test isolation — clears pending HTTP bridge state and frontend event listeners.
         .route("/test/reset", post(handle_test_reset))
+        .route("/test/snapshot", get(handle_test_snapshot))
         .with_state(state)
 }
 

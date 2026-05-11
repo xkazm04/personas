@@ -1,0 +1,91 @@
+name: E2E Smoke (live-app)
+
+# Non-blocking gate — captures Tauri-on-Linux flake patterns while we
+# stabilize. Promotion plan in
+# Obsidian/personas/Architect/decisions/2026-05-10-e2e-smoke-ci-scaffold.md:
+#
+#   1. After 5 consecutive green runs, flip continue-on-error to false.
+#   2. Add e2e_companion_chat.py + e2e_curation_run.py + e2e_messaging_dispatch.py
+#      once they're stable.
+#   3. Promote installer-test.yml from post-release to pre-release gate.
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+
+concurrency:
+  group: e2e-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    name: smoke (Linux + xvfb + tauri:dev:test)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - name: Install Tauri Linux deps + xvfb
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            libsoup-3.0-dev \
+            libjavascriptcoregtk-4.1-dev \
+            xvfb
+
+      - name: npm ci
+        run: npm ci
+
+      - name: Cargo build (test-automation feature, debug)
+        run: cargo build --features test-automation --manifest-path src-tauri/Cargo.toml
+
+      - name: Run smoke test under xvfb
+        # Non-blocking — flake patterns are still being characterized.
+        # See ADR for promotion criteria.
+        continue-on-error: true
+        env:
+          PERSONAS_TEST_PORT: "17320"
+        run: |
+          # Start the dev app in background under xvfb, then wait for the
+          # test-automation server to come up before running the smoke suite.
+          xvfb-run -a -- npm run tauri:dev:test &
+          DEV_PID=$!
+
+          for attempt in $(seq 1 60); do
+            if curl -sf http://127.0.0.1:17320/health >/dev/null 2>&1; then
+              echo "Test-automation server up after ${attempt} attempts"
+              break
+            fi
+            sleep 5
+          done
+
+          if ! curl -sf http://127.0.0.1:17320/health >/dev/null 2>&1; then
+            echo "::warning::Test-automation server did not come up within 5 minutes"
+            kill -9 $DEV_PID 2>/dev/null || true
+            exit 1
+          fi
+
+          # Run the smoke harness — 28-test framework validation, no
+          # business-logic assertions.
+          uvx --with httpx python tools/test-mcp/smoke_test.py
+
+          # Stop the dev app cleanly.
+          kill $DEV_PID 2>/dev/null || true
+          wait $DEV_PID 2>/dev/null || true

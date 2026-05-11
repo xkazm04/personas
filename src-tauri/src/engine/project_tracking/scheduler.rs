@@ -19,8 +19,8 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use chrono::Utc;
-use tauri::AppHandle;
 use tauri::async_runtime::JoinHandle;
+use tauri::AppHandle;
 use tokio::time::interval;
 use tracing::{info, warn};
 

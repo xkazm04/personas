@@ -50,7 +50,7 @@ test("health endpoint responds", test_health)
 print("\n=== 2. Navigate (all sections) ===")
 sections = [
     "home", "overview", "personas", "events", "credentials",
-    "design-reviews", "team", "cloud", "settings", "dev-tools",
+    "design-reviews", "plugins", "schedules", "settings",
 ]
 
 

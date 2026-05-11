@@ -17,7 +17,7 @@ import type { SidebarSection } from "@/lib/types/types";
 
 const VALID_SECTIONS: SidebarSection[] = [
   "home", "overview", "personas", "events", "credentials",
-  "design-reviews", "plugins", "settings",
+  "design-reviews", "plugins", "schedules", "settings",
 ];
 
 /**
@@ -58,6 +58,7 @@ interface TestBridge {
   openEditorTab(tab: string): { success: boolean; tab?: string; error?: string };
   startCreateAgent(): { success: boolean };
   getSnapshot(): Record<string, unknown>;
+  getRichSnapshot(): Record<string, unknown>;
   fillField(testId: string, value: string): { success: boolean; testId?: string; value?: string; error?: string };
   clickTestId(testId: string): { success: boolean; testId?: string; error?: string };
   waitForToast(text: string, timeoutMs?: number): Promise<{ success: boolean; text?: string; error?: string }>;
@@ -88,6 +89,13 @@ interface TestBridge {
   driveReadText(relPath: string): Promise<{ success: boolean; content?: string; error?: string }>;
   driveList(relPath?: string): Promise<{ success: boolean; count?: number; entries?: unknown[]; error?: string }>;
   waitForPersonaExecution(personaId: string, sinceIso: string, timeoutMs?: number): Promise<{ success: boolean; execution?: Record<string, unknown>; seen?: number; error?: string }>;
+  /**
+   * Generic Tauri IPC passthrough — for test scripts that need to call a
+   * command without a dedicated bridge wrapper. The script gets full
+   * control of params shape and is responsible for adapting to the
+   * command's contract.
+   */
+  invokeCommand(command: string, params?: Record<string, unknown>): Promise<{ success: boolean; result?: unknown; error?: string }>;
   [key: string]: unknown;
 }
 
@@ -427,6 +435,53 @@ const bridge: TestBridge = {
       errors,
       forms,
     };
+  },
+
+  /**
+   * Rich snapshot used by lib/snapshot.py to replace ad-hoc `_check_*.py`
+   * diagnostic scripts. Extends getSnapshot with build-session state and
+   * persona-count-by-status grouping. Delegates to getSnapshot for the
+   * shared DOM-traversal fields.
+   */
+  getRichSnapshot() {
+    const w = window as unknown as { __TEST__?: { getSnapshot?: () => Record<string, unknown> } };
+    const base = w.__TEST__?.getSnapshot?.() ?? {};
+    const agent = useAgentStore.getState();
+
+    const personasByStatus: Record<string, number> = {};
+    for (const p of agent.personas) {
+      const key = (p as unknown as { status?: string }).status || "unknown";
+      personasByStatus[key] = (personasByStatus[key] || 0) + 1;
+    }
+
+    return {
+      ...base,
+      buildSession: {
+        phase: agent.buildPhase ?? null,
+        sessionId: agent.buildSessionId ?? null,
+        personaId: agent.buildPersonaId ?? null,
+        error: agent.buildError ?? null,
+        outputLineCount: agent.buildOutputLines?.length ?? 0,
+        testPassed: agent.buildTestPassed ?? null,
+      },
+      personasByStatus,
+      personaCountByStatus: personasByStatus,
+    };
+  },
+
+  /**
+   * Generic Tauri IPC passthrough. Test scripts that don't have a
+   * dedicated bridge wrapper for the command they need can call this.
+   * Returns the same {success, result, error} envelope the rest of the
+   * bridge uses.
+   */
+  async invokeCommand(command: string, params?: Record<string, unknown>) {
+    try {
+      const result = await invoke(command, params ?? {});
+      return { success: true, result };
+    } catch (e) {
+      return { success: false, error: _fmtBridgeErr(e) };
+    }
   },
 
   /** Type into a field identified by data-testid */
