@@ -538,7 +538,8 @@ pub fn update_status(
                 tool_steps = COALESCE(?13, tool_steps),
                 claude_session_id = COALESCE(?14, claude_session_id),
                 execution_config = COALESCE(?15, execution_config),
-                log_truncated = ?16
+                log_truncated = ?16,
+                business_outcome = COALESCE(?17, business_outcome)
              WHERE id = ?12",
         )?;
         stmt.execute(params![
@@ -558,6 +559,7 @@ pub fn update_status(
             input.claude_session_id,
             input.execution_config,
             input.log_truncated,
+            input.business_outcome,
         ])?;
 
         Ok(())
@@ -612,7 +614,8 @@ pub fn update_status_if_running(
                 tool_steps = COALESCE(?13, tool_steps),
                 claude_session_id = COALESCE(?14, claude_session_id),
                 execution_config = COALESCE(?15, execution_config),
-                log_truncated = ?16
+                log_truncated = ?16,
+                business_outcome = COALESCE(?17, business_outcome)
              WHERE id = ?12 AND status = 'running'",
             )?;
             let rows_changed = stmt.execute(params![
@@ -632,6 +635,7 @@ pub fn update_status_if_running(
                 input.claude_session_id,
                 input.execution_config,
                 input.log_truncated,
+                input.business_outcome,
             ])?;
 
             Ok(rows_changed > 0)
@@ -689,7 +693,8 @@ pub fn update_status_if_not_final(
                 tool_steps = COALESCE(?13, tool_steps),
                 claude_session_id = COALESCE(?14, claude_session_id),
                 execution_config = COALESCE(?15, execution_config),
-                log_truncated = ?16
+                log_truncated = ?16,
+                business_outcome = COALESCE(?17, business_outcome)
              WHERE id = ?12 AND status IN ('running', 'cancelled')",
             )?;
             let rows_changed = stmt.execute(params![
@@ -709,6 +714,7 @@ pub fn update_status_if_not_final(
                 input.claude_session_id,
                 input.execution_config,
                 input.log_truncated,
+                input.business_outcome,
             ])?;
 
             Ok(rows_changed > 0)

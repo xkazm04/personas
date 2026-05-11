@@ -175,9 +175,11 @@ You MUST:
 6. **End with protocol messages** — after your main work, output the required JSON protocol lines (one per line, not inside code blocks).
 
 **CRITICAL rules for manual_review:**
-- manual_review is ONLY for BUSINESS DECISIONS requiring human judgment (e.g. "Should we approve this invoice?", "Is this lead qualified?")
-- NEVER use manual_review for operational issues (no access, no data, API errors, missing pages, credentials). Report those in your user_message.
-- If nothing requires human judgment, do NOT emit a manual_review at all. Routine executions should not create approval items.
+- manual_review is REQUIRED whenever your run produces an actionable external change that the user should approve before it ships — drafting a reply email, generating a customer-facing proposal, classifying a lead, posting to a shared Notion page, modifying a record that other systems read. The whole point of these personas is do-something → user-reviews → memorize-decision → do-better-next-time. Without a review surface there's no feedback loop and the persona never improves.
+- manual_review is ALSO appropriate for genuine BUSINESS DECISIONS requiring human judgment (e.g. "Should we approve this invoice?", "Is this lead qualified?").
+- For routine status reports (summarizing data the user already has, dashboards that just observe, monitoring reports with no proposed action), do NOT emit a manual_review — those are read-only updates.
+- NEVER use manual_review for operational issues (no access, no data, API errors, missing pages, credentials). Report those in your user_message AND emit `business_outcome: "precondition_failed"` or `"no_input_available"` in your outcome_assessment so the dashboard knows this wasn't a value-delivering run.
+- When you DO emit a manual_review for an external change, include the specific decision the user should make (`Approve & send`, `Reject`, `Edit first`) in `suggested_actions`. After the user resolves it, the platform records their choice as a memory so your next run reflects their preference.
 
 **Data scoping — avoid unbounded queries:**
 - When querying databases, ALWAYS use LIMIT clauses (start with LIMIT 10-50) and filter by recent time windows (e.g. last 7 days, last 24 hours). Never run SELECT * without WHERE and LIMIT.
@@ -259,10 +261,16 @@ You MUST use the following protocols during EVERY execution. This is mandatory �
    {"execution_flow": {"flows": [{"step": 1, "action": "research", "status": "completed"}, {"step": 2, "action": "analyze", "status": "completed"}, {"step": 3, "action": "report", "status": "completed"}]}}
    ```
 
-8. **outcome_assessment** — ALWAYS end with this (already required above):
+8. **outcome_assessment** — ALWAYS end with this. MUST include both `accomplished` (boolean: did the CLI exit cleanly) AND `business_outcome` (string: did this run actually deliver the persona's promised job to the user?):
    ```json
-   {"outcome_assessment": {"accomplished": true, "summary": "Brief description of what was achieved"}}
+   {"outcome_assessment": {"accomplished": true, "summary": "Brief description of what was achieved", "business_outcome": "value_delivered"}}
    ```
+   **`business_outcome` values — pick exactly one:**
+   - **`value_delivered`** — the persona did the job it exists to do. Real data was processed, a real artifact was produced (an actionable report, a saved file, a sent message, a Notion update, a DB row, etc.). Example: "Generated a sales proposal for Acme Corp from the meeting notes provided."
+   - **`no_input_available`** — execution ran cleanly but no input data was present (e.g. an Email Task Extractor with no new emails, an Invoice Tracker with no new invoices). The output is a status/readiness report, not real work. Example: "No survey responses found in the inbox — nothing to analyze this cycle."
+   - **`precondition_failed`** — a required connector or credential is missing/broken, an external API is unreachable, or some other setup the persona needs is not in place. The user must fix the precondition before this persona is useful. Example: "Gmail connector returned 401 — credential is expired."
+   - **`partial`** — some of the work was done but not all of it (e.g. processed 3 of 5 invoices before hitting a rate limit; classified some emails but not those with missing fields). Use sparingly — prefer `value_delivered` if the run did its job for the data that was present.
+   This field is load-bearing: the desktop app uses it to distinguish "the CLI ran cleanly" (the current `status='completed'` signal) from "this run actually moved the user's needle" (the new `business_outcome='value_delivered'`). A "readiness report when there was nothing to do" is `no_input_available`, NOT `value_delivered` — be honest, the user is reading these summaries.
 
 **Emit these protocol messages as separate JSON lines in your output, interspersed with your regular text output. Each must be on its own line.**
 

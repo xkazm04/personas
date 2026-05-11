@@ -2217,6 +2217,55 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // Per-execution business outcome tracking. The existing `status` column
+    // ('completed', 'failed', …) only captures whether the CLI subprocess
+    // ran cleanly; many "completed" runs in fact produce no business value
+    // ("no input provided", "no connector wired", "readiness report only").
+    // `business_outcome` is the LLM's self-assessment of whether the run
+    // actually delivered the persona's promised job. Emitted by the persona
+    // via `<business_outcome>{value_delivered|no_input_available|
+    // precondition_failed|partial}</business_outcome>` and parsed by the
+    // runner. Default `unknown` for back-compat with rows that pre-date this
+    // column.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "persona_executions_business_outcome",
+            description: "Add business_outcome column to persona_executions",
+            already_applied: |conn| has_column(conn, "persona_executions", "business_outcome"),
+            apply: |conn| {
+                conn.execute_batch(
+                    "ALTER TABLE persona_executions ADD COLUMN business_outcome TEXT NOT NULL DEFAULT 'unknown';
+                     CREATE INDEX IF NOT EXISTS idx_pe_persona_outcome
+                         ON persona_executions(persona_id, business_outcome);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
+    // Per-persona setup status. The adoption pre-flight (C1) writes
+    // `needs_credentials` when the persona declares connectors that have no
+    // vault credential bound; the persona-detail view surfaces this via a
+    // "Setup required" badge and the scheduler refuses to auto-execute until
+    // the user resolves it. Default `ready` for back-compat.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "personas_setup_status",
+            description: "Add setup_status column to personas",
+            already_applied: |conn| has_column(conn, "personas", "setup_status"),
+            apply: |conn| {
+                conn.execute_batch(
+                    "ALTER TABLE personas ADD COLUMN setup_status TEXT NOT NULL DEFAULT 'ready';
+                     CREATE INDEX IF NOT EXISTS idx_personas_setup_status
+                         ON personas(setup_status);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 

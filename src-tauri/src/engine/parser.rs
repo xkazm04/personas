@@ -504,8 +504,13 @@ pub fn extract_execution_flows(text: &str) -> Option<String> {
 
 /// Parse the outcome_assessment JSON from accumulated assistant text.
 ///
-/// Returns `Some((accomplished, summary))` if found, `None` otherwise.
-pub fn parse_outcome_assessment(text: &str) -> Option<(bool, String)> {
+/// Returns `Some((accomplished, summary, business_outcome))` if found,
+/// `None` otherwise. `business_outcome` is the LLM's self-rated value
+/// delivery (`value_delivered`, `no_input_available`, `precondition_failed`,
+/// `partial`); it is optional in the protocol — older personas that don't
+/// emit it yield `None` and the runner keeps the column at its
+/// `'unknown'` default.
+pub fn parse_outcome_assessment(text: &str) -> Option<(bool, String, Option<String>)> {
     for line in text.lines().rev() {
         let trimmed = line.trim();
         if trimmed.starts_with("{\"outcome_assessment\":")
@@ -519,7 +524,20 @@ pub fn parse_outcome_assessment(text: &str) -> Option<(bool, String)> {
                 .and_then(|s| s.as_str())
                 .unwrap_or("")
                 .to_string();
-            return Some((accomplished, summary));
+            let business_outcome = msg
+                .get("business_outcome")
+                .and_then(|s| s.as_str())
+                .filter(|s| {
+                    matches!(
+                        *s,
+                        "value_delivered"
+                            | "no_input_available"
+                            | "precondition_failed"
+                            | "partial"
+                    )
+                })
+                .map(|s| s.to_string());
+            return Some((accomplished, summary, business_outcome));
         }
     }
     None
@@ -1092,9 +1110,10 @@ Finished."#;
         let text = "Doing work...\n{\"outcome_assessment\": {\"accomplished\": true, \"summary\": \"All tasks completed\"}}\nDone.";
         let result = parse_outcome_assessment(text);
         assert!(result.is_some());
-        let (accomplished, summary) = result.unwrap();
+        let (accomplished, summary, biz) = result.unwrap();
         assert!(accomplished);
         assert_eq!(summary, "All tasks completed");
+        assert_eq!(biz, None);
     }
 
     #[test]
@@ -1102,9 +1121,32 @@ Finished."#;
         let text = "Trying...\n{\"outcome_assessment\": {\"accomplished\": false, \"summary\": \"API was unreachable\", \"blockers\": [\"connection refused\"]}}\n";
         let result = parse_outcome_assessment(text);
         assert!(result.is_some());
-        let (accomplished, summary) = result.unwrap();
+        let (accomplished, summary, biz) = result.unwrap();
         assert!(!accomplished);
         assert_eq!(summary, "API was unreachable");
+        assert_eq!(biz, None);
+    }
+
+    #[test]
+    fn test_parse_outcome_assessment_with_business_outcome() {
+        let text = "...\n{\"outcome_assessment\": {\"accomplished\": true, \"summary\": \"Generated proposal for Acme Corp\", \"business_outcome\": \"value_delivered\"}}\n";
+        let (_, _, biz) = parse_outcome_assessment(text).unwrap();
+        assert_eq!(biz, Some("value_delivered".to_string()));
+    }
+
+    #[test]
+    fn test_parse_outcome_assessment_business_outcome_no_input() {
+        let text = "...\n{\"outcome_assessment\": {\"accomplished\": true, \"summary\": \"No PDF provided — emitted readiness report\", \"business_outcome\": \"no_input_available\"}}\n";
+        let (_, _, biz) = parse_outcome_assessment(text).unwrap();
+        assert_eq!(biz, Some("no_input_available".to_string()));
+    }
+
+    #[test]
+    fn test_parse_outcome_assessment_rejects_unknown_business_outcome() {
+        // Unknown strings are silently dropped — keeps the column at 'unknown'.
+        let text = "...\n{\"outcome_assessment\": {\"accomplished\": true, \"summary\": \"x\", \"business_outcome\": \"made_up_value\"}}\n";
+        let (_, _, biz) = parse_outcome_assessment(text).unwrap();
+        assert_eq!(biz, None);
     }
 
     #[test]

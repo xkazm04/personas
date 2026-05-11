@@ -187,6 +187,12 @@ pub struct UpdateExecutionStatus {
     pub execution_config: Option<String>,
     /// When `true`, the execution log file may be incomplete due to I/O errors.
     pub log_truncated: bool,
+    /// LLM's self-assessment of whether the run delivered business value.
+    /// One of: `value_delivered`, `no_input_available`, `precondition_failed`,
+    /// `partial`. `None` here means "leave the column untouched" (COALESCE
+    /// keeps any previous write); the column itself defaults to `'unknown'`
+    /// on row creation.
+    pub business_outcome: Option<String>,
 }
 
 impl Default for UpdateExecutionStatus {
@@ -205,6 +211,7 @@ impl Default for UpdateExecutionStatus {
             claude_session_id: None,
             execution_config: None,
             log_truncated: false,
+            business_outcome: None,
         }
     }
 }

@@ -244,6 +244,12 @@ pub struct ExecutionResult {
     /// `true` when the execution logger encountered I/O errors, meaning the
     /// log file may be incomplete / truncated.
     pub log_truncated: bool,
+    /// LLM-emitted self-assessment of business value delivered, parsed from
+    /// the `outcome_assessment.business_outcome` protocol field. One of
+    /// `value_delivered`, `no_input_available`, `precondition_failed`,
+    /// `partial`. `None` here means the LLM did not emit it; the column
+    /// keeps its default `'unknown'`.
+    pub business_outcome: Option<String>,
 }
 
 // =============================================================================

@@ -2040,13 +2040,18 @@ pub async fn run_execution(
     } else {
         ExecutionState::Failed
     };
+    let mut parsed_business_outcome: Option<String> = None;
     if success {
-        if let Some((accomplished, ref _summary)) =
+        if let Some((accomplished, ref _summary, ref biz)) =
             parser::parse_outcome_assessment(&assistant_text)
         {
+            parsed_business_outcome = biz.clone();
             if !accomplished {
                 final_status = ExecutionState::Incomplete;
                 logger.log("[OUTCOME] Task not accomplished -- marking as incomplete");
+            }
+            if let Some(b) = biz.as_deref() {
+                logger.log(&format!("[OUTCOME] Business outcome: {b}"));
             }
         } else {
             // No outcome_assessment found -- use heuristic, but conservatively
@@ -2248,6 +2253,7 @@ pub async fn run_execution(
         trace_id: Some(final_trace.trace_id.clone()),
         execution_config: execution_config_json,
         log_truncated,
+        business_outcome: parsed_business_outcome,
     }
 }
 

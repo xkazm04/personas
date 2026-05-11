@@ -1641,6 +1641,7 @@ async fn handle_execution_result(
             claude_session_id: result.claude_session_id.clone(),
             execution_config: result.execution_config.clone(),
             log_truncated: result.log_truncated,
+            business_outcome: result.business_outcome.clone(),
         },
     )
     .await;
@@ -2489,6 +2490,7 @@ fn spawn_healing_chain(
                     claude_session_id: result.claude_session_id.clone(),
                     execution_config: None,
                     log_truncated: result.log_truncated,
+                    business_outcome: result.business_outcome.clone(),
                 },
             )
             .await;
@@ -2839,6 +2841,7 @@ fn spawn_delayed_retry(
                     claude_session_id: result.claude_session_id.clone(),
                     execution_config: None,
                     log_truncated: result.log_truncated,
+                    business_outcome: result.business_outcome.clone(),
                 },
             )
             .await;

@@ -64,5 +64,6 @@ pub(super) fn default_result() -> ExecutionResult {
         trace_id: None,
         execution_config: None,
         log_truncated: false,
+        business_outcome: None,
     }
 }
