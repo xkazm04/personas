@@ -105,7 +105,10 @@ pub struct FileWatcherSubscription {
     pub tx: tokio::sync::mpsc::Sender<super::file_watcher::RawFsEvent>,
     pub rx: Arc<tokio::sync::Mutex<tokio::sync::mpsc::Receiver<super::file_watcher::RawFsEvent>>>,
     pub dropped: Arc<std::sync::atomic::AtomicU64>,
-    #[allow(dead_code)]
+    /// Ambient fusion handle. Each tick pushes coalesced+debounced
+    /// file events through `push_file_change` so they appear in the
+    /// rolling window AND mirror to the cross-process `ambient_signal`
+    /// SQL table for the daemon-side bridge (Phase 3 c v3).
     pub ambient_ctx: super::ambient_context::AmbientContextHandle,
 }
 
@@ -352,21 +355,13 @@ impl ReactiveSubscription for FileWatcherSubscription {
     }
 
     async fn tick(&self) {
-        // Capture queued events count before tick so we can push new ones to ambient context
-        let events_before = {
-            let rx = self.rx.lock().await;
-            // We can't count without draining, so just run the tick and push
-            // file change signals from within file_watcher_tick via ambient ctx
-            drop(rx);
-            0usize
-        };
-        let _ = events_before;
         super::file_watcher::file_watcher_tick(
             &self.pool,
             &self.state,
             &self.tx,
             &self.rx,
             &self.dropped,
+            Some(&self.ambient_ctx),
         )
         .await;
     }

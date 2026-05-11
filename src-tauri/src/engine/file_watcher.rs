@@ -21,6 +21,8 @@ use crate::db::models::{CreatePersonaEventInput, TriggerConfig};
 use crate::db::repos::communication::events as event_repo;
 use crate::db::repos::resources::triggers as trigger_repo;
 use crate::db::DbPool;
+use crate::engine::ambient_context::AmbientContextHandle;
+use crate::engine::ambient_signal_repo;
 
 /// Raw FS event received from notify, before trigger matching.
 pub struct RawFsEvent {
@@ -72,12 +74,22 @@ pub fn create_file_watcher() -> (
 }
 
 /// Tick function called by the subscription loop.
+///
+/// `ambient_ctx` is `Some` for the windowed-app path (where ambient
+/// fusion lives) and `None` for headless contexts. When provided, each
+/// coalesced + debounced file event is pushed into the ambient
+/// fusion's `push_file_change` capture site, gated by the in-memory
+/// `file_changes_enabled` per-source toggle (Phase 2). The captured
+/// signal also lands in the `ambient_signal` SQL projection so the
+/// daemon-side bridge (Phase 3 c v3) carries file activity into
+/// daemon-fired persona prompts.
 pub async fn file_watcher_tick(
     pool: &DbPool,
     state: &Arc<Mutex<FileWatcherState>>,
     tx: &tokio::sync::mpsc::Sender<RawFsEvent>,
     rx: &Arc<Mutex<tokio::sync::mpsc::Receiver<RawFsEvent>>>,
     dropped: &Arc<AtomicU64>,
+    ambient_ctx: Option<&AmbientContextHandle>,
 ) {
     // Report dropped events from channel overflow since last tick
     let dropped_count = dropped.swap(0, Ordering::Relaxed);
@@ -149,6 +161,34 @@ pub async fn file_watcher_tick(
     // Release lock during trigger matching (CPU-bound) to avoid blocking
     // other file-watcher events. Re-acquire only for last_fired updates.
     drop(fw_state);
+
+    // Phase 2.5: Push the coalesced+debounced events into ambient fusion
+    // BEFORE trigger matching. Trigger matching narrows to specific globs
+    // and event kinds; ambient should see every change in any path the
+    // user has chosen to watch (the trigger registration is the user's
+    // implicit consent for "Athena may notice this directory"). The
+    // capture-site `push_file_change` checks `file_changes_enabled`, so a
+    // user with file ambient turned off pays only the lock-acquire cost.
+    if let Some(handle) = ambient_ctx {
+        let mut ctx = handle.lock().await;
+        for (_norm, kind, paths) in &coalesced {
+            if let Some(sig) = ctx.push_file_change(kind, paths) {
+                if let Err(e) = ambient_signal_repo::insert_signal(
+                    pool,
+                    &sig.id,
+                    &sig.source,
+                    &sig.summary,
+                    sig.captured_at,
+                    sig.redacted_content.as_deref(),
+                ) {
+                    tracing::warn!(
+                        signal_id = %sig.id,
+                        "ambient_signal insert (file_watcher) failed: {e}"
+                    );
+                }
+            }
+        }
+    }
 
     // Phase 3: Match triggers to events (reusing already-loaded triggers)
     let now_utc = chrono::Utc::now();
