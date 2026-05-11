@@ -32,7 +32,29 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+- **[2026-05-11 22:35] athena-completion — close real Phase-3/Phase-5 gaps + migrate shipped Athena docs**
+  - **Source:** in-session; user "Focus on 3 Athena concept documents in docs/concepts. Analyze current state and what is left to be done, we will dedicate this session to complete all three concepts" → recommended option = close real gaps + migrate docs (skip Phase 4 macOS/Linux).
+  - **Paths planned:**
+    - `src-tauri/src/engine/file_watcher.rs` + `src-tauri/src/engine/subscription.rs` — wire ambient handle into `file_watcher_tick`, call `push_file_change` per drained `RawFsEvent` (closes Doc 2 limitation #1 / ambient-context-fusion.md Fix A; daemon bridge picks up file signals for free).
+    - `src/features/agents/sub_editor/**` — add a CLI-awareness checkbox bound to `cli_awareness_enabled`, label/description from i18n. Closes Doc 3 limitation #1.
+    - `src/i18n/locales/en.json` — new keys for the editor checkbox + helper text.
+    - `docs/concepts/athena-desktop-aware-{daemon-bridge,cli-session-awareness,phase1-audit}.md` — update to reflect new shipped state, then move out of `concepts/` per the doc-rule (audit → `architecture/`, two shipped → `features/companion/` or sibling).
+    - `docs/concepts/README.md`, `docs/features/README.md`, `scripts/docs/feature-doc-map.json` — index updates.
+  - **No overlap with `/research`** (Obsidian-only) or any other running entry.
+  - **Status:** started
+
 ## Recently completed (last 14 days)
+
+- **[2026-05-11 22:00 → 23:10] /research — claude-code-2-1-139 (focus: code, 4 findings shipped + 1 descoped-reopenable)**
+  - **Source:** https://github.com/anthropics/claude-code/releases/tag/v2.1.139 (release notes via `gh api`). 6th observation of "CLI release log of a wrapped binary" source type.
+  - **Paths shipped:** 2 atomic commits on master.
+    - `bd8828b49` F1+F2 — `src-tauri/src/engine/provider/claude.rs` (minimum_version 2.1.136 → 2.1.139 + fix stale test at line 175 left behind by the prior 2.1.136 bump commit `6b788e1fb` + docstring narrative rewrite condensing 2.1.128 paragraph and adding 2.1.139 paragraph naming the 4 personas-relevant upstream fixes: stream watchdog phantom-abort, 10+ MCP servers silent exit, 16 MB SSE frame cap, hooks-no-terminal-access).
+    - `167e1e789` F3 — `src-tauri/src/engine/hooks_sidecar.rs::build_settings_json` (switch hook commands from legacy shell-form `command: "node -e \"...\""` to Claude Code 2.1.139's exec-form `command: "node", args: ["-e", node_script]` — eliminates ~15 LOC of Windows-quoting / JS-string-in-shell-arg double-escape gymnastics; test tightened to assert exec-form structurally on both Stop and PreCompact hooks).
+    - F4 descope — `Obsidian/personas/Patterns/descoped-reopenable.md` new entry for `/goal` completion-condition primitive (strategy-dependent; closes the documentation gap on the 2026-04-08 Paperclip "maximizer mode" informal descope). Cross-link to the 2026-04-27 `/steer` mid-execution input injection entry — both about extending personas' stdin-once `-p` mode contract.
+  - **Obsidian writes:** new `Obsidian/personas/Research/2026-05-11-claude-code-2-1-139.md`, new `Obsidian/personas/Lessons/2026-05-11-research.md`, append to `Obsidian/personas/Patterns/descoped-reopenable.md`.
+  - **Status:** completed (commits `bd8828b49`, `167e1e789` on master + ledger close in this commit).
+  - **Validation:** `cargo check --features desktop --manifest-path src-tauri/Cargo.toml --lib` clean (1m 31s, 123 pre-existing warnings, no new); `cargo test ... engine::provider::claude::tests` 8/8 pass (including the previously-broken `test_minimum_version_is_set`); `cargo test ... engine::hooks_sidecar::` 6/6 pass (including the tightened structural assertion on the args-form shape).
+  - **Headline:** Pure-metadata floor advance (8 upstream releases compounded) + structural cleanup of opt-in `hooks_sidecar` taking advantage of the new exec-form hook field. The 6th CLI release log run holds the source-type calibration row at "1-2 metadata findings + 1-2 contract-aware findings + 16-catch tail, hit rate 3-8%." **First time during a Phase 6 read that I caught a master-branch test regression introduced by a prior research run** (the 2.1.136 bump from commit `6b788e1fb` forgot to update `test_minimum_version_is_set` — folded into F2's bump-to-2.1.139). Parallel-session drift was heavy at session start (48 unrelated files in `git status`); explicit `git add <path>` per file + `git diff --cached --stat` verification held the index clean both commits. Phase 3 cross-check vs 17 descoped-reopenable entries fired zero reopens. The 10th unaddressed observation of the `mkdol` vault-path drift in skill.md — longest-running maintenance todo in the run history.
 
 - **[2026-05-11 ~10:00 → ~21:30] simple-mode-to-cockpit — delete simple-mode + companion-driven Cockpit + inline chat cards**
   - **Source:** in-session conversation; user asked to (1) delete `src/features/simple-mode/`, (2) extract Console/Inbox concepts into companion chat dynamic UI (auto-fire), (3) redesign Home→Cockpit 2nd-level item to be a companion-driven `compose_cockpit` surface mirroring how `compose_dashboard` drives the Dashboard tab.
