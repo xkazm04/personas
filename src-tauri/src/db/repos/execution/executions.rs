@@ -1163,7 +1163,13 @@ pub fn get_monthly_spend(pool: &DbPool, persona_id: &str) -> Result<f64, AppErro
 const DEFAULT_ZOMBIE_THRESHOLD_SECS: i64 = 30 * 60;
 
 /// Find executions stuck in 'running' state for longer than the zombie threshold
-/// and transition them to 'incomplete'. Returns the IDs of transitioned executions.
+/// and transition them to 'incomplete'. Returns the IDs of transitioned executions
+/// that should be SURFACED to the user — i.e. those for which the persona does
+/// not already have a newer completed execution. Zombies whose persona already
+/// has a newer completed run are still cleaned up (transitioned to incomplete),
+/// but their IDs are not returned, so the background sweep doesn't fire a
+/// misleading "execution stalled" notification for runs the user has already
+/// seen succeed via a later attempt.
 pub fn sweep_zombie_executions(pool: &DbPool) -> Result<Vec<String>, AppError> {
     timed_query!(
         "persona_executions",
@@ -1173,19 +1179,27 @@ pub fn sweep_zombie_executions(pool: &DbPool) -> Result<Vec<String>, AppError> {
             let now = chrono::Utc::now();
             let threshold_secs = DEFAULT_ZOMBIE_THRESHOLD_SECS;
 
-            // Find running executions whose started_at is older than the threshold
+            // Find running executions whose started_at is older than the threshold.
+            // Pull persona_id + created_at too so we can check "is there a newer
+            // completed run for the same persona?" before deciding whether to
+            // surface this zombie to the user.
             let mut stmt = conn.prepare_cached(
-                "SELECT id, started_at FROM persona_executions WHERE status = 'running'",
+                "SELECT id, persona_id, started_at, created_at FROM persona_executions WHERE status = 'running'",
             )?;
-            let candidates: Vec<(String, Option<String>)> = stmt
+            let candidates: Vec<(String, String, Option<String>, String)> = stmt
                 .query_map([], |row| {
-                    Ok((row.get::<_, String>(0)?, row.get::<_, Option<String>>(1)?))
+                    Ok((
+                        row.get::<_, String>(0)?,
+                        row.get::<_, String>(1)?,
+                        row.get::<_, Option<String>>(2)?,
+                        row.get::<_, String>(3)?,
+                    ))
                 })?
                 .filter_map(|r| r.ok())
                 .collect();
 
-            let mut zombie_ids = Vec::new();
-            for (id, started_at) in candidates {
+            let mut surface_ids = Vec::new();
+            for (id, persona_id, started_at, created_at) in candidates {
                 let is_zombie = match &started_at {
                     Some(ts) => {
                         if let Ok(started) = chrono::DateTime::parse_from_rfc3339(ts) {
@@ -1220,11 +1234,35 @@ pub fn sweep_zombie_executions(pool: &DbPool) -> Result<Vec<String>, AppError> {
                         now.to_rfc3339(),
                         id,
                     ])?;
-                    zombie_ids.push(id);
+
+                    // Surface to user only if there's no newer completed run for
+                    // the same persona. A newer completed run means the user
+                    // already saw success — re-notifying about an old stalled
+                    // attempt is just noise.
+                    let mut superseded_stmt = conn.prepare_cached(
+                        "SELECT 1 FROM persona_executions
+                         WHERE persona_id = ?1
+                           AND status = 'completed'
+                           AND created_at > ?2
+                         LIMIT 1",
+                    )?;
+                    let is_superseded: bool = superseded_stmt
+                        .query_row(params![persona_id, created_at], |_| Ok(true))
+                        .unwrap_or(false);
+
+                    if !is_superseded {
+                        surface_ids.push(id);
+                    } else {
+                        tracing::debug!(
+                            execution_id = %id,
+                            persona_id = %persona_id,
+                            "zombie sweep: silently transitioned superseded execution to incomplete (newer completed run exists)"
+                        );
+                    }
                 }
             }
 
-            Ok(zombie_ids)
+            Ok(surface_ids)
         }
     )
 }

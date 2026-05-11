@@ -35,6 +35,11 @@ interface BaseModalProps {
   portal?: boolean;
   /** Centered overlay (default) or full-height right-edge drawer with slide-in animation. */
   placement?: BaseModalPlacement;
+  /** Opt out of per-child stagger wrapping. Required for modals using a
+   *  flex-column header/body/footer layout where the body must fill remaining
+   *  space — the stagger wrapper is a block-level motion.div that breaks the
+   *  flex chain, so the body's flex-1 + overflow-y-auto silently no-op. */
+  staggerChildren?: boolean;
   children: React.ReactNode;
 }
 
@@ -142,6 +147,7 @@ export function BaseModal({
   embedded = false,
   portal = false,
   placement = 'center',
+  staggerChildren = true,
   children,
 }: BaseModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
@@ -159,8 +165,12 @@ export function BaseModal({
   const childVariants = reduceMotion ? REDUCED_PANEL_CHILD : FULL_PANEL_CHILD;
   // Child stagger applies to centered modals only; drawer panels animate as
   // one slide-in unit, and stagger-wrapping disrupts the flex column layout
-  // (header / body / footer) that drawers typically use.
-  const renderedChildren = isDrawer ? children : staggeredChildren(children, childVariants);
+  // (header / body / footer) that drawers typically use. Modals that use a
+  // flex-column body with `flex-1 overflow-y-auto` must also opt out via
+  // `staggerChildren={false}` — the wrapper motion.div is `display: block`
+  // and breaks the flex chain, leaving `flex-1` with no height to claim.
+  const renderedChildren =
+    isDrawer || !staggerChildren ? children : staggeredChildren(children, childVariants);
 
   const resolvedMaxWidth = maxWidthClass ?? (size ? SIZE_CLASSES[size] : 'max-w-4xl');
 

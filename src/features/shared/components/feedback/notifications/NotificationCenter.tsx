@@ -3,7 +3,7 @@ import { Bell, BellOff, X, ExternalLink, RefreshCw, FileText, CheckCheck, Trash2
 import { useNotificationCenterStore, type PipelineNotification, type ProcessType } from '@/stores/notificationCenterStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
-import { StatusIcon, statusBg } from '@/features/plugins/gitlab/components/pipelineHelpers';
+import { StatusIcon } from '@/features/plugins/gitlab/components/pipelineHelpers';
 import { useTranslation } from '@/i18n/useTranslation';
 import { getProcessLabel } from '@/lib/notifications/notifyProcessComplete';
 
@@ -105,54 +105,50 @@ function ProcessNotificationItem({ notification }: { notification: PipelineNotif
   return (
     <div
       onClick={handleClick}
-      className={`animate-fade-slide-in relative group p-3 rounded-modal border transition-colors cursor-default ${statusBg(notification.status)} ${
-        !notification.read ? 'ring-1 ring-orange-500/20' : ''
+      className={`animate-fade-slide-in relative group flex items-start gap-3 px-3 py-2.5 rounded-card border border-transparent hover:border-primary/10 hover:bg-secondary/30 transition-colors cursor-default ${
+        !notification.read ? 'bg-secondary/15' : ''
       }`}
     >
-      {!notification.read && (
-        <span className="absolute top-3 right-3 w-2 h-2 rounded-full bg-orange-500" />
-      )}
-
-      <button
-        onClick={(e) => { e.stopPropagation(); dismiss(notification.id); }}
-        className="absolute top-2 right-2 p-1 rounded-card opacity-0 group-hover:opacity-100 hover:bg-primary/10 text-foreground hover:text-foreground/70 transition-all"
-        aria-label="Dismiss"
-      >
-        <X className="w-3 h-3" />
-      </button>
-
-      {/* Header */}
-      <div className="flex items-center gap-2 mb-1.5">
+      {/* Leading colored status icon */}
+      <div className="flex-shrink-0 mt-0.5">
         {hasReviewRedirect
           ? <ClipboardCheck className="w-4 h-4 text-amber-400" />
           : <StatusIcon status={notification.status} />
         }
-        <span className="typo-body font-medium text-foreground/90">
-          {headerTitle}
-        </span>
-        <span className="typo-caption text-foreground ml-auto mr-4">
-          {formatTimestamp(notification.timestamp)}
-        </span>
       </div>
 
-      {/* Body — show stored message or fall back to status label */}
-      <p className="typo-caption text-foreground mb-2.5 pl-6 leading-relaxed">
-        {bodyText}
-      </p>
-
-      {/* Quick actions */}
-      <div className="flex items-center gap-1.5 pl-6">
-        {redirectSection && (
-          <button
-            onClick={(e) => { e.stopPropagation(); handleRedirect(); }}
-            className="flex items-center gap-1 px-2 py-1 rounded-card typo-caption text-foreground hover:text-foreground/90 hover:bg-primary/10 transition-colors"
-            title={hasReviewRedirect ? t.gitlab.go_to_approvals : processLabel}
-          >
-            <ArrowRight className="w-3 h-3" />
-            {hasReviewRedirect ? 'Review' : 'Open'}
-          </button>
-        )}
+      {/* Two-row body */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="typo-body font-medium text-foreground/90 truncate">{headerTitle}</span>
+          {!notification.read && <span className="w-1.5 h-1.5 rounded-full bg-orange-500 flex-shrink-0" />}
+          <span className="typo-caption text-foreground ml-auto flex-shrink-0">
+            {formatTimestamp(notification.timestamp)}
+          </span>
+        </div>
+        <div className="flex items-center gap-2 mt-0.5">
+          <p className="typo-caption text-foreground/80 truncate flex-1">{bodyText}</p>
+          {redirectSection && (
+            <button
+              onClick={(e) => { e.stopPropagation(); handleRedirect(); }}
+              className="flex-shrink-0 inline-flex items-center gap-1 typo-caption text-primary opacity-0 group-hover:opacity-100 hover:underline transition-opacity"
+              title={hasReviewRedirect ? t.gitlab.go_to_approvals : processLabel}
+            >
+              {hasReviewRedirect ? 'Review' : 'Open'}
+              <ArrowRight className="w-3 h-3" />
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* Dismiss (hover-only, top-right) */}
+      <button
+        onClick={(e) => { e.stopPropagation(); dismiss(notification.id); }}
+        className="flex-shrink-0 mt-0.5 p-1 rounded-card opacity-0 group-hover:opacity-100 hover:bg-primary/10 text-foreground hover:text-foreground/70 transition-all"
+        aria-label="Dismiss"
+      >
+        <X className="w-3 h-3" />
+      </button>
     </div>
   );
 }
@@ -188,85 +184,76 @@ function NotificationItem({ notification }: { notification: PipelineNotification
     if (!notification.read) markRead(notification.id);
   }, [notification, markRead]);
 
+  const pipelineTitle = `${t.gitlab.pipeline_hash}${notification.pipelineId}`;
+  const bodyText = `${notification.ref} — ${statusLabel(notification.status)}`;
+
   return (
     <div
       onClick={handleClick}
-      className={`animate-fade-slide-in relative group p-3 rounded-modal border transition-colors cursor-default ${statusBg(notification.status)} ${
-        !notification.read ? 'ring-1 ring-orange-500/20' : ''
+      className={`animate-fade-slide-in relative group flex items-start gap-3 px-3 py-2.5 rounded-card border border-transparent hover:border-primary/10 hover:bg-secondary/30 transition-colors cursor-default ${
+        !notification.read ? 'bg-secondary/15' : ''
       }`}
     >
-      {/* Unread indicator */}
-      {!notification.read && (
-        <span className="absolute top-3 right-3 w-2 h-2 rounded-full bg-orange-500" />
-      )}
+      <div className="flex-shrink-0 mt-0.5">
+        <StatusIcon status={notification.status} />
+      </div>
 
-      {/* Dismiss button */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="typo-body font-medium text-foreground/90 truncate">{pipelineTitle}</span>
+          {!notification.read && <span className="w-1.5 h-1.5 rounded-full bg-orange-500 flex-shrink-0" />}
+          <span className="typo-caption text-foreground ml-auto flex-shrink-0">
+            {formatTimestamp(notification.timestamp)}
+          </span>
+        </div>
+        <div className="flex items-center gap-2 mt-0.5">
+          <p className="typo-caption text-foreground/80 truncate flex-1 font-mono">{bodyText}</p>
+          <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+            {notification.webUrl && (
+              <button
+                onClick={(e) => { e.stopPropagation(); handleViewInGitLab(); }}
+                className="inline-flex items-center gap-1 typo-caption text-primary hover:underline"
+                title={t.gitlab.open_in_gitlab}
+              >
+                <ExternalLink className="w-3 h-3" /> GitLab
+              </button>
+            )}
+            {notification.status === 'failed' && notification.projectId && (
+              <button
+                onClick={(e) => { e.stopPropagation(); handleRetry(); }}
+                className="inline-flex items-center gap-1 typo-caption text-primary hover:underline"
+                title={t.common.retry}
+              >
+                <RefreshCw className="w-3 h-3" /> {t.common.retry}
+              </button>
+            )}
+            {notification.webUrl && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const url = sanitizeExternalUrl(notification.webUrl);
+                  if (url) {
+                    window.open(`${url}/jobs`, '_blank', 'noopener,noreferrer');
+                  }
+                  markRead(notification.id);
+                }}
+                className="inline-flex items-center gap-1 typo-caption text-primary hover:underline"
+                title={t.gitlab.view_logs}
+              >
+                <FileText className="w-3 h-3" /> {t.gitlab.view_logs}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
       <button
         onClick={(e) => { e.stopPropagation(); dismiss(notification.id); }}
-        className="absolute top-2 right-2 p-1 rounded-card opacity-0 group-hover:opacity-100 hover:bg-primary/10 text-foreground hover:text-foreground/70 transition-all"
+        className="flex-shrink-0 mt-0.5 p-1 rounded-card opacity-0 group-hover:opacity-100 hover:bg-primary/10 text-foreground hover:text-foreground/70 transition-all"
         aria-label="Dismiss"
       >
         <X className="w-3 h-3" />
       </button>
-
-      {/* Header */}
-      <div className="flex items-center gap-2 mb-1.5">
-        <StatusIcon status={notification.status} />
-        <span className="typo-body font-medium text-foreground/90">
-          {t.gitlab.pipeline_hash}{notification.pipelineId}
-        </span>
-        <span className="typo-caption text-foreground ml-auto mr-4">
-          {formatTimestamp(notification.timestamp)}
-        </span>
-      </div>
-
-      {/* Body */}
-      <p className="typo-caption text-foreground mb-2.5 pl-6">
-        <span className="font-mono text-foreground">{notification.ref}</span>
-        {' '}&mdash;{' '}{statusLabel(notification.status)}
-      </p>
-
-      {/* Quick actions */}
-      <div className="flex items-center gap-1.5 pl-6">
-        {notification.webUrl && (
-          <button
-            onClick={(e) => { e.stopPropagation(); handleViewInGitLab(); }}
-            className="flex items-center gap-1 px-2 py-1 rounded-card typo-caption text-foreground hover:text-foreground/90 hover:bg-primary/10 transition-colors"
-            title={t.gitlab.open_in_gitlab}
-          >
-            <ExternalLink className="w-3 h-3" />
-            GitLab
-          </button>
-        )}
-        {notification.status === 'failed' && notification.projectId && (
-          <button
-            onClick={(e) => { e.stopPropagation(); handleRetry(); }}
-            className="flex items-center gap-1 px-2 py-1 rounded-card typo-caption text-foreground hover:text-foreground/90 hover:bg-primary/10 transition-colors"
-            title={t.common.retry}
-          >
-            <RefreshCw className="w-3 h-3" />
-            {t.common.retry}
-          </button>
-        )}
-        {notification.webUrl && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              const url = sanitizeExternalUrl(notification.webUrl);
-              if (url) {
-                // Navigate to jobs page (append /jobs to pipeline URL)
-                window.open(`${url}/jobs`, '_blank', 'noopener,noreferrer');
-              }
-              markRead(notification.id);
-            }}
-            className="flex items-center gap-1 px-2 py-1 rounded-card typo-caption text-foreground hover:text-foreground/90 hover:bg-primary/10 transition-colors"
-            title={t.gitlab.view_logs}
-          >
-            <FileText className="w-3 h-3" />
-            {t.gitlab.view_logs}
-          </button>
-        )}
-      </div>
     </div>
   );
 }
