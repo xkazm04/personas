@@ -108,6 +108,12 @@ export interface PartialPersonaUpdate {
    * Default is `local_only` so admins must opt personas in.
    */
   gateway_exposure?: import('@/lib/bindings/PersonaGatewayExposure').PersonaGatewayExposure;
+  /**
+   * Phase 5 v1 (Athena CLI session awareness): per-persona gate. Both this
+   * AND the global `cli_session_awareness_enabled` setting must be true
+   * before the runner injects a "Claude CLI session" block into the prompt.
+   */
+  cli_awareness_enabled?: boolean;
 }
 
 // ============================================================================
@@ -152,6 +158,7 @@ export interface UpdateSettingsOp {
   sensitive?: boolean;
   max_concurrent?: number;
   timeout_ms?: number;
+  cli_awareness_enabled?: boolean;
 }
 
 /** Update design context (use-cases, design files, connector links). */
@@ -216,6 +223,7 @@ export function operationToPartial(op: PersonaOperation): PartialPersonaUpdate {
       return {
         name: op.name, description: op.description, icon: op.icon, color: op.color,
         enabled: op.enabled, sensitive: op.sensitive, max_concurrent: op.max_concurrent, timeout_ms: op.timeout_ms,
+        cli_awareness_enabled: op.cli_awareness_enabled,
       };
     case 'UpdateDesignContext':
       return { design_context: op.design_context };
@@ -264,6 +272,6 @@ export function buildUpdateInput(partial: PartialPersonaUpdate): UpdatePersonaIn
     group_id: partial.group_id !== undefined ? partial.group_id : null,
     parameters: partial.parameters !== undefined ? partial.parameters : null,
     gateway_exposure: partial.gateway_exposure !== undefined ? partial.gateway_exposure : null,
-    cli_awareness_enabled: null,
+    cli_awareness_enabled: partial.cli_awareness_enabled !== undefined ? partial.cli_awareness_enabled : null,
   };
 }

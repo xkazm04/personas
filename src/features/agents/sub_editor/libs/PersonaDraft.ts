@@ -26,6 +26,13 @@ export interface PersonaDraft {
   timeout: number;
   enabled: boolean;
   sensitive: boolean;
+  /**
+   * Phase 5 v1 (Athena CLI session awareness): per-persona gate. Both this
+   * and the global `cli_session_awareness_enabled` setting must be true for
+   * the runner to inject the active Claude CLI session into the prompt.
+   * Defaults to false.
+   */
+  cliAwarenessEnabled: boolean;
   selectedModel: string;
   selectedProvider: ModelProvider;
   baseUrl: string;
@@ -40,7 +47,7 @@ export interface PersonaDraft {
 
 /** Fields that belong to the Settings tab (name, appearance, limits). */
 export const SETTINGS_KEYS = [
-  'name', 'description', 'icon', 'color', 'maxConcurrent', 'timeout', 'enabled', 'sensitive',
+  'name', 'description', 'icon', 'color', 'maxConcurrent', 'timeout', 'enabled', 'sensitive', 'cliAwarenessEnabled',
 ] as const satisfies readonly (keyof PersonaDraft)[];
 
 /** Fields that belong to the Model / Provider tab. */
@@ -71,7 +78,7 @@ export function draftChanged(
   return keys.some((k) => draft[k] !== baseline[k]);
 }
 
-export function buildDraft(persona: { name: string; description?: string | null; icon?: string | null; color?: string | null; max_concurrent?: number | null; timeout_ms?: number | null; enabled: boolean; sensitive?: boolean; model_profile?: string | null; max_budget_usd?: number | null; max_turns?: number | null }): PersonaDraft {
+export function buildDraft(persona: { name: string; description?: string | null; icon?: string | null; color?: string | null; max_concurrent?: number | null; timeout_ms?: number | null; enabled: boolean; sensitive?: boolean; cli_awareness_enabled?: boolean; model_profile?: string | null; max_budget_usd?: number | null; max_turns?: number | null }): PersonaDraft {
   let selectedModel = '';
   let provider: ModelProvider = 'anthropic';
   let baseUrl = '';
@@ -115,6 +122,7 @@ export function buildDraft(persona: { name: string; description?: string | null;
     timeout: persona.timeout_ms ?? DEFAULT_PERSONA_TIMEOUT_MS,
     enabled: persona.enabled,
     sensitive: persona.sensitive ?? false,
+    cliAwarenessEnabled: persona.cli_awareness_enabled ?? false,
     selectedModel,
     selectedProvider: provider,
     baseUrl,

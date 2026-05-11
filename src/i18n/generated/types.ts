@@ -2352,6 +2352,8 @@ export type Translations = {
       persona_enabled: string;
       sensitive_preview: string;
       sensitive_preview_desc: string;
+      cli_awareness: string;
+      cli_awareness_desc: string;
       failed_health_watch: string;
       health_watch: string;
       health_watch_active: string;

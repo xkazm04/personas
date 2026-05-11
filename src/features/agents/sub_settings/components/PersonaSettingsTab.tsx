@@ -218,6 +218,22 @@ export function PersonaSettingsTab({
               />
             </div>
           )}
+
+          {!isSimple && (
+            <div className="flex items-center justify-between py-1">
+              <div>
+                <span className="typo-body font-medium text-foreground">{t.agents.settings_status.cli_awareness}</span>
+                <p className="typo-body text-foreground">{t.agents.settings_status.cli_awareness_desc}</p>
+              </div>
+              <AccessibleToggle
+                checked={draft.cliAwarenessEnabled}
+                onChange={() => patch({ cliAwarenessEnabled: !draft.cliAwarenessEnabled })}
+                label={t.agents.settings_status.cli_awareness}
+                data-testid="agent-cli-awareness"
+                size="md"
+              />
+            </div>
+          )}
         </div>
       </div>
 
