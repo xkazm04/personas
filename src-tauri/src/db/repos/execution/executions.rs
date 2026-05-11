@@ -39,6 +39,9 @@ fn row_to_execution(row: &Row) -> rusqlite::Result<PersonaExecution> {
         is_simulation: row
             .get::<_, Option<bool>>("is_simulation")?
             .unwrap_or(false),
+        business_outcome: row
+            .get::<_, Option<String>>("business_outcome")?
+            .unwrap_or_else(|| "unknown".to_string()),
     })
 }
 
@@ -61,6 +64,9 @@ fn row_to_execution_list_item(row: &Row) -> rusqlite::Result<ExecutionListItem> 
         is_simulation: row
             .get::<_, Option<bool>>("is_simulation")?
             .unwrap_or(false),
+        business_outcome: row
+            .get::<_, Option<String>>("business_outcome")?
+            .unwrap_or_else(|| "unknown".to_string()),
     })
 }
 
@@ -212,6 +218,9 @@ pub fn get_all_global(
                     is_simulation: row
                         .get::<_, Option<bool>>("is_simulation")?
                         .unwrap_or(false),
+                    business_outcome: row
+                        .get::<_, Option<String>>("business_outcome")?
+                        .unwrap_or_else(|| "unknown".to_string()),
                     persona_name: row.get("persona_name")?,
                     persona_icon: row.get("persona_icon")?,
                     persona_color: row.get("persona_color")?,

@@ -49,6 +49,15 @@ pub struct PersonaExecution {
     /// are filtered out of the default activity feed.
     #[serde(default)]
     pub is_simulation: bool,
+    /// LLM's self-assessment of business value delivery for this run.
+    /// One of `value_delivered`, `no_input_available`, `precondition_failed`,
+    /// `partial`, `unknown`. See `EXECUTION_MODE_DIRECTIVE` for semantics.
+    #[serde(default = "default_business_outcome")]
+    pub business_outcome: String,
+}
+
+fn default_business_outcome() -> String {
+    "unknown".to_string()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -74,6 +83,8 @@ pub struct ExecutionListItem {
     pub created_at: String,
     #[serde(default)]
     pub is_simulation: bool,
+    #[serde(default = "default_business_outcome")]
+    pub business_outcome: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -129,6 +140,8 @@ pub struct GlobalExecutionRow {
     /// Phase C3 — simulation runs are excluded from the default activity feed.
     #[serde(default)]
     pub is_simulation: bool,
+    #[serde(default = "default_business_outcome")]
+    pub business_outcome: String,
     // Persona metadata from JOIN
     pub persona_name: Option<String>,
     pub persona_icon: Option<String>,

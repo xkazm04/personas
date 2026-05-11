@@ -513,8 +513,21 @@ pub struct Persona {
     /// awareness.md`.
     #[serde(default)]
     pub cli_awareness_enabled: bool,
+    /// Adoption pre-flight signal. `ready` (default) means every declared
+    /// connector has a matching vault credential or is a built-in local
+    /// resource. `needs_credentials` means the persona was created but one
+    /// or more declared connectors have no vault entry — the UI shows a
+    /// "Setup required" badge and the runtime scheduler should skip
+    /// auto-execution until the user fixes it. Set by
+    /// `instant_adopt_template_inner` and `promote_build_draft_inner`.
+    #[serde(default = "default_setup_status")]
+    pub setup_status: String,
     pub created_at: String,
     pub updated_at: String,
+}
+
+fn default_setup_status() -> String {
+    "ready".to_string()
 }
 
 impl Persona {

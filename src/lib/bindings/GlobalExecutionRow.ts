@@ -16,4 +16,4 @@ log_truncated: boolean,
 /**
  * Phase C3 — simulation runs are excluded from the default activity feed.
  */
-is_simulation: boolean, persona_name: string | null, persona_icon: string | null, persona_color: string | null, };
+is_simulation: boolean, business_outcome: string, persona_name: string | null, persona_icon: string | null, persona_color: string | null, };

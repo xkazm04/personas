@@ -340,6 +340,7 @@ mod tests {
             gateway_exposure: Default::default(),
             template_category: None,
             cli_awareness_enabled: false,
+            setup_status: "ready".to_string(),
             created_at: "2026-05-09T00:00:00Z".into(),
             updated_at: "2026-05-09T00:00:00Z".into(),
         };

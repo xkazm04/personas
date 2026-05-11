@@ -264,5 +264,6 @@ export function buildUpdateInput(partial: PartialPersonaUpdate): UpdatePersonaIn
     group_id: partial.group_id !== undefined ? partial.group_id : null,
     parameters: partial.parameters !== undefined ? partial.parameters : null,
     gateway_exposure: partial.gateway_exposure !== undefined ? partial.gateway_exposure : null,
+    cli_awareness_enabled: null,
   };
 }

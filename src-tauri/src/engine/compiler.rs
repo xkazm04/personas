@@ -225,6 +225,7 @@ mod tests {
             gateway_exposure: crate::db::models::PersonaGatewayExposure::LocalOnly,
             template_category: None,
             cli_awareness_enabled: false,
+            setup_status: "ready".to_string(),
             created_at: "2026-01-01T00:00:00Z".into(),
             updated_at: "2026-01-01T00:00:00Z".into(),
         }

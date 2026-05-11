@@ -26,4 +26,10 @@ log_truncated: boolean,
  * `simulate_use_case`. Simulations skip real notification dispatch and
  * are filtered out of the default activity feed.
  */
-is_simulation: boolean, };
+is_simulation: boolean, 
+/**
+ * LLM's self-assessment of business value delivery for this run.
+ * One of `value_delivered`, `no_input_available`, `precondition_failed`,
+ * `partial`, `unknown`. See `EXECUTION_MODE_DIRECTIVE` for semantics.
+ */
+business_outcome: string, };

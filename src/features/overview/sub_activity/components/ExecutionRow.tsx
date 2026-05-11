@@ -5,6 +5,7 @@ import { formatDuration, getStatusEntry } from '@/lib/utils/formatters';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { BusinessOutcomeBadge } from '@/features/shared/components/display/BusinessOutcomeBadge';
 import { ExecutionDetail } from '@/features/agents/sub_executions';
 
 interface ExecutionRowProps {
@@ -47,6 +48,11 @@ export const ExecutionRow = memo(function ExecutionRow({ execution, isExpanded, 
           )}
           {status.label}
         </div>
+
+        {/* Business outcome: distinguishes "CLI ran cleanly" from "persona actually delivered value" */}
+        {execution.business_outcome && execution.business_outcome !== 'unknown' && (
+          <BusinessOutcomeBadge outcome={execution.business_outcome} variant="compact" />
+        )}
 
         {execution.retry_count > 0 && (
           <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-code font-mono rounded-card bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" title={`Healing retry #${execution.retry_count}`}>

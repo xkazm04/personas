@@ -407,6 +407,11 @@ fn row_to_persona_with_mode(row: &Row, mode: ProfileMode) -> rusqlite::Result<Pe
             .flatten()
             .map(|v| v != 0)
             .unwrap_or(false),
+        setup_status: row
+            .get::<_, Option<String>>("setup_status")
+            .ok()
+            .flatten()
+            .unwrap_or_else(|| "ready".to_string()),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })

@@ -1939,6 +1939,7 @@ mod tests {
             gateway_exposure: PersonaGatewayExposure::Public,
             template_category: None,
             cli_awareness_enabled: false,
+            setup_status: "ready".to_string(),
             created_at: now.clone(),
             updated_at: now,
         };
@@ -1986,6 +1987,7 @@ mod tests {
             gateway_exposure: PersonaGatewayExposure::Public,
             template_category: None,
             cli_awareness_enabled: false,
+            setup_status: "ready".to_string(),
             created_at: now.clone(),
             updated_at: now,
         };
@@ -2048,6 +2050,7 @@ mod tests {
             execution_config: Some("{}".into()),
             log_truncated: false,
             is_simulation: false,
+            business_outcome: "unknown".to_string(),
         }
     }
 
