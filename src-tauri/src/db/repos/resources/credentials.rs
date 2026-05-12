@@ -368,16 +368,7 @@ pub fn update_with_fields(
             // -- 2. Save fields if provided --
             if let Some(field_map) = fields {
                 if !field_map.is_empty() {
-                    // Delete existing fields and re-insert within the same transaction
-                    tx.execute(
-                        "DELETE FROM credential_fields WHERE credential_id = ?1",
-                        params![id],
-                    )?;
-
-                    for (key, value) in field_map {
-                        let is_sensitive = is_field_sensitive(sens_map.as_ref(), key);
-                        insert_field_row(&tx, &id, key, value, is_sensitive, &now)?;
-                    }
+                    save_fields_on_tx(&tx, id, field_map, sens_map.as_ref(), &now)?;
                 }
             }
 
@@ -1107,6 +1098,30 @@ pub fn get_fields(pool: &DbPool, credential_id: &str) -> Result<Vec<CredentialFi
     })
 }
 
+/// Delete-and-replace all fields for a credential on the caller's transaction.
+/// Owns the DELETE + per-field INSERT loop; the caller chooses when to commit.
+/// Used by both `save_fields` (which opens its own tx) and `update_with_fields`
+/// (which has an outer tx covering metadata + fields atomically).
+pub(crate) fn save_fields_on_tx(
+    tx: &rusqlite::Transaction,
+    credential_id: &str,
+    fields: &HashMap<String, String>,
+    sens_map: Option<&HashMap<String, bool>>,
+    now: &str,
+) -> Result<usize, AppError> {
+    tx.execute(
+        "DELETE FROM credential_fields WHERE credential_id = ?1",
+        params![credential_id],
+    )?;
+    let mut count = 0usize;
+    for (key, value) in fields {
+        let is_sensitive = is_field_sensitive(sens_map, key);
+        insert_field_row(tx, credential_id, key, value, is_sensitive, now)?;
+        count += 1;
+    }
+    Ok(count)
+}
+
 /// Save (upsert) all fields for a credential from a `HashMap<String, String>`.
 /// Encrypts sensitive fields individually. Replaces any existing field rows
 /// by deleting first, then inserting -- wrapped in a transaction to prevent
@@ -1123,21 +1138,9 @@ pub fn save_fields(
 
         let mut conn = pool.get()?;
         let tx = conn.transaction().map_err(AppError::Database)?;
-
-        // Remove existing field rows and re-insert atomically
-        tx.execute(
-            "DELETE FROM credential_fields WHERE credential_id = ?1",
-            params![credential_id],
-        )?;
-
         let now = chrono::Utc::now().to_rfc3339();
-        let mut count = 0usize;
 
-        for (key, value) in fields {
-            let is_sensitive = is_field_sensitive(sens_map.as_ref(), key);
-            insert_field_row(&tx, credential_id, key, value, is_sensitive, &now)?;
-            count += 1;
-        }
+        let count = save_fields_on_tx(&tx, credential_id, fields, sens_map.as_ref(), &now)?;
 
         tx.commit().map_err(AppError::Database)?;
         Ok(count)
