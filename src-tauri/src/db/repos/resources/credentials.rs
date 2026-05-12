@@ -1351,7 +1351,7 @@ fn normalize_field_key(key: &str) -> String {
 }
 
 /// Classify a credential field key into a type hint.
-fn classify_field_type(key: &str) -> &'static str {
+pub fn classify_field_type(key: &str) -> &'static str {
     let lower = key.to_lowercase();
     if lower.contains("url") || lower.contains("endpoint") || lower == "host" || lower == "server" {
         "url"
