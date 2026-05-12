@@ -185,6 +185,23 @@ pub(crate) async fn execute_persona_inner(
     // 1. Get persona
     let mut persona = persona_repo::get_by_id(&state.db, &persona_id)?;
 
+    // 1a. Setup gate (2026-05-12). A persona whose adoption pre-flight flagged
+    // `setup_status='needs_credentials'` (C1) has unresolved connector
+    // bindings — running it produces misleading "value_delivered" output
+    // because the LLM falls back to free-form text generation from the
+    // prompt + inputData instead of actually calling the connector. Block
+    // the execution path so the gap surfaces as an explicit error instead
+    // of a false-positive run. Simulations bypass this gate so the user
+    // can still test a persona's prompt behavior before wiring creds.
+    if !is_simulation && persona.setup_status == "needs_credentials" {
+        return Err(AppError::Validation(format!(
+            "Persona '{}' has setup_status='needs_credentials' — one or more declared connectors have no vault binding. \
+             Configure the missing credentials in Settings → Vault, then re-enable the persona. \
+             (You can run a simulation via `simulate_use_case` to test prompt behaviour without credentials.)",
+            persona.name
+        )));
+    }
+
     // 1b. Auto-expand use_case_id into input_data._use_case (Phase C1).
     //
     // When a trigger fires with a use_case_id (or a manual per-capability run

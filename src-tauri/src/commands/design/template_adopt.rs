@@ -240,14 +240,35 @@ pub fn instant_adopt_template_inner(
     let mut design: serde_json::Value = serde_json::from_str(&design_result_json)
         .map_err(|e| AppError::Validation(format!("Invalid design result JSON: {e}")))?;
 
-    // v3 templates ship a rich `persona` block + `use_cases[]`; the flat
-    // fields this function reads (`structured_prompt`, `suggested_tools`,
-    // `suggested_triggers`, `suggested_connectors`, `use_case_flows`,
-    // `full_prompt_markdown`, …) don't exist until v3 normalization runs.
-    // Without this call every adopted persona ends up with the default
-    // "You are a helpful AI assistant." prompt and an empty design_context
-    // — visible to the user as a Glyph-from-scratch empty state on click.
-    // The Glyph promote path already calls this; instant-adopt was the gap.
+    // v3 templates ship a rich `persona` block + `use_cases[]` where each UC
+    // is a `recipe_ref` stub. We need two passes to land usable content on
+    // the persona row:
+    //  1. `hydrate_recipe_refs` — replaces each recipe_ref with the inline
+    //     UC content pulled from the recipe catalog (resolved via DB).
+    //     Without this the resulting `design_context.useCases` is just a
+    //     list of recipe_ref pointers, which the Use Cases tab renders as
+    //     empty entries.
+    //  2. `normalize_v3_to_flat` — composes structured_prompt from the
+    //     persona block, hoists per-UC tools/triggers/connectors to the
+    //     flat `suggested_*` fields, populates use_case_flows. Without
+    //     this every adopted persona ends up with the default "You are a
+    //     helpful AI assistant." prompt and an empty design_context —
+    //     visible as a Glyph-from-scratch empty state on click.
+    //
+    // The Glyph promote path calls both in this order (see
+    // `commands::design::build_sessions:228`); instant-adopt was missing
+    // both gates until 2026-05-12.
+    let pool_for_lookup = state.db.clone();
+    let lookup = |id: &str| -> Result<crate::db::models::RecipeDefinition, AppError> {
+        crate::db::repos::resources::recipes::get_by_id(&pool_for_lookup, id)
+    };
+    if let Err(e) = crate::engine::template_v3::hydrate_recipe_refs(&mut design, lookup) {
+        tracing::warn!(
+            template = %template_name,
+            error = %e,
+            "instant_adopt_template: recipe_ref hydration failed; proceeding with un-hydrated payload"
+        );
+    }
     if crate::engine::template_v3::is_v3_shape(&design) {
         crate::engine::template_v3::normalize_v3_to_flat(&mut design);
     }
@@ -385,31 +406,68 @@ pub fn instant_adopt_template_inner(
         .get("suggested_notification_channels")
         .map(|v| serde_json::to_string(v).unwrap_or_default());
 
-    // Build proper DesignContextData-format design_context instead of raw design_result.
-    // `use_case_flows` is v3-flattened (populated by normalize_v3_to_flat); fall back
-    // to the raw `use_cases` block on v3 templates that didn't normalize cleanly, and
-    // finally to an empty list. Without this fallback the editor's Use Cases tab and
-    // Matrix view both render empty for instant-adopted personas.
-    let use_cases = design
-        .get("use_case_flows")
+    // Build proper DesignContextData-format design_context. After hydration +
+    // normalization the canonical use-case list lives at `design.use_cases`
+    // (each entry now inline-shaped with id/name/triggers/events/tools).
+    // `use_case_flows` is the v3-flattened mirror used by the runner; we
+    // prefer the richer `use_cases` shape for the frontend's Use Cases tab
+    // and the Design tab. Map each entry to the `DesignUseCase` shape the
+    // frontend expects (id, title, description, suggested_trigger,
+    // event_subscriptions, notification_channels, etc.).
+    let raw_use_cases = design
+        .get("use_cases")
         .and_then(|v| v.as_array())
         .cloned()
-        .or_else(|| design.get("use_cases").and_then(|v| v.as_array()).cloned())
+        .or_else(|| design.get("use_case_flows").and_then(|v| v.as_array()).cloned())
         .unwrap_or_default();
+    let mapped_use_cases: Vec<serde_json::Value> = raw_use_cases
+        .iter()
+        .map(|uc| map_template_use_case_to_design_use_case(uc))
+        .collect();
     let design_context_summary = design
         .get("summary")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string())
         .unwrap_or_else(|| format!("Adopted from template: {}", template_name));
+    // service_flow surfaces in the Design tab's connector pipeline panel —
+    // pull through if the template carried one.
+    let service_flow_json = design.get("service_flow").cloned();
     let design_context_obj = serde_json::json!({
-        "useCases": use_cases,
+        "useCases": mapped_use_cases,
         "summary": design_context_summary,
+        "connectorPipeline": service_flow_json,
         "builderMeta": {
             "creationMethod": "template_adopt"
         }
     });
     let design_context_str =
         serde_json::to_string(&design_context_obj).unwrap_or_else(|_| "{}".to_string());
+
+    // The Design tab reads `persona.last_design_result` as the AgentIR. After
+    // hydration + normalization, `design` is already AgentIR-shaped — it
+    // carries `structured_prompt`, `suggested_tools`, `suggested_triggers`,
+    // `suggested_connectors`, `suggested_notification_channels`,
+    // `suggested_event_subscriptions`, `service_flow`,
+    // `protocol_capabilities`, `use_case_flows`, plus the synthesized
+    // `full_prompt_markdown`/`summary` we inject below. Persisting the whole
+    // payload as last_design_result is what makes the Design tab show real
+    // content instead of an empty intent panel for instant-adopted personas.
+    let mut design_for_persist = design.clone();
+    if let Some(obj) = design_for_persist.as_object_mut() {
+        if !obj.contains_key("full_prompt_markdown") {
+            obj.insert(
+                "full_prompt_markdown".to_string(),
+                serde_json::Value::String(full_prompt.clone()),
+            );
+        }
+        if !obj.contains_key("summary") {
+            obj.insert(
+                "summary".to_string(),
+                serde_json::Value::String(design_context_summary.clone()),
+            );
+        }
+    }
+    let last_design_result_str = serde_json::to_string(&design_for_persist).ok();
 
     // Phase 17: derive template_category from the instruction text + connector names
     // so Simple-mode's tier-3 illustration resolver can bucket this persona.
@@ -459,6 +517,20 @@ pub fn instant_adopt_template_inner(
         created_persona_id.as_deref(),
     ) {
         tracing::warn!(template = %template_name, error = %e, "Failed to increment adoption count");
+    }
+
+    // Persist last_design_result so the Design tab has the AgentIR to render.
+    // create_persona_atomically + N8nPersonaOutput don't carry this column;
+    // we write it directly post-create. Best-effort — a failure here doesn't
+    // abort the adoption (persona row is already valid), but the Design tab
+    // would show a less-rich state.
+    if let (Some(pid), Some(ref ldr)) = (created_persona_id.as_deref(), &last_design_result_str) {
+        if let Ok(conn) = state.db.get() {
+            let _ = conn.execute(
+                "UPDATE personas SET last_design_result = ?1, updated_at = ?2 WHERE id = ?3",
+                rusqlite::params![ldr, chrono::Utc::now().to_rfc3339(), pid],
+            );
+        }
     }
 
     // Adoption pre-flight (C1): if the persona declares connectors that have
@@ -1720,4 +1792,136 @@ fn synthesize_system_prompt_markdown(design: &serde_json::Value) -> Option<Strin
     } else {
         Some(out)
     }
+}
+
+/// Map a v3 template use_case (hydrated from a recipe_ref) into the frontend's
+/// `DesignUseCase` shape so the Design tab + Use Cases tab render meaningful
+/// content. Falls back to a minimal stub when keys are missing so personas
+/// with malformed templates still produce visible rows instead of silent
+/// empties.
+///
+/// Mapped fields:
+/// - `id`, `title`, `description`
+/// - `category`, `enabled` (default true)
+/// - `capability_summary`, `tool_hints`
+/// - `suggested_trigger` (first entry of `suggested_triggers[]` or
+///   `trigger_composition.*` if present)
+/// - `event_subscriptions` (from `event_subscriptions[]`)
+/// - `notification_channels` (from `notification_channels[]` /
+///   `suggested_notification_channels[]`)
+/// - `sample_input` (from `sample_input`/`sample_inputs[0]` or
+///   `test_fixtures[0].input`)
+fn map_template_use_case_to_design_use_case(uc: &serde_json::Value) -> serde_json::Value {
+    let obj = match uc.as_object() {
+        Some(o) => o,
+        None => return uc.clone(),
+    };
+    let mut out = serde_json::Map::new();
+
+    // id — prefer existing, otherwise stable hash of title or random fallback.
+    let id = obj
+        .get("id")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+        .unwrap_or_else(|| format!("uc-{}", uuid::Uuid::new_v4()));
+    out.insert("id".into(), serde_json::Value::String(id));
+
+    // title / name → title; description from any of several keys.
+    let title = obj
+        .get("title")
+        .or_else(|| obj.get("name"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("Untitled capability")
+        .to_string();
+    out.insert("title".into(), serde_json::Value::String(title));
+
+    let description = obj
+        .get("description")
+        .or_else(|| obj.get("summary"))
+        .or_else(|| obj.get("goal"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    out.insert("description".into(), serde_json::Value::String(description));
+
+    if let Some(cat) = obj.get("category").and_then(|v| v.as_str()) {
+        out.insert("category".into(), serde_json::Value::String(cat.into()));
+    }
+
+    let enabled = obj
+        .get("enabled")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(true);
+    out.insert("enabled".into(), serde_json::Value::Bool(enabled));
+
+    if let Some(cs) = obj.get("capability_summary").and_then(|v| v.as_str()) {
+        out.insert(
+            "capability_summary".into(),
+            serde_json::Value::String(cs.into()),
+        );
+    }
+    if let Some(arr) = obj.get("tool_hints").and_then(|v| v.as_array()) {
+        out.insert("tool_hints".into(), serde_json::Value::Array(arr.clone()));
+    } else if let Some(arr) = obj.get("suggested_tools").and_then(|v| v.as_array()) {
+        // Templates carry `suggested_tools` per use_case; treat them as tool_hints.
+        let hints: Vec<serde_json::Value> = arr
+            .iter()
+            .filter_map(|t| {
+                t.as_str()
+                    .map(|s| serde_json::Value::String(s.into()))
+                    .or_else(|| t.get("name").cloned())
+            })
+            .collect();
+        if !hints.is_empty() {
+            out.insert("tool_hints".into(), serde_json::Value::Array(hints));
+        }
+    }
+
+    // suggested_trigger — pick first available trigger source.
+    if let Some(t) = obj.get("suggested_trigger") {
+        out.insert("suggested_trigger".into(), t.clone());
+    } else if let Some(arr) = obj.get("suggested_triggers").and_then(|v| v.as_array()) {
+        if let Some(first) = arr.first() {
+            out.insert("suggested_trigger".into(), first.clone());
+        }
+    }
+
+    if let Some(arr) = obj.get("event_subscriptions").and_then(|v| v.as_array()) {
+        out.insert(
+            "event_subscriptions".into(),
+            serde_json::Value::Array(arr.clone()),
+        );
+    }
+
+    if let Some(arr) = obj
+        .get("notification_channels")
+        .or_else(|| obj.get("suggested_notification_channels"))
+        .and_then(|v| v.as_array())
+    {
+        out.insert(
+            "notification_channels".into(),
+            serde_json::Value::Array(arr.clone()),
+        );
+    }
+
+    if let Some(si) = obj.get("sample_input") {
+        out.insert("sample_input".into(), si.clone());
+    } else if let Some(arr) = obj.get("sample_inputs").and_then(|v| v.as_array()) {
+        if let Some(first) = arr.first() {
+            out.insert("sample_input".into(), first.clone());
+        }
+    } else if let Some(fixtures) = obj.get("test_fixtures").and_then(|v| v.as_array()) {
+        if let Some(input) = fixtures.first().and_then(|f| f.get("input")) {
+            out.insert("sample_input".into(), input.clone());
+        }
+    }
+
+    if let Some(em) = obj.get("execution_mode").and_then(|v| v.as_str()) {
+        out.insert(
+            "execution_mode".into(),
+            serde_json::Value::String(em.into()),
+        );
+    }
+
+    serde_json::Value::Object(out)
 }
