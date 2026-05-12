@@ -28,12 +28,23 @@ interface GlyphCardProps {
   /** Extra content in the card footer below the summary — consumers hang
    *  policy chips, action buttons, etc. here. */
   footerSlot?: React.ReactNode;
+  /** When provided, each dimension's panel shows a "Refine this dimension"
+   *  affordance. The callback receives the dim + use-case context so the
+   *  consumer can prefix the user's feedback before sending it to the
+   *  build engine. */
+  onRefineDimension?: (useCaseId: string, dim: GlyphDimension, feedback: string) => void;
+  /** When true, petal clicks are no-ops and any open dim panel shows a
+   *  "build in progress" notice instead of edit affordances. */
+  isBuilding?: boolean;
 }
 
 /** Main capability card. The sigil is the navigation: hover a leaf to see
  *  its name in the header, click to drill into a DimensionPanel. The flow
  *  button (top-right) opens the full ActivityDiagramModal. */
-export function GlyphCard({ row, index, flow, templateName, statusDot, headerBadge, footerSlot }: GlyphCardProps) {
+export function GlyphCard({
+  row, index, flow, templateName, statusDot, headerBadge, footerSlot,
+  onRefineDimension, isBuilding,
+}: GlyphCardProps) {
   const { t } = useTranslation();
   const c = t.templates.chronology;
   const motion_ = useMotion();
@@ -78,7 +89,8 @@ export function GlyphCard({ row, index, flow, templateName, statusDot, headerBad
             <InteractiveSigil
               row={row} rowIndex={index} size={440}
               hoveredDim={hoveredDim} activeDim={activeDim}
-              onHover={setHoveredDim} onClick={setActiveDim}
+              onHover={setHoveredDim}
+              onClick={isBuilding ? () => undefined : setActiveDim}
             />
           </motion.div>
 
@@ -164,7 +176,19 @@ export function GlyphCard({ row, index, flow, templateName, statusDot, headerBad
           )}
 
           <AnimatePresence>
-            {activeDim && <DimensionPanel dim={activeDim} row={row} onClose={() => setActiveDim(null)} />}
+            {activeDim && (
+              <DimensionPanel
+                dim={activeDim}
+                row={row}
+                onClose={() => setActiveDim(null)}
+                isBuilding={isBuilding}
+                onRefine={
+                  onRefineDimension
+                    ? (feedback) => onRefineDimension(row.id, activeDim, feedback)
+                    : undefined
+                }
+              />
+            )}
           </AnimatePresence>
         </div>
       </motion.div>

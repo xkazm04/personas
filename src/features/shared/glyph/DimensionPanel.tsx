@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Send } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import type { GlyphRow, GlyphDimension } from './types';
@@ -10,18 +11,35 @@ interface DimensionPanelProps {
   dim: GlyphDimension;
   row: GlyphRow;
   onClose: () => void;
+  /** When provided, renders a "refine this dimension" panel that lets the user
+   *  send a freeform change request for this dim. The caller is expected to
+   *  prefix the feedback with dim + use-case context before sending to the
+   *  build engine. */
+  onRefine?: (feedback: string) => void;
+  /** When true, the refine textarea + button are hidden — the build is
+   *  already running and dimension state is locked. */
+  isBuilding?: boolean;
 }
 
 /** Overlay panel shown when a petal is clicked — reads like a single matrix
  *  cell: dim-colored accent bar on top, icon + label, then the dim's body.
  *  Back arrow returns the user to the sigil. Scale/translate entry animation
  *  is driven by the parent's AnimatePresence. */
-export function DimensionPanel({ dim, row, onClose }: DimensionPanelProps) {
+export function DimensionPanel({ dim, row, onClose, onRefine, isBuilding }: DimensionPanelProps) {
   const { t } = useTranslation();
   const c = t.templates.chronology;
   const motion_ = useMotion();
   const meta = DIM_META[dim];
   const Icon = meta.icon;
+  const [refineText, setRefineText] = useState('');
+  const canRefine = !!onRefine && !isBuilding;
+
+  const submitRefine = () => {
+    if (!canRefine || !refineText.trim()) return;
+    onRefine!(refineText.trim());
+    setRefineText('');
+    onClose();
+  };
 
   return (
     <motion.div
@@ -58,6 +76,44 @@ export function DimensionPanel({ dim, row, onClose }: DimensionPanelProps) {
       <div className="flex-1 overflow-y-auto px-4 pb-4 scrollbar-thin">
         <DimContent dim={dim} row={row} t={t} />
       </div>
+      {canRefine && (
+        <div
+          className="flex flex-col gap-2 px-4 py-3 border-t border-card-border"
+          style={{ background: `linear-gradient(180deg, transparent, ${meta.color}0a)` }}
+        >
+          <label className="typo-label font-semibold uppercase tracking-[0.18em] text-foreground/70">
+            Refine this dimension
+          </label>
+          <textarea
+            value={refineText}
+            onChange={(e) => setRefineText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                submitRefine();
+              }
+            }}
+            rows={2}
+            placeholder="Describe the change — e.g. 'switch review to on_uncertainty only'"
+            className="w-full px-3 py-2 rounded-input border border-card-border bg-card-bg typo-body text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-primary/40 resize-none"
+          />
+          <button
+            type="button"
+            disabled={!refineText.trim()}
+            onClick={submitRefine}
+            className="self-end inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary/15 border border-primary/30 hover:bg-primary/25 disabled:opacity-40 disabled:cursor-not-allowed typo-label font-semibold text-foreground cursor-pointer transition-colors"
+          >
+            <Send className="w-3.5 h-3.5" /> Apply on rebuild
+          </button>
+        </div>
+      )}
+      {!!isBuilding && (
+        <div className="px-4 py-3 border-t border-card-border bg-foreground/[0.03]">
+          <span className="typo-label text-foreground/65 italic">
+            Build in progress — dimensions are locked until the rebuild completes.
+          </span>
+        </div>
+      )}
     </motion.div>
   );
 }

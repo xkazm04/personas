@@ -46,6 +46,11 @@ export interface ChronologyCommandHubProps {
   onRefine?: (feedback: string) => void;
   onViewAgent?: () => void;
 
+  /** When set, replaces the default "Start Test" button label on the top bar.
+   *  Used by PersonaChronologyGlyph to flip to "Rebuild & Test" while there
+   *  are unsubmitted dimension refinements. */
+  startTestLabelOverride?: string;
+
   // Test results
   testOutputLines?: string[];
   testPassed?: boolean | null;
@@ -176,6 +181,7 @@ function DraftReadyRefinePanel({
 function HubTopBar({
   buildPhase, completeness = 0, isRunning, buildActivity,
   onStartTest, onViewAgent, expanded, onToggleExpand, showToggle,
+  startTestLabelOverride,
 }: {
   buildPhase?: BuildPhase;
   completeness?: number;
@@ -186,6 +192,7 @@ function HubTopBar({
   expanded: boolean;
   onToggleExpand: () => void;
   showToggle: boolean;
+  startTestLabelOverride?: string;
 }) {
   const { t } = useTranslation();
   const pct = Math.round(Math.min(100, Math.max(0, completeness)));
@@ -249,7 +256,7 @@ function HubTopBar({
             onClick={onStartTest}
             className="flex items-center gap-1.5 px-4 py-2 rounded-modal bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white typo-body font-semibold shadow-elevation-3 shadow-emerald-500/25 cursor-pointer transition-all"
           >
-            <Play className="w-4 h-4" /> {t.templates.matrix_variants.start_test}
+            <Play className="w-4 h-4" /> {startTestLabelOverride ?? t.templates.matrix_variants.start_test}
           </button>
         )}
         {onViewAgent && (buildPhase === 'completed' || buildPhase === 'promoted') && (
@@ -282,7 +289,7 @@ function ChronologyCommandHubImpl(props: ChronologyCommandHubProps) {
     buildPhase, completeness, isRunning, buildActivity,
     pendingQuestions = [], onAnswerBuildQuestion, onSubmitAllAnswers,
     onStartTest, onApproveTest, onApproveTestAnyway, onRejectTest, onDeleteDraft,
-    onRefine, onViewAgent,
+    onRefine, onViewAgent, startTestLabelOverride,
     testOutputLines = [], testPassed, testError, toolTestResults = [], testSummary,
   } = props;
 
@@ -311,6 +318,7 @@ function ChronologyCommandHubImpl(props: ChronologyCommandHubProps) {
         expanded={expanded}
         onToggleExpand={() => setUserExpanded(!expanded)}
         showToggle={needsDrawer}
+        startTestLabelOverride={startTestLabelOverride}
       />
 
       <AnimatePresence initial={false}>

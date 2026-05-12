@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import type { BuildQuestion } from '@/lib/types/buildTypes';
-import type { GlyphRow } from './types';
+import type { GlyphRow, GlyphDimension } from './types';
 import { GlyphCard } from './GlyphCard';
 import { GlyphQuestionPanel } from './GlyphQuestionPanel';
 
@@ -29,6 +29,11 @@ interface GlyphGridProps {
   renderStatusDot?: (row: GlyphRow) => 'active' | 'paused' | null | undefined;
   renderHeaderBadge?: (row: GlyphRow) => ReactNode;
   renderFooterSlot?: (row: GlyphRow) => ReactNode;
+  /** Per-card dimension refinement. When provided, each dim panel exposes a
+   *  "refine this dimension" form. */
+  onRefineDimension?: (useCaseId: string, dim: GlyphDimension, feedback: string) => void;
+  /** Locks petal clicks across every card while a build is running. */
+  isBuilding?: boolean;
 }
 
 /** Stateless grid of Glyph capability cards. All four surfaces — adoption,
@@ -38,6 +43,7 @@ export function GlyphGrid({
   rows, flowsById, templateName, columns = 2, emptyLabel,
   pendingQuestions, onAnswerBuildQuestion, slotAbove, slotBelow,
   renderStatusDot, renderHeaderBadge, renderFooterSlot,
+  onRefineDimension, isBuilding,
 }: GlyphGridProps) {
   const { t } = useTranslation();
   const c = t.templates.chronology;
@@ -70,6 +76,8 @@ export function GlyphGrid({
               statusDot={renderStatusDot?.(row) ?? null}
               headerBadge={renderHeaderBadge?.(row)}
               footerSlot={renderFooterSlot?.(row)}
+              onRefineDimension={onRefineDimension}
+              isBuilding={isBuilding}
             />
           ))}
         </div>
