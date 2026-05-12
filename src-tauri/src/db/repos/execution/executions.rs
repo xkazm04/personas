@@ -187,40 +187,40 @@ pub fn get_all_global(
             let sql = qb.build_select(base);
             let mut stmt = conn.prepare_cached(&sql)?;
 
+            // Read the 24 PersonaExecution columns via the shared mapper, then
+            // tack on the 3 JOIN-only persona-metadata columns. Keeps the
+            // nullable-column boilerplate (input_tokens/output_tokens/cost_usd/
+            // log_truncated/business_outcome unwraps) in one place — a new
+            // column on persona_executions touches one site, not two.
             let row_mapper = |row: &Row| -> rusqlite::Result<GlobalExecutionRow> {
+                let base = row_to_execution(row)?;
                 Ok(GlobalExecutionRow {
-                    id: row.get("id")?,
-                    persona_id: row.get("persona_id")?,
-                    trigger_id: row.get("trigger_id")?,
-                    use_case_id: row.get("use_case_id")?,
-                    status: row.get("status")?,
-                    input_data: row.get("input_data")?,
-                    output_data: row.get("output_data")?,
-                    claude_session_id: row.get("claude_session_id")?,
-                    log_file_path: row.get("log_file_path")?,
-                    execution_flows: row.get("execution_flows")?,
-                    model_used: row.get("model_used")?,
-                    input_tokens: row.get::<_, Option<i64>>("input_tokens")?.unwrap_or(0),
-                    output_tokens: row.get::<_, Option<i64>>("output_tokens")?.unwrap_or(0),
-                    cost_usd: row.get::<_, Option<f64>>("cost_usd")?.unwrap_or(0.0),
-                    error_message: row.get("error_message")?,
-                    duration_ms: row.get("duration_ms")?,
-                    tool_steps: row.get("tool_steps")?,
-                    retry_of_execution_id: row.get("retry_of_execution_id")?,
-                    retry_count: row.get::<_, Option<i64>>("retry_count")?.unwrap_or(0),
-                    started_at: row.get("started_at")?,
-                    completed_at: row.get("completed_at")?,
-                    created_at: row.get("created_at")?,
-                    execution_config: row.get("execution_config").unwrap_or(None),
-                    log_truncated: row
-                        .get::<_, Option<bool>>("log_truncated")?
-                        .unwrap_or(false),
-                    is_simulation: row
-                        .get::<_, Option<bool>>("is_simulation")?
-                        .unwrap_or(false),
-                    business_outcome: row
-                        .get::<_, Option<String>>("business_outcome")?
-                        .unwrap_or_else(|| "unknown".to_string()),
+                    id: base.id,
+                    persona_id: base.persona_id,
+                    trigger_id: base.trigger_id,
+                    use_case_id: base.use_case_id,
+                    status: base.status,
+                    input_data: base.input_data,
+                    output_data: base.output_data,
+                    claude_session_id: base.claude_session_id,
+                    log_file_path: base.log_file_path,
+                    execution_flows: base.execution_flows,
+                    model_used: base.model_used,
+                    input_tokens: base.input_tokens,
+                    output_tokens: base.output_tokens,
+                    cost_usd: base.cost_usd,
+                    error_message: base.error_message,
+                    duration_ms: base.duration_ms,
+                    tool_steps: base.tool_steps,
+                    retry_of_execution_id: base.retry_of_execution_id,
+                    retry_count: base.retry_count,
+                    started_at: base.started_at,
+                    completed_at: base.completed_at,
+                    created_at: base.created_at,
+                    execution_config: base.execution_config,
+                    log_truncated: base.log_truncated,
+                    is_simulation: base.is_simulation,
+                    business_outcome: base.business_outcome,
                     persona_name: row.get("persona_name")?,
                     persona_icon: row.get("persona_icon")?,
                     persona_color: row.get("persona_color")?,
