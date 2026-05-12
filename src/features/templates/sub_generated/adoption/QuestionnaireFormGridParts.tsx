@@ -98,6 +98,14 @@ function DynamicSelectBody({
   }
 
   if (state.error) {
+    // Distinguish "no credential available" (Retry can't help — the vault
+    // doesn't have one and the user must add one) from "transient fetch
+    // failed" (Retry is the right primary action). The errorKind flag is
+    // set in useDynamicQuestionOptions when the empty-result branch fires
+    // because nothing matched in the vault. Showing both buttons for the
+    // no-credential case was the bug the user flagged — Retry just looped
+    // on the same empty lookup, looking broken.
+    const isMissingCredential = state.errorKind === 'no_credential';
     return (
       <div className="space-y-2">
         <div className="flex items-center gap-2 typo-body text-status-error">
@@ -105,14 +113,16 @@ function DynamicSelectBody({
           {state.error}
         </div>
         <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={onRetry}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption font-medium rounded-card bg-foreground/[0.03] border border-border text-foreground hover:bg-foreground/[0.06] transition-colors"
-          >
-            <RefreshCw className="w-3 h-3" />
-            {t.templates.adopt_modal.retry}
-          </button>
+          {!isMissingCredential && (
+            <button
+              type="button"
+              onClick={onRetry}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption font-medium rounded-card bg-foreground/[0.03] border border-border text-foreground hover:bg-foreground/[0.06] transition-colors"
+            >
+              <RefreshCw className="w-3 h-3" />
+              {t.templates.adopt_modal.retry}
+            </button>
+          )}
           {(() => {
             const categoryForAdd = question.vault_category
               ?? (src.source === 'vault' ? src.service_type : null);
@@ -121,7 +131,11 @@ function DynamicSelectBody({
               <button
                 type="button"
                 onClick={() => onAddCredential(categoryForAdd)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption font-medium rounded-card bg-status-error/15 border border-status-error/30 text-status-error hover:bg-status-error/20 transition-colors"
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption font-medium rounded-card transition-colors ${
+                  isMissingCredential
+                    ? 'bg-primary/15 border border-primary/30 text-foreground hover:bg-primary/25'
+                    : 'bg-status-error/15 border border-status-error/30 text-status-error hover:bg-status-error/20'
+                }`}
               >
                 <Plus className="w-3 h-3" />
                 {t.templates.adopt_modal.add_credential}

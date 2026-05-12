@@ -15,6 +15,15 @@ export interface DynamicOptionState {
   ready: boolean;
   /** Error message if the fetch or parse failed. UI shows a retry affordance. */
   error: string | null;
+  /**
+   * Type of error, so the UI can hide actions that don't make sense for the
+   * specific failure: `no_credential` means the vault has no matching
+   * healthy entry — Retry is meaningless here (it just re-fires the same
+   * empty lookup), so only "Add credential" should render. `fetch_failed`
+   * is a transient IPC/discovery failure where Retry is the right primary
+   * action. `null` means no error.
+   */
+  errorKind: 'no_credential' | 'fetch_failed' | null;
   /** Discovered items, or empty before the fetch resolves. */
   items: DiscoveredItem[];
   /** Is this question waiting on an unanswered `depends_on` parent? */
@@ -25,6 +34,7 @@ const EMPTY_STATE: DynamicOptionState = {
   loading: false,
   ready: false,
   error: null,
+  errorKind: null,
   items: [],
   waitingOnParent: false,
 };
@@ -115,6 +125,7 @@ export function useDynamicQuestionOptions(
             [q.id]: {
               ...EMPTY_STATE,
               error: t.templates.adopt_modal.dynamic_misconfigured_scope,
+              errorKind: 'fetch_failed',
             },
           }));
           continue;
@@ -147,6 +158,7 @@ export function useDynamicQuestionOptions(
             error: items.length === 0
               ? tx(t.templates.adopt_modal.dynamic_pick_resource, { service: credServiceType, resource: fromScope })
               : null,
+            errorKind: items.length === 0 ? 'no_credential' : null,
             items,
             waitingOnParent: false,
           },
@@ -211,6 +223,7 @@ export function useDynamicQuestionOptions(
             loading: false,
             ready: items.length > 0,
             error: errorMsg,
+            errorKind: errorMsg ? 'no_credential' : null,
             items,
             waitingOnParent: false,
           },
@@ -234,6 +247,7 @@ export function useDynamicQuestionOptions(
             [q.id]: {
               ...EMPTY_STATE,
               error: tx(t.templates.adopt_modal.dynamic_no_credential, { category: src.service_type }),
+              errorKind: 'no_credential',
             },
           };
         });
@@ -278,6 +292,7 @@ export function useDynamicQuestionOptions(
               loading: false,
               ready: true,
               error: null,
+              errorKind: null,
               items,
               waitingOnParent: false,
             },
@@ -316,6 +331,7 @@ export function useDynamicQuestionOptions(
               loading: false,
               ready: false,
               error: message || t.templates.adopt_modal.dynamic_load_failed,
+              errorKind: 'fetch_failed',
               items: [],
               waitingOnParent: false,
             },

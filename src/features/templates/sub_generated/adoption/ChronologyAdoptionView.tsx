@@ -29,6 +29,7 @@ import { categoryOrderIndex } from "./questionnaireCategoryOrder";
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/generated/types';
 import { QuickAddCredentialModal } from "./QuickAddCredentialModal";
+import { BUILTIN_CONNECTORS, connectorCategoryTags } from "@/lib/credentials/builtinConnectors";
 import type { TriggerSelection } from "./useCasePickerShared";
 import { resolveIconForTemplate } from "@/lib/icons/templateIconResolver";
 
@@ -1016,8 +1017,20 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
       const src = q.dynamic_source;
       return src?.source === 'vault' && src.service_type === category;
     });
+    // The category passed in may already be a real category key
+    // (`messaging`, `email`, `image_generation`) OR a service_type that
+    // got promoted to category by the upstream useDynamicQuestionOptions
+    // fallback (`gmail`, `notion`, …). QuickAddCredentialModal filters
+    // the catalog with `connectorsInCategory(category)` which only
+    // matches real category tags — passing a service_type returns an
+    // empty candidate list and the modal looks broken. Resolve the
+    // service_type → category here so the picker always has candidates.
+    const builtin = BUILTIN_CONNECTORS.find((c) => c.name === category);
+    const normalizedCategory = builtin
+      ? connectorCategoryTags(builtin.name)[0] ?? category
+      : category;
     setQuickAddContext({
-      category,
+      category: normalizedCategory,
       targetQuestionId: targetQuestion?.id ?? null,
     });
   }, [filteredAdoptionQuestions]);
