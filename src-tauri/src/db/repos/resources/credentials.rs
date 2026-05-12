@@ -255,27 +255,7 @@ pub fn insert_credential_and_fields_tx(
 
     for (key, value) in fields {
         let is_sensitive = is_field_sensitive(sens_map.as_ref(), key);
-        let (enc_val, field_iv) = crypto::encrypt_field(value, is_sensitive)
-            .map_err(|e| AppError::Internal(format!("Field encryption failed: {}", e)))?;
-
-        let field_type = classify_field_type(key);
-        let field_id = uuid::Uuid::new_v4().to_string();
-
-        tx.execute(
-            "INSERT INTO credential_fields
-             (id, credential_id, field_key, encrypted_value, iv, field_type, is_sensitive, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)",
-            params![
-                field_id,
-                id,
-                key,
-                enc_val,
-                field_iv,
-                field_type,
-                is_sensitive as i32,
-                now,
-            ],
-        )?;
+        insert_field_row(tx, &id, key, value, is_sensitive, &now)?;
     }
 
     Ok(id)
@@ -396,23 +376,7 @@ pub fn update_with_fields(
 
                     for (key, value) in field_map {
                         let is_sensitive = is_field_sensitive(sens_map.as_ref(), key);
-                        let (enc_val, field_iv) = crypto::encrypt_field(value, is_sensitive)
-                            .map_err(|e| {
-                                AppError::Internal(format!("Field encryption failed: {e}"))
-                            })?;
-
-                        let field_type = classify_field_type(key);
-                        let field_id = uuid::Uuid::new_v4().to_string();
-
-                        tx.execute(
-                        "INSERT INTO credential_fields
-                         (id, credential_id, field_key, encrypted_value, iv, field_type, is_sensitive, created_at, updated_at)
-                         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)",
-                        params![
-                            field_id, id, key, enc_val, field_iv,
-                            field_type, is_sensitive as i32, now,
-                        ],
-                    )?;
+                        insert_field_row(&tx, &id, key, value, is_sensitive, &now)?;
                     }
                 }
             }
@@ -1171,27 +1135,7 @@ pub fn save_fields(
 
         for (key, value) in fields {
             let is_sensitive = is_field_sensitive(sens_map.as_ref(), key);
-            let (enc_val, field_iv) = crypto::encrypt_field(value, is_sensitive)
-                .map_err(|e| AppError::Internal(format!("Field encryption failed: {e}")))?;
-
-            let field_type = classify_field_type(key);
-            let field_id = uuid::Uuid::new_v4().to_string();
-
-            tx.execute(
-                "INSERT INTO credential_fields
-                 (id, credential_id, field_key, encrypted_value, iv, field_type, is_sensitive, created_at, updated_at)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)",
-                params![
-                    field_id,
-                    credential_id,
-                    key,
-                    enc_val,
-                    field_iv,
-                    field_type,
-                    is_sensitive as i32,
-                    now,
-                ],
-            )?;
+            insert_field_row(&tx, credential_id, key, value, is_sensitive, &now)?;
             count += 1;
         }
 
@@ -1348,6 +1292,44 @@ fn normalize_field_key(key: &str) -> String {
         "tokenType" => "token_type".to_string(),
         _ => key.to_string(),
     }
+}
+
+/// Insert a single credential field row using a plain INSERT. Owns the
+/// encrypt + classify + uuid scaffolding so per-field callers don't repeat it.
+/// The caller decides sensitivity (typically via `is_field_sensitive(sens_map, key)`).
+///
+/// Use this for the create-and-replace path. For idempotent updates where the
+/// row may already exist, use `upsert_field_on_conn` (which has the ON CONFLICT
+/// clause). For data-portability restore that needs INSERT OR REPLACE semantics,
+/// that path still owns its own SQL.
+pub fn insert_field_row(
+    conn: &rusqlite::Connection,
+    credential_id: &str,
+    key: &str,
+    value: &str,
+    is_sensitive: bool,
+    now: &str,
+) -> Result<(), AppError> {
+    let (enc_val, field_iv) = crypto::encrypt_field(value, is_sensitive)
+        .map_err(|e| AppError::Internal(format!("Field encryption failed: {e}")))?;
+    let field_type = classify_field_type(key);
+    let field_id = uuid::Uuid::new_v4().to_string();
+    conn.execute(
+        "INSERT INTO credential_fields
+         (id, credential_id, field_key, encrypted_value, iv, field_type, is_sensitive, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)",
+        params![
+            field_id,
+            credential_id,
+            key,
+            enc_val,
+            field_iv,
+            field_type,
+            is_sensitive as i32,
+            now,
+        ],
+    )?;
+    Ok(())
 }
 
 /// Classify a credential field key into a type hint.
