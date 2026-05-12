@@ -54,6 +54,29 @@ function normalizeTriggerType(raw: string): string {
   return TRIGGER_TYPE_ALIASES[raw] ?? raw;
 }
 
+/**
+ * Humanize a snake_case use_case identifier into a readable label.
+ * `uc_signals` → `Signals`, `uc_publish_and_alert` → `Publish and Alert`.
+ * Used as the fallback for the "Applies to:" line when a use_case_id is
+ * referenced by an adoption question but no inline name/title was set
+ * (templates whose use_cases[] are pure recipe_refs hit this path).
+ */
+function humanizeUseCaseId(id: string): string {
+  if (!id) return id;
+  const cleaned = id.replace(/^uc[_-]/i, '').replace(/_/g, ' ').trim();
+  if (!cleaned) return id;
+  return cleaned
+    .split(' ')
+    .map((word) => {
+      // Preserve known acronyms verbatim
+      if (/^(adr|api|crm|ci|cd|mcp|kb|qa|hr|cms|seo)$/i.test(word)) {
+        return word.toUpperCase();
+      }
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    })
+    .join(' ');
+}
+
 /** Extract dimension items from an AgentIR design result. Works with loose shapes.
  *
  * `credentialBindings` (optional) is a map of connector-name / vault-category →
@@ -589,16 +612,33 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
   }, []);
 
   // Map UC id → human title so questionnaire "Applies to:" lines can render
-  // "Applies to: Personal Briefing, Weekly Review" instead of raw ids like
-  // "uc_morning_digest". Titles fall back to the id if the template author
-  // didn't set a title on a capability.
+  // "Applies to: Signals, Congressional Scan" instead of raw ids like
+  // "uc_signals". Three layers of resolution:
+  //   1. availableUseCases (post-hydration use_cases array — has name/title)
+  //   2. adoption_questions also reference use_case_ids that may not appear in
+  //      availableUseCases for templates whose use_cases[] are pure recipe_refs
+  //      and haven't been hydrated client-side yet
+  //   3. Fallback to a humanized id ("uc_signals" → "Signals") so the user
+  //      never sees raw snake_case identifiers in the questionnaire
   const useCaseTitleById = useMemo<Record<string, string>>(() => {
     const out: Record<string, string> = {};
     for (const uc of availableUseCases) {
-      out[uc.id] = uc.name && uc.name.trim() ? uc.name : uc.id;
+      out[uc.id] = uc.name && uc.name.trim() && uc.name !== uc.id
+        ? uc.name
+        : humanizeUseCaseId(uc.id);
+    }
+    // Also seed entries for any use_case_id referenced by adoption_questions
+    // that didn't appear in availableUseCases (recipe_refs not hydrated, or
+    // template authoring drift). Without this, "Applies to: uc_signals"
+    // bleeds through for those ids even when the template is otherwise fine.
+    for (const q of adoptionQuestions) {
+      const ids = [q.use_case_id, ...(q.use_case_ids ?? [])].filter(Boolean) as string[];
+      for (const id of ids) {
+        if (!out[id]) out[id] = humanizeUseCaseId(id);
+      }
     }
     return out;
-  }, [availableUseCases]);
+  }, [availableUseCases, adoptionQuestions]);
 
   // Filter adoption questions by selected use cases + sort to match the
   // Live Preview bucket order (questionnaireCategoryOrder shared constant).

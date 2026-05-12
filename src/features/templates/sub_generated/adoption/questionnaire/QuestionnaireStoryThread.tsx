@@ -34,8 +34,15 @@ function ThreadItem({
 }) {
   const { t } = useTranslation();
   const meta = CATEGORY_META[question.category ?? ''] ?? FALLBACK_CATEGORY;
-  const StatusIcon = statusIconFor(state);
-  const statusColor = statusColorFor(state);
+  // When the current question ALSO has an answer (e.g. user just picked a
+  // credential and the cell stayed selected), prefer the answered visual
+  // so the right rail acknowledges the input. The "current" badge is
+  // demoted to a subtle marker so the user gets confirmation that the
+  // pick registered.
+  const isAnsweredCurrent = state === 'current' && !!answer;
+  const effectiveState: QuestionnaireThreadState = isAnsweredCurrent ? 'answered' : state;
+  const StatusIcon = statusIconFor(effectiveState);
+  const statusColor = statusColorFor(effectiveState);
   return (
     <button
       type="button"
@@ -58,12 +65,17 @@ function ThreadItem({
           <div className="text-sm text-foreground leading-snug line-clamp-2">
             {question.question}
           </div>
-          {state === 'answered' && answer ? (
-            <div className="text-xs text-foreground/65 leading-tight mt-1 truncate italic">
+          {effectiveState === 'answered' && answer ? (
+            <div className="text-xs text-status-success/80 leading-tight mt-1 truncate italic">
               {summarizeAnswer(answer, question.type, t)}
               {isAuto && (
                 <span className="ml-1.5 text-[10px] uppercase tracking-wider text-brand-purple/80 font-semibold not-italic">
                   auto
+                </span>
+              )}
+              {isAnsweredCurrent && (
+                <span className="ml-1.5 text-[10px] uppercase tracking-[0.18em] text-primary/80 font-semibold not-italic">
+                  current
                 </span>
               )}
             </div>
