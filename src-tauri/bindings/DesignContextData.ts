@@ -16,9 +16,9 @@ import type { DesignUseCase } from "./DesignUseCase";
 export type DesignContextData = { designFiles: DesignFilesSection | null, credentialLinks: { [key in string]?: string } | null, useCases: Array<DesignUseCase> | null, summary: string | null, connectorPipeline: Array<ConnectorPipelineStep> | null, 
 /**
  * Twin profile this persona is pinned to. When `Some`, the
- * `builtin-twin` connector should resolve this id instead of the
- * globally-active twin. Connector resolution wiring is a separate
- * follow-up — for now this is a pure config field round-tripped
- * through the design_context envelope.
+ * `builtin-twin` connector resolves this id instead of the
+ * globally-active twin via `twin_get_active_profile(persona_id)`.
+ * A deleted twin id silently falls back to the active twin so the
+ * connector never errors on stale design_context entries.
  */
 twinId: string | null, };

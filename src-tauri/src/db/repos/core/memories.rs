@@ -577,6 +577,38 @@ pub fn update_importance(pool: &DbPool, id: &str, importance: i32) -> Result<boo
     })
 }
 
+/// Patch the editable content fields on an existing memory.
+///
+/// Used by the message-rating upsert path in the Overview > Messages
+/// detail modal: when a user re-rates the same message, we update the
+/// existing memory row in place rather than spawning duplicate rows that
+/// would all share the same `source_execution_id`. Importance is bounded
+/// to the same [1, 5] range as `update_importance`. Tags are replaced
+/// wholesale — pass the current set, not a delta.
+pub fn update_content(
+    pool: &DbPool,
+    id: &str,
+    title: &str,
+    content: &str,
+    importance: i32,
+    tags: Option<&[String]>,
+) -> Result<bool, AppError> {
+    timed_query!("persona_memories", "persona_memories::update_content", {
+        validate_importance(importance)?;
+        let conn = pool.get()?;
+        let now = chrono::Utc::now().to_rfc3339();
+        let tags_json = tags
+            .map(|t| serde_json::to_string(t).unwrap_or_else(|_| "[]".to_string()));
+        let rows = conn.execute(
+            "UPDATE persona_memories
+             SET title = ?1, content = ?2, importance = ?3, tags = ?4, updated_at = ?5
+             WHERE id = ?6",
+            params![title, content, importance, tags_json, now, id],
+        )?;
+        Ok(rows > 0)
+    })
+}
+
 /// Batch-update importance for multiple memories in a single transaction.
 /// Each tuple is (id, new_importance).
 pub fn batch_update_importance(pool: &DbPool, updates: &[(String, i32)]) -> Result<i64, AppError> {

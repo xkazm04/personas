@@ -130,6 +130,14 @@ export interface CompanionPluginSlice {
    * skip synthesis cleanly even when this flag is true.
    */
   companionRecallSynthesisEnabled: boolean;
+  /**
+   * A2: when true, Athena may chain turns autonomously by emitting
+   * `OP: continue_autonomously` — the backend schedules a follow-up
+   * turn ~15s later. Toggle lives in the chat-panel header; any user
+   * message cancels the pending continuation gracefully (the "stop"
+   * UX is "type anything").
+   */
+  companionAutonomousMode: boolean;
 
   setCompanionPluginTab: (tab: CompanionPluginTab) => void;
   setCompanionFooterEnabled: (v: boolean) => void;
@@ -150,6 +158,7 @@ export interface CompanionPluginSlice {
   setCompanionLabJump: (j: CompanionLabJump | null) => void;
   setCompanionPanelCompact: (v: boolean) => void;
   setCompanionRecallSynthesisEnabled: (v: boolean) => void;
+  setCompanionAutonomousMode: (v: boolean) => void;
 }
 
 export const createCompanionPluginSlice: StateCreator<
@@ -175,6 +184,7 @@ export const createCompanionPluginSlice: StateCreator<
   companionLabJump: null,
   companionPanelCompact: false,
   companionRecallSynthesisEnabled: false,
+  companionAutonomousMode: false,
 
   setCompanionPluginTab: (companionPluginTab) => set({ companionPluginTab }),
   setCompanionFooterEnabled: (companionFooterEnabled) =>
@@ -210,4 +220,6 @@ export const createCompanionPluginSlice: StateCreator<
   setCompanionPanelCompact: (companionPanelCompact) => set({ companionPanelCompact }),
   setCompanionRecallSynthesisEnabled: (companionRecallSynthesisEnabled) =>
     set({ companionRecallSynthesisEnabled }),
+  setCompanionAutonomousMode: (companionAutonomousMode) =>
+    set({ companionAutonomousMode }),
 });

@@ -1182,6 +1182,98 @@ pub fn seed_mock_manual_review(
     }
 }
 
+/// Test-only seed: insert a fake `persona_messages` + `persona_manual_reviews`
+/// pair that share the same `execution_id` so the Message-detail modal can
+/// drive its "Pending decisions" section against a deterministic fixture.
+///
+/// Returns `(message_id, review_id, persona_id, execution_id)` so the
+/// caller (Playwright spec) can navigate the UI to the right message and
+/// assert the review row by id.
+#[derive(Debug, serde::Serialize, ts_rs::TS)]
+#[ts(export)]
+pub struct SeededLinkedArtifacts {
+    pub message_id: String,
+    pub review_id: String,
+    pub persona_id: String,
+    pub execution_id: String,
+}
+
+#[tauri::command]
+pub fn seed_linked_message_and_review(
+    state: State<'_, Arc<AppState>>,
+) -> Result<SeededLinkedArtifacts, AppError> {
+    require_auth_sync(&state)?;
+
+    #[cfg(not(debug_assertions))]
+    {
+        return Err(AppError::Validation(
+            "seed_linked_message_and_review is only available in debug builds".into(),
+        ));
+    }
+
+    #[cfg(debug_assertions)]
+    {
+        // Reuse the first persona, or fall back to a synthetic id (FK guard
+        // disables the persona_id check on insert).
+        let personas = persona_repo::get_all(&state.db)?;
+        let persona_id = personas
+            .first()
+            .map(|p| p.id.clone())
+            .unwrap_or_else(|| "mock-persona".to_string());
+
+        let execution_id = format!("test-exec-{}", &uuid::Uuid::new_v4().to_string()[..8]);
+        let message_id = uuid::Uuid::new_v4().to_string();
+        let review_id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+
+        let conn = state.db.get()?;
+        let result = {
+            let _fk_guard = crate::db::FkDisabledGuard::new(&conn)?;
+            conn.execute(
+                "INSERT INTO persona_messages
+                 (id, persona_id, execution_id, title, content, content_type, priority,
+                  is_read, metadata, created_at, thread_id)
+                 VALUES (?1, ?2, ?3, ?4, ?5, 'markdown', 'normal', 0, NULL, ?6, ?1)",
+                rusqlite::params![
+                    message_id,
+                    persona_id,
+                    execution_id,
+                    "E2E linked-artifacts test message",
+                    "# Linked test message\n\nThis message is paired with a pending manual review for the same execution. Used by the Playwright spec for the Overview > Messages detail modal features (rating, pending decisions, content actions).",
+                    now
+                ],
+            )?;
+
+            conn.execute(
+                "INSERT INTO persona_manual_reviews
+                 (id, execution_id, persona_id, title, description, severity, status,
+                  context_data, suggested_actions, created_at, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, 'warning', 'pending',
+                         ?6, ?7, ?8, ?8)",
+                rusqlite::params![
+                    review_id,
+                    execution_id,
+                    persona_id,
+                    "Approve linked output before delivery",
+                    "Generated content needs human sign-off before it ships. Linked to the same execution as the message.",
+                    r#"{"linked_message_id":"test","reason":"e2e fixture"}"#,
+                    r#"["Approve","Reject"]"#,
+                    now
+                ],
+            )?;
+            Ok::<(), AppError>(())
+        };
+        result?;
+
+        Ok(SeededLinkedArtifacts {
+            message_id,
+            review_id,
+            persona_id,
+            execution_id,
+        })
+    }
+}
+
 /// Backfill categories for all reviews that currently have `category = NULL`.
 /// Uses the `infer_template_category` function to derive a category from
 /// the instruction text and connector names.  Returns the count of updated rows.

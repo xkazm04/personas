@@ -14,6 +14,13 @@ import type { ComponentType } from 'react';
 import { ConnectedServicesWidget } from './widgets/ConnectedServicesWidget';
 import { DecisionsPanelWidget } from './widgets/DecisionsPanelWidget';
 import { PersonaOverviewWidget } from './widgets/PersonaOverviewWidget';
+import { MessageSummaryWidget } from './widgets/MessageSummaryWidget';
+import { ExecutionFactsWidget } from './widgets/ExecutionFactsWidget';
+import { LinkedDecisionsWidget } from './widgets/LinkedDecisionsWidget';
+import { LinkedMemoriesWidget } from './widgets/LinkedMemoriesWidget';
+import { MetricSparkWidget } from './widgets/MetricSparkWidget';
+import { IssueListWidget } from './widgets/IssueListWidget';
+import { TextCalloutWidget } from './widgets/TextCalloutWidget';
 
 export interface CockpitWidgetProps {
   /** Free-form config block from Athena's compose_cockpit op. */
@@ -26,4 +33,36 @@ export const cockpitWidgetRegistry: Record<string, ComponentType<CockpitWidgetPr
   persona_overview: PersonaOverviewWidget,
   connected_services: ConnectedServicesWidget,
   decisions_panel: DecisionsPanelWidget,
+  // Contextual widgets — composed programmatically by surfaces like the
+  // Overview > Messages detail modal's "Play in chat" handler. Athena
+  // does not emit these via compose_cockpit; they only render inside
+  // a transient contextualCockpit overlay.
+  message_summary: MessageSummaryWidget,
+  execution_facts: ExecutionFactsWidget,
+  linked_decisions: LinkedDecisionsWidget,
+  linked_memories: LinkedMemoriesWidget,
+  // Generic widgets — Athena populates them directly from connector
+  // results or memory; no per-widget data fetch. Lets her shape an
+  // explanation visually instead of as a long chat bubble.
+  metric_spark: MetricSparkWidget,
+  issue_list: IssueListWidget,
+  text_callout: TextCalloutWidget,
 };
+
+/** Tunes the grid `rowSpan` per widget kind. Multi-row gives long-form
+ *  widgets vertical room; dense widgets stay at 2 rows. */
+export function cockpitRowSpan(kind: string): number {
+  switch (kind) {
+    case 'persona_overview':
+    case 'decisions_panel':
+    case 'linked_decisions':
+    case 'linked_memories':
+    case 'issue_list':
+      return 3;
+    case 'metric_spark':
+      // KPI tile — short and wide, looks crammed at 2 rows.
+      return 2;
+    default:
+      return 2;
+  }
+}

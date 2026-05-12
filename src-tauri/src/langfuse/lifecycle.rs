@@ -22,8 +22,10 @@
 
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{LazyLock, Mutex};
 use std::time::{Duration, Instant};
 use tauri::{AppHandle, Emitter, Manager};
+use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 
 use crate::error::AppError;
@@ -31,6 +33,28 @@ use crate::langfuse::types::{
     LangfuseJobKind, LangfuseStackDone, LangfuseStackProgress, StartPhase,
 };
 use crate::langfuse::{config, docker, exporter, templates};
+
+/// Cancellation token for the in-flight start job. `spawn_start` stores a
+/// fresh token here; `spawn_stop` pulls and `.cancel()`s it so the pull/up/
+/// healthcheck phases abort and the subprocess is killed via `kill_on_drop`.
+static START_CANCEL: LazyLock<Mutex<Option<CancellationToken>>> =
+    LazyLock::new(|| Mutex::new(None));
+
+/// Signal the running start job (if any) to cancel. Called from `spawn_stop`
+/// and from the `langfuse_stack_reset` path. Idempotent.
+fn cancel_running_start() {
+    let token = {
+        let mut guard = match START_CANCEL.lock() {
+            Ok(g) => g,
+            Err(p) => p.into_inner(),
+        };
+        guard.take()
+    };
+    if let Some(t) = token {
+        tracing::info!("Cancelling in-flight Langfuse start job");
+        t.cancel();
+    }
+}
 
 pub const EVT_PROGRESS: &str = "langfuse://stack/progress";
 pub const EVT_DONE: &str = "langfuse://stack/done";
@@ -188,9 +212,28 @@ pub fn spawn_start(app: AppHandle) -> Result<String, AppError> {
     let job_id = Uuid::new_v4().to_string();
     let job_id_for_task = job_id.clone();
 
+    // Mint a fresh cancellation token and stash it so spawn_stop can fire it.
+    let cancel = CancellationToken::new();
+    {
+        let mut slot = match START_CANCEL.lock() {
+            Ok(g) => g,
+            Err(p) => p.into_inner(),
+        };
+        *slot = Some(cancel.clone());
+    }
+
     tauri::async_runtime::spawn(async move {
         let _g = guard; // hold for the lifetime of the task
-        let result = run_start(&app, &job_id_for_task).await;
+        let result = run_start(&app, &job_id_for_task, cancel.clone()).await;
+        // Clear the token slot once we're done so a stale token doesn't
+        // stick around to confuse the next stop click.
+        {
+            let mut slot = match START_CANCEL.lock() {
+                Ok(g) => g,
+                Err(p) => p.into_inner(),
+            };
+            *slot = None;
+        }
         match result {
             Ok(()) => emit_done(
                 &app,
@@ -200,14 +243,22 @@ pub fn spawn_start(app: AppHandle) -> Result<String, AppError> {
                 None,
                 None,
             ),
-            Err(e) => emit_done(
-                &app,
-                &job_id_for_task,
-                LangfuseJobKind::Start,
-                false,
-                Some(e.to_string()),
-                None,
-            ),
+            Err(e) => {
+                let was_cancelled = cancel.is_cancelled();
+                let error_msg = if was_cancelled {
+                    "Cancelled by user".to_string()
+                } else {
+                    e.to_string()
+                };
+                emit_done(
+                    &app,
+                    &job_id_for_task,
+                    LangfuseJobKind::Start,
+                    false,
+                    Some(error_msg),
+                    None,
+                );
+            }
         }
     });
 
@@ -218,6 +269,12 @@ pub fn spawn_start(app: AppHandle) -> Result<String, AppError> {
 pub fn spawn_stop(app: AppHandle) -> Result<String, AppError> {
     let guard = StopGuard::try_acquire()
         .ok_or_else(|| AppError::Langfuse("Another stop is already running.".into()))?;
+
+    // If a start is in flight, signal it to abort before we attempt the
+    // `compose down`. Without this, Stop would race against an in-progress
+    // pull and either no-op (containers don't exist yet) or duel with the
+    // start task over compose state.
+    cancel_running_start();
 
     let job_id = Uuid::new_v4().to_string();
     let job_id_for_task = job_id.clone();
@@ -252,7 +309,20 @@ pub fn spawn_stop(app: AppHandle) -> Result<String, AppError> {
 // Start flow
 // ---------------------------------------------------------------------------
 
-async fn run_start(app: &AppHandle, job_id: &str) -> Result<(), AppError> {
+async fn run_start(
+    app: &AppHandle,
+    job_id: &str,
+    cancel: CancellationToken,
+) -> Result<(), AppError> {
+    // Helper: bail early if the user clicked Stop between phases.
+    macro_rules! bail_if_cancelled {
+        () => {
+            if cancel.is_cancelled() {
+                return Err(AppError::Langfuse("Cancelled".into()));
+            }
+        };
+    }
+
     // === Phase 1: Preparing ===
     emit_progress(
         app,
@@ -264,6 +334,7 @@ async fn run_start(app: &AppHandle, job_id: &str) -> Result<(), AppError> {
     );
 
     let docker_info = docker::detect().await;
+    bail_if_cancelled!();
     if !docker_info.installed {
         return Err(AppError::Langfuse("Docker is not installed.".into()));
     }
@@ -325,6 +396,7 @@ async fn run_start(app: &AppHandle, job_id: &str) -> Result<(), AppError> {
     );
 
     // === Phase 2: Pulling images ===
+    bail_if_cancelled!();
     let pull_message = "Pulling Langfuse images (this can take a few minutes on first run)…";
     let ticker = spawn_phase_ticker(
         app.clone(),
@@ -332,7 +404,7 @@ async fn run_start(app: &AppHandle, job_id: &str) -> Result<(), AppError> {
         StartPhase::PullingImages,
         pull_message.to_string(),
     );
-    let pull_result = docker::pull(&stack_dir, &compose_cmd).await;
+    let pull_result = docker::pull(&stack_dir, &compose_cmd, cancel.clone()).await;
     ticker.abort();
     pull_result?;
     emit_progress(
@@ -345,6 +417,7 @@ async fn run_start(app: &AppHandle, job_id: &str) -> Result<(), AppError> {
     );
 
     // === Phase 3: Starting containers ===
+    bail_if_cancelled!();
     let start_message = "Starting containers…";
     let ticker = spawn_phase_ticker(
         app.clone(),
@@ -352,7 +425,7 @@ async fn run_start(app: &AppHandle, job_id: &str) -> Result<(), AppError> {
         StartPhase::StartingContainers,
         start_message.to_string(),
     );
-    let up_result = docker::up(&stack_dir, &compose_cmd).await;
+    let up_result = docker::up(&stack_dir, &compose_cmd, cancel.clone()).await;
     ticker.abort();
     up_result?;
     emit_progress(
@@ -365,6 +438,7 @@ async fn run_start(app: &AppHandle, job_id: &str) -> Result<(), AppError> {
     );
 
     // === Phase 4: Healthchecking ===
+    bail_if_cancelled!();
     let hc_message = "Waiting for Langfuse to respond…";
     let ticker = spawn_phase_ticker(
         app.clone(),
@@ -372,7 +446,7 @@ async fn run_start(app: &AppHandle, job_id: &str) -> Result<(), AppError> {
         StartPhase::Healthchecking,
         hc_message.to_string(),
     );
-    let probe_result = docker::probe_health(&secrets.host_url, 8 * 60).await;
+    let probe_result = docker::probe_health(&secrets.host_url, 8 * 60, cancel.clone()).await;
     ticker.abort();
     probe_result?;
     emit_progress(
@@ -513,7 +587,10 @@ pub async fn refresh_images(app: &AppHandle) -> Result<(), AppError> {
     let compose_cmd = docker_info
         .compose_cmd
         .ok_or_else(|| AppError::Langfuse("Docker compose is unavailable.".into()))?;
-    docker::pull(&stack_dir, &compose_cmd).await?;
+    // Refresh isn't cancellable via UI today (no Stop button on this flow).
+    // Pass a fresh, never-fired token so the docker::pull signature is
+    // satisfied without changing user-facing behavior.
+    docker::pull(&stack_dir, &compose_cmd, CancellationToken::new()).await?;
     tracing::info!("Refreshed Langfuse stack images");
     Ok(())
 }

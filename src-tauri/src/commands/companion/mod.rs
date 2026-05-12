@@ -113,6 +113,7 @@ pub fn companion_init(state: State<'_, Arc<AppState>>, app: AppHandle) -> Result
     JOB_WORKER.get_or_init(|| {
         let pool = state.user_db.clone();
         let app_handle = app.clone();
+        let sink = crate::companion::jobs::JobEventSink::App(app_handle);
         #[cfg(feature = "ml")]
         let embedder = state.embedding_manager.clone();
         tauri::async_runtime::spawn(async move {
@@ -121,10 +122,9 @@ pub fn companion_init(state: State<'_, Arc<AppState>>, app: AppHandle) -> Result
             loop {
                 #[cfg(feature = "ml")]
                 let res =
-                    crate::companion::jobs::worker_tick(&pool, embedder.as_ref(), &app_handle)
-                        .await;
+                    crate::companion::jobs::worker_tick(&pool, embedder.as_ref(), &sink).await;
                 #[cfg(not(feature = "ml"))]
-                let res = crate::companion::jobs::worker_tick(&pool, &app_handle).await;
+                let res = crate::companion::jobs::worker_tick(&pool, &sink).await;
                 if let Err(e) = res {
                     tracing::warn!(error = %e, "job worker tick failed");
                 }

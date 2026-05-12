@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Compass, MessageCircle } from 'lucide-react';
+import { Compass, Info, MessageCircle } from 'lucide-react';
 
 import {
   companionGetCockpit,
@@ -8,6 +8,8 @@ import {
   type CompanionCockpitWidget,
 } from '@/api/companion';
 import { useCompanionStore } from '@/features/plugins/companion/companionStore';
+import { useSystemStore } from '@/stores/systemStore';
+import { useTranslation } from '@/i18n/useTranslation';
 import {
   ContentBody,
   ContentBox,
@@ -16,7 +18,7 @@ import {
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { silentCatch } from '@/lib/silentCatch';
 
-import { cockpitWidgetRegistry } from './widgetRegistry';
+import { cockpitRowSpan, cockpitWidgetRegistry } from './widgetRegistry';
 
 /**
  * Home → Cockpit. The spec is composed by Athena via `compose_cockpit` and
@@ -30,9 +32,12 @@ import { cockpitWidgetRegistry } from './widgetRegistry';
  * composition (or any other request) without hunting for the footer icon.
  */
 export default function CockpitPanel() {
+  const { t, tx } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [spec, setSpec] = useState<CompanionCockpitSpec | null>(null);
   const setCompanionState = useCompanionStore((s) => s.setState);
+  const contextualCockpit = useSystemStore((s) => s.contextualCockpit);
+  const setContextualCockpit = useSystemStore((s) => s.setContextualCockpit);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -48,25 +53,35 @@ export default function CockpitPanel() {
   }, []);
 
   useEffect(() => {
+    // While a contextual overlay is active, skip the persistent fetch +
+    // focus-refresh so the contextual widgets aren't clobbered by an
+    // older LLM-composed spec coming back from the backend.
+    if (contextualCockpit) return;
     load();
     const handler = () => load();
     window.addEventListener('focus', handler);
     return () => window.removeEventListener('focus', handler);
-  }, [load]);
+  }, [load, contextualCockpit]);
 
-  let body: CompanionCockpitSpecBody | null = null;
+  // Active spec body: contextual overlay wins.
+  let persistentBody: CompanionCockpitSpecBody | null = null;
   if (spec) {
     try {
-      body = JSON.parse(spec.specJson) as CompanionCockpitSpecBody;
+      persistentBody = JSON.parse(spec.specJson) as CompanionCockpitSpecBody;
     } catch {
       // Invalid saved specs render as an empty cockpit below.
     }
   }
+  const body = contextualCockpit ? contextualCockpit.spec : persistentBody;
   const widgets = body?.widgets ?? [];
-  const headerTitle = body?.title ?? 'Cockpit';
-  const headerSubtitle = spec
-    ? `Composed by Athena — updated ${formatRelative(spec.updatedAt)}`
-    : 'Your companion-driven workspace';
+  const headerTitle = contextualCockpit
+    ? body?.title ?? t.overview.cockpit.title_default
+    : body?.title ?? 'Cockpit';
+  const headerSubtitle = contextualCockpit
+    ? t.overview.cockpit.subtitle_contextual
+    : spec
+      ? `Composed by Athena — updated ${formatRelative(spec.updatedAt)}`
+      : 'Your companion-driven workspace';
 
   const talkToAthena = (
     <button
@@ -90,11 +105,33 @@ export default function CockpitPanel() {
         actions={talkToAthena}
       />
       <ContentBody centered>
-        {loading ? (
+        {contextualCockpit && (
+          <div
+            data-testid="cockpit-context-banner"
+            className="flex items-center gap-3 px-4 py-2.5 rounded-card border border-primary/15 bg-primary/[0.04] mb-3"
+          >
+            <Info className="w-4 h-4 text-primary/70 flex-shrink-0" />
+            <span className="typo-body text-foreground/85 truncate">
+              {tx(t.overview.cockpit.context_for, {
+                title: contextualCockpit.source.messageTitle || t.overview.messages_view.message_label,
+              })}
+            </span>
+            <button
+              type="button"
+              data-testid="cockpit-context-exit"
+              onClick={() => setContextualCockpit(null)}
+              className="ml-auto typo-caption text-primary hover:text-primary/80 transition-colors"
+            >
+              {t.overview.cockpit.context_exit}
+            </button>
+          </div>
+        )}
+
+        {!contextualCockpit && loading ? (
           <div className="flex items-center justify-center py-20">
             <LoadingSpinner size="lg" />
           </div>
-        ) : !spec ? (
+        ) : !contextualCockpit && !spec ? (
           <CockpitEmptyState onTalk={() => setCompanionState('open')} />
         ) : (
           <div className="grid grid-cols-12 gap-3 auto-rows-[180px]">
@@ -132,12 +169,7 @@ function CockpitEmptyState({ onTalk }: { onTalk: () => void }) {
 
 function CockpitWidgetCell({ widget }: { widget: CompanionCockpitWidget }) {
   const span = Math.max(1, Math.min(12, widget.span ?? 6));
-  // Heights tuned per kind: persona grid and decisions list want vertical
-  // room; connected services is denser and reads well at 2 rows.
-  let rowSpan = 2;
-  if (widget.kind === 'persona_overview' || widget.kind === 'decisions_panel') {
-    rowSpan = 3;
-  }
+  const rowSpan = cockpitRowSpan(widget.kind);
   const Component = cockpitWidgetRegistry[widget.kind];
   return (
     <div

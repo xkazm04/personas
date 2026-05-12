@@ -23,15 +23,6 @@ export function TrustScoreBar({ score }: { score: number }) {
         <ShieldCheck className="w-3.5 h-3.5" />
         {tier.label}
       </div>
-      <div className="flex-1 h-1.5 rounded-full bg-primary/10 overflow-hidden min-w-[40px]">
-        <div
-          className={`h-full rounded-full transition-all duration-500 ${tier.bar}`}
-          style={{ width: `${Math.round(score)}%` }}
-        />
-      </div>
-      <span className={`text-md font-medium tabular-nums ${tier.color}`}>
-        {Math.round(score)}
-      </span>
     </div>
   );
 }

@@ -26,6 +26,38 @@ use serde::Serialize;
 use tauri::{AppHandle, Emitter};
 use uuid::Uuid;
 
+/// Where a job-status event lands. The desktop binary wires this to a
+/// Tauri `AppHandle.emit(...)` so the chat panel updates its
+/// indicator; the headless daemon binary wires it to `Noop` because
+/// it has no UI listener. Extending to a Tokio channel for in-process
+/// IPC (desktop ↔ daemon) is a future variant that slots in here.
+///
+/// Kept as an enum (not `dyn Trait`) so worker_tick can stay non-
+/// generic and the `JOB_EVENT` const has a single point-of-truth for
+/// the channel name.
+#[derive(Clone)]
+pub enum JobEventSink {
+    /// Desktop: emit to the Tauri webview.
+    App(AppHandle),
+    /// Daemon or test: drop the event on the floor.
+    Noop,
+}
+
+impl JobEventSink {
+    /// Best-effort emit. Errors are intentionally swallowed — a failed
+    /// emit must never abort the job that triggered it. Tauri returns
+    /// `Err` only when the runtime is shutting down or no listeners
+    /// are attached; neither is a job correctness issue.
+    pub fn emit(&self, payload: &BackgroundJob) {
+        match self {
+            JobEventSink::App(app) => {
+                let _ = app.emit(JOB_EVENT, payload);
+            }
+            JobEventSink::Noop => {}
+        }
+    }
+}
+
 use crate::companion::brain::episodic::{self, EpisodeRole};
 use crate::companion::session::DEFAULT_SESSION_ID;
 use crate::db::UserDbPool;
@@ -231,7 +263,7 @@ fn mark_failed(pool: &UserDbPool, id: &str, error: &str) -> Result<(), AppError>
 pub async fn worker_tick(
     pool: &UserDbPool,
     #[cfg(feature = "ml")] embedder: Option<&Arc<EmbeddingManager>>,
-    app: &AppHandle,
+    sink: &JobEventSink,
 ) -> Result<(), AppError> {
     let job = match pop_next_queued(pool)? {
         Some(j) => j,
@@ -239,8 +271,8 @@ pub async fn worker_tick(
     };
 
     // Tell the panel the job started — its indicator can switch from
-    // "queued" to "running" without polling.
-    let _ = app.emit(JOB_EVENT, &job);
+    // "queued" to "running" without polling. Noop under daemon.
+    sink.emit(&job);
 
     let result = dispatch_handler(pool, &job).await;
 
@@ -287,7 +319,7 @@ pub async fn worker_tick(
 
     // Re-emit so the panel updates the indicator with terminal status.
     if let Ok(Some(updated)) = get(pool, &job.id) {
-        let _ = app.emit(JOB_EVENT, &updated);
+        sink.emit(&updated);
     }
 
     Ok(())

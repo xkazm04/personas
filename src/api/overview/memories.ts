@@ -113,6 +113,22 @@ export const updateMemoryImportance = (id: string, importance: number) => {
   return invoke<boolean>("update_memory_importance", { id, importance });
 };
 
+/**
+ * Patch title + content + importance + tags on an existing memory row.
+ * Used by the message-rating upsert flow so re-rating the same message
+ * updates the existing memory rather than spawning duplicates.
+ */
+export const updateMemoryContent = (
+  id: string,
+  title: string,
+  content: string,
+  importance: number,
+  tags: string[] | null,
+) => {
+  assertImportance(importance);
+  return invoke<boolean>("update_memory_content", { id, title, content, importance, tags });
+};
+
 export const batchDeleteMemories = (ids: string[]) =>
   invoke<number>("batch_delete_memories", { ids });
 

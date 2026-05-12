@@ -11,6 +11,7 @@ import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useVaultStore } from "@/stores/vaultStore";
+import { useCompanionStore } from "@/features/plugins/companion/companionStore";
 import { sections as sidebarSections } from "@/features/shared/components/layout/sidebar/sidebarData";
 import { isTierVisible, TIERS, BUILD_MAX_TIER } from "@/lib/constants/uiModes";
 import type { SidebarSection } from "@/lib/types/types";
@@ -96,6 +97,7 @@ interface TestBridge {
    * command's contract.
    */
   invokeCommand(command: string, params?: Record<string, unknown>): Promise<{ success: boolean; result?: unknown; error?: string }>;
+  setTestFlag(key: string, value: unknown): { success: boolean; key?: string; value?: unknown };
   [key: string]: unknown;
 }
 
@@ -482,6 +484,18 @@ const bridge: TestBridge = {
     } catch (e) {
       return { success: false, error: _fmtBridgeErr(e) };
     }
+  },
+
+  /**
+   * Set a global `__TEST_*` flag on `globalThis` so a feature can branch
+   * out of behaviour that's impractical inside a Playwright run (real
+   * LLM calls, OS modal dialogs). Production code paths read these
+   * flags defensively (`globalThis.__TEST_FORCE_DRAFT__`, etc.) and
+   * fall back to normal behaviour when undefined.
+   */
+  setTestFlag(key: string, value: unknown) {
+    (globalThis as Record<string, unknown>)[key] = value;
+    return { success: true, key, value };
   },
 
   /** Type into a field identified by data-testid */
@@ -1689,6 +1703,88 @@ const bridge: TestBridge = {
    * tests usually only care about whether the prompt landed and
    * whether *something* came back, not the full assistant essay.
    */
+  /**
+   * A2: read the autonomous-mode header toggle state. Stored in
+   * systemStore (persisted), reflected in the chat-panel header.
+   * Tests read this to verify the toggle round-trips through the
+   * store + persistence layer.
+   */
+  getCompanionAutonomousMode(): { enabled: boolean } {
+    return { enabled: useSystemStore.getState().companionAutonomousMode };
+  },
+
+  /**
+   * A2: programmatically set the autonomous-mode flag. Useful when a
+   * test wants to verify autonomous-only UI affordances without
+   * physically clicking the header toggle (which is fine to test
+   * separately).
+   */
+  setCompanionAutonomousMode(enabled: boolean): { success: boolean } {
+    useSystemStore.getState().setCompanionAutonomousMode(enabled);
+    return { success: true };
+  },
+
+  /**
+   * A5: force the companion panel into a streaming state so tests can
+   * verify Stop-button presence and click behavior without burning a
+   * real Claude turn.
+   *
+   * The Stop button reads `streaming` from companionStore; setting
+   * `streaming: true` makes it appear. `streamingText` populates the
+   * streaming bubble so the test can assert content. Pass
+   * `streaming: false` (no streamingText) to clear.
+   *
+   * No turn id is set — the actual Stop click hits
+   * `companion_interrupt_turn` with a null/empty id which the backend
+   * silently no-ops on. Tests verify the button click path, not the
+   * end-to-end interrupt (which is exercised separately when a real
+   * stream is interruptible).
+   */
+  forceCompanionStreaming(params: {
+    streaming: boolean;
+    streamingText?: string;
+  }): { success: boolean } {
+    const store = useCompanionStore.getState();
+    store.setStreaming(params.streaming);
+    if (params.streaming && typeof params.streamingText === "string") {
+      store.resetStreamingText();
+      store.appendStreamingText(params.streamingText);
+    } else if (!params.streaming) {
+      store.resetStreamingText();
+    }
+    return { success: true };
+  },
+
+  /**
+   * Inject a synthetic message into the chat transcript. Bypasses the
+   * normal send-turn flow so tests can verify rendering of specific
+   * role+content combinations (system episodes, autonomous-continuation
+   * markers, long content) without driving a real conversation.
+   *
+   * The injected message is store-only — not persisted to the
+   * companion DB — so a subsequent `companionListRecentMessages`
+   * refetch will overwrite it. Tests that probe rendering should do
+   * their assertions before any reset/refetch.
+   */
+  setCompanionMessages(params: {
+    messages: Array<{
+      id: string;
+      role: 'user' | 'assistant' | 'system' | string;
+      content: string;
+      createdAt?: string;
+    }>;
+  }): { success: boolean; count: number } {
+    const now = new Date().toISOString();
+    const msgs = params.messages.map((m) => ({
+      id: m.id,
+      role: m.role,
+      content: m.content,
+      createdAt: m.createdAt ?? now,
+    }));
+    useCompanionStore.getState().setMessages(msgs);
+    return { success: true, count: msgs.length };
+  },
+
   async companionInspect(): Promise<{
     panelVisible: boolean;
     streaming: boolean;

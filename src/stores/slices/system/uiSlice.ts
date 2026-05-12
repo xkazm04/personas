@@ -2,6 +2,20 @@ import { startTransition } from "react";
 import type { StateCreator } from "zustand";
 import type { SystemStore } from "../../storeTypes";
 import type { SidebarSection, HomeTab, EditorTab, DesignSubTab, TemplateTab, CloudTab, SettingsTab, DevToolsTab, AgentTab, PluginTab, EventBusTab, ResearchLabTab } from "@/lib/types/types";
+import type { CompanionCockpitSpecBody } from "@/api/companion";
+
+/**
+ * Transient cockpit overlay set by surfaces like the Overview > Messages
+ * detail modal. While set, `CockpitPanel` renders this spec instead of the
+ * persistent LLM-composed one; clearing it restores the persistent view.
+ * Never persisted — resets to null on each app launch.
+ */
+export interface ContextualCockpit {
+  /** What triggered the overlay — drives the dismiss banner copy. */
+  source: { kind: 'message'; messageId: string; messageTitle: string };
+  /** Widget spec body — same shape Athena emits via compose_cockpit. */
+  spec: CompanionCockpitSpecBody;
+}
 /** Snapshot of adoption wizard state saved when the user closes mid-adoption. */
 export interface AdoptionDraft {
   reviewId: string;
@@ -104,6 +118,10 @@ export interface UiSlice {
   feedbackImprovementComplete: boolean;
   setFeedbackImprovementPersonaId: (id: string | null) => void;
   setFeedbackImprovementComplete: (complete: boolean) => void;
+
+  /** Transient contextual cockpit overlay — see {@link ContextualCockpit}. */
+  contextualCockpit: ContextualCockpit | null;
+  setContextualCockpit: (c: ContextualCockpit | null) => void;
 }
 
 export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) => ({
@@ -191,4 +209,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) =
   feedbackImprovementComplete: false,
   setFeedbackImprovementPersonaId: (id) => set({ feedbackImprovementPersonaId: id }),
   setFeedbackImprovementComplete: (complete) => set({ feedbackImprovementComplete: complete }),
+
+  contextualCockpit: null,
+  setContextualCockpit: (contextualCockpit) => set({ contextualCockpit }),
 });

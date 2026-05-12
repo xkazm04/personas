@@ -13,7 +13,7 @@ import Button from '@/features/shared/components/buttons/Button';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { ContextDataPreview } from './ReviewListItem';
-import { parseSuggestedActions } from '../libs/reviewHelpers';
+import { parseSuggestedActions, stripPersonaPrefix } from '../libs/reviewHelpers';
 import {
   type TriageReview,
   type DecisionVerdict,
@@ -86,17 +86,21 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
   }, [reviewIdx, resetAction]);
 
   const current = pending[reviewIdx] ?? null;
-  const { decisions, galleryImage } = current ? parseDecisions(current.context_data) : { decisions: [], galleryImage: null };
+  const { decisions, galleryImage, contextText } = current
+    ? parseDecisions(current.context_data)
+    : { decisions: [], galleryImage: null, contextText: null };
   const hasDecisions = decisions.length > 0;
   const hasMultipleDecisions = decisions.length > 1;
   const currentDecision = hasDecisions ? decisions[decisionIdx] : null;
   const currentDecisionImage = currentDecision ? getDecisionImage(currentDecision) : null;
   const hasAnyImages = galleryImage || decisions.some((d) => getDecisionImage(d));
 
-  // Suggested actions (only when no decisions)
+  // Suggested actions — surface them in both single- and multi-decision
+  // modes. In multi-decision mode they read as hints for what the user is
+  // judging across the batch, not per-decision actions.
   const suggestedActions = useMemo(
-    () => (current && !hasDecisions ? parseSuggestedActions(current.suggested_actions) : []),
-    [current, hasDecisions],
+    () => (current ? parseSuggestedActions(current.suggested_actions) : []),
+    [current],
   );
 
   // Navigation — reviews
@@ -117,23 +121,14 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
     if (decisionIdx > 0) { setDecisionDir(-1); setDecisionIdx((i) => i - 1); }
   }, [decisionIdx]);
 
-  // Decision toggles
-  const toggleDecision = useCallback((id: string, verdict: DecisionVerdict) => {
-    setDecisionVerdicts((prev) => ({ ...prev, [id]: prev[id] === verdict ? undefined : verdict }));
-  }, []);
-
-  const setAllDecisions = useCallback((verdict: DecisionVerdict) => {
-    const next: Record<string, DecisionVerdict> = {};
-    decisions.forEach((d) => { next[d.id] = verdict; });
-    setDecisionVerdicts(next);
-  }, [decisions]);
-
-  // Build notes
-  const buildNotes = useCallback((extraText: string, prefix?: string) => {
+  // Build verdict notes for an arbitrary verdict map — used both by the
+  // bottom Accept-all / Reject-all flow (current state) and the per-decision
+  // auto-resolve flow (next state, before React commits).
+  const buildVerdictNotes = useCallback((verdicts: Record<string, DecisionVerdict>, extraText: string, prefix?: string) => {
     const parts: string[] = [];
     if (prefix) parts.push(prefix);
     if (hasDecisions) {
-      const entries = Object.entries(decisionVerdicts).filter(([, v]) => v != null);
+      const entries = Object.entries(verdicts).filter(([, v]) => v != null);
       if (entries.length > 0) {
         const formatted = entries.map(([id, v]) => {
           const d = decisions.find((dd) => dd.id === id);
@@ -144,7 +139,47 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
     }
     if (extraText.trim()) parts.push(extraText.trim());
     return parts.length > 0 ? parts.join('\n\n') : undefined;
-  }, [hasDecisions, decisions, decisionVerdicts]);
+  }, [hasDecisions, decisions]);
+
+  const buildNotes = useCallback((extraText: string, prefix?: string) => {
+    return buildVerdictNotes(decisionVerdicts, extraText, prefix);
+  }, [buildVerdictNotes, decisionVerdicts]);
+
+  const setAllDecisions = useCallback((verdict: DecisionVerdict) => {
+    const next: Record<string, DecisionVerdict> = {};
+    decisions.forEach((d) => { next[d.id] = verdict; });
+    setDecisionVerdicts(next);
+  }, [decisions]);
+
+  // Per-decision verdict + auto-advance. Records the verdict and either
+  // moves to the next undecided decision or, when the last one is now
+  // resolved, commits the parent review (any-accepted → approved, all-
+  // rejected → rejected). The individual verdicts are preserved in notes.
+  const decideAndAdvance = useCallback((decisionId: string, verdict: 'accept' | 'reject') => {
+    if (!current || isProcessing) return;
+    const nextVerdicts: Record<string, DecisionVerdict> = { ...decisionVerdicts, [decisionId]: verdict };
+    setDecisionVerdicts(nextVerdicts);
+
+    const allDecided = decisions.every((d) => nextVerdicts[d.id] != null);
+    if (allDecided) {
+      const notes = buildVerdictNotes(nextVerdicts, '');
+      const anyAccepted = decisions.some((d) => nextVerdicts[d.id] === 'accept');
+      if (anyAccepted) onApprove(current.id, notes);
+      else onReject(current.id, notes);
+      return;
+    }
+
+    // Find next undecided decision starting after the current index.
+    const total = decisions.length;
+    for (let step = 1; step <= total; step++) {
+      const candidate = (decisionIdx + step) % total;
+      if (nextVerdicts[decisions[candidate]!.id] == null) {
+        setDecisionDir(candidate > decisionIdx ? 1 : -1);
+        setDecisionIdx(candidate);
+        return;
+      }
+    }
+  }, [current, isProcessing, decisions, decisionIdx, decisionVerdicts, buildVerdictNotes, onApprove, onReject]);
 
   // Actions
   const handleConfirmAction = useCallback(() => {
@@ -168,12 +203,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
       if (e.key === 'ArrowRight') {
         e.preventDefault();
         if (multiDecisionMode) {
-          // Accept current decision (force-set, don't toggle) and auto-advance
-          setDecisionVerdicts((prev) => ({ ...prev, [currentDecision!.id]: 'accept' }));
-          if (decisionIdx < decisions.length - 1) {
-            setDecisionDir(1);
-            setDecisionIdx((i) => i + 1);
-          }
+          decideAndAdvance(currentDecision!.id, 'accept');
         } else if (activeAction === 'approve') {
           handleConfirmAction();
         } else {
@@ -183,12 +213,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
       } else if (e.key === 'ArrowLeft') {
         e.preventDefault();
         if (multiDecisionMode) {
-          // Reject current decision and auto-advance
-          setDecisionVerdicts((prev) => ({ ...prev, [currentDecision!.id]: 'reject' }));
-          if (decisionIdx < decisions.length - 1) {
-            setDecisionDir(1);
-            setDecisionIdx((i) => i + 1);
-          }
+          decideAndAdvance(currentDecision!.id, 'reject');
         } else if (activeAction === 'reject') {
           handleConfirmAction();
         } else {
@@ -205,7 +230,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
     }
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [isProcessing, activeAction, handleConfirmAction, resetAction, hasMultipleDecisions, currentDecision, decisionIdx, decisions.length]);
+  }, [isProcessing, activeAction, handleConfirmAction, resetAction, hasMultipleDecisions, currentDecision, decideAndAdvance]);
 
   // Decision summary counts
   const acceptCount = Object.values(decisionVerdicts).filter((v) => v === 'accept').length;
@@ -285,7 +310,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
                 <div className="flex items-center gap-2">
                   <span className={`w-2 h-2 rounded-full flex-shrink-0 ${sevDot(r.severity)}`} />
                   <span className={`text-xs truncate ${isActive ? 'text-foreground font-medium' : 'text-foreground'}`}>
-                    {r.title}
+                    {stripPersonaPrefix(r.title, r.persona_name)}
                   </span>
                 </div>
                 {r.persona_name && (
@@ -379,11 +404,18 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
                   </div>
 
                   {/* Title */}
-                  <h2 className="text-xl font-bold text-foreground leading-tight">{current!.title}</h2>
+                  <h2 className="text-xl font-bold text-foreground leading-tight">{stripPersonaPrefix(current!.title, current!.persona_name)}</h2>
 
                   {/* Description */}
                   {current!.description && (
-                    <p className="text-sm text-foreground/90 leading-relaxed">{current!.description}</p>
+                    <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap">{current!.description}</p>
+                  )}
+
+                  {/* Extra prose context preserved by the backend when
+                      decisions are present — gives the user more than just
+                      bare decision labels. */}
+                  {contextText && (
+                    <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">{contextText}</p>
                   )}
 
                   {/* Gallery-level media (single image/video review like art director) */}
@@ -402,7 +434,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
                         ) : (
                           <img
                             src={galleryImage}
-                            alt={current!.title}
+                            alt={stripPersonaPrefix(current!.title, current!.persona_name)}
                             className="w-full max-h-[50vh] object-contain"
                             loading="lazy"
                           />
@@ -432,7 +464,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
                             <FocusedDecisionCard
                               decision={currentDecision}
                               verdict={decisionVerdicts[currentDecision.id]}
-                              onToggle={(v) => toggleDecision(currentDecision.id, v)}
+                              onDecide={(v) => decideAndAdvance(currentDecision.id, v)}
                               imageUrl={currentDecisionImage}
                             />
                           </motion.div>

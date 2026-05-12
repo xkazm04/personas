@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
   BookOpen,
   Bot,
+  Infinity as InfinityIcon,
   Loader2,
   Mic,
   MicOff,
@@ -10,6 +11,7 @@ import {
   PanelRightOpen,
   RotateCcw,
   Send,
+  Square,
   Wrench,
   X,
 } from 'lucide-react';
@@ -33,6 +35,8 @@ import {
   companionListProactiveMessages,
   companionListRecentMessages,
   companionBetaFlags,
+  companionCancelAutonomy,
+  companionInterruptTurn,
   companionReingestDoctrine,
   companionRequestImprovement,
   companionResetConversation,
@@ -141,6 +145,8 @@ export default function CompanionPanel() {
   const piperVoiceId = useSystemStore((s) => s.companionPiperVoiceId);
   const voiceSettings = useTtsSettings();
   const recallSynthesisEnabled = useSystemStore((s) => s.companionRecallSynthesisEnabled);
+  const autonomousMode = useSystemStore((s) => s.companionAutonomousMode);
+  const setAutonomousMode = useSystemStore((s) => s.setCompanionAutonomousMode);
   const panelCompact = useSystemStore((s) => s.companionPanelCompact);
   const setPanelCompact = useSystemStore((s) => s.setCompanionPanelCompact);
 
@@ -243,6 +249,19 @@ export default function CompanionPanel() {
             }}
             compact={panelCompact}
             onToggleCompact={() => setPanelCompact(!panelCompact)}
+            autonomousMode={autonomousMode}
+            onToggleAutonomousMode={() => {
+              const next = !autonomousMode;
+              setAutonomousMode(next);
+              if (!next) {
+                // Switching OFF: drop any scheduled continuation so a
+                // tick that was about to fire doesn't sneak through
+                // after the user explicitly opted out.
+                companionCancelAutonomy().catch(
+                  silentCatch('companion_cancel_autonomy'),
+                );
+              }
+            }}
           />
           <Body
             initialized={initialized}
@@ -265,6 +284,7 @@ export default function CompanionPanel() {
             piperVoiceId={piperVoiceId}
             voiceSettings={voiceSettings}
             recallSynthesisEnabled={recallSynthesisEnabled}
+            autonomousMode={autonomousMode}
             setMessages={setMessages}
             appendMessage={appendMessage}
             setStreaming={setStreaming}
@@ -296,12 +316,16 @@ function Header({
   onRefreshDoctrine,
   compact,
   onToggleCompact,
+  autonomousMode,
+  onToggleAutonomousMode,
 }: {
   onClose: () => void;
   onReset: () => void;
   onRefreshDoctrine: () => void;
   compact: boolean;
   onToggleCompact: () => void;
+  autonomousMode: boolean;
+  onToggleAutonomousMode: () => void;
 }) {
   const { t } = useTranslation();
   return (
@@ -328,6 +352,28 @@ function Header({
         </div>
       </div>
       <div className="flex items-center gap-1">
+        <button
+          onClick={onToggleAutonomousMode}
+          data-testid="companion-toggle-autonomous"
+          aria-pressed={autonomousMode}
+          className={`p-1.5 rounded-interactive transition-colors focus-ring ${
+            autonomousMode
+              ? 'bg-primary/15 text-primary hover:bg-primary/20'
+              : 'text-foreground/60 hover:text-foreground hover:bg-foreground/5'
+          }`}
+          aria-label={
+            autonomousMode
+              ? t.plugins.companion.autonomous_toggle_off
+              : t.plugins.companion.autonomous_toggle_on
+          }
+          title={
+            autonomousMode
+              ? t.plugins.companion.autonomous_toggle_off
+              : t.plugins.companion.autonomous_toggle_on
+          }
+        >
+          <InfinityIcon className="w-4 h-4" />
+        </button>
         <button
           onClick={onToggleCompact}
           data-testid="companion-toggle-compact"
@@ -369,6 +415,7 @@ function Header({
         </button>
         <button
           onClick={onClose}
+          data-testid="companion-close"
           className="p-1.5 rounded-interactive text-foreground/60 hover:text-foreground hover:bg-foreground/5 transition-colors focus-ring"
           aria-label={t.common.close}
         >
@@ -400,6 +447,7 @@ interface BodyProps {
   piperVoiceId: string | null;
   voiceSettings: ReturnType<typeof useTtsSettings>;
   recallSynthesisEnabled: boolean;
+  autonomousMode: boolean;
   setMessages: (m: BodyProps['messages']) => void;
   appendMessage: (m: BodyProps['messages'][number]) => void;
   setStreaming: (v: boolean) => void;
@@ -444,6 +492,7 @@ function Body(props: BodyProps) {
     piperVoiceId,
     voiceSettings,
     recallSynthesisEnabled,
+    autonomousMode,
     setMessages,
     appendMessage,
     setStreaming,
@@ -484,24 +533,44 @@ function Body(props: BodyProps) {
       .catch(silentCatch('companion_list_proactive_messages'));
   }, [initialized, setMessages, setApprovals, setProactive]);
 
+  // Track the turn id of the currently-streaming turn so the Stop
+  // button knows what to interrupt. Captured from the `started`
+  // stream event, cleared on `finished`/`error`. Ref (not state) so
+  // the listener closure stays stable.
+  const currentTurnIdRef = useRef<string | null>(null);
+
   // Subscribe to streaming events from the backend.
   useTauriEvent<CompanionStreamEvent>(
     COMPANION_STREAM_EVENT,
     useCallback(
       (event) => {
         const ev = event.payload;
-        if (ev.kind === 'cli') {
+        if (ev.kind === 'started') {
+          currentTurnIdRef.current = ev.turnId;
+        } else if (ev.kind === 'cli') {
           // Try to extract assistant text deltas from stream-json.
           const text = extractAssistantText(ev.payload);
           if (text) appendStreamingText(text);
+        } else if (ev.kind === 'finished') {
+          currentTurnIdRef.current = null;
         } else if (ev.kind === 'error') {
           setSendError(ev.payload);
+          currentTurnIdRef.current = null;
         }
       },
       [appendStreamingText, setSendError],
     ),
     'companion_stream_listen',
   );
+
+  const handleInterrupt = useCallback(() => {
+    const turnId = currentTurnIdRef.current;
+    if (!turnId) return;
+    // Optimistically clear so a second click doesn't double-fire while
+    // the backend is finalizing the partial reply.
+    currentTurnIdRef.current = null;
+    companionInterruptTurn(turnId).catch(silentCatch('companion_interrupt_turn'));
+  }, []);
 
   // Subscribe to direct-navigation events fired by Athena's `open_route`
   // op. By design these bypass the approval flow — Athena just switches
@@ -673,7 +742,12 @@ function Body(props: BodyProps) {
       setStreaming(true);
       resetStreamingText();
       try {
-        const result = await companionSendMessage(trimmed, voiceActive, recallSynthesisEnabled);
+        const result = await companionSendMessage(
+          trimmed,
+          voiceActive,
+          recallSynthesisEnabled,
+          autonomousMode,
+        );
         // Refresh canonical transcript from backend (replaces the optimistic
         // user bubble with the persisted episode + adds the assistant turn).
         const fresh = await companionListRecentMessages(50);
@@ -742,6 +816,7 @@ function Body(props: BodyProps) {
       synthesisVoiceId,
       voiceSettings,
       recallSynthesisEnabled,
+      autonomousMode,
     ],
   );
 
@@ -841,9 +916,21 @@ function Body(props: BodyProps) {
             </Bubble>
           ))}
           {streaming && (
-            <Bubble role="assistant" streaming index={messages.length}>
-              {streamingText || t.plugins.companion.thinking}
-            </Bubble>
+            <div className="relative group">
+              <Bubble role="assistant" streaming index={messages.length}>
+                {streamingText || t.plugins.companion.thinking}
+              </Bubble>
+              <button
+                type="button"
+                onClick={handleInterrupt}
+                className="absolute -top-2 -right-2 rounded-full bg-foreground/80 hover:bg-foreground text-background w-6 h-6 flex items-center justify-center shadow-elevation-2 transition-opacity opacity-0 group-hover:opacity-100 focus:opacity-100"
+                aria-label={t.plugins.companion.stop_turn}
+                title={t.plugins.companion.stop_turn}
+                data-testid="companion-stop-turn"
+              >
+                <Square className="w-3 h-3" fill="currentColor" />
+              </button>
+            </div>
           )}
           {improving && (
             <div className="rounded-card border border-amber-500/30 bg-amber-500/5 px-3.5 py-2.5 typo-body text-amber-300/90 flex items-center gap-2">
@@ -927,11 +1014,39 @@ function Bubble({
   children: React.ReactNode;
 }) {
   const isUser = role === 'user';
+  const isSystem = role === 'system';
+  const isString = typeof children === 'string';
+
+  // A2: autonomous-continuation system episodes render as a slim
+  // centered divider with the marker text — they're meta, not
+  // conversation. Detected by content prefix the backend writes when
+  // `TurnOrigin::Autonomous`. Other system episodes (rare today) fall
+  // back to the assistant-style bubble.
+  const isAutonomousMarker =
+    isSystem &&
+    isString &&
+    (children as string).startsWith('[autonomous continuation');
+  if (isAutonomousMarker) {
+    return (
+      <div
+        className="flex items-center gap-2 my-2 px-2 text-foreground/40"
+        data-testid="companion-autonomous-marker"
+        data-companion-bubble-role="system-autonomous"
+        data-companion-bubble-index={index}
+      >
+        <div className="flex-1 h-px bg-primary/20" aria-hidden />
+        <span className="typo-caption tracking-wide uppercase text-primary/70">
+          {children as string}
+        </span>
+        <div className="flex-1 h-px bg-primary/20" aria-hidden />
+      </div>
+    );
+  }
+
   // User messages render as plain text (typically no markdown). Assistant
   // messages render through MarkdownRenderer so headings, lists, code, and
   // emphasis show properly. Streaming text also renders as markdown so
   // partial content looks right as it grows.
-  const isString = typeof children === 'string';
   return (
     <div
       className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
@@ -1029,6 +1144,34 @@ function Composer({
   const [draft, setDraft] = useState('');
   const taRef = useRef<HTMLTextAreaElement>(null);
   const dictation = useDictation();
+
+  // External surfaces (Overview message detail "Play in chat") may seed a
+  // prompt before opening the panel. Subscribe to `pendingPrompt` so a
+  // *repeat* click re-seeds the composer even when the panel is already
+  // open (the prior mount-only effect ignored every click after the
+  // first).
+  //
+  // `autoSend` skips the draft + manual click and fires `onSend`
+  // immediately — used by surfaces that already showed the user the seed
+  // context (the message modal closes; user lands on the live reply).
+  //
+  // `__TEST_FORCE_DRAFT__` is a test-only escape hatch. Auto-send fires
+  // a real Claude IPC call that streams for 30–90 s and saturates the
+  // JS thread with chunk events, which breaks subsequent bridge-exec
+  // calls in the same Playwright run. The flag downgrades autoSend to
+  // draft-only so the spec can verify the seed-wiring without queuing a
+  // real LLM call.
+  const pendingPrompt = useCompanionStore((s) => s.pendingPrompt);
+  useEffect(() => {
+    if (!pendingPrompt) return;
+    useCompanionStore.getState().setPendingPrompt(null);
+    const forceDraft = (globalThis as { __TEST_FORCE_DRAFT__?: boolean }).__TEST_FORCE_DRAFT__;
+    if (pendingPrompt.autoSend && !disabled && !forceDraft) {
+      onSend(pendingPrompt.text);
+    } else {
+      setDraft(pendingPrompt.text);
+    }
+  }, [pendingPrompt, disabled, onSend]);
 
   // Splice dictation results into the draft. Final chunks become permanent;
   // interim text is shown live as a tail so the user can see what's being

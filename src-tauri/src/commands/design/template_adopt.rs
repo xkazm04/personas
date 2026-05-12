@@ -237,14 +237,32 @@ pub fn instant_adopt_template_inner(
     // This catches tampered templates even if the frontend checksums were bypassed.
     check_template_integrity(&template_name, &design_result_json)?;
 
-    let design: serde_json::Value = serde_json::from_str(&design_result_json)
+    let mut design: serde_json::Value = serde_json::from_str(&design_result_json)
         .map_err(|e| AppError::Validation(format!("Invalid design result JSON: {e}")))?;
 
+    // v3 templates ship a rich `persona` block + `use_cases[]`; the flat
+    // fields this function reads (`structured_prompt`, `suggested_tools`,
+    // `suggested_triggers`, `suggested_connectors`, `use_case_flows`,
+    // `full_prompt_markdown`, …) don't exist until v3 normalization runs.
+    // Without this call every adopted persona ends up with the default
+    // "You are a helpful AI assistant." prompt and an empty design_context
+    // — visible to the user as a Glyph-from-scratch empty state on click.
+    // The Glyph promote path already calls this; instant-adopt was the gap.
+    if crate::engine::template_v3::is_v3_shape(&design) {
+        crate::engine::template_v3::normalize_v3_to_flat(&mut design);
+    }
+
+    // After normalization the structured prompt is the canonical content;
+    // the system_prompt field becomes a fallback for the runner when
+    // structured_prompt is missing. We synthesize a readable markdown
+    // version from the persona's identity/voice/principles blocks so the
+    // editor's plain-text view isn't blank either.
     let full_prompt = design
         .get("full_prompt_markdown")
         .and_then(|v| v.as_str())
-        .unwrap_or("You are a helpful AI assistant.")
-        .to_string();
+        .map(|s| s.to_string())
+        .or_else(|| synthesize_system_prompt_markdown(&design))
+        .unwrap_or_else(|| "You are a helpful AI assistant.".to_string());
 
     let summary = design
         .get("summary")
@@ -367,11 +385,16 @@ pub fn instant_adopt_template_inner(
         .get("suggested_notification_channels")
         .map(|v| serde_json::to_string(v).unwrap_or_default());
 
-    // Build proper DesignContextData-format design_context instead of raw design_result
+    // Build proper DesignContextData-format design_context instead of raw design_result.
+    // `use_case_flows` is v3-flattened (populated by normalize_v3_to_flat); fall back
+    // to the raw `use_cases` block on v3 templates that didn't normalize cleanly, and
+    // finally to an empty list. Without this fallback the editor's Use Cases tab and
+    // Matrix view both render empty for instant-adopted personas.
     let use_cases = design
         .get("use_case_flows")
         .and_then(|v| v.as_array())
         .cloned()
+        .or_else(|| design.get("use_cases").and_then(|v| v.as_array()).cloned())
         .unwrap_or_default();
     let design_context_summary = design
         .get("summary")
@@ -1606,4 +1629,95 @@ pub fn verify_template_integrity_batch(
 pub fn get_template_manifest_count(state: State<'_, Arc<AppState>>) -> Result<usize, AppError> {
     require_auth_sync(&state)?;
     Ok(crate::engine::template_checksums::manifest_entry_count())
+}
+
+/// Synthesize a readable `system_prompt` markdown body from a v3 template's
+/// `persona` block. The runner prefers `structured_prompt` when present, so
+/// this fallback only surfaces when the editor renders the plain-text
+/// system_prompt panel — but having something there is the difference
+/// between "looks like an adopted persona" and "looks like an empty draft
+/// from the Glyph from-scratch flow". Returns `None` when there's no
+/// persona block to render (caller falls back to the historical default).
+fn synthesize_system_prompt_markdown(design: &serde_json::Value) -> Option<String> {
+    let persona = design.get("persona")?.as_object()?;
+    let mut out = String::new();
+
+    if let Some(id_obj) = persona.get("identity").and_then(|v| v.as_object()) {
+        let role = id_obj.get("role").and_then(|v| v.as_str()).unwrap_or("");
+        let desc = id_obj
+            .get("description")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        if !role.is_empty() {
+            out.push_str("You are ");
+            out.push_str(role);
+            out.push('.');
+        }
+        if !desc.is_empty() {
+            if !out.is_empty() {
+                out.push('\n');
+            }
+            out.push_str(desc);
+        }
+    }
+
+    if let Some(goal) = persona.get("goal").and_then(|v| v.as_str()) {
+        if !goal.is_empty() {
+            out.push_str("\n\n## Goal\n");
+            out.push_str(goal);
+        }
+    }
+
+    if let Some(voice) = persona.get("voice").and_then(|v| v.as_object()) {
+        let style = voice.get("style").and_then(|v| v.as_str()).unwrap_or("");
+        let fmt = voice
+            .get("output_format")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        if !style.is_empty() || !fmt.is_empty() {
+            out.push_str("\n\n## Voice\n");
+            if !style.is_empty() {
+                out.push_str(style);
+                out.push('\n');
+            }
+            if !fmt.is_empty() {
+                out.push_str(fmt);
+            }
+        }
+    }
+
+    let render_list = |key: &str, header: &str, out: &mut String| {
+        if let Some(arr) = persona.get(key).and_then(|v| v.as_array()) {
+            let items: Vec<&str> = arr.iter().filter_map(|v| v.as_str()).collect();
+            if !items.is_empty() {
+                out.push_str("\n\n## ");
+                out.push_str(header);
+                out.push('\n');
+                for item in items {
+                    out.push_str("- ");
+                    out.push_str(item);
+                    out.push('\n');
+                }
+            }
+        }
+    };
+    render_list("principles", "Principles", &mut out);
+    render_list("constraints", "Constraints", &mut out);
+    render_list("decision_principles", "Decision principles", &mut out);
+
+    if let Some(ops) = persona
+        .get("operating_instructions")
+        .and_then(|v| v.as_str())
+    {
+        if !ops.is_empty() {
+            out.push_str("\n\n## Operating instructions\n");
+            out.push_str(ops);
+        }
+    }
+
+    if out.trim().is_empty() {
+        None
+    } else {
+        Some(out)
+    }
 }

@@ -7,9 +7,7 @@ import Button from '@/features/shared/components/buttons/Button';
 import { DataGrid } from '@/features/shared/components/display/DataGrid';
 import { ConfirmDestructiveModal } from '@/features/shared/components/overlays/ConfirmDestructiveModal';
 import { useFavoriteAgents } from '@/hooks/agents/useFavoriteAgents';
-import { useDensity } from '@/hooks/utility/data/useDensity';
-import { DensityToggle } from '@/features/shared/components/display/DensityToggle';
-import { ViewPresetBar, DEFAULT_VIEW_CONFIG, type AgentListViewConfig } from './ViewPresetBar';
+import { DEFAULT_VIEW_CONFIG, type AgentListViewConfig } from './ViewPresetBar';
 import { PersonaOverviewBatchBar } from './PersonaOverviewBatchBar';
 import { PersonaOverviewToolbar } from './PersonaOverviewToolbar';
 import { PersonaOverviewCardList } from './PersonaOverviewCardList';
@@ -20,7 +18,6 @@ import { usePersonaActions } from './PersonaOverviewActions';
 import { useIsMobile } from './PersonaOverviewResponsive';
 import type { Persona } from '@/lib/bindings/Persona';
 import { useTranslation } from '@/i18n/useTranslation';
-import { ExecutionHeatmap } from '@/features/overview/sub_analytics/components/ExecutionHeatmap';
 
 const DRAFT_PROMPT = 'You are a helpful AI assistant.';
 
@@ -41,7 +38,6 @@ export default function PersonaOverviewPage() {
   const [search, setSearch] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const isMobile = useIsMobile();
-  const { density, setDensity, tokens: densityTokens } = useDensity('persona-overview');
 
   // A persona is "draft" only if it never finished a build (no design result
   // was ever saved) AND still carries the placeholder / empty system prompt.
@@ -148,17 +144,10 @@ export default function PersonaOverviewPage() {
                 {tx(t.agents.persona_list.delete_drafts_btn, { count: draftIds.length })}
               </Button>
             )}
-            <ViewPresetBar currentConfig={view} onApplyConfig={setView} />
-            <DensityToggle density={density} onChange={setDensity} scopeId="persona-overview" />
           </div>
         }
       />
       <ContentBody>
-        {personas.length > 0 && (
-          <div className="px-3 pt-3 pb-2 border-b border-primary/5">
-            <ExecutionHeatmap compact />
-          </div>
-        )}
         <div className="px-3 py-2 border-b border-primary/5">
           <PersonaOverviewToolbar search={search} onSearchChange={setSearch} view={view} onViewChange={setView} />
         </div>
@@ -175,7 +164,6 @@ export default function PersonaOverviewPage() {
             onRowClick={handleRowClick}
             isDraft={isDraft}
             connectorNamesMap={connectorNamesMap}
-            densityTokens={densityTokens}
           />
         ) : (
           <DataGrid
@@ -197,7 +185,7 @@ export default function PersonaOverviewPage() {
             pageSize={25}
             selectAll={allSelected}
             onSelectAll={handleSelectAll}
-            density={density}
+            density="compact"
           />
         )}
       </ContentBody>

@@ -79,12 +79,23 @@ export async function companionSendMessage(
   message: string,
   voiceEnabled: boolean = false,
   recallSynthesisEnabled: boolean = false,
+  autonomousMode: boolean = false,
 ): Promise<SendTurnResult> {
   return invoke<SendTurnResult>(
     'companion_send_message',
-    { message, voiceEnabled, recallSynthesisEnabled },
+    { message, voiceEnabled, recallSynthesisEnabled, autonomousMode },
     { timeoutMs: COMPANION_TURN_TIMEOUT_MS },
   );
+}
+
+/**
+ * Cancel any scheduled autonomous-continuation tick. Backend best-
+ * effort: drops the JoinHandle if pending; if a continuation already
+ * started, this is a no-op (use `companionInterruptTurn` to stop the
+ * in-flight stream instead). Idempotent.
+ */
+export async function companionCancelAutonomy(): Promise<void> {
+  return invoke<void>('companion_cancel_autonomy');
 }
 
 /**
@@ -446,6 +457,17 @@ export async function companionResetConversation(
   wipeTranscript?: boolean,
 ): Promise<void> {
   return invoke<void>('companion_reset_conversation', { wipeTranscript });
+}
+
+/**
+ * Request that an in-flight turn be interrupted. Best-effort: the
+ * backend polls the registry every ~200ms during streaming, so a click
+ * registered between `Started` and the first CLI line lands on the
+ * next tick. The partial reply (if any) is persisted as the assistant
+ * episode, tagged `[interrupted by user]`. Idempotent.
+ */
+export async function companionInterruptTurn(turnId: string): Promise<void> {
+  return invoke<void>('companion_interrupt_turn', { turnId });
 }
 
 export interface DoctrineIngestSummary {
@@ -873,7 +895,11 @@ export async function companionGetDashboard(): Promise<CompanionDashboardSpec | 
 export type CompanionCockpitWidgetKind =
   | 'persona_overview'
   | 'connected_services'
-  | 'decisions_panel';
+  | 'decisions_panel'
+  | 'message_summary'
+  | 'execution_facts'
+  | 'linked_decisions'
+  | 'linked_memories';
 
 export interface CompanionCockpitWidget {
   id: string;

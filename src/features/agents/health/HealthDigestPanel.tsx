@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import {
   Activity,
@@ -22,15 +22,17 @@ import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { useTranslation } from '@/i18n/useTranslation';
 import { formatTimestamp } from '@/lib/utils/formatters';
 import { Button } from '@/features/shared/components/buttons';
+import { BaseModal } from '@/lib/ui/BaseModal';
+import type { Translations } from '@/i18n/en';
 
 // -- Persona row in digest --------------------------------------------
 
 function PersonaDigestRow({
   check,
-  onNavigate,
+  onOpenIssues,
 }: {
   check: PersonaHealthCheck;
-  onNavigate: (personaId: string) => void;
+  onOpenIssues: (check: PersonaHealthCheck) => void;
 }) {
   const { t } = useTranslation();
   const errors = check.result.issues.filter((i: DryRunIssue) => i.severity === 'error').length;
@@ -47,45 +49,45 @@ function PersonaDigestRow({
   return (
     <button
       type="button"
-      onClick={() => onNavigate(check.personaId)}
-      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-modal hover:bg-primary/5 transition-colors text-left group ${severityClass}`}
+      onClick={() => onOpenIssues(check)}
+      className={`w-full flex items-center gap-2 px-3 py-2 rounded-modal hover:bg-primary/5 transition-colors text-left group ${severityClass}`}
     >
       {/* Persona icon — shared component handles emoji / catalog icon / Bot fallback */}
       <PersonaIcon
         icon={check.personaIcon ?? null}
         color={check.personaColor ?? null}
         display="framed"
-        frameSize="md"
+        frameSize="sm"
       />
 
-      {/* Name + issue counts */}
-      <div className="flex-1 min-w-0">
-        <p className={nameClass}>{check.personaName}</p>
-        <div className="flex items-center gap-2 mt-0.5">
-          {totalIssues === 0 ? (
-            <span className="typo-caption text-emerald-400/70 flex items-center gap-1">
-              <CheckCircle2 className="w-3 h-3" /> {t.agents.health_score.healthy}
-            </span>
-          ) : (
-            <>
-              {errors > 0 && (
-                <span className="typo-caption text-red-400 flex items-center gap-0.5">
-                  <XCircle className="w-3 h-3" /> {errors}
-                </span>
-              )}
-              {warnings > 0 && (
-                <span className="typo-caption text-amber-400 flex items-center gap-0.5">
-                  <AlertTriangle className="w-3 h-3" /> {warnings}
-                </span>
-              )}
-              {infos > 0 && (
-                <span className="typo-caption text-blue-400 flex items-center gap-0.5">
-                  <Info className="w-3 h-3" /> {infos}
-                </span>
-              )}
-            </>
-          )}
-        </div>
+      {/* Name */}
+      <p className={`${nameClass} flex-1`}>{check.personaName}</p>
+
+      {/* Inline issue counts (right-aligned, single row) */}
+      <div className="flex items-center gap-1.5 flex-shrink-0">
+        {totalIssues === 0 ? (
+          <span className="typo-caption text-emerald-400/70 flex items-center gap-1">
+            <CheckCircle2 className="w-3 h-3" /> {t.agents.health_score.healthy}
+          </span>
+        ) : (
+          <>
+            {errors > 0 && (
+              <span className="typo-caption text-red-400 flex items-center gap-0.5">
+                <XCircle className="w-3 h-3" /> {errors}
+              </span>
+            )}
+            {warnings > 0 && (
+              <span className="typo-caption text-amber-400 flex items-center gap-0.5">
+                <AlertTriangle className="w-3 h-3" /> {warnings}
+              </span>
+            )}
+            {infos > 0 && (
+              <span className="typo-caption text-blue-400 flex items-center gap-0.5">
+                <Info className="w-3 h-3" /> {infos}
+              </span>
+            )}
+          </>
+        )}
       </div>
 
       {/* Status indicator */}
@@ -93,6 +95,96 @@ function PersonaDigestRow({
 
       <ChevronRight className="w-4 h-4 text-foreground group-hover:text-muted-foreground/60 transition-colors" />
     </button>
+  );
+}
+
+// -- Issue-description modal -------------------------------------------
+
+function HealthIssueModal({
+  check,
+  onClose,
+  onNavigate,
+  t,
+  tx,
+}: {
+  check: PersonaHealthCheck | null;
+  onClose: () => void;
+  onNavigate: (personaId: string) => void;
+  t: Translations;
+  tx: (template: string, params: Record<string, string | number>) => string;
+}) {
+  const open = !!check;
+  return (
+    <BaseModal
+      isOpen={open}
+      onClose={onClose}
+      titleId="health-issue-modal-title"
+      maxWidthClass="max-w-lg"
+      panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 overflow-hidden"
+      portal
+    >
+      {check && (
+        <div className="p-4 space-y-4">
+          <div className="flex items-start gap-3">
+            <PersonaIcon
+              icon={check.personaIcon ?? null}
+              color={check.personaColor ?? null}
+              display="framed"
+              frameSize="md"
+            />
+            <div className="min-w-0 flex-1">
+              <h3 id="health-issue-modal-title" className="typo-heading font-semibold text-foreground/90 truncate">
+                {tx(t.agents.health_digest.issue_modal_title, { name: check.personaName })}
+              </h3>
+              <div className="flex items-center gap-1.5 mt-1">
+                <div className={`w-2 h-2 rounded-full flex-shrink-0 ${STATUS_CONFIG[check.result.status].dotClass}`} />
+                <p className="typo-caption text-foreground/70">
+                  {check.result.status === 'blocked'
+                    ? t.agents.health_digest.critical_issues
+                    : check.result.status === 'partial'
+                      ? t.agents.health_digest.some_attention
+                      : t.agents.health_digest.all_healthy}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="max-h-[50vh] overflow-y-auto space-y-2">
+            {check.result.issues.length === 0 ? (
+              <p className="typo-body text-foreground/70">
+                {t.agents.health_digest.issue_modal_no_issues}
+              </p>
+            ) : (
+              check.result.issues.map((issue: DryRunIssue) => {
+                const SeverityIcon =
+                  issue.severity === 'error' ? XCircle :
+                  issue.severity === 'warning' ? AlertTriangle :
+                  Info;
+                const tone = SEVERITY_STYLES[issue.severity];
+                return (
+                  <div
+                    key={issue.id}
+                    className={`flex items-start gap-2 px-3 py-2 rounded-card border ${tone.bg} ${tone.text}`}
+                  >
+                    <SeverityIcon className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                    <p className="typo-body text-foreground/90">{issue.description}</p>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-1">
+            <Button type="button" onClick={onClose} variant="secondary" size="md">
+              {t.agents.health_digest.issue_modal_close}
+            </Button>
+            <Button type="button" onClick={() => onNavigate(check.personaId)} variant="primary" size="md">
+              {t.agents.health_digest.issue_modal_open_detail}
+            </Button>
+          </div>
+        </div>
+      )}
+    </BaseModal>
   );
 }
 
@@ -136,7 +228,10 @@ export function HealthDigestPanel() {
     return allGroups.filter((g) => g.rows.length > 0);
   }, [digest, t]);
 
+  const [issueModalCheck, setIssueModalCheck] = useState<PersonaHealthCheck | null>(null);
+
   const handleNavigate = (personaId: string) => {
+    setIssueModalCheck(null);
     selectPersona(personaId);
     // Land on the design tab — the editor's HealthBadge sits in its tab bar
     // and the design surface is where the per-persona health check actually
@@ -282,7 +377,7 @@ export function HealthDigestPanel() {
             </div>
             <div className="divide-y divide-primary/5">
               {group.rows.map((check) => (
-                <PersonaDigestRow key={check.personaId} check={check} onNavigate={handleNavigate} />
+                <PersonaDigestRow key={check.personaId} check={check} onOpenIssues={setIssueModalCheck} />
               ))}
             </div>
           </div>
@@ -295,6 +390,14 @@ export function HealthDigestPanel() {
           {tx(t.agents.health_digest.last_run, { time: formatTimestamp(digest.generatedAt) })}
         </p>
       </div>
+
+      <HealthIssueModal
+        check={issueModalCheck}
+        onClose={() => setIssueModalCheck(null)}
+        onNavigate={handleNavigate}
+        t={t}
+        tx={tx}
+      />
     </div>
   );
 }

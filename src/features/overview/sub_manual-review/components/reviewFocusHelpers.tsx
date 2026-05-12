@@ -36,16 +36,25 @@ export type ActionType = 'reject' | 'retry' | 'approve' | null;
 // Decision parsing
 // ---------------------------------------------------------------------------
 
-export function parseDecisions(contextData: string | null | undefined): { decisions: DecisionItem[]; galleryImage: string | null; raw: Record<string, unknown> | null } {
-  if (!contextData) return { decisions: [], galleryImage: null, raw: null };
+export function parseDecisions(contextData: string | null | undefined): {
+  decisions: DecisionItem[];
+  galleryImage: string | null;
+  contextText: string | null;
+  raw: Record<string, unknown> | null;
+} {
+  if (!contextData) return { decisions: [], galleryImage: null, contextText: null, raw: null };
   try {
     const parsed = JSON.parse(contextData);
-    if (!parsed || typeof parsed !== 'object') return { decisions: [], galleryImage: null, raw: null };
+    if (!parsed || typeof parsed !== 'object') return { decisions: [], galleryImage: null, contextText: null, raw: null };
     const decisions: DecisionItem[] = Array.isArray(parsed.decisions) ? parsed.decisions : [];
     const galleryImage = parsed.gallery_image_ref ?? parsed.image_url ?? null;
-    return { decisions, galleryImage, raw: parsed };
+    // Backend dispatch preserves the original prose context under
+    // `context_text` when decisions are present. Surface it so the user
+    // sees the persona's narrative, not just bare decision labels.
+    const contextText = typeof parsed.context_text === 'string' ? parsed.context_text : null;
+    return { decisions, galleryImage, contextText, raw: parsed };
   } catch {
-    return { decisions: [], galleryImage: null, raw: null };
+    return { decisions: [], galleryImage: null, contextText: null, raw: null };
   }
 }
 

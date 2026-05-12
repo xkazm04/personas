@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Calendar, Clock, Zap } from 'lucide-react';
+import { Zap } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { type DataGridColumn } from '@/features/shared/components/display/DataGrid';
@@ -112,7 +112,7 @@ export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<P
           ),
       },
       {
-        key: 'trust', label: t.agents.overview_columns.trust, width: 'minmax(140px, 1fr)', sortable: true,
+        key: 'trust', label: t.agents.overview_columns.trust, width: '110px', sortable: true,
         filterComponent: (
           <PersonaOverviewFilterHeader
             label="Trust"
@@ -138,14 +138,13 @@ export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<P
         ),
       },
       {
-        key: 'lastRun', label: t.agents.overview_columns.last_run, width: '120px', sortable: true, align: 'right',
+        key: 'lastRun', label: t.agents.overview_columns.last_run, width: '160px', sortable: true, align: 'right',
         render: (p) => {
           const lastRun = lastRunMap[p.id];
           if (!lastRun) return <span className="text-md text-foreground">{t.agents.persona_list.never}</span>;
           return (
             <Tooltip content={new Date(lastRun).toLocaleString()}>
-              <span className="flex items-center justify-end gap-1 text-md text-foreground cursor-help">
-                <Clock className="w-3.5 h-3.5" />
+              <span className="text-md text-foreground cursor-help">
                 {formatRelativeTime(lastRun)}
               </span>
             </Tooltip>
@@ -157,8 +156,7 @@ export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<P
         render: (p) =>
           p.created_at ? (
             <Tooltip content={new Date(p.created_at).toLocaleString()}>
-              <span className="flex items-center justify-end gap-1 text-md text-foreground cursor-help">
-                <Calendar className="w-3.5 h-3.5" />
+              <span className="text-md text-foreground cursor-help">
                 {formatRelativeTime(p.created_at)}
               </span>
             </Tooltip>

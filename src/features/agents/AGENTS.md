@@ -23,7 +23,6 @@ there. If it legitimately spans two modules, the shared helper belongs in
 | ----------------------- | ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
 | `sub_connectors`        | Agent↔connector bindings, automation setup (n8n/Zapier/GitHub Actions), per-agent tool list (rendered via `ToolsSection` inside the connectors tab). | Credential storage — that's `features/vault`.                                      |
 | `sub_use_cases`         | Use-case cards, editing, activation toggles in the agent editor.              | Free-form chat; execution history.                                                |
-| `sub_chat`              | Chat tab UI: bubbles, composer, streaming render.                             | Session storage/event bus.                                                        |
 | `sub_activity`          | Activity matrix, per-execution drill-down.                                    | Top-level observability charts (those live in `features/overview`).               |
 | `sub_editor`            | Outer agent-editor shell, tab bar, draft save/restore, focus trap.            | Any single-tab content.                                                           |
 | `sub_settings`          | Per-agent settings (twin binding, visibility, workspace).                     | App-wide settings (that's `features/settings`).                                   |

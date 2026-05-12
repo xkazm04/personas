@@ -4,4 +4,4 @@ import type { ChannelDeliveryStats } from "./ChannelDeliveryStats";
 /**
  * Aggregated delivery stats for all channel types.
  */
-export type NotificationDeliveryStats = { slack: ChannelDeliveryStats, telegram: ChannelDeliveryStats, email: ChannelDeliveryStats, };
+export type NotificationDeliveryStats = { slack: ChannelDeliveryStats, telegram: ChannelDeliveryStats, email: ChannelDeliveryStats, discord: ChannelDeliveryStats, teams: ChannelDeliveryStats, };

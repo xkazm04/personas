@@ -13,7 +13,7 @@ import { PersonaEditorHeader } from './PersonaEditorHeader';
 import {
   ActivityTab,
   PersonaSettingsTab, PersonaUseCasesTab,
-  LabTab, ChatTab, DesignTab,
+  LabTab, DesignTab,
 } from './EditorLazyTabs';
 import { EditorTabContent } from './EditorTabContent';
 import { SubTabSurface } from './SubTabSurface';
@@ -101,8 +101,9 @@ export function EditorBody() {
   const { isStarter } = useTier();
   const setEditorTab = useSystemStore((s) => s.setEditorTab);
   useEffect(() => {
-    // The matrix tab was removed; bounce everyone (legacy persisted state) to use-cases.
-    if (editorTab === 'matrix') {
+    // The matrix and chat tabs were removed; bounce everyone (legacy persisted
+    // state) to use-cases. Companion chat now replaces the in-editor chat.
+    if (editorTab === 'matrix' || editorTab === 'chat') {
       setEditorTab('use-cases');
       return;
     }
@@ -192,7 +193,6 @@ export function EditorBody() {
               </EditorTabContent>
             )}
             {editorTab === 'lab' && <LabTab />}
-            {editorTab === 'chat' && <ChatTab />}
             {editorTab === 'design' && <DesignTab onConnectorsMissingChange={setConnectorsMissing} />}
             {editorTab === 'settings' && (
               <EditorTabContent>

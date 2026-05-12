@@ -26,4 +26,14 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// background-job worker runs the call and the result lands as a
 /// system episode. The user explicitly rejected the approval friction
 /// for connector use.
-pub const CONSTITUTION_VERSION: u32 = 5;
+///
+/// v6: cockpit catalog expanded with `metric_spark`, `issue_list`,
+/// `text_callout`. Guidance updated so Athena prefers composing a
+/// cockpit over dumping connector results into chat prose when the
+/// result is more than a few items.
+///
+/// v7: autonomous-mode primitive — `continue_autonomously` op added
+/// to the grammar. When the user toggles autonomous mode in the chat
+/// header, the prompt builder injects an addendum teaching Athena how
+/// to chain turns and dispatch parallel subagents.
+pub const CONSTITUTION_VERSION: u32 = 7;

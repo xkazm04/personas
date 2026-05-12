@@ -313,6 +313,81 @@ export class CompanionBridge {
     return out;
   }
 
+  /**
+   * A2: read the persisted autonomous-mode toggle state from
+   * systemStore. The chat-panel header reflects this — when `true`
+   * the ∞ button renders in the active (primary-tinted) variant.
+   */
+  async getAutonomousMode(): Promise<boolean> {
+    const r = await this.bridgeExec<{ enabled: boolean }>(
+      'getCompanionAutonomousMode',
+    );
+    return r.enabled;
+  }
+
+  /**
+   * A2: programmatically flip autonomous mode without going through
+   * the click path (which is tested separately). Returns when the
+   * setter has resolved.
+   */
+  async setAutonomousMode(enabled: boolean): Promise<void> {
+    await this.bridgeExec('setCompanionAutonomousMode', { enabled });
+  }
+
+  /**
+   * A5: force the panel into a streaming state. Lets Stop-button
+   * presence and click behavior be verified without burning a real
+   * Claude turn (which is also tested, but expensively, in
+   * `athena-conversation.spec.ts`).
+   */
+  async forceStreaming(
+    streaming: boolean,
+    streamingText?: string,
+  ): Promise<void> {
+    await this.bridgeExec('forceCompanionStreaming', {
+      streaming,
+      streamingText,
+    });
+  }
+
+  /**
+   * Inject synthetic messages into the chat transcript. Store-only —
+   * not persisted. Useful for verifying role-specific rendering
+   * (system episodes, autonomous markers, long content) without
+   * driving a real conversation.
+   */
+  async setMessages(
+    messages: Array<{
+      id: string;
+      role: 'user' | 'assistant' | 'system' | string;
+      content: string;
+      createdAt?: string;
+    }>,
+  ): Promise<void> {
+    await this.bridgeExec('setCompanionMessages', { messages });
+  }
+
+  /**
+   * Generic Tauri-command passthrough. The frontend bridge owns auth
+   * + serde shape; tests call this to drive backend commands the
+   * frontend would normally trigger via UI action. Returns the
+   * command's deserialized result, or throws on backend error.
+   */
+  async invokeCommand<T = unknown>(
+    command: string,
+    params: Record<string, unknown> = {},
+  ): Promise<T> {
+    const r = await this.bridgeExec<{
+      success: boolean;
+      result?: T;
+      error?: string;
+    }>('invokeCommand', { command, params });
+    if (!r.success) {
+      throw new Error(`invokeCommand(${command}) failed: ${r.error ?? 'unknown'}`);
+    }
+    return r.result as T;
+  }
+
   /** Whether the chat panel currently shows a `sendError` chip. */
   async hasSendErrorChip(): Promise<boolean> {
     // The error chip is rendered as a rose-tinted div near the bottom

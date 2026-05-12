@@ -236,6 +236,10 @@ export function ExecutionHeatmap({
         </div>
       ) : grid && data ? (
         <>
+          {!compact && (
+            <InsightsRow insights={data.insights} t={t} tx={tx} placement="top" />
+          )}
+
           <div className="overflow-x-auto -mx-1 px-1">
             <HeatmapGrid
               weeks={grid.weeks}
@@ -251,10 +255,6 @@ export function ExecutionHeatmap({
             <div className="mt-2 typo-caption text-foreground/70">
               <HoverLine day={hover} t={t} tx={tx} />
             </div>
-          )}
-
-          {!compact && (
-            <InsightsRow insights={data.insights} t={t} tx={tx} />
           )}
         </>
       ) : null}
@@ -381,14 +381,18 @@ function HoverLine({
 }
 
 function InsightsRow({
-  insights, t, tx,
+  insights, t, tx, placement = 'bottom',
 }: {
   insights: HeatmapInsights;
   t: Translations;
   tx: (template: string, params: Record<string, string | number>) => string;
+  placement?: 'top' | 'bottom';
 }) {
+  const containerCls = placement === 'top'
+    ? 'grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4 pb-3 border-b border-primary/10'
+    : 'grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-3 border-t border-primary/10';
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-3 border-t border-primary/10">
+    <div className={containerCls}>
       <InsightCell
         icon={<Flame className="w-3.5 h-3.5 text-amber-400/80" />}
         label={t.overview.heatmap.insights_streak}

@@ -63,6 +63,12 @@ pub struct Dispatched {
     /// chose to skip it for this turn). Frontend sets it as the latest
     /// `pendingPlayback` if voice playback is on.
     pub tts_text: Option<String>,
+    /// True iff Athena emitted at least one `continue_autonomously` op
+    /// in this turn. When the session is in autonomous mode AND this is
+    /// set, the caller schedules a continuation tick. The op carries no
+    /// payload beyond a `rationale` string — the dispatcher logs it but
+    /// otherwise ignores the body.
+    pub requests_continuation: bool,
     /// Any malformed op blocks we encountered. Logged but otherwise
     /// silent — never block the turn for a syntax error.
     pub warnings: Vec<String>,
@@ -428,6 +434,24 @@ pub fn dispatch(
                 }
                 // Strip the OP line from display — Athena's prose
                 // around it remains. Don't push to cleaned_lines.
+            }
+            // A2: autonomous continuation. Athena emits this when she
+            // wants the system to give her another turn (after a short
+            // delay) so she can keep working without user input. Only
+            // honored when the session is in autonomous mode — session.rs
+            // gates the actual schedule. We strip the line from display
+            // either way so the user never sees the directive verbatim.
+            Ok(env)
+                if env.op == "propose_action" && env.action == "continue_autonomously" =>
+            {
+                let rationale = env
+                    .params
+                    .get("rationale")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("(no rationale)");
+                tracing::debug!(rationale = %rationale, "athena: continue_autonomously requested");
+                out.requests_continuation = true;
+                // Don't push to cleaned_lines — strip the directive.
             }
             Ok(env) if env.op == "propose_action" && env.action == "open_route" => {
                 let route = env

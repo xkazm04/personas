@@ -3,8 +3,21 @@
 /**
  * A single entry in the snapshot (serialisable version of AmbientSignal).
  */
-export type AmbientSignalEntry = { source: string, summary: string, capturedAt: bigint, 
+export type AmbientSignalEntry = { 
+/**
+ * Stable per-signal id (format `sig_<n>`), assigned at capture time.
+ * Used by the "What did Athena see?" view to delete a single row
+ * without timestamp-collision races.
+ */
+id: string, source: string, summary: string, capturedAt: bigint, 
 /**
  * Seconds ago relative to snapshot time.
  */
-ageSecs: bigint, };
+ageSecs: bigint, 
+/**
+ * Redacted clipboard text (or other captured payload), if any.
+ * Lets the "What did Athena see?" view show what the user actually
+ * pasted — with credential-shaped substrings already masked. None
+ * for sources that don't capture content.
+ */
+redactedContent: string | null, };

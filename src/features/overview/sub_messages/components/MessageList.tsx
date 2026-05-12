@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { MessageSquare, CheckCheck, RefreshCw, Plus, List, GitBranch, ChevronRight, ChevronDown, MessageCircle, BookOpen } from 'lucide-react';
+import { MessageSquare, CheckCheck, RefreshCw, Plus, List, GitBranch, ChevronRight, ChevronDown, MessageCircle, BookOpen, Eye, EyeOff } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { useOverviewStore } from "@/stores/overviewStore";
@@ -88,7 +88,9 @@ export default function MessageList() {
   }, [threadReplies, personaMap]);
 
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('all');
-  const [readFilter, setReadFilter] = useState<ReadFilter>('all');
+  // Hide read messages by default — they're typically resolved noise. The
+  // header button toggles between 'unread' and 'all' for recovery/remind.
+  const [readFilter, setReadFilter] = useState<ReadFilter>('unread');
   const [selectedPersonaId, setSelectedPersonaId] = useState<string>('');
   const [selectedMsg, setSelectedMsg] = useState<PersonaMessage | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -215,6 +217,14 @@ export default function MessageList() {
                 <Plus className="w-3.5 h-3.5" /> {t.overview.messages_view.mock_message}
               </button>
             )}
+            <button
+              onClick={() => setReadFilter((prev) => (prev === 'unread' ? 'all' : 'unread'))}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-heading text-foreground/80 hover:text-foreground bg-secondary/30 border border-primary/15 hover:bg-secondary/50 transition-all"
+              title={readFilter === 'unread' ? t.overview.messages_view.show_read_messages : t.overview.messages_view.show_only_unread}
+            >
+              {readFilter === 'unread' ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+              {readFilter === 'unread' ? t.overview.messages_view.show_read_messages : t.overview.messages_view.show_only_unread}
+            </button>
             <div className="flex items-center rounded-card border border-primary/15 overflow-hidden">
               <button
                 onClick={() => setViewMode('flat')}

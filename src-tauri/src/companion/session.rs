@@ -10,9 +10,11 @@
 //! feedback land in later phases. The companion_session row holds a single
 //! `id='default'` pointer; multi-companion support is deferred.
 
+use std::collections::HashSet;
 use std::process::Stdio;
-use std::sync::Arc;
-use std::time::Duration;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, LazyLock, Mutex};
+use std::time::{Duration, Instant};
 
 use rusqlite::{params, OptionalExtension};
 use serde::Serialize;
@@ -30,6 +32,108 @@ use crate::error::AppError;
 
 /// The single-instance companion session id (Phase 1).
 pub const DEFAULT_SESSION_ID: &str = "default";
+
+/// Synthetic user message used to drive autonomous continuation turns.
+/// The prompt builder swaps it out for a turn-specific directive; the
+/// dispatcher persists it as a `[autonomous]` system episode rather
+/// than a regular user turn so the chat transcript stays readable.
+///
+/// Treat this string as a sentinel — never display it raw, never use
+/// it as a real user prompt.
+pub const AUTONOMOUS_CONTINUATION_MARKER: &str = "<<athena-autonomous-continuation>>";
+
+/// Delay before the autonomous continuation tick fires. Long enough
+/// for the user to interject ("stop", or any new turn) without a
+/// race, short enough that long-running tasks don't feel paused.
+const AUTONOMOUS_CONTINUATION_DELAY: Duration = Duration::from_secs(15);
+
+/// Hard cap on consecutive autonomous turns to prevent a runaway loop
+/// (Athena keeps emitting `continue_autonomously` indefinitely). Once
+/// reached, the system stops scheduling continuations until the user
+/// sends a fresh message.
+const MAX_AUTONOMOUS_CHAIN: u32 = 20;
+
+/// Why a turn was triggered. Drives prompt assembly (different
+/// addendum for autonomous ticks), episode persistence (user turns
+/// land as User episodes, autonomous ticks as System), and the
+/// continuation-loop counter.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TurnOrigin {
+    /// User typed a message into the panel composer.
+    User,
+    /// Athena's `continue_autonomously` op triggered a follow-up turn.
+    /// `chain_index` is 1-based — the first continuation is 1, second is
+    /// 2, etc. Resets to 0 when a User turn lands.
+    Autonomous { chain_index: u32 },
+}
+
+/// In-flight turn ids that the user has asked to interrupt. `run_cli`
+/// polls this set every ~200ms via `tokio::select!`; on hit, it
+/// `start_kill()`s the child CLI and returns whatever text was streamed
+/// so far so the partial reply still becomes the persisted assistant
+/// turn (annotated with `[interrupted]`).
+///
+/// A plain `Mutex<HashSet<String>>` is fine here — contention is one
+/// insert per Stop click, one read every 200ms during a streaming
+/// turn; the lock is held for microseconds.
+static INTERRUPTED_TURNS: LazyLock<Mutex<HashSet<String>>> =
+    LazyLock::new(|| Mutex::new(HashSet::new()));
+
+/// Mark a turn for interruption. The streaming loop will detect it on
+/// its next ~200ms tick, kill the child, and finalize whatever text
+/// it already received.
+pub fn request_interrupt(turn_id: &str) {
+    if let Ok(mut g) = INTERRUPTED_TURNS.lock() {
+        g.insert(turn_id.to_string());
+    }
+}
+
+fn was_interrupted(turn_id: &str) -> bool {
+    INTERRUPTED_TURNS
+        .lock()
+        .map(|g| g.contains(turn_id))
+        .unwrap_or(false)
+}
+
+fn clear_interrupt(turn_id: &str) {
+    if let Ok(mut g) = INTERRUPTED_TURNS.lock() {
+        g.remove(turn_id);
+    }
+}
+
+/// Cancellation flag for the in-flight autonomous-continuation tick.
+///
+/// We use a flag (not a `JoinHandle::abort`) for two reasons:
+///
+/// 1. `send_turn`'s future is `!Send` (multiple captures across awaits
+///    that the Tauri command path tolerates but `tauri::async_runtime
+///    ::spawn` doesn't), so we can't put it inside a `spawn` and rely
+///    on `abort()` anyway. The scheduler uses `spawn_blocking` with a
+///    fresh single-threaded tokio runtime instead — `abort()` on a
+///    blocking task is a soft signal, so we'd need a flag here either
+///    way.
+///
+/// 2. The semantics from Q3 are "stop = next user input"; that's a
+///    cooperative pause, not a process-kill. A flag the spawned task
+///    checks before each potentially-blocking step is exactly that.
+static AUTONOMOUS_CANCEL: AtomicBool = AtomicBool::new(false);
+
+/// Set the cancel flag so any pending continuation tick bails out on
+/// its next check. No-op if nothing's pending — the flag self-clears
+/// when a fresh continuation is scheduled.
+pub fn cancel_pending_autonomy() {
+    AUTONOMOUS_CANCEL.store(true, Ordering::SeqCst);
+}
+
+/// Reset the cancel flag in preparation for a freshly-scheduled tick.
+fn reset_autonomous_cancel() {
+    AUTONOMOUS_CANCEL.store(false, Ordering::SeqCst);
+}
+
+/// Was the in-flight tick cancelled while it was waiting / running?
+fn autonomous_was_cancelled() -> bool {
+    AUTONOMOUS_CANCEL.load(Ordering::SeqCst)
+}
 
 /// Tauri event channel that streams every CLI line to the frontend.
 pub const STREAM_EVENT: &str = "companion://stream";
@@ -78,6 +182,10 @@ pub struct TurnResult {
     pub assistant_episode_id: String,
     pub quick_replies: Vec<String>,
     pub tts_text: Option<String>,
+    /// Athena emitted `OP: continue_autonomously` this turn. The caller
+    /// (or the post-turn scheduler in this module) inspects this to
+    /// decide whether to fire a continuation tick.
+    pub requests_continuation: bool,
 }
 
 /// Hard ceiling per turn — Athena is designed to run long background
@@ -125,8 +233,10 @@ pub async fn send_turn(
     sys_db: Arc<DbPool>,
     #[cfg(feature = "ml")] embedder: Option<Arc<EmbeddingManager>>,
     user_message: String,
+    origin: TurnOrigin,
     voice_enabled: bool,
     recall_synthesis_enabled: bool,
+    autonomous_mode: bool,
 ) -> Result<TurnResult, AppError> {
     let session_id = DEFAULT_SESSION_ID.to_string();
     let turn_id = format!("turn_{}", short_random());
@@ -146,7 +256,19 @@ pub async fn send_turn(
         let _ = crate::companion::dev_session::recover_orphan_improvements(&user_db).await;
     }
 
-    // Persist the user turn (with embedding if embedder is available).
+    // Persist the turn-opening episode. User turns land as `User`;
+    // autonomous continuation ticks land as `System` with a marker so
+    // the transcript visibly distinguishes "the user typed this" from
+    // "Athena gave herself another turn". For autonomous, the CLI
+    // receives a directive (see `effective_user_message` below) — we
+    // never persist the marker token verbatim.
+    let (open_role, open_content) = match origin {
+        TurnOrigin::User => (EpisodeRole::User, user_message.clone()),
+        TurnOrigin::Autonomous { chain_index } => (
+            EpisodeRole::System,
+            format!("[autonomous continuation #{chain_index}]"),
+        ),
+    };
     let user_ep_id = {
         #[cfg(feature = "ml")]
         {
@@ -156,22 +278,22 @@ pub async fn send_turn(
                         &user_db,
                         emb,
                         &session_id,
-                        EpisodeRole::User,
-                        &user_message,
+                        open_role,
+                        &open_content,
                     )
                     .await?
                 }
                 None => episodic::append_episode(
                     &user_db,
                     &session_id,
-                    EpisodeRole::User,
-                    &user_message,
+                    open_role,
+                    &open_content,
                 )?,
             }
         }
         #[cfg(not(feature = "ml"))]
         {
-            episodic::append_episode(&user_db, &session_id, EpisodeRole::User, &user_message)?
+            episodic::append_episode(&user_db, &session_id, open_role, &open_content)?
         }
     };
 
@@ -188,6 +310,21 @@ pub async fn send_turn(
     // Read the prior claude session id (if any) for --resume.
     let claude_session_id = read_claude_session_id(&user_db, &session_id)?;
 
+    // What the CLI actually receives on stdin. For user turns, that's
+    // the raw message. For autonomous ticks, the marker token never
+    // reaches the model — it's a sentinel only the persistence layer
+    // sees; the CLI gets a real directive crafted here.
+    let effective_user_message: String = match origin {
+        TurnOrigin::User => user_message.clone(),
+        TurnOrigin::Autonomous { chain_index } => format!(
+            "Continue your autonomous work. This is continuation turn #{chain_index} of up to {max}. \
+             Review what you've done so far. Either make concrete progress on the open task or, if \
+             you've reached a natural stopping point or need user input, finalize without emitting \
+             another `continue_autonomously` op.",
+            max = MAX_AUTONOMOUS_CHAIN
+        ),
+    };
+
     let system_prompt = {
         #[cfg(feature = "ml")]
         {
@@ -196,9 +333,10 @@ pub async fn send_turn(
                 &sys_db,
                 embedder.as_ref(),
                 &session_id,
-                &user_message,
+                &effective_user_message,
                 voice_enabled,
                 recall_synthesis_enabled,
+                autonomous_mode,
             )
             .await?
         }
@@ -208,9 +346,10 @@ pub async fn send_turn(
                 &user_db,
                 &sys_db,
                 &session_id,
-                &user_message,
+                &effective_user_message,
                 voice_enabled,
                 recall_synthesis_enabled,
+                autonomous_mode,
             )
             .await?
         }
@@ -224,7 +363,7 @@ pub async fn send_turn(
             &session_id,
             claude_session_id.as_deref(),
             &system_prompt,
-            &user_message,
+            &effective_user_message,
             &user_db,
         ),
     )
@@ -298,6 +437,7 @@ pub async fn send_turn(
                     chat_cards: Vec::new(),
                     quick_replies: Vec::new(),
                     tts_text: None,
+                    requests_continuation: false,
                     warnings: vec![format!("dispatcher error: {e}")],
                 }
             }
@@ -417,12 +557,120 @@ pub async fn send_turn(
         },
     );
 
+    // A2 — autonomous continuation. Schedule the next tick if:
+    //   1. The session is in autonomous mode.
+    //   2. Athena emitted `OP: continue_autonomously` this turn.
+    //   3. We haven't hit MAX_AUTONOMOUS_CHAIN yet.
+    // User-message arrivals call `cancel_pending_autonomy` first
+    // (see commands/companion/chat.rs::companion_send_message), so a
+    // pending handle here is always for a chain Athena requested and
+    // the user hasn't intercepted.
+    if autonomous_mode && dispatched.requests_continuation {
+        let next_chain = match origin {
+            TurnOrigin::User => 1,
+            TurnOrigin::Autonomous { chain_index } => chain_index + 1,
+        };
+        if next_chain > MAX_AUTONOMOUS_CHAIN {
+            tracing::info!(
+                next_chain,
+                max = MAX_AUTONOMOUS_CHAIN,
+                "autonomous chain hit hard ceiling — not scheduling another tick"
+            );
+        } else {
+            schedule_autonomous_tick(
+                app.clone(),
+                user_db.clone(),
+                sys_db.clone(),
+                #[cfg(feature = "ml")]
+                embedder.clone(),
+                next_chain,
+                voice_enabled,
+                recall_synthesis_enabled,
+            );
+        }
+    }
+
     Ok(TurnResult {
         user_episode_id: user_ep_id,
         assistant_episode_id: assistant_ep_id,
         quick_replies: dispatched.quick_replies,
         tts_text: dispatched.tts_text,
+        requests_continuation: dispatched.requests_continuation,
     })
+}
+
+/// Schedule the next autonomous turn on a dedicated blocking thread
+/// with its own single-threaded tokio runtime.
+///
+/// Why blocking + current-thread: `send_turn` returns a `!Send` future
+/// (Tauri command path tolerates that; `tauri::async_runtime::spawn`
+/// does not). A blocking thread isn't bound by Send because no work-
+/// stealing happens — the future runs on one thread for its lifetime.
+///
+/// Cancellation: the body polls `AUTONOMOUS_CANCEL` every 200ms
+/// during the delay and before kicking off `send_turn`. A user message
+/// sets the flag (`cancel_pending_autonomy`) so the tick aborts before
+/// spinning up CLI work. Once `send_turn` is in flight, `A5`'s mid-
+/// stream interrupt handles cancellation of the CLI process itself.
+fn schedule_autonomous_tick(
+    app: AppHandle,
+    user_db: Arc<UserDbPool>,
+    sys_db: Arc<DbPool>,
+    #[cfg(feature = "ml")] embedder: Option<Arc<EmbeddingManager>>,
+    chain_index: u32,
+    voice_enabled: bool,
+    recall_synthesis_enabled: bool,
+) {
+    reset_autonomous_cancel();
+    let _ = tauri::async_runtime::spawn_blocking(move || {
+        // Poll the cancel flag while waiting out the delay. A coarse
+        // 200ms tick is plenty — the delay itself is 15s; finer polling
+        // wouldn't change the user's experience.
+        let started = Instant::now();
+        while started.elapsed() < AUTONOMOUS_CONTINUATION_DELAY {
+            if autonomous_was_cancelled() {
+                tracing::debug!("autonomous tick cancelled during delay");
+                return;
+            }
+            std::thread::sleep(Duration::from_millis(200));
+        }
+        if autonomous_was_cancelled() {
+            tracing::debug!("autonomous tick cancelled at delay boundary");
+            return;
+        }
+
+        // Single-threaded tokio runtime for this tick. send_turn awaits
+        // multiple `!Send` futures (rusqlite-touching helpers, the CLI
+        // child process); current-thread doesn't require Send.
+        let rt = match tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+        {
+            Ok(rt) => rt,
+            Err(e) => {
+                tracing::warn!(error = %e, "autonomous tick: failed to build runtime");
+                return;
+            }
+        };
+        rt.block_on(async move {
+            let res = send_turn(
+                &app,
+                user_db,
+                sys_db,
+                #[cfg(feature = "ml")]
+                embedder,
+                AUTONOMOUS_CONTINUATION_MARKER.to_string(),
+                TurnOrigin::Autonomous { chain_index },
+                voice_enabled,
+                recall_synthesis_enabled,
+                true, // autonomous_mode — by definition true for a tick
+            )
+            .await;
+            if let Err(e) = res {
+                tracing::warn!(error = %e, "autonomous continuation tick failed");
+            }
+        });
+    });
 }
 
 async fn run_cli(
@@ -477,6 +725,14 @@ async fn run_cli(
         .stderr(Stdio::piped())
         .env("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC", "1")
         .env("CLAUDE_CODE_DISABLE_TERMINAL_TITLE", "1")
+        // Enable fork-style subagent dispatch (2.1.117+) — when Athena
+        // uses the Task tool, the child inherits her full conversation
+        // history, runs in background, and shares the prompt cache.
+        // Cheaper than a named subagent and gives the autonomous loop
+        // a way to "send a copy of herself to investigate" without
+        // re-priming context. Harmless on older CLI versions (env var
+        // is ignored if the feature isn't recognized).
+        .env("CLAUDE_CODE_FORK_SUBAGENT", "1")
         .spawn()
         .map_err(|e| AppError::Internal(format!("spawn claude: {e}")))?;
 
@@ -520,51 +776,85 @@ async fn run_cli(
 
     let mut assistant_text = String::new();
     let mut new_claude_session_id: Option<String> = None;
+    let mut interrupt_tick = tokio::time::interval(Duration::from_millis(200));
+    // Skip the immediate first tick — `interval` fires once at t=0 by
+    // default, which would race the kill check before we've read a
+    // single line.
+    interrupt_tick.tick().await;
+    let mut interrupted = false;
 
-    while let Some(line) = reader
-        .next_line()
-        .await
-        .map_err(|e| AppError::Internal(format!("read claude stdout: {e}")))?
-    {
-        // Forward every line to the UI as-is.
-        emit(
-            app,
-            StreamEvent {
-                session_id: session_id.to_string(),
-                turn_id: turn_id.to_string(),
-                kind: StreamEventKind::Cli,
-                payload: line.clone(),
-            },
-        );
+    loop {
+        tokio::select! {
+            // Favor stdout reads over the interrupt tick — we never want
+            // to miss a line just because the timer happened to fire on
+            // the same loop iteration.
+            biased;
+            line_result = reader.next_line() => {
+                match line_result {
+                    Ok(Some(line)) => {
+                        emit(
+                            app,
+                            StreamEvent {
+                                session_id: session_id.to_string(),
+                                turn_id: turn_id.to_string(),
+                                kind: StreamEventKind::Cli,
+                                payload: line.clone(),
+                            },
+                        );
 
-        // Accumulate text + capture session id from parsable JSON.
-        if let Ok(value) = serde_json::from_str::<serde_json::Value>(&line) {
-            // The "system" init event carries session_id (Claude Code stream-json schema).
-            if value.get("type").and_then(|v| v.as_str()) == Some("system") {
-                if let Some(sid) = value.get("session_id").and_then(|v| v.as_str()) {
-                    new_claude_session_id = Some(sid.to_string());
-                }
-            }
-            // Assistant content blocks: extract any text.
-            if value.get("type").and_then(|v| v.as_str()) == Some("assistant") {
-                if let Some(content) = value
-                    .get("message")
-                    .and_then(|m| m.get("content"))
-                    .and_then(|c| c.as_array())
-                {
-                    for block in content {
-                        if block.get("type").and_then(|v| v.as_str()) == Some("text") {
-                            if let Some(text) = block.get("text").and_then(|v| v.as_str()) {
-                                if !assistant_text.is_empty() {
-                                    assistant_text.push('\n');
+                        if let Ok(value) = serde_json::from_str::<serde_json::Value>(&line) {
+                            if value.get("type").and_then(|v| v.as_str()) == Some("system") {
+                                if let Some(sid) = value.get("session_id").and_then(|v| v.as_str()) {
+                                    new_claude_session_id = Some(sid.to_string());
                                 }
-                                assistant_text.push_str(text);
+                            }
+                            if value.get("type").and_then(|v| v.as_str()) == Some("assistant") {
+                                if let Some(content) = value
+                                    .get("message")
+                                    .and_then(|m| m.get("content"))
+                                    .and_then(|c| c.as_array())
+                                {
+                                    for block in content {
+                                        if block.get("type").and_then(|v| v.as_str()) == Some("text") {
+                                            if let Some(text) = block.get("text").and_then(|v| v.as_str()) {
+                                                if !assistant_text.is_empty() {
+                                                    assistant_text.push('\n');
+                                                }
+                                                assistant_text.push_str(text);
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
+                    Ok(None) => break, // EOF — CLI finished naturally
+                    Err(e) => {
+                        return Err(AppError::Internal(format!("read claude stdout: {e}")));
+                    }
+                }
+            }
+            _ = interrupt_tick.tick() => {
+                if was_interrupted(turn_id) {
+                    interrupted = true;
+                    // Best-effort kill — if it fails the CLI will still
+                    // finish on its own; we just stop reading.
+                    let _ = child.start_kill();
+                    break;
                 }
             }
         }
+    }
+
+    // Clear the registry entry whether we hit it or not so a future
+    // turn with a coincidentally-similar id isn't pre-cancelled.
+    clear_interrupt(turn_id);
+
+    if interrupted {
+        // Drain whatever's still queued so the child can exit cleanly
+        // and we don't leak a zombie. Don't surface read errors here —
+        // a killed child often EOFs partway through a frame.
+        while let Ok(Some(_)) = reader.next_line().await {}
     }
 
     let status = child
@@ -575,6 +865,24 @@ async fn run_cli(
     let stderr_text = stderr_buf.lock().await.clone();
     // Best-effort: clean up the temp prompt file. Failure is harmless.
     let _ = std::fs::remove_file(&prompt_file);
+
+    // Interrupt path: the user clicked Stop. We killed the child, so a
+    // non-success exit is expected. Persist whatever streamed (or a
+    // placeholder if nothing did) and tag it so the transcript shows
+    // the partial nature. The CLI session pointer is also persisted —
+    // an interrupted turn still counts toward conversation continuity.
+    if interrupted {
+        if let Some(sid) = new_claude_session_id {
+            upsert_claude_session_id(pool, session_id, &sid)?;
+        }
+        let body = if assistant_text.trim().is_empty() {
+            "_(interrupted before any reply was generated)_".to_string()
+        } else {
+            format!("{assistant_text}\n\n_[interrupted by user]_")
+        };
+        return Ok(body);
+    }
+
     if !status.success() {
         let trimmed = if stderr_text.len() > 600 {
             format!("{}…", &stderr_text[..600])

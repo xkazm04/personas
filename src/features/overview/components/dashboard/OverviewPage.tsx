@@ -19,7 +19,7 @@ const SLADashboard = lazyRetry(() => import('@/features/overview/sub_sla/compone
 
 const PersonaHealthDashboard = lazyRetry(() => import('@/features/overview/sub_health/components/PersonaHealthDashboard'));
 const LeaderboardPage = lazyRetry(() => import('@/features/overview/sub_leaderboard'));
-const InboxTriagePage = lazyRetry(() => import('@/features/overview/sub_inbox/InboxTriagePage'));
+const IncidentsInbox = lazyRetry(() => import('@/features/overview/sub_incidents'));
 
 function OverviewContent() {
   useExecutionDashboardPipeline();
@@ -33,7 +33,7 @@ function OverviewContent() {
       <ErrorBoundary name={`Overview/${overviewTab}`}>
       <Suspense fallback={<SuspenseFallback />}>
         {overviewTab === 'home' ? <DashboardWithSubtabs /> :
-        overviewTab === 'inbox' ? <InboxTriagePage /> :
+        overviewTab === 'incidents' ? <IncidentsInbox /> :
         overviewTab === 'executions' ? <ExecutionsWithSubtabs /> :
         overviewTab === 'manual-review' ? <ManualReviewList /> :
         overviewTab === 'messages' ? <MessageList /> :

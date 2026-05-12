@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ListChecks, FileText, Settings, FlaskConical, Check, Activity, MessageCircle, Wand2, HeartPulse } from 'lucide-react';
+import { ListChecks, FileText, Settings, FlaskConical, Activity, Wand2, HeartPulse } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
 import type { EditorTab } from '@/lib/types/types';
@@ -17,7 +17,6 @@ const tabDefs: TabDefBase[] = [
   { id: 'design', labelKey: 'tab_design', icon: Wand2 },
   { id: 'use-cases', labelKey: 'tab_use_cases', icon: ListChecks },
   { id: 'lab', labelKey: 'tab_lab', icon: FlaskConical, minTier: TIERS.TEAM },
-  { id: 'chat', labelKey: 'tab_chat', icon: MessageCircle },
   { id: 'settings', labelKey: 'tab_settings', icon: Settings },
 ];
 
@@ -29,20 +28,13 @@ interface EditorTabBarProps {
   failedTabs?: string[];
 }
 
-type TabBadgeVariant = 'dirty' | 'attention' | 'error' | 'success';
+type TabBadgeVariant = 'dirty' | 'attention' | 'error';
 
 function TabBadge({ variant, count }: { variant: TabBadgeVariant; count?: number }) {
   if (variant === 'error') {
     return (
       <span className="ml-auto min-w-4 h-4 px-1 rounded-full bg-red-500/15 border border-red-500/25 text-red-400 typo-caption leading-4 text-center">
         {count ?? '!'}
-      </span>
-    );
-  }
-  if (variant === 'success') {
-    return (
-      <span className="ml-auto w-4 h-4 rounded-full bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center">
-        <Check className="w-2.5 h-2.5 text-emerald-400" />
       </span>
     );
   }
@@ -124,9 +116,7 @@ export function EditorTabBar({ dirtyTabs, connectorsMissing, failedTabs = [] }: 
                     ? <TabBadge variant="error" count={connectorsMissing} />
                     : tabDirty
                       ? <TabBadge variant="dirty" />
-                      : isActive && !tabDirty
-                        ? <TabBadge variant="success" />
-                        : null}
+                      : null}
                 {isActive && (
                   <motion.div
                     layoutId="personaEditorTab"

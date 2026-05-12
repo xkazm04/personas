@@ -48,6 +48,7 @@ pub async fn build_system_prompt(
     query: &str,
     voice_enabled: bool,
     recall_synthesis_enabled: bool,
+    autonomous_mode: bool,
 ) -> Result<String, AppError> {
     let root = disk::brain_root()?;
     let constitution =
@@ -114,6 +115,8 @@ pub async fn build_system_prompt(
 
     let onboarding_md = onboarding_addendum_if_needed(&identity, &recall.episodes);
     let voice_md = voice_addendum_if_needed(voice_enabled);
+    let display_md = display_addendum_if_voice_active(voice_enabled);
+    let autonomous_md = autonomous_addendum_if_enabled(autonomous_mode);
     let connector_names = connectors::list_enabled_for_prompt(user_db).unwrap_or_default();
     let connectors_md = format_connectors(&connector_names);
     let plugin_names = plugins::list_enabled(user_db).unwrap_or_default();
@@ -131,6 +134,8 @@ pub async fn build_system_prompt(
         &connectors_md,
         &onboarding_md,
         &voice_md,
+        &display_md,
+        &autonomous_md,
     ))
 }
 
@@ -142,6 +147,7 @@ pub async fn build_system_prompt(
     _query: &str,
     voice_enabled: bool,
     _recall_synthesis_enabled: bool,
+    autonomous_mode: bool,
 ) -> Result<String, AppError> {
     let root = disk::brain_root()?;
     let constitution =
@@ -173,6 +179,8 @@ pub async fn build_system_prompt(
 
     let onboarding_md = onboarding_addendum_if_needed(&identity, &recall.episodes);
     let voice_md = voice_addendum_if_needed(voice_enabled);
+    let display_md = display_addendum_if_voice_active(voice_enabled);
+    let autonomous_md = autonomous_addendum_if_enabled(autonomous_mode);
     let connector_names = connectors::list_enabled_for_prompt(user_db).unwrap_or_default();
     let connectors_md = format_connectors(&connector_names);
     let plugin_names = plugins::list_enabled(user_db).unwrap_or_default();
@@ -190,6 +198,8 @@ pub async fn build_system_prompt(
         &connectors_md,
         &onboarding_md,
         &voice_md,
+        &display_md,
+        &autonomous_md,
     ))
 }
 
@@ -556,6 +566,8 @@ fn compose(
     connectors_md: &str,
     onboarding_md: &str,
     voice_md: &str,
+    display_md: &str,
+    autonomous_md: &str,
 ) -> String {
     // When a synthesized briefing is present, it replaces the raw memory
     // sections (facts/goals/procedurals/episodes/backlog/doctrine) — the
@@ -609,6 +621,8 @@ fn compose(
             + synth_md.len()
             + onboarding_md.len()
             + voice_md.len()
+            + display_md.len()
+            + autonomous_md.len()
             + 256,
     );
     out.push_str(constitution);
@@ -650,6 +664,21 @@ fn compose(
     out.push_str(onboarding_md);
     // Voice addendum: only included when the user has voice playback on.
     out.push_str(voice_md);
+    // Dual-language addendum: paired with voice — instructs Athena to
+    // write the *visual* reply as a tighter, button-shaped index when
+    // the user is also listening. Voice off ⇒ empty string ⇒ default
+    // prose register.
+    out.push_str(display_md);
+    // Tools addendum: always on. Tells Athena she has WebSearch /
+    // WebFetch via Claude Code so she stops guessing at time-sensitive
+    // facts. Sits at the end (recency-weighted) but after onboarding +
+    // voice because those are turn-shape, this is tool-shape.
+    out.push_str(tools_addendum());
+    // Autonomous-mode addendum: only when the header toggle is on.
+    // Sits last so its instructions are the most recency-weighted —
+    // the autonomous loop is the most important behavioral
+    // modification of the turn.
+    out.push_str(autonomous_md);
     out
 }
 
@@ -734,6 +763,186 @@ fn format_project_tracking_pulses(user_db: &UserDbPool, plugin_names: &[String])
 /// Athena to emit a TTS line in addition to her normal markdown reply.
 /// Skipped entirely when voice is off so we don't waste tokens or
 /// confuse Athena with capabilities she shouldn't use.
+/// Autonomous-mode addendum — only emitted when the header toggle is
+/// on. Tells Athena she's allowed to chain turns by emitting
+/// `OP: continue_autonomously` and how to use her subagent toolbox.
+/// When the toggle is off this returns `""` and Athena's behavior
+/// reverts to the single-turn assistant.
+fn autonomous_addendum_if_enabled(autonomous_mode: bool) -> String {
+    if !autonomous_mode {
+        return String::new();
+    }
+    String::from(
+        r#"
+
+# AUTONOMOUS MODE — you may continue working between user turns
+
+The user enabled autonomous mode in the chat header. You're free to
+take more turns *without waiting for them* whenever a task you've
+started isn't finished yet.
+
+## The continuation primitive
+
+End any turn with the line below to receive another turn (after a
+short delay) to keep working:
+
+    OP: {"op": "propose_action", "action": "continue_autonomously", "params": {"rationale": "<one short sentence: why you're not done yet>"}}
+
+The system schedules the next tick ~15 seconds after the current
+turn finishes. If the user sends any message in the meantime, the
+scheduled tick is dropped and their message takes priority — your
+chain is paused gracefully without anything being killed.
+
+Hard ceiling: up to 20 consecutive autonomous turns per chain.
+Beyond that the system stops re-firing until the user sends a fresh
+message. Aim well below that — if you can't finish in 3-5 ticks,
+you're probably in a loop and should stop, summarize where you
+landed, and wait for the user.
+
+## When to chain vs stop
+
+**Chain (emit the op)** when:
+- You ran a tool/connector and the result needs analysis
+- You proposed a sub-task to a subagent and want to read its result
+- You wrote partial progress to memory and need another pass
+- You're researching with WebSearch and the picture isn't complete
+
+**Stop (just don't emit the op)** when:
+- You finished the user's request
+- You're waiting for the user to decide between options
+- You're blocked on something only the user can resolve
+- You'd be repeating yourself — diminishing returns
+
+## Subagent orchestration (Claude Code's `Agent` tool)
+
+You can dispatch parallel work to specialized subagents within a
+single turn. The Personas project ships these in `.claude/agents/`:
+
+- **`athena-persona-auditor`** — read a persona's recent runs +
+  artifacts, identify failure patterns, return a 1-page summary.
+  Use when the user (or you) want to understand why a persona
+  produces what it does.
+- **`athena-backlog-scout`** — scan recent execution artifacts +
+  memory for things worth tracking as backlog items. Returns a
+  ranked list. Use during idle autonomous ticks when there's no
+  open task — generates the proactive ideas the user enabled
+  autonomous mode for.
+- **`athena-doc-reader`** — pull doctrine/codebase context for a
+  question without polluting your own context with full file
+  reads. Returns a focused excerpt.
+- **`athena-web-researcher`** — WebSearch + WebFetch heavy for
+  current-events / library-docs queries. Returns a synthesis.
+
+Spawn them in one assistant turn with the `Agent` tool. You can
+spawn multiple in parallel — they run concurrently in separate
+context windows and return summaries you synthesize. Subagents do
+not outlive their spawn turn; they're a within-turn primitive.
+
+## Visual discipline during chains
+
+Each autonomous tick still produces a chat bubble — the user sees
+your work in real time. Two rules:
+
+1. **Don't spam.** If a tick made marginal progress, a one-liner
+   is fine. The user will see 20 bubbles otherwise.
+2. **Surface decisions, not deliberation.** Use chat cards
+   (`show_persona_overview`, etc.) and cockpit composition when
+   the work has a visual that beats prose.
+"#,
+    )
+}
+
+/// Static directive: Athena runs inside Claude Code with built-in
+/// tools (WebSearch, file reads, etc.). The default Claude Code
+/// system prompt is *replaced* by ours via `--system-prompt-file`, so
+/// without this block she has no idea those tools exist and will
+/// hallucinate around current-events questions. Always emitted — the
+/// tools are stable per session and the prompt-token cost is tiny.
+fn tools_addendum() -> &'static str {
+    r#"
+
+# YOU HAVE TOOLS — use them when the answer needs them
+
+You're running inside Claude Code, which gives you a small toolbox
+that runs *before* your reply is formed. They're free to call; the
+user expects you to reach for them when the question needs fresh
+data or specific facts you don't already have.
+
+**WebSearch** — search the live web. Use it when:
+- The user asks about anything *after January 2026* (your training
+  cutoff) — current events, recent releases, breaking news.
+- The user mentions a specific library / API / framework and wants
+  current syntax, version, or behavior. Don't guess from training
+  data when a search would settle it.
+- The user references a public person, company, or product the
+  context didn't already establish.
+
+**WebFetch** — pull and read a specific URL the user gave you.
+
+Do NOT use search for:
+- Anything about Personas Desktop itself (you have doctrine for that).
+- Anything about the user's own data (you have facts, episodes,
+  identity for that).
+- Generic engineering questions you can already answer well.
+
+When you use a tool, weave the result into your reply naturally;
+cite the source URL inline so the user can verify ("According to
+sentry.io's docs at <url>, ...").
+
+These tools run within the same turn as your reply — the user sees
+your single bubble, not the intermediate tool calls.
+"#
+}
+
+/// Dual-language directive — only emitted when voice playback is on.
+///
+/// When the user is *listening* to the spoken summary, the chat-bubble
+/// text should not duplicate the same prose visually. Instead, it
+/// becomes a skimmable index: short labels, bullets, and one or two
+/// QR chips the user can tap without re-reading the answer they just
+/// heard. The TTS line owns the nuance; the visual owns the next
+/// click.
+///
+/// When voice is OFF, this returns "" — the visual reply stays in
+/// Athena's default register (full prose, headings, citations).
+fn display_addendum_if_voice_active(voice_enabled: bool) -> String {
+    if !voice_enabled {
+        return String::new();
+    }
+    String::from(
+        r#"
+
+# DUAL-LANGUAGE — visual reply when voice is on
+
+The user is listening to your spoken summary right now. Don't make
+them read the same thing twice. Treat the chat bubble as a *control
+panel* for what they just heard, not a transcript:
+
+- Lead with one short headline sentence — the same one your TTS line
+  opens with. The bubble is the index card on top of the audio.
+- Keep prose to a minimum. Where you'd normally write a paragraph of
+  exposition, replace it with two or three bullets, or skip it
+  entirely. The voice already said it.
+- Lean on QR chips. If the spoken summary offers two choices, those
+  same two choices belong in `QR:` as tappable next actions. Aim for
+  2–4 chips; you can offer up to 5 when the branch space is real.
+- Use headings sparingly — at most one H2 per reply, only when the
+  bubble has clearly separate sections.
+- No long code blocks; quote at most one short line. Bullet lists of
+  identifiers (filenames, ids) are fine — they're scannable.
+- Preserve all `OP:` and `propose_action` lines exactly. Auto-fire
+  ops and approval cards are how Athena acts; they don't change just
+  because the user is listening.
+- Citations (`[memory:...]`, `[doctrine:...]`) still go in the visual
+  reply — voice elides them, the user wants to see the source.
+
+When voice is OFF the bubble goes back to its normal register —
+full prose, headings, longer answers when warranted. Read the user's
+current mode and write accordingly.
+"#,
+    )
+}
+
 fn voice_addendum_if_needed(voice_enabled: bool) -> String {
     if !voice_enabled {
         return String::new();

@@ -117,9 +117,30 @@ interface CompanionStore {
   setPlaybackAudioUrl: (audioUrl: string) => void;
   /** Mark the active playback as already heard (footer Play hides itself). */
   markPlaybackPlayed: () => void;
+
+  /**
+   * One-shot prompt injected into the composer by external surfaces
+   * (e.g. the message detail modal's "Play in chat" button). The
+   * composer subscribes and consumes on every fresh value.
+   *
+   * - `text` — composer content.
+   * - `autoSend` — if true, the composer fires `onSend` immediately
+   *   instead of filling the draft and waiting for the user to click.
+   *   Used by surfaces that have already shown the user the seed
+   *   context (e.g. the message modal closes; user lands on the live
+   *   reply) so a manual send-click would be redundant.
+   */
+  pendingPrompt: PendingPromptPayload | null;
+  setPendingPrompt: (p: PendingPromptPayload | null) => void;
+  consumePendingPrompt: () => PendingPromptPayload | null;
 }
 
-export const useCompanionStore = create<CompanionStore>((set) => ({
+export interface PendingPromptPayload {
+  text: string;
+  autoSend?: boolean;
+}
+
+export const useCompanionStore = create<CompanionStore>((set, get) => ({
   state: 'collapsed',
   brainPath: null,
   initError: null,
@@ -207,4 +228,12 @@ export const useCompanionStore = create<CompanionStore>((set) => ({
         ? { pendingPlayback: { ...s.pendingPlayback, played: true } }
         : s,
     ),
+
+  pendingPrompt: null,
+  setPendingPrompt: (pendingPrompt: PendingPromptPayload | null) => set({ pendingPrompt }),
+  consumePendingPrompt: (): PendingPromptPayload | null => {
+    const prompt = get().pendingPrompt;
+    if (prompt !== null) set({ pendingPrompt: null });
+    return prompt;
+  },
 }));

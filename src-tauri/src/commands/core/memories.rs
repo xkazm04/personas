@@ -149,6 +149,29 @@ pub fn update_memory_importance(
     repo::update_importance(&state.db, &id, importance)
 }
 
+/// Patch title + content + importance + tags on an existing memory row.
+/// Used by the message-rating upsert flow so re-rating updates rather
+/// than duplicates.
+#[tauri::command]
+pub fn update_memory_content(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+    title: String,
+    content: String,
+    importance: i32,
+    tags: Option<Vec<String>>,
+) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
+    repo::update_content(
+        &state.db,
+        &id,
+        &title,
+        &content,
+        importance,
+        tags.as_deref(),
+    )
+}
+
 #[tauri::command]
 pub fn batch_delete_memories(
     state: State<'_, Arc<AppState>>,

@@ -280,55 +280,10 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
         ...(capturedClaudeSessionId ? { claudeSessionId: capturedClaudeSessionId } : {}),
       }).then((ctx) => set({ chatSessionContext: ctx })).catch(() => {/* best-effort */});
 
-      // Advisory mode: extract and dispatch operations from assistant output
-      if (get().chatMode === 'advisory') {
-        const { extractOperations, dispatchOperations, formatResults } = await import(
-          "@/features/agents/sub_chat/libs/chatAdvisoryDispatch"
-        );
-        const ops = extractOperations(fullResponse);
-        if (ops.length > 0) {
-          const results = await dispatchOperations(ops, personaId);
-          const resultText = formatResults(results);
-          if (resultText) {
-            const resultMsg = await createChatMessage({
-              personaId,
-              sessionId,
-              role: "assistant",
-              content: resultText,
-            });
-            set((s) => ({
-              chatMessages: [...s.chatMessages, resultMsg].slice(-MAX_CHAT_MESSAGES),
-            }));
-          }
-
-          // Track any experiments started from advisory chat
-          const experiments = results.filter((r) => r.experimentRunId);
-          if (experiments.length > 0) {
-            // Load current working memory, append experiments, save
-            const ctx = get().chatSessionContext;
-            const existingWm = ctx?.workingMemory;
-            let wmData: { experiments?: Array<{ runId: string; mode: string; hypothesis: string; startedAt: string; sessionId: string; personaId: string }> } = {};
-            try { if (existingWm) wmData = JSON.parse(existingWm); } catch {/* fresh */}
-            if (!Array.isArray(wmData.experiments)) wmData.experiments = [];
-            for (const exp of experiments) {
-              const opMatch = ops.find((o) => o.op === exp.op);
-              wmData.experiments.push({
-                runId: exp.experimentRunId!,
-                mode: exp.op === "start_arena" ? "arena" : exp.op === "start_matrix" ? "matrix" : "eval",
-                hypothesis: (typeof opMatch?.instruction === "string" ? opMatch.instruction : typeof opMatch?.hypothesis === "string" ? opMatch.hypothesis : exp.summary).slice(0, 200),
-                startedAt: new Date().toISOString(),
-                sessionId,
-                personaId,
-              });
-            }
-            saveChatSessionContext({
-              sessionId,
-              personaId,
-              workingMemory: JSON.stringify(wmData),
-            }).then((updatedCtx) => set({ chatSessionContext: updatedCtx })).catch(() => {/* best effort */});
-          }
-        }
-      }
+      // Advisory mode was wired to the in-editor chat UI, which has been
+      // retired in favour of companion chat. The slice still exists so legacy
+      // background sessions and execution-stream consumers don't break, but
+      // there is no longer a UI surface that drives advisory operations.
     } catch (err) {
       reportError(err, "Failed to finalize chat stream", set, { stateUpdates: { chatStreaming: false } });
     }

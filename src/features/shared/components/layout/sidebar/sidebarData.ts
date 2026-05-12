@@ -1,13 +1,13 @@
 import {
   BarChart3, Bot, Zap, Key, Activity, ClipboardCheck, MessageSquare,
   FlaskConical, Brain, Cloud, Plus, LayoutTemplate, Monitor, Upload,
-  List, Settings, Globe, Palette, Bell, GitBranch, LayoutDashboard, Cpu,
+  List, Settings, Globe, Palette, GitBranch, LayoutDashboard, Cpu,
   Network, Database, Home, Compass, Shield, HardDriveDownload, Heart,
   FolderKanban, Map, Lightbulb, ArrowLeftRight, Play, Share2, Waypoints,
   Radio, Gauge, Unplug, Webhook, Puzzle, Store, Archive, Layers,
-  GraduationCap, BookOpen, Trophy,
+  GraduationCap, BookOpen, Trophy, AlertOctagon,
   User, Mic, Volume2, Sparkles,
-  Wand2, Image as ImageIcon, Film, Gauge as GaugeIcon,
+  Wand2, Image as ImageIcon, Film, Gauge as GaugeIcon, Bell,
   type LucideIcon,
 } from 'lucide-react';
 import type { SidebarSection, HomeTab, OverviewTab } from '@/lib/types/types';
@@ -62,7 +62,7 @@ export const homeItems: Array<{ id: HomeTab; icon: LucideIcon; label: string }> 
 
 export const overviewItems: Array<{ id: OverviewTab; icon: LucideIcon; label: string; minTier?: Tier; simpleHidden?: boolean }> = [
   { id: 'home', icon: LayoutDashboard, label: 'Dashboard' },
-  { id: 'inbox', icon: Bell, label: 'Inbox' },
+  { id: 'incidents', icon: AlertOctagon, label: 'Incidents', minTier: TIERS.TEAM },
   { id: 'executions', icon: Activity, label: 'Activity', minTier: TIERS.TEAM },
   { id: 'manual-review', icon: ClipboardCheck, label: 'Approvals', minTier: TIERS.TEAM },
   { id: 'messages', icon: MessageSquare, label: 'Messages' },

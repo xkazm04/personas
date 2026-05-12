@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { DollarSign, AlertTriangle } from 'lucide-react';
 import type { PersonaHealthSignal } from '@/stores/slices/overview/personaHealthSlice';
 import { useTranslation } from '@/i18n/useTranslation';
+import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 
 interface BurnRateProjectionProps {
   signals: PersonaHealthSignal[];
@@ -71,9 +72,9 @@ export function BurnRateProjection({ signals }: BurnRateProjectionProps) {
           <div className="space-y-1">
             {projections.atRisk.map((s) => (
               <div key={s.personaId} className="flex items-center justify-between typo-caption">
-                <span className="text-foreground truncate">
-                  {s.personaIcon && <span className="mr-1">{s.personaIcon}</span>}
-                  {s.personaName}
+                <span className="flex items-center gap-1.5 text-foreground truncate min-w-0">
+                  <PersonaIcon icon={s.personaIcon} color={s.personaColor} display="framed" frameSize="xs" />
+                  <span className="truncate">{s.personaName}</span>
                 </span>
                 <span className="text-red-400 font-semibold flex-shrink-0 ml-2">
                   {s.projectedExhaustionDays === 0 ? t.overview.burn_rate_extra.exhausted : `${s.projectedExhaustionDays}d left`}
@@ -93,9 +94,9 @@ function BurnBar({ signal, maxBurn }: { signal: PersonaHealthSignal; maxBurn: nu
 
   return (
     <div className="flex items-center gap-2">
-      <div className="w-24 truncate typo-caption text-foreground">
-        {signal.personaIcon && <span className="mr-1">{signal.personaIcon}</span>}
-        {signal.personaName}
+      <div className="flex items-center gap-1.5 w-32 typo-caption text-foreground min-w-0">
+        <PersonaIcon icon={signal.personaIcon} color={signal.personaColor} display="framed" frameSize="xs" />
+        <span className="truncate">{signal.personaName}</span>
       </div>
       <div className="flex-1 h-2 rounded-full bg-secondary/40 overflow-hidden">
         <div className={`h-full rounded-full ${barColor} transition-all duration-500`} style={{ width: `${pct}%` }} />

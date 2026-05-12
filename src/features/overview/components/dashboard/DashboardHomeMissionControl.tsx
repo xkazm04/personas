@@ -213,7 +213,7 @@ export default function DashboardHomeMissionControl() {
 
           {!isEmpty && (
             <ExecutionHeatmap
-              personaId={selectedPersonaId ?? undefined}
+              personaId={selectedPersonaId || undefined}
               onDayClick={() => setOverviewTab('executions')}
             />
           )}
@@ -318,13 +318,17 @@ const TRIAGE_META: Record<TriageKind, { Icon: typeof ClipboardCheck; color: stri
 };
 
 export function TriagePane({ items }: { items: TriageItem[] }) {
+  const { t, tx } = useTranslation();
   return (
     <div className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden flex flex-col">
-      <PaneHeader label="Triage" subtitle={`${items.length} open`} />
+      <PaneHeader
+        label={t.overview.dashboard.todos_label}
+        subtitle={tx(t.overview.dashboard.todos_subtitle_open, { count: items.length })}
+      />
       <div className="flex-1 divide-y divide-primary/5 max-h-[28rem] overflow-y-auto">
         {items.length === 0 ? (
           <div className="px-4 py-8 text-center typo-body text-foreground/60">
-            All clear.
+            {t.overview.dashboard.todos_empty}
           </div>
         ) : (
           items.map((item) => {

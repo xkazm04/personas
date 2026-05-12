@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { GitBranch, ArrowRight } from 'lucide-react';
 import type { CascadeLink, PersonaHealthSignal } from '@/stores/slices/overview/personaHealthSlice';
 import { useTranslation } from '@/i18n/useTranslation';
+import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 
 interface CascadeVisualizationProps {
   links: CascadeLink[];
@@ -81,10 +82,8 @@ export function CascadeVisualization({ links, signals }: CascadeVisualizationPro
           {signals.slice(0, 12).map(s => (
             <div key={s.personaId} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-card bg-secondary/40 border border-primary/10">
               <div className={`w-2 h-2 rounded-full ${GRADE_DOT[s.grade]} ring-2 ${GRADE_RING[s.grade]}`} />
-              <span className="text-xs text-foreground">
-                {s.personaIcon && <span className="mr-0.5">{s.personaIcon}</span>}
-                {s.personaName}
-              </span>
+              <PersonaIcon icon={s.personaIcon} color={s.personaColor} display="framed" frameSize="xs" />
+              <span className="text-xs text-foreground truncate max-w-[120px]">{s.personaName}</span>
             </div>
           ))}
         </div>
@@ -134,9 +133,9 @@ function ChainNode({ signal }: { signal: PersonaHealthSignal }) {
   return (
     <div className="flex items-center gap-1.5 px-2.5 py-2 rounded-card bg-secondary/40 border border-primary/10 hover:bg-secondary/60 transition-colors">
       <div className={`w-2.5 h-2.5 rounded-full ${dotColor} ring-2 ${ringColor}`} />
+      <PersonaIcon icon={signal.personaIcon} color={signal.personaColor} display="framed" frameSize="xs" />
       <div className="min-w-0">
         <p className="typo-caption text-foreground truncate max-w-[80px]">
-          {signal.personaIcon && <span className="mr-0.5">{signal.personaIcon}</span>}
           {signal.personaName}
         </p>
         <p className="text-[10px] text-foreground">{signal.heartbeatScore}hp</p>

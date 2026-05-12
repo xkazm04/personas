@@ -5,43 +5,38 @@ import { useTranslation } from '@/i18n/useTranslation';
 interface FocusedDecisionCardProps {
   decision: DecisionItem;
   verdict: DecisionVerdict;
-  onToggle: (v: DecisionVerdict) => void;
+  onDecide: (v: 'accept' | 'reject') => void;
   imageUrl: string | null;
 }
 
-export function FocusedDecisionCard({ decision, verdict, onToggle, imageUrl }: FocusedDecisionCardProps) {
+export function FocusedDecisionCard({ decision, verdict, onDecide, imageUrl }: FocusedDecisionCardProps) {
   const hasImage = !!imageUrl;
 
   return (
-    <div className={`rounded-card border border-primary/10 overflow-hidden border-l-2 ${catBorder(decision.category)}`}>
+    <div className={`relative rounded-card border border-primary/10 overflow-hidden border-l-2 ${catBorder(decision.category)}`}>
+      {/* Absolute-positioned verdict buttons — overlay so they don't eat content width. */}
+      <VerdictButtons verdict={verdict} onDecide={onDecide} />
+
       {hasImage ? (
-        /* ---- Image + Text side-by-side layout ---- */
+        /* ---- Image + Text side-by-side layout (full content width) ---- */
         <div className="flex flex-col md:flex-row">
           <MediaPanel url={imageUrl!} alt={decision.label} />
-          <div className="md:w-1/2 p-4 flex flex-col justify-between">
-            <div>
-              <DecisionMeta category={decision.category} mediaType={isVideoUrl(imageUrl!) ? 'video' : 'image'} />
-              <h3 className="typo-body-lg font-semibold text-foreground mb-2">{decision.label}</h3>
-              {decision.description && (
-                <p className="typo-body text-foreground leading-relaxed">{decision.description}</p>
-              )}
-            </div>
-            <VerdictButtons verdict={verdict} onToggle={onToggle} layout="full" />
+          <div className="md:flex-1 p-4 pr-32">
+            <DecisionMeta category={decision.category} mediaType={isVideoUrl(imageUrl!) ? 'video' : 'image'} />
+            <h3 className="typo-body-lg font-semibold text-foreground mb-2">{decision.label}</h3>
+            {decision.description && (
+              <p className="typo-body text-foreground leading-relaxed whitespace-pre-wrap">{decision.description}</p>
+            )}
           </div>
         </div>
       ) : (
-        /* ---- Text-only layout (full width, spacious) ---- */
-        <div className="p-4">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1 min-w-0">
-              <DecisionMeta category={decision.category} />
-              <h3 className="typo-body-lg font-semibold text-foreground mb-1">{decision.label}</h3>
-              {decision.description && (
-                <p className="typo-body text-foreground leading-relaxed">{decision.description}</p>
-              )}
-            </div>
-            <VerdictButtons verdict={verdict} onToggle={onToggle} layout="compact" />
-          </div>
+        /* ---- Text-only layout (full width) ---- */
+        <div className="p-4 pr-32">
+          <DecisionMeta category={decision.category} />
+          <h3 className="typo-body-lg font-semibold text-foreground mb-1">{decision.label}</h3>
+          {decision.description && (
+            <p className="typo-body text-foreground leading-relaxed whitespace-pre-wrap">{decision.description}</p>
+          )}
         </div>
       )}
     </div>
@@ -88,37 +83,34 @@ function MediaPanel({ url, alt }: { url: string; alt: string }) {
   );
 }
 
-function VerdictButtons({ verdict, onToggle, layout }: { verdict: DecisionVerdict; onToggle: (v: DecisionVerdict) => void; layout: 'full' | 'compact' }) {
+function VerdictButtons({ verdict, onDecide }: { verdict: DecisionVerdict; onDecide: (v: 'accept' | 'reject') => void }) {
   const { t } = useTranslation();
-  const wrapperClass = layout === 'full'
-    ? 'flex items-center gap-2 mt-4 pt-3 border-t border-primary/10'
-    : 'flex items-center gap-1.5 flex-shrink-0 pt-1';
-
-  const btnBase = layout === 'full'
-    ? 'flex-1 flex items-center justify-center gap-2 py-2.5 rounded-card typo-body font-medium transition-all'
-    : 'flex items-center gap-1.5 px-3 py-2 rounded-card typo-body font-medium transition-all';
 
   return (
-    <div className={wrapperClass}>
+    <div className="absolute top-2 right-2 z-10 flex items-center gap-1.5">
       <button
-        onClick={() => onToggle('accept')}
-        className={`${btnBase} ${verdict === 'accept'
-          ? 'bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/30'
-          : `bg-secondary/30 ${layout === 'full' ? 'text-foreground' : 'text-foreground'} hover:bg-emerald-500/10 hover:text-emerald-400`
+        onClick={() => onDecide('reject')}
+        title={t.overview.focused_decision.reject}
+        className={`flex items-center gap-1 px-2.5 py-1.5 rounded-card typo-caption font-medium transition-all shadow-elevation-1 backdrop-blur-sm ${
+          verdict === 'reject'
+            ? 'bg-red-500/30 text-red-400 ring-1 ring-red-500/40'
+            : 'bg-background/80 text-foreground hover:bg-red-500/15 hover:text-red-400 ring-1 ring-primary/15'
         }`}
       >
-        <CheckCircle2 className="w-4 h-4" />
-        {t.overview.focused_decision.accept}
+        <XCircle className="w-3.5 h-3.5" />
+        <span className="hidden sm:inline">{t.overview.focused_decision.reject}</span>
       </button>
       <button
-        onClick={() => onToggle('reject')}
-        className={`${btnBase} ${verdict === 'reject'
-          ? 'bg-red-500/20 text-red-400 ring-1 ring-red-500/30'
-          : `bg-secondary/30 ${layout === 'full' ? 'text-foreground' : 'text-foreground'} hover:bg-red-500/10 hover:text-red-400`
+        onClick={() => onDecide('accept')}
+        title={t.overview.focused_decision.accept}
+        className={`flex items-center gap-1 px-2.5 py-1.5 rounded-card typo-caption font-medium transition-all shadow-elevation-1 backdrop-blur-sm ${
+          verdict === 'accept'
+            ? 'bg-emerald-500/30 text-emerald-400 ring-1 ring-emerald-500/40'
+            : 'bg-background/80 text-foreground hover:bg-emerald-500/15 hover:text-emerald-400 ring-1 ring-primary/15'
         }`}
       >
-        <XCircle className="w-4 h-4" />
-        {t.overview.focused_decision.reject}
+        <CheckCircle2 className="w-3.5 h-3.5" />
+        <span className="hidden sm:inline">{t.overview.focused_decision.accept}</span>
       </button>
     </div>
   );

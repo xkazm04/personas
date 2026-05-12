@@ -19,7 +19,11 @@ import { useLangfuseStackStore } from "@/stores/langfuseStackStore";
 import { toastCatch } from "@/lib/silentCatch";
 import { useShallow } from "zustand/react/shallow";
 
-const POLL_INTERVAL_MS = 4_000;
+/// Poll cadence while a lifecycle job is in flight. Every refresh triggers
+/// `langfuse_stack_get_info`, which itself spawns 4–5 docker.exe subprocesses
+/// (detect chain + compose ps). 8s keeps the UI responsive without flooding
+/// the user's machine with subprocess churn during a multi-minute pull.
+const POLL_INTERVAL_MS = 8_000;
 
 export interface UseLangfuseStack {
   info: LangfuseStackInfo | null;
@@ -106,9 +110,11 @@ export function useLangfuseStack(): UseLangfuseStack {
       }
       return;
     }
-    // Slower cadence while waiting for Docker — the user is offscreen
-    // running an installer. Fast cadence during a job in flight.
-    const interval = jobInFlight ? POLL_INTERVAL_MS : 5_000;
+    // While waiting for Docker the user is offscreen running an installer —
+    // 8s is plenty. During a job, also 8s: the progress bar comes from
+    // `langfuse://stack/progress` events (always live), so this poll is
+    // only refreshing the static info bits (state, port, host).
+    const interval = jobInFlight ? POLL_INTERVAL_MS : 8_000;
     pollTimer.current = setInterval(() => {
       void refresh();
     }, interval);
