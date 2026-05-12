@@ -34,7 +34,15 @@ timestamp — the next session can recognize it as abandoned.
 
 _(none)_
 
+
+
 ## Recently completed (last 14 days)
+
+- **[2026-05-12 14:00 → 14:25] i18n-dead-keys — warn-only unreferenced-key scanner**
+  - **Paths shipped:** `scripts/i18n/find-unused-i18n-keys.mjs` (NEW, ~250 lines), `package.json` (added `check:i18n-dead` script). Status: not yet committed (awaiting user direction).
+  - **Approach:** prefix-match scanner. Reuses `flattenKeys()` shape from `check-coverage.mjs`. Walks `src/**/*.{ts,tsx}` (skips `i18n/`, `__tests__`, `*.test.*`, `*.spec.*`, `generated/`); re-includes 4 sanctioned shape adapters (`useReleasesTranslation`, `useSidebarTranslation`, `useTranslatedError`, `tokenMaps`). Captures `t.<dotted.path>` via regex, plus `tokenLabel(t, '<category>', …)` → `status_tokens.<category>` umbrella, plus `ERROR_KEY_MAP` `keyPrefix:` values parsed out of `useTranslatedError.ts` → `error_registry.<prefix>_{message,suggestion}`. Any en.json key whose path matches or is a prefix of a captured reference is "used". Modes: default (warn, exit 0), `--strict` (exit 1), `--json`, `--full`, `--ignore-prefix=a,b`.
+  - **First-run result:** 2152 / 11867 keys flagged unused (18.1%). Worst-offender sections — `overview` 531, `agents` 529, `vault` 256, `plugins` 133. Fully-dead sections (100% unused, strong signal): `toasts` 58/58, `composition` 47/47, `prompt_lab` 46/46, `error_explanation` 42/42, `tests` 27/27, `drift_labels` 26/26, `alerts` 15/15, `deploy_errors` 13/13, `command_palette` 11/11, `validation` 9/9, `teams` 6/6, `protocol_labels` 4/4, `cli` 2/2, `auth` 1/1. Spot-grepped `t.toasts`, `t.composition`, `t.prompt_lab`, `t.alerts`, `t.error_explanation`, `t.cli`, `t.auth` → zero matches in `src/`, confirming the scanner is not generating false positives on whole-section dead-letter cases.
+  - **Headline:** Dead-string detection now exists as a peer to `check:i18n` (locale-drift coverage). Started warn-only so the 2152-key backlog can be triaged in stages rather than gating CI on a hard cliff. Sister to the `t.<section>.x` prefix-match approach — fully-dead top-level sections like `toasts` (58 keys all unreferenced despite an active `toastStore.ts` — toast messages are passed in by callers, not pulled from the catalog) suggest 5+ obsolete migrations left their catalogs behind. Not yet wired into lefthook or CI — awaiting user signal on whether to (a) drain the backlog first then flip to `--strict` gate, or (b) wire as warn-step into pre-push immediately to surface the count to devs.
 
 - **[2026-05-12 13:00 → 13:40] /research — claude-code-for-slack-walkthrough (catch-dominated; 0 actioned + 1 descoped-reopenable)**
   - **Source:** https://www.youtube.com/watch?v=tdWLbBqAiio (Claude Code for Slack installation walkthrough). Anthropic-sibling product (3rd observation of this sub-row in the source-type calibration: Routines 2026-04-15 + Managed Agents 2026-04-08 + this run).
