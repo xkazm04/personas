@@ -7,7 +7,6 @@ const BASE_SECTIONS: readonly TranslationSection[] = [
   'common',
   'chrome',
   'sidebar',
-  'toasts',
   'errors',
   'error_registry',
   'empty_states',
@@ -19,13 +18,13 @@ const BASE_SECTIONS: readonly TranslationSection[] = [
 const ROUTE_SECTIONS: Record<SidebarSection, readonly TranslationSection[]> = {
   home: ['home', 'onboarding', 'system_health'],
   overview: ['overview', 'execution', 'execution_status', 'event_types', 'alerts', 'models'],
-  personas: ['agents', 'matrix_v3', 'design', 'prompt_lab', 'tests', 'execution', 'models', 'templates'],
+  personas: ['agents', 'matrix_v3', 'design', 'execution', 'models', 'templates'],
   events: ['triggers', 'event_types', 'alerts', 'schedules', 'shared'],
-  credentials: ['vault', 'connector_roles', 'connector_licensing', 'auth', 'validation'],
-  'design-reviews': ['design', 'tests', 'feedback_labels', 'protocol_labels', 'templates', 'recipes', 'recipe_shared'],
-  plugins: ['plugins', 'media_studio', 'research_lab', 'gitlab', 'pipeline', 'composition'],
+  credentials: ['vault', 'connector_roles', 'connector_licensing', 'auth'],
+  'design-reviews': ['design', 'feedback_labels', 'templates', 'recipes', 'recipe_shared'],
+  plugins: ['plugins', 'media_studio', 'research_lab', 'gitlab', 'pipeline'],
   schedules: ['schedules', 'triggers', 'event_types'],
-  settings: ['settings', 'cli', 'models', 'tiers', 'validation', 'auth'],
+  settings: ['settings', 'models', 'tiers', 'auth'],
 };
 
 export function sectionsForRoute(section: SidebarSection): readonly TranslationSection[] {
