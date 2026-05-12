@@ -148,7 +148,29 @@ function inferCategory(name: string): ArchCategory {
     return ARCH_CATEGORIES['design']!;
   if (n.includes('project') || n.includes('task') || n.includes('board') || n.includes('kanban'))
     return ARCH_CATEGORIES['project_management']!;
-  // Ultimate fallback: productivity (generic tool)
+  if (n.includes('scrap') || n.includes('rss') || n.includes('feed'))
+    return ARCH_CATEGORIES['web_scraping']!;
+  if (n.includes('codebase') || n.includes('source_code') || n.includes('vcs'))
+    return ARCH_CATEGORIES['source_control']!;
+  if (n.includes('legal') || n.includes('contract') || n.includes('compliance'))
+    return ARCH_CATEGORIES['legal']!;
+  if (n.includes('security') || n.includes('auth_'))
+    return ARCH_CATEGORIES['security']!;
+  if (n.includes('hr') || n.includes('people') || n.includes('employee'))
+    return ARCH_CATEGORIES['hr']!;
+  if (n.includes('ticket'))
+    return ARCH_CATEGORIES['ticketing']!;
+  if (n.includes('vision') || n.includes('ocr'))
+    return ARCH_CATEGORIES['vision']!;
+  // Last resort — log the slot so unmapped names surface in development
+  // instead of silently bucketing everything as Productivity (which used to
+  // hide 50+ templates' true categories). Productivity stays as the visible
+  // fallback so the column never collapses, but a console.warn flags the gap
+  // for the developer to map in connector-categories.json.
+  if (import.meta.env.DEV) {
+    // eslint-disable-next-line no-console
+    console.warn('[architecturalCategories] unmapped connector slot:', name);
+  }
   return ARCH_CATEGORIES['productivity']!;
 }
 
