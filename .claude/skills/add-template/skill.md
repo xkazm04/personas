@@ -192,6 +192,34 @@ Note: Do NOT include `manual` triggers in `suggested_triggers` — manual execut
 
 ### Batch 3: Human-in-the-Loop, Memory & Communication
 
+**Required dimensional defaults — the persona must ship complete.**
+
+Every v3 template MUST declare presets for the eight glyph dimensions so
+the post-adoption UI (questionnaire centerpiece sigil + per-use-case
+glyphs in the matrix) renders meaningful state on the first paint
+instead of "everything is empty". Capture these in Phase 2 even when
+the user says "default is fine" — record an explicit default rather
+than leaving the field absent.
+
+Per-use-case dimension presets (each `payload.use_cases[i]` row needs):
+
+- `review_policy: { mode: "always" | "on_uncertainty" | "never", context: "..." }`
+- `memory_policy: { enabled: true | false, context: "..." }`
+- `notification_channels: [{ type, role, ... }]` (empty array = no channel for this UC)
+- `event_subscriptions: [...]` (empty array = listens to no upstream events)
+- `emit_events: [...]` (events this UC publishes)
+
+Persona-level composition fields:
+
+- `payload.persona.trigger_composition: "shared" | "per_use_case"` — when multiple use_cases run on one trigger tick vs. each on its own
+- `payload.persona.message_composition: "combined" | "per_use_case"` — when outputs concatenate into one message vs. one message per UC
+- `payload.persona.error_handling` — non-empty string describing per-service failure handling
+
+If any of these are missing on a finished template, the centerpiece
+sigil in the adoption questionnaire renders an "empty" petal for that
+dimension and the user sees broken-looking pre-fill. **The skill must
+collect these in Phase 2 and write them in Phase 3, full stop.**
+
 Ask:
 1. **Approval gates**: Does this agent need human approval before any actions? (e.g., before sending emails, before deploying, before making payments)
 
@@ -274,6 +302,35 @@ This is the most critical section. Each sub-field must be detailed and technical
 - **customSections** (optional): Array of `{ title, content }` for domain-specific rules (field mappings, classification matrices, SLA definitions, etc.)
 
 ### 3c. Generate remaining payload fields
+
+#### 3c.0 — Dimensional preset checklist (run BEFORE writing the file)
+
+Before serializing, verify the payload carries every dimension preset
+collected in Batch 3. The adoption UI's centerpiece sigil + per-use-case
+glyphs read these fields directly; a missing one renders as an "empty"
+petal and degrades the perceived quality of the persona.
+
+Walk this checklist:
+
+- [ ] `payload.persona.trigger_composition` is `"shared"` or `"per_use_case"` (no default — pick explicitly).
+- [ ] `payload.persona.message_composition` is `"combined"` or `"per_use_case"`.
+- [ ] `payload.persona.error_handling` is a non-empty markdown string covering per-service failure modes.
+- [ ] For every entry in `payload.use_cases[]`:
+  - [ ] `review_policy.mode` set explicitly (`"always"` / `"on_uncertainty"` / `"never"`) with a one-sentence `context`.
+  - [ ] `memory_policy.enabled` set to `true` or `false` with a one-sentence `context`.
+  - [ ] `notification_channels: []` declared (empty is fine — must be present).
+  - [ ] `event_subscriptions: []` declared.
+  - [ ] `emit_events: []` declared (use the `entity.action.state` pattern from Batch 5).
+
+If you wrote a v3 template using `recipe_ref` per use_case, the
+**recipe** carries these fields, not the inline `use_cases[i]`. The
+checklist still applies — open the recipe rows you reference and
+confirm they're populated. Use the shipped templates as references:
+`scripts/templates/security/ai-environment-posture-audit.json` is the
+gold-standard example with full review_policy / memory_policy /
+notification_channels declared per use_case.
+
+#### 3c.1 — Other payload fields
 
 - **suggested_parameters**: Array of free parameter definitions. Parameters are runtime-adjustable values (thresholds, caps, limits) that users can change without triggering a rebuild. Templates should define parameters for any numeric threshold, limit, or configurable value referenced in the instructions. Parameters are injected into prompts via `{{param.key_name}}` syntax.
   ```json
