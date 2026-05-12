@@ -591,9 +591,37 @@ const BUILTIN_LOCAL_CONNECTORS: &[&str] = &[
     "personas_vector_db",
 ];
 
+/// Synonym map for connector role names emitted by templates that don't
+/// match a `connector_definitions.category` literally. E.g. v3 templates
+/// often say `codebase` when they mean a source-control system, or
+/// `image_generation` when they mean any AI image connector. Mapping these
+/// to the actual category names lets the vault check succeed when a
+/// credential is configured for that category, even if the template author
+/// picked an ad-hoc role label.
+fn normalize_connector_role(name: &str) -> &str {
+    match name.to_ascii_lowercase().as_str() {
+        "codebase" | "source_code" | "vcs" | "git" => "source_control",
+        "image_generation" | "image" | "image_ai" | "media_generation" => "ai",
+        "llm" | "language_model" => "ai",
+        "inbox" | "mail" => "email",
+        "chat" | "notifications" => "messaging",
+        "docs" | "wiki" | "documents" => "knowledge_base",
+        "files" | "fs" | "object_storage" => "storage",
+        "metrics" | "observability" | "errors" => "monitoring",
+        "tasks" | "issues" => "project_management",
+        _ => name,
+    }
+}
+
 /// Walk the persona's declared connector list and return the names of any
-/// that don't have a matching vault credential. Returns an empty list if
-/// every required connector is either built-in or has a credential bound.
+/// that don't have a matching vault credential. A required connector is
+/// considered satisfied when ANY of the following holds:
+///  1. it names a built-in local resource (local_drive, personas_database,
+///     personas_messages, personas_vector_db),
+///  2. it matches an exact `service_type` in `persona_credentials`,
+///  3. after `normalize_connector_role`, it matches a category of any
+///     `connector_definitions` row whose `name` is configured in the vault.
+/// Returns an empty list when every required connector resolves.
 fn check_persona_runnability(
     pool: &crate::db::DbPool,
     required: &Option<Vec<super::n8n_transform::types::N8nConnectorRef>>,
@@ -603,22 +631,48 @@ fn check_persona_runnability(
         _ => return Ok(Vec::new()),
     };
     let conn = pool.get()?;
+
+    // Preload the set of categories the user has at least one configured
+    // credential for. One query, then in-memory checks per connector.
+    let mut cat_stmt = conn.prepare(
+        "SELECT DISTINCT cd.category
+         FROM connector_definitions cd
+         JOIN persona_credentials pc ON LOWER(pc.service_type) = LOWER(cd.name)",
+    )?;
+    let configured_categories: std::collections::HashSet<String> = cat_stmt
+        .query_map([], |row| row.get::<_, String>(0))?
+        .filter_map(|r| r.ok())
+        .map(|s| s.to_ascii_lowercase())
+        .collect();
+
     let mut missing = Vec::new();
     for c in required {
         let name = c.name.trim();
         if name.is_empty() || BUILTIN_LOCAL_CONNECTORS.iter().any(|b| b.eq_ignore_ascii_case(name)) {
             continue;
         }
-        let exists: bool = conn
+        // 1. Exact service_type match in vault.
+        let by_service_type: bool = conn
             .query_row(
                 "SELECT 1 FROM persona_credentials WHERE LOWER(service_type) = LOWER(?1) LIMIT 1",
                 rusqlite::params![name],
                 |_| Ok(true),
             )
             .unwrap_or(false);
-        if !exists {
-            missing.push(name.to_string());
+        if by_service_type {
+            continue;
         }
+        // 2. Category match after synonym normalization.
+        let normalized = normalize_connector_role(name).to_ascii_lowercase();
+        if configured_categories.contains(&normalized) {
+            tracing::debug!(
+                connector = %name,
+                normalized = %normalized,
+                "adoption pre-flight: connector satisfied by category match"
+            );
+            continue;
+        }
+        missing.push(name.to_string());
     }
     Ok(missing)
 }
