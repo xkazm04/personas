@@ -19,7 +19,6 @@ export type { CloudOAuthAuthorizeResponse } from "./CloudOAuthAuthorizeResponse"
 export type { CloudOAuthStatusResponse } from "./CloudOAuthStatusResponse";
 export type { CloudStatusResponse } from "./CloudStatusResponse";
 export type { CloudWorkerCounts } from "./CloudWorkerCounts";
-export type { CompiledWorkflow } from "./CompiledWorkflow";
 export type { CompilationStage } from "./CompilationStage";
 export type { ConnectionMetricsSnapshot } from "./ConnectionMetricsSnapshot";
 export type { ContextAction } from "./ContextAction";

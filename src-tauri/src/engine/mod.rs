@@ -168,7 +168,6 @@ pub mod url_safety;
 #[cfg(feature = "ml")]
 pub mod vector_store;
 pub mod webhook;
-pub mod workflow_compiler;
 pub mod worktree_settings;
 
 #[cfg(test)]
