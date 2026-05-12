@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
-import { CheckCircle2, Plug, AlertCircle, ExternalLink, Wrench } from 'lucide-react';
+import { CheckCircle2, Plug, AlertCircle, ExternalLink, Wrench, Sparkles } from 'lucide-react';
 import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { resolveConnectorRunnability } from '@/features/shared/components/display/connectorRunnability';
 import { DesignCheckbox } from './DesignCheckbox';
 import { SECTION_LABEL } from './helpers';
 import type { AgentIR, SuggestedConnector } from '@/lib/types/designTypes';
@@ -38,11 +39,6 @@ export function ConnectorsSection({
   // wrongly read as "Credential ready" if the user happened to own a
   // credential of that service_type, regardless of link state.
   const credentialLinks = useSelectedCredentialLinks();
-  const credentialsById = useMemo(() => {
-    const m = new Map<string, CredentialMetadata>();
-    for (const c of credentials) m.set(c.id, c);
-    return m;
-  }, [credentials]);
   const connectorNames = new Set(connectorDefinitions.map((c) => c.name));
   const suggestedConnectors = result.suggested_connectors ?? [];
 
@@ -82,13 +78,30 @@ export function ConnectorsSection({
         {connectorToolMap.map((item, idx) => {
           const isGeneral = item.connector.name === 'general';
           const installed = !isGeneral && connectorNames.has(item.connector.name);
-          // Real link state — does THIS persona have a credential linked
-          // for THIS connector, and is its last healthcheck green?
-          const linkedCredId = !isGeneral ? credentialLinks[item.connector.name] : undefined;
-          const linkedCred = linkedCredId ? credentialsById.get(linkedCredId) : undefined;
+          // Resolve the connector against vault + native-capability rules.
+          // The previous logic looked only at the persona's explicit
+          // credentialLinks map (keyed by exact connector name), so
+          // instant-adopted personas — whose declared connectors are
+          // ROLE names like "codebase" / "messaging" / "knowledge_base"
+          // and whose credentialLinks map is empty — always showed
+          // "Configure credential" amber, even when a matching vault
+          // credential existed by category. This now mirrors the
+          // adoption pre-flight in template_adopt.rs.
+          const runnability = isGeneral
+            ? { status: 'satisfied' as const, reason: 'General tools', credential: undefined }
+            : resolveConnectorRunnability({
+                name: item.connector.name,
+                category: item.connDef?.category ?? null,
+                credentialLinks,
+                credentials,
+                connectorDefinitions,
+              });
+          const isNativeCap = runnability.status === 'native';
+          const linkedCred = runnability.credential;
           const hasCredential = !!linkedCred;
           const isHealthy = linkedCred?.healthcheck_last_success === true;
           const isUnhealthy = linkedCred?.healthcheck_last_success === false;
+          const needsSetup = runnability.status === 'needs_setup';
           // The "Configure credential" affordance should render when the
           // connector actually requires fields. Both arrays can legitimately
           // be empty; the previous `(a?.length || b?.length)` expression
@@ -117,39 +130,58 @@ export function ConnectorsSection({
                   {item.connDef?.label || (isGeneral ? 'General Tools' : item.connector.name)}
                 </span>
                 {!isGeneral && (
-                  hasCredential && isHealthy ? (
+                  isNativeCap ? (
+                    <Sparkles className="w-4 h-4 text-violet-400/80 flex-shrink-0" />
+                  ) : hasCredential && isHealthy ? (
                     <CheckCircle2 className="w-4 h-4 text-emerald-400/80 flex-shrink-0" />
+                  ) : needsSetup ? (
+                    <AlertCircle className="w-4 h-4 text-amber-400/80 flex-shrink-0" />
                   ) : (
                     <AlertCircle className={`w-4 h-4 flex-shrink-0 ${isUnhealthy ? 'text-red-400/80' : 'text-amber-400/80'}`} />
                   )
                 )}
               </div>
 
-              {/* Credential setup */}
-              {!isGeneral && onConnectorClick && requiresFields && (
-                <button
-                  type="button"
-                  onClick={() => onConnectorClick(item.connector)}
-                  className="flex items-center gap-1.5 typo-body text-primary/60 hover:text-primary transition-colors"
-                >
-                  {hasCredential && isHealthy ? (
-                    <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                  ) : (
-                    <AlertCircle className={`w-3 h-3 ${isUnhealthy ? 'text-red-400' : 'text-amber-400'}`} />
-                  )}
-                  <span>
-                    {hasCredential && isHealthy
-                      ? t.templates.design.credential_ready
-                      : hasCredential && isUnhealthy
-                        ? 'Credential failing healthcheck'
-                        : hasCredential
-                          ? 'Linked — not yet tested'
-                          : installed
-                            ? t.templates.design.configure_credential
-                            : 'Connector not installed'}
-                  </span>
-                  {item.connector.setup_url && <ExternalLink className="w-3 h-3" />}
-                </button>
+              {/* Credential setup status */}
+              {!isGeneral && (
+                isNativeCap ? (
+                  <div
+                    className="flex items-center gap-1.5 typo-body text-violet-400/80"
+                    title={runnability.reason}
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    <span>Native capability — no credential needed</span>
+                  </div>
+                ) : (onConnectorClick && requiresFields) || hasCredential ? (
+                  <button
+                    type="button"
+                    onClick={() => onConnectorClick?.(item.connector)}
+                    className="flex items-center gap-1.5 typo-body text-primary/60 hover:text-primary transition-colors"
+                    title={runnability.reason}
+                  >
+                    {hasCredential && isHealthy ? (
+                      <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                    ) : hasCredential && isUnhealthy ? (
+                      <AlertCircle className="w-3 h-3 text-red-400" />
+                    ) : hasCredential ? (
+                      <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                    ) : (
+                      <AlertCircle className="w-3 h-3 text-amber-400" />
+                    )}
+                    <span>
+                      {hasCredential && isHealthy
+                        ? t.templates.design.credential_ready
+                        : hasCredential && isUnhealthy
+                          ? 'Credential failing healthcheck'
+                          : hasCredential
+                            ? `Ready — ${linkedCred?.name}`
+                            : installed
+                              ? t.templates.design.configure_credential
+                              : 'Connector not installed'}
+                    </span>
+                    {item.connector.setup_url && <ExternalLink className="w-3 h-3" />}
+                  </button>
+                ) : null
               )}
 
               {/* Tools */}
