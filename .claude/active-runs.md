@@ -32,14 +32,17 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
-- **[2026-05-12 19:00 → ongoing] /prototype — DesignTab readability variants on DesignPhasePanelSaved**
-  - **Source:** in-session user request. Goal: 2 directional variants that improve scannability + navigation of the saved-design wall of sections.
-  - **Paths:** `src/features/agents/sub_design/phases/DesignPhasePanelSaved.tsx` (orchestrator + tab switcher), `src/features/agents/sub_design/phases/DesignPhasePanelSaved{Variant1,Variant2}.tsx` (new), `.claude/active-runs.md`.
-  - **Status:** started
+_(none)_
 
 
 
 ## Recently completed (last 14 days)
+
+- **[2026-05-12 19:00 → ~19:30] /prototype — DesignTab readability variants (baseline kept, prototypes cut)**
+  - **Source:** in-session user request following the connector-detection bugfix in `806bab583`. Goal: 2 directional variants that improve scannability + navigation of the saved-design wall of sections (DesignPhasePanelSaved → DesignResultPreview).
+  - **Paths shipped:** prototype round committed as `528096c23` (Outline + Stages variants behind a 3-way `Stack | Outline | Stages` layout switcher in `DesignPhasePanelSaved.tsx`); user reviewed and asked to revert to baseline. Cleanup landed as the next commit on master — `DesignPhasePanelSaved.tsx` restored to its pre-prototype shape (no switcher), `DesignPhasePanelSavedVariant1.tsx` + `DesignPhasePanelSavedVariant2.tsx` deleted.
+  - **Status:** completed — user picked **baseline (Stack)** as the winner; both prototypes removed; npx tsc --noEmit clean.
+  - **Outcome:** No layout change ships from this run. Baseline is preserved exactly as it was. The prototype work is recoverable from commit `528096c23` if a future session wants to revisit the directions (left-rail outline with anchored sections, multi-page tabbed shelf with Brief/Capabilities/Wiring/Tests phases). The connector-detection fix (`806bab583`) is independent and stays in master regardless.
 
 - **[2026-05-12 15:30 → 16:00] sync-origin — merge origin/master (25 refactor commits) into local (7 feature commits ahead)**
   - **Status:** completed locally (`38d097b14` merge commit on master). NOT pushed — git identity is `kazimi66` and lacks write access to `xkazm04/personas` (403). User to push manually.
