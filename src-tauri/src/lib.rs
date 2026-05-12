@@ -1828,6 +1828,7 @@ pub fn run() {
             commands::teams::teams::get_pipeline_analytics,
             commands::teams::teams::suggest_topology,
             commands::teams::teams::suggest_topology_llm,
+            commands::teams::teams::compile_workflow,
             // Team Memories
             commands::teams::team_memories::list_team_memories,
             commands::teams::team_memories::create_team_memory,

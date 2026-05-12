@@ -122,7 +122,20 @@ export interface UiSlice {
   /** Transient contextual cockpit overlay — see {@link ContextualCockpit}. */
   contextualCockpit: ContextualCockpit | null;
   setContextualCockpit: (c: ContextualCockpit | null) => void;
+
+  /**
+   * Most-recent-first stack of sidebar sections the user navigated *away
+   * from*. Capped at {@link NAV_HISTORY_MAX} so memory pressure stays
+   * trivial. `setSidebarSection` pushes the previous section before
+   * swapping; `navigateBack` pops the head and applies it without
+   * re-pushing.
+   */
+  navigationHistory: SidebarSection[];
+  navigateBack: () => void;
 }
+
+/** Cap on the back-history depth. */
+export const NAV_HISTORY_MAX = 5;
 
 export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) => ({
   sidebarSection: "home" as SidebarSection,
@@ -157,7 +170,12 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) =
   canvasEdgeFocus: null,
   liveStreamHighlightEventId: null,
 
-  setSidebarSection: (section) => startTransition(() => set({ sidebarSection: section })),
+  setSidebarSection: (section) => startTransition(() => set((state) => {
+    // Idempotent — re-clicking the current section is a no-op for history.
+    if (state.sidebarSection === section) return { sidebarSection: section };
+    const next = [state.sidebarSection, ...state.navigationHistory].slice(0, NAV_HISTORY_MAX);
+    return { sidebarSection: section, navigationHistory: next };
+  })),
   setHomeTab: (tab) => startTransition(() => set({ homeTab: tab })),
   setTemplateTab: (tab) => startTransition(() => set({ templateTab: tab })),
   setAgentTab: (tab) => startTransition(() => set({ agentTab: tab })),
@@ -212,4 +230,11 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) =
 
   contextualCockpit: null,
   setContextualCockpit: (contextualCockpit) => set({ contextualCockpit }),
+
+  navigationHistory: [],
+  navigateBack: () => startTransition(() => set((state) => {
+    const [head, ...rest] = state.navigationHistory;
+    if (!head) return state;
+    return { sidebarSection: head, navigationHistory: rest };
+  })),
 });

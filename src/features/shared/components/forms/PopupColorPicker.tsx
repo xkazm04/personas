@@ -30,7 +30,7 @@ export function PopupColorPicker({ value, onChange, size = 'sm' }: PopupColorPic
       <button
         type="button"
         onClick={() => setOpen((p) => !p)}
-        className={`w-10 h-10 rounded-lg border flex items-center justify-center transition-all ${
+        className={`w-10 h-10 rounded-lg border flex items-center justify-center transition-all cursor-pointer ${
           open
             ? 'border-primary/40 ring-2 ring-primary/20'
             : 'border-primary/15 hover:border-primary/30 hover:scale-105'
@@ -49,7 +49,11 @@ export function PopupColorPicker({ value, onChange, size = 'sm' }: PopupColorPic
 
       {open && (
           <div
-            className="animate-fade-slide-in absolute top-full mt-1 left-0 bg-background border border-primary/20 rounded-xl shadow-elevation-3 z-50 p-3 min-w-[280px]"
+            // Drop UP, not down. The picker is commonly used at the bottom of
+            // a card with `overflow-hidden` (e.g. Identity card with icon
+            // watermark); dropping down clips the popup. Bottom-anchored
+            // placement keeps the picker visible without portaling.
+            className="animate-fade-slide-in absolute bottom-full mb-1 left-0 bg-background border border-primary/20 rounded-xl shadow-elevation-3 z-50 p-3 min-w-[280px]"
           >
             <ColorPicker
               value={value}

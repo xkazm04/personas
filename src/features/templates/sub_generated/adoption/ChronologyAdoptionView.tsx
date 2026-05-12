@@ -30,6 +30,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/generated/types';
 import { QuickAddCredentialModal } from "./QuickAddCredentialModal";
 import type { TriggerSelection } from "./useCasePickerShared";
+import { resolveIconForTemplate } from "@/lib/icons/templateIconResolver";
 
 interface ChronologyAdoptionViewProps {
   review: PersonaDesignReview;
@@ -831,10 +832,29 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
       let createdPersonaId: string | null = null;
       try {
         const name = (designResult as Record<string, unknown>).name as string ?? templateName;
+        // Resolve an agent icon + color from the template's category tags and
+        // name/description so adopted personas show themed art in the sidebar
+        // instead of the generic Bot fallback. Templates that only declare
+        // "productivity" still resolve to specific icons (email/calendar/…) via
+        // name+description keyword inference. Template-authored `color` wins
+        // over the icon's suggestedColor when set.
+        const rawCategories = (designResult as Record<string, unknown>).category;
+        const categories = Array.isArray(rawCategories)
+          ? rawCategories.filter((c): c is string => typeof c === "string")
+          : typeof rawCategories === "string" ? [rawCategories] : [];
+        const templateDescription = (designResult as Record<string, unknown>).description;
+        const resolved = resolveIconForTemplate(
+          categories,
+          name,
+          typeof templateDescription === "string" ? templateDescription : review.instruction ?? null,
+        );
+        const templateColor = (designResult as Record<string, unknown>).color;
         const persona = await createPersona({
           name: name.slice(0, 60),
           description: review.instruction?.slice(0, 200) ?? undefined,
           system_prompt: "You are a helpful AI assistant.",
+          icon: resolved.icon,
+          color: typeof templateColor === "string" && templateColor ? templateColor : resolved.color,
         });
         createdPersonaId = persona.id;
         setPersonaId(persona.id);

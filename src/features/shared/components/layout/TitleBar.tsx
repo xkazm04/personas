@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { Minus, Square, X, Copy, Bell, CalendarClock, Compass } from 'lucide-react';
+import { Minus, Square, X, Copy, Bell, CalendarClock, Compass, ArrowLeft } from 'lucide-react';
 import { IS_DESKTOP } from '@/lib/utils/platform/platform';
 import { useNotificationCenterStore } from '@/stores/notificationCenterStore';
 import { useOnboardingQuestStore } from '@/stores/onboardingQuestStore';
@@ -19,6 +19,8 @@ export default function TitleBar() {
   const cronAgents = useOverviewStore((s) => s.cronAgents);
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const sidebarSection = useSystemStore((s) => s.sidebarSection);
+  const navigationHistory = useSystemStore((s) => s.navigationHistory);
+  const navigateBack = useSystemStore((s) => s.navigateBack);
   const questDismissed = useOnboardingQuestStore((s) => s.dismissed || !s.visible);
   const questHydrated = useOnboardingQuestStore((s) => s.hydrated);
   const reviveQuest = useOnboardingQuestStore((s) => s.revive);
@@ -66,6 +68,23 @@ export default function TitleBar() {
 
       {/* Spacer -- entire middle area is draggable */}
       <div data-tauri-drag-region className="flex-1" />
+
+      {/* Back-history button — pops the last sidebar section the user
+       *  navigated away from. Cap of 5 is enforced inside the store
+       *  (NAV_HISTORY_MAX). Hidden when the history is empty so it
+       *  doesn't squat empty space on first launch. */}
+      {navigationHistory.length > 0 && (
+        <button
+          type="button"
+          className="titlebar-btn"
+          data-testid="titlebar-back"
+          onClick={navigateBack}
+          aria-label={`Back to ${navigationHistory[0]}`}
+          title={`Back to ${navigationHistory[0]} (${navigationHistory.length} in history)`}
+        >
+          <ArrowLeft size={20} strokeWidth={1.5} />
+        </button>
+      )}
 
       {/* Time-of-day chip -- inline, sits before the action tray */}
       <TitleBarAmbient />

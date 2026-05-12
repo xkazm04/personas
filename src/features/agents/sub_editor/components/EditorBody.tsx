@@ -40,9 +40,8 @@ export function EditorBody() {
     cancelPendingSwitch: s.cancelPendingSwitch,
   })));
   const editorTab = useSystemStore((s) => s.editorTab);
-  const { credentials, connectorDefinitions } = useVaultStore(useShallow((s) => ({
+  const { credentials } = useVaultStore(useShallow((s) => ({
     credentials: s.credentials,
-    connectorDefinitions: s.connectorDefinitions,
   })));
 
   const {
@@ -198,7 +197,7 @@ export function EditorBody() {
               <EditorTabContent>
                 <PersonaSettingsTab
                   draft={draft} patch={patch} isDirty={isDirty} changedSections={changedSections}
-                  connectorDefinitions={connectorDefinitions} showDeleteConfirm={showDeleteConfirm}
+                  showDeleteConfirm={showDeleteConfirm}
                   setShowDeleteConfirm={setShowDeleteConfirm} isSaving={isSaving}
                   onDelete={handleDelete}
                 />

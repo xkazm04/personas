@@ -2,8 +2,10 @@
  * Agent Icon Catalog
  *
  * Registry of built-in agent icons with dark/light theme variants.
- * Icons are stored as PNGs in /public/agent_icons/{id}-dark.png and {id}-light.png.
- * The hot renderer uses a generated WebP sprite sheet with PNG fallback paths.
+ * Icons are stored as WebP in /public/agent_icons/{id}-dark.webp and {id}-light.webp.
+ * The hot renderer uses a generated WebP sprite sheet; the per-id WebP path
+ * stays around for grid pickers and the (effectively-unreachable) sprite-miss
+ * fallback. WebP shaves ~7x off the per-icon byte count vs the prior PNGs.
  *
  * Convention:
  *   persona.icon = "agent-icon:{id}"   (e.g. "agent-icon:code")
@@ -38,7 +40,7 @@ export const AGENT_ICONS: AgentIconEntry[] = [
   { id: 'marketing',    label: 'Marketing',     categories: ['marketing'],                   suggestedColor: '#e879f9' },
   { id: 'devops',       label: 'DevOps',        categories: ['devops', 'infrastructure'],    suggestedColor: '#0ea5e9' },
   { id: 'content',      label: 'Content',       categories: ['content'],                     suggestedColor: '#c084fc' },
-  { id: 'sales',        label: 'Sales',         categories: ['sales'],                       suggestedColor: '#fb923c' },
+  { id: 'sales',        label: 'Sales',         categories: ['sales', 'ecommerce'],          suggestedColor: '#fb923c' },
   { id: 'hr',           label: 'HR',            categories: ['hr'],                          suggestedColor: '#4ade80' },
   { id: 'legal',        label: 'Legal',         categories: ['legal'],                       suggestedColor: '#94a3b8' },
   { id: 'notification', label: 'Notification',  categories: ['notification', 'alerts'],      suggestedColor: '#fbbf24' },
@@ -67,9 +69,9 @@ export function toAgentIconValue(id: string): string {
 
 // ── Path Resolvers ────────────────────────────────────────────────────────────
 
-/** Resolve the public path to an agent icon PNG for the given theme mode. */
+/** Resolve the public path to an agent icon WebP for the given theme mode. */
 export function agentIconPath(id: string, mode: 'dark' | 'light'): string {
-  return `/agent_icons/${id}-${mode}.png`;
+  return `/agent_icons/${id}-${mode}.webp`;
 }
 
 /** Get the correct icon path from a full agent-icon value and theme mode. */
@@ -108,6 +110,71 @@ for (const entry of AGENT_ICONS) {
  * return the best-matching agent icon ID, or 'assistant' as fallback.
  */
 export function iconIdForCategories(categories: string[]): string {
+  for (const cat of categories) {
+    const match = CATEGORY_TO_ICON[cat];
+    if (match) return match;
+  }
+  return 'assistant';
+}
+
+// Keyword → icon ID mapping (most specific first). Used as a secondary signal
+// when a template's category alone is too coarse — e.g. ~24 templates declare
+// only "productivity" yet their purpose is clearly email/calendar/automation.
+// Mirrors the heuristics in `autoAssignIcons.ts` so adoption-time inference
+// agrees with the migration pass that runs on first launch.
+const KEYWORD_MAP: Array<{ keywords: string[]; iconId: string }> = [
+  { keywords: ['email', 'inbox', 'mail', 'digest', 'newsletter'],                          iconId: 'email' },
+  { keywords: ['calendar', 'schedule', 'meeting', 'appointment', 'standup', 'deadline'],  iconId: 'calendar' },
+  { keywords: ['security', 'vulnerability', 'access', 'sentinel'],                         iconId: 'security' },
+  { keywords: ['devops', 'sentry', 'infrastructure', 'deploy', 'incident', 'pipeline'],   iconId: 'devops' },
+  { keywords: ['monitor', 'alert', 'health', 'performance', 'watchdog'],                   iconId: 'monitor' },
+  { keywords: ['code', 'developer', 'codebase', 'ci/cd', 'qa', 'test', 'feature flag', 'git'], iconId: 'code' },
+  { keywords: ['document', 'documentation', 'knowledge base', 'wiki', 'journal'],          iconId: 'document' },
+  { keywords: ['support', 'helpdesk', 'ticket', 'escalation'],                             iconId: 'support' },
+  { keywords: ['automat', 'workflow', 'orchestrat', 'router'],                              iconId: 'automation' },
+  { keywords: ['research', 'intelligence', 'analyst', 'insight', 'scout', 'survey'],       iconId: 'research' },
+  { keywords: ['finance', 'invoice', 'expense', 'budget', 'billing', 'revenue', 'accounting', 'payment'], iconId: 'finance' },
+  { keywords: ['marketing', 'brand', 'campaign', 'seo'],                                    iconId: 'marketing' },
+  { keywords: ['content', 'editorial', 'video', 'writer', 'blog'],                          iconId: 'content' },
+  { keywords: ['sales', 'lead', 'crm', 'deal', 'proposal', 'outbound'],                    iconId: 'sales' },
+  { keywords: ['hr', 'recruit', 'onboard', 'hiring', 'employee', 'people'],                 iconId: 'hr' },
+  { keywords: ['legal', 'contract', 'compliance', 'regulation', 'policy'],                  iconId: 'legal' },
+  { keywords: ['notification', 'event', 'webhook'],                                          iconId: 'notification' },
+  { keywords: ['search', 'find', 'discover', 'explore', 'lookup'],                          iconId: 'search' },
+  { keywords: ['data', 'analytics', 'database', 'chart', 'metric', 'dashboard'],            iconId: 'data' },
+];
+
+/**
+ * Resolve the best agent icon ID for a template, blending three signals:
+ *   1. Categories that have a 1:1 mapping (sales, finance, legal, …) win first.
+ *   2. Otherwise, keyword inference from name+description picks a specific icon.
+ *   3. Fall back to the category mapping (productivity → assistant) when no
+ *      keyword fires, and finally to 'assistant'.
+ *
+ * Adoption uses this so an "email-morning-digest" template categorized only
+ * as "productivity" gets the email icon instead of the generic assistant.
+ */
+export function iconIdForTemplate(
+  categories: string[],
+  name?: string | null,
+  description?: string | null,
+): string {
+  // First pass: any category other than 'productivity' (which is the catch-all
+  // bucket that maps to 'assistant') gets to claim the icon — we trust the
+  // template author when they tag with something specific.
+  for (const cat of categories) {
+    if (cat === 'productivity') continue;
+    const match = CATEGORY_TO_ICON[cat];
+    if (match) return match;
+  }
+  // Second pass: keyword inference from name + description.
+  const text = `${name ?? ''} ${description ?? ''}`.toLowerCase();
+  if (text.trim()) {
+    for (const rule of KEYWORD_MAP) {
+      if (rule.keywords.some((kw) => text.includes(kw))) return rule.iconId;
+    }
+  }
+  // Third pass: 'productivity' (or whatever was left) → assistant.
   for (const cat of categories) {
     const match = CATEGORY_TO_ICON[cat];
     if (match) return match;

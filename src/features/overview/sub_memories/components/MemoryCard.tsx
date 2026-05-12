@@ -154,7 +154,7 @@ export function MemoryRow({
         {scopeBadge}
         {categoryBadge}
         <div className="w-[60px] flex-shrink-0"><ImportanceBar value={memory.importance} /></div>
-        <span className="typo-body text-foreground w-[60px] text-right flex-shrink-0">{formatRelativeTime(memory.created_at)}</span>
+        <span className="typo-body text-foreground w-[60px] text-right flex-shrink-0">{formatRelativeTime(memory.created_at).replace(/ ago$/, '')}</span>
         <div className="w-[32px] flex-shrink-0">{deleteButton}</div>
       </div>
 
@@ -169,7 +169,7 @@ export function MemoryRow({
           {scopeBadge}
           {categoryBadge}
           <ImportanceBar value={memory.importance} />
-          <span className="typo-body text-foreground ml-auto">{formatRelativeTime(memory.created_at)}</span>
+          <span className="typo-body text-foreground ml-auto">{formatRelativeTime(memory.created_at).replace(/ ago$/, '')}</span>
         </div>
       </div>
     </div>

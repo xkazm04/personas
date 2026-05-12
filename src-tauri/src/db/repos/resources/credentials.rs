@@ -255,7 +255,27 @@ pub fn insert_credential_and_fields_tx(
 
     for (key, value) in fields {
         let is_sensitive = is_field_sensitive(sens_map.as_ref(), key);
-        insert_field_row(tx, &id, key, value, is_sensitive, &now)?;
+        let (enc_val, field_iv) = crypto::encrypt_field(value, is_sensitive)
+            .map_err(|e| AppError::Internal(format!("Field encryption failed: {}", e)))?;
+
+        let field_type = classify_field_type(key);
+        let field_id = uuid::Uuid::new_v4().to_string();
+
+        tx.execute(
+            "INSERT INTO credential_fields
+             (id, credential_id, field_key, encrypted_value, iv, field_type, is_sensitive, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)",
+            params![
+                field_id,
+                id,
+                key,
+                enc_val,
+                field_iv,
+                field_type,
+                is_sensitive as i32,
+                now,
+            ],
+        )?;
     }
 
     Ok(id)
@@ -368,7 +388,32 @@ pub fn update_with_fields(
             // -- 2. Save fields if provided --
             if let Some(field_map) = fields {
                 if !field_map.is_empty() {
-                    save_fields_on_tx(&tx, id, field_map, sens_map.as_ref(), &now)?;
+                    // Delete existing fields and re-insert within the same transaction
+                    tx.execute(
+                        "DELETE FROM credential_fields WHERE credential_id = ?1",
+                        params![id],
+                    )?;
+
+                    for (key, value) in field_map {
+                        let is_sensitive = is_field_sensitive(sens_map.as_ref(), key);
+                        let (enc_val, field_iv) = crypto::encrypt_field(value, is_sensitive)
+                            .map_err(|e| {
+                                AppError::Internal(format!("Field encryption failed: {e}"))
+                            })?;
+
+                        let field_type = classify_field_type(key);
+                        let field_id = uuid::Uuid::new_v4().to_string();
+
+                        tx.execute(
+                        "INSERT INTO credential_fields
+                         (id, credential_id, field_key, encrypted_value, iv, field_type, is_sensitive, created_at, updated_at)
+                         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)",
+                        params![
+                            field_id, id, key, enc_val, field_iv,
+                            field_type, is_sensitive as i32, now,
+                        ],
+                    )?;
+                    }
                 }
             }
 
@@ -1098,30 +1143,6 @@ pub fn get_fields(pool: &DbPool, credential_id: &str) -> Result<Vec<CredentialFi
     })
 }
 
-/// Delete-and-replace all fields for a credential on the caller's transaction.
-/// Owns the DELETE + per-field INSERT loop; the caller chooses when to commit.
-/// Used by both `save_fields` (which opens its own tx) and `update_with_fields`
-/// (which has an outer tx covering metadata + fields atomically).
-pub(crate) fn save_fields_on_tx(
-    tx: &rusqlite::Transaction,
-    credential_id: &str,
-    fields: &HashMap<String, String>,
-    sens_map: Option<&HashMap<String, bool>>,
-    now: &str,
-) -> Result<usize, AppError> {
-    tx.execute(
-        "DELETE FROM credential_fields WHERE credential_id = ?1",
-        params![credential_id],
-    )?;
-    let mut count = 0usize;
-    for (key, value) in fields {
-        let is_sensitive = is_field_sensitive(sens_map, key);
-        insert_field_row(tx, credential_id, key, value, is_sensitive, now)?;
-        count += 1;
-    }
-    Ok(count)
-}
-
 /// Save (upsert) all fields for a credential from a `HashMap<String, String>`.
 /// Encrypts sensitive fields individually. Replaces any existing field rows
 /// by deleting first, then inserting -- wrapped in a transaction to prevent
@@ -1138,9 +1159,41 @@ pub fn save_fields(
 
         let mut conn = pool.get()?;
         let tx = conn.transaction().map_err(AppError::Database)?;
-        let now = chrono::Utc::now().to_rfc3339();
 
-        let count = save_fields_on_tx(&tx, credential_id, fields, sens_map.as_ref(), &now)?;
+        // Remove existing field rows and re-insert atomically
+        tx.execute(
+            "DELETE FROM credential_fields WHERE credential_id = ?1",
+            params![credential_id],
+        )?;
+
+        let now = chrono::Utc::now().to_rfc3339();
+        let mut count = 0usize;
+
+        for (key, value) in fields {
+            let is_sensitive = is_field_sensitive(sens_map.as_ref(), key);
+            let (enc_val, field_iv) = crypto::encrypt_field(value, is_sensitive)
+                .map_err(|e| AppError::Internal(format!("Field encryption failed: {e}")))?;
+
+            let field_type = classify_field_type(key);
+            let field_id = uuid::Uuid::new_v4().to_string();
+
+            tx.execute(
+                "INSERT INTO credential_fields
+                 (id, credential_id, field_key, encrypted_value, iv, field_type, is_sensitive, created_at, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)",
+                params![
+                    field_id,
+                    credential_id,
+                    key,
+                    enc_val,
+                    field_iv,
+                    field_type,
+                    is_sensitive as i32,
+                    now,
+                ],
+            )?;
+            count += 1;
+        }
 
         tx.commit().map_err(AppError::Database)?;
         Ok(count)
@@ -1297,46 +1350,8 @@ fn normalize_field_key(key: &str) -> String {
     }
 }
 
-/// Insert a single credential field row using a plain INSERT. Owns the
-/// encrypt + classify + uuid scaffolding so per-field callers don't repeat it.
-/// The caller decides sensitivity (typically via `is_field_sensitive(sens_map, key)`).
-///
-/// Use this for the create-and-replace path. For idempotent updates where the
-/// row may already exist, use `upsert_field_on_conn` (which has the ON CONFLICT
-/// clause). For data-portability restore that needs INSERT OR REPLACE semantics,
-/// that path still owns its own SQL.
-pub fn insert_field_row(
-    conn: &rusqlite::Connection,
-    credential_id: &str,
-    key: &str,
-    value: &str,
-    is_sensitive: bool,
-    now: &str,
-) -> Result<(), AppError> {
-    let (enc_val, field_iv) = crypto::encrypt_field(value, is_sensitive)
-        .map_err(|e| AppError::Internal(format!("Field encryption failed: {e}")))?;
-    let field_type = classify_field_type(key);
-    let field_id = uuid::Uuid::new_v4().to_string();
-    conn.execute(
-        "INSERT INTO credential_fields
-         (id, credential_id, field_key, encrypted_value, iv, field_type, is_sensitive, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)",
-        params![
-            field_id,
-            credential_id,
-            key,
-            enc_val,
-            field_iv,
-            field_type,
-            is_sensitive as i32,
-            now,
-        ],
-    )?;
-    Ok(())
-}
-
 /// Classify a credential field key into a type hint.
-pub fn classify_field_type(key: &str) -> &'static str {
+fn classify_field_type(key: &str) -> &'static str {
     let lower = key.to_lowercase();
     if lower.contains("url") || lower.contains("endpoint") || lower == "host" || lower == "server" {
         "url"

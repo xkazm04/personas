@@ -187,40 +187,40 @@ pub fn get_all_global(
             let sql = qb.build_select(base);
             let mut stmt = conn.prepare_cached(&sql)?;
 
-            // Read the 24 PersonaExecution columns via the shared mapper, then
-            // tack on the 3 JOIN-only persona-metadata columns. Keeps the
-            // nullable-column boilerplate (input_tokens/output_tokens/cost_usd/
-            // log_truncated/business_outcome unwraps) in one place — a new
-            // column on persona_executions touches one site, not two.
             let row_mapper = |row: &Row| -> rusqlite::Result<GlobalExecutionRow> {
-                let base = row_to_execution(row)?;
                 Ok(GlobalExecutionRow {
-                    id: base.id,
-                    persona_id: base.persona_id,
-                    trigger_id: base.trigger_id,
-                    use_case_id: base.use_case_id,
-                    status: base.status,
-                    input_data: base.input_data,
-                    output_data: base.output_data,
-                    claude_session_id: base.claude_session_id,
-                    log_file_path: base.log_file_path,
-                    execution_flows: base.execution_flows,
-                    model_used: base.model_used,
-                    input_tokens: base.input_tokens,
-                    output_tokens: base.output_tokens,
-                    cost_usd: base.cost_usd,
-                    error_message: base.error_message,
-                    duration_ms: base.duration_ms,
-                    tool_steps: base.tool_steps,
-                    retry_of_execution_id: base.retry_of_execution_id,
-                    retry_count: base.retry_count,
-                    started_at: base.started_at,
-                    completed_at: base.completed_at,
-                    created_at: base.created_at,
-                    execution_config: base.execution_config,
-                    log_truncated: base.log_truncated,
-                    is_simulation: base.is_simulation,
-                    business_outcome: base.business_outcome,
+                    id: row.get("id")?,
+                    persona_id: row.get("persona_id")?,
+                    trigger_id: row.get("trigger_id")?,
+                    use_case_id: row.get("use_case_id")?,
+                    status: row.get("status")?,
+                    input_data: row.get("input_data")?,
+                    output_data: row.get("output_data")?,
+                    claude_session_id: row.get("claude_session_id")?,
+                    log_file_path: row.get("log_file_path")?,
+                    execution_flows: row.get("execution_flows")?,
+                    model_used: row.get("model_used")?,
+                    input_tokens: row.get::<_, Option<i64>>("input_tokens")?.unwrap_or(0),
+                    output_tokens: row.get::<_, Option<i64>>("output_tokens")?.unwrap_or(0),
+                    cost_usd: row.get::<_, Option<f64>>("cost_usd")?.unwrap_or(0.0),
+                    error_message: row.get("error_message")?,
+                    duration_ms: row.get("duration_ms")?,
+                    tool_steps: row.get("tool_steps")?,
+                    retry_of_execution_id: row.get("retry_of_execution_id")?,
+                    retry_count: row.get::<_, Option<i64>>("retry_count")?.unwrap_or(0),
+                    started_at: row.get("started_at")?,
+                    completed_at: row.get("completed_at")?,
+                    created_at: row.get("created_at")?,
+                    execution_config: row.get("execution_config").unwrap_or(None),
+                    log_truncated: row
+                        .get::<_, Option<bool>>("log_truncated")?
+                        .unwrap_or(false),
+                    is_simulation: row
+                        .get::<_, Option<bool>>("is_simulation")?
+                        .unwrap_or(false),
+                    business_outcome: row
+                        .get::<_, Option<String>>("business_outcome")?
+                        .unwrap_or_else(|| "unknown".to_string()),
                     persona_name: row.get("persona_name")?,
                     persona_icon: row.get("persona_icon")?,
                     persona_color: row.get("persona_color")?,
@@ -507,22 +507,12 @@ pub fn get_by_use_case_id(
     )
 }
 
-/// Run an UPDATE on persona_executions with an optional WHERE-clause guard
-/// (compare-and-swap pattern). The guard string is spliced after `WHERE id = ?12`;
-/// pass `""` for an unconditional update or `" AND status = 'running'"` etc.
-/// for a CAS variant.
-///
-/// Returns the number of rows that actually changed — callers can compare with
-/// 0 to detect that the CAS lost. Single source of truth for the column list
-/// and param tuple; adding a new column touches one SQL string instead of three.
-fn update_status_with_guard(
+pub fn update_status(
     pool: &DbPool,
     id: &str,
     input: UpdateExecutionStatus,
-    guard_sql: &str,
-    timed_label: &'static str,
-) -> Result<usize, AppError> {
-    timed_query!("persona_executions", timed_label, {
+) -> Result<(), AppError> {
+    timed_query!("persona_executions", "persona_executions::update_status", {
         let now = chrono::Utc::now().to_rfc3339();
         let conn = pool.get()?;
 
@@ -531,14 +521,17 @@ fn update_status_with_guard(
         } else {
             None
         };
+
         let completed_at: Option<String> = if input.status.is_terminal() {
             Some(now)
         } else {
             None
         };
+
+        // Serialize ExecutionState to its DB string form
         let status_str = input.status.as_str();
 
-        let sql = format!(
+        let mut stmt = conn.prepare_cached(
             "UPDATE persona_executions SET
                 status = ?1,
                 output_data = COALESCE(?2, output_data),
@@ -556,12 +549,9 @@ fn update_status_with_guard(
                 execution_config = COALESCE(?15, execution_config),
                 log_truncated = ?16,
                 business_outcome = COALESCE(?17, business_outcome)
-             WHERE id = ?12{}",
-            guard_sql,
-        );
-
-        let mut stmt = conn.prepare_cached(&sql)?;
-        let rows_changed = stmt.execute(params![
+             WHERE id = ?12",
+        )?;
+        stmt.execute(params![
             status_str,
             input.output_data,
             input.error_message,
@@ -581,17 +571,8 @@ fn update_status_with_guard(
             input.business_outcome,
         ])?;
 
-        Ok(rows_changed)
+        Ok(())
     })
-}
-
-pub fn update_status(
-    pool: &DbPool,
-    id: &str,
-    input: UpdateExecutionStatus,
-) -> Result<(), AppError> {
-    update_status_with_guard(pool, id, input, "", "persona_executions::update_status")?;
-    Ok(())
 }
 
 /// Compare-and-swap status update: only writes if the current DB status is `running`.
@@ -605,14 +586,70 @@ pub fn update_status_if_running(
     id: &str,
     input: UpdateExecutionStatus,
 ) -> Result<bool, AppError> {
-    let rows = update_status_with_guard(
-        pool,
-        id,
-        input,
-        " AND status = 'running'",
+    timed_query!(
+        "persona_executions",
         "persona_executions::update_status_if_running",
-    )?;
-    Ok(rows > 0)
+        {
+            let now = chrono::Utc::now().to_rfc3339();
+            let conn = pool.get()?;
+
+            let started_at: Option<String> = if input.status == ExecutionState::Running {
+                Some(now.clone())
+            } else {
+                None
+            };
+
+            let completed_at: Option<String> = if input.status.is_terminal() {
+                Some(now)
+            } else {
+                None
+            };
+
+            let status_str = input.status.as_str();
+
+            let mut stmt = conn.prepare_cached(
+                "UPDATE persona_executions SET
+                status = ?1,
+                output_data = COALESCE(?2, output_data),
+                error_message = COALESCE(?3, error_message),
+                duration_ms = COALESCE(?4, duration_ms),
+                log_file_path = COALESCE(?5, log_file_path),
+                execution_flows = COALESCE(?6, execution_flows),
+                input_tokens = COALESCE(?7, input_tokens),
+                output_tokens = COALESCE(?8, output_tokens),
+                cost_usd = COALESCE(?9, cost_usd),
+                started_at = COALESCE(?10, started_at),
+                completed_at = COALESCE(?11, completed_at),
+                tool_steps = COALESCE(?13, tool_steps),
+                claude_session_id = COALESCE(?14, claude_session_id),
+                execution_config = COALESCE(?15, execution_config),
+                log_truncated = ?16,
+                business_outcome = COALESCE(?17, business_outcome)
+             WHERE id = ?12 AND status = 'running'",
+            )?;
+            let rows_changed = stmt.execute(params![
+                status_str,
+                input.output_data,
+                input.error_message,
+                input.duration_ms,
+                input.log_file_path,
+                input.execution_flows,
+                input.input_tokens,
+                input.output_tokens,
+                input.cost_usd,
+                started_at,
+                completed_at,
+                id,
+                input.tool_steps,
+                input.claude_session_id,
+                input.execution_config,
+                input.log_truncated,
+                input.business_outcome,
+            ])?;
+
+            Ok(rows_changed > 0)
+        }
+    )
 }
 
 /// Compare-and-swap status update: only writes if the current DB status is
@@ -626,14 +663,72 @@ pub fn update_status_if_not_final(
     id: &str,
     input: UpdateExecutionStatus,
 ) -> Result<bool, AppError> {
-    let rows = update_status_with_guard(
-        pool,
-        id,
-        input,
-        " AND status IN ('running', 'cancelled')",
+    timed_query!(
+        "persona_executions",
         "persona_executions::update_status_if_not_final",
-    )?;
-    Ok(rows > 0)
+        {
+            let now = chrono::Utc::now().to_rfc3339();
+            let conn = pool.get()?;
+
+            let started_at: Option<String> = if input.status == ExecutionState::Running {
+                Some(now.clone())
+            } else {
+                None
+            };
+
+            let completed_at: Option<String> = if input.status.is_terminal() {
+                Some(now)
+            } else {
+                None
+            };
+
+            let status_str = input.status.as_str();
+
+            // Allow overwrite when status is 'running' (normal path) or 'cancelled'
+            // (safety-net wrote a bare cancel that we can now enrich with metrics).
+            let mut stmt = conn.prepare_cached(
+                "UPDATE persona_executions SET
+                status = ?1,
+                output_data = COALESCE(?2, output_data),
+                error_message = COALESCE(?3, error_message),
+                duration_ms = COALESCE(?4, duration_ms),
+                log_file_path = COALESCE(?5, log_file_path),
+                execution_flows = COALESCE(?6, execution_flows),
+                input_tokens = COALESCE(?7, input_tokens),
+                output_tokens = COALESCE(?8, output_tokens),
+                cost_usd = COALESCE(?9, cost_usd),
+                started_at = COALESCE(?10, started_at),
+                completed_at = COALESCE(?11, completed_at),
+                tool_steps = COALESCE(?13, tool_steps),
+                claude_session_id = COALESCE(?14, claude_session_id),
+                execution_config = COALESCE(?15, execution_config),
+                log_truncated = ?16,
+                business_outcome = COALESCE(?17, business_outcome)
+             WHERE id = ?12 AND status IN ('running', 'cancelled')",
+            )?;
+            let rows_changed = stmt.execute(params![
+                status_str,
+                input.output_data,
+                input.error_message,
+                input.duration_ms,
+                input.log_file_path,
+                input.execution_flows,
+                input.input_tokens,
+                input.output_tokens,
+                input.cost_usd,
+                started_at,
+                completed_at,
+                id,
+                input.tool_steps,
+                input.claude_session_id,
+                input.execution_config,
+                input.log_truncated,
+                input.business_outcome,
+            ])?;
+
+            Ok(rows_changed > 0)
+        }
+    )
 }
 
 pub fn get_recent(pool: &DbPool, limit: Option<i64>) -> Result<Vec<PersonaExecution>, AppError> {

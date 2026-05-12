@@ -1,0 +1,91 @@
+import { Plus, X } from 'lucide-react';
+import { TriggerFieldGroup } from './TriggerFieldGroup';
+import { useTranslation } from '@/i18n/useTranslation';
+
+export interface FileWatcherConfigProps {
+  watchPaths: string[];
+  setWatchPaths: (v: string[]) => void;
+  watchEvents: string[];
+  setWatchEvents: React.Dispatch<React.SetStateAction<string[]>>;
+  watchRecursive: boolean;
+  setWatchRecursive: (v: boolean) => void;
+  globFilter: string;
+  setGlobFilter: (v: string) => void;
+  validationError: string | null;
+  setValidationError: (v: string | null) => void;
+}
+
+export function FileWatcherConfig({
+  watchPaths, setWatchPaths, watchEvents, setWatchEvents,
+  watchRecursive, setWatchRecursive, globFilter, setGlobFilter,
+  validationError, setValidationError,
+}: FileWatcherConfigProps) {
+  const { t } = useTranslation();
+  return (
+    <div className="space-y-3">
+      <TriggerFieldGroup label={t.triggers.file_watcher.paths_label} error={validationError} errorId="watch-paths-error">
+        {watchPaths.map((path, i) => (
+          <div key={i} className="flex items-center gap-1.5 mb-1.5">
+            <input
+              type="text"
+              value={path}
+              onChange={(e) => {
+                const updated = [...watchPaths];
+                updated[i] = e.target.value;
+                setWatchPaths(updated);
+                if (validationError) setValidationError(null);
+              }}
+              placeholder={t.triggers.file_watcher_path_placeholder}
+              aria-invalid={!!validationError}
+              aria-describedby={validationError ? 'watch-paths-error' : undefined}
+              className={`flex-1 px-3 py-2 bg-background/50 border rounded-modal text-foreground font-mono typo-code placeholder-muted-foreground/30 focus-ring transition-all ${
+                validationError ? 'border-red-500/30' : 'border-primary/15'
+              }`}
+            />
+            {watchPaths.length > 1 && (
+              <button type="button" onClick={() => setWatchPaths(watchPaths.filter((_, j) => j !== i))} className="p-1.5 text-foreground hover:text-red-400 transition-colors">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        ))}
+        <button type="button" onClick={() => setWatchPaths([...watchPaths, ''])} className="flex items-center gap-1 typo-body text-orange-400/80 hover:text-orange-400 transition-colors">
+          <Plus className="w-3.5 h-3.5" /> {t.triggers.file_watcher.add_path}
+        </button>
+      </TriggerFieldGroup>
+      <TriggerFieldGroup label={t.triggers.file_watcher.events_label}>
+        <div className="flex flex-wrap gap-1.5">
+          {(['create', 'modify', 'delete', 'rename'] as const).map((evt) => (
+            <button
+              key={evt}
+              type="button"
+              onClick={() => setWatchEvents(prev => prev.includes(evt) ? prev.filter(e => e !== evt) : [...prev, evt])}
+              className={`px-2.5 py-1 rounded-modal typo-body font-medium transition-all border ${
+                watchEvents.includes(evt)
+                  ? 'bg-orange-500/15 text-orange-400 border-orange-500/30'
+                  : 'bg-secondary/30 text-foreground border-border/30 hover:bg-secondary/50'
+              }`}
+            >
+              {evt}
+            </button>
+          ))}
+        </div>
+      </TriggerFieldGroup>
+      <div className="flex items-center gap-3">
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" checked={watchRecursive} onChange={(e) => setWatchRecursive(e.target.checked)} className="rounded border-primary/30" />
+          <span className="typo-body text-foreground">{t.triggers.watch_subdirs}</span>
+        </label>
+      </div>
+      <TriggerFieldGroup label={t.triggers.file_watcher.glob_filter} optional>
+        <input
+          type="text"
+          value={globFilter}
+          onChange={(e) => setGlobFilter(e.target.value)}
+          placeholder={t.triggers.file_watcher_pattern_placeholder}
+          className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground font-mono typo-code placeholder-muted-foreground/30 focus-ring transition-all"
+        />
+      </TriggerFieldGroup>
+    </div>
+  );
+}

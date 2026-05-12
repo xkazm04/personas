@@ -36,7 +36,7 @@ export function PersonaAvatar({
   const resolvedColor = color || defaultColor;
 
   if (icon) {
-    // Agent icon PNGs (theme-aware)
+    // Agent icon WebPs (theme-aware)
     if (isAgentIcon(icon)) {
       const src = resolveAgentIconSrc(icon, isDark);
       return (

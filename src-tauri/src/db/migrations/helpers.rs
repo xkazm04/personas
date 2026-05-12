@@ -1,6 +1,5 @@
 use rusqlite::Connection;
 
-use crate::db::repos::resources::credentials::classify_field_type;
 use crate::error::AppError;
 
 /// Split existing monolithic encrypted_data blobs into per-field rows.
@@ -343,3 +342,22 @@ pub(super) fn install_persona_memory_invariants(conn: &Connection) -> Result<(),
     Ok(())
 }
 
+/// Classify a credential field key into a type hint.
+pub(super) fn classify_field_type(key: &str) -> &'static str {
+    let lower = key.to_lowercase();
+    if lower.contains("url") || lower.contains("endpoint") || lower == "host" || lower == "server" {
+        "url"
+    } else if lower.contains("token")
+        || lower.contains("key")
+        || lower.contains("secret")
+        || lower.contains("password")
+    {
+        "secret"
+    } else if lower == "port" {
+        "number"
+    } else if lower.contains("email") || lower.contains("username") || lower.contains("user") {
+        "identity"
+    } else {
+        "text"
+    }
+}

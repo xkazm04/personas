@@ -1,0 +1,206 @@
+import { useMemo, useState, useEffect } from 'react';
+import { usePipelineStore } from "@/stores/pipelineStore";
+import { useAgentStore } from "@/stores/agentStore";
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("trigger-list");
+import { ChevronRight, Zap, Shield } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { listAllTriggers } from "@/api/pipeline/triggers";
+
+import { getTriggerHealthMap } from '@/api/pipeline/triggers';
+import type { PersonaTrigger } from '@/lib/types/types';
+import { TRIGGER_TYPE_META, DEFAULT_TRIGGER_META, WEBHOOK_BASE_URL } from '@/lib/utils/platform/triggerConstants';
+import { formatTimestamp } from '@/lib/utils/formatters';
+import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import type { TriggerHealth } from './triggerListTypes';
+import { HealthDot } from './HealthDot';
+import { TriggerCountdown } from './TriggerCountdown';
+import { useTranslation } from '@/i18n/useTranslation';
+import { useDensity } from '@/hooks/utility/data/useDensity';
+import { DensityToggle } from '@/features/shared/components/display/DensityToggle';
+
+interface TriggerListProps {
+  onNavigateToPersona?: (personaId: string) => void;
+}
+
+export function TriggerList({ onNavigateToPersona }: TriggerListProps) {
+  const { t, tx } = useTranslation();
+  const personas = useAgentStore((state) => state.personas);
+  const triggerRateLimits = usePipelineStore((s) => s.triggerRateLimits);
+  const [allTriggers, setAllTriggers] = useState<Record<string, PersonaTrigger[]>>({});
+  const [triggerHealthMap, setTriggerHealthMap] = useState<Record<string, TriggerHealth>>({});
+  const { density, setDensity, tokens: densityTokens } = useDensity('trigger-list');
+
+  useEffect(() => {
+    let stale = false;
+
+    const fetchAllTriggers = async () => {
+      try {
+        // Single IPC call for triggers + single IPC call for health (replaces N+1)
+        const [triggers, healthMap] = await Promise.all([
+          listAllTriggers(),
+          getTriggerHealthMap(),
+        ]);
+        if (stale) return;
+
+        const triggersMap: Record<string, PersonaTrigger[]> = {};
+        for (const trigger of triggers) {
+          const arr = triggersMap[trigger.persona_id] ?? (triggersMap[trigger.persona_id] = []);
+          arr.push(trigger);
+        }
+        setAllTriggers(triggersMap);
+        setTriggerHealthMap(healthMap as Record<string, TriggerHealth>);
+      } catch (error) {
+        logger.error('Failed to fetch triggers', { error: String(error) });
+        if (!stale) {
+          setAllTriggers({});
+          setTriggerHealthMap({});
+        }
+      }
+    };
+
+    if (personas.length > 0) {
+      fetchAllTriggers();
+    } else {
+      setAllTriggers({});
+      setTriggerHealthMap({});
+    }
+
+    return () => { stale = true; };
+  }, [personas]);
+
+  const groupedTriggers = useMemo(() => {
+    const groups: Record<string, { persona: typeof personas[0]; triggers: PersonaTrigger[] }> = {};
+
+    personas.forEach((persona) => {
+      const personaTriggers = allTriggers[persona.id] || [];
+      if (personaTriggers.length > 0) {
+        groups[persona.id] = { persona, triggers: personaTriggers };
+      }
+    });
+
+    return groups;
+  }, [personas, allTriggers]);
+
+
+  return (
+    <div className="flex-1 min-h-0 flex flex-col w-full overflow-hidden">
+      <div className="flex-1 overflow-y-auto flex flex-col">
+        {Object.keys(groupedTriggers).length === 0 ? (
+          <div className="flex-1 flex items-center justify-center p-6">
+            <EmptyState
+              icon={Zap}
+              title={t.triggers.list.empty_title}
+              description={t.triggers.list.empty_hint}
+              iconColor="text-amber-400/80"
+              iconContainerClassName="bg-amber-500/10 border-amber-500/20"
+              action={onNavigateToPersona ? {
+                label: t.triggers.list.create_first,
+                onClick: () => {
+                  const firstPersona = personas[0];
+                  if (firstPersona) onNavigateToPersona(firstPersona.id);
+                },
+              } : undefined}
+            />
+          </div>
+        ) : (
+          <div className="p-6 space-y-6">
+            <div className="flex items-center justify-between">
+              <h3 className="typo-code font-mono text-foreground uppercase tracking-wider">{t.triggers.list.event_triggers}</h3>
+              <DensityToggle density={density} onChange={setDensity} scopeId="trigger-list" />
+            </div>
+
+            {Object.values(groupedTriggers).map(({ persona, triggers }) => (
+              <div key={persona.id} className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="typo-heading font-semibold text-foreground">{persona.name}</h4>
+                  {onNavigateToPersona && (
+                    <button
+                      onClick={() => onNavigateToPersona(persona.id)}
+                      className="typo-body text-primary hover:text-primary/80 flex items-center gap-1 transition-colors"
+                    >
+                      Configure
+                      <ChevronRight className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+
+                <div className="space-y-1.5">
+                  {triggers.map((trigger) => {
+                    const meta = TRIGGER_TYPE_META[trigger.trigger_type] || DEFAULT_TRIGGER_META;
+                    const Icon = meta.Icon;
+                    const colorClass = meta.color;
+
+                    return (
+                      <motion.div
+                        key={trigger.id}
+                        role="button"
+                        tabIndex={0}
+                        whileHover={{ x: 4 }}
+                        whileFocus={{ x: 4 }}
+                        onClick={() => onNavigateToPersona?.(persona.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            onNavigateToPersona?.(persona.id);
+                          }
+                        }}
+                        className={`${densityTokens.cardPadding} bg-secondary/40 backdrop-blur-sm border border-border/30 rounded-modal cursor-pointer hover:border-primary/20 transition-all focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
+                      >
+                        <div className="flex items-start gap-2.5">
+                          <Icon className={`w-4 h-4 mt-0.5 ${colorClass}`} />
+
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className={`typo-body font-medium capitalize ${colorClass}`}>
+                                {trigger.trigger_type}
+                              </span>
+                              <span className={`typo-code px-1.5 py-0.5 rounded-card font-mono ${
+                                trigger.enabled
+                                  ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20'
+                                  : 'bg-secondary/60 text-foreground border border-border/20'
+                              }`}>
+                                {trigger.enabled ? t.triggers.on_label : t.triggers.off_label}
+                              </span>
+                              <HealthDot health={triggerHealthMap[trigger.id] ?? 'unknown'} />
+                              {triggerRateLimits[trigger.id]?.isThrottled && (
+                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full typo-body bg-red-500/15 text-red-400 border border-red-500/20 font-medium">
+                                  <Shield className="w-2.5 h-2.5" />
+                                  {t.triggers.throttled_label}
+                                </span>
+                              )}
+                              {(triggerRateLimits[trigger.id]?.queueDepth ?? 0) > 0 && (
+                                <span className="px-1.5 py-0.5 rounded-full typo-code bg-amber-500/15 text-amber-400 border border-amber-500/20 font-mono">
+                                  {tx(t.triggers.queued_label, { count: triggerRateLimits[trigger.id]!.queueDepth })}
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="mt-1.5 typo-body text-foreground space-y-0.5">
+                              <div>{t.triggers.last_label} {formatTimestamp(trigger.last_triggered_at, 'Never')}</div>
+                              {trigger.trigger_type === 'webhook' && (
+                                <div className="font-mono typo-code text-foreground truncate mt-0.5">
+                                  {WEBHOOK_BASE_URL.replace(/^https?:\/\//, '')}/{trigger.id.slice(0, 8)}...
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Radial countdown ring */}
+                          <div className="flex-shrink-0 mt-0.5">
+                            <TriggerCountdown trigger={trigger} accentColorClass={colorClass} />
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

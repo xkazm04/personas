@@ -3,10 +3,15 @@
  *
  * Mirrors `src-tauri/src/engine/limits.rs` for backend constants. These
  * thresholds control duplicate / contradiction / superseded detection in
- * `src/features/overview/sub_memories/libs/memoryConflicts.ts`. Tuning them
- * blind is an easy way to flood the conflict UI with false positives or hide
- * real ones — every value below carries a one-line justification so the next
- * person tweaking a threshold knows what they're trading off.
+ * `memoryConflicts.ts` (and a parallel hook copy under
+ * `sub_memories/hooks/memoryConflicts.ts`). Tuning them blind is an easy way
+ * to flood the conflict UI with false positives or hide real ones — every
+ * value below carries a one-line justification so the next person tweaking
+ * a threshold knows what they're trading off.
+ *
+ * Keep both call sites in lockstep. If you add a new threshold here, update
+ * both `libs/memoryConflicts.ts` and the legacy hook copy at
+ * `hooks/memoryConflicts.ts` to read from this module.
  */
 
 /** Word-vs-bigram blend used in `textSimilarity`. Bigrams weight slightly

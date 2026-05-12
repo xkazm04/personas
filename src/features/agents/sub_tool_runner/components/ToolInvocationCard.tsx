@@ -1,0 +1,211 @@
+import { useState } from 'react';
+import {
+  Play,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  ChevronDown,
+  ChevronRight,
+  Wrench,
+  Terminal,
+  Globe,
+  Zap,
+} from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import type { PersonaToolDefinition } from '@/lib/bindings/PersonaToolDefinition';
+import type { ToolInvocationResult } from '@/api/agents/tools';
+import { useTranslation } from '@/i18n/useTranslation';
+
+interface ToolInvocationCardProps {
+  tool: PersonaToolDefinition;
+  isRunning: boolean;
+  result: ToolInvocationResult | null;
+  error: string | null;
+  onRun: (inputJson: string) => void;
+}
+
+export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: ToolInvocationCardProps) {
+  const { t } = useTranslation();
+  const [inputJson, setInputJson] = useState(() => buildDefaultInput(tool));
+  const [expanded, setExpanded] = useState(false);
+
+  const toolType = tool.category === 'automation' ? 'automation' : tool.script_path ? 'script' : 'api';
+  const TypeIcon = toolType === 'automation' ? Zap : toolType === 'script' ? Terminal : Globe;
+
+  // Pre-flight JSON validation. Previously, malformed JSON (trailing comma,
+  // unquoted key, smart quotes from paste) was forwarded to the Rust tool
+  // invoker which surfaced a cryptic serde error from deep inside the
+  // engine. Parse here so the user sees a clear inline message and the
+  // Run button stays disabled until the payload is structurally valid.
+  const trimmed = inputJson.trim();
+  const jsonError = (() => {
+    if (!trimmed) return null; // empty is treated as '{}' on run
+    try {
+      JSON.parse(trimmed);
+      return null;
+    } catch (e) {
+      return e instanceof Error ? e.message : String(e);
+    }
+  })();
+  const canRun = !isRunning && !jsonError;
+
+  const handleRun = () => {
+    if (jsonError) return;
+    onRun(trimmed || '{}');
+  };
+
+  return (
+    <div className="rounded-modal border border-primary/10 bg-secondary/10 overflow-hidden">
+      {/* Header */}
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left hover:bg-secondary/20 transition-colors"
+      >
+        {expanded ? (
+          <ChevronDown className="w-3.5 h-3.5 text-foreground" />
+        ) : (
+          <ChevronRight className="w-3.5 h-3.5 text-foreground" />
+        )}
+        <Wrench className="w-3.5 h-3.5 text-foreground" />
+        <span className="typo-body font-medium text-foreground truncate">{tool.name}</span>
+        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-body rounded border border-primary/10 bg-secondary/30 text-foreground">
+          <TypeIcon className="w-2.5 h-2.5" />
+          {toolType}
+        </span>
+        {result && (
+          <span className={`ml-auto inline-flex items-center gap-1 typo-body ${result.success ? 'text-emerald-400' : 'text-red-400'}`}>
+            {result.success ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
+            {result.duration_ms}ms
+          </span>
+        )}
+      </button>
+
+      {/* Expanded body */}
+      {expanded && (
+          <div
+            className="animate-fade-slide-in overflow-hidden"
+          >
+            <div className="border-t border-primary/10 px-3.5 py-3 space-y-3">
+              {tool.description && (
+                <p className="typo-body text-foreground">{tool.description}</p>
+              )}
+
+              {/* Input */}
+              <div>
+                <label className="typo-heading font-semibold text-foreground uppercase tracking-wider mb-1 block">
+                  {t.agents.tool_runner.input_json}
+                </label>
+                <textarea
+                  value={inputJson}
+                  onChange={(e) => setInputJson(e.target.value)}
+                  rows={4}
+                  className={`w-full rounded-modal border bg-background/60 px-3 py-2 typo-code font-mono text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-1 resize-y ${
+                    jsonError
+                      ? 'border-red-500/40 focus-visible:ring-red-500/30'
+                      : 'border-primary/20 focus-visible:ring-violet-500/30'
+                  }`}
+                  placeholder='{ "key": "value" }'
+                  aria-invalid={!!jsonError}
+                />
+                {jsonError && (
+                  <p className="mt-1 typo-body text-red-400">
+                    {t.agents.tool_runner.invalid_json}
+                    <span className="ml-1 typo-code opacity-70">{jsonError}</span>
+                  </p>
+                )}
+              </div>
+
+              {/* Run button */}
+              <button
+                onClick={handleRun}
+                disabled={!canRun}
+                className="flex items-center gap-1.5 px-4 py-1.5 typo-body font-medium rounded-modal border border-violet-500/25 text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 transition-colors disabled:opacity-40"
+              >
+                {isRunning ? <LoadingSpinner size="sm" /> : <Play className="w-3.5 h-3.5" />}
+                {isRunning ? t.agents.tool_runner.running : t.agents.tool_runner.run}
+              </button>
+
+              {/* Result */}
+              <ResultDisplay result={result} error={error} />
+            </div>
+          </div>
+        )}
+    </div>
+  );
+}
+
+function ResultDisplay({ result, error }: { result: ToolInvocationResult | null; error: string | null }) {
+  const { t } = useTranslation();
+  if (error) {
+    return (
+      <div className="rounded-modal border border-red-500/15 bg-red-500/5 px-3 py-2 typo-body text-red-400">
+        <div className="flex items-center gap-1.5 mb-1">
+          <XCircle className="w-3 h-3 flex-shrink-0" />
+          <span className="font-medium">{t.agents.tool_runner.error}</span>
+        </div>
+        <pre className="typo-code font-mono whitespace-pre-wrap break-all opacity-80">{error}</pre>
+      </div>
+    );
+  }
+
+  if (!result) return null;
+
+  return (
+    <div className={`rounded-modal border px-3 py-2 typo-body ${
+      result.success
+        ? 'border-emerald-500/15 bg-emerald-500/5'
+        : 'border-red-500/15 bg-red-500/5'
+    }`}>
+      <div className="flex items-center gap-2 mb-1.5">
+        {result.success ? (
+          <CheckCircle2 className="w-3 h-3 text-emerald-400 flex-shrink-0" />
+        ) : (
+          <XCircle className="w-3 h-3 text-red-400 flex-shrink-0" />
+        )}
+        <span className={`font-medium ${result.success ? 'text-emerald-400' : 'text-red-400'}`}>
+          {result.success ? t.agents.tool_runner.success : t.agents.tool_runner.failed}
+        </span>
+        <span className="ml-auto flex items-center gap-1 text-foreground typo-body">
+          <Clock className="w-2.5 h-2.5" />
+          {result.duration_ms}ms
+        </span>
+      </div>
+
+      {result.output && (
+        <pre className="typo-code font-mono text-foreground whitespace-pre-wrap break-all max-h-64 overflow-y-auto">
+          {formatOutput(result.output)}
+        </pre>
+      )}
+      {result.error && (
+        <pre className="typo-code font-mono text-red-400/80 whitespace-pre-wrap break-all mt-1">
+          {result.error}
+        </pre>
+      )}
+    </div>
+  );
+}
+
+function buildDefaultInput(tool: PersonaToolDefinition): string {
+  if (tool.input_schema) {
+    try {
+      const schema = JSON.parse(tool.input_schema);
+      if (schema.properties) {
+        const defaults: Record<string, string> = {};
+        for (const key of Object.keys(schema.properties)) {
+          defaults[key] = '';
+        }
+        return JSON.stringify(defaults, null, 2);
+      }
+    } catch { /* intentional: non-critical -- JSON parse fallback */ }
+  }
+  return '{}';
+}
+
+function formatOutput(output: string): string {
+  try {
+    return JSON.stringify(JSON.parse(output), null, 2);
+  } catch {
+    // intentional: non-critical -- JSON parse fallback
+    return output;
+  }
+}

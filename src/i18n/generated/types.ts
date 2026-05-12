@@ -5125,6 +5125,9 @@ export type Translations = {
       pending_decisions_view_all: string;
       action_export_pdf: string;
       action_play_in_chat: string;
+      persona_link_title: string;
+      pending_decisions_approve_all: string;
+      pending_decisions_reject_all: string;
     };
     cockpit: {
       title_default: string;
@@ -11965,6 +11968,9 @@ export type Translations = {
       remove_file: string;
       choose_color: string;
       choose_icon: string;
+      select_agent_icon: string;
+      select_agent_icon_desc: string;
+      clear_icon: string;
       filter_placeholder: string;
       reset_to_default: string;
       color_hex_placeholder: string;

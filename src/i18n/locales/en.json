@@ -5118,7 +5118,10 @@
       "pending_decisions_reject": "Reject",
       "pending_decisions_view_all": "Open in Approvals",
       "action_export_pdf": "Export to PDF",
-      "action_play_in_chat": "Play in chat"
+      "action_play_in_chat": "Play in chat",
+      "persona_link_title": "View persona",
+      "pending_decisions_approve_all": "Approve all",
+      "pending_decisions_reject_all": "Reject all"
     },
     "cockpit": {
       "title_default": "Cockpit",
@@ -11959,6 +11962,9 @@
       "remove_file": "Remove file",
       "choose_color": "Choose color",
       "choose_icon": "Choose icon",
+      "select_agent_icon": "Select agent icon",
+      "select_agent_icon_desc": "Choose an icon for this agent. Themed dark/light variants render automatically.",
+      "clear_icon": "Clear icon",
       "filter_placeholder": "Filter...",
       "reset_to_default": "Reset to default",
       "color_hex_placeholder": "#8b5cf6",

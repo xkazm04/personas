@@ -5,7 +5,7 @@
  * adopted personas automatically get a themed icon.
  */
 import { getTemplateCatalog } from '@/lib/personas/templates/templateCatalog';
-import { iconIdForCategories, toAgentIconValue, getAgentIconEntry } from './agentIconCatalog';
+import { iconIdForCategories, iconIdForTemplate, toAgentIconValue, getAgentIconEntry } from './agentIconCatalog';
 
 interface ResolvedIcon {
   icon: string;   // e.g. "agent-icon:finance"
@@ -36,6 +36,25 @@ export async function resolveTemplateAgentIcon(templateNameOrId: string): Promis
  */
 export function resolveIconForCategories(categories: string[]): ResolvedIcon {
   const iconId = iconIdForCategories(categories);
+  const entry = getAgentIconEntry(iconId);
+  return {
+    icon: toAgentIconValue(iconId),
+    color: entry?.suggestedColor || '#8b5cf6',
+  };
+}
+
+/**
+ * Resolve icon + color from a template's categories combined with name and
+ * description. Strictly stronger than `resolveIconForCategories` when the
+ * template's only category is the catch-all "productivity" — keyword
+ * inference on the name picks email/calendar/automation/etc. instead.
+ */
+export function resolveIconForTemplate(
+  categories: string[],
+  name?: string | null,
+  description?: string | null,
+): ResolvedIcon {
+  const iconId = iconIdForTemplate(categories, name, description);
   const entry = getAgentIconEntry(iconId);
   return {
     icon: toAgentIconValue(iconId),

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { ImagePlus } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import {
   type PersonaDraft,
@@ -9,10 +10,15 @@ import {
 const MIN_PERSONA_TIMEOUT_S = MIN_PERSONA_TIMEOUT_MS / 1000;
 const MAX_PERSONA_TIMEOUT_S = MAX_PERSONA_TIMEOUT_MS / 1000;
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
-import { PopupIconSelector } from '@/features/shared/components/forms/PopupIconSelector';
+import { AgentIconPickerModal } from '@/features/shared/components/forms/AgentIconPickerModal';
 import { PopupColorPicker } from '@/features/shared/components/forms/PopupColorPicker';
+import {
+  isAgentIcon,
+  resolveAgentIconSprite,
+  resolveAgentIconSrc,
+} from '@/lib/icons/agentIconCatalog';
+import { useIsDarkTheme } from '@/stores/themeStore';
 import { FieldHint } from '@/features/shared/components/display/FieldHint';
-import type { ConnectorDefinition } from '@/lib/types/types';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { SettingsStatusBar } from './SettingsStatusBar';
 import { invokeWithTimeout } from '@/lib/tauriInvoke';
@@ -24,7 +30,6 @@ interface PersonaSettingsTabProps {
   patch: (updates: Partial<PersonaDraft>) => void;
   isDirty: boolean;
   changedSections: string[];
-  connectorDefinitions: ConnectorDefinition[];
   showDeleteConfirm: boolean;
   setShowDeleteConfirm: (show: boolean) => void;
   isSaving: boolean;
@@ -36,7 +41,6 @@ export function PersonaSettingsTab({
   patch,
   isDirty,
   changedSections,
-  connectorDefinitions,
   showDeleteConfirm,
   setShowDeleteConfirm,
   isSaving,
@@ -45,7 +49,18 @@ export function PersonaSettingsTab({
   const { t } = useTranslation();
   const personaId = useAgentStore((s) => s.selectedPersonaId);
   const { isStarter: isSimple } = useTier();
+  const isDark = useIsDarkTheme();
   const [retentionMonths, setRetentionMonths] = useState<number>(2);
+  const [iconPickerOpen, setIconPickerOpen] = useState(false);
+
+  // When the persona has an agent-icon selected, render it as a watermark on
+  // the Identity card. Uses the sprite when available (single network image
+  // for all themes); falls back to the per-id WebP path for safety.
+  const draftIconIsAgent = isAgentIcon(draft.icon);
+  const watermarkSprite = draftIconIsAgent ? resolveAgentIconSprite(draft.icon, isDark) : null;
+  const watermarkSrc = draftIconIsAgent && !watermarkSprite
+    ? resolveAgentIconSrc(draft.icon, isDark)
+    : null;
 
   useEffect(() => {
     if (!personaId) return;
@@ -62,14 +77,37 @@ export function PersonaSettingsTab({
 
   return (
     <div className="max-w-3xl 3xl:max-w-4xl 4xl:max-w-5xl space-y-4">
-      {/* Identity -- relative z-10 so icon/color picker popups render above cards below */}
+      {/* Identity -- relative z-10 so color picker popup renders above cards below */}
       <div className="space-y-3 relative z-10">
         <h4 className="flex items-center gap-2.5 typo-submodule-header tracking-wide">
           <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
           {t.agents.settings_status.identity}
         </h4>
-        <div className="bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-modal p-3 space-y-3">
-          <div>
+        <div className="relative bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-modal p-3 space-y-3 overflow-hidden">
+          {/* Semi-transparent agent-icon watermark. Renders behind the form
+              fields when the persona has an agent icon selected; positioned
+              right-edge so it reads as accent art without obscuring inputs.
+              Pointer-events-none so it never intercepts clicks. */}
+          {(watermarkSprite || watermarkSrc) && (
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-y-0 right-0 w-[55%] flex items-center justify-end pr-2 opacity-[0.09]"
+            >
+              {watermarkSprite ? (
+                <div
+                  className="agent-icon-sprite w-64 h-64"
+                  style={{
+                    backgroundImage: `url(${watermarkSprite.src})`,
+                    backgroundSize: `${watermarkSprite.columns * 100}% 100%`,
+                    backgroundPosition: `${watermarkSprite.columns <= 1 ? 0 : (watermarkSprite.index / (watermarkSprite.columns - 1)) * 100}% 0%`,
+                  }}
+                />
+              ) : (
+                <img src={watermarkSrc!} alt="" className="w-64 h-64 object-contain" />
+              )}
+            </div>
+          )}
+          <div className="relative">
             <label className="block typo-body font-medium text-foreground mb-1">{t.agents.settings_status.label_name}</label>
             <input
               type="text"
@@ -79,7 +117,7 @@ export function PersonaSettingsTab({
               className={INPUT_FIELD}
             />
           </div>
-          <div>
+          <div className="relative">
             <label className="block typo-body font-medium text-foreground mb-1">{t.agents.settings_status.label_description}</label>
             <textarea
               value={draft.description}
@@ -89,15 +127,31 @@ export function PersonaSettingsTab({
               className={`${INPUT_FIELD} resize-none`}
             />
           </div>
-          <div className="flex items-center gap-4">
+          <div className="relative flex items-center gap-4">
             <div>
               <label className="block typo-body font-medium text-foreground mb-2">{t.agents.settings_status.label_icon}</label>
-              <PopupIconSelector
-                value={draft.icon}
-                onChange={(icon) => patch({ icon })}
-                connectors={connectorDefinitions}
-                size="sm"
-              />
+              <button
+                type="button"
+                onClick={() => setIconPickerOpen(true)}
+                title={t.shared.forms_extra.choose_icon}
+                className="w-10 h-10 rounded-lg border border-primary/15 bg-background/50 hover:border-primary/30 hover:bg-secondary/40 flex items-center justify-center transition-all cursor-pointer"
+              >
+                {watermarkSprite ? (
+                  <div
+                    aria-hidden="true"
+                    className="agent-icon-sprite w-7 h-7"
+                    style={{
+                      backgroundImage: `url(${watermarkSprite.src})`,
+                      backgroundSize: `${watermarkSprite.columns * 100}% 100%`,
+                      backgroundPosition: `${watermarkSprite.columns <= 1 ? 0 : (watermarkSprite.index / (watermarkSprite.columns - 1)) * 100}% 0%`,
+                    }}
+                  />
+                ) : watermarkSrc ? (
+                  <img src={watermarkSrc} alt="" className="w-7 h-7 object-contain" />
+                ) : (
+                  <ImagePlus className="w-4 h-4 text-foreground" />
+                )}
+              </button>
             </div>
             <div>
               <label className="block typo-body font-medium text-foreground mb-2">{t.agents.settings_status.label_color}</label>
@@ -110,6 +164,13 @@ export function PersonaSettingsTab({
           </div>
         </div>
       </div>
+
+      <AgentIconPickerModal
+        isOpen={iconPickerOpen}
+        value={draft.icon}
+        onChange={(icon) => patch({ icon })}
+        onClose={() => setIconPickerOpen(false)}
+      />
 
       {/* Execution */}
       <div className="space-y-3">
@@ -193,7 +254,7 @@ export function PersonaSettingsTab({
             </div>
           )}
 
-          <div className="flex items-center justify-between py-1">
+          <div className="flex items-center justify-between gap-3 py-1">
             <span className="typo-body font-medium text-foreground">{t.agents.settings_status.persona_enabled}</span>
             <AccessibleToggle
               checked={draft.enabled}
@@ -201,11 +262,12 @@ export function PersonaSettingsTab({
               label={t.agents.settings_status.persona_enabled}
               data-testid="agent-enabled"
               size="md"
+              className="flex-shrink-0"
             />
           </div>
 
           {!isSimple && (
-            <div className="flex items-center justify-between py-1">
+            <div className="flex items-center justify-between gap-3 py-1">
               <div>
                 <span className="typo-body font-medium text-foreground">{t.agents.settings_status.sensitive_preview}</span>
                 <p className="typo-body text-foreground">{t.agents.settings_status.sensitive_preview_desc}</p>
@@ -215,12 +277,13 @@ export function PersonaSettingsTab({
                 onChange={() => patch({ sensitive: !draft.sensitive })}
                 label={t.agents.settings_status.sensitive_preview}
                 size="md"
+                className="flex-shrink-0"
               />
             </div>
           )}
 
           {!isSimple && (
-            <div className="flex items-center justify-between py-1">
+            <div className="flex items-center justify-between gap-3 py-1">
               <div>
                 <span className="typo-body font-medium text-foreground">{t.agents.settings_status.cli_awareness}</span>
                 <p className="typo-body text-foreground">{t.agents.settings_status.cli_awareness_desc}</p>
@@ -231,6 +294,7 @@ export function PersonaSettingsTab({
                 label={t.agents.settings_status.cli_awareness}
                 data-testid="agent-cli-awareness"
                 size="md"
+                className="flex-shrink-0"
               />
             </div>
           )}

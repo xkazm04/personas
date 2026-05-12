@@ -24,7 +24,7 @@ import { createLogger } from "@/lib/log";
 const logger = createLogger("manual-review");
 import { ReviewInboxPanel } from './ReviewInboxPanel';
 import { ReviewFilterTrailing } from './ReviewFilterTrailing';
-import type { TriageReview } from './reviewFocusHelpers';
+import type { TriageReview } from './TriagePlayer';
 import { ReviewFocusFlow } from './ReviewFocusFlow';
 
 export default function ManualReviewList() {

@@ -99,78 +99,6 @@ fn validate_update_persona(input: &UpdatePersonaInput) -> Result<(), AppError> {
     check(errors)
 }
 
-/// Fire-and-forget cloud sync after a persona write. Uses the just-updated
-/// Persona snapshot the caller already has (avoiding a re-read that could race
-/// with concurrent writers). Skips silently if cloud client isn't connected or
-/// the persona has no active deployment. Logs success/failure with `reason`
-/// so the two callers stay distinguishable in tracing.
-///
-/// The body forwards every persisted field the cloud needs — including
-/// `parameters` and `gatewayExposure`, which earlier copy-pasted variants of
-/// this block silently omitted (a drift bug that left the cloud copy stale on
-/// any param-only update).
-fn spawn_persona_cloud_sync(
-    state: &Arc<AppState>,
-    persona: Persona,
-    reason: &'static str,
-) {
-    let cloud_client = state.cloud_client.clone();
-    let db = state.db.clone();
-    let sync_id = persona.id.clone();
-    tauri::async_runtime::spawn(async move {
-        let client = match cloud_client.lock().await.clone() {
-            Some(c) => c,
-            None => return, // not connected to cloud — nothing to sync
-        };
-        let deployments = match client.list_deployments().await {
-            Ok(d) => d,
-            Err(_) => return,
-        };
-        if !deployments.iter().any(|d| d.persona_id == sync_id) {
-            return;
-        }
-        let tools_list =
-            match crate::db::repos::resources::tools::get_tools_for_persona(&db, &sync_id) {
-                Ok(t) => t,
-                Err(_) => return,
-            };
-        let prompt = engine::prompt::assemble_prompt(
-            &persona,
-            &tools_list,
-            None,
-            None,
-            None,
-            None,
-            #[cfg(feature = "desktop")]
-            None,
-        );
-        let body = serde_json::json!({
-            "id": persona.id,
-            "name": persona.name,
-            "description": persona.description,
-            "systemPrompt": prompt,
-            "structuredPrompt": persona.structured_prompt,
-            "icon": persona.icon,
-            "color": persona.color,
-            "enabled": true,
-            "maxConcurrent": persona.max_concurrent,
-            "timeoutMs": persona.timeout_ms,
-            "modelProfile": persona.model_profile,
-            "maxBudgetUsd": persona.max_budget_usd,
-            "maxTurns": persona.max_turns,
-            "designContext": persona.design_context,
-            "groupId": persona.group_id,
-            "parameters": persona.parameters,
-            "gatewayExposure": persona.gateway_exposure,
-        });
-        if let Err(e) = client.upsert_persona(&body).await {
-            tracing::warn!(persona_id = %sync_id, reason = reason, error = %e, "Background cloud sync failed");
-        } else {
-            tracing::info!(persona_id = %sync_id, reason = reason, "Persona auto-synced to cloud");
-        }
-    });
-}
-
 #[tauri::command]
 pub fn update_persona(
     state: State<'_, Arc<AppState>>,
@@ -187,7 +115,66 @@ pub fn update_persona(
         pool.invalidate(&pid).await;
     });
 
-    spawn_persona_cloud_sync(&state, result.clone(), "after_update");
+    // Auto-sync to cloud if connected (fire-and-forget).
+    // Use the already-fetched result to avoid re-reading stale data if
+    // another update races with the sync task.
+    let cloud_client = state.cloud_client.clone();
+    let db = state.db.clone();
+    let sync_id = id.clone();
+    let sync_persona = result.clone();
+    tauri::async_runtime::spawn(async move {
+        let client = match cloud_client.lock().await.clone() {
+            Some(c) => c,
+            None => return, // not connected to cloud — nothing to sync
+        };
+        // Check if there is an active deployment for this persona
+        let deployments = match client.list_deployments().await {
+            Ok(d) => d,
+            Err(_) => return,
+        };
+        let has_deployment = deployments.iter().any(|d| d.persona_id == sync_id);
+        if !has_deployment {
+            return;
+        }
+        // Use the already-updated persona snapshot; only tools need a DB read
+        let tools_list =
+            match crate::db::repos::resources::tools::get_tools_for_persona(&db, &sync_id) {
+                Ok(t) => t,
+                Err(_) => return,
+            };
+        let prompt = engine::prompt::assemble_prompt(
+            &sync_persona,
+            &tools_list,
+            None,
+            None,
+            None,
+            None,
+            #[cfg(feature = "desktop")]
+            None,
+        );
+        let body = serde_json::json!({
+            "id": sync_persona.id,
+            "name": sync_persona.name,
+            "description": sync_persona.description,
+            "systemPrompt": prompt,
+            "structuredPrompt": sync_persona.structured_prompt,
+            "icon": sync_persona.icon,
+            "color": sync_persona.color,
+            "enabled": true,
+            "maxConcurrent": sync_persona.max_concurrent,
+            "timeoutMs": sync_persona.timeout_ms,
+            "modelProfile": sync_persona.model_profile,
+            "maxBudgetUsd": sync_persona.max_budget_usd,
+            "maxTurns": sync_persona.max_turns,
+            "designContext": sync_persona.design_context,
+            "groupId": sync_persona.group_id,
+        });
+        if let Err(e) = client.upsert_persona(&body).await {
+            tracing::warn!(persona_id = %sync_id, error = %e, "Background cloud sync failed");
+        } else {
+            tracing::info!(persona_id = %sync_id, "Persona auto-synced to cloud after update");
+        }
+    });
 
     Ok(result)
 }
@@ -236,7 +223,62 @@ pub fn update_persona_parameters(
         pool.invalidate(&pid).await;
     });
 
-    spawn_persona_cloud_sync(&state, result.clone(), "after_parameter_update");
+    // Auto-sync to cloud if connected (fire-and-forget).
+    // Use the already-fetched result to avoid re-reading stale data.
+    let cloud_client = state.cloud_client.clone();
+    let db = state.db.clone();
+    let sync_id = id.clone();
+    let sync_persona = result.clone();
+    tauri::async_runtime::spawn(async move {
+        let client = match cloud_client.lock().await.clone() {
+            Some(c) => c,
+            None => return,
+        };
+        let deployments = match client.list_deployments().await {
+            Ok(d) => d,
+            Err(_) => return,
+        };
+        if !deployments.iter().any(|d| d.persona_id == sync_id) {
+            return;
+        }
+        let tools_list =
+            match crate::db::repos::resources::tools::get_tools_for_persona(&db, &sync_id) {
+                Ok(t) => t,
+                Err(_) => return,
+            };
+        let prompt = engine::prompt::assemble_prompt(
+            &sync_persona,
+            &tools_list,
+            None,
+            None,
+            None,
+            None,
+            #[cfg(feature = "desktop")]
+            None,
+        );
+        let body = serde_json::json!({
+            "id": sync_persona.id,
+            "name": sync_persona.name,
+            "description": sync_persona.description,
+            "systemPrompt": prompt,
+            "structuredPrompt": sync_persona.structured_prompt,
+            "icon": sync_persona.icon,
+            "color": sync_persona.color,
+            "enabled": true,
+            "maxConcurrent": sync_persona.max_concurrent,
+            "timeoutMs": sync_persona.timeout_ms,
+            "modelProfile": sync_persona.model_profile,
+            "maxBudgetUsd": sync_persona.max_budget_usd,
+            "maxTurns": sync_persona.max_turns,
+            "designContext": sync_persona.design_context,
+            "groupId": sync_persona.group_id,
+        });
+        if let Err(e) = client.upsert_persona(&body).await {
+            tracing::warn!(persona_id = %sync_id, error = %e, "Background cloud sync failed after parameter update");
+        } else {
+            tracing::info!(persona_id = %sync_id, "Persona auto-synced to cloud after parameter update");
+        }
+    });
 
     Ok(result)
 }

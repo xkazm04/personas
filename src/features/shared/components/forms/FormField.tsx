@@ -50,8 +50,8 @@ export interface FormFieldProps {
    */
   validationState?: ValidationState;
   /**
-   * Optional ref. When an error prop is set and this ref is provided, the
-   * wrapper will shake to draw attention to the error.
+   * Ref returned by `useShakeError()`.  When an error prop is set and this
+   * ref is provided, the wrapper will shake to draw attention to the error.
    */
   shakeRef?: RefObject<HTMLDivElement | null>;
   /**

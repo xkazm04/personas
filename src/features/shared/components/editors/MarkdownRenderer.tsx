@@ -67,14 +67,18 @@ function filterMetaContent(content: string): string {
 }
 
 const components: Components = {
+  // Generous top spacing on headings — markdown bodies read better when
+  // each section is visually offset from the prior paragraph, not just
+  // stacked tightly. Bottom margin stays moderate so the heading still
+  // hugs its body.
   h1: ({ children }) => (
-    <h1 className="typo-heading-lg text-primary mb-3 mt-6 pb-1.5 border-b border-primary/20">{children}</h1>
+    <h1 className="typo-heading-lg text-primary mb-3 mt-10 first:mt-0 pb-1.5 border-b border-primary/20">{children}</h1>
   ),
   h2: ({ children }) => (
-    <h2 className="text-[15px] font-semibold text-primary/90 mb-2.5 mt-4">{children}</h2>
+    <h2 className="text-[15px] font-semibold text-primary/90 mb-2.5 mt-8 first:mt-0">{children}</h2>
   ),
   h3: ({ children }) => (
-    <h3 className="typo-heading text-accent mb-2 mt-3 tracking-wide">{children}</h3>
+    <h3 className="typo-heading text-accent mb-2 mt-6 first:mt-0 tracking-wide">{children}</h3>
   ),
   p: ({ children }) => (
     <p className="typo-body text-foreground/90 mb-3 leading-relaxed">{children}</p>
@@ -121,16 +125,24 @@ const components: Components = {
       {children}
     </blockquote>
   ),
+  // Tables — visible-but-subtle borders and a faint surface tint so the
+  // grid reads as a discrete data block. `bg-foreground/[0.03]` is dark
+  // in dark mode and light in light mode (the foreground token inverts
+  // with the theme), so a single rule covers both.
   table: ({ children }) => (
-    <table className="w-full typo-body mb-3">{children}</table>
+    <table className="w-full typo-body my-4 border-separate border-spacing-0 overflow-hidden rounded-card border border-foreground/15 bg-foreground/[0.03]">
+      {children}
+    </table>
   ),
   th: ({ children }) => (
-    <th className="text-left font-medium text-foreground/90 pb-2 border-b border-border/30">
+    <th className="text-left typo-label text-foreground/85 px-3 py-2 border-b border-foreground/20 bg-foreground/[0.05]">
       {children}
     </th>
   ),
   td: ({ children }) => (
-    <td className="py-1.5 text-foreground border-b border-border/20">{children}</td>
+    <td className="px-3 py-2 text-foreground/90 border-b border-foreground/10 last:border-b-0">
+      {children}
+    </td>
   ),
   a: ({ href, children }) => {
     const safeHref = sanitizeExternalUrl(href);

@@ -33,6 +33,12 @@ import {
   SeverityIndicator,
   ContextDataPreview,
 } from '@/features/overview/sub_manual-review/components/ReviewListItem';
+import {
+  parseDecisions,
+  getDecisionImage,
+  type DecisionVerdict,
+} from '@/features/overview/sub_manual-review/components/reviewFocusHelpers';
+import { FocusedDecisionCard } from '@/features/overview/sub_manual-review/components/FocusedDecisionCard';
 import { silentCatch } from '@/lib/silentCatch';
 import { toastCatch } from '@/lib/silentCatch';
 import type { PersonaMessage } from '@/lib/types/types';
@@ -457,10 +463,40 @@ export function MessageDetailModal({
     </span>
   );
 
+  // Persona-name → Agent detail: split the localized "From {name}" string
+  // around the {name} placeholder so we can wrap just the name in a button
+  // without baking presentation into the locale entry.
+  const personaName = message.persona_name || t.overview.messages_view.unknown_persona;
+  const fromTemplate = t.overview.messages_view.from_label;
+  const [fromBefore, fromAfter] = fromTemplate.split('{name}');
+  const openPersonaDetail = () => {
+    if (!message.persona_id) return;
+    useAgentStore.getState().selectPersona(message.persona_id);
+    useSystemStore.getState().setSidebarSection('personas');
+    onClose();
+  };
+
+  const subtitleNode = (
+    <span className="inline-flex items-center gap-1 flex-wrap">
+      <span>{fromBefore ?? ''}</span>
+      <button
+        type="button"
+        data-testid="msg-detail-persona-link"
+        onClick={openPersonaDetail}
+        className="inline-flex items-center gap-1 px-1.5 py-0.5 -mx-0.5 rounded-input typo-body font-medium text-primary hover:text-primary/80 hover:bg-primary/[0.08] transition-colors focus-ring"
+        title={t.overview.messages_view.persona_link_title}
+      >
+        {personaName}
+        <ExternalLink className="w-3 h-3 opacity-70" />
+      </button>
+      <span>{(fromAfter ?? '').trim()} · {formatRelativeTime(message.created_at)}</span>
+    </span>
+  );
+
   return (
     <DetailModal
       title={titleNode}
-      subtitle={`${tx(t.overview.messages_view.from_label, { name: message.persona_name || t.overview.messages_view.unknown_persona })} · ${formatRelativeTime(message.created_at)}`}
+      subtitle={subtitleNode}
       onClose={onClose}
       actions={
         <>
@@ -820,6 +856,32 @@ function PendingDecisionCard({
   onOpenInApprovals: () => void;
   t: ReturnType<typeof useTranslation>['t'];
 }) {
+  // Multi-decision payloads live inside `context_data.decisions[]`. When
+  // present, we render each child as its own FocusedDecisionCard — the
+  // same primitive sub_manual-review uses — so the parent acts like a
+  // group header with the children rendered inline. Per-decision verdicts
+  // are tracked locally so the user can sweep through them; the parent's
+  // Approve/Reject still resolves the whole review (single status on the
+  // backend), but the local verdicts capture intent so the user can see
+  // a coherent decision summary before they commit.
+  const { decisions, contextText } = useMemo(
+    () => parseDecisions(review.context_data),
+    [review.context_data],
+  );
+  const hasChildren = decisions.length > 0;
+  const [childVerdicts, setChildVerdicts] = useState<Record<string, DecisionVerdict>>({});
+
+  const setVerdict = useCallback((id: string, v: 'accept' | 'reject') => {
+    setChildVerdicts((prev) => ({ ...prev, [id]: prev[id] === v ? undefined : v }));
+  }, []);
+
+  // When the user accepts everything we offer a fast "Approve all", and
+  // when they reject anything we offer "Reject all" — the per-decision
+  // verdicts inform a quick parent action. Without verdicts these stay
+  // as the default buttons.
+  const allAccepted = hasChildren && decisions.every((d) => childVerdicts[d.id] === 'accept');
+  const anyRejected = hasChildren && decisions.some((d) => childVerdicts[d.id] === 'reject');
+
   return (
     <div
       data-testid={`pending-review-row-${review.id}`}
@@ -828,15 +890,30 @@ function PendingDecisionCard({
       <div className="flex items-start gap-3">
         <SeverityIndicator severity={review.severity} />
         <div className="flex-1 min-w-0">
-          <p className="typo-body-lg font-medium text-foreground mb-1 break-words">
-            {review.title}
-          </p>
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
+            <p className="typo-body-lg font-medium text-foreground break-words">
+              {review.title}
+            </p>
+            {hasChildren && (
+              <span
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-input typo-caption font-semibold text-primary/85 bg-primary/10 border border-primary/15"
+                data-testid={`pending-review-decisions-count-${review.id}`}
+              >
+                {decisions.length} decisions
+              </span>
+            )}
+          </div>
           {review.description && (
             <p className="typo-body text-foreground/75 leading-relaxed mb-2">
               {review.description}
             </p>
           )}
-          {review.context_data && (
+          {contextText && (
+            <p className="typo-body text-foreground/70 leading-relaxed mb-2 whitespace-pre-wrap">
+              {contextText}
+            </p>
+          )}
+          {!hasChildren && review.context_data && (
             <div className="mt-2 px-3 py-2 rounded-card bg-background/30 border border-primary/[0.06]">
               <ContextDataPreview raw={review.context_data} />
             </div>
@@ -847,16 +924,38 @@ function PendingDecisionCard({
         </span>
       </div>
 
+      {hasChildren && (
+        <div
+          className="mt-3 space-y-2 pl-3 border-l border-primary/10"
+          data-testid={`pending-review-decisions-${review.id}`}
+        >
+          {decisions.map((decision) => (
+            <FocusedDecisionCard
+              key={decision.id}
+              decision={decision}
+              verdict={childVerdicts[decision.id]}
+              onDecide={(v) => setVerdict(decision.id, v)}
+              imageUrl={getDecisionImage(decision)}
+            />
+          ))}
+        </div>
+      )}
+
       <div className="flex items-center gap-2 mt-4">
         <button
           type="button"
           data-testid={`pending-review-approve-${review.id}`}
           onClick={onApprove}
-          disabled={resolving}
+          disabled={resolving || (hasChildren && anyRejected)}
           className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-card typo-caption font-semibold bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25 disabled:opacity-40 transition-colors"
+          title={hasChildren && anyRejected ? 'Clear rejections before approving the whole review' : undefined}
         >
           {resolving ? <Loader2 className="w-3 h-3 animate-spin" /> : <ThumbsUp className="w-3 h-3" />}
-          {t.overview.messages_view.pending_decisions_approve}
+          {hasChildren
+            ? allAccepted
+              ? t.overview.messages_view.pending_decisions_approve_all
+              : t.overview.messages_view.pending_decisions_approve
+            : t.overview.messages_view.pending_decisions_approve}
         </button>
         <button
           type="button"
@@ -866,7 +965,9 @@ function PendingDecisionCard({
           className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-card typo-caption font-semibold bg-red-500/15 text-red-300 hover:bg-red-500/25 disabled:opacity-40 transition-colors"
         >
           {resolving ? <Loader2 className="w-3 h-3 animate-spin" /> : <ThumbsDown className="w-3 h-3" />}
-          {t.overview.messages_view.pending_decisions_reject}
+          {hasChildren && anyRejected
+            ? t.overview.messages_view.pending_decisions_reject_all
+            : t.overview.messages_view.pending_decisions_reject}
         </button>
         <button
           type="button"
@@ -880,6 +981,7 @@ function PendingDecisionCard({
     </div>
   );
 }
+
 
 // ---------------------------------------------------------------------------
 // Content action button (Export PDF / Play in chat)

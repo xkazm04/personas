@@ -495,3 +495,52 @@ pub async fn suggest_topology_llm(
     .await
 }
 
+// ============================================================================
+// Workflow Compiler — natural language → team pipeline
+// ============================================================================
+
+/// Compile a natural-language workflow description into a persisted team with
+/// members, connections, and topology.  Uses the LLM topology builder to select
+/// personas and infer connections, then persists the result.
+///
+/// Falls back to keyword-based topology if the LLM returns empty members.
+#[tauri::command]
+pub async fn compile_workflow(
+    state: State<'_, Arc<AppState>>,
+    description: String,
+) -> Result<crate::engine::workflow_compiler::CompiledWorkflow, AppError> {
+    require_auth(&state).await?;
+    use crate::db::repos::core::personas as persona_repo;
+    use crate::engine::workflow_compiler;
+
+    let description = description.trim().to_string();
+    if description.is_empty() {
+        return Err(AppError::Validation(
+            "Workflow description cannot be empty".into(),
+        ));
+    }
+
+    let personas = persona_repo::get_all(&state.db)?;
+    if personas.iter().filter(|p| p.enabled).count() < 2 {
+        return Err(AppError::Validation(
+            "At least 2 enabled personas are required to compose a workflow".into(),
+        ));
+    }
+
+    let blueprint = run_llm_topology_request(
+        &state.db,
+        &description,
+        &[],
+        "Claude produced no output for workflow compilation",
+    )
+    .await?;
+
+    if blueprint.members.is_empty() {
+        return Err(AppError::Internal(
+            "Could not find matching personas for this workflow description".into(),
+        ));
+    }
+
+    // Persist as a new team
+    workflow_compiler::persist_blueprint(&state.db, &blueprint, &description)
+}

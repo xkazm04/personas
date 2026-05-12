@@ -21,8 +21,8 @@ export default function DetailModal({ title, subtitle, onClose, actions, childre
       size="full"
       portal
       staggerChildren={false}
-      containerClassName="fixed inset-0 z-[200] flex items-center justify-center p-6"
-      panelClassName="relative bg-gradient-to-b from-background via-background to-[color-mix(in_srgb,var(--color-background),var(--color-primary)_3%)] border border-primary/15 rounded-2xl shadow-elevation-4 shadow-black/30 overflow-hidden flex flex-col max-h-[calc(100vh-3rem)]"
+      containerClassName="fixed inset-0 z-[200] flex items-start justify-center px-6 pt-14 pb-6"
+      panelClassName="relative bg-gradient-to-b from-background via-background to-[color-mix(in_srgb,var(--color-background),var(--color-primary)_3%)] border border-primary/15 rounded-2xl shadow-elevation-4 shadow-black/30 overflow-hidden flex flex-col w-full max-h-[calc(100vh-5rem)]"
     >
       {/* Ambient glow effects */}
       <div className="absolute top-0 left-1/4 w-1/2 h-32 bg-primary/[0.04] blur-3xl pointer-events-none" />
