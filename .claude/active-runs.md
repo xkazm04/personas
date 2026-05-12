@@ -36,6 +36,15 @@ _(none)_
 
 ## Recently completed (last 14 days)
 
+- **[2026-05-12 13:00 → 13:40] /research — claude-code-for-slack-walkthrough (catch-dominated; 0 actioned + 1 descoped-reopenable)**
+  - **Source:** https://www.youtube.com/watch?v=tdWLbBqAiio (Claude Code for Slack installation walkthrough). Anthropic-sibling product (3rd observation of this sub-row in the source-type calibration: Routines 2026-04-15 + Managed Agents 2026-04-08 + this run).
+  - **Paths shipped:** zero code commits — entire run is descope shape per risks-first user-preferences rule (7th observation since codification).
+    - F1 descope — `Obsidian/personas/Patterns/descoped-reopenable.md` new entry for Slack Events API trigger preset. Direct sibling of the 2026-04-15 Claude Code Routines descope (same Anthropic-hosted-without-public-API shape, same plan-gate). Pre-existing infrastructure documented (`engine/webhook.rs` HMAC server on :9420, `validation/trigger.rs:6` webhook trigger validates, `scripts/connectors/builtin/slack.json` bot_token + channels resource).
+    - F2 decline — no track; pure speculation (intent-based persona auto-selection) without source anchor.
+  - **Obsidian writes:** new `Obsidian/personas/Research/2026-05-12-claude-code-for-slack-walkthrough.md`, new `Obsidian/personas/Lessons/2026-05-12-research.md`, append to `Obsidian/personas/Patterns/descoped-reopenable.md`.
+  - **Status:** completed (one ledger commit — Obsidian + active-runs only; zero code changes).
+  - **Headline:** Catch-dominated Anthropic-sibling-product walkthrough confirmed 10 catches against personas' existing infrastructure (Slack/GitHub/GitLab connectors, webhook trigger + HMAC server, notification_channels, smee relay). F1 descoped because (a) zero paying personas users have requested Slack-as-trigger, (b) Anthropic's hosted Claude-in-Slack is free for Pro+ users and covers the natural overlap, (c) no template would consume the new infrastructure today. Phase 2.5 web augmentation against `code.claude.com/docs/en/slack` was decisively load-bearing (vs the 2026-05-11 ~50/50 augmentation cost). **3rd observation of the "Anthropic-sibling-product walkthrough" calibration sub-row** — promote to skill.md on the 4th instance. Vault path `mkdol` → `kazda` drift in skill.md remains unaddressed (11th run, longest unfixed maintenance todo).
+
 - **[2026-05-11 22:35 → 23:25] athena-completion — close Phase-3/Phase-5 gaps + migrate shipped Athena docs**
   - **Source:** in-session; user "Focus on 3 Athena concept documents in docs/concepts. Analyze current state and what is left to be done, we will dedicate this session to complete all three concepts" → recommended option (close real gaps + migrate docs, skip Phase 4 macOS/Linux).
   - **Paths shipped (3 atomic commits on master):**
