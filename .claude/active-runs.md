@@ -32,7 +32,10 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
-_(none)_
+- **[2026-05-12 19:00 → ongoing] /prototype — DesignTab readability variants on DesignPhasePanelSaved**
+  - **Source:** in-session user request. Goal: 2 directional variants that improve scannability + navigation of the saved-design wall of sections.
+  - **Paths:** `src/features/agents/sub_design/phases/DesignPhasePanelSaved.tsx` (orchestrator + tab switcher), `src/features/agents/sub_design/phases/DesignPhasePanelSaved{Variant1,Variant2}.tsx` (new), `.claude/active-runs.md`.
+  - **Status:** started
 
 
 
