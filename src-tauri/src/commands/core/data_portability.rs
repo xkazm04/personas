@@ -1906,7 +1906,7 @@ fn apply_encrypted_credentials(
             let (enc_val, field_iv) = crypto::encrypt_field(value, is_sensitive)
                 .map_err(|e| AppError::Internal(format!("Field encryption failed: {}", e)))?;
 
-            let field_type = classify_credential_field_type(key);
+            let field_type = cred_repo::classify_field_type(key);
             let field_id = uuid::Uuid::new_v4().to_string();
             let now = chrono::Utc::now().to_rfc3339();
 
@@ -2333,27 +2333,7 @@ pub async fn import_credentials(
         // Insert encrypted fields within the same transaction
         for (key, value) in &entry.fields {
             let is_sensitive = cred_repo::is_field_sensitive(sens_map.as_ref(), key);
-            let (enc_val, field_iv) = crypto::encrypt_field(value, is_sensitive)
-                .map_err(|e| AppError::Internal(format!("Field encryption failed: {}", e)))?;
-
-            let field_type = classify_credential_field_type(key);
-            let field_id = uuid::Uuid::new_v4().to_string();
-
-            tx.execute(
-                "INSERT INTO credential_fields
-                 (id, credential_id, field_key, encrypted_value, iv, field_type, is_sensitive, created_at, updated_at)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)",
-                rusqlite::params![
-                    field_id,
-                    cred_id,
-                    key,
-                    enc_val,
-                    field_iv,
-                    field_type,
-                    is_sensitive as i32,
-                    now,
-                ],
-            )?;
+            cred_repo::insert_field_row(&tx, &cred_id, key, value, is_sensitive, &now)?;
         }
 
         result.created += 1;
@@ -2363,23 +2343,3 @@ pub async fn import_credentials(
     Ok(Some(result))
 }
 
-/// Classify a credential field key into a type category.
-/// Mirrors the private `classify_field_type` in cred_repo.
-fn classify_credential_field_type(key: &str) -> &'static str {
-    let lower = key.to_lowercase();
-    if lower.contains("url") || lower.contains("endpoint") || lower == "host" || lower == "server" {
-        "url"
-    } else if lower.contains("token")
-        || lower.contains("key")
-        || lower.contains("secret")
-        || lower.contains("password")
-    {
-        "secret"
-    } else if lower == "port" {
-        "number"
-    } else if lower.contains("email") || lower.contains("username") || lower.contains("user") {
-        "identity"
-    } else {
-        "text"
-    }
-}

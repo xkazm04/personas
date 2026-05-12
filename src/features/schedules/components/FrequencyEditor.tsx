@@ -4,7 +4,7 @@ import type { CronAgent } from '@/lib/bindings/CronAgent';
 import type { CronPreview } from '@/api/pipeline/triggers';
 import { CRON_PRESETS, type ScheduleEntry } from '../libs/scheduleHelpers';
 import { useConflictPreview } from '../libs/useCronPreview';
-import { TimezoneSelect, getDetectedTimezone } from '@/features/triggers/sub_triggers/TimezoneSelect';
+import { TimezoneSelect, getDetectedTimezone } from '@/features/schedules/components/TimezoneSelect';
 import { useThemeStore } from '@/stores/themeStore';
 import { useTranslation } from '@/i18n/useTranslation';
 

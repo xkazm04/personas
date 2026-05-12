@@ -143,17 +143,16 @@ pub trait CompilationPipeline {
 pub const PROMPT_ASSEMBLY_INVENTORY: &[&str] = &[
     "engine::compiler::assemble_prompt",
     "engine::intent_compiler::build_intent_prompt",
-    "engine::workflow_compiler::WorkflowCompiler::assemble_prompt",
 ];
 
-/// Compile-time assertion: keep the inventory at exactly three entries. If
+/// Compile-time assertion: keep the inventory at exactly two entries. If
 /// this fires, you have either added a compiler without registering it
 /// (breaking the documented boundary in `engine/README.md`) or removed one
 /// without retiring its README row.
 const _: () = assert!(
-    PROMPT_ASSEMBLY_INVENTORY.len() == 3,
-    "engine: PROMPT_ASSEMBLY_INVENTORY must list exactly the three compilers \
-     described in engine/README.md (compiler, intent_compiler, workflow_compiler). \
+    PROMPT_ASSEMBLY_INVENTORY.len() == 2,
+    "engine: PROMPT_ASSEMBLY_INVENTORY must list exactly the two live compilers \
+     described in engine/README.md (compiler, intent_compiler). \
      Update the inventory AND the README decision matrix together."
 );
 

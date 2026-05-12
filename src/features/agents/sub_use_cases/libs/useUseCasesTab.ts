@@ -11,7 +11,6 @@ export function useUseCasesTab() {
   const [expandedHistoryIds, setExpandedHistoryIds] = useState<Set<string>>(new Set());
   const [expandedConfigIds, setExpandedConfigIds] = useState<Set<string>>(new Set());
   const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
-  const [toolRunnerOpen, setToolRunnerOpen] = useState(false);
 
   const executionPanelRef = useRef<HTMLDivElement>(null);
 
@@ -82,8 +81,6 @@ export function useUseCasesTab() {
     historyExpandedMap,
     configExpandedMap,
     historyRefreshKey,
-    toolRunnerOpen,
-    setToolRunnerOpen,
     executionPanelRef,
     handleExecute,
     handleToggleHistory,

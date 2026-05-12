@@ -8,7 +8,9 @@ static PLACEHOLDER_RE: LazyLock<Regex> =
 use serde_json::json;
 use tauri::{Emitter, State};
 
-use crate::commands::credentials::ai_artifact_flow::{spawn_ai_artifact_task, AiArtifactParams};
+use crate::commands::credentials::ai_artifact_flow::{
+    spawn_ai_artifact_task, AiArtifactMessages, AiArtifactParams,
+};
 use crate::commands::credentials::shared::build_credential_task_cli_args;
 use crate::db::models::{
     CreatePersonaRecipeLinkInput, CreateRecipeInput, PersonaRecipeLink, RecipeDefinition,
@@ -208,31 +210,48 @@ pub async fn start_recipe_execution(
     Ok(json!({ "execution_id": execution_id }))
 }
 
+/// Shared cancel path for AI-artifact long-running tasks (recipe execution /
+/// generation / versioning, and any future AI-artifact domain). Takes the
+/// task id off the process registry, emits a `{<id_field>, status: cancelled,
+/// result: null, error: null}` status event on the messages-defined channel,
+/// and returns a `{was_running, cancelled_id}` JSON payload to the frontend.
+async fn cancel_ai_artifact_task(
+    state: &State<'_, Arc<AppState>>,
+    app: &tauri::AppHandle,
+    domain: &str,
+    messages: &AiArtifactMessages,
+) -> Result<serde_json::Value, AppError> {
+    require_auth(state).await?;
+    let cancelled_id = state.process_registry.take_id(domain);
+    let was_running = cancelled_id.is_some();
+
+    if let Some(ref id) = cancelled_id {
+        tracing::info!(cancelled_id = %id, domain = %domain, "Cancelled AI artifact task");
+        let mut payload = serde_json::Map::new();
+        payload.insert(messages.id_field.to_string(), json!(id));
+        payload.insert("status".to_string(), json!("cancelled"));
+        payload.insert("result".to_string(), serde_json::Value::Null);
+        payload.insert("error".to_string(), serde_json::Value::Null);
+        let _ = app.emit(messages.status_event, serde_json::Value::Object(payload));
+    } else {
+        tracing::debug!(domain = %domain, "cancel called but nothing was running");
+    }
+
+    Ok(json!({ "was_running": was_running, "cancelled_id": cancelled_id }))
+}
+
 #[tauri::command]
 pub async fn cancel_recipe_execution(
     state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
 ) -> Result<serde_json::Value, AppError> {
-    require_auth(&state).await?;
-    let cancelled_id = state.process_registry.take_id("recipe_execution");
-    let was_running = cancelled_id.is_some();
-
-    if let Some(ref id) = cancelled_id {
-        tracing::info!(cancelled_id = %id, "Cancelled recipe execution");
-        let _ = app.emit(
-            event_name::RECIPE_EXECUTION_STATUS,
-            json!({
-                "execution_id": id,
-                "status": "cancelled",
-                "result": null,
-                "error": null,
-            }),
-        );
-    } else {
-        tracing::debug!("cancel_recipe_execution called but nothing was running");
-    }
-
-    Ok(json!({ "was_running": was_running, "cancelled_id": cancelled_id }))
+    cancel_ai_artifact_task(
+        &state,
+        &app,
+        "recipe_execution",
+        &recipe_execution::RECIPE_EXECUTION_MESSAGES,
+    )
+    .await
 }
 
 #[tauri::command]
@@ -292,26 +311,13 @@ pub async fn cancel_recipe_generation(
     state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
 ) -> Result<serde_json::Value, AppError> {
-    require_auth(&state).await?;
-    let cancelled_id = state.process_registry.take_id("recipe_generation");
-    let was_running = cancelled_id.is_some();
-
-    if let Some(ref id) = cancelled_id {
-        tracing::info!(cancelled_id = %id, "Cancelled recipe generation");
-        let _ = app.emit(
-            event_name::RECIPE_GENERATION_STATUS,
-            json!({
-                "generation_id": id,
-                "status": "cancelled",
-                "result": null,
-                "error": null,
-            }),
-        );
-    } else {
-        tracing::debug!("cancel_recipe_generation called but nothing was running");
-    }
-
-    Ok(json!({ "was_running": was_running, "cancelled_id": cancelled_id }))
+    cancel_ai_artifact_task(
+        &state,
+        &app,
+        "recipe_generation",
+        &recipe_generation::RECIPE_GENERATION_MESSAGES,
+    )
+    .await
 }
 
 #[tauri::command]
@@ -429,26 +435,13 @@ pub async fn cancel_recipe_versioning(
     state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
 ) -> Result<serde_json::Value, AppError> {
-    require_auth(&state).await?;
-    let cancelled_id = state.process_registry.take_id("recipe_versioning");
-    let was_running = cancelled_id.is_some();
-
-    if let Some(ref id) = cancelled_id {
-        tracing::info!(cancelled_id = %id, "Cancelled recipe versioning");
-        let _ = app.emit(
-            event_name::RECIPE_VERSIONING_STATUS,
-            json!({
-                "versioning_id": id,
-                "status": "cancelled",
-                "result": null,
-                "error": null,
-            }),
-        );
-    } else {
-        tracing::debug!("cancel_recipe_versioning called but nothing was running");
-    }
-
-    Ok(json!({ "was_running": was_running, "cancelled_id": cancelled_id }))
+    cancel_ai_artifact_task(
+        &state,
+        &app,
+        "recipe_versioning",
+        &recipe_versioning::RECIPE_VERSIONING_MESSAGES,
+    )
+    .await
 }
 
 #[tauri::command]

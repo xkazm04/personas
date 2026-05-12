@@ -96,11 +96,11 @@ const DateRangePopover = forwardRef<HTMLDivElement, DateRangePopoverProps>(
       <div ref={ref} className="absolute top-full right-0 mt-2 z-50 bg-background/95 backdrop-blur-md border border-primary/20 rounded-modal shadow-elevation-3 p-4 min-w-[280px]">
         <div className="space-y-3">
           <div>
-            <label className="block typo-body text-foreground mb-1">Start Date</label>
+            <label className="block typo-body text-foreground mb-1">{t.overview.filters.start_date}</label>
             <input type="date" value={startDate} max={endDate || today} onChange={(e) => setStartDate(e.target.value)} className="w-full px-3 py-1.5 typo-body rounded-card bg-secondary/50 border border-primary/15 text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/50 focus-visible:border-blue-400/50" />
           </div>
           <div>
-            <label className="block typo-body text-foreground mb-1">End Date</label>
+            <label className="block typo-body text-foreground mb-1">{t.overview.filters.end_date}</label>
             <input type="date" value={endDate} min={startDate} max={today} onChange={(e) => setEndDate(e.target.value)} className="w-full px-3 py-1.5 typo-body rounded-card bg-secondary/50 border border-primary/15 text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/50 focus-visible:border-blue-400/50" />
           </div>
           {isValid && <p className="typo-body text-foreground">{dayCount} day{dayCount !== 1 ? 's' : ''} selected</p>}

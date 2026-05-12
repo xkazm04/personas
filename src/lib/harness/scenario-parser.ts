@@ -191,7 +191,6 @@ const AREAS: ScenarioArea[] = [
       'matrix/ components',
       'onboarding/ components',
       'persona/ components',
-      'ChatThread.tsx',
     ],
     dependsOn: ['typo-mapping'],
   },

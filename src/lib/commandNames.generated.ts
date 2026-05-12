@@ -204,7 +204,6 @@ export type CommandName =
   | "companion_tts_piper_engine_status"
   | "compile_from_intent"
   | "compile_persona_memories"
-  | "compile_workflow"
   | "confirm_n8n_persona_draft"
   | "connect_to_peer"
   | "connector_explorer_explore"
