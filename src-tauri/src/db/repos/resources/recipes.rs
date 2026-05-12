@@ -449,6 +449,74 @@ pub fn create_version(
     })
 }
 
+/// The four mutable fields of a recipe_definitions row that the version-write
+/// path snapshots into recipe_versions and propagates back via UPDATE. Borrowed
+/// references so callers don't have to clone Strings off existing records.
+struct RecipeMutableFields<'a> {
+    prompt_template: &'a str,
+    input_schema: Option<&'a str>,
+    sample_inputs: Option<&'a str>,
+    description: Option<&'a str>,
+}
+
+/// Append one row to recipe_versions inside the caller's transaction.
+fn insert_recipe_version_row(
+    tx: &rusqlite::Connection,
+    recipe_id: &str,
+    version_number: i64,
+    fields: &RecipeMutableFields,
+    changes_summary: Option<&str>,
+    now: &str,
+) -> Result<(), AppError> {
+    let id = uuid::Uuid::new_v4().to_string();
+    tx.execute(
+        "INSERT INTO recipe_versions (id, recipe_id, version_number, prompt_template, input_schema, sample_inputs, description, changes_summary, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+        rusqlite::params![
+            id, recipe_id, version_number,
+            fields.prompt_template, fields.input_schema,
+            fields.sample_inputs, fields.description,
+            changes_summary, now,
+        ],
+    )?;
+    Ok(())
+}
+
+/// Overwrite the four mutable fields on recipe_definitions inside the caller's tx.
+fn update_recipe_def_fields(
+    tx: &rusqlite::Connection,
+    recipe_id: &str,
+    fields: &RecipeMutableFields,
+    now: &str,
+) -> Result<(), AppError> {
+    tx.execute(
+        "UPDATE recipe_definitions SET prompt_template = ?1, input_schema = ?2, sample_inputs = ?3, description = ?4, updated_at = ?5 WHERE id = ?6",
+        rusqlite::params![
+            fields.prompt_template, fields.input_schema,
+            fields.sample_inputs, fields.description,
+            now, recipe_id,
+        ],
+    )?;
+    Ok(())
+}
+
+/// Read a recipe definition by id inside the caller's transaction, mapping
+/// QueryReturnedNoRows to a NotFound error.
+fn read_recipe_in_tx(
+    tx: &rusqlite::Connection,
+    recipe_id: &str,
+) -> Result<RecipeDefinition, AppError> {
+    tx.query_row(
+        "SELECT * FROM recipe_definitions WHERE id = ?1",
+        params![recipe_id],
+        row_to_recipe,
+    )
+    .map_err(|e| match e {
+        rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Recipe {recipe_id}")),
+        other => AppError::Database(other),
+    })
+}
+
 #[allow(clippy::too_many_arguments)]
 pub fn accept_version(
     pool: &DbPool,
@@ -462,6 +530,7 @@ pub fn accept_version(
     timed_query!("recipes", "recipes::accept_version", {
         let conn = pool.get()?;
         let tx = conn.unchecked_transaction()?;
+        let now = chrono::Utc::now().to_rfc3339();
 
         // 1. Get latest version number
         let latest: i64 = tx.query_row(
@@ -472,62 +541,40 @@ pub fn accept_version(
 
         // 2. If no versions exist yet, snapshot the current recipe as v1
         if latest == 0 {
-            let current = tx
-                .query_row(
-                    "SELECT * FROM recipe_definitions WHERE id = ?1",
-                    params![recipe_id],
-                    row_to_recipe,
-                )
-                .map_err(|_| AppError::NotFound(format!("Recipe {recipe_id} not found")))?;
-
-            let snapshot_id = uuid::Uuid::new_v4().to_string();
-            let now = chrono::Utc::now().to_rfc3339();
-            tx.execute(
-                "INSERT INTO recipe_versions (id, recipe_id, version_number, prompt_template, input_schema, sample_inputs, description, changes_summary, created_at)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
-                rusqlite::params![
-                    snapshot_id, recipe_id, 1,
-                    current.prompt_template, current.input_schema,
-                    current.sample_inputs, current.description,
-                    "Initial version (snapshot before first edit)", now,
-                ],
+            let current = read_recipe_in_tx(&tx, recipe_id)?;
+            let snapshot_fields = RecipeMutableFields {
+                prompt_template: &current.prompt_template,
+                input_schema: current.input_schema.as_deref(),
+                sample_inputs: current.sample_inputs.as_deref(),
+                description: current.description.as_deref(),
+            };
+            insert_recipe_version_row(
+                &tx,
+                recipe_id,
+                1,
+                &snapshot_fields,
+                Some("Initial version (snapshot before first edit)"),
+                &now,
             )?;
         }
 
         let new_version_number = if latest == 0 { 2 } else { latest + 1 };
+        let new_fields = RecipeMutableFields {
+            prompt_template,
+            input_schema,
+            sample_inputs,
+            description,
+        };
 
         // 3. Create the new version record
-        let version_id = uuid::Uuid::new_v4().to_string();
-        let now = chrono::Utc::now().to_rfc3339();
-        tx.execute(
-            "INSERT INTO recipe_versions (id, recipe_id, version_number, prompt_template, input_schema, sample_inputs, description, changes_summary, created_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
-            rusqlite::params![version_id, recipe_id, new_version_number, prompt_template, input_schema, sample_inputs, description, changes_summary, now],
-        )?;
+        insert_recipe_version_row(&tx, recipe_id, new_version_number, &new_fields, changes_summary, &now)?;
 
         // 4. Update the recipe definition with the new data
-        let now = chrono::Utc::now().to_rfc3339();
-        tx.execute(
-            "UPDATE recipe_definitions SET prompt_template = ?1, input_schema = ?2, sample_inputs = ?3, description = ?4, updated_at = ?5 WHERE id = ?6",
-            rusqlite::params![prompt_template, input_schema, sample_inputs, description, now, recipe_id],
-        )?;
+        update_recipe_def_fields(&tx, recipe_id, &new_fields, &now)?;
 
         // 5. Read the updated recipe within the transaction
-        let recipe = tx
-            .query_row(
-                "SELECT * FROM recipe_definitions WHERE id = ?1",
-                params![recipe_id],
-                row_to_recipe,
-            )
-            .map_err(|e| match e {
-                rusqlite::Error::QueryReturnedNoRows => {
-                    AppError::NotFound(format!("Recipe {recipe_id}"))
-                }
-                other => AppError::Database(other),
-            })?;
-
+        let recipe = read_recipe_in_tx(&tx, recipe_id)?;
         tx.commit()?;
-
         Ok(recipe)
     })
 }
@@ -540,6 +587,7 @@ pub fn revert_to_version(
     timed_query!("recipes", "recipes::revert_to_version", {
         let conn = pool.get()?;
         let tx = conn.unchecked_transaction()?;
+        let now = chrono::Utc::now().to_rfc3339();
 
         // 1. Read the target version
         let version = tx
@@ -551,13 +599,13 @@ pub fn revert_to_version(
             .map_err(|_| AppError::NotFound(format!("Version {version_id} not found")))?;
 
         // 2. Read the current recipe state
-        let current = tx
-            .query_row(
-                "SELECT * FROM recipe_definitions WHERE id = ?1",
-                params![recipe_id],
-                row_to_recipe,
-            )
-            .map_err(|_| AppError::NotFound(format!("Recipe {recipe_id} not found")))?;
+        let current = read_recipe_in_tx(&tx, recipe_id)?;
+        let current_fields = RecipeMutableFields {
+            prompt_template: &current.prompt_template,
+            input_schema: current.input_schema.as_deref(),
+            sample_inputs: current.sample_inputs.as_deref(),
+            description: current.description.as_deref(),
+        };
 
         // 3. Get latest version number
         let latest: i64 = tx.query_row(
@@ -568,47 +616,28 @@ pub fn revert_to_version(
         let snapshot_version = if latest == 0 { 1 } else { latest + 1 };
 
         // 4. Snapshot the current recipe state before overwriting so the user can recover it
-        let snapshot_id = uuid::Uuid::new_v4().to_string();
-        let now = chrono::Utc::now().to_rfc3339();
-        tx.execute(
-            "INSERT INTO recipe_versions (id, recipe_id, version_number, prompt_template, input_schema, sample_inputs, description, changes_summary, created_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
-            rusqlite::params![
-                snapshot_id,
-                recipe_id,
-                snapshot_version,
-                current.prompt_template,
-                current.input_schema,
-                current.sample_inputs,
-                current.description,
-                format!("Snapshot before revert to v{}", version.version_number),
-                now,
-            ],
+        let snapshot_summary = format!("Snapshot before revert to v{}", version.version_number);
+        insert_recipe_version_row(
+            &tx,
+            recipe_id,
+            snapshot_version,
+            &current_fields,
+            Some(&snapshot_summary),
+            &now,
         )?;
 
         // 5. Update the recipe definition to the target version
-        let now = chrono::Utc::now().to_rfc3339();
-        tx.execute(
-            "UPDATE recipe_definitions SET prompt_template = ?1, input_schema = ?2, sample_inputs = ?3, description = ?4, updated_at = ?5 WHERE id = ?6",
-            rusqlite::params![version.prompt_template, version.input_schema, version.sample_inputs, version.description, now, recipe_id],
-        )?;
+        let target_fields = RecipeMutableFields {
+            prompt_template: &version.prompt_template,
+            input_schema: version.input_schema.as_deref(),
+            sample_inputs: version.sample_inputs.as_deref(),
+            description: version.description.as_deref(),
+        };
+        update_recipe_def_fields(&tx, recipe_id, &target_fields, &now)?;
 
         // 6. Read the updated recipe within the transaction
-        let recipe = tx
-            .query_row(
-                "SELECT * FROM recipe_definitions WHERE id = ?1",
-                params![recipe_id],
-                row_to_recipe,
-            )
-            .map_err(|e| match e {
-                rusqlite::Error::QueryReturnedNoRows => {
-                    AppError::NotFound(format!("Recipe {recipe_id}"))
-                }
-                other => AppError::Database(other),
-            })?;
-
+        let recipe = read_recipe_in_tx(&tx, recipe_id)?;
         tx.commit()?;
-
         Ok(recipe)
     })
 }
