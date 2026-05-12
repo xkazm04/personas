@@ -1,9 +1,12 @@
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
+import type { AgentIR } from '@/lib/types/designTypes';
 import type { DynamicOptionState } from '../useDynamicQuestionOptions';
 
 export interface QuestionnaireFormProps {
   questions: TransformQuestionResponse[];
   userAnswers: Record<string, string>;
+  /** Parsed template payload — feeds the centerpiece sigil's base presence. */
+  designResult?: AgentIR | null;
   /** Question IDs auto-answered from the credential vault. */
   autoDetectedIds?: Set<string>;
   /** Question IDs blocked because no vault credential exists for the category. */
@@ -39,5 +42,3 @@ export interface QuestionnaireNormalizedOption {
 }
 
 export type QuestionnaireThreadState = 'answered' | 'current' | 'pending' | 'blocked';
-
-export type QuestionnairePulse = { id: number; cat: string };

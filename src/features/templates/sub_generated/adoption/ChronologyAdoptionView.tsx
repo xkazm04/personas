@@ -23,6 +23,7 @@ import type { PersonaDesignReview } from "@/lib/bindings/PersonaDesignReview";
 import type { CellBuildStatus } from "@/lib/types/buildTypes";
 import type { ActiveProcess } from "@/stores/slices/processActivitySlice";
 import type { TransformQuestionResponse } from "@/api/templates/n8nTransform";
+import type { AgentIR } from "@/lib/types/designTypes";
 import { matchVaultToQuestions } from "../shared/vaultAdoptionMatcher";
 import { useDynamicQuestionOptions } from "./useDynamicQuestionOptions";
 import { categoryOrderIndex } from "./questionnaireCategoryOrder";
@@ -1205,6 +1206,7 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
         <QuestionnaireForm
           questions={filteredAdoptionQuestions}
           userAnswers={adoptionAnswers}
+          designResult={designResult as unknown as AgentIR | null}
           autoDetectedIds={autoDetectedIds}
           blockedQuestionIds={blockedQuestionIds}
           filteredOptions={filteredOptions}

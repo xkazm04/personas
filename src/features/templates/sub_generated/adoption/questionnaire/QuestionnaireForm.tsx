@@ -1,18 +1,19 @@
 /**
- * QuestionnaireForm — three-pane synthesis with a decorative background
- * orbit. See ../questionnaire/ for the composed parts. This file is the
- * orchestrator: state, derived data, wiring, and the outer layout.
+ * QuestionnaireForm — three-pane synthesis with the persona's 8-petal sigil
+ * as the centerpiece. See ../questionnaire/ for the composed parts. This
+ * file is the orchestrator: state, derived data, wiring, and the outer
+ * layout.
  *
  * Layout:
  *   QuestionnaireHeaderBand (title + counters + stepper)
  *   ├── QuestionnaireCategoryRail (left — category nav)
- *   ├── Centre pane (background constellation absolute behind QuestionnaireHeroQuestion)
+ *   ├── Centre pane (QuestionnaireCenterpieceSigil behind QuestionnaireHeroQuestion)
  *   └── QuestionnaireStoryThread (right — question chain)
  *   QuestionnaireFooterNav (back / next / submit)
  */
 import { useCallback, useMemo, useState } from 'react';
-import { QuestionnaireBackgroundConstellation } from './QuestionnaireBackgroundConstellation';
 import { QuestionnaireCategoryRail } from './QuestionnaireCategoryRail';
+import { QuestionnaireCenterpieceSigil } from './QuestionnaireCenterpieceSigil';
 import { QuestionnaireFooterNav } from './QuestionnaireFooterNav';
 import { QuestionnaireHeaderBand } from './QuestionnaireHeaderBand';
 import { QuestionnaireHeroQuestion } from './QuestionnaireHeroQuestion';
@@ -20,12 +21,12 @@ import { QuestionnaireStoryThread } from './QuestionnaireStoryThread';
 import { isStackable, resolveStackableOptions } from './questionnaireHelpers';
 import { useQuestionnaireCategoryData } from './useQuestionnaireCategoryData';
 import { useQuestionnaireKeyboardNav } from './useQuestionnaireKeyboardNav';
-import { useQuestionnairePulses } from './useQuestionnairePulses';
 import type { QuestionnaireFormProps } from './types';
 
 export function QuestionnaireForm({
   questions,
   userAnswers,
+  designResult,
   autoDetectedIds,
   blockedQuestionIds,
   filteredOptions,
@@ -64,7 +65,6 @@ export function QuestionnaireForm({
     userAnswers,
     blockedQuestionIds,
   );
-  const pulses = useQuestionnairePulses(questions, userAnswers);
 
   const currentOptions = useMemo(
     () => (currentQuestion ? resolveStackableOptions(currentQuestion, filteredOptions?.[currentQuestion.id]) : []),
@@ -132,12 +132,12 @@ export function QuestionnaireForm({
         />
 
         <main className="flex-1 min-w-0 relative overflow-hidden">
-          <QuestionnaireBackgroundConstellation
-            categoryKeys={categoryKeys}
-            categoryProgress={categoryProgress}
-            currentCat={currentCat}
-            progressPct={progressPct}
-            pulses={pulses}
+          <QuestionnaireCenterpieceSigil
+            designResult={designResult ?? null}
+            questions={questions}
+            userAnswers={userAnswers}
+            templateName={templateName ?? 'Template'}
+            currentCategory={currentCat}
           />
           <div className="absolute inset-0 overflow-y-auto">
             <div className="max-w-2xl mx-auto px-10 py-10">
