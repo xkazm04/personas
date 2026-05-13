@@ -332,24 +332,42 @@ notification_channels declared per use_case.
 
 #### 3c.1 — Other payload fields
 
-- **suggested_parameters**: Array of free parameter definitions. Parameters are runtime-adjustable values (thresholds, caps, limits) that users can change without triggering a rebuild. Templates should define parameters for any numeric threshold, limit, or configurable value referenced in the instructions. Parameters are injected into prompts via `{{param.key_name}}` syntax.
+- **Parameters (free, runtime-adjustable)**: Values users can change *without* triggering a rebuild — counts, thresholds, sources, websites, tone choices. Every persona should declare every concrete value its prompt mentions as a parameter. Two declaration paths converge into the same `personas.parameters` JSON column after adoption (handled by `populate_persona_parameters_from_design` in `template_adopt.rs`):
+
+  **Path A — `suggested_parameters[]`**: Direct array of `PersonaParameter` objects on the payload. Use when the knob has an unambiguous default and you don't want to ask the user about it during adoption.
   ```json
   [
     {
-      "key": "parameter_key",
-      "label": "Display Label",
-      "type": "number|string|boolean|select",
-      "default_value": 100,
-      "value": 100,
-      "description": "What this parameter controls",
-      "unit": "$|%|ms|items",
-      "min": 0,
-      "max": 10000,
-      "options": ["option1", "option2"]
+      "key": "spending_threshold",
+      "label": "Weekly Spending Threshold",
+      "type": "number",
+      "default_value": 500,
+      "value": 500,
+      "description": "Max acceptable weekly spend before the agent alerts.",
+      "unit": "$", "min": 0, "max": 1000000
     }
   ]
   ```
-  When generating instructions and prompt, reference parameters as `{{param.key}}` so they're substituted at runtime.
+
+  **Path B — adoption questions with `maps_to: persona.parameters[KEY]`**: A question in `adoption_questions[]` whose `maps_to` is shaped `persona.parameters[KEY]`. The question's `default`, `type`, `min`/`max`, `options`, and `context` become the parameter's schema; the user's answer (when present) becomes the live value. Use when the knob's right default depends on the user's situation. Same example, asked at adoption time:
+  ```json
+  {
+    "id": "aq_spending_threshold",
+    "scope": "persona",
+    "category": "configuration",
+    "question": "Weekly spending threshold above which the agent alerts?",
+    "type": "number", "default": 500, "min": 0, "max": 1000000,
+    "maps_to": "persona.parameters[spending_threshold]",
+    "variable_name": "spending_threshold",
+    "context": "Higher thresholds reduce noise but mask gradual creep."
+  }
+  ```
+
+  Both paths populate the persona row's `parameters` column with the same JSON shape. When the same KEY appears in both, the questionnaire-derived definition wins (user answers override static defaults).
+
+  **CRITICAL**: when authoring a parameter under either path, the persona's `operating_instructions`, `tool_guidance`, or `full_prompt_markdown` MUST reference the parameter via `{{param.KEY}}` rather than the literal default. Otherwise the runtime substitution layer (`engine/prompt/variables.rs`) has nothing to substitute and the "adjustable without rebuild" promise is empty. Lint your draft: every `suggested_parameters[i].key` and every `adoption_questions[].variable_name` (when `maps_to` is `persona.parameters[...]`) should appear at least once as `{{param.KEY}}` in the prompt text.
+
+  **Examples of good parameter candidates** (from the active template catalog): number of items to extract per scan, lookback window in weeks/days, websites to research, knowledge-base IDs, output count, alert threshold, target audience type, tone preset.
 
 - **suggested_tools**: Typically `["http_request", "file_read", "file_write"]`.
 
