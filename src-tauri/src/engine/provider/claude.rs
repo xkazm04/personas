@@ -54,8 +54,28 @@ impl CliProvider for ClaudeProvider {
     }
 
     fn minimum_version(&self) -> Option<&str> {
-        // CLI ≥ 2.1.139 — floor advances when a newer CLI fixes the wrapping
+        // CLI ≥ 2.1.140 — floor advances when a newer CLI fixes the wrapping
         // contract personas depends on. Recent floor:
+        // - 2.1.140: pure upstream bug-fix release; no personas wrapping
+        //   contract changes. None of the fixes affect `-p`/stream-json mode,
+        //   `hooks_sidecar`, `cli_mcp_config`, or `build_cli_args` callers.
+        //   Notable for the Phase 6 catch table: the `/goal` + `disableAllHooks`
+        //   /`allowManagedHooksOnly` clear-message fix is informational only
+        //   against the descoped `/goal` completion-condition entry in
+        //   `Patterns/descoped-reopenable.md` (2026-05-11) — it confirms
+        //   hooks-disabled state changes `/goal` availability, but does NOT
+        //   publish the `-p`-mode wire contract (stream-json event variant
+        //   signaling goal-met) that the entry's reconsider-trigger (i)
+        //   requires. The Windows event-loop stall on missing-executable
+        //   `where.exe` re-spawns is also a near-miss against personas's
+        //   own `binary_probe.rs::BinaryProbeCache` (TTL-cached `where`/`which`
+        //   results) — same root pattern, already mitigated here. Other items
+        //   (`claude --bg`, remote managed settings 401, `/loop` redundant
+        //   wakeups, `extraKnownMarketplaces` persistence, settings-hot-reload
+        //   symlink misattribution, plugins component-folder warning, native
+        //   terminal cursor, `subagent_type` case-insensitive matching, `Read`
+        //   offset string validation, agent color palette) do not touch
+        //   personas's wrapping surface.
         // - 2.1.139: stream watchdog no longer fires a spurious "stream idle
         //   timeout" 5 minutes after a response completed (real defect — the
         //   timer wasn't being cleared on stream cancellation, false-aborting
@@ -84,7 +104,7 @@ impl CliProvider for ClaudeProvider {
         // against the 2.1.126 floor lives in `Patterns/descoped-reopenable.md`.
         // The check is advisory: `provider::check_cli_version` returns an Err
         // string below the floor; no caller turns that into a hard refusal.
-        Some("2.1.139")
+        Some("2.1.140")
     }
 }
 
@@ -171,6 +191,6 @@ mod tests {
         let provider = ClaudeProvider;
         let min = provider.minimum_version();
         assert!(min.is_some());
-        assert_eq!(min.unwrap(), "2.1.139");
+        assert_eq!(min.unwrap(), "2.1.140");
     }
 }
