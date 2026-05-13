@@ -530,6 +530,21 @@ pub fn list_tools() -> Vec<Value> {
             }
         }),
         json!({
+            "name": "personas_search_executions",
+            "description": "Search past persona executions by FTS5 full-text query against input/output/error_message. Returns highlighted snippets with >>>...<<< delimiters around matches, plus metadata (status, model, cost, duration). Use to recall prior runs by content (e.g. 'failed connector errors last week', 'executions that wrote to S3', 'runs mentioning rate limit').",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "query": { "type": "string", "description": "FTS5 query string. Supports prefix wildcards (rate*), phrase queries (\"rate limit\"), AND/OR/NOT operators, and column filters (output_data:error)." },
+                    "persona_id": { "type": "string", "description": "Optional — restrict to one persona's executions" },
+                    "status": { "type": "string", "enum": ["queued", "running", "completed", "failed", "cancelled"], "description": "Optional — filter by execution status" },
+                    "since": { "type": "string", "description": "Optional ISO-8601 timestamp — only executions created at-or-after this time" },
+                    "limit": { "type": "number", "description": "Max results (default 20, max 100)" }
+                },
+                "required": ["query"]
+            }
+        }),
+        json!({
             "name": "personas_list_templates",
             "description": "Browse the template catalog with quality scores and adoption metrics.",
             "inputSchema": {
@@ -677,6 +692,7 @@ pub fn call_tool(name: &str, args: &Value, pool: &McpDbPool) -> Value {
         "personas_knowledge_search" => handle_knowledge_search(args, pool),
         "personas_annotate" => handle_annotate(args, pool),
         "personas_health" => handle_health(args, pool),
+        "personas_search_executions" => handle_search_executions(args, pool),
         "personas_list_templates" => handle_list_templates(args, pool),
         "arena_list_models" => handle_arena_list_models(args),
         "arena_list_runs" => handle_arena_list_runs(args, pool),
@@ -1266,6 +1282,76 @@ fn handle_arena_get_results(args: &Value, pool: &McpDbPool) -> Result<String, St
                 "duration_ms": row.get::<_, i64>(15)?,
                 "error_message": row.get::<_, Option<String>>(16)?,
                 "created_at": row.get::<_, String>(17)?,
+            }))
+        })
+        .map_err(|e| format!("Query error: {e}"))?;
+
+    let results: Vec<Value> = rows.filter_map(|r| r.ok()).collect();
+    serde_json::to_string_pretty(&results).map_err(|e| format!("Serialize error: {e}"))
+}
+
+fn handle_search_executions(args: &Value, pool: &McpDbPool) -> Result<String, String> {
+    let query = args
+        .get("query")
+        .and_then(|v| v.as_str())
+        .ok_or("query is required")?;
+    if query.trim().is_empty() {
+        return Err("query must not be empty".into());
+    }
+    let persona_id = args.get("persona_id").and_then(|v| v.as_str());
+    let status = args.get("status").and_then(|v| v.as_str());
+    let since = args.get("since").and_then(|v| v.as_str());
+    let limit = args
+        .get("limit")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(20)
+        .clamp(1, 100);
+
+    let mut where_clauses: Vec<String> = vec!["executions_fts MATCH ?".into()];
+    let mut bound: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(query.to_string())];
+    if let Some(pid) = persona_id {
+        where_clauses.push("pe.persona_id = ?".into());
+        bound.push(Box::new(pid.to_string()));
+    }
+    if let Some(st) = status {
+        where_clauses.push("pe.status = ?".into());
+        bound.push(Box::new(st.to_string()));
+    }
+    if let Some(s) = since {
+        where_clauses.push("pe.created_at >= ?".into());
+        bound.push(Box::new(s.to_string()));
+    }
+    bound.push(Box::new(limit));
+
+    let sql = format!(
+        "SELECT pe.id, pe.persona_id, pe.status, pe.model_used, pe.cost_usd, pe.duration_ms, pe.created_at, \
+                snippet(executions_fts, 0, '>>>', '<<<', '…', 24) AS input_snippet, \
+                snippet(executions_fts, 1, '>>>', '<<<', '…', 24) AS output_snippet, \
+                snippet(executions_fts, 2, '>>>', '<<<', '…', 24) AS error_snippet \
+         FROM executions_fts \
+         JOIN persona_executions pe ON pe.rowid = executions_fts.rowid \
+         WHERE {} \
+         ORDER BY pe.created_at DESC \
+         LIMIT ?",
+        where_clauses.join(" AND ")
+    );
+
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(&sql).map_err(|e| format!("Query error: {e}"))?;
+    let param_refs: Vec<&dyn rusqlite::types::ToSql> = bound.iter().map(|p| p.as_ref()).collect();
+    let rows = stmt
+        .query_map(param_refs.as_slice(), |row| {
+            Ok(json!({
+                "execution_id": row.get::<_, String>(0)?,
+                "persona_id": row.get::<_, String>(1)?,
+                "status": row.get::<_, String>(2)?,
+                "model_used": row.get::<_, Option<String>>(3)?,
+                "cost_usd": row.get::<_, Option<f64>>(4)?,
+                "duration_ms": row.get::<_, Option<i64>>(5)?,
+                "created_at": row.get::<_, String>(6)?,
+                "input_snippet": row.get::<_, Option<String>>(7)?,
+                "output_snippet": row.get::<_, Option<String>>(8)?,
+                "error_snippet": row.get::<_, Option<String>>(9)?,
             }))
         })
         .map_err(|e| format!("Query error: {e}"))?;

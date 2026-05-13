@@ -11,11 +11,9 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useUseCasesTab } from '../../libs/useUseCasesTab';
 import { useCapabilityToggle } from '../../libs/useCapabilityToggle';
 import { CapabilityDisableDialog } from '../core/CapabilityDisableDialog';
-import { DefaultModelSection } from '../core/DefaultModelSection';
 import { UseCasesRefineCard } from '../core/UseCasesRefineCard';
 import { MiniSigil, EmptyMiniSigil } from './shared/MiniSigil';
 import { UseCaseDetailExpanded } from './shared/UseCaseDetailExpanded';
-import { PersonaCrest } from './shared/PersonaCrest';
 import { TilePolicyToggles } from './shared/TilePolicyToggles';
 import { TileModelStrip } from './shared/TileModelStrip';
 import {
@@ -55,7 +53,7 @@ const RUN_LOCK_MS = 60_000;
  * Tauri mutations the legacy Grid + Glyph baselines use, so any tab can
  * reflect changes made on any other.
  */
-export function RecipesVariantSigilGrid(props: Props) {
+export function RecipesVariantSigilGrid({ credentials }: Props) {
   const {
     selectedPersona, isExecuting, personaId, useCases: rawUseCases,
     selectedUseCaseId, setSelectedUseCaseId, historyRefreshKey,
@@ -98,7 +96,6 @@ export function RecipesVariantSigilGrid(props: Props) {
     [rawUseCases, personaConnectors],
   );
 
-  const personaName = props.draft.name?.trim() || selectedPersona?.name || 'Untitled persona';
   const personaDefaultModelProfile = selectedPersona?.model_profile ?? null;
   const activeUc = selectedUseCaseId ? items.find((u) => u.id === selectedUseCaseId) ?? null : null;
 
@@ -143,7 +140,7 @@ export function RecipesVariantSigilGrid(props: Props) {
             <UseCaseDetailExpanded
               uc={activeUc}
               personaId={personaId}
-              credentials={props.credentials}
+              credentials={credentials}
               memoriesDefault={memoriesDefault}
               reviewsDefault={reviewsDefault}
               isExecuting={isExecuting}
@@ -166,20 +163,6 @@ export function RecipesVariantSigilGrid(props: Props) {
             transition={{ duration: 0.18 }}
             className="flex-1 min-h-0 flex flex-col"
           >
-            <PersonaCrest
-              personaName={personaName}
-              useCases={items}
-              variant="compact"
-              rightSlot={
-                <DefaultModelSection
-                  draft={props.draft}
-                  patch={props.patch}
-                  modelDirty={props.modelDirty}
-                  personaId={personaId}
-                />
-              }
-            />
-
             {items.length === 0 ? (
               <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin">
                 <EmptyState variant="use-cases-empty" />

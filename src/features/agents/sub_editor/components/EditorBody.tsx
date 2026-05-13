@@ -5,14 +5,13 @@ import { SuspenseFallback } from '@/features/shared/components/feedback/Suspense
 import { Bot, RefreshCw } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
-import { useVaultStore } from "@/stores/vaultStore";
 import { ContentBox } from '@/features/shared/components/layout/ContentLayout';
 import { UnsavedChangesBanner, CloudNudgeBanner, PartialLoadBanner } from './EditorBanners';
 import { EditorTabBar } from './EditorTabBar';
 import { PersonaEditorHeader } from './PersonaEditorHeader';
 import {
   ActivityTab,
-  PersonaSettingsTab, PersonaUseCasesTab,
+  PersonaSettingsTab,
   LabTab, DesignTab,
 } from './EditorLazyTabs';
 import { EditorTabContent } from './EditorTabContent';
@@ -40,9 +39,6 @@ export function EditorBody() {
     cancelPendingSwitch: s.cancelPendingSwitch,
   })));
   const editorTab = useSystemStore((s) => s.editorTab);
-  const { credentials } = useVaultStore(useShallow((s) => ({
-    credentials: s.credentials,
-  })));
 
   const {
     draft, baseline, patch, setBaseline,
@@ -100,9 +96,9 @@ export function EditorBody() {
   const { isStarter } = useTier();
   const setEditorTab = useSystemStore((s) => s.setEditorTab);
   useEffect(() => {
-    // The matrix and chat tabs were removed; bounce everyone (legacy persisted
-    // state) to use-cases. Companion chat now replaces the in-editor chat.
-    if (editorTab === 'matrix' || editorTab === 'chat') {
+    // Legacy / removed tabs bounce to the Design hub. Use Cases now lives as
+    // a Design sub-tab; setEditorTab handles the sub-tab promotion.
+    if (editorTab === 'matrix' || editorTab === 'chat' || editorTab === 'use-cases') {
       setEditorTab('use-cases');
       return;
     }
@@ -186,13 +182,15 @@ export function EditorBody() {
         <SubTabSurface tabId={editorTab}>
           <Suspense fallback={<SuspenseFallback />}>
             {editorTab === 'activity' && <ActivityTab />}
-            {editorTab === 'use-cases' && (
-              <EditorTabContent>
-                <PersonaUseCasesTab draft={draft} patch={patch} modelDirty={modelDirty} credentials={credentials} />
-              </EditorTabContent>
-            )}
             {editorTab === 'lab' && <LabTab />}
-            {editorTab === 'design' && <DesignTab onConnectorsMissingChange={setConnectorsMissing} />}
+            {editorTab === 'design' && (
+              <DesignTab
+                draft={draft}
+                patch={patch}
+                modelDirty={modelDirty}
+                onConnectorsMissingChange={setConnectorsMissing}
+              />
+            )}
             {editorTab === 'settings' && (
               <EditorTabContent>
                 <PersonaSettingsTab

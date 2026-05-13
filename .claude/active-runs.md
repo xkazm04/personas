@@ -32,11 +32,31 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
-_(none)_
+- **[2026-05-13 — started] /research — hermes-agent-codebase-deep**
+  - **Source:** `C:\Users\kazda\kiro\hermes-agent` (Nous Research Hermes Agent codebase, comprehensive analysis of UI, functionality, architecture)
+  - **Paths:** `Obsidian/personas/Research/2026-05-13-hermes-agent-codebase-deep.md`, `Obsidian/personas/Lessons/2026-05-13-research.md` (Edit/append — coordinates with concurrent claude-code-2-1-140 run), `Obsidian/personas/Patterns/descoped-reopenable.md` (append-only), possibly `src/data/releases.json` + `src/features/home/components/releases/i18n/*.ts` if Phase 12 fires, `.claude/active-runs.md`
+  - **Status:** started
+  - **Note:** Aware of concurrent run on Lessons/releases. Will re-check ledger before any Phase 12 write.
 
 
 
 ## Recently completed (last 14 days)
+
+- **[2026-05-13] prod-installer — local production build for v0.1.0-1 (no source edits)**
+  - **Command:** `npm run tauri:build` (canonical: `desktop-full` features, NSIS + MSI). Build time 17m 30s; release profile clean (61 warnings, 0 errors).
+  - **Artifacts produced:**
+    - NSIS: `src-tauri/target/release/bundle/nsis/Personas_0.1.0-1_x64-setup.exe` (53 MB)
+    - MSI:  `src-tauri/target/release/bundle/msi/Personas_0.1.0-1_x64_en-US.msi` (72 MB)
+  - **Status:** completed — NSIS installer launched via `start ""` for user to walk through. No commits, no source edits, build artifacts only.
+
+- **[2026-05-13 ~afternoon] /research — claude-code-2-1-140 (focus: code, 1 metadata finding + 12 catches)**
+  - **Source:** https://github.com/anthropics/claude-code/releases/tag/v2.1.140 (release notes via `gh api`). 7th observation of the "CLI release log of a wrapped binary" source type — landed at the **low end** of the calibration row (1 metadata + 0 contract-aware findings + 12 catches, ~7% hit rate). Pure upstream bug-fix release; no wrapping-contract regressions for personas to track.
+  - **Paths shipped:** 1 atomic commit on master.
+    - `e7f62bb43` F1 — `src-tauri/src/engine/provider/claude.rs` (minimum_version 2.1.139 → 2.1.140, line 87; new docstring paragraph at lines 56-76 summarizing the catch table — `/goal` + disableAllHooks fix is informational only against the descoped completion-condition entry (does NOT publish the `-p`-mode wire contract reconsider-trigger (i) requires); Windows where.exe re-spawn fix is a near-miss against personas's own `binary_probe.rs::BinaryProbeCache` TTL mitigation; 10 other items not applicable to personas; test at line 174 updated 2.1.139 → 2.1.140).
+  - **Obsidian writes:** new `Obsidian/personas/Research/2026-05-13-claude-code-2-1-140.md`, new `Obsidian/personas/Lessons/2026-05-13-research.md`. No descoped-reopenable additions; all 17 existing entries cross-checked, zero reopens.
+  - **Status:** completed (commit `e7f62bb43` on master + ledger deregister in this same edit).
+  - **Validation:** `cargo check --features desktop --manifest-path src-tauri/Cargo.toml --lib` clean (exit 0, 57s, 125 pre-existing warnings, no new); `cargo test ... engine::provider::claude::tests` 8/8 pass (including `test_minimum_version_is_set` updated to assert "2.1.140"). Working tree at commit was clean — only the 2 expected files (claude.rs + active-runs.md), no parallel-session drift to navigate. Concurrent prod-installer + hermes-agent-codebase-deep sessions in `## Active` declared non-overlapping paths (build artifacts + hermes Research note slug); the hermes session is aware of this run and will re-check ledger before Phase 12.
+  - **Headline:** Smallest CLI-release-log run to date — 1 metadata-floor advance + 12 catches, zero contract-aware findings (v2.1.140 has no new flags/env vars/event variants for personas to integrate). The calibration row holds tightly to its 7th observation: "CLI release log of a wrapped binary" → 1-2 metadata + 1-2 contract + 16-catch tail; this run was at the LOW end of that band, in-band. Phase 12 (release log) was skipped — the floor advance is purely internal compatibility metadata with no user-visible behavior change; per the user-facing-news voice rules, it doesn't translate to release-notes copy a non-developer would care about. **11th consecutive observation of the `mkdol` → `kazda` vault-path drift in `skill.md` — longest-running unfixed maintenance todo in the run history. Lessons block flags promotion for a follow-up turn.**
 
 - **[2026-05-12 19:00 → ~19:30] /prototype — DesignTab readability variants (baseline kept, prototypes cut)**
   - **Source:** in-session user request following the connector-detection bugfix in `806bab583`. Goal: 2 directional variants that improve scannability + navigation of the saved-design wall of sections (DesignPhasePanelSaved → DesignResultPreview).

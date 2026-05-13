@@ -130,7 +130,15 @@ export const useSystemStore = create<SystemStore>()(
           state.designSubTab = 'connectors';
         } else if (legacyTab === 'health') {
           state.editorTab = 'design';
-          state.designSubTab = 'design';
+          state.designSubTab = 'prompt';
+        } else if (legacyTab === 'use-cases') {
+          state.editorTab = 'design';
+          state.designSubTab = 'use-cases';
+        }
+        // Migrate legacy designSubTab value: 'design' (former LLM-wizard tab) → 'prompt'.
+        const legacySubTab = state.designSubTab as unknown as string;
+        if (legacySubTab === 'design') {
+          state.designSubTab = 'prompt';
         }
       },
     },

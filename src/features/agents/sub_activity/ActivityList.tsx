@@ -34,7 +34,6 @@ function useColumns(): TableColumn<ActivityItem>[] {
       render: (item) => (
         <div className="min-w-0">
           <span className="typo-body font-medium text-foreground/85 truncate block">{item.title}</span>
-          <p className="typo-body text-foreground truncate">{item.subtitle}</p>
         </div>
       ),
     },

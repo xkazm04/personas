@@ -150,3 +150,38 @@ When this design is implemented, the PR should:
 The companion finding from the same `/research` run (`auto_pr_on_success` + `try_auto_pr_after_success`) closes the **specific** Linear→PR loop Symphony demoed at [00:05:01]. This document closes the **generalisation** of that loop: the hook surface that lets users compose Symphony's `create_after` / `run_after` shape themselves without each combination being hardcoded into personas.
 
 If only the specific finding ships, personas matches Symphony's headline demo. If this design also ships, personas matches Symphony's underlying configuration model — and surpasses it on type safety and testability.
+
+## v2 scope reference — intra-execution hooks (forward grounding)
+
+Added 2026-05-13 from `/research` run on Hermes Agent codebase (v0.12 + v0.13 releases). Hermes ships a wider hook surface than Symphony's task-level shape. When personas designs v2 intra-execution hooks, the Hermes list is the reference catalogue to evaluate:
+
+| Hook | What it transforms | Real-world use |
+|---|---|---|
+| `pre_tool_call(ctx) -> Optional[Block]` | Allow blocking / rewriting a tool call before it fires | Approval gating, dangerous-command guard, secret-arg redaction |
+| `post_tool_call(ctx, result) -> None` | Observe results — read-only | Audit logging, metrics, anomaly detection |
+| `transform_tool_result(ctx, result) -> result` | Reshape tool output before the LLM sees it | Truncation, normalization, citation injection, secret redaction |
+| `transform_terminal_output(ctx, output) -> output` | Reshape stdout/stderr from shell tool calls | Strip ANSI, redact env vars, summarize verbose output |
+| `pre_llm_call(ctx, messages) -> messages` | Reshape conversation before it goes to the provider | Compression, context-window trimming, persona-specific prepends |
+| `post_llm_call(ctx, response) -> None` | Observe LLM response — read-only | Cost telemetry, completion-quality scoring |
+| `transform_llm_output(ctx, output) -> output` | Reshape LLM output before it hits the conversation (Hermes v0.13 PR #21235) | Context-window reducers, content filters, format normalization |
+| `on_session_start(ctx) -> None` | Fire once when a session begins | Setup, initial context loading |
+| `on_session_end(ctx, outcome) -> None` | Fire once when a session ends — outcome carries final state | Cleanup, summary emission, archive triggers |
+
+**Translation to personas' two-channel runner:**
+- `pre_tool_call` / `post_tool_call` / `transform_tool_result` land in `engine/runner/mod.rs::run_persona`'s `match &line_type` block (~line 1301), where `StreamLineType::ToolUse` and `StreamLineType::ToolResult` are dispatched.
+- `pre_llm_call` is harder under personas' `-p` mode — there's no per-call hook into the spawned `claude` binary's conversation. Skip or relocate to "stream-line pre-emit" if needed.
+- `transform_llm_output` could attach to the structured-event channel `Message` arm — would let plugins redact / truncate / inject before the chat surface renders.
+- `on_session_start` / `on_session_end` fold into the task-level `TaskStart` / `SessionEnd` already in v1 scope above; don't duplicate.
+
+**Use-case examples worth capturing before v2 design starts:**
+- Context-window reducer (Hermes's own use case for `transform_llm_output`): when the model produces a verbose response, plugin trims it before the next turn sees it as history.
+- Secret redaction in tool output (Hermes had this as a `redaction.enabled` flag; flipped to off-by-default in v0.12, on-by-default in v0.13 after the corruption-incident pendulum swing).
+- Post-write delta lint (Hermes v0.13 PR #20191): a `transform_tool_result` impl for `write_file` / `patch` that parses Python / JSON / YAML / TOML and surfaces syntax errors back to the agent before the next turn.
+- Citation injection: a `transform_tool_result` impl for web-search tools that appends source URLs to the output.
+
+**Anti-patterns to avoid in v2:**
+- Letting hooks recurse — a `transform_llm_output` that calls the LLM is a footgun. Each hook should be synchronous-ish or have a hard timeout.
+- Letting hooks introduce ordering coupling — two hooks each thinking they're "the last to run". v1 says "registration order"; v2 should keep that and let plugin authors fix ordering by re-registration order, not by topological declarations.
+- Letting hooks bypass `--dangerously-skip-permissions` framing — a `pre_tool_call` hook that approves dangerous commands silently is its own security problem; treat hook decisions as advisory, not authoritative.
+
+This section is **forward grounding only** — no v2 design commitment. When a concrete personas consumer surfaces (Hermes's "post-write lint" use case is a candidate via N2 of the 2026-05-13 Hermes codebase run, but is itself currently deferred), revisit this list to pick which hooks ship and in what shape.

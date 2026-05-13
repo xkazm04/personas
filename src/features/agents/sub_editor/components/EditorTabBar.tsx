@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ListChecks, FileText, Settings, FlaskConical, Activity, Wand2, HeartPulse } from 'lucide-react';
+import { FileText, Settings, FlaskConical, Activity, Wand2, HeartPulse } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
 import type { EditorTab } from '@/lib/types/types';
@@ -15,7 +15,6 @@ type TabDefBase = { id: EditorTab; labelKey: string; icon: typeof FileText; devO
 const tabDefs: TabDefBase[] = [
   { id: 'activity', labelKey: 'tab_activity', icon: Activity, minTier: TIERS.TEAM },
   { id: 'design', labelKey: 'tab_design', icon: Wand2 },
-  { id: 'use-cases', labelKey: 'tab_use_cases', icon: ListChecks },
   { id: 'lab', labelKey: 'tab_lab', icon: FlaskConical, minTier: TIERS.TEAM },
   { id: 'settings', labelKey: 'tab_settings', icon: Settings },
 ];

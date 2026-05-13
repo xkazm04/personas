@@ -6,13 +6,11 @@ export const ActivityTab = lazy(() =>
 export const PersonaSettingsTab = lazy(() =>
   import('@/features/agents/sub_settings').then((m) => ({ default: m.PersonaSettingsTab })),
 );
-export const PersonaUseCasesTab = lazy(() =>
-  import('@/features/agents/sub_use_cases/components/core/PersonaUseCasesTab').then((m) => ({ default: m.PersonaUseCasesTab })),
-);
 export const LabTab = lazy(() =>
   import('@/features/agents/sub_lab/components/shared/LabTab').then((m) => ({ default: m.LabTab })),
 );
-/** DesignHub — umbrella that also renders the former Prompt / Connectors / Health surfaces. */
+/** DesignHub — tabbed container hosting Use Cases, Prompt, Connectors & Tools,
+ *  Events & Triggers, Messaging, and Automations. */
 export const DesignTab = lazy(() =>
   import('@/features/agents/sub_design').then((m) => ({ default: m.DesignHub })),
 );

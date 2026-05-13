@@ -66,11 +66,7 @@ export function renderPhaseContent(p: PhaseRenderProps) {
         savedDesignResult={p.savedDesignResult} selectedPersona={p.selectedPersona}
         toolDefinitions={p.toolDefinitions} currentToolNames={p.currentToolNames}
         credentials={p.credentials} connectorDefinitions={p.connectorDefinitions}
-        instruction={p.instruction} onInstructionChange={p.onInstructionChange}
-        designContext={p.designContext} onDesignContextChange={p.onDesignContextChange}
-        phase={p.phase} error={p.error} onStartAnalysis={p.onStartAnalysis}
-        intentMode={p.intentMode} inputMode={p.inputMode} onInputModeChange={p.onInputModeChange}
-        examplePairs={p.examplePairs} onExamplePairsChange={p.onExamplePairsChange}
+        error={p.error} onStartAnalysis={p.onStartAnalysis}
       />
     );
   }

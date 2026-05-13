@@ -143,7 +143,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) =
   templateTab: "generated" as TemplateTab,
   agentTab: "all" as AgentTab,
   editorTab: "activity" as EditorTab,
-  designSubTab: "design" as DesignSubTab,
+  designSubTab: "use-cases" as DesignSubTab,
   cloudTab: "unified" as CloudTab,
   settingsTab: "account" as SettingsTab,
   rerunInputData: null,
@@ -183,7 +183,9 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) =
     // Migrate legacy tab IDs → design hub with the matching sub-tab.
     if (tab === "prompt") return set({ editorTab: "design", designSubTab: "prompt" });
     if (tab === "connectors") return set({ editorTab: "design", designSubTab: "connectors" });
-    if (tab === "health") return set({ editorTab: "design", designSubTab: "design" });
+    if (tab === "health") return set({ editorTab: "design", designSubTab: "prompt" });
+    // Use Cases moved from a top-level tab into the Design hub.
+    if (tab === "use-cases") return set({ editorTab: "design", designSubTab: "use-cases" });
     set({ editorTab: tab });
   }),
   setDesignSubTab: (tab) => startTransition(() => set({ designSubTab: tab })),

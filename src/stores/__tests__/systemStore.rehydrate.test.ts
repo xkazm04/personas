@@ -89,7 +89,7 @@ describe('systemStore onRehydrateStorage — editorTab migration', () => {
     _resetDedupCacheForTests();
     useSystemStore.setState({
       editorTab: 'activity',
-      designSubTab: 'design',
+      designSubTab: 'use-cases',
     });
   });
 
@@ -109,12 +109,28 @@ describe('systemStore onRehydrateStorage — editorTab migration', () => {
     expect(state.designSubTab).toBe('connectors');
   });
 
-  it("migrates legacy 'health' to design+design", async () => {
+  it("migrates legacy 'health' to design+prompt", async () => {
     seedPersistedSystemStore({ editorTab: 'health' });
     await useSystemStore.persist.rehydrate();
     const state = useSystemStore.getState();
     expect(state.editorTab).toBe('design');
-    expect(state.designSubTab).toBe('design');
+    expect(state.designSubTab).toBe('prompt');
+  });
+
+  it("migrates legacy 'use-cases' editorTab to design+use-cases sub-tab", async () => {
+    seedPersistedSystemStore({ editorTab: 'use-cases' });
+    await useSystemStore.persist.rehydrate();
+    const state = useSystemStore.getState();
+    expect(state.editorTab).toBe('design');
+    expect(state.designSubTab).toBe('use-cases');
+  });
+
+  it("migrates legacy designSubTab 'design' to 'prompt'", async () => {
+    seedPersistedSystemStore({ editorTab: 'design', designSubTab: 'design' });
+    await useSystemStore.persist.rehydrate();
+    const state = useSystemStore.getState();
+    expect(state.editorTab).toBe('design');
+    expect(state.designSubTab).toBe('prompt');
   });
 
   it("preserves a current 'design' editorTab as-is", async () => {

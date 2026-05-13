@@ -384,8 +384,8 @@ export function getAuthMethods(connector: ConnectorDefinition): ConnectorAuthMet
 export type SidebarSection = "home" | "overview" | "personas" | "events" | "credentials" | "design-reviews" | "plugins" | "schedules" | "settings";
 export type HomeTab = "welcome" | "cockpit" | "roadmap" | "system-check" | "learning";
 export type EditorTab = "activity" | "matrix" | "use-cases" | "lab" | "settings" | "chat" | "design" | "assertions";
-/** Sub-tab within the Design hub (absorbs former Prompt, Connectors, Health tabs). */
-export type DesignSubTab = "design" | "prompt" | "connectors";
+/** Sub-tab within the Design hub. Use Cases sits leftmost as the default landing. */
+export type DesignSubTab = "use-cases" | "prompt" | "connectors" | "triggers" | "messaging" | "automations";
 /** Legacy EditorTab values kept only for migrating persisted state. */
 export type LegacyEditorTab = "prompt" | "connectors" | "health";
 export type OverviewTab = "home" | "incidents" | "executions" | "manual-review" | "messages" | "events" | "knowledge" | "sla" | "health" | "observability" | "leaderboard";

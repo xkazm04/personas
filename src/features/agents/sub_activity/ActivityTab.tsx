@@ -16,7 +16,6 @@ import { ActivityFilters } from './ActivityFilters';
 import { ActivityList } from './ActivityList';
 import { useActivityModals } from './ActivityModals';
 import { useSelectedUseCases } from '@/stores/selectors/personaSelectors';
-import { ExecutionHeatmap } from '@/features/overview/sub_analytics/components/ExecutionHeatmap';
 
 // Tolerate bindings that haven't been regenerated yet — use_case_id is
 // optional on every row that carries it after Phase C5.
@@ -155,17 +154,6 @@ export function ActivityTab() {
     );
   }
 
-  const handleHeatmapDayClick = useCallback((date: string) => {
-    setStatusFilter('all');
-    setUseCaseFilter('all');
-    setFilter('execution');
-    // The activity list doesn't have a date filter yet; expose the chosen day
-    // via URL hash so deep-linking and future date-filter wiring can pick it up.
-    if (typeof window !== 'undefined') {
-      window.history.replaceState(null, '', `#activity-date=${date}`);
-    }
-  }, []);
-
   return (
     <div className="space-y-4">
       <ActivityHeader
@@ -174,7 +162,6 @@ export function ActivityTab() {
         isLoading={isLoading}
         onRefresh={loadData}
       />
-      <ExecutionHeatmap personaId={selectedPersona.id} onDayClick={handleHeatmapDayClick} />
       <ActivityFilters
         filter={filter}
         statusFilter={statusFilter}
