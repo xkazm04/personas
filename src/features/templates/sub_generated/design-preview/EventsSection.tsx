@@ -93,7 +93,11 @@ export function EventsSection({
         <span className="typo-body font-normal text-foreground ml-1">{t.templates.design.what_activates}</span>
       </div>
 
-      <div className="bg-secondary/20 border border-primary/10 rounded-modal overflow-hidden divide-y divide-primary/[0.06]">
+      <div className={`bg-secondary/20 border border-primary/10 rounded-modal overflow-hidden ${
+        hasTriggers && hasSubscriptions
+          ? 'grid grid-cols-1 md:grid-cols-2 md:divide-x divide-primary/[0.06]'
+          : 'divide-y divide-primary/[0.06]'
+      }`}>
         {/* Triggers */}
         {hasTriggers && (
           <div className="p-3.5 space-y-2">
