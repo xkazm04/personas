@@ -285,10 +285,22 @@ pub fn instant_adopt_template_inner(
         .or_else(|| synthesize_system_prompt_markdown(&design))
         .unwrap_or_else(|| "You are a helpful AI assistant.".to_string());
 
+    // V3 templates carry the human-readable summary at `payload.persona.goal`
+    // (the one-line "what this persona does"). The legacy top-level `summary`
+    // field is preserved for older payloads. Fall back to a generic label
+    // only when neither exists, so the persona's description column tells the
+    // user what the persona DOES instead of where it came from.
     let summary = design
         .get("summary")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string())
+        .or_else(|| {
+            design
+                .get("persona")
+                .and_then(|p| p.get("goal"))
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+        })
         .or_else(|| Some(format!("Adopted from template: {template_name}")));
 
     // Normalize structured_prompt
@@ -428,6 +440,13 @@ pub fn instant_adopt_template_inner(
         .get("summary")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string())
+        .or_else(|| {
+            design
+                .get("persona")
+                .and_then(|p| p.get("goal"))
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+        })
         .unwrap_or_else(|| format!("Adopted from template: {}", template_name));
     // service_flow surfaces in the Design tab's connector pipeline panel —
     // pull through if the template carried one.

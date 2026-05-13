@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useAgentStore } from "@/stores/agentStore";
 import { useVaultStore } from "@/stores/vaultStore";
 import { silentCatch } from "@/lib/silentCatch";
+import { connectorCategoryTags } from "@/lib/credentials/builtinConnectors";
 import type { CredentialMetadata, ConnectorDefinition, PersonaWithDetails } from '@/lib/types/types';
 
 // Hex fallbacks for unknown / placeholder entries. Consumed by callers
@@ -65,8 +66,18 @@ function computeUnfulfilled(
       const linkedCredId = links[credType];
       if (linkedCredId && credentials.some((c) => c.id === linkedCredId)) continue;
 
-      // Check if a credential with matching service_type exists (auto-match)
-      const matching = credentials.filter((c) => c.service_type === credType);
+      // Check if a credential with matching service_type exists (auto-match).
+      // Two paths:
+      //  1. Direct: tool requires "github" → credential service_type is "github".
+      //  2. Category: tool requires "source_control" (a category) → credential
+      //     service_type is "github" which is tagged source_control. Templates
+      //     authored at the category level (the common case for V3) need this
+      //     second path; without it every category-shaped requirement renders
+      //     as missing-credential even when a perfect candidate exists.
+      const matching = credentials.filter((c) =>
+        c.service_type === credType ||
+        connectorCategoryTags(c.service_type).includes(credType),
+      );
 
       const connector = connectorByName.get(credType);
 
