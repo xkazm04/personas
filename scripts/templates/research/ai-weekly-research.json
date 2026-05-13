@@ -50,7 +50,7 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "One primary capability, event-chained learning: 1. **uc_weekly_briefing** (weekly Monday 9am, default) — load `research_index.json` for prior sessions and topic history. Read attached `research_sources` first. Web-search complementary angles across the user's chosen subdomains (see `aq_focus_subdomains`). For each finding: extract (headline, source, publication date, summary, impact badge). Write `research_{{YYYY-MM-DD}}.json` with all findings. Append to `research_index.json`. Compose the briefing per voice.output_format. Cross-reference prior sessions for trend patterns. Emit `research.ai_weekly.delivered` with session stats; emit `research.finding.superseded` per prior claim that this session contradicts or supersedes. 2. **uc_trend_watch** (event-listen on `research.ai_weekly.delivered`, session ≥ 3) — aggregate the last 4 sessions' findings into a trend summary: which categories are accelerating, which are fading, which have stabilized. Deliver as an addendum to the main briefing (message_composition per_use_case → its own short follow-up message). State files: `research_index.json` (session ledger), `research_{{date}}.json` (per-session findings), `research_preferences.json` (user's impact/signal weighting learned over time).",
+      "operating_instructions": "One primary capability, event-chained learning: 1. **uc_weekly_briefing** (weekly Monday 9am, default) — load `research_index.json` for prior sessions and topic history. Read attached `research_sources` first. Web-search complementary angles across the user's chosen subdomains (see `aq_focus_subdomains`). When `{{param.research_websites}}` is non-empty, weight those domains as primary sources before falling back to broader search. Extract up to {{param.findings_per_session}} findings; each carries (headline, source, publication date, summary, impact badge). Write `research_{{YYYY-MM-DD}}.json` with all findings. Append to `research_index.json`. Compose the briefing per voice.output_format. Cross-reference prior sessions for trend patterns. Emit `research.ai_weekly.delivered` with session stats; emit `research.finding.superseded` per prior claim that this session contradicts or supersedes. 2. **uc_trend_watch** (event-listen on `research.ai_weekly.delivered`, session ≥ 3) — aggregate the last 4 sessions' findings into a trend summary: which categories are accelerating, which are fading, which have stabilized. Deliver as an addendum to the main briefing (message_composition per_use_case → its own short follow-up message). State files: `research_index.json` (session ledger), `research_{{date}}.json` (per-session findings), `research_preferences.json` (user's impact/signal weighting learned over time).",
       "tool_guidance": "**Source reading order**:\n1. User reference sources (from `aq_research_sources`) — primary grounding.\n2. Web search per focus subdomain, time-qualified to past 7 days.\n3. Prior session findings for trend cross-reference. **Impact badge rubric**:\n- Transformative — reshapes an entire domain (new capability class, major regulatory shift).\n- Significant — meaningful industry move (leading lab release, major policy enforcement begins).\n- Incremental — expected progression (point release, minor benchmark improvement).\n- Emerging — early signal, needs more data (research preprint, experimental benchmark). **Local state**:\n- `research_index.json` — `{ sessions: [{ session_id, date, topic, finding_count, top_impact }] }`. Append-only.\n- `research_{{YYYY-MM-DD}}.json` — per-session findings with full metadata.\n- `research_preferences.json` — learned weights per category (accepted/rejected counts from feedback loop).\n- Always read-merge-write, never overwrite blindly.",
       "error_handling": "Web search unavailable → use reference sources only + label the gap. Prior session file missing → skip trend detection, note 'trend watch resumes once history is rebuilt'. `research_index.json` corrupted → archive with timestamp, initialize fresh, note in briefing footer. Quiet week (fewer than 3 significant findings) → deliver shortened briefing honestly; do not fabricate. Topic too narrow for the configured angle count → reduce angles naturally.",
       "examples": [],
@@ -95,6 +95,27 @@
           "version": "1.0.0",
           "bindings": {}
         }
+      }
+    ],
+    "suggested_parameters": [
+      {
+        "key": "research_websites",
+        "label": "Additional research websites",
+        "type": "string",
+        "default_value": "",
+        "value": "",
+        "description": "Comma-separated list of website URLs to weight as primary sources for the weekly briefing (e.g. 'arxiv.org/list/cs.AI/recent, openai.com/blog, anthropic.com/news'). Empty means rely solely on the auto-discovered search results. Substituted into operating_instructions via {{param.research_websites}}."
+      },
+      {
+        "key": "findings_per_session",
+        "label": "Findings per weekly session",
+        "type": "number",
+        "default_value": 7,
+        "value": 7,
+        "description": "Target number of distinct findings to extract per weekly briefing. Lower keeps the digest scannable; higher captures more of the week's signal at the cost of reading time. Substituted into operating_instructions via {{param.findings_per_session}}.",
+        "unit": "items",
+        "min": 3,
+        "max": 20
       }
     ],
     "adoption_questions": [
