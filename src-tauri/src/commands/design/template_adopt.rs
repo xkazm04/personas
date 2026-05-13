@@ -552,6 +552,23 @@ pub fn instant_adopt_template_inner(
         }
     }
 
+    // Translate `adoption_questions[].maps_to == persona.parameters[KEY]`
+    // declarations into a `PersonaParameter[]` array on the persona row.
+    // The instant-adopt path doesn't carry user answers (the test bridge
+    // skips the questionnaire) so every parameter lands at its template
+    // default — exactly what the user expects from "adopt with defaults".
+    // Best-effort: a failure here logs and continues; the persona still
+    // works, it just won't have tunable parameters surfaced.
+    if let Some(pid) = created_persona_id.as_deref() {
+        if let Err(e) = populate_persona_parameters_from_design(&state.db, pid, &design, None) {
+            tracing::warn!(
+                persona_id = %pid,
+                error = %e,
+                "instant_adopt_template: failed to populate persona.parameters (continuing)"
+            );
+        }
+    }
+
     // Adoption pre-flight (C1): if the persona declares connectors that have
     // no matching vault credential, mark setup_status='needs_credentials' so
     // the dashboard surfaces a "Setup required" badge and the user knows the
@@ -825,6 +842,174 @@ fn set_persona_setup_status(
         rusqlite::params![status, chrono::Utc::now().to_rfc3339(), persona_id],
     )?;
     Ok(())
+}
+
+/// Walk `design.adoption_questions[]` and write a `PersonaParameter[]` array
+/// into the persona's `parameters` column. A question contributes a parameter
+/// iff its `maps_to` field is shaped `persona.parameters[<key>]`. The
+/// parameter's `value` is the user's answer (when present in `answers`) or
+/// the question's `default` otherwise — so the test-bridge "instant adopt"
+/// path (no answers, defaults applied) and the UI build path (answers
+/// collected via questionnaire) converge on the same persona shape.
+///
+/// `PersonaParameter` is the schema declared in `db/models/persona.rs`:
+///   { key, label, type, default_value, value, description?, options?,
+///     min?, max?, unit? }
+///
+/// The `value` is normalized to the parameter's declared `type`:
+///   number  → JSON Number (f64 parse; falls back to default on failure)
+///   boolean → JSON Bool (true/yes/1/on or false/no/0/off; else default)
+///   select  → JSON String (raw answer string)
+///   string  → JSON String
+pub(super) fn populate_persona_parameters_from_design(
+    pool: &crate::db::DbPool,
+    persona_id: &str,
+    design: &serde_json::Value,
+    answers: Option<&std::collections::HashMap<String, String>>,
+) -> Result<(), AppError> {
+    // Two authoring paths converge here:
+    //   1. `suggested_parameters[]` — direct PersonaParameter array on the
+    //      template payload. Used when the template author has a fixed
+    //      knob set unrelated to the questionnaire.
+    //   2. `adoption_questions[]` with `maps_to: persona.parameters[KEY]` —
+    //      the question's `default` becomes the parameter's default and
+    //      the user's answer (when present) becomes the value. Used when
+    //      the knob is something we want to ask the user about during
+    //      adoption.
+    // The second path takes precedence: if the same KEY appears in both
+    // sources, the questionnaire-derived definition (with the user's
+    // answer baked in) wins.
+    let mut params_by_key: std::collections::HashMap<String, serde_json::Value> =
+        std::collections::HashMap::new();
+
+    if let Some(arr) = design.get("suggested_parameters").and_then(|v| v.as_array()) {
+        for p in arr {
+            if let Some(k) = p.get("key").and_then(|v| v.as_str()) {
+                params_by_key.insert(k.to_string(), p.clone());
+            }
+        }
+    }
+
+    let questions = match design.get("adoption_questions").and_then(|v| v.as_array()) {
+        Some(arr) => arr.as_slice(),
+        None => &[],
+    };
+    if params_by_key.is_empty() && questions.is_empty() {
+        return Ok(());
+    }
+
+    // Build the regex once per call. Adoption is rare enough that the
+    // per-call compile is invisible; avoids a once_cell dep.
+    let param_re = regex::Regex::new(r"^persona\.parameters\[([A-Za-z0-9_]+)\]$")
+        .map_err(|e| AppError::Internal(format!("compile param regex: {e}")))?;
+
+    for q in questions {
+        let maps_to = q.get("maps_to").and_then(|v| v.as_str()).unwrap_or("");
+        let key = match param_re.captures(maps_to) {
+            Some(c) => c.get(1).unwrap().as_str().to_string(),
+            None => continue,
+        };
+        let q_id = q.get("id").and_then(|v| v.as_str()).unwrap_or("");
+        let label = q
+            .get("variable_name")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string())
+            .unwrap_or_else(|| key.clone());
+        let q_type = q
+            .get("type")
+            .and_then(|v| v.as_str())
+            .unwrap_or("string")
+            .to_string();
+        let default = q.get("default").cloned().unwrap_or(serde_json::Value::Null);
+        let description = q.get("context").and_then(|v| v.as_str()).map(|s| s.to_string());
+        let options: Option<Vec<String>> = q
+            .get("options")
+            .and_then(|v| v.as_array())
+            .map(|arr| {
+                arr.iter()
+                    .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                    .collect()
+            });
+        let min = q.get("min").and_then(|v| v.as_f64());
+        let max = q.get("max").and_then(|v| v.as_f64());
+        let unit = q.get("unit").and_then(|v| v.as_str()).map(|s| s.to_string());
+
+        let raw_answer = answers.and_then(|a| a.get(q_id));
+        let value = match raw_answer {
+            Some(s) => coerce_answer_to_param_value(s, &q_type, &default),
+            None => default.clone(),
+        };
+
+        let mut param = serde_json::json!({
+            "key": key.clone(),
+            "label": label,
+            "type": q_type,
+            "default_value": default,
+            "value": value,
+        });
+        if let Some(d) = description {
+            param["description"] = serde_json::Value::String(d);
+        }
+        if let Some(o) = options {
+            param["options"] = serde_json::json!(o);
+        }
+        if let Some(m) = min {
+            param["min"] = serde_json::json!(m);
+        }
+        if let Some(m) = max {
+            param["max"] = serde_json::json!(m);
+        }
+        if let Some(u) = unit {
+            param["unit"] = serde_json::Value::String(u);
+        }
+        params_by_key.insert(key, param);
+    }
+
+    if params_by_key.is_empty() {
+        return Ok(());
+    }
+
+    // Sort by key for deterministic ordering — the UI lists parameters in
+    // whatever order they arrive, and a stable order makes diffs readable.
+    let mut params: Vec<serde_json::Value> = params_by_key.into_values().collect();
+    params.sort_by(|a, b| {
+        a.get("key")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .cmp(b.get("key").and_then(|v| v.as_str()).unwrap_or(""))
+    });
+
+    let json_str = serde_json::to_string(&params)
+        .map_err(|e| AppError::Internal(format!("serialize persona parameters: {e}")))?;
+    let conn = pool.get()?;
+    conn.execute(
+        "UPDATE personas SET parameters = ?1, updated_at = ?2 WHERE id = ?3",
+        rusqlite::params![json_str, chrono::Utc::now().to_rfc3339(), persona_id],
+    )?;
+    Ok(())
+}
+
+fn coerce_answer_to_param_value(
+    raw: &str,
+    q_type: &str,
+    default: &serde_json::Value,
+) -> serde_json::Value {
+    let trimmed = raw.trim();
+    if trimmed.is_empty() {
+        return default.clone();
+    }
+    match q_type {
+        "number" => match trimmed.parse::<f64>() {
+            Ok(n) => serde_json::Value::from(n),
+            Err(_) => default.clone(),
+        },
+        "boolean" => match trimmed.to_ascii_lowercase().as_str() {
+            "true" | "yes" | "1" | "on" => serde_json::Value::Bool(true),
+            "false" | "no" | "0" | "off" => serde_json::Value::Bool(false),
+            _ => default.clone(),
+        },
+        _ => serde_json::Value::String(trimmed.to_string()),
+    }
 }
 
 
