@@ -36,6 +36,17 @@ The plugin is organised as three tabs: **Creative Studio**, **Gallery**, **Media
 5. The **Creative Session** card is the working surface. Write a prompt, press Enter. The prompt plus the currently connected tools are handed to Claude CLI (the real runtime), which orchestrates Blender MCP and/or the image connectors. Output streams back line-by-line via the `artist-session-output` Tauri event and lands both in the live panel and in the session record. Square button cancels mid-stream; the **Copy** icon writes the whole output to the clipboard as tidy Markdown (`[You]` becomes bold prefix, consecutive `[Tool]` lines fold into one fenced code block, `[Creative]` / `[Complete]` become `> ✓` callouts, `[Error]` becomes `> ❌`, `[System]` becomes italic) so it pastes into a doc or a chat without further editing; trash icon clears the live panel (does not touch history).
 6. When a session completes, the plugin **auto-rescans the Artist folder** and imports any new assets into the Gallery, appending a `[System] Imported N new asset(s) to gallery.` line so the user sees the loop close.
 
+#### Reference mood board (right-edge dock)
+
+The Creative Studio is also flanked by a **collapsible right-edge dock** for pinning visual references. The dock is a floating panel rendered by `sub_blender/ReferenceBoard.tsx`; the slim tab on the right edge expands it.
+
+- **Pin from gallery**: drag any image card from the Gallery tab onto the dock, or use the new **Pin** icon on the AssetCard hover overlay. Drops land on the `referenceBoard` slice in `systemStore` with a default `weight` of 1.0. The dock is capped at 12 references; older pins are dropped when the cap is reached.
+- **Reorder**: drag any card inside the dock onto another to reorder. A private mime type (`application/x-artist-moodboard-reorder`) keeps internal reorders from being mistaken for new pin drops.
+- **Weight**: each card has a 0.1–2.0 slider that the user can nudge to bias the prompt more or less toward that reference.
+- **Prompt augmentation**: on `sendPrompt`, the `useCreativeSession` hook reads the current `referenceBoard` and prepends a plain-text descriptive context block to the prompt the CLI receives (filename + weight + tag list per reference). The user-facing line in session history shows only their original prompt; the wire payload carries the augmented version. This works against any tool — Leonardo, Gemini, or a Blender-only run — because the context lives inside the text prompt the CLI already gets, rather than requiring a parallel "attachments" channel through the IPC.
+
+The dock is a separate floating layer over the centered `ContentBody`, so the existing single-column layout of the Creative Studio is untouched — collapsing the dock makes it disappear entirely.
+
 > *Why a separate "Creative Studio" and not just a chat?* Because the creative loop is defined by which tools are wired up, not by model choice. The env panel is the UI that makes that state legible — you see at a glance whether the run you are about to dispatch can actually reach Blender or Leonardo, and you can fix it in-place without switching to Vault.
 
 ### 2. Gallery — the asset library

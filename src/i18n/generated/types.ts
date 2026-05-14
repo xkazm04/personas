@@ -12581,6 +12581,27 @@ export type Translations = {
       tags_prompt: string;
       viewer_3d: string;
       viewer_3d_hint: string;
+      moodboard_title: string;
+      moodboard_hint: string;
+      moodboard_show: string;
+      moodboard_hide: string;
+      moodboard_clear: string;
+      moodboard_clear_confirm_one: string;
+      moodboard_clear_confirm_other: string;
+      moodboard_count_one: string;
+      moodboard_count_other: string;
+      moodboard_empty_title: string;
+      moodboard_empty_hint: string;
+      moodboard_drop_here: string;
+      moodboard_already_pinned: string;
+      moodboard_pinned: string;
+      moodboard_pin_action: string;
+      moodboard_unpin: string;
+      moodboard_weight_label: string;
+      moodboard_weight_help: string;
+      moodboard_block_header: string;
+      moodboard_reference_label: string;
+      moodboard_no_tags_fallback: string;
     };
     dev_tools: {
       no_project_configured: string;

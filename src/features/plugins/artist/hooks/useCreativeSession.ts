@@ -10,10 +10,36 @@ import {
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
 import { EventName } from '@/lib/eventRegistry';
-import { useTranslation } from '@/i18n/useTranslation';
+import { useTranslation, type Translations } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import { useAnnounce } from '@/features/shared/components/feedback/AriaLiveProvider';
+import type { ReferenceBoardItem } from '@/stores/slices/system/artistSlice';
 
+/**
+ * Build the descriptive context block the CLI session gets prepended to
+ * the user's prompt. Each pinned reference contributes its filename, the
+ * weight slider value, and (if present) the tag layer the user curated
+ * in the gallery. The block is intentionally plain text so it's also
+ * useful for non-multimodal connectors that can't accept images directly.
+ */
+export function buildReferenceContext(
+  references: ReferenceBoardItem[],
+  t: Translations,
+  tx: (template: string, params: Record<string, string | number>) => string,
+): string {
+  if (references.length === 0) return '';
+  const fallbackTags = t.plugins.artist.moodboard_no_tags_fallback;
+  const lines = references.map((ref, idx) => {
+    const tags = (ref.tags ?? '')
+      .split(',')
+      .map((tag) => tag.trim())
+      .filter(Boolean);
+    const label = tx(t.plugins.artist.moodboard_reference_label, { index: idx + 1 });
+    const tagPart = tags.length > 0 ? tags.join(', ') : fallbackTags;
+    return `- ${label} (${ref.fileName}, weight ${ref.weight.toFixed(1)}): ${tagPart}`;
+  });
+  return `${t.plugins.artist.moodboard_block_header}\n${lines.join('\n')}`;
+}
 
 export function useCreativeSession() {
   const { t, tx } = useTranslation();
@@ -48,6 +74,16 @@ export function useCreativeSession() {
     // Screen-reader cue mirroring the visual "streaming" spinner — the
     // generation can take a while and produces no toast on start.
     announce('Generating image…', 'polite');
+
+    // Build the wire prompt by prepending the reference mood-board context
+    // (if any). The user sees their original prompt in history; the CLI
+    // sees the augmented version so it can reason about pinned references.
+    const references = useSystemStore.getState().referenceBoard;
+    const referenceBlock = buildReferenceContext(references, t, tx);
+    const wirePrompt = referenceBlock
+      ? `${referenceBlock}\n\n${userPrompt}`
+      : userPrompt;
+
     // Seed session history with the first line before any streaming output
     startCreativeSessionRecord({
       id: newId,
@@ -64,7 +100,7 @@ export function useCreativeSession() {
       if (artistFolder) {
         await artistEnsureFolders(artistFolder);
       }
-      await artistRunCreativeSession(newId, userPrompt, tools, artistFolder);
+      await artistRunCreativeSession(newId, wirePrompt, tools, artistFolder);
     } catch (err) {
       setRunning(false);
       finalizeCreativeSession(newId, 'failed');
@@ -72,7 +108,7 @@ export function useCreativeSession() {
       announce(message, 'assertive');
       useToastStore.getState().addToast(message, 'error');
     }
-  }, [setSessionId, setRunning, appendOutput, artistFolder, startCreativeSessionRecord, finalizeCreativeSession, announce]);
+  }, [setSessionId, setRunning, appendOutput, artistFolder, startCreativeSessionRecord, finalizeCreativeSession, announce, t, tx]);
 
   const cancel = useCallback(async () => {
     if (sessionId) {

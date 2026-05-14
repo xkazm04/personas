@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
+import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type DragEvent } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { Check, Trash2, Tag, Box, Loader2, Film } from 'lucide-react';
+import { Check, Trash2, Tag, Box, Loader2, Film, Pin } from 'lucide-react';
 import type { ArtistAsset } from '@/api/artist';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
@@ -8,6 +8,7 @@ import { useLocalImage } from '../hooks/useLocalImage';
 import { formatFileSize } from '../utils/format';
 import TagEditorModal from './TagEditorModal';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
+import { REFERENCE_DRAG_MIME } from '../sub_blender/ReferenceBoard';
 
 interface AssetCardProps {
   asset: ArtistAsset;
@@ -82,6 +83,7 @@ export default function AssetCard({
   };
   const queueMediaStudioAsset = useSystemStore((s) => s.queueMediaStudioAsset);
   const setArtistTab = useSystemStore((s) => s.setArtistTab);
+  const pinReference = useSystemStore((s) => s.pinReference);
   const isImage = asset.assetType === '2d';
   const sizeStr = formatFileSize(Number(asset.fileSize));
   const ext = asset.fileName.split('.').pop()?.toUpperCase() ?? '';
@@ -108,12 +110,46 @@ export default function AssetCard({
     onClick?.();
   };
 
+  const pinToMoodBoard = () => {
+    const before = useSystemStore.getState().referenceBoard.length;
+    pinReference({
+      assetId: asset.id,
+      filePath: asset.filePath,
+      fileName: asset.fileName,
+      tags: asset.tags,
+    });
+    const after = useSystemStore.getState().referenceBoard.length;
+    const toast = useToastStore.getState().addToast;
+    if (after === before) {
+      toast(t.plugins.artist.moodboard_already_pinned, 'success');
+    } else {
+      toast(t.plugins.artist.moodboard_pinned, 'success');
+    }
+  };
+
+  const handleDragStart = (e: DragEvent<HTMLDivElement>) => {
+    if (!isImage) return;
+    e.dataTransfer.setData(
+      REFERENCE_DRAG_MIME,
+      JSON.stringify({
+        assetId: asset.id,
+        filePath: asset.filePath,
+        fileName: asset.fileName,
+        tags: asset.tags,
+        assetType: asset.assetType,
+      }),
+    );
+    e.dataTransfer.effectAllowed = 'copy';
+  };
+
   const borderClass = selected
     ? 'border-rose-500/60 shadow-elevation-3 shadow-rose-500/10'
     : 'border-primary/8 hover:border-rose-500/20 hover:shadow-elevation-3 hover:shadow-rose-500/5';
 
   return (
     <div
+      draggable={isImage}
+      onDragStart={handleDragStart}
       className={`group relative rounded-modal border ${borderClass} bg-card/40 overflow-hidden transition-all cursor-pointer`}
       onClick={handleCardClick}
     >
@@ -181,6 +217,18 @@ export default function AssetCard({
           >
             <Tag className="w-4 h-4" />
           </button>
+          {isImage && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                pinToMoodBoard();
+              }}
+              className="p-2 rounded-card bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 transition-colors"
+              title={t.plugins.artist.moodboard_pin_action}
+            >
+              <Pin className="w-4 h-4" />
+            </button>
+          )}
           {isImage && (
             <button
               onClick={(e) => {

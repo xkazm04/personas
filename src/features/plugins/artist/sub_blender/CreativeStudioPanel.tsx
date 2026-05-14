@@ -15,6 +15,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { ConnectorInfo } from '@/stores/slices/system/artistSlice';
 import CreativeSessionHistory from './CreativeSessionHistory';
 import { sessionOutputToMarkdown } from './sessionMarkdown';
+import ReferenceBoard from './ReferenceBoard';
 
 export default function CreativeStudioPanel() {
   const { t } = useTranslation();
@@ -23,37 +24,42 @@ export default function CreativeStudioPanel() {
   const blenderMcpState = useSystemStore((s) => s.blenderMcpState);
 
   return (
-    <div className="space-y-6 max-w-4xl">
-      {/* Header */}
-      <div className="space-y-1">
-        <h2 className="typo-section-title flex items-center gap-2">
-          <Wand2 className="w-5 h-5 text-rose-400" />
-          {t.plugins.artist.creative_studio_title}
-        </h2>
-        <p className="typo-body text-foreground">
-          {t.plugins.artist.creative_studio_desc}
-        </p>
+    <>
+      <div className="space-y-6 max-w-4xl">
+        {/* Header */}
+        <div className="space-y-1">
+          <h2 className="typo-section-title flex items-center gap-2">
+            <Wand2 className="w-5 h-5 text-rose-400" />
+            {t.plugins.artist.creative_studio_title}
+          </h2>
+          <p className="typo-body text-foreground">
+            {t.plugins.artist.creative_studio_desc}
+          </p>
+        </div>
+
+        {/* Environment Status — compact, cached */}
+        <EnvironmentStatus
+          status={status}
+          checking={checking}
+          installing={installing}
+          onCheck={check}
+          onInstall={installMcp}
+          connectors={connectors}
+        />
+
+        {/* Past sessions */}
+        <CreativeSessionHistory />
+
+        {/* Creative Session Chat */}
+        <CreativeSessionChat
+          blenderReady={blenderMcpState === 'installed' || blenderMcpState === 'running'}
+          connectors={connectors}
+        />
       </div>
 
-      {/* Environment Status — compact, cached */}
-      <EnvironmentStatus
-        status={status}
-        checking={checking}
-        installing={installing}
-        onCheck={check}
-        onInstall={installMcp}
-        connectors={connectors}
-      />
-
-      {/* Past sessions */}
-      <CreativeSessionHistory />
-
-      {/* Creative Session Chat */}
-      <CreativeSessionChat
-        blenderReady={blenderMcpState === 'installed' || blenderMcpState === 'running'}
-        connectors={connectors}
-      />
-    </div>
+      {/* Reference mood board — floating right-edge dock */}
+      <ReferenceBoard />
+    </>
   );
 }
 

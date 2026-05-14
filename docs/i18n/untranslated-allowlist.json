@@ -1,10 +1,10 @@
 [
-  "*:director.healing_source_badge",
   "*:agents.build_webhook_source.filter_placeholder",
   "*:agents.build_webhook_source.url_placeholder",
   "*:agents.change_history.fields.model_profile",
   "*:agents.messaging_picker.field_placeholders.to",
   "*:agents.model_config.base_url_example",
+  "*:director.healing_source_badge",
   "*:overview.athena.section_title",
   "*:overview.sla_card.mtbf",
   "*:plugins.companion.voice_engine_elevenlabs",
@@ -12,6 +12,7 @@
   "*:plugins.companion.voice_engine_piper",
   "*:plugins.dev_tools.ctx_indicator_kpis",
   "*:settings.history.categories.byom",
+  "*:sidebar.mastermind",
   "*:sidebar.studio",
   "*:templates.adopt_modal.persona_label",
   "*:vault.shared.extract_entity_type_ph",
@@ -401,6 +402,8 @@
   "cs:plugins.artist.blender_label",
   "cs:plugins.artist.blender_mcp_label",
   "cs:plugins.artist.lighting_studio",
+  "cs:plugins.artist.moodboard_count_one",
+  "cs:plugins.artist.moodboard_reference_label",
   "cs:plugins.artist.title",
   "cs:plugins.artist.tool_blender",
   "cs:plugins.artist.tool_leonardo",
@@ -3151,6 +3154,5 @@
   "zh:vault.playground.path_placeholder",
   "zh:vault.schema_configs.database.subtype_convex_label",
   "zh:vault.schema_configs.database.subtype_postgresql_label",
-  "zh:vault.shared.api_path_placeholder",
-  "*:sidebar.mastermind"
+  "zh:vault.shared.api_path_placeholder"
 ]

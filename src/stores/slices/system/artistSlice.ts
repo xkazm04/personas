@@ -55,6 +55,21 @@ export interface CreativeSessionRecord {
   status: 'running' | 'completed' | 'failed' | 'cancelled';
 }
 
+/**
+ * A pinned visual reference on the Creative Studio mood board. The
+ * descriptive `tags` payload travels with the prompt so the model can
+ * reason about each reference even when it can't see the pixels (CLI
+ * sessions are text-only today; multimodal connectors will read filePath
+ * directly once wired).
+ */
+export interface ReferenceBoardItem {
+  assetId: string;
+  filePath: string;
+  fileName: string;
+  tags: string | null;
+  weight: number;
+}
+
 export interface ArtistSlice {
   artistTab: ArtistTab;
   galleryMode: GalleryMode;
@@ -79,6 +94,10 @@ export interface ArtistSlice {
 
   // Most-recently-opened Media Studio compositions (capped, MRU order)
   mediaStudioRecents: RecentMediaStudioComposition[];
+
+  // Reference mood board (Creative Studio right dock)
+  referenceBoard: ReferenceBoardItem[];
+  referenceBoardOpen: boolean;
 
   // Actions
   setArtistTab: (tab: ArtistTab) => void;
@@ -106,12 +125,27 @@ export interface ArtistSlice {
   // Media Studio recent compositions
   recordMediaStudioRecent: (entry: { path: string; name: string; thumbnailDataUrl?: string }) => void;
   removeMediaStudioRecent: (path: string) => void;
+
+  // Reference mood board actions
+  setReferenceBoardOpen: (open: boolean) => void;
+  pinReference: (item: Omit<ReferenceBoardItem, 'weight'> & { weight?: number }) => void;
+  unpinReference: (assetId: string) => void;
+  setReferenceWeight: (assetId: string, weight: number) => void;
+  reorderReferences: (assetId: string, toIndex: number) => void;
+  clearReferenceBoard: () => void;
 }
 
 const MAX_OUTPUT_LINES = 500;
 const MAX_SESSIONS = 25;
 const MAX_SESSION_LINES = 300;
 const MAX_MEDIA_STUDIO_RECENTS = 5;
+const MAX_REFERENCES = 12;
+const DEFAULT_REFERENCE_WEIGHT = 1.0;
+const MIN_REFERENCE_WEIGHT = 0.1;
+const MAX_REFERENCE_WEIGHT = 2.0;
+
+const clampWeight = (w: number) =>
+  Math.max(MIN_REFERENCE_WEIGHT, Math.min(MAX_REFERENCE_WEIGHT, Number.isFinite(w) ? w : DEFAULT_REFERENCE_WEIGHT));
 
 /**
  * Flush interval (ms) for batching streamed creative-session lines into the
@@ -173,6 +207,8 @@ export const createArtistSlice: StateCreator<SystemStore, [], [], ArtistSlice> =
   creativeConnectors: [],
   pendingMediaStudioAssets: [],
   mediaStudioRecents: [],
+  referenceBoard: [],
+  referenceBoardOpen: false,
 
   setArtistTab: (tab) => set({ artistTab: tab }),
   setGalleryMode: (mode) => set({ galleryMode: mode }),
@@ -268,5 +304,50 @@ export const createArtistSlice: StateCreator<SystemStore, [], [], ArtistSlice> =
     set((s) => ({
       mediaStudioRecents: s.mediaStudioRecents.filter((r) => r.path !== path),
     })),
+
+  setReferenceBoardOpen: (open) => set({ referenceBoardOpen: open }),
+
+  pinReference: (item) =>
+    set((s) => {
+      if (s.referenceBoard.some((r) => r.assetId === item.assetId)) return s;
+      const next: ReferenceBoardItem = {
+        assetId: item.assetId,
+        filePath: item.filePath,
+        fileName: item.fileName,
+        tags: item.tags ?? null,
+        weight: clampWeight(item.weight ?? DEFAULT_REFERENCE_WEIGHT),
+      };
+      return {
+        referenceBoard: [...s.referenceBoard, next].slice(-MAX_REFERENCES),
+        referenceBoardOpen: true,
+      };
+    }),
+
+  unpinReference: (assetId) =>
+    set((s) => ({
+      referenceBoard: s.referenceBoard.filter((r) => r.assetId !== assetId),
+    })),
+
+  setReferenceWeight: (assetId, weight) =>
+    set((s) => ({
+      referenceBoard: s.referenceBoard.map((r) =>
+        r.assetId === assetId ? { ...r, weight: clampWeight(weight) } : r,
+      ),
+    })),
+
+  reorderReferences: (assetId, toIndex) =>
+    set((s) => {
+      const fromIndex = s.referenceBoard.findIndex((r) => r.assetId === assetId);
+      if (fromIndex === -1) return s;
+      const clamped = Math.max(0, Math.min(s.referenceBoard.length - 1, toIndex));
+      if (clamped === fromIndex) return s;
+      const next = s.referenceBoard.slice();
+      const moved = next.splice(fromIndex, 1)[0];
+      if (!moved) return s;
+      next.splice(clamped, 0, moved);
+      return { referenceBoard: next };
+    }),
+
+  clearReferenceBoard: () => set({ referenceBoard: [] }),
   };
 };
