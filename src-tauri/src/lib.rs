@@ -959,6 +959,23 @@ pub fn run() {
             }
             st.checkpoint("curation_scheduler");
 
+            // Outbound webhook notifier. Polls persona_events on a 5s tick,
+            // fans matching events through enabled notification_subscriptions,
+            // and POSTs Mustache-templated bodies to Slack/Discord/Teams/
+            // generic JSON endpoints. See `engine/webhook_notifier.rs`.
+            {
+                let pool_for_notifier = pool.clone();
+                let app_for_notifier = app.handle().clone();
+                tauri::async_runtime::spawn(async move {
+                    engine::webhook_notifier::run_dispatcher(
+                        pool_for_notifier,
+                        app_for_notifier,
+                    )
+                    .await;
+                });
+            }
+            st.checkpoint("webhook_notifier");
+
             // Test automation HTTP server.
             //
             // Bind happens synchronously here so an EADDRINUSE failure is logged
@@ -1747,6 +1764,13 @@ pub fn run() {
             commands::communication::events::update_subscription,
             commands::communication::events::delete_subscription,
             commands::communication::events::test_event_flow,
+            // Communication -- Outbound notification webhooks (Slack/Discord/Teams/generic)
+            commands::communication::notifications::list_notification_subscriptions,
+            commands::communication::notifications::get_notification_subscription,
+            commands::communication::notifications::create_notification_subscription,
+            commands::communication::notifications::update_notification_subscription,
+            commands::communication::notifications::delete_notification_subscription,
+            commands::communication::notifications::test_notification_subscription,
             commands::communication::events::list_dead_letter_events,
             commands::communication::events::count_dead_letter_events,
             commands::communication::events::retry_dead_letter_event,

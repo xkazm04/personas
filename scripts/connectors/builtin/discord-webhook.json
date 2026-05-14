@@ -1,0 +1,32 @@
+{
+  "id": "builtin-discord-webhook",
+  "name": "discord_webhook",
+  "label": "Discord (channel webhook)",
+  "color": "#5865F2",
+  "icon_url": "/icons/connectors/discord.svg",
+  "category": "notifications",
+  "categories": ["notifications", "messaging"],
+  "fields": [
+    {
+      "key": "webhook_url",
+      "label": "Channel Webhook URL",
+      "type": "password",
+      "required": true,
+      "placeholder": "https://discord.com/api/webhooks/000000000000000000/...",
+      "helpText": "From the target Discord channel: Edit Channel -> Integrations -> Webhooks -> New Webhook -> Copy Webhook URL.",
+      "sensitive": true
+    }
+  ],
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "One-way outbound Discord notifications via channel webhook URL. Posts only to the channel that owns the webhook; cannot read messages or list channels.",
+    "auth_type": "webhook_url",
+    "auth_type_label": "Webhook URL",
+    "docs_url": "https://support.discord.com/hc/en-us/articles/228383668",
+    "setup_guide": "1. In Discord, open the channel that should receive notifications.\n2. Click the gear next to the channel name -> Integrations -> Webhooks.\n3. Click 'New Webhook', set a name and avatar, then 'Copy Webhook URL'.\n4. Paste the URL here.",
+    "pricing_tier": "free",
+    "outbound_only": true
+  }
+}

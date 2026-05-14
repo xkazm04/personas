@@ -1,0 +1,32 @@
+{
+  "id": "builtin-teams-webhook",
+  "name": "teams_webhook",
+  "label": "Microsoft Teams (incoming webhook)",
+  "color": "#4B53BC",
+  "icon_url": "/icons/connectors/microsoft-teams.svg",
+  "category": "notifications",
+  "categories": ["notifications", "messaging"],
+  "fields": [
+    {
+      "key": "webhook_url",
+      "label": "Incoming Webhook URL",
+      "type": "password",
+      "required": true,
+      "placeholder": "https://outlook.office.com/webhook/...",
+      "helpText": "From the target channel: ... menu -> Connectors -> Incoming Webhook -> Configure. Teams emits a MessageCard payload by default.",
+      "sensitive": true
+    }
+  ],
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "One-way outbound Microsoft Teams notifications via channel incoming webhook URL. Posts only to the channel that owns the connector; cannot read messages.",
+    "auth_type": "webhook_url",
+    "auth_type_label": "Webhook URL",
+    "docs_url": "https://learn.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook",
+    "setup_guide": "1. In Teams, go to the channel that should receive notifications.\n2. Click the ... menu next to the channel name -> Connectors.\n3. Find 'Incoming Webhook' and click Configure.\n4. Name the connector, optionally upload an icon, then 'Create'.\n5. Copy the generated URL and paste it here.",
+    "pricing_tier": "free",
+    "outbound_only": true
+  }
+}

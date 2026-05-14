@@ -2266,6 +2266,45 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // Outbound webhook notification subscriptions. Routes persona_events to
+    // Slack/Discord/Teams/generic JSON webhooks via Mustache-style templates.
+    // See `src-tauri/src/notifications/` for the dispatcher worker.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "notification_subscriptions",
+            description: "Create notification_subscriptions table for outbound webhook routing",
+            already_applied: |conn| has_table(conn, "notification_subscriptions"),
+            apply: |conn| {
+                conn.execute_batch(
+                    "CREATE TABLE IF NOT EXISTS notification_subscriptions (
+                        id                   TEXT PRIMARY KEY,
+                        label                TEXT NOT NULL,
+                        provider             TEXT NOT NULL,
+                        webhook_url          TEXT,
+                        credential_id        TEXT REFERENCES persona_credentials(id) ON DELETE SET NULL,
+                        event_types          TEXT NOT NULL,
+                        template_body        TEXT,
+                        enabled              INTEGER NOT NULL DEFAULT 1,
+                        last_delivery_at     TEXT,
+                        last_delivery_status TEXT,
+                        last_error           TEXT,
+                        created_at           TEXT NOT NULL,
+                        updated_at           TEXT NOT NULL
+                    );
+                     CREATE INDEX IF NOT EXISTS idx_notif_subs_enabled
+                         ON notification_subscriptions(enabled);
+                     CREATE TABLE IF NOT EXISTS notification_dispatch_watermark (
+                        id              INTEGER PRIMARY KEY CHECK (id = 1),
+                        last_event_at   TEXT NOT NULL,
+                        updated_at      TEXT NOT NULL
+                    );",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 
