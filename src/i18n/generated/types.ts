@@ -7990,6 +7990,32 @@ export type Translations = {
       notification_hint: string;
       severity_toggle_aria: string;
       weekly_digest_aria: string;
+      webhook_subscriptions_title: string;
+      webhook_subscriptions_add: string;
+      webhook_subscriptions_empty: string;
+      webhook_subscriptions_label: string;
+      webhook_subscriptions_label_placeholder: string;
+      webhook_subscriptions_provider: string;
+      webhook_subscriptions_provider_labels: {
+        slack: string;
+        discord: string;
+        teams: string;
+        generic: string;
+      };
+      webhook_subscriptions_url: string;
+      webhook_subscriptions_url_placeholder: string;
+      webhook_subscriptions_events: string;
+      webhook_subscriptions_events_placeholder: string;
+      webhook_subscriptions_events_hint: string;
+      webhook_subscriptions_template: string;
+      webhook_subscriptions_template_placeholder: string;
+      webhook_subscriptions_template_hint: string;
+      webhook_subscriptions_cancel: string;
+      webhook_subscriptions_save: string;
+      webhook_subscriptions_test_aria: string;
+      webhook_subscriptions_edit_aria: string;
+      webhook_subscriptions_delete_aria: string;
+      webhook_subscriptions_enabled_aria: string;
     };
     engine: {
       title: string;

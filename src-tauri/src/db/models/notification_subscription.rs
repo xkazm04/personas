@@ -50,16 +50,26 @@ pub struct CreateNotificationSubscriptionInput {
     pub enabled: Option<bool>,
 }
 
+/// Partial update payload. Any field set to `None` (TypeScript `null`) is
+/// left untouched; set a field to its empty value to clear it (empty string
+/// for URLs / templates, empty array is rejected for event_types).
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateNotificationSubscriptionInput {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
-    pub webhook_url: Option<Option<String>>,
-    pub credential_id: Option<Option<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub webhook_url: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub credential_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub event_types: Option<Vec<String>>,
-    pub template_body: Option<Option<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub template_body: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
 }
 

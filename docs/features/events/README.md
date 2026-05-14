@@ -42,6 +42,7 @@ The Live Stream header includes a shortcut into `Overview -> Events` for the ful
 | Testing | `test_event_flow`, `seed_mock_event` |
 | Dead letters | `list_dead_letter_events`, `count_dead_letter_events`, `retry_dead_letter_event`, `discard_dead_letter_event` |
 | Shared events | `shared_events_browse_catalog`, `shared_events_refresh_catalog`, `shared_events_subscribe`, `shared_events_unsubscribe`, `shared_events_list_subscriptions` |
+| Outbound webhooks | `list_notification_subscriptions`, `get_notification_subscription`, `create_notification_subscription`, `update_notification_subscription`, `delete_notification_subscription`, `test_notification_subscription` |
 | Scheduler/triggers | `src-tauri/src/commands/execution/scheduler.rs`, trigger APIs under `src/api/pipeline/triggers` |
 
 ## Data flow
@@ -51,5 +52,9 @@ The Live Stream header includes a shortcut into `Overview -> Events` for the ful
 3. The execution engine/scheduler evaluates trigger and subscription matches.
 4. Matching persona triggers enqueue executions or route into chain/composite logic.
 5. Failures move into dead-letter handling after retry limits.
+
+## Outbound webhook notifications
+
+A separate dispatcher (`src-tauri/src/engine/webhook_notifier.rs`) routes the same `persona_events` stream out to user-configured HTTP endpoints — Slack incoming webhooks, Discord channel webhooks, Microsoft Teams incoming webhooks, or a generic JSON POST. Each subscription declares one or more event-type patterns (`execution.finished`, `healing.*`, or the wildcard `*`); the dispatcher polls events on a 5s tick, matches them against enabled subscriptions, renders a Mustache-style template against the event payload, and POSTs the provider-shaped body via `SSRF_SAFE_HTTP`. A single-row watermark in `notification_dispatch_watermark` keeps deliveries idempotent across restarts. The configuration UI lives under Settings → Notifications (`src/features/settings/sub_notifications/components/WebhookSubscriptionsPanel.tsx`); the four `*-webhook` connectors in the vault catalog hand-roll the URL credential for credential-backed subscriptions.
 
 For deeper routing design details, see [event-routing.md](event-routing.md).

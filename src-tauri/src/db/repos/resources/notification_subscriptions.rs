@@ -151,19 +151,20 @@ pub fn update(
             let provider = input.provider.unwrap_or(current.provider);
             validate_provider(&provider)?;
 
-            // Option<Option<T>>: outer None = keep, outer Some(None) = clear, outer Some(Some) = set.
-            let webhook_url = match input.webhook_url {
-                Some(v) => v,
-                None => current.webhook_url,
-            };
-            let credential_id = match input.credential_id {
-                Some(v) => v,
-                None => current.credential_id,
-            };
-            let template_body = match input.template_body {
-                Some(v) => v,
-                None => current.template_body,
-            };
+            // For optional-clearable fields the contract is:
+            //   - Some("") -> clear (None in DB)
+            //   - Some(value) -> set
+            //   - None -> keep current
+            fn merge_clearable(new: Option<String>, current: Option<String>) -> Option<String> {
+                match new {
+                    Some(v) if v.is_empty() => None,
+                    Some(v) => Some(v),
+                    None => current,
+                }
+            }
+            let webhook_url = merge_clearable(input.webhook_url, current.webhook_url);
+            let credential_id = merge_clearable(input.credential_id, current.credential_id);
+            let template_body = merge_clearable(input.template_body, current.template_body);
 
             if webhook_url.is_none() && credential_id.is_none() {
                 return Err(AppError::Validation(
