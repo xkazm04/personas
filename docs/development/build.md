@@ -143,32 +143,60 @@ placing `onnxruntime.dll` next to the exe — **do not enable** ort's
 `scripts/verify-onnxruntime-bundling.mjs` runs in `release.yml` after each
 Windows build and fails the release if the DLL is missing.
 
-### Known issue: `ort` 2.0.0-rc.9 + Windows ARM64
+### Pyke `ort-sys 2.0.0-rc.9` aarch64-windows tarball is mislabeled (auto-fixed)
 
-`ort`'s pre-built binaries for `aarch64-pc-windows-msvc` (downloaded into
-`%LOCALAPPDATA%\ort.pyke.io\dfbin\aarch64-pc-windows-msvc\...`) are
-**actually x64 binaries** in the rc.9 release. Linking arm64 Rust code
-against them produces:
+The pre-built ONNX Runtime tarball pyke ships for `aarch64-pc-windows-msvc`
+in `ort-sys 2.0.0-rc.9` is named correctly but **contains x64 binaries
+inside**. Verified via `dumpbin /HEADERS`:
 
 ```
-lld-link: error: machine type x64 conflicts with arm64
+File: %LOCALAPPDATA%\ort.pyke.io\dfbin\aarch64-pc-windows-msvc\C09BFF…27DE\onnxruntime\lib\onnxruntime.lib
+File Type: LIBRARY
+FILE HEADER VALUES
+            8664 machine (x64)        ← should be AA64 / ARM64
 ```
 
-`npm run clean:ort` cannot fix this — the bug is upstream. Workarounds for
-local dev on Windows ARM64:
+The SHA256 of the tarball matches `dist.txt` so the download-time hash
+check passes; the defect is the contents, not the integrity. Linking arm64
+Rust code against it produces `lld-link: error: machine type x64 conflicts
+with arm64`. `fastembed 4.9.1` pins ort to exactly `=2.0.0-rc.9`, so we
+can't escape via a version bump without a major dep upgrade.
 
-1. **Use the lite variant**: `npm run tauri:dev:lite` or `tauri:dev:test`
-   (both exclude the `ml` feature). Sufficient for ~95% of dev work.
-2. **Cross-compile for x86_64**: install the target (`rustup target add
-   x86_64-pc-windows-msvc`) and pass `--target x86_64-pc-windows-msvc` to
-   `cargo`. The resulting x64 binary runs under Windows-on-ARM emulation —
-   slower than native but functional.
-3. **Wait for `ort` 2.0 stable**: the 2.0 stable release is expected to
-   ship real aarch64-pc-windows-msvc binaries.
+**Auto-fix (default):** `scripts/ensure-ort-cache.mjs` runs from the
+`pretauri:dev` / `pretauri:build` npm lifecycle hooks before cargo starts.
+It:
 
-Production releases run x64 + arm64 Windows builds in CI on `windows-latest`
-runners (which are x64), so the upstream bug doesn't affect releases — only
-local dev on ARM64 hardware.
+1. Reads `rustc -vV` to detect the host triple. Exits clean if not a known
+   Windows MSVC target.
+2. Sniffs the cached `onnxruntime.lib`'s first object member to read its
+   actual COFF machine field (bypassing labels).
+3. If the cache is correct for the host or absent, downloads Microsoft's
+   official ONNX Runtime 1.20.0 release for the host arch and places it
+   into pyke's expected cache slot. The `ort-sys` build script's
+   `if !lib_dir.exists()` check then short-circuits the broken download.
+4. Tracks state in a sentinel (`.personas-ort-fix-applied`) so subsequent
+   runs are O(ms).
+5. Detects stale cargo artifacts: if `target/<profile>/deps/libort_sys-*.rlib`
+   was built before the sentinel was last written, the rlib was linked
+   against the previous arch's lib and is evicted so cargo rebuilds.
+
+This switches ORT from STATIC linkage (pyke's 290 MB onnxruntime.lib) to
+DYNAMIC linkage (Microsoft's small import lib + onnxruntime.dll, ~12 MB).
+The `ort` crate's `copy-dylibs` feature (on by default) ensures the DLL is
+placed next to the exe in dev and release builds; tauri-bundler picks it up
+from `target/release/` for installers.
+
+**Manual recovery:** `npm run ensure:ort-cache` runs the fix on demand.
+`npm run clean:ort` wipes the cache and forces a re-fix on next dev/build.
+
+**Production releases:** CI builds run on x64 `windows-latest` runners.
+Pyke's x64 tarball is correct, so the fix script is a no-op there — but
+it still runs as a guard against future regressions in either tarball.
+
+If `pretauri:dev` is bypassed (e.g. running `cargo run` directly), the
+broken binary will be re-downloaded and you'll see the link error.
+Always go through the npm script entrypoints, or call
+`npm run ensure:ort-cache` first.
 
 ## CI gates
 

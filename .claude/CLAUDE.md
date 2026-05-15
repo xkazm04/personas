@@ -26,9 +26,28 @@ Quick reference of the most common scripts:
 - Tier-specific frontend bundles: `npm run build:starter` / `build:team` / `build:builder`. Locally validate all three with `npm run check:tiers` (CI also runs this).
 - Tauri installers: `npm run tauri:build` (canonical) / `tauri:build:lite` (fast nsis-only with `desktop` features) / `tauri:build:stable` (nsis + msi, `desktop-full`).
 - Tauri dev: `npm run tauri:dev` / `tauri:dev:lite` / `tauri:dev:stable` / `tauri:dev:test` (the last enables `--features test-automation`, HTTP server on :17320).
-- Cache recovery (use after switching Rust hosts or seeing `lld-link: machine type x64 conflicts with arm64`): `npm run clean:ort` (surgical, ~5 min recompile) or `npm run clean:rust` (nuclear, ~10+ min). `predev` auto-detects host-triple drift via `scripts/check-build-cache.mjs`.
 
-Codegen now runs in parallel via `scripts/run-codegen.mjs` (per-task 60s timeout, override with `CODEGEN_TIMEOUT_MS`). `predev` and `prebuild` both go through it.
+#### Picking dev variants — when to use lite vs full
+
+| You're working on… | Use | Why |
+|--|--|--|
+| UI/UX, frontend logic, Tauri command wiring, schema, triggers, recipes, observability — the **other 95% of the app** | `npm run tauri:dev:lite` | Skips `ml` + `p2p` → no ORT/fastembed compile (~3-5 min faster cold compile; smaller link surface; smaller incremental rebuilds) |
+| Vector knowledge base, embeddings, fastembed, ONNX inference, semantic search | `npm run tauri:dev` (full) | These code paths are gated behind `ml` and only compile in `desktop-full` |
+| P2P / mDNS / QUIC transport | `npm run tauri:dev` (full) | Gated behind `p2p` |
+| MCP-driven UI test automation (test-automation HTTP server on :17320) | `npm run tauri:dev:test` (lite + test-automation) or `tauri:dev:test:full` (full + test-automation) | Pick by what the test needs |
+| Verifying a release-shaped build locally (LTO, optimized) | `npm run tauri:build:stable` | Slow (~20 min) but matches what ships |
+
+**Default to `tauri:dev:lite` for daily work.** The cost of switching to full when you actually need ML/P2P is one cargo-recompile of those crates — much cheaper than paying the full compile on every iteration.
+
+#### When builds get slow or break
+
+- **`lld-link: machine type x64 conflicts with arm64`** — host-triple drift. Most common cause is also the well-known one: **pyke's `ort-sys 2.0.0-rc.9` ships a mislabeled aarch64 tarball that's actually x64 inside**. `pretauri:dev`/`pretauri:build` run `scripts/ensure-ort-cache.mjs` automatically before the cargo build, which sniffs the cached `onnxruntime.lib`'s real machine type and swaps it with Microsoft's official ORT release if it doesn't match the host. Idempotent and self-healing — if `clean:ort` ever wipes the cache, the next dev/build re-applies the fix. If you still hit this error: run `npm run ensure:ort-cache` manually and check its output.
+- **`Port 1420 is already in use`** — a previous `tauri dev` failed mid-startup and orphaned Vite. Find it with `netstat -ano | findstr :1420` (or `Get-NetTCPConnection -LocalPort 1420` in PowerShell), then `Stop-Process -Id <PID> -Force`. This recurs often enough that automating the kill in `pretauri:dev` is a tracked follow-up.
+- **`npm run clean:ort` (surgical, ~5 min recompile)** — wipes ort/ort-sys build artifacts + pyke's download cache. Use after switching Rust hosts. The next `npm run tauri:dev` will re-run `ensure-ort-cache.mjs` and repopulate.
+- **`npm run clean:rust` (nuclear, ~10+ min)** — full `cargo clean`. Last resort.
+- `predev` auto-detects rustc host-triple drift via `scripts/check-build-cache.mjs`.
+
+Codegen runs in parallel via `scripts/run-codegen.mjs` (per-task 60s timeout, override with `CODEGEN_TIMEOUT_MS`). `predev` and `prebuild` both go through it.
 
 Advisory pre-release scripts (manual, not CI-gated):
 - `npm run check:assets` — reports PNG → WebP compression savings via `scripts/optimize-assets.mjs --dry-run`. Run before bumping a release if asset weight matters.
