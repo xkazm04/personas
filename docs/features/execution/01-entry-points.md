@@ -47,6 +47,31 @@ the subscribed persona via `engine.start_execution()`.
    - Advance trigger schedule if `trigger_id` was supplied
 5. **Return** — `PersonaExecution` row (frontend polls or subscribes)
 
+### Dry run ("Test run")
+
+**Entry**: `invoke('dry_run_persona', { persona_id, input_data?, use_case_id? })`
+**Handler**: `src-tauri/src/commands/execution/executions.rs::dry_run_persona` → `src-tauri/src/engine/dry_run.rs::dry_run_persona`
+
+The validate-only sibling of `execute_persona`. Runs the same pre-flight as the
+manual path — fetch persona, run capability-contract pre-check, resolve
+credentials (including OAuth refresh), parse model profile, assemble the full
+prompt — and then stops. It does **not** create a `persona_executions` row,
+does **not** call `engine.start_execution()`, and does **not** spawn a CLI
+subprocess.
+
+The result returns synchronously as a `DryRunReport` with the assembled
+prompt, the planned tool surface, resolved/failed credentials, and capability
+contract diagnostics. A log file is still written under the engine log dir
+(name: `dryrun-<uuid>.log`) so the dry-run trace can be inspected the same
+way real execution logs are.
+
+Because no DB row is persisted, dry runs are invisible to every existing
+metric query, dashboard, and activity feed — the simplest possible isolation
+from "real execution metrics."
+
+Surfaced in the UI via "Test run" buttons in `PersonaRunner` and
+`ExecutionDetail`.
+
 ### Key params
 
 - `persona_id` (required)
@@ -99,6 +124,27 @@ rather than piling up.
 **Overdue recovery**: on app startup, `recover_overdue_triggers` runs
 once and fires all triggers with past `next_trigger_at`. Prevents
 missed fires when the app was closed during the scheduled time.
+
+**Automatic backfill**: when a schedule's config sets `max_backfill > 1`,
+the scheduler tick path enumerates every cron/interval slot strictly
+between `last_triggered_at` and `now` and publishes a catch-up event for
+each (capped at `BACKFILL_HARD_CAP = 100` per tick — `limits.rs`). Each
+catch-up event is marked with `backfill_slot: true` in its payload so
+downstream listeners can distinguish from the live fire. Implementation
+lives in `background.rs::trigger_scheduler_tick_counted` →
+`compute_missed_backfill_slots` + `synthesize_backfill_payload`.
+
+**User-initiated backfill**: the Schedules UI exposes a per-row Backfill
+action (`History` icon) that lets the user pick an arbitrary `[start, end]`
+window and replay every slot inside it via the
+`backfill_schedule` Tauri command (`commands/execution/scheduler.rs`).
+This is independent of `max_backfill` — it's for retroactive catch-up
+after a long downtime, manual re-runs of a specific day's slots, etc.
+Bounded by `BACKFILL_MAX_SLOTS_PER_REQUEST = 100`; the response includes
+`capped: true` when truncated so the UI can warn the user. Slots are
+synthesised with both `backfill_slot: true` and `user_backfill: true`
+markers so the auto-backfill path and the user path remain
+distinguishable in event payloads.
 
 ## Webhook
 
@@ -337,9 +383,10 @@ Prevents runaway cascades where A→B and B→A would infinite-loop.
 | File | Role |
 |---|---|
 | `src-tauri/src/commands/execution/executions.rs` | Manual entry (`execute_persona`) |
+| `src-tauri/src/commands/execution/scheduler.rs` | Scheduler engine on/off + user-initiated `backfill_schedule` |
 | `src-tauri/src/engine/background.rs` | All subscription loops (scheduler, polling, event bus, desktop) |
 | `src-tauri/src/engine/bus.rs` | Event matching logic |
-| `src-tauri/src/engine/scheduler.rs` | `compute_next_from_config` for schedule triggers |
+| `src-tauri/src/engine/scheduler.rs` | `compute_next_from_config` + `compute_slots_in_range` for schedule triggers |
 | `src-tauri/src/engine/cron.rs` | Cron expression parsing |
 | `src-tauri/src/engine/webhook.rs` | HTTP webhook server (port 9420) |
 | `src-tauri/src/engine/chain.rs` | Chain-trigger evaluation |

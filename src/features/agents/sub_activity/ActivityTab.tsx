@@ -16,6 +16,7 @@ import { ActivityFilters } from './ActivityFilters';
 import { ActivityList } from './ActivityList';
 import { useActivityModals } from './ActivityModals';
 import { useSelectedUseCases } from '@/stores/selectors/personaSelectors';
+import { useExecutionAnnotations } from '@/hooks/agents/useExecutionAnnotations';
 
 // Tolerate bindings that haven't been regenerated yet — use_case_id is
 // optional on every row that carries it after Phase C5.
@@ -27,13 +28,16 @@ export function ActivityTab() {
   const { t, tx } = useTranslation();
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const [items, setItems] = useState<ActivityItem[]>([]);
-  const [filter, setFilter] = useState<ActivityType>('all');
+  const [filter, setFilter] = useState<ActivityType>('execution');
   const [statusFilter, setStatusFilter] = useState('all');
   const [useCaseFilter, setUseCaseFilter] = useState('all');
+  const [tagFilter, setTagFilter] = useState('all');
+  const [starredOnly, setStarredOnly] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   const personaId = selectedPersona?.id;
   const useCases = useSelectedUseCases();
+  const { byExecution: annotationsByExecution, knownTags } = useExecutionAnnotations(personaId);
 
   const loadData = useCallback(async () => {
     if (!personaId) return;
@@ -117,8 +121,18 @@ export function ActivityTab() {
         ? result.filter((i) => !i.useCaseId)
         : result.filter((i) => i.useCaseId === useCaseFilter);
     }
+    if (starredOnly) {
+      result = result.filter(
+        (i) => i.type === 'execution' && (annotationsByExecution.get(i.id)?.starred ?? false),
+      );
+    }
+    if (tagFilter !== 'all') {
+      result = result.filter(
+        (i) => i.type === 'execution' && annotationsByExecution.get(i.id)?.tags.includes(tagFilter),
+      );
+    }
     return result;
-  }, [items, filter, statusFilter, useCaseFilter]);
+  }, [items, filter, statusFilter, useCaseFilter, starredOnly, tagFilter, annotationsByExecution]);
 
   const useCaseOptions = useMemo(
     () =>
@@ -166,16 +180,23 @@ export function ActivityTab() {
         filter={filter}
         statusFilter={statusFilter}
         useCaseFilter={useCaseFilter}
+        tagFilter={tagFilter}
+        starredOnly={starredOnly}
         counts={counts}
         availableStatuses={availableStatuses}
+        availableTags={knownTags}
         useCaseOptions={useCaseOptions}
         onFilterChange={setFilter}
         onStatusFilterChange={setStatusFilter}
         onUseCaseFilterChange={setUseCaseFilter}
+        onTagFilterChange={setTagFilter}
+        onStarredOnlyChange={setStarredOnly}
       />
       <ActivityList
         items={filtered}
         isLoading={isLoading}
+        useCaseOptions={useCaseOptions}
+        annotationsByExecution={annotationsByExecution}
         onRowClick={handleRowClick}
       />
       {modals}

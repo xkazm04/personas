@@ -15,6 +15,7 @@ mod dev_tools;
 mod event;
 mod evolution;
 mod execution;
+mod execution_annotation;
 #[cfg(feature = "p2p")]
 mod exposure;
 mod external_api_key;
@@ -82,6 +83,7 @@ pub use dev_tools::*;
 pub use event::*;
 pub use evolution::*;
 pub use execution::*;
+pub use execution_annotation::*;
 #[cfg(feature = "p2p")]
 pub use exposure::*;
 pub use external_api_key::*;

@@ -1,3 +1,4 @@
+pub mod annotations;
 pub mod assertions;
 pub mod audit_incidents;
 pub mod circuit_breaker;

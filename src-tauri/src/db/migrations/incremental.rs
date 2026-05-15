@@ -2266,6 +2266,39 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // Execution annotations: free-form tags, a note, and a star per execution.
+    // One row per (execution_id, author) so a single human user (the default
+    // 'user' author) overwrites their own annotation on re-save instead of
+    // accumulating duplicates. Mirrors LangSmith trace annotations.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "persona_execution_annotations",
+            description: "Add persona_execution_annotations table",
+            already_applied: |conn| has_table(conn, "persona_execution_annotations"),
+            apply: |conn| {
+                conn.execute_batch(
+                    "CREATE TABLE IF NOT EXISTS persona_execution_annotations (
+                        id           TEXT PRIMARY KEY,
+                        execution_id TEXT NOT NULL REFERENCES persona_executions(id) ON DELETE CASCADE,
+                        persona_id   TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
+                        author       TEXT NOT NULL DEFAULT 'user',
+                        tags         TEXT,
+                        note         TEXT,
+                        starred      INTEGER NOT NULL DEFAULT 0,
+                        created_at   TEXT NOT NULL,
+                        updated_at   TEXT NOT NULL,
+                        UNIQUE(execution_id, author)
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_pea_execution ON persona_execution_annotations(execution_id);
+                    CREATE INDEX IF NOT EXISTS idx_pea_persona   ON persona_execution_annotations(persona_id);
+                    CREATE INDEX IF NOT EXISTS idx_pea_starred   ON persona_execution_annotations(persona_id, starred);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     // Outbound webhook notification subscriptions. Routes persona_events to
     // Slack/Discord/Teams/generic JSON webhooks via Mustache-style templates.
     // See `src-tauri/src/notifications/` for the dispatcher worker.

@@ -20,6 +20,7 @@ The Live Stream header includes a shortcut into `Overview -> Events` for the ful
 | Cloud Events | Dev-only cloud webhook relay status | `sub_cloud_webhooks/CloudWebhooksTab.tsx` |
 | Dead Letter Queue | Dev-only failed event review, retry, discard | `sub_dead_letter/DeadLetterTab.tsx` |
 | Chain Studio | Dev-only visual chain editor built on React Flow nodes/edges | `sub_studio/TriggerStudioCanvas.tsx` |
+| Lineage | Cross-persona dependency graph derived from `listAllTriggers()`. Surfaces orphan triggers, chain cycles, and blast radius (click a persona to highlight every downstream trigger that would fire). Renders as a layered ReactFlow canvas with persona / trigger / event-hub node families. | `sub_lineage/TriggerLineageCanvas.tsx`, `sub_lineage/libs/deriveLineageGraph.ts` |
 | Marketplace | Dev-only shared event catalog and subscriptions | `sub_shared/SharedEventsTab.tsx` |
 
 ## Trigger editor mechanics

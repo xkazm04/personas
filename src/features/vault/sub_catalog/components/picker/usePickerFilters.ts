@@ -6,7 +6,19 @@ import { getLicenseTier, resolveTierLabel, type LicenseTier } from '@/lib/creden
 import type { RolePreset } from './catalogRolePresets';
 import { connectorMatchesAudience } from '@/lib/credentials/connectorAudiences';
 import { useSystemStore } from '@/stores/systemStore';
+import { useVaultStore } from '@/stores/vaultStore';
+import type { CatalogSortMode } from '@/stores/slices/vault/catalogPrefsSlice';
 import { useTranslation } from '@/i18n/useTranslation';
+import type { RecipeIndicator } from './useRecipeIndicators';
+
+/** Connectors with `created_at` newer than this are flagged with the "New" ribbon. */
+export const NEW_CONNECTOR_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
+
+export function isConnectorRecent(createdAt: string, now: number = Date.now()): boolean {
+  const t = Date.parse(createdAt);
+  if (!Number.isFinite(t)) return false;
+  return now - t <= NEW_CONNECTOR_WINDOW_MS;
+}
 
 type ConnectedFilter = 'all' | 'connected' | 'new';
 type FilterKey = 'category' | 'purpose' | 'connected' | 'license' | 'role';
@@ -15,9 +27,17 @@ function capitalize(s: string) {
   return s.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 }
 
-export function usePickerFilters(connectors: ConnectorDefinition[], credentials: CredentialMetadata[], searchTerm?: string) {
+export function usePickerFilters(
+  connectors: ConnectorDefinition[],
+  credentials: CredentialMetadata[],
+  searchTerm?: string,
+  recipeIndicators?: Map<string, RecipeIndicator>,
+) {
   const { t, tx } = useTranslation();
   const ps = t.vault.picker_section;
+  const sortMode = useVaultStore((s) => s.catalogSortMode);
+  const viewCounts = useVaultStore((s) => s.catalogConnectorViewCounts);
+  const setSortMode = useVaultStore((s) => s.setCatalogSortMode);
   // Consume any pending category filter set by another part of the app (e.g.
   // the template adoption modal redirecting to the catalog when a credential
   // is missing). Read inside useEffect with empty deps so the mount-time
@@ -161,7 +181,62 @@ export function usePickerFilters(connectors: ConnectorDefinition[], credentials:
     return opts;
   }, [licenseBase, t, tx, ps.filter_all_licenses, ps.filter_count]);
 
-  const filteredConnectors = useMemo(() => applyFilters(connectors), [connectors, applyFilters]);
+  const credentialUsageByType = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const c of credentials) {
+      m.set(c.service_type, (m.get(c.service_type) ?? 0) + (c.usage_count ?? 0));
+    }
+    return m;
+  }, [credentials]);
+
+  const popularityScore = useCallback((c: ConnectorDefinition) => {
+    const credUse = credentialUsageByType.get(c.name) ?? 0;
+    const recipeUse = recipeIndicators?.get(c.name)?.usageCount ?? 0;
+    const localViews = viewCounts[c.name] ?? 0;
+    return credUse + recipeUse + localViews;
+  }, [credentialUsageByType, recipeIndicators, viewCounts]);
+
+  const sortConnectors = useCallback((list: ConnectorDefinition[], mode: CatalogSortMode) => {
+    const copy = list.slice();
+    switch (mode) {
+      case 'popular':
+        return copy.sort((a, b) => {
+          const diff = popularityScore(b) - popularityScore(a);
+          return diff !== 0 ? diff : a.label.localeCompare(b.label);
+        });
+      case 'recently_added':
+        return copy.sort((a, b) => {
+          const tb = Date.parse(b.created_at);
+          const ta = Date.parse(a.created_at);
+          const safeTb = Number.isFinite(tb) ? tb : 0;
+          const safeTa = Number.isFinite(ta) ? ta : 0;
+          const diff = safeTb - safeTa;
+          return diff !== 0 ? diff : a.label.localeCompare(b.label);
+        });
+      case 'most_used_with_recipes':
+        return copy.sort((a, b) => {
+          const rb = recipeIndicators?.get(b.name)?.usageCount ?? 0;
+          const ra = recipeIndicators?.get(a.name)?.usageCount ?? 0;
+          const diff = rb - ra;
+          return diff !== 0 ? diff : a.label.localeCompare(b.label);
+        });
+      case 'alphabetical':
+      default:
+        return copy.sort((a, b) => a.label.localeCompare(b.label));
+    }
+  }, [popularityScore, recipeIndicators]);
+
+  const filteredConnectors = useMemo(
+    () => sortConnectors(applyFilters(connectors), sortMode),
+    [connectors, applyFilters, sortMode, sortConnectors],
+  );
+
+  const sortOptions = useMemo<ThemedSelectOption[]>(() => [
+    { value: 'alphabetical', label: ps.sort_alphabetical },
+    { value: 'popular', label: ps.sort_popular },
+    { value: 'recently_added', label: ps.sort_recently_added },
+    { value: 'most_used_with_recipes', label: ps.sort_most_used_with_recipes },
+  ], [ps.sort_alphabetical, ps.sort_popular, ps.sort_recently_added, ps.sort_most_used_with_recipes]);
 
   useEffect(() => {
     if (searchTerm?.trim()) {
@@ -185,6 +260,9 @@ export function usePickerFilters(connectors: ConnectorDefinition[], credentials:
     categoryOptions,
     connectedOptions,
     licenseOptions,
+    sortMode,
+    sortOptions,
+    setSortMode,
     setActiveCategory,
     setActivePurpose,
     setActiveLicense,

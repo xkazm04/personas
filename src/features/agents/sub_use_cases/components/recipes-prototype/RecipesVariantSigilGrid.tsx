@@ -1,13 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Power, AlertTriangle, Plus, Sparkles, Play } from 'lucide-react';
+import { Power, AlertTriangle, Plus, Sparkles, Play, Wand2, Loader2, X } from 'lucide-react';
 import { CONNECTOR_META, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { getMemoryCount } from '@/api/overview/memories';
 import { listManualReviews } from '@/api/overview/reviews';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { useSelectedCredentialLinks } from '@/stores/selectors/personaSelectors';
 import { useTranslation } from '@/i18n/useTranslation';
+import { BaseModal } from '@/features/shared/components/modals';
+import Button from '@/features/shared/components/buttons/Button';
+import { selectedModelsToConfigs } from '@/lib/models/modelCatalog';
+import { notifyProcessComplete } from '@/lib/notifications/notifyProcessComplete';
+import { toastCatch } from '@/lib/silentCatch';
 import { useUseCasesTab } from '../../libs/useUseCasesTab';
 import { useCapabilityToggle } from '../../libs/useCapabilityToggle';
 import { CapabilityDisableDialog } from '../core/CapabilityDisableDialog';
@@ -20,6 +26,7 @@ import {
   toDisplayUseCase, getHealthMeta, STATE_HEX, GRID_SLOT_COUNT,
   type DisplayUseCase, type UseCaseHealth,
 } from './shared/displayUseCase';
+import type { LabRunStatus } from '@/lib/bindings/LabRunStatus';
 import type { PersonaDraft } from '@/features/agents/sub_editor';
 import type { CredentialMetadata } from '@/lib/types/types';
 
@@ -31,6 +38,16 @@ interface Props {
 }
 
 const RUN_LOCK_MS = 60_000;
+
+/** Mini-sigil canvas size (px). Bumped 20% from the previous 130 to make
+ *  use-case tiles a clearer focal point on the persona overview. */
+const SIGIL_SIZE = 156;
+
+/** Containment panel max-width (px). Bumped 20% from 760 to give each
+ *  3-column tile slot the matching extra room. */
+const CONTAINMENT_MAX_WIDTH = 912;
+
+const TERMINAL_LAB_STATUSES: readonly LabRunStatus[] = ['completed', 'failed', 'cancelled'];
 
 /**
  * Variant — Sigil Grid (Round 3d — single top row + relocated run).
@@ -64,6 +81,39 @@ export function RecipesVariantSigilGrid({ credentials }: Props) {
   } = useCapabilityToggle();
 
   const { t } = useTranslation();
+
+  // Matrix-run-driven "describe a new capability" flow. The lab matrix run
+  // produces a new prompt draft as a side effect; we intentionally do NOT
+  // promote it — the user reviews + accepts in the Lab > Versions tab.
+  const startMatrix = useAgentStore((s) => s.startMatrix);
+  const matrixRuns = useAgentStore((s) => s.matrixRuns);
+  const [promptModalOpen, setPromptModalOpen] = useState(false);
+  const [pendingMatrixRunId, setPendingMatrixRunId] = useState<string | null>(null);
+  // Lock all "add another capability" affordances while a generation is
+  // in flight. Per product: while the matrix run is producing the new
+  // version, the user can neither adopt a recipe nor describe another need.
+  const isGenerationLocked = pendingMatrixRunId !== null;
+
+  // Watch our pending matrix run for terminal status, then fire the OS
+  // notification and unlock the empty tiles.
+  useEffect(() => {
+    if (!pendingMatrixRunId) return;
+    const run = matrixRuns.find((r) => r.id === pendingMatrixRunId);
+    if (!run || !TERMINAL_LAB_STATUSES.includes(run.status)) return;
+    const success = run.status === 'completed';
+    void notifyProcessComplete({
+      processType: 'matrix-build',
+      personaId: personaId ?? null,
+      personaName: selectedPersona?.name ?? null,
+      success,
+      summary: success
+        ? (run.llmSummary ?? run.summary ?? 'New persona version generated as draft. Open Lab → Versions to review.')
+        : (run.error ?? 'Generation did not complete.'),
+      redirectSection: 'personas',
+      redirectTab: 'lab',
+    }, t);
+    setPendingMatrixRunId(null);
+  }, [matrixRuns, pendingMatrixRunId, personaId, selectedPersona?.name, t]);
 
   const [memoriesDefault, setMemoriesDefault] = useState(true);
   const [reviewsDefault, setReviewsDefault] = useState(true);
@@ -114,6 +164,20 @@ export function RecipesVariantSigilGrid({ credentials }: Props) {
   };
   const handleRun = (uc: DisplayUseCase) => {
     handleExecute(uc.id, uc.raw.sample_input ?? undefined);
+  };
+
+  const handlePromptSubmit = async (instruction: string) => {
+    if (!personaId || !instruction.trim()) return;
+    const models = selectedModelsToConfigs(new Set(['sonnet']));
+    try {
+      const runId = await startMatrix(personaId, instruction.trim(), models);
+      if (runId) {
+        setPendingMatrixRunId(runId);
+        setPromptModalOpen(false);
+      }
+    } catch (err) {
+      toastCatch('RecipesVariantSigilGrid:startMatrix', 'Failed to start generation')(err);
+    }
   };
 
   if (!selectedPersona) {
@@ -177,9 +241,9 @@ export function RecipesVariantSigilGrid({ credentials }: Props) {
                     className="grid gap-3"
                     style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}
                   >
-                    {slots.map((uc, i) => (
-                      uc
-                        ? (
+                    {slots.map((uc, i) => {
+                      if (uc) {
+                        return (
                           <SigilTile
                             key={uc.id}
                             uc={uc}
@@ -192,16 +256,32 @@ export function RecipesVariantSigilGrid({ credentials }: Props) {
                             onToggle={() => handleToggle(uc)}
                             onRun={() => handleRun(uc)}
                           />
-                        )
-                        : <EmptyTile key={`empty-${i}`} prominent={i === items.length} />
-                    ))}
+                        );
+                      }
+                      // Only the leftmost empty slot (i === items.length) opens
+                      // the recipe catalog. Every other empty slot opens the
+                      // "describe a new capability" prompt that kicks off a
+                      // matrix lab run to produce a new persona draft.
+                      const variant: EmptyTileVariant = isGenerationLocked
+                        ? 'locked'
+                        : i === items.length
+                          ? 'recipe'
+                          : 'prompt';
+                      return (
+                        <EmptyTile
+                          key={`empty-${i}`}
+                          variant={variant}
+                          onPromptClick={() => setPromptModalOpen(true)}
+                        />
+                      );
+                    })}
                   </div>
                 </ContainmentPanel>
 
                 {/* Refine card relocated to below the grid as a secondary
                     feature — only renders itself when a build session exists. */}
                 {personaId && (
-                  <div className="mt-4 max-w-[760px] mx-auto">
+                  <div className="mt-4 mx-auto" style={{ maxWidth: CONTAINMENT_MAX_WIDTH }}>
                     <UseCasesRefineCard personaId={personaId} />
                   </div>
                 )}
@@ -218,6 +298,12 @@ export function RecipesVariantSigilGrid({ credentials }: Props) {
           onCancel={cancelDisable}
         />
       )}
+
+      <NewCapabilityPromptModal
+        isOpen={promptModalOpen}
+        onClose={() => setPromptModalOpen(false)}
+        onSubmit={(text) => void handlePromptSubmit(text)}
+      />
     </div>
   );
 }
@@ -234,7 +320,7 @@ function ContainmentPanel({ attentionCount, openSlotCount, children }: Containme
     <div
       className="rounded-modal border border-card-border bg-secondary/15 mx-auto"
       style={{
-        maxWidth: 760,
+        maxWidth: CONTAINMENT_MAX_WIDTH,
         boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04), inset 0 0 24px rgba(0,0,0,0.18)',
       }}
     >
@@ -372,14 +458,14 @@ function SigilTile({
           transition={{ duration: 0.32, ease: [0.32, 0.72, 0, 1] }}
           className="relative"
         >
-          <MiniSigil uc={uc} size={130} isHovered={hovered} petalStyle="wedge" />
+          <MiniSigil uc={uc} size={SIGIL_SIZE} isHovered={hovered} petalStyle="wedge" />
           <AnimatePresence>
             {isRunning && (
               <motion.span
                 key="run-halo"
                 aria-hidden
                 className="absolute inset-0 m-auto rounded-full"
-                style={{ width: 130, height: 130 }}
+                style={{ width: SIGIL_SIZE, height: SIGIL_SIZE }}
                 initial={{ opacity: 0 }}
                 exit={{ opacity: 0, transition: { duration: 0.25 } }}
                 animate={{
@@ -466,7 +552,14 @@ function StatusDot({ health }: { health: UseCaseHealth }) {
   return <span className={`w-2 h-2 rounded-full shrink-0 ${colorClass}`} aria-hidden />;
 }
 
-function EmptyTile({ prominent }: { prominent: boolean }) {
+type EmptyTileVariant = 'recipe' | 'prompt' | 'locked';
+
+interface EmptyTileProps {
+  variant: EmptyTileVariant;
+  onPromptClick: () => void;
+}
+
+function EmptyTile({ variant, onPromptClick }: EmptyTileProps) {
   const [hovered, setHovered] = useState(false);
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const setTemplateTab = useSystemStore((s) => s.setTemplateTab);
@@ -482,23 +575,45 @@ function EmptyTile({ prominent }: { prominent: boolean }) {
     setTemplateTab('recipes');
   };
 
+  const handleClick = () => {
+    if (variant === 'recipe') openRecipeCatalog();
+    else if (variant === 'prompt') onPromptClick();
+  };
+
+  const isLocked = variant === 'locked';
+  const isRecipe = variant === 'recipe';
+
   return (
     <button
       type="button"
-      onClick={openRecipeCatalog}
+      onClick={handleClick}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className={`group relative aspect-square rounded-card border border-dashed transition-all cursor-pointer overflow-hidden ${
-        prominent
-          ? 'border-foreground/30 bg-secondary/15 hover:border-primary/50 hover:bg-primary/5'
-          : 'border-border/30 bg-secondary/10 hover:border-foreground/30 hover:bg-secondary/20'
+      disabled={isLocked}
+      className={`group relative aspect-square rounded-card border border-dashed transition-all overflow-hidden ${
+        isLocked
+          ? 'border-border/30 bg-secondary/10 cursor-not-allowed opacity-70'
+          : isRecipe
+            ? 'border-foreground/30 bg-secondary/15 hover:border-primary/50 hover:bg-primary/5 cursor-pointer'
+            : 'border-border/40 bg-secondary/10 hover:border-violet-500/50 hover:bg-violet-500/5 cursor-pointer'
       }`}
     >
       <div className="absolute inset-x-0 top-9 bottom-14 flex items-center justify-center pointer-events-none">
-        <EmptyMiniSigil size={130} isHovered={hovered} />
+        {isLocked
+          ? <Loader2 className="w-9 h-9 text-foreground/40 animate-spin" />
+          : <EmptyMiniSigil size={SIGIL_SIZE} isHovered={hovered} />
+        }
       </div>
-      <div className={`absolute inset-x-0 bottom-0 px-3 py-2.5 ${prominent ? 'bg-gradient-to-t from-background/85 via-background/40 to-transparent' : ''}`}>
-        {prominent ? (
+      <div className={`absolute inset-x-0 bottom-0 px-3 py-2.5 ${isRecipe || isLocked ? 'bg-gradient-to-t from-background/85 via-background/40 to-transparent' : ''}`}>
+        {isLocked ? (
+          <>
+            <div className="typo-heading text-center font-medium text-foreground/70 leading-tight inline-flex items-center justify-center gap-1.5 w-full">
+              <Loader2 className="w-3.5 h-3.5 text-foreground/55 animate-spin" />
+              {t.agents.use_cases.generating_version}
+            </div>
+            <div className="typo-label text-foreground/40 mt-0.5 text-center">{t.agents.use_cases.notify_when_ready}</div>
+          </>
+        ) : isRecipe ? (
           <>
             <div className="typo-heading text-center font-medium text-foreground/85 leading-tight inline-flex items-center justify-center gap-1.5 w-full">
               <Sparkles className="w-3.5 h-3.5 text-primary/85" />
@@ -507,12 +622,96 @@ function EmptyTile({ prominent }: { prominent: boolean }) {
             <div className="typo-label text-foreground/45 mt-0.5 text-center">{t.agents.use_cases.from_curated_catalog}</div>
           </>
         ) : (
-          <div className="typo-caption text-foreground/45 inline-flex items-center justify-center gap-1 w-full">
-            <Plus className="w-3.5 h-3.5" />
-            {t.agents.use_cases.open_slot}
-          </div>
+          <>
+            <div className="typo-heading text-center font-medium text-foreground/80 leading-tight inline-flex items-center justify-center gap-1.5 w-full">
+              <Wand2 className="w-3.5 h-3.5 text-violet-400/85" />
+              {t.agents.use_cases.describe_new_capability}
+            </div>
+            <div className="typo-label text-foreground/45 mt-0.5 text-center inline-flex items-center justify-center gap-1 w-full">
+              <Plus className="w-3 h-3" />
+              {t.agents.use_cases.open_slot}
+            </div>
+          </>
         )}
       </div>
     </button>
+  );
+}
+
+interface NewCapabilityPromptModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (instruction: string) => void;
+}
+
+function NewCapabilityPromptModal({ isOpen, onClose, onSubmit }: NewCapabilityPromptModalProps) {
+  const { t } = useTranslation();
+  const [text, setText] = useState('');
+
+  useEffect(() => {
+    if (!isOpen) setText('');
+  }, [isOpen]);
+
+  const submit = () => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    onSubmit(trimmed);
+  };
+
+  return (
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      titleId="new-capability-prompt-title"
+      maxWidthClass="max-w-lg"
+      panelClassName="rounded-modal border border-violet-500/30 bg-background shadow-elevation-4 overflow-hidden"
+    >
+      <div className="flex items-start justify-between gap-3 px-4 py-3 border-b border-violet-500/20 bg-violet-500/5">
+        <div className="flex items-start gap-2.5">
+          <Wand2 className="w-5 h-5 text-violet-400 flex-shrink-0 mt-0.5" />
+          <div>
+            <h3 id="new-capability-prompt-title" className="typo-heading text-foreground">
+              {t.agents.use_cases.new_capability_title}
+            </h3>
+            <p className="typo-body text-foreground mt-0.5">{t.agents.use_cases.new_capability_subtitle}</p>
+          </div>
+        </div>
+        <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label="Dismiss" className="w-7 h-7 -mt-1 -mr-1">
+          <X className="w-4 h-4" />
+        </Button>
+      </div>
+
+      <div className="px-4 py-3 space-y-3">
+        <textarea
+          autoFocus
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder={t.agents.use_cases.new_capability_placeholder}
+          rows={5}
+          className="w-full px-3 py-2 typo-body bg-background/50 border border-violet-500/20 rounded-modal text-foreground placeholder-muted-foreground/30 focus-ring resize-none"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+              e.preventDefault();
+              submit();
+            }
+          }}
+        />
+        <p className="typo-caption text-foreground/55">{t.agents.use_cases.new_capability_hint}</p>
+      </div>
+
+      <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-primary/10 bg-secondary/20">
+        <Button variant="ghost" size="sm" onClick={onClose}>{t.common.cancel}</Button>
+        <Button
+          variant="accent"
+          accentColor="violet"
+          size="sm"
+          onClick={submit}
+          disabled={!text.trim()}
+        >
+          <Wand2 className="w-3.5 h-3.5" />
+          {t.agents.use_cases.start_generation}
+        </Button>
+      </div>
+    </BaseModal>
   );
 }

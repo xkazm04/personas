@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import type { ConnectorDefinition, CredentialMetadata } from '@/lib/types/types';
 import { useSystemStore } from '@/stores/systemStore';
+import { useVaultStore } from '@/stores/vaultStore';
 import { CredentialPickerFilters } from './CredentialPickerFilters';
 import { PickerGrid } from './PickerGrid';
 import { usePickerFilters } from './usePickerFilters';
@@ -14,10 +15,11 @@ interface CredentialPickerProps {
 }
 
 export function CredentialPicker({ connectors, credentials, onPickType, searchTerm }: CredentialPickerProps) {
-  const filters = usePickerFilters(connectors, credentials, searchTerm);
   const recipeIndicators = useRecipeIndicators();
+  const filters = usePickerFilters(connectors, credentials, searchTerm, recipeIndicators);
   const tourActive = useSystemStore((s) => s.tourActive);
   const recordCredentialInteraction = useSystemStore((s) => s.recordCredentialInteraction);
+  const recordCatalogConnectorView = useVaultStore((s) => s.recordCatalogConnectorView);
 
   const handleCategoryChange = useCallback((v: string | null) => {
     filters.setActiveCategory(v);
@@ -26,8 +28,9 @@ export function CredentialPicker({ connectors, credentials, onPickType, searchTe
 
   const handlePickType = useCallback((connector: ConnectorDefinition) => {
     if (tourActive) recordCredentialInteraction('connector', connector.name);
+    recordCatalogConnectorView(connector.name);
     onPickType(connector);
-  }, [onPickType, tourActive, recordCredentialInteraction]);
+  }, [onPickType, tourActive, recordCredentialInteraction, recordCatalogConnectorView]);
 
   return (
     <div className="space-y-3">
@@ -46,6 +49,9 @@ export function CredentialPicker({ connectors, credentials, onPickType, searchTe
         licenseOptions={filters.licenseOptions}
         activeRole={filters.activeRole}
         onRoleToggle={filters.handleRoleToggle}
+        sortMode={filters.sortMode}
+        onSortModeChange={filters.setSortMode}
+        sortOptions={filters.sortOptions}
       />
 
       <PickerGrid

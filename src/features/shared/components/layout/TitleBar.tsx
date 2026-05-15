@@ -66,17 +66,15 @@ export default function TitleBar() {
         <span>{t.chrome.app_title}</span>
       </div>
 
-      {/* Spacer -- entire middle area is draggable */}
-      <div data-tauri-drag-region className="flex-1" />
-
       {/* Back-history button — pops the last sidebar section the user
        *  navigated away from. Cap of 5 is enforced inside the store
        *  (NAV_HISTORY_MAX). Hidden when the history is empty so it
-       *  doesn't squat empty space on first launch. */}
+       *  doesn't squat empty space on first launch. Sits next to the
+       *  logo on the left so navigation controls cluster together. */}
       {navigationHistory.length > 0 && (
         <button
           type="button"
-          className="titlebar-btn"
+          className="titlebar-btn ml-1"
           data-testid="titlebar-back"
           onClick={navigateBack}
           aria-label={`Back to ${navigationHistory[0]}`}
@@ -85,6 +83,9 @@ export default function TitleBar() {
           <ArrowLeft size={20} strokeWidth={1.5} />
         </button>
       )}
+
+      {/* Spacer -- entire middle area is draggable */}
+      <div data-tauri-drag-region className="flex-1" />
 
       {/* Time-of-day chip -- inline, sits before the action tray */}
       <TitleBarAmbient />

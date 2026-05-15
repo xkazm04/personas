@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { executePersona } from "@/api/agents/executions";
 import { listTriggers, previewCronSchedule, updateTrigger } from "@/api/pipeline/triggers";
+import { backfillSchedule, type BackfillResult } from "@/api/pipeline/scheduler";
 
 import type { CronPreview } from '@/api/pipeline/triggers';
 import type { CronAgent } from '@/lib/bindings/CronAgent';
@@ -11,7 +12,12 @@ import { useToastStore } from '@/stores/toastStore';
 export interface ScheduleActionState {
   executing: string | null;   // trigger_id currently being executed
   editing: string | null;     // trigger_id being frequency-edited
+  backfilling: string | null; // trigger_id currently being backfilled
   cronPreview: CronPreview | null;
+  /** Most recent backfill result per trigger_id. Surfaced in the modal and
+   *  the ScheduleTimeline status row so users can see the catch-up count
+   *  without re-opening the modal. */
+  lastBackfill: Record<string, BackfillResult>;
 }
 
 export function useScheduleActions() {
@@ -21,7 +27,9 @@ export function useScheduleActions() {
   const [state, setState] = useState<ScheduleActionState>({
     executing: null,
     editing: null,
+    backfilling: null,
     cronPreview: null,
+    lastBackfill: {},
   });
 
   // -- Manual Execute ------------------------------------------------------
@@ -159,11 +167,53 @@ export function useScheduleActions() {
   // happens server-side; users no longer need a "recover N missed runs"
   // button. See Architect ADR 2026-05-01-schedules-overdue-backfill.
 
+  // -- User-initiated backfill --------------------------------------------
+  // Distinct from the scheduler's automatic max_backfill catch-up: lets the
+  // user pick an explicit [start, end] window and replays every cron/interval
+  // fire time that would have fallen inside it, regardless of last_triggered_at.
+
+  const backfill = useCallback(async (
+    agent: CronAgent,
+    startIso: string,
+    endIso: string,
+  ): Promise<BackfillResult | null> => {
+    setState((s) => ({ ...s, backfilling: agent.trigger_id }));
+    try {
+      const result = await backfillSchedule(agent.trigger_id, startIso, endIso);
+      setState((s) => ({
+        ...s,
+        lastBackfill: { ...s.lastBackfill, [agent.trigger_id]: result },
+      }));
+      if (result.slotsEnqueued > 0) {
+        addToast(
+          `Enqueued ${result.slotsEnqueued} catch-up run${result.slotsEnqueued === 1 ? '' : 's'} for "${agent.persona_name}"${result.capped ? ' (capped)' : ''}`,
+          'success',
+        );
+      } else {
+        addToast(
+          `No missed slots in that window for "${agent.persona_name}"`,
+          'success',
+        );
+      }
+      await fetchCronAgents();
+      return result;
+    } catch (err) {
+      addToast(
+        `Backfill failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
+        'error',
+      );
+      return null;
+    } finally {
+      setState((s) => ({ ...s, backfilling: null }));
+    }
+  }, [fetchCronAgents, addToast]);
+
   return {
     state,
     manualExecute,
     updateFrequency,
     toggleEnabled,
     previewCron,
+    backfill,
   } as const;
 }

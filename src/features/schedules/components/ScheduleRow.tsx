@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import {
   Play, Clock, Settings2, Pause, ToggleLeft, ToggleRight,
-  CheckCircle2, AlertTriangle, XCircle,
+  CheckCircle2, AlertTriangle, XCircle, History,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { ScheduleEntry } from '../libs/scheduleHelpers';
 import { formatRelative } from '../libs/scheduleHelpers';
 import FrequencyEditor from './FrequencyEditor';
+import BackfillModal from './BackfillModal';
+import type { BackfillResult } from '@/api/pipeline/scheduler';
 import { useThemeStore } from '@/stores/themeStore';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -16,9 +18,12 @@ interface ScheduleRowProps {
   existingEntries?: ScheduleEntry[];
   isExecuting: boolean;
   isEditing: boolean;
+  isBackfilling: boolean;
+  lastBackfill: BackfillResult | null;
   onManualExecute: () => void;
   onToggleEnabled: () => void;
   onUpdateFrequency: (cron: string | null, intervalSeconds: number | null, timezone?: string) => void;
+  onBackfill: (startIso: string, endIso: string) => Promise<void>;
   onPreviewCron: (expression: string, timezone?: string) => Promise<import('@/api/pipeline/triggers').CronPreview | null>;
 }
 
@@ -27,9 +32,12 @@ export default function ScheduleRow({
   existingEntries,
   isExecuting,
   isEditing,
+  isBackfilling,
+  lastBackfill,
   onManualExecute,
   onToggleEnabled,
   onUpdateFrequency,
+  onBackfill,
   onPreviewCron,
 }: ScheduleRowProps) {
   const { t } = useTranslation();
@@ -43,11 +51,13 @@ export default function ScheduleRow({
   } as const;
 
   const [showFreqEditor, setShowFreqEditor] = useState(false);
+  const [showBackfill, setShowBackfill] = useState(false);
   const timezone = useThemeStore((s) => s.timezone);
   const tzLabel = timezone === 'local' ? Intl.DateTimeFormat().resolvedOptions().timeZone.split('/').pop()?.replace(/_/g, ' ') || 'Local'
     : timezone === 'utc' ? 'UTC'
       : timezone.split('/').pop()?.replace(/_/g, ' ') || timezone;
   const { agent, schedule, health, nextRun, lastRun } = entry;
+  const canBackfill = !!agent.cron_expression || !!agent.interval_seconds;
   const disabled = health === 'paused';
 
   const { icon: HealthIcon, color: healthColor, accent: healthAccent, label: healthLabel } = HEALTH_CONFIG[health];
@@ -83,6 +93,23 @@ export default function ScheduleRow({
               <>
                 <span className="text-foreground">·</span>
                 <span className="truncate max-w-[200px]">{agent.description}</span>
+              </>
+            )}
+            {lastBackfill && lastBackfill.slotsEnqueued > 0 && (
+              <>
+                <span className="text-foreground">·</span>
+                <span
+                  className={`px-1.5 py-0.5 text-[10px] font-medium rounded ${
+                    lastBackfill.capped
+                      ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                      : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                  }`}
+                  title={t.schedules.backfill_inline_tooltip}
+                >
+                  <History className="w-2.5 h-2.5 inline mr-0.5" />
+                  +{lastBackfill.slotsEnqueued}
+                  {lastBackfill.capped ? '*' : ''}
+                </span>
               </>
             )}
           </div>
@@ -136,6 +163,22 @@ export default function ScheduleRow({
             )}
           </button>
 
+          {/* Backfill missed runs */}
+          {canBackfill && (
+            <button
+              onClick={() => setShowBackfill(true)}
+              disabled={isBackfilling || disabled}
+              className="p-2 rounded-card hover:bg-amber-500/15 text-foreground hover:text-amber-400 transition-colors disabled:opacity-40"
+              title={t.schedules.backfill_tooltip}
+            >
+              {isBackfilling ? (
+                <LoadingSpinner size="sm" />
+              ) : (
+                <History className="w-4 h-4" />
+              )}
+            </button>
+          )}
+
           {/* Change frequency */}
           <button
             onClick={() => setShowFreqEditor(true)}
@@ -173,6 +216,18 @@ export default function ScheduleRow({
           }}
           onCancel={() => setShowFreqEditor(false)}
           onPreviewCron={onPreviewCron}
+        />
+      )}
+
+      {/* Backfill modal */}
+      {showBackfill && (
+        <BackfillModal
+          agent={agent}
+          currentSchedule={schedule}
+          isRunning={isBackfilling}
+          lastResult={lastBackfill}
+          onBackfill={onBackfill}
+          onCancel={() => setShowBackfill(false)}
         />
       )}
     </>

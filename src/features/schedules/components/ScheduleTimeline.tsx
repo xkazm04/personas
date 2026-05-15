@@ -60,6 +60,7 @@ export default function ScheduleTimeline() {
     updateFrequency,
     toggleEnabled,
     previewCron,
+    backfill,
   } = useScheduleActions();
 
   // Unified refresh: initial load, 30s poll, and OVERDUE_TRIGGERS_FIRED all
@@ -155,9 +156,14 @@ export default function ScheduleTimeline() {
         existingEntries={entries}
         isExecuting={actionState.executing === entry.agent.trigger_id}
         isEditing={actionState.editing === entry.agent.trigger_id}
+        isBackfilling={actionState.backfilling === entry.agent.trigger_id}
+        lastBackfill={actionState.lastBackfill[entry.agent.trigger_id] ?? null}
         onManualExecute={() => manualExecute(entry.agent)}
         onToggleEnabled={() => toggleEnabled(entry.agent)}
         onUpdateFrequency={(cron, interval, tz) => updateFrequency(entry.agent, cron, interval, tz)}
+        onBackfill={async (startIso, endIso) => {
+          await backfill(entry.agent, startIso, endIso);
+        }}
         onPreviewCron={previewCron}
       />
     ));

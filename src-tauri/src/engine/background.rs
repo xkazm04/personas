@@ -1282,6 +1282,7 @@ fn compute_missed_backfill_slots(
     cfg: &crate::db::models::TriggerConfig,
     last_fire: chrono::DateTime<chrono::Utc>,
     now: chrono::DateTime<chrono::Utc>,
+    seed: u64,
 ) -> Vec<chrono::DateTime<chrono::Utc>> {
     use crate::db::models::TriggerConfig;
     let mut slots: Vec<chrono::DateTime<chrono::Utc>> = Vec::new();
@@ -1291,7 +1292,7 @@ fn compute_missed_backfill_slots(
             timezone,
             ..
         } => {
-            let Ok(schedule) = crate::engine::cron::parse_cron(expr) else {
+            let Ok(schedule) = crate::engine::cron::parse_cron_seeded(expr, seed) else {
                 return slots;
             };
             let tz = timezone
@@ -1434,7 +1435,11 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
         // The schedule still advances so triggers don't pile up as overdue.
         if !trigger.is_within_active_window(now) {
             let cfg = trigger.parse_config();
-            let next = sched_logic::compute_next_from_config(&cfg, now);
+            let next = sched_logic::compute_next_from_config(
+                &cfg,
+                now,
+                crate::engine::cron::seed_hash(&trigger.id),
+            );
             let _ = trigger_repo::mark_triggered(pool, &trigger.id, next, trigger.trigger_version);
             tracing::debug!(trigger_id = %trigger.id, "Trigger outside active window, skipping");
             continue;
@@ -1466,7 +1471,11 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
 
             if over_budget {
                 tracing::warn!(persona_id = %trigger.persona_id, "Cron agent paused due to exceeded budget");
-                let next = sched_logic::compute_next_from_config(&cfg, now);
+                let next = sched_logic::compute_next_from_config(
+                    &cfg,
+                    now,
+                    crate::engine::cron::seed_hash(&trigger.id),
+                );
                 let _ =
                     trigger_repo::mark_triggered(pool, &trigger.id, next, trigger.trigger_version);
                 continue;
@@ -1493,7 +1502,12 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
             if let Some(last_iso) = trigger.last_triggered_at.as_deref() {
                 if let Ok(last_dt) = chrono::DateTime::parse_from_rfc3339(last_iso) {
                     let last_utc = last_dt.with_timezone(&chrono::Utc);
-                    let mut missed = compute_missed_backfill_slots(&cfg, last_utc, now);
+                    let mut missed = compute_missed_backfill_slots(
+                        &cfg,
+                        last_utc,
+                        now,
+                        crate::engine::cron::seed_hash(&trigger.id),
+                    );
                     // Cap to (cap - 1) extras; the live fire below counts
                     // toward the user's intent. Drop the OLDEST when over.
                     let extras_wanted = backfill_cap.saturating_sub(1);
@@ -1594,7 +1608,11 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
         }
 
         // 3. Compute next trigger time first
-        let next = sched_logic::compute_next_from_config(&cfg, now);
+        let next = sched_logic::compute_next_from_config(
+            &cfg,
+            now,
+            crate::engine::cron::seed_hash(&trigger.id),
+        );
 
         if trigger.trigger_type == "schedule"
             && schedule_hourly_cap_exceeded(
@@ -2074,7 +2092,7 @@ mod tests {
         };
         let last = chrono::Utc.with_ymd_and_hms(2026, 5, 1, 9, 0, 0).unwrap();
         let now = chrono::Utc.with_ymd_and_hms(2026, 5, 1, 12, 30, 0).unwrap();
-        let slots = compute_missed_backfill_slots(&cfg, last, now);
+        let slots = compute_missed_backfill_slots(&cfg, last, now, 0);
         assert_eq!(slots.len(), 2, "expected [10:00, 11:00] (12:00 dropped)");
         assert_eq!(slots[0].hour(), 10);
         assert_eq!(slots[1].hour(), 11);
@@ -2095,7 +2113,7 @@ mod tests {
         let last = chrono::Utc.with_ymd_and_hms(2026, 5, 1, 12, 0, 0).unwrap();
         let now = chrono::Utc.with_ymd_and_hms(2026, 5, 1, 12, 30, 0).unwrap();
         // Next slot is 13:00 — past `now`, so no missed slots.
-        let slots = compute_missed_backfill_slots(&cfg, last, now);
+        let slots = compute_missed_backfill_slots(&cfg, last, now, 0);
         assert!(slots.is_empty());
     }
 
@@ -2116,7 +2134,7 @@ mod tests {
         };
         let last = chrono::Utc.with_ymd_and_hms(2026, 5, 1, 9, 0, 0).unwrap();
         let now = chrono::Utc.with_ymd_and_hms(2026, 5, 1, 12, 30, 0).unwrap();
-        let slots = compute_missed_backfill_slots(&cfg, last, now);
+        let slots = compute_missed_backfill_slots(&cfg, last, now, 0);
         assert_eq!(slots.len(), 2);
         assert_eq!(slots[0].hour(), 10);
         assert_eq!(slots[1].hour(), 11);
@@ -2140,7 +2158,7 @@ mod tests {
         };
         let last = chrono::Utc.with_ymd_and_hms(2026, 5, 1, 8, 0, 0).unwrap();
         let now = chrono::Utc.with_ymd_and_hms(2026, 5, 1, 12, 0, 0).unwrap();
-        let slots = compute_missed_backfill_slots(&cfg, last, now);
+        let slots = compute_missed_backfill_slots(&cfg, last, now, 0);
         // Internally the loop stops at BACKFILL_HARD_CAP=100 entries before
         // popping the most-recent — so output is 99.
         assert_eq!(slots.len(), 99);
@@ -2156,7 +2174,7 @@ mod tests {
         };
         let last = chrono::Utc.with_ymd_and_hms(2026, 5, 1, 9, 0, 0).unwrap();
         let now = chrono::Utc.with_ymd_and_hms(2026, 5, 1, 12, 30, 0).unwrap();
-        assert!(compute_missed_backfill_slots(&cfg, last, now).is_empty());
+        assert!(compute_missed_backfill_slots(&cfg, last, now, 0).is_empty());
     }
 
     #[test]

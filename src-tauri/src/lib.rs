@@ -1202,6 +1202,7 @@ pub fn run() {
             commands::core::personas::delete_persona,
             commands::core::personas::get_persona_summaries,
             commands::core::personas::get_persona_detail,
+            commands::core::personas::list_personas_using_connector,
             commands::core::personas::resolve_effective_config,
             // Core -- Use Cases (Phase C3: capability toggle + simulate;
             // Phase C5b: per-capability generation policy + event rename)
@@ -1293,11 +1294,18 @@ pub fn run() {
             commands::execution::executions::get_dream_replay,
             commands::execution::executions::get_circuit_breaker_status,
             commands::execution::executions::preview_execution,
+            commands::execution::executions::dry_run_persona,
+            // Execution -- Annotations (tags / note / star)
+            commands::execution::annotations::add_annotation,
+            commands::execution::annotations::list_execution_annotations,
+            commands::execution::annotations::list_persona_annotations,
+            commands::execution::annotations::delete_annotation,
             // Execution -- Scheduler
             commands::execution::scheduler::get_scheduler_status,
             commands::execution::scheduler::start_scheduler,
             commands::execution::scheduler::stop_scheduler,
             commands::execution::scheduler::get_subscription_health,
+            commands::execution::scheduler::backfill_schedule,
             // Execution -- Tests
             commands::execution::tests::start_test_run,
             commands::execution::tests::list_test_runs,

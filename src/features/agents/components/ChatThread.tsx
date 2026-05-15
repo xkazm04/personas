@@ -6,16 +6,22 @@ import {
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { ChatMessage } from '@/lib/bindings/ChatMessage';
+import { ChatMessageContent } from './ChatMessageContent';
 
 interface ChatThreadProps {
   messages: ChatMessage[];
   isThinking: boolean;
   thinkingLabel: string;
   error: string | null;
+  streamingMessageId?: string | null;
+  onSendToLab?: (code: string, language?: string) => void;
 }
 
 export const ChatThread = forwardRef<HTMLDivElement, ChatThreadProps>(
-  function ChatThread({ messages, isThinking, thinkingLabel, error }, ref) {
+  function ChatThread(
+    { messages, isThinking, thinkingLabel, error, streamingMessageId, onSendToLab },
+    ref,
+  ) {
     const { t } = useTranslation();
     return (
       <div ref={ref} className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
@@ -51,9 +57,19 @@ export const ChatThread = forwardRef<HTMLDivElement, ChatThreadProps>(
                 <Bot className="w-3.5 h-3.5 text-primary/60" />
               </div>
             )}
-            <p className="typo-body text-foreground whitespace-pre-wrap pt-1 min-w-0">
-              {msg.content}
-            </p>
+            {msg.role === 'user' ? (
+              <p className="typo-body text-foreground whitespace-pre-wrap pt-1 min-w-0">
+                {msg.content}
+              </p>
+            ) : (
+              <div className="pt-0.5 min-w-0 flex-1">
+                <ChatMessageContent
+                  content={msg.content}
+                  streaming={streamingMessageId === msg.id}
+                  onSendToLab={onSendToLab}
+                />
+              </div>
+            )}
           </div>
         ))}
 

@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect, useCallback, lazy, Suspense } from 'react';
-import { Palette, Check, Share2, LogOut, PanelLeftClose, PanelLeft } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback, lazy, Suspense, useMemo } from 'react';
+import { Palette, Check, Share2, LogOut, PanelLeftClose, PanelLeft, FolderGit2, ChevronUp } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { useThemeStore, THEMES } from '@/stores/themeStore';
 import type { ThemeId } from '@/stores/themeStore';
@@ -280,6 +280,108 @@ function CollapseFooterIcon() {
 }
 
 // ---------------------------------------------------------------------------
+// Active Dev Tools project picker -- compact right-side switcher so users
+// can change the active codebase without opening the Dev Tools plugin UI.
+// Hidden when no projects exist (avoids advertising an empty state).
+// ---------------------------------------------------------------------------
+
+function ProjectPickerFooterIcon() {
+  const projects = useSystemStore((s) => s.projects);
+  const activeProjectId = useSystemStore((s) => s.activeProjectId);
+  const setActiveProject = useSystemStore((s) => s.setActiveProject);
+  const fetchProjects = useSystemStore((s) => s.fetchProjects);
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
+  const [open, setOpen] = useState(false);
+  const loadedRef = useRef(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (loadedRef.current) return;
+    loadedRef.current = true;
+    void fetchProjects();
+  }, [fetchProjects]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  const activeProject = useMemo(
+    () => projects.find((p) => p.id === activeProjectId) ?? null,
+    [projects, activeProjectId],
+  );
+
+  if (projects.length === 0) return null;
+
+  const buttonLabel = activeProject?.name ?? 'Pick project';
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        data-testid="footer-project-picker"
+        className={`flex items-center gap-1.5 h-7 px-2 rounded-lg transition-colors max-w-[180px] ${
+          activeProject
+            ? 'text-indigo-300/90 hover:bg-indigo-500/10'
+            : 'text-foreground hover:bg-secondary/50'
+        }`}
+        title={activeProject?.root_path ?? 'Pick active Dev Tools project'}
+        aria-label={`Active project: ${buttonLabel}`}
+      >
+        <FolderGit2 className="w-4 h-4 flex-shrink-0" />
+        <span className="text-[11px] font-medium truncate min-w-0">{buttonLabel}</span>
+        <ChevronUp className={`w-3 h-3 flex-shrink-0 transition-transform ${open ? '' : 'rotate-180'}`} />
+      </button>
+
+      {open && (
+        <div className="animate-fade-slide-in absolute bottom-full right-0 mb-2 w-64 rounded-xl border border-primary/15 bg-background shadow-elevation-3 p-2 z-50">
+          <div className="px-2 py-1 mb-1 border-b border-primary/10">
+            <p className="text-[10px] uppercase tracking-wider text-foreground/60 font-mono">Active project</p>
+          </div>
+          <div className="max-h-64 overflow-y-auto">
+            {projects.map((p) => {
+              const isActive = p.id === activeProjectId;
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => { void setActiveProject(p.id); setOpen(false); }}
+                  className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg typo-caption transition-colors text-left ${
+                    isActive
+                      ? 'bg-indigo-500/10 text-indigo-300'
+                      : 'text-foreground hover:bg-secondary/40'
+                  }`}
+                >
+                  <FolderGit2 className="w-3.5 h-3.5 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[12px] font-medium truncate">{p.name}</div>
+                    {p.root_path && (
+                      <div className="text-[10px] text-foreground/60 truncate">{p.root_path}</div>
+                    )}
+                  </div>
+                  {isActive && <Check className="w-3 h-3 text-indigo-300 flex-shrink-0" />}
+                </button>
+              );
+            })}
+          </div>
+          <div className="mt-1 pt-1 border-t border-primary/10">
+            <button
+              onClick={() => { setSidebarSection('plugins'); setOpen(false); }}
+              className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-[11px] text-foreground/70 hover:bg-secondary/40 transition-colors"
+            >
+              Manage in Dev Tools
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Desktop footer bar
 // ---------------------------------------------------------------------------
 
@@ -319,8 +421,10 @@ export default function DesktopFooter() {
         </div>
       )}
 
-      {/* Right cluster: reserved for future status items */}
-      <div className="flex items-center gap-1.5" />
+      {/* Right cluster: quick active-project switcher (Dev Tools plugin) */}
+      <div className="flex items-center gap-1.5">
+        <ProjectPickerFooterIcon />
+      </div>
     </div>
   );
 }

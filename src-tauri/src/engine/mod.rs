@@ -69,6 +69,7 @@ pub mod director;
 pub mod discovery;
 pub mod dispatch;
 pub mod dream_replay;
+pub mod dry_run;
 #[cfg(feature = "ml")]
 pub mod embedder;
 #[cfg(feature = "p2p")]

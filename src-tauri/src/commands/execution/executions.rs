@@ -428,7 +428,11 @@ pub(crate) async fn execute_persona_inner(
     if let Some(ref tid) = execution.trigger_id {
         if let Ok(trigger) = trigger_repo::get_by_id(&state.db, tid) {
             let cfg = trigger.parse_config();
-            let next = sched_logic::compute_next_from_config(&cfg, chrono::Utc::now());
+            let next = sched_logic::compute_next_from_config(
+                &cfg,
+                chrono::Utc::now(),
+                crate::engine::cron::seed_hash(&trigger.id),
+            );
             if let Err(e) = trigger_repo::advance_schedule(&state.db, tid, next) {
                 tracing::warn!(trigger_id = %tid, error = %e, "Failed to advance trigger schedule after manual execution");
             }
@@ -692,6 +696,24 @@ pub fn get_circuit_breaker_status(
 ) -> Result<CircuitBreakerStatus, AppError> {
     require_auth_sync(&state)?;
     Ok(state.engine.circuit_breaker.get_status())
+}
+
+/// Validate a persona end-to-end without spawning the engine subprocess.
+///
+/// Mirrors the runner's `Validate` stage — credential resolution, capability
+/// contract check, model resolution, and full prompt assembly — and returns
+/// the assembled prompt plus the planned tool surface. No
+/// `persona_executions` row is created so dry runs do not pollute any
+/// execution metric, dashboard, or activity feed.
+#[tauri::command]
+pub async fn dry_run_persona(
+    state: State<'_, Arc<AppState>>,
+    persona_id: String,
+    input_data: Option<String>,
+    use_case_id: Option<String>,
+) -> Result<crate::engine::dry_run::DryRunReport, AppError> {
+    require_auth(&state).await?;
+    crate::engine::dry_run::dry_run_persona(&state, &persona_id, input_data, use_case_id).await
 }
 
 /// Preview an execution without running it: assembles the prompt, estimates

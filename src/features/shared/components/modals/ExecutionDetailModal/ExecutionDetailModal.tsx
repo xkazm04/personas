@@ -22,6 +22,7 @@ export function ExecutionDetailModal({ execution, onClose }: ExecutionDetailModa
       title={tx(t.agents.activity.modal_execution_title, { name: personaName })}
       subtitle={startedAt ? formatRelativeTime(startedAt) : undefined}
       onClose={onClose}
+      maxWidthClass="max-w-[76.8rem]"
     >
       <ExecutionDetail execution={execution} />
     </DetailModal>

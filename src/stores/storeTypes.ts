@@ -47,6 +47,7 @@ import type { ChatSlice } from "./slices/agents/chatSlice";
 import type { BackgroundChatSlice } from "./slices/agents/backgroundChatSlice";
 import type { MatrixBuildSlice } from "./slices/agents/matrixBuildSlice";
 import type { RotationSlice } from "./slices/vault/rotationSlice";
+import type { CatalogPrefsSlice } from "./slices/vault/catalogPrefsSlice";
 import type { ProcessActivitySlice } from "./slices/processActivitySlice";
 
 // -- Shared helpers ------------------------------------------------------
@@ -213,12 +214,13 @@ export type PipelineStore = CoreState &
   GroupSlice &
   RecipeSlice;
 
-/** Vault domain: credentials, databases, automations, rotation */
+/** Vault domain: credentials, databases, automations, rotation, catalog UI prefs */
 export type VaultStore = CoreState &
   CredentialSlice &
   DatabaseSlice &
   AutomationSlice &
-  RotationSlice;
+  RotationSlice &
+  CatalogPrefsSlice;
 
 /** System domain: UI, cloud, GitLab, onboarding, tour, view-mode, dev-tools, network, setup */
 export type SystemStore = CoreState &

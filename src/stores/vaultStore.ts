@@ -8,6 +8,7 @@ import { createCredentialSlice } from "./slices/vault/credentialSlice";
 import { createDatabaseSlice } from "./slices/vault/databaseSlice";
 import { createAutomationSlice } from "./slices/vault/automationSlice";
 import { createRotationSlice } from "./slices/vault/rotationSlice";
+import { createCatalogPrefsSlice } from "./slices/vault/catalogPrefsSlice";
 
 export const useVaultStore = create<VaultStore>()((...a) => ({
   error: null,
@@ -18,4 +19,5 @@ export const useVaultStore = create<VaultStore>()((...a) => ({
   ...createDatabaseSlice(...a),
   ...createAutomationSlice(...a),
   ...createRotationSlice(...a),
+  ...createCatalogPrefsSlice(...a),
 }));

@@ -1,8 +1,10 @@
 import { SearchX } from 'lucide-react';
+import { useMemo } from 'react';
 import type { ConnectorDefinition } from '@/lib/types/types';
 import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import { ConnectorCard } from './ConnectorCard';
 import type { RecipeIndicator } from './useRecipeIndicators';
+import { isConnectorRecent } from './usePickerFilters';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface PickerGridProps {
@@ -14,6 +16,7 @@ interface PickerGridProps {
 
 export function PickerGrid({ filteredConnectors, ownedServiceTypes, recipeIndicators, onPickType }: PickerGridProps) {
   const { t } = useTranslation();
+  const now = useMemo(() => Date.now(), [filteredConnectors]);
   return (
     <>
       <div className="grid [grid-template-columns:repeat(auto-fill,minmax(9rem,1fr))] gap-2.5">
@@ -22,6 +25,7 @@ export function PickerGrid({ filteredConnectors, ownedServiceTypes, recipeIndica
             key={connector.id}
             connector={connector}
             isOwned={ownedServiceTypes.has(connector.name)}
+            isNew={isConnectorRecent(connector.created_at, now)}
             recipeIndicator={recipeIndicators?.get(connector.name)}
             onPickType={onPickType}
           />

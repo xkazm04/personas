@@ -1,4 +1,4 @@
-import { Plug, Monitor, BadgeCheck } from 'lucide-react';
+import { Plug, Monitor, BadgeCheck, Sparkles } from 'lucide-react';
 import { motion, type Variants } from 'framer-motion';
 import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import type { ConnectorDefinition } from '@/lib/types/types';
@@ -14,6 +14,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 interface ConnectorCardProps {
   connector: ConnectorDefinition;
   isOwned: boolean;
+  isNew?: boolean;
   recipeIndicator?: RecipeIndicator;
   onPickType: (connector: ConnectorDefinition) => void;
 }
@@ -46,7 +47,7 @@ const labelVariants: Variants = {
   hover: { fontWeight: 600 },
 };
 
-export function ConnectorCard({ connector, isOwned, recipeIndicator, onPickType }: ConnectorCardProps) {
+export function ConnectorCard({ connector, isOwned, isNew, recipeIndicator, onPickType }: ConnectorCardProps) {
   const { t, tx } = useTranslation();
   const ps = t.vault.picker_section;
   const authMethods = getAuthMethods(connector);
@@ -83,6 +84,19 @@ export function ConnectorCard({ connector, isOwned, recipeIndicator, onPickType 
       >
         <TierIcon className={`w-3 h-3 ${tierMeta.textClass}`} />
       </motion.span>
+
+      {/* "New" ribbon (top-center) — connector added in last 30 days */}
+      {isNew && (
+        <motion.span
+          variants={badgeStrong}
+          data-testid={`catalog-connector-new-${connector.name}`}
+          className="absolute -top-1.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-input border text-[10px] font-semibold uppercase tracking-wide bg-violet-500/15 border-violet-500/30 text-violet-300"
+          title={ps.new_connector_tooltip}
+        >
+          <Sparkles className="w-2.5 h-2.5" />
+          {ps.new_connector_ribbon}
+        </motion.span>
+      )}
 
       {/* Auth method icons (top-left) */}
       <motion.div

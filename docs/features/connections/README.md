@@ -10,7 +10,7 @@ Connections is the credential, connector, resource, database, and dependency-man
 | --- | --- | --- |
 | Credentials | Credential list, cards, creation forms, import, workspace/picker flows, gateway controls | `sub_credentials/manager`, `sub_credentials/components` |
 | Databases | Database cards, table browser, SQL editor, safe mode, assistant chat, schema manager | `sub_databases` |
-| Catalog | Connector catalog, setup forms, auto-credential browser, desktop connectors, foraging, negotiator, schema proposal | `sub_catalog/components` |
+| Catalog | Connector catalog, setup forms, auto-credential browser, desktop connectors, foraging, negotiator, schema proposal. Sort dropdown (Alphabetical / Popular / Recently Added / Most-used with recipes) and a "New" ribbon on connectors added in the last 30 days; sort + local view counts persist in `vaultStore` via `catalogPrefsSlice`. | `sub_catalog/components` |
 | Dependencies | Relationship graph, blast-radius panel, simulation controls | `sub_dependencies` |
 | Add new | Entry mode into credential creation/catalog flows | `CredentialAddViews.tsx`, `useCatalogHandlers.ts` |
 

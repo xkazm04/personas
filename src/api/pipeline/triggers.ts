@@ -155,7 +155,14 @@ export const previewCronSchedule = (
   cronExpression: string,
   count?: number,
   timezone?: string,
-) => invoke<CronPreview>("preview_cron_schedule", { cronExpression, count, timezone });
+  /**
+   * Stable id (usually `trigger.id`) hashed into Jenkins `H` tokens so the
+   * preview matches the minute the engine will actually fire. Omit for
+   * syntax-only previews where the seed doesn't matter yet (eg new trigger
+   * draft before the id is assigned).
+   */
+  seed?: string,
+) => invoke<CronPreview>("preview_cron_schedule", { cronExpression, count, timezone, seed });
 
 /**
  * Compute every cron fire time within `[start, end)`, evaluated in the supplied
@@ -165,7 +172,9 @@ export const previewCronSchedule = (
  * Returns RFC3339 strings, ascending. Returns an empty array when the cron
  * expression is invalid (use `previewCronSchedule` for validation feedback).
  *
- * `max` defaults to 200, hard-capped at 1000 by the backend.
+ * `max` defaults to 200, hard-capped at 1000 by the backend. Pass `seed`
+ * (typically the trigger id) so Jenkins-style `H` tokens expand to the same
+ * minute the scheduler will actually use.
  */
 export const cronFireTimesInRange = (
   cronExpression: string,
@@ -173,12 +182,14 @@ export const cronFireTimesInRange = (
   start: Date,
   end: Date,
   max?: number,
+  seed?: string,
 ) => invoke<string[]>("cron_fire_times_in_range", {
   cronExpression,
   timezone,
   start: start.toISOString(),
   end: end.toISOString(),
   max,
+  seed,
 });
 
 // ============================================================================

@@ -134,7 +134,11 @@ pub fn create(pool: &DbPool, mut input: CreateTriggerInput) -> Result<PersonaTri
         // Compute next_trigger_at from plaintext config so it can be written
         // atomically in the same transaction as the INSERT.
         let parsed_cfg = TriggerConfig::from_raw(&input.trigger_type, input.config.as_deref());
-        let next_trigger_at = scheduler::compute_next_from_config(&parsed_cfg, chrono::Utc::now());
+        let next_trigger_at = scheduler::compute_next_from_config(
+            &parsed_cfg,
+            chrono::Utc::now(),
+            crate::engine::cron::seed_hash(&id),
+        );
         let invalid_timezone = scheduler::invalid_schedule_timezone(&parsed_cfg);
 
         // Fix 4a: for schedule / polling / webhook source triggers, auto-create a

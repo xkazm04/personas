@@ -243,7 +243,10 @@ pub async fn validate_trigger(
                 .or(config.get("cron_expression"))
                 .and_then(|v| v.as_str())
             {
-                match crate::engine::cron::parse_cron(cron_expr) {
+                match crate::engine::cron::parse_cron_seeded(
+                    cron_expr,
+                    crate::engine::cron::seed_hash(&trigger.id),
+                ) {
                     Ok(schedule) => {
                         let tz_str = config.get("timezone").and_then(|v| v.as_str());
                         let tz = tz_str.and_then(|s| s.parse::<chrono_tz::Tz>().ok());
@@ -744,17 +747,28 @@ pub struct CronPreview {
 /// `timezone` is an optional IANA name (e.g. `"America/New_York"`). When set,
 /// the cron expression is evaluated in that zone; otherwise the system local
 /// zone is used.
+///
+/// `seed` is an optional stable identifier (usually `trigger_id`) used to
+/// expand Jenkins-style `H` tokens deterministically. When omitted, `H`
+/// tokens collapse to the range minimum — fine for syntax-only previews but
+/// misleading for "where will this trigger actually fire"; pass the trigger
+/// id from the editor so the preview matches runtime.
 #[tauri::command]
 pub fn preview_cron_schedule(
     state: State<'_, Arc<AppState>>,
     cron_expression: String,
     count: Option<usize>,
     timezone: Option<String>,
+    seed: Option<String>,
 ) -> Result<CronPreview, AppError> {
     require_auth_sync(&state)?;
     let count = count.unwrap_or(5).min(10);
 
-    let schedule = match crate::engine::cron::parse_cron(&cron_expression) {
+    let seed_u64 = seed
+        .as_deref()
+        .map(crate::engine::cron::seed_hash)
+        .unwrap_or(0);
+    let schedule = match crate::engine::cron::parse_cron_seeded(&cron_expression, seed_u64) {
         Ok(s) => s,
         Err(e) => {
             return Ok(CronPreview {
@@ -813,11 +827,16 @@ pub fn cron_fire_times_in_range(
     start: String,
     end: String,
     max: Option<usize>,
+    seed: Option<String>,
 ) -> Result<Vec<String>, AppError> {
     require_auth_sync(&state)?;
     let cap = max.unwrap_or(200).min(1000);
 
-    let schedule = match crate::engine::cron::parse_cron(&cron_expression) {
+    let seed_u64 = seed
+        .as_deref()
+        .map(crate::engine::cron::seed_hash)
+        .unwrap_or(0);
+    let schedule = match crate::engine::cron::parse_cron_seeded(&cron_expression, seed_u64) {
         Ok(s) => s,
         Err(_) => return Ok(vec![]),
     };
