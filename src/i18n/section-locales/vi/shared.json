@@ -175,7 +175,10 @@
     "attach_file_title": "Đính kèm tệp (đặc tả API, schema, cấu hình MCP)",
     "add_references_title": "Thêm URL tham chiếu hoặc chuỗi kết nối",
     "no_matches": "Không có kết quả khớp",
-    "all_prefix": "Tất cả ("
+    "all_prefix": "Tất cả (",
+    "select_agent_icon": "Select agent icon",
+    "select_agent_icon_desc": "Choose an icon for this agent. Themed dark/light variants render automatically.",
+    "clear_icon": "Clear icon"
   },
   "reasoning_trace": {
     "system_init": "Khởi tạo hệ thống",

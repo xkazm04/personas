@@ -175,7 +175,10 @@
     "attach_file_title": "إرفاق ملف (مواصفة API، مخطط، إعدادات MCP)",
     "add_references_title": "إضافة URL مراجع أو سلاسل اتصال",
     "no_matches": "لا توجد تطابقات",
-    "all_prefix": "الكل ("
+    "all_prefix": "الكل (",
+    "select_agent_icon": "Select agent icon",
+    "select_agent_icon_desc": "Choose an icon for this agent. Themed dark/light variants render automatically.",
+    "clear_icon": "Clear icon"
   },
   "reasoning_trace": {
     "system_init": "تهيئة النظام",

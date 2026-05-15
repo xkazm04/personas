@@ -175,7 +175,10 @@
     "attach_file_title": "फ़ाइल संलग्न करें (API spec, schema, MCP config)",
     "add_references_title": "reference URLs या connection strings जोड़ें",
     "no_matches": "कोई मिलान नहीं",
-    "all_prefix": "सभी ("
+    "all_prefix": "सभी (",
+    "select_agent_icon": "Select agent icon",
+    "select_agent_icon_desc": "Choose an icon for this agent. Themed dark/light variants render automatically.",
+    "clear_icon": "Clear icon"
   },
   "reasoning_trace": {
     "system_init": "सिस्टम इनिट",

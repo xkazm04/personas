@@ -107,5 +107,14 @@
       "key": "key",
       "label": "Label"
     }
+  },
+  "composer_suggestion": {
+    "label": "We have a recipe for this",
+    "use_button": "Use this recipe",
+    "dismiss": "Dismiss",
+    "score_label": "Match",
+    "applied_toast": "Applied recipe: {name}",
+    "run_now": "Run now",
+    "run_now_toast": "Opening {name} in the recipe playground"
   }
 }

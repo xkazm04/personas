@@ -162,5 +162,19 @@
   "quest_hint_schedule_trigger": "Add a schedule from the persona triggers.",
   "quest_hint_try_recipe": "Browse the Recipes catalog.",
   "quest_hint_share_deployment": "Open a deployment and copy the share link.",
-  "quest_just_completed": "Milestone complete!"
+  "quest_just_completed": "Milestone complete!",
+  "app_running_tooltip": "Running",
+  "because_you_connected": "Because you connected {apps}, these templates fit best:",
+  "recommended_match_badge": "Matches {apps}",
+  "next_step_eyebrow": "Next step",
+  "next_step_progress": "Step {step} of {total}",
+  "next_step_complete_title": "You're all set up",
+  "next_step_complete_subtitle": "All seven activation steps are done. Fly free.",
+  "next_step_cta_create_persona": "Create a persona",
+  "next_step_cta_connect_credential": "Open Connections",
+  "next_step_cta_run_persona": "Open an agent",
+  "next_step_cta_save_memory": "Open Knowledge",
+  "next_step_cta_schedule_trigger": "Add a trigger",
+  "next_step_cta_try_recipe": "Browse recipes",
+  "next_step_cta_share_deployment": "Open deployments"
 }

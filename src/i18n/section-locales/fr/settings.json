@@ -25,7 +25,8 @@
     "updates_checking": "Checking...",
     "updates_up_to_date": "You're up to date",
     "updates_available_toast": "Update available — see the banner at the top to install",
-    "updates_check_failed": "Couldn't check for updates. Try again in a moment."
+    "updates_check_failed": "Couldn't check for updates. Try again in a moment.",
+    "avatar_alt": "Profile picture"
   },
   "appearance_extra": {
     "simple": "Simple",
@@ -121,7 +122,35 @@
     "digest_description": "Notification hebdomadaire résumant les problèmes de santé de tous les agents avec un score de santé global",
     "healing_alerts_hint": "Contrôlez quelles alertes de réparation déclenchent des notifications",
     "healing_severity": "Sévérité des alertes de réparation",
-    "notification_hint": "Les notifications de bureau utilisent le système de notification natif du système d'exploitation. Les notifications dans l'application apparaissent pour les problèmes critiques et de haute sévérité indépendamment de ces paramètres."
+    "notification_hint": "Les notifications de bureau utilisent le système de notification natif du système d'exploitation. Les notifications dans l'application apparaissent pour les problèmes critiques et de haute sévérité indépendamment de ces paramètres.",
+    "severity_toggle_aria": "{level} notifications",
+    "weekly_digest_aria": "Weekly health digest",
+    "webhook_subscriptions_title": "Outbound webhooks",
+    "webhook_subscriptions_add": "Add webhook",
+    "webhook_subscriptions_empty": "No webhook subscriptions yet. Add one to route persona events to Slack, Discord, Teams, or a custom JSON endpoint.",
+    "webhook_subscriptions_label": "Label",
+    "webhook_subscriptions_label_placeholder": "Production alerts",
+    "webhook_subscriptions_provider": "Destination",
+    "webhook_subscriptions_provider_labels": {
+      "slack": "Slack (incoming webhook)",
+      "discord": "Discord (channel webhook)",
+      "teams": "Microsoft Teams (incoming webhook)",
+      "generic": "Generic JSON (POST)"
+    },
+    "webhook_subscriptions_url": "Webhook URL",
+    "webhook_subscriptions_url_placeholder": "https://hooks.slack.com/services/...",
+    "webhook_subscriptions_events": "Event patterns",
+    "webhook_subscriptions_events_placeholder": "execution.finished, healing.escalated",
+    "webhook_subscriptions_events_hint": "Comma-separated. Use `prefix.*` to match all sub-types (e.g. `execution.*`) or `*` for everything.",
+    "webhook_subscriptions_template": "Message template (optional)",
+    "webhook_subscriptions_template_placeholder": "Persona {{payload.persona_id}} {{event_type}}: {{payload.status}}",
+    "webhook_subscriptions_template_hint": "Mustache-style placeholders walk the event JSON. Leave blank to use a default summary.",
+    "webhook_subscriptions_cancel": "Cancel",
+    "webhook_subscriptions_save": "Save",
+    "webhook_subscriptions_test_aria": "Send a test notification",
+    "webhook_subscriptions_edit_aria": "Edit webhook subscription",
+    "webhook_subscriptions_delete_aria": "Delete webhook subscription",
+    "webhook_subscriptions_enabled_aria": "Enable webhook subscription"
   },
   "engine": {
     "title": "Moteur",
@@ -200,7 +229,8 @@
     "cancel": "Annuler",
     "create_rule": "Créer une règle",
     "no_rules": "Aucune règle de contexte définie",
-    "all_sources": "toutes les sources"
+    "all_sources": "toutes les sources",
+    "toggle_aria": "Ambient context fusion"
   },
   "byom": {
     "title": "Apportez votre propre modèle",
@@ -429,7 +459,10 @@
     "rules_count_plural": "{count} règles",
     "reset_defaults": "Réinitialiser aux valeurs par défaut",
     "confirm_reset": "Confirmer la réinitialisation ?",
-    "rules_hint": "Les règles sont chargées depuis la base de données à chaque expédition. Les changements prennent effet immédiatement."
+    "rules_hint": "Les règles sont chargées depuis la base de données à chaque expédition. Les changements prennent effet immédiatement.",
+    "action_reject": "Reject",
+    "action_tag": "Tag",
+    "action_warn": "Warn"
   },
   "api_keys": {
     "title": "API Keys",
