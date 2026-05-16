@@ -9899,6 +9899,10 @@ export type Translations = {
       gh_import_create_btn: string;
       gh_import_toast_success: string;
       gh_import_toast_partial: string;
+      context_detail_goals_heading: string;
+      context_detail_no_goals: string;
+      context_detail_task_summary: string;
+      context_detail_goal_jump_tooltip: string;
       add_group: string;
       group_name_placeholder: string;
       create: string;

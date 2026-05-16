@@ -1,10 +1,34 @@
-import { X, File, ArrowUpRight } from 'lucide-react';
+import { useMemo } from 'react';
+import { X, File, ArrowUpRight, Target, ListChecks } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
-import type { ContextItem } from './contextMapTypes';
+import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
+import type { ContextItem } from './contextMapTypes';
 
 export default function ContextDetail({ ctx, onClose }: { ctx: ContextItem; onClose: () => void }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
+  const goals = useSystemStore((s) => s.goals);
+  const tasks = useSystemStore((s) => s.tasks);
+  const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
+  const setPendingLifecycleSubTab = useSystemStore((s) => s.setPendingLifecycleSubTab);
+  const setPendingGoalSpotlightId = useSystemStore((s) => s.setPendingGoalSpotlightId);
+
+  // Goals scoped to this context + per-goal task summary (done / total).
+  const linkedGoals = useMemo(() => {
+    const matched = goals.filter((g) => g.context_id === ctx.id);
+    return matched.map((g) => {
+      const myTasks = tasks.filter((task) => task.goal_id === g.id);
+      const done = myTasks.filter((task) => task.status === 'complete' || task.status === 'completed').length;
+      return { goal: g, tasksTotal: myTasks.length, tasksDone: done };
+    });
+  }, [goals, tasks, ctx.id]);
+
+  const handleGoalJump = (goalId: string) => {
+    setPendingGoalSpotlightId(goalId);
+    setPendingLifecycleSubTab('goals');
+    setDevToolsTab('lifecycle');
+  };
+
   return (
     <div
       className="animate-fade-slide-in w-80 flex-shrink-0 border-l border-primary/10 pl-5 overflow-y-auto"
@@ -17,6 +41,41 @@ export default function ContextDetail({ ctx, onClose }: { ctx: ContextItem; onCl
       </div>
 
       <p className="text-md text-foreground mb-4">{ctx.description}</p>
+
+      {/* Goals linked to this context (cycle 8 surfaced the count; here the items) */}
+      <div className="mb-4">
+        <h4 className="text-[10px] uppercase tracking-wider text-primary font-medium mb-2 flex items-center gap-1.5">
+          <Target className="w-3 h-3" />
+          {t.plugins.dev_tools.context_detail_goals_heading} ({linkedGoals.length})
+        </h4>
+        {linkedGoals.length === 0 ? (
+          <p className="typo-caption text-foreground/55 italic">{t.plugins.dev_tools.context_detail_no_goals}</p>
+        ) : (
+          <ul className="space-y-1.5">
+            {linkedGoals.map(({ goal, tasksTotal, tasksDone }) => (
+              <li key={goal.id}>
+                <button
+                  type="button"
+                  onClick={() => handleGoalJump(goal.id)}
+                  title={t.plugins.dev_tools.context_detail_goal_jump_tooltip}
+                  className="w-full text-left rounded-modal border border-primary/10 bg-card/30 px-2.5 py-2 hover:border-primary/25 hover:bg-primary/5 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="typo-caption text-foreground font-medium truncate flex-1">{goal.title}</span>
+                    <span className="typo-caption text-foreground/60 tabular-nums shrink-0">{goal.progress}%</span>
+                  </div>
+                  {tasksTotal > 0 && (
+                    <p className="typo-caption text-foreground/60 mt-0.5 flex items-center gap-1">
+                      <ListChecks className="w-2.5 h-2.5" />
+                      {tx(t.plugins.dev_tools.context_detail_task_summary, { done: tasksDone, total: tasksTotal })}
+                    </p>
+                  )}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
       <div className="mb-4">
         <h4 className="text-[10px] uppercase tracking-wider text-primary font-medium mb-2">
