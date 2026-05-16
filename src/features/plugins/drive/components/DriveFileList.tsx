@@ -8,7 +8,6 @@ import {
   FolderOpen,
   Layers,
   Search,
-  Sparkles,
 } from "lucide-react";
 
 import type { DriveEntry, DriveSearchHit } from "@/api/drive";
@@ -22,6 +21,7 @@ import {
   kindLabel,
   kindGroupLabel,
 } from "../designTokens";
+import { DriveEmptyHint } from "./DriveEmptyHint";
 
 interface Props {
   drive: UseDriveResult;
@@ -724,29 +724,24 @@ function AsyncColumnEntries(props: {
 function SearchEmptyWithCTA({ drive }: { drive: UseDriveResult }) {
   const { t, tx } = useTranslation();
   return (
-    <div className="flex-1 flex flex-col items-center justify-center gap-4 p-10 text-center">
-      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-sky-500/5 border border-cyan-500/30 flex items-center justify-center">
-        <Search className="w-7 h-7 text-cyan-300" />
-      </div>
-      <div className="space-y-1.5 max-w-sm">
-        <div className="typo-section-title">
-          {tx(t.plugins.drive.search_no_local_hits, { query: drive.searchQuery })}
-        </div>
-        <p className="typo-body text-foreground">
-          {t.plugins.drive.search_escalate_hint}
-        </p>
-      </div>
-      <button
-        type="button"
-        onClick={() => drive.runRecursiveSearch()}
-        disabled={drive.recursiveLoading}
-        className="flex items-center gap-1.5 px-4 py-2 rounded-card bg-gradient-to-b from-cyan-500/25 to-cyan-500/10 text-cyan-100 border border-cyan-500/40 typo-body font-semibold hover:from-cyan-500/35 hover:to-cyan-500/15 disabled:opacity-50 transition-all"
-      >
-        <Search className="w-3.5 h-3.5" />
-        {drive.recursiveLoading
-          ? t.plugins.drive.search_running
-          : t.plugins.drive.search_all_drive_cta}
-      </button>
+    <div className="flex-1 flex items-center justify-center p-10">
+      <DriveEmptyHint
+        size="lg"
+        icon={Search}
+        title={tx(t.plugins.drive.search_no_local_hits, {
+          query: drive.searchQuery,
+        })}
+        body={t.plugins.drive.search_escalate_hint}
+        cta={{
+          icon: Search,
+          label: drive.recursiveLoading
+            ? t.plugins.drive.search_running
+            : t.plugins.drive.search_all_drive_cta,
+          onClick: () => drive.runRecursiveSearch(),
+          disabled: drive.recursiveLoading,
+        }}
+        className="max-w-md"
+      />
     </div>
   );
 }
@@ -856,8 +851,12 @@ function RecursiveResultRow({
 function ColumnEmptyLabel() {
   const { t } = useTranslation();
   return (
-    <div className="px-3 py-6 typo-body text-foreground italic text-center">
-      {t.plugins.drive.empty_column}
+    <div className="px-2 py-3">
+      <DriveEmptyHint
+        size="sm"
+        icon={FolderIcon}
+        title={t.plugins.drive.empty_column}
+      />
     </div>
   );
 }
@@ -893,34 +892,19 @@ function DriveEmptyState({
   const { t } = useTranslation();
   const isRoot = drive.currentPath === "";
   return (
-    <div className="flex-1 flex flex-col items-center justify-center gap-5 p-10 text-center">
-      <div className="relative">
-        <div
-          aria-hidden
-          className="absolute inset-0 blur-2xl opacity-60 bg-gradient-to-br from-cyan-500/30 via-sky-500/20 to-transparent rounded-full"
-        />
-        <div className="relative w-24 h-24 rounded-2xl bg-gradient-to-br from-cyan-500/20 via-sky-500/10 to-transparent border border-cyan-500/30 flex items-center justify-center shadow-[0_0_40px_-10px_rgba(34,211,238,0.6)]">
-          <FolderOpen className="w-12 h-12 text-cyan-300" />
-        </div>
-        <Sparkles className="absolute -top-1 -right-1 w-4 h-4 text-cyan-300 animate-pulse" />
-      </div>
-      <div className="space-y-1.5 max-w-sm">
-        <div className="typo-heading typo-section-title">
-          {t.plugins.drive.empty_folder}
-        </div>
-        {isRoot && (
-          <p className="typo-body text-foreground">
-            {t.plugins.drive.empty_hint}
-          </p>
-        )}
-      </div>
-      <button
-        type="button"
-        onClick={onNewFolder}
-        className="flex items-center gap-1.5 px-4 py-2 rounded-card bg-gradient-to-b from-cyan-500/25 to-cyan-500/10 text-cyan-100 border border-cyan-500/40 typo-body font-semibold hover:from-cyan-500/35 hover:to-cyan-500/15 shadow-[0_0_16px_-4px_rgba(34,211,238,0.5)] transition-all"
-      >
-        {t.plugins.drive.empty_cta}
-      </button>
+    <div className="flex-1 flex items-center justify-center p-10">
+      <DriveEmptyHint
+        size="lg"
+        icon={FolderOpen}
+        title={t.plugins.drive.empty_folder}
+        body={isRoot ? t.plugins.drive.empty_hint : undefined}
+        cta={{
+          icon: FolderIcon,
+          label: t.plugins.drive.empty_cta,
+          onClick: onNewFolder,
+        }}
+        className="max-w-md"
+      />
     </div>
   );
 }

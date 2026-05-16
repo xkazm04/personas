@@ -9,6 +9,7 @@ import { silentCatch } from "@/lib/silentCatch";
 import type { UseDriveResult } from "../hooks/useDrive";
 import { useTranslation } from "@/i18n/useTranslation";
 import { formatRelativeTime, visualForEntry } from "../designTokens";
+import { DriveEmptyHint } from "./DriveEmptyHint";
 
 interface Props {
   drive: UseDriveResult;
@@ -98,8 +99,12 @@ export function DriveSidebar({ drive }: Props) {
             (drive.recent.length > 0 ? (
               <RecentRail entries={drive.recent} drive={drive} />
             ) : (
-              <div className="mx-2 px-3 py-3 rounded-card border border-dashed border-primary/15 typo-caption text-foreground/60 italic text-center">
-                {t.plugins.drive.sidebar_recent_empty}
+              <div className="mx-2">
+                <DriveEmptyHint
+                  size="sm"
+                  icon={Clock}
+                  title={t.plugins.drive.sidebar_recent_empty}
+                />
               </div>
             ))}
         </div>
