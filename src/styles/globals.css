@@ -1607,17 +1607,34 @@ body[data-drag-active="true"] * {
   --btn-primary: #0e7490;
 }
 
-/* Dark: Bronze */
+/* Dark: Bronze — warm amber palette, hue-coherent neutrals */
 [data-theme="dark-bronze"] {
   --primary: #d97706;
   --accent: #f59e0b;
   --background: #121008;
   --foreground: #fef3c7;
   --secondary: #1c1505;
+  --muted: #6b5226;
+  --muted-dark: #524018;
+  --muted-foreground: #d4b482;
   --border: #78350f;
-  --brand-cyan: #f59e0b;
+  --card-bg: rgba(245, 158, 11, 0.04);
+  --card-border: rgba(245, 158, 11, 0.10);
+  --brand-cyan: #fbbf24;
+  --brand-purple: #ea580c;
+  --brand-emerald: #ca8a04;
   --brand-amber: #fbbf24;
+  --brand-rose: #f97316;
   --btn-primary: #92400e;
+  --glass-bg: rgba(217, 119, 6, 0.04);
+  --glass-border: rgba(217, 119, 6, 0.12);
+  --status-success: #84cc16;
+  --status-warning: #f59e0b;
+  --status-error: #ef4444;
+  --status-info: #fbbf24;
+  --status-pending: #f59e0b;
+  --status-processing: #fbbf24;
+  --status-neutral: #a8956b;
 }
 
 /* Dark: Frost */
@@ -1633,30 +1650,64 @@ body[data-drag-active="true"] * {
   --btn-primary: #475569;
 }
 
-/* Dark: Purple */
+/* Dark: Purple — violet palette, hue-coherent neutrals */
 [data-theme="dark-purple"] {
   --primary: #a855f7;
   --accent: #c084fc;
   --background: #0e0a14;
   --foreground: #f3e8ff;
   --secondary: #1a1028;
+  --muted: #5b4275;
+  --muted-dark: #463057;
+  --muted-foreground: #c4a7e7;
   --border: #4c1d95;
+  --card-bg: rgba(168, 85, 247, 0.04);
+  --card-border: rgba(168, 85, 247, 0.10);
+  --brand-cyan: #818cf8;
   --brand-purple: #c084fc;
-  --brand-cyan: #8b5cf6;
+  --brand-emerald: #a78bfa;
+  --brand-amber: #d8b4fe;
+  --brand-rose: #d946ef;
   --btn-primary: #6d28d9;
+  --glass-bg: rgba(168, 85, 247, 0.04);
+  --glass-border: rgba(168, 85, 247, 0.12);
+  --status-success: #6ee7b7;
+  --status-warning: #fbbf24;
+  --status-error: #f87171;
+  --status-info: #c4b5fd;
+  --status-pending: #fbbf24;
+  --status-processing: #c4b5fd;
+  --status-neutral: #a392b8;
 }
 
-/* Dark: Pink */
+/* Dark: Pink — rose palette, hue-coherent neutrals */
 [data-theme="dark-pink"] {
   --primary: #ec4899;
   --accent: #f472b6;
   --background: #140a10;
   --foreground: #fce7f3;
   --secondary: #200d1a;
+  --muted: #6b3954;
+  --muted-dark: #532a40;
+  --muted-foreground: #d4a3c4;
   --border: #831843;
-  --brand-rose: #f472b6;
+  --card-bg: rgba(236, 72, 153, 0.04);
+  --card-border: rgba(236, 72, 153, 0.10);
+  --brand-cyan: #f9a8d4;
   --brand-purple: #db2777;
+  --brand-emerald: #f0abfc;
+  --brand-amber: #fda4af;
+  --brand-rose: #f472b6;
   --btn-primary: #9d174d;
+  --glass-bg: rgba(236, 72, 153, 0.04);
+  --glass-border: rgba(236, 72, 153, 0.12);
+  --status-success: #34d399;
+  --status-warning: #fbbf24;
+  --status-error: #f87171;
+  --status-info: #f472b6;
+  --status-pending: #fbbf24;
+  --status-processing: #f9a8d4;
+  --status-neutral: #b8889a;
 }
 
 /* Dark: Deadpool -- black/white canvas with blood-red accents */
