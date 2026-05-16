@@ -31,6 +31,19 @@ function nextStartTime<T extends { startTime: number; duration: number }>(items:
   return items.reduce((end, c) => Math.max(end, c.startTime + c.duration), 0);
 }
 
+interface StarterTemplate {
+  id: 'vertical-9-16' | 'horizontal-16-9' | 'square';
+  width: number;
+  height: number;
+  fps: number;
+}
+
+const STARTER_TEMPLATES: StarterTemplate[] = [
+  { id: 'vertical-9-16', width: 1080, height: 1920, fps: 30 },
+  { id: 'horizontal-16-9', width: 1920, height: 1080, fps: 30 },
+  { id: 'square', width: 1080, height: 1080, fps: 30 },
+];
+
 export default function MediaStudioPage() {
   const { t, tx } = useTranslation();
   const { status: ffmpegStatus, checking: ffmpegChecking, recheck: ffmpegRecheck } = useFfmpegDetect();
@@ -56,6 +69,21 @@ export default function MediaStudioPage() {
     canUndo,
     canRedo,
   } = useMediaStudio();
+
+  const applyStarterTemplate = useCallback(
+    (template: StarterTemplate) => {
+      replaceComposition({
+        id: crypto.randomUUID(),
+        name: starterTemplateName(template.id, t),
+        width: template.width,
+        height: template.height,
+        fps: template.fps,
+        backgroundColor: '#000000',
+        items: [],
+      });
+    },
+    [replaceComposition, t],
+  );
 
   const persistence = useMediaStudioPersistence({
     composition,
@@ -371,6 +399,7 @@ export default function MediaStudioPage() {
             <p className="typo-body text-foreground mt-1">{t.media_studio.empty_hint}</p>
           </div>
           <RecentCompositionsRow onLoad={persistence.loadFromPath} />
+          <StarterTemplatesRow onApply={applyStarterTemplate} />
           <div className="flex items-center gap-2 flex-wrap justify-center">
             <Button variant="accent" accentColor="rose" size="md" onClick={handleAddVideo}>
               <Video className="w-4 h-4" />
@@ -522,6 +551,51 @@ function RecentCompositionsRow({ onLoad }: { onLoad: (path: string) => Promise<v
       </div>
     </div>
   );
+}
+
+// ---------------------------------------------------------------------------
+// StarterTemplatesRow — a small grid of preset canvas shapes on the empty
+// state so users do not have to pick width/height/fps numerically every time
+// they start a new composition. Applying a template clears the current
+// composition and resets the timeline to the preset's W/H/fps; we only
+// render this row when the timeline is already empty, so no work is lost.
+// ---------------------------------------------------------------------------
+
+function StarterTemplatesRow({ onApply }: { onApply: (template: StarterTemplate) => void }) {
+  const { t } = useTranslation();
+  return (
+    <div className="w-full max-w-2xl flex flex-col items-center gap-2">
+      <span className="typo-label text-foreground">{t.media_studio.starter_templates_title}</span>
+      <div className="flex flex-wrap items-center gap-2 justify-center">
+        {STARTER_TEMPLATES.map((tpl) => (
+          <button
+            key={tpl.id}
+            type="button"
+            onClick={() => onApply(tpl)}
+            className="flex flex-col items-start gap-0.5 px-3 py-2 rounded-card border border-primary/10 bg-card/50 hover:border-rose-500/30 hover:bg-card/70 transition-colors min-w-[10rem]"
+          >
+            <span className="text-md text-foreground">{starterTemplateName(tpl.id, t)}</span>
+            <span className="text-[11px] text-foreground/60 tabular-nums">
+              {tpl.width}×{tpl.height} · {tpl.fps}fps
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+type Translations = ReturnType<typeof useTranslation>['t'];
+
+function starterTemplateName(id: StarterTemplate['id'], t: Translations): string {
+  switch (id) {
+    case 'vertical-9-16':
+      return t.media_studio.template_vertical_9_16_name;
+    case 'horizontal-16-9':
+      return t.media_studio.template_horizontal_16_9_name;
+    case 'square':
+      return t.media_studio.template_square_name;
+  }
 }
 
 function formatRelativeSince(ts: number): string {

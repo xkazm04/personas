@@ -11208,6 +11208,10 @@ export type Translations = {
     export_dismiss: string;
     recent_compositions: string;
     recent_saved_ago: string;
+    starter_templates_title: string;
+    template_vertical_9_16_name: string;
+    template_horizontal_16_9_name: string;
+    template_square_name: string;
     output_settings: string;
     resolution: string;
     framerate: string;
