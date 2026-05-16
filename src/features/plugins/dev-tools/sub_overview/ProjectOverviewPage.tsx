@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, type DragEvent } from 'react';
 import { motion } from 'framer-motion';
 import {
   GitBranch, RefreshCw,
@@ -20,6 +20,41 @@ import { useOverviewData } from './useOverviewData';
 
 // Re-export shared helpers so existing call sites keep resolving.
 export { formatErr } from './overviewHelpers';
+
+// ---------------------------------------------------------------------------
+// Vital-tile ordering — persisted per project so each project can keep its
+// own "most-watched first" layout.
+// ---------------------------------------------------------------------------
+
+type TileId = 'open_issues' | 'open_prs' | 'commits' | 'unresolved' | 'events_24h' | 'events_7d';
+const DEFAULT_TILE_ORDER: TileId[] = ['open_issues', 'open_prs', 'commits', 'unresolved', 'events_24h', 'events_7d'];
+
+function tileOrderStorageKey(projectId: string): string {
+  return `personas.devtools.overview_tile_order.${projectId}`;
+}
+
+function readTileOrder(projectId: string): TileId[] {
+  try {
+    const raw = localStorage.getItem(tileOrderStorageKey(projectId));
+    if (!raw) return DEFAULT_TILE_ORDER;
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return DEFAULT_TILE_ORDER;
+    const valid = new Set<TileId>(DEFAULT_TILE_ORDER);
+    const ordered = parsed.filter((x): x is TileId => typeof x === 'string' && valid.has(x as TileId));
+    // Append any tile ids missing from persisted order (e.g. after a future
+    // tile is added) so the user never loses a metric to legacy state.
+    for (const id of DEFAULT_TILE_ORDER) if (!ordered.includes(id)) ordered.push(id);
+    return ordered;
+  } catch {
+    return DEFAULT_TILE_ORDER;
+  }
+}
+
+function writeTileOrder(projectId: string, order: TileId[]): void {
+  try {
+    localStorage.setItem(tileOrderStorageKey(projectId), JSON.stringify(order));
+  } catch { /* quota / privacy mode — ignore */ }
+}
 
 /**
  * Dev-tools Overview — glance-first health dashboard ("Pulse" layout).
@@ -54,6 +89,28 @@ export default function ProjectOverviewPage() {
 
   const [showRepoChain, setShowRepoChain] = useState(false);
   const [showMonitorChain, setShowMonitorChain] = useState(false);
+
+  // Persisted tile order per project — different projects often care about
+  // different metrics first (a hot-bug project wants `unresolved` first; a
+  // PR-heavy project wants `open_prs` first). Drag a tile to reorder; the
+  // order is keyed by activeProjectId so each project remembers its layout.
+  const [tileOrder, setTileOrder] = useState<TileId[]>(DEFAULT_TILE_ORDER);
+  useEffect(() => {
+    if (!activeProjectId) return;
+    setTileOrder(readTileOrder(activeProjectId));
+  }, [activeProjectId]);
+  const [draggingTileId, setDraggingTileId] = useState<TileId | null>(null);
+  const handleTileDrop = (target: TileId) => {
+    if (!draggingTileId || draggingTileId === target || !activeProjectId) return;
+    const next = [...tileOrder];
+    const from = next.indexOf(draggingTileId);
+    const to = next.indexOf(target);
+    if (from < 0 || to < 0) return;
+    next.splice(from, 1);
+    next.splice(to, 0, draggingTileId);
+    setTileOrder(next);
+    writeTileOrder(activeProjectId, next);
+  };
 
   if (!activeProjectId || !activeProject) {
     return (
@@ -134,12 +191,35 @@ export default function ProjectOverviewPage() {
             <span className="typo-caption text-foreground/50">Last refresh just now</span>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
-            <VitalTile icon={CircleDot} value={repoStats?.openIssues ?? '—'} label={po.open_issues} tone={issueTone} loading={repoState === 'loading'} />
-            <VitalTile icon={GitPullRequest} value={repoStats?.openPullRequests ?? '—'} label={isGitLab ? po.open_mrs : po.open_prs} tone={prTone} loading={repoState === 'loading'} />
-            <VitalTile icon={GitCommitHorizontal} value={repoStats?.commitsLastWeek ?? '—'} label={po.commits_this_week} tone={commitsTone} loading={repoState === 'loading'} />
-            <VitalTile icon={Bug} value={monitorStats?.unresolvedIssues ?? '—'} label={po.unresolved_issues} tone={unresolvedTone} loading={monitorState === 'loading'} />
-            <VitalTile icon={Activity} value={monitorStats?.eventsLast24h ?? '—'} label={po.events_24h} tone={events24Tone} loading={monitorState === 'loading'} />
-            <VitalTile icon={BarChart3} value={monitorStats?.eventsLastWeek ?? '—'} label={po.events_7d} tone={events7Tone} loading={monitorState === 'loading'} />
+            {(() => {
+              const tilesById: Record<TileId, { icon: typeof CircleDot; value: string | number; label: string; tone: Tone; loading: boolean }> = {
+                open_issues: { icon: CircleDot, value: repoStats?.openIssues ?? '—', label: po.open_issues, tone: issueTone, loading: repoState === 'loading' },
+                open_prs:    { icon: GitPullRequest, value: repoStats?.openPullRequests ?? '—', label: isGitLab ? po.open_mrs : po.open_prs, tone: prTone, loading: repoState === 'loading' },
+                commits:     { icon: GitCommitHorizontal, value: repoStats?.commitsLastWeek ?? '—', label: po.commits_this_week, tone: commitsTone, loading: repoState === 'loading' },
+                unresolved:  { icon: Bug, value: monitorStats?.unresolvedIssues ?? '—', label: po.unresolved_issues, tone: unresolvedTone, loading: monitorState === 'loading' },
+                events_24h:  { icon: Activity, value: monitorStats?.eventsLast24h ?? '—', label: po.events_24h, tone: events24Tone, loading: monitorState === 'loading' },
+                events_7d:   { icon: BarChart3, value: monitorStats?.eventsLastWeek ?? '—', label: po.events_7d, tone: events7Tone, loading: monitorState === 'loading' },
+              };
+              return tileOrder.map((id) => {
+                const t = tilesById[id];
+                return (
+                  <VitalTile
+                    key={id}
+                    icon={t.icon}
+                    value={t.value}
+                    label={t.label}
+                    tone={t.tone}
+                    loading={t.loading}
+                    draggable
+                    isDragging={draggingTileId === id}
+                    onDragStart={() => setDraggingTileId(id)}
+                    onDragEnd={() => setDraggingTileId(null)}
+                    onDragOver={(e) => { e.preventDefault(); }}
+                    onDrop={(e) => { e.preventDefault(); handleTileDrop(id); }}
+                  />
+                );
+              });
+            })()}
           </div>
         </section>
 
@@ -315,15 +395,31 @@ const TONE_TEXT: Record<Tone, string> = {
 
 function VitalTile({
   icon: Icon, value, label, tone, loading,
+  draggable, isDragging, onDragStart, onDragEnd, onDragOver, onDrop,
 }: {
   icon: typeof CircleDot;
   value: string | number;
   label: string;
   tone: Tone;
   loading?: boolean;
+  draggable?: boolean;
+  isDragging?: boolean;
+  onDragStart?: (e: DragEvent<HTMLDivElement>) => void;
+  onDragEnd?: () => void;
+  onDragOver?: (e: DragEvent<HTMLDivElement>) => void;
+  onDrop?: (e: DragEvent<HTMLDivElement>) => void;
 }) {
   return (
-    <div className={`rounded-card border ${TONE_BG[tone]} px-3 py-2.5 transition-colors`}>
+    <div
+      draggable={draggable}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+      className={`rounded-card border ${TONE_BG[tone]} px-3 py-2.5 transition-all ${
+        draggable ? 'cursor-grab active:cursor-grabbing' : ''
+      } ${isDragging ? 'opacity-40' : ''}`}
+    >
       <div className="flex items-center justify-between mb-1.5">
         <Icon className={`w-3.5 h-3.5 ${TONE_TEXT[tone]}`} />
         {loading && <RefreshCw className="w-3 h-3 animate-spin text-foreground/30" />}

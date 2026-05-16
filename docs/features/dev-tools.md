@@ -74,6 +74,7 @@ The eight tabs are sequenced so a new project can walk top-to-bottom exactly onc
 
 1. Open **Overview**. A two-column layout shows **Codebase** (GitHub / GitLab) on the left and **Monitoring** (Sentry) on the right.
 2. Each card handles five states: **empty** (no credential) → **unmapped** (credential exists but not linked to this project) → **loading** → **connected** (with stat tiles) → **error** (with retry).
+3. The vital-signs strip (open issues / open PRs / commits / unresolved / events 24h / events 7d) is **drag-to-rearrange**: grab any tile and drop it on another to swap positions. Order persists per project to localStorage under `personas.devtools.overview_tile_order.${projectId}` so each project remembers its "most-watched first" layout. Future tiles added to `DEFAULT_TILE_ORDER` auto-append for users with persisted state.
 3. Connecting Sentry uses an inline form (`MonitoringLinkForm`) that writes the credential ID + project slug back to `dev_projects.monitoring_*`.
 4. Stat tiles use a static color token table — dynamic Tailwind classes (`bg-${color}-500/15`) are banned here because the JIT can't see them.
 
