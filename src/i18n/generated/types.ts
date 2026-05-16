@@ -12786,6 +12786,8 @@ export type Translations = {
     collapse: string;
     tracklist_label: string;
     open_source: string;
+    auto_resume_label: string;
+    auto_resume_description: string;
   };
   cockpit: {
     unknown_assistant: string;

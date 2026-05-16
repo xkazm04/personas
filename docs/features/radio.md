@@ -24,7 +24,11 @@ appropriate engine and reports state transitions back via
   badge and (for YouTube) a track count.
 - A "Radio" card in **Settings → Account** (`RadioSettingsCard`) that
   lists the curated catalog. YouTube stations show their tracklist;
-  stream stations show the source label + link.
+  stream stations show the source label + link. Three settings live
+  here: master enable, **auto-resume on launch** (when on, the last
+  playing station auto-starts the first time the footer mounts after
+  app open — off by default; grays out when the master switch is off),
+  and per-station hide-from-picker toggles.
 - If either engine fails to start within ~8 seconds (or fires an `error`
   event) the renderer surfaces a localized toast. For YouTube errors
   100/101/150 (embed disabled / unavailable) the renderer auto-skips to

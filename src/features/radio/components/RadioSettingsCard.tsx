@@ -6,13 +6,15 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useRadioState } from '../hooks/useRadioState';
 
 /**
- * Settings → Account section. Two controls:
+ * Settings → Account section. Three controls:
  *
  *   1. Master enable/disable for the footer controller (top toggle).
- *   2. Per-station enable list — each row is one station with a kind
+ *   2. Auto-resume — when on, the last station starts on app launch.
+ *      Grays out when the master switch is off.
+ *   3. Per-station enable list — each row is one station with a kind
  *      chip and a toggle that hides the station from the footer picker.
  *
- * Both kinds of state are persisted via systemStore so choices survive
+ * All settings are persisted via systemStore so choices survive
  * restarts. The view is read-only beyond toggles — no description, no
  * tracklist, no source link (those lived in earlier verbose layouts).
  */
@@ -23,6 +25,8 @@ export default function RadioSettingsCard() {
   const setRadioEnabled = useSystemStore((s) => s.setRadioEnabled);
   const disabledStationIds = useSystemStore((s) => s.disabledStationIds);
   const setStationDisabled = useSystemStore((s) => s.setStationDisabled);
+  const radioAutoResume = useSystemStore((s) => s.radioAutoResume);
+  const setRadioAutoResume = useSystemStore((s) => s.setRadioAutoResume);
   if (!loaded) return null;
 
   const disabledSet = new Set(disabledStationIds);
@@ -46,6 +50,22 @@ export default function RadioSettingsCard() {
           checked={radioEnabled}
           onChange={() => setRadioEnabled(!radioEnabled)}
           label={t.radio.enable_label}
+        />
+      </div>
+
+      <div
+        className={`flex items-center justify-between gap-4 rounded-card border border-primary/8 bg-secondary/10 p-3 transition-opacity ${
+          radioEnabled ? '' : 'opacity-50 pointer-events-none'
+        }`}
+      >
+        <div className="min-w-0">
+          <p className="typo-body font-medium text-foreground">{t.radio.auto_resume_label}</p>
+          <p className="typo-caption text-foreground/60">{t.radio.auto_resume_description}</p>
+        </div>
+        <AccessibleToggle
+          checked={radioAutoResume}
+          onChange={() => setRadioAutoResume(!radioAutoResume)}
+          label={t.radio.auto_resume_label}
         />
       </div>
 

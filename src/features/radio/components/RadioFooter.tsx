@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pause, Play, Radio, SkipBack, SkipForward, Volume1, Volume2, VolumeX } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
+import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
 import type { PlayStatus } from '@/lib/bindings/PlayStatus';
 import { useRadioState } from '../hooks/useRadioState';
@@ -85,9 +86,16 @@ function isValidYouTubeVideoId(videoId: string): boolean {
 export default function RadioFooter() {
   const { t, tx } = useTranslation();
   const { state, nowPlaying, stations, loaded } = useRadioState();
+  const autoResume = useSystemStore((s) => s.radioAutoResume);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [volumeOpen, setVolumeOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  /**
+   * Auto-resume fires exactly once per mount, after the initial radio
+   * state has loaded. The ref prevents the effect from refiring if the
+   * deps change later (e.g. station catalog update).
+   */
+  const autoResumedRef = useRef<boolean>(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const ytHostRef = useRef<HTMLDivElement | null>(null);
@@ -293,6 +301,20 @@ export default function RadioFooter() {
   }, [state?.volume, state, ytHandle]);
 
   useEffect(() => () => cancelWatchdog(), [cancelWatchdog]);
+
+  // Auto-resume the persisted station once, on first mount after load.
+  // Only fires if (a) the user opted in via the settings toggle,
+  // (b) there's a persisted current station, and (c) it wasn't already
+  // playing (status === 'stopped' means the prior session was paused
+  // when the app closed — and "paused" carries over via persistence).
+  useEffect(() => {
+    if (autoResumedRef.current) return;
+    if (!loaded || !autoResume || !state) return;
+    if (!state.currentStationId) return;
+    if (state.status === 'playing' || state.status === 'buffering') return;
+    autoResumedRef.current = true;
+    radioPlay().catch(silentCatch('radio:auto-resume'));
+  }, [loaded, autoResume, state]);
 
   // Reset progress bar whenever the current track or station changes.
   useEffect(() => {

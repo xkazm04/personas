@@ -12,21 +12,29 @@ import type { SystemStore } from '../../storeTypes';
  *   ids (not a Set) so persistence round-trips cleanly through the
  *   systemStore JSON storage. New stations added to the curated catalog
  *   default to enabled (absent from the list).
+ * - `radioAutoResume` — when on, the last-playing station auto-starts
+ *   the first time `RadioFooter` mounts after app launch. Off by
+ *   default; uninvited audio at startup is rude. Only fires if the
+ *   master `radioEnabled` is on and the persisted radio state has a
+ *   current station — otherwise the user opens the picker themselves.
  *
- * Both fields are persisted via `systemStore`'s `partialize`, so user
- * choices survive restarts. The toggles live in Settings → Account
- * (`RadioSettingsCard`).
+ * All three fields are persisted via `systemStore`'s `partialize`, so
+ * user choices survive restarts. The toggles live in Settings →
+ * Account (`RadioSettingsCard`).
  */
 export interface RadioSlice {
   radioEnabled: boolean;
   disabledStationIds: string[];
+  radioAutoResume: boolean;
   setRadioEnabled: (radioEnabled: boolean) => void;
   setStationDisabled: (stationId: string, disabled: boolean) => void;
+  setRadioAutoResume: (autoResume: boolean) => void;
 }
 
 export const createRadioSlice: StateCreator<SystemStore, [], [], RadioSlice> = (set) => ({
   radioEnabled: false,
   disabledStationIds: [],
+  radioAutoResume: false,
   setRadioEnabled: (radioEnabled) => set({ radioEnabled }),
   setStationDisabled: (stationId, disabled) =>
     set((state) => {
@@ -35,4 +43,5 @@ export const createRadioSlice: StateCreator<SystemStore, [], [], RadioSlice> = (
       else current.delete(stationId);
       return { disabledStationIds: Array.from(current) };
     }),
+  setRadioAutoResume: (autoResume) => set({ radioAutoResume: autoResume }),
 });
