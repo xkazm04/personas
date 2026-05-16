@@ -32,13 +32,20 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
-- **[2026-05-16 13:12 — started] /friend — radio (endless development loop)**
-  - **Source:** `/friend src\features\radio` — free-text hint resolved to the radio feature module
-  - **Paths:** `src/features/radio/`, possibly `src-tauri/src/radio/`, `src-tauri/src/commands/radio.rs`, `src-tauri/data/radio_stations.json`, `src/i18n/locales/en.json` (additive keys under `radio.*` only), `docs/features/radio.md`, `src/lib/bindings/Radio*.ts`/`Station*.ts`/`Track.ts` (if ts-rs runs), `.claude/active-runs.md`
+- **[2026-05-16 14:42 — started] artist-test-coverage — Vitest + Playwright for plugins/artist**
+  - **Paths:** `src/features/plugins/artist/**/__tests__/*.test.{ts,tsx}` (new), possibly `src/features/plugins/artist/sub_media_studio/hooks/useMediaExport.ts` (export `normalizeProgress` for unit test), possibly `tests/playwright/artist-*.spec.ts` + `tests/playwright/artist-bridge.ts` (Cycle D only)
   - **Status:** started
-  - **Branch:** `worktree-friend-radio-131216`
-  - **Worktree:** `.claude/worktrees/friend-radio-131216/`
-  - **Note:** /friend loop — UX/product directions only, atomic commits per cycle. Path-disjoint from concurrent /friend-{artist,companion,dev-tools,drive,langfuse} and /research-hermes sessions. Bias higher-effort + deepen-existing-surfaces per prior /friend lessons.
+  - **Branch:** `worktree-friend-artist-tests-144218`
+  - **Worktree:** `.claude/worktrees/friend-artist-tests-144218/`
+  - **Note:** Test coverage cycles A→B→C→D for the freshly-merged Artist work (`bcc2d0003`). Path-disjoint from all 8 concurrent /friend plugin sessions and from /friend-theming — adds new __tests__ dirs alongside existing source under `src/features/plugins/artist/`, no source file edits except possibly exporting one helper. Reads existing test infra: `src/test/setup.ts`, `src/test/tauriMock.ts`, `vitest.config.ts`. Vitest tests are parallel-safe via jsdom; Playwright spec (Cycle D) will reuse the existing :17320 HTTP-bridge architecture.
+
+- **[2026-05-16 14:07 — started] /friend — theming (endless development loop)**
+  - **Source:** `/friend` with explicit topic — app theming overhaul (11 themes; user reports only Midnight/Cyan/Frost look good; expand coverage, calibrate palettes, rethink light themes)
+  - **Paths:** `src/styles/globals.css`, `src/stores/themeStore.ts`, `src/lib/theme/`, `src/features/settings/sub_appearance/`, `src/i18n/locales/en.json` (additive `appearance.*` / `theme.*` keys only — coordinate with concurrent /friend-{radio,langfuse,drive,artist,companion,dev-tools,twin}), possibly `docs/features/settings/README.md`, `.claude/active-runs.md`
+  - **Status:** started
+  - **Branch:** `worktree-friend-theming-140706`
+  - **Worktree:** `.claude/worktrees/friend-theming-140706/`
+  - **Note:** Path-disjoint from all 8 concurrent /friend plugin sessions (they touch `src/features/plugins/<plugin>/`; theming touches `src/styles/` + `src/stores/themeStore.ts` + `src/lib/theme/` + `src/features/settings/sub_appearance/`). Bias higher-effort + deepen-existing-surfaces per prior /friend lessons. Cycle 1 will likely propose: status/brand-token completeness pass on under-themed darks, light-theme accent unification, palette-aware theme picker preview, or a "theming-coverage audit" debug overlay.
 
 - **[2026-05-16 13:11 — started] /friend — langfuse plugin**
   - **Source:** `/friend` endless development loop, area resolved from free-text hint `src\features\plugins\langfuse`
@@ -55,13 +62,6 @@ timestamp — the next session can recognize it as abandoned.
   - **Branch:** `worktree-friend-drive-130941`
   - **Worktree:** `.claude/worktrees/friend-drive-130941/`
   - **Note:** Path-disjoint from concurrent /friend-artist (sub_blender), /friend-companion, /friend-dev-tools, /research-hermes (Obsidian). Bias higher-effort + deepen-existing-surface per Lessons/2026-05-14-friend.
-
-- **[2026-05-16 13:10 — started] /friend — artist plugin**
-  - **Paths:** `src/features/plugins/artist/`, possibly `src/i18n/locales/en.json` (additive keys under `plugins.artist.*` / `media_studio.*`), possibly `docs/features/artist.md`
-  - **Status:** started
-  - **Branch:** `worktree-friend-artist-130851`
-  - **Worktree:** `.claude/worktrees/friend-artist-130851/`
-  - **Note:** /friend endless development loop. Path-disjoint from concurrent /friend-companion, /friend-dev-tools, and /research-hermes sessions. Bias higher-effort + deepen-existing-surfaces per prior /friend lessons.
 
 - **[2026-05-16 13:08 — started] /friend — companion (Athena chatbot), session 2**
   - **Source:** `/friend` endless development loop, area resolved from free-text hint `src\features\plugins\companion`
@@ -92,6 +92,28 @@ timestamp — the next session can recognize it as abandoned.
   - **Note:** Aware of concurrent run on Lessons/releases. Will re-check ledger before any Phase 12 write.
 
 ## Recently completed (last 14 days)
+
+- **[2026-05-16 14:07 → 18:30] /friend — theming (14 cycles, merging to master)**
+  - **Worktree:** `.claude/worktrees/friend-theming-140706/` (slated for cleanup post-merge)
+  - **Branch:** `worktree-friend-theming-140706`
+  - **Status:** completed (commits: `bca73f2f6..5250737e7`, 14 atomic commits, merging into master at session close per user request)
+  - **Paths:** `src/styles/globals.css`, `src/stores/themeStore.ts`, `src/lib/theme/contrastRatio.ts` (new), `src/features/settings/sub_appearance/components/{AppearanceSettings,CustomThemeCreator}.tsx`, `scripts/check-themes.mjs` (new), `package.json`, `src/i18n/locales/en.json` (additive `appearance.*` keys), `src/i18n/generated/{types,enSectionStrings}.ts`, `src/i18n/section-locales/**/settings.json`, `.claude/active-runs.md`. Path-disjoint from all 7 concurrent /friend plugin sessions.
+  - **Headline:** Theming subsystem went from "11 themes, 3 fine, 8 partial" to "13 themes, all AA across all status pairs, 3-surface contrast tooling (runtime badge / live creator readout / CLI audit), 4-toggle orthogonal a11y system (dim / CVD-safe / high-contrast / reduce-motion)". `npm run check:themes` exits 0 across the board. End-to-end loop closed: cycle 5 badge surfaced contrast → cycle 10 CLI audit measured it → cycle 11 calibration fixed two findings → audit re-runs green.
+  - **Cycles:** (1) Bronze/Purple/Pink full var coverage `bca73f2f6` · (2) Paper Pro light rewrite `6233d2622` · (3) Live preview tiles via `data-theme` cascade `d796328e3` · (4) Light Sage + Light Sand `06bc7faa6` · (5) WCAG contrast badge on tiles `57d71e3ec` · (6) Stage 2 Cyan/Frost/Red completeness `8dc3e93f6` · (7) Dim mode toggle (saturation axis) `f81ae54d2` · (8) Contrast readout in CustomThemeCreator `bec6537da` · (9) Hover-expand preview popover `3ac509852` · (10) `npm run check:themes` CLI audit `ed3a465aa` · (11) Stage 3 light status calibration acted on audit `3684f3cd8` · (12) CVD-safe palette toggle (hue axis) `eccccd06f` · (13) High-contrast preset (luminance axis) `b9c80cb4f` · (14) Reduce-motion preset (motion axis) `5250737e7`.
+  - **Outcome on /friend learning:** 4th consecutive session confirming deepen-existing-surface and stretch-bias patterns (already promoted in `Patterns/friend-preferences.md`). Three new observations registered for watchlist promotion: topic-commitment-in-args, end-to-end-loop arcs, complete-the-family framing for orthogonal axes.
+
+- **[2026-05-16 13:12 → wrap] /friend — radio (16 cycles)**
+  - **Worktree:** `.claude/worktrees/friend-radio-131216/` (left intact for user merge / cleanup)
+  - **Branch:** `worktree-friend-radio-131216`
+  - **Status:** completed (16 commits, `1f7df5271..24b7be65d`; 23 files, +1,424 / -94)
+  - **Headline cycles:** volume slider, track progress bar, now-playing card, auto-resume opt-in, buffering visual, YT crossfade, grouped picker, session blacklist, settings playing-now pulse, SomaFM metadata, title text crossfade, YT thumbnail, picker context menu, SomaFM catalog 3→8, equalizer bars (CSS — honest pivot from Web Audio after CORS finding), accent dot click target.
+  - **Notes:** 14 of 16 picks deepened existing surfaces; only the now-playing card and auto-resume introduced new behavior, both small. One Phase 3 gate trip on CSP produced a narrower-scope outcome (cycle 10 → Rust-side fetch). One honest mid-execute pivot recorded (cycle 15 EQ bars). Zero hard rejects this session; 9 directions hit 2× soft-skip and dropped cleanly. Vault writes: session note, lesson append, coverage update, **3 patterns promoted to `Patterns/friend-preferences.md`** (deepen-existing-surface bias, higher-effort mix, 2× soft-skip drop rule — all at 3 confirmations across companion + artist + radio).
+
+- **[2026-05-16 13:10 → 14:55] /friend — artist plugin (14 cycles)**
+  - **Worktree:** `.claude/worktrees/friend-artist-130851/`  (left intact for user merge)
+  - **Branch:** `worktree-friend-artist-130851`
+  - **Status:** completed (14 commits, `c33375370..d2ad367ec`)
+  - **Outcome:** ETA strip, lightbox zoom/pan/fullscreen/copy, gallery multi-select, export success strip, inline rename (+`artist_rename_asset` Rust cmd), recent compositions (artist slice MRU), starter canvas templates, Open-folder toolbar button, beat sidebar with click-to-seek, copy-session-as-markdown, export filename auto-suffix, 3D viewer keyboard nav, gallery group-by-day, preview-frame thumbnails on recents. Multi-audio-lanes pitched and dropped (architect-scoped — touches TimelinePanel layout + CompositionPreview gain integration + Rust render plan).
 
 - **[2026-05-16 13:25 → 14:35] doc-sync three-surface system + catch-up /guide-sync**
   - **Paths:** `scripts/docs/feature-doc-map.json`, `scripts/docs/check-doc-sync.mjs`, `scripts/docs/__tests__/check-doc-sync.test.mjs` (new), `.claude/CLAUDE.md`, `.claude/guide-sync-marker.json`, `personas-web/src/data/guide/content/{agents-prompts,triggers,monitoring}.ts`
