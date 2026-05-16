@@ -84,13 +84,16 @@ pub async fn fleet_kill_session(app: AppHandle, session_id: String) -> Result<()
 
 /// Snapshot the registry for the UI's session grid.
 ///
-/// Phase 4-5 will populate `hook_port` / `hooks_installed`; for now they
-/// return zero / false.
+/// `hook_port` is the resolved local_http port (the in-app HTTP server
+/// that hosts /fleet/hooks/*). Phase 5 will fill in `hooks_installed`
+/// based on inspecting `~/.claude/settings.json`; for now it stays
+/// `false` so the UI banner prompts the user to install.
 #[tauri::command]
 pub async fn fleet_list_sessions() -> Result<FleetRegistrySnapshot, String> {
+    let hook_port = crate::local_http::port().unwrap_or(0);
     Ok(FleetRegistrySnapshot {
         sessions: registry().list_dto(),
-        hook_port: 0,
+        hook_port,
         hooks_installed: false,
     })
 }

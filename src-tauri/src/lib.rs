@@ -719,6 +719,11 @@ pub fn run() {
                 "project-tracking",
                 engine::project_tracking::push::router(),
             );
+            // Fleet hook receiver — Claude Code lifecycle hooks POST here.
+            local_http::register_router(
+                "fleet",
+                commands::fleet::hooks::router(app.handle().clone()),
+            );
             match local_http::start() {
                 Ok(port) => tracing::info!(port, "local_http server started"),
                 Err(e) => tracing::warn!(error = %e, "local_http server failed to start"),
