@@ -72,11 +72,14 @@ appropriate engine and reports state transitions back via
   continuous source with no track boundary.
 - Clicking the track title opens a floating "now playing" card anchored
   above the footer (`NowPlayingCard`). The card shows the station with
-  an accent-tinted header, the current track + artist, a wider progress
-  bar with explicit M:SS / M:SS time labels, accent-coloured prev /
-  play / next controls, the full YouTube tracklist with the active
-  track highlighted (or, for `stream` stations, the description and
-  source link). Click outside or Escape dismisses.
+  an accent-tinted header, the current track + artist (with a YouTube
+  thumbnail from `i.ytimg.com/vi/{videoId}/mqdefault.jpg` to the left
+  for YT tracks), a wider progress bar with explicit M:SS / M:SS time
+  labels, accent-coloured prev / play / next controls, the full
+  YouTube tracklist with the active track highlighted (or, for
+  `stream` stations, the description and source link). Failed
+  thumbnails silently fall back to the layout without the image.
+  Click outside or Escape dismisses.
 - The footer title text **crossfades** when it changes — new YouTube
   track, new SomaFM metadata, station switch. A small `TitleCrossfade`
   component overlays an outgoing-text span (fading out) on top of the

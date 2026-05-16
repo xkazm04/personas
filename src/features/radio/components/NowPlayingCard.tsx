@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ExternalLink, Loader2, Pause, Play, SkipBack, SkipForward, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { NowPlaying } from '@/lib/bindings/NowPlaying';
@@ -45,6 +45,19 @@ export default function NowPlayingCard({
 }: NowPlayingCardProps) {
   const isPlaying = status === 'playing' || status === 'buffering';
   const isBuffering = status === 'buffering';
+
+  // YouTube provides a 320×180 thumbnail at the mqdefault URL for every
+  // public video. We reset the failed flag on track change so a working
+  // next track gets a fresh attempt — the first thumbnail load might
+  // have failed but the next videoId could be fine.
+  const [thumbFailed, setThumbFailed] = useState(false);
+  useEffect(() => {
+    setThumbFailed(false);
+  }, [nowPlaying.track?.videoId]);
+  const thumbUrl =
+    nowPlaying.track && !thumbFailed
+      ? `https://i.ytimg.com/vi/${nowPlaying.track.videoId}/mqdefault.jpg`
+      : null;
   const { t, tx } = useTranslation();
   const ref = useRef<HTMLDivElement>(null);
 
@@ -100,30 +113,41 @@ export default function NowPlayingCard({
       </div>
 
       <div className="px-4 py-3 space-y-3 border-t border-primary/8">
-        <div className="min-w-0">
-          {nowPlaying.track ? (
-            <>
-              <p className="typo-body font-medium text-foreground truncate">
-                {nowPlaying.track.title}
-              </p>
-              <p className="typo-caption text-foreground/70 truncate">
-                {nowPlaying.track.artist}
-              </p>
-            </>
-          ) : streamMetadata ? (
-            <>
-              <p className="typo-body font-medium text-foreground truncate">
-                {streamMetadata.title}
-              </p>
-              <p className="typo-caption text-foreground/70 truncate">
-                {streamMetadata.artist}
-              </p>
-            </>
-          ) : (
-            <p className="typo-body text-foreground/80 leading-relaxed">
-              {nowPlaying.station.description}
-            </p>
+        <div className="flex items-center gap-3 min-w-0">
+          {thumbUrl && (
+            <img
+              src={thumbUrl}
+              alt=""
+              loading="lazy"
+              className="w-20 aspect-video rounded-input object-cover shrink-0 bg-secondary/30"
+              onError={() => setThumbFailed(true)}
+            />
           )}
+          <div className="min-w-0 flex-1">
+            {nowPlaying.track ? (
+              <>
+                <p className="typo-body font-medium text-foreground truncate">
+                  {nowPlaying.track.title}
+                </p>
+                <p className="typo-caption text-foreground/70 truncate">
+                  {nowPlaying.track.artist}
+                </p>
+              </>
+            ) : streamMetadata ? (
+              <>
+                <p className="typo-body font-medium text-foreground truncate">
+                  {streamMetadata.title}
+                </p>
+                <p className="typo-caption text-foreground/70 truncate">
+                  {streamMetadata.artist}
+                </p>
+              </>
+            ) : (
+              <p className="typo-body text-foreground/80 leading-relaxed">
+                {nowPlaying.station.description}
+              </p>
+            )}
+          </div>
         </div>
 
         {isYoutube && progress && progress.durationSec > 0 && (
