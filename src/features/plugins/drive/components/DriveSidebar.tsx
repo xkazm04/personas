@@ -9,6 +9,7 @@ import { useTranslation } from "@/i18n/useTranslation";
 import { formatRelativeTime, visualForEntry } from "../designTokens";
 import { useScrollShadows } from "../hooks/useScrollShadows";
 import { DriveEmptyHint } from "./DriveEmptyHint";
+import { DropCountChip } from "./DropCountChip";
 
 const RECENT_COLLAPSED_KEY = "drive.sidebar.recentCollapsed";
 // Show ⌘ on Mac, Ctrl elsewhere — keyboard hints should match what the
@@ -388,7 +389,10 @@ function TreeNode({
             }`}
           />
         )}
-        <span className="truncate">{node.name || t.plugins.drive.sidebar_root_fallback}</span>
+        <span className="truncate flex-1">{node.name || t.plugins.drive.sidebar_root_fallback}</span>
+        {dropActive && activeDragCount && (
+          <DropCountChip count={activeDragCount} />
+        )}
       </button>
       {expanded &&
         node.children.map((child) => (

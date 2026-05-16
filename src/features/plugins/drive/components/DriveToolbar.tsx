@@ -26,6 +26,7 @@ import { silentCatch } from "@/lib/silentCatch";
 import type { UseDriveResult, ViewMode } from "../hooks/useDrive";
 import { useScrollShadows } from "../hooks/useScrollShadows";
 import { useTranslation } from "@/i18n/useTranslation";
+import { DropCountChip } from "./DropCountChip";
 
 interface Props {
   drive: UseDriveResult;
@@ -224,6 +225,7 @@ export function DriveToolbar({
         >
           {(() => {
             const isRootLast = segments.length === 0;
+            const rootDropActive = breadcrumbDropOver === "";
             return (
               <span
                 onDragOver={(e) =>
@@ -238,7 +240,10 @@ export function DriveToolbar({
                   onClick={() => drive.navigate("")}
                   isLast={isRootLast}
                   dragHint={!isRootLast && !!activeDragCount}
-                  dropActive={breadcrumbDropOver === ""}
+                  dropActive={rootDropActive}
+                  dropCount={
+                    rootDropActive ? activeDragCount ?? null : null
+                  }
                 />
               </span>
             );
@@ -246,6 +251,7 @@ export function DriveToolbar({
           {segments.map((seg, i) => {
             const subPath = segments.slice(0, i + 1).join("/");
             const isLast = i === segments.length - 1;
+            const segDropActive = breadcrumbDropOver === subPath;
             return (
               <div
                 key={subPath}
@@ -262,7 +268,8 @@ export function DriveToolbar({
                   onClick={() => drive.navigate(subPath)}
                   isLast={isLast}
                   dragHint={!isLast && !!activeDragCount}
-                  dropActive={breadcrumbDropOver === subPath}
+                  dropActive={segDropActive}
+                  dropCount={segDropActive ? activeDragCount ?? null : null}
                 />
               </div>
             );
@@ -523,6 +530,7 @@ function BreadcrumbPill({
   isLast,
   dragHint = false,
   dropActive = false,
+  dropCount = null,
 }: {
   label: string;
   icon?: LucideIcon;
@@ -530,6 +538,7 @@ function BreadcrumbPill({
   isLast: boolean;
   dragHint?: boolean;
   dropActive?: boolean;
+  dropCount?: number | null;
 }) {
   // dropActive (cursor over this pill mid-drag) wins over dragHint
   // (drag in flight, pill available) which wins over the default look
@@ -549,6 +558,9 @@ function BreadcrumbPill({
     >
       {Icon && <Icon className="w-3.5 h-3.5 flex-shrink-0" />}
       <span className="truncate">{label}</span>
+      {dropCount !== null && dropCount > 0 && (
+        <DropCountChip count={dropCount} />
+      )}
     </button>
   );
 }

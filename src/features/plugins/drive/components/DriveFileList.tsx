@@ -23,6 +23,7 @@ import {
   kindGroupLabel,
 } from "../designTokens";
 import { DriveEmptyHint } from "./DriveEmptyHint";
+import { DropCountChip } from "./DropCountChip";
 
 interface Props {
   drive: UseDriveResult;
@@ -484,9 +485,14 @@ function ListView({
                       onCancel={() => onCancelInlineRename?.()}
                     />
                   ) : (
-                    <span className="typo-body typo-card-label truncate">
-                      {entry.name}
-                    </span>
+                    <>
+                      <span className="typo-body typo-card-label truncate flex-1">
+                        {entry.name}
+                      </span>
+                      {drop && activeDragCount && (
+                        <DropCountChip count={activeDragCount} />
+                      )}
+                    </>
                   )}
                 </div>
                 <div className="typo-body text-foreground self-center tabular-nums">
