@@ -21,6 +21,38 @@ import {
 import { toastCatch } from "@/lib/silentCatch";
 import { kindBucketWeight, visualForEntry } from "../designTokens";
 
+// localStorage key holding the user's preferred view-state (viewMode +
+// sortKey + sortDir). Single JSON blob so writes are atomic and the
+// shape can grow without breaking older clients.
+const VIEW_STATE_KEY = "drive.viewState";
+
+interface PersistedViewState {
+  viewMode?: ViewMode;
+  sortKey?: SortKey;
+  sortDir?: SortDir;
+}
+
+function readPersistedViewState(): PersistedViewState {
+  try {
+    const raw = localStorage.getItem(VIEW_STATE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === "object") return parsed as PersistedViewState;
+  } catch {
+    // Quota / privacy mode / malformed JSON — degrade to defaults silently.
+  }
+  return {};
+}
+
+function writePersistedViewState(state: PersistedViewState) {
+  try {
+    const current = readPersistedViewState();
+    localStorage.setItem(VIEW_STATE_KEY, JSON.stringify({ ...current, ...state }));
+  } catch {
+    // Quota / privacy mode — in-memory state still updates.
+  }
+}
+
 export type ClipboardMode = "copy" | "cut";
 export type ViewMode = "list" | "icons" | "columns";
 export type SortKey = "name" | "size" | "modified" | "kind";
@@ -163,10 +195,26 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
   const [recent, setRecent] = useState<DriveEntry[]>([]);
 
   const [selection, setSelection] = useState<Set<string>>(new Set());
-  const [sortKey, setSortKey] = useState<SortKey>("name");
-  const [sortDir, setSortDir] = useState<SortDir>("asc");
+  // viewMode / sortKey / sortDir hydrate from localStorage on first
+  // render so users keep their preferred layout across sessions. Lazy
+  // init avoids the JSON parse on every render.
+  const [sortKey, setSortKeyRaw] = useState<SortKey>(
+    () => readPersistedViewState().sortKey ?? "name",
+  );
+  const [sortDir, setSortDirRaw] = useState<SortDir>(
+    () => readPersistedViewState().sortDir ?? "asc",
+  );
   const [searchQuery, setSearchQuery] = useState("");
-  const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [viewMode, setViewModeRaw] = useState<ViewMode>(
+    () => readPersistedViewState().viewMode ?? "list",
+  );
+
+  // setViewMode + setSort wrappers persist on every change. Direct state
+  // setters (setViewModeRaw etc.) stay private to this hook.
+  const setViewMode = useCallback((mode: ViewMode) => {
+    setViewModeRaw(mode);
+    writePersistedViewState({ viewMode: mode });
+  }, []);
   const [clipboard, setClipboard] = useState<DriveClipboard | null>(null);
   const [recentlyWritten, setRecentlyWritten] = useState<Set<string>>(
     new Set(),
@@ -369,10 +417,11 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
   // Sort + search
   const setSort = useCallback(
     (key: SortKey, dir?: SortDir) => {
-      setSortKey(key);
-      setSortDir(
-        dir ?? (key === sortKey ? (sortDir === "asc" ? "desc" : "asc") : "asc"),
-      );
+      const nextDir =
+        dir ?? (key === sortKey ? (sortDir === "asc" ? "desc" : "asc") : "asc");
+      setSortKeyRaw(key);
+      setSortDirRaw(nextDir);
+      writePersistedViewState({ sortKey: key, sortDir: nextDir });
     },
     [sortKey, sortDir],
   );
