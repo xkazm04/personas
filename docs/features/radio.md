@@ -29,6 +29,13 @@ appropriate engine and reports state transitions back via
   playing station auto-starts the first time the footer mounts after
   app open — off by default; grays out when the master switch is off),
   and per-station hide-from-picker toggles.
+- While the engine is in `buffering` state (audio waiting for data or
+  YouTube prebuffer) the play button swaps to a spinning loader tinted
+  with the station accent, the now-playing accent dot pulses, and the
+  expanded card's big play button pulses subtly. Once `playing` lands
+  the spinner returns to a Pause icon. Stalled streams that never
+  reach `playing` within the 8s watchdog still surface the unavailable
+  toast as before.
 - If either engine fails to start within ~8 seconds (or fires an `error`
   event) the renderer surfaces a localized toast. For YouTube errors
   100/101/150 (embed disabled / unavailable) the renderer auto-skips to

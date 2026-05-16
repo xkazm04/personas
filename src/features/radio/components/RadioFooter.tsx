@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Pause, Play, Radio, SkipBack, SkipForward, Volume1, Volume2, VolumeX } from 'lucide-react';
+import { Loader2, Pause, Play, Radio, SkipBack, SkipForward, Volume1, Volume2, VolumeX } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
@@ -352,6 +352,7 @@ export default function RadioFooter() {
 
   const status = state?.status ?? 'stopped';
   const isPlayingNow = status === 'playing' || status === 'buffering';
+  const isBuffering = status === 'buffering';
   const accent = nowPlaying?.station.accentColor ?? '#666';
 
   const togglePlay = () => {
@@ -455,9 +456,15 @@ export default function RadioFooter() {
         onClick={togglePlay}
         className="w-7 h-7 rounded-interactive flex items-center justify-center text-foreground hover:bg-secondary/50 transition-colors"
         aria-label={isPlayingNow ? t.radio.pause : t.radio.play}
-        title={isPlayingNow ? t.radio.pause : t.radio.play}
+        title={isBuffering ? t.radio.buffering : isPlayingNow ? t.radio.pause : t.radio.play}
       >
-        {isPlayingNow ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+        {isBuffering ? (
+          <Loader2 className="w-4 h-4 animate-spin" style={{ color: accent }} />
+        ) : isPlayingNow ? (
+          <Pause className="w-4 h-4" />
+        ) : (
+          <Play className="w-4 h-4" />
+        )}
       </button>
       <button
         type="button"
@@ -495,10 +502,10 @@ export default function RadioFooter() {
       <div className="relative flex items-center gap-1.5 max-w-[260px] min-w-0 ml-1">
         <span
           aria-hidden
-          className="w-1.5 h-1.5 rounded-full shrink-0"
+          className={`w-1.5 h-1.5 rounded-full shrink-0 ${isBuffering ? 'animate-pulse' : ''}`}
           style={{
             background: accent,
-            boxShadow: isPlayingNow ? `0 0 6px ${accent}` : 'none',
+            boxShadow: status === 'playing' ? `0 0 6px ${accent}` : 'none',
             transition: 'box-shadow 200ms',
           }}
         />
@@ -533,7 +540,7 @@ export default function RadioFooter() {
         {detailsOpen && nowPlaying && (
           <NowPlayingCard
             nowPlaying={nowPlaying}
-            isPlaying={isPlayingNow}
+            status={status}
             isYoutube={isYoutube}
             progress={progress}
             currentTrackIndex={nowPlaying.trackIndexInStation ?? null}

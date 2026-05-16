@@ -12788,6 +12788,7 @@ export type Translations = {
     open_source: string;
     auto_resume_label: string;
     auto_resume_description: string;
+    buffering: string;
   };
   cockpit: {
     unknown_assistant: string;

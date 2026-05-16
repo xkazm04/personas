@@ -1,11 +1,12 @@
 import { useEffect, useRef } from 'react';
-import { ExternalLink, Pause, Play, SkipBack, SkipForward, X } from 'lucide-react';
+import { ExternalLink, Loader2, Pause, Play, SkipBack, SkipForward, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { NowPlaying } from '@/lib/bindings/NowPlaying';
+import type { PlayStatus } from '@/lib/bindings/PlayStatus';
 
 interface NowPlayingCardProps {
   nowPlaying: NowPlaying;
-  isPlaying: boolean;
+  status: PlayStatus;
   isYoutube: boolean;
   progress: { currentSec: number; durationSec: number } | null;
   currentTrackIndex: number | null;
@@ -30,7 +31,7 @@ function formatTime(sec: number): string {
  */
 export default function NowPlayingCard({
   nowPlaying,
-  isPlaying,
+  status,
   isYoutube,
   progress,
   currentTrackIndex,
@@ -39,6 +40,8 @@ export default function NowPlayingCard({
   onNext,
   onClose,
 }: NowPlayingCardProps) {
+  const isPlaying = status === 'playing' || status === 'buffering';
+  const isBuffering = status === 'buffering';
   const { t, tx } = useTranslation();
   const ref = useRef<HTMLDivElement>(null);
 
@@ -143,12 +146,20 @@ export default function NowPlayingCard({
           <button
             type="button"
             onClick={onTogglePlay}
-            className="w-10 h-10 rounded-full flex items-center justify-center text-foreground transition-transform hover:scale-105"
+            className={`w-10 h-10 rounded-full flex items-center justify-center text-foreground transition-transform hover:scale-105 ${
+              isBuffering ? 'animate-pulse' : ''
+            }`}
             style={{ background: accent }}
             aria-label={isPlaying ? t.radio.pause : t.radio.play}
-            title={isPlaying ? t.radio.pause : t.radio.play}
+            title={isBuffering ? t.radio.buffering : isPlaying ? t.radio.pause : t.radio.play}
           >
-            {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 translate-x-0.5" />}
+            {isBuffering ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : isPlaying ? (
+              <Pause className="w-4 h-4" />
+            ) : (
+              <Play className="w-4 h-4 translate-x-0.5" />
+            )}
           </button>
           <button
             type="button"
