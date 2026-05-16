@@ -13,6 +13,11 @@ import {
 import { silentCatch, toastCatch } from "@/lib/silentCatch";
 import { useToastStore } from "@/stores/toastStore";
 
+import {
+  kindBucketWeight,
+  kindGroupLabel,
+  visualForEntry,
+} from "./designTokens";
 import { useDrive } from "./hooks/useDrive";
 import { DriveToolbar } from "./components/DriveToolbar";
 import { DriveSidebar } from "./components/DriveSidebar";
@@ -555,13 +560,62 @@ export default function DrivePage() {
           title={tx(t.plugins.drive.delete_confirm_title, {
             count: dialog.paths.length,
           })}
-          body={t.plugins.drive.delete_confirm_body}
+          body={
+            <div className="space-y-3">
+              <DeleteBreakdown paths={dialog.paths} entries={drive.entries} t={t} />
+              <div>{t.plugins.drive.delete_confirm_body}</div>
+            </div>
+          }
           danger
           onConfirm={() => confirmDialog()}
           onCancel={() => setDialog(null)}
         />
       )}
     </ContentBox>
+  );
+}
+
+function DeleteBreakdown({
+  paths,
+  entries,
+  t,
+}: {
+  paths: string[];
+  entries: DriveEntry[];
+  t: ReturnType<typeof useTranslation>["t"];
+}) {
+  // Build a per-bucket count from the entries the user actually selected.
+  // Paths the user picked are by definition in the current folder's entry
+  // list, so this is a straight lookup.
+  const byPath = new Map(entries.map((e) => [e.path, e] as const));
+  const counts = new Map<string, number>();
+  for (const p of paths) {
+    const entry = byPath.get(p);
+    if (!entry) continue;
+    const key = visualForEntry(entry).labelKey;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  const buckets = Array.from(counts.entries()).sort(
+    ([a], [b]) =>
+      kindBucketWeight(a as Parameters<typeof kindBucketWeight>[0]) -
+      kindBucketWeight(b as Parameters<typeof kindBucketWeight>[0]),
+  );
+  if (buckets.length === 0) return null;
+
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {buckets.map(([key, count]) => (
+        <span
+          key={key}
+          className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-rose-500/10 border border-rose-500/25 typo-caption text-rose-100"
+        >
+          <span className="font-semibold tabular-nums">{count}</span>
+          <span className="text-rose-100/80">
+            {kindGroupLabel(t, key as Parameters<typeof kindGroupLabel>[1])}
+          </span>
+        </span>
+      ))}
+    </div>
   );
 }
 

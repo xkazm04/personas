@@ -77,7 +77,7 @@ export function DriveTextPrompt({
 
 interface ConfirmPromptProps {
   title: string;
-  body?: string;
+  body?: React.ReactNode;
   danger?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
