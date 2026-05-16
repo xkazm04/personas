@@ -82,6 +82,15 @@ export default function LifecyclePage() {
   useEffect(() => { refresh(); }, [refresh]);
   useEffect(() => { if (activeProjectId) fetchGoals(activeProjectId); }, [activeProjectId, fetchGoals]);
 
+  // Consume any pending sub-tab handoff (e.g. Task Runner goal pill jumping
+  // straight to the Goals sub-tab). Read once on mount and clear so a stale
+  // value can't survive an unmount/remount race.
+  useEffect(() => {
+    const pending = useSystemStore.getState().pendingLifecycleSubTab;
+    if (pending) setTab(pending);
+    useSystemStore.getState().setPendingLifecycleSubTab(null);
+  }, []);
+
   const hasApproved = triggers.some((tr) => parseListenerConfig(tr, REVIEW_APPROVED_EVENT));
   const hasRejected = triggers.some((tr) => parseListenerConfig(tr, REVIEW_REJECTED_EVENT));
   const hasSchedule = triggers.some((tr) => tr.trigger_type === 'schedule');

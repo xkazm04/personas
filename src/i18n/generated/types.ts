@@ -10982,6 +10982,7 @@ export type Translations = {
       goal_link_placeholder: string;
       create_task: string;
       source_label: string;
+      goal_pill_tooltip: string;
       new_task: string;
       batch_from_accepted: string;
       start_batch: string;

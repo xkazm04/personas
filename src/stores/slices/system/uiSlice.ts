@@ -72,6 +72,8 @@ export interface UiSlice {
   contextScanComplete: boolean;
   /** Pending category filter applied when the credentials catalog next mounts. */
   pendingCatalogCategoryFilter: string | null;
+  /** Pending sub-tab applied when the Lifecycle page next mounts (e.g. jump-to-goals from a Task Runner goal pill). */
+  pendingLifecycleSubTab: 'setup' | 'goals' | 'competitions' | 'tracking' | null;
 
   // Canvas <-> Live Stream cross-linking
   canvasEdgeFocus: { edgeId: string; eventType: string; sourceFilter: string | null } | null;
@@ -107,6 +109,7 @@ export interface UiSlice {
   setContextScanActive: (active: boolean) => void;
   setContextScanComplete: (complete: boolean) => void;
   setPendingCatalogCategoryFilter: (category: string | null) => void;
+  setPendingLifecycleSubTab: (tab: 'setup' | 'goals' | 'competitions' | 'tracking' | null) => void;
   setCanvasEdgeFocus: (focus: { edgeId: string; eventType: string; sourceFilter: string | null } | null) => void;
   setLiveStreamHighlightEventId: (id: string | null) => void;
   // Plugin enable/disable
@@ -167,6 +170,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) =
   contextScanActive: false,
   contextScanComplete: false,
   pendingCatalogCategoryFilter: null,
+  pendingLifecycleSubTab: null,
   canvasEdgeFocus: null,
   liveStreamHighlightEventId: null,
 
@@ -211,6 +215,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) =
   setContextScanActive: (active) => set({ contextScanActive: active }),
   setContextScanComplete: (complete) => set({ contextScanComplete: complete }),
   setPendingCatalogCategoryFilter: (category) => set({ pendingCatalogCategoryFilter: category }),
+  setPendingLifecycleSubTab: (tab) => set({ pendingLifecycleSubTab: tab }),
   setCanvasEdgeFocus: (focus) => set({ canvasEdgeFocus: focus }),
   setLiveStreamHighlightEventId: (id) => set({ liveStreamHighlightEventId: id }),
   enabledPlugins: new Set<PluginTab>(['dev-tools', 'artist', 'obsidian-brain', 'research-lab', 'drive', 'twin', 'companion']),

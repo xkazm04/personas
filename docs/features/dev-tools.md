@@ -65,6 +65,7 @@ The eight tabs are sequenced so a new project can walk top-to-bottom exactly onc
 3. Output streams live via the **TaskOutputPanel** (expandable). Context warnings from the LLM (e.g. "couldn't load referenced file") are flagged as a **Partial context** badge with the full list revealed on expand.
 4. A **Self-Healing** panel above the queue watches for failures and offers one-click retries.
 5. **PR Bridge** (see *Proposal A* below) appears on every completed task — a collapsible card with the suggested branch name, commit message, PR title and body (with agent citation), plus three actions: *Copy PR body*, *Prepare branch & commit* (uses `dev_tools_create_branch` + `dev_tools_commit_changes`), *Open draft PR on GitHub* (via `@tauri-apps/plugin-shell` with GitHub's `quick_pull=1` URL pre-fill).
+6. Tasks linked to a goal show a clickable violet **goal pill** beside the source label; clicking it jumps to **Lifecycle → Goals** in one hop (handoff via the `pendingLifecycleSubTab` slot in `uiSlice`).
 
 ### 6. Overview — live health signals
 

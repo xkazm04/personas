@@ -10976,6 +10976,7 @@
       "goal_link_placeholder": "Select a goal…",
       "create_task": "Create Task",
       "source_label": "Source:",
+      "goal_pill_tooltip": "Jump to this goal in Lifecycle",
       "new_task": "New Task",
       "batch_from_accepted": "Batch from Accepted",
       "start_batch": "Start Batch",
