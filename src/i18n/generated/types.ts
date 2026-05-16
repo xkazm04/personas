@@ -9720,6 +9720,8 @@ export type Translations = {
       lightbox_counter: string;
       lightbox_loading: string;
       lightbox_failed: string;
+      sidebar_recent_empty: string;
+      sidebar_recent_reveal_aria: string;
       details_empty_hint: string;
       details_location: string;
       copy_path_tooltip: string;

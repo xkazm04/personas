@@ -12,6 +12,7 @@ import {
   driveMkdir,
   driveMove,
   driveParentPath,
+  driveRecent,
   driveRename,
   driveSearch,
   driveStorageInfo,
@@ -117,6 +118,12 @@ export interface UseDriveResult {
   storage: DriveStorageInfo | null;
   refreshStorage: () => void;
 
+  // Sidebar "Recent" rail — N most-recently-modified files across the
+  // managed drive. Refreshed alongside the tree on first mount + after
+  // any mutation that adds or moves a file.
+  recent: DriveEntry[];
+  refreshRecent: () => void;
+
   // Highlight recent writes for ~1.2s
   recentlyWritten: Set<string>;
 
@@ -153,6 +160,7 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
   const [error, setError] = useState<string | null>(null);
   const [tree, setTree] = useState<DriveTreeNode | null>(null);
   const [storage, setStorage] = useState<DriveStorageInfo | null>(null);
+  const [recent, setRecent] = useState<DriveEntry[]>([]);
 
   const [selection, setSelection] = useState<Set<string>>(new Set());
   const [sortKey, setSortKey] = useState<SortKey>("name");
@@ -213,6 +221,12 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
     driveStorageInfo().then(setStorage).catch(toastCatch("drive:storageInfo"));
   }, []);
 
+  const refreshRecent = useCallback(() => {
+    driveRecent(5)
+      .then(setRecent)
+      .catch(toastCatch("drive:recent"));
+  }, []);
+
   useEffect(() => {
     refresh();
   }, [refresh]);
@@ -220,7 +234,8 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
   useEffect(() => {
     refreshTree();
     refreshStorage();
-  }, [refreshTree, refreshStorage]);
+    refreshRecent();
+  }, [refreshTree, refreshStorage, refreshRecent]);
 
   // Clear selection on navigation.
   useEffect(() => {
@@ -450,7 +465,8 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
     refresh();
     refreshTree();
     refreshStorage();
-  }, [clipboard, currentPath, refresh, refreshTree, refreshStorage, flashWrite]);
+    refreshRecent();
+  }, [clipboard, currentPath, refresh, refreshTree, refreshStorage, refreshRecent, flashWrite]);
 
   // Mutations
   const createFolder = useCallback(
@@ -481,8 +497,9 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
       }
       refresh();
       refreshStorage();
+      refreshRecent();
     },
-    [currentPath, refresh, refreshStorage, flashWrite],
+    [currentPath, refresh, refreshStorage, refreshRecent, flashWrite],
   );
 
   const rename = useCallback(
@@ -528,8 +545,9 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
       }
       refresh();
       refreshTree();
+      refreshRecent();
     },
-    [refresh, refreshTree, flashWrite],
+    [refresh, refreshTree, refreshRecent, flashWrite],
   );
 
   // Derived flags
@@ -585,6 +603,9 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
 
     storage,
     refreshStorage,
+
+    recent,
+    refreshRecent,
 
     recentlyWritten,
 

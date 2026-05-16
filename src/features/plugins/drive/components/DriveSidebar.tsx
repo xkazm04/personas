@@ -1,11 +1,12 @@
 import { useState, useCallback } from "react";
-import { ChevronRight, Folder, FolderOpen, HardDrive, Sparkles } from "lucide-react";
+import { ChevronRight, Clock, Folder, FolderOpen, HardDrive, Sparkles } from "lucide-react";
 
-import type { DriveTreeNode } from "@/api/drive";
-import { driveFormatBytes } from "@/api/drive";
+import type { DriveEntry, DriveTreeNode } from "@/api/drive";
+import { driveFormatBytes, driveParentPath } from "@/api/drive";
 import { silentCatch } from "@/lib/silentCatch";
 import type { UseDriveResult } from "../hooks/useDrive";
 import { useTranslation } from "@/i18n/useTranslation";
+import { formatRelativeTime, visualForEntry } from "../designTokens";
 
 interface Props {
   drive: UseDriveResult;
@@ -47,8 +48,17 @@ export function DriveSidebar({ drive }: Props) {
         </div>
       </div>
 
-      {/* Folder tree */}
+      {/* Recent rail + folder tree share the scrollable middle area. */}
       <div className="flex-1 overflow-y-auto py-2 px-1">
+        {drive.recent.length > 0 && (
+          <div className="mb-3">
+            <div className="px-2 mb-1 flex items-center gap-1.5 typo-label text-foreground">
+              <Clock className="w-3 h-3 text-cyan-300/80" />
+              <span>{t.plugins.drive.sidebar_recent}</span>
+            </div>
+            <RecentRail entries={drive.recent} drive={drive} />
+          </div>
+        )}
         <div className="px-2 mb-1.5 typo-label text-foreground">
           {t.plugins.drive.sidebar_folders_label}
         </div>
@@ -89,6 +99,56 @@ export function DriveSidebar({ drive }: Props) {
         </div>
       )}
     </aside>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Recent rail — the N most-recently-modified files across the drive.
+// Click a row to navigate to the file's parent folder and select it.
+// ---------------------------------------------------------------------------
+
+function RecentRail({
+  entries,
+  drive,
+}: {
+  entries: DriveEntry[];
+  drive: UseDriveResult;
+}) {
+  const { t, tx } = useTranslation();
+  return (
+    <div className="px-1 space-y-0.5">
+      {entries.map((entry) => {
+        const visual = visualForEntry(entry);
+        const Icon = visual.Icon;
+        const parent = driveParentPath(entry.path);
+        return (
+          <button
+            key={entry.path}
+            type="button"
+            onClick={() => {
+              drive.navigate(parent);
+              // selectOnly may race with the navigation-clears-selection
+              // effect; the targeted entry might not be in visibleEntries
+              // yet. We schedule the select for the next microtask, which
+              // lands after navigate's state batch.
+              queueMicrotask(() => drive.selectOnly(entry.path));
+            }}
+            title={entry.path}
+            className="group w-full flex items-center gap-2 py-1.5 px-2 rounded-input text-left typo-body text-foreground hover:bg-cyan-500/10 hover:text-cyan-100 transition-colors"
+          >
+            <div
+              className={`flex items-center justify-center w-5 h-5 rounded bg-gradient-to-br ${visual.gradient} flex-shrink-0`}
+            >
+              <Icon className={`w-3 h-3 ${visual.text}`} />
+            </div>
+            <span className="min-w-0 flex-1 truncate">{entry.name}</span>
+            <span className="typo-caption text-foreground/60 tabular-nums flex-shrink-0 group-hover:text-cyan-200/60">
+              {formatRelativeTime(entry.modified, t, tx)}
+            </span>
+          </button>
+        );
+      })}
+    </div>
   );
 }
 

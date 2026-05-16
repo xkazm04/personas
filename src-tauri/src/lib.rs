@@ -2021,6 +2021,7 @@ pub fn run() {
             commands::drive::drive_list,
             commands::drive::drive_list_tree,
             commands::drive::drive_search,
+            commands::drive::drive_recent,
             commands::drive::drive_stat,
             commands::drive::drive_read,
             commands::drive::drive_read_text,

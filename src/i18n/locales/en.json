@@ -9714,6 +9714,8 @@
       "lightbox_counter": "{current} of {total}",
       "lightbox_loading": "Loading image…",
       "lightbox_failed": "Could not load image.",
+      "sidebar_recent_empty": "Files saved by agents land here",
+      "sidebar_recent_reveal_aria": "Reveal in Drive",
       "details_empty_hint": "Select a file or folder to see its details and inline preview.",
       "details_location": "Location",
       "copy_path_tooltip": "Copy path",
