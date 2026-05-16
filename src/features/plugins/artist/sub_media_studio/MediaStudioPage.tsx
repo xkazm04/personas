@@ -370,6 +370,7 @@ export default function MediaStudioPage() {
             <h2 className="typo-section-title">{t.media_studio.empty_title}</h2>
             <p className="typo-body text-foreground mt-1">{t.media_studio.empty_hint}</p>
           </div>
+          <RecentCompositionsRow onLoad={persistence.loadFromPath} />
           <div className="flex items-center gap-2 flex-wrap justify-center">
             <Button variant="accent" accentColor="rose" size="md" onClick={handleAddVideo}>
               <Video className="w-4 h-4" />
@@ -484,6 +485,51 @@ export default function MediaStudioPage() {
       )}
     </div>
   );
+}
+
+// ---------------------------------------------------------------------------
+// RecentCompositionsRow — surfaces the last few opened/saved compositions on
+// the empty state so the user can resume work without walking the file
+// dialog. Reads from the persisted MRU list on the artist slice; click loads
+// via `persistence.loadFromPath`, which auto-evicts missing files.
+// ---------------------------------------------------------------------------
+
+function RecentCompositionsRow({ onLoad }: { onLoad: (path: string) => Promise<void> }) {
+  const { t, tx } = useTranslation();
+  const recents = useSystemStore((s) => s.mediaStudioRecents);
+  if (recents.length === 0) return null;
+  return (
+    <div className="w-full max-w-2xl flex flex-col items-center gap-2">
+      <span className="typo-label text-foreground">{t.media_studio.recent_compositions}</span>
+      <div className="flex flex-wrap items-center gap-2 justify-center">
+        {recents.map((r) => (
+          <button
+            key={r.path}
+            type="button"
+            onClick={() => { void onLoad(r.path); }}
+            title={r.path}
+            className="flex items-center gap-2 px-3 py-2 rounded-card border border-primary/10 bg-card/50 hover:border-rose-500/30 hover:bg-card/70 transition-colors max-w-xs"
+          >
+            <Film className="w-3.5 h-3.5 text-rose-400 flex-shrink-0" />
+            <div className="flex flex-col text-left min-w-0">
+              <span className="text-md text-foreground truncate">{r.name}</span>
+              <span className="text-[11px] text-foreground/60">
+                {tx(t.media_studio.recent_saved_ago, { time: formatRelativeSince(r.savedAt) })}
+              </span>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function formatRelativeSince(ts: number): string {
+  const diff = Math.max(0, Date.now() - ts);
+  if (diff < 60_000) return `${Math.max(1, Math.round(diff / 1_000))}s`;
+  if (diff < 3_600_000) return `${Math.round(diff / 60_000)}m`;
+  if (diff < 86_400_000) return `${Math.round(diff / 3_600_000)}h`;
+  return `${Math.round(diff / 86_400_000)}d`;
 }
 
 // ---------------------------------------------------------------------------

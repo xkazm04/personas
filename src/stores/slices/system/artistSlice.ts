@@ -25,6 +25,21 @@ export interface QueuedMediaAsset {
 }
 
 /**
+ * Persisted Media Studio composition entry, surfaced as a "Recent" row on
+ * the empty state so users can reopen the last few compositions without
+ * walking the file dialog. Capped at MAX_MEDIA_STUDIO_RECENTS entries; the
+ * most recent open or save bubbles to the head.
+ */
+export interface RecentMediaStudioComposition {
+  /** Absolute path on disk. */
+  path: string;
+  /** Composition.name at the time of last open/save. */
+  name: string;
+  /** ms-epoch of the last open or save. */
+  savedAt: number;
+}
+
+/**
  * Persisted creative-session record. Each prompt-run produces one of these
  * so the user can scroll through history and replay past conversations.
  */
@@ -59,6 +74,9 @@ export interface ArtistSlice {
   // Pending handoff to Media Studio
   pendingMediaStudioAssets: QueuedMediaAsset[];
 
+  // Most-recently-opened Media Studio compositions (capped, MRU order)
+  mediaStudioRecents: RecentMediaStudioComposition[];
+
   // Actions
   setArtistTab: (tab: ArtistTab) => void;
   setGalleryMode: (mode: GalleryMode) => void;
@@ -81,11 +99,16 @@ export interface ArtistSlice {
   // Gallery → Media Studio handoff
   queueMediaStudioAsset: (asset: QueuedMediaAsset) => void;
   consumeMediaStudioAssets: () => QueuedMediaAsset[];
+
+  // Media Studio recent compositions
+  recordMediaStudioRecent: (entry: { path: string; name: string }) => void;
+  removeMediaStudioRecent: (path: string) => void;
 }
 
 const MAX_OUTPUT_LINES = 500;
 const MAX_SESSIONS = 25;
 const MAX_SESSION_LINES = 300;
+const MAX_MEDIA_STUDIO_RECENTS = 5;
 
 export const createArtistSlice: StateCreator<SystemStore, [], [], ArtistSlice> = (set, get) => ({
   artistTab: "blender" as ArtistTab,
@@ -100,6 +123,7 @@ export const createArtistSlice: StateCreator<SystemStore, [], [], ArtistSlice> =
   creativeSessions: [],
   creativeConnectors: [],
   pendingMediaStudioAssets: [],
+  mediaStudioRecents: [],
 
   setArtistTab: (tab) => set({ artistTab: tab }),
   setGalleryMode: (mode) => set({ galleryMode: mode }),
@@ -155,4 +179,17 @@ export const createArtistSlice: StateCreator<SystemStore, [], [], ArtistSlice> =
     set({ pendingMediaStudioAssets: [] });
     return queue;
   },
+
+  recordMediaStudioRecent: ({ path, name }) =>
+    set((s) => {
+      const filtered = s.mediaStudioRecents.filter((r) => r.path !== path);
+      const next: RecentMediaStudioComposition = { path, name, savedAt: Date.now() };
+      return {
+        mediaStudioRecents: [next, ...filtered].slice(0, MAX_MEDIA_STUDIO_RECENTS),
+      };
+    }),
+  removeMediaStudioRecent: (path) =>
+    set((s) => ({
+      mediaStudioRecents: s.mediaStudioRecents.filter((r) => r.path !== path),
+    })),
 });

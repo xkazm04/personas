@@ -11206,6 +11206,8 @@ export type Translations = {
     export_open_file: string;
     export_show_in_folder: string;
     export_dismiss: string;
+    recent_compositions: string;
+    recent_saved_ago: string;
     output_settings: string;
     resolution: string;
     framerate: string;

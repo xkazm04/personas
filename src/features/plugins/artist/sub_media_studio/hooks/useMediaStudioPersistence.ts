@@ -10,6 +10,7 @@ import {
   artistSaveComposition,
 } from '@/api/artist';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
+import { useSystemStore } from '@/stores/systemStore';
 import type { Composition } from '../types';
 
 /** How long after the last edit to flush an autosave. */
@@ -33,6 +34,10 @@ export interface MediaStudioPersistence {
   saveAs: () => Promise<void>;
   /** Prompt for a file and load it into the composition store. */
   openFile: () => Promise<void>;
+  /** Load a specific composition file without prompting — used by the Recent
+   *  list on the empty state. Missing files surface a toast via the same
+   *  error path as `openFile`. */
+  loadFromPath: (path: string) => Promise<void>;
   /** Acknowledge the "restored from autosave" banner. */
   dismissRestoreHint: () => void;
 }
@@ -166,6 +171,9 @@ export function useMediaStudioPersistence({
 
   // -- Save / Save As / Open ----------------------------------------------
 
+  const recordRecent = useSystemStore((s) => s.recordMediaStudioRecent);
+  const removeRecent = useSystemStore((s) => s.removeMediaStudioRecent);
+
   const writeTo = useCallback(
     async (targetPath: string) => {
       setStatus('saving');
@@ -177,12 +185,13 @@ export function useMediaStudioPersistence({
         setCurrentFile(targetPath);
         setLastSavedAt(Date.now());
         setStatus('saved');
+        recordRecent({ path: targetPath, name: composition.name || 'Untitled' });
       } catch (err) {
         setStatus('error');
         toastCatch('Could not save composition')(err);
       }
     },
-    [composition],
+    [composition, recordRecent],
   );
 
   const save = useCallback(async () => {
@@ -199,23 +208,34 @@ export function useMediaStudioPersistence({
     if (path) await writeTo(path);
   }, [promptSavePath, writeTo]);
 
+  const loadFromPath = useCallback(
+    async (path: string) => {
+      try {
+        const loaded = await artistLoadComposition(path);
+        const parsed = JSON.parse(loaded.compositionJson) as Composition;
+        replaceComposition(parsed);
+        setCurrentFile(path);
+        setLastSavedAt(Date.now());
+        setStatus('saved');
+        setRestoredFromAutosave(false);
+        await artistClearAutosave().catch(silentCatch('clear_autosave'));
+        recordRecent({ path, name: parsed.name || 'Untitled' });
+      } catch (err) {
+        setStatus('error');
+        // Drop the recent entry — its path no longer resolves, so it would
+        // just keep failing if the user clicks it again.
+        removeRecent(path);
+        toastCatch('Could not open composition')(err);
+      }
+    },
+    [replaceComposition, recordRecent, removeRecent],
+  );
+
   const openFile = useCallback(async () => {
     const path = await promptOpenPath();
     if (!path) return;
-    try {
-      const loaded = await artistLoadComposition(path);
-      const parsed = JSON.parse(loaded.compositionJson) as Composition;
-      replaceComposition(parsed);
-      setCurrentFile(path);
-      setLastSavedAt(Date.now());
-      setStatus('saved');
-      setRestoredFromAutosave(false);
-      await artistClearAutosave().catch(silentCatch('clear_autosave'));
-    } catch (err) {
-      setStatus('error');
-      toastCatch('Could not open composition')(err);
-    }
-  }, [promptOpenPath, replaceComposition]);
+    await loadFromPath(path);
+  }, [promptOpenPath, loadFromPath]);
 
   const dismissRestoreHint = useCallback(() => setRestoredFromAutosave(false), []);
 
@@ -227,6 +247,7 @@ export function useMediaStudioPersistence({
     save,
     saveAs,
     openFile,
+    loadFromPath,
     dismissRestoreHint,
   };
 }

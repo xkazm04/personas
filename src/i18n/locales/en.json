@@ -11200,6 +11200,8 @@
     "export_open_file": "Open",
     "export_show_in_folder": "Show in folder",
     "export_dismiss": "Dismiss",
+    "recent_compositions": "Recent",
+    "recent_saved_ago": "saved {time} ago",
     "output_settings": "Output settings",
     "resolution": "Resolution",
     "framerate": "Frame rate",
