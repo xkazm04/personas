@@ -26,7 +26,7 @@ A persona invoking a twin tool (e.g. `get_tone("slack")`, `recall_memory("client
 
 ## User flow
 
-The plugin is organised as eight tabs — **Profiles**, **Identity**, **Tone**, **Brain**, **Knowledge**, **Voice**, **Channels**, **Training** — with a persistent **TwinSelector** banner at the top. The banner shows the active twin name and, when more than one twin exists, a dropdown to switch between them.
+The plugin is organised as eight tabs — **Profiles**, **Identity**, **Tone**, **Brain**, **Knowledge**, **Voice**, **Channels**, **Training** — with a persistent **TwinSelector** banner at the top. The banner shows the active twin name and, when more than one twin exists, a dropdown to switch between them. A clickable **readiness pill** on the right summarises the active twin's setup score (0–100); clicking it opens a popover that lists the highest-impact missing milestones (e.g. *"No bio yet"*, *"Generic tone only"*) and deep-links into the matching sub-tab so the user can fix them one click away.
 
 ### 1. Profiles — manage twins
 

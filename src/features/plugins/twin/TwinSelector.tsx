@@ -2,6 +2,7 @@ import { Sparkles, ChevronDown, AlertCircle, User, Mic, Brain, Volume2, Radio, B
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useTwinReadiness, type MilestoneStatus } from './useTwinReadiness';
+import { ReadinessGapPopover } from './_shared/ReadinessGapPopover';
 import type { TwinTab } from '@/lib/types/types';
 import type { LucideIcon } from 'lucide-react';
 
@@ -38,14 +39,8 @@ function statusClasses(status: MilestoneStatus): { dot: string; icon: string } {
   return { dot: 'bg-secondary/60 border-primary/10', icon: 'text-foreground' };
 }
 
-function readinessColor(score: number): string {
-  if (score >= 80) return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25';
-  if (score >= 40) return 'bg-amber-500/10 text-amber-400 border-amber-500/25';
-  return 'bg-secondary/40 text-foreground border-primary/10';
-}
-
 export function TwinSelector() {
-  const { t: tFull, tx } = useTranslation();
+  const { t: tFull } = useTranslation();
   const t = tFull.twin;
   const twinProfiles = useSystemStore((s) => s.twinProfiles);
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
@@ -136,13 +131,8 @@ export function TwinSelector() {
           })}
         </div>
 
-        {/* Readiness % badge */}
-        <div
-          className={`ml-auto px-2 py-1 rounded-full text-[10px] font-medium border ${readinessColor(readiness.score)}`}
-          title={`${t.progress.readiness}: ${readiness.score}%`}
-        >
-          {tx(t.profiles.readyPercent, { pct: readiness.score })}
-        </div>
+        {/* Readiness % badge — click to see "what's missing" gap popover */}
+        <ReadinessGapPopover readiness={readiness} onJumpTo={setTwinTab} />
       </div>
     </div>
   );

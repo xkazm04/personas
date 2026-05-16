@@ -12714,6 +12714,43 @@
       "channelsActive": "{active} of {total} channels active",
       "memoriesApproved": "{count} memories approved"
     },
+    "gaps": {
+      "title": "What's missing",
+      "subtitle": "Readiness {pct}%",
+      "dialogLabel": "What's missing for this twin",
+      "close": "Close",
+      "openTooltip": "Click to see what's missing",
+      "allSetTooltip": "All milestones complete",
+      "allSetTitle": "All set",
+      "allSetBody": "Every milestone is complete. This twin is ready to speak.",
+      "moreCount": "+{count} more",
+      "titles": {
+        "identityEmpty": "No bio yet",
+        "identityPartial": "Bio is short",
+        "toneEmpty": "No tone captured",
+        "tonePartial": "Generic tone only",
+        "brainEmpty": "No knowledge bound",
+        "brainPartial": "Subpath only — no KB",
+        "voiceEmpty": "No voice set",
+        "channelsEmpty": "No channels",
+        "channelsPartial": "All channels paused",
+        "memoriesEmpty": "No approved memories",
+        "memoriesPartial": "Memories thin"
+      },
+      "hints": {
+        "identityEmpty": "Add a short bio so this twin has a voice.",
+        "identityPartial": "Expand the bio past 50 characters for stronger grounding.",
+        "toneEmpty": "Capture at least one tone profile.",
+        "tonePartial": "Add a channel-specific tone override.",
+        "brainEmpty": "Bind a knowledge base or an Obsidian subpath.",
+        "brainPartial": "Bind a knowledge base for semantic recall.",
+        "voiceEmpty": "Pick a voice id from ElevenLabs to enable speech.",
+        "channelsEmpty": "Add a channel so the twin can be reached.",
+        "channelsPartial": "Activate at least one channel.",
+        "memoriesEmpty": "Approve memories or run a training session.",
+        "memoriesPartial": "{remaining} more approved memories to reach strong ({approved} of {threshold})."
+      }
+    },
     "nudges": {
       "channelWithoutTone": "You added a {channel} channel but haven't set a {channel} tone — messages will use the generic fallback.",
       "channelWithoutToneCta": "Set {channel} tone",

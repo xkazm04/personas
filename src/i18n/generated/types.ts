@@ -12720,6 +12720,43 @@ export type Translations = {
       channelsActive: string;
       memoriesApproved: string;
     };
+    gaps: {
+      title: string;
+      subtitle: string;
+      dialogLabel: string;
+      close: string;
+      openTooltip: string;
+      allSetTooltip: string;
+      allSetTitle: string;
+      allSetBody: string;
+      moreCount: string;
+      titles: {
+        identityEmpty: string;
+        identityPartial: string;
+        toneEmpty: string;
+        tonePartial: string;
+        brainEmpty: string;
+        brainPartial: string;
+        voiceEmpty: string;
+        channelsEmpty: string;
+        channelsPartial: string;
+        memoriesEmpty: string;
+        memoriesPartial: string;
+      };
+      hints: {
+        identityEmpty: string;
+        identityPartial: string;
+        toneEmpty: string;
+        tonePartial: string;
+        brainEmpty: string;
+        brainPartial: string;
+        voiceEmpty: string;
+        channelsEmpty: string;
+        channelsPartial: string;
+        memoriesEmpty: string;
+        memoriesPartial: string;
+      };
+    };
     nudges: {
       channelWithoutTone: string;
       channelWithoutToneCta: string;
