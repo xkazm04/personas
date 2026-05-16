@@ -12365,9 +12365,12 @@
     "selector": {
       "noTwin": "No twin configured",
       "createFirst": "Create a twin first so personas have an identity to speak as.",
-      "createTwin": "Create Twin",
+      "createTwin": "新しいツインを作成",
       "selectTwin": "Select a twin...",
-      "progressGroupLabel": "Twin setup progress"
+      "progressGroupLabel": "Twin setup progress",
+      "pickerLabel": "アクティブなツインを選択",
+      "searchPlaceholder": "名前またはロールで検索…",
+      "noMatches": "検索に一致するツインはありません。"
     },
     "emptyState": {
       "subtitle": "You need an active twin to use this tab.",
@@ -12399,7 +12402,12 @@
       "promptNoName": "(name)",
       "promptNoBio": "(no bio set — fill in above)",
       "saving": "Saving...",
-      "saveIdentity": "Save Identity"
+      "saveIdentity": "Save Identity",
+      "refineWithAi": "AI でリファイン",
+      "bioRefineHint": "AI は既存の声と事実を維持し、文章を整えるだけです。下のステアリングキーワードは任意です。",
+      "bioRefineKeywordsPlaceholder": "(任意) 例: より簡潔に、堅苦しさを抑えて、ドライなユーモアを残す",
+      "refining": "リファイン中...",
+      "refineBio": "バイオをリファイン"
     },
     "channels": {
       "title": "Channels",
@@ -12435,7 +12443,19 @@
       "fieldPersona": "persona",
       "fieldSignal": "signal",
       "statusConfigured": "configured",
-      "ctaAddTone": "add override →"
+      "ctaAddTone": "add override →",
+      "lastBridged": "前回のブリッジ {when}",
+      "lastNever": "未使用",
+      "lastJustNow": "たった今",
+      "lastMinutesAgo": "{count}分前",
+      "lastHoursAgo": "{count}時間前",
+      "lastDaysAgo": "{count}日前",
+      "testTooltip": "合成アウトバウンド ping をログに記録",
+      "testDisabledPaused": "テストする前にチャンネルをアクティブ化してください",
+      "testAria": "テストメッセージを送信",
+      "testToast": "{channel} のテスト ping をログに記録しました",
+      "personaPickerPlaceholder": "ペルソナを選択…",
+      "personaNone": "— なし —"
     },
     "tone": {
       "title": "Tone Profiles",
@@ -12482,7 +12502,13 @@
       "removeVoiceConfirm": "Remove voice configuration? The twin will have no voice until reconfigured.",
       "configureVoice": "Configure Voice",
       "saving": "Saving...",
-      "save": "Save"
+      "save": "Save",
+      "previewCta": "プレビュー",
+      "previewLoading": "合成中…",
+      "previewStop": "停止",
+      "previewTooltip": "現在の設定で短いサンプルを合成",
+      "previewNeedsConfig": "プレビューする前に voice ID と認証情報 ID を設定してください",
+      "previewSample": "音声チャンネルで話すとき、ツインはこのように聞こえます。"
     },
     "training": {
       "title": "Training Room",
@@ -12520,7 +12546,10 @@
       "generatingFollowup": "Generating follow-up...",
       "summarizingSession": "Summarizing what we learned...",
       "sessionSummaryHeading": "What we learned this session",
-      "summarySaved": "Summary saved as a high-priority memory."
+      "summarySaved": "Summary saved as a high-priority memory.",
+      "nextMovesHeading": "次にどこへ進むか",
+      "nextMovesSubtitle": "最もカバレッジの薄いトピック — ブレインを大きく強化するために次にこれらをトレーニングしましょう。",
+      "nextMovesCoverage": "これまでに {count} 件のグラウンディング事実"
     },
     "brain": {
       "title": "Brain",
@@ -12588,7 +12617,18 @@
       "entriesCount_other": "{count} entries",
       "priorityWithCount": "priority {count}",
       "approveAction": "approve",
-      "rejectAction": "reject"
+      "rejectAction": "reject",
+      "bulkSelectAll": "このページのすべてを選択",
+      "bulkSelectedCount": "{count} 件選択中",
+      "bulkRowSelect": "一括レビュー用にメモリを選択",
+      "bulkApproveCta": "{count} 件を承認",
+      "bulkRejectCta": "{count} 件を拒否",
+      "bulkClear": "選択を解除",
+      "bulkApprovedToast": "{count} 件のメモリを承認しました — ブレインにインデックスされました。",
+      "bulkRejectedToast": "{count} 件のメモリを拒否しました。",
+      "bulkPartialToast": "{succeeded} 件レビュー、{failed} 件失敗 — 詳細はトーストを確認してください。",
+      "provenanceChip": "from {id}…",
+      "provenanceTooltip": "ソースコミュニケーション ID: {id}"
     },
     "profiles": {
       "title": "Twin Profiles",
@@ -12644,7 +12684,26 @@
       "compiledLabel": "Compiled wiki",
       "auditReportLabel": "Audit report",
       "copy": "Copy",
-      "copied": "Copied to clipboard"
+      "copied": "Copied to clipboard",
+      "compiledSummary": "{count} ファイルを書き込みました。",
+      "copyPath": "パスをコピー",
+      "freshness": {
+        "loading": "Wiki…",
+        "compiling": "コンパイル中…",
+        "never": "Wiki: 未コンパイル",
+        "neverTooltip": "まだディスク上に wiki がありません。クリックして承認済みメモリからコンパイルします。",
+        "fresh": "Wiki: {rel}",
+        "freshTooltip": "{count} ファイル · コンパイル {rel}\n{path}\nクリックして再コンパイル。",
+        "stale": "Wiki: {rel}",
+        "staleTooltip": "{count} ファイル · 前回コンパイル {rel} (古い)\n{path}\nクリックして再コンパイル。",
+        "compiledToast": "Wiki をコンパイルしました — {count} ファイルを書き込みました。",
+        "openFolderTooltip": "ファイルマネージャーで wiki フォルダーを開く",
+        "openFolderAria": "wiki フォルダーを開く",
+        "justNow": "たった今",
+        "minutesAgo": "{count}分前",
+        "hoursAgo": "{count}時間前",
+        "daysAgo": "{count}日前"
+      }
     },
     "hero": {
       "eyebrow": "Twin",
@@ -12736,6 +12795,124 @@
       "channelsBody": "Each channel binds a credential. Pausing a channel keeps the config but stops traffic.",
       "trainingTitle": "Interview yourself",
       "trainingBody": "Pick a topic — AI asks 5 questions — answer in your voice. The session summary becomes a high-signal memory."
+    },
+    "gaps": {
+      "title": "不足しているもの",
+      "subtitle": "準備状況 {pct}%",
+      "dialogLabel": "このツインに不足しているもの",
+      "close": "閉じる",
+      "openTooltip": "クリックして不足しているものを表示",
+      "allSetTooltip": "すべてのマイルストーンが完了",
+      "allSetTitle": "準備完了",
+      "allSetBody": "すべてのマイルストーンが完了しました。このツインは話す準備ができています。",
+      "moreCount": "さらに +{count} 件",
+      "titles": {
+        "identityEmpty": "バイオがまだありません",
+        "identityPartial": "バイオが短い",
+        "toneEmpty": "トーンが未取得",
+        "tonePartial": "汎用トーンのみ",
+        "brainEmpty": "ナレッジ未バインド",
+        "brainPartial": "サブパスのみ — KB なし",
+        "voiceEmpty": "ボイス未設定",
+        "channelsEmpty": "チャンネルなし",
+        "channelsPartial": "全チャンネルが一時停止中",
+        "memoriesEmpty": "承認済みメモリなし",
+        "memoriesPartial": "メモリが少ない"
+      },
+      "hints": {
+        "identityEmpty": "このツインに声を与えるため、短いバイオを追加してください。",
+        "identityPartial": "グラウンディングを強化するため、バイオを 50 文字以上に拡張してください。",
+        "toneEmpty": "少なくとも 1 つのトーンプロフィールを取得してください。",
+        "tonePartial": "チャンネル固有のトーンオーバーライドを追加してください。",
+        "brainEmpty": "ナレッジベースまたは Obsidian サブパスをバインドしてください。",
+        "brainPartial": "セマンティックリコールのためにナレッジベースをバインドしてください。",
+        "voiceEmpty": "音声を有効にするため、ElevenLabs から voice ID を選んでください。",
+        "channelsEmpty": "ツインに連絡できるよう、チャンネルを追加してください。",
+        "channelsPartial": "少なくとも 1 つのチャンネルをアクティブ化してください。",
+        "memoriesEmpty": "メモリを承認するか、トレーニングセッションを実行してください。",
+        "memoriesPartial": "強グラウンディングまであと {remaining} 件の承認済みメモリ ({approved} / {threshold})。"
+      }
+    },
+    "contacts": {
+      "title": "コンタクト",
+      "subtitle": "このツインがやり取りした外部ハンドル。エイリアスとメモを追加するとリコールが容易になります。リストはコミュニケーションから自動入力されます。",
+      "loading": "コンタクトを読み込み中…",
+      "emptyTitle": "コンタクトはまだありません",
+      "emptyBody": "ツインがどれかのチャンネルで誰かとメッセージを交換すると、ここにコンタクトが表示されます。",
+      "lastSeen": "最終確認 {rel}前",
+      "neverBridged": "なし",
+      "justNow": "たった今",
+      "messageCount": "{count} メッセージ",
+      "aliasPlaceholder": "わかりやすい名前 (例: 「Discord の Alice」)",
+      "notesPlaceholder": "メモ — 文脈、好み、重要な日付…",
+      "editAria": "エイリアスとメモを編集",
+      "save": "保存",
+      "saving": "保存中…",
+      "cancel": "キャンセル"
+    },
+    "distilled": {
+      "title": "抽出された事実",
+      "subtitle": "ツインとそのコンタクトに関する精選された事実。各事実はそれを生み出したソースコミュニケーションを引用します。",
+      "addCta": "事実を追加",
+      "addHeading": "新しい抽出された事実",
+      "cancel": "キャンセル",
+      "saving": "保存中…",
+      "loading": "抽出された事実を読み込み中…",
+      "contentPlaceholder": "例: Alice は午後 9 時以降の DMs を好む。朝型を自称しているが返信は夜が多い。",
+      "contactLabel": "コンタクト (任意)",
+      "contactPlaceholder": "例: alice@discord",
+      "importanceLabel": "重要度",
+      "sourcesLabel": "ソースコミュニケーション",
+      "sourcesHint": "少なくとも 1 つ選択してください — 事実は出典を引用しなければなりません。",
+      "needsSources": "保存を有効にするには、少なくとも 1 つのソースコミュニケーションを選択してください。",
+      "noCommsYet": "このツインのコミュニケーションはまだ記録されていません。",
+      "saveWithSources": "事実を保存 ({count} 件のソース)",
+      "sent": "送信",
+      "received": "受信",
+      "sourceCount": "{count} 件のソース",
+      "emptyTitle": "まだ事実は抽出されていません",
+      "emptyBody": "コミュニケーションをレビューしながら事実を追加し、各事実はその出典となるメッセージを引用します。今後のステージでは事実を自動的に提案します。",
+      "deleteAria": "抽出された事実を削除"
+    },
+    "reflections": {
+      "title": "リフレクション",
+      "subtitle": "オペレーター監査ジャーナル。このツインの最近のアクティビティについて質問すると、Claude がツインプロフィールと直近 40 件のコミュニケーションを読み、短く凍結された回答を書き出します。",
+      "loading": "リフレクションを読み込み中…",
+      "emptyTitle": "まだリフレクションはありません",
+      "emptyBody": "上にシード質問を入力して最初のリフレクションを生成してください。過去のリフレクションは書き起こされた監査証跡として凍結されたままになります。",
+      "seedPlaceholder": "例: 「今週このツインの声にはどんなパターンが現れている？」",
+      "reflectCta": "リフレクト",
+      "generating": "リフレクション中…",
+      "deleteAria": "リフレクションを削除",
+      "suggestedSeedLabels": {
+        "voiceChange": "ボイスのドリフト",
+        "commsCadence": "ケイデンス",
+        "contactSurprises": "意外な点"
+      },
+      "suggestedSeeds": {
+        "voiceChange": "ツインの声はバイオからドリフトしている？どこで、そしてそのドリフトは意図的？",
+        "commsCadence": "最近のチャンネル全体でのケイデンス、インバウンド対アウトバウンドのバランスは？",
+        "contactSurprises": "驚いたコンタクトやスレッドは？— 予期しないトピック、見慣れないハンドル、トーンのずれた返信など。"
+      }
+    },
+    "recall": {
+      "title": "リコールプレビュー",
+      "subtitle": "このツインを採用したペルソナがランタイムに見るもの — バイオ、汎用トーン、最新のコミュニケーション、最重要の抽出された事実。今日のところは読み取り専用です。今後のステージでこのバンドルを実際のペルソナプロンプトに組み込みます。",
+      "contactFilterPlaceholder": "コンタクト (ハンドル) にスコープ…",
+      "refresh": "更新",
+      "refreshing": "更新中…",
+      "loading": "リコールを読み込み中…",
+      "scopedTo": "スコープ: {handle}",
+      "scopeToTooltip": "このコンタクトにプレビューをスコープ",
+      "identitySection": "アイデンティティ",
+      "toneSection": "汎用トーン",
+      "toneEmpty": "汎用トーンが未設定 — ペルソナはバイオのみに依存します。",
+      "factsSection": "上位の抽出された事実 ({count})",
+      "factsEmpty": "抽出された事実はまだありません — リコールはコミュニケーションのみにフォールバックします。",
+      "commsSection": "最近のコミュニケーション ({count})",
+      "commsEmpty": "このツインのコミュニケーションはまだ記録されていません。",
+      "contactsSection": "アクティビティ別の上位コンタクト ({count})",
+      "contactsEmpty": "このツインにはまだコンタクトがありません。"
     }
   },
   "recipe_shared": {

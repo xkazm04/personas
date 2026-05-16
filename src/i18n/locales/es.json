@@ -12365,9 +12365,12 @@
     "selector": {
       "noTwin": "No twin configured",
       "createFirst": "Create a twin first so personas have an identity to speak as.",
-      "createTwin": "Create Twin",
+      "createTwin": "Crear gemelo nuevo",
       "selectTwin": "Select a twin...",
-      "progressGroupLabel": "Twin setup progress"
+      "progressGroupLabel": "Twin setup progress",
+      "pickerLabel": "Elige el gemelo activo",
+      "searchPlaceholder": "Buscar por nombre o rol…",
+      "noMatches": "Ningún gemelo coincide con tu búsqueda."
     },
     "emptyState": {
       "subtitle": "You need an active twin to use this tab.",
@@ -12399,7 +12402,12 @@
       "promptNoName": "(name)",
       "promptNoBio": "(no bio set — fill in above)",
       "saving": "Saving...",
-      "saveIdentity": "Save Identity"
+      "saveIdentity": "Save Identity",
+      "refineWithAi": "Refinar con IA",
+      "bioRefineHint": "La IA conservará tu voz y los datos existentes — solo afinará la prosa. Las palabras clave de orientación son opcionales.",
+      "bioRefineKeywordsPlaceholder": "(opcional) p. ej. más conciso, menos corporativo, mantén el humor seco",
+      "refining": "Refinando...",
+      "refineBio": "Refinar bio"
     },
     "channels": {
       "title": "Channels",
@@ -12435,7 +12443,19 @@
       "fieldPersona": "persona",
       "fieldSignal": "signal",
       "statusConfigured": "configured",
-      "ctaAddTone": "add override →"
+      "ctaAddTone": "add override →",
+      "lastBridged": "Último puente {when}",
+      "lastNever": "Nunca usado",
+      "lastJustNow": "ahora mismo",
+      "lastMinutesAgo": "hace {count} min",
+      "lastHoursAgo": "hace {count} h",
+      "lastDaysAgo": "hace {count} d",
+      "testTooltip": "Registrar un ping saliente sintético",
+      "testDisabledPaused": "Activa el canal antes de probarlo",
+      "testAria": "Enviar mensaje de prueba",
+      "testToast": "Ping de prueba registrado para {channel}",
+      "personaPickerPlaceholder": "Elige una persona…",
+      "personaNone": "— Ninguna —"
     },
     "tone": {
       "title": "Tone Profiles",
@@ -12482,7 +12502,13 @@
       "removeVoiceConfirm": "Remove voice configuration? The twin will have no voice until reconfigured.",
       "configureVoice": "Configure Voice",
       "saving": "Saving...",
-      "save": "Save"
+      "save": "Save",
+      "previewCta": "Vista previa",
+      "previewLoading": "Sintetizando…",
+      "previewStop": "Detener",
+      "previewTooltip": "Sintetiza una muestra corta con la configuración actual",
+      "previewNeedsConfig": "Define un voice id y un credential id antes de la vista previa",
+      "previewSample": "Así sonará tu gemelo cuando hable por el canal de voz."
     },
     "training": {
       "title": "Training Room",
@@ -12520,7 +12546,10 @@
       "generatingFollowup": "Generating follow-up...",
       "summarizingSession": "Summarizing what we learned...",
       "sessionSummaryHeading": "What we learned this session",
-      "summarySaved": "Summary saved as a high-priority memory."
+      "summarySaved": "Summary saved as a high-priority memory.",
+      "nextMovesHeading": "Hacia dónde ir después",
+      "nextMovesSubtitle": "Los temas con menos cobertura — entrénalos a continuación para el mayor impulso al cerebro.",
+      "nextMovesCoverage": "{count} hechos de base hasta ahora"
     },
     "brain": {
       "title": "Brain",
@@ -12588,7 +12617,18 @@
       "entriesCount_other": "{count} entries",
       "priorityWithCount": "priority {count}",
       "approveAction": "approve",
-      "rejectAction": "reject"
+      "rejectAction": "reject",
+      "bulkSelectAll": "Seleccionar todo en esta página",
+      "bulkSelectedCount": "{count} seleccionados",
+      "bulkRowSelect": "Seleccionar memoria para revisión masiva",
+      "bulkApproveCta": "Aprobar {count}",
+      "bulkRejectCta": "Rechazar {count}",
+      "bulkClear": "Limpiar selección",
+      "bulkApprovedToast": "{count} memorias aprobadas — ya están indexadas en el cerebro.",
+      "bulkRejectedToast": "{count} memorias rechazadas.",
+      "bulkPartialToast": "{succeeded} revisadas, {failed} fallaron — revisa los avisos para más detalles.",
+      "provenanceChip": "desde {id}…",
+      "provenanceTooltip": "Id de comunicación de origen: {id}"
     },
     "profiles": {
       "title": "Twin Profiles",
@@ -12644,7 +12684,26 @@
       "compiledLabel": "Compiled wiki",
       "auditReportLabel": "Audit report",
       "copy": "Copy",
-      "copied": "Copied to clipboard"
+      "copied": "Copied to clipboard",
+      "compiledSummary": "{count} archivos escritos.",
+      "copyPath": "Copiar ruta",
+      "freshness": {
+        "loading": "Wiki…",
+        "compiling": "Compilando…",
+        "never": "Wiki: sin compilar",
+        "neverTooltip": "Aún no hay wiki en disco. Haz clic para compilar desde las memorias aprobadas.",
+        "fresh": "Wiki: {rel}",
+        "freshTooltip": "{count} archivos · compilado {rel}\n{path}\nHaz clic para recompilar.",
+        "stale": "Wiki: {rel}",
+        "staleTooltip": "{count} archivos · última compilación {rel} (obsoleta)\n{path}\nHaz clic para recompilar.",
+        "compiledToast": "Wiki compilado — {count} archivos escritos.",
+        "openFolderTooltip": "Abrir la carpeta del wiki en el explorador de archivos",
+        "openFolderAria": "Abrir carpeta del wiki",
+        "justNow": "ahora mismo",
+        "minutesAgo": "hace {count} min",
+        "hoursAgo": "hace {count} h",
+        "daysAgo": "hace {count} d"
+      }
     },
     "hero": {
       "eyebrow": "Twin",
@@ -12736,6 +12795,124 @@
       "channelsBody": "Each channel binds a credential. Pausing a channel keeps the config but stops traffic.",
       "trainingTitle": "Interview yourself",
       "trainingBody": "Pick a topic — AI asks 5 questions — answer in your voice. The session summary becomes a high-signal memory."
+    },
+    "gaps": {
+      "title": "Qué falta",
+      "subtitle": "Preparación {pct}%",
+      "dialogLabel": "Qué falta para este gemelo",
+      "close": "Cerrar",
+      "openTooltip": "Haz clic para ver qué falta",
+      "allSetTooltip": "Todos los hitos completos",
+      "allSetTitle": "Todo listo",
+      "allSetBody": "Todos los hitos están completos. Este gemelo está listo para hablar.",
+      "moreCount": "+{count} más",
+      "titles": {
+        "identityEmpty": "Aún no hay bio",
+        "identityPartial": "La bio es corta",
+        "toneEmpty": "Sin tono capturado",
+        "tonePartial": "Solo tono genérico",
+        "brainEmpty": "Sin conocimiento vinculado",
+        "brainPartial": "Solo subruta — sin KB",
+        "voiceEmpty": "Sin voz configurada",
+        "channelsEmpty": "Sin canales",
+        "channelsPartial": "Todos los canales en pausa",
+        "memoriesEmpty": "Sin memorias aprobadas",
+        "memoriesPartial": "Memorias escasas"
+      },
+      "hints": {
+        "identityEmpty": "Agrega una bio breve para que este gemelo tenga voz.",
+        "identityPartial": "Amplía la bio más allá de 50 caracteres para un anclaje más fuerte.",
+        "toneEmpty": "Captura al menos un perfil de tono.",
+        "tonePartial": "Agrega una anulación de tono específica del canal.",
+        "brainEmpty": "Vincula una base de conocimiento o una subruta de Obsidian.",
+        "brainPartial": "Vincula una base de conocimiento para recuperación semántica.",
+        "voiceEmpty": "Elige un voice id de ElevenLabs para habilitar el habla.",
+        "channelsEmpty": "Agrega un canal para que se pueda contactar al gemelo.",
+        "channelsPartial": "Activa al menos un canal.",
+        "memoriesEmpty": "Aprueba memorias o ejecuta una sesión de entrenamiento.",
+        "memoriesPartial": "Faltan {remaining} memorias aprobadas más para llegar a fuerte ({approved} de {threshold})."
+      }
+    },
+    "contacts": {
+      "title": "Contactos",
+      "subtitle": "Identificadores externos con los que este gemelo ha interactuado. Agrega un alias y notas para facilitar la recuperación; la lista se llena automáticamente desde las comunicaciones.",
+      "loading": "Cargando contactos…",
+      "emptyTitle": "Aún no hay contactos",
+      "emptyBody": "Los contactos aparecen aquí en cuanto el gemelo intercambia un mensaje con alguien en cualquier canal.",
+      "lastSeen": "Visto hace {rel}",
+      "neverBridged": "nunca",
+      "justNow": "ahora mismo",
+      "messageCount": "{count} mensajes",
+      "aliasPlaceholder": "Nombre amigable (p. ej. \"Alice de Discord\")",
+      "notesPlaceholder": "Notas — contexto, preferencias, fechas que importan…",
+      "editAria": "Editar alias y notas",
+      "save": "Guardar",
+      "saving": "Guardando…",
+      "cancel": "Cancelar"
+    },
+    "distilled": {
+      "title": "Hechos destilados",
+      "subtitle": "Hechos curados sobre el gemelo y sus contactos. Cada hecho cita las comunicaciones de origen que lo produjeron.",
+      "addCta": "Agregar hecho",
+      "addHeading": "Nuevo hecho destilado",
+      "cancel": "Cancelar",
+      "saving": "Guardando…",
+      "loading": "Cargando hechos destilados…",
+      "contentPlaceholder": "p. ej. Alice prefiere los DMs después de las 9pm; dice que es madrugadora pero responde de noche.",
+      "contactLabel": "Contacto (opcional)",
+      "contactPlaceholder": "p. ej. alice@discord",
+      "importanceLabel": "Importancia",
+      "sourcesLabel": "Comunicaciones de origen",
+      "sourcesHint": "Elige al menos una — los hechos deben citar su origen.",
+      "needsSources": "Elige al menos una comunicación de origen para habilitar Guardar.",
+      "noCommsYet": "Aún no hay comunicaciones registradas para este gemelo.",
+      "saveWithSources": "Guardar hecho ({count} fuentes)",
+      "sent": "Enviado",
+      "received": "Recibido",
+      "sourceCount": "{count} fuentes",
+      "emptyTitle": "Aún no se han destilado hechos",
+      "emptyBody": "Agrega hechos a medida que revisas las comunicaciones — cada uno citando los mensajes que lo originaron. Etapas futuras propondrán hechos automáticamente.",
+      "deleteAria": "Eliminar hecho destilado"
+    },
+    "reflections": {
+      "title": "Reflexiones",
+      "subtitle": "Diarios de auditoría del operador. Pregunta algo sobre la actividad reciente de este gemelo — Claude lee el perfil del gemelo + las últimas 40 comunicaciones y escribe una respuesta breve y congelada.",
+      "loading": "Cargando reflexiones…",
+      "emptyTitle": "Aún no hay reflexiones",
+      "emptyBody": "Escribe una pregunta inicial arriba para generar la primera reflexión. Las reflexiones pasadas quedan congeladas como rastro de auditoría escrito.",
+      "seedPlaceholder": "Pregunta algo como: \"¿Qué patrones están surgiendo en la voz de este gemelo esta semana?\"",
+      "reflectCta": "Reflexionar",
+      "generating": "Reflexionando…",
+      "deleteAria": "Eliminar reflexión",
+      "suggestedSeedLabels": {
+        "voiceChange": "Deriva de voz",
+        "commsCadence": "Cadencia",
+        "contactSurprises": "Sorpresas"
+      },
+      "suggestedSeeds": {
+        "voiceChange": "¿La voz del gemelo se está desviando de su bio? ¿Dónde y la deriva es intencional?",
+        "commsCadence": "¿Cuál es la cadencia y el balance de entrantes vs salientes entre canales últimamente?",
+        "contactSurprises": "¿Hay contactos o hilos que te sorprendieron — temas inesperados, identificadores desconocidos, respuestas fuera de tono?"
+      }
+    },
+    "recall": {
+      "title": "Vista previa de recuperación",
+      "subtitle": "Lo que vería en tiempo de ejecución una persona que adopte este gemelo — bio, tono genérico, las comunicaciones más recientes y los hechos destilados de mayor importancia. Solo lectura hoy; etapas futuras conectarán este paquete al prompt real de la persona.",
+      "contactFilterPlaceholder": "Acotar a un contacto (identificador)…",
+      "refresh": "Actualizar",
+      "refreshing": "Actualizando…",
+      "loading": "Cargando recuperación…",
+      "scopedTo": "Acotado a: {handle}",
+      "scopeToTooltip": "Acotar la vista previa a este contacto",
+      "identitySection": "Identidad",
+      "toneSection": "Tono genérico",
+      "toneEmpty": "Sin tono genérico configurado — la persona se basará solo en la bio.",
+      "factsSection": "Hechos destilados principales ({count})",
+      "factsEmpty": "Aún no hay hechos destilados — la recuperación recurrirá solo a las comunicaciones.",
+      "commsSection": "Comunicaciones recientes ({count})",
+      "commsEmpty": "Aún no hay comunicaciones registradas para este gemelo.",
+      "contactsSection": "Contactos principales por actividad ({count})",
+      "contactsEmpty": "Aún no hay contactos en este gemelo."
     }
   },
   "recipe_shared": {

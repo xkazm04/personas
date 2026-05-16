@@ -12365,9 +12365,12 @@
     "selector": {
       "noTwin": "No twin configured",
       "createFirst": "Create a twin first so personas have an identity to speak as.",
-      "createTwin": "Create Twin",
+      "createTwin": "Vytvořit nového dvojníka",
       "selectTwin": "Select a twin...",
-      "progressGroupLabel": "Twin setup progress"
+      "progressGroupLabel": "Twin setup progress",
+      "pickerLabel": "Vyberte aktivního dvojníka",
+      "searchPlaceholder": "Hledat podle jména nebo role…",
+      "noMatches": "Žádní dvojníci neodpovídají vašemu hledání."
     },
     "emptyState": {
       "subtitle": "You need an active twin to use this tab.",
@@ -12399,7 +12402,12 @@
       "promptNoName": "(name)",
       "promptNoBio": "(no bio set — fill in above)",
       "saving": "Saving...",
-      "saveIdentity": "Save Identity"
+      "saveIdentity": "Save Identity",
+      "refineWithAi": "Vylepšit pomocí AI",
+      "bioRefineHint": "AI zachová váš stávající hlas a fakta — jen vybrousí text. Volitelná klíčová slova pro směrování níže.",
+      "bioRefineKeywordsPlaceholder": "(volitelné) např. stručnější, méně korporátní, zachovat suchý humor",
+      "refining": "Vylepšuji…",
+      "refineBio": "Vylepšit bio"
     },
     "channels": {
       "title": "Channels",
@@ -12435,7 +12443,19 @@
       "fieldPersona": "persona",
       "fieldSignal": "signal",
       "statusConfigured": "configured",
-      "ctaAddTone": "add override →"
+      "ctaAddTone": "add override →",
+      "lastBridged": "Naposledy přemostěno {when}",
+      "lastNever": "Nikdy nepoužito",
+      "lastJustNow": "právě teď",
+      "lastMinutesAgo": "před {count} min",
+      "lastHoursAgo": "před {count} h",
+      "lastDaysAgo": "před {count} d",
+      "testTooltip": "Zalogovat syntetický odchozí ping",
+      "testDisabledPaused": "Nejprve kanál aktivujte, abyste ho mohli otestovat",
+      "testAria": "Odeslat testovací zprávu",
+      "testToast": "Testovací ping zalogován pro {channel}",
+      "personaPickerPlaceholder": "Vyberte personu…",
+      "personaNone": "— Žádná —"
     },
     "tone": {
       "title": "Tone Profiles",
@@ -12482,7 +12502,13 @@
       "removeVoiceConfirm": "Remove voice configuration? The twin will have no voice until reconfigured.",
       "configureVoice": "Configure Voice",
       "saving": "Saving...",
-      "save": "Save"
+      "save": "Save",
+      "previewCta": "Náhled",
+      "previewLoading": "Syntetizuji…",
+      "previewStop": "Zastavit",
+      "previewTooltip": "Syntetizovat krátkou ukázku s aktuálním nastavením",
+      "previewNeedsConfig": "Před náhledem nastavte voice id a credential id",
+      "previewSample": "Takto bude váš dvojník znít, když promluví hlasovým kanálem."
     },
     "training": {
       "title": "Training Room",
@@ -12520,7 +12546,10 @@
       "generatingFollowup": "Generating follow-up...",
       "summarizingSession": "Summarizing what we learned...",
       "sessionSummaryHeading": "What we learned this session",
-      "summarySaved": "Summary saved as a high-priority memory."
+      "summarySaved": "Summary saved as a high-priority memory.",
+      "nextMovesHeading": "Kam pokračovat",
+      "nextMovesSubtitle": "Témata s nejtenčím pokrytím — natrénujte je jako další pro největší posílení mozku.",
+      "nextMovesCoverage": "{count} ukotvujících faktů zatím"
     },
     "brain": {
       "title": "Brain",
@@ -12588,7 +12617,18 @@
       "entriesCount_other": "{count} entries",
       "priorityWithCount": "priority {count}",
       "approveAction": "approve",
-      "rejectAction": "reject"
+      "rejectAction": "reject",
+      "bulkSelectAll": "Vybrat vše na této stránce",
+      "bulkSelectedCount": "{count} vybráno",
+      "bulkRowSelect": "Vybrat vzpomínku pro hromadnou kontrolu",
+      "bulkApproveCta": "Schválit {count}",
+      "bulkRejectCta": "Zamítnout {count}",
+      "bulkClear": "Zrušit výběr",
+      "bulkApprovedToast": "Schváleno {count} vzpomínek — jsou nyní indexovány v mozku.",
+      "bulkRejectedToast": "Zamítnuto {count} vzpomínek.",
+      "bulkPartialToast": "{succeeded} zkontrolováno, {failed} selhalo — podrobnosti v toastech.",
+      "provenanceChip": "z {id}…",
+      "provenanceTooltip": "Zdrojové id komunikace: {id}"
     },
     "profiles": {
       "title": "Twin Profiles",
@@ -12644,7 +12684,26 @@
       "compiledLabel": "Compiled wiki",
       "auditReportLabel": "Audit report",
       "copy": "Copy",
-      "copied": "Copied to clipboard"
+      "copied": "Copied to clipboard",
+      "compiledSummary": "Zapsáno {count} souborů.",
+      "copyPath": "Kopírovat cestu",
+      "freshness": {
+        "loading": "Wiki…",
+        "compiling": "Kompiluji…",
+        "never": "Wiki: nezkompilováno",
+        "neverTooltip": "Wiki zatím na disku není. Kliknutím zkompilujete ze schválených vzpomínek.",
+        "fresh": "Wiki: {rel}",
+        "freshTooltip": "{count} souborů · zkompilováno {rel}\n{path}\nKliknutím rekompilujete.",
+        "stale": "Wiki: {rel}",
+        "staleTooltip": "{count} souborů · naposledy zkompilováno {rel} (zastaralé)\n{path}\nKliknutím rekompilujete.",
+        "compiledToast": "Wiki zkompilováno — zapsáno {count} souborů.",
+        "openFolderTooltip": "Otevřít složku wiki ve správci souborů",
+        "openFolderAria": "Otevřít složku wiki",
+        "justNow": "právě teď",
+        "minutesAgo": "před {count} min",
+        "hoursAgo": "před {count} h",
+        "daysAgo": "před {count} d"
+      }
     },
     "hero": {
       "eyebrow": "Twin",
@@ -12736,6 +12795,124 @@
       "channelsBody": "Each channel binds a credential. Pausing a channel keeps the config but stops traffic.",
       "trainingTitle": "Interview yourself",
       "trainingBody": "Pick a topic — AI asks 5 questions — answer in your voice. The session summary becomes a high-signal memory."
+    },
+    "gaps": {
+      "title": "Co chybí",
+      "subtitle": "Připravenost {pct}%",
+      "dialogLabel": "Co chybí pro tohoto dvojníka",
+      "close": "Zavřít",
+      "openTooltip": "Klikněte, abyste viděli, co chybí",
+      "allSetTooltip": "Všechny milníky dokončeny",
+      "allSetTitle": "Vše hotovo",
+      "allSetBody": "Každý milník je dokončen. Tento dvojník je připraven promluvit.",
+      "moreCount": "+{count} dalších",
+      "titles": {
+        "identityEmpty": "Zatím žádné bio",
+        "identityPartial": "Bio je krátké",
+        "toneEmpty": "Žádný tón nezachycen",
+        "tonePartial": "Pouze obecný tón",
+        "brainEmpty": "Žádné napojené znalosti",
+        "brainPartial": "Pouze podcesta — bez KB",
+        "voiceEmpty": "Není nastaven hlas",
+        "channelsEmpty": "Žádné kanály",
+        "channelsPartial": "Všechny kanály pozastaveny",
+        "memoriesEmpty": "Žádné schválené vzpomínky",
+        "memoriesPartial": "Vzpomínek je málo"
+      },
+      "hints": {
+        "identityEmpty": "Přidejte krátké bio, aby tento dvojník měl hlas.",
+        "identityPartial": "Rozšiřte bio nad 50 znaků pro silnější ukotvení.",
+        "toneEmpty": "Zachyťte alespoň jeden tónový profil.",
+        "tonePartial": "Přidejte tónovou výjimku specifickou pro kanál.",
+        "brainEmpty": "Napojte znalostní bázi nebo podcestu Obsidianu.",
+        "brainPartial": "Napojte znalostní bázi pro sémantické vybavování.",
+        "voiceEmpty": "Vyberte voice id z ElevenLabs pro povolení řeči.",
+        "channelsEmpty": "Přidejte kanál, aby bylo možné dvojníka oslovit.",
+        "channelsPartial": "Aktivujte alespoň jeden kanál.",
+        "memoriesEmpty": "Schvalte vzpomínky nebo spusťte tréninkové sezení.",
+        "memoriesPartial": "Dalších {remaining} schválených vzpomínek do silné úrovně ({approved} z {threshold})."
+      }
+    },
+    "contacts": {
+      "title": "Kontakty",
+      "subtitle": "Externí handles, se kterými tento dvojník interagoval. Přidejte alias a poznámky pro snadnější vybavování; seznam se automaticky doplňuje z komunikací.",
+      "loading": "Načítám kontakty…",
+      "emptyTitle": "Zatím žádné kontakty",
+      "emptyBody": "Kontakty se zde objeví, jakmile si dvojník vymění zprávu s někým na jakémkoli kanálu.",
+      "lastSeen": "Naposledy viděno před {rel}",
+      "neverBridged": "nikdy",
+      "justNow": "právě teď",
+      "messageCount": "{count} zpráv",
+      "aliasPlaceholder": "Přátelské jméno (např. \"Alice z Discordu\")",
+      "notesPlaceholder": "Poznámky — kontext, preference, důležitá data…",
+      "editAria": "Upravit alias a poznámky",
+      "save": "Uložit",
+      "saving": "Ukládám…",
+      "cancel": "Zrušit"
+    },
+    "distilled": {
+      "title": "Destilovaná fakta",
+      "subtitle": "Kurátorovaná fakta o dvojníkovi a jeho kontaktech. Každé fakt cituje zdrojové komunikace, ze kterých vzniklo.",
+      "addCta": "Přidat fakt",
+      "addHeading": "Nové destilované fakt",
+      "cancel": "Zrušit",
+      "saving": "Ukládám…",
+      "loading": "Načítám destilovaná fakta…",
+      "contentPlaceholder": "např. Alice preferuje DMs po 21. hodině; říká, že je ranní typ, ale odpovídá v noci.",
+      "contactLabel": "Kontakt (volitelné)",
+      "contactPlaceholder": "např. alice@discord",
+      "importanceLabel": "Důležitost",
+      "sourcesLabel": "Zdrojové komunikace",
+      "sourcesHint": "Vyberte alespoň jednu — fakta musí citovat svůj původ.",
+      "needsSources": "Vyberte alespoň jednu zdrojovou komunikaci, abyste mohli Uložit.",
+      "noCommsYet": "Pro tohoto dvojníka zatím nejsou zaznamenány žádné komunikace.",
+      "saveWithSources": "Uložit fakt ({count} zdrojů)",
+      "sent": "Odesláno",
+      "received": "Přijato",
+      "sourceCount": "{count} zdrojů",
+      "emptyTitle": "Zatím žádná destilovaná fakta",
+      "emptyBody": "Přidávejte fakta při procházení komunikací — každé fakt cituje zprávy, ze kterých vzniklo. Budoucí fáze budou fakta navrhovat automaticky.",
+      "deleteAria": "Smazat destilované fakt"
+    },
+    "reflections": {
+      "title": "Reflexe",
+      "subtitle": "Operátorské auditní deníky. Položte otázku o nedávné aktivitě tohoto dvojníka — Claude přečte profil dvojníka + posledních 40 komunikací a napíše krátkou, zmrazenou odpověď.",
+      "loading": "Načítám reflexe…",
+      "emptyTitle": "Zatím žádné reflexe",
+      "emptyBody": "Napište výše počáteční otázku, abyste vygenerovali první reflexi. Minulé reflexe zůstávají zmrazené jako psaná auditní stopa.",
+      "seedPlaceholder": "Zeptejte se třeba: \"Jaké vzorce se tento týden objevují v hlasu tohoto dvojníka?\"",
+      "reflectCta": "Reflektovat",
+      "generating": "Reflektuji…",
+      "deleteAria": "Smazat reflexi",
+      "suggestedSeedLabels": {
+        "voiceChange": "Drift hlasu",
+        "commsCadence": "Kadence",
+        "contactSurprises": "Překvapení"
+      },
+      "suggestedSeeds": {
+        "voiceChange": "Driftuje hlas dvojníka od jeho bio? Kde a je ten drift záměrný?",
+        "commsCadence": "Jaká je v poslední době kadence a poměr příchozích vs odchozích napříč kanály?",
+        "contactSurprises": "Jsou nějaké kontakty nebo vlákna, která vás překvapila — neočekávaná témata, neznámé handles, neslazené odpovědi?"
+      }
+    },
+    "recall": {
+      "title": "Náhled vybavování",
+      "subtitle": "Co by persona adoptující tohoto dvojníka viděla za běhu — bio, obecný tón, nejnovější komunikace a destilovaná fakta s nejvyšší důležitostí. Dnes pouze ke čtení; budoucí fáze propojí tento balíček do skutečného promptu persony.",
+      "contactFilterPlaceholder": "Omezit na kontakt (handle)…",
+      "refresh": "Obnovit",
+      "refreshing": "Obnovuji…",
+      "loading": "Načítám vybavování…",
+      "scopedTo": "Omezeno na: {handle}",
+      "scopeToTooltip": "Omezit náhled na tento kontakt",
+      "identitySection": "Identita",
+      "toneSection": "Obecný tón",
+      "toneEmpty": "Není nakonfigurován žádný obecný tón — persona se bude spoléhat pouze na bio.",
+      "factsSection": "Nejdůležitější destilovaná fakta ({count})",
+      "factsEmpty": "Zatím žádná destilovaná fakta — vybavování se vrátí pouze ke komunikacím.",
+      "commsSection": "Nedávné komunikace ({count})",
+      "commsEmpty": "Pro tohoto dvojníka zatím nejsou zaznamenány žádné komunikace.",
+      "contactsSection": "Nejaktivnější kontakty ({count})",
+      "contactsEmpty": "Tento dvojník zatím nemá žádné kontakty."
     }
   },
   "recipe_shared": {

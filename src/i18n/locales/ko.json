@@ -12365,9 +12365,12 @@
     "selector": {
       "noTwin": "No twin configured",
       "createFirst": "Create a twin first so personas have an identity to speak as.",
-      "createTwin": "Create Twin",
+      "createTwin": "새 트윈 만들기",
       "selectTwin": "Select a twin...",
-      "progressGroupLabel": "Twin setup progress"
+      "progressGroupLabel": "Twin setup progress",
+      "pickerLabel": "활성 트윈 선택",
+      "searchPlaceholder": "이름 또는 역할로 검색…",
+      "noMatches": "검색과 일치하는 트윈이 없습니다."
     },
     "emptyState": {
       "subtitle": "You need an active twin to use this tab.",
@@ -12399,7 +12402,12 @@
       "promptNoName": "(name)",
       "promptNoBio": "(no bio set — fill in above)",
       "saving": "Saving...",
-      "saveIdentity": "Save Identity"
+      "saveIdentity": "Save Identity",
+      "refineWithAi": "AI로 다듬기",
+      "bioRefineHint": "AI는 기존의 목소리와 사실은 그대로 유지하면서 문장만 다듬어 줍니다. 아래에 선택적 방향 키워드를 입력할 수 있습니다.",
+      "bioRefineKeywordsPlaceholder": "(선택) 예: 더 간결하게, 덜 사무적으로, 건조한 유머는 유지",
+      "refining": "다듬는 중...",
+      "refineBio": "Bio 다듬기"
     },
     "channels": {
       "title": "Channels",
@@ -12435,7 +12443,19 @@
       "fieldPersona": "persona",
       "fieldSignal": "signal",
       "statusConfigured": "configured",
-      "ctaAddTone": "add override →"
+      "ctaAddTone": "add override →",
+      "lastBridged": "마지막 연결: {when}",
+      "lastNever": "사용 이력 없음",
+      "lastJustNow": "방금 전",
+      "lastMinutesAgo": "{count}분 전",
+      "lastHoursAgo": "{count}시간 전",
+      "lastDaysAgo": "{count}일 전",
+      "testTooltip": "합성 아웃바운드 핑 기록",
+      "testDisabledPaused": "테스트하려면 먼저 채널을 활성화하세요",
+      "testAria": "테스트 메시지 보내기",
+      "testToast": "{channel}에 대한 테스트 핑이 기록되었습니다",
+      "personaPickerPlaceholder": "페르소나 선택…",
+      "personaNone": "— 없음 —"
     },
     "tone": {
       "title": "Tone Profiles",
@@ -12482,7 +12502,13 @@
       "removeVoiceConfirm": "Remove voice configuration? The twin will have no voice until reconfigured.",
       "configureVoice": "Configure Voice",
       "saving": "Saving...",
-      "save": "Save"
+      "save": "Save",
+      "previewCta": "미리 듣기",
+      "previewLoading": "합성 중…",
+      "previewStop": "중지",
+      "previewTooltip": "현재 설정으로 짧은 샘플을 합성합니다",
+      "previewNeedsConfig": "미리 듣기 전에 voice id와 credential id를 설정하세요",
+      "previewSample": "voice 채널을 통해 말할 때 당신의 트윈이 이런 목소리로 들립니다."
     },
     "training": {
       "title": "Training Room",
@@ -12520,7 +12546,10 @@
       "generatingFollowup": "Generating follow-up...",
       "summarizingSession": "Summarizing what we learned...",
       "sessionSummaryHeading": "What we learned this session",
-      "summarySaved": "Summary saved as a high-priority memory."
+      "summarySaved": "Summary saved as a high-priority memory.",
+      "nextMovesHeading": "다음으로 갈 곳",
+      "nextMovesSubtitle": "커버리지가 가장 얕은 주제 — 다음 학습 대상으로 잡으면 두뇌 강화 효과가 가장 큽니다.",
+      "nextMovesCoverage": "지금까지 {count}개의 grounding 사실"
     },
     "brain": {
       "title": "Brain",
@@ -12588,7 +12617,18 @@
       "entriesCount_other": "{count} entries",
       "priorityWithCount": "priority {count}",
       "approveAction": "approve",
-      "rejectAction": "reject"
+      "rejectAction": "reject",
+      "bulkSelectAll": "이 페이지의 모두 선택",
+      "bulkSelectedCount": "{count}개 선택됨",
+      "bulkRowSelect": "일괄 검토를 위해 메모리 선택",
+      "bulkApproveCta": "{count}개 승인",
+      "bulkRejectCta": "{count}개 거부",
+      "bulkClear": "선택 해제",
+      "bulkApprovedToast": "{count}개의 메모리를 승인했습니다 — 이제 뇌에 인덱싱되었습니다.",
+      "bulkRejectedToast": "{count}개의 메모리를 거부했습니다.",
+      "bulkPartialToast": "{succeeded}개 검토됨, {failed}개 실패 — 자세한 내용은 토스트를 참고하세요.",
+      "provenanceChip": "출처: {id}…",
+      "provenanceTooltip": "출처 communication id: {id}"
     },
     "profiles": {
       "title": "Twin Profiles",
@@ -12644,7 +12684,26 @@
       "compiledLabel": "Compiled wiki",
       "auditReportLabel": "Audit report",
       "copy": "Copy",
-      "copied": "Copied to clipboard"
+      "copied": "Copied to clipboard",
+      "compiledSummary": "{count}개 파일을 작성했습니다.",
+      "copyPath": "경로 복사",
+      "freshness": {
+        "loading": "Wiki…",
+        "compiling": "컴파일 중…",
+        "never": "Wiki: 아직 컴파일되지 않음",
+        "neverTooltip": "디스크에 wiki가 아직 없습니다. 승인된 메모리에서 컴파일하려면 클릭하세요.",
+        "fresh": "Wiki: {rel}",
+        "freshTooltip": "{count}개 파일 · {rel}에 컴파일됨\n{path}\n다시 컴파일하려면 클릭하세요.",
+        "stale": "Wiki: {rel}",
+        "staleTooltip": "{count}개 파일 · 마지막 컴파일 {rel} (오래됨)\n{path}\n다시 컴파일하려면 클릭하세요.",
+        "compiledToast": "Wiki가 컴파일되었습니다 — {count}개 파일을 작성했습니다.",
+        "openFolderTooltip": "파일 관리자에서 wiki 폴더 열기",
+        "openFolderAria": "wiki 폴더 열기",
+        "justNow": "방금 전",
+        "minutesAgo": "{count}분 전",
+        "hoursAgo": "{count}시간 전",
+        "daysAgo": "{count}일 전"
+      }
     },
     "hero": {
       "eyebrow": "Twin",
@@ -12736,6 +12795,124 @@
       "channelsBody": "Each channel binds a credential. Pausing a channel keeps the config but stops traffic.",
       "trainingTitle": "Interview yourself",
       "trainingBody": "Pick a topic — AI asks 5 questions — answer in your voice. The session summary becomes a high-signal memory."
+    },
+    "gaps": {
+      "title": "부족한 부분",
+      "subtitle": "준비도 {pct}%",
+      "dialogLabel": "이 트윈에 부족한 것",
+      "close": "닫기",
+      "openTooltip": "부족한 부분을 확인하려면 클릭하세요",
+      "allSetTooltip": "모든 마일스톤 완료",
+      "allSetTitle": "준비 완료",
+      "allSetBody": "모든 마일스톤이 완료되었습니다. 이 트윈은 말할 준비가 되었습니다.",
+      "moreCount": "+{count}개 더",
+      "titles": {
+        "identityEmpty": "아직 bio가 없습니다",
+        "identityPartial": "Bio가 짧습니다",
+        "toneEmpty": "tone이 캡처되지 않음",
+        "tonePartial": "generic tone만 있음",
+        "brainEmpty": "지식이 연결되지 않음",
+        "brainPartial": "subpath만 — KB 없음",
+        "voiceEmpty": "voice가 설정되지 않음",
+        "channelsEmpty": "채널 없음",
+        "channelsPartial": "모든 채널이 일시 중지됨",
+        "memoriesEmpty": "승인된 메모리 없음",
+        "memoriesPartial": "메모리가 얕음"
+      },
+      "hints": {
+        "identityEmpty": "이 트윈이 자신의 목소리를 갖도록 짧은 bio를 추가하세요.",
+        "identityPartial": "더 강한 grounding을 위해 bio를 50자 이상으로 확장하세요.",
+        "toneEmpty": "최소 하나의 tone 프로필을 캡처하세요.",
+        "tonePartial": "채널별 tone 오버라이드를 추가하세요.",
+        "brainEmpty": "지식 베이스 또는 Obsidian subpath를 연결하세요.",
+        "brainPartial": "의미 기반 recall을 위해 지식 베이스를 연결하세요.",
+        "voiceEmpty": "음성 출력을 활성화하려면 ElevenLabs에서 voice id를 선택하세요.",
+        "channelsEmpty": "트윈에 도달할 수 있도록 채널을 추가하세요.",
+        "channelsPartial": "최소 하나의 채널을 활성화하세요.",
+        "memoriesEmpty": "메모리를 승인하거나 학습 세션을 실행하세요.",
+        "memoriesPartial": "strong 단계에 도달하려면 {remaining}개의 승인된 메모리가 더 필요합니다 ({threshold}개 중 {approved}개)."
+      }
+    },
+    "contacts": {
+      "title": "연락처",
+      "subtitle": "이 트윈이 상호작용한 외부 핸들입니다. 별칭과 메모를 추가하면 recall이 더 쉬워집니다. 목록은 communications에서 자동으로 채워집니다.",
+      "loading": "연락처 불러오는 중…",
+      "emptyTitle": "아직 연락처가 없습니다",
+      "emptyBody": "트윈이 어떤 채널에서든 누군가와 메시지를 주고받는 즉시 여기에 연락처가 나타납니다.",
+      "lastSeen": "마지막 활동 {rel} 전",
+      "neverBridged": "없음",
+      "justNow": "방금 전",
+      "messageCount": "메시지 {count}개",
+      "aliasPlaceholder": "친근한 이름 (예: \"Discord의 Alice\")",
+      "notesPlaceholder": "메모 — 맥락, 선호 사항, 중요한 날짜…",
+      "editAria": "별칭과 메모 편집",
+      "save": "저장",
+      "saving": "저장 중…",
+      "cancel": "취소"
+    },
+    "distilled": {
+      "title": "정제된 사실",
+      "subtitle": "트윈과 연락처에 대한 큐레이션된 사실. 각 사실은 그것을 만들어 낸 출처 communication을 인용합니다.",
+      "addCta": "사실 추가",
+      "addHeading": "새 정제된 사실",
+      "cancel": "취소",
+      "saving": "저장 중…",
+      "loading": "정제된 사실 불러오는 중…",
+      "contentPlaceholder": "예: Alice는 저녁 9시 이후 DM을 선호합니다. 본인은 아침형이라고 하지만 답장은 밤에 합니다.",
+      "contactLabel": "연락처 (선택)",
+      "contactPlaceholder": "예: alice@discord",
+      "importanceLabel": "중요도",
+      "sourcesLabel": "출처 communications",
+      "sourcesHint": "최소 하나를 선택하세요 — 사실은 반드시 출처를 인용해야 합니다.",
+      "needsSources": "저장하려면 최소 하나의 출처 communication을 선택하세요.",
+      "noCommsYet": "이 트윈에 기록된 communication이 아직 없습니다.",
+      "saveWithSources": "사실 저장 (출처 {count}개)",
+      "sent": "보냄",
+      "received": "받음",
+      "sourceCount": "출처 {count}개",
+      "emptyTitle": "아직 정제된 사실이 없습니다",
+      "emptyBody": "communication을 검토하면서 사실을 추가하세요 — 각 사실은 출처가 된 메시지를 인용합니다. 추후 단계에서는 사실을 자동으로 제안할 예정입니다.",
+      "deleteAria": "정제된 사실 삭제"
+    },
+    "reflections": {
+      "title": "회고",
+      "subtitle": "운영자 감사용 저널. 이 트윈의 최근 활동에 대해 질문하면 — Claude가 트윈 프로필과 최근 communication 40개를 읽고 짧고 고정된 답변을 작성합니다.",
+      "loading": "회고 불러오는 중…",
+      "emptyTitle": "아직 회고가 없습니다",
+      "emptyBody": "위에 시드 질문을 입력하여 첫 회고를 생성하세요. 과거 회고는 기록된 감사 추적으로 그대로 보존됩니다.",
+      "seedPlaceholder": "예: \"이번 주 이 트윈의 목소리에서 어떤 패턴이 나타나고 있나요?\"",
+      "reflectCta": "회고",
+      "generating": "회고 중…",
+      "deleteAria": "회고 삭제",
+      "suggestedSeedLabels": {
+        "voiceChange": "목소리 변화",
+        "commsCadence": "리듬",
+        "contactSurprises": "예상 밖"
+      },
+      "suggestedSeeds": {
+        "voiceChange": "트윈의 목소리가 bio에서 벗어나고 있나요? 어디서, 그리고 그 변화는 의도적인가요?",
+        "commsCadence": "최근 채널별로 inbound와 outbound의 리듬과 균형은 어떤가요?",
+        "contactSurprises": "예상치 못한 주제, 낯선 핸들, 어울리지 않는 톤의 답장 등 놀라움을 준 연락처나 스레드가 있나요?"
+      }
+    },
+    "recall": {
+      "title": "Recall 미리보기",
+      "subtitle": "이 트윈을 채택한 페르소나가 런타임에 보게 될 내용 — bio, generic tone, 가장 최근 communications, 그리고 중요도가 가장 높은 정제된 사실. 현재는 읽기 전용이며, 추후 단계에서 이 번들을 실제 페르소나 프롬프트에 연결할 예정입니다.",
+      "contactFilterPlaceholder": "특정 연락처(핸들)로 범위 좁히기…",
+      "refresh": "새로고침",
+      "refreshing": "새로고침 중…",
+      "loading": "Recall 불러오는 중…",
+      "scopedTo": "범위: {handle}",
+      "scopeToTooltip": "이 연락처로 미리보기 범위를 좁힙니다",
+      "identitySection": "Identity",
+      "toneSection": "Generic tone",
+      "toneEmpty": "구성된 generic tone이 없습니다 — 페르소나는 bio에만 의존합니다.",
+      "factsSection": "상위 정제된 사실 ({count}개)",
+      "factsEmpty": "아직 정제된 사실이 없습니다 — recall은 communication에만 의존합니다.",
+      "commsSection": "최근 communications ({count}개)",
+      "commsEmpty": "이 트윈에 기록된 communication이 아직 없습니다.",
+      "contactsSection": "활동 기준 상위 연락처 ({count}개)",
+      "contactsEmpty": "이 트윈에 연락처가 아직 없습니다."
     }
   },
   "recipe_shared": {

@@ -12365,9 +12365,12 @@
     "selector": {
       "noTwin": "No twin configured",
       "createFirst": "Create a twin first so personas have an identity to speak as.",
-      "createTwin": "Create Twin",
+      "createTwin": "新建 twin",
       "selectTwin": "Select a twin...",
-      "progressGroupLabel": "Twin setup progress"
+      "progressGroupLabel": "Twin setup progress",
+      "pickerLabel": "选择当前 twin",
+      "searchPlaceholder": "按名称或角色搜索…",
+      "noMatches": "没有匹配的 twin。"
     },
     "emptyState": {
       "subtitle": "You need an active twin to use this tab.",
@@ -12399,7 +12402,12 @@
       "promptNoName": "(name)",
       "promptNoBio": "(no bio set — fill in above)",
       "saving": "Saving...",
-      "saveIdentity": "Save Identity"
+      "saveIdentity": "Save Identity",
+      "refineWithAi": "用 AI 润色",
+      "bioRefineHint": "AI 会保留你已有的语气和事实 — 只是让文字更精炼。下面可选填引导关键词。",
+      "bioRefineKeywordsPlaceholder": "（可选）例如：更简洁、少一点商务腔、保留冷幽默",
+      "refining": "润色中...",
+      "refineBio": "润色 bio"
     },
     "channels": {
       "title": "Channels",
@@ -12435,7 +12443,19 @@
       "fieldPersona": "persona",
       "fieldSignal": "signal",
       "statusConfigured": "configured",
-      "ctaAddTone": "add override →"
+      "ctaAddTone": "add override →",
+      "lastBridged": "上次桥接于 {when}",
+      "lastNever": "从未使用",
+      "lastJustNow": "刚刚",
+      "lastMinutesAgo": "{count} 分钟前",
+      "lastHoursAgo": "{count} 小时前",
+      "lastDaysAgo": "{count} 天前",
+      "testTooltip": "记录一条合成的外发探测消息",
+      "testDisabledPaused": "先激活该通道才能测试",
+      "testAria": "发送测试消息",
+      "testToast": "已为 {channel} 记录测试探测",
+      "personaPickerPlaceholder": "选择一个 persona…",
+      "personaNone": "— 无 —"
     },
     "tone": {
       "title": "Tone Profiles",
@@ -12482,7 +12502,13 @@
       "removeVoiceConfirm": "Remove voice configuration? The twin will have no voice until reconfigured.",
       "configureVoice": "Configure Voice",
       "saving": "Saving...",
-      "save": "Save"
+      "save": "Save",
+      "previewCta": "试听",
+      "previewLoading": "合成中…",
+      "previewStop": "停止",
+      "previewTooltip": "用当前设置合成一段简短样本",
+      "previewNeedsConfig": "试听前请先设置 voice id 和 credential id",
+      "previewSample": "这是你的 twin 通过语音通道说话时的声音。"
     },
     "training": {
       "title": "Training Room",
@@ -12520,7 +12546,10 @@
       "generatingFollowup": "Generating follow-up...",
       "summarizingSession": "Summarizing what we learned...",
       "sessionSummaryHeading": "What we learned this session",
-      "summarySaved": "Summary saved as a high-priority memory."
+      "summarySaved": "Summary saved as a high-priority memory.",
+      "nextMovesHeading": "下一步去哪里",
+      "nextMovesSubtitle": "覆盖最薄弱的话题 — 优先训练这些，可让大脑获益最大。",
+      "nextMovesCoverage": "目前有 {count} 条基础事实"
     },
     "brain": {
       "title": "Brain",
@@ -12588,7 +12617,18 @@
       "entriesCount_other": "{count} entries",
       "priorityWithCount": "priority {count}",
       "approveAction": "approve",
-      "rejectAction": "reject"
+      "rejectAction": "reject",
+      "bulkSelectAll": "选择本页全部",
+      "bulkSelectedCount": "已选 {count} 项",
+      "bulkRowSelect": "选择记忆以进行批量审核",
+      "bulkApproveCta": "批准 {count} 项",
+      "bulkRejectCta": "拒绝 {count} 项",
+      "bulkClear": "清除选择",
+      "bulkApprovedToast": "已批准 {count} 条记忆 — 已索引进大脑。",
+      "bulkRejectedToast": "已拒绝 {count} 条记忆。",
+      "bulkPartialToast": "{succeeded} 条已审核，{failed} 条失败 — 详见提示。",
+      "provenanceChip": "来自 {id}…",
+      "provenanceTooltip": "来源通信 id：{id}"
     },
     "profiles": {
       "title": "Twin Profiles",
@@ -12644,7 +12684,26 @@
       "compiledLabel": "Compiled wiki",
       "auditReportLabel": "Audit report",
       "copy": "Copy",
-      "copied": "Copied to clipboard"
+      "copied": "Copied to clipboard",
+      "compiledSummary": "已写入 {count} 个文件。",
+      "copyPath": "复制路径",
+      "freshness": {
+        "loading": "Wiki…",
+        "compiling": "编译中…",
+        "never": "Wiki：尚未编译",
+        "neverTooltip": "磁盘上还没有 wiki。点击从已批准的记忆中编译。",
+        "fresh": "Wiki：{rel}",
+        "freshTooltip": "{count} 个文件 · 编译于 {rel}\n{path}\n点击重新编译。",
+        "stale": "Wiki：{rel}",
+        "staleTooltip": "{count} 个文件 · 上次编译于 {rel}（已过期）\n{path}\n点击重新编译。",
+        "compiledToast": "Wiki 已编译 — 已写入 {count} 个文件。",
+        "openFolderTooltip": "在文件管理器中打开 wiki 文件夹",
+        "openFolderAria": "打开 wiki 文件夹",
+        "justNow": "刚刚",
+        "minutesAgo": "{count} 分钟前",
+        "hoursAgo": "{count} 小时前",
+        "daysAgo": "{count} 天前"
+      }
     },
     "hero": {
       "eyebrow": "Twin",
@@ -12736,6 +12795,124 @@
       "channelsBody": "Each channel binds a credential. Pausing a channel keeps the config but stops traffic.",
       "trainingTitle": "Interview yourself",
       "trainingBody": "Pick a topic — AI asks 5 questions — answer in your voice. The session summary becomes a high-signal memory."
+    },
+    "gaps": {
+      "title": "缺失内容",
+      "subtitle": "就绪度 {pct}%",
+      "dialogLabel": "该 twin 还缺少哪些内容",
+      "close": "关闭",
+      "openTooltip": "点击查看还缺少什么",
+      "allSetTooltip": "所有里程碑均已完成",
+      "allSetTitle": "全部就绪",
+      "allSetBody": "每一项里程碑都已完成。该 twin 已可以开口说话。",
+      "moreCount": "还有 {count} 项",
+      "titles": {
+        "identityEmpty": "尚无 bio",
+        "identityPartial": "Bio 太短",
+        "toneEmpty": "未捕获语气",
+        "tonePartial": "仅有通用语气",
+        "brainEmpty": "未绑定知识库",
+        "brainPartial": "只有子路径 — 没有 KB",
+        "voiceEmpty": "未设置语音",
+        "channelsEmpty": "没有通道",
+        "channelsPartial": "所有通道已暂停",
+        "memoriesEmpty": "无已批准的记忆",
+        "memoriesPartial": "记忆偏少"
+      },
+      "hints": {
+        "identityEmpty": "添加一段简短 bio，让该 twin 拥有自己的声音。",
+        "identityPartial": "将 bio 扩展到 50 个字符以上，使其基础更扎实。",
+        "toneEmpty": "至少捕获一份语气配置。",
+        "tonePartial": "为某个通道添加专属语气覆盖。",
+        "brainEmpty": "绑定一个知识库或 Obsidian 子路径。",
+        "brainPartial": "绑定一个知识库以支持语义召回。",
+        "voiceEmpty": "从 ElevenLabs 选取一个 voice id 来启用语音合成。",
+        "channelsEmpty": "添加一个通道，让 twin 可被联系到。",
+        "channelsPartial": "至少激活一个通道。",
+        "memoriesEmpty": "批准记忆或进行一次训练会话。",
+        "memoriesPartial": "再批准 {remaining} 条记忆即可达到强水平（已有 {approved}/{threshold}）。"
+      }
+    },
+    "contacts": {
+      "title": "联系人",
+      "subtitle": "该 twin 互动过的外部账号。添加别名和备注便于回忆;列表会从通信记录自动填充。",
+      "loading": "正在加载联系人…",
+      "emptyTitle": "暂无联系人",
+      "emptyBody": "一旦 twin 在任何通道上与他人交换消息,联系人就会出现在这里。",
+      "lastSeen": "上次出现于 {rel} 前",
+      "neverBridged": "从未",
+      "justNow": "刚刚",
+      "messageCount": "{count} 条消息",
+      "aliasPlaceholder": "友好名称（例如 \"Discord 上的 Alice\"）",
+      "notesPlaceholder": "备注 — 背景、偏好、重要日期…",
+      "editAria": "编辑别名和备注",
+      "save": "保存",
+      "saving": "保存中…",
+      "cancel": "取消"
+    },
+    "distilled": {
+      "title": "提炼事实",
+      "subtitle": "关于 twin 及其联系人的精选事实。每条事实都引用产生它的来源通信。",
+      "addCta": "添加事实",
+      "addHeading": "新建提炼事实",
+      "cancel": "取消",
+      "saving": "保存中…",
+      "loading": "正在加载提炼事实…",
+      "contentPlaceholder": "例如：Alice 偏好晚上 9 点后私信;她说自己是早起的人但夜里才回复。",
+      "contactLabel": "联系人（可选）",
+      "contactPlaceholder": "例如：alice@discord",
+      "importanceLabel": "重要性",
+      "sourcesLabel": "来源通信",
+      "sourcesHint": "至少选一条 — 事实必须注明出处。",
+      "needsSources": "至少选择一条来源通信才能保存。",
+      "noCommsYet": "该 twin 尚未记录任何通信。",
+      "saveWithSources": "保存事实（{count} 条来源）",
+      "sent": "已发送",
+      "received": "已接收",
+      "sourceCount": "{count} 条来源",
+      "emptyTitle": "尚未提炼任何事实",
+      "emptyBody": "在审阅通信时添加事实 — 每条事实都引用其来源消息。后续阶段会自动提出事实建议。",
+      "deleteAria": "删除提炼事实"
+    },
+    "reflections": {
+      "title": "反思",
+      "subtitle": "操作者审查日记。就该 twin 的近期活动提一个问题 — Claude 会读取 twin 资料和最近 40 条通信，写下一段简短、冻结的答案。",
+      "loading": "正在加载反思…",
+      "emptyTitle": "暂无反思",
+      "emptyBody": "在上方输入一个种子问题，生成第一条反思。过往反思将冻结保留为书面审查记录。",
+      "seedPlaceholder": "试着这样问：\"本周这个 twin 的语气中正在出现哪些模式？\"",
+      "reflectCta": "反思",
+      "generating": "反思中…",
+      "deleteAria": "删除反思",
+      "suggestedSeedLabels": {
+        "voiceChange": "语气漂移",
+        "commsCadence": "节奏",
+        "contactSurprises": "意外"
+      },
+      "suggestedSeeds": {
+        "voiceChange": "该 twin 的语气是否在偏离其 bio？在哪些方面？这种漂移是有意的吗？",
+        "commsCadence": "最近各通道上入站与出站的节奏和比例如何？",
+        "contactSurprises": "是否有让你意外的联系人或线程 — 不预期的话题、不熟悉的账号、跑调的回复？"
+      }
+    },
+    "recall": {
+      "title": "召回预览",
+      "subtitle": "采用该 twin 的 persona 在运行时会看到的内容 — bio、通用语气、最近的通信，以及重要性最高的提炼事实。当前只读;后续阶段会把这个 bundle 接入实际的 persona 提示词。",
+      "contactFilterPlaceholder": "限定到某个联系人（账号）…",
+      "refresh": "刷新",
+      "refreshing": "刷新中…",
+      "loading": "正在加载召回内容…",
+      "scopedTo": "限定到：{handle}",
+      "scopeToTooltip": "将预览限定到该联系人",
+      "identitySection": "身份",
+      "toneSection": "通用语气",
+      "toneEmpty": "未配置通用语气 — persona 将仅依赖 bio。",
+      "factsSection": "重要性最高的提炼事实（{count}）",
+      "factsEmpty": "尚无提炼事实 — 召回将退回到仅使用通信。",
+      "commsSection": "近期通信（{count}）",
+      "commsEmpty": "该 twin 尚未记录任何通信。",
+      "contactsSection": "活动最频繁的联系人（{count}）",
+      "contactsEmpty": "该 twin 还没有任何联系人。"
     }
   },
   "recipe_shared": {

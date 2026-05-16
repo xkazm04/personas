@@ -2,9 +2,12 @@
   "selector": {
     "noTwin": "No twin configured",
     "createFirst": "Create a twin first so personas have an identity to speak as.",
-    "createTwin": "Create Twin",
+    "createTwin": "Создать нового twin",
     "selectTwin": "Select a twin...",
-    "progressGroupLabel": "Twin setup progress"
+    "progressGroupLabel": "Twin setup progress",
+    "pickerLabel": "Выберите активного twin",
+    "searchPlaceholder": "Поиск по имени или роли…",
+    "noMatches": "Нет twin, подходящих под запрос."
   },
   "emptyState": {
     "subtitle": "You need an active twin to use this tab.",
@@ -36,7 +39,12 @@
     "promptNoName": "(name)",
     "promptNoBio": "(no bio set — fill in above)",
     "saving": "Saving...",
-    "saveIdentity": "Save Identity"
+    "saveIdentity": "Save Identity",
+    "refineWithAi": "Доработать через AI",
+    "bioRefineHint": "AI сохранит твой голос и факты — просто подтянет формулировки. Ниже опциональные ключевые слова для уточнения.",
+    "bioRefineKeywordsPlaceholder": "(опционально) напр. короче, менее корпоративно, сохрани сухой юмор",
+    "refining": "Доработка...",
+    "refineBio": "Доработать био"
   },
   "channels": {
     "title": "Channels",
@@ -72,7 +80,19 @@
     "fieldPersona": "persona",
     "fieldSignal": "signal",
     "statusConfigured": "configured",
-    "ctaAddTone": "add override →"
+    "ctaAddTone": "add override →",
+    "lastBridged": "Последний мост {when}",
+    "lastNever": "Не использовался",
+    "lastJustNow": "только что",
+    "lastMinutesAgo": "{count} мин назад",
+    "lastHoursAgo": "{count} ч назад",
+    "lastDaysAgo": "{count} дн назад",
+    "testTooltip": "Записать синтетический исходящий пинг",
+    "testDisabledPaused": "Сначала активируйте канал, чтобы его протестировать",
+    "testAria": "Отправить тестовое сообщение",
+    "testToast": "Тестовый пинг записан для {channel}",
+    "personaPickerPlaceholder": "Выберите персону…",
+    "personaNone": "— Нет —"
   },
   "tone": {
     "title": "Tone Profiles",
@@ -119,7 +139,13 @@
     "removeVoiceConfirm": "Remove voice configuration? The twin will have no voice until reconfigured.",
     "configureVoice": "Configure Voice",
     "saving": "Saving...",
-    "save": "Save"
+    "save": "Save",
+    "previewCta": "Предпросмотр",
+    "previewLoading": "Синтез…",
+    "previewStop": "Стоп",
+    "previewTooltip": "Синтезировать короткий пример с текущими настройками",
+    "previewNeedsConfig": "Перед предпросмотром укажите voice id и credential id",
+    "previewSample": "Так будет звучать ваш twin, когда заговорит через голосовой канал."
   },
   "training": {
     "title": "Training Room",
@@ -157,7 +183,10 @@
     "generatingFollowup": "Generating follow-up...",
     "summarizingSession": "Summarizing what we learned...",
     "sessionSummaryHeading": "What we learned this session",
-    "summarySaved": "Summary saved as a high-priority memory."
+    "summarySaved": "Summary saved as a high-priority memory.",
+    "nextMovesHeading": "Куда двигаться дальше",
+    "nextMovesSubtitle": "Темы со слабейшим покрытием — натренируйте их следующими для максимального прироста мозга.",
+    "nextMovesCoverage": "{count} опорных фактов на данный момент"
   },
   "brain": {
     "title": "Brain",
@@ -225,7 +254,18 @@
     "entriesCount_other": "{count} entries",
     "priorityWithCount": "priority {count}",
     "approveAction": "approve",
-    "rejectAction": "reject"
+    "rejectAction": "reject",
+    "bulkSelectAll": "Выбрать всё на этой странице",
+    "bulkSelectedCount": "Выбрано: {count}",
+    "bulkRowSelect": "Выбрать воспоминание для массовой обработки",
+    "bulkApproveCta": "Утвердить {count}",
+    "bulkRejectCta": "Отклонить {count}",
+    "bulkClear": "Сбросить выбор",
+    "bulkApprovedToast": "Утверждено воспоминаний: {count} — теперь они проиндексированы в мозге.",
+    "bulkRejectedToast": "Отклонено воспоминаний: {count}.",
+    "bulkPartialToast": "Обработано: {succeeded}, ошибок: {failed} — подробности в тостах.",
+    "provenanceChip": "из {id}…",
+    "provenanceTooltip": "ID исходной коммуникации: {id}"
   },
   "profiles": {
     "title": "Twin Profiles",
@@ -281,7 +321,26 @@
     "compiledLabel": "Compiled wiki",
     "auditReportLabel": "Audit report",
     "copy": "Copy",
-    "copied": "Copied to clipboard"
+    "copied": "Copied to clipboard",
+    "compiledSummary": "Записано файлов: {count}.",
+    "copyPath": "Копировать путь",
+    "freshness": {
+      "loading": "Wiki…",
+      "compiling": "Компиляция…",
+      "never": "Wiki: не скомпилирована",
+      "neverTooltip": "Wiki ещё нет на диске. Нажмите, чтобы скомпилировать из утверждённых воспоминаний.",
+      "fresh": "Wiki: {rel}",
+      "freshTooltip": "{count} файлов · скомпилировано {rel}\n{path}\nНажмите, чтобы перекомпилировать.",
+      "stale": "Wiki: {rel}",
+      "staleTooltip": "{count} файлов · последняя компиляция {rel} (устарела)\n{path}\nНажмите, чтобы перекомпилировать.",
+      "compiledToast": "Wiki скомпилирована — записано файлов: {count}.",
+      "openFolderTooltip": "Открыть папку wiki в файловом менеджере",
+      "openFolderAria": "Открыть папку wiki",
+      "justNow": "только что",
+      "minutesAgo": "{count} мин назад",
+      "hoursAgo": "{count} ч назад",
+      "daysAgo": "{count} дн назад"
+    }
   },
   "hero": {
     "eyebrow": "Twin",
@@ -373,5 +432,123 @@
     "channelsBody": "Each channel binds a credential. Pausing a channel keeps the config but stops traffic.",
     "trainingTitle": "Interview yourself",
     "trainingBody": "Pick a topic — AI asks 5 questions — answer in your voice. The session summary becomes a high-signal memory."
+  },
+  "gaps": {
+    "title": "Чего не хватает",
+    "subtitle": "Готовность {pct}%",
+    "dialogLabel": "Чего не хватает для этого twin",
+    "close": "Закрыть",
+    "openTooltip": "Нажмите, чтобы увидеть, чего не хватает",
+    "allSetTooltip": "Все этапы завершены",
+    "allSetTitle": "Всё готово",
+    "allSetBody": "Все этапы пройдены. Этот twin готов говорить.",
+    "moreCount": "+ ещё {count}",
+    "titles": {
+      "identityEmpty": "Биография ещё не задана",
+      "identityPartial": "Биография коротковата",
+      "toneEmpty": "Тон не зафиксирован",
+      "tonePartial": "Только общий тон",
+      "brainEmpty": "Знания не подключены",
+      "brainPartial": "Только subpath — без KB",
+      "voiceEmpty": "Голос не задан",
+      "channelsEmpty": "Нет каналов",
+      "channelsPartial": "Все каналы на паузе",
+      "memoriesEmpty": "Нет утверждённых воспоминаний",
+      "memoriesPartial": "Воспоминаний мало"
+    },
+    "hints": {
+      "identityEmpty": "Добавьте короткое био, чтобы у twin появился голос.",
+      "identityPartial": "Расширьте био хотя бы до 50 символов — для более крепкого опорного контекста.",
+      "toneEmpty": "Зафиксируйте хотя бы один профиль тона.",
+      "tonePartial": "Добавьте оверрайд тона под конкретный канал.",
+      "brainEmpty": "Подключите базу знаний или Obsidian subpath.",
+      "brainPartial": "Подключите базу знаний для семантического recall.",
+      "voiceEmpty": "Выберите voice id из ElevenLabs, чтобы включить речь.",
+      "channelsEmpty": "Добавьте канал, чтобы до twin можно было дотянуться.",
+      "channelsPartial": "Активируйте хотя бы один канал.",
+      "memoriesEmpty": "Утвердите воспоминания или запустите тренировочную сессию.",
+      "memoriesPartial": "Ещё {remaining} утверждённых воспоминаний до отметки «strong» ({approved} из {threshold})."
+    }
+  },
+  "contacts": {
+    "title": "Контакты",
+    "subtitle": "Внешние хэндлы, с которыми этот twin общался. Добавьте алиас и заметки, чтобы было проще вспомнить; список заполняется автоматически из коммуникаций.",
+    "loading": "Загрузка контактов…",
+    "emptyTitle": "Контактов пока нет",
+    "emptyBody": "Контакты появятся здесь, как только twin обменяется сообщением с кем-нибудь по любому каналу.",
+    "lastSeen": "Последний раз виден {rel} назад",
+    "neverBridged": "никогда",
+    "justNow": "только что",
+    "messageCount": "{count} сообщений",
+    "aliasPlaceholder": "Понятное имя (напр. «Алиса из Discord»)",
+    "notesPlaceholder": "Заметки — контекст, предпочтения, важные даты…",
+    "editAria": "Изменить алиас и заметки",
+    "save": "Сохранить",
+    "saving": "Сохранение…",
+    "cancel": "Отмена"
+  },
+  "distilled": {
+    "title": "Выжимка фактов",
+    "subtitle": "Курируемые факты о twin и его контактах. Каждый факт ссылается на исходные коммуникации, из которых он получен.",
+    "addCta": "Добавить факт",
+    "addHeading": "Новый выжатый факт",
+    "cancel": "Отмена",
+    "saving": "Сохранение…",
+    "loading": "Загрузка выжатых фактов…",
+    "contentPlaceholder": "напр. Алиса предпочитает DMs после 21:00; говорит, что жаворонок, но отвечает ночью.",
+    "contactLabel": "Контакт (опционально)",
+    "contactPlaceholder": "напр. alice@discord",
+    "importanceLabel": "Важность",
+    "sourcesLabel": "Исходные коммуникации",
+    "sourcesHint": "Выберите хотя бы одну — факты обязаны ссылаться на источник.",
+    "needsSources": "Выберите хотя бы одну исходную коммуникацию, чтобы активировать «Сохранить».",
+    "noCommsYet": "У этого twin пока нет зафиксированных коммуникаций.",
+    "saveWithSources": "Сохранить факт ({count} источников)",
+    "sent": "Отправлено",
+    "received": "Получено",
+    "sourceCount": "{count} источников",
+    "emptyTitle": "Выжатых фактов пока нет",
+    "emptyBody": "Добавляйте факты, разбирая коммуникации — каждый со ссылкой на исходные сообщения. На будущих стадиях факты будут предлагаться автоматически.",
+    "deleteAria": "Удалить выжатый факт"
+  },
+  "reflections": {
+    "title": "Рефлексии",
+    "subtitle": "Журналы операторского аудита. Задайте вопрос про недавнюю активность этого twin — Claude прочитает профиль twin и последние 40 коммуникаций и напишет короткий, замороженный ответ.",
+    "loading": "Загрузка рефлексий…",
+    "emptyTitle": "Рефлексий пока нет",
+    "emptyBody": "Введите затравочный вопрос выше, чтобы сгенерировать первую рефлексию. Прошлые рефлексии остаются замороженными как письменный аудит-трейл.",
+    "seedPlaceholder": "Спросите что-нибудь вроде: «Какие паттерны проступают в голосе этого twin на этой неделе?»",
+    "reflectCta": "Отрефлексировать",
+    "generating": "Рефлексия…",
+    "deleteAria": "Удалить рефлексию",
+    "suggestedSeedLabels": {
+      "voiceChange": "Дрейф голоса",
+      "commsCadence": "Каденс",
+      "contactSurprises": "Сюрпризы"
+    },
+    "suggestedSeeds": {
+      "voiceChange": "Не дрейфует ли голос twin от его био? Где именно, и намеренно ли это?",
+      "commsCadence": "Какой сейчас каденс и баланс входящих и исходящих по каналам?",
+      "contactSurprises": "Есть ли контакты или треды, которые удивили — неожиданные темы, незнакомые хэндлы, ответы не в тон?"
+    }
+  },
+  "recall": {
+    "title": "Предпросмотр recall",
+    "subtitle": "Что увидит персона, адопти́рующая этот twin, в рантайме — био, общий тон, самые свежие коммуникации и выжатые факты с наивысшей важностью. Сегодня только для чтения; на будущих стадиях этот бандл попадёт в реальный prompt персоны.",
+    "contactFilterPlaceholder": "Ограничить контактом (хэндл)…",
+    "refresh": "Обновить",
+    "refreshing": "Обновление…",
+    "loading": "Загрузка recall…",
+    "scopedTo": "Сужено до: {handle}",
+    "scopeToTooltip": "Сузить предпросмотр до этого контакта",
+    "identitySection": "Идентичность",
+    "toneSection": "Общий тон",
+    "toneEmpty": "Общий тон не настроен — персона будет опираться только на био.",
+    "factsSection": "Топ выжатых фактов ({count})",
+    "factsEmpty": "Выжатых фактов пока нет — recall откатится на одни коммуникации.",
+    "commsSection": "Свежие коммуникации ({count})",
+    "commsEmpty": "У этого twin пока нет зафиксированных коммуникаций.",
+    "contactsSection": "Топ контактов по активности ({count})",
+    "contactsEmpty": "У этого twin пока нет контактов."
   }
 }

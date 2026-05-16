@@ -2,9 +2,12 @@
   "selector": {
     "noTwin": "No twin configured",
     "createFirst": "Create a twin first so personas have an identity to speak as.",
-    "createTwin": "Create Twin",
+    "createTwin": "Buat twin baru",
     "selectTwin": "Select a twin...",
-    "progressGroupLabel": "Twin setup progress"
+    "progressGroupLabel": "Twin setup progress",
+    "pickerLabel": "Pilih twin aktif",
+    "searchPlaceholder": "Cari berdasarkan nama atau peran…",
+    "noMatches": "Tidak ada twin yang cocok dengan pencarian Anda."
   },
   "emptyState": {
     "subtitle": "You need an active twin to use this tab.",
@@ -36,7 +39,12 @@
     "promptNoName": "(name)",
     "promptNoBio": "(no bio set — fill in above)",
     "saving": "Saving...",
-    "saveIdentity": "Save Identity"
+    "saveIdentity": "Save Identity",
+    "refineWithAi": "Sempurnakan dengan AI",
+    "bioRefineHint": "AI akan mempertahankan suara dan fakta yang sudah ada — hanya merapikan prosa. Kata kunci pengarah opsional di bawah.",
+    "bioRefineKeywordsPlaceholder": "(opsional) mis. lebih ringkas, kurang korporat, pertahankan humor kering",
+    "refining": "Menyempurnakan...",
+    "refineBio": "Sempurnakan Bio"
   },
   "channels": {
     "title": "Channels",
@@ -72,7 +80,19 @@
     "fieldPersona": "persona",
     "fieldSignal": "signal",
     "statusConfigured": "configured",
-    "ctaAddTone": "add override →"
+    "ctaAddTone": "add override →",
+    "lastBridged": "Terakhir dijembatani {when}",
+    "lastNever": "Belum pernah digunakan",
+    "lastJustNow": "baru saja",
+    "lastMinutesAgo": "{count} mnt lalu",
+    "lastHoursAgo": "{count} jam lalu",
+    "lastDaysAgo": "{count} hr lalu",
+    "testTooltip": "Catat ping keluar sintetis",
+    "testDisabledPaused": "Aktifkan kanalnya terlebih dahulu untuk mengujinya",
+    "testAria": "Kirim pesan uji",
+    "testToast": "Ping uji dicatat untuk {channel}",
+    "personaPickerPlaceholder": "Pilih persona…",
+    "personaNone": "— Tidak ada —"
   },
   "tone": {
     "title": "Tone Profiles",
@@ -119,7 +139,13 @@
     "removeVoiceConfirm": "Remove voice configuration? The twin will have no voice until reconfigured.",
     "configureVoice": "Configure Voice",
     "saving": "Saving...",
-    "save": "Save"
+    "save": "Save",
+    "previewCta": "Pratinjau",
+    "previewLoading": "Mensintesis…",
+    "previewStop": "Hentikan",
+    "previewTooltip": "Sintesis sampel pendek dengan pengaturan saat ini",
+    "previewNeedsConfig": "Atur voice ID dan credential ID sebelum melakukan pratinjau",
+    "previewSample": "Beginilah suara twin Anda ketika berbicara melalui kanal suara."
   },
   "training": {
     "title": "Training Room",
@@ -157,7 +183,10 @@
     "generatingFollowup": "Generating follow-up...",
     "summarizingSession": "Summarizing what we learned...",
     "sessionSummaryHeading": "What we learned this session",
-    "summarySaved": "Summary saved as a high-priority memory."
+    "summarySaved": "Summary saved as a high-priority memory.",
+    "nextMovesHeading": "Ke mana selanjutnya",
+    "nextMovesSubtitle": "Topik dengan cakupan paling tipis — latih ini berikutnya untuk peningkatan otak terbesar.",
+    "nextMovesCoverage": "{count} fakta dasar sejauh ini"
   },
   "brain": {
     "title": "Brain",
@@ -225,7 +254,18 @@
     "entriesCount_other": "{count} entries",
     "priorityWithCount": "priority {count}",
     "approveAction": "approve",
-    "rejectAction": "reject"
+    "rejectAction": "reject",
+    "bulkSelectAll": "Pilih semua di halaman ini",
+    "bulkSelectedCount": "{count} dipilih",
+    "bulkRowSelect": "Pilih memori untuk peninjauan massal",
+    "bulkApproveCta": "Setujui {count}",
+    "bulkRejectCta": "Tolak {count}",
+    "bulkClear": "Bersihkan pilihan",
+    "bulkApprovedToast": "Menyetujui {count} memori — kini terindeks di otak.",
+    "bulkRejectedToast": "Menolak {count} memori.",
+    "bulkPartialToast": "{succeeded} ditinjau, {failed} gagal — lihat toast untuk detail.",
+    "provenanceChip": "dari {id}…",
+    "provenanceTooltip": "ID komunikasi sumber: {id}"
   },
   "profiles": {
     "title": "Twin Profiles",
@@ -281,7 +321,26 @@
     "compiledLabel": "Compiled wiki",
     "auditReportLabel": "Audit report",
     "copy": "Copy",
-    "copied": "Copied to clipboard"
+    "copied": "Copied to clipboard",
+    "compiledSummary": "{count} berkas ditulis.",
+    "copyPath": "Salin path",
+    "freshness": {
+      "loading": "Wiki…",
+      "compiling": "Mengompilasi…",
+      "never": "Wiki: belum dikompilasi",
+      "neverTooltip": "Belum ada wiki di disk. Klik untuk mengompilasi dari memori yang disetujui.",
+      "fresh": "Wiki: {rel}",
+      "freshTooltip": "{count} berkas · dikompilasi {rel}\n{path}\nKlik untuk mengompilasi ulang.",
+      "stale": "Wiki: {rel}",
+      "staleTooltip": "{count} berkas · terakhir dikompilasi {rel} (usang)\n{path}\nKlik untuk mengompilasi ulang.",
+      "compiledToast": "Wiki dikompilasi — {count} berkas ditulis.",
+      "openFolderTooltip": "Buka folder wiki di pengelola berkas Anda",
+      "openFolderAria": "Buka folder wiki",
+      "justNow": "baru saja",
+      "minutesAgo": "{count} mnt lalu",
+      "hoursAgo": "{count} jam lalu",
+      "daysAgo": "{count} hr lalu"
+    }
   },
   "hero": {
     "eyebrow": "Twin",
@@ -373,5 +432,123 @@
     "channelsBody": "Each channel binds a credential. Pausing a channel keeps the config but stops traffic.",
     "trainingTitle": "Interview yourself",
     "trainingBody": "Pick a topic — AI asks 5 questions — answer in your voice. The session summary becomes a high-signal memory."
+  },
+  "gaps": {
+    "title": "Apa yang kurang",
+    "subtitle": "Kesiapan {pct}%",
+    "dialogLabel": "Apa yang kurang untuk twin ini",
+    "close": "Tutup",
+    "openTooltip": "Klik untuk melihat apa yang kurang",
+    "allSetTooltip": "Semua tonggak selesai",
+    "allSetTitle": "Semua siap",
+    "allSetBody": "Setiap tonggak selesai. Twin ini siap berbicara.",
+    "moreCount": "+{count} lainnya",
+    "titles": {
+      "identityEmpty": "Belum ada bio",
+      "identityPartial": "Bio terlalu pendek",
+      "toneEmpty": "Tidak ada tone yang ditangkap",
+      "tonePartial": "Hanya tone generik",
+      "brainEmpty": "Tidak ada pengetahuan yang terikat",
+      "brainPartial": "Hanya subpath — tanpa KB",
+      "voiceEmpty": "Tidak ada voice yang diatur",
+      "channelsEmpty": "Tidak ada kanal",
+      "channelsPartial": "Semua kanal dijeda",
+      "memoriesEmpty": "Tidak ada memori yang disetujui",
+      "memoriesPartial": "Memori tipis"
+    },
+    "hints": {
+      "identityEmpty": "Tambahkan bio singkat agar twin ini memiliki suara.",
+      "identityPartial": "Perluas bio melebihi 50 karakter untuk pendasaran yang lebih kuat.",
+      "toneEmpty": "Tangkap setidaknya satu profil tone.",
+      "tonePartial": "Tambahkan override tone khusus kanal.",
+      "brainEmpty": "Ikat knowledge base atau subpath Obsidian.",
+      "brainPartial": "Ikat knowledge base untuk recall semantik.",
+      "voiceEmpty": "Pilih voice ID dari ElevenLabs untuk mengaktifkan suara.",
+      "channelsEmpty": "Tambahkan kanal agar twin dapat dihubungi.",
+      "channelsPartial": "Aktifkan setidaknya satu kanal.",
+      "memoriesEmpty": "Setujui memori atau jalankan sesi pelatihan.",
+      "memoriesPartial": "{remaining} memori disetujui lagi untuk mencapai kuat ({approved} dari {threshold})."
+    }
+  },
+  "contacts": {
+    "title": "Kontak",
+    "subtitle": "Handle eksternal yang pernah berinteraksi dengan twin ini. Tambahkan alias dan catatan agar recall lebih mudah; daftar terisi otomatis dari komunikasi.",
+    "loading": "Memuat kontak…",
+    "emptyTitle": "Belum ada kontak",
+    "emptyBody": "Kontak muncul di sini segera setelah twin bertukar pesan dengan seseorang di kanal mana pun.",
+    "lastSeen": "Terakhir terlihat {rel} lalu",
+    "neverBridged": "tidak pernah",
+    "justNow": "baru saja",
+    "messageCount": "{count} pesan",
+    "aliasPlaceholder": "Nama akrab (mis. \"Alice dari Discord\")",
+    "notesPlaceholder": "Catatan — konteks, preferensi, tanggal penting…",
+    "editAria": "Edit alias dan catatan",
+    "save": "Simpan",
+    "saving": "Menyimpan…",
+    "cancel": "Batal"
+  },
+  "distilled": {
+    "title": "Fakta yang disuling",
+    "subtitle": "Fakta terkurasi tentang twin dan kontaknya. Setiap fakta mengutip komunikasi sumber yang menghasilkannya.",
+    "addCta": "Tambah fakta",
+    "addHeading": "Fakta suling baru",
+    "cancel": "Batal",
+    "saving": "Menyimpan…",
+    "loading": "Memuat fakta suling…",
+    "contentPlaceholder": "mis. Alice lebih suka DMs setelah jam 9 malam; bilang dia orang pagi tapi membalas malam hari.",
+    "contactLabel": "Kontak (opsional)",
+    "contactPlaceholder": "mis. alice@discord",
+    "importanceLabel": "Kepentingan",
+    "sourcesLabel": "Komunikasi sumber",
+    "sourcesHint": "Pilih setidaknya satu — fakta harus mengutip asalnya.",
+    "needsSources": "Pilih setidaknya satu komunikasi sumber untuk mengaktifkan Simpan.",
+    "noCommsYet": "Belum ada komunikasi yang tercatat untuk twin ini.",
+    "saveWithSources": "Simpan fakta ({count} sumber)",
+    "sent": "Dikirim",
+    "received": "Diterima",
+    "sourceCount": "{count} sumber",
+    "emptyTitle": "Belum ada fakta yang disuling",
+    "emptyBody": "Tambahkan fakta saat Anda meninjau komunikasi — setiap fakta mengutip pesan asalnya. Tahap berikutnya akan mengusulkan fakta secara otomatis.",
+    "deleteAria": "Hapus fakta suling"
+  },
+  "reflections": {
+    "title": "Refleksi",
+    "subtitle": "Jurnal audit operator. Ajukan pertanyaan tentang aktivitas terakhir twin ini — Claude membaca profil twin + 40 komunikasi terakhir dan menulis jawaban singkat yang dibekukan.",
+    "loading": "Memuat refleksi…",
+    "emptyTitle": "Belum ada refleksi",
+    "emptyBody": "Ketik pertanyaan benih di atas untuk menghasilkan refleksi pertama. Refleksi sebelumnya tetap beku sebagai jejak audit tertulis.",
+    "seedPlaceholder": "Tanyakan sesuatu seperti: \"Pola apa yang muncul dalam suara twin ini minggu ini?\"",
+    "reflectCta": "Refleksi",
+    "generating": "Merefleksikan…",
+    "deleteAria": "Hapus refleksi",
+    "suggestedSeedLabels": {
+      "voiceChange": "Pergeseran suara",
+      "commsCadence": "Irama",
+      "contactSurprises": "Kejutan"
+    },
+    "suggestedSeeds": {
+      "voiceChange": "Apakah suara twin bergeser dari bio-nya? Di mana, dan apakah pergeseran itu disengaja?",
+      "commsCadence": "Bagaimana irama dan keseimbangan masuk vs keluar di seluruh kanal belakangan ini?",
+      "contactSurprises": "Apakah ada kontak atau utas yang mengejutkan Anda — topik tak terduga, handle asing, balasan di luar tone?"
+    }
+  },
+  "recall": {
+    "title": "Pratinjau recall",
+    "subtitle": "Apa yang akan dilihat persona yang mengadopsi twin ini saat runtime — bio, tone generik, komunikasi terbaru, dan fakta suling dengan kepentingan tertinggi. Hanya-baca hari ini; tahap berikutnya akan menyambungkan bundel ini ke prompt persona yang sebenarnya.",
+    "contactFilterPlaceholder": "Lingkup ke kontak (handle)…",
+    "refresh": "Segarkan",
+    "refreshing": "Menyegarkan…",
+    "loading": "Memuat recall…",
+    "scopedTo": "Dilingkupkan ke: {handle}",
+    "scopeToTooltip": "Lingkupkan pratinjau ke kontak ini",
+    "identitySection": "Identitas",
+    "toneSection": "Tone generik",
+    "toneEmpty": "Tidak ada tone generik yang dikonfigurasi — persona akan mengandalkan bio saja.",
+    "factsSection": "Fakta suling teratas ({count})",
+    "factsEmpty": "Belum ada fakta suling — recall akan kembali ke komunikasi saja.",
+    "commsSection": "Komunikasi terbaru ({count})",
+    "commsEmpty": "Belum ada komunikasi yang tercatat untuk twin ini.",
+    "contactsSection": "Kontak teratas berdasarkan aktivitas ({count})",
+    "contactsEmpty": "Belum ada kontak pada twin ini."
   }
 }
