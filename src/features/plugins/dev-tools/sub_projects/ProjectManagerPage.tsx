@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  FolderKanban, Plus, ChevronRight, Folder, Network, Code2,
+  FolderKanban, Plus, ChevronRight, Folder, Network, Code2, GitBranch,
 } from 'lucide-react';
 import { open as openExternal } from '@tauri-apps/plugin-shell';
 import { toastCatch } from '@/lib/silentCatch';
+import { GitHubIssueImportModal } from './GitHubIssueImportModal';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { ActionRow } from '@/features/shared/components/layout/ActionRow';
 import { Button } from '@/features/shared/components/buttons';
@@ -53,6 +54,8 @@ export default function ProjectManagerPage() {
   const [showCrossProjectMap, setShowCrossProjectMap] = useState(false);
   const [editingProject, setEditingProject] = useState<EditProjectData | null>(null);
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
+  const [importProjectId, setImportProjectId] = useState<string | null>(null);
+  const importProject = projects.find((p) => p.id === importProjectId);
 
   const activeProject = projects.find((p) => p.id === activeProjectId);
 
@@ -251,6 +254,17 @@ export default function ProjectManagerPage() {
                     <span className="self-center"><StatusBadge status={project.status} /></span>
                     <span className="typo-caption text-foreground self-center">{project.createdAt}</span>
                     <div className="self-center flex items-center gap-0.5 justify-end" onClick={(e) => e.stopPropagation()}>
+                      {project.githubUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setImportProjectId(project.id)}
+                          title={t.plugins.dev_tools.row_import_gh_issues}
+                          aria-label={t.plugins.dev_tools.row_import_gh_issues}
+                          className="w-7 h-7 flex items-center justify-center rounded-interactive text-foreground/60 hover:text-primary hover:bg-primary/10 transition-colors"
+                        >
+                          <GitBranch className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => { openExternal(`vscode://file/${project.path}`).catch(toastCatch('Failed to open in VS Code')); }}
@@ -292,6 +306,16 @@ export default function ProjectManagerPage() {
         open={showCrossProjectMap}
         onClose={() => setShowCrossProjectMap(false)}
       />
+
+      {importProject && importProject.githubUrl && (
+        <GitHubIssueImportModal
+          open={importProjectId !== null}
+          onClose={() => setImportProjectId(null)}
+          projectId={importProject.id}
+          projectName={importProject.name}
+          githubUrl={importProject.githubUrl}
+        />
+      )}
     </ContentBox>
   );
 }
