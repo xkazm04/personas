@@ -20,7 +20,7 @@ import { useRadioState } from '../hooks/useRadioState';
  */
 export default function RadioSettingsCard() {
   const { t } = useTranslation();
-  const { stations, loaded } = useRadioState();
+  const { state, stations, loaded } = useRadioState();
   const radioEnabled = useSystemStore((s) => s.radioEnabled);
   const setRadioEnabled = useSystemStore((s) => s.setRadioEnabled);
   const disabledStationIds = useSystemStore((s) => s.disabledStationIds);
@@ -73,15 +73,22 @@ export default function RadioSettingsCard() {
         {stations.map((station) => {
           const isYt = station.source.kind === 'youtubeTracks';
           const enabled = !disabledSet.has(station.id);
+          const isCurrent = state?.currentStationId === station.id;
+          const isPlaying = isCurrent && state?.status === 'playing';
+          const isBuffering = isCurrent && state?.status === 'buffering';
           return (
             <li
               key={station.id}
               className="flex items-center gap-3 px-3 py-2"
             >
               <span
-                aria-hidden
-                className="w-2 h-2 rounded-full shrink-0"
-                style={{ background: station.accentColor }}
+                aria-label={isPlaying || isBuffering ? t.radio.now_playing : undefined}
+                className={`w-2 h-2 rounded-full shrink-0 ${isBuffering ? 'animate-pulse' : ''}`}
+                style={{
+                  background: station.accentColor,
+                  boxShadow: isPlaying ? `0 0 6px ${station.accentColor}` : 'none',
+                  transition: 'box-shadow 200ms',
+                }}
               />
               <p className="typo-body font-medium text-foreground truncate flex-1">
                 {station.name}

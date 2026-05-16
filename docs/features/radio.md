@@ -33,7 +33,10 @@ appropriate engine and reports state transitions back via
   here: master enable, **auto-resume on launch** (when on, the last
   playing station auto-starts the first time the footer mounts after
   app open — off by default; grays out when the master switch is off),
-  and per-station hide-from-picker toggles.
+  and per-station hide-from-picker toggles. The row dot for the
+  currently active station glows in the accent colour (or pulses when
+  buffering), mirroring the footer's playing-state cue, so it's
+  visible at a glance which station is live while you toggle others.
 - While the engine is in `buffering` state (audio waiting for data or
   YouTube prebuffer) the play button swaps to a spinning loader tinted
   with the station accent, the now-playing accent dot pulses, and the
