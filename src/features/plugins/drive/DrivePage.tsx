@@ -65,6 +65,36 @@ export default function DrivePage() {
   const [dialog, setDialog] = useState<Dialog>(null);
   const [pathEditing, setPathEditing] = useState(false);
   const [lightboxPath, setLightboxPath] = useState<string | null>(null);
+  // Path currently being inline-renamed inside the list view. Null when no
+  // rename in flight. Icons / columns views fall back to the modal prompt.
+  const [inlineRenamingPath, setInlineRenamingPath] = useState<string | null>(null);
+
+  const requestRename = useCallback(
+    (entry: DriveEntry) => {
+      if (drive.viewMode === "list") {
+        setInlineRenamingPath(entry.path);
+      } else {
+        setDialog({ kind: "rename", entry });
+      }
+    },
+    [drive.viewMode],
+  );
+
+  const commitInlineRename = useCallback(
+    async (path: string, newName: string) => {
+      setInlineRenamingPath(null);
+      const trimmed = newName.trim();
+      if (!trimmed) return;
+      const current = drive.visibleEntries.find((e) => e.path === path);
+      if (current && current.name === trimmed) return; // no-op
+      await drive.rename(path, trimmed);
+    },
+    [drive],
+  );
+
+  const cancelInlineRename = useCallback(() => {
+    setInlineRenamingPath(null);
+  }, []);
   const [signEntry, setSignEntry] = useState<DriveEntry | null>(null);
   const [verifyEntry, setVerifyEntry] = useState<DriveEntry | null>(null);
   const [ocrEntry, setOcrEntry] = useState<DriveEntry | null>(null);
@@ -162,7 +192,9 @@ export default function DrivePage() {
         const entry = drv.visibleEntries.find((ent) => ent.path === first);
         if (entry) {
           e.preventDefault();
-          setDialog({ kind: "rename", entry });
+          // Inline in list view, modal fallback elsewhere.
+          if (drv.viewMode === "list") setInlineRenamingPath(entry.path);
+          else setDialog({ kind: "rename", entry });
         }
         return;
       }
@@ -440,8 +472,11 @@ export default function DrivePage() {
               drive={drive}
               onOpen={handleOpen}
               onContextMenu={openContextMenu}
-              onRenameRequest={(entry) => setDialog({ kind: "rename", entry })}
+              onRenameRequest={requestRename}
               onNewFolder={() => setDialog({ kind: "new_folder" })}
+              inlineRenamingPath={inlineRenamingPath}
+              onCommitInlineRename={commitInlineRename}
+              onCancelInlineRename={cancelInlineRename}
             />
           </div>
           <DriveDetailsPane
@@ -479,7 +514,7 @@ export default function DrivePage() {
           onOpen={handleOpen}
           onNewFolder={() => setDialog({ kind: "new_folder" })}
           onNewFile={() => setDialog({ kind: "new_file" })}
-          onRename={(entry) => setDialog({ kind: "rename", entry })}
+          onRename={requestRename}
           onRequestDelete={(paths) => setDialog({ kind: "delete", paths })}
           onReveal={handleReveal}
           onCopyPath={handleCopyPath}

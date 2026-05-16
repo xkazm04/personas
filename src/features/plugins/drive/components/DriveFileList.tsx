@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { ChevronUp, ChevronDown, FolderOpen, Sparkles, Search, ArrowUpRight } from "lucide-react";
 
 import type { DriveEntry, DriveSearchHit } from "@/api/drive";
@@ -19,6 +19,9 @@ interface Props {
   onContextMenu: (entry: DriveEntry | null, clientX: number, clientY: number) => void;
   onRenameRequest: (entry: DriveEntry) => void;
   onNewFolder: () => void;
+  inlineRenamingPath?: string | null;
+  onCommitInlineRename?: (path: string, newName: string) => void;
+  onCancelInlineRename?: () => void;
 }
 
 export function DriveFileList({
@@ -27,6 +30,9 @@ export function DriveFileList({
   onContextMenu,
   onRenameRequest,
   onNewFolder,
+  inlineRenamingPath = null,
+  onCommitInlineRename,
+  onCancelInlineRename,
 }: Props) {
   if (drive.viewMode === "icons") {
     return (
@@ -56,6 +62,66 @@ export function DriveFileList({
       onContextMenu={onContextMenu}
       onRenameRequest={onRenameRequest}
       onNewFolder={onNewFolder}
+      inlineRenamingPath={inlineRenamingPath}
+      onCommitInlineRename={onCommitInlineRename}
+      onCancelInlineRename={onCancelInlineRename}
+    />
+  );
+}
+
+// Inline rename input — replaces the filename span in the list view row
+// while the user is renaming. Auto-focuses, pre-selects the base name
+// without extension so the user can type a new name without nuking the
+// file extension. Enter commits, Esc cancels, blur cancels.
+function InlineRenameInput({
+  initialName,
+  onCommit,
+  onCancel,
+}: {
+  initialName: string;
+  onCommit: (name: string) => void;
+  onCancel: () => void;
+}) {
+  const [value, setValue] = useState(initialName);
+  const ref = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.focus();
+    // Pre-select the base name (everything before the last dot) so the
+    // extension is preserved unless the user explicitly extends the
+    // selection. For names like ".env" with no separate base, just select
+    // everything.
+    const dot = initialName.lastIndexOf(".");
+    if (dot > 0) el.setSelectionRange(0, dot);
+    else el.select();
+  }, [initialName]);
+
+  return (
+    <input
+      ref={ref}
+      type="text"
+      value={value}
+      spellCheck={false}
+      autoComplete="off"
+      onChange={(e) => setValue(e.target.value)}
+      onKeyDown={(e) => {
+        // Stop bubbling so the global keyboard handler doesn't see Enter
+        // or Esc and re-fire its own behavior.
+        e.stopPropagation();
+        if (e.key === "Enter") {
+          e.preventDefault();
+          onCommit(value);
+        } else if (e.key === "Escape") {
+          e.preventDefault();
+          onCancel();
+        }
+      }}
+      onClick={(e) => e.stopPropagation()}
+      onDoubleClick={(e) => e.stopPropagation()}
+      onBlur={onCancel}
+      className="flex-1 min-w-0 px-1.5 py-0.5 rounded-input bg-background/80 border border-cyan-500/50 typo-body text-foreground focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
     />
   );
 }
@@ -115,6 +181,9 @@ function ListView({
   onContextMenu,
   onRenameRequest: _onRenameRequest,
   onNewFolder,
+  inlineRenamingPath = null,
+  onCommitInlineRename,
+  onCancelInlineRename,
 }: Props) {
   const { t, tx } = useTranslation();
   const [dragTarget, setDragTarget] = useState<string | null>(null);
@@ -291,9 +360,19 @@ function ListView({
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <FileChip entry={entry} size={32} />
-                  <span className="typo-body typo-card-label truncate">
-                    {entry.name}
-                  </span>
+                  {inlineRenamingPath === entry.path ? (
+                    <InlineRenameInput
+                      initialName={entry.name}
+                      onCommit={(newName) =>
+                        onCommitInlineRename?.(entry.path, newName)
+                      }
+                      onCancel={() => onCancelInlineRename?.()}
+                    />
+                  ) : (
+                    <span className="typo-body typo-card-label truncate">
+                      {entry.name}
+                    </span>
+                  )}
                 </div>
                 <div className="typo-body text-foreground self-center tabular-nums">
                   {entry.kind === "folder" ? "—" : driveFormatBytes(entry.size)}
