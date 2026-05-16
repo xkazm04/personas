@@ -180,14 +180,18 @@ function rowStateClass(
   zebra: boolean,
 ): string {
   if (isDropTarget)
-    return "bg-cyan-500/25 ring-1 ring-cyan-400/60 shadow-[inset_0_0_12px_rgba(34,211,238,0.3)]";
+    return "bg-cyan-500/25 ring-1 ring-cyan-400/60 shadow-[inset_0_0_12px_rgba(34,211,238,0.3)] transition-colors duration-150 ease-out";
   if (isFlash)
     return "bg-emerald-500/15 ring-1 ring-emerald-400/50 shadow-[inset_0_0_16px_rgba(52,211,153,0.2)] transition-all duration-700";
   if (isSelected)
-    return "bg-gradient-to-r from-cyan-500/15 via-cyan-500/8 to-transparent text-foreground shadow-[inset_2px_0_0_rgba(34,211,238,0.8)]";
+    return "bg-gradient-to-r from-cyan-500/15 via-cyan-500/8 to-transparent text-foreground shadow-[inset_2px_0_0_rgba(34,211,238,0.8)] transition-colors duration-150 ease-out";
+  // Hover previews the selected state by sliding toward the same cyan
+  // palette rather than landing on neutral secondary/40 — that way the
+  // "I'm pointing here → this is chosen" transition reads as a
+  // continuum, not a jump from gray to cyan.
   return zebra
-    ? "bg-secondary/15 hover:bg-secondary/40 transition-colors"
-    : "hover:bg-secondary/40 transition-colors";
+    ? "bg-secondary/15 hover:bg-cyan-500/8 hover:shadow-[inset_2px_0_0_rgba(34,211,238,0.25)] transition-colors duration-150 ease-out"
+    : "hover:bg-cyan-500/8 hover:shadow-[inset_2px_0_0_rgba(34,211,238,0.25)] transition-colors duration-150 ease-out";
 }
 
 // ============================================================================
