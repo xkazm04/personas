@@ -146,6 +146,12 @@ Athena emits `show_trigger_set { intent, triggers }` to decompose a persona's in
 
 Together with `show_use_case_set` (the what-it-handles angle), the trigger card completes the persona-decomposition triangle. Widget renders each trigger with a source-aware icon hint (Bell for inbox/webhook, Clock for scheduled, Repeat for polling). Auto-fire — same suggestion shape as siblings; advisory not pinnable. Constitution bumped to v12.
 
+## `show_model_tier_choice` chat-card
+
+Picks up the model-tier-selection readiness item from cycle-6 doctrine. Athena emits `show_model_tier_choice { intent, recommended, tiers }` with the three Anthropic tiers (haiku / sonnet / opus), marking one as `recommended` and providing a 1-2 sentence rationale per tier. The widget sorts haiku → sonnet → opus and accents the recommended one (emerald border + star badge). Informational only — it doesn't write any selection; the user picks the tier when they reach the build flow.
+
+Rationale shapes follow the doctrine heuristics: Haiku for high-volume routing/triage with structured output, Sonnet as the default for the majority of personas, Opus for long-context reasoning over large inputs or output where a single bad reply is expensive. Constitution bumped to v13.
+
 ## Refine chips
 
 Below the latest completed assistant bubble only, `RefineChips` renders three small affordances — **Shorter**, **More detail**, **Code only** — that resend the prior user message with a localized steering suffix appended ("— much shorter, please.", "— go deeper, with examples.", "— code only, minimal prose."). Click feeds the modified prompt through the same `send()` path used by the composer, so the optimistic-bubble / streaming / TTS pipeline kicks in identically. Disabled while streaming or improving. Older bubbles in scrollback don't render chips — refining a mid-scrollback turn is a different, higher-effort UI that needs to model "which user message do I resend?" carefully.

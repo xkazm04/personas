@@ -20,6 +20,7 @@ import { LinkedDecisionsWidget } from './widgets/LinkedDecisionsWidget';
 import { LinkedMemoriesWidget } from './widgets/LinkedMemoriesWidget';
 import { MetricSparkWidget } from './widgets/MetricSparkWidget';
 import { IssueListWidget } from './widgets/IssueListWidget';
+import { ModelTierChoiceWidget } from './widgets/ModelTierChoiceWidget';
 import { PersonaWalkthroughWidget } from './widgets/PersonaWalkthroughWidget';
 import { TemplateSuggestionsWidget } from './widgets/TemplateSuggestionsWidget';
 import { TextCalloutWidget } from './widgets/TextCalloutWidget';
@@ -72,6 +73,11 @@ export const cockpitWidgetRegistry: Record<string, ComponentType<CockpitWidgetPr
   // persona response shape" grain test; the optional grain and
   // idempotency notes surface the design rationale.
   trigger_set: TriggerSetWidget,
+  // Model-tier recommendation. Emitted via `show_model_tier_choice
+  // { intent, recommended, tiers: [{tier, rationale}] }`. Renders the
+  // three tiers (haiku/sonnet/opus) side-by-side with the recommended
+  // one accented.
+  model_tier_choice: ModelTierChoiceWidget,
 };
 
 /** Tunes the grid `rowSpan` per widget kind. Multi-row gives long-form

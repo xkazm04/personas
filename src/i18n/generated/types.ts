@@ -10585,6 +10585,12 @@ export type Translations = {
       trigger_set_condition: string;
       trigger_set_grain: string;
       trigger_set_idempotency: string;
+      model_tier_title: string;
+      model_tier_empty: string;
+      model_tier_haiku: string;
+      model_tier_sonnet: string;
+      model_tier_opus: string;
+      model_tier_recommended_badge: string;
       proactive_evaluate_now: string;
       memory_run_consolidation: string;
       memory_generate_reflection: string;

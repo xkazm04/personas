@@ -308,6 +308,92 @@ pub fn dispatch(
                 });
             }
             Ok(env)
+                if env.op == "propose_action" && env.action == "show_model_tier_choice" =>
+            {
+                // Model-tier recommendation card. Athena compares the
+                // three tiers (haiku / sonnet / opus) for a specific
+                // persona intent, marking one as recommended with the
+                // rationale from cycle-6 doctrine's tier-selection
+                // heuristics. Auto-fire (no approval) — it's an
+                // explanation, not a write.
+                let intent = env
+                    .params
+                    .get("intent")
+                    .and_then(|v| v.as_str())
+                    .map(str::trim)
+                    .unwrap_or("");
+                let recommended = env
+                    .params
+                    .get("recommended")
+                    .and_then(|v| v.as_str())
+                    .map(str::trim)
+                    .unwrap_or("");
+                if !matches!(recommended, "haiku" | "sonnet" | "opus") {
+                    out.warnings.push(format!(
+                        "show_model_tier_choice: `recommended` must be haiku|sonnet|opus, got `{recommended}`"
+                    ));
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                let tiers = env
+                    .params
+                    .get("tiers")
+                    .and_then(|v| v.as_array())
+                    .cloned()
+                    .unwrap_or_default();
+                if tiers.is_empty() {
+                    out.warnings.push(
+                        "show_model_tier_choice: `tiers` must be a non-empty array of {tier, rationale}"
+                            .into(),
+                    );
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                // Each tier entry needs a valid tier slug and a non-
+                // empty rationale; the recommended one is identified
+                // by matching `tier` against the top-level `recommended`
+                // field (we don't trust per-row `recommended` booleans
+                // to be self-consistent).
+                let mut bad_tier: Option<String> = None;
+                for t in &tiers {
+                    let slug = t.get("tier").and_then(|v| v.as_str()).unwrap_or("");
+                    if !matches!(slug, "haiku" | "sonnet" | "opus") {
+                        bad_tier = Some(slug.to_string());
+                        break;
+                    }
+                    let rationale = t
+                        .get("rationale")
+                        .and_then(|v| v.as_str())
+                        .map(str::trim)
+                        .unwrap_or("");
+                    if rationale.is_empty() {
+                        bad_tier = Some(format!("{slug} (empty rationale)"));
+                        break;
+                    }
+                }
+                if let Some(bad) = bad_tier {
+                    out.warnings.push(format!(
+                        "show_model_tier_choice: invalid tier entry `{bad}`"
+                    ));
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                let title = env
+                    .params
+                    .get("title")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string());
+                out.chat_cards.push(ChatCard {
+                    kind: "model_tier_choice".to_string(),
+                    title,
+                    config: serde_json::json!({
+                        "intent": intent,
+                        "recommended": recommended,
+                        "tiers": tiers,
+                    }),
+                });
+            }
+            Ok(env)
                 if env.op == "propose_action" && env.action == "show_trigger_set" =>
             {
                 // Trigger-decomposition card. Same family as use_case_set:

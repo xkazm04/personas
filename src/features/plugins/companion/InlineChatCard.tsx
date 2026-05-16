@@ -17,6 +17,7 @@ const UNCLAMPED_KINDS = new Set([
   'template_suggestions',
   'use_case_set',
   'trigger_set',
+  'model_tier_choice',
 ]);
 
 /**

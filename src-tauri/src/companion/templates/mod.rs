@@ -68,4 +68,9 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// condition, optional grain + idempotency notes). Applies cycle-6
 /// doctrine's "one trigger condition → one persona response shape"
 /// grain test.
-pub const CONSTITUTION_VERSION: u32 = 12;
+///
+/// v13: `show_model_tier_choice` op — Athena compares the three model
+/// tiers (haiku / sonnet / opus) for a specific persona intent, marking
+/// one as recommended with the rationale from cycle-6 doctrine's tier-
+/// selection heuristics. Auto-fire chat-card.
+pub const CONSTITUTION_VERSION: u32 = 13;
