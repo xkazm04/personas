@@ -66,6 +66,12 @@ export function DriveFileList({
         onContextMenu={onContextMenu}
         onRenameRequest={onRenameRequest}
         onNewFolder={onNewFolder}
+        inlineRenamingPath={inlineRenamingPath}
+        onCommitInlineRename={onCommitInlineRename}
+        onCancelInlineRename={onCancelInlineRename}
+        pendingCreate={pendingCreate}
+        onCommitPendingCreate={onCommitPendingCreate}
+        onCancelPendingCreate={onCancelPendingCreate}
       />
     );
   }
@@ -79,6 +85,9 @@ export function DriveFileList({
         inlineRenamingPath={inlineRenamingPath}
         onCommitInlineRename={onCommitInlineRename}
         onCancelInlineRename={onCancelInlineRename}
+        pendingCreate={pendingCreate}
+        onCommitPendingCreate={onCommitPendingCreate}
+        onCancelPendingCreate={onCancelPendingCreate}
       />
     );
   }
@@ -536,11 +545,14 @@ function IconsView({
   inlineRenamingPath = null,
   onCommitInlineRename,
   onCancelInlineRename,
+  pendingCreate = null,
+  onCommitPendingCreate,
+  onCancelPendingCreate,
 }: Props) {
   if (drive.loading && drive.entries.length === 0) {
     return <LoadingState />;
   }
-  if (drive.visibleEntries.length === 0) {
+  if (drive.visibleEntries.length === 0 && !pendingCreate) {
     return <DriveEmptyState drive={drive} onNewFolder={onNewFolder} />;
   }
   return (
@@ -552,6 +564,29 @@ function IconsView({
       }}
     >
       <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-4">
+        {pendingCreate && (
+          <div className="flex flex-col items-center gap-2.5 p-3 rounded-modal border bg-cyan-500/10 border-cyan-500/50 ring-2 ring-cyan-400/40">
+            <div
+              className={`w-16 h-16 rounded-modal border border-primary/10 flex items-center justify-center shadow-inner bg-gradient-to-br ${
+                pendingCreate === "folder"
+                  ? "from-sky-500/25 via-sky-500/10 to-sky-500/5"
+                  : "from-slate-500/20 via-slate-500/10 to-slate-500/5"
+              }`}
+            >
+              {pendingCreate === "folder" ? (
+                <FolderIcon className="w-8 h-8 text-sky-300" />
+              ) : (
+                <FileIcon className="w-8 h-8 text-foreground" />
+              )}
+            </div>
+            <InlineRenameInput
+              initialName=""
+              onCommit={(name) => onCommitPendingCreate?.(name)}
+              onCancel={() => onCancelPendingCreate?.()}
+              className="w-full text-center px-1.5 py-0.5 rounded-input bg-background/80 border border-cyan-500/50 typo-body text-foreground focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+            />
+          </div>
+        )}
         {drive.visibleEntries.map((entry) => {
           const selected = drive.isSelected(entry.path);
           const flash = drive.recentlyWritten.has(entry.path);
@@ -635,6 +670,9 @@ function ColumnsView({
   inlineRenamingPath = null,
   onCommitInlineRename,
   onCancelInlineRename,
+  pendingCreate = null,
+  onCommitPendingCreate,
+  onCancelPendingCreate,
 }: Omit<Props, "onRenameRequest">) {
   const segments = drive.currentPath
     ? drive.currentPath.split("/").filter(Boolean)
@@ -644,7 +682,11 @@ function ColumnsView({
     levels.push(segments.slice(0, i + 1).join("/"));
   }
 
-  if (drive.visibleEntries.length === 0 && segments.length === 0) {
+  if (
+    drive.visibleEntries.length === 0 &&
+    segments.length === 0 &&
+    !pendingCreate
+  ) {
     return <DriveEmptyState drive={drive} onNewFolder={onNewFolder} />;
   }
 
@@ -661,6 +703,9 @@ function ColumnsView({
           inlineRenamingPath={inlineRenamingPath}
           onCommitInlineRename={onCommitInlineRename}
           onCancelInlineRename={onCancelInlineRename}
+          pendingCreate={pendingCreate}
+          onCommitPendingCreate={onCommitPendingCreate}
+          onCancelPendingCreate={onCancelPendingCreate}
         />
       ))}
     </div>
@@ -676,6 +721,9 @@ interface ColumnPaneProps {
   inlineRenamingPath?: string | null;
   onCommitInlineRename?: (path: string, newName: string) => void;
   onCancelInlineRename?: () => void;
+  pendingCreate?: "folder" | "file" | null;
+  onCommitPendingCreate?: (name: string) => void;
+  onCancelPendingCreate?: () => void;
 }
 
 function ColumnPane({
@@ -687,6 +735,9 @@ function ColumnPane({
   inlineRenamingPath = null,
   onCommitInlineRename,
   onCancelInlineRename,
+  pendingCreate = null,
+  onCommitPendingCreate,
+  onCancelPendingCreate,
 }: ColumnPaneProps) {
   const isCurrent = levelPath === drive.currentPath;
   return (
@@ -701,6 +752,9 @@ function ColumnPane({
           inlineRenamingPath={inlineRenamingPath}
           onCommitInlineRename={onCommitInlineRename}
           onCancelInlineRename={onCancelInlineRename}
+          pendingCreate={pendingCreate}
+          onCommitPendingCreate={onCommitPendingCreate}
+          onCancelPendingCreate={onCancelPendingCreate}
         />
       ) : (
         <AsyncColumnEntries
@@ -728,6 +782,9 @@ function ColumnEntries({
   inlineRenamingPath = null,
   onCommitInlineRename,
   onCancelInlineRename,
+  pendingCreate = null,
+  onCommitPendingCreate,
+  onCancelPendingCreate,
 }: {
   entries: DriveEntry[];
   drive: UseDriveResult;
@@ -737,9 +794,34 @@ function ColumnEntries({
   inlineRenamingPath?: string | null;
   onCommitInlineRename?: (path: string, newName: string) => void;
   onCancelInlineRename?: () => void;
+  pendingCreate?: "folder" | "file" | null;
+  onCommitPendingCreate?: (name: string) => void;
+  onCancelPendingCreate?: () => void;
 }) {
   return (
     <>
+      {pendingCreate && (
+        <div className="w-full flex items-center gap-2.5 px-3 py-2 typo-body bg-cyan-500/10 border-b border-cyan-500/25">
+          <div
+            className={`flex items-center justify-center w-[22px] h-[22px] rounded-card border ${
+              pendingCreate === "folder"
+                ? "bg-sky-500/20 border-sky-500/30 text-sky-300"
+                : "bg-slate-500/15 border-slate-500/25 text-foreground"
+            }`}
+          >
+            {pendingCreate === "folder" ? (
+              <FolderIcon className="w-3 h-3" />
+            ) : (
+              <FileIcon className="w-3 h-3" />
+            )}
+          </div>
+          <InlineRenameInput
+            initialName=""
+            onCommit={(name) => onCommitPendingCreate?.(name)}
+            onCancel={() => onCancelPendingCreate?.()}
+          />
+        </div>
+      )}
       {entries.map((entry) => {
         const isActive = entry.path === activeChild;
         const selected = drive.isSelected(entry.path);

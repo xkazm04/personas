@@ -28,7 +28,7 @@ import {
   type ContextMenuState,
 } from "./components/DriveContextMenu";
 import { DriveImageLightbox } from "./components/DriveImageLightbox";
-import { DriveTextPrompt, DriveConfirm } from "./components/DrivePrompt";
+import { DriveConfirm } from "./components/DrivePrompt";
 import { useSigning } from "./signing/useSigning";
 import { DriveSignDialog } from "./signing/DriveSignDialog";
 import { DriveVerifyDialog } from "./signing/DriveVerifyDialog";
@@ -36,10 +36,10 @@ import { DriveSignaturesPanel } from "./signing/DriveSignaturesPanel";
 import { useOcr } from "./ocr/useOcr";
 import { DriveOcrDrawer } from "./ocr/DriveOcrDrawer";
 
+// Only the delete confirmation still uses a real modal — create + rename
+// went inline in cycles 9/10/24/27. Keeping the discriminated-union shape
+// in case a future dialog kind needs it.
 type Dialog =
-  | { kind: "new_folder" }
-  | { kind: "new_file" }
-  | { kind: "rename"; entry: DriveEntry }
   | { kind: "delete"; paths: string[] }
   | null;
 
@@ -94,15 +94,15 @@ export default function DrivePage() {
     [],
   );
 
+  // Inline-create works in every view now (phantom row in list / columns,
+  // phantom tile in icons), so no modal fallback is needed.
   const requestNewFolder = useCallback(() => {
-    if (drive.viewMode === "list") setPendingCreate("folder");
-    else setDialog({ kind: "new_folder" });
-  }, [drive.viewMode]);
+    setPendingCreate("folder");
+  }, []);
 
   const requestNewFile = useCallback(() => {
-    if (drive.viewMode === "list") setPendingCreate("file");
-    else setDialog({ kind: "new_file" });
-  }, [drive.viewMode]);
+    setPendingCreate("file");
+  }, []);
 
   const commitPendingCreate = useCallback(
     async (name: string) => {
@@ -321,22 +321,11 @@ export default function DrivePage() {
     driveRevealInOs(entry.path).catch(toastCatch("drive:reveal"));
   }, []);
 
-  const confirmDialog = useCallback(
-    async (value?: string) => {
-      if (!dialog) return;
-      if (dialog.kind === "new_folder" && value) {
-        await drive.createFolder(value);
-      } else if (dialog.kind === "new_file" && value) {
-        await drive.createFile(value);
-      } else if (dialog.kind === "rename" && value) {
-        await drive.rename(dialog.entry.path, value);
-      } else if (dialog.kind === "delete") {
-        await drive.remove(dialog.paths);
-      }
-      setDialog(null);
-    },
-    [dialog, drive],
-  );
+  const confirmDelete = useCallback(async () => {
+    if (dialog?.kind !== "delete") return;
+    await drive.remove(dialog.paths);
+    setDialog(null);
+  }, [dialog, drive]);
 
   // ---------------------------------------------------------------------
   // OS → Drive drag-drop
@@ -630,31 +619,6 @@ export default function DrivePage() {
         />
       )}
 
-      {dialog?.kind === "new_folder" && (
-        <DriveTextPrompt
-          title={t.plugins.drive.new_folder_title}
-          placeholder={t.plugins.drive.new_folder_placeholder}
-          onConfirm={(v) => confirmDialog(v)}
-          onCancel={() => setDialog(null)}
-        />
-      )}
-      {dialog?.kind === "new_file" && (
-        <DriveTextPrompt
-          title={t.plugins.drive.new_file_title}
-          placeholder={t.plugins.drive.new_file_placeholder}
-          onConfirm={(v) => confirmDialog(v)}
-          onCancel={() => setDialog(null)}
-        />
-      )}
-      {dialog?.kind === "rename" && (
-        <DriveTextPrompt
-          title={t.plugins.drive.rename_title}
-          placeholder={t.plugins.drive.rename_placeholder}
-          initialValue={dialog.entry.name}
-          onConfirm={(v) => confirmDialog(v)}
-          onCancel={() => setDialog(null)}
-        />
-      )}
       {lightboxPath && (() => {
         // Navigable list of previewable entries in the current folder —
         // images, videos, and PDFs all share the lightbox now. Sorted by
@@ -692,7 +656,7 @@ export default function DrivePage() {
             </div>
           }
           danger
-          onConfirm={() => confirmDialog()}
+          onConfirm={() => confirmDelete()}
           onCancel={() => setDialog(null)}
         />
       )}
