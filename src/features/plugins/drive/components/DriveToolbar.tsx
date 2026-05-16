@@ -24,6 +24,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DriveTreeNode } from "@/api/drive";
 import { silentCatch } from "@/lib/silentCatch";
 import type { UseDriveResult, ViewMode } from "../hooks/useDrive";
+import { useScrollShadows } from "../hooks/useScrollShadows";
 import { useTranslation } from "@/i18n/useTranslation";
 
 interface Props {
@@ -431,36 +432,56 @@ function MovePopover({
     return out;
   }, [tree, selectionPaths]);
 
+  const { ref: scrollRef, topShadow, bottomShadow } =
+    useScrollShadows<HTMLDivElement>();
+
   return (
     <div
       role="dialog"
       aria-label={title}
-      className="absolute right-0 top-full mt-1 z-30 w-72 max-h-80 overflow-y-auto rounded-modal border border-primary/15 bg-background/95 backdrop-blur-md shadow-elevation-3"
+      className="absolute right-0 top-full mt-1 z-30 w-72 rounded-modal border border-primary/15 bg-background/95 backdrop-blur-md shadow-elevation-3 overflow-hidden"
     >
       <div className="sticky top-0 px-3 py-2 border-b border-primary/10 bg-background/95 typo-label text-foreground">
         {title}
       </div>
-      {candidates.length === 0 ? (
-        <div className="px-3 py-4 typo-body text-foreground italic text-center">
-          {emptyLabel}
-        </div>
-      ) : (
-        <div className="py-1">
-          {candidates.map(({ node, depth }) => (
-            <button
-              key={node.path || "__root__"}
-              type="button"
-              onClick={() => onPick(node.path)}
-              className="w-full flex items-center gap-2 py-1.5 pr-2 rounded-input text-left typo-body text-foreground hover:bg-cyan-500/15 hover:text-cyan-100 transition-colors"
-              style={{ paddingLeft: `${10 + depth * 14}px` }}
-            >
-              <Folder className="w-3.5 h-3.5 text-sky-400/70 flex-shrink-0" />
-              <span className="truncate">
-                {node.name || rootLabel}
-              </span>
-            </button>
-          ))}
-        </div>
+      <div ref={scrollRef} className="relative max-h-80 overflow-y-auto">
+        {candidates.length === 0 ? (
+          <div className="px-3 py-4 typo-body text-foreground italic text-center">
+            {emptyLabel}
+          </div>
+        ) : (
+          <div className="py-1">
+            {candidates.map(({ node, depth }) => (
+              <button
+                key={node.path || "__root__"}
+                type="button"
+                onClick={() => onPick(node.path)}
+                className="w-full flex items-center gap-2 py-1.5 pr-2 rounded-input text-left typo-body text-foreground hover:bg-cyan-500/15 hover:text-cyan-100 transition-colors"
+                style={{ paddingLeft: `${10 + depth * 14}px` }}
+              >
+                <Folder className="w-3.5 h-3.5 text-sky-400/70 flex-shrink-0" />
+                <span className="truncate">
+                  {node.name || rootLabel}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      {/* Fade affordances — render only when there's actually content
+          to scroll in that direction. pointer-events-none keeps them
+          purely visual; sticky=top inside the scroll area still works. */}
+      {topShadow && (
+        <div
+          aria-hidden
+          className="absolute left-0 right-0 top-[33px] h-4 bg-gradient-to-b from-background/95 to-transparent pointer-events-none"
+        />
+      )}
+      {bottomShadow && (
+        <div
+          aria-hidden
+          className="absolute left-0 right-0 bottom-0 h-4 bg-gradient-to-t from-background/95 to-transparent pointer-events-none"
+        />
       )}
     </div>
   );

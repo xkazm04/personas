@@ -7,6 +7,7 @@ import { silentCatch } from "@/lib/silentCatch";
 import type { UseDriveResult } from "../hooks/useDrive";
 import { useTranslation } from "@/i18n/useTranslation";
 import { formatRelativeTime, visualForEntry } from "../designTokens";
+import { useScrollShadows } from "../hooks/useScrollShadows";
 import { DriveEmptyHint } from "./DriveEmptyHint";
 
 const RECENT_COLLAPSED_KEY = "drive.sidebar.recentCollapsed";
@@ -28,6 +29,11 @@ interface Props {
 
 export function DriveSidebar({ drive, activeDragCount = null }: Props) {
   const { t, tx } = useTranslation();
+  const {
+    ref: scrollRef,
+    topShadow,
+    bottomShadow,
+  } = useScrollShadows<HTMLDivElement>();
 
   // localStorage-backed collapse state for the Recent rail. A full zustand
   // slice would be heavier than this one boolean deserves; the localStorage
@@ -81,8 +87,23 @@ export function DriveSidebar({ drive, activeDragCount = null }: Props) {
         </div>
       </div>
 
-      {/* Recent rail + folder tree share the scrollable middle area. */}
-      <div className="flex-1 overflow-y-auto py-2 px-1">
+      {/* Recent rail + folder tree share the scrollable middle area.
+          The wrapper is relative so the scroll-shadow fade overlays
+          can position against it without scrolling with the content. */}
+      <div className="relative flex-1 min-h-0">
+        {topShadow && (
+          <div
+            aria-hidden
+            className="absolute left-0 right-0 top-0 h-4 z-10 bg-gradient-to-b from-background to-transparent pointer-events-none"
+          />
+        )}
+        {bottomShadow && (
+          <div
+            aria-hidden
+            className="absolute left-0 right-0 bottom-0 h-4 z-10 bg-gradient-to-t from-background to-transparent pointer-events-none"
+          />
+        )}
+      <div ref={scrollRef} className="h-full overflow-y-auto py-2 px-1">
         <div className="mb-3">
           <button
             type="button"
@@ -132,6 +153,7 @@ export function DriveSidebar({ drive, activeDragCount = null }: Props) {
             {t.plugins.drive.loading}
           </div>
         )}
+        </div>
       </div>
 
       {/* Storage block — used-bytes is the hero glance value; item count
