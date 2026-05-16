@@ -28,6 +28,7 @@ import {
   COMPANION_NAVIGATE_EVENT,
   type ChatCard,
   type CompanionChatCardsEvent,
+  COMPANION_JOB_EVENT,
   COMPANION_OPEN_LAB_EVENT,
   COMPANION_PROACTIVE_EVENT,
   COMPANION_RECALL_PREVIEW_EVENT,
@@ -43,6 +44,7 @@ import {
   companionRequestImprovement,
   companionResetConversation,
   companionSendMessage,
+  type BackgroundJob,
   type CompanionRecallPreviewEvent,
   type CompanionStreamEvent,
   type CompanionTurnSummaryEvent,
@@ -57,6 +59,7 @@ import { ProactiveCard } from './ProactiveCard';
 import { AthenaAvatar } from './AthenaAvatar';
 import { BrainViewer } from './BrainViewer';
 import { CompanionToolbar } from './CompanionToolbar';
+import { ConnectorCallCard } from './ConnectorCallCard';
 import { RecallStrip } from './RecallStrip';
 import { RefineChips } from './RefineChips';
 import { TurnSummaryChip } from './TurnSummaryChip';
@@ -224,6 +227,7 @@ export default function CompanionPanel() {
               setSendError(null);
               useCompanionStore.getState().clearAllRecall();
               useCompanionStore.getState().clearAllTurnSummaries();
+              useCompanionStore.getState().clearAllConnectorJobs();
               try {
                 await companionResetConversation(true);
               } catch (err: unknown) {
@@ -530,6 +534,13 @@ function Body(props: BodyProps) {
   const turnSummaryByEpisodeId = useCompanionStore(
     (s) => s.turnSummaryByEpisodeId,
   );
+  const jobsById = useCompanionStore((s) => s.jobsById);
+  const pendingConnectorJobIds = useCompanionStore(
+    (s) => s.pendingConnectorJobIds,
+  );
+  const connectorJobIdsByEpisodeId = useCompanionStore(
+    (s) => s.connectorJobIdsByEpisodeId,
+  );
 
   // Initial transcript + pending approvals fetch — once init is done.
   const fetchedRef = useRef(false);
@@ -573,11 +584,15 @@ function Body(props: BodyProps) {
           const text = extractAssistantText(ev.payload);
           if (text) appendStreamingText(text);
         } else if (ev.kind === 'finished') {
-          // Promote the streaming recall (if any) onto the just-persisted
-          // assistant episode so the strip stays visible above the now-
-          // completed bubble. Payload is the assistant_episode_id.
+          // Promote the streaming recall AND any pending connector_use
+          // jobs onto the just-persisted assistant episode so they pin
+          // under the now-completed bubble. Payload is the
+          // assistant_episode_id.
           if (ev.payload) {
             useCompanionStore.getState().attachRecallToEpisode(ev.payload);
+            useCompanionStore
+              .getState()
+              .attachPendingJobsToEpisode(ev.payload);
           } else {
             useCompanionStore.getState().setStreamingRecall(null);
           }
@@ -627,6 +642,21 @@ function Body(props: BodyProps) {
       useCompanionStore.getState().setTurnSummary(assistantEpisodeId, summary);
     }, []),
     'companion_turn_summary_listen',
+  );
+
+  // Background-job event: every queued→running→completed/failed
+  // transition for any job kind. We keep the full row in `jobsById` and
+  // let `upsertJob` decide whether to add it to the pending list — only
+  // `connector_use` jobs become inline cards; other kinds (scan_codebase,
+  // curation_run) have their own UIs and shouldn't squat on the chat.
+  useTauriEvent<BackgroundJob>(
+    COMPANION_JOB_EVENT,
+    useCallback((event) => {
+      const job = event.payload;
+      if (!job?.id) return;
+      useCompanionStore.getState().upsertJob(job);
+    }, []),
+    'companion_job_listen',
   );
 
   const handleInterrupt = useCallback(() => {
@@ -999,12 +1029,22 @@ function Body(props: BodyProps) {
               const prev = i > 0 ? messages[i - 1] : undefined;
               const priorUser =
                 isLastAssistant && prev?.role === 'user' ? prev.content : '';
+              const connectorJobIds =
+                m.role === 'assistant'
+                  ? connectorJobIdsByEpisodeId[m.id] ?? []
+                  : [];
               return (
                 <div key={m.id} className="space-y-1">
                   {recall && <RecallStrip preview={recall} />}
                   <Bubble role={m.role} index={i}>
                     {m.content}
                   </Bubble>
+                  {connectorJobIds.map((jobId) => {
+                    const job = jobsById[jobId];
+                    return job ? (
+                      <ConnectorCallCard key={jobId} job={job} />
+                    ) : null;
+                  })}
                   {summary && <TurnSummaryChip summary={summary} />}
                   {isLastAssistant && priorUser && !streaming && !improving && (
                     <RefineChips
@@ -1035,6 +1075,12 @@ function Body(props: BodyProps) {
                   <Square className="w-3 h-3" fill="currentColor" />
                 </button>
               </div>
+              {pendingConnectorJobIds.map((jobId) => {
+                const job = jobsById[jobId];
+                return job ? (
+                  <ConnectorCallCard key={jobId} job={job} />
+                ) : null;
+              })}
             </div>
           )}
           {improving && (

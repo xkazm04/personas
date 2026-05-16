@@ -10448,6 +10448,11 @@ export type Translations = {
       refine_more_detail_suffix: string;
       refine_code_only: string;
       refine_code_only_suffix: string;
+      connector_call_queued: string;
+      connector_call_running: string;
+      connector_call_completed: string;
+      connector_call_failed: string;
+      connector_call_in_flight_hint: string;
       autonomous_toggle_on: string;
       autonomous_toggle_off: string;
       composer_placeholder: string;

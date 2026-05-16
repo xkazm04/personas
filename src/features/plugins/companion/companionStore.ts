@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { CompanionState } from './types';
 import type {
+  BackgroundJob,
   BrainKind,
   ChatCard,
   CompanionConnector,
@@ -174,6 +175,24 @@ interface CompanionStore {
   turnSummaryByEpisodeId: Record<string, StoredTurnSummary>;
   setTurnSummary: (episodeId: string, summary: StoredTurnSummary) => void;
   clearAllTurnSummaries: () => void;
+
+  /**
+   * Live state of every `connector_use` background job we've seen on the
+   * `companion://job` channel, keyed by job id. The card subscribes to a
+   * single job's status and re-renders as the worker transitions
+   * queued → running → completed/failed.
+   *
+   * `pendingConnectorJobIds` collects jobs queued in the current
+   * (streaming) turn before the assistant episode id is known; at
+   * `finished` time they're promoted into `connectorJobIdsByEpisodeId`
+   * so the cards pin under the right bubble.
+   */
+  jobsById: Record<string, BackgroundJob>;
+  pendingConnectorJobIds: string[];
+  connectorJobIdsByEpisodeId: Record<string, string[]>;
+  upsertJob: (job: BackgroundJob) => void;
+  attachPendingJobsToEpisode: (episodeId: string) => void;
+  clearAllConnectorJobs: () => void;
 }
 
 export interface PendingPromptPayload {
@@ -306,4 +325,50 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
       },
     })),
   clearAllTurnSummaries: () => set({ turnSummaryByEpisodeId: {} }),
+
+  jobsById: {},
+  pendingConnectorJobIds: [],
+  connectorJobIdsByEpisodeId: {},
+  upsertJob: (job) =>
+    set((s) => {
+      const next: Partial<CompanionStore> = {
+        jobsById: { ...s.jobsById, [job.id]: job },
+      };
+      // Only `connector_use` jobs are surfaced as inline cards. Other
+      // kinds (scan_codebase, curation_run) flow through their own
+      // dedicated UIs and shouldn't squat on the chat transcript.
+      if (
+        job.kind === 'connector_use' &&
+        !s.pendingConnectorJobIds.includes(job.id) &&
+        // Don't re-pend a job that's already pinned to an episode (e.g.
+        // the late `completed` event arriving after `finished` already
+        // promoted the pending list).
+        !Object.values(s.connectorJobIdsByEpisodeId).some((ids) =>
+          ids.includes(job.id),
+        )
+      ) {
+        next.pendingConnectorJobIds = [...s.pendingConnectorJobIds, job.id];
+      }
+      return next;
+    }),
+  attachPendingJobsToEpisode: (episodeId) =>
+    set((s) => {
+      if (!episodeId || s.pendingConnectorJobIds.length === 0) {
+        return { pendingConnectorJobIds: [] };
+      }
+      const existing = s.connectorJobIdsByEpisodeId[episodeId] ?? [];
+      return {
+        pendingConnectorJobIds: [],
+        connectorJobIdsByEpisodeId: {
+          ...s.connectorJobIdsByEpisodeId,
+          [episodeId]: [...existing, ...s.pendingConnectorJobIds],
+        },
+      };
+    }),
+  clearAllConnectorJobs: () =>
+    set({
+      jobsById: {},
+      pendingConnectorJobIds: [],
+      connectorJobIdsByEpisodeId: {},
+    }),
 }));
