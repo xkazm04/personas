@@ -47,6 +47,11 @@ interface ConsolidatedLayoutProps {
    *  QuestionnaireStoryThread. */
   rightSlot?: ReactNode;
 
+  /** Per-row inline policy controls (memory / review / events). Caller
+   *  decides what to render — view mode supplies TilePolicyToggles;
+   *  adoption / scratch supply their own equivalents (or omit). */
+  renderRowPolicySlot?: (uc: DisplayUseCase) => ReactNode;
+
   /** Detail panel rendered when `selectedItemId` is set. View mode passes
    *  UseCaseDetailExpanded; other modes can pass mode-specific drill-downs. */
   detailNode?: ReactNode;
@@ -87,6 +92,7 @@ export function ConsolidatedLayout({
   heroRightSlot,
   topSlot,
   rightSlot,
+  renderRowPolicySlot,
   detailNode,
   emptyNode,
   maxWidth = DEFAULT_MAX_WIDTH,
@@ -151,6 +157,7 @@ export function ConsolidatedLayout({
                               onOpen={() => onRowOpen(uc)}
                               onToggle={() => onRowToggle(uc)}
                               onRun={onRowRun ? () => onRowRun(uc) : undefined}
+                              policySlot={renderRowPolicySlot?.(uc)}
                             />
                           ))}
                         </div>

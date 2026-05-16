@@ -21,6 +21,12 @@ interface UseCaseRowProps {
   /** Optional — when omitted the run button is hidden (adoption / scratch
    *  pre-build don't have a runnable persona yet). */
   onRun?: () => void;
+  /** Optional inline policy controls (memory / review / events / ...).
+   *  Rendered between the title block and the run / power buttons.
+   *  Caller-owned so each consolidated mode supplies its own affordances:
+   *    - view mode → TilePolicyToggles
+   *    - adoption / scratch → mode-specific equivalents (later commits) */
+  policySlot?: React.ReactNode;
 }
 
 /**
@@ -39,6 +45,7 @@ export function UseCaseRow({
   onOpen,
   onToggle,
   onRun,
+  policySlot,
 }: UseCaseRowProps) {
   const { t, tx } = useTranslation();
   const [hovered, setHovered] = useState(false);
@@ -162,6 +169,12 @@ export function UseCaseRow({
             {uc.triggerLabel}
           </div>
         </div>
+
+        {policySlot && (
+          <div className="shrink-0 hidden md:flex items-center" onClick={(e) => e.stopPropagation()}>
+            {policySlot}
+          </div>
+        )}
 
         <div className="shrink-0 flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
           {onRun && (

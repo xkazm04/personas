@@ -10,6 +10,7 @@ import { useUseCasesTab } from '../../libs/useUseCasesTab';
 import { useCapabilityToggle } from '../../libs/useCapabilityToggle';
 import { CapabilityDisableDialog } from '../core/CapabilityDisableDialog';
 import { UseCaseDetailExpanded } from '../recipes-prototype/shared/UseCaseDetailExpanded';
+import { TilePolicyToggles } from '../recipes-prototype/shared/TilePolicyToggles';
 import {
   toDisplayUseCase,
   type DisplayUseCase,
@@ -132,6 +133,18 @@ export function ConsolidatedSigilLayout({ credentials }: ConsolidatedSigilLayout
           requestToggle(personaId, uc.id, uc.title, uc.health === 'disabled');
         }}
         onRowRun={(uc) => handleExecute(uc.id, uc.raw.sample_input ?? undefined)}
+        renderRowPolicySlot={
+          personaId
+            ? (uc) => (
+                <TilePolicyToggles
+                  personaId={personaId}
+                  uc={uc}
+                  memoriesDefault={memoriesDefault}
+                  reviewsDefault={reviewsDefault}
+                />
+              )
+            : undefined
+        }
         detailNode={detailNode}
         emptyNode={<EmptyState variant="use-cases-empty" />}
       />
