@@ -1224,3 +1224,348 @@ fn short_random() -> String {
         .take(10)
         .collect()
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// Tests
+//
+// Coverage focuses on the new chat-card op variants added by /friend
+// 2026-05-16 session 2: show_persona_walkthrough, show_template_suggestions,
+// show_use_case_set, show_trigger_set, show_model_tier_choice,
+// show_observability_plan, show_decision_log, show_persona_ready,
+// show_design_capabilities, show_recent_decisions. All are auto-fire
+// chat-card emitters that push to `out.chat_cards` on valid input and to
+// `out.warnings` on bad input — no DB writes for any of them except
+// show_decision_log (which best-effort persists to companion_design_decision).
+//
+// Tests build a small in-memory UserDbPool with the COMPANION_SCHEMA
+// applied so the show_decision_log persist path doesn't fail; the rest
+// of the dispatch surface doesn't touch the pool.
+// ─────────────────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::db::UserDbPool;
+    use r2d2::Pool;
+    use r2d2_sqlite::SqliteConnectionManager;
+
+    /// Build an in-memory user db pool with the companion schema applied.
+    /// Uses a file::memory: URI with shared cache so all pool connections
+    /// see the same tables (per the pattern in db/repos/resources/
+    /// db_schema.rs's in-memory comment).
+    fn test_pool() -> UserDbPool {
+        let manager = SqliteConnectionManager::file(
+            "file::memory:?cache=shared",
+        )
+        .with_flags(
+            rusqlite::OpenFlags::SQLITE_OPEN_READ_WRITE
+                | rusqlite::OpenFlags::SQLITE_OPEN_CREATE
+                | rusqlite::OpenFlags::SQLITE_OPEN_URI,
+        );
+        let pool = Pool::builder()
+            .max_size(2)
+            .build(manager)
+            .expect("build in-memory pool");
+        // Minimal schema — just the tables the dispatcher arms exercise.
+        let conn = pool.get().expect("get conn");
+        conn.execute_batch(
+            "CREATE TABLE IF NOT EXISTS companion_approval (
+                id TEXT PRIMARY KEY,
+                session_id TEXT NOT NULL,
+                kind TEXT NOT NULL,
+                payload TEXT NOT NULL,
+                status TEXT NOT NULL,
+                human_review_id TEXT,
+                created_at TEXT NOT NULL DEFAULT (datetime('now'))
+            );
+            CREATE TABLE IF NOT EXISTS companion_design_decision (
+                id                  TEXT PRIMARY KEY,
+                session_id          TEXT NOT NULL,
+                persona_context     TEXT,
+                label               TEXT NOT NULL,
+                choice              TEXT NOT NULL,
+                rationale           TEXT NOT NULL,
+                decision_timestamp  TEXT,
+                created_at          TEXT NOT NULL DEFAULT (datetime('now'))
+            );",
+        )
+        .expect("apply schema");
+        pool
+    }
+
+    fn dispatch_op(op_json: &str) -> Dispatched {
+        let pool = test_pool();
+        let text = format!("Some prose.\nOP: {op_json}\nMore prose.");
+        dispatch(&pool, "default", &text).expect("dispatch ok")
+    }
+
+    // ── show_persona_walkthrough ────────────────────────────────────────
+
+    #[test]
+    fn show_persona_walkthrough_emits_chat_card() {
+        let op = r###"{"op":"propose_action","action":"show_persona_walkthrough","params":{"intent":"triage tickets","content":"## Plan\n\nbody"}}"###;
+        let out = dispatch_op(op);
+        assert_eq!(out.chat_cards.len(), 1);
+        assert_eq!(out.chat_cards[0].kind, "persona_walkthrough");
+        assert!(out.warnings.is_empty());
+    }
+
+    #[test]
+    fn show_persona_walkthrough_rejects_empty_content() {
+        let op = r###"{"op":"propose_action","action":"show_persona_walkthrough","params":{"intent":"x","content":""}}"###;
+        let out = dispatch_op(op);
+        assert!(out.chat_cards.is_empty());
+        assert!(out.warnings.iter().any(|w| w.contains("content")));
+    }
+
+    // ── show_template_suggestions ───────────────────────────────────────
+
+    #[test]
+    fn show_template_suggestions_emits_chat_card() {
+        let op = r###"{"op":"propose_action","action":"show_template_suggestions","params":{"intent":"triage support tickets","limit":3}}"###;
+        let out = dispatch_op(op);
+        assert_eq!(out.chat_cards.len(), 1);
+        assert_eq!(out.chat_cards[0].kind, "template_suggestions");
+        assert!(out.warnings.is_empty());
+    }
+
+    #[test]
+    fn show_template_suggestions_rejects_empty_intent() {
+        let op = r###"{"op":"propose_action","action":"show_template_suggestions","params":{"intent":""}}"###;
+        let out = dispatch_op(op);
+        assert!(out.chat_cards.is_empty());
+        assert!(out.warnings.iter().any(|w| w.contains("intent")));
+    }
+
+    #[test]
+    fn show_template_suggestions_clamps_limit_into_1_to_5() {
+        let op = r###"{"op":"propose_action","action":"show_template_suggestions","params":{"intent":"x","limit":99}}"###;
+        let out = dispatch_op(op);
+        assert_eq!(out.chat_cards.len(), 1);
+        let limit = out.chat_cards[0]
+            .config
+            .get("limit")
+            .and_then(|v| v.as_u64())
+            .expect("limit field");
+        assert!((1..=5).contains(&limit), "limit clamped to 1..=5, got {limit}");
+    }
+
+    // ── show_use_case_set ───────────────────────────────────────────────
+
+    #[test]
+    fn show_use_case_set_emits_chat_card() {
+        let op = r###"{"op":"propose_action","action":"show_use_case_set","params":{"intent":"x","use_cases":[{"label":"Golden","role":"golden","description":"d"},{"label":"Variant","role":"variant","description":"d"},{"label":"Outscope","role":"out_of_scope","description":"d"}]}}"###;
+        let out = dispatch_op(op);
+        assert_eq!(out.chat_cards.len(), 1);
+        assert_eq!(out.chat_cards[0].kind, "use_case_set");
+    }
+
+    #[test]
+    fn show_use_case_set_rejects_empty_array() {
+        let op = r###"{"op":"propose_action","action":"show_use_case_set","params":{"use_cases":[]}}"###;
+        let out = dispatch_op(op);
+        assert!(out.chat_cards.is_empty());
+        assert!(out.warnings.iter().any(|w| w.contains("use_cases")));
+    }
+
+    #[test]
+    fn show_use_case_set_rejects_invalid_role() {
+        let op = r###"{"op":"propose_action","action":"show_use_case_set","params":{"use_cases":[{"label":"X","role":"surprise","description":"d"}]}}"###;
+        let out = dispatch_op(op);
+        assert!(out.chat_cards.is_empty());
+        assert!(out.warnings.iter().any(|w| w.contains("role")));
+    }
+
+    #[test]
+    fn show_use_case_set_rejects_oversize_array() {
+        let mut entries = Vec::new();
+        for i in 0..9 {
+            entries.push(format!(
+                r###"{{"label":"L{i}","role":"variant","description":"d"}}"###
+            ));
+        }
+        let op = format!(
+            r###"{{"op":"propose_action","action":"show_use_case_set","params":{{"use_cases":[{}]}}}}"###,
+            entries.join(",")
+        );
+        let out = dispatch_op(&op);
+        assert!(out.chat_cards.is_empty());
+        assert!(out.warnings.iter().any(|w| w.contains("too many")));
+    }
+
+    // ── show_trigger_set ────────────────────────────────────────────────
+
+    #[test]
+    fn show_trigger_set_emits_chat_card() {
+        let op = r###"{"op":"propose_action","action":"show_trigger_set","params":{"intent":"x","triggers":[{"label":"L","source":"S","condition":"C"}]}}"###;
+        let out = dispatch_op(op);
+        assert_eq!(out.chat_cards.len(), 1);
+        assert_eq!(out.chat_cards[0].kind, "trigger_set");
+    }
+
+    #[test]
+    fn show_trigger_set_rejects_missing_field() {
+        let op = r###"{"op":"propose_action","action":"show_trigger_set","params":{"triggers":[{"label":"L","source":"","condition":"C"}]}}"###;
+        let out = dispatch_op(op);
+        assert!(out.chat_cards.is_empty());
+        assert!(out.warnings.iter().any(|w| w.contains("source")));
+    }
+
+    // ── show_model_tier_choice ──────────────────────────────────────────
+
+    #[test]
+    fn show_model_tier_choice_emits_chat_card() {
+        let op = r###"{"op":"propose_action","action":"show_model_tier_choice","params":{"recommended":"sonnet","tiers":[{"tier":"haiku","rationale":"a"},{"tier":"sonnet","rationale":"b"},{"tier":"opus","rationale":"c"}]}}"###;
+        let out = dispatch_op(op);
+        assert_eq!(out.chat_cards.len(), 1);
+        assert_eq!(out.chat_cards[0].kind, "model_tier_choice");
+    }
+
+    #[test]
+    fn show_model_tier_choice_rejects_unknown_recommended() {
+        let op = r###"{"op":"propose_action","action":"show_model_tier_choice","params":{"recommended":"galactus","tiers":[{"tier":"sonnet","rationale":"x"}]}}"###;
+        let out = dispatch_op(op);
+        assert!(out.chat_cards.is_empty());
+        assert!(out.warnings.iter().any(|w| w.contains("recommended")));
+    }
+
+    #[test]
+    fn show_model_tier_choice_rejects_bad_tier_slug() {
+        let op = r###"{"op":"propose_action","action":"show_model_tier_choice","params":{"recommended":"sonnet","tiers":[{"tier":"haiku","rationale":"a"},{"tier":"jellyfish","rationale":"b"}]}}"###;
+        let out = dispatch_op(op);
+        assert!(out.chat_cards.is_empty());
+        assert!(out.warnings.iter().any(|w| w.contains("invalid tier")));
+    }
+
+    // ── show_observability_plan ─────────────────────────────────────────
+
+    #[test]
+    fn show_observability_plan_emits_chat_card() {
+        let op = r###"{"op":"propose_action","action":"show_observability_plan","params":{"error_handling":{"triggers":["tool timeout"],"escalation":"manual_reviews"},"success_metric":{"kind":"count_by_status","description":"weekly rollup"}}}"###;
+        let out = dispatch_op(op);
+        assert_eq!(out.chat_cards.len(), 1);
+        assert_eq!(out.chat_cards[0].kind, "observability_plan");
+    }
+
+    #[test]
+    fn show_observability_plan_rejects_missing_error_handling() {
+        let op = r###"{"op":"propose_action","action":"show_observability_plan","params":{"success_metric":{"kind":"latency","description":"x"}}}"###;
+        let out = dispatch_op(op);
+        assert!(out.chat_cards.is_empty());
+        assert!(out.warnings.iter().any(|w| w.contains("error_handling")));
+    }
+
+    #[test]
+    fn show_observability_plan_rejects_unknown_metric_kind() {
+        let op = r###"{"op":"propose_action","action":"show_observability_plan","params":{"error_handling":{"triggers":["a"],"escalation":"e"},"success_metric":{"kind":"vibes","description":"x"}}}"###;
+        let out = dispatch_op(op);
+        assert!(out.chat_cards.is_empty());
+        assert!(out.warnings.iter().any(|w| w.contains("kind")));
+    }
+
+    // ── show_decision_log ───────────────────────────────────────────────
+
+    #[test]
+    fn show_decision_log_emits_chat_card_and_persists() {
+        let pool = test_pool();
+        let op = r###"{"op":"propose_action","action":"show_decision_log","params":{"intent":"persona_abc","decisions":[{"label":"Model tier","choice":"Sonnet","rationale":"right balance"},{"label":"Triggers","choice":"Slack only","rationale":"scope"}]}}"###;
+        let text = format!("Some prose.\nOP: {op}");
+        let out = dispatch(&pool, "default", &text).expect("dispatch ok");
+        assert_eq!(out.chat_cards.len(), 1);
+        assert_eq!(out.chat_cards[0].kind, "decision_log");
+
+        // Verify rows landed in companion_design_decision.
+        let conn = pool.get().expect("get conn");
+        let count: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM companion_design_decision WHERE persona_context = 'persona_abc'",
+                [],
+                |r| r.get(0),
+            )
+            .expect("count");
+        assert_eq!(count, 2);
+    }
+
+    #[test]
+    fn show_decision_log_rejects_missing_rationale() {
+        let op = r###"{"op":"propose_action","action":"show_decision_log","params":{"decisions":[{"label":"X","choice":"Y","rationale":""}]}}"###;
+        let out = dispatch_op(op);
+        assert!(out.chat_cards.is_empty());
+        assert!(out.warnings.iter().any(|w| w.contains("rationale")));
+    }
+
+    // ── show_persona_ready ──────────────────────────────────────────────
+
+    #[test]
+    fn show_persona_ready_emits_chat_card() {
+        let op = r###"{"op":"propose_action","action":"show_persona_ready","params":{"recommended_action":"interactive","summary":{"intent_line":"Triage tickets","model_tier":"sonnet"}}}"###;
+        let out = dispatch_op(op);
+        assert_eq!(out.chat_cards.len(), 1);
+        assert_eq!(out.chat_cards[0].kind, "persona_ready");
+    }
+
+    #[test]
+    fn show_persona_ready_rejects_missing_intent_line() {
+        let op = r###"{"op":"propose_action","action":"show_persona_ready","params":{"recommended_action":"interactive","summary":{}}}"###;
+        let out = dispatch_op(op);
+        assert!(out.chat_cards.is_empty());
+        assert!(out.warnings.iter().any(|w| w.contains("intent_line")));
+    }
+
+    #[test]
+    fn show_persona_ready_rejects_unknown_recommended_action() {
+        let op = r###"{"op":"propose_action","action":"show_persona_ready","params":{"recommended_action":"explode","summary":{"intent_line":"x"}}}"###;
+        let out = dispatch_op(op);
+        assert!(out.chat_cards.is_empty());
+        assert!(out.warnings.iter().any(|w| w.contains("recommended_action")));
+    }
+
+    // ── show_design_capabilities ────────────────────────────────────────
+
+    #[test]
+    fn show_design_capabilities_emits_chat_card() {
+        let op = r###"{"op":"propose_action","action":"show_design_capabilities","params":{"intro":"Here's the menu."}}"###;
+        let out = dispatch_op(op);
+        assert_eq!(out.chat_cards.len(), 1);
+        assert_eq!(out.chat_cards[0].kind, "design_capabilities");
+    }
+
+    #[test]
+    fn show_design_capabilities_tolerates_empty_intro() {
+        let op = r###"{"op":"propose_action","action":"show_design_capabilities","params":{}}"###;
+        let out = dispatch_op(op);
+        assert_eq!(out.chat_cards.len(), 1);
+    }
+
+    // ── show_recent_decisions ───────────────────────────────────────────
+
+    #[test]
+    fn show_recent_decisions_emits_chat_card() {
+        let op = r###"{"op":"propose_action","action":"show_recent_decisions","params":{"persona_context":"persona_abc","limit":3}}"###;
+        let out = dispatch_op(op);
+        assert_eq!(out.chat_cards.len(), 1);
+        assert_eq!(out.chat_cards[0].kind, "recent_decisions");
+    }
+
+    #[test]
+    fn show_recent_decisions_rejects_missing_context() {
+        let op = r###"{"op":"propose_action","action":"show_recent_decisions","params":{}}"###;
+        let out = dispatch_op(op);
+        assert!(out.chat_cards.is_empty());
+        assert!(out.warnings.iter().any(|w| w.contains("persona_context")));
+    }
+
+    #[test]
+    fn show_recent_decisions_clamps_limit() {
+        let op = r###"{"op":"propose_action","action":"show_recent_decisions","params":{"persona_context":"x","limit":42}}"###;
+        let out = dispatch_op(op);
+        assert_eq!(out.chat_cards.len(), 1);
+        let limit = out.chat_cards[0]
+            .config
+            .get("limit")
+            .and_then(|v| v.as_u64())
+            .expect("limit field");
+        assert!((1..=5).contains(&limit));
+    }
+}
+
