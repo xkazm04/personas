@@ -84,4 +84,10 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// rationale per entry). Helps the user retrace reasoning without
 /// re-running the conversation; helps future-Athena explain past
 /// decisions when asked.
-pub const CONSTITUTION_VERSION: u32 = 15;
+///
+/// v16: `show_persona_ready` op — end-of-design recap card. Rolls every
+/// decomposition (intent line + system prompt outline + use cases +
+/// triggers + model tier + observability) into a build-ready summary
+/// with a primary commit button (interactive / one_shot / use_template).
+/// Closes the design → build loop without an explicit handoff message.
+pub const CONSTITUTION_VERSION: u32 = 16;

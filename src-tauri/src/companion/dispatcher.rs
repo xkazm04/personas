@@ -308,6 +308,69 @@ pub fn dispatch(
                 });
             }
             Ok(env)
+                if env.op == "propose_action" && env.action == "show_persona_ready" =>
+            {
+                // End-of-design recap. Athena rolls up all the design
+                // decisions (intent line, use cases, triggers, model
+                // tier, observability) into one build-ready card with a
+                // primary "Commit to build" button that fires the same
+                // prefill flow as the walkthrough's build button.
+                let intent_line = env
+                    .params
+                    .get("summary")
+                    .and_then(|s| s.get("intent_line"))
+                    .and_then(|v| v.as_str())
+                    .map(str::trim)
+                    .unwrap_or("");
+                if intent_line.is_empty() {
+                    out.warnings.push(
+                        "show_persona_ready: summary.intent_line is required (the refined one-sentence persona purpose used for prefill)".into(),
+                    );
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                let recommended = env
+                    .params
+                    .get("recommended_action")
+                    .and_then(|v| v.as_str())
+                    .map(str::trim)
+                    .unwrap_or("interactive");
+                if !matches!(
+                    recommended,
+                    "build_oneshot" | "interactive" | "use_template"
+                ) {
+                    out.warnings.push(format!(
+                        "show_persona_ready: recommended_action must be build_oneshot|interactive|use_template, got `{recommended}`"
+                    ));
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                let summary = env
+                    .params
+                    .get("summary")
+                    .cloned()
+                    .unwrap_or(serde_json::Value::Null);
+                let intent = env
+                    .params
+                    .get("intent")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                let title = env
+                    .params
+                    .get("title")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string());
+                out.chat_cards.push(ChatCard {
+                    kind: "persona_ready".to_string(),
+                    title,
+                    config: serde_json::json!({
+                        "intent": intent,
+                        "summary": summary,
+                        "recommended_action": recommended,
+                    }),
+                });
+            }
+            Ok(env)
                 if env.op == "propose_action" && env.action == "show_decision_log" =>
             {
                 // Decision-log card — audit trail of design choices Athena

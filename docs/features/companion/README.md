@@ -168,6 +168,18 @@ The widget renders a vertical timeline (subtle fuchsia rail + node dots) where e
 
 Helps two cases: (1) the user wants to retrace reasoning without re-reading the whole conversation; (2) the user is reviewing a built persona later and wants to know why a specific choice was made. Constitution bumped to v15.
 
+## `show_persona_ready` chat-card — design → build closer
+
+The end-of-design recap. Athena emits `show_persona_ready { intent, summary, recommended_action }` after she's worked the user through the design decomposition (walkthrough → use_cases → triggers → tier → observability) and there's enough decided to commit.
+
+`summary` carries the refined intent line plus optional rollups of system prompt outline, use case labels, trigger labels, model tier, and observability plan one-liner. `recommended_action` picks the primary button shape:
+
+- `interactive` (default) — fires the prefill flow with `autoLaunch=false`; user lands in `UnifiedBuildEntry` with the intent filled in and drives the build through the standard gate flow.
+- `build_oneshot` — same prefill but `autoLaunch=true` + `mode=one_shot`; Athena will decide everything and ping when done.
+- `use_template` — skip prefill, route to the template gallery; Athena should have already named the recommended starter in her chat reply.
+
+Widget renders an emerald-accented card with a "Refined intent" lead-in box, optional rows for each summary field that's populated, a contextual hint string, and a primary button. Closes the design → build loop without requiring an explicit handoff message. Constitution bumped to v16.
+
 ## Refine chips
 
 Below the latest completed assistant bubble only, `RefineChips` renders three small affordances — **Shorter**, **More detail**, **Code only** — that resend the prior user message with a localized steering suffix appended ("— much shorter, please.", "— go deeper, with examples.", "— code only, minimal prose."). Click feeds the modified prompt through the same `send()` path used by the composer, so the optimistic-bubble / streaming / TTS pipeline kicks in identically. Disabled while streaming or improving. Older bubbles in scrollback don't render chips — refining a mid-scrollback turn is a different, higher-effort UI that needs to model "which user message do I resend?" carefully.

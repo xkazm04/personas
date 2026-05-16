@@ -20,6 +20,7 @@ const UNCLAMPED_KINDS = new Set([
   'model_tier_choice',
   'observability_plan',
   'decision_log',
+  'persona_ready',
 ]);
 
 /**

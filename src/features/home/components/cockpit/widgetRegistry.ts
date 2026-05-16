@@ -23,6 +23,7 @@ import { IssueListWidget } from './widgets/IssueListWidget';
 import { DecisionLogWidget } from './widgets/DecisionLogWidget';
 import { ModelTierChoiceWidget } from './widgets/ModelTierChoiceWidget';
 import { ObservabilityPlanWidget } from './widgets/ObservabilityPlanWidget';
+import { PersonaReadyWidget } from './widgets/PersonaReadyWidget';
 import { PersonaWalkthroughWidget } from './widgets/PersonaWalkthroughWidget';
 import { TemplateSuggestionsWidget } from './widgets/TemplateSuggestionsWidget';
 import { TextCalloutWidget } from './widgets/TextCalloutWidget';
@@ -90,6 +91,12 @@ export const cockpitWidgetRegistry: Record<string, ComponentType<CockpitWidgetPr
   // Each decision has label / choice / rationale; widget renders a
   // vertical timeline.
   decision_log: DecisionLogWidget,
+  // End-of-design recap. Emitted via `show_persona_ready { intent,
+  // summary, recommended_action }`. Rolls every decomposition into one
+  // build-ready summary; primary button commits to the prefill flow
+  // (interactive / one_shot) or routes to the template gallery
+  // (use_template).
+  persona_ready: PersonaReadyWidget,
 };
 
 /** Tunes the grid `rowSpan` per widget kind. Multi-row gives long-form
