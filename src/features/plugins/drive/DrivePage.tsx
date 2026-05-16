@@ -451,6 +451,10 @@ export default function DrivePage() {
                 label={t.plugins.drive.bulk_cut}
                 onClick={drive.cutSelection}
               />
+              {/* Visual fence separating safe ops (copy/cut) from
+                  destructive (delete) — the eye reads "different group"
+                  before the user reads the label. */}
+              <span aria-hidden className="mx-0.5 w-px h-3.5 bg-rose-400/30" />
               <BulkChip
                 icon={Trash2}
                 label={t.plugins.drive.bulk_delete}
@@ -727,9 +731,13 @@ function BulkChip({
   tone?: "default" | "danger" | "ghost";
   iconOnly?: boolean;
 }) {
+  // Danger chips wear a rose tint at rest, not only on hover — the visual
+  // weight should match the action's blast radius even before the cursor
+  // arrives. Safe ops (copy/cut) stay flush with the cyan pill; the
+  // separator before [Delete] makes the grouping explicit.
   const styles =
     tone === "danger"
-      ? "text-rose-100 hover:bg-rose-500/25 hover:text-rose-50"
+      ? "text-rose-100 bg-rose-500/10 border border-rose-500/30 hover:bg-rose-500/25 hover:text-rose-50 hover:border-rose-500/50"
       : tone === "ghost"
         ? "text-cyan-200/70 hover:bg-cyan-500/15 hover:text-cyan-50"
         : "text-cyan-100 hover:bg-cyan-500/25 hover:text-cyan-50";
