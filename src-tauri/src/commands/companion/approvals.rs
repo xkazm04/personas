@@ -211,6 +211,7 @@ pub async fn companion_approve_action(
         // Phase G — project registry + background jobs.
         "register_project" => execute_register_project(&state, &params),
         "enqueue_dev_job" => execute_enqueue_dev_job(&state, &params),
+        "schedule_proactive" => execute_schedule_proactive(&state, &params),
         other => Err(AppError::Internal(format!(
             "approval `{approval_id}`: unknown action `{other}`"
         ))),
@@ -1206,5 +1207,62 @@ fn execute_enqueue_dev_job(
         "Job `{job_id}` (`{kind}`) queued. The worker will pick it up within a few \
          seconds; results land as a system episode you'll see on your next turn. \
          You can keep chatting while it runs."
+    )))
+}
+
+/// Athena's `schedule_proactive` approval — persist a future-dated row in
+/// `companion_proactive_message`. The deliver-due sweep
+/// (`proactive::deliver_due_scheduled`, called from
+/// `companion_evaluate_proactive_now`) releases it when the time arrives.
+fn execute_schedule_proactive(
+    state: &State<'_, Arc<AppState>>,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    let message = params
+        .get("message")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| AppError::Internal("schedule_proactive: missing `message`".into()))?;
+    let when_iso = params
+        .get("when_iso")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| {
+            AppError::Internal("schedule_proactive: missing `when_iso` (ISO8601 UTC)".into())
+        })?;
+    // Parse + revalidate the timestamp so a malformed string fails the
+    // approval at execution time rather than silently stranding the row
+    // forever (the sweep query just compares strings — a non-ISO value
+    // would never match). chrono accepts both RFC3339 and ISO8601 with
+    // `Z` / offset suffixes, which is the shape Athena's prompt
+    // documents.
+    let parsed = chrono::DateTime::parse_from_rfc3339(when_iso).map_err(|e| {
+        AppError::Internal(format!(
+            "schedule_proactive: `when_iso` ({when_iso}) is not RFC3339 — {e}"
+        ))
+    })?;
+    let now = chrono::Utc::now();
+    if parsed.with_timezone(&chrono::Utc) <= now {
+        return Err(AppError::Internal(format!(
+            "schedule_proactive: `when_iso` ({when_iso}) is in the past"
+        )));
+    }
+    let canonical = parsed
+        .with_timezone(&chrono::Utc)
+        .to_rfc3339_opts(chrono::SecondsFormat::Secs, true);
+    let msg = crate::companion::proactive::insert_scheduled(&state.user_db, message, &canonical)?;
+    Ok(ExecuteResult::message(format!(
+        "Scheduled check-in `{id}` for {canonical}: \"{preview}\"",
+        id = msg.id,
+        preview = if message.chars().count() > 80 {
+            format!(
+                "{}…",
+                message.chars().take(79).collect::<String>()
+            )
+        } else {
+            message.to_string()
+        }
     )))
 }

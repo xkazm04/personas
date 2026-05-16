@@ -792,13 +792,25 @@ export async function companionRunReflection(): Promise<string> {
  */
 export interface ProactiveMessage {
   id: string;
-  triggerKind: 'goal_target_approaching' | 'backlog_aging' | 'cadence_due' | string;
+  triggerKind:
+    | 'goal_target_approaching'
+    | 'backlog_aging'
+    | 'cadence_due'
+    | 'athena_scheduled'
+    | string;
   triggerRef: string | null;
   message: string;
   status: 'queued' | 'delivered' | 'engaged' | 'dismissed' | 'expired';
   createdAt: string;
   deliveredAt: string | null;
   resolvedAt: string | null;
+  /**
+   * ISO8601 UTC. Non-null on rows Athena scheduled via `schedule_proactive`
+   * — the deliver-due sweep holds them in `queued` until this timestamp
+   * is reached. Null for trigger-driven nudges (delivered as soon as
+   * their guards pass).
+   */
+  scheduledFor: string | null;
 }
 
 /** Tauri event channel — new proactive messages arriving from the engine. */

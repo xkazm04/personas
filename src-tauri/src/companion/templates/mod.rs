@@ -36,4 +36,12 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// to the grammar. When the user toggles autonomous mode in the chat
 /// header, the prompt builder injects an addendum teaching Athena how
 /// to chain turns and dispatch parallel subagents.
-pub const CONSTITUTION_VERSION: u32 = 7;
+///
+/// v8: `schedule_proactive` op — Athena can commit to a future check-in.
+/// User approves the (message, when_iso) pair; the deliver-due sweep in
+/// `proactive::deliver_due_scheduled` releases it when the time arrives,
+/// flowing through the same `companion://proactive` event channel as
+/// trigger-driven nudges. Approval-gated because it puts a future
+/// obligation on the user's attention (unlike connector calls, which
+/// run on pre-greenlit pinned credentials).
+pub const CONSTITUTION_VERSION: u32 = 8;

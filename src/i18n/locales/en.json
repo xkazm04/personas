@@ -10557,6 +10557,7 @@
       "proactive_kind_backlog": "aging promise",
       "proactive_kind_cadence": "cadence check-in",
       "proactive_kind_on_this_day": "on this day",
+      "proactive_kind_athena_scheduled": "scheduled by Athena",
       "proactive_evaluate_now": "Check for nudges",
       "memory_run_consolidation": "Run consolidation",
       "memory_generate_reflection": "Generate reflection",

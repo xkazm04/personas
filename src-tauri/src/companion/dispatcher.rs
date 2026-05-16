@@ -130,6 +130,13 @@ const ALLOWED_ACTIONS: &[&str] = &[
     // Phase G — project registry + background jobs.
     "register_project",
     "enqueue_dev_job",
+    // Athena's future check-in commitments. Goes through approval
+    // because it puts a future obligation on the user's attention —
+    // unlike connector calls (real-world action that runs once on
+    // pinned credentials the user already greenlit), scheduling a
+    // proactive ping needs explicit "yes, ping me about this then"
+    // consent.
+    "schedule_proactive",
 ];
 
 /// Lab modes valid for `open_lab`. Mirrors the `lab-mode-*` testids in

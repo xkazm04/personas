@@ -378,6 +378,18 @@ pub fn init_user_db(app_data_dir: &Path) -> Result<UserDbPool, AppError> {
         let conn = pool.get()?;
         conn.execute_batch(COMPANION_SCHEMA)?;
         tracing::debug!("Companion schema ensured in user database");
+
+        // Defensive incremental ALTERs for columns added after the
+        // initial COMPANION_SCHEMA. Each statement is wrapped in a
+        // failure-ignoring closure because SQLite returns "duplicate
+        // column name" on the second run — that's the success path,
+        // not an error. (User-database migrations don't share the
+        // system-database runner in db::migrations::incremental.)
+        for stmt in &[
+            "ALTER TABLE companion_proactive_message ADD COLUMN scheduled_for TEXT;",
+        ] {
+            let _ = conn.execute_batch(stmt);
+        }
     }
 
     // One-time backfill of kb_chunks_fts for installs that already have chunks
@@ -688,13 +700,17 @@ CREATE INDEX IF NOT EXISTS idx_companion_backlog_status ON companion_backlog_ite
 -- | dismissed (user said no) | expired (sat too long).
 CREATE TABLE IF NOT EXISTS companion_proactive_message (
     id            TEXT PRIMARY KEY,
-    trigger_kind  TEXT NOT NULL,                 -- 'goal_target_approaching' | 'backlog_aging' | 'cadence_due'
+    trigger_kind  TEXT NOT NULL,                 -- 'goal_target_approaching' | 'backlog_aging' | 'cadence_due' | 'athena_scheduled'
     trigger_ref   TEXT,                           -- id of the goal/backlog/ritual that fired
     message       TEXT NOT NULL,
     status        TEXT NOT NULL DEFAULT 'queued',
     created_at    TEXT NOT NULL DEFAULT (datetime('now')),
     delivered_at  TEXT,
-    resolved_at   TEXT
+    resolved_at   TEXT,
+    -- NULL = "deliver as soon as triggers say so" (current behavior).
+    -- Non-NULL ISO8601 = the deliver-due sweep skips this row until the
+    -- timestamp is reached. Set by Athena's `schedule_proactive` op.
+    scheduled_for TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_companion_proactive_status
     ON companion_proactive_message(status, created_at DESC);
