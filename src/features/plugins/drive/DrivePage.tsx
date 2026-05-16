@@ -27,6 +27,7 @@ import {
   DriveContextMenu,
   type ContextMenuState,
 } from "./components/DriveContextMenu";
+import { DriveImageLightbox } from "./components/DriveImageLightbox";
 import { DriveTextPrompt, DriveConfirm } from "./components/DrivePrompt";
 import { useSigning } from "./signing/useSigning";
 import { DriveSignDialog } from "./signing/DriveSignDialog";
@@ -63,6 +64,7 @@ export default function DrivePage() {
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const [dialog, setDialog] = useState<Dialog>(null);
   const [pathEditing, setPathEditing] = useState(false);
+  const [lightboxPath, setLightboxPath] = useState<string | null>(null);
   const [signEntry, setSignEntry] = useState<DriveEntry | null>(null);
   const [verifyEntry, setVerifyEntry] = useState<DriveEntry | null>(null);
   const [ocrEntry, setOcrEntry] = useState<DriveEntry | null>(null);
@@ -445,6 +447,7 @@ export default function DrivePage() {
           <DriveDetailsPane
             entries={selectedEntries}
             currentPath={drive.currentPath}
+            onPreviewClick={(entry) => setLightboxPath(entry.path)}
           />
         </div>
 
@@ -555,6 +558,24 @@ export default function DrivePage() {
           onCancel={() => setDialog(null)}
         />
       )}
+      {lightboxPath && (() => {
+        // Build the navigable list of image entries from the current folder
+        // each time the lightbox opens. Sorted by name so prev/next is a
+        // stable visual sequence regardless of the live sort key.
+        const imageEntries = drive.visibleEntries
+          .filter((e) => e.kind === "file" && e.mime?.startsWith("image/"))
+          .slice()
+          .sort((a, b) => a.name.localeCompare(b.name));
+        if (imageEntries.length === 0) return null;
+        return (
+          <DriveImageLightbox
+            entries={imageEntries}
+            initialPath={lightboxPath}
+            onClose={() => setLightboxPath(null)}
+          />
+        );
+      })()}
+
       {dialog?.kind === "delete" && (
         <DriveConfirm
           title={tx(t.plugins.drive.delete_confirm_title, {

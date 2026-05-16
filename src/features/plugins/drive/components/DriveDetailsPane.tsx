@@ -9,12 +9,17 @@ import { visualForEntry, kindLabel } from "../designTokens";
 interface Props {
   entries: DriveEntry[];
   currentPath: string;
+  onPreviewClick?: (entry: DriveEntry) => void;
 }
 
 const TEXT_PREVIEW_MAX_BYTES = 256 * 1024; // 256 KB
 const IMAGE_MIME_PREFIX = "image/";
 
-export function DriveDetailsPane({ entries, currentPath }: Props) {
+export function DriveDetailsPane({
+  entries,
+  currentPath,
+  onPreviewClick,
+}: Props) {
   const { t, tx } = useTranslation();
   const primary = entries[0] ?? null;
   const multi = entries.length > 1;
@@ -142,7 +147,7 @@ export function DriveDetailsPane({ entries, currentPath }: Props) {
             <div className="typo-label text-foreground">
               {t.plugins.drive.details_preview}
             </div>
-            <FilePreview entry={primary} />
+            <FilePreview entry={primary} onPreviewClick={onPreviewClick} />
           </div>
         )}
       </div>
@@ -175,7 +180,13 @@ function DetailRow({
   );
 }
 
-function FilePreview({ entry }: { entry: DriveEntry }) {
+function FilePreview({
+  entry,
+  onPreviewClick,
+}: {
+  entry: DriveEntry;
+  onPreviewClick?: (entry: DriveEntry) => void;
+}) {
   const { t } = useTranslation();
   const [text, setText] = useState<string | null>(null);
   const [state, setState] = useState<
@@ -248,7 +259,7 @@ function FilePreview({ entry }: { entry: DriveEntry }) {
     );
   }
   if (entry.mime?.startsWith(IMAGE_MIME_PREFIX)) {
-    return <ImagePreviewBlob entry={entry} />;
+    return <ImagePreviewBlob entry={entry} onPreviewClick={onPreviewClick} />;
   }
   if (text !== null) {
     return (
@@ -264,7 +275,13 @@ function FilePreview({ entry }: { entry: DriveEntry }) {
   );
 }
 
-function ImagePreviewBlob({ entry }: { entry: DriveEntry }) {
+function ImagePreviewBlob({
+  entry,
+  onPreviewClick,
+}: {
+  entry: DriveEntry;
+  onPreviewClick?: (entry: DriveEntry) => void;
+}) {
   const [url, setUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -287,13 +304,30 @@ function ImagePreviewBlob({ entry }: { entry: DriveEntry }) {
   }, [entry.path, entry.mime]);
 
   if (!url) return null;
+  // No click target if the parent didn't wire a lightbox; the preview is
+  // still rendered as a plain image.
+  if (!onPreviewClick) {
+    return (
+      <div className="rounded-card border border-primary/10 bg-background/60 p-1 overflow-hidden">
+        <img
+          src={url}
+          alt={entry.name}
+          className="rounded-input max-w-full max-h-56 object-contain mx-auto"
+        />
+      </div>
+    );
+  }
   return (
-    <div className="rounded-card border border-primary/10 bg-background/60 p-1 overflow-hidden">
+    <button
+      type="button"
+      onClick={() => onPreviewClick(entry)}
+      className="group block w-full rounded-card border border-primary/10 bg-background/60 p-1 overflow-hidden hover:border-cyan-500/40 hover:shadow-[0_0_20px_-6px_rgba(34,211,238,0.5)] transition-all cursor-zoom-in"
+    >
       <img
         src={url}
         alt={entry.name}
-        className="rounded-input max-w-full max-h-56 object-contain mx-auto"
+        className="rounded-input max-w-full max-h-56 object-contain mx-auto group-hover:scale-[1.02] transition-transform"
       />
-    </div>
+    </button>
   );
 }

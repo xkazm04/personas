@@ -9714,6 +9714,12 @@ export type Translations = {
       move_to_title: string;
       move_to_root_option: string;
       move_to_no_destinations: string;
+      lightbox_close: string;
+      lightbox_prev: string;
+      lightbox_next: string;
+      lightbox_counter: string;
+      lightbox_loading: string;
+      lightbox_failed: string;
       details_empty_hint: string;
       details_location: string;
       copy_path_tooltip: string;
