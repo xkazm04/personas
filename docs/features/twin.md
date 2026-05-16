@@ -65,7 +65,7 @@ The plugin is organised as eight tabs — **Profiles**, **Identity**, **Tone**, 
 
 The tab is a two-column grid:
 
-- **Memory Inbox (left)** — filters for `pending` / `approved` / `rejected`. Each pending card shows title, content, channel badge, priority if > 3, and two actions: **Approve** (index into KB) or **Reject** (discard). Approved memories power future recalls.
+- **Memory Inbox (left)** — filters for `pending` / `approved` / `rejected`. Each pending card shows title, content, channel badge, priority if > 3, and two actions: **Approve** (index into KB) or **Reject** (discard). Approved memories power future recalls. When viewing the **pending** filter, a bulk-action bar appears above the list with a "Select all on this page" checkbox; each row also gets its own checkbox. With one or more selected, "Approve N" and "Reject N" buttons fire sequential reviews and show a single completion toast — turns a 10-card triage into two clicks.
 - **Conversation History (right)** — chronological log of every interaction through the Twin connector. Inbound vs outbound is color-coded (cyan vs violet), and each row shows channel, contact handle, timestamp, content, and optional summary. This is the raw trail; the inbox is the curated extract.
 
 ### 6. Voice — ElevenLabs configuration

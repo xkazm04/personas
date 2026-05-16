@@ -12664,6 +12664,15 @@ export type Translations = {
       approveTitle: string;
       rejectTitle: string;
       priority: string;
+      bulkSelectAll: string;
+      bulkSelectedCount: string;
+      bulkRowSelect: string;
+      bulkApproveCta: string;
+      bulkRejectCta: string;
+      bulkClear: string;
+      bulkApprovedToast: string;
+      bulkRejectedToast: string;
+      bulkPartialToast: string;
       conversationHistory: string;
       conversationExplanation: string;
       noConversationsYet: string;
