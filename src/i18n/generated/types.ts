@@ -9696,6 +9696,7 @@ export type Translations = {
       details_kind: string;
       details_modified: string;
       details_items: string;
+      details_modified_range: string;
       details_preview: string;
       preview_unavailable: string;
       preview_binary: string;

@@ -9690,6 +9690,7 @@
       "details_kind": "Kind",
       "details_modified": "Modified",
       "details_items": "Items",
+      "details_modified_range": "{newest} → {oldest}",
       "details_preview": "Preview",
       "preview_unavailable": "Preview unavailable",
       "preview_binary": "Binary file — open in the OS file manager to inspect.",

@@ -4,7 +4,13 @@ import { Copy, FileText, Info, Play } from "lucide-react";
 import { driveFormatBytes, driveReadText, type DriveEntry } from "@/api/drive";
 import { useTranslation } from "@/i18n/useTranslation";
 import { silentCatch } from "@/lib/silentCatch";
-import { visualForEntry, kindLabel } from "../designTokens";
+import {
+  formatRelativeTime,
+  kindBucketWeight,
+  kindGroupLabel,
+  kindLabel,
+  visualForEntry,
+} from "../designTokens";
 
 const VIDEO_MIME_PREFIX = "video/";
 const PDF_MIME = "application/pdf";
@@ -126,24 +132,7 @@ export function DriveDetailsPane({
           </DetailGrid>
         )}
 
-        {multi && (
-          <div className="rounded-card border border-primary/15 bg-secondary/30 p-3">
-            <div className="typo-label text-foreground">
-              {t.plugins.drive.details_items}
-            </div>
-            <div className="mt-1.5 typo-body text-foreground font-semibold tabular-nums">
-              {entries.length}
-              <span className="ml-1.5 font-normal text-foreground">
-                • {driveFormatBytes(
-                  entries.reduce(
-                    (sum, e) => sum + (e.kind === "file" ? e.size : 0),
-                    0,
-                  ),
-                )}
-              </span>
-            </div>
-          </div>
-        )}
+        {multi && <MultiSelectSummary entries={entries} />}
 
         {!multi && primary.kind === "file" && (
           <div className="space-y-2">
@@ -155,6 +144,100 @@ export function DriveDetailsPane({
         )}
       </div>
     </aside>
+  );
+}
+
+/**
+ * Multi-selection summary card. Replaces a bare "5 items · 24 MB" with
+ * a kind breakdown (3 Folders · 12 Images · 1 PDF) and a modified-range
+ * line so the user can sanity-check what they've grabbed before any
+ * bulk action. Mirrors the visual vocabulary of the delete-confirm
+ * breakdown so the two surfaces speak the same language.
+ */
+function MultiSelectSummary({ entries }: { entries: DriveEntry[] }) {
+  const { t, tx } = useTranslation();
+  // Per-bucket count for the chip row.
+  const buckets = (() => {
+    const m = new Map<string, number>();
+    for (const e of entries) {
+      const k = visualForEntry(e).labelKey;
+      m.set(k, (m.get(k) ?? 0) + 1);
+    }
+    return Array.from(m.entries()).sort(
+      ([a], [b]) =>
+        kindBucketWeight(a as Parameters<typeof kindBucketWeight>[0]) -
+        kindBucketWeight(b as Parameters<typeof kindBucketWeight>[0]),
+    );
+  })();
+
+  // Total bytes across files (folders excluded — they have no size).
+  const totalBytes = entries.reduce(
+    (sum, e) => sum + (e.kind === "file" ? e.size : 0),
+    0,
+  );
+
+  // Modified range — only meaningful when there's at least one mtime.
+  // ISO-8601 / RFC-3339 strings sort chronologically, so plain string
+  // compare picks oldest/newest without a Date parse.
+  const stamps = entries.map((e) => e.modified).filter((s): s is string => !!s);
+  const first = stamps[0];
+  let oldest: string | null = first ?? null;
+  let newest: string | null = first ?? null;
+  for (const s of stamps) {
+    if (oldest === null || s < oldest) oldest = s;
+    if (newest === null || s > newest) newest = s;
+  }
+  const sameMoment = oldest !== null && oldest === newest;
+
+  return (
+    <div className="rounded-card border border-primary/15 bg-secondary/30 p-3 space-y-2.5">
+      {/* Top row — total count + total size. */}
+      <div>
+        <div className="typo-label text-foreground">
+          {t.plugins.drive.details_items}
+        </div>
+        <div className="mt-1 typo-body text-foreground font-semibold tabular-nums">
+          {entries.length}
+          {totalBytes > 0 && (
+            <span className="ml-1.5 font-normal text-foreground/70">
+              • {driveFormatBytes(totalBytes)}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Kind breakdown chips. */}
+      {buckets.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {buckets.map(([key, count]) => (
+            <span
+              key={key}
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-primary/10 border border-primary/15 typo-caption text-foreground"
+            >
+              <span className="font-semibold tabular-nums">{count}</span>
+              <span className="text-foreground/70">
+                {kindGroupLabel(
+                  t,
+                  key as Parameters<typeof kindGroupLabel>[1],
+                )}
+              </span>
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Modified range. */}
+      {newest && oldest && (
+        <div className="pt-1.5 border-t border-primary/10 typo-caption text-foreground/70">
+          {sameMoment
+            ? formatRelativeTime(newest, t, tx)
+            : tx(t.plugins.drive.details_modified_range, {
+                newest: formatRelativeTime(newest, t, tx),
+                oldest: formatRelativeTime(oldest, t, tx),
+              })}
+        </div>
+      )}
+    </div>
   );
 }
 
