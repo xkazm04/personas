@@ -1829,11 +1829,14 @@ body[data-drag-active="true"] * {
   --btn-primary: #1d4ed8;
   --glass-bg: rgba(255, 255, 255, 0.7);
   --glass-border: rgba(15, 23, 42, 0.06);
-  --status-success: #059669;
-  --status-warning: #d97706;
+  /* Status colors calibrated to ≥ AA against the cool near-white canvas.
+     amber-800 / emerald-700 replace amber-600 / emerald-600 which only
+     reached AA-lg on this background (surfaced by check:themes). */
+  --status-success: #047857;
+  --status-warning: #92400e;
   --status-error: #dc2626;
   --status-info: #2563eb;
-  --status-pending: #d97706;
+  --status-pending: #92400e;
   --status-processing: #2563eb;
   --status-neutral: #64748b;
   --shadow-elevation-1: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.06);
@@ -1866,12 +1869,15 @@ body[data-drag-active="true"] * {
   --btn-primary: #1d4ed8;
   --glass-bg: rgba(255, 255, 255, 0.5);
   --glass-border: rgba(59, 130, 246, 0.15);
-  --status-success: #0d9488;
-  --status-warning: #d97706;
-  --status-error: #dc2626;
-  --status-info: #2563eb;
-  --status-pending: #d97706;
-  --status-processing: #2563eb;
+  /* Status colors calibrated to ≥ AA on the slightly blue-tinted canvas.
+     amber-800 / teal-700 / red-700 / blue-700 replace the 500-600 tier
+     defaults which only reached AA-lg here (surfaced by check:themes). */
+  --status-success: #0f766e;
+  --status-warning: #92400e;
+  --status-error: #b91c1c;
+  --status-info: #1d4ed8;
+  --status-pending: #92400e;
+  --status-processing: #1d4ed8;
   --status-neutral: #3d5a80;
   --ice-shadow-sm: 0 1px 3px rgba(37, 99, 235, 0.06), 0 1px 2px rgba(37, 99, 235, 0.04);
   --ice-shadow-md: 0 4px 12px rgba(37, 99, 235, 0.08), 0 2px 4px rgba(37, 99, 235, 0.04);
@@ -2026,12 +2032,15 @@ body[data-drag-active="true"] * {
   --btn-primary: #065f46;
   --glass-bg: rgba(255, 255, 255, 0.7);
   --glass-border: rgba(20, 33, 25, 0.07);
+  /* Sage status colors calibrated to ≥ AA on the cool green-tinted canvas.
+     amber-800 / teal-700 / red-700 replace amber-700 / teal-600 / red-600
+     which fell at or below AA-lg (surfaced by check:themes). */
   --status-success: #047857;
-  --status-warning: #b45309;
-  --status-error: #dc2626;
-  --status-info: #0d9488;
-  --status-pending: #b45309;
-  --status-processing: #0d9488;
+  --status-warning: #92400e;
+  --status-error: #b91c1c;
+  --status-info: #0f766e;
+  --status-pending: #92400e;
+  --status-processing: #0f766e;
   --status-neutral: #5a6b5d;
   --shadow-elevation-1: 0 1px 2px rgba(20, 33, 25, 0.05), 0 1px 3px rgba(20, 33, 25, 0.07);
   --shadow-elevation-2: 0 2px 6px rgba(20, 33, 25, 0.06), 0 4px 12px rgba(20, 33, 25, 0.05);
@@ -2063,11 +2072,13 @@ body[data-drag-active="true"] * {
   --btn-primary: #78350f;
   --glass-bg: rgba(255, 252, 245, 0.72);
   --glass-border: rgba(42, 36, 24, 0.08);
+  /* Sand status colors calibrated to AA on the warm beige canvas.
+     amber-800 replaces amber-700 (warning was at the 4.5:1 boundary). */
   --status-success: #047857;
-  --status-warning: #b45309;
+  --status-warning: #92400e;
   --status-error: #b91c1c;
   --status-info: #0e7490;
-  --status-pending: #b45309;
+  --status-pending: #92400e;
   --status-processing: #0e7490;
   --status-neutral: #6b5d3e;
   --shadow-elevation-1: 0 1px 2px rgba(42, 36, 24, 0.05), 0 1px 3px rgba(42, 36, 24, 0.07);
