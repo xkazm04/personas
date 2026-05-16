@@ -20,6 +20,7 @@ import MediaStudioToolbar from './toolbar/MediaStudioToolbar';
 import { artistProbeMedia } from '@/api/artist/index';
 import { VIDEO_EXTENSIONS, AUDIO_EXTENSIONS, IMAGE_EXTENSIONS } from './constants';
 import type { VideoClip, AudioClip, TextItem, ImageItem, TimelineItem } from './types';
+import BeatSidebar from './BeatSidebar';
 import FfmpegStatusBanner from './FfmpegStatusBanner';
 import CompositionPreview from './CompositionPreview';
 import TimelinePanel from './TimelinePanel';
@@ -426,12 +427,20 @@ export default function MediaStudioPage() {
 
       {ffmpegReady && composition.items.length > 0 && (
         <div className="flex-1 flex flex-col min-h-0">
-          <div className="flex-1 min-h-0 p-4 flex items-center justify-center bg-background/40">
-            <CompositionPreview
+          <div className="flex-1 min-h-0 flex">
+            <div className="flex-1 min-h-0 p-4 flex items-center justify-center bg-background/40">
+              <CompositionPreview
+                engine={engine}
+                playing={playing}
+                plan={plan}
+                totalDuration={totalDuration}
+              />
+            </div>
+            <BeatSidebar
+              beats={textItems}
               engine={engine}
-              playing={playing}
-              plan={plan}
-              totalDuration={totalDuration}
+              onSeek={seek}
+              onSelect={setSelectedItemId}
             />
           </div>
 

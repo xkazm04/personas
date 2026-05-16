@@ -11213,6 +11213,12 @@ export type Translations = {
     template_vertical_9_16_name: string;
     template_horizontal_16_9_name: string;
     template_square_name: string;
+    beat_sidebar_title: string;
+    beat_sidebar_count: string;
+    beat_sidebar_collapse: string;
+    beat_sidebar_expand: string;
+    beat_sidebar_empty: string;
+    beat_sidebar_untitled: string;
     output_settings: string;
     resolution: string;
     framerate: string;
