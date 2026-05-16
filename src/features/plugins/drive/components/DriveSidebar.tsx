@@ -3,6 +3,7 @@ import { ChevronRight, Folder, FolderOpen, HardDrive, Sparkles } from "lucide-re
 
 import type { DriveTreeNode } from "@/api/drive";
 import { driveFormatBytes } from "@/api/drive";
+import { silentCatch } from "@/lib/silentCatch";
 import type { UseDriveResult } from "../hooks/useDrive";
 import { useTranslation } from "@/i18n/useTranslation";
 
@@ -137,6 +138,7 @@ interface TreeNodeProps {
 function TreeNode({ node, drive, depth, initiallyOpen = false }: TreeNodeProps) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(initiallyOpen);
+  const [dropActive, setDropActive] = useState(false);
   const isActive = drive.currentPath === node.path;
   const hasChildren = node.children.length > 0 || node.hasMoreChildren;
 
@@ -144,6 +146,53 @@ function TreeNode({ node, drive, depth, initiallyOpen = false }: TreeNodeProps) 
     e.stopPropagation();
     setExpanded((v) => !v);
   }, []);
+
+  // Drag from the file list ships `application/x-drive-move` with the
+  // selection's paths. Tree nodes mirror the file-list folder drop target
+  // so the sidebar stops feeling decorative.
+  const acceptsDrop = (e: React.DragEvent) =>
+    Array.from(e.dataTransfer?.types ?? []).includes("application/x-drive-move");
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    if (!acceptsDrop(e)) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDropActive(true);
+  }, []);
+
+  const handleDragLeave = useCallback(() => {
+    setDropActive(false);
+  }, []);
+
+  const handleDrop = useCallback(
+    async (e: React.DragEvent) => {
+      if (!acceptsDrop(e)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      setDropActive(false);
+      const raw = e.dataTransfer.getData("application/x-drive-move");
+      if (!raw) return;
+      try {
+        const { paths } = JSON.parse(raw) as { paths: string[] };
+        for (const p of paths) {
+          if (p === node.path) continue;
+          // Refuse moving an ancestor folder into its own descendant — it
+          // would orphan the subtree. The backend would also reject, but
+          // catching here avoids the toast on a predictable mis-drop.
+          if (node.path !== "" && node.path.startsWith(`${p}/`)) continue;
+          const name = p.split("/").pop() ?? p;
+          const dst = node.path ? `${node.path}/${name}` : name;
+          await drive.move(p, dst);
+        }
+        // Expand the destination after a successful drop so the user can
+        // see where their files landed without re-clicking.
+        if (hasChildren && !expanded) setExpanded(true);
+      } catch (err) {
+        silentCatch("drive:sidebar-drop")(err);
+      }
+    },
+    [drive, node.path, hasChildren, expanded],
+  );
 
   return (
     <div className="relative">
@@ -154,10 +203,15 @@ function TreeNode({ node, drive, depth, initiallyOpen = false }: TreeNodeProps) 
           if (hasChildren && !expanded) setExpanded(true);
         }}
         onDoubleClick={toggle}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
         className={`group relative w-full flex items-center gap-1.5 py-1.5 pr-2 rounded-input text-left typo-body transition-all ${
-          isActive
-            ? "bg-gradient-to-r from-cyan-500/20 via-cyan-500/10 to-transparent text-cyan-100 shadow-[inset_2px_0_0_rgba(34,211,238,0.8)]"
-            : "text-foreground hover:bg-secondary/50 hover:text-foreground"
+          dropActive
+            ? "bg-cyan-500/30 ring-1 ring-cyan-400/60 text-cyan-50 shadow-[inset_0_0_12px_rgba(34,211,238,0.4)]"
+            : isActive
+              ? "bg-gradient-to-r from-cyan-500/20 via-cyan-500/10 to-transparent text-cyan-100 shadow-[inset_2px_0_0_rgba(34,211,238,0.8)]"
+              : "text-foreground hover:bg-secondary/50 hover:text-foreground"
         }`}
         style={{ paddingLeft: `${10 + depth * 14}px` }}
       >
