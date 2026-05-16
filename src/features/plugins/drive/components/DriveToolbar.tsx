@@ -9,12 +9,14 @@ import {
   Grid3x3,
   List,
   Columns3,
+  Pencil,
   RefreshCw,
   Search,
   X,
   Home,
   type LucideIcon,
 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 import type { UseDriveResult, ViewMode } from "../hooks/useDrive";
 import { useTranslation } from "@/i18n/useTranslation";
@@ -24,6 +26,15 @@ interface Props {
   onNewFolder: () => void;
   onNewFile: () => void;
   onOpenSignatures: () => void;
+  pathEditing?: boolean;
+  onPathEditingChange?: (v: boolean) => void;
+}
+
+function normalizePathInput(raw: string): string {
+  // Strip leading/trailing whitespace and slashes; collapse internal `//`.
+  // Drive paths are always relative — empty string is the root.
+  const trimmed = raw.trim().replace(/^\/+|\/+$/g, "");
+  return trimmed.replace(/\/{2,}/g, "/");
 }
 
 export function DriveToolbar({
@@ -31,12 +42,38 @@ export function DriveToolbar({
   onNewFolder,
   onNewFile,
   onOpenSignatures,
+  pathEditing = false,
+  onPathEditingChange,
 }: Props) {
   const { t } = useTranslation();
 
   const segments = drive.currentPath
     ? drive.currentPath.split("/").filter(Boolean)
     : [];
+
+  // Local controlled state, mirrored to the parent flag so Ctrl+L from
+  // DrivePage can flip it. Initial value resets to the current path each
+  // time edit mode opens.
+  const [draft, setDraft] = useState(drive.currentPath);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (pathEditing) {
+      setDraft(drive.currentPath);
+      // Defer focus + select until the input has mounted in the swap.
+      requestAnimationFrame(() => {
+        inputRef.current?.focus();
+        inputRef.current?.select();
+      });
+    }
+  }, [pathEditing, drive.currentPath]);
+
+  const exitEdit = () => onPathEditingChange?.(false);
+  const commitEdit = () => {
+    const normalized = normalizePathInput(draft);
+    drive.navigate(normalized);
+    exitEdit();
+  };
 
   return (
     <div className="flex items-center gap-2 px-4 py-2.5 border-b border-primary/10 bg-gradient-to-b from-background/70 to-background/40 backdrop-blur-sm">
@@ -68,32 +105,72 @@ export function DriveToolbar({
         />
       </div>
 
-      {/* Breadcrumb */}
-      <nav
-        aria-label="Breadcrumb"
-        className="flex items-center gap-0.5 min-w-0 flex-1 px-2 py-1 rounded-card bg-secondary/30 border border-primary/10"
-      >
-        <BreadcrumbPill
-          label={t.plugins.drive.sidebar_root}
-          icon={Home}
-          onClick={() => drive.navigate("")}
-          isLast={segments.length === 0}
-        />
-        {segments.map((seg, i) => {
-          const subPath = segments.slice(0, i + 1).join("/");
-          const isLast = i === segments.length - 1;
-          return (
-            <div key={subPath} className="flex items-center gap-0.5 min-w-0">
-              <ChevronRight className="w-3 h-3 text-foreground flex-shrink-0" />
-              <BreadcrumbPill
-                label={seg}
-                onClick={() => drive.navigate(subPath)}
-                isLast={isLast}
-              />
-            </div>
-          );
-        })}
-      </nav>
+      {/* Breadcrumb (or path input when editing) */}
+      {pathEditing ? (
+        <div className="flex items-center gap-2 min-w-0 flex-1 px-2 py-1 rounded-card bg-cyan-500/10 border border-cyan-500/35 focus-within:border-cyan-400/60 focus-within:ring-2 focus-within:ring-cyan-500/20">
+          <Pencil className="w-3.5 h-3.5 text-cyan-300 flex-shrink-0" />
+          <input
+            ref={inputRef}
+            type="text"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                commitEdit();
+              } else if (e.key === "Escape") {
+                e.preventDefault();
+                exitEdit();
+              }
+            }}
+            onBlur={exitEdit}
+            placeholder={t.plugins.drive.path_input_placeholder}
+            aria-label={t.plugins.drive.path_input_aria}
+            spellCheck={false}
+            autoComplete="off"
+            className="flex-1 min-w-0 bg-transparent typo-body font-mono text-cyan-50 placeholder:text-foreground focus:outline-none"
+          />
+          <span className="typo-caption text-cyan-200/50 flex-shrink-0 hidden md:inline">
+            {t.plugins.drive.path_input_hint}
+          </span>
+        </div>
+      ) : (
+        <nav
+          aria-label="Breadcrumb"
+          className="flex items-center gap-0.5 min-w-0 flex-1 px-2 py-1 rounded-card bg-secondary/30 border border-primary/10 hover:border-primary/20 group/breadcrumb"
+        >
+          <BreadcrumbPill
+            label={t.plugins.drive.sidebar_root}
+            icon={Home}
+            onClick={() => drive.navigate("")}
+            isLast={segments.length === 0}
+          />
+          {segments.map((seg, i) => {
+            const subPath = segments.slice(0, i + 1).join("/");
+            const isLast = i === segments.length - 1;
+            return (
+              <div key={subPath} className="flex items-center gap-0.5 min-w-0">
+                <ChevronRight className="w-3 h-3 text-foreground flex-shrink-0" />
+                <BreadcrumbPill
+                  label={seg}
+                  onClick={() => drive.navigate(subPath)}
+                  isLast={isLast}
+                />
+              </div>
+            );
+          })}
+          {/* Trailing empty area + pencil affordance — click to type a path. */}
+          <button
+            type="button"
+            onClick={() => onPathEditingChange?.(true)}
+            className="ml-auto flex items-center justify-center w-5 h-5 rounded text-foreground/0 group-hover/breadcrumb:text-cyan-300/70 hover:!text-cyan-200 hover:bg-cyan-500/15 transition-all flex-shrink-0"
+            title={t.plugins.drive.path_input_aria}
+            aria-label={t.plugins.drive.path_input_aria}
+          >
+            <Pencil className="w-3 h-3" />
+          </button>
+        </nav>
+      )}
 
       {/* Search */}
       <div className="relative flex items-center group">

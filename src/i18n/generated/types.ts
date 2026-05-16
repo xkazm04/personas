@@ -9647,6 +9647,9 @@ export type Translations = {
       up: string;
       refresh: string;
       search_placeholder: string;
+      path_input_placeholder: string;
+      path_input_aria: string;
+      path_input_hint: string;
       view_list: string;
       view_icons: string;
       view_columns: string;

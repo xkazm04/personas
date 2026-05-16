@@ -57,6 +57,7 @@ export default function DrivePage() {
 
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const [dialog, setDialog] = useState<Dialog>(null);
+  const [pathEditing, setPathEditing] = useState(false);
   const [signEntry, setSignEntry] = useState<DriveEntry | null>(null);
   const [verifyEntry, setVerifyEntry] = useState<DriveEntry | null>(null);
   const [ocrEntry, setOcrEntry] = useState<DriveEntry | null>(null);
@@ -120,6 +121,11 @@ export default function DrivePage() {
       if (mod && e.key.toLowerCase() === "a") {
         e.preventDefault();
         drv.selectAll();
+        return;
+      }
+      if (mod && e.key.toLowerCase() === "l") {
+        e.preventDefault();
+        setPathEditing(true);
         return;
       }
       if (mod && e.key.toLowerCase() === "c") {
@@ -392,6 +398,8 @@ export default function DrivePage() {
           onNewFolder={() => setDialog({ kind: "new_folder" })}
           onNewFile={() => setDialog({ kind: "new_file" })}
           onOpenSignatures={() => setSignaturesOpen(true)}
+          pathEditing={pathEditing}
+          onPathEditingChange={setPathEditing}
         />
         <div className="flex-1 min-h-0 flex">
           <DriveSidebar drive={drive} />
