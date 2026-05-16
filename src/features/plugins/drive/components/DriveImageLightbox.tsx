@@ -78,12 +78,39 @@ export function DriveImageLightbox({ entries, initialPath, onClose }: Props) {
     setIndex((i) => (i + 1) % total);
   }, [total]);
 
-  const [transform, setTransform] = useState<Transform>(IDENTITY);
+  // Transform state per-image. The lightbox keeps a map keyed by path
+  // for the lifetime of the session — flipping prev/next restores the
+  // zoom/rotation/pan you had on each image, which matters for
+  // image-comparison workflows (e.g. two screenshots both pre-zoomed to
+  // 200% to compare a region). The map clears on close (component
+  // unmount), so re-opening the lightbox starts fresh.
+  const transformsRef = useRef<Map<string, Transform>>(new Map());
+  const currentPathKey = current?.path ?? "";
+  const [transform, setTransformRaw] = useState<Transform>(IDENTITY);
   const transformRef = useRef(transform);
   transformRef.current = transform;
+  // Wrap setTransform so every state change also writes to the per-path
+  // map. Consumers can keep calling setTransform / functional updaters —
+  // the side-effect threads through.
+  const setTransform = useCallback(
+    (next: Transform | ((prev: Transform) => Transform)) => {
+      setTransformRaw((prev) => {
+        const resolved =
+          typeof next === "function"
+            ? (next as (p: Transform) => Transform)(prev)
+            : next;
+        if (currentPathKey) transformsRef.current.set(currentPathKey, resolved);
+        return resolved;
+      });
+    },
+    [currentPathKey],
+  );
+  // Restore the stored transform when entry changes; fall back to
+  // identity if the user hasn't transformed this image yet.
   useEffect(() => {
-    setTransform(IDENTITY);
-  }, [index]);
+    if (!currentPathKey) return;
+    setTransformRaw(transformsRef.current.get(currentPathKey) ?? IDENTITY);
+  }, [currentPathKey]);
 
   const zoomBy = useCallback(
     (factor: number, originX?: number, originY?: number) => {
