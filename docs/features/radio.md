@@ -45,7 +45,14 @@ appropriate engine and reports state transitions back via
   event) the renderer surfaces a localized toast. For YouTube errors
   100/101/150 (embed disabled / unavailable) the renderer auto-skips to
   the next track via `radio_track_ended` so a single bad video doesn't
-  deadlock the station.
+  deadlock the station. Failed videoIds also land in a session-scope
+  blacklist (`failedVideoIdsRef`): the next time the shuffle wrap
+  returns the same id, the engine-sync useEffect silently advances the
+  cursor without re-triggering the toast. A `skipBudgetRef` (reset on
+  station change and on every successful PLAYING state) caps
+  consecutive blacklist-skips at the station's track count, so an
+  entirely-broken station eventually surfaces the failure instead of
+  spinning forever.
 - For `youtubeTracks` stations a thin accent-coloured progress bar
   appears below the track title while playing. The renderer polls
   `player.getCurrentTime()` / `player.getDuration()` once per second

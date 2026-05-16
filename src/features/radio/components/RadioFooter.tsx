@@ -125,6 +125,21 @@ export default function RadioFooter() {
   const crossfadingRef = useRef<boolean>(false);
   const fadeRafRef = useRef<number | null>(null);
   const fadedOutVideoIdRef = useRef<string | null>(null);
+  /**
+   * Session blacklist of YouTube video IDs that have failed this run —
+   * either via a fatal onError (100/101/150/etc.) or via the silent-stall
+   * watchdog. The engine-sync useEffect checks this set before issuing
+   * `player.loadVideo` and short-circuits to `radioTrackEnded` if the
+   * incoming id is already known-broken, sparing the user another
+   * "unavailable" toast on every shuffle wrap.
+   *
+   * `skipBudgetRef` caps consecutive blacklist-skips so an entirely
+   * broken station can't loop forever — it resets on station change
+   * and on every successful PLAYING state.
+   */
+  const failedVideoIdsRef = useRef<Set<string>>(new Set());
+  const skipBudgetRef = useRef<number>(0);
+  const stationTrackCountRef = useRef<number>(0);
 
   const stationKind = nowPlaying?.station.source.kind ?? null;
   const isStream = stationKind === 'stream';
@@ -170,6 +185,9 @@ export default function RadioFooter() {
       if (code === YT_STATE.PLAYING) {
         cancelWatchdog();
         reportStatus('playing');
+        // Successful play replenishes the skip budget — a later run of
+        // bad tracks can be skipped again without giving up early.
+        skipBudgetRef.current = stationTrackCountRef.current;
       } else if (code === YT_STATE.PAUSED) {
         if (lastReportedRef.current !== 'stopped') reportStatus('paused');
       } else if (code === YT_STATE.BUFFERING) {
@@ -187,6 +205,10 @@ export default function RadioFooter() {
     (code: number) => {
       cancelWatchdog();
       if (isFatalYouTubeError(code)) {
+        // Remember this videoId as broken for the rest of the session
+        // so the next shuffle wrap doesn't put us through the same toast.
+        const failedId = currentVideoIdRef.current;
+        if (failedId) failedVideoIdsRef.current.add(failedId);
         // Skip past the unplayable track. Toast only if the next track
         // also fails — the watchdog covers that.
         radioTrackEnded().catch(silentCatch('radio:track-ended'));
@@ -284,6 +306,17 @@ export default function RadioFooter() {
         return;
       }
 
+      // Session blacklist: silently skip known-broken videos until the
+      // budget runs out. The budget caps at the station's track count
+      // so an entirely-broken station can't infinitely loop — once we
+      // exhaust the budget, the next bad track plays normally and the
+      // existing toast/watchdog path surfaces the failure.
+      if (failedVideoIdsRef.current.has(videoId) && skipBudgetRef.current > 0) {
+        skipBudgetRef.current -= 1;
+        radioTrackEnded().catch(silentCatch('radio:track-ended-blacklisted'));
+        return;
+      }
+
       const startSeconds =
         (state?.currentStationId &&
           state.stationCursors?.[state.currentStationId]?.positionSec) || 0;
@@ -291,7 +324,11 @@ export default function RadioFooter() {
       if (desiredPlaying) {
         armWatchdog(nowPlaying.station.name, () => {
           // Most "embed disabled" tracks would have fired onError already;
-          // this watchdog handles the silent-stall variant by skipping.
+          // this watchdog handles the silent-stall variant by blacklisting
+          // the videoId + skipping. Without the blacklist add, the next
+          // wrap of the shuffle would silently stall on the same track.
+          const stalledId = currentVideoIdRef.current;
+          if (stalledId) failedVideoIdsRef.current.add(stalledId);
           radioTrackEnded().catch(silentCatch('radio:track-ended'));
         });
       }
@@ -412,6 +449,19 @@ export default function RadioFooter() {
   useEffect(() => {
     setProgress(null);
   }, [nowPlaying?.track?.videoId, nowPlaying?.station.id]);
+
+  // Track count + skip budget reset on station change. The budget caps
+  // consecutive blacklist-skips; resetting here lets a new station's
+  // bad tracks be skipped fully even if the previous station exhausted
+  // its budget.
+  useEffect(() => {
+    const tracks =
+      nowPlaying?.station.source.kind === 'youtubeTracks'
+        ? nowPlaying.station.source.tracks
+        : null;
+    stationTrackCountRef.current = tracks?.length ?? 0;
+    skipBudgetRef.current = stationTrackCountRef.current;
+  }, [nowPlaying?.station.id]);
 
   // Poll the YouTube player for current time + duration while playing.
   // Every Nth tick also reports the position to the backend so the
