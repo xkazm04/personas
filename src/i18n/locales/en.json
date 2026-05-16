@@ -12775,7 +12775,11 @@
     "volume_label": "Volume",
     "mute": "Mute",
     "unmute": "Unmute",
-    "progress_label": "{current} / {total}"
+    "progress_label": "{current} / {total}",
+    "expand_button": "Show details",
+    "collapse": "Close",
+    "tracklist_label": "{count} tracks",
+    "open_source": "Open source"
   },
   "cockpit": {
     "unknown_assistant": "Unknown assistant",

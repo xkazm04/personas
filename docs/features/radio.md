@@ -35,6 +35,13 @@ appropriate engine and reports state transitions back via
   `player.getCurrentTime()` / `player.getDuration()` once per second
   and every fifth tick reports the current position back through
   `radio_report_status` so a restart resumes mid-track.
+- Clicking the track title opens a floating "now playing" card anchored
+  above the footer (`NowPlayingCard`). The card shows the station with
+  an accent-tinted header, the current track + artist, a wider progress
+  bar with explicit M:SS / M:SS time labels, accent-coloured prev /
+  play / next controls, the full YouTube tracklist with the active
+  track highlighted (or, for `stream` stations, the description and
+  source link). Click outside or Escape dismisses.
 
 ## Architecture
 

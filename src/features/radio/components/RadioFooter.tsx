@@ -16,6 +16,7 @@ import {
   radioSetVolume,
   radioTrackEnded,
 } from '../api/radioApi';
+import NowPlayingCard from './NowPlayingCard';
 import StationPicker from './StationPicker';
 import VolumePopover from './VolumePopover';
 
@@ -86,6 +87,7 @@ export default function RadioFooter() {
   const { state, nowPlaying, stations, loaded } = useRadioState();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [volumeOpen, setVolumeOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const ytHostRef = useRef<HTMLDivElement | null>(null);
@@ -478,12 +480,16 @@ export default function RadioFooter() {
             transition: 'box-shadow 200ms',
           }}
         />
-        <span
-          className="typo-caption text-foreground/85 truncate"
-          title={titleLine}
+        <button
+          type="button"
+          onClick={() => setDetailsOpen((v) => !v)}
+          className="typo-caption text-foreground/85 hover:text-foreground truncate text-left transition-colors min-w-0"
+          title={t.radio.expand_button}
+          aria-label={t.radio.expand_button}
+          aria-expanded={detailsOpen}
         >
           {titleLine}
-        </span>
+        </button>
         {isYoutube && progress && progress.durationSec > 0 && (
           <div
             aria-hidden
@@ -501,6 +507,19 @@ export default function RadioFooter() {
               }}
             />
           </div>
+        )}
+        {detailsOpen && nowPlaying && (
+          <NowPlayingCard
+            nowPlaying={nowPlaying}
+            isPlaying={isPlayingNow}
+            isYoutube={isYoutube}
+            progress={progress}
+            currentTrackIndex={nowPlaying.trackIndexInStation ?? null}
+            onTogglePlay={togglePlay}
+            onPrev={onPrev}
+            onNext={onNext}
+            onClose={() => setDetailsOpen(false)}
+          />
         )}
       </div>
 

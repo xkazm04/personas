@@ -12782,6 +12782,10 @@ export type Translations = {
     mute: string;
     unmute: string;
     progress_label: string;
+    expand_button: string;
+    collapse: string;
+    tracklist_label: string;
+    open_source: string;
   };
   cockpit: {
     unknown_assistant: string;
