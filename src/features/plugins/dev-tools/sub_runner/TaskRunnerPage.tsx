@@ -284,6 +284,7 @@ function TaskCard({
 
   return (
     <div
+      data-task-id={task.id}
       className={`animate-fade-slide-in border rounded-modal overflow-hidden transition-colors ${
         hasWarnings ? 'border-amber-500/25 hover:border-amber-500/35' : 'border-primary/10 hover:border-primary/20'
       }`}
@@ -447,6 +448,29 @@ export default function TaskRunnerPage() {
     depth: t.depth ?? 'quick',
     contextWarnings: taskWarnings[t.id],
   }));
+
+  // Consume any pending task-focus handoff (e.g. from goal spotlight task
+  // click). Capture into local state, clear from the store immediately, then
+  // wait until the tasks list has the matching card before scrolling it
+  // into view + applying a short-lived ring.
+  const [pendingFocusId, setPendingFocusId] = useState<string | null>(null);
+  useEffect(() => {
+    const id = useSystemStore.getState().pendingTaskFocusId;
+    if (id) {
+      setPendingFocusId(id);
+      useSystemStore.getState().setPendingTaskFocusId(null);
+    }
+  }, []);
+  useEffect(() => {
+    if (!pendingFocusId) return;
+    const el = document.querySelector<HTMLElement>(`[data-task-id="${pendingFocusId}"]`);
+    if (!el) return; // Card hasn't rendered yet; wait for next tasks update.
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.classList.add('ring-2', 'ring-primary/60');
+    const t = window.setTimeout(() => el.classList.remove('ring-2', 'ring-primary/60'), 2000);
+    setPendingFocusId(null);
+    return () => window.clearTimeout(t);
+  }, [pendingFocusId, storeTasks.length]);
 
   // Fetch tasks on mount and when project changes
   useEffect(() => {

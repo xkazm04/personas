@@ -10827,6 +10827,7 @@ export type Translations = {
       spotlight_tasks_done_suffix: string;
       spotlight_tasks_failed_suffix: string;
       spotlight_tasks_empty: string;
+      spotlight_task_jump_tooltip: string;
       kanban_nudge_decrease: string;
       kanban_nudge_increase: string;
       kanban_drop_here: string;

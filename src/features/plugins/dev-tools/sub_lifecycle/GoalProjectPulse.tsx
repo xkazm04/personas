@@ -21,6 +21,7 @@ import {
   ArrowRight, Calendar, Layers, Link2, Activity, ListChecks, Loader2,
 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useSystemStore } from '@/stores/systemStore';
 import type { DevGoal } from '@/lib/bindings/DevGoal';
 import type { DevGoalDependency } from '@/lib/bindings/DevGoalDependency';
 import type { DevTask } from '@/lib/bindings/DevTask';
@@ -415,6 +416,13 @@ function SpotlightPane({
 
 function TaskList({ tasks, loading }: { tasks: DevTask[]; loading: boolean }) {
   const { t } = useTranslation();
+  const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
+  const setPendingTaskFocusId = useSystemStore((s) => s.setPendingTaskFocusId);
+
+  const handleTaskJump = (taskId: string) => {
+    setPendingTaskFocusId(taskId);
+    setDevToolsTab('task-runner');
+  };
 
   const counts = useMemo(() => {
     const acc = { done: 0, active: 0, pending: 0, failed: 0 };
@@ -458,23 +466,27 @@ function TaskList({ tasks, loading }: { tasks: DevTask[]; loading: boolean }) {
             const isComplete = task.status === 'complete';
             const isFailed = task.status === 'failed';
             return (
-              <li
-                key={task.id}
-                className="flex items-center gap-2 rounded-interactive border border-primary/10 bg-background/30 px-2.5 py-1.5"
-              >
-                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                  isComplete ? 'bg-emerald-400'
-                  : isFailed ? 'bg-red-400'
-                  : task.status === 'pending' ? 'bg-foreground/30'
-                  : 'bg-amber-400 animate-pulse'
-                }`} />
-                <span className="text-sm text-foreground truncate flex-1 min-w-0">{task.title}</span>
-                {!isComplete && !isFailed && task.progress_pct > 0 && (
-                  <span className="typo-caption text-foreground/60 tabular-nums shrink-0">{task.progress_pct}%</span>
-                )}
-                <span className={`typo-caption uppercase tracking-wide tabular-nums shrink-0 ${tint}`}>
-                  {task.status}
-                </span>
+              <li key={task.id}>
+                <button
+                  type="button"
+                  onClick={() => handleTaskJump(task.id)}
+                  title={t.plugins.dev_lifecycle.spotlight_task_jump_tooltip}
+                  className="w-full flex items-center gap-2 rounded-interactive border border-primary/10 bg-background/30 px-2.5 py-1.5 text-left hover:border-primary/25 hover:bg-primary/5 transition-colors"
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                    isComplete ? 'bg-emerald-400'
+                    : isFailed ? 'bg-red-400'
+                    : task.status === 'pending' ? 'bg-foreground/30'
+                    : 'bg-amber-400 animate-pulse'
+                  }`} />
+                  <span className="text-sm text-foreground truncate flex-1 min-w-0">{task.title}</span>
+                  {!isComplete && !isFailed && task.progress_pct > 0 && (
+                    <span className="typo-caption text-foreground/60 tabular-nums shrink-0">{task.progress_pct}%</span>
+                  )}
+                  <span className={`typo-caption uppercase tracking-wide tabular-nums shrink-0 ${tint}`}>
+                    {task.status}
+                  </span>
+                </button>
               </li>
             );
           })}

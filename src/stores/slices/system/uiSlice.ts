@@ -74,6 +74,8 @@ export interface UiSlice {
   pendingCatalogCategoryFilter: string | null;
   /** Pending sub-tab applied when the Lifecycle page next mounts (e.g. jump-to-goals from a Task Runner goal pill). */
   pendingLifecycleSubTab: 'setup' | 'goals' | 'competitions' | 'tracking' | null;
+  /** Pending task ID to scroll-into-view + highlight when TaskRunner next mounts (e.g. from a goal-spotlight task click). */
+  pendingTaskFocusId: string | null;
 
   // Canvas <-> Live Stream cross-linking
   canvasEdgeFocus: { edgeId: string; eventType: string; sourceFilter: string | null } | null;
@@ -110,6 +112,7 @@ export interface UiSlice {
   setContextScanComplete: (complete: boolean) => void;
   setPendingCatalogCategoryFilter: (category: string | null) => void;
   setPendingLifecycleSubTab: (tab: 'setup' | 'goals' | 'competitions' | 'tracking' | null) => void;
+  setPendingTaskFocusId: (id: string | null) => void;
   setCanvasEdgeFocus: (focus: { edgeId: string; eventType: string; sourceFilter: string | null } | null) => void;
   setLiveStreamHighlightEventId: (id: string | null) => void;
   // Plugin enable/disable
@@ -171,6 +174,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) =
   contextScanComplete: false,
   pendingCatalogCategoryFilter: null,
   pendingLifecycleSubTab: null,
+  pendingTaskFocusId: null,
   canvasEdgeFocus: null,
   liveStreamHighlightEventId: null,
 
@@ -216,6 +220,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) =
   setContextScanComplete: (complete) => set({ contextScanComplete: complete }),
   setPendingCatalogCategoryFilter: (category) => set({ pendingCatalogCategoryFilter: category }),
   setPendingLifecycleSubTab: (tab) => set({ pendingLifecycleSubTab: tab }),
+  setPendingTaskFocusId: (id) => set({ pendingTaskFocusId: id }),
   setCanvasEdgeFocus: (focus) => set({ canvasEdgeFocus: focus }),
   setLiveStreamHighlightEventId: (id) => set({ liveStreamHighlightEventId: id }),
   enabledPlugins: new Set<PluginTab>(['dev-tools', 'artist', 'obsidian-brain', 'research-lab', 'drive', 'twin', 'companion']),
