@@ -32,12 +32,6 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
-- **[2026-05-16 16:30 — started] /research — hermes-goal-skill**
-  - **Source:** https://www.youtube.com/watch?v=9oOZ3PB6n4Y (Hermes Agent `/goal` walkthrough) + Web augmentation on Hermes `/goal` docs (user explicitly asked: "Web search what hermes does with /goal skill, explain and propose whether any reusability in our app")
-  - **Paths:** `Obsidian/personas/Research/2026-05-16-hermes-goal-skill.md` (new), `Obsidian/personas/Lessons/2026-05-16-research.md` (new, no other today-runs detected), `Obsidian/personas/Patterns/descoped-reopenable.md` (likely update — 2026-05-11 `/goal` entry already exists), `.claude/active-runs.md`. NO code paths planned upfront — user asked for "explanation + proposal", default Phase 8 outcome is documentation update, not implementation. May add `.planning/handoffs/2026-05-16-...` if user accepts an in-session shape.
-  - **Status:** started
-  - **Note:** Aware of concurrent `[2026-05-13 — started] /research — hermes-agent-codebase-deep` whose timestamp is 3 days stale (>2h cutoff) — that session likely aborted or merged. Its declared paths overlap on `descoped-reopenable.md` only; safe to coexist via Edit-append discipline. Will flag the stale entry to the user in the Phase 11 summary.
-
 - **[2026-05-16 14:42 — started] artist-test-coverage — Vitest + Playwright for plugins/artist**
   - **Paths:** `src/features/plugins/artist/**/__tests__/*.test.{ts,tsx}` (new), possibly `src/features/plugins/artist/sub_media_studio/hooks/useMediaExport.ts` (export `normalizeProgress` for unit test), possibly `tests/playwright/artist-*.spec.ts` + `tests/playwright/artist-bridge.ts` (Cycle D only)
   - **Status:** started
@@ -97,6 +91,16 @@ timestamp — the next session can recognize it as abandoned.
   - **Note:** Read-only analysis of OpenHands; no edits to that repo. Path-disjoint from 7 concurrent /friend plugin sessions (they touch `src/features/plugins/*` and `src/styles/`; this run touches `src/features/plugins/dev-tools/` only IF code finding lands there + user accepts — would surface as conflict at Phase 8). Path-disjoint from /friend-theming (styles), /research-hermes-agent (different Lessons date file). Phase 13 commit will be atomic.
 
 ## Recently completed (last 14 days)
+
+- **[2026-05-16 16:30 → 17:10] /research — hermes-goal-skill (reaffirm descope + anchor fix)**
+  - **Status:** completed (commit: `a68f9b6f7`)
+  - **Source:** https://www.youtube.com/watch?v=9oOZ3PB6n4Y (Wes Roth Hermes Agent `/goal` walkthrough) + web augmentation on `hermes-agent.nousresearch.com/docs/user-guide/features/goals` (user explicitly asked: "explain and propose whether any reusability in our app")
+  - **Paths shipped:**
+    - **Repo:** `.claude/active-runs.md` (register + this deregister entry — uncommitted Phase 13h edit for next session to sweep), `.claude/codebase-stack.md` (anchor fix: stale `engine/runner.rs::run_persona` → `engine/runner/mod.rs::run_execution`)
+    - **Obsidian:** `Research/2026-05-16-hermes-goal-skill.md` (new), `Lessons/2026-05-16-research.md` (new), `Patterns/descoped-reopenable.md` (2026-05-11 entry refined with 2026-05-16 update: anchor correction, web-augmented contract details, new soft reconsider trigger (v))
+  - **Outcome:** Reaffirmed descoped status on the `/goal` Ralph-loop primitive. The video is 5 days late behind the 2026-05-11 descoped-reopenable entry and the 2026-05-13 hermes-agent-codebase-deep update — zero new architectural surface; only refinements. User chose Option A (reaffirm + refine) over scaffold / full execution / seed-template after risks-first review. Hermes is now #1 on OpenRouter with 2x growth in 3 days post-`/goal` launch (market validation), but no paying personas user has surfaced demand — the dominant blocker remains demand-side, not architectural.
+  - **Source-type yield:** Product demo / competitor walkthrough scoped to one feature; same-source repeat (4th Hermes run in 5 weeks). 1 reopen-reaffirm + 5 already-existed catches. AT THE LOW END of the product-demo band — in-band given the prior deep-read had already mined the same surface.
+  - **Concurrent-session note:** The commit's active-runs.md diff swept up 3 other sessions' edits that landed between my read and my stage: langfuse /friend deregistered, /research-openhands-codebase-analysis registered at 18:50, /friend-radio Recently-completed entry reformatted. All coherent forward-moving ledger churn; documented in commit body per CLAUDE.md primitive 5.
 
 - **[2026-05-16 14:07 → 18:30] /friend — theming (14 cycles, merged to master at `21dc389de`)**
   - **Worktree:** `.claude/worktrees/friend-theming-140706/` — REMOVED post-merge
