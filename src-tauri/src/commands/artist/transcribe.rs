@@ -25,8 +25,8 @@ use tauri::State;
 use tokio::process::Command as TokioCommand;
 
 use crate::error::AppError;
-use crate::ipc_auth::require_privileged;
 use crate::AppState;
+use personas_macros::requires;
 
 /// Sidecar schema version. Bump when the on-disk shape changes in a way
 /// that older readers can't tolerate.
@@ -138,12 +138,12 @@ fn validate_local_file_path(path: &str) -> Result<(), AppError> {
 /// sidecar lands next to the input file, so the fixed `.transcript.json`
 /// suffix bounds the write target.
 #[tauri::command]
+#[requires(privileged)]
 pub async fn artist_transcribe_media(
     state: State<'_, Arc<AppState>>,
     file_path: String,
     provider: TranscribeProvider,
 ) -> Result<TranscribeResult, AppError> {
-    require_privileged(&state, "artist_transcribe_media").await?;
     validate_local_file_path(&file_path)?;
 
     let source = PathBuf::from(&file_path);
@@ -174,11 +174,11 @@ pub async fn artist_transcribe_media(
 /// `validate_local_file_path` (no UNC, no ADS, no `..` traversal). Privileged
 /// at the IPC wrapper level. Consumed by `useTranscriptCache`.
 #[tauri::command]
+#[requires(privileged)]
 pub async fn artist_load_transcript(
     state: State<'_, Arc<AppState>>,
     transcript_path: String,
 ) -> Result<String, AppError> {
-    require_privileged(&state, "artist_load_transcript").await?;
     validate_local_file_path(&transcript_path)?;
     if !transcript_path.ends_with(".transcript.json") {
         return Err(AppError::Validation(

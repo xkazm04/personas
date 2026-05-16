@@ -24,8 +24,8 @@ use crate::engine::render_plan::{
     compile as render_plan_compile, AudioStage, OverlayStage, RenderPlan, SourceEntry, VideoStage,
 };
 use crate::error::AppError;
-use crate::ipc_auth::require_privileged;
 use crate::AppState;
+use personas_macros::requires;
 
 // =============================================================================
 // Types
@@ -148,10 +148,10 @@ async fn get_ffmpeg_version_async(ffmpeg_path: &Path) -> Result<String, AppError
 // =============================================================================
 
 #[tauri::command]
+#[requires(privileged)]
 pub async fn artist_check_ffmpeg(
     state: State<'_, Arc<AppState>>,
 ) -> Result<FfmpegStatus, AppError> {
-    require_privileged(&state, "artist_check_ffmpeg").await?;
     match find_ffmpeg_path().await {
         Some(p) => {
             let version = get_ffmpeg_version_async(&p).await.ok();
@@ -171,11 +171,11 @@ pub async fn artist_check_ffmpeg(
 
 /// Probe a media file using ffprobe to get duration, dimensions, codecs.
 #[tauri::command]
+#[requires(privileged)]
 pub async fn artist_probe_media(
     state: State<'_, Arc<AppState>>,
     file_path: String,
 ) -> Result<MediaProbeResult, AppError> {
-    require_privileged(&state, "artist_probe_media").await?;
     let ffprobe_path = find_ffprobe_path()
         .await
         .ok_or_else(|| AppError::NotFound("ffprobe not found (install ffmpeg)".into()))?;
@@ -266,11 +266,11 @@ async fn find_ffprobe_path() -> Option<PathBuf> {
 /// own command. Auth-gated because the parser is reachable from any IPC
 /// caller and unbounded composition_json size is a CPU-DoS vector.
 #[tauri::command]
+#[requires(privileged)]
 pub async fn artist_compile_render_plan(
     state: State<'_, Arc<AppState>>,
     composition_json: String,
 ) -> Result<RenderPlan, AppError> {
-    require_privileged(&state, "artist_compile_render_plan").await?;
     let composition: RpComposition = serde_json::from_str(&composition_json)
         .map_err(|e| AppError::Validation(format!("Invalid composition: {e}")))?;
 
@@ -286,6 +286,7 @@ pub async fn artist_compile_render_plan(
 ///
 /// Runs in a background task, streaming progress events to the frontend.
 #[tauri::command]
+#[requires(privileged)]
 pub async fn artist_export_composition(
     state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
@@ -293,7 +294,6 @@ pub async fn artist_export_composition(
     composition_json: String,
     output_path: String,
 ) -> Result<serde_json::Value, AppError> {
-    require_privileged(&state, "artist_export_composition").await?;
 
     let ffmpeg = find_ffmpeg_path()
         .await
@@ -365,12 +365,12 @@ pub async fn artist_export_composition(
 /// Extract the audio track of a media file into a standalone file.
 /// Uses stream-copy (no re-encode) when possible.
 #[tauri::command]
+#[requires(privileged)]
 pub async fn artist_extract_audio(
     state: State<'_, Arc<AppState>>,
     input_path: String,
     output_path: String,
 ) -> Result<String, AppError> {
-    require_privileged(&state, "artist_extract_audio").await?;
     let ffmpeg = find_ffmpeg_path()
         .await
         .ok_or_else(|| AppError::NotFound("ffmpeg not found".into()))?;
@@ -410,13 +410,13 @@ pub async fn artist_extract_audio(
 /// Save a single frame as an image. Uses fast seek (`-ss` before `-i`) so
 /// it's near-instant even on long files.
 #[tauri::command]
+#[requires(privileged)]
 pub async fn artist_save_thumbnail(
     state: State<'_, Arc<AppState>>,
     input_path: String,
     time_seconds: f64,
     output_path: String,
 ) -> Result<String, AppError> {
-    require_privileged(&state, "artist_save_thumbnail").await?;
     let ffmpeg = find_ffmpeg_path()
         .await
         .ok_or_else(|| AppError::NotFound("ffmpeg not found".into()))?;
@@ -456,11 +456,11 @@ pub async fn artist_save_thumbnail(
 /// returned `integrated` LUFS to apply a true linear gain equivalent to what
 /// the export's loudnorm pass will produce.
 #[tauri::command]
+#[requires(privileged)]
 pub async fn artist_measure_loudness(
     state: State<'_, Arc<AppState>>,
     file_path: String,
 ) -> Result<LoudnessStats, AppError> {
-    require_privileged(&state, "artist_measure_loudness").await?;
     let ffmpeg = find_ffmpeg_path()
         .await
         .ok_or_else(|| AppError::NotFound("ffmpeg not found".into()))?;
@@ -520,6 +520,7 @@ pub async fn artist_measure_loudness(
 /// when possible — falls back to re-encode only if stream-copy rejects the
 /// range (e.g. not on a keyframe).
 #[tauri::command]
+#[requires(privileged)]
 pub async fn artist_trim_file(
     state: State<'_, Arc<AppState>>,
     input_path: String,
@@ -527,7 +528,6 @@ pub async fn artist_trim_file(
     end_seconds: f64,
     output_path: String,
 ) -> Result<String, AppError> {
-    require_privileged(&state, "artist_trim_file").await?;
     let ffmpeg = find_ffmpeg_path()
         .await
         .ok_or_else(|| AppError::NotFound("ffmpeg not found".into()))?;
@@ -601,12 +601,12 @@ pub async fn artist_trim_file(
 }
 
 #[tauri::command]
+#[requires(privileged)]
 pub async fn artist_cancel_export(
     app: tauri::AppHandle,
     state: State<'_, Arc<AppState>>,
     job_id: String,
 ) -> Result<bool, AppError> {
-    require_privileged(&state, "artist_cancel_export").await?;
     MEDIA_EXPORT_JOBS.cancel(&app, &job_id)?;
     Ok(true)
 }

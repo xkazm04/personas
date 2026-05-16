@@ -3,19 +3,20 @@ use tauri::State;
 
 use crate::engine::enclave::{self, EnclavePolicy, EnclaveSealResult, EnclaveVerifyResult};
 use crate::error::AppError;
-use crate::ipc_auth::{require_auth_sync, require_privileged_sync};
+use crate::ipc_auth::{require_auth_sync};
 use crate::AppState;
+use personas_macros::requires;
 
 // -- Seal -----------------------------------------------------------------
 
 #[tauri::command]
+#[requires(privileged)]
 pub fn seal_enclave(
     state: State<'_, Arc<AppState>>,
     persona_id: String,
     policy: EnclavePolicy,
     save_path: String,
 ) -> Result<EnclaveSealResult, AppError> {
-    require_privileged_sync(&state, "seal_enclave")?;
 
     let (bytes, result) = enclave::seal(&state.db, &persona_id, policy)?;
 

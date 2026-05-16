@@ -10,16 +10,17 @@ use crate::engine::share_link::{self, ResolvedShareLink, ShareLinkResult};
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth_sync, require_privileged_sync};
 use crate::AppState;
+use personas_macros::requires;
 
 // -- Export ---------------------------------------------------------------
 
 #[tauri::command]
+#[requires(privileged)]
 pub fn export_persona_bundle(
     state: State<'_, Arc<AppState>>,
     resource_ids: Vec<String>,
     save_path: String,
 ) -> Result<BundleExportResult, AppError> {
-    require_privileged_sync(&state, "export_persona_bundle")?;
     if resource_ids.is_empty() {
         return Err(AppError::Validation(
             "At least one resource must be selected for export".into(),
@@ -56,12 +57,12 @@ pub fn preview_bundle_import(
 // -- Import Apply --------------------------------------------------------
 
 #[tauri::command]
+#[requires(privileged)]
 pub fn apply_bundle_import(
     state: State<'_, Arc<AppState>>,
     file_path: String,
     options: BundleImportOptions,
 ) -> Result<BundleImportResult, AppError> {
-    require_privileged_sync(&state, "apply_bundle_import")?;
 
     // Use cached preview bytes if a preview_id was provided (TOCTOU mitigation).
     // Falls back to re-reading the file if the cache entry expired or is missing,
@@ -137,11 +138,11 @@ pub struct ClipboardExportResult {
 }
 
 #[tauri::command]
+#[requires(privileged)]
 pub fn export_bundle_to_clipboard(
     state: State<'_, Arc<AppState>>,
     resource_ids: Vec<String>,
 ) -> Result<ClipboardExportResult, AppError> {
-    require_privileged_sync(&state, "export_bundle_to_clipboard")?;
     if resource_ids.is_empty() {
         return Err(AppError::Validation(
             "At least one resource must be selected for export".into(),
@@ -200,12 +201,12 @@ pub fn preview_bundle_from_clipboard(
 // -- Clipboard Import Apply (base64) ------------------------------------
 
 #[tauri::command]
+#[requires(privileged)]
 pub fn apply_bundle_from_clipboard(
     state: State<'_, Arc<AppState>>,
     base64_data: String,
     options: BundleImportOptions,
 ) -> Result<BundleImportResult, AppError> {
-    require_privileged_sync(&state, "apply_bundle_from_clipboard")?;
 
     // Use cached preview bytes if available, otherwise decode from base64
     let bytes = if let Some(ref pid) = options.preview_id {
@@ -277,11 +278,11 @@ pub fn verify_bundle(
 // -- Share Link ----------------------------------------------------------
 
 #[tauri::command]
+#[requires(privileged)]
 pub fn create_share_link(
     state: State<'_, Arc<AppState>>,
     resource_ids: Vec<String>,
 ) -> Result<ShareLinkResult, AppError> {
-    require_privileged_sync(&state, "create_share_link")?;
     if resource_ids.is_empty() {
         return Err(AppError::Validation(
             "At least one resource must be selected for sharing".into(),

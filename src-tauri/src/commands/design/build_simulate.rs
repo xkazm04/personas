@@ -37,8 +37,9 @@ use crate::db::repos::core::build_sessions as build_session_repo;
 use crate::db::repos::core::memories as mem_repo;
 use crate::db::repos::core::personas as persona_repo;
 use crate::error::AppError;
-use crate::ipc_auth::{require_auth, require_privileged};
+use crate::ipc_auth::{require_auth};
 use crate::AppState;
+use personas_macros::requires;
 
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -404,11 +405,11 @@ pub struct SimulationArtefacts {
 /// any execution's artefacts — same gate as observability commands that
 /// touch arbitrary executions.
 #[tauri::command]
+#[requires(privileged)]
 pub async fn get_simulation_artefacts(
     state: State<'_, Arc<AppState>>,
     execution_id: String,
 ) -> Result<SimulationArtefacts, AppError> {
-    require_privileged(&state, "get_simulation_artefacts").await?;
 
     let reviews = review_repo::get_by_execution(&state.db, &execution_id).unwrap_or_default();
     let memories = mem_repo::get_by_execution(&state.db, &execution_id).unwrap_or_default();

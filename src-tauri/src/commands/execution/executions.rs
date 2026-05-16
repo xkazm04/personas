@@ -12,11 +12,10 @@ use crate::engine::automation_runner::automation_to_virtual_tool;
 use crate::engine::failover::CircuitBreakerStatus;
 use crate::engine::scheduler as sched_logic;
 use crate::error::AppError;
-use crate::ipc_auth::{
-    require_auth, require_auth_sync, require_privileged, require_privileged_sync,
-};
+use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::validation::open_log_file_safely;
 use crate::AppState;
+use personas_macros::requires;
 
 /// Verify that the execution belongs to the expected persona.
 fn verify_execution_owner(
@@ -99,6 +98,7 @@ pub fn get_execution(
 }
 
 #[tauri::command]
+#[requires(privileged)]
 pub fn create_execution(
     state: State<'_, Arc<AppState>>,
     persona_id: String,
@@ -107,7 +107,6 @@ pub fn create_execution(
     model_used: Option<String>,
     use_case_id: Option<String>,
 ) -> Result<PersonaExecution, AppError> {
-    require_privileged_sync(&state, "create_execution")?;
     repo::create(
         &state.db,
         &persona_id,
@@ -127,6 +126,7 @@ pub fn create_execution(
 /// asynchronously inside the spawned engine task.
 #[allow(clippy::too_many_arguments)]
 #[tauri::command]
+#[requires(privileged)]
 pub async fn execute_persona(
     state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
@@ -137,7 +137,6 @@ pub async fn execute_persona(
     continuation: Option<crate::engine::types::Continuation>,
     idempotency_key: Option<String>,
 ) -> Result<PersonaExecution, AppError> {
-    require_privileged(&state, "execute_persona").await?;
     execute_persona_inner(
         &state,
         app,

@@ -11,10 +11,11 @@ use crate::db::repos::resources::triggers as repo;
 use crate::db::repos::resources::webhook_log as webhook_log_repo;
 use crate::engine::chain;
 use crate::error::AppError;
-use crate::ipc_auth::{require_auth, require_auth_sync, require_privileged};
+use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::validation::contract::check;
 use crate::validation::trigger as tv;
 use crate::AppState;
+use personas_macros::requires;
 
 #[tauri::command]
 pub fn list_all_triggers(state: State<'_, Arc<AppState>>) -> Result<Vec<PersonaTrigger>, AppError> {
@@ -1253,11 +1254,11 @@ pub struct DryRunChainTarget {
 /// Validates config, generates the event that would be published,
 /// finds matching subscriptions, and identifies downstream chain triggers.
 #[tauri::command]
+#[requires(privileged)]
 pub async fn dry_run_trigger(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<DryRunResult, AppError> {
-    require_privileged(&state, "dry_run_trigger").await?;
     // 1. Run full validation
     let validation = validate_trigger(state.clone(), id.clone()).await?;
 

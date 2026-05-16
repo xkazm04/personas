@@ -16,7 +16,6 @@ use tauri::{AppHandle, Manager, State};
 use url::Url;
 
 use crate::error::AppError;
-use crate::ipc_auth::require_privileged;
 use crate::langfuse::client::probe;
 use crate::langfuse::config;
 use crate::langfuse::docker;
@@ -28,6 +27,7 @@ use crate::langfuse::types::{
     LangfuseSaveRequest, LangfuseStackInfo, LangfuseStackState, LangfuseTestResult,
 };
 use crate::AppState;
+use personas_macros::requires;
 
 /// Validate a Langfuse host URL. Mirrors the cloud-orchestrator policy: HTTPS
 /// for remote hosts; HTTP only for loopback (so users can test against a
@@ -68,13 +68,13 @@ fn validate_langfuse_host(raw: &str) -> Result<Url, AppError> {
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
+#[requires(privileged)]
 pub async fn langfuse_test_connection(
     state: State<'_, Arc<AppState>>,
     host: String,
     public_key: String,
     secret_key: String,
 ) -> Result<LangfuseTestResult, AppError> {
-    require_privileged(&state, "langfuse_test_connection").await?;
     // Reject obviously bad hosts (non-https remote, file://, gopher://, etc.)
     // before we hand the URL + Basic-auth credentials to reqwest.
     validate_langfuse_host(&host)?;
@@ -82,11 +82,11 @@ pub async fn langfuse_test_connection(
 }
 
 #[tauri::command]
+#[requires(privileged)]
 pub async fn langfuse_save_config(
     state: State<'_, Arc<AppState>>,
     request: LangfuseSaveRequest,
 ) -> Result<LangfuseTestResult, AppError> {
-    require_privileged(&state, "langfuse_save_config").await?;
 
     let LangfuseSaveRequest {
         host,

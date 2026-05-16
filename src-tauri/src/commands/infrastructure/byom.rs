@@ -20,8 +20,9 @@ use crate::db::repos::execution::provider_audit;
 use crate::engine::byom::{ByomPolicy, PolicyWarning, ProviderAuditEntry};
 use crate::engine::provider::{resolve_provider, EngineKind};
 use crate::error::AppError;
-use crate::ipc_auth::{require_auth_sync, require_privileged_sync};
+use crate::ipc_auth::require_auth_sync;
 use crate::AppState;
+use personas_macros::requires;
 use std::time::Instant;
 
 // =============================================================================
@@ -71,41 +72,41 @@ pub fn validate_byom_policy(
 
 /// List provider audit log entries (newest first).
 #[tauri::command]
+#[requires(privileged)]
 pub fn list_provider_audit_log(
     state: State<'_, Arc<AppState>>,
     limit: Option<i64>,
 ) -> Result<Vec<ProviderAuditEntry>, AppError> {
-    require_privileged_sync(&state, "list_provider_audit_log")?;
     provider_audit::list(&state.db, limit)
 }
 
 /// List provider audit entries for a specific persona.
 #[tauri::command]
+#[requires(privileged)]
 pub fn list_provider_audit_by_persona(
     state: State<'_, Arc<AppState>>,
     persona_id: String,
     limit: Option<i64>,
 ) -> Result<Vec<ProviderAuditEntry>, AppError> {
-    require_privileged_sync(&state, "list_provider_audit_by_persona")?;
     provider_audit::list_by_persona(&state.db, &persona_id, limit)
 }
 
 /// Get aggregate provider usage statistics.
 #[tauri::command]
+#[requires(privileged)]
 pub fn get_provider_usage_stats(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<provider_audit::ProviderUsageStats>, AppError> {
-    require_privileged_sync(&state, "get_provider_usage_stats")?;
     provider_audit::get_usage_stats(&state.db)
 }
 
 /// Get daily provider usage timeseries for sparkline rendering.
 #[tauri::command]
+#[requires(privileged)]
 pub fn get_provider_usage_timeseries(
     state: State<'_, Arc<AppState>>,
     days: Option<i64>,
 ) -> Result<Vec<provider_audit::ProviderUsageTimeseries>, AppError> {
-    require_privileged_sync(&state, "get_provider_usage_timeseries")?;
     provider_audit::get_usage_timeseries(&state.db, days.unwrap_or(30))
 }
 

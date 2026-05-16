@@ -28,6 +28,7 @@ use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync, require_privileged};
 use crate::validation;
 use crate::AppState;
+use personas_macros::requires;
 
 use super::export_types::{
     MemoryExport, SubscriptionExport, TriggerExport, MAX_CONFIG_LEN, MAX_DESCRIPTION_LEN,
@@ -260,12 +261,12 @@ pub async fn get_export_stats(state: State<'_, Arc<AppState>>) -> Result<ExportS
 /// When `passphrase` is provided (>= 8 chars), credential secrets are encrypted
 /// and embedded in the bundle.
 #[tauri::command]
+#[requires(privileged)]
 pub async fn export_full(
     state: State<'_, Arc<AppState>>,
     app: AppHandle,
     passphrase: Option<String>,
 ) -> Result<bool, AppError> {
-    require_privileged(&state, "export_full").await?;
     let pool = &state.db;
     let mut bundle = build_export_bundle(pool, ExportScope::Full)?;
 
@@ -327,12 +328,12 @@ pub async fn export_selective(
 /// When `passphrase` is provided and the bundle contains `encrypted_credentials`,
 /// credential secrets are decrypted and written to the imported credential shells.
 #[tauri::command]
+#[requires(privileged)]
 pub async fn import_portability_bundle(
     state: State<'_, Arc<AppState>>,
     app: AppHandle,
     passphrase: Option<String>,
 ) -> Result<Option<PortabilityImportResult>, AppError> {
-    require_privileged(&state, "import_portability_bundle").await?;
     let app_clone = app.clone();
     let file_path = tokio::task::spawn_blocking(move || {
         app_clone
@@ -506,12 +507,12 @@ pub async fn export_selective_to_path(
 
 #[cfg(debug_assertions)]
 #[tauri::command]
+#[requires(privileged)]
 pub async fn import_portability_bundle_from_path(
     state: State<'_, Arc<AppState>>,
     passphrase: Option<String>,
     file_path: String,
 ) -> Result<Option<PortabilityImportResult>, AppError> {
-    require_privileged(&state, "import_portability_bundle_from_path").await?;
     let path = std::path::PathBuf::from(&file_path);
 
     let content = if path.extension().is_some_and(|ext| ext == "zip") {
@@ -1996,12 +1997,12 @@ fn derive_key(passphrase: &str, salt: &[u8]) -> [u8; 32] {
 
 /// Export all credential secrets to a password-protected encrypted file.
 #[tauri::command]
+#[requires(privileged)]
 pub async fn export_credentials(
     state: State<'_, Arc<AppState>>,
     app: AppHandle,
     passphrase: String,
 ) -> Result<bool, AppError> {
-    require_privileged(&state, "export_credentials").await?;
 
     if passphrase.len() < 8 {
         return Err(AppError::Validation(
@@ -2110,6 +2111,7 @@ pub async fn export_credentials(
 
 /// Import credentials from a password-protected encrypted file.
 #[tauri::command]
+#[requires(privileged)]
 pub async fn import_credentials(
     state: State<'_, Arc<AppState>>,
     app: AppHandle,
@@ -2117,7 +2119,6 @@ pub async fn import_credentials(
     resolutions_json: Option<String>,
     file_path_override: Option<String>,
 ) -> Result<Option<CredentialImportResult>, AppError> {
-    require_privileged(&state, "import_credentials").await?;
 
     let path = if let Some(override_path) = file_path_override {
         std::path::PathBuf::from(override_path)

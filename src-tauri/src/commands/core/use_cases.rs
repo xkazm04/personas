@@ -14,8 +14,8 @@ use ts_rs::TS;
 use crate::db::models::PersonaExecution;
 use crate::db::repos::core::personas as persona_repo;
 use crate::error::AppError;
-use crate::ipc_auth::require_privileged;
 use crate::AppState;
+use personas_macros::requires;
 
 use self::testable::{build_simulation_input, cascade_use_case_toggle};
 
@@ -252,12 +252,12 @@ pub struct UseCaseToggleResult {
 /// anything. Returns the counts the UI would show in its confirmation
 /// dialog.
 #[tauri::command]
+#[requires(privileged)]
 pub async fn get_use_case_cascade(
     state: State<'_, Arc<AppState>>,
     persona_id: String,
     use_case_id: String,
 ) -> Result<UseCaseToggleResult, AppError> {
-    require_privileged(&state, "get_use_case_cascade").await?;
 
     let conn = state.db.get()?;
     let triggers_updated: i64 = conn
@@ -300,13 +300,13 @@ pub async fn get_use_case_cascade(
 /// See docs/concepts/persona-capabilities/02-use-case-as-capability.md
 /// §enable-disable-cascade for the contract.
 #[tauri::command]
+#[requires(privileged)]
 pub async fn set_use_case_enabled(
     state: State<'_, Arc<AppState>>,
     persona_id: String,
     use_case_id: String,
     enabled: bool,
 ) -> Result<UseCaseToggleResult, AppError> {
-    require_privileged(&state, "set_use_case_enabled").await?;
 
     // Run cascade in a scoped block so the Connection (+ inner transaction) drops
     // **before** we await on `session_pool.invalidate`. Transactions are `!Send`
@@ -358,13 +358,13 @@ pub struct UseCaseGenerationSettings {
 ///
 /// Phase C5b.
 #[tauri::command]
+#[requires(privileged)]
 pub async fn set_use_case_generation_settings(
     state: State<'_, Arc<AppState>>,
     persona_id: String,
     use_case_id: String,
     settings: UseCaseGenerationSettings,
 ) -> Result<UseCaseGenerationSettings, AppError> {
-    require_privileged(&state, "set_use_case_generation_settings").await?;
 
     let result = {
         let conn = state.db.get()?;
@@ -400,12 +400,12 @@ pub struct EventListenerCounts {
 /// listen for `event_type`. Used by the rename modal to warn the user before
 /// they break consumer wiring. Phase C5b.
 #[tauri::command]
+#[requires(privileged)]
 pub async fn count_event_listeners(
     state: State<'_, Arc<AppState>>,
     event_type: String,
     exclude_persona_id: Option<String>,
 ) -> Result<EventListenerCounts, AppError> {
-    require_privileged(&state, "count_event_listeners").await?;
 
     let conn = state.db.get()?;
     let exclude = exclude_persona_id.as_deref().unwrap_or("");
@@ -465,6 +465,7 @@ pub struct RenameEventListenersResult {
 /// Apply the chosen consumer action when renaming an event. Excludes the
 /// renaming persona by default. Phase C5b.
 #[tauri::command]
+#[requires(privileged)]
 pub async fn rename_event_listeners(
     state: State<'_, Arc<AppState>>,
     from_event: String,
@@ -472,7 +473,6 @@ pub async fn rename_event_listeners(
     action: RenameConsumerAction,
     exclude_persona_id: Option<String>,
 ) -> Result<RenameEventListenersResult, AppError> {
-    require_privileged(&state, "rename_event_listeners").await?;
 
     if from_event.trim().is_empty() || to_event.trim().is_empty() {
         return Err(AppError::Validation(
@@ -553,6 +553,7 @@ pub async fn rename_event_listeners(
 ///
 /// See docs/concepts/persona-capabilities/02-use-case-as-capability.md §simulation.
 #[tauri::command]
+#[requires(privileged)]
 pub async fn simulate_use_case(
     state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
@@ -560,7 +561,6 @@ pub async fn simulate_use_case(
     use_case_id: String,
     input_override: Option<String>,
 ) -> Result<PersonaExecution, AppError> {
-    require_privileged(&state, "simulate_use_case").await?;
 
     // Resolve sample_input from the use case when no override is given.
     let persona = persona_repo::get_by_id(&state.db, &persona_id)?;

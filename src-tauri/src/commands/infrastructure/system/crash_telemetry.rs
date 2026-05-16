@@ -3,19 +3,20 @@ use std::sync::Arc;
 use tauri::{Manager, State};
 
 use crate::error::AppError;
-use crate::ipc_auth::{require_privileged, require_privileged_sync};
+
 use crate::AppState;
+use personas_macros::requires;
 
 // =============================================================================
 // Native Crash Logs
 // =============================================================================
 
 #[tauri::command]
+#[requires(privileged)]
 pub fn get_crash_logs(
     state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
 ) -> Result<Vec<crate::logging::CrashLogEntry>, AppError> {
-    require_privileged_sync(&state, "get_crash_logs")?;
     let app_data_dir = app
         .path()
         .app_data_dir()
@@ -25,11 +26,11 @@ pub fn get_crash_logs(
 }
 
 #[tauri::command]
+#[requires(privileged)]
 pub fn clear_crash_logs(
     state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
 ) -> Result<(), AppError> {
-    require_privileged_sync(&state, "clear_crash_logs")?;
     let app_data_dir = app
         .path()
         .app_data_dir()
@@ -44,11 +45,11 @@ pub fn clear_crash_logs(
 /// a long-lived install is accumulating disk usage that the bounded retention
 /// caps are supposed to prevent.
 #[tauri::command]
+#[requires(privileged)]
 pub fn get_log_directory_stats(
     state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
 ) -> Result<crate::logging::LogDirectoryStats, AppError> {
-    require_privileged_sync(&state, "get_log_directory_stats")?;
     let app_data_dir = app
         .path()
         .app_data_dir()
@@ -62,6 +63,7 @@ pub fn get_log_directory_stats(
 // =============================================================================
 
 #[tauri::command]
+#[requires(privileged)]
 pub async fn report_frontend_crash(
     state: State<'_, Arc<AppState>>,
     component: String,
@@ -69,7 +71,6 @@ pub async fn report_frontend_crash(
     stack: Option<String>,
     component_stack: Option<String>,
 ) -> Result<crate::db::models::FrontendCrashRow, AppError> {
-    require_privileged(&state, "report_frontend_crash").await?;
     let version = env!("CARGO_PKG_VERSION").to_string();
     crate::db::repos::core::frontend_crashes::insert(
         &state.db,
@@ -82,25 +83,25 @@ pub async fn report_frontend_crash(
 }
 
 #[tauri::command]
+#[requires(privileged)]
 pub async fn get_frontend_crashes(
     state: State<'_, Arc<AppState>>,
     limit: Option<u32>,
 ) -> Result<Vec<crate::db::models::FrontendCrashRow>, AppError> {
-    require_privileged(&state, "get_frontend_crashes").await?;
     crate::db::repos::core::frontend_crashes::list_recent(&state.db, limit.unwrap_or(50))
 }
 
 #[tauri::command]
+#[requires(privileged)]
 pub async fn clear_frontend_crashes(state: State<'_, Arc<AppState>>) -> Result<(), AppError> {
-    require_privileged(&state, "clear_frontend_crashes").await?;
     crate::db::repos::core::frontend_crashes::clear_all(&state.db)
 }
 
 #[tauri::command]
+#[requires(privileged)]
 pub async fn get_frontend_crash_count(
     state: State<'_, Arc<AppState>>,
     hours: Option<u32>,
 ) -> Result<u32, AppError> {
-    require_privileged(&state, "get_frontend_crash_count").await?;
     crate::db::repos::core::frontend_crashes::count_since(&state.db, hours.unwrap_or(24))
 }

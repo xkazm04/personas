@@ -11,8 +11,9 @@ use crate::db::repos::resources::tool_audit_log;
 use crate::db::repos::resources::tools as repo;
 use crate::engine::tool_runner::{self, ToolInvocationResult};
 use crate::error::AppError;
-use crate::ipc_auth::{require_auth_sync, require_privileged};
+use crate::ipc_auth::{require_auth_sync};
 use crate::AppState;
+use personas_macros::requires;
 
 #[tauri::command]
 pub fn list_tool_definitions(
@@ -157,13 +158,13 @@ pub fn get_tool_performance_summary(
 }
 
 #[tauri::command]
+#[requires(privileged)]
 pub async fn invoke_tool_direct(
     state: State<'_, Arc<AppState>>,
     tool_id: String,
     persona_id: String,
     input_json: String,
 ) -> Result<ToolInvocationResult, AppError> {
-    require_privileged(&state, "invoke_tool_direct").await?;
     let tool = repo::get_definition_by_id(&state.db, &tool_id)?;
     let persona = persona_repo::get_by_id(&state.db, &persona_id)?;
     if !repo::is_tool_assigned(&state.db, &persona_id, &tool_id)? {
