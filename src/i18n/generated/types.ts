@@ -10169,6 +10169,9 @@ export type Translations = {
       pr_bridge_copy_reasoning: string;
       pr_bridge_copy_reasoning_tooltip: string;
       pr_bridge_reasoning_copied: string;
+      pr_bridge_copy_git_block: string;
+      pr_bridge_copy_git_block_tooltip: string;
+      pr_bridge_git_block_copied: string;
       pr_bridge_prepare: string;
       pr_bridge_open_github: string;
       pr_bridge_expand: string;

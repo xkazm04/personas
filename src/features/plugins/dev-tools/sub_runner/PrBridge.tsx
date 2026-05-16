@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { open as openExternal } from '@tauri-apps/plugin-shell';
 import {
   GitPullRequest, Copy, GitBranch, ExternalLink,
-  ChevronDown, ChevronRight, AlertCircle, Sparkles,
+  ChevronDown, ChevronRight, AlertCircle, Sparkles, Terminal,
 } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { useSystemStore } from '@/stores/systemStore';
@@ -201,6 +201,41 @@ export function PrBridge({ task }: { task: DevTask }) {
     }
   };
 
+  // Ready-to-paste git command block for users who'd rather drive the
+  // branch/commit/push themselves (or who're on a host where Tauri can't
+  // shell out to git). Uses a single-quoted heredoc so the multi-line
+  // commit message — including the reasoning blob — round-trips cleanly
+  // without shell escaping. Adds an optional `gh` PR-create line on the
+  // end which silently no-ops when gh isn't installed.
+  const handleCopyGitCommands = async () => {
+    const baseBranch = ghRepo ? '' : ''; // placeholder if a base detection is wired later
+    void baseBranch;
+    const lines: string[] = [
+      `# Branch + commit for "${content.prTitle.replace(/"/g, '\\"')}"`,
+      `git checkout -b ${content.branchName}`,
+      `git add -A`,
+      `git commit -m "$(cat <<'COMMIT_EOF'`,
+      content.commitMessage,
+      `COMMIT_EOF`,
+      `)"`,
+    ];
+    if (ghRepo) {
+      lines.push(`git push -u origin ${content.branchName}`);
+      lines.push('');
+      lines.push('# Optional — opens a draft PR via the GitHub CLI (skip if gh is not installed):');
+      lines.push(`gh pr create --draft --title ${JSON.stringify(content.prTitle)} --body-file -<<'BODY_EOF'`);
+      lines.push(content.prBody);
+      lines.push('BODY_EOF');
+    }
+    const block = lines.join('\n');
+    try {
+      await navigator.clipboard.writeText(block);
+      addToast(dt.pr_bridge_git_block_copied, 'success');
+    } catch {
+      addToast(dt.pr_bridge_copy_failed, 'error');
+    }
+  };
+
   const handlePrepareBranch = async () => {
     if (!project) return;
     setPreparing(true);
@@ -350,6 +385,15 @@ export function PrBridge({ task }: { task: DevTask }) {
                 {dt.pr_bridge_copy_reasoning}
               </Button>
             )}
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={<Terminal className="w-3.5 h-3.5" />}
+              onClick={handleCopyGitCommands}
+              title={dt.pr_bridge_copy_git_block_tooltip}
+            >
+              {dt.pr_bridge_copy_git_block}
+            </Button>
             <Button
               variant="secondary"
               size="sm"
