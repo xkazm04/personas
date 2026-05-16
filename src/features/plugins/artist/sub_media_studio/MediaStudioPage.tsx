@@ -4,6 +4,7 @@ import { save as saveDialog } from '@tauri-apps/plugin-dialog';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Button } from '@/features/shared/components/buttons';
 import { useSystemStore } from '@/stores/systemStore';
+import { formatDurationHuman } from '../utils/format';
 import { useFfmpegDetect } from './hooks/useFfmpegDetect';
 import { useMediaExport } from './hooks/useMediaExport';
 import { useMediaStudio } from './hooks/useMediaStudio';
@@ -29,7 +30,7 @@ function nextStartTime<T extends { startTime: number; duration: number }>(items:
 }
 
 export default function MediaStudioPage() {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const { status: ffmpegStatus, checking: ffmpegChecking, recheck: ffmpegRecheck } = useFfmpegDetect();
   const {
     composition,
@@ -404,7 +405,7 @@ export default function MediaStudioPage() {
 
           {exportState.status === 'exporting' && (
             <div className="flex items-center gap-2 px-4 py-1.5 border-t border-primary/10 bg-card/40">
-              <span className="text-[11px] text-foreground/60">Exporting…</span>
+              <span className="text-[11px] text-foreground/60">{t.media_studio.exporting}</span>
               <div className="flex-1 h-1 rounded-full bg-secondary/40 overflow-hidden max-w-xs">
                 <div
                   className="h-full bg-rose-500 transition-all"
@@ -414,8 +415,24 @@ export default function MediaStudioPage() {
               <span className="text-[11px] text-foreground/60 tabular-nums">
                 {Math.round(exportState.progress * 100)}%
               </span>
+              {exportState.elapsedMs >= 1000 && (
+                <span className="text-[11px] text-foreground/60 tabular-nums">
+                  ·{' '}
+                  {tx(t.media_studio.export_elapsed, {
+                    time: formatDurationHuman(exportState.elapsedMs / 1000),
+                  })}
+                </span>
+              )}
+              {exportState.etaMs !== null && (
+                <span className="text-[11px] text-foreground/60 tabular-nums">
+                  ·{' '}
+                  {tx(t.media_studio.export_eta, {
+                    time: formatDurationHuman(exportState.etaMs / 1000),
+                  })}
+                </span>
+              )}
               <Button variant="ghost" size="sm" onClick={cancelExport}>
-                Cancel
+                {t.media_studio.export_cancel}
               </Button>
             </div>
           )}

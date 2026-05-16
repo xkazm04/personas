@@ -11178,6 +11178,8 @@ export type Translations = {
     export_complete: string;
     export_failed: string;
     export_cancel: string;
+    export_elapsed: string;
+    export_eta: string;
     output_settings: string;
     resolution: string;
     framerate: string;

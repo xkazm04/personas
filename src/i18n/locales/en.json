@@ -11172,6 +11172,8 @@
     "export_complete": "Export complete",
     "export_failed": "Export failed",
     "export_cancel": "Cancel export",
+    "export_elapsed": "{time} elapsed",
+    "export_eta": "~{time} left",
     "output_settings": "Output settings",
     "resolution": "Resolution",
     "framerate": "Frame rate",
