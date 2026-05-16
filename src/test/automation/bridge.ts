@@ -1853,20 +1853,27 @@ const bridge: TestBridge = {
    * Plus the pre-existing kinds: persona_overview, connected_services,
    * decisions_panel, metric_spark, issue_list, text_callout.
    */
-  setCompanionChatCards(params: {
+  setCompanionChatCards(
     cards: Array<{
       kind: string;
       title?: string | null;
       config?: Record<string, unknown>;
-    }>;
-  }): { success: boolean; count: number } {
-    const cards = params.cards.map((c) => ({
+    }>,
+  ): { success: boolean; count: number } {
+    // Direct positional arg (not `params: { cards }`) — the bridge's
+    // named-arg dispatcher (parseParamNames + resolveArgs) matches by
+    // parameter NAME, so the function must declare `cards` at the top
+    // level. Wrapping in `params: {...}` makes the function declare
+    // `params` instead, named-dispatch finds no match, falls through
+    // to Object.values, and the cards array arrives as `params` with
+    // no `.cards` accessor — silent failure.
+    const list = (cards ?? []).map((c) => ({
       kind: c.kind,
       title: c.title ?? undefined,
       config: c.config ?? {},
     }));
-    useCompanionStore.getState().setChatCards(cards);
-    return { success: true, count: cards.length };
+    useCompanionStore.getState().setChatCards(list);
+    return { success: true, count: list.length };
   },
 
   /**

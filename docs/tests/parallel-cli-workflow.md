@@ -178,6 +178,36 @@ Run-and-fix iteration with the app already up has a few non-obvious traps. These
 
 5. **Stale Playwright runs leak test-results.** Failed spec runs leave a `test-results/.last-run.json` + per-test directories in the repo root. These are not tracked but show up in `git status`; do not stage them. The user's `.gitignore` should cover this if it's missing.
 
+6. **`/find-text` matches DOM textContent; `text` field returns innerText.** The bridge's text-matching is asymmetric in a way that bit the `/friend`-drive cycle-features spec end-to-end:
+
+   - The search query passed to `/find-text` is matched against the DOM-source `textContent` of each candidate node — case-sensitive and pre-CSS-transform. If your label reads "Storage" in the i18n string but is rendered uppercase via `typo-label` (CSS `text-transform: uppercase`), `findText("STORAGE")` returns **0 hits**; `findText("Storage")` returns the match.
+   - The `text` field on the returned `QueryNode` is the rendered `innerText` — CSS transforms applied. So a hit on the "Storage" search comes back with `text: "STORAGE"`. Assertions that compare exact case should compare against the rendered form, not the search query.
+
+   `/query` returns the same `text: innerText` shape, so `query("button")` followed by filtering on `text` already speaks the rendered case correctly. Bridge `clickTestId` / `fillField` operate on testids and side-step the issue entirely; the trap only matters when you author a spec around visible text.
+
+   When you need to click a button by its visible text without a testid, prefer `innerText` in your `/eval` selector — `textContent` returns the DOM source and will diverge on CSS-uppercased labels:
+
+   ```js
+   // ✅ matches the user-visible label, including CSS uppercase
+   Array.from(document.querySelectorAll("button"))
+     .find(b => (b.innerText || "").trim() === "KIND")?.click();
+
+   // ❌ misses the same button — textContent is "Kind" not "KIND"
+   Array.from(document.querySelectorAll("button"))
+     .find(b => b.textContent.trim() === "KIND")?.click();
+   ```
+
+7. **Tokio spawning from Tauri 2's sync `setup()` callback panics on boot.** Tauri 2 runs `setup` synchronously without binding a Tokio reactor to the calling thread, so a bare `tokio::task::spawn(async move { ... })` invoked from there (directly or via a setup helper like `spawn_ticker`) crashes with:
+
+   ```
+   thread 'main' panicked at ...:
+   there is no reactor running, must be called from the context of a Tokio 1.x runtime
+   ```
+
+   Use `tauri::async_runtime::spawn` instead — Tauri owns its own runtime that is safe to spawn into from any context, including the sync setup hook. The fleet phase-6 staleness ticker + JSONL watcher hit this on 2026-05-16; the fix in `src-tauri/src/commands/fleet/stale.rs` + `transcript.rs` shows the pattern.
+
+   Bare `tokio::spawn` is fine inside `#[tauri::command] async fn` handlers — those run inside Tauri's runtime already. The trap is specifically for setup-time fire-and-forget workers.
+
 ---
 
 ## A note on the active-runs ledger
