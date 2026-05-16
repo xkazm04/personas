@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Loader2, RefreshCw, ScrollText } from 'lucide-react';
+import { FolderOpen, Loader2, RefreshCw, ScrollText } from 'lucide-react';
+import { open as openExternal } from '@tauri-apps/plugin-shell';
 import * as twinApi from '@/api/twin/twin';
 import { useTranslation, type Translations } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
@@ -98,6 +99,18 @@ export function WikiFreshnessPill({ twinId }: Props) {
     }
   };
 
+  const dirPath =
+    state.kind === 'fresh' || state.kind === 'stale' ? state.dirPath : undefined;
+
+  const onOpenFolder = async () => {
+    if (!dirPath) return;
+    try {
+      await openExternal(dirPath);
+    } catch (e) {
+      toastCatch('twin:open-wiki-folder')(e);
+    }
+  };
+
   // Pre-resolve presentation per state so the button can be rendered uniformly.
   let label: string;
   let title: string;
@@ -148,16 +161,29 @@ export function WikiFreshnessPill({ twinId }: Props) {
   }
 
   return (
-    <button
-      type="button"
-      onClick={busy ? undefined : onCompile}
-      disabled={busy}
-      title={title}
-      aria-label={title}
-      className={`flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-medium border transition-colors focus-ring disabled:cursor-wait ${cls}`}
-    >
-      {icon}
-      <span className="truncate max-w-[120px]">{label}</span>
-    </button>
+    <span className="inline-flex items-center">
+      <button
+        type="button"
+        onClick={busy ? undefined : onCompile}
+        disabled={busy}
+        title={title}
+        aria-label={title}
+        className={`flex items-center gap-1 px-2 py-1 ${dirPath ? 'rounded-l-full rounded-r-none border-r-0' : 'rounded-full'} text-[10px] font-medium border transition-colors focus-ring disabled:cursor-wait ${cls}`}
+      >
+        {icon}
+        <span className="truncate max-w-[120px]">{label}</span>
+      </button>
+      {dirPath && (
+        <button
+          type="button"
+          onClick={onOpenFolder}
+          title={t.twin.wiki.freshness.openFolderTooltip}
+          aria-label={t.twin.wiki.freshness.openFolderAria}
+          className={`flex items-center px-1.5 py-1 rounded-r-full text-[10px] font-medium border transition-colors focus-ring ${cls}`}
+        >
+          <FolderOpen className="w-3 h-3" />
+        </button>
+      )}
+    </span>
   );
 }

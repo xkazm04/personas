@@ -12426,6 +12426,8 @@ export type Translations = {
         stale: string;
         staleTooltip: string;
         compiledToast: string;
+        openFolderTooltip: string;
+        openFolderAria: string;
         justNow: string;
         minutesAgo: string;
         hoursAgo: string;

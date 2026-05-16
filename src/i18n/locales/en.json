@@ -12420,6 +12420,8 @@
         "stale": "Wiki: {rel}",
         "staleTooltip": "{count} files · last compiled {rel} (stale)\n{path}\nClick to recompile.",
         "compiledToast": "Wiki compiled — {count} files written.",
+        "openFolderTooltip": "Open the wiki folder in your file manager",
+        "openFolderAria": "Open wiki folder",
         "justNow": "just now",
         "minutesAgo": "{count}m ago",
         "hoursAgo": "{count}h ago",
