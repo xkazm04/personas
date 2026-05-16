@@ -139,6 +139,14 @@ export default function GoalConstellation() {
 
   const [dependencies, setDependencies] = useState<DevGoalDependency[]>([]);
   const [variant, setVariant] = useState<VariantId>('baseline');
+  // Goal id seeded into the Pulse variant when the user clicks a node in the
+  // Baseline force graph — switches variants and pre-selects the goal so the
+  // user lands on the spotlight already focused on what they clicked.
+  const [pulseSeedId, setPulseSeedId] = useState<string | null>(null);
+  const handleBaselineGoalClick = (goalId: string) => {
+    setPulseSeedId(goalId);
+    setVariant('pulse');
+  };
 
   useEffect(() => {
     if (activeProjectId) fetchGoals(activeProjectId);
@@ -195,9 +203,22 @@ export default function GoalConstellation() {
         })}
       </div>
 
-      {variant === 'baseline' && <GoalConstellationBaseline goals={goals} dependencies={dependencies} />}
-      {variant === 'pulse'    && <GoalProjectPulse goals={goals} dependencies={dependencies} />}
-      {variant === 'flow'     && <GoalDependencyFlow goals={goals} dependencies={dependencies} />}
+      {variant === 'baseline' && (
+        <GoalConstellationBaseline
+          goals={goals}
+          dependencies={dependencies}
+          onGoalClick={handleBaselineGoalClick}
+        />
+      )}
+      {variant === 'pulse' && (
+        <GoalProjectPulse
+          key={pulseSeedId ?? 'pulse-auto'}
+          goals={goals}
+          dependencies={dependencies}
+          initialSelectedId={pulseSeedId}
+        />
+      )}
+      {variant === 'flow' && <GoalDependencyFlow goals={goals} dependencies={dependencies} />}
     </div>
   );
 }
@@ -209,9 +230,11 @@ export default function GoalConstellation() {
 function GoalConstellationBaseline({
   goals,
   dependencies,
+  onGoalClick,
 }: {
   goals: DevGoal[];
   dependencies: DevGoalDependency[];
+  onGoalClick?: (goalId: string) => void;
 }) {
   const { t } = useTranslation();
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -326,6 +349,7 @@ function GoalConstellationBaseline({
                 key={goal.id}
                 onMouseEnter={() => setHoveredId(goal.id)}
                 onMouseLeave={() => setHoveredId(null)}
+                onClick={() => onGoalClick?.(goal.id)}
                 className="cursor-pointer"
               >
                 {/* Glow / pulse for stalled */}
@@ -380,10 +404,13 @@ function GoalConstellationBaseline({
 
                 {/* Hover tooltip */}
                 {isHovered && (
-                  <foreignObject x={pos.x - 100} y={pos.y - r - 50} width={200} height={40}>
+                  <foreignObject x={pos.x - 110} y={pos.y - r - 64} width={220} height={56}>
                     <div className="bg-background/95 border border-primary/20 rounded-card px-3 py-1.5 text-center shadow-elevation-3">
                       <p className="typo-body font-medium text-foreground truncate">{goal.title}</p>
                       <p className="typo-caption text-foreground">{goal.status} &middot; {goal.progress}%</p>
+                      {onGoalClick && (
+                        <p className="typo-caption text-primary/80 mt-0.5">{t.plugins.dev_lifecycle.constellation_click_hint}</p>
+                      )}
                     </div>
                   </foreignObject>
                 )}

@@ -41,6 +41,8 @@ const TASK_STATUS_TINT: Record<string, string> = {
 interface Props {
   goals: DevGoal[];
   dependencies: DevGoalDependency[];
+  /** Optional goal id to pre-select on first render — e.g. seeded from the Baseline force graph. */
+  initialSelectedId?: string | null;
 }
 
 type StatusKey = 'blocked' | 'in-progress' | 'open' | 'done';
@@ -68,7 +70,7 @@ function daysUntil(target: string | null): number | null {
   return Math.round((d - Date.now()) / 86400000);
 }
 
-export function GoalProjectPulse({ goals, dependencies }: Props) {
+export function GoalProjectPulse({ goals, dependencies, initialSelectedId }: Props) {
   const { t } = useTranslation();
 
   // Status partitions
@@ -98,14 +100,17 @@ export function GoalProjectPulse({ goals, dependencies }: Props) {
     return { blocks, requires };
   }, [dependencies]);
 
-  // Auto-select: top blocker > most-progressed in flight > next open
-  const initialId = useMemo(() => {
+  // Auto-select: top blocker > most-progressed in flight > next open.
+  // An explicit `initialSelectedId` from the parent (e.g. seeded from a
+  // Baseline force-graph click) wins over the auto-pick.
+  const autoInitialId = useMemo(() => {
     return grouped.blocked[0]?.id
       ?? grouped['in-progress'][0]?.id
       ?? grouped.open[0]?.id
       ?? grouped.done[0]?.id
       ?? null;
   }, [grouped]);
+  const initialId = initialSelectedId ?? autoInitialId;
 
   const [selectedId, setSelectedId] = useState<string | null>(initialId);
   useEffect(() => { if (!selectedId) setSelectedId(initialId); }, [initialId, selectedId]);
