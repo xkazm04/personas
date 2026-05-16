@@ -9,7 +9,7 @@ import { HEX_COLOR_MAP } from '../constants/ideaColors';
 // Types + aggregation
 // ---------------------------------------------------------------------------
 
-interface AgentStats {
+export interface AgentStats {
   agent: ScanAgentDef;
   total: number;
   accepted: number;
@@ -33,7 +33,7 @@ type SortKey = 'accept' | 'impl' | 'ideas' | 'impact' | 'effort';
  * Linking ideas -> agents uses DevIdea.scan_type (a string, matched against
  * ScanAgentDef.key).
  */
-function computeAgentStats(
+export function computeAgentStats(
   ideas: ReturnType<typeof useSystemStore.getState>['ideas'],
   tasks: ReturnType<typeof useSystemStore.getState>['tasks'],
 ): AgentStats[] {

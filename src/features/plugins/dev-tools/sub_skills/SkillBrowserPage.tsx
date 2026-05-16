@@ -1,6 +1,6 @@
 import {
   BookOpen, Search, FileText, ChevronRight, Save,
-  RefreshCw, X, FolderOpen, AlertCircle,
+  RefreshCw, X, FolderOpen, AlertCircle, Star, Clock,
 } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { ActionRow } from '@/features/shared/components/layout/ActionRow';
@@ -23,10 +23,11 @@ export default function SkillBrowserPage() {
   const dt = t.plugins.dev_tools;
   const data = useSkillData();
   const {
-    skills, filtered, loading, search, setSearch,
+    skills, filtered, recentSkills, loading, search, setSearch,
     selectedSkill, activeFile, fileContent, editContent, setEditContent,
     editing, setEditing, saving, fileLoading, loadFailed,
     skillFiles, fetchSkills, selectSkill, switchFile, save, cancelEdit,
+    toggleFavorite, isFavorite,
   } = data;
 
   return (
@@ -64,6 +65,34 @@ export default function SkillBrowserPage() {
               />
             </div>
 
+            {/* Recent chips — only shown when no search filter is active */}
+            {!search && recentSkills.length > 0 && (
+              <div>
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <Clock className="w-3 h-3 text-foreground" />
+                  <span className="typo-caption uppercase tracking-[0.18em] text-foreground/70">
+                    {t.plugins.dev_tools.skills_recent_heading}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {recentSkills.map((s) => (
+                    <button
+                      key={`recent-${s.name}`}
+                      type="button"
+                      onClick={() => selectSkill(s)}
+                      className={`text-[10px] font-medium px-2 py-0.5 rounded-full border transition-colors ${
+                        selectedSkill?.name === s.name
+                          ? 'border-primary/40 bg-primary/15 text-primary'
+                          : 'border-primary/15 bg-card/30 text-foreground hover:border-primary/25 hover:bg-primary/5'
+                      }`}
+                    >
+                      {s.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="flex-1 overflow-y-auto space-y-1.5">
               {loading ? (
                 <div className="flex items-center justify-center py-12">
@@ -82,7 +111,9 @@ export default function SkillBrowserPage() {
                     key={skill.name}
                     skill={skill}
                     selected={selectedSkill?.name === skill.name}
+                    favorited={isFavorite(skill.name)}
                     onClick={() => selectSkill(skill)}
+                    onToggleFavorite={() => toggleFavorite(skill.name)}
                   />
                 ))
               )}
@@ -154,12 +185,29 @@ export default function SkillBrowserPage() {
                       <RefreshCw className="w-4 h-4 animate-spin text-foreground" />
                     </div>
                   ) : editing ? (
-                    <textarea
-                      value={editContent}
-                      onChange={(e) => setEditContent(e.target.value)}
-                      className="w-full h-full min-h-[300px] p-3 text-md font-mono bg-secondary/20 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 resize-none"
-                      spellCheck={false}
-                    />
+                    <div className="grid grid-cols-2 gap-3 h-full min-h-[300px]">
+                      <textarea
+                        value={editContent}
+                        onChange={(e) => setEditContent(e.target.value)}
+                        className="w-full h-full min-h-[300px] p-3 text-md font-mono bg-secondary/20 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 resize-none"
+                        spellCheck={false}
+                      />
+                      <div className="border border-primary/10 rounded-modal bg-card/30 p-3 overflow-y-auto">
+                        <div className="flex items-center gap-1.5 mb-2 pb-2 border-b border-primary/5">
+                          <span className="text-[9px] uppercase tracking-[0.18em] text-foreground/55">
+                            {t.plugins.dev_tools.skills_preview_heading}
+                          </span>
+                          {editContent !== fileContent && (
+                            <span className="text-[9px] text-amber-400/80 ml-auto">{t.plugins.dev_tools.skills_preview_unsaved}</span>
+                          )}
+                        </div>
+                        {editContent.trim() ? (
+                          <MarkdownRenderer content={editContent} />
+                        ) : (
+                          <p className="text-md text-foreground/45 italic">{t.plugins.dev_tools.skills_preview_empty}</p>
+                        )}
+                      </div>
+                    </div>
                   ) : fileContent ? (
                     <MarkdownRenderer content={fileContent} />
                   ) : !loadFailed ? (
@@ -178,18 +226,23 @@ export default function SkillBrowserPage() {
 }
 
 function SkillListItem({
-  skill, selected, onClick,
+  skill, selected, favorited, onClick, onToggleFavorite,
 }: {
   skill: SkillEntry;
   selected: boolean;
+  favorited: boolean;
   onClick: () => void;
+  onToggleFavorite: () => void;
 }) {
   const { t, tx } = useTranslation();
   const dt = t.plugins.dev_tools;
   return (
-    <button
+    <div
       onClick={onClick}
-      className={`w-full text-left rounded-modal border p-3 transition-all ${
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } }}
+      role="button"
+      tabIndex={0}
+      className={`w-full text-left rounded-modal border p-3 transition-all cursor-pointer ${
         selected
           ? 'border-primary/30 bg-primary/8 ring-1 ring-primary/20'
           : 'border-primary/10 bg-card/30 hover:border-primary/20'
@@ -213,9 +266,21 @@ function SkillListItem({
               {tx(skill.referenceFileCount === 1 ? dt.skills_ref_count_one : dt.skills_ref_count_other, { count: skill.referenceFileCount })}
             </span>
           )}
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
+            title={favorited ? dt.skills_unfavorite : dt.skills_favorite}
+            aria-label={favorited ? dt.skills_unfavorite : dt.skills_favorite}
+            aria-pressed={favorited}
+            className={`p-0.5 rounded transition-colors ${
+              favorited ? 'text-amber-400 hover:text-amber-300' : 'text-foreground/30 hover:text-amber-400'
+            }`}
+          >
+            <Star className={`w-3.5 h-3.5 ${favorited ? 'fill-amber-400' : ''}`} />
+          </button>
           <ChevronRight className="w-3.5 h-3.5 text-foreground" />
         </div>
       </div>
-    </button>
+    </div>
   );
 }

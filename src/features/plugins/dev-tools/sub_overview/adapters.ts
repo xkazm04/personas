@@ -113,6 +113,57 @@ export async function fetchGitHubStats(
 }
 
 // ---------------------------------------------------------------------------
+// GitHub — list open issues (PRs filtered out)
+// ---------------------------------------------------------------------------
+
+export interface GitHubIssueSummary {
+  number: number;
+  title: string;
+  body: string | null;
+  htmlUrl: string;
+  labels: string[];
+  updatedAt: string;
+}
+
+export async function fetchGitHubIssues(
+  credentialId: string,
+  owner: string,
+  repo: string,
+): Promise<GitHubIssueSummary[]> {
+  const headers = {
+    Accept: 'application/vnd.github+json',
+    'User-Agent': 'personas-desktop',
+  };
+  const res = await executeApiRequest(
+    credentialId,
+    'GET',
+    `/repos/${owner}/${repo}/issues?state=open&per_page=100&sort=updated&direction=desc`,
+    headers,
+  );
+  if (res.status >= 400) {
+    throw new Error(`GitHub issues request failed (${res.status}): ${res.body.slice(0, 200)}`);
+  }
+  const raw = JSON.parse(res.body);
+  if (!Array.isArray(raw)) return [];
+  // GitHub's /issues endpoint returns PRs too — they carry a `pull_request`
+  // object. Skip those so the import flow only ingests real issues.
+  return raw
+    .filter((it) => it && typeof it === 'object' && !('pull_request' in it && it.pull_request))
+    .map((it): GitHubIssueSummary => ({
+      number: it.number,
+      title: it.title ?? `(untitled issue #${it.number})`,
+      body: typeof it.body === 'string' ? it.body : null,
+      htmlUrl: it.html_url ?? '',
+      labels: Array.isArray(it.labels)
+        ? it.labels.map((l: unknown) =>
+            typeof l === 'string' ? l : (l && typeof l === 'object' && 'name' in l ? String((l as { name: unknown }).name) : '')
+          ).filter(Boolean)
+        : [],
+      updatedAt: typeof it.updated_at === 'string' ? it.updated_at : '',
+    }));
+}
+
+// ---------------------------------------------------------------------------
 // GitLab adapter
 // ---------------------------------------------------------------------------
 

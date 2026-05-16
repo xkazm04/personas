@@ -14,6 +14,7 @@ export interface Project {
   goalCount: number;
   status: 'active' | 'archived' | 'paused';
   createdAt: string;
+  githubUrl?: string;
 }
 
 export interface Goal {
@@ -46,6 +47,7 @@ export function toProject(dp: import("@/lib/bindings/DevProject").DevProject, go
     goalCount,
     status: (dp.status as Project["status"]) || "active",
     createdAt: dp.created_at.slice(0, 10),
+    githubUrl: dp.github_url ?? undefined,
   };
 }
 

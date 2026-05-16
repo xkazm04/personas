@@ -72,6 +72,12 @@ export interface UiSlice {
   contextScanComplete: boolean;
   /** Pending category filter applied when the credentials catalog next mounts. */
   pendingCatalogCategoryFilter: string | null;
+  /** Pending sub-tab applied when the Lifecycle page next mounts (e.g. jump-to-goals from a Task Runner goal pill). */
+  pendingLifecycleSubTab: 'setup' | 'goals' | 'competitions' | 'tracking' | null;
+  /** Pending task ID to scroll-into-view + highlight when TaskRunner next mounts (e.g. from a goal-spotlight task click). */
+  pendingTaskFocusId: string | null;
+  /** Pending goal ID to seed the Pulse variant of GoalConstellation on next mount (e.g. from a ContextMap goal-coverage badge click). */
+  pendingGoalSpotlightId: string | null;
 
   // Canvas <-> Live Stream cross-linking
   canvasEdgeFocus: { edgeId: string; eventType: string; sourceFilter: string | null } | null;
@@ -109,6 +115,9 @@ export interface UiSlice {
   setContextScanActive: (active: boolean) => void;
   setContextScanComplete: (complete: boolean) => void;
   setPendingCatalogCategoryFilter: (category: string | null) => void;
+  setPendingLifecycleSubTab: (tab: 'setup' | 'goals' | 'competitions' | 'tracking' | null) => void;
+  setPendingTaskFocusId: (id: string | null) => void;
+  setPendingGoalSpotlightId: (id: string | null) => void;
   setCanvasEdgeFocus: (focus: { edgeId: string; eventType: string; sourceFilter: string | null } | null) => void;
   setLiveStreamHighlightEventId: (id: string | null) => void;
   // Plugin enable/disable
@@ -170,6 +179,9 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) =
   contextScanActive: false,
   contextScanComplete: false,
   pendingCatalogCategoryFilter: null,
+  pendingLifecycleSubTab: null,
+  pendingTaskFocusId: null,
+  pendingGoalSpotlightId: null,
   canvasEdgeFocus: null,
   liveStreamHighlightEventId: null,
 
@@ -215,6 +227,9 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) =
   setContextScanActive: (active) => set({ contextScanActive: active }),
   setContextScanComplete: (complete) => set({ contextScanComplete: complete }),
   setPendingCatalogCategoryFilter: (category) => set({ pendingCatalogCategoryFilter: category }),
+  setPendingLifecycleSubTab: (tab) => set({ pendingLifecycleSubTab: tab }),
+  setPendingTaskFocusId: (id) => set({ pendingTaskFocusId: id }),
+  setPendingGoalSpotlightId: (id) => set({ pendingGoalSpotlightId: id }),
   setCanvasEdgeFocus: (focus) => set({ canvasEdgeFocus: focus }),
   setLiveStreamHighlightEventId: (id) => set({ liveStreamHighlightEventId: id }),
   enabledPlugins: new Set<PluginTab>([
