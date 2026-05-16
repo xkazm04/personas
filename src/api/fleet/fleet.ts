@@ -8,6 +8,7 @@
 
 import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
 import type { FleetRegistrySnapshot } from '@/lib/bindings/FleetRegistrySnapshot';
+import type { FleetHookStatus } from '@/lib/bindings/FleetHookStatus';
 
 /**
  * Spawn a new Claude Code session in a PTY rooted at `cwd`.
@@ -57,3 +58,24 @@ export const listSessions = () =>
  */
 export const removeSession = (sessionId: string) =>
   invoke<boolean>('fleet_remove_session', { sessionId });
+
+/**
+ * Install (or re-install) Fleet's Claude Code hook entries into
+ * `~/.claude/settings.json`. Idempotent.
+ */
+export const installHooks = () =>
+  invoke<FleetHookStatus>('fleet_install_hooks', {});
+
+/**
+ * Remove every Fleet-tagged hook entry. User-authored hooks are
+ * preserved.
+ */
+export const uninstallHooks = () =>
+  invoke<FleetHookStatus>('fleet_uninstall_hooks', {});
+
+/**
+ * Report the current state of Fleet's hook entries in
+ * `~/.claude/settings.json`. Drives the settings-page install banner.
+ */
+export const checkHooks = () =>
+  invoke<FleetHookStatus>('fleet_check_hooks', {});

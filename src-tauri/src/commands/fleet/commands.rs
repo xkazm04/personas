@@ -16,9 +16,10 @@ use std::path::PathBuf;
 
 use tauri::AppHandle;
 
+use super::hook_install;
 use super::pty;
 use super::registry::registry;
-use super::types::FleetRegistrySnapshot;
+use super::types::{FleetHookStatus, FleetRegistrySnapshot};
 
 /// Spawn a new `claude` session in a PTY rooted at `cwd`.
 ///
@@ -84,18 +85,46 @@ pub async fn fleet_kill_session(app: AppHandle, session_id: String) -> Result<()
 
 /// Snapshot the registry for the UI's session grid.
 ///
-/// `hook_port` is the resolved local_http port (the in-app HTTP server
-/// that hosts /fleet/hooks/*). Phase 5 will fill in `hooks_installed`
-/// based on inspecting `~/.claude/settings.json`; for now it stays
-/// `false` so the UI banner prompts the user to install.
+/// `hook_port` is the resolved local_http port (hosting /fleet/hooks/*).
+/// `hooks_installed` reflects whether `~/.claude/settings.json` currently
+/// carries our `_fleet`-tagged entries.
 #[tauri::command]
 pub async fn fleet_list_sessions() -> Result<FleetRegistrySnapshot, String> {
     let hook_port = crate::local_http::port().unwrap_or(0);
+    let hooks_installed = hook_install::check_hooks(hook_port)
+        .map(|s| s.installed && s.port_matches)
+        .unwrap_or(false);
     Ok(FleetRegistrySnapshot {
         sessions: registry().list_dto(),
         hook_port,
-        hooks_installed: false,
+        hooks_installed,
     })
+}
+
+/// Install (or re-install) Fleet's Claude Code hook entries into
+/// `~/.claude/settings.json`. Idempotent — re-installing replaces any
+/// prior Fleet-tagged entries. Returns the resulting status.
+#[tauri::command]
+pub async fn fleet_install_hooks() -> Result<FleetHookStatus, String> {
+    let port = crate::local_http::port()
+        .ok_or_else(|| "Fleet hook receiver not running — restart Personas".to_string())?;
+    hook_install::install_hooks(port)
+}
+
+/// Remove every Fleet-tagged hook entry from `~/.claude/settings.json`.
+/// User-authored hooks are left untouched (we only remove entries
+/// carrying our `_fleet: true` sentinel).
+#[tauri::command]
+pub async fn fleet_uninstall_hooks() -> Result<FleetHookStatus, String> {
+    hook_install::uninstall_hooks()
+}
+
+/// Inspect `~/.claude/settings.json` and report the current Fleet hook
+/// install status — drives the settings page banner.
+#[tauri::command]
+pub async fn fleet_check_hooks() -> Result<FleetHookStatus, String> {
+    let port = crate::local_http::port().unwrap_or(0);
+    hook_install::check_hooks(port)
 }
 
 /// Drop an exited session from the registry. Returns `true` if a row

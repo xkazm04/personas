@@ -2596,6 +2596,9 @@ pub fn run() {
             commands::fleet::commands::fleet_kill_session,
             commands::fleet::commands::fleet_list_sessions,
             commands::fleet::commands::fleet_remove_session,
+            commands::fleet::commands::fleet_install_hooks,
+            commands::fleet::commands::fleet_uninstall_hooks,
+            commands::fleet::commands::fleet_check_hooks,
         ]))
         .run(tauri::generate_context!())
         .unwrap_or_else(|e| {

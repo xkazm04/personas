@@ -17,6 +17,7 @@
 //! build profiles.
 
 pub mod commands;
+pub mod hook_install;
 pub mod hooks;
 pub mod pty;
 pub mod registry;
