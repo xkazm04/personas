@@ -10833,6 +10833,8 @@
       "spotlight_tasks_empty": "No tasks linked to this goal yet. Batch from accepted ideas in Task Runner.",
       "spotlight_task_jump_tooltip": "Open in Task Runner",
       "constellation_click_hint": "Click → open in Pulse",
+      "readiness_step_counter_label": "Steps",
+      "readiness_step_counter_value": "{passed}/{total}",
       "kanban_nudge_decrease": "Decrease progress 5%",
       "kanban_nudge_increase": "Increase progress 5%",
       "kanban_drop_here": "Drop here to move",
