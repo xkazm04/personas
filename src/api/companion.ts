@@ -1164,3 +1164,24 @@ export interface CompanionRecallPreviewEvent {
   turnId: string;
   preview: CompanionRecallPreview;
 }
+
+/**
+ * Per-turn rollup of dispatcher side-effects keyed by assistant episode.
+ * Fires once per turn after the dispatcher block. The panel renders a
+ * tiny chip below the completed assistant bubble — total=0 turns are
+ * silently elided.
+ */
+export const COMPANION_TURN_SUMMARY_EVENT = 'companion://turn-summary';
+
+export interface CompanionTurnSummaryEvent {
+  sessionId: string;
+  turnId: string;
+  assistantEpisodeId: string;
+  approvals: number;
+  navigations: number;
+  labOpens: number;
+  dashboards: number;
+  cockpits: number;
+  chatCards: number;
+  continuation: boolean;
+}

@@ -6,10 +6,21 @@ import type {
   CompanionConnector,
   CompanionMessage,
   CompanionRecallPreview,
+  CompanionTurnSummaryEvent,
   PendingApproval,
   PluginToggle,
   ProactiveMessage,
 } from '@/api/companion';
+
+/**
+ * Stored per-turn dispatcher rollup, keyed by assistant episode id. Same
+ * shape as `CompanionTurnSummaryEvent` minus the session/turn correlator
+ * fields the chip doesn't need.
+ */
+export type StoredTurnSummary = Omit<
+  CompanionTurnSummaryEvent,
+  'sessionId' | 'turnId' | 'assistantEpisodeId'
+>;
 
 export type { CompanionMessage };
 
@@ -153,6 +164,16 @@ interface CompanionStore {
   /** Promote the in-flight strip to the named assistant episode id. */
   attachRecallToEpisode: (episodeId: string) => void;
   clearAllRecall: () => void;
+
+  /**
+   * Per-turn dispatcher rollup, keyed by assistant episode id. Populated
+   * from `companion://turn-summary` events; reset alongside the rest of
+   * the conversation state. Same persistence model as `recallByEpisodeId`
+   * — session-scoped, lost on app restart.
+   */
+  turnSummaryByEpisodeId: Record<string, StoredTurnSummary>;
+  setTurnSummary: (episodeId: string, summary: StoredTurnSummary) => void;
+  clearAllTurnSummaries: () => void;
 }
 
 export interface PendingPromptPayload {
@@ -275,4 +296,14 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
     }),
   clearAllRecall: () =>
     set({ streamingRecall: null, recallByEpisodeId: {} }),
+
+  turnSummaryByEpisodeId: {},
+  setTurnSummary: (episodeId, summary) =>
+    set((s) => ({
+      turnSummaryByEpisodeId: {
+        ...s.turnSummaryByEpisodeId,
+        [episodeId]: summary,
+      },
+    })),
+  clearAllTurnSummaries: () => set({ turnSummaryByEpisodeId: {} }),
 }));

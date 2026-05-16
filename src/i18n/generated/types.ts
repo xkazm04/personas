@@ -10433,6 +10433,14 @@ export type Translations = {
       recall_group_procedurals: string;
       recall_group_goals: string;
       recall_group_backlog: string;
+      turn_summary_label: string;
+      turn_summary_nav: string;
+      turn_summary_approval: string;
+      turn_summary_lab: string;
+      turn_summary_dashboard: string;
+      turn_summary_cockpit: string;
+      turn_summary_card: string;
+      turn_summary_continuation: string;
       autonomous_toggle_on: string;
       autonomous_toggle_off: string;
       composer_placeholder: string;

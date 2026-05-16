@@ -44,6 +44,7 @@ Events:
 - `companion://navigate`: direct route switch requested by Athena.
 - `companion://stream`: streaming turn output from the backend.
 - `companion://recall-preview`: per-turn rollup of what the brain pulled into the system prompt (counts + titles per memory kind).
+- `companion://turn-summary`: per-turn rollup of dispatcher side-effects keyed by assistant episode id (approvals / navigations / lab opens / dashboards / cockpits / chat cards / continuation flag).
 
 Approval outcomes may include a client-side action such as `{ type: "navigate", route }`.
 
@@ -54,6 +55,12 @@ Each turn, after the prompt builder runs but before the CLI spawns, the backend 
 The panel renders this as a thin `RecallStrip` collapsed above each assistant bubble: a single-line summary ("Athena replayed 5 recent turns and consulted 12 memories") that expands on click to show the actual titles grouped by kind. The strip persists on the bubble for the rest of the session; an app restart drops the strip (recall is ephemeral working memory).
 
 Stage 1 of 2 — chips are read-only. Stage 2 will wire each chip to open the Brain Viewer scoped to that entry.
+
+## Turn-summary chip
+
+Below each assistant bubble, a tiny caption-sized chip (`TurnSummaryChip`) surfaces what Athena's reply *did* — distinct from what she *said*. The chip aggregates dispatcher outputs from the same turn (pending approvals, direct navigations, lab tab opens, dashboard / cockpit auto-fires, inline chat-cards) plus a flag for `continue_autonomously`. Total-zero turns render nothing.
+
+Source: the backend emits one `companion://turn-summary` event per turn after the dispatcher block, already keyed by the persisted `assistant_episode_id` so the panel can attach the chip to the right bubble without correlating turn ids. Same session-scoped persistence model as the recall preview — lost on app restart.
 
 ## Voice
 

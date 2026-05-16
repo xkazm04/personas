@@ -191,6 +191,33 @@ pub struct RecallPreviewEvent {
     pub preview: crate::companion::prompt::RecallPreview,
 }
 
+/// Per-turn rollup of side-effects the dispatcher produced from Athena's
+/// reply: how many approvals were filed, how many direct nav/lab/dashboard/
+/// cockpit/chat-card auto-fires happened, and whether she requested an
+/// autonomous continuation. Emitted once after the dispatcher block, with
+/// `assistant_episode_id` already known so the frontend can key the chip
+/// directly under the persisted bubble. No persistence — the chip is
+/// session-scoped UI, same lifecycle as `RECALL_PREVIEW_EVENT`.
+pub const TURN_SUMMARY_EVENT: &str = "companion://turn-summary";
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TurnSummaryEvent {
+    pub session_id: String,
+    pub turn_id: String,
+    pub assistant_episode_id: String,
+    pub approvals: u32,
+    pub navigations: u32,
+    pub lab_opens: u32,
+    pub dashboards: u32,
+    pub cockpits: u32,
+    pub chat_cards: u32,
+    /// Athena emitted `OP: continue_autonomously` — the next tick is
+    /// either scheduled or capped (caller decides). Surfaced as a flag
+    /// because "she said she'd keep going" is its own glanceable signal.
+    pub continuation: bool,
+}
+
 /// What `send_turn` returns to the chat command. The IDs let the UI
 /// reconcile the optimistic bubble with persisted episodes; the
 /// `quick_replies` carry Athena's QR offerings for this specific turn
@@ -580,6 +607,27 @@ pub async fn send_turn(
         });
         if let Err(e) = app.emit(CHAT_CARDS_EVENT, payload) {
             tracing::warn!(error = %e, "companion chat_cards event emit failed");
+        }
+    }
+
+    // Per-turn rollup of dispatcher side-effects. The chip on each
+    // completed bubble reads this; total=0 turns get nothing. Best-effort —
+    // a missed emit just means no chip for that turn.
+    {
+        let summary = TurnSummaryEvent {
+            session_id: session_id.clone(),
+            turn_id: turn_id.clone(),
+            assistant_episode_id: assistant_ep_id.clone(),
+            approvals: dispatched.approvals.len() as u32,
+            navigations: dispatched.navigations.len() as u32,
+            lab_opens: dispatched.lab_opens.len() as u32,
+            dashboards: dispatched.dashboards.len() as u32,
+            cockpits: dispatched.cockpits.len() as u32,
+            chat_cards: dispatched.chat_cards.len() as u32,
+            continuation: dispatched.requests_continuation,
+        };
+        if let Err(e) = app.emit(TURN_SUMMARY_EVENT, summary) {
+            tracing::warn!(error = %e, "companion turn summary event emit failed");
         }
     }
 

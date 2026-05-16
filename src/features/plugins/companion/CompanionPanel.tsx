@@ -32,6 +32,7 @@ import {
   COMPANION_PROACTIVE_EVENT,
   COMPANION_RECALL_PREVIEW_EVENT,
   COMPANION_STREAM_EVENT,
+  COMPANION_TURN_SUMMARY_EVENT,
   companionListPendingApprovals,
   companionListProactiveMessages,
   companionListRecentMessages,
@@ -44,6 +45,7 @@ import {
   companionSendMessage,
   type CompanionRecallPreviewEvent,
   type CompanionStreamEvent,
+  type CompanionTurnSummaryEvent,
   type CreatedApproval,
   type OpenLabEvent,
   type ProactiveDeliveryEvent,
@@ -56,6 +58,7 @@ import { AthenaAvatar } from './AthenaAvatar';
 import { BrainViewer } from './BrainViewer';
 import { CompanionToolbar } from './CompanionToolbar';
 import { RecallStrip } from './RecallStrip';
+import { TurnSummaryChip } from './TurnSummaryChip';
 import { useToastStore } from '@/stores/toastStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { silentCatch } from '@/lib/silentCatch';
@@ -219,6 +222,7 @@ export default function CompanionPanel() {
               // sessions.
               setSendError(null);
               useCompanionStore.getState().clearAllRecall();
+              useCompanionStore.getState().clearAllTurnSummaries();
               try {
                 await companionResetConversation(true);
               } catch (err: unknown) {
@@ -522,6 +526,9 @@ function Body(props: BodyProps) {
   // no setter callbacks that the parent needs to coordinate.
   const streamingRecall = useCompanionStore((s) => s.streamingRecall);
   const recallByEpisodeId = useCompanionStore((s) => s.recallByEpisodeId);
+  const turnSummaryByEpisodeId = useCompanionStore(
+    (s) => s.turnSummaryByEpisodeId,
+  );
 
   // Initial transcript + pending approvals fetch — once init is done.
   const fetchedRef = useRef(false);
@@ -597,6 +604,28 @@ function Body(props: BodyProps) {
       useCompanionStore.getState().setStreamingRecall(ev.preview);
     }, []),
     'companion_recall_preview_listen',
+  );
+
+  // Turn-summary event: fires after the dispatcher block once per turn,
+  // already keyed by the persisted assistant_episode_id. The chip below
+  // the bubble reads from `turnSummaryByEpisodeId[m.id]`.
+  useTauriEvent<CompanionTurnSummaryEvent>(
+    COMPANION_TURN_SUMMARY_EVENT,
+    useCallback((event) => {
+      const ev = event.payload;
+      if (!ev?.assistantEpisodeId) return;
+      // Strip out the correlator fields the chip doesn't need.
+      const {
+        sessionId: _sid,
+        turnId: _tid,
+        assistantEpisodeId,
+        ...summary
+      } = ev;
+      void _sid;
+      void _tid;
+      useCompanionStore.getState().setTurnSummary(assistantEpisodeId, summary);
+    }, []),
+    'companion_turn_summary_listen',
   );
 
   const handleInterrupt = useCallback(() => {
@@ -949,12 +978,17 @@ function Body(props: BodyProps) {
           {messages.map((m, i) => {
             const recall =
               m.role === 'assistant' ? recallByEpisodeId[m.id] : undefined;
+            const summary =
+              m.role === 'assistant'
+                ? turnSummaryByEpisodeId[m.id]
+                : undefined;
             return (
               <div key={m.id} className="space-y-1">
                 {recall && <RecallStrip preview={recall} />}
                 <Bubble role={m.role} index={i}>
                   {m.content}
                 </Bubble>
+                {summary && <TurnSummaryChip summary={summary} />}
               </div>
             );
           })}
