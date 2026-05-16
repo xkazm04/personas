@@ -169,6 +169,37 @@ pub struct TwinVoiceProfile {
 }
 
 // ============================================================================
+// Twin Contacts (P6+ — Cycle 14 Stage 1)
+//
+// Durable per-twin record of every external handle the twin has interacted
+// with. Auto-populated from twin_communications during list calls + manually
+// editable alias/notes. The list-with-activity query LEFT JOINs against
+// twin_communications to produce the view rows the UI consumes.
+// ============================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct TwinContact {
+    pub id: String,
+    pub twin_id: String,
+    /// External handle as it appeared in `twin_communications.contact_handle`.
+    pub handle: String,
+    /// User-supplied display name. UI prefers this over `handle` when set.
+    pub alias: Option<String>,
+    /// Free-text operator notes about this relationship.
+    pub notes: Option<String>,
+    /// Number of communications scoped to (twin_id, handle). Populated by
+    /// the list-with-activity query; 0 for manually-added contacts that
+    /// haven't been bridged yet.
+    pub message_count: i64,
+    /// Latest `occurred_at` from `twin_communications` for this contact;
+    /// `None` when message_count == 0.
+    pub last_seen_at: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+// ============================================================================
 // Twin Distilled Facts (P6+)
 //
 // Curated, deduplicated facts about the twin or its contacts. Distillation

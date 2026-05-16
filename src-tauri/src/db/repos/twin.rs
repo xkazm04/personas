@@ -1,8 +1,8 @@
 use rusqlite::{params, Row};
 
 use crate::db::models::{
-    TwinChannel, TwinCommunication, TwinDistilledFact, TwinPendingMemory, TwinProfile, TwinTone,
-    TwinVoiceProfile,
+    TwinChannel, TwinCommunication, TwinContact, TwinDistilledFact, TwinPendingMemory, TwinProfile,
+    TwinTone, TwinVoiceProfile,
 };
 use crate::db::DbPool;
 use crate::error::AppError;
@@ -770,6 +770,106 @@ pub fn delete_channel(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     let conn = pool.get()?;
     let rows = conn.execute("DELETE FROM twin_channels WHERE id = ?1", params![id])?;
     Ok(rows > 0)
+}
+
+// ============================================================================
+// Contacts (P6+ — Cycle 14 Stage 1)
+// ============================================================================
+
+fn upsert_contacts_from_communications(
+    conn: &rusqlite::Connection,
+    twin_id: &str,
+) -> Result<(), AppError> {
+    // INSERT OR IGNORE picks up every distinct handle seen in
+    // twin_communications without overwriting any user-edited alias/notes
+    // already in twin_contacts.
+    let now = chrono::Utc::now().to_rfc3339();
+    conn.execute(
+        "INSERT OR IGNORE INTO twin_contacts (id, twin_id, handle, created_at, updated_at) \
+         SELECT lower(hex(randomblob(16))), ?1, contact_handle, ?2, ?2 \
+         FROM twin_communications \
+         WHERE twin_id = ?1 AND contact_handle IS NOT NULL AND contact_handle <> ''",
+        params![twin_id, now],
+    )?;
+    Ok(())
+}
+
+fn row_to_contact(row: &Row) -> rusqlite::Result<TwinContact> {
+    Ok(TwinContact {
+        id: row.get("id")?,
+        twin_id: row.get("twin_id")?,
+        handle: row.get("handle")?,
+        alias: row.get("alias")?,
+        notes: row.get("notes")?,
+        message_count: row.get::<_, Option<i64>>("message_count")?.unwrap_or(0),
+        last_seen_at: row.get("last_seen_at")?,
+        created_at: row.get("created_at")?,
+        updated_at: row.get("updated_at")?,
+    })
+}
+
+pub fn list_contacts_with_activity(
+    pool: &DbPool,
+    twin_id: &str,
+) -> Result<Vec<TwinContact>, AppError> {
+    let conn = pool.get()?;
+    upsert_contacts_from_communications(&conn, twin_id)?;
+
+    let mut stmt = conn.prepare(
+        "SELECT \
+            c.id, c.twin_id, c.handle, c.alias, c.notes, c.created_at, c.updated_at, \
+            COALESCE(agg.message_count, 0) AS message_count, \
+            agg.last_seen_at AS last_seen_at \
+         FROM twin_contacts c \
+         LEFT JOIN ( \
+            SELECT contact_handle, COUNT(*) AS message_count, MAX(occurred_at) AS last_seen_at \
+            FROM twin_communications \
+            WHERE twin_id = ?1 AND contact_handle IS NOT NULL AND contact_handle <> '' \
+            GROUP BY contact_handle \
+         ) agg ON agg.contact_handle = c.handle \
+         WHERE c.twin_id = ?1 \
+         ORDER BY COALESCE(agg.last_seen_at, c.created_at) DESC",
+    )?;
+    let rows = stmt.query_map(params![twin_id], row_to_contact)?;
+    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+}
+
+pub fn update_contact(
+    pool: &DbPool,
+    id: &str,
+    alias: Option<&str>,
+    notes: Option<&str>,
+) -> Result<TwinContact, AppError> {
+    let now = chrono::Utc::now().to_rfc3339();
+    let conn = pool.get()?;
+    let rows = conn.execute(
+        "UPDATE twin_contacts SET alias = ?2, notes = ?3, updated_at = ?4 WHERE id = ?1",
+        params![id, alias, notes, now],
+    )?;
+    if rows == 0 {
+        return Err(AppError::NotFound(format!("twin contact {id}")));
+    }
+    // Single-row read after update; reuse the list query shape would be
+    // overkill for one row. message_count + last_seen_at recomputed from
+    // the join so the caller gets a consistent view-shaped struct.
+    conn.query_row(
+        "SELECT \
+            c.id, c.twin_id, c.handle, c.alias, c.notes, c.created_at, c.updated_at, \
+            COALESCE(agg.message_count, 0) AS message_count, \
+            agg.last_seen_at AS last_seen_at \
+         FROM twin_contacts c \
+         LEFT JOIN ( \
+            SELECT contact_handle, COUNT(*) AS message_count, MAX(occurred_at) AS last_seen_at \
+            FROM twin_communications \
+            WHERE twin_id = (SELECT twin_id FROM twin_contacts WHERE id = ?1) \
+              AND contact_handle IS NOT NULL AND contact_handle <> '' \
+            GROUP BY contact_handle \
+         ) agg ON agg.contact_handle = c.handle \
+         WHERE c.id = ?1",
+        params![id],
+        row_to_contact,
+    )
+    .map_err(AppError::Database)
 }
 
 // ============================================================================

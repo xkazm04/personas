@@ -8,6 +8,7 @@ import type { TwinChannel } from "@/lib/bindings/TwinChannel";
 import type { TwinWikiCompileResult } from "@/lib/bindings/TwinWikiCompileResult";
 import type { TwinWikiStatus } from "@/lib/bindings/TwinWikiStatus";
 import type { TwinDistilledFact } from "@/lib/bindings/TwinDistilledFact";
+import type { TwinContact } from "@/lib/bindings/TwinContact";
 import type {
   TwinChannelKind,
   TwinInteractionDirection,
@@ -355,3 +356,19 @@ export const createDistilledFact = (
 
 export const deleteDistilledFact = (id: string) =>
   invoke<boolean>("twin_delete_distilled_fact", { id });
+
+// ============================================================================
+// Contacts (Cycle 14 Stage 1)
+// ============================================================================
+
+/**
+ * List the active twin's contacts with derived `messageCount` + `lastSeenAt`
+ * for each. The backend auto-upserts new handles seen in twin_communications
+ * before returning, so a freshly bridged contact appears on the very next
+ * call without any explicit "sync" step.
+ */
+export const listTwinContacts = (twinId: string) =>
+  invoke<TwinContact[]>("twin_list_contacts", { twinId });
+
+export const updateTwinContact = (id: string, alias?: string, notes?: string) =>
+  invoke<TwinContact>("twin_update_contact", { id, alias, notes });

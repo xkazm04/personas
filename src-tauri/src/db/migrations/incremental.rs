@@ -2338,6 +2338,38 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // Twin contacts — durable per-twin record of every handle the twin has
+    // interacted with on any channel. Auto-populated from twin_communications
+    // (handles seen via list_contacts_with_activity) + manually editable
+    // alias/notes. Stage 1 of the per-contact memory work; Stage 2 will add
+    // proactive nudges scoped per (twin_id, contact_handle).
+    // See docs/features/twin.md (Cycle 14).
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "twin_contacts",
+            description: "Create twin_contacts table for per-contact aliases and notes",
+            already_applied: |conn| has_table(conn, "twin_contacts"),
+            apply: |conn| {
+                conn.execute_batch(
+                    "CREATE TABLE IF NOT EXISTS twin_contacts (
+                        id          TEXT PRIMARY KEY,
+                        twin_id     TEXT NOT NULL REFERENCES twin_profiles(id) ON DELETE CASCADE,
+                        handle      TEXT NOT NULL,
+                        alias       TEXT,
+                        notes       TEXT,
+                        created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+                        updated_at  TEXT NOT NULL DEFAULT (datetime('now')),
+                        UNIQUE(twin_id, handle)
+                    );
+                     CREATE INDEX IF NOT EXISTS idx_twin_contacts_twin
+                         ON twin_contacts(twin_id);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     // Twin pending memories — back-cite the source communication when the
     // memory was queued via `record_interaction`. NULL for legacy rows and
     // for memories created by URL ingest / wiki audit (where no single

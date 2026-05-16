@@ -8,8 +8,8 @@ use tokio::process::Command;
 use ts_rs::TS;
 
 use crate::db::models::{
-    TwinChannel, TwinCommunication, TwinDistilledFact, TwinPendingMemory, TwinProfile, TwinTone,
-    TwinVoiceProfile,
+    TwinChannel, TwinCommunication, TwinContact, TwinDistilledFact, TwinPendingMemory, TwinProfile,
+    TwinTone, TwinVoiceProfile,
 };
 use crate::db::repos::twin as repo;
 use crate::engine::prompt;
@@ -1114,4 +1114,39 @@ pub async fn twin_delete_distilled_fact(
 ) -> Result<bool, AppError> {
     require_auth(&state).await?;
     repo::delete_distilled_fact(&state.db, &id)
+}
+
+// ============================================================================
+// Contacts (Cycle 14 Stage 1)
+//
+// twin_list_contacts auto-upserts new handles seen in twin_communications
+// every call, so the table self-maintains without a background job. Stage
+// 2 will add proactive nudges scoped per (twin_id, handle); Stage 1 just
+// gives operators a single place to attach aliases + notes to each contact.
+// ============================================================================
+
+#[tauri::command]
+pub async fn twin_list_contacts(
+    state: State<'_, Arc<AppState>>,
+    twin_id: String,
+) -> Result<Vec<TwinContact>, AppError> {
+    require_auth(&state).await?;
+    let _ = repo::get_profile_by_id(&state.db, &twin_id)?;
+    repo::list_contacts_with_activity(&state.db, &twin_id)
+}
+
+#[tauri::command]
+pub async fn twin_update_contact(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+    alias: Option<String>,
+    notes: Option<String>,
+) -> Result<TwinContact, AppError> {
+    require_auth(&state).await?;
+    let alias_trim = alias
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty());
+    let notes_trim = notes.as_deref().map(str::trim).filter(|s| !s.is_empty());
+    repo::update_contact(&state.db, &id, alias_trim, notes_trim)
 }

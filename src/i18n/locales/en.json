@@ -12637,6 +12637,23 @@
       "brainStep5": "Obsidian notes (if connected) can be manually ingested too",
       "vec0Unavailable": "Vector extension (vec0) not available. Use \"Link Existing\" to connect a knowledge base created from the Credentials page."
     },
+    "contacts": {
+      "title": "Contacts",
+      "subtitle": "External handles this twin has interacted with. Add an alias and notes to make recall easier; the list auto-populates from communications.",
+      "loading": "Loading contacts…",
+      "emptyTitle": "No contacts yet",
+      "emptyBody": "Contacts appear here as soon as the twin exchanges a message with someone on any channel.",
+      "lastSeen": "Last seen {rel} ago",
+      "neverBridged": "never",
+      "justNow": "just now",
+      "messageCount": "{count} messages",
+      "aliasPlaceholder": "Friendly name (e.g. \"Alice from Discord\")",
+      "notesPlaceholder": "Notes — context, preferences, dates that matter…",
+      "editAria": "Edit alias and notes",
+      "save": "Save",
+      "saving": "Saving…",
+      "cancel": "Cancel"
+    },
     "distilled": {
       "title": "Distilled facts",
       "subtitle": "Curated facts about the twin and its contacts. Each fact cites the source communications that produced it.",

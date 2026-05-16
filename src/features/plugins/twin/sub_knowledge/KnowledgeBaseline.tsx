@@ -7,6 +7,7 @@ import { TwinEmptyState } from '../TwinEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 import { CoachMark } from '../CoachMark';
+import { ContactsPanel } from './ContactsPanel';
 
 type MemoryFilter = 'pending' | 'approved' | 'rejected';
 
@@ -106,6 +107,7 @@ export default function KnowledgeBaseline() {
       <ContentBody>
         <div className="flex flex-col gap-4 pb-8">
           <CoachMark id="knowledge" title={t.coach.knowledgeTitle} body={t.coach.knowledgeBody} />
+          <ContactsPanel twinId={activeTwinId} />
           {pendingCount > 10 && filter !== 'pending' && (
             <div className="p-3 rounded-card border border-amber-500/25 bg-amber-500/5 flex items-center gap-3">
               <Inbox className="w-4 h-4 text-amber-400 flex-shrink-0" />

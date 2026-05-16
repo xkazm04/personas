@@ -2454,6 +2454,8 @@ pub fn run() {
             commands::infrastructure::twin::twin_list_distilled_facts,
             commands::infrastructure::twin::twin_create_distilled_fact,
             commands::infrastructure::twin::twin_delete_distilled_fact,
+            commands::infrastructure::twin::twin_list_contacts,
+            commands::infrastructure::twin::twin_update_contact,
             // Notifications
             notifications::send_app_notification,
             notifications::test_notification_channel,
