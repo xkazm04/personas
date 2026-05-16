@@ -11047,6 +11047,11 @@ export type Translations = {
       synthesis_suggestions: string;
       percent_similar: string;
       potential_duplicates: string;
+      lifecycle_heading: string;
+      lifecycle_stage_accepted: string;
+      lifecycle_stage_tasked: string;
+      lifecycle_stage_shipped: string;
+      lifecycle_jump_to_task: string;
       scanning_with: string;
       analyzing_codebase: string;
       no_previous_scans: string;
