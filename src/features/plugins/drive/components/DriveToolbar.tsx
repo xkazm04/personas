@@ -6,18 +6,22 @@ import {
   FolderPlus,
   FilePlus,
   FileSignature,
+  Folder,
   Grid3x3,
   List,
   Columns3,
+  Move,
   Pencil,
+  PenSquare,
   RefreshCw,
   Search,
   X,
   Home,
   type LucideIcon,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
+import type { DriveTreeNode } from "@/api/drive";
 import type { UseDriveResult, ViewMode } from "../hooks/useDrive";
 import { useTranslation } from "@/i18n/useTranslation";
 
@@ -26,6 +30,8 @@ interface Props {
   onNewFolder: () => void;
   onNewFile: () => void;
   onOpenSignatures: () => void;
+  onMoveSelection?: (dst: string) => void;
+  onSignSelection?: () => void;
   pathEditing?: boolean;
   onPathEditingChange?: (v: boolean) => void;
 }
@@ -42,10 +48,40 @@ export function DriveToolbar({
   onNewFolder,
   onNewFile,
   onOpenSignatures,
+  onMoveSelection,
+  onSignSelection,
   pathEditing = false,
   onPathEditingChange,
 }: Props) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
+  const selectionCount = drive.selection.size;
+  const hasSelection = selectionCount > 0;
+
+  // Single-file selection unlocks the [Sign] action. Selecting a folder
+  // is treated as no-op for signing.
+  const singleSelectedEntry = useMemo(() => {
+    if (selectionCount !== 1) return null;
+    const path = Array.from(drive.selection)[0];
+    return drive.visibleEntries.find((e) => e.path === path) ?? null;
+  }, [drive.selection, drive.visibleEntries, selectionCount]);
+  const canSign =
+    !!singleSelectedEntry && singleSelectedEntry.kind === "file" && !!onSignSelection;
+
+  // Move-to popover anchored under its trigger. Closed by click-outside.
+  const [moveOpen, setMoveOpen] = useState(false);
+  const moveAnchorRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!moveOpen) return;
+    const onDocClick = (e: MouseEvent) => {
+      if (!moveAnchorRef.current?.contains(e.target as Node)) setMoveOpen(false);
+    };
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, [moveOpen]);
+  // Auto-close when the selection drops to 0 (e.g. user clears or deletes mid-popover).
+  useEffect(() => {
+    if (!hasSelection) setMoveOpen(false);
+  }, [hasSelection]);
 
   const segments = drive.currentPath
     ? drive.currentPath.split("/").filter(Boolean)
@@ -219,25 +255,138 @@ export function DriveToolbar({
         />
       </div>
 
-      {/* Actions */}
-      <ActionButton
-        icon={FolderPlus}
-        label={t.plugins.drive.new_folder}
-        onClick={onNewFolder}
-        variant="primary"
-      />
-      <ActionButton
-        icon={FilePlus}
-        label={t.plugins.drive.new_file}
-        onClick={onNewFile}
-        variant="ghost"
-      />
+      {/* Actions — selection-aware morph. With a selection, hide "New …"
+          create-buttons (they don't apply to the current focus) and show
+          Move-to + Sign instead. Signatures stays visible always. */}
+      {hasSelection ? (
+        <>
+          <div ref={moveAnchorRef} className="relative">
+            <ActionButton
+              icon={Move}
+              label={t.plugins.drive.bulk_move_to}
+              onClick={() => setMoveOpen((v) => !v)}
+              variant="primary"
+            />
+            {moveOpen && (
+              <MovePopover
+                tree={drive.tree}
+                selectionPaths={Array.from(drive.selection)}
+                title={tx(t.plugins.drive.move_to_title, {
+                  count: selectionCount,
+                })}
+                rootLabel={t.plugins.drive.move_to_root_option}
+                emptyLabel={t.plugins.drive.move_to_no_destinations}
+                onPick={(dst) => {
+                  setMoveOpen(false);
+                  onMoveSelection?.(dst);
+                }}
+              />
+            )}
+          </div>
+          {canSign && (
+            <ActionButton
+              icon={PenSquare}
+              label={t.plugins.drive.bulk_sign}
+              onClick={() => onSignSelection?.()}
+              variant="ghost"
+            />
+          )}
+        </>
+      ) : (
+        <>
+          <ActionButton
+            icon={FolderPlus}
+            label={t.plugins.drive.new_folder}
+            onClick={onNewFolder}
+            variant="primary"
+          />
+          <ActionButton
+            icon={FilePlus}
+            label={t.plugins.drive.new_file}
+            onClick={onNewFile}
+            variant="ghost"
+          />
+        </>
+      )}
       <ActionButton
         icon={FileSignature}
         label={t.plugins.drive.signatures_button}
         onClick={onOpenSignatures}
         variant="accent"
       />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Move-to popover — flattened tree, click a folder to pick it as destination.
+// ---------------------------------------------------------------------------
+
+function MovePopover({
+  tree,
+  selectionPaths,
+  title,
+  rootLabel,
+  emptyLabel,
+  onPick,
+}: {
+  tree: DriveTreeNode | null;
+  selectionPaths: string[];
+  title: string;
+  rootLabel: string;
+  emptyLabel: string;
+  onPick: (dst: string) => void;
+}) {
+  // Flatten the tree into a depth-tagged list. Filters out destinations
+  // that would be invalid moves: any selection path itself, and any
+  // descendant of a selection path (refuses ancestor-into-descendant —
+  // same guard the sidebar drop applies).
+  const candidates = useMemo(() => {
+    const out: Array<{ node: DriveTreeNode; depth: number }> = [];
+    if (!tree) return out;
+    const isInvalid = (path: string) =>
+      selectionPaths.some(
+        (p) => path === p || (p !== "" && path.startsWith(`${p}/`)),
+      );
+    const walk = (node: DriveTreeNode, depth: number) => {
+      if (!isInvalid(node.path)) out.push({ node, depth });
+      for (const child of node.children) walk(child, depth + 1);
+    };
+    walk(tree, 0);
+    return out;
+  }, [tree, selectionPaths]);
+
+  return (
+    <div
+      role="dialog"
+      aria-label={title}
+      className="absolute right-0 top-full mt-1 z-30 w-72 max-h-80 overflow-y-auto rounded-modal border border-primary/15 bg-background/95 backdrop-blur-md shadow-elevation-3"
+    >
+      <div className="sticky top-0 px-3 py-2 border-b border-primary/10 bg-background/95 typo-label text-foreground">
+        {title}
+      </div>
+      {candidates.length === 0 ? (
+        <div className="px-3 py-4 typo-body text-foreground italic text-center">
+          {emptyLabel}
+        </div>
+      ) : (
+        <div className="py-1">
+          {candidates.map(({ node, depth }) => (
+            <button
+              key={node.path || "__root__"}
+              type="button"
+              onClick={() => onPick(node.path)}
+              className="w-full flex items-center gap-2 py-1.5 pr-2 rounded-input text-left typo-body text-foreground hover:bg-cyan-500/15 hover:text-cyan-100 transition-colors"
+              style={{ paddingLeft: `${10 + depth * 14}px` }}
+            >
+              <Folder className="w-3.5 h-3.5 text-sky-400/70 flex-shrink-0" />
+              <span className="truncate">
+                {node.name || rootLabel}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

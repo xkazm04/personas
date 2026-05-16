@@ -9709,6 +9709,11 @@ export type Translations = {
       bulk_copy: string;
       bulk_cut: string;
       bulk_delete: string;
+      bulk_move_to: string;
+      bulk_sign: string;
+      move_to_title: string;
+      move_to_root_option: string;
+      move_to_no_destinations: string;
       details_empty_hint: string;
       details_location: string;
       copy_path_tooltip: string;

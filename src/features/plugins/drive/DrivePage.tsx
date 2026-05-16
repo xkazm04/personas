@@ -335,6 +335,29 @@ export default function DrivePage() {
     setDialog({ kind: "delete", paths: Array.from(drive.selection) });
   }, [drive.selection]);
 
+  const handleMoveSelection = useCallback(
+    async (dst: string) => {
+      const paths = Array.from(drive.selection);
+      for (const p of paths) {
+        if (p === dst) continue;
+        // Refuse moving an ancestor folder into its own descendant — would
+        // orphan the subtree. Same guard the sidebar drop applies.
+        if (dst !== "" && dst.startsWith(`${p}/`)) continue;
+        const name = p.split("/").pop() ?? p;
+        const finalDst = dst ? `${dst}/${name}` : name;
+        await drive.move(p, finalDst);
+      }
+    },
+    [drive],
+  );
+
+  const handleSignSelection = useCallback(() => {
+    if (drive.selection.size !== 1) return;
+    const path = Array.from(drive.selection)[0];
+    const entry = drive.visibleEntries.find((e) => e.path === path);
+    if (entry && entry.kind === "file") setSignEntry(entry);
+  }, [drive.selection, drive.visibleEntries]);
+
   return (
     <ContentBox>
       <ContentHeader
@@ -398,6 +421,8 @@ export default function DrivePage() {
           onNewFolder={() => setDialog({ kind: "new_folder" })}
           onNewFile={() => setDialog({ kind: "new_file" })}
           onOpenSignatures={() => setSignaturesOpen(true)}
+          onMoveSelection={handleMoveSelection}
+          onSignSelection={handleSignSelection}
           pathEditing={pathEditing}
           onPathEditingChange={setPathEditing}
         />
