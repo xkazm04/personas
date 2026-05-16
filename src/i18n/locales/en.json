@@ -12543,7 +12543,13 @@
       "removeVoiceConfirm": "Remove voice configuration? The twin will have no voice until reconfigured.",
       "configureVoice": "Configure Voice",
       "saving": "Saving...",
-      "save": "Save"
+      "save": "Save",
+      "previewCta": "Preview",
+      "previewLoading": "Synthesizing…",
+      "previewStop": "Stop",
+      "previewTooltip": "Synthesize a short sample with the current settings",
+      "previewNeedsConfig": "Set a voice id and credential id before previewing",
+      "previewSample": "This is how your twin will sound when speaking through the voice channel."
     },
     "training": {
       "title": "Training Room",

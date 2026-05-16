@@ -74,7 +74,8 @@ The tab is a two-column grid:
 2. Enter a **Credential ID** pointing to the ElevenLabs API key stored in the vault. Required for synthesis, optional for configuration.
 3. Pick a **Model** (Multilingual v2, Monolingual v1, Turbo v2 / v2.5).
 4. Adjust the three sliders (**Stability**, **Similarity Boost**, **Style**) — labels underneath make the trade-off obvious ("More expressive" ↔ "More consistent").
-5. **Configure Voice** saves the profile. From there `synthesize_speech` is callable by any persona adopting this twin.
+5. Hit **Preview** (next to Save) to synthesize a short sample line with the current form values via `companion_tts` and play it inline — works against the unsaved form, so you can A/B slider changes without committing.
+6. **Configure Voice** saves the profile. From there `synthesize_speech` is callable by any persona adopting this twin.
 
 ### 7. Channels — where the twin speaks
 

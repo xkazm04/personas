@@ -12550,6 +12550,12 @@ export type Translations = {
       configureVoice: string;
       saving: string;
       save: string;
+      previewCta: string;
+      previewLoading: string;
+      previewStop: string;
+      previewTooltip: string;
+      previewNeedsConfig: string;
+      previewSample: string;
     };
     training: {
       title: string;
