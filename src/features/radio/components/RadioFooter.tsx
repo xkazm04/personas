@@ -652,14 +652,18 @@ export default function RadioFooter() {
       </div>
 
       <div className="relative flex items-center gap-1.5 max-w-[260px] min-w-0 ml-1">
-        <span
-          aria-hidden
-          className={`w-1.5 h-1.5 rounded-full shrink-0 ${isBuffering ? 'animate-pulse' : ''}`}
+        <button
+          type="button"
+          onClick={() => setDetailsOpen((v) => !v)}
+          className={`w-1.5 h-1.5 rounded-full shrink-0 cursor-pointer hover:scale-150 transition-transform ${
+            isBuffering ? 'animate-pulse' : ''
+          }`}
           style={{
             background: accent,
             boxShadow: status === 'playing' ? `0 0 6px ${accent}` : 'none',
-            transition: 'box-shadow 200ms',
           }}
+          aria-label={t.radio.expand_button}
+          title={t.radio.expand_button}
         />
         <button
           type="button"

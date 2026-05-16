@@ -78,8 +78,8 @@ appropriate engine and reports state transitions back via
   `crossfadingRef.current` is true so the animation owns volume
   exclusively. Stream stations don't crossfade — they're a single
   continuous source with no track boundary.
-- Clicking the track title opens a floating "now playing" card anchored
-  above the footer (`NowPlayingCard`). The card shows the station with
+- Clicking the track title — or the accent dot to its left — opens a
+  floating "now playing" card anchored above the footer (`NowPlayingCard`). The card shows the station with
   an accent-tinted header, the current track + artist (with a YouTube
   thumbnail from `i.ytimg.com/vi/{videoId}/mqdefault.jpg` to the left
   for YT tracks), a wider progress bar with explicit M:SS / M:SS time
