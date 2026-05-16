@@ -1,8 +1,8 @@
-import { Puzzle, Palette, Brain, BookOpen, Wrench, HardDrive, Sparkles, Bot, LineChart } from 'lucide-react';
+import { Puzzle, Palette, Brain, BookOpen, Wrench, HardDrive, Sparkles, Bot, LineChart, Terminal } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
-import type { ArtistTab, DevToolsTab, TwinTab } from '@/lib/types/types';
+import type { ArtistTab, DevToolsTab, TwinTab, FleetTab } from '@/lib/types/types';
 import type { CompanionPluginTab } from '@/stores/slices/system/companionPluginSlice';
-import { artistItems, companionItems, devToolsItems, researchLabItems, twinItems } from '../sidebarData';
+import { artistItems, companionItems, devToolsItems, fleetItems, researchLabItems, twinItems } from '../sidebarData';
 import { useTranslation } from '@/i18n/useTranslation';
 
 export function PluginsSidebarNav() {
@@ -21,6 +21,8 @@ export function PluginsSidebarNav() {
   const twinProfiles = useSystemStore((s) => s.twinProfiles);
   const companionPluginTab = useSystemStore((s) => s.companionPluginTab);
   const setCompanionPluginTab = useSystemStore((s) => s.setCompanionPluginTab);
+  const fleetTab = useSystemStore((s) => s.fleetTab);
+  const setFleetTab = useSystemStore((s) => s.setFleetTab);
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const projects = useSystemStore((s) => s.projects);
   const creativeSessionRunning = useSystemStore((s) => s.creativeSessionRunning);
@@ -274,6 +276,45 @@ export function PluginsSidebarNav() {
                     onClick={() => setResearchLabTab(item.id as import('@/lib/types/types').ResearchLabTab)}
                     className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] transition-colors ${
                       researchLabTab === item.id
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-foreground hover:bg-secondary/40 hover:text-foreground/70'
+                    }`}
+                  >
+                    {item.icon && <item.icon className="w-3.5 h-3.5 flex-shrink-0" />}
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Fleet (DEV-only — Claude Code session aggregator) */}
+        {enabledPlugins.has('fleet') && (
+          <div className="space-y-1">
+            <button
+              onClick={() => setPluginTab('fleet')}
+              aria-current={pluginTab === 'fleet' ? 'page' : undefined}
+              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
+                pluginTab === 'fleet'
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80'
+              }`}
+            >
+              <Terminal className="w-4 h-4 flex-shrink-0" />
+              Fleet
+              <span className="ml-auto inline-flex items-center px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400 text-[9px] font-medium border border-amber-500/25">
+                DEV
+              </span>
+            </button>
+            {pluginTab === 'fleet' && (
+              <div className="ml-4 space-y-0.5">
+                {fleetItems.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => setFleetTab(item.id as FleetTab)}
+                    className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] transition-colors ${
+                      fleetTab === item.id
                         ? 'bg-primary/10 text-primary'
                         : 'text-foreground hover:bg-secondary/40 hover:text-foreground/70'
                     }`}

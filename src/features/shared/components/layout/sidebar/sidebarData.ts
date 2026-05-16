@@ -154,6 +154,14 @@ export const companionItems: SubNavItem[] = [
   { id: 'voice', label: 'Voice', icon: Mic },
 ];
 
+// Fleet plugin sub-nav (DEV-only). Aggregates Claude Code CLI sessions
+// across terminals via PTY ownership + hooks. See docs/features/fleet.md.
+export const fleetItems: SubNavItem[] = [
+  { id: 'grid', label: 'Sessions', icon: LayoutDashboard },
+  { id: 'decisions', label: 'Decisions', icon: MessageSquare },
+  { id: 'settings', label: 'Settings', icon: Settings },
+];
+
 export function getSettingsItems(isDev: boolean, activeTier?: Tier): SubNavItem[] {
   const tier = activeTier ?? TIERS.TEAM;
   return [
