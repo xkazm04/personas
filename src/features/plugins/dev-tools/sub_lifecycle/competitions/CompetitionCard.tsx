@@ -8,7 +8,7 @@ import { getCompetition, pickCompetitionWinner, cancelCompetition, deleteCompeti
 import { CompetitionSlotRow } from './CompetitionSlotRow';
 import { WinnerInsightDialog } from './WinnerInsightDialog';
 import { RacingProgress } from './RacingProgress';
-import { PromptDiffModal } from './PromptDiffModal';
+import { PromptDiffModal, summarizePromptDiff } from './PromptDiffModal';
 import type { DevCompetition } from '@/lib/bindings/DevCompetition';
 
 const STATUS_BADGES: Record<string, { color: string; label: string }> = {
@@ -90,8 +90,25 @@ export function CompetitionCard({ competition, onRefresh }: { competition: DevCo
 
   const handleOpenPickWinner = useCallback((taskId: string) => {
     setPendingWinnerTaskId(taskId);
+    // Pre-fill the insight textarea with a plain-text summary of how the
+    // winner's prompt differs from each other variant. The user can edit
+    // freely — this just gives them the actual delta as a starting point
+    // rather than a blank box. (Connects cycle 15's prompt diff to the
+    // insight-capture step.)
+    const winnerSlot = detail?.slots.find((s) => s.slot.task_id === taskId)?.slot;
+    if (winnerSlot?.strategy_prompt && detail) {
+      const others = detail.slots
+        .filter((s) => s.slot.id !== winnerSlot.id && s.slot.strategy_prompt)
+        .map((s) => ({ label: s.slot.strategy_label, prompt: s.slot.strategy_prompt! }));
+      if (others.length > 0) {
+        setWinnerInsightText(
+          summarizePromptDiff(winnerSlot.strategy_label, winnerSlot.strategy_prompt, others)
+        );
+        return;
+      }
+    }
     setWinnerInsightText('');
-  }, []);
+  }, [detail]);
 
   const handleConfirmPickWinner = useCallback(async () => {
     if (!pendingWinnerTaskId) return;

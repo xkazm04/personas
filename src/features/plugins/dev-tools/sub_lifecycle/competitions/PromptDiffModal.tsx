@@ -32,7 +32,7 @@ interface DiffLine {
 }
 
 // Line-level LCS — small enough for prompts (typically <100 lines).
-function diffLines(a: string, b: string): DiffLine[] {
+export function diffLines(a: string, b: string): DiffLine[] {
   const aLines = a.split('\n');
   const bLines = b.split('\n');
   const m = aLines.length;
@@ -63,6 +63,44 @@ function diffLines(a: string, b: string): DiffLine[] {
   while (i < m) { out.push({ leftText: aLines[i]!, rightText: null, op: 'remove' }); i++; }
   while (j < n) { out.push({ leftText: null, rightText: bLines[j]!, op: 'add' }); j++; }
   return out;
+}
+
+/**
+ * Build a short plain-text summary of how `winner` differs from `others`.
+ * Designed to pre-fill the WinnerInsightDialog textarea so the human's
+ * insight comment starts from the actual prompt delta rather than a blank
+ * box. Trims long lines and caps the per-other-slot bullet list at a few
+ * lines so the textarea stays editable.
+ */
+export function summarizePromptDiff(
+  winnerLabel: string,
+  winnerPrompt: string,
+  others: { label: string; prompt: string }[],
+): string {
+  const TRIM = 80;
+  const MAX_BULLETS = 4;
+  const trim = (s: string) => (s.length > TRIM ? s.slice(0, TRIM - 1) + '…' : s);
+  const parts: string[] = [`${winnerLabel} won. Notable prompt deltas vs other variants:`, ''];
+  for (const other of others) {
+    const lines = diffLines(other.prompt, winnerPrompt);
+    let adds = 0, removes = 0;
+    const samples: string[] = [];
+    for (const l of lines) {
+      if (l.op === 'add') {
+        adds++;
+        if (samples.length < MAX_BULLETS && l.rightText?.trim()) samples.push(`  + ${trim(l.rightText.trim())}`);
+      } else if (l.op === 'remove') {
+        removes++;
+        if (samples.length < MAX_BULLETS && l.leftText?.trim()) samples.push(`  - ${trim(l.leftText.trim())}`);
+      }
+    }
+    if (adds === 0 && removes === 0) continue;
+    parts.push(`vs ${other.label} (+${adds} / -${removes}):`);
+    parts.push(...samples);
+    parts.push('');
+  }
+  parts.push('— My take on why this won:');
+  return parts.join('\n');
 }
 
 export function PromptDiffModal({ open, onClose, left, right }: Props) {
