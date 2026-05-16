@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Swords, RefreshCw, Ban, Lightbulb, Trash2 } from 'lucide-react';
+import { Swords, RefreshCw, Ban, Lightbulb, Trash2, FileDiff } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useToastStore } from '@/stores/toastStore';
@@ -8,6 +8,7 @@ import { getCompetition, pickCompetitionWinner, cancelCompetition, deleteCompeti
 import { CompetitionSlotRow } from './CompetitionSlotRow';
 import { WinnerInsightDialog } from './WinnerInsightDialog';
 import { RacingProgress } from './RacingProgress';
+import { PromptDiffModal } from './PromptDiffModal';
 import type { DevCompetition } from '@/lib/bindings/DevCompetition';
 
 const STATUS_BADGES: Record<string, { color: string; label: string }> = {
@@ -58,6 +59,18 @@ export function CompetitionCard({ competition, onRefresh }: { competition: DevCo
   const [picking, setPicking] = useState<string | null>(null);
   const [pendingWinnerTaskId, setPendingWinnerTaskId] = useState<string | null>(null);
   const [winnerInsightText, setWinnerInsightText] = useState('');
+  // Side-by-side prompt diff — user multi-selects exactly 2 slots, then
+  // opens the modal to see the line-level delta between their prompts.
+  const [compareSelected, setCompareSelected] = useState<Set<string>>(new Set());
+  const [showDiffModal, setShowDiffModal] = useState(false);
+  const toggleCompare = useCallback((slotId: string) => {
+    setCompareSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(slotId)) next.delete(slotId);
+      else if (next.size < 2) next.add(slotId);
+      return next;
+    });
+  }, []);
 
   const loadDetail = useCallback(async () => {
     setLoading(true);
@@ -180,6 +193,30 @@ export function CompetitionCard({ competition, onRefresh }: { competition: DevCo
                 />
               )}
 
+              {detail.slots.length >= 2 && (
+                <div className="flex items-center gap-2 typo-caption text-foreground/70">
+                  <span>{dl.prompt_diff_picker_label}</span>
+                  <span className="tabular-nums">{tx(dl.prompt_diff_picker_count, { selected: compareSelected.size })}</span>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    icon={<FileDiff className="w-3 h-3" />}
+                    disabled={compareSelected.size !== 2}
+                    onClick={() => setShowDiffModal(true)}
+                  >
+                    {dl.prompt_diff_open_btn}
+                  </Button>
+                  {compareSelected.size > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setCompareSelected(new Set())}
+                      className="typo-caption text-foreground/60 hover:text-foreground underline"
+                    >
+                      {t.common.clear}
+                    </button>
+                  )}
+                </div>
+              )}
               <div className="space-y-2">
                 {detail.slots.map(({ slot, task }) => (
                   <CompetitionSlotRow
@@ -190,9 +227,26 @@ export function CompetitionCard({ competition, onRefresh }: { competition: DevCo
                     isFinished={isFinished}
                     onPickWinner={handleOpenPickWinner}
                     picking={picking}
+                    compareChecked={compareSelected.has(slot.id)}
+                    compareDisabled={compareSelected.size >= 2 && !compareSelected.has(slot.id)}
+                    onToggleCompare={detail.slots.length >= 2 ? toggleCompare : undefined}
                   />
                 ))}
               </div>
+              {showDiffModal && compareSelected.size === 2 && (() => {
+                const [leftId, rightId] = Array.from(compareSelected);
+                const leftSlot = detail.slots.find((s) => s.slot.id === leftId);
+                const rightSlot = detail.slots.find((s) => s.slot.id === rightId);
+                if (!leftSlot || !rightSlot) return null;
+                return (
+                  <PromptDiffModal
+                    open
+                    onClose={() => setShowDiffModal(false)}
+                    left={{ slot: leftSlot.slot, isWinner: detail.competition.winner_task_id === leftSlot.slot.task_id }}
+                    right={{ slot: rightSlot.slot, isWinner: detail.competition.winner_task_id === rightSlot.slot.task_id }}
+                  />
+                );
+              })()}
               {pendingWinnerTaskId && (
                 <WinnerInsightDialog
                   pendingTaskId={pendingWinnerTaskId}

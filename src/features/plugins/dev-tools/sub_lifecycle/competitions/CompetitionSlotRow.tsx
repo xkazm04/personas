@@ -27,6 +27,11 @@ interface CompetitionSlotRowProps {
   isFinished: boolean;
   onPickWinner: (taskId: string) => void;
   picking: string | null;
+  /** When provided, the row renders a compare-checkbox in front of the title. */
+  compareChecked?: boolean;
+  /** Disabled when 2 are already selected and this row isn't one of them. */
+  compareDisabled?: boolean;
+  onToggleCompare?: (slotId: string) => void;
 }
 
 export function CompetitionSlotRow({
@@ -36,6 +41,9 @@ export function CompetitionSlotRow({
   isFinished,
   onPickWinner,
   picking,
+  compareChecked,
+  compareDisabled,
+  onToggleCompare,
 }: CompetitionSlotRowProps) {
   const { t, tx } = useTranslation();
   const dt = t.plugins.dev_tools;
@@ -109,6 +117,17 @@ export function CompetitionSlotRow({
       }`}
     >
       <div className="flex items-center gap-3 px-3 py-2.5">
+        {onToggleCompare && (
+          <input
+            type="checkbox"
+            checked={Boolean(compareChecked)}
+            disabled={compareDisabled}
+            onChange={() => onToggleCompare(slot.id)}
+            title={dt.slot_compare_checkbox_tooltip}
+            aria-label={dt.slot_compare_checkbox_tooltip}
+            className="w-3.5 h-3.5 accent-primary shrink-0 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+          />
+        )}
         {taskStatusIcon}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">

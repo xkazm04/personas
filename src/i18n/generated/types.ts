@@ -9903,6 +9903,7 @@ export type Translations = {
       context_detail_no_goals: string;
       context_detail_task_summary: string;
       context_detail_goal_jump_tooltip: string;
+      slot_compare_checkbox_tooltip: string;
       add_group: string;
       group_name_placeholder: string;
       create: string;
@@ -10858,6 +10859,12 @@ export type Translations = {
       constellation_click_hint: string;
       readiness_step_counter_label: string;
       readiness_step_counter_value: string;
+      prompt_diff_picker_label: string;
+      prompt_diff_picker_count: string;
+      prompt_diff_open_btn: string;
+      prompt_diff_title: string;
+      prompt_diff_stats: string;
+      prompt_diff_empty: string;
       kanban_nudge_decrease: string;
       kanban_nudge_increase: string;
       kanban_drop_here: string;
