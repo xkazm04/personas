@@ -9856,6 +9856,8 @@
       "session_status_cancelled": "Cancelled",
       "replay_session": "Replay",
       "delete_session": "Delete session",
+      "copy_session_output": "Copy session as markdown",
+      "session_output_copied": "Session output copied as markdown",
       "lightbox_zoom_in": "Zoom in",
       "lightbox_zoom_out": "Zoom out",
       "lightbox_reset_zoom": "Reset zoom",
