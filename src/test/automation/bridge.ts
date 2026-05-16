@@ -101,10 +101,16 @@ interface TestBridge {
   // -- Artist plugin helpers --
   setArtistTab(tab: string): { success: boolean; tab?: string; error?: string };
   getArtistTab(): { success: boolean; tab: string };
+  // -- Generic plugin / twin helpers --
+  setPluginTab(tab: string): { success: boolean; tab?: string; error?: string };
+  setTwinTab(tab: string): { success: boolean; tab?: string; error?: string };
+  seedTwin(name?: string): Promise<{ success: boolean; twinId?: string | null; error?: string }>;
   [key: string]: unknown;
 }
 
 const VALID_ARTIST_TABS = ['blender', 'gallery', 'media-studio'] as const;
+const VALID_PLUGIN_TABS = ['browse', 'companion', 'artist', 'dev-tools', 'obsidian-brain', 'research-lab', 'drive', 'twin', 'langfuse'] as const;
+const VALID_TWIN_TABS = ['profiles', 'identity', 'tone', 'brain', 'knowledge', 'voice', 'channels', 'training'] as const;
 
 /** Turn an arbitrary caught value into a human-readable error string.
  *  Tauri IPC errors deserialize as plain objects that stringify to
@@ -206,6 +212,56 @@ const bridge: TestBridge = {
 
   getArtistTab() {
     return { success: true, tab: useSystemStore.getState().artistTab };
+  },
+
+  // Generic plugin-tab switch — pairs with /navigate('plugins') for tests
+  // that want to drop straight into a specific plugin without clicking
+  // through the plugin browser. Mirrors the setArtistTab convenience.
+  setPluginTab(tab: string) {
+    if (!(VALID_PLUGIN_TABS as readonly string[]).includes(tab)) {
+      return {
+        success: false,
+        error: `Invalid plugin tab: ${tab}. Valid: ${VALID_PLUGIN_TABS.join(', ')}`,
+      };
+    }
+    useSystemStore.getState().setPluginTab(tab as typeof VALID_PLUGIN_TABS[number]);
+    return { success: true, tab };
+  },
+
+  setTwinTab(tab: string) {
+    if (!(VALID_TWIN_TABS as readonly string[]).includes(tab)) {
+      return {
+        success: false,
+        error: `Invalid twin tab: ${tab}. Valid: ${VALID_TWIN_TABS.join(', ')}`,
+      };
+    }
+    // Also flip the plugin tab so the twin surface actually mounts.
+    useSystemStore.getState().setPluginTab('twin');
+    useSystemStore.getState().setTwinTab(tab as typeof VALID_TWIN_TABS[number]);
+    return { success: true, tab };
+  },
+
+  // Idempotent test fixture — ensure a twin profile exists so the pills /
+  // panels added across cycles 1-16 have something to render against.
+  // Returns the active twin's id when done. Safe to call repeatedly.
+  async seedTwin(name?: string) {
+    try {
+      const state = useSystemStore.getState();
+      await state.fetchTwinProfiles();
+      const refreshed = useSystemStore.getState();
+      let active = refreshed.activeTwinId;
+      if (!active || !refreshed.twinProfiles.some((t) => t.id === active)) {
+        if (refreshed.twinProfiles.length === 0) {
+          await state.createTwinProfile(name ?? 'Test Twin');
+        }
+        const after = useSystemStore.getState();
+        active = after.activeTwinId ?? after.twinProfiles[0]?.id ?? null;
+        if (active) await state.setActiveTwin(active);
+      }
+      return { success: true, twinId: active };
+    } catch (e) {
+      return { success: false, error: _fmtBridgeErr(e) };
+    }
   },
 
   navigate(section: string) {
