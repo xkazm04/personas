@@ -403,6 +403,7 @@ fn row_to_pending_memory(row: &Row) -> rusqlite::Result<TwinPendingMemory> {
         importance: row.get::<_, Option<i32>>("importance")?.unwrap_or(3),
         status: row.get("status")?,
         reviewer_notes: row.get("reviewer_notes")?,
+        source_communication_id: row.get("source_communication_id").ok(),
         created_at: row.get("created_at")?,
         reviewed_at: row.get("reviewed_at")?,
     })
@@ -438,14 +439,16 @@ pub fn create_pending_memory(
     content: &str,
     title: Option<&str>,
     importance: i32,
+    source_communication_id: Option<&str>,
 ) -> Result<TwinPendingMemory, AppError> {
     let id = uuid::Uuid::new_v4().to_string();
     let now = chrono::Utc::now().to_rfc3339();
     let conn = pool.get()?;
     conn.execute(
-        "INSERT INTO twin_pending_memories (id, twin_id, channel, content, title, importance, created_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
-        params![id, twin_id, channel, content, title, importance, now],
+        "INSERT INTO twin_pending_memories \
+            (id, twin_id, channel, content, title, importance, source_communication_id, created_at) \
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+        params![id, twin_id, channel, content, title, importance, source_communication_id, now],
     )?;
     conn.query_row(
         "SELECT * FROM twin_pending_memories WHERE id = ?1",
@@ -562,6 +565,7 @@ pub fn record_interaction(
             &mem_content,
             title.as_deref(),
             3,
+            Some(&id),
         );
     }
 

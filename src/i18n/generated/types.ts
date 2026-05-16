@@ -12702,6 +12702,8 @@ export type Translations = {
       bulkApprovedToast: string;
       bulkRejectedToast: string;
       bulkPartialToast: string;
+      provenanceChip: string;
+      provenanceTooltip: string;
       conversationHistory: string;
       conversationExplanation: string;
       noConversationsYet: string;

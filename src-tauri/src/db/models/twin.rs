@@ -98,6 +98,10 @@ pub struct TwinPendingMemory {
     pub status: String,
     /// User notes explaining the approval/rejection.
     pub reviewer_notes: Option<String>,
+    /// Source `twin_communications.id` when this memory was queued by
+    /// `record_interaction`. NULL for memories that didn't originate from
+    /// a single communication (URL ingest, wiki audit, etc.).
+    pub source_communication_id: Option<String>,
     pub created_at: String,
     pub reviewed_at: Option<String>,
 }

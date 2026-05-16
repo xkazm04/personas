@@ -750,6 +750,7 @@ pub async fn twin_ingest_url(
         &content,
         Some(&title_text),
         3, // medium importance
+        None, // URL ingest doesn't originate from a single communication
     )
 }
 
@@ -991,6 +992,7 @@ pub async fn twin_audit_wiki(
         report.trim(),
         Some(&title_text),
         4, // high importance — audits should surface clearly
+        None, // wiki audit synthesises from many files, not one communication
     )
 }
 

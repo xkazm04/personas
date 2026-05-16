@@ -2338,6 +2338,25 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // Twin pending memories — back-cite the source communication when the
+    // memory was queued via `record_interaction`. NULL for legacy rows and
+    // for memories created by URL ingest / wiki audit (where no single
+    // communication produced them). See docs/features/twin.md (Cycle 13).
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "twin_pending_memories_source_communication_id",
+            description: "Add source_communication_id column to twin_pending_memories for provenance",
+            already_applied: |conn| has_column(conn, "twin_pending_memories", "source_communication_id"),
+            apply: |conn| {
+                conn.execute_batch(
+                    "ALTER TABLE twin_pending_memories ADD COLUMN source_communication_id TEXT;",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     // Twin distilled facts — curated, deduplicated facts about the twin or
     // its contacts, with provenance citing source twin_communications rows.
     // Foundation table for the future consolidation + recall pipeline ported

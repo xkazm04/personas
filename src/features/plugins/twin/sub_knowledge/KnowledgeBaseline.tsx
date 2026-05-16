@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { BookOpen, CheckCircle2, XCircle, Clock, MessageSquare, ArrowDownLeft, ArrowUpRight, Inbox, History, X } from 'lucide-react';
+import { BookOpen, CheckCircle2, XCircle, Clock, MessageSquare, ArrowDownLeft, ArrowUpRight, Inbox, History, X, Link2 } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
@@ -213,10 +213,19 @@ export default function KnowledgeBaseline() {
                           <div className="flex-1 min-w-0">
                             {mem.title && <p className="typo-caption text-foreground font-medium">{mem.title}</p>}
                             <p className="typo-body text-foreground mt-0.5">{mem.content}</p>
-                            <div className="flex items-center gap-3 mt-2">
+                            <div className="flex items-center gap-3 mt-2 flex-wrap">
                               {mem.channel && <span className="px-1.5 py-0.5 text-[9px] rounded-full bg-secondary/40 text-foreground">{mem.channel}</span>}
                               <span className="typo-caption text-foreground">{new Date(mem.created_at).toLocaleDateString()}</span>
                               {mem.importance > 3 && <span className="px-1.5 py-0.5 text-[9px] rounded-full bg-violet-500/15 text-violet-400">{t.knowledge.priority} {mem.importance}</span>}
+                              {mem.source_communication_id && (
+                                <span
+                                  className="flex items-center gap-1 px-1.5 py-0.5 text-[9px] rounded-full bg-secondary/40 text-foreground"
+                                  title={tx(t.knowledge.provenanceTooltip, { id: mem.source_communication_id })}
+                                >
+                                  <Link2 className="w-2.5 h-2.5" />
+                                  {tx(t.knowledge.provenanceChip, { id: mem.source_communication_id.slice(0, 8) })}
+                                </span>
+                              )}
                             </div>
                           </div>
                           {isPending ? (

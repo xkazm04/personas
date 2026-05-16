@@ -12696,6 +12696,8 @@
       "bulkApprovedToast": "Approved {count} memories — they're now indexed in the brain.",
       "bulkRejectedToast": "Rejected {count} memories.",
       "bulkPartialToast": "{succeeded} reviewed, {failed} failed — see toasts for details.",
+      "provenanceChip": "from {id}…",
+      "provenanceTooltip": "Source communication id: {id}",
       "conversationHistory": "Conversation History",
       "conversationExplanation": "Every message sent or received through the Twin connector is logged here. This is the raw interaction trail — the memory inbox above is the curated extract.",
       "noConversationsYet": "No conversations yet",
