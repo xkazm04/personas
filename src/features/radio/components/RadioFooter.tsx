@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Pause, Play, Radio, SkipBack, SkipForward } from 'lucide-react';
+import { Pause, Play, Radio, SkipBack, SkipForward, Volume1, Volume2, VolumeX } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
@@ -13,9 +13,11 @@ import {
   radioPrev,
   radioReportStatus,
   radioSetStation,
+  radioSetVolume,
   radioTrackEnded,
 } from '../api/radioApi';
 import StationPicker from './StationPicker';
+import VolumePopover from './VolumePopover';
 
 /**
  * Time we give either engine to reach `playing` state after a play/load.
@@ -72,6 +74,7 @@ export default function RadioFooter() {
   const { t, tx } = useTranslation();
   const { state, nowPlaying, stations, loaded } = useRadioState();
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [volumeOpen, setVolumeOpen] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const ytHostRef = useRef<HTMLDivElement | null>(null);
@@ -79,6 +82,11 @@ export default function RadioFooter() {
   const lastReportedRef = useRef<PlayStatus>('stopped');
   const currentStreamUrlRef = useRef<string | null>(null);
   const currentVideoIdRef = useRef<string | null>(null);
+  /**
+   * Last non-zero volume the user picked. Mute restores from here so
+   * toggling unmute returns to where the user was — not the default 0.7.
+   */
+  const lastNonZeroVolumeRef = useRef<number>(0.7);
 
   const stationKind = nowPlaying?.station.source.kind ?? null;
   const isStream = stationKind === 'stream';
@@ -295,6 +303,20 @@ export default function RadioFooter() {
     radioSetStation(id).catch(silentCatch('radio:footer'));
   };
 
+  const currentVolume = state?.volume ?? 0.7;
+  const muted = currentVolume <= 0.001;
+  // Keep the restore-target fresh whenever the user holds the slider above 0.
+  if (currentVolume > 0.001) lastNonZeroVolumeRef.current = currentVolume;
+
+  const onVolumeChange = (v: number) => {
+    radioSetVolume(v).catch(silentCatch('radio:set-volume'));
+  };
+  const onMuteToggle = () => {
+    const next = muted ? lastNonZeroVolumeRef.current || 0.7 : 0;
+    radioSetVolume(next).catch(silentCatch('radio:mute'));
+  };
+  const VolumeIcon = muted ? VolumeX : currentVolume < 0.5 ? Volume1 : Volume2;
+
   const onAudioPlaying = () => {
     cancelWatchdog();
     reportStatus('playing');
@@ -380,6 +402,28 @@ export default function RadioFooter() {
       >
         <SkipForward className="w-3.5 h-3.5" />
       </button>
+
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setVolumeOpen((v) => !v)}
+          className="w-6 h-6 rounded-interactive flex items-center justify-center text-foreground/80 hover:bg-secondary/40 transition-colors"
+          aria-label={t.radio.volume_button}
+          title={t.radio.volume_button}
+          aria-expanded={volumeOpen}
+        >
+          <VolumeIcon className="w-3.5 h-3.5" />
+        </button>
+        {volumeOpen && (
+          <VolumePopover
+            volume={currentVolume}
+            accentColor={accent}
+            onChange={onVolumeChange}
+            onMuteToggle={onMuteToggle}
+            onClose={() => setVolumeOpen(false)}
+          />
+        )}
+      </div>
 
       <div className="flex items-center gap-1.5 max-w-[260px] min-w-0 ml-1">
         <span

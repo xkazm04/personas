@@ -12777,6 +12777,10 @@ export type Translations = {
     enable_description: string;
     station_toggle_label: string;
     picker_empty: string;
+    volume_button: string;
+    volume_label: string;
+    mute: string;
+    unmute: string;
   };
   cockpit: {
     unknown_assistant: string;

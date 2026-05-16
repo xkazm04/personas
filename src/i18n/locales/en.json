@@ -12770,7 +12770,11 @@
     "enable_label": "Show radio in app footer",
     "enable_description": "Off by default. When on, a compact controller appears in the centre of the footer. Your choice is remembered across restarts.",
     "station_toggle_label": "Show in picker",
-    "picker_empty": "All stations are hidden. Enable some in Settings → Account."
+    "picker_empty": "All stations are hidden. Enable some in Settings → Account.",
+    "volume_button": "Volume",
+    "volume_label": "Volume",
+    "mute": "Mute",
+    "unmute": "Unmute"
   },
   "cockpit": {
     "unknown_assistant": "Unknown assistant",

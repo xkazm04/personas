@@ -17,8 +17,9 @@ appropriate engine and reports state transitions back via
 ## What the user sees
 
 - A compact controller in the **centre** of the bottom-of-window footer
-  (`DesktopFooter`): prev-track, play/pause, next-track, station name +
-  current track (truncated), station-picker.
+  (`DesktopFooter`): prev-track, play/pause, next-track, volume (level-
+  aware speaker icon — click to open a slider popover with a built-in
+  mute toggle), station name + current track (truncated), station-picker.
 - The station picker lists every curated station with a YouTube/Radio
   badge and (for YouTube) a track count.
 - A "Radio" card in **Settings → Account** (`RadioSettingsCard`) that
