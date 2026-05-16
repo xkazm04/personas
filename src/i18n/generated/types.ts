@@ -9861,6 +9861,15 @@ export type Translations = {
       session_status_cancelled: string;
       replay_session: string;
       delete_session: string;
+      lightbox_zoom_in: string;
+      lightbox_zoom_out: string;
+      lightbox_reset_zoom: string;
+      lightbox_fullscreen: string;
+      lightbox_exit_fullscreen: string;
+      lightbox_copy_path: string;
+      lightbox_path_copied: string;
+      lightbox_prev_image: string;
+      lightbox_next_image: string;
     };
     dev_tools: {
       no_project_configured: string;

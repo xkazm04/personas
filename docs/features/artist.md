@@ -47,7 +47,7 @@ The plugin is organised as three tabs: **Creative Studio**, **Gallery**, **Media
    - **Delete** — removes the DB row; the file on disk is untouched.
    - **Edit Tags** — opens a themed chip editor (Enter/comma to add, Backspace to drop the last tag, Esc to close). Tags are stored as a comma-joined string on the asset row.
    - **Send to Media Studio** (2D only) — queues the asset on the artist slice and flips the active tab to Media Studio. See **Lifecycle** below.
-5. Clicking a 2D asset opens a full-screen **lightbox** with left/right navigation, image counter, and keyboard shortcuts (`←` `→` cycle, `Esc` closes, click outside dismisses).
+5. Clicking a 2D asset opens a full-screen **lightbox** with left/right navigation, image counter, and keyboard shortcuts (`←` `→` cycle, `Esc` closes, click outside dismisses, mouse-wheel or `+` / `−` zooms 1× to 5×, click-drag pans when zoomed, `0` resets, `F` toggles browser fullscreen, `C` copies the file path to the clipboard).
 6. Clicking a 3D asset opens the **3D viewer modal** — a real `@react-three/fiber` canvas with OrbitControls, auto-rotate toggle, wireframe toggle, and three lighting presets (`studio`, `outdoor`, `sunset`-backed; `soft` = `apartment`). The viewer code is **lazy-loaded** — the ~1MB three.js chunk is only fetched when the user actually opens a `.glb` / `.gltf` for the first time. Unsupported extensions (`.fbx`, `.obj`, `.blend`, `.stl`…) render a polite "preview not available" fallback that recommends exporting as glTF.
 
 ### 3. Media Studio — timeline compositor

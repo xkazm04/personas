@@ -9854,7 +9854,16 @@
       "session_status_failed": "Failed",
       "session_status_cancelled": "Cancelled",
       "replay_session": "Replay",
-      "delete_session": "Delete session"
+      "delete_session": "Delete session",
+      "lightbox_zoom_in": "Zoom in",
+      "lightbox_zoom_out": "Zoom out",
+      "lightbox_reset_zoom": "Reset zoom",
+      "lightbox_fullscreen": "Fullscreen",
+      "lightbox_exit_fullscreen": "Exit fullscreen",
+      "lightbox_copy_path": "Copy file path",
+      "lightbox_path_copied": "File path copied",
+      "lightbox_prev_image": "Previous image",
+      "lightbox_next_image": "Next image"
     },
     "dev_tools": {
       "no_project_configured": "No dev project configured",
