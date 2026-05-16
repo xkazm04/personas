@@ -109,6 +109,9 @@ export const driveSearch = (query: string, maxResults?: number) =>
     maxResults: maxResults ?? null,
   });
 
+export const driveRecent = (limit?: number) =>
+  invoke<DriveEntry[]>("drive_recent", { limit: limit ?? null });
+
 export const driveRead = (relPath: string) =>
   invoke<number[]>("drive_read", { relPath: validateRelPath(relPath) });
 

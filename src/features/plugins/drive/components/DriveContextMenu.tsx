@@ -127,8 +127,14 @@ export function DriveContextMenu({
     </button>
   );
 
-  const divider = (
-    <div className="my-1 mx-2 border-t border-primary/15" aria-hidden />
+  // Tone-aware divider — the rose variant fences off the destructive
+  // zone (Delete) so the boundary reads before the user's cursor lands
+  // on it. Matches the rose separator in the header-pill bulk chips.
+  const divider = (tone: "neutral" | "danger" = "neutral") => (
+    <div
+      className={`my-1 mx-2 border-t ${tone === "danger" ? "border-rose-500/25" : "border-primary/15"}`}
+      aria-hidden
+    />
   );
 
   return (
@@ -149,7 +155,7 @@ export function DriveContextMenu({
             t.plugins.drive.ctx_reveal,
             () => onReveal(entry),
           )}
-          {divider}
+          {divider()}
           {item(
             <Pencil className="w-3.5 h-3.5" />,
             t.plugins.drive.ctx_rename,
@@ -168,6 +174,15 @@ export function DriveContextMenu({
             () => drive.cutSelection(),
             { shortcut: "Ctrl+X" },
           )}
+          {/* Paste lives in the entry-context too — it always targets the
+              current folder via pasteHere(), so it's relevant regardless
+              of which row was right-clicked. Matches Finder / Explorer. */}
+          {item(
+            <ClipboardPaste className="w-3.5 h-3.5" />,
+            t.plugins.drive.ctx_paste,
+            () => drive.pasteHere(),
+            { shortcut: "Ctrl+V", disabled: !drive.clipboard },
+          )}
           {item(
             <LinkIcon className="w-3.5 h-3.5" />,
             t.plugins.drive.ctx_copy_path,
@@ -175,7 +190,7 @@ export function DriveContextMenu({
           )}
           {entry.kind === "file" && (
             <>
-              {divider}
+              {divider()}
               {item(
                 <FileSignature className="w-3.5 h-3.5" />,
                 t.plugins.drive.ctx_sign_file,
@@ -199,7 +214,7 @@ export function DriveContextMenu({
                 )}
             </>
           )}
-          {divider}
+          {divider("danger")}
           {item(
             <Trash2 className="w-3.5 h-3.5" />,
             t.plugins.drive.ctx_delete,
@@ -219,7 +234,7 @@ export function DriveContextMenu({
             t.plugins.drive.ctx_new_file,
             onNewFile,
           )}
-          {divider}
+          {divider()}
           {item(
             <ClipboardPaste className="w-3.5 h-3.5" />,
             t.plugins.drive.ctx_paste,

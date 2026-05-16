@@ -1,20 +1,62 @@
-import { useState, useCallback } from "react";
-import { ChevronRight, Folder, FolderOpen, HardDrive, Sparkles } from "lucide-react";
+import { useCallback, useState } from "react";
+import { ChevronDown, ChevronRight, Clock, Folder, FolderOpen, HardDrive } from "lucide-react";
 
-import type { DriveTreeNode } from "@/api/drive";
-import { driveFormatBytes } from "@/api/drive";
+import type { DriveEntry, DriveTreeNode } from "@/api/drive";
+import { driveFormatBytes, driveParentPath } from "@/api/drive";
+import { silentCatch } from "@/lib/silentCatch";
 import type { UseDriveResult } from "../hooks/useDrive";
 import { useTranslation } from "@/i18n/useTranslation";
+import { formatRelativeTime, visualForEntry } from "../designTokens";
+import { useScrollShadows } from "../hooks/useScrollShadows";
+import { DriveEmptyHint } from "./DriveEmptyHint";
+import { DropCountChip } from "./DropCountChip";
+
+const RECENT_COLLAPSED_KEY = "drive.sidebar.recentCollapsed";
+// Show ⌘ on Mac, Ctrl elsewhere — keyboard hints should match what the
+// user is actually pressing. The DrivePage handler accepts both modifiers.
+const MOD_KEY_LABEL =
+  typeof navigator !== "undefined" &&
+  /Mac|iPod|iPhone|iPad/.test(navigator.platform)
+    ? "⌘"
+    : "Ctrl";
 
 interface Props {
   drive: UseDriveResult;
+  /** When a drive-internal drag is in flight, the count of dragged entries
+   *  (null when no drag). Used to render a faint "drop available" hint on
+   *  every tree node so the user has a map of valid targets. */
+  activeDragCount?: number | null;
 }
 
-/** Visual-only cap for the storage meter. Real drives are unbounded. */
-const STORAGE_METER_CAP_BYTES = 5 * 1024 * 1024 * 1024; // 5 GB
-
-export function DriveSidebar({ drive }: Props) {
+export function DriveSidebar({ drive, activeDragCount = null }: Props) {
   const { t, tx } = useTranslation();
+  const {
+    ref: scrollRef,
+    topShadow,
+    bottomShadow,
+  } = useScrollShadows<HTMLDivElement>();
+
+  // localStorage-backed collapse state for the Recent rail. A full zustand
+  // slice would be heavier than this one boolean deserves; the localStorage
+  // read happens once at mount and writes are infrequent.
+  const [recentCollapsed, setRecentCollapsed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(RECENT_COLLAPSED_KEY) === "true";
+    } catch {
+      return false;
+    }
+  });
+  const toggleRecentCollapsed = useCallback(() => {
+    setRecentCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(RECENT_COLLAPSED_KEY, String(next));
+      } catch {
+        // Quota / privacy mode — the in-memory state still updates.
+      }
+      return next;
+    });
+  }, []);
 
   return (
     <aside className="w-60 flex-shrink-0 border-r border-primary/10 bg-gradient-to-b from-background via-background to-background/80 flex flex-col">
@@ -46,44 +88,96 @@ export function DriveSidebar({ drive }: Props) {
         </div>
       </div>
 
-      {/* Folder tree */}
-      <div className="flex-1 overflow-y-auto py-2 px-1">
+      {/* Recent rail + folder tree share the scrollable middle area.
+          The wrapper is relative so the scroll-shadow fade overlays
+          can position against it without scrolling with the content. */}
+      <div className="relative flex-1 min-h-0">
+        {topShadow && (
+          <div
+            aria-hidden
+            className="absolute left-0 right-0 top-0 h-4 z-10 bg-gradient-to-b from-background to-transparent pointer-events-none"
+          />
+        )}
+        {bottomShadow && (
+          <div
+            aria-hidden
+            className="absolute left-0 right-0 bottom-0 h-4 z-10 bg-gradient-to-t from-background to-transparent pointer-events-none"
+          />
+        )}
+      <div ref={scrollRef} className="h-full overflow-y-auto py-2 px-1">
+        <div className="mb-3">
+          <button
+            type="button"
+            onClick={toggleRecentCollapsed}
+            aria-expanded={!recentCollapsed}
+            className="group w-full px-2 mb-1 flex items-center gap-1.5 typo-label text-foreground hover:text-cyan-200 transition-colors"
+          >
+            {recentCollapsed ? (
+              <ChevronRight className="w-3 h-3 text-foreground/60 group-hover:text-cyan-200/80" />
+            ) : (
+              <ChevronDown className="w-3 h-3 text-foreground/60 group-hover:text-cyan-200/80" />
+            )}
+            <Clock className="w-3 h-3 text-cyan-300/80" />
+            <span>{t.plugins.drive.sidebar_recent}</span>
+            {drive.recent.length > 0 && (
+              <span className="ml-auto typo-caption text-foreground/50 tabular-nums">
+                {drive.recent.length}
+              </span>
+            )}
+          </button>
+          {!recentCollapsed &&
+            (drive.recent.length > 0 ? (
+              <RecentRail entries={drive.recent} drive={drive} />
+            ) : (
+              <div className="mx-2">
+                <DriveEmptyHint
+                  size="sm"
+                  icon={Clock}
+                  title={t.plugins.drive.sidebar_recent_empty}
+                />
+              </div>
+            ))}
+        </div>
         <div className="px-2 mb-1.5 typo-label text-foreground">
           {t.plugins.drive.sidebar_folders_label}
         </div>
         {drive.tree ? (
-          <TreeNode node={drive.tree} drive={drive} depth={0} initiallyOpen />
+          <TreeNode
+            node={drive.tree}
+            drive={drive}
+            depth={0}
+            initiallyOpen
+            activeDragCount={activeDragCount}
+          />
         ) : (
           <div className="px-3 py-2 typo-body text-foreground">
             {t.plugins.drive.loading}
           </div>
         )}
+        </div>
       </div>
 
-      {/* Storage meter */}
+      {/* Storage block — used-bytes is the hero glance value; item count
+          plays subtitle. The previous log-scale bar pretended to measure
+          a 5 GB quota that the sandbox doesn't actually enforce, so it
+          read as a misleading progress meter; dropping it makes the
+          panel say what it really knows. The root path moves to the
+          container's title attribute (tooltip only). */}
       {drive.storage && (
-        <div className="border-t border-primary/10 px-4 py-3 bg-background/40">
-          <div className="flex items-center justify-between mb-1.5">
-            <div className="typo-label text-foreground">
-              {t.plugins.drive.sidebar_storage}
-            </div>
-            <Sparkles className="w-3 h-3 text-cyan-300" />
+        <div
+          className="border-t border-primary/10 px-4 py-3 bg-background/40"
+          title={drive.storage.root}
+        >
+          <div className="typo-label text-foreground/50 tracking-wider uppercase mb-1">
+            {t.plugins.drive.sidebar_storage}
           </div>
-          <StorageMeter
-            usedBytes={drive.storage.usedBytes}
-            capBytes={STORAGE_METER_CAP_BYTES}
-          />
-          <div className="mt-2 typo-body text-foreground font-medium">
-            {tx(t.plugins.drive.storage_used, {
-              used: driveFormatBytes(drive.storage.usedBytes),
+          <div className="typo-section-title tabular-nums text-foreground">
+            {driveFormatBytes(drive.storage.usedBytes)}
+          </div>
+          <div className="mt-0.5 typo-caption text-foreground/60 tabular-nums">
+            {tx(t.plugins.drive.items_total, {
               count: drive.storage.entryCount,
             })}
-          </div>
-          <div
-            className="mt-1 typo-caption text-foreground font-mono truncate"
-            title={drive.storage.root}
-          >
-            {drive.storage.root}
           </div>
         </div>
       )}
@@ -92,33 +186,67 @@ export function DriveSidebar({ drive }: Props) {
 }
 
 // ---------------------------------------------------------------------------
-// Storage meter
+// Recent rail — the N most-recently-modified files across the drive.
+// Click a row to navigate to the file's parent folder and select it.
 // ---------------------------------------------------------------------------
 
-function StorageMeter({
-  usedBytes,
-  capBytes,
+function RecentRail({
+  entries,
+  drive,
 }: {
-  usedBytes: number;
-  capBytes: number;
+  entries: DriveEntry[];
+  drive: UseDriveResult;
 }) {
-  // Log-scale so the bar animates even for very small drives; caps at cap.
-  const raw = Math.max(0, usedBytes) / Math.max(1, capBytes);
-  const pct = Math.min(1, Math.log10(1 + raw * 9));
-  const width = Math.max(4, pct * 100);
-
+  const { t, tx } = useTranslation();
   return (
-    <div
-      role="progressbar"
-      aria-valuenow={Math.round(pct * 100)}
-      aria-valuemin={0}
-      aria-valuemax={100}
-      className="relative h-2 w-full overflow-hidden rounded-full bg-secondary/50 border border-primary/10"
-    >
-      <div
-        className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-cyan-500 via-sky-400 to-teal-300 shadow-[0_0_10px_rgba(14,165,233,0.6)] transition-all duration-500"
-        style={{ width: `${width}%` }}
-      />
+    <div className="px-1 space-y-0.5">
+      {entries.map((entry, idx) => {
+        const visual = visualForEntry(entry);
+        const Icon = visual.Icon;
+        const parent = driveParentPath(entry.path);
+        // The first 5 rail slots are bound to Ctrl+1..5 in DrivePage's
+        // keyboard handler. Show a kbd hint chip on hover for those rows
+        // so the affordance is discoverable without cluttering rest state.
+        const shortcutN = idx < 5 ? idx + 1 : null;
+        return (
+          <button
+            key={entry.path}
+            type="button"
+            onClick={() => {
+              drive.navigate(parent);
+              // selectOnly may race with the navigation-clears-selection
+              // effect; the targeted entry might not be in visibleEntries
+              // yet. We schedule the select for the next microtask, which
+              // lands after navigate's state batch.
+              queueMicrotask(() => drive.selectOnly(entry.path));
+            }}
+            title={
+              shortcutN
+                ? `${entry.path}\n${MOD_KEY_LABEL}+${shortcutN}`
+                : entry.path
+            }
+            className="group w-full flex items-center gap-2 py-1.5 px-2 rounded-input text-left typo-body text-foreground hover:bg-cyan-500/10 hover:text-cyan-100 transition-colors"
+          >
+            <div
+              className={`flex items-center justify-center w-5 h-5 rounded bg-gradient-to-br ${visual.gradient} flex-shrink-0`}
+            >
+              <Icon className={`w-3 h-3 ${visual.text}`} />
+            </div>
+            <span className="min-w-0 flex-1 truncate">{entry.name}</span>
+            {shortcutN && (
+              <kbd
+                aria-hidden
+                className="typo-caption font-mono px-1 py-px rounded border border-primary/15 bg-secondary/40 text-foreground/40 tabular-nums opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+              >
+                {MOD_KEY_LABEL}+{shortcutN}
+              </kbd>
+            )}
+            <span className="typo-caption text-foreground/60 tabular-nums flex-shrink-0 group-hover:text-cyan-200/60">
+              {formatRelativeTime(entry.modified, t, tx)}
+            </span>
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -132,18 +260,77 @@ interface TreeNodeProps {
   drive: UseDriveResult;
   depth: number;
   initiallyOpen?: boolean;
+  activeDragCount?: number | null;
 }
 
-function TreeNode({ node, drive, depth, initiallyOpen = false }: TreeNodeProps) {
+function TreeNode({
+  node,
+  drive,
+  depth,
+  initiallyOpen = false,
+  activeDragCount = null,
+}: TreeNodeProps) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(initiallyOpen);
+  const [dropActive, setDropActive] = useState(false);
   const isActive = drive.currentPath === node.path;
   const hasChildren = node.children.length > 0 || node.hasMoreChildren;
+  // True when a drag is in flight AND this node would be a valid drop
+  // target (not the currently-hovered one — that's `dropActive` and gets
+  // the bright cyan halo instead).
+  const dragHint = !!activeDragCount && !dropActive;
 
   const toggle = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     setExpanded((v) => !v);
   }, []);
+
+  // Drag from the file list ships `application/x-drive-move` with the
+  // selection's paths. Tree nodes mirror the file-list folder drop target
+  // so the sidebar stops feeling decorative.
+  const acceptsDrop = (e: React.DragEvent) =>
+    Array.from(e.dataTransfer?.types ?? []).includes("application/x-drive-move");
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    if (!acceptsDrop(e)) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDropActive(true);
+  }, []);
+
+  const handleDragLeave = useCallback(() => {
+    setDropActive(false);
+  }, []);
+
+  const handleDrop = useCallback(
+    async (e: React.DragEvent) => {
+      if (!acceptsDrop(e)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      setDropActive(false);
+      const raw = e.dataTransfer.getData("application/x-drive-move");
+      if (!raw) return;
+      try {
+        const { paths } = JSON.parse(raw) as { paths: string[] };
+        for (const p of paths) {
+          if (p === node.path) continue;
+          // Refuse moving an ancestor folder into its own descendant — it
+          // would orphan the subtree. The backend would also reject, but
+          // catching here avoids the toast on a predictable mis-drop.
+          if (node.path !== "" && node.path.startsWith(`${p}/`)) continue;
+          const name = p.split("/").pop() ?? p;
+          const dst = node.path ? `${node.path}/${name}` : name;
+          await drive.move(p, dst);
+        }
+        // Expand the destination after a successful drop so the user can
+        // see where their files landed without re-clicking.
+        if (hasChildren && !expanded) setExpanded(true);
+      } catch (err) {
+        silentCatch("drive:sidebar-drop")(err);
+      }
+    },
+    [drive, node.path, hasChildren, expanded],
+  );
 
   return (
     <div className="relative">
@@ -154,10 +341,17 @@ function TreeNode({ node, drive, depth, initiallyOpen = false }: TreeNodeProps) 
           if (hasChildren && !expanded) setExpanded(true);
         }}
         onDoubleClick={toggle}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
         className={`group relative w-full flex items-center gap-1.5 py-1.5 pr-2 rounded-input text-left typo-body transition-all ${
-          isActive
-            ? "bg-gradient-to-r from-cyan-500/20 via-cyan-500/10 to-transparent text-cyan-100 shadow-[inset_2px_0_0_rgba(34,211,238,0.8)]"
-            : "text-foreground hover:bg-secondary/50 hover:text-foreground"
+          dropActive
+            ? "bg-cyan-500/30 ring-1 ring-cyan-400/60 text-cyan-50 shadow-[inset_0_0_12px_rgba(34,211,238,0.4)]"
+            : dragHint
+              ? "ring-1 ring-cyan-400/15 bg-cyan-500/4 text-cyan-100/70"
+              : isActive
+                ? "bg-gradient-to-r from-cyan-500/20 via-cyan-500/10 to-transparent text-cyan-100 shadow-[inset_2px_0_0_rgba(34,211,238,0.8)]"
+                : "text-foreground hover:bg-secondary/50 hover:text-foreground"
         }`}
         style={{ paddingLeft: `${10 + depth * 14}px` }}
       >
@@ -195,7 +389,10 @@ function TreeNode({ node, drive, depth, initiallyOpen = false }: TreeNodeProps) 
             }`}
           />
         )}
-        <span className="truncate">{node.name || t.plugins.drive.sidebar_root_fallback}</span>
+        <span className="truncate flex-1">{node.name || t.plugins.drive.sidebar_root_fallback}</span>
+        {dropActive && activeDragCount && (
+          <DropCountChip count={activeDragCount} />
+        )}
       </button>
       {expanded &&
         node.children.map((child) => (
@@ -204,6 +401,7 @@ function TreeNode({ node, drive, depth, initiallyOpen = false }: TreeNodeProps) 
             node={child}
             drive={drive}
             depth={depth + 1}
+            activeDragCount={activeDragCount}
           />
         ))}
     </div>
