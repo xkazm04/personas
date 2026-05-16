@@ -84,13 +84,18 @@ timestamp — the next session can recognize it as abandoned.
   - **Status:** started
   - **Note:** Aware of concurrent run on Lessons/releases. Will re-check ledger before any Phase 12 write.
 
-- **[2026-05-16 18:50 — started] /research — openhands-codebase-analysis**
-  - **Source:** `C:\Users\kazda\kiro\OpenHands` (All-Hands OpenHands codebase — Python backend agent runtime, React frontend, microagents, runtime/sandbox architecture, SDK; focus=code)
-  - **Paths:** `Obsidian/personas/Research/2026-05-16-openhands-codebase-analysis.md` (new), `Obsidian/personas/Lessons/2026-05-16-research.md` (Edit/append), `Obsidian/personas/Patterns/descoped-reopenable.md` (append-only if descoped findings), possibly `.planning/handoffs/2026-05-16-*.md` and any code findings the user accepts in Phase 8 (likely under `src-tauri/src/engine/` and/or `src/features/plugins/dev-tools/` per the framework-vs-plugin routing rule), `.claude/active-runs.md`
-  - **Status:** started
-  - **Note:** Read-only analysis of OpenHands; no edits to that repo. Path-disjoint from 7 concurrent /friend plugin sessions (they touch `src/features/plugins/*` and `src/styles/`; this run touches `src/features/plugins/dev-tools/` only IF code finding lands there + user accepts — would surface as conflict at Phase 8). Path-disjoint from /friend-theming (styles), /research-hermes-agent (different Lessons date file). Phase 13 commit will be atomic.
 
 ## Recently completed (last 14 days)
+
+- **[2026-05-16 18:50 → 19:25] /research — openhands-codebase-analysis**
+  - **Status:** completed (commit: `327889130`)
+  - **Source:** `C:\Users\kazda\kiro\OpenHands` (All-Hands OpenHands repo; focus=code)
+  - **Paths shipped:**
+    - **Repo:** `src-tauri/src/engine/webhook_notifier.rs` (refactor — +232 / -45 LOC), `.claude/active-runs.md` (register; this deregister is uncommitted for next session sweep)
+    - **Obsidian:** `Research/2026-05-16-openhands-codebase-analysis.md` (new), `Lessons/2026-05-16-research.md` (appended via Edit below the 16:30 hermes-goal-skill block)
+  - **Outcome:** 1 finding accepted of 4 surviving Phase 4 (8 catches dominated — outbound webhook system, MCP both directions, lifecycle hooks, agent delegation, memory condensing, sandbox abstraction differ fundamentally). User picked the option I'd recommended descoping: polymorphic EventCallbackProcessor refactor for `webhook_notifier`. Executed in-session: extracted `NotificationProvider` enum (Slack/Discord/Teams/Generic, infallible FromStr, unknown→Generic for DB forward-compat) + `EventProcessor` async trait + `WebhookProcessor` as first impl. `cargo check` clean (one new "kind never used" warning documenting the trait extension point). `cargo test webhook_notifier` 13/13 pass (9 pre-existing + 4 new). Public API and DB schema preserved — zero migration risk.
+  - **Source-type yield:** Cloned-codebase walkthrough (NEW source-type row, n=1) — 4 candidates + 8 catches matches product-demo-band shape. Catch count exceeds finding count — confirms the source's primary value is "personas already covers most of this surface" rather than gap discovery.
+  - **Concurrent-session note:** No path overlaps. 7 /friend plugin sessions touched `src/features/plugins/<plugin>/`; theming touched `src/styles/`; artist-test-coverage touched `src/features/plugins/artist/__tests__/`; hermes-codebase-deep touched Obsidian only. My refactor was on `src-tauri/src/engine/webhook_notifier.rs` — fully disjoint. Staged 2 files explicitly via `git add <path>` per-file; `git diff --cached --stat` showed exactly the 2 files I intended (no pre-staged drift per the 2026-05-09 stash-incident discipline).
 
 - **[2026-05-16 16:30 → 17:10] /research — hermes-goal-skill (reaffirm descope + anchor fix)**
   - **Status:** completed (commit: `a68f9b6f7`)
