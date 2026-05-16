@@ -103,6 +103,8 @@ The card renders through a new `persona_walkthrough` widget in `cockpitWidgetReg
 
 Content shape is just `{ intent, content }` where `content` is the markdown blob Athena composed. The walkthrough typically includes: proposed intent line, system prompt outline, use case set, tools, triggers, model tier, observability hooks — the seven readiness items from the best-practices doctrine, applied to this user's specific intent. From there the user can act: pick a starter template, refine the intent, or commit to a build via `build_oneshot` / `prefill_persona_create`.
 
+The walkthrough card carries a **"Build from this"** affordance — a primary button at the bottom that fires the same prefill (intent text, interactive mode) the approval-driven `prefill_persona_create` flow uses, then routes to the personas view. The user lands in `UnifiedBuildEntry` with the intent already filled in. No approval round-trip needed for this path — the walkthrough is itself a suggestion the user is reviewing, and the prefill commit just hands the conversation off to the standard build flow.
+
 Constitution bumped to v9 so existing installs pick up the new op signature on next boot.
 
 ## `show_template_suggestions` chat-card

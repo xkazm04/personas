@@ -10566,6 +10566,8 @@ export type Translations = {
       proactive_kind_athena_scheduled: string;
       walkthrough_title: string;
       walkthrough_empty: string;
+      walkthrough_commit_hint: string;
+      walkthrough_commit_button: string;
       template_suggestions_title: string;
       template_suggestions_loading: string;
       template_suggestions_empty: string;

@@ -1,6 +1,7 @@
-import { Sparkles } from 'lucide-react';
+import { Rocket, Sparkles } from 'lucide-react';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useSystemStore } from '@/stores/systemStore';
 import type { CockpitWidgetProps } from '../widgetRegistry';
 
 /**
@@ -49,6 +50,43 @@ export function PersonaWalkthroughWidget({ config, title }: CockpitWidgetProps) 
       <div className="typo-body text-foreground/90 [&_h1]:typo-h3 [&_h2]:typo-h4 [&_h3]:typo-h5 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:my-0.5 [&_p]:my-2 [&_code]:rounded-sm [&_code]:bg-foreground/10 [&_code]:px-1 [&_code]:typo-caption">
         <MarkdownRenderer content={content} />
       </div>
+      {intent && (
+        <footer className="flex items-center justify-between gap-2 pt-1">
+          <span className="typo-caption text-foreground/45">
+            {t.plugins.companion.walkthrough_commit_hint}
+          </span>
+          <button
+            type="button"
+            onClick={() => commitWalkthroughToBuild(intent)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary text-primary-foreground typo-caption font-medium hover:opacity-90 focus-ring"
+            data-testid="companion-walkthrough-commit"
+          >
+            <Rocket className="w-3.5 h-3.5" />
+            <span>{t.plugins.companion.walkthrough_commit_button}</span>
+          </button>
+        </footer>
+      )}
     </div>
   );
+}
+
+/**
+ * Frontend-side prefill commit. Mirrors what
+ * `commands::companion::approvals::execute_prefill_persona_create`'s
+ * ClientAction does after approval — the walkthrough card is itself a
+ * suggestion (not an approval-bearing row), so it can fire the prefill
+ * directly without round-tripping through the approval queue. Mode is
+ * `interactive` (default) and autoLaunch is false; the user still drives
+ * the build from UnifiedBuildEntry.
+ */
+function commitWalkthroughToBuild(intent: string) {
+  const sys = useSystemStore.getState();
+  sys.setCompanionPrefill({
+    intent,
+    name: null,
+    autoLaunch: false,
+    mode: 'interactive',
+    companionSessionId: null,
+  });
+  sys.setSidebarSection('personas');
 }
