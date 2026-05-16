@@ -626,17 +626,24 @@ export default function DrivePage() {
         />
       )}
       {lightboxPath && (() => {
-        // Build the navigable list of image entries from the current folder
-        // each time the lightbox opens. Sorted by name so prev/next is a
-        // stable visual sequence regardless of the live sort key.
-        const imageEntries = drive.visibleEntries
-          .filter((e) => e.kind === "file" && e.mime?.startsWith("image/"))
+        // Navigable list of previewable entries in the current folder —
+        // images, videos, and PDFs all share the lightbox now. Sorted by
+        // name so prev/next is a stable visual sequence regardless of the
+        // live sort key.
+        const previewableEntries = drive.visibleEntries
+          .filter(
+            (e) =>
+              e.kind === "file" &&
+              (e.mime?.startsWith("image/") ||
+                e.mime?.startsWith("video/") ||
+                e.mime === "application/pdf"),
+          )
           .slice()
           .sort((a, b) => a.name.localeCompare(b.name));
-        if (imageEntries.length === 0) return null;
+        if (previewableEntries.length === 0) return null;
         return (
           <DriveImageLightbox
-            entries={imageEntries}
+            entries={previewableEntries}
             initialPath={lightboxPath}
             onClose={() => setLightboxPath(null)}
           />

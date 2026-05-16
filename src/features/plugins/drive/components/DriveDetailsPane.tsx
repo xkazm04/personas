@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
-import { Copy, Info } from "lucide-react";
+import { Copy, FileText, Info, Play } from "lucide-react";
 
 import { driveFormatBytes, driveReadText, type DriveEntry } from "@/api/drive";
 import { useTranslation } from "@/i18n/useTranslation";
 import { silentCatch } from "@/lib/silentCatch";
 import { visualForEntry, kindLabel } from "../designTokens";
+
+const VIDEO_MIME_PREFIX = "video/";
+const PDF_MIME = "application/pdf";
 
 interface Props {
   entries: DriveEntry[];
@@ -190,7 +193,7 @@ function FilePreview({
   const { t } = useTranslation();
   const [text, setText] = useState<string | null>(null);
   const [state, setState] = useState<
-    "loading" | "ready" | "unsupported" | "too_large"
+    "loading" | "ready" | "unsupported" | "too_large" | "video" | "pdf"
   >("loading");
 
   useEffect(() => {
@@ -201,6 +204,18 @@ function FilePreview({
     const mime = entry.mime ?? "";
     if (mime.startsWith(IMAGE_MIME_PREFIX)) {
       setState("ready");
+      return;
+    }
+    // Video + PDF render an "Open in viewer" CTA; the lightbox handles
+    // the full playback / iframe rendering. We don't preload the bytes
+    // here — the lightbox fetches them on open so the Details pane stays
+    // light for files the user never expands.
+    if (mime.startsWith(VIDEO_MIME_PREFIX)) {
+      setState("video");
+      return;
+    }
+    if (mime === PDF_MIME) {
+      setState("pdf");
       return;
     }
 
@@ -258,6 +273,28 @@ function FilePreview({
       </div>
     );
   }
+  if (state === "video") {
+    return (
+      <OpenInLightboxCTA
+        entry={entry}
+        icon={Play}
+        label={t.plugins.drive.preview_open_video}
+        accent="rose"
+        onPreviewClick={onPreviewClick}
+      />
+    );
+  }
+  if (state === "pdf") {
+    return (
+      <OpenInLightboxCTA
+        entry={entry}
+        icon={FileText}
+        label={t.plugins.drive.preview_open_pdf}
+        accent="red"
+        onPreviewClick={onPreviewClick}
+      />
+    );
+  }
   if (entry.mime?.startsWith(IMAGE_MIME_PREFIX)) {
     return <ImagePreviewBlob entry={entry} onPreviewClick={onPreviewClick} />;
   }
@@ -272,6 +309,50 @@ function FilePreview({
     <div className="rounded-card border border-primary/10 bg-secondary/25 px-3 py-3 typo-body text-foreground">
       {t.plugins.drive.preview_unavailable}
     </div>
+  );
+}
+
+/**
+ * "Open in viewer" call-to-action — used by the video and PDF preview
+ * branches. Mirrors the visual of the image-preview thumbnail so the
+ * "click to expand" affordance is consistent across kinds.
+ */
+function OpenInLightboxCTA({
+  entry,
+  icon: Icon,
+  label,
+  accent,
+  onPreviewClick,
+}: {
+  entry: DriveEntry;
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  accent: "rose" | "red";
+  onPreviewClick?: (entry: DriveEntry) => void;
+}) {
+  const styles =
+    accent === "rose"
+      ? "border-rose-500/35 bg-gradient-to-br from-rose-500/15 via-rose-500/5 to-transparent text-rose-100 hover:border-rose-500/55 hover:from-rose-500/25"
+      : "border-red-500/35 bg-gradient-to-br from-red-500/15 via-red-500/5 to-transparent text-red-100 hover:border-red-500/55 hover:from-red-500/25";
+  if (!onPreviewClick) {
+    return (
+      <div
+        className={`flex items-center justify-center gap-2 px-3 py-6 rounded-card border ${styles}`}
+      >
+        <Icon className="w-4 h-4" />
+        <span className="typo-body font-medium">{label}</span>
+      </div>
+    );
+  }
+  return (
+    <button
+      type="button"
+      onClick={() => onPreviewClick(entry)}
+      className={`group w-full flex items-center justify-center gap-2 px-3 py-6 rounded-card border transition-all cursor-zoom-in ${styles}`}
+    >
+      <Icon className="w-4 h-4 group-hover:scale-110 transition-transform" />
+      <span className="typo-body font-semibold">{label}</span>
+    </button>
   );
 }
 

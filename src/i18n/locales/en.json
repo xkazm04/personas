@@ -9718,6 +9718,8 @@
       "lightbox_zoom_out": "Zoom out",
       "lightbox_zoom_reset": "Reset view",
       "lightbox_rotate": "Rotate 90°",
+      "preview_open_video": "Play video",
+      "preview_open_pdf": "Open PDF",
       "sidebar_recent_empty": "Files saved by agents land here",
       "sidebar_recent_reveal_aria": "Reveal in Drive",
       "details_empty_hint": "Select a file or folder to see its details and inline preview.",

@@ -1,3 +1,18 @@
+/**
+ * Drive media lightbox — full-screen overlay for previewing files by
+ * opening them. Despite the historical name (`DriveImageLightbox`), it
+ * now handles images, video, and PDFs. The component is kept under the
+ * old filename to minimise import-site churn; rename to
+ * `DrivePreviewLightbox` is a follow-up.
+ *
+ * Per-kind behaviour:
+ * - image/*           — zoom (+/-, mouse-wheel) / pan (drag) / rotate (R).
+ * - video/*           — native <video controls autoplay>.
+ * - application/pdf   — sandboxed <iframe> from a blob URL.
+ *
+ * Arrow keys cycle entries regardless of kind; +/-/0/R only fire on
+ * images and the toolbar buttons hide for non-image entries.
+ */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -27,6 +42,8 @@ interface Transform {
   panY: number;
 }
 
+type MediaKind = "image" | "video" | "pdf" | "other";
+
 const IDENTITY: Transform = { zoom: 1, rotation: 0, panX: 0, panY: 0 };
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 8;
@@ -36,6 +53,15 @@ function clamp(v: number, lo: number, hi: number) {
   return Math.min(hi, Math.max(lo, v));
 }
 
+function kindFromEntry(entry: DriveEntry | null): MediaKind {
+  if (!entry) return "other";
+  const mime = entry.mime ?? "";
+  if (mime.startsWith("image/")) return "image";
+  if (mime.startsWith("video/")) return "video";
+  if (mime === "application/pdf") return "pdf";
+  return "other";
+}
+
 export function DriveImageLightbox({ entries, initialPath, onClose }: Props) {
   const { t, tx } = useTranslation();
   const [index, setIndex] = useState(() =>
@@ -43,6 +69,7 @@ export function DriveImageLightbox({ entries, initialPath, onClose }: Props) {
   );
   const total = entries.length;
   const current = entries[index] ?? null;
+  const kind = kindFromEntry(current);
 
   const goPrev = useCallback(() => {
     setIndex((i) => (i - 1 + total) % total);
@@ -51,8 +78,6 @@ export function DriveImageLightbox({ entries, initialPath, onClose }: Props) {
     setIndex((i) => (i + 1) % total);
   }, [total]);
 
-  // Transform state per-image. Cleared on entry change so prev/next is
-  // never "stuck zoomed-in" on a new image.
   const [transform, setTransform] = useState<Transform>(IDENTITY);
   const transformRef = useRef(transform);
   transformRef.current = transform;
@@ -60,27 +85,26 @@ export function DriveImageLightbox({ entries, initialPath, onClose }: Props) {
     setTransform(IDENTITY);
   }, [index]);
 
-  const zoomBy = useCallback((factor: number, originX?: number, originY?: number) => {
-    setTransform((prev) => {
-      const next = clamp(prev.zoom * factor, MIN_ZOOM, MAX_ZOOM);
-      if (next === prev.zoom) return prev;
-      // If zooming all the way out, reset pan too — leaving it offset
-      // creates the visual bug "image floats out of center after Out."
-      if (next <= MIN_ZOOM) return { ...prev, zoom: next, panX: 0, panY: 0 };
-      // Zoom toward the cursor when origin is provided: shift the pan so
-      // the pixel under the cursor stays under the cursor after zoom.
-      if (originX !== undefined && originY !== undefined) {
-        const scale = next / prev.zoom;
-        return {
-          ...prev,
-          zoom: next,
-          panX: originX - scale * (originX - prev.panX),
-          panY: originY - scale * (originY - prev.panY),
-        };
-      }
-      return { ...prev, zoom: next };
-    });
-  }, []);
+  const zoomBy = useCallback(
+    (factor: number, originX?: number, originY?: number) => {
+      setTransform((prev) => {
+        const next = clamp(prev.zoom * factor, MIN_ZOOM, MAX_ZOOM);
+        if (next === prev.zoom) return prev;
+        if (next <= MIN_ZOOM) return { ...prev, zoom: next, panX: 0, panY: 0 };
+        if (originX !== undefined && originY !== undefined) {
+          const scale = next / prev.zoom;
+          return {
+            ...prev,
+            zoom: next,
+            panX: originX - scale * (originX - prev.panX),
+            panY: originY - scale * (originY - prev.panY),
+          };
+        }
+        return { ...prev, zoom: next };
+      });
+    },
+    [],
+  );
 
   const rotate = useCallback(() => {
     setTransform((prev) => ({
@@ -93,7 +117,8 @@ export function DriveImageLightbox({ entries, initialPath, onClose }: Props) {
     setTransform(IDENTITY);
   }, []);
 
-  // Global keyboard: Esc closes, arrows cycle, +/-/0 zoom, R rotate.
+  // Global keyboard: Esc closes always; arrows cycle always; +/-/0/R only
+  // fire on images (no-op on video / pdf).
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -105,25 +130,28 @@ export function DriveImageLightbox({ entries, initialPath, onClose }: Props) {
       } else if (e.key === "ArrowRight") {
         e.preventDefault();
         goNext();
-      } else if (e.key === "+" || e.key === "=") {
-        e.preventDefault();
-        zoomBy(ZOOM_STEP);
-      } else if (e.key === "-" || e.key === "_") {
-        e.preventDefault();
-        zoomBy(1 / ZOOM_STEP);
-      } else if (e.key === "0") {
-        e.preventDefault();
-        resetView();
-      } else if (e.key === "r" || e.key === "R") {
-        e.preventDefault();
-        rotate();
+      } else if (kind === "image") {
+        if (e.key === "+" || e.key === "=") {
+          e.preventDefault();
+          zoomBy(ZOOM_STEP);
+        } else if (e.key === "-" || e.key === "_") {
+          e.preventDefault();
+          zoomBy(1 / ZOOM_STEP);
+        } else if (e.key === "0") {
+          e.preventDefault();
+          resetView();
+        } else if (e.key === "r" || e.key === "R") {
+          e.preventDefault();
+          rotate();
+        }
       }
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
-  }, [onClose, goPrev, goNext, zoomBy, resetView, rotate]);
+  }, [onClose, goPrev, goNext, zoomBy, resetView, rotate, kind]);
 
-  // Fetch the current entry's bytes once and wrap them in a blob URL.
+  // Fetch the current entry's bytes and wrap them in a blob URL. Works the
+  // same way for images / video / pdf — only the rendered tag changes.
   const [url, setUrl] = useState<string | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "failed">("loading");
 
@@ -157,8 +185,7 @@ export function DriveImageLightbox({ entries, initialPath, onClose }: Props) {
     };
   }, [current]);
 
-  // Drag-to-pan. Only active when zoomed in. We track the gesture in a ref
-  // so mousemove doesn't trigger renders until we update transform.
+  // Drag-to-pan — only meaningful for images, and only when zoomed in.
   const dragRef = useRef<{
     startMouseX: number;
     startMouseY: number;
@@ -166,16 +193,20 @@ export function DriveImageLightbox({ entries, initialPath, onClose }: Props) {
     startPanY: number;
   } | null>(null);
 
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (transformRef.current.zoom <= MIN_ZOOM) return;
-    e.preventDefault();
-    dragRef.current = {
-      startMouseX: e.clientX,
-      startMouseY: e.clientY,
-      startPanX: transformRef.current.panX,
-      startPanY: transformRef.current.panY,
-    };
-  }, []);
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      if (kind !== "image") return;
+      if (transformRef.current.zoom <= MIN_ZOOM) return;
+      e.preventDefault();
+      dragRef.current = {
+        startMouseX: e.clientX,
+        startMouseY: e.clientY,
+        startPanX: transformRef.current.panX,
+        startPanY: transformRef.current.panY,
+      };
+    },
+    [kind],
+  );
 
   useEffect(() => {
     const handleMove = (e: MouseEvent) => {
@@ -202,19 +233,19 @@ export function DriveImageLightbox({ entries, initialPath, onClose }: Props) {
 
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
-      // Cursor-centric zoom: pixel under cursor stays under cursor.
+      if (kind !== "image") return;
       const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
       const ox = e.clientX - (rect.left + rect.width / 2);
       const oy = e.clientY - (rect.top + rect.height / 2);
       const factor = e.deltaY < 0 ? ZOOM_STEP : 1 / ZOOM_STEP;
       zoomBy(factor, ox, oy);
     },
-    [zoomBy],
+    [kind, zoomBy],
   );
 
   if (!current) return null;
 
-  const isZoomed = transform.zoom > MIN_ZOOM;
+  const isZoomed = kind === "image" && transform.zoom > MIN_ZOOM;
   const zoomPct = Math.round(transform.zoom * 100);
 
   return createPortal(
@@ -237,41 +268,43 @@ export function DriveImageLightbox({ entries, initialPath, onClose }: Props) {
           </div>
         </div>
 
-        {/* Zoom + rotate cluster */}
-        <div className="flex items-center gap-0.5 p-0.5 rounded-card bg-secondary/40 border border-primary/15">
-          <ChromeIconButton
-            icon={ZoomOut}
-            label={t.plugins.drive.lightbox_zoom_out}
-            onClick={() => zoomBy(1 / ZOOM_STEP)}
-            disabled={transform.zoom <= MIN_ZOOM}
-          />
-          <span className="typo-caption text-foreground/70 tabular-nums w-12 text-center select-none">
-            {zoomPct}%
-          </span>
-          <ChromeIconButton
-            icon={ZoomIn}
-            label={t.plugins.drive.lightbox_zoom_in}
-            onClick={() => zoomBy(ZOOM_STEP)}
-            disabled={transform.zoom >= MAX_ZOOM}
-          />
-          <span aria-hidden className="w-px h-4 bg-primary/15 mx-0.5" />
-          <ChromeIconButton
-            icon={RotateCw}
-            label={t.plugins.drive.lightbox_rotate}
-            onClick={rotate}
-          />
-          <ChromeIconButton
-            icon={RefreshCw}
-            label={t.plugins.drive.lightbox_zoom_reset}
-            onClick={resetView}
-            disabled={
-              transform.zoom === IDENTITY.zoom &&
-              transform.rotation === IDENTITY.rotation &&
-              transform.panX === 0 &&
-              transform.panY === 0
-            }
-          />
-        </div>
+        {/* Zoom + rotate cluster — only for images. */}
+        {kind === "image" && (
+          <div className="flex items-center gap-0.5 p-0.5 rounded-card bg-secondary/40 border border-primary/15">
+            <ChromeIconButton
+              icon={ZoomOut}
+              label={t.plugins.drive.lightbox_zoom_out}
+              onClick={() => zoomBy(1 / ZOOM_STEP)}
+              disabled={transform.zoom <= MIN_ZOOM}
+            />
+            <span className="typo-caption text-foreground/70 tabular-nums w-12 text-center select-none">
+              {zoomPct}%
+            </span>
+            <ChromeIconButton
+              icon={ZoomIn}
+              label={t.plugins.drive.lightbox_zoom_in}
+              onClick={() => zoomBy(ZOOM_STEP)}
+              disabled={transform.zoom >= MAX_ZOOM}
+            />
+            <span aria-hidden className="w-px h-4 bg-primary/15 mx-0.5" />
+            <ChromeIconButton
+              icon={RotateCw}
+              label={t.plugins.drive.lightbox_rotate}
+              onClick={rotate}
+            />
+            <ChromeIconButton
+              icon={RefreshCw}
+              label={t.plugins.drive.lightbox_zoom_reset}
+              onClick={resetView}
+              disabled={
+                transform.zoom === IDENTITY.zoom &&
+                transform.rotation === IDENTITY.rotation &&
+                transform.panX === 0 &&
+                transform.panY === 0
+              }
+            />
+          </div>
+        )}
 
         {total > 1 && (
           <div className="typo-body text-foreground tabular-nums px-3 py-1 rounded-full bg-secondary/40 border border-primary/15">
@@ -292,7 +325,7 @@ export function DriveImageLightbox({ entries, initialPath, onClose }: Props) {
         </button>
       </div>
 
-      {/* Image stage */}
+      {/* Media stage */}
       <div
         className={`relative flex-1 min-h-0 flex items-center justify-center p-8 overflow-hidden select-none ${
           isZoomed ? (dragRef.current ? "cursor-grabbing" : "cursor-grab") : ""
@@ -322,7 +355,7 @@ export function DriveImageLightbox({ entries, initialPath, onClose }: Props) {
             {t.plugins.drive.lightbox_failed}
           </div>
         )}
-        {state === "ready" && url && (
+        {state === "ready" && url && kind === "image" && (
           <img
             src={url}
             alt={current.name}
@@ -335,6 +368,36 @@ export function DriveImageLightbox({ entries, initialPath, onClose }: Props) {
             }}
             className="max-w-full max-h-full object-contain rounded-card shadow-elevation-3 will-change-transform"
           />
+        )}
+        {state === "ready" && url && kind === "video" && (
+          <video
+            // key forces React to tear down and remount on entry change;
+            // without this, switching between videos via prev/next would
+            // keep the old element around with stale src and the controls
+            // would show ⏵ on a half-loaded buffer.
+            key={current.path}
+            src={url}
+            controls
+            autoPlay
+            className="max-w-full max-h-full rounded-card shadow-elevation-3 bg-black"
+          />
+        )}
+        {state === "ready" && url && kind === "pdf" && (
+          <iframe
+            key={current.path}
+            src={url}
+            title={current.name}
+            className="w-full h-full bg-white rounded-card shadow-elevation-3"
+            // Sandbox blocks scripts/forms/popups so a malicious PDF can't
+            // jump out of its frame. allow-same-origin lets the PDF
+            // renderer load its assets relative to the blob URL.
+            sandbox="allow-same-origin"
+          />
+        )}
+        {state === "ready" && url && kind === "other" && (
+          <div className="typo-body text-foreground/70 italic">
+            {t.plugins.drive.preview_binary}
+          </div>
         )}
         {total > 1 && !isZoomed && (
           <button

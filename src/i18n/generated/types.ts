@@ -9724,6 +9724,8 @@ export type Translations = {
       lightbox_zoom_out: string;
       lightbox_zoom_reset: string;
       lightbox_rotate: string;
+      preview_open_video: string;
+      preview_open_pdf: string;
       sidebar_recent_empty: string;
       sidebar_recent_reveal_aria: string;
       details_empty_hint: string;
