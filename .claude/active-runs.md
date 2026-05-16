@@ -32,14 +32,6 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
-- **[2026-05-16 14:30 — started] fleet — Claude Code session aggregator plugin (phases 0-9)**
-  - **Source:** User request — design + implement Tauri-hosted multi-session manager for Claude Code CLIs with PTY ownership, hook-driven state, and decision broadcast. Approach B from the 3-option proposal.
-  - **Paths:** `src/features/plugins/fleet/` (new), `src-tauri/src/commands/fleet/` (new), `src/stores/slices/system/fleetSlice.ts` (new), `src/api/fleet/fleet.ts` (new), `src/lib/types/types.ts` (add `'fleet'` to `PluginTab`), `src/stores/slices/system/uiSlice.ts` (add `'fleet'` to `enabledPlugins` Set), `src/features/shared/components/layout/sidebar/sections/PluginsSidebarNav.tsx` (add fleet entry behind `import.meta.env.DEV`), `src/features/shared/components/layout/sidebar/sidebarData.ts` (add `fleetItems`), `src/i18n/locales/en.json` (additive keys under `plugins.fleet.*` — disjoint from concurrent /friend-{artist,companion,dev-tools,drive,langfuse,radio,theming,twin}), `src-tauri/Cargo.toml` (portable-pty dep), `src-tauri/src/lib.rs` (mod fleet, register commands + axum routes), `src-tauri/src/engine/event_registry.rs` (FLEET_* events), `src/lib/eventRegistry.ts` (FLEET_* mirror), `src/lib/bindings/Fleet*.ts` (ts-rs codegen), `package.json` (@xterm/xterm, @xterm/addon-fit), `scripts/docs/feature-doc-map.json` (fleet entry), `docs/features/fleet.md` (new)
-  - **Status:** started
-  - **Branch:** `worktree-fleet-plugin`
-  - **Worktree:** `.claude/worktrees/fleet-plugin/`
-  - **Note:** DEV-build-only plugin (gated by `import.meta.env.DEV` in sidebar nav). Atomic commits per phase. Phases 0-9: scaffold → Rust types → PTY → xterm pane → hook receiver → hook installer → state machine → grid UI → decision broadcast → polish/docs.
-
 - **[2026-05-16 13:12 — started] /friend — radio (endless development loop)**
   - **Source:** `/friend src\features\radio` — free-text hint resolved to the radio feature module
   - **Paths:** `src/features/radio/`, possibly `src-tauri/src/radio/`, `src-tauri/src/commands/radio.rs`, `src-tauri/data/radio_stations.json`, `src/i18n/locales/en.json` (additive keys under `radio.*` only), `docs/features/radio.md`, `src/lib/bindings/Radio*.ts`/`Station*.ts`/`Track.ts` (if ts-rs runs), `.claude/active-runs.md`
@@ -100,6 +92,24 @@ timestamp — the next session can recognize it as abandoned.
   - **Note:** Aware of concurrent run on Lessons/releases. Will re-check ledger before any Phase 12 write.
 
 ## Recently completed (last 14 days)
+
+- **[2026-05-16 14:30 → end-of-session] fleet — Claude Code session aggregator plugin (phases 0-9)**
+  - **Source:** User request — design + implement Tauri-hosted multi-session manager for Claude Code CLIs with PTY ownership, hook-driven state, decision broadcast. Approach B from the 3-option proposal.
+  - **Status:** completed
+  - **Branch:** `worktree-fleet-plugin`
+  - **Worktree:** `.claude/worktrees/fleet-plugin/`
+  - **Commits (atomic per phase):**
+    - `6ff13f3d1` phase 0 — scaffold DEV-only Fleet plugin (sidebar entry + 3 sub-pages, orange theme).
+    - `15549203f` phase 1 — Rust module skeleton + ts-rs DTOs (FleetSession / FleetSessionState / FleetRegistrySnapshot / FleetHookStatus / FleetHookEvent), portable-pty dep, FLEET_* event registry.
+    - `dcde662f7` phase 2 — PTY spawn + stdin/stdout (6 Tauri commands + global registry).
+    - `135a814c4` phase 3 — xterm.js pane + single-session test-bed.
+    - `ee75766af` phase 4 — axum /fleet/hooks/* receiver with sessionstart→Running, notification→AwaitingInput, stop→Idle, etc.
+    - `c5929d245` phase 5 — idempotent installer for `~/.claude/settings.json` (`_fleet: true` marker preserves user hooks) + settings UI banner.
+    - `b089ac3e3` phase 6 — staleness ticker (30s/5min) + recursive notify watcher on `~/.claude/projects/*.jsonl`.
+    - `d464a099c` phase 7 — project-grouped session grid + sidebar waiting-count badge + per-session state cards.
+    - `04c93709c` phase 8 — decision broadcast composer (select-waiting / select-all, append-↵ toggle, localStorage history).
+    - phase 9 — `docs/features/fleet.md` + `scripts/docs/feature-doc-map.json` entry.
+  - **Outcome:** End-to-end working multi-session manager. PTY ownership for sessions spawned from Fleet; hook-driven state machine for any `claude` running anywhere on the machine once hooks are installed; one-click "send this to every session waiting for input" decision broadcast. DEV-only (sidebar gated by `import.meta.env.DEV`). cargo check + npx tsc --noEmit clean throughout. Worktree pending review/merge — keep at `.claude/worktrees/fleet-plugin/` until validated.
 
 - **[2026-05-16 13:25 → 14:35] doc-sync three-surface system + catch-up /guide-sync**
   - **Paths:** `scripts/docs/feature-doc-map.json`, `scripts/docs/check-doc-sync.mjs`, `scripts/docs/__tests__/check-doc-sync.test.mjs` (new), `.claude/CLAUDE.md`, `.claude/guide-sync-marker.json`, `personas-web/src/data/guide/content/{agents-prompts,triggers,monitoring}.ts`
