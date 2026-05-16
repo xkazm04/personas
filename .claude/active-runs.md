@@ -32,6 +32,59 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+- **[2026-05-16 13:12 — started] /friend — radio (endless development loop)**
+  - **Source:** `/friend src\features\radio` — free-text hint resolved to the radio feature module
+  - **Paths:** `src/features/radio/`, possibly `src-tauri/src/radio/`, `src-tauri/src/commands/radio.rs`, `src-tauri/data/radio_stations.json`, `src/i18n/locales/en.json` (additive keys under `radio.*` only), `docs/features/radio.md`, `src/lib/bindings/Radio*.ts`/`Station*.ts`/`Track.ts` (if ts-rs runs), `.claude/active-runs.md`
+  - **Status:** started
+  - **Branch:** `worktree-friend-radio-131216`
+  - **Worktree:** `.claude/worktrees/friend-radio-131216/`
+  - **Note:** /friend loop — UX/product directions only, atomic commits per cycle. Path-disjoint from concurrent /friend-{artist,companion,dev-tools,drive,langfuse} and /research-hermes sessions. Bias higher-effort + deepen-existing-surfaces per prior /friend lessons.
+
+- **[2026-05-16 13:11 — started] /friend — langfuse plugin**
+  - **Source:** `/friend` endless development loop, area resolved from free-text hint `src\features\plugins\langfuse`
+  - **Paths:** `src/features/plugins/langfuse/`, `src/i18n/locales/en.json` (additive keys only under `plugins.langfuse.*` — disjoint from concurrent /friend-{drive,artist,companion,dev-tools}), possibly `src-tauri/src/langfuse/` (only with explicit Phase 3 risk-gate approval), possibly `docs/features/` if a langfuse doc exists, `.claude/active-runs.md`
+  - **Branch:** `worktree-friend-langfuse-131101`
+  - **Worktree:** `.claude/worktrees/friend-langfuse-131101/`
+  - **Status:** started
+  - **Note:** First /friend session over langfuse plugin. Path A is closed (managed self-host shipped end-to-end); user is in Path A+ phase. Path-disjoint from 4 concurrent /friend sessions (different plugin directories + different `plugins.*` i18n sub-trees). Bias deepen-existing-surface + higher-effort per prior /friend lessons.
+
+- **[2026-05-16 — started] /friend — drive plugin**
+  - **Source:** `/friend` endless loop, area resolved from path `src\features\plugins\drive`
+  - **Paths:** `src/features/plugins/drive/`, `src-tauri/src/commands/infrastructure/drive.rs` (if touched), `src/i18n/locales/en.json` (additive `plugins.drive.*` only — coordinate with concurrent /friend-artist, /friend-companion, /friend-dev-tools), `docs/features/drive.md` (if user-visible change ships)
+  - **Status:** started
+  - **Branch:** `worktree-friend-drive-130941`
+  - **Worktree:** `.claude/worktrees/friend-drive-130941/`
+  - **Note:** Path-disjoint from concurrent /friend-artist (sub_blender), /friend-companion, /friend-dev-tools, /research-hermes (Obsidian). Bias higher-effort + deepen-existing-surface per Lessons/2026-05-14-friend.
+
+- **[2026-05-16 13:10 — started] /friend — artist plugin**
+  - **Paths:** `src/features/plugins/artist/`, possibly `src/i18n/locales/en.json` (additive keys under `plugins.artist.*` / `media_studio.*`), possibly `docs/features/artist.md`
+  - **Status:** started
+  - **Branch:** `worktree-friend-artist-130851`
+  - **Worktree:** `.claude/worktrees/friend-artist-130851/`
+  - **Note:** /friend endless development loop. Path-disjoint from concurrent /friend-companion, /friend-dev-tools, and /research-hermes sessions. Bias higher-effort + deepen-existing-surfaces per prior /friend lessons.
+
+- **[2026-05-16 13:08 — started] /friend — companion (Athena chatbot), session 2**
+  - **Source:** `/friend` endless development loop, area resolved from free-text hint `src\features\plugins\companion`
+  - **Paths:** `src/features/plugins/companion/`, `src-tauri/src/companion/`, `src/i18n/locales/en.json` (additive keys only under `plugins.companion.*`), `docs/features/companion/README.md`, `src/lib/bindings/Companion*.ts` (if ts-rs runs), `.claude/active-runs.md`
+  - **Branch:** `worktree-friend-companion-130838`
+  - **Worktree:** `.claude/worktrees/friend-companion-130838/`
+  - **Status:** started
+  - **Note:** Session 2 over companion. Prior session (worktree-friend-companion-234310) NOT merged to master — building fresh on `201bfeec6`. Avoiding net-new-surface ideas (3× soft-skipped last session). Bias higher-effort per prior session feedback.
+
+- **[2026-05-16 13:09 — started] /friend — dev-tools (endless development loop)**
+  - **Paths:** `src/features/plugins/dev-tools/`, possibly `src-tauri/src/commands/dev_tools/` + `src/i18n/locales/en.json` (additive keys under `plugins.dev_tools.*`) + `docs/features/dev-tools.md` per cycle
+  - **Status:** started
+  - **Branch:** `worktree-friend-dev-tools-130945`
+  - **Worktree:** `.claude/worktrees/friend-dev-tools-130945/`
+  - **Note:** /friend loop — UX/product directions only, atomic commits per cycle. No overlap with concurrent /friend-companion or /research-hermes sessions. Bias higher-effort + deepen-existing-surfaces per prior /friend lessons.
+
+- **[2026-05-16 13:09 — started] /friend — twin plugin**
+  - **Paths:** `src/features/plugins/twin/`, possibly `src-tauri/src/twin/` + `src-tauri/src/commands/twin/` + `src/lib/bindings/Twin*.ts` + `src/i18n/locales/en.json` (additive keys under `twin.*` only — coordinate with concurrent /friend-{drive,artist,companion,dev-tools,langfuse} on same en.json) + `docs/features/twin.md` per cycle
+  - **Status:** started
+  - **Branch:** `worktree-friend-twin-130914`
+  - **Worktree:** `.claude/worktrees/friend-twin-130914/`
+  - **Note:** /friend endless development loop. Path-disjoint from concurrent /friend-{langfuse,drive,artist,companion,dev-tools} (different plugin dirs + different en.json sub-trees) and /research-hermes (Obsidian). Shared en.json: additive `twin.*` keys only. Bias higher-effort + deepen-existing-surfaces per Lessons/2026-05-14-friend.
+
 - **[2026-05-13 — started] /research — hermes-agent-codebase-deep**
   - **Source:** `C:\Users\kazda\kiro\hermes-agent` (Nous Research Hermes Agent codebase, comprehensive analysis of UI, functionality, architecture)
   - **Paths:** `Obsidian/personas/Research/2026-05-13-hermes-agent-codebase-deep.md`, `Obsidian/personas/Lessons/2026-05-13-research.md` (Edit/append — coordinates with concurrent claude-code-2-1-140 run), `Obsidian/personas/Patterns/descoped-reopenable.md` (append-only), possibly `src/data/releases.json` + `src/features/home/components/releases/i18n/*.ts` if Phase 12 fires, `.claude/active-runs.md`
@@ -39,6 +92,20 @@ timestamp — the next session can recognize it as abandoned.
   - **Note:** Aware of concurrent run on Lessons/releases. Will re-check ledger before any Phase 12 write.
 
 ## Recently completed (last 14 days)
+
+- **[2026-05-16 13:25 → 14:35] doc-sync three-surface system + catch-up /guide-sync**
+  - **Paths:** `scripts/docs/feature-doc-map.json`, `scripts/docs/check-doc-sync.mjs`, `scripts/docs/__tests__/check-doc-sync.test.mjs` (new), `.claude/CLAUDE.md`, `.claude/guide-sync-marker.json`, `personas-web/src/data/guide/content/{agents-prompts,triggers,monitoring}.ts`
+  - **Status:** completed (commit: 66e447219 in personas + af66f99 in personas-web)
+  - **Commits — personas:** `d584207f7` three-target Stop hook + map + tests; `15f214256` CLAUDE.md doc-sync rewrite; `b632e5b32` promote marketing breadcrumb to exit-2 (per-session enforcement, no weekly schedule per user redirect); `66e447219` catch-up marker bump.
+  - **Commits — personas-web:** `94f8f13` agents-prompts (template adoption flow, vault picker, setup status); `ee4f9b9` triggers (inbound vs outbound clarification); `af66f99` monitoring (notification bell flow).
+  - **Outcome:** Built generalized Stop hook covering 3 docs surfaces (feature docs, onboarding tour, marketing guides) with `feature-doc-map.json` as the single source of truth. Each entry can declare `doc`/`onboardingFlows`/`marketingModule`. Marketing breadcrumb is exit-2 (cross-repo edits to `../personas-web/` satisfy it; dismissable per turn). 30 test assertions, all green. User redirected mid-session from weekly schedule to per-session enforcement model. Catch-up sync after 1586-commit / 5-week drift: 5 focused content updates in personas-web, 31 topics flagged for future targeted runs, 3 missing-coverage product surfaces noted (cockpit/Athena, director, outbound channel delivery). Worktrees `worktree-doc-sync-multi` (personas) and `worktree-guide-sync-20260516` (personas-web) cleaned up post-merge.
+
+- **[2026-05-15 09:33 → 09:51] prod-installer — local production build for v0.1.0-1 (no source edits)**
+  - **Command:** `npm run tauri:build` (canonical: `desktop-full` features, NSIS + MSI). Build time 17m 44s; release profile clean (61 warnings, 0 errors — same `langfuse::exporter` dead-code warnings as the 2026-05-13 build). `pretauri:build` ran `ensure-ort-cache` from origin merge `201bfeec6` first; ORT cache was already good, no-op.
+  - **Artifacts produced:**
+    - NSIS: `src-tauri/target/release/bundle/nsis/Personas_0.1.0-1_x64-setup.exe` (53 MB)
+    - MSI:  `src-tauri/target/release/bundle/msi/Personas_0.1.0-1_x64_en-US.msi` (72 MB)
+  - **Status:** completed — NSIS installer launched via `start ""` for user to walk through. No commits, no source edits, build artifacts only. Same version (0.1.0-1) as 2026-05-13 build — rebuilt on top of merged origin tree (commit `201bfeec6`) which includes the ort-arm64-fix scaffolding, /friend skill, notif webhooks, moodboard panel, and god-component sweep.
 
 - **[2026-05-15] god-component-sweep — split ~200 god components (>300 LOC) + add max-lines lint guard**
   - **Status:** completed on branch `worktree-god-component-sweep` (commits `649a850dd` infra + `cdf604b08` refactor). NOT merged to master — user owns merge (main checkout has 99+ in-flight WIP files from concurrent sessions; per-file reconciliation needed when merging, same recipe as 2026-05-15 notif-webhooks).
