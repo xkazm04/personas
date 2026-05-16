@@ -89,7 +89,8 @@ The tab is a two-column grid:
 2. The model generates 5 interview questions **grounded in what's already approved in the KB** — the topic screen shows "Already known: N memories — questions will avoid duplicates."
 3. Answer each question in your own voice. Each answer is recorded as a pending memory. If your answer is terse (< 15 words), a single **Follow-up** question is generated and inserted into the queue; you can **Skip** it instead of answering.
 4. On completion, the model summarises the session into a 3–5 sentence "what we learned" paragraph. The summary is saved as a high-signal pending memory tagged `kind: session_summary`, and displayed on the complete screen.
-5. Press **Review Memories** to jump straight to the Knowledge tab and triage the new pending entries.
+5. Below the summary, a **Where to go next** panel surfaces the two topic presets with the thinnest grounding-fact coverage so far (rough keyword-match on the active twin's approved memories). Clicking a recommendation jumps back to the topic picker for a follow-up session — closing the loop so completion isn't a dead end.
+6. Press **Review Memories** to jump straight to the Knowledge tab and triage the new pending entries.
 
 ### Twin × Persona binding
 

@@ -12578,6 +12578,9 @@ export type Translations = {
       sessionCompleteDetail: string;
       trainMore: string;
       reviewMemories: string;
+      nextMovesHeading: string;
+      nextMovesSubtitle: string;
+      nextMovesCoverage: string;
       groundingHint: string;
       followupBadge: string;
       followupCta: string;

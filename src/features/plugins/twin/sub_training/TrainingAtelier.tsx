@@ -6,6 +6,7 @@ import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { TwinEmptyState } from '../TwinEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useTrainingSession, TRAINING_TOPIC_PRESETS } from './useTrainingSession';
+import { NextMovesPanel } from './NextMovesPanel';
 
 /* ------------------------------------------------------------------ *
  *  Atelier — "Studio Interview"
@@ -295,6 +296,8 @@ export default function TrainingAtelier() {
                   </div>
                 </motion.div>
               )}
+
+              <NextMovesPanel onPick={session.handleReset} />
 
               <div className="flex items-center justify-center gap-3 mt-8">
                 <Button onClick={session.handleReset} variant="accent" accentColor="violet" size="sm">
