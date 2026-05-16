@@ -20,8 +20,9 @@ const IDLE_STATE: ExportState = {
 
 // Backend emits progress as a percent (0–100, clamped) — normalize to a 0–1
 // fraction so callers can treat ExportState.progress consistently across UI
-// surfaces. Clamp defensively in case the source ever drifts.
-function normalizeProgress(raw: number): number {
+// surfaces. Clamp defensively in case the source ever drifts. Exported for
+// unit-test coverage.
+export function normalizeProgress(raw: number): number {
   if (!Number.isFinite(raw) || raw <= 0) return 0;
   const fraction = raw > 1 ? raw / 100 : raw;
   return Math.min(1, Math.max(0, fraction));
