@@ -137,3 +137,15 @@ pub struct NowPlaying {
     pub track_index_in_station: Option<u32>,
     pub status: PlayStatus,
 }
+
+/// Current-track metadata scraped from a stream provider (today: SomaFM).
+/// Streams have no per-track structure of their own — this is the
+/// renderer's way to surface artist/title for the title segment and
+/// the now-playing card on stream stations.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct StreamMetadata {
+    pub title: String,
+    pub artist: String,
+}

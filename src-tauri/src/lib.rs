@@ -2583,6 +2583,7 @@ pub fn run() {
             commands::radio::radio_set_volume,
             commands::radio::radio_report_status,
             commands::radio::radio_track_ended,
+            commands::radio::radio_fetch_somafm_metadata,
         ]))
         .run(tauri::generate_context!())
         .unwrap_or_else(|e| {

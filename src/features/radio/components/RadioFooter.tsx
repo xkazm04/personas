@@ -6,6 +6,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
 import type { PlayStatus } from '@/lib/bindings/PlayStatus';
 import { useRadioState } from '../hooks/useRadioState';
+import { somafmSlugForStation, useSomafmMetadata } from '../hooks/useSomafmMetadata';
 import { useYouTubePlayer } from '../hooks/useYouTubePlayer';
 import {
   radioNext,
@@ -144,6 +145,13 @@ export default function RadioFooter() {
   const stationKind = nowPlaying?.station.source.kind ?? null;
   const isStream = stationKind === 'stream';
   const isYoutube = stationKind === 'youtubeTracks';
+
+  const somafmSlug = somafmSlugForStation(
+    stationKind,
+    nowPlaying?.station.sourceLabel ?? null,
+    nowPlaying?.station.slug ?? null,
+  );
+  const streamMetadata = useSomafmMetadata(somafmSlug);
 
   const reportStatus = useCallback((status: PlayStatus, positionSec: number | null = null) => {
     if (lastReportedRef.current === status && positionSec === null) return;
@@ -545,8 +553,9 @@ export default function RadioFooter() {
   const titleLine = useMemo(() => {
     if (!nowPlaying) return t.radio.idle_title;
     if (nowPlaying.track) return `${nowPlaying.track.artist} — ${nowPlaying.track.title}`;
+    if (streamMetadata) return `${streamMetadata.artist} — ${streamMetadata.title}`;
     return nowPlaying.station.name;
-  }, [nowPlaying, t]);
+  }, [nowPlaying, streamMetadata, t]);
 
   // Off-screen host for the YouTube player. 200×200 stays above YT's
   // minimum playable size; positioning takes it off the visible canvas.
@@ -686,6 +695,7 @@ export default function RadioFooter() {
             isYoutube={isYoutube}
             progress={progress}
             currentTrackIndex={nowPlaying.trackIndexInStation ?? null}
+            streamMetadata={streamMetadata}
             onTogglePlay={togglePlay}
             onPrev={onPrev}
             onNext={onNext}

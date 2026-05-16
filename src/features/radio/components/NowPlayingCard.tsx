@@ -3,6 +3,7 @@ import { ExternalLink, Loader2, Pause, Play, SkipBack, SkipForward, X } from 'lu
 import { useTranslation } from '@/i18n/useTranslation';
 import type { NowPlaying } from '@/lib/bindings/NowPlaying';
 import type { PlayStatus } from '@/lib/bindings/PlayStatus';
+import type { StreamMetadata } from '@/lib/bindings/StreamMetadata';
 
 interface NowPlayingCardProps {
   nowPlaying: NowPlaying;
@@ -10,6 +11,7 @@ interface NowPlayingCardProps {
   isYoutube: boolean;
   progress: { currentSec: number; durationSec: number } | null;
   currentTrackIndex: number | null;
+  streamMetadata: StreamMetadata | null;
   onTogglePlay: () => void;
   onPrev: () => void;
   onNext: () => void;
@@ -35,6 +37,7 @@ export default function NowPlayingCard({
   isYoutube,
   progress,
   currentTrackIndex,
+  streamMetadata,
   onTogglePlay,
   onPrev,
   onNext,
@@ -105,6 +108,15 @@ export default function NowPlayingCard({
               </p>
               <p className="typo-caption text-foreground/70 truncate">
                 {nowPlaying.track.artist}
+              </p>
+            </>
+          ) : streamMetadata ? (
+            <>
+              <p className="typo-body font-medium text-foreground truncate">
+                {streamMetadata.title}
+              </p>
+              <p className="typo-caption text-foreground/70 truncate">
+                {streamMetadata.artist}
               </p>
             </>
           ) : (

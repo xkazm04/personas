@@ -132,6 +132,16 @@ appropriate engine and reports state transitions back via
   app resumes the last station; persisted `current_station_id` /
   cursor entries that no longer exist in the catalog are silently
   discarded.
+- **SomaFM stream metadata.** Stream stations carry no track data of
+  their own, but SomaFM publishes per-channel current-track JSON at
+  `https://somafm.com/songs/{slug}.json`. The renderer polls
+  `radio_fetch_somafm_metadata` every 30s while a station with
+  `sourceLabel === "SomaFM"` is active. The fetch runs server-side in
+  Rust via `reqwest` (5s timeout, slug validated against
+  `^[a-z0-9-]{1,64}$`), so the renderer doesn't need a CSP entry for
+  the apex `somafm.com` domain. Surfaced in both the footer title
+  segment and the now-playing card's current-track row; the station
+  name + description remain the fallback when metadata is unavailable.
 
 ## Tauri command surface
 
@@ -151,6 +161,7 @@ All commands are wrapped via `invokeWithTimeout` in
 | `radio_set_volume` | UI → Rust | Volume in [0.0, 1.0] |
 | `radio_report_status` | UI → Rust | Engine reports state transitions; optional `position_sec` (YouTube only) |
 | `radio_track_ended` | UI → Rust | YouTube engine reports natural END or skip-on-error |
+| `radio_fetch_somafm_metadata` | UI → Rust | Fetch current-track artist/title from `https://somafm.com/songs/{slug}.json` (async; runs in Rust so the renderer needs no CSP entry for the apex domain). Returns `Some(StreamMetadata)` on success, `None` on any non-fatal failure |
 
 ## Tauri events
 
