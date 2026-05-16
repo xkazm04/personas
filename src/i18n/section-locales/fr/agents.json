@@ -909,7 +909,7 @@
     "auto_event_type": "Type d'événement : {eventType}",
     "auto_zapier_hint": "Le hook de capture sera validé et connecté.",
     "auto_custom_hint": "Configuration manuelle requise. L'automatisation sera enregistrée comme brouillon.",
-    "auto_input_schema_placeholder": "string",
+    "auto_input_schema_placeholder": "{ \"file_url\": \"string\" }",
     "auto_github_token_needs": "Votre token nécessite les portées {scopes}. Mettez à jour votre token sur github.com/settings/tokens.",
     "auto_fallback_title": "Bascule vers le connecteur direct en cas d'échec",
     "ch_title": "Canaux de notification",
@@ -2074,7 +2074,7 @@
     "success": "Succès",
     "failed": "Échec",
     "error": "Erreur",
-    "input_json_placeholder": "valeur",
+    "input_json_placeholder": "{ \"key\": \"value\" }",
     "invalid_json": "Invalid JSON — fix before running."
   },
   "health_check": {

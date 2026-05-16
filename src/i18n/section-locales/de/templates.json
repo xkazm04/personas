@@ -891,7 +891,7 @@
     "generating_template": "Generiere: {name}",
     "start_review_predefined": "Überprüfung starten (5 Fälle)",
     "start_batch": "Stapel starten ({count} Vorlage{plural})",
-    "start_review_custom": "Überprüfung starten ({count} Fall/-fälle)",
+    "start_review_custom": "Überprüfung starten ({count} case{plural})",
     "copy_log": "Protokoll kopieren",
     "copied_log": "Kopiert!",
     "back": "Zurück",

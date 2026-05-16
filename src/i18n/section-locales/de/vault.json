@@ -437,7 +437,7 @@
     "sql_hint": "Abfrage schreiben und Ausführen oder Strg+Enter drücken",
     "executing_query": "Abfrage wird ausgeführt...",
     "redis_placeholder": "Redis-Befehl eingeben (z.B. GET mykey, HGETALL users:1)",
-    "convex_placeholder": "func:name",
+    "convex_placeholder": "Geben Sie den Tabellennamen zum Durchsuchen oder den JSON-Text ein: {\"path\": \"func:name\", \"args\": {}}",
     "sql_placeholder": "SQL-Abfrage eingeben (Strg+Enter zum Ausführen)",
     "running": "Läuft...",
     "safe_mode": "Sicherer Modus",
@@ -679,7 +679,7 @@
     "add_tag_title": "Tag hinzufügen",
     "local_embedding_hint": "Embeddings werden lokal mit {model} ({dims}-dim) erzeugt. Es werden keine Daten an externe Dienste gesendet. Das Modell (~23MB) wird beim ersten Gebrauch heruntergeladen und lokal zwischengespeichert.",
     "api_path_placeholder": "/api/v1/resource",
-    "json_body_placeholder": "Wert",
+    "json_body_placeholder": "{\"key\": \"value\"}",
     "sending": "Senden...",
     "send": "Senden",
     "search_results_one": "{count} Ergebnis für \"{query}\"",
@@ -1011,7 +1011,7 @@
     "base_url_placeholder": "https://api.example.com",
     "openapi_url_placeholder": "https://api.example.com/openapi.json",
     "auth_schemes": "Auth-Schemata",
-    "body_placeholder": "Wert"
+    "body_placeholder": "{ \"key\": \"value\" }"
   },
   "foraging": {
     "no_credentials_found": "Keine Zugangsdaten gefunden",

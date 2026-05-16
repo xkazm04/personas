@@ -24,7 +24,7 @@
     "sending": "পাঠানো হচ্ছে...",
     "empty_response": "(খালি রেসপন্স)",
     "snippets": "স্নিপেট",
-    "request_body_placeholder": "আপনার প্রম্পট এখানে..."
+    "request_body_placeholder": "{ \"message\": \"Your prompt here...\" }"
   },
   "connection": {
     "orchestrator_url_label": "ক্লাউড সার্ভার URL",
@@ -189,7 +189,7 @@
     "no_deployments": "এখনও কোনো ডিপ্লয়মেন্ট নেই",
     "adjust_filters": "আপনার সার্চ বা ফিল্টার পরিবর্তন করুন।",
     "deploy_hint": "ক্লাউড বা GitLab ট্যাব থেকে পার্সোনা ডিপ্লয় করুন।",
-    "showing_of": "{showing}/{total}টি ডিপ্লয়মেন্ট দেখানো হচ্ছে",
+    "showing_of": "{total}টি স্থাপনার{plural} {showing} দেখানো হচ্ছে",
     "total_invocations": "মোট আহ্বান:",
     "search_placeholder": "ডিপ্লয়মেন্ট অনুসন্ধান করুন...",
     "filter": "ফিল্টার",

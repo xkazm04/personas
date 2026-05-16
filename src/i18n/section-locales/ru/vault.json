@@ -437,7 +437,7 @@
     "sql_hint": "Напишите запрос и нажмите «Выполнить» или Ctrl+Enter",
     "executing_query": "Выполнение запроса...",
     "redis_placeholder": "Введите команду Redis (например: GET mykey, HGETALL users:1)",
-    "convex_placeholder": "func:name",
+    "convex_placeholder": "Введите имя таблицы для просмотра или тело JSON: {\"path\": \"func:name\", \"args\": {}}",
     "sql_placeholder": "Введите SQL-запрос (Ctrl+Enter для выполнения)",
     "running": "Выполняется...",
     "safe_mode": "Безопасный режим",
@@ -679,7 +679,7 @@
     "add_tag_title": "Добавить тег",
     "local_embedding_hint": "Эмбеддинги создаются локально с помощью {model} ({dims}-мерные). Данные не покидают ваше устройство. Модель (~23МБ) скачивается при первом использовании и кэшируется локально.",
     "api_path_placeholder": "/api/v1/resource",
-    "json_body_placeholder": "значение",
+    "json_body_placeholder": "{\"key\": \"value\"}",
     "sending": "Отправка...",
     "send": "Отправить",
     "search_results_one": "{count} результат по запросу \"{query}\"",
@@ -1011,7 +1011,7 @@
     "base_url_placeholder": "https://api.example.com",
     "openapi_url_placeholder": "https://api.example.com/openapi.json",
     "auth_schemes": "схемы авторизации",
-    "body_placeholder": "значение"
+    "body_placeholder": "{ \"key\": \"value\" }"
   },
   "foraging": {
     "no_credentials_found": "Учётных данных не найдено",

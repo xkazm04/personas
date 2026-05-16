@@ -24,7 +24,7 @@
     "sending": "送信中...",
     "empty_response": "（空のレスポンス）",
     "snippets": "スニペット",
-    "request_body_placeholder": "ここにプロンプトを入力..."
+    "request_body_placeholder": "{ \"message\": \"Your prompt here...\" }"
   },
   "connection": {
     "orchestrator_url_label": "クラウドサーバーURL",
@@ -189,7 +189,7 @@
     "no_deployments": "まだデプロイメントはありません",
     "adjust_filters": "検索またはフィルターを調整してみてください。",
     "deploy_hint": "クラウドまたはGitLabタブからペルソナをデプロイします。",
-    "showing_of": "{total}件中{showing}件のデプロイメントを表示",
+    "showing_of": "{total} {showing} {plural} 個の展開中 を表示中",
     "total_invocations": "総呼び出し回数:",
     "search_placeholder": "デプロイメントを検索...",
     "filter": "フィルター",

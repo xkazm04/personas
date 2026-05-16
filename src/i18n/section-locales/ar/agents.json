@@ -508,7 +508,7 @@
     "no_tools_warning": "هذه الشخصية لا تحتوي على أدوات. أضف أدوات لاختبار أغنى.",
     "add_prompt_first": "أضف تعليمات لهذه الشخصية أولاً",
     "select_model": "اختر نموذجاً واحداً على الأقل",
-    "run_arena": "تشغيل الساحة ({count} نموذج)",
+    "run_arena": "{count, plural, one {} تشغيل الساحة ({count} نموذج آخر {s}})",
     "cancel_test": "إلغاء الاختبار",
     "focus_use_case": "التركيز على حالة الاستخدام",
     "describe_changes": "صف التغييرات المطلوبة",
@@ -909,7 +909,7 @@
     "auto_event_type": "نوع الحدث: {eventType}",
     "auto_zapier_hint": "سيُتحقق من catch hook ويُربط.",
     "auto_custom_hint": "الإعداد اليدوي مطلوب. ستُحفظ الأتمتة كمسودة.",
-    "auto_input_schema_placeholder": "نص",
+    "auto_input_schema_placeholder": "{ \"file_url\": \"string\" }",
     "auto_github_token_needs": "يحتاج رمزك إلى نطاق/نطاقات {scopes}. حدّث رمزك على github.com/settings/tokens.",
     "auto_fallback_title": "يعود تلقائياً إلى الموصّل المباشر عند الفشل",
     "ch_title": "قنوات الإشعارات",
@@ -2074,7 +2074,7 @@
     "success": "نجاح",
     "failed": "فشل",
     "error": "خطأ",
-    "input_json_placeholder": "قيمة",
+    "input_json_placeholder": "{ \"key\": \"value\" }",
     "invalid_json": "Invalid JSON — fix before running."
   },
   "health_check": {

@@ -24,7 +24,7 @@
     "sending": "جارٍ الإرسال...",
     "empty_response": "(استجابة فارغة)",
     "snippets": "مقاطع الكود",
-    "request_body_placeholder": "موجِّه الطلب هنا..."
+    "request_body_placeholder": "{ \"message\": \"Your prompt here...\" }"
   },
   "connection": {
     "orchestrator_url_label": "عنوان URL للخادم السحابي",

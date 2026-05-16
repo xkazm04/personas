@@ -508,7 +508,7 @@
     "no_tools_warning": "このペルソナにはツールが割り当てられていません。より豊富なテストのためにツールを追加してください。",
     "add_prompt_first": "先にこのペルソナにプロンプトを追加してください",
     "select_model": "少なくとも1つのモデルを選択",
-    "run_arena": "アリーナを実行 ({count} モデル)",
+    "run_arena": "{count, plural, one {} アリーナを実行します ({count} モデル other {s}})",
     "cancel_test": "テストをキャンセル",
     "focus_use_case": "ユースケースに集中",
     "describe_changes": "変更内容を説明",
@@ -909,7 +909,7 @@
     "auto_event_type": "イベントタイプ: {eventType}",
     "auto_zapier_hint": "キャッチフックが検証・接続されます。",
     "auto_custom_hint": "手動セットアップが必要です。オートメーションは下書きとして保存されます。",
-    "auto_input_schema_placeholder": "string",
+    "auto_input_schema_placeholder": "{ \"file_url\": \"string\" }",
     "auto_github_token_needs": "トークンには {scopes} スコープが必要です。github.com/settings/tokens でトークンを更新してください。",
     "auto_fallback_title": "失敗時に直接コネクタへフォールバック",
     "ch_title": "通知チャンネル",
@@ -2074,7 +2074,7 @@
     "success": "成功",
     "failed": "失敗",
     "error": "エラー",
-    "input_json_placeholder": "value",
+    "input_json_placeholder": "{ \"key\": \"value\" }",
     "invalid_json": "Invalid JSON — fix before running."
   },
   "health_check": {

@@ -437,7 +437,7 @@
     "sql_hint": "クエリを記述してRunかCtrl+Enterを押す",
     "executing_query": "クエリ実行中...",
     "redis_placeholder": "Redisコマンドを入力（例: GET mykey、HGETALL users:1）",
-    "convex_placeholder": "func:name",
+    "convex_placeholder": "参照するテーブル名を入力するか、JSON 本文を入力してください: {\"path\": \"func:name\", \"args\": {}}",
     "sql_placeholder": "SQLクエリを入力（Ctrl+Enterで実行）",
     "running": "実行中...",
     "safe_mode": "セーフモード",
@@ -536,7 +536,7 @@
     "daily_execs_lost": "失われる1日の実行数",
     "daily_cost_impact": "1日のコスト影響",
     "sim_low": "この認証情報に依存するペルソナやワークフローはありません。失効しても安全です。",
-    "sim_high": "{credentialName} を取り消すとワークスペース全体の {personas} 件のペルソナに影響します。",
+    "sim_high": "{credentialName} を取り消すと、ワークスペース全体の {personas} persona{personaPlural} に影響します。",
     "sim_medium": "{credentialName} の取り消しは影響範囲が限定的です。",
     "per_day": "/日"
   },
@@ -679,7 +679,7 @@
     "add_tag_title": "タグを追加",
     "local_embedding_hint": "埋め込みは {model} ({dims}次元) を使ってローカルで生成されます。データは端末外に出ません。モデル (~23MB) は初回使用時にダウンロードされ、ローカルにキャッシュされます。",
     "api_path_placeholder": "/api/v1/resource",
-    "json_body_placeholder": "value",
+    "json_body_placeholder": "{\"key\": \"value\"}",
     "sending": "送信中...",
     "send": "送信",
     "search_results_one": "\"{query}\" の {count} 件の結果",
@@ -965,13 +965,13 @@
     "no_filter_match": "別の検索語を試すか、フィルターをクリアしてください。",
     "set_up_credentials": "認証情報をセットアップ",
     "clear_selection": "選択をクリア",
-    "set_up_services": "{count} 件のサービスをセットアップ",
+    "set_up_services": "{plural} {count} サービスをセットアップします",
     "setting_up": "{total} 件中 {current} 件をセットアップ中",
     "wizard_title": "認証情報セットアップウィザード",
     "choose_service": "セットアップするサービスを選択",
     "ai_walk_description": "AIがAPI認証情報の取得を段階的にガイドします。",
     "wizard_subtitle": "AIガイド付き認証情報セットアップ",
-    "wizard_subtitle_batch": "{count} 件のサービスをセットアップ中"
+    "wizard_subtitle_batch": "{plural} {count} サービスをセットアップしています"
   },
   "autopilot": {
     "title": "API自動操縦",
@@ -1011,7 +1011,7 @@
     "base_url_placeholder": "https://api.example.com",
     "openapi_url_placeholder": "https://api.example.com/openapi.json",
     "auth_schemes": "認証スキーム",
-    "body_placeholder": "value"
+    "body_placeholder": "{ \"key\": \"value\" }"
   },
   "foraging": {
     "no_credentials_found": "認証情報が見つかりません",

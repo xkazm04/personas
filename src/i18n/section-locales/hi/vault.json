@@ -437,7 +437,7 @@
     "sql_hint": "एक क्वेरी लिखें और Run या Ctrl+Enter दबाएं",
     "executing_query": "क्वेरी निष्पादित हो रही है...",
     "redis_placeholder": "Redis कमांड दर्ज करें (जैसे GET mykey, HGETALL users:1)",
-    "convex_placeholder": "func:name",
+    "convex_placeholder": "{\"path\": \"func:name\", \"args\": {} ब्राउज़ करने के लिए तालिका का नाम दर्ज करें, या JSON बॉडी: }",
     "sql_placeholder": "SQL क्वेरी दर्ज करें (निष्पादन के लिए Ctrl+Enter)",
     "running": "चल रहा है...",
     "safe_mode": "सेफ मोड",
@@ -679,7 +679,7 @@
     "add_tag_title": "टैग जोड़ें",
     "local_embedding_hint": "Embedding {model} ({dims}-dim) का उपयोग करके स्थानीय रूप से उत्पन्न होते हैं। कोई डेटा आपकी मशीन नहीं छोड़ता। मॉडल (~23MB) पहली बार उपयोग पर डाउनलोड होता है और स्थानीय रूप से कैश होता है।",
     "api_path_placeholder": "/api/v1/resource",
-    "json_body_placeholder": "value",
+    "json_body_placeholder": "{\"key\": \"value\"}",
     "sending": "भेजा जा रहा है...",
     "send": "भेजें",
     "search_results_one": "\"{query}\" के लिए {count} परिणाम",
@@ -1011,7 +1011,7 @@
     "base_url_placeholder": "https://api.example.com",
     "openapi_url_placeholder": "https://api.example.com/openapi.json",
     "auth_schemes": "प्रमाणीकरण schemes",
-    "body_placeholder": "value"
+    "body_placeholder": "{ \"key\": \"value\" }"
   },
   "foraging": {
     "no_credentials_found": "कोई क्रेडेंशियल नहीं मिले",

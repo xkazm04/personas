@@ -508,7 +508,7 @@
     "no_tools_warning": "Diese Persona hat keine Tools. Fügen Sie Tools für umfangreichere Tests hinzu.",
     "add_prompt_first": "Fügen Sie dieser Persona zuerst einen Prompt hinzu",
     "select_model": "Mindestens ein Modell auswählen",
-    "run_arena": "Arena ausführen ({count} Modelle)",
+    "run_arena": "Run Arena ({count} model{count, plural, one {} other {s}})",
     "cancel_test": "Test abbrechen",
     "focus_use_case": "Auf Anwendungsfall konzentrieren",
     "describe_changes": "Beschreiben Sie die gewünschten Änderungen",
@@ -909,7 +909,7 @@
     "auto_event_type": "Ereignistyp: {eventType}",
     "auto_zapier_hint": "Catch-Hook wird validiert und verbunden.",
     "auto_custom_hint": "Manuelle Einrichtung erforderlich. Automatisierung wird als Entwurf gespeichert.",
-    "auto_input_schema_placeholder": "string",
+    "auto_input_schema_placeholder": "{ \"file_url\": \"string\" }",
     "auto_github_token_needs": "Ihr Token benötigt {scopes} Scope(s). Aktualisieren Sie Ihr Token unter github.com/settings/tokens.",
     "auto_fallback_title": "Fällt bei Fehler auf direkten Konnektor zurück",
     "ch_title": "Benachrichtigungskanäle",
@@ -2074,7 +2074,7 @@
     "success": "Erfolg",
     "failed": "Fehlgeschlagen",
     "error": "Fehler",
-    "input_json_placeholder": "Wert",
+    "input_json_placeholder": "{ \"key\": \"value\" }",
     "invalid_json": "Invalid JSON — fix before running."
   },
   "health_check": {

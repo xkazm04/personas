@@ -437,7 +437,7 @@
     "sql_hint": "اكتب استعلاماً واضغط تشغيل أو Ctrl+Enter",
     "executing_query": "جارٍ تنفيذ الاستعلام...",
     "redis_placeholder": "أدخل أمر Redis (مثال: GET mykey، HGETALL users:1)",
-    "convex_placeholder": "func:name",
+    "convex_placeholder": "{\"path\": \"func:name\", \"args\": {} أدخل اسم الجدول للتصفح، أو نص JSON: }",
     "sql_placeholder": "أدخل استعلام SQL (Ctrl+Enter للتنفيذ)",
     "running": "جارٍ التشغيل...",
     "safe_mode": "الوضع الآمن",
@@ -679,7 +679,7 @@
     "add_tag_title": "إضافة وسم",
     "local_embedding_hint": "تُولَّد التضمينات محلياً باستخدام {model} ({dims}-بُعد). لا تغادر أي بيانات جهازك. يُنزَّل النموذج (~23 ميغابايت) عند أول استخدام ويُخزَّن محلياً.",
     "api_path_placeholder": "/api/v1/resource",
-    "json_body_placeholder": "قيمة",
+    "json_body_placeholder": "{\"key\": \"value\"}",
     "sending": "جارٍ الإرسال...",
     "send": "إرسال",
     "search_results_one": "نتيجة {count} لـ \"{query}\"",
@@ -1011,7 +1011,7 @@
     "base_url_placeholder": "https://api.example.com",
     "openapi_url_placeholder": "https://api.example.com/openapi.json",
     "auth_schemes": "مخططات المصادقة",
-    "body_placeholder": "قيمة"
+    "body_placeholder": "{ \"key\": \"value\" }"
   },
   "foraging": {
     "no_credentials_found": "لم تُعثَر على بيانات اعتماد",

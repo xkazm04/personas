@@ -97,7 +97,7 @@
   "creating_team": "Création de l’équipe avec {count} agents...",
   "seeding_memories": "Initialisation des mémoires depuis des équipes similaires...",
   "team_created": "Équipe créée",
-  "memories_seeded": "{count} mémoire{count, plural, one {} other {s}} initialisée{count, plural, one {} other {s}}",
+  "memories_seeded": "{count} mémoires ensemencés",
   "open_team_canvas": "Ouvrir le canevas de l’équipe",
   "try_again": "Réessayer",
   "agent_count": "{count} agent{count, plural, one {} other {s}}",

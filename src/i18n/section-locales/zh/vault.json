@@ -437,7 +437,7 @@
     "sql_hint": "编写查询并按运行或 Ctrl+Enter",
     "executing_query": "正在执行查询...",
     "redis_placeholder": "输入 Redis 命令（例如 GET mykey, HGETALL users:1）",
-    "convex_placeholder": "func:name",
+    "convex_placeholder": "输入要浏览的表名称或 JSON 正文：{\"path\": \"func:name\", \"args\": {}}",
     "sql_placeholder": "输入 SQL 查询（Ctrl+Enter 执行）",
     "running": "运行中...",
     "safe_mode": "安全模式",
@@ -679,7 +679,7 @@
     "add_tag_title": "添加标签",
     "local_embedding_hint": "嵌入向量使用 {model} ({dims} 维) 本地生成。数据不会离开您的设备。模型（约 23MB）首次使用时下载并缓存在本地。",
     "api_path_placeholder": "/api/v1/resource",
-    "json_body_placeholder": "value",
+    "json_body_placeholder": "{\"key\": \"value\"}",
     "sending": "发送中...",
     "send": "发送",
     "search_results_one": "找到 {count} 条与 \"{query}\" 相关的结果",
@@ -1011,7 +1011,7 @@
     "base_url_placeholder": "https://api.example.com",
     "openapi_url_placeholder": "https://api.example.com/openapi.json",
     "auth_schemes": "认证方案",
-    "body_placeholder": "value"
+    "body_placeholder": "{ \"key\": \"value\" }"
   },
   "foraging": {
     "no_credentials_found": "未找到凭据",

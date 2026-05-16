@@ -508,7 +508,7 @@
     "no_tools_warning": "У этого агента нет инструментов. Добавьте инструменты для более богатого тестирования.",
     "add_prompt_first": "Сначала добавьте промпт",
     "select_model": "Выберите хотя бы одну модель",
-    "run_arena": "Запустить арену ({count} модел.)",
+    "run_arena": "{count, plural, one {} Run Arena ({count} модель другой {s}})",
     "cancel_test": "Отменить тест",
     "focus_use_case": "Фокус на сценарии",
     "describe_changes": "Опишите желаемые изменения",
@@ -909,7 +909,7 @@
     "auto_event_type": "Тип события: {eventType}",
     "auto_zapier_hint": "Catch hook будет проверен и подключён.",
     "auto_custom_hint": "Требуется ручная настройка. Автоматизация будет сохранена как черновик.",
-    "auto_input_schema_placeholder": "строка",
+    "auto_input_schema_placeholder": "{ \"file_url\": \"string\" }",
     "auto_github_token_needs": "Вашему токену нужны области доступа: {scopes}. Обновите токен на github.com/settings/tokens.",
     "auto_fallback_title": "При ошибке переключается на прямой коннектор",
     "ch_title": "Каналы уведомлений",
@@ -2074,7 +2074,7 @@
     "success": "Успешно",
     "failed": "Не удалось",
     "error": "Ошибка",
-    "input_json_placeholder": "значение",
+    "input_json_placeholder": "{ \"key\": \"value\" }",
     "invalid_json": "Invalid JSON — fix before running."
   },
   "health_check": {

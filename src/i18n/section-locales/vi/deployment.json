@@ -24,7 +24,7 @@
     "sending": "Đang gửi...",
     "empty_response": "(phản hồi trống)",
     "snippets": "Đoạn mã",
-    "request_body_placeholder": "Prompt của bạn tại đây..."
+    "request_body_placeholder": "{ \"message\": \"Your prompt here...\" }"
   },
   "connection": {
     "orchestrator_url_label": "URL máy chủ đám mây",
@@ -189,7 +189,7 @@
     "no_deployments": "Chưa có triển khai",
     "adjust_filters": "Hãy thử điều chỉnh tìm kiếm hoặc bộ lọc.",
     "deploy_hint": "Triển khai personas từ tab Đám mây hoặc GitLab.",
-    "showing_of": "Hiển thị {showing} trong {total} triển khai",
+    "showing_of": "{total} {showing} Đang hiển thị trong tổng số hoạt động triển khai{plural}",
     "total_invocations": "Tổng số lần gọi:",
     "search_placeholder": "Tìm kiếm triển khai...",
     "filter": "Lọc",

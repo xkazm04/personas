@@ -24,7 +24,7 @@
     "sending": "Отправка...",
     "empty_response": "(пустой ответ)",
     "snippets": "Примеры кода",
-    "request_body_placeholder": "Ваш промпт здесь..."
+    "request_body_placeholder": "{ \"message\": \"Your prompt here...\" }"
   },
   "connection": {
     "orchestrator_url_label": "URL облачного сервера",
@@ -189,7 +189,7 @@
     "no_deployments": "Развёртываний пока нет",
     "adjust_filters": "Попробуйте изменить поиск или фильтры.",
     "deploy_hint": "Развёртывайте агентов с вкладок Облако или GitLab.",
-    "showing_of": "Показано {showing} из {total} развёртываний",
+    "showing_of": "{total} {showing} {plural} Показ развертывания",
     "total_invocations": "Всего вызовов:",
     "search_placeholder": "Поиск развёртываний...",
     "filter": "Фильтр",

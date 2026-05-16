@@ -24,7 +24,7 @@
     "sending": "Wird gesendet...",
     "empty_response": "(leere Antwort)",
     "snippets": "Snippets",
-    "request_body_placeholder": "Ihr Prompt hier..."
+    "request_body_placeholder": "{ \"message\": \"Your prompt here...\" }"
   },
   "connection": {
     "orchestrator_url_label": "Cloud-Server-URL",
