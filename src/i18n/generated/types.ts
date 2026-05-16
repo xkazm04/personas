@@ -9470,6 +9470,7 @@ export type Translations = {
     };
   };
   project_overview: {
+    today_activity_heading: string;
     codebase: string;
     monitoring: string;
     connected: string;

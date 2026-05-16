@@ -9464,6 +9464,7 @@
     }
   },
   "project_overview": {
+    "today_activity_heading": "TODAY",
     "codebase": "Codebase",
     "monitoring": "Monitoring",
     "connected": "Connected",

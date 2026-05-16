@@ -1,11 +1,11 @@
-import { useState, useEffect, type DragEvent } from 'react';
+import { useState, useEffect, useMemo, type DragEvent } from 'react';
 import { motion } from 'framer-motion';
 import {
   GitBranch, RefreshCw,
   CircleDot, GitPullRequest, GitCommitHorizontal,
   Bug, Activity, BarChart3, Shield, Key,
   Code2, AlertCircle, CheckCircle2, ExternalLink, LayoutDashboard,
-  Settings,
+  Settings, ScanSearch, Sparkles, XCircle, Target,
 } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
@@ -20,6 +20,7 @@ import { useOverviewData } from './useOverviewData';
 
 // Re-export shared helpers so existing call sites keep resolving.
 export { formatErr } from './overviewHelpers';
+import { buildTodayActivity, type ActivityEvent, type ActivityKind } from './overviewHelpers';
 
 // ---------------------------------------------------------------------------
 // Vital-tile ordering — persisted per project so each project can keep its
@@ -89,6 +90,41 @@ export default function ProjectOverviewPage() {
 
   const [showRepoChain, setShowRepoChain] = useState(false);
   const [showMonitorChain, setShowMonitorChain] = useState(false);
+
+  // Cross-tab "What changed today" feed — pulls from the same store slices
+  // that power Scanner / Triage / Task Runner / Lifecycle, then dedupes,
+  // sorts, and surfaces in one chronological list on the Overview tab.
+  const storeScans = useSystemStore((s) => s.scans ?? []);
+  const storeTasksForToday = useSystemStore((s) => s.tasks);
+  const storeSignals = useSystemStore((s) => s.goalSignals);
+  const fetchScansForToday = useSystemStore((s) => s.fetchScans);
+  const fetchTasksForToday = useSystemStore((s) => s.fetchTasks);
+  useEffect(() => {
+    if (!activeProjectId) return;
+    fetchScansForToday(activeProjectId);
+    fetchTasksForToday(activeProjectId);
+  }, [activeProjectId, fetchScansForToday, fetchTasksForToday]);
+  const todayActivity = useMemo(
+    () => buildTodayActivity(storeScans, storeTasksForToday, storeSignals),
+    [storeScans, storeTasksForToday, storeSignals],
+  );
+
+  const setPendingTaskFocusId = useSystemStore((s) => s.setPendingTaskFocusId);
+  const setPendingGoalSpotlightId = useSystemStore((s) => s.setPendingGoalSpotlightId);
+  const setPendingLifecycleSubTab = useSystemStore((s) => s.setPendingLifecycleSubTab);
+  const handleActivityJump = (event: ActivityEvent) => {
+    if (!event.sourceId) return;
+    if (event.kind === 'task_created' || event.kind === 'task_completed' || event.kind === 'task_failed') {
+      setPendingTaskFocusId(event.sourceId);
+      setDevToolsTab('task-runner');
+    } else if (event.kind === 'goal_signal') {
+      setPendingGoalSpotlightId(event.sourceId);
+      setPendingLifecycleSubTab('goals');
+      setDevToolsTab('lifecycle');
+    } else if (event.kind === 'scan_run') {
+      setDevToolsTab('idea-scanner');
+    }
+  };
 
   // Persisted tile order per project — different projects often care about
   // different metrics first (a hot-bug project wants `unresolved` first; a
@@ -222,6 +258,21 @@ export default function ProjectOverviewPage() {
             })()}
           </div>
         </section>
+
+        {/* ==================== "Today" cross-tab activity ==================== */}
+        {todayActivity.length > 0 && (
+          <section className="mb-6">
+            <div className="flex items-baseline justify-between mb-3">
+              <h2 className="typo-label text-foreground/70">{po.today_activity_heading}</h2>
+              <span className="typo-caption text-foreground/50 tabular-nums">{todayActivity.length}</span>
+            </div>
+            <ul className="rounded-card border border-primary/10 bg-card/30 divide-y divide-primary/5 max-h-72 overflow-y-auto">
+              {todayActivity.map((event) => (
+                <ActivityRow key={event.id} event={event} onJump={handleActivityJump} />
+              ))}
+            </ul>
+          </section>
+        )}
 
         {/* ==================== Connections rail ==================== */}
         <section>
@@ -516,4 +567,44 @@ function relativeTime(iso: string): string {
   if (d < 7) return `${d}d ago`;
   const w = Math.round(d / 7);
   return `${w}w ago`;
+}
+
+// ---------------------------------------------------------------------------
+// ActivityRow — one entry in the "Today" cross-tab feed
+// ---------------------------------------------------------------------------
+
+const ACTIVITY_META: Record<ActivityKind, { icon: typeof CircleDot; tint: string }> = {
+  scan_run:       { icon: ScanSearch,    tint: 'text-amber-400' },
+  task_created:   { icon: Sparkles,      tint: 'text-blue-400' },
+  task_completed: { icon: CheckCircle2,  tint: 'text-emerald-400' },
+  task_failed:    { icon: XCircle,       tint: 'text-red-400' },
+  goal_signal:    { icon: Target,        tint: 'text-violet-400' },
+};
+
+function ActivityRow({ event, onJump }: { event: ActivityEvent; onJump: (e: ActivityEvent) => void }) {
+  const meta = ACTIVITY_META[event.kind];
+  const Icon = meta.icon;
+  const clickable = Boolean(event.sourceId) || event.kind === 'scan_run';
+  const inner = (
+    <div className="flex items-center gap-2.5 px-4 py-2">
+      <Icon className={`w-3.5 h-3.5 shrink-0 ${meta.tint}`} />
+      <span className="text-md text-foreground truncate flex-1">{event.label}</span>
+      <span className="typo-caption text-foreground/50 tabular-nums shrink-0">{relativeTime(event.timestamp)}</span>
+    </div>
+  );
+  return (
+    <li>
+      {clickable ? (
+        <button
+          type="button"
+          onClick={() => onJump(event)}
+          className="w-full text-left hover:bg-primary/5 transition-colors"
+        >
+          {inner}
+        </button>
+      ) : (
+        inner
+      )}
+    </li>
+  );
 }
