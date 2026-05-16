@@ -8076,6 +8076,10 @@ export type Translations = {
       dim_mode_hint: string;
       dim_mode_on: string;
       dim_mode_off: string;
+      cvd_safe_label: string;
+      cvd_safe_hint: string;
+      cvd_safe_on: string;
+      cvd_safe_off: string;
       custom_theme: string;
       custom_theme_active: string;
       custom_theme_hint: string;

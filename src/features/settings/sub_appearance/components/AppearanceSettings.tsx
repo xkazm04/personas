@@ -299,6 +299,8 @@ export default function AppearanceSettings() {
   const setBrightness = useThemeStore((s) => s.setBrightness);
   const dim = useThemeStore((s) => s.dim);
   const setDim = useThemeStore((s) => s.setDim);
+  const cvdSafe = useThemeStore((s) => s.cvdSafe);
+  const setCvdSafe = useThemeStore((s) => s.setCvdSafe);
   const isDark = useIsDarkTheme();
   const brightnessLevels = isDark ? DARK_BRIGHTNESS_LEVELS : LIGHT_BRIGHTNESS_LEVELS;
   const customTheme = useThemeStore((s) => s.customTheme);
@@ -468,6 +470,26 @@ export default function AppearanceSettings() {
                 }`}
               >
                 {dim ? s.dim_mode_on : s.dim_mode_off}
+              </Button>
+            </div>
+            {/* Color-vision-deficiency safe palette — distinguishes warning↔error
+                via luminance (yellow vs saturated red) instead of red↔orange */}
+            <div className="flex items-start justify-between gap-4 pt-3 mt-1 border-t border-primary/10">
+              <div className="flex-1">
+                <div className="text-sm text-foreground font-medium">{s.cvd_safe_label}</div>
+                <div className="typo-body text-foreground/80">{s.cvd_safe_hint}</div>
+              </div>
+              <Button
+                variant="ghost"
+                onClick={() => setCvdSafe(!cvdSafe)}
+                aria-pressed={cvdSafe}
+                className={`shrink-0 px-4 py-2 rounded-interactive border min-w-[64px] ${
+                  cvdSafe
+                    ? 'border-primary/40 bg-primary/10 text-primary font-medium'
+                    : 'border-primary/10 hover:border-primary/30 text-foreground'
+                }`}
+              >
+                {cvdSafe ? s.cvd_safe_on : s.cvd_safe_off}
               </Button>
             </div>
           </div>

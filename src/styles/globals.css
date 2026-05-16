@@ -4429,3 +4429,25 @@ html[data-document-visible='false'] *::after {
 .light-only { display: none; }
 [data-theme^="light"] .dark-only { display: none; }
 [data-theme^="light"] .light-only { display: inline-block; }
+
+/* Color-vision-deficiency safe palette override.
+   Placed at the end of the file with `html` selector for higher specificity
+   than [data-theme="X"] rules, so it wins regardless of the active theme.
+
+   The classic CVD trap is red↔orange (protanopia/deuteranopia compresses
+   that hue range). The fix is luminance differentiation: shift WARNING from
+   amber/orange to high-luminance yellow (#facc15), which reads as visually
+   lighter than red even in monochrome. ERROR shifts to red-500 — keeping
+   the red hue but bumping saturation so it's distinguishable from yellow
+   by luminance AND from blue/teal info colors by hue.
+
+   Override the -raw token AND the rendered token so the brightness
+   counteraction layer (color-mix on -raw) picks up the safe value too. */
+html[data-cvd="safe"] {
+  --status-warning-raw: #facc15;
+  --status-warning: #facc15;
+  --status-pending-raw: #facc15;
+  --status-pending: #facc15;
+  --status-error-raw: #ef4444;
+  --status-error: #ef4444;
+}
