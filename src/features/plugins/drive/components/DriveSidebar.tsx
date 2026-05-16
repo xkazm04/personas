@@ -1,5 +1,7 @@
-import { useState, useCallback } from "react";
-import { ChevronRight, Clock, Folder, FolderOpen, HardDrive, Sparkles } from "lucide-react";
+import { useCallback, useState } from "react";
+import { ChevronDown, ChevronRight, Clock, Folder, FolderOpen, HardDrive, Sparkles } from "lucide-react";
+
+const RECENT_COLLAPSED_KEY = "drive.sidebar.recentCollapsed";
 
 import type { DriveEntry, DriveTreeNode } from "@/api/drive";
 import { driveFormatBytes, driveParentPath } from "@/api/drive";
@@ -17,6 +19,28 @@ const STORAGE_METER_CAP_BYTES = 5 * 1024 * 1024 * 1024; // 5 GB
 
 export function DriveSidebar({ drive }: Props) {
   const { t, tx } = useTranslation();
+
+  // localStorage-backed collapse state for the Recent rail. A full zustand
+  // slice would be heavier than this one boolean deserves; the localStorage
+  // read happens once at mount and writes are infrequent.
+  const [recentCollapsed, setRecentCollapsed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(RECENT_COLLAPSED_KEY) === "true";
+    } catch {
+      return false;
+    }
+  });
+  const toggleRecentCollapsed = useCallback(() => {
+    setRecentCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(RECENT_COLLAPSED_KEY, String(next));
+      } catch {
+        // Quota / privacy mode — the in-memory state still updates.
+      }
+      return next;
+    });
+  }, []);
 
   return (
     <aside className="w-60 flex-shrink-0 border-r border-primary/10 bg-gradient-to-b from-background via-background to-background/80 flex flex-col">
@@ -50,15 +74,35 @@ export function DriveSidebar({ drive }: Props) {
 
       {/* Recent rail + folder tree share the scrollable middle area. */}
       <div className="flex-1 overflow-y-auto py-2 px-1">
-        {drive.recent.length > 0 && (
-          <div className="mb-3">
-            <div className="px-2 mb-1 flex items-center gap-1.5 typo-label text-foreground">
-              <Clock className="w-3 h-3 text-cyan-300/80" />
-              <span>{t.plugins.drive.sidebar_recent}</span>
-            </div>
-            <RecentRail entries={drive.recent} drive={drive} />
-          </div>
-        )}
+        <div className="mb-3">
+          <button
+            type="button"
+            onClick={toggleRecentCollapsed}
+            aria-expanded={!recentCollapsed}
+            className="group w-full px-2 mb-1 flex items-center gap-1.5 typo-label text-foreground hover:text-cyan-200 transition-colors"
+          >
+            {recentCollapsed ? (
+              <ChevronRight className="w-3 h-3 text-foreground/60 group-hover:text-cyan-200/80" />
+            ) : (
+              <ChevronDown className="w-3 h-3 text-foreground/60 group-hover:text-cyan-200/80" />
+            )}
+            <Clock className="w-3 h-3 text-cyan-300/80" />
+            <span>{t.plugins.drive.sidebar_recent}</span>
+            {drive.recent.length > 0 && (
+              <span className="ml-auto typo-caption text-foreground/50 tabular-nums">
+                {drive.recent.length}
+              </span>
+            )}
+          </button>
+          {!recentCollapsed &&
+            (drive.recent.length > 0 ? (
+              <RecentRail entries={drive.recent} drive={drive} />
+            ) : (
+              <div className="mx-2 px-3 py-3 rounded-card border border-dashed border-primary/15 typo-caption text-foreground/60 italic text-center">
+                {t.plugins.drive.sidebar_recent_empty}
+              </div>
+            ))}
+        </div>
         <div className="px-2 mb-1.5 typo-label text-foreground">
           {t.plugins.drive.sidebar_folders_label}
         </div>
