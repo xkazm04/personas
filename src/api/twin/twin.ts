@@ -9,6 +9,7 @@ import type { TwinWikiCompileResult } from "@/lib/bindings/TwinWikiCompileResult
 import type { TwinWikiStatus } from "@/lib/bindings/TwinWikiStatus";
 import type { TwinDistilledFact } from "@/lib/bindings/TwinDistilledFact";
 import type { TwinContact } from "@/lib/bindings/TwinContact";
+import type { TwinReflection } from "@/lib/bindings/TwinReflection";
 import type {
   TwinChannelKind,
   TwinInteractionDirection,
@@ -372,3 +373,23 @@ export const listTwinContacts = (twinId: string) =>
 
 export const updateTwinContact = (id: string, alias?: string, notes?: string) =>
   invoke<TwinContact>("twin_update_contact", { id, alias, notes });
+
+// ============================================================================
+// Reflections (Cycle 15 Stage 1)
+// ============================================================================
+
+export const listTwinReflections = (twinId: string) =>
+  invoke<TwinReflection[]>("twin_list_reflections", { twinId });
+
+/**
+ * Generate a new reflection. Backend builds the prompt from the twin's
+ * profile + last 40 communications + the operator's seed question, runs
+ * it through the Claude CLI dispatcher, and persists the result. The
+ * returned row is the canonical record — UI should append it to its
+ * cached list rather than refetch.
+ */
+export const reflectOnTwin = (twinId: string, promptSeed: string) =>
+  invoke<TwinReflection>("twin_reflect", { twinId, promptSeed });
+
+export const deleteTwinReflection = (id: string) =>
+  invoke<boolean>("twin_delete_reflection", { id });

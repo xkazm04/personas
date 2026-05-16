@@ -12643,6 +12643,27 @@ export type Translations = {
       brainStep5: string;
       vec0Unavailable: string;
     };
+    reflections: {
+      title: string;
+      subtitle: string;
+      loading: string;
+      emptyTitle: string;
+      emptyBody: string;
+      seedPlaceholder: string;
+      reflectCta: string;
+      generating: string;
+      deleteAria: string;
+      suggestedSeedLabels: {
+        voiceChange: string;
+        commsCadence: string;
+        contactSurprises: string;
+      };
+      suggestedSeeds: {
+        voiceChange: string;
+        commsCadence: string;
+        contactSurprises: string;
+      };
+    };
     contacts: {
       title: string;
       subtitle: string;

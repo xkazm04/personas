@@ -9,7 +9,7 @@ use ts_rs::TS;
 
 use crate::db::models::{
     TwinChannel, TwinCommunication, TwinContact, TwinDistilledFact, TwinPendingMemory, TwinProfile,
-    TwinTone, TwinVoiceProfile,
+    TwinReflection, TwinTone, TwinVoiceProfile,
 };
 use crate::db::repos::twin as repo;
 use crate::engine::prompt;
@@ -1149,4 +1149,104 @@ pub async fn twin_update_contact(
         .filter(|s| !s.is_empty());
     let notes_trim = notes.as_deref().map(str::trim).filter(|s| !s.is_empty());
     repo::update_contact(&state.db, &id, alias_trim, notes_trim)
+}
+
+// ============================================================================
+// Reflections (Cycle 15 Stage 1)
+//
+// Twin-wide operator-audit journals. Builds a prompt from the twin profile
+// + recent communications + the user's seed question, runs it through the
+// existing Claude CLI dispatcher, and persists the prose result. Read-only
+// once written; the audit value depends on the journal being frozen.
+// ============================================================================
+
+const REFLECT_COMMS_LIMIT: i32 = 40;
+
+#[tauri::command]
+pub async fn twin_list_reflections(
+    state: State<'_, Arc<AppState>>,
+    twin_id: String,
+) -> Result<Vec<TwinReflection>, AppError> {
+    require_auth(&state).await?;
+    repo::list_reflections(&state.db, &twin_id)
+}
+
+#[tauri::command]
+pub async fn twin_delete_reflection(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+) -> Result<bool, AppError> {
+    require_auth(&state).await?;
+    repo::delete_reflection(&state.db, &id)
+}
+
+#[tauri::command]
+pub async fn twin_reflect(
+    state: State<'_, Arc<AppState>>,
+    twin_id: String,
+    prompt_seed: String,
+) -> Result<TwinReflection, AppError> {
+    require_auth(&state).await?;
+    let seed = prompt_seed.trim();
+    if seed.is_empty() {
+        return Err(AppError::Validation(
+            "twin_reflect: prompt_seed cannot be empty".into(),
+        ));
+    }
+
+    let profile = repo::get_profile_by_id(&state.db, &twin_id)?;
+    let comms = repo::list_communications(&state.db, &twin_id, None, REFLECT_COMMS_LIMIT)?;
+
+    let identity_block = format!(
+        "Twin: {name}\nRole: {role}\nBio: {bio}\n",
+        name = profile.name,
+        role = profile.role.as_deref().unwrap_or("(not specified)"),
+        bio = profile.bio.as_deref().unwrap_or("(not specified)"),
+    );
+
+    let comms_block = if comms.is_empty() {
+        "(no communications recorded yet)".to_string()
+    } else {
+        comms
+            .iter()
+            .map(|c| {
+                let date = &c.occurred_at[..10.min(c.occurred_at.len())];
+                let dir = if c.direction == "out" { "→" } else { "←" };
+                let handle = c.contact_handle.as_deref().unwrap_or("(no handle)");
+                let snippet = if c.content.len() > 240 {
+                    format!("{}…", &c.content[..240])
+                } else {
+                    c.content.clone()
+                };
+                format!("{date} {dir} {handle} [{ch}]: {snippet}", ch = c.channel)
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
+    };
+
+    let prompt_text = format!(
+        "You are writing a private operator-audit reflection on a digital twin's recent activity. \
+         The reader is the human operator (the twin's owner) — not the twin itself. Be candid, \
+         specific, and short. Output ONLY the reflection prose (markdown allowed for paragraph \
+         breaks; no headings, no preamble, no code fences).\n\n\
+         # Twin\n{identity_block}\n\
+         # Recent communications (newest first, up to {limit})\n{comms_block}\n\n\
+         # Operator's seed question\n{seed}\n\n\
+         Write 3-6 sentences answering the seed question, grounded in the communications above. \
+         If the communications don't support a confident answer, say so plainly rather than \
+         inventing detail.",
+        identity_block = identity_block,
+        comms_block = comms_block,
+        limit = REFLECT_COMMS_LIMIT,
+        seed = seed,
+    );
+
+    let raw = spawn_claude_with_prompt(prompt_text).await?;
+    let content = raw.trim();
+    if content.is_empty() {
+        return Err(AppError::Internal(
+            "twin_reflect: Claude returned empty output".into(),
+        ));
+    }
+    repo::create_reflection(&state.db, &twin_id, seed, content)
 }

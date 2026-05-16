@@ -2,7 +2,7 @@ use rusqlite::{params, Row};
 
 use crate::db::models::{
     TwinChannel, TwinCommunication, TwinContact, TwinDistilledFact, TwinPendingMemory, TwinProfile,
-    TwinTone, TwinVoiceProfile,
+    TwinReflection, TwinTone, TwinVoiceProfile,
 };
 use crate::db::DbPool;
 use crate::error::AppError;
@@ -870,6 +870,57 @@ pub fn update_contact(
         row_to_contact,
     )
     .map_err(AppError::Database)
+}
+
+// ============================================================================
+// Reflections (P6+ — Cycle 15 Stage 1)
+// ============================================================================
+
+fn row_to_reflection(row: &Row) -> rusqlite::Result<TwinReflection> {
+    Ok(TwinReflection {
+        id: row.get("id")?,
+        twin_id: row.get("twin_id")?,
+        prompt_seed: row.get("prompt_seed")?,
+        content: row.get("content")?,
+        created_at: row.get("created_at")?,
+    })
+}
+
+pub fn list_reflections(pool: &DbPool, twin_id: &str) -> Result<Vec<TwinReflection>, AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT * FROM twin_reflections WHERE twin_id = ?1 ORDER BY created_at DESC",
+    )?;
+    let rows = stmt.query_map(params![twin_id], row_to_reflection)?;
+    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+}
+
+pub fn create_reflection(
+    pool: &DbPool,
+    twin_id: &str,
+    prompt_seed: &str,
+    content: &str,
+) -> Result<TwinReflection, AppError> {
+    let id = uuid::Uuid::new_v4().to_string();
+    let now = chrono::Utc::now().to_rfc3339();
+    let conn = pool.get()?;
+    conn.execute(
+        "INSERT INTO twin_reflections (id, twin_id, prompt_seed, content, created_at) \
+         VALUES (?1, ?2, ?3, ?4, ?5)",
+        params![id, twin_id, prompt_seed, content, now],
+    )?;
+    conn.query_row(
+        "SELECT * FROM twin_reflections WHERE id = ?1",
+        params![id],
+        row_to_reflection,
+    )
+    .map_err(AppError::Database)
+}
+
+pub fn delete_reflection(pool: &DbPool, id: &str) -> Result<bool, AppError> {
+    let conn = pool.get()?;
+    let rows = conn.execute("DELETE FROM twin_reflections WHERE id = ?1", params![id])?;
+    Ok(rows > 0)
 }
 
 // ============================================================================

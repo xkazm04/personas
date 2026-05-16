@@ -12637,6 +12637,27 @@
       "brainStep5": "Obsidian notes (if connected) can be manually ingested too",
       "vec0Unavailable": "Vector extension (vec0) not available. Use \"Link Existing\" to connect a knowledge base created from the Credentials page."
     },
+    "reflections": {
+      "title": "Reflections",
+      "subtitle": "Operator-audit journals. Ask a question about this twin's recent activity — Claude reads the twin profile + last 40 communications and writes a short, frozen answer.",
+      "loading": "Loading reflections…",
+      "emptyTitle": "No reflections yet",
+      "emptyBody": "Type a seed question above to generate the first reflection. Past reflections stay frozen as a written audit trail.",
+      "seedPlaceholder": "Ask something like: \"What patterns are emerging in this twin's voice this week?\"",
+      "reflectCta": "Reflect",
+      "generating": "Reflecting…",
+      "deleteAria": "Delete reflection",
+      "suggestedSeedLabels": {
+        "voiceChange": "Voice drift",
+        "commsCadence": "Cadence",
+        "contactSurprises": "Surprises"
+      },
+      "suggestedSeeds": {
+        "voiceChange": "Is the twin's voice drifting from its bio? Where, and is the drift intentional?",
+        "commsCadence": "What's the cadence and balance of inbound vs outbound across channels lately?",
+        "contactSurprises": "Are there any contacts or threads that surprised you — unexpected topics, unfamiliar handles, off-tone replies?"
+      }
+    },
     "contacts": {
       "title": "Contacts",
       "subtitle": "External handles this twin has interacted with. Add an alias and notes to make recall easier; the list auto-populates from communications.",

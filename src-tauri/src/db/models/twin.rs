@@ -169,6 +169,29 @@ pub struct TwinVoiceProfile {
 }
 
 // ============================================================================
+// Twin Reflections (P6+ — Cycle 15 Stage 1)
+//
+// Operator-audit journals. Each row is a Claude-generated prose summary of
+// the twin's recent communications, seeded by an operator prompt
+// ("What's been moving in this twin's voice lately?"). Stored append-only;
+// the user can delete individual rows but never edit them — the audit value
+// is precisely that they're frozen at write time.
+// ============================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct TwinReflection {
+    pub id: String,
+    pub twin_id: String,
+    /// Operator-supplied prompt that drove the reflection. Kept verbatim so
+    /// future reads understand what question this answer was responding to.
+    pub prompt_seed: String,
+    /// The Claude output — markdown-friendly prose.
+    pub content: String,
+    pub created_at: String,
+}
+
+// ============================================================================
 // Twin Contacts (P6+ — Cycle 14 Stage 1)
 //
 // Durable per-twin record of every external handle the twin has interacted
