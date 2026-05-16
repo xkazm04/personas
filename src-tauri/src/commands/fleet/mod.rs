@@ -21,4 +21,7 @@ pub mod hook_install;
 pub mod hooks;
 pub mod pty;
 pub mod registry;
+pub mod stale;
+#[cfg(feature = "desktop")]
+pub mod transcript;
 pub mod types;

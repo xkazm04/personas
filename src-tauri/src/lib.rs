@@ -724,6 +724,12 @@ pub fn run() {
                 "fleet",
                 commands::fleet::hooks::router(app.handle().clone()),
             );
+            // Fleet background workers — staleness ticker + JSONL watcher.
+            // Both fire-and-forget; the staleness ticker is safe everywhere,
+            // the JSONL watcher is desktop-only because `notify` is feature-gated.
+            commands::fleet::stale::spawn_ticker(app.handle().clone());
+            #[cfg(feature = "desktop")]
+            commands::fleet::transcript::spawn_watcher(app.handle().clone());
             match local_http::start() {
                 Ok(port) => tracing::info!(port, "local_http server started"),
                 Err(e) => tracing::warn!(error = %e, "local_http server failed to start"),
