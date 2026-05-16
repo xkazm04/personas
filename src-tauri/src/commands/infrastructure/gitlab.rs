@@ -8,8 +8,8 @@ use crate::error::AppError;
 use crate::gitlab;
 use crate::gitlab::client::GitLabClient;
 use crate::gitlab::types::*;
-use crate::ipc_auth::require_cloud_auth;
 use crate::AppState;
+use personas_macros::requires;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -45,12 +45,12 @@ async fn get_gitlab_client(state: &AppState) -> Result<Arc<GitLabClient>, AppErr
 ///
 /// `instance_url` is optional — when omitted or empty, defaults to `https://gitlab.com`.
 #[tauri::command]
+#[requires(cloud)]
 pub async fn gitlab_connect(
     state: State<'_, Arc<AppState>>,
     token: String,
     instance_url: Option<String>,
 ) -> Result<GitLabUser, AppError> {
-    require_cloud_auth(&state, "gitlab_connect").await?;
     if token.trim().is_empty() {
         return Err(AppError::GitLab("GitLab token must not be empty".into()));
     }
@@ -85,12 +85,12 @@ pub async fn gitlab_connect(
 /// The instance URL is resolved in order: explicit `instance_url` parameter → vault
 /// credential `instance_url` field → default (`https://gitlab.com`).
 #[tauri::command]
+#[requires(cloud)]
 pub async fn gitlab_connect_from_vault(
     state: State<'_, Arc<AppState>>,
     credential_id: String,
     instance_url: Option<String>,
 ) -> Result<GitLabUser, AppError> {
-    require_cloud_auth(&state, "gitlab_connect_from_vault").await?;
 
     let credential = cred_repo::get_by_id(&state.db, &credential_id)?;
     let fields = cred_repo::get_decrypted_fields(&state.db, &credential)?;
@@ -141,8 +141,8 @@ pub async fn gitlab_connect_from_vault(
 
 /// Disconnect from GitLab. Clears keyring and drops in-memory client.
 #[tauri::command]
+#[requires(cloud)]
 pub async fn gitlab_disconnect(state: State<'_, Arc<AppState>>) -> Result<(), AppError> {
-    require_cloud_auth(&state, "gitlab_disconnect").await?;
     gitlab::config::clear_gitlab_config();
     *state.gitlab_client.lock().await = None;
     *state.gitlab_config_cache.lock().await = None;
@@ -153,10 +153,10 @@ pub async fn gitlab_disconnect(state: State<'_, Arc<AppState>>) -> Result<(), Ap
 /// Return the current GitLab connection configuration, if any.
 /// Caches the token validation result for 60 seconds to avoid repeated HTTP round-trips.
 #[tauri::command]
+#[requires(cloud)]
 pub async fn gitlab_get_config(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Option<GitLabConfig>, AppError> {
-    require_cloud_auth(&state, "gitlab_get_config").await?;
     let maybe_client = state.gitlab_client.lock().await.clone();
     match maybe_client {
         Some(client) => {
@@ -214,10 +214,10 @@ pub async fn gitlab_get_config(
 
 /// List GitLab projects accessible to the authenticated user.
 #[tauri::command]
+#[requires(cloud)]
 pub async fn gitlab_list_projects(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<GitLabProject>, AppError> {
-    require_cloud_auth(&state, "gitlab_list_projects").await?;
     let client = get_gitlab_client(&state).await?;
     client.list_projects().await
 }
@@ -231,13 +231,13 @@ pub async fn gitlab_list_projects(
 ///
 /// Falls back to AGENTS.md via Repository Files API if the Duo Agent API is unavailable.
 #[tauri::command]
+#[requires(cloud)]
 pub async fn gitlab_deploy_persona(
     state: State<'_, Arc<AppState>>,
     persona_id: String,
     project_id: i64,
     provision_credentials: bool,
 ) -> Result<GitLabDeployResult, AppError> {
-    require_cloud_auth(&state, "gitlab_deploy_persona").await?;
     let client = get_gitlab_client(&state).await?;
 
     let persona = personas::get_by_id(&state.db, &persona_id)?;
@@ -371,12 +371,12 @@ pub async fn gitlab_deploy_persona(
 /// Accepts a list of CI/CD variable keys to delete. This is called during
 /// undeploy to clean up secrets that were previously provisioned.
 #[tauri::command]
+#[requires(cloud)]
 pub async fn gitlab_revoke_credentials(
     state: State<'_, Arc<AppState>>,
     project_id: i64,
     variable_keys: Vec<String>,
 ) -> Result<u32, AppError> {
-    require_cloud_auth(&state, "gitlab_revoke_credentials").await?;
     let client = get_gitlab_client(&state).await?;
     let mut revoked: u32 = 0;
 
@@ -403,11 +403,11 @@ pub async fn gitlab_revoke_credentials(
 
 /// List deployed Duo Agents for a project.
 #[tauri::command]
+#[requires(cloud)]
 pub async fn gitlab_list_agents(
     state: State<'_, Arc<AppState>>,
     project_id: i64,
 ) -> Result<Vec<GitLabAgent>, AppError> {
-    require_cloud_auth(&state, "gitlab_list_agents").await?;
     let client = get_gitlab_client(&state).await?;
     match client.list_duo_agents(project_id).await {
         Ok(agents) => Ok(agents),
@@ -421,12 +421,12 @@ pub async fn gitlab_list_agents(
 
 /// Remove a deployed Duo Agent from a project.
 #[tauri::command]
+#[requires(cloud)]
 pub async fn gitlab_undeploy_agent(
     state: State<'_, Arc<AppState>>,
     project_id: i64,
     agent_id: String,
 ) -> Result<(), AppError> {
-    require_cloud_auth(&state, "gitlab_undeploy_agent").await?;
     let client = get_gitlab_client(&state).await?;
     client.delete_duo_agent(project_id, &agent_id).await?;
     tracing::info!(
@@ -526,12 +526,12 @@ fn extract_prompt_from_agents_md(content: &str) -> Option<String> {
 /// List version history for a persona deployed to a GitLab project.
 /// Returns tags matching the persona/<name>/* pattern, sorted newest first.
 #[tauri::command]
+#[requires(cloud)]
 pub async fn gitlab_list_persona_versions(
     state: State<'_, Arc<AppState>>,
     project_id: i64,
     persona_name: String,
 ) -> Result<Vec<GitLabPersonaVersion>, AppError> {
-    require_cloud_auth(&state, "gitlab_list_persona_versions").await?;
     let client = get_gitlab_client(&state).await?;
 
     let slug = persona_name
@@ -585,6 +585,7 @@ pub async fn gitlab_list_persona_versions(
 /// Deploy a persona and tag it as a new version in the GitLab project.
 /// This extends `gitlab_deploy_persona` with automatic version tagging.
 #[tauri::command]
+#[requires(cloud)]
 pub async fn gitlab_deploy_persona_versioned(
     state: State<'_, Arc<AppState>>,
     persona_id: String,
@@ -592,7 +593,6 @@ pub async fn gitlab_deploy_persona_versioned(
     provision_credentials: bool,
     environment: Option<String>,
 ) -> Result<GitLabDeployResult, AppError> {
-    require_cloud_auth(&state, "gitlab_deploy_persona_versioned").await?;
     let client = get_gitlab_client(&state).await?;
 
     let persona = personas::get_by_id(&state.db, &persona_id)?;
@@ -789,13 +789,13 @@ pub async fn gitlab_deploy_persona_versioned(
 /// This reads the AGENTS.md at the specified tag, then redeploys the agent definition
 /// from that version. A new rollback tag is also created for audit trail.
 #[tauri::command]
+#[requires(cloud)]
 pub async fn gitlab_rollback_persona(
     state: State<'_, Arc<AppState>>,
     project_id: i64,
     persona_name: String,
     target_tag: String,
 ) -> Result<GitLabRollbackResult, AppError> {
-    require_cloud_auth(&state, "gitlab_rollback_persona").await?;
     let client = get_gitlab_client(&state).await?;
 
     // Verify the tag exists
@@ -967,12 +967,12 @@ pub async fn gitlab_rollback_persona(
 /// List environment branches for a persona in a GitLab project.
 /// Looks for branches matching `persona/<name>/<env>` pattern.
 #[tauri::command]
+#[requires(cloud)]
 pub async fn gitlab_list_persona_branches(
     state: State<'_, Arc<AppState>>,
     project_id: i64,
     persona_name: String,
 ) -> Result<Vec<GitLabPersonaBranch>, AppError> {
-    require_cloud_auth(&state, "gitlab_list_persona_branches").await?;
     let client = get_gitlab_client(&state).await?;
 
     let slug = persona_name
@@ -1011,12 +1011,12 @@ pub async fn gitlab_list_persona_branches(
 
 /// Create environment branches (dev/staging/production) for a persona in a project.
 #[tauri::command]
+#[requires(cloud)]
 pub async fn gitlab_setup_persona_branches(
     state: State<'_, Arc<AppState>>,
     project_id: i64,
     persona_name: String,
 ) -> Result<Vec<GitLabPersonaBranch>, AppError> {
-    require_cloud_auth(&state, "gitlab_setup_persona_branches").await?;
     let client = get_gitlab_client(&state).await?;
 
     let slug = persona_name
@@ -1072,13 +1072,13 @@ pub async fn gitlab_setup_persona_branches(
 
 /// List deployment history for a specific project, optionally filtered by persona.
 #[tauri::command]
+#[requires(cloud)]
 pub async fn gitlab_list_deployment_history(
     state: State<'_, Arc<AppState>>,
     project_id: i64,
     persona_id: Option<String>,
     limit: Option<u32>,
 ) -> Result<Vec<GitLabDeploymentRecord>, AppError> {
-    require_cloud_auth(&state, "gitlab_list_deployment_history").await?;
     let max = limit.unwrap_or(50);
     match persona_id {
         Some(pid) => deployment_history::list_by_persona_project(&state.db, &pid, project_id, max),
@@ -1091,12 +1091,12 @@ pub async fn gitlab_list_deployment_history(
 /// Finds the specified deployment record, redeploys that persona snapshot,
 /// and revokes CI/CD variables from the current deployment.
 #[tauri::command]
+#[requires(cloud)]
 pub async fn gitlab_rollback_from_history(
     state: State<'_, Arc<AppState>>,
     project_id: i64,
     deployment_id: String,
 ) -> Result<GitLabDeployResult, AppError> {
-    require_cloud_auth(&state, "gitlab_rollback_from_history").await?;
     let client = get_gitlab_client(&state).await?;
 
     // Get the full history for this project to find the target and current deployments

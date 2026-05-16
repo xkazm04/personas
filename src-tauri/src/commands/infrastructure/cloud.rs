@@ -20,8 +20,9 @@ use crate::db::repos::execution::executions;
 use crate::db::repos::resources::tools;
 use crate::engine;
 use crate::error::AppError;
-use crate::ipc_auth::{require_auth, require_cloud_auth};
+use crate::ipc_auth::{require_auth};
 use crate::AppState;
+use personas_macros::requires;
 
 // ---------------------------------------------------------------------------
 // Types
@@ -112,12 +113,12 @@ async fn get_cloud_client(state: &AppState) -> Result<Arc<CloudClient>, AppError
 /// Stores credentials in the OS keyring and initialises the in-memory client.
 /// Returns the health-check round-trip latency in milliseconds.
 #[tauri::command]
+#[requires(cloud)]
 pub async fn cloud_connect(
     state: State<'_, Arc<AppState>>,
     url: String,
     api_key: String,
 ) -> Result<u64, AppError> {
-    require_cloud_auth(&state, "cloud_connect").await?;
 
     // Reject concurrent connect attempts. The health check can take up to 30s
     // and without this guard two calls could race through health, keyring write,
@@ -180,10 +181,10 @@ pub async fn cloud_connect(
 /// re-enter their URL and API key every session.
 /// Returns the health-check round-trip latency in milliseconds.
 #[tauri::command]
+#[requires(cloud)]
 pub async fn cloud_reconnect_from_keyring(
     state: State<'_, Arc<AppState>>,
 ) -> Result<u64, AppError> {
-    require_cloud_auth(&state, "cloud_reconnect_from_keyring").await?;
     // Already connected -- nothing to do
     if state.cloud_client.lock().await.is_some() {
         return Ok(0);
@@ -239,8 +240,8 @@ pub async fn cloud_reconnect_from_keyring(
 /// Cancels all active cloud polling loops, clears keyring credentials and
 /// drops the in-memory client.
 #[tauri::command]
+#[requires(cloud)]
 pub async fn cloud_disconnect(state: State<'_, Arc<AppState>>) -> Result<(), AppError> {
-    require_cloud_auth(&state, "cloud_disconnect").await?;
     // Cancel every in-flight cloud execution so polling loops stop immediately
     // and no further requests are sent to the endpoint.
     let active_ids: Vec<String> = state.cloud_exec_ids.lock().await.keys().cloned().collect();
@@ -265,10 +266,10 @@ pub async fn cloud_disconnect(state: State<'_, Arc<AppState>>) -> Result<(), App
 
 /// Return the current cloud connection configuration, if any.
 #[tauri::command]
+#[requires(cloud)]
 pub async fn cloud_get_config(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Option<CloudConfig>, AppError> {
-    require_cloud_auth(&state, "cloud_get_config").await?;
     let is_connected = state.cloud_client.lock().await.is_some();
 
     match cloud::config::load_cloud_config() {
@@ -282,12 +283,12 @@ pub async fn cloud_get_config(
 /// Performs granular checks (DNS, TCP, TLS, HTTP, API compatibility) and
 /// returns per-step pass/fail results so the UI can render a checklist.
 #[tauri::command]
+#[requires(cloud)]
 pub async fn cloud_diagnose(
     state: State<'_, Arc<AppState>>,
     url: String,
     api_key: String,
 ) -> Result<CloudDiagnostics, AppError> {
-    require_cloud_auth(&state, "cloud_diagnose").await?;
     let overall_start = Instant::now();
     let mut steps: Vec<DiagnosticStep> = Vec::new();
 
@@ -535,23 +536,23 @@ pub async fn cloud_diagnose(
 
 /// Query the cloud orchestrator's current status.
 #[tauri::command]
+#[requires(cloud)]
 pub async fn cloud_status(
     state: State<'_, Arc<AppState>>,
 ) -> Result<cloud::client::CloudStatusResponse, AppError> {
-    require_cloud_auth(&state, "cloud_status").await?;
     let client = get_cloud_client(&state).await?;
     client.status().await
 }
 
 /// Submit a persona for cloud execution.
 #[tauri::command]
+#[requires(cloud)]
 pub async fn cloud_execute_persona(
     state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
     persona_id: String,
     input_data: Option<String>,
 ) -> Result<String, AppError> {
-    require_cloud_auth(&state, "cloud_execute_persona").await?;
     let client = get_cloud_client(&state).await?;
 
     let persona = personas::get_by_id(&state.db, &persona_id)?;
@@ -708,11 +709,11 @@ pub async fn cloud_execute_persona(
 
 /// Cancel a running cloud execution.
 #[tauri::command]
+#[requires(cloud)]
 pub async fn cloud_cancel_execution(
     state: State<'_, Arc<AppState>>,
     execution_id: String,
 ) -> Result<bool, AppError> {
-    require_cloud_auth(&state, "cloud_cancel_execution").await?;
     let cloud_exec_id = state
         .cloud_exec_ids
         .lock()
@@ -742,10 +743,10 @@ pub async fn cloud_cancel_execution(
 
 /// Initiate OAuth authorization via the cloud orchestrator.
 #[tauri::command]
+#[requires(cloud)]
 pub async fn cloud_oauth_authorize(
     state: State<'_, Arc<AppState>>,
 ) -> Result<cloud::client::CloudOAuthAuthorizeResponse, AppError> {
-    require_cloud_auth(&state, "cloud_oauth_authorize").await?;
     let client = get_cloud_client(&state).await?;
     let resp = client.oauth_authorize().await?;
 
@@ -757,40 +758,40 @@ pub async fn cloud_oauth_authorize(
 
 /// Handle the OAuth callback from the cloud orchestrator.
 #[tauri::command]
+#[requires(cloud)]
 pub async fn cloud_oauth_callback(
     state: State<'_, Arc<AppState>>,
     code: String,
     oauth_state: String,
 ) -> Result<serde_json::Value, AppError> {
-    require_cloud_auth(&state, "cloud_oauth_callback").await?;
     let client = get_cloud_client(&state).await?;
     client.oauth_callback(&code, &oauth_state).await
 }
 
 /// Check the current OAuth status with the cloud orchestrator.
 #[tauri::command]
+#[requires(cloud)]
 pub async fn cloud_oauth_status(
     state: State<'_, Arc<AppState>>,
 ) -> Result<cloud::client::CloudOAuthStatusResponse, AppError> {
-    require_cloud_auth(&state, "cloud_oauth_status").await?;
     let client = get_cloud_client(&state).await?;
     client.oauth_status().await
 }
 
 /// Refresh the OAuth token via the cloud orchestrator.
 #[tauri::command]
+#[requires(cloud)]
 pub async fn cloud_oauth_refresh(
     state: State<'_, Arc<AppState>>,
 ) -> Result<serde_json::Value, AppError> {
-    require_cloud_auth(&state, "cloud_oauth_refresh").await?;
     let client = get_cloud_client(&state).await?;
     client.oauth_refresh().await
 }
 
 /// Disconnect OAuth credentials from the cloud orchestrator.
 #[tauri::command]
+#[requires(cloud)]
 pub async fn cloud_oauth_disconnect(state: State<'_, Arc<AppState>>) -> Result<(), AppError> {
-    require_cloud_auth(&state, "cloud_oauth_disconnect").await?;
     let client = get_cloud_client(&state).await?;
     client.oauth_disconnect().await
 }
@@ -802,12 +803,12 @@ pub async fn cloud_oauth_disconnect(state: State<'_, Arc<AppState>>) -> Result<(
 /// Deploy a persona as a managed cloud API endpoint.
 /// Syncs the persona to the cloud orchestrator and creates a deployment.
 #[tauri::command]
+#[requires(cloud)]
 pub async fn cloud_deploy_persona(
     state: State<'_, Arc<AppState>>,
     persona_id: String,
     max_monthly_budget_usd: Option<f64>,
 ) -> Result<cloud::client::CloudDeployment, AppError> {
-    require_cloud_auth(&state, "cloud_deploy_persona").await?;
     let client = get_cloud_client(&state).await?;
 
     // Read the persona locally to use as label
@@ -866,11 +867,11 @@ pub async fn cloud_deploy_persona(
 /// This re-upserts the persona so that any active deployment reflects local edits
 /// (system prompt, tools, timeout, model profile, etc.).
 #[tauri::command]
+#[requires(cloud)]
 pub async fn cloud_sync_persona(
     state: State<'_, Arc<AppState>>,
     persona_id: String,
 ) -> Result<(), AppError> {
-    require_cloud_auth(&state, "cloud_sync_persona").await?;
     let client = get_cloud_client(&state).await?;
 
     let persona = personas::get_by_id(&state.db, &persona_id)?;
@@ -912,43 +913,43 @@ pub async fn cloud_sync_persona(
 
 /// List all cloud deployments.
 #[tauri::command]
+#[requires(cloud)]
 pub async fn cloud_list_deployments(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<cloud::client::CloudDeployment>, AppError> {
-    require_cloud_auth(&state, "cloud_list_deployments").await?;
     let client = get_cloud_client(&state).await?;
     client.list_deployments().await
 }
 
 /// Pause a cloud deployment (stops accepting incoming requests).
 #[tauri::command]
+#[requires(cloud)]
 pub async fn cloud_pause_deployment(
     state: State<'_, Arc<AppState>>,
     deployment_id: String,
 ) -> Result<cloud::client::CloudDeployment, AppError> {
-    require_cloud_auth(&state, "cloud_pause_deployment").await?;
     let client = get_cloud_client(&state).await?;
     client.pause_deployment(&deployment_id).await
 }
 
 /// Resume a paused cloud deployment.
 #[tauri::command]
+#[requires(cloud)]
 pub async fn cloud_resume_deployment(
     state: State<'_, Arc<AppState>>,
     deployment_id: String,
 ) -> Result<cloud::client::CloudDeployment, AppError> {
-    require_cloud_auth(&state, "cloud_resume_deployment").await?;
     let client = get_cloud_client(&state).await?;
     client.resume_deployment(&deployment_id).await
 }
 
 /// Remove a cloud deployment (undeploy).
 #[tauri::command]
+#[requires(cloud)]
 pub async fn cloud_undeploy(
     state: State<'_, Arc<AppState>>,
     deployment_id: String,
 ) -> Result<(), AppError> {
-    require_cloud_auth(&state, "cloud_undeploy").await?;
     let client = get_cloud_client(&state).await?;
     client.delete_deployment(&deployment_id).await?;
     tracing::info!(deployment_id = %deployment_id, "Cloud deployment removed");
@@ -957,10 +958,10 @@ pub async fn cloud_undeploy(
 
 /// Get the cloud orchestrator base URL (for building endpoint URLs in the UI).
 #[tauri::command]
+#[requires(cloud)]
 pub async fn cloud_get_base_url(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Option<String>, AppError> {
-    require_cloud_auth(&state, "cloud_get_base_url").await?;
     let client_guard = state.cloud_client.lock().await;
     Ok(client_guard.as_ref().map(|c| c.base_url().to_string()))
 }
@@ -971,16 +972,17 @@ pub async fn cloud_get_base_url(
 
 /// List pending cloud review requests.
 #[tauri::command]
+#[requires(cloud)]
 pub async fn cloud_list_pending_reviews(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<cloud::client::CloudReviewRequest>, AppError> {
-    require_cloud_auth(&state, "cloud_list_pending_reviews").await?;
     let client = get_cloud_client(&state).await?;
     client.list_pending_reviews().await
 }
 
 /// Respond to a cloud review request (approve/reject).
 #[tauri::command]
+#[requires(cloud)]
 pub async fn cloud_respond_to_review(
     state: State<'_, Arc<AppState>>,
     execution_id: String,
@@ -988,7 +990,6 @@ pub async fn cloud_respond_to_review(
     decision: String,
     message: String,
 ) -> Result<serde_json::Value, AppError> {
-    require_cloud_auth(&state, "cloud_respond_to_review").await?;
     let client = get_cloud_client(&state).await?;
     client
         .respond_to_review(&execution_id, &review_id, &decision, &message)
@@ -1001,6 +1002,7 @@ pub async fn cloud_respond_to_review(
 
 /// List cloud execution history with optional filters.
 #[tauri::command]
+#[requires(cloud)]
 pub async fn cloud_list_executions(
     state: State<'_, Arc<AppState>>,
     persona_id: Option<String>,
@@ -1008,7 +1010,6 @@ pub async fn cloud_list_executions(
     limit: Option<u32>,
     offset: Option<u32>,
 ) -> Result<Vec<cloud::client::CloudExecution>, AppError> {
-    require_cloud_auth(&state, "cloud_list_executions").await?;
     let client = get_cloud_client(&state).await?;
     client
         .list_executions(persona_id.as_deref(), status.as_deref(), limit, offset)
@@ -1017,12 +1018,12 @@ pub async fn cloud_list_executions(
 
 /// Get aggregated execution statistics.
 #[tauri::command]
+#[requires(cloud)]
 pub async fn cloud_execution_stats(
     state: State<'_, Arc<AppState>>,
     persona_id: Option<String>,
     period_days: Option<u32>,
 ) -> Result<cloud::client::CloudExecutionStats, AppError> {
-    require_cloud_auth(&state, "cloud_execution_stats").await?;
     let client = get_cloud_client(&state).await?;
     client
         .execution_stats(persona_id.as_deref(), period_days)
@@ -1034,11 +1035,11 @@ pub async fn cloud_execution_stats(
 /// Calls `poll_execution` with offset 0 to retrieve all available output from
 /// the cloud tail buffer.
 #[tauri::command]
+#[requires(cloud)]
 pub async fn cloud_get_execution_output(
     state: State<'_, Arc<AppState>>,
     execution_id: String,
 ) -> Result<Vec<String>, AppError> {
-    require_cloud_auth(&state, "cloud_get_execution_output").await?;
     let client = get_cloud_client(&state).await?;
     let poll = client.poll_execution(&execution_id, 0).await?;
     Ok(poll.output)
@@ -1050,17 +1051,18 @@ pub async fn cloud_get_execution_output(
 
 /// List triggers for a cloud-deployed persona.
 #[tauri::command]
+#[requires(cloud)]
 pub async fn cloud_list_triggers(
     state: State<'_, Arc<AppState>>,
     persona_id: String,
 ) -> Result<Vec<cloud::client::CloudTrigger>, AppError> {
-    require_cloud_auth(&state, "cloud_list_triggers").await?;
     let client = get_cloud_client(&state).await?;
     client.list_persona_triggers(&persona_id).await
 }
 
 /// Create a cloud trigger.
 #[tauri::command]
+#[requires(cloud)]
 pub async fn cloud_create_trigger(
     state: State<'_, Arc<AppState>>,
     persona_id: String,
@@ -1069,7 +1071,6 @@ pub async fn cloud_create_trigger(
     enabled: Option<bool>,
     use_case_id: Option<String>,
 ) -> Result<cloud::client::CloudTrigger, AppError> {
-    require_cloud_auth(&state, "cloud_create_trigger").await?;
     let client = get_cloud_client(&state).await?;
     let body = cloud::client::CreateCloudTriggerBody {
         persona_id,
@@ -1083,6 +1084,7 @@ pub async fn cloud_create_trigger(
 
 /// Update a cloud trigger.
 #[tauri::command]
+#[requires(cloud)]
 pub async fn cloud_update_trigger(
     state: State<'_, Arc<AppState>>,
     trigger_id: String,
@@ -1090,7 +1092,6 @@ pub async fn cloud_update_trigger(
     config: Option<String>,
     enabled: Option<bool>,
 ) -> Result<cloud::client::CloudTrigger, AppError> {
-    require_cloud_auth(&state, "cloud_update_trigger").await?;
     let client = get_cloud_client(&state).await?;
     let body = cloud::client::UpdateCloudTriggerBody {
         trigger_type,
@@ -1102,21 +1103,21 @@ pub async fn cloud_update_trigger(
 
 /// Delete a cloud trigger.
 #[tauri::command]
+#[requires(cloud)]
 pub async fn cloud_delete_trigger(
     state: State<'_, Arc<AppState>>,
     trigger_id: String,
 ) -> Result<(), AppError> {
-    require_cloud_auth(&state, "cloud_delete_trigger").await?;
     let client = get_cloud_client(&state).await?;
     client.delete_trigger(&trigger_id).await
 }
 
 /// Get the current cloud webhook relay status.
 #[tauri::command]
+#[requires(cloud)]
 pub async fn cloud_webhook_relay_status(
     state: State<'_, Arc<AppState>>,
 ) -> Result<engine::cloud_webhook_relay::CloudWebhookRelayStatus, AppError> {
-    require_cloud_auth(&state, "cloud_webhook_relay_status").await?;
     let connected = state.cloud_client.lock().await.is_some();
     let relay = state.cloud_webhook_relay_state.lock().await;
     Ok(engine::cloud_webhook_relay::CloudWebhookRelayStatus {
@@ -1136,12 +1137,12 @@ pub async fn cloud_webhook_relay_status(
 
 /// List recent firings for a cloud trigger.
 #[tauri::command]
+#[requires(cloud)]
 pub async fn cloud_list_trigger_firings(
     state: State<'_, Arc<AppState>>,
     trigger_id: String,
     limit: Option<u32>,
 ) -> Result<Vec<cloud::client::CloudTriggerFiring>, AppError> {
-    require_cloud_auth(&state, "cloud_list_trigger_firings").await?;
     let client = get_cloud_client(&state).await?;
     client.list_trigger_firings(&trigger_id, limit).await
 }
@@ -1164,11 +1165,11 @@ pub async fn smee_relay_list(state: State<'_, Arc<AppState>>) -> Result<Vec<Smee
 
 /// Create a new Smee relay.
 #[tauri::command]
+#[requires(cloud)]
 pub async fn smee_relay_create(
     state: State<'_, Arc<AppState>>,
     input: CreateSmeeRelayInput,
 ) -> Result<SmeeRelay, AppError> {
-    require_cloud_auth(&state, "smee_relay_create").await?;
     // Validate URL
     let stripped = input
         .channel_url
@@ -1186,12 +1187,12 @@ pub async fn smee_relay_create(
 
 /// Update an existing Smee relay.
 #[tauri::command]
+#[requires(cloud)]
 pub async fn smee_relay_update(
     state: State<'_, Arc<AppState>>,
     id: String,
     input: UpdateSmeeRelayInput,
 ) -> Result<SmeeRelay, AppError> {
-    require_cloud_auth(&state, "smee_relay_update").await?;
     let relay = smee_relay_repo::update(&state.db, &id, input)?;
     state.smee_relay_notifier.notify();
     Ok(relay)
@@ -1199,12 +1200,12 @@ pub async fn smee_relay_update(
 
 /// Set the status of a Smee relay (active/paused).
 #[tauri::command]
+#[requires(cloud)]
 pub async fn smee_relay_set_status(
     state: State<'_, Arc<AppState>>,
     id: String,
     status: String,
 ) -> Result<SmeeRelay, AppError> {
-    require_cloud_auth(&state, "smee_relay_set_status").await?;
     if !["active", "paused"].contains(&status.as_str()) {
         return Err(AppError::Validation(
             "Status must be 'active' or 'paused'".into(),
