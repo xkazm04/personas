@@ -3,38 +3,43 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Play, Power, AlertTriangle } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { CONNECTOR_META, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
-import { MiniSigil } from '../recipes-prototype/shared/MiniSigil';
+import { MiniSigil } from '@/features/agents/sub_use_cases/components/recipes-prototype/shared/MiniSigil';
 import {
   getHealthMeta,
   STATE_HEX,
   type DisplayUseCase,
-} from '../recipes-prototype/shared/displayUseCase';
+} from '@/features/agents/sub_use_cases/components/recipes-prototype/shared/displayUseCase';
 
 const RUN_LOCK_MS = 60_000;
 const SIGIL_SIZE = 72;
 
-interface ConsolidatedUseCaseRowProps {
+interface UseCaseRowProps {
   uc: DisplayUseCase;
   isPendingToggle: boolean;
   onOpen: () => void;
   onToggle: () => void;
-  onRun: () => void;
+  /** Optional — when omitted the run button is hidden (adoption / scratch
+   *  pre-build don't have a runnable persona yet). */
+  onRun?: () => void;
 }
 
 /**
  * Horizontal row rendering of a single capability for the Consolidated
- * prototype. Sigil on the left anchors the row to the persona-level
- * hero above; title + trigger summary in the middle; run / power on the
- * right. Whole row is clickable to open the detail view; the trailing
+ * layout. Sigil on the left anchors the row to the persona-level hero
+ * above; title + trigger summary in the middle; run / power on the
+ * right. Whole row is clickable to open the detail view; trailing
  * buttons stop propagation so they act independently.
+ *
+ * Per-petal interactivity (click trigger → schedule picker, etc.) is
+ * not yet wired here — added in commit B once shared with hero scope.
  */
-export function ConsolidatedUseCaseRow({
+export function UseCaseRow({
   uc,
   isPendingToggle,
   onOpen,
   onToggle,
   onRun,
-}: ConsolidatedUseCaseRowProps) {
+}: UseCaseRowProps) {
   const { t, tx } = useTranslation();
   const [hovered, setHovered] = useState(false);
   const [runStartedAt, setRunStartedAt] = useState<number | null>(null);
@@ -54,7 +59,7 @@ export function ConsolidatedUseCaseRow({
 
   const handleRunClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (isRunning || isDisabled) return;
+    if (!onRun || isRunning || isDisabled) return;
     setRunStartedAt(Date.now());
     onRun();
   };
@@ -159,33 +164,35 @@ export function ConsolidatedUseCaseRow({
         </div>
 
         <div className="shrink-0 flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-          <button
-            type="button"
-            onClick={handleRunClick}
-            disabled={isDisabled || isRunning}
-            className={`inline-flex items-center justify-center w-8 h-8 rounded-full border transition-colors cursor-pointer disabled:cursor-not-allowed ${
-              isRunning
-                ? 'border-status-info/45 bg-status-info/15 text-status-info'
-                : 'border-card-border bg-secondary/70 text-foreground/85 hover:text-status-info hover:border-status-info/45 hover:bg-status-info/10 disabled:opacity-40'
-            }`}
-            title={
-              isRunning
-                ? t.agents.use_cases.running_label
-                : tx(t.agents.use_cases.run_title, { title: uc.title })
-            }
-          >
-            {isRunning ? (
-              <span
-                className="relative flex h-3.5 w-3.5 items-center justify-center"
-                aria-hidden
-              >
-                <span className="animate-ping absolute h-full w-full rounded-full bg-status-info opacity-50" />
-                <span className="relative rounded-full h-2 w-2 bg-status-info" />
-              </span>
-            ) : (
-              <Play className="w-3.5 h-3.5" />
-            )}
-          </button>
+          {onRun && (
+            <button
+              type="button"
+              onClick={handleRunClick}
+              disabled={isDisabled || isRunning}
+              className={`inline-flex items-center justify-center w-8 h-8 rounded-full border transition-colors cursor-pointer disabled:cursor-not-allowed ${
+                isRunning
+                  ? 'border-status-info/45 bg-status-info/15 text-status-info'
+                  : 'border-card-border bg-secondary/70 text-foreground/85 hover:text-status-info hover:border-status-info/45 hover:bg-status-info/10 disabled:opacity-40'
+              }`}
+              title={
+                isRunning
+                  ? t.agents.use_cases.running_label
+                  : tx(t.agents.use_cases.run_title, { title: uc.title })
+              }
+            >
+              {isRunning ? (
+                <span
+                  className="relative flex h-3.5 w-3.5 items-center justify-center"
+                  aria-hidden
+                >
+                  <span className="animate-ping absolute h-full w-full rounded-full bg-status-info opacity-50" />
+                  <span className="relative rounded-full h-2 w-2 bg-status-info" />
+                </span>
+              ) : (
+                <Play className="w-3.5 h-3.5" />
+              )}
+            </button>
+          )}
           <button
             type="button"
             onClick={handleToggleClick}

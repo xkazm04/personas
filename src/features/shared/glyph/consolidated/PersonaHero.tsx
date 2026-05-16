@@ -2,9 +2,9 @@ import { useMemo } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { GLYPH_DIMENSIONS, DIM_META, PETAL_ANGLES } from '@/features/shared/glyph';
 import type { GlyphDimension } from '@/features/shared/glyph';
-import type { DisplayUseCase } from '../recipes-prototype/shared/displayUseCase';
+import type { DisplayUseCase } from '@/features/agents/sub_use_cases/components/recipes-prototype/shared/displayUseCase';
 
-interface ConsolidatedPersonaHeroProps {
+interface PersonaHeroProps {
   personaName: string;
   useCases: DisplayUseCase[];
   /** Optional right slot — typically a persona-level default model picker. */
@@ -12,20 +12,20 @@ interface ConsolidatedPersonaHeroProps {
 }
 
 /**
- * Hero-scale persona band for the Consolidated prototype. Larger sigil
- * and stronger typography than PersonaCrest so the persona reads as the
+ * Hero-scale persona band for the Consolidated layout. Larger sigil and
+ * stronger typography than PersonaCrest so the persona reads as the
  * focal point of the surface rather than a header decoration.
  *
  * The union sigil lights every dimension that ANY active capability uses,
  * with dimmed but visible petals for dimensions that only paused/attention
  * capabilities reference — so the user can see the persona's full reach
  * even when some capabilities are inactive.
+ *
+ * Consumed by every Consolidated mode (view / adoption / scratch). Mode-
+ * specific chrome (top stepper, right story thread, etc.) is composed
+ * AROUND this hero by the caller, not by this component.
  */
-export function ConsolidatedPersonaHero({
-  personaName,
-  useCases,
-  rightSlot,
-}: ConsolidatedPersonaHeroProps) {
+export function PersonaHero({ personaName, useCases, rightSlot }: PersonaHeroProps) {
   const { t, tx } = useTranslation();
 
   const stats = useMemo(() => {
@@ -124,10 +124,16 @@ interface HeroUnionSigilProps {
 }
 
 /**
- * Hero-scale union sigil. Active dimensions are rendered at full opacity;
- * dimensions used only by paused/attention capabilities are rendered at
- * reduced opacity so the persona's full structural footprint stays visible
- * without overstating its current activity.
+ * Hero-scale union sigil. Active dimensions render at full opacity;
+ * dimensions used only by paused/attention capabilities render at reduced
+ * opacity so the persona's full structural footprint stays visible without
+ * overstating its current activity.
+ *
+ * Local SVG body rather than the parametric `<Sigil>` primitive — the
+ * primitive unification is deferred (see docs/concepts/glyph-consolidation.md
+ * decision 4). Until then this is one of five hand-rolled bodies; the
+ * others are GlyphHeroSigil, InteractiveSigil, MiniSigil (row-strip), and
+ * the recipes-prototype MiniSigil (tile).
  */
 function HeroUnionSigil({ activeDims, inactiveDims, size }: HeroUnionSigilProps) {
   const center = size / 2;

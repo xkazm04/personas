@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation } from '@/i18n/useTranslation';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { getMemoryCount } from '@/api/overview/memories';
 import { listManualReviews } from '@/api/overview/reviews';
 import { useSelectedCredentialLinks } from '@/stores/selectors/personaSelectors';
+import { ConsolidatedLayout } from '@/features/shared/glyph/consolidated';
 import type { CredentialMetadata } from '@/lib/types/types';
 import { useUseCasesTab } from '../../libs/useUseCasesTab';
 import { useCapabilityToggle } from '../../libs/useCapabilityToggle';
@@ -14,24 +14,20 @@ import {
   toDisplayUseCase,
   type DisplayUseCase,
 } from '../recipes-prototype/shared/displayUseCase';
-import { ConsolidatedPersonaHero } from './ConsolidatedPersonaHero';
-import { ConsolidatedUseCaseRow } from './ConsolidatedUseCaseRow';
 
 interface ConsolidatedSigilLayoutProps {
   credentials: CredentialMetadata[];
 }
 
-const HERO_MAX_WIDTH = 960;
-
 /**
- * Prototype consolidated view: persona-level hero band at the top with a
- * list of capability rows below. Behavior parity for run / pause / open
- * detail / disable-confirmation is preserved against RecipesVariantSigilGrid;
- * defers model-strip + policy-toggles to the detail view to keep the row
- * layout legible at the consolidated scale.
+ * View-mode wrapper around the shared ConsolidatedLayout. Owns the
+ * use-cases-tab hooks, derives DisplayUseCase[] from the persona's design
+ * context, and supplies the UseCaseDetailExpanded as the detail node when
+ * a row is selected. The disable-confirmation dialog also lives here.
  *
- * Behind a tab switch in PersonaUseCasesTab so it does not affect the
- * default capability surface.
+ * The shared layout itself is mode-agnostic and lives under
+ * src/features/shared/glyph/consolidated/. Future scratch + adoption
+ * wrappers compose the same layout with mode-specific data sources.
  */
 export function ConsolidatedSigilLayout({ credentials }: ConsolidatedSigilLayoutProps) {
   const { t } = useTranslation();
@@ -88,18 +84,6 @@ export function ConsolidatedSigilLayout({ credentials }: ConsolidatedSigilLayout
     ? items.find((u) => u.id === selectedUseCaseId) ?? null
     : null;
 
-  const handleToggle = (uc: DisplayUseCase) => {
-    if (!personaId) return;
-    requestToggle(personaId, uc.id, uc.title, uc.health === 'disabled');
-  };
-  const handleSimulate = (uc: DisplayUseCase) => {
-    if (!personaId) return;
-    requestSimulate(personaId, uc.id);
-  };
-  const handleRun = (uc: DisplayUseCase) => {
-    handleExecute(uc.id, uc.raw.sample_input ?? undefined);
-  };
-
   if (!selectedPersona) {
     return (
       <EmptyState
@@ -109,80 +93,48 @@ export function ConsolidatedSigilLayout({ credentials }: ConsolidatedSigilLayout
     );
   }
 
-  return (
-    <div className="flex flex-col h-full">
-      <AnimatePresence mode="popLayout" initial={false}>
-        {activeUc ? (
-          <motion.div
-            key="detail"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.22, ease: [0.32, 0.72, 0, 1] }}
-            className="flex-1 min-h-0 flex flex-col"
-          >
-            <UseCaseDetailExpanded
-              uc={activeUc}
-              personaId={personaId}
-              credentials={credentials}
-              memoriesDefault={memoriesDefault}
-              reviewsDefault={reviewsDefault}
-              isExecuting={isExecuting}
-              isThisExecuting={isExecuting && selectedUseCaseId === activeUc.id}
-              pendingToggleId={pendingUseCaseId}
-              historyRefreshKey={historyRefreshKey}
-              onBack={() => setSelectedUseCaseId(null)}
-              onToggle={() => handleToggle(activeUc)}
-              onRun={() => handleRun(activeUc)}
-              onSimulate={() => handleSimulate(activeUc)}
-              onRerun={handleRerun}
-            />
-          </motion.div>
-        ) : (
-          <motion.div
-            key="grid"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.18 }}
-            className="flex-1 min-h-0 flex flex-col"
-          >
-            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin">
-              <div
-                className="mx-auto px-4 py-4 flex flex-col gap-4"
-                style={{ maxWidth: HERO_MAX_WIDTH }}
-              >
-                <ConsolidatedPersonaHero
-                  personaName={selectedPersona.name ?? ''}
-                  useCases={items}
-                />
+  const detailNode = activeUc ? (
+    <UseCaseDetailExpanded
+      uc={activeUc}
+      personaId={personaId}
+      credentials={credentials}
+      memoriesDefault={memoriesDefault}
+      reviewsDefault={reviewsDefault}
+      isExecuting={isExecuting}
+      isThisExecuting={isExecuting && selectedUseCaseId === activeUc.id}
+      pendingToggleId={pendingUseCaseId}
+      historyRefreshKey={historyRefreshKey}
+      onBack={() => setSelectedUseCaseId(null)}
+      onToggle={() => {
+        if (!personaId) return;
+        requestToggle(personaId, activeUc.id, activeUc.title, activeUc.health === 'disabled');
+      }}
+      onRun={() => handleExecute(activeUc.id, activeUc.raw.sample_input ?? undefined)}
+      onSimulate={() => {
+        if (!personaId) return;
+        requestSimulate(personaId, activeUc.id);
+      }}
+      onRerun={handleRerun}
+    />
+  ) : null;
 
-                {items.length === 0 ? (
-                  <EmptyState variant="use-cases-empty" />
-                ) : (
-                  <div className="flex flex-col gap-2">
-                    <span className="typo-label uppercase tracking-[0.18em] text-foreground/55 px-1">
-                      {t.agents.use_cases.consolidated_capabilities_heading}
-                    </span>
-                    <div className="flex flex-col gap-2">
-                      {items.map((uc) => (
-                        <ConsolidatedUseCaseRow
-                          key={uc.id}
-                          uc={uc}
-                          isPendingToggle={pendingUseCaseId === uc.id}
-                          onOpen={() => setSelectedUseCaseId(uc.id)}
-                          onToggle={() => handleToggle(uc)}
-                          onRun={() => handleRun(uc)}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+  return (
+    <>
+      <ConsolidatedLayout
+        mode="view"
+        personaName={selectedPersona.name ?? ''}
+        items={items}
+        selectedItemId={selectedUseCaseId}
+        pendingToggleId={pendingUseCaseId}
+        onRowOpen={(uc) => setSelectedUseCaseId(uc.id)}
+        onRowToggle={(uc) => {
+          if (!personaId) return;
+          requestToggle(personaId, uc.id, uc.title, uc.health === 'disabled');
+        }}
+        onRowRun={(uc) => handleExecute(uc.id, uc.raw.sample_input ?? undefined)}
+        detailNode={detailNode}
+        emptyNode={<EmptyState variant="use-cases-empty" />}
+      />
 
       {disableConfirmation && personaId && (
         <CapabilityDisableDialog
@@ -191,6 +143,6 @@ export function ConsolidatedSigilLayout({ credentials }: ConsolidatedSigilLayout
           onCancel={cancelDisable}
         />
       )}
-    </div>
+    </>
   );
 }
