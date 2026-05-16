@@ -56,7 +56,7 @@ The eight tabs are sequenced so a new project can walk top-to-bottom exactly onc
 ### 4. Idea Triage — Tinder-style accept / reject
 
 1. Open **Idea Triage**. Pending ideas form a 3-card stack in the center; sidebar filters narrow by category, scan type, effort range, and risk range.
-2. Swipe right (or ➡ / Z) to accept, left (or ⬅ / A) to reject. The top card drags physically via Framer Motion; the border glows red/green based on drag direction.
+2. Swipe right (or ➡ / Z) to accept, left (or ⬅ / A) to reject. The top card drags physically via Framer Motion; the border glows red/green based on drag direction. Each card surfaces the proposing agent's identity and Scoreboard rank inline below the title — "🔒 Security Auditor · rank #3 (81% accept)" — computed from the same `computeAgentStats` aggregation the Scoreboard uses, so the credibility signal travels with every triage decision.
 3. The optional **Auto-Triage Rules** panel above the stack lets you define conditional rules (e.g. "if effort ≤ 3 and impact ≥ 7 → accept") that are applied in bulk via `dev_tools_run_triage_rules`.
 4. Progress bar + status badges (accepted / rejected / pending) update live. A `?` keyboard shortcut opens the full shortcuts overlay.
 

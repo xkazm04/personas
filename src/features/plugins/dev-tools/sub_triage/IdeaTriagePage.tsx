@@ -15,6 +15,7 @@ import { DEFAULT_CATEGORY_TW, CATEGORY_TW, levelColor } from '../constants/ideaC
 import { TriageRulesPanel } from './TriageRulesPanel';
 import { EffortRiskFilter } from './EffortRiskFilter';
 import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker';
+import { computeAgentStats } from '../sub_scanner/AgentScoreboard';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -29,6 +30,9 @@ interface TriageIdea {
   reasoning: string;
   category: CategoryKey;
   agentEmoji: string;
+  agentLabel: string | null;
+  agentRank: number | null;
+  agentAcceptRate: number | null;
   effort: number;
   impact: number;
   risk: number;
@@ -142,6 +146,30 @@ function SwipeCard({
 
         {/* Title + description */}
         <h3 className="typo-heading-lg font-semibold text-primary mb-2">{idea.title}</h3>
+        {idea.agentLabel && (
+          <p className="text-md text-foreground/70 -mt-1 mb-2 flex items-center gap-1.5 flex-wrap">
+            <span>{idea.agentEmoji}</span>
+            <span className="font-medium text-foreground/85">{idea.agentLabel}</span>
+            {idea.agentRank !== null ? (
+              <>
+                <span className="text-foreground/40">·</span>
+                <span className="text-foreground/70 tabular-nums">
+                  {dt.triage_agent_rank_prefix}#{idea.agentRank}
+                </span>
+                {idea.agentAcceptRate !== null && (
+                  <span className="text-foreground/60 tabular-nums">
+                    ({Math.round(idea.agentAcceptRate * 100)}{dt.triage_agent_accept_suffix})
+                  </span>
+                )}
+              </>
+            ) : (
+              <>
+                <span className="text-foreground/40">·</span>
+                <span className="text-foreground/50 italic">{dt.triage_agent_no_rank}</span>
+              </>
+            )}
+          </p>
+        )}
         <p className="text-md text-foreground mb-4 leading-relaxed flex-1 min-h-0 overflow-y-auto">
           {idea.description}
         </p>
@@ -168,8 +196,28 @@ export default function IdeaTriagePage() {
   const { triageIdea, deleteIdea } = useDevToolsActions();
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const storeIdeas = useSystemStore((s) => s.ideas);
+  const storeTasks = useSystemStore((s) => s.tasks);
   const fetchIdeas = useSystemStore((s) => s.fetchIdeas);
+  const fetchTasks = useSystemStore((s) => s.fetchTasks);
   const triageCounts = useSystemStore((s) => s.triageCounts);
+
+  // Per-agent rank map (1 = highest accept rate; agents with no signal sort
+  // last). Computed from the same data the Scoreboard uses so the rank shown
+  // on a triage card matches what the user sees in Idea Scanner.
+  const agentRankByKey = useMemo(() => {
+    const stats = computeAgentStats(storeIdeas, storeTasks);
+    const ranked = [...stats].sort((a, b) => {
+      const ar = a.acceptRate;
+      const br = b.acceptRate;
+      if (ar === null && br === null) return 0;
+      if (ar === null) return 1;
+      if (br === null) return -1;
+      return br - ar;
+    });
+    const map = new Map<string, { rank: number; acceptRate: number | null }>();
+    ranked.forEach((s, i) => map.set(s.agent.key, { rank: i + 1, acceptRate: s.acceptRate }));
+    return map;
+  }, [storeIdeas, storeTasks]);
 
   const [filterCategory, setFilterCategory] = useState<CategoryKey | 'all'>('all');
   const [filterScanType, setFilterScanType] = useState<string | null>(null);
@@ -177,15 +225,21 @@ export default function IdeaTriagePage() {
   const [effortRange, setEffortRange] = useState<[number, number]>([1, 10]);
   const [riskRange, setRiskRange] = useState<[number, number]>([1, 10]);
 
-  // Load ideas from store on mount / project change
+  // Load ideas + tasks from store on mount / project change. Tasks are
+  // needed so the inline scoreboard rank on each triage card has signal
+  // even when the user opens Triage before Scanner this session.
   useEffect(() => {
-    if (activeProjectId) fetchIdeas(activeProjectId);
-  }, [activeProjectId, fetchIdeas]);
+    if (activeProjectId) {
+      fetchIdeas(activeProjectId);
+      fetchTasks(activeProjectId);
+    }
+  }, [activeProjectId, fetchIdeas, fetchTasks]);
 
   // Map store ideas to triage format
   const ideas: TriageIdea[] = useMemo(() =>
     storeIdeas.map((i) => {
       const agent = SCAN_AGENTS.find((a) => a.key === i.scan_type);
+      const rankInfo = agentRankByKey.get(i.scan_type);
       return {
         id: i.id,
         title: i.title,
@@ -193,13 +247,16 @@ export default function IdeaTriagePage() {
         reasoning: i.reasoning ?? '',
         category: (i.category as CategoryKey) || 'technical',
         agentEmoji: agent?.emoji ?? '?',
+        agentLabel: agent?.label ?? null,
+        agentRank: rankInfo?.rank ?? null,
+        agentAcceptRate: rankInfo?.acceptRate ?? null,
         effort: i.effort ?? 5,
         impact: i.impact ?? 5,
         risk: i.risk ?? 5,
         status: (i.status as TriageIdea['status']) || 'pending',
       };
     }),
-  [storeIdeas]);
+  [storeIdeas, agentRankByKey]);
 
   const pendingIdeas = ideas
     .filter((i) => i.status === 'pending' && (filterCategory === 'all' || i.category === filterCategory))

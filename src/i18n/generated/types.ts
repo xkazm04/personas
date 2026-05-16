@@ -9883,6 +9883,9 @@ export type Translations = {
       context_no_goal_tooltip: string;
       row_open_vscode: string;
       row_open_folder: string;
+      triage_agent_rank_prefix: string;
+      triage_agent_accept_suffix: string;
+      triage_agent_no_rank: string;
       add_group: string;
       group_name_placeholder: string;
       create: string;
