@@ -9,6 +9,7 @@ import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/compon
 import { ActionRow } from '@/features/shared/components/layout/ActionRow';
 import { useDevToolsActions } from '../hooks/useDevToolsActions';
 import { useSystemStore } from '@/stores/systemStore';
+import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { SCAN_AGENTS, AGENT_CATEGORIES } from '../constants/scanAgents';
 import { DEFAULT_CATEGORY_TW, CATEGORY_TW, levelColor } from '../constants/ideaColors';
@@ -267,6 +268,30 @@ export default function IdeaTriagePage() {
   const rejectedCount = triageCounts?.rejected ?? ideas.filter((i) => i.status === 'rejected').length;
   const pendingCount = triageCounts?.pending ?? ideas.filter((i) => i.status === 'pending').length;
   const totalCount = ideas.length;
+
+  // End-of-session summary toast. Snapshot the accepted/rejected counts on
+  // first non-empty mount; when pending later hits zero and the user has
+  // actually triaged something this session, fire a single celebratory
+  // toast — then arm the "fired" flag so re-renders don't refire it.
+  const addToastTriage = useToastStore((s) => s.addToast);
+  const [sessionStart] = useState<{ accepted: number; rejected: number; t: number }>(
+    () => ({ accepted: acceptedCount, rejected: rejectedCount, t: Date.now() }),
+  );
+  const [summaryFired, setSummaryFired] = useState(false);
+  useEffect(() => {
+    if (summaryFired) return;
+    if (pendingCount !== 0) return;
+    const dAccepted = acceptedCount - sessionStart.accepted;
+    const dRejected = rejectedCount - sessionStart.rejected;
+    const total = dAccepted + dRejected;
+    if (total < 3) return; // Don't fire for trivial sessions (1-2 swipes).
+    const minutes = Math.max(1, Math.round((Date.now() - sessionStart.t) / 60000));
+    addToastTriage(
+      tx(dt.triage_session_summary, { total, accepted: dAccepted, rejected: dRejected, minutes }),
+      'success',
+    );
+    setSummaryFired(true);
+  }, [pendingCount, acceptedCount, rejectedCount, sessionStart, summaryFired, addToastTriage, tx, dt.triage_session_summary]);
 
   const visibleStack = pendingIdeas.slice(0, 3);
 

@@ -9881,6 +9881,7 @@
       "triage_agent_rank_prefix": "rank ",
       "triage_agent_accept_suffix": "% accept",
       "triage_agent_no_rank": "no signal yet",
+      "triage_session_summary": "Done — triaged {total} idea(s) in {minutes}m ({accepted} accepted, {rejected} rejected)",
       "row_import_gh_issues": "Import GitHub issues as goals",
       "gh_import_title": "Import GitHub issues as goals",
       "gh_import_loading": "Loading open issues from GitHub…",

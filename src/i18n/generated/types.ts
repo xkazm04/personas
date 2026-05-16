@@ -9887,6 +9887,7 @@ export type Translations = {
       triage_agent_rank_prefix: string;
       triage_agent_accept_suffix: string;
       triage_agent_no_rank: string;
+      triage_session_summary: string;
       row_import_gh_issues: string;
       gh_import_title: string;
       gh_import_loading: string;
