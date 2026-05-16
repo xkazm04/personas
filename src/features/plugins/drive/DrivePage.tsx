@@ -74,7 +74,10 @@ export default function DrivePage() {
 
   const requestRename = useCallback(
     (entry: DriveEntry) => {
-      if (drive.viewMode === "list") {
+      // List and Icons both have a stable text slot to swap with an
+      // inline input; only Columns view still routes to the modal
+      // because its column rows are too narrow for the rename UI.
+      if (drive.viewMode === "list" || drive.viewMode === "icons") {
         setInlineRenamingPath(entry.path);
       } else {
         setDialog({ kind: "rename", entry });
@@ -221,8 +224,9 @@ export default function DrivePage() {
         const entry = drv.visibleEntries.find((ent) => ent.path === first);
         if (entry) {
           e.preventDefault();
-          // Inline in list view, modal fallback elsewhere.
-          if (drv.viewMode === "list") setInlineRenamingPath(entry.path);
+          // Inline in list + icons, modal fallback for columns view.
+          if (drv.viewMode === "list" || drv.viewMode === "icons")
+            setInlineRenamingPath(entry.path);
           else setDialog({ kind: "rename", entry });
         }
         return;

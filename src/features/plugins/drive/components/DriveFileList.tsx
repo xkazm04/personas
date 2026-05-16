@@ -88,18 +88,22 @@ export function DriveFileList({
   );
 }
 
-// Inline rename input — replaces the filename span in the list view row
-// while the user is renaming. Auto-focuses, pre-selects the base name
-// without extension so the user can type a new name without nuking the
-// file extension. Enter commits, Esc cancels, blur cancels.
+// Inline rename input — replaces the filename span/label while the user
+// is renaming. Auto-focuses, pre-selects the base name without extension
+// so the user can type a new name without nuking the file extension.
+// Enter commits, Esc cancels, blur cancels. The className override lets
+// callers swap the layout class (list-view uses flex-1, icons-view uses
+// w-full text-center) without forking the input behaviour.
 function InlineRenameInput({
   initialName,
   onCommit,
   onCancel,
+  className = "flex-1 min-w-0 px-1.5 py-0.5 rounded-input bg-background/80 border border-cyan-500/50 typo-body text-foreground focus:outline-none focus:ring-2 focus:ring-cyan-500/40",
 }: {
   initialName: string;
   onCommit: (name: string) => void;
   onCancel: () => void;
+  className?: string;
 }) {
   const [value, setValue] = useState(initialName);
   const ref = useRef<HTMLInputElement | null>(null);
@@ -140,7 +144,7 @@ function InlineRenameInput({
       onClick={(e) => e.stopPropagation()}
       onDoubleClick={(e) => e.stopPropagation()}
       onBlur={onCancel}
-      className="flex-1 min-w-0 px-1.5 py-0.5 rounded-input bg-background/80 border border-cyan-500/50 typo-body text-foreground focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+      className={className}
     />
   );
 }
@@ -473,6 +477,9 @@ function IconsView({
   onOpen,
   onContextMenu,
   onNewFolder,
+  inlineRenamingPath = null,
+  onCommitInlineRename,
+  onCancelInlineRename,
 }: Props) {
   if (drive.loading && drive.entries.length === 0) {
     return <LoadingState />;
@@ -493,6 +500,32 @@ function IconsView({
           const selected = drive.isSelected(entry.path);
           const flash = drive.recentlyWritten.has(entry.path);
           const visual = visualForEntry(entry);
+          const isRenaming = inlineRenamingPath === entry.path;
+          // When renaming, render the tile as a div instead of a button
+          // — nesting an <input> inside a <button> is invalid HTML and
+          // the button's click handlers would fight the input's focus.
+          if (isRenaming) {
+            return (
+              <div
+                key={entry.path}
+                className="flex flex-col items-center gap-2.5 p-3 rounded-modal border bg-cyan-500/10 border-cyan-500/50 ring-2 ring-cyan-400/40"
+              >
+                <div
+                  className={`w-16 h-16 rounded-modal bg-gradient-to-br ${visual.gradient} border border-primary/10 flex items-center justify-center shadow-inner`}
+                >
+                  <visual.Icon className={`w-8 h-8 ${visual.text}`} />
+                </div>
+                <InlineRenameInput
+                  initialName={entry.name}
+                  onCommit={(newName) =>
+                    onCommitInlineRename?.(entry.path, newName)
+                  }
+                  onCancel={() => onCancelInlineRename?.()}
+                  className="w-full text-center px-1.5 py-0.5 rounded-input bg-background/80 border border-cyan-500/50 typo-body text-foreground focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                />
+              </div>
+            );
+          }
           return (
             <button
               key={entry.path}
