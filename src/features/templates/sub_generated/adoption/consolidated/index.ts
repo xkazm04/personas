@@ -1,0 +1,1 @@
+export { ConsolidatedAdoptionView } from './ConsolidatedAdoptionView';
