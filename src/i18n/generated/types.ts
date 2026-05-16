@@ -11200,6 +11200,10 @@ export type Translations = {
     export_cancel: string;
     export_elapsed: string;
     export_eta: string;
+    export_done: string;
+    export_open_file: string;
+    export_show_in_folder: string;
+    export_dismiss: string;
     output_settings: string;
     resolution: string;
     framerate: string;

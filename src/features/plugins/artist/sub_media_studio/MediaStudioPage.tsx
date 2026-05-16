@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState, type DragEvent } from 'react';
-import { Video, Music, ImagePlus, Type, Upload, Film } from 'lucide-react';
+import { Check, FolderOpen, Video, Music, ImagePlus, Type, Upload, Film, Play, X } from 'lucide-react';
 import { save as saveDialog } from '@tauri-apps/plugin-dialog';
+import { open as openExternal } from '@tauri-apps/plugin-shell';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Button } from '@/features/shared/components/buttons';
 import { useSystemStore } from '@/stores/systemStore';
+import { silentCatch } from '@/lib/silentCatch';
 import { formatDurationHuman } from '../utils/format';
 import { useFfmpegDetect } from './hooks/useFfmpegDetect';
 import { useMediaExport } from './hooks/useMediaExport';
@@ -82,7 +84,7 @@ export default function MediaStudioPage() {
     }
   }, [composition.items, resolveAnchor, updateItem]);
 
-  const { exportState, startExport, cancelExport } = useMediaExport(composition);
+  const { exportState, startExport, cancelExport, dismissExport } = useMediaExport(composition);
 
   const handleExport = useCallback(async () => {
     const outputPath = await saveDialog({
@@ -403,6 +405,13 @@ export default function MediaStudioPage() {
             />
           </div>
 
+          {exportState.status === 'complete' && exportState.outputPath && (
+            <ExportSuccessStrip
+              outputPath={exportState.outputPath}
+              onDismiss={dismissExport}
+            />
+          )}
+
           {exportState.status === 'exporting' && (
             <div className="flex items-center gap-2 px-4 py-1.5 border-t border-primary/10 bg-card/40">
               <span className="text-[11px] text-foreground/60">{t.media_studio.exporting}</span>
@@ -473,6 +482,57 @@ export default function MediaStudioPage() {
           />
         </div>
       )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ExportSuccessStrip — replaces the in-flight progress bar once an export
+// lands so the user can play the file or jump to its folder without
+// scrubbing through dialog history. Dismissing returns the strip to idle
+// (and the user can start another export the normal way).
+// ---------------------------------------------------------------------------
+
+function ExportSuccessStrip({
+  outputPath,
+  onDismiss,
+}: {
+  outputPath: string;
+  onDismiss: () => void;
+}) {
+  const { t } = useTranslation();
+
+  // Split off the basename and parent folder once — both are derived from the
+  // absolute path Tauri gives us, supporting / and \ separators.
+  const sepIdx = Math.max(outputPath.lastIndexOf('/'), outputPath.lastIndexOf('\\'));
+  const fileName = sepIdx >= 0 ? outputPath.slice(sepIdx + 1) : outputPath;
+  const parentDir = sepIdx >= 0 ? outputPath.slice(0, sepIdx) : outputPath;
+
+  const playFile = () => {
+    openExternal(outputPath).catch(silentCatch('Open exported file'));
+  };
+  const showFolder = () => {
+    openExternal(parentDir).catch(silentCatch('Open export folder'));
+  };
+
+  return (
+    <div className="flex items-center gap-2 px-4 py-1.5 border-t border-primary/10 bg-emerald-500/5">
+      <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+      <span className="text-[11px] text-foreground/80 font-medium">{t.media_studio.export_done}</span>
+      <span className="text-[11px] text-foreground/60 font-mono truncate flex-1" title={outputPath}>
+        {fileName}
+      </span>
+      <Button variant="ghost" size="sm" onClick={playFile} title={t.media_studio.export_open_file}>
+        <Play className="w-3.5 h-3.5" />
+        <span className="hidden md:inline">{t.media_studio.export_open_file}</span>
+      </Button>
+      <Button variant="ghost" size="sm" onClick={showFolder} title={t.media_studio.export_show_in_folder}>
+        <FolderOpen className="w-3.5 h-3.5" />
+        <span className="hidden md:inline">{t.media_studio.export_show_in_folder}</span>
+      </Button>
+      <Button variant="ghost" size="sm" onClick={onDismiss} title={t.media_studio.export_dismiss}>
+        <X className="w-3.5 h-3.5" />
+      </Button>
     </div>
   );
 }

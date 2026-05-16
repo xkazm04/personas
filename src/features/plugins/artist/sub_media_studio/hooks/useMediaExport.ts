@@ -151,5 +151,9 @@ export function useMediaExport(composition: Composition) {
     setExportState((prev) => ({ ...prev, status: 'cancelled' }));
   }, [exportState.jobId]);
 
-  return { exportState, startExport, cancelExport };
+  const dismissExport = useCallback(() => {
+    setExportState(IDLE_STATE);
+  }, []);
+
+  return { exportState, startExport, cancelExport, dismissExport };
 }
