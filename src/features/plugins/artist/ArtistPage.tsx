@@ -21,7 +21,11 @@ export default function ArtistPage() {
     return (
       <ContentBox>
         <ContentBody flex noPadding>
-          <div key={artistTab} className="animate-fade-slide-in flex-1 flex flex-col min-h-0">
+          <div
+            key={artistTab}
+            data-testid="artist-page-media-studio"
+            className="animate-fade-slide-in flex-1 flex flex-col min-h-0"
+          >
             <Suspense fallback={null}>
               <MediaStudioPage />
             </Suspense>
@@ -34,7 +38,11 @@ export default function ArtistPage() {
   return (
     <ContentBox>
       <ContentBody centered>
-        <div key={artistTab} className="animate-fade-slide-in">
+        <div
+          key={artistTab}
+          data-testid={`artist-page-${artistTab}`}
+          className="animate-fade-slide-in"
+        >
           <Suspense fallback={null}>
             {artistTab === 'blender' && <CreativeStudioPanel />}
             {artistTab === 'gallery' && <GalleryPage />}

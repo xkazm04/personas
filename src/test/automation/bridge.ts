@@ -98,8 +98,13 @@ interface TestBridge {
    */
   invokeCommand(command: string, params?: Record<string, unknown>): Promise<{ success: boolean; result?: unknown; error?: string }>;
   setTestFlag(key: string, value: unknown): { success: boolean; key?: string; value?: unknown };
+  // -- Artist plugin helpers --
+  setArtistTab(tab: string): { success: boolean; tab?: string; error?: string };
+  getArtistTab(): { success: boolean; tab: string };
   [key: string]: unknown;
 }
+
+const VALID_ARTIST_TABS = ['blender', 'gallery', 'media-studio'] as const;
 
 /** Turn an arbitrary caught value into a human-readable error string.
  *  Tauri IPC errors deserialize as plain objects that stringify to
@@ -182,6 +187,21 @@ const bridge: TestBridge = {
     } catch (e) {
       return { success: false, error: unpackError(e) };
     }
+  },
+
+  setArtistTab(tab: string) {
+    if (!(VALID_ARTIST_TABS as readonly string[]).includes(tab)) {
+      return {
+        success: false,
+        error: `Invalid artist tab: ${tab}. Valid: ${VALID_ARTIST_TABS.join(', ')}`,
+      };
+    }
+    useSystemStore.getState().setArtistTab(tab as 'blender' | 'gallery' | 'media-studio');
+    return { success: true, tab };
+  },
+
+  getArtistTab() {
+    return { success: true, tab: useSystemStore.getState().artistTab };
   },
 
   navigate(section: string) {

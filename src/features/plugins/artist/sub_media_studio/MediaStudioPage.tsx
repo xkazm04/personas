@@ -401,7 +401,10 @@ export default function MediaStudioPage() {
       )}
 
       {ffmpegReady && composition.items.length === 0 && (
-        <div className="flex-1 flex flex-col items-center justify-center gap-5 p-8 text-center">
+        <div
+          data-testid="media-studio-empty-state"
+          className="flex-1 flex flex-col items-center justify-center gap-5 p-8 text-center"
+        >
           <div className="w-20 h-20 rounded-3xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center">
             <Film className="w-10 h-10 text-rose-400" />
           </div>
@@ -599,6 +602,7 @@ function StarterTemplatesRow({ onApply }: { onApply: (template: StarterTemplate)
           <button
             key={tpl.id}
             type="button"
+            data-testid={`starter-template-${tpl.id}`}
             onClick={() => onApply(tpl)}
             className="flex flex-col items-start gap-0.5 px-3 py-2 rounded-card border border-primary/10 bg-card/50 hover:border-rose-500/30 hover:bg-card/70 transition-colors min-w-[10rem]"
           >
