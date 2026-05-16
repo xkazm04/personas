@@ -148,6 +148,18 @@ export default function GoalConstellation() {
     setVariant('pulse');
   };
 
+  // Consume any pending spotlight handoff (e.g. from a ContextMap
+  // goal-coverage badge click). Read once on mount; clear so it can't
+  // refire on a future mount.
+  useEffect(() => {
+    const pending = useSystemStore.getState().pendingGoalSpotlightId;
+    if (pending) {
+      setPulseSeedId(pending);
+      setVariant('pulse');
+    }
+    useSystemStore.getState().setPendingGoalSpotlightId(null);
+  }, []);
+
   useEffect(() => {
     if (activeProjectId) fetchGoals(activeProjectId);
   }, [activeProjectId, fetchGoals]);

@@ -9876,6 +9876,11 @@ export type Translations = {
       entry_points: string;
       no_context_groups: string;
       scan_or_create: string;
+      context_goal_singular: string;
+      context_goal_plural: string;
+      context_goal_coverage_tooltip: string;
+      context_no_goal_label: string;
+      context_no_goal_tooltip: string;
       add_group: string;
       group_name_placeholder: string;
       create: string;

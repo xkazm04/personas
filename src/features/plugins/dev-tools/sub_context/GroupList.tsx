@@ -16,11 +16,13 @@ interface GroupListProps {
   onShowNewGroup: (v: boolean) => void;
   onCreateGroup: (name: string, color: string) => void;
   onScan: () => void;
+  goalCoverageByContext?: Map<string, { count: number; firstGoalId: string }>;
 }
 
 export default function GroupList({
   groups, selectedCtxId, onSelectCtx,
   showNewGroup, onShowNewGroup, onCreateGroup, onScan,
+  goalCoverageByContext,
 }: GroupListProps) {
   const { t } = useTranslation();
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
@@ -92,9 +94,19 @@ export default function GroupList({
                           <p className="text-md text-foreground py-3 text-center">{t.plugins.dev_tools.no_contexts_in_group}</p>
                         ) : (
                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
-                            {group.contexts.map((ctx) => (
-                              <ContextCard key={ctx.id} ctx={ctx} selected={selectedCtxId === ctx.id} onSelect={() => onSelectCtx(selectedCtxId === ctx.id ? null : ctx.id)} />
-                            ))}
+                            {group.contexts.map((ctx) => {
+                              const coverage = goalCoverageByContext?.get(ctx.id);
+                              return (
+                                <ContextCard
+                                  key={ctx.id}
+                                  ctx={ctx}
+                                  selected={selectedCtxId === ctx.id}
+                                  onSelect={() => onSelectCtx(selectedCtxId === ctx.id ? null : ctx.id)}
+                                  goalCount={coverage?.count ?? 0}
+                                  firstGoalId={coverage?.firstGoalId}
+                                />
+                              );
+                            })}
                           </div>
                         )}
                       </div>
