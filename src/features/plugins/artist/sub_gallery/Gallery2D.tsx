@@ -3,6 +3,7 @@ import {
   useEffect,
   useRef,
   useState,
+  type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
   type WheelEvent as ReactWheelEvent,
 } from 'react';
@@ -21,8 +22,11 @@ import type { ArtistAsset } from '@/api/artist';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
 import { silentCatch } from '@/lib/silentCatch';
+import { useGallerySelection } from '../hooks/useGallerySelection';
 import { useLocalImage } from '../hooks/useLocalImage';
+import { mergeTagAcross } from './tagOps';
 import AssetCard from './AssetCard';
+import GallerySelectionBar from './GallerySelectionBar';
 
 interface Gallery2DProps {
   assets: ArtistAsset[];
@@ -32,6 +36,8 @@ interface Gallery2DProps {
 
 export default function Gallery2D({ assets, onDelete, onUpdateTags }: Gallery2DProps) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const { selectedIds, isSelected, toggle, clear, count } = useGallerySelection(assets);
+  const inSelectMode = count > 0;
 
   const openLightbox = useCallback((index: number) => {
     setLightboxIndex(index);
@@ -49,10 +55,44 @@ export default function Gallery2D({ assets, onDelete, onUpdateTags }: Gallery2DP
     setLightboxIndex((i) => (i !== null ? (i - 1 + assets.length) % assets.length : null));
   }, [assets.length]);
 
+  const handleToggle = useCallback(
+    (id: string, index: number) => (e: ReactMouseEvent) => toggle(id, index, e.shiftKey),
+    [toggle],
+  );
+
+  const handleBulkDelete = useCallback(() => {
+    const ids = [...selectedIds];
+    clear();
+    for (const id of ids) onDelete(id);
+  }, [selectedIds, clear, onDelete]);
+
+  const handleBulkAddTag = useCallback(
+    (tag: string) => {
+      const ids = [...selectedIds];
+      clear();
+      for (const id of ids) {
+        const asset = assets.find((a) => a.id === id);
+        if (!asset) continue;
+        const merged = mergeTagAcross(asset.tags ?? '', tag);
+        if (merged !== (asset.tags ?? '')) onUpdateTags(id, merged);
+      }
+    },
+    [selectedIds, clear, assets, onUpdateTags],
+  );
+
   const currentAsset = lightboxIndex !== null ? assets[lightboxIndex] : null;
 
   return (
     <>
+      {inSelectMode && (
+        <GallerySelectionBar
+          count={count}
+          onDelete={handleBulkDelete}
+          onAddTag={handleBulkAddTag}
+          onClear={clear}
+        />
+      )}
+
       {/* Masonry-like grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
         {assets.map((asset, i) => (
@@ -62,11 +102,14 @@ export default function Gallery2D({ assets, onDelete, onUpdateTags }: Gallery2DP
             onDelete={onDelete}
             onUpdateTags={onUpdateTags}
             onClick={() => openLightbox(i)}
+            selected={isSelected(asset.id)}
+            inSelectMode={inSelectMode}
+            onToggleSelect={handleToggle(asset.id, i)}
           />
         ))}
       </div>
 
-      {currentAsset && lightboxIndex !== null && (
+      {currentAsset && lightboxIndex !== null && !inSelectMode && (
         <LightboxOverlay
           asset={currentAsset}
           index={lightboxIndex}

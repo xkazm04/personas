@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { Trash2, Tag, Box, Loader2, Film } from 'lucide-react';
+import { Check, Trash2, Tag, Box, Loader2, Film } from 'lucide-react';
 import type { ArtistAsset } from '@/api/artist';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
@@ -13,9 +13,24 @@ interface AssetCardProps {
   onDelete: (id: string) => void;
   onUpdateTags: (id: string, tags: string) => void;
   onClick?: () => void;
+  /** When true, the card is part of a selection set — render highlighted. */
+  selected?: boolean;
+  /** When true, primary click toggles selection instead of running `onClick`. */
+  inSelectMode?: boolean;
+  /** Toggle this card's selection. Receives the original MouseEvent so callers
+   *  can pick up modifiers like shiftKey for range-select. */
+  onToggleSelect?: (e: ReactMouseEvent) => void;
 }
 
-export default function AssetCard({ asset, onDelete, onUpdateTags, onClick }: AssetCardProps) {
+export default function AssetCard({
+  asset,
+  onDelete,
+  onUpdateTags,
+  onClick,
+  selected = false,
+  inSelectMode = false,
+  onToggleSelect,
+}: AssetCardProps) {
   const { t } = useTranslation();
   const [editingTags, setEditingTags] = useState(false);
   const queueMediaStudioAsset = useSystemStore((s) => s.queueMediaStudioAsset);
@@ -35,11 +50,45 @@ export default function AssetCard({ asset, onDelete, onUpdateTags, onClick }: As
     useToastStore.getState().addToast(t.plugins.artist.sent_to_media_studio, 'success');
   };
 
+  const handleCardClick = (e: ReactMouseEvent) => {
+    // In select mode, primary click toggles the card instead of opening the
+    // viewer; shift+click extends the selection range. The user exits select
+    // mode by clicking the selection bar's clear button.
+    if (inSelectMode && onToggleSelect) {
+      onToggleSelect(e);
+      return;
+    }
+    onClick?.();
+  };
+
+  const borderClass = selected
+    ? 'border-rose-500/60 shadow-elevation-3 shadow-rose-500/10'
+    : 'border-primary/8 hover:border-rose-500/20 hover:shadow-elevation-3 hover:shadow-rose-500/5';
+
   return (
     <div
-      className="group relative rounded-modal border border-primary/8 bg-card/40 overflow-hidden transition-all hover:border-rose-500/20 hover:shadow-elevation-3 hover:shadow-rose-500/5 cursor-pointer"
-      onClick={onClick}
+      className={`group relative rounded-modal border ${borderClass} bg-card/40 overflow-hidden transition-all cursor-pointer`}
+      onClick={handleCardClick}
     >
+      {onToggleSelect && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleSelect(e);
+          }}
+          aria-label={selected ? t.plugins.artist.gallery_deselect : t.plugins.artist.gallery_select}
+          aria-pressed={selected}
+          className={`absolute top-2 left-2 z-10 w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+            selected
+              ? 'bg-rose-500 border-rose-500 text-white'
+              : 'bg-black/40 border-white/50 opacity-0 group-hover:opacity-100 hover:border-white'
+          }`}
+        >
+          {selected && <Check className="w-3 h-3" strokeWidth={3} />}
+        </button>
+      )}
+
       {/* Thumbnail area */}
       <div className="relative aspect-square bg-background/60 flex items-center justify-center overflow-hidden">
         {isImage && dataUrl ? (

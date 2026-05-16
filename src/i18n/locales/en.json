@@ -9863,7 +9863,18 @@
       "lightbox_copy_path": "Copy file path",
       "lightbox_path_copied": "File path copied",
       "lightbox_prev_image": "Previous image",
-      "lightbox_next_image": "Next image"
+      "lightbox_next_image": "Next image",
+      "gallery_select": "Select",
+      "gallery_deselect": "Deselect",
+      "gallery_n_selected": "{count} selected",
+      "gallery_delete_selected": "Delete",
+      "gallery_confirm_delete_n": "Confirm delete {count}",
+      "gallery_clear_selection": "Clear selection",
+      "gallery_bulk_tag_button": "Tag",
+      "gallery_bulk_tag_title": "Add tag to selection",
+      "gallery_bulk_tag_subtitle": "Adds a tag to {count} selected assets, keeping their existing tags.",
+      "gallery_bulk_tag_placeholder": "Tag to add",
+      "gallery_bulk_tag_apply": "Apply"
     },
     "dev_tools": {
       "no_project_configured": "No dev project configured",

@@ -9870,6 +9870,17 @@ export type Translations = {
       lightbox_path_copied: string;
       lightbox_prev_image: string;
       lightbox_next_image: string;
+      gallery_select: string;
+      gallery_deselect: string;
+      gallery_n_selected: string;
+      gallery_delete_selected: string;
+      gallery_confirm_delete_n: string;
+      gallery_clear_selection: string;
+      gallery_bulk_tag_button: string;
+      gallery_bulk_tag_title: string;
+      gallery_bulk_tag_subtitle: string;
+      gallery_bulk_tag_placeholder: string;
+      gallery_bulk_tag_apply: string;
     };
     dev_tools: {
       no_project_configured: string;
