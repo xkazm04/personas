@@ -9876,6 +9876,7 @@
       "context_goal_coverage_tooltip": "Open in Lifecycle → Goals",
       "context_no_goal_label": "no goal",
       "context_no_goal_tooltip": "No goal references this context yet",
+      "group_show_all": "Show all ({hidden} more)",
       "row_open_vscode": "Open in VS Code",
       "row_open_folder": "Open project folder",
       "triage_agent_rank_prefix": "rank ",

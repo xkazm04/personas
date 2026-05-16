@@ -9882,6 +9882,7 @@ export type Translations = {
       context_goal_coverage_tooltip: string;
       context_no_goal_label: string;
       context_no_goal_tooltip: string;
+      group_show_all: string;
       row_open_vscode: string;
       row_open_folder: string;
       triage_agent_rank_prefix: string;
