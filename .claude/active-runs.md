@@ -32,6 +32,14 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+- **[2026-05-16 — started] glyph-consolidation prototype — view mode**
+  - **Source:** User asked to unify the glyph mechanism across scratch / template / view surfaces. Analysis landed at `docs/concepts/glyph-consolidation.md` (commit `ba69b8580`). First implementation step: a Consolidated prototype (persona-hero + capability-rows) behind a tab switcher in PersonaUseCasesTab, view mode only. Adoption + build modes deferred pending user direction.
+  - **Paths:** `src/features/agents/sub_use_cases/components/consolidated-prototype/` (new), `src/features/agents/sub_use_cases/components/core/PersonaUseCasesTab.tsx`, `src/i18n/locales/en.json` (additive keys under `agents.use_cases.layout_tab_*` and `agents.use_cases.consolidated_capabilities_heading`), `src/i18n/generated/types.ts` + `src/i18n/generated/enSectionStrings.ts` (regenerated), `.claude/active-runs.md`
+  - **Status:** started
+  - **Branch:** `worktree-glyph-consolidated`
+  - **Worktree:** `.claude/worktrees/glyph-consolidated/`
+  - **Note:** Path-disjoint from all 9 concurrent /friend + /research sessions. The new prototype only renders behind a non-default tab switch; default SigilGrid surface is unchanged. Original `agents/components/glyph/`, `shared/glyph/`, `templates/sub_generated/adoption/glyph/` are untouched in this phase.
+
 - **[2026-05-16 14:42 — started] artist-test-coverage — Vitest + Playwright for plugins/artist**
   - **Paths:** `src/features/plugins/artist/**/__tests__/*.test.{ts,tsx}` (new), possibly `src/features/plugins/artist/sub_media_studio/hooks/useMediaExport.ts` (export `normalizeProgress` for unit test), possibly `tests/playwright/artist-*.spec.ts` + `tests/playwright/artist-bridge.ts` (Cycle D only)
   - **Status:** started

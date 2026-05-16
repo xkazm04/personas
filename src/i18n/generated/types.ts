@@ -1814,6 +1814,17 @@ export type Translations = {
       capabilities_paused: string;
       _comment_dimensions_coverage: string;
       dimensions_coverage: string;
+      _comment_section_ConsolidatedPrototype: string;
+      _comment_layout_tab_label: string;
+      layout_tab_label: string;
+      _comment_layout_tab_sigil_grid: string;
+      layout_tab_sigil_grid: string;
+      _comment_layout_tab_consolidated: string;
+      layout_tab_consolidated: string;
+      _comment_layout_tab_prototype_badge: string;
+      layout_tab_prototype_badge: string;
+      _comment_consolidated_capabilities_heading: string;
+      consolidated_capabilities_heading: string;
       _comment_section_ConnectorDimCard: string;
       _comment_connector_rebind_aria: string;
       connector_rebind_aria: string;
