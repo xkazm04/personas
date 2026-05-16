@@ -6,34 +6,38 @@ import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
+import type { TwinWikiCompileResult } from '@/lib/bindings/TwinWikiCompileResult';
+import type { TwinPendingMemory } from '@/lib/bindings/TwinPendingMemory';
 
 /**
- * Surfaces the previously-hidden `twin_compile_wiki` + `twin_audit_wiki`
- * backend commands (Direction 4 in docs/features/twin.md). Compile renders
- * the twin as a cross-linked markdown wiki; audit returns an AI-generated
- * report flagging gaps and contradictions. Both are read-only operations
- * from the user's perspective.
+ * Surfaces the `twin_compile_wiki` + `twin_audit_wiki` backend commands.
+ * Compile generates a folder of cross-linked markdown files under the app
+ * data dir; audit produces a high-priority pending memory with a wiki
+ * health report (Healthy / Needs Attention / Critical).
  *
  * Mounted at the top of the Knowledge sub-tabs, collapsible to stay out of
- * the way when not in use.
+ * the way when not in use. The freshness summary lives on TwinSelector via
+ * WikiFreshnessPill — this panel is for the deep audit + re-compile flow.
  */
 export function TwinWikiPanel({ activeTwinId }: { activeTwinId: string | null }) {
-  const t = useTranslation().t.twin;
+  const { t: tFull, tx } = useTranslation();
+  const t = tFull.twin;
   const addToast = useToastStore((s) => s.addToast);
 
   const [open, setOpen] = useState(false);
   const [compileLoading, setCompileLoading] = useState(false);
   const [auditLoading, setAuditLoading] = useState(false);
-  const [wikiText, setWikiText] = useState<string | null>(null);
-  const [auditText, setAuditText] = useState<string | null>(null);
+  const [compiled, setCompiled] = useState<TwinWikiCompileResult | null>(null);
+  const [auditMemory, setAuditMemory] = useState<TwinPendingMemory | null>(null);
 
   const handleCompile = async () => {
     if (!activeTwinId) return;
     setCompileLoading(true);
-    setAuditText(null);
+    setAuditMemory(null);
     try {
       const out = await twinApi.compileWiki(activeTwinId);
-      setWikiText(out);
+      setCompiled(out);
+      addToast(tx(t.wiki.freshness.compiledToast, { count: out.fileCount }), 'success');
     } catch (e) {
       toastCatch('twin:compile-wiki')(e);
     } finally {
@@ -46,7 +50,7 @@ export function TwinWikiPanel({ activeTwinId }: { activeTwinId: string | null })
     setAuditLoading(true);
     try {
       const out = await twinApi.auditWiki(activeTwinId);
-      setAuditText(out);
+      setAuditMemory(out);
     } catch (e) {
       toastCatch('twin:audit-wiki')(e);
     } finally {
@@ -105,8 +109,8 @@ export function TwinWikiPanel({ activeTwinId }: { activeTwinId: string | null })
               size="sm"
               variant="ghost"
               onClick={handleAudit}
-              disabled={auditLoading || !wikiText}
-              title={!wikiText ? t.wiki.auditNeedsCompile : undefined}
+              disabled={auditLoading || !compiled}
+              title={!compiled ? t.wiki.auditNeedsCompile : undefined}
             >
               {auditLoading ? (
                 <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
@@ -117,38 +121,41 @@ export function TwinWikiPanel({ activeTwinId }: { activeTwinId: string | null })
             </Button>
           </div>
 
-          {wikiText && (
+          {compiled && (
             <section>
               <div className="flex items-center justify-between mb-1.5">
                 <p className="text-[10px] uppercase tracking-[0.18em] text-foreground/55 font-medium">{t.wiki.compiledLabel}</p>
                 <button
                   type="button"
-                  onClick={() => handleCopy(wikiText)}
+                  onClick={() => handleCopy(compiled.dirPath)}
                   className="flex items-center gap-1 text-[11px] text-foreground/65 hover:text-violet-300 transition-colors"
                 >
-                  <Copy className="w-3 h-3" /> {t.wiki.copy}
+                  <Copy className="w-3 h-3" /> {t.wiki.copyPath}
                 </button>
               </div>
-              <pre className="rounded-interactive border border-violet-500/15 bg-background/60 p-3 max-h-72 overflow-auto whitespace-pre-wrap break-words font-mono text-xs leading-relaxed text-foreground/85">
-                {wikiText}
-              </pre>
+              <div className="rounded-interactive border border-violet-500/15 bg-background/60 px-3 py-2 space-y-1">
+                <p className="typo-caption text-foreground">
+                  {tx(t.wiki.compiledSummary, { count: compiled.fileCount })}
+                </p>
+                <p className="font-mono text-[11px] text-foreground/60 break-all">{compiled.dirPath}</p>
+              </div>
             </section>
           )}
 
-          {auditText && (
+          {auditMemory && (
             <section>
               <div className="flex items-center justify-between mb-1.5">
                 <p className="text-[10px] uppercase tracking-[0.18em] text-foreground/55 font-medium">{t.wiki.auditReportLabel}</p>
                 <button
                   type="button"
-                  onClick={() => handleCopy(auditText)}
+                  onClick={() => handleCopy(auditMemory.content)}
                   className="flex items-center gap-1 text-[11px] text-foreground/65 hover:text-violet-300 transition-colors"
                 >
                   <Copy className="w-3 h-3" /> {t.wiki.copy}
                 </button>
               </div>
               <pre className="rounded-interactive border border-amber-500/20 bg-amber-500/5 p-3 max-h-72 overflow-auto whitespace-pre-wrap break-words font-mono text-xs leading-relaxed text-foreground/85">
-                {auditText}
+                {auditMemory.content}
               </pre>
             </section>
           )}

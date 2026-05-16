@@ -12365,9 +12365,12 @@
     "selector": {
       "noTwin": "No twin configured",
       "createFirst": "Create a twin first so personas have an identity to speak as.",
-      "createTwin": "Create Twin",
+      "createTwin": "إنشاء توأم جديد",
       "selectTwin": "Select a twin...",
-      "progressGroupLabel": "Twin setup progress"
+      "progressGroupLabel": "Twin setup progress",
+      "pickerLabel": "اختر التوأم النشط",
+      "searchPlaceholder": "ابحث بالاسم أو الدور…",
+      "noMatches": "لا توجد توائم تطابق بحثك."
     },
     "emptyState": {
       "subtitle": "You need an active twin to use this tab.",
@@ -12399,7 +12402,12 @@
       "promptNoName": "(name)",
       "promptNoBio": "(no bio set — fill in above)",
       "saving": "Saving...",
-      "saveIdentity": "Save Identity"
+      "saveIdentity": "Save Identity",
+      "refineWithAi": "تحسين باستخدام AI",
+      "bioRefineHint": "سيحافظ AI على صوتك ومعلوماتك الحالية — فقط سيُهذّب الصياغة. كلمات توجيهية اختيارية أدناه.",
+      "bioRefineKeywordsPlaceholder": "(اختياري) مثل: أكثر إيجازًا، أقل رسمية، احتفظ بالفكاهة الجافة",
+      "refining": "جارٍ التحسين...",
+      "refineBio": "تحسين السيرة"
     },
     "channels": {
       "title": "Channels",
@@ -12435,7 +12443,19 @@
       "fieldPersona": "persona",
       "fieldSignal": "signal",
       "statusConfigured": "configured",
-      "ctaAddTone": "add override →"
+      "ctaAddTone": "add override →",
+      "lastBridged": "آخر تواصل {when}",
+      "lastNever": "لم يُستخدم مطلقًا",
+      "lastJustNow": "الآن",
+      "lastMinutesAgo": "منذ {count} د",
+      "lastHoursAgo": "منذ {count} س",
+      "lastDaysAgo": "منذ {count} ي",
+      "testTooltip": "تسجيل اختبار صادر اصطناعي",
+      "testDisabledPaused": "فعّل القناة أولاً لاختبارها",
+      "testAria": "إرسال رسالة اختبار",
+      "testToast": "تم تسجيل اختبار للقناة {channel}",
+      "personaPickerPlaceholder": "اختر شخصية…",
+      "personaNone": "— لا شيء —"
     },
     "tone": {
       "title": "Tone Profiles",
@@ -12482,7 +12502,13 @@
       "removeVoiceConfirm": "Remove voice configuration? The twin will have no voice until reconfigured.",
       "configureVoice": "Configure Voice",
       "saving": "Saving...",
-      "save": "Save"
+      "save": "Save",
+      "previewCta": "معاينة",
+      "previewLoading": "جارٍ التركيب…",
+      "previewStop": "إيقاف",
+      "previewTooltip": "تركيب عيّنة قصيرة بالإعدادات الحالية",
+      "previewNeedsConfig": "حدّد معرّف الصوت ومعرّف الاعتماد قبل المعاينة",
+      "previewSample": "هكذا سيبدو صوت توأمك عند التحدث عبر قناة الصوت."
     },
     "training": {
       "title": "Training Room",
@@ -12520,7 +12546,10 @@
       "generatingFollowup": "Generating follow-up...",
       "summarizingSession": "Summarizing what we learned...",
       "sessionSummaryHeading": "What we learned this session",
-      "summarySaved": "Summary saved as a high-priority memory."
+      "summarySaved": "Summary saved as a high-priority memory.",
+      "nextMovesHeading": "إلى أين تتجه بعد ذلك",
+      "nextMovesSubtitle": "المواضيع ذات التغطية الأضعف — درّب على هذه تاليًا لأكبر تعزيز للدماغ.",
+      "nextMovesCoverage": "{count} حقائق أساسية حتى الآن"
     },
     "brain": {
       "title": "Brain",
@@ -12588,7 +12617,18 @@
       "entriesCount_other": "{count} entries",
       "priorityWithCount": "priority {count}",
       "approveAction": "approve",
-      "rejectAction": "reject"
+      "rejectAction": "reject",
+      "bulkSelectAll": "تحديد الكل في هذه الصفحة",
+      "bulkSelectedCount": "{count} محددة",
+      "bulkRowSelect": "تحديد الذاكرة للمراجعة المُجمَّعة",
+      "bulkApproveCta": "اعتماد {count}",
+      "bulkRejectCta": "رفض {count}",
+      "bulkClear": "إلغاء التحديد",
+      "bulkApprovedToast": "تم اعتماد {count} ذاكرة — وهي الآن مفهرسة في الدماغ.",
+      "bulkRejectedToast": "تم رفض {count} ذاكرة.",
+      "bulkPartialToast": "تمت مراجعة {succeeded}، وفشل {failed} — راجع الإشعارات للتفاصيل.",
+      "provenanceChip": "من {id}…",
+      "provenanceTooltip": "معرّف communication المصدر: {id}"
     },
     "profiles": {
       "title": "Twin Profiles",
@@ -12644,7 +12684,26 @@
       "compiledLabel": "Compiled wiki",
       "auditReportLabel": "Audit report",
       "copy": "Copy",
-      "copied": "Copied to clipboard"
+      "copied": "Copied to clipboard",
+      "compiledSummary": "تمت كتابة {count} ملفًا.",
+      "copyPath": "نسخ المسار",
+      "freshness": {
+        "loading": "Wiki…",
+        "compiling": "جارٍ التجميع…",
+        "never": "Wiki: غير مُجمَّع",
+        "neverTooltip": "لا يوجد Wiki على القرص بعد. انقر للتجميع من الذاكرات المعتمدة.",
+        "fresh": "Wiki: {rel}",
+        "freshTooltip": "{count} ملفًا · مُجمَّع {rel}\n{path}\nانقر لإعادة التجميع.",
+        "stale": "Wiki: {rel}",
+        "staleTooltip": "{count} ملفًا · آخر تجميع {rel} (قديم)\n{path}\nانقر لإعادة التجميع.",
+        "compiledToast": "تم تجميع Wiki — تمت كتابة {count} ملفًا.",
+        "openFolderTooltip": "افتح مجلد Wiki في مدير الملفات",
+        "openFolderAria": "افتح مجلد Wiki",
+        "justNow": "الآن",
+        "minutesAgo": "منذ {count} د",
+        "hoursAgo": "منذ {count} س",
+        "daysAgo": "منذ {count} ي"
+      }
     },
     "hero": {
       "eyebrow": "Twin",
@@ -12736,6 +12795,124 @@
       "channelsBody": "Each channel binds a credential. Pausing a channel keeps the config but stops traffic.",
       "trainingTitle": "Interview yourself",
       "trainingBody": "Pick a topic — AI asks 5 questions — answer in your voice. The session summary becomes a high-signal memory."
+    },
+    "gaps": {
+      "title": "ما الذي ينقص",
+      "subtitle": "الجاهزية {pct}%",
+      "dialogLabel": "ما الذي ينقص لهذا التوأم",
+      "close": "إغلاق",
+      "openTooltip": "انقر لمعرفة ما ينقص",
+      "allSetTooltip": "اكتملت جميع المراحل",
+      "allSetTitle": "كل شيء جاهز",
+      "allSetBody": "كل مرحلة مكتملة. هذا التوأم جاهز للتحدث.",
+      "moreCount": "+{count} المزيد",
+      "titles": {
+        "identityEmpty": "لا توجد سيرة بعد",
+        "identityPartial": "السيرة قصيرة",
+        "toneEmpty": "لم تُسجَّل نبرة",
+        "tonePartial": "نبرة عامة فقط",
+        "brainEmpty": "لا توجد معرفة مرتبطة",
+        "brainPartial": "مسار فرعي فقط — لا توجد KB",
+        "voiceEmpty": "لم يُحدَّد صوت",
+        "channelsEmpty": "لا توجد قنوات",
+        "channelsPartial": "جميع القنوات متوقفة",
+        "memoriesEmpty": "لا توجد ذاكرات معتمدة",
+        "memoriesPartial": "الذاكرات شحيحة"
+      },
+      "hints": {
+        "identityEmpty": "أضف سيرة قصيرة ليكون لهذا التوأم صوت.",
+        "identityPartial": "وسّع السيرة لتتجاوز 50 حرفًا لتأسيس أقوى.",
+        "toneEmpty": "سجّل ملفًا واحدًا للنبرة على الأقل.",
+        "tonePartial": "أضف تجاوزًا للنبرة خاصًا بقناة.",
+        "brainEmpty": "اربط قاعدة معرفة أو مسارًا فرعيًا في Obsidian.",
+        "brainPartial": "اربط قاعدة معرفة للاسترجاع الدلالي.",
+        "voiceEmpty": "اختر معرّف صوت من ElevenLabs لتمكين الكلام.",
+        "channelsEmpty": "أضف قناة ليمكن الوصول إلى التوأم.",
+        "channelsPartial": "فعّل قناة واحدة على الأقل.",
+        "memoriesEmpty": "اعتمد ذاكرات أو شغّل جلسة تدريب.",
+        "memoriesPartial": "{remaining} ذاكرة معتمدة إضافية للوصول إلى المستوى القوي ({approved} من {threshold})."
+      }
+    },
+    "contacts": {
+      "title": "جهات الاتصال",
+      "subtitle": "المعرّفات الخارجية التي تفاعل معها هذا التوأم. أضف اسمًا مستعارًا وملاحظات لتسهيل الاسترجاع؛ تُعبَّأ القائمة تلقائيًا من communications.",
+      "loading": "جارٍ تحميل جهات الاتصال…",
+      "emptyTitle": "لا توجد جهات اتصال بعد",
+      "emptyBody": "تظهر جهات الاتصال هنا بمجرد أن يتبادل التوأم رسالة مع شخص ما على أي قناة.",
+      "lastSeen": "آخر ظهور منذ {rel}",
+      "neverBridged": "أبدًا",
+      "justNow": "الآن",
+      "messageCount": "{count} رسالة",
+      "aliasPlaceholder": "اسم ودود (مثل \"Alice from Discord\")",
+      "notesPlaceholder": "ملاحظات — السياق، التفضيلات، التواريخ المهمة…",
+      "editAria": "تعديل الاسم المستعار والملاحظات",
+      "save": "حفظ",
+      "saving": "جارٍ الحفظ…",
+      "cancel": "إلغاء"
+    },
+    "distilled": {
+      "title": "حقائق مُقطَّرة",
+      "subtitle": "حقائق منتقاة عن التوأم وجهات اتصاله. كل حقيقة تستشهد بـ communications المصدر التي أنتجتها.",
+      "addCta": "إضافة حقيقة",
+      "addHeading": "حقيقة مُقطَّرة جديدة",
+      "cancel": "إلغاء",
+      "saving": "جارٍ الحفظ…",
+      "loading": "جارٍ تحميل الحقائق المُقطَّرة…",
+      "contentPlaceholder": "مثل: Alice تفضّل DMs بعد الساعة 9 مساءً؛ تقول إنها صباحية لكنها ترد ليلًا.",
+      "contactLabel": "جهة اتصال (اختياري)",
+      "contactPlaceholder": "مثل: alice@discord",
+      "importanceLabel": "الأهمية",
+      "sourcesLabel": "communications المصدر",
+      "sourcesHint": "اختر مصدرًا واحدًا على الأقل — يجب على الحقائق الاستشهاد بمصدرها.",
+      "needsSources": "اختر communication مصدر واحد على الأقل لتمكين الحفظ.",
+      "noCommsYet": "لا توجد communications مسجلة لهذا التوأم بعد.",
+      "saveWithSources": "حفظ الحقيقة ({count} مصادر)",
+      "sent": "مُرسلة",
+      "received": "مُستلمة",
+      "sourceCount": "{count} مصادر",
+      "emptyTitle": "لم تُقطَّر حقائق بعد",
+      "emptyBody": "أضف حقائق أثناء مراجعتك لـ communications — كل حقيقة تستشهد بالرسائل التي أتت منها. ستقترح المراحل المستقبلية الحقائق تلقائيًا.",
+      "deleteAria": "حذف الحقيقة المُقطَّرة"
+    },
+    "reflections": {
+      "title": "تأمّلات",
+      "subtitle": "يوميات مراجعة المُشغِّل. اطرح سؤالًا حول نشاط هذا التوأم الأخير — يقرأ Claude ملف التوأم وآخر 40 communication ويكتب إجابة قصيرة ومجمَّدة.",
+      "loading": "جارٍ تحميل التأمّلات…",
+      "emptyTitle": "لا توجد تأمّلات بعد",
+      "emptyBody": "اكتب سؤالًا بذرة أعلاه لتوليد أول تأمّل. تبقى التأمّلات السابقة مجمَّدة كسجل مكتوب للمراجعة.",
+      "seedPlaceholder": "اسأل شيئًا مثل: \"ما الأنماط التي تظهر في صوت هذا التوأم هذا الأسبوع؟\"",
+      "reflectCta": "تأمّل",
+      "generating": "جارٍ التأمّل…",
+      "deleteAria": "حذف التأمّل",
+      "suggestedSeedLabels": {
+        "voiceChange": "انحراف الصوت",
+        "commsCadence": "الإيقاع",
+        "contactSurprises": "مفاجآت"
+      },
+      "suggestedSeeds": {
+        "voiceChange": "هل ينحرف صوت التوأم عن سيرته؟ أين، وهل الانحراف مقصود؟",
+        "commsCadence": "ما إيقاع وتوازن الوارد مقابل الصادر عبر القنوات مؤخرًا؟",
+        "contactSurprises": "هل هناك أي جهات اتصال أو مواضيع فاجأتك — مواضيع غير متوقعة، معرّفات غير مألوفة، ردود خارج النبرة؟"
+      }
+    },
+    "recall": {
+      "title": "معاينة الاسترجاع",
+      "subtitle": "ما ستراه شخصية تتبنى هذا التوأم وقت التشغيل — السيرة، النبرة العامة، أحدث communications، والحقائق المُقطَّرة الأعلى أهمية. للقراءة فقط اليوم؛ ستربط المراحل المستقبلية هذه الحزمة بمطالبة الشخصية الفعلية.",
+      "contactFilterPlaceholder": "حصر النطاق بجهة اتصال (handle)…",
+      "refresh": "تحديث",
+      "refreshing": "جارٍ التحديث…",
+      "loading": "جارٍ تحميل الاسترجاع…",
+      "scopedTo": "نطاق محصور بـ: {handle}",
+      "scopeToTooltip": "حصر المعاينة بجهة الاتصال هذه",
+      "identitySection": "الهوية",
+      "toneSection": "النبرة العامة",
+      "toneEmpty": "لم تُهيَّأ نبرة عامة — ستعتمد الشخصية على السيرة وحدها.",
+      "factsSection": "أبرز الحقائق المُقطَّرة ({count})",
+      "factsEmpty": "لا توجد حقائق مُقطَّرة بعد — سيعود الاسترجاع إلى communications وحدها.",
+      "commsSection": "آخر communications ({count})",
+      "commsEmpty": "لا توجد communications مسجلة لهذا التوأم بعد.",
+      "contactsSection": "أبرز جهات الاتصال حسب النشاط ({count})",
+      "contactsEmpty": "لا توجد جهات اتصال على هذا التوأم بعد."
     }
   },
   "recipe_shared": {

@@ -12365,9 +12365,12 @@
     "selector": {
       "noTwin": "No twin configured",
       "createFirst": "Create a twin first so personas have an identity to speak as.",
-      "createTwin": "Create Twin",
+      "createTwin": "नया ट्विन बनाएँ",
       "selectTwin": "Select a twin...",
-      "progressGroupLabel": "Twin setup progress"
+      "progressGroupLabel": "Twin setup progress",
+      "pickerLabel": "सक्रिय ट्विन चुनें",
+      "searchPlaceholder": "नाम या भूमिका से खोजें…",
+      "noMatches": "आपकी खोज से मेल खाता कोई ट्विन नहीं है।"
     },
     "emptyState": {
       "subtitle": "You need an active twin to use this tab.",
@@ -12399,7 +12402,12 @@
       "promptNoName": "(name)",
       "promptNoBio": "(no bio set — fill in above)",
       "saving": "Saving...",
-      "saveIdentity": "Save Identity"
+      "saveIdentity": "Save Identity",
+      "refineWithAi": "AI से परिष्कृत करें",
+      "bioRefineHint": "AI आपकी मौजूदा आवाज़ और तथ्यों को बनाए रखेगा — बस गद्य को कसेगा। नीचे वैकल्पिक मार्गदर्शक कीवर्ड।",
+      "bioRefineKeywordsPlaceholder": "(वैकल्पिक) जैसे अधिक संक्षिप्त, कम कॉर्पोरेट, शुष्क हास्य बनाए रखें",
+      "refining": "परिष्कृत किया जा रहा है...",
+      "refineBio": "बायो परिष्कृत करें"
     },
     "channels": {
       "title": "Channels",
@@ -12435,7 +12443,19 @@
       "fieldPersona": "persona",
       "fieldSignal": "signal",
       "statusConfigured": "configured",
-      "ctaAddTone": "add override →"
+      "ctaAddTone": "add override →",
+      "lastBridged": "अंतिम बार ब्रिज किया गया {when}",
+      "lastNever": "कभी उपयोग नहीं हुआ",
+      "lastJustNow": "अभी-अभी",
+      "lastMinutesAgo": "{count} मिनट पहले",
+      "lastHoursAgo": "{count} घंटे पहले",
+      "lastDaysAgo": "{count} दिन पहले",
+      "testTooltip": "एक कृत्रिम आउटबाउंड पिंग लॉग करें",
+      "testDisabledPaused": "परीक्षण करने के लिए पहले चैनल को सक्रिय करें",
+      "testAria": "परीक्षण संदेश भेजें",
+      "testToast": "{channel} के लिए परीक्षण पिंग लॉग किया गया",
+      "personaPickerPlaceholder": "एक persona चुनें…",
+      "personaNone": "— कोई नहीं —"
     },
     "tone": {
       "title": "Tone Profiles",
@@ -12482,7 +12502,13 @@
       "removeVoiceConfirm": "Remove voice configuration? The twin will have no voice until reconfigured.",
       "configureVoice": "Configure Voice",
       "saving": "Saving...",
-      "save": "Save"
+      "save": "Save",
+      "previewCta": "पूर्वावलोकन",
+      "previewLoading": "संश्लेषित किया जा रहा है…",
+      "previewStop": "रोकें",
+      "previewTooltip": "वर्तमान सेटिंग्स के साथ एक छोटा नमूना संश्लेषित करें",
+      "previewNeedsConfig": "पूर्वावलोकन से पहले voice id और credential id सेट करें",
+      "previewSample": "voice चैनल के माध्यम से बोलते समय आपका ट्विन ऐसा सुनाई देगा।"
     },
     "training": {
       "title": "Training Room",
@@ -12520,7 +12546,10 @@
       "generatingFollowup": "Generating follow-up...",
       "summarizingSession": "Summarizing what we learned...",
       "sessionSummaryHeading": "What we learned this session",
-      "summarySaved": "Summary saved as a high-priority memory."
+      "summarySaved": "Summary saved as a high-priority memory.",
+      "nextMovesHeading": "आगे कहाँ जाएँ",
+      "nextMovesSubtitle": "सबसे कम कवरेज वाले विषय — मस्तिष्क को सबसे बड़ा बढ़ावा देने के लिए इन्हें अगला प्रशिक्षित करें।",
+      "nextMovesCoverage": "अब तक {count} ग्राउंडिंग तथ्य"
     },
     "brain": {
       "title": "Brain",
@@ -12588,7 +12617,18 @@
       "entriesCount_other": "{count} entries",
       "priorityWithCount": "priority {count}",
       "approveAction": "approve",
-      "rejectAction": "reject"
+      "rejectAction": "reject",
+      "bulkSelectAll": "इस पृष्ठ पर सभी का चयन करें",
+      "bulkSelectedCount": "{count} चयनित",
+      "bulkRowSelect": "बल्क समीक्षा के लिए स्मृति का चयन करें",
+      "bulkApproveCta": "{count} स्वीकृत करें",
+      "bulkRejectCta": "{count} अस्वीकार करें",
+      "bulkClear": "चयन साफ़ करें",
+      "bulkApprovedToast": "{count} स्मृतियाँ स्वीकृत — अब वे मस्तिष्क में अनुक्रमित हैं।",
+      "bulkRejectedToast": "{count} स्मृतियाँ अस्वीकार की गईं।",
+      "bulkPartialToast": "{succeeded} समीक्षित, {failed} विफल — विवरण के लिए टोस्ट देखें।",
+      "provenanceChip": "{id}… से",
+      "provenanceTooltip": "स्रोत संचार id: {id}"
     },
     "profiles": {
       "title": "Twin Profiles",
@@ -12644,7 +12684,26 @@
       "compiledLabel": "Compiled wiki",
       "auditReportLabel": "Audit report",
       "copy": "Copy",
-      "copied": "Copied to clipboard"
+      "copied": "Copied to clipboard",
+      "compiledSummary": "{count} फ़ाइलें लिखी गईं।",
+      "copyPath": "पथ कॉपी करें",
+      "freshness": {
+        "loading": "Wiki…",
+        "compiling": "संकलित किया जा रहा है…",
+        "never": "Wiki: संकलित नहीं",
+        "neverTooltip": "अभी डिस्क पर कोई wiki नहीं है। स्वीकृत स्मृतियों से संकलित करने के लिए क्लिक करें।",
+        "fresh": "Wiki: {rel}",
+        "freshTooltip": "{count} फ़ाइलें · संकलित {rel}\n{path}\nपुनः संकलित करने के लिए क्लिक करें।",
+        "stale": "Wiki: {rel}",
+        "staleTooltip": "{count} फ़ाइलें · अंतिम बार संकलित {rel} (पुरानी)\n{path}\nपुनः संकलित करने के लिए क्लिक करें।",
+        "compiledToast": "Wiki संकलित — {count} फ़ाइलें लिखी गईं।",
+        "openFolderTooltip": "अपने फ़ाइल मैनेजर में wiki फ़ोल्डर खोलें",
+        "openFolderAria": "wiki फ़ोल्डर खोलें",
+        "justNow": "अभी-अभी",
+        "minutesAgo": "{count} मिनट पहले",
+        "hoursAgo": "{count} घंटे पहले",
+        "daysAgo": "{count} दिन पहले"
+      }
     },
     "hero": {
       "eyebrow": "Twin",
@@ -12736,6 +12795,124 @@
       "channelsBody": "Each channel binds a credential. Pausing a channel keeps the config but stops traffic.",
       "trainingTitle": "Interview yourself",
       "trainingBody": "Pick a topic — AI asks 5 questions — answer in your voice. The session summary becomes a high-signal memory."
+    },
+    "gaps": {
+      "title": "क्या कमी है",
+      "subtitle": "तैयारी {pct}%",
+      "dialogLabel": "इस ट्विन के लिए क्या कमी है",
+      "close": "बंद करें",
+      "openTooltip": "देखने के लिए क्लिक करें कि क्या कमी है",
+      "allSetTooltip": "सभी मील के पत्थर पूर्ण",
+      "allSetTitle": "सब तैयार",
+      "allSetBody": "हर मील का पत्थर पूर्ण है। यह ट्विन बोलने के लिए तैयार है।",
+      "moreCount": "+{count} और",
+      "titles": {
+        "identityEmpty": "अभी तक कोई बायो नहीं",
+        "identityPartial": "बायो छोटा है",
+        "toneEmpty": "कोई स्वर रिकॉर्ड नहीं",
+        "tonePartial": "केवल सामान्य स्वर",
+        "brainEmpty": "कोई ज्ञान बंधा नहीं",
+        "brainPartial": "केवल उप-पथ — कोई KB नहीं",
+        "voiceEmpty": "कोई आवाज़ सेट नहीं",
+        "channelsEmpty": "कोई चैनल नहीं",
+        "channelsPartial": "सभी चैनल रोके गए",
+        "memoriesEmpty": "कोई स्वीकृत स्मृतियाँ नहीं",
+        "memoriesPartial": "स्मृतियाँ कम"
+      },
+      "hints": {
+        "identityEmpty": "एक छोटा बायो जोड़ें ताकि इस ट्विन की एक आवाज़ हो।",
+        "identityPartial": "मज़बूत आधार के लिए बायो को 50 अक्षरों से आगे बढ़ाएँ।",
+        "toneEmpty": "कम से कम एक स्वर प्रोफ़ाइल रिकॉर्ड करें।",
+        "tonePartial": "एक चैनल-विशिष्ट स्वर ओवरराइड जोड़ें।",
+        "brainEmpty": "एक knowledge base या Obsidian उप-पथ बाँधें।",
+        "brainPartial": "सिमेंटिक रिकॉल के लिए एक knowledge base बाँधें।",
+        "voiceEmpty": "वाणी सक्षम करने के लिए ElevenLabs से एक voice id चुनें।",
+        "channelsEmpty": "एक चैनल जोड़ें ताकि ट्विन तक पहुँचा जा सके।",
+        "channelsPartial": "कम से कम एक चैनल सक्रिय करें।",
+        "memoriesEmpty": "स्मृतियाँ स्वीकृत करें या एक प्रशिक्षण सत्र चलाएँ।",
+        "memoriesPartial": "मज़बूत तक पहुँचने के लिए {remaining} और स्वीकृत स्मृतियाँ ({threshold} में से {approved})।"
+      }
+    },
+    "contacts": {
+      "title": "संपर्क",
+      "subtitle": "बाहरी हैंडल जिनसे इस ट्विन ने बातचीत की है। रिकॉल आसान बनाने के लिए एक उपनाम और नोट्स जोड़ें; सूची संचार से स्वतः-भर जाती है।",
+      "loading": "संपर्क लोड हो रहे हैं…",
+      "emptyTitle": "अभी तक कोई संपर्क नहीं",
+      "emptyBody": "जैसे ही ट्विन किसी चैनल पर किसी से संदेश आदान-प्रदान करता है, संपर्क यहाँ दिखाई देते हैं।",
+      "lastSeen": "अंतिम बार देखा गया {rel} पहले",
+      "neverBridged": "कभी नहीं",
+      "justNow": "अभी-अभी",
+      "messageCount": "{count} संदेश",
+      "aliasPlaceholder": "मैत्रीपूर्ण नाम (जैसे \"Discord से Alice\")",
+      "notesPlaceholder": "नोट्स — संदर्भ, प्राथमिकताएँ, महत्वपूर्ण तिथियाँ…",
+      "editAria": "उपनाम और नोट्स संपादित करें",
+      "save": "सहेजें",
+      "saving": "सहेजा जा रहा है…",
+      "cancel": "रद्द करें"
+    },
+    "distilled": {
+      "title": "आसुत तथ्य",
+      "subtitle": "ट्विन और उसके संपर्कों के बारे में संग्रहीत तथ्य। प्रत्येक तथ्य उन स्रोत संचारों का उद्धरण देता है जिनसे वह उत्पन्न हुआ।",
+      "addCta": "तथ्य जोड़ें",
+      "addHeading": "नया आसुत तथ्य",
+      "cancel": "रद्द करें",
+      "saving": "सहेजा जा रहा है…",
+      "loading": "आसुत तथ्य लोड हो रहे हैं…",
+      "contentPlaceholder": "जैसे Alice रात 9 बजे के बाद DMs पसंद करती है; कहती है कि वह सुबह की व्यक्ति है पर जवाब रात को देती है।",
+      "contactLabel": "संपर्क (वैकल्पिक)",
+      "contactPlaceholder": "जैसे alice@discord",
+      "importanceLabel": "महत्व",
+      "sourcesLabel": "स्रोत संचार",
+      "sourcesHint": "कम से कम एक चुनें — तथ्यों को अपना मूल उद्धृत करना चाहिए।",
+      "needsSources": "सहेजें सक्षम करने के लिए कम से कम एक स्रोत संचार चुनें।",
+      "noCommsYet": "इस ट्विन के लिए अभी तक कोई संचार रिकॉर्ड नहीं किया गया।",
+      "saveWithSources": "तथ्य सहेजें ({count} स्रोत)",
+      "sent": "भेजा",
+      "received": "प्राप्त",
+      "sourceCount": "{count} स्रोत",
+      "emptyTitle": "अभी तक कोई तथ्य आसुत नहीं",
+      "emptyBody": "जैसे-जैसे आप संचार की समीक्षा करते हैं, तथ्य जोड़ें — प्रत्येक तथ्य उन संदेशों का उद्धरण देता है जिनसे वह आया। भविष्य के चरण स्वचालित रूप से तथ्यों का प्रस्ताव देंगे।",
+      "deleteAria": "आसुत तथ्य हटाएँ"
+    },
+    "reflections": {
+      "title": "चिंतन",
+      "subtitle": "ऑपरेटर-ऑडिट पत्रिकाएँ। इस ट्विन की हाल की गतिविधि के बारे में एक प्रश्न पूछें — Claude ट्विन प्रोफ़ाइल + अंतिम 40 संचार पढ़ता है और एक छोटा, स्थिर उत्तर लिखता है।",
+      "loading": "चिंतन लोड हो रहे हैं…",
+      "emptyTitle": "अभी तक कोई चिंतन नहीं",
+      "emptyBody": "पहला चिंतन उत्पन्न करने के लिए ऊपर एक बीज प्रश्न टाइप करें। पिछले चिंतन एक लिखित ऑडिट ट्रेल के रूप में स्थिर रहते हैं।",
+      "seedPlaceholder": "कुछ ऐसा पूछें: \"इस सप्ताह इस ट्विन की आवाज़ में कौन से पैटर्न उभर रहे हैं?\"",
+      "reflectCta": "चिंतन करें",
+      "generating": "चिंतन किया जा रहा है…",
+      "deleteAria": "चिंतन हटाएँ",
+      "suggestedSeedLabels": {
+        "voiceChange": "आवाज़ बहाव",
+        "commsCadence": "लय",
+        "contactSurprises": "आश्चर्य"
+      },
+      "suggestedSeeds": {
+        "voiceChange": "क्या ट्विन की आवाज़ अपने बायो से बह रही है? कहाँ, और क्या बहाव जानबूझकर है?",
+        "commsCadence": "हाल ही में चैनलों के बीच इनबाउंड बनाम आउटबाउंड की लय और संतुलन क्या है?",
+        "contactSurprises": "क्या ऐसे कोई संपर्क या थ्रेड हैं जिन्होंने आपको आश्चर्यचकित किया — अप्रत्याशित विषय, अपरिचित हैंडल, स्वर से बाहर के उत्तर?"
+      }
+    },
+    "recall": {
+      "title": "रिकॉल पूर्वावलोकन",
+      "subtitle": "इस ट्विन को अपनाने वाला एक persona रनटाइम पर क्या देखेगा — बायो, सामान्य स्वर, सबसे हाल के संचार, और सर्वोच्च-महत्व के आसुत तथ्य। आज केवल-पढ़ने योग्य; भविष्य के चरण इस बंडल को वास्तविक persona prompt में जोड़ेंगे।",
+      "contactFilterPlaceholder": "किसी संपर्क (हैंडल) तक सीमित करें…",
+      "refresh": "ताज़ा करें",
+      "refreshing": "ताज़ा किया जा रहा है…",
+      "loading": "रिकॉल लोड हो रहा है…",
+      "scopedTo": "तक सीमित: {handle}",
+      "scopeToTooltip": "इस संपर्क तक पूर्वावलोकन सीमित करें",
+      "identitySection": "पहचान",
+      "toneSection": "सामान्य स्वर",
+      "toneEmpty": "कोई सामान्य स्वर कॉन्फ़िगर नहीं — persona केवल बायो पर निर्भर करेगा।",
+      "factsSection": "शीर्ष आसुत तथ्य ({count})",
+      "factsEmpty": "अभी तक कोई आसुत तथ्य नहीं — रिकॉल केवल संचार पर वापस आ जाएगा।",
+      "commsSection": "हाल के संचार ({count})",
+      "commsEmpty": "इस ट्विन के लिए अभी तक कोई संचार रिकॉर्ड नहीं किया गया।",
+      "contactsSection": "गतिविधि के अनुसार शीर्ष संपर्क ({count})",
+      "contactsEmpty": "इस ट्विन पर अभी तक कोई संपर्क नहीं।"
     }
   },
   "recipe_shared": {

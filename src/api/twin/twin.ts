@@ -5,6 +5,12 @@ import type { TwinPendingMemory } from "@/lib/bindings/TwinPendingMemory";
 import type { TwinCommunication } from "@/lib/bindings/TwinCommunication";
 import type { TwinVoiceProfile } from "@/lib/bindings/TwinVoiceProfile";
 import type { TwinChannel } from "@/lib/bindings/TwinChannel";
+import type { TwinWikiCompileResult } from "@/lib/bindings/TwinWikiCompileResult";
+import type { TwinWikiStatus } from "@/lib/bindings/TwinWikiStatus";
+import type { TwinDistilledFact } from "@/lib/bindings/TwinDistilledFact";
+import type { TwinContact } from "@/lib/bindings/TwinContact";
+import type { TwinReflection } from "@/lib/bindings/TwinReflection";
+import type { TwinRecallBundle } from "@/lib/bindings/TwinRecallBundle";
 import type {
   TwinChannelKind,
   TwinInteractionDirection,
@@ -272,8 +278,18 @@ export const updateChannel = (
 export const deleteChannel = (id: string) =>
   invoke<boolean>("twin_delete_channel", { id });
 
-export const generateBio = (name: string, role: string | null, keywords: string) =>
-  invoke<string>("twin_generate_bio", { name, role, keywords });
+/**
+ * Generate or refine a twin's bio. When `existingBio` is provided + non-empty
+ * the backend switches to refinement mode: keep the original voice and facts,
+ * just clean up the prose. Otherwise composes from scratch using `keywords`.
+ */
+export const generateBio = (
+  name: string,
+  role: string | null,
+  keywords: string,
+  existingBio?: string,
+) =>
+  invoke<string>("twin_generate_bio", { name, role, keywords, existingBio });
 
 // ============================================================================
 // Wiki commands (Direction 4 — currently surfaced via the Knowledge tab)
@@ -288,15 +304,108 @@ export const ingestUrl = (url: string, twinId?: string) =>
   invoke<string>("twin_ingest_url", { url, twinId });
 
 /**
- * Compile the full twin (identity, tone, memories, voice, channels) as a
- * cross-linked markdown wiki.
+ * Compile the full twin's approved memories into a navigable markdown wiki.
+ * `outputDir` is optional — when omitted, files land in the per-twin slot
+ * under the app data dir (so the freshness pill in TwinSelector can find
+ * them without any caller bookkeeping).
  */
-export const compileWiki = (twinId: string) =>
-  invoke<string>("twin_compile_wiki", { twinId });
+export const compileWiki = (twinId: string, outputDir?: string) =>
+  invoke<TwinWikiCompileResult>("twin_compile_wiki", { twinId, outputDir });
 
 /**
- * AI-audit a compiled wiki for gaps and contradictions. Returns the audit
- * report as markdown.
+ * AI-audit a compiled wiki for gaps and contradictions. Returns a pending
+ * memory row (the audit report is stored as a high-priority memory so it
+ * surfaces in the Knowledge inbox).
  */
-export const auditWiki = (twinId: string) =>
-  invoke<string>("twin_audit_wiki", { twinId });
+export const auditWiki = (twinId: string, wikiDir?: string) =>
+  invoke<TwinPendingMemory>("twin_audit_wiki", { twinId, wikiDir });
+
+/**
+ * Non-mutating freshness query — returns `{ exists, fileCount, lastCompiledAt,
+ * dirPath }`. Drives the WikiFreshnessPill in TwinSelector. Cheap (one
+ * `read_dir` over a small directory) so the hook can poll on twin change.
+ */
+export const wikiStatus = (twinId: string) =>
+  invoke<TwinWikiStatus>("twin_wiki_status", { twinId });
+
+// ============================================================================
+// Distilled Facts (P6+ — manual write surface, Cycle 12 Stage 1)
+// ============================================================================
+
+export const listDistilledFacts = (twinId: string, contactHandle?: string) =>
+  invoke<TwinDistilledFact[]>("twin_list_distilled_facts", { twinId, contactHandle });
+
+/**
+ * Record a curated fact about the twin or one of its contacts. Provenance
+ * is mandatory — `sourceCommunicationIds` must reference at least one row
+ * in `twin_communications`. The backend rejects empty arrays to keep the
+ * provenance contract from breaking down.
+ */
+export const createDistilledFact = (
+  twinId: string,
+  sourceCommunicationIds: string[],
+  content: string,
+  contactHandle?: string,
+  importance?: number,
+) =>
+  invoke<TwinDistilledFact>("twin_create_distilled_fact", {
+    twinId,
+    contactHandle,
+    content,
+    importance,
+    sourceCommunicationIds,
+  });
+
+export const deleteDistilledFact = (id: string) =>
+  invoke<boolean>("twin_delete_distilled_fact", { id });
+
+// ============================================================================
+// Contacts (Cycle 14 Stage 1)
+// ============================================================================
+
+/**
+ * List the active twin's contacts with derived `messageCount` + `lastSeenAt`
+ * for each. The backend auto-upserts new handles seen in twin_communications
+ * before returning, so a freshly bridged contact appears on the very next
+ * call without any explicit "sync" step.
+ */
+export const listTwinContacts = (twinId: string) =>
+  invoke<TwinContact[]>("twin_list_contacts", { twinId });
+
+export const updateTwinContact = (id: string, alias?: string, notes?: string) =>
+  invoke<TwinContact>("twin_update_contact", { id, alias, notes });
+
+// ============================================================================
+// Reflections (Cycle 15 Stage 1)
+// ============================================================================
+
+export const listTwinReflections = (twinId: string) =>
+  invoke<TwinReflection[]>("twin_list_reflections", { twinId });
+
+/**
+ * Generate a new reflection. Backend builds the prompt from the twin's
+ * profile + last 40 communications + the operator's seed question, runs
+ * it through the Claude CLI dispatcher, and persists the result. The
+ * returned row is the canonical record — UI should append it to its
+ * cached list rather than refetch.
+ */
+export const reflectOnTwin = (twinId: string, promptSeed: string) =>
+  invoke<TwinReflection>("twin_reflect", { twinId, promptSeed });
+
+export const deleteTwinReflection = (id: string) =>
+  invoke<boolean>("twin_delete_reflection", { id });
+
+// ============================================================================
+// Recall preview (Cycle 16 Stage 1 — read-only)
+// ============================================================================
+
+/**
+ * Structured slice of twin state a persona prompt-builder would need at
+ * runtime. Returns { profile, tone, recent_communications, top_facts,
+ * top_contacts, contact_filter }. Stage 1 is read-only — the Brain preview
+ * panel calls this to show operators "here's what a persona adopting this
+ * twin would see." Stage 2 will wire this bundle into the connector tool
+ * that assembles the runtime prompt.
+ */
+export const twinRecall = (twinId: string, contactHandle?: string) =>
+  invoke<TwinRecallBundle>("twin_recall", { twinId, contactHandle });

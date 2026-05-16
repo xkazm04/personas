@@ -98,6 +98,10 @@ pub struct TwinPendingMemory {
     pub status: String,
     /// User notes explaining the approval/rejection.
     pub reviewer_notes: Option<String>,
+    /// Source `twin_communications.id` when this memory was queued by
+    /// `record_interaction`. NULL for memories that didn't originate from
+    /// a single communication (URL ingest, wiki audit, etc.).
+    pub source_communication_id: Option<String>,
     pub created_at: String,
     pub reviewed_at: Option<String>,
 }
@@ -162,6 +166,93 @@ pub struct TwinVoiceProfile {
     /// Style exaggeration 0.0–1.0.
     pub style: f64,
     pub updated_at: String,
+}
+
+// ============================================================================
+// Twin Reflections (P6+ — Cycle 15 Stage 1)
+//
+// Operator-audit journals. Each row is a Claude-generated prose summary of
+// the twin's recent communications, seeded by an operator prompt
+// ("What's been moving in this twin's voice lately?"). Stored append-only;
+// the user can delete individual rows but never edit them — the audit value
+// is precisely that they're frozen at write time.
+// ============================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct TwinReflection {
+    pub id: String,
+    pub twin_id: String,
+    /// Operator-supplied prompt that drove the reflection. Kept verbatim so
+    /// future reads understand what question this answer was responding to.
+    pub prompt_seed: String,
+    /// The Claude output — markdown-friendly prose.
+    pub content: String,
+    pub created_at: String,
+}
+
+// ============================================================================
+// Twin Contacts (P6+ — Cycle 14 Stage 1)
+//
+// Durable per-twin record of every external handle the twin has interacted
+// with. Auto-populated from twin_communications during list calls + manually
+// editable alias/notes. The list-with-activity query LEFT JOINs against
+// twin_communications to produce the view rows the UI consumes.
+// ============================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct TwinContact {
+    pub id: String,
+    pub twin_id: String,
+    /// External handle as it appeared in `twin_communications.contact_handle`.
+    pub handle: String,
+    /// User-supplied display name. UI prefers this over `handle` when set.
+    pub alias: Option<String>,
+    /// Free-text operator notes about this relationship.
+    pub notes: Option<String>,
+    /// Number of communications scoped to (twin_id, handle). Populated by
+    /// the list-with-activity query; 0 for manually-added contacts that
+    /// haven't been bridged yet.
+    pub message_count: i64,
+    /// Latest `occurred_at` from `twin_communications` for this contact;
+    /// `None` when message_count == 0.
+    pub last_seen_at: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+// ============================================================================
+// Twin Distilled Facts (P6+)
+//
+// Curated, deduplicated facts about the twin or its contacts. Distillation
+// turns raw `twin_communications` + approved `twin_pending_memories` into
+// a smaller set of high-signal facts with provenance — each fact cites the
+// source `communication` ids that produced it. Future stages will add an
+// AI consolidation pass + vector dedup; cycle 12 ships the schema + manual
+// write surface so the rest of the stack has a table to target.
+// ============================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct TwinDistilledFact {
+    pub id: String,
+    pub twin_id: String,
+    /// Optional scope — typically a contact handle when the fact is about a
+    /// specific relationship ("alice@discord"), or NULL for self-facts.
+    pub contact_handle: Option<String>,
+    /// The distilled fact in natural language ("Alice prefers DMs after 9pm").
+    pub content: String,
+    /// Importance rating (1–5). Drives retrieval ordering once recall lands.
+    pub importance: i32,
+    /// JSON array of source `twin_communications.id` values — the provenance
+    /// trail. Empty arrays are rejected at the repo write boundary so a fact
+    /// can never enter the table without a citation.
+    pub sources_json: String,
+    pub created_at: String,
+    /// Touched whenever this fact participates in a recall pass — drives the
+    /// future importance-decay job.
+    pub last_seen_at: String,
 }
 
 // ============================================================================

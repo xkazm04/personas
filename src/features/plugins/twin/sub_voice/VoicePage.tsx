@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Volume2, Save, Trash2, ExternalLink } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Volume2, Save, Trash2, ExternalLink, Loader2, Play, Square } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
@@ -7,6 +7,8 @@ import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDial
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { TwinEmptyState } from '../TwinEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
+import { toastCatch } from '@/lib/silentCatch';
+import { companionTts } from '@/api/companion';
 import { CoachMark } from '../CoachMark';
 import { Radio } from 'lucide-react';
 
@@ -53,6 +55,9 @@ export default function VoicePage() {
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [confirmingRemove, setConfirmingRemove] = useState(false);
+  const [previewState, setPreviewState] = useState<'idle' | 'loading' | 'playing'>('idle');
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const previewUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (activeTwinId) fetchVoiceProfile(activeTwinId);
@@ -103,6 +108,53 @@ export default function VoicePage() {
   const handleDelete = () => {
     if (!activeTwinId) return;
     setConfirmingRemove(true);
+  };
+
+  // Release any blob URL when unmounting / between previews so we don't leak.
+  useEffect(() => {
+    return () => {
+      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+      if (audioRef.current) audioRef.current.pause();
+    };
+  }, []);
+
+  const handleStopPreview = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    setPreviewState('idle');
+  };
+
+  const handlePreview = async () => {
+    if (!voiceId.trim() || !credentialId.trim()) return;
+    handleStopPreview();
+    setPreviewState('loading');
+    try {
+      const audio = await companionTts(
+        t.voice.previewSample,
+        credentialId.trim(),
+        voiceId.trim(),
+        { modelId, stability, similarityBoost, style },
+        'elevenlabs',
+      );
+      const bin = atob(audio.audioBase64);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      const blob = new Blob([bytes], { type: audio.mimeType });
+      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+      const url = URL.createObjectURL(blob);
+      previewUrlRef.current = url;
+      const el = new Audio(url);
+      audioRef.current = el;
+      el.onended = () => setPreviewState('idle');
+      el.onerror = () => setPreviewState('idle');
+      await el.play();
+      setPreviewState('playing');
+    } catch (err) {
+      toastCatch('twin:preview-voice')(err);
+      setPreviewState('idle');
+    }
   };
   const performDelete = async () => {
     if (!activeTwinId) {
@@ -269,12 +321,25 @@ export default function VoicePage() {
               ) : (
                 <span />
               )}
-              {(dirty || !voiceProfile) && (
-                <Button onClick={handleSave} disabled={saving || !voiceId.trim()} size="sm">
-                  <Save className="w-4 h-4 mr-1.5" />
-                  {saving ? t.voice.saving : voiceProfile ? t.voice.save : t.voice.configureVoice}
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={previewState === 'playing' ? handleStopPreview : handlePreview}
+                  disabled={!voiceId.trim() || !credentialId.trim() || previewState === 'loading'}
+                  size="sm"
+                  variant="ghost"
+                  title={!voiceId.trim() || !credentialId.trim() ? t.voice.previewNeedsConfig : t.voice.previewTooltip}
+                >
+                  {previewState === 'loading' && (<><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />{t.voice.previewLoading}</>)}
+                  {previewState === 'playing' && (<><Square className="w-3.5 h-3.5 mr-1.5" />{t.voice.previewStop}</>)}
+                  {previewState === 'idle' && (<><Play className="w-3.5 h-3.5 mr-1.5" />{t.voice.previewCta}</>)}
                 </Button>
-              )}
+                {(dirty || !voiceProfile) && (
+                  <Button onClick={handleSave} disabled={saving || !voiceId.trim()} size="sm">
+                    <Save className="w-4 h-4 mr-1.5" />
+                    {saving ? t.voice.saving : voiceProfile ? t.voice.save : t.voice.configureVoice}
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         )}

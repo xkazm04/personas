@@ -13,25 +13,40 @@ import { genderDef, genderFromPronouns, pronounsFromGender, type Gender } from '
 interface BioGeneratorPanelProps {
   name: string;
   role: string;
+  existingBio: string;
   onBioGenerated: (bio: string) => void;
   onClose: () => void;
 }
 
-function BioGeneratorPanel({ name, role, onBioGenerated, onClose }: BioGeneratorPanelProps) {
+function BioGeneratorPanel({ name, role, existingBio, onBioGenerated, onClose }: BioGeneratorPanelProps) {
   const t = useTranslation().t.twin;
   const [bioKeywords, setBioKeywords] = useState('');
   const [generating, setGenerating] = useState(false);
+  const isRefine = existingBio.trim().length > 0;
 
   const handleGenerate = async () => {
-    if (!bioKeywords.trim() || !name.trim()) return;
+    if (!name.trim()) return;
+    // Refine mode: keywords are optional steering. Generate mode: keywords required.
+    if (!isRefine && !bioKeywords.trim()) return;
     setGenerating(true);
     try {
-      const result = await generateBio(name.trim(), role.trim() || null, bioKeywords.trim());
+      const result = await generateBio(
+        name.trim(),
+        role.trim() || null,
+        bioKeywords.trim(),
+        isRefine ? existingBio : undefined,
+      );
       onBioGenerated(result);
       onClose();
     } catch {
-      const keywords = bioKeywords.split(',').map((k) => k.trim()).filter(Boolean);
-      onBioGenerated(`${name.trim()}${role.trim() ? `, ${role.trim()}` : ''}. ${keywords.join('. ')}.`);
+      // Fallback: in refine mode, keep the existing bio; in generate mode,
+      // stitch keywords into a plain sentence so the user gets something usable.
+      if (isRefine) {
+        onBioGenerated(existingBio);
+      } else {
+        const keywords = bioKeywords.split(',').map((k) => k.trim()).filter(Boolean);
+        onBioGenerated(`${name.trim()}${role.trim() ? `, ${role.trim()}` : ''}. ${keywords.join('. ')}.`);
+      }
     } finally {
       setGenerating(false);
     }
@@ -39,12 +54,29 @@ function BioGeneratorPanel({ name, role, onBioGenerated, onClose }: BioGenerator
 
   return (
     <div className="p-3 rounded-card border border-violet-500/15 bg-violet-500/5 space-y-3">
-      <p className="typo-caption text-foreground">{t.identity.bioGenHint}</p>
-      <input type="text" placeholder={t.identity.bioKeywordsPlaceholder} value={bioKeywords} onChange={(e) => setBioKeywords(e.target.value)} className={INPUT_FIELD} autoFocus />
+      <p className="typo-caption text-foreground">
+        {isRefine ? t.identity.bioRefineHint : t.identity.bioGenHint}
+      </p>
+      <input
+        type="text"
+        placeholder={isRefine ? t.identity.bioRefineKeywordsPlaceholder : t.identity.bioKeywordsPlaceholder}
+        value={bioKeywords}
+        onChange={(e) => setBioKeywords(e.target.value)}
+        className={INPUT_FIELD}
+        autoFocus
+      />
       <div className="flex justify-end">
-        <Button onClick={handleGenerate} disabled={generating || !bioKeywords.trim()} size="sm" variant="accent" accentColor="violet">
+        <Button
+          onClick={handleGenerate}
+          disabled={generating || (!isRefine && !bioKeywords.trim())}
+          size="sm"
+          variant="accent"
+          accentColor="violet"
+        >
           <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-          {generating ? t.identity.generating : t.identity.generateBio}
+          {generating
+            ? (isRefine ? t.identity.refining : t.identity.generating)
+            : (isRefine ? t.identity.refineBio : t.identity.generateBio)}
         </Button>
       </div>
     </div>
@@ -164,11 +196,11 @@ export default function IdentityBaseline() {
                 className="flex items-center gap-1.5 typo-caption text-violet-400 hover:text-violet-300 transition-colors"
               >
                 <Wand2 className="w-3.5 h-3.5" />
-                {showBioGen ? t.identity.cancel : t.identity.generateWithAi}
+                {showBioGen ? t.identity.cancel : bio.trim() ? t.identity.refineWithAi : t.identity.generateWithAi}
               </button>
             </div>
             {showBioGen && (
-              <BioGeneratorPanel name={name} role={role} onBioGenerated={handleBioGenerated} onClose={() => setShowBioGen(false)} />
+              <BioGeneratorPanel name={name} role={role} existingBio={bio} onBioGenerated={handleBioGenerated} onClose={() => setShowBioGen(false)} />
             )}
             <textarea rows={5} placeholder={t.identity.bioPlaceholder} value={bio} onChange={(e) => { setBio(e.target.value); markDirty(); }} className={`${INPUT_FIELD} resize-y`} />
           </div>

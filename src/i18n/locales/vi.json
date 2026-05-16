@@ -12365,9 +12365,12 @@
     "selector": {
       "noTwin": "No twin configured",
       "createFirst": "Create a twin first so personas have an identity to speak as.",
-      "createTwin": "Create Twin",
+      "createTwin": "Tạo twin mới",
       "selectTwin": "Select a twin...",
-      "progressGroupLabel": "Twin setup progress"
+      "progressGroupLabel": "Twin setup progress",
+      "pickerLabel": "Chọn twin đang hoạt động",
+      "searchPlaceholder": "Tìm theo tên hoặc vai trò…",
+      "noMatches": "Không có twin nào khớp với tìm kiếm của bạn."
     },
     "emptyState": {
       "subtitle": "You need an active twin to use this tab.",
@@ -12399,7 +12402,12 @@
       "promptNoName": "(name)",
       "promptNoBio": "(no bio set — fill in above)",
       "saving": "Saving...",
-      "saveIdentity": "Save Identity"
+      "saveIdentity": "Save Identity",
+      "refineWithAi": "Tinh chỉnh bằng AI",
+      "bioRefineHint": "AI sẽ giữ nguyên giọng văn và dữ kiện hiện có — chỉ làm chặt câu chữ. Bên dưới là các từ khóa định hướng tùy chọn.",
+      "bioRefineKeywordsPlaceholder": "(tùy chọn) ví dụ: ngắn gọn hơn, bớt văn phong doanh nghiệp, giữ kiểu hài khô",
+      "refining": "Đang tinh chỉnh...",
+      "refineBio": "Tinh chỉnh tiểu sử"
     },
     "channels": {
       "title": "Channels",
@@ -12435,7 +12443,19 @@
       "fieldPersona": "persona",
       "fieldSignal": "signal",
       "statusConfigured": "configured",
-      "ctaAddTone": "add override →"
+      "ctaAddTone": "add override →",
+      "lastBridged": "Lần cuối kết nối {when}",
+      "lastNever": "Chưa từng dùng",
+      "lastJustNow": "vừa xong",
+      "lastMinutesAgo": "{count} phút trước",
+      "lastHoursAgo": "{count} giờ trước",
+      "lastDaysAgo": "{count} ngày trước",
+      "testTooltip": "Ghi nhận một ping gửi đi giả lập",
+      "testDisabledPaused": "Kích hoạt kênh trước rồi mới có thể kiểm tra",
+      "testAria": "Gửi tin nhắn kiểm tra",
+      "testToast": "Đã ghi nhận ping kiểm tra cho {channel}",
+      "personaPickerPlaceholder": "Chọn một persona…",
+      "personaNone": "— Không có —"
     },
     "tone": {
       "title": "Tone Profiles",
@@ -12482,7 +12502,13 @@
       "removeVoiceConfirm": "Remove voice configuration? The twin will have no voice until reconfigured.",
       "configureVoice": "Configure Voice",
       "saving": "Saving...",
-      "save": "Save"
+      "save": "Save",
+      "previewCta": "Xem trước",
+      "previewLoading": "Đang tổng hợp…",
+      "previewStop": "Dừng",
+      "previewTooltip": "Tổng hợp một đoạn mẫu ngắn với cài đặt hiện tại",
+      "previewNeedsConfig": "Đặt voice id và credential id trước khi xem trước",
+      "previewSample": "Đây là cách twin của bạn sẽ nghe khi nói qua kênh thoại."
     },
     "training": {
       "title": "Training Room",
@@ -12520,7 +12546,10 @@
       "generatingFollowup": "Generating follow-up...",
       "summarizingSession": "Summarizing what we learned...",
       "sessionSummaryHeading": "What we learned this session",
-      "summarySaved": "Summary saved as a high-priority memory."
+      "summarySaved": "Summary saved as a high-priority memory.",
+      "nextMovesHeading": "Đi tiếp ở đâu",
+      "nextMovesSubtitle": "Các chủ đề có độ phủ mỏng nhất — huấn luyện những chủ đề này tiếp theo để bộ não phát triển mạnh nhất.",
+      "nextMovesCoverage": "{count} dữ kiện nền tảng đến nay"
     },
     "brain": {
       "title": "Brain",
@@ -12588,7 +12617,18 @@
       "entriesCount_other": "{count} entries",
       "priorityWithCount": "priority {count}",
       "approveAction": "approve",
-      "rejectAction": "reject"
+      "rejectAction": "reject",
+      "bulkSelectAll": "Chọn tất cả trên trang này",
+      "bulkSelectedCount": "Đã chọn {count}",
+      "bulkRowSelect": "Chọn ký ức để duyệt hàng loạt",
+      "bulkApproveCta": "Duyệt {count}",
+      "bulkRejectCta": "Từ chối {count}",
+      "bulkClear": "Bỏ chọn",
+      "bulkApprovedToast": "Đã duyệt {count} ký ức — chúng đã được lập chỉ mục vào bộ não.",
+      "bulkRejectedToast": "Đã từ chối {count} ký ức.",
+      "bulkPartialToast": "{succeeded} đã duyệt, {failed} thất bại — xem toast để biết chi tiết.",
+      "provenanceChip": "từ {id}…",
+      "provenanceTooltip": "ID liên lạc nguồn: {id}"
     },
     "profiles": {
       "title": "Twin Profiles",
@@ -12644,7 +12684,26 @@
       "compiledLabel": "Compiled wiki",
       "auditReportLabel": "Audit report",
       "copy": "Copy",
-      "copied": "Copied to clipboard"
+      "copied": "Copied to clipboard",
+      "compiledSummary": "Đã ghi {count} tệp.",
+      "copyPath": "Sao chép đường dẫn",
+      "freshness": {
+        "loading": "Wiki…",
+        "compiling": "Đang biên dịch…",
+        "never": "Wiki: chưa biên dịch",
+        "neverTooltip": "Chưa có wiki trên đĩa. Bấm để biên dịch từ các ký ức đã duyệt.",
+        "fresh": "Wiki: {rel}",
+        "freshTooltip": "{count} tệp · biên dịch {rel}\n{path}\nBấm để biên dịch lại.",
+        "stale": "Wiki: {rel}",
+        "staleTooltip": "{count} tệp · biên dịch lần cuối {rel} (đã cũ)\n{path}\nBấm để biên dịch lại.",
+        "compiledToast": "Đã biên dịch wiki — ghi {count} tệp.",
+        "openFolderTooltip": "Mở thư mục wiki trong trình quản lý tệp",
+        "openFolderAria": "Mở thư mục wiki",
+        "justNow": "vừa xong",
+        "minutesAgo": "{count} phút trước",
+        "hoursAgo": "{count} giờ trước",
+        "daysAgo": "{count} ngày trước"
+      }
     },
     "hero": {
       "eyebrow": "Twin",
@@ -12736,6 +12795,124 @@
       "channelsBody": "Each channel binds a credential. Pausing a channel keeps the config but stops traffic.",
       "trainingTitle": "Interview yourself",
       "trainingBody": "Pick a topic — AI asks 5 questions — answer in your voice. The session summary becomes a high-signal memory."
+    },
+    "gaps": {
+      "title": "Còn thiếu gì",
+      "subtitle": "Sẵn sàng {pct}%",
+      "dialogLabel": "Twin này còn thiếu gì",
+      "close": "Đóng",
+      "openTooltip": "Bấm để xem còn thiếu gì",
+      "allSetTooltip": "Tất cả các mốc đã hoàn thành",
+      "allSetTitle": "Đã sẵn sàng",
+      "allSetBody": "Mọi mốc đều đã hoàn thành. Twin này sẵn sàng cất tiếng.",
+      "moreCount": "+{count} nữa",
+      "titles": {
+        "identityEmpty": "Chưa có tiểu sử",
+        "identityPartial": "Tiểu sử còn ngắn",
+        "toneEmpty": "Chưa nắm bắt được tông giọng",
+        "tonePartial": "Chỉ có tông giọng chung",
+        "brainEmpty": "Chưa gắn kiến thức",
+        "brainPartial": "Chỉ có subpath — không có KB",
+        "voiceEmpty": "Chưa đặt giọng",
+        "channelsEmpty": "Chưa có kênh nào",
+        "channelsPartial": "Tất cả kênh đều tạm dừng",
+        "memoriesEmpty": "Chưa có ký ức nào được duyệt",
+        "memoriesPartial": "Ký ức còn mỏng"
+      },
+      "hints": {
+        "identityEmpty": "Thêm một đoạn tiểu sử ngắn để twin này có giọng nói.",
+        "identityPartial": "Mở rộng tiểu sử quá 50 ký tự để có nền tảng vững hơn.",
+        "toneEmpty": "Nắm bắt ít nhất một hồ sơ tông giọng.",
+        "tonePartial": "Thêm một bản ghi đè tông giọng riêng cho từng kênh.",
+        "brainEmpty": "Gắn một knowledge base hoặc một subpath Obsidian.",
+        "brainPartial": "Gắn một knowledge base để truy hồi ngữ nghĩa.",
+        "voiceEmpty": "Chọn một voice id từ ElevenLabs để bật chức năng phát tiếng.",
+        "channelsEmpty": "Thêm một kênh để có thể tiếp cận twin.",
+        "channelsPartial": "Kích hoạt ít nhất một kênh.",
+        "memoriesEmpty": "Duyệt ký ức hoặc chạy một phiên huấn luyện.",
+        "memoriesPartial": "Cần thêm {remaining} ký ức được duyệt nữa để đạt mức mạnh ({approved} trên {threshold})."
+      }
+    },
+    "contacts": {
+      "title": "Danh bạ",
+      "subtitle": "Các handle bên ngoài mà twin này đã từng tương tác. Thêm bí danh và ghi chú để dễ truy hồi; danh sách tự động cập nhật từ các cuộc liên lạc.",
+      "loading": "Đang tải danh bạ…",
+      "emptyTitle": "Chưa có liên hệ nào",
+      "emptyBody": "Các liên hệ sẽ xuất hiện ở đây ngay khi twin trao đổi tin nhắn với ai đó trên bất kỳ kênh nào.",
+      "lastSeen": "Lần cuối gặp {rel} trước",
+      "neverBridged": "chưa bao giờ",
+      "justNow": "vừa xong",
+      "messageCount": "{count} tin nhắn",
+      "aliasPlaceholder": "Tên thân mật (ví dụ: \"Alice từ Discord\")",
+      "notesPlaceholder": "Ghi chú — ngữ cảnh, sở thích, ngày tháng quan trọng…",
+      "editAria": "Chỉnh sửa bí danh và ghi chú",
+      "save": "Lưu",
+      "saving": "Đang lưu…",
+      "cancel": "Hủy"
+    },
+    "distilled": {
+      "title": "Dữ kiện chắt lọc",
+      "subtitle": "Các dữ kiện đã được tuyển chọn về twin và các liên hệ của nó. Mỗi dữ kiện đều trích dẫn các cuộc liên lạc nguồn đã tạo ra nó.",
+      "addCta": "Thêm dữ kiện",
+      "addHeading": "Dữ kiện chắt lọc mới",
+      "cancel": "Hủy",
+      "saving": "Đang lưu…",
+      "loading": "Đang tải dữ kiện chắt lọc…",
+      "contentPlaceholder": "ví dụ: Alice thích DMs sau 9 giờ tối; nói rằng cô ấy là người dậy sớm nhưng lại trả lời vào ban đêm.",
+      "contactLabel": "Liên hệ (tùy chọn)",
+      "contactPlaceholder": "ví dụ: alice@discord",
+      "importanceLabel": "Mức độ quan trọng",
+      "sourcesLabel": "Cuộc liên lạc nguồn",
+      "sourcesHint": "Chọn ít nhất một — dữ kiện phải trích dẫn nguồn gốc.",
+      "needsSources": "Chọn ít nhất một cuộc liên lạc nguồn để bật Lưu.",
+      "noCommsYet": "Chưa ghi nhận cuộc liên lạc nào cho twin này.",
+      "saveWithSources": "Lưu dữ kiện ({count} nguồn)",
+      "sent": "Đã gửi",
+      "received": "Đã nhận",
+      "sourceCount": "{count} nguồn",
+      "emptyTitle": "Chưa chắt lọc được dữ kiện nào",
+      "emptyBody": "Thêm dữ kiện khi bạn duyệt các cuộc liên lạc — mỗi dữ kiện trích dẫn các tin nhắn đã sinh ra nó. Các giai đoạn sau sẽ đề xuất dữ kiện tự động.",
+      "deleteAria": "Xóa dữ kiện chắt lọc"
+    },
+    "reflections": {
+      "title": "Suy ngẫm",
+      "subtitle": "Nhật ký kiểm toán của vận hành viên. Đặt một câu hỏi về hoạt động gần đây của twin — Claude đọc hồ sơ twin + 40 cuộc liên lạc gần nhất rồi viết một câu trả lời ngắn, đóng băng lại.",
+      "loading": "Đang tải suy ngẫm…",
+      "emptyTitle": "Chưa có suy ngẫm nào",
+      "emptyBody": "Gõ một câu hỏi gợi mở ở trên để tạo suy ngẫm đầu tiên. Các suy ngẫm trước đây sẽ được đóng băng làm dấu vết kiểm toán bằng văn bản.",
+      "seedPlaceholder": "Hỏi điều gì đó như: \"Tuần này giọng nói của twin đang lộ ra những hình mẫu gì?\"",
+      "reflectCta": "Suy ngẫm",
+      "generating": "Đang suy ngẫm…",
+      "deleteAria": "Xóa suy ngẫm",
+      "suggestedSeedLabels": {
+        "voiceChange": "Lệch giọng",
+        "commsCadence": "Nhịp độ",
+        "contactSurprises": "Bất ngờ"
+      },
+      "suggestedSeeds": {
+        "voiceChange": "Giọng nói của twin có đang lệch khỏi tiểu sử không? Lệch ở đâu, và lệch có chủ ý không?",
+        "commsCadence": "Gần đây nhịp độ và cân bằng giữa tin đến và tin đi trên các kênh ra sao?",
+        "contactSurprises": "Có liên hệ hay cuộc trò chuyện nào khiến bạn bất ngờ không — chủ đề ngoài dự kiến, handle lạ, phản hồi lệch tông?"
+      }
+    },
+    "recall": {
+      "title": "Xem trước truy hồi",
+      "subtitle": "Những gì một persona khi nhận twin này sẽ thấy lúc chạy — tiểu sử, tông giọng chung, các cuộc liên lạc gần nhất và những dữ kiện chắt lọc quan trọng nhất. Hiện chỉ đọc; các giai đoạn sau sẽ nối gói này vào prompt persona thực tế.",
+      "contactFilterPlaceholder": "Giới hạn theo một liên hệ (handle)…",
+      "refresh": "Làm mới",
+      "refreshing": "Đang làm mới…",
+      "loading": "Đang tải truy hồi…",
+      "scopedTo": "Giới hạn theo: {handle}",
+      "scopeToTooltip": "Giới hạn xem trước theo liên hệ này",
+      "identitySection": "Danh tính",
+      "toneSection": "Tông giọng chung",
+      "toneEmpty": "Chưa cấu hình tông giọng chung — persona sẽ chỉ dựa vào tiểu sử.",
+      "factsSection": "Các dữ kiện chắt lọc hàng đầu ({count})",
+      "factsEmpty": "Chưa có dữ kiện chắt lọc — truy hồi sẽ chỉ dựa vào các cuộc liên lạc.",
+      "commsSection": "Các cuộc liên lạc gần đây ({count})",
+      "commsEmpty": "Chưa ghi nhận cuộc liên lạc nào cho twin này.",
+      "contactsSection": "Liên hệ hàng đầu theo hoạt động ({count})",
+      "contactsEmpty": "Twin này chưa có liên hệ nào."
     }
   },
   "recipe_shared": {

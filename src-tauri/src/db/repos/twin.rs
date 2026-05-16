@@ -1,7 +1,8 @@
 use rusqlite::{params, Row};
 
 use crate::db::models::{
-    TwinChannel, TwinCommunication, TwinPendingMemory, TwinProfile, TwinTone, TwinVoiceProfile,
+    TwinChannel, TwinCommunication, TwinContact, TwinDistilledFact, TwinPendingMemory, TwinProfile,
+    TwinReflection, TwinTone, TwinVoiceProfile,
 };
 use crate::db::DbPool;
 use crate::error::AppError;
@@ -402,6 +403,7 @@ fn row_to_pending_memory(row: &Row) -> rusqlite::Result<TwinPendingMemory> {
         importance: row.get::<_, Option<i32>>("importance")?.unwrap_or(3),
         status: row.get("status")?,
         reviewer_notes: row.get("reviewer_notes")?,
+        source_communication_id: row.get("source_communication_id").ok(),
         created_at: row.get("created_at")?,
         reviewed_at: row.get("reviewed_at")?,
     })
@@ -437,14 +439,16 @@ pub fn create_pending_memory(
     content: &str,
     title: Option<&str>,
     importance: i32,
+    source_communication_id: Option<&str>,
 ) -> Result<TwinPendingMemory, AppError> {
     let id = uuid::Uuid::new_v4().to_string();
     let now = chrono::Utc::now().to_rfc3339();
     let conn = pool.get()?;
     conn.execute(
-        "INSERT INTO twin_pending_memories (id, twin_id, channel, content, title, importance, created_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
-        params![id, twin_id, channel, content, title, importance, now],
+        "INSERT INTO twin_pending_memories \
+            (id, twin_id, channel, content, title, importance, source_communication_id, created_at) \
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+        params![id, twin_id, channel, content, title, importance, source_communication_id, now],
     )?;
     conn.query_row(
         "SELECT * FROM twin_pending_memories WHERE id = ?1",
@@ -523,6 +527,30 @@ pub fn list_communications(
     }
 }
 
+/// Like `list_communications` but filters by `contact_handle` instead of
+/// channel. Used by recall preview to surface the most recent N exchanges
+/// with a specific contact. When `contact_handle` is None, falls through
+/// to the twin-wide list.
+pub fn list_communications_by_contact(
+    pool: &DbPool,
+    twin_id: &str,
+    contact_handle: Option<&str>,
+    limit: i32,
+) -> Result<Vec<TwinCommunication>, AppError> {
+    let conn = pool.get()?;
+    if let Some(handle) = contact_handle {
+        let mut stmt = conn.prepare(
+            "SELECT * FROM twin_communications \
+             WHERE twin_id = ?1 AND contact_handle = ?2 \
+             ORDER BY occurred_at DESC LIMIT ?3",
+        )?;
+        let rows = stmt.query_map(params![twin_id, handle, limit], row_to_communication)?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    } else {
+        list_communications(pool, twin_id, None, limit)
+    }
+}
+
 /// Record an interaction and optionally create a pending memory for it.
 pub fn record_interaction(
     pool: &DbPool,
@@ -561,6 +589,7 @@ pub fn record_interaction(
             &mem_content,
             title.as_deref(),
             3,
+            Some(&id),
         );
     }
 
@@ -765,6 +794,335 @@ pub fn delete_channel(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     let conn = pool.get()?;
     let rows = conn.execute("DELETE FROM twin_channels WHERE id = ?1", params![id])?;
     Ok(rows > 0)
+}
+
+// ============================================================================
+// Contacts (P6+ — Cycle 14 Stage 1)
+// ============================================================================
+
+fn upsert_contacts_from_communications(
+    conn: &rusqlite::Connection,
+    twin_id: &str,
+) -> Result<(), AppError> {
+    // INSERT OR IGNORE picks up every distinct handle seen in
+    // twin_communications without overwriting any user-edited alias/notes
+    // already in twin_contacts.
+    let now = chrono::Utc::now().to_rfc3339();
+    conn.execute(
+        "INSERT OR IGNORE INTO twin_contacts (id, twin_id, handle, created_at, updated_at) \
+         SELECT lower(hex(randomblob(16))), ?1, contact_handle, ?2, ?2 \
+         FROM twin_communications \
+         WHERE twin_id = ?1 AND contact_handle IS NOT NULL AND contact_handle <> ''",
+        params![twin_id, now],
+    )?;
+    Ok(())
+}
+
+fn row_to_contact(row: &Row) -> rusqlite::Result<TwinContact> {
+    Ok(TwinContact {
+        id: row.get("id")?,
+        twin_id: row.get("twin_id")?,
+        handle: row.get("handle")?,
+        alias: row.get("alias")?,
+        notes: row.get("notes")?,
+        message_count: row.get::<_, Option<i64>>("message_count")?.unwrap_or(0),
+        last_seen_at: row.get("last_seen_at")?,
+        created_at: row.get("created_at")?,
+        updated_at: row.get("updated_at")?,
+    })
+}
+
+pub fn list_contacts_with_activity(
+    pool: &DbPool,
+    twin_id: &str,
+) -> Result<Vec<TwinContact>, AppError> {
+    let conn = pool.get()?;
+    upsert_contacts_from_communications(&conn, twin_id)?;
+
+    let mut stmt = conn.prepare(
+        "SELECT \
+            c.id, c.twin_id, c.handle, c.alias, c.notes, c.created_at, c.updated_at, \
+            COALESCE(agg.message_count, 0) AS message_count, \
+            agg.last_seen_at AS last_seen_at \
+         FROM twin_contacts c \
+         LEFT JOIN ( \
+            SELECT contact_handle, COUNT(*) AS message_count, MAX(occurred_at) AS last_seen_at \
+            FROM twin_communications \
+            WHERE twin_id = ?1 AND contact_handle IS NOT NULL AND contact_handle <> '' \
+            GROUP BY contact_handle \
+         ) agg ON agg.contact_handle = c.handle \
+         WHERE c.twin_id = ?1 \
+         ORDER BY COALESCE(agg.last_seen_at, c.created_at) DESC",
+    )?;
+    let rows = stmt.query_map(params![twin_id], row_to_contact)?;
+    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+}
+
+pub fn update_contact(
+    pool: &DbPool,
+    id: &str,
+    alias: Option<&str>,
+    notes: Option<&str>,
+) -> Result<TwinContact, AppError> {
+    let now = chrono::Utc::now().to_rfc3339();
+    let conn = pool.get()?;
+    let rows = conn.execute(
+        "UPDATE twin_contacts SET alias = ?2, notes = ?3, updated_at = ?4 WHERE id = ?1",
+        params![id, alias, notes, now],
+    )?;
+    if rows == 0 {
+        return Err(AppError::NotFound(format!("twin contact {id}")));
+    }
+    // Single-row read after update; reuse the list query shape would be
+    // overkill for one row. message_count + last_seen_at recomputed from
+    // the join so the caller gets a consistent view-shaped struct.
+    conn.query_row(
+        "SELECT \
+            c.id, c.twin_id, c.handle, c.alias, c.notes, c.created_at, c.updated_at, \
+            COALESCE(agg.message_count, 0) AS message_count, \
+            agg.last_seen_at AS last_seen_at \
+         FROM twin_contacts c \
+         LEFT JOIN ( \
+            SELECT contact_handle, COUNT(*) AS message_count, MAX(occurred_at) AS last_seen_at \
+            FROM twin_communications \
+            WHERE twin_id = (SELECT twin_id FROM twin_contacts WHERE id = ?1) \
+              AND contact_handle IS NOT NULL AND contact_handle <> '' \
+            GROUP BY contact_handle \
+         ) agg ON agg.contact_handle = c.handle \
+         WHERE c.id = ?1",
+        params![id],
+        row_to_contact,
+    )
+    .map_err(AppError::Database)
+}
+
+// ============================================================================
+// Reflections (P6+ — Cycle 15 Stage 1)
+// ============================================================================
+
+fn row_to_reflection(row: &Row) -> rusqlite::Result<TwinReflection> {
+    Ok(TwinReflection {
+        id: row.get("id")?,
+        twin_id: row.get("twin_id")?,
+        prompt_seed: row.get("prompt_seed")?,
+        content: row.get("content")?,
+        created_at: row.get("created_at")?,
+    })
+}
+
+pub fn list_reflections(pool: &DbPool, twin_id: &str) -> Result<Vec<TwinReflection>, AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT * FROM twin_reflections WHERE twin_id = ?1 ORDER BY created_at DESC",
+    )?;
+    let rows = stmt.query_map(params![twin_id], row_to_reflection)?;
+    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+}
+
+pub fn create_reflection(
+    pool: &DbPool,
+    twin_id: &str,
+    prompt_seed: &str,
+    content: &str,
+) -> Result<TwinReflection, AppError> {
+    let id = uuid::Uuid::new_v4().to_string();
+    let now = chrono::Utc::now().to_rfc3339();
+    let conn = pool.get()?;
+    conn.execute(
+        "INSERT INTO twin_reflections (id, twin_id, prompt_seed, content, created_at) \
+         VALUES (?1, ?2, ?3, ?4, ?5)",
+        params![id, twin_id, prompt_seed, content, now],
+    )?;
+    conn.query_row(
+        "SELECT * FROM twin_reflections WHERE id = ?1",
+        params![id],
+        row_to_reflection,
+    )
+    .map_err(AppError::Database)
+}
+
+pub fn delete_reflection(pool: &DbPool, id: &str) -> Result<bool, AppError> {
+    let conn = pool.get()?;
+    let rows = conn.execute("DELETE FROM twin_reflections WHERE id = ?1", params![id])?;
+    Ok(rows > 0)
+}
+
+// ============================================================================
+// Distilled Facts (P6+ — manual write surface, Cycle 12 Stage 1)
+// ============================================================================
+
+fn row_to_distilled_fact(row: &Row) -> rusqlite::Result<TwinDistilledFact> {
+    Ok(TwinDistilledFact {
+        id: row.get("id")?,
+        twin_id: row.get("twin_id")?,
+        contact_handle: row.get("contact_handle")?,
+        content: row.get("content")?,
+        importance: row.get("importance")?,
+        sources_json: row.get("sources_json")?,
+        created_at: row.get("created_at")?,
+        last_seen_at: row.get("last_seen_at")?,
+    })
+}
+
+pub fn list_distilled_facts(
+    pool: &DbPool,
+    twin_id: &str,
+    contact_handle: Option<&str>,
+) -> Result<Vec<TwinDistilledFact>, AppError> {
+    let conn = pool.get()?;
+    if let Some(handle) = contact_handle {
+        let mut stmt = conn.prepare(
+            "SELECT * FROM twin_distilled_facts \
+             WHERE twin_id = ?1 AND contact_handle = ?2 \
+             ORDER BY importance DESC, last_seen_at DESC",
+        )?;
+        let rows = stmt.query_map(params![twin_id, handle], row_to_distilled_fact)?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    } else {
+        let mut stmt = conn.prepare(
+            "SELECT * FROM twin_distilled_facts \
+             WHERE twin_id = ?1 \
+             ORDER BY importance DESC, last_seen_at DESC",
+        )?;
+        let rows = stmt.query_map(params![twin_id], row_to_distilled_fact)?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    }
+}
+
+pub fn create_distilled_fact(
+    pool: &DbPool,
+    twin_id: &str,
+    contact_handle: Option<&str>,
+    content: &str,
+    importance: i32,
+    source_communication_ids: &[String],
+) -> Result<TwinDistilledFact, AppError> {
+    let trimmed = content.trim();
+    if trimmed.is_empty() {
+        return Err(AppError::Validation(
+            "distilled fact content cannot be empty".into(),
+        ));
+    }
+    if source_communication_ids.is_empty() {
+        // Provenance contract — see TwinDistilledFact docs. Empty sources
+        // are a frontend bug, never a legitimate state; reject explicitly
+        // rather than silently storing a hallucination-shaped row.
+        return Err(AppError::Validation(
+            "distilled fact requires at least one source communication id".into(),
+        ));
+    }
+    let clamped_importance = importance.clamp(1, 5);
+    let id = uuid::Uuid::new_v4().to_string();
+    let now = chrono::Utc::now().to_rfc3339();
+    let sources_json = serde_json::to_string(source_communication_ids)
+        .map_err(|e| AppError::Internal(format!("encode sources_json: {e}")))?;
+
+    let conn = pool.get()?;
+    conn.execute(
+        "INSERT INTO twin_distilled_facts \
+            (id, twin_id, contact_handle, content, importance, sources_json, created_at, last_seen_at) \
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)",
+        params![
+            id,
+            twin_id,
+            contact_handle,
+            trimmed,
+            clamped_importance,
+            sources_json,
+            now,
+        ],
+    )?;
+    conn.query_row(
+        "SELECT * FROM twin_distilled_facts WHERE id = ?1",
+        params![id],
+        row_to_distilled_fact,
+    )
+    .map_err(AppError::Database)
+}
+
+pub fn delete_distilled_fact(pool: &DbPool, id: &str) -> Result<bool, AppError> {
+    let conn = pool.get()?;
+    let rows = conn.execute("DELETE FROM twin_distilled_facts WHERE id = ?1", params![id])?;
+    Ok(rows > 0)
+}
+
+/// Top-N distilled facts for recall — ordered by importance then recency.
+/// Optionally scoped to a contact handle when the recall is per-contact.
+pub fn top_distilled_facts_for_recall(
+    pool: &DbPool,
+    twin_id: &str,
+    contact_handle: Option<&str>,
+    limit: i32,
+) -> Result<Vec<TwinDistilledFact>, AppError> {
+    let conn = pool.get()?;
+    let sql = if contact_handle.is_some() {
+        // Include both contact-scoped facts AND self-facts (NULL contact_handle).
+        // Self-facts about the twin's voice/preferences are always relevant
+        // even when recall is filtered to a specific contact.
+        "SELECT * FROM twin_distilled_facts \
+         WHERE twin_id = ?1 AND (contact_handle = ?2 OR contact_handle IS NULL) \
+         ORDER BY importance DESC, last_seen_at DESC \
+         LIMIT ?3"
+    } else {
+        "SELECT * FROM twin_distilled_facts \
+         WHERE twin_id = ?1 \
+         ORDER BY importance DESC, last_seen_at DESC \
+         LIMIT ?3"
+    };
+    let mut stmt = conn.prepare(sql)?;
+    let rows = if let Some(handle) = contact_handle {
+        stmt.query_map(params![twin_id, handle, limit], row_to_distilled_fact)?
+            .collect::<Result<Vec<_>, _>>()
+    } else {
+        stmt.query_map(params![twin_id, limit], row_to_distilled_fact)?
+            .collect::<Result<Vec<_>, _>>()
+    };
+    rows.map_err(AppError::Database)
+}
+
+pub fn top_contacts_by_activity(
+    pool: &DbPool,
+    twin_id: &str,
+    limit: i32,
+) -> Result<Vec<TwinContact>, AppError> {
+    let conn = pool.get()?;
+    upsert_contacts_from_communications(&conn, twin_id)?;
+    let mut stmt = conn.prepare(
+        "SELECT \
+            c.id, c.twin_id, c.handle, c.alias, c.notes, c.created_at, c.updated_at, \
+            COALESCE(agg.message_count, 0) AS message_count, \
+            agg.last_seen_at AS last_seen_at \
+         FROM twin_contacts c \
+         LEFT JOIN ( \
+            SELECT contact_handle, COUNT(*) AS message_count, MAX(occurred_at) AS last_seen_at \
+            FROM twin_communications \
+            WHERE twin_id = ?1 AND contact_handle IS NOT NULL AND contact_handle <> '' \
+            GROUP BY contact_handle \
+         ) agg ON agg.contact_handle = c.handle \
+         WHERE c.twin_id = ?1 \
+         ORDER BY message_count DESC, COALESCE(agg.last_seen_at, c.created_at) DESC \
+         LIMIT ?2",
+    )?;
+    let rows = stmt.query_map(params![twin_id, limit], row_to_contact)?;
+    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+}
+
+pub fn get_tone_optional(
+    pool: &DbPool,
+    twin_id: &str,
+    channel: &str,
+) -> Result<Option<TwinTone>, AppError> {
+    let conn = pool.get()?;
+    let result = conn.query_row(
+        "SELECT * FROM twin_tone_profiles WHERE twin_id = ?1 AND channel = ?2",
+        params![twin_id, channel],
+        row_to_tone,
+    );
+    match result {
+        Ok(t) => Ok(Some(t)),
+        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+        Err(e) => Err(AppError::Database(e)),
+    }
 }
 
 #[cfg(test)]

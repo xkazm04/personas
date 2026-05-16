@@ -12461,6 +12461,9 @@ export type Translations = {
       createTwin: string;
       selectTwin: string;
       progressGroupLabel: string;
+      pickerLabel: string;
+      searchPlaceholder: string;
+      noMatches: string;
     };
     variantTabs: {
       prototype: string;
@@ -12485,9 +12488,28 @@ export type Translations = {
       auditing: string;
       auditNeedsCompile: string;
       compiledLabel: string;
+      compiledSummary: string;
+      copyPath: string;
       auditReportLabel: string;
       copy: string;
       copied: string;
+      freshness: {
+        loading: string;
+        compiling: string;
+        never: string;
+        neverTooltip: string;
+        fresh: string;
+        freshTooltip: string;
+        stale: string;
+        staleTooltip: string;
+        compiledToast: string;
+        openFolderTooltip: string;
+        openFolderAria: string;
+        justNow: string;
+        minutesAgo: string;
+        hoursAgo: string;
+        daysAgo: string;
+      };
     };
     identity: {
       title: string;
@@ -12501,11 +12523,16 @@ export type Translations = {
       genderNeutral: string;
       bio: string;
       generateWithAi: string;
+      refineWithAi: string;
       cancel: string;
       bioGenHint: string;
       bioKeywordsPlaceholder: string;
+      bioRefineHint: string;
+      bioRefineKeywordsPlaceholder: string;
       generating: string;
+      refining: string;
       generateBio: string;
+      refineBio: string;
       bioPlaceholder: string;
       obsidianVaultSubpath: string;
       obsidianSubpathHint: string;
@@ -12529,6 +12556,8 @@ export type Translations = {
       noCredentialsForChannel: string;
       personaIdOptional: string;
       personaIdPlaceholder: string;
+      personaPickerPlaceholder: string;
+      personaNone: string;
       cancelBtn: string;
       adding: string;
       loading: string;
@@ -12551,6 +12580,16 @@ export type Translations = {
       fieldSignal: string;
       statusConfigured: string;
       ctaAddTone: string;
+      lastBridged: string;
+      lastNever: string;
+      lastJustNow: string;
+      lastMinutesAgo: string;
+      lastHoursAgo: string;
+      lastDaysAgo: string;
+      testTooltip: string;
+      testDisabledPaused: string;
+      testAria: string;
+      testToast: string;
     };
     tone: {
       title: string;
@@ -12598,6 +12637,12 @@ export type Translations = {
       configureVoice: string;
       saving: string;
       save: string;
+      previewCta: string;
+      previewLoading: string;
+      previewStop: string;
+      previewTooltip: string;
+      previewNeedsConfig: string;
+      previewSample: string;
     };
     training: {
       title: string;
@@ -12628,6 +12673,9 @@ export type Translations = {
       sessionCompleteDetail: string;
       trainMore: string;
       reviewMemories: string;
+      nextMovesHeading: string;
+      nextMovesSubtitle: string;
+      nextMovesCoverage: string;
       groundingHint: string;
       followupBadge: string;
       followupCta: string;
@@ -12672,6 +12720,87 @@ export type Translations = {
       brainStep5: string;
       vec0Unavailable: string;
     };
+    recall: {
+      title: string;
+      subtitle: string;
+      contactFilterPlaceholder: string;
+      refresh: string;
+      refreshing: string;
+      loading: string;
+      scopedTo: string;
+      scopeToTooltip: string;
+      identitySection: string;
+      toneSection: string;
+      toneEmpty: string;
+      factsSection: string;
+      factsEmpty: string;
+      commsSection: string;
+      commsEmpty: string;
+      contactsSection: string;
+      contactsEmpty: string;
+    };
+    reflections: {
+      title: string;
+      subtitle: string;
+      loading: string;
+      emptyTitle: string;
+      emptyBody: string;
+      seedPlaceholder: string;
+      reflectCta: string;
+      generating: string;
+      deleteAria: string;
+      suggestedSeedLabels: {
+        voiceChange: string;
+        commsCadence: string;
+        contactSurprises: string;
+      };
+      suggestedSeeds: {
+        voiceChange: string;
+        commsCadence: string;
+        contactSurprises: string;
+      };
+    };
+    contacts: {
+      title: string;
+      subtitle: string;
+      loading: string;
+      emptyTitle: string;
+      emptyBody: string;
+      lastSeen: string;
+      neverBridged: string;
+      justNow: string;
+      messageCount: string;
+      aliasPlaceholder: string;
+      notesPlaceholder: string;
+      editAria: string;
+      save: string;
+      saving: string;
+      cancel: string;
+    };
+    distilled: {
+      title: string;
+      subtitle: string;
+      addCta: string;
+      addHeading: string;
+      cancel: string;
+      saving: string;
+      loading: string;
+      contentPlaceholder: string;
+      contactLabel: string;
+      contactPlaceholder: string;
+      importanceLabel: string;
+      sourcesLabel: string;
+      sourcesHint: string;
+      needsSources: string;
+      noCommsYet: string;
+      saveWithSources: string;
+      sent: string;
+      received: string;
+      sourceCount: string;
+      emptyTitle: string;
+      emptyBody: string;
+      deleteAria: string;
+    };
     knowledge: {
       title: string;
       subtitle: string;
@@ -12698,6 +12827,17 @@ export type Translations = {
       approveTitle: string;
       rejectTitle: string;
       priority: string;
+      bulkSelectAll: string;
+      bulkSelectedCount: string;
+      bulkRowSelect: string;
+      bulkApproveCta: string;
+      bulkRejectCta: string;
+      bulkClear: string;
+      bulkApprovedToast: string;
+      bulkRejectedToast: string;
+      bulkPartialToast: string;
+      provenanceChip: string;
+      provenanceTooltip: string;
       conversationHistory: string;
       conversationExplanation: string;
       noConversationsYet: string;
@@ -12796,6 +12936,43 @@ export type Translations = {
       toneProgress: string;
       channelsActive: string;
       memoriesApproved: string;
+    };
+    gaps: {
+      title: string;
+      subtitle: string;
+      dialogLabel: string;
+      close: string;
+      openTooltip: string;
+      allSetTooltip: string;
+      allSetTitle: string;
+      allSetBody: string;
+      moreCount: string;
+      titles: {
+        identityEmpty: string;
+        identityPartial: string;
+        toneEmpty: string;
+        tonePartial: string;
+        brainEmpty: string;
+        brainPartial: string;
+        voiceEmpty: string;
+        channelsEmpty: string;
+        channelsPartial: string;
+        memoriesEmpty: string;
+        memoriesPartial: string;
+      };
+      hints: {
+        identityEmpty: string;
+        identityPartial: string;
+        toneEmpty: string;
+        tonePartial: string;
+        brainEmpty: string;
+        brainPartial: string;
+        voiceEmpty: string;
+        channelsEmpty: string;
+        channelsPartial: string;
+        memoriesEmpty: string;
+        memoriesPartial: string;
+      };
     };
     nudges: {
       channelWithoutTone: string;

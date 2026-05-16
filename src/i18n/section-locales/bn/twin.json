@@ -2,9 +2,12 @@
   "selector": {
     "noTwin": "No twin configured",
     "createFirst": "Create a twin first so personas have an identity to speak as.",
-    "createTwin": "Create Twin",
+    "createTwin": "নতুন টুইন তৈরি করুন",
     "selectTwin": "Select a twin...",
-    "progressGroupLabel": "Twin setup progress"
+    "progressGroupLabel": "Twin setup progress",
+    "pickerLabel": "সক্রিয় টুইন বেছে নিন",
+    "searchPlaceholder": "নাম বা ভূমিকা দিয়ে অনুসন্ধান করুন…",
+    "noMatches": "আপনার অনুসন্ধানের সাথে কোনো টুইন মেলে না।"
   },
   "emptyState": {
     "subtitle": "You need an active twin to use this tab.",
@@ -36,7 +39,12 @@
     "promptNoName": "(name)",
     "promptNoBio": "(no bio set — fill in above)",
     "saving": "Saving...",
-    "saveIdentity": "Save Identity"
+    "saveIdentity": "Save Identity",
+    "refineWithAi": "AI দিয়ে পরিমার্জন করুন",
+    "bioRefineHint": "AI আপনার বিদ্যমান কণ্ঠস্বর ও তথ্য বজায় রাখবে — শুধু লেখা আরও পরিশীলিত করবে। নিচে ঐচ্ছিক নির্দেশনা কীওয়ার্ড।",
+    "bioRefineKeywordsPlaceholder": "(ঐচ্ছিক) যেমন আরও সংক্ষিপ্ত, কম কর্পোরেট, শুষ্ক রসিকতা বজায় রাখুন",
+    "refining": "পরিমার্জন করা হচ্ছে...",
+    "refineBio": "জীবনী পরিমার্জন করুন"
   },
   "channels": {
     "title": "Channels",
@@ -72,7 +80,19 @@
     "fieldPersona": "persona",
     "fieldSignal": "signal",
     "statusConfigured": "configured",
-    "ctaAddTone": "add override →"
+    "ctaAddTone": "add override →",
+    "lastBridged": "সর্বশেষ ব্রিজ {when}",
+    "lastNever": "কখনও ব্যবহার হয়নি",
+    "lastJustNow": "এইমাত্র",
+    "lastMinutesAgo": "{count} মিনিট আগে",
+    "lastHoursAgo": "{count} ঘণ্টা আগে",
+    "lastDaysAgo": "{count} দিন আগে",
+    "testTooltip": "একটি কৃত্রিম আউটবাউন্ড পিং লগ করুন",
+    "testDisabledPaused": "পরীক্ষা করতে প্রথমে চ্যানেলটি সক্রিয় করুন",
+    "testAria": "পরীক্ষামূলক বার্তা পাঠান",
+    "testToast": "{channel}-এর জন্য পরীক্ষামূলক পিং লগ করা হয়েছে",
+    "personaPickerPlaceholder": "একটি পার্সোনা বেছে নিন…",
+    "personaNone": "— কোনোটি নয় —"
   },
   "tone": {
     "title": "Tone Profiles",
@@ -119,7 +139,13 @@
     "removeVoiceConfirm": "Remove voice configuration? The twin will have no voice until reconfigured.",
     "configureVoice": "Configure Voice",
     "saving": "Saving...",
-    "save": "Save"
+    "save": "Save",
+    "previewCta": "প্রিভিউ",
+    "previewLoading": "সিন্থেসাইজ করা হচ্ছে…",
+    "previewStop": "থামান",
+    "previewTooltip": "বর্তমান সেটিংস দিয়ে একটি ছোট নমুনা সিন্থেসাইজ করুন",
+    "previewNeedsConfig": "প্রিভিউ করার আগে একটি voice id এবং credential id সেট করুন",
+    "previewSample": "ভয়েস চ্যানেলের মাধ্যমে কথা বলার সময় আপনার টুইন এভাবেই শোনাবে।"
   },
   "training": {
     "title": "Training Room",
@@ -157,7 +183,10 @@
     "generatingFollowup": "Generating follow-up...",
     "summarizingSession": "Summarizing what we learned...",
     "sessionSummaryHeading": "What we learned this session",
-    "summarySaved": "Summary saved as a high-priority memory."
+    "summarySaved": "Summary saved as a high-priority memory.",
+    "nextMovesHeading": "এরপর কোথায় যাবেন",
+    "nextMovesSubtitle": "সবচেয়ে কম কভারেজ সহ বিষয়সমূহ — মস্তিষ্কের সর্বোচ্চ বুস্টের জন্য এগুলোর উপর পরবর্তী প্রশিক্ষণ দিন।",
+    "nextMovesCoverage": "এখন পর্যন্ত {count}টি গ্রাউন্ডিং তথ্য"
   },
   "brain": {
     "title": "Brain",
@@ -225,7 +254,18 @@
     "entriesCount_other": "{count} entries",
     "priorityWithCount": "priority {count}",
     "approveAction": "approve",
-    "rejectAction": "reject"
+    "rejectAction": "reject",
+    "bulkSelectAll": "এই পৃষ্ঠার সবগুলো নির্বাচন করুন",
+    "bulkSelectedCount": "{count}টি নির্বাচিত",
+    "bulkRowSelect": "বাল্ক পর্যালোচনার জন্য স্মৃতি নির্বাচন করুন",
+    "bulkApproveCta": "{count}টি অনুমোদন করুন",
+    "bulkRejectCta": "{count}টি প্রত্যাখ্যান করুন",
+    "bulkClear": "নির্বাচন মুছে ফেলুন",
+    "bulkApprovedToast": "{count}টি স্মৃতি অনুমোদিত হয়েছে — এগুলো এখন মস্তিষ্কে সূচীবদ্ধ।",
+    "bulkRejectedToast": "{count}টি স্মৃতি প্রত্যাখ্যাত হয়েছে।",
+    "bulkPartialToast": "{succeeded}টি পর্যালোচিত, {failed}টি ব্যর্থ — বিস্তারিত জানতে টোস্ট দেখুন।",
+    "provenanceChip": "{id} থেকে…",
+    "provenanceTooltip": "উৎস যোগাযোগ id: {id}"
   },
   "profiles": {
     "title": "Twin Profiles",
@@ -281,7 +321,26 @@
     "compiledLabel": "Compiled wiki",
     "auditReportLabel": "Audit report",
     "copy": "Copy",
-    "copied": "Copied to clipboard"
+    "copied": "Copied to clipboard",
+    "compiledSummary": "{count}টি ফাইল লেখা হয়েছে।",
+    "copyPath": "পাথ কপি করুন",
+    "freshness": {
+      "loading": "উইকি…",
+      "compiling": "সংকলন করা হচ্ছে…",
+      "never": "উইকি: সংকলিত হয়নি",
+      "neverTooltip": "ডিস্কে এখনও কোনো উইকি নেই। অনুমোদিত স্মৃতি থেকে সংকলন করতে ক্লিক করুন।",
+      "fresh": "উইকি: {rel}",
+      "freshTooltip": "{count}টি ফাইল · সংকলিত {rel}\n{path}\nপুনরায় সংকলন করতে ক্লিক করুন।",
+      "stale": "উইকি: {rel}",
+      "staleTooltip": "{count}টি ফাইল · সর্বশেষ সংকলিত {rel} (পুরানো)\n{path}\nপুনরায় সংকলন করতে ক্লিক করুন।",
+      "compiledToast": "উইকি সংকলিত হয়েছে — {count}টি ফাইল লেখা হয়েছে।",
+      "openFolderTooltip": "আপনার ফাইল ম্যানেজারে উইকি ফোল্ডার খুলুন",
+      "openFolderAria": "উইকি ফোল্ডার খুলুন",
+      "justNow": "এইমাত্র",
+      "minutesAgo": "{count} মিনিট আগে",
+      "hoursAgo": "{count} ঘণ্টা আগে",
+      "daysAgo": "{count} দিন আগে"
+    }
   },
   "hero": {
     "eyebrow": "Twin",
@@ -373,5 +432,123 @@
     "channelsBody": "Each channel binds a credential. Pausing a channel keeps the config but stops traffic.",
     "trainingTitle": "Interview yourself",
     "trainingBody": "Pick a topic — AI asks 5 questions — answer in your voice. The session summary becomes a high-signal memory."
+  },
+  "gaps": {
+    "title": "কী অনুপস্থিত",
+    "subtitle": "প্রস্তুতি {pct}%",
+    "dialogLabel": "এই টুইনের জন্য কী অনুপস্থিত",
+    "close": "বন্ধ",
+    "openTooltip": "কী অনুপস্থিত তা দেখতে ক্লিক করুন",
+    "allSetTooltip": "সব মাইলফলক সম্পন্ন",
+    "allSetTitle": "সব প্রস্তুত",
+    "allSetBody": "প্রতিটি মাইলফলক সম্পন্ন। এই টুইন কথা বলার জন্য প্রস্তুত।",
+    "moreCount": "+আরও {count}টি",
+    "titles": {
+      "identityEmpty": "এখনও কোনো জীবনী নেই",
+      "identityPartial": "জীবনী সংক্ষিপ্ত",
+      "toneEmpty": "কোনো টোন ধারণ করা হয়নি",
+      "tonePartial": "শুধু জেনেরিক টোন",
+      "brainEmpty": "কোনো জ্ঞান বাঁধা নেই",
+      "brainPartial": "শুধু সাবপাথ — কোনো KB নেই",
+      "voiceEmpty": "কোনো ভয়েস সেট করা নেই",
+      "channelsEmpty": "কোনো চ্যানেল নেই",
+      "channelsPartial": "সব চ্যানেল বিরতিতে",
+      "memoriesEmpty": "কোনো অনুমোদিত স্মৃতি নেই",
+      "memoriesPartial": "স্মৃতি কম"
+    },
+    "hints": {
+      "identityEmpty": "এই টুইনের কণ্ঠস্বর থাকার জন্য একটি ছোট জীবনী যোগ করুন।",
+      "identityPartial": "শক্তিশালী গ্রাউন্ডিংয়ের জন্য জীবনী ৫০ অক্ষরের বেশি প্রসারিত করুন।",
+      "toneEmpty": "অন্তত একটি টোন প্রোফাইল ধারণ করুন।",
+      "tonePartial": "একটি চ্যানেল-নির্দিষ্ট টোন ওভাররাইড যোগ করুন।",
+      "brainEmpty": "একটি জ্ঞান ভাণ্ডার বা একটি Obsidian সাবপাথ বাঁধুন।",
+      "brainPartial": "সিম্যান্টিক রিকলের জন্য একটি জ্ঞান ভাণ্ডার বাঁধুন।",
+      "voiceEmpty": "বক্তৃতা সক্রিয় করতে ElevenLabs থেকে একটি voice id বেছে নিন।",
+      "channelsEmpty": "টুইনের কাছে পৌঁছানো যাবে এমন একটি চ্যানেল যোগ করুন।",
+      "channelsPartial": "অন্তত একটি চ্যানেল সক্রিয় করুন।",
+      "memoriesEmpty": "স্মৃতি অনুমোদন করুন বা একটি প্রশিক্ষণ সেশন চালান।",
+      "memoriesPartial": "শক্তিশালী পৌঁছাতে আরও {remaining}টি অনুমোদিত স্মৃতি প্রয়োজন ({threshold}-এর মধ্যে {approved})।"
+    }
+  },
+  "contacts": {
+    "title": "যোগাযোগ",
+    "subtitle": "বাহ্যিক হ্যান্ডেল যাদের সাথে এই টুইন যোগাযোগ করেছে। রিকল সহজ করতে একটি উপনাম এবং নোট যোগ করুন; তালিকাটি যোগাযোগ থেকে স্বয়ংক্রিয়ভাবে পপুলেট হয়।",
+    "loading": "যোগাযোগ লোড করা হচ্ছে…",
+    "emptyTitle": "এখনও কোনো যোগাযোগ নেই",
+    "emptyBody": "টুইন যখন কোনো চ্যানেলে কারো সাথে বার্তা আদান-প্রদান করে তখনই এখানে যোগাযোগ প্রদর্শিত হবে।",
+    "lastSeen": "সর্বশেষ দেখা {rel} আগে",
+    "neverBridged": "কখনও না",
+    "justNow": "এইমাত্র",
+    "messageCount": "{count}টি বার্তা",
+    "aliasPlaceholder": "বন্ধুত্বপূর্ণ নাম (যেমন \"Discord-এর Alice\")",
+    "notesPlaceholder": "নোট — প্রসঙ্গ, পছন্দ, গুরুত্বপূর্ণ তারিখ…",
+    "editAria": "উপনাম ও নোট সম্পাদনা করুন",
+    "save": "সংরক্ষণ",
+    "saving": "সংরক্ষণ হচ্ছে…",
+    "cancel": "বাতিল"
+  },
+  "distilled": {
+    "title": "পরিশোধিত তথ্য",
+    "subtitle": "টুইন এবং তার যোগাযোগ সম্পর্কে নির্বাচিত তথ্য। প্রতিটি তথ্য এর উৎস যোগাযোগ উদ্ধৃত করে।",
+    "addCta": "তথ্য যোগ করুন",
+    "addHeading": "নতুন পরিশোধিত তথ্য",
+    "cancel": "বাতিল",
+    "saving": "সংরক্ষণ হচ্ছে…",
+    "loading": "পরিশোধিত তথ্য লোড করা হচ্ছে…",
+    "contentPlaceholder": "যেমন Alice রাত ৯টার পরে DMs পছন্দ করে; বলে সে সকালের মানুষ কিন্তু রাতে উত্তর দেয়।",
+    "contactLabel": "যোগাযোগ (ঐচ্ছিক)",
+    "contactPlaceholder": "যেমন alice@discord",
+    "importanceLabel": "গুরুত্ব",
+    "sourcesLabel": "উৎস যোগাযোগ",
+    "sourcesHint": "অন্তত একটি বেছে নিন — তথ্যকে অবশ্যই তার উৎস উদ্ধৃত করতে হবে।",
+    "needsSources": "সংরক্ষণ সক্রিয় করতে অন্তত একটি উৎস যোগাযোগ বেছে নিন।",
+    "noCommsYet": "এই টুইনের জন্য এখনও কোনো যোগাযোগ রেকর্ড করা হয়নি।",
+    "saveWithSources": "তথ্য সংরক্ষণ করুন ({count}টি উৎস)",
+    "sent": "প্রেরিত",
+    "received": "প্রাপ্ত",
+    "sourceCount": "{count}টি উৎস",
+    "emptyTitle": "এখনও কোনো তথ্য পরিশোধিত হয়নি",
+    "emptyBody": "যোগাযোগ পর্যালোচনা করার সময় তথ্য যোগ করুন — প্রতিটি তথ্য সেই বার্তাগুলো উদ্ধৃত করে যা থেকে এটি এসেছে। ভবিষ্যত পর্যায়গুলো স্বয়ংক্রিয়ভাবে তথ্য প্রস্তাব করবে।",
+    "deleteAria": "পরিশোধিত তথ্য মুছুন"
+  },
+  "reflections": {
+    "title": "প্রতিফলন",
+    "subtitle": "অপারেটর-অডিট জার্নাল। এই টুইনের সাম্প্রতিক কার্যকলাপ সম্পর্কে একটি প্রশ্ন জিজ্ঞাসা করুন — Claude টুইন প্রোফাইল + শেষ ৪০টি যোগাযোগ পড়ে এবং একটি ছোট, স্থির উত্তর লেখে।",
+    "loading": "প্রতিফলন লোড করা হচ্ছে…",
+    "emptyTitle": "এখনও কোনো প্রতিফলন নেই",
+    "emptyBody": "প্রথম প্রতিফলন তৈরি করতে উপরে একটি সিড প্রশ্ন টাইপ করুন। অতীতের প্রতিফলন একটি লিখিত অডিট ট্রেইল হিসেবে স্থির থাকে।",
+    "seedPlaceholder": "যেমন কিছু জিজ্ঞাসা করুন: \"এই সপ্তাহে এই টুইনের কণ্ঠস্বরে কোন প্যাটার্ন দেখা যাচ্ছে?\"",
+    "reflectCta": "প্রতিফলিত করুন",
+    "generating": "প্রতিফলিত হচ্ছে…",
+    "deleteAria": "প্রতিফলন মুছুন",
+    "suggestedSeedLabels": {
+      "voiceChange": "কণ্ঠস্বরে পরিবর্তন",
+      "commsCadence": "ছন্দ",
+      "contactSurprises": "চমক"
+    },
+    "suggestedSeeds": {
+      "voiceChange": "টুইনের কণ্ঠস্বর কি তার জীবনী থেকে সরে যাচ্ছে? কোথায়, এবং পরিবর্তনটি কি ইচ্ছাকৃত?",
+      "commsCadence": "ইদানীং চ্যানেল জুড়ে ইনবাউন্ড বনাম আউটবাউন্ডের ছন্দ এবং ভারসাম্য কেমন?",
+      "contactSurprises": "এমন কোনো যোগাযোগ বা থ্রেড আছে যা আপনাকে চমকে দিয়েছে — অপ্রত্যাশিত বিষয়, অপরিচিত হ্যান্ডেল, অমিল টোনের উত্তর?"
+    }
+  },
+  "recall": {
+    "title": "রিকল প্রিভিউ",
+    "subtitle": "এই টুইন গ্রহণকারী একটি পার্সোনা রানটাইমে যা দেখবে — জীবনী, জেনেরিক টোন, সবচেয়ে সাম্প্রতিক যোগাযোগ এবং সর্বোচ্চ গুরুত্বের পরিশোধিত তথ্য। আজ শুধু-পঠনযোগ্য; ভবিষ্যত পর্যায়গুলো এই বান্ডিলটি প্রকৃত পার্সোনা প্রম্পটে সংযুক্ত করবে।",
+    "contactFilterPlaceholder": "একটি যোগাযোগের (হ্যান্ডেল) মধ্যে সীমাবদ্ধ করুন…",
+    "refresh": "রিফ্রেশ",
+    "refreshing": "রিফ্রেশ হচ্ছে…",
+    "loading": "রিকল লোড করা হচ্ছে…",
+    "scopedTo": "সীমাবদ্ধ: {handle}",
+    "scopeToTooltip": "প্রিভিউ এই যোগাযোগে সীমাবদ্ধ করুন",
+    "identitySection": "পরিচয়",
+    "toneSection": "জেনেরিক টোন",
+    "toneEmpty": "কোনো জেনেরিক টোন কনফিগার করা নেই — পার্সোনা শুধু জীবনীর উপর নির্ভর করবে।",
+    "factsSection": "শীর্ষ পরিশোধিত তথ্য ({count})",
+    "factsEmpty": "এখনও কোনো পরিশোধিত তথ্য নেই — রিকল শুধু যোগাযোগের উপর নির্ভর করবে।",
+    "commsSection": "সাম্প্রতিক যোগাযোগ ({count})",
+    "commsEmpty": "এই টুইনের জন্য এখনও কোনো যোগাযোগ রেকর্ড করা হয়নি।",
+    "contactsSection": "কার্যকলাপ অনুসারে শীর্ষ যোগাযোগ ({count})",
+    "contactsEmpty": "এই টুইনে এখনও কোনো যোগাযোগ নেই।"
   }
 }

@@ -12365,9 +12365,12 @@
     "selector": {
       "noTwin": "No twin configured",
       "createFirst": "Create a twin first so personas have an identity to speak as.",
-      "createTwin": "Create Twin",
+      "createTwin": "Créer un nouveau twin",
       "selectTwin": "Select a twin...",
-      "progressGroupLabel": "Twin setup progress"
+      "progressGroupLabel": "Twin setup progress",
+      "pickerLabel": "Choisir le twin actif",
+      "searchPlaceholder": "Rechercher par nom ou rôle…",
+      "noMatches": "Aucun twin ne correspond à votre recherche."
     },
     "emptyState": {
       "subtitle": "You need an active twin to use this tab.",
@@ -12399,7 +12402,12 @@
       "promptNoName": "(name)",
       "promptNoBio": "(no bio set — fill in above)",
       "saving": "Saving...",
-      "saveIdentity": "Save Identity"
+      "saveIdentity": "Save Identity",
+      "refineWithAi": "Affiner avec l'IA",
+      "bioRefineHint": "L'IA conservera votre voix et vos faits existants — elle ne fera que resserrer le texte. Mots-clés d'orientation facultatifs ci-dessous.",
+      "bioRefineKeywordsPlaceholder": "(facultatif) ex. plus concis, moins corporate, garder l'humour pince-sans-rire",
+      "refining": "Affinage...",
+      "refineBio": "Affiner la bio"
     },
     "channels": {
       "title": "Channels",
@@ -12435,7 +12443,19 @@
       "fieldPersona": "persona",
       "fieldSignal": "signal",
       "statusConfigured": "configured",
-      "ctaAddTone": "add override →"
+      "ctaAddTone": "add override →",
+      "lastBridged": "Dernier relai {when}",
+      "lastNever": "Jamais utilisé",
+      "lastJustNow": "à l'instant",
+      "lastMinutesAgo": "il y a {count} min",
+      "lastHoursAgo": "il y a {count} h",
+      "lastDaysAgo": "il y a {count} j",
+      "testTooltip": "Consigner un ping sortant synthétique",
+      "testDisabledPaused": "Activez d'abord le canal pour le tester",
+      "testAria": "Envoyer un message de test",
+      "testToast": "Ping de test consigné pour {channel}",
+      "personaPickerPlaceholder": "Choisir une persona…",
+      "personaNone": "— Aucune —"
     },
     "tone": {
       "title": "Tone Profiles",
@@ -12482,7 +12502,13 @@
       "removeVoiceConfirm": "Remove voice configuration? The twin will have no voice until reconfigured.",
       "configureVoice": "Configure Voice",
       "saving": "Saving...",
-      "save": "Save"
+      "save": "Save",
+      "previewCta": "Aperçu",
+      "previewLoading": "Synthèse en cours…",
+      "previewStop": "Arrêter",
+      "previewTooltip": "Synthétiser un court échantillon avec les paramètres actuels",
+      "previewNeedsConfig": "Définissez un voice id et un credential id avant l'aperçu",
+      "previewSample": "Voici à quoi ressemblera votre twin lorsqu'il parlera via le canal voix."
     },
     "training": {
       "title": "Training Room",
@@ -12520,7 +12546,10 @@
       "generatingFollowup": "Generating follow-up...",
       "summarizingSession": "Summarizing what we learned...",
       "sessionSummaryHeading": "What we learned this session",
-      "summarySaved": "Summary saved as a high-priority memory."
+      "summarySaved": "Summary saved as a high-priority memory.",
+      "nextMovesHeading": "Où aller ensuite",
+      "nextMovesSubtitle": "Sujets dont la couverture est la plus mince — entraînez-les en priorité pour donner le plus gros coup de boost au cerveau.",
+      "nextMovesCoverage": "{count} faits d'ancrage à ce jour"
     },
     "brain": {
       "title": "Brain",
@@ -12588,7 +12617,18 @@
       "entriesCount_other": "{count} entries",
       "priorityWithCount": "priority {count}",
       "approveAction": "approve",
-      "rejectAction": "reject"
+      "rejectAction": "reject",
+      "bulkSelectAll": "Tout sélectionner sur cette page",
+      "bulkSelectedCount": "{count} sélectionnés",
+      "bulkRowSelect": "Sélectionner la mémoire pour la revue groupée",
+      "bulkApproveCta": "Approuver {count}",
+      "bulkRejectCta": "Rejeter {count}",
+      "bulkClear": "Effacer la sélection",
+      "bulkApprovedToast": "{count} mémoires approuvées — elles sont maintenant indexées dans le cerveau.",
+      "bulkRejectedToast": "{count} mémoires rejetées.",
+      "bulkPartialToast": "{succeeded} traités, {failed} en échec — voir les toasts pour les détails.",
+      "provenanceChip": "depuis {id}…",
+      "provenanceTooltip": "ID de communication source : {id}"
     },
     "profiles": {
       "title": "Twin Profiles",
@@ -12644,7 +12684,26 @@
       "compiledLabel": "Compiled wiki",
       "auditReportLabel": "Audit report",
       "copy": "Copy",
-      "copied": "Copied to clipboard"
+      "copied": "Copied to clipboard",
+      "compiledSummary": "{count} fichiers écrits.",
+      "copyPath": "Copier le chemin",
+      "freshness": {
+        "loading": "Wiki…",
+        "compiling": "Compilation…",
+        "never": "Wiki : non compilé",
+        "neverTooltip": "Aucun wiki sur le disque pour l'instant. Cliquez pour compiler à partir des mémoires approuvées.",
+        "fresh": "Wiki : {rel}",
+        "freshTooltip": "{count} fichiers · compilé {rel}\n{path}\nCliquez pour recompiler.",
+        "stale": "Wiki : {rel}",
+        "staleTooltip": "{count} fichiers · dernière compilation {rel} (obsolète)\n{path}\nCliquez pour recompiler.",
+        "compiledToast": "Wiki compilé — {count} fichiers écrits.",
+        "openFolderTooltip": "Ouvrir le dossier du wiki dans votre gestionnaire de fichiers",
+        "openFolderAria": "Ouvrir le dossier du wiki",
+        "justNow": "à l'instant",
+        "minutesAgo": "il y a {count} min",
+        "hoursAgo": "il y a {count} h",
+        "daysAgo": "il y a {count} j"
+      }
     },
     "hero": {
       "eyebrow": "Twin",
@@ -12736,6 +12795,124 @@
       "channelsBody": "Each channel binds a credential. Pausing a channel keeps the config but stops traffic.",
       "trainingTitle": "Interview yourself",
       "trainingBody": "Pick a topic — AI asks 5 questions — answer in your voice. The session summary becomes a high-signal memory."
+    },
+    "gaps": {
+      "title": "Ce qui manque",
+      "subtitle": "Préparation {pct} %",
+      "dialogLabel": "Ce qui manque pour ce twin",
+      "close": "Fermer",
+      "openTooltip": "Cliquez pour voir ce qui manque",
+      "allSetTooltip": "Tous les jalons sont complets",
+      "allSetTitle": "Tout est prêt",
+      "allSetBody": "Tous les jalons sont complets. Ce twin est prêt à prendre la parole.",
+      "moreCount": "+{count} autres",
+      "titles": {
+        "identityEmpty": "Aucune bio pour l'instant",
+        "identityPartial": "La bio est courte",
+        "toneEmpty": "Aucun ton capturé",
+        "tonePartial": "Ton générique uniquement",
+        "brainEmpty": "Aucune connaissance liée",
+        "brainPartial": "Sous-chemin uniquement — aucune KB",
+        "voiceEmpty": "Aucune voix définie",
+        "channelsEmpty": "Aucun canal",
+        "channelsPartial": "Tous les canaux en pause",
+        "memoriesEmpty": "Aucune mémoire approuvée",
+        "memoriesPartial": "Mémoires insuffisantes"
+      },
+      "hints": {
+        "identityEmpty": "Ajoutez une courte bio pour donner une voix à ce twin.",
+        "identityPartial": "Étendez la bio au-delà de 50 caractères pour un meilleur ancrage.",
+        "toneEmpty": "Capturez au moins un profil de ton.",
+        "tonePartial": "Ajoutez un ton spécifique à un canal.",
+        "brainEmpty": "Liez une base de connaissances ou un sous-chemin Obsidian.",
+        "brainPartial": "Liez une base de connaissances pour la recherche sémantique.",
+        "voiceEmpty": "Choisissez un voice id ElevenLabs pour activer la parole.",
+        "channelsEmpty": "Ajoutez un canal pour que le twin puisse être joint.",
+        "channelsPartial": "Activez au moins un canal.",
+        "memoriesEmpty": "Approuvez des mémoires ou lancez une session d'entraînement.",
+        "memoriesPartial": "{remaining} mémoires approuvées de plus pour atteindre solide ({approved} sur {threshold})."
+      }
+    },
+    "contacts": {
+      "title": "Contacts",
+      "subtitle": "Handles externes avec lesquels ce twin a interagi. Ajoutez un alias et des notes pour faciliter le rappel ; la liste se remplit automatiquement à partir des communications.",
+      "loading": "Chargement des contacts…",
+      "emptyTitle": "Aucun contact pour l'instant",
+      "emptyBody": "Les contacts apparaissent ici dès que le twin échange un message avec quelqu'un sur un canal.",
+      "lastSeen": "Vu il y a {rel}",
+      "neverBridged": "jamais",
+      "justNow": "à l'instant",
+      "messageCount": "{count} messages",
+      "aliasPlaceholder": "Nom familier (ex. \"Alice depuis Discord\")",
+      "notesPlaceholder": "Notes — contexte, préférences, dates importantes…",
+      "editAria": "Modifier l'alias et les notes",
+      "save": "Enregistrer",
+      "saving": "Enregistrement…",
+      "cancel": "Annuler"
+    },
+    "distilled": {
+      "title": "Faits distillés",
+      "subtitle": "Faits sélectionnés sur le twin et ses contacts. Chaque fait cite les communications source qui l'ont produit.",
+      "addCta": "Ajouter un fait",
+      "addHeading": "Nouveau fait distillé",
+      "cancel": "Annuler",
+      "saving": "Enregistrement…",
+      "loading": "Chargement des faits distillés…",
+      "contentPlaceholder": "ex. Alice préfère les DMs après 21 h ; dit être du matin mais répond le soir.",
+      "contactLabel": "Contact (facultatif)",
+      "contactPlaceholder": "ex. alice@discord",
+      "importanceLabel": "Importance",
+      "sourcesLabel": "Communications source",
+      "sourcesHint": "Choisissez-en au moins une — les faits doivent citer leur origine.",
+      "needsSources": "Choisissez au moins une communication source pour activer Enregistrer.",
+      "noCommsYet": "Aucune communication enregistrée pour ce twin pour l'instant.",
+      "saveWithSources": "Enregistrer le fait ({count} sources)",
+      "sent": "Envoyé",
+      "received": "Reçu",
+      "sourceCount": "{count} sources",
+      "emptyTitle": "Aucun fait distillé pour l'instant",
+      "emptyBody": "Ajoutez des faits au fil de la revue des communications — chaque fait citant les messages dont il provient. Les étapes futures proposeront des faits automatiquement.",
+      "deleteAria": "Supprimer le fait distillé"
+    },
+    "reflections": {
+      "title": "Réflexions",
+      "subtitle": "Journaux d'audit pour l'opérateur. Posez une question sur l'activité récente de ce twin — Claude lit le profil du twin + les 40 dernières communications et rédige une réponse courte et figée.",
+      "loading": "Chargement des réflexions…",
+      "emptyTitle": "Aucune réflexion pour l'instant",
+      "emptyBody": "Saisissez une question amorce ci-dessus pour générer la première réflexion. Les réflexions passées restent figées comme une trace d'audit écrite.",
+      "seedPlaceholder": "Posez par exemple : \"Quels schémas émergent dans la voix de ce twin cette semaine ?\"",
+      "reflectCta": "Réfléchir",
+      "generating": "Réflexion en cours…",
+      "deleteAria": "Supprimer la réflexion",
+      "suggestedSeedLabels": {
+        "voiceChange": "Dérive de voix",
+        "commsCadence": "Cadence",
+        "contactSurprises": "Surprises"
+      },
+      "suggestedSeeds": {
+        "voiceChange": "La voix du twin dérive-t-elle de sa bio ? Où, et la dérive est-elle intentionnelle ?",
+        "commsCadence": "Quelle est la cadence et l'équilibre entrant/sortant sur les canaux ces derniers temps ?",
+        "contactSurprises": "Y a-t-il des contacts ou des fils qui vous ont surpris — sujets inattendus, handles inconnus, réponses hors-ton ?"
+      }
+    },
+    "recall": {
+      "title": "Aperçu du rappel",
+      "subtitle": "Ce qu'une persona qui adopte ce twin verrait à l'exécution — bio, ton générique, communications les plus récentes et faits distillés les plus importants. En lecture seule pour l'instant ; les étapes futures relieront ce bundle au prompt persona réel.",
+      "contactFilterPlaceholder": "Limiter à un contact (handle)…",
+      "refresh": "Actualiser",
+      "refreshing": "Actualisation…",
+      "loading": "Chargement du rappel…",
+      "scopedTo": "Limité à : {handle}",
+      "scopeToTooltip": "Limiter l'aperçu à ce contact",
+      "identitySection": "Identité",
+      "toneSection": "Ton générique",
+      "toneEmpty": "Aucun ton générique configuré — la persona s'appuiera uniquement sur la bio.",
+      "factsSection": "Faits distillés majeurs ({count})",
+      "factsEmpty": "Aucun fait distillé pour l'instant — le rappel se rabattra sur les communications seules.",
+      "commsSection": "Communications récentes ({count})",
+      "commsEmpty": "Aucune communication enregistrée pour ce twin pour l'instant.",
+      "contactsSection": "Top contacts par activité ({count})",
+      "contactsEmpty": "Aucun contact sur ce twin pour l'instant."
     }
   },
   "recipe_shared": {
