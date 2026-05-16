@@ -17,24 +17,34 @@ import type { SystemStore } from '../../storeTypes';
  *   default; uninvited audio at startup is rude. Only fires if the
  *   master `radioEnabled` is on and the persisted radio state has a
  *   current station — otherwise the user opens the picker themselves.
+ * - `collapsedSourceKinds` — which station-source groups are collapsed
+ *   in `StationPicker`. Stored as a list of `'youtubeTracks' | 'stream'`
+ *   values; absent means expanded. Persisted so collapse choice survives
+ *   reopening the picker (and the app).
  *
- * All three fields are persisted via `systemStore`'s `partialize`, so
+ * All four fields are persisted via `systemStore`'s `partialize`, so
  * user choices survive restarts. The toggles live in Settings →
- * Account (`RadioSettingsCard`).
+ * Account (`RadioSettingsCard`); the collapse state is set inline in
+ * the picker.
  */
+export type StationSourceKind = 'youtubeTracks' | 'stream';
+
 export interface RadioSlice {
   radioEnabled: boolean;
   disabledStationIds: string[];
   radioAutoResume: boolean;
+  collapsedSourceKinds: StationSourceKind[];
   setRadioEnabled: (radioEnabled: boolean) => void;
   setStationDisabled: (stationId: string, disabled: boolean) => void;
   setRadioAutoResume: (autoResume: boolean) => void;
+  setSourceKindCollapsed: (kind: StationSourceKind, collapsed: boolean) => void;
 }
 
 export const createRadioSlice: StateCreator<SystemStore, [], [], RadioSlice> = (set) => ({
   radioEnabled: false,
   disabledStationIds: [],
   radioAutoResume: false,
+  collapsedSourceKinds: [],
   setRadioEnabled: (radioEnabled) => set({ radioEnabled }),
   setStationDisabled: (stationId, disabled) =>
     set((state) => {
@@ -44,4 +54,11 @@ export const createRadioSlice: StateCreator<SystemStore, [], [], RadioSlice> = (
       return { disabledStationIds: Array.from(current) };
     }),
   setRadioAutoResume: (autoResume) => set({ radioAutoResume: autoResume }),
+  setSourceKindCollapsed: (kind, collapsed) =>
+    set((state) => {
+      const current = new Set(state.collapsedSourceKinds);
+      if (collapsed) current.add(kind);
+      else current.delete(kind);
+      return { collapsedSourceKinds: Array.from(current) };
+    }),
 });

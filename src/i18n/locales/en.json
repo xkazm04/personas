@@ -12782,7 +12782,11 @@
     "open_source": "Open source",
     "auto_resume_label": "Resume last station on launch",
     "auto_resume_description": "When on, the last-playing station starts automatically the first time the radio loads after the app opens. Off by default.",
-    "buffering": "Buffering"
+    "buffering": "Buffering",
+    "group_youtube": "YouTube",
+    "group_stream": "Streams",
+    "group_toggle_label": "Toggle group",
+    "group_count": "{count}"
   },
   "cockpit": {
     "unknown_assistant": "Unknown assistant",

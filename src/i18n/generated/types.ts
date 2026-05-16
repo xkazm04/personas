@@ -12789,6 +12789,10 @@ export type Translations = {
     auto_resume_label: string;
     auto_resume_description: string;
     buffering: string;
+    group_youtube: string;
+    group_stream: string;
+    group_toggle_label: string;
+    group_count: string;
   };
   cockpit: {
     unknown_assistant: string;

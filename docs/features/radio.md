@@ -21,7 +21,12 @@ appropriate engine and reports state transitions back via
   aware speaker icon — click to open a slider popover with a built-in
   mute toggle), station name + current track (truncated), station-picker.
 - The station picker lists every curated station with a YouTube/Radio
-  badge and (for YouTube) a track count.
+  badge and (for YouTube) a track count. When the catalog contains
+  both `youtubeTracks` and `stream` stations the list splits into
+  collapsible "YouTube" / "Streams" groups (each with a count chip);
+  the collapse choice persists across sessions via
+  `collapsedSourceKinds` in the radio slice. Catalogs of a single
+  kind render flat — the heading would feel decorative.
 - A "Radio" card in **Settings → Account** (`RadioSettingsCard`) that
   lists the curated catalog. YouTube stations show their tracklist;
   stream stations show the source label + link. Three settings live
