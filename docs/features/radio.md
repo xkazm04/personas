@@ -46,6 +46,15 @@ appropriate engine and reports state transitions back via
   `player.getCurrentTime()` / `player.getDuration()` once per second
   and every fifth tick reports the current position back through
   `radio_report_status` so a restart resumes mid-track.
+- YouTube tracks **crossfade** at end-of-track. When the polling loop
+  notices `durationSec - currentSec <= 1.6s` it kicks a 1.5s eased
+  rAF-driven fade from `state.volume → 0` on the YT player. When the
+  next videoId loads, an identical fade runs from `0 → state.volume`.
+  The volume-sync useEffect that normally forces the player back to
+  `state.volume` after every state change skips the YT path while
+  `crossfadingRef.current` is true so the animation owns volume
+  exclusively. Stream stations don't crossfade — they're a single
+  continuous source with no track boundary.
 - Clicking the track title opens a floating "now playing" card anchored
   above the footer (`NowPlayingCard`). The card shows the station with
   an accent-tinted header, the current track + artist, a wider progress

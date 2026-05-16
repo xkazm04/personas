@@ -33,6 +33,10 @@ const PLAYBACK_WATCHDOG_MS = 8000;
 const PROGRESS_POLL_MS = 1000;
 /** Persist position to backend every Nth progress tick. */
 const POSITION_REPORT_EVERY_N_TICKS = 5;
+/** How long the crossfade runs on either side of a natural track-end. */
+const CROSSFADE_DURATION_MS = 1500;
+/** Trigger the fade-out when the current track has this many seconds left. */
+const CROSSFADE_TRIGGER_BEFORE_END_SEC = 1.6;
 
 function formatTime(sec: number): string {
   const m = Math.floor(sec / 60);
@@ -110,6 +114,17 @@ export default function RadioFooter() {
   const lastNonZeroVolumeRef = useRef<number>(0.7);
   /** Current/total seconds for the YouTube progress bar; null when N/A. */
   const [progress, setProgress] = useState<{ currentSec: number; durationSec: number } | null>(null);
+  /**
+   * Crossfade plumbing. `crossfadingRef` flips on for the duration of an
+   * animated volume change so the volume-sync useEffect doesn't slap the
+   * player back to `state.volume` mid-fade. `fadeRafRef` holds the in-
+   * flight rAF id; `fadedOutVideoIdRef` remembers which track we've
+   * already started the end-of-track fade for so the trigger fires once
+   * per track rather than every progress poll.
+   */
+  const crossfadingRef = useRef<boolean>(false);
+  const fadeRafRef = useRef<number | null>(null);
+  const fadedOutVideoIdRef = useRef<string | null>(null);
 
   const stationKind = nowPlaying?.station.source.kind ?? null;
   const isStream = stationKind === 'stream';
@@ -291,14 +306,91 @@ export default function RadioFooter() {
     }
   }, [isYoutube, nowPlaying, state?.status, state?.stationCursors, state?.currentStationId, ytHandle, armWatchdog, cancelWatchdog]);
 
-  // Volume sync (both engines).
+  // Volume sync (both engines). Skip the YT player path during a
+  // crossfade animation so the rAF loop owns volume exclusively until
+  // the fade lands on its target.
   useEffect(() => {
     if (!state) return;
     if (audioRef.current && Math.abs(audioRef.current.volume - state.volume) > 0.01) {
       audioRef.current.volume = state.volume;
     }
-    ytHandle.current?.setVolume(state.volume);
+    if (!crossfadingRef.current) {
+      ytHandle.current?.setVolume(state.volume);
+    }
   }, [state?.volume, state, ytHandle]);
+
+  // Animate the YouTube player volume between two values over a duration.
+  // Used by the end-of-track fade-out and start-of-next fade-in, so the
+  // shuffled tracklist sounds continuous instead of hard-cutting between
+  // every song. Eased in-out so the transition feels natural to the ear.
+  const animateYtVolume = useCallback(
+    (from: number, to: number, durationMs: number) => {
+      const player = ytHandle.current;
+      if (!player) return;
+      if (fadeRafRef.current !== null) {
+        window.cancelAnimationFrame(fadeRafRef.current);
+      }
+      crossfadingRef.current = true;
+      const start = performance.now();
+      const step = (now: number) => {
+        const linearT = Math.min(1, (now - start) / durationMs);
+        const eased = linearT < 0.5
+          ? 2 * linearT * linearT
+          : 1 - Math.pow(-2 * linearT + 2, 2) / 2;
+        const v = from + (to - from) * eased;
+        player.setVolume(v);
+        if (linearT < 1) {
+          fadeRafRef.current = window.requestAnimationFrame(step);
+        } else {
+          fadeRafRef.current = null;
+          crossfadingRef.current = false;
+        }
+      };
+      fadeRafRef.current = window.requestAnimationFrame(step);
+    },
+    [ytHandle],
+  );
+
+  // Trigger the end-of-track fade-out as currentSec nears durationSec.
+  // We use a `fadedOutVideoIdRef` so this runs at most once per track:
+  // every subsequent progress poll inside the trigger window is a no-op.
+  useEffect(() => {
+    if (!isYoutube) return;
+    if (!progress || progress.durationSec <= 0) return;
+    if (state?.status !== 'playing') return;
+    const videoId = nowPlaying?.track?.videoId ?? null;
+    if (!videoId || fadedOutVideoIdRef.current === videoId) return;
+    const remaining = progress.durationSec - progress.currentSec;
+    if (remaining > 0 && remaining <= CROSSFADE_TRIGGER_BEFORE_END_SEC) {
+      fadedOutVideoIdRef.current = videoId;
+      animateYtVolume(state?.volume ?? 0.7, 0, CROSSFADE_DURATION_MS);
+    }
+  }, [isYoutube, progress, state?.status, state?.volume, nowPlaying?.track?.videoId, animateYtVolume]);
+
+  // Fade the new track in from 0 once it loads, but only if the prior
+  // track was actually faded out (so the user's first play of the day
+  // doesn't start from silence).
+  useEffect(() => {
+    if (!isYoutube) return;
+    const videoId = nowPlaying?.track?.videoId ?? null;
+    if (!videoId) return;
+    if (fadedOutVideoIdRef.current && fadedOutVideoIdRef.current !== videoId) {
+      animateYtVolume(0, state?.volume ?? 0.7, CROSSFADE_DURATION_MS);
+      fadedOutVideoIdRef.current = null;
+    }
+  }, [isYoutube, nowPlaying?.track?.videoId, state?.volume, animateYtVolume]);
+
+  // Cancel any in-flight crossfade on unmount.
+  useEffect(
+    () => () => {
+      if (fadeRafRef.current !== null) {
+        window.cancelAnimationFrame(fadeRafRef.current);
+        fadeRafRef.current = null;
+      }
+      crossfadingRef.current = false;
+    },
+    [],
+  );
 
   useEffect(() => () => cancelWatchdog(), [cancelWatchdog]);
 
