@@ -10953,6 +10953,15 @@ export type Translations = {
       gate_rejection_listener: string;
     };
     dev_projects: {
+      bulk_selected_one: string;
+      bulk_selected_many: string;
+      bulk_archive_btn: string;
+      bulk_archive_success: string;
+      bulk_archive_partial: string;
+      bulk_select_all: string;
+      bulk_select_clear: string;
+      bulk_select_row: string;
+      bulk_already_archived: string;
       active_goals: string;
       run_context_map_scan: string;
       entry_points: string;

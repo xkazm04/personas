@@ -37,6 +37,7 @@ The eight tabs are sequenced so a new project can walk top-to-bottom exactly onc
 4. A top-of-page **ProjectSelector** banner persists across every other tab so the active project is always visible. With zero projects it becomes a prompt → "Create Project" CTA; with one it collapses to a label; with many it becomes a dropdown.
 5. Each project row carries two quick-action icons in the last column: **Open in VS Code** (deep-links via the `vscode://file/<path>` URI handler — silently falls back if VS Code isn't installed) and **Open project folder** (`shell.open(path)` → OS file manager). Both stop click propagation so they don't toggle row activation.
 6. Rows whose `github_url` is set carry a third icon: **Import GitHub issues as goals**. Opens a modal that resolves the first matching GitHub credential, lists open issues via `executeApiRequest` (PRs filtered out by the `pull_request` field — same proxy + auth path the Overview tab uses), and creates one DevGoal per selected issue with the GitHub URL appended to the description. No backend changes.
+7. **Bulk archive** — a leading checkbox column lets the user multi-select non-archived rows; the header checkbox toggles select-all-visible. When at least one row is selected, a sticky amber action bar appears above the table with a count + **Archive selected** button (loops `updateProject({ status: 'archived' })` per id and reports `Archived N` / `M failed` toasts). Archived rows render their checkbox disabled with an "Already archived" hint.
 
 ### 2. Context Map — scan the codebase into semantic domains
 

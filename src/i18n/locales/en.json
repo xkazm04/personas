@@ -10947,6 +10947,15 @@
       "gate_rejection_listener": "Rejection listener wired"
     },
     "dev_projects": {
+      "bulk_selected_one": "project selected",
+      "bulk_selected_many": "projects selected",
+      "bulk_archive_btn": "Archive selected",
+      "bulk_archive_success": "Archived {count} project(s)",
+      "bulk_archive_partial": "{failed} project(s) failed to archive",
+      "bulk_select_all": "Select all active projects",
+      "bulk_select_clear": "Clear selection",
+      "bulk_select_row": "Select for bulk action",
+      "bulk_already_archived": "Already archived",
       "active_goals": "active goals",
       "run_context_map_scan": "Run Context Map scan for this project to populate metadata.",
       "entry_points": "entry points",

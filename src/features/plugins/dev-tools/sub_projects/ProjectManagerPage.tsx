@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-  FolderKanban, Plus, ChevronRight, Folder, Network, Code2, GitBranch,
+  FolderKanban, Plus, ChevronRight, Folder, Network, Code2, GitBranch, Archive, CheckSquare, Square, X as XIcon,
 } from 'lucide-react';
 import { open as openExternal } from '@tauri-apps/plugin-shell';
 import { toastCatch } from '@/lib/silentCatch';
+import { useToastStore } from '@/stores/toastStore';
 import { GitHubIssueImportModal } from './GitHubIssueImportModal';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { ActionRow } from '@/features/shared/components/layout/ActionRow';
@@ -56,6 +57,48 @@ export default function ProjectManagerPage() {
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
   const [importProjectId, setImportProjectId] = useState<string | null>(null);
   const importProject = projects.find((p) => p.id === importProjectId);
+
+  // Bulk-archive selection — checkbox column + sticky action bar above the
+  // table. Archive flows through updateProject({status: 'archived'}) per id
+  // so it reuses the existing slice action and SQL repository path.
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [archiving, setArchiving] = useState(false);
+  const addToastPm = useToastStore((s) => s.addToast);
+  const toggleSelection = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
+  const clearSelection = useCallback(() => setSelectedIds(new Set()), []);
+  const visibleNonArchivedIds = useMemo(
+    () => projects.filter((p) => p.status !== 'archived').map((p) => p.id),
+    [projects],
+  );
+  const allVisibleSelected = visibleNonArchivedIds.length > 0 && visibleNonArchivedIds.every((id) => selectedIds.has(id));
+  const toggleSelectAll = useCallback(() => {
+    if (allVisibleSelected) clearSelection();
+    else setSelectedIds(new Set(visibleNonArchivedIds));
+  }, [allVisibleSelected, visibleNonArchivedIds, clearSelection]);
+  const bulkArchive = useCallback(async () => {
+    if (selectedIds.size === 0 || archiving) return;
+    setArchiving(true);
+    let ok = 0, fail = 0;
+    try {
+      for (const id of selectedIds) {
+        try {
+          await storeUpdateProject(id, { status: 'archived' });
+          ok++;
+        } catch { fail++; }
+      }
+      if (ok > 0) addToastPm(t.plugins.dev_projects.bulk_archive_success.replace('{count}', String(ok)), 'success');
+      if (fail > 0) addToastPm(t.plugins.dev_projects.bulk_archive_partial.replace('{failed}', String(fail)), 'error');
+      clearSelection();
+    } finally {
+      setArchiving(false);
+    }
+  }, [selectedIds, archiving, storeUpdateProject, addToastPm, t.plugins.dev_projects.bulk_archive_success, t.plugins.dev_projects.bulk_archive_partial, clearSelection]);
 
   const activeProject = projects.find((p) => p.id === activeProjectId);
 
@@ -223,8 +266,46 @@ export default function ProjectManagerPage() {
               </div>
             ) : (
               <div className="border border-primary/10 rounded-modal">
+                {/* Bulk-action bar — only visible when something is selected */}
+                {selectedIds.size > 0 && (
+                  <div className="flex items-center gap-2 px-4 py-2 bg-amber-500/8 border-b border-amber-500/20">
+                    <span className="typo-caption text-amber-300 font-medium tabular-nums">
+                      {selectedIds.size} {selectedIds.size === 1 ? t.plugins.dev_projects.bulk_selected_one : t.plugins.dev_projects.bulk_selected_many}
+                    </span>
+                    <Button
+                      variant="accent"
+                      accentColor="amber"
+                      size="xs"
+                      icon={<Archive className="w-3 h-3" />}
+                      loading={archiving}
+                      onClick={bulkArchive}
+                    >
+                      {t.plugins.dev_projects.bulk_archive_btn}
+                    </Button>
+                    <button
+                      type="button"
+                      onClick={clearSelection}
+                      className="ml-auto inline-flex items-center gap-1 typo-caption text-foreground/60 hover:text-foreground"
+                    >
+                      <XIcon className="w-3 h-3" /> {t.common.clear}
+                    </button>
+                  </div>
+                )}
+
                 {/* Table header */}
-                <div className="grid grid-cols-[1fr_1.2fr_0.8fr_0.5fr_0.6fr_0.7fr_110px] gap-3 px-4 py-2.5 bg-primary/5 border-b border-primary/10 typo-label font-medium text-primary uppercase tracking-wider rounded-t-xl">
+                <div className="grid grid-cols-[28px_1fr_1.2fr_0.8fr_0.5fr_0.6fr_0.7fr_110px] gap-3 px-4 py-2.5 bg-primary/5 border-b border-primary/10 typo-label font-medium text-primary uppercase tracking-wider rounded-t-xl">
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); toggleSelectAll(); }}
+                    title={allVisibleSelected ? t.plugins.dev_projects.bulk_select_clear : t.plugins.dev_projects.bulk_select_all}
+                    aria-label={allVisibleSelected ? t.plugins.dev_projects.bulk_select_clear : t.plugins.dev_projects.bulk_select_all}
+                    className="self-center text-foreground/60 hover:text-primary disabled:opacity-30"
+                    disabled={visibleNonArchivedIds.length === 0}
+                  >
+                    {allVisibleSelected
+                      ? <CheckSquare className="w-3.5 h-3.5" />
+                      : <Square className="w-3.5 h-3.5" />}
+                  </button>
                   <span>{t.plugins.dev_tools.col_name}</span>
                   <span>{t.plugins.dev_tools.col_path}</span>
                   <span>{t.plugins.dev_tools.col_tech_stack}</span>
@@ -238,12 +319,26 @@ export default function ProjectManagerPage() {
                   <div
                     key={project.id}
                     onClick={() => handleSetActive(project.id)}
-                    className={`grid grid-cols-[1fr_1.2fr_0.8fr_0.5fr_0.6fr_0.7fr_110px] gap-3 px-4 py-3 border-b border-primary/5 last:border-b-0 cursor-pointer transition-colors ${
-                      activeProjectId === project.id
+                    className={`grid grid-cols-[28px_1fr_1.2fr_0.8fr_0.5fr_0.6fr_0.7fr_110px] gap-3 px-4 py-3 border-b border-primary/5 last:border-b-0 cursor-pointer transition-colors ${
+                      selectedIds.has(project.id)
+                        ? 'bg-amber-500/5 ring-1 ring-amber-500/20'
+                        : activeProjectId === project.id
                         ? 'bg-primary/10'
                         : 'hover:bg-primary/5'
                     }`}
                   >
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); toggleSelection(project.id); }}
+                      disabled={project.status === 'archived'}
+                      aria-label={t.plugins.dev_projects.bulk_select_row}
+                      title={project.status === 'archived' ? t.plugins.dev_projects.bulk_already_archived : t.plugins.dev_projects.bulk_select_row}
+                      className="self-center text-foreground/40 hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      {selectedIds.has(project.id)
+                        ? <CheckSquare className="w-3.5 h-3.5 text-primary" />
+                        : <Square className="w-3.5 h-3.5" />}
+                    </button>
                     <span className="typo-body text-foreground font-medium flex items-center gap-2 truncate">
                       <ChevronRight className={`w-3.5 h-3.5 text-foreground transition-transform ${activeProjectId === project.id ? 'rotate-90' : ''}`} />
                       {project.name}
