@@ -9881,6 +9881,8 @@ export type Translations = {
       context_goal_coverage_tooltip: string;
       context_no_goal_label: string;
       context_no_goal_tooltip: string;
+      row_open_vscode: string;
+      row_open_folder: string;
       add_group: string;
       group_name_placeholder: string;
       create: string;

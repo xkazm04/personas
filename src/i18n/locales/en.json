@@ -9875,6 +9875,8 @@
       "context_goal_coverage_tooltip": "Open in Lifecycle → Goals",
       "context_no_goal_label": "no goal",
       "context_no_goal_tooltip": "No goal references this context yet",
+      "row_open_vscode": "Open in VS Code",
+      "row_open_folder": "Open project folder",
       "add_group": "Add Group",
       "group_name_placeholder": "Group name...",
       "create": "Create",

@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  FolderKanban, Plus, ChevronRight, Folder, Network,
+  FolderKanban, Plus, ChevronRight, Folder, Network, Code2,
 } from 'lucide-react';
+import { open as openExternal } from '@tauri-apps/plugin-shell';
+import { toastCatch } from '@/lib/silentCatch';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { ActionRow } from '@/features/shared/components/layout/ActionRow';
 import { Button } from '@/features/shared/components/buttons';
@@ -219,7 +221,7 @@ export default function ProjectManagerPage() {
             ) : (
               <div className="border border-primary/10 rounded-modal">
                 {/* Table header */}
-                <div className="grid grid-cols-[1fr_1.2fr_0.8fr_0.5fr_0.6fr_0.7fr_40px] gap-3 px-4 py-2.5 bg-primary/5 border-b border-primary/10 typo-label font-medium text-primary uppercase tracking-wider rounded-t-xl">
+                <div className="grid grid-cols-[1fr_1.2fr_0.8fr_0.5fr_0.6fr_0.7fr_110px] gap-3 px-4 py-2.5 bg-primary/5 border-b border-primary/10 typo-label font-medium text-primary uppercase tracking-wider rounded-t-xl">
                   <span>{t.plugins.dev_tools.col_name}</span>
                   <span>{t.plugins.dev_tools.col_path}</span>
                   <span>{t.plugins.dev_tools.col_tech_stack}</span>
@@ -233,7 +235,7 @@ export default function ProjectManagerPage() {
                   <div
                     key={project.id}
                     onClick={() => handleSetActive(project.id)}
-                    className={`grid grid-cols-[1fr_1.2fr_0.8fr_0.5fr_0.6fr_0.7fr_40px] gap-3 px-4 py-3 border-b border-primary/5 last:border-b-0 cursor-pointer transition-colors ${
+                    className={`grid grid-cols-[1fr_1.2fr_0.8fr_0.5fr_0.6fr_0.7fr_110px] gap-3 px-4 py-3 border-b border-primary/5 last:border-b-0 cursor-pointer transition-colors ${
                       activeProjectId === project.id
                         ? 'bg-primary/10'
                         : 'hover:bg-primary/5'
@@ -248,7 +250,27 @@ export default function ProjectManagerPage() {
                     <span className="typo-caption text-foreground self-center">{project.goalCount}</span>
                     <span className="self-center"><StatusBadge status={project.status} /></span>
                     <span className="typo-caption text-foreground self-center">{project.createdAt}</span>
-                    <ProjectRowMenu projectId={project.id} projectName={project.name} onEdit={() => handleEditProject(project.id)} />
+                    <div className="self-center flex items-center gap-0.5 justify-end" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        type="button"
+                        onClick={() => { openExternal(`vscode://file/${project.path}`).catch(toastCatch('Failed to open in VS Code')); }}
+                        title={t.plugins.dev_tools.row_open_vscode}
+                        aria-label={t.plugins.dev_tools.row_open_vscode}
+                        className="w-7 h-7 flex items-center justify-center rounded-interactive text-foreground/60 hover:text-primary hover:bg-primary/10 transition-colors"
+                      >
+                        <Code2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { openExternal(project.path).catch(toastCatch('Failed to open project folder')); }}
+                        title={t.plugins.dev_tools.row_open_folder}
+                        aria-label={t.plugins.dev_tools.row_open_folder}
+                        className="w-7 h-7 flex items-center justify-center rounded-interactive text-foreground/60 hover:text-primary hover:bg-primary/10 transition-colors"
+                      >
+                        <Folder className="w-3.5 h-3.5" />
+                      </button>
+                      <ProjectRowMenu projectId={project.id} projectName={project.name} onEdit={() => handleEditProject(project.id)} />
+                    </div>
                   </div>
                 ))}
               </div>

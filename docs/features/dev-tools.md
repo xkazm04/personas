@@ -35,6 +35,7 @@ The eight tabs are sequenced so a new project can walk top-to-bottom exactly onc
 2. Click **New Project** and pick a local folder. The name is auto-filled from the directory name, the tech stack can be set visually, and you can attach a GitHub URL to unlock Overview stats and the PR Bridge later.
 3. After creation, a **Generate Context Map** CTA appears — skip it only if you intend to define contexts manually.
 4. A top-of-page **ProjectSelector** banner persists across every other tab so the active project is always visible. With zero projects it becomes a prompt → "Create Project" CTA; with one it collapses to a label; with many it becomes a dropdown.
+5. Each project row carries two quick-action icons in the last column: **Open in VS Code** (deep-links via the `vscode://file/<path>` URI handler — silently falls back if VS Code isn't installed) and **Open project folder** (`shell.open(path)` → OS file manager). Both stop click propagation so they don't toggle row activation.
 
 ### 2. Context Map — scan the codebase into semantic domains
 
