@@ -11048,7 +11048,12 @@
       "history_col_ideas": "Ideas",
       "history_col_tokens": "Tokens",
       "history_col_duration": "Duration",
-      "history_col_when": "When"
+      "history_col_when": "When",
+      "history_col_action": "Action",
+      "history_rerun_label": "Rerun",
+      "history_rerun_tooltip": "Re-run this scan against the current code",
+      "history_filter_label": "Filter agents:",
+      "history_filter_clear": "Clear filter"
     },
     "dev_triage": {
       "auto_triage_rules": "Auto-Triage Rules",

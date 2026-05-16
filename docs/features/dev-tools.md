@@ -50,6 +50,7 @@ The eight tabs are sequenced so a new project can walk top-to-bottom exactly onc
 3. A **ScanProgress** card streams live progress while the run is active. Ideas arrive as `DevIdea` rows with category, agent key, effort/impact/risk (1-10 each), and an optional `reasoning` blob.
 4. The **Results** grid shows per-scan idea cards with color-coded level badges. A **Scan History** table below records timestamps, token counts, duration, and the agent set for every past scan.
 5. The **Agent Performance** collapsible panel (see *Agent Scoreboard* below) surfaces per-agent accept / implementation / avg-impact stats aggregated across the whole project.
+6. The **Scan History** table below the results gains an agent-set filter chip row (one chip per agent that has ever scanned, with a count badge — OR-combine semantics; an amber "Clear filter" chip appears when any chip is active) and a per-row **Rerun** button that re-runs the historical agent set against the current code. Rerun is disabled while another scan is in flight.
 
 ### 4. Idea Triage — Tinder-style accept / reject
 

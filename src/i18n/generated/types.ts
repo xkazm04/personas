@@ -11055,6 +11055,11 @@ export type Translations = {
       history_col_tokens: string;
       history_col_duration: string;
       history_col_when: string;
+      history_col_action: string;
+      history_rerun_label: string;
+      history_rerun_tooltip: string;
+      history_filter_label: string;
+      history_filter_clear: string;
     };
     dev_triage: {
       auto_triage_rules: string;
