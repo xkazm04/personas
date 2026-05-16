@@ -3,6 +3,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useTwinReadiness, type MilestoneStatus } from './useTwinReadiness';
 import { ReadinessGapPopover } from './_shared/ReadinessGapPopover';
+import { WikiFreshnessPill } from './_shared/WikiFreshnessPill';
 import type { TwinTab } from '@/lib/types/types';
 import type { LucideIcon } from 'lucide-react';
 
@@ -131,8 +132,11 @@ export function TwinSelector() {
           })}
         </div>
 
-        {/* Readiness % badge — click to see "what's missing" gap popover */}
-        <ReadinessGapPopover readiness={readiness} onJumpTo={setTwinTab} />
+        {/* Right rail: wiki freshness pill + readiness gap popover */}
+        <div className="ml-auto flex items-center gap-1.5">
+          {activeTwinId && <WikiFreshnessPill twinId={activeTwinId} />}
+          <ReadinessGapPopover readiness={readiness} onJumpTo={setTwinTab} />
+        </div>
       </div>
     </div>
   );

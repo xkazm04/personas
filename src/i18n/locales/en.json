@@ -12402,9 +12402,26 @@
       "auditing": "Auditing…",
       "auditNeedsCompile": "Compile the wiki first.",
       "compiledLabel": "Compiled wiki",
+      "compiledSummary": "{count} files written.",
+      "copyPath": "Copy path",
       "auditReportLabel": "Audit report",
       "copy": "Copy",
-      "copied": "Copied to clipboard"
+      "copied": "Copied to clipboard",
+      "freshness": {
+        "loading": "Wiki…",
+        "compiling": "Compiling…",
+        "never": "Wiki: not compiled",
+        "neverTooltip": "No wiki on disk yet. Click to compile from approved memories.",
+        "fresh": "Wiki: {rel}",
+        "freshTooltip": "{count} files · compiled {rel}\n{path}\nClick to recompile.",
+        "stale": "Wiki: {rel}",
+        "staleTooltip": "{count} files · last compiled {rel} (stale)\n{path}\nClick to recompile.",
+        "compiledToast": "Wiki compiled — {count} files written.",
+        "justNow": "just now",
+        "minutesAgo": "{count}m ago",
+        "hoursAgo": "{count}h ago",
+        "daysAgo": "{count}d ago"
+      }
     },
     "identity": {
       "title": "Identity",

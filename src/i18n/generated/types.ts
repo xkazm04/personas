@@ -12408,9 +12408,26 @@ export type Translations = {
       auditing: string;
       auditNeedsCompile: string;
       compiledLabel: string;
+      compiledSummary: string;
+      copyPath: string;
       auditReportLabel: string;
       copy: string;
       copied: string;
+      freshness: {
+        loading: string;
+        compiling: string;
+        never: string;
+        neverTooltip: string;
+        fresh: string;
+        freshTooltip: string;
+        stale: string;
+        staleTooltip: string;
+        compiledToast: string;
+        justNow: string;
+        minutesAgo: string;
+        hoursAgo: string;
+        daysAgo: string;
+      };
     };
     identity: {
       title: string;

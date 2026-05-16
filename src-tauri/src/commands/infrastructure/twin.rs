@@ -1,7 +1,11 @@
+use std::path::PathBuf;
 use std::sync::Arc;
-use tauri::State;
+
+use serde::{Deserialize, Serialize};
+use tauri::{AppHandle, Manager, State};
 use tokio::io::AsyncWriteExt;
 use tokio::process::Command;
+use ts_rs::TS;
 
 use crate::db::models::{
     TwinChannel, TwinCommunication, TwinPendingMemory, TwinProfile, TwinTone, TwinVoiceProfile,
@@ -11,6 +15,61 @@ use crate::engine::prompt;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
+
+// ============================================================================
+// Wiki types (P6+ — second-brain build-out)
+// ============================================================================
+
+/// Result of a `twin_compile_wiki` invocation. Tells the caller how many
+/// files landed and where, so the frontend can show "12 files · ~/twin-wikis/foo/"
+/// without a follow-up status query.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct TwinWikiCompileResult {
+    pub file_count: u32,
+    pub dir_path: String,
+    /// ISO-8601 UTC timestamp.
+    pub compiled_at: String,
+}
+
+/// Snapshot of an on-disk twin wiki. `exists: false` means no compile has
+/// run yet (or the dir was deleted out from under us). The frontend uses
+/// `last_compiled_at` to render the freshness pill in TwinSelector.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct TwinWikiStatus {
+    pub exists: bool,
+    pub file_count: u32,
+    /// ISO-8601 UTC timestamp of the newest .md file's mtime; `None` when
+    /// the directory is empty or absent.
+    pub last_compiled_at: Option<String>,
+    /// Resolved on-disk path. Always populated even when `exists` is false
+    /// — that's where a subsequent compile would write to.
+    pub dir_path: String,
+}
+
+/// Default wiki output directory for a twin. Lives under the app data dir
+/// so it survives app upgrades but doesn't pollute the user's Documents.
+fn default_wiki_dir(app: &AppHandle, twin_id: &str) -> Result<PathBuf, AppError> {
+    let base = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| AppError::Internal(format!("app_data_dir unavailable: {e}")))?;
+    Ok(base.join("twin-wikis").join(twin_id))
+}
+
+fn resolve_wiki_dir(
+    app: &AppHandle,
+    twin_id: &str,
+    override_dir: Option<String>,
+) -> Result<PathBuf, AppError> {
+    match override_dir.filter(|s| !s.trim().is_empty()) {
+        Some(s) => Ok(PathBuf::from(s)),
+        None => default_wiki_dir(app, twin_id),
+    }
+}
 
 // ============================================================================
 // Twin Profiles (P0)
@@ -683,10 +742,11 @@ pub async fn twin_ingest_url(
 
 #[tauri::command]
 pub async fn twin_compile_wiki(
+    app: AppHandle,
     state: State<'_, Arc<AppState>>,
     twin_id: String,
-    output_dir: String,
-) -> Result<u32, AppError> {
+    output_dir: Option<String>,
+) -> Result<TwinWikiCompileResult, AppError> {
     require_auth(&state).await?;
 
     let profile = repo::get_profile_by_id(&state.db, &twin_id)?;
@@ -699,8 +759,12 @@ pub async fn twin_compile_wiki(
         ));
     }
 
-    std::fs::create_dir_all(&output_dir)
+    let dir_path = resolve_wiki_dir(&app, &twin_id, output_dir)?;
+    std::fs::create_dir_all(&dir_path)
         .map_err(|e| AppError::Internal(format!("Failed to create output dir: {e}")))?;
+    let output_dir = dir_path
+        .to_string_lossy()
+        .to_string();
 
     let identity_block = format!(
         "Twin: {name}\nRole: {role}\nBio: {bio}\nLanguages: {langs}\n",
@@ -810,7 +874,11 @@ pub async fn twin_compile_wiki(
         ));
     }
 
-    Ok(written)
+    Ok(TwinWikiCompileResult {
+        file_count: written,
+        dir_path: output_dir,
+        compiled_at: chrono::Utc::now().to_rfc3339(),
+    })
 }
 
 // ----------------------------------------------------------------------------
@@ -819,16 +887,19 @@ pub async fn twin_compile_wiki(
 
 #[tauri::command]
 pub async fn twin_audit_wiki(
+    app: AppHandle,
     state: State<'_, Arc<AppState>>,
     twin_id: String,
-    wiki_dir: String,
+    wiki_dir: Option<String>,
 ) -> Result<TwinPendingMemory, AppError> {
     require_auth(&state).await?;
 
     // Verify the twin exists before doing file I/O
     let _ = repo::get_profile_by_id(&state.db, &twin_id)?;
 
-    let dir = std::path::Path::new(&wiki_dir);
+    let dir_buf = resolve_wiki_dir(&app, &twin_id, wiki_dir)?;
+    let dir = dir_buf.as_path();
+    let wiki_dir = dir.to_string_lossy().to_string();
     if !dir.exists() {
         return Err(AppError::NotFound(format!(
             "Wiki directory not found: {wiki_dir}. Run twin_compile_wiki first."
@@ -904,4 +975,65 @@ pub async fn twin_audit_wiki(
         Some(&title_text),
         4, // high importance — audits should surface clearly
     )
+}
+
+// ----------------------------------------------------------------------------
+// twin_wiki_status — non-mutating freshness query for the selector pill
+// ----------------------------------------------------------------------------
+
+#[tauri::command]
+pub async fn twin_wiki_status(
+    app: AppHandle,
+    state: State<'_, Arc<AppState>>,
+    twin_id: String,
+) -> Result<TwinWikiStatus, AppError> {
+    require_auth(&state).await?;
+    // Confirm the twin exists so we never surface a freshness pill for a
+    // dangling id (e.g. after a delete from another tab).
+    let _ = repo::get_profile_by_id(&state.db, &twin_id)?;
+
+    let dir_buf = default_wiki_dir(&app, &twin_id)?;
+    let dir_path = dir_buf.to_string_lossy().to_string();
+
+    if !dir_buf.exists() {
+        return Ok(TwinWikiStatus {
+            exists: false,
+            file_count: 0,
+            last_compiled_at: None,
+            dir_path,
+        });
+    }
+
+    let mut file_count: u32 = 0;
+    let mut newest_mtime: Option<std::time::SystemTime> = None;
+    let entries = std::fs::read_dir(&dir_buf)
+        .map_err(|e| AppError::Internal(format!("Failed to read wiki dir: {e}")))?;
+    for entry in entries {
+        let Ok(entry) = entry else { continue };
+        let path = entry.path();
+        if path.extension().and_then(|s| s.to_str()) != Some("md") {
+            continue;
+        }
+        file_count += 1;
+        if let Ok(meta) = entry.metadata() {
+            if let Ok(mtime) = meta.modified() {
+                newest_mtime = Some(match newest_mtime {
+                    Some(prev) if prev > mtime => prev,
+                    _ => mtime,
+                });
+            }
+        }
+    }
+
+    let last_compiled_at = newest_mtime.map(|t| {
+        let dt: chrono::DateTime<chrono::Utc> = t.into();
+        dt.to_rfc3339()
+    });
+
+    Ok(TwinWikiStatus {
+        exists: file_count > 0,
+        file_count,
+        last_compiled_at,
+        dir_path,
+    })
 }

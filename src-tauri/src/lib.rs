@@ -2450,6 +2450,7 @@ pub fn run() {
             commands::infrastructure::twin::twin_ingest_url,
             commands::infrastructure::twin::twin_compile_wiki,
             commands::infrastructure::twin::twin_audit_wiki,
+            commands::infrastructure::twin::twin_wiki_status,
             // Notifications
             notifications::send_app_notification,
             notifications::test_notification_channel,

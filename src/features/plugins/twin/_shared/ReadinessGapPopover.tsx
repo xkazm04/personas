@@ -163,7 +163,7 @@ export function ReadinessGapPopover({ readiness, onJumpTo }: Props) {
   const top = gaps.slice(0, 3);
 
   return (
-    <div ref={rootRef} className="relative ml-auto">
+    <div ref={rootRef} className="relative">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}

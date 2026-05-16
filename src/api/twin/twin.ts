@@ -5,6 +5,8 @@ import type { TwinPendingMemory } from "@/lib/bindings/TwinPendingMemory";
 import type { TwinCommunication } from "@/lib/bindings/TwinCommunication";
 import type { TwinVoiceProfile } from "@/lib/bindings/TwinVoiceProfile";
 import type { TwinChannel } from "@/lib/bindings/TwinChannel";
+import type { TwinWikiCompileResult } from "@/lib/bindings/TwinWikiCompileResult";
+import type { TwinWikiStatus } from "@/lib/bindings/TwinWikiStatus";
 import type {
   TwinChannelKind,
   TwinInteractionDirection,
@@ -288,15 +290,26 @@ export const ingestUrl = (url: string, twinId?: string) =>
   invoke<string>("twin_ingest_url", { url, twinId });
 
 /**
- * Compile the full twin (identity, tone, memories, voice, channels) as a
- * cross-linked markdown wiki.
+ * Compile the full twin's approved memories into a navigable markdown wiki.
+ * `outputDir` is optional — when omitted, files land in the per-twin slot
+ * under the app data dir (so the freshness pill in TwinSelector can find
+ * them without any caller bookkeeping).
  */
-export const compileWiki = (twinId: string) =>
-  invoke<string>("twin_compile_wiki", { twinId });
+export const compileWiki = (twinId: string, outputDir?: string) =>
+  invoke<TwinWikiCompileResult>("twin_compile_wiki", { twinId, outputDir });
 
 /**
- * AI-audit a compiled wiki for gaps and contradictions. Returns the audit
- * report as markdown.
+ * AI-audit a compiled wiki for gaps and contradictions. Returns a pending
+ * memory row (the audit report is stored as a high-priority memory so it
+ * surfaces in the Knowledge inbox).
  */
-export const auditWiki = (twinId: string) =>
-  invoke<string>("twin_audit_wiki", { twinId });
+export const auditWiki = (twinId: string, wikiDir?: string) =>
+  invoke<TwinPendingMemory>("twin_audit_wiki", { twinId, wikiDir });
+
+/**
+ * Non-mutating freshness query — returns `{ exists, fileCount, lastCompiledAt,
+ * dirPath }`. Drives the WikiFreshnessPill in TwinSelector. Cheap (one
+ * `read_dir` over a small directory) so the hook can poll on twin change.
+ */
+export const wikiStatus = (twinId: string) =>
+  invoke<TwinWikiStatus>("twin_wiki_status", { twinId });
