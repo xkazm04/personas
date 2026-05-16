@@ -2,10 +2,14 @@
 //! `RadioServiceHandle` mutex, mutate the service, persist state, and emit
 //! a `radio:state` event so the footer can re-render without polling.
 
+use serde::Deserialize;
+use std::time::Duration;
 use tauri::{AppHandle, Emitter, State};
 
 use crate::error::AppError;
-use crate::radio::{NowPlaying, PlayStatus, RadioService, RadioServiceHandle, RadioState, Station};
+use crate::radio::{
+    NowPlaying, PlayStatus, RadioService, RadioServiceHandle, RadioState, Station, StreamMetadata,
+};
 
 /// Tauri event emitted to the main window with the latest `RadioState`
 /// after every mutation, so the footer can re-render without polling.
@@ -180,4 +184,63 @@ pub fn radio_track_ended(
     })??;
     broadcast(&app, &snap);
     Ok(snap)
+}
+
+/// Shape of the SomaFM `/songs/{slug}.json` response. We only consume
+/// the first entry (current track); historical entries are ignored.
+#[derive(Debug, Deserialize)]
+struct SomaFmResponse {
+    songs: Vec<SomaFmSong>,
+}
+
+#[derive(Debug, Deserialize)]
+struct SomaFmSong {
+    title: String,
+    artist: String,
+}
+
+/// Sanity bound on the slug so we can't be tricked into forging an
+/// arbitrary URL path. SomaFM slugs are short, lowercase, ASCII.
+fn is_safe_somafm_slug(slug: &str) -> bool {
+    !slug.is_empty()
+        && slug.len() <= 64
+        && slug
+            .chars()
+            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
+}
+
+/// Fetch the current track for a SomaFM stream station. Runs server-side
+/// (in Rust) so the renderer doesn't need a CSP entry for `somafm.com`
+/// apex. Returns `Ok(None)` on any non-fatal failure (network blip, empty
+/// `songs` array, parse error) — the renderer treats absence as "no
+/// metadata available right now" and keeps showing the station name.
+#[tauri::command]
+pub async fn radio_fetch_somafm_metadata(slug: String) -> Result<Option<StreamMetadata>, AppError> {
+    if !is_safe_somafm_slug(&slug) {
+        return Ok(None);
+    }
+    let url = format!("https://somafm.com/songs/{slug}.json");
+    let client = match reqwest::Client::builder()
+        .timeout(Duration::from_secs(5))
+        .user_agent("Personas/0.1 (radio metadata)")
+        .build()
+    {
+        Ok(c) => c,
+        Err(_) => return Ok(None),
+    };
+    let resp = match client.get(&url).send().await {
+        Ok(r) => r,
+        Err(_) => return Ok(None),
+    };
+    if !resp.status().is_success() {
+        return Ok(None);
+    }
+    let body: SomaFmResponse = match resp.json().await {
+        Ok(b) => b,
+        Err(_) => return Ok(None),
+    };
+    Ok(body.songs.into_iter().next().map(|s| StreamMetadata {
+        title: s.title,
+        artist: s.artist,
+    }))
 }

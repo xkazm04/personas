@@ -89,6 +89,8 @@ export const useSystemStore = create<SystemStore>()(
         companionAutonomousMode: state.companionAutonomousMode,
         radioEnabled: state.radioEnabled,
         disabledStationIds: state.disabledStationIds,
+        radioAutoResume: state.radioAutoResume,
+        collapsedSourceKinds: state.collapsedSourceKinds,
       }),
       onRehydrateStorage: () => (state) => {
         if (!state) return;

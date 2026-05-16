@@ -1181,6 +1181,17 @@ input[type="range"]:disabled::-moz-range-thumb {
   }
 }
 
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes eq-bounce {
+  0% { transform: scaleY(0.2); }
+  100% { transform: scaleY(1); }
+}
+
 @keyframes fade-slide-in {
   from {
     opacity: 0;

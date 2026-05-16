@@ -12854,6 +12854,25 @@ export type Translations = {
     enable_description: string;
     station_toggle_label: string;
     picker_empty: string;
+    volume_button: string;
+    volume_label: string;
+    mute: string;
+    unmute: string;
+    progress_label: string;
+    expand_button: string;
+    collapse: string;
+    tracklist_label: string;
+    open_source: string;
+    auto_resume_label: string;
+    auto_resume_description: string;
+    buffering: string;
+    group_youtube: string;
+    group_stream: string;
+    group_toggle_label: string;
+    group_count: string;
+    row_menu_label: string;
+    row_menu_hide: string;
+    row_menu_open_source: string;
   };
   cockpit: {
     unknown_assistant: string;

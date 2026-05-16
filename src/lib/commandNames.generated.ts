@@ -898,6 +898,7 @@ export type CommandName =
   | "promote_build_draft"
   | "promote_use_case_to_recipe"
   | "publish_event"
+  | "radio_fetch_somafm_metadata"
   | "radio_get_now_playing"
   | "radio_get_state"
   | "radio_list_stations"
