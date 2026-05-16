@@ -527,6 +527,30 @@ pub fn list_communications(
     }
 }
 
+/// Like `list_communications` but filters by `contact_handle` instead of
+/// channel. Used by recall preview to surface the most recent N exchanges
+/// with a specific contact. When `contact_handle` is None, falls through
+/// to the twin-wide list.
+pub fn list_communications_by_contact(
+    pool: &DbPool,
+    twin_id: &str,
+    contact_handle: Option<&str>,
+    limit: i32,
+) -> Result<Vec<TwinCommunication>, AppError> {
+    let conn = pool.get()?;
+    if let Some(handle) = contact_handle {
+        let mut stmt = conn.prepare(
+            "SELECT * FROM twin_communications \
+             WHERE twin_id = ?1 AND contact_handle = ?2 \
+             ORDER BY occurred_at DESC LIMIT ?3",
+        )?;
+        let rows = stmt.query_map(params![twin_id, handle, limit], row_to_communication)?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    } else {
+        list_communications(pool, twin_id, None, limit)
+    }
+}
+
 /// Record an interaction and optionally create a pending memory for it.
 pub fn record_interaction(
     pool: &DbPool,
@@ -1020,6 +1044,85 @@ pub fn delete_distilled_fact(pool: &DbPool, id: &str) -> Result<bool, AppError> 
     let conn = pool.get()?;
     let rows = conn.execute("DELETE FROM twin_distilled_facts WHERE id = ?1", params![id])?;
     Ok(rows > 0)
+}
+
+/// Top-N distilled facts for recall — ordered by importance then recency.
+/// Optionally scoped to a contact handle when the recall is per-contact.
+pub fn top_distilled_facts_for_recall(
+    pool: &DbPool,
+    twin_id: &str,
+    contact_handle: Option<&str>,
+    limit: i32,
+) -> Result<Vec<TwinDistilledFact>, AppError> {
+    let conn = pool.get()?;
+    let sql = if contact_handle.is_some() {
+        // Include both contact-scoped facts AND self-facts (NULL contact_handle).
+        // Self-facts about the twin's voice/preferences are always relevant
+        // even when recall is filtered to a specific contact.
+        "SELECT * FROM twin_distilled_facts \
+         WHERE twin_id = ?1 AND (contact_handle = ?2 OR contact_handle IS NULL) \
+         ORDER BY importance DESC, last_seen_at DESC \
+         LIMIT ?3"
+    } else {
+        "SELECT * FROM twin_distilled_facts \
+         WHERE twin_id = ?1 \
+         ORDER BY importance DESC, last_seen_at DESC \
+         LIMIT ?3"
+    };
+    let mut stmt = conn.prepare(sql)?;
+    let rows = if let Some(handle) = contact_handle {
+        stmt.query_map(params![twin_id, handle, limit], row_to_distilled_fact)?
+            .collect::<Result<Vec<_>, _>>()
+    } else {
+        stmt.query_map(params![twin_id, limit], row_to_distilled_fact)?
+            .collect::<Result<Vec<_>, _>>()
+    };
+    rows.map_err(AppError::Database)
+}
+
+pub fn top_contacts_by_activity(
+    pool: &DbPool,
+    twin_id: &str,
+    limit: i32,
+) -> Result<Vec<TwinContact>, AppError> {
+    let conn = pool.get()?;
+    upsert_contacts_from_communications(&conn, twin_id)?;
+    let mut stmt = conn.prepare(
+        "SELECT \
+            c.id, c.twin_id, c.handle, c.alias, c.notes, c.created_at, c.updated_at, \
+            COALESCE(agg.message_count, 0) AS message_count, \
+            agg.last_seen_at AS last_seen_at \
+         FROM twin_contacts c \
+         LEFT JOIN ( \
+            SELECT contact_handle, COUNT(*) AS message_count, MAX(occurred_at) AS last_seen_at \
+            FROM twin_communications \
+            WHERE twin_id = ?1 AND contact_handle IS NOT NULL AND contact_handle <> '' \
+            GROUP BY contact_handle \
+         ) agg ON agg.contact_handle = c.handle \
+         WHERE c.twin_id = ?1 \
+         ORDER BY message_count DESC, COALESCE(agg.last_seen_at, c.created_at) DESC \
+         LIMIT ?2",
+    )?;
+    let rows = stmt.query_map(params![twin_id, limit], row_to_contact)?;
+    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+}
+
+pub fn get_tone_optional(
+    pool: &DbPool,
+    twin_id: &str,
+    channel: &str,
+) -> Result<Option<TwinTone>, AppError> {
+    let conn = pool.get()?;
+    let result = conn.query_row(
+        "SELECT * FROM twin_tone_profiles WHERE twin_id = ?1 AND channel = ?2",
+        params![twin_id, channel],
+        row_to_tone,
+    );
+    match result {
+        Ok(t) => Ok(Some(t)),
+        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+        Err(e) => Err(AppError::Database(e)),
+    }
 }
 
 #[cfg(test)]

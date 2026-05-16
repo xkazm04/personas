@@ -51,6 +51,37 @@ pub struct TwinWikiStatus {
     pub dir_path: String,
 }
 
+/// Bundle returned by `twin_recall` — the structured slice of twin state
+/// a persona prompt-builder would need when assembling a runtime prompt.
+/// Cycle 16 Stage 1 is a *read-only preview*; the actual persona-prompt
+/// path doesn't consume this yet (Stage 2). Field casing stays snake_case
+/// to match the nested model structs so the TypeScript binding has a
+/// consistent shape across all twin recall fields.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct TwinRecallBundle {
+    pub profile: TwinProfile,
+    /// Generic-channel tone for the twin, when configured. `None` means the
+    /// twin has no tone rows yet — the prompt builder should fall back to
+    /// the bio alone.
+    pub tone: Option<TwinTone>,
+    /// Newest-first window of `twin_communications` scoped to this twin,
+    /// optionally filtered to a specific contact handle. The "recency
+    /// shelf" of the recall layer.
+    pub recent_communications: Vec<TwinCommunication>,
+    /// Top distilled facts by importance × recency. Always includes self-
+    /// facts (NULL contact_handle) when a contact filter is applied — the
+    /// twin's voice and preferences are relevant regardless of who they're
+    /// speaking to. The "always-include facts shelf" of the recall layer.
+    pub top_facts: Vec<TwinDistilledFact>,
+    /// Top contacts by message count — only populated when the recall is
+    /// twin-wide (no `contact_filter`). Gives the operator a sense of who
+    /// the twin is most active with.
+    pub top_contacts: Vec<TwinContact>,
+    /// Echo of the input filter. `None` means twin-wide recall.
+    pub contact_filter: Option<String>,
+}
+
 /// Default wiki output directory for a twin. Lives under the app data dir
 /// so it survives app upgrades but doesn't pollute the user's Documents.
 fn default_wiki_dir(app: &AppHandle, twin_id: &str) -> Result<PathBuf, AppError> {
@@ -1178,6 +1209,58 @@ pub async fn twin_delete_reflection(
 ) -> Result<bool, AppError> {
     require_auth(&state).await?;
     repo::delete_reflection(&state.db, &id)
+}
+
+// ============================================================================
+// Recall preview (Cycle 16 Stage 1 — read-only)
+//
+// Returns the structured slice of twin state a persona prompt-builder would
+// need at runtime. Stage 1 surfaces it through a Brain preview panel only —
+// the actual persona prompt path doesn't consume the bundle yet. Stage 2
+// will wire this into the connector tool that assembles the runtime prompt
+// so persona replies pick up the same recency + facts shelves the operator
+// previews here.
+// ============================================================================
+
+const RECALL_COMMS_LIMIT: i32 = 5;
+const RECALL_FACTS_LIMIT: i32 = 5;
+const RECALL_CONTACTS_LIMIT: i32 = 5;
+
+#[tauri::command]
+pub async fn twin_recall(
+    state: State<'_, Arc<AppState>>,
+    twin_id: String,
+    contact_handle: Option<String>,
+) -> Result<TwinRecallBundle, AppError> {
+    require_auth(&state).await?;
+
+    let profile = repo::get_profile_by_id(&state.db, &twin_id)?;
+    let tone = repo::get_tone_optional(&state.db, &twin_id, "generic")?;
+    let contact_filter = contact_handle
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string);
+    let filter_ref = contact_filter.as_deref();
+
+    let recent_communications =
+        repo::list_communications_by_contact(&state.db, &twin_id, filter_ref, RECALL_COMMS_LIMIT)?;
+    let top_facts =
+        repo::top_distilled_facts_for_recall(&state.db, &twin_id, filter_ref, RECALL_FACTS_LIMIT)?;
+    let top_contacts = if filter_ref.is_some() {
+        Vec::new()
+    } else {
+        repo::top_contacts_by_activity(&state.db, &twin_id, RECALL_CONTACTS_LIMIT)?
+    };
+
+    Ok(TwinRecallBundle {
+        profile,
+        tone,
+        recent_communications,
+        top_facts,
+        top_contacts,
+        contact_filter,
+    })
 }
 
 #[tauri::command]

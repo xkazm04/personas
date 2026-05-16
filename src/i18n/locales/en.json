@@ -12637,6 +12637,25 @@
       "brainStep5": "Obsidian notes (if connected) can be manually ingested too",
       "vec0Unavailable": "Vector extension (vec0) not available. Use \"Link Existing\" to connect a knowledge base created from the Credentials page."
     },
+    "recall": {
+      "title": "Recall preview",
+      "subtitle": "What a persona adopting this twin would see at runtime — bio, generic tone, the most recent communications, and the highest-importance distilled facts. Read-only today; future stages wire this bundle into the actual persona prompt.",
+      "contactFilterPlaceholder": "Scope to a contact (handle)…",
+      "refresh": "Refresh",
+      "refreshing": "Refreshing…",
+      "loading": "Loading recall…",
+      "scopedTo": "Scoped to: {handle}",
+      "scopeToTooltip": "Scope the preview to this contact",
+      "identitySection": "Identity",
+      "toneSection": "Generic tone",
+      "toneEmpty": "No generic tone configured — persona will rely on bio alone.",
+      "factsSection": "Top distilled facts ({count})",
+      "factsEmpty": "No distilled facts yet — recall will fall back to communications alone.",
+      "commsSection": "Recent communications ({count})",
+      "commsEmpty": "No communications recorded for this twin yet.",
+      "contactsSection": "Top contacts by activity ({count})",
+      "contactsEmpty": "No contacts on this twin yet."
+    },
     "reflections": {
       "title": "Reflections",
       "subtitle": "Operator-audit journals. Ask a question about this twin's recent activity — Claude reads the twin profile + last 40 communications and writes a short, frozen answer.",

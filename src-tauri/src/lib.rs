@@ -2459,6 +2459,7 @@ pub fn run() {
             commands::infrastructure::twin::twin_reflect,
             commands::infrastructure::twin::twin_list_reflections,
             commands::infrastructure::twin::twin_delete_reflection,
+            commands::infrastructure::twin::twin_recall,
             // Notifications
             notifications::send_app_notification,
             notifications::test_notification_channel,

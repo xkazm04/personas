@@ -10,6 +10,7 @@ import type { TwinWikiStatus } from "@/lib/bindings/TwinWikiStatus";
 import type { TwinDistilledFact } from "@/lib/bindings/TwinDistilledFact";
 import type { TwinContact } from "@/lib/bindings/TwinContact";
 import type { TwinReflection } from "@/lib/bindings/TwinReflection";
+import type { TwinRecallBundle } from "@/lib/bindings/TwinRecallBundle";
 import type {
   TwinChannelKind,
   TwinInteractionDirection,
@@ -393,3 +394,18 @@ export const reflectOnTwin = (twinId: string, promptSeed: string) =>
 
 export const deleteTwinReflection = (id: string) =>
   invoke<boolean>("twin_delete_reflection", { id });
+
+// ============================================================================
+// Recall preview (Cycle 16 Stage 1 — read-only)
+// ============================================================================
+
+/**
+ * Structured slice of twin state a persona prompt-builder would need at
+ * runtime. Returns { profile, tone, recent_communications, top_facts,
+ * top_contacts, contact_filter }. Stage 1 is read-only — the Brain preview
+ * panel calls this to show operators "here's what a persona adopting this
+ * twin would see." Stage 2 will wire this bundle into the connector tool
+ * that assembles the runtime prompt.
+ */
+export const twinRecall = (twinId: string, contactHandle?: string) =>
+  invoke<TwinRecallBundle>("twin_recall", { twinId, contactHandle });
