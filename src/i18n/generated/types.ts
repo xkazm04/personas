@@ -12781,6 +12781,7 @@ export type Translations = {
     volume_label: string;
     mute: string;
     unmute: string;
+    progress_label: string;
   };
   cockpit: {
     unknown_assistant: string;

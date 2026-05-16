@@ -26,6 +26,14 @@ export interface YTPlayerHandle {
   /** `volume` is in [0.0, 1.0]; we convert to YT's 0–100 scale internally. */
   setVolume: (volume: number) => void;
   getCurrentTime: () => number;
+  /**
+   * Real duration of the currently loaded video, in seconds. Returns 0
+   * before the player has fetched the video metadata (typical for the
+   * first few hundred ms after `loadVideo`). Track-level `durationSec`
+   * in the seed is null — this is how the renderer learns the real
+   * length for the progress bar.
+   */
+  getDuration: () => number;
 }
 
 declare global {
@@ -142,6 +150,12 @@ export function useYouTubePlayer(
           getCurrentTime: () => {
             try { return Number(p.getCurrentTime?.() ?? 0); } catch (e) {
               silentCatch('radio:yt-current-time')(e);
+              return 0;
+            }
+          },
+          getDuration: () => {
+            try { return Number(p.getDuration?.() ?? 0); } catch (e) {
+              silentCatch('radio:yt-duration')(e);
               return 0;
             }
           },

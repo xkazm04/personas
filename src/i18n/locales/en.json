@@ -12774,7 +12774,8 @@
     "volume_button": "Volume",
     "volume_label": "Volume",
     "mute": "Mute",
-    "unmute": "Unmute"
+    "unmute": "Unmute",
+    "progress_label": "{current} / {total}"
   },
   "cockpit": {
     "unknown_assistant": "Unknown assistant",

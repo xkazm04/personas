@@ -27,6 +27,17 @@ import VolumePopover from './VolumePopover';
  */
 const PLAYBACK_WATCHDOG_MS = 8000;
 
+/** Poll interval for YouTube `getCurrentTime` — drives the progress bar. */
+const PROGRESS_POLL_MS = 1000;
+/** Persist position to backend every Nth progress tick. */
+const POSITION_REPORT_EVERY_N_TICKS = 5;
+
+function formatTime(sec: number): string {
+  const m = Math.floor(sec / 60);
+  const s = Math.max(0, Math.floor(sec % 60));
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
 /** YT IFrame Player state codes. */
 const YT_STATE = {
   UNSTARTED: -1,
@@ -87,6 +98,8 @@ export default function RadioFooter() {
    * toggling unmute returns to where the user was — not the default 0.7.
    */
   const lastNonZeroVolumeRef = useRef<number>(0.7);
+  /** Current/total seconds for the YouTube progress bar; null when N/A. */
+  const [progress, setProgress] = useState<{ currentSec: number; durationSec: number } | null>(null);
 
   const stationKind = nowPlaying?.station.source.kind ?? null;
   const isStream = stationKind === 'stream';
@@ -279,6 +292,36 @@ export default function RadioFooter() {
 
   useEffect(() => () => cancelWatchdog(), [cancelWatchdog]);
 
+  // Reset progress bar whenever the current track or station changes.
+  useEffect(() => {
+    setProgress(null);
+  }, [nowPlaying?.track?.videoId, nowPlaying?.station.id]);
+
+  // Poll the YouTube player for current time + duration while playing.
+  // Every Nth tick also reports the position to the backend so the
+  // station cursor resumes mid-track across restarts.
+  useEffect(() => {
+    if (!isYoutube || state?.status !== 'playing') return;
+    let tick = 0;
+    const id = window.setInterval(() => {
+      const player = ytHandle.current;
+      if (!player) return;
+      const currentSec = player.getCurrentTime();
+      const durationSec = player.getDuration();
+      if (durationSec > 0) {
+        setProgress({
+          currentSec: Math.round(currentSec),
+          durationSec: Math.round(durationSec),
+        });
+      }
+      tick += 1;
+      if (tick % POSITION_REPORT_EVERY_N_TICKS === 0) {
+        reportStatus('playing', Math.round(currentSec));
+      }
+    }, PROGRESS_POLL_MS);
+    return () => window.clearInterval(id);
+  }, [isYoutube, state?.status, ytHandle, reportStatus]);
+
   // ---------------------------------------------------------------------
   // Render.
   // ---------------------------------------------------------------------
@@ -425,7 +468,7 @@ export default function RadioFooter() {
         )}
       </div>
 
-      <div className="flex items-center gap-1.5 max-w-[260px] min-w-0 ml-1">
+      <div className="relative flex items-center gap-1.5 max-w-[260px] min-w-0 ml-1">
         <span
           aria-hidden
           className="w-1.5 h-1.5 rounded-full shrink-0"
@@ -441,6 +484,24 @@ export default function RadioFooter() {
         >
           {titleLine}
         </span>
+        {isYoutube && progress && progress.durationSec > 0 && (
+          <div
+            aria-hidden
+            className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full bg-foreground/10 overflow-hidden"
+            title={tx(t.radio.progress_label, {
+              current: formatTime(progress.currentSec),
+              total: formatTime(progress.durationSec),
+            })}
+          >
+            <div
+              className="h-full transition-[width] duration-1000 ease-linear"
+              style={{
+                width: `${Math.min(100, (progress.currentSec / progress.durationSec) * 100)}%`,
+                background: accent,
+              }}
+            />
+          </div>
+        )}
       </div>
 
       <div className="relative">

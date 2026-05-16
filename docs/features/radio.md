@@ -30,6 +30,11 @@ appropriate engine and reports state transitions back via
   100/101/150 (embed disabled / unavailable) the renderer auto-skips to
   the next track via `radio_track_ended` so a single bad video doesn't
   deadlock the station.
+- For `youtubeTracks` stations a thin accent-coloured progress bar
+  appears below the track title while playing. The renderer polls
+  `player.getCurrentTime()` / `player.getDuration()` once per second
+  and every fifth tick reports the current position back through
+  `radio_report_status` so a restart resumes mid-track.
 
 ## Architecture
 
