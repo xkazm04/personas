@@ -513,8 +513,12 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
       }
       refresh();
       refreshTree();
+      // Rename changes the file's mtime AND its name — the rail's previous
+      // entry now references a stale path. Refresh so the row shows the
+      // new name and stays clickable.
+      refreshRecent();
     },
-    [refresh, refreshTree, flashWrite],
+    [refresh, refreshTree, refreshRecent, flashWrite],
   );
 
   const remove = useCallback(
@@ -530,8 +534,11 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
       refresh();
       refreshTree();
       refreshStorage();
+      // Files just deleted may have been in the rail. Refresh so the
+      // displayed rows match the live tree.
+      refreshRecent();
     },
-    [refresh, refreshTree, refreshStorage, clearSelection],
+    [refresh, refreshTree, refreshStorage, refreshRecent, clearSelection],
   );
 
   const move = useCallback(
