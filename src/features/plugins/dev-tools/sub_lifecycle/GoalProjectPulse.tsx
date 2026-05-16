@@ -18,11 +18,24 @@ import { useMemo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   Target, AlertCircle, Clock, CheckCircle2, Circle,
-  ArrowRight, Calendar, Layers, Link2, Activity,
+  ArrowRight, Calendar, Layers, Link2, Activity, ListChecks, Loader2,
 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { DevGoal } from '@/lib/bindings/DevGoal';
 import type { DevGoalDependency } from '@/lib/bindings/DevGoalDependency';
+import type { DevTask } from '@/lib/bindings/DevTask';
+import * as devApi from '@/api/devTools/devTools';
+import { silentCatch } from '@/lib/silentCatch';
+
+const TASK_STATUS_TINT: Record<string, string> = {
+  pending:      'text-foreground/60',
+  analyzing:    'text-blue-400',
+  planning:     'text-blue-400',
+  implementing: 'text-amber-400',
+  validating:   'text-amber-400',
+  complete:     'text-emerald-400',
+  failed:       'text-red-400',
+};
 
 interface Props {
   goals: DevGoal[];
@@ -99,6 +112,21 @@ export function GoalProjectPulse({ goals, dependencies }: Props) {
   const selected = useMemo(() => goals.find((g) => g.id === selectedId) ?? null, [goals, selectedId]);
   const goalById = useMemo(() => new Map(goals.map((g) => [g.id, g])), [goals]);
 
+  // Tasks linked to the selected goal — fetched on selection change.
+  // listTasks(projectId?, status?, goalId?) — passing only goalId narrows server-side.
+  const [tasks, setTasks] = useState<DevTask[]>([]);
+  const [tasksLoading, setTasksLoading] = useState(false);
+  useEffect(() => {
+    if (!selectedId) { setTasks([]); return; }
+    let cancelled = false;
+    setTasksLoading(true);
+    devApi.listTasks(undefined, undefined, selectedId)
+      .then((rows) => { if (!cancelled) setTasks(rows); })
+      .catch(silentCatch('GoalProjectPulse.listTasks'))
+      .finally(() => { if (!cancelled) setTasksLoading(false); });
+    return () => { cancelled = true; };
+  }, [selectedId]);
+
   return (
     <div className="space-y-4">
       {/* Pulse strip */}
@@ -138,6 +166,8 @@ export function GoalProjectPulse({ goals, dependencies }: Props) {
           blocks={selected ? (depMaps.blocks[selected.id] ?? []).map((id) => goalById.get(id)).filter(Boolean) as DevGoal[] : []}
           requires={selected ? (depMaps.requires[selected.id] ?? []).map((id) => goalById.get(id)).filter(Boolean) as DevGoal[] : []}
           parent={selected?.parent_goal_id ? goalById.get(selected.parent_goal_id) ?? null : null}
+          tasks={tasks}
+          tasksLoading={tasksLoading}
         />
       </div>
     </div>
@@ -255,18 +285,21 @@ function StatusGroup({
 // ---------------------------------------------------------------------------
 
 function SpotlightPane({
-  goal, blocks, requires, parent,
+  goal, blocks, requires, parent, tasks, tasksLoading,
 }: {
   goal: DevGoal | null;
   blocks: DevGoal[];
   requires: DevGoal[];
   parent: DevGoal | null;
+  tasks: DevTask[];
+  tasksLoading: boolean;
 }) {
+  const { t } = useTranslation();
   if (!goal) {
     return (
       <div className="rounded-card border border-dashed border-primary/15 bg-card/20 p-8 text-center">
         <Target className="w-8 h-8 text-foreground/40 mx-auto mb-2" />
-        <p className="typo-body text-foreground/70">Pick a goal to inspect its dependencies.</p>
+        <p className="typo-body text-foreground/70">{t.plugins.dev_lifecycle.spotlight_pick_goal}</p>
       </div>
     );
   }
@@ -365,11 +398,89 @@ function SpotlightPane({
 
         {requires.length === 0 && blocks.length === 0 && (
           <p className="typo-caption text-foreground/60 pt-2 border-t border-primary/10 flex items-center gap-1.5">
-            <Link2 className="w-3 h-3" /> Standalone — no dependencies.
+            <Link2 className="w-3 h-3" /> {t.plugins.dev_lifecycle.spotlight_standalone}
           </p>
         )}
+
+        {/* Tasks linked to this goal */}
+        <TaskList tasks={tasks} loading={tasksLoading} />
       </div>
     </motion.div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Task list — work items linked to the spotlighted goal
+// ---------------------------------------------------------------------------
+
+function TaskList({ tasks, loading }: { tasks: DevTask[]; loading: boolean }) {
+  const { t } = useTranslation();
+
+  const counts = useMemo(() => {
+    const acc = { done: 0, active: 0, pending: 0, failed: 0 };
+    for (const task of tasks) {
+      if (task.status === 'complete') acc.done++;
+      else if (task.status === 'failed') acc.failed++;
+      else if (task.status === 'pending') acc.pending++;
+      else acc.active++;
+    }
+    return acc;
+  }, [tasks]);
+
+  return (
+    <div className="pt-3 border-t border-primary/10">
+      <div className="flex items-baseline gap-2 mb-2">
+        <ListChecks className="w-3.5 h-3.5 text-foreground/70" />
+        <p className="typo-caption uppercase tracking-[0.18em] text-foreground/70">
+          {t.plugins.dev_lifecycle.spotlight_tasks_heading}
+        </p>
+        {!loading && tasks.length > 0 && (
+          <p className="typo-caption text-foreground/60 tabular-nums">
+            {counts.done}/{tasks.length} {t.plugins.dev_lifecycle.spotlight_tasks_done_suffix}
+            {counts.failed > 0 && (
+              <span className="text-red-400 ml-1.5">· {counts.failed} {t.plugins.dev_lifecycle.spotlight_tasks_failed_suffix}</span>
+            )}
+          </p>
+        )}
+        {loading && <Loader2 className="w-3 h-3 text-foreground/50 animate-spin" />}
+      </div>
+
+      {!loading && tasks.length === 0 && (
+        <p className="typo-caption text-foreground/60 italic">
+          {t.plugins.dev_lifecycle.spotlight_tasks_empty}
+        </p>
+      )}
+
+      {tasks.length > 0 && (
+        <ul className="space-y-1.5">
+          {tasks.map((task) => {
+            const tint = TASK_STATUS_TINT[task.status] ?? 'text-foreground/60';
+            const isComplete = task.status === 'complete';
+            const isFailed = task.status === 'failed';
+            return (
+              <li
+                key={task.id}
+                className="flex items-center gap-2 rounded-interactive border border-primary/10 bg-background/30 px-2.5 py-1.5"
+              >
+                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                  isComplete ? 'bg-emerald-400'
+                  : isFailed ? 'bg-red-400'
+                  : task.status === 'pending' ? 'bg-foreground/30'
+                  : 'bg-amber-400 animate-pulse'
+                }`} />
+                <span className="text-sm text-foreground truncate flex-1 min-w-0">{task.title}</span>
+                {!isComplete && !isFailed && task.progress_pct > 0 && (
+                  <span className="typo-caption text-foreground/60 tabular-nums shrink-0">{task.progress_pct}%</span>
+                )}
+                <span className={`typo-caption uppercase tracking-wide tabular-nums shrink-0 ${tint}`}>
+                  {task.status}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
   );
 }
 

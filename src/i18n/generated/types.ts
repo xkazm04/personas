@@ -10818,6 +10818,12 @@ export type Translations = {
       lifecycle_readiness: string;
       goals_tab_no_goals: string;
       goal_constellation: string;
+      spotlight_pick_goal: string;
+      spotlight_standalone: string;
+      spotlight_tasks_heading: string;
+      spotlight_tasks_done_suffix: string;
+      spotlight_tasks_failed_suffix: string;
+      spotlight_tasks_empty: string;
       sync_to_obsidian: string;
       tab_setup: string;
       tab_goals: string;
