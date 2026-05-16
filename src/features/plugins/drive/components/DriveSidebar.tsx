@@ -10,6 +10,13 @@ import { formatRelativeTime, visualForEntry } from "../designTokens";
 import { DriveEmptyHint } from "./DriveEmptyHint";
 
 const RECENT_COLLAPSED_KEY = "drive.sidebar.recentCollapsed";
+// Show ⌘ on Mac, Ctrl elsewhere — keyboard hints should match what the
+// user is actually pressing. The DrivePage handler accepts both modifiers.
+const MOD_KEY_LABEL =
+  typeof navigator !== "undefined" &&
+  /Mac|iPod|iPhone|iPad/.test(navigator.platform)
+    ? "⌘"
+    : "Ctrl";
 
 interface Props {
   drive: UseDriveResult;
@@ -160,10 +167,14 @@ function RecentRail({
   const { t, tx } = useTranslation();
   return (
     <div className="px-1 space-y-0.5">
-      {entries.map((entry) => {
+      {entries.map((entry, idx) => {
         const visual = visualForEntry(entry);
         const Icon = visual.Icon;
         const parent = driveParentPath(entry.path);
+        // The first 5 rail slots are bound to Ctrl+1..5 in DrivePage's
+        // keyboard handler. Show a kbd hint chip on hover for those rows
+        // so the affordance is discoverable without cluttering rest state.
+        const shortcutN = idx < 5 ? idx + 1 : null;
         return (
           <button
             key={entry.path}
@@ -176,7 +187,11 @@ function RecentRail({
               // lands after navigate's state batch.
               queueMicrotask(() => drive.selectOnly(entry.path));
             }}
-            title={entry.path}
+            title={
+              shortcutN
+                ? `${entry.path}\n${MOD_KEY_LABEL}+${shortcutN}`
+                : entry.path
+            }
             className="group w-full flex items-center gap-2 py-1.5 px-2 rounded-input text-left typo-body text-foreground hover:bg-cyan-500/10 hover:text-cyan-100 transition-colors"
           >
             <div
@@ -185,6 +200,14 @@ function RecentRail({
               <Icon className={`w-3 h-3 ${visual.text}`} />
             </div>
             <span className="min-w-0 flex-1 truncate">{entry.name}</span>
+            {shortcutN && (
+              <kbd
+                aria-hidden
+                className="typo-caption font-mono px-1 py-px rounded border border-primary/15 bg-secondary/40 text-foreground/40 tabular-nums opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+              >
+                {MOD_KEY_LABEL}+{shortcutN}
+              </kbd>
+            )}
             <span className="typo-caption text-foreground/60 tabular-nums flex-shrink-0 group-hover:text-cyan-200/60">
               {formatRelativeTime(entry.modified, t, tx)}
             </span>

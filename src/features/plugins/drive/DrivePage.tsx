@@ -197,6 +197,19 @@ export default function DrivePage() {
         setPathEditing(true);
         return;
       }
+      // Ctrl+1..5 jumps to the Nth Recent-rail entry — navigates to its
+      // parent and selects it, mirroring the rail row's onClick.
+      if (mod && /^[1-5]$/.test(e.key)) {
+        const idx = parseInt(e.key, 10) - 1;
+        const entry = drv.recent[idx];
+        if (entry) {
+          e.preventDefault();
+          const parent = driveParentPath(entry.path);
+          drv.navigate(parent);
+          queueMicrotask(() => drv.selectOnly(entry.path));
+        }
+        return;
+      }
       if (mod && e.key.toLowerCase() === "c") {
         e.preventDefault();
         drv.copySelection();
