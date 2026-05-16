@@ -4,9 +4,10 @@
 //! See `docs/features/fleet.md` (lands in phase 9) for the design rationale.
 //!
 //! Module layout (filled in across phases 1-9):
-//! - [`types`]       — ts-rs DTOs shared with the frontend (phase 1, this file)
-//! - [`registry`]    — global registry of active sessions + state machine (phase 6)
+//! - [`types`]       — ts-rs DTOs shared with the frontend (phase 1)
+//! - [`registry`]    — global registry of active sessions + state (phase 2 / 6)
 //! - [`pty`]         — portable-pty spawn + I/O multiplexing (phase 2)
+//! - [`commands`]    — Tauri command surface (phase 2)
 //! - [`hooks`]       — axum routes that accept Claude Code hook callbacks (phase 4)
 //! - [`hook_install`] — idempotent ~/.claude/settings.json patching (phase 5)
 //! - [`transcript`]  — JSONL watcher on ~/.claude/projects/ (phase 6)
@@ -15,4 +16,7 @@
 //! DEV-gated. Keeps ts-rs output and command-name codegen stable across
 //! build profiles.
 
+pub mod commands;
+pub mod pty;
+pub mod registry;
 pub mod types;

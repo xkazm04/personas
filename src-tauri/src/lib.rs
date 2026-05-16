@@ -2584,6 +2584,13 @@ pub fn run() {
             commands::radio::radio_set_volume,
             commands::radio::radio_report_status,
             commands::radio::radio_track_ended,
+            // Fleet (DEV-only Claude Code session aggregator)
+            commands::fleet::commands::fleet_spawn_session,
+            commands::fleet::commands::fleet_write_input,
+            commands::fleet::commands::fleet_resize_session,
+            commands::fleet::commands::fleet_kill_session,
+            commands::fleet::commands::fleet_list_sessions,
+            commands::fleet::commands::fleet_remove_session,
         ]))
         .run(tauri::generate_context!())
         .unwrap_or_else(|e| {
