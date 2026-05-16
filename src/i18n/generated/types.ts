@@ -8068,6 +8068,10 @@ export type Translations = {
       timezone_hint: string;
       brightness: string;
       brightness_hint: string;
+      dim_mode_label: string;
+      dim_mode_hint: string;
+      dim_mode_on: string;
+      dim_mode_off: string;
       custom_theme: string;
       custom_theme_active: string;
       custom_theme_hint: string;

@@ -631,10 +631,18 @@ html {
 :root {
   --app-brightness: 1.25;
   --brightness-compensate: calc(1 / var(--app-brightness));
+  --app-saturation: 1;
 }
 
 html {
-  filter: brightness(var(--app-brightness));
+  filter: brightness(var(--app-brightness)) saturate(var(--app-saturation));
+}
+
+/* Dim mode — lowers global saturation for comfortable late-night use.
+   Composed into the same html filter as brightness, so the existing
+   brightness counteraction continues to apply at full intensity. */
+[data-saturation="dim"] {
+  --app-saturation: 0.72;
 }
 
 /* Brightness compensation for vivid interactive elements.

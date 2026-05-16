@@ -159,6 +159,15 @@ function applyTextScale(scale: TextScale) {
   document.documentElement.setAttribute('data-text-scale', scale);
 }
 
+function applyDim(dim: boolean) {
+  const el = document.documentElement;
+  if (dim) {
+    el.setAttribute('data-saturation', 'dim');
+  } else {
+    el.removeAttribute('data-saturation');
+  }
+}
+
 function isLightTheme(id: ThemeId, customConfig?: CustomThemeConfig | null): boolean {
   if (id === 'custom') return customConfig?.baseMode === 'light';
   return id.startsWith('light');
@@ -199,6 +208,7 @@ interface ThemeState {
   brightness: BrightnessLevel;
   customTheme: CustomThemeConfig | null;
   ambientTimeOfDay: boolean;
+  dim: boolean;
   setTheme: (id: ThemeId) => void;
   setTextScale: (scale: TextScale) => void;
   setTimezone: (tz: TimezoneMode) => void;
@@ -206,6 +216,7 @@ interface ThemeState {
   setCustomTheme: (config: CustomThemeConfig) => void;
   clearCustomTheme: () => void;
   setAmbientTimeOfDay: (enabled: boolean) => void;
+  setDim: (enabled: boolean) => void;
 }
 
 /** Derived selector: true when the active theme is dark. */
@@ -227,6 +238,7 @@ export const useThemeStore = create<ThemeState>()(
       brightness: 'low' as BrightnessLevel,
       customTheme: null as CustomThemeConfig | null,
       ambientTimeOfDay: true,
+      dim: false,
       setTheme: (id: ThemeId) => {
         applyThemeToDOM(id, get().customTheme);
         applyBrightness(get().brightness, id, get().customTheme);
@@ -262,6 +274,11 @@ export const useThemeStore = create<ThemeState>()(
         set({ ambientTimeOfDay: enabled });
         storeBus.emit('appearance:changed', { field: 'ambientTimeOfDay', value: enabled ? 'on' : 'off' });
       },
+      setDim: (enabled: boolean) => {
+        applyDim(enabled);
+        set({ dim: enabled });
+        storeBus.emit('appearance:changed', { field: 'dim', value: enabled ? 'on' : 'off' });
+      },
     }),
     {
       name: 'persona-theme',
@@ -278,6 +295,7 @@ export const useThemeStore = create<ThemeState>()(
           applyThemeToDOM(state.themeId, state.customTheme);
           applyTextScale(state.textScale ?? 'larger');
           applyBrightness(state.brightness ?? 'low', state.themeId, state.customTheme);
+          applyDim(state.dim ?? false);
         }
       },
     }

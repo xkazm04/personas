@@ -194,6 +194,8 @@ export default function AppearanceSettings() {
 
   const brightness = useThemeStore((s) => s.brightness);
   const setBrightness = useThemeStore((s) => s.setBrightness);
+  const dim = useThemeStore((s) => s.dim);
+  const setDim = useThemeStore((s) => s.setDim);
   const isDark = useIsDarkTheme();
   const brightnessLevels = isDark ? DARK_BRIGHTNESS_LEVELS : LIGHT_BRIGHTNESS_LEVELS;
   const customTheme = useThemeStore((s) => s.customTheme);
@@ -344,6 +346,26 @@ export default function AppearanceSettings() {
                   </Button>
                 );
               })}
+            </div>
+            {/* Dim mode toggle — independent of brightness levels; reduces
+                color saturation across the entire app for late-night use */}
+            <div className="flex items-start justify-between gap-4 pt-3 mt-1 border-t border-primary/10">
+              <div className="flex-1">
+                <div className="text-sm text-foreground font-medium">{s.dim_mode_label}</div>
+                <div className="typo-body text-foreground/80">{s.dim_mode_hint}</div>
+              </div>
+              <Button
+                variant="ghost"
+                onClick={() => setDim(!dim)}
+                aria-pressed={dim}
+                className={`shrink-0 px-4 py-2 rounded-interactive border min-w-[64px] ${
+                  dim
+                    ? 'border-primary/40 bg-primary/10 text-primary font-medium'
+                    : 'border-primary/10 hover:border-primary/30 text-foreground'
+                }`}
+              >
+                {dim ? s.dim_mode_on : s.dim_mode_off}
+              </Button>
             </div>
           </div>
 
