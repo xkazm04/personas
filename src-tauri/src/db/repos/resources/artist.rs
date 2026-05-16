@@ -99,3 +99,19 @@ pub fn update_asset_tags(pool: &DbPool, id: &str, tags: &str) -> Result<ArtistAs
         get_asset(pool, id)
     })
 }
+
+pub fn update_asset_path(
+    pool: &DbPool,
+    id: &str,
+    file_name: &str,
+    file_path: &str,
+) -> Result<ArtistAsset, AppError> {
+    timed_query!("artist_assets", "artist_assets::update_asset_path", {
+        let conn = pool.get()?;
+        conn.execute(
+            "UPDATE artist_assets SET file_name = ?1, file_path = ?2 WHERE id = ?3",
+            rusqlite::params![file_name, file_path, id],
+        )?;
+        get_asset(pool, id)
+    })
+}

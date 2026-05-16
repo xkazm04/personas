@@ -32,9 +32,10 @@ interface Gallery2DProps {
   assets: ArtistAsset[];
   onDelete: (id: string) => void;
   onUpdateTags: (id: string, tags: string) => void;
+  onRename?: (id: string, newBasename: string) => void;
 }
 
-export default function Gallery2D({ assets, onDelete, onUpdateTags }: Gallery2DProps) {
+export default function Gallery2D({ assets, onDelete, onUpdateTags, onRename }: Gallery2DProps) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const { selectedIds, isSelected, toggle, clear, count } = useGallerySelection(assets);
   const inSelectMode = count > 0;
@@ -101,6 +102,7 @@ export default function Gallery2D({ assets, onDelete, onUpdateTags }: Gallery2DP
             asset={asset}
             onDelete={onDelete}
             onUpdateTags={onUpdateTags}
+            onRename={onRename}
             onClick={() => openLightbox(i)}
             selected={isSelected(asset.id)}
             inSelectMode={inSelectMode}

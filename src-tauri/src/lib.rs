@@ -1976,6 +1976,7 @@ pub fn run() {
             commands::artist::artist_import_asset,
             commands::artist::artist_delete_asset,
             commands::artist::artist_update_tags,
+            commands::artist::artist_rename_asset,
             commands::artist::artist_get_default_folder,
             commands::artist::artist_ensure_folders,
             commands::artist::artist_read_image_base64,

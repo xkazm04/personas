@@ -12,7 +12,7 @@ export default function GalleryPage() {
   const galleryMode = useSystemStore((s) => s.galleryMode);
   const setGalleryMode = useSystemStore((s) => s.setGalleryMode);
   const artistFolder = useSystemStore((s) => s.artistFolder);
-  const { assets, loading, scanning, scanAndImport, deleteAsset, updateTags } = useArtistAssets();
+  const { assets, loading, scanning, scanAndImport, deleteAsset, updateTags, renameAsset } = useArtistAssets();
 
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<'name' | 'date' | 'size'>('date');
@@ -136,9 +136,19 @@ export default function GalleryPage() {
           </p>
         </div>
       ) : galleryMode === '2d' ? (
-        <Gallery2D assets={filteredAssets} onDelete={deleteAsset} onUpdateTags={updateTags} />
+        <Gallery2D
+          assets={filteredAssets}
+          onDelete={deleteAsset}
+          onUpdateTags={updateTags}
+          onRename={renameAsset}
+        />
       ) : (
-        <Gallery3D assets={filteredAssets} onDelete={deleteAsset} onUpdateTags={updateTags} />
+        <Gallery3D
+          assets={filteredAssets}
+          onDelete={deleteAsset}
+          onUpdateTags={updateTags}
+          onRename={renameAsset}
+        />
       )}
     </div>
   );

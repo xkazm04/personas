@@ -9881,6 +9881,8 @@ export type Translations = {
       gallery_bulk_tag_subtitle: string;
       gallery_bulk_tag_placeholder: string;
       gallery_bulk_tag_apply: string;
+      rename_asset: string;
+      rename_hint: string;
     };
     dev_tools: {
       no_project_configured: string;

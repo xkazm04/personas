@@ -17,9 +17,10 @@ interface Gallery3DProps {
   assets: ArtistAsset[];
   onDelete: (id: string) => void;
   onUpdateTags: (id: string, tags: string) => void;
+  onRename?: (id: string, newBasename: string) => void;
 }
 
-export default function Gallery3D({ assets, onDelete, onUpdateTags }: Gallery3DProps) {
+export default function Gallery3D({ assets, onDelete, onUpdateTags, onRename }: Gallery3DProps) {
   const { t } = useTranslation();
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const { selectedIds, isSelected, toggle, clear, count } = useGallerySelection(assets);
@@ -78,6 +79,7 @@ export default function Gallery3D({ assets, onDelete, onUpdateTags }: Gallery3DP
             asset={asset}
             onDelete={onDelete}
             onUpdateTags={onUpdateTags}
+            onRename={onRename}
             onClick={() => setSelectedIndex(i)}
             selected={isSelected(asset.id)}
             inSelectMode={inSelectMode}

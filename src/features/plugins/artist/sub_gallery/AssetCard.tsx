@@ -1,4 +1,4 @@
-import { useState, type MouseEvent as ReactMouseEvent } from 'react';
+import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Check, Trash2, Tag, Box, Loader2, Film } from 'lucide-react';
 import type { ArtistAsset } from '@/api/artist';
@@ -12,6 +12,10 @@ interface AssetCardProps {
   asset: ArtistAsset;
   onDelete: (id: string) => void;
   onUpdateTags: (id: string, tags: string) => void;
+  /** When provided, double-clicking the filename label switches it to an
+   *  inline edit input. The string passed back is the desired new basename
+   *  (with or without extension — the backend preserves the original). */
+  onRename?: (id: string, newBasename: string) => void;
   onClick?: () => void;
   /** When true, the card is part of a selection set — render highlighted. */
   selected?: boolean;
@@ -26,6 +30,7 @@ export default function AssetCard({
   asset,
   onDelete,
   onUpdateTags,
+  onRename,
   onClick,
   selected = false,
   inSelectMode = false,
@@ -33,6 +38,46 @@ export default function AssetCard({
 }: AssetCardProps) {
   const { t } = useTranslation();
   const [editingTags, setEditingTags] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [draftName, setDraftName] = useState(asset.fileName);
+  const renameInputRef = useRef<HTMLInputElement>(null);
+
+  // When the rename input mounts, focus it and pre-select the basename (the
+  // text before the final '.') so a one-character edit replaces the slug
+  // and keeps the extension as-is. Users who want to change the extension
+  // can shift-arrow / select-all the usual way.
+  useEffect(() => {
+    if (!renaming) return;
+    const el = renameInputRef.current;
+    if (!el) return;
+    el.focus();
+    const dot = draftName.lastIndexOf('.');
+    el.setSelectionRange(0, dot > 0 ? dot : draftName.length);
+    // We only want this on the transition into rename mode, not on every keystroke.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [renaming]);
+
+  const startRename = () => {
+    if (!onRename || inSelectMode) return;
+    setDraftName(asset.fileName);
+    setRenaming(true);
+  };
+
+  const commitRename = () => {
+    if (!onRename) {
+      setRenaming(false);
+      return;
+    }
+    const trimmed = draftName.trim();
+    setRenaming(false);
+    if (!trimmed || trimmed === asset.fileName) return;
+    onRename(asset.id, trimmed);
+  };
+
+  const cancelRename = () => {
+    setRenaming(false);
+    setDraftName(asset.fileName);
+  };
   const queueMediaStudioAsset = useSystemStore((s) => s.queueMediaStudioAsset);
   const setArtistTab = useSystemStore((s) => s.setArtistTab);
   const isImage = asset.assetType === '2d';
@@ -150,7 +195,34 @@ export default function AssetCard({
 
       {/* Info */}
       <div className="px-3 py-2 space-y-0.5">
-        <p className="typo-card-label truncate">{asset.fileName}</p>
+        {renaming ? (
+          <input
+            ref={renameInputRef}
+            value={draftName}
+            onChange={(e) => setDraftName(e.target.value)}
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => {
+              e.stopPropagation();
+              if (e.key === 'Enter') commitRename();
+              else if (e.key === 'Escape') cancelRename();
+            }}
+            onBlur={commitRename}
+            spellCheck={false}
+            className="w-full typo-card-label px-1 py-0.5 -mx-1 rounded bg-secondary/40 border border-rose-500/40 text-foreground focus:outline-none focus:border-rose-500/80"
+            aria-label={t.plugins.artist.rename_asset}
+          />
+        ) : (
+          <p
+            className={`typo-card-label truncate ${onRename && !inSelectMode ? 'cursor-text hover:bg-secondary/20 -mx-1 px-1 rounded' : ''}`}
+            onDoubleClick={(e) => {
+              e.stopPropagation();
+              startRename();
+            }}
+            title={onRename && !inSelectMode ? t.plugins.artist.rename_hint : undefined}
+          >
+            {asset.fileName}
+          </p>
+        )}
         <div className="flex items-center gap-2 text-md text-foreground">
           <span>{ext}</span>
           <span>&middot;</span>

@@ -9874,7 +9874,9 @@
       "gallery_bulk_tag_title": "Add tag to selection",
       "gallery_bulk_tag_subtitle": "Adds a tag to {count} selected assets, keeping their existing tags.",
       "gallery_bulk_tag_placeholder": "Tag to add",
-      "gallery_bulk_tag_apply": "Apply"
+      "gallery_bulk_tag_apply": "Apply",
+      "rename_asset": "Rename asset",
+      "rename_hint": "Double-click to rename"
     },
     "dev_tools": {
       "no_project_configured": "No dev project configured",

@@ -244,6 +244,70 @@ pub fn artist_update_tags(
     repo::update_asset_tags(pool, &id, &tags)
 }
 
+/// Rename an artist asset on disk + in the database. The new name must be a
+/// bare basename (no path separators). The original file extension is
+/// preserved unless the user-supplied name already carries it; collisions in
+/// the same folder are rejected up front so we never overwrite a sibling.
+#[tauri::command]
+pub fn artist_rename_asset(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+    new_basename: String,
+) -> Result<ArtistAsset, AppError> {
+    let pool = &state.db;
+    let asset = repo::get_asset(pool, &id)?;
+
+    let trimmed = new_basename.trim();
+    if trimmed.is_empty() {
+        return Err(AppError::Validation(
+            "Rename: new name cannot be empty".into(),
+        ));
+    }
+    if trimmed.contains('/') || trimmed.contains('\\') || trimmed.contains('\0') {
+        return Err(AppError::Validation(
+            "Rename: path separators are not allowed in a filename".into(),
+        ));
+    }
+    if trimmed == "." || trimmed == ".." {
+        return Err(AppError::Validation("Rename: reserved name".into()));
+    }
+
+    let old_path = Path::new(&asset.file_path);
+    let parent = old_path
+        .parent()
+        .ok_or_else(|| AppError::Internal("Rename: asset path has no parent directory".into()))?;
+    let original_ext = old_path
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("")
+        .to_string();
+
+    let new_file_name = if !original_ext.is_empty()
+        && !trimmed
+            .to_lowercase()
+            .ends_with(&format!(".{}", original_ext.to_lowercase()))
+    {
+        format!("{trimmed}.{original_ext}")
+    } else {
+        trimmed.to_string()
+    };
+    let new_path = parent.join(&new_file_name);
+
+    // Reject collisions before touching the filesystem so the failure mode is
+    // a clean error instead of a half-applied rename.
+    if new_path != old_path && new_path.exists() {
+        return Err(AppError::Validation(format!(
+            "Rename: '{new_file_name}' already exists in this folder"
+        )));
+    }
+
+    if new_path != old_path {
+        std::fs::rename(old_path, &new_path)?;
+    }
+
+    repo::update_asset_path(pool, &id, &new_file_name, &new_path.to_string_lossy())
+}
+
 /// Get the default artist folder path (~/Personas/Artist).
 #[tauri::command]
 pub fn artist_get_default_folder() -> Result<String, AppError> {
