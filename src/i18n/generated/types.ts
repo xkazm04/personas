@@ -10163,6 +10163,9 @@ export type Translations = {
       pr_bridge_unsupported_host: string;
       pr_bridge_copy_body: string;
       pr_bridge_copy_all: string;
+      pr_bridge_copy_reasoning: string;
+      pr_bridge_copy_reasoning_tooltip: string;
+      pr_bridge_reasoning_copied: string;
       pr_bridge_prepare: string;
       pr_bridge_open_github: string;
       pr_bridge_expand: string;

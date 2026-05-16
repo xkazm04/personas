@@ -84,7 +84,10 @@ function buildPrContent(
   const slug = slugifyForBranch(titleSource);
   const branchName = `dev-tools/${slug}-${taskIdShort}`;
 
-  const prTitle = titleSource;
+  // PR title gets an agent prefix when known — agent attribution travels
+  // through commit-log surfaces (GitHub PR list, `git log --oneline`) that
+  // never render the PR body's reasoning blob.
+  const prTitle = agent ? `[${agent.emoji} ${agent.label}] ${titleSource}` : titleSource;
 
   // Commit message: subject + blank line + trailer. Keep the subject under the
   // 72-char git convention so GitHub and `git log --oneline` render cleanly.
@@ -183,6 +186,16 @@ export function PrBridge({ task }: { task: DevTask }) {
     try {
       await navigator.clipboard.writeText(combined);
       addToast(dt.pr_bridge_copied, 'success');
+    } catch {
+      addToast(dt.pr_bridge_copy_failed, 'error');
+    }
+  };
+
+  const handleCopyReasoning = async () => {
+    if (!idea?.reasoning) return;
+    try {
+      await navigator.clipboard.writeText(idea.reasoning);
+      addToast(dt.pr_bridge_reasoning_copied, 'success');
     } catch {
       addToast(dt.pr_bridge_copy_failed, 'error');
     }
@@ -326,6 +339,17 @@ export function PrBridge({ task }: { task: DevTask }) {
             >
               {dt.pr_bridge_copy_all}
             </Button>
+            {idea?.reasoning && (
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={<Sparkles className="w-3.5 h-3.5" />}
+                onClick={handleCopyReasoning}
+                title={dt.pr_bridge_copy_reasoning_tooltip}
+              >
+                {dt.pr_bridge_copy_reasoning}
+              </Button>
+            )}
             <Button
               variant="secondary"
               size="sm"
