@@ -1132,3 +1132,35 @@ export interface CompanionStreamEvent {
   /** Raw stream-json line for kind=cli, free-form text otherwise. */
   payload: string;
 }
+
+/**
+ * Per-turn rollup of what Athena's brain pulled into the system prompt.
+ * Fired once per turn, right after the prompt is built and right before
+ * the CLI spawn — so the panel can show a "Athena consulted N memories"
+ * strip above the streaming bubble.
+ */
+export const COMPANION_RECALL_PREVIEW_EVENT = 'companion://recall-preview';
+
+export interface CompanionRecallPreviewEntry {
+  /** Stable id of the underlying memory row (or doctrine file_path). */
+  id: string;
+  /** Short, glanceable label (≤60 chars, truncated server-side). */
+  title: string;
+}
+
+export interface CompanionRecallPreview {
+  episodeCount: number;
+  doctrine: CompanionRecallPreviewEntry[];
+  facts: CompanionRecallPreviewEntry[];
+  procedurals: CompanionRecallPreviewEntry[];
+  goals: CompanionRecallPreviewEntry[];
+  backlog: CompanionRecallPreviewEntry[];
+  /** True when a synthesis briefing replaced raw chunks this turn. */
+  synthesized: boolean;
+}
+
+export interface CompanionRecallPreviewEvent {
+  sessionId: string;
+  turnId: string;
+  preview: CompanionRecallPreview;
+}

@@ -170,6 +170,27 @@ pub const COMPOSE_COCKPIT_EVENT: &str = "companion://compose-cockpit";
 /// Auto-fire — no approval, no server-side persistence (transient UI).
 pub const CHAT_CARDS_EVENT: &str = "companion://chat-cards";
 
+/// Per-turn rollup of what Athena's brain pulled into the system prompt:
+/// counts + glanceable titles per memory kind. Emitted once per turn, right
+/// after the prompt is built and right before the CLI spawn. Payload is a
+/// `RecallPreviewEvent { sessionId, turnId, preview }`. The frontend renders
+/// a small "Athena consulted N memories" strip above the streaming bubble.
+pub const RECALL_PREVIEW_EVENT: &str = "companion://recall-preview";
+
+/// Wire shape for `RECALL_PREVIEW_EVENT`. `preview` is the same shape as
+/// `prompt::RecallPreview` (serialized camelCase). Carrying `turn_id` lets
+/// the frontend correlate the strip with the streaming bubble that's
+/// about to fill in for this turn; carrying `session_id` mirrors every
+/// other companion event for forward compatibility (multi-session is on
+/// the roadmap, even though Phase 1 ships a single default session).
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RecallPreviewEvent {
+    pub session_id: String,
+    pub turn_id: String,
+    pub preview: crate::companion::prompt::RecallPreview,
+}
+
 /// What `send_turn` returns to the chat command. The IDs let the UI
 /// reconcile the optimistic bubble with persisted episodes; the
 /// `quick_replies` carry Athena's QR offerings for this specific turn
@@ -325,7 +346,7 @@ pub async fn send_turn(
         ),
     };
 
-    let system_prompt = {
+    let (system_prompt, recall_preview) = {
         #[cfg(feature = "ml")]
         {
             prompt::build_system_prompt(
@@ -354,6 +375,21 @@ pub async fn send_turn(
             .await?
         }
     };
+
+    // Surface what the brain pulled into the prompt so the panel can show
+    // a "Athena consulted N memories" strip above the streaming bubble.
+    // Best-effort: a failed emit just means no strip this turn — never
+    // block the actual chat reply on UI bookkeeping.
+    if let Err(e) = app.emit(
+        RECALL_PREVIEW_EVENT,
+        RecallPreviewEvent {
+            session_id: session_id.clone(),
+            turn_id: turn_id.clone(),
+            preview: recall_preview,
+        },
+    ) {
+        tracing::warn!(error = %e, "companion recall preview event emit failed");
+    }
 
     let assistant_text = match timeout(
         TURN_TIMEOUT,

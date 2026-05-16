@@ -5,6 +5,7 @@ import type {
   ChatCard,
   CompanionConnector,
   CompanionMessage,
+  CompanionRecallPreview,
   PendingApproval,
   PluginToggle,
   ProactiveMessage,
@@ -133,6 +134,25 @@ interface CompanionStore {
   pendingPrompt: PendingPromptPayload | null;
   setPendingPrompt: (p: PendingPromptPayload | null) => void;
   consumePendingPrompt: () => PendingPromptPayload | null;
+
+  /**
+   * Per-turn recall preview surfaced from the backend's `recall-preview`
+   * event. `streamingRecall` is the live, in-flight strip shown above the
+   * streaming bubble; on the `finished` stream event it's moved into
+   * `recallByEpisodeId` keyed by the assistant episode id so the strip
+   * persists above the just-completed bubble. Both cleared on conversation
+   * reset.
+   *
+   * Persistence is intentionally session-scoped: after an app restart,
+   * older bubbles drop their strip (the underlying recall is ephemeral
+   * working memory anyway). Stage 2 of this feature would persist + replay.
+   */
+  streamingRecall: CompanionRecallPreview | null;
+  recallByEpisodeId: Record<string, CompanionRecallPreview>;
+  setStreamingRecall: (preview: CompanionRecallPreview | null) => void;
+  /** Promote the in-flight strip to the named assistant episode id. */
+  attachRecallToEpisode: (episodeId: string) => void;
+  clearAllRecall: () => void;
 }
 
 export interface PendingPromptPayload {
@@ -236,4 +256,23 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
     if (prompt !== null) set({ pendingPrompt: null });
     return prompt;
   },
+
+  streamingRecall: null,
+  recallByEpisodeId: {},
+  setStreamingRecall: (streamingRecall) => set({ streamingRecall }),
+  attachRecallToEpisode: (episodeId) =>
+    set((s) => {
+      if (!s.streamingRecall || !episodeId) {
+        return { streamingRecall: null };
+      }
+      return {
+        streamingRecall: null,
+        recallByEpisodeId: {
+          ...s.recallByEpisodeId,
+          [episodeId]: s.streamingRecall,
+        },
+      };
+    }),
+  clearAllRecall: () =>
+    set({ streamingRecall: null, recallByEpisodeId: {} }),
 }));

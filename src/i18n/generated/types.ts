@@ -10422,6 +10422,17 @@ export type Translations = {
       empty_transcript: string;
       thinking: string;
       stop_turn: string;
+      recall_empty: string;
+      recall_episodes_only: string;
+      recall_memories_only: string;
+      recall_combined: string;
+      recall_synthesized_badge: string;
+      recall_synthesized_tooltip: string;
+      recall_group_doctrine: string;
+      recall_group_facts: string;
+      recall_group_procedurals: string;
+      recall_group_goals: string;
+      recall_group_backlog: string;
       autonomous_toggle_on: string;
       autonomous_toggle_off: string;
       composer_placeholder: string;

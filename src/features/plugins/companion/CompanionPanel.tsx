@@ -30,6 +30,7 @@ import {
   type CompanionChatCardsEvent,
   COMPANION_OPEN_LAB_EVENT,
   COMPANION_PROACTIVE_EVENT,
+  COMPANION_RECALL_PREVIEW_EVENT,
   COMPANION_STREAM_EVENT,
   companionListPendingApprovals,
   companionListProactiveMessages,
@@ -41,6 +42,7 @@ import {
   companionRequestImprovement,
   companionResetConversation,
   companionSendMessage,
+  type CompanionRecallPreviewEvent,
   type CompanionStreamEvent,
   type CreatedApproval,
   type OpenLabEvent,
@@ -53,6 +55,7 @@ import { ProactiveCard } from './ProactiveCard';
 import { AthenaAvatar } from './AthenaAvatar';
 import { BrainViewer } from './BrainViewer';
 import { CompanionToolbar } from './CompanionToolbar';
+import { RecallStrip } from './RecallStrip';
 import { useToastStore } from '@/stores/toastStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { silentCatch } from '@/lib/silentCatch';
@@ -215,6 +218,7 @@ export default function CompanionPanel() {
               // this, a timeout error from a stuck CLI lingers across
               // sessions.
               setSendError(null);
+              useCompanionStore.getState().clearAllRecall();
               try {
                 await companionResetConversation(true);
               } catch (err: unknown) {
@@ -513,6 +517,11 @@ function Body(props: BodyProps) {
     markPlaybackPlayed,
   } = props;
   const { t } = useTranslation();
+  // Recall preview state is read directly from the store (rather than
+  // threaded through Body's props) — these are display-only fields with
+  // no setter callbacks that the parent needs to coordinate.
+  const streamingRecall = useCompanionStore((s) => s.streamingRecall);
+  const recallByEpisodeId = useCompanionStore((s) => s.recallByEpisodeId);
 
   // Initial transcript + pending approvals fetch — once init is done.
   const fetchedRef = useRef(false);
@@ -547,20 +556,47 @@ function Body(props: BodyProps) {
         const ev = event.payload;
         if (ev.kind === 'started') {
           currentTurnIdRef.current = ev.turnId;
+          // New turn — drop any leftover in-flight recall strip; the
+          // backend will re-emit `recall-preview` once the new prompt
+          // is built.
+          useCompanionStore.getState().setStreamingRecall(null);
         } else if (ev.kind === 'cli') {
           // Try to extract assistant text deltas from stream-json.
           const text = extractAssistantText(ev.payload);
           if (text) appendStreamingText(text);
         } else if (ev.kind === 'finished') {
+          // Promote the streaming recall (if any) onto the just-persisted
+          // assistant episode so the strip stays visible above the now-
+          // completed bubble. Payload is the assistant_episode_id.
+          if (ev.payload) {
+            useCompanionStore.getState().attachRecallToEpisode(ev.payload);
+          } else {
+            useCompanionStore.getState().setStreamingRecall(null);
+          }
           currentTurnIdRef.current = null;
         } else if (ev.kind === 'error') {
           setSendError(ev.payload);
+          useCompanionStore.getState().setStreamingRecall(null);
           currentTurnIdRef.current = null;
         }
       },
       [appendStreamingText, setSendError],
     ),
     'companion_stream_listen',
+  );
+
+  // Recall-preview event: fires once per turn between `started` and the
+  // first CLI delta, carrying what the brain pulled into the system
+  // prompt. Stash it as the in-flight strip; it gets promoted to the
+  // assistant episode at `finished` time.
+  useTauriEvent<CompanionRecallPreviewEvent>(
+    COMPANION_RECALL_PREVIEW_EVENT,
+    useCallback((event) => {
+      const ev = event.payload;
+      if (!ev?.preview) return;
+      useCompanionStore.getState().setStreamingRecall(ev.preview);
+    }, []),
+    'companion_recall_preview_listen',
   );
 
   const handleInterrupt = useCallback(() => {
@@ -910,26 +946,36 @@ function Body(props: BodyProps) {
               {t.plugins.companion.empty_transcript}
             </p>
           )}
-          {messages.map((m, i) => (
-            <Bubble key={m.id} role={m.role} index={i}>
-              {m.content}
-            </Bubble>
-          ))}
+          {messages.map((m, i) => {
+            const recall =
+              m.role === 'assistant' ? recallByEpisodeId[m.id] : undefined;
+            return (
+              <div key={m.id} className="space-y-1">
+                {recall && <RecallStrip preview={recall} />}
+                <Bubble role={m.role} index={i}>
+                  {m.content}
+                </Bubble>
+              </div>
+            );
+          })}
           {streaming && (
-            <div className="relative group">
-              <Bubble role="assistant" streaming index={messages.length}>
-                {streamingText || t.plugins.companion.thinking}
-              </Bubble>
-              <button
-                type="button"
-                onClick={handleInterrupt}
-                className="absolute -top-2 -right-2 rounded-full bg-foreground/80 hover:bg-foreground text-background w-6 h-6 flex items-center justify-center shadow-elevation-2 transition-opacity opacity-0 group-hover:opacity-100 focus:opacity-100"
-                aria-label={t.plugins.companion.stop_turn}
-                title={t.plugins.companion.stop_turn}
-                data-testid="companion-stop-turn"
-              >
-                <Square className="w-3 h-3" fill="currentColor" />
-              </button>
+            <div className="space-y-1">
+              {streamingRecall && <RecallStrip preview={streamingRecall} />}
+              <div className="relative group">
+                <Bubble role="assistant" streaming index={messages.length}>
+                  {streamingText || t.plugins.companion.thinking}
+                </Bubble>
+                <button
+                  type="button"
+                  onClick={handleInterrupt}
+                  className="absolute -top-2 -right-2 rounded-full bg-foreground/80 hover:bg-foreground text-background w-6 h-6 flex items-center justify-center shadow-elevation-2 transition-opacity opacity-0 group-hover:opacity-100 focus:opacity-100"
+                  aria-label={t.plugins.companion.stop_turn}
+                  title={t.plugins.companion.stop_turn}
+                  data-testid="companion-stop-turn"
+                >
+                  <Square className="w-3 h-3" fill="currentColor" />
+                </button>
+              </div>
             </div>
           )}
           {improving && (
