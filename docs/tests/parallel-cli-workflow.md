@@ -157,6 +157,27 @@ This is the common shape during a busy session:
 
 The HMR concern doesn't bite because each worktree has its own `src/` directory, so worktree edits don't reach the `tauri:dev:test` running off the main checkout. CLI A's app sees the main checkout's source state; CLIs B–E's edits stay confined to their worktrees.
 
+### Authoring a Playwright spec against a running app — operational gotchas
+
+Run-and-fix iteration with the app already up has a few non-obvious traps. These are the ones the artist test-coverage push hit end-to-end; flagging them here so the next author does not re-learn them at the cost of a 30-second restart per try.
+
+1. **`src/test/automation/bridge.ts` is NOT hot-reloadable.** The test bridge is loaded once when the WebView initializes and exposed on `window.__TEST__`. Vite *does* detect file changes and emit an HMR update, but the existing bridge instance keeps its old methods — adding `setArtistTab` to source does not make it callable on the running app. You must **fully restart `tauri:dev:test`** for bridge.ts edits to take effect. (Vite + Rust target stay warm, so a restart is ~30 s, not the ~3–5 min cold compile.)
+
+   Practical implication: design the bridge method set up front, ship all the methods a feature needs in one commit, and avoid iterating on bridge.ts in tight loops. Iterate on the spec / bridge wrapper / testids — they all hot-reload cleanly.
+
+2. **The dual-checkout trap.** If the app is running from the main checkout (`personas/`) but you're editing files in a worktree (`.claude/worktrees/<slug>/`), your edits never reach the running app — different working directories, different sources, different Vite watchers. You will see your spec fail because the testid is "missing" when it's actually present in your worktree branch but not in master.
+
+   Resolutions, in order of preference:
+   - Edit the testid-adjacent source files in the main checkout directly while the app is running — HMR picks them up immediately. Apply the same edits to your worktree branch afterwards (or merge in the other direction).
+   - Merge your worktree branch into master to push your changes into the running app's source. Vite HMR picks them up.
+   - Start a second app from the worktree itself (cold build, ~3–5 min the first time) and target it via `COMPANION_TEST_PORT`. Only worth it for repeated runs.
+
+3. **Cold cargo builds occasionally hang at 676/678.** The `tauri:dev:test` startup compiles a long Rust crate chain. A small fraction of cold starts get stuck on the last 2 crates (the `personas-desktop` binary) and never finish; symptoms are no `[vite]` startup line, no `127.0.0.1:17320` listener, build progress bar pinned. Kill the cargo + node processes and try again. Subsequent starts are seconds because the target cache is warm.
+
+4. **`location.reload()` does not refresh the bridge.** The HTTP `/eval` with `window.location.reload()` reloads the React tree but re-uses the same bridge module instance — it does not re-run the bridge's init script that exposes `window.__TEST__`. Same conclusion as #1: a full process restart is the only way.
+
+5. **Stale Playwright runs leak test-results.** Failed spec runs leave a `test-results/.last-run.json` + per-test directories in the repo root. These are not tracked but show up in `git status`; do not stage them. The user's `.gitignore` should cover this if it's missing.
+
 ---
 
 ## A note on the active-runs ledger

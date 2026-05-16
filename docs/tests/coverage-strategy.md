@@ -164,6 +164,21 @@ npm run test:playwright:<feature>
 
 **Workers must stay at 1** in `playwright.config.ts` if your feature has any shared backend state — single companion session, single database row, single selection bar at a time. For Artist, multi-asset operations are local-state, but `workers: 1` is the safe default until you've identified a specific source of parallel-safety.
 
+**State-dependent assertions belong behind `test.skip()`, not `expect()`.** The running app holds real persisted state — autosaved compositions, scanned gallery assets, saved credentials, prior sessions. An assertion like "the empty-state row is visible" only holds on a fresh install; on a dev machine where autosave restored a real composition with clips, the empty-state branch is suppressed by design. Don't fight reality — gate the assertion on a precondition query and `test.skip()` with a reason when the precondition fails:
+
+```ts
+const empty = await bridge.query('[data-testid="media-studio-empty-state"]');
+if (empty.length === 0) {
+  test.skip(true, 'no empty state on this app instance (composition has items)');
+  return;
+}
+// ...rest of the assertion...
+```
+
+This keeps the spec passing on both fresh-install and dirty-state machines, and records the reason for the skip so reviewers see it's intentional. The alternative — adding a "reset to fresh state" bridge method — is occasionally worth it for high-value flows but adds bridge surface area and risks erasing real user data on a dev box.
+
+**When iterating on `bridge.ts`, expect a full app restart per edit.** The test bridge is loaded once at WebView init, exposed on `window.__TEST__`, and is NOT hot-reloadable — Vite emits an HMR update but the existing bridge instance keeps its old methods. Design the bridge method set up front and ship it in one commit; iterate freely on the TS bridge wrapper, the spec itself, and the testid attributes (all HMR cleanly). See [`parallel-cli-workflow.md`](parallel-cli-workflow.md#authoring-a-playwright-spec-against-a-running-app--operational-gotchas) for the full list of operational gotchas.
+
 **Example**: see `tests/playwright/companion-bridge.ts` (~280 LOC) + `tests/playwright/athena-conversation.spec.ts` for the companion pattern. Artist's `artist-bridge.ts` + first spec follow the same shape.
 
 ---
