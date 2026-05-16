@@ -68,6 +68,9 @@ export function DriveFileList({
         onOpen={onOpen}
         onContextMenu={onContextMenu}
         onNewFolder={onNewFolder}
+        inlineRenamingPath={inlineRenamingPath}
+        onCommitInlineRename={onCommitInlineRename}
+        onCancelInlineRename={onCancelInlineRename}
       />
     );
   }
@@ -576,6 +579,9 @@ function ColumnsView({
   onOpen,
   onContextMenu,
   onNewFolder,
+  inlineRenamingPath = null,
+  onCommitInlineRename,
+  onCancelInlineRename,
 }: Omit<Props, "onRenameRequest">) {
   const segments = drive.currentPath
     ? drive.currentPath.split("/").filter(Boolean)
@@ -599,6 +605,9 @@ function ColumnsView({
           activeChild={levels[idx + 1] ?? null}
           onOpen={onOpen}
           onContextMenu={onContextMenu}
+          inlineRenamingPath={inlineRenamingPath}
+          onCommitInlineRename={onCommitInlineRename}
+          onCancelInlineRename={onCancelInlineRename}
         />
       ))}
     </div>
@@ -611,6 +620,9 @@ interface ColumnPaneProps {
   activeChild: string | null;
   onOpen: (entry: DriveEntry) => void;
   onContextMenu: (entry: DriveEntry | null, x: number, y: number) => void;
+  inlineRenamingPath?: string | null;
+  onCommitInlineRename?: (path: string, newName: string) => void;
+  onCancelInlineRename?: () => void;
 }
 
 function ColumnPane({
@@ -619,6 +631,9 @@ function ColumnPane({
   activeChild,
   onOpen,
   onContextMenu,
+  inlineRenamingPath = null,
+  onCommitInlineRename,
+  onCancelInlineRename,
 }: ColumnPaneProps) {
   const isCurrent = levelPath === drive.currentPath;
   return (
@@ -630,6 +645,9 @@ function ColumnPane({
           activeChild={activeChild}
           onOpen={onOpen}
           onContextMenu={onContextMenu}
+          inlineRenamingPath={inlineRenamingPath}
+          onCommitInlineRename={onCommitInlineRename}
+          onCancelInlineRename={onCancelInlineRename}
         />
       ) : (
         <AsyncColumnEntries
@@ -639,6 +657,9 @@ function ColumnPane({
           cachedEntriesFor={drive.cachedEntriesFor}
           onOpen={onOpen}
           onContextMenu={onContextMenu}
+          inlineRenamingPath={inlineRenamingPath}
+          onCommitInlineRename={onCommitInlineRename}
+          onCancelInlineRename={onCancelInlineRename}
         />
       )}
     </div>
@@ -651,18 +672,45 @@ function ColumnEntries({
   activeChild,
   onOpen,
   onContextMenu,
+  inlineRenamingPath = null,
+  onCommitInlineRename,
+  onCancelInlineRename,
 }: {
   entries: DriveEntry[];
   drive: UseDriveResult;
   activeChild: string | null;
   onOpen: (entry: DriveEntry) => void;
   onContextMenu: (entry: DriveEntry | null, x: number, y: number) => void;
+  inlineRenamingPath?: string | null;
+  onCommitInlineRename?: (path: string, newName: string) => void;
+  onCancelInlineRename?: () => void;
 }) {
   return (
     <>
       {entries.map((entry) => {
         const isActive = entry.path === activeChild;
         const selected = drive.isSelected(entry.path);
+        const isRenaming = inlineRenamingPath === entry.path;
+        // Same pattern as IconsView — drop the button wrapper while
+        // renaming so the input can mount without invalid-HTML nesting
+        // and without the button's click handler stealing focus.
+        if (isRenaming) {
+          return (
+            <div
+              key={entry.path}
+              className="w-full flex items-center gap-2.5 px-3 py-2 typo-body bg-cyan-500/10 shadow-[inset_2px_0_0_rgba(34,211,238,0.9)]"
+            >
+              <FileChip entry={entry} size={22} />
+              <InlineRenameInput
+                initialName={entry.name}
+                onCommit={(newName) =>
+                  onCommitInlineRename?.(entry.path, newName)
+                }
+                onCancel={() => onCancelInlineRename?.()}
+              />
+            </div>
+          );
+        }
         return (
           <button
             key={entry.path}
@@ -710,6 +758,9 @@ function AsyncColumnEntries(props: {
   cachedEntriesFor: (p: string) => DriveEntry[] | null;
   onOpen: (entry: DriveEntry) => void;
   onContextMenu: (entry: DriveEntry | null, x: number, y: number) => void;
+  inlineRenamingPath?: string | null;
+  onCommitInlineRename?: (path: string, newName: string) => void;
+  onCancelInlineRename?: () => void;
 }) {
   // Seed from useDrive's path cache so columns the user has already navigated
   // through render synchronously instead of flashing a Loading state and
@@ -746,6 +797,9 @@ function AsyncColumnEntries(props: {
       activeChild={props.activeChild}
       onOpen={props.onOpen}
       onContextMenu={props.onContextMenu}
+      inlineRenamingPath={props.inlineRenamingPath}
+      onCommitInlineRename={props.onCommitInlineRename}
+      onCancelInlineRename={props.onCancelInlineRename}
     />
   );
 }
