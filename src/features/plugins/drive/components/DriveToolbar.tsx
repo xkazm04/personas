@@ -19,9 +19,10 @@ import {
   Home,
   type LucideIcon,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { DriveTreeNode } from "@/api/drive";
+import { silentCatch } from "@/lib/silentCatch";
 import type { UseDriveResult, ViewMode } from "../hooks/useDrive";
 import { useTranslation } from "@/i18n/useTranslation";
 
@@ -34,6 +35,7 @@ interface Props {
   onSignSelection?: () => void;
   pathEditing?: boolean;
   onPathEditingChange?: (v: boolean) => void;
+  activeDragCount?: number | null;
 }
 
 function normalizePathInput(raw: string): string {
@@ -52,6 +54,7 @@ export function DriveToolbar({
   onSignSelection,
   pathEditing = false,
   onPathEditingChange,
+  activeDragCount = null,
 }: Props) {
   const { t, tx } = useTranslation();
   const selectionCount = drive.selection.size;
@@ -82,6 +85,49 @@ export function DriveToolbar({
   useEffect(() => {
     if (!hasSelection) setMoveOpen(false);
   }, [hasSelection]);
+
+  // Which breadcrumb pill (if any) the cursor is currently over during a
+  // drag. Path string OR "__root__" sentinel for the Root pill (empty
+  // string is a valid path so we can't use null/"" interchangeably).
+  const [breadcrumbDropOver, setBreadcrumbDropOver] = useState<string | null>(null);
+  const acceptsBreadcrumbDrop = (e: React.DragEvent) =>
+    Array.from(e.dataTransfer?.types ?? []).includes("application/x-drive-move");
+  const handleSegmentDragOver = useCallback(
+    (e: React.DragEvent, targetPath: string) => {
+      if (!acceptsBreadcrumbDrop(e)) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      setBreadcrumbDropOver(targetPath);
+    },
+    [],
+  );
+  const handleSegmentDragLeave = useCallback(() => {
+    setBreadcrumbDropOver(null);
+  }, []);
+  const handleSegmentDrop = useCallback(
+    async (e: React.DragEvent, targetPath: string) => {
+      if (!acceptsBreadcrumbDrop(e)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      setBreadcrumbDropOver(null);
+      const raw = e.dataTransfer.getData("application/x-drive-move");
+      if (!raw) return;
+      try {
+        const { paths } = JSON.parse(raw) as { paths: string[] };
+        for (const p of paths) {
+          if (p === targetPath) continue;
+          // Refuse ancestor → descendant moves (would orphan the subtree).
+          if (targetPath !== "" && targetPath.startsWith(`${p}/`)) continue;
+          const name = p.split("/").pop() ?? p;
+          const dst = targetPath ? `${targetPath}/${name}` : name;
+          await drive.move(p, dst);
+        }
+      } catch (err) {
+        silentCatch("drive:breadcrumb-drop")(err);
+      }
+    },
+    [drive],
+  );
 
   const segments = drive.currentPath
     ? drive.currentPath.split("/").filter(Boolean)
@@ -175,22 +221,47 @@ export function DriveToolbar({
           aria-label="Breadcrumb"
           className="flex items-center gap-0.5 min-w-0 flex-1 px-2 py-1 rounded-card bg-secondary/30 border border-primary/10 hover:border-primary/20 group/breadcrumb"
         >
-          <BreadcrumbPill
-            label={t.plugins.drive.sidebar_root}
-            icon={Home}
-            onClick={() => drive.navigate("")}
-            isLast={segments.length === 0}
-          />
+          {(() => {
+            const isRootLast = segments.length === 0;
+            return (
+              <span
+                onDragOver={(e) =>
+                  !isRootLast && handleSegmentDragOver(e, "")
+                }
+                onDragLeave={handleSegmentDragLeave}
+                onDrop={(e) => !isRootLast && handleSegmentDrop(e, "")}
+              >
+                <BreadcrumbPill
+                  label={t.plugins.drive.sidebar_root}
+                  icon={Home}
+                  onClick={() => drive.navigate("")}
+                  isLast={isRootLast}
+                  dragHint={!isRootLast && !!activeDragCount}
+                  dropActive={breadcrumbDropOver === ""}
+                />
+              </span>
+            );
+          })()}
           {segments.map((seg, i) => {
             const subPath = segments.slice(0, i + 1).join("/");
             const isLast = i === segments.length - 1;
             return (
-              <div key={subPath} className="flex items-center gap-0.5 min-w-0">
+              <div
+                key={subPath}
+                className="flex items-center gap-0.5 min-w-0"
+                onDragOver={(e) =>
+                  !isLast && handleSegmentDragOver(e, subPath)
+                }
+                onDragLeave={handleSegmentDragLeave}
+                onDrop={(e) => !isLast && handleSegmentDrop(e, subPath)}
+              >
                 <ChevronRight className="w-3 h-3 text-foreground flex-shrink-0" />
                 <BreadcrumbPill
                   label={seg}
                   onClick={() => drive.navigate(subPath)}
                   isLast={isLast}
+                  dragHint={!isLast && !!activeDragCount}
+                  dropActive={breadcrumbDropOver === subPath}
                 />
               </div>
             );
@@ -429,21 +500,31 @@ function BreadcrumbPill({
   icon: Icon,
   onClick,
   isLast,
+  dragHint = false,
+  dropActive = false,
 }: {
   label: string;
   icon?: LucideIcon;
   onClick: () => void;
   isLast: boolean;
+  dragHint?: boolean;
+  dropActive?: boolean;
 }) {
+  // dropActive (cursor over this pill mid-drag) wins over dragHint
+  // (drag in flight, pill available) which wins over the default look
+  // (active = last segment / hover state).
+  const stateClass = dropActive
+    ? "bg-cyan-500/30 ring-1 ring-cyan-400/60 text-cyan-50 shadow-[inset_0_0_10px_rgba(34,211,238,0.35)]"
+    : dragHint
+      ? "ring-1 ring-cyan-400/20 bg-cyan-500/5 text-cyan-100/85"
+      : isLast
+        ? "typo-section-title"
+        : "text-foreground hover:text-cyan-200 hover:bg-primary/10";
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`flex items-center gap-1 px-2 py-1 rounded-input typo-body font-medium truncate max-w-[160px] transition-colors ${
-        isLast
-          ? "typo-section-title"
-          : "text-foreground hover:text-cyan-200 hover:bg-primary/10"
-      }`}
+      className={`flex items-center gap-1 px-2 py-1 rounded-input typo-body font-medium truncate max-w-[160px] transition-colors ${stateClass}`}
     >
       {Icon && <Icon className="w-3.5 h-3.5 flex-shrink-0" />}
       <span className="truncate">{label}</span>
