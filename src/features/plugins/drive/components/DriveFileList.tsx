@@ -6,6 +6,7 @@ import {
   File as FileIcon,
   Folder as FolderIcon,
   FolderOpen,
+  Layers,
   Search,
   Sparkles,
 } from "lucide-react";
@@ -219,19 +220,31 @@ function ListView({
     className?: string;
   }) => {
     const active = drive.sortKey === column;
+    // When sorting by kind, the column header competes with the section
+    // dividers below — mute it and swap the sort arrow for a Layers icon
+    // so the eye reads "this column is what's grouping the rows," not
+    // "this column is itself ascending/descending."
+    const isGrouped = column === "kind" && drive.sortKey === "kind";
     const Arrow = drive.sortDir === "asc" ? ChevronUp : ChevronDown;
     return (
       <button
         type="button"
         onClick={() => drive.setSort(column)}
+        title={isGrouped ? drive.sortDir : undefined}
         className={`flex items-center gap-1 py-2 typo-label transition-colors ${
-          active
-            ? "text-cyan-200"
-            : "text-foreground hover:text-foreground"
+          isGrouped
+            ? "text-cyan-200/45 hover:text-cyan-200/70"
+            : active
+              ? "text-cyan-200"
+              : "text-foreground hover:text-foreground"
         } ${className}`}
       >
         {label}
-        {active && <Arrow className="w-3 h-3" />}
+        {isGrouped ? (
+          <Layers className="w-3 h-3" />
+        ) : (
+          active && <Arrow className="w-3 h-3" />
+        )}
       </button>
     );
   };
