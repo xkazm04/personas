@@ -9858,6 +9858,8 @@
       "delete_session": "Delete session",
       "copy_session_output": "Copy session as markdown",
       "session_output_copied": "Session output copied as markdown",
+      "viewer_prev_model": "Previous model",
+      "viewer_next_model": "Next model",
       "lightbox_zoom_in": "Zoom in",
       "lightbox_zoom_out": "Zoom out",
       "lightbox_reset_zoom": "Reset zoom",

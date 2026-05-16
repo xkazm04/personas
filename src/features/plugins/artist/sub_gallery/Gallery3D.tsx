@@ -1,6 +1,6 @@
-import { lazy, Suspense, useCallback, useState, type MouseEvent as ReactMouseEvent } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { X, RotateCw, Grid3x3, Box, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, RotateCw, Grid3x3, Box, Loader2 } from 'lucide-react';
 import type { ArtistAsset } from '@/api/artist';
 import { useGallerySelection } from '../hooks/useGallerySelection';
 import { useModelViewer } from '../hooks/useModelViewer';
@@ -60,6 +60,37 @@ export default function Gallery3D({ assets, onDelete, onUpdateTags, onRename }: 
     selectedAsset.fileName.split('.').pop()?.toLowerCase() ?? '',
   );
 
+  const goNext = useCallback(() => {
+    setSelectedIndex((i) => (i !== null && assets.length > 0 ? (i + 1) % assets.length : i));
+  }, [assets.length]);
+
+  const goPrev = useCallback(() => {
+    setSelectedIndex((i) =>
+      i !== null && assets.length > 0 ? (i - 1 + assets.length) % assets.length : i,
+    );
+  }, [assets.length]);
+
+  // Keyboard navigation while the 3D viewer is open — mirrors the 2D
+  // lightbox shape (← / → cycle, Esc closes) so reviewing batch Blender
+  // output does not require close-and-reopen for each model.
+  useEffect(() => {
+    if (!selectedAsset) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        goNext();
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        goPrev();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        setSelectedIndex(null);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [selectedAsset, goNext, goPrev]);
+
   return (
     <>
       {inSelectMode && (
@@ -94,6 +125,26 @@ export default function Gallery3D({ assets, onDelete, onUpdateTags, onRename }: 
           className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center"
           onClick={() => setSelectedIndex(null)}
         >
+          {assets.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); goPrev(); }}
+                aria-label={t.plugins.artist.viewer_prev_model}
+                className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-card bg-white/10 text-white hover:bg-white/20 transition-colors z-10"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); goNext(); }}
+                aria-label={t.plugins.artist.viewer_next_model}
+                className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-card bg-white/10 text-white hover:bg-white/20 transition-colors z-10"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </button>
+            </>
+          )}
           <div
             className="relative w-[85vw] max-w-5xl h-[80vh] rounded-2xl border border-primary/10 bg-card overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}

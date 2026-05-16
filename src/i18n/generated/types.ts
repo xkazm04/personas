@@ -9864,6 +9864,8 @@ export type Translations = {
       delete_session: string;
       copy_session_output: string;
       session_output_copied: string;
+      viewer_prev_model: string;
+      viewer_next_model: string;
       lightbox_zoom_in: string;
       lightbox_zoom_out: string;
       lightbox_reset_zoom: string;
