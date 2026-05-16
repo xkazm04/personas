@@ -351,6 +351,18 @@ pub fn uninstall() {
     *http_guard = None;
 }
 
+/// Per-persona-gated wrapper around [`export_trace`]. When
+/// `persona_export_enabled` is `false`, the call is a no-op — the trace is
+/// neither queued nor recorded in stats. Use this from the runner so users
+/// can opt individual personas out of Langfuse export without disabling the
+/// integration globally.
+pub fn export_trace_for_persona(persona_export_enabled: bool, trace: &ExecutionTrace) {
+    if !persona_export_enabled {
+        return;
+    }
+    export_trace(trace);
+}
+
 /// Fire-and-forget export of a finalized trace. No-op when nothing is
 /// installed. Never blocks; never propagates errors to the execution path.
 /// Takes a reference and clones internally so the caller can keep using the

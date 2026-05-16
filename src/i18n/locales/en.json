@@ -2449,6 +2449,8 @@
       "sensitive_preview_desc": "Mask hover preview details until revealed.",
       "cli_awareness": "Claude CLI session awareness",
       "cli_awareness_desc": "Let this persona read recent turns from your active interactive Claude CLI session as additional context. Requires the global toggle in Companion → Setup → Sensory signals to also be ON. Read-only — your CLI session is never modified.",
+      "langfuse_export": "Export traces to Langfuse",
+      "langfuse_export_desc": "Ship this persona's execution traces to your configured Langfuse instance. Off keeps THIS persona's traces local without disabling the integration globally — useful for personas handling sensitive content. On by default.",
       "failed_health_watch": "Failed to update health watch setting",
       "health_watch": "Health Watch",
       "health_watch_active": "Health monitoring active (every 6h)",

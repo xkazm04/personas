@@ -407,6 +407,12 @@ fn row_to_persona_with_mode(row: &Row, mode: ProfileMode) -> rusqlite::Result<Pe
             .flatten()
             .map(|v| v != 0)
             .unwrap_or(false),
+        langfuse_export_enabled: row
+            .get::<_, Option<i64>>("langfuse_export_enabled")
+            .ok()
+            .flatten()
+            .map(|v| v != 0)
+            .unwrap_or(true),
         setup_status: row
             .get::<_, Option<String>>("setup_status")
             .ok()
@@ -862,6 +868,14 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
             param_values,
             bool
         );
+        push_field_param!(
+            input.langfuse_export_enabled,
+            "langfuse_export_enabled",
+            sets,
+            param_idx,
+            param_values,
+            bool
+        );
 
         let sql = format!(
             "UPDATE personas SET {} WHERE id = ?{} RETURNING *",
@@ -1256,13 +1270,13 @@ pub fn duplicate(pool: &DbPool, source_id: &str) -> Result<Persona, AppError> {
               model_profile, max_budget_usd, max_turns, design_context, group_id,
               notification_channels, parameters, trust_level, trust_origin,
               trust_verified_at, trust_score, source_review_id, last_design_result,
-              template_category, cli_awareness_enabled, created_at, updated_at)
+              template_category, cli_awareness_enabled, langfuse_export_enabled, created_at, updated_at)
              SELECT ?1, project_id, name || ' (Copy)', description, system_prompt, structured_prompt,
                     icon, color, enabled, sensitive, headless, max_concurrent, timeout_ms,
                     model_profile, max_budget_usd, max_turns, design_context, group_id,
                     notification_channels, parameters, trust_level, trust_origin,
                     trust_verified_at, trust_score, source_review_id, last_design_result,
-                    template_category, cli_awareness_enabled, ?2, ?2
+                    template_category, cli_awareness_enabled, langfuse_export_enabled, ?2, ?2
              FROM personas WHERE id = ?3",
             params![new_id, now, source_id],
         )?;

@@ -5,4 +5,8 @@ export type UpdatePersonaInput = { name: string | null, description: string | nu
 /**
  * Phase 5 v1: per-persona Claude CLI session-resume awareness gate.
  */
-cli_awareness_enabled: boolean | null, };
+cli_awareness_enabled: boolean | null,
+/**
+ * Per-persona Langfuse trace export gate.
+ */
+langfuse_export_enabled: boolean | null, };

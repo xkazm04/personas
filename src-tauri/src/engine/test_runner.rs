@@ -970,10 +970,11 @@ pub(crate) async fn score_result(
 
     // Stage 2: fire-and-forget ship the score + a synthetic trace to Langfuse.
     // No-ops unless the user has both connected and opted into push_lab_scores
-    // in the plugin settings.
+    // in the plugin settings AND this persona has langfuse_export_enabled.
     crate::langfuse::lab_score::ship_lab_score(
         &persona.id,
         &persona.name,
+        persona.langfuse_export_enabled,
         &scenario.name,
         &scenario.description,
         tool_accuracy,

@@ -23,6 +23,7 @@ use crate::langfuse::exporter;
 pub fn ship_lab_score(
     persona_id: &str,
     persona_name: &str,
+    persona_export_enabled: bool,
     scenario_name: &str,
     scenario_description: &str,
     tool_accuracy: Option<i32>,
@@ -34,6 +35,12 @@ pub fn ship_lab_score(
     cost_usd: f64,
     duration_ms: u64,
 ) {
+    // First gate: per-persona export opt-out. When OFF, this persona's lab
+    // scenarios stay local — neither trace nor score crosses to Langfuse.
+    if !persona_export_enabled {
+        return;
+    }
+
     let trace_uuid = Uuid::new_v4().to_string();
     let span_uuid = Uuid::new_v4().to_string();
     let execution_id = format!("lab-{trace_uuid}");

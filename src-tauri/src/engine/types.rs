@@ -452,6 +452,7 @@ impl EphemeralPersona {
             gateway_exposure: crate::db::models::PersonaGatewayExposure::LocalOnly,
             template_category: None,
             cli_awareness_enabled: false,
+            langfuse_export_enabled: true,
             setup_status: "ready".to_string(),
             created_at: now.clone(),
             updated_at: now,

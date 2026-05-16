@@ -2455,6 +2455,8 @@ export type Translations = {
       sensitive_preview_desc: string;
       cli_awareness: string;
       cli_awareness_desc: string;
+      langfuse_export: string;
+      langfuse_export_desc: string;
       failed_health_watch: string;
       health_watch: string;
       health_watch_active: string;
