@@ -1,7 +1,5 @@
 import { useCallback, useState } from "react";
-import { ChevronDown, ChevronRight, Clock, Folder, FolderOpen, HardDrive, Sparkles } from "lucide-react";
-
-const RECENT_COLLAPSED_KEY = "drive.sidebar.recentCollapsed";
+import { ChevronDown, ChevronRight, Clock, Folder, FolderOpen, HardDrive } from "lucide-react";
 
 import type { DriveEntry, DriveTreeNode } from "@/api/drive";
 import { driveFormatBytes, driveParentPath } from "@/api/drive";
@@ -11,12 +9,11 @@ import { useTranslation } from "@/i18n/useTranslation";
 import { formatRelativeTime, visualForEntry } from "../designTokens";
 import { DriveEmptyHint } from "./DriveEmptyHint";
 
+const RECENT_COLLAPSED_KEY = "drive.sidebar.recentCollapsed";
+
 interface Props {
   drive: UseDriveResult;
 }
-
-/** Visual-only cap for the storage meter. Real drives are unbounded. */
-const STORAGE_METER_CAP_BYTES = 5 * 1024 * 1024 * 1024; // 5 GB
 
 export function DriveSidebar({ drive }: Props) {
   const { t, tx } = useTranslation();
@@ -120,30 +117,27 @@ export function DriveSidebar({ drive }: Props) {
         )}
       </div>
 
-      {/* Storage meter */}
+      {/* Storage block — used-bytes is the hero glance value; item count
+          plays subtitle. The previous log-scale bar pretended to measure
+          a 5 GB quota that the sandbox doesn't actually enforce, so it
+          read as a misleading progress meter; dropping it makes the
+          panel say what it really knows. The root path moves to the
+          container's title attribute (tooltip only). */}
       {drive.storage && (
-        <div className="border-t border-primary/10 px-4 py-3 bg-background/40">
-          <div className="flex items-center justify-between mb-1.5">
-            <div className="typo-label text-foreground">
-              {t.plugins.drive.sidebar_storage}
-            </div>
-            <Sparkles className="w-3 h-3 text-cyan-300" />
+        <div
+          className="border-t border-primary/10 px-4 py-3 bg-background/40"
+          title={drive.storage.root}
+        >
+          <div className="typo-label text-foreground/50 tracking-wider uppercase mb-1">
+            {t.plugins.drive.sidebar_storage}
           </div>
-          <StorageMeter
-            usedBytes={drive.storage.usedBytes}
-            capBytes={STORAGE_METER_CAP_BYTES}
-          />
-          <div className="mt-2 typo-body text-foreground font-medium">
-            {tx(t.plugins.drive.storage_used, {
-              used: driveFormatBytes(drive.storage.usedBytes),
+          <div className="typo-section-title tabular-nums text-foreground">
+            {driveFormatBytes(drive.storage.usedBytes)}
+          </div>
+          <div className="mt-0.5 typo-caption text-foreground/60 tabular-nums">
+            {tx(t.plugins.drive.items_total, {
               count: drive.storage.entryCount,
             })}
-          </div>
-          <div
-            className="mt-1 typo-caption text-foreground font-mono truncate"
-            title={drive.storage.root}
-          >
-            {drive.storage.root}
           </div>
         </div>
       )}
@@ -197,38 +191,6 @@ function RecentRail({
           </button>
         );
       })}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Storage meter
-// ---------------------------------------------------------------------------
-
-function StorageMeter({
-  usedBytes,
-  capBytes,
-}: {
-  usedBytes: number;
-  capBytes: number;
-}) {
-  // Log-scale so the bar animates even for very small drives; caps at cap.
-  const raw = Math.max(0, usedBytes) / Math.max(1, capBytes);
-  const pct = Math.min(1, Math.log10(1 + raw * 9));
-  const width = Math.max(4, pct * 100);
-
-  return (
-    <div
-      role="progressbar"
-      aria-valuenow={Math.round(pct * 100)}
-      aria-valuemin={0}
-      aria-valuemax={100}
-      className="relative h-2 w-full overflow-hidden rounded-full bg-secondary/50 border border-primary/10"
-    >
-      <div
-        className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-cyan-500 via-sky-400 to-teal-300 shadow-[0_0_10px_rgba(14,165,233,0.6)] transition-all duration-500"
-        style={{ width: `${width}%` }}
-      />
     </div>
   );
 }
