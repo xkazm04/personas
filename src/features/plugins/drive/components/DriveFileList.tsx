@@ -14,6 +14,7 @@ import type { DriveEntry, DriveSearchHit } from "@/api/drive";
 import { driveFormatBytes, driveList, driveParentPath } from "@/api/drive";
 import { silentCatch } from "@/lib/silentCatch";
 import type { UseDriveResult, SortKey } from "../hooks/useDrive";
+import { useScrollShadows } from "../hooks/useScrollShadows";
 import { useTranslation } from "@/i18n/useTranslation";
 import {
   visualForEntry,
@@ -232,6 +233,11 @@ function ListView({
 }: Props) {
   const { t, tx } = useTranslation();
   const [dragTarget, setDragTarget] = useState<string | null>(null);
+  const {
+    ref: scrollRef,
+    topShadow,
+    bottomShadow,
+  } = useScrollShadows<HTMLDivElement>();
 
   const SortHeader = ({
     column,
@@ -350,6 +356,7 @@ function ListView({
 
   return (
     <div
+      ref={scrollRef}
       className="flex-1 overflow-auto"
       onContextMenu={(e) => {
         e.preventDefault();
@@ -364,6 +371,15 @@ function ListView({
           <SortHeader column="kind" label={t.plugins.drive.col_kind} />
           <SortHeader column="modified" label={t.plugins.drive.col_modified} />
         </div>
+        {/* Top scroll-shadow — sticky just below the column header so it
+            sits exactly at the top of the row area, signalling content
+            scrolls up under the header. Hidden when scrollTop === 0. */}
+        {topShadow && (
+          <div
+            aria-hidden
+            className="sticky top-[33px] z-[8] -mb-4 h-4 bg-gradient-to-b from-background/95 to-transparent pointer-events-none"
+          />
+        )}
         {/* Phantom create row — sits above real rows, kind-styled by intent. */}
         {pendingCreate && (
           <div className="grid grid-cols-[1fr_110px_120px_160px] gap-3 px-4 py-2 border-b border-cyan-500/25 bg-cyan-500/5">
@@ -488,6 +504,15 @@ function ListView({
             </Fragment>
           );
         })}
+        {/* Bottom scroll-shadow — sticky at bottom-0 inside the scroll
+            container so it tracks the visible viewport edge. Hidden when
+            the last row is fully in view. */}
+        {bottomShadow && (
+          <div
+            aria-hidden
+            className="sticky bottom-0 z-[8] -mt-4 h-4 bg-gradient-to-t from-background to-transparent pointer-events-none"
+          />
+        )}
       </div>
     </div>
   );
