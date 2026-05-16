@@ -2,18 +2,23 @@
 // Stop hook: nudge Claude when feature/command source changed in this turn
 // but its coupled documentation surfaces were not all updated.
 //
-// Three target types per entry in scripts/docs/feature-doc-map.json:
-//   1. `doc`                — feature doc in docs/features/. Exit-2 nag.
+// Three target types per entry in scripts/docs/feature-doc-map.json — all
+// independently checked, all exit-2 nags on miss:
+//   1. `doc`                — feature doc in docs/features/. Satisfied by
+//                             editing any file under docs/features/ in the
+//                             same turn.
 //   2. `onboardingFlows`    — tour-flow IDs from the onboardingFlows registry.
-//                             Exit-2 nag if any listed AND no src/features/onboarding/**
-//                             file was touched in the same turn.
-//   3. `marketingModule`    — desktop-modules.ts module ID. Informational
-//                             breadcrumb only; never exits 2 on its own. Folded
-//                             into the message when (1) or (2) fires, so the
-//                             reader can mention it in their next /guide-sync run.
-//                             Standalone marketing-only impact is handled by
-//                             the scheduled weekly /guide-sync routine — see
-//                             CLAUDE.md "Documentation Sync".
+//                             Satisfied by editing any src/features/onboarding/**
+//                             file in the same turn.
+//   3. `marketingModule`    — desktop-modules.ts module ID. Satisfied by
+//                             editing any file under ../personas-web/ (cross-
+//                             repo sibling checkout) in the same turn, OR by
+//                             dismissing as internal-only. This used to be an
+//                             informational breadcrumb with a weekly safety
+//                             net; the safety net was removed in favor of
+//                             per-session gap-prevention (CLAUDE.md
+//                             "Documentation Sync"). Dismiss noise is the
+//                             explicit trade-off.
 //
 // Triggered by .claude/settings.json -> hooks.Stop.
 // Reads JSONL transcript at $payload.transcript_path, scans the most recent
@@ -114,6 +119,10 @@ function main() {
   const editedArr = [...edited];
   const docsTouched = editedArr.some((f) => f.startsWith('docs/features/'));
   const onboardingTouched = editedArr.some((f) => f.startsWith('src/features/onboarding/'));
+  // Cross-repo sibling: ../personas-web/ from this checkout. normalize() emits
+  // paths relative to REPO_ROOT, so personas-web edits show up with a leading
+  // ".." segment.
+  const personasWebTouched = editedArr.some((f) => f.startsWith('../personas-web/') || f.includes('/personas-web/'));
 
   const meaningful = editedArr.filter((f) => !SKIP_PATTERNS.some((re) => re.test(f)));
   if (meaningful.length === 0) process.exit(0);
@@ -158,8 +167,9 @@ function main() {
 
   const featureDocMissing = !docsTouched && docHits.size > 0;
   const onboardingMissing = !onboardingTouched && onboardingHits.size > 0;
+  const marketingMissing = !personasWebTouched && marketingHits.size > 0;
 
-  if (!featureDocMissing && !onboardingMissing) process.exit(0);
+  if (!featureDocMissing && !onboardingMissing && !marketingMissing) process.exit(0);
 
   const sections = [];
 
@@ -199,22 +209,28 @@ function main() {
     );
   }
 
-  if (marketingHits.size > 0) {
+  if (marketingMissing) {
     const modLines = [...marketingHits.entries()]
       .map(([mod, docs]) => {
         const uniqDocs = [...new Set(docs.filter(Boolean))].slice(0, 3).join(', ');
-        return `  - module "${mod}" (related docs: ${uniqDocs || 'unmapped'})`;
+        return `  - module "${mod}" (related desktop docs: ${uniqDocs || 'unmapped'})`;
       })
       .join('\n');
     sections.push(
-      `Marketing-guide breadcrumb (informational — no action required this turn):\n` +
-      `Desktop-module(s) potentially affected, picked up by next scheduled /guide-sync:\n${modLines}\n` +
-      `Run /guide-sync manually if the change is urgent for the marketing site.`,
+      `Marketing-guide reminder: this turn edited source coupled to a marketing-site ` +
+      `guide module, but no ../personas-web/ file was touched.\n\n` +
+      `Marketing module(s) likely affected:\n${modLines}\n\n` +
+      `Per CLAUDE.md "Documentation Sync — three surfaces": prevent gaps per-session, ` +
+      `not via weekly batch. Resolve by one of: (a) edit the affected guide at ` +
+      `../personas-web/src/data/guide/content/<category>.ts in this session, (b) invoke ` +
+      `/guide-sync to do a full pass now, or (c) dismiss with "no marketing impact, ` +
+      `internal change only" if this is a refactor that doesn't shift anything visible at ` +
+      `the marketing-guide level of abstraction.`,
     );
   }
 
   const message = sections.join('\n\n---\n\n') +
-    `\n\nDismiss path: reply with one short sentence — e.g. "internal-only, no doc/tour update needed" — and stop.\n`;
+    `\n\nDismiss path: reply with one short sentence — e.g. "internal-only, no doc/tour/marketing update needed" — and stop.\n`;
 
   process.stderr.write(message);
   process.exit(2);

@@ -69,10 +69,9 @@ function expect(label, cond, detail) {
 }
 
 // ────────────────────────────────────────────────────────────────────────
-// Case 1: source edit alone (no docs, no onboarding) → feature-doc nag
-//         AND marketing breadcrumb folded in.
+// Case 1: source edit alone → all three nags (feature-doc, onboarding, marketing)
 // ────────────────────────────────────────────────────────────────────────
-console.log('Case 1: vault source edit only');
+console.log('Case 1: vault source edit only — all three nags');
 {
   const r = runHook([
     { tool: 'Edit', path: 'src/features/vault/sub_catalog/components/picker/ConnectorCard.tsx' },
@@ -80,12 +79,12 @@ console.log('Case 1: vault source edit only');
   expect('exit code is 2', r.code === 2, `got ${r.code}`);
   expect('mentions docs/features/connections', r.stderr.includes('docs/features/connections/README.md'));
   expect('mentions onboarding tour (credentials-intro)', r.stderr.includes('credentials-intro'));
-  expect('mentions marketing breadcrumb', r.stderr.includes('Marketing-guide breadcrumb'));
+  expect('mentions marketing reminder', r.stderr.includes('Marketing-guide reminder'));
   expect('mentions module "connections"', r.stderr.includes('module "connections"'));
 }
 
 // ────────────────────────────────────────────────────────────────────────
-// Case 2: source + feature doc both touched → only onboarding nag fires
+// Case 2: source + feature doc both touched → onboarding + marketing remain
 // ────────────────────────────────────────────────────────────────────────
 console.log('\nCase 2: vault source + connections doc edited together');
 {
@@ -93,21 +92,38 @@ console.log('\nCase 2: vault source + connections doc edited together');
     { tool: 'Edit', path: 'src/features/vault/sub_catalog/components/picker/ConnectorCard.tsx' },
     { tool: 'Edit', path: 'docs/features/connections/README.md' },
   ]);
-  expect('exit code is 2 (onboarding still pending)', r.code === 2, `got ${r.code}`);
+  expect('exit code is 2 (onboarding + marketing still pending)', r.code === 2, `got ${r.code}`);
   expect('NO feature-doc nag', !r.stderr.includes('Doc-sync reminder'));
   expect('onboarding nag fires', r.stderr.includes('Onboarding-tour reminder'));
-  expect('marketing breadcrumb still folded in', r.stderr.includes('Marketing-guide breadcrumb'));
+  expect('marketing nag fires', r.stderr.includes('Marketing-guide reminder'));
 }
 
 // ────────────────────────────────────────────────────────────────────────
-// Case 3: source + doc + onboarding step touched → exit 0 (everything done)
+// Case 3: source + doc + onboarding step touched → marketing remains
 // ────────────────────────────────────────────────────────────────────────
-console.log('\nCase 3: vault source + doc + onboarding step all edited');
+console.log('\nCase 3: vault source + doc + onboarding step (marketing still pending)');
 {
   const r = runHook([
     { tool: 'Edit', path: 'src/features/vault/sub_catalog/components/picker/ConnectorCard.tsx' },
     { tool: 'Edit', path: 'docs/features/connections/README.md' },
     { tool: 'Edit', path: 'src/features/onboarding/components/steps/CredentialsTourContent.tsx' },
+  ]);
+  expect('exit code is 2 (marketing still pending)', r.code === 2, `got ${r.code}`);
+  expect('NO feature-doc nag', !r.stderr.includes('Doc-sync reminder'));
+  expect('NO onboarding nag', !r.stderr.includes('Onboarding-tour reminder'));
+  expect('marketing nag fires alone', r.stderr.includes('Marketing-guide reminder'));
+}
+
+// ────────────────────────────────────────────────────────────────────────
+// Case 3b: same as above + personas-web edit → exit 0 (everything done)
+// ────────────────────────────────────────────────────────────────────────
+console.log('\nCase 3b: all four surfaces touched — clean');
+{
+  const r = runHook([
+    { tool: 'Edit', path: 'src/features/vault/sub_catalog/components/picker/ConnectorCard.tsx' },
+    { tool: 'Edit', path: 'docs/features/connections/README.md' },
+    { tool: 'Edit', path: 'src/features/onboarding/components/steps/CredentialsTourContent.tsx' },
+    { tool: 'Edit', path: '../personas-web/src/data/guide/content/credentials.ts' },
   ]);
   expect('exit code is 0', r.code === 0, `got ${r.code}; stderr=${r.stderr.slice(0, 200)}`);
   expect('no stderr message', r.stderr === '');
@@ -115,13 +131,29 @@ console.log('\nCase 3: vault source + doc + onboarding step all edited');
 
 // ────────────────────────────────────────────────────────────────────────
 // Case 4: source with marketing target but NO onboarding coupling
-//         + doc touched → exit 0 (no exit-2 nags; breadcrumb suppressed)
+//         + doc touched → marketing still fires (exit 2)
 // ────────────────────────────────────────────────────────────────────────
-console.log('\nCase 4: schedules source + schedules doc (no onboarding coupling)');
+console.log('\nCase 4: schedules source + doc (no onboarding) — marketing still fires');
 {
   const r = runHook([
     { tool: 'Edit', path: 'src/features/schedules/components/ScheduleRow.tsx' },
     { tool: 'Edit', path: 'docs/features/schedules.md' },
+  ]);
+  expect('exit code is 2 (marketing pending)', r.code === 2, `got ${r.code}`);
+  expect('NO feature-doc nag', !r.stderr.includes('Doc-sync reminder'));
+  expect('NO onboarding nag', !r.stderr.includes('Onboarding-tour reminder'));
+  expect('marketing nag fires alone', r.stderr.includes('Marketing-guide reminder'));
+  expect('mentions module "schedules"', r.stderr.includes('module "schedules"'));
+}
+
+// ────────────────────────────────────────────────────────────────────────
+// Case 4b: source without marketingModule → exit 0 when doc+onboarding clean
+// ────────────────────────────────────────────────────────────────────────
+console.log('\nCase 4b: sharing source + doc (no marketingModule mapped)');
+{
+  const r = runHook([
+    { tool: 'Edit', path: 'src/features/sharing/components/foo.tsx' },
+    { tool: 'Edit', path: 'docs/features/sharing/README.md' },
   ]);
   expect('exit code is 0', r.code === 0, `got ${r.code}; stderr=${r.stderr.slice(0, 200)}`);
 }
@@ -138,9 +170,9 @@ console.log('\nCase 5: test file only');
 }
 
 // ────────────────────────────────────────────────────────────────────────
-// Case 6: triggers source → events doc + multiple tour flows in nag
+// Case 6: triggers source → events doc + multiple tour flows + marketing
 // ────────────────────────────────────────────────────────────────────────
-console.log('\nCase 6: triggers source — multi-flow onboarding nag');
+console.log('\nCase 6: triggers source — multi-flow onboarding + marketing nag');
 {
   const r = runHook([
     { tool: 'Edit', path: 'src/features/triggers/TriggersPage.tsx' },
@@ -151,6 +183,7 @@ console.log('\nCase 6: triggers source — multi-flow onboarding nag');
   expect('mentions trigger-types flow', r.stderr.includes('trigger-types'));
   expect('mentions event-chaining flow', r.stderr.includes('event-chaining'));
   expect('mentions live-stream flow', r.stderr.includes('live-stream'));
+  expect('mentions marketing module "events"', r.stderr.includes('module "events"'));
 }
 
 // ────────────────────────────────────────────────────────────────────────

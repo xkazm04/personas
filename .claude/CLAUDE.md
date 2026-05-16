@@ -280,21 +280,23 @@ Hardcoded English in JSX is still being extracted incrementally. When you encoun
 
 ---
 
-## Documentation Sync — three surfaces, three enforcement layers
+## Documentation Sync — three surfaces, same-session enforcement
 
-The product has three docs surfaces that decay at different rates and demand different gates:
+The product has three docs surfaces:
 
 1. **`docs/features/`** (this repo) — implemented-product reference for users, developers, and CLI agents.
 2. **`src/features/onboarding/`** (this repo) — guided-tour steps the user walks through on first launch.
-3. **`personas-web/src/data/guide/content/`** (separate repo) — marketing-site guides at the product-explanation level.
+3. **`personas-web/src/data/guide/content/`** (sibling repo at `../personas-web/`) — marketing-site guides at the product-explanation level.
 
-Development happens through Claude with no second human reviewer to catch drift, so enforcement lives in this section, the Stop hook, and a scheduled cron — not in habit.
+Development happens through Claude with no second human reviewer to catch drift, so enforcement lives in this section and in a Stop hook. **The design choice is per-session gap-prevention, not a weekly catch-up cron** — drift compounds across sessions much faster than a weekly batch can clear it, so every session must leave all three surfaces consistent with whatever it changed in source.
 
 ### The rule
 
-When a turn edits **feature/command source** with **user-visible** effect (new tab/page/command, changed flow, removed feature, new event, schema migration that surfaces in UI, renamed table, new tier gate), update the matching surfaces in the **same turn** *if they're same-repo*. Cross-repo marketing guides are caught by the weekly scheduled `/guide-sync` (see below) — you don't need to fix those in-line unless the change is urgent.
+When a turn edits **feature/command source** with **user-visible** effect (new tab/page/command, changed flow, removed feature, new event, schema migration that surfaces in UI, renamed table, new tier gate), update **every coupled surface in the same turn** — including the cross-repo marketing guide if a `marketingModule` is mapped.
 
-If the change is internal-only (refactor, bugfix without behavior shift, generated code, test-only), no doc update is needed.
+If the change is internal-only (refactor, bugfix without behavior shift, generated code, test-only) no surface update is needed. Dismiss the hook with one short sentence naming why.
+
+The cross-repo cost (clone or `cd ../personas-web && git ...`) is real but it's lower than the compounding cost of guides falling out of sync with the desktop product across dozens of sessions.
 
 ### Source → docs map (single source of truth)
 
@@ -328,26 +330,32 @@ When you add a new feature area, add an entry to `feature-doc-map.json` in the s
 
 1. Walks the current turn's transcript for `Edit` / `Write` / `MultiEdit` / `NotebookEdit` calls.
 2. Filters out skip patterns (tests, generated bindings, i18n, docs themselves, migrations, template/connector seeds).
-3. Matches the remaining edits against `feature-doc-map.json` and runs **three independent checks**:
+3. Matches the remaining edits against `feature-doc-map.json` and runs **three independent exit-2 checks**:
    - **Feature doc** — if source matched an entry's `sourceGlobs` and no `docs/features/*` file was edited → exit 2 with a feature-doc reminder.
    - **Onboarding tour** — if source matched an entry that lists `onboardingFlows` and no `src/features/onboarding/**` file was edited → exit 2 with an onboarding-tour reminder naming the affected flow(s) and their step file(s).
-   - **Marketing guide** — if source matched an entry with `marketingModule`, fold an informational breadcrumb into the message naming the affected module. **Never exits 2 on its own**; the scheduled weekly `/guide-sync` is what keeps marketing in sync.
+   - **Marketing guide** — if source matched an entry with `marketingModule` and no `../personas-web/` file was edited → exit 2 with a marketing reminder naming the affected module(s). Cross-repo edits to `../personas-web/src/data/guide/content/*.ts` satisfy this; dismissal works the same way.
 
-The three sections combine into one message. Exit 2 fires when feature-doc *or* onboarding is missing; the marketing breadcrumb is purely informational.
+The three sections combine into one message. Exit 2 fires when **any** of feature-doc / onboarding / marketing is missing.
 
-When you see the reminder, **either** update the named surfaces in this turn, **or** reply with one short sentence — `"internal-only, no doc/tour update needed"` (or similar) — explaining why. Do not ignore the reminder silently.
+When you see the reminder, **either** update the named surface(s) in this turn (cross-repo `cd ../personas-web` is part of normal workflow), **or** reply with one short sentence — `"internal-only, no doc/tour/marketing update needed"` (or similar) — explaining why. Do not ignore the reminder silently. The dismiss path is the explicit trade-off for the noisier per-session model.
 
-The hook honors `stop_hook_active`, so it can't infinite-loop. Test fixtures live at [`scripts/docs/__tests__/check-doc-sync.test.mjs`](../scripts/docs/__tests__/check-doc-sync.test.mjs) — run with `node scripts/docs/__tests__/check-doc-sync.test.mjs` (20 assertions, no deps).
+The hook honors `stop_hook_active`, so it can't infinite-loop. Test fixtures live at [`scripts/docs/__tests__/check-doc-sync.test.mjs`](../scripts/docs/__tests__/check-doc-sync.test.mjs) — run with `node scripts/docs/__tests__/check-doc-sync.test.mjs` (30 assertions, no deps).
 
-### Marketing guides — scheduled `/guide-sync`, not Stop-hook gate
+### Marketing guides — cross-repo workflow inside the same session
 
-Marketing guides live in a separate git repo (`personas-web`), so same-turn enforcement is impossible (you'd be writing across two histories). They're also high-signal/low-frequency: most desktop changes don't affect them, and per-edit nags would degrade to wallpaper.
+Marketing guides live at `../personas-web/src/data/guide/content/<category>.ts` (sibling checkout). When the Stop hook surfaces a marketing reminder:
 
-Instead: a weekly scheduled `/guide-sync` routine batches the week's commits, maps them to guide topics via `personas-web/src/data/guide/desktop-modules.ts`, flags stale topics, and proposes updates. See `/schedule list` to inspect or modify the routine.
+1. The fastest path is a direct edit: `Edit` the relevant `personas-web/src/data/guide/content/*.ts` file with the same change you just shipped on the desktop side. The mapping `desktop-module → guide category` is in [`personas-web/src/data/guide/desktop-modules.ts`](../../personas-web/src/data/guide/desktop-modules.ts) (`TOPIC_MODULE_MAP`).
+2. For larger changes that affect many topics, invoke `/guide-sync` mid-session — it'll batch-propose updates and write them in one pass.
+3. If the change is genuinely below the marketing-guide level of abstraction (an internal refactor, a bugfix that doesn't shift any user-visible flow), dismiss the reminder with `"no marketing impact, internal change only"`.
 
-Run `/guide-sync` manually if a change is urgent for the marketing site (e.g. a major feature ships mid-week and the launch announcement points at a stale guide).
+Both repos run their own `git` — keep commits atomic per repo. Per the parallel-safety primitives above, never `git stash` other sessions' work in either checkout.
 
 **Mode tags**: Guide categories and topics have a `mode` field (`"simple"`, `"power"`, or `"both"`) controlling visibility in the guide filter UI. When moving features between Simple/Power modes in the desktop app, update the corresponding category or topic mode in `personas-web`.
+
+### Catch-up runs
+
+There is no scheduled `/guide-sync` cron — the per-session model is the entire enforcement. If drift accumulates (e.g. after a sustained period where multiple sessions dismissed marketing reminders), run `/guide-sync` manually to do a full pass. The marker at `.claude/guide-sync-marker.json` tracks the last full-pass commit so the skill knows what range of history to scan.
 
 ---
 
