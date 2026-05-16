@@ -90,4 +90,10 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// triggers + model tier + observability) into a build-ready summary
 /// with a primary commit button (interactive / one_shot / use_template).
 /// Closes the design → build loop without an explicit handoff message.
-pub const CONSTITUTION_VERSION: u32 = 16;
+///
+/// v17: `show_design_capabilities` op — onboarding card listing the
+/// design-family vocabulary (walkthrough / templates / use cases /
+/// triggers / tier / observability / decision log / ready recap) with
+/// short descriptions and example user prompts. Surfaced when a user
+/// asks "what can you help me design?" so they know what to ask for.
+pub const CONSTITUTION_VERSION: u32 = 17;

@@ -21,6 +21,7 @@ const UNCLAMPED_KINDS = new Set([
   'observability_plan',
   'decision_log',
   'persona_ready',
+  'design_capabilities',
 ]);
 
 /**

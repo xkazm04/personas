@@ -308,6 +308,33 @@ pub fn dispatch(
                 });
             }
             Ok(env)
+                if env.op == "propose_action" && env.action == "show_design_capabilities" =>
+            {
+                // Onboarding-style card for the design-family. Athena
+                // emits this when a user asks "what can you help me
+                // design?" — surfaces her vocabulary (walkthrough, use
+                // cases, triggers, model tier, observability, ready
+                // recap) so the user knows what to ask for. Content is
+                // mostly hardcoded in the widget; the op carries just an
+                // optional intro line Athena composes for context.
+                let intro = env
+                    .params
+                    .get("intro")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string())
+                    .unwrap_or_default();
+                let title = env
+                    .params
+                    .get("title")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string());
+                out.chat_cards.push(ChatCard {
+                    kind: "design_capabilities".to_string(),
+                    title,
+                    config: serde_json::json!({ "intro": intro }),
+                });
+            }
+            Ok(env)
                 if env.op == "propose_action" && env.action == "show_persona_ready" =>
             {
                 // End-of-design recap. Athena rolls up all the design

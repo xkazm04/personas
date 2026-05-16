@@ -21,6 +21,7 @@ import { LinkedMemoriesWidget } from './widgets/LinkedMemoriesWidget';
 import { MetricSparkWidget } from './widgets/MetricSparkWidget';
 import { IssueListWidget } from './widgets/IssueListWidget';
 import { DecisionLogWidget } from './widgets/DecisionLogWidget';
+import { DesignCapabilitiesWidget } from './widgets/DesignCapabilitiesWidget';
 import { ModelTierChoiceWidget } from './widgets/ModelTierChoiceWidget';
 import { ObservabilityPlanWidget } from './widgets/ObservabilityPlanWidget';
 import { PersonaReadyWidget } from './widgets/PersonaReadyWidget';
@@ -97,6 +98,12 @@ export const cockpitWidgetRegistry: Record<string, ComponentType<CockpitWidgetPr
   // (interactive / one_shot) or routes to the template gallery
   // (use_template).
   persona_ready: PersonaReadyWidget,
+  // Onboarding card listing Athena's persona-design vocabulary (the 8
+  // structured-card ops she can fire). Emitted via
+  // `show_design_capabilities { intro? }`. Content list is hardcoded
+  // in the widget so users get a true picture of "what can you help
+  // me design?" instead of a model-generated capability list.
+  design_capabilities: DesignCapabilitiesWidget,
 };
 
 /** Tunes the grid `rowSpan` per widget kind. Multi-row gives long-form

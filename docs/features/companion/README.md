@@ -180,6 +180,14 @@ The end-of-design recap. Athena emits `show_persona_ready { intent, summary, rec
 
 Widget renders an emerald-accented card with a "Refined intent" lead-in box, optional rows for each summary field that's populated, a contextual hint string, and a primary button. Closes the design → build loop without requiring an explicit handoff message. Constitution bumped to v16.
 
+## `show_design_capabilities` onboarding card
+
+The design-family has eight chat-card ops (walkthrough, template suggestions, use_case_set, trigger_set, model_tier_choice, observability_plan, decision_log, persona_ready). For new users that's a lot of vocabulary to discover by accident. The `show_design_capabilities` op surfaces all of them as a single onboarding card with one-line descriptions and example "Try: …" prompts.
+
+Op carries only an optional `intro` line Athena composes for context (e.g. "Here's what I can help you design today — pick whichever angle fits where you are."). The capability list itself is hardcoded in the widget so users get a true picture of what's available, not a model-generated (and potentially hallucinated) list.
+
+When adding a new design-family op, mirror the addition in `DesignCapabilitiesWidget` so onboarding stays current. Constitution bumped to v17.
+
 ## Refine chips
 
 Below the latest completed assistant bubble only, `RefineChips` renders three small affordances — **Shorter**, **More detail**, **Code only** — that resend the prior user message with a localized steering suffix appended ("— much shorter, please.", "— go deeper, with examples.", "— code only, minimal prose."). Click feeds the modified prompt through the same `send()` path used by the composer, so the optimistic-bubble / streaming / TTS pipeline kicks in identically. Disabled while streaming or improving. Older bubbles in scrollback don't render chips — refining a mid-scrollback turn is a different, higher-effort UI that needs to model "which user message do I resend?" carefully.
