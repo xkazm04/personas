@@ -116,9 +116,16 @@ export default function MediaStudioPage() {
   const { exportState, startExport, cancelExport, dismissExport } = useMediaExport(composition);
 
   const handleExport = useCallback(async () => {
+    // Tag the suggested filename with today's date so successive exports do
+    // not all collide on the composition name and stomp each other when the
+    // user accepts the dialog default. The composition name is sanitized for
+    // Windows reserved characters so a name like "Q3/Q4 mix" still opens a
+    // valid save dialog instead of erroring.
+    const date = new Date().toISOString().slice(0, 10);
+    const safeName = (composition.name || 'export').replace(/[\\/:*?"<>|]+/g, '_').trim() || 'export';
     const outputPath = await saveDialog({
       filters: [{ name: 'MP4 Video', extensions: ['mp4'] }],
-      defaultPath: `${composition.name || 'export'}.mp4`,
+      defaultPath: `${safeName}_${date}.mp4`,
     });
     if (!outputPath) return;
     startExport(outputPath);
