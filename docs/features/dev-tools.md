@@ -83,7 +83,7 @@ The eight tabs are sequenced so a new project can walk top-to-bottom exactly onc
 
 ### 8. Skills — browse dev patterns
 
-1. Open **Skills**. The left pane lists markdown files from the user's skills directory with a fuzzy-search box.
+1. Open **Skills**. The left pane lists markdown files from the user's skills directory with a fuzzy-search box. A **Recent** chip row above the list surfaces the last five skills opened this session (persisted to `localStorage`), and each skill row has a star button that pins it to favorites — favorites float to the top of the list across sessions.
 2. The right pane renders the selected file with an inline **Edit** toggle that writes changes back to disk.
 3. A safety banner is shown when a file fails to load — editing is disabled to prevent data loss.
 

@@ -10076,6 +10076,9 @@ export type Translations = {
       skills_subtitle_other: string;
       skills_ref_count_one: string;
       skills_ref_count_other: string;
+      skills_favorite: string;
+      skills_unfavorite: string;
+      skills_recent_heading: string;
       effort: string;
       risk: string;
       quick_wins: string;
