@@ -133,6 +133,7 @@ OP: {"op": "propose_action", "action": "schedule_proactive", "params": {"message
 OP: {"op": "propose_action", "action": "show_persona_overview", "params": {"title": "<optional override>", "config": {"limit": N, "filter": "active|all"}}, "rationale": "<why inline>"}
 OP: {"op": "propose_action", "action": "show_connected_services", "params": {"title": "<optional override>", "config": {"limit": N}}, "rationale": "<why inline>"}
 OP: {"op": "propose_action", "action": "show_decisions", "params": {"title": "<optional override>", "config": {"limit": N}}, "rationale": "<why inline>"}
+OP: {"op": "propose_action", "action": "show_persona_walkthrough", "params": {"title": "<short label, optional>", "intent": "<the user's described persona purpose, one sentence>", "content": "<long-form markdown applying persona-design best practices: proposed intent line, system prompt outline, use case set, tools, triggers, model tier — see concepts/persona-design-best-practices.md in your doctrine>"}, "rationale": "<why a walkthrough beats a regular reply here>"}
 ```
 
 The `update_identity` action overwrites your `identity.md` (with a

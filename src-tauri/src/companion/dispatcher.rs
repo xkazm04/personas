@@ -307,6 +307,46 @@ pub fn dispatch(
                     config,
                 });
             }
+            Ok(env)
+                if env.op == "propose_action" && env.action == "show_persona_walkthrough" =>
+            {
+                // Persona-design walkthrough — long-form markdown plan
+                // Athena composes for a specific intent, pulling from the
+                // `concepts/persona-design-best-practices.md` doctrine.
+                // Auto-fire (no approval); it's a suggestion to read, not
+                // an action to commit. Config is just `{ intent, content }`
+                // — the widget renders the markdown as-is.
+                let content = env
+                    .params
+                    .get("content")
+                    .and_then(|v| v.as_str())
+                    .map(str::trim)
+                    .unwrap_or("");
+                if content.is_empty() {
+                    out.warnings
+                        .push("show_persona_walkthrough: `content` (markdown) is required".into());
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                let intent = env
+                    .params
+                    .get("intent")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                let title = env
+                    .params
+                    .get("title")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string());
+                out.chat_cards.push(ChatCard {
+                    kind: "persona_walkthrough".to_string(),
+                    title,
+                    config: serde_json::json!({
+                        "intent": intent,
+                        "content": content,
+                    }),
+                });
+            }
             Ok(env) if env.op == "propose_action" && env.action == "compose_cockpit" => {
                 let widgets = env.params.get("widgets");
                 let widgets_arr = widgets.and_then(|v| v.as_array());

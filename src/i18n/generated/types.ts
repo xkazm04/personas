@@ -10564,6 +10564,8 @@ export type Translations = {
       proactive_kind_cadence: string;
       proactive_kind_on_this_day: string;
       proactive_kind_athena_scheduled: string;
+      walkthrough_title: string;
+      walkthrough_empty: string;
       proactive_evaluate_now: string;
       memory_run_consolidation: string;
       memory_generate_reflection: string;

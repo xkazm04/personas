@@ -44,4 +44,10 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// trigger-driven nudges. Approval-gated because it puts a future
 /// obligation on the user's attention (unlike connector calls, which
 /// run on pre-greenlit pinned credentials).
-pub const CONSTITUTION_VERSION: u32 = 8;
+///
+/// v9: `show_persona_walkthrough` op — long-form markdown card Athena
+/// emits with her step-by-step persona-design plan applied to a user
+/// intent, pulled from the `concepts/persona-design-best-practices.md`
+/// doctrine. Auto-fire (no approval) — it's a suggestion to read, not
+/// an action to commit.
+pub const CONSTITUTION_VERSION: u32 = 9;

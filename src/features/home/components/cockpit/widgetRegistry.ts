@@ -20,6 +20,7 @@ import { LinkedDecisionsWidget } from './widgets/LinkedDecisionsWidget';
 import { LinkedMemoriesWidget } from './widgets/LinkedMemoriesWidget';
 import { MetricSparkWidget } from './widgets/MetricSparkWidget';
 import { IssueListWidget } from './widgets/IssueListWidget';
+import { PersonaWalkthroughWidget } from './widgets/PersonaWalkthroughWidget';
 import { TextCalloutWidget } from './widgets/TextCalloutWidget';
 
 export interface CockpitWidgetProps {
@@ -47,6 +48,11 @@ export const cockpitWidgetRegistry: Record<string, ComponentType<CockpitWidgetPr
   metric_spark: MetricSparkWidget,
   issue_list: IssueListWidget,
   text_callout: TextCalloutWidget,
+  // Persona-design walkthrough — Athena's step-by-step plan applying
+  // the persona-design best-practices doctrine to a user intent. Emitted
+  // via `show_persona_walkthrough`. Long-form markdown; InlineChatCard
+  // relaxes its 260px height clamp for this kind so it flows naturally.
+  persona_walkthrough: PersonaWalkthroughWidget,
 };
 
 /** Tunes the grid `rowSpan` per widget kind. Multi-row gives long-form

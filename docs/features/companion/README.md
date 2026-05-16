@@ -95,6 +95,16 @@ When users ask "is my persona ready?" or "help me design a persona for X", Athen
 
 The guide is for the model's working context — it tells Athena *how* to evaluate or compose a persona, not just *what* the persona schema is. Edits go through the standard `companion_reingest_doctrine` flow (idempotent: only changed chunks re-embed).
 
+## `show_persona_walkthrough` chat-card
+
+The persona-design doctrine becomes actionable through a new auto-fire op: `show_persona_walkthrough { intent, content, title? }`. Athena emits it when a user asks "help me design a persona for X" — instead of replying in chat prose, she composes a long-form markdown plan and lands it as an inline card via the existing chat-cards event channel.
+
+The card renders through a new `persona_walkthrough` widget in `cockpitWidgetRegistry`. Unlike the dashboard-style widgets (persona_overview, decisions_panel, etc.) it's not height-clamped to 260px — `InlineChatCard` recognizes `persona_walkthrough` as an unclamped kind so the markdown flows naturally and the chat scroll handles overflow. Header shows the intent + a sparkle accent; body is a `MarkdownRenderer` with prose-tight styles for nested lists, headings, and inline code.
+
+Content shape is just `{ intent, content }` where `content` is the markdown blob Athena composed. The walkthrough typically includes: proposed intent line, system prompt outline, use case set, tools, triggers, model tier, observability hooks — the seven readiness items from the best-practices doctrine, applied to this user's specific intent. From there the user can act: pick a starter template, refine the intent, or commit to a build via `build_oneshot` / `prefill_persona_create`.
+
+Constitution bumped to v9 so existing installs pick up the new op signature on next boot.
+
 ## Refine chips
 
 Below the latest completed assistant bubble only, `RefineChips` renders three small affordances — **Shorter**, **More detail**, **Code only** — that resend the prior user message with a localized steering suffix appended ("— much shorter, please.", "— go deeper, with examples.", "— code only, minimal prose."). Click feeds the modified prompt through the same `send()` path used by the composer, so the optimistic-bubble / streaming / TTS pipeline kicks in identically. Disabled while streaming or improving. Older bubbles in scrollback don't render chips — refining a mid-scrollback turn is a different, higher-effort UI that needs to model "which user message do I resend?" carefully.
