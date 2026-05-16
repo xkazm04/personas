@@ -19,6 +19,8 @@ export type ThemeId =
   | 'light'
   | 'light-ice'
   | 'light-news'
+  | 'light-sage'
+  | 'light-sand'
   | 'custom';
 
 export type TextScale = 'large' | 'larger' | 'xl';
@@ -71,9 +73,11 @@ export const THEMES: ThemeDefinition[] = [
   { id: 'dark-pink', label: 'Pink', primaryColor: '#ec4899', accentColor: '#f472b6', backgroundSample: '#140a10', foregroundSample: '#fce7f3', isLight: false },
   { id: 'dark-red', label: 'Red', primaryColor: '#cc0000', accentColor: '#e60000', backgroundSample: '#080808', foregroundSample: '#ededed', isLight: false },
   { id: 'dark-matrix', label: 'Matrix', primaryColor: '#00ff41', accentColor: '#20c20e', backgroundSample: '#050505', foregroundSample: '#e8e8e8', isLight: false },
-  { id: 'light', label: 'Light', primaryColor: '#2554b0', accentColor: '#3568c7', backgroundSample: '#e9e6df', foregroundSample: '#1c1c28', isLight: true },
+  { id: 'light', label: 'Light', primaryColor: '#2563eb', accentColor: '#3b82f6', backgroundSample: '#f7f8fa', foregroundSample: '#0f172a', isLight: true },
   { id: 'light-ice', label: 'Ice', primaryColor: '#2563eb', accentColor: '#38bdf8', backgroundSample: '#e8eff6', foregroundSample: '#0f172a', isLight: true },
   { id: 'light-news', label: 'News', primaryColor: '#1a1a1a', accentColor: '#555555', backgroundSample: '#e0ded9', foregroundSample: '#111111', isLight: true },
+  { id: 'light-sage', label: 'Sage', primaryColor: '#047857', accentColor: '#10b981', backgroundSample: '#f1f4f1', foregroundSample: '#142119', isLight: true },
+  { id: 'light-sand', label: 'Sand', primaryColor: '#92400e', accentColor: '#d97706', backgroundSample: '#f5f2eb', foregroundSample: '#2a2418', isLight: true },
 ];
 
 export const TEXT_SCALES: { id: TextScale; label: string; description: string }[] = [
@@ -155,6 +159,42 @@ function applyTextScale(scale: TextScale) {
   document.documentElement.setAttribute('data-text-scale', scale);
 }
 
+function applyDim(dim: boolean) {
+  const el = document.documentElement;
+  if (dim) {
+    el.setAttribute('data-saturation', 'dim');
+  } else {
+    el.removeAttribute('data-saturation');
+  }
+}
+
+function applyCvdSafe(cvdSafe: boolean) {
+  const el = document.documentElement;
+  if (cvdSafe) {
+    el.setAttribute('data-cvd', 'safe');
+  } else {
+    el.removeAttribute('data-cvd');
+  }
+}
+
+function applyHighContrast(highContrast: boolean) {
+  const el = document.documentElement;
+  if (highContrast) {
+    el.setAttribute('data-contrast', 'high');
+  } else {
+    el.removeAttribute('data-contrast');
+  }
+}
+
+function applyReduceMotion(reduceMotion: boolean) {
+  const el = document.documentElement;
+  if (reduceMotion) {
+    el.setAttribute('data-motion', 'reduce');
+  } else {
+    el.removeAttribute('data-motion');
+  }
+}
+
 function isLightTheme(id: ThemeId, customConfig?: CustomThemeConfig | null): boolean {
   if (id === 'custom') return customConfig?.baseMode === 'light';
   return id.startsWith('light');
@@ -195,6 +235,10 @@ interface ThemeState {
   brightness: BrightnessLevel;
   customTheme: CustomThemeConfig | null;
   ambientTimeOfDay: boolean;
+  dim: boolean;
+  cvdSafe: boolean;
+  highContrast: boolean;
+  reduceMotion: boolean;
   setTheme: (id: ThemeId) => void;
   setTextScale: (scale: TextScale) => void;
   setTimezone: (tz: TimezoneMode) => void;
@@ -202,6 +246,10 @@ interface ThemeState {
   setCustomTheme: (config: CustomThemeConfig) => void;
   clearCustomTheme: () => void;
   setAmbientTimeOfDay: (enabled: boolean) => void;
+  setDim: (enabled: boolean) => void;
+  setCvdSafe: (enabled: boolean) => void;
+  setHighContrast: (enabled: boolean) => void;
+  setReduceMotion: (enabled: boolean) => void;
 }
 
 /** Derived selector: true when the active theme is dark. */
@@ -223,6 +271,10 @@ export const useThemeStore = create<ThemeState>()(
       brightness: 'low' as BrightnessLevel,
       customTheme: null as CustomThemeConfig | null,
       ambientTimeOfDay: true,
+      dim: false,
+      cvdSafe: false,
+      highContrast: false,
+      reduceMotion: false,
       setTheme: (id: ThemeId) => {
         applyThemeToDOM(id, get().customTheme);
         applyBrightness(get().brightness, id, get().customTheme);
@@ -258,6 +310,26 @@ export const useThemeStore = create<ThemeState>()(
         set({ ambientTimeOfDay: enabled });
         storeBus.emit('appearance:changed', { field: 'ambientTimeOfDay', value: enabled ? 'on' : 'off' });
       },
+      setDim: (enabled: boolean) => {
+        applyDim(enabled);
+        set({ dim: enabled });
+        storeBus.emit('appearance:changed', { field: 'dim', value: enabled ? 'on' : 'off' });
+      },
+      setCvdSafe: (enabled: boolean) => {
+        applyCvdSafe(enabled);
+        set({ cvdSafe: enabled });
+        storeBus.emit('appearance:changed', { field: 'cvdSafe', value: enabled ? 'on' : 'off' });
+      },
+      setHighContrast: (enabled: boolean) => {
+        applyHighContrast(enabled);
+        set({ highContrast: enabled });
+        storeBus.emit('appearance:changed', { field: 'highContrast', value: enabled ? 'on' : 'off' });
+      },
+      setReduceMotion: (enabled: boolean) => {
+        applyReduceMotion(enabled);
+        set({ reduceMotion: enabled });
+        storeBus.emit('appearance:changed', { field: 'reduceMotion', value: enabled ? 'on' : 'off' });
+      },
     }),
     {
       name: 'persona-theme',
@@ -274,6 +346,10 @@ export const useThemeStore = create<ThemeState>()(
           applyThemeToDOM(state.themeId, state.customTheme);
           applyTextScale(state.textScale ?? 'larger');
           applyBrightness(state.brightness ?? 'low', state.themeId, state.customTheme);
+          applyDim(state.dim ?? false);
+          applyCvdSafe(state.cvdSafe ?? false);
+          applyHighContrast(state.highContrast ?? false);
+          applyReduceMotion(state.reduceMotion ?? false);
         }
       },
     }

@@ -4,10 +4,61 @@ import { SectionHeading } from '@/features/shared/components/layout/SectionHeadi
 import { useThemeStore } from '@/stores/themeStore';
 import type { CustomThemeConfig } from '@/stores/themeStore';
 import { deriveCustomThemeVars } from '@/lib/theme/deriveCustomTheme';
+import { getContrastRatio, getContrastLevel, type ContrastLevel } from '@/lib/theme/contrastRatio';
 import { Button } from '@/features/shared/components/buttons';
 import { ColorRow } from './ColorRow';
 import { ThemePreview } from './ThemePreview';
 import { useTranslation } from '@/i18n/useTranslation';
+
+/* Live WCAG readout for the three color pairs that matter most when
+   designing a theme: body text contrast, button-label contrast, and the
+   primary-as-accent-text contrast. Updates as the user moves sliders,
+   so a "Low" badge appears the moment a pick falls below AA. */
+function ContrastReadout({ vars, labels }: {
+  vars: Record<string, string>;
+  labels: { title: string; body: string; primaryBtn: string; accentText: string; aaa: string; aa: string; low: string };
+}) {
+  const fg = vars['--foreground'] ?? '#e2e8f0';
+  const bg = vars['--background'] ?? '#0a0e14';
+  const primary = vars['--primary'] ?? '#06b6d4';
+  // btn-primary defaults to a derived darken(primary, 20); when used as a
+  // button surface, its label is rendered in --btn-primary-fg (defaults to
+  // white at :root and is not overridden by deriveCustomThemeVars).
+  const btnPrimary = vars['--btn-primary'] ?? primary;
+  const btnPrimaryFg = '#ffffff';
+
+  const pairs = [
+    { id: 'body', label: labels.body, ratio: getContrastRatio(fg, bg), level: getContrastLevel(fg, bg) },
+    { id: 'btn', label: labels.primaryBtn, ratio: getContrastRatio(btnPrimaryFg, btnPrimary), level: getContrastLevel(btnPrimaryFg, btnPrimary) },
+    { id: 'accent', label: labels.accentText, ratio: getContrastRatio(primary, bg), level: getContrastLevel(primary, bg) },
+  ];
+
+  const badgeClass = (level: ContrastLevel) =>
+    level === 'AAA' ? 'bg-status-success/20 text-status-success'
+    : level === 'AA' ? 'bg-status-info/20 text-status-info'
+    : 'bg-status-warning/25 text-status-warning';
+  const badgeText = (level: ContrastLevel) =>
+    level === 'AAA' ? labels.aaa : level === 'AA' ? labels.aa : labels.low;
+
+  return (
+    <div className="space-y-2">
+      <label className="typo-caption font-medium text-foreground">{labels.title}</label>
+      <div className="rounded-card border border-primary/8 bg-secondary/10 px-3 py-2 grid grid-cols-3 gap-3">
+        {pairs.map((p) => (
+          <div key={p.id} className="flex flex-col gap-1">
+            <span className="typo-caption text-foreground/70">{p.label}</span>
+            <div className="flex items-center gap-1.5">
+              <span className={`px-1.5 py-0.5 rounded-pill text-[9px] font-semibold tracking-wide ${badgeClass(p.level)}`}>
+                {badgeText(p.level)}
+              </span>
+              <span className="typo-code font-mono text-foreground/80 text-[11px]">{p.ratio.toFixed(1)}:1</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function CustomThemeCreator() {
   const existingConfig = useThemeStore((s) => s.customTheme);
@@ -176,6 +227,21 @@ export default function CustomThemeCreator() {
           </div>
         )}
       </div>
+
+      {/* Live contrast readout — updates per-keystroke so users can see
+          AAA/AA/Low fall out of their color choices in real time. */}
+      <ContrastReadout
+        vars={derivedVars}
+        labels={{
+          title: s.contrast_readout_title,
+          body: s.contrast_pair_body,
+          primaryBtn: s.contrast_pair_primary_btn,
+          accentText: s.contrast_pair_accent_text,
+          aaa: s.contrast_badge_aaa,
+          aa: s.contrast_badge_aa,
+          low: s.contrast_badge_low,
+        }}
+      />
 
       {/* Live preview */}
       <div className="space-y-2">
