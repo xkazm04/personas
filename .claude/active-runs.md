@@ -32,6 +32,12 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+- **[2026-05-16 16:30 — started] /research — hermes-goal-skill**
+  - **Source:** https://www.youtube.com/watch?v=9oOZ3PB6n4Y (Hermes Agent `/goal` walkthrough) + Web augmentation on Hermes `/goal` docs (user explicitly asked: "Web search what hermes does with /goal skill, explain and propose whether any reusability in our app")
+  - **Paths:** `Obsidian/personas/Research/2026-05-16-hermes-goal-skill.md` (new), `Obsidian/personas/Lessons/2026-05-16-research.md` (new, no other today-runs detected), `Obsidian/personas/Patterns/descoped-reopenable.md` (likely update — 2026-05-11 `/goal` entry already exists), `.claude/active-runs.md`. NO code paths planned upfront — user asked for "explanation + proposal", default Phase 8 outcome is documentation update, not implementation. May add `.planning/handoffs/2026-05-16-...` if user accepts an in-session shape.
+  - **Status:** started
+  - **Note:** Aware of concurrent `[2026-05-13 — started] /research — hermes-agent-codebase-deep` whose timestamp is 3 days stale (>2h cutoff) — that session likely aborted or merged. Its declared paths overlap on `descoped-reopenable.md` only; safe to coexist via Edit-append discipline. Will flag the stale entry to the user in the Phase 11 summary.
+
 - **[2026-05-16 14:42 — started] artist-test-coverage — Vitest + Playwright for plugins/artist**
   - **Paths:** `src/features/plugins/artist/**/__tests__/*.test.{ts,tsx}` (new), possibly `src/features/plugins/artist/sub_media_studio/hooks/useMediaExport.ts` (export `normalizeProgress` for unit test), possibly `tests/playwright/artist-*.spec.ts` + `tests/playwright/artist-bridge.ts` (Cycle D only)
   - **Status:** started
@@ -47,13 +53,6 @@ timestamp — the next session can recognize it as abandoned.
   - **Worktree:** `.claude/worktrees/friend-theming-140706/`
   - **Note:** Path-disjoint from all 8 concurrent /friend plugin sessions (they touch `src/features/plugins/<plugin>/`; theming touches `src/styles/` + `src/stores/themeStore.ts` + `src/lib/theme/` + `src/features/settings/sub_appearance/`). Bias higher-effort + deepen-existing-surfaces per prior /friend lessons. Cycle 1 will likely propose: status/brand-token completeness pass on under-themed darks, light-theme accent unification, palette-aware theme picker preview, or a "theming-coverage audit" debug overlay.
 
-- **[2026-05-16 13:11 — started] /friend — langfuse plugin**
-  - **Source:** `/friend` endless development loop, area resolved from free-text hint `src\features\plugins\langfuse`
-  - **Paths:** `src/features/plugins/langfuse/`, `src/i18n/locales/en.json` (additive keys only under `plugins.langfuse.*` — disjoint from concurrent /friend-{drive,artist,companion,dev-tools}), possibly `src-tauri/src/langfuse/` (only with explicit Phase 3 risk-gate approval), possibly `docs/features/` if a langfuse doc exists, `.claude/active-runs.md`
-  - **Branch:** `worktree-friend-langfuse-131101`
-  - **Worktree:** `.claude/worktrees/friend-langfuse-131101/`
-  - **Status:** started
-  - **Note:** First /friend session over langfuse plugin. Path A is closed (managed self-host shipped end-to-end); user is in Path A+ phase. Path-disjoint from 4 concurrent /friend sessions (different plugin directories + different `plugins.*` i18n sub-trees). Bias deepen-existing-surface + higher-effort per prior /friend lessons.
 
 - **[2026-05-16 — started] /friend — drive plugin**
   - **Source:** `/friend` endless loop, area resolved from path `src\features\plugins\drive`
@@ -91,6 +90,12 @@ timestamp — the next session can recognize it as abandoned.
   - **Status:** started
   - **Note:** Aware of concurrent run on Lessons/releases. Will re-check ledger before any Phase 12 write.
 
+- **[2026-05-16 18:50 — started] /research — openhands-codebase-analysis**
+  - **Source:** `C:\Users\kazda\kiro\OpenHands` (All-Hands OpenHands codebase — Python backend agent runtime, React frontend, microagents, runtime/sandbox architecture, SDK; focus=code)
+  - **Paths:** `Obsidian/personas/Research/2026-05-16-openhands-codebase-analysis.md` (new), `Obsidian/personas/Lessons/2026-05-16-research.md` (Edit/append), `Obsidian/personas/Patterns/descoped-reopenable.md` (append-only if descoped findings), possibly `.planning/handoffs/2026-05-16-*.md` and any code findings the user accepts in Phase 8 (likely under `src-tauri/src/engine/` and/or `src/features/plugins/dev-tools/` per the framework-vs-plugin routing rule), `.claude/active-runs.md`
+  - **Status:** started
+  - **Note:** Read-only analysis of OpenHands; no edits to that repo. Path-disjoint from 7 concurrent /friend plugin sessions (they touch `src/features/plugins/*` and `src/styles/`; this run touches `src/features/plugins/dev-tools/` only IF code finding lands there + user accepts — would surface as conflict at Phase 8). Path-disjoint from /friend-theming (styles), /research-hermes-agent (different Lessons date file). Phase 13 commit will be atomic.
+
 ## Recently completed (last 14 days)
 
 - **[2026-05-16 14:07 → 18:30] /friend — theming (14 cycles, merged to master at `21dc389de`)**
@@ -103,9 +108,9 @@ timestamp — the next session can recognize it as abandoned.
   - **Outcome on /friend learning:** 4th consecutive session confirming deepen-existing-surface and stretch-bias patterns (already promoted in `Patterns/friend-preferences.md`). Three new observations registered for watchlist promotion: topic-commitment-in-args, end-to-end-loop arcs, complete-the-family framing for orthogonal axes.
 
 - **[2026-05-16 13:12 → wrap] /friend — radio (16 cycles)**
-  - **Worktree:** `.claude/worktrees/friend-radio-131216/` (left intact for user merge / cleanup)
-  - **Branch:** `worktree-friend-radio-131216`
-  - **Status:** completed (16 commits, `1f7df5271..24b7be65d`; 23 files, +1,424 / -94)
+  - **Status:** merged to master at `475fbc8b6` (merge of 16 commits `1f7df5271..24b7be65d`; 23 files, +1,424 / -94). Worktree removed + branch deleted post-merge.
+  - **Worktree (now removed):** `.claude/worktrees/friend-radio-131216/`
+  - **Branch (now deleted):** `worktree-friend-radio-131216`
   - **Headline cycles:** volume slider, track progress bar, now-playing card, auto-resume opt-in, buffering visual, YT crossfade, grouped picker, session blacklist, settings playing-now pulse, SomaFM metadata, title text crossfade, YT thumbnail, picker context menu, SomaFM catalog 3→8, equalizer bars (CSS — honest pivot from Web Audio after CORS finding), accent dot click target.
   - **Notes:** 14 of 16 picks deepened existing surfaces; only the now-playing card and auto-resume introduced new behavior, both small. One Phase 3 gate trip on CSP produced a narrower-scope outcome (cycle 10 → Rust-side fetch). One honest mid-execute pivot recorded (cycle 15 EQ bars). Zero hard rejects this session; 9 directions hit 2× soft-skip and dropped cleanly. Vault writes: session note, lesson append, coverage update, **3 patterns promoted to `Patterns/friend-preferences.md`** (deepen-existing-surface bias, higher-effort mix, 2× soft-skip drop rule — all at 3 confirmations across companion + artist + radio).
 
