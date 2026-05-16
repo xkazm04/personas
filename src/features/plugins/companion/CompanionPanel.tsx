@@ -58,6 +58,7 @@ import { AthenaAvatar } from './AthenaAvatar';
 import { BrainViewer } from './BrainViewer';
 import { CompanionToolbar } from './CompanionToolbar';
 import { RecallStrip } from './RecallStrip';
+import { RefineChips } from './RefineChips';
 import { TurnSummaryChip } from './TurnSummaryChip';
 import { useToastStore } from '@/stores/toastStore';
 import { useSystemStore } from '@/stores/systemStore';
@@ -975,23 +976,47 @@ function Body(props: BodyProps) {
               {t.plugins.companion.empty_transcript}
             </p>
           )}
-          {messages.map((m, i) => {
-            const recall =
-              m.role === 'assistant' ? recallByEpisodeId[m.id] : undefined;
-            const summary =
-              m.role === 'assistant'
-                ? turnSummaryByEpisodeId[m.id]
-                : undefined;
-            return (
-              <div key={m.id} className="space-y-1">
-                {recall && <RecallStrip preview={recall} />}
-                <Bubble role={m.role} index={i}>
-                  {m.content}
-                </Bubble>
-                {summary && <TurnSummaryChip summary={summary} />}
-              </div>
-            );
-          })}
+          {(() => {
+            // Find the last assistant index so RefineChips renders only
+            // on the latest completed assistant bubble — refining mid-
+            // scrollback is a different, higher-effort UI to model.
+            let lastAssistantIdx = -1;
+            for (let i = messages.length - 1; i >= 0; i--) {
+              if (messages[i]?.role === 'assistant') {
+                lastAssistantIdx = i;
+                break;
+              }
+            }
+            return messages.map((m, i) => {
+              const recall =
+                m.role === 'assistant' ? recallByEpisodeId[m.id] : undefined;
+              const summary =
+                m.role === 'assistant'
+                  ? turnSummaryByEpisodeId[m.id]
+                  : undefined;
+              const isLastAssistant =
+                m.role === 'assistant' && i === lastAssistantIdx;
+              const prev = i > 0 ? messages[i - 1] : undefined;
+              const priorUser =
+                isLastAssistant && prev?.role === 'user' ? prev.content : '';
+              return (
+                <div key={m.id} className="space-y-1">
+                  {recall && <RecallStrip preview={recall} />}
+                  <Bubble role={m.role} index={i}>
+                    {m.content}
+                  </Bubble>
+                  {summary && <TurnSummaryChip summary={summary} />}
+                  {isLastAssistant && priorUser && !streaming && !improving && (
+                    <RefineChips
+                      priorUserMessage={priorUser}
+                      onSend={send}
+                      disabled={!initialized || streaming || improving}
+                    />
+                  )}
+                </div>
+              );
+            });
+          })()}
           {streaming && (
             <div className="space-y-1">
               {streamingRecall && <RecallStrip preview={streamingRecall} />}

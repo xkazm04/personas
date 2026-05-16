@@ -10441,6 +10441,13 @@ export type Translations = {
       turn_summary_cockpit: string;
       turn_summary_card: string;
       turn_summary_continuation: string;
+      refine_label: string;
+      refine_shorter: string;
+      refine_shorter_suffix: string;
+      refine_more_detail: string;
+      refine_more_detail_suffix: string;
+      refine_code_only: string;
+      refine_code_only_suffix: string;
       autonomous_toggle_on: string;
       autonomous_toggle_off: string;
       composer_placeholder: string;
