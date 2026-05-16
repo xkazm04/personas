@@ -9702,6 +9702,10 @@ export type Translations = {
       items_selected: string;
       items_total: string;
       items_selected_summary: string;
+      bulk_clear_selection: string;
+      bulk_copy: string;
+      bulk_cut: string;
+      bulk_delete: string;
       details_empty_hint: string;
       details_location: string;
       copy_path_tooltip: string;

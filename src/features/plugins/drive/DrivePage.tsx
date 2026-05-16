@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { HardDrive, Upload } from "lucide-react";
+import { Copy, HardDrive, Scissors, Trash2, Upload, X } from "lucide-react";
 
 import { ContentBox, ContentHeader } from "@/features/shared/components/layout/ContentLayout";
 import { useTranslation } from "@/i18n/useTranslation";
@@ -322,9 +322,12 @@ export default function DrivePage() {
   // ---------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------
-  const statusLine = drive.selection.size > 0
-    ? tx(t.plugins.drive.items_selected, { count: drive.selection.size })
-    : tx(t.plugins.drive.items_total, { count: drive.visibleEntries.length });
+  const selectionCount = drive.selection.size;
+  const hasSelection = selectionCount > 0;
+  const requestDeleteSelection = useCallback(() => {
+    if (drive.selection.size === 0) return;
+    setDialog({ kind: "delete", paths: Array.from(drive.selection) });
+  }, [drive.selection]);
 
   return (
     <ContentBox>
@@ -334,12 +337,47 @@ export default function DrivePage() {
         title={t.plugins.drive.title}
         subtitle={t.plugins.drive.subtitle}
         actions={
-          <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/25">
-            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.8)]" />
-            <span className="typo-body text-cyan-100 font-medium tabular-nums">
-              {statusLine}
-            </span>
-          </div>
+          hasSelection ? (
+            <div className="flex items-center gap-1 pl-2.5 pr-1 py-1 rounded-full bg-cyan-500/15 border border-cyan-500/35 shadow-[0_0_14px_-6px_rgba(34,211,238,0.55)]">
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.8)]" />
+              <span className="typo-body text-cyan-100 font-medium tabular-nums">
+                {tx(t.plugins.drive.items_selected, { count: selectionCount })}
+              </span>
+              <span aria-hidden className="mx-1 w-px h-3.5 bg-cyan-400/30" />
+              <BulkChip
+                icon={Copy}
+                label={t.plugins.drive.bulk_copy}
+                onClick={drive.copySelection}
+              />
+              <BulkChip
+                icon={Scissors}
+                label={t.plugins.drive.bulk_cut}
+                onClick={drive.cutSelection}
+              />
+              <BulkChip
+                icon={Trash2}
+                label={t.plugins.drive.bulk_delete}
+                onClick={requestDeleteSelection}
+                tone="danger"
+              />
+              <BulkChip
+                icon={X}
+                label={t.plugins.drive.bulk_clear_selection}
+                onClick={drive.clearSelection}
+                tone="ghost"
+                iconOnly
+              />
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/25">
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.8)]" />
+              <span className="typo-body text-cyan-100 font-medium tabular-nums">
+                {tx(t.plugins.drive.items_total, {
+                  count: drive.visibleEntries.length,
+                })}
+              </span>
+            </div>
+          )
         }
       />
       <div
@@ -491,5 +529,38 @@ export default function DrivePage() {
         />
       )}
     </ContentBox>
+  );
+}
+
+function BulkChip({
+  icon: Icon,
+  label,
+  onClick,
+  tone = "default",
+  iconOnly = false,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  onClick: () => void;
+  tone?: "default" | "danger" | "ghost";
+  iconOnly?: boolean;
+}) {
+  const styles =
+    tone === "danger"
+      ? "text-rose-100 hover:bg-rose-500/25 hover:text-rose-50"
+      : tone === "ghost"
+        ? "text-cyan-200/70 hover:bg-cyan-500/15 hover:text-cyan-50"
+        : "text-cyan-100 hover:bg-cyan-500/25 hover:text-cyan-50";
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={label}
+      aria-label={label}
+      className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full typo-body font-medium transition-colors ${styles}`}
+    >
+      <Icon className="w-3.5 h-3.5" />
+      {!iconOnly && <span>{label}</span>}
+    </button>
   );
 }
