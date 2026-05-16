@@ -134,12 +134,14 @@ export default function FleetDecisionsPage() {
         subtitle="Broadcast one prompt to many sessions at once"
       />
       <ContentBody>
+        <div data-testid="fleet-decisions-page" />
         <div className="grid grid-cols-12 gap-4">
           {/* Composer (left) */}
           <div className="col-span-7 space-y-3">
             <label className="block">
               <span className="typo-caption font-medium text-foreground mb-1.5 block">Message</span>
               <textarea
+                data-testid="fleet-decision-text"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 placeholder="Type the decision to broadcast — e.g. an approval, a clarification, the next task…"

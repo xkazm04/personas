@@ -295,6 +295,7 @@ export function PluginsSidebarNav() {
         {enabledPlugins.has('fleet') && (
           <div className="space-y-1">
             <button
+              data-testid="tab-fleet"
               onClick={() => setPluginTab('fleet')}
               aria-current={pluginTab === 'fleet' ? 'page' : undefined}
               className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
@@ -319,6 +320,7 @@ export function PluginsSidebarNav() {
                 {fleetItems.map((item) => (
                   <button
                     key={item.id}
+                    data-testid={`fleet-subtab-${item.id}`}
                     onClick={() => setFleetTab(item.id as FleetTab)}
                     className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] transition-colors ${
                       fleetTab === item.id

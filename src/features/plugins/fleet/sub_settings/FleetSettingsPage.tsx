@@ -56,14 +56,14 @@ export default function FleetSettingsPage() {
         subtitle="Manage the Claude Code hook entries that drive live session state"
       />
       <ContentBody>
-        <div className="space-y-4">
+        <div className="space-y-4" data-testid="fleet-settings-page">
           {/* Banner */}
           {!status ? (
-            <div className="border border-primary/10 rounded-modal bg-primary/5 px-4 py-3">
+            <div className="border border-primary/10 rounded-modal bg-primary/5 px-4 py-3" data-testid="fleet-hooks-banner-loading">
               <p className="typo-caption text-foreground/60">Loading hook status…</p>
             </div>
           ) : portMismatch ? (
-            <div className="border border-amber-500/25 rounded-modal bg-amber-500/5 px-4 py-3">
+            <div className="border border-amber-500/25 rounded-modal bg-amber-500/5 px-4 py-3" data-testid="fleet-hooks-banner-mismatch">
               <div className="flex items-center gap-2 mb-1">
                 <AlertCircle className="w-4 h-4 text-amber-400" />
                 <p className="typo-caption font-medium text-amber-400">Port mismatch</p>
@@ -75,7 +75,7 @@ export default function FleetSettingsPage() {
               </p>
             </div>
           ) : installed ? (
-            <div className="border border-emerald-500/25 rounded-modal bg-emerald-500/5 px-4 py-3">
+            <div className="border border-emerald-500/25 rounded-modal bg-emerald-500/5 px-4 py-3" data-testid="fleet-hooks-banner-installed">
               <div className="flex items-center gap-2 mb-1">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                 <p className="typo-caption font-medium text-emerald-400">Hooks installed</p>
@@ -88,7 +88,7 @@ export default function FleetSettingsPage() {
               </p>
             </div>
           ) : (
-            <div className="border border-primary/15 rounded-modal bg-primary/5 px-4 py-3">
+            <div className="border border-primary/15 rounded-modal bg-primary/5 px-4 py-3" data-testid="fleet-hooks-banner-missing">
               <p className="typo-caption font-medium text-foreground mb-1">Hooks not installed</p>
               <p className="text-[12px] text-foreground/70 leading-relaxed">
                 Fleet needs five hook entries in <code className="font-mono">~/.claude/settings.json</code> to receive
@@ -100,8 +100,9 @@ export default function FleetSettingsPage() {
           )}
 
           {/* Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2" data-testid="fleet-settings-actions">
             <Button
+              data-testid="fleet-install-hooks"
               variant={installed ? 'secondary' : 'accent'}
               accentColor="amber"
               size="sm"
@@ -112,6 +113,7 @@ export default function FleetSettingsPage() {
               {installed ? 'Re-install hooks' : 'Install hooks'}
             </Button>
             <Button
+              data-testid="fleet-uninstall-hooks"
               variant="danger"
               size="sm"
               icon={<Trash2 className="w-3.5 h-3.5" />}
@@ -121,6 +123,7 @@ export default function FleetSettingsPage() {
               Uninstall
             </Button>
             <Button
+              data-testid="fleet-refresh-hooks"
               variant="ghost"
               size="sm"
               icon={<RefreshCw className="w-3.5 h-3.5" />}

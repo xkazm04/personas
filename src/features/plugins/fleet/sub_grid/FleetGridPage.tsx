@@ -129,6 +129,7 @@ export default function FleetGridPage() {
         }
       />
       <ContentBody>
+        <div data-testid="fleet-grid-page" />
         {!hooksInstalled && (
           <div className="border border-amber-500/25 rounded-modal bg-amber-500/5 px-3 py-2 mb-3 text-[11px] text-amber-300/90">
             Hooks not installed — sessions you spawn here will work, but live state from external{' '}
@@ -138,6 +139,7 @@ export default function FleetGridPage() {
 
         <ActionRow>
           <Button
+            data-testid="fleet-spawn-toggle"
             variant="accent"
             accentColor="amber"
             size="sm"
@@ -146,15 +148,16 @@ export default function FleetGridPage() {
           >
             {showSpawn ? 'Cancel' : 'Spawn session'}
           </Button>
-          <Button variant="ghost" size="sm" icon={<RefreshCw className="w-3.5 h-3.5" />} onClick={refresh}>
+          <Button data-testid="fleet-grid-refresh" variant="ghost" size="sm" icon={<RefreshCw className="w-3.5 h-3.5" />} onClick={refresh}>
             Refresh
           </Button>
         </ActionRow>
 
         {showSpawn && (
-          <div className="mt-2 mb-3 flex items-center gap-2 p-2 border border-primary/15 rounded-modal bg-primary/5">
+          <div className="mt-2 mb-3 flex items-center gap-2 p-2 border border-primary/15 rounded-modal bg-primary/5" data-testid="fleet-spawn-flyout">
             <FolderInput className="w-4 h-4 text-foreground/50 flex-shrink-0" />
             <input
+              data-testid="fleet-spawn-cwd"
               type="text"
               value={cwd}
               onChange={(e) => setCwd(e.target.value)}
@@ -166,6 +169,7 @@ export default function FleetGridPage() {
               }}
             />
             <Button
+              data-testid="fleet-spawn-confirm"
               variant="accent"
               accentColor="amber"
               size="sm"
