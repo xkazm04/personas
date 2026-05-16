@@ -280,34 +280,35 @@ Hardcoded English in JSX is still being extracted incrementally. When you encoun
 
 ---
 
-## Guide Sync (Marketing Site)
+## Documentation Sync — three surfaces, three enforcement layers
 
-After significant feature work, run `/guide-sync` to keep the marketing site guides (`personas-web`) in sync with desktop app changes. The skill:
+The product has three docs surfaces that decay at different rates and demand different gates:
 
-1. Detects changed files since last sync (marker at `.claude/guide-sync-marker.json`)
-2. Maps changes to guide topics via `personas-web/src/data/guide/desktop-modules.ts`
-3. Flags stale topics and suggests content updates
-4. Optionally updates guide content in `personas-web/src/data/guide/content/*.ts`
+1. **`docs/features/`** (this repo) — implemented-product reference for users, developers, and CLI agents.
+2. **`src/features/onboarding/`** (this repo) — guided-tour steps the user walks through on first launch.
+3. **`personas-web/src/data/guide/content/`** (separate repo) — marketing-site guides at the product-explanation level.
 
-**Mode tags**: Guide categories and topics have a `mode` field (`"simple"`, `"power"`, or `"both"`) that controls visibility in the guide filter UI. When moving features between Simple/Power modes in the desktop app, update the corresponding category or topic mode in `personas-web`.
-
----
-
-## Documentation Sync (`docs/features/`)
-
-`docs/features/` is the implemented-product reference for users, developers, and CLI agents. It must track the codebase. This project's development happens through Claude — there is no other reviewer who will catch doc drift, so the responsibility lives in this section and in a Stop hook.
+Development happens through Claude with no second human reviewer to catch drift, so enforcement lives in this section, the Stop hook, and a scheduled cron — not in habit.
 
 ### The rule
 
-When a turn edits **feature/command source** with **user-visible** effect (new tab/page/command, changed flow, removed feature, new event, schema migration that surfaces in UI, renamed table, new tier gate), update the matching feature doc in the **same turn**. If the change is internal-only (refactor, bugfix without behavior shift, generated code, test-only) no doc update is needed.
+When a turn edits **feature/command source** with **user-visible** effect (new tab/page/command, changed flow, removed feature, new event, schema migration that surfaces in UI, renamed table, new tier gate), update the matching surfaces in the **same turn** *if they're same-repo*. Cross-repo marketing guides are caught by the weekly scheduled `/guide-sync` (see below) — you don't need to fix those in-line unless the change is urgent.
 
-### Source → doc map
+If the change is internal-only (refactor, bugfix without behavior shift, generated code, test-only), no doc update is needed.
 
-The authoritative source→doc mapping is in [`scripts/docs/feature-doc-map.json`](../scripts/docs/feature-doc-map.json). Quick reference:
+### Source → docs map (single source of truth)
+
+[`scripts/docs/feature-doc-map.json`](../scripts/docs/feature-doc-map.json) is the authoritative map. Each entry can declare up to three target types:
+
+- `doc` — the feature doc path. **Required.** Drives the feature-doc Stop-hook nag.
+- `onboardingFlows` — optional array of tour-flow IDs (from the `onboardingFlows` registry at the top of the same file). Drives the onboarding Stop-hook nag.
+- `marketingModule` — optional `desktop-modules.ts` module ID. Drives an *informational* marketing breadcrumb (no enforcement; the scheduled `/guide-sync` is what actually keeps marketing in sync).
+
+Quick reference of source → feature doc:
 
 | Source area | Feature doc |
 | --- | --- |
-| `src/features/personas/**`, `src/features/agents/**`, `src-tauri/src/commands/core/personas.rs` | [`docs/features/personas/README.md`](../docs/features/README.md) |
+| `src/features/personas/**`, `src/features/agents/**`, `src-tauri/src/commands/core/personas.rs` | `docs/features/personas/README.md` |
 | `src/features/templates/**`, `src-tauri/src/commands/design/**`, `src-tauri/src/engine/build_session/**` | `docs/features/templates/README.md` |
 | `src-tauri/src/commands/execution/**`, `src-tauri/src/engine/{runner,scheduler,bus,chain,...}.rs` | `docs/features/execution/README.md` |
 | `src/features/vault/**`, `src-tauri/src/commands/credentials/**` | `docs/features/connections/README.md` |
@@ -319,20 +320,34 @@ The authoritative source→doc mapping is in [`scripts/docs/feature-doc-map.json
 | `src/features/overview/**` | `docs/features/overview/README.md` |
 | `src/features/plugins/<plugin>/**`, `src-tauri/src/commands/<plugin>/**` (or `infrastructure/<plugin>.rs`) | `docs/features/<plugin>.md` (artist, companion, dev-tools, drive, obsidian-brain, research-lab, twin) |
 
-When you add a new feature area, add an entry to `feature-doc-map.json` in the same change.
+When you add a new feature area, add an entry to `feature-doc-map.json` in the same change. If the feature has a corresponding onboarding tour step, list its flow id in `onboardingFlows`; if it has a corresponding marketing module, list it in `marketingModule`.
 
-### The Stop hook
+### The Stop hook — three independent checks per turn
 
 `.claude/settings.json` registers a Stop hook that runs `node scripts/docs/check-doc-sync.mjs` before every turn ends. The script:
 
-1. Walks the current turn's transcript for `Edit` / `Write` / `MultiEdit` calls.
+1. Walks the current turn's transcript for `Edit` / `Write` / `MultiEdit` / `NotebookEdit` calls.
 2. Filters out skip patterns (tests, generated bindings, i18n, docs themselves, migrations, template/connector seeds).
-3. Matches the remaining edits against the feature-doc map.
-4. If feature source was edited but no `docs/features/*` was touched in the same turn, exits 2 with a structured reminder naming the affected docs.
+3. Matches the remaining edits against `feature-doc-map.json` and runs **three independent checks**:
+   - **Feature doc** — if source matched an entry's `sourceGlobs` and no `docs/features/*` file was edited → exit 2 with a feature-doc reminder.
+   - **Onboarding tour** — if source matched an entry that lists `onboardingFlows` and no `src/features/onboarding/**` file was edited → exit 2 with an onboarding-tour reminder naming the affected flow(s) and their step file(s).
+   - **Marketing guide** — if source matched an entry with `marketingModule`, fold an informational breadcrumb into the message naming the affected module. **Never exits 2 on its own**; the scheduled weekly `/guide-sync` is what keeps marketing in sync.
 
-When you see that reminder, **either** update the named doc(s) in this turn, **or** reply with one short sentence — `"internal-only, no doc update needed"` (or similar) — explaining why no doc work is required (refactor, bugfix without behavior shift, etc.). Do not ignore the reminder silently.
+The three sections combine into one message. Exit 2 fires when feature-doc *or* onboarding is missing; the marketing breadcrumb is purely informational.
 
-The hook honors `stop_hook_active`, so it can't infinite-loop. Bypass for an entire turn by either dismissing as above, or by including a doc edit alongside the source change.
+When you see the reminder, **either** update the named surfaces in this turn, **or** reply with one short sentence — `"internal-only, no doc/tour update needed"` (or similar) — explaining why. Do not ignore the reminder silently.
+
+The hook honors `stop_hook_active`, so it can't infinite-loop. Test fixtures live at [`scripts/docs/__tests__/check-doc-sync.test.mjs`](../scripts/docs/__tests__/check-doc-sync.test.mjs) — run with `node scripts/docs/__tests__/check-doc-sync.test.mjs` (20 assertions, no deps).
+
+### Marketing guides — scheduled `/guide-sync`, not Stop-hook gate
+
+Marketing guides live in a separate git repo (`personas-web`), so same-turn enforcement is impossible (you'd be writing across two histories). They're also high-signal/low-frequency: most desktop changes don't affect them, and per-edit nags would degrade to wallpaper.
+
+Instead: a weekly scheduled `/guide-sync` routine batches the week's commits, maps them to guide topics via `personas-web/src/data/guide/desktop-modules.ts`, flags stale topics, and proposes updates. See `/schedule list` to inspect or modify the routine.
+
+Run `/guide-sync` manually if a change is urgent for the marketing site (e.g. a major feature ships mid-week and the launch announcement points at a stale guide).
+
+**Mode tags**: Guide categories and topics have a `mode` field (`"simple"`, `"power"`, or `"both"`) controlling visibility in the guide filter UI. When moving features between Simple/Power modes in the desktop app, update the corresponding category or topic mode in `personas-web`.
 
 ---
 
