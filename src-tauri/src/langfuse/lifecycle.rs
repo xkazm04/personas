@@ -546,6 +546,13 @@ async fn run_stop(app: &AppHandle, job_id: &str) -> Result<(), AppError> {
 
     docker::down(&stack_dir, &compose_cmd, false).await?;
 
+    // Tear down the in-process exporter so queued traces don't fail-loop
+    // against the now-dead OTLP endpoint. The next `start` re-installs it
+    // from the persisted secrets (see run_start_internal). Without this,
+    // a stopped stack quietly fills the export-failure ring buffer with
+    // "Could not reach" errors for every persona execution.
+    exporter::uninstall();
+
     emit_progress(app, job_id, LangfuseJobKind::Stop, None, 1.0, "Stopped.");
 
     Ok(())
@@ -570,6 +577,9 @@ pub async fn reset_volumes(app: &AppHandle) -> Result<(), AppError> {
         .compose_cmd
         .ok_or_else(|| AppError::Langfuse("Docker compose is unavailable.".into()))?;
     docker::down(&stack_dir, &compose_cmd, true).await?;
+    // `compose down -v` also takes the stack down — same fail-loop concern
+    // as run_stop. The next `start` re-installs from secrets.
+    exporter::uninstall();
     tracing::warn!("Reset Langfuse stack volumes (data wiped)");
     Ok(())
 }

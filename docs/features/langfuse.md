@@ -56,6 +56,22 @@ The frontend wrappers live in `src/api/langfuse.ts`.
 | `exporter.rs` | Trace exporter shipped with each persona execution |
 | `lab_score.rs` | Per-scenario score-push helper (`engine::test_runner::score_result` → synthetic trace + Scores API POST) |
 
+### Exporter lifecycle invariants
+
+The in-process OTLP exporter is installed and uninstalled in lockstep with the user's connection state, so traces never queue against a dead endpoint:
+
+| Event | Exporter action |
+| --- | --- |
+| App boot with saved + enabled config | `init_from_config` → install |
+| `langfuse_save_config` with enabled = true | install |
+| `langfuse_save_config` with enabled = false | uninstall |
+| `langfuse_clear_config` | uninstall |
+| Managed stack first start (`run_start_internal`) | install |
+| Managed stack stop (`run_stop`) | uninstall |
+| Managed stack reset (`reset_volumes`, `compose down -v`) | uninstall |
+
+The health bar's "configured but not running" hint surfaces the rare case where `config.enabled = true` but `exporter::is_installed() = false` — typically after a stop, until the next start re-installs.
+
 ## Auto-login flow (`local_http/langfuse_routes.rs`)
 
 When the user clicks Open Langfuse:
