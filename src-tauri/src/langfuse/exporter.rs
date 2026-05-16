@@ -56,6 +56,10 @@ static EXPORT_STATS: OnceLock<Mutex<ExportStatsInner>> = OnceLock::new();
 /// executions will not exceed this in an hour; cap keeps RAM bounded if
 /// they do.
 const RECENT_SUCCESS_CAP: usize = 1000;
+/// Cap on stored recent failures. Surfaces to the UI drill-down so users
+/// can read patterns in why things fail. Tight cap because each entry holds
+/// a 200-char error string.
+const RECENT_FAILURE_CAP: usize = 20;
 const ONE_HOUR_SECS: i64 = 3600;
 
 #[derive(Default)]
@@ -66,6 +70,16 @@ struct ExportStatsInner {
     last_error_at: Option<i64>,
     last_error: Option<String>,
     recent_success_ts: VecDeque<i64>,
+    /// Newest first; bounded at [`RECENT_FAILURE_CAP`]. The IPC payload
+    /// trims to the top N — keeping the in-process tail bigger lets a
+    /// future "show me 20" drill-down work without re-recording.
+    recent_failures: VecDeque<RecentFailure>,
+}
+
+#[derive(Debug, Clone)]
+struct RecentFailure {
+    at: i64,
+    message: String,
 }
 
 fn stats_cell() -> &'static Mutex<ExportStatsInner> {
@@ -101,13 +115,21 @@ fn record_export_failure(msg: impl Into<String>) {
     };
     g.failure_total = g.failure_total.saturating_add(1);
     g.last_error_at = Some(now);
-    let s = msg.into();
-    g.last_error = Some(s.chars().take(200).collect());
+    let trimmed: String = msg.into().chars().take(200).collect();
+    g.last_error = Some(trimmed.clone());
+    if g.recent_failures.len() >= RECENT_FAILURE_CAP {
+        g.recent_failures.pop_front();
+    }
+    g.recent_failures.push_back(RecentFailure {
+        at: now,
+        message: trimmed,
+    });
 }
 
 /// Snapshot of the in-process exporter stats. Returned by
 /// `langfuse_get_export_stats`; intentionally narrow so the wire payload
-/// stays small.
+/// stays small. `recent_failures` ships the newest-first slice (cap 10) so
+/// the health-bar drill-down can render without a follow-up call.
 pub fn snapshot_stats() -> ExportStatsSnapshot {
     let cutoff = unix_secs_now() - ONE_HOUR_SECS;
     let g = match stats_cell().lock() {
@@ -119,6 +141,18 @@ pub fn snapshot_stats() -> ExportStatsSnapshot {
         .iter()
         .filter(|t| **t >= cutoff)
         .count() as u64;
+    // Newest first, capped at 10 — the UI only renders 5 by default but a
+    // little headroom keeps "Show more" cheap when we add it.
+    let recent_failures: Vec<RecentFailureSnapshot> = g
+        .recent_failures
+        .iter()
+        .rev()
+        .take(10)
+        .map(|f| RecentFailureSnapshot {
+            at: f.at,
+            message: f.message.clone(),
+        })
+        .collect();
     ExportStatsSnapshot {
         success_total: g.success_total,
         failure_total: g.failure_total,
@@ -126,6 +160,7 @@ pub fn snapshot_stats() -> ExportStatsSnapshot {
         last_export_at: g.last_export_at,
         last_error_at: g.last_error_at,
         last_error: g.last_error.clone(),
+        recent_failures,
     }
 }
 
@@ -138,6 +173,13 @@ pub struct ExportStatsSnapshot {
     pub last_export_at: Option<i64>,
     pub last_error_at: Option<i64>,
     pub last_error: Option<String>,
+    pub recent_failures: Vec<RecentFailureSnapshot>,
+}
+
+#[derive(Debug, Clone)]
+pub struct RecentFailureSnapshot {
+    pub at: i64,
+    pub message: String,
 }
 
 fn cell() -> &'static RwLock<Option<Arc<LangfuseExporter>>> {

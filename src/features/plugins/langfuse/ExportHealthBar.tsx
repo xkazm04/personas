@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
-import { AlertTriangle, EyeOff, FlaskConical, Power, RefreshCw } from "lucide-react";
+import {
+  AlertTriangle,
+  ChevronDown,
+  ChevronRight,
+  EyeOff,
+  FlaskConical,
+  Power,
+  RefreshCw,
+} from "lucide-react";
 import { useTranslation } from "@/i18n/useTranslation";
 import { langfuseGetExportStats } from "@/api/langfuse";
 import type { LangfuseExportStats } from "@/lib/bindings/LangfuseExportStats";
@@ -28,6 +36,7 @@ export function ExportHealthBar() {
   const { t, tx } = useTranslation();
   const [stats, setStats] = useState<LangfuseExportStats | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [errorsOpen, setErrorsOpen] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -77,7 +86,7 @@ export function ExportHealthBar() {
         </button>
       </div>
 
-      {/* Three-stat tile row */}
+      {/* Three-stat tile row. Errors tile is clickable when failures exist. */}
       <div className="grid grid-cols-3 gap-2">
         <StatTile
           label={t.plugins.langfuse.health_total_label}
@@ -93,6 +102,8 @@ export function ExportHealthBar() {
           label={t.plugins.langfuse.health_errors_label}
           value={stats.failureTotal.toString()}
           tone={hasErrors ? "error" : "muted"}
+          onClick={hasErrors ? () => setErrorsOpen((v) => !v) : undefined}
+          expanded={errorsOpen}
         />
       </div>
 
@@ -103,8 +114,8 @@ export function ExportHealthBar() {
           : t.plugins.langfuse.health_last_export_never}
       </div>
 
-      {/* Last error (only when present) */}
-      {hasErrors && stats.lastError && (
+      {/* Last error (only when present and drill-down is closed) */}
+      {hasErrors && stats.lastError && !errorsOpen && (
         <div className="flex items-start gap-2 px-2 py-1.5 typo-caption rounded-card border border-amber-500/20 bg-amber-500/5 text-amber-200/90">
           <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
           <span className="truncate" title={stats.lastError}>
@@ -113,6 +124,31 @@ export function ExportHealthBar() {
               message: stats.lastError,
             })}
           </span>
+        </div>
+      )}
+
+      {/* Drill-down: recent failures list */}
+      {errorsOpen && (
+        <div className="rounded-card border border-amber-500/20 bg-amber-500/5 overflow-hidden">
+          {stats.recentFailures.length === 0 ? (
+            <div className="px-3 py-2 typo-caption text-foreground/80">
+              {t.plugins.langfuse.health_recent_failures_empty}
+            </div>
+          ) : (
+            <ul className="divide-y divide-amber-500/10">
+              {stats.recentFailures.slice(0, 5).map((f) => (
+                <li
+                  key={`${f.at.toString()}-${f.message.slice(0, 16)}`}
+                  className="px-3 py-2 typo-caption text-amber-200/90"
+                >
+                  <div className="text-foreground/60 typo-caption">
+                    {formatRelative(f.at) ?? "—"}
+                  </div>
+                  <div className="break-words">{f.message}</div>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
 
@@ -154,7 +190,19 @@ export function ExportHealthBar() {
 
 type StatTone = "neutral" | "success" | "error" | "muted";
 
-function StatTile({ label, value, tone }: { label: string; value: string; tone: StatTone }) {
+function StatTile({
+  label,
+  value,
+  tone,
+  onClick,
+  expanded,
+}: {
+  label: string;
+  value: string;
+  tone: StatTone;
+  onClick?: () => void;
+  expanded?: boolean;
+}) {
   const toneClass =
     tone === "success"
       ? "text-emerald-300"
@@ -163,11 +211,32 @@ function StatTile({ label, value, tone }: { label: string; value: string; tone: 
         : tone === "muted"
           ? "text-foreground/60"
           : "text-foreground";
-  return (
-    <div className="rounded-card border border-primary/10 bg-secondary/20 px-3 py-2 text-center">
+  const baseClass =
+    "rounded-card border border-primary/10 bg-secondary/20 px-3 py-2 text-center";
+  const interactiveClass = onClick
+    ? "cursor-pointer hover:bg-secondary/40 transition-colors w-full"
+    : "";
+  const body = (
+    <>
       <div className={`typo-heading ${toneClass}`}>{value}</div>
-      <div className="typo-caption text-foreground/80 mt-0.5">{label}</div>
-    </div>
+      <div className="typo-caption text-foreground/80 mt-0.5 flex items-center justify-center gap-1">
+        {label}
+        {onClick &&
+          (expanded ? (
+            <ChevronDown className="w-3 h-3" />
+          ) : (
+            <ChevronRight className="w-3 h-3" />
+          ))}
+      </div>
+    </>
+  );
+  if (!onClick) {
+    return <div className={baseClass}>{body}</div>;
+  }
+  return (
+    <button type="button" onClick={onClick} className={`${baseClass} ${interactiveClass}`}>
+      {body}
+    </button>
   );
 }
 

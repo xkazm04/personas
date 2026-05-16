@@ -120,6 +120,19 @@ pub struct LangfuseExportStats {
     pub exporter_installed: bool,
     /// Mirrors [`LangfuseConfig::push_lab_scores`] for the health badge.
     pub push_lab_scores: bool,
+    /// Newest first, capped at 10. Powers the health-bar Errors-tile drill-down.
+    pub recent_failures: Vec<LangfuseExportFailure>,
+}
+
+/// A single recent export failure for the health-bar drill-down. Trimmed
+/// to a 200-char message at record time so the IPC payload stays small.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct LangfuseExportFailure {
+    /// Unix seconds.
+    pub at: i64,
+    pub message: String,
 }
 
 /// Plaintext admin credentials for the managed stack. Returned only when

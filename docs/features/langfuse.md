@@ -19,7 +19,7 @@ Detailed design rationale (path A → A+ probe → decision B) lives in `docs/co
 | Open-in-Langfuse | Button that opens the user's default browser to the Langfuse UI, auto-signed-in via nonce | `OpenInLangfuseButton.tsx` |
 | Recent traces panel | Mini-table of the last 10 traces shipped to Langfuse, each row deep-links into the trace via the auto-login flow (managed) or `openExternal` (manual). Only rendered when an instance is reachable — for the managed stack this means it appears once the stack is Running. | `TraceListPanel.tsx` |
 | Smoke trace button | "Send test trace" action that fires a synthetic one-span OTLP trace at the configured Langfuse host and shows result + deep-link to the new trace. Auto-remounts the recent-traces panel on success so the smoke trace shows up immediately. | `SmokeTraceButton.tsx` |
-| Export health bar | At-a-glance counters (total this session, last hour, errors) plus enabled/redaction badges and a last-error line. Refreshes every 30 s while open; backed by an in-process counter inside the exporter worker (process-lifetime, resets on app restart). | `ExportHealthBar.tsx` |
+| Export health bar | At-a-glance counters (total this session, last hour, errors) plus enabled/redaction/lab-scores badges and a last-error line. Clicking the Errors tile expands the last 5 failures (timestamp + 200-char message) for diagnosing patterns. Refreshes every 30 s while open; backed by a process-lifetime ring buffer inside the exporter worker. | `ExportHealthBar.tsx` |
 
 `LangfusePage.tsx` collapses the manual section by default for first-run users (when `config.host` is empty), and expands it when an existing manual config is detected.
 

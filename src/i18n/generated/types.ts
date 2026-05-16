@@ -9669,6 +9669,9 @@ export type Translations = {
       health_disabled_hint: string;
       health_lab_scores_on: string;
       health_lab_scores_off: string;
+      health_show_errors: string;
+      health_hide_errors: string;
+      health_recent_failures_empty: string;
       push_lab_scores_label: string;
       push_lab_scores_desc: string;
     };

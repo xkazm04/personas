@@ -24,9 +24,9 @@ use crate::langfuse::exporter;
 use crate::langfuse::lifecycle;
 use crate::langfuse::templates;
 use crate::langfuse::types::{
-    LangfuseAdminCredentials, LangfuseConfig, LangfuseExportStats, LangfuseJobHandle,
-    LangfuseJobKind, LangfuseSaveRequest, LangfuseSmokeTraceResult, LangfuseStackInfo,
-    LangfuseStackState, LangfuseTestResult, LangfuseTraceSummary,
+    LangfuseAdminCredentials, LangfuseConfig, LangfuseExportFailure, LangfuseExportStats,
+    LangfuseJobHandle, LangfuseJobKind, LangfuseSaveRequest, LangfuseSmokeTraceResult,
+    LangfuseStackInfo, LangfuseStackState, LangfuseTestResult, LangfuseTraceSummary,
 };
 use crate::AppState;
 
@@ -166,6 +166,14 @@ pub async fn langfuse_get_export_stats() -> Result<LangfuseExportStats, AppError
         redact_content: config::load_redact(),
         exporter_installed: exporter::is_installed(),
         push_lab_scores: config::load_push_lab_scores(),
+        recent_failures: snap
+            .recent_failures
+            .into_iter()
+            .map(|f| LangfuseExportFailure {
+                at: f.at,
+                message: f.message,
+            })
+            .collect(),
     })
 }
 
