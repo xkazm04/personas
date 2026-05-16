@@ -10693,6 +10693,14 @@ export type Translations = {
       tab_memory: string;
       tab_voice: string;
       tab_dashboard: string;
+      tab_decisions: string;
+      decisions_panel_title: string;
+      decisions_panel_subtitle: string;
+      decisions_panel_filter_placeholder: string;
+      decisions_panel_loading: string;
+      decisions_panel_empty: string;
+      decisions_panel_empty_filtered: string;
+      decisions_panel_unscoped: string;
       dashboard_empty_title: string;
       dashboard_empty_body: string;
       dashboard_unknown_widget: string;

@@ -1,7 +1,12 @@
 import type { StateCreator } from 'zustand';
 import type { SystemStore } from '../../storeTypes';
 
-export type CompanionPluginTab = 'setup' | 'memory' | 'voice' | 'dashboard';
+export type CompanionPluginTab =
+  | 'setup'
+  | 'memory'
+  | 'voice'
+  | 'dashboard'
+  | 'decisions';
 
 /**
  * Companion plugin state.

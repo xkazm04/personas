@@ -1,5 +1,12 @@
 import { lazy, Suspense } from 'react';
-import { Bot, Settings, Brain, LayoutDashboard, Mic } from 'lucide-react';
+import {
+  Bot,
+  Brain,
+  LayoutDashboard,
+  Mic,
+  ScrollText,
+  Settings,
+} from 'lucide-react';
 import {
   ContentBox,
   ContentHeader,
@@ -14,6 +21,7 @@ const SetupPanel = lazy(() => import('./sub_setup/SetupPanel'));
 const MemoryPanel = lazy(() => import('./sub_memory/MemoryPanel'));
 const VoicePanel = lazy(() => import('./sub_voice/VoicePanel'));
 const DashboardPanel = lazy(() => import('./sub_dashboard/DashboardPanel'));
+const DecisionsPanel = lazy(() => import('./sub_decisions/DecisionsPanel'));
 
 /**
  * Companion plugin page — three-tab manager surface for Athena.
@@ -40,6 +48,7 @@ export default function CompanionPluginPage() {
     { id: 'memory', label: t.plugins.companion.tab_memory, icon: Brain },
     { id: 'voice', label: t.plugins.companion.tab_voice, icon: Mic },
     { id: 'dashboard', label: t.plugins.companion.tab_dashboard, icon: LayoutDashboard },
+    { id: 'decisions', label: t.plugins.companion.tab_decisions, icon: ScrollText },
   ];
 
   return (
@@ -85,6 +94,7 @@ export default function CompanionPluginPage() {
             {tab === 'memory' && <MemoryPanel />}
             {tab === 'voice' && <VoicePanel />}
             {tab === 'dashboard' && <DashboardPanel />}
+            {tab === 'decisions' && <DecisionsPanel />}
           </Suspense>
         </div>
       </ContentBody>
