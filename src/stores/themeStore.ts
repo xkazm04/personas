@@ -186,6 +186,15 @@ function applyHighContrast(highContrast: boolean) {
   }
 }
 
+function applyReduceMotion(reduceMotion: boolean) {
+  const el = document.documentElement;
+  if (reduceMotion) {
+    el.setAttribute('data-motion', 'reduce');
+  } else {
+    el.removeAttribute('data-motion');
+  }
+}
+
 function isLightTheme(id: ThemeId, customConfig?: CustomThemeConfig | null): boolean {
   if (id === 'custom') return customConfig?.baseMode === 'light';
   return id.startsWith('light');
@@ -229,6 +238,7 @@ interface ThemeState {
   dim: boolean;
   cvdSafe: boolean;
   highContrast: boolean;
+  reduceMotion: boolean;
   setTheme: (id: ThemeId) => void;
   setTextScale: (scale: TextScale) => void;
   setTimezone: (tz: TimezoneMode) => void;
@@ -239,6 +249,7 @@ interface ThemeState {
   setDim: (enabled: boolean) => void;
   setCvdSafe: (enabled: boolean) => void;
   setHighContrast: (enabled: boolean) => void;
+  setReduceMotion: (enabled: boolean) => void;
 }
 
 /** Derived selector: true when the active theme is dark. */
@@ -263,6 +274,7 @@ export const useThemeStore = create<ThemeState>()(
       dim: false,
       cvdSafe: false,
       highContrast: false,
+      reduceMotion: false,
       setTheme: (id: ThemeId) => {
         applyThemeToDOM(id, get().customTheme);
         applyBrightness(get().brightness, id, get().customTheme);
@@ -313,6 +325,11 @@ export const useThemeStore = create<ThemeState>()(
         set({ highContrast: enabled });
         storeBus.emit('appearance:changed', { field: 'highContrast', value: enabled ? 'on' : 'off' });
       },
+      setReduceMotion: (enabled: boolean) => {
+        applyReduceMotion(enabled);
+        set({ reduceMotion: enabled });
+        storeBus.emit('appearance:changed', { field: 'reduceMotion', value: enabled ? 'on' : 'off' });
+      },
     }),
     {
       name: 'persona-theme',
@@ -332,6 +349,7 @@ export const useThemeStore = create<ThemeState>()(
           applyDim(state.dim ?? false);
           applyCvdSafe(state.cvdSafe ?? false);
           applyHighContrast(state.highContrast ?? false);
+          applyReduceMotion(state.reduceMotion ?? false);
         }
       },
     }

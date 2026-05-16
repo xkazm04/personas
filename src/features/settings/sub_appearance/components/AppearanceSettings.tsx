@@ -303,6 +303,8 @@ export default function AppearanceSettings() {
   const setCvdSafe = useThemeStore((s) => s.setCvdSafe);
   const highContrast = useThemeStore((s) => s.highContrast);
   const setHighContrast = useThemeStore((s) => s.setHighContrast);
+  const reduceMotion = useThemeStore((s) => s.reduceMotion);
+  const setReduceMotion = useThemeStore((s) => s.setReduceMotion);
   const isDark = useIsDarkTheme();
   const brightnessLevels = isDark ? DARK_BRIGHTNESS_LEVELS : LIGHT_BRIGHTNESS_LEVELS;
   const customTheme = useThemeStore((s) => s.customTheme);
@@ -512,6 +514,27 @@ export default function AppearanceSettings() {
                 }`}
               >
                 {highContrast ? s.high_contrast_on : s.high_contrast_off}
+              </Button>
+            </div>
+            {/* Reduce motion — kills transitions/animations app-wide via a
+                wildcard CSS rule. Fourth axis in the a11y stack: alongside
+                dim (saturation), CVD (hue), and high-contrast (luminance). */}
+            <div className="flex items-start justify-between gap-4 pt-3 mt-1 border-t border-primary/10">
+              <div className="flex-1">
+                <div className="text-sm text-foreground font-medium">{s.reduce_motion_label}</div>
+                <div className="typo-body text-foreground/80">{s.reduce_motion_hint}</div>
+              </div>
+              <Button
+                variant="ghost"
+                onClick={() => setReduceMotion(!reduceMotion)}
+                aria-pressed={reduceMotion}
+                className={`shrink-0 px-4 py-2 rounded-interactive border min-w-[64px] ${
+                  reduceMotion
+                    ? 'border-primary/40 bg-primary/10 text-primary font-medium'
+                    : 'border-primary/10 hover:border-primary/30 text-foreground'
+                }`}
+              >
+                {reduceMotion ? s.reduce_motion_on : s.reduce_motion_off}
               </Button>
             </div>
           </div>

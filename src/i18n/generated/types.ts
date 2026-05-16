@@ -8084,6 +8084,10 @@ export type Translations = {
       high_contrast_hint: string;
       high_contrast_on: string;
       high_contrast_off: string;
+      reduce_motion_label: string;
+      reduce_motion_hint: string;
+      reduce_motion_on: string;
+      reduce_motion_off: string;
       custom_theme: string;
       custom_theme_active: string;
       custom_theme_hint: string;

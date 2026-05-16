@@ -4507,3 +4507,20 @@ html[data-contrast="high"][data-theme^="light"] {
   --muted-foreground: color-mix(in srgb, var(--foreground) 80%, transparent);
   --card-border: color-mix(in srgb, var(--foreground) 25%, transparent);
 }
+
+/* Reduce-motion preset — mirrors the prefers-reduced-motion media query
+   at user request (independent of OS preference). Collapses every animation
+   and transition to a near-instant 0.01ms, which preserves the FINAL state
+   of state-driven CSS (so toggled classNames still apply the intended
+   styles) while eliminating the motion path that triggers vestibular
+   discomfort. !important is required to override Tailwind's animate-*
+   utility durations and explicit `transition: ...` declarations on
+   component-level rules. */
+html[data-motion="reduce"] *,
+html[data-motion="reduce"] *::before,
+html[data-motion="reduce"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
