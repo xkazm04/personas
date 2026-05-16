@@ -1601,10 +1601,22 @@ body[data-drag-active="true"] * {
   --background: #0a1214;
   --foreground: #e0f2fe;
   --secondary: #0d2025;
+  --muted: #4a6b75;
+  --muted-dark: #36525a;
+  --muted-foreground: #94c5d4;
   --border: #164e63;
+  --card-bg: rgba(34, 211, 238, 0.04);
+  --card-border: rgba(34, 211, 238, 0.10);
   --brand-cyan: #22d3ee;
   --brand-purple: #0ea5e9;
+  --brand-emerald: #2dd4bf;
+  --brand-amber: #fbbf24;
+  --brand-rose: #fb7185;
   --btn-primary: #0e7490;
+  --glass-bg: rgba(6, 182, 212, 0.04);
+  --glass-border: rgba(6, 182, 212, 0.12);
+  --status-info: #22d3ee;
+  --status-processing: #22d3ee;
 }
 
 /* Dark: Bronze — warm amber palette, hue-coherent neutrals */
@@ -1637,17 +1649,30 @@ body[data-drag-active="true"] * {
   --status-neutral: #a8956b;
 }
 
-/* Dark: Frost */
+/* Dark: Frost -- intentionally desaturated neutral slate; full surface coverage
+   uses muted brand tokens to preserve the minimalist register. Status colors
+   stay at :root semantic defaults so success/warning/error remain readable
+   against the otherwise-monochrome canvas. */
 [data-theme="dark-frost"] {
   --primary: #e2e8f0;
   --accent: #f8fafc;
   --background: #0f1115;
   --foreground: #f1f5f9;
   --secondary: #1a1f28;
+  --muted: #4d5566;
+  --muted-dark: #3a414e;
+  --muted-foreground: #94a3b8;
   --border: #334155;
+  --card-bg: rgba(255, 255, 255, 0.035);
+  --card-border: rgba(255, 255, 255, 0.08);
   --brand-cyan: #cbd5e1;
   --brand-purple: #94a3b8;
+  --brand-emerald: #a3b8c4;
+  --brand-amber: #cbd5e1;
+  --brand-rose: #94a3b8;
   --btn-primary: #475569;
+  --glass-bg: rgba(255, 255, 255, 0.025);
+  --glass-border: rgba(255, 255, 255, 0.06);
 }
 
 /* Dark: Purple — violet palette, hue-coherent neutrals */
@@ -1717,6 +1742,8 @@ body[data-drag-active="true"] * {
   --background: #080808;
   --foreground: #ededed;
   --secondary: #131313;
+  --muted: #525252;
+  --muted-dark: #404040;
   --muted-foreground: #a3a3a3;
   --border: #262626;
   --card-bg: rgba(255, 255, 255, 0.025);
