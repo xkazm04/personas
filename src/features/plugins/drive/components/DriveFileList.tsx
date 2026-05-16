@@ -1,5 +1,14 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
-import { ChevronUp, ChevronDown, FolderOpen, Sparkles, Search, ArrowUpRight } from "lucide-react";
+import {
+  ArrowUpRight,
+  ChevronUp,
+  ChevronDown,
+  File as FileIcon,
+  Folder as FolderIcon,
+  FolderOpen,
+  Search,
+  Sparkles,
+} from "lucide-react";
 
 import type { DriveEntry, DriveSearchHit } from "@/api/drive";
 import { driveFormatBytes, driveList, driveParentPath } from "@/api/drive";
@@ -22,6 +31,9 @@ interface Props {
   inlineRenamingPath?: string | null;
   onCommitInlineRename?: (path: string, newName: string) => void;
   onCancelInlineRename?: () => void;
+  pendingCreate?: "folder" | "file" | null;
+  onCommitPendingCreate?: (name: string) => void;
+  onCancelPendingCreate?: () => void;
 }
 
 export function DriveFileList({
@@ -33,6 +45,9 @@ export function DriveFileList({
   inlineRenamingPath = null,
   onCommitInlineRename,
   onCancelInlineRename,
+  pendingCreate = null,
+  onCommitPendingCreate,
+  onCancelPendingCreate,
 }: Props) {
   if (drive.viewMode === "icons") {
     return (
@@ -65,6 +80,9 @@ export function DriveFileList({
       inlineRenamingPath={inlineRenamingPath}
       onCommitInlineRename={onCommitInlineRename}
       onCancelInlineRename={onCancelInlineRename}
+      pendingCreate={pendingCreate}
+      onCommitPendingCreate={onCommitPendingCreate}
+      onCancelPendingCreate={onCancelPendingCreate}
     />
   );
 }
@@ -184,6 +202,9 @@ function ListView({
   inlineRenamingPath = null,
   onCommitInlineRename,
   onCancelInlineRename,
+  pendingCreate = null,
+  onCommitPendingCreate,
+  onCancelPendingCreate,
 }: Props) {
   const { t, tx } = useTranslation();
   const [dragTarget, setDragTarget] = useState<string | null>(null);
@@ -271,7 +292,7 @@ function ListView({
     );
   }
 
-  if (drive.visibleEntries.length === 0) {
+  if (drive.visibleEntries.length === 0 && !pendingCreate) {
     if (drive.searchQuery.trim().length >= 2) {
       return <SearchEmptyWithCTA drive={drive} />;
     }
@@ -305,6 +326,38 @@ function ListView({
           <SortHeader column="kind" label={t.plugins.drive.col_kind} />
           <SortHeader column="modified" label={t.plugins.drive.col_modified} />
         </div>
+        {/* Phantom create row — sits above real rows, kind-styled by intent. */}
+        {pendingCreate && (
+          <div className="grid grid-cols-[1fr_110px_120px_160px] gap-3 px-4 py-2 border-b border-cyan-500/25 bg-cyan-500/5">
+            <div className="flex items-center gap-3 min-w-0">
+              <div
+                className={`flex items-center justify-center w-8 h-8 rounded-card border ${
+                  pendingCreate === "folder"
+                    ? "bg-sky-500/20 border-sky-500/30 text-sky-300"
+                    : "bg-slate-500/15 border-slate-500/25 text-foreground"
+                }`}
+              >
+                {pendingCreate === "folder" ? (
+                  <FolderIcon className="w-4 h-4" />
+                ) : (
+                  <FileIcon className="w-4 h-4" />
+                )}
+              </div>
+              <InlineRenameInput
+                initialName=""
+                onCommit={(name) => onCommitPendingCreate?.(name)}
+                onCancel={() => onCancelPendingCreate?.()}
+              />
+            </div>
+            <div className="typo-body text-foreground self-center tabular-nums">—</div>
+            <div className="typo-body text-foreground self-center">
+              {pendingCreate === "folder"
+                ? t.plugins.drive.folder_kind
+                : t.plugins.drive.kind_generic}
+            </div>
+            <div className="typo-body text-foreground self-center">—</div>
+          </div>
+        )}
         {/* Rows */}
         {drive.visibleEntries.map((entry, idx) => {
           const selected = drive.isSelected(entry.path);

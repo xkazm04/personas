@@ -68,6 +68,9 @@ export default function DrivePage() {
   // Path currently being inline-renamed inside the list view. Null when no
   // rename in flight. Icons / columns views fall back to the modal prompt.
   const [inlineRenamingPath, setInlineRenamingPath] = useState<string | null>(null);
+  // Inline create — when set, the list view renders a phantom row at the
+  // top with an empty inline input. Icons / columns fall back to modal.
+  const [pendingCreate, setPendingCreate] = useState<"folder" | "file" | null>(null);
 
   const requestRename = useCallback(
     (entry: DriveEntry) => {
@@ -79,6 +82,32 @@ export default function DrivePage() {
     },
     [drive.viewMode],
   );
+
+  const requestNewFolder = useCallback(() => {
+    if (drive.viewMode === "list") setPendingCreate("folder");
+    else setDialog({ kind: "new_folder" });
+  }, [drive.viewMode]);
+
+  const requestNewFile = useCallback(() => {
+    if (drive.viewMode === "list") setPendingCreate("file");
+    else setDialog({ kind: "new_file" });
+  }, [drive.viewMode]);
+
+  const commitPendingCreate = useCallback(
+    async (name: string) => {
+      const kind = pendingCreate;
+      setPendingCreate(null);
+      const trimmed = name.trim();
+      if (!trimmed || !kind) return;
+      if (kind === "folder") await drive.createFolder(trimmed);
+      else await drive.createFile(trimmed);
+    },
+    [pendingCreate, drive],
+  );
+
+  const cancelPendingCreate = useCallback(() => {
+    setPendingCreate(null);
+  }, []);
 
   const commitInlineRename = useCallback(
     async (path: string, newName: string) => {
@@ -457,8 +486,8 @@ export default function DrivePage() {
       >
         <DriveToolbar
           drive={drive}
-          onNewFolder={() => setDialog({ kind: "new_folder" })}
-          onNewFile={() => setDialog({ kind: "new_file" })}
+          onNewFolder={requestNewFolder}
+          onNewFile={requestNewFile}
           onOpenSignatures={() => setSignaturesOpen(true)}
           onMoveSelection={handleMoveSelection}
           onSignSelection={handleSignSelection}
@@ -473,10 +502,13 @@ export default function DrivePage() {
               onOpen={handleOpen}
               onContextMenu={openContextMenu}
               onRenameRequest={requestRename}
-              onNewFolder={() => setDialog({ kind: "new_folder" })}
+              onNewFolder={requestNewFolder}
               inlineRenamingPath={inlineRenamingPath}
               onCommitInlineRename={commitInlineRename}
               onCancelInlineRename={cancelInlineRename}
+              pendingCreate={pendingCreate}
+              onCommitPendingCreate={commitPendingCreate}
+              onCancelPendingCreate={cancelPendingCreate}
             />
           </div>
           <DriveDetailsPane
@@ -512,8 +544,8 @@ export default function DrivePage() {
           drive={drive}
           onClose={() => setContextMenu(null)}
           onOpen={handleOpen}
-          onNewFolder={() => setDialog({ kind: "new_folder" })}
-          onNewFile={() => setDialog({ kind: "new_file" })}
+          onNewFolder={requestNewFolder}
+          onNewFile={requestNewFile}
           onRename={requestRename}
           onRequestDelete={(paths) => setDialog({ kind: "delete", paths })}
           onReveal={handleReveal}
