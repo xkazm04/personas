@@ -8060,6 +8060,10 @@ export type Translations = {
       default_tab: string;
       custom_tab: string;
       theme_preview_aria: string;
+      contrast_badge_aaa: string;
+      contrast_badge_aa: string;
+      contrast_badge_low: string;
+      contrast_badge_aria: string;
       timezone: string;
       timezone_hint: string;
       brightness: string;

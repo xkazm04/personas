@@ -7,6 +7,7 @@ import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/compon
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
+import { getContrastRatio, getContrastLevel } from '@/lib/theme/contrastRatio';
 import CustomThemeCreator from './CustomThemeCreator';
 import TranslationContributor from './TranslationContributor';
 import PseudoLocaleToggle from './PseudoLocaleToggle';
@@ -19,6 +20,28 @@ import PseudoLocaleToggle from './PseudoLocaleToggle';
 const ThemeSwatch = memo(function ThemeSwatch({ theme, active, onSelect }: { theme: ThemeDefinition; active: boolean; onSelect: () => void }) {
   const { tx, t } = useTranslation();
   const previewAriaLabel = tx(t.settings.appearance.theme_preview_aria, { name: theme.label });
+
+  // WCAG contrast badge: computed from the theme's *advertised* fg/bg pair
+  // (matches what users will see for body text on the canvas).
+  const contrastRatio = useMemo(
+    () => getContrastRatio(theme.foregroundSample, theme.backgroundSample),
+    [theme.foregroundSample, theme.backgroundSample],
+  );
+  const contrastLevel = useMemo(
+    () => getContrastLevel(theme.foregroundSample, theme.backgroundSample),
+    [theme.foregroundSample, theme.backgroundSample],
+  );
+  const a = t.settings.appearance;
+  const badgeLabel =
+    contrastLevel === 'AAA' ? a.contrast_badge_aaa
+    : contrastLevel === 'AA' ? a.contrast_badge_aa
+    : a.contrast_badge_low;
+  const badgeAriaLabel = tx(a.contrast_badge_aria, { level: badgeLabel, ratio: contrastRatio.toFixed(1) });
+  const badgeClass =
+    contrastLevel === 'AAA' ? 'bg-status-success/20 text-status-success'
+    : contrastLevel === 'AA' ? 'bg-status-info/20 text-status-info'
+    : 'bg-status-warning/25 text-status-warning';
+
   // Midnight has no [data-theme=...] rule — it lives at :root. Setting the
   // attribute to its id on the wrapper inherits root vars unchanged, so we
   // can scope every tile uniformly without special-casing.
@@ -35,11 +58,21 @@ const ThemeSwatch = memo(function ThemeSwatch({ theme, active, onSelect }: { the
       <div
         data-theme={theme.id}
         aria-label={previewAriaLabel}
-        className="w-full bg-background text-foreground flex flex-col gap-2 px-3 py-3 pointer-events-none"
+        className="relative w-full bg-background text-foreground flex flex-col gap-2 px-3 py-3 pointer-events-none"
         style={{ minHeight: '110px' }}
       >
+        {/* Contrast badge — anchored top-right inside the data-theme'd region
+            so its semantic colors also reflect the previewed theme's palette */}
+        <span
+          aria-label={badgeAriaLabel}
+          title={badgeAriaLabel}
+          className={`absolute top-2 right-2 px-1.5 py-0.5 rounded-pill text-[9px] font-semibold tracking-wide ${badgeClass}`}
+        >
+          {badgeLabel}
+        </span>
+
         {/* Top row: primary disc with active check + accent + neutral chip */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between pr-12">
           <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center shadow-elevation-1">
             {active && <Check className="w-3.5 h-3.5 text-btn-primary-fg" />}
           </div>
