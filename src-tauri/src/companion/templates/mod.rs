@@ -57,4 +57,9 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// keyword match against `persona_design_reviews`). The card has an
 /// "open gallery" affordance for users to follow through with the
 /// existing adoption flow.
-pub const CONSTITUTION_VERSION: u32 = 10;
+///
+/// v11: `show_use_case_set` op — auto-fire chat-card carrying 3-5 use
+/// cases tagged golden / variant / out_of_scope, applying the use-case
+/// decomposition rules from the persona-design best-practices doctrine.
+/// Zooms into the layer the walkthrough card only sketches.
+pub const CONSTITUTION_VERSION: u32 = 11;

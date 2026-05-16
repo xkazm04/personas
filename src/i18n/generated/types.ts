@@ -10570,6 +10570,11 @@ export type Translations = {
       template_suggestions_loading: string;
       template_suggestions_empty: string;
       template_suggestions_open_browse: string;
+      use_case_set_title: string;
+      use_case_set_empty: string;
+      use_case_set_role_golden: string;
+      use_case_set_role_variant: string;
+      use_case_set_role_out_of_scope: string;
       proactive_evaluate_now: string;
       memory_run_consolidation: string;
       memory_generate_reflection: string;

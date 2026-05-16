@@ -23,6 +23,7 @@ import { IssueListWidget } from './widgets/IssueListWidget';
 import { PersonaWalkthroughWidget } from './widgets/PersonaWalkthroughWidget';
 import { TemplateSuggestionsWidget } from './widgets/TemplateSuggestionsWidget';
 import { TextCalloutWidget } from './widgets/TextCalloutWidget';
+import { UseCaseSetWidget } from './widgets/UseCaseSetWidget';
 
 export interface CockpitWidgetProps {
   /** Free-form config block from Athena's compose_cockpit op. */
@@ -59,6 +60,11 @@ export const cockpitWidgetRegistry: Record<string, ComponentType<CockpitWidgetPr
   // `show_template_suggestions { intent, limit? }`. Also unclamped in
   // InlineChatCard since 3-5 result rows exceed 260px comfortably.
   template_suggestions: TemplateSuggestionsWidget,
+  // Use-case decomposition. Emitted via
+  // `show_use_case_set { intent, use_cases: [{label, role, description}] }`.
+  // Athena composes the use cases; the widget renders them grouped by
+  // golden / variant / out-of-scope role with role-specific accents.
+  use_case_set: UseCaseSetWidget,
 };
 
 /** Tunes the grid `rowSpan` per widget kind. Multi-row gives long-form

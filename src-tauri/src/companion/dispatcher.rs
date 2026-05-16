@@ -308,6 +308,74 @@ pub fn dispatch(
                 });
             }
             Ok(env)
+                if env.op == "propose_action" && env.action == "show_use_case_set" =>
+            {
+                // Use-case decomposition card. Athena supplies an intent
+                // + a list of 3-5 use cases tagged golden / variant /
+                // out_of_scope, applying the use-case coverage rules
+                // from the persona-design best-practices doctrine.
+                // Auto-fire (no approval) — it's a structured suggestion
+                // for the user to review.
+                let intent = env
+                    .params
+                    .get("intent")
+                    .and_then(|v| v.as_str())
+                    .map(str::trim)
+                    .unwrap_or("");
+                let use_cases = env
+                    .params
+                    .get("use_cases")
+                    .and_then(|v| v.as_array())
+                    .cloned()
+                    .unwrap_or_default();
+                if use_cases.is_empty() {
+                    out.warnings.push(
+                        "show_use_case_set: `use_cases` must be a non-empty array of {label, role, description} objects"
+                            .into(),
+                    );
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                if use_cases.len() > 8 {
+                    out.warnings.push(format!(
+                        "show_use_case_set: {} use cases is too many — cap at 5 per card; split into multiple ops if needed",
+                        use_cases.len()
+                    ));
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                // Validate role enum on every entry up front so a single
+                // bad row doesn't slip through and confuse the widget.
+                let mut bad_role: Option<String> = None;
+                for uc in &use_cases {
+                    let role = uc.get("role").and_then(|v| v.as_str()).unwrap_or("");
+                    if !matches!(role, "golden" | "variant" | "out_of_scope") {
+                        bad_role = Some(role.to_string());
+                        break;
+                    }
+                }
+                if let Some(role) = bad_role {
+                    out.warnings.push(format!(
+                        "show_use_case_set: `role` must be golden|variant|out_of_scope, got `{role}`"
+                    ));
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                let title = env
+                    .params
+                    .get("title")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string());
+                out.chat_cards.push(ChatCard {
+                    kind: "use_case_set".to_string(),
+                    title,
+                    config: serde_json::json!({
+                        "intent": intent,
+                        "use_cases": use_cases,
+                    }),
+                });
+            }
+            Ok(env)
                 if env.op == "propose_action" && env.action == "show_template_suggestions" =>
             {
                 // Template-match card. Athena supplies the intent text; the
