@@ -10893,6 +10893,12 @@ export type Translations = {
       tracking_save_failed: string;
       tracking_saved: string;
       tracking_never_pulsed: string;
+      tracking_stale_hint: string;
+      tracking_force_pulse: string;
+      tracking_force_pulse_tooltip: string;
+      tracking_force_pulse_disabled: string;
+      tracking_pulse_fired: string;
+      tracking_pulse_failed: string;
       adopt_first_period: string;
       auto_setup_complete: string;
       setup_failed: string;

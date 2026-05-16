@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, Circle, GitBranch, FileText, Save } from 'lucide-react';
+import { CheckCircle2, Circle, GitBranch, FileText, Save, Zap, AlertTriangle } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -10,7 +10,18 @@ import {
   projectTrackingSetSubscription,
   projectTrackingIsMasterEnabled,
   projectTrackingGetObsidianVault,
+  projectTrackingRunNow,
 } from '@/api/companion/projectTracking';
+
+const STALE_PULSE_MS = 4 * 60 * 60 * 1000;
+
+function isStalePulse(lastPulseAt: string | null, enabled: boolean): boolean {
+  if (!enabled) return false;
+  if (!lastPulseAt) return true;
+  const t = new Date(lastPulseAt).getTime();
+  if (isNaN(t)) return true;
+  return Date.now() - t > STALE_PULSE_MS;
+}
 import type { SubscriptionWithProject } from '@/lib/bindings/SubscriptionWithProject';
 
 type Draft = {
@@ -108,6 +119,24 @@ export function ProjectTrackingTab() {
     [drafts, addToast, refresh, t.plugins.dev_lifecycle.tracking_save_failed, t.plugins.dev_lifecycle.tracking_saved],
   );
 
+  const [pulsing, setPulsing] = useState(false);
+  const forcePulse = useCallback(async () => {
+    if (pulsing) return;
+    setPulsing(true);
+    try {
+      await projectTrackingRunNow();
+      addToast(t.plugins.dev_lifecycle.tracking_pulse_fired, 'success');
+      // Refresh after a short delay so the consolidator has a chance to write
+      // a fresh lastPulseAt before the row redraws.
+      window.setTimeout(() => { void refresh(); }, 1500);
+    } catch (err) {
+      addToast(t.plugins.dev_lifecycle.tracking_pulse_failed, 'error');
+      toastCatch('project-tracking-tab:forcePulse')(err);
+    } finally {
+      setPulsing(false);
+    }
+  }, [pulsing, refresh, addToast, t.plugins.dev_lifecycle.tracking_pulse_fired, t.plugins.dev_lifecycle.tracking_pulse_failed]);
+
   const masterHint = useMemo(
     () =>
       masterEnabled
@@ -140,10 +169,15 @@ export function ProjectTrackingTab() {
             {rows.map((row) => {
               const draft = drafts[row.projectId];
               if (!draft) return null;
+              const stale = isStalePulse(row.lastPulseAt, draft.enabled && masterEnabled);
               return (
                 <div
                   key={row.projectId}
-                  className="rounded-card border border-primary/10 bg-secondary/5 p-4"
+                  className={`rounded-card border p-4 transition-colors ${
+                    stale
+                      ? 'border-amber-500/30 bg-amber-500/[0.04]'
+                      : 'border-primary/10 bg-secondary/5'
+                  }`}
                 >
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="min-w-0">
@@ -205,19 +239,37 @@ export function ProjectTrackingTab() {
                     </div>
                   ) : null}
 
-                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-primary/10">
-                    <div className="typo-caption text-foreground/55">
+                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-primary/10 gap-3 flex-wrap">
+                    <div className={`typo-caption inline-flex items-center gap-1.5 ${
+                      stale ? 'text-amber-400 font-medium' : 'text-foreground/55'
+                    }`}>
+                      {stale && <AlertTriangle className="w-3 h-3" />}
                       {t.plugins.dev_lifecycle.tracking_column_last_pulse}: {row.lastPulseAt ?? t.plugins.dev_lifecycle.tracking_never_pulsed}
+                      {stale && (
+                        <span className="text-amber-400/80 ml-1">{t.plugins.dev_lifecycle.tracking_stale_hint}</span>
+                      )}
                     </div>
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={() => void save(row.projectId)}
-                      disabled={!draft.dirty}
-                    >
-                      <Save className="w-3.5 h-3.5 mr-1" />
-                      {t.plugins.dev_lifecycle.tracking_save}
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => void forcePulse()}
+                        disabled={pulsing || !masterEnabled || !draft.enabled}
+                        title={!masterEnabled || !draft.enabled ? t.plugins.dev_lifecycle.tracking_force_pulse_disabled : t.plugins.dev_lifecycle.tracking_force_pulse_tooltip}
+                      >
+                        <Zap className={`w-3.5 h-3.5 mr-1 ${pulsing ? 'animate-pulse' : ''}`} />
+                        {t.plugins.dev_lifecycle.tracking_force_pulse}
+                      </Button>
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => void save(row.projectId)}
+                        disabled={!draft.dirty}
+                      >
+                        <Save className="w-3.5 h-3.5 mr-1" />
+                        {t.plugins.dev_lifecycle.tracking_save}
+                      </Button>
+                    </div>
                   </div>
                 </div>
               );
