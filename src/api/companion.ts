@@ -688,7 +688,10 @@ export type BrainKind =
   | 'ritual:focus_window'
   | 'backlog'
   | 'backlog:self_promise'
-  | 'backlog:capability_gap';
+  | 'backlog:capability_gap'
+  // Audit trail of design choices — populated by the dispatcher
+  // whenever Athena emits a show_decision_log card.
+  | 'design_decision';
 
 export interface BrainListItem {
   id: string;

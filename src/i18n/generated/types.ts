@@ -10680,6 +10680,7 @@ export type Translations = {
       consolidation_run_status_failed: string;
       consolidation_run_status_running: string;
       reflections: string;
+      design_decisions: string;
       reflection_running: string;
       reflection_failed: string;
       decay_done: string;

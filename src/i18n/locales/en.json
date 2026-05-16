@@ -10674,6 +10674,7 @@
       "consolidation_run_status_failed": "Failed",
       "consolidation_run_status_running": "Running",
       "reflections": "Reflections",
+      "design_decisions": "Design decisions",
       "reflection_running": "Generating reflection…",
       "reflection_failed": "Reflection failed",
       "decay_done": "{{count}} facts decayed.",
