@@ -1768,41 +1768,45 @@ body[data-drag-active="true"] * {
   --status-neutral: #808080;
 }
 
-/* Light -- warm paper-like palette, toned-down brightness */
+/* Light -- "Paper Pro" — high-contrast neutral slate palette.
+   WCAG-AAA foreground/background contrast, soft borders + elevation-led
+   depth, single confident blue accent. The previous warm-paper variant
+   tinted everything beige (#e9e6df) which made the UI read as a writing
+   app; this rewrite targets professional dashboard polish. */
 [data-theme="light"] {
-  --primary: #2554b0;
-  --primary-rgb: 37, 84, 176;
-  --accent: #3568c7;
-  --background: #e9e6df;
-  --foreground: #1c1c28;
-  --secondary: #dad5cb;
-  --muted: #4d4d58;
-  --muted-dark: #38384a;
-  --muted-foreground: #3d3d4a;
-  --border: #bfb8ab;
-  --card-bg: rgba(0, 0, 0, 0.04);
-  --card-border: rgba(0, 0, 0, 0.10);
-  --brand-cyan: #0e7490;
+  --primary: #2563eb;
+  --primary-rgb: 37, 99, 235;
+  --accent: #3b82f6;
+  --background: #f7f8fa;
+  --foreground: #0f172a;
+  --secondary: #eef0f3;
+  --muted: #64748b;
+  --muted-dark: #475569;
+  --muted-foreground: #475569;
+  --border: #e2e8f0;
+  --card-bg: rgba(255, 255, 255, 0.82);
+  --card-border: rgba(15, 23, 42, 0.06);
+  --brand-cyan: #0891b2;
   --brand-purple: #7c3aed;
   --brand-emerald: #059669;
-  --brand-amber: #b45309;
-  --brand-rose: #be123c;
-  --btn-primary: #1e40af;
-  --glass-bg: rgba(0, 0, 0, 0.03);
-  --glass-border: rgba(0, 0, 0, 0.08);
+  --brand-amber: #d97706;
+  --brand-rose: #e11d48;
+  --btn-primary: #1d4ed8;
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(15, 23, 42, 0.06);
   --status-success: #059669;
-  --status-warning: #b45309;
+  --status-warning: #d97706;
   --status-error: #dc2626;
   --status-info: #2563eb;
-  --status-pending: #b45309;
+  --status-pending: #d97706;
   --status-processing: #2563eb;
-  --status-neutral: #3d3d4a;
-  --shadow-elevation-1: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.08);
-  --shadow-elevation-2: 0 2px 4px rgba(0, 0, 0, 0.08), 0 4px 8px rgba(0, 0, 0, 0.06);
-  --shadow-elevation-3: 0 4px 8px rgba(0, 0, 0, 0.1), 0 8px 16px rgba(0, 0, 0, 0.08);
-  --shadow-elevation-4: 0 8px 16px rgba(0, 0, 0, 0.12), 0 16px 32px rgba(0, 0, 0, 0.1);
-  --chart-grid-stroke: rgba(0, 0, 0, 0.10);
-  --chart-axis-fill: rgba(0, 0, 0, 0.55);
+  --status-neutral: #64748b;
+  --shadow-elevation-1: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.06);
+  --shadow-elevation-2: 0 2px 6px rgba(15, 23, 42, 0.06), 0 4px 12px rgba(15, 23, 42, 0.05);
+  --shadow-elevation-3: 0 4px 12px rgba(15, 23, 42, 0.08), 0 8px 24px rgba(15, 23, 42, 0.06);
+  --shadow-elevation-4: 0 8px 24px rgba(15, 23, 42, 0.10), 0 16px 48px rgba(15, 23, 42, 0.08);
+  --chart-grid-stroke: rgba(15, 23, 42, 0.08);
+  --chart-axis-fill: rgba(15, 23, 42, 0.55);
 }
 
 /* Light: Ice -- icy blue-white palette, toned-down brightness */
