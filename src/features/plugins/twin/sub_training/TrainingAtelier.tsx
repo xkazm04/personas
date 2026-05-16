@@ -297,7 +297,14 @@ export default function TrainingAtelier() {
                 </motion.div>
               )}
 
-              <NextMovesPanel onPick={session.handleReset} />
+              <NextMovesPanel
+                onPick={(presetId) => {
+                  const preset = TRAINING_TOPIC_PRESETS.find((p) => p.id === presetId);
+                  if (!preset) return;
+                  const prompt = t.training[preset.promptKey];
+                  void session.generateQuestions(prompt);
+                }}
+              />
 
               <div className="flex items-center justify-center gap-3 mt-8">
                 <Button onClick={session.handleReset} variant="accent" accentColor="violet" size="sm">

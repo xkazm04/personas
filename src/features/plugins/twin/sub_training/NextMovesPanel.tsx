@@ -72,10 +72,13 @@ function scorePresetCoverage(memories: TwinPendingMemory[]): Scored[] {
   });
 }
 
+type PresetId = (typeof TRAINING_TOPIC_PRESETS)[number]['id'];
+
 interface Props {
-  /** Called when the user picks a recommendation — routes back to topic
-   *  picker. Stage 2 will replace this with an auto-start handler. */
-  onPick: () => void;
+  /** Auto-start the chosen preset: reset session state and immediately
+   *  fire generateQuestions for the matching prompt. Cycle 4 routed back
+   *  to the topic picker; Stage 2 closes the loop to one click. */
+  onPick: (presetId: PresetId) => void;
 }
 
 export function NextMovesPanel({ onPick }: Props) {
@@ -119,7 +122,7 @@ export function NextMovesPanel({ onPick }: Props) {
               <button
                 key={r.id}
                 type="button"
-                onClick={onPick}
+                onClick={() => onPick(r.id)}
                 className={`group flex items-center gap-3 p-3 rounded-card border transition-all hover:shadow-elevation-1 text-left ${r.tint}`}
               >
                 <span className="w-9 h-9 rounded-interactive bg-card/60 border border-primary/15 flex items-center justify-center flex-shrink-0">
