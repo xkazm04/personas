@@ -1,3 +1,10 @@
+[workspace]
+# `.` is the existing personas-desktop crate; `macros/` is the proc-macro
+# helper crate (cannot be a sub-module — Rust requires proc-macros live in
+# their own crate with `proc-macro = true`). Adding more workspace members
+# in the future just appends to this list.
+members = [".", "macros"]
+
 [package]
 name = "personas-desktop"
 version = "0.1.0-1"
@@ -66,6 +73,9 @@ ollama = []
 daemon = ["desktop-full"]
 
 [dependencies]
+# Internal proc-macro crate (see src-tauri/macros/).
+personas-macros = { path = "macros" }
+
 tauri = { version = "2", features = ["tray-icon", "protocol-asset"] }
 tauri-plugin-notification = "2"
 tauri-plugin-dialog = "2"

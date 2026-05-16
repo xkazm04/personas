@@ -11,8 +11,8 @@ use crate::engine::db_query;
 use crate::engine::event_registry::event_name;
 use crate::engine::prompt;
 use crate::error::AppError;
-use crate::ipc_auth::require_privileged;
 use crate::AppState;
+use personas_macros::requires;
 
 // -- Debug output sanitization -----------------------------------------
 //
@@ -176,6 +176,7 @@ pub fn cancel_query_debug_job(
 
 #[allow(clippy::too_many_arguments)]
 #[tauri::command]
+#[requires(privileged)]
 pub async fn start_query_debug(
     state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
@@ -186,7 +187,6 @@ pub async fn start_query_debug(
     debug_id: String,
     allow_mutations: Option<bool>,
 ) -> Result<(), AppError> {
-    require_privileged(&state, "start_query_debug").await?;
     QUERY_DEBUG_JOBS.ensure_not_running(&debug_id)?;
 
     let cancel_token = CancellationToken::new();
@@ -220,12 +220,12 @@ pub async fn start_query_debug(
 }
 
 #[tauri::command]
+#[requires(privileged)]
 pub async fn cancel_query_debug(
     state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
     debug_id: String,
 ) -> Result<(), AppError> {
-    require_privileged(&state, "cancel_query_debug").await?;
     QUERY_DEBUG_JOBS.cancel_or_preempt(&app, &debug_id, ())
 }
 

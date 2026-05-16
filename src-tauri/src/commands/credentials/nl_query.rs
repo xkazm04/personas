@@ -11,8 +11,8 @@ use crate::engine::db_query;
 use crate::engine::event_registry::event_name;
 use crate::engine::prompt;
 use crate::error::AppError;
-use crate::ipc_auth::require_privileged;
 use crate::AppState;
+use personas_macros::requires;
 
 // -- Job-specific extra state --------------------------------------------
 
@@ -51,6 +51,7 @@ pub fn cancel_nl_query_job(app: &tauri::AppHandle, query_id: &str) -> Result<(),
 // -- Tauri commands ------------------------------------------------------
 
 #[tauri::command]
+#[requires(privileged)]
 pub async fn start_nl_query(
     state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
@@ -60,7 +61,6 @@ pub async fn start_nl_query(
     conversation_history: Option<Vec<ConversationTurn>>,
     database_type: Option<String>,
 ) -> Result<(), AppError> {
-    require_privileged(&state, "start_nl_query").await?;
     NL_QUERY_JOBS.ensure_not_running(&query_id)?;
 
     let cancel_token = CancellationToken::new();
@@ -93,11 +93,11 @@ pub async fn start_nl_query(
 }
 
 #[tauri::command]
+#[requires(privileged)]
 pub async fn get_nl_query_snapshot(
     state: State<'_, Arc<AppState>>,
     query_id: String,
 ) -> Result<serde_json::Value, AppError> {
-    require_privileged(&state, "get_nl_query_snapshot").await?;
 
     let snapshot = NL_QUERY_JOBS.get_task_snapshot(&query_id, |extra| NlQuerySnapshotExtras {
         generated_sql: extra.generated_sql.clone(),
@@ -118,12 +118,12 @@ pub async fn get_nl_query_snapshot(
 }
 
 #[tauri::command]
+#[requires(privileged)]
 pub async fn cancel_nl_query(
     state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
     query_id: String,
 ) -> Result<(), AppError> {
-    require_privileged(&state, "cancel_nl_query").await?;
     NL_QUERY_JOBS.cancel_or_preempt(&app, &query_id, NlQueryExtra::default())
 }
 

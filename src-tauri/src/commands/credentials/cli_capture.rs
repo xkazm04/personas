@@ -30,8 +30,9 @@ use crate::db::models::{CreateCredentialInput, PersonaCredential};
 use crate::db::repos::resources::credentials as cred_repo;
 use crate::db::DbPool;
 use crate::error::AppError;
-use crate::ipc_auth::{require_auth, require_privileged};
+use crate::ipc_auth::{require_auth};
 use crate::AppState;
+use personas_macros::requires;
 
 // =============================================================================
 // Spec types
@@ -990,12 +991,12 @@ pub async fn cli_verify_auth(
 /// button so the credential is stamped with `metadata.source = "cli"` and the
 /// capture expiry, enabling CLI-aware healthchecks and proactive refresh.
 #[tauri::command]
+#[requires(privileged)]
 pub async fn cli_capture_save(
     state: State<'_, Arc<AppState>>,
     service_type: String,
     credential_name: String,
 ) -> Result<PersonaCredential, AppError> {
-    require_privileged(&state, "cli_capture_save").await?;
 
     let spec = find_spec(&service_type).ok_or(CliCaptureError::UnknownService)?;
     let result = run_spec(spec).await.map_err(AppError::from)?;

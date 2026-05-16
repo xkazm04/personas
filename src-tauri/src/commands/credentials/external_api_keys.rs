@@ -9,16 +9,16 @@ use tauri::State;
 use crate::db::models::{CreateApiKeyResponse, ExternalApiKey};
 use crate::db::repos::resources::external_api_keys as repo;
 use crate::error::AppError;
-use crate::ipc_auth::require_privileged_sync;
 use crate::AppState;
+use personas_macros::requires;
 
 #[tauri::command]
+#[requires(privileged)]
 pub fn create_external_api_key(
     state: State<'_, Arc<AppState>>,
     name: String,
     scopes: Vec<String>,
 ) -> Result<CreateApiKeyResponse, AppError> {
-    require_privileged_sync(&state, "create_external_api_key")?;
     let resp = repo::create(&state.db, &name, scopes)?;
     tracing::info!(
         api_key_id = %resp.record.id,
@@ -29,30 +29,30 @@ pub fn create_external_api_key(
 }
 
 #[tauri::command]
+#[requires(privileged)]
 pub fn list_external_api_keys(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<ExternalApiKey>, AppError> {
-    require_privileged_sync(&state, "list_external_api_keys")?;
     repo::list(&state.db)
 }
 
 #[tauri::command]
+#[requires(privileged)]
 pub fn revoke_external_api_key(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<(), AppError> {
-    require_privileged_sync(&state, "revoke_external_api_key")?;
     repo::revoke(&state.db, &id)?;
     tracing::info!(api_key_id = %id, "external_api_key revoked");
     Ok(())
 }
 
 #[tauri::command]
+#[requires(privileged)]
 pub fn delete_external_api_key(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<(), AppError> {
-    require_privileged_sync(&state, "delete_external_api_key")?;
     repo::delete(&state.db, &id)?;
     tracing::info!(api_key_id = %id, "external_api_key deleted");
     Ok(())
@@ -70,8 +70,8 @@ pub fn delete_external_api_key(
 /// unexpected callers (compromised renderer, malicious plugin webview,
 /// test-automation HTTP bridge) leave a trail.
 #[tauri::command]
+#[requires(privileged)]
 pub fn get_system_api_key(state: State<'_, Arc<AppState>>) -> Result<String, AppError> {
-    require_privileged_sync(&state, "get_system_api_key")?;
     let key = crate::engine::management_api::get_or_create_system_api_key(&state.db)?;
     tracing::info!("system_api_key issued to privileged caller");
     Ok(key)

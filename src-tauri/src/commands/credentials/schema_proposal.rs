@@ -13,8 +13,8 @@ use crate::engine::db_query;
 use crate::engine::event_registry::event_name;
 use crate::engine::prompt;
 use crate::error::AppError;
-use crate::ipc_auth::require_privileged;
 use crate::AppState;
+use personas_macros::requires;
 
 // -- Job-specific extra state --------------------------------------------
 
@@ -56,6 +56,7 @@ pub fn cancel_schema_proposal_job(
 
 #[allow(clippy::too_many_arguments)]
 #[tauri::command]
+#[requires(privileged)]
 pub async fn start_schema_proposal(
     state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
@@ -66,7 +67,6 @@ pub async fn start_schema_proposal(
     existing_tables: Vec<String>,
     database_type: Option<String>,
 ) -> Result<(), AppError> {
-    require_privileged(&state, "start_schema_proposal").await?;
     SCHEMA_PROPOSAL_JOBS.ensure_not_running(&proposal_id)?;
 
     let cancel_token = CancellationToken::new();
@@ -100,11 +100,11 @@ pub async fn start_schema_proposal(
 }
 
 #[tauri::command]
+#[requires(privileged)]
 pub async fn get_schema_proposal_snapshot(
     state: State<'_, Arc<AppState>>,
     proposal_id: String,
 ) -> Result<serde_json::Value, AppError> {
-    require_privileged(&state, "get_schema_proposal_snapshot").await?;
 
     let snapshot = SCHEMA_PROPOSAL_JOBS.get_task_snapshot(&proposal_id, |extra| {
         SchemaProposalSnapshotExtras {
@@ -127,22 +127,22 @@ pub async fn get_schema_proposal_snapshot(
 }
 
 #[tauri::command]
+#[requires(privileged)]
 pub async fn cancel_schema_proposal(
     state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
     proposal_id: String,
 ) -> Result<(), AppError> {
-    require_privileged(&state, "cancel_schema_proposal").await?;
     SCHEMA_PROPOSAL_JOBS.cancel_or_preempt(&app, &proposal_id, SchemaProposalExtra::default())
 }
 
 #[tauri::command]
+#[requires(privileged)]
 pub async fn validate_db_schema(
     state: State<'_, Arc<AppState>>,
     credential_id: String,
     expected_tables: Vec<String>,
 ) -> Result<serde_json::Value, AppError> {
-    require_privileged(&state, "validate_db_schema").await?;
 
     let tables_result =
         db_query::introspect_tables(&state.db, &credential_id, Some(&state.user_db)).await?;

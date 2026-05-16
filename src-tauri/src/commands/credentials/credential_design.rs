@@ -11,7 +11,7 @@ use crate::engine::healthcheck::{
     resolve_template, validate_field_values, validate_healthcheck_url, validate_template_url,
 };
 use crate::error::AppError;
-use crate::ipc_auth::{require_privileged, require_privileged_sync};
+
 use crate::AppState;
 
 use super::ai_artifact_flow::{
@@ -19,6 +19,7 @@ use super::ai_artifact_flow::{
 };
 use super::shared::build_credential_task_cli_args;
 use crate::engine::event_registry::event_name;
+use personas_macros::requires;
 
 // -- Credential design messages ----------------------------------
 
@@ -39,12 +40,12 @@ const DESIGN_MESSAGES: AiArtifactMessages = AiArtifactMessages {
 // -- Commands ----------------------------------------------------
 
 #[tauri::command]
+#[requires(privileged)]
 pub async fn start_credential_design(
     state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
     instruction: String,
 ) -> Result<serde_json::Value, AppError> {
-    require_privileged(&state, "start_credential_design").await?;
     let connectors = connector_repo::get_all(&state.db)?;
 
     let design_prompt =
@@ -92,8 +93,8 @@ pub async fn start_credential_design(
 }
 
 #[tauri::command]
+#[requires(privileged)]
 pub fn cancel_credential_design(state: State<'_, Arc<AppState>>) -> Result<(), AppError> {
-    require_privileged_sync(&state, "cancel_credential_design")?;
     // Cancel the active credential design and kill the CLI child process.
     if let Some(pid) = state.process_registry.cancel("credential_design") {
         tracing::info!(pid = pid, "Killing credential design CLI child process");
@@ -104,13 +105,13 @@ pub fn cancel_credential_design(state: State<'_, Arc<AppState>>) -> Result<(), A
 }
 
 #[tauri::command]
+#[requires(privileged)]
 pub async fn test_credential_design_healthcheck(
     state: State<'_, Arc<AppState>>,
     instruction: String,
     connector: serde_json::Value,
     field_values: serde_json::Value,
 ) -> Result<serde_json::Value, AppError> {
-    require_privileged(&state, "test_credential_design_healthcheck").await?;
     let values_map: HashMap<String, String> = serde_json::from_value(field_values)
         .map_err(|e| AppError::Validation(format!("Invalid field values: {e}")))?;
 

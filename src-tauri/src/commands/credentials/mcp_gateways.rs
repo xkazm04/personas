@@ -12,10 +12,11 @@ use tauri::State;
 
 use crate::db::repos::resources::mcp_gateways::{self, GatewayMember};
 use crate::error::AppError;
-use crate::ipc_auth::require_privileged;
 use crate::AppState;
+use personas_macros::requires;
 
 #[tauri::command]
+#[requires(privileged)]
 pub async fn add_mcp_gateway_member(
     state: State<'_, Arc<AppState>>,
     gateway_credential_id: String,
@@ -23,7 +24,6 @@ pub async fn add_mcp_gateway_member(
     display_name: String,
     sort_order: Option<i32>,
 ) -> Result<String, AppError> {
-    require_privileged(&state, "add_mcp_gateway_member").await?;
     mcp_gateways::add_member(
         &state.db,
         &gateway_credential_id,
@@ -34,32 +34,32 @@ pub async fn add_mcp_gateway_member(
 }
 
 #[tauri::command]
+#[requires(privileged)]
 pub async fn remove_mcp_gateway_member(
     state: State<'_, Arc<AppState>>,
     gateway_credential_id: String,
     member_credential_id: String,
 ) -> Result<(), AppError> {
-    require_privileged(&state, "remove_mcp_gateway_member").await?;
     mcp_gateways::remove_member(&state.db, &gateway_credential_id, &member_credential_id)
 }
 
 #[tauri::command]
+#[requires(privileged)]
 pub async fn list_mcp_gateway_members(
     state: State<'_, Arc<AppState>>,
     gateway_credential_id: String,
 ) -> Result<Vec<GatewayMember>, AppError> {
-    require_privileged(&state, "list_mcp_gateway_members").await?;
     mcp_gateways::list_members(&state.db, &gateway_credential_id)
 }
 
 #[tauri::command]
+#[requires(privileged)]
 pub async fn set_mcp_gateway_member_enabled(
     state: State<'_, Arc<AppState>>,
     gateway_credential_id: String,
     member_credential_id: String,
     enabled: bool,
 ) -> Result<(), AppError> {
-    require_privileged(&state, "set_mcp_gateway_member_enabled").await?;
     mcp_gateways::set_member_enabled(
         &state.db,
         &gateway_credential_id,

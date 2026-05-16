@@ -19,8 +19,8 @@ use crate::commands::credentials::ai_artifact_flow::spawn_claude_and_collect;
 use crate::engine::event_registry::event_name;
 use crate::engine::prompt::build_cli_args;
 use crate::engine::types::StreamLineType;
-use crate::ipc_auth::require_privileged;
 use crate::AppState;
+use personas_macros::requires;
 
 /// Event names for auto-cred browser progress.
 const STATUS_EVENT: &str = event_name::AUTO_CRED_BROWSER_STATUS;
@@ -686,13 +686,18 @@ pub enum AutoCredMode {
 }
 
 /// Start a browser automation session to create credentials.
+///
+/// Note: this fn returns `Result<_, String>` not `Result<_, AppError>`, so the
+/// `#[requires(privileged)]` macro can't be used here — its expansion uses
+/// bare `?` which requires `From<AppError>` for the error type. The explicit
+/// `.map_err(|e| e.to_string())?` bridge stays.
 #[tauri::command]
 pub async fn start_auto_cred_browser(
     app: tauri::AppHandle,
     state: State<'_, Arc<AppState>>,
     request: AutoCredBrowserRequest,
 ) -> Result<AutoCredBrowserResult, String> {
-    require_privileged(&state, "start_auto_cred_browser")
+    crate::ipc_auth::require_privileged(&state, "start_auto_cred_browser")
         .await
         .map_err(|e| e.to_string())?;
     let registry = Arc::clone(&state.process_registry);
@@ -1244,6 +1249,7 @@ pub async fn start_auto_cred_browser(
 }
 
 /// Save a playwright procedure for a connector type.
+/// `Result<_, String>` keeps the macro out — see start_auto_cred_browser.
 #[tauri::command]
 pub async fn save_playwright_procedure(
     state: State<'_, Arc<AppState>>,
@@ -1251,7 +1257,7 @@ pub async fn save_playwright_procedure(
     procedure_json: String,
     field_keys: String,
 ) -> Result<serde_json::Value, String> {
-    require_privileged(&state, "save_playwright_procedure")
+    crate::ipc_auth::require_privileged(&state, "save_playwright_procedure")
         .await
         .map_err(|e| e.to_string())?;
     let proc = crate::db::repos::resources::playwright_procedures::save(
@@ -1270,12 +1276,13 @@ pub async fn save_playwright_procedure(
 }
 
 /// Get the active playwright procedure for a connector.
+/// `Result<_, String>` keeps the macro out — see start_auto_cred_browser.
 #[tauri::command]
 pub async fn get_playwright_procedure(
     state: State<'_, Arc<AppState>>,
     connector_name: String,
 ) -> Result<Option<serde_json::Value>, String> {
-    require_privileged(&state, "get_playwright_procedure")
+    crate::ipc_auth::require_privileged(&state, "get_playwright_procedure")
         .await
         .map_err(|e| e.to_string())?;
     let proc =

@@ -4968,6 +4968,7 @@ dependencies = [
  "open",
  "ort",
  "pbkdf2",
+ "personas-macros",
  "proptest",
  "quinn",
  "r2d2",
@@ -5016,6 +5017,15 @@ dependencies = [
  "xcap",
  "zeroize",
  "zip 2.4.2",
+]
+
+[[package]]
+name = "personas-macros"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.117",
 ]
 
 [[package]]

@@ -4,46 +4,46 @@ use tauri::State;
 use crate::db::models::{CredentialAuditEntry, CredentialDependent, CredentialUsageStats};
 use crate::db::repos::resources::audit_log;
 use crate::error::AppError;
-use crate::ipc_auth::require_privileged_sync;
 use crate::AppState;
+use personas_macros::requires;
 
 /// Get the audit log for a specific credential.
 #[tauri::command]
+#[requires(privileged)]
 pub fn credential_audit_log(
     state: State<'_, Arc<AppState>>,
     credential_id: String,
     limit: Option<u32>,
 ) -> Result<Vec<CredentialAuditEntry>, AppError> {
-    require_privileged_sync(&state, "credential_audit_log")?;
     audit_log::get_by_credential(&state.db, &credential_id, limit.unwrap_or(50))
 }
 
 /// Get the global audit log across all credentials (security dashboard).
 #[tauri::command]
+#[requires(privileged)]
 pub fn credential_audit_log_global(
     state: State<'_, Arc<AppState>>,
     limit: Option<u32>,
 ) -> Result<Vec<CredentialAuditEntry>, AppError> {
-    require_privileged_sync(&state, "credential_audit_log_global")?;
     audit_log::get_all(&state.db, limit.unwrap_or(200))
 }
 
 /// Get aggregated usage statistics for a credential.
 #[tauri::command]
+#[requires(privileged)]
 pub fn credential_usage_stats(
     state: State<'_, Arc<AppState>>,
     credential_id: String,
 ) -> Result<CredentialUsageStats, AppError> {
-    require_privileged_sync(&state, "credential_usage_stats")?;
     audit_log::get_usage_stats(&state.db, &credential_id)
 }
 
 /// Get all personas/teams that depend on a credential.
 #[tauri::command]
+#[requires(privileged)]
 pub fn credential_dependents(
     state: State<'_, Arc<AppState>>,
     credential_id: String,
 ) -> Result<Vec<CredentialDependent>, AppError> {
-    require_privileged_sync(&state, "credential_dependents")?;
     audit_log::get_dependents(&state.db, &credential_id)
 }

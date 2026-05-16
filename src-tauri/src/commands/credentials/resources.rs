@@ -19,8 +19,9 @@ use crate::db::repos::resources::connectors as connector_repo;
 use crate::db::repos::resources::credentials as repo;
 use crate::engine::resource_listing::{self, ResourceItem};
 use crate::error::AppError;
-use crate::ipc_auth::{require_privileged, require_privileged_sync};
+
 use crate::AppState;
+use personas_macros::requires;
 
 /// Read the `scoped_resources` JSON blob for a credential.
 ///
@@ -43,12 +44,12 @@ pub fn get_scoped_resources(
 /// resource identifiers themselves are not secrets, they control which data
 /// an agent is allowed to reach, so they sit on the privileged surface.
 #[tauri::command]
+#[requires(privileged)]
 pub fn save_scoped_resources(
     state: State<'_, Arc<AppState>>,
     credential_id: String,
     scoped_resources: Option<String>,
 ) -> Result<(), AppError> {
-    require_privileged_sync(&state, "save_scoped_resources")?;
     if let Some(payload) = scoped_resources.as_deref() {
         // Cross-check the payload against the connector's resources[] spec so
         // unknown keys, malformed picks, or single-selection violations are
@@ -69,12 +70,12 @@ pub fn save_scoped_resources(
 /// Stored under `metadata.scope_enforcement` so the api_proxy can read it on
 /// every request without an extra DB column.
 #[tauri::command]
+#[requires(privileged)]
 pub fn set_credential_scope_enforcement(
     state: State<'_, Arc<AppState>>,
     credential_id: String,
     mode: String,
 ) -> Result<(), AppError> {
-    require_privileged_sync(&state, "set_credential_scope_enforcement")?;
     let normalized = match mode.as_str() {
         "warn" | "block" => mode,
         other => {
@@ -100,6 +101,7 @@ pub fn set_credential_scope_enforcement(
 /// This is a privileged command because it decrypts credential fields and
 /// makes an outbound HTTP call using them.
 #[tauri::command]
+#[requires(privileged)]
 pub async fn list_connector_resources(
     state: State<'_, Arc<AppState>>,
     credential_id: String,
@@ -107,10 +109,6 @@ pub async fn list_connector_resources(
     depends_on_context: Option<HashMap<String, serde_json::Value>>,
     bypass_cache: Option<bool>,
 ) -> Result<Vec<ResourceItem>, AppError> {
-    // Async variant: thread-local privilege flag isn't reliable across tokio
-    // task migration, so we use the async helper which verifies init only.
-    // The actual privilege gating is enforced by the invoke handler wrapper.
-    require_privileged(&state, "list_connector_resources").await?;
     let ctx = depends_on_context.unwrap_or_default();
     resource_listing::list_resources(
         &state.db,

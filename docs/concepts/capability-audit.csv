@@ -1,0 +1,114 @@
+file,line,surface,subject,object,axis,current_rule,notes
+# === BACKEND: require_auth_sync — basic session check (PUBLIC tier of IPC) ===
+src-tauri/src/ipc_auth.rs,~50,middleware,auth,none,auth_required,"require_auth_sync(&state)?",623 call sites across commands/ (most common rule)
+src-tauri/src/ipc_auth.rs,~70,middleware,auth,none,auth_required,"require_auth(&state).await?",154 async sites across commands/
+# === BACKEND: require_privileged_sync — IPC session token (PRIVILEGED tier) ===
+src-tauri/src/ipc_auth.rs,~83,middleware,session_token,none,privileged,"require_privileged_sync(&state, cmd_name)",70 sync sites (credentials/vault writes)
+src-tauri/src/ipc_auth.rs,~91,middleware,session_token,none,privileged,"require_privileged(&state, cmd_name).await?",80 async sites
+src-tauri/src/ipc_auth.rs,120,cfg-strip,session_token,command_name,privileged,"PRIVILEGED_COMMANDS: &[&str] = &[...] (55 names)",Static allowlist; defense-in-depth
+# === BACKEND: require_cloud_auth — Google OAuth (CLOUD tier) ===
+src-tauri/src/ipc_auth.rs,~625,cfg-strip,oauth,command_name,cloud_command_list,"CLOUD_COMMANDS: &[&str] = &[...] (50 names)",Static allowlist (cloud_* + gitlab_* + smee_relay_*)
+src-tauri/src/ipc_auth.rs,~700,middleware,oauth,none,cloud_command_list,"require_cloud_auth(&state, cmd_name).await?",50 call sites
+# === BACKEND: BYOM scope (provider policy CRUD; NOT command-level enforcement) ===
+src-tauri/src/commands/infrastructure/byom.rs,~30,command,auth,none,byom_scope,"get_byom_policy → require_auth_sync",weak gate; readable by any authed user
+src-tauri/src/commands/infrastructure/byom.rs,~60,command,auth,none,byom_scope,"set_byom_policy → require_auth_sync",weak gate
+src-tauri/src/commands/infrastructure/byom.rs,~85,command,auth,none,byom_scope,"delete_byom_policy → require_auth_sync",weak gate
+src-tauri/src/commands/infrastructure/byom.rs,~110,command,auth,none,byom_scope,"validate_byom_policy → require_auth_sync",weak gate
+src-tauri/src/commands/infrastructure/byom.rs,~135,command,session_token,none,byom_scope,"list_provider_audit_log → require_privileged_sync",privileged read
+src-tauri/src/commands/infrastructure/byom.rs,~150,command,session_token,none,byom_scope,"list_provider_audit_by_persona → require_privileged_sync",privileged read
+src-tauri/src/commands/infrastructure/byom.rs,~165,command,session_token,none,byom_scope,"get_provider_usage_stats → require_privileged_sync",privileged read
+src-tauri/src/commands/infrastructure/byom.rs,~180,command,session_token,none,byom_scope,"get_provider_usage_timeseries → require_privileged_sync",privileged read
+src-tauri/src/engine/byom.rs,60-70,engine,provider,none,byom_scope,"BYOMPolicy { enabled, allowed_providers[], blocked_providers[] }",1 enable flag + 2 lists; runtime evaluation
+src-tauri/src/engine/byom.rs,93-101,engine,provider,task_complexity,byom_scope,"TaskComplexity routing: only Standard fires today",Simple/Critical paths are dead code; tracked gap
+# === BACKEND: Tier checks — NONE FOUND ===
+src-tauri/src/engine/tier.rs,1-105,engine,rate_limit,none,tier_flag_RATE_ONLY,"TierConfig { free/pro/enterprise } rate limits only",NOT access control. Misleading name; no Tier::Team/Starter/Builder enum exists in backend
+# === BACKEND: Ownership checks — NONE FOUND ===
+# (No persona.user_id == current_user gates; no require_persona_owner; backend is single-user-per-machine)
+# === BACKEND: Cargo cfg-gated builds ===
+src-tauri/Cargo.toml,features,cfg-strip,feature,binary,cargo_feature,"feature = ""desktop""",231 gate sites; clipboard/window/tray/ambient/desktop-bridges
+src-tauri/Cargo.toml,features,cfg-strip,feature,binary,cargo_feature,"feature = ""ml""",107 gate sites; embeddings/vector/KB
+src-tauri/Cargo.toml,features,cfg-strip,feature,binary,cargo_feature,"feature = ""p2p""",80 gate sites; mDNS/QUIC/ed25519
+src-tauri/Cargo.toml,features,cfg-strip,feature,binary,cargo_feature,"feature = ""test-automation""",xcap + standalone HTTP server on :17320
+src-tauri/Cargo.toml,features,cfg-strip,feature,binary,cargo_feature,"feature = ""daemon""",implies desktop-full; Phase 0 scaffold
+# === BACKEND: cfg(debug_assertions) — dev-only commands ===
+src-tauri/src/commands/companion/feedback.rs,~140,command,dev,none,dev_env,"self_improve_enabled: cfg!(debug_assertions)",
+src-tauri/src/commands/drive.rs,multiple,command,dev,none,dev_env,"is_dev: cfg!(debug_assertions)",used in Drive URL routing
+src-tauri/src/commands/execution/healing.rs,~55,command,dev,none,dev_env,"healing requires cfg!(debug_assertions) OR VITE_DEVELOPMENT=true",compound dev gate
+src-tauri/src/companion/dev_session.rs,1,module,dev,none,dev_env,"entire module under cfg(debug_assertions)",never runs in release
+src-tauri/src/engine/mod.rs,~220,engine,dev,none,dev_env,"cli_session_awareness gated on debug_assertions OR env var",
+# === FRONTEND: Tier flag — primary axis ===
+src/lib/constants/uiModes.ts,24-28,helper,tier,none,tier_flag,"TIERS = { STARTER, TEAM, BUILDER }",core enum
+src/lib/constants/uiModes.ts,33-37,helper,tier,none,tier_flag,"TIER_RANK = { STARTER:1, TEAM:2, BUILDER:3 }",ranking
+src/lib/constants/uiModes.ts,40,helper,tier,none,tier_flag,"BUILD_MAX_TIER = import.meta.env.VITE_APP_TIER ?? TIERS.BUILDER",runtime read; NOT tree-shaken
+src/lib/constants/uiModes.ts,49,helper,tier,none,tier_flag,"isTierVisible(minTier, activeTier) ranking compare",declarative helper
+src/hooks/utility/interaction/useTier.ts,41-54,hook,tier,none,tier_flag,"useTier() → { current, isVisible, isStarter, isTeam, isBuilder }",1 of 1 canonical hook
+src/features/shared/components/layout/sidebar/sidebarData.ts,37,menu_item,tier,none,tier_flag,"{ id: 'events', minTier: TIERS.TEAM }",13 declarative sidebar gates
+src/features/shared/components/layout/sidebar/sidebarData.ts,40,menu_item,tier,none,tier_flag,"{ id: 'plugins', minTier: TIERS.TEAM }",
+src/features/shared/components/layout/sidebar/sidebarData.ts,65-70,menu_item,tier,none,tier_flag,"overview sub-items: incidents/executions/manual-review/events/knowledge",5 items minTier=TEAM
+src/features/shared/components/layout/sidebar/sidebarData.ts,78,menu_item,tier,none,tier_flag,"{ id: 'databases', minTier: TIERS.TEAM }",
+src/features/shared/components/layout/sidebar/sidebarData.ts,98,menu_item,tier,none,tier_flag,"{ id: 'n8n', minTier: TIERS.TEAM }",
+src/features/shared/components/layout/sidebar/sidebarData.ts,165-166,menu_item,tier,none,tier_flag,"portability/api-keys minTier: TIERS.TEAM",
+src/features/shared/components/layout/sidebar/SidebarLevel1.tsx,137,component,tier,none,tier_flag,"filter(isTierVisible(s.minTier ?? STARTER, tier.current))",render filter
+src/features/shared/components/layout/sidebar/SidebarLevel2.tsx,79,component,tier,none,tier_flag,"filterByTier(items, tier.current)",reusable
+src/features/shared/components/layout/sidebar/Sidebar.tsx,114,component,tier,none,tier_flag,"if (currentSection?.minTier && !tier.isVisible(...)) auto-redirect",
+src/features/agents/sub_editor/components/EditorTabBar.tsx,16-17,menu_item,tier,none,tier_flag,"activity + lab tabs minTier: TIERS.TEAM",
+src/features/agents/sub_editor/components/EditorTabBar.tsx,95,component,tier,none,tier_flag,".filter(!td.minTier || tier.isVisible(td.minTier))",
+src/features/agents/sub_editor/components/EditorBody.tsx,96-106,component,tier,none,tier_flag,"if (isStarter && editorTab==='activity'...) switch tab",auto-escape
+src/features/vault/sub_credentials/components/list/CredentialDetailModals.tsx,23-27,component,tier,none,tier_flag,"if (isSimple) return null",health-check modal hidden in STARTER
+src/features/vault/sub_credentials/components/card/badges/VaultStatusBadge.tsx,17-56,component,tier,none,tier_flag,"if (isSimple) return simplified badge",
+src/features/vault/sub_credentials/manager/CredentialManagerHeader.tsx,68-105,component,tier,none,tier_flag,"{!isSimple && <...>}",advanced manager hidden in STARTER
+src/features/vault/sub_credentials/components/list/CredentialList.tsx,28-98,component,tier,none,tier_flag,"const { isStarter: isSimple } = useTier()",renames property
+src/features/vault/sub_credentials/components/list/CredentialListColumns.tsx,42-101,component,tier,none,tier_flag,"early return if isSimple",simplified columns
+src/features/agents/health/HealthCheckPanel.tsx,31-216,component,tier,none,tier_flag,"{!isSimple && dryRun.capabilities.length > 0}",
+src/features/agents/sub_settings/components/PersonaSettingsTab.tsx,51-285,component,tier,none,tier_flag,"4× {!isSimple && <...>} blocks",
+src/features/home/components/SetupCards.tsx,105-116,component,tier,none,tier_flag,"const visibleRoles = isSimple ? ROLES.filter(...) : ROLES",STARTER shows only 'office-rat'
+src/features/home/components/NavigationGrid.tsx,86-91,component,tier,none,tier_flag,"if (isSimple) filtered.filter(SIMPLE_SECTIONS)",
+src/features/home/components/HeroHeader.tsx,36-48,component,tier,none,tier_flag,"if (isStarter) disable hero animation",
+src/features/execution/components/ExecutionMiniPlayer.tsx,130-394,component,tier,none,tier_flag,"6+ {!isSimple && ...} blocks",
+src/features/templates/sub_generated/gallery/modals/TemplateDetailModal.tsx,67-289,component,tier,none,tier_flag,"conditional adoption count & references",
+src/features/onboarding/components/TourLauncher.tsx,52-58,component,tier,none,tier_flag,"isStarter ? 'getting-started-simple' : '...'",different onboarding per tier
+src/features/shared/components/layout/DesktopFooter.tsx,217-232,component,tier,none,tier_flag,"const { isBuilder: isDevMode } = useTier()",BUILDER tier reveals dev controls
+src/lib/utils/platform/platform.ts,82-89,helper,tier,none,tier_flag,"SIMPLE_SECTIONS = new Set([...])",
+# === FRONTEND: Dev env ===
+src/features/shared/components/layout/sidebar/sidebarData.ts,90-94,menu_item,dev,none,dev_env,"devOnly: true (cloud-webhooks/dead-letter/studio/shared)",
+src/features/shared/components/layout/sidebar/sidebarData.ts,163-170,menu_item,dev,none,dev_env,"settings sub-items devOnly: true (engine/byom/network/QG/config/admin)",6 dev-only settings
+src/features/shared/components/layout/sidebar/SidebarLevel1.tsx,137,component,dev,none,dev_env,"(!s.devOnly || isDev)",compound: tier + dev
+src/features/agents/sub_editor/components/PersonaEditorHeader.tsx,125,component,dev,none,dev_env,"{import.meta.env.DEV && <LabQualityBadge />}",
+src/features/vault/sub_catalog/components/forms/CredentialTypePicker.tsx,55-125,component,dev,none,dev_env,"...(import.meta.env.DEV ? [{ devOnly: true,... }])",
+src/features/shared/components/layout/sidebar/sections/AgentsSidebarNav.tsx,65-506,component,dev,none,dev_env,"import.meta.env.DEV && dev-mode persona debug UI",
+src/lib/utils/platform/platform.ts,92-94,helper,dev,none,dev_env,"DEV_MODE_SECTIONS = new Set(['plugins'])",
+# (43 total uses of import.meta.env.DEV in src/)
+# === FRONTEND: Auth / session ===
+src/stores/authStore.ts,28-96,slice,auth,none,auth_flag,"isAuthenticated: boolean",only 7 frontend consumers
+src/features/plugins/obsidian-brain/sub_cloud/CloudSyncPanel.tsx,44-156,component,auth,none,auth_flag,"if (!isAuthenticated)",cloud sync requires auth
+src/features/agents/sub_editor/components/EditorBanners.tsx,117-128,component,auth,none,auth_flag,"!isAuthenticated conditional banner",
+src/features/overview/components/health/SystemHealthPanel.tsx,22-36,component,auth,none,auth_flag,"useAuthStore((s) => s.isAuthenticated)",
+src/features/settings/sub_account/components/AccountSettings.tsx,16-107,component,auth,none,auth_flag,"{isAuthenticated && user ? ... : ...}",
+src/features/shared/components/layout/DesktopFooter.tsx,45-77,component,auth,none,auth_flag,"avatar / sign-in gate",
+src/features/shared/components/layout/AuthButton.tsx,9-31,component,auth,none,auth_flag,"if (!isAuthenticated) return SignInButton",
+# === FRONTEND: Ownership (very thin) ===
+src/hooks/execution/usePersonaExecution.ts,29-52,hook,ownership,persona_id,ownership_check,"isOwnerAligned() compares executionPersonaId to persona",
+src/hooks/execution/useExecutionStream.ts,19-25,hook,ownership,persona_id,ownership_check,"const isOwner = executionPersonaId === personaId",
+# === FRONTEND: Plugin enabled ===
+src/stores/slices/system/uiSlice.ts,113,slice,plugin,plugin_id,plugin_enabled,"enabledPlugins: Set<PluginTab>",1 registry
+src/stores/slices/system/uiSlice.ts,168,slice,plugin,plugin_id,plugin_enabled,"default enabled: dev-tools/artist/obsidian/research/drive/twin/companion",7 enabled by default; langfuse opt-in
+src/features/shared/components/layout/sidebar/sections/PluginsSidebarNav.tsx,52,sidebar,plugin,artist,plugin_enabled,"enabledPlugins.has('artist')",
+src/features/shared/components/layout/sidebar/sections/PluginsSidebarNav.tsx,95,sidebar,plugin,dev-tools,plugin_enabled,"enabledPlugins.has('dev-tools')",
+src/features/shared/components/layout/sidebar/sections/PluginsSidebarNav.tsx,139,sidebar,plugin,obsidian-brain,plugin_enabled,"enabledPlugins.has('obsidian-brain')",
+src/features/shared/components/layout/sidebar/sections/PluginsSidebarNav.tsx,155,sidebar,plugin,drive,plugin_enabled,"enabledPlugins.has('drive')",
+src/features/shared/components/layout/sidebar/sections/PluginsSidebarNav.tsx,171,sidebar,plugin,twin,plugin_enabled,"enabledPlugins.has('twin')",
+src/features/shared/components/layout/sidebar/sections/PluginsSidebarNav.tsx,217,sidebar,plugin,companion,plugin_enabled,"enabledPlugins.has('companion')",
+src/features/shared/components/layout/sidebar/sections/PluginsSidebarNav.tsx,255,sidebar,plugin,research-lab,plugin_enabled,"enabledPlugins.has('research-lab')",
+src/features/shared/components/layout/sidebar/sections/PluginsSidebarNav.tsx,291,sidebar,plugin,langfuse,plugin_enabled,"enabledPlugins.has('langfuse')",not in default preset
+# === FRONTEND: Simple mode — INFRASTRUCTURE EXISTS BUT NO TOGGLE ===
+src/features/shared/components/layout/sidebar/sidebarData.ts,various,menu_item,mode,none,simple_mode,"simpleHidden: true on various items",property defined but no store-level mode toggle exists
+# === FRONTEND: BYOM scope ===
+src/features/settings/sub_byom/components/ByomSettings.tsx,top,component,provider,policy,byom_scope,"5 sub-tabs: policy/keys/routing/compliance/audit",
+src/features/settings/sub_byom/libs/useByomSettings.ts,77-117,hook,provider,policy,byom_scope,"load/save/validate policy + dirty state",1 evaluation hook
+src/features/settings/sub_byom/components/ByomProviderList.tsx,full,component,provider,policy,byom_scope,"toggle allowed/blocked providers",display-only
+# (41 total frontend references to allowed_providers/blocked_providers/byom_policy)
+# === BUILD-TIME: drift risk — Cargo features NOT synchronized with VITE_APP_TIER ===
+package.json,55-57,build_script,tier,build_target,build_drift,"build:starter/team/builder set VITE_APP_TIER",does NOT pass --features to tauri build
+src-tauri/tauri.conf.json,features,build_config,feature,binary,build_drift,"features = [""desktop-full""]",starter build STILL ships ml + p2p Rust code
+src-tauri/tauri.lite.conf.json,features,build_config,feature,binary,build_drift,"features = [""desktop""]",only skips ml + p2p; not tier-linked
+src-tauri/src/lib.rs,1720,cfg-strip,feature_combo,command,cargo_feature,"#[cfg(all(feature = ""desktop"", feature = ""ml""))]",only place compound cfg used; risk for forgotten companion TS gate

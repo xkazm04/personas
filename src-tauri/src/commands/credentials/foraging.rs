@@ -13,8 +13,8 @@ use rusqlite::params;
 use serde::{Deserialize, Serialize};
 use tauri::State;
 
-use crate::ipc_auth::require_privileged_sync;
 use crate::AppState;
+use personas_macros::requires;
 
 // -- Types --------------------------------------------------------------
 
@@ -583,11 +583,14 @@ fn deduplicate(results: Vec<ForagedCredential>) -> Vec<ForagedCredential> {
 // -- Tauri Commands -----------------------------------------------------
 
 /// Scan the local filesystem for discoverable credentials.
+/// `Result<_, String>` keeps the macro out — its expansion uses bare `?`
+/// which requires `From<AppError>` for the error type.
 #[tauri::command]
 pub fn scan_credential_sources(
     state: State<'_, Arc<AppState>>,
 ) -> Result<ForagingScanResult, String> {
-    require_privileged_sync(&state, "scan_credential_sources").map_err(|e| e.to_string())?;
+    crate::ipc_auth::require_privileged_sync(&state, "scan_credential_sources")
+        .map_err(|e| e.to_string())?;
     let start = std::time::Instant::now();
 
     // Get existing credential service types to mark duplicates
@@ -640,6 +643,7 @@ pub fn scan_credential_sources(
 ///
 /// The credential row, encrypted fields, and audit log entry are written in a
 /// single SQLite transaction so either all writes succeed or none do.
+/// `Result<_, String>` keeps the macro out — see scan_credential_sources.
 #[tauri::command]
 pub fn import_foraged_credential(
     state: State<'_, Arc<AppState>>,
@@ -647,7 +651,8 @@ pub fn import_foraged_credential(
     credential_name: String,
     service_type: String,
 ) -> Result<serde_json::Value, String> {
-    require_privileged_sync(&state, "import_foraged_credential").map_err(|e| e.to_string())?;
+    crate::ipc_auth::require_privileged_sync(&state, "import_foraged_credential")
+        .map_err(|e| e.to_string())?;
     // Re-read the actual values from the source.
     // The fields HashMap contains raw secret material -- never log or emit it.
     let fields = resolve_real_values(&foraged_id, &service_type)

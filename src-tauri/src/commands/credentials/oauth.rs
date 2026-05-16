@@ -19,8 +19,9 @@ use zeroize::{Zeroize, ZeroizeOnDrop};
 use crate::db::repos::resources::audit_log;
 use crate::engine::crypto::{EncryptedToken, SecureString};
 use crate::error::AppError;
-use crate::ipc_auth::{require_privileged, require_privileged_sync};
+
 use crate::AppState;
+use personas_macros::requires;
 use std::sync::Arc;
 
 const OAUTH_SESSION_TTL_SECS: u64 = 10 * 60;
@@ -374,6 +375,7 @@ fn decrypt_token(token: &Option<EncryptedToken>) -> Option<SecureString> {
 // -- Commands ----------------------------------------------------
 
 #[tauri::command]
+#[requires(privileged)]
 pub async fn start_google_credential_oauth(
     state: State<'_, Arc<AppState>>,
     client_id: String,
@@ -381,7 +383,6 @@ pub async fn start_google_credential_oauth(
     connector_name: String,
     extra_scopes: Option<Vec<String>>,
 ) -> Result<serde_json::Value, AppError> {
-    require_privileged(&state, "start_google_credential_oauth").await?;
     let (resolved_client_id, resolved_client_secret, credential_source) =
         resolve_google_oauth_client_credentials(client_id, client_secret)?;
 
@@ -511,11 +512,11 @@ pub async fn start_google_credential_oauth(
 }
 
 #[tauri::command]
+#[requires(privileged)]
 pub fn get_google_credential_oauth_status(
     state: State<'_, Arc<AppState>>,
     session_id: String,
 ) -> Result<serde_json::Value, AppError> {
-    require_privileged_sync(&state, "get_google_credential_oauth_status")?;
     Ok(get_session_status(&session_id))
 }
 
@@ -1259,10 +1260,10 @@ fn get_session_status(session_id: &str) -> serde_json::Value {
 
 /// List available OAuth providers.
 #[tauri::command]
+#[requires(privileged)]
 pub fn list_oauth_providers(
     state: State<'_, Arc<AppState>>,
 ) -> Result<serde_json::Value, AppError> {
-    require_privileged_sync(&state, "list_oauth_providers")?;
     let providers: Vec<serde_json::Value> = PROVIDER_REGISTRY
         .iter()
         .map(|p| {
@@ -1292,6 +1293,7 @@ pub fn list_oauth_providers(
 /// - `extra_params`: Optional extra query params for the authorization URL
 #[allow(clippy::too_many_arguments)]
 #[tauri::command]
+#[requires(privileged)]
 pub async fn start_oauth(
     state: State<'_, Arc<AppState>>,
     provider_id: String,
@@ -1304,7 +1306,6 @@ pub async fn start_oauth(
     use_pkce: Option<bool>,
     extra_params: Option<HashMap<String, String>>,
 ) -> Result<serde_json::Value, AppError> {
-    require_privileged(&state, "start_oauth").await?;
 
     // Resolve app-managed credentials when user doesn't provide their own.
     let (client_id, client_secret) =
@@ -1505,16 +1506,17 @@ pub async fn start_oauth(
 }
 
 #[tauri::command]
+#[requires(privileged)]
 pub fn get_oauth_status(
     state: State<'_, Arc<AppState>>,
     session_id: String,
 ) -> Result<serde_json::Value, AppError> {
-    require_privileged_sync(&state, "get_oauth_status")?;
     Ok(get_session_status(&session_id))
 }
 
 /// Refresh an access token using a refresh token.
 #[tauri::command]
+#[requires(privileged)]
 pub async fn refresh_oauth_token(
     state: State<'_, Arc<AppState>>,
     provider_id: String,
@@ -1524,7 +1526,6 @@ pub async fn refresh_oauth_token(
     token_url: Option<String>,
     oidc_issuer: Option<String>,
 ) -> Result<serde_json::Value, AppError> {
-    require_privileged(&state, "refresh_oauth_token").await?;
     // Wrap secrets immediately so bare Strings are dropped
     let client_secret = client_secret.map(SecureString::new);
     let refresh_token = SecureString::new(refresh_token);

@@ -9,8 +9,8 @@ use crate::db::models::CreateConnectorDefinitionInput;
 use crate::db::repos::resources::connectors as connector_repo;
 use crate::engine::api_proxy::invalidate_connector_cache;
 use crate::error::AppError;
-use crate::ipc_auth::require_privileged_sync;
 use crate::AppState;
+use personas_macros::requires;
 
 // ============================================================================
 // Types — exported to TypeScript via ts-rs
@@ -638,12 +638,11 @@ fn to_snake_case(s: &str) -> String {
 
 /// Parse an OpenAPI spec from a URL — fetches the spec and parses it.
 #[tauri::command]
+#[requires(privileged)]
 pub async fn openapi_parse_from_url(
     state: State<'_, Arc<AppState>>,
     url: String,
 ) -> Result<OpenApiParseResult, AppError> {
-    require_privileged_sync(&state, "openapi_parse_from_url")?;
-
     let parsed_url =
         url::Url::parse(&url).map_err(|e| AppError::Validation(format!("Invalid URL: {}", e)))?;
 
@@ -684,17 +683,18 @@ pub async fn openapi_parse_from_url(
 
 /// Parse an OpenAPI spec from raw content (JSON or YAML string).
 #[tauri::command]
+#[requires(privileged)]
 pub fn openapi_parse_from_content(
     state: State<'_, Arc<AppState>>,
     content: String,
 ) -> Result<OpenApiParseResult, AppError> {
-    require_privileged_sync(&state, "openapi_parse_from_content")?;
     parse_openapi_spec(&content)
 }
 
 /// Generate a connector definition + tool definitions from a parsed spec.
 /// Creates the connector in the database and returns the result.
 #[tauri::command]
+#[requires(privileged)]
 pub fn openapi_generate_connector(
     state: State<'_, Arc<AppState>>,
     parsed: OpenApiParseResult,
@@ -702,7 +702,6 @@ pub fn openapi_generate_connector(
     custom_name: Option<String>,
     custom_color: Option<String>,
 ) -> Result<GeneratedConnectorResult, AppError> {
-    require_privileged_sync(&state, "openapi_generate_connector")?;
 
     let connector_label = custom_name.unwrap_or_else(|| parsed.title.clone());
     let connector_name = to_snake_case(&connector_label);
@@ -786,6 +785,7 @@ pub fn openapi_generate_connector(
 
 /// Test an API endpoint in the playground.
 #[tauri::command]
+#[requires(privileged)]
 pub async fn openapi_playground_test(
     state: State<'_, Arc<AppState>>,
     base_url: String,
@@ -795,8 +795,6 @@ pub async fn openapi_playground_test(
     query_params: HashMap<String, String>,
     body: Option<String>,
 ) -> Result<PlaygroundTestResult, AppError> {
-    require_privileged_sync(&state, "openapi_playground_test")?;
-
     // Validate URL
     let full_url = format!("{}{}", base_url.trim_end_matches('/'), path);
     let parsed = url::Url::parse(&full_url)

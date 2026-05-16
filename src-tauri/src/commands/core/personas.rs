@@ -18,29 +18,29 @@ use crate::engine;
 use crate::engine::config_merge::{self, EffectiveModelConfig};
 use crate::engine::types::ExecutionState;
 use crate::error::AppError;
-use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::validation::contract::check;
+use personas_macros::requires;
 use crate::validation::persona as pv;
 use crate::AppState;
 
 #[tauri::command]
+#[requires(auth)]
 pub fn list_personas(state: State<'_, Arc<AppState>>) -> Result<Vec<Persona>, AppError> {
-    require_auth_sync(&state)?;
     repo::get_all(&state.db)
 }
 
 #[tauri::command]
+#[requires(auth)]
 pub fn get_persona(state: State<'_, Arc<AppState>>, id: String) -> Result<Persona, AppError> {
-    require_auth_sync(&state)?;
     repo::get_by_id(&state.db, &id)
 }
 
 #[tauri::command]
+#[requires(auth)]
 pub fn create_persona(
     state: State<'_, Arc<AppState>>,
     input: CreatePersonaInput,
 ) -> Result<Persona, AppError> {
-    require_auth_sync(&state)?;
     validate_create_persona(&input)?;
     repo::create(&state.db, input)
 }
@@ -100,12 +100,12 @@ fn validate_update_persona(input: &UpdatePersonaInput) -> Result<(), AppError> {
 }
 
 #[tauri::command]
+#[requires(auth)]
 pub fn update_persona(
     state: State<'_, Arc<AppState>>,
     id: String,
     input: UpdatePersonaInput,
 ) -> Result<Persona, AppError> {
-    require_auth_sync(&state)?;
     validate_update_persona(&input)?;
     let result = repo::update(&state.db, &id, input)?;
     // Invalidate cached session AFTER successful DB update
@@ -185,12 +185,12 @@ const MAX_PARAMETERS_JSON_SIZE: usize = 65_536;
 /// Lightweight parameter-only update — invalidates cached sessions so the
 /// engine picks up the new parameter values immediately.
 #[tauri::command]
+#[requires(auth)]
 pub fn update_persona_parameters(
     state: State<'_, Arc<AppState>>,
     id: String,
     parameters: Option<String>,
 ) -> Result<Persona, AppError> {
-    require_auth_sync(&state)?;
 
     // Validate the parameters JSON before storing
     if let Some(ref params_json) = parameters {
@@ -284,11 +284,11 @@ pub fn update_persona_parameters(
 }
 
 #[tauri::command]
+#[requires(auth)]
 pub fn duplicate_persona(
     state: State<'_, Arc<AppState>>,
     source_id: String,
 ) -> Result<Persona, AppError> {
-    require_auth_sync(&state)?;
     let result = repo::duplicate(&state.db, &source_id)?;
 
     // Validate the duplicated persona against current rules. The source may
@@ -310,10 +310,10 @@ pub fn duplicate_persona(
 }
 
 #[tauri::command]
+#[requires(auth)]
 pub fn get_persona_summaries(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<PersonaSummary>, AppError> {
-    require_auth_sync(&state)?;
     repo::get_summaries(&state.db)
 }
 
@@ -336,11 +336,11 @@ pub struct PersonaDetail {
 }
 
 #[tauri::command]
+#[requires(auth)]
 pub fn get_persona_detail(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<PersonaDetail, AppError> {
-    require_auth_sync(&state)?;
     let persona = repo::get_by_id(&state.db, &id)?;
 
     let mut warnings: Vec<String> = Vec::new();
@@ -397,11 +397,11 @@ pub fn get_persona_detail(
 /// linked to a specific connector (e.g. `"codebase"`) without paying
 /// the cost of fetching every persona's full detail.
 #[tauri::command]
+#[requires(auth)]
 pub fn list_personas_using_connector(
     state: State<'_, Arc<AppState>>,
     connector_name: String,
 ) -> Result<Vec<String>, AppError> {
-    require_auth_sync(&state)?;
     tool_repo::list_persona_ids_using_connector(&state.db, &connector_name)
 }
 
@@ -432,11 +432,11 @@ pub struct BlastRadiusItem {
 }
 
 #[tauri::command]
+#[requires(auth)]
 pub fn persona_blast_radius(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<Vec<BlastRadiusItem>, AppError> {
-    require_auth_sync(&state)?;
     let items = repo::blast_radius(&state.db, &id)?;
     Ok(items
         .into_iter()
@@ -453,11 +453,11 @@ const DELETION_DRAIN_TIMEOUT: std::time::Duration = std::time::Duration::from_se
 const DELETION_DRAIN_POLL: std::time::Duration = std::time::Duration::from_millis(250);
 
 #[tauri::command]
+#[requires(auth)]
 pub async fn delete_persona(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<DeletePersonaResult, AppError> {
-    require_auth(&state).await?;
 
     // ── Phase 1: Mark persona as "deleting" to block new executions ──
     state.engine.mark_deleting(&id).await;
@@ -601,11 +601,11 @@ async fn delete_persona_inner(
 /// Resolve the effective model configuration for a persona, showing the
 /// cascaded result of global -> workspace -> agent-level overrides.
 #[tauri::command]
+#[requires(auth)]
 pub fn resolve_effective_config(
     state: State<'_, Arc<AppState>>,
     persona_id: String,
 ) -> Result<EffectiveModelConfig, AppError> {
-    require_auth_sync(&state)?;
     let persona = repo::get_by_id(&state.db, &persona_id)?;
     let workspace = persona
         .group_id

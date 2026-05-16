@@ -7,8 +7,8 @@ use crate::db::models::{
 use crate::db::repos::resources::connectors as repo;
 use crate::engine::api_proxy::{invalidate_connector_cache, refresh_connector_keyword_snapshot};
 use crate::error::AppError;
-use crate::ipc_auth::require_privileged_sync;
 use crate::AppState;
+use personas_macros::requires;
 
 #[tauri::command]
 pub fn list_connectors(
@@ -27,11 +27,11 @@ pub fn get_connector(
 }
 
 #[tauri::command]
+#[requires(privileged)]
 pub fn create_connector(
     state: State<'_, Arc<AppState>>,
     input: CreateConnectorDefinitionInput,
 ) -> Result<ConnectorDefinition, AppError> {
-    require_privileged_sync(&state, "create_connector")?;
     let result = repo::create(&state.db, input)?;
     invalidate_connector_cache();
     refresh_connector_keyword_snapshot(&state.db);
@@ -39,12 +39,12 @@ pub fn create_connector(
 }
 
 #[tauri::command]
+#[requires(privileged)]
 pub fn update_connector(
     state: State<'_, Arc<AppState>>,
     id: String,
     input: UpdateConnectorDefinitionInput,
 ) -> Result<ConnectorDefinition, AppError> {
-    require_privileged_sync(&state, "update_connector")?;
     let result = repo::update(&state.db, &id, input)?;
     invalidate_connector_cache();
     refresh_connector_keyword_snapshot(&state.db);
@@ -52,8 +52,8 @@ pub fn update_connector(
 }
 
 #[tauri::command]
+#[requires(privileged)]
 pub fn delete_connector(state: State<'_, Arc<AppState>>, id: String) -> Result<bool, AppError> {
-    require_privileged_sync(&state, "delete_connector")?;
     let result = repo::delete(&state.db, &id)?;
     invalidate_connector_cache();
     refresh_connector_keyword_snapshot(&state.db);

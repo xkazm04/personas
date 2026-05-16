@@ -6,7 +6,7 @@ use tauri::State;
 use crate::db::repos::resources::audit_log;
 use crate::engine::credential_negotiator;
 use crate::error::AppError;
-use crate::ipc_auth::{require_privileged, require_privileged_sync};
+
 use crate::AppState;
 
 use super::ai_artifact_flow::{
@@ -14,6 +14,7 @@ use super::ai_artifact_flow::{
 };
 use super::shared::build_credential_task_cli_args;
 use crate::engine::event_registry::event_name;
+use personas_macros::requires;
 
 // -- Negotiation messages ----------------------------------------
 
@@ -39,6 +40,7 @@ const NEGOTIATION_MESSAGES: AiArtifactMessages = AiArtifactMessages {
 /// inform the AI prompt to skip account-creation / sign-in steps for services
 /// the user is already authenticated to.
 #[tauri::command]
+#[requires(privileged)]
 pub async fn start_credential_negotiation(
     state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
@@ -47,7 +49,6 @@ pub async fn start_credential_negotiation(
     field_keys: Vec<String>,
     authenticated_services: Option<Vec<serde_json::Value>>,
 ) -> Result<serde_json::Value, AppError> {
-    require_privileged(&state, "start_credential_negotiation").await?;
     let auth_services = authenticated_services.unwrap_or_default();
     let negotiation_prompt = credential_negotiator::build_negotiation_prompt(
         &service_name,
@@ -96,8 +97,8 @@ pub async fn start_credential_negotiation(
 
 /// Cancel an active credential negotiation.
 #[tauri::command]
+#[requires(privileged)]
 pub fn cancel_credential_negotiation(state: State<'_, Arc<AppState>>) -> Result<(), AppError> {
-    require_privileged_sync(&state, "cancel_credential_negotiation")?;
     // Cancel the active negotiation and kill the CLI child process.
     if let Some(pid) = state.process_registry.cancel("negotiation") {
         tracing::info!(
@@ -112,6 +113,7 @@ pub fn cancel_credential_negotiation(state: State<'_, Arc<AppState>>) -> Result<
 
 /// Get contextual help for a specific provisioning step.
 #[tauri::command]
+#[requires(privileged)]
 pub async fn get_negotiation_step_help(
     state: State<'_, Arc<AppState>>,
     service_name: String,
@@ -119,7 +121,6 @@ pub async fn get_negotiation_step_help(
     step_title: String,
     user_question: String,
 ) -> Result<serde_json::Value, AppError> {
-    require_privileged(&state, "get_negotiation_step_help").await?;
     let prompt_text = credential_negotiator::build_step_help_prompt(
         &service_name,
         step_index as usize,
