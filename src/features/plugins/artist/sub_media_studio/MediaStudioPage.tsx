@@ -22,7 +22,7 @@ import { VIDEO_EXTENSIONS, AUDIO_EXTENSIONS, IMAGE_EXTENSIONS } from './constant
 import type { VideoClip, AudioClip, TextItem, ImageItem, TimelineItem } from './types';
 import BeatSidebar from './BeatSidebar';
 import FfmpegStatusBanner from './FfmpegStatusBanner';
-import CompositionPreview from './CompositionPreview';
+import CompositionPreview, { type CompositionPreviewHandle } from './CompositionPreview';
 import TimelinePanel from './TimelinePanel';
 import PlaybackControls from './PlaybackControls';
 
@@ -86,10 +86,13 @@ export default function MediaStudioPage() {
     [replaceComposition, t],
   );
 
+  const previewRef = useRef<CompositionPreviewHandle>(null);
+
   const persistence = useMediaStudioPersistence({
     composition,
     replaceComposition,
     enabled: true,
+    captureThumbnail: () => previewRef.current?.captureThumbnail() ?? null,
   });
 
   const { plan } = useRenderPlan(composition);
@@ -437,6 +440,7 @@ export default function MediaStudioPage() {
           <div className="flex-1 min-h-0 flex">
             <div className="flex-1 min-h-0 p-4 flex items-center justify-center bg-background/40">
               <CompositionPreview
+                ref={previewRef}
                 engine={engine}
                 playing={playing}
                 plan={plan}
@@ -555,7 +559,15 @@ function RecentCompositionsRow({ onLoad }: { onLoad: (path: string) => Promise<v
             title={r.path}
             className="flex items-center gap-2 px-3 py-2 rounded-card border border-primary/10 bg-card/50 hover:border-rose-500/30 hover:bg-card/70 transition-colors max-w-xs"
           >
-            <Film className="w-3.5 h-3.5 text-rose-400 flex-shrink-0" />
+            {r.thumbnailDataUrl ? (
+              <img
+                src={r.thumbnailDataUrl}
+                alt=""
+                className="w-12 h-7 rounded object-cover flex-shrink-0"
+              />
+            ) : (
+              <Film className="w-3.5 h-3.5 text-rose-400 flex-shrink-0" />
+            )}
             <div className="flex flex-col text-left min-w-0">
               <span className="text-md text-foreground truncate">{r.name}</span>
               <span className="text-[11px] text-foreground/60">

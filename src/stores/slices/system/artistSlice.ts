@@ -37,6 +37,9 @@ export interface RecentMediaStudioComposition {
   name: string;
   /** ms-epoch of the last open or save. */
   savedAt: number;
+  /** Tiny JPEG data URL of the preview frame at save time. Keeps the recents
+   *  row scannable at a glance. Sized ~160px wide so localStorage stays small. */
+  thumbnailDataUrl?: string;
 }
 
 /**
@@ -101,7 +104,7 @@ export interface ArtistSlice {
   consumeMediaStudioAssets: () => QueuedMediaAsset[];
 
   // Media Studio recent compositions
-  recordMediaStudioRecent: (entry: { path: string; name: string }) => void;
+  recordMediaStudioRecent: (entry: { path: string; name: string; thumbnailDataUrl?: string }) => void;
   removeMediaStudioRecent: (path: string) => void;
 }
 
@@ -180,10 +183,19 @@ export const createArtistSlice: StateCreator<SystemStore, [], [], ArtistSlice> =
     return queue;
   },
 
-  recordMediaStudioRecent: ({ path, name }) =>
+  recordMediaStudioRecent: ({ path, name, thumbnailDataUrl }) =>
     set((s) => {
+      // Preserve a prior thumbnail when the caller does not supply one — Open
+      // does not have a freshly-rendered preview to capture from, so it should
+      // not wipe the last Save's thumbnail when it bubbles the entry to the top.
+      const prior = s.mediaStudioRecents.find((r) => r.path === path);
       const filtered = s.mediaStudioRecents.filter((r) => r.path !== path);
-      const next: RecentMediaStudioComposition = { path, name, savedAt: Date.now() };
+      const next: RecentMediaStudioComposition = {
+        path,
+        name,
+        savedAt: Date.now(),
+        thumbnailDataUrl: thumbnailDataUrl ?? prior?.thumbnailDataUrl,
+      };
       return {
         mediaStudioRecents: [next, ...filtered].slice(0, MAX_MEDIA_STUDIO_RECENTS),
       };

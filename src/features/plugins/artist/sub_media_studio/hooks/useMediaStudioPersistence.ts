@@ -49,6 +49,11 @@ interface Opts {
   replaceComposition: (next: Composition) => void;
   /** Is the app ready to autosave? false during first render before restore. */
   enabled: boolean;
+  /** Optional snapshot of the current preview frame at save time, written into
+   *  the recents list so the empty-state row can render a thumbnail. Called
+   *  only on explicit Save (autosave path is too hot for an extra canvas op);
+   *  returning null is fine — the recents row falls back to a Film icon. */
+  captureThumbnail?: () => string | null;
 }
 
 /**
@@ -61,6 +66,7 @@ export function useMediaStudioPersistence({
   composition,
   replaceComposition,
   enabled,
+  captureThumbnail,
 }: Opts): MediaStudioPersistence {
   const [restoredFromAutosave, setRestoredFromAutosave] = useState(false);
   const [status, setStatus] = useState<PersistenceStatus>('idle');
@@ -185,13 +191,17 @@ export function useMediaStudioPersistence({
         setCurrentFile(targetPath);
         setLastSavedAt(Date.now());
         setStatus('saved');
-        recordRecent({ path: targetPath, name: composition.name || 'Untitled' });
+        recordRecent({
+          path: targetPath,
+          name: composition.name || 'Untitled',
+          thumbnailDataUrl: captureThumbnail?.() ?? undefined,
+        });
       } catch (err) {
         setStatus('error');
         toastCatch('Could not save composition')(err);
       }
     },
-    [composition, recordRecent],
+    [composition, recordRecent, captureThumbnail],
   );
 
   const save = useCallback(async () => {
