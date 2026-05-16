@@ -9654,6 +9654,19 @@ export type Translations = {
       smoke_trace_success: string;
       smoke_trace_error: string;
       smoke_trace_view_link: string;
+      health_section: string;
+      health_total_label: string;
+      health_last_hour_label: string;
+      health_errors_label: string;
+      health_last_export: string;
+      health_last_export_never: string;
+      health_last_error: string;
+      health_redaction_on: string;
+      health_redaction_off: string;
+      health_export_on: string;
+      health_export_off: string;
+      health_exporter_not_installed: string;
+      health_disabled_hint: string;
     };
     drive: {
       title: string;

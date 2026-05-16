@@ -5,7 +5,7 @@
  * Keep this narrow: the trace-list panel only needs enough to render a row
  * and build a deep-link. Anything richer belongs in the Langfuse UI itself.
  */
-export type LangfuseTraceSummary = { id: string, name: string | null,
+export type LangfuseTraceSummary = { id: string, name: string | null, 
 /**
  * ISO-8601 timestamp string as returned by Langfuse.
  */

@@ -4,6 +4,7 @@ import { ContentBox, ContentHeader, ContentBody } from "@/features/shared/compon
 import { LoadingSpinner } from "@/features/shared/components/feedback/LoadingSpinner";
 import { useTranslation } from "@/i18n/useTranslation";
 import { ConnectionForm } from "./ConnectionForm";
+import { ExportHealthBar } from "./ExportHealthBar";
 import { ManagedStackPanel } from "./ManagedStackPanel";
 import { SmokeTraceButton } from "./SmokeTraceButton";
 import { StatusPanel } from "./StatusPanel";
@@ -66,9 +67,10 @@ export default function LangfusePage() {
             )}
           </section>
 
-          {/* Smoke trace + recent traces — only when there's a reachable instance */}
+          {/* Health → smoke trace → recent traces — only when reachable */}
           {showTraceList && settings.config && (
             <>
+              <ExportHealthBar />
               <SmokeTraceButton
                 config={settings.config}
                 onSent={() => setTraceListNonce((n) => n + 1)}

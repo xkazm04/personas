@@ -9647,7 +9647,20 @@
       "smoke_trace_sending": "Sending…",
       "smoke_trace_success": "Trace sent.",
       "smoke_trace_error": "Failed: {error}",
-      "smoke_trace_view_link": "View trace"
+      "smoke_trace_view_link": "View trace",
+      "health_section": "Export health",
+      "health_total_label": "Total this session",
+      "health_last_hour_label": "Last hour",
+      "health_errors_label": "Errors",
+      "health_last_export": "Last export: {when}",
+      "health_last_export_never": "No exports yet this session.",
+      "health_last_error": "Last error: {when} — {message}",
+      "health_redaction_on": "Redaction: ON",
+      "health_redaction_off": "Redaction: OFF",
+      "health_export_on": "Export: ON",
+      "health_export_off": "Export: OFF",
+      "health_exporter_not_installed": "Exporter is configured but not running — restart the app to start shipping traces.",
+      "health_disabled_hint": "Export is OFF. Toggle it on in the manual section below to start shipping traces."
     },
     "drive": {
       "title": "Drive",

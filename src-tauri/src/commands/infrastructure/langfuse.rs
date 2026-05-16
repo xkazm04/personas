@@ -24,9 +24,9 @@ use crate::langfuse::exporter;
 use crate::langfuse::lifecycle;
 use crate::langfuse::templates;
 use crate::langfuse::types::{
-    LangfuseAdminCredentials, LangfuseConfig, LangfuseJobHandle, LangfuseJobKind,
-    LangfuseSaveRequest, LangfuseSmokeTraceResult, LangfuseStackInfo, LangfuseStackState,
-    LangfuseTestResult, LangfuseTraceSummary,
+    LangfuseAdminCredentials, LangfuseConfig, LangfuseExportStats, LangfuseJobHandle,
+    LangfuseJobKind, LangfuseSaveRequest, LangfuseSmokeTraceResult, LangfuseStackInfo,
+    LangfuseStackState, LangfuseTestResult, LangfuseTraceSummary,
 };
 use crate::AppState;
 
@@ -146,6 +146,24 @@ pub async fn langfuse_save_config(
     );
 
     Ok(result)
+}
+
+/// Snapshot of in-process exporter health. Stats are reset on app restart;
+/// for persistent counters we'd need a SQLite-backed approach (deferred).
+#[tauri::command]
+pub async fn langfuse_get_export_stats() -> Result<LangfuseExportStats, AppError> {
+    let snap = exporter::snapshot_stats();
+    Ok(LangfuseExportStats {
+        success_total: snap.success_total,
+        failure_total: snap.failure_total,
+        success_last_hour: snap.success_last_hour,
+        last_export_at: snap.last_export_at,
+        last_error_at: snap.last_error_at,
+        last_error: snap.last_error,
+        enabled: config::load_enabled(),
+        redact_content: config::load_redact(),
+        exporter_installed: exporter::is_installed(),
+    })
 }
 
 /// Send a synthetic one-span trace to the configured Langfuse instance so

@@ -86,6 +86,31 @@ pub struct LangfuseSmokeTraceResult {
     pub project_id: Option<String>,
 }
 
+/// Rolling export-health stats for the plugin page. All counts are
+/// process-lifetime (reset on app restart). `successLastHour` counts
+/// successful exports in the last 3600 seconds via a bounded ring buffer.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct LangfuseExportStats {
+    pub success_total: u64,
+    pub failure_total: u64,
+    pub success_last_hour: u64,
+    /// Unix seconds. Null when nothing has been exported this session.
+    pub last_export_at: Option<i64>,
+    pub last_error_at: Option<i64>,
+    pub last_error: Option<String>,
+    /// Pulled from current config so the panel can show a single coherent
+    /// health line without two round-trips.
+    pub enabled: bool,
+    pub redact_content: bool,
+    /// `true` once the exporter has been installed in this process — i.e.
+    /// init_from_config succeeded or a save took effect. When false, traces
+    /// won't ship even if `enabled` is true (e.g. config saved but app
+    /// hasn't restarted yet).
+    pub exporter_installed: bool,
+}
+
 /// Plaintext admin credentials for the managed stack. Returned only when
 /// the user explicitly asks (via `langfuse_stack_get_admin_credentials`),
 /// never as part of `langfuse_get_config`.

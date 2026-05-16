@@ -1,6 +1,7 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 import type { LangfuseAdminCredentials } from "@/lib/bindings/LangfuseAdminCredentials";
 import type { LangfuseConfig } from "@/lib/bindings/LangfuseConfig";
+import type { LangfuseExportStats } from "@/lib/bindings/LangfuseExportStats";
 import type { LangfuseJobHandle } from "@/lib/bindings/LangfuseJobHandle";
 import type { LangfuseSaveRequest } from "@/lib/bindings/LangfuseSaveRequest";
 import type { LangfuseSmokeTraceResult } from "@/lib/bindings/LangfuseSmokeTraceResult";
@@ -49,6 +50,11 @@ export async function langfuseRecentTraces(
 /// + the configured project id, so callers can deep-link straight to it.
 export async function langfuseSmokeTrace(): Promise<LangfuseSmokeTraceResult> {
   return invoke<LangfuseSmokeTraceResult>("langfuse_smoke_trace");
+}
+
+/// In-process exporter health snapshot. Counters reset on app restart.
+export async function langfuseGetExportStats(): Promise<LangfuseExportStats> {
+  return invoke<LangfuseExportStats>("langfuse_get_export_stats");
 }
 
 export async function langfuseClearConfig(): Promise<void> {
