@@ -1,7 +1,8 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Radio, Plus, Trash2, Power, PowerOff, X, User, Mic } from 'lucide-react';
+import { Radio, Plus, Trash2, Power, PowerOff, X, User, Mic, Send, Clock } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useVaultStore } from '@/stores/vaultStore';
+import { useToastStore } from '@/stores/toastStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
 import { ThemedSelect, type ThemedSelectOption } from '@/features/shared/components/forms/ThemedSelect';
@@ -10,9 +11,10 @@ import { toastCatch } from '@/lib/silentCatch';
 import type { TwinChannel } from '@/lib/bindings/TwinChannel';
 import type { TwinChannelKind } from '@/api/enums';
 import { TwinEmptyState } from '../TwinEmptyState';
-import { useTranslation } from '@/i18n/useTranslation';
+import { useTranslation, type Translations } from '@/i18n/useTranslation';
 import { CoachMark } from '../CoachMark';
 import { DEPLOYMENT_CHANNELS, getDeploymentChannelMeta, paletteOf } from '../_shared/channels';
+import { useChannelActivity } from './useChannelActivity';
 
 // Baseline view consumes a flattened {color, bg} shape — derived from the
 // canonical metadata so adding a new channel kind only touches _shared/channels.ts.
@@ -33,14 +35,34 @@ function getChannelMeta(type: string) {
 
 const channelOptions: ThemedSelectOption[] = CHANNEL_TYPES.map((ct) => ({ value: ct.id, label: ct.label }));
 
-function ChannelCard({ channel, meta, credential, onToggle, onDelete }: {
+/**
+ * Render a "Last bridged X ago" / "Never used" badge for the row's channel.
+ * Used by ChannelCard to surface dead channels without leaving the page.
+ */
+function relativeAge(t: Translations, tx: (template: string, vars: Record<string, string | number>) => string, iso: string, now = Date.now()): string {
+  const ms = Math.max(0, now - new Date(iso).getTime());
+  if (ms < 60_000) return t.twin.channels.lastJustNow;
+  if (ms < 3_600_000) return tx(t.twin.channels.lastMinutesAgo, { count: Math.max(1, Math.round(ms / 60_000)) });
+  if (ms < 86_400_000) return tx(t.twin.channels.lastHoursAgo, { count: Math.max(1, Math.round(ms / 3_600_000)) });
+  return tx(t.twin.channels.lastDaysAgo, { count: Math.max(1, Math.round(ms / 86_400_000)) });
+}
+
+function ChannelCard({ channel, meta, credential, lastActivityIso, onToggle, onDelete, onTest, testing }: {
   channel: TwinChannel;
   meta: ReturnType<typeof getChannelMeta>;
   credential: { id: string; name: string } | undefined;
+  lastActivityIso: string | undefined;
   onToggle: (ch: TwinChannel) => void;
   onDelete: (ch: TwinChannel) => void;
+  onTest: (ch: TwinChannel) => void;
+  testing: boolean;
 }) {
-  const t = useTranslation().t.twin;
+  const { t: tFull, tx } = useTranslation();
+  const t = tFull.twin;
+  const activityLabel = lastActivityIso
+    ? tx(t.channels.lastBridged, { when: relativeAge(tFull, tx, lastActivityIso) })
+    : t.channels.lastNever;
+  const activityTone = lastActivityIso ? 'text-foreground' : 'text-foreground/55';
   return (
     <div className={`p-4 rounded-card border transition-colors ${channel.is_active ? 'border-violet-500/20 bg-card/60' : 'border-primary/10 bg-card/30 opacity-60'}`}>
       <div className="flex items-center gap-3">
@@ -57,8 +79,21 @@ function ChannelCard({ channel, meta, credential, onToggle, onDelete }: {
             <span className="typo-caption text-foreground truncate">{credential ? credential.name : channel.credential_id.slice(0, 12) + '...'}</span>
             {channel.persona_id && <span className="flex items-center gap-1 typo-caption text-foreground"><User className="w-3 h-3" />{channel.persona_id.slice(0, 8)}...</span>}
           </div>
+          <div className={`flex items-center gap-1 mt-1 typo-caption ${activityTone}`}>
+            <Clock className="w-3 h-3" />
+            <span className="truncate">{activityLabel}</span>
+          </div>
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
+          <button
+            onClick={() => onTest(channel)}
+            disabled={testing || !channel.is_active}
+            title={!channel.is_active ? t.channels.testDisabledPaused : t.channels.testTooltip}
+            className="p-1.5 rounded-interactive text-foreground hover:text-violet-300 hover:bg-violet-500/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            aria-label={t.channels.testAria}
+          >
+            <Send className={`w-4 h-4 ${testing ? 'animate-pulse' : ''}`} />
+          </button>
           <button onClick={() => onToggle(channel)} className="p-1.5 rounded-interactive text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors">
             {channel.is_active ? <PowerOff className="w-4 h-4" /> : <Power className="w-4 h-4" />}
           </button>
@@ -72,7 +107,8 @@ function ChannelCard({ channel, meta, credential, onToggle, onDelete }: {
 }
 
 export default function ChannelsBaseline() {
-  const t = useTranslation().t.twin;
+  const { t: tFull, tx } = useTranslation();
+  const t = tFull.twin;
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const channels = useSystemStore((s) => s.twinChannels);
   const isLoading = useSystemStore((s) => s.twinChannelsLoading);
@@ -80,10 +116,13 @@ export default function ChannelsBaseline() {
   const createChannel = useSystemStore((s) => s.createTwinChannel);
   const updateChannel = useSystemStore((s) => s.updateTwinChannel);
   const deleteChannel = useSystemStore((s) => s.deleteTwinChannel);
+  const recordInteraction = useSystemStore((s) => s.recordTwinInteraction);
   const tones = useSystemStore((s) => s.twinTones);
   const setTwinTab = useSystemStore((s) => s.setTwinTab);
   const credentials = useVaultStore((s) => s.credentials);
   const fetchCredentials = useVaultStore((s) => s.fetchCredentials);
+  const addToast = useToastStore((s) => s.addToast);
+  const { lastByChannel } = useChannelActivity(activeTwinId);
 
   const [adding, setAdding] = useState(false);
   const [newType, setNewType] = useState<TwinChannelKind>('discord');
@@ -92,6 +131,7 @@ export default function ChannelsBaseline() {
   const [newLabel, setNewLabel] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [testingId, setTestingId] = useState<string | null>(null);
 
   useEffect(() => { if (activeTwinId) fetchChannels(activeTwinId); }, [activeTwinId, fetchChannels]);
   useEffect(() => { fetchCredentials(); }, [fetchCredentials]);
@@ -126,6 +166,28 @@ export default function ChannelsBaseline() {
     if (!confirm(t.channels.removeConfirm.replace('{label}', label))) return;
     try { await deleteChannel(ch.id); }
     catch (err) { toastCatch('ChannelsBaseline:delete')(err); }
+  };
+  const handleTest = async (ch: TwinChannel) => {
+    if (!activeTwinId) return;
+    setTestingId(ch.id);
+    try {
+      await recordInteraction(
+        activeTwinId,
+        ch.channel_type as TwinChannelKind,
+        'out',
+        '[Test ping from Channels tab — synthetic outbound, no external bridge.]',
+        undefined,
+        '[test ping]',
+        undefined,
+        false,
+      );
+      const meta = getChannelMeta(ch.channel_type);
+      addToast(tx(t.channels.testToast, { channel: ch.label ?? meta.label }), 'success');
+    } catch (err) {
+      toastCatch('ChannelsBaseline:test')(err);
+    } finally {
+      setTestingId(null);
+    }
   };
 
   if (!activeTwinId) return <TwinEmptyState icon={Radio} title={t.channels.title} />;
@@ -210,7 +272,19 @@ export default function ChannelsBaseline() {
               {channels.map((ch) => {
                 const meta = getChannelMeta(ch.channel_type);
                 const cred = credentials.find((c) => c.id === ch.credential_id);
-                return <ChannelCard key={ch.id} channel={ch} meta={meta} credential={cred} onToggle={handleToggle} onDelete={handleDelete} />;
+                return (
+                  <ChannelCard
+                    key={ch.id}
+                    channel={ch}
+                    meta={meta}
+                    credential={cred}
+                    lastActivityIso={lastByChannel.get(ch.channel_type)}
+                    onToggle={handleToggle}
+                    onDelete={handleDelete}
+                    onTest={handleTest}
+                    testing={testingId === ch.id}
+                  />
+                );
               })}
             </div>
           )}

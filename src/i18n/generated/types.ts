@@ -12491,6 +12491,16 @@ export type Translations = {
       fieldSignal: string;
       statusConfigured: string;
       ctaAddTone: string;
+      lastBridged: string;
+      lastNever: string;
+      lastJustNow: string;
+      lastMinutesAgo: string;
+      lastHoursAgo: string;
+      lastDaysAgo: string;
+      testTooltip: string;
+      testDisabledPaused: string;
+      testAria: string;
+      testToast: string;
     };
     tone: {
       title: string;

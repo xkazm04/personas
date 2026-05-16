@@ -12484,7 +12484,17 @@
       "fieldPersona": "persona",
       "fieldSignal": "signal",
       "statusConfigured": "configured",
-      "ctaAddTone": "add override →"
+      "ctaAddTone": "add override →",
+      "lastBridged": "Last bridged {when}",
+      "lastNever": "Never used",
+      "lastJustNow": "just now",
+      "lastMinutesAgo": "{count}m ago",
+      "lastHoursAgo": "{count}h ago",
+      "lastDaysAgo": "{count}d ago",
+      "testTooltip": "Log a synthetic outbound ping",
+      "testDisabledPaused": "Activate the channel first to test it",
+      "testAria": "Send test message",
+      "testToast": "Test ping logged for {channel}"
     },
     "tone": {
       "title": "Tone Profiles",
