@@ -196,6 +196,10 @@ const bridge: TestBridge = {
         error: `Invalid artist tab: ${tab}. Valid: ${VALID_ARTIST_TABS.join(', ')}`,
       };
     }
+    // Also flip the plugin tab so ArtistPage mounts in the Plugins section.
+    // Without this, setting artistTab alone is a no-op visually — the
+    // Plugins surface still shows the Browse page (or another plugin).
+    useSystemStore.getState().setPluginTab('artist');
     useSystemStore.getState().setArtistTab(tab as 'blender' | 'gallery' | 'media-studio');
     return { success: true, tab };
   },
@@ -1954,3 +1958,4 @@ async function collectBrainCounts(): Promise<{
 (window as unknown as Record<string, unknown>).__OVERVIEW_STORE__ = useOverviewStore;
 (window as unknown as Record<string, unknown>).__VAULT_STORE__ = useVaultStore;
 console.log("[test-automation] Bridge loaded — window.__TEST__ ready");
+
