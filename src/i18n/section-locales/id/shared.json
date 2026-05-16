@@ -175,7 +175,10 @@
     "attach_file_title": "Lampirkan file (spesifikasi API, skema, konfigurasi MCP)",
     "add_references_title": "Tambahkan URL referensi atau string koneksi",
     "no_matches": "Tidak ada kecocokan",
-    "all_prefix": "Semua ("
+    "all_prefix": "Semua (",
+    "select_agent_icon": "Select agent icon",
+    "select_agent_icon_desc": "Choose an icon for this agent. Themed dark/light variants render automatically.",
+    "clear_icon": "Clear icon"
   },
   "reasoning_trace": {
     "system_init": "Inisialisasi Sistem",

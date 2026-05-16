@@ -2266,6 +2266,78 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // Execution annotations: free-form tags, a note, and a star per execution.
+    // One row per (execution_id, author) so a single human user (the default
+    // 'user' author) overwrites their own annotation on re-save instead of
+    // accumulating duplicates. Mirrors LangSmith trace annotations.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "persona_execution_annotations",
+            description: "Add persona_execution_annotations table",
+            already_applied: |conn| has_table(conn, "persona_execution_annotations"),
+            apply: |conn| {
+                conn.execute_batch(
+                    "CREATE TABLE IF NOT EXISTS persona_execution_annotations (
+                        id           TEXT PRIMARY KEY,
+                        execution_id TEXT NOT NULL REFERENCES persona_executions(id) ON DELETE CASCADE,
+                        persona_id   TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
+                        author       TEXT NOT NULL DEFAULT 'user',
+                        tags         TEXT,
+                        note         TEXT,
+                        starred      INTEGER NOT NULL DEFAULT 0,
+                        created_at   TEXT NOT NULL,
+                        updated_at   TEXT NOT NULL,
+                        UNIQUE(execution_id, author)
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_pea_execution ON persona_execution_annotations(execution_id);
+                    CREATE INDEX IF NOT EXISTS idx_pea_persona   ON persona_execution_annotations(persona_id);
+                    CREATE INDEX IF NOT EXISTS idx_pea_starred   ON persona_execution_annotations(persona_id, starred);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
+    // Outbound webhook notification subscriptions. Routes persona_events to
+    // Slack/Discord/Teams/generic JSON webhooks via Mustache-style templates.
+    // See `src-tauri/src/notifications/` for the dispatcher worker.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "notification_subscriptions",
+            description: "Create notification_subscriptions table for outbound webhook routing",
+            already_applied: |conn| has_table(conn, "notification_subscriptions"),
+            apply: |conn| {
+                conn.execute_batch(
+                    "CREATE TABLE IF NOT EXISTS notification_subscriptions (
+                        id                   TEXT PRIMARY KEY,
+                        label                TEXT NOT NULL,
+                        provider             TEXT NOT NULL,
+                        webhook_url          TEXT,
+                        credential_id        TEXT REFERENCES persona_credentials(id) ON DELETE SET NULL,
+                        event_types          TEXT NOT NULL,
+                        template_body        TEXT,
+                        enabled              INTEGER NOT NULL DEFAULT 1,
+                        last_delivery_at     TEXT,
+                        last_delivery_status TEXT,
+                        last_error           TEXT,
+                        created_at           TEXT NOT NULL,
+                        updated_at           TEXT NOT NULL
+                    );
+                     CREATE INDEX IF NOT EXISTS idx_notif_subs_enabled
+                         ON notification_subscriptions(enabled);
+                     CREATE TABLE IF NOT EXISTS notification_dispatch_watermark (
+                        id              INTEGER PRIMARY KEY CHECK (id = 1),
+                        last_event_at   TEXT NOT NULL,
+                        updated_at      TEXT NOT NULL
+                    );",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 

@@ -7,6 +7,7 @@ import { silentCatch, toastCatch } from "@/lib/silentCatch";
 import { useSelectedCredentialLinks } from '@/stores/selectors/personaSelectors';
 import { mutateCredentialLink } from '@/hooks/design/core/useDesignContextMutator';
 import { useTranslation } from '@/i18n/useTranslation';
+import { connectorCategoryTags } from "@/lib/credentials/builtinConnectors";
 import type { ConnectorStatus, ConnectorReadiness } from './connectorTypes';
 import { deriveReadiness } from './connectorTypes';
 
@@ -35,11 +36,20 @@ export function useConnectorStatuses() {
 
   const credentialLinks = useSelectedCredentialLinks();
 
-  // Pre-build lookup maps to avoid O(N*M) linear searches
+  // Pre-build lookup maps to avoid O(N*M) linear searches. Each credential
+  // gets indexed under its service_type AND every category tag the underlying
+  // connector claims (e.g. a `github` credential is also reachable under
+  // `source_control` and `codebase`). Templates routinely declare connector
+  // requirements at the category level, so the strict-service-type-only index
+  // used to leave every category-shaped slot reading as "missing credential"
+  // even when a perfectly viable candidate sat in the vault.
   const credentialsByServiceType = useMemo(() => {
     const map = new Map<string, (typeof credentials)[number]>();
     for (const cred of credentials) {
       if (!map.has(cred.service_type)) map.set(cred.service_type, cred);
+      for (const tag of connectorCategoryTags(cred.service_type)) {
+        if (!map.has(tag)) map.set(tag, cred);
+      }
     }
     return map;
   }, [credentials]);

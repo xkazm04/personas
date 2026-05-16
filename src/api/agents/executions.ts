@@ -9,6 +9,7 @@ import type { Continuation } from "@/lib/bindings/Continuation";
 import type { ExecutionTrace } from "@/lib/bindings/ExecutionTrace";
 import type { DreamReplaySession } from "@/lib/bindings/DreamReplaySession";
 import type { CircuitBreakerStatus } from "@/lib/bindings/CircuitBreakerStatus";
+import type { DryRunReport } from "@/lib/bindings/DryRunReport";
 
 // ============================================================================
 // Executions
@@ -137,3 +138,6 @@ export interface ExecutionPreview {
 
 export const previewExecution = (personaId: string, inputData?: string, useCaseId?: string) =>
   invoke<ExecutionPreview>("preview_execution", { personaId, inputData, useCaseId });
+
+export const dryRunPersona = (personaId: string, inputData?: string, useCaseId?: string) =>
+  invoke<DryRunReport>("dry_run_persona", { personaId, inputData, useCaseId });

@@ -5,6 +5,7 @@ import { DeferUntilIdle } from '@/features/shared/components/layout/DeferUntilId
 import HeroHeader from './HeroHeader';
 import NavigationGrid, { type NavCard } from './NavigationGrid';
 import ResumeBanner from './ResumeBanner';
+import NextStepCoachCard from './NextStepCoachCard';
 import { useTranslation } from '@/i18n/useTranslation';
 
 const LanguageCards = lazy(() => import('./LanguageSwitcher').then(m => ({ default: m.LanguageCardGrid })));
@@ -45,6 +46,7 @@ export default function WelcomeLayout({
       <div className="flex-1 overflow-y-auto relative z-10">
         <div className="w-full px-6 py-4 space-y-4">
           <ResumeBanner />
+          <NextStepCoachCard />
           <HeroHeader greeting={greeting} displayName={displayName} />
 
           {/* Below-fold content deferred to keep initial DOM small. WebView2

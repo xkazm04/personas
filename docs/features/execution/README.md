@@ -90,7 +90,58 @@ src-tauri/src/engine/config_merge.rs             (cascaded config resolution)
 src-tauri/src/engine/tool_runner.rs              (tool dispatch: script/API/automation)
 src-tauri/src/engine/automation_runner.rs        (external platform invocation)
 src-tauri/src/db/repos/execution/executions.rs   (execution CRUD + queries)
+src-tauri/src/commands/execution/annotations.rs  (IPC: add_annotation, list_execution_annotations, list_persona_annotations, delete_annotation)
+src-tauri/src/db/repos/execution/annotations.rs  (persona_execution_annotations CRUD)
 ```
+
+### Execution annotations (tags, note, star)
+
+`persona_execution_annotations` is a thin write-rarely layer over
+`persona_executions` that lets users mark a run as significant.
+
+- One row per `(execution_id, author)` — re-saving overwrites in place. The
+  default author is `"user"`; future agents/companion writers can register
+  under different author keys without clobbering the human's view.
+- Fields: `tags` (JSON array of free-form strings — `regression`, `golden-example`,
+  `investigate`, …), `note` (short free-text), `starred` (boolean).
+- Cascade-deletes with the parent execution row (FK ON DELETE CASCADE).
+- Frontend reads via the `useExecutionAnnotations(personaId)` hook
+  (`src/hooks/agents/useExecutionAnnotations.ts`) which loads all rows once
+  per persona and indexes by `execution_id` — cheap enough to power the
+  activity-feed chip strip without per-row IPC.
+- Activity feed: tag-chip strip on `ActivityList` rows, plus `tagFilter` and
+  `starredOnly` filters on `ActivityFilters`.
+- Execution detail: side panel hosts `AnnotationEditor` for save / clear.
+- Execution list: when ≥ 2 rows have annotations with `starred=true`, a
+  "Compare starred" affordance auto-selects the two most recently starred
+  executions and opens the comparison view.
+
+### Bulk re-run with cohort report
+
+When iterating on a fix, users often need to verify against the actual
+failing population — not a single hand-picked retry. The execution list
+exposes a **Bulk re-run** mode (multi-select checkboxes) alongside the
+existing Compare mode:
+
+- Frontend entry points (`src/features/agents/sub_executions/components/list/`):
+  - `BulkRerunToolbar.tsx` — selection toolbar with "Select all failed",
+    "Since fix…" (datetime picker), and "Re-run N" action. The "Since fix…"
+    panel quick-fills from the latest `persona_execution_annotations`
+    `updated_at` (handy when an annotation marks the fix attempt).
+  - `BulkRerunStrip.tsx` — stacked progress strip rendered while the cohort
+    runs (per-row dot grid + percent + cancel).
+  - `BulkRerunReport.tsx` — auto-opens on cohort completion. Surfaces
+    success rate, recovered/regressed counts, mean cost and duration deltas,
+    and per-row drill-down that hands an (original, new) pair to the
+    existing `ExecutionComparison` view.
+- Driver hook: `useBulkRerun()` in `libs/useBulkRerun.ts` fans out via
+  `execute_persona` with `MAX_CONCURRENT = 3` workers, hydrates
+  `input_data` per row from `get_execution`, and stamps an idempotency key
+  per attempt (`bulk-rerun-<originalId>-<ts>`) so the runner's idempotency
+  layer dedupes accidental double-clicks.
+- A cohort regression is `origStatus = completed` AND `newStatus ∈
+  {failed, cancelled, timeout}`; a recovery is the inverse direction.
+  Both lists render their own row strip in the report.
 
 ## Relation to other pillars
 
@@ -157,6 +208,16 @@ Backend path: `executions.rs::execute_persona` →
 2. The scheduler loop sets `next_trigger_at` on insert.
 3. Every ~10s, `TriggerSchedulerSubscription.tick()` claims all
    overdue rows and fires them.
+
+**Jenkins-style `H` jitter.** The cron parser accepts Jenkins's hash
+token to spread schedules across the allowed range instead of piling
+up at `:00`. `H/15 * * * *` runs every 15 minutes but starts at a
+deterministic per-trigger offset (FNV-1a hash of `trigger.id` modulo
+15). Two personas with the same `H/15` cron land on different
+minutes. Supported forms: `H`, `H/N`, `H(lo-hi)`, `H(lo-hi)/N`.
+Implemented in `engine/cron.rs::expand_h_tokens`; previews and the
+calendar pass `trigger.id` as `seed` so the UI matches the runtime
+fire time.
 
 ### Chain persona B after persona A
 

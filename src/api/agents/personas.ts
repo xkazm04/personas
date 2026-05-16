@@ -58,6 +58,15 @@ export const getPersonaSummaries = () =>
 export const getPersonaDetail = (id: string) =>
   invoke<PersonaDetailResponse>("get_persona_detail", { id });
 
+/**
+ * Returns persona IDs that have at least one tool whose `requires_credential_type`
+ * matches `connectorName`. Used by the Agents sidebar to surface personas linked
+ * to a specific connector (e.g. `"codebase"`) without fetching every persona's
+ * full detail.
+ */
+export const listPersonasUsingConnector = (connectorName: string) =>
+  invoke<string[]>("list_personas_using_connector", { connectorName });
+
 /** Resolve the effective model config for a persona (global -> workspace -> agent cascade). */
 export const resolveEffectiveConfig = (personaId: string) =>
   invoke<EffectiveModelConfig>("resolve_effective_config", { personaId });

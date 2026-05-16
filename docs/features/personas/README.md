@@ -68,7 +68,7 @@ src-tauri/src/db/models/memory.rs               (PersonaMemory — tiers, import
 src-tauri/src/db/models/review.rs               (PersonaManualReview)
 src-tauri/src/db/models/automation.rs           (PersonaAutomation + automation_runs)
 src-tauri/src/db/repos/core/personas.rs         (CRUD + queries)
-src-tauri/src/commands/core/personas.rs         (Tauri IPC: list, create, update, delete)
+src-tauri/src/commands/core/personas.rs         (Tauri IPC: list, create, update, delete, list_personas_using_connector)
 ```
 
 ## Relation to other pillars

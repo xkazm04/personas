@@ -52,8 +52,28 @@ impl CronSchedule {
 }
 
 /// Parse a 5-field cron expression. Returns Err on invalid input.
+///
+/// Jenkins-style `H` tokens are accepted and expanded with a zero seed before
+/// parsing — every persona resolves to the same offset, which defeats the
+/// thundering-herd protection. Runtime call sites with a persona/trigger
+/// identifier should call [`parse_cron_seeded`] instead; this entry point is
+/// reserved for syntax validation and previews that have no per-persona
+/// context.
 pub fn parse_cron(expr: &str) -> Result<CronSchedule, String> {
-    let fields: Vec<&str> = expr.split_whitespace().collect();
+    parse_cron_seeded(expr, 0)
+}
+
+/// Parse a 5-field cron expression with a deterministic seed for Jenkins-style
+/// `H` token expansion. The seed is hashed into each `H` token's allowed range
+/// so two personas with the same cron string receive different fire offsets,
+/// spreading load away from `:00`-of-the-hour pile-ups.
+///
+/// Pass [`seed_hash`] of a stable identifier (typically `trigger.id`,
+/// `persona.id`, or `credential.id`) so the same persona always lands on the
+/// same minute. Seeds of zero collapse all `H` tokens to their range minimum.
+pub fn parse_cron_seeded(expr: &str, seed: u64) -> Result<CronSchedule, String> {
+    let expanded = expand_h_tokens(expr, seed)?;
+    let fields: Vec<&str> = expanded.split_whitespace().collect();
     if fields.len() != 5 {
         return Err(format!("Expected 5 fields, got {}", fields.len()));
     }
@@ -66,6 +86,150 @@ pub fn parse_cron(expr: &str) -> Result<CronSchedule, String> {
     };
     validate_min_interval(&schedule, MIN_CRON_INTERVAL_SECONDS)?;
     Ok(schedule)
+}
+
+/// FNV-1a 64-bit hash for converting an opaque string identifier (persona id,
+/// trigger id, credential id, ...) into a seed for [`parse_cron_seeded`].
+/// Stable across runs and platforms — the same id always produces the same
+/// schedule.
+pub fn seed_hash(s: &str) -> u64 {
+    let mut h: u64 = 0xcbf2_9ce4_8422_2325;
+    for b in s.as_bytes() {
+        h ^= u64::from(*b);
+        h = h.wrapping_mul(0x0000_0100_0000_01b3);
+    }
+    h
+}
+
+/// Expand Jenkins-style `H` tokens in a 5-field cron expression into concrete
+/// values derived from `seed`. The output is a plain cron expression that
+/// [`parse_cron`]'s grammar already accepts; passes through unchanged when no
+/// `H` appears.
+///
+/// Grammar accepted inside any single comma-separated part of a field:
+///
+/// - `H` — hashed value in `[field_min, field_max]`
+/// - `H/N` — hash an offset in `[0, min(N, field_max-field_min+1)-1]`, then
+///   render `offset, offset+N, offset+2N, …` clipped to the field range
+/// - `H(lo-hi)` — hashed value in `[lo, hi]`
+/// - `H(lo-hi)/N` — hashed offset in `[lo, lo + min(N, hi-lo+1) - 1]`, then
+///   stepped by N up to `hi`
+///
+/// Each field is salted with its position index so `H H * * *` does not put
+/// minute and hour on the same value. Each comma-separated part is further
+/// salted with its part index so `H,H * * * *` produces two distinct minutes.
+pub fn expand_h_tokens(expr: &str, seed: u64) -> Result<String, String> {
+    // Cheap pre-check: nothing to do if the expression has no H tokens.
+    if !expr.contains('H') {
+        return Ok(expr.to_string());
+    }
+    let fields: Vec<&str> = expr.split_whitespace().collect();
+    if fields.len() != 5 {
+        // Defer the "wrong field count" error to parse_cron so the user-facing
+        // message stays consistent.
+        return Ok(expr.to_string());
+    }
+    let ranges: [(u32, u32); 5] = [(0, 59), (0, 23), (1, 31), (1, 12), (0, 6)];
+    let mut out: Vec<String> = Vec::with_capacity(5);
+    for (idx, (field, &(lo, hi))) in fields.iter().zip(ranges.iter()).enumerate() {
+        // Mix the field index into the seed so each field hashes independently.
+        let field_seed = seed.wrapping_add((idx as u64).wrapping_mul(0x9E37_79B9_7F4A_7C15));
+        out.push(expand_h_field(field, lo, hi, field_seed)?);
+    }
+    Ok(out.join(" "))
+}
+
+fn expand_h_field(field: &str, fmin: u32, fmax: u32, seed: u64) -> Result<String, String> {
+    if !field.contains('H') {
+        return Ok(field.to_string());
+    }
+    let mut parts_out: Vec<String> = Vec::new();
+    for (part_idx, part) in field.split(',').enumerate() {
+        let trimmed = part.trim();
+        let part_seed =
+            seed.wrapping_add((part_idx as u64).wrapping_mul(0x517C_C1B7_2722_0A95));
+        parts_out.push(expand_h_part(trimmed, fmin, fmax, part_seed)?);
+    }
+    Ok(parts_out.join(","))
+}
+
+fn expand_h_part(part: &str, fmin: u32, fmax: u32, seed: u64) -> Result<String, String> {
+    if !part.contains('H') {
+        return Ok(part.to_string());
+    }
+    let (left, step) = match part.split_once('/') {
+        Some((l, r)) => {
+            let n: u32 = r
+                .trim()
+                .parse()
+                .map_err(|_| format!("Invalid H step: {r}"))?;
+            (l.trim(), Some(n))
+        }
+        None => (part, None),
+    };
+
+    if !left.starts_with('H') {
+        // `H` only appears on the right of the slash — e.g. `*/H` is not
+        // supported. Surface a clear error rather than silently passing the
+        // raw text to parse_cron (which would also fail, less helpfully).
+        return Err(format!("Invalid H token: {part}"));
+    }
+
+    let suffix = &left[1..];
+    let (lo, hi) = if suffix.is_empty() {
+        (fmin, fmax)
+    } else if suffix.starts_with('(') && suffix.ends_with(')') && suffix.len() >= 3 {
+        let inside = &suffix[1..suffix.len() - 1];
+        let (a, b) = inside
+            .split_once('-')
+            .ok_or_else(|| format!("Invalid H range: {inside}"))?;
+        let a: u32 = a
+            .trim()
+            .parse()
+            .map_err(|_| format!("Invalid H range start: {a}"))?;
+        let b: u32 = b
+            .trim()
+            .parse()
+            .map_err(|_| format!("Invalid H range end: {b}"))?;
+        if a < fmin || b > fmax || a > b {
+            return Err(format!(
+                "H range {a}-{b} out of bounds {fmin}-{fmax}"
+            ));
+        }
+        (a, b)
+    } else {
+        return Err(format!("Invalid H token: {part}"));
+    };
+
+    let span = hi - lo + 1;
+    match step {
+        None => {
+            let v = lo + ((seed % span as u64) as u32);
+            Ok(v.to_string())
+        }
+        Some(n) => {
+            if n == 0 {
+                return Err("Step cannot be zero".into());
+            }
+            // Hash offset into [0, min(step, span)-1] so distinct seeds spread
+            // evenly when step < span. When step >= span there is only one
+            // bucket, so all seeds collapse to a single value — which is the
+            // intended Jenkins behaviour.
+            let bucket = u64::from(n.min(span));
+            let offset = (seed % bucket) as u32;
+            let start = lo + offset;
+            let mut values: Vec<String> = Vec::new();
+            let mut v = start;
+            while v <= hi {
+                values.push(v.to_string());
+                match v.checked_add(n) {
+                    Some(next) => v = next,
+                    None => break,
+                }
+            }
+            Ok(values.join(","))
+        }
+    }
 }
 
 fn validate_min_interval(schedule: &CronSchedule, min_seconds: i64) -> Result<(), String> {
@@ -672,5 +836,189 @@ mod tests {
         // 2026-02-01 is Sunday, day 1 — dom match (1st)
         let sun_1st = Utc.with_ymd_and_hms(2026, 2, 1, 9, 0, 0).unwrap();
         assert!(matches(&s, &sun_1st));
+    }
+
+    // -- Jenkins-style H token expansion ---------------------------------------
+
+    #[test]
+    fn test_seed_hash_is_deterministic_and_distinct() {
+        let a = seed_hash("persona-alpha");
+        let b = seed_hash("persona-alpha");
+        let c = seed_hash("persona-bravo");
+        assert_eq!(a, b, "same id must hash to same seed");
+        assert_ne!(a, c, "different ids should usually hash to different seeds");
+    }
+
+    #[test]
+    fn test_expand_h_plain_minute() {
+        // H in minutes with a non-zero seed should land somewhere in 0..=59
+        let expanded = expand_h_tokens("H * * * *", 42).unwrap();
+        let minute: u32 = expanded.split_whitespace().next().unwrap().parse().unwrap();
+        assert!(minute <= 59);
+    }
+
+    #[test]
+    fn test_expand_h_pure_passthrough() {
+        // Non-H expressions must pass through verbatim.
+        let expr = "*/15 9-17 * * 1-5";
+        assert_eq!(expand_h_tokens(expr, 12345).unwrap(), expr);
+    }
+
+    #[test]
+    fn test_expand_h_step_spreads_within_range() {
+        // H/15 minutes: hash should produce 4 minutes one quarter-hour apart,
+        // starting at hash mod 15 in [0,14].
+        let expanded = expand_h_tokens("H/15 * * * *", 0).unwrap();
+        // seed=0 → offset 0 → "0,15,30,45"
+        assert!(expanded.starts_with("0,15,30,45 "), "got: {expanded}");
+
+        let expanded = expand_h_tokens("H/15 * * * *", 7).unwrap();
+        // seed=7 → offset 7 → "7,22,37,52"
+        assert!(expanded.starts_with("7,22,37,52 "), "got: {expanded}");
+    }
+
+    #[test]
+    fn test_expand_h_step_clips_to_field_max() {
+        // H/20 minutes with seed=15 → offset 15 → 15,35,55 (not 75/95).
+        let expanded = expand_h_tokens("H/20 * * * *", 15).unwrap();
+        assert!(expanded.starts_with("15,35,55 "), "got: {expanded}");
+    }
+
+    #[test]
+    fn test_expand_h_with_explicit_range() {
+        // H(9-17) for hours field: result must fall inside [9, 17] for any
+        // seed. We can't assert a specific value because the field-index salt
+        // mixes with the seed before the modulo — the assertion only checks
+        // the property the user actually cares about: bounded by the range.
+        for seed in [0u64, 1, 7, 8, 42, u64::MAX] {
+            let expanded = expand_h_tokens("0 H(9-17) * * *", seed).unwrap();
+            let parts: Vec<&str> = expanded.split_whitespace().collect();
+            let hour: u32 = parts[1].parse().unwrap();
+            assert!(
+                (9..=17).contains(&hour),
+                "seed={seed} produced hour {hour}, expected 9..=17"
+            );
+        }
+
+        // Determinism: same seed gives the same hour every time.
+        let first = expand_h_tokens("0 H(9-17) * * *", 12345).unwrap();
+        let again = expand_h_tokens("0 H(9-17) * * *", 12345).unwrap();
+        assert_eq!(first, again);
+    }
+
+    #[test]
+    fn test_expand_h_range_with_step() {
+        // H(0-29)/10 minutes, seed=0 → offset 0 → 0,10,20.
+        let expanded = expand_h_tokens("H(0-29)/10 * * * *", 0).unwrap();
+        assert!(expanded.starts_with("0,10,20 "), "got: {expanded}");
+        // seed=3 → offset 3 → 3,13,23.
+        let expanded = expand_h_tokens("H(0-29)/10 * * * *", 3).unwrap();
+        assert!(expanded.starts_with("3,13,23 "), "got: {expanded}");
+    }
+
+    #[test]
+    fn test_parse_cron_seeded_accepts_h() {
+        // Round-trip: parse_cron_seeded should accept H syntax and produce a
+        // legal schedule whose minute matches the expansion.
+        let seed = seed_hash("persona-1");
+        let s = parse_cron_seeded("H/15 * * * *", seed).unwrap();
+        assert_eq!(s.minutes.count_ones(), 4);
+    }
+
+    #[test]
+    fn test_parse_cron_back_compat_accepts_h_with_zero_seed() {
+        // `parse_cron` is the back-compat entry point: it must still accept H
+        // syntax (so validators don't reject Jenkins expressions), even though
+        // it collapses everything to the range minimum.
+        let s = parse_cron("H * * * *").unwrap();
+        assert!(s.has_minute(0));
+        assert_eq!(s.minutes.count_ones(), 1);
+    }
+
+    #[test]
+    fn test_expand_h_distributes_personas_across_minute() {
+        // Two personas with the same `H/15` cron must usually land on
+        // different minute offsets. Probabilistic but with 15 buckets and
+        // FNV-1a, two well-separated string ids should collide < 10% of time.
+        let a = expand_h_tokens("H/15 * * * *", seed_hash("persona-aaa")).unwrap();
+        let b = expand_h_tokens("H/15 * * * *", seed_hash("persona-bbb")).unwrap();
+        assert_ne!(
+            a, b,
+            "distinct personas with H/15 collided on the same offset"
+        );
+    }
+
+    #[test]
+    fn test_expand_h_multiple_fields_independent() {
+        // `H H * * *` — minute and hour must not be identical for every seed.
+        // Field-index salt prevents collapse.
+        let mut hour_eq_minute = 0;
+        for i in 0..50 {
+            let expanded = expand_h_tokens("H H * * *", seed_hash(&format!("p-{i}"))).unwrap();
+            let parts: Vec<&str> = expanded.split_whitespace().collect();
+            if parts[0] == parts[1] {
+                hour_eq_minute += 1;
+            }
+        }
+        // With 60 minutes × 24 hours and a field salt, collisions should be
+        // rare. Allow generous slack — the assertion only fails if the salt
+        // accidentally aligned hour and minute pools.
+        assert!(
+            hour_eq_minute < 25,
+            "H H field salt failed to decorrelate: {hour_eq_minute}/50 collisions"
+        );
+    }
+
+    #[test]
+    fn test_expand_h_invalid_range_rejected() {
+        // H(50-20) is reversed
+        assert!(expand_h_tokens("H(50-20) * * * *", 0).is_err());
+        // H(70-80) is out of bounds for minutes
+        assert!(expand_h_tokens("H(70-80) * * * *", 0).is_err());
+    }
+
+    #[test]
+    fn test_expand_h_invalid_step_rejected() {
+        assert!(expand_h_tokens("H/0 * * * *", 0).is_err());
+        assert!(expand_h_tokens("H/abc * * * *", 0).is_err());
+    }
+
+    #[test]
+    fn test_expand_h_in_list_each_part_independent() {
+        // `H,H * * * *` — two H tokens in the same field; salt by part index
+        // should usually give two distinct minutes.
+        let expanded = expand_h_tokens("H,H * * * *", seed_hash("persona-list")).unwrap();
+        let minute_field = expanded.split_whitespace().next().unwrap();
+        let parts: Vec<&str> = minute_field.split(',').collect();
+        assert_eq!(parts.len(), 2);
+        // Don't strictly require difference (small chance of collision), just
+        // require both parsed correctly as numbers.
+        for p in &parts {
+            let _: u32 = p.parse().unwrap();
+        }
+    }
+
+    #[test]
+    fn test_parse_cron_seeded_next_fire_matches_expansion() {
+        // Sanity end-to-end: a seeded H/15 cron's next fire must be one of
+        // the four minutes the expansion produced.
+        let seed = seed_hash("e2e-persona");
+        let expanded = expand_h_tokens("H/15 * * * *", seed).unwrap();
+        let allowed: Vec<u32> = expanded
+            .split_whitespace()
+            .next()
+            .unwrap()
+            .split(',')
+            .map(|s| s.parse().unwrap())
+            .collect();
+        let s = parse_cron_seeded("H/15 * * * *", seed).unwrap();
+        let from = Utc.with_ymd_and_hms(2026, 6, 1, 10, 0, 0).unwrap();
+        let next = next_fire_time(&s, from).unwrap();
+        assert!(
+            allowed.contains(&next.minute()),
+            "next fire minute {} not in expansion {:?}",
+            next.minute(),
+            allowed
+        );
     }
 }

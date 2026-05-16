@@ -1,0 +1,32 @@
+{
+  "id": "builtin-slack-webhook",
+  "name": "slack_webhook",
+  "label": "Slack (incoming webhook)",
+  "color": "#4A154B",
+  "icon_url": "/icons/connectors/slack.svg",
+  "category": "notifications",
+  "categories": ["notifications", "messaging"],
+  "fields": [
+    {
+      "key": "webhook_url",
+      "label": "Incoming Webhook URL",
+      "type": "password",
+      "required": true,
+      "placeholder": "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXX",
+      "helpText": "From the Slack app's Incoming Webhooks page. The URL itself is the secret — anyone who has it can post to the configured channel.",
+      "sensitive": true
+    }
+  ],
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "One-way outbound Slack notifications via incoming webhook URL. Posts only to the channel the webhook was provisioned for; cannot read messages, list channels, or perform bot actions.",
+    "auth_type": "webhook_url",
+    "auth_type_label": "Webhook URL",
+    "docs_url": "https://api.slack.com/messaging/webhooks",
+    "setup_guide": "1. Open api.slack.com/apps and pick (or create) the app you want to post from.\n2. Enable 'Incoming Webhooks' in the sidebar.\n3. Click 'Add New Webhook to Workspace', authorize, and pick the target channel.\n4. Copy the https://hooks.slack.com/... URL and paste it here.",
+    "pricing_tier": "free",
+    "outbound_only": true
+  }
+}

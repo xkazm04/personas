@@ -69,6 +69,7 @@ pub mod director;
 pub mod discovery;
 pub mod dispatch;
 pub mod dream_replay;
+pub mod dry_run;
 #[cfg(feature = "ml")]
 pub mod embedder;
 #[cfg(feature = "p2p")]
@@ -168,6 +169,7 @@ pub mod url_safety;
 #[cfg(feature = "ml")]
 pub mod vector_store;
 pub mod webhook;
+pub mod webhook_notifier;
 pub mod workflow_compiler;
 pub mod worktree_settings;
 

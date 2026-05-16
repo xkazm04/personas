@@ -19,6 +19,9 @@ interface ExecutionListRowProps {
   compareMode: boolean;
   compareLeft: string | null;
   compareRight: string | null;
+  bulkMode?: boolean;
+  bulkSelected?: boolean;
+  bulkDisabled?: boolean;
   isExpanded: boolean;
   showRaw: boolean;
   hasCopied: boolean;
@@ -33,6 +36,7 @@ interface ExecutionListRowProps {
 
 export function ExecutionListRow({
   execution, execIdx, executions, compareMode, compareLeft, compareRight,
+  bulkMode = false, bulkSelected = false, bulkDisabled = false,
   isExpanded, showRaw, hasCopied, copiedId, capabilityTitle,
   onRowClick, onCopyId, onRerun, onAutoCompareRetry,
   densityTokens = DENSITY_TOKENS.comfortable,
@@ -71,12 +75,31 @@ export function ExecutionListRow({
     <div style={{ contain: 'layout paint style' }}>
       {/* Desktop table row (md+) */}
       <div
-        onClick={() => onRowClick(execution.id)}
-        className={`animate-fade-in hidden md:grid grid-cols-12 gap-4 px-4 ${densityTokens.rowPaddingY} border-b border-primary/10 cursor-pointer transition-colors ${
-          isCompareSelected ? 'bg-primary/10 border-l-2 border-l-primary/40' : 'bg-background/30 hover:bg-secondary/20'
+        onClick={() => { if (!bulkDisabled) onRowClick(execution.id); }}
+        className={`animate-fade-in hidden md:grid grid-cols-12 gap-4 px-4 ${densityTokens.rowPaddingY} border-b border-primary/10 transition-colors ${
+          bulkDisabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
+        } ${
+          bulkMode && bulkSelected
+            ? 'bg-primary/10 border-l-2 border-l-primary/40'
+            : isCompareSelected
+              ? 'bg-primary/10 border-l-2 border-l-primary/40'
+              : 'bg-background/30 hover:bg-secondary/20'
         }`}
       >
-        {compareMode && (
+        {bulkMode && (
+          <div className="col-span-1 flex items-center">
+            <input
+              type="checkbox"
+              checked={bulkSelected}
+              disabled={bulkDisabled}
+              onClick={(ev) => ev.stopPropagation()}
+              onChange={() => onRowClick(execution.id)}
+              className="w-4 h-4 accent-primary"
+              aria-label={e.bulk_rerun_select_row}
+            />
+          </div>
+        )}
+        {!bulkMode && compareMode && (
           <div className="col-span-1 flex items-center">
             {compareLabel ? (
               <span className={`w-5 h-5 rounded-card flex items-center justify-center typo-heading ${
@@ -87,27 +110,40 @@ export function ExecutionListRow({
         )}
         <div className="col-span-2 flex items-center gap-2 flex-wrap">{chevron}{statusBadge}{retryBadge}{simulatedBadge}</div>
         <div className="col-span-2 flex items-center min-w-0">{capabilityCell}</div>
-        <div className={`${compareMode ? 'col-span-1' : 'col-span-2'} flex items-center`}>{duration}</div>
+        <div className={`${compareMode || bulkMode ? 'col-span-1' : 'col-span-2'} flex items-center`}>{duration}</div>
         <div className="col-span-2 typo-body text-foreground/90 flex items-center">{formatTimestamp(execution.started_at)}</div>
         <div className="col-span-2 typo-code text-foreground/90 flex items-center">
           <Tooltip content={e.input_tokens}><span>{formatTokens(execution.input_tokens)}</span></Tooltip>{' / '}
           <Tooltip content={e.output_tokens}><span>{formatTokens(execution.output_tokens)}</span></Tooltip>
         </div>
-        <div className={`${compareMode ? 'col-span-1' : 'col-span-2'} flex items-center gap-2`}>
+        <div className={`${compareMode || bulkMode ? 'col-span-1' : 'col-span-2'} flex items-center gap-2`}>
           <span className="typo-code text-foreground/90">{formatCost(execution.cost_usd, { precision: 4, language })}</span>
-          {!compareMode && <CostSparkline costs={executions.slice(execIdx, Math.min(executions.length, execIdx + 10)).map((e) => e.cost_usd).reverse()} />}
+          {!compareMode && !bulkMode && <CostSparkline costs={executions.slice(execIdx, Math.min(executions.length, execIdx + 10)).map((e) => e.cost_usd).reverse()} />}
         </div>
       </div>
 
       {/* Mobile card (<md) */}
       <div
-        onClick={() => onRowClick(execution.id)}
-        className={`flex md:hidden flex-col gap-1.5 px-4 ${densityTokens.rowPaddingY} border-b border-primary/10 cursor-pointer transition-colors ${
-          isCompareSelected ? 'bg-primary/10' : 'bg-background/30 hover:bg-secondary/20'
+        onClick={() => { if (!bulkDisabled) onRowClick(execution.id); }}
+        className={`flex md:hidden flex-col gap-1.5 px-4 ${densityTokens.rowPaddingY} border-b border-primary/10 transition-colors ${
+          bulkDisabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
+        } ${
+          (bulkMode && bulkSelected) || isCompareSelected ? 'bg-primary/10' : 'bg-background/30 hover:bg-secondary/20'
         }`}
       >
         <div className="flex items-center gap-2 flex-wrap">
-          {compareMode && compareLabel && (
+          {bulkMode && (
+            <input
+              type="checkbox"
+              checked={bulkSelected}
+              disabled={bulkDisabled}
+              onClick={(ev) => ev.stopPropagation()}
+              onChange={() => onRowClick(execution.id)}
+              className="w-4 h-4 accent-primary"
+              aria-label={e.bulk_rerun_select_row}
+            />
+          )}
+          {!bulkMode && compareMode && compareLabel && (
             <span className={`w-5 h-5 rounded-card flex items-center justify-center typo-heading ${
               compareLabel === 'A' ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'bg-pink-500/20 text-pink-400 border border-pink-500/30'
             }`}>{compareLabel}</span>

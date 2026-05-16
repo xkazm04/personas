@@ -14,6 +14,7 @@ pub mod external_api_keys;
 pub mod identity;
 pub mod mcp_gateways;
 pub mod n8n_sessions;
+pub mod notification_subscriptions;
 pub mod oauth_token_metrics;
 pub mod obsidian_brain;
 pub mod ocr;

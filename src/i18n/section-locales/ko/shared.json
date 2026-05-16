@@ -175,7 +175,10 @@
     "attach_file_title": "파일 첨부 (API 사양, 스키마, MCP 설정)",
     "add_references_title": "참조 URL 또는 연결 문자열 추가",
     "no_matches": "일치하는 항목 없음",
-    "all_prefix": "전체 ("
+    "all_prefix": "전체 (",
+    "select_agent_icon": "Select agent icon",
+    "select_agent_icon_desc": "Choose an icon for this agent. Themed dark/light variants render automatically.",
+    "clear_icon": "Clear icon"
   },
   "reasoning_trace": {
     "system_init": "System Init",

@@ -1,0 +1,32 @@
+{
+  "id": "builtin-generic-webhook",
+  "name": "generic_webhook",
+  "label": "Generic JSON webhook",
+  "color": "#6B7280",
+  "icon_url": "/icons/connectors/webhook.svg",
+  "category": "notifications",
+  "categories": ["notifications"],
+  "fields": [
+    {
+      "key": "webhook_url",
+      "label": "Webhook URL",
+      "type": "password",
+      "required": true,
+      "placeholder": "https://example.com/hooks/personas",
+      "helpText": "Any HTTPS endpoint that accepts POST with a JSON body. Personas sends `{ text, event }` where `event` is the full PersonaEvent payload.",
+      "sensitive": true
+    }
+  ],
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Generic JSON outbound webhook. POSTs `{ text: <rendered template>, event: <full event payload> }` to any user-supplied HTTPS URL. Use for PagerDuty Events v2, custom Zapier hooks, or any in-house alert pipeline.",
+    "auth_type": "webhook_url",
+    "auth_type_label": "Webhook URL",
+    "docs_url": "https://docs.personas.app/docs/notifications",
+    "setup_guide": "1. Decide which endpoint should receive Personas events.\n2. Paste the full HTTPS URL here. Internal/private IPs are blocked by the SSRF guard.\n3. (Optional) Use the template editor on the subscription to shape the `text` field per event type.",
+    "pricing_tier": "free",
+    "outbound_only": true
+  }
+}

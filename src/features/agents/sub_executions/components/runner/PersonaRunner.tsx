@@ -2,7 +2,7 @@ import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { sanitizeIconUrl, isIconUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { TerminalStrip } from '@/features/shared/components/terminal/TerminalStrip';
-import { Play, Square, ChevronDown, ChevronRight, Cloud, Clock, Timer, DollarSign, RotateCw, Wrench, Monitor, AlertTriangle, RefreshCw, X } from 'lucide-react';
+import { Play, Square, ChevronDown, ChevronRight, Cloud, Clock, Timer, DollarSign, RotateCw, Wrench, Monitor, AlertTriangle, RefreshCw, X, FlaskConical } from 'lucide-react';
 import { BudgetRecoveryCard } from './BudgetRecoveryCard';
 import { useTranslation } from '@/i18n/useTranslation';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
@@ -11,6 +11,8 @@ import { KeyValueEditor } from '@/features/shared/components/forms/KeyValueEdito
 import { ExecutionTerminal } from './ExecutionTerminal';
 import { useRunnerState } from '../../libs/useRunnerState';
 import { useRunnerExecution } from '../../libs/useRunnerExecution';
+import { useDryRun } from '../../libs/useDryRun';
+import { DryRunModal } from './DryRunModal';
 import { MiniPlayerPinButton, StatusIcon } from './RunnerHeader';
 import { HealingCard, AiHealingCounters } from './RunnerToolCalls';
 import { RunnerPhaseTimeline } from './RunnerStreamView';
@@ -34,6 +36,10 @@ export function PersonaRunner() {
   const personaId = selectedPersona?.id || '';
 
   const state = useRunnerState(personaId);
+  const dryRun = useDryRun({
+    personaId,
+    getInputData: () => state.inputData,
+  });
   const exec = useRunnerExecution({
     personaId,
     inputData: state.inputData,
@@ -102,7 +108,20 @@ export function PersonaRunner() {
             {isExecuting ? (<><Square className="w-5 h-5" />{t.agents.executions.stop_execution}</>) : (<>{cloudConfig?.is_connected ? <Cloud className="w-5 h-5" /> : <Play className="w-5 h-5" />}{cloudConfig?.is_connected ? t.agents.executions.execute_on_cloud : t.agents.executions.execute_persona}</>)}
           </button>
         )}
+        {!IS_MOBILE && (
+          <button
+            data-testid="dry-run-persona-btn"
+            onClick={dryRun.run}
+            disabled={isExecuting || dryRun.loading}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-modal typo-body transition-colors border border-primary/15 bg-secondary/30 text-foreground/85 hover:bg-secondary/50 hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+            title={t.agents.executions.dry_run.button_hint}
+          >
+            <FlaskConical className="w-3.5 h-3.5" />
+            {dryRun.loading ? t.agents.executions.dry_run.button_running : t.agents.executions.dry_run.button_label}
+          </button>
+        )}
       </div>
+      <DryRunModal open={dryRun.open} loading={dryRun.loading} report={dryRun.report} errorMessage={dryRun.errorMessage} onClose={dryRun.close} />
 
       {/* Execution verification failure banner */}
       {executionVerificationFailed && (

@@ -169,6 +169,7 @@ export default function OnboardingOverlay() {
                 templates={templates}
                 loadState={templateLoadState}
                 selectedId={onboardingSelectedReviewId}
+                approvedApps={approvedApps}
                 onSelect={handleTemplateSelect}
                 onRetry={retryLoadTemplates}
               />

@@ -4,7 +4,7 @@ import {
   List, Settings, Globe, Palette, GitBranch, LayoutDashboard, Cpu,
   Network, Database, Home, Compass, Shield, HardDriveDownload, Heart,
   FolderKanban, Map, Lightbulb, ArrowLeftRight, Play, Share2, Waypoints,
-  Radio, Gauge, Unplug, Webhook, Puzzle, Store, Archive, Layers,
+  Radio, Gauge, Unplug, Webhook, Puzzle, Store, Archive, Layers, Workflow,
   GraduationCap, BookOpen, Trophy, AlertOctagon,
   User, Mic, Volume2, Sparkles,
   Wand2, Image as ImageIcon, Film, Gauge as GaugeIcon, Bell,
@@ -90,6 +90,7 @@ export const eventBusItems: SubNavItem[] = [
   { id: 'cloud-webhooks', label: 'Cloud Events', icon: Webhook, devOnly: true },
   { id: 'dead-letter', label: 'Dead Letter Queue', icon: Archive, devOnly: true },
   { id: 'studio', label: 'Chain Studio', icon: GitBranch, devOnly: true },
+  { id: 'lineage', label: 'Lineage', icon: Workflow },
   { id: 'shared', label: 'Marketplace', icon: Store, devOnly: true },
 ];
 

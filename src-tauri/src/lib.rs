@@ -959,6 +959,23 @@ pub fn run() {
             }
             st.checkpoint("curation_scheduler");
 
+            // Outbound webhook notifier. Polls persona_events on a 5s tick,
+            // fans matching events through enabled notification_subscriptions,
+            // and POSTs Mustache-templated bodies to Slack/Discord/Teams/
+            // generic JSON endpoints. See `engine/webhook_notifier.rs`.
+            {
+                let pool_for_notifier = pool.clone();
+                let app_for_notifier = app.handle().clone();
+                tauri::async_runtime::spawn(async move {
+                    engine::webhook_notifier::run_dispatcher(
+                        pool_for_notifier,
+                        app_for_notifier,
+                    )
+                    .await;
+                });
+            }
+            st.checkpoint("webhook_notifier");
+
             // Test automation HTTP server.
             //
             // Bind happens synchronously here so an EADDRINUSE failure is logged
@@ -1185,6 +1202,7 @@ pub fn run() {
             commands::core::personas::delete_persona,
             commands::core::personas::get_persona_summaries,
             commands::core::personas::get_persona_detail,
+            commands::core::personas::list_personas_using_connector,
             commands::core::personas::resolve_effective_config,
             // Core -- Use Cases (Phase C3: capability toggle + simulate;
             // Phase C5b: per-capability generation policy + event rename)
@@ -1276,11 +1294,18 @@ pub fn run() {
             commands::execution::executions::get_dream_replay,
             commands::execution::executions::get_circuit_breaker_status,
             commands::execution::executions::preview_execution,
+            commands::execution::executions::dry_run_persona,
+            // Execution -- Annotations (tags / note / star)
+            commands::execution::annotations::add_annotation,
+            commands::execution::annotations::list_execution_annotations,
+            commands::execution::annotations::list_persona_annotations,
+            commands::execution::annotations::delete_annotation,
             // Execution -- Scheduler
             commands::execution::scheduler::get_scheduler_status,
             commands::execution::scheduler::start_scheduler,
             commands::execution::scheduler::stop_scheduler,
             commands::execution::scheduler::get_subscription_health,
+            commands::execution::scheduler::backfill_schedule,
             // Execution -- Tests
             commands::execution::tests::start_test_run,
             commands::execution::tests::list_test_runs,
@@ -1747,6 +1772,13 @@ pub fn run() {
             commands::communication::events::update_subscription,
             commands::communication::events::delete_subscription,
             commands::communication::events::test_event_flow,
+            // Communication -- Outbound notification webhooks (Slack/Discord/Teams/generic)
+            commands::communication::notifications::list_notification_subscriptions,
+            commands::communication::notifications::get_notification_subscription,
+            commands::communication::notifications::create_notification_subscription,
+            commands::communication::notifications::update_notification_subscription,
+            commands::communication::notifications::delete_notification_subscription,
+            commands::communication::notifications::test_notification_subscription,
             commands::communication::events::list_dead_letter_events,
             commands::communication::events::count_dead_letter_events,
             commands::communication::events::retry_dead_letter_event,

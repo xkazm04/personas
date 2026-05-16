@@ -25,7 +25,8 @@
     "updates_checking": "Checking...",
     "updates_up_to_date": "You're up to date",
     "updates_available_toast": "Update available — see the banner at the top to install",
-    "updates_check_failed": "Couldn't check for updates. Try again in a moment."
+    "updates_check_failed": "Couldn't check for updates. Try again in a moment.",
+    "avatar_alt": "Profile picture"
   },
   "appearance_extra": {
     "simple": "সহজ",
@@ -121,7 +122,35 @@
     "digest_description": "সব এজেন্টের স্বাস্থ্য সমস্যার সাপ্তাহিক সারাংশ বিজ্ঞপ্তি",
     "healing_alerts_hint": "কোন হিলিং অ্যালার্ট বিজ্ঞপ্তি ট্রিগার করবে নিয়ন্ত্রণ করুন",
     "healing_severity": "হিলিং অ্যালার্ট তীব্রতা",
-    "notification_hint": "ডেস্কটপ বিজ্ঞপ্তি OS নোটিফিকেশন ব্যবহার করে। ইন-অ্যাপ টোস্ট গুরুতর ও উচ্চ তীব্রতার সমস্যায় সেটিংস নির্বিশেষে দেখায়।"
+    "notification_hint": "ডেস্কটপ বিজ্ঞপ্তি OS নোটিফিকেশন ব্যবহার করে। ইন-অ্যাপ টোস্ট গুরুতর ও উচ্চ তীব্রতার সমস্যায় সেটিংস নির্বিশেষে দেখায়।",
+    "severity_toggle_aria": "{level} notifications",
+    "weekly_digest_aria": "Weekly health digest",
+    "webhook_subscriptions_title": "Outbound webhooks",
+    "webhook_subscriptions_add": "Add webhook",
+    "webhook_subscriptions_empty": "No webhook subscriptions yet. Add one to route persona events to Slack, Discord, Teams, or a custom JSON endpoint.",
+    "webhook_subscriptions_label": "Label",
+    "webhook_subscriptions_label_placeholder": "Production alerts",
+    "webhook_subscriptions_provider": "Destination",
+    "webhook_subscriptions_provider_labels": {
+      "slack": "Slack (incoming webhook)",
+      "discord": "Discord (channel webhook)",
+      "teams": "Microsoft Teams (incoming webhook)",
+      "generic": "Generic JSON (POST)"
+    },
+    "webhook_subscriptions_url": "Webhook URL",
+    "webhook_subscriptions_url_placeholder": "https://hooks.slack.com/services/...",
+    "webhook_subscriptions_events": "Event patterns",
+    "webhook_subscriptions_events_placeholder": "execution.finished, healing.escalated",
+    "webhook_subscriptions_events_hint": "Comma-separated. Use `prefix.*` to match all sub-types (e.g. `execution.*`) or `*` for everything.",
+    "webhook_subscriptions_template": "Message template (optional)",
+    "webhook_subscriptions_template_placeholder": "Persona {{payload.persona_id}} {{event_type}}: {{payload.status}}",
+    "webhook_subscriptions_template_hint": "Mustache-style placeholders walk the event JSON. Leave blank to use a default summary.",
+    "webhook_subscriptions_cancel": "Cancel",
+    "webhook_subscriptions_save": "Save",
+    "webhook_subscriptions_test_aria": "Send a test notification",
+    "webhook_subscriptions_edit_aria": "Edit webhook subscription",
+    "webhook_subscriptions_delete_aria": "Delete webhook subscription",
+    "webhook_subscriptions_enabled_aria": "Enable webhook subscription"
   },
   "engine": {
     "title": "ইঞ্জিন",
@@ -200,7 +229,8 @@
     "cancel": "বাতিল",
     "create_rule": "নিয়ম তৈরি করুন",
     "no_rules": "কোনো কনটেক্সট নিয়ম সংজ্ঞায়িত নেই",
-    "all_sources": "সব উৎস"
+    "all_sources": "সব উৎস",
+    "toggle_aria": "Ambient context fusion"
   },
   "byom": {
     "title": "নিজের মডেল আনুন",
@@ -429,7 +459,10 @@
     "rules_count_plural": "{count}টি নিয়ম",
     "reset_defaults": "ডিফল্টে রিসেট করুন",
     "confirm_reset": "রিসেট নিশ্চিত করুন?",
-    "rules_hint": "নিয়মগুলি প্রতিটি ডিসপ্যাচে ডেটাবেস থেকে লোড হয়। পরিবর্তন তাৎক্ষণিকভাবে কার্যকর হয়।"
+    "rules_hint": "নিয়মগুলি প্রতিটি ডিসপ্যাচে ডেটাবেস থেকে লোড হয়। পরিবর্তন তাৎক্ষণিকভাবে কার্যকর হয়।",
+    "action_reject": "Reject",
+    "action_tag": "Tag",
+    "action_warn": "Warn"
   },
   "api_keys": {
     "title": "API Keys",

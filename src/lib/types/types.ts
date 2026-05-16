@@ -399,7 +399,7 @@ export type ResearchLabTab = "dashboard" | "projects" | "literature" | "hypothes
 export type ObsidianBrainTab = "setup" | "sync" | "browse" | "graph" | "cloud";
 export type TwinTab = "profiles" | "identity" | "tone" | "brain" | "knowledge" | "voice" | "channels" | "training";
 export type ArtistTab = "blender" | "gallery" | "media-studio";
-export type EventBusTab = "builder" | "studio" | "shared" | "live-stream" | "rate-limits" | "test" | "smee-relay" | "cloud-webhooks" | "dead-letter";
+export type EventBusTab = "builder" | "studio" | "shared" | "lineage" | "live-stream" | "rate-limits" | "test" | "smee-relay" | "cloud-webhooks" | "dead-letter";
 
 // Ollama-as-CLI-engine is deferred — see src/features/settings/sub_engine/libs/engineCapabilities.ts
 // and src-tauri/src/engine/ollama.rs (gated behind the `ollama` Cargo feature).

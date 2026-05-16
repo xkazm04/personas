@@ -10,7 +10,7 @@ Connections is the credential, connector, resource, database, and dependency-man
 | --- | --- | --- |
 | Credentials | Credential list, cards, creation forms, import, workspace/picker flows, gateway controls | `sub_credentials/manager`, `sub_credentials/components` |
 | Databases | Database cards, table browser, SQL editor, safe mode, assistant chat, schema manager | `sub_databases` |
-| Catalog | Connector catalog, setup forms, auto-credential browser, desktop connectors, foraging, negotiator, schema proposal | `sub_catalog/components` |
+| Catalog | Connector catalog, setup forms, auto-credential browser, desktop connectors, foraging, negotiator, schema proposal. Sort dropdown (Alphabetical / Popular / Recently Added / Most-used with recipes) and a "New" ribbon on connectors added in the last 30 days; sort + local view counts persist in `vaultStore` via `catalogPrefsSlice`. | `sub_catalog/components` |
 | Dependencies | Relationship graph, blast-radius panel, simulation controls | `sub_dependencies` |
 | Add new | Entry mode into credential creation/catalog flows | `CredentialAddViews.tsx`, `useCatalogHandlers.ts` |
 
@@ -44,6 +44,10 @@ The credentials manager uses `useCredentialManagerState`, `CredentialNavContext`
 | Intelligence/autopilot | `credential_design.rs`, `auto_cred_browser.rs`, `foraging.rs`, `negotiator.rs`, `intelligence.rs`, `openapi_autopilot.rs` |
 | Rotation | `rotation.rs` |
 | Vector KB | `vector_kb.rs` |
+
+## Outbound notification connectors
+
+Four catalog entries in `scripts/connectors/builtin/` expose URL-only webhook credentials for outbound alerting: `slack-webhook` (Slack incoming webhook), `discord-webhook` (Discord channel webhook), `teams-webhook` (Microsoft Teams incoming webhook), and `generic-webhook` (any HTTPS endpoint accepting POST). They live alongside the full Slack/Discord/Teams bot connectors but expose only a `webhook_url` password field — no scopes, no resource picker — so users can grant a least-privilege "post-only" credential. The vault encrypts the URL like any other sensitive field, and the outbound dispatcher (`engine/webhook_notifier.rs`) reads it through `get_decrypted_fields`. See [events/README.md](../events/README.md#outbound-webhook-notifications) for the routing layer.
 
 ## Security constraints
 

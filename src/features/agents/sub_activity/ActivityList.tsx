@@ -1,16 +1,29 @@
+import { useMemo } from 'react';
+import { Star } from 'lucide-react';
 import { formatRelativeTime, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
 import { TYPE_ICONS, renderImportanceStars, type ActivityItem } from './activityTypes';
 import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
 import { useTranslation } from '@/i18n/useTranslation';
+import type { ExecutionAnnotation } from '@/lib/bindings/ExecutionAnnotation';
 
 interface ActivityListProps {
   items: ActivityItem[];
   isLoading: boolean;
+  useCaseOptions: { id: string; title: string }[];
+  annotationsByExecution: Map<string, ExecutionAnnotation>;
   onRowClick: (item: ActivityItem) => void;
 }
 
-function useColumns(): TableColumn<ActivityItem>[] {
+function useColumns(
+  useCaseOptions: { id: string; title: string }[],
+  annotationsByExecution: Map<string, ExecutionAnnotation>,
+): TableColumn<ActivityItem>[] {
   const { t } = useTranslation();
+  const useCaseTitleById = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const uc of useCaseOptions) m.set(uc.id, uc.title);
+    return m;
+  }, [useCaseOptions]);
   return [
     {
       key: 'icon',
@@ -31,11 +44,58 @@ function useColumns(): TableColumn<ActivityItem>[] {
       width: '1fr',
       sortable: true,
       sortFn: (a, b) => a.title.localeCompare(b.title),
-      render: (item) => (
-        <div className="min-w-0">
-          <span className="typo-body font-medium text-foreground/85 truncate block">{item.title}</span>
-        </div>
-      ),
+      render: (item) => {
+        const annotation =
+          item.type === 'execution' ? annotationsByExecution.get(item.id) : undefined;
+        return (
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 min-w-0">
+              {annotation?.starred && (
+                <Star className="w-3 h-3 text-amber-400 shrink-0" fill="currentColor" />
+              )}
+              <span className="typo-body font-medium text-foreground/85 truncate">{item.title}</span>
+            </div>
+            {annotation && (annotation.tags.length > 0 || annotation.note) && (
+              <div className="flex flex-wrap items-center gap-1 mt-0.5">
+                {annotation.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="px-1.5 py-px typo-code rounded-card bg-primary/10 text-primary/80 border border-primary/15"
+                  >
+                    {tag}
+                  </span>
+                ))}
+                {annotation.note && (
+                  <span
+                    className="typo-code text-foreground/60 italic truncate max-w-[180px]"
+                    title={annotation.note}
+                  >
+                    {annotation.note}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      key: 'useCase',
+      label: t.agents.activity.col_use_case,
+      width: '160px',
+      sortable: true,
+      sortFn: (a, b) => {
+        const at = a.useCaseId ? (useCaseTitleById.get(a.useCaseId) ?? a.useCaseId) : '';
+        const bt = b.useCaseId ? (useCaseTitleById.get(b.useCaseId) ?? b.useCaseId) : '';
+        return at.localeCompare(bt);
+      },
+      render: (item) => {
+        if (!item.useCaseId) {
+          return <span className="typo-body text-foreground italic">{t.agents.activity.use_case_persona_wide}</span>;
+        }
+        const title = useCaseTitleById.get(item.useCaseId) ?? item.useCaseId;
+        return <span className="typo-body text-foreground truncate block" title={title}>{title}</span>;
+      },
     },
     {
       key: 'status',
@@ -75,13 +135,9 @@ function useColumns(): TableColumn<ActivityItem>[] {
   ];
 }
 
-export function ActivityList({ items, isLoading, onRowClick }: ActivityListProps) {
+export function ActivityList({ items, isLoading, useCaseOptions, annotationsByExecution, onRowClick }: ActivityListProps) {
   const { t } = useTranslation();
-  const columns = useColumns();
-  // Key on isLoading so the container remounts when a refresh resolves,
-  // replaying the fade-slide-in keyframe. Pair with a 150ms opacity pulse
-  // on the outgoing list so the motion reads as "data is refreshing" rather
-  // than an instant swap that disconnects from the spinning refresh icon.
+  const columns = useColumns(useCaseOptions, annotationsByExecution);
   return (
     <div
       key={isLoading ? 'loading' : 'ready'}

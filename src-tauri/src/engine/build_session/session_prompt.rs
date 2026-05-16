@@ -288,9 +288,49 @@ Once behavior_core + all capability envelopes + all persona_resolution fields ar
       "tool_hints": [...], "use_case_flow": {{...}},
       "error_handling": ""
     }}
+  ],
+  "suggested_parameters": [
+    {{
+      "key": "<snake_case_identifier>",
+      "label": "<short human title>",
+      "type": "number|string|boolean|select",
+      "default_value": <typed default>,
+      "value": <same as default>,
+      "description": "<why a user would tune this, and what it controls>",
+      "min": <num, optional>, "max": <num, optional>,
+      "options": ["..."], "unit": "items|%|$|ms"
+    }}
   ]
 }}}}
 ```
+
+### Parameter discovery (REQUIRED)
+
+If the persona's `operating_instructions` mention any value the user would
+plausibly want to change later — counts ("extract 7 ideas", "top 5 results",
+"summarize in 3 paragraphs"), thresholds ("alert above $500"), lookback
+windows ("last 4 weeks"), tone choices ("gentle / direct / socratic"), or
+source lists — you MUST:
+
+1. Declare it as a `suggested_parameters[]` entry with a typed default, sensible
+   min/max for numbers, and a `description` explaining the trade-off.
+2. Rewrite the matching reference in `operating_instructions` (and
+   `tool_guidance` / `error_handling` if relevant) from the literal value to
+   the placeholder `{{{{param.<key>}}}}` so the runtime substitution layer
+   plugs the live value in at execution time.
+
+Otherwise the user has no way to tune the persona short of rebuilding it.
+Personas with all-hardcoded values feel rigid and the user can't iterate.
+
+Good parameter candidates by domain:
+- Research personas: max findings per session, lookback window, source weight
+- Curators: max items per issue, freshness cutoff, scoring threshold
+- Triagers: minimum confidence, recurrence floor before flagging
+- Briefings: priority count, level of detail, cadence
+
+The Agents.Design > Parameters card surfaces these for live editing without
+a rebuild — so favour parameters over questionnaire-baked defaults whenever
+the value is plausibly tunable.
 
 Also derive and include a `structured_prompt` with decomposed sections (this is used by the runtime prompt assembler):
 

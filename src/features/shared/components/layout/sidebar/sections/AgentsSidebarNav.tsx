@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Users, Plus, List, Star, ChevronDown, Cloud, Clock, Activity } from 'lucide-react';
+import { Users, Plus, List, Star, ChevronDown, Cloud, Clock, Activity, FolderGit2 } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useSystemStore } from "@/stores/systemStore";
@@ -9,6 +9,7 @@ import { useFavoriteAgents as useFavoriteAgentsInline } from '@/hooks/agents/use
 import { usePrefetchOnHover } from '@/hooks/agents/usePrefetchOnHover';
 import { useRecentAgents } from '@/hooks/agents/useRecentAgents';
 import { useSidebarAgentActivity, type AgentActivityType } from '@/hooks/sidebar/useSidebarAgentActivity';
+import { useCodebasePersonas } from '@/hooks/sidebar/useCodebasePersonas';
 import { cloudItems } from '../sidebarData';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -54,9 +55,13 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
   const executionPersonaId = useAgentStore((s) => s.executionPersonaId);
   const isExecuting = useAgentStore((s) => s.isExecuting);
   const backgroundExecutions = useAgentStore((s) => s.backgroundExecutions);
+  const activeProjectId = useSystemStore((s) => s.activeProjectId);
+  const devProjects = useSystemStore((s) => s.projects);
+  const fetchDevProjects = useSystemStore((s) => s.fetchProjects);
   const [favoritesCollapsed, setFavoritesCollapsed] = useState(false);
   const [recentsCollapsed, setRecentsCollapsed] = useState(false);
   const [progressCollapsed, setProgressCollapsed] = useState(false);
+  const [activeProjectCollapsed, setActiveProjectCollapsed] = useState(false);
   const isDev = import.meta.env.DEV;
   const { getPrefetchProps } = usePrefetchOnHover();
 
@@ -163,6 +168,25 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
     [personas, recentIds, favorites],
   );
 
+  // Personas attached to the "codebase" built-in connector. Combined with
+  // the user's currently-active Dev Tools project, these are the agents
+  // that can operate on the active codebase. Section is hidden entirely
+  // when no project is active or no persona has the connector.
+  const codebasePersonaIds = useCodebasePersonas();
+  useEffect(() => {
+    if (devProjects.length === 0) {
+      void fetchDevProjects();
+    }
+  }, [devProjects.length, fetchDevProjects]);
+  const activeProject = useMemo(
+    () => devProjects.find((p) => p.id === activeProjectId) ?? null,
+    [devProjects, activeProjectId],
+  );
+  const activeProjectPersonas = useMemo(
+    () => (activeProjectId ? personas.filter((p) => codebasePersonaIds.has(p.id)) : []),
+    [personas, codebasePersonaIds, activeProjectId],
+  );
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -244,6 +268,62 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
                 </button>
               );
             })}
+          </div>
+        )}
+
+        {/* Active Dev Tools project — personas with the built-in "codebase"
+            connector. Shown only when a project is selected AND at least one
+            persona is wired up; otherwise hidden so the sidebar doesn't
+            advertise an empty group. */}
+        {activeProject && activeProjectPersonas.length > 0 && (
+          <div className="mt-3 pt-3 border-t border-primary/10">
+            <button
+              onClick={() => setActiveProjectCollapsed(!activeProjectCollapsed)}
+              aria-expanded={!activeProjectCollapsed}
+              className="w-full flex items-center gap-2 px-3 py-1.5 typo-label text-indigo-400/70 hover:text-indigo-400/90 transition-colors"
+              title={`Active project: ${activeProject.name}${activeProject.root_path ? ` — ${activeProject.root_path}` : ''}`}
+            >
+              <FolderGit2 className="w-3 h-3" aria-hidden="true" />
+              <span className="truncate min-w-0">{activeProject.name}</span>
+              <span className="text-[10px] font-mono text-indigo-400/50 ml-0.5">{activeProjectPersonas.length}</span>
+              <ChevronDown className={`w-3 h-3 ml-auto transition-transform ${activeProjectCollapsed ? '-rotate-90' : ''}`} />
+            </button>
+            {!activeProjectCollapsed && (
+              <div className="mt-1 space-y-0.5">
+                {activeProjectPersonas.map((p) => {
+                  const isRunning = executingPersonaIds.has(p.id);
+                  const isActive = selectedPersonaId === p.id && !isCreatingPersona;
+                  return (
+                    <button
+                      key={p.id}
+                      {...getPrefetchProps(p.id)}
+                      onClick={() => selectPersona(p.id)}
+                      aria-current={isActive ? 'page' : undefined}
+                      className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg typo-body transition-colors group ${
+                        isActive
+                          ? 'bg-primary/10 text-foreground/90 shadow-[0_0_12px_rgba(99,102,241,0.12)] border border-indigo-500/20'
+                          : isRunning
+                            ? 'bg-orange-500/5 hover:bg-secondary/40'
+                            : 'hover:bg-secondary/40'
+                      }`}
+                    >
+                      {isRunning ? (
+                        <span className="relative flex h-5 w-5 items-center justify-center flex-shrink-0">
+                          <span className="absolute w-3 h-3 rounded-full animate-ping bg-orange-500/40" />
+                          <span className="relative w-2.5 h-2.5 rounded-full bg-orange-500 border border-orange-600/50" />
+                        </span>
+                      ) : (
+                        <PersonaIcon icon={p.icon} color={p.color} />
+                      )}
+                      <span className={`truncate text-[13px] min-w-0 flex-1 text-left ${
+                        isActive ? 'text-foreground/90 font-medium' : isRunning ? 'text-orange-300/90' : 'text-foreground'
+                      }`}>{p.name}</span>
+                      {!isRunning && <HealthDot grade={healthGrades[p.id]} />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 

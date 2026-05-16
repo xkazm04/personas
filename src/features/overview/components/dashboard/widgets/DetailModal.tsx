@@ -8,10 +8,13 @@ interface DetailModalProps {
   subtitle?: ReactNode;
   onClose: () => void;
   actions?: ReactNode;
+  /** Override the default max-width (size="full" → max-w-5xl). Pass a Tailwind
+   *  max-w-* class to widen or narrow specific instances of the modal. */
+  maxWidthClass?: string;
   children: ReactNode;
 }
 
-export default function DetailModal({ title, subtitle, onClose, actions, children }: DetailModalProps) {
+export default function DetailModal({ title, subtitle, onClose, actions, maxWidthClass, children }: DetailModalProps) {
   const { t } = useTranslation();
   return (
     <BaseModal
@@ -19,6 +22,7 @@ export default function DetailModal({ title, subtitle, onClose, actions, childre
       onClose={onClose}
       titleId="detail-modal-title"
       size="full"
+      maxWidthClass={maxWidthClass}
       portal
       staggerChildren={false}
       containerClassName="fixed inset-0 z-[200] flex items-start justify-center px-6 pt-14 pb-6"

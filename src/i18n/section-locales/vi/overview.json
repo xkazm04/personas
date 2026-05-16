@@ -127,7 +127,23 @@
       "importance": "Mức quan trọng",
       "tags": "Thẻ",
       "tags_hint": "(phân cách bằng dấu phẩy)"
-    }
+    },
+    "curation_schedule_button": "Schedule",
+    "curation_schedule_button_hint": "Schedule automatic memory curation",
+    "curation_schedule_button_no_persona": "Pick an agent to schedule curation",
+    "curation_schedule_title": "Schedule memory curation",
+    "curation_schedule_description": "Run a memory review automatically on a recurring schedule. The result lands as a proposal you can apply or discard — your live memories are never touched without your confirmation.",
+    "curation_schedule_cron_label": "Schedule (cron)",
+    "curation_schedule_cron_hint": "5-field cron expression: minutes hours day-of-month month day-of-week.",
+    "curation_schedule_presets_label": "Quick picks",
+    "preset_weekly_sunday": "Weekly · Sun 3am",
+    "preset_daily_3am": "Daily · 3am",
+    "preset_weekly_monday": "Weekly · Mon 9am",
+    "preset_monthly": "Monthly · 1st",
+    "curation_schedule_last_run_label": "Last run",
+    "curation_schedule_disabled_state": "Curation is disabled for this agent",
+    "curation_schedule_disable": "Disable schedule",
+    "curation_schedule_save": "Save schedule"
   },
   "memory_review": {
     "all_conflicts_resolved": "Tất cả xung đột đã được giải quyết",
@@ -284,7 +300,10 @@
     "empty_title": "Chào mừng đến Personas",
     "empty_subtitle": "Tạo tác nhân đầu tiên để bắt đầu xem số liệu thực thi, biểu đồ lưu lượng và hoạt động tại đây.",
     "create_persona": "Tạo Persona",
-    "from_templates": "Từ mẫu"
+    "from_templates": "Từ mẫu",
+    "todos_label": "Todos",
+    "todos_subtitle_open": "{count} open",
+    "todos_empty": "All clear."
   },
   "execution_metrics": {
     "title": "Số liệu thực thi",
@@ -439,7 +458,27 @@
     "improve_placeholder": "Mô tả cách đầu ra này có thể được cải thiện...",
     "submit_improvement": "Gửi cải thiện",
     "starting": "Đang bắt đầu...",
-    "unknown_persona": "Không rõ"
+    "unknown_persona": "Không rõ",
+    "show_read_messages": "Show read",
+    "show_only_unread": "Hide read",
+    "rating_label": "Rate this message",
+    "rating_star_aria": "Rate {value} of 5",
+    "rating_saved": "Saved · {stars}/5",
+    "rating_clear": "Clear rating",
+    "rating_memory_title": "Message rating: {stars}/5",
+    "rating_memory_content_good": "User rated the output {stars}/5 stars. This message met expectations — keep the approach.",
+    "rating_memory_content_neutral": "User rated the output {stars}/5 stars. Neutral feedback — review the message for marginal improvements.",
+    "rating_memory_content_poor": "User rated the output {stars}/5 stars. Low score — review the prompt or approach before repeating this pattern.",
+    "section_pending_decisions": "Pending decisions",
+    "pending_decisions_empty": "No human-review tasks linked to this execution.",
+    "pending_decisions_approve": "Approve",
+    "pending_decisions_reject": "Reject",
+    "pending_decisions_view_all": "Open in Approvals",
+    "action_export_pdf": "Export to PDF",
+    "action_play_in_chat": "Play in chat",
+    "persona_link_title": "View persona",
+    "pending_decisions_approve_all": "Approve all",
+    "pending_decisions_reject_all": "Reject all"
   },
   "events": {
     "title": "Sự kiện",
@@ -621,7 +660,16 @@
     "executions_badge": "Thực thi",
     "success_badge": "Thành công",
     "alerts_badge": "Cảnh báo",
-    "agents_badge": "Tác nhân"
+    "agents_badge": "Tác nhân",
+    "tool_performance": "Tool Performance",
+    "tool_performance_subtitle": "Latency & error rate per tool",
+    "tool_performance_col_tool": "Tool",
+    "tool_performance_col_runs": "Runs",
+    "tool_performance_col_avg": "Avg",
+    "tool_performance_col_max": "Max",
+    "tool_performance_col_errors": "Errors",
+    "tool_performance_empty": "No tool runs in this window",
+    "tool_performance_unit_ms": "ms"
   },
   "cards": {
     "fleet_optimization": "Tối ưu hóa đội",
@@ -1379,5 +1427,28 @@
     "realtime_title": "Watch your events flow in real time",
     "realtime_subtitle": "Animated particles trace each event as it travels from sources to your agents. Every dot is a live event moving through your system.",
     "realtime_action": "Send a test event"
+  },
+  "cockpit": {
+    "title_default": "Cockpit",
+    "subtitle_contextual": "Showing context for a single message — chat with Athena alongside.",
+    "context_for": "Showing context for {title}",
+    "context_exit": "Exit context",
+    "message_summary_title": "Message",
+    "message_unavailable": "Message unavailable",
+    "message_empty": "(empty body)",
+    "open_in_messages": "Open in Messages",
+    "execution_facts_title": "Execution facts",
+    "fact_model": "Model",
+    "fact_cost": "Cost",
+    "fact_duration": "Duration",
+    "fact_tokens": "Tokens (in/out)",
+    "fact_status": "Status",
+    "fact_outcome": "Outcome",
+    "linked_decisions_title": "Pending decisions",
+    "linked_decisions_empty": "No human-review tasks for this execution.",
+    "linked_decisions_approve": "Approve",
+    "linked_decisions_reject": "Reject",
+    "linked_memories_title": "Linked memories",
+    "linked_memories_empty": "No memories recorded for this execution."
   }
 }

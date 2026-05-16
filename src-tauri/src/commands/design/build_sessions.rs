@@ -2485,6 +2485,36 @@ pub async fn promote_build_draft_inner(
     // Post-transaction: best-effort scheduler updates
     update_trigger_schedules(&state.db, &created_trigger_ids);
 
+    // Translate any `adoption_questions[].maps_to == persona.parameters[KEY]`
+    // declarations on the original design payload into a `PersonaParameter[]`
+    // array on the persona row, with the user's questionnaire answers as
+    // each parameter's `value`. The runtime substitution layer
+    // (`engine/prompt/variables.rs`) then resolves `{{param.KEY}}`
+    // placeholders to the live value, so users can re-tune without rebuilding.
+    // Best-effort: a failure here logs and continues; the persona still works,
+    // it just won't have tunable parameters surfaced.
+    if let Ok(design_json) = serde_json::from_str::<serde_json::Value>(&design_result_str) {
+        let answers_map: Option<std::collections::HashMap<String, String>> = session
+            .adoption_answers
+            .as_ref()
+            .and_then(|raw| {
+                serde_json::from_str::<crate::engine::adoption_answers::AdoptionAnswers>(raw).ok()
+            })
+            .map(|a| a.answers);
+        if let Err(e) = super::template_adopt::populate_persona_parameters_from_design(
+            &state.db,
+            &persona_id,
+            &design_json,
+            answers_map.as_ref(),
+        ) {
+            tracing::warn!(
+                persona_id = %persona_id,
+                error = %e,
+                "promote_build_draft: failed to populate persona.parameters (continuing)"
+            );
+        }
+    }
+
     // C7 — auto-create smee_relays rows for every webhook trigger that
     // carried a `smee_channel_url` from the build prompt rule 24 flow.
     // Best-effort: a failure here doesn't unwind the promote (the webhook

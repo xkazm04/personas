@@ -1137,7 +1137,14 @@
     "filter_status_connected": "Connected ({count})",
     "filter_status_new": "New ({count})",
     "filter_all_licenses": "All Licenses ({count})",
-    "filter_count": "{label} ({count})"
+    "filter_count": "{label} ({count})",
+    "filter_sort": "Sort",
+    "sort_alphabetical": "Alphabetical",
+    "sort_popular": "Popular",
+    "sort_recently_added": "Recently Added",
+    "sort_most_used_with_recipes": "Most-used with recipes",
+    "new_connector_ribbon": "New",
+    "new_connector_tooltip": "Added in the last 30 days"
   },
   "cli_capture": {
     "cta": "স্থানীয় CLI থেকে আমদানি করুন",

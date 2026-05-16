@@ -53,7 +53,13 @@ pub fn tick(pool: &DbPool) -> Result<usize, AppError> {
     let mut enqueued = 0usize;
 
     for schedule in &schedules {
-        let parsed = match cron::parse_cron(&schedule.cron_expr) {
+        // Seed H-token expansion with the persona id so two personas on the
+        // same `H/15` curation cron land on different minutes instead of
+        // both running at :00.
+        let parsed = match cron::parse_cron_seeded(
+            &schedule.cron_expr,
+            cron::seed_hash(&schedule.persona_id),
+        ) {
             Ok(s) => s,
             Err(e) => {
                 tracing::warn!(

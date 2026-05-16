@@ -175,7 +175,10 @@
     "attach_file_title": "ファイルを添付 (API 仕様、スキーマ、MCP 設定)",
     "add_references_title": "参照 URL または接続文字列を追加",
     "no_matches": "一致なし",
-    "all_prefix": "すべて ("
+    "all_prefix": "すべて (",
+    "select_agent_icon": "Select agent icon",
+    "select_agent_icon_desc": "Choose an icon for this agent. Themed dark/light variants render automatically.",
+    "clear_icon": "Clear icon"
   },
   "reasoning_trace": {
     "system_init": "システム初期化",

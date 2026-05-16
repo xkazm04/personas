@@ -376,6 +376,42 @@ pub fn get_in_range(
     })
 }
 
+/// Fetch events newer than `after_created_at` (ascending, with `id`
+/// tiebreaker), bounded by `limit`. When `after_created_at` is `None`,
+/// returns the oldest events first up to the limit — this only happens
+/// once per install, at which point the outbound webhook notifier seeds
+/// its watermark.
+///
+/// Used by `engine::webhook_notifier::tick` to drain unseen events into
+/// outbound subscriptions.
+pub fn get_recent_after(
+    pool: &DbPool,
+    after_created_at: Option<&str>,
+    limit: i64,
+) -> Result<Vec<PersonaEvent>, AppError> {
+    timed_query!("persona_events", "persona_events::get_recent_after", {
+        let conn = pool.get()?;
+        if let Some(cursor) = after_created_at {
+            let mut stmt = conn.prepare_cached(
+                "SELECT * FROM persona_events
+                 WHERE created_at > ?1
+                 ORDER BY created_at ASC, id ASC
+                 LIMIT ?2",
+            )?;
+            let rows = stmt.query_map(params![cursor, limit], row_to_event)?;
+            Ok(collect_rows(rows, "get_recent_after"))
+        } else {
+            let mut stmt = conn.prepare_cached(
+                "SELECT * FROM persona_events
+                 ORDER BY created_at ASC, id ASC
+                 LIMIT ?1",
+            )?;
+            let rows = stmt.query_map(params![limit], row_to_event)?;
+            Ok(collect_rows(rows, "get_recent_after"))
+        }
+    })
+}
+
 /// Count events by source persona ID (used for post-mortem dedup check).
 pub fn count_by_source(pool: &DbPool, persona_id: &str) -> Result<i64, AppError> {
     timed_query!("persona_events", "persona_events::count_by_source", {

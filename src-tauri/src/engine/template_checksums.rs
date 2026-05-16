@@ -22,7 +22,7 @@ static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLo
     m.insert("content/demo-recorder.json", "001c3128b7f4aa6c");
     m.insert("content/feature-video-creator.json", "0006f600b1dd4395");
     m.insert("content/game-character-animator.json", "0009f6b421cfac45");
-    m.insert("content/newsletter-curator.json", "0006cc5eb31b53fa");
+    m.insert("content/newsletter-curator.json", "00139ae6ae3f2199");
     m.insert("content/scientific-writing-editor.json", "0004c8305a7c3658");
     m.insert("content/social-media-designer.json", "0008ef6b468080a9");
     m.insert("content/youtube-content-pipeline.json", "0000708b71e85c85");
@@ -71,12 +71,12 @@ static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLo
     m.insert("marketing/web-marketing.json", "001f894aba6e0e03");
     m.insert("marketing/website-conversion-audit.json", "0009381b6ad7d0e0");
     m.insert("productivity/appointment-orchestrator.json", "000c112d130486ae");
-    m.insert("productivity/daily-standup-compiler.json", "0000fce1359780e7");
+    m.insert("productivity/daily-standup-compiler.json", "00198ec0b6110bba");
     m.insert("productivity/digital-clone.json", "001192f28c81ec92");
     m.insert("productivity/email-follow-up-tracker.json", "000af66b0a225ee1");
     m.insert("productivity/email-morning-digest.json", "001ee7716e0db975");
     m.insert("productivity/email-task-extractor.json", "001407b490e37845");
-    m.insert("productivity/idea-harvester.json", "001b088b8b470404");
+    m.insert("productivity/idea-harvester.json", "0002458ef107e52a");
     m.insert("productivity/meeting-lifecycle-manager.json", "0004aaa526a2376b");
     m.insert("productivity/personal-capture-bot.json", "0003c16e3411c026");
     m.insert("productivity/router.json", "00109fa530b5aa47");
@@ -88,7 +88,7 @@ static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLo
     m.insert("project-management/deadline-synchronizer.json", "0010b5035cd7e759");
     m.insert("project-management/technical-decision-tracker.json", "000735af4ccd1e6e");
     m.insert("research/ai-research-report-generator.json", "000f5bf0f58cd874");
-    m.insert("research/ai-weekly-research.json", "0014bdda0fc92d41");
+    m.insert("research/ai-weekly-research.json", "000993c6c42ca2ca");
     m.insert("research/bi-dashboard-digest.json", "000ad6465f83f806");
     m.insert("research/conversational-database-analyst.json", "0015498ffdaaf159");
     m.insert("research/customer-event-intelligence.json", "0017717fe08ca436");
@@ -97,7 +97,7 @@ static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLo
     m.insert("research/knowledge-base-health-auditor.json", "00107e29951d3d42");
     m.insert("research/linkedin-watchlist-scout.json", "000f0dcb7de78f54");
     m.insert("research/product-analytics-briefer.json", "00046ecb42347dbc");
-    m.insert("research/product-scout.json", "001945790cd62f10");
+    m.insert("research/product-scout.json", "00137e09495f47fc");
     m.insert("research/product-signal-detector.json", "0010e6e4cd83f52c");
     m.insert("research/research-knowledge-curator.json", "0010cc43f7f46f6c");
     m.insert("research/research-paper-indexer.json", "0014171826a5c189");

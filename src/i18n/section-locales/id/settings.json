@@ -25,7 +25,8 @@
     "updates_checking": "Checking...",
     "updates_up_to_date": "You're up to date",
     "updates_available_toast": "Update available — see the banner at the top to install",
-    "updates_check_failed": "Couldn't check for updates. Try again in a moment."
+    "updates_check_failed": "Couldn't check for updates. Try again in a moment.",
+    "avatar_alt": "Profile picture"
   },
   "appearance_extra": {
     "simple": "Sederhana",
@@ -121,7 +122,35 @@
     "digest_description": "Notifikasi mingguan merangkum masalah kesehatan di semua agen dengan skor kesehatan total",
     "healing_alerts_hint": "Kontrol peringatan pemulihan mana yang memicu notifikasi",
     "healing_severity": "Tingkat Keparahan Peringatan Pemulihan",
-    "notification_hint": "Notifikasi desktop menggunakan sistem notifikasi OS asli. Toast dalam aplikasi muncul untuk masalah kritis dan tingkat tinggi tanpa memandang pengaturan ini."
+    "notification_hint": "Notifikasi desktop menggunakan sistem notifikasi OS asli. Toast dalam aplikasi muncul untuk masalah kritis dan tingkat tinggi tanpa memandang pengaturan ini.",
+    "severity_toggle_aria": "{level} notifications",
+    "weekly_digest_aria": "Weekly health digest",
+    "webhook_subscriptions_title": "Outbound webhooks",
+    "webhook_subscriptions_add": "Add webhook",
+    "webhook_subscriptions_empty": "No webhook subscriptions yet. Add one to route persona events to Slack, Discord, Teams, or a custom JSON endpoint.",
+    "webhook_subscriptions_label": "Label",
+    "webhook_subscriptions_label_placeholder": "Production alerts",
+    "webhook_subscriptions_provider": "Destination",
+    "webhook_subscriptions_provider_labels": {
+      "slack": "Slack (incoming webhook)",
+      "discord": "Discord (channel webhook)",
+      "teams": "Microsoft Teams (incoming webhook)",
+      "generic": "Generic JSON (POST)"
+    },
+    "webhook_subscriptions_url": "Webhook URL",
+    "webhook_subscriptions_url_placeholder": "https://hooks.slack.com/services/...",
+    "webhook_subscriptions_events": "Event patterns",
+    "webhook_subscriptions_events_placeholder": "execution.finished, healing.escalated",
+    "webhook_subscriptions_events_hint": "Comma-separated. Use `prefix.*` to match all sub-types (e.g. `execution.*`) or `*` for everything.",
+    "webhook_subscriptions_template": "Message template (optional)",
+    "webhook_subscriptions_template_placeholder": "Persona {{payload.persona_id}} {{event_type}}: {{payload.status}}",
+    "webhook_subscriptions_template_hint": "Mustache-style placeholders walk the event JSON. Leave blank to use a default summary.",
+    "webhook_subscriptions_cancel": "Cancel",
+    "webhook_subscriptions_save": "Save",
+    "webhook_subscriptions_test_aria": "Send a test notification",
+    "webhook_subscriptions_edit_aria": "Edit webhook subscription",
+    "webhook_subscriptions_delete_aria": "Delete webhook subscription",
+    "webhook_subscriptions_enabled_aria": "Enable webhook subscription"
   },
   "engine": {
     "title": "Mesin",
@@ -200,7 +229,8 @@
     "cancel": "Batalkan",
     "create_rule": "Buat Aturan",
     "no_rules": "Tidak ada aturan konteks yang ditentukan",
-    "all_sources": "semua sumber"
+    "all_sources": "semua sumber",
+    "toggle_aria": "Ambient context fusion"
   },
   "byom": {
     "title": "Bawa Model Anda Sendiri",
@@ -429,7 +459,10 @@
     "rules_count_plural": "{count} aturan",
     "reset_defaults": "Reset ke default",
     "confirm_reset": "Konfirmasi reset?",
-    "rules_hint": "Aturan dimuat dari database pada setiap pengiriman. Perubahan berlaku segera."
+    "rules_hint": "Aturan dimuat dari database pada setiap pengiriman. Perubahan berlaku segera.",
+    "action_reject": "Reject",
+    "action_tag": "Tag",
+    "action_warn": "Warn"
   },
   "api_keys": {
     "title": "API Keys",

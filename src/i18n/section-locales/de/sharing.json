@@ -164,5 +164,13 @@
   "sync_rounds": "Synchronisierungsrunden",
   "success_fail": "Erfolg / Fehler",
   "avg_sync_duration": "Durchschn. Synchronisierungsdauer",
-  "entries_received": "Einträge empfangen"
+  "entries_received": "Einträge empfangen",
+  "exported_bundle_one": "Bundle exported: {count} resource ({size})",
+  "exported_bundle_other": "Bundle exported: {count} resources ({size})",
+  "copied_bundle_one": "Bundle copied: {count} resource ({size})",
+  "copied_bundle_other": "Bundle copied: {count} resources ({size})",
+  "share_link_copied_one": "Share link copied! {count} resource (expires in 24h, single use)",
+  "share_link_copied_other": "Share link copied! {count} resources (expires in 24h, single use)",
+  "imported_resources_one": "Imported {count} resource",
+  "imported_resources_other": "Imported {count} resources"
 }

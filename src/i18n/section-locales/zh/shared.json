@@ -175,7 +175,10 @@
     "attach_file_title": "附加文件（API 规范、模式、MCP 配置）",
     "add_references_title": "添加参考 URL 或连接字符串",
     "no_matches": "无匹配项",
-    "all_prefix": "全部 ("
+    "all_prefix": "全部 (",
+    "select_agent_icon": "Select agent icon",
+    "select_agent_icon_desc": "Choose an icon for this agent. Themed dark/light variants render automatically.",
+    "clear_icon": "Clear icon"
   },
   "reasoning_trace": {
     "system_init": "系统初始化",

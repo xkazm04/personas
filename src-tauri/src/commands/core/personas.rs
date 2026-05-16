@@ -391,6 +391,20 @@ pub fn get_persona_detail(
     })
 }
 
+/// Returns persona IDs that have at least one tool whose
+/// `requires_credential_type` matches the given connector name. Cheap,
+/// single-query lookup used by the Agents sidebar to surface personas
+/// linked to a specific connector (e.g. `"codebase"`) without paying
+/// the cost of fetching every persona's full detail.
+#[tauri::command]
+pub fn list_personas_using_connector(
+    state: State<'_, Arc<AppState>>,
+    connector_name: String,
+) -> Result<Vec<String>, AppError> {
+    require_auth_sync(&state)?;
+    tool_repo::list_persona_ids_using_connector(&state.db, &connector_name)
+}
+
 /// Result of a persona deletion, reporting what happened to running executions.
 #[derive(Debug, Clone, Serialize, TS)]
 #[ts(export)]

@@ -175,7 +175,10 @@
     "attach_file_title": "Přiložit soubor (API spec, schéma, MCP config)",
     "add_references_title": "Přidat referenční URL nebo connection stringy",
     "no_matches": "Žádné shody",
-    "all_prefix": "Vše ("
+    "all_prefix": "Vše (",
+    "select_agent_icon": "Select agent icon",
+    "select_agent_icon_desc": "Choose an icon for this agent. Themed dark/light variants render automatically.",
+    "clear_icon": "Clear icon"
   },
   "reasoning_trace": {
     "system_init": "Inicializace systému",

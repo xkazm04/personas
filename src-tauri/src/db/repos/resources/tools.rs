@@ -346,6 +346,34 @@ pub fn get_tools_for_personas(
     )
 }
 
+/// Returns the IDs of all personas that have at least one tool whose
+/// `requires_credential_type` matches the given connector name. Used by
+/// the Agents sidebar to surface personas linked to a specific connector
+/// (e.g. "codebase") without having to fetch every persona's tool list.
+pub fn list_persona_ids_using_connector(
+    pool: &DbPool,
+    connector_name: &str,
+) -> Result<Vec<String>, AppError> {
+    timed_query!(
+        "persona_tool_definitions",
+        "persona_tool_definitions::list_persona_ids_using_connector",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
+                "SELECT DISTINCT pt.persona_id
+                 FROM persona_tools pt
+                 INNER JOIN persona_tool_definitions d ON d.id = pt.tool_id
+                 WHERE d.requires_credential_type = ?1",
+            )?;
+            let rows = stmt.query_map(params![connector_name], |row| row.get::<_, String>(0))?;
+            let ids = rows
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)?;
+            Ok(ids)
+        }
+    )
+}
+
 pub fn assign_tool(
     pool: &DbPool,
     persona_id: &str,

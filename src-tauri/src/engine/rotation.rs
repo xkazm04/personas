@@ -1121,7 +1121,12 @@ pub async fn evaluate_credential_events(pool: &DbPool) {
         let config = parse_event_config(event.config.as_deref());
 
         let should_fire = match event.event_template_id.as_str() {
-            "cron_schedule" => evaluate_cron_event(&config, &now, event.last_polled_at.as_deref()),
+            "cron_schedule" => evaluate_cron_event(
+                &config,
+                &now,
+                event.last_polled_at.as_deref(),
+                cron::seed_hash(&event.id),
+            ),
             "expiration_threshold" => {
                 evaluate_expiration_event(pool, &event.credential_id, &config, &now)
             }
@@ -1181,17 +1186,20 @@ pub async fn evaluate_credential_events(pool: &DbPool) {
 }
 
 /// Check if a cron schedule matches the current time window since last poll.
+/// `seed` is hashed into any Jenkins-style `H` tokens so two credential
+/// events on the same `H/15` cron land on different minutes.
 fn evaluate_cron_event(
     config: &serde_json::Value,
     now: &chrono::DateTime<chrono::Utc>,
     last_polled_at: Option<&str>,
+    seed: u64,
 ) -> bool {
     let cron_expr = match config.get("cronExpression").and_then(|v| v.as_str()) {
         Some(expr) if !expr.trim().is_empty() => expr.trim(),
         _ => return false,
     };
 
-    let schedule = match cron::parse_cron(cron_expr) {
+    let schedule = match cron::parse_cron_seeded(cron_expr, seed) {
         Ok(s) => s,
         Err(e) => {
             tracing::warn!(cron = %cron_expr, error = %e, "Credential events: invalid cron expression");

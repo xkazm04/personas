@@ -184,6 +184,7 @@ export function useCalendarEvents(
                 startD,
                 endD,
                 500,
+                agent.trigger_id,
               );
               return isos.map((s) => new Date(s));
             } catch {
@@ -345,7 +346,14 @@ export function useConflictPreview(
           const a = entry.agent;
           if (a.cron_expression) {
             try {
-              const isos = await cronFireTimesInRange(a.cron_expression, a.timezone ?? undefined, now, end, 500);
+              const isos = await cronFireTimesInRange(
+                a.cron_expression,
+                a.timezone ?? undefined,
+                now,
+                end,
+                500,
+                a.trigger_id,
+              );
               return isos.map((s) => new Date(s));
             } catch {
               return [] as Date[];

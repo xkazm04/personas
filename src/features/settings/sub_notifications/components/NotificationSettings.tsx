@@ -4,6 +4,7 @@ import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/compon
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { useAppSetting } from '@/hooks/utility/data/useAppSetting';
 import { useTranslation } from '@/i18n/useTranslation';
+import { WebhookSubscriptionsPanel } from './WebhookSubscriptionsPanel';
 
 const SETTINGS_KEY = 'notification_prefs';
 
@@ -162,6 +163,9 @@ export default function NotificationSettings() {
 
           {/* Weekly Health Digest */}
           <WeeklyDigestToggle />
+
+          {/* Outbound webhook subscriptions (Slack/Discord/Teams/generic JSON) */}
+          <WebhookSubscriptionsPanel />
 
           <p className="typo-body text-foreground">
             {s.notification_hint}
