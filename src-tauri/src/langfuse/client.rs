@@ -7,15 +7,17 @@
 //! Phase 1b.
 
 use base64::{engine::general_purpose::STANDARD as B64, Engine as _};
-use serde_json::Value;
+use serde_json::{json, Value};
 use std::time::Duration;
 
 use super::types::{LangfuseTestResult, LangfuseTraceSummary};
 
 const PROBE_PATH: &str = "/api/public/projects";
 const TRACES_PATH: &str = "/api/public/traces";
+const OTLP_TRACES_PATH: &str = "/api/public/otel/v1/traces";
 const PROBE_TIMEOUT: Duration = Duration::from_secs(10);
 const TRACES_TIMEOUT: Duration = Duration::from_secs(15);
+const SMOKE_TIMEOUT: Duration = Duration::from_secs(15);
 
 /// Test a (host, public_key, secret_key) triple against Langfuse.
 /// Never panics; returns a structured result the frontend can render.
@@ -234,6 +236,123 @@ fn parse_trace_summary(v: &Value) -> Option<LangfuseTraceSummary> {
     })
 }
 
+/// Send a minimal one-span OTLP/JSON trace synchronously and return its
+/// 32-hex trace id on success. Used by the "Send test trace" UX so the
+/// user can verify export end-to-end without running a real persona.
+///
+/// Hits `/api/public/otel/v1/traces` with HTTP Basic auth + the SSRF-safe
+/// DNS resolver — identical security posture to `probe`.
+pub async fn send_smoke_trace(
+    host: &str,
+    public_key: &str,
+    secret_key: &str,
+) -> Result<String, String> {
+    let host = host.trim().trim_end_matches('/');
+    if host.is_empty() {
+        return Err("Host URL is required.".to_string());
+    }
+    if public_key.trim().is_empty() || secret_key.trim().is_empty() {
+        return Err("Both public and secret keys are required.".to_string());
+    }
+
+    let trace_id = uuid_to_32_hex(&uuid::Uuid::new_v4().to_string());
+    let span_id = uuid_to_16_hex(&uuid::Uuid::new_v4().to_string());
+
+    // Span ends "now"; covers the last 100 ms so Langfuse renders a real bar.
+    let now_ns = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_nanos() as u64)
+        .unwrap_or(0);
+    let start_ns = now_ns.saturating_sub(100_000_000);
+
+    let payload = json!({
+        "resourceSpans": [{
+            "resource": {
+                "attributes": [
+                    { "key": "service.name", "value": { "stringValue": "personas-desktop" } },
+                    { "key": "personas.kind", "value": { "stringValue": "smoke_trace" } },
+                ]
+            },
+            "scopeSpans": [{
+                "scope": { "name": "personas-desktop", "version": env!("CARGO_PKG_VERSION") },
+                "spans": [{
+                    "traceId": trace_id,
+                    "spanId": span_id,
+                    "name": "Personas smoke trace",
+                    "kind": 1,
+                    "startTimeUnixNano": format!("{start_ns}"),
+                    "endTimeUnixNano": format!("{now_ns}"),
+                    "attributes": [
+                        { "key": "personas.span_type", "value": { "stringValue": "smoke" } },
+                        { "key": "langfuse.observation.type", "value": { "stringValue": "event" } },
+                    ],
+                    "status": { "code": 1 }
+                }]
+            }]
+        }]
+    });
+
+    let url = format!("{host}{OTLP_TRACES_PATH}");
+    let auth = B64.encode(format!("{}:{}", public_key.trim(), secret_key.trim()));
+
+    let client = reqwest::Client::builder()
+        .timeout(SMOKE_TIMEOUT)
+        .dns_resolver(std::sync::Arc::new(
+            crate::engine::ssrf_safe_dns::SsrfSafeDnsResolver,
+        ))
+        .build()
+        .map_err(|e| format!("Failed to build HTTP client: {e}"))?;
+
+    let resp = client
+        .post(&url)
+        .header("Authorization", format!("Basic {auth}"))
+        .header("Content-Type", "application/json")
+        .json(&payload)
+        .send()
+        .await
+        .map_err(|e| {
+            if e.is_timeout() {
+                format!("POST to {host} timed out after {}s.", SMOKE_TIMEOUT.as_secs())
+            } else if e.is_connect() {
+                format!("Could not reach {host}. Is Langfuse running?")
+            } else {
+                format!("Request failed: {e}")
+            }
+        })?;
+
+    let status = resp.status();
+    if !status.is_success() {
+        let body = resp.text().await.unwrap_or_default();
+        let snippet: String = body.chars().take(200).collect();
+        return Err(match status.as_u16() {
+            401 | 403 => "Authentication failed. Re-test the connection.".to_string(),
+            404 => "OTLP endpoint not found at this host.".to_string(),
+            s => format!("Langfuse returned HTTP {s}: {snippet}"),
+        });
+    }
+    Ok(trace_id)
+}
+
+fn uuid_to_32_hex(uuid: &str) -> String {
+    let stripped: String = uuid.chars().filter(|c| *c != '-').collect();
+    let mut s = stripped.to_lowercase();
+    while s.len() < 32 {
+        s.push('0');
+    }
+    s.truncate(32);
+    s
+}
+
+fn uuid_to_16_hex(uuid: &str) -> String {
+    let stripped: String = uuid.chars().filter(|c| *c != '-').collect();
+    let mut s = stripped.to_lowercase();
+    while s.len() < 16 {
+        s.push('0');
+    }
+    s.truncate(16);
+    s
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -274,5 +393,20 @@ mod tests {
     fn parse_trace_list_handles_missing_data_field() {
         let body: Value = serde_json::from_str(r#"{"meta": {}}"#).unwrap();
         assert!(parse_trace_list(&body).is_empty());
+    }
+
+    #[test]
+    fn uuid_to_32_hex_strips_dashes_and_lowercases() {
+        let out = uuid_to_32_hex("ABCDEF12-3456-7890-1234-567890ABCDEF");
+        assert_eq!(out.len(), 32);
+        assert!(out.chars().all(|c| c.is_ascii_hexdigit()));
+        assert_eq!(out, "abcdef12345678901234567890abcdef");
+    }
+
+    #[test]
+    fn uuid_to_16_hex_truncates() {
+        let out = uuid_to_16_hex("aabbccdd-eeff-0011-2233-445566778899");
+        assert_eq!(out.len(), 16);
+        assert_eq!(out, "aabbccddeeff0011");
     }
 }

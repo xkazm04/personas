@@ -3,6 +3,7 @@ import type { LangfuseAdminCredentials } from "@/lib/bindings/LangfuseAdminCrede
 import type { LangfuseConfig } from "@/lib/bindings/LangfuseConfig";
 import type { LangfuseJobHandle } from "@/lib/bindings/LangfuseJobHandle";
 import type { LangfuseSaveRequest } from "@/lib/bindings/LangfuseSaveRequest";
+import type { LangfuseSmokeTraceResult } from "@/lib/bindings/LangfuseSmokeTraceResult";
 import type { LangfuseStackInfo } from "@/lib/bindings/LangfuseStackInfo";
 import type { LangfuseTestResult } from "@/lib/bindings/LangfuseTestResult";
 import type { LangfuseTraceSummary } from "@/lib/bindings/LangfuseTraceSummary";
@@ -41,6 +42,13 @@ export async function langfuseRecentTraces(
   return invoke<LangfuseTraceSummary[]>("langfuse_recent_traces", {
     limit: limit ?? null,
   });
+}
+
+/// Fire a synthetic one-span trace at the configured Langfuse host to verify
+/// the integration end-to-end. Returns the 32-hex trace id Langfuse received
+/// + the configured project id, so callers can deep-link straight to it.
+export async function langfuseSmokeTrace(): Promise<LangfuseSmokeTraceResult> {
+  return invoke<LangfuseSmokeTraceResult>("langfuse_smoke_trace");
 }
 
 export async function langfuseClearConfig(): Promise<void> {

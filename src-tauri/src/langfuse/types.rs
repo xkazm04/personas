@@ -76,6 +76,16 @@ pub struct LangfuseTraceSummary {
     pub total_cost: Option<f64>,
 }
 
+/// Result of `langfuse_smoke_trace`: the 32-hex trace id Langfuse received,
+/// plus the project id so the frontend can build a deep-link to it.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct LangfuseSmokeTraceResult {
+    pub trace_id: String,
+    pub project_id: Option<String>,
+}
+
 /// Plaintext admin credentials for the managed stack. Returned only when
 /// the user explicitly asks (via `langfuse_stack_get_admin_credentials`),
 /// never as part of `langfuse_get_config`.

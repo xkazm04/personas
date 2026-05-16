@@ -9640,7 +9640,14 @@
       "recent_traces_open_label": "Open in Langfuse",
       "recent_traces_session": "session {id}",
       "recent_traces_latency": "{seconds}s",
-      "recent_traces_cost": "${cost}"
+      "recent_traces_cost": "${cost}",
+      "smoke_trace_section": "Test trace",
+      "smoke_trace_intro": "Send a synthetic trace to verify the integration end-to-end.",
+      "smoke_trace_button": "Send test trace",
+      "smoke_trace_sending": "Sending…",
+      "smoke_trace_success": "Trace sent.",
+      "smoke_trace_error": "Failed: {error}",
+      "smoke_trace_view_link": "View trace"
     },
     "drive": {
       "title": "Drive",

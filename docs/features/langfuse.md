@@ -18,6 +18,7 @@ Detailed design rationale (path A → A+ probe → decision B) lives in `docs/co
 | Status panel | Compact status surface for sidebar/footer use | `StatusPanel.tsx` |
 | Open-in-Langfuse | Button that opens the user's default browser to the Langfuse UI, auto-signed-in via nonce | `OpenInLangfuseButton.tsx` |
 | Recent traces panel | Mini-table of the last 10 traces shipped to Langfuse, each row deep-links into the trace via the auto-login flow (managed) or `openExternal` (manual). Only rendered when an instance is reachable — for the managed stack this means it appears once the stack is Running. | `TraceListPanel.tsx` |
+| Smoke trace button | "Send test trace" action that fires a synthetic one-span OTLP trace at the configured Langfuse host and shows result + deep-link to the new trace. Auto-remounts the recent-traces panel on success so the smoke trace shows up immediately. | `SmokeTraceButton.tsx` |
 
 `LangfusePage.tsx` collapses the manual section by default for first-run users (when `config.host` is empty), and expands it when an existing manual config is detected.
 
@@ -34,7 +35,7 @@ Detailed design rationale (path A → A+ probe → decision B) lives in `docs/co
 
 | Family | Commands |
 | --- | --- |
-| Manual config | `langfuse_test_connection`, `langfuse_save_config`, `langfuse_get_config`, `langfuse_clear_config`, `langfuse_save_preferred_port`, `langfuse_recent_traces` |
+| Manual config | `langfuse_test_connection`, `langfuse_save_config`, `langfuse_get_config`, `langfuse_clear_config`, `langfuse_save_preferred_port`, `langfuse_recent_traces`, `langfuse_smoke_trace` |
 | Managed stack | `langfuse_stack_get_info`, `langfuse_stack_start`, `langfuse_stack_stop`, `langfuse_stack_get_admin_credentials`, `langfuse_stack_open_ui`, `langfuse_stack_reset`, `langfuse_stack_refresh_images` |
 | Docker bootstrap | `langfuse_docker_download_installer`, `langfuse_docker_run_installer` (used when Docker isn't installed) |
 | Auth | `langfuse_open_authenticated_ui` (single-use nonce-based auto-login) |

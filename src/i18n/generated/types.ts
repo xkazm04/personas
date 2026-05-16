@@ -9647,6 +9647,13 @@ export type Translations = {
       recent_traces_session: string;
       recent_traces_latency: string;
       recent_traces_cost: string;
+      smoke_trace_section: string;
+      smoke_trace_intro: string;
+      smoke_trace_button: string;
+      smoke_trace_sending: string;
+      smoke_trace_success: string;
+      smoke_trace_error: string;
+      smoke_trace_view_link: string;
     };
     drive: {
       title: string;

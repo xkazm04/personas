@@ -17,7 +17,7 @@ use url::Url;
 
 use crate::error::AppError;
 use crate::ipc_auth::require_privileged;
-use crate::langfuse::client::{fetch_recent_traces, probe};
+use crate::langfuse::client::{fetch_recent_traces, probe, send_smoke_trace};
 use crate::langfuse::config;
 use crate::langfuse::docker;
 use crate::langfuse::exporter;
@@ -25,8 +25,8 @@ use crate::langfuse::lifecycle;
 use crate::langfuse::templates;
 use crate::langfuse::types::{
     LangfuseAdminCredentials, LangfuseConfig, LangfuseJobHandle, LangfuseJobKind,
-    LangfuseSaveRequest, LangfuseStackInfo, LangfuseStackState, LangfuseTestResult,
-    LangfuseTraceSummary,
+    LangfuseSaveRequest, LangfuseSmokeTraceResult, LangfuseStackInfo, LangfuseStackState,
+    LangfuseTestResult, LangfuseTraceSummary,
 };
 use crate::AppState;
 
@@ -146,6 +146,35 @@ pub async fn langfuse_save_config(
     );
 
     Ok(result)
+}
+
+/// Send a synthetic one-span trace to the configured Langfuse instance so
+/// the user can verify the integration without running a real persona.
+/// Returns the trace id Langfuse received plus the project id for deep-linking.
+#[tauri::command]
+pub async fn langfuse_smoke_trace(
+    state: State<'_, Arc<AppState>>,
+) -> Result<LangfuseSmokeTraceResult, AppError> {
+    require_privileged(&state, "langfuse_smoke_trace").await?;
+
+    let host = config::load_host()
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| AppError::Langfuse("Langfuse is not connected.".into()))?;
+    let public_key = config::load_public_key()
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| AppError::Langfuse("No Langfuse public key on file.".into()))?;
+    let secret_key = config::load_secret_key()
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| AppError::Langfuse("No Langfuse secret key on file.".into()))?;
+
+    let trace_id = send_smoke_trace(&host, &public_key, &secret_key)
+        .await
+        .map_err(AppError::Langfuse)?;
+
+    Ok(LangfuseSmokeTraceResult {
+        trace_id,
+        project_id: config::load_project_id(),
+    })
 }
 
 /// Fetch the most-recent traces from the configured Langfuse host so the

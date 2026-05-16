@@ -5,6 +5,7 @@ import { LoadingSpinner } from "@/features/shared/components/feedback/LoadingSpi
 import { useTranslation } from "@/i18n/useTranslation";
 import { ConnectionForm } from "./ConnectionForm";
 import { ManagedStackPanel } from "./ManagedStackPanel";
+import { SmokeTraceButton } from "./SmokeTraceButton";
 import { StatusPanel } from "./StatusPanel";
 import { TraceListPanel } from "./TraceListPanel";
 import { useLangfuseSettings } from "./hooks/useLangfuseSettings";
@@ -20,6 +21,9 @@ export default function LangfusePage() {
   const hasManual =
     !!settings.config && !settings.config.managed && settings.config.host.length > 0;
   const [advancedOpen, setAdvancedOpen] = useState(!!hasManual);
+  // Bumped after a successful smoke trace to force-remount TraceListPanel
+  // so the new trace shows up without the user clicking Refresh manually.
+  const [traceListNonce, setTraceListNonce] = useState(0);
   const preferredPort = settings.config?.preferredPort ?? 3000;
 
   // Trace-list is only meaningful when the user has a reachable instance.
@@ -62,9 +66,15 @@ export default function LangfusePage() {
             )}
           </section>
 
-          {/* Recent traces — only when there's a reachable instance */}
+          {/* Smoke trace + recent traces — only when there's a reachable instance */}
           {showTraceList && settings.config && (
-            <TraceListPanel config={settings.config} />
+            <>
+              <SmokeTraceButton
+                config={settings.config}
+                onSent={() => setTraceListNonce((n) => n + 1)}
+              />
+              <TraceListPanel key={traceListNonce} config={settings.config} />
+            </>
           )}
 
           {/* Advanced: bring-your-own */}
