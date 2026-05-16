@@ -10166,6 +10166,8 @@
       "pr_bridge_copy_git_block": "Copy git commands",
       "pr_bridge_copy_git_block_tooltip": "Copy a ready-to-paste bash block (checkout, commit via heredoc, push, optional gh pr create).",
       "pr_bridge_git_block_copied": "Git command block copied — paste into a terminal at the repo root.",
+      "pr_bridge_reset_steps": "Reset checkmarks",
+      "pr_bridge_reset_steps_tooltip": "Clear the per-task completion checkmarks (does not undo any work — just the visual tracker).",
       "pr_bridge_prepare": "Prepare branch & commit",
       "pr_bridge_open_github": "Open draft PR on GitHub",
       "pr_bridge_expand": "Show PR preview",

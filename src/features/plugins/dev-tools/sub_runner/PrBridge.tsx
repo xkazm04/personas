@@ -1,9 +1,41 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { open as openExternal } from '@tauri-apps/plugin-shell';
 import {
   GitPullRequest, Copy, GitBranch, ExternalLink,
-  ChevronDown, ChevronRight, AlertCircle, Sparkles, Terminal,
+  ChevronDown, ChevronRight, AlertCircle, Sparkles, Terminal, Check, RotateCcw,
 } from 'lucide-react';
+
+// ---------------------------------------------------------------------------
+// Per-task step tracker — checkmarks survive page navigation via localStorage
+// so a long-running PR flow can be picked up where it was left off.
+// ---------------------------------------------------------------------------
+
+type PrStep = 'copy_body' | 'copy_all' | 'copy_reasoning' | 'copy_git' | 'prepare' | 'open_gh';
+
+function stepsStorageKey(taskId: string): string {
+  return `personas.devtools.pr_bridge_done.${taskId}`;
+}
+
+function readDoneSteps(taskId: string): Set<PrStep> {
+  try {
+    const raw = localStorage.getItem(stepsStorageKey(taskId));
+    if (!raw) return new Set();
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return new Set();
+    return new Set(parsed.filter((s): s is PrStep =>
+      typeof s === 'string' &&
+      (s === 'copy_body' || s === 'copy_all' || s === 'copy_reasoning' || s === 'copy_git' || s === 'prepare' || s === 'open_gh')
+    ));
+  } catch {
+    return new Set();
+  }
+}
+
+function writeDoneSteps(taskId: string, steps: Set<PrStep>): void {
+  try {
+    localStorage.setItem(stepsStorageKey(taskId), JSON.stringify(Array.from(steps)));
+  } catch { /* quota / privacy mode — ignore */ }
+}
 import { Button } from '@/features/shared/components/buttons';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
@@ -158,6 +190,22 @@ export function PrBridge({ task }: { task: DevTask }) {
   const [expanded, setExpanded] = useState(false);
   const [preparing, setPreparing] = useState(false);
   const [opening, setOpening] = useState(false);
+  const [doneSteps, setDoneSteps] = useState<Set<PrStep>>(() => readDoneSteps(task.id));
+  // Re-read when the surfaced task id changes (different completed task expanded).
+  useEffect(() => { setDoneSteps(readDoneSteps(task.id)); }, [task.id]);
+  const markDone = useCallback((step: PrStep) => {
+    setDoneSteps((prev) => {
+      if (prev.has(step)) return prev;
+      const next = new Set(prev);
+      next.add(step);
+      writeDoneSteps(task.id, next);
+      return next;
+    });
+  }, [task.id]);
+  const resetSteps = useCallback(() => {
+    setDoneSteps(new Set());
+    writeDoneSteps(task.id, new Set());
+  }, [task.id]);
 
   const ghRepo = useMemo(
     () => (project?.github_url ? parseGitHubRepo(project.github_url) : null),
@@ -176,6 +224,7 @@ export function PrBridge({ task }: { task: DevTask }) {
     try {
       await navigator.clipboard.writeText(content.prBody);
       addToast(dt.pr_bridge_copied, 'success');
+      markDone('copy_body');
     } catch {
       addToast(dt.pr_bridge_copy_failed, 'error');
     }
@@ -186,6 +235,7 @@ export function PrBridge({ task }: { task: DevTask }) {
     try {
       await navigator.clipboard.writeText(combined);
       addToast(dt.pr_bridge_copied, 'success');
+      markDone('copy_all');
     } catch {
       addToast(dt.pr_bridge_copy_failed, 'error');
     }
@@ -196,6 +246,7 @@ export function PrBridge({ task }: { task: DevTask }) {
     try {
       await navigator.clipboard.writeText(idea.reasoning);
       addToast(dt.pr_bridge_reasoning_copied, 'success');
+      markDone('copy_reasoning');
     } catch {
       addToast(dt.pr_bridge_copy_failed, 'error');
     }
@@ -231,6 +282,7 @@ export function PrBridge({ task }: { task: DevTask }) {
     try {
       await navigator.clipboard.writeText(block);
       addToast(dt.pr_bridge_git_block_copied, 'success');
+      markDone('copy_git');
     } catch {
       addToast(dt.pr_bridge_copy_failed, 'error');
     }
@@ -243,6 +295,7 @@ export function PrBridge({ task }: { task: DevTask }) {
       await createBranch(project.id, content.branchName);
       await commitChanges(project.id, content.commitMessage, true);
       addToast(tx(dt.pr_bridge_branch_prepared, { branch: content.branchName }), 'success');
+      markDone('prepare');
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       addToast(tx(dt.pr_bridge_branch_failed, { message: msg }), 'error');
@@ -268,6 +321,7 @@ export function PrBridge({ task }: { task: DevTask }) {
       // branch when `base` is omitted from the compare path.
       const url = `https://github.com/${ghRepo.owner}/${ghRepo.repo}/pull/new/${encodeURIComponent(content.branchName)}?${params.toString()}`;
       await openExternal(url);
+      markDone('open_gh');
     } catch {
       addToast(dt.pr_bridge_open_failed, 'error');
     } finally {
@@ -358,63 +412,86 @@ export function PrBridge({ task }: { task: DevTask }) {
 
           {/* Actions */}
           <div className="flex flex-wrap items-center gap-2 pt-1">
-            <Button
-              variant="secondary"
-              size="sm"
-              icon={<Copy className="w-3.5 h-3.5" />}
-              onClick={handleCopyBody}
-            >
-              {dt.pr_bridge_copy_body}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              icon={<Copy className="w-3.5 h-3.5" />}
-              onClick={handleCopyAll}
-            >
-              {dt.pr_bridge_copy_all}
-            </Button>
-            {idea?.reasoning && (
+            <ActionWithCheck done={doneSteps.has('copy_body')}>
+              <Button
+                variant="secondary"
+                size="sm"
+                icon={<Copy className="w-3.5 h-3.5" />}
+                onClick={handleCopyBody}
+              >
+                {dt.pr_bridge_copy_body}
+              </Button>
+            </ActionWithCheck>
+            <ActionWithCheck done={doneSteps.has('copy_all')}>
               <Button
                 variant="ghost"
                 size="sm"
-                icon={<Sparkles className="w-3.5 h-3.5" />}
-                onClick={handleCopyReasoning}
-                title={dt.pr_bridge_copy_reasoning_tooltip}
+                icon={<Copy className="w-3.5 h-3.5" />}
+                onClick={handleCopyAll}
               >
-                {dt.pr_bridge_copy_reasoning}
+                {dt.pr_bridge_copy_all}
               </Button>
+            </ActionWithCheck>
+            {idea?.reasoning && (
+              <ActionWithCheck done={doneSteps.has('copy_reasoning')}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  icon={<Sparkles className="w-3.5 h-3.5" />}
+                  onClick={handleCopyReasoning}
+                  title={dt.pr_bridge_copy_reasoning_tooltip}
+                >
+                  {dt.pr_bridge_copy_reasoning}
+                </Button>
+              </ActionWithCheck>
             )}
-            <Button
-              variant="ghost"
-              size="sm"
-              icon={<Terminal className="w-3.5 h-3.5" />}
-              onClick={handleCopyGitCommands}
-              title={dt.pr_bridge_copy_git_block_tooltip}
-            >
-              {dt.pr_bridge_copy_git_block}
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              icon={<GitBranch className="w-3.5 h-3.5" />}
-              loading={preparing}
-              disabled={!project || preparing}
-              onClick={handlePrepareBranch}
-            >
+            <ActionWithCheck done={doneSteps.has('copy_git')}>
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={<Terminal className="w-3.5 h-3.5" />}
+                onClick={handleCopyGitCommands}
+                title={dt.pr_bridge_copy_git_block_tooltip}
+              >
+                {dt.pr_bridge_copy_git_block}
+              </Button>
+            </ActionWithCheck>
+            <ActionWithCheck done={doneSteps.has('prepare')}>
+              <Button
+                variant="secondary"
+                size="sm"
+                icon={<GitBranch className="w-3.5 h-3.5" />}
+                loading={preparing}
+                disabled={!project || preparing}
+                onClick={handlePrepareBranch}
+              >
               {dt.pr_bridge_prepare}
-            </Button>
-            <Button
-              variant="accent"
-              accentColor="emerald"
-              size="sm"
-              icon={<GitPullRequest className="w-3.5 h-3.5" />}
-              loading={opening}
-              disabled={!hasRecognizedRepo || opening}
-              onClick={handleOpenGithub}
-            >
-              {dt.pr_bridge_open_github}
-            </Button>
+              </Button>
+            </ActionWithCheck>
+            <ActionWithCheck done={doneSteps.has('open_gh')}>
+              <Button
+                variant="accent"
+                accentColor="emerald"
+                size="sm"
+                icon={<GitPullRequest className="w-3.5 h-3.5" />}
+                loading={opening}
+                disabled={!hasRecognizedRepo || opening}
+                onClick={handleOpenGithub}
+              >
+                {dt.pr_bridge_open_github}
+              </Button>
+            </ActionWithCheck>
+            {doneSteps.size > 0 && (
+              <button
+                type="button"
+                onClick={resetSteps}
+                title={dt.pr_bridge_reset_steps_tooltip}
+                className="ml-auto inline-flex items-center gap-1 text-[10px] text-foreground/55 hover:text-foreground transition-colors"
+              >
+                <RotateCcw className="w-3 h-3" />
+                {dt.pr_bridge_reset_steps}
+              </button>
+            )}
           </div>
 
           {hasRecognizedRepo && (
@@ -448,5 +525,23 @@ function PreviewField({
       </span>
       <div className="min-w-0">{children}</div>
     </div>
+  );
+}
+
+/**
+ * Wraps a Button and overlays a small emerald check pill on the upper-right
+ * when the matching step has been completed (e.g. user clicked Copy body,
+ * pasted, came back; the check tells them they already did that step).
+ */
+function ActionWithCheck({ done, children }: { done: boolean; children: React.ReactNode }) {
+  return (
+    <span className="relative inline-flex">
+      {children}
+      {done && (
+        <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-background flex items-center justify-center pointer-events-none">
+          <Check className="w-2 h-2 text-background" strokeWidth={3.5} />
+        </span>
+      )}
+    </span>
   );
 }
