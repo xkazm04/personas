@@ -224,6 +224,15 @@
       "marketingModule": "plugins"
     },
     {
+      "doc": "docs/features/fleet.md",
+      "sourceGlobs": [
+        "src/features/plugins/fleet/**",
+        "src-tauri/src/commands/fleet/**",
+        "src/stores/slices/system/fleetSlice.ts",
+        "src/api/fleet/**"
+      ]
+    },
+    {
       "doc": "docs/features/drive/README.md",
       "sourceGlobs": [
         "src/features/plugins/drive/**",

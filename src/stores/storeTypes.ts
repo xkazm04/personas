@@ -34,6 +34,7 @@ import type { BudgetEnforcementSlice } from "./slices/agents/budgetEnforcementSl
 import type { AlertSlice } from "./slices/overview/alertSlice";
 import type { PersonaHealthSlice } from "./slices/overview/personaHealthSlice";
 import type { DevToolsSlice } from "./slices/system/devToolsSlice";
+import type { FleetSlice } from "./slices/system/fleetSlice";
 import type { NetworkSlice } from "./slices/network/networkSlice";
 import type { SetupSlice } from "./slices/system/setupSlice";
 import type { AmbientContextSlice } from "./slices/system/ambientContextSlice";
@@ -230,6 +231,7 @@ export type SystemStore = CoreState &
   OnboardingSlice &
   TourSlice &
   DevToolsSlice &
+  FleetSlice &
   NetworkSlice &
   SetupSlice &
   AmbientContextSlice &

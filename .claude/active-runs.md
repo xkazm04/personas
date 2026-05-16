@@ -129,6 +129,26 @@ timestamp — the next session can recognize it as abandoned.
   - **Status:** completed (14 commits, `c33375370..d2ad367ec`)
   - **Outcome:** ETA strip, lightbox zoom/pan/fullscreen/copy, gallery multi-select, export success strip, inline rename (+`artist_rename_asset` Rust cmd), recent compositions (artist slice MRU), starter canvas templates, Open-folder toolbar button, beat sidebar with click-to-seek, copy-session-as-markdown, export filename auto-suffix, 3D viewer keyboard nav, gallery group-by-day, preview-frame thumbnails on recents. Multi-audio-lanes pitched and dropped (architect-scoped — touches TimelinePanel layout + CompositionPreview gain integration + Rust render plan).
 
+- **[2026-05-16 14:30 → end-of-session] fleet — Claude Code session aggregator plugin (phases 0-9 + tests, merged)**
+  - **Source:** User request — design + implement Tauri-hosted multi-session manager for Claude Code CLIs with PTY ownership, hook-driven state, decision broadcast. Approach B from the 3-option proposal.
+  - **Worktree:** `.claude/worktrees/fleet-plugin/` — REMOVED post-merge
+  - **Branch:** `worktree-fleet-plugin` — DELETED post-merge
+  - **Status:** completed + merged to master
+  - **Commits (atomic per phase):**
+    - `6ff13f3d1` phase 0 — scaffold DEV-only Fleet plugin (sidebar entry + 3 sub-pages, orange theme).
+    - `15549203f` phase 1 — Rust module skeleton + ts-rs DTOs (FleetSession / FleetSessionState / FleetRegistrySnapshot / FleetHookStatus / FleetHookEvent), portable-pty dep, FLEET_* event registry.
+    - `dcde662f7` phase 2 — PTY spawn + stdin/stdout (6 Tauri commands + global registry).
+    - `135a814c4` phase 3 — xterm.js pane + single-session test-bed.
+    - `ee75766af` phase 4 — axum /fleet/hooks/* receiver with sessionstart→Running, notification→AwaitingInput, stop→Idle, etc.
+    - `c5929d245` phase 5 — idempotent installer for `~/.claude/settings.json` (`_fleet: true` marker preserves user hooks) + settings UI banner.
+    - `b089ac3e3` phase 6 — staleness ticker (30s/5min) + recursive notify watcher on `~/.claude/projects/*.jsonl`.
+    - `d464a099c` phase 7 — project-grouped session grid + sidebar waiting-count badge + per-session state cards.
+    - `04c93709c` phase 8 — decision broadcast composer (select-waiting / select-all, append-↵ toggle, localStorage history).
+    - `93d534242` phase 9 — `docs/features/fleet.md` + `scripts/docs/feature-doc-map.json` entry.
+    - `2c4c947f8` tests — Vitest (23/23 passing) + Playwright spec (committed, defer live) + data-testid attributes on UI for E2E reach.
+  - **Outcome:** End-to-end working multi-session manager. PTY ownership for sessions spawned from Fleet; hook-driven state machine for any `claude` running anywhere on the machine once hooks are installed; one-click "send this to every session waiting for input" decision broadcast. DEV-only (sidebar gated by `import.meta.env.DEV`). cargo check + npx tsc --noEmit clean throughout. Test coverage: 11 cargo unit tests (hook_install, stale, ts-rs exports, command Send), 23 Vitest tests (FleetStatusBadge × 6, FleetSettingsPage × 6, fleetSlice × 11), 7 Playwright tests authored (deferred to user manual verification).
+  - **Concurrent-session note:** Pre-merge ledger sweep (`4e1a6e8a9`) picked up the /research-openhands deregister that was left "uncommitted for next session sweep". Merge resolved three conflicts: (1) `.claude/active-runs.md` Recently-completed section — kept both fleet block and master-side openhands/artist deregisters; (2) `src-tauri/src/lib.rs` invoke_handler list — kept both new radio_fetch_somafm_metadata and the 9 fleet_* commands; (3) `src/lib/commandNames.generated.ts` — regenerated post-merge from authoritative Tauri command set.
+
 - **[2026-05-16 13:25 → 14:35] doc-sync three-surface system + catch-up /guide-sync**
   - **Paths:** `scripts/docs/feature-doc-map.json`, `scripts/docs/check-doc-sync.mjs`, `scripts/docs/__tests__/check-doc-sync.test.mjs` (new), `.claude/CLAUDE.md`, `.claude/guide-sync-marker.json`, `personas-web/src/data/guide/content/{agents-prompts,triggers,monitoring}.ts`
   - **Status:** completed (commit: 66e447219 in personas + af66f99 in personas-web)
