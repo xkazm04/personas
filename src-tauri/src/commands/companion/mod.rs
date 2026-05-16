@@ -9,6 +9,7 @@ pub mod brain;
 pub mod chat;
 pub mod connectors;
 pub mod consolidate;
+pub mod decisions;
 pub mod feedback;
 pub mod jobs;
 pub mod observability;

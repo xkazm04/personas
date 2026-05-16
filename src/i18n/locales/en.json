@@ -10597,6 +10597,8 @@
       "observability_metric_custom": "Custom metric",
       "decision_log_title": "Decision log",
       "decision_log_empty": "Athena hasn't logged any decisions for this conversation yet.",
+      "decision_log_persisted_badge": "Saved",
+      "decision_log_persisted_tooltip": "Athena writes every decision_log entry into companion_design_decision so the audit trail survives session reloads.",
       "persona_ready_title": "Persona ready to build",
       "persona_ready_empty": "Athena's recap needs at least a refined intent line. Try asking again.",
       "persona_ready_intent_label": "Refined intent",

@@ -2133,6 +2133,7 @@ pub fn run() {
             commands::companion::jobs::companion_get_job,
             commands::companion::jobs::companion_enqueue_job,
             commands::companion::templates::companion_match_templates,
+            commands::companion::decisions::companion_list_design_decisions,
             // Infrastructure -- Auth
             commands::infrastructure::auth::login_with_google,
             commands::infrastructure::auth::get_auth_state,

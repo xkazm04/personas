@@ -10603,6 +10603,8 @@ export type Translations = {
       observability_metric_custom: string;
       decision_log_title: string;
       decision_log_empty: string;
+      decision_log_persisted_badge: string;
+      decision_log_persisted_tooltip: string;
       persona_ready_title: string;
       persona_ready_empty: string;
       persona_ready_intent_label: string;

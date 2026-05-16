@@ -168,6 +168,12 @@ The widget renders a vertical timeline (subtle fuchsia rail + node dots) where e
 
 Helps two cases: (1) the user wants to retrace reasoning without re-reading the whole conversation; (2) the user is reviewing a built persona later and wants to know why a specific choice was made. Constitution bumped to v15.
 
+### Cross-session persistence
+
+The dispatcher auto-persists every `show_decision_log` entry into a new `companion_design_decision` SQL table in the user db (additive schema, no migration of existing rows). One row per `{label, choice, rationale}` entry; `persona_context` defaults to the `intent` field of the card so future queries can filter to "decisions about persona X" or "decisions about this build session". Rows are immutable — to "correct" a decision, Athena emits a fresh `show_decision_log` with the updated entry; the original stays put so retrospective analysis sees the actual sequence of choices.
+
+Retrieval surface: `companion_list_design_decisions(personaContext?, limit?)` Tauri command — frontend can list everything Athena's ever decided, or scope by context. The widget header shows a small "Saved" badge so users know persistence is active.
+
 ## `show_persona_ready` chat-card — design → build closer
 
 The end-of-design recap. Athena emits `show_persona_ready { intent, summary, recommended_action }` after she's worked the user through the design decomposition (walkthrough → use_cases → triggers → tier → observability) and there's enough decided to commit.

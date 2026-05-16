@@ -510,6 +510,32 @@ export async function companionMatchTemplates(
   });
 }
 
+export interface CompanionDesignDecision {
+  id: string;
+  sessionId: string;
+  personaContext: string | null;
+  label: string;
+  choice: string;
+  rationale: string;
+  decisionTimestamp: string | null;
+  createdAt: string;
+}
+
+/**
+ * Retrospective list of design decisions Athena has logged across all
+ * conversations. Filter by `personaContext` to scope to a specific
+ * persona id / build session id / intent string.
+ */
+export async function companionListDesignDecisions(
+  personaContext?: string | null,
+  limit?: number,
+): Promise<CompanionDesignDecision[]> {
+  return invoke<CompanionDesignDecision[]>('companion_list_design_decisions', {
+    personaContext: personaContext ?? null,
+    limit: limit ?? null,
+  });
+}
+
 export async function companionReingestDoctrine(): Promise<DoctrineIngestSummary> {
   return invoke<DoctrineIngestSummary>('companion_reingest_doctrine');
 }

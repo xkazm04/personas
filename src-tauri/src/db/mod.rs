@@ -720,6 +720,27 @@ CREATE INDEX IF NOT EXISTS idx_companion_proactive_status
 CREATE INDEX IF NOT EXISTS idx_companion_proactive_dedupe
     ON companion_proactive_message(trigger_kind, trigger_ref, status);
 
+-- Design decisions captured during companion conversations. Persisted
+-- copy of the `show_decision_log` chat-card entries so Athena (and the
+-- user) can retrace design rationale across sessions. `persona_context`
+-- is optional — a persona id, build session id, or free-form intent
+-- string letting future queries filter by which persona the decisions
+-- describe.
+CREATE TABLE IF NOT EXISTS companion_design_decision (
+    id                  TEXT PRIMARY KEY,
+    session_id          TEXT NOT NULL,
+    persona_context     TEXT,
+    label               TEXT NOT NULL,
+    choice              TEXT NOT NULL,
+    rationale           TEXT NOT NULL,
+    decision_timestamp  TEXT,            -- the timestamp Athena attached, optional
+    created_at          TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_companion_design_decision_session
+    ON companion_design_decision(session_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_companion_design_decision_context
+    ON companion_design_decision(persona_context, created_at DESC);
+
 -- Daily budget for proactive nudges. The scheduler increments on each
 -- delivery; a fresh row is created on the first nudge of any UTC date.
 CREATE TABLE IF NOT EXISTS companion_proactive_budget (

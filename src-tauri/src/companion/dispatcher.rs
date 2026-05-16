@@ -464,6 +464,45 @@ pub fn dispatch(
                     .get("title")
                     .and_then(|v| v.as_str())
                     .map(|s| s.to_string());
+
+                // Best-effort persist to companion_design_decision so
+                // the audit trail survives session reloads. Errors are
+                // logged but don't fail the dispatch — the chat-card
+                // still renders even if the write doesn't land.
+                let inputs: Vec<crate::companion::brain::decisions::DecisionInput<'_>> =
+                    decisions
+                        .iter()
+                        .filter_map(|d| {
+                            let label = d.get("label").and_then(|v| v.as_str())?;
+                            let choice = d.get("choice").and_then(|v| v.as_str())?;
+                            let rationale = d.get("rationale").and_then(|v| v.as_str())?;
+                            let decision_timestamp =
+                                d.get("timestamp").and_then(|v| v.as_str());
+                            Some(crate::companion::brain::decisions::DecisionInput {
+                                label,
+                                choice,
+                                rationale,
+                                decision_timestamp,
+                            })
+                        })
+                        .collect();
+                // `intent` doubles as `persona_context` for now — it's
+                // either a persona id, build session id, or the intent
+                // string itself; all queryable for "decisions about X".
+                let persona_context: Option<&str> = if intent.is_empty() {
+                    None
+                } else {
+                    Some(intent)
+                };
+                if let Err(e) = crate::companion::brain::decisions::save_batch(
+                    pool,
+                    session_id,
+                    persona_context,
+                    &inputs,
+                ) {
+                    tracing::warn!(error = %e, "design-decision persist failed (chat-card still rendered)");
+                }
+
                 out.chat_cards.push(ChatCard {
                     kind: "decision_log".to_string(),
                     title,

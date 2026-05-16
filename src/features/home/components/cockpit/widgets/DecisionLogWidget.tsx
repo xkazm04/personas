@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { ChevronRight, GitBranch, ScrollText } from 'lucide-react';
+import { ChevronRight, GitBranch, Save, ScrollText } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { CockpitWidgetProps } from '../widgetRegistry';
 
@@ -66,6 +66,13 @@ export function DecisionLogWidget({ config, title }: CockpitWidgetProps) {
             · {intent}
           </span>
         )}
+        <span
+          className="inline-flex items-center gap-1 text-foreground/45 ml-auto shrink-0"
+          title={t.plugins.companion.decision_log_persisted_tooltip}
+        >
+          <Save className="w-3 h-3" />
+          <span>{t.plugins.companion.decision_log_persisted_badge}</span>
+        </span>
       </header>
       <ol className="relative space-y-3 pl-4">
         <span
