@@ -28,6 +28,12 @@ pub struct LangfuseConfig {
     pub project_id: Option<String>,
     pub last_tested_at: Option<i64>,
     pub last_test_outcome: Option<String>,
+    /// Opt-in: push Lab evaluation scores (`tool_accuracy`, `output_quality`,
+    /// `protocol_compliance`) to Langfuse's `/api/public/scores` endpoint
+    /// after each scored scenario. Off by default. Stage 1 of N — the toggle
+    /// is plumbed through config + UI; the call from the lab path is wired
+    /// in a follow-up.
+    pub push_lab_scores: bool,
 }
 
 /// Payload sent from the frontend when saving a Langfuse connection
@@ -45,6 +51,9 @@ pub struct LangfuseSaveRequest {
     /// Optional project id for "Open in Langfuse" deep links. Empty / absent
     /// means we don't know — the deep-link button is hidden in that case.
     pub project_id: Option<String>,
+    /// Opt-in: push Lab evaluation scores to Langfuse Scores API after each
+    /// scored scenario. Off by default. See [`LangfuseConfig::push_lab_scores`].
+    pub push_lab_scores: bool,
 }
 
 /// Result of probing a Langfuse host with a given key pair.
@@ -109,6 +118,8 @@ pub struct LangfuseExportStats {
     /// won't ship even if `enabled` is true (e.g. config saved but app
     /// hasn't restarted yet).
     pub exporter_installed: bool,
+    /// Mirrors [`LangfuseConfig::push_lab_scores`] for the health badge.
+    pub push_lab_scores: bool,
 }
 
 /// Plaintext admin credentials for the managed stack. Returned only when

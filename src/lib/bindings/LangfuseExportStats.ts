@@ -21,4 +21,8 @@ enabled: boolean, redactContent: boolean,
  * won't ship even if `enabled` is true (e.g. config saved but app
  * hasn't restarted yet).
  */
-exporterInstalled: boolean, };
+exporterInstalled: boolean, 
+/**
+ * Mirrors [`LangfuseConfig::push_lab_scores`] for the health badge.
+ */
+pushLabScores: boolean, };

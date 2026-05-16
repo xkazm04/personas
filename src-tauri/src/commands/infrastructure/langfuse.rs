@@ -96,6 +96,7 @@ pub async fn langfuse_save_config(
         redact_content,
         enabled,
         project_id,
+        push_lab_scores,
     } = request;
 
     let trimmed_host = host.trim().trim_end_matches('/').to_string();
@@ -130,6 +131,7 @@ pub async fn langfuse_save_config(
             .filter(|s| !s.is_empty()),
     )
     .map_err(AppError::Langfuse)?;
+    config::store_push_lab_scores(push_lab_scores).map_err(AppError::Langfuse)?;
     config::store_last_test(Utc::now().timestamp(), &result.message).map_err(AppError::Langfuse)?;
 
     if enabled {
@@ -163,6 +165,7 @@ pub async fn langfuse_get_export_stats() -> Result<LangfuseExportStats, AppError
         enabled: config::load_enabled(),
         redact_content: config::load_redact(),
         exporter_installed: exporter::is_installed(),
+        push_lab_scores: config::load_push_lab_scores(),
     })
 }
 
@@ -243,6 +246,7 @@ pub async fn langfuse_get_config() -> Result<Option<LangfuseConfig>, AppError> {
                 project_id,
                 last_tested_at,
                 last_test_outcome,
+                push_lab_scores: config::load_push_lab_scores(),
             }))
         }
         _ => {
@@ -259,6 +263,7 @@ pub async fn langfuse_get_config() -> Result<Option<LangfuseConfig>, AppError> {
                 project_id: None,
                 last_tested_at: None,
                 last_test_outcome: None,
+                push_lab_scores: false,
             }))
         }
     }

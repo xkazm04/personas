@@ -9667,6 +9667,10 @@ export type Translations = {
       health_export_off: string;
       health_exporter_not_installed: string;
       health_disabled_hint: string;
+      health_lab_scores_on: string;
+      health_lab_scores_off: string;
+      push_lab_scores_label: string;
+      push_lab_scores_desc: string;
     };
     drive: {
       title: string;

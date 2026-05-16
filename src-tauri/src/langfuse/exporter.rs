@@ -336,6 +336,12 @@ pub fn push_lab_scores(
     protocol_compliance: Option<i32>,
     rationale: Option<String>,
 ) {
+    // Honor the user's opt-in flag. Default is OFF; turning it on requires
+    // a deliberate toggle in the plugin's connection form. This gate fires
+    // before any HTTP work so disabled state costs nothing.
+    if !config::load_push_lab_scores() {
+        return;
+    }
     let cfg = {
         let guard = match http_cell().read() {
             Ok(g) => g,

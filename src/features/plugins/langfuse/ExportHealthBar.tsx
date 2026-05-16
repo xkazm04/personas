@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { AlertTriangle, EyeOff, Power, RefreshCw } from "lucide-react";
+import { AlertTriangle, EyeOff, FlaskConical, Power, RefreshCw } from "lucide-react";
 import { useTranslation } from "@/i18n/useTranslation";
 import { langfuseGetExportStats } from "@/api/langfuse";
 import type { LangfuseExportStats } from "@/lib/bindings/LangfuseExportStats";
@@ -129,6 +129,12 @@ export function ExportHealthBar() {
           on={stats.redactContent}
           onLabel={t.plugins.langfuse.health_redaction_on}
           offLabel={t.plugins.langfuse.health_redaction_off}
+        />
+        <Badge
+          icon={FlaskConical}
+          on={stats.pushLabScores}
+          onLabel={t.plugins.langfuse.health_lab_scores_on}
+          offLabel={t.plugins.langfuse.health_lab_scores_off}
         />
       </div>
 

@@ -77,3 +77,4 @@ No embedded webview, no manual sign-in form — the user lands inside Langfuse a
 - Manual mode currently relies on the user typing their secret API key once. There is no OAuth flow for cloud Langfuse.
 - The managed stack assumes Docker Engine is available; on Windows/macOS the bootstrap commands open Docker Desktop's installer.
 - Trace export from personas is wired through the engine exporter; per-persona enable/disable is not yet a first-class control.
+- **Lab score push** — the `push_lab_scores` toggle on the connection form is wired through config + UI and gates the existing `exporter::push_lab_scores` helper. The call site from the Lab scoring path (`engine::test_runner::score_result`) is not yet wired; Lab scenarios do not currently produce Langfuse-bound traces, so a follow-up has to add per-scenario trace emission before scores can attach to a trace.
