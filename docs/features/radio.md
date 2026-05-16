@@ -94,6 +94,16 @@ appropriate engine and reports state transitions back via
   incoming one (fading in) over 300ms, driven by two named keyframes
   (`fade-in`, `fade-out`) in `globals.css`. The fade is purely cosmetic
   — the underlying click target on the title segment behaves identically.
+- Stream stations get an **equalizer bar strip** in the now-playing
+  card (where the YT progress bar would be). 16 bars in the station
+  accent color, each with a randomized animation duration and negative
+  delay so they bounce out of phase. Note: these are NOT real audio
+  levels — cross-origin streams cannot be fed through Web Audio's
+  `AnalyserNode` (the analyser returns zeros for CORS-tainted media
+  and forcing `crossorigin="anonymous"` on the audio element would
+  block playback entirely). The bars are CSS-keyframe decoration
+  (`eq-bounce` keyframe) driven by the binary `isPlaying` state. Pause
+  → bars freeze at floor; play → bars bounce.
 
 ## Architecture
 

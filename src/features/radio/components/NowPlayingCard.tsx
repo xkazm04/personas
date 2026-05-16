@@ -4,6 +4,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { NowPlaying } from '@/lib/bindings/NowPlaying';
 import type { PlayStatus } from '@/lib/bindings/PlayStatus';
 import type { StreamMetadata } from '@/lib/bindings/StreamMetadata';
+import EqualizerBars from './EqualizerBars';
 
 interface NowPlayingCardProps {
   nowPlaying: NowPlaying;
@@ -167,6 +168,8 @@ export default function NowPlayingCard({
             </div>
           </div>
         )}
+
+        {!isYoutube && <EqualizerBars accentColor={accent} isPlaying={isPlaying} />}
 
         <div className="flex items-center justify-center gap-1.5">
           <button
