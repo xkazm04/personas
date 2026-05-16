@@ -18,6 +18,7 @@ import {
   driveWriteText,
 } from "@/api/drive";
 import { toastCatch } from "@/lib/silentCatch";
+import { visualForEntry } from "../designTokens";
 
 export type ClipboardMode = "copy" | "cut";
 export type ViewMode = "list" | "icons" | "columns";
@@ -380,9 +381,20 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
         case "modified":
           cmp = a.modified.localeCompare(b.modified);
           break;
-        case "kind":
-          cmp = (a.extension ?? "").localeCompare(b.extension ?? "");
+        case "kind": {
+          // Group by resolved kind bucket (image / code / data / …) — same
+          // mapping the Kind column displays. Within a bucket fall back to
+          // case-insensitive name so files inside the group are scannable.
+          // The previous extension-only compare interleaved unrelated kinds
+          // (.css next to .json next to .png) and made the "Kind" sort
+          // inconsistent with the column it's named after.
+          const ak = visualForEntry(a).labelKey;
+          const bk = visualForEntry(b).labelKey;
+          cmp = ak.localeCompare(bk);
+          if (cmp === 0)
+            cmp = a.name.toLowerCase().localeCompare(b.name.toLowerCase());
           break;
+        }
       }
       return sortDir === "asc" ? cmp : -cmp;
     });

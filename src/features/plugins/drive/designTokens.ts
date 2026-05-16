@@ -153,6 +153,44 @@ export function kindLabel(t: Translations, visual: DriveFileVisual): string {
 }
 
 /**
+ * Plural / collection label for a kind bucket. Used by the list view's
+ * sort-by-kind group headers ("Folders · 3", "Images · 5", …). Each kind
+ * maps to a dedicated plural key so translators control the exact form.
+ */
+export function kindGroupLabel(
+  t: Translations,
+  labelKey: DriveKindLabelKey,
+): string {
+  switch (labelKey) {
+    case "kind_folder":
+      return t.plugins.drive.group_folders;
+    case "kind_image":
+      return t.plugins.drive.group_images;
+    case "kind_audio":
+      return t.plugins.drive.group_audio;
+    case "kind_video":
+      return t.plugins.drive.group_videos;
+    case "kind_pdf":
+      return t.plugins.drive.group_pdfs;
+    case "kind_code":
+      return t.plugins.drive.group_code;
+    case "kind_data":
+      return t.plugins.drive.group_data;
+    case "kind_sheet":
+      return t.plugins.drive.group_sheets;
+    case "kind_archive":
+      return t.plugins.drive.group_archives;
+    case "kind_text":
+      return t.plugins.drive.group_documents;
+    case "kind_signature":
+      return t.plugins.drive.group_signatures;
+    case "kind_generic":
+    default:
+      return t.plugins.drive.group_other;
+  }
+}
+
+/**
  * Pick a visual preset for a drive entry, using its mime + extension.
  */
 export function visualForEntry(entry: DriveEntry, opened = false): DriveFileVisual {

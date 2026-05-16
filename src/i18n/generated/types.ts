@@ -9721,6 +9721,18 @@ export type Translations = {
       kind_text: string;
       kind_signature: string;
       kind_generic: string;
+      group_folders: string;
+      group_images: string;
+      group_audio: string;
+      group_videos: string;
+      group_pdfs: string;
+      group_code: string;
+      group_data: string;
+      group_sheets: string;
+      group_archives: string;
+      group_documents: string;
+      group_signatures: string;
+      group_other: string;
       time_just_now: string;
       time_minutes_ago_one: string;
       time_minutes_ago_other: string;

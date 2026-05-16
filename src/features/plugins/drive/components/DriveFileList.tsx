@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 import { ChevronUp, ChevronDown, FolderOpen, Sparkles, Search, ArrowUpRight } from "lucide-react";
 
 import type { DriveEntry, DriveSearchHit } from "@/api/drive";
@@ -6,7 +6,12 @@ import { driveFormatBytes, driveList, driveParentPath } from "@/api/drive";
 import { silentCatch } from "@/lib/silentCatch";
 import type { UseDriveResult, SortKey } from "../hooks/useDrive";
 import { useTranslation } from "@/i18n/useTranslation";
-import { visualForEntry, formatRelativeTime, kindLabel } from "../designTokens";
+import {
+  visualForEntry,
+  formatRelativeTime,
+  kindLabel,
+  kindGroupLabel,
+} from "../designTokens";
 
 interface Props {
   drive: UseDriveResult;
@@ -204,6 +209,17 @@ function ListView({
     return <DriveEmptyState drive={drive} onNewFolder={onNewFolder} />;
   }
 
+  // When sorting by kind, precompute the bucket per-row + the per-bucket
+  // count so we can render sticky group dividers between buckets. Cheap —
+  // visibleEntries is already capped at folder-size.
+  const buckets =
+    drive.sortKey === "kind"
+      ? drive.visibleEntries.map((e) => visualForEntry(e).labelKey)
+      : null;
+  const bucketCounts: Map<string, number> | null = buckets
+    ? buckets.reduce((m, k) => m.set(k, (m.get(k) ?? 0) + 1), new Map<string, number>())
+    : null;
+
   return (
     <div
       className="flex-1 overflow-auto"
@@ -226,58 +242,72 @@ function ListView({
           const flash = drive.recentlyWritten.has(entry.path);
           const drop = dragTarget === entry.path;
           const zebra = idx % 2 === 1;
+          const bucket = buckets?.[idx] ?? null;
+          const showGroupHeader =
+            !!bucket && (idx === 0 || buckets?.[idx - 1] !== bucket);
           return (
-            <div
-              key={entry.path}
-              draggable
-              onDragStart={(e) => handleDragStart(e, entry)}
-              onDragOver={(e) => {
-                if (entry.kind === "folder") {
+            <Fragment key={entry.path}>
+              {showGroupHeader && bucket && (
+                <div className="sticky top-[33px] z-[5] flex items-center justify-between gap-2 px-4 py-1.5 bg-gradient-to-r from-cyan-500/10 via-cyan-500/5 to-transparent border-y border-cyan-500/15 backdrop-blur-sm">
+                  <span className="typo-label tracking-wider uppercase text-cyan-200/90">
+                    {kindGroupLabel(t, bucket)}
+                  </span>
+                  <span className="typo-caption text-cyan-200/60 tabular-nums">
+                    {bucketCounts?.get(bucket) ?? 0}
+                  </span>
+                </div>
+              )}
+              <div
+                draggable
+                onDragStart={(e) => handleDragStart(e, entry)}
+                onDragOver={(e) => {
+                  if (entry.kind === "folder") {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "move";
+                    setDragTarget(entry.path);
+                  }
+                }}
+                onDragLeave={() => setDragTarget(null)}
+                onDrop={(e) => handleDropOn(e, entry)}
+                onClick={(e) => {
+                  if (e.shiftKey) drive.selectRange(entry.path);
+                  else if (e.ctrlKey || e.metaKey)
+                    drive.toggleSelect(entry.path, true);
+                  else drive.selectOnly(entry.path);
+                }}
+                onDoubleClick={() => onOpen(entry)}
+                onContextMenu={(e) => {
                   e.preventDefault();
-                  e.dataTransfer.dropEffect = "move";
-                  setDragTarget(entry.path);
-                }
-              }}
-              onDragLeave={() => setDragTarget(null)}
-              onDrop={(e) => handleDropOn(e, entry)}
-              onClick={(e) => {
-                if (e.shiftKey) drive.selectRange(entry.path);
-                else if (e.ctrlKey || e.metaKey)
-                  drive.toggleSelect(entry.path, true);
-                else drive.selectOnly(entry.path);
-              }}
-              onDoubleClick={() => onOpen(entry)}
-              onContextMenu={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (!selected) drive.selectOnly(entry.path);
-                onContextMenu(entry, e.clientX, e.clientY);
-              }}
-              className={`grid grid-cols-[1fr_110px_120px_160px] gap-3 px-4 py-2 border-b border-primary/5 cursor-default ${rowStateClass(
-                selected,
-                flash,
-                drop,
-                zebra,
-              )}`}
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <FileChip entry={entry} size={32} />
-                <span className="typo-body typo-card-label truncate">
-                  {entry.name}
-                </span>
+                  e.stopPropagation();
+                  if (!selected) drive.selectOnly(entry.path);
+                  onContextMenu(entry, e.clientX, e.clientY);
+                }}
+                className={`grid grid-cols-[1fr_110px_120px_160px] gap-3 px-4 py-2 border-b border-primary/5 cursor-default ${rowStateClass(
+                  selected,
+                  flash,
+                  drop,
+                  zebra,
+                )}`}
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <FileChip entry={entry} size={32} />
+                  <span className="typo-body typo-card-label truncate">
+                    {entry.name}
+                  </span>
+                </div>
+                <div className="typo-body text-foreground self-center tabular-nums">
+                  {entry.kind === "folder" ? "—" : driveFormatBytes(entry.size)}
+                </div>
+                <div className="typo-body text-foreground self-center truncate">
+                  {entry.kind === "folder"
+                    ? t.plugins.drive.folder_kind
+                    : kindLabel(t, visualForEntry(entry))}
+                </div>
+                <div className="typo-body text-foreground self-center tabular-nums">
+                  {formatRelativeTime(entry.modified, t, tx)}
+                </div>
               </div>
-              <div className="typo-body text-foreground self-center tabular-nums">
-                {entry.kind === "folder" ? "—" : driveFormatBytes(entry.size)}
-              </div>
-              <div className="typo-body text-foreground self-center truncate">
-                {entry.kind === "folder"
-                  ? t.plugins.drive.folder_kind
-                  : kindLabel(t, visualForEntry(entry))}
-              </div>
-              <div className="typo-body text-foreground self-center tabular-nums">
-                {formatRelativeTime(entry.modified, t, tx)}
-              </div>
-            </div>
+            </Fragment>
           );
         })}
       </div>
