@@ -12446,11 +12446,16 @@ export type Translations = {
       genderNeutral: string;
       bio: string;
       generateWithAi: string;
+      refineWithAi: string;
       cancel: string;
       bioGenHint: string;
       bioKeywordsPlaceholder: string;
+      bioRefineHint: string;
+      bioRefineKeywordsPlaceholder: string;
       generating: string;
+      refining: string;
       generateBio: string;
+      refineBio: string;
       bioPlaceholder: string;
       obsidianVaultSubpath: string;
       obsidianSubpathHint: string;

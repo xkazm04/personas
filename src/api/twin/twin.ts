@@ -274,8 +274,18 @@ export const updateChannel = (
 export const deleteChannel = (id: string) =>
   invoke<boolean>("twin_delete_channel", { id });
 
-export const generateBio = (name: string, role: string | null, keywords: string) =>
-  invoke<string>("twin_generate_bio", { name, role, keywords });
+/**
+ * Generate or refine a twin's bio. When `existingBio` is provided + non-empty
+ * the backend switches to refinement mode: keep the original voice and facts,
+ * just clean up the prose. Otherwise composes from scratch using `keywords`.
+ */
+export const generateBio = (
+  name: string,
+  role: string | null,
+  keywords: string,
+  existingBio?: string,
+) =>
+  invoke<string>("twin_generate_bio", { name, role, keywords, existingBio });
 
 // ============================================================================
 // Wiki commands (Direction 4 — currently surfaced via the Knowledge tab)

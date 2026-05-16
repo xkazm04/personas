@@ -454,15 +454,31 @@ pub async fn twin_generate_bio(
     name: String,
     role: Option<String>,
     keywords: String,
+    existing_bio: Option<String>,
 ) -> Result<String, AppError> {
     require_auth(&state).await?;
 
-    let prompt_text = format!(
-        "Generate a concise professional bio (2-3 sentences, first person) for a digital twin named \"{name}\"{role_part}. \
-         Use these keywords/topics as input: {keywords}. \
-         Output ONLY the bio text, nothing else. No quotes, no preamble.",
-        role_part = role.as_ref().map(|r| format!(", role: {r}")).unwrap_or_default(),
-    );
+    let role_part = role
+        .as_ref()
+        .map(|r| format!(", role: {r}"))
+        .unwrap_or_default();
+
+    let prompt_text = match existing_bio.as_ref().filter(|s| !s.trim().is_empty()) {
+        Some(existing) => format!(
+            "Refine the bio below for a digital twin named \"{name}\"{role_part}. \
+             Keep the original voice, facts, and structure intact — improve clarity, \
+             flow, and word choice; tighten where verbose; preserve any concrete \
+             details. Apply these steering keywords/notes if non-empty: {keywords}. \
+             Output ONLY the refined bio text (2-3 sentences, first person). No \
+             quotes, no preamble, no explanation.\n\nExisting bio:\n{existing}",
+            existing = existing.trim(),
+        ),
+        None => format!(
+            "Generate a concise professional bio (2-3 sentences, first person) for a digital twin named \"{name}\"{role_part}. \
+             Use these keywords/topics as input: {keywords}. \
+             Output ONLY the bio text, nothing else. No quotes, no preamble.",
+        ),
+    };
 
     let mut cli_args = prompt::build_cli_args(None, None);
     cli_args.args.push("--model".to_string());

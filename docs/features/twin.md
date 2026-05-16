@@ -38,7 +38,7 @@ The plugin is organised as eight tabs — **Profiles**, **Identity**, **Tone**, 
 
 1. Open **Identity**. The header renders the active twin's name.
 2. Fill **Name**, **Role / Title**, **Gender** (male / female / neutral), **Bio**, and **Obsidian Vault Subpath**.
-3. Click **Generate with AI** to open the bio generator — enter keywords, the backend composes a polished paragraph that lands in the Bio field (you can still edit it).
+3. Click **Generate with AI** to open the bio generator — enter keywords, the backend composes a polished paragraph that lands in the Bio field (you can still edit it). When a bio is already present, the same button reads **Refine with AI** — the panel sends the existing bio + any optional steering keywords ("more concise", "keep the dry humor") to `twin_generate_bio`'s refine mode, which tightens the prose while preserving voice and facts.
 4. The **Prompt preview** card shows the exact text that gets injected into the persona's system prompt when this twin is adopted: `You are speaking as <name>, <role>.\n\n<bio>`.
 5. Hit **Save Identity** when dirty.
 
