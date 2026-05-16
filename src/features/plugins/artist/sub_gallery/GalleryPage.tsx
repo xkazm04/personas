@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Image, Box, FolderOpen, FolderSearch, Search, SortAsc, SortDesc } from 'lucide-react';
+import { CalendarDays, Image, Box, FolderOpen, FolderSearch, Search, SortAsc, SortDesc } from 'lucide-react';
 import { open as openExternal } from '@tauri-apps/plugin-shell';
 import { useArtistAssets } from '../hooks/useArtistAssets';
 import { useSystemStore } from '@/stores/systemStore';
@@ -7,6 +7,7 @@ import { silentCatch } from '@/lib/silentCatch';
 import type { GalleryMode } from '../types';
 import Gallery2D from './Gallery2D';
 import Gallery3D from './Gallery3D';
+import { groupAssetsByDay, type AssetGroupKey } from './groupByDay';
 import { useTranslation } from '@/i18n/useTranslation';
 
 export default function GalleryPage() {
@@ -19,6 +20,7 @@ export default function GalleryPage() {
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<'name' | 'date' | 'size'>('date');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const [grouped, setGrouped] = useState(false);
 
   const filteredAssets = useMemo(() => {
     let list = assets.filter((a) => a.assetType === galleryMode);
@@ -40,6 +42,26 @@ export default function GalleryPage() {
   }, [assets, galleryMode, search, sortBy, sortDir]);
 
   const toggleSort = () => setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+
+  const groups = useMemo(
+    () => (grouped ? groupAssetsByDay(filteredAssets) : null),
+    [grouped, filteredAssets],
+  );
+
+  const groupLabel = (key: AssetGroupKey): string => {
+    switch (key) {
+      case 'group_today':
+        return t.plugins.artist.group_today;
+      case 'group_yesterday':
+        return t.plugins.artist.group_yesterday;
+      case 'group_this_week':
+        return t.plugins.artist.group_this_week;
+      case 'group_this_month':
+        return t.plugins.artist.group_this_month;
+      case 'group_older':
+        return t.plugins.artist.group_older;
+    }
+  };
 
   const modes: { id: GalleryMode; label: string; icon: typeof Image }[] = [
     { id: '2d', label: t.plugins.artist.mode_2d, icon: Image },
@@ -96,6 +118,20 @@ export default function GalleryPage() {
           {sortDir === 'asc' ? <SortAsc className="w-3.5 h-3.5" /> : <SortDesc className="w-3.5 h-3.5" />}
         </button>
 
+        {/* Group by day toggle */}
+        <button
+          onClick={() => setGrouped((g) => !g)}
+          aria-pressed={grouped}
+          title={grouped ? t.plugins.artist.group_by_day_off : t.plugins.artist.group_by_day_on}
+          className={`p-1.5 rounded-card text-md transition-colors ${
+            grouped
+              ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+              : 'text-foreground hover:bg-secondary/40 border border-transparent'
+          }`}
+        >
+          <CalendarDays className="w-3.5 h-3.5" />
+        </button>
+
         {/* Open folder in OS file manager */}
         <button
           onClick={() => artistFolder && openExternal(artistFolder).catch(silentCatch('Open artist folder'))}
@@ -147,6 +183,32 @@ export default function GalleryPage() {
               ? t.plugins.artist.scan_import_images_hint
               : t.plugins.artist.scan_import_models_hint}
           </p>
+        </div>
+      ) : groups ? (
+        <div className="space-y-6">
+          {groups.map((group) => (
+            <section key={group.labelKey} className="space-y-2">
+              <header className="flex items-baseline gap-2 sticky top-0 z-10 bg-background/95 backdrop-blur py-1 -mx-2 px-2">
+                <h3 className="typo-section-title">{groupLabel(group.labelKey)}</h3>
+                <span className="text-md text-foreground/60 tabular-nums">{group.assets.length}</span>
+              </header>
+              {galleryMode === '2d' ? (
+                <Gallery2D
+                  assets={group.assets}
+                  onDelete={deleteAsset}
+                  onUpdateTags={updateTags}
+                  onRename={renameAsset}
+                />
+              ) : (
+                <Gallery3D
+                  assets={group.assets}
+                  onDelete={deleteAsset}
+                  onUpdateTags={updateTags}
+                  onRename={renameAsset}
+                />
+              )}
+            </section>
+          ))}
         </div>
       ) : galleryMode === '2d' ? (
         <Gallery2D

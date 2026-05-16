@@ -40,7 +40,7 @@ The plugin is organised as three tabs: **Creative Studio**, **Gallery**, **Media
 
 ### 2. Gallery — the asset library
 
-1. Open the **Gallery** tab. The toolbar lets you toggle **2D Images / 3D Models**, search file names + tags, sort by date/name/size, flip the sort direction, and trigger **Scan Folder**.
+1. Open the **Gallery** tab. The toolbar lets you toggle **2D Images / 3D Models**, search file names + tags, sort by date/name/size, flip the sort direction, toggle **Group by day** (buckets the grid into Today / Yesterday / Earlier this week / Earlier this month / Older with sticky section headers — empty buckets are dropped), **Open folder** (jumps to the Artist folder in the OS file manager), and **Scan Folder**.
 2. **Scan Folder** walks the configured Artist folder (and its `images/` + `models/` subfolders), calls `artist_scan_folder` to probe each file, and imports new rows into SQLite via `artist_import_asset`. Existing rows (matched by absolute `file_path`) are skipped. The scan toast is pluralized correctly: `Found N assets, imported M new.`
 3. Assets render in a responsive grid (2–6 columns depending on viewport). Thumbnails are loaded via Tauri IPC (`artist_read_image_base64`) and **cached at module scope** (300-entry LRU + in-flight dedupe) so remounting the grid from a sort or search change is free — one IPC per file, not one per render.
 4. Hovering any card reveals three actions:

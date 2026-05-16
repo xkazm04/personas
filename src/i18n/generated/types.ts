@@ -9866,6 +9866,13 @@ export type Translations = {
       session_output_copied: string;
       viewer_prev_model: string;
       viewer_next_model: string;
+      group_by_day_on: string;
+      group_by_day_off: string;
+      group_today: string;
+      group_yesterday: string;
+      group_this_week: string;
+      group_this_month: string;
+      group_older: string;
       lightbox_zoom_in: string;
       lightbox_zoom_out: string;
       lightbox_reset_zoom: string;
