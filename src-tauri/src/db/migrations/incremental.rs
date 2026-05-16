@@ -2338,6 +2338,40 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // Twin distilled facts — curated, deduplicated facts about the twin or
+    // its contacts, with provenance citing source twin_communications rows.
+    // Foundation table for the future consolidation + recall pipeline ported
+    // from companion::brain. See docs/features/twin.md (Cycle 12).
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "twin_distilled_facts",
+            description: "Create twin_distilled_facts table for curated, cited facts",
+            already_applied: |conn| has_table(conn, "twin_distilled_facts"),
+            apply: |conn| {
+                conn.execute_batch(
+                    "CREATE TABLE IF NOT EXISTS twin_distilled_facts (
+                        id              TEXT PRIMARY KEY,
+                        twin_id         TEXT NOT NULL REFERENCES twin_profiles(id) ON DELETE CASCADE,
+                        contact_handle  TEXT,
+                        content         TEXT NOT NULL,
+                        importance      INTEGER NOT NULL DEFAULT 3,
+                        sources_json    TEXT NOT NULL DEFAULT '[]',
+                        created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+                        last_seen_at    TEXT NOT NULL DEFAULT (datetime('now'))
+                    );
+                     CREATE INDEX IF NOT EXISTS idx_twin_facts_twin
+                         ON twin_distilled_facts(twin_id);
+                     CREATE INDEX IF NOT EXISTS idx_twin_facts_contact
+                         ON twin_distilled_facts(twin_id, contact_handle);
+                     CREATE INDEX IF NOT EXISTS idx_twin_facts_importance
+                         ON twin_distilled_facts(twin_id, importance DESC, last_seen_at DESC);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 

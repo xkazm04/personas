@@ -8,7 +8,8 @@ use tokio::process::Command;
 use ts_rs::TS;
 
 use crate::db::models::{
-    TwinChannel, TwinCommunication, TwinPendingMemory, TwinProfile, TwinTone, TwinVoiceProfile,
+    TwinChannel, TwinCommunication, TwinDistilledFact, TwinPendingMemory, TwinProfile, TwinTone,
+    TwinVoiceProfile,
 };
 use crate::db::repos::twin as repo;
 use crate::engine::prompt;
@@ -1052,4 +1053,63 @@ pub async fn twin_wiki_status(
         last_compiled_at,
         dir_path,
     })
+}
+
+// ============================================================================
+// Distilled facts — manual write surface (Cycle 12 Stage 1)
+//
+// Future stages will add a Claude-driven consolidation pass that turns raw
+// communications + approved pending memories into proposed distilled facts;
+// for now the table is populated manually so the rest of the stack (recall,
+// reflection, contacts) has something concrete to target.
+// ============================================================================
+
+#[tauri::command]
+pub async fn twin_list_distilled_facts(
+    state: State<'_, Arc<AppState>>,
+    twin_id: String,
+    contact_handle: Option<String>,
+) -> Result<Vec<TwinDistilledFact>, AppError> {
+    require_auth(&state).await?;
+    let handle = contact_handle
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty());
+    repo::list_distilled_facts(&state.db, &twin_id, handle)
+}
+
+#[tauri::command]
+pub async fn twin_create_distilled_fact(
+    state: State<'_, Arc<AppState>>,
+    twin_id: String,
+    contact_handle: Option<String>,
+    content: String,
+    importance: Option<i32>,
+    source_communication_ids: Vec<String>,
+) -> Result<TwinDistilledFact, AppError> {
+    require_auth(&state).await?;
+    // Confirm the twin exists before doing the write — keeps a dangling id
+    // from poisoning the table after a delete from another tab.
+    let _ = repo::get_profile_by_id(&state.db, &twin_id)?;
+    let handle = contact_handle
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty());
+    repo::create_distilled_fact(
+        &state.db,
+        &twin_id,
+        handle,
+        &content,
+        importance.unwrap_or(3),
+        &source_communication_ids,
+    )
+}
+
+#[tauri::command]
+pub async fn twin_delete_distilled_fact(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+) -> Result<bool, AppError> {
+    require_auth(&state).await?;
+    repo::delete_distilled_fact(&state.db, &id)
 }

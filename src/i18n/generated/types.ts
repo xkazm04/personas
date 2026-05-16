@@ -12643,6 +12643,30 @@ export type Translations = {
       brainStep5: string;
       vec0Unavailable: string;
     };
+    distilled: {
+      title: string;
+      subtitle: string;
+      addCta: string;
+      addHeading: string;
+      cancel: string;
+      saving: string;
+      loading: string;
+      contentPlaceholder: string;
+      contactLabel: string;
+      contactPlaceholder: string;
+      importanceLabel: string;
+      sourcesLabel: string;
+      sourcesHint: string;
+      needsSources: string;
+      noCommsYet: string;
+      saveWithSources: string;
+      sent: string;
+      received: string;
+      sourceCount: string;
+      emptyTitle: string;
+      emptyBody: string;
+      deleteAria: string;
+    };
     knowledge: {
       title: string;
       subtitle: string;

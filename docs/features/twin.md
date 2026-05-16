@@ -54,9 +54,10 @@ The plugin is organised as eight tabs — **Profiles**, **Identity**, **Tone**, 
 
 ### 4. Brain — the memory layers
 
-1. Open **Brain**. Two sections appear:
+1. Open **Brain**. Three sections appear:
    - **Obsidian Vault** (optional) — informational; reads from the `obsidian_subpath` set in Identity.
    - **Knowledge Base** (required for recall) — vector-indexed store that powers `recall_memory`.
+   - **Distilled facts** — curated, cited facts about the twin or specific contacts. Each row cites the `twin_communications` it came from (provenance contract — facts can never enter without a source). Manual write surface today; future cycles add a Claude-driven consolidation pass that proposes facts from recent communications + approved pending memories.
 2. If no KB is bound: press **Create New KB** (auto-creates *`<Twin name> Brain`* and binds it) or **Link Existing** to pick one from the credential vault.
 3. Once bound, the panel shows document count, chunk count, and status (ready / pending). **Refresh** re-fetches stats, **Unbind** detaches without deleting the KB.
 4. The "How the brain grows" card explains the 5-step lifecycle: personas record interactions → pending memories appear in Knowledge → you approve → indexed into KB → next recall finds them.

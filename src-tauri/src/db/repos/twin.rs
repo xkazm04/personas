@@ -1,7 +1,8 @@
 use rusqlite::{params, Row};
 
 use crate::db::models::{
-    TwinChannel, TwinCommunication, TwinPendingMemory, TwinProfile, TwinTone, TwinVoiceProfile,
+    TwinChannel, TwinCommunication, TwinDistilledFact, TwinPendingMemory, TwinProfile, TwinTone,
+    TwinVoiceProfile,
 };
 use crate::db::DbPool;
 use crate::error::AppError;
@@ -764,6 +765,105 @@ pub fn update_channel(
 pub fn delete_channel(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     let conn = pool.get()?;
     let rows = conn.execute("DELETE FROM twin_channels WHERE id = ?1", params![id])?;
+    Ok(rows > 0)
+}
+
+// ============================================================================
+// Distilled Facts (P6+ — manual write surface, Cycle 12 Stage 1)
+// ============================================================================
+
+fn row_to_distilled_fact(row: &Row) -> rusqlite::Result<TwinDistilledFact> {
+    Ok(TwinDistilledFact {
+        id: row.get("id")?,
+        twin_id: row.get("twin_id")?,
+        contact_handle: row.get("contact_handle")?,
+        content: row.get("content")?,
+        importance: row.get("importance")?,
+        sources_json: row.get("sources_json")?,
+        created_at: row.get("created_at")?,
+        last_seen_at: row.get("last_seen_at")?,
+    })
+}
+
+pub fn list_distilled_facts(
+    pool: &DbPool,
+    twin_id: &str,
+    contact_handle: Option<&str>,
+) -> Result<Vec<TwinDistilledFact>, AppError> {
+    let conn = pool.get()?;
+    if let Some(handle) = contact_handle {
+        let mut stmt = conn.prepare(
+            "SELECT * FROM twin_distilled_facts \
+             WHERE twin_id = ?1 AND contact_handle = ?2 \
+             ORDER BY importance DESC, last_seen_at DESC",
+        )?;
+        let rows = stmt.query_map(params![twin_id, handle], row_to_distilled_fact)?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    } else {
+        let mut stmt = conn.prepare(
+            "SELECT * FROM twin_distilled_facts \
+             WHERE twin_id = ?1 \
+             ORDER BY importance DESC, last_seen_at DESC",
+        )?;
+        let rows = stmt.query_map(params![twin_id], row_to_distilled_fact)?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    }
+}
+
+pub fn create_distilled_fact(
+    pool: &DbPool,
+    twin_id: &str,
+    contact_handle: Option<&str>,
+    content: &str,
+    importance: i32,
+    source_communication_ids: &[String],
+) -> Result<TwinDistilledFact, AppError> {
+    let trimmed = content.trim();
+    if trimmed.is_empty() {
+        return Err(AppError::Validation(
+            "distilled fact content cannot be empty".into(),
+        ));
+    }
+    if source_communication_ids.is_empty() {
+        // Provenance contract — see TwinDistilledFact docs. Empty sources
+        // are a frontend bug, never a legitimate state; reject explicitly
+        // rather than silently storing a hallucination-shaped row.
+        return Err(AppError::Validation(
+            "distilled fact requires at least one source communication id".into(),
+        ));
+    }
+    let clamped_importance = importance.clamp(1, 5);
+    let id = uuid::Uuid::new_v4().to_string();
+    let now = chrono::Utc::now().to_rfc3339();
+    let sources_json = serde_json::to_string(source_communication_ids)
+        .map_err(|e| AppError::Internal(format!("encode sources_json: {e}")))?;
+
+    let conn = pool.get()?;
+    conn.execute(
+        "INSERT INTO twin_distilled_facts \
+            (id, twin_id, contact_handle, content, importance, sources_json, created_at, last_seen_at) \
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)",
+        params![
+            id,
+            twin_id,
+            contact_handle,
+            trimmed,
+            clamped_importance,
+            sources_json,
+            now,
+        ],
+    )?;
+    conn.query_row(
+        "SELECT * FROM twin_distilled_facts WHERE id = ?1",
+        params![id],
+        row_to_distilled_fact,
+    )
+    .map_err(AppError::Database)
+}
+
+pub fn delete_distilled_fact(pool: &DbPool, id: &str) -> Result<bool, AppError> {
+    let conn = pool.get()?;
+    let rows = conn.execute("DELETE FROM twin_distilled_facts WHERE id = ?1", params![id])?;
     Ok(rows > 0)
 }
 

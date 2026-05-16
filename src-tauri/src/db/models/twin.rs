@@ -165,6 +165,39 @@ pub struct TwinVoiceProfile {
 }
 
 // ============================================================================
+// Twin Distilled Facts (P6+)
+//
+// Curated, deduplicated facts about the twin or its contacts. Distillation
+// turns raw `twin_communications` + approved `twin_pending_memories` into
+// a smaller set of high-signal facts with provenance — each fact cites the
+// source `communication` ids that produced it. Future stages will add an
+// AI consolidation pass + vector dedup; cycle 12 ships the schema + manual
+// write surface so the rest of the stack has a table to target.
+// ============================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct TwinDistilledFact {
+    pub id: String,
+    pub twin_id: String,
+    /// Optional scope — typically a contact handle when the fact is about a
+    /// specific relationship ("alice@discord"), or NULL for self-facts.
+    pub contact_handle: Option<String>,
+    /// The distilled fact in natural language ("Alice prefers DMs after 9pm").
+    pub content: String,
+    /// Importance rating (1–5). Drives retrieval ordering once recall lands.
+    pub importance: i32,
+    /// JSON array of source `twin_communications.id` values — the provenance
+    /// trail. Empty arrays are rejected at the repo write boundary so a fact
+    /// can never enter the table without a citation.
+    pub sources_json: String,
+    pub created_at: String,
+    /// Touched whenever this fact participates in a recall pass — drives the
+    /// future importance-decay job.
+    pub last_seen_at: String,
+}
+
+// ============================================================================
 // Twin Channels (P4)
 //
 // Maps a twin to its deployment channels — which channel (discord, slack,

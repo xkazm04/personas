@@ -5,6 +5,7 @@ import { TwinEmptyState } from '../TwinEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 import { CoachMark } from '../CoachMark';
 import { useBrainConnection } from './useBrainConnection';
+import { DistilledFactsPanel } from './DistilledFactsPanel';
 
 export default function BrainBaseline() {
   const t = useTranslation().t.twin;
@@ -95,6 +96,8 @@ export default function BrainBaseline() {
               </div>
             )}
           </div>
+
+          {activeTwinId && <DistilledFactsPanel twinId={activeTwinId} />}
 
           <div className="p-4 rounded-card border border-primary/5 bg-card/20">
             <p className="typo-caption text-foreground font-medium mb-2">{t.brain.howBrainGrows}</p>

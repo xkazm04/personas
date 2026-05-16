@@ -7,6 +7,7 @@ import type { TwinVoiceProfile } from "@/lib/bindings/TwinVoiceProfile";
 import type { TwinChannel } from "@/lib/bindings/TwinChannel";
 import type { TwinWikiCompileResult } from "@/lib/bindings/TwinWikiCompileResult";
 import type { TwinWikiStatus } from "@/lib/bindings/TwinWikiStatus";
+import type { TwinDistilledFact } from "@/lib/bindings/TwinDistilledFact";
 import type {
   TwinChannelKind,
   TwinInteractionDirection,
@@ -323,3 +324,34 @@ export const auditWiki = (twinId: string, wikiDir?: string) =>
  */
 export const wikiStatus = (twinId: string) =>
   invoke<TwinWikiStatus>("twin_wiki_status", { twinId });
+
+// ============================================================================
+// Distilled Facts (P6+ — manual write surface, Cycle 12 Stage 1)
+// ============================================================================
+
+export const listDistilledFacts = (twinId: string, contactHandle?: string) =>
+  invoke<TwinDistilledFact[]>("twin_list_distilled_facts", { twinId, contactHandle });
+
+/**
+ * Record a curated fact about the twin or one of its contacts. Provenance
+ * is mandatory — `sourceCommunicationIds` must reference at least one row
+ * in `twin_communications`. The backend rejects empty arrays to keep the
+ * provenance contract from breaking down.
+ */
+export const createDistilledFact = (
+  twinId: string,
+  sourceCommunicationIds: string[],
+  content: string,
+  contactHandle?: string,
+  importance?: number,
+) =>
+  invoke<TwinDistilledFact>("twin_create_distilled_fact", {
+    twinId,
+    contactHandle,
+    content,
+    importance,
+    sourceCommunicationIds,
+  });
+
+export const deleteDistilledFact = (id: string) =>
+  invoke<boolean>("twin_delete_distilled_fact", { id });
