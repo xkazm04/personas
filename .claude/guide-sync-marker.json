@@ -1,7 +1,50 @@
 {
-  "lastSyncCommit": "c2a13e99",
-  "lastSyncDate": "2026-04-11",
-  "topicsFlagged": [],
-  "topicsUpdated": [],
-  "note": "Initial sync marker — all guide content assumed current as of this date."
+  "lastSyncCommit": "201bfeec6",
+  "lastSyncDate": "2026-05-16",
+  "topicsFlagged": [
+    "creating-a-new-agent",
+    "writing-effective-prompts",
+    "simple-vs-structured-prompt-mode",
+    "structured-prompt-sections-explained",
+    "assigning-tools-to-agents",
+    "agent-settings-and-limits",
+    "agent-health-indicators",
+    "how-triggers-work",
+    "webhook-triggers",
+    "schedule-triggers",
+    "chain-triggers",
+    "event-based-triggers",
+    "testing-and-debugging-triggers",
+    "the-monitoring-dashboard",
+    "real-time-activity-feed",
+    "execution-logs",
+    "execution-tracing",
+    "anomaly-detection",
+    "setting-budget-limits",
+    "how-personas-keeps-your-data-safe",
+    "adding-a-new-credential",
+    "auto-credential-browser",
+    "which-agents-use-which-credentials",
+    "connector-catalog",
+    "what-are-pipelines",
+    "the-team-canvas",
+    "pipeline-execution",
+    "why-test-your-agents",
+    "the-testing-lab-overview",
+    "arena-testing",
+    "deploying-an-agent-to-the-cloud"
+  ],
+  "topicsUpdated": [
+    "creating-a-new-agent",
+    "assigning-tools-to-agents",
+    "agent-health-indicators",
+    "webhook-triggers",
+    "real-time-activity-feed"
+  ],
+  "missingCoverage": [
+    "cockpit-and-athena-chatbot",
+    "director-meta-persona-coach",
+    "outbound-channel-delivery"
+  ],
+  "note": "Catch-up sync 2026-05-16 after 5-week / 1586-commit drift. Made 5 focused content updates where drift was verifiable; flagged the rest for future targeted /guide-sync runs. Going forward, the Stop hook at scripts/docs/check-doc-sync.mjs enforces per-session marketing-guide updates, so this kind of bulk catch-up should not be needed again."
 }
