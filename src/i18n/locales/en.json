@@ -12463,6 +12463,8 @@
       "noCredentialsForChannel": "No credentials for this channel",
       "personaIdOptional": "Persona ID (optional)",
       "personaIdPlaceholder": "Persona that operates here",
+      "personaPickerPlaceholder": "Pick a persona…",
+      "personaNone": "— None —",
       "cancelBtn": "Cancel",
       "adding": "Adding...",
       "loading": "Loading...",

@@ -82,6 +82,7 @@ The tab is a two-column grid:
 2. Pick a **Channel Type** (Discord, Slack, Email/Gmail, Telegram, SMS/Twilio, Teams, WhatsApp). The credential picker immediately filters by matching service type.
 3. Give it a **Label** (e.g. *My Discord Server*), pick a **Credential**, and optionally bind a **Persona ID** that operates there.
 4. Each channel card has pause/activate, remove, and a **Test** action. The Test button records a synthetic outbound communication (no external bridge fires — it's a local signal) so you can see the channel light up in the activity feed. Below the credential row each card shows a **last-bridged badge** ("Last bridged 12m ago" / "Never used") derived from the active twin's communication log — at-a-glance freshness for spotting dead channels. Paused channels don't accept inbound twin traffic and have Test disabled, but stay listed.
+5. The **Persona** binding in the add-channel form is a searchable dropdown of registered personas (with a "— None —" option) rather than a raw ID input — the row chip then shows the persona name instead of a truncated id.
 
 ### 8. Training — teach the twin by conversation
 

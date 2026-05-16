@@ -12469,6 +12469,8 @@ export type Translations = {
       noCredentialsForChannel: string;
       personaIdOptional: string;
       personaIdPlaceholder: string;
+      personaPickerPlaceholder: string;
+      personaNone: string;
       cancelBtn: string;
       adding: string;
       loading: string;

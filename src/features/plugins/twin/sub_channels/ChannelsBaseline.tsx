@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { Radio, Plus, Trash2, Power, PowerOff, X, User, Mic, Send, Clock } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useVaultStore } from '@/stores/vaultStore';
+import { useAgentStore } from '@/stores/agentStore';
 import { useToastStore } from '@/stores/toastStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
@@ -47,10 +48,11 @@ function relativeAge(t: Translations, tx: (template: string, vars: Record<string
   return tx(t.twin.channels.lastDaysAgo, { count: Math.max(1, Math.round(ms / 86_400_000)) });
 }
 
-function ChannelCard({ channel, meta, credential, lastActivityIso, onToggle, onDelete, onTest, testing }: {
+function ChannelCard({ channel, meta, credential, personaName, lastActivityIso, onToggle, onDelete, onTest, testing }: {
   channel: TwinChannel;
   meta: ReturnType<typeof getChannelMeta>;
   credential: { id: string; name: string } | undefined;
+  personaName: string | undefined;
   lastActivityIso: string | undefined;
   onToggle: (ch: TwinChannel) => void;
   onDelete: (ch: TwinChannel) => void;
@@ -77,7 +79,12 @@ function ChannelCard({ channel, meta, credential, lastActivityIso, onToggle, onD
           </div>
           <div className="flex items-center gap-3 mt-1">
             <span className="typo-caption text-foreground truncate">{credential ? credential.name : channel.credential_id.slice(0, 12) + '...'}</span>
-            {channel.persona_id && <span className="flex items-center gap-1 typo-caption text-foreground"><User className="w-3 h-3" />{channel.persona_id.slice(0, 8)}...</span>}
+            {channel.persona_id && (
+              <span className="flex items-center gap-1 typo-caption text-foreground truncate" title={channel.persona_id}>
+                <User className="w-3 h-3" />
+                {personaName ?? channel.persona_id.slice(0, 8) + '…'}
+              </span>
+            )}
           </div>
           <div className={`flex items-center gap-1 mt-1 typo-caption ${activityTone}`}>
             <Clock className="w-3 h-3" />
@@ -121,6 +128,8 @@ export default function ChannelsBaseline() {
   const setTwinTab = useSystemStore((s) => s.setTwinTab);
   const credentials = useVaultStore((s) => s.credentials);
   const fetchCredentials = useVaultStore((s) => s.fetchCredentials);
+  const personas = useAgentStore((s) => s.personas);
+  const fetchPersonas = useAgentStore((s) => s.fetchPersonas);
   const addToast = useToastStore((s) => s.addToast);
   const { lastByChannel } = useChannelActivity(activeTwinId);
 
@@ -135,6 +144,20 @@ export default function ChannelsBaseline() {
 
   useEffect(() => { if (activeTwinId) fetchChannels(activeTwinId); }, [activeTwinId, fetchChannels]);
   useEffect(() => { fetchCredentials(); }, [fetchCredentials]);
+  useEffect(() => { if (personas.length === 0) void fetchPersonas(); }, [personas.length, fetchPersonas]);
+
+  const personaOptions: ThemedSelectOption[] = useMemo(
+    () => [
+      { value: '', label: t.channels.personaNone, description: '' },
+      ...personas.map((p) => ({ value: p.id, label: p.name, description: p.id.slice(0, 8) })),
+    ],
+    [personas, t.channels.personaNone],
+  );
+  const personaNameById = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const p of personas) m.set(p.id, p.name);
+    return m;
+  }, [personas]);
 
   const channelDef = CHANNEL_TYPES.find((c) => c.id === newType);
   const filteredCredentials = useMemo(() => {
@@ -249,7 +272,17 @@ export default function ChannelsBaseline() {
                 </div>
                 <div className="space-y-1">
                   <span className="typo-caption text-foreground font-medium">{t.channels.personaIdOptional}</span>
-                  <input type="text" placeholder={t.channels.personaIdPlaceholder} value={newPersonaId} onChange={(e) => setNewPersonaId(e.target.value)} className={`${INPUT_FIELD} font-mono`} />
+                  {personas.length > 0 ? (
+                    <ThemedSelect
+                      filterable
+                      options={personaOptions}
+                      value={newPersonaId}
+                      onValueChange={setNewPersonaId}
+                      placeholder={t.channels.personaPickerPlaceholder}
+                    />
+                  ) : (
+                    <input type="text" placeholder={t.channels.personaIdPlaceholder} value={newPersonaId} onChange={(e) => setNewPersonaId(e.target.value)} className={`${INPUT_FIELD} font-mono`} />
+                  )}
                 </div>
               </div>
               {formError && <p className="typo-caption text-red-400">{formError}</p>}
@@ -278,6 +311,7 @@ export default function ChannelsBaseline() {
                     channel={ch}
                     meta={meta}
                     credential={cred}
+                    personaName={ch.persona_id ? personaNameById.get(ch.persona_id) : undefined}
                     lastActivityIso={lastByChannel.get(ch.channel_type)}
                     onToggle={handleToggle}
                     onDelete={handleDelete}
