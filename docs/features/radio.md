@@ -27,6 +27,14 @@ appropriate engine and reports state transitions back via
   the collapse choice persists across sessions via
   `collapsedSourceKinds` in the radio slice. Catalogs of a single
   kind render flat — the heading would feel decorative.
+- Right-click any picker row opens a small fixed-position actions
+  menu at the cursor: **Hide from picker** (calls the existing
+  `setStationDisabled` so the row disappears immediately — re-enable
+  from Settings → Radio) and, when the station declares a
+  `sourceUrl`, **Open source** (routes through `open_external_url`
+  to launch the provider page in the system browser). Escape or
+  outside-click dismisses the actions menu without closing the
+  picker behind it.
 - A "Radio" card in **Settings → Account** (`RadioSettingsCard`) that
   lists the curated catalog. YouTube stations show their tracklist;
   stream stations show the source label + link. Three settings live

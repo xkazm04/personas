@@ -12793,6 +12793,9 @@ export type Translations = {
     group_stream: string;
     group_toggle_label: string;
     group_count: string;
+    row_menu_label: string;
+    row_menu_hide: string;
+    row_menu_open_source: string;
   };
   cockpit: {
     unknown_assistant: string;

@@ -1,5 +1,7 @@
-import { useEffect, useMemo, useRef } from 'react';
-import { Check, ChevronDown, ChevronRight, Music, Radio } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Check, ChevronDown, ChevronRight, ExternalLink, EyeOff, Music, Radio } from 'lucide-react';
+import { openExternalUrl } from '@/api/system/system';
+import { silentCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import type { StationSourceKind } from '@/stores/slices/system/radioSlice';
@@ -23,6 +25,18 @@ export default function StationPicker({
   const disabledStationIds = useSystemStore((s) => s.disabledStationIds);
   const collapsedSourceKinds = useSystemStore((s) => s.collapsedSourceKinds);
   const setSourceKindCollapsed = useSystemStore((s) => s.setSourceKindCollapsed);
+  const setStationDisabled = useSystemStore((s) => s.setStationDisabled);
+  /**
+   * When non-null, a small actions menu floats at viewport (clientX,
+   * clientY) for the named station. Right-click opens it; click-outside
+   * or any action closes it. We render it as a portal-less sibling of
+   * the picker so it can paint over the picker's own bounds.
+   */
+  const [contextMenu, setContextMenu] = useState<{
+    stationId: string;
+    x: number;
+    y: number;
+  } | null>(null);
 
   // Hide stations the user has disabled in Settings → Account. Currently
   // playing stations stay playing even if disabled — the picker just hides
@@ -50,10 +64,22 @@ export default function StationPicker({
 
   useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
+      // Close the context menu first if open — clicking outside it
+      // shouldn't also close the underlying picker in one go.
+      if (contextMenu) {
+        setContextMenu(null);
+        return;
+      }
       if (ref.current && !ref.current.contains(e.target as Node)) onClose();
     };
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') {
+        if (contextMenu) {
+          setContextMenu(null);
+          return;
+        }
+        onClose();
+      }
     };
     document.addEventListener('mousedown', onDocClick);
     document.addEventListener('keydown', onKey);
@@ -61,7 +87,16 @@ export default function StationPicker({
       document.removeEventListener('mousedown', onDocClick);
       document.removeEventListener('keydown', onKey);
     };
-  }, [onClose]);
+  }, [onClose, contextMenu]);
+
+  const onRowContextMenu = (e: React.MouseEvent, stationId: string) => {
+    e.preventDefault();
+    setContextMenu({ stationId, x: e.clientX, y: e.clientY });
+  };
+
+  const contextStation = contextMenu
+    ? visibleStations.find((s) => s.id === contextMenu.stationId) ?? null
+    : null;
 
   const renderStation = (station: Station) => {
     const active = station.id === currentStationId;
@@ -73,6 +108,7 @@ export default function StationPicker({
         <button
           type="button"
           onClick={() => onPick(station.id)}
+          onContextMenu={(e) => onRowContextMenu(e, station.id)}
           className={`w-full flex items-center gap-3 px-3 py-2 typo-body text-left transition-colors ${
             active ? 'bg-secondary/40' : 'hover:bg-secondary/20'
           }`}
@@ -171,6 +207,46 @@ export default function StationPicker({
           </div>
         )}
       </div>
+      {contextMenu && contextStation && (
+        <div
+          role="menu"
+          aria-label={t.radio.row_menu_label}
+          className="fixed z-50 min-w-44 rounded-card border border-primary/10 bg-background shadow-elevation-3 py-1"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          <button
+            type="button"
+            role="menuitem"
+            className="w-full flex items-center gap-2 px-3 py-1.5 typo-caption text-left text-foreground/85 hover:bg-secondary/30 transition-colors"
+            onClick={() => {
+              setStationDisabled(contextStation.id, true);
+              setContextMenu(null);
+            }}
+          >
+            <EyeOff className="w-3.5 h-3.5 text-foreground/55" />
+            {t.radio.row_menu_hide}
+          </button>
+          {contextStation.sourceUrl && (
+            <button
+              type="button"
+              role="menuitem"
+              className="w-full flex items-center gap-2 px-3 py-1.5 typo-caption text-left text-foreground/85 hover:bg-secondary/30 transition-colors"
+              onClick={() => {
+                if (contextStation.sourceUrl) {
+                  openExternalUrl(contextStation.sourceUrl).catch(
+                    silentCatch('radio:open-source'),
+                  );
+                }
+                setContextMenu(null);
+              }}
+            >
+              <ExternalLink className="w-3.5 h-3.5 text-foreground/55" />
+              {t.radio.row_menu_open_source}
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

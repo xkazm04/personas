@@ -12786,7 +12786,10 @@
     "group_youtube": "YouTube",
     "group_stream": "Streams",
     "group_toggle_label": "Toggle group",
-    "group_count": "{count}"
+    "group_count": "{count}",
+    "row_menu_label": "Station actions",
+    "row_menu_hide": "Hide from picker",
+    "row_menu_open_source": "Open source"
   },
   "cockpit": {
     "unknown_assistant": "Unknown assistant",
