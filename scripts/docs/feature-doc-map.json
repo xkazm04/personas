@@ -1,5 +1,78 @@
 {
-  "_comment": "Source -> doc map used by scripts/docs/check-doc-sync.mjs (Stop hook). When a turn edits files matching sourceGlobs, the hook reminds Claude to update the matching `doc`. Skip patterns (tests, generated bindings, i18n, docs themselves) are handled inside the script.",
+  "_comment": "Source -> doc map used by scripts/docs/check-doc-sync.mjs (Stop hook). Three target types per entry: `doc` (feature doc — required, exit-2 nag if missing), `onboardingFlows` (optional list of tour-flow IDs from the onboardingFlows registry below — exit-2 nag if any listed AND no `src/features/onboarding/**` file touched), `marketingModule` (optional desktop-modules.ts module ID — informational breadcrumb only, never exits 2 on its own). Skip patterns (tests, generated bindings, i18n, docs themselves) are handled inside the script.",
+  "onboardingFlows": {
+    "_comment": "Tour-flow registry. Each flow id is referenced from entries[*].onboardingFlows to declare 'when source in this entry changes, the named tour flow is likely affected — re-walk the tour.' The stepFile is the canonical onboarding component for the flow (null if the step is rendered by a generic TourPanelBody driven by tourSlice config). tourEvent is the completion event from src/stores/slices/system/tourSlice.ts TOUR_EVENTS (the contract that closes the step).",
+    "appearance-setup": {
+      "stepFile": "src/features/onboarding/components/AppearanceStep.tsx",
+      "tourEvent": "tour:appearance-changed",
+      "description": "Theme + accent + density picker — first step of getting-started tour"
+    },
+    "credentials-intro": {
+      "stepFile": "src/features/onboarding/components/steps/CredentialsTourContent.tsx",
+      "tourEvent": "tour:credentials-explored",
+      "description": "Walks user through credential categories + connection types in the vault catalog"
+    },
+    "persona-creation": {
+      "stepFile": "src/features/onboarding/components/steps/PersonaCreationCoach.tsx",
+      "tourEvent": "tour:persona-promoted",
+      "description": "Coaches user from prompt → draft → adopted persona via the build session"
+    },
+    "template-picker": {
+      "stepFile": "src/features/onboarding/components/TemplatePickerStep.tsx",
+      "tourEvent": "tour:persona-draft-ready",
+      "description": "Ranked template gallery used during onboarding template selection"
+    },
+    "overview-dashboard": {
+      "stepFile": null,
+      "tourEvent": "tour:dashboard-viewed",
+      "description": "Exploration step — main overview dashboard tiles"
+    },
+    "execution-activity": {
+      "stepFile": "src/features/onboarding/components/ExecutionStep.tsx",
+      "tourEvent": "tour:activity-explored",
+      "description": "Walks user through the activity feed + execution list"
+    },
+    "messages-tab": {
+      "stepFile": null,
+      "tourEvent": "tour:messages-explored",
+      "description": "Exploration step — cockpit / companion inbox messages"
+    },
+    "health-monitoring": {
+      "stepFile": null,
+      "tourEvent": "tour:health-explored",
+      "description": "Exploration step — overview health + self-healing surfaces"
+    },
+    "lab-arena": {
+      "stepFile": null,
+      "tourEvent": "tour:lab-explored",
+      "description": "Exploration step — agents lab (arena / A-B / matrix)"
+    },
+    "events-intro": {
+      "stepFile": null,
+      "tourEvent": "tour:events-viewed",
+      "description": "Exploration step — events live stream + builder overview"
+    },
+    "trigger-types": {
+      "stepFile": null,
+      "tourEvent": "tour:triggers-explored",
+      "description": "Exploration step — trigger builder showcasing manual/schedule/webhook/clipboard/file-watcher"
+    },
+    "event-chaining": {
+      "stepFile": null,
+      "tourEvent": "tour:chaining-understood",
+      "description": "Exploration step — chain studio"
+    },
+    "live-stream": {
+      "stepFile": null,
+      "tourEvent": "tour:livestream-viewed",
+      "description": "Exploration step — live event stream"
+    },
+    "desktop-discovery": {
+      "stepFile": "src/features/onboarding/components/DesktopDiscoveryStep.tsx",
+      "tourEvent": null,
+      "description": "Spotlights sidebar nav items so the user knows where to find things"
+    }
+  },
   "entries": [
     {
       "doc": "docs/features/personas/README.md",
@@ -10,7 +83,9 @@
         "src-tauri/src/commands/core/agent_ir.rs",
         "src-tauri/src/db/models/persona.rs",
         "src-tauri/src/db/models/agent_ir.rs"
-      ]
+      ],
+      "onboardingFlows": ["persona-creation", "lab-arena"],
+      "marketingModule": "agents"
     },
     {
       "doc": "docs/features/templates/README.md",
@@ -22,7 +97,9 @@
         "src-tauri/src/engine/connector_strategy.rs",
         "src-tauri/src/engine/template_checksums.rs",
         "src-tauri/src/engine/build_session/**"
-      ]
+      ],
+      "onboardingFlows": ["template-picker", "persona-creation"],
+      "marketingModule": "templates"
     },
     {
       "doc": "docs/features/execution/README.md",
@@ -42,14 +119,18 @@
         "src-tauri/src/engine/cost.rs",
         "src-tauri/src/engine/automation_runner.rs",
         "src-tauri/src/engine/tool_runner.rs"
-      ]
+      ],
+      "onboardingFlows": ["execution-activity"],
+      "marketingModule": "agents"
     },
     {
       "doc": "docs/features/connections/README.md",
       "sourceGlobs": [
         "src/features/vault/**",
         "src-tauri/src/commands/credentials/**"
-      ]
+      ],
+      "onboardingFlows": ["credentials-intro"],
+      "marketingModule": "connections"
     },
     {
       "doc": "docs/features/events/README.md",
@@ -58,14 +139,17 @@
         "src-tauri/src/commands/communication/**",
         "src-tauri/src/engine/webhook.rs",
         "src-tauri/src/engine/event_registry.rs"
-      ]
+      ],
+      "onboardingFlows": ["events-intro", "trigger-types", "event-chaining", "live-stream"],
+      "marketingModule": "events"
     },
     {
       "doc": "docs/features/recipes/README.md",
       "sourceGlobs": [
         "src/features/recipes/**",
         "src-tauri/src/commands/recipes/**"
-      ]
+      ],
+      "marketingModule": "agents"
     },
     {
       "doc": "docs/features/settings/README.md",
@@ -76,13 +160,17 @@
         "src-tauri/src/commands/infrastructure/tier_usage.rs",
         "src-tauri/src/commands/credentials/external_api_keys.rs",
         "src-tauri/src/engine/management_api.rs"
-      ]
+      ],
+      "onboardingFlows": ["appearance-setup"],
+      "marketingModule": "settings"
     },
     {
       "doc": "docs/features/home.md",
       "sourceGlobs": [
         "src/features/home/**"
-      ]
+      ],
+      "onboardingFlows": ["desktop-discovery"],
+      "marketingModule": "home"
     },
     {
       "doc": "docs/features/cockpit.md",
@@ -91,68 +179,81 @@
         "src/features/plugins/companion/inbox/**",
         "src/features/plugins/companion/InlineChatCard.tsx",
         "src-tauri/src/companion/brain/cockpit.rs"
-      ]
+      ],
+      "onboardingFlows": ["messages-tab"],
+      "marketingModule": "home"
     },
     {
       "doc": "docs/features/onboarding.md",
       "sourceGlobs": [
         "src/features/onboarding/**"
-      ]
+      ],
+      "marketingModule": "home"
     },
     {
       "doc": "docs/features/overview/README.md",
       "sourceGlobs": [
         "src/features/overview/**"
-      ]
+      ],
+      "onboardingFlows": ["overview-dashboard", "execution-activity", "health-monitoring"],
+      "marketingModule": "overview"
     },
     {
       "doc": "docs/features/artist.md",
       "sourceGlobs": [
         "src/features/plugins/artist/**",
         "src-tauri/src/commands/artist/**"
-      ]
+      ],
+      "marketingModule": "plugins"
     },
     {
       "doc": "docs/features/companion/README.md",
       "sourceGlobs": [
         "src/features/plugins/companion/**",
         "src-tauri/src/commands/companion/**"
-      ]
+      ],
+      "onboardingFlows": ["messages-tab"],
+      "marketingModule": "plugins"
     },
     {
       "doc": "docs/features/dev-tools.md",
       "sourceGlobs": [
         "src/features/plugins/dev-tools/**",
         "src-tauri/src/commands/infrastructure/dev_tools.rs"
-      ]
+      ],
+      "marketingModule": "plugins"
     },
     {
       "doc": "docs/features/drive/README.md",
       "sourceGlobs": [
         "src/features/plugins/drive/**",
         "src-tauri/src/commands/drive.rs"
-      ]
+      ],
+      "marketingModule": "plugins"
     },
     {
       "doc": "docs/features/obsidian-brain.md",
       "sourceGlobs": [
         "src/features/plugins/obsidian-brain/**",
         "src-tauri/src/commands/obsidian_brain/**"
-      ]
+      ],
+      "marketingModule": "plugins"
     },
     {
       "doc": "docs/features/research-lab.md",
       "sourceGlobs": [
         "src/features/plugins/research-lab/**",
         "src-tauri/src/commands/infrastructure/research_lab.rs"
-      ]
+      ],
+      "marketingModule": "plugins"
     },
     {
       "doc": "docs/features/twin.md",
       "sourceGlobs": [
         "src/features/plugins/twin/**",
         "src-tauri/src/commands/infrastructure/twin.rs"
-      ]
+      ],
+      "marketingModule": "plugins"
     },
     {
       "doc": "docs/features/gitlab.md",
@@ -160,7 +261,8 @@
         "src/features/plugins/gitlab/**",
         "src-tauri/src/commands/infrastructure/gitlab.rs",
         "src-tauri/src/gitlab/**"
-      ]
+      ],
+      "marketingModule": "deployment"
     },
     {
       "doc": "docs/features/langfuse.md",
@@ -169,7 +271,8 @@
         "src-tauri/src/commands/infrastructure/langfuse.rs",
         "src-tauri/src/langfuse/**",
         "src-tauri/src/local_http/langfuse_routes.rs"
-      ]
+      ],
+      "marketingModule": "plugins"
     },
     {
       "doc": "docs/features/deployment/README.md",
@@ -177,7 +280,8 @@
         "src/features/deployment/**",
         "src/api/system/cloud.ts",
         "src-tauri/src/cloud/**"
-      ]
+      ],
+      "marketingModule": "deployment"
     },
     {
       "doc": "docs/features/sharing/README.md",
@@ -193,7 +297,8 @@
       "doc": "docs/features/schedules.md",
       "sourceGlobs": [
         "src/features/schedules/**"
-      ]
+      ],
+      "marketingModule": "schedules"
     },
     {
       "doc": "docs/features/pipeline/README.md",
@@ -202,7 +307,8 @@
         "src-tauri/src/commands/teams/**",
         "src-tauri/src/db/repos/core/teams.rs",
         "src-tauri/src/db/repos/core/groups.rs"
-      ]
+      ],
+      "marketingModule": "pipeline"
     },
     {
       "doc": "docs/features/automation-tools.md",
@@ -220,7 +326,8 @@
       "sourceGlobs": [
         "src/features/home/sub_releases/**",
         "src-tauri/src/commands/infrastructure/live_roadmap.rs"
-      ]
+      ],
+      "marketingModule": "home"
     },
     {
       "doc": "docs/features/radio.md",
