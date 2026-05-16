@@ -308,6 +308,83 @@ pub fn dispatch(
                 });
             }
             Ok(env)
+                if env.op == "propose_action" && env.action == "show_trigger_set" =>
+            {
+                // Trigger-decomposition card. Same family as use_case_set:
+                // Athena composes 1-4 trigger configurations applying
+                // cycle-6 doctrine's "one trigger condition → one persona
+                // response shape" grain test. Each entry has label,
+                // source, condition; optional grain + idempotency notes.
+                let intent = env
+                    .params
+                    .get("intent")
+                    .and_then(|v| v.as_str())
+                    .map(str::trim)
+                    .unwrap_or("");
+                let triggers = env
+                    .params
+                    .get("triggers")
+                    .and_then(|v| v.as_array())
+                    .cloned()
+                    .unwrap_or_default();
+                if triggers.is_empty() {
+                    out.warnings.push(
+                        "show_trigger_set: `triggers` must be a non-empty array of {label, source, condition} objects"
+                            .into(),
+                    );
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                if triggers.len() > 6 {
+                    out.warnings.push(format!(
+                        "show_trigger_set: {} triggers is too many — cap at 4 per card; split into multiple ops if needed",
+                        triggers.len()
+                    ));
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                // Validate each trigger has the required fields up front
+                // so the widget renders cleanly.
+                let mut missing: Option<&'static str> = None;
+                for tr in &triggers {
+                    for field in ["label", "source", "condition"] {
+                        if tr
+                            .get(field)
+                            .and_then(|v| v.as_str())
+                            .map(str::trim)
+                            .filter(|s| !s.is_empty())
+                            .is_none()
+                        {
+                            missing = Some(field);
+                            break;
+                        }
+                    }
+                    if missing.is_some() {
+                        break;
+                    }
+                }
+                if let Some(field) = missing {
+                    out.warnings.push(format!(
+                        "show_trigger_set: every trigger needs a non-empty `{field}`"
+                    ));
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                let title = env
+                    .params
+                    .get("title")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string());
+                out.chat_cards.push(ChatCard {
+                    kind: "trigger_set".to_string(),
+                    title,
+                    config: serde_json::json!({
+                        "intent": intent,
+                        "triggers": triggers,
+                    }),
+                });
+            }
+            Ok(env)
                 if env.op == "propose_action" && env.action == "show_use_case_set" =>
             {
                 // Use-case decomposition card. Athena supplies an intent

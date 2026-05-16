@@ -16,6 +16,7 @@ const UNCLAMPED_KINDS = new Set([
   'persona_walkthrough',
   'template_suggestions',
   'use_case_set',
+  'trigger_set',
 ]);
 
 /**

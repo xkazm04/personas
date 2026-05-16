@@ -23,6 +23,7 @@ import { IssueListWidget } from './widgets/IssueListWidget';
 import { PersonaWalkthroughWidget } from './widgets/PersonaWalkthroughWidget';
 import { TemplateSuggestionsWidget } from './widgets/TemplateSuggestionsWidget';
 import { TextCalloutWidget } from './widgets/TextCalloutWidget';
+import { TriggerSetWidget } from './widgets/TriggerSetWidget';
 import { UseCaseSetWidget } from './widgets/UseCaseSetWidget';
 
 export interface CockpitWidgetProps {
@@ -65,6 +66,12 @@ export const cockpitWidgetRegistry: Record<string, ComponentType<CockpitWidgetPr
   // Athena composes the use cases; the widget renders them grouped by
   // golden / variant / out-of-scope role with role-specific accents.
   use_case_set: UseCaseSetWidget,
+  // Trigger decomposition — sibling of use_case_set. Emitted via
+  // `show_trigger_set { intent, triggers: [{label, source, condition, grain?, idempotency_note?}] }`.
+  // Each entry applies cycle-6 doctrine's "one trigger condition → one
+  // persona response shape" grain test; the optional grain and
+  // idempotency notes surface the design rationale.
+  trigger_set: TriggerSetWidget,
 };
 
 /** Tunes the grid `rowSpan` per widget kind. Multi-row gives long-form

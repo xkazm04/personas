@@ -10580,6 +10580,11 @@ export type Translations = {
       use_case_set_role_golden: string;
       use_case_set_role_variant: string;
       use_case_set_role_out_of_scope: string;
+      trigger_set_title: string;
+      trigger_set_empty: string;
+      trigger_set_condition: string;
+      trigger_set_grain: string;
+      trigger_set_idempotency: string;
       proactive_evaluate_now: string;
       memory_run_consolidation: string;
       memory_generate_reflection: string;

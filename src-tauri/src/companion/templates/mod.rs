@@ -62,4 +62,10 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// cases tagged golden / variant / out_of_scope, applying the use-case
 /// decomposition rules from the persona-design best-practices doctrine.
 /// Zooms into the layer the walkthrough card only sketches.
-pub const CONSTITUTION_VERSION: u32 = 11;
+///
+/// v12: `show_trigger_set` op — sibling of `show_use_case_set`. Auto-
+/// fire chat-card carrying 1-4 trigger configurations (label, source,
+/// condition, optional grain + idempotency notes). Applies cycle-6
+/// doctrine's "one trigger condition → one persona response shape"
+/// grain test.
+pub const CONSTITUTION_VERSION: u32 = 12;

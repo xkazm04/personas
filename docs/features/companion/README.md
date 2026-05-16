@@ -140,6 +140,12 @@ Advisory cards (`persona_walkthrough`, `template_suggestions`, `use_case_set`) d
 
 Closes the loop between transient chat reasoning and the persistent cockpit surface: when Athena composes a useful widget inline (a status spark for a service, an issue rollup, a custom callout), the user can promote it to their dashboard with one click instead of asking Athena to compose a full cockpit from scratch.
 
+## `show_trigger_set` chat-card (sibling of use_case_set)
+
+Athena emits `show_trigger_set { intent, triggers }` to decompose a persona's input distribution from the trigger angle: 1-4 trigger configurations each with `label`, `source` (free-form: Slack webhook, scheduled cron, polling Sentry, manual), `condition` (what input shape fires this), and optional `grain` + `idempotency_note` to surface cycle-6 doctrine's right-grain test.
+
+Together with `show_use_case_set` (the what-it-handles angle), the trigger card completes the persona-decomposition triangle. Widget renders each trigger with a source-aware icon hint (Bell for inbox/webhook, Clock for scheduled, Repeat for polling). Auto-fire — same suggestion shape as siblings; advisory not pinnable. Constitution bumped to v12.
+
 ## Refine chips
 
 Below the latest completed assistant bubble only, `RefineChips` renders three small affordances — **Shorter**, **More detail**, **Code only** — that resend the prior user message with a localized steering suffix appended ("— much shorter, please.", "— go deeper, with examples.", "— code only, minimal prose."). Click feeds the modified prompt through the same `send()` path used by the composer, so the optimistic-bubble / streaming / TTS pipeline kicks in identically. Disabled while streaming or improving. Older bubbles in scrollback don't render chips — refining a mid-scrollback turn is a different, higher-effort UI that needs to model "which user message do I resend?" carefully.
