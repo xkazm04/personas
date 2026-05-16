@@ -215,6 +215,12 @@ export const EventName = {
   // listener adds an entry to the notification bell with a deep-link to
   // the persona's draft so the user can review what landed.
   BUILD_ONESHOT_TERMINAL: 'build-oneshot-terminal',
+
+  // Fleet plugin (DEV-only Claude Code session aggregator)
+  FLEET_SESSION_OUTPUT: 'fleet-session-output',
+  FLEET_SESSION_STATE: 'fleet-session-state',
+  FLEET_SESSION_EXITED: 'fleet-session-exited',
+  FLEET_REGISTRY_CHANGED: 'fleet-registry-changed',
 } as const;
 
 export type EventNameValue = (typeof EventName)[keyof typeof EventName];
@@ -868,6 +874,12 @@ export interface EventPayloadMap {
 
   // One-shot build terminal phase reached
   [EventName.BUILD_ONESHOT_TERMINAL]: BuildOneShotTerminalPayload;
+
+  // Fleet plugin events
+  [EventName.FLEET_SESSION_OUTPUT]: { session_id: string; chunk: string };
+  [EventName.FLEET_SESSION_STATE]: { session_id: string; state: string; reason?: string };
+  [EventName.FLEET_SESSION_EXITED]: { session_id: string; exit_code: number | null };
+  [EventName.FLEET_REGISTRY_CHANGED]: { kind: 'added' | 'removed' | 'updated'; session_id: string };
 }
 
 // ---------------------------------------------------------------------------
