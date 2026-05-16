@@ -160,6 +160,14 @@ The 7th readiness item from cycle-6 doctrine: every persona needs an error path 
 
 Auto-fire chat-card; informational only. Together with cycles 7-9 + 12-13, Athena now has structured chat-card surfaces for 5 of the 7 readiness items (intent overview, use cases, triggers, model tier, observability). The remaining gaps (system prompt structure, tools) were in-session sticky-dropped. Constitution bumped to v14.
 
+## `show_decision_log` chat-card
+
+Builds on top of the design-decomposition family rather than expanding it. After Athena has helped a user work through a design (across walkthroughs, use-case decompositions, trigger sets, tier choices), she can emit `show_decision_log { intent, decisions }` to surface the audit trail of choices made so far. Each decision has a `label` (what was decided), `choice` (what was picked), `rationale` (one sentence why), and optional `timestamp`.
+
+The widget renders a vertical timeline (subtle fuchsia rail + node dots) where each row reads `<label>  →  <choice>` with the rationale below in a smaller caption. Same-day timestamps show as `HH:MM`; older entries collapse to `MMM D`. Auto-fire chat-card; advisory not pinnable.
+
+Helps two cases: (1) the user wants to retrace reasoning without re-reading the whole conversation; (2) the user is reviewing a built persona later and wants to know why a specific choice was made. Constitution bumped to v15.
+
 ## Refine chips
 
 Below the latest completed assistant bubble only, `RefineChips` renders three small affordances — **Shorter**, **More detail**, **Code only** — that resend the prior user message with a localized steering suffix appended ("— much shorter, please.", "— go deeper, with examples.", "— code only, minimal prose."). Click feeds the modified prompt through the same `send()` path used by the composer, so the optimistic-bubble / streaming / TTS pipeline kicks in identically. Disabled while streaming or improving. Older bubbles in scrollback don't render chips — refining a mid-scrollback turn is a different, higher-effort UI that needs to model "which user message do I resend?" carefully.

@@ -78,4 +78,10 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// cycle-6 doctrine. Two sections: error handling (what failures
 /// escalate to manual_reviews) + success metric (count_by_status /
 /// cost_per_run / latency / custom). Auto-fire chat-card.
-pub const CONSTITUTION_VERSION: u32 = 14;
+///
+/// v15: `show_decision_log` op — audit-trail card capturing the
+/// design choices Athena made during the conversation (label / choice /
+/// rationale per entry). Helps the user retrace reasoning without
+/// re-running the conversation; helps future-Athena explain past
+/// decisions when asked.
+pub const CONSTITUTION_VERSION: u32 = 15;

@@ -10595,6 +10595,8 @@
       "observability_metric_cost_per_run": "Cost per run",
       "observability_metric_latency": "Latency",
       "observability_metric_custom": "Custom metric",
+      "decision_log_title": "Decision log",
+      "decision_log_empty": "Athena hasn't logged any decisions for this conversation yet.",
       "proactive_evaluate_now": "Check for nudges",
       "memory_run_consolidation": "Run consolidation",
       "memory_generate_reflection": "Generate reflection",

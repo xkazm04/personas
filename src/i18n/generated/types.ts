@@ -10601,6 +10601,8 @@ export type Translations = {
       observability_metric_cost_per_run: string;
       observability_metric_latency: string;
       observability_metric_custom: string;
+      decision_log_title: string;
+      decision_log_empty: string;
       proactive_evaluate_now: string;
       memory_run_consolidation: string;
       memory_generate_reflection: string;

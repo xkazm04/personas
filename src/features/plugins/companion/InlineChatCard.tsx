@@ -19,6 +19,7 @@ const UNCLAMPED_KINDS = new Set([
   'trigger_set',
   'model_tier_choice',
   'observability_plan',
+  'decision_log',
 ]);
 
 /**

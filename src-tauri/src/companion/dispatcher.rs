@@ -308,6 +308,82 @@ pub fn dispatch(
                 });
             }
             Ok(env)
+                if env.op == "propose_action" && env.action == "show_decision_log" =>
+            {
+                // Decision-log card — audit trail of design choices Athena
+                // made during the current conversation. Each entry has a
+                // label (what was decided), choice (what was picked), and
+                // rationale (one sentence why). Helps the user retrace
+                // reasoning later — "why did we pick Sonnet?" — without
+                // re-running the conversation.
+                let intent = env
+                    .params
+                    .get("intent")
+                    .and_then(|v| v.as_str())
+                    .map(str::trim)
+                    .unwrap_or("");
+                let decisions = env
+                    .params
+                    .get("decisions")
+                    .and_then(|v| v.as_array())
+                    .cloned()
+                    .unwrap_or_default();
+                if decisions.is_empty() {
+                    out.warnings.push(
+                        "show_decision_log: `decisions` must be a non-empty array of {label, choice, rationale} objects"
+                            .into(),
+                    );
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                if decisions.len() > 12 {
+                    out.warnings.push(format!(
+                        "show_decision_log: {} decisions is too many — cap at 8 per card; split into multiple ops if needed",
+                        decisions.len()
+                    ));
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                let mut missing_field: Option<&'static str> = None;
+                for d in &decisions {
+                    for field in ["label", "choice", "rationale"] {
+                        if d
+                            .get(field)
+                            .and_then(|v| v.as_str())
+                            .map(str::trim)
+                            .filter(|s| !s.is_empty())
+                            .is_none()
+                        {
+                            missing_field = Some(field);
+                            break;
+                        }
+                    }
+                    if missing_field.is_some() {
+                        break;
+                    }
+                }
+                if let Some(field) = missing_field {
+                    out.warnings.push(format!(
+                        "show_decision_log: every decision needs a non-empty `{field}`"
+                    ));
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                let title = env
+                    .params
+                    .get("title")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string());
+                out.chat_cards.push(ChatCard {
+                    kind: "decision_log".to_string(),
+                    title,
+                    config: serde_json::json!({
+                        "intent": intent,
+                        "decisions": decisions,
+                    }),
+                });
+            }
+            Ok(env)
                 if env.op == "propose_action" && env.action == "show_observability_plan" =>
             {
                 // Observability plan card — the 7th readiness item from

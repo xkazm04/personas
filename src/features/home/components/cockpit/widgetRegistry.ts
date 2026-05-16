@@ -20,6 +20,7 @@ import { LinkedDecisionsWidget } from './widgets/LinkedDecisionsWidget';
 import { LinkedMemoriesWidget } from './widgets/LinkedMemoriesWidget';
 import { MetricSparkWidget } from './widgets/MetricSparkWidget';
 import { IssueListWidget } from './widgets/IssueListWidget';
+import { DecisionLogWidget } from './widgets/DecisionLogWidget';
 import { ModelTierChoiceWidget } from './widgets/ModelTierChoiceWidget';
 import { ObservabilityPlanWidget } from './widgets/ObservabilityPlanWidget';
 import { PersonaWalkthroughWidget } from './widgets/PersonaWalkthroughWidget';
@@ -84,6 +85,11 @@ export const cockpitWidgetRegistry: Record<string, ComponentType<CockpitWidgetPr
   // metric (which signal is tracked). Emitted via
   // `show_observability_plan { intent, error_handling, success_metric }`.
   observability_plan: ObservabilityPlanWidget,
+  // Decision log — audit trail of design choices made during the
+  // conversation. Emitted via `show_decision_log { intent, decisions }`.
+  // Each decision has label / choice / rationale; widget renders a
+  // vertical timeline.
+  decision_log: DecisionLogWidget,
 };
 
 /** Tunes the grid `rowSpan` per widget kind. Multi-row gives long-form
