@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useRef, useState, type DragEvent } from 'react';
-import { Video, Music, ImagePlus, Type, Upload, Film } from 'lucide-react';
+import { Check, FolderOpen, Video, Music, ImagePlus, Type, Upload, Film, Play, X } from 'lucide-react';
 import { save as saveDialog } from '@tauri-apps/plugin-dialog';
+import { open as openExternal } from '@tauri-apps/plugin-shell';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Button } from '@/features/shared/components/buttons';
 import { useSystemStore } from '@/stores/systemStore';
+import { silentCatch } from '@/lib/silentCatch';
+import { formatDurationHuman } from '../utils/format';
 import { useFfmpegDetect } from './hooks/useFfmpegDetect';
 import { useMediaExport } from './hooks/useMediaExport';
 import { useMediaStudio } from './hooks/useMediaStudio';
@@ -17,8 +20,9 @@ import MediaStudioToolbar from './toolbar/MediaStudioToolbar';
 import { artistProbeMedia } from '@/api/artist/index';
 import { VIDEO_EXTENSIONS, AUDIO_EXTENSIONS, IMAGE_EXTENSIONS } from './constants';
 import type { VideoClip, AudioClip, TextItem, ImageItem, TimelineItem } from './types';
+import BeatSidebar from './BeatSidebar';
 import FfmpegStatusBanner from './FfmpegStatusBanner';
-import CompositionPreview from './CompositionPreview';
+import CompositionPreview, { type CompositionPreviewHandle } from './CompositionPreview';
 import TimelinePanel from './TimelinePanel';
 import PlaybackControls from './PlaybackControls';
 
@@ -28,8 +32,21 @@ function nextStartTime<T extends { startTime: number; duration: number }>(items:
   return items.reduce((end, c) => Math.max(end, c.startTime + c.duration), 0);
 }
 
+interface StarterTemplate {
+  id: 'vertical-9-16' | 'horizontal-16-9' | 'square';
+  width: number;
+  height: number;
+  fps: number;
+}
+
+const STARTER_TEMPLATES: StarterTemplate[] = [
+  { id: 'vertical-9-16', width: 1080, height: 1920, fps: 30 },
+  { id: 'horizontal-16-9', width: 1920, height: 1080, fps: 30 },
+  { id: 'square', width: 1080, height: 1080, fps: 30 },
+];
+
 export default function MediaStudioPage() {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const { status: ffmpegStatus, checking: ffmpegChecking, recheck: ffmpegRecheck } = useFfmpegDetect();
   const {
     composition,
@@ -54,10 +71,28 @@ export default function MediaStudioPage() {
     canRedo,
   } = useMediaStudio();
 
+  const applyStarterTemplate = useCallback(
+    (template: StarterTemplate) => {
+      replaceComposition({
+        id: crypto.randomUUID(),
+        name: starterTemplateName(template.id, t),
+        width: template.width,
+        height: template.height,
+        fps: template.fps,
+        backgroundColor: '#000000',
+        items: [],
+      });
+    },
+    [replaceComposition, t],
+  );
+
+  const previewRef = useRef<CompositionPreviewHandle>(null);
+
   const persistence = useMediaStudioPersistence({
     composition,
     replaceComposition,
     enabled: true,
+    captureThumbnail: () => previewRef.current?.captureThumbnail() ?? null,
   });
 
   const { plan } = useRenderPlan(composition);
@@ -81,12 +116,19 @@ export default function MediaStudioPage() {
     }
   }, [composition.items, resolveAnchor, updateItem]);
 
-  const { exportState, startExport, cancelExport } = useMediaExport(composition);
+  const { exportState, startExport, cancelExport, dismissExport } = useMediaExport(composition);
 
   const handleExport = useCallback(async () => {
+    // Tag the suggested filename with today's date so successive exports do
+    // not all collide on the composition name and stomp each other when the
+    // user accepts the dialog default. The composition name is sanitized for
+    // Windows reserved characters so a name like "Q3/Q4 mix" still opens a
+    // valid save dialog instead of erroring.
+    const date = new Date().toISOString().slice(0, 10);
+    const safeName = (composition.name || 'export').replace(/[\\/:*?"<>|]+/g, '_').trim() || 'export';
     const outputPath = await saveDialog({
       filters: [{ name: 'MP4 Video', extensions: ['mp4'] }],
-      defaultPath: `${composition.name || 'export'}.mp4`,
+      defaultPath: `${safeName}_${date}.mp4`,
     });
     if (!outputPath) return;
     startExport(outputPath);
@@ -367,6 +409,8 @@ export default function MediaStudioPage() {
             <h2 className="typo-section-title">{t.media_studio.empty_title}</h2>
             <p className="typo-body text-foreground mt-1">{t.media_studio.empty_hint}</p>
           </div>
+          <RecentCompositionsRow onLoad={persistence.loadFromPath} />
+          <StarterTemplatesRow onApply={applyStarterTemplate} />
           <div className="flex items-center gap-2 flex-wrap justify-center">
             <Button variant="accent" accentColor="rose" size="md" onClick={handleAddVideo}>
               <Video className="w-4 h-4" />
@@ -393,18 +437,34 @@ export default function MediaStudioPage() {
 
       {ffmpegReady && composition.items.length > 0 && (
         <div className="flex-1 flex flex-col min-h-0">
-          <div className="flex-1 min-h-0 p-4 flex items-center justify-center bg-background/40">
-            <CompositionPreview
+          <div className="flex-1 min-h-0 flex">
+            <div className="flex-1 min-h-0 p-4 flex items-center justify-center bg-background/40">
+              <CompositionPreview
+                ref={previewRef}
+                engine={engine}
+                playing={playing}
+                plan={plan}
+                totalDuration={totalDuration}
+              />
+            </div>
+            <BeatSidebar
+              beats={textItems}
               engine={engine}
-              playing={playing}
-              plan={plan}
-              totalDuration={totalDuration}
+              onSeek={seek}
+              onSelect={setSelectedItemId}
             />
           </div>
 
+          {exportState.status === 'complete' && exportState.outputPath && (
+            <ExportSuccessStrip
+              outputPath={exportState.outputPath}
+              onDismiss={dismissExport}
+            />
+          )}
+
           {exportState.status === 'exporting' && (
             <div className="flex items-center gap-2 px-4 py-1.5 border-t border-primary/10 bg-card/40">
-              <span className="text-[11px] text-foreground/60">Exporting…</span>
+              <span className="text-[11px] text-foreground/60">{t.media_studio.exporting}</span>
               <div className="flex-1 h-1 rounded-full bg-secondary/40 overflow-hidden max-w-xs">
                 <div
                   className="h-full bg-rose-500 transition-all"
@@ -414,8 +474,24 @@ export default function MediaStudioPage() {
               <span className="text-[11px] text-foreground/60 tabular-nums">
                 {Math.round(exportState.progress * 100)}%
               </span>
+              {exportState.elapsedMs >= 1000 && (
+                <span className="text-[11px] text-foreground/60 tabular-nums">
+                  ·{' '}
+                  {tx(t.media_studio.export_elapsed, {
+                    time: formatDurationHuman(exportState.elapsedMs / 1000),
+                  })}
+                </span>
+              )}
+              {exportState.etaMs !== null && (
+                <span className="text-[11px] text-foreground/60 tabular-nums">
+                  ·{' '}
+                  {tx(t.media_studio.export_eta, {
+                    time: formatDurationHuman(exportState.etaMs / 1000),
+                  })}
+                </span>
+              )}
               <Button variant="ghost" size="sm" onClick={cancelExport}>
-                Cancel
+                {t.media_studio.export_cancel}
               </Button>
             </div>
           )}
@@ -456,6 +532,155 @@ export default function MediaStudioPage() {
           />
         </div>
       )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// RecentCompositionsRow — surfaces the last few opened/saved compositions on
+// the empty state so the user can resume work without walking the file
+// dialog. Reads from the persisted MRU list on the artist slice; click loads
+// via `persistence.loadFromPath`, which auto-evicts missing files.
+// ---------------------------------------------------------------------------
+
+function RecentCompositionsRow({ onLoad }: { onLoad: (path: string) => Promise<void> }) {
+  const { t, tx } = useTranslation();
+  const recents = useSystemStore((s) => s.mediaStudioRecents);
+  if (recents.length === 0) return null;
+  return (
+    <div className="w-full max-w-2xl flex flex-col items-center gap-2">
+      <span className="typo-label text-foreground">{t.media_studio.recent_compositions}</span>
+      <div className="flex flex-wrap items-center gap-2 justify-center">
+        {recents.map((r) => (
+          <button
+            key={r.path}
+            type="button"
+            onClick={() => { void onLoad(r.path); }}
+            title={r.path}
+            className="flex items-center gap-2 px-3 py-2 rounded-card border border-primary/10 bg-card/50 hover:border-rose-500/30 hover:bg-card/70 transition-colors max-w-xs"
+          >
+            {r.thumbnailDataUrl ? (
+              <img
+                src={r.thumbnailDataUrl}
+                alt=""
+                className="w-12 h-7 rounded object-cover flex-shrink-0"
+              />
+            ) : (
+              <Film className="w-3.5 h-3.5 text-rose-400 flex-shrink-0" />
+            )}
+            <div className="flex flex-col text-left min-w-0">
+              <span className="text-md text-foreground truncate">{r.name}</span>
+              <span className="text-[11px] text-foreground/60">
+                {tx(t.media_studio.recent_saved_ago, { time: formatRelativeSince(r.savedAt) })}
+              </span>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// StarterTemplatesRow — a small grid of preset canvas shapes on the empty
+// state so users do not have to pick width/height/fps numerically every time
+// they start a new composition. Applying a template clears the current
+// composition and resets the timeline to the preset's W/H/fps; we only
+// render this row when the timeline is already empty, so no work is lost.
+// ---------------------------------------------------------------------------
+
+function StarterTemplatesRow({ onApply }: { onApply: (template: StarterTemplate) => void }) {
+  const { t } = useTranslation();
+  return (
+    <div className="w-full max-w-2xl flex flex-col items-center gap-2">
+      <span className="typo-label text-foreground">{t.media_studio.starter_templates_title}</span>
+      <div className="flex flex-wrap items-center gap-2 justify-center">
+        {STARTER_TEMPLATES.map((tpl) => (
+          <button
+            key={tpl.id}
+            type="button"
+            onClick={() => onApply(tpl)}
+            className="flex flex-col items-start gap-0.5 px-3 py-2 rounded-card border border-primary/10 bg-card/50 hover:border-rose-500/30 hover:bg-card/70 transition-colors min-w-[10rem]"
+          >
+            <span className="text-md text-foreground">{starterTemplateName(tpl.id, t)}</span>
+            <span className="text-[11px] text-foreground/60 tabular-nums">
+              {tpl.width}×{tpl.height} · {tpl.fps}fps
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+type Translations = ReturnType<typeof useTranslation>['t'];
+
+function starterTemplateName(id: StarterTemplate['id'], t: Translations): string {
+  switch (id) {
+    case 'vertical-9-16':
+      return t.media_studio.template_vertical_9_16_name;
+    case 'horizontal-16-9':
+      return t.media_studio.template_horizontal_16_9_name;
+    case 'square':
+      return t.media_studio.template_square_name;
+  }
+}
+
+function formatRelativeSince(ts: number): string {
+  const diff = Math.max(0, Date.now() - ts);
+  if (diff < 60_000) return `${Math.max(1, Math.round(diff / 1_000))}s`;
+  if (diff < 3_600_000) return `${Math.round(diff / 60_000)}m`;
+  if (diff < 86_400_000) return `${Math.round(diff / 3_600_000)}h`;
+  return `${Math.round(diff / 86_400_000)}d`;
+}
+
+// ---------------------------------------------------------------------------
+// ExportSuccessStrip — replaces the in-flight progress bar once an export
+// lands so the user can play the file or jump to its folder without
+// scrubbing through dialog history. Dismissing returns the strip to idle
+// (and the user can start another export the normal way).
+// ---------------------------------------------------------------------------
+
+function ExportSuccessStrip({
+  outputPath,
+  onDismiss,
+}: {
+  outputPath: string;
+  onDismiss: () => void;
+}) {
+  const { t } = useTranslation();
+
+  // Split off the basename and parent folder once — both are derived from the
+  // absolute path Tauri gives us, supporting / and \ separators.
+  const sepIdx = Math.max(outputPath.lastIndexOf('/'), outputPath.lastIndexOf('\\'));
+  const fileName = sepIdx >= 0 ? outputPath.slice(sepIdx + 1) : outputPath;
+  const parentDir = sepIdx >= 0 ? outputPath.slice(0, sepIdx) : outputPath;
+
+  const playFile = () => {
+    openExternal(outputPath).catch(silentCatch('Open exported file'));
+  };
+  const showFolder = () => {
+    openExternal(parentDir).catch(silentCatch('Open export folder'));
+  };
+
+  return (
+    <div className="flex items-center gap-2 px-4 py-1.5 border-t border-primary/10 bg-emerald-500/5">
+      <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+      <span className="text-[11px] text-foreground/80 font-medium">{t.media_studio.export_done}</span>
+      <span className="text-[11px] text-foreground/60 font-mono truncate flex-1" title={outputPath}>
+        {fileName}
+      </span>
+      <Button variant="ghost" size="sm" onClick={playFile} title={t.media_studio.export_open_file}>
+        <Play className="w-3.5 h-3.5" />
+        <span className="hidden md:inline">{t.media_studio.export_open_file}</span>
+      </Button>
+      <Button variant="ghost" size="sm" onClick={showFolder} title={t.media_studio.export_show_in_folder}>
+        <FolderOpen className="w-3.5 h-3.5" />
+        <span className="hidden md:inline">{t.media_studio.export_show_in_folder}</span>
+      </Button>
+      <Button variant="ghost" size="sm" onClick={onDismiss} title={t.media_studio.export_dismiss}>
+        <X className="w-3.5 h-3.5" />
+      </Button>
     </div>
   );
 }

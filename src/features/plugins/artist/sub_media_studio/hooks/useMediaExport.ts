@@ -13,7 +13,19 @@ const IDLE_STATE: ExportState = {
   jobId: null,
   outputPath: null,
   error: null,
+  startedAt: null,
+  elapsedMs: 0,
+  etaMs: null,
 };
+
+// Backend emits progress as a percent (0–100, clamped) — normalize to a 0–1
+// fraction so callers can treat ExportState.progress consistently across UI
+// surfaces. Clamp defensively in case the source ever drifts.
+function normalizeProgress(raw: number): number {
+  if (!Number.isFinite(raw) || raw <= 0) return 0;
+  const fraction = raw > 1 ? raw / 100 : raw;
+  return Math.min(1, Math.max(0, fraction));
+}
 
 /**
  * Manages an FFmpeg export job — progress, cancel, completion.
@@ -42,23 +54,35 @@ export function useMediaExport(composition: Composition) {
       previousUnsubs.forEach((u) => u());
 
       const jobId = crypto.randomUUID();
+      const startedAt = Date.now();
       setExportState({
         status: 'exporting',
         progress: 0,
         jobId,
         outputPath,
         error: null,
+        startedAt,
+        elapsedMs: 0,
+        etaMs: null,
       });
 
       // Subscribe to backend events
       const unsubs: UnlistenFn[] = [];
 
       unsubs.push(
-        await listen<{ job_id: string; progress: number }>(
+        await listen<{ job_id: string; progress: number; time?: number }>(
           EventName.MEDIA_EXPORT_PROGRESS,
           (e) => {
             if (e.payload.job_id !== jobId) return;
-            setExportState((prev) => ({ ...prev, progress: e.payload.progress }));
+            const progress = normalizeProgress(e.payload.progress);
+            const elapsedMs = Date.now() - startedAt;
+            // Need at least ~1% real progress before the linear ETA stops being
+            // noise — otherwise an early tick gives 100× overestimates.
+            const etaMs =
+              progress > 0.01 && progress < 1
+                ? Math.max(0, (elapsedMs * (1 - progress)) / progress)
+                : null;
+            setExportState((prev) => ({ ...prev, progress, elapsedMs, etaMs }));
           },
         ),
       );
@@ -90,6 +114,7 @@ export function useMediaExport(composition: Composition) {
               status: 'complete',
               progress: 1,
               outputPath: e.payload.output_path,
+              etaMs: null,
             }));
             unsubs.forEach((u) => u());
           },
@@ -126,5 +151,9 @@ export function useMediaExport(composition: Composition) {
     setExportState((prev) => ({ ...prev, status: 'cancelled' }));
   }, [exportState.jobId]);
 
-  return { exportState, startExport, cancelExport };
+  const dismissExport = useCallback(() => {
+    setExportState(IDLE_STATE);
+  }, []);
+
+  return { exportState, startExport, cancelExport, dismissExport };
 }

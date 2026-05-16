@@ -4,6 +4,7 @@ import {
   artistScanFolder,
   artistImportAsset,
   artistDeleteAsset,
+  artistRenameAsset,
   artistUpdateTags,
   artistGetDefaultFolder,
   artistEnsureFolders,
@@ -67,6 +68,12 @@ export function useArtistAssets() {
       .catch(toastCatch('useArtistAssets:updateTags'));
   }, []);
 
+  const renameAsset = useCallback(async (id: string, newBasename: string) => {
+    await artistRenameAsset(id, newBasename)
+      .then((updated) => setAssets((prev) => prev.map((a) => (a.id === id ? updated : a))))
+      .catch(toastCatch('useArtistAssets:renameAsset'));
+  }, []);
+
   // Initialize default folder
   useEffect(() => {
     if (!artistFolder) {
@@ -87,5 +94,6 @@ export function useArtistAssets() {
     scanAndImport,
     deleteAsset,
     updateTags,
+    renameAsset,
   };
 }

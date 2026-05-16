@@ -54,6 +54,10 @@ export const artistDeleteAsset = (id: string) =>
 export const artistUpdateTags = (id: string, tags: string) =>
   invoke<ArtistAsset>("artist_update_tags", { id, tags });
 
+/** Rename an asset's file on disk and update the DB row. */
+export const artistRenameAsset = (id: string, newBasename: string) =>
+  invoke<ArtistAsset>("artist_rename_asset", { id, newBasename });
+
 // -- Folder Management ------------------------------------------------------
 
 export const artistGetDefaultFolder = () =>
