@@ -93,10 +93,10 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Recently completed (last 14 days)
 
-- **[2026-05-16 14:07 → 18:30] /friend — theming (14 cycles, merging to master)**
-  - **Worktree:** `.claude/worktrees/friend-theming-140706/` (slated for cleanup post-merge)
-  - **Branch:** `worktree-friend-theming-140706`
-  - **Status:** completed (commits: `bca73f2f6..5250737e7`, 14 atomic commits, merging into master at session close per user request)
+- **[2026-05-16 14:07 → 18:30] /friend — theming (14 cycles, merged to master at `21dc389de`)**
+  - **Worktree:** `.claude/worktrees/friend-theming-140706/` — REMOVED post-merge
+  - **Branch:** `worktree-friend-theming-140706` — DELETED post-merge
+  - **Status:** completed + merged (cycle commits: `bca73f2f6..5250737e7`, 14 atomic commits; merge commit on master: `21dc389de`; pre-merge ledger commit: `904d3d16a`)
   - **Paths:** `src/styles/globals.css`, `src/stores/themeStore.ts`, `src/lib/theme/contrastRatio.ts` (new), `src/features/settings/sub_appearance/components/{AppearanceSettings,CustomThemeCreator}.tsx`, `scripts/check-themes.mjs` (new), `package.json`, `src/i18n/locales/en.json` (additive `appearance.*` keys), `src/i18n/generated/{types,enSectionStrings}.ts`, `src/i18n/section-locales/**/settings.json`, `.claude/active-runs.md`. Path-disjoint from all 7 concurrent /friend plugin sessions.
   - **Headline:** Theming subsystem went from "11 themes, 3 fine, 8 partial" to "13 themes, all AA across all status pairs, 3-surface contrast tooling (runtime badge / live creator readout / CLI audit), 4-toggle orthogonal a11y system (dim / CVD-safe / high-contrast / reduce-motion)". `npm run check:themes` exits 0 across the board. End-to-end loop closed: cycle 5 badge surfaced contrast → cycle 10 CLI audit measured it → cycle 11 calibration fixed two findings → audit re-runs green.
   - **Cycles:** (1) Bronze/Purple/Pink full var coverage `bca73f2f6` · (2) Paper Pro light rewrite `6233d2622` · (3) Live preview tiles via `data-theme` cascade `d796328e3` · (4) Light Sage + Light Sand `06bc7faa6` · (5) WCAG contrast badge on tiles `57d71e3ec` · (6) Stage 2 Cyan/Frost/Red completeness `8dc3e93f6` · (7) Dim mode toggle (saturation axis) `f81ae54d2` · (8) Contrast readout in CustomThemeCreator `bec6537da` · (9) Hover-expand preview popover `3ac509852` · (10) `npm run check:themes` CLI audit `ed3a465aa` · (11) Stage 3 light status calibration acted on audit `3684f3cd8` · (12) CVD-safe palette toggle (hue axis) `eccccd06f` · (13) High-contrast preset (luminance axis) `b9c80cb4f` · (14) Reduce-motion preset (motion axis) `5250737e7`.
