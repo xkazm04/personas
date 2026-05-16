@@ -8059,6 +8059,7 @@ export type Translations = {
       theming: string;
       default_tab: string;
       custom_tab: string;
+      theme_preview_aria: string;
       timezone: string;
       timezone_hint: string;
       brightness: string;

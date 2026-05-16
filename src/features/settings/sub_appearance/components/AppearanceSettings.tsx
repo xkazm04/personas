@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, memo, useMemo } from 'react';
+import { useState, memo, useMemo } from 'react';
 import { Check, Globe, Palette, Sun, Type } from 'lucide-react';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { useThemeStore, THEMES, TEXT_SCALES, DARK_BRIGHTNESS_LEVELS, LIGHT_BRIGHTNESS_LEVELS, BRIGHTNESS_ICON_OPACITY_BY_INDEX, customThemeDef, useIsDarkTheme } from '@/stores/themeStore';
@@ -11,78 +11,66 @@ import CustomThemeCreator from './CustomThemeCreator';
 import TranslationContributor from './TranslationContributor';
 import PseudoLocaleToggle from './PseudoLocaleToggle';
 
-const ThemePreviewTooltip = memo(function ThemePreviewTooltip({ theme }: { theme: ThemeDefinition }) {
-  const { backgroundSample, foregroundSample, primaryColor, accentColor } = theme;
-  const borderColor = theme.isLight ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.12)';
-  return (
-    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 animate-expand-in pointer-events-none" style={{ zIndex: 99999 }}>
-      <div
-        className="w-[140px] rounded-card overflow-hidden flex flex-col"
-        style={{ backgroundColor: backgroundSample, border: `1px solid ${borderColor}`, boxShadow: '0 8px 30px rgba(0,0,0,0.25)' }}
-      >
-        {/* Mini UI preview */}
-        <div className="h-[70px] flex flex-col justify-center px-3 gap-2">
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: primaryColor }} />
-            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: accentColor }} />
-            <div className="w-3 h-3 rounded-interactive" style={{ backgroundColor: foregroundSample, opacity: 0.2 }} />
-          </div>
-          <div className="flex gap-1">
-            <div className="h-1 flex-1 rounded-full" style={{ backgroundColor: foregroundSample, opacity: 0.12 }} />
-            <div className="h-1 w-5 rounded-full" style={{ backgroundColor: primaryColor, opacity: 0.5 }} />
-          </div>
-          <div className="flex gap-1">
-            <div className="h-1 w-8 rounded-full" style={{ backgroundColor: foregroundSample, opacity: 0.08 }} />
-            <div className="h-1 flex-1 rounded-full" style={{ backgroundColor: foregroundSample, opacity: 0.08 }} />
-          </div>
-        </div>
-        {/* Label -- rendered ON the theme's own background for proper contrast */}
-        <div
-          className="text-[10px] text-center py-1.5 font-semibold tracking-wide"
-          style={{ color: foregroundSample, borderTop: `1px solid ${borderColor}` }}
-        >
-          {theme.label}
-        </div>
-      </div>
-    </div>
-  );
-});
-
+/* Mini UI preview rendered inside the swatch.
+   Wrapping it in [data-theme="<id>"] re-scopes every CSS variable to that
+   theme's palette — so `bg-primary` / `bg-status-success` / `text-foreground`
+   inside this subtree paint with the previewed theme, not the active one.
+   Result: each tile is a live, real-token preview, not a static swatch. */
 const ThemeSwatch = memo(function ThemeSwatch({ theme, active, onSelect }: { theme: ThemeDefinition; active: boolean; onSelect: () => void }) {
-  const [showPreview, setShowPreview] = useState(false);
-  const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const handleEnter = useCallback(() => {
-    if (leaveTimer.current) clearTimeout(leaveTimer.current);
-    setShowPreview(true);
-  }, []);
-
-  const handleLeave = useCallback(() => {
-    leaveTimer.current = setTimeout(() => setShowPreview(false), 300);
-  }, []);
-
+  const { tx, t } = useTranslation();
+  const previewAriaLabel = tx(t.settings.appearance.theme_preview_aria, { name: theme.label });
+  // Midnight has no [data-theme=...] rule — it lives at :root. Setting the
+  // attribute to its id on the wrapper inherits root vars unchanged, so we
+  // can scope every tile uniformly without special-casing.
   return (
     <Button
       variant="ghost"
       onClick={onSelect}
-      onMouseEnter={handleEnter}
-      onMouseLeave={handleLeave}
-      className={`group relative flex flex-col items-center gap-2 p-3 rounded-modal border ${
+      className={`group relative flex flex-col p-0 rounded-modal border overflow-hidden ${
         active
-          ? 'border-primary/30 bg-primary/5'
-          : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
+          ? 'border-primary/40 ring-2 ring-primary/20'
+          : 'border-primary/10 hover:border-primary/30'
       }`}
     >
-      {showPreview && !active && <ThemePreviewTooltip theme={theme} />}
       <div
-        className="w-10 h-10 rounded-full border-2 border-black/10 flex items-center justify-center"
-        style={{ backgroundColor: theme.primaryColor }}
+        data-theme={theme.id}
+        aria-label={previewAriaLabel}
+        className="w-full bg-background text-foreground flex flex-col gap-2 px-3 py-3 pointer-events-none"
+        style={{ minHeight: '110px' }}
       >
-        {active && <Check className="w-4 h-4 text-white drop-shadow-elevation-1" />}
+        {/* Top row: primary disc with active check + accent + neutral chip */}
+        <div className="flex items-center justify-between">
+          <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center shadow-elevation-1">
+            {active && <Check className="w-3.5 h-3.5 text-btn-primary-fg" />}
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-accent" />
+            <span className="w-2 h-2 rounded-full bg-brand-purple" />
+            <span className="w-2 h-2 rounded-full bg-brand-emerald" />
+          </div>
+        </div>
+
+        {/* Status dot row -- real semantic tokens, showing how the theme
+            differentiates success/warning/error/info */}
+        <div className="flex items-center gap-1 mt-0.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-status-success" />
+          <span className="w-1.5 h-1.5 rounded-full bg-status-warning" />
+          <span className="w-1.5 h-1.5 rounded-full bg-status-error" />
+          <span className="w-1.5 h-1.5 rounded-full bg-status-info" />
+          <span className="h-1 flex-1 rounded-full bg-foreground/10 ml-1" />
+        </div>
+
+        {/* Mini "card" -- shows how surfaces sit on the background */}
+        <div className="rounded-card bg-card-bg border border-card-border px-2 py-1.5 flex items-center gap-2">
+          <div className="h-1 flex-1 rounded-full bg-foreground/15" />
+          <div className="h-1 w-4 rounded-full bg-primary/60" />
+        </div>
+
+        {/* Label rendered in the theme's foreground for true contrast preview */}
+        <span className="text-sm font-medium text-foreground mt-auto">
+          {theme.label}
+        </span>
       </div>
-      <span className={`text-sm ${active ? 'text-foreground/90 font-medium' : 'text-foreground'}`}>
-        {theme.label}
-      </span>
     </Button>
   );
 });

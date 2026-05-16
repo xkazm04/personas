@@ -8053,6 +8053,7 @@
       "theming": "Theming",
       "default_tab": "Default",
       "custom_tab": "Custom",
+      "theme_preview_aria": "Live preview of {name} theme",
       "timezone": "Timezone",
       "timezone_hint": "Controls how schedule times and cron expressions are displayed throughout the app.",
       "brightness": "Brightness",
