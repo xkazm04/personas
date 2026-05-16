@@ -5,6 +5,7 @@ import type { LangfuseJobHandle } from "@/lib/bindings/LangfuseJobHandle";
 import type { LangfuseSaveRequest } from "@/lib/bindings/LangfuseSaveRequest";
 import type { LangfuseStackInfo } from "@/lib/bindings/LangfuseStackInfo";
 import type { LangfuseTestResult } from "@/lib/bindings/LangfuseTestResult";
+import type { LangfuseTraceSummary } from "@/lib/bindings/LangfuseTraceSummary";
 
 // ---------------------------------------------------------------------------
 // Manual connection (advanced flow)
@@ -30,6 +31,16 @@ export async function langfuseSaveConfig(
 
 export async function langfuseGetConfig(): Promise<LangfuseConfig | null> {
   return invoke<LangfuseConfig | null>("langfuse_get_config");
+}
+
+/// Fetch the last N traces from the configured Langfuse host. Default 10.
+/// Backend caps at 100 to keep the network hop bounded.
+export async function langfuseRecentTraces(
+  limit?: number,
+): Promise<LangfuseTraceSummary[]> {
+  return invoke<LangfuseTraceSummary[]>("langfuse_recent_traces", {
+    limit: limit ?? null,
+  });
 }
 
 export async function langfuseClearConfig(): Promise<void> {

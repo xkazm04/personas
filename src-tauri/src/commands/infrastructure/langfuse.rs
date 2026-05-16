@@ -17,7 +17,7 @@ use url::Url;
 
 use crate::error::AppError;
 use crate::ipc_auth::require_privileged;
-use crate::langfuse::client::probe;
+use crate::langfuse::client::{fetch_recent_traces, probe};
 use crate::langfuse::config;
 use crate::langfuse::docker;
 use crate::langfuse::exporter;
@@ -26,6 +26,7 @@ use crate::langfuse::templates;
 use crate::langfuse::types::{
     LangfuseAdminCredentials, LangfuseConfig, LangfuseJobHandle, LangfuseJobKind,
     LangfuseSaveRequest, LangfuseStackInfo, LangfuseStackState, LangfuseTestResult,
+    LangfuseTraceSummary,
 };
 use crate::AppState;
 
@@ -145,6 +146,32 @@ pub async fn langfuse_save_config(
     );
 
     Ok(result)
+}
+
+/// Fetch the most-recent traces from the configured Langfuse host so the
+/// plugin page can render a deep-link list without the user opening Langfuse
+/// first. Uses the stored public+secret keys; rejects when no connection is
+/// configured. Caps at 100 to avoid pulling unbounded history.
+#[tauri::command]
+pub async fn langfuse_recent_traces(
+    state: State<'_, Arc<AppState>>,
+    limit: Option<u32>,
+) -> Result<Vec<LangfuseTraceSummary>, AppError> {
+    require_privileged(&state, "langfuse_recent_traces").await?;
+
+    let host = config::load_host()
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| AppError::Langfuse("Langfuse is not connected.".into()))?;
+    let public_key = config::load_public_key()
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| AppError::Langfuse("No Langfuse public key on file.".into()))?;
+    let secret_key = config::load_secret_key()
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| AppError::Langfuse("No Langfuse secret key on file.".into()))?;
+
+    fetch_recent_traces(&host, &public_key, &secret_key, limit.unwrap_or(10))
+        .await
+        .map_err(AppError::Langfuse)
 }
 
 #[tauri::command]

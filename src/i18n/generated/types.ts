@@ -9636,6 +9636,17 @@ export type Translations = {
       install_download_button: string;
       install_run_button: string;
       install_unsupported: string;
+      recent_traces_section: string;
+      recent_traces_intro: string;
+      recent_traces_empty: string;
+      recent_traces_loading: string;
+      recent_traces_error: string;
+      recent_traces_refresh: string;
+      recent_traces_no_name: string;
+      recent_traces_open_label: string;
+      recent_traces_session: string;
+      recent_traces_latency: string;
+      recent_traces_cost: string;
     };
     drive: {
       title: string;

@@ -2240,6 +2240,7 @@ pub fn run() {
             commands::infrastructure::langfuse::langfuse_get_config,
             commands::infrastructure::langfuse::langfuse_clear_config,
             commands::infrastructure::langfuse::langfuse_save_preferred_port,
+            commands::infrastructure::langfuse::langfuse_recent_traces,
             commands::infrastructure::langfuse::langfuse_stack_get_info,
             commands::infrastructure::langfuse::langfuse_stack_start,
             commands::infrastructure::langfuse::langfuse_stack_stop,

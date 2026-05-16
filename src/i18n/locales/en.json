@@ -9629,7 +9629,18 @@
       "install_intro": "Personas can download the Docker Desktop installer for you. After it downloads, run the installer to finish setup — we'll detect Docker automatically once it's available.",
       "install_download_button": "Download installer",
       "install_run_button": "Run installer",
-      "install_unsupported": "Auto-download isn't supported on this OS. Use the link above to install Docker manually."
+      "install_unsupported": "Auto-download isn't supported on this OS. Use the link above to install Docker manually.",
+      "recent_traces_section": "Recent traces",
+      "recent_traces_intro": "Last {count} traces shipped to your Langfuse instance.",
+      "recent_traces_empty": "No traces yet. Run a persona to see them here.",
+      "recent_traces_loading": "Loading recent traces…",
+      "recent_traces_error": "Could not load traces: {error}",
+      "recent_traces_refresh": "Refresh",
+      "recent_traces_no_name": "Unnamed trace",
+      "recent_traces_open_label": "Open in Langfuse",
+      "recent_traces_session": "session {id}",
+      "recent_traces_latency": "{seconds}s",
+      "recent_traces_cost": "${cost}"
     },
     "drive": {
       "title": "Drive",

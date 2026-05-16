@@ -58,6 +58,24 @@ pub struct LangfuseTestResult {
     pub project_name: Option<String>,
 }
 
+/// Compact view of a single trace returned by `GET /api/public/traces`.
+/// Keep this narrow: the trace-list panel only needs enough to render a row
+/// and build a deep-link. Anything richer belongs in the Langfuse UI itself.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct LangfuseTraceSummary {
+    pub id: String,
+    pub name: Option<String>,
+    /// ISO-8601 timestamp string as returned by Langfuse.
+    pub timestamp: Option<String>,
+    pub session_id: Option<String>,
+    pub user_id: Option<String>,
+    pub project_id: Option<String>,
+    pub latency_seconds: Option<f64>,
+    pub total_cost: Option<f64>,
+}
+
 /// Plaintext admin credentials for the managed stack. Returned only when
 /// the user explicitly asks (via `langfuse_stack_get_admin_credentials`),
 /// never as part of `langfuse_get_config`.

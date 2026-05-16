@@ -6,6 +6,7 @@ import { useTranslation } from "@/i18n/useTranslation";
 import { ConnectionForm } from "./ConnectionForm";
 import { ManagedStackPanel } from "./ManagedStackPanel";
 import { StatusPanel } from "./StatusPanel";
+import { TraceListPanel } from "./TraceListPanel";
 import { useLangfuseSettings } from "./hooks/useLangfuseSettings";
 import { useLangfuseStack } from "./hooks/useLangfuseStack";
 
@@ -20,6 +21,17 @@ export default function LangfusePage() {
     !!settings.config && !settings.config.managed && settings.config.host.length > 0;
   const [advancedOpen, setAdvancedOpen] = useState(!!hasManual);
   const preferredPort = settings.config?.preferredPort ?? 3000;
+
+  // Trace-list is only meaningful when the user has a reachable instance.
+  // For the managed stack we wait until it's actually Running; for manual
+  // we trust the user's enabled flag — the fetch will surface an error if
+  // the host is offline.
+  const stackRunning = stack.info?.state === "running";
+  const showTraceList =
+    !!settings.config &&
+    settings.config.enabled &&
+    settings.config.host.length > 0 &&
+    (settings.config.managed ? stackRunning : true);
 
   return (
     <ContentBox>
@@ -49,6 +61,11 @@ export default function LangfusePage() {
               <ManagedStackPanel stack={stack} preferredPort={preferredPort} />
             )}
           </section>
+
+          {/* Recent traces — only when there's a reachable instance */}
+          {showTraceList && settings.config && (
+            <TraceListPanel config={settings.config} />
+          )}
 
           {/* Advanced: bring-your-own */}
           <section className="rounded-card border border-primary/10 bg-secondary/5">
