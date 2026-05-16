@@ -18,7 +18,7 @@ import {
   driveWriteText,
 } from "@/api/drive";
 import { toastCatch } from "@/lib/silentCatch";
-import { visualForEntry } from "../designTokens";
+import { kindBucketWeight, visualForEntry } from "../designTokens";
 
 export type ClipboardMode = "copy" | "cut";
 export type ViewMode = "list" | "icons" | "columns";
@@ -388,9 +388,15 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
           // The previous extension-only compare interleaved unrelated kinds
           // (.css next to .json next to .png) and made the "Kind" sort
           // inconsistent with the column it's named after.
-          const ak = visualForEntry(a).labelKey;
-          const bk = visualForEntry(b).labelKey;
-          cmp = ak.localeCompare(bk);
+          //
+          // Bucket ordering uses a curated weight (folders → images →
+          // videos → pdfs → documents → code → data → sheets → audio →
+          // archives → signatures → other) rather than alphabetic-by-key,
+          // so "Other" stays at the end and visually-related groups
+          // cluster.
+          const aw = kindBucketWeight(visualForEntry(a).labelKey);
+          const bw = kindBucketWeight(visualForEntry(b).labelKey);
+          cmp = aw - bw;
           if (cmp === 0)
             cmp = a.name.toLowerCase().localeCompare(b.name.toLowerCase());
           break;

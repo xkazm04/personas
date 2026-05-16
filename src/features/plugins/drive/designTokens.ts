@@ -153,6 +153,37 @@ export function kindLabel(t: Translations, visual: DriveFileVisual): string {
 }
 
 /**
+ * Curated ordering weight for kind buckets. Used when sorting the list
+ * view by Kind so groups appear in a visually-sensible order rather than
+ * alphabetic-by-labelKey (which scattered "Other" between Data and
+ * Images and felt arbitrary). Lower number = earlier in the list.
+ *
+ * Folders intentionally land first so they stay at the top regardless of
+ * the comparator's folders-first override; the curated order matches
+ * intuition for "things you produce" → "things you reference":
+ *   folders → images → videos → pdfs → documents → code → data →
+ *   sheets → audio → archives → signatures → other.
+ */
+const KIND_BUCKET_ORDER: Record<DriveKindLabelKey, number> = {
+  kind_folder: 0,
+  kind_image: 1,
+  kind_video: 2,
+  kind_pdf: 3,
+  kind_text: 4, // Documents (markdown, plain text)
+  kind_code: 5,
+  kind_data: 6, // JSON / YAML / TOML
+  kind_sheet: 7, // CSV / TSV
+  kind_audio: 8,
+  kind_archive: 9,
+  kind_signature: 10,
+  kind_generic: 11,
+};
+
+export function kindBucketWeight(labelKey: DriveKindLabelKey): number {
+  return KIND_BUCKET_ORDER[labelKey] ?? KIND_BUCKET_ORDER.kind_generic;
+}
+
+/**
  * Plural / collection label for a kind bucket. Used by the list view's
  * sort-by-kind group headers ("Folders · 3", "Images · 5", …). Each kind
  * maps to a dedicated plural key so translators control the exact form.
