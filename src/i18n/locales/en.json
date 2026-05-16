@@ -392,6 +392,9 @@
   "agents": {
     "title": "Personas",
     "loading": "Loading...",
+    "persona_decisions_footer_one": "1 design decision Athena logged",
+    "persona_decisions_footer_many": "{count} design decisions Athena logged",
+    "persona_decisions_footer_open_audit": "Open audit",
     "overview": {
       "title": "My Agents",
       "subtitle_one": "{count} agent -- sorted by relevance",

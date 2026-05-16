@@ -398,6 +398,9 @@ export type Translations = {
   agents: {
     title: string;
     loading: string;
+    persona_decisions_footer_one: string;
+    persona_decisions_footer_many: string;
+    persona_decisions_footer_open_audit: string;
     overview: {
       title: string;
       subtitle_one: string;
