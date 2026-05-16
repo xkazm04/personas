@@ -10648,6 +10648,8 @@ export type Translations = {
       design_cap_ready_label: string;
       design_cap_ready_behavior: string;
       design_cap_ready_example: string;
+      recent_decisions_title: string;
+      recent_decisions_loading: string;
       proactive_evaluate_now: string;
       memory_run_consolidation: string;
       memory_generate_reflection: string;

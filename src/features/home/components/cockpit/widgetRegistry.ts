@@ -26,6 +26,7 @@ import { ModelTierChoiceWidget } from './widgets/ModelTierChoiceWidget';
 import { ObservabilityPlanWidget } from './widgets/ObservabilityPlanWidget';
 import { PersonaReadyWidget } from './widgets/PersonaReadyWidget';
 import { PersonaWalkthroughWidget } from './widgets/PersonaWalkthroughWidget';
+import { RecentDecisionsWidget } from './widgets/RecentDecisionsWidget';
 import { TemplateSuggestionsWidget } from './widgets/TemplateSuggestionsWidget';
 import { TextCalloutWidget } from './widgets/TextCalloutWidget';
 import { TriggerSetWidget } from './widgets/TriggerSetWidget';
@@ -104,6 +105,11 @@ export const cockpitWidgetRegistry: Record<string, ComponentType<CockpitWidgetPr
   // in the widget so users get a true picture of "what can you help
   // me design?" instead of a model-generated capability list.
   design_capabilities: DesignCapabilitiesWidget,
+  // Compact "Athena recently decided" chip strip. Fetches up to 5
+  // decisions for a persona_context on mount; renders nothing if the
+  // fetch comes back empty. Emitted via
+  // `show_recent_decisions { persona_context, limit? }`.
+  recent_decisions: RecentDecisionsWidget,
 };
 
 /** Tunes the grid `rowSpan` per widget kind. Multi-row gives long-form

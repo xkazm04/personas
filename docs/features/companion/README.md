@@ -196,6 +196,12 @@ Op carries only an optional `intro` line Athena composes for context (e.g. "Here
 
 When adding a new design-family op, mirror the addition in `DesignCapabilitiesWidget` so onboarding stays current. Constitution bumped to v17.
 
+## `show_recent_decisions` compact recall chip strip
+
+Lighter cousin of `show_decision_log`. Athena emits `show_recent_decisions { persona_context, limit? }` when she wants to remind the user of prior choices without derailing into a full audit-trail render. The widget fetches via `companion_list_design_decisions` on mount and renders 1-5 chips of the shape `<label> → <choice>` (no rationale, no timeline). Renders nothing if the fetch comes back empty — softer than the full DecisionLogWidget; shouldn't hold a slot with an empty state.
+
+Constitution bumped to v18. With this, Athena has two complementary surfaces for recalling design decisions: heavy (`show_decision_log` for a deliberate audit-trail render) and light (`show_recent_decisions` for a glanceable "by the way…" reminder).
+
 ## Refine chips
 
 Below the latest completed assistant bubble only, `RefineChips` renders three small affordances — **Shorter**, **More detail**, **Code only** — that resend the prior user message with a localized steering suffix appended ("— much shorter, please.", "— go deeper, with examples.", "— code only, minimal prose."). Click feeds the modified prompt through the same `send()` path used by the composer, so the optimistic-bubble / streaming / TTS pipeline kicks in identically. Disabled while streaming or improving. Older bubbles in scrollback don't render chips — refining a mid-scrollback turn is a different, higher-effort UI that needs to model "which user message do I resend?" carefully.

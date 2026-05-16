@@ -10642,6 +10642,8 @@
       "design_cap_ready_label": "Ready-to-build recap",
       "design_cap_ready_behavior": "I roll everything into one build-ready card with a commit button when the design is locked in.",
       "design_cap_ready_example": "\"Are we ready to build this?\"",
+      "recent_decisions_title": "You recently decided",
+      "recent_decisions_loading": "Loading recent decisions…",
       "proactive_evaluate_now": "Check for nudges",
       "memory_run_consolidation": "Run consolidation",
       "memory_generate_reflection": "Generate reflection",

@@ -22,6 +22,7 @@ const UNCLAMPED_KINDS = new Set([
   'decision_log',
   'persona_ready',
   'design_capabilities',
+  'recent_decisions',
 ]);
 
 /**

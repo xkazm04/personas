@@ -96,4 +96,10 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// triggers / tier / observability / decision log / ready recap) with
 /// short descriptions and example user prompts. Surfaced when a user
 /// asks "what can you help me design?" so they know what to ask for.
-pub const CONSTITUTION_VERSION: u32 = 17;
+///
+/// v18: `show_recent_decisions` op — compact chip strip surfacing 1-5
+/// of Athena's most recent saved decisions for a given persona_context.
+/// Lighter than `show_decision_log`; intended for inline "by the way,
+/// you decided X" reminders. Widget fetches via
+/// companion_list_design_decisions on mount.
+pub const CONSTITUTION_VERSION: u32 = 18;

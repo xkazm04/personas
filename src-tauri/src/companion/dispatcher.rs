@@ -308,6 +308,49 @@ pub fn dispatch(
                 });
             }
             Ok(env)
+                if env.op == "propose_action" && env.action == "show_recent_decisions" =>
+            {
+                // Compact recall card — surfaces 1-5 of the most recent
+                // saved decisions for a given persona_context as small
+                // chips. Lighter than a full show_decision_log card;
+                // intended for "by the way, you decided..." inline
+                // reminders. Widget fetches the actual rows on mount
+                // via companion_list_design_decisions.
+                let persona_context = env
+                    .params
+                    .get("persona_context")
+                    .and_then(|v| v.as_str())
+                    .map(str::trim)
+                    .unwrap_or("");
+                if persona_context.is_empty() {
+                    out.warnings.push(
+                        "show_recent_decisions: `persona_context` (persona id, build session id, or intent string) is required so the widget knows what to fetch"
+                            .into(),
+                    );
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                let limit = env
+                    .params
+                    .get("limit")
+                    .and_then(|v| v.as_u64())
+                    .unwrap_or(3)
+                    .clamp(1, 5);
+                let title = env
+                    .params
+                    .get("title")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string());
+                out.chat_cards.push(ChatCard {
+                    kind: "recent_decisions".to_string(),
+                    title,
+                    config: serde_json::json!({
+                        "persona_context": persona_context,
+                        "limit": limit,
+                    }),
+                });
+            }
+            Ok(env)
                 if env.op == "propose_action" && env.action == "show_design_capabilities" =>
             {
                 // Onboarding-style card for the design-family. Athena
