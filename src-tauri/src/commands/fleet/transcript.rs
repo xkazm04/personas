@@ -57,7 +57,9 @@ pub fn spawn_watcher(app: AppHandle) {
         // we pick up the directory once the user runs `claude` for the
         // first time.
         let app_clone = app.clone();
-        tokio::task::spawn(async move {
+        // tauri::async_runtime::spawn — see stale.rs spawn_ticker docstring
+        // for why we don't use tokio::task::spawn from this sync setup path.
+        tauri::async_runtime::spawn(async move {
             loop {
                 tokio::time::sleep(Duration::from_secs(60)).await;
                 if let Some(d) = projects_dir() {

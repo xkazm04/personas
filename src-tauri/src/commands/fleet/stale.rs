@@ -38,8 +38,14 @@ struct FleetStatePayload {
 
 /// Spawn the staleness ticker. Idempotent — the caller should call this
 /// at most once (in `setup()`).
+///
+/// Uses `tauri::async_runtime::spawn` instead of `tokio::task::spawn`
+/// because Tauri 2's `setup()` callback runs in a sync context with no
+/// thread-local Tokio reactor; the bare `tokio::task::spawn` panics
+/// there. Tauri's async_runtime is the runtime Tauri itself owns and is
+/// safe to spawn into from the setup hook.
 pub fn spawn_ticker(app: AppHandle) {
-    tokio::task::spawn(async move {
+    tauri::async_runtime::spawn(async move {
         let mut interval = tokio::time::interval(Duration::from_secs(TICK_INTERVAL_SECS));
         // First tick fires immediately; skip it to give the app a moment to settle.
         interval.tick().await;
