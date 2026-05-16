@@ -8064,6 +8064,10 @@ export type Translations = {
       contrast_badge_aa: string;
       contrast_badge_low: string;
       contrast_badge_aria: string;
+      contrast_readout_title: string;
+      contrast_pair_body: string;
+      contrast_pair_primary_btn: string;
+      contrast_pair_accent_text: string;
       timezone: string;
       timezone_hint: string;
       brightness: string;
