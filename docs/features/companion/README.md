@@ -132,6 +132,14 @@ The dispatcher validates the role enum and the array size (1-8, soft target 3-5)
 
 A persona with only golden cases breaks on its first edge-case input; the doctrine guidance flagged here pushes Athena to surface all three roles when she proposes a use-case set. Constitution bumped to v11.
 
+## "Pin to cockpit" on inline chat-cards
+
+Dashboard-shaped chat-cards (`persona_overview`, `connected_services`, `decisions_panel`, `metric_spark`, `issue_list`, `text_callout`) get a hover-revealed **Pin to cockpit** affordance in the top-right corner. Click → calls the new `companion_pin_widget_to_cockpit` Tauri command which loads the current cockpit spec, appends the widget with a fresh id and `span=4` default, and saves. Idempotent on the backend — pinning the same `{kind, config}` twice is a no-op.
+
+Advisory cards (`persona_walkthrough`, `template_suggestions`, `use_case_set`) deliberately do NOT show the pin — they're read-once shapes, not persistent dashboard surfaces. Pinning them would dilute the cockpit's signal-to-noise.
+
+Closes the loop between transient chat reasoning and the persistent cockpit surface: when Athena composes a useful widget inline (a status spark for a service, an issue rollup, a custom callout), the user can promote it to their dashboard with one click instead of asking Athena to compose a full cockpit from scratch.
+
 ## Refine chips
 
 Below the latest completed assistant bubble only, `RefineChips` renders three small affordances — **Shorter**, **More detail**, **Code only** — that resend the prior user message with a localized steering suffix appended ("— much shorter, please.", "— go deeper, with examples.", "— code only, minimal prose."). Click feeds the modified prompt through the same `send()` path used by the composer, so the optimistic-bubble / streaming / TTS pipeline kicks in identically. Disabled while streaming or improving. Older bubbles in scrollback don't render chips — refining a mid-scrollback turn is a different, higher-effort UI that needs to model "which user message do I resend?" carefully.

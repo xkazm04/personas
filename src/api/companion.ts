@@ -962,6 +962,23 @@ export async function companionGetCockpit(): Promise<CompanionCockpitSpec | null
   return invoke<CompanionCockpitSpec | null>('companion_get_cockpit');
 }
 
+/**
+ * Append a single widget to the user's cockpit. Wired to the "Pin to
+ * cockpit" affordance on `InlineChatCard`. Idempotent on the backend —
+ * pinning the same {kind, config} twice is a no-op.
+ */
+export async function companionPinWidgetToCockpit(payload: {
+  kind: string;
+  title?: string | null;
+  config?: Record<string, unknown> | null;
+}): Promise<void> {
+  return invoke<void>('companion_pin_widget_to_cockpit', {
+    kind: payload.kind,
+    title: payload.title ?? null,
+    config: payload.config ?? null,
+  });
+}
+
 /** Tauri event for `compose_cockpit` auto-fire. Payload is empty. */
 export const COMPANION_COMPOSE_COCKPIT_EVENT = 'companion://compose-cockpit';
 

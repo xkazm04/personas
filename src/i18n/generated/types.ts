@@ -10568,6 +10568,9 @@ export type Translations = {
       walkthrough_empty: string;
       walkthrough_commit_hint: string;
       walkthrough_commit_button: string;
+      pin_to_cockpit: string;
+      pin_to_cockpit_pinned: string;
+      pin_to_cockpit_success: string;
       template_suggestions_title: string;
       template_suggestions_loading: string;
       template_suggestions_empty: string;
