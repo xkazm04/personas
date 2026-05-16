@@ -12384,6 +12384,9 @@ export type Translations = {
       createTwin: string;
       selectTwin: string;
       progressGroupLabel: string;
+      pickerLabel: string;
+      searchPlaceholder: string;
+      noMatches: string;
     };
     variantTabs: {
       prototype: string;

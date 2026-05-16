@@ -1,9 +1,10 @@
-import { Sparkles, ChevronDown, AlertCircle, User, Mic, Brain, Volume2, Radio, BookOpen } from 'lucide-react';
+import { Sparkles, AlertCircle, User, Mic, Brain, Volume2, Radio, BookOpen } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useTwinReadiness, type MilestoneStatus } from './useTwinReadiness';
 import { ReadinessGapPopover } from './_shared/ReadinessGapPopover';
 import { WikiFreshnessPill } from './_shared/WikiFreshnessPill';
+import { TwinPicker } from './_shared/TwinPicker';
 import type { TwinTab } from '@/lib/types/types';
 import type { LucideIcon } from 'lucide-react';
 
@@ -80,25 +81,12 @@ export function TwinSelector() {
         )}
       </div>
     ) : (
-      <div className="relative min-w-0 flex-1 max-w-xs">
-        <select
-          value={activeTwinId ?? ''}
-          onChange={(e) => {
-            if (e.target.value) setActiveTwin(e.target.value);
-          }}
-          aria-label={t.selector.selectTwin}
-          className="w-full appearance-none px-3 py-1.5 pl-8 pr-7 typo-caption font-medium text-primary bg-violet-500/5 border border-violet-500/10 rounded-card cursor-pointer hover:bg-violet-500/8 focus-ring transition-colors"
-        >
-          <option value="" disabled>{t.selector.selectTwin}</option>
-          {twinProfiles.map((tw) => (
-            <option key={tw.id} value={tw.id}>
-              {tw.name}{tw.role ? ` — ${tw.role}` : ''}
-            </option>
-          ))}
-        </select>
-        <Sparkles className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-violet-400/60 pointer-events-none" />
-        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-foreground pointer-events-none" />
-      </div>
+      <TwinPicker
+        profiles={twinProfiles}
+        activeTwinId={activeTwinId}
+        onSelect={setActiveTwin}
+        onCreateNew={() => setTwinTab('profiles')}
+      />
     );
 
   return (

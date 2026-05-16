@@ -12375,9 +12375,12 @@
     "selector": {
       "noTwin": "No twin configured",
       "createFirst": "Create a twin first so personas have an identity to speak as.",
-      "createTwin": "Create Twin",
+      "createTwin": "Create new twin",
       "selectTwin": "Select a twin...",
-      "progressGroupLabel": "Twin setup progress"
+      "progressGroupLabel": "Twin setup progress",
+      "pickerLabel": "Pick the active twin",
+      "searchPlaceholder": "Search by name or role…",
+      "noMatches": "No twins match your search."
     },
     "variantTabs": {
       "prototype": "Prototype",
