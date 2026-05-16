@@ -4451,3 +4451,59 @@ html[data-cvd="safe"] {
   --status-error-raw: #ef4444;
   --status-error: #ef4444;
 }
+
+/* High-contrast preset — one-click AAA across the board.
+   Pushes every status token to a luminance extreme relative to the canvas
+   (very light tints on dark themes, very dark tints on light themes),
+   strengthens card borders, and lifts muted-foreground toward the
+   foreground tone so secondary text doesn't sit at AA-lg.
+
+   Selectors stack one attribute over the [data-theme="X"] override layer
+   (which is also single-attribute), so we use compound `html[a][b]`
+   selectors for guaranteed specificity wins regardless of theme.
+
+   Combines cleanly with [data-cvd="safe"]: high-contrast applies its
+   luminance shift, then CVD-safe's yellow/red pair tweaks the warning
+   side (CVD is single-attribute so high-contrast wins where they
+   overlap — high contrast already enforces sufficient red/yellow
+   distinguishability via luminance). */
+
+/* Dark themes — light status tints */
+html[data-contrast="high"]:not([data-theme^="light"]) {
+  --status-success: #6ee7b7;
+  --status-success-raw: #6ee7b7;
+  --status-warning: #fde047;
+  --status-warning-raw: #fde047;
+  --status-error: #fca5a5;
+  --status-error-raw: #fca5a5;
+  --status-info: #93c5fd;
+  --status-info-raw: #93c5fd;
+  --status-pending: #fde047;
+  --status-pending-raw: #fde047;
+  --status-processing: #93c5fd;
+  --status-processing-raw: #93c5fd;
+  --status-neutral: #e2e8f0;
+  --status-neutral-raw: #e2e8f0;
+  --muted-foreground: color-mix(in srgb, var(--foreground) 75%, transparent);
+  --card-border: color-mix(in srgb, var(--foreground) 30%, transparent);
+}
+
+/* Light themes — dark status tints */
+html[data-contrast="high"][data-theme^="light"] {
+  --status-success: #064e3b;
+  --status-success-raw: #064e3b;
+  --status-warning: #78350f;
+  --status-warning-raw: #78350f;
+  --status-error: #7f1d1d;
+  --status-error-raw: #7f1d1d;
+  --status-info: #1e3a8a;
+  --status-info-raw: #1e3a8a;
+  --status-pending: #78350f;
+  --status-pending-raw: #78350f;
+  --status-processing: #1e3a8a;
+  --status-processing-raw: #1e3a8a;
+  --status-neutral: #0f172a;
+  --status-neutral-raw: #0f172a;
+  --muted-foreground: color-mix(in srgb, var(--foreground) 80%, transparent);
+  --card-border: color-mix(in srgb, var(--foreground) 25%, transparent);
+}

@@ -8080,6 +8080,10 @@ export type Translations = {
       cvd_safe_hint: string;
       cvd_safe_on: string;
       cvd_safe_off: string;
+      high_contrast_label: string;
+      high_contrast_hint: string;
+      high_contrast_on: string;
+      high_contrast_off: string;
       custom_theme: string;
       custom_theme_active: string;
       custom_theme_hint: string;

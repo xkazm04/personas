@@ -301,6 +301,8 @@ export default function AppearanceSettings() {
   const setDim = useThemeStore((s) => s.setDim);
   const cvdSafe = useThemeStore((s) => s.cvdSafe);
   const setCvdSafe = useThemeStore((s) => s.setCvdSafe);
+  const highContrast = useThemeStore((s) => s.highContrast);
+  const setHighContrast = useThemeStore((s) => s.setHighContrast);
   const isDark = useIsDarkTheme();
   const brightnessLevels = isDark ? DARK_BRIGHTNESS_LEVELS : LIGHT_BRIGHTNESS_LEVELS;
   const customTheme = useThemeStore((s) => s.customTheme);
@@ -490,6 +492,26 @@ export default function AppearanceSettings() {
                 }`}
               >
                 {cvdSafe ? s.cvd_safe_on : s.cvd_safe_off}
+              </Button>
+            </div>
+            {/* High-contrast preset — luminance maximization across status,
+                muted-foreground, and card borders. Stacks on top of CVD-safe. */}
+            <div className="flex items-start justify-between gap-4 pt-3 mt-1 border-t border-primary/10">
+              <div className="flex-1">
+                <div className="text-sm text-foreground font-medium">{s.high_contrast_label}</div>
+                <div className="typo-body text-foreground/80">{s.high_contrast_hint}</div>
+              </div>
+              <Button
+                variant="ghost"
+                onClick={() => setHighContrast(!highContrast)}
+                aria-pressed={highContrast}
+                className={`shrink-0 px-4 py-2 rounded-interactive border min-w-[64px] ${
+                  highContrast
+                    ? 'border-primary/40 bg-primary/10 text-primary font-medium'
+                    : 'border-primary/10 hover:border-primary/30 text-foreground'
+                }`}
+              >
+                {highContrast ? s.high_contrast_on : s.high_contrast_off}
               </Button>
             </div>
           </div>

@@ -177,6 +177,15 @@ function applyCvdSafe(cvdSafe: boolean) {
   }
 }
 
+function applyHighContrast(highContrast: boolean) {
+  const el = document.documentElement;
+  if (highContrast) {
+    el.setAttribute('data-contrast', 'high');
+  } else {
+    el.removeAttribute('data-contrast');
+  }
+}
+
 function isLightTheme(id: ThemeId, customConfig?: CustomThemeConfig | null): boolean {
   if (id === 'custom') return customConfig?.baseMode === 'light';
   return id.startsWith('light');
@@ -219,6 +228,7 @@ interface ThemeState {
   ambientTimeOfDay: boolean;
   dim: boolean;
   cvdSafe: boolean;
+  highContrast: boolean;
   setTheme: (id: ThemeId) => void;
   setTextScale: (scale: TextScale) => void;
   setTimezone: (tz: TimezoneMode) => void;
@@ -228,6 +238,7 @@ interface ThemeState {
   setAmbientTimeOfDay: (enabled: boolean) => void;
   setDim: (enabled: boolean) => void;
   setCvdSafe: (enabled: boolean) => void;
+  setHighContrast: (enabled: boolean) => void;
 }
 
 /** Derived selector: true when the active theme is dark. */
@@ -251,6 +262,7 @@ export const useThemeStore = create<ThemeState>()(
       ambientTimeOfDay: true,
       dim: false,
       cvdSafe: false,
+      highContrast: false,
       setTheme: (id: ThemeId) => {
         applyThemeToDOM(id, get().customTheme);
         applyBrightness(get().brightness, id, get().customTheme);
@@ -296,6 +308,11 @@ export const useThemeStore = create<ThemeState>()(
         set({ cvdSafe: enabled });
         storeBus.emit('appearance:changed', { field: 'cvdSafe', value: enabled ? 'on' : 'off' });
       },
+      setHighContrast: (enabled: boolean) => {
+        applyHighContrast(enabled);
+        set({ highContrast: enabled });
+        storeBus.emit('appearance:changed', { field: 'highContrast', value: enabled ? 'on' : 'off' });
+      },
     }),
     {
       name: 'persona-theme',
@@ -314,6 +331,7 @@ export const useThemeStore = create<ThemeState>()(
           applyBrightness(state.brightness ?? 'low', state.themeId, state.customTheme);
           applyDim(state.dim ?? false);
           applyCvdSafe(state.cvdSafe ?? false);
+          applyHighContrast(state.highContrast ?? false);
         }
       },
     }
