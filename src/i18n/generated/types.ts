@@ -10591,6 +10591,16 @@ export type Translations = {
       model_tier_sonnet: string;
       model_tier_opus: string;
       model_tier_recommended_badge: string;
+      observability_plan_title: string;
+      observability_plan_empty: string;
+      observability_plan_error_path: string;
+      observability_plan_escalation: string;
+      observability_plan_success_metric: string;
+      observability_plan_target: string;
+      observability_metric_count_by_status: string;
+      observability_metric_cost_per_run: string;
+      observability_metric_latency: string;
+      observability_metric_custom: string;
       proactive_evaluate_now: string;
       memory_run_consolidation: string;
       memory_generate_reflection: string;

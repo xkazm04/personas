@@ -73,4 +73,9 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// tiers (haiku / sonnet / opus) for a specific persona intent, marking
 /// one as recommended with the rationale from cycle-6 doctrine's tier-
 /// selection heuristics. Auto-fire chat-card.
-pub const CONSTITUTION_VERSION: u32 = 13;
+///
+/// v14: `show_observability_plan` op — the 7th readiness item from
+/// cycle-6 doctrine. Two sections: error handling (what failures
+/// escalate to manual_reviews) + success metric (count_by_status /
+/// cost_per_run / latency / custom). Auto-fire chat-card.
+pub const CONSTITUTION_VERSION: u32 = 14;

@@ -308,6 +308,74 @@ pub fn dispatch(
                 });
             }
             Ok(env)
+                if env.op == "propose_action" && env.action == "show_observability_plan" =>
+            {
+                // Observability plan card — the 7th readiness item from
+                // cycle-6 doctrine. Two sections: error handling (what
+                // escalates to manual review + how) and success metric
+                // (which signal is tracked + target).
+                let intent = env
+                    .params
+                    .get("intent")
+                    .and_then(|v| v.as_str())
+                    .map(str::trim)
+                    .unwrap_or("");
+                let error_handling = env
+                    .params
+                    .get("error_handling")
+                    .cloned()
+                    .unwrap_or(serde_json::Value::Null);
+                if !error_handling.is_object() {
+                    out.warnings.push(
+                        "show_observability_plan: `error_handling` must be an object {triggers: [string], escalation: string}"
+                            .into(),
+                    );
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                let success_metric = env
+                    .params
+                    .get("success_metric")
+                    .cloned()
+                    .unwrap_or(serde_json::Value::Null);
+                if !success_metric.is_object() {
+                    out.warnings.push(
+                        "show_observability_plan: `success_metric` must be an object {kind, description, target?}"
+                            .into(),
+                    );
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                let metric_kind = success_metric
+                    .get("kind")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                if !matches!(
+                    metric_kind,
+                    "count_by_status" | "cost_per_run" | "latency" | "custom"
+                ) {
+                    out.warnings.push(format!(
+                        "show_observability_plan: success_metric.kind must be count_by_status|cost_per_run|latency|custom, got `{metric_kind}`"
+                    ));
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                let title = env
+                    .params
+                    .get("title")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string());
+                out.chat_cards.push(ChatCard {
+                    kind: "observability_plan".to_string(),
+                    title,
+                    config: serde_json::json!({
+                        "intent": intent,
+                        "error_handling": error_handling,
+                        "success_metric": success_metric,
+                    }),
+                });
+            }
+            Ok(env)
                 if env.op == "propose_action" && env.action == "show_model_tier_choice" =>
             {
                 // Model-tier recommendation card. Athena compares the

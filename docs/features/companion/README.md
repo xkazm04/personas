@@ -152,6 +152,14 @@ Picks up the model-tier-selection readiness item from cycle-6 doctrine. Athena e
 
 Rationale shapes follow the doctrine heuristics: Haiku for high-volume routing/triage with structured output, Sonnet as the default for the majority of personas, Opus for long-context reasoning over large inputs or output where a single bad reply is expensive. Constitution bumped to v13.
 
+## `show_observability_plan` chat-card
+
+The 7th readiness item from cycle-6 doctrine: every persona needs an error path that doesn't black-hole AND at least one success metric tracked. Athena emits `show_observability_plan { intent, error_handling, success_metric }` to surface both.
+
+`error_handling` is `{ triggers: [string], escalation: string }` — a list of named failure modes plus where they end up (typically the `manual_reviews` queue). `success_metric` is `{ kind, description, target? }` with `kind` in `count_by_status | cost_per_run | latency | custom`. The widget renders the two sections stacked: red-accented error path on top, emerald-accented success metric below, with a metric-kind-specific icon.
+
+Auto-fire chat-card; informational only. Together with cycles 7-9 + 12-13, Athena now has structured chat-card surfaces for 5 of the 7 readiness items (intent overview, use cases, triggers, model tier, observability). The remaining gaps (system prompt structure, tools) were in-session sticky-dropped. Constitution bumped to v14.
+
 ## Refine chips
 
 Below the latest completed assistant bubble only, `RefineChips` renders three small affordances — **Shorter**, **More detail**, **Code only** — that resend the prior user message with a localized steering suffix appended ("— much shorter, please.", "— go deeper, with examples.", "— code only, minimal prose."). Click feeds the modified prompt through the same `send()` path used by the composer, so the optimistic-bubble / streaming / TTS pipeline kicks in identically. Disabled while streaming or improving. Older bubbles in scrollback don't render chips — refining a mid-scrollback turn is a different, higher-effort UI that needs to model "which user message do I resend?" carefully.

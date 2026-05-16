@@ -21,6 +21,7 @@ import { LinkedMemoriesWidget } from './widgets/LinkedMemoriesWidget';
 import { MetricSparkWidget } from './widgets/MetricSparkWidget';
 import { IssueListWidget } from './widgets/IssueListWidget';
 import { ModelTierChoiceWidget } from './widgets/ModelTierChoiceWidget';
+import { ObservabilityPlanWidget } from './widgets/ObservabilityPlanWidget';
 import { PersonaWalkthroughWidget } from './widgets/PersonaWalkthroughWidget';
 import { TemplateSuggestionsWidget } from './widgets/TemplateSuggestionsWidget';
 import { TextCalloutWidget } from './widgets/TextCalloutWidget';
@@ -78,6 +79,11 @@ export const cockpitWidgetRegistry: Record<string, ComponentType<CockpitWidgetPr
   // three tiers (haiku/sonnet/opus) side-by-side with the recommended
   // one accented.
   model_tier_choice: ModelTierChoiceWidget,
+  // Observability plan — the 7th readiness item from cycle-6 doctrine.
+  // Two sections: error handling (what failures escalate) + success
+  // metric (which signal is tracked). Emitted via
+  // `show_observability_plan { intent, error_handling, success_metric }`.
+  observability_plan: ObservabilityPlanWidget,
 };
 
 /** Tunes the grid `rowSpan` per widget kind. Multi-row gives long-form
