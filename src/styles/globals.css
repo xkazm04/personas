@@ -1173,6 +1173,12 @@ input[type="range"]:disabled::-moz-range-thumb {
   }
 }
 
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
 @keyframes fade-slide-in {
   from {
     opacity: 0;

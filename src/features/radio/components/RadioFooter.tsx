@@ -20,6 +20,7 @@ import {
 } from '../api/radioApi';
 import NowPlayingCard from './NowPlayingCard';
 import StationPicker from './StationPicker';
+import TitleCrossfade from './TitleCrossfade';
 import VolumePopover from './VolumePopover';
 
 /**
@@ -663,12 +664,12 @@ export default function RadioFooter() {
         <button
           type="button"
           onClick={() => setDetailsOpen((v) => !v)}
-          className="typo-caption text-foreground/85 hover:text-foreground truncate text-left transition-colors min-w-0"
+          className="relative typo-caption text-foreground/85 hover:text-foreground text-left transition-colors min-w-0 flex-1"
           title={t.radio.expand_button}
           aria-label={t.radio.expand_button}
           aria-expanded={detailsOpen}
         >
-          {titleLine}
+          <TitleCrossfade text={titleLine} />
         </button>
         {isYoutube && progress && progress.durationSec > 0 && (
           <div

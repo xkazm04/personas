@@ -77,6 +77,12 @@ appropriate engine and reports state transitions back via
   play / next controls, the full YouTube tracklist with the active
   track highlighted (or, for `stream` stations, the description and
   source link). Click outside or Escape dismisses.
+- The footer title text **crossfades** when it changes — new YouTube
+  track, new SomaFM metadata, station switch. A small `TitleCrossfade`
+  component overlays an outgoing-text span (fading out) on top of the
+  incoming one (fading in) over 300ms, driven by two named keyframes
+  (`fade-in`, `fade-out`) in `globals.css`. The fade is purely cosmetic
+  — the underlying click target on the title segment behaves identically.
 
 ## Architecture
 
