@@ -294,11 +294,15 @@ export function DriveToolbar({
         </>
       ) : (
         <>
+          {/* Both create buttons share ghost tone — there's no honest
+              reason for "+ New folder" to read as twice as urgent as
+              "+ New file." Cyan-primary is reserved for selection-mode
+              actions ([Move to…]) and the active view-toggle. */}
           <ActionButton
             icon={FolderPlus}
             label={t.plugins.drive.new_folder}
             onClick={onNewFolder}
-            variant="primary"
+            variant="ghost"
           />
           <ActionButton
             icon={FilePlus}
@@ -312,7 +316,7 @@ export function DriveToolbar({
         icon={FileSignature}
         label={t.plugins.drive.signatures_button}
         onClick={onOpenSignatures}
-        variant="accent"
+        variant="muted-accent"
       />
     </div>
   );
@@ -486,8 +490,16 @@ function ActionButton({
   icon: LucideIcon;
   label: string;
   onClick: () => void;
-  variant: "primary" | "ghost" | "accent";
+  variant: "primary" | "ghost" | "accent" | "muted-accent";
 }) {
+  // Variant budget:
+  //   primary       — selection-mode primary action ([Move to…]).
+  //   ghost         — neutral create / utility actions.
+  //   accent        — high-intensity fuchsia (unused at rest now;
+  //                   reserved for callers that want to demand attention).
+  //   muted-accent  — fuchsia-tinted but quiet enough to live next to
+  //                   ghost neighbours without out-shouting them. Used by
+  //                   the Signatures gateway button.
   const styles = {
     primary:
       "bg-gradient-to-b from-cyan-500/25 to-cyan-500/10 text-cyan-100 border border-cyan-500/40 hover:from-cyan-500/35 hover:to-cyan-500/15 shadow-[0_0_12px_-4px_rgba(34,211,238,0.4)]",
@@ -495,6 +507,8 @@ function ActionButton({
       "bg-secondary/50 text-foreground border border-primary/15 hover:bg-secondary/70 hover:text-foreground",
     accent:
       "bg-gradient-to-b from-fuchsia-500/25 to-rose-500/10 text-fuchsia-100 border border-fuchsia-500/40 hover:from-fuchsia-500/35 hover:to-rose-500/15 shadow-[0_0_12px_-4px_rgba(217,70,239,0.4)]",
+    "muted-accent":
+      "bg-secondary/50 text-fuchsia-200/80 border border-fuchsia-500/20 hover:bg-fuchsia-500/10 hover:text-fuchsia-100 hover:border-fuchsia-500/35",
   } as const;
   return (
     <button
