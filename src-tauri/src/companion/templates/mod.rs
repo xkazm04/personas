@@ -50,4 +50,11 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// intent, pulled from the `concepts/persona-design-best-practices.md`
 /// doctrine. Auto-fire (no approval) — it's a suggestion to read, not
 /// an action to commit.
-pub const CONSTITUTION_VERSION: u32 = 9;
+///
+/// v10: `show_template_suggestions` op — auto-fire chat-card that takes
+/// the user's intent and surfaces the top-3 matching templates from the
+/// gallery via the new `companion_match_templates` command (lightweight
+/// keyword match against `persona_design_reviews`). The card has an
+/// "open gallery" affordance for users to follow through with the
+/// existing adoption flow.
+pub const CONSTITUTION_VERSION: u32 = 10;

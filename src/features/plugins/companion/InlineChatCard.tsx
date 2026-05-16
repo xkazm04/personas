@@ -7,7 +7,7 @@ import type { ChatCard } from '@/api/companion';
  * naturally; trapping a multi-paragraph walkthrough inside a 260px box
  * makes it unreadable.
  */
-const UNCLAMPED_KINDS = new Set(['persona_walkthrough']);
+const UNCLAMPED_KINDS = new Set(['persona_walkthrough', 'template_suggestions']);
 
 /**
  * One inline chat-card rendered inside the chat transcript. Wraps the

@@ -105,6 +105,19 @@ Content shape is just `{ intent, content }` where `content` is the markdown blob
 
 Constitution bumped to v9 so existing installs pick up the new op signature on next boot.
 
+## `show_template_suggestions` chat-card
+
+When a user describes a persona they want, Athena's first move shouldn't always be "let me design one from scratch" — often the gallery already has a near-match. The auto-fire op `show_template_suggestions { intent, limit? }` surfaces matching templates inline so the user can adopt instead of build.
+
+Wire:
+
+- Athena emits the op carrying the intent text only (no per-template knowledge required from her side).
+- Dispatcher creates a chat-card `kind=template_suggestions` with `config={ intent, limit }`.
+- The new `TemplateSuggestionsWidget` calls `companion_match_templates(intent, limit)` on mount (Tauri command in `src-tauri/src/commands/companion/templates.rs`). The command extracts keywords from the intent (3+ chars, stop-words filtered, cap 8) and runs them through the existing `search_reviews_compact` LIKE-match query — no LLM call, no async job.
+- Results render as small cards with name, category, instruction snippet, connector chips. An "open gallery" affordance navigates to `design-reviews` so the user can follow through with the existing adoption flow (questionnaire + customization).
+
+No direct adoption from chat by design — that would bypass the customization steps users expect from template adoption. Constitution bumped to v10.
+
 ## Refine chips
 
 Below the latest completed assistant bubble only, `RefineChips` renders three small affordances — **Shorter**, **More detail**, **Code only** — that resend the prior user message with a localized steering suffix appended ("— much shorter, please.", "— go deeper, with examples.", "— code only, minimal prose."). Click feeds the modified prompt through the same `send()` path used by the composer, so the optimistic-bubble / streaming / TTS pipeline kicks in identically. Disabled while streaming or improving. Older bubbles in scrollback don't render chips — refining a mid-scrollback turn is a different, higher-effort UI that needs to model "which user message do I resend?" carefully.

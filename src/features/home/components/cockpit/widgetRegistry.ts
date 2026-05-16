@@ -21,6 +21,7 @@ import { LinkedMemoriesWidget } from './widgets/LinkedMemoriesWidget';
 import { MetricSparkWidget } from './widgets/MetricSparkWidget';
 import { IssueListWidget } from './widgets/IssueListWidget';
 import { PersonaWalkthroughWidget } from './widgets/PersonaWalkthroughWidget';
+import { TemplateSuggestionsWidget } from './widgets/TemplateSuggestionsWidget';
 import { TextCalloutWidget } from './widgets/TextCalloutWidget';
 
 export interface CockpitWidgetProps {
@@ -53,6 +54,11 @@ export const cockpitWidgetRegistry: Record<string, ComponentType<CockpitWidgetPr
   // via `show_persona_walkthrough`. Long-form markdown; InlineChatCard
   // relaxes its 260px height clamp for this kind so it flows naturally.
   persona_walkthrough: PersonaWalkthroughWidget,
+  // Template-match suggestions — fetched on mount via
+  // companion_match_templates(intent). Emitted via
+  // `show_template_suggestions { intent, limit? }`. Also unclamped in
+  // InlineChatCard since 3-5 result rows exceed 260px comfortably.
+  template_suggestions: TemplateSuggestionsWidget,
 };
 
 /** Tunes the grid `rowSpan` per widget kind. Multi-row gives long-form

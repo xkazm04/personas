@@ -10566,6 +10566,10 @@ export type Translations = {
       proactive_kind_athena_scheduled: string;
       walkthrough_title: string;
       walkthrough_empty: string;
+      template_suggestions_title: string;
+      template_suggestions_loading: string;
+      template_suggestions_empty: string;
+      template_suggestions_open_browse: string;
       proactive_evaluate_now: string;
       memory_run_consolidation: string;
       memory_generate_reflection: string;

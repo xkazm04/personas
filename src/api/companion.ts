@@ -485,6 +485,31 @@ export interface DoctrineIngestSummary {
  * Useful when curated docs change and Athena should pick up the latest
  * without an app restart.
  */
+export interface CompanionTemplateMatch {
+  id: string;
+  name: string;
+  /** First ~200 chars of the instruction body. */
+  snippet: string;
+  category: string | null;
+  connectors: string[];
+}
+
+/**
+ * Lightweight keyword match against the persona_design_reviews table for
+ * Athena's `show_template_suggestions` chat-card. No LLM call — the
+ * widget surfaces top matches as a "worth a look" pointer; users wanting
+ * LLM-ranked search use the design-reviews view's smart-search.
+ */
+export async function companionMatchTemplates(
+  intent: string,
+  limit?: number,
+): Promise<CompanionTemplateMatch[]> {
+  return invoke<CompanionTemplateMatch[]>('companion_match_templates', {
+    intent,
+    limit: limit ?? null,
+  });
+}
+
 export async function companionReingestDoctrine(): Promise<DoctrineIngestSummary> {
   return invoke<DoctrineIngestSummary>('companion_reingest_doctrine');
 }

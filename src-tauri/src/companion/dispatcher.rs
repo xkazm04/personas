@@ -308,6 +308,49 @@ pub fn dispatch(
                 });
             }
             Ok(env)
+                if env.op == "propose_action" && env.action == "show_template_suggestions" =>
+            {
+                // Template-match card. Athena supplies the intent text; the
+                // widget calls `companion_match_templates` on mount to
+                // fetch the actual matches (we don't query the system DB
+                // from here — dispatcher only has UserDbPool). Auto-fire,
+                // no approval — the suggestions are a pointer, not an
+                // action.
+                let intent = env
+                    .params
+                    .get("intent")
+                    .and_then(|v| v.as_str())
+                    .map(str::trim)
+                    .unwrap_or("");
+                if intent.is_empty() {
+                    out.warnings.push(
+                        "show_template_suggestions: `intent` (the user's described persona purpose) is required"
+                            .into(),
+                    );
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                let limit = env
+                    .params
+                    .get("limit")
+                    .and_then(|v| v.as_u64())
+                    .unwrap_or(3)
+                    .clamp(1, 5);
+                let title = env
+                    .params
+                    .get("title")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string());
+                out.chat_cards.push(ChatCard {
+                    kind: "template_suggestions".to_string(),
+                    title,
+                    config: serde_json::json!({
+                        "intent": intent,
+                        "limit": limit,
+                    }),
+                });
+            }
+            Ok(env)
                 if env.op == "propose_action" && env.action == "show_persona_walkthrough" =>
             {
                 // Persona-design walkthrough — long-form markdown plan
