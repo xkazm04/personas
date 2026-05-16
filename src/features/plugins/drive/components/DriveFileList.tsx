@@ -35,6 +35,9 @@ interface Props {
   pendingCreate?: "folder" | "file" | null;
   onCommitPendingCreate?: (name: string) => void;
   onCancelPendingCreate?: () => void;
+  activeDragCount?: number | null;
+  onDragSelectionStart?: (count: number) => void;
+  onDragSelectionEnd?: () => void;
 }
 
 export function DriveFileList({
@@ -49,6 +52,9 @@ export function DriveFileList({
   pendingCreate = null,
   onCommitPendingCreate,
   onCancelPendingCreate,
+  activeDragCount = null,
+  onDragSelectionStart,
+  onDragSelectionEnd,
 }: Props) {
   if (drive.viewMode === "icons") {
     return (
@@ -87,6 +93,9 @@ export function DriveFileList({
       pendingCreate={pendingCreate}
       onCommitPendingCreate={onCommitPendingCreate}
       onCancelPendingCreate={onCancelPendingCreate}
+      activeDragCount={activeDragCount}
+      onDragSelectionStart={onDragSelectionStart}
+      onDragSelectionEnd={onDragSelectionEnd}
     />
   );
 }
@@ -217,6 +226,9 @@ function ListView({
   pendingCreate = null,
   onCommitPendingCreate,
   onCancelPendingCreate,
+  activeDragCount = null,
+  onDragSelectionStart,
+  onDragSelectionEnd,
 }: Props) {
   const { t, tx } = useTranslation();
   const [dragTarget, setDragTarget] = useState<string | null>(null);
@@ -263,16 +275,18 @@ function ListView({
   const handleDragStart = useCallback(
     (e: React.DragEvent<HTMLDivElement>, entry: DriveEntry) => {
       if (!drive.isSelected(entry.path)) drive.selectOnly(entry.path);
-      const payload = JSON.stringify({
-        paths:
-          drive.selection.size > 0 && drive.selection.has(entry.path)
-            ? Array.from(drive.selection)
-            : [entry.path],
-      });
-      e.dataTransfer.setData("application/x-drive-move", payload);
+      const paths =
+        drive.selection.size > 0 && drive.selection.has(entry.path)
+          ? Array.from(drive.selection)
+          : [entry.path];
+      e.dataTransfer.setData(
+        "application/x-drive-move",
+        JSON.stringify({ paths }),
+      );
       e.dataTransfer.effectAllowed = "move";
+      onDragSelectionStart?.(paths.length);
     },
-    [drive],
+    [drive, onDragSelectionStart],
   );
 
   const handleDropOn = useCallback(
@@ -406,6 +420,7 @@ function ListView({
               <div
                 draggable
                 onDragStart={(e) => handleDragStart(e, entry)}
+                onDragEnd={() => onDragSelectionEnd?.()}
                 onDragOver={(e) => {
                   if (entry.kind === "folder") {
                     e.preventDefault();
@@ -433,7 +448,14 @@ function ListView({
                   flash,
                   drop,
                   zebra,
-                )}`}
+                )} ${
+                  // Folder rows get a faint cyan halo while a drag is in
+                  // flight, signalling "you can drop here" before the
+                  // cursor hovers. Hover keeps the existing drop state.
+                  activeDragCount && entry.kind === "folder" && !drop && !selected
+                    ? "ring-1 ring-cyan-400/20 bg-cyan-500/5"
+                    : ""
+                }`}
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <FileChip entry={entry} size={32} />

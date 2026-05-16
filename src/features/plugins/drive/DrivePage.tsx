@@ -65,12 +65,23 @@ export default function DrivePage() {
   const [dialog, setDialog] = useState<Dialog>(null);
   const [pathEditing, setPathEditing] = useState(false);
   const [lightboxPath, setLightboxPath] = useState<string | null>(null);
-  // Path currently being inline-renamed inside the list view. Null when no
-  // rename in flight. Icons / columns views fall back to the modal prompt.
+  // Path currently being inline-renamed. Null when no rename in flight.
   const [inlineRenamingPath, setInlineRenamingPath] = useState<string | null>(null);
   // Inline create — when set, the list view renders a phantom row at the
   // top with an empty inline input. Icons / columns fall back to modal.
   const [pendingCreate, setPendingCreate] = useState<"folder" | "file" | null>(null);
+  // Count of entries currently being dragged inside the drive (null when
+  // no drag is in flight). Used to light up every valid drop target
+  // (file-list folder rows + sidebar tree nodes) so the user has a map
+  // of where the gesture can land instead of having to discover targets
+  // by hovering.
+  const [activeDragCount, setActiveDragCount] = useState<number | null>(null);
+  const handleDragSelectionStart = useCallback((count: number) => {
+    setActiveDragCount(count);
+  }, []);
+  const handleDragSelectionEnd = useCallback(() => {
+    setActiveDragCount(null);
+  }, []);
 
   const requestRename = useCallback(
     (entry: DriveEntry) => {
@@ -510,7 +521,7 @@ export default function DrivePage() {
           onPathEditingChange={setPathEditing}
         />
         <div className="flex-1 min-h-0 flex">
-          <DriveSidebar drive={drive} />
+          <DriveSidebar drive={drive} activeDragCount={activeDragCount} />
           <div className="flex-1 min-w-0 flex flex-col">
             <DriveFileList
               drive={drive}
@@ -524,6 +535,9 @@ export default function DrivePage() {
               pendingCreate={pendingCreate}
               onCommitPendingCreate={commitPendingCreate}
               onCancelPendingCreate={cancelPendingCreate}
+              activeDragCount={activeDragCount}
+              onDragSelectionStart={handleDragSelectionStart}
+              onDragSelectionEnd={handleDragSelectionEnd}
             />
           </div>
           <DriveDetailsPane

@@ -20,9 +20,13 @@ const MOD_KEY_LABEL =
 
 interface Props {
   drive: UseDriveResult;
+  /** When a drive-internal drag is in flight, the count of dragged entries
+   *  (null when no drag). Used to render a faint "drop available" hint on
+   *  every tree node so the user has a map of valid targets. */
+  activeDragCount?: number | null;
 }
 
-export function DriveSidebar({ drive }: Props) {
+export function DriveSidebar({ drive, activeDragCount = null }: Props) {
   const { t, tx } = useTranslation();
 
   // localStorage-backed collapse state for the Recent rail. A full zustand
@@ -116,7 +120,13 @@ export function DriveSidebar({ drive }: Props) {
           {t.plugins.drive.sidebar_folders_label}
         </div>
         {drive.tree ? (
-          <TreeNode node={drive.tree} drive={drive} depth={0} initiallyOpen />
+          <TreeNode
+            node={drive.tree}
+            drive={drive}
+            depth={0}
+            initiallyOpen
+            activeDragCount={activeDragCount}
+          />
         ) : (
           <div className="px-3 py-2 typo-body text-foreground">
             {t.plugins.drive.loading}
@@ -227,14 +237,25 @@ interface TreeNodeProps {
   drive: UseDriveResult;
   depth: number;
   initiallyOpen?: boolean;
+  activeDragCount?: number | null;
 }
 
-function TreeNode({ node, drive, depth, initiallyOpen = false }: TreeNodeProps) {
+function TreeNode({
+  node,
+  drive,
+  depth,
+  initiallyOpen = false,
+  activeDragCount = null,
+}: TreeNodeProps) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(initiallyOpen);
   const [dropActive, setDropActive] = useState(false);
   const isActive = drive.currentPath === node.path;
   const hasChildren = node.children.length > 0 || node.hasMoreChildren;
+  // True when a drag is in flight AND this node would be a valid drop
+  // target (not the currently-hovered one — that's `dropActive` and gets
+  // the bright cyan halo instead).
+  const dragHint = !!activeDragCount && !dropActive;
 
   const toggle = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -303,9 +324,11 @@ function TreeNode({ node, drive, depth, initiallyOpen = false }: TreeNodeProps) 
         className={`group relative w-full flex items-center gap-1.5 py-1.5 pr-2 rounded-input text-left typo-body transition-all ${
           dropActive
             ? "bg-cyan-500/30 ring-1 ring-cyan-400/60 text-cyan-50 shadow-[inset_0_0_12px_rgba(34,211,238,0.4)]"
-            : isActive
-              ? "bg-gradient-to-r from-cyan-500/20 via-cyan-500/10 to-transparent text-cyan-100 shadow-[inset_2px_0_0_rgba(34,211,238,0.8)]"
-              : "text-foreground hover:bg-secondary/50 hover:text-foreground"
+            : dragHint
+              ? "ring-1 ring-cyan-400/15 bg-cyan-500/4 text-cyan-100/70"
+              : isActive
+                ? "bg-gradient-to-r from-cyan-500/20 via-cyan-500/10 to-transparent text-cyan-100 shadow-[inset_2px_0_0_rgba(34,211,238,0.8)]"
+                : "text-foreground hover:bg-secondary/50 hover:text-foreground"
         }`}
         style={{ paddingLeft: `${10 + depth * 14}px` }}
       >
@@ -352,6 +375,7 @@ function TreeNode({ node, drive, depth, initiallyOpen = false }: TreeNodeProps) 
             node={child}
             drive={drive}
             depth={depth + 1}
+            activeDragCount={activeDragCount}
           />
         ))}
     </div>
