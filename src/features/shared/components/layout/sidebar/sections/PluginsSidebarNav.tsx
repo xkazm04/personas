@@ -23,6 +23,8 @@ export function PluginsSidebarNav() {
   const setCompanionPluginTab = useSystemStore((s) => s.setCompanionPluginTab);
   const fleetTab = useSystemStore((s) => s.fleetTab);
   const setFleetTab = useSystemStore((s) => s.setFleetTab);
+  const fleetSessions = useSystemStore((s) => s.fleetSessions);
+  const fleetWaitingCount = fleetSessions.filter((s) => s.state === 'awaiting_input').length;
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const projects = useSystemStore((s) => s.projects);
   const creativeSessionRunning = useSystemStore((s) => s.creativeSessionRunning);
@@ -303,6 +305,11 @@ export function PluginsSidebarNav() {
             >
               <Terminal className="w-4 h-4 flex-shrink-0" />
               Fleet
+              {fleetWaitingCount > 0 && (
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-amber-500/30 text-amber-200 text-[10px] font-bold border border-amber-500/50 animate-pulse">
+                  {fleetWaitingCount}
+                </span>
+              )}
               <span className="ml-auto inline-flex items-center px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400 text-[9px] font-medium border border-amber-500/25">
                 DEV
               </span>
