@@ -185,12 +185,29 @@ export default function SkillBrowserPage() {
                       <RefreshCw className="w-4 h-4 animate-spin text-foreground" />
                     </div>
                   ) : editing ? (
-                    <textarea
-                      value={editContent}
-                      onChange={(e) => setEditContent(e.target.value)}
-                      className="w-full h-full min-h-[300px] p-3 text-md font-mono bg-secondary/20 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 resize-none"
-                      spellCheck={false}
-                    />
+                    <div className="grid grid-cols-2 gap-3 h-full min-h-[300px]">
+                      <textarea
+                        value={editContent}
+                        onChange={(e) => setEditContent(e.target.value)}
+                        className="w-full h-full min-h-[300px] p-3 text-md font-mono bg-secondary/20 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 resize-none"
+                        spellCheck={false}
+                      />
+                      <div className="border border-primary/10 rounded-modal bg-card/30 p-3 overflow-y-auto">
+                        <div className="flex items-center gap-1.5 mb-2 pb-2 border-b border-primary/5">
+                          <span className="text-[9px] uppercase tracking-[0.18em] text-foreground/55">
+                            {t.plugins.dev_tools.skills_preview_heading}
+                          </span>
+                          {editContent !== fileContent && (
+                            <span className="text-[9px] text-amber-400/80 ml-auto">{t.plugins.dev_tools.skills_preview_unsaved}</span>
+                          )}
+                        </div>
+                        {editContent.trim() ? (
+                          <MarkdownRenderer content={editContent} />
+                        ) : (
+                          <p className="text-md text-foreground/45 italic">{t.plugins.dev_tools.skills_preview_empty}</p>
+                        )}
+                      </div>
+                    </div>
                   ) : fileContent ? (
                     <MarkdownRenderer content={fileContent} />
                   ) : !loadFailed ? (

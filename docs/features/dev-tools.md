@@ -92,7 +92,7 @@ The eight tabs are sequenced so a new project can walk top-to-bottom exactly onc
 ### 8. Skills — browse dev patterns
 
 1. Open **Skills**. The left pane lists markdown files from the user's skills directory with a fuzzy-search box. A **Recent** chip row above the list surfaces the last five skills opened this session (persisted to `localStorage`), and each skill row has a star button that pins it to favorites — favorites float to the top of the list across sessions.
-2. The right pane renders the selected file with an inline **Edit** toggle that writes changes back to disk.
+2. The right pane renders the selected file with an inline **Edit** toggle that writes changes back to disk. Edit mode is a 2-column split-view — raw markdown textarea on the left, live `MarkdownRenderer` preview on the right (with an "unsaved" indicator when the buffer diverges from disk). Markdown errors are now visible immediately instead of waiting for save.
 3. A safety banner is shown when a file fails to load — editing is disabled to prevent data loss.
 
 ### Lifecycle, end-to-end

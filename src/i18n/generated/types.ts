@@ -10108,6 +10108,9 @@ export type Translations = {
       skills_favorite: string;
       skills_unfavorite: string;
       skills_recent_heading: string;
+      skills_preview_heading: string;
+      skills_preview_unsaved: string;
+      skills_preview_empty: string;
       effort: string;
       risk: string;
       quick_wins: string;
