@@ -1,7 +1,9 @@
 import { useState, useMemo } from 'react';
-import { Image, Box, FolderSearch, Search, SortAsc, SortDesc } from 'lucide-react';
+import { Image, Box, FolderOpen, FolderSearch, Search, SortAsc, SortDesc } from 'lucide-react';
+import { open as openExternal } from '@tauri-apps/plugin-shell';
 import { useArtistAssets } from '../hooks/useArtistAssets';
 import { useSystemStore } from '@/stores/systemStore';
+import { silentCatch } from '@/lib/silentCatch';
 import type { GalleryMode } from '../types';
 import Gallery2D from './Gallery2D';
 import Gallery3D from './Gallery3D';
@@ -92,6 +94,17 @@ export default function GalleryPage() {
         </select>
         <button onClick={toggleSort} className="p-1.5 rounded-card hover:bg-secondary/40 text-foreground">
           {sortDir === 'asc' ? <SortAsc className="w-3.5 h-3.5" /> : <SortDesc className="w-3.5 h-3.5" />}
+        </button>
+
+        {/* Open folder in OS file manager */}
+        <button
+          onClick={() => artistFolder && openExternal(artistFolder).catch(silentCatch('Open artist folder'))}
+          disabled={!artistFolder}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-card text-md text-foreground hover:bg-secondary/40 border border-primary/10 transition-colors disabled:opacity-40"
+          title={t.plugins.artist.open_folder}
+        >
+          <FolderOpen className="w-3.5 h-3.5" />
+          {t.plugins.artist.open_folder}
         </button>
 
         {/* Scan button */}

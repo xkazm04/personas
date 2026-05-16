@@ -9820,6 +9820,7 @@ export type Translations = {
       sort_size: string;
       scanning: string;
       scan_folder: string;
+      open_folder: string;
       watching: string;
       loading_assets: string;
       no_images_yet: string;
