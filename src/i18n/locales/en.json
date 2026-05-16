@@ -9664,7 +9664,7 @@
       "health_lab_scores_on": "Lab scores: ON",
       "health_lab_scores_off": "Lab scores: OFF",
       "push_lab_scores_label": "Push Lab evaluation scores",
-      "push_lab_scores_desc": "Ship the tool_accuracy / output_quality / protocol_compliance rubrics to Langfuse's Scores API after each Lab scenario. Off by default; takes effect once linked traces ship from the Lab path (next release)."
+      "push_lab_scores_desc": "Ship the tool_accuracy / output_quality / protocol_compliance rubrics to Langfuse's Scores API after each Lab scenario, alongside a synthetic trace that carries the scenario context. Off by default."
     },
     "drive": {
       "title": "Drive",
