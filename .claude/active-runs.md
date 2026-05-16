@@ -35,8 +35,14 @@ timestamp — the next session can recognize it as abandoned.
 - **[2026-05-13 — started] /research — hermes-agent-codebase-deep**
   - **Source:** `C:\Users\kazda\kiro\hermes-agent` (Nous Research Hermes Agent codebase, comprehensive analysis of UI, functionality, architecture)
   - **Paths:** `Obsidian/personas/Research/2026-05-13-hermes-agent-codebase-deep.md`, `Obsidian/personas/Lessons/2026-05-13-research.md` (Edit/append — coordinates with concurrent claude-code-2-1-140 run), `Obsidian/personas/Patterns/descoped-reopenable.md` (append-only), possibly `src/data/releases.json` + `src/features/home/components/releases/i18n/*.ts` if Phase 12 fires, `.claude/active-runs.md`
-  - **Status:** started
+  - **Status:** started (STALE — entry is >24h old as of 2026-05-14 session start; treating as abandoned per the 2-hour rule)
   - **Note:** Aware of concurrent run on Lessons/releases. Will re-check ledger before any Phase 12 write.
+
+- **[2026-05-14 — started] /research — claude-code-2-1-141**
+  - **Source:** https://github.com/anthropics/claude-code/releases/tag/v2.1.141 (release notes via WebFetch). 8th observation of "CLI release log of a wrapped binary" source type. Focus: code.
+  - **Paths:** `Obsidian/personas/Research/2026-05-14-claude-code-2-1-141.md` (new, unique slug), `Obsidian/personas/Lessons/2026-05-14-research.md` (new — today is first run of the day), possibly `src-tauri/src/engine/provider/claude.rs` (minimum_version floor advance — pending Phase 8), `.claude/active-runs.md`. No `.research-cache/` (Phase 2b source — WebFetch, no transcript file).
+  - **Status:** started
+  - **Note:** Stale 2026-05-13 hermes-agent entry above does NOT overlap my scope (its Lessons file is 2026-05-13; mine is 2026-05-14). Proceeding without conflict.
 
 
 
