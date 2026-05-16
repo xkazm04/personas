@@ -1836,6 +1836,40 @@ const bridge: TestBridge = {
   },
 
   /**
+   * Inject synthetic chat-cards into the companion store. Drives the
+   * `chatCards` slice that backs `InlineChatCard` rendering, bypassing
+   * a real dispatcher emit. Used by the persona-design chat-card specs
+   * (cycles 7-22 of /friend 2026-05-16 session 2) to verify widget
+   * mount + rendering without needing a live Claude turn to produce
+   * the `companion://chat-cards` event.
+   *
+   * Card shape mirrors the `ChatCard` type from `@/api/companion`:
+   *   { kind: string, title?: string | null, config?: Record<string, unknown> }
+   *
+   * Card kinds that drive the persona-design family (rendered through
+   * `cockpitWidgetRegistry`): persona_walkthrough, template_suggestions,
+   * use_case_set, trigger_set, model_tier_choice, observability_plan,
+   * decision_log, persona_ready, design_capabilities, recent_decisions.
+   * Plus the pre-existing kinds: persona_overview, connected_services,
+   * decisions_panel, metric_spark, issue_list, text_callout.
+   */
+  setCompanionChatCards(params: {
+    cards: Array<{
+      kind: string;
+      title?: string | null;
+      config?: Record<string, unknown>;
+    }>;
+  }): { success: boolean; count: number } {
+    const cards = params.cards.map((c) => ({
+      kind: c.kind,
+      title: c.title ?? undefined,
+      config: c.config ?? {},
+    }));
+    useCompanionStore.getState().setChatCards(cards);
+    return { success: true, count: cards.length };
+  },
+
+  /**
    * Inject a synthetic message into the chat transcript. Bypasses the
    * normal send-turn flow so tests can verify rendering of specific
    * role+content combinations (system episodes, autonomous-continuation

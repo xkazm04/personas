@@ -2109,6 +2109,7 @@ pub fn run() {
             commands::companion::consolidate::companion_get_reflection,
             commands::companion::consolidate::companion_get_dashboard,
             commands::companion::consolidate::companion_get_cockpit,
+            commands::companion::consolidate::companion_pin_widget_to_cockpit,
             commands::companion::consolidate::companion_enqueue_curation_run,
             commands::companion::consolidate::companion_discard_consolidation_run,
             commands::companion::proactive::companion_evaluate_proactive_now,
@@ -2144,6 +2145,8 @@ pub fn run() {
             commands::companion::jobs::companion_list_jobs,
             commands::companion::jobs::companion_get_job,
             commands::companion::jobs::companion_enqueue_job,
+            commands::companion::templates::companion_match_templates,
+            commands::companion::decisions::companion_list_design_decisions,
             // Infrastructure -- Auth
             commands::infrastructure::auth::login_with_google,
             commands::infrastructure::auth::get_auth_state,

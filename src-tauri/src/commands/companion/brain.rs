@@ -18,6 +18,7 @@ use serde::Serialize;
 use tauri::State;
 
 use crate::companion::brain::backlog;
+use crate::companion::brain::decisions;
 use crate::companion::brain::doctrine;
 use crate::companion::brain::goals;
 use crate::companion::brain::procedural::{self, ProceduralScope};
@@ -108,6 +109,7 @@ pub fn companion_list_brain_items(
         "episode" => list_episodes(&state),
         "doctrine" => list_doctrine(&state),
         "reflection" => list_reflections(&state),
+        "design_decision" => list_design_decisions(&state),
         "identity" => Ok(single_file_list(
             "identity",
             "Identity",
@@ -152,6 +154,7 @@ pub fn companion_get_brain_item(
         "episode" => get_episode(&state, &id),
         "doctrine" => get_doctrine(&state, &id),
         "reflection" => get_reflection(&state, &id),
+        "design_decision" => get_design_decision(&state, &id),
         "identity" => read_brain_file("identity", "Identity", "identity.md"),
         "constitution" => read_brain_file("constitution", "Constitution", "constitution.md"),
         other => Err(AppError::Internal(format!(
@@ -189,7 +192,7 @@ pub fn companion_delete_brain_item(
     }
     match kind.as_str() {
         "episode" => delete_episode(&state, &id),
-        "doctrine" | "identity" | "constitution" => Err(AppError::Internal(format!(
+        "doctrine" | "identity" | "constitution" | "design_decision" => Err(AppError::Internal(format!(
             "`{kind}` items are not deletable from the viewer"
         ))),
         other => Err(AppError::Internal(format!(
@@ -888,6 +891,98 @@ fn extract_section(md: &str, anchor: &str) -> Option<String> {
         return Some(buf.join("\n"));
     }
     None
+}
+
+// ── design decisions ────────────────────────────────────────────────────
+
+fn list_design_decisions(
+    state: &State<'_, Arc<AppState>>,
+) -> Result<Vec<BrainListItem>, AppError> {
+    // Reuse the brain::decisions list path — same caps as the
+    // standalone Decisions panel (cap-200 for the viewer pane).
+    let rows = decisions::list_recent(&state.user_db, 200)?;
+    Ok(rows
+        .into_iter()
+        .map(|d| {
+            let preview = if d.choice.chars().count() > 80 {
+                let trimmed: String = d.choice.chars().take(79).collect();
+                format!("{trimmed}\u{2026}")
+            } else {
+                d.choice.clone()
+            };
+            let meta = match (
+                d.persona_context.as_deref(),
+                d.decision_timestamp.as_deref(),
+            ) {
+                (Some(ctx), Some(ts)) => format!("{ctx} · {ts}"),
+                (Some(ctx), None) => ctx.to_string(),
+                (None, Some(ts)) => ts.to_string(),
+                (None, None) => d.created_at.clone(),
+            };
+            BrainListItem {
+                id: d.id,
+                kind: "design_decision".into(),
+                title: d.label,
+                preview,
+                meta,
+                deletable: false,
+            }
+        })
+        .collect())
+}
+
+fn get_design_decision(
+    state: &State<'_, Arc<AppState>>,
+    id: &str,
+) -> Result<BrainDetail, AppError> {
+    let conn = state.user_db.get()?;
+    let row = conn
+        .query_row(
+            "SELECT id, session_id, persona_context, label, choice, rationale,
+                    decision_timestamp, created_at
+             FROM companion_design_decision WHERE id = ?1",
+            params![id],
+            |r| {
+                Ok((
+                    r.get::<_, String>(0)?,
+                    r.get::<_, String>(1)?,
+                    r.get::<_, Option<String>>(2)?,
+                    r.get::<_, String>(3)?,
+                    r.get::<_, String>(4)?,
+                    r.get::<_, String>(5)?,
+                    r.get::<_, Option<String>>(6)?,
+                    r.get::<_, String>(7)?,
+                ))
+            },
+        )
+        .map_err(|e| AppError::Internal(format!("design decision `{id}` not found — {e}")))?;
+    let (
+        row_id,
+        session_id,
+        persona_context,
+        label,
+        choice,
+        rationale,
+        decision_timestamp,
+        created_at,
+    ) = row;
+    let meta = match (persona_context.as_deref(), decision_timestamp.as_deref()) {
+        (Some(ctx), Some(ts)) => format!("{ctx} · {ts} · session {session_id}"),
+        (Some(ctx), None) => format!("{ctx} · session {session_id}"),
+        (None, Some(ts)) => format!("{ts} · session {session_id}"),
+        (None, None) => format!("{created_at} · session {session_id}"),
+    };
+    let content = format!(
+        "## Choice\n\n{choice}\n\n## Rationale\n\n{rationale}\n"
+    );
+    Ok(BrainDetail {
+        id: row_id,
+        kind: "design_decision".into(),
+        title: label,
+        content,
+        meta,
+        deletable: false,
+    })
 }
 
 fn slugify(s: &str) -> String {

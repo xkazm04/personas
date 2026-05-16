@@ -378,6 +378,18 @@ pub fn init_user_db(app_data_dir: &Path) -> Result<UserDbPool, AppError> {
         let conn = pool.get()?;
         conn.execute_batch(COMPANION_SCHEMA)?;
         tracing::debug!("Companion schema ensured in user database");
+
+        // Defensive incremental ALTERs for columns added after the
+        // initial COMPANION_SCHEMA. Each statement is wrapped in a
+        // failure-ignoring closure because SQLite returns "duplicate
+        // column name" on the second run — that's the success path,
+        // not an error. (User-database migrations don't share the
+        // system-database runner in db::migrations::incremental.)
+        for stmt in &[
+            "ALTER TABLE companion_proactive_message ADD COLUMN scheduled_for TEXT;",
+        ] {
+            let _ = conn.execute_batch(stmt);
+        }
     }
 
     // One-time backfill of kb_chunks_fts for installs that already have chunks
@@ -688,13 +700,17 @@ CREATE INDEX IF NOT EXISTS idx_companion_backlog_status ON companion_backlog_ite
 -- | dismissed (user said no) | expired (sat too long).
 CREATE TABLE IF NOT EXISTS companion_proactive_message (
     id            TEXT PRIMARY KEY,
-    trigger_kind  TEXT NOT NULL,                 -- 'goal_target_approaching' | 'backlog_aging' | 'cadence_due'
+    trigger_kind  TEXT NOT NULL,                 -- 'goal_target_approaching' | 'backlog_aging' | 'cadence_due' | 'athena_scheduled'
     trigger_ref   TEXT,                           -- id of the goal/backlog/ritual that fired
     message       TEXT NOT NULL,
     status        TEXT NOT NULL DEFAULT 'queued',
     created_at    TEXT NOT NULL DEFAULT (datetime('now')),
     delivered_at  TEXT,
-    resolved_at   TEXT
+    resolved_at   TEXT,
+    -- NULL = "deliver as soon as triggers say so" (current behavior).
+    -- Non-NULL ISO8601 = the deliver-due sweep skips this row until the
+    -- timestamp is reached. Set by Athena's `schedule_proactive` op.
+    scheduled_for TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_companion_proactive_status
     ON companion_proactive_message(status, created_at DESC);
@@ -703,6 +719,27 @@ CREATE INDEX IF NOT EXISTS idx_companion_proactive_status
 -- with matching (trigger_kind, trigger_ref) before inserting.
 CREATE INDEX IF NOT EXISTS idx_companion_proactive_dedupe
     ON companion_proactive_message(trigger_kind, trigger_ref, status);
+
+-- Design decisions captured during companion conversations. Persisted
+-- copy of the `show_decision_log` chat-card entries so Athena (and the
+-- user) can retrace design rationale across sessions. `persona_context`
+-- is optional — a persona id, build session id, or free-form intent
+-- string letting future queries filter by which persona the decisions
+-- describe.
+CREATE TABLE IF NOT EXISTS companion_design_decision (
+    id                  TEXT PRIMARY KEY,
+    session_id          TEXT NOT NULL,
+    persona_context     TEXT,
+    label               TEXT NOT NULL,
+    choice              TEXT NOT NULL,
+    rationale           TEXT NOT NULL,
+    decision_timestamp  TEXT,            -- the timestamp Athena attached, optional
+    created_at          TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_companion_design_decision_session
+    ON companion_design_decision(session_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_companion_design_decision_context
+    ON companion_design_decision(persona_context, created_at DESC);
 
 -- Daily budget for proactive nudges. The scheduler increments on each
 -- delivery; a fresh row is created on the first nudge of any UTC date.

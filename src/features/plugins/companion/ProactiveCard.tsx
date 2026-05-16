@@ -60,7 +60,9 @@ export function ProactiveCard({
           ? 'border-violet-500/30 bg-violet-500/[0.06]'
           : message.triggerKind === 'cadence_due'
             ? 'border-emerald-500/30 bg-emerald-500/[0.06]'
-            : 'border-primary/30 bg-primary/[0.06]';
+            : message.triggerKind === 'athena_scheduled'
+              ? 'border-sky-500/30 bg-sky-500/[0.06]'
+              : 'border-primary/30 bg-primary/[0.06]';
 
   return (
     <div
@@ -131,6 +133,8 @@ function triggerLabel(
       return t.plugins.companion.proactive_kind_cadence;
     case 'on_this_day':
       return t.plugins.companion.proactive_kind_on_this_day;
+    case 'athena_scheduled':
+      return t.plugins.companion.proactive_kind_athena_scheduled;
     default:
       return kind;
   }

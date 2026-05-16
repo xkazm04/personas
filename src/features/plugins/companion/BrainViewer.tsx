@@ -9,6 +9,7 @@ import {
   Inbox,
   Layers,
   ListChecks,
+  ScrollText,
   Sparkles,
   Target,
   Trash2,
@@ -43,7 +44,8 @@ type KindLabelKey =
   | 'procedurals'
   | 'goals'
   | 'rituals'
-  | 'backlog';
+  | 'backlog'
+  | 'design_decisions';
 
 const KINDS: { kind: BrainKind; icon: typeof Bot; labelKey: KindLabelKey }[] = [
   // Reading order: who I think she is (identity), what she knows about
@@ -60,6 +62,7 @@ const KINDS: { kind: BrainKind; icon: typeof Bot; labelKey: KindLabelKey }[] = [
   { kind: 'ritual', icon: Compass, labelKey: 'rituals' },
   { kind: 'episode', icon: Bot, labelKey: 'episodes' },
   { kind: 'reflection', icon: ListChecks, labelKey: 'reflections' },
+  { kind: 'design_decision', icon: ScrollText, labelKey: 'design_decisions' },
   { kind: 'doctrine', icon: BookOpen, labelKey: 'doctrine' },
   { kind: 'constitution', icon: Layers, labelKey: 'constitution' },
 ];
@@ -192,6 +195,8 @@ function kindLabel(
       return t.plugins.companion.facts_world;
     case 'reflection':
       return t.plugins.companion.reflections;
+    case 'design_decision':
+      return t.plugins.companion.design_decisions;
     default:
       return kind;
   }

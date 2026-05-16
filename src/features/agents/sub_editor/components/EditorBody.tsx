@@ -8,6 +8,7 @@ import { useSystemStore } from "@/stores/systemStore";
 import { ContentBox } from '@/features/shared/components/layout/ContentLayout';
 import { UnsavedChangesBanner, CloudNudgeBanner, PartialLoadBanner } from './EditorBanners';
 import { EditorTabBar } from './EditorTabBar';
+import { PersonaDecisionsFooter } from './PersonaDecisionsFooter';
 import { PersonaEditorHeader } from './PersonaEditorHeader';
 import {
   ActivityTab,
@@ -204,6 +205,10 @@ export function EditorBody() {
           </Suspense>
         </SubTabSurface>
       </div>
+
+      {selectedPersona?.id && (
+        <PersonaDecisionsFooter personaId={selectedPersona.id} />
+      )}
 
       <UnsavedChangesModal
         isOpen={guard.isOpen}

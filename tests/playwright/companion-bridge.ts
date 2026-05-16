@@ -368,6 +368,22 @@ export class CompanionBridge {
   }
 
   /**
+   * Inject synthetic chat-cards. Wraps `bridge.setCompanionChatCards`
+   * (added 2026-05-16 for the persona-design family). Drives the
+   * `chatCards` store slice that backs `InlineChatCard` rendering;
+   * bypasses a real dispatcher emit.
+   */
+  async setChatCards(
+    cards: Array<{
+      kind: string;
+      title?: string | null;
+      config?: Record<string, unknown>;
+    }>,
+  ): Promise<void> {
+    await this.bridgeExec('setCompanionChatCards', { cards });
+  }
+
+  /**
    * Generic Tauri-command passthrough. The frontend bridge owns auth
    * + serde shape; tests call this to drive backend commands the
    * frontend would normally trigger via UI action. Returns the

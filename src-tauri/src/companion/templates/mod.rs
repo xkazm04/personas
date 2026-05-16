@@ -36,4 +36,70 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// to the grammar. When the user toggles autonomous mode in the chat
 /// header, the prompt builder injects an addendum teaching Athena how
 /// to chain turns and dispatch parallel subagents.
-pub const CONSTITUTION_VERSION: u32 = 7;
+///
+/// v8: `schedule_proactive` op — Athena can commit to a future check-in.
+/// User approves the (message, when_iso) pair; the deliver-due sweep in
+/// `proactive::deliver_due_scheduled` releases it when the time arrives,
+/// flowing through the same `companion://proactive` event channel as
+/// trigger-driven nudges. Approval-gated because it puts a future
+/// obligation on the user's attention (unlike connector calls, which
+/// run on pre-greenlit pinned credentials).
+///
+/// v9: `show_persona_walkthrough` op — long-form markdown card Athena
+/// emits with her step-by-step persona-design plan applied to a user
+/// intent, pulled from the `concepts/persona-design-best-practices.md`
+/// doctrine. Auto-fire (no approval) — it's a suggestion to read, not
+/// an action to commit.
+///
+/// v10: `show_template_suggestions` op — auto-fire chat-card that takes
+/// the user's intent and surfaces the top-3 matching templates from the
+/// gallery via the new `companion_match_templates` command (lightweight
+/// keyword match against `persona_design_reviews`). The card has an
+/// "open gallery" affordance for users to follow through with the
+/// existing adoption flow.
+///
+/// v11: `show_use_case_set` op — auto-fire chat-card carrying 3-5 use
+/// cases tagged golden / variant / out_of_scope, applying the use-case
+/// decomposition rules from the persona-design best-practices doctrine.
+/// Zooms into the layer the walkthrough card only sketches.
+///
+/// v12: `show_trigger_set` op — sibling of `show_use_case_set`. Auto-
+/// fire chat-card carrying 1-4 trigger configurations (label, source,
+/// condition, optional grain + idempotency notes). Applies cycle-6
+/// doctrine's "one trigger condition → one persona response shape"
+/// grain test.
+///
+/// v13: `show_model_tier_choice` op — Athena compares the three model
+/// tiers (haiku / sonnet / opus) for a specific persona intent, marking
+/// one as recommended with the rationale from cycle-6 doctrine's tier-
+/// selection heuristics. Auto-fire chat-card.
+///
+/// v14: `show_observability_plan` op — the 7th readiness item from
+/// cycle-6 doctrine. Two sections: error handling (what failures
+/// escalate to manual_reviews) + success metric (count_by_status /
+/// cost_per_run / latency / custom). Auto-fire chat-card.
+///
+/// v15: `show_decision_log` op — audit-trail card capturing the
+/// design choices Athena made during the conversation (label / choice /
+/// rationale per entry). Helps the user retrace reasoning without
+/// re-running the conversation; helps future-Athena explain past
+/// decisions when asked.
+///
+/// v16: `show_persona_ready` op — end-of-design recap card. Rolls every
+/// decomposition (intent line + system prompt outline + use cases +
+/// triggers + model tier + observability) into a build-ready summary
+/// with a primary commit button (interactive / one_shot / use_template).
+/// Closes the design → build loop without an explicit handoff message.
+///
+/// v17: `show_design_capabilities` op — onboarding card listing the
+/// design-family vocabulary (walkthrough / templates / use cases /
+/// triggers / tier / observability / decision log / ready recap) with
+/// short descriptions and example user prompts. Surfaced when a user
+/// asks "what can you help me design?" so they know what to ask for.
+///
+/// v18: `show_recent_decisions` op — compact chip strip surfacing 1-5
+/// of Athena's most recent saved decisions for a given persona_context.
+/// Lighter than `show_decision_log`; intended for inline "by the way,
+/// you decided X" reminders. Widget fetches via
+/// companion_list_design_decisions on mount.
+pub const CONSTITUTION_VERSION: u32 = 18;
