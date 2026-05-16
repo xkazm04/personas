@@ -42,6 +42,71 @@
       }
     },
     {
+      "id": "indiepop",
+      "slug": "indiepop",
+      "name": "Indie Pop Rocks!",
+      "description": "New and classic indie pop tracks.",
+      "accentColor": "#ff8aa8",
+      "sourceUrl": "https://somafm.com/indiepop/",
+      "sourceLabel": "SomaFM",
+      "source": {
+        "kind": "stream",
+        "streamUrl": "https://ice1.somafm.com/indiepop-128-mp3"
+      }
+    },
+    {
+      "id": "beatblender",
+      "slug": "beatblender",
+      "name": "Beat Blender",
+      "description": "A late-night blend of deep-house and downtempo chill.",
+      "accentColor": "#6c8df5",
+      "sourceUrl": "https://somafm.com/beatblender/",
+      "sourceLabel": "SomaFM",
+      "source": {
+        "kind": "stream",
+        "streamUrl": "https://ice1.somafm.com/beatblender-128-mp3"
+      }
+    },
+    {
+      "id": "secretagent",
+      "slug": "secretagent",
+      "name": "Secret Agent",
+      "description": "The soundtrack for your stylish, mysterious, dangerous life — mid-century lounge and spy-fi.",
+      "accentColor": "#d4af50",
+      "sourceUrl": "https://somafm.com/secretagent/",
+      "sourceLabel": "SomaFM",
+      "source": {
+        "kind": "stream",
+        "streamUrl": "https://ice1.somafm.com/secretagent-128-mp3"
+      }
+    },
+    {
+      "id": "synphaera",
+      "slug": "synphaera",
+      "name": "Synphaera Radio",
+      "description": "Featuring new electronic ambient releases from the Synphaera label.",
+      "accentColor": "#88e0cc",
+      "sourceUrl": "https://somafm.com/synphaera/",
+      "sourceLabel": "SomaFM",
+      "source": {
+        "kind": "stream",
+        "streamUrl": "https://ice1.somafm.com/synphaera-128-mp3"
+      }
+    },
+    {
+      "id": "bootliquor",
+      "slug": "bootliquor",
+      "name": "Boot Liquor",
+      "description": "Americana roots music for cowhands, cowpokes, and city slickers alike.",
+      "accentColor": "#c19260",
+      "sourceUrl": "https://somafm.com/bootliquor/",
+      "sourceLabel": "SomaFM",
+      "source": {
+        "kind": "stream",
+        "streamUrl": "https://ice1.somafm.com/bootliquor-128-mp3"
+      }
+    },
+    {
       "id": "lofi",
       "slug": "lofi",
       "name": "Lofi",

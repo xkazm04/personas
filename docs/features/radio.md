@@ -126,7 +126,11 @@ appropriate engine and reports state transitions back via
 
 - **Curated catalog** lives in [`src-tauri/data/radio_stations.json`](../../src-tauri/data/radio_stations.json).
   Baked into the binary via `include_str!` so users see the same catalog
-  the team shipped — no editor surface.
+  the team shipped — no editor surface. Ships today with 2 YouTube
+  focus/lofi stations and 6 SomaFM ambient/genre channels (Groove
+  Salad, Drone Zone, Lush, Indie Pop Rocks!, Beat Blender, Secret
+  Agent, Synphaera Radio, Boot Liquor) — picker grouping (above) keeps
+  the two engines visually separate.
 - **Hidden YouTube player.** The IFrame Player API requires a real DOM
   element with non-zero dimensions; `RadioFooter` mounts a 200×200 div
   off-screen at `position: fixed; left: -10000px; top: -10000px`. Audio
