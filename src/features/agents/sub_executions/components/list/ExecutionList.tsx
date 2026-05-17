@@ -151,7 +151,7 @@ export function ExecutionList() {
     });
   }, []);
 
-  const handleRowClick = (executionId: string) => {
+  const handleRowClick = useCallback((executionId: string) => {
     if (bulkMode) { toggleBulkSelected(executionId); return; }
     if (compareMode) { handleCompareSelect(executionId); return; }
     const nextExpandedId = expandedId === executionId ? null : executionId;
@@ -161,7 +161,19 @@ export function ExecutionList() {
         logger.warn('Failed to hydrate execution detail', { executionId: nextExpandedId, error: err });
       });
     }
-  };
+  }, [bulkMode, compareMode, expandedId, toggleBulkSelected, hydrateExecution]);
+
+  // Stable refs for the per-row handlers — pairs with React.memo on
+  // ExecutionListRow so a parent re-render that doesn't touch these
+  // dependencies skips the row subtree.
+  const handleCopyId = useCallback((id: string) => {
+    copyToClipboard(id);
+    setCopiedId(id);
+  }, [copyToClipboard]);
+
+  const handleRerun = useCallback((inputData: string | null) => {
+    setRerunInputData(inputData || '{}');
+  }, [setRerunInputData]);
 
   const enterBulkMode = () => {
     setBulkMode(true);
@@ -369,8 +381,8 @@ export function ExecutionList() {
               copiedId={copiedId}
               capabilityTitle={execution.use_case_id ? useCaseTitleById.get(execution.use_case_id) ?? null : null}
               onRowClick={handleRowClick}
-              onCopyId={(id) => { copyToClipboard(id); setCopiedId(id); }}
-              onRerun={(inputData) => setRerunInputData(inputData || '{}')}
+              onCopyId={handleCopyId}
+              onRerun={handleRerun}
               onAutoCompareRetry={handleAutoCompareRetry}
               densityTokens={densityTokens}
             />

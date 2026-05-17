@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import type { ExecutionListItem } from '@/lib/bindings/ExecutionListItem';
 import { ChevronDown, ChevronRight, RotateCw, Copy, Check, RefreshCw, ArrowLeftRight, FlaskConical } from 'lucide-react';
@@ -34,7 +35,7 @@ interface ExecutionListRowProps {
   densityTokens?: DensityTokens;
 }
 
-export function ExecutionListRow({
+function ExecutionListRowImpl({
   execution, execIdx, executions, compareMode, compareLeft, compareRight,
   bulkMode = false, bulkSelected = false, bulkDisabled = false,
   isExpanded, showRaw, hasCopied, copiedId, capabilityTitle,
@@ -209,3 +210,9 @@ export function ExecutionListRow({
     </div>
   );
 }
+
+// React.memo wraps the row so a parent re-render that doesn't change any of
+// this row's props skips the subtree. Pairs with useCallback-stabilized
+// handlers in ExecutionList — without those the function-identity churn
+// defeats the shallow compare. /architect 2026-05-17 list-memo-hygiene.
+export const ExecutionListRow = memo(ExecutionListRowImpl);
