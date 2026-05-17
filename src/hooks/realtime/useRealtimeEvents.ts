@@ -128,7 +128,9 @@ export function useRealtimeEvents(): UseRealtimeEventsReturn {
 
   // Stats are tracked separately from animation state — only recomputed when
   // the events array actually changes (add/remove), never on animation ticks.
-  const [dataVersion, setDataVersion] = useState(0);
+  // Stored in a ref + read in a useMemo keyed on `events` identity so consumers
+  // re-evaluate when (and only when) the events list mutates. This drops the
+  // dataVersion counter that previously fired a redundant setState per push.
   const statsRef = useRef<RealtimeStats>(computeStats([]));
 
   const clearPendingTestFlowTimeouts = useCallback(() => {
@@ -138,7 +140,7 @@ export function useRealtimeEvents(): UseRealtimeEventsReturn {
     testFlowTimeoutsRef.current = [];
   }, []);
 
-  const stats = useMemo(() => statsRef.current, [dataVersion]);
+  const stats = useMemo(() => statsRef.current, [events]);
 
   // Helper: push events and recompute stats in one batch.
   // This is the ONLY way events should be added — it ensures stats stay in sync
@@ -150,9 +152,10 @@ export function useRealtimeEvents(): UseRealtimeEventsReturn {
       if (next.length > 200) {
         setCapDroppedCount((c) => c + next.length - 200);
       }
-      // Recompute stats from the new data state
+      // Recompute stats from the new data state. statsRef is consumed via the
+      // useMemo above keyed on `events`, so this assignment is observed
+      // automatically on the resulting re-render — no separate setState needed.
       statsRef.current = computeStats(capped);
-      setDataVersion((v) => v + 1);
       return capped;
     });
   }, []);
