@@ -147,6 +147,7 @@ pub fn spawn_session(
         claude_session_id: None,
         cwd: cwd.clone(),
         project_label,
+        name: None,
         args: args.clone(),
         state: FleetSessionState::Spawning,
         last_activity_ms: now,

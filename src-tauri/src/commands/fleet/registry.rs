@@ -28,6 +28,9 @@ pub struct FleetSessionInner {
     pub claude_session_id: Option<String>,
     pub cwd: PathBuf,
     pub project_label: String,
+    /// User-supplied display name. None by default; settable via
+    /// fleet_rename_session.
+    pub name: Option<String>,
     pub args: Vec<String>,
     pub state: FleetSessionState,
     pub last_activity_ms: i64,
@@ -48,6 +51,7 @@ impl FleetSessionInner {
             claude_session_id: self.claude_session_id.clone(),
             cwd: self.cwd.to_string_lossy().into_owned(),
             project_label: self.project_label.clone(),
+            name: self.name.clone(),
             args: self.args.clone(),
             state: self.state,
             last_activity_ms: self.last_activity_ms,
@@ -153,6 +157,22 @@ impl FleetRegistry {
             if let Ok(mut w) = session.writer.lock() { *w = None; }
             if let Ok(mut m) = session.master.lock() { *m = None; }
         }
+    }
+
+    /// Sets (or clears with `None` / empty string) the per-session display
+    /// name. Returns `true` if a session was found and updated.
+    pub fn rename(&self, session_id: &str, name: Option<String>) -> bool {
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let Some(session) = map.get_mut(session_id) else {
+            return false;
+        };
+        // Treat empty / whitespace-only as None so the UI can "clear" by
+        // submitting an empty input.
+        session.name = match name {
+            Some(s) if !s.trim().is_empty() => Some(s.trim().to_string()),
+            _ => None,
+        };
+        true
     }
 
     /// Removes a session entirely. Used by the UI to dismiss exited rows.

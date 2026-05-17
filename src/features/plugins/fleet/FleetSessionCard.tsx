@@ -1,7 +1,8 @@
-import { memo, useCallback } from 'react';
-import { X } from 'lucide-react';
-import { toastCatch } from '@/lib/silentCatch';
-import { killSession, removeSession } from '@/api/fleet/fleet';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { X, Pencil } from 'lucide-react';
+import { toastCatch, silentCatch } from '@/lib/silentCatch';
+import { killSession, removeSession, renameSession } from '@/api/fleet/fleet';
+import { useSystemStore } from '@/stores/systemStore';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import { FleetStatusDots } from './FleetStatusDots';
 
@@ -9,11 +10,15 @@ import { FleetStatusDots } from './FleetStatusDots';
  * Compact one-row session card for the left panel.
  *
  * Surfaces only what scales to a list of 5-10 parallel sessions:
- *   [● ●] project-name                                    [×]
+ *   [● ●] project-name · custom-name           [✎] [×]
  *
  * The two dots are the {console, business} state pair (see FleetStatusDots).
- * Click anywhere on the row to focus the session in the right pane. Click X
- * to kill (if alive) or drop (if exited).
+ * Clicking anywhere on the row (outside the action buttons) focuses the
+ * session in the right pane. Hovering the row reveals an edit pencil + an
+ * X close button:
+ *   - ✎ → click to enter inline-edit mode for the per-session name
+ *         (Enter to save, Esc to cancel, blur to save)
+ *   - × → kill (if alive) or drop (if exited)
  *
  * Memoized — when other sessions update, this card's props are unchanged
  * (slice patchSession preserves untouched session object identities) and
@@ -27,7 +32,24 @@ interface Props {
 }
 
 function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }: Props) {
-  const handleOpen = useCallback(() => onActivate(session.id), [session.id, onActivate]);
+  const patchSession = useSystemStore((s) => s.fleetPatchSession);
+
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Focus the input as soon as we enter edit mode.
+  useEffect(() => {
+    if (editing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editing]);
+
+  const handleOpen = useCallback(() => {
+    // Click on the row body activates; the edit + close actions stopPropagation.
+    if (!editing) onActivate(session.id);
+  }, [session.id, onActivate, editing]);
 
   const handleClose = useCallback(
     async (e: React.MouseEvent) => {
@@ -46,6 +68,34 @@ function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }:
     [session.id, session.state, onRemovedLocal],
   );
 
+  const beginEdit = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDraft(session.name ?? '');
+    setEditing(true);
+  }, [session.name]);
+
+  const cancelEdit = useCallback(() => {
+    setEditing(false);
+    setDraft('');
+  }, []);
+
+  const commitEdit = useCallback(async () => {
+    setEditing(false);
+    const next = draft.trim() === '' ? null : draft.trim();
+    if (next === (session.name ?? null)) return; // no-op
+    // Optimistic local patch — the registry round-trip will arrive via
+    // FLEET_REGISTRY_CHANGED → fleetRefresh anyway, but updating now
+    // keeps the row from flickering back to the old value.
+    patchSession(session.id, { name: next });
+    try {
+      await renameSession(session.id, next);
+    } catch (e) {
+      silentCatch('FleetSessionCard:rename')(e);
+      // Revert optimistic patch on failure.
+      patchSession(session.id, { name: session.name ?? null });
+    }
+  }, [draft, session.id, session.name, patchSession]);
+
   return (
     <button
       type="button"
@@ -60,24 +110,84 @@ function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }:
       title={session.cwd}
     >
       <FleetStatusDots state={session.state} reason={session.stateReason} />
-      <span className="typo-caption font-medium truncate flex-1 min-w-0">
-        {session.projectLabel}
-      </span>
-      <span
-        role="button"
-        tabIndex={0}
-        aria-label={session.state === 'exited' ? 'Remove from list' : 'Kill session'}
-        onClick={handleClose}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            handleClose(e as unknown as React.MouseEvent);
-          }
-        }}
-        className="opacity-40 group-hover:opacity-100 hover:text-red-400 transition-opacity p-0.5 rounded -mr-0.5 flex-shrink-0"
-      >
-        <X className="w-3 h-3" />
-      </span>
+
+      {/* Label area — either the static "project · name" or the inline edit input. */}
+      {editing ? (
+        <input
+          ref={inputRef}
+          data-testid={`fleet-session-rename-input-${session.id}`}
+          type="text"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              commitEdit();
+            } else if (e.key === 'Escape') {
+              e.preventDefault();
+              cancelEdit();
+            }
+          }}
+          onBlur={() => commitEdit()}
+          placeholder="name…"
+          className="typo-caption font-medium flex-1 min-w-0 bg-background border border-primary/30 rounded px-1.5 py-0 focus:outline-none focus:ring-1 focus:ring-primary/50"
+        />
+      ) : (
+        <span className="typo-caption font-medium truncate flex-1 min-w-0 flex items-baseline gap-1.5">
+          <span className="truncate">{session.projectLabel}</span>
+          {session.name && (
+            <>
+              <span className="text-foreground/30 select-none">·</span>
+              <span
+                className="text-foreground/70 italic truncate min-w-0"
+                data-testid={`fleet-session-name-${session.id}`}
+              >
+                {session.name}
+              </span>
+            </>
+          )}
+        </span>
+      )}
+
+      {/* Actions — only render the buttons when not editing to keep the
+          inline input full-width. */}
+      {!editing && (
+        <>
+          <span
+            role="button"
+            tabIndex={0}
+            aria-label={session.name ? 'Rename session' : 'Add session name'}
+            title={session.name ? 'Rename session' : 'Add session name'}
+            onClick={beginEdit}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                beginEdit(e as unknown as React.MouseEvent);
+              }
+            }}
+            className="opacity-0 group-hover:opacity-60 hover:!opacity-100 hover:text-primary transition-opacity p-0.5 rounded flex-shrink-0"
+            data-testid={`fleet-session-rename-${session.id}`}
+          >
+            <Pencil className="w-3 h-3" />
+          </span>
+          <span
+            role="button"
+            tabIndex={0}
+            aria-label={session.state === 'exited' ? 'Remove from list' : 'Kill session'}
+            onClick={handleClose}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleClose(e as unknown as React.MouseEvent);
+              }
+            }}
+            className="opacity-40 group-hover:opacity-100 hover:text-red-400 transition-opacity p-0.5 rounded -mr-0.5 flex-shrink-0"
+          >
+            <X className="w-3 h-3" />
+          </span>
+        </>
+      )}
     </button>
   );
 }

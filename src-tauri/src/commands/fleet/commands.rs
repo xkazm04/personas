@@ -83,6 +83,22 @@ pub async fn fleet_kill_session(app: AppHandle, session_id: String) -> Result<()
     Ok(())
 }
 
+/// Set (or clear, with `None` / empty `name`) the user-supplied display
+/// name for a session. Returns the updated snapshot so the frontend can
+/// patch its slice without a separate refresh round-trip.
+#[tauri::command]
+pub async fn fleet_rename_session(
+    app: AppHandle,
+    session_id: String,
+    name: Option<String>,
+) -> Result<bool, String> {
+    let updated = registry().rename(&session_id, name);
+    if updated {
+        pty::emit_registry_changed(&app, "updated", &session_id);
+    }
+    Ok(updated)
+}
+
 /// Snapshot the registry for the UI's session grid.
 ///
 /// `hook_port` is the resolved local_http port (hosting /fleet/hooks/*).

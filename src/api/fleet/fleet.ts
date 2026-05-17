@@ -79,3 +79,11 @@ export const uninstallHooks = () =>
  */
 export const checkHooks = () =>
   invoke<FleetHookStatus>('fleet_check_hooks', {});
+
+/**
+ * Set (or clear with `null` / empty string) the user-supplied display
+ * name for a session. The Rust side trims whitespace and treats empty
+ * as null. Resolves to `true` if the session existed and was updated.
+ */
+export const renameSession = (sessionId: string, name: string | null) =>
+  invoke<boolean>('fleet_rename_session', { sessionId, name });
