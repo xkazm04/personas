@@ -23,6 +23,20 @@ fn run_step(conn: &Connection, migration: IncrementalMigration) -> Result<(), Ap
     Ok(())
 }
 
+/// Wrap a DDL batch in BEGIN IMMEDIATE / COMMIT so multi-statement scripts
+/// (CREATE TABLE + CREATE INDEX + INSERT FROM legacy) succeed or roll back
+/// as a unit. SQLite's default auto-commit applies per statement, which
+/// leaves partial schema state on power-loss or panic mid-batch.
+///
+/// Idempotency stays the layer above (has_column/has_table guards). This
+/// only fixes atomicity within a single migration step.
+fn ddl_step(conn: &Connection, sql: &str) -> Result<(), AppError> {
+    let tx = conn.unchecked_transaction()?;
+    tx.execute_batch(sql)?;
+    tx.commit()?;
+    Ok(())
+}
+
 fn has_column(conn: &Connection, table: &str, column: &str) -> Result<bool, AppError> {
     let mut stmt = conn.prepare(&format!(
         "SELECT COUNT(*) FROM pragma_table_info('{}') WHERE name = ?1",
@@ -51,7 +65,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
             description: "Add FTS5 index for execution search",
             already_applied: |conn| has_table(conn, "executions_fts"),
             apply: |conn| {
-                conn.execute_batch(
+                ddl_step(conn, 
                     "CREATE VIRTUAL TABLE IF NOT EXISTS executions_fts USING fts5(
                         input_data,
                         output_data,
@@ -87,7 +101,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
             description: "Add tool_steps column to persona_executions",
             already_applied: |conn| has_column(conn, "persona_executions", "tool_steps"),
             apply: |conn| {
-                conn.execute_batch("ALTER TABLE persona_executions ADD COLUMN tool_steps TEXT;")?;
+                ddl_step(conn, "ALTER TABLE persona_executions ADD COLUMN tool_steps TEXT;")?;
                 Ok(())
             },
         },
@@ -103,7 +117,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
                 has_column(conn, "persona_healing_issues", "is_circuit_breaker")
             },
             apply: |conn| {
-                conn.execute_batch("ALTER TABLE persona_healing_issues ADD COLUMN is_circuit_breaker INTEGER NOT NULL DEFAULT 0;")?;
+                ddl_step(conn, "ALTER TABLE persona_healing_issues ADD COLUMN is_circuit_breaker INTEGER NOT NULL DEFAULT 0;")?;
                 Ok(())
             },
         },
@@ -117,7 +131,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
             description: "Add use_case_flows column to persona_design_reviews",
             already_applied: |conn| has_column(conn, "persona_design_reviews", "use_case_flows"),
             apply: |conn| {
-                conn.execute_batch(
+                ddl_step(conn, 
                     "ALTER TABLE persona_design_reviews ADD COLUMN use_case_flows TEXT;",
                 )?;
                 Ok(())
@@ -133,7 +147,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .unwrap_or(false);
 
     if !has_retry_of {
-        conn.execute_batch(
+        ddl_step(conn, 
             "ALTER TABLE persona_executions ADD COLUMN retry_of_execution_id TEXT;
              ALTER TABLE persona_executions ADD COLUMN retry_count INTEGER DEFAULT 0;",
         )?;
@@ -149,17 +163,11 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
 
     if !has_transform_id {
         // Recreate table to add new columns AND update CHECK constraint for 'awaiting_answers'.
-        // SQLite doesn't support ALTER CHECK, so we recreate.
-        //
-        // Wrap in an explicit transaction: rusqlite's execute_batch commits each
-        // statement individually, so a mid-batch failure (disk full, FK violation,
-        // lock contention) would leave the staging _new table populated while the
-        // original table still exists — a state that bricks the next launch when
-        // the migration retries and hits UNIQUE PK conflicts on the leftover rows.
-        // The DROP IF EXISTS at the top is a belt-and-braces guard against any
-        // staging table that survived a prior crash before this fix landed.
-        let tx = conn.unchecked_transaction()?;
-        tx.execute_batch(
+        // SQLite doesn't support ALTER CHECK, so we recreate. ddl_step's transaction
+        // wrapper handles the multi-statement atomicity; the DROP IF EXISTS at the top
+        // is a belt-and-braces guard against any staging table that survived a prior
+        // crash before per-step transactions landed.
+        ddl_step(conn,
             "DROP TABLE IF EXISTS n8n_transform_sessions_new;
             CREATE TABLE n8n_transform_sessions_new (
                 id                TEXT PRIMARY KEY,
@@ -190,7 +198,6 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
             CREATE INDEX IF NOT EXISTS idx_nts_created ON n8n_transform_sessions(created_at DESC);
             CREATE INDEX IF NOT EXISTS idx_nts_status_updated ON n8n_transform_sessions(status, updated_at DESC);"
         )?;
-        tx.commit()?;
         tracing::info!("Migrated n8n_transform_sessions: added transform_id, questions_json, awaiting_answers status");
     }
 
@@ -204,7 +211,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .unwrap_or(false);
 
     if !has_ppv_tag {
-        conn.execute_batch(
+        ddl_step(conn, 
             "ALTER TABLE persona_prompt_versions ADD COLUMN tag TEXT NOT NULL DEFAULT 'experimental';"
         )?;
         tracing::info!("Added tag column to persona_prompt_versions");
@@ -225,7 +232,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     let needs_chain_migration = !trigger_table_sql.contains("'chain'");
 
     if needs_chain_migration {
-        conn.execute_batch(
+        ddl_step(conn, 
             "CREATE TABLE IF NOT EXISTS persona_triggers_new (
                 id                TEXT PRIMARY KEY,
                 persona_id        TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
@@ -254,7 +261,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .map(|c| c > 0)
         .unwrap_or(false);
     if !has_impl_guide {
-        conn.execute_batch(
+        ddl_step(conn, 
             "ALTER TABLE persona_tool_definitions ADD COLUMN implementation_guide TEXT;",
         )?;
         tracing::info!("Added implementation_guide column to persona_tool_definitions");
@@ -267,7 +274,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .map(|c| c > 0)
         .unwrap_or(false);
     if !has_use_case_id {
-        conn.execute_batch(
+        ddl_step(conn, 
             "ALTER TABLE persona_executions ADD COLUMN use_case_id TEXT;
              CREATE INDEX IF NOT EXISTS idx_pe_use_case ON persona_executions(use_case_id);",
         )?;
@@ -284,7 +291,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .map(|c| c > 0)
         .unwrap_or(false);
     if !has_is_simulation {
-        conn.execute_batch(
+        ddl_step(conn, 
             "ALTER TABLE persona_executions ADD COLUMN is_simulation INTEGER NOT NULL DEFAULT 0;
              CREATE INDEX IF NOT EXISTS idx_pe_simulation ON persona_executions(persona_id, is_simulation);"
         )?;
@@ -303,7 +310,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .map(|c| c > 0)
         .unwrap_or(false);
     if !has_msg_use_case_id {
-        conn.execute_batch(
+        ddl_step(conn, 
             "ALTER TABLE persona_messages ADD COLUMN use_case_id TEXT;
              CREATE INDEX IF NOT EXISTS idx_pmsg_use_case ON persona_messages(use_case_id);",
         )?;
@@ -316,7 +323,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .map(|c| c > 0)
         .unwrap_or(false);
     if !has_review_use_case_id {
-        conn.execute_batch(
+        ddl_step(conn, 
             "ALTER TABLE persona_manual_reviews ADD COLUMN use_case_id TEXT;
              CREATE INDEX IF NOT EXISTS idx_pmr_use_case ON persona_manual_reviews(use_case_id);",
         )?;
@@ -331,7 +338,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .map(|c| c > 0)
         .unwrap_or(false);
     if !has_memory_use_case_id {
-        conn.execute_batch(
+        ddl_step(conn, 
             "ALTER TABLE persona_memories ADD COLUMN use_case_id TEXT;
              CREATE INDEX IF NOT EXISTS idx_pm_use_case ON persona_memories(use_case_id);",
         )?;
@@ -347,7 +354,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .map(|c| c > 0)
         .unwrap_or(false);
     if !has_trigger_use_case_id {
-        conn.execute_batch(
+        ddl_step(conn, 
             "ALTER TABLE persona_triggers ADD COLUMN use_case_id TEXT;
              CREATE INDEX IF NOT EXISTS idx_pt_use_case ON persona_triggers(use_case_id);",
         )?;
@@ -361,7 +368,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .map(|c| c > 0)
         .unwrap_or(false);
     if !has_sub_use_case_id {
-        conn.execute_batch(
+        ddl_step(conn, 
             "ALTER TABLE persona_event_subscriptions ADD COLUMN use_case_id TEXT;
              CREATE INDEX IF NOT EXISTS idx_pes_use_case ON persona_event_subscriptions(use_case_id);"
         )?;
@@ -377,7 +384,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .map(|c| c > 0)
         .unwrap_or(false);
     if !has_event_use_case_id {
-        conn.execute_batch(
+        ddl_step(conn, 
             "ALTER TABLE persona_events ADD COLUMN use_case_id TEXT;
              CREATE INDEX IF NOT EXISTS idx_pevt_use_case ON persona_events(use_case_id);",
         )?;
@@ -394,7 +401,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .query_row([], |row| row.get(0))
         .unwrap_or(0);
     if arena_count == 0 && old_test_count > 0 {
-        conn.execute_batch(
+        ddl_step(conn, 
             "INSERT OR IGNORE INTO lab_arena_runs (id, persona_id, status, models_tested, scenarios_count, summary, error, created_at, completed_at)
              SELECT id, persona_id, status, models_tested, scenarios_count, summary, error, created_at, completed_at
              FROM persona_test_runs;
@@ -420,7 +427,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .unwrap_or(false);
 
     if !has_design_conversations {
-        conn.execute_batch(
+        ddl_step(conn, 
             "CREATE TABLE IF NOT EXISTS design_conversations (
                 id          TEXT PRIMARY KEY,
                 persona_id  TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
@@ -447,7 +454,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .unwrap_or(false);
 
     if !has_eval_runs {
-        conn.execute_batch(
+        ddl_step(conn, 
             "CREATE TABLE IF NOT EXISTS lab_eval_runs (
                 id              TEXT PRIMARY KEY,
                 persona_id      TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
@@ -500,7 +507,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .unwrap_or(false);
 
     if !has_test_suites {
-        conn.execute_batch(
+        ddl_step(conn, 
             "CREATE TABLE IF NOT EXISTS test_suites (
                 id              TEXT PRIMARY KEY,
                 persona_id      TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
@@ -527,7 +534,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .map(|c| c > 0)
         .unwrap_or(false);
     if !has_group_description {
-        conn.execute_batch(
+        ddl_step(conn, 
             "ALTER TABLE persona_groups ADD COLUMN description TEXT;
              ALTER TABLE persona_groups ADD COLUMN default_model_profile TEXT;
              ALTER TABLE persona_groups ADD COLUMN default_max_budget_usd REAL;
@@ -547,7 +554,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .unwrap_or(false);
 
     if !has_execution_traces {
-        conn.execute_batch(
+        ddl_step(conn, 
             "CREATE TABLE IF NOT EXISTS execution_traces (
                 id              TEXT PRIMARY KEY,
                 execution_id    TEXT NOT NULL,
@@ -573,7 +580,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .map(|c| c > 0)
         .unwrap_or(false);
     if !has_adoption_count {
-        conn.execute_batch(
+        ddl_step(conn, 
             "ALTER TABLE persona_design_reviews ADD COLUMN adoption_count INTEGER NOT NULL DEFAULT 0;
              ALTER TABLE persona_design_reviews ADD COLUMN last_adopted_at TEXT;"
         )?;
@@ -593,7 +600,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .unwrap_or(false);
 
     if !has_unique_name_idx {
-        conn.execute_batch(
+        ddl_step(conn, 
             "DELETE FROM persona_design_reviews
              WHERE id NOT IN (
                SELECT id FROM (
@@ -621,7 +628,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
 
     if !has_pes_unique_idx {
         // Clean up existing duplicates first (keep newest per combo)
-        conn.execute_batch(
+        ddl_step(conn, 
             "DELETE FROM persona_event_subscriptions
              WHERE id NOT IN (
                SELECT id FROM (
@@ -649,7 +656,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .unwrap_or(false);
 
     if !has_ptc_unique_idx {
-        conn.execute_batch(
+        ddl_step(conn, 
             "DELETE FROM persona_team_connections
              WHERE id NOT IN (
                SELECT id FROM (
@@ -680,7 +687,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .unwrap_or(false);
 
     if has_old_name_only_idx {
-        conn.execute_batch(
+        ddl_step(conn, 
             "DROP INDEX IF EXISTS idx_pdr_unique_name;
              CREATE UNIQUE INDEX IF NOT EXISTS idx_pdr_unique_name_run
                ON persona_design_reviews(test_case_name, test_run_id);",
@@ -698,7 +705,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .unwrap_or(false);
 
     if !has_composite_idx {
-        conn.execute_batch(
+        ddl_step(conn, 
             "CREATE UNIQUE INDEX IF NOT EXISTS idx_pdr_unique_name_run
                ON persona_design_reviews(test_case_name, test_run_id);",
         )?;
@@ -712,7 +719,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .unwrap_or(false);
 
     if !has_category {
-        conn.execute_batch("ALTER TABLE persona_design_reviews ADD COLUMN category TEXT;")?;
+        ddl_step(conn, "ALTER TABLE persona_design_reviews ADD COLUMN category TEXT;")?;
         tracing::info!("Added category column to persona_design_reviews");
     }
 
@@ -728,7 +735,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .unwrap_or(false);
 
     if !has_credential_fields {
-        conn.execute_batch(
+        ddl_step(conn, 
             "CREATE TABLE IF NOT EXISTS credential_fields (
                 id                TEXT PRIMARY KEY,
                 credential_id     TEXT NOT NULL REFERENCES persona_credentials(id) ON DELETE CASCADE,
@@ -768,7 +775,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .unwrap_or_default();
 
     if !trigger_sql.contains("'event_listener'") {
-        conn.execute_batch(
+        ddl_step(conn, 
             "CREATE TABLE IF NOT EXISTS persona_triggers_new (
                 id                TEXT PRIMARY KEY,
                 persona_id        TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
@@ -813,7 +820,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .unwrap_or(0);
 
     if sub_count > 0 {
-        conn.execute_batch(
+        ddl_step(conn, 
             "INSERT INTO persona_triggers (id, persona_id, trigger_type, config, enabled, use_case_id, created_at, updated_at)
              SELECT
                lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-4' || substr(hex(randomblob(2)),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(hex(randomblob(2)),2) || '-' || hex(randomblob(6))),
@@ -849,7 +856,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .unwrap_or(false);
 
     if !has_credential_audit_log {
-        conn.execute_batch(
+        ddl_step(conn, 
             "CREATE TABLE IF NOT EXISTS credential_audit_log (
                 id              TEXT PRIMARY KEY,
                 credential_id   TEXT NOT NULL,
@@ -875,7 +882,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .unwrap_or(false);
 
     if !has_tool_audit_log {
-        conn.execute_batch(
+        ddl_step(conn, 
             "CREATE TABLE IF NOT EXISTS tool_execution_audit_log (
                 id              TEXT PRIMARY KEY,
                 tool_id         TEXT NOT NULL,
@@ -907,7 +914,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .unwrap_or(false);
 
     if !has_payload_iv {
-        conn.execute_batch("ALTER TABLE persona_events ADD COLUMN payload_iv TEXT;")?;
+        ddl_step(conn, "ALTER TABLE persona_events ADD COLUMN payload_iv TEXT;")?;
         tracing::info!("Added payload_iv column to persona_events for encrypted event payloads");
     }
 
@@ -919,7 +926,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .unwrap_or(false);
 
     if !has_sensitive_flag {
-        conn.execute_batch(
+        ddl_step(conn, 
             "ALTER TABLE personas ADD COLUMN sensitive INTEGER NOT NULL DEFAULT 0;",
         )?;
         tracing::info!("Added sensitive column to personas");
@@ -933,7 +940,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .unwrap_or(false);
 
     if !has_playwright_procedures {
-        conn.execute_batch(
+        ddl_step(conn, 
             "CREATE TABLE IF NOT EXISTS playwright_procedures (
                 id              TEXT PRIMARY KEY,
                 connector_name  TEXT NOT NULL,
@@ -959,7 +966,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .unwrap_or(false);
 
     if !has_execution_knowledge {
-        conn.execute_batch(
+        ddl_step(conn, 
             "CREATE TABLE IF NOT EXISTS execution_knowledge (
                 id                  TEXT PRIMARY KEY,
                 persona_id          TEXT NOT NULL,
@@ -994,11 +1001,11 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .unwrap_or(false);
 
     if !has_recipe_credential_id {
-        conn.execute_batch("ALTER TABLE recipe_definitions ADD COLUMN credential_id TEXT;")?;
+        ddl_step(conn, "ALTER TABLE recipe_definitions ADD COLUMN credential_id TEXT;")?;
         tracing::info!("Added credential_id column to recipe_definitions");
     }
     // Index created separately -- safe for both new and existing DBs
-    conn.execute_batch(
+    ddl_step(conn, 
         "CREATE INDEX IF NOT EXISTS idx_recipe_def_credential ON recipe_definitions(credential_id);"
     )?;
 
@@ -1012,15 +1019,15 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .unwrap_or(false);
 
     if !has_recipe_use_case_id {
-        conn.execute_batch("ALTER TABLE recipe_definitions ADD COLUMN use_case_id TEXT;")?;
+        ddl_step(conn, "ALTER TABLE recipe_definitions ADD COLUMN use_case_id TEXT;")?;
         tracing::info!("Added use_case_id column to recipe_definitions");
     }
-    conn.execute_batch(
+    ddl_step(conn, 
         "CREATE INDEX IF NOT EXISTS idx_recipe_def_use_case ON recipe_definitions(use_case_id);",
     )?;
 
     // -- Recipe Versions table ------------------------------------------
-    conn.execute_batch(
+    ddl_step(conn, 
         "CREATE TABLE IF NOT EXISTS recipe_versions (
             id              TEXT PRIMARY KEY,
             recipe_id       TEXT NOT NULL REFERENCES recipe_definitions(id) ON DELETE CASCADE,
@@ -1047,7 +1054,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .unwrap_or(false);
 
     if !has_provider_audit_log {
-        conn.execute_batch(
+        ddl_step(conn, 
             "CREATE TABLE IF NOT EXISTS provider_audit_log (
                 id                  TEXT PRIMARY KEY,
                 execution_id        TEXT NOT NULL,
@@ -1075,7 +1082,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     // These cover the most frequent WHERE + ORDER BY combinations found
     // across repository modules. All use IF NOT EXISTS so they are safe
     // to run on existing databases that already have them.
-    conn.execute_batch(
+    ddl_step(conn, 
         "-- personas: list queries order by created_at and filter by project_id
          CREATE INDEX IF NOT EXISTS idx_personas_project    ON personas(project_id);
          CREATE INDEX IF NOT EXISTS idx_personas_created    ON personas(created_at DESC);
@@ -1127,7 +1134,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .unwrap_or(false);
 
     if !has_headless {
-        conn.execute_batch("ALTER TABLE personas ADD COLUMN headless INTEGER NOT NULL DEFAULT 0;")?;
+        ddl_step(conn, "ALTER TABLE personas ADD COLUMN headless INTEGER NOT NULL DEFAULT 0;")?;
         tracing::info!("Added headless column to personas for background cron agents");
     }
 
@@ -1139,14 +1146,14 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .unwrap_or(false);
 
     if !has_ek_scope {
-        conn.execute_batch(
+        ddl_step(conn, 
             "ALTER TABLE execution_knowledge ADD COLUMN scope_type TEXT NOT NULL DEFAULT 'persona';
              ALTER TABLE execution_knowledge ADD COLUMN scope_id TEXT;
              ALTER TABLE execution_knowledge ADD COLUMN annotation_text TEXT;
              ALTER TABLE execution_knowledge ADD COLUMN annotation_source TEXT;
              ALTER TABLE execution_knowledge ADD COLUMN is_verified INTEGER NOT NULL DEFAULT 0;",
         )?;
-        conn.execute_batch(
+        ddl_step(conn, 
             "CREATE INDEX IF NOT EXISTS idx_ek_scope ON execution_knowledge(scope_type, scope_id);
              CREATE INDEX IF NOT EXISTS idx_ek_annotation ON execution_knowledge(annotation_source);"
         )?;
@@ -1159,7 +1166,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     // New types: 'agent_annotation', 'user_annotation'
 
     // -- Template Feedback table -----------------------------------------
-    conn.execute_batch(
+    ddl_step(conn, 
         "CREATE TABLE IF NOT EXISTS template_feedback (
             id              TEXT PRIMARY KEY,
             review_id       TEXT NOT NULL,
@@ -1178,7 +1185,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     )?;
 
     // -- Credential recipes: shared discovery cache across Design / Negotiator / AutoCred --
-    conn.execute_batch(
+    ddl_step(conn, 
         "CREATE TABLE IF NOT EXISTS credential_recipes (
             id                  TEXT PRIMARY KEY,
             connector_name      TEXT NOT NULL UNIQUE,
@@ -1209,7 +1216,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .unwrap_or(false);
 
     if !has_source_review {
-        conn.execute_batch("ALTER TABLE personas ADD COLUMN source_review_id TEXT;")?;
+        ddl_step(conn, "ALTER TABLE personas ADD COLUMN source_review_id TEXT;")?;
         tracing::info!("Added source_review_id to personas for template lineage tracking");
     }
 
@@ -1221,7 +1228,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .unwrap_or(false);
 
     if !has_trust_level {
-        conn.execute_batch(
+        ddl_step(conn, 
             "ALTER TABLE personas ADD COLUMN trust_level TEXT NOT NULL DEFAULT 'verified';
              ALTER TABLE personas ADD COLUMN trust_origin TEXT NOT NULL DEFAULT 'builtin';
              ALTER TABLE personas ADD COLUMN trust_verified_at TEXT;",
@@ -1237,7 +1244,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .unwrap_or(false);
 
     if !has_saved_views {
-        conn.execute_batch(
+        ddl_step(conn, 
             "CREATE TABLE IF NOT EXISTS saved_views (
                 id                  TEXT PRIMARY KEY,
                 name                TEXT NOT NULL,
@@ -1263,14 +1270,14 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .unwrap_or(false);
 
     if !has_et_evicted {
-        conn.execute_batch(
+        ddl_step(conn, 
             "ALTER TABLE execution_traces ADD COLUMN evicted_span_count INTEGER NOT NULL DEFAULT 0;"
         )?;
         tracing::info!("Added evicted_span_count column to execution_traces");
     }
 
     // -- P2P Phase 2: Discovered Peers table (mDNS LAN discovery) ------
-    conn.execute_batch(
+    ddl_step(conn, 
         "CREATE TABLE IF NOT EXISTS discovered_peers (
             peer_id         TEXT PRIMARY KEY,
             display_name    TEXT NOT NULL,
@@ -1285,7 +1292,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     )?;
 
     // -- P2P Phase 2: Peer Manifests table (synced exposure manifests) -
-    conn.execute_batch(
+    ddl_step(conn, 
         "CREATE TABLE IF NOT EXISTS peer_manifests (
             id              TEXT PRIMARY KEY,
             peer_id         TEXT NOT NULL,
@@ -1308,14 +1315,14 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .unwrap_or(0)
         > 0;
     if !has_trust_status {
-        conn.execute_batch(
+        ddl_step(conn, 
             "ALTER TABLE discovered_peers ADD COLUMN trust_status TEXT NOT NULL DEFAULT 'unknown';",
         )?;
         tracing::info!("Added trust_status column to discovered_peers");
     }
 
     // -- Adoption audit log table -------------------------------------------
-    conn.execute_batch(
+    ddl_step(conn, 
         "CREATE TABLE IF NOT EXISTS adoption_log (
             id                TEXT PRIMARY KEY,
             template_name     TEXT NOT NULL,
@@ -1330,7 +1337,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     // Composite indexes for lab result queries:
     // Results tables: (run_id, scenario_name, model_id) for ORDER BY scenario_name, model_id
     // Runs tables: (persona_id, created_at DESC) for ORDER BY created_at DESC
-    conn.execute_batch(
+    ddl_step(conn, 
         "CREATE INDEX IF NOT EXISTS idx_lab_arena_results_composite ON lab_arena_results(run_id, scenario_name, model_id);
          CREATE INDEX IF NOT EXISTS idx_lab_ab_results_composite ON lab_ab_results(run_id, scenario_name, model_id);
          CREATE INDEX IF NOT EXISTS idx_lab_matrix_results_composite ON lab_matrix_results(run_id, variant, scenario_name, model_id);
@@ -1350,7 +1357,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .map(|c| c > 0)
         .unwrap_or(false);
     if !has_arena_rationale {
-        conn.execute_batch(
+        ddl_step(conn, 
             "ALTER TABLE lab_arena_results ADD COLUMN rationale TEXT;
              ALTER TABLE lab_arena_results ADD COLUMN suggestions TEXT;
              ALTER TABLE lab_ab_results ADD COLUMN rationale TEXT;
@@ -1373,7 +1380,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .unwrap_or(false);
 
     if !has_workflow_json {
-        conn.execute_batch(
+        ddl_step(conn, 
             "ALTER TABLE build_sessions ADD COLUMN workflow_json TEXT;
              ALTER TABLE build_sessions ADD COLUMN parser_result_json TEXT;",
         )?;
@@ -1381,7 +1388,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     }
 
     // -- Frontend crash telemetry table (persists React ErrorBoundary crashes to SQLite) --
-    conn.execute_batch(
+    ddl_step(conn, 
         "CREATE TABLE IF NOT EXISTS frontend_crashes (
             id              TEXT PRIMARY KEY,
             component       TEXT NOT NULL,
@@ -1395,7 +1402,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     )?;
 
     // -- OAuth token lifetime metrics (tracks predicted vs actual token expiry) --
-    conn.execute_batch(
+    ddl_step(conn, 
         "CREATE TABLE IF NOT EXISTS oauth_token_metrics (
             id                      TEXT PRIMARY KEY,
             credential_id           TEXT NOT NULL REFERENCES persona_credentials(id) ON DELETE CASCADE,
@@ -1414,7 +1421,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     )?;
 
     // -- Output Assertions (declarative output validation) ---------------------
-    conn.execute_batch(
+    ddl_step(conn, 
         "CREATE TABLE IF NOT EXISTS output_assertions (
             id              TEXT PRIMARY KEY,
             persona_id      TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
@@ -1454,7 +1461,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     // -- Policy Events (audit trail for generation-policy enforcement) --------
     // Each silent drop / auto-resolve in engine/dispatch.rs writes a row here
     // so users can verify review/memory/event policies fired as declared.
-    conn.execute_batch(
+    ddl_step(conn, 
         "CREATE TABLE IF NOT EXISTS policy_events (
             id              TEXT PRIMARY KEY,
             execution_id    TEXT NOT NULL REFERENCES persona_executions(id) ON DELETE CASCADE,
@@ -1479,7 +1486,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .unwrap_or(false);
 
     if !has_view_type {
-        conn.execute_batch(
+        ddl_step(conn, 
             "ALTER TABLE saved_views ADD COLUMN view_type TEXT NOT NULL DEFAULT 'analytics';
              ALTER TABLE saved_views ADD COLUMN view_config TEXT;",
         )?;
@@ -1495,7 +1502,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .map(|c| c > 0)
         .unwrap_or(false);
     if !has_llm_summary {
-        conn.execute_batch(
+        ddl_step(conn, 
             "ALTER TABLE lab_arena_runs ADD COLUMN llm_summary TEXT;
              ALTER TABLE lab_ab_runs ADD COLUMN llm_summary TEXT;
              ALTER TABLE lab_matrix_runs ADD COLUMN llm_summary TEXT;
@@ -1513,7 +1520,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .map(|c| c > 0)
         .unwrap_or(false);
     if !has_progress_json {
-        conn.execute_batch(
+        ddl_step(conn, 
             "ALTER TABLE lab_arena_runs ADD COLUMN progress_json TEXT;
              ALTER TABLE lab_ab_runs ADD COLUMN progress_json TEXT;
              ALTER TABLE lab_matrix_runs ADD COLUMN progress_json TEXT;
@@ -1533,7 +1540,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .unwrap_or(false);
 
     if !has_persona_versions {
-        conn.execute_batch(
+        ddl_step(conn, 
             "CREATE TABLE persona_versions (
                 id TEXT PRIMARY KEY,
                 persona_id TEXT NOT NULL,
@@ -1575,7 +1582,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
             .map(|c| c > 0)
             .unwrap_or(false);
         if has_ppv {
-            conn.execute_batch(
+            ddl_step(conn, 
                 "INSERT OR IGNORE INTO persona_versions (id, persona_id, version_number, name, system_prompt, structured_prompt, change_summary, tag, created_at)
                  SELECT ppv.id, ppv.persona_id, ppv.version_number,
                         COALESCE(p.name, 'Unknown'),
@@ -1589,7 +1596,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     }
 
     // -- Document Signatures table (Doc-Signing plugin) ------------------------
-    conn.execute_batch(
+    ddl_step(conn, 
         "CREATE TABLE IF NOT EXISTS document_signatures (
             id                      TEXT PRIMARY KEY,
             file_name               TEXT NOT NULL,
@@ -1608,7 +1615,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     )?;
 
     // -- Dev Pipelines (Idea-to-Execution Pipeline) -------------------------
-    conn.execute_batch(
+    ddl_step(conn, 
         "CREATE TABLE IF NOT EXISTS dev_pipelines (
             id              TEXT PRIMARY KEY,
             project_id      TEXT NOT NULL,
@@ -1628,7 +1635,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     )?;
 
     // -- Context Health Snapshots (Codebase Health Scanner) ------------------
-    conn.execute_batch(
+    ddl_step(conn, 
         "CREATE TABLE IF NOT EXISTS context_health_snapshots (
             id              TEXT PRIMARY KEY,
             project_id      TEXT NOT NULL,
@@ -1649,7 +1656,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     )?;
 
     // -- Cross-Project Relations (Codebases connector) -----------------------
-    conn.execute_batch(
+    ddl_step(conn, 
         "CREATE TABLE IF NOT EXISTS cross_project_relations (
             id                  TEXT PRIMARY KEY,
             source_project_id   TEXT NOT NULL REFERENCES dev_projects(id) ON DELETE CASCADE,
@@ -1665,7 +1672,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     )?;
 
     // -- OCR Documents table (OCR plugin) ------------------------------------
-    conn.execute_batch(
+    ddl_step(conn, 
         "CREATE TABLE IF NOT EXISTS ocr_documents (
             id              TEXT PRIMARY KEY,
             file_name       TEXT NOT NULL,
@@ -1691,7 +1698,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .unwrap_or(false);
 
     if !has_chat_ctx_claude_sid {
-        conn.execute_batch("ALTER TABLE chat_session_context ADD COLUMN claude_session_id TEXT;")?;
+        ddl_step(conn, "ALTER TABLE chat_session_context ADD COLUMN claude_session_id TEXT;")?;
         tracing::info!("Added claude_session_id column to chat_session_context");
     }
 
@@ -1702,7 +1709,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .map(|c| c > 0)
         .unwrap_or(false);
     if !has_idempotency_key {
-        conn.execute_batch(
+        ddl_step(conn, 
             "ALTER TABLE persona_executions ADD COLUMN idempotency_key TEXT;
              CREATE UNIQUE INDEX IF NOT EXISTS idx_pe_idempotency ON persona_executions(idempotency_key) WHERE idempotency_key IS NOT NULL;"
         )?;
@@ -1710,7 +1717,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     }
 
     // -- Index source_type on persona_events for filtered search ----------
-    conn.execute_batch(
+    ddl_step(conn, 
         "CREATE INDEX IF NOT EXISTS idx_pev_source_type ON persona_events(source_type);",
     )?;
 
@@ -1721,7 +1728,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .map(|c| c > 0)
         .unwrap_or(false);
     if !has_parameters {
-        conn.execute_batch("ALTER TABLE personas ADD COLUMN parameters TEXT;")?;
+        ddl_step(conn, "ALTER TABLE personas ADD COLUMN parameters TEXT;")?;
         tracing::info!("Added parameters column to personas");
     }
 
@@ -1736,14 +1743,14 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .map(|c| c > 0)
         .unwrap_or(false);
     if !has_trigger_status {
-        conn.execute_batch(
+        ddl_step(conn, 
             "ALTER TABLE persona_triggers ADD COLUMN status TEXT NOT NULL DEFAULT 'active';",
         )?;
         // Backfill: enabled=1 → 'active', enabled=0 → 'disabled'
-        conn.execute_batch(
+        ddl_step(conn, 
             "UPDATE persona_triggers SET status = CASE WHEN enabled = 1 THEN 'active' ELSE 'disabled' END;"
         )?;
-        conn.execute_batch(
+        ddl_step(conn, 
             "CREATE INDEX IF NOT EXISTS idx_ptr_status ON persona_triggers(status);",
         )?;
         tracing::info!("Added status column to persona_triggers and backfilled from enabled");
@@ -1758,25 +1765,25 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .map(|c| c > 0)
         .unwrap_or(false);
     if !has_memory_tier {
-        conn.execute_batch(
+        ddl_step(conn, 
             "ALTER TABLE persona_memories ADD COLUMN tier TEXT NOT NULL DEFAULT 'active';",
         )?;
-        conn.execute_batch(
+        ddl_step(conn, 
             "ALTER TABLE persona_memories ADD COLUMN access_count INTEGER NOT NULL DEFAULT 0;",
         )?;
-        conn.execute_batch("ALTER TABLE persona_memories ADD COLUMN last_accessed_at TEXT;")?;
+        ddl_step(conn, "ALTER TABLE persona_memories ADD COLUMN last_accessed_at TEXT;")?;
         // Composite index for the tiered injection query
-        conn.execute_batch(
+        ddl_step(conn, 
             "CREATE INDEX IF NOT EXISTS idx_pm_tier_injection
              ON persona_memories(persona_id, tier, importance DESC);",
         )?;
         // Backfill: promote high-importance memories (≥8) that already exist to core
-        conn.execute_batch("UPDATE persona_memories SET tier = 'core' WHERE importance >= 8;")?;
+        ddl_step(conn, "UPDATE persona_memories SET tier = 'core' WHERE importance >= 8;")?;
         tracing::info!("Added tier, access_count, last_accessed_at columns to persona_memories");
     }
 
     // Add warnings column to automation_runs for surfacing auth fallbacks & method defaults.
-    let _ = conn.execute_batch("ALTER TABLE automation_runs ADD COLUMN warnings TEXT;");
+    let _ = ddl_step(conn, "ALTER TABLE automation_runs ADD COLUMN warnings TEXT;");
 
     // Migrate legacy string-matched interrupted sessions to first-class 'interrupted' status.
     let migrated = conn
@@ -1794,7 +1801,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     }
 
     // Cloud webhook relay watermark table
-    conn.execute_batch(
+    ddl_step(conn, 
         "CREATE TABLE IF NOT EXISTS cloud_webhook_watermarks (
             trigger_id      TEXT PRIMARY KEY,
             last_seen_ts    TEXT NOT NULL,
@@ -1813,7 +1820,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     let _ = conn.execute("DELETE FROM chat_messages WHERE id = '__role_check__'", []);
 
     if needs_role_migration {
-        conn.execute_batch(
+        ddl_step(conn, 
             "CREATE TABLE chat_messages_new (
                 id              TEXT PRIMARY KEY,
                 persona_id      TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
@@ -1835,7 +1842,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     }
 
     // Circuit breaker persistence table (survive restarts, 15-min TTL)
-    conn.execute_batch(
+    ddl_step(conn, 
         "CREATE TABLE IF NOT EXISTS circuit_breaker_state (
             provider              TEXT PRIMARY KEY,
             consecutive_failures  INTEGER NOT NULL DEFAULT 0,
@@ -1855,7 +1862,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .map(|c| c > 0)
         .unwrap_or(false);
     if !has_trigger_version {
-        conn.execute_batch(
+        ddl_step(conn, 
             "ALTER TABLE persona_triggers ADD COLUMN trigger_version INTEGER NOT NULL DEFAULT 0;",
         )?;
         tracing::info!("Added trigger_version column to persona_triggers for CAS safety");
@@ -1864,7 +1871,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     // -- Composite indexes for memory & chat hot-path queries --------------------
     // These are idempotent (IF NOT EXISTS) and cover the top query patterns that
     // degrade to full table scans as data grows.
-    conn.execute_batch(
+    ddl_step(conn, 
         // chat_messages: get_session_messages + list_sessions
         // WHERE persona_id = ? AND session_id = ? ORDER BY created_at DESC
         "CREATE INDEX IF NOT EXISTS idx_chat_persona_session_created
@@ -1895,7 +1902,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     // The single-column idx_automation_runs_automation cannot satisfy ORDER BY
     // started_at DESC without a filesort; a composite index eliminates that.
     // The (status, started_at) index lets reap_stale_runs avoid a full table scan.
-    conn.execute_batch(
+    ddl_step(conn, 
         // get_runs_by_automation: WHERE automation_id = ? ORDER BY started_at DESC
         "CREATE INDEX IF NOT EXISTS idx_automation_runs_auto_started
          ON automation_runs(automation_id, started_at DESC);
@@ -1912,7 +1919,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     // lets SQLite satisfy the WHERE + ORDER BY without a filesort.
     // pipeline_runs: has_running_pipeline filters (team_id, status); list_pipeline_runs
     // filters team_id and sorts by started_at DESC.
-    conn.execute_batch(
+    ddl_step(conn, 
         "CREATE INDEX IF NOT EXISTS idx_tm_team_importance_created
          ON team_memories(team_id, importance DESC, created_at DESC);
 
@@ -1929,7 +1936,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     // team_memories: get_all, get_total_count filter (team_id, run_id); evict_excess
     // filters (team_id, run_id IS NOT NULL). A composite index lets SQLite satisfy
     // these without scanning the full table and then post-filtering by run_id.
-    conn.execute_batch(
+    ddl_step(conn, 
         "CREATE INDEX IF NOT EXISTS idx_tm_team_run
          ON team_memories(team_id, run_id);",
     )?;
@@ -1937,7 +1944,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
 
     // Add composite index for trigger_id + created_at on persona_executions
     // Covers get_by_trigger_id query: WHERE trigger_id = ? ORDER BY created_at DESC
-    conn.execute_batch(
+    ddl_step(conn, 
         "CREATE INDEX IF NOT EXISTS idx_pe_trigger_created
          ON persona_executions(trigger_id, created_at DESC);",
     )?;
@@ -1955,7 +1962,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .unwrap_or(false);
 
     if !has_template_category {
-        conn.execute_batch("ALTER TABLE personas ADD COLUMN template_category TEXT;")?;
+        ddl_step(conn, "ALTER TABLE personas ADD COLUMN template_category TEXT;")?;
         tracing::info!("Added template_category column to personas");
     }
 
@@ -1971,7 +1978,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .map(|c| c > 0)
         .unwrap_or(false);
     if !has_mutation_strategy {
-        conn.execute_batch("ALTER TABLE evolution_policies ADD COLUMN mutation_strategy TEXT;")?;
+        ddl_step(conn, "ALTER TABLE evolution_policies ADD COLUMN mutation_strategy TEXT;")?;
         tracing::info!("Added mutation_strategy column to evolution_policies");
     }
 
@@ -1987,7 +1994,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .map(|c| c > 0)
         .unwrap_or(false);
     if !has_last_heartbeat_at {
-        conn.execute_batch("ALTER TABLE persona_executions ADD COLUMN last_heartbeat_at TEXT;")?;
+        ddl_step(conn, "ALTER TABLE persona_executions ADD COLUMN last_heartbeat_at TEXT;")?;
         tracing::info!("Added last_heartbeat_at column to persona_executions");
     }
 
@@ -2007,7 +2014,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         .unwrap_or(false);
 
     if !has_audit_incidents {
-        conn.execute_batch(
+        ddl_step(conn, 
             "CREATE TABLE IF NOT EXISTS audit_incidents (
                 id              TEXT PRIMARY KEY,
                 source_table    TEXT NOT NULL,
@@ -2046,11 +2053,11 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     // can post a result message into that session's episode log on terminal
     // phase. NULL when the session was started from the regular UI.
     if !has_column(conn, "build_sessions", "mode")? {
-        conn.execute_batch("ALTER TABLE build_sessions ADD COLUMN mode TEXT;")?;
+        ddl_step(conn, "ALTER TABLE build_sessions ADD COLUMN mode TEXT;")?;
         tracing::info!("Added mode column to build_sessions");
     }
     if !has_column(conn, "build_sessions", "companion_session_id")? {
-        conn.execute_batch("ALTER TABLE build_sessions ADD COLUMN companion_session_id TEXT;")?;
+        ddl_step(conn, "ALTER TABLE build_sessions ADD COLUMN companion_session_id TEXT;")?;
         tracing::info!("Added companion_session_id column to build_sessions");
     }
 
@@ -2066,7 +2073,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     // The unique index is partial — only enforced when source_template_id is
     // NOT NULL — so user-authored recipes with NULL provenance don't collide.
     if !has_column(conn, "recipe_definitions", "source_template_id")? {
-        conn.execute_batch(
+        ddl_step(conn, 
             "ALTER TABLE recipe_definitions ADD COLUMN source_template_id TEXT;
              ALTER TABLE recipe_definitions ADD COLUMN source_use_case_id TEXT;
              ALTER TABLE recipe_definitions ADD COLUMN source_use_case_name TEXT;
@@ -2087,7 +2094,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     // this audit trail. Index keyed on created_at DESC because every read is
     // a "last N events" query.
     if !has_table(conn, "recipe_suggestion_events")? {
-        conn.execute_batch(
+        ddl_step(conn, 
             "CREATE TABLE recipe_suggestion_events (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 recipe_id TEXT NOT NULL,
@@ -2113,7 +2120,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
             description: "Create persona_memory_review_proposal table for review-and-discard memory curation",
             already_applied: |conn| has_table(conn, "persona_memory_review_proposal"),
             apply: |conn| {
-                conn.execute_batch(
+                ddl_step(conn, 
                     "CREATE TABLE IF NOT EXISTS persona_memory_review_proposal (
                         id              TEXT PRIMARY KEY,
                         persona_id      TEXT,
@@ -2149,7 +2156,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
             description: "Create persona_background_job table for async memory curation runs",
             already_applied: |conn| has_table(conn, "persona_background_job"),
             apply: |conn| {
-                conn.execute_batch(
+                ddl_step(conn, 
                     "CREATE TABLE IF NOT EXISTS persona_background_job (
                         id                TEXT PRIMARY KEY,
                         kind              TEXT NOT NULL,
@@ -2186,7 +2193,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
             description: "Create persona_curation_schedule table for scheduled memory curation",
             already_applied: |conn| has_table(conn, "persona_curation_schedule"),
             apply: |conn| {
-                conn.execute_batch(
+                ddl_step(conn, 
                     "CREATE TABLE IF NOT EXISTS persona_curation_schedule (
                         persona_id        TEXT PRIMARY KEY
                                           REFERENCES personas(id) ON DELETE CASCADE,
@@ -2211,7 +2218,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
             description: "Add allowed_repos column to smee_relays for origin authentication",
             already_applied: |conn| has_column(conn, "smee_relays", "allowed_repos"),
             apply: |conn| {
-                conn.execute_batch("ALTER TABLE smee_relays ADD COLUMN allowed_repos TEXT;")?;
+                ddl_step(conn, "ALTER TABLE smee_relays ADD COLUMN allowed_repos TEXT;")?;
                 Ok(())
             },
         },
@@ -2234,7 +2241,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
             description: "Add business_outcome column to persona_executions",
             already_applied: |conn| has_column(conn, "persona_executions", "business_outcome"),
             apply: |conn| {
-                conn.execute_batch(
+                ddl_step(conn, 
                     "ALTER TABLE persona_executions ADD COLUMN business_outcome TEXT NOT NULL DEFAULT 'unknown';
                      CREATE INDEX IF NOT EXISTS idx_pe_persona_outcome
                          ON persona_executions(persona_id, business_outcome);",
@@ -2256,7 +2263,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
             description: "Add setup_status column to personas",
             already_applied: |conn| has_column(conn, "personas", "setup_status"),
             apply: |conn| {
-                conn.execute_batch(
+                ddl_step(conn, 
                     "ALTER TABLE personas ADD COLUMN setup_status TEXT NOT NULL DEFAULT 'ready';
                      CREATE INDEX IF NOT EXISTS idx_personas_setup_status
                          ON personas(setup_status);",
@@ -2277,7 +2284,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
             description: "Add persona_execution_annotations table",
             already_applied: |conn| has_table(conn, "persona_execution_annotations"),
             apply: |conn| {
-                conn.execute_batch(
+                ddl_step(conn, 
                     "CREATE TABLE IF NOT EXISTS persona_execution_annotations (
                         id           TEXT PRIMARY KEY,
                         execution_id TEXT NOT NULL REFERENCES persona_executions(id) ON DELETE CASCADE,
@@ -2309,7 +2316,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
             description: "Create notification_subscriptions table for outbound webhook routing",
             already_applied: |conn| has_table(conn, "notification_subscriptions"),
             apply: |conn| {
-                conn.execute_batch(
+                ddl_step(conn, 
                     "CREATE TABLE IF NOT EXISTS notification_subscriptions (
                         id                   TEXT PRIMARY KEY,
                         label                TEXT NOT NULL,
@@ -2343,14 +2350,14 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
 
 /// Ensure the composite_trigger_fires table exists for persisting suppression state.
 pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
-    conn.execute_batch(
+    ddl_step(conn, 
         "CREATE TABLE IF NOT EXISTS composite_trigger_fires (
             trigger_id  TEXT PRIMARY KEY,
             fired_at    TEXT NOT NULL
         );",
     )?;
     // -- Artist plugin tables -------------------------------------------------
-    conn.execute_batch(
+    ddl_step(conn, 
         "CREATE TABLE IF NOT EXISTS artist_assets (
             id              TEXT PRIMARY KEY,
             file_name       TEXT NOT NULL,
@@ -2385,7 +2392,7 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     )?;
 
     // ── Obsidian Brain: Sync State & Log ─────────────────────────────
-    conn.execute_batch(
+    ddl_step(conn, 
         "CREATE TABLE IF NOT EXISTS obsidian_sync_state (
             id              TEXT PRIMARY KEY,
             entity_type     TEXT NOT NULL,
@@ -2420,7 +2427,7 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     // 2026-04-08 as part of the LangSmith/Arcade MCP gateway pattern (finding #1
     // from /research run on the same date, see .planning/handoffs/2026-04-08-
     // mcp-gateway-arcade.md for the full phase plan).
-    conn.execute_batch(
+    ddl_step(conn, 
         "CREATE TABLE IF NOT EXISTS mcp_gateway_members (
             id                      TEXT PRIMARY KEY,
             gateway_credential_id   TEXT NOT NULL,
@@ -2451,11 +2458,11 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
         "ALTER TABLE executions ADD COLUMN pending_auth_started_at TEXT;",
         "ALTER TABLE executions ADD COLUMN pending_auth_credential_id TEXT;",
     ] {
-        let _ = conn.execute_batch(stmt); // ignore duplicate column errors on re-run
+        let _ = ddl_step(conn, stmt); // ignore duplicate column errors on re-run
     }
 
     // -- Lab: Consensus (stochastic multi-run agreement) ----------------------
-    conn.execute_batch(
+    ddl_step(conn, 
         "CREATE TABLE IF NOT EXISTS lab_consensus_runs (
             id              TEXT PRIMARY KEY,
             persona_id      TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
@@ -2500,13 +2507,13 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     )?;
 
     // -- dev_tasks: depth column (quick / campaign / deep_build) ---------------
-    conn.execute_batch("ALTER TABLE dev_tasks ADD COLUMN depth TEXT NOT NULL DEFAULT 'quick';")
+    ddl_step(conn, "ALTER TABLE dev_tasks ADD COLUMN depth TEXT NOT NULL DEFAULT 'quick';")
         .ok(); // ok() — column may already exist
 
     // -- dev_projects: monitoring connector fields ----------------------------
-    conn.execute_batch("ALTER TABLE dev_projects ADD COLUMN monitoring_credential_id TEXT;")
+    ddl_step(conn, "ALTER TABLE dev_projects ADD COLUMN monitoring_credential_id TEXT;")
         .ok();
-    conn.execute_batch("ALTER TABLE dev_projects ADD COLUMN monitoring_project_slug TEXT;")
+    ddl_step(conn, "ALTER TABLE dev_projects ADD COLUMN monitoring_project_slug TEXT;")
         .ok();
 
     // -- dev_projects: static_scan_config -------------------------------------
@@ -2514,7 +2521,7 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     // configures which static-analysis CLI the static_scan runner spawns for
     // this project. Sibling to the LLM-driven idea_scanner — see
     // commands/infrastructure/static_scan.rs.
-    conn.execute_batch("ALTER TABLE dev_projects ADD COLUMN static_scan_config TEXT;")
+    ddl_step(conn, "ALTER TABLE dev_projects ADD COLUMN static_scan_config TEXT;")
         .ok();
 
     // -- dev_projects: auto-PR-on-success gate + GitHub credential pointer ---
@@ -2523,14 +2530,14 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     // PR via `engine/platforms/github.rs::GitHubClient::create_pull_request`.
     // The credential is resolved from `pr_credential_id`. Both columns are
     // nullable / default-off so existing projects are unaffected.
-    conn.execute_batch("ALTER TABLE dev_projects ADD COLUMN auto_pr_on_success INTEGER NOT NULL DEFAULT 0;")
+    ddl_step(conn, "ALTER TABLE dev_projects ADD COLUMN auto_pr_on_success INTEGER NOT NULL DEFAULT 0;")
         .ok();
-    conn.execute_batch("ALTER TABLE dev_projects ADD COLUMN pr_credential_id TEXT;")
+    ddl_step(conn, "ALTER TABLE dev_projects ADD COLUMN pr_credential_id TEXT;")
         .ok();
 
     // ── Composition Workflows (persisted DAG definitions) ───────────────
     // Migrates workflows from frontend localStorage to backend SQLite.
-    conn.execute_batch(
+    ddl_step(conn, 
         "CREATE TABLE IF NOT EXISTS composition_workflows (
             id               TEXT PRIMARY KEY,
             name             TEXT NOT NULL,
@@ -2552,7 +2559,7 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     // resolved by the `builtin-twin` connector when a persona invokes a twin
     // tool. Tone, voice, channels, and memory tables land in P1-P4. The slug
     // is unique because it doubles as the Obsidian vault subfolder name.
-    conn.execute_batch(
+    ddl_step(conn, 
         "CREATE TABLE IF NOT EXISTS twin_profiles (
             id              TEXT PRIMARY KEY,
             name            TEXT NOT NULL,
@@ -2573,7 +2580,7 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     // Each twin can speak differently on each channel. The `generic` row is
     // the default fallback. UNIQUE(twin_id, channel) enforces at most one
     // tone per (twin, channel) pair.
-    conn.execute_batch(
+    ddl_step(conn, 
         "CREATE TABLE IF NOT EXISTS twin_tones (
             id              TEXT PRIMARY KEY,
             twin_id         TEXT NOT NULL REFERENCES twin_profiles(id) ON DELETE CASCADE,
@@ -2589,13 +2596,13 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     )?;
 
     // -- Twin plugin: knowledge_base_id on profiles (P2) ---------------------
-    let _ = conn.execute_batch("ALTER TABLE twin_profiles ADD COLUMN knowledge_base_id TEXT;"); // ignore "duplicate column" on re-run
+    let _ = ddl_step(conn, "ALTER TABLE twin_profiles ADD COLUMN knowledge_base_id TEXT;"); // ignore "duplicate column" on re-run
 
     // -- Twin plugin: pending memories inbox (P2) ----------------------------
     // Human-approval gate for memories. record_interaction writes here; the
     // user approves/rejects in the Knowledge tab. Approved memories get
     // ingested into the twin's knowledge base.
-    conn.execute_batch(
+    ddl_step(conn, 
         "CREATE TABLE IF NOT EXISTS twin_pending_memories (
             id              TEXT PRIMARY KEY,
             twin_id         TEXT NOT NULL REFERENCES twin_profiles(id) ON DELETE CASCADE,
@@ -2614,7 +2621,7 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
 
     // -- Twin plugin: communication log (P2) ---------------------------------
     // Interaction log — what the twin said and received across channels.
-    conn.execute_batch(
+    ddl_step(conn, 
         "CREATE TABLE IF NOT EXISTS twin_communications (
             id              TEXT PRIMARY KEY,
             twin_id         TEXT NOT NULL REFERENCES twin_profiles(id) ON DELETE CASCADE,
@@ -2634,7 +2641,7 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     // -- Twin plugin: voice profiles (P3) ------------------------------------
     // One voice config per twin. Stores the provider, voice_id, and synthesis
     // parameters. UNIQUE(twin_id) enforces one voice per twin.
-    conn.execute_batch(
+    ddl_step(conn, 
         "CREATE TABLE IF NOT EXISTS twin_voice_profiles (
             id              TEXT PRIMARY KEY,
             twin_id         TEXT NOT NULL UNIQUE REFERENCES twin_profiles(id) ON DELETE CASCADE,
@@ -2653,7 +2660,7 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     // Maps a twin to its deployment channels. Each row = one channel where
     // the twin speaks, via a credential (e.g. Discord bot token) and
     // optionally a persona that operates there.
-    conn.execute_batch(
+    ddl_step(conn, 
         "CREATE TABLE IF NOT EXISTS twin_channels (
             id              TEXT PRIMARY KEY,
             twin_id         TEXT NOT NULL REFERENCES twin_profiles(id) ON DELETE CASCADE,
@@ -2677,7 +2684,7 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
         "lab_matrix_results",
         "lab_eval_results",
     ] {
-        let _ = conn.execute_batch(&format!("ALTER TABLE {table} ADD COLUMN eval_method TEXT;"));
+        let _ = ddl_step(conn, &format!("ALTER TABLE {table} ADD COLUMN eval_method TEXT;"));
     }
 
     // -- adoption_answers column on build_sessions --------------------------------
@@ -2689,7 +2696,7 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
         .unwrap_or(false);
 
     if !has_adoption_answers {
-        conn.execute_batch("ALTER TABLE build_sessions ADD COLUMN adoption_answers TEXT;")?;
+        ddl_step(conn, "ALTER TABLE build_sessions ADD COLUMN adoption_answers TEXT;")?;
         tracing::info!("Added adoption_answers column to build_sessions");
     }
 
@@ -2704,7 +2711,7 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
         .unwrap_or(false);
 
     if !has_traceparent {
-        conn.execute_batch("ALTER TABLE persona_executions ADD COLUMN traceparent TEXT;")?;
+        ddl_step(conn, "ALTER TABLE persona_executions ADD COLUMN traceparent TEXT;")?;
         tracing::info!("Added traceparent column to persona_executions");
     }
 
@@ -2726,7 +2733,7 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
         .unwrap_or(false);
 
     if !has_last_test_report {
-        conn.execute_batch("ALTER TABLE personas ADD COLUMN last_test_report TEXT;")?;
+        ddl_step(conn, "ALTER TABLE personas ADD COLUMN last_test_report TEXT;")?;
         tracing::info!("Added last_test_report column to personas");
     }
 
@@ -2743,7 +2750,7 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
         .unwrap_or(false);
 
     if !has_cli_awareness {
-        conn.execute_batch(
+        ddl_step(conn, 
             "ALTER TABLE personas ADD COLUMN cli_awareness_enabled INTEGER NOT NULL DEFAULT 0;",
         )?;
         tracing::info!("Added cli_awareness_enabled column to personas (Phase 5 v1)");
@@ -2773,7 +2780,7 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
         .unwrap_or(false);
 
     if !has_scoped_resources {
-        conn.execute_batch("ALTER TABLE persona_credentials ADD COLUMN scoped_resources TEXT;")?;
+        ddl_step(conn, "ALTER TABLE persona_credentials ADD COLUMN scoped_resources TEXT;")?;
         tracing::info!("Added scoped_resources column to persona_credentials");
     }
 
@@ -2788,7 +2795,7 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
         .unwrap_or(false);
 
     if !has_connector_resources {
-        conn.execute_batch("ALTER TABLE connector_definitions ADD COLUMN resources TEXT;")?;
+        ddl_step(conn, "ALTER TABLE connector_definitions ADD COLUMN resources TEXT;")?;
         tracing::info!("Added resources column to connector_definitions");
     }
 
@@ -2801,7 +2808,7 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     // result_id points at (eval/ab/arena/matrix/consensus). Forward-only —
     // older results have no events. Truncated payloads at the boundary so a
     // single chatty scenario can't blow up the DB.
-    conn.execute_batch(
+    ddl_step(conn, 
         "CREATE TABLE IF NOT EXISTS lab_result_events (
             id                  TEXT PRIMARY KEY,
             result_id           TEXT NOT NULL,
@@ -2826,7 +2833,7 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     // {added, modified, deleted} delta — unchanged regions short-circuit. PK is
     // (project_id, file_path) because file_path is unique per project but the
     // same relative path may exist in multiple projects.
-    conn.execute_batch(
+    ddl_step(conn, 
         "CREATE TABLE IF NOT EXISTS dev_context_file_hashes (
             project_id          TEXT NOT NULL REFERENCES dev_projects(id) ON DELETE CASCADE,
             file_path           TEXT NOT NULL,
@@ -2873,7 +2880,7 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     // table-by-table once it ships.
     //
     // ADR: 2026-05-02-lab-tool-calls-child-table.
-    conn.execute_batch(
+    ddl_step(conn, 
         "CREATE TABLE IF NOT EXISTS lab_tool_calls (
             id           TEXT PRIMARY KEY,
             result_kind  TEXT NOT NULL CHECK(result_kind IN ('arena','ab','matrix','consensus','eval','test_run')),
@@ -2928,7 +2935,7 @@ fn drop_legacy_tool_calls_columns(conn: &Connection) {
         "ALTER TABLE persona_test_results DROP COLUMN tool_calls_actual",
     ];
     for sql in drops {
-        let _ = conn.execute_batch(sql);
+        let _ = ddl_step(conn, sql);
     }
 }
 
@@ -3125,7 +3132,7 @@ fn research_lab_align_columns(conn: &Connection) {
         "ALTER TABLE research_reports ADD COLUMN updated_at TEXT",
     ];
     for sql in stmts {
-        let _ = conn.execute_batch(sql);
+        let _ = ddl_step(conn, sql);
     }
 
     // Backfill any NULL timestamps left by an ADD COLUMN on a legacy DB.
@@ -3144,6 +3151,6 @@ fn research_lab_align_columns(conn: &Connection) {
         "UPDATE research_reports SET created_at = COALESCE(created_at, datetime('now')), updated_at = COALESCE(updated_at, datetime('now')) WHERE created_at IS NULL OR updated_at IS NULL",
     ];
     for sql in backfills {
-        let _ = conn.execute_batch(sql);
+        let _ = ddl_step(conn, sql);
     }
 }
