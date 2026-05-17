@@ -90,6 +90,53 @@ export function FleetTerminalPane({ sessionId, className }: FleetTerminalPanePro
       writeInput(sessionId, data).catch(silentCatch('FleetTerminalPane:writeInput'));
     });
 
+    // Clipboard paste — Ctrl+Shift+V (Windows / Linux terminal
+    // convention) and Cmd+V (macOS). We intercept the key event
+    // before xterm processes it, read the system clipboard via the
+    // WebView's navigator.clipboard, and write the text straight to
+    // the PTY. Returning false suppresses xterm's default handling so
+    // the literal keystrokes aren't *also* sent.
+    //
+    // We don't bind plain Ctrl+V on Windows/Linux because in many
+    // CLI contexts Ctrl+V is a legitimate control sequence (eg.
+    // verbatim insert in readline); preserving terminal semantics
+    // matters more than matching the browser-style shortcut.
+    const pasteFromClipboard = () => {
+      navigator.clipboard
+        .readText()
+        .then((text) => {
+          if (!text) return;
+          // Strip a trailing newline so pasting a single line doesn't
+          // accidentally submit — let the user press Enter explicitly.
+          // Multi-line pastes keep their internal newlines intact;
+          // terminals handle that correctly.
+          const cleaned = text.replace(/\r?\n$/, '');
+          return writeInput(sessionId, cleaned);
+        })
+        .catch(silentCatch('FleetTerminalPane:paste'));
+    };
+
+    term.attachCustomKeyEventHandler((event) => {
+      if (event.type !== 'keydown') return true;
+      const isMac = navigator.platform.toLowerCase().includes('mac');
+      const isPaste =
+        (event.ctrlKey && event.shiftKey && event.key.toUpperCase() === 'V') ||
+        (isMac && event.metaKey && !event.shiftKey && event.key.toUpperCase() === 'V');
+      if (!isPaste) return true;
+      event.preventDefault();
+      pasteFromClipboard();
+      return false; // suppress xterm default
+    });
+
+    // Right-click anywhere in the pane also pastes — matches the
+    // Windows Terminal / VS Code terminal behaviour and gives a
+    // discoverable path for users who don't know the shortcut.
+    const onContextMenu = (e: MouseEvent) => {
+      e.preventDefault();
+      pasteFromClipboard();
+    };
+    container.addEventListener('contextmenu', onContextMenu);
+
     // PTY stdout → terminal.
     const unlistenPromise = listen<{ session_id: string; chunk: string }>(
       EventName.FLEET_SESSION_OUTPUT,
@@ -122,6 +169,7 @@ export function FleetTerminalPane({ sessionId, className }: FleetTerminalPanePro
     return () => {
       resizeObserver.disconnect();
       if (rafId !== null) cancelAnimationFrame(rafId);
+      container.removeEventListener('contextmenu', onContextMenu);
       dataDisposable.dispose();
       unlistenPromise.then((fn) => fn()).catch(silentCatch('FleetTerminalPane:unlisten'));
       term.dispose();
