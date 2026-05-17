@@ -71,31 +71,36 @@ export default function GalleryPage() {
   return (
     <div className="space-y-4">
       {/* Toolbar */}
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex items-center gap-2 flex-wrap rounded-modal border border-primary/10 bg-card/70 px-3 py-2">
         {/* Mode toggle */}
-        {modes.map((m) => {
-          const Icon = m.icon;
-          return (
-            <button
-              key={m.id}
-              onClick={() => setGalleryMode(m.id)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-card text-md transition-colors ${
-                galleryMode === m.id
-                  ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                  : 'text-foreground hover:bg-secondary/40 border border-transparent'
-              }`}
-            >
-              <Icon className="w-3.5 h-3.5" />
-              {m.label}
-            </button>
-          );
-        })}
+        <div className="flex items-center gap-0.5 bg-secondary/30 rounded-card border border-primary/10 p-0.5">
+          {modes.map((m) => {
+            const Icon = m.icon;
+            const isActive = galleryMode === m.id;
+            return (
+              <button
+                key={m.id}
+                onClick={() => setGalleryMode(m.id)}
+                aria-pressed={isActive}
+                title={m.label}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-card text-md transition-colors ${
+                  isActive
+                    ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                    : 'text-foreground hover:bg-secondary/40 border border-transparent'
+                }`}
+              >
+                <Icon className="w-[18px] h-[18px]" />
+                {m.label}
+              </button>
+            );
+          })}
+        </div>
 
         <div className="flex-1" />
 
         {/* Search */}
         <div className="relative">
-          <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-foreground" />
+          <Search className="w-[17px] h-[17px] absolute left-2.5 top-1/2 -translate-y-1/2 text-foreground" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -104,54 +109,60 @@ export default function GalleryPage() {
           />
         </div>
 
-        {/* Sort */}
-        <select
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-          className="px-2 py-1.5 rounded-card bg-background/80 border border-primary/10 text-md text-foreground"
-        >
-          <option value="date">{t.plugins.artist.sort_date}</option>
-          <option value="name">{t.plugins.artist.sort_name}</option>
-          <option value="size">{t.plugins.artist.sort_size}</option>
-        </select>
-        <button onClick={toggleSort} className="p-1.5 rounded-card hover:bg-secondary/40 text-foreground">
-          {sortDir === 'asc' ? <SortAsc className="w-3.5 h-3.5" /> : <SortDesc className="w-3.5 h-3.5" />}
-        </button>
+        {/* Sort + group cluster */}
+        <div className="flex items-center gap-0.5 bg-secondary/30 rounded-card border border-primary/10 p-0.5">
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+            className="px-2 py-1.5 rounded-card bg-transparent border border-transparent text-md text-foreground focus:outline-none focus:border-primary/20"
+          >
+            <option value="date">{t.plugins.artist.sort_date}</option>
+            <option value="name">{t.plugins.artist.sort_name}</option>
+            <option value="size">{t.plugins.artist.sort_size}</option>
+          </select>
+          <button
+            onClick={toggleSort}
+            title={sortDir === 'asc' ? t.plugins.artist.sort_date : t.plugins.artist.sort_date}
+            aria-label={`Sort ${sortDir === 'asc' ? 'ascending' : 'descending'}`}
+            className="w-9 h-9 flex items-center justify-center rounded-card border border-transparent text-foreground/70 hover:bg-secondary/40 hover:text-foreground transition-colors"
+          >
+            {sortDir === 'asc' ? <SortAsc className="w-[18px] h-[18px]" /> : <SortDesc className="w-[18px] h-[18px]" />}
+          </button>
+          <button
+            onClick={() => setGrouped((g) => !g)}
+            aria-pressed={grouped}
+            title={grouped ? t.plugins.artist.group_by_day_off : t.plugins.artist.group_by_day_on}
+            className={`w-9 h-9 flex items-center justify-center rounded-card border transition-colors ${
+              grouped
+                ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground border-transparent'
+            }`}
+          >
+            <CalendarDays className="w-[18px] h-[18px]" />
+          </button>
+        </div>
 
-        {/* Group by day toggle */}
-        <button
-          onClick={() => setGrouped((g) => !g)}
-          aria-pressed={grouped}
-          title={grouped ? t.plugins.artist.group_by_day_off : t.plugins.artist.group_by_day_on}
-          className={`p-1.5 rounded-card text-md transition-colors ${
-            grouped
-              ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-              : 'text-foreground hover:bg-secondary/40 border border-transparent'
-          }`}
-        >
-          <CalendarDays className="w-3.5 h-3.5" />
-        </button>
-
-        {/* Open folder in OS file manager */}
-        <button
-          onClick={() => artistFolder && openExternal(artistFolder).catch(silentCatch('Open artist folder'))}
-          disabled={!artistFolder}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-card text-md text-foreground hover:bg-secondary/40 border border-primary/10 transition-colors disabled:opacity-40"
-          title={t.plugins.artist.open_folder}
-        >
-          <FolderOpen className="w-3.5 h-3.5" />
-          {t.plugins.artist.open_folder}
-        </button>
-
-        {/* Scan button */}
-        <button
-          onClick={() => artistFolder && scanAndImport(artistFolder)}
-          disabled={scanning || !artistFolder}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-card text-md bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition-colors disabled:opacity-40"
-        >
-          <FolderSearch className={`w-3.5 h-3.5 ${scanning ? 'animate-spin' : ''}`} />
-          {scanning ? t.plugins.artist.scanning : t.plugins.artist.scan_folder}
-        </button>
+        {/* Folder actions cluster */}
+        <div className="flex items-center gap-0.5 bg-secondary/30 rounded-card border border-primary/10 p-0.5">
+          <button
+            onClick={() => artistFolder && openExternal(artistFolder).catch(silentCatch('Open artist folder'))}
+            disabled={!artistFolder}
+            title={t.plugins.artist.open_folder}
+            aria-label={t.plugins.artist.open_folder}
+            className="w-9 h-9 flex items-center justify-center rounded-card border border-transparent text-foreground/70 hover:bg-secondary/40 hover:text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <FolderOpen className="w-[18px] h-[18px]" />
+          </button>
+          <button
+            onClick={() => artistFolder && scanAndImport(artistFolder)}
+            disabled={scanning || !artistFolder}
+            title={scanning ? t.plugins.artist.scanning : t.plugins.artist.scan_folder}
+            aria-label={scanning ? t.plugins.artist.scanning : t.plugins.artist.scan_folder}
+            className="w-9 h-9 flex items-center justify-center rounded-card border border-rose-500/25 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-rose-500/10"
+          >
+            <FolderSearch className={`w-[18px] h-[18px] ${scanning ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
       </div>
 
       {/* Folder info */}

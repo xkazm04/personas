@@ -1,7 +1,6 @@
 import { lazy, Suspense, useEffect, useRef } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
 import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
-import { TwinSelector } from './TwinSelector';
 import { useHydrateActiveTwin } from './useTwinReadiness';
 
 const ProfilesPage = lazy(() => import('./sub_profiles/ProfilesPage'));
@@ -44,7 +43,6 @@ export default function TwinPage() {
 
   return (
     <div className="h-full w-full flex flex-col">
-      <TwinSelector />
       <div
         data-testid="twin-page"
         key={twinTab}

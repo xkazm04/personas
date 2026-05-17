@@ -47,13 +47,28 @@ pub struct SkillFileContent {
 // Helpers
 // ============================================================================
 
-fn skills_dir(state: &AppState) -> Result<PathBuf, AppError> {
-    // Try to find .claude/skills relative to the active project or cwd
+/// Resolve the `.claude/skills` directory.
+///
+/// When `project_id` is provided we look up that specific row's `root_path`
+/// — this is the path users get when they pick a project in the dev-tools
+/// Skills tab. With no `project_id` we fall back to scanning all projects
+/// (preserves legacy callers that haven't been updated to forward the
+/// active id yet) and finally the current working directory.
+fn skills_dir(state: &AppState, project_id: Option<&str>) -> Result<PathBuf, AppError> {
     let candidates: Vec<PathBuf> = {
         let mut c = Vec::new();
-        // Check active project root path
         if let Ok(conn) = state.db.get() {
-            if let Ok(mut projects) = conn.prepare("SELECT root_path FROM dev_projects LIMIT 5") {
+            if let Some(id) = project_id {
+                if let Ok(rp) = conn.query_row::<String, _, _>(
+                    "SELECT root_path FROM dev_projects WHERE id = ?1",
+                    [id],
+                    |row| row.get(0),
+                ) {
+                    c.push(PathBuf::from(&rp).join(".claude").join("skills"));
+                }
+            } else if let Ok(mut projects) =
+                conn.prepare("SELECT root_path FROM dev_projects LIMIT 5")
+            {
                 if let Ok(mut rows) = projects.query([]) {
                     while let Ok(Some(row)) = rows.next() {
                         if let Ok(rp) = row.get::<_, String>(0) {
@@ -63,7 +78,6 @@ fn skills_dir(state: &AppState) -> Result<PathBuf, AppError> {
                 }
             }
         }
-        // Fallback: current working directory
         if let Ok(cwd) = std::env::current_dir() {
             c.push(cwd.join(".claude").join("skills"));
         }
@@ -99,10 +113,13 @@ fn read_first_line_description(skill_md_path: &Path) -> Option<String> {
 // ============================================================================
 
 #[tauri::command]
-pub fn skill_files_list(state: State<'_, Arc<AppState>>) -> Result<Vec<SkillEntry>, AppError> {
+pub fn skill_files_list(
+    state: State<'_, Arc<AppState>>,
+    project_id: Option<String>,
+) -> Result<Vec<SkillEntry>, AppError> {
     require_auth_sync(&state)?;
 
-    let dir = skills_dir(&state)?;
+    let dir = skills_dir(&state, project_id.as_deref())?;
     let mut entries = Vec::new();
 
     let read_dir = std::fs::read_dir(&dir)
@@ -181,10 +198,11 @@ pub fn skill_files_read(
     state: State<'_, Arc<AppState>>,
     skill_name: String,
     file_name: String,
+    project_id: Option<String>,
 ) -> Result<SkillFileContent, AppError> {
     require_auth_sync(&state)?;
 
-    let dir = skills_dir(&state)?;
+    let dir = skills_dir(&state, project_id.as_deref())?;
     let file_path = dir.join(&skill_name).join(&file_name);
 
     // Also try the skill as a direct .md file
@@ -217,10 +235,11 @@ pub fn skill_files_write(
     skill_name: String,
     file_name: String,
     content: String,
+    project_id: Option<String>,
 ) -> Result<(), AppError> {
     require_auth_sync(&state)?;
 
-    let dir = skills_dir(&state)?;
+    let dir = skills_dir(&state, project_id.as_deref())?;
     let file_path = dir.join(&skill_name).join(&file_name);
 
     if !file_path.exists() {

@@ -17,6 +17,14 @@ vi.mock('@/stores/toastStore', () => ({
     selector({ addToast: vi.fn() }),
 }));
 
+// useSkillData now subscribes to activeProjectId so it can scope skill
+// lookups to the user's selected dev-tools project. Minimal stub returns
+// null (no project selected) — list/read/write still get exercised.
+vi.mock('@/stores/systemStore', () => ({
+  useSystemStore: (selector: (s: { activeProjectId: string | null }) => unknown) =>
+    selector({ activeProjectId: null }),
+}));
+
 // useTranslation calls go through the i18n Proxy; for unit tests the dt
 // strings only matter when an error path fires. Stub minimally.
 vi.mock('@/i18n/useTranslation', () => ({

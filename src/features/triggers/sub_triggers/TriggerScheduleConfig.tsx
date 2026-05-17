@@ -1,7 +1,6 @@
 import { formatInterval } from '@/lib/utils/formatters';
 import { type CronPreview } from '@/api/pipeline/triggers';
 import { SchedulePreview, CronSchedulePreview } from './TriggerSchedulePreview';
-import { CronFireHeatmap } from './CronFireHeatmap';
 import { TimezoneSelect } from './TimezoneSelect';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -271,11 +270,6 @@ export function CronConfig({
       {/* Next-runs timeline preview */}
       {cronPreview?.valid && cronPreview.next_runs.length > 0 && (
         <CronSchedulePreview cronPreview={cronPreview} />
-      )}
-
-      {/* 30-day calendar heatmap */}
-      {cronPreview?.valid && (
-        <CronFireHeatmap cronExpression={cronExpression} timezone={timezone} />
       )}
     </div>
   );

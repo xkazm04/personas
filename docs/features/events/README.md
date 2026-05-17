@@ -12,7 +12,7 @@ The Live Stream header includes a shortcut into `Overview -> Events` for the ful
 
 | Tab | Behavior | Implementation |
 | --- | --- | --- |
-| Live Stream | Real-time event stream with type chips, JSON highlighting, detail modal. Activity chip row above the grid shows per-type counts (top 8 by frequency, click to filter). Stream auto-pauses on table hover (1.5s grace on mouse leave) so a fast feed never yanks a row out from under the reader; deliberate Pause button is unchanged. | `sub_live_stream` |
+| Live Stream | Real-time event stream with type chips, JSON highlighting, detail modal | `sub_live_stream` |
 | Builder | Visual routing canvas from event sources to persona listeners | `sub_builder/EventCanvas.tsx`, `layouts/routing` |
 | Speed Limits | Rate-limit dashboard over trigger/event activity | `sub_speed_limits/RateLimitDashboard.tsx` |
 | Test | Manual event test surface | `sub_test/TestTab.tsx` |
@@ -31,10 +31,7 @@ The Live Stream header includes a shortcut into `Overview -> Events` for the ful
 - Config families include webhook, schedule, polling, file watcher, event listener, clipboard, app focus, and composite triggers.
 - `NlTriggerInput` and `nlTriggerParser.ts` translate natural-language schedule text into structured trigger config.
 - `TriggerSchedulePreview`, `RadialCountdownRing`, and `TriggerCountdown` make schedule timing visible before and after save.
-- `CronFireHeatmap` adds a 30-day forecast strip below the cron preview: each day is a colored cell (low/medium/high density buckets) showing how many fires fall in that day, with a total count and density legend. Wire-driven by `useCronFireTimesInRange` so timezone and cron semantics match what the engine will actually do.
-- `TriggerList` ships a single-select chip filter row above the per-persona groupings: All / Enabled / Disabled / Healthy / Degraded / Failing / Throttled. Counts are taken from the full unfiltered set so the badges stay stable as the user toggles between chips; chips with zero matches are disabled.
-- `TriggerExecutionHistory` links a trigger back to executions it caused. The drawer hoists the underlying `useTriggerHistory` hook and passes its state into both `TriggerInsightsStrip` (always-visible top metrics) and the expand-on-demand history list, so opening the drawer only spends one IPC for both.
-- `TriggerInsightsStrip` shows last fire timestamp, 24h fire count, success rate, recent-failure warning (3+ of last 5), and a DLQ count badge that links to the Dead Letter Queue tab.
+- `TriggerExecutionHistory` links a trigger back to executions it caused.
 - `DryRunResultView` displays backend dry-run feedback.
 
 ## Backend command surface

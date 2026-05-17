@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useToastStore } from '@/stores/toastStore';
+import { useSystemStore } from '@/stores/systemStore';
 import * as devApi from '@/api/devTools/devTools';
 import type { SkillEntry } from '@/api/devTools/devTools';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -35,6 +36,7 @@ export function useSkillData() {
   const { t, tx } = useTranslation();
   const dt = t.plugins.dev_tools;
   const addToast = useToastStore((s) => s.addToast);
+  const activeProjectId = useSystemStore((s) => s.activeProjectId);
 
   const [skills, setSkills] = useState<SkillEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,23 +76,34 @@ export function useSkillData() {
   const fetchSkills = useCallback(async () => {
     setLoading(true);
     try {
-      const list = await devApi.listSkills();
+      const list = await devApi.listSkills(activeProjectId);
       setSkills(list);
     } catch {
       addToast(dt.skills_load_failed_toast, 'error');
     } finally {
       setLoading(false);
     }
-  }, [addToast, dt]);
+  }, [addToast, dt, activeProjectId]);
 
-  useEffect(() => { fetchSkills(); }, [fetchSkills]);
+  // Reset selection + reload when the active project changes — skills come
+  // from the new project's .claude/skills directory, so the previous
+  // selection is unlikely to still be valid.
+  useEffect(() => {
+    setSelectedSkill(null);
+    setActiveFile('SKILL.md');
+    setFileContent('');
+    setEditContent('');
+    setEditing(false);
+    setLoadFailed(false);
+    fetchSkills();
+  }, [fetchSkills]);
 
   const loadFile = useCallback(async (skill: SkillEntry, fileName: string) => {
     setFileLoading(true);
     setEditing(false);
     setLoadFailed(false);
     try {
-      const result = await devApi.readSkillFile(skill.name, fileName);
+      const result = await devApi.readSkillFile(skill.name, fileName, activeProjectId);
       setFileContent(result.content);
       setEditContent(result.content);
     } catch {
@@ -101,7 +114,7 @@ export function useSkillData() {
     } finally {
       setFileLoading(false);
     }
-  }, [addToast, dt, tx]);
+  }, [addToast, dt, tx, activeProjectId]);
 
   const selectSkill = useCallback((skill: SkillEntry) => {
     setSelectedSkill(skill);
@@ -120,7 +133,7 @@ export function useSkillData() {
     if (!selectedSkill) return;
     setSaving(true);
     try {
-      await devApi.writeSkillFile(selectedSkill.name, activeFile, editContent);
+      await devApi.writeSkillFile(selectedSkill.name, activeFile, editContent, activeProjectId);
       setFileContent(editContent);
       setEditing(false);
       addToast(tx(dt.skills_save_success_toast, { skill: selectedSkill.name, file: activeFile }), 'success');
@@ -129,7 +142,7 @@ export function useSkillData() {
     } finally {
       setSaving(false);
     }
-  }, [selectedSkill, activeFile, editContent, addToast, dt, tx]);
+  }, [selectedSkill, activeFile, editContent, addToast, dt, tx, activeProjectId]);
 
   const cancelEdit = useCallback(() => {
     setEditing(false);

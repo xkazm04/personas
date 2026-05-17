@@ -26,7 +26,7 @@ A persona invoking a twin tool (e.g. `get_tone("slack")`, `recall_memory("client
 
 ## User flow
 
-The plugin is organised as eight tabs — **Profiles**, **Identity**, **Tone**, **Brain**, **Knowledge**, **Voice**, **Channels**, **Training** — with a persistent **TwinSelector** banner at the top. The banner shows the active twin name and, when more than one twin exists, a **searchable picker** opens as a popover with keyboard arrows + Enter + a "Create new twin" footer CTA (routes to Profiles). A clickable **readiness pill** on the right summarises the active twin's setup score (0–100); clicking it opens a popover that lists the highest-impact missing milestones (e.g. *"No bio yet"*, *"Generic tone only"*) and deep-links into the matching sub-tab so the user can fix them one click away. Next to it sits a **wiki freshness pill** — *"not compiled"* / *"Wiki: 12m ago"* / *"Wiki: 3d ago"* (stale) — that clicks through to recompile the per-twin markdown wiki on disk via `twin_compile_wiki`. The pill polls `twin_wiki_status` on twin switch, so the user can spot a stale wiki without opening the Knowledge tab. When a wiki exists on disk, a paired **folder-icon button** opens the wiki directory in the OS file manager via `@tauri-apps/plugin-shell`.
+The plugin is organised as eight tabs — **Profiles**, **Identity**, **Tone**, **Brain**, **Knowledge**, **Voice**, **Channels**, **Training**. Each tab opens directly into its **Atelier** view: a violet hero band carries the active twin's name, readiness, and KPI rail, so there is no longer a separate "speaking as" banner above the page body. The Profiles Atelier doubles as the canonical roster surface — its hero card shows the active twin's readiness arc + milestone chips, with satellite cards beneath for the rest of the roster. The Profiles, Identity, Tone, Brain, Knowledge, Channels, and Training subsections render only their Atelier layout; the **Voice** subsection still shows a small *Atelier / Current* prototype switcher at the top while the new Atelier layout is being evaluated against the existing picker UI.
 
 ### 1. Profiles — manage twins
 
@@ -253,17 +253,18 @@ Per-persona overrides (Direction 3 above) are the next evolution: `design_contex
 
 ```
 src/features/plugins/twin/
-├── TwinPage.tsx                        # tab host; renders TwinSelector + active sub-tab
-├── TwinSelector.tsx                    # persistent "speaking as" banner (empty / chip / dropdown)
+├── TwinPage.tsx                        # tab host; renders the active sub-tab (no top banner anymore)
 ├── TwinEmptyState.tsx                  # shared empty state for subtabs with no active twin
-├── sub_profiles/ProfilesPage.tsx       # twin CRUD
-├── sub_identity/IdentityPage.tsx       # bio / role / gender / pronouns / AI bio generator
-├── sub_tone/TonePage.tsx               # per-channel voice directives
-├── sub_brain/BrainPage.tsx             # Obsidian subpath + KB bind/unbind
-├── sub_knowledge/KnowledgePage.tsx     # pending-memory inbox + conversation history
-├── sub_voice/VoicePage.tsx             # ElevenLabs voice ID + model + sliders
-├── sub_channels/ChannelsPage.tsx       # channel deployment cockpit
-└── sub_training/TrainingPage.tsx       # KB-grounded interview with adaptive follow-ups + session summary
+├── _shared/TwinHeaderBand.tsx          # violet hero band reused by every Atelier
+├── _variants/TwinVariantTabs.tsx       # 3-variant prototype strip; only Tone still uses it
+├── sub_profiles/ProfilesPage.tsx       # renders ProfilesAtelier directly (roster + hero card)
+├── sub_identity/IdentityPage.tsx       # renders IdentityAtelier directly
+├── sub_tone/TonePage.tsx               # still wraps Atelier / Console / Baseline behind the prototype strip
+├── sub_brain/BrainPage.tsx             # renders BrainAtelier directly
+├── sub_knowledge/KnowledgePage.tsx     # renders KnowledgeAtelier directly
+├── sub_voice/VoicePage.tsx             # 2-tab switcher: VoiceAtelier (new) vs VoiceBaseline (current)
+├── sub_channels/ChannelsPage.tsx       # renders ChannelsAtelier directly
+└── sub_training/TrainingPage.tsx       # renders TrainingAtelier directly
 ```
 
 ```

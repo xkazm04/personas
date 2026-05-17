@@ -7562,15 +7562,6 @@ export type Translations = {
       unknown_budget: string;
       budget_exceeded: string;
       budget: string;
-      filter_toolbar_label: string;
-      filter_all: string;
-      filter_enabled: string;
-      filter_disabled: string;
-      filter_healthy: string;
-      filter_degraded: string;
-      filter_failing: string;
-      filter_throttled: string;
-      no_match_filter: string;
     };
     config: {
       no_persona: string;
@@ -7806,24 +7797,6 @@ export type Translations = {
     in_buffer: string;
     resume_label: string;
     pause_label: string;
-    hover_paused_label: string;
-    hover_paused_tooltip: string;
-    activity_chip_row_label: string;
-    activity_chip_filter_active: string;
-    activity_more_count: string;
-    insights_last_fired: string;
-    insights_24h_label: string;
-    insights_fires_count: string;
-    insights_success_label: string;
-    insights_recent_failures_label: string;
-    insights_recent_failures_tooltip: string;
-    insights_dlq_label: string;
-    insights_dlq_open_title: string;
-    heatmap_title: string;
-    heatmap_total: string;
-    heatmap_total_capped: string;
-    heatmap_legend_less: string;
-    heatmap_legend_more: string;
     no_events_title: string;
     no_events_desc: string;
     connecting_to_bus: string;
@@ -12772,11 +12745,8 @@ export type Translations = {
   };
   twin: {
     selector: {
-      noTwin: string;
-      createFirst: string;
       createTwin: string;
       selectTwin: string;
-      progressGroupLabel: string;
       pickerLabel: string;
       searchPlaceholder: string;
       noMatches: string;
@@ -12959,6 +12929,22 @@ export type Translations = {
       previewTooltip: string;
       previewNeedsConfig: string;
       previewSample: string;
+      eyebrowAtelier: string;
+      atelierVariantLabel: string;
+      currentVariantLabel: string;
+      stageEmptyHeadline: string;
+      stageEmptyBody: string;
+      stageReadyHeadline: string;
+      stageReadyBody: string;
+      kpiVoiceSet: string;
+      kpiCredential: string;
+      kpiModel: string;
+      kpiPreview: string;
+      kpiReady: string;
+      kpiMissing: string;
+      sectionIdentity: string;
+      sectionSynthesis: string;
+      sectionModel: string;
     };
     training: {
       title: string;

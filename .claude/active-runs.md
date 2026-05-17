@@ -32,14 +32,6 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
-- **[2026-05-17 13:01 — started] /friend — triggers (endless development loop)**
-  - **Source:** `/friend` with explicit path arg `src\features\triggers` → topic commitment on triggers area. Coverage.md shows triggers has had NO prior /friend visit; recent commits show heavy i18n + a11y polish + an orphan-tree refactor + schedules nearby. 10 tabs in TriggersPage: live-stream / builder / studio / lineage / shared / rate-limits / test / smee-relay / cloud-webhooks / dead-letter.
-  - **Paths:** `src/features/triggers/`, `src-tauri/src/commands/communication/` (read-mostly; any IPC additions trigger Phase 3 gate), `src-tauri/src/engine/event_registry.rs` (read-mostly), `src/i18n/locales/*.json` (additive `triggers.*` keys only — coordinate with concurrent /friend-schedules using `schedules.*`, /friend-theming using `appearance.*`/`theme.*`, /friend plugin sessions using `plugins.*`), possibly `docs/features/events/README.md` per cycle, `.claude/active-runs.md`
-  - **Status:** started
-  - **Branch:** `worktree-friend-triggers-130100`
-  - **Worktree:** `.claude/worktrees/friend-triggers-130100/`
-  - **Note:** First /friend session over triggers. Path-disjoint from all 9 concurrent sessions: schedules touches `src/features/schedules/`, overview-polish touches `src/features/overview/`, sidebar-L3 touches `src/features/home/` + `src/features/shared/components/layout/sidebar/`, plugin /friends touch `src/features/plugins/*`, theming touches `src/styles/` + `src/stores/themeStore.ts`. Shared en.json: additive `triggers.*` only. Apply Patterns/friend-preferences.md: deepen-existing (cap 1 of 5 net-new), bias higher-effort (1 small / 2 medium / 2 stretch), drop 2× soft-skips, stage-1-of-N where it fits. Per-cycle: also add the new English keys to 13 non-English locales in same commit.
-
 - **[2026-05-17 — started] overview-polish — Header unification + Events/Knowledge/Health fixes**
   - **Source:** User-driven UX polish — Overview module. Header consistency across submodules, Events subtitle bug ("50 50 of 50"), Knowledge background-CLI review + drop Schedule, Health Reliability tab dedup + filter compaction.
   - **Paths:** `src/features/overview/sub_events/components/EventLogList.tsx`, `src/features/overview/sub_knowledge/components/**`, `src/features/overview/sub_health/components/**`, possibly headers in other `src/features/overview/sub_*/components/**` for consistency, `src/i18n/locales/en.json` (additive `overview.*` keys only — disjoint from concurrent `schedules.*`/`appearance.*`/`plugins.*`/`shared.sidebar_extra.*`)
@@ -101,6 +93,21 @@ timestamp — the next session can recognize it as abandoned.
 
 
 ## Recently completed (last 14 days)
+
+- **[2026-05-17 → wrap] twin-variant-consolidation — Atelier as baseline + Voice 2-tab prototype**
+  - **Status:** completed (pending commit; tsc clean, 19/19 twin tests passing, lint clean of net-new code aside from inherited spacing/typo warnings shared with sibling Ateliers)
+  - **Branch:** master (no worktree — interactive user-driven session; coexisted cleanly with `worktree-friend-twin-130914` which is on a separate physical checkout)
+  - **Paths shipped:** `src/features/plugins/twin/TwinPage.tsx` (drop `<TwinSelector />`), `src/features/plugins/twin/TwinSelector.tsx` (DELETED), `src/features/plugins/twin/sub_{profiles,identity,brain,knowledge,channels,training}/{Page,Console,Baseline}.tsx` (Page now renders Atelier directly, Console/Baseline DELETED — 10 files removed), `src/features/plugins/twin/sub_voice/{VoicePage,VoiceAtelier,VoiceBaseline}.tsx` (new VoiceAtelier built on TwinHeaderBand + WaveformDecoration; old VoicePage body preserved as VoiceBaseline; VoicePage rewritten as 2-tab switcher behind `twin-voice-variant` localStorage key), `src/i18n/locales/en.json` (additive `voice.{eyebrowAtelier,atelierVariantLabel,currentVariantLabel,stage*,kpi*,section*}`; removed `selector.{noTwin,createFirst,progressGroupLabel}`), `src/i18n/generated/{types.ts,enSectionStrings.ts}` + `src/i18n/section-locales/*/twin.json` (regen), `docs/features/twin.md` (user-flow + frontend-modules table updated).
+  - **Note:** Tone subsection left untouched per user scope (variant matrix still in place there, so TwinVariantTabs.tsx and the `twin.variantTabs.*` keys are kept). Orphaned `_shared/{WikiFreshnessPill,TwinPicker,ReadinessGapPopover}.tsx` left in place — they have no current consumer but could be re-adopted into Atelier hero bands; flagging for a future sweep.
+
+- **[2026-05-17 13:01 → wrap] /friend — triggers (4 cycles, merged to master at `bcd440743`)**
+  - **Worktree:** `.claude/worktrees/friend-triggers-130100/` — REMOVED post-merge
+  - **Branch:** `worktree-friend-triggers-130100` — DELETED post-merge
+  - **Status:** completed + merged (cycle commits: `fda0ea552..8ca716922`, 4 atomic commits; merge commit on master: `bcd440743` via detached-worktree + update-ref pattern, one conflict in generated `enSectionStrings.ts` resolved by regenerating from auto-merged en.json; tsc-validated)
+  - **Paths shipped (4 cycles, ~1,283 LOC net):** `src/features/triggers/sub_live_stream/LiveStreamTab.tsx` (hover-pause + activity chip row), `src/features/triggers/sub_triggers/{TriggerInsightsStrip.tsx (new), TriggerDetailDrawer.tsx, TriggerExecutionHistory.tsx, CronFireHeatmap.tsx (new), TriggerScheduleConfig.tsx, TriggerList.tsx}`, `src/i18n/locales/en.json` + 13 non-EN locales + 13 section-locales/triggers.json (additive `triggers.*` only), `docs/features/events/README.md`.
+  - **Cycles:** (1) Live Stream hover-pause + per-type activity chip row `fda0ea552` · (2) Trigger insights strip on detail drawer (sparkline + last-fire + 24h count + success rate + DLQ badge → DLQ tab; hoisted useTriggerHistory) `70cd8c621` · (3) 30-day cron fire heatmap below schedule preview `fbaecb11e` · (4) Trigger list quick-filter chips (All/Enabled/Disabled/Healthy/Degraded/Failing/Throttled with stable counts) `8ca716922`.
+  - **Headline:** First /friend session over triggers area. User picked all 4 options from the first menu in one batch (`3,4,5,6`) — strong topic-commitment-from-args signal (3rd cross-session observation, qualified for friend-preferences promotion). One soft-skip (DLQ bulk-select default), no hard rejects. New tactical pattern observed: "hoist-and-share-state" (pulled useTriggerHistory up to drawer to share between two visual sections, one IPC instead of two).
+  - **Concurrent-session note:** Main checkout had heavy WIP from 9+ parallel sessions. Used detached-worktree + update-ref merge pattern (langfuse 2026-05-16 precedent) so the main checkout's in-flight files were untouched. The merge's 4 source files were path-disjoint from all other active sessions; en.json auto-merged section-disjoint with concurrent schedules/appearance/plugins additions.
 
 - **[2026-05-16 → 2026-05-17 merge] glyph-consolidation prototype — view + adoption (phase 1 + phase 2 A-C)**
   - **Worktree:** `.claude/worktrees/glyph-consolidated/` (removed post-merge)
