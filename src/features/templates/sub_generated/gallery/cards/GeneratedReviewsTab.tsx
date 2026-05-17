@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { createLogger } from '@/lib/log';
 
 const logger = createLogger('template-gallery');
@@ -50,6 +50,13 @@ export default function GeneratedReviewsTab({
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [density, setDensityRaw] = useState<Density>('comfortable');
 
+  // Stable refs for the row callbacks. Pairs with React.memo on
+  // ComfortableRow so a parent re-render that doesn't touch these deps
+  // skips the row subtree. /architect 2026-05-17 list-memo-hygiene.
+  const handleToggleExpand = useCallback((id: string, isExpanded: boolean) => {
+    setExpandedRow(isExpanded ? null : id);
+  }, []);
+
   const credentialServiceTypesArray = useMemo(
     () => credentials.map((c) => c.service_type),
     [credentials],
@@ -75,6 +82,9 @@ export default function GeneratedReviewsTab({
 
   const rebuild = useBackgroundRebuild(() => gallery.refresh());
   const preview = useBackgroundPreview();
+
+  const handleResetRebuild = useCallback(() => { rebuild.resetRebuild(); }, [rebuild]);
+  const handleResetPreview = useCallback(() => { preview.resetPreview(); }, [preview]);
 
   const actions = useGalleryActions(
     gallery.allItems, gallery.total, gallery.sortBy,
@@ -221,16 +231,16 @@ export default function GeneratedReviewsTab({
             installedConnectorNames={actions.installedConnectorNames}
             credentialServiceTypes={actions.credentialServiceTypes}
             modals={modals}
-            onToggleExpand={(id, isExpanded) => setExpandedRow(isExpanded ? null : id)}
+            onToggleExpand={handleToggleExpand}
             onViewFlows={onViewFlows}
             onDeleteReview={actions.handleDeleteReview}
             onAddCredential={actions.handleAddCredential}
             rebuildReviewId={rebuild.reviewId}
             rebuildPhase={rebuild.phase}
-            onResetRebuild={() => rebuild.resetRebuild()}
+            onResetRebuild={handleResetRebuild}
             previewReviewId={preview.reviewId}
             previewPhase={preview.phase}
-            onResetPreview={() => preview.resetPreview()}
+            onResetPreview={handleResetPreview}
             isFetchingMore={gallery.isFetchingMore}
             hasMore={gallery.hasMore}
             isLoading={gallery.isLoading}

@@ -137,7 +137,7 @@ export function TemplateVirtualList({
                     installedConnectorNames={installedConnectorNames}
                     credentialServiceTypes={credentialServiceTypes}
                     modals={modals}
-                    onToggleExpand={(id) => onToggleExpand(id, isExpanded)}
+                    onToggleExpand={onToggleExpand}
                     onViewFlows={onViewFlows}
                     onDeleteReview={onDeleteReview}
                     onAddCredential={onAddCredential}

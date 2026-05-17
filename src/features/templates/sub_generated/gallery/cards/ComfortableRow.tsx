@@ -1,3 +1,4 @@
+import { memo, useCallback } from 'react';
 import {
   ChevronDown,
   ChevronRight,
@@ -24,7 +25,10 @@ interface ComfortableRowProps {
   installedConnectorNames: Set<string>;
   credentialServiceTypes: Set<string>;
   modals: ModalStackActions<TemplateModal>;
-  onToggleExpand: (id: string) => void;
+  // Takes (id, currentIsExpanded) so parents can pass a stable reference
+  // without per-row closures. The row itself constructs the call inside
+  // a memoized handler.
+  onToggleExpand: (id: string, isExpanded: boolean) => void;
   onViewFlows: (review: PersonaDesignReview) => void;
   onDeleteReview: (id: string) => void;
   onAddCredential: (name: string, review: PersonaDesignReview) => void;
@@ -36,7 +40,7 @@ interface ComfortableRowProps {
   onResetPreview: () => void;
 }
 
-export function ComfortableRow({
+function ComfortableRowImpl({
   review,
   isExpanded,
   searchQuery,
@@ -58,6 +62,10 @@ export function ComfortableRow({
   const { connectors, flowCount } = getCachedLightFields(review);
   const designResult = isExpanded ? getCachedDesignResult(review) : null;
 
+  const handleToggle = useCallback(() => {
+    onToggleExpand(review.id, isExpanded);
+  }, [onToggleExpand, review.id, isExpanded]);
+
   const readinessStatuses = designResult?.suggested_connectors
     ? deriveConnectorReadiness(designResult.suggested_connectors, installedConnectorNames, credentialServiceTypes)
     : [];
@@ -70,7 +78,7 @@ export function ComfortableRow({
   return (
     <>
       <div
-        onClick={() => onToggleExpand(review.id)}
+        onClick={handleToggle}
         className="group flex items-center border-b border-primary/5 hover:bg-secondary/30 cursor-pointer transition-colors"
         data-testid={`template-row-${review.id}`}
       >
@@ -182,3 +190,9 @@ export function ComfortableRow({
     </>
   );
 }
+
+// React.memo wraps the row so a parent re-render that doesn't change this
+// row's props skips the subtree. Pairs with useCallback-stabilized handlers
+// in TemplateVirtualList + GeneratedReviewsTab.
+// /architect 2026-05-17 list-memo-hygiene.
+export const ComfortableRow = memo(ComfortableRowImpl);
