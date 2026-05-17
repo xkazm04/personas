@@ -1283,11 +1283,29 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
     );
 
     return (
-      <div className="flex flex-col h-full min-h-0">
+      // `flex-1 min-h-0` (not `h-full`) so this wrapper takes the *remaining*
+      // height after AdoptionWizardModal's title bar inside the 92vh modal
+      // panel. With `h-full`, the wrapper was 92vh on top of the ~60px title
+      // bar — the bottom overflowed `overflow-hidden` on the modal's inner
+      // container, the inner scroll container's parent never had a bounded
+      // height, and the main content (sigil + rows) wasn't scrollable.
+      <div className="flex-1 min-h-0 flex flex-col">
         <AdoptionLayoutSwitcher value={layout} onChange={setLayout} />
         <div className="flex-1 min-h-0 flex flex-col">
           {layout === 'classic' ? classicBranch : personaLayoutBranch}
         </div>
+        {/* QuickAddCredentialModal is needed in BOTH branches (Classic and
+         *  Persona Layout fire `handleAddCredentialForCategory` which sets
+         *  `quickAddContext`). Previously the modal only mounted in the
+         *  post-seed return below, so clicking "Add credential" in pre-seed
+         *  set state but rendered nothing. */}
+        {quickAddContext && (
+          <QuickAddCredentialModal
+            category={quickAddContext.category}
+            onCredentialAdded={handleCredentialAdded}
+            onClose={() => setQuickAddContext(null)}
+          />
+        )}
       </div>
     );
   }
