@@ -54,13 +54,13 @@ timestamp — the next session can recognize it as abandoned.
   - **Branch:** master (small surgical multi-file change, user-driven directly in main checkout; per CLAUDE.md "single-file fixes can stay on the main checkout" — this is borderline; staying on master per user proceed)
   - **Note:** Path-disjoint from all 8+ concurrent /friend sessions (none touch `src/features/home/`, `src/features/shared/components/layout/sidebar/`, or `src/stores/slices/system/`). Shared en.json: additive under `shared.sidebar_extra.*` only (others touch `schedules.*`, `appearance.*`, `plugins.*`).
 
-- **[2026-05-17 12:34 — started] /friend — schedules (endless development loop)**
-  - **Source:** `/friend` with explicit topic — "develop the scheduling feature further". Fresh on top of master `3bd32e590` (which already includes today's UX-polish pass: removed Timeline view label, mock-schedule button, header subtitle; widened calendar columns; light-theme contrast fix; theme-aware titlebar icon).
-  - **Paths:** `src/features/schedules/`, `src/i18n/locales/en.json` (additive `schedules.*` keys only — coordinate with concurrent /friend-{theming,drive,companion-2,twin}), `src/styles/globals.css` (only if calendar visuals extend), possibly `src-tauri/src/engine/scheduler.rs` / `src-tauri/src/engine/cron.rs` / `src-tauri/src/commands/triggers/` (read-mostly; any IPC additions trigger Phase 3 gate), possibly `docs/features/schedules.md` per cycle, `.claude/active-runs.md`
-  - **Status:** started
-  - **Branch:** `worktree-friend-schedules-123440`
-  - **Worktree:** `.claude/worktrees/friend-schedules-123440/`
-  - **Note:** First /friend session over schedules. Path-disjoint from concurrent /friend-{theming, drive, companion-2, twin, artist-tests}: they touch `src/styles/` / `src/features/plugins/*` / tests. Shared en.json: additive `schedules.*` only. Bias higher-effort + deepen-existing-surfaces per Patterns/friend-preferences.md (rules 1+2). Net-new-surface cap = 1 of 5.
+- **[2026-05-16 — started] glyph-consolidation prototype — view + adoption (phase 2 commits A-C, merging now)**
+  - **Source:** User asked to unify the glyph mechanism across scratch / template / view surfaces. Analysis landed at `docs/concepts/glyph-consolidation.md`. Phase 1 (view mode prototype) + phase 2 commits A (move to shared/glyph), B (inline policy controls on rows), C (consolidated adoption tab) shipped on `worktree-glyph-consolidated`. Phase 2 commit D (scratch flow) deferred. About to merge to master with a preserve-WIP commit for unrelated dirty state first.
+  - **Paths:** `src/features/agents/sub_use_cases/components/consolidated-prototype/`, `src/features/agents/sub_use_cases/components/core/PersonaUseCasesTab.tsx`, `src/features/shared/glyph/consolidated/` (new), `src/features/templates/sub_generated/adoption/consolidated/` (new), `src/features/templates/sub_generated/adoption/ChronologyAdoptionView.tsx`, `src/i18n/locales/en.json` (additive keys under `agents.use_cases.layout_tab_*` and `templates.adopt_modal.layout_tab_*` / `consolidated_*`), `src/i18n/generated/types.ts` + `src/i18n/generated/enSectionStrings.ts` (regenerated), `.claude/active-runs.md`
+  - **Status:** merging
+  - **Branch:** `worktree-glyph-consolidated`
+  - **Worktree:** `.claude/worktrees/glyph-consolidated/`
+  - **Note:** All changes opt-in behind a tab switcher; default Sigil Grid / Classic flows unchanged. Path-disjoint from all 9 active sessions: triggers/schedules/overview/sidebar/plugins. Shared en.json: additive `agents.use_cases.layout_tab_*` + `templates.adopt_modal.layout_tab_*` / `consolidated_*` only.
 
 - **[2026-05-16 14:42 — started] artist-test-coverage — Vitest + Playwright for plugins/artist**
   - **Paths:** `src/features/plugins/artist/**/__tests__/*.test.{ts,tsx}` (new), possibly `src/features/plugins/artist/sub_media_studio/hooks/useMediaExport.ts` (export `normalizeProgress` for unit test), possibly `tests/playwright/artist-*.spec.ts` + `tests/playwright/artist-bridge.ts` (Cycle D only)
@@ -109,6 +109,15 @@ timestamp — the next session can recognize it as abandoned.
 
 
 ## Recently completed (last 14 days)
+
+- **[2026-05-17 12:34 → ~14:00 wrap] /friend — schedules (4 cycles, branch unmerged — user owns the merge)**
+  - **Worktree:** `.claude/worktrees/friend-schedules-123440/`
+  - **Branch:** `worktree-friend-schedules-123440` (4 commits ahead of master, NOT merged)
+  - **Status:** completed (4 atomic cycle commits: `8f2f0b37c..5c22c50d7`)
+  - **Paths shipped:** `src/features/schedules/components/{ScheduleRow,ScheduleTimeline,ScheduleCalendar,ScheduleRowHistoryPanel}.tsx` (last new), `src/features/schedules/libs/useScheduleActions.ts` (+skipNextFire, +runIn), `src/i18n/locales/*.json` (additive `schedules.*` keys in en + 13 non-English locales — 28 keys total across 4 cycles), `src/i18n/generated/{types,enSectionStrings}.ts`, `src/i18n/section-locales/*/schedules.json`, `docs/features/schedules.md`
+  - **Cycles:** (1) Skip-next-fire + delayed-run row actions `8f2f0b37c` — caret-dropdown next to Run-now with "Skip next fire" + 2×2 chip grid for Run-in-5/15/30/60 min; pure client-side via existing `updateTrigger.next_trigger_at`. Pre-disclosed Phase 3 gate turned out to be over-cautious. (2) Inline run-history peek beneath schedule row, Stage 1 of 2 `3eebab894` — chevron toggle expands a peek showing last 5 executions via `listExecutionsByTrigger`. (3) Click-to-filter calendar legend `6cd2aa4c0` — legend chips became toggle switches w/ `aria-checked`; "Overlap" off hides events in conflict groups; conflict counts stay on the unfiltered set. (4) Sparkline + execution deep-link, Stage 2 of 2 `5c22c50d7` — 14-day stacked sparkline above peek + headline failure-rate; "View in Activity →" pops `ExecutionDetailModal` via reused `overviewSlice.pendingExecutionFocus`.
+  - **Hard rejects:** EventTooltip wire-up + Live ticking countdown (both proposed 2× across menus, never picked, escalated at session-end). Added to `Friend/passes.md` schedules section.
+  - **Notable:** Zero new IPCs across 4 ambitious cycles — `updateTrigger`, `listExecutionsByTrigger`, `cron_fire_times_in_range`, and `pendingExecutionFocus` were already general enough. Stage-1-of-N inside same session worked again (cycle 2 → cycle 4 closed the loop). Per-cycle i18n fan-out to 13 locales via parallel translator subagents. **Branch NOT merged — user owns merge decision per /friend exit protocol.** To inspect: `git log --oneline worktree-friend-schedules-123440 ^master`. To merge: `git merge --no-ff worktree-friend-schedules-123440`. To discard: `git worktree remove .claude/worktrees/friend-schedules-123440 && git branch -D worktree-friend-schedules-123440`.
 
 - **[2026-05-17] tours-revamp — descope Activation Quest + expand guided tours**
   - **Status:** completed + merged to master (worktree commits: `459f86e08` Quest descope, `14b678024` tour expansion, `c07631514` ledger; merge commit `fe33f2652` on master)

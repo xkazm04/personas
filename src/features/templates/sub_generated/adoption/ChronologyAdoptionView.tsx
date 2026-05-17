@@ -14,6 +14,7 @@ const logger = createLogger("template-adoption");
 import { PersonaChronologyGlyph } from "./glyph";
 import { QuestionnaireForm } from "./questionnaire";
 import { UseCasePickerStep, type UseCaseOption } from "./ucPicker";
+import { ConsolidatedAdoptionView } from "./consolidated";
 import { useBuild } from "@/features/agents/components/matrix/useBuild";
 import { useLifecycle } from "@/features/agents/components/matrix/useLifecycle";
 import { useAgentStore } from "@/stores/agentStore";
@@ -419,11 +420,36 @@ function applyTriggerSelections(
   };
 }
 
+type AdoptionLayout = 'classic' | 'consolidated';
+const ADOPTION_LAYOUT_STORAGE_KEY = 'personas:adoption-layout';
+
+function readAdoptionLayout(): AdoptionLayout {
+  try {
+    const raw = localStorage.getItem(ADOPTION_LAYOUT_STORAGE_KEY);
+    if (raw === 'classic' || raw === 'consolidated') return raw;
+  } catch {
+    /* SSR or disabled localStorage */
+  }
+  return 'classic';
+}
+
+function writeAdoptionLayout(value: AdoptionLayout): void {
+  try {
+    localStorage.setItem(ADOPTION_LAYOUT_STORAGE_KEY, value);
+  } catch {
+    /* best-effort */
+  }
+}
+
 export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: ChronologyAdoptionViewProps) {
   const { t, tx } = useTranslation();
   const [seeded, setSeeded] = useState(false);
   const [personaId, setPersonaId] = useState<string | null>(null);
   const [fadeOut, setFadeOut] = useState(false);
+  const [layout, setLayout] = useState<AdoptionLayout>(() => readAdoptionLayout());
+  useEffect(() => {
+    writeAdoptionLayout(layout);
+  }, [layout]);
   const createPersona = useAgentStore((s) => s.createPersona);
   const seedDone = useRef(false);
   const seedInFlight = useRef(false);
@@ -1177,55 +1203,81 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
   }, [designResult, showUseCasePicker, selectedUseCaseIds, triggerSelections]);
 
   if (!seeded) {
-    // Step 1 — capability + trigger composition (merged). Shown for
-    // templates with ≥2 use cases; single-UC templates skip straight to
-    // the questionnaire since there's no composition decision to make.
-    if (showUseCasePicker && !useCasesPicked) {
+    // Pre-seed surface — wrapped in a layout switcher so the user can opt
+    // into the Consolidated prototype without losing the proven 3-step
+    // Classic flow. Both branches read the same state (selectedUseCaseIds,
+    // adoptionAnswers, ...) so switching tabs preserves all input.
+    const classicBranch = (() => {
+      if (showUseCasePicker && !useCasesPicked) {
+        return (
+          <UseCasePickerStep
+            templateName={templateName}
+            templateGoal={templateGoal}
+            useCases={availableUseCasesWithDefaults}
+            selectedIds={selectedUseCaseIds}
+            availableEvents={availableEventTypes}
+            triggerComposition={triggerComposition}
+            triggerSelections={perUseCaseTriggerSelections}
+            onToggle={toggleUseCase}
+            onTriggerChange={setPerUseCaseTriggerSelections}
+            onContinue={() => setUseCasesPicked(true)}
+          />
+        );
+      }
+      if (hasFilteredQuestions && !questionsComplete) {
+        return (
+          <QuestionnaireForm
+            questions={filteredAdoptionQuestions}
+            userAnswers={adoptionAnswers}
+            designResult={designResult as unknown as AgentIR | null}
+            autoDetectedIds={autoDetectedIds}
+            blockedQuestionIds={blockedQuestionIds}
+            filteredOptions={filteredOptions}
+            dynamicOptions={dynamicOptions}
+            onRetryDynamic={retryDynamic}
+            onAddCredential={handleAddCredentialForCategory}
+            onAnswerUpdated={(id, answer) =>
+              setAdoptionAnswers((prev) => ({ ...prev, [id]: answer }))
+            }
+            onSubmit={() => setQuestionsComplete(true)}
+            onClose={onClose}
+            templateName={templateName}
+            useCaseTitleById={useCaseTitleById}
+          />
+        );
+      }
       return (
-        <UseCasePickerStep
-          templateName={templateName}
-          templateGoal={templateGoal}
-          useCases={availableUseCasesWithDefaults}
-          selectedIds={selectedUseCaseIds}
-          availableEvents={availableEventTypes}
-          triggerComposition={triggerComposition}
-          triggerSelections={perUseCaseTriggerSelections}
-          onToggle={toggleUseCase}
-          onTriggerChange={setPerUseCaseTriggerSelections}
-          onContinue={() => setUseCasesPicked(true)}
-        />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="typo-body text-foreground animate-pulse">{t.templates.adopt_modal.loading_template}</div>
+        </div>
       );
-    }
-    // Step 2 — questionnaire. Rendered inline while the user fills it in so
-    // static/dynamic questions are interactive immediately. We only fall back
-    // to the "Loading template…" placeholder AFTER the user submits, while
-    // seed creates the draft persona — so the user is never blocked behind
-    // a generic loading screen with the questionnaire trapped underneath it.
-    if (hasFilteredQuestions && !questionsComplete) {
-      return (
-        <QuestionnaireForm
-          questions={filteredAdoptionQuestions}
-          userAnswers={adoptionAnswers}
-          designResult={designResult as unknown as AgentIR | null}
-          autoDetectedIds={autoDetectedIds}
-          blockedQuestionIds={blockedQuestionIds}
-          filteredOptions={filteredOptions}
-          dynamicOptions={dynamicOptions}
-          onRetryDynamic={retryDynamic}
-          onAddCredential={handleAddCredentialForCategory}
-          onAnswerUpdated={(id, answer) =>
-            setAdoptionAnswers((prev) => ({ ...prev, [id]: answer }))
-          }
-          onSubmit={() => setQuestionsComplete(true)}
-          onClose={onClose}
-          templateName={templateName}
-          useCaseTitleById={useCaseTitleById}
-        />
-      );
-    }
+    })();
+
+    const consolidatedBranch = (
+      <ConsolidatedAdoptionView
+        designResult={designResult}
+        templateName={templateName}
+        selectedUseCaseIds={selectedUseCaseIds}
+        onToggleUseCase={toggleUseCase}
+        questions={filteredAdoptionQuestions}
+        userAnswers={adoptionAnswers}
+        autoDetectedIds={autoDetectedIds}
+        blockedQuestionIds={blockedQuestionIds}
+        onSwitchToClassic={() => setLayout('classic')}
+        onContinue={() => {
+          if (showUseCasePicker && !useCasesPicked) setUseCasesPicked(true);
+          if (hasFilteredQuestions && !questionsComplete) setQuestionsComplete(true);
+        }}
+        onClose={onClose}
+      />
+    );
+
     return (
-      <div className="flex-1 flex items-center justify-center">
-        <div className="typo-body text-foreground animate-pulse">{t.templates.adopt_modal.loading_template}</div>
+      <div className="flex flex-col h-full min-h-0">
+        <AdoptionLayoutSwitcher value={layout} onChange={setLayout} />
+        <div className="flex-1 min-h-0 flex flex-col">
+          {layout === 'classic' ? classicBranch : consolidatedBranch}
+        </div>
       </div>
     );
   }
@@ -1269,6 +1321,62 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
           onClose={() => setQuickAddContext(null)}
         />
       )}
+    </div>
+  );
+}
+
+interface AdoptionLayoutSwitcherProps {
+  value: AdoptionLayout;
+  onChange: (next: AdoptionLayout) => void;
+}
+
+/**
+ * Tab switcher rendered above the pre-seed adoption surface so the user
+ * can opt into the Consolidated prototype without losing the proven
+ * 3-step Classic flow. Persisted via localStorage so the choice survives
+ * modal reopens. Hidden after seed.
+ */
+function AdoptionLayoutSwitcher({ value, onChange }: AdoptionLayoutSwitcherProps) {
+  const { t } = useTranslation();
+  return (
+    <div className="flex items-center gap-2 px-5 pt-3 pb-2 shrink-0">
+      <span className="typo-label uppercase tracking-[0.18em] text-foreground/55">
+        {t.templates.adopt_modal.layout_tab_label}
+      </span>
+      <div
+        role="tablist"
+        className="inline-flex items-center rounded-full border border-card-border bg-secondary/40 p-0.5"
+      >
+        <button
+          type="button"
+          role="tab"
+          aria-selected={value === 'classic'}
+          onClick={() => onChange('classic')}
+          className={`relative inline-flex items-center px-3 py-1 rounded-full typo-caption transition-colors cursor-pointer ${
+            value === 'classic'
+              ? 'bg-primary/20 text-foreground'
+              : 'text-foreground/65 hover:text-foreground hover:bg-secondary/60'
+          }`}
+        >
+          {t.templates.adopt_modal.layout_tab_classic}
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={value === 'consolidated'}
+          onClick={() => onChange('consolidated')}
+          className={`relative inline-flex items-center px-3 py-1 rounded-full typo-caption transition-colors cursor-pointer ${
+            value === 'consolidated'
+              ? 'bg-primary/20 text-foreground'
+              : 'text-foreground/65 hover:text-foreground hover:bg-secondary/60'
+          }`}
+        >
+          {t.templates.adopt_modal.layout_tab_consolidated}
+          <span className="ml-1.5 typo-label uppercase tracking-wider text-primary/85">
+            {t.templates.adopt_modal.layout_tab_prototype_badge}
+          </span>
+        </button>
+      </div>
     </div>
   );
 }
