@@ -1,9 +1,10 @@
-import { useMemo } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { Zap } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { type DataGridColumn } from '@/features/shared/components/display/DataGrid';
 import { formatRelativeTime } from '@/lib/utils/formatters';
+import { useFormattedDate } from '@/hooks/utility/data/useFormattedDate';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
 import { BuildingBadge, HEALTH_STYLES, StatusBadge, TrustScoreBar } from './PersonaOverviewBadges';
@@ -30,6 +31,14 @@ interface UsePersonaColumnsArgs {
 }
 
 // Moved inside the hook to access translation keys
+
+// Tooltip whose content is a memoized locale-formatted date. Extracted so
+// the DataGrid render fns can keep returning JSX (which can't call hooks
+// directly). One useMemo per row instead of per-render-pass.
+function FormattedDateTooltip({ ts, children }: { ts: string | null | undefined; children: ReactNode }) {
+  const formatted = useFormattedDate(ts);
+  return <Tooltip content={formatted}>{children}</Tooltip>;
+}
 
 export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<Persona>[] {
   const { t } = useTranslation();
@@ -143,11 +152,11 @@ export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<P
           const lastRun = lastRunMap[p.id];
           if (!lastRun) return <span className="text-md text-foreground">{t.agents.persona_list.never}</span>;
           return (
-            <Tooltip content={new Date(lastRun).toLocaleString()}>
+            <FormattedDateTooltip ts={lastRun}>
               <span className="text-md text-foreground cursor-help">
                 {formatRelativeTime(lastRun)}
               </span>
-            </Tooltip>
+            </FormattedDateTooltip>
           );
         },
       },
@@ -155,11 +164,11 @@ export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<P
         key: 'created', label: 'Created', width: '120px', sortable: true, align: 'right',
         render: (p) =>
           p.created_at ? (
-            <Tooltip content={new Date(p.created_at).toLocaleString()}>
+            <FormattedDateTooltip ts={p.created_at}>
               <span className="text-md text-foreground cursor-help">
                 {formatRelativeTime(p.created_at)}
               </span>
-            </Tooltip>
+            </FormattedDateTooltip>
           ) : (
             <span className="text-md text-foreground">--</span>
           ),
