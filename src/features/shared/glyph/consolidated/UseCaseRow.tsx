@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Play, Power, AlertTriangle } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { CONNECTOR_META, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
-import { MiniSigil } from '@/features/agents/sub_use_cases/components/recipes-prototype/shared/MiniSigil';
+import { CapabilitySigil } from '@/features/shared/glyph/CapabilitySigil';
 import {
   getHealthMeta,
   STATE_HEX,
@@ -100,7 +100,7 @@ export function UseCaseRow({
     >
       <div className="flex items-center gap-4 px-4 py-3">
         <div className="relative shrink-0">
-          <MiniSigil uc={uc} size={SIGIL_SIZE} isHovered={hovered} petalStyle="wedge" />
+          <CapabilitySigil uc={uc} size={SIGIL_SIZE} isHovered={hovered} petalStyle="wedge" />
           <AnimatePresence>
             {isRunning && (
               <motion.span
