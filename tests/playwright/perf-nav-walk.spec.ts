@@ -159,6 +159,26 @@ const STOPS: NavStop[] = [
   { id: 'artist/blender',      group: 'artist', description: 'Artist → Blender',     setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'artist' }); await bridgeExec('setArtistTab', { tab: 'blender' }); } },
   { id: 'artist/gallery',      group: 'artist', description: 'Artist → Gallery',     setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'artist' }); await bridgeExec('setArtistTab', { tab: 'gallery' }); } },
   { id: 'artist/media-studio', group: 'artist', description: 'Artist → Media Studio', setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'artist' }); await bridgeExec('setArtistTab', { tab: 'media-studio' }); } },
+
+  // Re-visit stops — measure the impact of Tier-1 cache/TTL fixes.
+  // A second mount of the same page should hit the in-memory caches
+  // (rotation-status cache, healthcheck TTL, config cache) and fire far
+  // fewer IPCs than the cold-land measurement.
+  { id: 'revisit/credentials-2nd', group: 'revisit', description: 'Credentials, second visit', setup: async () => { await navigate('home'); await new Promise(r => setTimeout(r, 200)); await navigate('credentials'); } },
+  { id: 'revisit/overview-2nd',    group: 'revisit', description: 'Overview, second visit',    setup: async () => { await navigate('home'); await new Promise(r => setTimeout(r, 200)); await navigate('overview'); } },
+  { id: 'revisit/settings-2nd',    group: 'revisit', description: 'Settings, second visit',    setup: async () => { await navigate('home'); await new Promise(r => setTimeout(r, 200)); await navigate('settings'); } },
+
+  // Interaction stop — sustained live-event traffic via the test bridge's
+  // triggerTestFlow(), which fans 4 simulated events through the event bus
+  // over ~1.5s. Exercises the Wave 2A rAF coalescing in
+  // createSingletonListener + useRealtimeEvents downstream.
+  { id: 'interaction/live-events-burst', group: 'interaction', description: 'Realtime burst on Events tab', setup: async () => {
+    await navigate('events');
+    await new Promise(r => setTimeout(r, 400));
+    await bridgeExec('triggerTestFlow', {});
+    // Let the burst land; wait-for-idle finishes the rest.
+    await new Promise(r => setTimeout(r, 1500));
+  } },
 ];
 
 // ── Report writer ───────────────────────────────────────────────────────────
