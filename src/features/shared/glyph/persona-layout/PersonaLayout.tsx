@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation } from '@/i18n/useTranslation';
+import type { GlyphDimension } from '@/features/shared/glyph';
+import type { PetalState } from '@/features/shared/glyph/persona-sigil';
 import type { DisplayUseCase } from '@/features/agents/sub_use_cases/components/recipes-prototype/shared/displayUseCase';
 import { PersonaHero } from './PersonaHero';
 import { UseCaseRow } from './UseCaseRow';
@@ -35,17 +37,41 @@ interface PersonaLayoutProps {
   onRowToggle: (uc: DisplayUseCase) => void;
   onRowRun?: (uc: DisplayUseCase) => void;
 
-  /** Optional right-edge content in the hero band (e.g. persona default
-   *  model picker). */
+  /** Optional content rendered on the right side of the hero's metadata
+   *  band (e.g. persona default model picker). Flows into the band, not
+   *  next to the sigil. */
   heroRightSlot?: ReactNode;
+
+  /** Forwarded to PersonaHero.petalStatesOverride. Adoption supplies its
+   *  own derivation (pending state for dims with unanswered questions);
+   *  view mode omits this and lets the hero compute from useCases. */
+  heroPetalStatesOverride?: Record<GlyphDimension, PetalState>;
+
+  /** Forwarded to PersonaHero.onPetalClick. Adoption mode opens the
+   *  inline answer card on click; view mode leaves it unset (no-op). */
+  onHeroPetalClick?: (dim: GlyphDimension) => void;
+
+  /** Forwarded to PersonaHero.activeDim. Lets the caller control which
+   *  petal is "active" when the centerOverlay is open. */
+  heroActiveDim?: GlyphDimension | null;
+
+  /** Forwarded to PersonaHero.centerOverlay. Adoption renders its
+   *  answer-card here when a pending petal is clicked. */
+  heroCenterOverlay?: ReactNode;
 
   /** Optional slot above the hero — adoption uses this for the
    *  QuestionnaireHeaderBand stepper. */
   topSlot?: ReactNode;
 
-  /** Optional slot to the right of the grid — adoption uses this for the
-   *  QuestionnaireStoryThread. */
+  /** Optional slot to the right of the main column — adoption uses this
+   *  for the QuestionnaireStoryThread. Takes 320px on lg+ screens; wraps
+   *  below on narrow screens. */
   rightSlot?: ReactNode;
+
+  /** Optional slot rendered between the hero and the capability rows.
+   *  Adoption uses this for stepper controls, scratch may use it for
+   *  intent composer artifacts. */
+  belowHeroSlot?: ReactNode;
 
   /** Per-row inline policy controls (memory / review / events). Caller
    *  decides what to render — view mode supplies TilePolicyToggles;
@@ -59,26 +85,34 @@ interface PersonaLayoutProps {
   /** Rendered in place of the row list when `items` is empty. Caller-owned
    *  so each mode picks its own empty messaging. */
   emptyNode?: ReactNode;
-
-  /** Max width of the centre column. Defaults to 960px so the hero and
-   *  rows stay readable on wide displays. */
-  maxWidth?: number;
 }
 
-const DEFAULT_MAX_WIDTH = 960;
-
 /**
- * Mode-agnostic Consolidated layout: persona-level hero band + capability
- * rows below, with optional top / right slots for adoption chrome and a
- * detail-overlay slot for drill-downs.
+ * Mode-agnostic Persona Layout. The surface is the same shape across
+ * view / adoption / scratch:
  *
- * Behaviour parity with the prior view-only PersonaLayoutView:
- *   • selecting an item swaps the surface to the detailNode
- *   • per-row run / toggle / open handlers are caller-supplied
+ *    ┌──────────────────────────────────────────────┬─────────────┐
+ *    │  topSlot (adoption: QuestionnaireHeaderBand) │             │
+ *    ├──────────────────────────────────────────────┤             │
+ *    │  Persona metadata band (name, counts, dims)  │             │
+ *    │                                              │  rightSlot  │
+ *    │              ╭──────────────╮                │ (adoption:  │
+ *    │              │  Persona     │                │  story      │
+ *    │              │  Sigil       │                │  thread)    │
+ *    │              │  (~640px)    │                │             │
+ *    │              ╰──────────────╯                │             │
+ *    │                                              │             │
+ *    │  belowHeroSlot (adoption: Continue button)   │             │
+ *    │                                              │             │
+ *    │  Capability rows (CapabilitySigil + title)   │             │
+ *    └──────────────────────────────────────────────┴─────────────┘
+ *
+ * Selecting a row swaps the surface to detailNode (view mode passes
+ * UseCaseDetailExpanded; other modes can pass their own drill-down).
  *
  * The disable-confirmation dialog and any mode-specific modals (vault
- * quick-add, picker modals, etc.) are caller-owned — this component only
- * renders the shell.
+ * quick-add, scratch picker modals, etc.) are caller-owned — this
+ * component only renders the shell.
  */
 export function PersonaLayout({
   mode,
@@ -90,12 +124,16 @@ export function PersonaLayout({
   onRowToggle,
   onRowRun,
   heroRightSlot,
+  heroPetalStatesOverride,
+  onHeroPetalClick,
+  heroActiveDim,
+  heroCenterOverlay,
   topSlot,
   rightSlot,
+  belowHeroSlot,
   renderRowPolicySlot,
   detailNode,
   emptyNode,
-  maxWidth = DEFAULT_MAX_WIDTH,
 }: PersonaLayoutProps) {
   const { t } = useTranslation();
 
@@ -127,24 +165,27 @@ export function PersonaLayout({
             className="flex-1 min-h-0 flex flex-col"
           >
             <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin">
-              <div
-                className="mx-auto px-4 py-4 flex flex-col gap-4"
-                style={{ maxWidth }}
-              >
+              <div className="w-full px-4 lg:px-8 py-4 flex flex-col gap-4">
                 {topSlot}
 
-                <div className={rightSlot ? 'grid gap-4 lg:grid-cols-[1fr_320px]' : ''}>
-                  <div className="flex flex-col gap-4 min-w-0">
+                <div className={rightSlot ? 'grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]' : ''}>
+                  <div className="flex flex-col gap-6 min-w-0">
                     <PersonaHero
                       personaName={personaName}
                       useCases={items}
-                      rightSlot={heroRightSlot}
+                      petalStatesOverride={heroPetalStatesOverride}
+                      onPetalClick={onHeroPetalClick}
+                      activeDim={heroActiveDim}
+                      centerOverlay={heroCenterOverlay}
+                      metadataRightSlot={heroRightSlot}
                     />
+
+                    {belowHeroSlot}
 
                     {items.length === 0 ? (
                       emptyNode ?? null
                     ) : (
-                      <div className="flex flex-col gap-2">
+                      <div className="flex flex-col gap-2 mx-auto w-full max-w-[960px]">
                         <span className="typo-label uppercase tracking-[0.18em] text-foreground/55 px-1">
                           {t.agents.use_cases.persona_layout_capabilities_heading}
                         </span>

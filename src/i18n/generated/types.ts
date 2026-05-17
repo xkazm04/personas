@@ -7023,6 +7023,12 @@ export type Translations = {
       persona_layout_continue_no_capabilities: string;
       _comment_persona_layout_no_capabilities: string;
       persona_layout_no_capabilities: string;
+      _comment_persona_layout_dim_all_answered: string;
+      persona_layout_dim_all_answered: string;
+      _comment_persona_layout_dim_done: string;
+      persona_layout_dim_done: string;
+      _comment_persona_layout_dim_open_hint: string;
+      persona_layout_dim_open_hint: string;
       credentials_required_title: string;
       credentials_required_body: string;
       answered_of_total: string;

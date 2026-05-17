@@ -1264,9 +1264,16 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
         onToggleUseCase={toggleUseCase}
         questions={filteredAdoptionQuestions}
         userAnswers={adoptionAnswers}
+        onAnswerUpdated={(id, answer) =>
+          setAdoptionAnswers((prev) => ({ ...prev, [id]: answer }))
+        }
         autoDetectedIds={autoDetectedIds}
         blockedQuestionIds={blockedQuestionIds}
-        onSwitchToClassic={() => setLayout('classic')}
+        filteredOptions={filteredOptions}
+        dynamicOptions={dynamicOptions}
+        onRetryDynamic={retryDynamic}
+        onAddCredential={handleAddCredentialForCategory}
+        useCaseTitleById={useCaseTitleById}
         onContinue={() => {
           if (showUseCasePicker && !useCasesPicked) setUseCasesPicked(true);
           if (hasFilteredQuestions && !questionsComplete) setQuestionsComplete(true);

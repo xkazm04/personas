@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { GLYPH_DIMENSIONS } from '@/features/shared/glyph';
 import type { GlyphDimension } from '@/features/shared/glyph';
@@ -9,40 +9,56 @@ import type { DisplayUseCase } from '@/features/agents/sub_use_cases/components/
 interface PersonaHeroProps {
   personaName: string;
   useCases: DisplayUseCase[];
-  /** Sigil canvas size in px. Defaults to 220 — large enough that
-   *  petals stay tappable in view mode without dominating the page. */
+  /** Sigil canvas size in px. Default 640 — matches the scratch flow's
+   *  GlyphFullLayout / GlyphPrototypeLayout so the persona's main glyph
+   *  reads identically across view / adoption / scratch surfaces. */
   sigilSize?: number;
-  /** Optional right slot — typically a persona-level default model picker. */
-  rightSlot?: React.ReactNode;
+  /** Override petalStates derivation. View mode computes from useCases
+   *  (resolved if any active capability uses dim, else idle); adoption
+   *  passes a custom map that surfaces `pending` for dims with
+   *  unanswered questions. */
+  petalStatesOverride?: Record<GlyphDimension, PetalState>;
+  /** Click handler for a petal — caller decides what to open / toggle.
+   *  Defaults to a no-op highlight. */
+  onPetalClick?: (dim: GlyphDimension) => void;
+  /** Currently-active dim (e.g. the question card is open on this petal).
+   *  Drives the "other petals dim" treatment in GlyphHeroSigil. */
+  activeDim?: GlyphDimension | null;
+  /** Center overlay rendered inside the sigil core (answer card during
+   *  adoption pending-question state, status text during build, etc.). */
+  centerOverlay?: ReactNode;
+  /** Optional content rendered on the right side of the metadata band
+   *  (e.g. persona default model picker). */
+  metadataRightSlot?: ReactNode;
 }
 
-const DEFAULT_SIGIL_SIZE = 220;
+const DEFAULT_SIGIL_SIZE = 640;
 
 /**
- * Persona-level hero band — the "Persona Sigil" anchored at the top of a
- * Persona Layout surface. Uses the canonical GlyphSigilCanvas (the same
- * component the scratch flow renders at 640px) so view, adoption, and
- * scratch all share one persona-sigil renderer.
+ * Persona-level hero — the canonical Persona Sigil (8 petals = 8 persona
+ * dimensions) at hero scale, anchored at the top of a Persona Layout
+ * surface.
  *
- * In view mode the sigil is read-mostly:
- *   - A petal is `resolved` when any ACTIVE capability touches that dim
- *   - A petal is `idle` when no capability uses that dim, OR when only
- *     paused / needs-attention capabilities reference it (the subtle
- *     inactive-dim differentiation from the earlier prototype is dropped
- *     here so the canonical PetalState vocabulary is enough)
- *   - Hover / click are wired but have no effect yet — view-mode petal
- *     interactivity (a small read-only summary popover) lands in a
- *     follow-up commit
+ * Layout: metadata band (name + capability counts + dimension coverage)
+ * fills the full width above; large sigil sits centered below. Same
+ * GlyphSigilCanvas the scratch flow uses at 640px, so view / adoption /
+ * scratch render an identical glyph at identical size — what differs is
+ * the petalStates derivation and what a petal click does.
  */
 export function PersonaHero({
   personaName,
   useCases,
   sigilSize = DEFAULT_SIGIL_SIZE,
-  rightSlot,
+  petalStatesOverride,
+  onPetalClick,
+  activeDim: activeDimProp,
+  centerOverlay,
+  metadataRightSlot,
 }: PersonaHeroProps) {
   const { t, tx } = useTranslation();
   const [hoveredDim, setHoveredDim] = useState<GlyphDimension | null>(null);
-  const [activeDim, setActiveDim] = useState<GlyphDimension | null>(null);
+  const [localActiveDim, setLocalActiveDim] = useState<GlyphDimension | null>(null);
+  const activeDim = activeDimProp !== undefined ? activeDimProp : localActiveDim;
 
   const stats = useMemo(() => {
     const total = useCases.length;
@@ -62,56 +78,54 @@ export function PersonaHero({
   }, [useCases]);
 
   const petalStates = useMemo<Record<GlyphDimension, PetalState>>(() => {
+    if (petalStatesOverride) return petalStatesOverride;
     const out = {} as Record<GlyphDimension, PetalState>;
     for (const dim of GLYPH_DIMENSIONS) {
       out[dim] = stats.activeDims.has(dim) ? 'resolved' : 'idle';
     }
     return out;
-  }, [stats.activeDims]);
+  }, [petalStatesOverride, stats.activeDims]);
+
+  const handleClickDim = (d: GlyphDimension) => {
+    if (onPetalClick) {
+      onPetalClick(d);
+      return;
+    }
+    setLocalActiveDim((prev) => (prev === d ? null : d));
+  };
 
   return (
-    <div
-      className="relative overflow-hidden rounded-modal border border-card-border bg-gradient-to-br from-secondary/55 via-secondary/30 to-secondary/10 shadow-elevation-2"
-      style={{
-        boxShadow:
-          'inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 32px rgba(0,0,0,0.18)',
-      }}
-    >
+    <div className="flex flex-col items-stretch gap-6">
+      {/* Metadata band — full-width row above the sigil so it never
+       *  constrains the sigil's available size. */}
       <div
-        aria-hidden
-        className="absolute inset-0 pointer-events-none opacity-70"
+        className="relative overflow-hidden rounded-modal border border-card-border bg-gradient-to-r from-secondary/55 via-secondary/30 to-secondary/55 px-6 py-4"
         style={{
-          background:
-            'radial-gradient(ellipse 60% 80% at 12% 50%, rgba(96,165,250,0.10) 0%, transparent 60%),' +
-            'radial-gradient(ellipse 50% 60% at 88% 50%, rgba(52,211,153,0.06) 0%, transparent 70%)',
+          boxShadow:
+            'inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 16px rgba(0,0,0,0.15)',
         }}
-      />
+      >
+        <div
+          aria-hidden
+          className="absolute inset-0 pointer-events-none opacity-60"
+          style={{
+            background:
+              'radial-gradient(ellipse 35% 90% at 5% 50%, rgba(96,165,250,0.10) 0%, transparent 70%),' +
+              'radial-gradient(ellipse 35% 90% at 95% 50%, rgba(52,211,153,0.07) 0%, transparent 70%)',
+          }}
+        />
 
-      <div className="relative flex items-center gap-6 px-6 py-6">
-        <div className="shrink-0">
-          <GlyphSigilCanvas
-            size={sigilSize}
-            petalStates={petalStates}
-            hoveredDim={hoveredDim}
-            activeDim={activeDim}
-            onHoverDim={setHoveredDim}
-            onClickDim={(d) => setActiveDim((prev) => (prev === d ? null : d))}
-          >
-            {/* Center is intentionally empty in view mode — petals carry the
-             *  meaning and the persona name lives in the side column. */}
-            <span aria-hidden />
-          </GlyphSigilCanvas>
-        </div>
+        <div className="relative flex items-center gap-6">
+          <div className="flex-1 min-w-0">
+            <span className="typo-label uppercase tracking-[0.22em] text-foreground/55">
+              {t.agents.use_cases.persona_label}
+            </span>
+            <h2 className="typo-section-title text-foreground mt-0.5 truncate font-semibold">
+              {personaName}
+            </h2>
+          </div>
 
-        <div className="flex-1 min-w-0">
-          <span className="typo-label uppercase tracking-[0.22em] text-foreground/55">
-            {t.agents.use_cases.persona_label}
-          </span>
-          <h2 className="typo-section-title text-foreground mt-1 truncate font-semibold">
-            {personaName}
-          </h2>
-
-          <div className="flex items-center gap-3 mt-3 flex-wrap">
+          <div className="hidden md:flex items-center gap-4 flex-wrap shrink-0">
             <span className="inline-flex items-baseline gap-1.5">
               <span className="typo-data text-foreground font-mono text-xl">
                 {stats.total}
@@ -135,16 +149,66 @@ export function PersonaHero({
                 {tx(t.agents.use_cases.capabilities_paused, { count: stats.paused })}
               </span>
             )}
+            <span className="typo-caption text-foreground/45 border-l border-card-border pl-4">
+              {tx(t.agents.use_cases.dimensions_coverage, {
+                count: stats.allDims.size,
+              })}
+            </span>
           </div>
 
-          <div className="mt-2 typo-caption text-foreground/55">
-            {tx(t.agents.use_cases.dimensions_coverage, {
-              count: stats.allDims.size,
-            })}
-          </div>
+          {metadataRightSlot && <div className="shrink-0">{metadataRightSlot}</div>}
         </div>
 
-        {rightSlot && <div className="shrink-0">{rightSlot}</div>}
+        {/* Narrow screens — counts stack below the name */}
+        <div className="md:hidden mt-3 flex items-center gap-3 flex-wrap">
+          <span className="inline-flex items-baseline gap-1.5">
+            <span className="typo-data text-foreground font-mono text-lg">{stats.total}</span>
+            <span className="typo-label uppercase tracking-wider text-foreground/65">
+              {t.agents.use_cases.capabilities_label}
+            </span>
+          </span>
+          {stats.active > 0 && (
+            <span className="typo-caption text-status-success">
+              {tx(t.agents.use_cases.capabilities_active, { count: stats.active })}
+            </span>
+          )}
+          {stats.attention > 0 && (
+            <span className="typo-caption text-status-warning">
+              {tx(t.agents.use_cases.capabilities_attention, { count: stats.attention })}
+            </span>
+          )}
+          {stats.paused > 0 && (
+            <span className="typo-caption text-foreground/55">
+              {tx(t.agents.use_cases.capabilities_paused, { count: stats.paused })}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Sigil stage — centered, sized at 640px by default (matches scratch).
+       *  No surrounding card so the sigil reads as the focal element of
+       *  the page; subtle radial backdrop only.  */}
+      <div className="relative flex justify-center items-center py-4">
+        <div
+          aria-hidden
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background:
+              'radial-gradient(ellipse 50% 70% at 50% 50%, rgba(96,165,250,0.06) 0%, transparent 70%)',
+          }}
+        />
+        <div className="relative" style={{ width: sigilSize, maxWidth: '100%' }}>
+          <GlyphSigilCanvas
+            size={sigilSize}
+            petalStates={petalStates}
+            hoveredDim={hoveredDim}
+            activeDim={activeDim}
+            onHoverDim={setHoveredDim}
+            onClickDim={handleClickDim}
+          >
+            {centerOverlay ?? <span aria-hidden />}
+          </GlyphSigilCanvas>
+        </div>
       </div>
     </div>
   );
