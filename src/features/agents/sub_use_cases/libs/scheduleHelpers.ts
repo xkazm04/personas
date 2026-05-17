@@ -1,3 +1,6 @@
+import { DAYS } from '@/lib/utils/dayOfWeek';
+import { CRON_PRESETS } from '@/lib/utils/cronPresets';
+
 // -- Types --------------------------------------------------------------
 
 export interface SuggestedTrigger {
@@ -17,32 +20,13 @@ export type BuilderMode = 'presets' | 'visual' | 'cron';
 
 // -- Constants ----------------------------------------------------------
 
-export const DAYS = [
-  { key: '1', short: 'Mon', label: 'Monday' },
-  { key: '2', short: 'Tue', label: 'Tuesday' },
-  { key: '3', short: 'Wed', label: 'Wednesday' },
-  { key: '4', short: 'Thu', label: 'Thursday' },
-  { key: '5', short: 'Fri', label: 'Friday' },
-  { key: '6', short: 'Sat', label: 'Saturday' },
-  { key: '0', short: 'Sun', label: 'Sunday' },
-] as const;
+// DAYS and CRON_PRESETS are re-exported from the canonical modules in
+// @/lib/utils so all scheduling UIs share one source of truth. See
+// `src/lib/utils/dayOfWeek.ts` and `src/lib/utils/cronPresets.ts`.
+export { DAYS };
+export const SCHEDULE_PRESETS = CRON_PRESETS;
 
 export const HOURS = Array.from({ length: 24 }, (_, i) => i);
-
-export const SCHEDULE_PRESETS = [
-  { label: 'Every hour', cron: '0 * * * *', category: 'frequent' },
-  { label: 'Every 6 hours', cron: '0 */6 * * *', category: 'frequent' },
-  { label: 'Daily at 9 AM', cron: '0 9 * * *', category: 'daily' },
-  { label: 'Daily at midnight', cron: '0 0 * * *', category: 'daily' },
-  { label: 'Daily at 6 PM', cron: '0 18 * * *', category: 'daily' },
-  { label: 'Weekdays at 9 AM', cron: '0 9 * * 1-5', category: 'weekday' },
-  { label: 'Weekdays at 8 AM', cron: '0 8 * * 1-5', category: 'weekday' },
-  { label: 'Every Monday at 9 AM', cron: '0 9 * * 1', category: 'weekly' },
-  { label: 'Every Friday at 5 PM', cron: '0 17 * * 5', category: 'weekly' },
-  { label: 'Monthly on the 1st', cron: '0 0 1 * *', category: 'monthly' },
-  { label: 'Every 15 minutes', cron: '*/15 * * * *', category: 'frequent' },
-  { label: 'Twice daily (9 AM & 5 PM)', cron: '0 9,17 * * *', category: 'daily' },
-] as const;
 
 export const TIMEZONES = [
   { label: 'Local time', value: 'local' },

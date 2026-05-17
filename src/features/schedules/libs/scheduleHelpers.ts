@@ -1,8 +1,10 @@
 import type { CronAgent } from '@/lib/bindings/CronAgent';
 import { formatInterval, formatRelative } from '@/features/overview/sub_cron_agents/libs/cronHelpers';
+import { CRON_PRESETS } from '@/lib/utils/cronPresets';
 
 // -- Re-export shared helpers ------------------------------------------------
 export { formatInterval, formatRelative };
+export { CRON_PRESETS };
 
 // -- Types -------------------------------------------------------------------
 
@@ -104,19 +106,8 @@ export function groupByTimeWindow(entries: ScheduleEntry[]): TimeGroup[] {
     .map((label) => ({ label, entries: buckets.get(label)! }));
 }
 
-// -- Cron presets -------------------------------------------------------------
-// (detectSkippedExecutions and the SkippedExecution / RecoveryPolicy types
-// were removed when the scheduler gained automatic max_backfill catch-up.
-// Architect ADR: 2026-05-01-schedules-overdue-backfill.)
-
-export const CRON_PRESETS = [
-  { label: 'Every 5 min', cron: '*/5 * * * *' },
-  { label: 'Every 15 min', cron: '*/15 * * * *' },
-  { label: 'Every 30 min', cron: '*/30 * * * *' },
-  { label: 'Every hour', cron: '0 * * * *' },
-  { label: 'Every 6 hours', cron: '0 */6 * * *' },
-  { label: 'Daily midnight UTC', cron: '0 0 * * *' },
-  { label: 'Daily 9am UTC', cron: '0 9 * * *' },
-  { label: 'Weekdays 9am UTC', cron: '0 9 * * 1-5' },
-  { label: 'Weekly Sunday', cron: '0 0 * * 0' },
-] as const;
+// CRON_PRESETS is re-exported above from @/lib/utils/cronPresets so all
+// scheduling UIs share one source of truth. (detectSkippedExecutions and
+// the SkippedExecution / RecoveryPolicy types were removed when the
+// scheduler gained automatic max_backfill catch-up. ADR:
+// 2026-05-01-schedules-overdue-backfill.)

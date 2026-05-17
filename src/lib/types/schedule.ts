@@ -1,4 +1,5 @@
 import type { CronAgent } from '@/lib/bindings/CronAgent';
+import { DAY_NAME_TO_NUM } from '@/lib/utils/dayOfWeek';
 
 /**
  * Canonical "what fires when" shape — the minimal subset of fields needed to
@@ -66,10 +67,6 @@ export interface FrequencyInputs {
   timezone?: string;
 }
 
-const DOW_MAP: Record<string, number> = {
-  sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6,
-};
-
 export function frequencyToSchedule(inputs: FrequencyInputs): Schedule {
   const [hStr, mStr] = (inputs.time || '09:00').split(':');
   const hour = clampInt(parseInt(hStr ?? '9', 10), 0, 23);
@@ -81,7 +78,7 @@ export function frequencyToSchedule(inputs: FrequencyInputs): Schedule {
       return { cron: `${minute} ${hour} * * *`, timezone: tz };
     case 'weekly': {
       const dow = (inputs.days ?? [])
-        .map((d) => DOW_MAP[d.toLowerCase()])
+        .map((d) => DAY_NAME_TO_NUM[d.toLowerCase()])
         .filter((n): n is number => typeof n === 'number')
         .sort((a, b) => a - b);
       const dowField = dow.length > 0 ? dow.join(',') : '1'; // default: Monday

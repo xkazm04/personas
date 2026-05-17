@@ -1,4 +1,5 @@
 import type { TriggerFormState } from './configs/buildTriggerConfig';
+import { findDayOfWeekInText } from '@/lib/utils/dayOfWeek';
 
 /**
  * Non-fatal advisory emitted when the parser rewrote a user-supplied value to
@@ -97,26 +98,12 @@ function parseCron(input: string): string | null {
     const ampm = atTime[3];
     if (ampm === 'pm' && hour < 12) hour += 12;
     if (ampm === 'am' && hour === 12) hour = 0;
-    // Check for day-of-week
-    const dow = parseDayOfWeek(lower);
+    // Check for day-of-week (canonical lookup in @/lib/utils/dayOfWeek)
+    const dow = findDayOfWeekInText(lower);
     if (dow !== null) return `${minute} ${hour} * * ${dow}`;
     return `${minute} ${hour} * * *`;
   }
 
-  return null;
-}
-
-function parseDayOfWeek(input: string): string | null {
-  const days: Record<string, string> = {
-    monday: '1', tuesday: '2', wednesday: '3', thursday: '4',
-    friday: '5', saturday: '6', sunday: '0',
-    mon: '1', tue: '2', wed: '3', thu: '4', fri: '5', sat: '6', sun: '0',
-  };
-  for (const [name, num] of Object.entries(days)) {
-    if (new RegExp(`\\b${name}s?\\b`, 'i').test(input)) return num;
-  }
-  if (/\bweekday/i.test(input)) return '1-5';
-  if (/\bweekend/i.test(input)) return '0,6';
   return null;
 }
 

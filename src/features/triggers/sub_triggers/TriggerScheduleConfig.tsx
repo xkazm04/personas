@@ -3,6 +3,7 @@ import { type CronPreview } from '@/api/pipeline/triggers';
 import { SchedulePreview, CronSchedulePreview } from './TriggerSchedulePreview';
 import { TimezoneSelect } from './TimezoneSelect';
 import { useTranslation } from '@/i18n/useTranslation';
+import { CRON_PRESETS } from '@/lib/utils/cronPresets';
 
 export function IntervalConfig({
   interval,
@@ -114,16 +115,9 @@ export function IntervalConfig({
   );
 }
 
-const CRON_PRESETS = [
-  { label: 'Every minute', value: '* * * * *' },
-  { label: 'Hourly', value: '0 * * * *' },
-  { label: 'Daily 9 AM', value: '0 9 * * *' },
-  { label: 'Daily midnight', value: '0 0 * * *' },
-  { label: 'Weekdays 9 AM', value: '0 9 * * 1-5' },
-  { label: 'Weekly Mon', value: '0 0 * * 1' },
-  { label: 'Monthly 1st', value: '0 0 1 * *' },
-  { label: 'Every 6h', value: '0 */6 * * *' },
-];
+// CRON_PRESETS imported from @/lib/utils/cronPresets (shared with the
+// schedules dashboard + use-case schedule builder). Field name is `cron`,
+// not `value`.
 
 export function CronConfig({
   cronExpression,
@@ -161,11 +155,11 @@ export function CronConfig({
         <div className="flex flex-wrap gap-1.5">
           {CRON_PRESETS.map((p) => (
             <button
-              key={p.value}
+              key={p.cron}
               type="button"
-              onClick={() => onPresetSelect(p.value)}
+              onClick={() => onPresetSelect(p.cron)}
               className={`px-2.5 py-1 rounded-modal typo-body transition-all border ${
-                cronExpression === p.value
+                cronExpression === p.cron
                   ? 'bg-amber-500/15 text-amber-400 border-amber-500/30 font-medium'
                   : 'bg-secondary/30 text-foreground border-border/30 hover:text-muted-foreground hover:bg-secondary/50'
               }`}
