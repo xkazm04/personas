@@ -20,6 +20,8 @@ mod logging;
 mod notifications;
 mod radio;
 pub mod startup_timing;
+#[cfg(debug_assertions)]
+mod stream_harness;
 pub mod test_automation;
 #[cfg(feature = "desktop")]
 mod tray;
@@ -509,6 +511,17 @@ pub fn run() {
                 .build(),
         );
     }
+
+    // Phase 1 diagnostic for idea-7452b77e: registers `stream-test://` so a
+    // dev-only frontend harness can measure whether the WebView's URL loader
+    // delivers a large response body incrementally or atomically. Compiled
+    // only in debug builds.
+    #[cfg(debug_assertions)]
+    {
+        final_builder = final_builder
+            .register_asynchronous_uri_scheme_protocol("stream-test", stream_harness::handle);
+    }
+
     final_builder
         .setup(|app| {
             // Always manage PendingResponses so __test_respond command doesn't panic

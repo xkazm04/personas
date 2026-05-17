@@ -2,6 +2,8 @@
 if (import.meta.env.DEV) {
   import('./lib/debug/freezeDetector');
   import('./lib/debug/freezeWatchdog');
+  // Phase 1 diagnostic for idea-7452b77e — attaches window.__streamHarness().
+  import('./lib/devTools/streamHarness');
 }
 import React from "react";
 import ReactDOM from "react-dom/client";
