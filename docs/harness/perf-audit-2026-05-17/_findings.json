@@ -1,0 +1,1155 @@
+{
+  "criticals": [
+    {
+      "context": "activity-events-realtime-bus",
+      "num": 1,
+      "title": "Realtime hub re-renders entire React tree on every event (3-state burst per tick)",
+      "sev": "critical",
+      "cat": "re-render",
+      "file": "src/hooks/realtime/useRealtimeEvents.ts:146-158",
+      "scen": "Each backend tick lands a single `PersonaEvent`. `pushEvent` synchronously triggers `setEvents` (new array), `setCapDroppedCount` only sometimes, **and unconditionally** `setDataVersion((v) => v + 1)` from inside the `se"
+    },
+    {
+      "context": "activity-events-realtime-bus",
+      "num": 2,
+      "title": "Event-bus singleton fan-out has no coalescing, no rAF batching, no payload deduping",
+      "sev": "critical",
+      "cat": "re-render",
+      "file": "src/hooks/realtime/createSingletonListener.ts:62-76",
+      "scen": "On every Tauri `event-bus` payload the singleton immediately iterates `for (const cb of subscribers) cb(payload);` synchronously inside the Tauri listener callback. There are at least three live subscribers in production"
+    },
+    {
+      "context": "activity-events-realtime-bus",
+      "num": 3,
+      "title": "EventLogSidebar slices+reverses 200 events and runs `personas.find()` per event on every realtime tick",
+      "sev": "critical",
+      "cat": "algorithmic",
+      "file": "src/features/overview/sub_realtime/components/panels/EventLogSidebar.tsx:50-67",
+      "scen": "`logEntries` runs `events.slice(-200).map(...).reverse()` and inside the map performs `allPersonas.find((p) => p.id === evt.target_persona_id)` for each entry — that's O(events × personas) per render. The component re-re"
+    },
+    {
+      "context": "analytics-sla-usage-leaderboard",
+      "num": 2,
+      "title": "`PredictiveAlerts` calls a hook inside a non-component helper and rebuilds the alert list every parent render",
+      "sev": "critical",
+      "cat": "re-render",
+      "file": "src/features/overview/sub_health/components/PredictiveAlerts.tsx:42",
+      "scen": "`PersonaHealthDashboard` renders `<PredictiveAlerts signals={healthSignals} recommendations={routingRecommendations} />`. Inside the component body, `buildPredictiveAlerts(signals)` is invoked as a plain function call wi"
+    },
+    {
+      "context": "automations-deployment",
+      "num": 1,
+      "title": "UnifiedDeploymentDashboard rebuilds `unified` row array + remounts sparkline computations on every selection toggle",
+      "sev": "critical",
+      "cat": "re-render",
+      "file": "src/features/deployment/components/UnifiedDeploymentDashboard.tsx:56",
+      "scen": "User opens the unified dashboard with 30+ deployments and clicks a row checkbox, types in the search box, or auto-poll fires. Every keystroke + every checkbox click triggers a re-render of the parent, which feeds a NEW `"
+    },
+    {
+      "context": "build-sessions-personamatrix",
+      "num": 1,
+      "title": "Every BuildEvent flush re-creates the full ScalarsProjection AND triggers full GlyphFullLayout subtree re-render",
+      "sev": "critical",
+      "cat": "re-render",
+      "file": "src/stores/slices/agents/matrixBuildSlice.ts:483-499",
+      "scen": "A live build emits a continuous stream of `progress`, `cell_update`, `capability_resolution_update`, and `persona_resolution_update` events. `flushEvents` (useBuildSession.ts:198) dispatches all events buffered in a sing"
+    },
+    {
+      "context": "connector-catalog-mcp-gateways-recipes",
+      "num": 1,
+      "title": "Catalog filter pipeline rebuilds 5 filtered arrays per keystroke without debounce",
+      "sev": "critical",
+      "cat": "re-render",
+      "file": "src/features/vault/sub_catalog/components/picker/usePickerFilters.ts:81-105",
+      "scen": "User types in the catalog search box (Ctrl/Cmd+K) with ~200 connectors loaded. Each keystroke pushes a new `searchTerm` through `CredentialPicker` -> `useCredentialViewFSM` re-runs the search-`filter()` -> `connectors` p"
+    },
+    {
+      "context": "credential-vault-crud",
+      "num": 1,
+      "title": "`CredentialList` re-renders every row on each global credentials/connectors mutation (no row memoization, no virtualization)",
+      "sev": "critical",
+      "cat": "re-render",
+      "file": "src/features/vault/sub_credentials/components/list/CredentialList.tsx:130",
+      "scen": "User on the vault list with 50+ credentials while bulk healthcheck runs (`useBulkHealthcheck` patches credentials in batches of 5 via `useVaultStore.setState`), or while typing in the search box (re-runs `filterAndSortCr"
+    },
+    {
+      "context": "execution-engine-healing-genome",
+      "num": 1,
+      "title": "Titlebar `ProcessActivityIndicator` re-renders on every telemetry tick of every run",
+      "sev": "critical",
+      "cat": "re-render",
+      "file": "src/features/shared/components/layout/ProcessActivityIndicator.tsx:12-14",
+      "scen": "A persona executes and the backend emits per-tool-call telemetry (`enrichProcess` for `toolCallCount`/`costUsd`/`lastEvent`) plus periodic `updateProcessStatus`. Each call does `set({ activeProcesses: { ...state.activePr"
+    },
+    {
+      "context": "first-party-plugins-artist-drive-gitlab-obsidian-twin",
+      "num": 1,
+      "title": "Artist scan-and-import is a sequential N-per-file IPC waterfall  [plugin: artist]",
+      "sev": "critical",
+      "cat": "async-coordination",
+      "file": "src/features/plugins/artist/hooks/useArtistAssets.ts:40-43",
+      "scen": "User clicks \"Scan folder\" on a directory with 500 image/3D files. `scanAndImport` `await`s `artistImportAsset(asset)` in a `for…of` loop — each IPC roundtrip blocks the next. At ~10 ms per Tauri invoke this is ~5 s wall-"
+    },
+    {
+      "context": "i18n-system-shared-design-components",
+      "num": 1,
+      "title": "`useTranslation` subscribes to the WHOLE i18nStore — every component re-renders on `fontReady` flip",
+      "sev": "critical",
+      "cat": "re-render",
+      "file": "src/i18n/useTranslation.ts:320",
+      "scen": "User switches language to `zh`/`ar`/`hi`/`bn`/`ja`/`ko`. `applyLangAttributes` flips `fontReady: false` in `i18nStore.ts:62`, and once the `<link>` loads `fontReady: true` in `i18nStore.ts:43`. Every single component cur"
+    },
+    {
+      "context": "i18n-system-shared-design-components",
+      "num": 2,
+      "title": "`useActiveI18nSections()` returns a fresh array on every render — kills downstream memos",
+      "sev": "critical",
+      "cat": "re-render",
+      "file": "src/i18n/routeSections.ts:30-31",
+      "scen": "Every render of every component that calls `useTranslation()` (hundreds of components) walks through `sectionsForRoute(sidebarSection)` which does `[...new Set([...BASE_SECTIONS, ...(ROUTE_SECTIONS[section] ?? [])])]`. T"
+    },
+    {
+      "context": "i18n-system-shared-design-components",
+      "num": 3,
+      "title": "`useTranslation()` returns a fresh `{ t, language, tx }` object every render",
+      "sev": "critical",
+      "cat": "re-render",
+      "file": "src/i18n/useTranslation.ts:327-337",
+      "scen": "Any consumer that destructures `const { t } = useTranslation()` and then passes `t` (or a slice of it) to a `useMemo`/`useEffect` dependency, or to a `React.memo`'d child, breaks the memo because the parent's `t` is `bun"
+    },
+    {
+      "context": "incidents-manual-review-memories-knowledge",
+      "num": 1,
+      "title": "Memory conflict detection is O(n²) on every memories array reference change",
+      "sev": "critical",
+      "cat": "algorithmic",
+      "file": "src/features/overview/sub_memories/libs/memoryConflicts.ts:84",
+      "scen": "User opens the \"Conflicts\" tab. `detectConflicts(memories)` runs on the full memory list. With even 200 memories that's ~20k pairs; each pair runs `textSimilarity` + `topicOverlap`, each of which re-`tokenize`s and re-`b"
+    },
+    {
+      "context": "lab-use-cases-tools-connectors",
+      "num": 1,
+      "title": "SigilGrid tile renders N hook subscriptions + Listbox per slot, with no memoization",
+      "sev": "critical",
+      "cat": "re-render",
+      "file": "src/features/agents/sub_use_cases/components/recipes-prototype/RecipesVariantSigilGrid.tsx:244-277",
+      "scen": "Editor's Use Cases tab. The grid lays out up to `GRID_SLOT_COUNT = 9` tiles. Each `SigilTile` renders `TileModelStrip` + `TilePolicyToggles`, and each of those calls `usePolicyControls(...)` → which calls `useAgentStore("
+    },
+    {
+      "context": "persona-crud-editor",
+      "num": 1,
+      "title": "`preparationFingerprint` JSON.stringify on every keystroke",
+      "sev": "critical",
+      "cat": "re-render",
+      "file": "src/features/agents/sub_editor/hooks/useEditorDraft.ts:48",
+      "scen": "User typing in any text field in the editor (name, description, structured prompt, etc.)."
+    },
+    {
+      "context": "persona-crud-editor",
+      "num": 2,
+      "title": "`useEffectivePersona` re-allocates merged persona on every keystroke",
+      "sev": "critical",
+      "cat": "re-render",
+      "file": "src/features/agents/sub_editor/libs/useEffectivePersona.ts:21",
+      "scen": "Any keystroke in the editor (typing in the description field, model dropdown change, anywhere)."
+    },
+    {
+      "context": "pipeline-team-memory-sharing-network",
+      "num": 1,
+      "title": "Pipeline status tick rebuilds every Node object → full canvas re-render",
+      "sev": "critical",
+      "cat": "re-render",
+      "file": "src/features/pipeline/components/TeamCanvas.tsx:67-75",
+      "scen": "A pipeline run is in flight. The Rust engine emits `PIPELINE_STATUS` events as each node transitions (queued → running → completed). On a team with N ≈ 30–60 members, this fires several times per second."
+    },
+    {
+      "context": "recipes-use-case-blueprints",
+      "num": 1,
+      "title": "RecipeList renders all ~291 cards without virtualization",
+      "sev": "critical",
+      "cat": "re-render",
+      "file": "src/features/recipes/sub_list/components/RecipeList.tsx:75",
+      "scen": "Open the Recipes tab. With the seeded catalog of ~291 entries (see `RecipesPage.tsx:43` \"the catalog has ~291 entries\"), the `recipes.map(...)` mounts ~291 `RecipeCard` instances simultaneously — each with its own `useSt"
+    },
+    {
+      "context": "schedules-cron-agents",
+      "num": 1,
+      "title": "N×M IPC fan-out + entire calendar event-set rebuild on every navigation/legend toggle",
+      "sev": "critical",
+      "cat": "data-layer",
+      "file": "src/features/schedules/libs/useCronPreview.ts:153",
+      "scen": "Calendar view with N schedules in the system. User clicks \"next week\", flips between week/month, or toggles a legend chip."
+    },
+    {
+      "context": "settings-byom-engine-config",
+      "num": 1,
+      "title": "AmbientContextPanel polls every 5s while EngineSettings is mounted, and re-fires when Engine tab is reopened",
+      "sev": "critical",
+      "cat": "async-coordination",
+      "file": "src/features/settings/components/AmbientContextPanel.tsx:71-79",
+      "scen": "User opens Settings → Engine tab once. `AmbientContextPanel` mounts inside the engine page (`EngineSettings.tsx:137-139`) and immediately starts a 5s `setInterval` calling `fetchAmbientSnapshot(selectedPersonaId)` + `fet"
+    },
+    {
+      "context": "templates-catalog-n8n-adoption",
+      "num": 1,
+      "title": "`computeAdoptionReadiness` re-parses `design_result` for every template on every credential change",
+      "sev": "critical",
+      "cat": "algorithmic",
+      "file": "src/features/templates/sub_generated/shared/adoptionReadiness.ts:20",
+      "scen": "User opens Templates → catalog mounts. The gallery hook builds a `readinessScores` `Map` by iterating **every loaded item** and calling `computeAdoptionReadiness(...)`, which `JSON.parse`s `review.design_result` (a fat I"
+    },
+    {
+      "context": "templates-catalog-n8n-adoption",
+      "num": 2,
+      "title": "`ChronologyAdoptionView` re-parses `review.design_result` on every render",
+      "sev": "critical",
+      "cat": "data-layer",
+      "file": "src/features/templates/sub_generated/adoption/ChronologyAdoptionView.tsx:458-465",
+      "scen": "User clicks \"Adopt\" → modal opens. This component is the entire questionnaire/UC picker/glyph flow — it re-renders on every keystroke in any answer, every UC toggle, every credential change. Each render hits an inline II"
+    },
+    {
+      "context": "tests-assertions-quality-gates",
+      "num": 1,
+      "title": "`startTest` flips `isTestRunning=true` but no listener mounts to flip it back — UI gets stuck for 30 minutes",
+      "sev": "critical",
+      "cat": "async-coordination",
+      "file": "src/stores/slices/agents/testSlice.ts:70",
+      "scen": "User clicks the **Test** button in `UseCaseDetailPanel` /   `UseCaseTestRunner`. `startTest` invokes `markStarted` which sets   `isTestRunning=true` and schedules a 30-minute `setTimeout` \"safety\" reset.   The intended c"
+    },
+    {
+      "context": "trigger-studio-webhooks",
+      "num": 1,
+      "title": "LiveStream event-row list rebuilds on every event, no virtualization",
+      "sev": "critical",
+      "cat": "re-render",
+      "file": "src/features/triggers/sub_live_stream/LiveStreamTab.tsx:97-110, 371-393",
+      "scen": "Live event bus firing 50–200 evt/s (well within the 10k-cap the file already   defends against) on a stream that already holds the rolling 200-row buffer."
+    }
+  ],
+  "highs": [
+    {
+      "context": "activity-events-realtime-bus",
+      "num": 4,
+      "title": "EventLogSidebar render list is unvirtualized — full 200-row DOM rebuild on every tick",
+      "sev": "high",
+      "cat": "re-render",
+      "file": "src/features/overview/sub_realtime/components/panels/EventLogSidebar.tsx:118-209",
+      "scen": "`{filteredLog.map(entry => ...)}` renders the full filtered list (capped at 200) as React children of the scroll container. Each entry produces a non-trivial subtree (status icon, ChevronRight, payload preview, optional "
+    },
+    {
+      "context": "activity-events-realtime-bus",
+      "num": 5,
+      "title": "EventLogSidebar parses payload JSON inside render via `tryParsePayload` — re-parses every tick",
+      "sev": "high",
+      "cat": "data-layer",
+      "file": "src/features/overview/sub_realtime/components/panels/EventLogSidebar.tsx:26-40,122",
+      "scen": "For each event row, `tryParsePayload(entry.payload)` calls `JSON.parse(raw)` plus `Object.keys(...)` + `JSON.stringify` of every value on every render. The result is not memoized (called in the `.map` body), so all 200 p"
+    },
+    {
+      "context": "activity-events-realtime-bus",
+      "num": 7,
+      "title": "`useRealtimeEvents.computeStats` is O(events) with 4 separate filter+map passes + 2 Set rebuilds",
+      "sev": "high",
+      "cat": "algorithmic",
+      "file": "src/hooks/realtime/useRealtimeEvents.ts:67-108",
+      "scen": "On every event push, `statsRef.current = computeStats(capped)` runs. It performs `events.filter(...)` four times, calls `new Date(e.created_at).getTime()` inside each filter, then two `new Set(... map ... filter)` materi"
+    },
+    {
+      "context": "activity-events-realtime-bus",
+      "num": 8,
+      "title": "`useEventLog.filteredEvents` rebuilds a `Map<id, timestamp>` and re-sorts a merged array every realtime tick",
+      "sev": "high",
+      "cat": "algorithmic",
+      "file": "src/features/overview/sub_events/libs/useEventLog.ts:188-220",
+      "scen": "Each `pushRecentEvent` updates `recentEvents`; the `filteredEvents` memo then dedupes via Set, builds a `tsMap` with `new Date(e.created_at).getTime()` for every event, and sorts the entire merged list. Deps include `sea"
+    },
+    {
+      "context": "agent-chat-sessions",
+      "num": 1,
+      "title": "ChatThread re-renders the entire message list on every streaming token",
+      "sev": "high",
+      "cat": "re-renders / streaming",
+      "file": "src/features/agents/components/ChatThread.tsx:46-74",
+      "scen": "While an assistant message is streaming, `msg.content` of the last message mutates each chunk. Every chunk arrival re-runs the component, and because the entire `messages.map(...)` body is inline JSX (no memoized row com"
+    },
+    {
+      "context": "agent-chat-sessions",
+      "num": 2,
+      "title": "`executionOutput` is consumed as raw array on every chunk, no rAF coalescing",
+      "sev": "high",
+      "cat": "streaming / event coalescing",
+      "file": "src/stores/slices/agents/chatSlice.ts:238-241",
+      "scen": "`appendChatStreamLine` is a documented no-op (line 238) — the chat reads `executionOutput` directly. In `setupChatExecListeners`, the `EXECUTION_OUTPUT` Tauri event handler calls `get().appendExecutionOutput(event.payloa"
+    },
+    {
+      "context": "analytics-sla-usage-leaderboard",
+      "num": 1,
+      "title": "ObservabilityDashboard recreates `since` ISO every render, blowing the `ToolPerformancePanel` memo",
+      "sev": "high",
+      "cat": "re-render",
+      "file": "src/features/overview/sub_observability/components/ObservabilityDashboard.tsx:253",
+      "scen": "Open Observability dashboard. Any state change in the dashboard (a hover, a filter pill click, the auto-refresh tick, the alert-rules toggle) re-renders `ObservabilityDashboard`. The `<ToolPerformancePanel since={new Dat"
+    },
+    {
+      "context": "analytics-sla-usage-leaderboard",
+      "num": 3,
+      "title": "`useIpcSnapshot` recomputes full IPC stats on every subscribed IPC call — including when the panel is collapsed",
+      "sev": "high",
+      "cat": "algorithmic",
+      "file": "src/features/overview/sub_observability/components/IpcPerformancePanel.tsx:16-26",
+      "scen": "`IpcPerformancePanel` subscribes to `subscribeIpcMetrics` via `useSyncExternalStore`. Every IPC call (and there are many — observability auto-refresh, healing fetches, etc.) bumps the generation counter and triggers re-r"
+    },
+    {
+      "context": "analytics-sla-usage-leaderboard",
+      "num": 4,
+      "title": "`useStatusPageData` fetches on every visibility-return and polls every 60 s — even when Status tab is not active",
+      "sev": "high",
+      "cat": "duplicate-call / data-layer",
+      "file": "src/features/overview/sub_health/libs/useStatusPageData.ts:70-104",
+      "scen": "`StatusPageView` is lazy-loaded by `PersonaHealthDashboard` when the user selects the `status-page` view. Once mounted, `useStatusPageData`'s effect kicks off `loadData()` immediately, starts a 60s `setInterval`, and re-"
+    },
+    {
+      "context": "analytics-sla-usage-leaderboard",
+      "num": 5,
+      "title": "`MetricsCharts` chart-redraw on tooltip move via inline reference-line/anomaly `label` functions",
+      "sev": "high",
+      "cat": "re-render",
+      "file": "src/features/overview/sub_observability/components/MetricsCharts.tsx:74-130",
+      "scen": "Inside the cost AreaChart and the execution-health BarChart, each `<R.ReferenceLine>` (one per annotation, one per anomaly) receives an inline `label={({ viewBox }) => …}` arrow function that closes over `getAnnotationCo"
+    },
+    {
+      "context": "analytics-sla-usage-leaderboard",
+      "num": 10,
+      "title": "`SystemTraceViewer` ancestor-collapsed walk is O(N² × depth) and re-runs on every collapse toggle",
+      "sev": "high",
+      "cat": "algorithmic",
+      "file": "src/features/overview/sub_observability/components/SystemTraceViewer.tsx:35-53",
+      "scen": "Inside `TraceCard`, the `useMemo` rebuilds the visible-spans list whenever `collapsedSpans` changes. For each flat node, `isAncestorCollapsed` walks parents via `trace.spans.find(s => s.span_id === currentParentId)` — a "
+    },
+    {
+      "context": "automations-deployment",
+      "num": 2,
+      "title": "`useDeploymentHealth` recomputes O(N log N) deployment key every render and writes refs unconditionally",
+      "sev": "high",
+      "cat": "re-render",
+      "file": "src/features/deployment/hooks/useDeploymentHealth.ts:24",
+      "scen": "Dashboard with 50 deployments. Parent re-renders for any reason (search keystroke, hover state, selection toggle, poll). The hook body runs lines 24–33 every render: `rows.filter().map()` allocates a new array, `[...new "
+    },
+    {
+      "context": "automations-deployment",
+      "num": 3,
+      "title": "`DailyBreakdownChart` reads layout DOM during render and triggers full re-render on every mousemove",
+      "sev": "high",
+      "cat": "re-render",
+      "file": "src/features/deployment/components/cloud/DailyBreakdownChart.tsx:49",
+      "scen": "User hovers over the 7/30/90-day execution chart in CloudHistoryPanel. `onMouseMove` (line 111) fires at ~60 Hz and calls `setTooltipPos({...})`, which triggers a full re-render of the chart including re-mapping all bars"
+    },
+    {
+      "context": "automations-deployment",
+      "num": 4,
+      "title": "`CloudHistoryPanel` runs poll + debounced refetch in parallel after filter change, and rebuilds `dailyBreakdown` array on every render",
+      "sev": "high",
+      "cat": "duplicate-call",
+      "file": "src/features/deployment/components/cloud/CloudHistoryPanel.tsx:106",
+      "scen": "User changes the persona/status/period filter. The `useEffect` at line 106 fires `debouncedFetchData()` (300ms delay). Simultaneously, `usePolling` at line 115 has registered `fetchData` with the coordinator — and becaus"
+    },
+    {
+      "context": "automations-deployment",
+      "num": 5,
+      "title": "`useCloudHealthMonitor` bypasses PollingCoordinator and uses chained `setTimeout` recursion",
+      "sev": "high",
+      "cat": "async-coordination",
+      "file": "src/features/deployment/hooks/useCloudHealthMonitor.ts:54",
+      "scen": "User opens `CloudDeployPanel`. `useCloudHealthMonitor()` (line 98 of CloudDeployPanel) starts a `setTimeout` chain: every 30s `runHealthCheck` calls `cloudGetConfig()`, which calls back into Tauri. Meanwhile `usePolling`"
+    },
+    {
+      "context": "build-sessions-personamatrix",
+      "num": 2,
+      "title": "`useShallow` selector in `useBuild` returns fresh array/object references every render via `Object.keys()`",
+      "sev": "high",
+      "cat": "re-render",
+      "file": "src/features/agents/components/matrix/useBuild.ts:59",
+      "scen": "The shallow selector contains `pendingAnswerCount: Object.keys(s.buildPendingAnswers).length`. `Object.keys()` is called inside the selector function but the value (a number) is OK — however, the projected object include"
+    },
+    {
+      "context": "build-sessions-personamatrix",
+      "num": 3,
+      "title": "EventBridge double-processes every build event during foregrounded session because guard logic checks the **same** event handler path",
+      "sev": "high",
+      "cat": "duplicate-call",
+      "file": "src/lib/eventBridge.ts:360-422",
+      "scen": "The Channel handler processes events for the active session and registers the session id in `__BUILD_CHANNEL_ACTIVE_SESSIONS__`. EventBridge subscribes to the global Tauri `BUILD_SESSION_EVENT` and skips entries whose `s"
+    },
+    {
+      "context": "build-sessions-personamatrix",
+      "num": 4,
+      "title": "`handleBuildCellUpdate` runs `JSON.stringify` on cell items inside the store updater path",
+      "sev": "high",
+      "cat": "algorithmic",
+      "file": "src/stores/slices/agents/matrixBuildSlice.ts:678-684",
+      "scen": "Every `cell_update` event during resolving phase runs through this updater, which on a re-resolve compares old vs new items via `JSON.stringify(oldItems) !== JSON.stringify(newItems)` to decide `resolved` vs `updated` st"
+    },
+    {
+      "context": "companion-runtime-approvals",
+      "num": 1,
+      "title": "streamingText store update re-renders entire CompanionPanel Body per CLI chunk",
+      "sev": "high",
+      "cat": "re-render",
+      "file": "src/features/plugins/companion/CompanionPanel.tsx:115",
+      "scen": "An assistant turn streams hundreds of `kind: 'cli'` stream-json lines. Each line that contains an assistant text delta calls `appendStreamingText(text)`, which does `set((s) => ({ streamingText: s.streamingText + chunk }"
+    },
+    {
+      "context": "companion-runtime-approvals",
+      "num": 2,
+      "title": "ApprovalCard re-parses JSON params on every parent re-render",
+      "sev": "high",
+      "cat": "re-render",
+      "file": "src/features/plugins/companion/ApprovalCard.tsx:115-120",
+      "scen": "Each `ApprovalCard` body computes `prettyParams` as `JSON.stringify(JSON.parse(approval.paramsJson), null, 2)` at the top level of the function. Cards are rendered as `approvals.map((a) => <ApprovalCard … />)` in `Compan"
+    },
+    {
+      "context": "companion-runtime-approvals",
+      "num": 3,
+      "title": "Auto-scroll writes scrollHeight on every streaming chunk (layout thrash)",
+      "sev": "high",
+      "cat": "re-render",
+      "file": "src/features/plugins/companion/CompanionPanel.tsx:797-802",
+      "scen": "`useEffect(() => { el.scrollTop = el.scrollHeight; }, [messages, streamingText, streaming]);` runs on every `streamingText` change (i.e., every CLI chunk). Reading `scrollHeight` forces a synchronous layout (reflow) befo"
+    },
+    {
+      "context": "companion-runtime-approvals",
+      "num": 4,
+      "title": "Approvals refetched in full on every approval event + every resolve",
+      "sev": "high",
+      "cat": "duplicate-call",
+      "file": "src/features/plugins/companion/CompanionPanel.tsx:786-794",
+      "scen": "`COMPANION_APPROVALS_EVENT` carries a `CreatedApproval[]` payload of *just the new* approvals, but the listener ignores the payload and unconditionally calls `companionListPendingApprovals()`. Separately, `ApprovalCard.o"
+    },
+    {
+      "context": "connector-catalog-mcp-gateways-recipes",
+      "num": 2,
+      "title": "`useRecipeIndicators` fetches every cached recipe on every mount, no shared store",
+      "sev": "high",
+      "cat": "duplicate-call",
+      "file": "src/features/vault/sub_catalog/components/picker/useRecipeIndicators.ts:18-34",
+      "scen": "Every mount of `CredentialPicker` fires `listCredentialRecipes()` (an unbounded IPC call returning the full recipe list). The picker is mounted on every catalog visit, on every FSM `CANCEL_FORM`/`GO_CATALOG` round-trip, "
+    },
+    {
+      "context": "connector-catalog-mcp-gateways-recipes",
+      "num": 3,
+      "title": "`popularityScore` recomputed in-sort: N log N × O(map lookups) on every filter/search change",
+      "sev": "high",
+      "cat": "algorithmic",
+      "file": "src/features/vault/sub_catalog/components/picker/usePickerFilters.ts:192-227",
+      "scen": "When `sortMode === 'popular'`, the comparator calls `popularityScore(a)` and `popularityScore(b)` per `localeCompare` pair — `N log N` calls. Each call does 3 map gets + an additive. Combined with the existing per-keystr"
+    },
+    {
+      "context": "connector-catalog-mcp-gateways-recipes",
+      "num": 6,
+      "title": "`RecipeConfidenceBanner` re-fires IPC on every instruction keystroke",
+      "sev": "high",
+      "cat": "duplicate-call",
+      "file": "src/features/vault/sub_catalog/components/design/phases/RecipeConfidenceBanner.tsx:21-39",
+      "scen": "The `useEffect` depends on `instruction`, which is wired to the textarea in `IdlePhase` (`onChange={(e) => onInstructionChange(e.target.value)}`). Every keystroke fires `getCredentialRecipe(normalized)` against the IPC b"
+    },
+    {
+      "context": "credential-vault-crud",
+      "num": 2,
+      "title": "`fetchCredentials` is called from 35+ components with no in-flight dedup or staleness window",
+      "sev": "high",
+      "cat": "duplicate-call",
+      "file": "src/stores/slices/vault/credentialSlice.ts:61",
+      "scen": "Open the vault manager — `useCredentialManagerState` runs `Promise.all([fetchCredentials(), fetchConnectorDefinitions()])`. While that's pending, `ConnectedServicesWidget`, `useObservabilityData`, and other widgets each "
+    },
+    {
+      "context": "credential-vault-crud",
+      "num": 3,
+      "title": "`CredentialRelationshipGraph` re-fetches all credential dependents on every credentials mutation (N+1 IPC, O(N) work in render)",
+      "sev": "high",
+      "cat": "duplicate-call",
+      "file": "src/features/vault/sub_dependencies/CredentialRelationshipGraph.tsx:38-58",
+      "scen": "User opens the Dependencies graph view; bulk healthcheck or `Rotate All` runs in parallel from the manager — the `credentials` zustand state mutates after each store batch, retriggering the load effect."
+    },
+    {
+      "context": "credential-vault-crud",
+      "num": 4,
+      "title": "`useRotateAll` rotates credentials sequentially, blocking on each IPC",
+      "sev": "high",
+      "cat": "async-coordination",
+      "file": "src/features/vault/sub_credentials/manager/useRotateAll.ts:32-51",
+      "scen": "User clicks \"Rotate All\" with 10 OAuth credentials. Each `rotateCredentialNow` is awaited one-by-one in a for-loop."
+    },
+    {
+      "context": "credential-vault-crud",
+      "num": 5,
+      "title": "`CredentialIntelligence` modal triple-fetches on every `credentialId` change with no shared cache",
+      "sev": "high",
+      "cat": "duplicate-call",
+      "file": "src/features/vault/sub_credentials/components/features/CredentialIntelligence.tsx:43-64",
+      "scen": "User clicks through 5 credentials in the list to inspect Intelligence tabs. Each open issues 3 IPCs (`getCredentialUsageStats`, `getCredentialDependents`, `getCredentialAuditLog`) with no caching. Re-opening the same cre"
+    },
+    {
+      "context": "execution-engine-healing-genome",
+      "num": 2,
+      "title": "`ProcessActivityDrawer` recomputes 3 filter passes + sort on every store mutation",
+      "sev": "high",
+      "cat": "re-render",
+      "file": "src/features/shared/components/layout/ProcessActivityDrawer.tsx:184-192",
+      "scen": "While the drawer is open during a long run, `enrichProcess` fires per tool call. The drawer reads the entire `activeProcesses` map via `useShallow`, then in the render body runs three independent `Object.entries(activePr"
+    },
+    {
+      "context": "execution-engine-healing-genome",
+      "num": 4,
+      "title": "`extractGenome` fired serially in a for-loop per breeding result load",
+      "sev": "high",
+      "cat": "duplicate-call / async-coordination",
+      "file": "src/features/agents/sub_lab/components/genome/useGenomeBreeding.ts:60-73",
+      "scen": "User selects a breeding run with N parents. The loop `for (const pid of parentIds) { await genomeApi.extractGenome(pid); ... }` walks parents sequentially, awaiting each IPC round-trip before starting the next. Parent co"
+    },
+    {
+      "context": "execution-engine-healing-genome",
+      "num": 5,
+      "title": "`OffspringCard` re-parses genome + fitness JSON on every render",
+      "sev": "high",
+      "cat": "data-layer / algorithmic",
+      "file": "src/features/agents/sub_lab/components/genome/GenomeBreedingPanel.tsx:387-388",
+      "scen": "Each offspring card calls `parseJsonOrDefault<PersonaGenome>(result.genomeJson, null)` and `parseJsonOrDefault<FitnessScore>(result.fitnessJson, null)` directly in the render body. The genome JSON is a *full persona blob"
+    },
+    {
+      "context": "first-party-plugins-artist-drive-gitlab-obsidian-twin",
+      "num": 2,
+      "title": "Obsidian browse-tree filter calls O(n) recursive `matchesFilter` ~3× per node per render  [plugin: obsidian-brain]",
+      "sev": "high",
+      "cat": "algorithmic",
+      "file": "src/features/plugins/obsidian-brain/sub_browse/BrowsePanel.tsx:17-22, 31-37",
+      "scen": "User types in the vault filter on a vault with thousands of notes (`obsidianBrainListVaultFiles` returns the entire tree client-side). For every keystroke React re-renders the tree; each `TreeItem` calls `matchesFilter(n"
+    },
+    {
+      "context": "first-party-plugins-artist-drive-gitlab-obsidian-twin",
+      "num": 3,
+      "title": "`useProfileDashboards` issues N × 4 IPC calls (no batching, no dedup across renders)  [plugin: twin]",
+      "sev": "high",
+      "cat": "duplicate-call",
+      "file": "src/features/plugins/twin/useProfileDashboards.ts:42-86",
+      "scen": "ProfilesAtelier mounts with 20 twin profiles → 80 parallel Tauri invokes (`listTones`, `listChannels`, `getVoiceProfile`, `listPendingMemories`) burst at once. Tauri IPC serialises through a single thread on the renderer"
+    },
+    {
+      "context": "first-party-plugins-artist-drive-gitlab-obsidian-twin",
+      "num": 4,
+      "title": "Drive `visibleEntries` re-sorts the entire entry array on every entry/selection touch  [plugin: drive]",
+      "sev": "high",
+      "cat": "re-render",
+      "file": "src/features/plugins/drive/hooks/useDrive.ts:429-472",
+      "scen": "A drive folder with 5000 entries. `visibleEntries` is `useMemo`d on `[entries, searchQuery, sortKey, sortDir]` — fine for those — but the sort comparator for `kind` calls `visualForEntry(a)` AND `visualForEntry(b)` per c"
+    },
+    {
+      "context": "first-party-plugins-artist-drive-gitlab-obsidian-twin",
+      "num": 5,
+      "title": "Drive `useDrive` returns a fresh result object literal on every render (re-render storm)  [plugin: drive]",
+      "sev": "high",
+      "cat": "re-render",
+      "file": "src/features/plugins/drive/hooks/useDrive.ts:613-675",
+      "scen": "`useDrive()` returns a `UseDriveResult` object built with bare `{ … }` literal at the bottom. It's never `useMemo`d. Every render of `DrivePage` (e.g. on any state change — drag counter, dialog open, context menu coords)"
+    },
+    {
+      "context": "first-party-plugins-artist-drive-gitlab-obsidian-twin",
+      "num": 6,
+      "title": "Research-lab GraphPanel re-filters per kind per render (5× full-array `.filter()`)  [plugin: research-lab]",
+      "sev": "high",
+      "cat": "re-render",
+      "file": "src/features/plugins/research-lab/sub_graph/GraphPanel.tsx:93-99",
+      "scen": "GraphPanel has a `toggles` array built **inline in render body** (not memoised) that filters each of sources/hypotheses/experiments/findings/reports by project ID just to compute toolbar counts. With a project that has 1"
+    },
+    {
+      "context": "first-party-plugins-artist-drive-gitlab-obsidian-twin",
+      "num": 7,
+      "title": "Drive recursive search results not paginated / not virtualised  [plugin: drive]",
+      "sev": "high",
+      "cat": "re-render",
+      "file": "src/features/plugins/drive/components/DriveFileList.tsx:971-1015",
+      "scen": "`runRecursiveSearch` calls `driveSearch(q)` with no `maxResults` cap (the API accepts one but the call passes none → backend default). Results render as a flat `results.map((hit) => <RecursiveResultRow ...>)` — no virtua"
+    },
+    {
+      "context": "first-party-plugins-artist-drive-gitlab-obsidian-twin",
+      "num": 8,
+      "title": "Gallery2D grid renders all assets at once (no virtualisation, all thumbnails decode)  [plugin: artist]",
+      "sev": "high",
+      "cat": "re-render",
+      "file": "src/features/plugins/artist/sub_gallery/Gallery2D.tsx:98-112",
+      "scen": "GalleryPage filters/sorts assets then renders `<Gallery2D assets={filtered} />` which `.map`s every asset to an `AssetCard`. Every AssetCard mounts a `useLocalImage(asset.filePath)` hook — even off-screen cards immediate"
+    },
+    {
+      "context": "i18n-system-shared-design-components",
+      "num": 4,
+      "title": "Every `useTranslation()` consumer subscribes to `useSystemStore` for `sidebarSection`",
+      "sev": "high",
+      "cat": "re-render",
+      "file": "src/i18n/routeSections.ts:35",
+      "scen": "Every component that calls `useTranslation()` transitively subscribes to `useSystemStore` for `sidebarSection`. When the user clicks a top-level sidebar nav, `sidebarSection` changes, and **every translated component** i"
+    },
+    {
+      "context": "i18n-system-shared-design-components",
+      "num": 5,
+      "title": "`getBundle` Proxy `get` handler triggers `preloadSections` as a side-effect of property access",
+      "sev": "high",
+      "cat": "duplicate-call",
+      "file": "src/i18n/useTranslation.ts:234-260",
+      "scen": "When a non-English bundle is requested, `getBundle` returns a `Proxy`. Every property access (e.g. `t.common.save`) goes through `get(_target, prop)` which, on cache miss, calls `preloadSections(lang, [prop])` (line 240)"
+    },
+    {
+      "context": "i18n-system-shared-design-components",
+      "num": 6,
+      "title": "`useSidebarLabels` builds a 40-entry `Map` on every `t.sidebar` change",
+      "sev": "high",
+      "cat": "re-render",
+      "file": "src/i18n/useSidebarTranslation.ts:14-97",
+      "scen": "`Sidebar`, `SidebarLevel1`, `SidebarLevel2`, `SidebarSubNav` all call `useSidebarLabels()`. Each instance memos a 40-entry `Map` keyed on `[t.sidebar]`. Combined with finding #3 (`t` *appears* stable per language but the"
+    },
+    {
+      "context": "i18n-system-shared-design-components",
+      "num": 7,
+      "title": "`pseudoLocale.buildPseudoBundle` cache never invalidates on English bundle change",
+      "sev": "high",
+      "cat": "memory / correctness",
+      "file": "src/i18n/pseudoLocale.ts:62-67",
+      "scen": "Dev-only feature, but: `buildPseudoBundle` walks the entire English bundle, transforms every string, and caches the result. The cache is built on **first call** with whatever English bundle was passed. If subsequent call"
+    },
+    {
+      "context": "incidents-manual-review-memories-knowledge",
+      "num": 2,
+      "title": "Knowledge dashboard rebuilds expensive virtualized rows on every animation tick",
+      "sev": "high",
+      "cat": "re-render",
+      "file": "src/features/overview/sub_knowledge/components/KnowledgeRow.tsx:179",
+      "scen": "`KnowledgeGraphDashboard` virtualizes a list of `KnowledgeRow`. Each row calls `parseJsonOrDefault<Record<string, unknown>>(entry.pattern_data, {})` directly in render. When expanded, it renders nested `framer-motion` `A"
+    },
+    {
+      "context": "incidents-manual-review-memories-knowledge",
+      "num": 3,
+      "title": "Incidents inbox list never virtualized; full DOM render of N rows",
+      "sev": "high",
+      "cat": "re-render",
+      "file": "src/features/overview/sub_incidents/components/IncidentsInbox.tsx:128",
+      "scen": "`incidents.map(...)` renders every row directly inside a `<div className=\"divide-y...\">`. The hook fetches `DEFAULT_LIMIT = 100`. Each `IncidentRow` calls `useTranslation()` (selector subscription) and renders a checkbox"
+    },
+    {
+      "context": "incidents-manual-review-memories-knowledge",
+      "num": 4,
+      "title": "ManualReviewList computes status counts and `reviewMap` on every render via 3+ useMemos but reads `allReviews` length unnecessarily",
+      "sev": "high",
+      "cat": "re-render",
+      "file": "src/features/overview/sub_manual-review/components/ManualReviewList.tsx:74-93",
+      "scen": "Each `fetchCloudReviews` poll tick (every `POLLING_CONFIG.cloudReviews.interval`) replaces `cloudReviews` in the store. That cascades through: `useEnrichedRecords(manualReviews/cloudReviews, personaMap)` (creates new arr"
+    },
+    {
+      "context": "lab-use-cases-tools-connectors",
+      "num": 2,
+      "title": "Per-tile cascading `fetchDetail` refetches the entire persona on each toggle",
+      "sev": "high",
+      "cat": "duplicate-call",
+      "file": "src/features/agents/sub_use_cases/components/recipes-prototype/shared/usePolicyControls.ts:78",
+      "scen": "User clicks the memory / review / events toggle on a tile, swaps the model, edits a connector/notification chip, or toggles the capability — each handler does `await setX(...); await fetchDetail(personaId)`."
+    },
+    {
+      "context": "lab-use-cases-tools-connectors",
+      "num": 3,
+      "title": "`ExecutionLogViewer` splits/classifies the entire log on every render",
+      "sev": "high",
+      "cat": "data-layer / algorithmic",
+      "file": "src/features/agents/sub_executions/detail/views/ExecutionLogViewer.tsx:87-95",
+      "scen": "User opens an execution detail with a long log (multi-MB CLI runs are common per the runner code path)."
+    },
+    {
+      "context": "lab-use-cases-tools-connectors",
+      "num": 4,
+      "title": "`LabEventStream.deriveToolCallDurations` is O(n²) and recomputed every render",
+      "sev": "high",
+      "cat": "algorithmic",
+      "file": "src/features/agents/sub_lab/components/shared/LabEventStream.tsx:18-29",
+      "scen": "User expands the event stream on any lab result (Arena/AB/Matrix/Eval scenario detail)."
+    },
+    {
+      "context": "oauth-discovery-foraging-api-proxy",
+      "num": 1,
+      "title": "`checkPlaywrightAvailable()` re-runs on every mount of `AutoCredPanel` AND `CatalogAutoSetup` with no cache; result never changes within a session",
+      "sev": "high",
+      "cat": "duplicate-call",
+      "file": "src/api/vault/autoCredBrowser.ts:27",
+      "scen": "User opens the AutoCred wizard. `CatalogAutoSetup` fires   `checkPlaywrightAvailable()` in `useEffect` (CatalogAutoSetup.tsx:69). It   then renders `<AutoCredPanel/>`, which fires `checkPlaywrightAvailable()`   again in "
+    },
+    {
+      "context": "oauth-discovery-foraging-api-proxy",
+      "num": 2,
+      "title": "`importForagedCredential` is awaited sequentially in a `for` loop instead of `Promise.all`",
+      "sev": "high",
+      "cat": "async-coordination",
+      "file": "src/api/vault/foraging.ts:15",
+      "scen": "User runs credential foraging, gets back N credentials   (browser cookies, CLI tokens, env vars), bulk-selects them, clicks Import.   The loop awaits each `importForagedCredential` one at a time, even though   the backen"
+    },
+    {
+      "context": "onboarding-home-simple-mode",
+      "num": 1,
+      "title": "`HomePage` remounts the whole subtree on every tab switch",
+      "sev": "high",
+      "cat": "re-render",
+      "file": "src/features/home/components/HomePage.tsx:19",
+      "scen": "User clicks any home sub-tab (welcome → cockpit → roadmap → learning)."
+    },
+    {
+      "context": "onboarding-home-simple-mode",
+      "num": 2,
+      "title": "CockpitPanel parses `specJson` on every render and reloads on window focus",
+      "sev": "high",
+      "cat": "re-render",
+      "file": "src/features/home/components/cockpit/CockpitPanel.tsx:67-75",
+      "scen": "Any state change in `CockpitPanel` (loading flip, contextual cockpit overlay open/close, any parent re-render) → component re-runs body."
+    },
+    {
+      "context": "onboarding-home-simple-mode",
+      "num": 3,
+      "title": "Onboarding overlay kicks off both heavy effects in parallel on Step 1",
+      "sev": "high",
+      "cat": "data-layer",
+      "file": "src/features/onboarding/components/useOnboardingState.ts:92-129",
+      "scen": "First-launch user; `startOnboarding()` flips `onboardingActive=true` while step is still `appearance`."
+    },
+    {
+      "context": "onboarding-home-simple-mode",
+      "num": 4,
+      "title": "`GuidedTour.navigateToStep` schedules up to 3 setTimeouts per step change, and the effect runs on every store change in its dep array",
+      "sev": "high",
+      "cat": "async-coordination",
+      "file": "src/features/onboarding/components/GuidedTour.tsx:79-119",
+      "scen": "User clicks Next in the tour panel, or any store action recreates one of the captured setters."
+    },
+    {
+      "context": "persona-crud-editor",
+      "num": 3,
+      "title": "`PersonaEditorHeader` re-renders on every keystroke despite only display-field overrides",
+      "sev": "high",
+      "cat": "re-render",
+      "file": "src/features/agents/sub_editor/components/PersonaEditorHeader.tsx:38",
+      "scen": "User types in Settings/Model/Prompt fields."
+    },
+    {
+      "context": "persona-crud-editor",
+      "num": 4,
+      "title": "`QuickStatsBar` fires `listExecutions(personaId, 10)` on every persona switch with no cache",
+      "sev": "high",
+      "cat": "duplicate-call",
+      "file": "src/features/agents/sub_editor/hooks/useQuickStats.ts:24",
+      "scen": "User clicks any persona; navigates away; clicks back. Or switches between personas in the sidebar."
+    },
+    {
+      "context": "persona-crud-editor",
+      "num": 5,
+      "title": "`selectPersona` always re-fires `fetchDetail` even when `detailCache[id]` is fresh",
+      "sev": "high",
+      "cat": "duplicate-call",
+      "file": "src/stores/slices/agents/personaSlice.ts:484",
+      "scen": "User clicks persona A, then B, then A. Or: sidebar rapid-fire while still loading."
+    },
+    {
+      "context": "persona-crud-editor",
+      "num": 6,
+      "title": "`SubTabSurface` unmount/remount of lazy tab on every tab switch",
+      "sev": "high",
+      "cat": "re-render",
+      "file": "src/features/agents/sub_editor/components/SubTabSurface.tsx:13",
+      "scen": "User clicks between editor tabs (Activity → Design → Settings → Lab)."
+    },
+    {
+      "context": "pipeline-team-memory-sharing-network",
+      "num": 2,
+      "title": "`onNodeDrag` recomputes alignment guides against every node on every mouse move",
+      "sev": "high",
+      "cat": "algorithmic",
+      "file": "src/features/pipeline/components/canvas/useCanvasHandlers.ts:141-144",
+      "scen": "User drags a node around the canvas. `onNodeDrag` fires at pointer-move frequency (often 60–120 Hz on high-refresh displays)."
+    },
+    {
+      "context": "pipeline-team-memory-sharing-network",
+      "num": 3,
+      "title": "Topology graph + per-member suggestion filter rebuilt on every tick → O(M × S) per derivation",
+      "sev": "high",
+      "cat": "algorithmic",
+      "file": "src/features/pipeline/sub_canvas/libs/useDerivedCanvasState.ts:77-111",
+      "scen": "Every change to `pipelineNodeStatuses`, `analytics`, `dryRunState`, `dismissedSuggestionIds`, or `pipelineCycleNodeIds` re-runs the full `useMemo`. During a run, this fires per status event."
+    },
+    {
+      "context": "pipeline-team-memory-sharing-network",
+      "num": 4,
+      "title": "`useDebugger` writes a fresh `DryRunState` object on every render → feedback loop",
+      "sev": "high",
+      "cat": "re-render",
+      "file": "src/features/pipeline/sub_canvas/libs/useDebugger.ts:51-53",
+      "scen": "Dry-run mode active. The user clicks Play; the debugger auto-steps every 800 ms."
+    },
+    {
+      "context": "recipes-use-case-blueprints",
+      "num": 2,
+      "title": "RecipeEditor lacks autosave + loses draft on background save error only via clipboard",
+      "sev": "high",
+      "cat": "async-coordination",
+      "file": "src/features/recipes/sub_editor/components/RecipeEditor.tsx:79-130",
+      "scen": "User edits a recipe with a 200-line `prompt_template`. If they switch tabs, refresh, or the app crashes between the last keystroke and the \"Save Changes\" click, the entire edit is lost. There is **no autosave** and no dr"
+    },
+    {
+      "context": "recipes-use-case-blueprints",
+      "num": 3,
+      "title": "Every mutation re-fetches the entire recipe catalog (cascading O(N) refresh)",
+      "sev": "high",
+      "cat": "duplicate-call",
+      "file": "src/stores/slices/pipeline/recipeSlice.ts:50-82",
+      "scen": "User clicks save in the editor → `createRecipe` / `updateRecipe` / `deleteRecipe` each invoke `list_recipes` again to refresh the whole array, ignoring the response payload (`createRecipe` already returns the created `Re"
+    },
+    {
+      "context": "recipes-use-case-blueprints",
+      "num": 4,
+      "title": "RecipeHistoryTab re-renders all history rows with full Markdown on every state tick",
+      "sev": "high",
+      "cat": "re-render",
+      "file": "src/features/recipes/sub_playground/tabs/RecipeHistoryTab.tsx:46-89",
+      "scen": "User runs the test runner 20 times (`useRecipeTestRunner.ts:34`: `slice(0, 20)`). Each history entry renders a `PromptTemplateRenderer` plus, if `llm_output` is set, a `MarkdownRenderer` (react-markdown + remark-gfm + re"
+    },
+    {
+      "context": "recipes-use-case-blueprints",
+      "num": 5,
+      "title": "useRecipeTestRunner spurious history rewrites on every execution.output tick",
+      "sev": "high",
+      "cat": "re-render",
+      "file": "src/features/recipes/sub_playground/libs/useRecipeTestRunner.ts:27-37",
+      "scen": "The LLM execution streams tokens. `execution.phase === 'done'` triggers an effect that calls `setHistory((prev) => { const [, ...rest] = prev; return [updated, ...rest].slice(0, 20); })` — but the effect dep list include"
+    },
+    {
+      "context": "schedules-cron-agents",
+      "num": 2,
+      "title": "WeekView rebuilds the entire 24-hour×7-day slot grid on every event toggle",
+      "sev": "high",
+      "cat": "re-render",
+      "file": "src/features/schedules/libs/calendarHelpers.ts:85",
+      "scen": "User toggles a legend chip (\"projected\" off/on) on a calendar with hundreds of fire-times (e.g. a `*/5 * * * *` agent over 7 days = 2016 events)."
+    },
+    {
+      "context": "schedules-cron-agents",
+      "num": 3,
+      "title": "MonthView uses `day.events.find` (O(D·E)) for event placement + `Date.toISOString()` as React keys",
+      "sev": "high",
+      "cat": "algorithmic",
+      "file": "src/features/schedules/libs/calendarHelpers.ts:137",
+      "scen": "Month view with a busy calendar (e.g. 5–10 schedules × 30+ days of fire times = hundreds-to-thousands of events)."
+    },
+    {
+      "context": "schedules-cron-agents",
+      "num": 5,
+      "title": "30s polling + OVERDUE_TRIGGERS_FIRED listener attached unconditionally on the schedules page",
+      "sev": "high",
+      "cat": "async-coordination",
+      "file": "src/features/schedules/components/ScheduleTimeline.tsx:67-120",
+      "scen": "User navigates to schedules, then to another tab; or schedules tab is in a stacked layout."
+    },
+    {
+      "context": "settings-byom-engine-config",
+      "num": 2,
+      "title": "Tab switching re-fetches entire config slice with no cache — 4 IPCs per BYOM revisit",
+      "sev": "high",
+      "cat": "duplicate-call",
+      "file": "src/features/settings/sub_byom/libs/useByomSettings.ts:100-130",
+      "scen": "User opens BYOM tab → switches to another settings tab for 30s → switches back. Because SettingsPage unmounts idle tabs (`SettingsPage.tsx:22,43-61`), `useByomSettings` re-mounts and re-runs the full mount-time fetch. On"
+    },
+    {
+      "context": "settings-byom-engine-config",
+      "num": 3,
+      "title": "BYOM `useByomSettings` runs `validateByomPolicy` on every keystroke in routing/compliance/provider edits",
+      "sev": "high",
+      "cat": "re-render",
+      "file": "src/features/settings/sub_byom/libs/useByomSettings.ts:257-262",
+      "scen": "User is in BYOM → routing rules, types in a rule name. Each keystroke calls `updateRoutingRule` (line 219-224) → new `policy` object → `useMemo` deps fire → `validateByomPolicy(policy)` walks the whole policy synchronous"
+    },
+    {
+      "context": "settings-byom-engine-config",
+      "num": 4,
+      "title": "CustomThemeCreator recomputes `deriveCustomThemeVars` twice on every keystroke in 14 color fields",
+      "sev": "high",
+      "cat": "re-render",
+      "file": "src/features/settings/sub_appearance/components/CustomThemeCreator.tsx:89-109",
+      "scen": "User opens Custom Theme creator and types in the \"Theme name\" field, or drags any of 8 color pickers, or moves the gradient angle slider (`type=\"range\"`, line 224). Every change goes through one of 12 `useState` setters "
+    },
+    {
+      "context": "templates-catalog-n8n-adoption",
+      "num": 3,
+      "title": "`RecipesPage` always fires `fetchRecipes()` on mount even when 291-entry catalog is already loaded",
+      "sev": "high",
+      "cat": "duplicate-call",
+      "file": "src/features/templates/sub_recipes/RecipesPage.tsx:38-40",
+      "scen": "User navigates Templates → Recipes tab. Recipes were already seeded at boot (`recipeSlice` from `pipelineStore`). `useEffect(() => { fetchRecipes()...}, [fetchRecipes])` fires unconditionally on every mount."
+    },
+    {
+      "context": "templates-catalog-n8n-adoption",
+      "num": 4,
+      "title": "`useGalleryActions.readinessScores` not keyed on `getCachedDesignResult` cache, re-runs on every filter toggle",
+      "sev": "high",
+      "cat": "re-render",
+      "file": "src/features/templates/sub_generated/gallery/cards/useGalleryActions.ts:45-77",
+      "scen": "User opens density toggle / coverage filter / component filter. The hook's `availableComponents` memo (line 65) calls `getCachedLightFields` + `deriveArchCategories` for every item; `readinessScores` (line 45) calls `com"
+    },
+    {
+      "context": "templates-catalog-n8n-adoption",
+      "num": 5,
+      "title": "`useConnectorStatuses` ping-pongs `setStatuses` on every credential mutation",
+      "sev": "high",
+      "cat": "re-render",
+      "file": "src/features/templates/sub_n8n/edit/useConnectorStatuses.ts:140-171",
+      "scen": "User on the n8n Edit step adds/links a credential. Adding a credential mutates `vaultStore.credentials` (subscribed at line 66), which dirties `credentialsByIdMap`, `credentialsByServiceType`, `matchedCredByConnector`, e"
+    },
+    {
+      "context": "templates-catalog-n8n-adoption",
+      "num": 6,
+      "title": "`FlowDiagram` and `FlowNodeCard` lack `React.memo`; full BFS layout re-runs on hover/click",
+      "sev": "high",
+      "cat": "re-render",
+      "file": "src/features/templates/sub_diagrams/FlowDiagram.tsx:9-147",
+      "scen": "User opens ActivityDiagramModal, clicks a node to see the popover. `ActivityDiagramModal` setState (`inspectedNode`, `popoverPos`) re-renders the modal; `FlowDiagram` is a child and re-runs without memo. The internal `ad"
+    },
+    {
+      "context": "templates-catalog-n8n-adoption",
+      "num": 7,
+      "title": "`TemplateDetailModal` re-parses `use_case_flows` + `suggested_adjustment` on every render",
+      "sev": "high",
+      "cat": "data-layer",
+      "file": "src/features/templates/sub_generated/gallery/modals/TemplateDetailModal.tsx:110-115",
+      "scen": "User opens the template detail modal, switches between Overview / Prompt / Connectors tabs. Tab switch is a setState in the parent → modal body re-renders → lines 110/111 fire `parseJsonSafe<UseCaseFlow[]>(review.use_cas"
+    },
+    {
+      "context": "tests-assertions-quality-gates",
+      "num": 2,
+      "title": "Components subscribe to whole `testRunProgress` object, re-rendering on every progress tick across siblings",
+      "sev": "high",
+      "cat": "re-render",
+      "file": "src/features/agents/sub_use_cases/components/core/UseCaseTestRunner.tsx:22",
+      "scen": "While a test is running, the `test-run-status` event (once the   listener from #1 is mounted) fires every `executing` step — typically per   scenario × per model. Each event triggers `set({ testRunProgress: { ... } })`, "
+    },
+    {
+      "context": "tests-assertions-quality-gates",
+      "num": 4,
+      "title": "`cancelTest` always transitions to \"cancelled\" even when the IPC throws — state-machine lie",
+      "sev": "high",
+      "cat": "async-coordination",
+      "file": "src/stores/slices/agents/testSlice.ts:89",
+      "scen": "```ts   cancelTest: async (runId) => {     try { await cancelTestRun(runId); }     catch (err) { reportError(err, \"...\", set); }     finally { testLifecycle.markCancelled(set); }   },   ```"
+    },
+    {
+      "context": "trigger-studio-webhooks",
+      "num": 2,
+      "title": "CloudWebhooksTab waterfalls N `cloudListTriggers` calls per deployment",
+      "sev": "high",
+      "cat": "duplicate-call / async-coordination",
+      "file": "src/features/triggers/sub_cloud_webhooks/CloudWebhooksTab.tsx:44-81",
+      "scen": "User opens Cloud Webhooks tab with K active deployments."
+    },
+    {
+      "context": "trigger-studio-webhooks",
+      "num": 3,
+      "title": "RadialCountdownRing runs one rAF loop per trigger forever",
+      "sev": "high",
+      "cat": "memory / async-coordination",
+      "file": "src/features/triggers/sub_triggers/RadialCountdownRing.tsx:29-46",
+      "scen": "TriggerList view rendered with many schedule/polling triggers (e.g. 30+   triggers across personas)."
+    },
+    {
+      "context": "trigger-studio-webhooks",
+      "num": 4,
+      "title": "TriggerAddForm = god-component, all child config sections re-render per keystroke",
+      "sev": "high",
+      "cat": "re-render",
+      "file": "src/features/triggers/sub_triggers/TriggerAddForm.tsx:33-241",
+      "scen": "User types in any input — interval, cron expression, hmac secret, watch path,   composite condition list, etc."
+    }
+  ],
+  "cat_counts": {
+    "re-render": 80,
+    "algorithmic": 36,
+    "data-layer": 15,
+    "async-coordination": 16,
+    "re-renders / streaming": 1,
+    "streaming / event coalescing": 1,
+    "algorithmic / async coordination": 1,
+    "re-renders": 2,
+    "async coordination": 1,
+    "duplicate-call / data-layer": 1,
+    "duplicate-call": 34,
+    "re-render / memory": 1,
+    "memory / algorithmic": 1,
+    "re-render / algorithmic": 1,
+    "duplicate-call / async-coordination": 3,
+    "data-layer / algorithmic": 2,
+    "memory / correctness": 1,
+    "re-render (micro)": 1,
+    "re-render / data-layer": 1,
+    "memory": 1,
+    "memory / async-coordination": 1
+  },
+  "per_ctx": {
+    "activity-events-realtime-bus": {
+      "C": 3,
+      "H": 4,
+      "M": 3,
+      "L": 1,
+      "total": 11
+    },
+    "agent-chat-sessions": {
+      "C": 0,
+      "H": 2,
+      "M": 6,
+      "L": 0,
+      "total": 8
+    },
+    "analytics-sla-usage-leaderboard": {
+      "C": 1,
+      "H": 5,
+      "M": 3,
+      "L": 1,
+      "total": 10
+    },
+    "automations-deployment": {
+      "C": 1,
+      "H": 4,
+      "M": 3,
+      "L": 0,
+      "total": 8
+    },
+    "build-sessions-personamatrix": {
+      "C": 1,
+      "H": 3,
+      "M": 4,
+      "L": 1,
+      "total": 9
+    },
+    "companion-runtime-approvals": {
+      "C": 0,
+      "H": 4,
+      "M": 3,
+      "L": 1,
+      "total": 8
+    },
+    "connector-catalog-mcp-gateways-recipes": {
+      "C": 1,
+      "H": 3,
+      "M": 3,
+      "L": 0,
+      "total": 7
+    },
+    "credential-vault-crud": {
+      "C": 1,
+      "H": 4,
+      "M": 4,
+      "L": 1,
+      "total": 10
+    },
+    "execution-engine-healing-genome": {
+      "C": 1,
+      "H": 3,
+      "M": 2,
+      "L": 1,
+      "total": 7
+    },
+    "first-party-plugins-artist-drive-gitlab-obsidian-twin": {
+      "C": 1,
+      "H": 7,
+      "M": 4,
+      "L": 1,
+      "total": 13
+    },
+    "i18n-system-shared-design-components": {
+      "C": 3,
+      "H": 4,
+      "M": 2,
+      "L": 1,
+      "total": 10
+    },
+    "incidents-manual-review-memories-knowledge": {
+      "C": 1,
+      "H": 3,
+      "M": 3,
+      "L": 1,
+      "total": 8
+    },
+    "lab-use-cases-tools-connectors": {
+      "C": 1,
+      "H": 3,
+      "M": 4,
+      "L": 1,
+      "total": 9
+    },
+    "oauth-discovery-foraging-api-proxy": {
+      "C": 0,
+      "H": 2,
+      "M": 2,
+      "L": 1,
+      "total": 5
+    },
+    "onboarding-home-simple-mode": {
+      "C": 0,
+      "H": 4,
+      "M": 5,
+      "L": 1,
+      "total": 10
+    },
+    "persona-crud-editor": {
+      "C": 2,
+      "H": 4,
+      "M": 2,
+      "L": 1,
+      "total": 9
+    },
+    "pipeline-team-memory-sharing-network": {
+      "C": 1,
+      "H": 3,
+      "M": 4,
+      "L": 1,
+      "total": 9
+    },
+    "recipes-use-case-blueprints": {
+      "C": 1,
+      "H": 4,
+      "M": 3,
+      "L": 1,
+      "total": 9
+    },
+    "schedules-cron-agents": {
+      "C": 1,
+      "H": 3,
+      "M": 1,
+      "L": 1,
+      "total": 6
+    },
+    "settings-byom-engine-config": {
+      "C": 1,
+      "H": 3,
+      "M": 4,
+      "L": 1,
+      "total": 9
+    },
+    "templates-catalog-n8n-adoption": {
+      "C": 2,
+      "H": 5,
+      "M": 2,
+      "L": 1,
+      "total": 10
+    },
+    "tests-assertions-quality-gates": {
+      "C": 1,
+      "H": 2,
+      "M": 2,
+      "L": 1,
+      "total": 6
+    },
+    "trigger-studio-webhooks": {
+      "C": 1,
+      "H": 3,
+      "M": 4,
+      "L": 2,
+      "total": 10
+    }
+  }
+}

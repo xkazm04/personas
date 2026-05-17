@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { listen } from '@tauri-apps/api/event';
+import type { Event } from '@tauri-apps/api/event';
+import { useTauriEvent } from '@/hooks/useTauriEvent';
 import type { ExecutionTrace } from '@/lib/bindings/ExecutionTrace';
 import type { TraceSpan } from '@/lib/bindings/TraceSpan';
 import type { UnifiedTrace, UnifiedSpan, UnifiedSpanType } from '@/lib/execution/pipeline';
@@ -58,37 +59,36 @@ export function useTraceData(executionId: string, personaId: string) {
   }, [executionId, personaId]);
 
   // Listen for live trace updates (complete trace emitted on finish)
-  useEffect(() => {
-    const unlisten = listen<ExecutionTrace>('execution-trace', (event) => {
-      if (event.payload.execution_id === executionId) {
-        setTrace(event.payload);
-      }
-    });
-    return () => { unlisten.then(fn => fn()); };
+  const handleTrace = useCallback((event: Event<ExecutionTrace>) => {
+    if (event.payload.execution_id === executionId) {
+      setTrace(event.payload);
+    }
   }, [executionId]);
+  useTauriEvent<ExecutionTrace>('execution-trace', handleTrace);
 
   // Listen for live span events
-  useEffect(() => {
-    const unlisten = listen<{ execution_id: string; span: TraceSpan; event_type: string }>(
-      'execution-trace-span',
-      (event) => {
-        if (event.payload.execution_id !== executionId) return;
-        setTrace((prev) => {
-          if (!prev) return prev;
-          const { span, event_type } = event.payload;
-          const existingIdx = prev.spans.findIndex(s => s.span_id === span.span_id);
-          const newSpans = [...prev.spans];
-          if (event_type === 'start' && existingIdx === -1) {
-            newSpans.push(span);
-          } else if (event_type === 'end' && existingIdx >= 0) {
-            newSpans[existingIdx] = span;
-          }
-          return { ...prev, spans: newSpans };
-        });
-      },
-    );
-    return () => { unlisten.then(fn => fn()); };
-  }, [executionId]);
+  const handleTraceSpan = useCallback(
+    (event: Event<{ execution_id: string; span: TraceSpan; event_type: string }>) => {
+      if (event.payload.execution_id !== executionId) return;
+      setTrace((prev) => {
+        if (!prev) return prev;
+        const { span, event_type } = event.payload;
+        const existingIdx = prev.spans.findIndex(s => s.span_id === span.span_id);
+        const newSpans = [...prev.spans];
+        if (event_type === 'start' && existingIdx === -1) {
+          newSpans.push(span);
+        } else if (event_type === 'end' && existingIdx >= 0) {
+          newSpans[existingIdx] = span;
+        }
+        return { ...prev, spans: newSpans };
+      });
+    },
+    [executionId],
+  );
+  useTauriEvent<{ execution_id: string; span: TraceSpan; event_type: string }>(
+    'execution-trace-span',
+    handleTraceSpan,
+  );
 
   const toggleSpan = useCallback((spanId: string) => {
     setCollapsedSpans((prev) => {

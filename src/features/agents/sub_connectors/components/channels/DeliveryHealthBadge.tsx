@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Activity } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { getNotificationDeliveryStats } from '@/api/system/system';
-import { typedListen } from '@/lib/eventRegistry';
 import { EventName } from '@/lib/eventRegistry';
+import { useTypedTauriEvent } from '@/hooks/useTauriEvent';
 import type { ChannelDeliveryStats } from '@/lib/bindings/ChannelDeliveryStats';
 import type { NotificationChannelType } from '@/lib/types/frontendTypes';
 
@@ -36,15 +36,14 @@ export function DeliveryHealthBadge({ channelTypes }: DeliveryHealthBadgeProps) 
     getNotificationDeliveryStats()
       .then((s) => setStats({ slack: s.slack, telegram: s.telegram, email: s.email }))
       .catch(() => {});
-
-    const unlisten = typedListen(EventName.NOTIFICATION_DELIVERY, () => {
-      getNotificationDeliveryStats()
-        .then((s) => setStats({ slack: s.slack, telegram: s.telegram, email: s.email }))
-        .catch(() => {});
-    });
-
-    return () => { unlisten.then((fn) => fn()); };
   }, []);
+
+  const handleDelivery = useCallback(() => {
+    getNotificationDeliveryStats()
+      .then((s) => setStats({ slack: s.slack, telegram: s.telegram, email: s.email }))
+      .catch(() => {});
+  }, []);
+  useTypedTauriEvent(EventName.NOTIFICATION_DELIVERY, handleDelivery);
 
   if (!stats) return null;
 

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Map as MapIcon, Plus, Search } from 'lucide-react';
-import { listen } from '@tauri-apps/api/event';
+import type { Event } from '@tauri-apps/api/event';
+import { useTauriEvent } from '@/hooks/useTauriEvent';
 import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
 import { EventName } from '@/lib/eventRegistry';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
@@ -187,22 +188,21 @@ export default function ContextMapPage() {
     return result;
   }, [storeGroups, storeContexts, t]);
 
-  // Listen for Tauri streaming events — registered ONCE on mount.
-  // Reads activeScanId from the store at event time so the listener is stable
-  // across re-renders (avoids the unstable useDevToolsActions dependency bug).
-  useEffect(() => {
-    let outputUnlisten: (() => void) | null = null;
-    let statusUnlisten: (() => void) | null = null;
-    let completeUnlisten: (() => void) | null = null;
+  // Listen for Tauri streaming events. Each handler reads activeScanId from
+  // the store at event time so it ignores stale jobs without taking the
+  // scan id as a closure dependency. Output handler has no language deps;
+  // status + complete handlers re-bind on t/tx so mid-scan completion
+  // notifications use the active locale.
+  const handleScanOutput = useCallback((event: Event<{ job_id: string; line: string }>) => {
+    const currentScanId = useSystemStore.getState().activeScanId;
+    if (currentScanId && event.payload.job_id === currentScanId) {
+      setScanLines((prev) => [...prev, event.payload.line]);
+    }
+  }, []);
+  useTauriEvent<{ job_id: string; line: string }>(EventName.CONTEXT_GEN_OUTPUT, handleScanOutput);
 
-    listen<{ job_id: string; line: string }>(EventName.CONTEXT_GEN_OUTPUT, (event) => {
-      const currentScanId = useSystemStore.getState().activeScanId;
-      if (currentScanId && event.payload.job_id === currentScanId) {
-        setScanLines((prev) => [...prev, event.payload.line]);
-      }
-    }).then((fn) => { outputUnlisten = fn; });
-
-    listen<{ job_id: string; status: string; error?: string }>(EventName.CONTEXT_GEN_STATUS, (event) => {
+  const handleScanStatus = useCallback(
+    (event: Event<{ job_id: string; status: string; error?: string }>) => {
       const currentScanId = useSystemStore.getState().activeScanId;
       if (currentScanId && event.payload.job_id === currentScanId) {
         const { status, error } = event.payload;
@@ -224,17 +224,24 @@ export default function ContextMapPage() {
           finalizeContextScan({ outcome: 'failed', errorMessage: error }, () => setScanLines([]), t, tx);
         }
       }
-    }).then((fn) => { statusUnlisten = fn; });
+    },
+    [t, tx],
+  );
+  useTauriEvent<{ job_id: string; status: string; error?: string }>(
+    EventName.CONTEXT_GEN_STATUS,
+    handleScanStatus,
+  );
 
-    // Primary completion event — carries the summary counts.
-    listen<{
+  // Primary completion event — carries the summary counts.
+  const handleScanComplete = useCallback(
+    (event: Event<{
       scan_id: string;
       groups_created?: number;
       contexts_created?: number;
       files_mapped?: number;
       status?: string;
       error?: string;
-    }>(EventName.CONTEXT_GEN_COMPLETE, (event) => {
+    }>) => {
       const currentScanId = useSystemStore.getState().activeScanId;
       if (currentScanId && event.payload.scan_id === currentScanId) {
         const isWarning = event.payload.status === 'completed_with_warning';
@@ -251,17 +258,17 @@ export default function ContextMapPage() {
           tx,
         );
       }
-    }).then((fn) => { completeUnlisten = fn; });
-
-    return () => {
-      outputUnlisten?.();
-      statusUnlisten?.();
-      completeUnlisten?.();
-    };
-    // t/tx flow into finalizeContextScan; re-register on language switch so
-    // mid-scan completion notifications use the active locale. Cost is one
-    // listener swap per language change.
-  }, [t, tx]);
+    },
+    [t, tx],
+  );
+  useTauriEvent<{
+    scan_id: string;
+    groups_created?: number;
+    contexts_created?: number;
+    files_mapped?: number;
+    status?: string;
+    error?: string;
+  }>(EventName.CONTEXT_GEN_COMPLETE, handleScanComplete);
 
   // On mount: if a scan is already active in the store, poll its real status.
   // This handles the case where the user navigated away during a scan and

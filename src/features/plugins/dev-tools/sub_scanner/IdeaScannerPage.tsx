@@ -5,7 +5,8 @@ import {
   BrainCircuit,
   Zap,
 } from 'lucide-react';
-import { listen } from '@tauri-apps/api/event';
+import type { Event } from '@tauri-apps/api/event';
+import { useTauriEvent } from '@/hooks/useTauriEvent';
 import { EventName } from '@/lib/eventRegistry';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { ActionRow } from '@/features/shared/components/layout/ActionRow';
@@ -164,22 +165,22 @@ export default function IdeaScannerPage() {
   const finalizeScanRef = useRef(finalizeScan);
   useEffect(() => { finalizeScanRef.current = finalizeScan; });
 
-  // Listen for streaming events — registered ONCE on mount.
-  // Reads currentScanId from store at event time so listener is stable.
-  useEffect(() => {
-    let outputUnlisten: (() => void) | null = null;
-    let statusUnlisten: (() => void) | null = null;
-
-    listen<{ job_id: string; line: string }>(EventName.IDEA_SCAN_OUTPUT, (event) => {
-      const id = useSystemStore.getState().currentScanId;
-      if (id && event.payload.job_id === id) {
-        if (event.payload.line.startsWith('[Idea')) {
-          setScanProgress((p) => Math.min(p + 3, 95));
-        }
+  // Listen for streaming events. Handlers read currentScanId from the store
+  // at event time so they ignore stale jobs without taking the scan id as a
+  // closure dependency. finalizeScanRef is mutable so handler identity stays
+  // stable across renders.
+  const handleScanOutput = useCallback((event: Event<{ job_id: string; line: string }>) => {
+    const id = useSystemStore.getState().currentScanId;
+    if (id && event.payload.job_id === id) {
+      if (event.payload.line.startsWith('[Idea')) {
+        setScanProgress((p) => Math.min(p + 3, 95));
       }
-    }).then((fn) => { outputUnlisten = fn; });
+    }
+  }, []);
+  useTauriEvent<{ job_id: string; line: string }>(EventName.IDEA_SCAN_OUTPUT, handleScanOutput);
 
-    listen<{ job_id: string; status: string; error?: string }>(EventName.IDEA_SCAN_STATUS, (event) => {
+  const handleScanStatus = useCallback(
+    (event: Event<{ job_id: string; status: string; error?: string }>) => {
       const id = useSystemStore.getState().currentScanId;
       if (id && event.payload.job_id === id) {
         const { status, error } = event.payload;
@@ -191,13 +192,13 @@ export default function IdeaScannerPage() {
           finalizeScanRef.current('failed', error);
         }
       }
-    }).then((fn) => { statusUnlisten = fn; });
-
-    return () => {
-      outputUnlisten?.();
-      statusUnlisten?.();
-    };
-  }, []);
+    },
+    [],
+  );
+  useTauriEvent<{ job_id: string; status: string; error?: string }>(
+    EventName.IDEA_SCAN_STATUS,
+    handleScanStatus,
+  );
 
   // On mount: if a scan is already active, poll its real status to resync
   // (handles user navigating away during scan and missing completion event).

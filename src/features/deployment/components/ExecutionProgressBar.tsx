@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
-import { listen } from '@tauri-apps/api/event';
+import { useEffect, useState, useCallback } from 'react';
+import type { Event } from '@tauri-apps/api/event';
 import { Activity, Brain, Wrench, FileText, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { useTauriEvent } from '@/hooks/useTauriEvent';
 import { useTranslation } from '@/i18n/useTranslation';
 
 // ---------------------------------------------------------------------------
@@ -48,16 +49,15 @@ export function ExecutionProgressBar({ executionId }: Props) {
   const [progress, setProgress] = useState<ExecutionProgress | null>(null);
 
   useEffect(() => {
-    if (!executionId) { setProgress(null); return; }
-
-    const unlisten = listen<ProgressEvent>('execution-progress', (event) => {
-      if (event.payload.execution_id === executionId) {
-        setProgress(event.payload.progress);
-      }
-    });
-
-    return () => { unlisten.then((fn) => fn()); };
+    if (!executionId) setProgress(null);
   }, [executionId]);
+
+  const handleProgress = useCallback((event: Event<ProgressEvent>) => {
+    if (executionId && event.payload.execution_id === executionId) {
+      setProgress(event.payload.progress);
+    }
+  }, [executionId]);
+  useTauriEvent<ProgressEvent>('execution-progress', handleProgress);
 
   const { t, tx } = useTranslation();
   const dt = t.deployment.dashboard;

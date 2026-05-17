@@ -1,6 +1,7 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { AlertTriangle, X, ExternalLink } from 'lucide-react';
-import { typedListen, EventName } from '@/lib/eventRegistry';
+import { EventName, type EventPayloadMap } from '@/lib/eventRegistry';
+import { useTypedTauriEvent } from '@/hooks/useTauriEvent';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface ReauthEntry {
@@ -19,8 +20,8 @@ export function ReauthBanner({ onNavigate }: { onNavigate?: (credentialId: strin
   const { t } = useTranslation();
   const [entries, setEntries] = useState<ReauthEntry[]>([]);
 
-  useEffect(() => {
-    const unlisten = typedListen(EventName.CREDENTIAL_REAUTH_REQUIRED, (payload) => {
+  const handleReauthRequired = useCallback(
+    (payload: EventPayloadMap[typeof EventName.CREDENTIAL_REAUTH_REQUIRED]) => {
       setEntries((prev) => {
         // Deduplicate by credentialId
         if (prev.some((e) => e.credentialId === payload.credentialId)) return prev;
@@ -30,9 +31,10 @@ export function ReauthBanner({ onNavigate }: { onNavigate?: (credentialId: strin
           serviceType: payload.serviceType,
         }];
       });
-    });
-    return () => { unlisten.then((fn) => fn()); };
-  }, []);
+    },
+    [],
+  );
+  useTypedTauriEvent(EventName.CREDENTIAL_REAUTH_REQUIRED, handleReauthRequired);
 
   const dismiss = useCallback((credentialId: string) => {
     setEntries((prev) => prev.filter((e) => e.credentialId !== credentialId));
