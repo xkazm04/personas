@@ -121,9 +121,14 @@ export function QuestionnaireStoryThread({
 }) {
   const resolveState = (i: number): QuestionnaireThreadState => {
     const q = questions[i]!;
-    if (blockedQuestionIds?.has(q.id)) return 'blocked';
+    const answered = !!userAnswers[q.id];
+    // `blockedQuestionIds` is derived from the VAULT only (it doesn't
+    // inspect user answers). Once the user has picked a value, the
+    // question is resolved — show `answered`, not `blocked`. Without
+    // this, the right rail stayed red after picking a valid option.
+    if (blockedQuestionIds?.has(q.id) && !answered) return 'blocked';
     if (i === activeIdx) return 'current';
-    if (userAnswers[q.id]) return 'answered';
+    if (answered) return 'answered';
     return 'pending';
   };
 
