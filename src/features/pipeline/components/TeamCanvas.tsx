@@ -64,11 +64,22 @@ export default function TeamCanvas() {
   [cs.stickyNotes, handlers.handleUpdateNote, handlers.handleDeleteNote]);
 
   // -- Sync derived + sticky nodes into React Flow --------------------
+  // Preserves node references when the user-dragged position matches the
+  // derived-computed position. Previously every PIPELINE_STATUS tick spread
+  // each node into a fresh `{ ...n, position }` object even when nothing had
+  // changed, defeating PersonaNode's React.memo and re-rendering the full
+  // canvas on a team with 30-60 members several times per second.
   useEffect(() => {
     setNodes((prev) => {
       const posMap = new Map(prev.map((n) => [n.id, n.position]));
-      const personaNodes = derived.nodes.map((n) => ({ ...n, position: posMap.get(n.id) ?? n.position }));
-      const noteNodes = stickyNodes.map((n) => ({ ...n, position: posMap.get(n.id) ?? n.position }));
+      const reconcile = <N extends Node>(n: N): N => {
+        const savedPos = posMap.get(n.id);
+        if (savedPos === undefined) return n;
+        if (savedPos.x === n.position.x && savedPos.y === n.position.y) return n;
+        return { ...n, position: savedPos };
+      };
+      const personaNodes = derived.nodes.map(reconcile);
+      const noteNodes = stickyNodes.map(reconcile);
       return [...personaNodes, ...noteNodes];
     });
     setEdges(derived.edges);
