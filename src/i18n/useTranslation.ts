@@ -236,9 +236,13 @@ function getBundle(lang: Language): Translations {
         if (typeof prop !== 'string' || !isTranslationSection(prop)) {
           return undefined;
         }
-        if (lang !== 'en' && getCachedSection(lang, prop) === undefined) {
-          preloadSections(lang, [prop]);
-        }
+        // Pure read: do NOT trigger preloadSections from a property getter.
+        // Sections are preloaded explicitly by useTranslation's effect (for the
+        // current route) and useLanguagePrefetch (for hover-intent). Kicking
+        // off loaders inside `get` made every distinct top-level section
+        // accessed during a render fan out into a fresh preloadSections call
+        // + listeners.forEach broadcast, which retriggered more renders and
+        // more accesses — a render storm under language switch.
         return getResolvedSection(lang, prop);
       },
       has(_target, prop) {
