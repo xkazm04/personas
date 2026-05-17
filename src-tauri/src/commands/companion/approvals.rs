@@ -212,6 +212,11 @@ pub async fn companion_approve_action(
         "register_project" => execute_register_project(&state, &params),
         "enqueue_dev_job" => execute_enqueue_dev_job(&state, &params),
         "schedule_proactive" => execute_schedule_proactive(&state, &params),
+        // Phase J — Fleet integration.
+        "fleet_send_input" => execute_fleet_send_input(&params),
+        "fleet_broadcast" => execute_fleet_broadcast(&params),
+        "fleet_kill" => execute_fleet_kill(&params),
+        "fleet_spawn" => execute_fleet_spawn(&app, &params),
         other => Err(AppError::Internal(format!(
             "approval `{approval_id}`: unknown action `{other}`"
         ))),
@@ -1264,5 +1269,166 @@ fn execute_schedule_proactive(
         } else {
             message.to_string()
         }
+    )))
+}
+
+// ── Phase J — Fleet dispatcher executors ────────────────────────────
+//
+// All four hit the fleet's in-process registry directly; no IPC
+// roundtrip. Each returns a human-readable message that lands as a
+// system episode so Athena can quote it on the next turn.
+
+fn execute_fleet_send_input(params: &serde_json::Value) -> Result<ExecuteResult, AppError> {
+    let session_id = params
+        .get("session_id")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| AppError::Internal("fleet_send_input: missing `session_id`".into()))?;
+    let text = params
+        .get("text")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| AppError::Internal("fleet_send_input: missing `text`".into()))?;
+    let press_enter = params
+        .get("press_enter")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(true);
+    let payload = if press_enter {
+        format!("{text}\r")
+    } else {
+        text.to_string()
+    };
+    crate::commands::fleet::registry::registry()
+        .write_input(session_id, payload.as_bytes())
+        .map_err(AppError::Internal)?;
+    Ok(ExecuteResult::message(format!(
+        "Sent {} bytes to fleet session `{}`.",
+        payload.len(),
+        &session_id[..session_id.len().min(8)],
+    )))
+}
+
+fn execute_fleet_broadcast(params: &serde_json::Value) -> Result<ExecuteResult, AppError> {
+    let target = params
+        .get("target")
+        .and_then(|v| v.as_str())
+        .unwrap_or("all_waiting");
+    let text = params
+        .get("text")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| AppError::Internal("fleet_broadcast: missing `text`".into()))?;
+    let press_enter = params
+        .get("press_enter")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(true);
+    let payload = if press_enter {
+        format!("{text}\r")
+    } else {
+        text.to_string()
+    };
+
+    let snapshot = crate::commands::fleet::registry::registry().list_dto();
+    let mut targets: Vec<String> = match target {
+        "all_waiting" => snapshot
+            .iter()
+            .filter(|s| s.state == crate::commands::fleet::types::FleetSessionState::AwaitingInput)
+            .map(|s| s.id.clone())
+            .collect(),
+        "all" => snapshot
+            .iter()
+            .filter(|s| s.state != crate::commands::fleet::types::FleetSessionState::Exited)
+            .map(|s| s.id.clone())
+            .collect(),
+        "ids" => params
+            .get("ids")
+            .and_then(|v| v.as_array())
+            .map(|arr| arr.iter().filter_map(|x| x.as_str().map(str::to_string)).collect())
+            .unwrap_or_default(),
+        other => {
+            return Err(AppError::Internal(format!(
+                "fleet_broadcast: unknown target `{other}` (use all_waiting | all | ids)"
+            )));
+        }
+    };
+    targets.dedup();
+    if targets.is_empty() {
+        return Ok(ExecuteResult::message(
+            "fleet_broadcast: no sessions matched the target (nothing sent).".into(),
+        ));
+    }
+
+    let mut ok = 0;
+    let mut failed = 0;
+    for sid in &targets {
+        match crate::commands::fleet::registry::registry().write_input(sid, payload.as_bytes()) {
+            Ok(()) => ok += 1,
+            Err(_) => failed += 1,
+        }
+    }
+    Ok(ExecuteResult::message(format!(
+        "Broadcast delivered to {ok}/{total} fleet session{plural}{fail_note}.",
+        total = targets.len(),
+        plural = if targets.len() == 1 { "" } else { "s" },
+        fail_note = if failed > 0 {
+            format!(" ({failed} failed)")
+        } else {
+            String::new()
+        },
+    )))
+}
+
+fn execute_fleet_kill(params: &serde_json::Value) -> Result<ExecuteResult, AppError> {
+    let session_id = params
+        .get("session_id")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| AppError::Internal("fleet_kill: missing `session_id`".into()))?;
+    // Soft-kill (PTY EOF). Future hard-kill (Child::kill) is a Phase 6
+    // enhancement in the fleet module itself.
+    let ok = crate::commands::fleet::registry::registry().close_pty_handles(session_id);
+    if !ok {
+        return Err(AppError::Internal(format!(
+            "fleet_kill: session `{session_id}` not found"
+        )));
+    }
+    Ok(ExecuteResult::message(format!(
+        "Closed fleet session `{}` (soft kill — PTY EOF sent).",
+        &session_id[..session_id.len().min(8)],
+    )))
+}
+
+fn execute_fleet_spawn(
+    app: &tauri::AppHandle,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    let cwd = params
+        .get("cwd")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| AppError::Internal("fleet_spawn: missing `cwd`".into()))?;
+    let args: Vec<String> = params
+        .get("args")
+        .and_then(|v| v.as_array())
+        .map(|arr| arr.iter().filter_map(|x| x.as_str().map(str::to_string)).collect())
+        .unwrap_or_default();
+    let cols = params.get("cols").and_then(|v| v.as_u64()).unwrap_or(120) as u16;
+    let rows = params.get("rows").and_then(|v| v.as_u64()).unwrap_or(32) as u16;
+
+    let id = crate::commands::fleet::pty::spawn_session(
+        app.clone(),
+        std::path::PathBuf::from(cwd),
+        args,
+        cols,
+        rows,
+    )
+    .map_err(AppError::Internal)?;
+
+    // Recursion guard sentinel: tag this session with the user-visible
+    // name "athena" so it's obvious in the fleet UI which sessions are
+    // Athena-spawned. The proactive evaluator can grow a "skip if name
+    // == 'athena'" branch in Phase E without changing the FleetSession
+    // schema. Public rename() preserves the optimistic-update path.
+    let _ = crate::commands::fleet::registry::registry().rename(&id, Some("athena".to_string()));
+
+    Ok(ExecuteResult::message(format!(
+        "Spawned fleet session `{}` in `{}`. Tagged \"athena\" for visibility.",
+        &id[..id.len().min(8)],
+        cwd,
     )))
 }

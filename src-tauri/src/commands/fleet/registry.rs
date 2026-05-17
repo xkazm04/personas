@@ -175,6 +175,19 @@ impl FleetRegistry {
         true
     }
 
+    /// Soft-kill: drop the writer + master so the PTY child sees EOF on
+    /// its slave fd. Mirrors the fleet UI's close-session behavior and
+    /// is what Athena's `fleet_kill` dispatcher action calls. The reaper
+    /// task picks up the eventual exit and marks the session `Exited`.
+    /// Returns `false` if the session id is unknown.
+    pub fn close_pty_handles(&self, session_id: &str) -> bool {
+        let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let Some(session) = map.get(session_id) else { return false; };
+        if let Ok(mut w) = session.writer.lock() { *w = None; }
+        if let Ok(mut m) = session.master.lock() { *m = None; }
+        true
+    }
+
     /// Removes a session entirely. Used by the UI to dismiss exited rows.
     pub fn remove(&self, session_id: &str) -> bool {
         let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
