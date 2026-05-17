@@ -1,5 +1,108 @@
-import { useMemo } from 'react';
+import { useCallback } from 'react';
 import { useTranslation } from './useTranslation';
+
+type SidebarBundle = ReturnType<typeof useTranslation>['t']['sidebar'];
+
+// Module-scope cache keyed by the t.sidebar object reference. Translation
+// section objects are stable per language (cached via mergedSectionCache in
+// useTranslation), so the WeakMap entry is built once per language and reused
+// across every consumer (Sidebar, SidebarLevel1, SidebarLevel2, SidebarSubNav).
+// Previously each consumer rebuilt its own 40-entry Map per render via useMemo,
+// duplicating identical work 4×.
+const SIDEBAR_LABEL_CACHE = new WeakMap<SidebarBundle, Map<string, string>>();
+
+function buildSidebarLabelMap(sb: SidebarBundle): Map<string, string> {
+  // Map: sidebarData item ID -> translated label.
+  // Keys here match the `id` values in sidebarData.ts arrays.
+  return new Map<string, string>([
+    // Level 1 sections
+    ['home', sb.home],
+    ['overview', sb.overview],
+    ['personas', sb.agents],
+    ['events', sb.events],
+    ['credentials', sb.keys],
+    ['design-reviews', sb.templates],
+    ['plugins', sb.plugins],
+    ['settings', sb.settings],
+    ['teams', sb.teams],
+    ['cloud', sb.cloud],
+
+    // Home sub-items
+    ['welcome', sb.welcome],
+    ['cockpit', sb.cockpit],
+    ['roadmap', sb.roadmap],
+    ['system-check', sb.system_check],
+
+    // Overview sub-items
+    ['home-overview', sb.dashboard], // disambiguate from top-level 'home'
+    ['executions', sb.executions],
+    ['manual-review', sb.manual_review],
+    ['messages', sb.messages],
+    ['knowledge', sb.knowledge],
+    ['sla', sb.sla],
+    ['schedules', sb.schedules],
+    ['health', sb.health],
+
+    // Credential sub-items
+    ['databases', sb.databases],
+    ['from-template', sb.catalog],
+    ['graph', sb.graph],
+    ['add-new', sb.add_new],
+
+    // Event bus sub-items
+    ['live-stream', sb.live_stream],
+    ['rate-limits', sb.throttling],
+    ['test', sb.test],
+    ['smee-relay', sb.local_relay],
+    ['cloud-webhooks', sb.cloud_events],
+
+    // Template sub-items
+    ['n8n', sb.n8n_import],
+    ['generated', sb.generated],
+
+    // Cloud sub-items
+    ['unified', sb.all_deployments],
+    ['gitlab', sb.gitlab],
+
+    // Settings sub-items
+    ['account', sb.account],
+    ['appearance', sb.appearance],
+    ['notifications', sb.notifications],
+    ['engine', sb.engine],
+    ['byom', sb.byom],
+    ['portability', sb.data],
+    ['config', sb.config_resolution],
+    ['network', sb.network],
+    ['admin', sb.admin],
+
+    // Agent sub-items
+    ['create', sb.create],
+    ['all-agents', sb.all_agents],
+    ['favorites', sb.favorites],
+    ['recent', sb.recent],
+
+    // Plugin sub-items
+    ['browse', sb.browse],
+    ['dev-tools', sb.dev_tools],
+    ['active-project', sb.active_project],
+
+    // Dev tools sub-items
+    ['projects', sb.projects],
+    ['context-map', sb.context_map],
+    ['idea-scanner', sb.idea_scanner],
+    ['idea-triage', sb.idea_triage],
+    ['task-runner', sb.task_runner],
+  ]);
+}
+
+function getSidebarLabelMap(sb: SidebarBundle): Map<string, string> {
+  let map = SIDEBAR_LABEL_CACHE.get(sb);
+  if (!map) {
+    map = buildSidebarLabelMap(sb);
+    SIDEBAR_LABEL_CACHE.set(sb, map);
+  }
+  return map;
+}
 
 /**
  * Returns a lookup function that resolves a sidebar item ID to its translated label.
@@ -10,92 +113,11 @@ import { useTranslation } from './useTranslation';
  */
 export function useSidebarLabels() {
   const { t } = useTranslation();
-
-  const labelMap = useMemo(() => {
-    const sb = t.sidebar;
-    // Map: sidebarData item ID -> translated label.
-    // Keys here match the `id` values in sidebarData.ts arrays.
-    return new Map<string, string>([
-      // Level 1 sections
-      ['home', sb.home],
-      ['overview', sb.overview],
-      ['personas', sb.agents],
-      ['events', sb.events],
-      ['credentials', sb.keys],
-      ['design-reviews', sb.templates],
-      ['plugins', sb.plugins],
-      ['settings', sb.settings],
-      ['teams', sb.teams],
-      ['cloud', sb.cloud],
-
-      // Home sub-items
-      ['welcome', sb.welcome],
-      ['cockpit', sb.cockpit],
-      ['roadmap', sb.roadmap],
-      ['system-check', sb.system_check],
-
-      // Overview sub-items
-      ['home-overview', sb.dashboard], // disambiguate from top-level 'home'
-      ['executions', sb.executions],
-      ['manual-review', sb.manual_review],
-      ['messages', sb.messages],
-      ['knowledge', sb.knowledge],
-      ['sla', sb.sla],
-      ['schedules', sb.schedules],
-      ['health', sb.health],
-
-      // Credential sub-items
-      ['databases', sb.databases],
-      ['from-template', sb.catalog],
-      ['graph', sb.graph],
-      ['add-new', sb.add_new],
-
-      // Event bus sub-items
-      ['live-stream', sb.live_stream],
-      ['rate-limits', sb.throttling],
-      ['test', sb.test],
-      ['smee-relay', sb.local_relay],
-      ['cloud-webhooks', sb.cloud_events],
-
-      // Template sub-items
-      ['n8n', sb.n8n_import],
-      ['generated', sb.generated],
-
-      // Cloud sub-items
-      ['unified', sb.all_deployments],
-      ['gitlab', sb.gitlab],
-
-      // Settings sub-items
-      ['account', sb.account],
-      ['appearance', sb.appearance],
-      ['notifications', sb.notifications],
-      ['engine', sb.engine],
-      ['byom', sb.byom],
-      ['portability', sb.data],
-      ['config', sb.config_resolution],
-      ['network', sb.network],
-      ['admin', sb.admin],
-
-      // Agent sub-items
-      ['create', sb.create],
-      ['all-agents', sb.all_agents],
-      ['favorites', sb.favorites],
-      ['recent', sb.recent],
-
-      // Plugin sub-items
-      ['browse', sb.browse],
-      ['dev-tools', sb.dev_tools],
-      ['active-project', sb.active_project],
-
-      // Dev tools sub-items
-      ['projects', sb.projects],
-      ['context-map', sb.context_map],
-      ['idea-scanner', sb.idea_scanner],
-      ['idea-triage', sb.idea_triage],
-      ['task-runner', sb.task_runner],
-    ]);
-  }, [t.sidebar]);
+  const labelMap = getSidebarLabelMap(t.sidebar);
 
   /** Resolve translated label for a sidebar item ID. Falls back to the given default. */
-  return (id: string, fallback?: string) => labelMap.get(id) ?? fallback ?? id;
+  return useCallback(
+    (id: string, fallback?: string) => labelMap.get(id) ?? fallback ?? id,
+    [labelMap],
+  );
 }
