@@ -57,6 +57,8 @@ export default function ScheduleTimeline() {
     toggleEnabled,
     previewCron,
     backfill,
+    skipNextFire,
+    runIn,
   } = useScheduleActions();
 
   // Unified refresh: initial load, 30s poll, and OVERDUE_TRIGGERS_FIRED all
@@ -156,6 +158,8 @@ export default function ScheduleTimeline() {
           await backfill(entry.agent, startIso, endIso);
         }}
         onPreviewCron={previewCron}
+        onSkipNextFire={() => skipNextFire(entry.agent)}
+        onRunIn={(delayMs) => runIn(entry.agent, delayMs)}
       />
     ));
 
