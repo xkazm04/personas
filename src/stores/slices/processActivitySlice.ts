@@ -45,6 +45,15 @@ export interface ActiveProcess {
 
 export interface ProcessActivitySlice {
   activeProcesses: Record<string, ActiveProcess>; // keyed by domain or domain:runId
+  /**
+   * Derived count of `activeProcesses`. Maintained in sync with the map so the
+   * titlebar `ProcessActivityIndicator` can subscribe to a primitive (number)
+   * instead of running `Object.keys(activeProcesses).length` inside its selector
+   * on every store mutation. With Zustand's default `Object.is` equality, the
+   * indicator now re-renders only when the count actually changes — not on
+   * every telemetry tick that mutates an inner ActiveProcess.
+   */
+  activeProcessCount: number;
   recentProcesses: ActiveProcess[]; // last 10 completed, newest first
 
   // Actions
@@ -186,25 +195,30 @@ export const createProcessActivitySlice: StateCreator<
   ProcessActivitySlice
 > = (set, _get) => ({
   activeProcesses: {},
+  activeProcessCount: 0,
   recentProcesses: [],
 
   processStarted: (domain, runId, label, navigateTo) => {
     const key = processKey(domain, runId);
-    set((state) => ({
-      activeProcesses: {
+    set((state) => {
+      const isNew = state.activeProcesses[key] === undefined;
+      const activeProcesses = {
         ...state.activeProcesses,
         [key]: {
           domain,
           runId,
           label: label ?? state.activeProcesses[key]?.label,
           startedAt: Date.now(),
-          status: "running",
+          status: "running" as const,
           toolCallCount: 0,
           costUsd: 0,
           navigateTo: navigateTo ?? state.activeProcesses[key]?.navigateTo,
         },
-      },
-    }));
+      };
+      return isNew
+        ? { activeProcesses, activeProcessCount: state.activeProcessCount + 1 }
+        : { activeProcesses };
+    });
   },
 
   processEnded: (domain, action, runId) => {
@@ -223,7 +237,11 @@ export const createProcessActivitySlice: StateCreator<
       const ended: ActiveProcess = { ...process, status: action };
       const recent = [ended, ...state.recentProcesses].slice(0, MAX_RECENT);
 
-      return { activeProcesses: remaining, recentProcesses: recent };
+      return {
+        activeProcesses: remaining,
+        activeProcessCount: state.activeProcessCount - 1,
+        recentProcesses: recent,
+      };
     });
   },
 
@@ -275,22 +293,24 @@ export const createProcessActivitySlice: StateCreator<
     const key = processKey(domain, runId);
     set((state) => {
       const existing = state.activeProcesses[key];
-      return {
-        activeProcesses: {
-          ...state.activeProcesses,
-          [key]: {
-            domain,
-            runId,
-            label: label ?? existing?.label,
-            startedAt: existing?.startedAt ?? Date.now(),
-            status: "queued" as const,
-            toolCallCount: 0,
-            costUsd: 0,
-            queuePosition: position,
-            personaId,
-          },
+      const isNew = existing === undefined;
+      const activeProcesses = {
+        ...state.activeProcesses,
+        [key]: {
+          domain,
+          runId,
+          label: label ?? existing?.label,
+          startedAt: existing?.startedAt ?? Date.now(),
+          status: "queued" as const,
+          toolCallCount: 0,
+          costUsd: 0,
+          queuePosition: position,
+          personaId,
         },
       };
+      return isNew
+        ? { activeProcesses, activeProcessCount: state.activeProcessCount + 1 }
+        : { activeProcesses };
     });
   },
 
@@ -323,7 +343,11 @@ export const createProcessActivitySlice: StateCreator<
         // instead of silently inheriting "dropped" semantics.
         if (shouldSurviveClearNonActive(proc.status)) kept[key] = proc;
       }
-      return { activeProcesses: kept, recentProcesses: [] };
+      return {
+        activeProcesses: kept,
+        activeProcessCount: Object.keys(kept).length,
+        recentProcesses: [],
+      };
     });
   },
 });
