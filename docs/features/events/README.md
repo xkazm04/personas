@@ -31,7 +31,8 @@ The Live Stream header includes a shortcut into `Overview -> Events` for the ful
 - Config families include webhook, schedule, polling, file watcher, event listener, clipboard, app focus, and composite triggers.
 - `NlTriggerInput` and `nlTriggerParser.ts` translate natural-language schedule text into structured trigger config.
 - `TriggerSchedulePreview`, `RadialCountdownRing`, and `TriggerCountdown` make schedule timing visible before and after save.
-- `TriggerExecutionHistory` links a trigger back to executions it caused.
+- `TriggerExecutionHistory` links a trigger back to executions it caused. The drawer hoists the underlying `useTriggerHistory` hook and passes its state into both `TriggerInsightsStrip` (always-visible top metrics) and the expand-on-demand history list, so opening the drawer only spends one IPC for both.
+- `TriggerInsightsStrip` shows last fire timestamp, 24h fire count, success rate, recent-failure warning (3+ of last 5), and a DLQ count badge that links to the Dead Letter Queue tab.
 - `DryRunResultView` displays backend dry-run feedback.
 
 ## Backend command surface

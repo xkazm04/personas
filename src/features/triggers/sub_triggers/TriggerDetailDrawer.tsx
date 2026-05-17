@@ -1,13 +1,16 @@
+import { useEffect } from 'react';
 import { Trash2, X, Check, Play, Terminal, FlaskConical } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { PersonaTrigger } from '@/lib/types/types';
 import type { TriggerRateLimitConfig } from '@/lib/utils/platform/triggerConstants';
 import { useTriggerDetail } from '@/features/triggers/hooks/useTriggerDetail';
+import { useTriggerHistory } from '@/features/triggers/hooks/useTriggerHistory';
 import type { TriggerRateLimitState } from '@/stores/slices/pipeline/triggerSlice';
 import { RateLimitControls } from './RateLimitControls';
 import { ActiveHoursSection } from './ActiveHoursSection';
 import { TriggerExecutionHistory } from './TriggerExecutionHistory';
+import { TriggerInsightsStrip } from './TriggerInsightsStrip';
 import { ConfigSection } from './TriggerConfigSection';
 import { DryRunResultView } from './DryRunResultView';
 import { WebhookRequestInspector } from './WebhookRequestInspector';
@@ -28,12 +31,32 @@ interface TriggerDetailDrawerProps {
 export function TriggerDetailDrawer({ trigger, credentialEventsList, onDelete, rateLimit, rateLimitState, onRateLimitChange, rawConfig, onActiveWindowChange }: TriggerDetailDrawerProps) {
   const { t } = useTranslation();
   const detail = useTriggerDetail(trigger.id, trigger.persona_id);
+
+  // Hoisted history hook — TriggerInsightsStrip (always visible at top) and
+  // TriggerExecutionHistory (expand-on-demand below) share the same fetch so
+  // opening the drawer only spends one IPC instead of two.
+  const history = useTriggerHistory(trigger.id, trigger.persona_id);
+  useEffect(() => {
+    if (history.executions.length === 0 && !history.loading) {
+      void history.fetch();
+    }
+    // Re-fetch only when the trigger identity changes — drawer remount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trigger.id]);
+
   return (
     <div
       className="animate-fade-slide-in overflow-hidden"
     >
       <div className="px-3 pb-3 space-y-3">
         <div className="border-t border-primary/8" />
+
+        <TriggerInsightsStrip
+          triggerId={trigger.id}
+          executions={history.executions}
+          stats={history.stats}
+          loading={history.loading}
+        />
 
         <ConfigSection trigger={trigger} credentialEventsList={credentialEventsList} detail={detail} />
 
@@ -126,7 +149,11 @@ export function TriggerDetailDrawer({ trigger, credentialEventsList, onDelete, r
           <WebhookRequestInspector triggerId={trigger.id} />
         )}
 
-        <TriggerExecutionHistory triggerId={trigger.id} personaId={trigger.persona_id} />
+        <TriggerExecutionHistory
+          triggerId={trigger.id}
+          personaId={trigger.persona_id}
+          historyState={history}
+        />
       </div>
     </div>
   );

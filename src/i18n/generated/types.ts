@@ -7769,6 +7769,14 @@ export type Translations = {
     activity_chip_row_label: string;
     activity_chip_filter_active: string;
     activity_more_count: string;
+    insights_last_fired: string;
+    insights_24h_label: string;
+    insights_fires_count: string;
+    insights_success_label: string;
+    insights_recent_failures_label: string;
+    insights_recent_failures_tooltip: string;
+    insights_dlq_label: string;
+    insights_dlq_open_title: string;
     no_events_title: string;
     no_events_desc: string;
     connecting_to_bus: string;
