@@ -10749,6 +10749,9 @@ export type Translations = {
       proactive_label: string;
       proactive_engage: string;
       proactive_dismiss: string;
+      footer_notice_analysis_completed: string;
+      footer_notice_proactive_default: string;
+      footer_notice_dismiss: string;
       proactive_kind_goal: string;
       proactive_kind_backlog: string;
       proactive_kind_cadence: string;
