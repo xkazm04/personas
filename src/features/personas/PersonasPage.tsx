@@ -36,7 +36,6 @@ const DrivePage = lazy(() => import('@/features/plugins/drive/DrivePage'));
 const TwinPage = lazy(() => import('@/features/plugins/twin/TwinPage'));
 const CompanionPluginPage = lazy(() => import('@/features/plugins/companion/CompanionPluginPage'));
 const LangfusePage = lazy(() => import('@/features/plugins/langfuse/LangfusePage'));
-const FleetPage = lazy(() => import('@/features/plugins/fleet/FleetPage'));
 const PluginBrowsePage = lazy(() => import('@/features/plugins/PluginBrowsePage'));
 const SchedulesPage = lazy(() => import('@/features/schedules/components/ScheduleTimeline'));
 
@@ -228,9 +227,6 @@ export default function PersonasPage() {
       }
       if (pluginTab === 'langfuse') {
         return <ErrorBoundary name="Langfuse"><Suspense fallback={SectionFallback}><LangfusePage /></Suspense></ErrorBoundary>;
-      }
-      if (pluginTab === 'fleet') {
-        return <ErrorBoundary name="Fleet"><Suspense fallback={SectionFallback}><FleetPage /></Suspense></ErrorBoundary>;
       }
       // Browse view — plugin cards with enable/disable toggles
       return <ErrorBoundary name="PluginBrowse"><Suspense fallback={SectionFallback}><PluginBrowsePage /></Suspense></ErrorBoundary>;

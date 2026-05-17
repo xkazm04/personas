@@ -8,6 +8,7 @@ import {
   GraduationCap, BookOpen, Trophy, AlertOctagon,
   User, Mic, Volume2, Sparkles,
   Wand2, Image as ImageIcon, Film, Gauge as GaugeIcon, Bell,
+  Terminal,
   type LucideIcon,
 } from 'lucide-react';
 import type { SidebarSection, HomeTab, OverviewTab } from '@/lib/types/types';
@@ -115,6 +116,12 @@ export const devToolsItems: SubNavItem[] = [
   { id: 'idea-triage', label: 'Idea Triage', icon: ArrowLeftRight },
   { id: 'task-runner', label: 'Task Runner', icon: Play },
   { id: 'skills', label: 'Skills', icon: BookOpen },
+  // Fleet — Claude Code session aggregator for the active project.
+  // Inherits the active project's root_path as the spawn cwd. Not
+  // tier-gated here because the PluginsSidebarNav devToolsItems map
+  // doesn't apply tier/dev filtering today; the underlying Rust module
+  // always compiles so showing it is safe across builds.
+  { id: 'fleet', label: 'Fleet', icon: Terminal },
 ];
 
 export const twinItems: SubNavItem[] = [
@@ -152,14 +159,6 @@ export const companionItems: SubNavItem[] = [
   { id: 'setup', label: 'Setup', icon: Settings },
   { id: 'memory', label: 'Memory', icon: Brain },
   { id: 'voice', label: 'Voice', icon: Mic },
-];
-
-// Fleet plugin sub-nav (DEV-only). Aggregates Claude Code CLI sessions
-// across terminals via PTY ownership + hooks. See docs/features/fleet.md.
-export const fleetItems: SubNavItem[] = [
-  { id: 'grid', label: 'Sessions', icon: LayoutDashboard },
-  { id: 'decisions', label: 'Decisions', icon: MessageSquare },
-  { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
 export function getSettingsItems(isDev: boolean, activeTier?: Tier): SubNavItem[] {
