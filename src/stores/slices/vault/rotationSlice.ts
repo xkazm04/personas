@@ -60,9 +60,20 @@ export const createRotationSlice: StateCreator<VaultStore, [], [], RotationSlice
     const credentials = get().credentials;
     if (credentials.length === 0) return;
 
+    // Skip credentials whose status is already cached this session. Without
+    // this guard, every mount of RotationOverviewPanel re-fires N IPCs for
+    // data that hasn't changed since last fetch (the perf-walk on
+    // 2026-05-17 observed 25 get_rotation_status calls on every Overview
+    // landing — pure fan-out for already-cached data). Callers that need
+    // freshness should clear `rotationStatuses` or use `fetchRotationStatus`
+    // for the specific credential.
+    const cached = get().rotationStatuses;
+    const stale = credentials.filter((c) => !cached[c.id]);
+    if (stale.length === 0) return;
+
     const statuses: Record<string, RotationStatus> = {};
     const results = await Promise.allSettled(
-      credentials.map(async (cred) => {
+      stale.map(async (cred) => {
         const status = await getRotationStatus(cred.id);
         return { id: cred.id, status };
       }),
