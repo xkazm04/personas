@@ -1,6 +1,9 @@
 import {
   Palette, Key, Sparkles, Activity, MessageSquare, Heart, FlaskConical,
   BarChart3, Radio, Link, Zap, Eye,
+  Puzzle, Bot, User, Wrench, Layers,
+  CalendarClock, CalendarRange, Clock,
+  LayoutGrid, Wand2, BookOpen,
 } from 'lucide-react';
 import {
   getTourSurface,
@@ -11,18 +14,35 @@ import {
 // -- Per-step icon map (all tours) ---------------------------------------
 
 const ICON_MAP: Record<string, typeof Key> = {
+  // Getting Started
   'appearance-setup': Palette,
   'credentials-intro': Key,
   'persona-creation': Sparkles,
+  // Execution & Observability
   'overview-dashboard': BarChart3,
   'execution-activity': Activity,
   'messages-tab': MessageSquare,
   'health-monitoring': Heart,
   'lab-arena': FlaskConical,
+  // Orchestration & Events
   'events-intro': Zap,
   'trigger-types': Radio,
   'event-chaining': Link,
   'live-stream': Eye,
+  // Plugins Explorer
+  'plugins-browse': Puzzle,
+  'plugin-companion': Bot,
+  'plugin-twin': User,
+  'plugin-dev-tools': Wrench,
+  'plugin-others': Layers,
+  // Schedules Mastery
+  'schedules-page': CalendarClock,
+  'schedules-views': CalendarRange,
+  'schedules-attach': Clock,
+  // Templates & Recipes
+  'templates-page': LayoutGrid,
+  'templates-adopt': Wand2,
+  'recipes-tab': BookOpen,
 };
 
 export function getStepIcon(stepId: string): typeof Key {
@@ -36,6 +56,9 @@ const STEP_TO_SURFACE: Record<string, TourSurfaceKey> = {
   'appearance-setup': 'violet', 'credentials-intro': 'violet', 'persona-creation': 'violet',
   'overview-dashboard': 'blue', 'execution-activity': 'blue', 'messages-tab': 'blue', 'health-monitoring': 'blue', 'lab-arena': 'blue',
   'events-intro': 'teal', 'trigger-types': 'teal', 'event-chaining': 'teal', 'live-stream': 'teal',
+  'plugins-browse': 'amber', 'plugin-companion': 'amber', 'plugin-twin': 'amber', 'plugin-dev-tools': 'amber', 'plugin-others': 'amber',
+  'schedules-page': 'emerald', 'schedules-views': 'emerald', 'schedules-attach': 'emerald',
+  'templates-page': 'indigo', 'templates-adopt': 'indigo', 'recipes-tab': 'indigo',
 };
 
 /**
