@@ -15,6 +15,14 @@ export interface MemorySlice {
   memoryStats: MemoryStats | null;
   memoryActions: MemoryAction[];
 
+  // Background CLI review state — kept in the store so the in-flight task
+  // and its result survive overview tab navigation. The Knowledge tab can
+  // unmount mid-review and the user expects to come back to either an
+  // in-progress spinner or the completed result, not a fresh button.
+  memoryReviewRunning: boolean;
+  memoryReviewResult: MemoryReviewResult | null;
+  memoryReviewError: string | null;
+
   // Actions
   fetchMemories: (filters?: { persona_id?: string; category?: string; search?: string; sort_column?: string; sort_direction?: string }) => Promise<void>;
   createMemory: (input: { persona_id: string; title: string; content: string; category: string; importance: number; tags: string[] }) => Promise<boolean>;
@@ -25,6 +33,7 @@ export interface MemorySlice {
     deleteIdB: string,
   ) => Promise<boolean>;
   reviewMemories: (personaId?: string) => Promise<MemoryReviewResult>;
+  clearMemoryReviewResult: () => void;
   setMemoryTier: (id: string, tier: MemoryTier) => Promise<void>;
   dismissMemoryAction: (actionId: string) => void;
   loadMemoryActions: () => void;
@@ -73,6 +82,9 @@ export const createMemorySlice: StateCreator<OverviewStore, [], [], MemorySlice>
   memoriesTotal: 0,
   memoryStats: null,
   memoryActions: loadActions(),
+  memoryReviewRunning: false,
+  memoryReviewResult: null,
+  memoryReviewError: null,
 
   fetchMemories: async (filters?) => {
     const requestId = ++fetchRequestId;
@@ -176,6 +188,9 @@ export const createMemorySlice: StateCreator<OverviewStore, [], [], MemorySlice>
   },
 
   reviewMemories: async (personaId?) => {
+    // Guard against double-clicks while a review is already running.
+    if (get().memoryReviewRunning) return get().memoryReviewResult as MemoryReviewResult;
+    set({ memoryReviewRunning: true, memoryReviewResult: null, memoryReviewError: null });
     try {
       const memoriesBefore = get().memories;
       const result = await reviewMemoriesWithCli(personaId);
@@ -192,11 +207,18 @@ export const createMemorySlice: StateCreator<OverviewStore, [], [], MemorySlice>
         }
       }
 
+      set({ memoryReviewRunning: false, memoryReviewResult: result });
       return result;
     } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      set({ memoryReviewRunning: false, memoryReviewError: message });
       reportError(err, "Failed to review memories", set);
       throw err;
     }
+  },
+
+  clearMemoryReviewResult: () => {
+    set({ memoryReviewResult: null, memoryReviewError: null });
   },
 
   setMemoryTier: async (id, tier) => {

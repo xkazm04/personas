@@ -260,6 +260,15 @@ pub const PRIVILEGED_COMMANDS: &[&str] = &[
     "use_credential_recipe",
     // Credentials -- Vector KB
     // (inherits protection from the credential surface)
+    // External API keys (management HTTP API credentials surfaced in Settings →
+    // API Keys). These call `require_privileged_sync` in their bodies, so the
+    // wrapper MUST set the validated flag — without these entries every
+    // settings load fails with "IPC authentication required for this operation".
+    "create_external_api_key",
+    "list_external_api_keys",
+    "revoke_external_api_key",
+    "delete_external_api_key",
+    "get_system_api_key",
     // Signing
     "sign_document",
     "verify_document",

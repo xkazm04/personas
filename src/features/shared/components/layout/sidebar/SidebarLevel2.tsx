@@ -3,6 +3,7 @@ import { AnimatePresence } from 'framer-motion';
 import { Key, Sparkles, CalendarClock, Map as MapIcon, Rocket } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { Button } from '@/features/shared/components/buttons';
+import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { useOverviewStore } from "@/stores/overviewStore";
@@ -214,7 +215,7 @@ export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0,
           items={settingsItems}
           activeId={settingsTab}
           onSelect={(id) => setSettingsTab(id as SettingsTab)}
-          devItems={isDev ? new Set(['engine', 'byom', 'network', 'quality-gates', 'config', 'admin']) : undefined}
+          devItems={isDev ? new Set(['engine', 'byom', 'network', 'config', 'admin']) : undefined}
           accents={SETTINGS_ICON_ACCENTS}
         />
       );
@@ -332,8 +333,8 @@ const HOME_RELEASE_STORAGE_KEY = 'home-releases-selected-version';
 function persistHomeReleaseVersion(version: string): void {
   try {
     window.sessionStorage.setItem(HOME_RELEASE_STORAGE_KEY, version);
-  } catch {
-    // sessionStorage may be unavailable (sandboxed iframe); store-side state still works.
+  } catch (err) {
+    silentCatch('SidebarLevel2:persistHomeReleaseVersion')(err);
   }
 }
 

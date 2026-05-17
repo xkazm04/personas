@@ -5049,6 +5049,7 @@ export type Translations = {
     dashboard: {
       title: string;
       subtitle: string;
+      mission_control_eyebrow: string;
       greeting_morning: string;
       greeting_afternoon: string;
       greeting_evening: string;

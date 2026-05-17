@@ -159,7 +159,7 @@ export default function PersonaHealthDashboard() {
           </Suspense>
         ) : healthView === 'reliability' ? (
           <Suspense fallback={<div className="flex items-center justify-center py-16 text-foreground typo-body">{t.overview.health_dashboard.loading_reliability}</div>}>
-            <SLADashboard />
+            <SLADashboard embedded />
           </Suspense>
         ) : (
         <div className="space-y-6">

@@ -61,6 +61,18 @@ const ENDPOINT_DISCOVERED_PEERS = 'discoveredPeers';
 const ENDPOINT_NETWORK_STATUS = 'networkStatus';
 const ENDPOINT_NETWORK_SNAPSHOT = 'networkSnapshot';
 
+/**
+ * Detect a "command not found" error from Tauri. This happens when a backend
+ * command is gated behind a Cargo feature (e.g. `p2p`) and the running build
+ * doesn't include it — typical with `tauri:dev:lite`. We treat these as
+ * "feature unavailable" rather than real errors so the Network tab can render
+ * a single calm empty state instead of spamming three toasts.
+ */
+function isCommandUnavailableError(err: unknown): boolean {
+  const msg = errMsg(err, '').toLowerCase();
+  return msg.includes('not found') || msg.includes('not allowed by the scope') || msg.includes('command') && msg.includes('was not found');
+}
+
 export interface NetworkSlice {
   // State (Phase 1)
   localIdentity: PeerIdentity | null;
@@ -84,6 +96,13 @@ export interface NetworkSlice {
   networkConsecutiveFailures: number;
   /** Per-endpoint consecutive failure counts; each poller updates only its own slot. */
   networkFailureCounts: Record<string, number>;
+  /**
+   * True when the running build doesn't include the `p2p` Cargo feature, so
+   * network/identity/snapshot commands aren't registered. UI surfaces should
+   * render a "P2P unavailable in this build" empty state instead of error
+   * banners when this is true.
+   */
+  p2pUnavailable: boolean;
 
   // Identity actions
   fetchLocalIdentity: () => Promise<void>;
@@ -153,6 +172,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
   networkError: null,
   networkConsecutiveFailures: 0,
   networkFailureCounts: {},
+  p2pUnavailable: false,
 
   // -- Identity --------------------------------------------------------
 
@@ -161,6 +181,10 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
       const identity = await identityApi.getLocalIdentity();
       set({ localIdentity: identity });
     } catch (err) {
+      if (isCommandUnavailableError(err)) {
+        set({ p2pUnavailable: true });
+        return;
+      }
       reportError(err, "Failed to fetch identity", set);
     }
   },
@@ -191,6 +215,10 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
       const peers = await identityApi.listTrustedPeers();
       set({ trustedPeers: peers });
     } catch (err) {
+      if (isCommandUnavailableError(err)) {
+        set({ p2pUnavailable: true });
+        return;
+      }
       reportError(err, "Failed to fetch trusted peers", set);
     }
   },
@@ -233,6 +261,10 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
       const resources = await exposureApi.listExposedResources();
       set({ exposedResources: resources });
     } catch (err) {
+      if (isCommandUnavailableError(err)) {
+        set({ p2pUnavailable: true });
+        return;
+      }
       reportError(err, "Failed to fetch exposed resources", set);
     }
   },
@@ -421,6 +453,10 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
       const peers = await discoveryApi.getDiscoveredPeers();
       set((s) => clearFailure(s, ENDPOINT_DISCOVERED_PEERS, { discoveredPeers: peers }));
     } catch (err) {
+      if (isCommandUnavailableError(err)) {
+        set({ p2pUnavailable: true });
+        return;
+      }
       set((s) => bumpFailure(s, ENDPOINT_DISCOVERED_PEERS, err));
     }
   },
@@ -483,11 +519,16 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
       const status = await discoveryApi.getNetworkStatus();
       set((s) => clearFailure(s, ENDPOINT_NETWORK_STATUS, { networkStatus: status }));
     } catch (err) {
+      if (isCommandUnavailableError(err)) {
+        set({ p2pUnavailable: true });
+        return;
+      }
       set((s) => bumpFailure(s, ENDPOINT_NETWORK_STATUS, err));
     }
   },
 
   fetchNetworkSnapshot: async () => {
+    if (get().p2pUnavailable) return;
     try {
       const snapshot = await discoveryApi.getNetworkSnapshot();
       set((s) =>
@@ -501,6 +542,10 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
         }),
       );
     } catch (err) {
+      if (isCommandUnavailableError(err)) {
+        set({ p2pUnavailable: true });
+        return;
+      }
       set((s) => bumpFailure(s, ENDPOINT_NETWORK_SNAPSHOT, err));
     }
   },

@@ -9,8 +9,6 @@ import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 import { getContrastRatio, getContrastLevel } from '@/lib/theme/contrastRatio';
 import CustomThemeCreator from './CustomThemeCreator';
-import TranslationContributor from './TranslationContributor';
-import PseudoLocaleToggle from './PseudoLocaleToggle';
 
 /* Hover-expand popover — renders a larger fidelity app-surface sample of
    the theme: titlebar, sidebar with nav items, header card, status row,
@@ -134,11 +132,11 @@ const ThemeSwatch = memo(function ThemeSwatch({ theme, active, onSelect }: { the
     : contrastLevel === 'AA' ? 'bg-status-info/20 text-status-info'
     : 'bg-status-warning/25 text-status-warning';
 
-  // Midnight has no [data-theme=...] rule — it lives at :root. Setting the
-  // attribute to its id on the wrapper inherits root vars unchanged, so we
-  // can scope every tile uniformly without special-casing.
-  // Wrapping div carries the hover popover (positioned outside the Button's
-  // overflow-hidden clip rect) and forwards hover/focus events to both.
+  // Each tile paints with inline styles derived from the theme's palette
+  // (THEMES.primaryColor / accentColor / backgroundSample / foregroundSample),
+  // not Tailwind utilities. That sidesteps any CSS-variable cascade timing
+  // and guarantees every tile visibly previews ITS OWN theme regardless of
+  // which theme is currently active.
   return (
     <div
       className="relative"
@@ -146,67 +144,67 @@ const ThemeSwatch = memo(function ThemeSwatch({ theme, active, onSelect }: { the
       onMouseLeave={handleLeave}
     >
       {showHover && !active && <ThemeHoverPreview theme={theme} />}
-      <Button
-      variant="ghost"
-      onClick={onSelect}
-      onFocus={handleEnter}
-      onBlur={handleLeave}
-      className={`group relative flex flex-col p-0 rounded-modal border overflow-hidden w-full ${
-        active
-          ? 'border-primary/40 ring-2 ring-primary/20'
-          : 'border-primary/10 hover:border-primary/30'
-      }`}
-    >
-      <div
-        data-theme={theme.id}
+      <button
+        type="button"
+        onClick={onSelect}
+        onFocus={handleEnter}
+        onBlur={handleLeave}
         aria-label={previewAriaLabel}
-        className="relative w-full bg-background text-foreground flex flex-col gap-2 px-3 py-3 pointer-events-none"
-        style={{ minHeight: '110px' }}
+        className={`group relative flex flex-col w-full p-0 overflow-hidden rounded-modal border transition-all ${
+          active
+            ? 'border-primary/40 ring-2 ring-primary/20'
+            : 'border-primary/10 hover:border-primary/30'
+        }`}
       >
-        {/* Contrast badge — anchored top-right inside the data-theme'd region
-            so its semantic colors also reflect the previewed theme's palette */}
-        <span
-          aria-label={badgeAriaLabel}
-          title={badgeAriaLabel}
-          className={`absolute top-2 right-2 px-1.5 py-0.5 rounded-pill text-[9px] font-semibold tracking-wide ${badgeClass}`}
+        <div
+          className="relative w-full flex flex-col gap-2.5 px-3 py-3 pointer-events-none"
+          style={{
+            minHeight: '110px',
+            backgroundColor: theme.backgroundSample,
+            color: theme.foregroundSample,
+          }}
         >
-          {badgeLabel}
-        </span>
+          {/* Contrast badge — rendered with a neutral chip style so it remains
+              legible on every tile background */}
+          <span
+            aria-label={badgeAriaLabel}
+            title={badgeAriaLabel}
+            className={`absolute top-2 right-2 px-1.5 py-0.5 rounded-pill text-[9px] font-semibold tracking-wide ${badgeClass}`}
+          >
+            {badgeLabel}
+          </span>
 
-        {/* Top row: primary disc with active check + accent + neutral chip */}
-        <div className="flex items-center justify-between pr-12">
-          <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center shadow-elevation-1">
-            {active && <Check className="w-3.5 h-3.5 text-btn-primary-fg" />}
+          {/* Top row: primary disc + accent disc */}
+          <div className="flex items-center gap-2 pr-12">
+            <div
+              className="w-7 h-7 rounded-full flex items-center justify-center shadow-elevation-1"
+              style={{ backgroundColor: theme.primaryColor }}
+            >
+              {active && <Check className="w-3.5 h-3.5" style={{ color: theme.backgroundSample }} />}
+            </div>
+            <div
+              className="w-5 h-5 rounded-full"
+              style={{ backgroundColor: theme.accentColor }}
+            />
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-accent" />
-            <span className="w-2 h-2 rounded-full bg-brand-purple" />
-            <span className="w-2 h-2 rounded-full bg-brand-emerald" />
+
+          {/* Color strip — primary / accent / fg / bg in a single row makes
+              palette differences readable at a glance */}
+          <div className="flex items-center gap-1">
+            <span className="h-2 flex-1 rounded-full" style={{ backgroundColor: theme.primaryColor }} />
+            <span className="h-2 flex-1 rounded-full" style={{ backgroundColor: theme.accentColor }} />
+            <span className="h-2 flex-1 rounded-full" style={{ backgroundColor: theme.foregroundSample, opacity: 0.3 }} />
           </div>
-        </div>
 
-        {/* Status dot row -- real semantic tokens, showing how the theme
-            differentiates success/warning/error/info */}
-        <div className="flex items-center gap-1 mt-0.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-status-success" />
-          <span className="w-1.5 h-1.5 rounded-full bg-status-warning" />
-          <span className="w-1.5 h-1.5 rounded-full bg-status-error" />
-          <span className="w-1.5 h-1.5 rounded-full bg-status-info" />
-          <span className="h-1 flex-1 rounded-full bg-foreground/10 ml-1" />
+          {/* Theme label rendered in the theme's foreground for true contrast preview */}
+          <span
+            className="text-sm font-semibold mt-auto"
+            style={{ color: theme.foregroundSample }}
+          >
+            {theme.label}
+          </span>
         </div>
-
-        {/* Mini "card" -- shows how surfaces sit on the background */}
-        <div className="rounded-card bg-card-bg border border-card-border px-2 py-1.5 flex items-center gap-2">
-          <div className="h-1 flex-1 rounded-full bg-foreground/15" />
-          <div className="h-1 w-4 rounded-full bg-primary/60" />
-        </div>
-
-        {/* Label rendered in the theme's foreground for true contrast preview */}
-        <span className="text-sm font-medium text-foreground mt-auto">
-          {theme.label}
-        </span>
-      </div>
-    </Button>
+      </button>
     </div>
   );
 });
@@ -342,11 +340,11 @@ export default function AppearanceSettings() {
                   scale.id === 'large' ? 'text-base' :
                   scale.id === 'larger' ? 'text-lg' : 'text-xl';
                 return (
-                  <Button
-                    variant="ghost"
+                  <button
+                    type="button"
                     key={scale.id}
                     onClick={() => setTextScale(scale.id as TextScale)}
-                    className={`relative flex flex-col items-center gap-2 p-4 rounded-modal border ${
+                    className={`relative flex flex-col items-center gap-2 p-4 rounded-modal border transition-colors text-center ${
                       isActive
                         ? 'border-primary/30 bg-primary/5'
                         : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
@@ -357,10 +355,10 @@ export default function AppearanceSettings() {
                     >
                       Aa
                     </span>
-                    <span className={`text-xs ${isActive ? 'text-foreground font-medium' : 'text-foreground'}`}>
+                    <span className={`text-sm ${isActive ? 'text-foreground font-medium' : 'text-foreground'}`}>
                       {scale.label}
                     </span>
-                    <span className="text-[11px] text-foreground">
+                    <span className="text-[11px] text-foreground/70 leading-snug">
                       {scale.description}
                     </span>
                     {isActive && (
@@ -368,7 +366,7 @@ export default function AppearanceSettings() {
                         <Check className="w-3.5 h-3.5 text-primary" />
                       </div>
                     )}
-                  </Button>
+                  </button>
                 );
               })}
             </div>
@@ -384,11 +382,11 @@ export default function AppearanceSettings() {
               {TIMEZONE_OPTIONS.map((tz) => {
                 const isActive = timezone === tz.value;
                 return (
-                  <Button
-                    variant="ghost"
+                  <button
+                    type="button"
                     key={tz.value}
                     onClick={() => setTimezone(tz.value as TimezoneMode)}
-                    className={`relative flex flex-col items-center gap-1.5 p-4 rounded-modal border ${
+                    className={`relative flex flex-col items-center gap-2 p-4 rounded-modal border transition-colors text-center ${
                       isActive
                         ? 'border-primary/30 bg-primary/5'
                         : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
@@ -397,7 +395,7 @@ export default function AppearanceSettings() {
                     <span className={`text-sm font-medium ${isActive ? 'text-foreground/90' : 'text-foreground'}`}>
                       {s[tz.labelKey]}
                     </span>
-                    <span className="text-[11px] text-foreground">
+                    <span className="text-[11px] text-foreground/70 leading-snug">
                       {s[tz.descriptionKey]}
                     </span>
                     {isActive && (
@@ -405,19 +403,11 @@ export default function AppearanceSettings() {
                         <Check className="w-3.5 h-3.5 text-primary" />
                       </div>
                     )}
-                  </Button>
+                  </button>
                 );
               })}
             </div>
           </div>
-
-          {/* Language & Translation Contributions — dev only */}
-          {import.meta.env.DEV && (
-            <div className="rounded-modal border-2 border-amber-500/50 ring-1 ring-amber-500/20">
-              <TranslationContributor />
-              <PseudoLocaleToggle />
-            </div>
-          )}
 
           {/* Brightness */}
           <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
@@ -430,11 +420,11 @@ export default function AppearanceSettings() {
                 const isActive = brightness === level.id;
                 const iconOpacity = BRIGHTNESS_ICON_OPACITY_BY_INDEX[i] ?? 'opacity-100';
                 return (
-                  <Button
-                    variant="ghost"
+                  <button
+                    type="button"
                     key={level.id}
                     onClick={() => setBrightness(level.id as BrightnessLevel)}
-                    className={`relative flex flex-col items-center gap-2 p-4 rounded-modal border ${
+                    className={`relative flex flex-col items-center gap-2 p-4 rounded-modal border transition-colors text-center ${
                       isActive
                         ? 'border-primary/30 bg-primary/5'
                         : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
@@ -444,7 +434,7 @@ export default function AppearanceSettings() {
                     <span className={`text-sm ${isActive ? 'text-foreground/90 font-medium' : 'text-foreground'}`}>
                       {level.label}
                     </span>
-                    <span className="typo-body text-foreground">
+                    <span className="text-[11px] text-foreground/70 leading-snug">
                       {level.description}
                     </span>
                     {isActive && (
@@ -452,7 +442,7 @@ export default function AppearanceSettings() {
                         <Check className="w-3.5 h-3.5 text-primary" />
                       </div>
                     )}
-                  </Button>
+                  </button>
                 );
               })}
             </div>

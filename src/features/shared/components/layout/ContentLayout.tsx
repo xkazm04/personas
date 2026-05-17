@@ -81,8 +81,15 @@ export function ContentBox({ children, minWidth, 'data-testid': testId }: Conten
 // ---------------------------------------------------------------------------
 
 interface ContentHeaderProps {
-  icon: ReactNode;
+  /** Optional icon (left of title). Renders inside a small colored chip when
+   *  `iconColor` is supplied; rendered raw otherwise. May be omitted entirely
+   *  for headers that lead with text only. */
+  icon?: ReactNode;
   iconColor?: IconColor;
+  /** Small mono-uppercase label rendered above the title (Home/"Mission
+   *  Control" pattern). Keep to 1–3 words; longer eyebrows degrade
+   *  readability at this size. */
+  eyebrow?: ReactNode;
   title: string;
   subtitle?: ReactNode;
   actions?: ReactNode;
@@ -95,21 +102,24 @@ interface ContentHeaderProps {
 export function ContentHeader({
   icon,
   iconColor,
+  eyebrow,
   title,
   subtitle,
   actions,
   children,
   style,
 }: ContentHeaderProps) {
-  const iconElement = iconColor ? (
-    <div
-      className={`${IS_MOBILE ? 'w-8 h-8' : 'w-10 h-10'} rounded-xl ${ICON_COLOR_MAP[iconColor].bg} border ${ICON_COLOR_MAP[iconColor].border} flex items-center justify-center`}
-    >
-      {icon}
-    </div>
-  ) : (
-    icon
-  );
+  const iconElement = icon ? (
+    iconColor ? (
+      <div
+        className={`${IS_MOBILE ? 'w-7 h-7' : 'w-9 h-9'} rounded-lg ${ICON_COLOR_MAP[iconColor].bg} border ${ICON_COLOR_MAP[iconColor].border} flex items-center justify-center flex-shrink-0`}
+      >
+        {icon}
+      </div>
+    ) : (
+      icon
+    )
+  ) : null;
 
   const layoutCtx = useContext(ContentLayoutContext);
   const scrolled = layoutCtx?.scrolled ?? false;
@@ -118,7 +128,7 @@ export function ContentHeader({
     <div
       style={style}
       className={[
-        IS_MOBILE ? 'px-3 py-3' : 'px-4 md:px-6 xl:px-8 py-6',
+        IS_MOBILE ? 'px-3 py-2.5' : 'px-4 md:px-6 xl:px-8 py-4',
         // bg-card-bg maps to --color-card-bg via @theme; the previous
         // bg-primary/5 fallback (used pre-backdrop-filter) introduced a
         // brand-tinted variant that didn't match the theme's neutral
@@ -134,11 +144,15 @@ export function ContentHeader({
       <div className="flex items-center gap-3 pr-20">
         {iconElement}
         <div className="flex-1 min-w-0">
+          {eyebrow && (
+            <div className="typo-caption uppercase tracking-[0.3em] text-foreground/50 font-mono mb-0.5">
+              {eyebrow}
+            </div>
+          )}
           <h1 className="typo-heading-lg text-foreground/90">{title}</h1>
           {subtitle && (
             <p className="typo-body text-foreground">{subtitle}</p>
           )}
-
         </div>
         {actions}
       </div>

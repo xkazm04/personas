@@ -5043,6 +5043,7 @@
     "dashboard": {
       "title": "Dashboard",
       "subtitle": "Operational overview and system status",
+      "mission_control_eyebrow": "Mission Control",
       "greeting_morning": "Good Morning",
       "greeting_afternoon": "Good Afternoon",
       "greeting_evening": "Good Evening",

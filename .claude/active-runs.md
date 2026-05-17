@@ -32,6 +32,14 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+- **[2026-05-17 13:01 — started] /friend — triggers (endless development loop)**
+  - **Source:** `/friend` with explicit path arg `src\features\triggers` → topic commitment on triggers area. Coverage.md shows triggers has had NO prior /friend visit; recent commits show heavy i18n + a11y polish + an orphan-tree refactor + schedules nearby. 10 tabs in TriggersPage: live-stream / builder / studio / lineage / shared / rate-limits / test / smee-relay / cloud-webhooks / dead-letter.
+  - **Paths:** `src/features/triggers/`, `src-tauri/src/commands/communication/` (read-mostly; any IPC additions trigger Phase 3 gate), `src-tauri/src/engine/event_registry.rs` (read-mostly), `src/i18n/locales/*.json` (additive `triggers.*` keys only — coordinate with concurrent /friend-schedules using `schedules.*`, /friend-theming using `appearance.*`/`theme.*`, /friend plugin sessions using `plugins.*`), possibly `docs/features/events/README.md` per cycle, `.claude/active-runs.md`
+  - **Status:** started
+  - **Branch:** `worktree-friend-triggers-130100`
+  - **Worktree:** `.claude/worktrees/friend-triggers-130100/`
+  - **Note:** First /friend session over triggers. Path-disjoint from all 9 concurrent sessions: schedules touches `src/features/schedules/`, overview-polish touches `src/features/overview/`, sidebar-L3 touches `src/features/home/` + `src/features/shared/components/layout/sidebar/`, plugin /friends touch `src/features/plugins/*`, theming touches `src/styles/` + `src/stores/themeStore.ts`. Shared en.json: additive `triggers.*` only. Apply Patterns/friend-preferences.md: deepen-existing (cap 1 of 5 net-new), bias higher-effort (1 small / 2 medium / 2 stretch), drop 2× soft-skips, stage-1-of-N where it fits. Per-cycle: also add the new English keys to 13 non-English locales in same commit.
+
 - **[2026-05-17 — started] overview-polish — Header unification + Events/Knowledge/Health fixes**
   - **Source:** User-driven UX polish — Overview module. Header consistency across submodules, Events subtitle bug ("50 50 of 50"), Knowledge background-CLI review + drop Schedule, Health Reliability tab dedup + filter compaction.
   - **Paths:** `src/features/overview/sub_events/components/EventLogList.tsx`, `src/features/overview/sub_knowledge/components/**`, `src/features/overview/sub_health/components/**`, possibly headers in other `src/features/overview/sub_*/components/**` for consistency, `src/i18n/locales/en.json` (additive `overview.*` keys only — disjoint from concurrent `schedules.*`/`appearance.*`/`plugins.*`/`shared.sidebar_extra.*`)
@@ -103,7 +111,7 @@ timestamp — the next session can recognize it as abandoned.
 ## Recently completed (last 14 days)
 
 - **[2026-05-17] tours-revamp — descope Activation Quest + expand guided tours**
-  - **Status:** completed + merged to master (worktree commits: `459f86e08` Quest descope, `14b678024` tour expansion, `c07631514` ledger; merge commit `<merge-sha>` on master)
+  - **Status:** completed + merged to master (worktree commits: `459f86e08` Quest descope, `14b678024` tour expansion, `c07631514` ledger; merge commit `fe33f2652` on master)
   - **Paths shipped:**
     - **Deletes (Phase 1):** `src/features/onboarding/components/OnboardingQuestPill.tsx`, `src/stores/onboardingQuestStore.ts`, `src/features/home/components/NextStepCoachCard.tsx`
     - **Edits (Phase 1):** `src/App.tsx`, `src/features/home/components/WelcomeLayout.tsx`, `src/features/shared/components/layout/TitleBar.tsx`, `src/i18n/locales/{en,ar,bn,cs,de,es,fr,hi,id,ja,ko,ru,vi,zh}.json` (35 `quest_*` + `next_step_*` keys removed each), `src/i18n/section-locales/**/onboarding.json`, `src/i18n/generated/{types,enSectionStrings}.ts`, `docs/features/{home,onboarding}.md`

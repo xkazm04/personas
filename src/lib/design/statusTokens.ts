@@ -125,7 +125,6 @@ export const SETTINGS_ICON_ACCENTS = {
   notifications:   { text: 'text-amber-400',   bg: 'bg-amber-500/10',   border: 'border-amber-500/30' },
   engine:          { text: 'text-cyan-400',    bg: 'bg-cyan-500/10',    border: 'border-cyan-500/30' },
   byom:            { text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/30' },
-  'quality-gates': { text: 'text-sky-400',     bg: 'bg-sky-500/10',     border: 'border-sky-500/30' },
   portability:     { text: 'text-indigo-400',  bg: 'bg-indigo-500/10',  border: 'border-indigo-500/30' },
   'api-keys':      { text: 'text-fuchsia-400', bg: 'bg-fuchsia-500/10', border: 'border-fuchsia-500/30' },
   admin:           { text: 'text-rose-400',    bg: 'bg-rose-500/10',    border: 'border-rose-500/30' },
