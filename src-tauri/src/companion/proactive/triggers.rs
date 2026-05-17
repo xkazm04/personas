@@ -74,6 +74,9 @@ pub fn collect_all(pool: &UserDbPool) -> Result<Vec<Nudge>, AppError> {
     out.extend(backlog_aging(pool).unwrap_or_default());
     out.extend(cadence_due(pool).unwrap_or_default());
     out.extend(on_this_day(pool).unwrap_or_default());
+    // Fleet attention — failed / long-waiting / stale sessions.
+    // No DB lookup (reads the in-process fleet registry); no error path.
+    out.extend(super::fleet_triggers::fleet_attention());
     Ok(out)
 }
 
