@@ -86,11 +86,17 @@ export function useBulkHealthcheck() {
     const queue = [...credentials];
 
     // Credentials tested within this window via per-card Test Connection
-    // should not be re-probed during the bulk run -- the bulk result can
+    // or a prior bulk run should not be re-probed -- the bulk result can
     // race manual tests and flip a freshly-succeeded card to a transient
     // network failure (e.g. provider rate-limiting from the concurrent
-    // bulk sweep). Reuse the manual result instead.
-    const FRESH_RESULT_TTL_MS = 30_000;
+    // bulk sweep). Reuse the persisted result instead.
+    //
+    // Bumped from 30s to 24h after the 2026-05-17 perf-walk: the daily
+    // auto-test fired 25 fresh healthchecks per Vault landing because the
+    // 30s window was too tight to catch yesterday's bulk run, and most
+    // credentials don't actually need re-probing more than once a day.
+    // 24h aligns with the "daily" semantics of the auto-test caller above.
+    const FRESH_RESULT_TTL_MS = 24 * 60 * 60 * 1000;
 
     const worker = async () => {
       while (queue.length > 0 && !cancelRef.current) {
