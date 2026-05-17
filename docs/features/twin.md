@@ -26,7 +26,7 @@ A persona invoking a twin tool (e.g. `get_tone("slack")`, `recall_memory("client
 
 ## User flow
 
-The plugin is organised as eight tabs — **Profiles**, **Identity**, **Tone**, **Brain**, **Knowledge**, **Voice**, **Channels**, **Training** — with a persistent **TwinSelector** banner at the top. The banner shows the active twin name and, when more than one twin exists, a dropdown to switch between them.
+The plugin is organised as eight tabs — **Profiles**, **Identity**, **Tone**, **Brain**, **Knowledge**, **Voice**, **Channels**, **Training** — with a persistent **TwinSelector** banner at the top. The banner shows the active twin name and, when more than one twin exists, a **searchable picker** opens as a popover with keyboard arrows + Enter + a "Create new twin" footer CTA (routes to Profiles). A clickable **readiness pill** on the right summarises the active twin's setup score (0–100); clicking it opens a popover that lists the highest-impact missing milestones (e.g. *"No bio yet"*, *"Generic tone only"*) and deep-links into the matching sub-tab so the user can fix them one click away. Next to it sits a **wiki freshness pill** — *"not compiled"* / *"Wiki: 12m ago"* / *"Wiki: 3d ago"* (stale) — that clicks through to recompile the per-twin markdown wiki on disk via `twin_compile_wiki`. The pill polls `twin_wiki_status` on twin switch, so the user can spot a stale wiki without opening the Knowledge tab. When a wiki exists on disk, a paired **folder-icon button** opens the wiki directory in the OS file manager via `@tauri-apps/plugin-shell`.
 
 ### 1. Profiles — manage twins
 
@@ -38,7 +38,7 @@ The plugin is organised as eight tabs — **Profiles**, **Identity**, **Tone**, 
 
 1. Open **Identity**. The header renders the active twin's name.
 2. Fill **Name**, **Role / Title**, **Gender** (male / female / neutral), **Bio**, and **Obsidian Vault Subpath**.
-3. Click **Generate with AI** to open the bio generator — enter keywords, the backend composes a polished paragraph that lands in the Bio field (you can still edit it).
+3. Click **Generate with AI** to open the bio generator — enter keywords, the backend composes a polished paragraph that lands in the Bio field (you can still edit it). When a bio is already present, the same button reads **Refine with AI** — the panel sends the existing bio + any optional steering keywords ("more concise", "keep the dry humor") to `twin_generate_bio`'s refine mode, which tightens the prose while preserving voice and facts.
 4. The **Prompt preview** card shows the exact text that gets injected into the persona's system prompt when this twin is adopted: `You are speaking as <name>, <role>.\n\n<bio>`.
 5. Hit **Save Identity** when dirty.
 
@@ -54,18 +54,23 @@ The plugin is organised as eight tabs — **Profiles**, **Identity**, **Tone**, 
 
 ### 4. Brain — the memory layers
 
-1. Open **Brain**. Two sections appear:
+1. Open **Brain**. Three sections appear:
    - **Obsidian Vault** (optional) — informational; reads from the `obsidian_subpath` set in Identity.
    - **Knowledge Base** (required for recall) — vector-indexed store that powers `recall_memory`.
+   - **Distilled facts** — curated, cited facts about the twin or specific contacts. Each row cites the `twin_communications` it came from (provenance contract — facts can never enter without a source). Manual write surface today; future cycles add a Claude-driven consolidation pass that proposes facts from recent communications + approved pending memories.
+   - **Reflections** — operator-audit journals. The user types a seed question; the backend assembles the twin profile + last 40 communications + the seed into a Claude prompt and persists the prose answer as an immutable `twin_reflection` row. The journal is read-only after write — the audit value is precisely that reflections stay frozen at the moment they were generated.
+   - **Recall preview** — read-only visualisation of the structured bundle a persona prompt-builder would see at runtime: bio + generic tone + last 5 communications + top 5 distilled facts + top 5 contacts (when twin-wide). Drives by the new `twin_recall(twin_id, contact_handle?)` command. Scope-to-contact buttons let the operator see what recall looks like for a specific relationship. Stage 1 ships the bundle + preview; Stage 2 will wire it into the actual persona prompt path so runtime replies pick up the same shelves.
 2. If no KB is bound: press **Create New KB** (auto-creates *`<Twin name> Brain`* and binds it) or **Link Existing** to pick one from the credential vault.
 3. Once bound, the panel shows document count, chunk count, and status (ready / pending). **Refresh** re-fetches stats, **Unbind** detaches without deleting the KB.
 4. The "How the brain grows" card explains the 5-step lifecycle: personas record interactions → pending memories appear in Knowledge → you approve → indexed into KB → next recall finds them.
 
 ### 5. Knowledge — review what the twin remembers
 
-The tab is a two-column grid:
+A **Contacts** panel sits at the top of the tab — every external handle this twin has interacted with (auto-populated from `twin_communications` on each list call, no background job). Each row shows the handle (or its operator-supplied alias), last-seen relative time, and message count. Inline edit attaches an alias + free-text notes that persist per `(twin_id, handle)` and become the scope key for the future per-contact memory + nudge work.
 
-- **Memory Inbox (left)** — filters for `pending` / `approved` / `rejected`. Each pending card shows title, content, channel badge, priority if > 3, and two actions: **Approve** (index into KB) or **Reject** (discard). Approved memories power future recalls.
+Below the Contacts panel the tab is a two-column grid:
+
+- **Memory Inbox (left)** — filters for `pending` / `approved` / `rejected`. Each pending card shows title, content, channel badge, priority if > 3, an optional **provenance chip** ("from `abc12345…`") linking back to the source `twin_communications.id` that produced it (populated for memories created by `record_interaction`; NULL for URL-ingest and wiki-audit memories), and two actions: **Approve** (index into KB) or **Reject** (discard). Approved memories power future recalls. When viewing the **pending** filter, a bulk-action bar appears above the list with a "Select all on this page" checkbox; each row also gets its own checkbox. With one or more selected, "Approve N" and "Reject N" buttons fire sequential reviews and show a single completion toast — turns a 10-card triage into two clicks.
 - **Conversation History (right)** — chronological log of every interaction through the Twin connector. Inbound vs outbound is color-coded (cyan vs violet), and each row shows channel, contact handle, timestamp, content, and optional summary. This is the raw trail; the inbox is the curated extract.
 
 ### 6. Voice — ElevenLabs configuration
@@ -74,14 +79,16 @@ The tab is a two-column grid:
 2. Enter a **Credential ID** pointing to the ElevenLabs API key stored in the vault. Required for synthesis, optional for configuration.
 3. Pick a **Model** (Multilingual v2, Monolingual v1, Turbo v2 / v2.5).
 4. Adjust the three sliders (**Stability**, **Similarity Boost**, **Style**) — labels underneath make the trade-off obvious ("More expressive" ↔ "More consistent").
-5. **Configure Voice** saves the profile. From there `synthesize_speech` is callable by any persona adopting this twin.
+5. Hit **Preview** (next to Save) to synthesize a short sample line with the current form values via `companion_tts` and play it inline — works against the unsaved form, so you can A/B slider changes without committing.
+6. **Configure Voice** saves the profile. From there `synthesize_speech` is callable by any persona adopting this twin.
 
 ### 7. Channels — where the twin speaks
 
 1. Open **Channels**. Press **Add Channel**.
 2. Pick a **Channel Type** (Discord, Slack, Email/Gmail, Telegram, SMS/Twilio, Teams, WhatsApp). The credential picker immediately filters by matching service type.
 3. Give it a **Label** (e.g. *My Discord Server*), pick a **Credential**, and optionally bind a **Persona ID** that operates there.
-4. Each channel card has pause/activate and remove actions. Paused channels don't accept inbound twin traffic but stay listed.
+4. Each channel card has pause/activate, remove, and a **Test** action. The Test button records a synthetic outbound communication (no external bridge fires — it's a local signal) so you can see the channel light up in the activity feed. Below the credential row each card shows a **last-bridged badge** ("Last bridged 12m ago" / "Never used") derived from the active twin's communication log — at-a-glance freshness for spotting dead channels. Paused channels don't accept inbound twin traffic and have Test disabled, but stay listed.
+5. The **Persona** binding in the add-channel form is a searchable dropdown of registered personas (with a "— None —" option) rather than a raw ID input — the row chip then shows the persona name instead of a truncated id.
 
 ### 8. Training — teach the twin by conversation
 
@@ -89,7 +96,8 @@ The tab is a two-column grid:
 2. The model generates 5 interview questions **grounded in what's already approved in the KB** — the topic screen shows "Already known: N memories — questions will avoid duplicates."
 3. Answer each question in your own voice. Each answer is recorded as a pending memory. If your answer is terse (< 15 words), a single **Follow-up** question is generated and inserted into the queue; you can **Skip** it instead of answering.
 4. On completion, the model summarises the session into a 3–5 sentence "what we learned" paragraph. The summary is saved as a high-signal pending memory tagged `kind: session_summary`, and displayed on the complete screen.
-5. Press **Review Memories** to jump straight to the Knowledge tab and triage the new pending entries.
+5. Below the summary, a **Where to go next** panel surfaces the two topic presets with the thinnest grounding-fact coverage so far (rough keyword-match on the active twin's approved memories). Clicking a recommendation **auto-starts the matching preset** — `generateQuestions` fires immediately for the picked topic prompt, skipping the topic picker. Completion → next session is one click.
+6. Press **Review Memories** to jump straight to the Knowledge tab and triage the new pending entries.
 
 ### Twin × Persona binding
 

@@ -24,7 +24,7 @@
     "sending": "Odesílání...",
     "empty_response": "(prázdná odpověď)",
     "snippets": "Snippety",
-    "request_body_placeholder": "Tvůj prompt zde..."
+    "request_body_placeholder": "{ \"message\": \"Your prompt here...\" }"
   },
   "connection": {
     "orchestrator_url_label": "URL cloudového serveru",

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Map, Plus, Search } from 'lucide-react';
+import { Map as MapIcon, Plus, Search } from 'lucide-react';
 import { listen } from '@tauri-apps/api/event';
 import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
 import { EventName } from '@/lib/eventRegistry';
@@ -120,10 +120,32 @@ export default function ContextMapPage() {
 
   const storeGroups = useSystemStore((s) => s.contextGroups);
   const storeContexts = useSystemStore((s) => s.contexts);
+  const storeGoals = useSystemStore((s) => s.goals);
+  const fetchGoals = useSystemStore((s) => s.fetchGoals);
   const activeScanId = useSystemStore((s) => s.activeScanId);
   const activeProject = useSystemStore((s) =>
     s.projects.find((p) => p.id === s.activeProjectId),
   );
+  const activeProjectId = useSystemStore((s) => s.activeProjectId);
+
+  // Ensure goals are loaded so the per-context coverage badge has data even
+  // when the user opens ContextMap before ever visiting Lifecycle.
+  useEffect(() => {
+    if (activeProjectId) fetchGoals(activeProjectId);
+  }, [activeProjectId, fetchGoals]);
+
+  // contextId → { count, firstGoalId } so each ContextCard can show its
+  // goal-coverage badge and seed the spotlight handoff in one click.
+  const goalCoverageByContext = useMemo(() => {
+    const map = new Map<string, { count: number; firstGoalId: string }>();
+    for (const g of storeGoals) {
+      if (!g.context_id) continue;
+      const existing = map.get(g.context_id);
+      if (existing) existing.count++;
+      else map.set(g.context_id, { count: 1, firstGoalId: g.id });
+    }
+    return map;
+  }, [storeGoals]);
 
   const codebaseScanPhase = useSystemStore((s) => s.codebaseScanPhase);
   const scanning = codebaseScanPhase === 'scanning';
@@ -317,7 +339,7 @@ export default function ContextMapPage() {
   return (
     <ContentBox>
       <ContentHeader
-        icon={<Map className="w-5 h-5 text-amber-400" />}
+        icon={<MapIcon className="w-5 h-5 text-amber-400" />}
         iconColor="amber"
         title={t.plugins.dev_tools.context_map_title}
         subtitle={t.plugins.dev_tools.context_map_subtitle}
@@ -338,6 +360,7 @@ export default function ContextMapPage() {
             onShowNewGroup={setShowNewGroup}
             onCreateGroup={handleCreateGroup}
             onScan={handleScan}
+            goalCoverageByContext={goalCoverageByContext}
           />
 
           {selectedCtx && <ContextDetail ctx={selectedCtx} onClose={() => setSelectedCtxId(null)} />}

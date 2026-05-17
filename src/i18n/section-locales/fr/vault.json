@@ -437,7 +437,7 @@
     "sql_hint": "Entrez une requête SQL",
     "executing_query": "Exécution de la requête...",
     "redis_placeholder": "Entrez une commande Redis...",
-    "convex_placeholder": "Entrez une requête Convex...",
+    "convex_placeholder": "Saisissez le nom de la table à parcourir ou le corps JSON : {\"path\": \"func:name\", \"args\": {}}",
     "sql_placeholder": "Entrez une requête SQL...",
     "running": "En cours...",
     "safe_mode": "Mode sécurisé",
@@ -679,7 +679,7 @@
     "add_tag_title": "Ajouter un tag",
     "local_embedding_hint": "Les embeddings sont générés localement avec {model} ({dims}-dim). Aucune donnée ne quitte votre machine. Le modèle (~23Mo) est téléchargé au premier usage et mis en cache localement.",
     "api_path_placeholder": "/api/v1/resource",
-    "json_body_placeholder": "valeur",
+    "json_body_placeholder": "{\"key\": \"value\"}",
     "sending": "Envoi...",
     "send": "Envoyer",
     "search_results_one": "{count} résultat pour \"{query}\"",
@@ -1011,7 +1011,7 @@
     "base_url_placeholder": "https://api.example.com",
     "openapi_url_placeholder": "https://api.example.com/openapi.json",
     "auth_schemes": "schémas d'auth.",
-    "body_placeholder": "valeur"
+    "body_placeholder": "{ \"key\": \"value\" }"
   },
   "foraging": {
     "no_credentials_found": "Aucun identifiant trouvé",

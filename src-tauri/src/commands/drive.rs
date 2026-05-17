@@ -830,6 +830,51 @@ fn walk_search(
     }
 }
 
+/// Return the N most-recently-modified files across the managed drive,
+/// sorted newest first. Used by the sidebar "Recent" rail so the user can
+/// jump to whatever a persona just exported without remembering the path.
+/// Folders are skipped — the rail is for actual files.
+#[tauri::command]
+pub fn drive_recent(
+    app: AppHandle,
+    limit: Option<u32>,
+) -> Result<Vec<DriveEntry>, AppError> {
+    let n = limit.unwrap_or(5).clamp(1, 50) as usize;
+    let root = managed_root(&app)?;
+    let mut acc: Vec<DriveEntry> = Vec::new();
+    walk_recent(&root, &root, &mut acc);
+    // ISO-8601 / RFC-3339 timestamps sort chronologically by string compare,
+    // so descending lex order = newest first. Saves a Date parse per item.
+    acc.sort_by(|a, b| b.modified.cmp(&a.modified));
+    acc.truncate(n);
+    Ok(acc)
+}
+
+fn walk_recent(root: &Path, dir: &Path, acc: &mut Vec<DriveEntry>) {
+    let read = match std::fs::read_dir(dir) {
+        Ok(r) => r,
+        Err(_) => return,
+    };
+    for entry in read.flatten() {
+        let path = entry.path();
+        let name = entry.file_name().to_string_lossy().to_string();
+        if name == ".DS_Store" || name == "Thumbs.db" || name == "desktop.ini" {
+            continue;
+        }
+        // Trash bin lives at <root>/.trash and is a soft-delete graveyard —
+        // those files are not what the user means by "recent."
+        if dir == root && name == ".trash" {
+            continue;
+        }
+        let is_dir = entry.file_type().map(|f| f.is_dir()).unwrap_or(false);
+        if is_dir {
+            walk_recent(root, &path, acc);
+        } else if let Ok(drive_entry) = build_entry(root, &path) {
+            acc.push(drive_entry);
+        }
+    }
+}
+
 #[tauri::command]
 pub fn drive_stat(app: AppHandle, rel_path: String) -> Result<DriveEntry, AppError> {
     let root = managed_root(&app)?;

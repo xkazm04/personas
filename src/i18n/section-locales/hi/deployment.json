@@ -24,7 +24,7 @@
     "sending": "भेजा जा रहा है...",
     "empty_response": "(खाली प्रतिक्रिया)",
     "snippets": "स्निपेट",
-    "request_body_placeholder": "यहाँ अपना प्रॉम्प्ट..."
+    "request_body_placeholder": "{ \"message\": \"Your prompt here...\" }"
   },
   "connection": {
     "orchestrator_url_label": "क्लाउड सर्वर URL",
@@ -189,7 +189,7 @@
     "no_deployments": "अभी तक कोई तैनाती नहीं",
     "adjust_filters": "अपनी खोज या फ़िल्टर समायोजित करने का प्रयास करें।",
     "deploy_hint": "क्लाउड या GitLab टैब से पर्सोना तैनात करें।",
-    "showing_of": "{total} में से {showing} तैनाती दिखाई जा रही हैं",
+    "showing_of": "{total} {showing} {plural} परिनियोजन का दिखाया जा रहा है",
     "total_invocations": "कुल आह्वान:",
     "search_placeholder": "तैनाती खोजें...",
     "filter": "फ़िल्टर",

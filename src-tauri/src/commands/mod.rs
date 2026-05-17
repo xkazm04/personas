@@ -6,6 +6,7 @@ pub mod credentials;
 pub mod design;
 pub mod drive;
 pub mod execution;
+pub mod fleet;
 pub mod infrastructure;
 pub mod live_roadmap;
 pub mod network;

@@ -24,7 +24,7 @@
     "sending": "Envoi...",
     "empty_response": "(réponse vide)",
     "snippets": "Extraits",
-    "request_body_placeholder": "Votre prompt ici..."
+    "request_body_placeholder": "{ \"message\": \"Your prompt here...\" }"
   },
   "connection": {
     "orchestrator_url_label": "URL du serveur cloud",

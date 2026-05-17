@@ -103,6 +103,17 @@
   background: rgba(0, 0, 0, 0.06);
 }
 
+/* Calendar event label color follows the agent color in dark themes but
+   darkens for light themes so the text retains AA contrast against the
+   lightly-tinted (~12% opacity) background fill. Drives the purple/orange/
+   green palette items that were too washed-out on light surfaces. */
+.event-block-label {
+  color: var(--ev-color);
+}
+[data-theme^="light"] .event-block-label {
+  color: color-mix(in srgb, var(--ev-color) 65%, #111827);
+}
+
 [data-theme="light"] .titlebar-btn-close:hover,
 [data-theme="light-ice"] .titlebar-btn-close:hover,
 [data-theme="light-news"] .titlebar-btn-close:hover {
@@ -631,10 +642,18 @@ html {
 :root {
   --app-brightness: 1.25;
   --brightness-compensate: calc(1 / var(--app-brightness));
+  --app-saturation: 1;
 }
 
 html {
-  filter: brightness(var(--app-brightness));
+  filter: brightness(var(--app-brightness)) saturate(var(--app-saturation));
+}
+
+/* Dim mode — lowers global saturation for comfortable late-night use.
+   Composed into the same html filter as brightness, so the existing
+   brightness counteraction continues to apply at full intensity. */
+[data-saturation="dim"] {
+  --app-saturation: 0.72;
 }
 
 /* Brightness compensation for vivid interactive elements.
@@ -1173,6 +1192,17 @@ input[type="range"]:disabled::-moz-range-thumb {
   }
 }
 
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes eq-bounce {
+  0% { transform: scaleY(0.2); }
+  100% { transform: scaleY(1); }
+}
+
 @keyframes fade-slide-in {
   from {
     opacity: 0;
@@ -1601,62 +1631,138 @@ body[data-drag-active="true"] * {
   --background: #0a1214;
   --foreground: #e0f2fe;
   --secondary: #0d2025;
+  --muted: #4a6b75;
+  --muted-dark: #36525a;
+  --muted-foreground: #94c5d4;
   --border: #164e63;
+  --card-bg: rgba(34, 211, 238, 0.04);
+  --card-border: rgba(34, 211, 238, 0.10);
   --brand-cyan: #22d3ee;
   --brand-purple: #0ea5e9;
+  --brand-emerald: #2dd4bf;
+  --brand-amber: #fbbf24;
+  --brand-rose: #fb7185;
   --btn-primary: #0e7490;
+  --glass-bg: rgba(6, 182, 212, 0.04);
+  --glass-border: rgba(6, 182, 212, 0.12);
+  --status-info: #22d3ee;
+  --status-processing: #22d3ee;
 }
 
-/* Dark: Bronze */
+/* Dark: Bronze — warm amber palette, hue-coherent neutrals */
 [data-theme="dark-bronze"] {
   --primary: #d97706;
   --accent: #f59e0b;
   --background: #121008;
   --foreground: #fef3c7;
   --secondary: #1c1505;
+  --muted: #6b5226;
+  --muted-dark: #524018;
+  --muted-foreground: #d4b482;
   --border: #78350f;
-  --brand-cyan: #f59e0b;
+  --card-bg: rgba(245, 158, 11, 0.04);
+  --card-border: rgba(245, 158, 11, 0.10);
+  --brand-cyan: #fbbf24;
+  --brand-purple: #ea580c;
+  --brand-emerald: #ca8a04;
   --brand-amber: #fbbf24;
+  --brand-rose: #f97316;
   --btn-primary: #92400e;
+  --glass-bg: rgba(217, 119, 6, 0.04);
+  --glass-border: rgba(217, 119, 6, 0.12);
+  --status-success: #84cc16;
+  --status-warning: #f59e0b;
+  --status-error: #ef4444;
+  --status-info: #fbbf24;
+  --status-pending: #f59e0b;
+  --status-processing: #fbbf24;
+  --status-neutral: #a8956b;
 }
 
-/* Dark: Frost */
+/* Dark: Frost -- intentionally desaturated neutral slate; full surface coverage
+   uses muted brand tokens to preserve the minimalist register. Status colors
+   stay at :root semantic defaults so success/warning/error remain readable
+   against the otherwise-monochrome canvas. */
 [data-theme="dark-frost"] {
   --primary: #e2e8f0;
   --accent: #f8fafc;
   --background: #0f1115;
   --foreground: #f1f5f9;
   --secondary: #1a1f28;
+  --muted: #4d5566;
+  --muted-dark: #3a414e;
+  --muted-foreground: #94a3b8;
   --border: #334155;
+  --card-bg: rgba(255, 255, 255, 0.035);
+  --card-border: rgba(255, 255, 255, 0.08);
   --brand-cyan: #cbd5e1;
   --brand-purple: #94a3b8;
+  --brand-emerald: #a3b8c4;
+  --brand-amber: #cbd5e1;
+  --brand-rose: #94a3b8;
   --btn-primary: #475569;
+  --glass-bg: rgba(255, 255, 255, 0.025);
+  --glass-border: rgba(255, 255, 255, 0.06);
 }
 
-/* Dark: Purple */
+/* Dark: Purple — violet palette, hue-coherent neutrals */
 [data-theme="dark-purple"] {
   --primary: #a855f7;
   --accent: #c084fc;
   --background: #0e0a14;
   --foreground: #f3e8ff;
   --secondary: #1a1028;
+  --muted: #5b4275;
+  --muted-dark: #463057;
+  --muted-foreground: #c4a7e7;
   --border: #4c1d95;
+  --card-bg: rgba(168, 85, 247, 0.04);
+  --card-border: rgba(168, 85, 247, 0.10);
+  --brand-cyan: #818cf8;
   --brand-purple: #c084fc;
-  --brand-cyan: #8b5cf6;
+  --brand-emerald: #a78bfa;
+  --brand-amber: #d8b4fe;
+  --brand-rose: #d946ef;
   --btn-primary: #6d28d9;
+  --glass-bg: rgba(168, 85, 247, 0.04);
+  --glass-border: rgba(168, 85, 247, 0.12);
+  --status-success: #6ee7b7;
+  --status-warning: #fbbf24;
+  --status-error: #f87171;
+  --status-info: #c4b5fd;
+  --status-pending: #fbbf24;
+  --status-processing: #c4b5fd;
+  --status-neutral: #a392b8;
 }
 
-/* Dark: Pink */
+/* Dark: Pink — rose palette, hue-coherent neutrals */
 [data-theme="dark-pink"] {
   --primary: #ec4899;
   --accent: #f472b6;
   --background: #140a10;
   --foreground: #fce7f3;
   --secondary: #200d1a;
+  --muted: #6b3954;
+  --muted-dark: #532a40;
+  --muted-foreground: #d4a3c4;
   --border: #831843;
-  --brand-rose: #f472b6;
+  --card-bg: rgba(236, 72, 153, 0.04);
+  --card-border: rgba(236, 72, 153, 0.10);
+  --brand-cyan: #f9a8d4;
   --brand-purple: #db2777;
+  --brand-emerald: #f0abfc;
+  --brand-amber: #fda4af;
+  --brand-rose: #f472b6;
   --btn-primary: #9d174d;
+  --glass-bg: rgba(236, 72, 153, 0.04);
+  --glass-border: rgba(236, 72, 153, 0.12);
+  --status-success: #34d399;
+  --status-warning: #fbbf24;
+  --status-error: #f87171;
+  --status-info: #f472b6;
+  --status-pending: #fbbf24;
+  --status-processing: #f9a8d4;
+  --status-neutral: #b8889a;
 }
 
 /* Dark: Deadpool -- black/white canvas with blood-red accents */
@@ -1666,6 +1772,8 @@ body[data-drag-active="true"] * {
   --background: #080808;
   --foreground: #ededed;
   --secondary: #131313;
+  --muted: #525252;
+  --muted-dark: #404040;
   --muted-foreground: #a3a3a3;
   --border: #262626;
   --card-bg: rgba(255, 255, 255, 0.025);
@@ -1717,41 +1825,48 @@ body[data-drag-active="true"] * {
   --status-neutral: #808080;
 }
 
-/* Light -- warm paper-like palette, toned-down brightness */
+/* Light -- "Paper Pro" — high-contrast neutral slate palette.
+   WCAG-AAA foreground/background contrast, soft borders + elevation-led
+   depth, single confident blue accent. The previous warm-paper variant
+   tinted everything beige (#e9e6df) which made the UI read as a writing
+   app; this rewrite targets professional dashboard polish. */
 [data-theme="light"] {
-  --primary: #2554b0;
-  --primary-rgb: 37, 84, 176;
-  --accent: #3568c7;
-  --background: #e9e6df;
-  --foreground: #1c1c28;
-  --secondary: #dad5cb;
-  --muted: #4d4d58;
-  --muted-dark: #38384a;
-  --muted-foreground: #3d3d4a;
-  --border: #bfb8ab;
-  --card-bg: rgba(0, 0, 0, 0.04);
-  --card-border: rgba(0, 0, 0, 0.10);
-  --brand-cyan: #0e7490;
+  --primary: #2563eb;
+  --primary-rgb: 37, 99, 235;
+  --accent: #3b82f6;
+  --background: #f7f8fa;
+  --foreground: #0f172a;
+  --secondary: #eef0f3;
+  --muted: #64748b;
+  --muted-dark: #475569;
+  --muted-foreground: #475569;
+  --border: #e2e8f0;
+  --card-bg: rgba(255, 255, 255, 0.82);
+  --card-border: rgba(15, 23, 42, 0.06);
+  --brand-cyan: #0891b2;
   --brand-purple: #7c3aed;
   --brand-emerald: #059669;
-  --brand-amber: #b45309;
-  --brand-rose: #be123c;
-  --btn-primary: #1e40af;
-  --glass-bg: rgba(0, 0, 0, 0.03);
-  --glass-border: rgba(0, 0, 0, 0.08);
-  --status-success: #059669;
-  --status-warning: #b45309;
+  --brand-amber: #d97706;
+  --brand-rose: #e11d48;
+  --btn-primary: #1d4ed8;
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(15, 23, 42, 0.06);
+  /* Status colors calibrated to ≥ AA against the cool near-white canvas.
+     amber-800 / emerald-700 replace amber-600 / emerald-600 which only
+     reached AA-lg on this background (surfaced by check:themes). */
+  --status-success: #047857;
+  --status-warning: #92400e;
   --status-error: #dc2626;
   --status-info: #2563eb;
-  --status-pending: #b45309;
+  --status-pending: #92400e;
   --status-processing: #2563eb;
-  --status-neutral: #3d3d4a;
-  --shadow-elevation-1: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.08);
-  --shadow-elevation-2: 0 2px 4px rgba(0, 0, 0, 0.08), 0 4px 8px rgba(0, 0, 0, 0.06);
-  --shadow-elevation-3: 0 4px 8px rgba(0, 0, 0, 0.1), 0 8px 16px rgba(0, 0, 0, 0.08);
-  --shadow-elevation-4: 0 8px 16px rgba(0, 0, 0, 0.12), 0 16px 32px rgba(0, 0, 0, 0.1);
-  --chart-grid-stroke: rgba(0, 0, 0, 0.10);
-  --chart-axis-fill: rgba(0, 0, 0, 0.55);
+  --status-neutral: #64748b;
+  --shadow-elevation-1: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.06);
+  --shadow-elevation-2: 0 2px 6px rgba(15, 23, 42, 0.06), 0 4px 12px rgba(15, 23, 42, 0.05);
+  --shadow-elevation-3: 0 4px 12px rgba(15, 23, 42, 0.08), 0 8px 24px rgba(15, 23, 42, 0.06);
+  --shadow-elevation-4: 0 8px 24px rgba(15, 23, 42, 0.10), 0 16px 48px rgba(15, 23, 42, 0.08);
+  --chart-grid-stroke: rgba(15, 23, 42, 0.08);
+  --chart-axis-fill: rgba(15, 23, 42, 0.55);
 }
 
 /* Light: Ice -- icy blue-white palette, toned-down brightness */
@@ -1776,12 +1891,15 @@ body[data-drag-active="true"] * {
   --btn-primary: #1d4ed8;
   --glass-bg: rgba(255, 255, 255, 0.5);
   --glass-border: rgba(59, 130, 246, 0.15);
-  --status-success: #0d9488;
-  --status-warning: #d97706;
-  --status-error: #dc2626;
-  --status-info: #2563eb;
-  --status-pending: #d97706;
-  --status-processing: #2563eb;
+  /* Status colors calibrated to ≥ AA on the slightly blue-tinted canvas.
+     amber-800 / teal-700 / red-700 / blue-700 replace the 500-600 tier
+     defaults which only reached AA-lg here (surfaced by check:themes). */
+  --status-success: #0f766e;
+  --status-warning: #92400e;
+  --status-error: #b91c1c;
+  --status-info: #1d4ed8;
+  --status-pending: #92400e;
+  --status-processing: #1d4ed8;
   --status-neutral: #3d5a80;
   --ice-shadow-sm: 0 1px 3px rgba(37, 99, 235, 0.06), 0 1px 2px rgba(37, 99, 235, 0.04);
   --ice-shadow-md: 0 4px 12px rgba(37, 99, 235, 0.08), 0 2px 4px rgba(37, 99, 235, 0.04);
@@ -1912,6 +2030,85 @@ body[data-drag-active="true"] * {
   --shadow-elevation-4: 0 8px 16px rgba(0, 0, 0, 0.18), 0 16px 32px rgba(0, 0, 0, 0.12);
   --chart-grid-stroke: rgba(0, 0, 0, 0.12);
   --chart-axis-fill: rgba(17, 17, 17, 0.6);
+}
+
+/* Light: Sage -- calm muted green-gray, editorial / document polish */
+[data-theme="light-sage"] {
+  --primary: #047857;
+  --primary-rgb: 4, 120, 87;
+  --accent: #10b981;
+  --background: #f1f4f1;
+  --foreground: #142119;
+  --secondary: #e1e6e1;
+  --muted: #5a6b5d;
+  --muted-dark: #43544a;
+  --muted-foreground: #43544a;
+  --border: #c8d2c8;
+  --card-bg: rgba(255, 255, 255, 0.82);
+  --card-border: rgba(20, 33, 25, 0.07);
+  --brand-cyan: #0d9488;
+  --brand-purple: #7c3aed;
+  --brand-emerald: #047857;
+  --brand-amber: #b45309;
+  --brand-rose: #be185d;
+  --btn-primary: #065f46;
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(20, 33, 25, 0.07);
+  /* Sage status colors calibrated to ≥ AA on the cool green-tinted canvas.
+     amber-800 / teal-700 / red-700 replace amber-700 / teal-600 / red-600
+     which fell at or below AA-lg (surfaced by check:themes). */
+  --status-success: #047857;
+  --status-warning: #92400e;
+  --status-error: #b91c1c;
+  --status-info: #0f766e;
+  --status-pending: #92400e;
+  --status-processing: #0f766e;
+  --status-neutral: #5a6b5d;
+  --shadow-elevation-1: 0 1px 2px rgba(20, 33, 25, 0.05), 0 1px 3px rgba(20, 33, 25, 0.07);
+  --shadow-elevation-2: 0 2px 6px rgba(20, 33, 25, 0.06), 0 4px 12px rgba(20, 33, 25, 0.05);
+  --shadow-elevation-3: 0 4px 12px rgba(20, 33, 25, 0.08), 0 8px 24px rgba(20, 33, 25, 0.06);
+  --shadow-elevation-4: 0 8px 24px rgba(20, 33, 25, 0.10), 0 16px 48px rgba(20, 33, 25, 0.08);
+  --chart-grid-stroke: rgba(20, 33, 25, 0.08);
+  --chart-axis-fill: rgba(20, 33, 25, 0.55);
+}
+
+/* Light: Sand -- warm muted beige, professional doc-style palette */
+[data-theme="light-sand"] {
+  --primary: #92400e;
+  --primary-rgb: 146, 64, 14;
+  --accent: #d97706;
+  --background: #f5f2eb;
+  --foreground: #2a2418;
+  --secondary: #ece6d6;
+  --muted: #6b5d3e;
+  --muted-dark: #4d4327;
+  --muted-foreground: #5a4d2e;
+  --border: #d4cdb8;
+  --card-bg: rgba(255, 252, 245, 0.85);
+  --card-border: rgba(42, 36, 24, 0.08);
+  --brand-cyan: #0e7490;
+  --brand-purple: #7c3aed;
+  --brand-emerald: #047857;
+  --brand-amber: #b45309;
+  --brand-rose: #be185d;
+  --btn-primary: #78350f;
+  --glass-bg: rgba(255, 252, 245, 0.72);
+  --glass-border: rgba(42, 36, 24, 0.08);
+  /* Sand status colors calibrated to AA on the warm beige canvas.
+     amber-800 replaces amber-700 (warning was at the 4.5:1 boundary). */
+  --status-success: #047857;
+  --status-warning: #92400e;
+  --status-error: #b91c1c;
+  --status-info: #0e7490;
+  --status-pending: #92400e;
+  --status-processing: #0e7490;
+  --status-neutral: #6b5d3e;
+  --shadow-elevation-1: 0 1px 2px rgba(42, 36, 24, 0.05), 0 1px 3px rgba(42, 36, 24, 0.07);
+  --shadow-elevation-2: 0 2px 6px rgba(42, 36, 24, 0.06), 0 4px 12px rgba(42, 36, 24, 0.05);
+  --shadow-elevation-3: 0 4px 12px rgba(42, 36, 24, 0.08), 0 8px 24px rgba(42, 36, 24, 0.06);
+  --shadow-elevation-4: 0 8px 24px rgba(42, 36, 24, 0.10), 0 16px 48px rgba(42, 36, 24, 0.08);
+  --chart-grid-stroke: rgba(42, 36, 24, 0.08);
+  --chart-axis-fill: rgba(42, 36, 24, 0.55);
 }
 
 [data-theme="light-news"] * {
@@ -4254,3 +4451,98 @@ html[data-document-visible='false'] *::after {
 .light-only { display: none; }
 [data-theme^="light"] .dark-only { display: none; }
 [data-theme^="light"] .light-only { display: inline-block; }
+
+/* Color-vision-deficiency safe palette override.
+   Placed at the end of the file with `html` selector for higher specificity
+   than [data-theme="X"] rules, so it wins regardless of the active theme.
+
+   The classic CVD trap is red↔orange (protanopia/deuteranopia compresses
+   that hue range). The fix is luminance differentiation: shift WARNING from
+   amber/orange to high-luminance yellow (#facc15), which reads as visually
+   lighter than red even in monochrome. ERROR shifts to red-500 — keeping
+   the red hue but bumping saturation so it's distinguishable from yellow
+   by luminance AND from blue/teal info colors by hue.
+
+   Override the -raw token AND the rendered token so the brightness
+   counteraction layer (color-mix on -raw) picks up the safe value too. */
+html[data-cvd="safe"] {
+  --status-warning-raw: #facc15;
+  --status-warning: #facc15;
+  --status-pending-raw: #facc15;
+  --status-pending: #facc15;
+  --status-error-raw: #ef4444;
+  --status-error: #ef4444;
+}
+
+/* High-contrast preset — one-click AAA across the board.
+   Pushes every status token to a luminance extreme relative to the canvas
+   (very light tints on dark themes, very dark tints on light themes),
+   strengthens card borders, and lifts muted-foreground toward the
+   foreground tone so secondary text doesn't sit at AA-lg.
+
+   Selectors stack one attribute over the [data-theme="X"] override layer
+   (which is also single-attribute), so we use compound `html[a][b]`
+   selectors for guaranteed specificity wins regardless of theme.
+
+   Combines cleanly with [data-cvd="safe"]: high-contrast applies its
+   luminance shift, then CVD-safe's yellow/red pair tweaks the warning
+   side (CVD is single-attribute so high-contrast wins where they
+   overlap — high contrast already enforces sufficient red/yellow
+   distinguishability via luminance). */
+
+/* Dark themes — light status tints */
+html[data-contrast="high"]:not([data-theme^="light"]) {
+  --status-success: #6ee7b7;
+  --status-success-raw: #6ee7b7;
+  --status-warning: #fde047;
+  --status-warning-raw: #fde047;
+  --status-error: #fca5a5;
+  --status-error-raw: #fca5a5;
+  --status-info: #93c5fd;
+  --status-info-raw: #93c5fd;
+  --status-pending: #fde047;
+  --status-pending-raw: #fde047;
+  --status-processing: #93c5fd;
+  --status-processing-raw: #93c5fd;
+  --status-neutral: #e2e8f0;
+  --status-neutral-raw: #e2e8f0;
+  --muted-foreground: color-mix(in srgb, var(--foreground) 75%, transparent);
+  --card-border: color-mix(in srgb, var(--foreground) 30%, transparent);
+}
+
+/* Light themes — dark status tints */
+html[data-contrast="high"][data-theme^="light"] {
+  --status-success: #064e3b;
+  --status-success-raw: #064e3b;
+  --status-warning: #78350f;
+  --status-warning-raw: #78350f;
+  --status-error: #7f1d1d;
+  --status-error-raw: #7f1d1d;
+  --status-info: #1e3a8a;
+  --status-info-raw: #1e3a8a;
+  --status-pending: #78350f;
+  --status-pending-raw: #78350f;
+  --status-processing: #1e3a8a;
+  --status-processing-raw: #1e3a8a;
+  --status-neutral: #0f172a;
+  --status-neutral-raw: #0f172a;
+  --muted-foreground: color-mix(in srgb, var(--foreground) 80%, transparent);
+  --card-border: color-mix(in srgb, var(--foreground) 25%, transparent);
+}
+
+/* Reduce-motion preset — mirrors the prefers-reduced-motion media query
+   at user request (independent of OS preference). Collapses every animation
+   and transition to a near-instant 0.01ms, which preserves the FINAL state
+   of state-driven CSS (so toggled classNames still apply the intended
+   styles) while eliminating the motion path that triggers vestibular
+   discomfort. !important is required to override Tailwind's animate-*
+   utility durations and explicit `transition: ...` declarations on
+   component-level rules. */
+html[data-motion="reduce"] *,
+html[data-motion="reduce"] *::before,
+html[data-motion="reduce"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}

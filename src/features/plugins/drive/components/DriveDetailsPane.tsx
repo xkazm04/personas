@@ -1,20 +1,34 @@
 import { useEffect, useState } from "react";
-import { Copy, Info } from "lucide-react";
+import { Copy, FileText, Info, Play } from "lucide-react";
 
 import { driveFormatBytes, driveReadText, type DriveEntry } from "@/api/drive";
 import { useTranslation } from "@/i18n/useTranslation";
 import { silentCatch } from "@/lib/silentCatch";
-import { visualForEntry, kindLabel } from "../designTokens";
+import {
+  formatRelativeTime,
+  kindBucketWeight,
+  kindGroupLabel,
+  kindLabel,
+  visualForEntry,
+} from "../designTokens";
+
+const VIDEO_MIME_PREFIX = "video/";
+const PDF_MIME = "application/pdf";
 
 interface Props {
   entries: DriveEntry[];
   currentPath: string;
+  onPreviewClick?: (entry: DriveEntry) => void;
 }
 
 const TEXT_PREVIEW_MAX_BYTES = 256 * 1024; // 256 KB
 const IMAGE_MIME_PREFIX = "image/";
 
-export function DriveDetailsPane({ entries, currentPath }: Props) {
+export function DriveDetailsPane({
+  entries,
+  currentPath,
+  onPreviewClick,
+}: Props) {
   const { t, tx } = useTranslation();
   const primary = entries[0] ?? null;
   const multi = entries.length > 1;
@@ -118,35 +132,112 @@ export function DriveDetailsPane({ entries, currentPath }: Props) {
           </DetailGrid>
         )}
 
-        {multi && (
-          <div className="rounded-card border border-primary/15 bg-secondary/30 p-3">
-            <div className="typo-label text-foreground">
-              {t.plugins.drive.details_items}
-            </div>
-            <div className="mt-1.5 typo-body text-foreground font-semibold tabular-nums">
-              {entries.length}
-              <span className="ml-1.5 font-normal text-foreground">
-                • {driveFormatBytes(
-                  entries.reduce(
-                    (sum, e) => sum + (e.kind === "file" ? e.size : 0),
-                    0,
-                  ),
-                )}
-              </span>
-            </div>
-          </div>
-        )}
+        {multi && <MultiSelectSummary entries={entries} />}
 
         {!multi && primary.kind === "file" && (
           <div className="space-y-2">
             <div className="typo-label text-foreground">
               {t.plugins.drive.details_preview}
             </div>
-            <FilePreview entry={primary} />
+            <FilePreview entry={primary} onPreviewClick={onPreviewClick} />
           </div>
         )}
       </div>
     </aside>
+  );
+}
+
+/**
+ * Multi-selection summary card. Replaces a bare "5 items · 24 MB" with
+ * a kind breakdown (3 Folders · 12 Images · 1 PDF) and a modified-range
+ * line so the user can sanity-check what they've grabbed before any
+ * bulk action. Mirrors the visual vocabulary of the delete-confirm
+ * breakdown so the two surfaces speak the same language.
+ */
+function MultiSelectSummary({ entries }: { entries: DriveEntry[] }) {
+  const { t, tx } = useTranslation();
+  // Per-bucket count for the chip row.
+  const buckets = (() => {
+    const m = new Map<string, number>();
+    for (const e of entries) {
+      const k = visualForEntry(e).labelKey;
+      m.set(k, (m.get(k) ?? 0) + 1);
+    }
+    return Array.from(m.entries()).sort(
+      ([a], [b]) =>
+        kindBucketWeight(a as Parameters<typeof kindBucketWeight>[0]) -
+        kindBucketWeight(b as Parameters<typeof kindBucketWeight>[0]),
+    );
+  })();
+
+  // Total bytes across files (folders excluded — they have no size).
+  const totalBytes = entries.reduce(
+    (sum, e) => sum + (e.kind === "file" ? e.size : 0),
+    0,
+  );
+
+  // Modified range — only meaningful when there's at least one mtime.
+  // ISO-8601 / RFC-3339 strings sort chronologically, so plain string
+  // compare picks oldest/newest without a Date parse.
+  const stamps = entries.map((e) => e.modified).filter((s): s is string => !!s);
+  const first = stamps[0];
+  let oldest: string | null = first ?? null;
+  let newest: string | null = first ?? null;
+  for (const s of stamps) {
+    if (oldest === null || s < oldest) oldest = s;
+    if (newest === null || s > newest) newest = s;
+  }
+  const sameMoment = oldest !== null && oldest === newest;
+
+  return (
+    <div className="rounded-card border border-primary/15 bg-secondary/30 p-3 space-y-2.5">
+      {/* Top row — total count + total size. */}
+      <div>
+        <div className="typo-label text-foreground">
+          {t.plugins.drive.details_items}
+        </div>
+        <div className="mt-1 typo-body text-foreground font-semibold tabular-nums">
+          {entries.length}
+          {totalBytes > 0 && (
+            <span className="ml-1.5 font-normal text-foreground/70">
+              • {driveFormatBytes(totalBytes)}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Kind breakdown chips. */}
+      {buckets.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {buckets.map(([key, count]) => (
+            <span
+              key={key}
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-primary/10 border border-primary/15 typo-caption text-foreground"
+            >
+              <span className="font-semibold tabular-nums">{count}</span>
+              <span className="text-foreground/70">
+                {kindGroupLabel(
+                  t,
+                  key as Parameters<typeof kindGroupLabel>[1],
+                )}
+              </span>
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Modified range. */}
+      {newest && oldest && (
+        <div className="pt-1.5 border-t border-primary/10 typo-caption text-foreground/70">
+          {sameMoment
+            ? formatRelativeTime(newest, t, tx)
+            : tx(t.plugins.drive.details_modified_range, {
+                newest: formatRelativeTime(newest, t, tx),
+                oldest: formatRelativeTime(oldest, t, tx),
+              })}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -175,11 +266,17 @@ function DetailRow({
   );
 }
 
-function FilePreview({ entry }: { entry: DriveEntry }) {
+function FilePreview({
+  entry,
+  onPreviewClick,
+}: {
+  entry: DriveEntry;
+  onPreviewClick?: (entry: DriveEntry) => void;
+}) {
   const { t } = useTranslation();
   const [text, setText] = useState<string | null>(null);
   const [state, setState] = useState<
-    "loading" | "ready" | "unsupported" | "too_large"
+    "loading" | "ready" | "unsupported" | "too_large" | "video" | "pdf"
   >("loading");
 
   useEffect(() => {
@@ -190,6 +287,18 @@ function FilePreview({ entry }: { entry: DriveEntry }) {
     const mime = entry.mime ?? "";
     if (mime.startsWith(IMAGE_MIME_PREFIX)) {
       setState("ready");
+      return;
+    }
+    // Video + PDF render an "Open in viewer" CTA; the lightbox handles
+    // the full playback / iframe rendering. We don't preload the bytes
+    // here — the lightbox fetches them on open so the Details pane stays
+    // light for files the user never expands.
+    if (mime.startsWith(VIDEO_MIME_PREFIX)) {
+      setState("video");
+      return;
+    }
+    if (mime === PDF_MIME) {
+      setState("pdf");
       return;
     }
 
@@ -247,8 +356,30 @@ function FilePreview({ entry }: { entry: DriveEntry }) {
       </div>
     );
   }
+  if (state === "video") {
+    return (
+      <OpenInLightboxCTA
+        entry={entry}
+        icon={Play}
+        label={t.plugins.drive.preview_open_video}
+        accent="rose"
+        onPreviewClick={onPreviewClick}
+      />
+    );
+  }
+  if (state === "pdf") {
+    return (
+      <OpenInLightboxCTA
+        entry={entry}
+        icon={FileText}
+        label={t.plugins.drive.preview_open_pdf}
+        accent="red"
+        onPreviewClick={onPreviewClick}
+      />
+    );
+  }
   if (entry.mime?.startsWith(IMAGE_MIME_PREFIX)) {
-    return <ImagePreviewBlob entry={entry} />;
+    return <ImagePreviewBlob entry={entry} onPreviewClick={onPreviewClick} />;
   }
   if (text !== null) {
     return (
@@ -264,7 +395,57 @@ function FilePreview({ entry }: { entry: DriveEntry }) {
   );
 }
 
-function ImagePreviewBlob({ entry }: { entry: DriveEntry }) {
+/**
+ * "Open in viewer" call-to-action — used by the video and PDF preview
+ * branches. Mirrors the visual of the image-preview thumbnail so the
+ * "click to expand" affordance is consistent across kinds.
+ */
+function OpenInLightboxCTA({
+  entry,
+  icon: Icon,
+  label,
+  accent,
+  onPreviewClick,
+}: {
+  entry: DriveEntry;
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  accent: "rose" | "red";
+  onPreviewClick?: (entry: DriveEntry) => void;
+}) {
+  const styles =
+    accent === "rose"
+      ? "border-rose-500/35 bg-gradient-to-br from-rose-500/15 via-rose-500/5 to-transparent text-rose-100 hover:border-rose-500/55 hover:from-rose-500/25"
+      : "border-red-500/35 bg-gradient-to-br from-red-500/15 via-red-500/5 to-transparent text-red-100 hover:border-red-500/55 hover:from-red-500/25";
+  if (!onPreviewClick) {
+    return (
+      <div
+        className={`flex items-center justify-center gap-2 px-3 py-6 rounded-card border ${styles}`}
+      >
+        <Icon className="w-4 h-4" />
+        <span className="typo-body font-medium">{label}</span>
+      </div>
+    );
+  }
+  return (
+    <button
+      type="button"
+      onClick={() => onPreviewClick(entry)}
+      className={`group w-full flex items-center justify-center gap-2 px-3 py-6 rounded-card border transition-all cursor-zoom-in ${styles}`}
+    >
+      <Icon className="w-4 h-4 group-hover:scale-110 transition-transform" />
+      <span className="typo-body font-semibold">{label}</span>
+    </button>
+  );
+}
+
+function ImagePreviewBlob({
+  entry,
+  onPreviewClick,
+}: {
+  entry: DriveEntry;
+  onPreviewClick?: (entry: DriveEntry) => void;
+}) {
   const [url, setUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -287,13 +468,30 @@ function ImagePreviewBlob({ entry }: { entry: DriveEntry }) {
   }, [entry.path, entry.mime]);
 
   if (!url) return null;
+  // No click target if the parent didn't wire a lightbox; the preview is
+  // still rendered as a plain image.
+  if (!onPreviewClick) {
+    return (
+      <div className="rounded-card border border-primary/10 bg-background/60 p-1 overflow-hidden">
+        <img
+          src={url}
+          alt={entry.name}
+          className="rounded-input max-w-full max-h-56 object-contain mx-auto"
+        />
+      </div>
+    );
+  }
   return (
-    <div className="rounded-card border border-primary/10 bg-background/60 p-1 overflow-hidden">
+    <button
+      type="button"
+      onClick={() => onPreviewClick(entry)}
+      className="group block w-full rounded-card border border-primary/10 bg-background/60 p-1 overflow-hidden hover:border-cyan-500/40 hover:shadow-[0_0_20px_-6px_rgba(34,211,238,0.5)] transition-all cursor-zoom-in"
+    >
       <img
         src={url}
         alt={entry.name}
-        className="rounded-input max-w-full max-h-56 object-contain mx-auto"
+        className="rounded-input max-w-full max-h-56 object-contain mx-auto group-hover:scale-[1.02] transition-transform"
       />
-    </div>
+    </button>
   );
 }

@@ -508,7 +508,7 @@
     "no_tools_warning": "Persona ini tidak memiliki alat yang ditetapkan. Tambahkan alat untuk pengujian lebih kaya.",
     "add_prompt_first": "Tambahkan prompt ke persona ini terlebih dahulu",
     "select_model": "Pilih setidaknya satu model",
-    "run_arena": "Jalankan Arena ({count} model)",
+    "run_arena": "Jalankan Arena ({count} model{count, plural, one {} other {s}})",
     "cancel_test": "Batal Uji",
     "focus_use_case": "Fokus pada Kasus Penggunaan",
     "describe_changes": "Jelaskan perubahan yang diinginkan",
@@ -909,7 +909,7 @@
     "auto_event_type": "Jenis acara: {eventType}",
     "auto_zapier_hint": "Catch hook akan divalidasi dan dihubungkan.",
     "auto_custom_hint": "Pengaturan manual diperlukan. Otomasi akan disimpan sebagai draf.",
-    "auto_input_schema_placeholder": "string",
+    "auto_input_schema_placeholder": "{ \"file_url\": \"string\" }",
     "auto_github_token_needs": "Token Anda memerlukan cakupan {scopes}. Perbarui token di github.com/settings/tokens.",
     "auto_fallback_title": "Kembali ke konektor langsung jika gagal",
     "ch_title": "Saluran Notifikasi",
@@ -2074,7 +2074,7 @@
     "success": "Berhasil",
     "failed": "Gagal",
     "error": "Kesalahan",
-    "input_json_placeholder": "value",
+    "input_json_placeholder": "{ \"key\": \"value\" }",
     "invalid_json": "Invalid JSON — fix before running."
   },
   "health_check": {

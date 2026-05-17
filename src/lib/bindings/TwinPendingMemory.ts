@@ -24,4 +24,10 @@ status: string,
 /**
  * User notes explaining the approval/rejection.
  */
-reviewer_notes: string | null, created_at: string, reviewed_at: string | null, };
+reviewer_notes: string | null, 
+/**
+ * Source `twin_communications.id` when this memory was queued by
+ * `record_interaction`. NULL for memories that didn't originate from
+ * a single communication (URL ingest, wiki audit, etc.).
+ */
+source_communication_id: string | null, created_at: string, reviewed_at: string | null, };

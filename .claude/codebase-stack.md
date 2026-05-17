@@ -44,7 +44,7 @@ Defined in `src-tauri/src/engine/provider/mod.rs` as the `CliProvider` trait. **
 
 ### How a persona execution actually runs
 
-1. `engine/runner.rs::run_persona` receives an execution request
+1. `engine/runner/mod.rs::run_execution` receives an execution request. **NOTE:** Earlier copies of this doc said `engine/runner.rs::run_persona`; that anchor is stale — `runner` is a directory (`mod.rs` + `stages.rs` + `env.rs` + `credentials.rs` + `globals.rs` + `HOOKS_DESIGN.md`), and the entry function is `run_execution`. The `run_persona_synchronous` wrapper at `engine/management_api.rs:~1525` is the Tauri-command-level caller; `run_persona_node` at `engine/pipeline_executor.rs:~319` is the pipeline-step caller. Both go through `run_execution`. Anchor correction from `/research` run 2026-05-16 (Hermes `/goal` reaffirm).
 2. Resolves credentials (`engine/credential_negotiator.rs`)
 3. Picks a provider (`engine/failover.rs` → `provider::for_engine_name`)
 4. Calls `provider.build_execution_args(persona, model_profile)` — which delegates to `engine/prompt.rs::build_cli_args`

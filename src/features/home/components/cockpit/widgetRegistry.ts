@@ -20,7 +20,17 @@ import { LinkedDecisionsWidget } from './widgets/LinkedDecisionsWidget';
 import { LinkedMemoriesWidget } from './widgets/LinkedMemoriesWidget';
 import { MetricSparkWidget } from './widgets/MetricSparkWidget';
 import { IssueListWidget } from './widgets/IssueListWidget';
+import { DecisionLogWidget } from './widgets/DecisionLogWidget';
+import { DesignCapabilitiesWidget } from './widgets/DesignCapabilitiesWidget';
+import { ModelTierChoiceWidget } from './widgets/ModelTierChoiceWidget';
+import { ObservabilityPlanWidget } from './widgets/ObservabilityPlanWidget';
+import { PersonaReadyWidget } from './widgets/PersonaReadyWidget';
+import { PersonaWalkthroughWidget } from './widgets/PersonaWalkthroughWidget';
+import { RecentDecisionsWidget } from './widgets/RecentDecisionsWidget';
+import { TemplateSuggestionsWidget } from './widgets/TemplateSuggestionsWidget';
 import { TextCalloutWidget } from './widgets/TextCalloutWidget';
+import { TriggerSetWidget } from './widgets/TriggerSetWidget';
+import { UseCaseSetWidget } from './widgets/UseCaseSetWidget';
 
 export interface CockpitWidgetProps {
   /** Free-form config block from Athena's compose_cockpit op. */
@@ -47,6 +57,59 @@ export const cockpitWidgetRegistry: Record<string, ComponentType<CockpitWidgetPr
   metric_spark: MetricSparkWidget,
   issue_list: IssueListWidget,
   text_callout: TextCalloutWidget,
+  // Persona-design walkthrough — Athena's step-by-step plan applying
+  // the persona-design best-practices doctrine to a user intent. Emitted
+  // via `show_persona_walkthrough`. Long-form markdown; InlineChatCard
+  // relaxes its 260px height clamp for this kind so it flows naturally.
+  persona_walkthrough: PersonaWalkthroughWidget,
+  // Template-match suggestions — fetched on mount via
+  // companion_match_templates(intent). Emitted via
+  // `show_template_suggestions { intent, limit? }`. Also unclamped in
+  // InlineChatCard since 3-5 result rows exceed 260px comfortably.
+  template_suggestions: TemplateSuggestionsWidget,
+  // Use-case decomposition. Emitted via
+  // `show_use_case_set { intent, use_cases: [{label, role, description}] }`.
+  // Athena composes the use cases; the widget renders them grouped by
+  // golden / variant / out-of-scope role with role-specific accents.
+  use_case_set: UseCaseSetWidget,
+  // Trigger decomposition — sibling of use_case_set. Emitted via
+  // `show_trigger_set { intent, triggers: [{label, source, condition, grain?, idempotency_note?}] }`.
+  // Each entry applies cycle-6 doctrine's "one trigger condition → one
+  // persona response shape" grain test; the optional grain and
+  // idempotency notes surface the design rationale.
+  trigger_set: TriggerSetWidget,
+  // Model-tier recommendation. Emitted via `show_model_tier_choice
+  // { intent, recommended, tiers: [{tier, rationale}] }`. Renders the
+  // three tiers (haiku/sonnet/opus) side-by-side with the recommended
+  // one accented.
+  model_tier_choice: ModelTierChoiceWidget,
+  // Observability plan — the 7th readiness item from cycle-6 doctrine.
+  // Two sections: error handling (what failures escalate) + success
+  // metric (which signal is tracked). Emitted via
+  // `show_observability_plan { intent, error_handling, success_metric }`.
+  observability_plan: ObservabilityPlanWidget,
+  // Decision log — audit trail of design choices made during the
+  // conversation. Emitted via `show_decision_log { intent, decisions }`.
+  // Each decision has label / choice / rationale; widget renders a
+  // vertical timeline.
+  decision_log: DecisionLogWidget,
+  // End-of-design recap. Emitted via `show_persona_ready { intent,
+  // summary, recommended_action }`. Rolls every decomposition into one
+  // build-ready summary; primary button commits to the prefill flow
+  // (interactive / one_shot) or routes to the template gallery
+  // (use_template).
+  persona_ready: PersonaReadyWidget,
+  // Onboarding card listing Athena's persona-design vocabulary (the 8
+  // structured-card ops she can fire). Emitted via
+  // `show_design_capabilities { intro? }`. Content list is hardcoded
+  // in the widget so users get a true picture of "what can you help
+  // me design?" instead of a model-generated capability list.
+  design_capabilities: DesignCapabilitiesWidget,
+  // Compact "Athena recently decided" chip strip. Fetches up to 5
+  // decisions for a persona_context on mount; renders nothing if the
+  // fetch comes back empty. Emitted via
+  // `show_recent_decisions { persona_context, limit? }`.
+  recent_decisions: RecentDecisionsWidget,
 };
 
 /** Tunes the grid `rowSpan` per widget kind. Multi-row gives long-form

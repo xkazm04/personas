@@ -437,7 +437,7 @@
     "sql_hint": "Napište dotaz a stiskněte Spustit nebo Ctrl+Enter",
     "executing_query": "Provádění dotazu...",
     "redis_placeholder": "Zadejte Redis příkaz (např. GET mykey)",
-    "convex_placeholder": "Zadejte název tabulky nebo JSON tělo",
+    "convex_placeholder": "{\"path\": \"func:name\", \"args\": {} Zadejte název tabulky, kterou chcete procházet, nebo tělo JSON: }",
     "sql_placeholder": "Zadejte SQL dotaz (Ctrl+Enter pro spuštění)",
     "running": "Běží...",
     "safe_mode": "Bezpečný režim",
@@ -679,7 +679,7 @@
     "add_tag_title": "Přidat štítek",
     "local_embedding_hint": "Embeddings se generují lokálně pomocí {model} ({dims} dimenzí). Žádná data neopouštějí tvůj počítač. Model (~23 MB) se stáhne při prvním použití a uloží lokálně.",
     "api_path_placeholder": "/api/v1/resource",
-    "json_body_placeholder": "hodnota",
+    "json_body_placeholder": "{\"key\": \"value\"}",
     "sending": "Odesílání...",
     "send": "Odeslat",
     "search_results_one": "{count} výsledek pro \"{query}\"",
@@ -1011,7 +1011,7 @@
     "base_url_placeholder": "https://api.example.com",
     "openapi_url_placeholder": "https://api.example.com/openapi.json",
     "auth_schemes": "auth schémata",
-    "body_placeholder": "hodnota"
+    "body_placeholder": "{ \"key\": \"value\" }"
   },
   "foraging": {
     "no_credentials_found": "Nenalezeny žádné přihlašovací údaje",

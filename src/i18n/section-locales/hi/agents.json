@@ -508,7 +508,7 @@
     "no_tools_warning": "इस पर्सोना में कोई टूल असाइन नहीं है। बेहतर परीक्षण के लिए टूल जोड़ें।",
     "add_prompt_first": "पहले इस पर्सोना में प्रॉम्प्ट जोड़ें",
     "select_model": "कम से कम एक मॉडल चुनें",
-    "run_arena": "एरेना चलाएं ({count} मॉडल)",
+    "run_arena": "{count} {count, plural, one {} एरिना चलाएं ( मॉडल अन्य {s}})",
     "cancel_test": "परीक्षण रद्द करें",
     "focus_use_case": "उपयोग मामले पर फ़ोकस करें",
     "describe_changes": "अपने वांछित परिवर्तन वर्णित करें",
@@ -909,7 +909,7 @@
     "auto_event_type": "इवेंट प्रकार: {eventType}",
     "auto_zapier_hint": "Catch hook मान्य और कनेक्ट किया जाएगा।",
     "auto_custom_hint": "मैन्युअल सेटअप आवश्यक। ऑटोमेशन ड्राफ्ट के रूप में सहेजा जाएगा।",
-    "auto_input_schema_placeholder": "string",
+    "auto_input_schema_placeholder": "{ \"file_url\": \"string\" }",
     "auto_github_token_needs": "आपके टोकन को {scopes} scope की आवश्यकता है। github.com/settings/tokens पर अपना टोकन अपडेट करें।",
     "auto_fallback_title": "विफलता पर सीधे कनेक्टर पर वापस आता है",
     "ch_title": "अधिसूचना चैनल",
@@ -2074,7 +2074,7 @@
     "success": "सफल",
     "failed": "विफल",
     "error": "त्रुटि",
-    "input_json_placeholder": "value",
+    "input_json_placeholder": "{ \"key\": \"value\" }",
     "invalid_json": "Invalid JSON — fix before running."
   },
   "health_check": {

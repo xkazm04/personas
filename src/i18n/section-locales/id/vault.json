@@ -437,7 +437,7 @@
     "sql_hint": "Tulis kueri dan tekan Jalankan atau Ctrl+Enter",
     "executing_query": "Mengeksekusi kueri...",
     "redis_placeholder": "Masukkan perintah Redis (mis. GET mykey, HGETALL users:1)",
-    "convex_placeholder": "func:name",
+    "convex_placeholder": "Masukkan nama tabel yang akan dijelajahi, atau isi JSON: {\"path\": \"func:name\", \"args\": {}}",
     "sql_placeholder": "Masukkan kueri SQL (Ctrl+Enter untuk mengeksekusi)",
     "running": "Berjalan...",
     "safe_mode": "Mode Aman",
@@ -536,7 +536,7 @@
     "daily_execs_lost": "Eksekusi Harian Hilang",
     "daily_cost_impact": "Dampak Biaya Harian",
     "sim_low": "Tidak ada persona atau alur kerja yang bergantung pada kredensial ini. Aman untuk dicabut.",
-    "sim_high": "Mencabut {credentialName} akan berdampak pada {personas} persona di seluruh workspace Anda.",
+    "sim_high": "Mencabut {credentialName} akan berdampak pada {personas} persona{personaPlural} di seluruh ruang kerja Anda.",
     "sim_medium": "Mencabut {credentialName} memiliki dampak terbatas.",
     "per_day": "per hari"
   },
@@ -965,13 +965,13 @@
     "no_filter_match": "Coba kata kunci pencarian yang berbeda atau hapus filter Anda.",
     "set_up_credentials": "Siapkan Kredensial",
     "clear_selection": "Hapus pilihan",
-    "set_up_services": "Siapkan {count} layanan",
+    "set_up_services": "Siapkan layanan {count}{plural}",
     "setting_up": "Menyiapkan {current} dari {total}",
     "wizard_title": "Wisaya Kredensial",
     "choose_service": "Pilih layanan",
     "ai_walk_description": "AI akan memandu Anda melalui pengaturan",
     "wizard_subtitle": "Pilih layanan yang ingin Anda sambungkan",
-    "wizard_subtitle_batch": "Menyiapkan {count} layanan"
+    "wizard_subtitle_batch": "Menyiapkan layanan {count}{plural}"
   },
   "autopilot": {
     "title": "API Autopilot",
@@ -1011,7 +1011,7 @@
     "base_url_placeholder": "https://api.example.com",
     "openapi_url_placeholder": "https://api.example.com/openapi.json",
     "auth_schemes": "Skema autentikasi",
-    "body_placeholder": "{\"key\": \"value\"}"
+    "body_placeholder": "{ \"key\": \"value\" }"
   },
   "foraging": {
     "no_credentials_found": "Tidak ada kredensial ditemukan",

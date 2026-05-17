@@ -16,14 +16,22 @@ interface GroupListProps {
   onShowNewGroup: (v: boolean) => void;
   onCreateGroup: (name: string, color: string) => void;
   onScan: () => void;
+  goalCoverageByContext?: Map<string, { count: number; firstGoalId: string }>;
 }
+
+const CONTEXTS_INITIAL_RENDER = 30;
 
 export default function GroupList({
   groups, selectedCtxId, onSelectCtx,
   showNewGroup, onShowNewGroup, onCreateGroup, onScan,
+  goalCoverageByContext,
 }: GroupListProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  // Per-group "show all" flag — large groups render only the first N contexts
+  // by default so a repo with 500 contexts in one group doesn't blow up the
+  // initial render. Click "Show all" to render the rest of that group.
+  const [showAllInGroup, setShowAllInGroup] = useState<Set<string>>(new Set());
   const [newGroupName, setNewGroupName] = useState('');
   const [newGroupColor, setNewGroupColor] = useState('amber');
   const { staggerDelay: _staggerDelay } = useMotion();
@@ -85,21 +93,56 @@ export default function GroupList({
                   <span className="typo-card-label flex-1 text-left">{group.name}</span>
                   <span className="text-[10px] text-foreground bg-primary/5 rounded-full px-2 py-0.5">{group.contexts.length} context{group.contexts.length !== 1 ? 's' : ''}</span>
                 </button>
-                {isExpanded && (
+                {isExpanded && (() => {
+                  const isOverflowing = group.contexts.length > CONTEXTS_INITIAL_RENDER;
+                  const showAll = showAllInGroup.has(group.id);
+                  const visibleContexts = isOverflowing && !showAll
+                    ? group.contexts.slice(0, CONTEXTS_INITIAL_RENDER)
+                    : group.contexts;
+                  const hiddenCount = group.contexts.length - visibleContexts.length;
+                  return (
                     <div className="animate-fade-slide-in overflow-hidden">
                       <div className="px-4 pb-4 pt-1">
                         {group.contexts.length === 0 ? (
                           <p className="text-md text-foreground py-3 text-center">{t.plugins.dev_tools.no_contexts_in_group}</p>
                         ) : (
-                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
-                            {group.contexts.map((ctx) => (
-                              <ContextCard key={ctx.id} ctx={ctx} selected={selectedCtxId === ctx.id} onSelect={() => onSelectCtx(selectedCtxId === ctx.id ? null : ctx.id)} />
-                            ))}
-                          </div>
+                          <>
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+                              {visibleContexts.map((ctx) => {
+                                const coverage = goalCoverageByContext?.get(ctx.id);
+                                return (
+                                  <ContextCard
+                                    key={ctx.id}
+                                    ctx={ctx}
+                                    selected={selectedCtxId === ctx.id}
+                                    onSelect={() => onSelectCtx(selectedCtxId === ctx.id ? null : ctx.id)}
+                                    goalCount={coverage?.count ?? 0}
+                                    firstGoalId={coverage?.firstGoalId}
+                                  />
+                                );
+                              })}
+                            </div>
+                            {hiddenCount > 0 && (
+                              <div className="flex justify-center pt-3">
+                                <button
+                                  type="button"
+                                  onClick={() => setShowAllInGroup((prev) => {
+                                    const next = new Set(prev);
+                                    next.add(group.id);
+                                    return next;
+                                  })}
+                                  className="typo-caption text-primary hover:text-primary/80 hover:underline"
+                                >
+                                  {tx(t.plugins.dev_tools.group_show_all, { hidden: hiddenCount })}
+                                </button>
+                              </div>
+                            )}
+                          </>
                         )}
                       </div>
                     </div>
-                  )}
+                  );
+                })()}
               </div>
             );
           })}

@@ -24,7 +24,7 @@
     "sending": "Enviando...",
     "empty_response": "(respuesta vacía)",
     "snippets": "Fragmentos",
-    "request_body_placeholder": "Tu prompt aquí..."
+    "request_body_placeholder": "{ \"message\": \"Your prompt here...\" }"
   },
   "connection": {
     "orchestrator_url_label": "URL del servidor en la nube",

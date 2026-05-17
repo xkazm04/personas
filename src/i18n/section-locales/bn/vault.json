@@ -437,7 +437,7 @@
     "sql_hint": "একটি কোয়েরি লিখুন এবং Run বা Ctrl+Enter চাপুন",
     "executing_query": "কোয়েরি এক্সিকিউট হচ্ছে...",
     "redis_placeholder": "Redis কমান্ড প্রবেশ করুন (যেমন GET mykey, HGETALL users:1)",
-    "convex_placeholder": "func:name",
+    "convex_placeholder": "ব্রাউজ করতে টেবিলের নাম লিখুন বা JSON বডি: {\"path\": \"func:name\", \"args\": {}}",
     "sql_placeholder": "SQL কোয়েরি প্রবেশ করুন (এক্সিকিউট করতে Ctrl+Enter)",
     "running": "চলছে...",
     "safe_mode": "নিরাপদ মোড",
@@ -679,7 +679,7 @@
     "add_tag_title": "ট্যাগ যোগ করুন",
     "local_embedding_hint": "এমবেডিং স্থানীয়ভাবে {model} ({dims}-dim) ব্যবহার করে তৈরি হয়। কোনো ডেটা আপনার মেশিন থেকে বের হয় না। মডেল (~23MB) প্রথম ব্যবহারে ডাউনলোড এবং স্থানীয়ভাবে ক্যাশ করা হয়।",
     "api_path_placeholder": "/api/v1/resource",
-    "json_body_placeholder": "মান",
+    "json_body_placeholder": "{\"key\": \"value\"}",
     "sending": "পাঠানো হচ্ছে...",
     "send": "পাঠান",
     "search_results_one": "\"{query}\"-এর জন্য {count}টি ফলাফল",
@@ -1011,7 +1011,7 @@
     "base_url_placeholder": "https://api.example.com",
     "openapi_url_placeholder": "https://api.example.com/openapi.json",
     "auth_schemes": "auth স্কিম",
-    "body_placeholder": "মান"
+    "body_placeholder": "{ \"key\": \"value\" }"
   },
   "foraging": {
     "no_credentials_found": "কোনো ক্রেডেনশিয়াল পাওয়া যায়নি",

@@ -1,14 +1,27 @@
 import { create } from 'zustand';
 import type { CompanionState } from './types';
 import type {
+  BackgroundJob,
   BrainKind,
   ChatCard,
   CompanionConnector,
   CompanionMessage,
+  CompanionRecallPreview,
+  CompanionTurnSummaryEvent,
   PendingApproval,
   PluginToggle,
   ProactiveMessage,
 } from '@/api/companion';
+
+/**
+ * Stored per-turn dispatcher rollup, keyed by assistant episode id. Same
+ * shape as `CompanionTurnSummaryEvent` minus the session/turn correlator
+ * fields the chip doesn't need.
+ */
+export type StoredTurnSummary = Omit<
+  CompanionTurnSummaryEvent,
+  'sessionId' | 'turnId' | 'assistantEpisodeId'
+>;
 
 export type { CompanionMessage };
 
@@ -133,6 +146,53 @@ interface CompanionStore {
   pendingPrompt: PendingPromptPayload | null;
   setPendingPrompt: (p: PendingPromptPayload | null) => void;
   consumePendingPrompt: () => PendingPromptPayload | null;
+
+  /**
+   * Per-turn recall preview surfaced from the backend's `recall-preview`
+   * event. `streamingRecall` is the live, in-flight strip shown above the
+   * streaming bubble; on the `finished` stream event it's moved into
+   * `recallByEpisodeId` keyed by the assistant episode id so the strip
+   * persists above the just-completed bubble. Both cleared on conversation
+   * reset.
+   *
+   * Persistence is intentionally session-scoped: after an app restart,
+   * older bubbles drop their strip (the underlying recall is ephemeral
+   * working memory anyway). Stage 2 of this feature would persist + replay.
+   */
+  streamingRecall: CompanionRecallPreview | null;
+  recallByEpisodeId: Record<string, CompanionRecallPreview>;
+  setStreamingRecall: (preview: CompanionRecallPreview | null) => void;
+  /** Promote the in-flight strip to the named assistant episode id. */
+  attachRecallToEpisode: (episodeId: string) => void;
+  clearAllRecall: () => void;
+
+  /**
+   * Per-turn dispatcher rollup, keyed by assistant episode id. Populated
+   * from `companion://turn-summary` events; reset alongside the rest of
+   * the conversation state. Same persistence model as `recallByEpisodeId`
+   * — session-scoped, lost on app restart.
+   */
+  turnSummaryByEpisodeId: Record<string, StoredTurnSummary>;
+  setTurnSummary: (episodeId: string, summary: StoredTurnSummary) => void;
+  clearAllTurnSummaries: () => void;
+
+  /**
+   * Live state of every `connector_use` background job we've seen on the
+   * `companion://job` channel, keyed by job id. The card subscribes to a
+   * single job's status and re-renders as the worker transitions
+   * queued → running → completed/failed.
+   *
+   * `pendingConnectorJobIds` collects jobs queued in the current
+   * (streaming) turn before the assistant episode id is known; at
+   * `finished` time they're promoted into `connectorJobIdsByEpisodeId`
+   * so the cards pin under the right bubble.
+   */
+  jobsById: Record<string, BackgroundJob>;
+  pendingConnectorJobIds: string[];
+  connectorJobIdsByEpisodeId: Record<string, string[]>;
+  upsertJob: (job: BackgroundJob) => void;
+  attachPendingJobsToEpisode: (episodeId: string) => void;
+  clearAllConnectorJobs: () => void;
 }
 
 export interface PendingPromptPayload {
@@ -236,4 +296,79 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
     if (prompt !== null) set({ pendingPrompt: null });
     return prompt;
   },
+
+  streamingRecall: null,
+  recallByEpisodeId: {},
+  setStreamingRecall: (streamingRecall) => set({ streamingRecall }),
+  attachRecallToEpisode: (episodeId) =>
+    set((s) => {
+      if (!s.streamingRecall || !episodeId) {
+        return { streamingRecall: null };
+      }
+      return {
+        streamingRecall: null,
+        recallByEpisodeId: {
+          ...s.recallByEpisodeId,
+          [episodeId]: s.streamingRecall,
+        },
+      };
+    }),
+  clearAllRecall: () =>
+    set({ streamingRecall: null, recallByEpisodeId: {} }),
+
+  turnSummaryByEpisodeId: {},
+  setTurnSummary: (episodeId, summary) =>
+    set((s) => ({
+      turnSummaryByEpisodeId: {
+        ...s.turnSummaryByEpisodeId,
+        [episodeId]: summary,
+      },
+    })),
+  clearAllTurnSummaries: () => set({ turnSummaryByEpisodeId: {} }),
+
+  jobsById: {},
+  pendingConnectorJobIds: [],
+  connectorJobIdsByEpisodeId: {},
+  upsertJob: (job) =>
+    set((s) => {
+      const next: Partial<CompanionStore> = {
+        jobsById: { ...s.jobsById, [job.id]: job },
+      };
+      // Only `connector_use` jobs are surfaced as inline cards. Other
+      // kinds (scan_codebase, curation_run) flow through their own
+      // dedicated UIs and shouldn't squat on the chat transcript.
+      if (
+        job.kind === 'connector_use' &&
+        !s.pendingConnectorJobIds.includes(job.id) &&
+        // Don't re-pend a job that's already pinned to an episode (e.g.
+        // the late `completed` event arriving after `finished` already
+        // promoted the pending list).
+        !Object.values(s.connectorJobIdsByEpisodeId).some((ids) =>
+          ids.includes(job.id),
+        )
+      ) {
+        next.pendingConnectorJobIds = [...s.pendingConnectorJobIds, job.id];
+      }
+      return next;
+    }),
+  attachPendingJobsToEpisode: (episodeId) =>
+    set((s) => {
+      if (!episodeId || s.pendingConnectorJobIds.length === 0) {
+        return { pendingConnectorJobIds: [] };
+      }
+      const existing = s.connectorJobIdsByEpisodeId[episodeId] ?? [];
+      return {
+        pendingConnectorJobIds: [],
+        connectorJobIdsByEpisodeId: {
+          ...s.connectorJobIdsByEpisodeId,
+          [episodeId]: [...existing, ...s.pendingConnectorJobIds],
+        },
+      };
+    }),
+  clearAllConnectorJobs: () =>
+    set({
+      jobsById: {},
+      pendingConnectorJobIds: [],
+      connectorJobIdsByEpisodeId: {},
+    }),
 }));

@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo, type DragEvent } from 'react';
 import { motion } from 'framer-motion';
 import {
   GitBranch, RefreshCw,
   CircleDot, GitPullRequest, GitCommitHorizontal,
   Bug, Activity, BarChart3, Shield, Key,
   Code2, AlertCircle, CheckCircle2, ExternalLink, LayoutDashboard,
-  Settings,
+  Settings, ScanSearch, Sparkles, XCircle, Target,
 } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
@@ -20,6 +20,42 @@ import { useOverviewData } from './useOverviewData';
 
 // Re-export shared helpers so existing call sites keep resolving.
 export { formatErr } from './overviewHelpers';
+import { buildTodayActivity, type ActivityEvent, type ActivityKind } from './overviewHelpers';
+
+// ---------------------------------------------------------------------------
+// Vital-tile ordering — persisted per project so each project can keep its
+// own "most-watched first" layout.
+// ---------------------------------------------------------------------------
+
+type TileId = 'open_issues' | 'open_prs' | 'commits' | 'unresolved' | 'events_24h' | 'events_7d';
+const DEFAULT_TILE_ORDER: TileId[] = ['open_issues', 'open_prs', 'commits', 'unresolved', 'events_24h', 'events_7d'];
+
+function tileOrderStorageKey(projectId: string): string {
+  return `personas.devtools.overview_tile_order.${projectId}`;
+}
+
+function readTileOrder(projectId: string): TileId[] {
+  try {
+    const raw = localStorage.getItem(tileOrderStorageKey(projectId));
+    if (!raw) return DEFAULT_TILE_ORDER;
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return DEFAULT_TILE_ORDER;
+    const valid = new Set<TileId>(DEFAULT_TILE_ORDER);
+    const ordered = parsed.filter((x): x is TileId => typeof x === 'string' && valid.has(x as TileId));
+    // Append any tile ids missing from persisted order (e.g. after a future
+    // tile is added) so the user never loses a metric to legacy state.
+    for (const id of DEFAULT_TILE_ORDER) if (!ordered.includes(id)) ordered.push(id);
+    return ordered;
+  } catch {
+    return DEFAULT_TILE_ORDER;
+  }
+}
+
+function writeTileOrder(projectId: string, order: TileId[]): void {
+  try {
+    localStorage.setItem(tileOrderStorageKey(projectId), JSON.stringify(order));
+  } catch { /* quota / privacy mode — ignore */ }
+}
 
 /**
  * Dev-tools Overview — glance-first health dashboard ("Pulse" layout).
@@ -54,6 +90,63 @@ export default function ProjectOverviewPage() {
 
   const [showRepoChain, setShowRepoChain] = useState(false);
   const [showMonitorChain, setShowMonitorChain] = useState(false);
+
+  // Cross-tab "What changed today" feed — pulls from the same store slices
+  // that power Scanner / Triage / Task Runner / Lifecycle, then dedupes,
+  // sorts, and surfaces in one chronological list on the Overview tab.
+  const storeScans = useSystemStore((s) => s.scans ?? []);
+  const storeTasksForToday = useSystemStore((s) => s.tasks);
+  const storeSignals = useSystemStore((s) => s.goalSignals);
+  const fetchScansForToday = useSystemStore((s) => s.fetchScans);
+  const fetchTasksForToday = useSystemStore((s) => s.fetchTasks);
+  useEffect(() => {
+    if (!activeProjectId) return;
+    fetchScansForToday(activeProjectId);
+    fetchTasksForToday(activeProjectId);
+  }, [activeProjectId, fetchScansForToday, fetchTasksForToday]);
+  const todayActivity = useMemo(
+    () => buildTodayActivity(storeScans, storeTasksForToday, storeSignals),
+    [storeScans, storeTasksForToday, storeSignals],
+  );
+
+  const setPendingTaskFocusId = useSystemStore((s) => s.setPendingTaskFocusId);
+  const setPendingGoalSpotlightId = useSystemStore((s) => s.setPendingGoalSpotlightId);
+  const setPendingLifecycleSubTab = useSystemStore((s) => s.setPendingLifecycleSubTab);
+  const handleActivityJump = (event: ActivityEvent) => {
+    if (!event.sourceId) return;
+    if (event.kind === 'task_created' || event.kind === 'task_completed' || event.kind === 'task_failed') {
+      setPendingTaskFocusId(event.sourceId);
+      setDevToolsTab('task-runner');
+    } else if (event.kind === 'goal_signal') {
+      setPendingGoalSpotlightId(event.sourceId);
+      setPendingLifecycleSubTab('goals');
+      setDevToolsTab('lifecycle');
+    } else if (event.kind === 'scan_run') {
+      setDevToolsTab('idea-scanner');
+    }
+  };
+
+  // Persisted tile order per project — different projects often care about
+  // different metrics first (a hot-bug project wants `unresolved` first; a
+  // PR-heavy project wants `open_prs` first). Drag a tile to reorder; the
+  // order is keyed by activeProjectId so each project remembers its layout.
+  const [tileOrder, setTileOrder] = useState<TileId[]>(DEFAULT_TILE_ORDER);
+  useEffect(() => {
+    if (!activeProjectId) return;
+    setTileOrder(readTileOrder(activeProjectId));
+  }, [activeProjectId]);
+  const [draggingTileId, setDraggingTileId] = useState<TileId | null>(null);
+  const handleTileDrop = (target: TileId) => {
+    if (!draggingTileId || draggingTileId === target || !activeProjectId) return;
+    const next = [...tileOrder];
+    const from = next.indexOf(draggingTileId);
+    const to = next.indexOf(target);
+    if (from < 0 || to < 0) return;
+    next.splice(from, 1);
+    next.splice(to, 0, draggingTileId);
+    setTileOrder(next);
+    writeTileOrder(activeProjectId, next);
+  };
 
   if (!activeProjectId || !activeProject) {
     return (
@@ -134,14 +227,52 @@ export default function ProjectOverviewPage() {
             <span className="typo-caption text-foreground/50">Last refresh just now</span>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
-            <VitalTile icon={CircleDot} value={repoStats?.openIssues ?? '—'} label={po.open_issues} tone={issueTone} loading={repoState === 'loading'} />
-            <VitalTile icon={GitPullRequest} value={repoStats?.openPullRequests ?? '—'} label={isGitLab ? po.open_mrs : po.open_prs} tone={prTone} loading={repoState === 'loading'} />
-            <VitalTile icon={GitCommitHorizontal} value={repoStats?.commitsLastWeek ?? '—'} label={po.commits_this_week} tone={commitsTone} loading={repoState === 'loading'} />
-            <VitalTile icon={Bug} value={monitorStats?.unresolvedIssues ?? '—'} label={po.unresolved_issues} tone={unresolvedTone} loading={monitorState === 'loading'} />
-            <VitalTile icon={Activity} value={monitorStats?.eventsLast24h ?? '—'} label={po.events_24h} tone={events24Tone} loading={monitorState === 'loading'} />
-            <VitalTile icon={BarChart3} value={monitorStats?.eventsLastWeek ?? '—'} label={po.events_7d} tone={events7Tone} loading={monitorState === 'loading'} />
+            {(() => {
+              const tilesById: Record<TileId, { icon: typeof CircleDot; value: string | number; label: string; tone: Tone; loading: boolean }> = {
+                open_issues: { icon: CircleDot, value: repoStats?.openIssues ?? '—', label: po.open_issues, tone: issueTone, loading: repoState === 'loading' },
+                open_prs:    { icon: GitPullRequest, value: repoStats?.openPullRequests ?? '—', label: isGitLab ? po.open_mrs : po.open_prs, tone: prTone, loading: repoState === 'loading' },
+                commits:     { icon: GitCommitHorizontal, value: repoStats?.commitsLastWeek ?? '—', label: po.commits_this_week, tone: commitsTone, loading: repoState === 'loading' },
+                unresolved:  { icon: Bug, value: monitorStats?.unresolvedIssues ?? '—', label: po.unresolved_issues, tone: unresolvedTone, loading: monitorState === 'loading' },
+                events_24h:  { icon: Activity, value: monitorStats?.eventsLast24h ?? '—', label: po.events_24h, tone: events24Tone, loading: monitorState === 'loading' },
+                events_7d:   { icon: BarChart3, value: monitorStats?.eventsLastWeek ?? '—', label: po.events_7d, tone: events7Tone, loading: monitorState === 'loading' },
+              };
+              return tileOrder.map((id) => {
+                const t = tilesById[id];
+                return (
+                  <VitalTile
+                    key={id}
+                    icon={t.icon}
+                    value={t.value}
+                    label={t.label}
+                    tone={t.tone}
+                    loading={t.loading}
+                    draggable
+                    isDragging={draggingTileId === id}
+                    onDragStart={() => setDraggingTileId(id)}
+                    onDragEnd={() => setDraggingTileId(null)}
+                    onDragOver={(e) => { e.preventDefault(); }}
+                    onDrop={(e) => { e.preventDefault(); handleTileDrop(id); }}
+                  />
+                );
+              });
+            })()}
           </div>
         </section>
+
+        {/* ==================== "Today" cross-tab activity ==================== */}
+        {todayActivity.length > 0 && (
+          <section className="mb-6">
+            <div className="flex items-baseline justify-between mb-3">
+              <h2 className="typo-label text-foreground/70">{po.today_activity_heading}</h2>
+              <span className="typo-caption text-foreground/50 tabular-nums">{todayActivity.length}</span>
+            </div>
+            <ul className="rounded-card border border-primary/10 bg-card/30 divide-y divide-primary/5 max-h-72 overflow-y-auto">
+              {todayActivity.map((event) => (
+                <ActivityRow key={event.id} event={event} onJump={handleActivityJump} />
+              ))}
+            </ul>
+          </section>
+        )}
 
         {/* ==================== Connections rail ==================== */}
         <section>
@@ -315,15 +446,31 @@ const TONE_TEXT: Record<Tone, string> = {
 
 function VitalTile({
   icon: Icon, value, label, tone, loading,
+  draggable, isDragging, onDragStart, onDragEnd, onDragOver, onDrop,
 }: {
   icon: typeof CircleDot;
   value: string | number;
   label: string;
   tone: Tone;
   loading?: boolean;
+  draggable?: boolean;
+  isDragging?: boolean;
+  onDragStart?: (e: DragEvent<HTMLDivElement>) => void;
+  onDragEnd?: () => void;
+  onDragOver?: (e: DragEvent<HTMLDivElement>) => void;
+  onDrop?: (e: DragEvent<HTMLDivElement>) => void;
 }) {
   return (
-    <div className={`rounded-card border ${TONE_BG[tone]} px-3 py-2.5 transition-colors`}>
+    <div
+      draggable={draggable}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+      className={`rounded-card border ${TONE_BG[tone]} px-3 py-2.5 transition-all ${
+        draggable ? 'cursor-grab active:cursor-grabbing' : ''
+      } ${isDragging ? 'opacity-40' : ''}`}
+    >
       <div className="flex items-center justify-between mb-1.5">
         <Icon className={`w-3.5 h-3.5 ${TONE_TEXT[tone]}`} />
         {loading && <RefreshCw className="w-3 h-3 animate-spin text-foreground/30" />}
@@ -420,4 +567,44 @@ function relativeTime(iso: string): string {
   if (d < 7) return `${d}d ago`;
   const w = Math.round(d / 7);
   return `${w}w ago`;
+}
+
+// ---------------------------------------------------------------------------
+// ActivityRow — one entry in the "Today" cross-tab feed
+// ---------------------------------------------------------------------------
+
+const ACTIVITY_META: Record<ActivityKind, { icon: typeof CircleDot; tint: string }> = {
+  scan_run:       { icon: ScanSearch,    tint: 'text-amber-400' },
+  task_created:   { icon: Sparkles,      tint: 'text-blue-400' },
+  task_completed: { icon: CheckCircle2,  tint: 'text-emerald-400' },
+  task_failed:    { icon: XCircle,       tint: 'text-red-400' },
+  goal_signal:    { icon: Target,        tint: 'text-violet-400' },
+};
+
+function ActivityRow({ event, onJump }: { event: ActivityEvent; onJump: (e: ActivityEvent) => void }) {
+  const meta = ACTIVITY_META[event.kind];
+  const Icon = meta.icon;
+  const clickable = Boolean(event.sourceId) || event.kind === 'scan_run';
+  const inner = (
+    <div className="flex items-center gap-2.5 px-4 py-2">
+      <Icon className={`w-3.5 h-3.5 shrink-0 ${meta.tint}`} />
+      <span className="text-md text-foreground truncate flex-1">{event.label}</span>
+      <span className="typo-caption text-foreground/50 tabular-nums shrink-0">{relativeTime(event.timestamp)}</span>
+    </div>
+  );
+  return (
+    <li>
+      {clickable ? (
+        <button
+          type="button"
+          onClick={() => onJump(event)}
+          className="w-full text-left hover:bg-primary/5 transition-colors"
+        >
+          {inner}
+        </button>
+      ) : (
+        inner
+      )}
+    </li>
+  );
 }

@@ -437,7 +437,7 @@
     "sql_hint": "Escribe una consulta y presiona Ejecutar o Ctrl+Enter",
     "executing_query": "Ejecutando consulta...",
     "redis_placeholder": "Ingresa el comando Redis (p. ej. GET miclave, HGETALL usuarios:1)",
-    "convex_placeholder": "func:nombre",
+    "convex_placeholder": "Ingrese el nombre de la tabla para explorar o el cuerpo JSON: {\"path\": \"func:name\", \"args\": {}}",
     "sql_placeholder": "Ingresa la consulta SQL (Ctrl+Enter para ejecutar)",
     "running": "Ejecutando...",
     "safe_mode": "Modo seguro",
@@ -1011,7 +1011,7 @@
     "base_url_placeholder": "https://api.ejemplo.com",
     "openapi_url_placeholder": "https://api.ejemplo.com/openapi.json",
     "auth_schemes": "Esquemas de autenticación",
-    "body_placeholder": "{\"key\": \"value\"}"
+    "body_placeholder": "{ \"key\": \"value\" }"
   },
   "foraging": {
     "no_credentials_found": "No se encontraron credenciales",

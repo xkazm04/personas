@@ -1,7 +1,10 @@
-import { Sparkles, ChevronDown, AlertCircle, User, Mic, Brain, Volume2, Radio, BookOpen } from 'lucide-react';
+import { Sparkles, AlertCircle, User, Mic, Brain, Volume2, Radio, BookOpen } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useTwinReadiness, type MilestoneStatus } from './useTwinReadiness';
+import { ReadinessGapPopover } from './_shared/ReadinessGapPopover';
+import { WikiFreshnessPill } from './_shared/WikiFreshnessPill';
+import { TwinPicker } from './_shared/TwinPicker';
 import type { TwinTab } from '@/lib/types/types';
 import type { LucideIcon } from 'lucide-react';
 
@@ -38,14 +41,8 @@ function statusClasses(status: MilestoneStatus): { dot: string; icon: string } {
   return { dot: 'bg-secondary/60 border-primary/10', icon: 'text-foreground' };
 }
 
-function readinessColor(score: number): string {
-  if (score >= 80) return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25';
-  if (score >= 40) return 'bg-amber-500/10 text-amber-400 border-amber-500/25';
-  return 'bg-secondary/40 text-foreground border-primary/10';
-}
-
 export function TwinSelector() {
-  const { t: tFull, tx } = useTranslation();
+  const { t: tFull } = useTranslation();
   const t = tFull.twin;
   const twinProfiles = useSystemStore((s) => s.twinProfiles);
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
@@ -84,25 +81,12 @@ export function TwinSelector() {
         )}
       </div>
     ) : (
-      <div className="relative min-w-0 flex-1 max-w-xs">
-        <select
-          value={activeTwinId ?? ''}
-          onChange={(e) => {
-            if (e.target.value) setActiveTwin(e.target.value);
-          }}
-          aria-label={t.selector.selectTwin}
-          className="w-full appearance-none px-3 py-1.5 pl-8 pr-7 typo-caption font-medium text-primary bg-violet-500/5 border border-violet-500/10 rounded-card cursor-pointer hover:bg-violet-500/8 focus-ring transition-colors"
-        >
-          <option value="" disabled>{t.selector.selectTwin}</option>
-          {twinProfiles.map((tw) => (
-            <option key={tw.id} value={tw.id}>
-              {tw.name}{tw.role ? ` — ${tw.role}` : ''}
-            </option>
-          ))}
-        </select>
-        <Sparkles className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-violet-400/60 pointer-events-none" />
-        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-foreground pointer-events-none" />
-      </div>
+      <TwinPicker
+        profiles={twinProfiles}
+        activeTwinId={activeTwinId}
+        onSelect={setActiveTwin}
+        onCreateNew={() => setTwinTab('profiles')}
+      />
     );
 
   return (
@@ -136,12 +120,10 @@ export function TwinSelector() {
           })}
         </div>
 
-        {/* Readiness % badge */}
-        <div
-          className={`ml-auto px-2 py-1 rounded-full text-[10px] font-medium border ${readinessColor(readiness.score)}`}
-          title={`${t.progress.readiness}: ${readiness.score}%`}
-        >
-          {tx(t.profiles.readyPercent, { pct: readiness.score })}
+        {/* Right rail: wiki freshness pill + readiness gap popover */}
+        <div className="ml-auto flex items-center gap-1.5">
+          {activeTwinId && <WikiFreshnessPill twinId={activeTwinId} />}
+          <ReadinessGapPopover readiness={readiness} onJumpTo={setTwinTab} />
         </div>
       </div>
     </div>

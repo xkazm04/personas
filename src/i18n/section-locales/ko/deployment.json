@@ -24,7 +24,7 @@
     "sending": "전송 중...",
     "empty_response": "(빈 응답)",
     "snippets": "스니펫",
-    "request_body_placeholder": "여기에 프롬프트 입력..."
+    "request_body_placeholder": "{ \"message\": \"Your prompt here...\" }"
   },
   "connection": {
     "orchestrator_url_label": "클라우드 서버 URL",
@@ -189,7 +189,7 @@
     "no_deployments": "아직 배포 없음",
     "adjust_filters": "검색 또는 필터를 조정해 보세요.",
     "deploy_hint": "클라우드 또는 GitLab 탭에서 페르소나를 배포하세요.",
-    "showing_of": "{showing}/{total}개 배포 표시 중",
+    "showing_of": "{plural} {total} 배포 중 {showing} 표시",
     "total_invocations": "총 호출:",
     "search_placeholder": "배포 검색...",
     "filter": "필터",

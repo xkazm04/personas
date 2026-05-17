@@ -32,19 +32,162 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+- **[2026-05-17 — started] overview-polish — Header unification + Events/Knowledge/Health fixes**
+  - **Source:** User-driven UX polish — Overview module. Header consistency across submodules, Events subtitle bug ("50 50 of 50"), Knowledge background-CLI review + drop Schedule, Health Reliability tab dedup + filter compaction.
+  - **Paths:** `src/features/overview/sub_events/components/EventLogList.tsx`, `src/features/overview/sub_knowledge/components/**`, `src/features/overview/sub_health/components/**`, possibly headers in other `src/features/overview/sub_*/components/**` for consistency, `src/i18n/locales/en.json` (additive `overview.*` keys only — disjoint from concurrent `schedules.*`/`appearance.*`/`plugins.*`/`shared.sidebar_extra.*`)
+  - **Status:** started
+  - **Branch:** master (surgical edits to overview/* — disjoint from all active worktrees which touch shared/, schedules/, plugins/*, styles/, stores/themeStore.ts, stores/slices/system/)
+  - **Note:** Path-disjoint from all 8 active sessions: none touch `src/features/overview/**`. Shared en.json: additive under `overview.*` only.
+
+- **[2026-05-17 — started] sidebar L3 — Home/Roadmap promotion to sidebar Level 3**
+  - **Source:** User-driven design session — redesign SidebarLevel2 to support a 3rd-level push/slide pane in modules that need it. Scope this pass: Home → Roadmap only (Agents L3/L4 deferred). Pattern locked: push/slide, L2 lists hidden when L3 active, back-arrow header.
+  - **Paths:** `src/features/shared/components/layout/sidebar/SidebarLevel3.tsx` (new), `src/features/shared/components/layout/sidebar/SidebarLevel2.tsx`, `src/features/home/components/releases/HomeReleases.tsx`, `src/features/home/components/releases/ReleasesNavBar.tsx` (delete), `src/stores/slices/system/` (add `homeReleaseVersion`), `src/i18n/locales/en.json` (additive `shared.sidebar_extra.back_to_home` only), `docs/features/home.md`, `.claude/active-runs.md`
+  - **Status:** started
+  - **Branch:** master (small surgical multi-file change, user-driven directly in main checkout; per CLAUDE.md "single-file fixes can stay on the main checkout" — this is borderline; staying on master per user proceed)
+  - **Note:** Path-disjoint from all 8+ concurrent /friend sessions (none touch `src/features/home/`, `src/features/shared/components/layout/sidebar/`, or `src/stores/slices/system/`). Shared en.json: additive under `shared.sidebar_extra.*` only (others touch `schedules.*`, `appearance.*`, `plugins.*`).
+
+- **[2026-05-17 12:34 — started] /friend — schedules (endless development loop)**
+  - **Source:** `/friend` with explicit topic — "develop the scheduling feature further". Fresh on top of master `3bd32e590` (which already includes today's UX-polish pass: removed Timeline view label, mock-schedule button, header subtitle; widened calendar columns; light-theme contrast fix; theme-aware titlebar icon).
+  - **Paths:** `src/features/schedules/`, `src/i18n/locales/en.json` (additive `schedules.*` keys only — coordinate with concurrent /friend-{theming,drive,companion-2,twin}), `src/styles/globals.css` (only if calendar visuals extend), possibly `src-tauri/src/engine/scheduler.rs` / `src-tauri/src/engine/cron.rs` / `src-tauri/src/commands/triggers/` (read-mostly; any IPC additions trigger Phase 3 gate), possibly `docs/features/schedules.md` per cycle, `.claude/active-runs.md`
+  - **Status:** started
+  - **Branch:** `worktree-friend-schedules-123440`
+  - **Worktree:** `.claude/worktrees/friend-schedules-123440/`
+  - **Note:** First /friend session over schedules. Path-disjoint from concurrent /friend-{theming, drive, companion-2, twin, artist-tests}: they touch `src/styles/` / `src/features/plugins/*` / tests. Shared en.json: additive `schedules.*` only. Bias higher-effort + deepen-existing-surfaces per Patterns/friend-preferences.md (rules 1+2). Net-new-surface cap = 1 of 5.
+
+- **[2026-05-16 14:42 — started] artist-test-coverage — Vitest + Playwright for plugins/artist**
+  - **Paths:** `src/features/plugins/artist/**/__tests__/*.test.{ts,tsx}` (new), possibly `src/features/plugins/artist/sub_media_studio/hooks/useMediaExport.ts` (export `normalizeProgress` for unit test), possibly `tests/playwright/artist-*.spec.ts` + `tests/playwright/artist-bridge.ts` (Cycle D only)
+  - **Status:** started
+  - **Branch:** `worktree-friend-artist-tests-144218`
+  - **Worktree:** `.claude/worktrees/friend-artist-tests-144218/`
+  - **Note:** Test coverage cycles A→B→C→D for the freshly-merged Artist work (`bcc2d0003`). Path-disjoint from all 8 concurrent /friend plugin sessions and from /friend-theming — adds new __tests__ dirs alongside existing source under `src/features/plugins/artist/`, no source file edits except possibly exporting one helper. Reads existing test infra: `src/test/setup.ts`, `src/test/tauriMock.ts`, `vitest.config.ts`. Vitest tests are parallel-safe via jsdom; Playwright spec (Cycle D) will reuse the existing :17320 HTTP-bridge architecture.
+
+- **[2026-05-16 14:07 — started] /friend — theming (endless development loop)**
+  - **Source:** `/friend` with explicit topic — app theming overhaul (11 themes; user reports only Midnight/Cyan/Frost look good; expand coverage, calibrate palettes, rethink light themes)
+  - **Paths:** `src/styles/globals.css`, `src/stores/themeStore.ts`, `src/lib/theme/`, `src/features/settings/sub_appearance/`, `src/i18n/locales/en.json` (additive `appearance.*` / `theme.*` keys only — coordinate with concurrent /friend-{radio,langfuse,drive,artist,companion,dev-tools,twin}), possibly `docs/features/settings/README.md`, `.claude/active-runs.md`
+  - **Status:** started
+  - **Branch:** `worktree-friend-theming-140706`
+  - **Worktree:** `.claude/worktrees/friend-theming-140706/`
+  - **Note:** Path-disjoint from all 8 concurrent /friend plugin sessions (they touch `src/features/plugins/<plugin>/`; theming touches `src/styles/` + `src/stores/themeStore.ts` + `src/lib/theme/` + `src/features/settings/sub_appearance/`). Bias higher-effort + deepen-existing-surfaces per prior /friend lessons. Cycle 1 will likely propose: status/brand-token completeness pass on under-themed darks, light-theme accent unification, palette-aware theme picker preview, or a "theming-coverage audit" debug overlay.
+
+
+- **[2026-05-16 — started] /friend — drive plugin**
+  - **Source:** `/friend` endless loop, area resolved from path `src\features\plugins\drive`
+  - **Paths:** `src/features/plugins/drive/`, `src-tauri/src/commands/infrastructure/drive.rs` (if touched), `src/i18n/locales/en.json` (additive `plugins.drive.*` only — coordinate with concurrent /friend-artist, /friend-companion, /friend-dev-tools), `docs/features/drive.md` (if user-visible change ships)
+  - **Status:** started
+  - **Branch:** `worktree-friend-drive-130941`
+  - **Worktree:** `.claude/worktrees/friend-drive-130941/`
+  - **Note:** Path-disjoint from concurrent /friend-artist (sub_blender), /friend-companion, /friend-dev-tools, /research-hermes (Obsidian). Bias higher-effort + deepen-existing-surface per Lessons/2026-05-14-friend.
+
+- **[2026-05-16 13:08 — started] /friend — companion (Athena chatbot), session 2**
+  - **Source:** `/friend` endless development loop, area resolved from free-text hint `src\features\plugins\companion`
+  - **Paths:** `src/features/plugins/companion/`, `src-tauri/src/companion/`, `src/i18n/locales/en.json` (additive keys only under `plugins.companion.*`), `docs/features/companion/README.md`, `src/lib/bindings/Companion*.ts` (if ts-rs runs), `.claude/active-runs.md`
+  - **Branch:** `worktree-friend-companion-130838`
+  - **Worktree:** `.claude/worktrees/friend-companion-130838/`
+  - **Status:** started
+  - **Note:** Session 2 over companion. Prior session (worktree-friend-companion-234310) NOT merged to master — building fresh on `201bfeec6`. Avoiding net-new-surface ideas (3× soft-skipped last session). Bias higher-effort per prior session feedback.
+
+- **[2026-05-16 13:09 — started] /friend — twin plugin**
+  - **Paths:** `src/features/plugins/twin/`, possibly `src-tauri/src/twin/` + `src-tauri/src/commands/twin/` + `src/lib/bindings/Twin*.ts` + `src/i18n/locales/en.json` (additive keys under `twin.*` only — coordinate with concurrent /friend-{drive,artist,companion,dev-tools,langfuse} on same en.json) + `docs/features/twin.md` per cycle
+  - **Status:** started
+  - **Branch:** `worktree-friend-twin-130914`
+  - **Worktree:** `.claude/worktrees/friend-twin-130914/`
+  - **Note:** /friend endless development loop. Path-disjoint from concurrent /friend-{langfuse,drive,artist,companion,dev-tools} (different plugin dirs + different en.json sub-trees) and /research-hermes (Obsidian). Shared en.json: additive `twin.*` keys only. Bias higher-effort + deepen-existing-surfaces per Lessons/2026-05-14-friend.
+
 - **[2026-05-13 — started] /research — hermes-agent-codebase-deep**
   - **Source:** `C:\Users\kazda\kiro\hermes-agent` (Nous Research Hermes Agent codebase, comprehensive analysis of UI, functionality, architecture)
   - **Paths:** `Obsidian/personas/Research/2026-05-13-hermes-agent-codebase-deep.md`, `Obsidian/personas/Lessons/2026-05-13-research.md` (Edit/append — coordinates with concurrent claude-code-2-1-140 run), `Obsidian/personas/Patterns/descoped-reopenable.md` (append-only), possibly `src/data/releases.json` + `src/features/home/components/releases/i18n/*.ts` if Phase 12 fires, `.claude/active-runs.md`
   - **Status:** started (STALE — entry is >24h old as of 2026-05-14 session start; treating as abandoned per the 2-hour rule)
   - **Note:** Aware of concurrent run on Lessons/releases. Will re-check ledger before any Phase 12 write.
 
-- **[2026-05-14 — started] /research — claude-code-2-1-141**
-  - **Source:** https://github.com/anthropics/claude-code/releases/tag/v2.1.141 (release notes via WebFetch). 8th observation of "CLI release log of a wrapped binary" source type. Focus: code.
-  - **Paths:** `Obsidian/personas/Research/2026-05-14-claude-code-2-1-141.md` (new, unique slug), `Obsidian/personas/Lessons/2026-05-14-research.md` (new — today is first run of the day), possibly `src-tauri/src/engine/provider/claude.rs` (minimum_version floor advance — pending Phase 8), `.claude/active-runs.md`. No `.research-cache/` (Phase 2b source — WebFetch, no transcript file).
-  - **Status:** started
-  - **Note:** Stale 2026-05-13 hermes-agent entry above does NOT overlap my scope (its Lessons file is 2026-05-13; mine is 2026-05-14). Proceeding without conflict.
 
 ## Recently completed (last 14 days)
+
+- **[2026-05-16 13:09 → 16:20 wrap] /friend — dev-tools (26 cycles, merged to master at `0728ecf23`)**
+  - **Worktree:** `.claude/worktrees/friend-dev-tools-130945/` — REMOVED post-merge
+  - **Branch:** `worktree-friend-dev-tools-130945` — DELETED post-merge
+  - **Status:** completed + merged + tested (cycle commits: `3b84c86dc..b8d146f30`, 26 atomic commits + 1 test commit `bf97b1c03`; merge commit on master: `0728ecf23`)
+  - **Paths shipped (39 files net):** `src/features/plugins/dev-tools/**` (every sub_ folder touched at least once — context/lifecycle/scanner/triage/runner/projects/skills/overview), `src/stores/slices/system/uiSlice.ts` (3 new pendingX slots: `pendingLifecycleSubTab`, `pendingTaskFocusId`, `pendingGoalSpotlightId`), `src/i18n/locales/en.json` (additive `plugins.dev_tools/dev_lifecycle/dev_scanner/dev_projects/project_overview.*` keys), `docs/features/dev-tools.md` (significantly expanded with each cycle's user-facing changes). Plus 6 test files / 53 Vitest tests under `__tests__/` for the highest-signal flows.
+  - **Headline:** Largest single /friend session on record (26 cycles + 53-test coverage commit, ~2,400 LOC net). Every dev-tools tab gained substantive new functionality; the cross-tab `pendingX-on-uiSlice` handoff convention now threads the whole plugin (4 uses); localStorage is the established per-project UI state spot (3 uses). 3 new modal flows shipped (GH issue import, prompt diff, ContextDetail goals panel). The TODAY feed on Overview ties it all together by pulling activity from Scanner/Triage/Runner/Lifecycle store slices in one panel.
+  - **Cycles (titles):** (1) Spotlight tasks `3b84c86dc` · (2) Kanban drag + ±5% nudge `721224f0e` · (3) Goal pill on Task Runner cards `895117169` · (4) Skills favorites + recents `bfb33e760` · (5) Spotlight task → Runner focus `dc0c6920a` · (6) Scan History filter + Rerun `2a473f8ab` · (7) Baseline click → Pulse seeded `7f037ab0c` · (8) ContextMap goal-coverage badge `3d09bf706` · (9) PM row quick actions (VS Code + folder) `dcdee5a9e` · (10) Triage card agent rank inline `0ac24b06e` · (11) Lifecycle step-stone readiness `c850cd8a7` · (12) GH issue import modal `f9b4d38d0` · (13) Overview drag-rearrange tiles `8c7a0fe09` · (14) ContextDetail linked goals + tasks `cb1218be9` · (15) Competitions prompt diff modal `2f18f1f2d` · (16) IdeaEvolution lifecycle strip `2093d6b01` · (17) TODAY cross-tab activity feed `cbaf0711b` · (18) Tracking stale highlight + Force pulse `d5114854c` · (19) WinnerInsightDialog diff prefill `f7eadac52` · (20) PR Bridge agent emoji + Copy reasoning `27f9d4854` · (21) Skills split-view live preview `f510fda0b` · (22) PM bulk-archive multi-select `077f8c59b` · (23) PR Bridge Copy git commands `20b5d8fa6` · (24) PR Bridge per-step checkmarks `f6f6041f3` · (25) Triage end-of-session toast `c0178593a` · (26) ContextMap lazy-expand large groups `b8d146f30`.
+  - **Test commit `bf97b1c03`:** 53 Vitest tests across 6 files — `PromptDiffModal.test.ts` (LCS diff + summarizer), `overviewHelpers.test.ts` (buildTodayActivity time-window + sort + cap), `ContextCard.test.tsx` (goal-coverage badge variants), `ReadinessGates.test.tsx` (step-stones + weights), `useSkillData.test.ts` (favorites + recents localStorage state machine + corrupted-storage guard), `GoalKanban.test.tsx` (±5% clamping + drag-drop dataTransfer contract). All 53 pass; ran in ~2.6s.
+  - **Merge approach:** Master had moved ahead by 10+ commits since the worktree base (`201bfeec6` → `ce295b348`), so not FF-eligible. Used the 2026-05-15 notif-webhooks `update-ref` pattern: created a detached worktree at master HEAD, ran `git merge --no-ff` (one conflict in generated `enSectionStrings.ts` — resolved by regenerating from auto-merged `en.json`), validated with `npx tsc --noEmit` (exit 0), committed as `0728ecf23`, then `git update-ref refs/heads/master 0728ecf23` to advance master without touching the main checkout's 53 in-flight i18n files from other sessions. Followed up with per-file `git checkout HEAD --` for the 39 merge-touched files (none had WIP overlap except the regenerated `enSectionStrings.ts`) so Vite HMR in the running `tauri:dev:test` could pick up the new code immediately. Cleaned up worktree + temp merge worktree + branch.
+  - **Concurrent-session note:** Main checkout had heavy WIP from 7+ parallel sessions (theming, drive, twin, langfuse, radio, artist-tests, openhands-research, plus pre-existing locale regen). My merge's 39 files were path-disjoint from all of those except the generated `enSectionStrings.ts`. The 53 i18n locale files in the main checkout's status are translation team's WIP for other features — preserved untouched throughout the merge.
+
+- **[2026-05-16 18:50 → 19:25] /research — openhands-codebase-analysis**
+  - **Status:** completed (commit: `327889130`)
+  - **Source:** `C:\Users\kazda\kiro\OpenHands` (All-Hands OpenHands repo; focus=code)
+  - **Paths shipped:**
+    - **Repo:** `src-tauri/src/engine/webhook_notifier.rs` (refactor — +232 / -45 LOC), `.claude/active-runs.md` (register; this deregister is uncommitted for next session sweep)
+    - **Obsidian:** `Research/2026-05-16-openhands-codebase-analysis.md` (new), `Lessons/2026-05-16-research.md` (appended via Edit below the 16:30 hermes-goal-skill block)
+  - **Outcome:** 1 finding accepted of 4 surviving Phase 4 (8 catches dominated — outbound webhook system, MCP both directions, lifecycle hooks, agent delegation, memory condensing, sandbox abstraction differ fundamentally). User picked the option I'd recommended descoping: polymorphic EventCallbackProcessor refactor for `webhook_notifier`. Executed in-session: extracted `NotificationProvider` enum (Slack/Discord/Teams/Generic, infallible FromStr, unknown→Generic for DB forward-compat) + `EventProcessor` async trait + `WebhookProcessor` as first impl. `cargo check` clean (one new "kind never used" warning documenting the trait extension point). `cargo test webhook_notifier` 13/13 pass (9 pre-existing + 4 new). Public API and DB schema preserved — zero migration risk.
+  - **Source-type yield:** Cloned-codebase walkthrough (NEW source-type row, n=1) — 4 candidates + 8 catches matches product-demo-band shape. Catch count exceeds finding count — confirms the source's primary value is "personas already covers most of this surface" rather than gap discovery.
+  - **Concurrent-session note:** No path overlaps. 7 /friend plugin sessions touched `src/features/plugins/<plugin>/`; theming touched `src/styles/`; artist-test-coverage touched `src/features/plugins/artist/__tests__/`; hermes-codebase-deep touched Obsidian only. My refactor was on `src-tauri/src/engine/webhook_notifier.rs` — fully disjoint. Staged 2 files explicitly via `git add <path>` per-file; `git diff --cached --stat` showed exactly the 2 files I intended (no pre-staged drift per the 2026-05-09 stash-incident discipline).
+
+- **[2026-05-16 16:30 → 17:10] /research — hermes-goal-skill (reaffirm descope + anchor fix)**
+  - **Status:** completed (commit: `a68f9b6f7`)
+  - **Source:** https://www.youtube.com/watch?v=9oOZ3PB6n4Y (Wes Roth Hermes Agent `/goal` walkthrough) + web augmentation on `hermes-agent.nousresearch.com/docs/user-guide/features/goals` (user explicitly asked: "explain and propose whether any reusability in our app")
+  - **Paths shipped:**
+    - **Repo:** `.claude/active-runs.md` (register + this deregister entry — uncommitted Phase 13h edit for next session to sweep), `.claude/codebase-stack.md` (anchor fix: stale `engine/runner.rs::run_persona` → `engine/runner/mod.rs::run_execution`)
+    - **Obsidian:** `Research/2026-05-16-hermes-goal-skill.md` (new), `Lessons/2026-05-16-research.md` (new), `Patterns/descoped-reopenable.md` (2026-05-11 entry refined with 2026-05-16 update: anchor correction, web-augmented contract details, new soft reconsider trigger (v))
+  - **Outcome:** Reaffirmed descoped status on the `/goal` Ralph-loop primitive. The video is 5 days late behind the 2026-05-11 descoped-reopenable entry and the 2026-05-13 hermes-agent-codebase-deep update — zero new architectural surface; only refinements. User chose Option A (reaffirm + refine) over scaffold / full execution / seed-template after risks-first review. Hermes is now #1 on OpenRouter with 2x growth in 3 days post-`/goal` launch (market validation), but no paying personas user has surfaced demand — the dominant blocker remains demand-side, not architectural.
+  - **Source-type yield:** Product demo / competitor walkthrough scoped to one feature; same-source repeat (4th Hermes run in 5 weeks). 1 reopen-reaffirm + 5 already-existed catches. AT THE LOW END of the product-demo band — in-band given the prior deep-read had already mined the same surface.
+  - **Concurrent-session note:** The commit's active-runs.md diff swept up 3 other sessions' edits that landed between my read and my stage: langfuse /friend deregistered, /research-openhands-codebase-analysis registered at 18:50, /friend-radio Recently-completed entry reformatted. All coherent forward-moving ledger churn; documented in commit body per CLAUDE.md primitive 5.
+
+- **[2026-05-16 14:07 → 18:30] /friend — theming (14 cycles, merged to master at `21dc389de`)**
+  - **Worktree:** `.claude/worktrees/friend-theming-140706/` — REMOVED post-merge
+  - **Branch:** `worktree-friend-theming-140706` — DELETED post-merge
+  - **Status:** completed + merged (cycle commits: `bca73f2f6..5250737e7`, 14 atomic commits; merge commit on master: `21dc389de`; pre-merge ledger commit: `904d3d16a`)
+  - **Paths:** `src/styles/globals.css`, `src/stores/themeStore.ts`, `src/lib/theme/contrastRatio.ts` (new), `src/features/settings/sub_appearance/components/{AppearanceSettings,CustomThemeCreator}.tsx`, `scripts/check-themes.mjs` (new), `package.json`, `src/i18n/locales/en.json` (additive `appearance.*` keys), `src/i18n/generated/{types,enSectionStrings}.ts`, `src/i18n/section-locales/**/settings.json`, `.claude/active-runs.md`. Path-disjoint from all 7 concurrent /friend plugin sessions.
+  - **Headline:** Theming subsystem went from "11 themes, 3 fine, 8 partial" to "13 themes, all AA across all status pairs, 3-surface contrast tooling (runtime badge / live creator readout / CLI audit), 4-toggle orthogonal a11y system (dim / CVD-safe / high-contrast / reduce-motion)". `npm run check:themes` exits 0 across the board. End-to-end loop closed: cycle 5 badge surfaced contrast → cycle 10 CLI audit measured it → cycle 11 calibration fixed two findings → audit re-runs green.
+  - **Cycles:** (1) Bronze/Purple/Pink full var coverage `bca73f2f6` · (2) Paper Pro light rewrite `6233d2622` · (3) Live preview tiles via `data-theme` cascade `d796328e3` · (4) Light Sage + Light Sand `06bc7faa6` · (5) WCAG contrast badge on tiles `57d71e3ec` · (6) Stage 2 Cyan/Frost/Red completeness `8dc3e93f6` · (7) Dim mode toggle (saturation axis) `f81ae54d2` · (8) Contrast readout in CustomThemeCreator `bec6537da` · (9) Hover-expand preview popover `3ac509852` · (10) `npm run check:themes` CLI audit `ed3a465aa` · (11) Stage 3 light status calibration acted on audit `3684f3cd8` · (12) CVD-safe palette toggle (hue axis) `eccccd06f` · (13) High-contrast preset (luminance axis) `b9c80cb4f` · (14) Reduce-motion preset (motion axis) `5250737e7`.
+  - **Outcome on /friend learning:** 4th consecutive session confirming deepen-existing-surface and stretch-bias patterns (already promoted in `Patterns/friend-preferences.md`). Three new observations registered for watchlist promotion: topic-commitment-in-args, end-to-end-loop arcs, complete-the-family framing for orthogonal axes.
+
+- **[2026-05-16 13:12 → wrap] /friend — radio (16 cycles)**
+  - **Status:** merged to master at `475fbc8b6` (merge of 16 commits `1f7df5271..24b7be65d`; 23 files, +1,424 / -94). Worktree removed + branch deleted post-merge.
+  - **Worktree (now removed):** `.claude/worktrees/friend-radio-131216/`
+  - **Branch (now deleted):** `worktree-friend-radio-131216`
+  - **Headline cycles:** volume slider, track progress bar, now-playing card, auto-resume opt-in, buffering visual, YT crossfade, grouped picker, session blacklist, settings playing-now pulse, SomaFM metadata, title text crossfade, YT thumbnail, picker context menu, SomaFM catalog 3→8, equalizer bars (CSS — honest pivot from Web Audio after CORS finding), accent dot click target.
+  - **Notes:** 14 of 16 picks deepened existing surfaces; only the now-playing card and auto-resume introduced new behavior, both small. One Phase 3 gate trip on CSP produced a narrower-scope outcome (cycle 10 → Rust-side fetch). One honest mid-execute pivot recorded (cycle 15 EQ bars). Zero hard rejects this session; 9 directions hit 2× soft-skip and dropped cleanly. Vault writes: session note, lesson append, coverage update, **3 patterns promoted to `Patterns/friend-preferences.md`** (deepen-existing-surface bias, higher-effort mix, 2× soft-skip drop rule — all at 3 confirmations across companion + artist + radio).
+
+- **[2026-05-16 13:10 → 14:55] /friend — artist plugin (14 cycles)**
+  - **Worktree:** `.claude/worktrees/friend-artist-130851/`  (left intact for user merge)
+  - **Branch:** `worktree-friend-artist-130851`
+  - **Status:** completed (14 commits, `c33375370..d2ad367ec`)
+  - **Outcome:** ETA strip, lightbox zoom/pan/fullscreen/copy, gallery multi-select, export success strip, inline rename (+`artist_rename_asset` Rust cmd), recent compositions (artist slice MRU), starter canvas templates, Open-folder toolbar button, beat sidebar with click-to-seek, copy-session-as-markdown, export filename auto-suffix, 3D viewer keyboard nav, gallery group-by-day, preview-frame thumbnails on recents. Multi-audio-lanes pitched and dropped (architect-scoped — touches TimelinePanel layout + CompositionPreview gain integration + Rust render plan).
+
+- **[2026-05-16 14:30 → end-of-session] fleet — Claude Code session aggregator plugin (phases 0-9 + tests, merged)**
+  - **Source:** User request — design + implement Tauri-hosted multi-session manager for Claude Code CLIs with PTY ownership, hook-driven state, decision broadcast. Approach B from the 3-option proposal.
+  - **Worktree:** `.claude/worktrees/fleet-plugin/` — REMOVED post-merge
+  - **Branch:** `worktree-fleet-plugin` — DELETED post-merge
+  - **Status:** completed + merged to master
+  - **Commits (atomic per phase):**
+    - `6ff13f3d1` phase 0 — scaffold DEV-only Fleet plugin (sidebar entry + 3 sub-pages, orange theme).
+    - `15549203f` phase 1 — Rust module skeleton + ts-rs DTOs (FleetSession / FleetSessionState / FleetRegistrySnapshot / FleetHookStatus / FleetHookEvent), portable-pty dep, FLEET_* event registry.
+    - `dcde662f7` phase 2 — PTY spawn + stdin/stdout (6 Tauri commands + global registry).
+    - `135a814c4` phase 3 — xterm.js pane + single-session test-bed.
+    - `ee75766af` phase 4 — axum /fleet/hooks/* receiver with sessionstart→Running, notification→AwaitingInput, stop→Idle, etc.
+    - `c5929d245` phase 5 — idempotent installer for `~/.claude/settings.json` (`_fleet: true` marker preserves user hooks) + settings UI banner.
+    - `b089ac3e3` phase 6 — staleness ticker (30s/5min) + recursive notify watcher on `~/.claude/projects/*.jsonl`.
+    - `d464a099c` phase 7 — project-grouped session grid + sidebar waiting-count badge + per-session state cards.
+    - `04c93709c` phase 8 — decision broadcast composer (select-waiting / select-all, append-↵ toggle, localStorage history).
+    - `93d534242` phase 9 — `docs/features/fleet.md` + `scripts/docs/feature-doc-map.json` entry.
+    - `2c4c947f8` tests — Vitest (23/23 passing) + Playwright spec (committed, defer live) + data-testid attributes on UI for E2E reach.
+  - **Outcome:** End-to-end working multi-session manager. PTY ownership for sessions spawned from Fleet; hook-driven state machine for any `claude` running anywhere on the machine once hooks are installed; one-click "send this to every session waiting for input" decision broadcast. DEV-only (sidebar gated by `import.meta.env.DEV`). cargo check + npx tsc --noEmit clean throughout. Test coverage: 11 cargo unit tests (hook_install, stale, ts-rs exports, command Send), 23 Vitest tests (FleetStatusBadge × 6, FleetSettingsPage × 6, fleetSlice × 11), 7 Playwright tests authored (deferred to user manual verification).
+  - **Concurrent-session note:** Pre-merge ledger sweep (`4e1a6e8a9`) picked up the /research-openhands deregister that was left "uncommitted for next session sweep". Merge resolved three conflicts: (1) `.claude/active-runs.md` Recently-completed section — kept both fleet block and master-side openhands/artist deregisters; (2) `src-tauri/src/lib.rs` invoke_handler list — kept both new radio_fetch_somafm_metadata and the 9 fleet_* commands; (3) `src/lib/commandNames.generated.ts` — regenerated post-merge from authoritative Tauri command set.
+
+- **[2026-05-16 13:25 → 14:35] doc-sync three-surface system + catch-up /guide-sync**
+  - **Paths:** `scripts/docs/feature-doc-map.json`, `scripts/docs/check-doc-sync.mjs`, `scripts/docs/__tests__/check-doc-sync.test.mjs` (new), `.claude/CLAUDE.md`, `.claude/guide-sync-marker.json`, `personas-web/src/data/guide/content/{agents-prompts,triggers,monitoring}.ts`
+  - **Status:** completed (commit: 66e447219 in personas + af66f99 in personas-web)
+  - **Commits — personas:** `d584207f7` three-target Stop hook + map + tests; `15f214256` CLAUDE.md doc-sync rewrite; `b632e5b32` promote marketing breadcrumb to exit-2 (per-session enforcement, no weekly schedule per user redirect); `66e447219` catch-up marker bump.
+  - **Commits — personas-web:** `94f8f13` agents-prompts (template adoption flow, vault picker, setup status); `ee4f9b9` triggers (inbound vs outbound clarification); `af66f99` monitoring (notification bell flow).
+  - **Outcome:** Built generalized Stop hook covering 3 docs surfaces (feature docs, onboarding tour, marketing guides) with `feature-doc-map.json` as the single source of truth. Each entry can declare `doc`/`onboardingFlows`/`marketingModule`. Marketing breadcrumb is exit-2 (cross-repo edits to `../personas-web/` satisfy it; dismissable per turn). 30 test assertions, all green. User redirected mid-session from weekly schedule to per-session enforcement model. Catch-up sync after 1586-commit / 5-week drift: 5 focused content updates in personas-web, 31 topics flagged for future targeted runs, 3 missing-coverage product surfaces noted (cockpit/Athena, director, outbound channel delivery). Worktrees `worktree-doc-sync-multi` (personas) and `worktree-guide-sync-20260516` (personas-web) cleaned up post-merge.
+
+- **[2026-05-15 09:33 → 09:51] prod-installer — local production build for v0.1.0-1 (no source edits)**
+  - **Command:** `npm run tauri:build` (canonical: `desktop-full` features, NSIS + MSI). Build time 17m 44s; release profile clean (61 warnings, 0 errors — same `langfuse::exporter` dead-code warnings as the 2026-05-13 build). `pretauri:build` ran `ensure-ort-cache` from origin merge `201bfeec6` first; ORT cache was already good, no-op.
+  - **Artifacts produced:**
+    - NSIS: `src-tauri/target/release/bundle/nsis/Personas_0.1.0-1_x64-setup.exe` (53 MB)
+    - MSI:  `src-tauri/target/release/bundle/msi/Personas_0.1.0-1_x64_en-US.msi` (72 MB)
+  - **Status:** completed — NSIS installer launched via `start ""` for user to walk through. No commits, no source edits, build artifacts only. Same version (0.1.0-1) as 2026-05-13 build — rebuilt on top of merged origin tree (commit `201bfeec6`) which includes the ort-arm64-fix scaffolding, /friend skill, notif webhooks, moodboard panel, and god-component sweep.
 
 - **[2026-05-15] god-component-sweep — split ~200 god components (>300 LOC) + add max-lines lint guard**
   - **Status:** completed on branch `worktree-god-component-sweep` (commits `649a850dd` infra + `cdf604b08` refactor). NOT merged to master — user owns merge (main checkout has 99+ in-flight WIP files from concurrent sessions; per-file reconciliation needed when merging, same recipe as 2026-05-15 notif-webhooks).

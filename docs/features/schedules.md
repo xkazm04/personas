@@ -10,7 +10,7 @@ Schedules is the user-facing surface for cron- and interval-driven personas. It 
 
 | Surface | Behavior | Implementation |
 | --- | --- | --- |
-| Timeline view | Grouped or flat list of cron-driven agents with next/last run, schedule expression, and health pill | `ScheduleTimeline.tsx`, `ScheduleRow.tsx` |
+| Timeline view | Time-bucketed list of cron-driven agents (`Overdue` / `Next 15 min` / `Next hour` / …) with next/last run, schedule expression, and health pill | `ScheduleTimeline.tsx`, `ScheduleRow.tsx` |
 | Calendar view | Week/Month calendar of fire times with conflict detection | `ScheduleCalendar.tsx`, `WeekView.tsx`, `MonthView.tsx`, `EventBlock.tsx`, `EventTooltip.tsx` |
 | Frequency editor | Inline editor for cron expression / interval | `FrequencyEditor.tsx` |
 
@@ -40,7 +40,6 @@ This view does not own a dedicated backend module — it composes existing engin
 | API wrapper | Backend |
 | --- | --- |
 | `@/api/pipeline/scheduler` (`getSchedulerStatus`, `startScheduler`, `stopScheduler`) | `engine/scheduler.rs` |
-| `@/api/pipeline/triggers` (`seedMockCronAgent` for dev) | `engine/scheduler.rs`, `engine/cron.rs` |
 | Calendar fire times | `cron_fire_times_in_range` IPC backed by `engine/cron.rs` |
 | Cron agent list | `useOverviewStore().fetchCronAgents()` (overview store fetches the full cron-agent set used both here and in Overview) |
 

@@ -337,3 +337,63 @@ pub fn companion_get_cockpit(
         updated_at: c.updated_at,
     }))
 }
+
+/// Append a single widget to the user's cockpit. The frontend's "Pin to
+/// cockpit" button on `InlineChatCard` calls this with the chat-card's
+/// `{kind, title?, config?}`. Loads the current cockpit spec (or seeds
+/// a fresh `{title:"Cockpit", widgets:[]}` when none exists), generates
+/// a stable id for the new widget, defaults `span=4` (a third of the
+/// 12-col grid), and saves. Idempotent on a no-op pin (same kind + same
+/// config) so accidental double-clicks don't duplicate the widget.
+#[tauri::command]
+pub fn companion_pin_widget_to_cockpit(
+    state: State<'_, Arc<AppState>>,
+    kind: String,
+    title: Option<String>,
+    config: Option<serde_json::Value>,
+) -> Result<(), AppError> {
+    ipc_auth::require_auth_sync(&state)?;
+    let now = chrono::Utc::now().to_rfc3339();
+    let mut spec: serde_json::Value = match cockpit::load_cockpit(&state.user_db)? {
+        Some(c) => serde_json::from_str(&c.spec_json).unwrap_or_else(|_| {
+            serde_json::json!({ "title": "Cockpit", "widgets": [] })
+        }),
+        None => serde_json::json!({ "title": "Cockpit", "widgets": [] }),
+    };
+    let widgets = spec
+        .get_mut("widgets")
+        .and_then(|v| v.as_array_mut())
+        .ok_or_else(|| AppError::Internal("cockpit spec missing `widgets` array".into()))?;
+
+    let new_config = config.clone().unwrap_or_else(|| serde_json::json!({}));
+    // Idempotency guard — skip the insert if an existing widget has the
+    // same kind + same config. Accidental double-clicks shouldn't bloat
+    // the cockpit. Stringify both sides via canonical JSON for equality.
+    let existing_match = widgets.iter().any(|w| {
+        w.get("kind").and_then(|v| v.as_str()) == Some(kind.as_str())
+            && w.get("config").unwrap_or(&serde_json::Value::Null) == &new_config
+    });
+    if existing_match {
+        return Ok(());
+    }
+
+    let id = format!("pin_{}", chrono::Utc::now().timestamp_millis());
+    let mut widget = serde_json::json!({
+        "id": id,
+        "kind": kind,
+        "span": 4,
+        "config": new_config,
+    });
+    if let Some(t) = title {
+        widget["title"] = serde_json::Value::String(t);
+    }
+    widgets.push(widget);
+
+    if let Some(spec_obj) = spec.as_object_mut() {
+        spec_obj.insert("updated_at".into(), serde_json::Value::String(now));
+    }
+
+    let spec_json = spec.to_string();
+    cockpit::save_cockpit(&state.user_db, &spec_json)?;
+    Ok(())
+}

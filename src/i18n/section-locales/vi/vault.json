@@ -437,7 +437,7 @@
     "sql_hint": "Viết truy vấn và nhấn Chạy hoặc Ctrl+Enter",
     "executing_query": "Đang thực thi truy vấn...",
     "redis_placeholder": "Nhập lệnh Redis (vd: GET mykey, HGETALL users:1)",
-    "convex_placeholder": "func:tên",
+    "convex_placeholder": "Nhập tên bảng để duyệt hoặc nội dung JSON: {\"path\": \"func:name\", \"args\": {}}",
     "sql_placeholder": "Nhập truy vấn SQL (Ctrl+Enter để thực thi)",
     "running": "Đang chạy...",
     "safe_mode": "Chế độ an toàn",
@@ -679,7 +679,7 @@
     "add_tag_title": "Thêm thẻ",
     "local_embedding_hint": "Embedding được tạo cục bộ bằng {model} ({dims}-chiều). Không có dữ liệu nào rời khỏi máy của bạn. Mô hình (~23MB) được tải xuống khi sử dụng lần đầu và lưu vào bộ nhớ cache cục bộ.",
     "api_path_placeholder": "/api/v1/resource",
-    "json_body_placeholder": "giá trị",
+    "json_body_placeholder": "{\"key\": \"value\"}",
     "sending": "Đang gửi...",
     "send": "Gửi",
     "search_results_one": "{count} kết quả cho \"{query}\"",
@@ -1011,7 +1011,7 @@
     "base_url_placeholder": "https://api.example.com",
     "openapi_url_placeholder": "https://api.example.com/openapi.json",
     "auth_schemes": "các phương thức xác thực",
-    "body_placeholder": "giá trị"
+    "body_placeholder": "{ \"key\": \"value\" }"
   },
   "foraging": {
     "no_credentials_found": "Không tìm thấy thông tin xác thực",

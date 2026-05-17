@@ -72,6 +72,7 @@ const INCLUDED_DOCS: &[&str] = &[
     "concepts/invisible-apps-p2p.md",
     "concepts/mobile.md",
     "concepts/real-api-testing.md",
+    "concepts/persona-design-best-practices.md",
     // Athena's own capability surface — kept in doctrine so the
     // "what can you do?" question pulls a current, honest answer via
     // embedding retrieval instead of relying on the constitution's
@@ -199,6 +200,10 @@ const EMBEDDED_DOCS: &[(&str, &str)] = &[
     (
         "concepts/real-api-testing.md",
         include_str!("../../../../docs/concepts/real-api-testing.md"),
+    ),
+    (
+        "concepts/persona-design-best-practices.md",
+        include_str!("../../../../docs/concepts/persona-design-best-practices.md"),
     ),
     (
         "features/companion/athena-usecases.md",

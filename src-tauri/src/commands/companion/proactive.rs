@@ -43,7 +43,15 @@ pub async fn companion_evaluate_proactive_now(
     app: AppHandle,
 ) -> Result<usize, AppError> {
     ipc_auth::require_auth(&state).await?;
-    let new_msgs = proactive::evaluate(&state.user_db)?;
+    let mut new_msgs = proactive::evaluate(&state.user_db)?;
+    // Athena's `schedule_proactive` commitments flow through the same
+    // emit + status transition as trigger-driven nudges, but their
+    // candidate set comes from a time-based sweep instead of
+    // [`proactive::triggers::collect_all`]. Run the sweep here so the
+    // existing scheduler cadence (manual `evaluate_proactive_now` calls,
+    // background tick, etc.) services both kinds with one entry point.
+    let due_scheduled = proactive::deliver_due_scheduled(&state.user_db)?;
+    new_msgs.extend(due_scheduled);
     for m in &new_msgs {
         if let Err(e) = proactive::mark_delivered(&state.user_db, &m.id) {
             tracing::warn!(id = %m.id, error = %e, "proactive: mark_delivered failed");

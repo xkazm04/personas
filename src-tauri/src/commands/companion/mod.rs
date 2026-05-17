@@ -9,6 +9,7 @@ pub mod brain;
 pub mod chat;
 pub mod connectors;
 pub mod consolidate;
+pub mod decisions;
 pub mod feedback;
 pub mod jobs;
 pub mod observability;
@@ -17,6 +18,7 @@ pub mod proactive;
 pub mod project_tracking;
 #[cfg(feature = "desktop")]
 pub mod sensory;
+pub mod templates;
 pub mod voice;
 
 use std::sync::Arc;

@@ -189,6 +189,13 @@ which = { version = "8.0.1", optional = true }
 xcap = { version = "0.7", optional = true }
 image = { version = "0.25", default-features = false, features = ["png"], optional = true }
 
+# Fleet plugin (DEV-only Claude Code session aggregator).
+# `portable-pty` (wezterm) wraps ConPTY on Windows + posix_openpt on Unix
+# behind one cross-platform API. Always-on, not feature-gated — the
+# fleet UI itself is DEV-only at the sidebar level but the Rust module
+# always compiles so type/ts-rs surfaces stay stable.
+portable-pty = "0.8"
+
 [[bin]]
 name = "personas-mcp"
 path = "src/mcp_bin.rs"

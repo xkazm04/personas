@@ -1,7 +1,7 @@
 import { startTransition } from "react";
 import type { StateCreator } from "zustand";
 import type { SystemStore } from "../../storeTypes";
-import type { SidebarSection, HomeTab, EditorTab, DesignSubTab, TemplateTab, CloudTab, SettingsTab, DevToolsTab, AgentTab, PluginTab, EventBusTab, ResearchLabTab } from "@/lib/types/types";
+import type { SidebarSection, HomeTab, EditorTab, DesignSubTab, TemplateTab, CloudTab, SettingsTab, DevToolsTab, AgentTab, PluginTab, EventBusTab, ResearchLabTab, FleetTab } from "@/lib/types/types";
 import type { CompanionCockpitSpecBody } from "@/api/companion";
 
 /**
@@ -43,6 +43,14 @@ export interface UiSlice {
   // State
   sidebarSection: SidebarSection;
   homeTab: HomeTab;
+  /**
+   * Selected release version on the Home → "What's New" surface. Driven by
+   * the sidebar Level 3 release nav; the page-body `<ReleasesNavBar>` was
+   * retired in favour of putting the release picker into the sidebar push
+   * pane. Defaults to `'roadmap'` so first-launch lands on the roadmap
+   * timeline view, matching the L2 entry users click to enter L3.
+   */
+  homeReleaseVersion: string;
   templateTab: TemplateTab;
   agentTab: AgentTab;
   editorTab: EditorTab;
@@ -72,6 +80,12 @@ export interface UiSlice {
   contextScanComplete: boolean;
   /** Pending category filter applied when the credentials catalog next mounts. */
   pendingCatalogCategoryFilter: string | null;
+  /** Pending sub-tab applied when the Lifecycle page next mounts (e.g. jump-to-goals from a Task Runner goal pill). */
+  pendingLifecycleSubTab: 'setup' | 'goals' | 'competitions' | 'tracking' | null;
+  /** Pending task ID to scroll-into-view + highlight when TaskRunner next mounts (e.g. from a goal-spotlight task click). */
+  pendingTaskFocusId: string | null;
+  /** Pending goal ID to seed the Pulse variant of GoalConstellation on next mount (e.g. from a ContextMap goal-coverage badge click). */
+  pendingGoalSpotlightId: string | null;
 
   // Canvas <-> Live Stream cross-linking
   canvasEdgeFocus: { edgeId: string; eventType: string; sourceFilter: string | null } | null;
@@ -80,6 +94,7 @@ export interface UiSlice {
   // Actions
   setSidebarSection: (section: SidebarSection) => void;
   setHomeTab: (tab: HomeTab) => void;
+  setHomeReleaseVersion: (version: string) => void;
   setTemplateTab: (tab: TemplateTab) => void;
   setAgentTab: (tab: AgentTab) => void;
   /** Accepts current EditorTab values plus legacy 'prompt' | 'connectors' | 'health', which are migrated to `design` with the matching sub-tab. */
@@ -102,11 +117,16 @@ export interface UiSlice {
   setAdoptionDraft: (draft: AdoptionDraft | null) => void;
   setPluginTab: (tab: PluginTab) => void;
   setDevToolsTab: (tab: DevToolsTab) => void;
+  fleetTab: FleetTab;
+  setFleetTab: (tab: FleetTab) => void;
   setEventBusTab: (tab: EventBusTab) => void;
   setResearchLabTab: (tab: ResearchLabTab) => void;
   setContextScanActive: (active: boolean) => void;
   setContextScanComplete: (complete: boolean) => void;
   setPendingCatalogCategoryFilter: (category: string | null) => void;
+  setPendingLifecycleSubTab: (tab: 'setup' | 'goals' | 'competitions' | 'tracking' | null) => void;
+  setPendingTaskFocusId: (id: string | null) => void;
+  setPendingGoalSpotlightId: (id: string | null) => void;
   setCanvasEdgeFocus: (focus: { edgeId: string; eventType: string; sourceFilter: string | null } | null) => void;
   setLiveStreamHighlightEventId: (id: string | null) => void;
   // Plugin enable/disable
@@ -140,6 +160,7 @@ export const NAV_HISTORY_MAX = 5;
 export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) => ({
   sidebarSection: "home" as SidebarSection,
   homeTab: "welcome" as HomeTab,
+  homeReleaseVersion: "roadmap",
   templateTab: "generated" as TemplateTab,
   agentTab: "all" as AgentTab,
   editorTab: "activity" as EditorTab,
@@ -161,12 +182,16 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) =
   templateGalleryTotal: 0,
   pluginTab: "browse" as PluginTab,
   devToolsTab: "projects" as DevToolsTab,
+  fleetTab: "grid" as FleetTab,
   eventBusTab: "live-stream" as EventBusTab,
   researchLabTab: "dashboard" as ResearchLabTab,
   adoptionDraft: null,
   contextScanActive: false,
   contextScanComplete: false,
   pendingCatalogCategoryFilter: null,
+  pendingLifecycleSubTab: null,
+  pendingTaskFocusId: null,
+  pendingGoalSpotlightId: null,
   canvasEdgeFocus: null,
   liveStreamHighlightEventId: null,
 
@@ -177,6 +202,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) =
     return { sidebarSection: section, navigationHistory: next };
   })),
   setHomeTab: (tab) => startTransition(() => set({ homeTab: tab })),
+  setHomeReleaseVersion: (version) => startTransition(() => set({ homeReleaseVersion: version })),
   setTemplateTab: (tab) => startTransition(() => set({ templateTab: tab })),
   setAgentTab: (tab) => startTransition(() => set({ agentTab: tab })),
   setEditorTab: (tab) => startTransition(() => {
@@ -206,14 +232,22 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) =
   setAdoptionDraft: (draft) => set({ adoptionDraft: draft }),
   setPluginTab: (tab) => set({ pluginTab: tab }),
   setDevToolsTab: (tab) => set({ devToolsTab: tab }),
+  setFleetTab: (tab) => set({ fleetTab: tab }),
   setResearchLabTab: (tab) => startTransition(() => set({ researchLabTab: tab })),
   setEventBusTab: (tab) => startTransition(() => set({ eventBusTab: tab })),
   setContextScanActive: (active) => set({ contextScanActive: active }),
   setContextScanComplete: (complete) => set({ contextScanComplete: complete }),
   setPendingCatalogCategoryFilter: (category) => set({ pendingCatalogCategoryFilter: category }),
+  setPendingLifecycleSubTab: (tab) => set({ pendingLifecycleSubTab: tab }),
+  setPendingTaskFocusId: (id) => set({ pendingTaskFocusId: id }),
+  setPendingGoalSpotlightId: (id) => set({ pendingGoalSpotlightId: id }),
   setCanvasEdgeFocus: (focus) => set({ canvasEdgeFocus: focus }),
   setLiveStreamHighlightEventId: (id) => set({ liveStreamHighlightEventId: id }),
-  enabledPlugins: new Set<PluginTab>(['dev-tools', 'artist', 'obsidian-brain', 'research-lab', 'drive', 'twin', 'companion']),
+  enabledPlugins: new Set<PluginTab>([
+    'dev-tools', 'artist', 'obsidian-brain', 'research-lab', 'drive', 'twin', 'companion',
+    // Fleet is a DEV-only experimental plugin (Claude Code session aggregator).
+    ...(import.meta.env.DEV ? (['fleet'] as PluginTab[]) : []),
+  ]),
   togglePlugin: (plugin) => set((state) => {
     const next = new Set(state.enabledPlugins);
     if (next.has(plugin)) {

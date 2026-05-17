@@ -437,7 +437,7 @@
     "sql_hint": "쿼리를 작성하고 실행 또는 Ctrl+Enter 누르기",
     "executing_query": "쿼리 실행 중...",
     "redis_placeholder": "Redis 명령 입력 (예: GET mykey, HGETALL users:1)",
-    "convex_placeholder": "func:name",
+    "convex_placeholder": "찾아볼 테이블 이름을 입력하거나 JSON 본문을 입력하세요: {\"path\": \"func:name\", \"args\": {}}",
     "sql_placeholder": "SQL 쿼리 입력 (Ctrl+Enter로 실행)",
     "running": "실행 중...",
     "safe_mode": "안전 모드",
@@ -679,7 +679,7 @@
     "add_tag_title": "태그 추가",
     "local_embedding_hint": "{model} ({dims}차원)을 사용해 로컬에서 임베딩이 생성됩니다. 데이터가 기기를 벗어나지 않습니다. 모델(~23MB)은 처음 사용 시 다운로드되어 로컬에 캐시됩니다.",
     "api_path_placeholder": "/api/v1/resource",
-    "json_body_placeholder": "value",
+    "json_body_placeholder": "{\"key\": \"value\"}",
     "sending": "전송 중...",
     "send": "보내기",
     "search_results_one": "\"{query}\"에 대한 결과 {count}개",
@@ -1011,7 +1011,7 @@
     "base_url_placeholder": "https://api.example.com",
     "openapi_url_placeholder": "https://api.example.com/openapi.json",
     "auth_schemes": "인증 스키마",
-    "body_placeholder": "value"
+    "body_placeholder": "{ \"key\": \"value\" }"
   },
   "foraging": {
     "no_credentials_found": "자격 증명 없음",

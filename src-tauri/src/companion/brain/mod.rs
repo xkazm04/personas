@@ -9,6 +9,7 @@ pub mod backlog;
 pub mod cockpit;
 pub mod consolidation;
 pub mod dashboard;
+pub mod decisions;
 pub mod doctrine;
 pub mod embeddings;
 pub mod episodic;

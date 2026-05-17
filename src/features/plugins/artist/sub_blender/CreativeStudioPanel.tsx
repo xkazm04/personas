@@ -1,16 +1,19 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   Wand2, Download, RefreshCw, CheckCircle2, XCircle,
-  Send, Square, Trash2, ExternalLink, Sparkles,
+  Send, Square, Trash2, ExternalLink, Sparkles, Copy,
 } from 'lucide-react';
 import { useBlenderMcp } from '../hooks/useBlenderMcp';
 import { useCreativeSession } from '../hooks/useCreativeSession';
 import { useCreativeConnectors } from '../hooks/useCreativeConnectors';
 import { useSystemStore } from '@/stores/systemStore';
+import { useToastStore } from '@/stores/toastStore';
+import { silentCatch } from '@/lib/silentCatch';
 import { getConnectorMeta, ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { ConnectorInfo } from '@/stores/slices/system/artistSlice';
 import CreativeSessionHistory from './CreativeSessionHistory';
+import { sessionOutputToMarkdown } from './sessionMarkdown';
 
 export default function CreativeStudioPanel() {
   const { t } = useTranslation();
@@ -309,14 +312,34 @@ function CreativeSessionChat({
             <span className="text-md text-amber-400">{t.plugins.artist.no_tools_connected}</span>
           )}
           {output.length > 0 && (
-            <button
-              onClick={clear}
-              disabled={running}
-              className="p-1 rounded hover:bg-secondary/40 text-foreground disabled:opacity-30 ml-2"
-              title={t.plugins.artist.clear_session}
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
+            <>
+              <button
+                onClick={() => {
+                  const md = sessionOutputToMarkdown(output);
+                  navigator.clipboard
+                    .writeText(md)
+                    .then(() =>
+                      useToastStore
+                        .getState()
+                        .addToast(t.plugins.artist.session_output_copied, 'success'),
+                    )
+                    .catch(silentCatch('Copy session markdown'));
+                }}
+                className="p-1 rounded hover:bg-secondary/40 text-foreground ml-2"
+                title={t.plugins.artist.copy_session_output}
+                aria-label={t.plugins.artist.copy_session_output}
+              >
+                <Copy className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={clear}
+                disabled={running}
+                className="p-1 rounded hover:bg-secondary/40 text-foreground disabled:opacity-30"
+                title={t.plugins.artist.clear_session}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </>
           )}
         </div>
       </div>

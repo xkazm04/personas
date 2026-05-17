@@ -14,6 +14,7 @@ import { createOnboardingSlice, isOnboardingStep, ONBOARDING_STEPS } from "./sli
 import * as Sentry from "@sentry/react";
 import { createTourSlice } from "./slices/system/tourSlice";
 import { createDevToolsSlice } from "./slices/system/devToolsSlice";
+import { createFleetSlice } from "./slices/system/fleetSlice";
 import { createNetworkSlice } from "./slices/network/networkSlice";
 import { createSetupSlice } from "./slices/system/setupSlice";
 import { createAmbientContextSlice } from "./slices/system/ambientContextSlice";
@@ -35,6 +36,7 @@ export const useSystemStore = create<SystemStore>()(
       ...createOnboardingSlice(...a),
       ...createTourSlice(...a),
       ...createDevToolsSlice(...a),
+      ...createFleetSlice(...a),
       ...createNetworkSlice(...a),
       ...createSetupSlice(...a),
       ...createAmbientContextSlice(...a),
@@ -67,6 +69,7 @@ export const useSystemStore = create<SystemStore>()(
         artistTab: state.artistTab,
         artistFolder: state.artistFolder,
         creativeSessions: state.creativeSessions,
+        mediaStudioRecents: state.mediaStudioRecents,
         obsidianBrainTab: state.obsidianBrainTab,
         obsidianVaultPath: state.obsidianVaultPath,
         twinTab: state.twinTab,
@@ -88,6 +91,8 @@ export const useSystemStore = create<SystemStore>()(
         companionAutonomousMode: state.companionAutonomousMode,
         radioEnabled: state.radioEnabled,
         disabledStationIds: state.disabledStationIds,
+        radioAutoResume: state.radioAutoResume,
+        collapsedSourceKinds: state.collapsedSourceKinds,
       }),
       onRehydrateStorage: () => (state) => {
         if (!state) return;

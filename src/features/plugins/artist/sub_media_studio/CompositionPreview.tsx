@@ -1,4 +1,4 @@
-import { useMemo, useRef, useEffect, useState } from 'react';
+import { forwardRef, useImperativeHandle, useMemo, useRef, useEffect, useState } from 'react';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { MonitorPlay } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -20,6 +20,14 @@ interface CompositionPreviewProps {
   totalDuration: number;
 }
 
+/** Imperative handle exposed to MediaStudioPage so the persistence layer can
+ *  snapshot the current preview frame on save and store it as a tiny thumbnail
+ *  on the recents list. Returns null when no video stage is mounted or the
+ *  element is not yet decoded. */
+export interface CompositionPreviewHandle {
+  captureThumbnail: () => string | null;
+}
+
 // ---------------------------------------------------------------------------
 // Renderer — consumes a RenderPlan produced by `compile(composition, ...)`.
 // See docs/concepts/media-studio-renderplan.md §"Renderer contract" for the
@@ -37,12 +45,10 @@ function sourcePath(source: SourceEntry | undefined): string | null {
   return source.path;
 }
 
-export default function CompositionPreview({
-  engine,
-  playing,
-  plan,
-  totalDuration,
-}: CompositionPreviewProps) {
+function CompositionPreviewImpl(
+  { engine, playing, plan, totalDuration }: CompositionPreviewProps,
+  ref: React.Ref<CompositionPreviewHandle>,
+) {
   const { t } = useTranslation();
 
   const [currentTime, setCurrentTime] = useState(0);
@@ -52,6 +58,33 @@ export default function CompositionPreview({
 
   // -- Active video stage ----------------------------------------------------
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      captureThumbnail: () => {
+        const video = videoRef.current;
+        // HAVE_CURRENT_DATA = 2 — guarantees there is at least one frame ready
+        // to draw. Without this guard toDataURL returns a blank/transparent URL.
+        if (!video || video.readyState < 2 || !video.videoWidth) return null;
+        try {
+          const W = 160;
+          const aspect = video.videoHeight / Math.max(1, video.videoWidth);
+          const H = Math.max(1, Math.round(W * aspect));
+          const canvas = document.createElement('canvas');
+          canvas.width = W;
+          canvas.height = H;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return null;
+          ctx.drawImage(video, 0, 0, W, H);
+          return canvas.toDataURL('image/jpeg', 0.6);
+        } catch {
+          return null;
+        }
+      },
+    }),
+    [],
+  );
   const activeVideo: VideoStage | null = useMemo(() => {
     if (!plan) return null;
     return (
@@ -394,3 +427,6 @@ export default function CompositionPreview({
     </div>
   );
 }
+
+const CompositionPreview = forwardRef(CompositionPreviewImpl);
+export default CompositionPreview;

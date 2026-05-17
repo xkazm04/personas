@@ -1,9 +1,9 @@
 import { silentCatch } from "@/lib/silentCatch";
-import { useEffect, useMemo, useState, useCallback, useRef, lazy, Suspense } from 'react';
+import { useEffect, useMemo, useState, useRef, lazy, Suspense } from 'react';
 import { EventName, typedListen } from '@/lib/eventRegistry';
 import { useElementVisible } from '@/hooks/utility/useElementVisible';
 import {
-  CalendarClock, RefreshCw, Pause, Plus, Calendar, Filter, Zap,
+  CalendarClock, RefreshCw, Pause, Calendar, Filter, Zap,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
@@ -18,17 +18,13 @@ import {
 } from '../libs/scheduleHelpers';
 import { useScheduleActions } from '../libs/useScheduleActions';
 import { getSchedulerStatus, startScheduler, stopScheduler } from '@/api/pipeline/scheduler';
-import { seedMockCronAgent } from '@/api/pipeline/triggers';
 import type { SchedulerStats } from '@/api/pipeline/scheduler';
 import ScheduleRow from './ScheduleRow';
 
 const ScheduleCalendar = lazy(() => import('./ScheduleCalendar'));
 
 import type { ScheduleViewMode as ViewMode } from '@/lib/constants/uiModes';
-import { createLogger } from "@/lib/log";
 import { useTranslation } from '@/i18n/useTranslation';
-
-const logger = createLogger("schedule-timeline");
 
 export default function ScheduleTimeline() {
   const { t, tx } = useTranslation();
@@ -134,11 +130,6 @@ export default function ScheduleTimeline() {
   const activeCount = entries.filter((e) => e.health !== 'paused').length;
   const pausedCount = entries.filter((e) => e.health === 'paused').length;
 
-  const handleSeedSchedule = useCallback(async () => {
-    try { await seedMockCronAgent(); await fetchCronAgents(); }
-    catch (err) { logger.error('Failed to seed mock schedule', { error: err }); }
-  }, [fetchCronAgents]);
-
   const handleToggleScheduler = async () => {
     try {
       const result = schedulerStats?.running
@@ -169,13 +160,12 @@ export default function ScheduleTimeline() {
     ));
 
   return (
-    <div ref={containerRef}>
+    <div ref={containerRef} className="flex-1 min-h-0 flex flex-col w-full">
     <ContentBox>
       <ContentHeader
         icon={<CalendarClock className="w-5 h-5 text-blue-400" />}
         iconColor="blue"
         title={t.schedules.title}
-        subtitle={t.schedules.subtitle}
         actions={
           <div className="flex items-center gap-3">
             {/* Scheduler engine status */}
@@ -200,13 +190,6 @@ export default function ScheduleTimeline() {
                     {t.schedules.engine_off}
                   </>
                 )}
-              </button>
-            )}
-
-            {/* Mock seed (dev only) */}
-            {import.meta.env.DEV && (
-              <button onClick={handleSeedSchedule} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title={t.schedules.seed_mock_tooltip}>
-                <Plus className="w-3.5 h-3.5" /> {t.schedules.mock_schedule}
               </button>
             )}
 
@@ -292,12 +275,8 @@ export default function ScheduleTimeline() {
               <Suspense fallback={<div className="flex items-center justify-center py-12 text-foreground"><LoadingSpinner className="mr-2" />{t.schedules.loading_calendar}</div>}>
                 <ScheduleCalendar entries={entries} />
               </Suspense>
-            ) : viewMode === 'grouped' ? (
-              <GroupedView groups={grouped} renderEntries={renderEntries} />
             ) : (
-              <div className="space-y-1.5">
-                {renderEntries(sorted)}
-              </div>
+              <GroupedView groups={grouped} renderEntries={renderEntries} />
             )}
           </div>
         )}
@@ -315,7 +294,6 @@ function ScheduleViewTabs({ value, onChange }: { value: ViewMode; onChange: (v: 
 
   const VIEW_OPTIONS: { value: ViewMode; label: string; icon?: true }[] = [
     { value: 'grouped', label: t.schedules.view_grouped },
-    { value: 'timeline', label: t.schedules.view_timeline },
     { value: 'calendar', label: t.schedules.view_calendar, icon: true },
   ];
   const tablistRef = useRef<HTMLDivElement>(null);

@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Pause, Play, Radio, SkipBack, SkipForward } from 'lucide-react';
+import { Loader2, Pause, Play, Radio, SkipBack, SkipForward, Volume1, Volume2, VolumeX } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
+import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
 import type { PlayStatus } from '@/lib/bindings/PlayStatus';
 import { useRadioState } from '../hooks/useRadioState';
+import { somafmSlugForStation, useSomafmMetadata } from '../hooks/useSomafmMetadata';
 import { useYouTubePlayer } from '../hooks/useYouTubePlayer';
 import {
   radioNext,
@@ -13,9 +15,13 @@ import {
   radioPrev,
   radioReportStatus,
   radioSetStation,
+  radioSetVolume,
   radioTrackEnded,
 } from '../api/radioApi';
+import NowPlayingCard from './NowPlayingCard';
 import StationPicker from './StationPicker';
+import TitleCrossfade from './TitleCrossfade';
+import VolumePopover from './VolumePopover';
 
 /**
  * Time we give either engine to reach `playing` state after a play/load.
@@ -24,6 +30,21 @@ import StationPicker from './StationPicker';
  * the station.
  */
 const PLAYBACK_WATCHDOG_MS = 8000;
+
+/** Poll interval for YouTube `getCurrentTime` — drives the progress bar. */
+const PROGRESS_POLL_MS = 1000;
+/** Persist position to backend every Nth progress tick. */
+const POSITION_REPORT_EVERY_N_TICKS = 5;
+/** How long the crossfade runs on either side of a natural track-end. */
+const CROSSFADE_DURATION_MS = 1500;
+/** Trigger the fade-out when the current track has this many seconds left. */
+const CROSSFADE_TRIGGER_BEFORE_END_SEC = 1.6;
+
+function formatTime(sec: number): string {
+  const m = Math.floor(sec / 60);
+  const s = Math.max(0, Math.floor(sec % 60));
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
 
 /** YT IFrame Player state codes. */
 const YT_STATE = {
@@ -71,7 +92,16 @@ function isValidYouTubeVideoId(videoId: string): boolean {
 export default function RadioFooter() {
   const { t, tx } = useTranslation();
   const { state, nowPlaying, stations, loaded } = useRadioState();
+  const autoResume = useSystemStore((s) => s.radioAutoResume);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [volumeOpen, setVolumeOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  /**
+   * Auto-resume fires exactly once per mount, after the initial radio
+   * state has loaded. The ref prevents the effect from refiring if the
+   * deps change later (e.g. station catalog update).
+   */
+  const autoResumedRef = useRef<boolean>(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const ytHostRef = useRef<HTMLDivElement | null>(null);
@@ -79,10 +109,50 @@ export default function RadioFooter() {
   const lastReportedRef = useRef<PlayStatus>('stopped');
   const currentStreamUrlRef = useRef<string | null>(null);
   const currentVideoIdRef = useRef<string | null>(null);
+  /**
+   * Last non-zero volume the user picked. Mute restores from here so
+   * toggling unmute returns to where the user was — not the default 0.7.
+   */
+  const lastNonZeroVolumeRef = useRef<number>(0.7);
+  /** Current/total seconds for the YouTube progress bar; null when N/A. */
+  const [progress, setProgress] = useState<{ currentSec: number; durationSec: number } | null>(null);
+  /**
+   * Crossfade plumbing. `crossfadingRef` flips on for the duration of an
+   * animated volume change so the volume-sync useEffect doesn't slap the
+   * player back to `state.volume` mid-fade. `fadeRafRef` holds the in-
+   * flight rAF id; `fadedOutVideoIdRef` remembers which track we've
+   * already started the end-of-track fade for so the trigger fires once
+   * per track rather than every progress poll.
+   */
+  const crossfadingRef = useRef<boolean>(false);
+  const fadeRafRef = useRef<number | null>(null);
+  const fadedOutVideoIdRef = useRef<string | null>(null);
+  /**
+   * Session blacklist of YouTube video IDs that have failed this run —
+   * either via a fatal onError (100/101/150/etc.) or via the silent-stall
+   * watchdog. The engine-sync useEffect checks this set before issuing
+   * `player.loadVideo` and short-circuits to `radioTrackEnded` if the
+   * incoming id is already known-broken, sparing the user another
+   * "unavailable" toast on every shuffle wrap.
+   *
+   * `skipBudgetRef` caps consecutive blacklist-skips so an entirely
+   * broken station can't loop forever — it resets on station change
+   * and on every successful PLAYING state.
+   */
+  const failedVideoIdsRef = useRef<Set<string>>(new Set());
+  const skipBudgetRef = useRef<number>(0);
+  const stationTrackCountRef = useRef<number>(0);
 
   const stationKind = nowPlaying?.station.source.kind ?? null;
   const isStream = stationKind === 'stream';
   const isYoutube = stationKind === 'youtubeTracks';
+
+  const somafmSlug = somafmSlugForStation(
+    stationKind,
+    nowPlaying?.station.sourceLabel ?? null,
+    nowPlaying?.station.slug ?? null,
+  );
+  const streamMetadata = useSomafmMetadata(somafmSlug);
 
   const reportStatus = useCallback((status: PlayStatus, positionSec: number | null = null) => {
     if (lastReportedRef.current === status && positionSec === null) return;
@@ -124,6 +194,9 @@ export default function RadioFooter() {
       if (code === YT_STATE.PLAYING) {
         cancelWatchdog();
         reportStatus('playing');
+        // Successful play replenishes the skip budget — a later run of
+        // bad tracks can be skipped again without giving up early.
+        skipBudgetRef.current = stationTrackCountRef.current;
       } else if (code === YT_STATE.PAUSED) {
         if (lastReportedRef.current !== 'stopped') reportStatus('paused');
       } else if (code === YT_STATE.BUFFERING) {
@@ -141,6 +214,10 @@ export default function RadioFooter() {
     (code: number) => {
       cancelWatchdog();
       if (isFatalYouTubeError(code)) {
+        // Remember this videoId as broken for the rest of the session
+        // so the next shuffle wrap doesn't put us through the same toast.
+        const failedId = currentVideoIdRef.current;
+        if (failedId) failedVideoIdsRef.current.add(failedId);
         // Skip past the unplayable track. Toast only if the next track
         // also fails — the watchdog covers that.
         radioTrackEnded().catch(silentCatch('radio:track-ended'));
@@ -238,6 +315,17 @@ export default function RadioFooter() {
         return;
       }
 
+      // Session blacklist: silently skip known-broken videos until the
+      // budget runs out. The budget caps at the station's track count
+      // so an entirely-broken station can't infinitely loop — once we
+      // exhaust the budget, the next bad track plays normally and the
+      // existing toast/watchdog path surfaces the failure.
+      if (failedVideoIdsRef.current.has(videoId) && skipBudgetRef.current > 0) {
+        skipBudgetRef.current -= 1;
+        radioTrackEnded().catch(silentCatch('radio:track-ended-blacklisted'));
+        return;
+      }
+
       const startSeconds =
         (state?.currentStationId &&
           state.stationCursors?.[state.currentStationId]?.positionSec) || 0;
@@ -245,7 +333,11 @@ export default function RadioFooter() {
       if (desiredPlaying) {
         armWatchdog(nowPlaying.station.name, () => {
           // Most "embed disabled" tracks would have fired onError already;
-          // this watchdog handles the silent-stall variant by skipping.
+          // this watchdog handles the silent-stall variant by blacklisting
+          // the videoId + skipping. Without the blacklist add, the next
+          // wrap of the shuffle would silently stall on the same track.
+          const stalledId = currentVideoIdRef.current;
+          if (stalledId) failedVideoIdsRef.current.add(stalledId);
           radioTrackEnded().catch(silentCatch('radio:track-ended'));
         });
       }
@@ -260,16 +352,150 @@ export default function RadioFooter() {
     }
   }, [isYoutube, nowPlaying, state?.status, state?.stationCursors, state?.currentStationId, ytHandle, armWatchdog, cancelWatchdog]);
 
-  // Volume sync (both engines).
+  // Volume sync (both engines). Skip the YT player path during a
+  // crossfade animation so the rAF loop owns volume exclusively until
+  // the fade lands on its target.
   useEffect(() => {
     if (!state) return;
     if (audioRef.current && Math.abs(audioRef.current.volume - state.volume) > 0.01) {
       audioRef.current.volume = state.volume;
     }
-    ytHandle.current?.setVolume(state.volume);
+    if (!crossfadingRef.current) {
+      ytHandle.current?.setVolume(state.volume);
+    }
   }, [state?.volume, state, ytHandle]);
 
+  // Animate the YouTube player volume between two values over a duration.
+  // Used by the end-of-track fade-out and start-of-next fade-in, so the
+  // shuffled tracklist sounds continuous instead of hard-cutting between
+  // every song. Eased in-out so the transition feels natural to the ear.
+  const animateYtVolume = useCallback(
+    (from: number, to: number, durationMs: number) => {
+      const player = ytHandle.current;
+      if (!player) return;
+      if (fadeRafRef.current !== null) {
+        window.cancelAnimationFrame(fadeRafRef.current);
+      }
+      crossfadingRef.current = true;
+      const start = performance.now();
+      const step = (now: number) => {
+        const linearT = Math.min(1, (now - start) / durationMs);
+        const eased = linearT < 0.5
+          ? 2 * linearT * linearT
+          : 1 - Math.pow(-2 * linearT + 2, 2) / 2;
+        const v = from + (to - from) * eased;
+        player.setVolume(v);
+        if (linearT < 1) {
+          fadeRafRef.current = window.requestAnimationFrame(step);
+        } else {
+          fadeRafRef.current = null;
+          crossfadingRef.current = false;
+        }
+      };
+      fadeRafRef.current = window.requestAnimationFrame(step);
+    },
+    [ytHandle],
+  );
+
+  // Trigger the end-of-track fade-out as currentSec nears durationSec.
+  // We use a `fadedOutVideoIdRef` so this runs at most once per track:
+  // every subsequent progress poll inside the trigger window is a no-op.
+  useEffect(() => {
+    if (!isYoutube) return;
+    if (!progress || progress.durationSec <= 0) return;
+    if (state?.status !== 'playing') return;
+    const videoId = nowPlaying?.track?.videoId ?? null;
+    if (!videoId || fadedOutVideoIdRef.current === videoId) return;
+    const remaining = progress.durationSec - progress.currentSec;
+    if (remaining > 0 && remaining <= CROSSFADE_TRIGGER_BEFORE_END_SEC) {
+      fadedOutVideoIdRef.current = videoId;
+      animateYtVolume(state?.volume ?? 0.7, 0, CROSSFADE_DURATION_MS);
+    }
+  }, [isYoutube, progress, state?.status, state?.volume, nowPlaying?.track?.videoId, animateYtVolume]);
+
+  // Fade the new track in from 0 once it loads, but only if the prior
+  // track was actually faded out (so the user's first play of the day
+  // doesn't start from silence).
+  useEffect(() => {
+    if (!isYoutube) return;
+    const videoId = nowPlaying?.track?.videoId ?? null;
+    if (!videoId) return;
+    if (fadedOutVideoIdRef.current && fadedOutVideoIdRef.current !== videoId) {
+      animateYtVolume(0, state?.volume ?? 0.7, CROSSFADE_DURATION_MS);
+      fadedOutVideoIdRef.current = null;
+    }
+  }, [isYoutube, nowPlaying?.track?.videoId, state?.volume, animateYtVolume]);
+
+  // Cancel any in-flight crossfade on unmount.
+  useEffect(
+    () => () => {
+      if (fadeRafRef.current !== null) {
+        window.cancelAnimationFrame(fadeRafRef.current);
+        fadeRafRef.current = null;
+      }
+      crossfadingRef.current = false;
+    },
+    [],
+  );
+
   useEffect(() => () => cancelWatchdog(), [cancelWatchdog]);
+
+  // Auto-resume the persisted station once, on first mount after load.
+  // Only fires if (a) the user opted in via the settings toggle,
+  // (b) there's a persisted current station, and (c) it wasn't already
+  // playing (status === 'stopped' means the prior session was paused
+  // when the app closed — and "paused" carries over via persistence).
+  useEffect(() => {
+    if (autoResumedRef.current) return;
+    if (!loaded || !autoResume || !state) return;
+    if (!state.currentStationId) return;
+    if (state.status === 'playing' || state.status === 'buffering') return;
+    autoResumedRef.current = true;
+    radioPlay().catch(silentCatch('radio:auto-resume'));
+  }, [loaded, autoResume, state]);
+
+  // Reset progress bar whenever the current track or station changes.
+  useEffect(() => {
+    setProgress(null);
+  }, [nowPlaying?.track?.videoId, nowPlaying?.station.id]);
+
+  // Track count + skip budget reset on station change. The budget caps
+  // consecutive blacklist-skips; resetting here lets a new station's
+  // bad tracks be skipped fully even if the previous station exhausted
+  // its budget.
+  useEffect(() => {
+    const tracks =
+      nowPlaying?.station.source.kind === 'youtubeTracks'
+        ? nowPlaying.station.source.tracks
+        : null;
+    stationTrackCountRef.current = tracks?.length ?? 0;
+    skipBudgetRef.current = stationTrackCountRef.current;
+  }, [nowPlaying?.station.id]);
+
+  // Poll the YouTube player for current time + duration while playing.
+  // Every Nth tick also reports the position to the backend so the
+  // station cursor resumes mid-track across restarts.
+  useEffect(() => {
+    if (!isYoutube || state?.status !== 'playing') return;
+    let tick = 0;
+    const id = window.setInterval(() => {
+      const player = ytHandle.current;
+      if (!player) return;
+      const currentSec = player.getCurrentTime();
+      const durationSec = player.getDuration();
+      if (durationSec > 0) {
+        setProgress({
+          currentSec: Math.round(currentSec),
+          durationSec: Math.round(durationSec),
+        });
+      }
+      tick += 1;
+      if (tick % POSITION_REPORT_EVERY_N_TICKS === 0) {
+        reportStatus('playing', Math.round(currentSec));
+      }
+    }, PROGRESS_POLL_MS);
+    return () => window.clearInterval(id);
+  }, [isYoutube, state?.status, ytHandle, reportStatus]);
 
   // ---------------------------------------------------------------------
   // Render.
@@ -277,6 +503,7 @@ export default function RadioFooter() {
 
   const status = state?.status ?? 'stopped';
   const isPlayingNow = status === 'playing' || status === 'buffering';
+  const isBuffering = status === 'buffering';
   const accent = nowPlaying?.station.accentColor ?? '#666';
 
   const togglePlay = () => {
@@ -294,6 +521,20 @@ export default function RadioFooter() {
     setPickerOpen(false);
     radioSetStation(id).catch(silentCatch('radio:footer'));
   };
+
+  const currentVolume = state?.volume ?? 0.7;
+  const muted = currentVolume <= 0.001;
+  // Keep the restore-target fresh whenever the user holds the slider above 0.
+  if (currentVolume > 0.001) lastNonZeroVolumeRef.current = currentVolume;
+
+  const onVolumeChange = (v: number) => {
+    radioSetVolume(v).catch(silentCatch('radio:set-volume'));
+  };
+  const onMuteToggle = () => {
+    const next = muted ? lastNonZeroVolumeRef.current || 0.7 : 0;
+    radioSetVolume(next).catch(silentCatch('radio:mute'));
+  };
+  const VolumeIcon = muted ? VolumeX : currentVolume < 0.5 ? Volume1 : Volume2;
 
   const onAudioPlaying = () => {
     cancelWatchdog();
@@ -313,8 +554,9 @@ export default function RadioFooter() {
   const titleLine = useMemo(() => {
     if (!nowPlaying) return t.radio.idle_title;
     if (nowPlaying.track) return `${nowPlaying.track.artist} — ${nowPlaying.track.title}`;
+    if (streamMetadata) return `${streamMetadata.artist} — ${streamMetadata.title}`;
     return nowPlaying.station.name;
-  }, [nowPlaying, t]);
+  }, [nowPlaying, streamMetadata, t]);
 
   // Off-screen host for the YouTube player. 200×200 stays above YT's
   // minimum playable size; positioning takes it off the visible canvas.
@@ -366,9 +608,15 @@ export default function RadioFooter() {
         onClick={togglePlay}
         className="w-7 h-7 rounded-interactive flex items-center justify-center text-foreground hover:bg-secondary/50 transition-colors"
         aria-label={isPlayingNow ? t.radio.pause : t.radio.play}
-        title={isPlayingNow ? t.radio.pause : t.radio.play}
+        title={isBuffering ? t.radio.buffering : isPlayingNow ? t.radio.pause : t.radio.play}
       >
-        {isPlayingNow ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+        {isBuffering ? (
+          <Loader2 className="w-4 h-4 animate-spin" style={{ color: accent }} />
+        ) : isPlayingNow ? (
+          <Pause className="w-4 h-4" />
+        ) : (
+          <Play className="w-4 h-4" />
+        )}
       </button>
       <button
         type="button"
@@ -381,22 +629,84 @@ export default function RadioFooter() {
         <SkipForward className="w-3.5 h-3.5" />
       </button>
 
-      <div className="flex items-center gap-1.5 max-w-[260px] min-w-0 ml-1">
-        <span
-          aria-hidden
-          className="w-1.5 h-1.5 rounded-full shrink-0"
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setVolumeOpen((v) => !v)}
+          className="w-6 h-6 rounded-interactive flex items-center justify-center text-foreground/80 hover:bg-secondary/40 transition-colors"
+          aria-label={t.radio.volume_button}
+          title={t.radio.volume_button}
+          aria-expanded={volumeOpen}
+        >
+          <VolumeIcon className="w-3.5 h-3.5" />
+        </button>
+        {volumeOpen && (
+          <VolumePopover
+            volume={currentVolume}
+            accentColor={accent}
+            onChange={onVolumeChange}
+            onMuteToggle={onMuteToggle}
+            onClose={() => setVolumeOpen(false)}
+          />
+        )}
+      </div>
+
+      <div className="relative flex items-center gap-1.5 max-w-[260px] min-w-0 ml-1">
+        <button
+          type="button"
+          onClick={() => setDetailsOpen((v) => !v)}
+          className={`w-1.5 h-1.5 rounded-full shrink-0 cursor-pointer hover:scale-150 transition-transform ${
+            isBuffering ? 'animate-pulse' : ''
+          }`}
           style={{
             background: accent,
-            boxShadow: isPlayingNow ? `0 0 6px ${accent}` : 'none',
-            transition: 'box-shadow 200ms',
+            boxShadow: status === 'playing' ? `0 0 6px ${accent}` : 'none',
           }}
+          aria-label={t.radio.expand_button}
+          title={t.radio.expand_button}
         />
-        <span
-          className="typo-caption text-foreground/85 truncate"
-          title={titleLine}
+        <button
+          type="button"
+          onClick={() => setDetailsOpen((v) => !v)}
+          className="relative typo-caption text-foreground/85 hover:text-foreground text-left transition-colors min-w-0 flex-1"
+          title={t.radio.expand_button}
+          aria-label={t.radio.expand_button}
+          aria-expanded={detailsOpen}
         >
-          {titleLine}
-        </span>
+          <TitleCrossfade text={titleLine} />
+        </button>
+        {isYoutube && progress && progress.durationSec > 0 && (
+          <div
+            aria-hidden
+            className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full bg-foreground/10 overflow-hidden"
+            title={tx(t.radio.progress_label, {
+              current: formatTime(progress.currentSec),
+              total: formatTime(progress.durationSec),
+            })}
+          >
+            <div
+              className="h-full transition-[width] duration-1000 ease-linear"
+              style={{
+                width: `${Math.min(100, (progress.currentSec / progress.durationSec) * 100)}%`,
+                background: accent,
+              }}
+            />
+          </div>
+        )}
+        {detailsOpen && nowPlaying && (
+          <NowPlayingCard
+            nowPlaying={nowPlaying}
+            status={status}
+            isYoutube={isYoutube}
+            progress={progress}
+            currentTrackIndex={nowPlaying.trackIndexInStation ?? null}
+            streamMetadata={streamMetadata}
+            onTogglePlay={togglePlay}
+            onPrev={onPrev}
+            onNext={onNext}
+            onClose={() => setDetailsOpen(false)}
+          />
+        )}
       </div>
 
       <div className="relative">

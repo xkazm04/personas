@@ -508,7 +508,7 @@
     "no_tools_warning": "Tato persona nemá přiřazené žádné nástroje. Přidejte je pro bohatší testování.",
     "add_prompt_first": "Nejdříve přidejte prompt k této personě",
     "select_model": "Vyberte alespoň jeden model",
-    "run_arena": "Spustit arénu ({count} model(y/ů))",
+    "run_arena": "Run Arena ({count} model{count, plural, one {} other {s}})",
     "cancel_test": "Zrušit test",
     "focus_use_case": "Zaměřit se na případ užití",
     "describe_changes": "Popište požadované změny",
@@ -909,7 +909,7 @@
     "auto_event_type": "Typ události: {eventType}",
     "auto_zapier_hint": "Catch hook bude ověřen a připojen.",
     "auto_custom_hint": "Vyžadováno manuální nastavení. Automatizace bude uložena jako návrh.",
-    "auto_input_schema_placeholder": "řetězec",
+    "auto_input_schema_placeholder": "{ \"file_url\": \"string\" }",
     "auto_github_token_needs": "Tvůj token potřebuje scope {scopes}. Aktualizuj token na github.com/settings/tokens.",
     "auto_fallback_title": "Při selhání se přepne na přímý konektor",
     "ch_title": "Kanály oznámení",
@@ -2074,7 +2074,7 @@
     "success": "Úspěch",
     "failed": "Selhalo",
     "error": "Chyba",
-    "input_json_placeholder": "hodnota",
+    "input_json_placeholder": "{ \"key\": \"value\" }",
     "invalid_json": "Invalid JSON — fix before running."
   },
   "health_check": {

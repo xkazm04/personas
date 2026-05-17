@@ -614,7 +614,7 @@
   "composite_event_type_placeholder": "ex. order.placed",
   "composite_debounce_placeholder": "ex. 5000",
   "file_watcher_path_placeholder": "ex. /chemin/vers/dossier",
-  "file_watcher_pattern_placeholder": "ex. *.json",
+  "file_watcher_pattern_placeholder": "par ex. *.py, *.{ts,tsx}, Dockerfile",
   "polling_endpoint_placeholder": "ex. https://api.example.com/status",
   "more_tools_title": "Plus d'outils",
   "validate_and_fire_title": "Valider et déclencher",

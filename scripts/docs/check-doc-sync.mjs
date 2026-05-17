@@ -1,18 +1,33 @@
 #!/usr/bin/env node
-// Stop hook: nudge Claude to update docs/features when feature/command source
-// changed in this turn but no matching feature doc was edited.
+// Stop hook: nudge Claude when feature/command source changed in this turn
+// but its coupled documentation surfaces were not all updated.
+//
+// Three target types per entry in scripts/docs/feature-doc-map.json — all
+// independently checked, all exit-2 nags on miss:
+//   1. `doc`                — feature doc in docs/features/. Satisfied by
+//                             editing any file under docs/features/ in the
+//                             same turn.
+//   2. `onboardingFlows`    — tour-flow IDs from the onboardingFlows registry.
+//                             Satisfied by editing any src/features/onboarding/**
+//                             file in the same turn.
+//   3. `marketingModule`    — desktop-modules.ts module ID. Satisfied by
+//                             editing any file under ../personas-web/ (cross-
+//                             repo sibling checkout) in the same turn, OR by
+//                             dismissing as internal-only. This used to be an
+//                             informational breadcrumb with a weekly safety
+//                             net; the safety net was removed in favor of
+//                             per-session gap-prevention (CLAUDE.md
+//                             "Documentation Sync"). Dismiss noise is the
+//                             explicit trade-off.
 //
 // Triggered by .claude/settings.json -> hooks.Stop.
 // Reads JSONL transcript at $payload.transcript_path, scans the most recent
-// assistant turn for Edit/Write/MultiEdit tool calls, and matches edited paths
-// against scripts/docs/feature-doc-map.json. If user-visible feature source
-// was touched without any docs/features/ edit, exits 2 with a reminder so
-// Claude addresses it before stopping.
+// assistant turn for Edit/Write/MultiEdit/NotebookEdit tool calls, and matches
+// edited paths against the map. Honors `stop_hook_active` to avoid loops.
 //
 // Dismiss path: if the change is internal-only (refactor, generated code,
-// no behavior shift), Claude is instructed to reply with one short sentence
-// acknowledging "internal-only, no doc update needed" and stop. The hook
-// honors `stop_hook_active` to avoid infinite re-trigger loops.
+// no behavior shift), Claude replies with one short sentence acknowledging
+// "internal-only, no doc update needed" and stops.
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -96,16 +111,20 @@ function collectEditedFilesFromTranscript(transcriptPath) {
 
 function main() {
   const payload = safeJson(readStdin()) || {};
-  // Don't loop on ourselves
   if (payload.stop_hook_active) process.exit(0);
 
   const edited = collectEditedFilesFromTranscript(payload.transcript_path);
   if (edited.size === 0) process.exit(0);
 
-  const docsTouched = [...edited].some((f) => f.startsWith('docs/features/'));
-  if (docsTouched) process.exit(0);
+  const editedArr = [...edited];
+  const docsTouched = editedArr.some((f) => f.startsWith('docs/features/'));
+  const onboardingTouched = editedArr.some((f) => f.startsWith('src/features/onboarding/'));
+  // Cross-repo sibling: ../personas-web/ from this checkout. normalize() emits
+  // paths relative to REPO_ROOT, so personas-web edits show up with a leading
+  // ".." segment.
+  const personasWebTouched = editedArr.some((f) => f.startsWith('../personas-web/') || f.includes('/personas-web/'));
 
-  const meaningful = [...edited].filter((f) => !SKIP_PATTERNS.some((re) => re.test(f)));
+  const meaningful = editedArr.filter((f) => !SKIP_PATTERNS.some((re) => re.test(f)));
   if (meaningful.length === 0) process.exit(0);
 
   let map;
@@ -115,38 +134,103 @@ function main() {
     process.exit(0);
   }
 
+  const onboardingFlows = map.onboardingFlows || {};
   const compiled = (map.entries || []).map((entry) => ({
     doc: entry.doc,
+    onboardingFlows: entry.onboardingFlows || [],
+    marketingModule: entry.marketingModule || null,
     matchers: (entry.sourceGlobs || []).map(compileGlob),
   }));
 
-  const hits = new Map();
+  const docHits = new Map();           // doc path -> [files that triggered it]
+  const onboardingHits = new Map();    // flow id -> [files that triggered it]
+  const marketingHits = new Map();     // module id -> [docs whose entries pointed here]
+
   for (const f of meaningful) {
     for (const entry of compiled) {
-      if (entry.matchers.some((re) => re.test(f))) {
-        if (!hits.has(entry.doc)) hits.set(entry.doc, []);
-        hits.get(entry.doc).push(f);
+      if (!entry.matchers.some((re) => re.test(f))) continue;
+
+      if (entry.doc) {
+        if (!docHits.has(entry.doc)) docHits.set(entry.doc, []);
+        docHits.get(entry.doc).push(f);
+      }
+      for (const flowId of entry.onboardingFlows) {
+        if (!onboardingHits.has(flowId)) onboardingHits.set(flowId, []);
+        onboardingHits.get(flowId).push(f);
+      }
+      if (entry.marketingModule) {
+        if (!marketingHits.has(entry.marketingModule)) marketingHits.set(entry.marketingModule, []);
+        marketingHits.get(entry.marketingModule).push(entry.doc);
       }
     }
   }
 
-  if (hits.size === 0) process.exit(0);
+  const featureDocMissing = !docsTouched && docHits.size > 0;
+  const onboardingMissing = !onboardingTouched && onboardingHits.size > 0;
+  const marketingMissing = !personasWebTouched && marketingHits.size > 0;
 
-  const summary = [...hits.entries()]
-    .map(([doc, files]) => {
-      const head = files.slice(0, 4).join(', ');
-      const tail = files.length > 4 ? ` (+${files.length - 4} more)` : '';
-      return `  - ${doc} <- ${head}${tail}`;
-    })
-    .join('\n');
+  if (!featureDocMissing && !onboardingMissing && !marketingMissing) process.exit(0);
 
-  const message =
-    `Doc-sync reminder: this turn edited feature/command source but no docs/features/* was touched.\n\n` +
-    `Mapped feature doc(s) likely affected:\n${summary}\n\n` +
-    `If the change is user-visible (new tab/page/command, changed flow, removed feature, ` +
-    `new event, schema migration that surfaces in UI), update the matching doc(s) above.\n\n` +
-    `If the change is internal-only (pure refactor, bugfix with no behavior shift, generated ` +
-    `code, test-only), reply with one short sentence acknowledging "internal-only, no doc update needed" and stop.\n`;
+  const sections = [];
+
+  if (featureDocMissing) {
+    const summary = [...docHits.entries()]
+      .map(([doc, files]) => {
+        const head = files.slice(0, 4).join(', ');
+        const tail = files.length > 4 ? ` (+${files.length - 4} more)` : '';
+        return `  - ${doc} <- ${head}${tail}`;
+      })
+      .join('\n');
+    sections.push(
+      `Doc-sync reminder: this turn edited feature/command source but no docs/features/* was touched.\n\n` +
+      `Mapped feature doc(s) likely affected:\n${summary}`,
+    );
+  }
+
+  if (onboardingMissing) {
+    const flowLines = [...onboardingHits.entries()]
+      .map(([flowId, files]) => {
+        const flow = onboardingFlows[flowId] || {};
+        const stepRef = flow.stepFile ? ` (step: ${flow.stepFile})` : '';
+        const desc = flow.description ? ` — ${flow.description}` : '';
+        const head = files.slice(0, 3).join(', ');
+        const tail = files.length > 3 ? ` (+${files.length - 3} more)` : '';
+        return `  - ${flowId}${stepRef}${desc}\n    triggered by: ${head}${tail}`;
+      })
+      .join('\n');
+    sections.push(
+      `Onboarding-tour reminder: this turn edited source coupled to one or more tour flows, ` +
+      `but no src/features/onboarding/** file was touched.\n\n` +
+      `Tour flow(s) likely affected:\n${flowLines}\n\n` +
+      `If the user-visible flow this tour walks through changed (sidebar nav, modal copy, ` +
+      `step ordering, anchor element renamed), re-walk the tour and update the step file(s) ` +
+      `+ tourSlice config. If the change is internal (refactor without UI shift), dismiss with ` +
+      `"internal-only, no tour update needed".`,
+    );
+  }
+
+  if (marketingMissing) {
+    const modLines = [...marketingHits.entries()]
+      .map(([mod, docs]) => {
+        const uniqDocs = [...new Set(docs.filter(Boolean))].slice(0, 3).join(', ');
+        return `  - module "${mod}" (related desktop docs: ${uniqDocs || 'unmapped'})`;
+      })
+      .join('\n');
+    sections.push(
+      `Marketing-guide reminder: this turn edited source coupled to a marketing-site ` +
+      `guide module, but no ../personas-web/ file was touched.\n\n` +
+      `Marketing module(s) likely affected:\n${modLines}\n\n` +
+      `Per CLAUDE.md "Documentation Sync — three surfaces": prevent gaps per-session, ` +
+      `not via weekly batch. Resolve by one of: (a) edit the affected guide at ` +
+      `../personas-web/src/data/guide/content/<category>.ts in this session, (b) invoke ` +
+      `/guide-sync to do a full pass now, or (c) dismiss with "no marketing impact, ` +
+      `internal change only" if this is a refactor that doesn't shift anything visible at ` +
+      `the marketing-guide level of abstraction.`,
+    );
+  }
+
+  const message = sections.join('\n\n---\n\n') +
+    `\n\nDismiss path: reply with one short sentence — e.g. "internal-only, no doc/tour/marketing update needed" — and stop.\n`;
 
   process.stderr.write(message);
   process.exit(2);

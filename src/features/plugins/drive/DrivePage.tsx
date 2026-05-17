@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { HardDrive, Upload } from "lucide-react";
+import { Copy, HardDrive, Scissors, Trash2, Upload, X } from "lucide-react";
 
 import { ContentBox, ContentHeader } from "@/features/shared/components/layout/ContentLayout";
 import { useTranslation } from "@/i18n/useTranslation";
@@ -13,6 +13,11 @@ import {
 import { silentCatch, toastCatch } from "@/lib/silentCatch";
 import { useToastStore } from "@/stores/toastStore";
 
+import {
+  kindBucketWeight,
+  kindGroupLabel,
+  visualForEntry,
+} from "./designTokens";
 import { useDrive } from "./hooks/useDrive";
 import { DriveToolbar } from "./components/DriveToolbar";
 import { DriveSidebar } from "./components/DriveSidebar";
@@ -22,7 +27,8 @@ import {
   DriveContextMenu,
   type ContextMenuState,
 } from "./components/DriveContextMenu";
-import { DriveTextPrompt, DriveConfirm } from "./components/DrivePrompt";
+import { DriveImageLightbox } from "./components/DriveImageLightbox";
+import { DriveConfirm } from "./components/DrivePrompt";
 import { useSigning } from "./signing/useSigning";
 import { DriveSignDialog } from "./signing/DriveSignDialog";
 import { DriveVerifyDialog } from "./signing/DriveVerifyDialog";
@@ -30,10 +36,10 @@ import { DriveSignaturesPanel } from "./signing/DriveSignaturesPanel";
 import { useOcr } from "./ocr/useOcr";
 import { DriveOcrDrawer } from "./ocr/DriveOcrDrawer";
 
+// Only the delete confirmation still uses a real modal — create + rename
+// went inline in cycles 9/10/24/27. Keeping the discriminated-union shape
+// in case a future dialog kind needs it.
 type Dialog =
-  | { kind: "new_folder" }
-  | { kind: "new_file" }
-  | { kind: "rename"; entry: DriveEntry }
   | { kind: "delete"; paths: string[] }
   | null;
 
@@ -57,6 +63,78 @@ export default function DrivePage() {
 
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const [dialog, setDialog] = useState<Dialog>(null);
+  const [pathEditing, setPathEditing] = useState(false);
+  const [lightboxPath, setLightboxPath] = useState<string | null>(null);
+  // Path currently being inline-renamed. Null when no rename in flight.
+  const [inlineRenamingPath, setInlineRenamingPath] = useState<string | null>(null);
+  // Inline create — when set, the list view renders a phantom row at the
+  // top with an empty inline input. Icons / columns fall back to modal.
+  const [pendingCreate, setPendingCreate] = useState<"folder" | "file" | null>(null);
+  // Count of entries currently being dragged inside the drive (null when
+  // no drag is in flight). Used to light up every valid drop target
+  // (file-list folder rows + sidebar tree nodes) so the user has a map
+  // of where the gesture can land instead of having to discover targets
+  // by hovering.
+  const [activeDragCount, setActiveDragCount] = useState<number | null>(null);
+  const handleDragSelectionStart = useCallback((count: number) => {
+    setActiveDragCount(count);
+  }, []);
+  const handleDragSelectionEnd = useCallback(() => {
+    setActiveDragCount(null);
+  }, []);
+
+  const requestRename = useCallback(
+    (entry: DriveEntry) => {
+      // All three views now have a stable text slot to swap with the
+      // inline input — list cells, icons-view labels, and Miller-column
+      // rows. The modal fallback is kept only as a defensive default if
+      // a future view mode lands without an inline wiring.
+      setInlineRenamingPath(entry.path);
+    },
+    [],
+  );
+
+  // Inline-create works in every view now (phantom row in list / columns,
+  // phantom tile in icons), so no modal fallback is needed.
+  const requestNewFolder = useCallback(() => {
+    setPendingCreate("folder");
+  }, []);
+
+  const requestNewFile = useCallback(() => {
+    setPendingCreate("file");
+  }, []);
+
+  const commitPendingCreate = useCallback(
+    async (name: string) => {
+      const kind = pendingCreate;
+      setPendingCreate(null);
+      const trimmed = name.trim();
+      if (!trimmed || !kind) return;
+      if (kind === "folder") await drive.createFolder(trimmed);
+      else await drive.createFile(trimmed);
+    },
+    [pendingCreate, drive],
+  );
+
+  const cancelPendingCreate = useCallback(() => {
+    setPendingCreate(null);
+  }, []);
+
+  const commitInlineRename = useCallback(
+    async (path: string, newName: string) => {
+      setInlineRenamingPath(null);
+      const trimmed = newName.trim();
+      if (!trimmed) return;
+      const current = drive.visibleEntries.find((e) => e.path === path);
+      if (current && current.name === trimmed) return; // no-op
+      await drive.rename(path, trimmed);
+    },
+    [drive],
+  );
+
+  const cancelInlineRename = useCallback(() => {
+    setInlineRenamingPath(null);
+  }, []);
   const [signEntry, setSignEntry] = useState<DriveEntry | null>(null);
   const [verifyEntry, setVerifyEntry] = useState<DriveEntry | null>(null);
   const [ocrEntry, setOcrEntry] = useState<DriveEntry | null>(null);
@@ -122,6 +200,24 @@ export default function DrivePage() {
         drv.selectAll();
         return;
       }
+      if (mod && e.key.toLowerCase() === "l") {
+        e.preventDefault();
+        setPathEditing(true);
+        return;
+      }
+      // Ctrl+1..5 jumps to the Nth Recent-rail entry — navigates to its
+      // parent and selects it, mirroring the rail row's onClick.
+      if (mod && /^[1-5]$/.test(e.key)) {
+        const idx = parseInt(e.key, 10) - 1;
+        const entry = drv.recent[idx];
+        if (entry) {
+          e.preventDefault();
+          const parent = driveParentPath(entry.path);
+          drv.navigate(parent);
+          queueMicrotask(() => drv.selectOnly(entry.path));
+        }
+        return;
+      }
       if (mod && e.key.toLowerCase() === "c") {
         e.preventDefault();
         drv.copySelection();
@@ -149,7 +245,7 @@ export default function DrivePage() {
         const entry = drv.visibleEntries.find((ent) => ent.path === first);
         if (entry) {
           e.preventDefault();
-          setDialog({ kind: "rename", entry });
+          setInlineRenamingPath(entry.path);
         }
         return;
       }
@@ -225,22 +321,11 @@ export default function DrivePage() {
     driveRevealInOs(entry.path).catch(toastCatch("drive:reveal"));
   }, []);
 
-  const confirmDialog = useCallback(
-    async (value?: string) => {
-      if (!dialog) return;
-      if (dialog.kind === "new_folder" && value) {
-        await drive.createFolder(value);
-      } else if (dialog.kind === "new_file" && value) {
-        await drive.createFile(value);
-      } else if (dialog.kind === "rename" && value) {
-        await drive.rename(dialog.entry.path, value);
-      } else if (dialog.kind === "delete") {
-        await drive.remove(dialog.paths);
-      }
-      setDialog(null);
-    },
-    [dialog, drive],
-  );
+  const confirmDelete = useCallback(async () => {
+    if (dialog?.kind !== "delete") return;
+    await drive.remove(dialog.paths);
+    setDialog(null);
+  }, [dialog, drive]);
 
   // ---------------------------------------------------------------------
   // OS → Drive drag-drop
@@ -322,9 +407,35 @@ export default function DrivePage() {
   // ---------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------
-  const statusLine = drive.selection.size > 0
-    ? tx(t.plugins.drive.items_selected, { count: drive.selection.size })
-    : tx(t.plugins.drive.items_total, { count: drive.visibleEntries.length });
+  const selectionCount = drive.selection.size;
+  const hasSelection = selectionCount > 0;
+  const requestDeleteSelection = useCallback(() => {
+    if (drive.selection.size === 0) return;
+    setDialog({ kind: "delete", paths: Array.from(drive.selection) });
+  }, [drive.selection]);
+
+  const handleMoveSelection = useCallback(
+    async (dst: string) => {
+      const paths = Array.from(drive.selection);
+      for (const p of paths) {
+        if (p === dst) continue;
+        // Refuse moving an ancestor folder into its own descendant — would
+        // orphan the subtree. Same guard the sidebar drop applies.
+        if (dst !== "" && dst.startsWith(`${p}/`)) continue;
+        const name = p.split("/").pop() ?? p;
+        const finalDst = dst ? `${dst}/${name}` : name;
+        await drive.move(p, finalDst);
+      }
+    },
+    [drive],
+  );
+
+  const handleSignSelection = useCallback(() => {
+    if (drive.selection.size !== 1) return;
+    const path = Array.from(drive.selection)[0];
+    const entry = drive.visibleEntries.find((e) => e.path === path);
+    if (entry && entry.kind === "file") setSignEntry(entry);
+  }, [drive.selection, drive.visibleEntries]);
 
   return (
     <ContentBox>
@@ -334,12 +445,51 @@ export default function DrivePage() {
         title={t.plugins.drive.title}
         subtitle={t.plugins.drive.subtitle}
         actions={
-          <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/25">
-            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.8)]" />
-            <span className="typo-body text-cyan-100 font-medium tabular-nums">
-              {statusLine}
-            </span>
-          </div>
+          hasSelection ? (
+            <div className="flex items-center gap-1 pl-2.5 pr-1 py-1 rounded-full bg-cyan-500/15 border border-cyan-500/35 shadow-[0_0_14px_-6px_rgba(34,211,238,0.55)]">
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.8)]" />
+              <span className="typo-body text-cyan-100 font-medium tabular-nums">
+                {tx(t.plugins.drive.items_selected, { count: selectionCount })}
+              </span>
+              <span aria-hidden className="mx-1 w-px h-3.5 bg-cyan-400/30" />
+              <BulkChip
+                icon={Copy}
+                label={t.plugins.drive.bulk_copy}
+                onClick={drive.copySelection}
+              />
+              <BulkChip
+                icon={Scissors}
+                label={t.plugins.drive.bulk_cut}
+                onClick={drive.cutSelection}
+              />
+              {/* Visual fence separating safe ops (copy/cut) from
+                  destructive (delete) — the eye reads "different group"
+                  before the user reads the label. */}
+              <span aria-hidden className="mx-0.5 w-px h-3.5 bg-rose-400/30" />
+              <BulkChip
+                icon={Trash2}
+                label={t.plugins.drive.bulk_delete}
+                onClick={requestDeleteSelection}
+                tone="danger"
+              />
+              <BulkChip
+                icon={X}
+                label={t.plugins.drive.bulk_clear_selection}
+                onClick={drive.clearSelection}
+                tone="ghost"
+                iconOnly
+              />
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/25">
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.8)]" />
+              <span className="typo-body text-cyan-100 font-medium tabular-nums">
+                {tx(t.plugins.drive.items_total, {
+                  count: drive.visibleEntries.length,
+                })}
+              </span>
+            </div>
+          )
         }
       />
       <div
@@ -351,24 +501,39 @@ export default function DrivePage() {
       >
         <DriveToolbar
           drive={drive}
-          onNewFolder={() => setDialog({ kind: "new_folder" })}
-          onNewFile={() => setDialog({ kind: "new_file" })}
+          onNewFolder={requestNewFolder}
+          onNewFile={requestNewFile}
           onOpenSignatures={() => setSignaturesOpen(true)}
+          onMoveSelection={handleMoveSelection}
+          onSignSelection={handleSignSelection}
+          pathEditing={pathEditing}
+          onPathEditingChange={setPathEditing}
+          activeDragCount={activeDragCount}
         />
         <div className="flex-1 min-h-0 flex">
-          <DriveSidebar drive={drive} />
+          <DriveSidebar drive={drive} activeDragCount={activeDragCount} />
           <div className="flex-1 min-w-0 flex flex-col">
             <DriveFileList
               drive={drive}
               onOpen={handleOpen}
               onContextMenu={openContextMenu}
-              onRenameRequest={(entry) => setDialog({ kind: "rename", entry })}
-              onNewFolder={() => setDialog({ kind: "new_folder" })}
+              onRenameRequest={requestRename}
+              onNewFolder={requestNewFolder}
+              inlineRenamingPath={inlineRenamingPath}
+              onCommitInlineRename={commitInlineRename}
+              onCancelInlineRename={cancelInlineRename}
+              pendingCreate={pendingCreate}
+              onCommitPendingCreate={commitPendingCreate}
+              onCancelPendingCreate={cancelPendingCreate}
+              activeDragCount={activeDragCount}
+              onDragSelectionStart={handleDragSelectionStart}
+              onDragSelectionEnd={handleDragSelectionEnd}
             />
           </div>
           <DriveDetailsPane
             entries={selectedEntries}
             currentPath={drive.currentPath}
+            onPreviewClick={(entry) => setLightboxPath(entry.path)}
           />
         </div>
 
@@ -398,9 +563,9 @@ export default function DrivePage() {
           drive={drive}
           onClose={() => setContextMenu(null)}
           onOpen={handleOpen}
-          onNewFolder={() => setDialog({ kind: "new_folder" })}
-          onNewFile={() => setDialog({ kind: "new_file" })}
-          onRename={(entry) => setDialog({ kind: "rename", entry })}
+          onNewFolder={requestNewFolder}
+          onNewFile={requestNewFile}
+          onRename={requestRename}
           onRequestDelete={(paths) => setDialog({ kind: "delete", paths })}
           onReveal={handleReveal}
           onCopyPath={handleCopyPath}
@@ -454,42 +619,128 @@ export default function DrivePage() {
         />
       )}
 
-      {dialog?.kind === "new_folder" && (
-        <DriveTextPrompt
-          title={t.plugins.drive.new_folder_title}
-          placeholder={t.plugins.drive.new_folder_placeholder}
-          onConfirm={(v) => confirmDialog(v)}
-          onCancel={() => setDialog(null)}
-        />
-      )}
-      {dialog?.kind === "new_file" && (
-        <DriveTextPrompt
-          title={t.plugins.drive.new_file_title}
-          placeholder={t.plugins.drive.new_file_placeholder}
-          onConfirm={(v) => confirmDialog(v)}
-          onCancel={() => setDialog(null)}
-        />
-      )}
-      {dialog?.kind === "rename" && (
-        <DriveTextPrompt
-          title={t.plugins.drive.rename_title}
-          placeholder={t.plugins.drive.rename_placeholder}
-          initialValue={dialog.entry.name}
-          onConfirm={(v) => confirmDialog(v)}
-          onCancel={() => setDialog(null)}
-        />
-      )}
+      {lightboxPath && (() => {
+        // Navigable list of previewable entries in the current folder —
+        // images, videos, and PDFs all share the lightbox now. Sorted by
+        // name so prev/next is a stable visual sequence regardless of the
+        // live sort key.
+        const previewableEntries = drive.visibleEntries
+          .filter(
+            (e) =>
+              e.kind === "file" &&
+              (e.mime?.startsWith("image/") ||
+                e.mime?.startsWith("video/") ||
+                e.mime === "application/pdf"),
+          )
+          .slice()
+          .sort((a, b) => a.name.localeCompare(b.name));
+        if (previewableEntries.length === 0) return null;
+        return (
+          <DriveImageLightbox
+            entries={previewableEntries}
+            initialPath={lightboxPath}
+            onClose={() => setLightboxPath(null)}
+          />
+        );
+      })()}
+
       {dialog?.kind === "delete" && (
         <DriveConfirm
           title={tx(t.plugins.drive.delete_confirm_title, {
             count: dialog.paths.length,
           })}
-          body={t.plugins.drive.delete_confirm_body}
+          body={
+            <div className="space-y-3">
+              <DeleteBreakdown paths={dialog.paths} entries={drive.entries} t={t} />
+              <div>{t.plugins.drive.delete_confirm_body}</div>
+            </div>
+          }
           danger
-          onConfirm={() => confirmDialog()}
+          onConfirm={() => confirmDelete()}
           onCancel={() => setDialog(null)}
         />
       )}
     </ContentBox>
+  );
+}
+
+function DeleteBreakdown({
+  paths,
+  entries,
+  t,
+}: {
+  paths: string[];
+  entries: DriveEntry[];
+  t: ReturnType<typeof useTranslation>["t"];
+}) {
+  // Build a per-bucket count from the entries the user actually selected.
+  // Paths the user picked are by definition in the current folder's entry
+  // list, so this is a straight lookup.
+  const byPath = new Map(entries.map((e) => [e.path, e] as const));
+  const counts = new Map<string, number>();
+  for (const p of paths) {
+    const entry = byPath.get(p);
+    if (!entry) continue;
+    const key = visualForEntry(entry).labelKey;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  const buckets = Array.from(counts.entries()).sort(
+    ([a], [b]) =>
+      kindBucketWeight(a as Parameters<typeof kindBucketWeight>[0]) -
+      kindBucketWeight(b as Parameters<typeof kindBucketWeight>[0]),
+  );
+  if (buckets.length === 0) return null;
+
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {buckets.map(([key, count]) => (
+        <span
+          key={key}
+          className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-rose-500/10 border border-rose-500/25 typo-caption text-rose-100"
+        >
+          <span className="font-semibold tabular-nums">{count}</span>
+          <span className="text-rose-100/80">
+            {kindGroupLabel(t, key as Parameters<typeof kindGroupLabel>[1])}
+          </span>
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function BulkChip({
+  icon: Icon,
+  label,
+  onClick,
+  tone = "default",
+  iconOnly = false,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  onClick: () => void;
+  tone?: "default" | "danger" | "ghost";
+  iconOnly?: boolean;
+}) {
+  // Danger chips wear a rose tint at rest, not only on hover — the visual
+  // weight should match the action's blast radius even before the cursor
+  // arrives. Safe ops (copy/cut) stay flush with the cyan pill; the
+  // separator before [Delete] makes the grouping explicit.
+  const styles =
+    tone === "danger"
+      ? "text-rose-100 bg-rose-500/10 border border-rose-500/30 hover:bg-rose-500/25 hover:text-rose-50 hover:border-rose-500/50"
+      : tone === "ghost"
+        ? "text-cyan-200/70 hover:bg-cyan-500/15 hover:text-cyan-50"
+        : "text-cyan-100 hover:bg-cyan-500/25 hover:text-cyan-50";
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={label}
+      aria-label={label}
+      className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full typo-body font-medium transition-colors ${styles}`}
+    >
+      <Icon className="w-3.5 h-3.5" />
+      {!iconOnly && <span>{label}</span>}
+    </button>
   );
 }

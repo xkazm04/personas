@@ -3,6 +3,7 @@ import type { NowPlaying } from '@/lib/bindings/NowPlaying';
 import type { PlayStatus } from '@/lib/bindings/PlayStatus';
 import type { RadioState } from '@/lib/bindings/RadioState';
 import type { Station } from '@/lib/bindings/Station';
+import type { StreamMetadata } from '@/lib/bindings/StreamMetadata';
 
 export const listStations = () =>
   invokeWithTimeout<Station[]>('radio_list_stations');
@@ -36,3 +37,6 @@ export const radioReportStatus = (status: PlayStatus, positionSec: number | null
 
 export const radioTrackEnded = () =>
   invokeWithTimeout<RadioState>('radio_track_ended');
+
+export const radioFetchSomafmMetadata = (slug: string) =>
+  invokeWithTimeout<StreamMetadata | null>('radio_fetch_somafm_metadata', { slug });

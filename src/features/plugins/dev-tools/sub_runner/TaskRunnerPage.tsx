@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   Play, Plus, ListChecks, XCircle, ChevronDown, ChevronRight,
   Loader2, CheckCircle2, AlertCircle, Clock, Ban, X, Link2,
-  Zap, Layers, Building2, AlertTriangle, Infinity as InfinityIcon,
+  Zap, Layers, Building2, AlertTriangle, Infinity as InfinityIcon, Target,
 } from 'lucide-react';
 import { listen } from '@tauri-apps/api/event';
 import { EventName } from '@/lib/eventRegistry';
@@ -272,8 +272,19 @@ function TaskCard({
   const hasOutput = outputLines.length > 0 || task.output;
   const hasWarnings = task.contextWarnings && task.contextWarnings.length > 0;
 
+  const goal = useSystemStore((s) =>
+    task.goalId ? s.goals.find((g) => g.id === task.goalId) ?? null : null,
+  );
+  const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
+  const setPendingLifecycleSubTab = useSystemStore((s) => s.setPendingLifecycleSubTab);
+  const handleGoalJump = () => {
+    setPendingLifecycleSubTab('goals');
+    setDevToolsTab('lifecycle');
+  };
+
   return (
     <div
+      data-task-id={task.id}
       className={`animate-fade-slide-in border rounded-modal overflow-hidden transition-colors ${
         hasWarnings ? 'border-amber-500/25 hover:border-amber-500/35' : 'border-primary/10 hover:border-primary/20'
       }`}
@@ -302,8 +313,23 @@ function TaskCard({
               </span>
             )}
           </div>
-          {task.source && (
-            <p className="text-[10px] text-foreground mt-0.5">{t.plugins.dev_runner.source_label} {task.source}</p>
+          {(task.source || goal) && (
+            <div className="flex items-center gap-2 mt-0.5">
+              {task.source && (
+                <p className="text-[10px] text-foreground">{t.plugins.dev_runner.source_label} {task.source}</p>
+              )}
+              {goal && (
+                <button
+                  type="button"
+                  onClick={handleGoalJump}
+                  title={t.plugins.dev_runner.goal_pill_tooltip}
+                  className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full border border-violet-500/25 bg-violet-500/10 text-violet-300 hover:bg-violet-500/20 hover:border-violet-500/40 transition-colors max-w-[200px]"
+                >
+                  <Target className="w-2.5 h-2.5 shrink-0" />
+                  <span className="truncate">{goal.title}</span>
+                </button>
+              )}
+            </div>
           )}
         </div>
 
@@ -422,6 +448,29 @@ export default function TaskRunnerPage() {
     depth: t.depth ?? 'quick',
     contextWarnings: taskWarnings[t.id],
   }));
+
+  // Consume any pending task-focus handoff (e.g. from goal spotlight task
+  // click). Capture into local state, clear from the store immediately, then
+  // wait until the tasks list has the matching card before scrolling it
+  // into view + applying a short-lived ring.
+  const [pendingFocusId, setPendingFocusId] = useState<string | null>(null);
+  useEffect(() => {
+    const id = useSystemStore.getState().pendingTaskFocusId;
+    if (id) {
+      setPendingFocusId(id);
+      useSystemStore.getState().setPendingTaskFocusId(null);
+    }
+  }, []);
+  useEffect(() => {
+    if (!pendingFocusId) return;
+    const el = document.querySelector<HTMLElement>(`[data-task-id="${pendingFocusId}"]`);
+    if (!el) return; // Card hasn't rendered yet; wait for next tasks update.
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.classList.add('ring-2', 'ring-primary/60');
+    const t = window.setTimeout(() => el.classList.remove('ring-2', 'ring-primary/60'), 2000);
+    setPendingFocusId(null);
+    return () => window.clearTimeout(t);
+  }, [pendingFocusId, storeTasks.length]);
 
   // Fetch tasks on mount and when project changes
   useEffect(() => {

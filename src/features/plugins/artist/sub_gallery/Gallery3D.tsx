@@ -1,10 +1,13 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { X, RotateCw, Grid3x3, Box, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, RotateCw, Grid3x3, Box, Loader2 } from 'lucide-react';
 import type { ArtistAsset } from '@/api/artist';
+import { useGallerySelection } from '../hooks/useGallerySelection';
 import { useModelViewer } from '../hooks/useModelViewer';
 import { formatFileSize } from '../utils/format';
 import AssetCard from './AssetCard';
+import GallerySelectionBar from './GallerySelectionBar';
+import { mergeTagAcross } from './tagOps';
 
 // Lazy-load three.js — the ~500KB gzipped bundle only matters when a user
 // actually opens a .glb/.gltf model for the first time.
@@ -14,23 +17,91 @@ interface Gallery3DProps {
   assets: ArtistAsset[];
   onDelete: (id: string) => void;
   onUpdateTags: (id: string, tags: string) => void;
+  onRename?: (id: string, newBasename: string) => void;
 }
 
-export default function Gallery3D({ assets, onDelete, onUpdateTags }: Gallery3DProps) {
+export default function Gallery3D({ assets, onDelete, onUpdateTags, onRename }: Gallery3DProps) {
   const { t } = useTranslation();
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const { selectedIds, isSelected, toggle, clear, count } = useGallerySelection(assets);
+  const inSelectMode = count > 0;
   const {
     wireframe, autoRotate, lightingPreset,
     toggleWireframe, toggleAutoRotate, setLightingPreset,
   } = useModelViewer();
 
-  const selectedAsset = selectedIndex !== null ? assets[selectedIndex] : null;
+  const handleToggle = useCallback(
+    (id: string, index: number) => (e: ReactMouseEvent) => toggle(id, index, e.shiftKey),
+    [toggle],
+  );
+
+  const handleBulkDelete = useCallback(() => {
+    const ids = [...selectedIds];
+    clear();
+    for (const id of ids) onDelete(id);
+  }, [selectedIds, clear, onDelete]);
+
+  const handleBulkAddTag = useCallback(
+    (tag: string) => {
+      const ids = [...selectedIds];
+      clear();
+      for (const id of ids) {
+        const asset = assets.find((a) => a.id === id);
+        if (!asset) continue;
+        const merged = mergeTagAcross(asset.tags ?? '', tag);
+        if (merged !== (asset.tags ?? '')) onUpdateTags(id, merged);
+      }
+    },
+    [selectedIds, clear, assets, onUpdateTags],
+  );
+
+  const selectedAsset = !inSelectMode && selectedIndex !== null ? assets[selectedIndex] : null;
   const isViewable = selectedAsset && ['glb', 'gltf'].includes(
     selectedAsset.fileName.split('.').pop()?.toLowerCase() ?? '',
   );
 
+  const goNext = useCallback(() => {
+    setSelectedIndex((i) => (i !== null && assets.length > 0 ? (i + 1) % assets.length : i));
+  }, [assets.length]);
+
+  const goPrev = useCallback(() => {
+    setSelectedIndex((i) =>
+      i !== null && assets.length > 0 ? (i - 1 + assets.length) % assets.length : i,
+    );
+  }, [assets.length]);
+
+  // Keyboard navigation while the 3D viewer is open — mirrors the 2D
+  // lightbox shape (← / → cycle, Esc closes) so reviewing batch Blender
+  // output does not require close-and-reopen for each model.
+  useEffect(() => {
+    if (!selectedAsset) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        goNext();
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        goPrev();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        setSelectedIndex(null);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [selectedAsset, goNext, goPrev]);
+
   return (
     <>
+      {inSelectMode && (
+        <GallerySelectionBar
+          count={count}
+          onDelete={handleBulkDelete}
+          onAddTag={handleBulkAddTag}
+          onClear={clear}
+        />
+      )}
+
       {/* Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
         {assets.map((asset, i) => (
@@ -39,7 +110,11 @@ export default function Gallery3D({ assets, onDelete, onUpdateTags }: Gallery3DP
             asset={asset}
             onDelete={onDelete}
             onUpdateTags={onUpdateTags}
+            onRename={onRename}
             onClick={() => setSelectedIndex(i)}
+            selected={isSelected(asset.id)}
+            inSelectMode={inSelectMode}
+            onToggleSelect={handleToggle(asset.id, i)}
           />
         ))}
       </div>
@@ -50,6 +125,26 @@ export default function Gallery3D({ assets, onDelete, onUpdateTags }: Gallery3DP
           className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center"
           onClick={() => setSelectedIndex(null)}
         >
+          {assets.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); goPrev(); }}
+                aria-label={t.plugins.artist.viewer_prev_model}
+                className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-card bg-white/10 text-white hover:bg-white/20 transition-colors z-10"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); goNext(); }}
+                aria-label={t.plugins.artist.viewer_next_model}
+                className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-card bg-white/10 text-white hover:bg-white/20 transition-colors z-10"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </button>
+            </>
+          )}
           <div
             className="relative w-[85vw] max-w-5xl h-[80vh] rounded-2xl border border-primary/10 bg-card overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}

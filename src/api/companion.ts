@@ -485,6 +485,57 @@ export interface DoctrineIngestSummary {
  * Useful when curated docs change and Athena should pick up the latest
  * without an app restart.
  */
+export interface CompanionTemplateMatch {
+  id: string;
+  name: string;
+  /** First ~200 chars of the instruction body. */
+  snippet: string;
+  category: string | null;
+  connectors: string[];
+}
+
+/**
+ * Lightweight keyword match against the persona_design_reviews table for
+ * Athena's `show_template_suggestions` chat-card. No LLM call — the
+ * widget surfaces top matches as a "worth a look" pointer; users wanting
+ * LLM-ranked search use the design-reviews view's smart-search.
+ */
+export async function companionMatchTemplates(
+  intent: string,
+  limit?: number,
+): Promise<CompanionTemplateMatch[]> {
+  return invoke<CompanionTemplateMatch[]>('companion_match_templates', {
+    intent,
+    limit: limit ?? null,
+  });
+}
+
+export interface CompanionDesignDecision {
+  id: string;
+  sessionId: string;
+  personaContext: string | null;
+  label: string;
+  choice: string;
+  rationale: string;
+  decisionTimestamp: string | null;
+  createdAt: string;
+}
+
+/**
+ * Retrospective list of design decisions Athena has logged across all
+ * conversations. Filter by `personaContext` to scope to a specific
+ * persona id / build session id / intent string.
+ */
+export async function companionListDesignDecisions(
+  personaContext?: string | null,
+  limit?: number,
+): Promise<CompanionDesignDecision[]> {
+  return invoke<CompanionDesignDecision[]>('companion_list_design_decisions', {
+    personaContext: personaContext ?? null,
+    limit: limit ?? null,
+  });
+}
+
 export async function companionReingestDoctrine(): Promise<DoctrineIngestSummary> {
   return invoke<DoctrineIngestSummary>('companion_reingest_doctrine');
 }
@@ -637,7 +688,10 @@ export type BrainKind =
   | 'ritual:focus_window'
   | 'backlog'
   | 'backlog:self_promise'
-  | 'backlog:capability_gap';
+  | 'backlog:capability_gap'
+  // Audit trail of design choices — populated by the dispatcher
+  // whenever Athena emits a show_decision_log card.
+  | 'design_decision';
 
 export interface BrainListItem {
   id: string;
@@ -792,13 +846,25 @@ export async function companionRunReflection(): Promise<string> {
  */
 export interface ProactiveMessage {
   id: string;
-  triggerKind: 'goal_target_approaching' | 'backlog_aging' | 'cadence_due' | string;
+  triggerKind:
+    | 'goal_target_approaching'
+    | 'backlog_aging'
+    | 'cadence_due'
+    | 'athena_scheduled'
+    | string;
   triggerRef: string | null;
   message: string;
   status: 'queued' | 'delivered' | 'engaged' | 'dismissed' | 'expired';
   createdAt: string;
   deliveredAt: string | null;
   resolvedAt: string | null;
+  /**
+   * ISO8601 UTC. Non-null on rows Athena scheduled via `schedule_proactive`
+   * — the deliver-due sweep holds them in `queued` until this timestamp
+   * is reached. Null for trigger-driven nudges (delivered as soon as
+   * their guards pass).
+   */
+  scheduledFor: string | null;
 }
 
 /** Tauri event channel — new proactive messages arriving from the engine. */
@@ -923,6 +989,23 @@ export interface CompanionCockpitSpec {
 
 export async function companionGetCockpit(): Promise<CompanionCockpitSpec | null> {
   return invoke<CompanionCockpitSpec | null>('companion_get_cockpit');
+}
+
+/**
+ * Append a single widget to the user's cockpit. Wired to the "Pin to
+ * cockpit" affordance on `InlineChatCard`. Idempotent on the backend —
+ * pinning the same {kind, config} twice is a no-op.
+ */
+export async function companionPinWidgetToCockpit(payload: {
+  kind: string;
+  title?: string | null;
+  config?: Record<string, unknown> | null;
+}): Promise<void> {
+  return invoke<void>('companion_pin_widget_to_cockpit', {
+    kind: payload.kind,
+    title: payload.title ?? null,
+    config: payload.config ?? null,
+  });
 }
 
 /** Tauri event for `compose_cockpit` auto-fire. Payload is empty. */
@@ -1131,4 +1214,57 @@ export interface CompanionStreamEvent {
   kind: 'started' | 'cli' | 'finished' | 'error';
   /** Raw stream-json line for kind=cli, free-form text otherwise. */
   payload: string;
+}
+
+/**
+ * Per-turn rollup of what Athena's brain pulled into the system prompt.
+ * Fired once per turn, right after the prompt is built and right before
+ * the CLI spawn — so the panel can show a "Athena consulted N memories"
+ * strip above the streaming bubble.
+ */
+export const COMPANION_RECALL_PREVIEW_EVENT = 'companion://recall-preview';
+
+export interface CompanionRecallPreviewEntry {
+  /** Stable id of the underlying memory row (or doctrine file_path). */
+  id: string;
+  /** Short, glanceable label (≤60 chars, truncated server-side). */
+  title: string;
+}
+
+export interface CompanionRecallPreview {
+  episodeCount: number;
+  doctrine: CompanionRecallPreviewEntry[];
+  facts: CompanionRecallPreviewEntry[];
+  procedurals: CompanionRecallPreviewEntry[];
+  goals: CompanionRecallPreviewEntry[];
+  backlog: CompanionRecallPreviewEntry[];
+  /** True when a synthesis briefing replaced raw chunks this turn. */
+  synthesized: boolean;
+}
+
+export interface CompanionRecallPreviewEvent {
+  sessionId: string;
+  turnId: string;
+  preview: CompanionRecallPreview;
+}
+
+/**
+ * Per-turn rollup of dispatcher side-effects keyed by assistant episode.
+ * Fires once per turn after the dispatcher block. The panel renders a
+ * tiny chip below the completed assistant bubble — total=0 turns are
+ * silently elided.
+ */
+export const COMPANION_TURN_SUMMARY_EVENT = 'companion://turn-summary';
+
+export interface CompanionTurnSummaryEvent {
+  sessionId: string;
+  turnId: string;
+  assistantEpisodeId: string;
+  approvals: number;
+  navigations: number;
+  labOpens: number;
+  dashboards: number;
+  cockpits: number;
+  chatCards: number;
+  continuation: boolean;
 }

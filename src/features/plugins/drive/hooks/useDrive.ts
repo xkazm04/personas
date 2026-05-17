@@ -12,12 +12,46 @@ import {
   driveMkdir,
   driveMove,
   driveParentPath,
+  driveRecent,
   driveRename,
   driveSearch,
   driveStorageInfo,
   driveWriteText,
 } from "@/api/drive";
 import { toastCatch } from "@/lib/silentCatch";
+import { kindBucketWeight, visualForEntry } from "../designTokens";
+
+// localStorage key holding the user's preferred view-state (viewMode +
+// sortKey + sortDir). Single JSON blob so writes are atomic and the
+// shape can grow without breaking older clients.
+const VIEW_STATE_KEY = "drive.viewState";
+
+interface PersistedViewState {
+  viewMode?: ViewMode;
+  sortKey?: SortKey;
+  sortDir?: SortDir;
+}
+
+function readPersistedViewState(): PersistedViewState {
+  try {
+    const raw = localStorage.getItem(VIEW_STATE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === "object") return parsed as PersistedViewState;
+  } catch {
+    // Quota / privacy mode / malformed JSON — degrade to defaults silently.
+  }
+  return {};
+}
+
+function writePersistedViewState(state: PersistedViewState) {
+  try {
+    const current = readPersistedViewState();
+    localStorage.setItem(VIEW_STATE_KEY, JSON.stringify({ ...current, ...state }));
+  } catch {
+    // Quota / privacy mode — in-memory state still updates.
+  }
+}
 
 export type ClipboardMode = "copy" | "cut";
 export type ViewMode = "list" | "icons" | "columns";
@@ -116,6 +150,12 @@ export interface UseDriveResult {
   storage: DriveStorageInfo | null;
   refreshStorage: () => void;
 
+  // Sidebar "Recent" rail — N most-recently-modified files across the
+  // managed drive. Refreshed alongside the tree on first mount + after
+  // any mutation that adds or moves a file.
+  recent: DriveEntry[];
+  refreshRecent: () => void;
+
   // Highlight recent writes for ~1.2s
   recentlyWritten: Set<string>;
 
@@ -152,12 +192,29 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
   const [error, setError] = useState<string | null>(null);
   const [tree, setTree] = useState<DriveTreeNode | null>(null);
   const [storage, setStorage] = useState<DriveStorageInfo | null>(null);
+  const [recent, setRecent] = useState<DriveEntry[]>([]);
 
   const [selection, setSelection] = useState<Set<string>>(new Set());
-  const [sortKey, setSortKey] = useState<SortKey>("name");
-  const [sortDir, setSortDir] = useState<SortDir>("asc");
+  // viewMode / sortKey / sortDir hydrate from localStorage on first
+  // render so users keep their preferred layout across sessions. Lazy
+  // init avoids the JSON parse on every render.
+  const [sortKey, setSortKeyRaw] = useState<SortKey>(
+    () => readPersistedViewState().sortKey ?? "name",
+  );
+  const [sortDir, setSortDirRaw] = useState<SortDir>(
+    () => readPersistedViewState().sortDir ?? "asc",
+  );
   const [searchQuery, setSearchQuery] = useState("");
-  const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [viewMode, setViewModeRaw] = useState<ViewMode>(
+    () => readPersistedViewState().viewMode ?? "list",
+  );
+
+  // setViewMode + setSort wrappers persist on every change. Direct state
+  // setters (setViewModeRaw etc.) stay private to this hook.
+  const setViewMode = useCallback((mode: ViewMode) => {
+    setViewModeRaw(mode);
+    writePersistedViewState({ viewMode: mode });
+  }, []);
   const [clipboard, setClipboard] = useState<DriveClipboard | null>(null);
   const [recentlyWritten, setRecentlyWritten] = useState<Set<string>>(
     new Set(),
@@ -212,6 +269,12 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
     driveStorageInfo().then(setStorage).catch(toastCatch("drive:storageInfo"));
   }, []);
 
+  const refreshRecent = useCallback(() => {
+    driveRecent(5)
+      .then(setRecent)
+      .catch(toastCatch("drive:recent"));
+  }, []);
+
   useEffect(() => {
     refresh();
   }, [refresh]);
@@ -219,7 +282,8 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
   useEffect(() => {
     refreshTree();
     refreshStorage();
-  }, [refreshTree, refreshStorage]);
+    refreshRecent();
+  }, [refreshTree, refreshStorage, refreshRecent]);
 
   // Clear selection on navigation.
   useEffect(() => {
@@ -353,10 +417,11 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
   // Sort + search
   const setSort = useCallback(
     (key: SortKey, dir?: SortDir) => {
-      setSortKey(key);
-      setSortDir(
-        dir ?? (key === sortKey ? (sortDir === "asc" ? "desc" : "asc") : "asc"),
-      );
+      const nextDir =
+        dir ?? (key === sortKey ? (sortDir === "asc" ? "desc" : "asc") : "asc");
+      setSortKeyRaw(key);
+      setSortDirRaw(nextDir);
+      writePersistedViewState({ sortKey: key, sortDir: nextDir });
     },
     [sortKey, sortDir],
   );
@@ -380,9 +445,26 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
         case "modified":
           cmp = a.modified.localeCompare(b.modified);
           break;
-        case "kind":
-          cmp = (a.extension ?? "").localeCompare(b.extension ?? "");
+        case "kind": {
+          // Group by resolved kind bucket (image / code / data / …) — same
+          // mapping the Kind column displays. Within a bucket fall back to
+          // case-insensitive name so files inside the group are scannable.
+          // The previous extension-only compare interleaved unrelated kinds
+          // (.css next to .json next to .png) and made the "Kind" sort
+          // inconsistent with the column it's named after.
+          //
+          // Bucket ordering uses a curated weight (folders → images →
+          // videos → pdfs → documents → code → data → sheets → audio →
+          // archives → signatures → other) rather than alphabetic-by-key,
+          // so "Other" stays at the end and visually-related groups
+          // cluster.
+          const aw = kindBucketWeight(visualForEntry(a).labelKey);
+          const bw = kindBucketWeight(visualForEntry(b).labelKey);
+          cmp = aw - bw;
+          if (cmp === 0)
+            cmp = a.name.toLowerCase().localeCompare(b.name.toLowerCase());
           break;
+        }
       }
       return sortDir === "asc" ? cmp : -cmp;
     });
@@ -432,7 +514,8 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
     refresh();
     refreshTree();
     refreshStorage();
-  }, [clipboard, currentPath, refresh, refreshTree, refreshStorage, flashWrite]);
+    refreshRecent();
+  }, [clipboard, currentPath, refresh, refreshTree, refreshStorage, refreshRecent, flashWrite]);
 
   // Mutations
   const createFolder = useCallback(
@@ -463,8 +546,9 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
       }
       refresh();
       refreshStorage();
+      refreshRecent();
     },
-    [currentPath, refresh, refreshStorage, flashWrite],
+    [currentPath, refresh, refreshStorage, refreshRecent, flashWrite],
   );
 
   const rename = useCallback(
@@ -478,8 +562,12 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
       }
       refresh();
       refreshTree();
+      // Rename changes the file's mtime AND its name — the rail's previous
+      // entry now references a stale path. Refresh so the row shows the
+      // new name and stays clickable.
+      refreshRecent();
     },
-    [refresh, refreshTree, flashWrite],
+    [refresh, refreshTree, refreshRecent, flashWrite],
   );
 
   const remove = useCallback(
@@ -495,8 +583,11 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
       refresh();
       refreshTree();
       refreshStorage();
+      // Files just deleted may have been in the rail. Refresh so the
+      // displayed rows match the live tree.
+      refreshRecent();
     },
-    [refresh, refreshTree, refreshStorage, clearSelection],
+    [refresh, refreshTree, refreshStorage, refreshRecent, clearSelection],
   );
 
   const move = useCallback(
@@ -510,8 +601,9 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
       }
       refresh();
       refreshTree();
+      refreshRecent();
     },
-    [refresh, refreshTree, flashWrite],
+    [refresh, refreshTree, refreshRecent, flashWrite],
   );
 
   // Derived flags
@@ -567,6 +659,9 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
 
     storage,
     refreshStorage,
+
+    recent,
+    refreshRecent,
 
     recentlyWritten,
 

@@ -732,6 +732,17 @@ pub fn run() {
                 "project-tracking",
                 engine::project_tracking::push::router(),
             );
+            // Fleet hook receiver — Claude Code lifecycle hooks POST here.
+            local_http::register_router(
+                "fleet",
+                commands::fleet::hooks::router(app.handle().clone()),
+            );
+            // Fleet background workers — staleness ticker + JSONL watcher.
+            // Both fire-and-forget; the staleness ticker is safe everywhere,
+            // the JSONL watcher is desktop-only because `notify` is feature-gated.
+            commands::fleet::stale::spawn_ticker(app.handle().clone());
+            #[cfg(feature = "desktop")]
+            commands::fleet::transcript::spawn_watcher(app.handle().clone());
             match local_http::start() {
                 Ok(port) => tracing::info!(port, "local_http server started"),
                 Err(e) => tracing::warn!(error = %e, "local_http server failed to start"),
@@ -1989,6 +2000,7 @@ pub fn run() {
             commands::artist::artist_import_asset,
             commands::artist::artist_delete_asset,
             commands::artist::artist_update_tags,
+            commands::artist::artist_rename_asset,
             commands::artist::artist_get_default_folder,
             commands::artist::artist_ensure_folders,
             commands::artist::artist_read_image_base64,
@@ -2034,6 +2046,7 @@ pub fn run() {
             commands::drive::drive_list,
             commands::drive::drive_list_tree,
             commands::drive::drive_search,
+            commands::drive::drive_recent,
             commands::drive::drive_stat,
             commands::drive::drive_read,
             commands::drive::drive_read_text,
@@ -2109,6 +2122,7 @@ pub fn run() {
             commands::companion::consolidate::companion_get_reflection,
             commands::companion::consolidate::companion_get_dashboard,
             commands::companion::consolidate::companion_get_cockpit,
+            commands::companion::consolidate::companion_pin_widget_to_cockpit,
             commands::companion::consolidate::companion_enqueue_curation_run,
             commands::companion::consolidate::companion_discard_consolidation_run,
             commands::companion::proactive::companion_evaluate_proactive_now,
@@ -2144,6 +2158,8 @@ pub fn run() {
             commands::companion::jobs::companion_list_jobs,
             commands::companion::jobs::companion_get_job,
             commands::companion::jobs::companion_enqueue_job,
+            commands::companion::templates::companion_match_templates,
+            commands::companion::decisions::companion_list_design_decisions,
             // Infrastructure -- Auth
             commands::infrastructure::auth::login_with_google,
             commands::infrastructure::auth::get_auth_state,
@@ -2463,6 +2479,16 @@ pub fn run() {
             commands::infrastructure::twin::twin_ingest_url,
             commands::infrastructure::twin::twin_compile_wiki,
             commands::infrastructure::twin::twin_audit_wiki,
+            commands::infrastructure::twin::twin_wiki_status,
+            commands::infrastructure::twin::twin_list_distilled_facts,
+            commands::infrastructure::twin::twin_create_distilled_fact,
+            commands::infrastructure::twin::twin_delete_distilled_fact,
+            commands::infrastructure::twin::twin_list_contacts,
+            commands::infrastructure::twin::twin_update_contact,
+            commands::infrastructure::twin::twin_reflect,
+            commands::infrastructure::twin::twin_list_reflections,
+            commands::infrastructure::twin::twin_delete_reflection,
+            commands::infrastructure::twin::twin_recall,
             // Notifications
             notifications::send_app_notification,
             notifications::test_notification_channel,
@@ -2596,6 +2622,17 @@ pub fn run() {
             commands::radio::radio_set_volume,
             commands::radio::radio_report_status,
             commands::radio::radio_track_ended,
+            commands::radio::radio_fetch_somafm_metadata,
+            // Fleet (DEV-only Claude Code session aggregator)
+            commands::fleet::commands::fleet_spawn_session,
+            commands::fleet::commands::fleet_write_input,
+            commands::fleet::commands::fleet_resize_session,
+            commands::fleet::commands::fleet_kill_session,
+            commands::fleet::commands::fleet_list_sessions,
+            commands::fleet::commands::fleet_remove_session,
+            commands::fleet::commands::fleet_install_hooks,
+            commands::fleet::commands::fleet_uninstall_hooks,
+            commands::fleet::commands::fleet_check_hooks,
         ]))
         .run(tauri::generate_context!())
         .unwrap_or_else(|e| {

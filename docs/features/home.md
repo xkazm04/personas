@@ -22,6 +22,10 @@ Home tabs are declared in `homeItems` in `src/features/shared/components/layout/
 
 `HomeReleases.tsx` and `HomeRoadmapView.tsx` render bundled releases plus the live roadmap. `useLiveRoadmap.ts` calls the Rust live-roadmap command, falls back to bundled data, and surfaces status through `LiveRoadmapStatusPill`.
 
+### Release picker lives in the sidebar Level 3 push pane
+
+As of 2026-05-17 the in-page `ReleasesNavBar` (top-of-page pill row) was retired. Clicking "What's New" in the Home sidebar (Level 2) now slides the sidebar into a Level 3 panel listing each release plus the roadmap entry — see `src/features/shared/components/layout/sidebar/SidebarLevel3.tsx` (the generic primitive) and the `HomeRoadmapL3` sub-component in `SidebarLevel2.tsx`. The selected version is held in `systemStore.homeReleaseVersion` and persisted to `sessionStorage` (`home-releases-selected-version`); `HomeReleases.tsx` reads from the store and is purely a renderer for whichever release the sidebar has selected. The back-arrow header returns to the Home L2 list.
+
 Implementation contract: [live-roadmap/live-roadmap.md](live-roadmap/live-roadmap.md).
 
 ## Activation Quest

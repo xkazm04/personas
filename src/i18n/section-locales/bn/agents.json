@@ -508,7 +508,7 @@
     "no_tools_warning": "এই পার্সোনার কোনো টুল নির্ধারিত নেই। আরো সমৃদ্ধ পরীক্ষার জন্য টুল যোগ করুন।",
     "add_prompt_first": "প্রথমে এই পার্সোনায় একটি প্রম্পট যোগ করুন",
     "select_model": "কমপক্ষে একটি মডেল নির্বাচন করুন",
-    "run_arena": "আরেনা চালান ({count}টি মডেল{count, plural, one {} other {}})",
+    "run_arena": "রান অ্যারেনা ({count} মডেল{count, plural, one {} other {s}})",
     "cancel_test": "পরীক্ষা বাতিল",
     "focus_use_case": "ব্যবহারের ক্ষেত্রে ফোকাস করুন",
     "describe_changes": "আপনার কাঙ্ক্ষিত পরিবর্তন বর্ণনা করুন",
@@ -909,7 +909,7 @@
     "auto_event_type": "ইভেন্ট টাইপ: {eventType}",
     "auto_zapier_hint": "ক্যাচ হুক যাচাই ও সংযুক্ত হবে।",
     "auto_custom_hint": "ম্যানুয়াল সেটআপ প্রয়োজন। অটোমেশন খসড়া হিসেবে সংরক্ষিত হবে।",
-    "auto_input_schema_placeholder": "string",
+    "auto_input_schema_placeholder": "{ \"file_url\": \"string\" }",
     "auto_github_token_needs": "আপনার টোকেনের {scopes} স্কোপ(গুলি) প্রয়োজন। github.com/settings/tokens-এ আপনার টোকেন আপডেট করুন।",
     "auto_fallback_title": "ব্যর্থতায় সরাসরি কানেক্টরে ফিরে যায়",
     "ch_title": "বিজ্ঞপ্তি চ্যানেলসমূহ",
@@ -2074,7 +2074,7 @@
     "success": "সফল",
     "failed": "ব্যর্থ",
     "error": "ত্রুটি",
-    "input_json_placeholder": "মান",
+    "input_json_placeholder": "{ \"key\": \"value\" }",
     "invalid_json": "Invalid JSON — fix before running."
   },
   "health_check": {

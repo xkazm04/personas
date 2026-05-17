@@ -98,8 +98,19 @@ interface TestBridge {
    */
   invokeCommand(command: string, params?: Record<string, unknown>): Promise<{ success: boolean; result?: unknown; error?: string }>;
   setTestFlag(key: string, value: unknown): { success: boolean; key?: string; value?: unknown };
+  // -- Artist plugin helpers --
+  setArtistTab(tab: string): { success: boolean; tab?: string; error?: string };
+  getArtistTab(): { success: boolean; tab: string };
+  // -- Generic plugin / twin helpers --
+  setPluginTab(tab: string): { success: boolean; tab?: string; error?: string };
+  setTwinTab(tab: string): { success: boolean; tab?: string; error?: string };
+  seedTwin(name?: string): Promise<{ success: boolean; twinId?: string | null; error?: string }>;
   [key: string]: unknown;
 }
+
+const VALID_ARTIST_TABS = ['blender', 'gallery', 'media-studio'] as const;
+const VALID_PLUGIN_TABS = ['browse', 'companion', 'artist', 'dev-tools', 'obsidian-brain', 'research-lab', 'drive', 'twin', 'langfuse'] as const;
+const VALID_TWIN_TABS = ['profiles', 'identity', 'tone', 'brain', 'knowledge', 'voice', 'channels', 'training'] as const;
 
 /** Turn an arbitrary caught value into a human-readable error string.
  *  Tauri IPC errors deserialize as plain objects that stringify to
@@ -181,6 +192,75 @@ const bridge: TestBridge = {
       return { success: true };
     } catch (e) {
       return { success: false, error: unpackError(e) };
+    }
+  },
+
+  setArtistTab(tab: string) {
+    if (!(VALID_ARTIST_TABS as readonly string[]).includes(tab)) {
+      return {
+        success: false,
+        error: `Invalid artist tab: ${tab}. Valid: ${VALID_ARTIST_TABS.join(', ')}`,
+      };
+    }
+    // Also flip the plugin tab so ArtistPage mounts in the Plugins section.
+    // Without this, setting artistTab alone is a no-op visually — the
+    // Plugins surface still shows the Browse page (or another plugin).
+    useSystemStore.getState().setPluginTab('artist');
+    useSystemStore.getState().setArtistTab(tab as 'blender' | 'gallery' | 'media-studio');
+    return { success: true, tab };
+  },
+
+  getArtistTab() {
+    return { success: true, tab: useSystemStore.getState().artistTab };
+  },
+
+  // Generic plugin-tab switch — pairs with /navigate('plugins') for tests
+  // that want to drop straight into a specific plugin without clicking
+  // through the plugin browser. Mirrors the setArtistTab convenience.
+  setPluginTab(tab: string) {
+    if (!(VALID_PLUGIN_TABS as readonly string[]).includes(tab)) {
+      return {
+        success: false,
+        error: `Invalid plugin tab: ${tab}. Valid: ${VALID_PLUGIN_TABS.join(', ')}`,
+      };
+    }
+    useSystemStore.getState().setPluginTab(tab as typeof VALID_PLUGIN_TABS[number]);
+    return { success: true, tab };
+  },
+
+  setTwinTab(tab: string) {
+    if (!(VALID_TWIN_TABS as readonly string[]).includes(tab)) {
+      return {
+        success: false,
+        error: `Invalid twin tab: ${tab}. Valid: ${VALID_TWIN_TABS.join(', ')}`,
+      };
+    }
+    // Also flip the plugin tab so the twin surface actually mounts.
+    useSystemStore.getState().setPluginTab('twin');
+    useSystemStore.getState().setTwinTab(tab as typeof VALID_TWIN_TABS[number]);
+    return { success: true, tab };
+  },
+
+  // Idempotent test fixture — ensure a twin profile exists so the pills /
+  // panels added across cycles 1-16 have something to render against.
+  // Returns the active twin's id when done. Safe to call repeatedly.
+  async seedTwin(name?: string) {
+    try {
+      const state = useSystemStore.getState();
+      await state.fetchTwinProfiles();
+      const refreshed = useSystemStore.getState();
+      let active = refreshed.activeTwinId;
+      if (!active || !refreshed.twinProfiles.some((t) => t.id === active)) {
+        if (refreshed.twinProfiles.length === 0) {
+          await state.createTwinProfile(name ?? 'Test Twin');
+        }
+        const after = useSystemStore.getState();
+        active = after.activeTwinId ?? after.twinProfiles[0]?.id ?? null;
+        if (active) await state.setActiveTwin(active);
+      }
+      return { success: true, twinId: active };
+    } catch (e) {
+      return { success: false, error: _fmtBridgeErr(e) };
     }
   },
 
@@ -1756,6 +1836,47 @@ const bridge: TestBridge = {
   },
 
   /**
+   * Inject synthetic chat-cards into the companion store. Drives the
+   * `chatCards` slice that backs `InlineChatCard` rendering, bypassing
+   * a real dispatcher emit. Used by the persona-design chat-card specs
+   * (cycles 7-22 of /friend 2026-05-16 session 2) to verify widget
+   * mount + rendering without needing a live Claude turn to produce
+   * the `companion://chat-cards` event.
+   *
+   * Card shape mirrors the `ChatCard` type from `@/api/companion`:
+   *   { kind: string, title?: string | null, config?: Record<string, unknown> }
+   *
+   * Card kinds that drive the persona-design family (rendered through
+   * `cockpitWidgetRegistry`): persona_walkthrough, template_suggestions,
+   * use_case_set, trigger_set, model_tier_choice, observability_plan,
+   * decision_log, persona_ready, design_capabilities, recent_decisions.
+   * Plus the pre-existing kinds: persona_overview, connected_services,
+   * decisions_panel, metric_spark, issue_list, text_callout.
+   */
+  setCompanionChatCards(
+    cards: Array<{
+      kind: string;
+      title?: string | null;
+      config?: Record<string, unknown>;
+    }>,
+  ): { success: boolean; count: number } {
+    // Direct positional arg (not `params: { cards }`) — the bridge's
+    // named-arg dispatcher (parseParamNames + resolveArgs) matches by
+    // parameter NAME, so the function must declare `cards` at the top
+    // level. Wrapping in `params: {...}` makes the function declare
+    // `params` instead, named-dispatch finds no match, falls through
+    // to Object.values, and the cards array arrives as `params` with
+    // no `.cards` accessor — silent failure.
+    const list = (cards ?? []).map((c) => ({
+      kind: c.kind,
+      title: c.title ?? undefined,
+      config: c.config ?? {},
+    }));
+    useCompanionStore.getState().setChatCards(list);
+    return { success: true, count: list.length };
+  },
+
+  /**
    * Inject a synthetic message into the chat transcript. Bypasses the
    * normal send-turn flow so tests can verify rendering of specific
    * role+content combinations (system episodes, autonomous-continuation
@@ -1934,3 +2055,4 @@ async function collectBrainCounts(): Promise<{
 (window as unknown as Record<string, unknown>).__OVERVIEW_STORE__ = useOverviewStore;
 (window as unknown as Record<string, unknown>).__VAULT_STORE__ = useVaultStore;
 console.log("[test-automation] Bridge loaded — window.__TEST__ ready");
+

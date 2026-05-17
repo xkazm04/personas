@@ -24,7 +24,7 @@
     "sending": "Mengirim...",
     "empty_response": "(respons kosong)",
     "snippets": "Cuplikan",
-    "request_body_placeholder": "{\n  \"input\": \"Halo, dunia!\"\n}"
+    "request_body_placeholder": "{ \"message\": \"Your prompt here...\" }"
   },
   "connection": {
     "orchestrator_url_label": "URL Server Cloud",

@@ -24,7 +24,7 @@
     "sending": "发送中...",
     "empty_response": "（空响应）",
     "snippets": "代码片段",
-    "request_body_placeholder": "在此输入您的提示..."
+    "request_body_placeholder": "{ \"message\": \"Your prompt here...\" }"
   },
   "connection": {
     "orchestrator_url_label": "云服务器 URL",
@@ -189,7 +189,7 @@
     "no_deployments": "暂无部署",
     "adjust_filters": "尝试调整搜索或筛选器。",
     "deploy_hint": "从云端或 GitLab 标签部署代理。",
-    "showing_of": "显示 {showing}/{total} 个部署",
+    "showing_of": "显示 {showing} 的部署，共 {total} 个部署{plural}",
     "total_invocations": "总调用次数：",
     "search_placeholder": "搜索部署...",
     "filter": "筛选",

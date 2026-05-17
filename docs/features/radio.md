@@ -17,18 +17,93 @@ appropriate engine and reports state transitions back via
 ## What the user sees
 
 - A compact controller in the **centre** of the bottom-of-window footer
-  (`DesktopFooter`): prev-track, play/pause, next-track, station name +
-  current track (truncated), station-picker.
+  (`DesktopFooter`): prev-track, play/pause, next-track, volume (level-
+  aware speaker icon — click to open a slider popover with a built-in
+  mute toggle), station name + current track (truncated), station-picker.
 - The station picker lists every curated station with a YouTube/Radio
-  badge and (for YouTube) a track count.
+  badge and (for YouTube) a track count. When the catalog contains
+  both `youtubeTracks` and `stream` stations the list splits into
+  collapsible "YouTube" / "Streams" groups (each with a count chip);
+  the collapse choice persists across sessions via
+  `collapsedSourceKinds` in the radio slice. Catalogs of a single
+  kind render flat — the heading would feel decorative.
+- Right-click any picker row opens a small fixed-position actions
+  menu at the cursor: **Hide from picker** (calls the existing
+  `setStationDisabled` so the row disappears immediately — re-enable
+  from Settings → Radio) and, when the station declares a
+  `sourceUrl`, **Open source** (routes through `open_external_url`
+  to launch the provider page in the system browser). Escape or
+  outside-click dismisses the actions menu without closing the
+  picker behind it.
 - A "Radio" card in **Settings → Account** (`RadioSettingsCard`) that
   lists the curated catalog. YouTube stations show their tracklist;
-  stream stations show the source label + link.
+  stream stations show the source label + link. Three settings live
+  here: master enable, **auto-resume on launch** (when on, the last
+  playing station auto-starts the first time the footer mounts after
+  app open — off by default; grays out when the master switch is off),
+  and per-station hide-from-picker toggles. The row dot for the
+  currently active station glows in the accent colour (or pulses when
+  buffering), mirroring the footer's playing-state cue, so it's
+  visible at a glance which station is live while you toggle others.
+- While the engine is in `buffering` state (audio waiting for data or
+  YouTube prebuffer) the play button swaps to a spinning loader tinted
+  with the station accent, the now-playing accent dot pulses, and the
+  expanded card's big play button pulses subtly. Once `playing` lands
+  the spinner returns to a Pause icon. Stalled streams that never
+  reach `playing` within the 8s watchdog still surface the unavailable
+  toast as before.
 - If either engine fails to start within ~8 seconds (or fires an `error`
   event) the renderer surfaces a localized toast. For YouTube errors
   100/101/150 (embed disabled / unavailable) the renderer auto-skips to
   the next track via `radio_track_ended` so a single bad video doesn't
-  deadlock the station.
+  deadlock the station. Failed videoIds also land in a session-scope
+  blacklist (`failedVideoIdsRef`): the next time the shuffle wrap
+  returns the same id, the engine-sync useEffect silently advances the
+  cursor without re-triggering the toast. A `skipBudgetRef` (reset on
+  station change and on every successful PLAYING state) caps
+  consecutive blacklist-skips at the station's track count, so an
+  entirely-broken station eventually surfaces the failure instead of
+  spinning forever.
+- For `youtubeTracks` stations a thin accent-coloured progress bar
+  appears below the track title while playing. The renderer polls
+  `player.getCurrentTime()` / `player.getDuration()` once per second
+  and every fifth tick reports the current position back through
+  `radio_report_status` so a restart resumes mid-track.
+- YouTube tracks **crossfade** at end-of-track. When the polling loop
+  notices `durationSec - currentSec <= 1.6s` it kicks a 1.5s eased
+  rAF-driven fade from `state.volume → 0` on the YT player. When the
+  next videoId loads, an identical fade runs from `0 → state.volume`.
+  The volume-sync useEffect that normally forces the player back to
+  `state.volume` after every state change skips the YT path while
+  `crossfadingRef.current` is true so the animation owns volume
+  exclusively. Stream stations don't crossfade — they're a single
+  continuous source with no track boundary.
+- Clicking the track title — or the accent dot to its left — opens a
+  floating "now playing" card anchored above the footer (`NowPlayingCard`). The card shows the station with
+  an accent-tinted header, the current track + artist (with a YouTube
+  thumbnail from `i.ytimg.com/vi/{videoId}/mqdefault.jpg` to the left
+  for YT tracks), a wider progress bar with explicit M:SS / M:SS time
+  labels, accent-coloured prev / play / next controls, the full
+  YouTube tracklist with the active track highlighted (or, for
+  `stream` stations, the description and source link). Failed
+  thumbnails silently fall back to the layout without the image.
+  Click outside or Escape dismisses.
+- The footer title text **crossfades** when it changes — new YouTube
+  track, new SomaFM metadata, station switch. A small `TitleCrossfade`
+  component overlays an outgoing-text span (fading out) on top of the
+  incoming one (fading in) over 300ms, driven by two named keyframes
+  (`fade-in`, `fade-out`) in `globals.css`. The fade is purely cosmetic
+  — the underlying click target on the title segment behaves identically.
+- Stream stations get an **equalizer bar strip** in the now-playing
+  card (where the YT progress bar would be). 16 bars in the station
+  accent color, each with a randomized animation duration and negative
+  delay so they bounce out of phase. Note: these are NOT real audio
+  levels — cross-origin streams cannot be fed through Web Audio's
+  `AnalyserNode` (the analyser returns zeros for CORS-tainted media
+  and forcing `crossorigin="anonymous"` on the audio element would
+  block playback entirely). The bars are CSS-keyframe decoration
+  (`eq-bounce` keyframe) driven by the binary `isPlaying` state. Pause
+  → bars freeze at floor; play → bars bounce.
 
 ## Architecture
 
@@ -61,7 +136,11 @@ appropriate engine and reports state transitions back via
 
 - **Curated catalog** lives in [`src-tauri/data/radio_stations.json`](../../src-tauri/data/radio_stations.json).
   Baked into the binary via `include_str!` so users see the same catalog
-  the team shipped — no editor surface.
+  the team shipped — no editor surface. Ships today with 2 YouTube
+  focus/lofi stations and 6 SomaFM ambient/genre channels (Groove
+  Salad, Drone Zone, Lush, Indie Pop Rocks!, Beat Blender, Secret
+  Agent, Synphaera Radio, Boot Liquor) — picker grouping (above) keeps
+  the two engines visually separate.
 - **Hidden YouTube player.** The IFrame Player API requires a real DOM
   element with non-zero dimensions; `RadioFooter` mounts a 200×200 div
   off-screen at `position: fixed; left: -10000px; top: -10000px`. Audio
@@ -84,6 +163,16 @@ appropriate engine and reports state transitions back via
   app resumes the last station; persisted `current_station_id` /
   cursor entries that no longer exist in the catalog are silently
   discarded.
+- **SomaFM stream metadata.** Stream stations carry no track data of
+  their own, but SomaFM publishes per-channel current-track JSON at
+  `https://somafm.com/songs/{slug}.json`. The renderer polls
+  `radio_fetch_somafm_metadata` every 30s while a station with
+  `sourceLabel === "SomaFM"` is active. The fetch runs server-side in
+  Rust via `reqwest` (5s timeout, slug validated against
+  `^[a-z0-9-]{1,64}$`), so the renderer doesn't need a CSP entry for
+  the apex `somafm.com` domain. Surfaced in both the footer title
+  segment and the now-playing card's current-track row; the station
+  name + description remain the fallback when metadata is unavailable.
 
 ## Tauri command surface
 
@@ -103,6 +192,7 @@ All commands are wrapped via `invokeWithTimeout` in
 | `radio_set_volume` | UI → Rust | Volume in [0.0, 1.0] |
 | `radio_report_status` | UI → Rust | Engine reports state transitions; optional `position_sec` (YouTube only) |
 | `radio_track_ended` | UI → Rust | YouTube engine reports natural END or skip-on-error |
+| `radio_fetch_somafm_metadata` | UI → Rust | Fetch current-track artist/title from `https://somafm.com/songs/{slug}.json` (async; runs in Rust so the renderer needs no CSP entry for the apex domain). Returns `Some(StreamMetadata)` on success, `None` on any non-fatal failure |
 
 ## Tauri events
 

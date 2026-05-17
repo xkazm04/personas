@@ -46,7 +46,17 @@ pub struct ProactiveMessage {
     pub created_at: String,
     pub delivered_at: Option<String>,
     pub resolved_at: Option<String>,
+    /// ISO8601 UTC timestamp at which the deliver-due sweep should release
+    /// this row. `None` = standard trigger-driven nudges (delivered as
+    /// soon as their guards pass). `Some` = Athena's `schedule_proactive`
+    /// commitments — held in `queued` until the time arrives.
+    pub scheduled_for: Option<String>,
 }
+
+/// Trigger kind used by [`insert_scheduled`] for Athena-authored future
+/// check-ins. Kept distinct from the trigger-evaluator kinds so the
+/// telemetry and the dedupe paths can tell them apart.
+pub const SCHEDULED_TRIGGER_KIND: &str = "athena_scheduled";
 
 /// Candidate produced by a trigger evaluator. Persisted via
 /// `enqueue_if_new` — the dedupe + budget guards live there, not in
@@ -160,7 +170,74 @@ fn enqueue_if_new(pool: &UserDbPool, nudge: &Nudge) -> Result<Option<ProactiveMe
         created_at: now,
         delivered_at: None,
         resolved_at: None,
+        scheduled_for: None,
     }))
+}
+
+/// Insert a future-dated proactive message — the persistence side of
+/// Athena's `schedule_proactive` op. Bypasses the trigger-based dedupe
+/// guard (Athena can schedule multiple check-ins for different times)
+/// but still runs through the daily delivery budget when the time
+/// arrives, via [`deliver_due_scheduled`].
+pub fn insert_scheduled(
+    pool: &UserDbPool,
+    message: &str,
+    when_iso: &str,
+) -> Result<ProactiveMessage, AppError> {
+    let conn = pool.get()?;
+    let id = format!("nudge_{}", short_uuid());
+    let now = Utc::now().to_rfc3339();
+    conn.execute(
+        "INSERT INTO companion_proactive_message
+         (id, trigger_kind, trigger_ref, message, status, created_at, scheduled_for)
+         VALUES (?1, ?2, NULL, ?3, 'queued', ?4, ?5)",
+        params![id, SCHEDULED_TRIGGER_KIND, message, now, when_iso],
+    )?;
+    Ok(ProactiveMessage {
+        id,
+        trigger_kind: SCHEDULED_TRIGGER_KIND.into(),
+        trigger_ref: None,
+        message: message.to_string(),
+        status: "queued".into(),
+        created_at: now,
+        delivered_at: None,
+        resolved_at: None,
+        scheduled_for: Some(when_iso.to_string()),
+    })
+}
+
+/// Sweep for scheduled rows whose time has arrived. Returns the rows
+/// the caller should announce on `companion://proactive` (status still
+/// `queued`; the caller transitions to `delivered` via [`mark_delivered`]
+/// after emitting). Trigger-driven rows (scheduled_for IS NULL) are
+/// untouched — they flow through [`evaluate`] only.
+pub fn deliver_due_scheduled(pool: &UserDbPool) -> Result<Vec<ProactiveMessage>, AppError> {
+    let conn = pool.get()?;
+    let now = Utc::now().to_rfc3339();
+    let mut stmt = conn.prepare(
+        "SELECT id, trigger_kind, trigger_ref, message, status, created_at, delivered_at, resolved_at, scheduled_for
+         FROM companion_proactive_message
+         WHERE status = 'queued'
+           AND scheduled_for IS NOT NULL
+           AND scheduled_for <= ?1
+         ORDER BY scheduled_for ASC",
+    )?;
+    let rows = stmt
+        .query_map(params![now], |row| {
+            Ok(ProactiveMessage {
+                id: row.get(0)?,
+                trigger_kind: row.get(1)?,
+                trigger_ref: row.get(2)?,
+                message: row.get(3)?,
+                status: row.get(4)?,
+                created_at: row.get(5)?,
+                delivered_at: row.get(6)?,
+                resolved_at: row.get(7)?,
+                scheduled_for: row.get(8)?,
+            })
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(rows)
 }
 
 pub fn list_messages(
@@ -175,7 +252,7 @@ pub fn list_messages(
         ""
     };
     let sql = format!(
-        "SELECT id, trigger_kind, trigger_ref, message, status, created_at, delivered_at, resolved_at
+        "SELECT id, trigger_kind, trigger_ref, message, status, created_at, delivered_at, resolved_at, scheduled_for
          FROM companion_proactive_message
          {where_clause}
          ORDER BY created_at DESC
@@ -193,6 +270,7 @@ pub fn list_messages(
                 created_at: row.get(5)?,
                 delivered_at: row.get(6)?,
                 resolved_at: row.get(7)?,
+                scheduled_for: row.get(8)?,
             })
         })?
         .collect::<Result<Vec<_>, _>>()?;

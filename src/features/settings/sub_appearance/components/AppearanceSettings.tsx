@@ -7,83 +7,207 @@ import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/compon
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
+import { getContrastRatio, getContrastLevel } from '@/lib/theme/contrastRatio';
 import CustomThemeCreator from './CustomThemeCreator';
 import TranslationContributor from './TranslationContributor';
 import PseudoLocaleToggle from './PseudoLocaleToggle';
 
-const ThemePreviewTooltip = memo(function ThemePreviewTooltip({ theme }: { theme: ThemeDefinition }) {
-  const { backgroundSample, foregroundSample, primaryColor, accentColor } = theme;
-  const borderColor = theme.isLight ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.12)';
+/* Hover-expand popover — renders a larger fidelity app-surface sample of
+   the theme: titlebar, sidebar with nav items, header card, status row,
+   chart sparkline, button row. Same data-theme cascade trick as the
+   swatch tile, so all child Tailwind utility classes paint with the
+   previewed theme. Positioned below the tile; pointer-events-none so the
+   hover target stays the tile itself. */
+function ThemeHoverPreview({ theme }: { theme: ThemeDefinition }) {
   return (
-    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 animate-expand-in pointer-events-none" style={{ zIndex: 99999 }}>
+    <div
+      className="absolute top-full left-1/2 -translate-x-1/2 mt-2 pointer-events-none animate-expand-in"
+      style={{ zIndex: 9999 }}
+      aria-hidden="true"
+    >
       <div
-        className="w-[140px] rounded-card overflow-hidden flex flex-col"
-        style={{ backgroundColor: backgroundSample, border: `1px solid ${borderColor}`, boxShadow: '0 8px 30px rgba(0,0,0,0.25)' }}
+        data-theme={theme.id}
+        className="w-[280px] rounded-modal overflow-hidden shadow-elevation-4 border border-card-border bg-background text-foreground"
       >
-        {/* Mini UI preview */}
-        <div className="h-[70px] flex flex-col justify-center px-3 gap-2">
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: primaryColor }} />
-            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: accentColor }} />
-            <div className="w-3 h-3 rounded-interactive" style={{ backgroundColor: foregroundSample, opacity: 0.2 }} />
-          </div>
-          <div className="flex gap-1">
-            <div className="h-1 flex-1 rounded-full" style={{ backgroundColor: foregroundSample, opacity: 0.12 }} />
-            <div className="h-1 w-5 rounded-full" style={{ backgroundColor: primaryColor, opacity: 0.5 }} />
-          </div>
-          <div className="flex gap-1">
-            <div className="h-1 w-8 rounded-full" style={{ backgroundColor: foregroundSample, opacity: 0.08 }} />
-            <div className="h-1 flex-1 rounded-full" style={{ backgroundColor: foregroundSample, opacity: 0.08 }} />
-          </div>
+        {/* Faux titlebar */}
+        <div className="flex items-center gap-1.5 px-3 py-2 border-b border-card-border">
+          <span className="w-2 h-2 rounded-full bg-status-error" />
+          <span className="w-2 h-2 rounded-full bg-status-warning" />
+          <span className="w-2 h-2 rounded-full bg-status-success" />
+          <span className="ml-auto text-[10px] font-semibold tracking-wide text-foreground/80">
+            {theme.label}
+          </span>
         </div>
-        {/* Label -- rendered ON the theme's own background for proper contrast */}
-        <div
-          className="text-[10px] text-center py-1.5 font-semibold tracking-wide"
-          style={{ color: foregroundSample, borderTop: `1px solid ${borderColor}` }}
-        >
-          {theme.label}
+        {/* Body: faux sidebar + main column */}
+        <div className="flex">
+          <div className="flex flex-col gap-1.5 px-2 py-2.5 border-r border-card-border bg-secondary/40">
+            <span className="w-5 h-5 rounded-interactive bg-primary/80" />
+            <span className="w-5 h-5 rounded-interactive bg-foreground/10" />
+            <span className="w-5 h-5 rounded-interactive bg-foreground/10" />
+            <span className="w-5 h-5 rounded-interactive bg-foreground/10" />
+          </div>
+          <div className="flex-1 px-3 py-2.5 flex flex-col gap-2">
+            {/* Card */}
+            <div className="rounded-card bg-card-bg border border-card-border p-2 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="h-1.5 w-12 rounded-full bg-foreground/30" />
+                <span className="px-1.5 py-0.5 rounded-pill text-[8px] font-semibold bg-status-success/20 text-status-success">OK</span>
+              </div>
+              <span className="block h-1 w-full rounded-full bg-foreground/10" />
+              <span className="block h-1 w-3/4 rounded-full bg-foreground/10" />
+            </div>
+            {/* Status row */}
+            <div className="flex items-center gap-1">
+              <span className="px-1.5 py-0.5 rounded-pill text-[8px] font-semibold bg-status-info/20 text-status-info">INFO</span>
+              <span className="px-1.5 py-0.5 rounded-pill text-[8px] font-semibold bg-status-warning/25 text-status-warning">WARN</span>
+              <span className="px-1.5 py-0.5 rounded-pill text-[8px] font-semibold bg-status-error/20 text-status-error">ERR</span>
+            </div>
+            {/* Sparkline */}
+            <svg viewBox="0 0 100 24" className="w-full h-6" preserveAspectRatio="none">
+              <polyline
+                points="0,18 12,14 24,16 36,8 48,11 60,5 72,9 84,3 100,7"
+                fill="none"
+                stroke="var(--primary)"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <polyline
+                points="0,21 12,19 24,20 36,17 48,19 60,16 72,18 84,15 100,16"
+                fill="none"
+                stroke="var(--accent)"
+                strokeOpacity="0.55"
+                strokeWidth="1.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            {/* Button row */}
+            <div className="flex items-center gap-1.5">
+              <span className="px-2 py-1 rounded-interactive text-[10px] font-semibold bg-primary text-btn-primary-fg">Run</span>
+              <span className="px-2 py-1 rounded-interactive text-[10px] font-medium border border-card-border text-foreground/85">Skip</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
-});
+}
 
+/* Mini UI preview rendered inside the swatch.
+   Wrapping it in [data-theme="<id>"] re-scopes every CSS variable to that
+   theme's palette — so `bg-primary` / `bg-status-success` / `text-foreground`
+   inside this subtree paint with the previewed theme, not the active one.
+   Result: each tile is a live, real-token preview, not a static swatch. */
 const ThemeSwatch = memo(function ThemeSwatch({ theme, active, onSelect }: { theme: ThemeDefinition; active: boolean; onSelect: () => void }) {
-  const [showPreview, setShowPreview] = useState(false);
-  const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { tx, t } = useTranslation();
+  const previewAriaLabel = tx(t.settings.appearance.theme_preview_aria, { name: theme.label });
 
+  const [showHover, setShowHover] = useState(false);
+  const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleEnter = useCallback(() => {
     if (leaveTimer.current) clearTimeout(leaveTimer.current);
-    setShowPreview(true);
+    setShowHover(true);
   }, []);
-
   const handleLeave = useCallback(() => {
-    leaveTimer.current = setTimeout(() => setShowPreview(false), 300);
+    leaveTimer.current = setTimeout(() => setShowHover(false), 180);
   }, []);
 
+  // WCAG contrast badge: computed from the theme's *advertised* fg/bg pair
+  // (matches what users will see for body text on the canvas).
+  const contrastRatio = useMemo(
+    () => getContrastRatio(theme.foregroundSample, theme.backgroundSample),
+    [theme.foregroundSample, theme.backgroundSample],
+  );
+  const contrastLevel = useMemo(
+    () => getContrastLevel(theme.foregroundSample, theme.backgroundSample),
+    [theme.foregroundSample, theme.backgroundSample],
+  );
+  const a = t.settings.appearance;
+  const badgeLabel =
+    contrastLevel === 'AAA' ? a.contrast_badge_aaa
+    : contrastLevel === 'AA' ? a.contrast_badge_aa
+    : a.contrast_badge_low;
+  const badgeAriaLabel = tx(a.contrast_badge_aria, { level: badgeLabel, ratio: contrastRatio.toFixed(1) });
+  const badgeClass =
+    contrastLevel === 'AAA' ? 'bg-status-success/20 text-status-success'
+    : contrastLevel === 'AA' ? 'bg-status-info/20 text-status-info'
+    : 'bg-status-warning/25 text-status-warning';
+
+  // Midnight has no [data-theme=...] rule — it lives at :root. Setting the
+  // attribute to its id on the wrapper inherits root vars unchanged, so we
+  // can scope every tile uniformly without special-casing.
+  // Wrapping div carries the hover popover (positioned outside the Button's
+  // overflow-hidden clip rect) and forwards hover/focus events to both.
   return (
-    <Button
-      variant="ghost"
-      onClick={onSelect}
+    <div
+      className="relative"
       onMouseEnter={handleEnter}
       onMouseLeave={handleLeave}
-      className={`group relative flex flex-col items-center gap-2 p-3 rounded-modal border ${
+    >
+      {showHover && !active && <ThemeHoverPreview theme={theme} />}
+      <Button
+      variant="ghost"
+      onClick={onSelect}
+      onFocus={handleEnter}
+      onBlur={handleLeave}
+      className={`group relative flex flex-col p-0 rounded-modal border overflow-hidden w-full ${
         active
-          ? 'border-primary/30 bg-primary/5'
-          : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
+          ? 'border-primary/40 ring-2 ring-primary/20'
+          : 'border-primary/10 hover:border-primary/30'
       }`}
     >
-      {showPreview && !active && <ThemePreviewTooltip theme={theme} />}
       <div
-        className="w-10 h-10 rounded-full border-2 border-black/10 flex items-center justify-center"
-        style={{ backgroundColor: theme.primaryColor }}
+        data-theme={theme.id}
+        aria-label={previewAriaLabel}
+        className="relative w-full bg-background text-foreground flex flex-col gap-2 px-3 py-3 pointer-events-none"
+        style={{ minHeight: '110px' }}
       >
-        {active && <Check className="w-4 h-4 text-white drop-shadow-elevation-1" />}
+        {/* Contrast badge — anchored top-right inside the data-theme'd region
+            so its semantic colors also reflect the previewed theme's palette */}
+        <span
+          aria-label={badgeAriaLabel}
+          title={badgeAriaLabel}
+          className={`absolute top-2 right-2 px-1.5 py-0.5 rounded-pill text-[9px] font-semibold tracking-wide ${badgeClass}`}
+        >
+          {badgeLabel}
+        </span>
+
+        {/* Top row: primary disc with active check + accent + neutral chip */}
+        <div className="flex items-center justify-between pr-12">
+          <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center shadow-elevation-1">
+            {active && <Check className="w-3.5 h-3.5 text-btn-primary-fg" />}
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-accent" />
+            <span className="w-2 h-2 rounded-full bg-brand-purple" />
+            <span className="w-2 h-2 rounded-full bg-brand-emerald" />
+          </div>
+        </div>
+
+        {/* Status dot row -- real semantic tokens, showing how the theme
+            differentiates success/warning/error/info */}
+        <div className="flex items-center gap-1 mt-0.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-status-success" />
+          <span className="w-1.5 h-1.5 rounded-full bg-status-warning" />
+          <span className="w-1.5 h-1.5 rounded-full bg-status-error" />
+          <span className="w-1.5 h-1.5 rounded-full bg-status-info" />
+          <span className="h-1 flex-1 rounded-full bg-foreground/10 ml-1" />
+        </div>
+
+        {/* Mini "card" -- shows how surfaces sit on the background */}
+        <div className="rounded-card bg-card-bg border border-card-border px-2 py-1.5 flex items-center gap-2">
+          <div className="h-1 flex-1 rounded-full bg-foreground/15" />
+          <div className="h-1 w-4 rounded-full bg-primary/60" />
+        </div>
+
+        {/* Label rendered in the theme's foreground for true contrast preview */}
+        <span className="text-sm font-medium text-foreground mt-auto">
+          {theme.label}
+        </span>
       </div>
-      <span className={`text-sm ${active ? 'text-foreground/90 font-medium' : 'text-foreground'}`}>
-        {theme.label}
-      </span>
     </Button>
+    </div>
   );
 });
 
@@ -173,6 +297,14 @@ export default function AppearanceSettings() {
 
   const brightness = useThemeStore((s) => s.brightness);
   const setBrightness = useThemeStore((s) => s.setBrightness);
+  const dim = useThemeStore((s) => s.dim);
+  const setDim = useThemeStore((s) => s.setDim);
+  const cvdSafe = useThemeStore((s) => s.cvdSafe);
+  const setCvdSafe = useThemeStore((s) => s.setCvdSafe);
+  const highContrast = useThemeStore((s) => s.highContrast);
+  const setHighContrast = useThemeStore((s) => s.setHighContrast);
+  const reduceMotion = useThemeStore((s) => s.reduceMotion);
+  const setReduceMotion = useThemeStore((s) => s.setReduceMotion);
   const isDark = useIsDarkTheme();
   const brightnessLevels = isDark ? DARK_BRIGHTNESS_LEVELS : LIGHT_BRIGHTNESS_LEVELS;
   const customTheme = useThemeStore((s) => s.customTheme);
@@ -323,6 +455,87 @@ export default function AppearanceSettings() {
                   </Button>
                 );
               })}
+            </div>
+            {/* Dim mode toggle — independent of brightness levels; reduces
+                color saturation across the entire app for late-night use */}
+            <div className="flex items-start justify-between gap-4 pt-3 mt-1 border-t border-primary/10">
+              <div className="flex-1">
+                <div className="text-sm text-foreground font-medium">{s.dim_mode_label}</div>
+                <div className="typo-body text-foreground/80">{s.dim_mode_hint}</div>
+              </div>
+              <Button
+                variant="ghost"
+                onClick={() => setDim(!dim)}
+                aria-pressed={dim}
+                className={`shrink-0 px-4 py-2 rounded-interactive border min-w-[64px] ${
+                  dim
+                    ? 'border-primary/40 bg-primary/10 text-primary font-medium'
+                    : 'border-primary/10 hover:border-primary/30 text-foreground'
+                }`}
+              >
+                {dim ? s.dim_mode_on : s.dim_mode_off}
+              </Button>
+            </div>
+            {/* Color-vision-deficiency safe palette — distinguishes warning↔error
+                via luminance (yellow vs saturated red) instead of red↔orange */}
+            <div className="flex items-start justify-between gap-4 pt-3 mt-1 border-t border-primary/10">
+              <div className="flex-1">
+                <div className="text-sm text-foreground font-medium">{s.cvd_safe_label}</div>
+                <div className="typo-body text-foreground/80">{s.cvd_safe_hint}</div>
+              </div>
+              <Button
+                variant="ghost"
+                onClick={() => setCvdSafe(!cvdSafe)}
+                aria-pressed={cvdSafe}
+                className={`shrink-0 px-4 py-2 rounded-interactive border min-w-[64px] ${
+                  cvdSafe
+                    ? 'border-primary/40 bg-primary/10 text-primary font-medium'
+                    : 'border-primary/10 hover:border-primary/30 text-foreground'
+                }`}
+              >
+                {cvdSafe ? s.cvd_safe_on : s.cvd_safe_off}
+              </Button>
+            </div>
+            {/* High-contrast preset — luminance maximization across status,
+                muted-foreground, and card borders. Stacks on top of CVD-safe. */}
+            <div className="flex items-start justify-between gap-4 pt-3 mt-1 border-t border-primary/10">
+              <div className="flex-1">
+                <div className="text-sm text-foreground font-medium">{s.high_contrast_label}</div>
+                <div className="typo-body text-foreground/80">{s.high_contrast_hint}</div>
+              </div>
+              <Button
+                variant="ghost"
+                onClick={() => setHighContrast(!highContrast)}
+                aria-pressed={highContrast}
+                className={`shrink-0 px-4 py-2 rounded-interactive border min-w-[64px] ${
+                  highContrast
+                    ? 'border-primary/40 bg-primary/10 text-primary font-medium'
+                    : 'border-primary/10 hover:border-primary/30 text-foreground'
+                }`}
+              >
+                {highContrast ? s.high_contrast_on : s.high_contrast_off}
+              </Button>
+            </div>
+            {/* Reduce motion — kills transitions/animations app-wide via a
+                wildcard CSS rule. Fourth axis in the a11y stack: alongside
+                dim (saturation), CVD (hue), and high-contrast (luminance). */}
+            <div className="flex items-start justify-between gap-4 pt-3 mt-1 border-t border-primary/10">
+              <div className="flex-1">
+                <div className="text-sm text-foreground font-medium">{s.reduce_motion_label}</div>
+                <div className="typo-body text-foreground/80">{s.reduce_motion_hint}</div>
+              </div>
+              <Button
+                variant="ghost"
+                onClick={() => setReduceMotion(!reduceMotion)}
+                aria-pressed={reduceMotion}
+                className={`shrink-0 px-4 py-2 rounded-interactive border min-w-[64px] ${
+                  reduceMotion
+                    ? 'border-primary/40 bg-primary/10 text-primary font-medium'
+                    : 'border-primary/10 hover:border-primary/30 text-foreground'
+                }`}
+              >
+                {reduceMotion ? s.reduce_motion_on : s.reduce_motion_off}
+              </Button>
             </div>
           </div>
 

@@ -5,7 +5,7 @@
   "greeting_evening": "Dobrý večer",
   "operator": "Operátor",
   "summary_empty": "Začněte vytvořením prvního agenta nebo prozkoumáním platformy.",
-  "summary_stats": "Máte {personasCount} agent{personasPlural} a {credentialsCount} přihlašovací{credentialsPlural} údaj{credentialsPlural} nakonfigurováno.",
+  "summary_stats": "Máte nakonfigurované {personasCount} agenta{personasPlural} a {credentialsCount} pověření{credentialsPlural}.",
   "quick_navigation": "Rychlá navigace",
   "platform_label": "platforma personas",
   "roadmap": {

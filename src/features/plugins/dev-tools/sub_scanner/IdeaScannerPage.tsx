@@ -288,6 +288,55 @@ export default function IdeaScannerPage() {
     }
   }, [selectedAgents, runScan]);
 
+  // Rerun a historical scan with its exact agent set against current HEAD.
+  // Also restores the agent selection in the picker grid for visibility.
+  const handleRerunFromHistory = useCallback(async (agentKeys: string[]) => {
+    if (agentKeys.length === 0 || isRunning) return;
+    const nextSet = new Set(agentKeys);
+    setSelectedAgents(nextSet);
+    setScanProgress(5);
+    setCurrentAgentKey(agentKeys[0] ?? null);
+    useOverviewStore.getState().processStarted(
+      'idea_scan',
+      undefined,
+      `Idea Scan (rerun, ${agentKeys.length} agents)`,
+      { section: 'plugins', tab: 'idea-scanner' },
+    );
+    try {
+      await runScan(agentKeys);
+    } catch {
+      setScanProgress(0);
+      useOverviewStore.getState().processEnded('idea_scan', 'failed');
+    }
+  }, [isRunning, runScan]);
+
+  // Filter chips for the history table — derive from distinct agent keys in
+  // the history (preserves insertion order from history newest-first).
+  const [historyFilter, setHistoryFilter] = useState<Set<string>>(new Set());
+  const historyAgentCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const h of history) {
+      for (const k of h.agentTypes.split(',').map((s) => s.trim()).filter(Boolean)) {
+        counts.set(k, (counts.get(k) ?? 0) + 1);
+      }
+    }
+    return counts;
+  }, [history]);
+  const filteredHistory = useMemo(() => {
+    if (historyFilter.size === 0) return history;
+    return history.filter((h) => {
+      const keys = h.agentTypes.split(',').map((s) => s.trim());
+      return keys.some((k) => historyFilter.has(k));
+    });
+  }, [history, historyFilter]);
+  const toggleHistoryFilter = useCallback((agentKey: string) => {
+    setHistoryFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(agentKey)) next.delete(agentKey); else next.add(agentKey);
+      return next;
+    });
+  }, []);
+
   // Auto-scan: evaluate all contexts and run matching agents per context
   const handleAutoScan = useCallback(async () => {
     if (!activeProjectId || autoScanRunning) return;
@@ -566,7 +615,48 @@ export default function IdeaScannerPage() {
             <h3 className="text-md font-semibold uppercase tracking-wider text-primary mb-3">
               {t.plugins.dev_scanner.scan_history_header}{history.length})
             </h3>
-            <ScanHistoryTable history={history} />
+
+            {/* Filter chips — only show when there's enough history to be worth filtering */}
+            {historyAgentCounts.size > 1 && (
+              <div className="flex flex-wrap items-center gap-1.5 mb-3">
+                <span className="typo-caption text-foreground/70 mr-1">
+                  {t.plugins.dev_scanner.history_filter_label}
+                </span>
+                {Array.from(historyAgentCounts.entries()).map(([key, count]) => {
+                  const agent = SCAN_AGENTS.find((a) => a.key === key);
+                  const active = historyFilter.has(key);
+                  return (
+                    <button
+                      key={`hist-filter-${key}`}
+                      type="button"
+                      onClick={() => toggleHistoryFilter(key)}
+                      className={`text-[10px] font-medium px-2 py-0.5 rounded-full border transition-colors ${
+                        active
+                          ? 'border-primary/40 bg-primary/15 text-primary'
+                          : 'border-primary/15 bg-card/30 text-foreground hover:border-primary/25'
+                      }`}
+                    >
+                      <span className="mr-1">{agent?.emoji ?? '?'}</span>
+                      {agent?.label ?? key} <span className="text-foreground/60">({count})</span>
+                    </button>
+                  );
+                })}
+                {historyFilter.size > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setHistoryFilter(new Set())}
+                    className="text-[10px] font-medium px-2 py-0.5 rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20"
+                  >
+                    {t.plugins.dev_scanner.history_filter_clear}
+                  </button>
+                )}
+              </div>
+            )}
+
+            <ScanHistoryTable
+              history={filteredHistory}
+              onRerun={isRunning ? undefined : handleRerunFromHistory}
+            />
           </div>
         </div>
       </ContentBody>

@@ -7,7 +7,7 @@
  *   - ScanHistoryTable  — past scan runs table
  */
 import { motion } from 'framer-motion';
-import { CheckSquare, Square, BarChart3, Clock, Info } from 'lucide-react';
+import { CheckSquare, Square, BarChart3, Clock, Info, RotateCcw } from 'lucide-react';
 import { formatDuration } from '@/lib/utils/formatters';
 import { SCAN_STATUS_STYLES, relativeTime } from './ideaScannerHelpers';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
@@ -223,30 +223,41 @@ export interface ScanHistoryEntry {
   durationMs: number | null;
 }
 
-export function ScanHistoryTable({ history }: { history: ScanHistoryEntry[] }) {
+export function ScanHistoryTable({
+  history,
+  onRerun,
+}: {
+  history: ScanHistoryEntry[];
+  onRerun?: (agentKeys: string[]) => void;
+}) {
   const { t } = useTranslation();
   const ds = t.plugins.dev_scanner;
   if (history.length === 0) {
     return <p className="text-md text-foreground">{ds.no_previous_scans}</p>;
   }
+  const showRerun = Boolean(onRerun);
+  const cols = showRerun
+    ? 'grid-cols-[1fr_0.6fr_0.5fr_0.7fr_0.5fr_0.5fr_0.4fr]'
+    : 'grid-cols-[1fr_0.6fr_0.5fr_0.7fr_0.5fr_0.5fr]';
   return (
     <div className="border border-primary/10 rounded-modal overflow-hidden">
       {/* Table header */}
-      <div className="grid grid-cols-[1fr_0.6fr_0.5fr_0.7fr_0.5fr_0.5fr] gap-2 px-3 py-2 bg-primary/5 border-b border-primary/10 text-md font-medium text-primary uppercase tracking-wider">
+      <div className={`grid ${cols} gap-2 px-3 py-2 bg-primary/5 border-b border-primary/10 text-md font-medium text-primary uppercase tracking-wider`}>
         <span>{ds.history_col_agents}</span>
         <span>{ds.history_col_status}</span>
         <span>{ds.history_col_ideas}</span>
         <span>{ds.history_col_tokens}</span>
         <span>{ds.history_col_duration}</span>
         <span>{ds.history_col_when}</span>
+        {showRerun && <span className="text-right">{ds.history_col_action}</span>}
       </div>
       {history.map((entry) => {
-        const agentKeys = entry.agentTypes.split(',');
-        const agentEmojis = agentKeys.map((k) => SCAN_AGENTS.find((a) => a.key === k.trim())?.emoji ?? '?').join(' ');
+        const agentKeys = entry.agentTypes.split(',').map((s) => s.trim()).filter(Boolean);
+        const agentEmojis = agentKeys.map((k) => SCAN_AGENTS.find((a) => a.key === k)?.emoji ?? '?').join(' ');
         const statusStyle = SCAN_STATUS_STYLES[entry.status] ?? SCAN_STATUS_STYLES.error;
         const totalTokens = (entry.inputTokens ?? 0) + (entry.outputTokens ?? 0);
         return (
-          <div key={entry.id} className="grid grid-cols-[1fr_0.6fr_0.5fr_0.7fr_0.5fr_0.5fr] gap-2 px-3 py-2.5 border-b border-primary/5 last:border-b-0 hover:bg-primary/5 transition-colors items-center">
+          <div key={entry.id} className={`grid ${cols} gap-2 px-3 py-2.5 border-b border-primary/5 last:border-b-0 hover:bg-primary/5 transition-colors items-center`}>
             <span className="text-md text-foreground truncate" title={agentKeys.join(', ')}>
               {agentEmojis} <span className="text-foreground">{agentKeys.length > 1 ? `(${agentKeys.length})` : agentKeys[0]}</span>
             </span>
@@ -267,6 +278,19 @@ export function ScanHistoryTable({ history }: { history: ScanHistoryEntry[] }) {
               <Clock className="w-3.5 h-3.5" />
               {relativeTime(entry.timestamp)}
             </span>
+            {showRerun && (
+              <span className="text-right">
+                <button
+                  type="button"
+                  onClick={() => onRerun!(agentKeys)}
+                  title={ds.history_rerun_tooltip}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-primary/20 bg-primary/5 text-[10px] font-medium text-foreground hover:border-primary/40 hover:bg-primary/10 transition-colors"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  {ds.history_rerun_label}
+                </button>
+              </span>
+            )}
           </div>
         );
       })}

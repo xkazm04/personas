@@ -186,4 +186,10 @@ export interface ExportState {
   jobId: string | null;
   outputPath: string | null;
   error: string | null;
+  /** ms-epoch the export started, or null when idle. */
+  startedAt: number | null;
+  /** Wall-clock ms elapsed since startedAt — refreshed on each progress event. */
+  elapsedMs: number;
+  /** Linear ETA in ms based on elapsedMs and progress fraction; null until progress is meaningful. */
+  etaMs: number | null;
 }

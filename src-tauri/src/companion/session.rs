@@ -170,6 +170,54 @@ pub const COMPOSE_COCKPIT_EVENT: &str = "companion://compose-cockpit";
 /// Auto-fire — no approval, no server-side persistence (transient UI).
 pub const CHAT_CARDS_EVENT: &str = "companion://chat-cards";
 
+/// Per-turn rollup of what Athena's brain pulled into the system prompt:
+/// counts + glanceable titles per memory kind. Emitted once per turn, right
+/// after the prompt is built and right before the CLI spawn. Payload is a
+/// `RecallPreviewEvent { sessionId, turnId, preview }`. The frontend renders
+/// a small "Athena consulted N memories" strip above the streaming bubble.
+pub const RECALL_PREVIEW_EVENT: &str = "companion://recall-preview";
+
+/// Wire shape for `RECALL_PREVIEW_EVENT`. `preview` is the same shape as
+/// `prompt::RecallPreview` (serialized camelCase). Carrying `turn_id` lets
+/// the frontend correlate the strip with the streaming bubble that's
+/// about to fill in for this turn; carrying `session_id` mirrors every
+/// other companion event for forward compatibility (multi-session is on
+/// the roadmap, even though Phase 1 ships a single default session).
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RecallPreviewEvent {
+    pub session_id: String,
+    pub turn_id: String,
+    pub preview: crate::companion::prompt::RecallPreview,
+}
+
+/// Per-turn rollup of side-effects the dispatcher produced from Athena's
+/// reply: how many approvals were filed, how many direct nav/lab/dashboard/
+/// cockpit/chat-card auto-fires happened, and whether she requested an
+/// autonomous continuation. Emitted once after the dispatcher block, with
+/// `assistant_episode_id` already known so the frontend can key the chip
+/// directly under the persisted bubble. No persistence — the chip is
+/// session-scoped UI, same lifecycle as `RECALL_PREVIEW_EVENT`.
+pub const TURN_SUMMARY_EVENT: &str = "companion://turn-summary";
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TurnSummaryEvent {
+    pub session_id: String,
+    pub turn_id: String,
+    pub assistant_episode_id: String,
+    pub approvals: u32,
+    pub navigations: u32,
+    pub lab_opens: u32,
+    pub dashboards: u32,
+    pub cockpits: u32,
+    pub chat_cards: u32,
+    /// Athena emitted `OP: continue_autonomously` — the next tick is
+    /// either scheduled or capped (caller decides). Surfaced as a flag
+    /// because "she said she'd keep going" is its own glanceable signal.
+    pub continuation: bool,
+}
+
 /// What `send_turn` returns to the chat command. The IDs let the UI
 /// reconcile the optimistic bubble with persisted episodes; the
 /// `quick_replies` carry Athena's QR offerings for this specific turn
@@ -325,7 +373,7 @@ pub async fn send_turn(
         ),
     };
 
-    let system_prompt = {
+    let (system_prompt, recall_preview) = {
         #[cfg(feature = "ml")]
         {
             prompt::build_system_prompt(
@@ -354,6 +402,21 @@ pub async fn send_turn(
             .await?
         }
     };
+
+    // Surface what the brain pulled into the prompt so the panel can show
+    // a "Athena consulted N memories" strip above the streaming bubble.
+    // Best-effort: a failed emit just means no strip this turn — never
+    // block the actual chat reply on UI bookkeeping.
+    if let Err(e) = app.emit(
+        RECALL_PREVIEW_EVENT,
+        RecallPreviewEvent {
+            session_id: session_id.clone(),
+            turn_id: turn_id.clone(),
+            preview: recall_preview,
+        },
+    ) {
+        tracing::warn!(error = %e, "companion recall preview event emit failed");
+    }
 
     let assistant_text = match timeout(
         TURN_TIMEOUT,
@@ -544,6 +607,27 @@ pub async fn send_turn(
         });
         if let Err(e) = app.emit(CHAT_CARDS_EVENT, payload) {
             tracing::warn!(error = %e, "companion chat_cards event emit failed");
+        }
+    }
+
+    // Per-turn rollup of dispatcher side-effects. The chip on each
+    // completed bubble reads this; total=0 turns get nothing. Best-effort —
+    // a missed emit just means no chip for that turn.
+    {
+        let summary = TurnSummaryEvent {
+            session_id: session_id.clone(),
+            turn_id: turn_id.clone(),
+            assistant_episode_id: assistant_ep_id.clone(),
+            approvals: dispatched.approvals.len() as u32,
+            navigations: dispatched.navigations.len() as u32,
+            lab_opens: dispatched.lab_opens.len() as u32,
+            dashboards: dispatched.dashboards.len() as u32,
+            cockpits: dispatched.cockpits.len() as u32,
+            chat_cards: dispatched.chat_cards.len() as u32,
+            continuation: dispatched.requests_continuation,
+        };
+        if let Err(e) = app.emit(TURN_SUMMARY_EVENT, summary) {
+            tracing::warn!(error = %e, "companion turn summary event emit failed");
         }
     }
 

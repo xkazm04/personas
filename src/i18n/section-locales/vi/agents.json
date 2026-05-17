@@ -508,7 +508,7 @@
     "no_tools_warning": "Tác nhân này chưa gán công cụ. Thêm công cụ để kiểm tra phong phú hơn.",
     "add_prompt_first": "Thêm prompt vào tác nhân này trước",
     "select_model": "Chọn ít nhất một mô hình",
-    "run_arena": "Chạy đấu trường ({count} mô hình)",
+    "run_arena": "{count, plural, one {} Run Arena ({count} model khác {s}})",
     "cancel_test": "Hủy kiểm tra",
     "focus_use_case": "Tập trung vào trường hợp sử dụng",
     "describe_changes": "Mô tả thay đổi mong muốn",
@@ -909,7 +909,7 @@
     "auto_event_type": "Loại sự kiện: {eventType}",
     "auto_zapier_hint": "Catch hook sẽ được xác thực và kết nối.",
     "auto_custom_hint": "Cần thiết lập thủ công. Tự động hóa sẽ được lưu làm bản nháp.",
-    "auto_input_schema_placeholder": "chuỗi",
+    "auto_input_schema_placeholder": "{ \"file_url\": \"string\" }",
     "auto_github_token_needs": "Token của bạn cần phạm vi {scopes}. Cập nhật token tại github.com/settings/tokens.",
     "auto_fallback_title": "Quay về trình kết nối trực tiếp khi thất bại",
     "ch_title": "Kênh thông báo",
@@ -2074,7 +2074,7 @@
     "success": "Thành công",
     "failed": "Thất bại",
     "error": "Lỗi",
-    "input_json_placeholder": "giá trị",
+    "input_json_placeholder": "{ \"key\": \"value\" }",
     "invalid_json": "Invalid JSON — fix before running."
   },
   "health_check": {

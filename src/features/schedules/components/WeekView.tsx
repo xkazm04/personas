@@ -56,7 +56,7 @@ export function WeekView({
   return (
     <div className="border border-primary/10 rounded-modal overflow-hidden">
       {/* Day headers */}
-      <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-primary/10 bg-primary/[0.02]">
+      <div className="grid grid-cols-[60px_repeat(7,minmax(0,1fr))] border-b border-primary/10 bg-primary/[0.02]">
         <div className="px-2 py-2 text-[10px] text-foreground" />
         {days.map((day) => {
           const isToday = isSameDay(day, today);
@@ -75,9 +75,9 @@ export function WeekView({
       </div>
 
       {/* Hour rows */}
-      <div className="max-h-[520px] overflow-y-auto">
+      <div className="max-h-[624px] overflow-y-auto">
         {activeHours.map((hour) => (
-          <div key={hour} className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-primary/5 min-h-[44px]">
+          <div key={hour} className="grid grid-cols-[60px_repeat(7,minmax(0,1fr))] border-b border-primary/5 min-h-[44px]">
             {/* Hour label */}
             <div className="px-2 py-1 text-[10px] text-foreground text-right pr-3 pt-1.5">
               {formatHour(hour)}
@@ -94,7 +94,7 @@ export function WeekView({
               return (
                 <div
                   key={`${key}-${hour}`}
-                  className={`border-l border-primary/5 px-0.5 py-0.5 relative ${
+                  className={`border-l border-primary/5 px-0.5 py-0.5 relative min-w-0 ${
                     isNow ? 'bg-blue-500/[0.04]' : ''
                   } ${cellConflictCount > 0 ? 'bg-amber-500/[0.06]' : ''}`}
                 >
