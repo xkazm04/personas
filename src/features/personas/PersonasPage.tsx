@@ -13,6 +13,7 @@ import { ErrorBanner } from '@/features/shared/components/feedback/ErrorBanner';
 import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
 import { CanvasDragProvider } from '@/features/pipeline/sub_canvas';
 import DesktopFooter from '@/features/shared/components/layout/DesktopFooter';
+import { useFleetCompanionBridge } from '@/features/plugins/companion/useFleetCompanionBridge';
 
 // Lazy-load all section content — only Sidebar stays eager (always visible)
 const HomePage = lazy(() => import('@/features/home/components/HomePage'));
@@ -44,6 +45,10 @@ const SectionFallback = null;
 
 export default function PersonasPage() {
   const { shouldAnimate, transition } = useMotion();
+  // Always-on bridge: writes Fleet lifecycle events to Athena's
+  // episodic memory regardless of which sidebar section is active.
+  // No-op when no fleet sessions exist.
+  useFleetCompanionBridge();
   const { sidebarSection, cloudTab, agentTab, pluginTab, isCreatingPersona, isLoading, error } = useSystemStore(
     useShallow((s) => ({
       sidebarSection: s.sidebarSection,

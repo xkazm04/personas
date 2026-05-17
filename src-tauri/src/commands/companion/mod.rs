@@ -11,6 +11,7 @@ pub mod connectors;
 pub mod consolidate;
 pub mod decisions;
 pub mod feedback;
+pub mod fleet_bridge;
 pub mod jobs;
 pub mod observability;
 pub mod plugins;

@@ -163,6 +163,15 @@ pub async fn build_system_prompt(
         .map(observability::format_for_prompt)
         .unwrap_or_default();
 
+    // Append a live Fleet digest if any sessions are running. Returns
+    // empty when fleet is idle, so the prompt stays clean for users who
+    // don't use it.
+    let observability_md = format!(
+        "{}{}",
+        observability_md,
+        crate::companion::brain::fleet::current_state_digest(),
+    );
+
     let recall = match embedder {
         Some(emb) => retrieval::retrieve(user_db, emb, session_id, query)
             .await
@@ -263,6 +272,15 @@ pub async fn build_system_prompt(
         .as_ref()
         .map(observability::format_for_prompt)
         .unwrap_or_default();
+
+    // Append a live Fleet digest if any sessions are running. Returns
+    // empty when fleet is idle, so the prompt stays clean for users who
+    // don't use it.
+    let observability_md = format!(
+        "{}{}",
+        observability_md,
+        crate::companion::brain::fleet::current_state_digest(),
+    );
 
     let recall = Recall {
         episodes: episodic::list_recent(user_db, session_id, 20).unwrap_or_default(),
