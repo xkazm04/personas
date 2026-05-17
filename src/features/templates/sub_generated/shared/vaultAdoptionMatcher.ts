@@ -35,8 +35,11 @@ function expandAliases(serviceType: string): readonly string[] {
 }
 
 /** Does the vault contain any credential whose service_type matches the
- *  canonical name OR any of its known aliases? */
-function hasMatchingCredential(
+ *  canonical name OR any of its known aliases? Exported so callers that
+ *  need to react to a single picked-option's credential status (e.g. the
+ *  adoption flow's post-pick auto-prompt) can use the same alias-aware
+ *  semantics matchVaultToQuestions does. */
+export function hasMatchingCredential(
   canonical: string,
   credentialServiceTypes: Set<string>,
 ): boolean {

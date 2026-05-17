@@ -26,7 +26,7 @@ import type { CellBuildStatus } from "@/lib/types/buildTypes";
 import type { ActiveProcess } from "@/stores/slices/processActivitySlice";
 import type { TransformQuestionResponse } from "@/api/templates/n8nTransform";
 import type { AgentIR } from "@/lib/types/designTypes";
-import { matchVaultToQuestions } from "../shared/vaultAdoptionMatcher";
+import { hasMatchingCredential, matchVaultToQuestions } from "../shared/vaultAdoptionMatcher";
 import { useDynamicQuestionOptions } from "./useDynamicQuestionOptions";
 import { categoryOrderIndex } from "./questionnaireCategoryOrder";
 import { useTranslation } from '@/i18n/useTranslation';
@@ -1116,6 +1116,56 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
     setAdoptionAnswers((prev) => ({ ...prev, [ctx.targetQuestionId!]: serviceType }));
   }, [quickAddContext]);
 
+  // Wrapper around the plain `setAdoptionAnswers` that also auto-prompts
+  // for credential setup when the user picks an option whose service_type
+  // has no matching vault credential. Without this, the user would pick
+  // "Gmail OAuth" (just a label) and proceed to build, only to see tests
+  // fail with "Missing keys: email" — because the answer doesn't create
+  // a credential, it just records intent.
+  //
+  // Behaviour: set the answer first (so the picked option stays selected
+  // visually); then, if the question carries a vault_category and the
+  // picked option's service_type has no matching credential in the vault,
+  // open the QuickAddCredentialModal scoped to that category. If the user
+  // dismisses the modal, the answer remains — they can add the credential
+  // later. If they complete the add flow, handleCredentialAdded re-sets
+  // the answer to the freshly created service_type.
+  const credentialServiceTypesSet = useMemo(
+    () => new Set(credentialServiceTypes),
+    [credentialServiceTypes],
+  );
+  const handleAnswerUpdated = useCallback(
+    (id: string, answer: string) => {
+      setAdoptionAnswers((prev) => ({ ...prev, [id]: answer }));
+      const q = filteredAdoptionQuestions.find((qq) => qq.id === id);
+      if (!q) return;
+      // Resolve the picked option's service_type via the parallel
+      // option_service_types[] array. Skip if the question doesn't
+      // declare option types or the value isn't a known option (free
+      // text fallthrough).
+      const options = q.options ?? [];
+      const ost = q.option_service_types ?? [];
+      if (options.length === 0 || ost.length !== options.length) return;
+      const idx = options.indexOf(answer);
+      if (idx < 0) return;
+      const serviceType = ost[idx];
+      if (!serviceType) return; // null fallback option = no credential needed
+      if (!q.vault_category) return;
+      if (hasMatchingCredential(serviceType, credentialServiceTypesSet)) return;
+      // Open the QuickAddCredentialModal — handleAddCredentialForCategory
+      // resolves the vault category and sets `quickAddContext`, which
+      // mounts QuickAddCredentialModal. After the user completes the add
+      // flow, handleCredentialAdded re-sets the answer to the freshly
+      // created credential's service_type.
+      handleAddCredentialForCategory(q.vault_category);
+    },
+    [
+      filteredAdoptionQuestions,
+      credentialServiceTypesSet,
+      handleAddCredentialForCategory,
+    ],
+  );
+
   // Discard the current draft persona and close the adoption modal.
   // Shown as "Delete Draft" in the Command Hub when tests are skipped/failed
   // and the user wants to abandon the adoption rather than retry or approve.
@@ -1240,9 +1290,7 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
             dynamicOptions={dynamicOptions}
             onRetryDynamic={retryDynamic}
             onAddCredential={handleAddCredentialForCategory}
-            onAnswerUpdated={(id, answer) =>
-              setAdoptionAnswers((prev) => ({ ...prev, [id]: answer }))
-            }
+            onAnswerUpdated={handleAnswerUpdated}
             onSubmit={() => setQuestionsComplete(true)}
             onClose={onClose}
             templateName={templateName}
@@ -1265,9 +1313,7 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
         onToggleUseCase={toggleUseCase}
         questions={filteredAdoptionQuestions}
         userAnswers={adoptionAnswers}
-        onAnswerUpdated={(id, answer) =>
-          setAdoptionAnswers((prev) => ({ ...prev, [id]: answer }))
-        }
+        onAnswerUpdated={handleAnswerUpdated}
         autoDetectedIds={autoDetectedIds}
         blockedQuestionIds={blockedQuestionIds}
         filteredOptions={filteredOptions}
