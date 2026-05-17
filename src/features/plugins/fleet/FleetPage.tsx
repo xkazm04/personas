@@ -1,17 +1,18 @@
 import { lazy, Suspense, useState } from 'react';
-import { Terminal, LayoutDashboard, MessageSquare, Settings as SettingsIcon } from 'lucide-react';
+import { Terminal, LayoutDashboard, Settings as SettingsIcon } from 'lucide-react';
 import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 
 const FleetGridPage = lazy(() => import('./sub_grid/FleetGridPage'));
-const FleetDecisionsPage = lazy(() => import('./sub_decisions/FleetDecisionsPage'));
 const FleetSettingsPage = lazy(() => import('./sub_settings/FleetSettingsPage'));
 
-type InternalTab = 'grid' | 'decisions' | 'settings';
+type InternalTab = 'grid' | 'settings';
 
+// Single Sessions tab is the home for every operation (spawn, kill,
+// broadcast, terminal view). Settings stays for hook uninstall +
+// diagnostics; install lives in the Sessions header pill now.
 const TABS: { id: InternalTab; label: string; icon: typeof Terminal }[] = [
   { id: 'grid', label: 'Sessions', icon: LayoutDashboard },
-  { id: 'decisions', label: 'Decisions', icon: MessageSquare },
   { id: 'settings', label: 'Settings', icon: SettingsIcon },
 ];
 
@@ -31,7 +32,7 @@ export default function FleetPage() {
       {/* Internal tab strip — lightweight band above the active sub-page;
           each sub-page renders its own ContentBox/Header underneath. */}
       <div className="flex items-center gap-1 px-4 pt-3 pb-2 border-b border-primary/5">
-        <Terminal className="w-4 h-4 text-amber-400 mr-2" />
+        <Terminal className="w-4 h-4 text-primary mr-2" />
         <span className="typo-caption font-semibold text-foreground mr-3">Fleet</span>
         {TABS.map((t) => {
           const Icon = t.icon;
@@ -43,7 +44,7 @@ export default function FleetPage() {
               onClick={() => setTab(t.id)}
               className={`flex items-center gap-1.5 px-3 py-1 rounded-card text-[12px] transition-colors ${
                 active
-                  ? 'bg-amber-500/10 text-amber-300 border border-amber-500/25'
+                  ? 'bg-primary/10 text-primary border border-primary/25'
                   : 'text-foreground/60 hover:text-foreground hover:bg-secondary/40 border border-transparent'
               }`}
             >
@@ -61,7 +62,6 @@ export default function FleetPage() {
       >
         <Suspense fallback={<SuspenseFallback />}>
           {tab === 'grid' && <FleetGridPage />}
-          {tab === 'decisions' && <FleetDecisionsPage />}
           {tab === 'settings' && <FleetSettingsPage />}
         </Suspense>
       </div>
@@ -76,14 +76,13 @@ export function FleetPhaseBanner({ phase, summary }: { phase: string; summary: s
   return (
     <ContentBox>
       <ContentHeader
-        icon={<Terminal className="w-5 h-5 text-amber-400" />}
-        iconColor="amber"
+        icon={<Terminal className="w-5 h-5 text-primary" />}
         title="Fleet — Claude Code session aggregator"
         subtitle="Experimental — lives under Dev Tools, inherits the active project"
       />
       <ContentBody>
-        <div className="border border-amber-500/25 rounded-modal bg-amber-500/5 px-4 py-3">
-          <p className="typo-caption font-medium text-amber-400 mb-1">{phase}</p>
+        <div className="border border-primary/20 rounded-modal bg-primary/5 px-4 py-3">
+          <p className="typo-caption font-medium text-primary mb-1">{phase}</p>
           <p className="text-[12px] text-foreground/80 leading-relaxed">{summary}</p>
         </div>
       </ContentBody>

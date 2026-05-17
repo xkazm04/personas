@@ -1,13 +1,11 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { listen } from '@tauri-apps/api/event';
+import { useShallow } from 'zustand/react/shallow';
 import {
   Terminal as TerminalIcon,
   Play,
   RefreshCw,
-  FolderKanban,
-  AlertCircle,
-  Download,
-  CheckCircle2,
+  Send,
 } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { ActionRow } from '@/features/shared/components/layout/ActionRow';
@@ -15,44 +13,70 @@ import { Button } from '@/features/shared/components/buttons';
 import { toastCatch, silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import { EventName } from '@/lib/eventRegistry';
-import { spawnSession, installHooks } from '@/api/fleet/fleet';
-import type { FleetSession } from '@/lib/bindings/FleetSession';
+import { spawnSession } from '@/api/fleet/fleet';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import { FleetSessionCard } from '../FleetSessionCard';
 import { FleetTerminalPane } from '../FleetTerminalPane';
-import { STATE_PRIORITY } from '../FleetStatusBadge';
+import { FleetHooksPill } from '../FleetHooksPill';
+import { FleetBroadcastModal } from '../FleetBroadcastModal';
 
+/**
+ * Sessions view — the only Fleet tab the user navigates between (Settings
+ * still exists for uninstall + diagnostics). Layout:
+ *
+ *   ContentHeader: Project · counters                 [Hooks pill]
+ *   ActionRow:     [Spawn]  [Broadcast]  [Refresh]
+ *   Grid:
+ *     Left col 4:  compact session rows (FleetSessionCard, memoized)
+ *     Right col 8: live terminal pane for the focused session
+ *
+ * Optimization choices for 5-10 parallel CLIs:
+ *  - useShallow on the sessions read → reference equality bails out the
+ *    parent re-render when no sessions changed even if other slice fields
+ *    did. Patches that touch one session preserve the other session
+ *    objects' identity (see fleetPatchSession), so React.memo on each
+ *    card avoids re-rendering the rows that didn't change.
+ *  - Only the active session mounts an xterm — other sessions still
+ *    receive PTY chunks in Rust but the FE event listener filters by id
+ *    in O(1) and discards (only the active pane keeps a Terminal alive).
+ *  - Event handlers (state / exited / registry-changed) are attached
+ *    once via useEffect with empty-deps + stable refs for the slice
+ *    actions; no resubscribe on every render.
+ */
 export default function FleetGridPage() {
-  const sessions = useSystemStore((s) => s.fleetSessions);
+  const sessions = useSystemStore(useShallow((s) => s.fleetSessions));
   const refresh = useSystemStore((s) => s.fleetRefresh);
   const patchSession = useSystemStore((s) => s.fleetPatchSession);
   const removeLocal = useSystemStore((s) => s.fleetRemoveSessionLocal);
   const activeSessionId = useSystemStore((s) => s.fleetActiveSessionId);
   const setActiveSession = useSystemStore((s) => s.fleetSetActiveSession);
-  const hooksInstalled = useSystemStore((s) => s.fleetHooksInstalled);
-  const hookPort = useSystemStore((s) => s.fleetHookPort);
-  const applyHookStatus = useSystemStore((s) => s.fleetApplyHookStatus);
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
-  const projects = useSystemStore((s) => s.projects);
+  const projects = useSystemStore(useShallow((s) => s.projects));
   const fetchProjects = useSystemStore((s) => s.fetchProjects);
 
   const [spawning, setSpawning] = useState(false);
-  const [installing, setInstalling] = useState(false);
+  const [broadcastOpen, setBroadcastOpen] = useState(false);
 
   const activeProject = useMemo(
     () => (activeProjectId ? projects.find((p) => p.id === activeProjectId) : null) ?? null,
     [activeProjectId, projects],
   );
 
-  // Initial fetch + project list + event subscriptions
+  // Hold the latest refresh/patch/remove in refs so the listener effect can
+  // stay attached once for the lifetime of the page. Without this, every
+  // sessions-array update would tear down + re-attach the three Tauri
+  // listeners (cheap individually but noisy under 5-10 sessions).
+  const actionsRef = useRef({ refresh, patchSession, removeLocal });
+  actionsRef.current = { refresh, patchSession, removeLocal };
+
   useEffect(() => {
-    refresh();
+    actionsRef.current.refresh();
     fetchProjects().catch(silentCatch('FleetGridPage:fetchProjects'));
 
     const unStateP = listen<{ session_id: string; state: string; reason?: string }>(
       EventName.FLEET_SESSION_STATE,
       (event) => {
-        patchSession(event.payload.session_id, {
+        actionsRef.current.patchSession(event.payload.session_id, {
           state: event.payload.state as FleetSessionState,
           stateReason: event.payload.reason ?? null,
           lastActivityMs: BigInt(Date.now()),
@@ -63,7 +87,7 @@ export default function FleetGridPage() {
     const unExitedP = listen<{ session_id: string; exit_code: number | null }>(
       EventName.FLEET_SESSION_EXITED,
       (event) => {
-        patchSession(event.payload.session_id, {
+        actionsRef.current.patchSession(event.payload.session_id, {
           state: 'exited' as FleetSessionState,
           exitCode: event.payload.exit_code,
           lastActivityMs: BigInt(Date.now()),
@@ -75,10 +99,10 @@ export default function FleetGridPage() {
       EventName.FLEET_REGISTRY_CHANGED,
       (event) => {
         if (event.payload.kind === 'removed') {
-          removeLocal(event.payload.session_id);
+          actionsRef.current.removeLocal(event.payload.session_id);
         } else {
-          // Added or updated — re-fetch to get the full row.
-          refresh();
+          // Added or updated → re-fetch to get the full row.
+          actionsRef.current.refresh();
         }
       },
     );
@@ -88,26 +112,20 @@ export default function FleetGridPage() {
       unExitedP.then((fn) => fn());
       unRegistryP.then((fn) => fn());
     };
-  }, [refresh, patchSession, removeLocal, fetchProjects]);
+    // Effect intentionally has no deps — actions live behind a ref above.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // Group sessions by project label
-  const groups = useMemo(() => {
-    const map = new Map<string, FleetSession[]>();
-    for (const s of sessions) {
-      const key = s.projectLabel || 'unknown';
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(s);
-    }
-    for (const arr of map.values()) {
-      arr.sort((a, b) => {
-        const pa = STATE_PRIORITY[a.state] ?? 0;
-        const pb = STATE_PRIORITY[b.state] ?? 0;
-        if (pa !== pb) return pb - pa;
-        return Number(b.lastActivityMs) - Number(a.lastActivityMs);
-      });
-    }
-    return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]));
-  }, [sessions]);
+  // Stable callbacks so React.memo on FleetSessionCard isn't broken by a
+  // new closure identity every render.
+  const handleActivate = useCallback(
+    (id: string) => setActiveSession(id),
+    [setActiveSession],
+  );
+  const handleRemovedLocal = useCallback(
+    (id: string) => removeLocal(id),
+    [removeLocal],
+  );
 
   const activeSession = useMemo(
     () => sessions.find((s) => s.id === activeSessionId) ?? null,
@@ -128,88 +146,36 @@ export default function FleetGridPage() {
     }
   }, [activeProject, spawning, refresh, setActiveSession]);
 
-  const handleInstallHooks = useCallback(async () => {
-    if (installing) return;
-    setInstalling(true);
-    try {
-      const status = await installHooks();
-      applyHookStatus(status);
-      refresh();
-    } catch (e) {
-      toastCatch('FleetGridPage:install', 'Failed to install Claude Code hooks')(e);
-    } finally {
-      setInstalling(false);
+  const counts = useMemo(() => {
+    let waiting = 0, working = 0, idle = 0, exited = 0;
+    for (const s of sessions) {
+      if (s.state === 'awaiting_input') waiting += 1;
+      else if (s.state === 'running') working += 1;
+      else if (s.state === 'idle') idle += 1;
+      else if (s.state === 'exited') exited += 1;
     }
-  }, [installing, applyHookStatus, refresh]);
+    return { waiting, working, idle, exited };
+  }, [sessions]);
 
-  const waitingCount = sessions.filter((s) => s.state === 'awaiting_input').length;
-  const runningCount = sessions.filter((s) => s.state === 'running').length;
+  const subtitle = activeProject
+    ? `Project: ${activeProject.name} · ${sessions.length} session${sessions.length === 1 ? '' : 's'} · ${counts.waiting} waiting · ${counts.working} working · ${counts.idle} idle${counts.exited > 0 ? ` · ${counts.exited} exited` : ''}`
+    : 'No project selected — pick one in Dev Tools → Projects';
 
   return (
     <ContentBox>
       <ContentHeader
-        icon={<TerminalIcon className="w-5 h-5 text-amber-400" />}
-        iconColor="amber"
+        icon={<TerminalIcon className="w-5 h-5 text-primary" />}
         title="Fleet — Sessions"
-        subtitle={
-          activeProject
-            ? `Project: ${activeProject.name} · ${sessions.length} session${sessions.length === 1 ? '' : 's'} · ${waitingCount} waiting · ${runningCount} running`
-            : 'No project selected — pick one in Dev Tools → Projects'
-        }
+        subtitle={subtitle}
+        actions={<FleetHooksPill />}
       />
       <ContentBody>
         <div data-testid="fleet-grid-page" />
 
-        {/* Install banner — prominent so the user can act without
-            navigating to Settings. Hidden once installed. */}
-        {!hooksInstalled && (
-          <div
-            data-testid="fleet-grid-install-banner"
-            className="border border-amber-500/30 rounded-modal bg-amber-500/8 px-4 py-3 mb-3 flex items-start gap-3"
-          >
-            <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
-            <div className="flex-1 min-w-0">
-              <p className="typo-caption font-medium text-amber-300 mb-1">
-                Claude Code hooks not installed
-              </p>
-              <p className="text-[11px] text-foreground/70 leading-relaxed">
-                Without hooks, sessions you spawn here work but live state from external{' '}
-                <code className="font-mono">claude</code> runs (sessions started from any other
-                terminal) won't be tracked. One click patches{' '}
-                <code className="font-mono">~/.claude/settings.json</code> with six tagged hook
-                entries; uninstall any time from the Settings tab.
-              </p>
-            </div>
-            <Button
-              data-testid="fleet-grid-install-hooks"
-              variant="accent"
-              accentColor="amber"
-              size="sm"
-              icon={<Download className="w-3.5 h-3.5" />}
-              disabled={installing}
-              onClick={handleInstallHooks}
-            >
-              {installing ? 'Installing…' : 'Install hooks'}
-            </Button>
-          </div>
-        )}
-
-        {hooksInstalled && hookPort > 0 && (
-          <div
-            data-testid="fleet-grid-install-ok"
-            className="border border-emerald-500/20 rounded-modal bg-emerald-500/5 px-3 py-1.5 mb-3 flex items-center gap-2 text-[11px] text-emerald-300/90"
-          >
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-            Hooks installed → <code className="font-mono">/fleet/hooks/* on port {hookPort}</code>.
-            External <code className="font-mono">claude</code> runs are tracked.
-          </div>
-        )}
-
         <ActionRow>
           <Button
             data-testid="fleet-spawn"
-            variant="accent"
-            accentColor="amber"
+            variant="primary"
             size="sm"
             icon={<Play className="w-3.5 h-3.5" />}
             disabled={!activeProject || spawning}
@@ -217,6 +183,16 @@ export default function FleetGridPage() {
             title={activeProject ? `Spawn at ${activeProject.root_path}` : 'Pick a project first'}
           >
             {spawning ? 'Spawning…' : `Spawn in ${activeProject?.name ?? 'project'}`}
+          </Button>
+          <Button
+            data-testid="fleet-broadcast-open"
+            variant="secondary"
+            size="sm"
+            icon={<Send className="w-3.5 h-3.5" />}
+            disabled={sessions.filter((s) => s.state !== 'exited').length === 0}
+            onClick={() => setBroadcastOpen(true)}
+          >
+            Broadcast
           </Button>
           <Button
             data-testid="fleet-grid-refresh"
@@ -229,44 +205,30 @@ export default function FleetGridPage() {
           </Button>
         </ActionRow>
 
-        {activeProject && (
-          <p
-            data-testid="fleet-active-project-path"
-            className="text-[10px] font-mono text-foreground/40 mt-1 mb-3 truncate"
-            title={activeProject.root_path}
-          >
-            cwd: {activeProject.root_path}
-          </p>
-        )}
-
         <div className="grid grid-cols-12 gap-3 mt-3 min-h-[400px]">
-          {/* Session list (left) */}
-          <div className="col-span-4 space-y-3 max-h-[calc(100vh-320px)] overflow-y-auto">
+          {/* Compact session list (left) */}
+          <div className="col-span-4 space-y-0.5 max-h-[calc(100vh-300px)] overflow-y-auto pr-1">
             {sessions.length === 0 ? (
-              <div className="text-center py-10 border border-dashed border-primary/10 rounded-modal">
-                <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-2">
-                  <TerminalIcon className="w-6 h-6 text-amber-400/50" />
+              <div className="text-center py-8 border border-dashed border-primary/10 rounded-modal">
+                <div className="w-10 h-10 rounded-xl bg-primary/8 border border-primary/15 flex items-center justify-center mx-auto mb-2">
+                  <TerminalIcon className="w-5 h-5 text-foreground/40" />
                 </div>
                 <p className="text-[11px] text-foreground/60">No sessions yet</p>
                 <p className="text-[10px] text-foreground/40 mt-1 px-3">
                   {activeProject
-                    ? 'Click Spawn to launch claude in this project, or run it externally once hooks are installed.'
-                    : 'Pick a project in Dev Tools → Projects, then come back here.'}
+                    ? 'Click Spawn to launch claude, or run it externally once hooks are installed.'
+                    : 'Pick a project in Dev Tools → Projects.'}
                 </p>
               </div>
             ) : (
-              groups.map(([projectLabel, projectSessions]) => (
-                <div key={projectLabel}>
-                  <h4 className="typo-label uppercase tracking-wider text-foreground/50 px-1 mb-1.5 flex items-center gap-1.5">
-                    <FolderKanban className="w-3 h-3" />
-                    {projectLabel}
-                  </h4>
-                  <div className="space-y-1.5">
-                    {projectSessions.map((s) => (
-                      <FleetSessionCard key={s.id} session={s} />
-                    ))}
-                  </div>
-                </div>
+              sessions.map((s) => (
+                <FleetSessionCard
+                  key={s.id}
+                  session={s}
+                  isActive={s.id === activeSessionId}
+                  onActivate={handleActivate}
+                  onRemovedLocal={handleRemovedLocal}
+                />
               ))
             )}
           </div>
@@ -287,14 +249,16 @@ export default function FleetGridPage() {
                 <FleetTerminalPane sessionId={activeSession.id} />
               )
             ) : (
-              <div className="h-full flex flex-col items-center justify-center text-foreground/40 p-6">
-                <TerminalIcon className="w-10 h-10 mb-3 text-foreground/20" />
+              <div className="h-full flex flex-col items-center justify-center text-foreground/30 p-6">
+                <TerminalIcon className="w-10 h-10 mb-3" />
                 <p className="typo-caption">Select a session to view its terminal</p>
               </div>
             )}
           </div>
         </div>
       </ContentBody>
+
+      <FleetBroadcastModal open={broadcastOpen} onClose={() => setBroadcastOpen(false)} />
     </ContentBox>
   );
 }

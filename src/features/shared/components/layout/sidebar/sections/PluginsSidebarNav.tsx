@@ -200,7 +200,11 @@ function PluginL3(props: PluginL3Props) {
           label: item.label,
           icon: item.icon,
           rightSlot: item.id === 'fleet' && props.fleetWaitingCount > 0 ? (
-            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-amber-500/30 text-amber-200 typo-caption font-bold border border-amber-500/50 animate-pulse">
+            <span
+              data-testid="fleet-sidebar-waiting-badge"
+              className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-violet-500/25 text-violet-200 typo-caption font-bold border border-violet-500/40 animate-pulse"
+              title={`${props.fleetWaitingCount} session${props.fleetWaitingCount === 1 ? '' : 's'} awaiting input`}
+            >
               {props.fleetWaitingCount}
             </span>
           ) : null,

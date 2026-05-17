@@ -42,11 +42,15 @@ export function FleetTerminalPane({ sessionId, className }: FleetTerminalPanePro
       // Match Personas dark theme. Light theme override applied via CSS
       // in xterm.css overrides at the bottom of this file.
       theme: {
+        // Cursor + selection use violet (matches the "awaiting input"
+        // attention dot) instead of amber/gold per the de-goldify pass.
+        // ANSI yellow/brightYellow stay as-is because programs may emit
+        // legitimate yellow text and that's the terminal's job to preserve.
         background: '#0a0a0c',
         foreground: '#e6e6e8',
-        cursor: '#fbbf24',
+        cursor: '#a78bfa',
         cursorAccent: '#0a0a0c',
-        selectionBackground: '#fbbf2444',
+        selectionBackground: '#a78bfa44',
         black: '#1e1e22',
         red: '#ef4444',
         green: '#10b981',
