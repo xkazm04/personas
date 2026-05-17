@@ -114,10 +114,17 @@ export function AdoptionAnswerCard({
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.96 }}
         transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-        className="pointer-events-auto relative rounded-modal border bg-background/95 backdrop-blur-md shadow-elevation-3 w-full flex flex-col"
+        className="pointer-events-auto relative rounded-modal border bg-background/95 backdrop-blur-md shadow-elevation-3 w-full grid"
         style={{
           borderColor: `${dimColor}66`,
           boxShadow: `0 0 24px ${dimColor}33, 0 8px 32px rgba(0,0,0,0.35)`,
+          // Grid with auto/1fr/auto rows so the body's `1fr` track is what
+          // actually has a constrained height. A flex column with only
+          // `maxHeight` doesn't bound `flex-1` against — the body grows to
+          // content and `overflow-y-auto` never engages. Grid's 1fr track,
+          // combined with the card's maxHeight, makes the body the
+          // scrollable region exactly where the user expects.
+          gridTemplateRows: 'auto minmax(0, 1fr) auto',
           maxHeight: 'min(85vh, 800px)',
         }}
       >
@@ -157,7 +164,7 @@ export function AdoptionAnswerCard({
           </button>
         </div>
 
-        <div className="px-8 pb-4 flex-1 min-h-0 overflow-y-auto scrollbar-thin">
+        <div className="px-8 pb-4 min-h-0 overflow-y-auto scrollbar-thin">
           <QuestionnaireHeroQuestion
             question={activeQuestion}
             answer={answer}
