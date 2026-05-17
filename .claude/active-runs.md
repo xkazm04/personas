@@ -32,13 +32,6 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
-- **[2026-05-17 — started] tours-revamp — descope Quest + expand guided tours**
-  - **Paths:** `src/features/onboarding/` (delete `OnboardingQuestPill.tsx`; edit tour panel + `tourConstants.ts` + step components), `src/stores/onboardingQuestStore.ts` (delete), `src/stores/slices/system/tourSlice.ts` (add 3 new tours, expand existing), `src/features/home/components/NextStepCoachCard.tsx` (delete), `src/features/home/` (remove NextStepCoachCard usage), `src/features/shared/components/layout/TitleBar.tsx` (remove quest-revive button), `src/App.tsx` (remove `<OnboardingQuestPill />` mount), `src/i18n/locales/en.json` (additive `onboarding.tour_*` keys + delete `onboarding.quest_*` keys — coordinate with concurrent /friend sessions on same en.json), `src/lib/storeBusWiring.ts` (new tour event wiring), `docs/features/onboarding.md`, `docs/features/home.md`, plus targeted `data-testid` adds in `src/features/{schedules,recipes,plugins,templates}/`
-  - **Status:** started
-  - **Branch:** `worktree-tours-revamp`
-  - **Worktree:** `.claude/worktrees/tours-revamp/`
-  - **Note:** Path-disjoint from all 8 concurrent /friend plugin sessions (they touch `src/features/plugins/<plugin>/` for plugin-specific work; this session only adds `data-testid` attributes inside plugin shells, not feature logic). Shared en.json: my edits are under `onboarding.*` subtree only (additions + quest_* deletions); /friend sessions touch their own `plugins.<name>.*` subtrees. Possible merge contention on tourSlice.ts is zero (no concurrent session touches tour code). User-driven manual session — not a /friend or /research loop.
-
 - **[2026-05-16 14:42 — started] artist-test-coverage — Vitest + Playwright for plugins/artist**
   - **Paths:** `src/features/plugins/artist/**/__tests__/*.test.{ts,tsx}` (new), possibly `src/features/plugins/artist/sub_media_studio/hooks/useMediaExport.ts` (export `normalizeProgress` for unit test), possibly `tests/playwright/artist-*.spec.ts` + `tests/playwright/artist-bridge.ts` (Cycle D only)
   - **Status:** started
@@ -93,6 +86,15 @@ timestamp — the next session can recognize it as abandoned.
 
 
 ## Recently completed (last 14 days)
+
+- **[2026-05-17] tours-revamp — descope Activation Quest + expand guided tours**
+  - **Status:** completed (commits: `459f86e08` Quest descope, `14b678024` tour expansion — both on branch `worktree-tours-revamp`, pending merge to master)
+  - **Paths shipped:**
+    - **Deletes (Phase 1):** `src/features/onboarding/components/OnboardingQuestPill.tsx`, `src/stores/onboardingQuestStore.ts`, `src/features/home/components/NextStepCoachCard.tsx`
+    - **Edits (Phase 1):** `src/App.tsx`, `src/features/home/components/WelcomeLayout.tsx`, `src/features/shared/components/layout/TitleBar.tsx`, `src/i18n/locales/{en,ar,bn,cs,de,es,fr,hi,id,ja,ko,ru,vi,zh}.json` (35 `quest_*` + `next_step_*` keys removed each), `src/i18n/section-locales/**/onboarding.json`, `src/i18n/generated/{types,enSectionStrings}.ts`, `docs/features/{home,onboarding}.md`
+    - **Edits (Phase 2):** `src/stores/slices/system/tourSlice.ts` (+3 new tours, fixed `tab-lab` → `editor-tab-lab` and `agent-test-btn` → `build-test-report-open`, version bump 3 → 4), `src/stores/slices/system/tourSlice.test.ts` (+1 new assertion), `src/features/onboarding/components/tourConstants.ts` (+13 icon/surface entries), `src/features/home/components/HomeLearning.tsx` (icon + COLORS for amber/emerald/indigo), `src/features/plugins/PluginBrowsePage.tsx` (+`plugin-browse-page` testid), `src/features/schedules/components/ScheduleTimeline.tsx` (+`schedules-page` testid), `src/features/onboarding/README.md`, `docs/features/onboarding.md` (tour catalog table), `scripts/docs/feature-doc-map.json` (+11 onboardingFlows + wiring), `scripts/docs/__tests__/check-doc-sync.test.mjs` (Case 4 retarget from schedules to deployment)
+  - **Outcome:** Quest pill (bottom-right) and `NextStepCoachCard` (Home > Welcome) fully removed per user descope ("not really valuable"). Guided tours expanded from 4 → 7: plugins-explorer (5 steps, amber), schedules-mastery (3 steps, emerald), templates-recipes (3 steps, indigo). All existing tours audited — two broken testids fixed (`tab-lab`, `agent-test-btn`). All seven tours now render automatically in Home > Learning. `npx tsc --noEmit` clean (0 errors), tourSlice.test.ts 9/9 pass, check-doc-sync test fixtures 30/30 pass, i18n coverage gate 0 extras across 13 locales. Pre-existing test failures (useBuild, useLifecycle, webview2-compat) unrelated to this branch.
+  - **Concurrent-session note:** No path overlaps with the 8 concurrent /friend plugin sessions (they touch `src/features/plugins/<plugin>/` for plugin-specific work; this session only added two `data-testid` attributes to plugin/schedule shells). Shared `en.json`: my edits removed `onboarding.quest_*` + `onboarding.next_step_*` keys; /friend sessions touch their own `plugins.<name>.*` subtrees. `git diff --cached --stat` verified per commit to match intent before each commit per CLAUDE.md primitive 5.
 
 - **[2026-05-16 18:50 → 19:25] /research — openhands-codebase-analysis**
   - **Status:** completed (commit: `327889130`)
