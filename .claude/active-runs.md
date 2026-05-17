@@ -102,6 +102,21 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Recently completed (last 14 days)
 
+- **[2026-05-17 20:10 → 22:00 wrap] /architect — performance (scan mode, F1+F2+F3 shipped on master)**
+  - **Source:** Custom free-form theme "App performance, efficient rendering, data processing, avoiding duplicit calls". First architect run on a perf theme; coverage.md previously had only state-management (2026-05-09) and e2e (2026-05-10).
+  - **Branch:** master (user picked sequential-on-master at Phase 6 triage; mid-session another perf-audit Pipeline B session swept F1's dirty source files into commit `88ca91269`, so F2+F3 used atomic single-Bash-call stage+commit per memory `feedback_atomic_commit_under_parallel_sessions.md`)
+  - **Status:** completed
+  - **Commits shipped:**
+    - F1 (struct-bug-class): swept into `88ca91269` (content verified in HEAD; ADR records audit-trail caveat)
+    - F2 (weak-pattern, scoped): `17291fe68`
+    - F3.a (weak-pattern, useFormattedDate): `93a65b911`
+    - F3.b (React.memo ExecutionListRow): `07b7ffa95`
+    - F3.c (React.memo ComfortableRow): `7fcc925fc`
+    - Phase 10/11 vault sync + codebase-stack.md edit: (final atomic commit, this entry's commit)
+  - **Paths shipped:** `src/hooks/useTauriEvent.ts` (+useTypedTauriEvent), 6 listener migrations (useTraceData, ContextMapPage, IdeaScannerPage, ReauthBanner, ExecutionProgressBar, DeliveryHealthBadge); `src/stores/slices/vault/credentialSlice.ts` (TTL+inflight), `src/features/agents/sub_editor/hooks/useQuickStats.ts` (limit=50); `src/hooks/utility/data/useFormattedDate.ts` (new), `src/features/agents/components/persona/PersonaOverviewColumns.tsx`, `src/features/agents/sub_executions/components/list/{ExecutionListRow,ExecutionList}.tsx`, `src/features/templates/sub_generated/gallery/cards/{ComfortableRow,TemplateVirtualList,GeneratedReviewsTab}.tsx`; `.claude/codebase-stack.md` (documents the tauriInvoke auto-dedup invariant).
+  - **Vault:** scan note `Architect/scans/2026-05-17-performance.md`; 3 ADRs (`async-listen-race-fix`, `credentialslice-ttl-inflight`, `list-memo-hygiene`); 4 new noted strong patterns (pollingCoordinator, eventBridge, tauriInvoke auto-dedup, off-thread worker); 3 new resolved weak-patterns entries; 3 new promoted preferences in `Patterns/architect-preferences.md`; `Lessons/2026-05-17-architect.md`; coverage entry; backlog entry for deferred trigger-fetch-consolidation.
+  - **Notable:** Final validation TSC 0 / lint 13,556 (+1 from baseline 13,555) / tests 4 failed / 1412 passed (baseline 7/1409 — fewer failures, likely flaky baseline). F1 reach was 3x the sub-agent estimate (2→6 files) caught by wider mechanical grep — 3rd observation of the under-count pattern, now promoted to architect-preferences.
+
 - **[2026-05-16 → 2026-05-17 merge] glyph-consolidation prototype — view + adoption (phase 1 + phase 2 A-C)**
   - **Worktree:** `.claude/worktrees/glyph-consolidated/` (removed post-merge)
   - **Branch:** `worktree-glyph-consolidated` (4 commits, merged via `d419e44db`)

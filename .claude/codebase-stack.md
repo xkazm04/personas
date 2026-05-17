@@ -454,6 +454,18 @@ npm run build:builder   # builder tier
   - `src/test/automation/bridge.ts` — test harness that imports raw `invoke` from `@tauri-apps/api/core` to drive E2E flows. Test infra; not production code.
   - Anywhere else: route through api/ — established by [[Architect/decisions/2026-05-10-orphan-commands-wrap]].
 
+### IPC layer: `invokeWithTimeout` 250ms in-flight auto-dedup (INVISIBLE strong pattern)
+
+`src/lib/tauriInvoke.ts` maintains an in-flight Promise Map (`inflightAutoDedup`) keyed by `(command, JSON.stringify(args))` with a ~250ms TTL on read-only commands. When two callers fire the same command with identical args inside the window, the second caller receives the first caller's still-in-flight promise — only one IPC roundtrip hits the backend.
+
+**Surfaced by /architect performance scan 2026-05-17 (sub-agent 2) as a "surprise" finding** — the mechanism is invisible from call sites and was previously undocumented anywhere. Concrete consequences:
+
+- A persona-switch burst where 3-4 components mount and call `list_credentials()` in the same tick → 1 IPC, not 3-4.
+- Higher-level slice caches (e.g. `executionSlice.executionsCache`, the 2026-05-17 credentialSlice TTL+inflight via `inflightCredentialsFetch`) layer on top of this for a 30s window beyond the 250ms.
+- Differing args defeat dedup. The 2026-05-17 `useQuickStats` fix (standardize fetch limit to 50 to match ActivityTab) was specifically to align args so the auto-dedup window catches the pair.
+
+**Risk to losing:** a well-intentioned "let me clean up this Map" refactor could tank cold-start IPC counts by 2-4× without any failing test or lint rule to catch it. Documented here so the seam stays load-bearing. Established by /architect scan 2026-05-17; preserved as a noted strong-pattern at [[Architect/strong-patterns#tauriInvoke 250ms in-flight auto-dedup]].
+
 ### Database
 - Two SQLite files, both in `%APPDATA%/com.personas.desktop/`:
   - `personas.db` — operational data (personas, executions, triggers, credentials, etc.)
