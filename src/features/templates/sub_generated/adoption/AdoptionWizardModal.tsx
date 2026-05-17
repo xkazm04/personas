@@ -89,6 +89,16 @@ export default function AdoptionWizardModal({
       titleId="adoption-matrix-title"
       maxWidthClass="max-w-[1750px]"
       panelClassName="h-[92vh] bg-background border border-primary/15 rounded-2xl shadow-elevation-4 overflow-hidden flex flex-col"
+      // Required for the flex-column header + scrollable body layout below:
+      // BaseModal's default `staggerChildren=true` wraps each child in a
+      // block-level `motion.div`, which breaks the parent `flex flex-col`
+      // chain so the body's `flex-1 + overflow-y-auto` silently no-ops.
+      // Symptom before this opt-out: ChronologyAdoptionView's main scroll
+      // area had `scrollHeight === clientHeight === parentHeight`, content
+      // overflowed the modal panel through `overflow-hidden`, and the user
+      // could see — but not reach — the rows / Continue button below the
+      // sigil. See BaseModal.tsx:38-43.
+      staggerChildren={false}
       portal
     >
       <div className="relative h-full overflow-hidden flex flex-col">
