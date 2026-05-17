@@ -9056,7 +9056,17 @@
     "backfill_result_failed": "({count} failed)",
     "backfill_result_capped": "Result was capped — narrow the window or run again from the last slot to continue.",
     "backfill_result_show_slots": "Show enqueued fire times",
-    "backfill_inline_tooltip": "Most recent backfill — asterisk means the cap was hit."
+    "backfill_inline_tooltip": "Most recent backfill — asterisk means the cap was hit.",
+    "more_actions": "更多操作",
+    "advanced_actions_aria": "更多调度操作",
+    "skip_next_fire": "跳过下次",
+    "skip_next_fire_hint": "将下次运行向后推一次——下一次触发被抑制。",
+    "delayed_run_heading": "延迟下次运行",
+    "run_in_5min": "5 分钟后运行",
+    "run_in_15min": "15 分钟后运行",
+    "run_in_30min": "30 分钟后运行",
+    "run_in_1h": "1 小时后运行",
+    "delayed_run_hint": "用此延迟时间替换下次计划触发。"
   },
   "recipes_catalog": {
     "_comment_section_RecipesBrowseList": "── RecipesBrowseList.tsx ──",

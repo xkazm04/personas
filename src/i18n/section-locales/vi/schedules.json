@@ -73,5 +73,15 @@
   "backfill_result_failed": "({count} failed)",
   "backfill_result_capped": "Result was capped — narrow the window or run again from the last slot to continue.",
   "backfill_result_show_slots": "Show enqueued fire times",
-  "backfill_inline_tooltip": "Most recent backfill — asterisk means the cap was hit."
+  "backfill_inline_tooltip": "Most recent backfill — asterisk means the cap was hit.",
+  "more_actions": "Hành động khác",
+  "advanced_actions_aria": "Hành động lịch trình khác",
+  "skip_next_fire": "Bỏ qua lần chạy tiếp theo",
+  "skip_next_fire_hint": "Đẩy lần chạy tiếp theo lên một bước — lần chạy sắp tới sẽ bị bỏ qua.",
+  "delayed_run_heading": "Hoãn lần chạy tiếp theo",
+  "run_in_5min": "Chạy sau 5 phút",
+  "run_in_15min": "Chạy sau 15 phút",
+  "run_in_30min": "Chạy sau 30 phút",
+  "run_in_1h": "Chạy sau 1 giờ",
+  "delayed_run_hint": "Thay thế lần chạy đã lên lịch tiếp theo bằng một lần chạy sau khoảng trễ này."
 }

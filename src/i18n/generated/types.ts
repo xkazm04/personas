@@ -9066,6 +9066,16 @@ export type Translations = {
     backfill_result_capped: string;
     backfill_result_show_slots: string;
     backfill_inline_tooltip: string;
+    more_actions: string;
+    advanced_actions_aria: string;
+    skip_next_fire: string;
+    skip_next_fire_hint: string;
+    delayed_run_heading: string;
+    run_in_5min: string;
+    run_in_15min: string;
+    run_in_30min: string;
+    run_in_1h: string;
+    delayed_run_hint: string;
   };
   recipes_catalog: {
     _comment_section_RecipesBrowseList: string;

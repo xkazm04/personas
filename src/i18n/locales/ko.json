@@ -9056,7 +9056,17 @@
     "backfill_result_failed": "({count} failed)",
     "backfill_result_capped": "Result was capped — narrow the window or run again from the last slot to continue.",
     "backfill_result_show_slots": "Show enqueued fire times",
-    "backfill_inline_tooltip": "Most recent backfill — asterisk means the cap was hit."
+    "backfill_inline_tooltip": "Most recent backfill — asterisk means the cap was hit.",
+    "more_actions": "추가 작업",
+    "advanced_actions_aria": "추가 스케줄 작업",
+    "skip_next_fire": "다음 실행 건너뛰기",
+    "skip_next_fire_hint": "다음 실행을 한 번 앞당깁니다 — 곧 예정된 실행은 생략됩니다.",
+    "delayed_run_heading": "다음 실행 지연",
+    "run_in_5min": "5분 후 실행",
+    "run_in_15min": "15분 후 실행",
+    "run_in_30min": "30분 후 실행",
+    "run_in_1h": "1시간 후 실행",
+    "delayed_run_hint": "다음 예정된 실행을 이 지연 시간으로 대체합니다."
   },
   "recipes_catalog": {
     "_comment_section_RecipesBrowseList": "── RecipesBrowseList.tsx ──",

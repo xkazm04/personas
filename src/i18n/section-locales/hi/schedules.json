@@ -73,5 +73,15 @@
   "backfill_result_failed": "({count} failed)",
   "backfill_result_capped": "Result was capped — narrow the window or run again from the last slot to continue.",
   "backfill_result_show_slots": "Show enqueued fire times",
-  "backfill_inline_tooltip": "Most recent backfill — asterisk means the cap was hit."
+  "backfill_inline_tooltip": "Most recent backfill — asterisk means the cap was hit.",
+  "more_actions": "अधिक क्रियाएँ",
+  "advanced_actions_aria": "अधिक शेड्यूल क्रियाएँ",
+  "skip_next_fire": "अगला फायर छोड़ें",
+  "skip_next_fire_hint": "अगला रन एक आगे बढ़ाएँ — आगामी फायर दबा दिया जाता है।",
+  "delayed_run_heading": "अगला रन विलंबित करें",
+  "run_in_5min": "5 मिनट में चलाएँ",
+  "run_in_15min": "15 मिनट में चलाएँ",
+  "run_in_30min": "30 मिनट में चलाएँ",
+  "run_in_1h": "1 घंटे में चलाएँ",
+  "delayed_run_hint": "अगले निर्धारित फायर को इस विलंब वाले फायर से बदल देता है।"
 }

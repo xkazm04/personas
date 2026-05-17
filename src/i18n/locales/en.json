@@ -9059,7 +9059,17 @@
     "backfill_result_failed": "({count} failed)",
     "backfill_result_capped": "Result was capped — narrow the window or run again from the last slot to continue.",
     "backfill_result_show_slots": "Show enqueued fire times",
-    "backfill_inline_tooltip": "Most recent backfill — asterisk means the cap was hit."
+    "backfill_inline_tooltip": "Most recent backfill — asterisk means the cap was hit.",
+    "more_actions": "More actions",
+    "advanced_actions_aria": "More schedule actions",
+    "skip_next_fire": "Skip next fire",
+    "skip_next_fire_hint": "Bump next run forward by one — the upcoming fire is suppressed.",
+    "delayed_run_heading": "Delay next run",
+    "run_in_5min": "Run in 5 minutes",
+    "run_in_15min": "Run in 15 minutes",
+    "run_in_30min": "Run in 30 minutes",
+    "run_in_1h": "Run in 1 hour",
+    "delayed_run_hint": "Replaces the next scheduled fire with one at this delay."
   },
   "recipes_catalog": {
     "_comment_section_RecipesBrowseList": "── RecipesBrowseList.tsx ──",

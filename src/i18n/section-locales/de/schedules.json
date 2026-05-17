@@ -73,5 +73,15 @@
   "backfill_result_failed": "({count} failed)",
   "backfill_result_capped": "Result was capped — narrow the window or run again from the last slot to continue.",
   "backfill_result_show_slots": "Show enqueued fire times",
-  "backfill_inline_tooltip": "Most recent backfill — asterisk means the cap was hit."
+  "backfill_inline_tooltip": "Most recent backfill — asterisk means the cap was hit.",
+  "more_actions": "Weitere Aktionen",
+  "advanced_actions_aria": "Weitere Zeitplan-Aktionen",
+  "skip_next_fire": "Nächste Ausführung überspringen",
+  "skip_next_fire_hint": "Nächste Ausführung um eins verschieben — die anstehende Ausführung wird unterdrückt.",
+  "delayed_run_heading": "Nächste Ausführung verzögern",
+  "run_in_5min": "In 5 Minuten ausführen",
+  "run_in_15min": "In 15 Minuten ausführen",
+  "run_in_30min": "In 30 Minuten ausführen",
+  "run_in_1h": "In 1 Stunde ausführen",
+  "delayed_run_hint": "Ersetzt die nächste geplante Ausführung durch eine mit dieser Verzögerung."
 }

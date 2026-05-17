@@ -73,5 +73,15 @@
   "backfill_result_failed": "({count} failed)",
   "backfill_result_capped": "Result was capped — narrow the window or run again from the last slot to continue.",
   "backfill_result_show_slots": "Show enqueued fire times",
-  "backfill_inline_tooltip": "Most recent backfill — asterisk means the cap was hit."
+  "backfill_inline_tooltip": "Most recent backfill — asterisk means the cap was hit.",
+  "more_actions": "إجراءات إضافية",
+  "advanced_actions_aria": "إجراءات إضافية للجدولة",
+  "skip_next_fire": "تخطّي التشغيل التالي",
+  "skip_next_fire_hint": "تأجيل التشغيل التالي خطوة واحدة — يتم تجاوز التشغيل القادم.",
+  "delayed_run_heading": "تأجيل التشغيل التالي",
+  "run_in_5min": "التشغيل بعد 5 دقائق",
+  "run_in_15min": "التشغيل بعد 15 دقيقة",
+  "run_in_30min": "التشغيل بعد 30 دقيقة",
+  "run_in_1h": "التشغيل بعد ساعة واحدة",
+  "delayed_run_hint": "يستبدل التشغيل المجدول التالي بتشغيل بعد هذا التأخير."
 }

@@ -9056,7 +9056,17 @@
     "backfill_result_failed": "({count} failed)",
     "backfill_result_capped": "Result was capped — narrow the window or run again from the last slot to continue.",
     "backfill_result_show_slots": "Show enqueued fire times",
-    "backfill_inline_tooltip": "Most recent backfill — asterisk means the cap was hit."
+    "backfill_inline_tooltip": "Most recent backfill — asterisk means the cap was hit.",
+    "more_actions": "その他の操作",
+    "advanced_actions_aria": "スケジュールのその他の操作",
+    "skip_next_fire": "次回の実行をスキップ",
+    "skip_next_fire_hint": "次回の実行を1回分先送りします — 直近の実行は抑制されます。",
+    "delayed_run_heading": "次回の実行を遅延",
+    "run_in_5min": "5分後に実行",
+    "run_in_15min": "15分後に実行",
+    "run_in_30min": "30分後に実行",
+    "run_in_1h": "1時間後に実行",
+    "delayed_run_hint": "次回のスケジュール実行を、この遅延後の実行に置き換えます。"
   },
   "recipes_catalog": {
     "_comment_section_RecipesBrowseList": "── RecipesBrowseList.tsx ──",
