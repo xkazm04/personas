@@ -69,25 +69,34 @@ export function PluginsSidebarNav() {
   const activeProject = activeProjectId ? projects.find((p) => p.id === activeProjectId) : null;
   const activeTwin = activeTwinId ? twinProfiles.find((tw) => tw.id === activeTwinId) : null;
 
-  // Plugin catalog sorted alphabetically by translated label. Browse is
-  // included in the alphabetical sort rather than pinned — the user asked
-  // for "sort items by name asc" with no carve-outs.
-  const sortedPlugins = useMemo<PluginMeta[]>(() => {
-    const meta: PluginMeta[] = [
-      { id: 'browse',          label: 'Browse',                              icon: Puzzle,    hasSubItems: false },
-      { id: 'artist',          label: 'Artist',                              icon: Palette,   hasSubItems: true },
-      { id: 'dev-tools',       label: t.shared.sidebar_extra.dev_tools_label, icon: Wrench,   hasSubItems: true },
-      { id: 'obsidian-brain',  label: t.shared.sidebar_extra.obsidian_brain,  icon: Brain,    hasSubItems: true },
-      { id: 'drive',           label: 'Drive',                               icon: HardDrive, hasSubItems: false },
-      { id: 'twin',            label: 'Twin',                                icon: Sparkles,  hasSubItems: true },
-      { id: 'companion',       label: 'Companion',                           icon: Bot,       hasSubItems: true },
-      { id: 'research-lab',    label: t.shared.sidebar_extra.research_lab,    icon: BookOpen, hasSubItems: true },
-      { id: 'langfuse',        label: 'Langfuse',                            icon: LineChart, hasSubItems: false },
-    ];
-    return meta
-      .filter((p) => p.id === 'browse' || enabledPlugins.has(p.id))
-      .sort((a, b) => a.label.localeCompare(b.label));
-  }, [t, enabledPlugins]);
+  // Plugin catalog. Browse is a management surface, not a plugin itself,
+  // so it stays pinned at the top of the L2 list (rendered separately
+  // below); the remaining enabled plugins are sorted alphabetically by
+  // translated label.
+  const allPlugins = useMemo<PluginMeta[]>(() => [
+    { id: 'browse',          label: 'Browse',                              icon: Puzzle,    hasSubItems: false },
+    { id: 'artist',          label: 'Artist',                              icon: Palette,   hasSubItems: true },
+    { id: 'dev-tools',       label: t.shared.sidebar_extra.dev_tools_label, icon: Wrench,   hasSubItems: true },
+    { id: 'obsidian-brain',  label: t.shared.sidebar_extra.obsidian_brain,  icon: Brain,    hasSubItems: true },
+    { id: 'drive',           label: 'Drive',                               icon: HardDrive, hasSubItems: false },
+    { id: 'twin',            label: 'Twin',                                icon: Sparkles,  hasSubItems: true },
+    { id: 'companion',       label: 'Companion',                           icon: Bot,       hasSubItems: true },
+    { id: 'research-lab',    label: t.shared.sidebar_extra.research_lab,    icon: BookOpen, hasSubItems: true },
+    { id: 'langfuse',        label: 'Langfuse',                            icon: LineChart, hasSubItems: false },
+  ], [t]);
+
+  const browseMeta = allPlugins.find((p) => p.id === 'browse')!;
+  const sortedPlugins = useMemo<PluginMeta[]>(
+    () => allPlugins
+      .filter((p) => p.id !== 'browse' && enabledPlugins.has(p.id))
+      .sort((a, b) => a.label.localeCompare(b.label)),
+    [allPlugins, enabledPlugins],
+  );
+
+  const activePluginLabel = useMemo(
+    () => allPlugins.find((p) => p.id === pluginTab)?.label ?? pluginTab,
+    [allPlugins, pluginTab],
+  );
 
   const isL3 = PLUGINS_WITH_SUBITEMS.has(pluginTab) && enabledPlugins.has(pluginTab);
 
@@ -98,7 +107,7 @@ export function PluginsSidebarNav() {
           key={`plugin-l3-${pluginTab}`}
           plugin={pluginTab}
           onBack={() => setPluginTab('browse')}
-          backLabel={t.shared.sidebar_extra.back_to_plugins}
+          backLabel={activePluginLabel}
           artistTab={artistTab}
           setArtistTab={setArtistTab}
           devToolsTab={devToolsTab}
@@ -118,20 +127,21 @@ export function PluginsSidebarNav() {
         />
       ) : (
         <div key="plugin-l2" className="flex flex-col h-full">
-          <nav className="flex-1 px-2 py-2 space-y-1 overflow-y-auto" role="tablist" aria-label="Plugins">
-            {sortedPlugins.map((plugin) => {
-              const Icon = plugin.icon;
-              const isActive = pluginTab === plugin.id;
-              const showArtistRunning = plugin.id === 'artist' && creativeSessionRunning;
-              const showTwinMissing = plugin.id === 'twin' && !activeTwin && twinProfiles.length === 0 && pluginTab === 'twin';
+          <nav className="flex-1 px-2 py-2 overflow-y-auto" role="tablist" aria-label="Plugins">
+            {/* Browse — pinned at top. It's the plugin manager, not a plugin
+                itself, so it sits above the alphabetical plugin list with a
+                divider between them. */}
+            {(() => {
+              const Icon = browseMeta.icon;
+              const isActive = pluginTab === 'browse';
               return (
                 <button
-                  key={plugin.id}
+                  key="browse"
                   type="button"
                   role="tab"
                   aria-selected={isActive}
                   aria-current={isActive ? 'page' : undefined}
-                  onClick={() => setPluginTab(plugin.id)}
+                  onClick={() => setPluginTab('browse')}
                   className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
                     isActive
                       ? 'bg-primary/10 text-primary'
@@ -139,19 +149,48 @@ export function PluginsSidebarNav() {
                   }`}
                 >
                   <Icon className="w-4 h-4 flex-shrink-0" />
-                  <span className="flex-1 text-left truncate">{plugin.label}</span>
-                  {showArtistRunning && (
-                    <span className="relative flex h-2.5 w-2.5">
-                      <span className="absolute inset-0 rounded-full animate-ping bg-orange-500/40" />
-                      <span className="relative w-2.5 h-2.5 rounded-full bg-orange-500 border border-orange-600/50" />
-                    </span>
-                  )}
-                  {showTwinMissing && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400" aria-hidden />
-                  )}
+                  <span className="flex-1 text-left truncate">{browseMeta.label}</span>
                 </button>
               );
-            })}
+            })()}
+            {sortedPlugins.length > 0 && (
+              <div className="my-2 border-t border-primary/10" />
+            )}
+            <div className="space-y-1">
+              {sortedPlugins.map((plugin) => {
+                const Icon = plugin.icon;
+                const isActive = pluginTab === plugin.id;
+                const showArtistRunning = plugin.id === 'artist' && creativeSessionRunning;
+                const showTwinMissing = plugin.id === 'twin' && !activeTwin && twinProfiles.length === 0 && pluginTab === 'twin';
+                return (
+                  <button
+                    key={plugin.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={isActive}
+                    aria-current={isActive ? 'page' : undefined}
+                    onClick={() => setPluginTab(plugin.id)}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
+                      isActive
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4 flex-shrink-0" />
+                    <span className="flex-1 text-left truncate">{plugin.label}</span>
+                    {showArtistRunning && (
+                      <span className="relative flex h-2.5 w-2.5">
+                        <span className="absolute inset-0 rounded-full animate-ping bg-orange-500/40" />
+                        <span className="relative w-2.5 h-2.5 rounded-full bg-orange-500 border border-orange-600/50" />
+                      </span>
+                    )}
+                    {showTwinMissing && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400" aria-hidden />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </nav>
         </div>
       )}
