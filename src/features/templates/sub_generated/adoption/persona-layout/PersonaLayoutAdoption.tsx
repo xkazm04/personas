@@ -189,10 +189,29 @@ export function PersonaLayoutAdoption({
     [questions, userAnswers],
   );
   const totalCount = questions.length;
-  const blockedCount = blockedQuestionIds.size;
+  // `blockedQuestionIds` is derived from the VAULT (matchVaultToQuestions)
+  // and never inspects user answers — once a question has been picked
+  // from the stackable options, the user has explicitly resolved it,
+  // even if the chosen service_type doesn't yet have a credential in
+  // the vault (the credential add can happen post-adoption). Subtract
+  // answered questions from the blocking set so picking a valid option
+  // actually clears the gate.
+  const blockedCount = useMemo(
+    () => Array.from(blockedQuestionIds).filter((id) => !userAnswers[id]).length,
+    [blockedQuestionIds, userAnswers],
+  );
   const progressPct = totalCount === 0 ? 1 : answeredCount / totalCount;
   const remaining = totalCount - answeredCount;
-  const canContinue = remaining === 0 && blockedCount === 0 && selectedUseCaseIds.size > 0;
+  // Templates without declared use_cases (recipe-driven templates) produce
+  // an empty `items` array — there's nothing for the user to enable. Don't
+  // gate Continue on `selectedUseCaseIds.size > 0` in that case; the
+  // adoption flow seeds capabilities at build time. When the template DOES
+  // declare use cases, keep the original gate so the user must enable at
+  // least one.
+  const canContinue =
+    remaining === 0 &&
+    blockedCount === 0 &&
+    (items.length === 0 || selectedUseCaseIds.size > 0);
 
   const activeStoryIdx = useMemo(() => {
     if (!activeDim) return -1;
