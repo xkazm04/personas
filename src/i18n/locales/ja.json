@@ -9066,7 +9066,21 @@
     "run_in_15min": "15分後に実行",
     "run_in_30min": "30分後に実行",
     "run_in_1h": "1時間後に実行",
-    "delayed_run_hint": "次回のスケジュール実行を、この遅延後の実行に置き換えます。"
+    "delayed_run_hint": "次回のスケジュール実行を、この遅延後の実行に置き換えます。",
+    "recent_runs": "最近の実行",
+    "recent_runs_aria": "最近の実行を表示",
+    "recent_runs_hide_aria": "最近の実行を非表示",
+    "recent_runs_empty": "このスケジュールではまだ実行がありません。",
+    "recent_runs_loading": "最近の実行を読み込み中…",
+    "recent_runs_load_failed": "最近の実行を読み込めませんでした。",
+    "run_status_running": "実行中",
+    "run_status_queued": "キュー待ち",
+    "run_status_succeeded": "成功",
+    "run_status_failed": "失敗",
+    "run_status_cancelled": "キャンセル済み",
+    "run_duration": "{ms}ミリ秒",
+    "run_cost_usd": "${cost}",
+    "run_view_in_activity": "アクティビティで表示 →"
   },
   "recipes_catalog": {
     "_comment_section_RecipesBrowseList": "── RecipesBrowseList.tsx ──",

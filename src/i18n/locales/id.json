@@ -9066,7 +9066,21 @@
     "run_in_15min": "Jalankan dalam 15 menit",
     "run_in_30min": "Jalankan dalam 30 menit",
     "run_in_1h": "Jalankan dalam 1 jam",
-    "delayed_run_hint": "Mengganti jalankan terjadwal berikutnya dengan penundaan ini."
+    "delayed_run_hint": "Mengganti jalankan terjadwal berikutnya dengan penundaan ini.",
+    "recent_runs": "Jalankan terbaru",
+    "recent_runs_aria": "Tampilkan jalankan terbaru",
+    "recent_runs_hide_aria": "Sembunyikan jalankan terbaru",
+    "recent_runs_empty": "Belum ada eksekusi untuk jadwal ini.",
+    "recent_runs_loading": "Memuat jalankan terbaru…",
+    "recent_runs_load_failed": "Tidak dapat memuat jalankan terbaru.",
+    "run_status_running": "Berjalan",
+    "run_status_queued": "Dalam antrean",
+    "run_status_succeeded": "Berhasil",
+    "run_status_failed": "Gagal",
+    "run_status_cancelled": "Dibatalkan",
+    "run_duration": "{ms}ms",
+    "run_cost_usd": "${cost}",
+    "run_view_in_activity": "Lihat di Aktivitas →"
   },
   "recipes_catalog": {
     "_comment_section_RecipesBrowseList": "── RecipesBrowseList.tsx ──",

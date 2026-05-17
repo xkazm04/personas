@@ -83,5 +83,19 @@
   "run_in_15min": "15분 후 실행",
   "run_in_30min": "30분 후 실행",
   "run_in_1h": "1시간 후 실행",
-  "delayed_run_hint": "다음 예정된 실행을 이 지연 시간으로 대체합니다."
+  "delayed_run_hint": "다음 예정된 실행을 이 지연 시간으로 대체합니다.",
+  "recent_runs": "최근 실행",
+  "recent_runs_aria": "최근 실행 표시",
+  "recent_runs_hide_aria": "최근 실행 숨기기",
+  "recent_runs_empty": "이 일정의 실행 기록이 아직 없습니다.",
+  "recent_runs_loading": "최근 실행을 불러오는 중…",
+  "recent_runs_load_failed": "최근 실행을 불러올 수 없습니다.",
+  "run_status_running": "실행 중",
+  "run_status_queued": "대기 중",
+  "run_status_succeeded": "성공",
+  "run_status_failed": "실패",
+  "run_status_cancelled": "취소됨",
+  "run_duration": "{ms}ms",
+  "run_cost_usd": "${cost}",
+  "run_view_in_activity": "활동에서 보기 →"
 }

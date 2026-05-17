@@ -9066,7 +9066,21 @@
     "run_in_15min": "Chạy sau 15 phút",
     "run_in_30min": "Chạy sau 30 phút",
     "run_in_1h": "Chạy sau 1 giờ",
-    "delayed_run_hint": "Thay thế lần chạy đã lên lịch tiếp theo bằng một lần chạy sau khoảng trễ này."
+    "delayed_run_hint": "Thay thế lần chạy đã lên lịch tiếp theo bằng một lần chạy sau khoảng trễ này.",
+    "recent_runs": "Lần chạy gần đây",
+    "recent_runs_aria": "Hiện các lần chạy gần đây",
+    "recent_runs_hide_aria": "Ẩn các lần chạy gần đây",
+    "recent_runs_empty": "Chưa có lần thực thi nào cho lịch này.",
+    "recent_runs_loading": "Đang tải các lần chạy gần đây…",
+    "recent_runs_load_failed": "Không thể tải các lần chạy gần đây.",
+    "run_status_running": "Đang chạy",
+    "run_status_queued": "Đang chờ",
+    "run_status_succeeded": "Thành công",
+    "run_status_failed": "Thất bại",
+    "run_status_cancelled": "Đã hủy",
+    "run_duration": "{ms}ms",
+    "run_cost_usd": "${cost}",
+    "run_view_in_activity": "Xem trong Hoạt động →"
   },
   "recipes_catalog": {
     "_comment_section_RecipesBrowseList": "── RecipesBrowseList.tsx ──",

@@ -83,5 +83,19 @@
   "run_in_15min": "15 分钟后运行",
   "run_in_30min": "30 分钟后运行",
   "run_in_1h": "1 小时后运行",
-  "delayed_run_hint": "用此延迟时间替换下次计划触发。"
+  "delayed_run_hint": "用此延迟时间替换下次计划触发。",
+  "recent_runs": "最近运行",
+  "recent_runs_aria": "显示最近运行",
+  "recent_runs_hide_aria": "隐藏最近运行",
+  "recent_runs_empty": "此计划尚无执行记录。",
+  "recent_runs_loading": "正在加载最近运行…",
+  "recent_runs_load_failed": "无法加载最近运行。",
+  "run_status_running": "运行中",
+  "run_status_queued": "已排队",
+  "run_status_succeeded": "成功",
+  "run_status_failed": "失败",
+  "run_status_cancelled": "已取消",
+  "run_duration": "{ms}毫秒",
+  "run_cost_usd": "${cost}",
+  "run_view_in_activity": "在活动中查看 →"
 }

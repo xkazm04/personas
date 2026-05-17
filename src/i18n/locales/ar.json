@@ -9066,7 +9066,21 @@
     "run_in_15min": "التشغيل بعد 15 دقيقة",
     "run_in_30min": "التشغيل بعد 30 دقيقة",
     "run_in_1h": "التشغيل بعد ساعة واحدة",
-    "delayed_run_hint": "يستبدل التشغيل المجدول التالي بتشغيل بعد هذا التأخير."
+    "delayed_run_hint": "يستبدل التشغيل المجدول التالي بتشغيل بعد هذا التأخير.",
+    "recent_runs": "عمليات التشغيل الأخيرة",
+    "recent_runs_aria": "إظهار عمليات التشغيل الأخيرة",
+    "recent_runs_hide_aria": "إخفاء عمليات التشغيل الأخيرة",
+    "recent_runs_empty": "لا توجد عمليات تنفيذ لهذا الجدول الزمني بعد.",
+    "recent_runs_loading": "جارٍ تحميل عمليات التشغيل الأخيرة…",
+    "recent_runs_load_failed": "تعذر تحميل عمليات التشغيل الأخيرة.",
+    "run_status_running": "قيد التشغيل",
+    "run_status_queued": "في قائمة الانتظار",
+    "run_status_succeeded": "نجح",
+    "run_status_failed": "فشل",
+    "run_status_cancelled": "أُلغي",
+    "run_duration": "{ms} مللي ثانية",
+    "run_cost_usd": "${cost}",
+    "run_view_in_activity": "عرض في النشاط ←"
   },
   "recipes_catalog": {
     "_comment_section_RecipesBrowseList": "── RecipesBrowseList.tsx ──",

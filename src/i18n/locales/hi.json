@@ -9066,7 +9066,21 @@
     "run_in_15min": "15 मिनट में चलाएँ",
     "run_in_30min": "30 मिनट में चलाएँ",
     "run_in_1h": "1 घंटे में चलाएँ",
-    "delayed_run_hint": "अगले निर्धारित फायर को इस विलंब वाले फायर से बदल देता है।"
+    "delayed_run_hint": "अगले निर्धारित फायर को इस विलंब वाले फायर से बदल देता है।",
+    "recent_runs": "हाल के रन",
+    "recent_runs_aria": "हाल के रन दिखाएँ",
+    "recent_runs_hide_aria": "हाल के रन छिपाएँ",
+    "recent_runs_empty": "इस शेड्यूल के लिए अभी तक कोई निष्पादन नहीं।",
+    "recent_runs_loading": "हाल के रन लोड हो रहे हैं…",
+    "recent_runs_load_failed": "हाल के रन लोड नहीं हो सके।",
+    "run_status_running": "चल रहा है",
+    "run_status_queued": "कतार में",
+    "run_status_succeeded": "सफल",
+    "run_status_failed": "विफल",
+    "run_status_cancelled": "रद्द किया गया",
+    "run_duration": "{ms}ms",
+    "run_cost_usd": "${cost}",
+    "run_view_in_activity": "गतिविधि में देखें →"
   },
   "recipes_catalog": {
     "_comment_section_RecipesBrowseList": "── RecipesBrowseList.tsx ──",

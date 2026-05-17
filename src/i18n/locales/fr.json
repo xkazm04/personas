@@ -9066,7 +9066,21 @@
     "run_in_15min": "Exécuter dans 15 minutes",
     "run_in_30min": "Exécuter dans 30 minutes",
     "run_in_1h": "Exécuter dans 1 heure",
-    "delayed_run_hint": "Remplace le prochain déclenchement planifié par un déclenchement à ce délai."
+    "delayed_run_hint": "Remplace le prochain déclenchement planifié par un déclenchement à ce délai.",
+    "recent_runs": "Exécutions récentes",
+    "recent_runs_aria": "Afficher les exécutions récentes",
+    "recent_runs_hide_aria": "Masquer les exécutions récentes",
+    "recent_runs_empty": "Aucune exécution pour le moment pour cette planification.",
+    "recent_runs_loading": "Chargement des exécutions récentes…",
+    "recent_runs_load_failed": "Impossible de charger les exécutions récentes.",
+    "run_status_running": "En cours",
+    "run_status_queued": "En file d'attente",
+    "run_status_succeeded": "Réussie",
+    "run_status_failed": "Échouée",
+    "run_status_cancelled": "Annulée",
+    "run_duration": "{ms} ms",
+    "run_cost_usd": "{cost} $",
+    "run_view_in_activity": "Voir dans l'activité →"
   },
   "recipes_catalog": {
     "_comment_section_RecipesBrowseList": "── RecipesBrowseList.tsx ──",

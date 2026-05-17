@@ -83,5 +83,19 @@
   "run_in_15min": "১৫ মিনিটে চালান",
   "run_in_30min": "৩০ মিনিটে চালান",
   "run_in_1h": "১ ঘণ্টায় চালান",
-  "delayed_run_hint": "পরবর্তী নির্ধারিত চালানোকে এই বিলম্বে প্রতিস্থাপন করে।"
+  "delayed_run_hint": "পরবর্তী নির্ধারিত চালানোকে এই বিলম্বে প্রতিস্থাপন করে।",
+  "recent_runs": "সাম্প্রতিক চালানো",
+  "recent_runs_aria": "সাম্প্রতিক চালানো দেখান",
+  "recent_runs_hide_aria": "সাম্প্রতিক চালানো লুকান",
+  "recent_runs_empty": "এই সময়সূচির জন্য এখনও কোনো এক্সিকিউশন নেই।",
+  "recent_runs_loading": "সাম্প্রতিক চালানো লোড হচ্ছে…",
+  "recent_runs_load_failed": "সাম্প্রতিক চালানো লোড করা যায়নি।",
+  "run_status_running": "চলছে",
+  "run_status_queued": "সারিবদ্ধ",
+  "run_status_succeeded": "সফল হয়েছে",
+  "run_status_failed": "ব্যর্থ হয়েছে",
+  "run_status_cancelled": "বাতিল করা হয়েছে",
+  "run_duration": "{ms}মিসে",
+  "run_cost_usd": "${cost}",
+  "run_view_in_activity": "কার্যকলাপে দেখুন →"
 }

@@ -9076,6 +9076,20 @@ export type Translations = {
     run_in_30min: string;
     run_in_1h: string;
     delayed_run_hint: string;
+    recent_runs: string;
+    recent_runs_aria: string;
+    recent_runs_hide_aria: string;
+    recent_runs_empty: string;
+    recent_runs_loading: string;
+    recent_runs_load_failed: string;
+    run_status_running: string;
+    run_status_queued: string;
+    run_status_succeeded: string;
+    run_status_failed: string;
+    run_status_cancelled: string;
+    run_duration: string;
+    run_cost_usd: string;
+    run_view_in_activity: string;
   };
   recipes_catalog: {
     _comment_section_RecipesBrowseList: string;

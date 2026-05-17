@@ -83,5 +83,19 @@
   "run_in_15min": "Ejecutar en 15 minutos",
   "run_in_30min": "Ejecutar en 30 minutos",
   "run_in_1h": "Ejecutar en 1 hora",
-  "delayed_run_hint": "Reemplaza la próxima activación programada con una con este retraso."
+  "delayed_run_hint": "Reemplaza la próxima activación programada con una con este retraso.",
+  "recent_runs": "Ejecuciones recientes",
+  "recent_runs_aria": "Mostrar ejecuciones recientes",
+  "recent_runs_hide_aria": "Ocultar ejecuciones recientes",
+  "recent_runs_empty": "Aún no hay ejecuciones para esta programación.",
+  "recent_runs_loading": "Cargando ejecuciones recientes…",
+  "recent_runs_load_failed": "No se pudieron cargar las ejecuciones recientes.",
+  "run_status_running": "En ejecución",
+  "run_status_queued": "En cola",
+  "run_status_succeeded": "Completada",
+  "run_status_failed": "Fallida",
+  "run_status_cancelled": "Cancelada",
+  "run_duration": "{ms} ms",
+  "run_cost_usd": "${cost}",
+  "run_view_in_activity": "Ver en Actividad →"
 }

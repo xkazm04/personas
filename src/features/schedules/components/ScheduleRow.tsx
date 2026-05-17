@@ -2,12 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import {
   Play, Clock, Settings2, Pause, ToggleLeft, ToggleRight,
   CheckCircle2, AlertTriangle, XCircle, History, ChevronDown, SkipForward, Timer,
+  ChevronRight,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { ScheduleEntry } from '../libs/scheduleHelpers';
 import { formatRelative } from '../libs/scheduleHelpers';
 import FrequencyEditor from './FrequencyEditor';
 import BackfillModal from './BackfillModal';
+import { ScheduleRowHistoryPanel } from './ScheduleRowHistoryPanel';
 import type { BackfillResult } from '@/api/pipeline/scheduler';
 import { useThemeStore } from '@/stores/themeStore';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
@@ -57,6 +59,7 @@ export default function ScheduleRow({
   const [showFreqEditor, setShowFreqEditor] = useState(false);
   const [showBackfill, setShowBackfill] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const advancedRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -88,10 +91,14 @@ export default function ScheduleRow({
 
   return (
     <>
-      <div className={`group flex items-center gap-3 px-4 py-3 rounded-modal border border-l-[3px] transition-all ${healthAccent} ${disabled
+      <div className={`group border border-l-[3px] transition-all ${healthAccent} ${
+        showHistory ? 'rounded-modal' : 'rounded-modal'
+      } ${
+        disabled
           ? 'border-primary/5 bg-primary/[0.02] opacity-60'
           : 'border-primary/10 bg-primary/[0.03] hover:bg-primary/[0.05] hover:border-primary/20'
-        }`}>
+      }`}>
+      <div className="flex items-center gap-3 px-4 py-3">
         {/* Agent icon */}
         <PersonaIcon icon={agent.persona_icon} color={agent.persona_color} display="framed" frameSize={"lg"} />
 
@@ -150,9 +157,16 @@ export default function ScheduleRow({
             <div className="typo-caption text-foreground">--</div>
           )}
           {lastRun && (
-            <div className="text-[10px] text-foreground mt-0.5">
-              last {formatRelative(lastRun.toISOString())}
-            </div>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setShowHistory((v) => !v); }}
+              aria-expanded={showHistory}
+              aria-label={showHistory ? t.schedules.recent_runs_hide_aria : t.schedules.recent_runs_aria}
+              className="inline-flex items-center gap-1 text-[10px] text-foreground mt-0.5 hover:text-foreground/80 transition-colors group/peek"
+            >
+              <ChevronRight className={`w-2.5 h-2.5 transition-transform ${showHistory ? 'rotate-90' : ''} text-foreground/55 group-hover/peek:text-foreground/80`} />
+              <span>last {formatRelative(lastRun.toISOString())}</span>
+            </button>
           )}
         </div>
 
@@ -290,6 +304,20 @@ export default function ScheduleRow({
             )}
           </button>
         </div>
+      </div>
+
+      {/* Inline run-history peek (Stage 1) */}
+      {showHistory && (
+        <div role="region" aria-label={t.schedules.recent_runs} className="border-t border-primary/10 bg-primary/[0.015]">
+          <div className="px-4 pt-2 flex items-center gap-1.5">
+            <History className="w-3 h-3 text-foreground/55" />
+            <span className="text-[10px] uppercase tracking-wider text-foreground/55">
+              {t.schedules.recent_runs}
+            </span>
+          </div>
+          <ScheduleRowHistoryPanel triggerId={agent.trigger_id} />
+        </div>
+      )}
       </div>
 
       {/* Frequency editor modal */}

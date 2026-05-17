@@ -83,5 +83,19 @@
   "run_in_15min": "Запустить через 15 минут",
   "run_in_30min": "Запустить через 30 минут",
   "run_in_1h": "Запустить через 1 час",
-  "delayed_run_hint": "Заменяет следующий запланированный запуск на запуск с этой задержкой."
+  "delayed_run_hint": "Заменяет следующий запланированный запуск на запуск с этой задержкой.",
+  "recent_runs": "Недавние запуски",
+  "recent_runs_aria": "Показать недавние запуски",
+  "recent_runs_hide_aria": "Скрыть недавние запуски",
+  "recent_runs_empty": "Для этого расписания ещё нет выполнений.",
+  "recent_runs_loading": "Загрузка недавних запусков…",
+  "recent_runs_load_failed": "Не удалось загрузить недавние запуски.",
+  "run_status_running": "Выполняется",
+  "run_status_queued": "В очереди",
+  "run_status_succeeded": "Успешно",
+  "run_status_failed": "Сбой",
+  "run_status_cancelled": "Отменено",
+  "run_duration": "{ms} мс",
+  "run_cost_usd": "${cost}",
+  "run_view_in_activity": "Открыть в Активности →"
 }

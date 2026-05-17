@@ -83,5 +83,19 @@
   "run_in_15min": "In 15 Minuten ausführen",
   "run_in_30min": "In 30 Minuten ausführen",
   "run_in_1h": "In 1 Stunde ausführen",
-  "delayed_run_hint": "Ersetzt die nächste geplante Ausführung durch eine mit dieser Verzögerung."
+  "delayed_run_hint": "Ersetzt die nächste geplante Ausführung durch eine mit dieser Verzögerung.",
+  "recent_runs": "Letzte Ausführungen",
+  "recent_runs_aria": "Letzte Ausführungen anzeigen",
+  "recent_runs_hide_aria": "Letzte Ausführungen ausblenden",
+  "recent_runs_empty": "Für diesen Zeitplan gibt es noch keine Ausführungen.",
+  "recent_runs_loading": "Letzte Ausführungen werden geladen…",
+  "recent_runs_load_failed": "Letzte Ausführungen konnten nicht geladen werden.",
+  "run_status_running": "Wird ausgeführt",
+  "run_status_queued": "In Warteschlange",
+  "run_status_succeeded": "Erfolgreich",
+  "run_status_failed": "Fehlgeschlagen",
+  "run_status_cancelled": "Abgebrochen",
+  "run_duration": "{ms} ms",
+  "run_cost_usd": "${cost}",
+  "run_view_in_activity": "In Aktivität anzeigen →"
 }

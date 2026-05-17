@@ -9069,7 +9069,21 @@
     "run_in_15min": "Run in 15 minutes",
     "run_in_30min": "Run in 30 minutes",
     "run_in_1h": "Run in 1 hour",
-    "delayed_run_hint": "Replaces the next scheduled fire with one at this delay."
+    "delayed_run_hint": "Replaces the next scheduled fire with one at this delay.",
+    "recent_runs": "Recent runs",
+    "recent_runs_aria": "Show recent runs",
+    "recent_runs_hide_aria": "Hide recent runs",
+    "recent_runs_empty": "No executions yet for this schedule.",
+    "recent_runs_loading": "Loading recent runs…",
+    "recent_runs_load_failed": "Could not load recent runs.",
+    "run_status_running": "Running",
+    "run_status_queued": "Queued",
+    "run_status_succeeded": "Succeeded",
+    "run_status_failed": "Failed",
+    "run_status_cancelled": "Cancelled",
+    "run_duration": "{ms}ms",
+    "run_cost_usd": "${cost}",
+    "run_view_in_activity": "View in Activity →"
   },
   "recipes_catalog": {
     "_comment_section_RecipesBrowseList": "── RecipesBrowseList.tsx ──",
