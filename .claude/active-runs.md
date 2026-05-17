@@ -32,6 +32,15 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+- **[2026-05-17 — started] glyph-adoption-tests — Playwright coverage for adoption pre-seed bugs**
+  - **Source:** User reports two bugs in template adoption Persona Layout tab: (1) main content scroll doesn't engage even after the previous fix `cb550566e`; (2) "Add credential" click is silent. Want Playwright coverage to verify whether the master fix is actually live in the running app, AND ensure future regressions get caught.
+  - **Paths:** `tests/playwright/adoption-bridge.ts` (new), `tests/playwright/adoption-persona-layout.spec.ts` (new), possibly `src/test/automation/bridge.ts` (only if a missing bridge method blocks the spec — would be a coordinated edit needing main-checkout copy too per parallel-cli-workflow.md "bridge not hot-reloadable" rule), possibly testid additions to `AdoptionAnswerCard.tsx` / `ChronologyAdoptionView.tsx` / `PersonaLayoutAdoption.tsx` if existing testids don't reach the assertions.
+  - **Status:** started
+  - **Branch:** `worktree-glyph-adoption-tests`
+  - **Worktree:** `.claude/worktrees/glyph-adoption-tests/`
+  - **Test shell:** Holding tauri:dev:test on :17320 (already running from main checkout) for the duration of this run.
+  - **Note:** Per `docs/tests/parallel-cli-workflow.md`, test runs from a worktree against an app served by the main checkout — exactly the "dual-checkout trap" scenario this lets us diagnose. If the spec fails despite master containing `cb550566e`, that tells us the bundle is stale or the fix is in a different layer than I thought.
+
 - **[2026-05-17 — started] overview-polish — Header unification + Events/Knowledge/Health fixes**
   - **Source:** User-driven UX polish — Overview module. Header consistency across submodules, Events subtitle bug ("50 50 of 50"), Knowledge background-CLI review + drop Schedule, Health Reliability tab dedup + filter compaction.
   - **Paths:** `src/features/overview/sub_events/components/EventLogList.tsx`, `src/features/overview/sub_knowledge/components/**`, `src/features/overview/sub_health/components/**`, possibly headers in other `src/features/overview/sub_*/components/**` for consistency, `src/i18n/locales/en.json` (additive `overview.*` keys only — disjoint from concurrent `schedules.*`/`appearance.*`/`plugins.*`/`shared.sidebar_extra.*`)
