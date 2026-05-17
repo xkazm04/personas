@@ -12566,11 +12566,8 @@
   },
   "twin": {
     "selector": {
-      "noTwin": "No twin configured",
-      "createFirst": "Create a twin first so personas have an identity to speak as.",
       "createTwin": "Créer un nouveau twin",
       "selectTwin": "Select a twin...",
-      "progressGroupLabel": "Twin setup progress",
       "pickerLabel": "Choisir le twin actif",
       "searchPlaceholder": "Rechercher par nom ou rôle…",
       "noMatches": "Aucun twin ne correspond à votre recherche."

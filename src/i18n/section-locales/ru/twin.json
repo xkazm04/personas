@@ -1,10 +1,7 @@
 {
   "selector": {
-    "noTwin": "No twin configured",
-    "createFirst": "Create a twin first so personas have an identity to speak as.",
     "createTwin": "Создать нового twin",
     "selectTwin": "Select a twin...",
-    "progressGroupLabel": "Twin setup progress",
     "pickerLabel": "Выберите активного twin",
     "searchPlaceholder": "Поиск по имени или роли…",
     "noMatches": "Нет twin, подходящих под запрос."

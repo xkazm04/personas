@@ -12566,11 +12566,8 @@
   },
   "twin": {
     "selector": {
-      "noTwin": "No twin configured",
-      "createFirst": "Create a twin first so personas have an identity to speak as.",
       "createTwin": "নতুন টুইন তৈরি করুন",
       "selectTwin": "Select a twin...",
-      "progressGroupLabel": "Twin setup progress",
       "pickerLabel": "সক্রিয় টুইন বেছে নিন",
       "searchPlaceholder": "নাম বা ভূমিকা দিয়ে অনুসন্ধান করুন…",
       "noMatches": "আপনার অনুসন্ধানের সাথে কোনো টুইন মেলে না।"

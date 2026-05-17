@@ -1,10 +1,7 @@
 {
   "selector": {
-    "noTwin": "No twin configured",
-    "createFirst": "Create a twin first so personas have an identity to speak as.",
     "createTwin": "新建 twin",
     "selectTwin": "Select a twin...",
-    "progressGroupLabel": "Twin setup progress",
     "pickerLabel": "选择当前 twin",
     "searchPlaceholder": "按名称或角色搜索…",
     "noMatches": "没有匹配的 twin。"

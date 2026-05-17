@@ -1,10 +1,7 @@
 {
   "selector": {
-    "noTwin": "No twin configured",
-    "createFirst": "Create a twin first so personas have an identity to speak as.",
     "createTwin": "إنشاء توأم جديد",
     "selectTwin": "Select a twin...",
-    "progressGroupLabel": "Twin setup progress",
     "pickerLabel": "اختر التوأم النشط",
     "searchPlaceholder": "ابحث بالاسم أو الدور…",
     "noMatches": "لا توجد توائم تطابق بحثك."

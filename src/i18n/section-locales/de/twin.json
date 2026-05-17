@@ -1,10 +1,7 @@
 {
   "selector": {
-    "noTwin": "No twin configured",
-    "createFirst": "Create a twin first so personas have an identity to speak as.",
     "createTwin": "Neuen Twin erstellen",
     "selectTwin": "Select a twin...",
-    "progressGroupLabel": "Twin setup progress",
     "pickerLabel": "Aktiven Twin auswählen",
     "searchPlaceholder": "Nach Name oder Rolle suchen…",
     "noMatches": "Keine Twins entsprechen deiner Suche."
