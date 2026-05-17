@@ -32,6 +32,14 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+- **[2026-05-17 — started] glyph-layout-redesign — full-width centered Persona Sigil + inline adoption Q&A**
+  - **Source:** User feedback after testing prior merge (`7a8462f9c`): layout limits the Persona Sigil's size by putting metadata next to it. Wants metadata row ABOVE + centered large sigil ~640px (matches scratch). Also: adoption questionnaire should answer questions inline via petal clicks (scratch style) instead of bouncing to Classic.
+  - **Paths:** `src/features/shared/glyph/persona-layout/PersonaHero.tsx` (rebuild — metadata above + centered sigil at 640px), `src/features/shared/glyph/persona-layout/PersonaLayout.tsx` (drop maxWidth clamp, restructure main column), `src/features/templates/sub_generated/adoption/persona-layout/PersonaLayoutAdoption.tsx` (inline question answer card overlay, petal-state derivation from pending questions, drop bounce-to-Classic), possibly new `src/features/templates/sub_generated/adoption/persona-layout/AdoptionAnswerCard.tsx` or similar, `src/i18n/locales/en.json` (additive keys only)
+  - **Status:** started
+  - **Branch:** `worktree-glyph-layout-redesign`
+  - **Worktree:** `.claude/worktrees/glyph-layout-redesign/`
+  - **Note:** Path-disjoint from all 9 concurrent /friend sessions — touches only PersonaLayout components + adoption surface. Tab switcher (Classic vs Persona Layout) remains as user's escape hatch. Scratch flow untouched.
+
 - **[2026-05-17 — started] overview-polish — Header unification + Events/Knowledge/Health fixes**
   - **Source:** User-driven UX polish — Overview module. Header consistency across submodules, Events subtitle bug ("50 50 of 50"), Knowledge background-CLI review + drop Schedule, Health Reliability tab dedup + filter compaction.
   - **Paths:** `src/features/overview/sub_events/components/EventLogList.tsx`, `src/features/overview/sub_knowledge/components/**`, `src/features/overview/sub_health/components/**`, possibly headers in other `src/features/overview/sub_*/components/**` for consistency, `src/i18n/locales/en.json` (additive `overview.*` keys only — disjoint from concurrent `schedules.*`/`appearance.*`/`plugins.*`/`shared.sidebar_extra.*`)
