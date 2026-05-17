@@ -14,7 +14,7 @@ const logger = createLogger("template-adoption");
 import { PersonaChronologyGlyph } from "./glyph";
 import { QuestionnaireForm } from "./questionnaire";
 import { UseCasePickerStep, type UseCaseOption } from "./ucPicker";
-import { ConsolidatedAdoptionView } from "./consolidated";
+import { PersonaLayoutAdoption } from "./persona-layout";
 import { useBuild } from "@/features/agents/components/matrix/useBuild";
 import { useLifecycle } from "@/features/agents/components/matrix/useLifecycle";
 import { useAgentStore } from "@/stores/agentStore";
@@ -420,13 +420,16 @@ function applyTriggerSelections(
   };
 }
 
-type AdoptionLayout = 'classic' | 'consolidated';
+type AdoptionLayout = 'classic' | 'persona-layout';
 const ADOPTION_LAYOUT_STORAGE_KEY = 'personas:adoption-layout';
 
 function readAdoptionLayout(): AdoptionLayout {
   try {
     const raw = localStorage.getItem(ADOPTION_LAYOUT_STORAGE_KEY);
-    if (raw === 'classic' || raw === 'consolidated') return raw;
+    if (raw === 'classic' || raw === 'persona-layout') return raw;
+    // Migrate the previous 'consolidated' value (renamed to 'persona-layout'
+    // when the dictionary was clarified — Persona Layout is the canonical name).
+    if (raw === 'consolidated') return 'persona-layout';
   } catch {
     /* SSR or disabled localStorage */
   }
@@ -1253,8 +1256,8 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
       );
     })();
 
-    const consolidatedBranch = (
-      <ConsolidatedAdoptionView
+    const personaLayoutBranch = (
+      <PersonaLayoutAdoption
         designResult={designResult}
         templateName={templateName}
         selectedUseCaseIds={selectedUseCaseIds}
@@ -1276,7 +1279,7 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
       <div className="flex flex-col h-full min-h-0">
         <AdoptionLayoutSwitcher value={layout} onChange={setLayout} />
         <div className="flex-1 min-h-0 flex flex-col">
-          {layout === 'classic' ? classicBranch : consolidatedBranch}
+          {layout === 'classic' ? classicBranch : personaLayoutBranch}
         </div>
       </div>
     );
@@ -1332,7 +1335,7 @@ interface AdoptionLayoutSwitcherProps {
 
 /**
  * Tab switcher rendered above the pre-seed adoption surface so the user
- * can opt into the Consolidated prototype without losing the proven
+ * can opt into the Persona Layout prototype without losing the proven
  * 3-step Classic flow. Persisted via localStorage so the choice survives
  * modal reopens. Hidden after seed.
  */
@@ -1363,15 +1366,15 @@ function AdoptionLayoutSwitcher({ value, onChange }: AdoptionLayoutSwitcherProps
         <button
           type="button"
           role="tab"
-          aria-selected={value === 'consolidated'}
-          onClick={() => onChange('consolidated')}
+          aria-selected={value === 'persona-layout'}
+          onClick={() => onChange('persona-layout')}
           className={`relative inline-flex items-center px-3 py-1 rounded-full typo-caption transition-colors cursor-pointer ${
-            value === 'consolidated'
+            value === 'persona-layout'
               ? 'bg-primary/20 text-foreground'
               : 'text-foreground/65 hover:text-foreground hover:bg-secondary/60'
           }`}
         >
-          {t.templates.adopt_modal.layout_tab_consolidated}
+          {t.templates.adopt_modal.layout_tab_persona_layout}
           <span className="ml-1.5 typo-label uppercase tracking-wider text-primary/85">
             {t.templates.adopt_modal.layout_tab_prototype_badge}
           </span>

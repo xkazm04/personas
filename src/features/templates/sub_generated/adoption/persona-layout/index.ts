@@ -1,0 +1,1 @@
+export { PersonaLayoutAdoption } from './PersonaLayoutAdoption';

@@ -1,3 +1,3 @@
-export { ConsolidatedLayout, type ConsolidatedMode } from './ConsolidatedLayout';
+export { PersonaLayout, type PersonaLayoutMode } from './PersonaLayout';
 export { PersonaHero } from './PersonaHero';
 export { UseCaseRow } from './UseCaseRow';

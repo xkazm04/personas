@@ -4,7 +4,7 @@ import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { getMemoryCount } from '@/api/overview/memories';
 import { listManualReviews } from '@/api/overview/reviews';
 import { useSelectedCredentialLinks } from '@/stores/selectors/personaSelectors';
-import { ConsolidatedLayout } from '@/features/shared/glyph/consolidated';
+import { PersonaLayout } from '@/features/shared/glyph/persona-layout';
 import type { CredentialMetadata } from '@/lib/types/types';
 import { useUseCasesTab } from '../../libs/useUseCasesTab';
 import { useCapabilityToggle } from '../../libs/useCapabilityToggle';
@@ -16,21 +16,21 @@ import {
   type DisplayUseCase,
 } from '../recipes-prototype/shared/displayUseCase';
 
-interface ConsolidatedSigilLayoutProps {
+interface PersonaLayoutViewProps {
   credentials: CredentialMetadata[];
 }
 
 /**
- * View-mode wrapper around the shared ConsolidatedLayout. Owns the
+ * View-mode wrapper around the shared PersonaLayout. Owns the
  * use-cases-tab hooks, derives DisplayUseCase[] from the persona's design
- * context, and supplies the UseCaseDetailExpanded as the detail node when
- * a row is selected. The disable-confirmation dialog also lives here.
+ * context, and supplies UseCaseDetailExpanded as the detail node when a
+ * row is selected. The disable-confirmation dialog also lives here.
  *
  * The shared layout itself is mode-agnostic and lives under
- * src/features/shared/glyph/consolidated/. Future scratch + adoption
- * wrappers compose the same layout with mode-specific data sources.
+ * src/features/shared/glyph/persona-layout/. Adoption + scratch wrappers
+ * compose the same layout with mode-specific data sources.
  */
-export function ConsolidatedSigilLayout({ credentials }: ConsolidatedSigilLayoutProps) {
+export function PersonaLayoutView({ credentials }: PersonaLayoutViewProps) {
   const { t } = useTranslation();
   const {
     selectedPersona,
@@ -121,7 +121,7 @@ export function ConsolidatedSigilLayout({ credentials }: ConsolidatedSigilLayout
 
   return (
     <>
-      <ConsolidatedLayout
+      <PersonaLayout
         mode="view"
         personaName={selectedPersona.name ?? ''}
         items={items}

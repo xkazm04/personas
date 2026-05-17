@@ -94,6 +94,14 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Recently completed (last 14 days)
 
+- **[2026-05-17 → merge] glyph-persona-sigil — canonical Persona Sigil + new dictionary**
+  - **Worktree:** `.claude/worktrees/glyph-persona-sigil/` (will be removed in cleanup commit)
+  - **Branch:** `worktree-glyph-persona-sigil` (4 commits, merge SHA pending — about to land)
+  - **Status:** merged (pending commit; preserve-WIP precursor `d65592034` captured 82 unrelated dirty files on master)
+  - **Paths shipped:** `src/features/shared/glyph/persona-sigil/` (new — promoted GlyphHeroSigil, GlyphSigilCanvas, GlyphPetalIcons, GlyphOrbitProgress, useBuildingPetalSweep, PetalState type, DIM_LABEL). `src/features/shared/glyph/CapabilitySigil.tsx` (new — MiniSigil renamed to CapabilitySigil, EmptyMiniSigil → EmptyCapabilitySigil). `src/features/shared/glyph/persona-layout/` (rename from consolidated/, PersonaLayout component, PersonaHero with canonical sigil, UseCaseRow). `src/features/agents/sub_use_cases/components/persona-layout/` (rename from consolidated-prototype/, PersonaLayoutView). `src/features/templates/sub_generated/adoption/persona-layout/` (rename from consolidated/, PersonaLayoutAdoption). Re-export shims at old paths in `agents/components/glyph/` for the scratch flow + `recipes-prototype/shared/MiniSigil.tsx`. Renamed i18n keys: `agents.use_cases.layout_tab_consolidated → layout_tab_persona_layout`, `consolidated_capabilities_heading → persona_layout_capabilities_heading`, `templates.adopt_modal.consolidated_* → persona_layout_*`. Tab labels now read "Persona Layout · Prototype".
+  - **Commits:** `c8e931952` view-mode hero uses canonical Persona Sigil (drops HeroUnionSigil), `cac7e8d60` promote Persona Sigil to shared/glyph/persona-sigil, `0ff8c89a3` promote MiniSigil → CapabilitySigil, `629c95781` rename ConsolidatedLayout → PersonaLayout (folders + i18n keys + UI labels). localStorage values migrate on read.
+  - **Note:** Corrects the glyph-component reuse error from the previous phase-2 merge (`d419e44db`) — that merge shipped a 5th hand-rolled SVG body (`HeroUnionSigil`) instead of reusing the canonical persona sigil that already existed in the scratch flow. This merge replaces it with the real `GlyphSigilCanvas` at 220px and establishes the dictionary in `docs/concepts/glyph-consolidation.md`. Scratch flow (`GlyphFullLayout`, `GlyphPrototypeLayout`) untouched — re-export shims at old paths preserve current behavior.
+
 - **[2026-05-17 → wrap] twin-variant-consolidation — Atelier as baseline + Voice 2-tab prototype**
   - **Status:** completed (pending commit; tsc clean, 19/19 twin tests passing, lint clean of net-new code aside from inherited spacing/typo warnings shared with sibling Ateliers)
   - **Branch:** master (no worktree — interactive user-driven session; coexisted cleanly with `worktree-friend-twin-130914` which is on a separate physical checkout)
