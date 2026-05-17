@@ -2,8 +2,8 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { GLYPH_DIMENSIONS } from '@/features/shared/glyph';
 import type { GlyphDimension } from '@/features/shared/glyph';
-import { GlyphSigilCanvas } from '@/features/agents/components/glyph/GlyphSigilCanvas';
-import type { PetalState } from '@/features/agents/components/glyph/glyphLayoutTypes';
+import { GlyphSigilCanvas } from '@/features/shared/glyph/persona-sigil';
+import type { PetalState } from '@/features/shared/glyph/persona-sigil';
 import type { DisplayUseCase } from '@/features/agents/sub_use_cases/components/recipes-prototype/shared/displayUseCase';
 
 interface PersonaHeroProps {

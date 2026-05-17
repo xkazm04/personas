@@ -2,8 +2,9 @@ import type { GlyphDimension, GlyphRow } from "@/features/shared/glyph";
 import type { BuildQuestion, CellBuildStatus, BuildPhase, ToolTestResult } from "@/lib/types/buildTypes";
 import type { QuickConfigState } from "@/features/agents/components/matrix/quickConfigTypes";
 import type { ChannelSpecV2 } from "@/lib/bindings/ChannelSpecV2";
+import type { PetalState } from "@/features/shared/glyph/persona-sigil/types";
 
-export type PetalState = "idle" | "filling" | "resolved" | "pending" | "error";
+export type { PetalState };
 
 export interface GlyphFullLayoutProps {
   intentText: string;
