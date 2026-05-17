@@ -490,6 +490,13 @@ function updateSessionInState(
   const existing = state.buildSessions[targetId];
   if (!existing) return {};
   const updated = updater(existing);
+  // No-op short-circuit: when an updater returns the same session reference
+  // (conditional bail-outs in event handlers do this when the event doesn't
+  // apply to current phase/state), skip the projection rebuild entirely.
+  // Without this, every conditional-bail-out event still allocated a fresh
+  // buildSessions map plus a 32-key ScalarsProjection that consumers would
+  // have to compare against — pure churn for zero state change.
+  if (updated === existing) return {};
   const nextSessions = { ...state.buildSessions, [targetId]: updated };
   const activeSession = targetId === state.activeBuildSessionId ? updated : state.buildSessions[state.activeBuildSessionId ?? ''] ?? null;
   return {
