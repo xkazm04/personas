@@ -1,20 +1,22 @@
 /**
  * useBadgeCounts — Sidebar badge polling driver.
  *
- * Owns the consolidated polling timer (badge counts + budget spend in one
+ * Owns the consolidated sidebar polling (badge counts + budget spend in one
  * tick) and exposes the canonical sidebar-scoped fields drawn from
  * `useAttention("sidebar")`. The unified attention registry is the single
  * source of truth — this hook just wires polling and projects the counts
  * the sidebar cares about.
  *
- * Dynamically imports the overviewStore to avoid pulling all overview slices
- * into the main bundle on first paint.
+ * Registers a single ticker on the shared PollingCoordinator's 30s bucket
+ * so sidebar refreshes align with other dashboard pollers and SQLite serves
+ * them from the same warm cache.
  */
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useCallback } from "react";
 import { useAgentStore } from "@/stores/agentStore";
 import { POLLING_CONFIG } from "@/hooks/utility/timing/usePolling";
 import { useAttention } from "@/hooks/useAttention";
+import { getPollingCoordinator } from "@/lib/polling/pollingCoordinator";
 
 interface BadgeCounts {
   pendingReviewCount: number;
@@ -23,7 +25,6 @@ interface BadgeCounts {
 }
 
 export function useBadgeCounts(): BadgeCounts {
-  const timerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
   const fetchBudgetSpend = useAgentStore((s) => s.fetchBudgetSpend);
   const { counts } = useAttention("sidebar");
 
@@ -41,15 +42,17 @@ export function useBadgeCounts(): BadgeCounts {
 
   useEffect(() => {
     let cancelled = false;
+    let dispose: (() => void) | null = null;
     void import("@/stores/overviewStore").then(() => {
       if (cancelled) return;
-      // Fire initial fetches (badge counts + budget in one tick)
-      void fetchAll();
-      timerRef.current = setInterval(fetchAll, POLLING_CONFIG.dashboardRefresh.interval);
+      const handle = getPollingCoordinator().register("sidebarBadges", fetchAll, {
+        interval: POLLING_CONFIG.dashboardRefresh.interval,
+      });
+      dispose = handle.dispose;
     });
     return () => {
       cancelled = true;
-      if (timerRef.current) clearInterval(timerRef.current);
+      dispose?.();
     };
   }, [fetchAll]);
 

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useDocumentVisibility } from '@/hooks/utility/useDocumentVisibility';
+import { getPollingCoordinator } from '@/lib/polling/pollingCoordinator';
 
 // -- Polling configuration registry --------------------------------------
 export const POLLING_CONFIG = {
@@ -24,6 +25,11 @@ export interface PollingOptions {
   enabled: boolean;
   /** Maximum backoff interval on consecutive errors (default: 4× interval). */
   maxBackoff?: number;
+  /**
+   * Optional human-readable name surfaced in coordinator stats for debugging.
+   * Default: "polling". Pass a stable string per call site to keep stats useful.
+   */
+  name?: string;
 }
 
 export interface PollingState {
@@ -36,19 +42,24 @@ export interface PollingState {
 /**
  * Declarative polling hook.
  *
- * - Manages setInterval lifecycle tied to `enabled`.
- * - Pauses when the browser tab is hidden (`document.visibilityState`).
- * - Applies exponential backoff on consecutive errors.
- * - Fires immediately on enable, then at `interval` thereafter.
+ * - Registers a ticker with the shared PollingCoordinator so all 30s/15s
+ *   pollers fire on the same heartbeat instead of each owning a setTimeout.
+ * - Pauses when the browser tab is hidden (the coordinator suspends every
+ *   bucket on visibilitychange).
+ * - Applies exponential backoff on consecutive errors via a predicate gate:
+ *   the coordinator's bucket keeps firing on schedule, but this ticker's
+ *   shouldRun() returns false until `nextEligibleAt` elapses. Backoff caps
+ *   at `maxBackoff` (default 4× interval).
+ * - Fires immediately on enable, then on each bucket tick thereafter.
  */
 export function usePolling(
   fetchFn: () => unknown | Promise<unknown>,
-  { interval, enabled, maxBackoff }: PollingOptions,
+  { interval, enabled, maxBackoff, name }: PollingOptions,
 ): PollingState {
   const [lastRefreshed, setLastRefreshed] = useState<number | null>(null);
   const isDocumentVisible = useDocumentVisibility();
   const errorCountRef = useRef(0);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const nextEligibleAtRef = useRef(0);
   const fetchRef = useRef<() => unknown | Promise<unknown>>(fetchFn);
   fetchRef.current = fetchFn;
 
@@ -58,56 +69,29 @@ export function usePolling(
     try {
       await fetchRef.current();
       errorCountRef.current = 0;
+      nextEligibleAtRef.current = 0;
       setLastRefreshed(Date.now());
     } catch {
       errorCountRef.current++;
+      const backoff = Math.min(
+        interval * Math.pow(2, errorCountRef.current),
+        effectiveMaxBackoff,
+      );
+      // Skip ticks until this timestamp; bucket keeps firing for other
+      // tickers, so we don't desynchronize the heartbeat.
+      nextEligibleAtRef.current = Date.now() + backoff;
     }
-  }, []);
+  }, [interval, effectiveMaxBackoff]);
 
   useEffect(() => {
-    if (!enabled || !isDocumentVisible) return;
-
-    const getDelay = () => {
-      if (errorCountRef.current === 0) return interval;
-      const backoff = interval * Math.pow(2, errorCountRef.current);
-      return Math.min(backoff, effectiveMaxBackoff);
-    };
-
-    let stopped = false;
-    let timeoutId: ReturnType<typeof setTimeout> | null = null;
-
-    // Recursive setTimeout instead of setInterval. setInterval evaluated
-    // getDelay() ONCE at scheduling time, so the exponential backoff was a
-    // no-op while a polling cycle was alive — during a sustained backend
-    // outage the hook kept hammering the API at the original 5s/12s/15s
-    // cadence and could trip rate limits (esp. self-hosted GitLab). Now
-    // each tick awaits runFetch() then recomputes the delay against the
-    // current errorCountRef before scheduling the next tick.
-    const tick = async () => {
-      if (stopped) return;
-      await runFetch();
-      if (stopped) return;
-      timeoutId = setTimeout(() => { void tick(); }, getDelay());
-      // Mirror to timerRef so external code that inspects it still works
-      // (the existing clear() logic is gone but kept the same ref shape).
-      timerRef.current = timeoutId as unknown as ReturnType<typeof setInterval>;
-    };
-
-    const clear = () => {
-      if (timeoutId !== null) {
-        clearTimeout(timeoutId);
-        timeoutId = null;
-      }
-      timerRef.current = null;
-    };
-
-    void tick();
-
-    return () => {
-      stopped = true;
-      clear();
-    };
-  }, [enabled, isDocumentVisible, interval, effectiveMaxBackoff, runFetch]);
+    if (!enabled) return;
+    const coord = getPollingCoordinator();
+    const handle = coord.register(name ?? "polling", runFetch, {
+      interval,
+      shouldRun: () => Date.now() >= nextEligibleAtRef.current,
+    });
+    return () => handle.dispose();
+  }, [enabled, interval, runFetch, name]);
 
   return { isPolling: enabled && isDocumentVisible, lastRefreshed };
 }
