@@ -325,18 +325,30 @@ export function useTranslation() {
   const routeSections = useActiveI18nSections();
   useSyncExternalStore(subscribe, getSnapshot);
 
-  preloadSections(language, routeSections);
+  // Preload outside render: kicking off async loaders during render allocated
+  // promises and broadcast listeners on every render of every translated
+  // component. With sectionsForRoute now memoized, the dep array is stable.
+  useEffect(() => {
+    preloadSections(language, routeSections);
+  }, [language, routeSections]);
+
   const bundle = getBundle(language);
 
-  return {
-    /** Full translation tree for the active language. */
-    t: bundle,
-    /** Active language code (e.g. "en", "zh", "es"). */
-    language,
-    /**
-     * Interpolate variables into a translation string.
-     * @example tx(t.common.agent_count_other, { count: 5 })
-     */
-    tx: interpolate,
-  };
+  // Stable return identity per language so consumers that destructure
+  // `const { t } = useTranslation()` and pass `t` into useMemo deps, React.memo,
+  // or context providers don't get spurious invalidations every parent render.
+  return useMemo(
+    () => ({
+      /** Full translation tree for the active language. */
+      t: bundle,
+      /** Active language code (e.g. "en", "zh", "es"). */
+      language,
+      /**
+       * Interpolate variables into a translation string.
+       * @example tx(t.common.agent_count_other, { count: 5 })
+       */
+      tx: interpolate,
+    }),
+    [bundle, language],
+  );
 }
