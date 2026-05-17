@@ -31,6 +31,37 @@ export function createSingletonListener<T>(eventName: string) {
   let dropWarningEmitted = false;
   const MAX_BUFFER = 50;
 
+  // Coalesce per-frame delivery: a single backend tick can land multiple
+  // payloads within the same animation frame, especially during bursty
+  // realtime traffic (build status, pipeline ticks). Collecting them and
+  // dispatching once per frame keeps React commits aligned with paint and
+  // lets React 18's automatic batching collapse N events into one render.
+  let frameQueue: T[] = [];
+  let frameScheduled = false;
+
+  function scheduleFrameFlush() {
+    if (frameScheduled) return;
+    frameScheduled = true;
+    const schedule =
+      typeof requestAnimationFrame === 'function'
+        ? requestAnimationFrame
+        : (cb: FrameRequestCallback): number => {
+            queueMicrotask(() => cb(0));
+            return 0;
+          };
+    schedule(() => {
+      frameScheduled = false;
+      if (frameQueue.length === 0) return;
+      const batch = frameQueue;
+      frameQueue = [];
+      for (const payload of batch) {
+        for (const cb of subscribers) {
+          cb(payload);
+        }
+      }
+    });
+  }
+
   function recordEarlyDrop() {
     earlyDroppedCount += 1;
     if (!dropWarningEmitted) {
@@ -48,11 +79,10 @@ export function createSingletonListener<T>(eventName: string) {
     if (earlyBuffer.length === 0) return;
     const pending = earlyBuffer;
     earlyBuffer = [];
-    for (const payload of pending) {
-      for (const cb of subscribers) {
-        cb(payload);
-      }
-    }
+    // Route through the per-frame queue so a large early-buffer drain doesn't
+    // saturate the microtask checkpoint with one render-per-event.
+    frameQueue.push(...pending);
+    scheduleFrameFlush();
   }
 
   function ensureListener(): Promise<void> {
@@ -70,9 +100,8 @@ export function createSingletonListener<T>(eventName: string) {
           }
           return;
         }
-        for (const cb of subscribers) {
-          cb(payload);
-        }
+        frameQueue.push(payload);
+        scheduleFrameFlush();
       });
       setupInFlight = false;
 
