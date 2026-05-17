@@ -1,9 +1,8 @@
 import { lazy, Suspense } from 'react';
-import { Brain, Settings, RefreshCw, FolderOpen, Cloud, Network } from 'lucide-react';
+import { Brain } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useSystemStore } from '@/stores/systemStore';
-import type { ObsidianBrainTab } from '@/lib/types/types';
 import { useTranslation } from '@/i18n/useTranslation';
 
 const SetupPanel = lazy(() => import('./sub_setup/SetupPanel'));
@@ -14,17 +13,7 @@ const CloudSyncPanel = lazy(() => import('./sub_cloud/CloudSyncPanel'));
 
 export default function ObsidianBrainPage() {
   const { t } = useTranslation();
-
-  const tabs: { id: ObsidianBrainTab; label: string; icon: typeof Brain }[] = [
-    { id: 'setup', label: t.plugins.obsidian_brain.tab_setup, icon: Settings },
-    { id: 'sync', label: t.plugins.obsidian_brain.tab_sync, icon: RefreshCw },
-    { id: 'browse', label: t.plugins.obsidian_brain.tab_browse, icon: FolderOpen },
-    { id: 'graph', label: t.plugins.obsidian_brain.tab_graph, icon: Network },
-    { id: 'cloud', label: t.plugins.obsidian_brain.tab_cloud, icon: Cloud },
-  ];
   const obsidianBrainTab = useSystemStore((s) => s.obsidianBrainTab);
-  const setObsidianBrainTab = useSystemStore((s) => s.setObsidianBrainTab);
-  const pendingConflicts = useSystemStore((s) => s.obsidianPendingConflicts);
 
   return (
     <ContentBox>
@@ -33,32 +22,6 @@ export default function ObsidianBrainPage() {
         iconColor="violet"
         title={t.plugins.obsidian_brain.title}
         subtitle={t.plugins.obsidian_brain.subtitle}
-        actions={
-          <div className="flex items-center gap-1">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setObsidianBrainTab(tab.id)}
-                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-card typo-caption font-medium transition-colors focus-ring ${
-                    obsidianBrainTab === tab.id
-                      ? 'bg-violet-500/15 text-violet-400 border border-violet-500/25'
-                      : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80 border border-transparent'
-                  }`}
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                  {tab.label}
-                  {tab.id === 'sync' && pendingConflicts > 0 && (
-                    <span className="ml-0.5 px-1.5 py-0.5 typo-caption font-medium rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                      {pendingConflicts}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        }
       />
 
       <ContentBody centered>

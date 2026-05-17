@@ -37,6 +37,12 @@ export interface SidebarLevel3Props {
   onSelect: (id: string) => void;
   /** Optional aria-label for the nav list. */
   ariaLabel?: string;
+  /**
+   * Optional content rendered between the back-row and the nav list.
+   * Useful for context pills (e.g. "active project", "active twin") that
+   * scope the L3 contents.
+   */
+  subHeader?: ReactNode;
 }
 
 export default function SidebarLevel3({
@@ -46,6 +52,7 @@ export default function SidebarLevel3({
   activeId,
   onSelect,
   ariaLabel,
+  subHeader,
 }: SidebarLevel3Props) {
   return (
     <motion.div
@@ -63,6 +70,10 @@ export default function SidebarLevel3({
         <ChevronLeft className="w-4 h-4 flex-shrink-0" />
         <span className="typo-label">{backLabel}</span>
       </button>
+
+      {subHeader && (
+        <div className="px-3 py-2 border-b border-primary/8">{subHeader}</div>
+      )}
 
       <nav
         className="flex-1 px-2 py-2 space-y-0.5 overflow-y-auto"

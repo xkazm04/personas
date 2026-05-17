@@ -8,7 +8,7 @@ import {
   GraduationCap, BookOpen, Trophy, AlertOctagon,
   User, Mic, Volume2, Sparkles,
   Wand2, Image as ImageIcon, Film, Gauge as GaugeIcon, Bell,
-  Terminal,
+  Terminal, RefreshCw, FolderOpen,
   type LucideIcon,
 } from 'lucide-react';
 import type { SidebarSection, HomeTab, OverviewTab } from '@/lib/types/types';
@@ -159,6 +159,18 @@ export const companionItems: SubNavItem[] = [
   { id: 'setup', label: 'Setup', icon: Settings },
   { id: 'memory', label: 'Memory', icon: Brain },
   { id: 'voice', label: 'Voice', icon: Mic },
+];
+
+// Obsidian Brain plugin sub-nav: promoted to sidebar L3 on 2026-05-17.
+// Mirrors the in-page header tab bar that previously lived in
+// ObsidianBrainPage.tsx — the page now renders only the active panel,
+// matching the L3-pattern adopted by Artist / Dev Tools / Twin etc.
+export const obsidianBrainItems: SubNavItem[] = [
+  { id: 'setup',  label: 'Setup',        icon: Settings },
+  { id: 'sync',   label: 'Sync',         icon: RefreshCw },
+  { id: 'browse', label: 'Browse Vault', icon: FolderOpen },
+  { id: 'graph',  label: 'Graph',        icon: Network },
+  { id: 'cloud',  label: 'Cloud',        icon: Cloud },
 ];
 
 export function getSettingsItems(isDev: boolean, activeTier?: Tier): SubNavItem[] {

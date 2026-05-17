@@ -12578,6 +12578,7 @@ export type Translations = {
       research_lab: string;
       back_to_home: string;
       whats_new: string;
+      back_to_plugins: string;
     };
     execution_detail: {
       copy: string;

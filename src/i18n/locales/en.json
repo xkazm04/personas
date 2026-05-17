@@ -12571,7 +12571,8 @@
       "active_twin": "Active Twin",
       "research_lab": "Research Lab",
       "back_to_home": "Home",
-      "whats_new": "What's New"
+      "whats_new": "What's New",
+      "back_to_plugins": "Plugins"
     },
     "execution_detail": {
       "copy": "Copy",

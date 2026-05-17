@@ -18,7 +18,10 @@ interface PluginDef {
 export default function PluginBrowsePage() {
   const { t } = useTranslation();
 
-  const PLUGINS: PluginDef[] = [
+  // Sorted alphabetically by the user's translated label so the Browse grid
+  // matches the alphabetical L2 sidebar list. Sort respects locale ordering
+  // via `localeCompare`.
+  const PLUGINS: PluginDef[] = ([
     { id: 'artist', label: t.plugins.artist_label, description: t.plugins.artist_desc, icon: Palette, color: 'text-rose-400', activeBg: 'bg-rose-500/10', activeBorder: 'border-rose-500/20' },
     { id: 'dev-tools', label: t.plugins.dev_tools_label, description: t.plugins.dev_tools_desc, icon: Wrench, color: 'text-amber-400', activeBg: 'bg-amber-500/10', activeBorder: 'border-amber-500/20' },
     { id: 'obsidian-brain', label: t.plugins.obsidian_brain_label, description: t.plugins.obsidian_brain_desc, icon: Brain, color: 'text-violet-400', activeBg: 'bg-violet-500/10', activeBorder: 'border-violet-500/20' },
@@ -27,7 +30,7 @@ export default function PluginBrowsePage() {
     { id: 'twin', label: t.plugins.twin_label, description: t.plugins.twin_desc, icon: Sparkles, color: 'text-violet-400', activeBg: 'bg-violet-500/10', activeBorder: 'border-violet-500/20' },
     { id: 'companion', label: t.plugins.companion_label, description: t.plugins.companion_desc, icon: Bot, color: 'text-cyan-400', activeBg: 'bg-cyan-500/10', activeBorder: 'border-cyan-500/20' },
     { id: 'langfuse', label: t.plugins.langfuse_label, description: t.plugins.langfuse_desc, icon: LineChart, color: 'text-indigo-400', activeBg: 'bg-indigo-500/10', activeBorder: 'border-indigo-500/20' },
-  ];
+  ] satisfies PluginDef[]).slice().sort((a, b) => a.label.localeCompare(b.label));
   const enabledPlugins = useSystemStore((s) => s.enabledPlugins);
   const togglePlugin = useSystemStore((s) => s.togglePlugin);
 
