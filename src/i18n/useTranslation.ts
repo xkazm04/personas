@@ -317,7 +317,11 @@ export function getActiveTranslations(): Translations {
  *   tx(t.common.agent_count_other, { count: 5 }) // "5 agents"
  */
 export function useTranslation() {
-  const { language } = useI18nStore();
+  // Selective subscription: only re-render this hook's consumers on actual
+  // language changes. The whole-store destructure used to fan out fontReady
+  // flips (set by font-loader onload) to every translated component, doubling
+  // the rerender cost of any language switch involving CJK/Arabic/Devanagari.
+  const language = useI18nStore((s) => s.language);
   const routeSections = useActiveI18nSections();
   useSyncExternalStore(subscribe, getSnapshot);
 
