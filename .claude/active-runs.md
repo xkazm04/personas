@@ -54,14 +54,6 @@ timestamp — the next session can recognize it as abandoned.
   - **Branch:** master (small surgical multi-file change, user-driven directly in main checkout; per CLAUDE.md "single-file fixes can stay on the main checkout" — this is borderline; staying on master per user proceed)
   - **Note:** Path-disjoint from all 8+ concurrent /friend sessions (none touch `src/features/home/`, `src/features/shared/components/layout/sidebar/`, or `src/stores/slices/system/`). Shared en.json: additive under `shared.sidebar_extra.*` only (others touch `schedules.*`, `appearance.*`, `plugins.*`).
 
-- **[2026-05-16 — started] glyph-consolidation prototype — view + adoption (phase 2 commits A-C, merging now)**
-  - **Source:** User asked to unify the glyph mechanism across scratch / template / view surfaces. Analysis landed at `docs/concepts/glyph-consolidation.md`. Phase 1 (view mode prototype) + phase 2 commits A (move to shared/glyph), B (inline policy controls on rows), C (consolidated adoption tab) shipped on `worktree-glyph-consolidated`. Phase 2 commit D (scratch flow) deferred. About to merge to master with a preserve-WIP commit for unrelated dirty state first.
-  - **Paths:** `src/features/agents/sub_use_cases/components/consolidated-prototype/`, `src/features/agents/sub_use_cases/components/core/PersonaUseCasesTab.tsx`, `src/features/shared/glyph/consolidated/` (new), `src/features/templates/sub_generated/adoption/consolidated/` (new), `src/features/templates/sub_generated/adoption/ChronologyAdoptionView.tsx`, `src/i18n/locales/en.json` (additive keys under `agents.use_cases.layout_tab_*` and `templates.adopt_modal.layout_tab_*` / `consolidated_*`), `src/i18n/generated/types.ts` + `src/i18n/generated/enSectionStrings.ts` (regenerated), `.claude/active-runs.md`
-  - **Status:** merging
-  - **Branch:** `worktree-glyph-consolidated`
-  - **Worktree:** `.claude/worktrees/glyph-consolidated/`
-  - **Note:** All changes opt-in behind a tab switcher; default Sigil Grid / Classic flows unchanged. Path-disjoint from all 9 active sessions: triggers/schedules/overview/sidebar/plugins. Shared en.json: additive `agents.use_cases.layout_tab_*` + `templates.adopt_modal.layout_tab_*` / `consolidated_*` only.
-
 - **[2026-05-16 14:42 — started] artist-test-coverage — Vitest + Playwright for plugins/artist**
   - **Paths:** `src/features/plugins/artist/**/__tests__/*.test.{ts,tsx}` (new), possibly `src/features/plugins/artist/sub_media_studio/hooks/useMediaExport.ts` (export `normalizeProgress` for unit test), possibly `tests/playwright/artist-*.spec.ts` + `tests/playwright/artist-bridge.ts` (Cycle D only)
   - **Status:** started
@@ -109,6 +101,14 @@ timestamp — the next session can recognize it as abandoned.
 
 
 ## Recently completed (last 14 days)
+
+- **[2026-05-16 → 2026-05-17 merge] glyph-consolidation prototype — view + adoption (phase 1 + phase 2 A-C)**
+  - **Worktree:** `.claude/worktrees/glyph-consolidated/` (removed post-merge)
+  - **Branch:** `worktree-glyph-consolidated` (4 commits, merged via `d419e44db`)
+  - **Status:** completed (merge commit `d419e44db`; preserve-WIP precursor commit `dc07f1a46` captured 28 unrelated dirty files on master)
+  - **Paths shipped:** `src/features/shared/glyph/consolidated/` (new — ConsolidatedLayout, PersonaHero, UseCaseRow, index), `src/features/agents/sub_use_cases/components/consolidated-prototype/` (new — view-mode wrapper), `src/features/agents/sub_use_cases/components/core/PersonaUseCasesTab.tsx` (tab switcher), `src/features/templates/sub_generated/adoption/consolidated/` (new — adoption-mode wrapper), `src/features/templates/sub_generated/adoption/ChronologyAdoptionView.tsx` (tab switcher in pre-seed), `docs/concepts/glyph-consolidation.md` (analysis ADR — `ba69b8580`), `src/i18n/locales/en.json` (additive `agents.use_cases.layout_tab_*`, `templates.adopt_modal.layout_tab_*` + `consolidated_*`)
+  - **Commits:** `6bce38f5d` view-mode prototype tab, `63f5484e9` move layout to shared/glyph + hoist hooks, `6b67d912d` inline policy controls on rows, `82d10e635` adoption modal tab. Phase 2 commit D (scratch flow consolidation) intentionally deferred.
+  - **Note:** All changes opt-in behind a tab switcher; default Sigil Grid (use cases) + Classic (adoption) flows unchanged. Inline question-answering in adoption mode routes back to Classic — petal-popover primitive deferred.
 
 - **[2026-05-17 12:34 → ~14:00 wrap] /friend — schedules (4 cycles, branch unmerged — user owns the merge)**
   - **Worktree:** `.claude/worktrees/friend-schedules-123440/`
