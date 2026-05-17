@@ -95,7 +95,7 @@ export function TwinHeaderBand({
 }: TwinHeaderBandProps) {
   const a = ACCENTS[accent];
   return (
-    <div className="flex-shrink-0 relative overflow-hidden border-b border-primary/10">
+    <div className="flex-shrink-0 relative overflow-hidden border-b border-primary/10 min-w-[80vw]">
       <div className={`absolute inset-0 bg-gradient-to-r ${a.fromBg} ${a.toBg} to-transparent`} />
       {decoration && <div className="absolute inset-0 opacity-40 pointer-events-none">{decoration}</div>}
       <div className="relative px-4 md:px-6 xl:px-8 py-5 flex items-center gap-4">
