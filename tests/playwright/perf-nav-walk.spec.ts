@@ -44,6 +44,7 @@ interface PerfSnapshot {
     avgActualMs: number;
   };
   dom: { nodeCount: number };
+  diagnostics?: { ipcSubscribed?: boolean };
 }
 
 async function postRaw(p: string, body: unknown = {}): Promise<unknown> {
@@ -179,8 +180,11 @@ interface RunReport {
 }
 
 function repoRoot(): string {
-  // tests/playwright/perf-nav-walk.spec.ts → ../../../ → repo root
-  return path.resolve(__dirname, '..', '..');
+  // tests/playwright/perf-nav-walk.spec.ts → ../../../ → repo root.
+  // Playwright runs specs as ESM where __dirname is undefined, so derive
+  // from the spec's own location via import.meta.url.
+  const here = path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'));
+  return path.resolve(here, '..', '..');
 }
 
 function reportPath(): string {
@@ -206,20 +210,18 @@ test.describe('perf-nav-walk', () => {
     expect(health.status).toBe('ok');
     const probe = await snapshotPerf();
     expect(typeof probe.ipc.totalCount).toBe('number');
-    // Ensure the JS-side patched window.__TAURI_INTERNALS__.invoke (otherwise
-    // the snapshot would always read 0 — a silent measurement bug).
-    // The bridge exposes `ipcPatched` via __PERF__, but the snapshot doesn't
-    // include it; verify by triggering a known IPC and seeing the counter move.
-    await resetPerf();
-    await navigate('home');
-    const probe2 = await snapshotPerf();
-    expect(probe2.ipc.totalCount).toBeGreaterThan(0);
+    // The hard guarantee we need is that perfInstrument subscribed to the
+    // IPC metrics bus. If it didn't, every stop reads 0 IPCs which would be
+    // a silent measurement bug. A given navigate() may legitimately fire
+    // zero new IPCs (cache hit, no-op transition), so we don't gate on
+    // that count being > 0.
+    expect(probe.diagnostics?.ipcSubscribed).toBe(true);
 
     const results: StopResult[] = [];
     for (const stop of STOPS) {
       const stopResult: StopResult = {
         stop: { id: stop.id, group: stop.group, description: stop.description },
-        perf: probe2, // placeholder; replaced below
+        perf: probe, // placeholder; replaced below
       };
       try {
         await resetPerf();

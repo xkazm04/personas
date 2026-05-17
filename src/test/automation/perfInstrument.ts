@@ -7,9 +7,13 @@
  * take snapshots, and emit marks. Captures:
  *
  *   1. **IPC invocations** — count + total duration + per-command breakdown,
- *      by patching window.__TAURI_INTERNALS__.invoke at module load. This
- *      catches every Tauri command regardless of which import path the
- *      caller uses (@tauri-apps/api/core, plugin wrappers, etc).
+ *      by subscribing to `subscribeIpcMetrics` from @/lib/ipcMetrics. Every
+ *      Personas invoke that goes through `tauriInvoke.ts` is recorded there
+ *      automatically. (Tauri 2 makes window.__TAURI_INTERNALS__.invoke
+ *      non-configurable, so monkey-patching at that layer fails — see commit
+ *      history for the rejected attempt.) Calls that bypass tauriInvoke.ts
+ *      and hit @tauri-apps/api/core::invoke directly are NOT counted; today
+ *      that's a small minority and a known measurement gap.
  *
  *   2. **React render commits** — fed by a root `<Profiler>` in App.tsx
  *      via `recordRender()`. Tracks commit count plus actual + base
@@ -27,6 +31,11 @@
  * and App.tsx's Profiler `onRender` callback is the cheapest path possible
  * (one object lookup) when __PERF__ is not present.
  */
+import {
+  subscribeIpcMetrics,
+  getIpcRecords,
+  getIpcTotalCount,
+} from '@/lib/ipcMetrics';
 
 interface PerCommandStats {
   count: number;
@@ -63,6 +72,9 @@ export interface PerfSnapshot {
   dom: {
     nodeCount: number;
   };
+  diagnostics?: {
+    ipcSubscribed: boolean;
+  };
 }
 
 function createInitialState(): PerfState {
@@ -79,57 +91,51 @@ function createInitialState(): PerfState {
 }
 
 let state: PerfState = createInitialState();
+// Baseline of getIpcTotalCount() at the last reset. Used to compute how
+// many new records have arrived since reset by comparing with the current
+// count, then taking the last N records from the ring buffer.
+let ipcBaselineTotal = 0;
+
+function ingestNewIpcRecords(): void {
+  const currTotal = getIpcTotalCount();
+  const newSince = currTotal - ipcBaselineTotal;
+  if (newSince <= 0) return;
+  const allRecords = getIpcRecords();
+  // Ring buffer holds at most RING_SIZE entries; if too many calls have
+  // landed since reset, oldest are dropped. We take the most recent
+  // min(newSince, allRecords.length) entries to stay correct.
+  const take = Math.min(newSince, allRecords.length);
+  const slice = allRecords.slice(-take);
+  for (const r of slice) {
+    state.ipcCount += 1;
+    let e = state.ipcByCommand.get(r.command);
+    if (!e) {
+      e = { count: 0, totalMs: 0 };
+      state.ipcByCommand.set(r.command, e);
+    }
+    e.count += 1;
+    e.totalMs += r.durationMs;
+    state.ipcTotalMs += r.durationMs;
+  }
+  ipcBaselineTotal = currTotal;
+}
 
 /**
- * Patch Tauri's low-level IPC dispatcher to count + time every command.
- * The standard @tauri-apps/api/core::invoke ultimately calls
- * window.__TAURI_INTERNALS__.invoke, so patching that catches every call
- * site regardless of import path. Idempotent — returns true if patch
- * applied (or already present), false if the internals weren't available.
+ * Subscribe to @/lib/ipcMetrics so every Tauri command recorded by
+ * tauriInvoke.ts (the app-wide IPC wrapper) feeds into our state.
+ * Idempotent across HMR — the listener is added once per module evaluation;
+ * we keep a single unsubscriber on the module object so re-evals replace it
+ * cleanly. Returns true if the subscription was attached.
  */
-function patchTauriInternals(): boolean {
-  type InvokeFn = (cmd: string, args?: unknown, opts?: unknown) => unknown;
-  type Internals = { invoke?: InvokeFn };
-  const w = window as unknown as { __TAURI_INTERNALS__?: Internals };
-  const internals = w.__TAURI_INTERNALS__;
-  if (!internals || typeof internals.invoke !== 'function') return false;
-
-  const originalInvoke = internals.invoke;
-  // Avoid double-patching across HMR / repeated module evaluation.
-  if ((originalInvoke as { __perfPatched?: boolean }).__perfPatched) return true;
-
-  const patched: InvokeFn = function (this: unknown, cmd, args, opts) {
-    const cmdName = String(cmd ?? 'unknown');
-    const start = performance.now();
-    state.ipcCount += 1;
-    let entry = state.ipcByCommand.get(cmdName);
-    if (!entry) {
-      entry = { count: 0, totalMs: 0 };
-      state.ipcByCommand.set(cmdName, entry);
-    }
-    entry.count += 1;
-
-    const recordDuration = () => {
-      const dur = performance.now() - start;
-      entry.totalMs += dur;
-      state.ipcTotalMs += dur;
-    };
-
-    try {
-      const result = originalInvoke.call(this, cmd, args, opts);
-      if (result && typeof (result as { finally?: unknown }).finally === 'function') {
-        return (result as Promise<unknown>).finally(recordDuration);
-      }
-      recordDuration();
-      return result;
-    } catch (err) {
-      recordDuration();
-      throw err;
-    }
-  };
-
-  (patched as { __perfPatched?: boolean }).__perfPatched = true;
-  internals.invoke = patched;
+let unsubscribeIpc: (() => void) | null = null;
+function attachIpcSubscription(): boolean {
+  if (typeof subscribeIpcMetrics !== 'function') return false;
+  if (unsubscribeIpc) {
+    unsubscribeIpc();
+    unsubscribeIpc = null;
+  }
+  ipcBaselineTotal = getIpcTotalCount();
+  unsubscribeIpc = subscribeIpcMetrics(ingestNewIpcRecords);
   return true;
 }
 
@@ -153,6 +159,10 @@ export function recordRender(
 }
 
 function snapshot(): PerfSnapshot {
+  // Drain any IPC records that arrived since the last subscriber notification
+  // but haven't been ingested yet (the listener fires per-record, but we may
+  // be called between adds — re-pull to be sure).
+  ingestNewIpcRecords();
   const now = performance.now();
   const byCommand = Array.from(state.ipcByCommand.entries())
     .map(([command, e]) => ({
@@ -185,11 +195,15 @@ function snapshot(): PerfSnapshot {
     dom: {
       nodeCount: document.querySelectorAll('*').length,
     },
+    diagnostics: {
+      ipcSubscribed: unsubscribeIpc !== null,
+    },
   };
 }
 
 function reset(): void {
   state = createInitialState();
+  ipcBaselineTotal = getIpcTotalCount();
 }
 
 function mark(label: string): void {
@@ -198,7 +212,7 @@ function mark(label: string): void {
 
 // ── Initialise on load ────────────────────────────────────────────────────
 
-const ipcPatched = patchTauriInternals();
+const ipcSubscribed = attachIpcSubscription();
 
 // Expose on window so the Rust test-automation bridge can call into us
 // via eval. The bridge.ts dispatcher also picks up these methods through
@@ -208,7 +222,7 @@ interface PerfApi {
   snapshot: () => PerfSnapshot;
   mark: (label: string) => void;
   recordRender: typeof recordRender;
-  ipcPatched: boolean;
+  ipcSubscribed: boolean;
 }
 
 const perfApi: PerfApi = {
@@ -216,7 +230,7 @@ const perfApi: PerfApi = {
   snapshot,
   mark,
   recordRender,
-  ipcPatched,
+  ipcSubscribed,
 };
 
 (window as unknown as { __PERF__: PerfApi }).__PERF__ = perfApi;
