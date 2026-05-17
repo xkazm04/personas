@@ -83,6 +83,12 @@ interface PersonaLayoutProps {
    *  adoption / scratch supply their own equivalents (or omit). */
   renderRowPolicySlot?: (uc: DisplayUseCase) => ReactNode;
 
+  /** Optional content rendered after the last capability row. View mode
+   *  uses this for the "Add capability" dashed-row affordance; adoption
+   *  / scratch typically leave it unset. Not rendered when items is
+   *  empty (the emptyNode covers that state). */
+  appendRow?: ReactNode;
+
   /** Detail panel rendered when `selectedItemId` is set. View mode passes
    *  UseCaseDetailExpanded; other modes can pass mode-specific drill-downs. */
   detailNode?: ReactNode;
@@ -138,6 +144,7 @@ export function PersonaLayout({
   rightSlot,
   belowHeroSlot,
   renderRowPolicySlot,
+  appendRow,
   detailNode,
   emptyNode,
 }: PersonaLayoutProps) {
@@ -208,6 +215,7 @@ export function PersonaLayout({
                               policySlot={renderRowPolicySlot?.(uc)}
                             />
                           ))}
+                          {appendRow}
                         </div>
                       </div>
                     )}
