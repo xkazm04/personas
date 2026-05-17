@@ -32,6 +32,13 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+- **[2026-05-17 — started] tours-revamp — descope Quest + expand guided tours**
+  - **Paths:** `src/features/onboarding/` (delete `OnboardingQuestPill.tsx`; edit tour panel + `tourConstants.ts` + step components), `src/stores/onboardingQuestStore.ts` (delete), `src/stores/slices/system/tourSlice.ts` (add 3 new tours, expand existing), `src/features/home/components/NextStepCoachCard.tsx` (delete), `src/features/home/` (remove NextStepCoachCard usage), `src/features/shared/components/layout/TitleBar.tsx` (remove quest-revive button), `src/App.tsx` (remove `<OnboardingQuestPill />` mount), `src/i18n/locales/en.json` (additive `onboarding.tour_*` keys + delete `onboarding.quest_*` keys — coordinate with concurrent /friend sessions on same en.json), `src/lib/storeBusWiring.ts` (new tour event wiring), `docs/features/onboarding.md`, `docs/features/home.md`, plus targeted `data-testid` adds in `src/features/{schedules,recipes,plugins,templates}/`
+  - **Status:** started
+  - **Branch:** `worktree-tours-revamp`
+  - **Worktree:** `.claude/worktrees/tours-revamp/`
+  - **Note:** Path-disjoint from all 8 concurrent /friend plugin sessions (they touch `src/features/plugins/<plugin>/` for plugin-specific work; this session only adds `data-testid` attributes inside plugin shells, not feature logic). Shared en.json: my edits are under `onboarding.*` subtree only (additions + quest_* deletions); /friend sessions touch their own `plugins.<name>.*` subtrees. Possible merge contention on tourSlice.ts is zero (no concurrent session touches tour code). User-driven manual session — not a /friend or /research loop.
+
 - **[2026-05-16 14:42 — started] artist-test-coverage — Vitest + Playwright for plugins/artist**
   - **Paths:** `src/features/plugins/artist/**/__tests__/*.test.{ts,tsx}` (new), possibly `src/features/plugins/artist/sub_media_studio/hooks/useMediaExport.ts` (export `normalizeProgress` for unit test), possibly `tests/playwright/artist-*.spec.ts` + `tests/playwright/artist-bridge.ts` (Cycle D only)
   - **Status:** started
