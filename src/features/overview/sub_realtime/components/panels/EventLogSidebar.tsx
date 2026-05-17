@@ -47,10 +47,21 @@ export default function EventLogSidebar({ events, onSelectEvent }: Props) {
   const logRef = useRef<HTMLDivElement>(null);
   const autoScrollRef = useRef(true);
 
+  // Build a persona lookup map once per personas array change, then resolve
+  // names in O(1) below. Previously this did `allPersonas.find(...)` for every
+  // event entry on every realtime tick — O(events × personas) per render.
+  const personaNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const p of allPersonas as Array<{ id: string; name?: string }>) {
+      if (p.name) map.set(p.id, p.name);
+    }
+    return map;
+  }, [allPersonas]);
+
   const logEntries: LogEntry[] = useMemo(() => {
     return events.slice(-200).map(evt => {
       const personaName = evt.target_persona_id
-        ? allPersonas.find((p: { id: string; name?: string }) => p.id === evt.target_persona_id)?.name ?? evt.target_persona_id.slice(0, 8)
+        ? personaNameById.get(evt.target_persona_id) ?? evt.target_persona_id.slice(0, 8)
         : '(broadcast)';
       return {
         id: evt.id,
@@ -64,7 +75,7 @@ export default function EventLogSidebar({ events, onSelectEvent }: Props) {
         color: EVENT_TYPE_HEX_COLORS[evt.event_type] ?? '#818cf8',
       };
     }).reverse();
-  }, [events, allPersonas]);
+  }, [events, personaNameById]);
 
   const filteredLog = useMemo(() => {
     if (!logSearch.trim()) return logEntries;
