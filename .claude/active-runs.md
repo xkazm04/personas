@@ -94,6 +94,13 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Recently completed (last 14 days)
 
+- **[2026-05-17 → merge `f2291d71f`] glyph-layout-refine — wider answer card + AddCapabilityRow**
+  - **Branch:** `worktree-glyph-layout-refine` (2 commits, merged via `f2291d71f`; worktree removed, branch deleted)
+  - **Status:** completed
+  - **Paths shipped:** `src/features/shared/glyph/persona-layout/PersonaHero.tsx` (new `wideOverlay` slot positioned absolute over the sigil stage, caps at min(1280px,96vw); centerOverlay auto-hides while wideOverlay is open), `src/features/shared/glyph/persona-layout/PersonaLayout.tsx` (new `heroWideOverlay` + `appendRow` props), `src/features/shared/glyph/persona-layout/AddCapabilityRow.tsx` (new — dashed empty row mirroring legacy EmptyTile recipe variant), `src/features/shared/glyph/persona-layout/index.ts` (export new component), `src/features/templates/sub_generated/adoption/persona-layout/AdoptionAnswerCard.tsx` (drops own width cap, becomes flex column with min-h-0 body for internal vertical scroll, max-height min(85vh,800px)), `src/features/templates/sub_generated/adoption/persona-layout/PersonaLayoutAdoption.tsx` (answer card moves to heroWideOverlay; new center count-button when pending questions exist with no active dim, click → opens first unanswered question via questionToDimension), `src/features/agents/sub_use_cases/components/persona-layout/PersonaLayoutView.tsx` (renders AddCapabilityRow with setSidebarSection('design-reviews') + setTemplateTab('recipes') click), `src/i18n/locales/en.json` (additive: persona_layout_center_questions_to_answer_one/_other, persona_layout_center_click_to_start, persona_layout_center_open_questions_title).
+  - **Commits:** `3b376926d` wider answer card + center count-button; `53e5309cc` AddCapabilityRow at end of view-mode list.
+  - **Note:** No new components in adoption mode — AddCapabilityRow is view-mode-only (adoption pre-seed has no persona to extend). Scratch flow untouched.
+
 - **[2026-05-17 → merge `e814ea794`] glyph-layout-redesign — full-width Persona Layout + inline adoption Q&A**
   - **Worktree:** `.claude/worktrees/glyph-layout-redesign/` (removed post-merge)
   - **Branch:** `worktree-glyph-layout-redesign` (2 commits, merged via `e814ea794`)
