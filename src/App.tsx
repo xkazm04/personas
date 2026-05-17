@@ -1,4 +1,4 @@
-import { Component, lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
+import { Component, lazy, Profiler, Suspense, useCallback, useEffect, useRef, useState, type ProfilerOnRenderCallback, type ReactNode } from "react";
 import { AnimatePresence, motion, MotionConfig } from "framer-motion";
 import PersonasPage from "@/features/personas/PersonasPage";
 import UpdateBanner from "@/features/shared/components/feedback/UpdateBanner";
@@ -148,7 +148,9 @@ export default function App() {
     // Loaded in dev builds always, or in production when PERSONAS_TEST_PORT is set
     // (Rust injects window.__PERSONAS_TEST_MODE__ = true via eval).
     if (import.meta.env.DEV || (window as unknown as Record<string, unknown>).__PERSONAS_TEST_MODE__) {
-      void import("@/test/automation/bridge");
+      // Sequence: bridge first so window.__TEST__ exists, then perfInstrument
+      // can register its methods onto it. Both are no-cost no-ops in prod.
+      void import("@/test/automation/bridge").then(() => import("@/test/automation/perfInstrument"));
     }
 
     // Report frontend time-to-interactive to the Rust backend.
@@ -196,7 +198,19 @@ export default function App() {
 
   const isMobilePreview = useMobilePreview();
 
+  // Forward every commit to window.__PERF__ when present (set up by
+  // src/test/automation/perfInstrument.ts in test mode). The lookup is one
+  // object access per commit when __PERF__ is absent — well below Profiler's
+  // own overhead, which the React docs note is "small enough not to need
+  // disabling in production." Keeping the Profiler unconditional means
+  // measurement can be turned on with PERSONAS_TEST_PORT against any build.
+  const onRootRender = useCallback<ProfilerOnRenderCallback>((...args) => {
+    const perf = (window as unknown as { __PERF__?: { recordRender?: ProfilerOnRenderCallback } }).__PERF__;
+    perf?.recordRender?.(...args);
+  }, []);
+
   return (
+    <Profiler id="app-root" onRender={onRootRender}>
     <VibeThemeProvider>
       <AppKeyboardProvider>
         <ModalStackProvider>
@@ -265,5 +279,6 @@ export default function App() {
         </ModalStackProvider>
       </AppKeyboardProvider>
     </VibeThemeProvider>
+    </Profiler>
   );
 }
