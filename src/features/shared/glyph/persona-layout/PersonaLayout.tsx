@@ -5,11 +5,11 @@ import type { DisplayUseCase } from '@/features/agents/sub_use_cases/components/
 import { PersonaHero } from './PersonaHero';
 import { UseCaseRow } from './UseCaseRow';
 
-export type ConsolidatedMode = 'view' | 'adoption' | 'scratch';
+export type PersonaLayoutMode = 'view' | 'adoption' | 'scratch';
 
-interface ConsolidatedLayoutProps {
+interface PersonaLayoutProps {
   /** Drives mode-specific chrome (top/right slots, padding, etc.). */
-  mode: ConsolidatedMode;
+  mode: PersonaLayoutMode;
 
   /** Persona identity displayed in the hero band. */
   personaName: string;
@@ -72,7 +72,7 @@ const DEFAULT_MAX_WIDTH = 960;
  * rows below, with optional top / right slots for adoption chrome and a
  * detail-overlay slot for drill-downs.
  *
- * Behaviour parity with the prior view-only ConsolidatedSigilLayout:
+ * Behaviour parity with the prior view-only PersonaLayoutView:
  *   • selecting an item swaps the surface to the detailNode
  *   • per-row run / toggle / open handlers are caller-supplied
  *
@@ -80,7 +80,7 @@ const DEFAULT_MAX_WIDTH = 960;
  * quick-add, picker modals, etc.) are caller-owned — this component only
  * renders the shell.
  */
-export function ConsolidatedLayout({
+export function PersonaLayout({
   mode,
   personaName,
   items,
@@ -96,7 +96,7 @@ export function ConsolidatedLayout({
   detailNode,
   emptyNode,
   maxWidth = DEFAULT_MAX_WIDTH,
-}: ConsolidatedLayoutProps) {
+}: PersonaLayoutProps) {
   const { t } = useTranslation();
 
   const activeItem = selectedItemId
@@ -146,7 +146,7 @@ export function ConsolidatedLayout({
                     ) : (
                       <div className="flex flex-col gap-2">
                         <span className="typo-label uppercase tracking-[0.18em] text-foreground/55 px-1">
-                          {t.agents.use_cases.consolidated_capabilities_heading}
+                          {t.agents.use_cases.persona_layout_capabilities_heading}
                         </span>
                         <div className="flex flex-col gap-2">
                           {items.map((uc) => (

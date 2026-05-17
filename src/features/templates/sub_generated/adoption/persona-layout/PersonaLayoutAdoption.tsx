@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { ConsolidatedLayout } from '@/features/shared/glyph/consolidated';
+import { PersonaLayout } from '@/features/shared/glyph/persona-layout';
 import {
   toDisplayUseCase,
   type DisplayUseCase,
@@ -16,7 +16,7 @@ type TemplateDesignResult = Record<string, unknown>;
 import { QuestionnaireHeaderBand } from '../questionnaire/QuestionnaireHeaderBand';
 import { QuestionnaireStoryThread } from '../questionnaire/QuestionnaireStoryThread';
 
-interface ConsolidatedAdoptionViewProps {
+interface PersonaLayoutAdoptionProps {
   /** Template parsed design result — source of use cases for the rows. */
   designResult: TemplateDesignResult | null;
   /** Template name displayed in the hero band + stepper. */
@@ -49,10 +49,10 @@ interface ConsolidatedAdoptionViewProps {
 const NO_ACTIVE_QUESTION = -1;
 
 /**
- * First-draft Consolidated adoption surface (phase 2, commit C).
+ * First-draft Persona Layout adoption surface (phase 2, commit C).
  *
  * Replaces the picker + questionnaire steps with a single screen showing:
- *   • hero band — union sigil + persona-level summary from template
+ *   • Persona Sigil — union of dimensions from template's design_result
  *   • capability rows — each template use case as a row, power button =
  *     include/skip toggle (replaces UseCasePickerStep's role)
  *   • top stepper — QuestionnaireHeaderBand reused, no active question
@@ -69,10 +69,10 @@ const NO_ACTIVE_QUESTION = -1;
  *     Template-time policy overrides land via the questionnaire answers.
  *
  * Wires through the same data ChronologyAdoptionView assembles for
- * picker + questionnaire, so toggling between Classic and Consolidated
+ * picker + questionnaire, so toggling between Classic and Persona Layout
  * tabs preserves all user input.
  */
-export function ConsolidatedAdoptionView({
+export function PersonaLayoutAdoption({
   designResult,
   templateName,
   selectedUseCaseIds,
@@ -84,7 +84,7 @@ export function ConsolidatedAdoptionView({
   onSwitchToClassic,
   onContinue,
   onClose,
-}: ConsolidatedAdoptionViewProps) {
+}: PersonaLayoutAdoptionProps) {
   const { t, tx } = useTranslation();
 
   const items = useMemo<DisplayUseCase[]>(() => {
@@ -146,18 +146,18 @@ export function ConsolidatedAdoptionView({
 
   const continueDisabledReason = !canContinue
     ? blockedCount > 0
-      ? tx(t.templates.adopt_modal.consolidated_continue_blocked, { count: blockedCount })
+      ? tx(t.templates.adopt_modal.persona_layout_continue_blocked, { count: blockedCount })
       : remaining > 0
-        ? tx(t.templates.adopt_modal.consolidated_continue_remaining, { count: remaining })
+        ? tx(t.templates.adopt_modal.persona_layout_continue_remaining, { count: remaining })
         : selectedUseCaseIds.size === 0
-          ? t.templates.adopt_modal.consolidated_continue_no_capabilities
+          ? t.templates.adopt_modal.persona_layout_continue_no_capabilities
           : null
     : null;
 
   return (
     <div className="flex flex-col h-full min-h-0">
       <div className="flex-1 min-h-0">
-        <ConsolidatedLayout
+        <PersonaLayout
           mode="adoption"
           personaName={templateName}
           items={items}
@@ -172,7 +172,7 @@ export function ConsolidatedAdoptionView({
           emptyNode={
             <div className="rounded-modal border border-card-border bg-secondary/30 p-8 text-center">
               <span className="typo-body text-foreground/70 italic">
-                {t.templates.adopt_modal.consolidated_no_capabilities}
+                {t.templates.adopt_modal.persona_layout_no_capabilities}
               </span>
             </div>
           }
@@ -193,7 +193,7 @@ export function ConsolidatedAdoptionView({
           className="inline-flex items-center gap-1.5 typo-caption text-foreground/85 hover:text-foreground transition-colors cursor-pointer"
         >
           <ChevronLeft className="w-3.5 h-3.5" />
-          {t.templates.adopt_modal.consolidated_edit_questions}
+          {t.templates.adopt_modal.persona_layout_edit_questions}
         </button>
         <div className="flex-1" />
         {continueDisabledReason && (
@@ -212,7 +212,7 @@ export function ConsolidatedAdoptionView({
               : 'bg-secondary/40 border-border/30 text-foreground/40 cursor-not-allowed'
           }`}
         >
-          {t.templates.adopt_modal.consolidated_continue_to_build}
+          {t.templates.adopt_modal.persona_layout_continue_to_build}
           <ChevronRight className="w-3.5 h-3.5" />
         </button>
       </div>

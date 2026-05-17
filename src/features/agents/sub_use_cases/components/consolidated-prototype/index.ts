@@ -1,1 +1,0 @@
-export { ConsolidatedSigilLayout } from './ConsolidatedSigilLayout';
