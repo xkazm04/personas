@@ -27,8 +27,20 @@ const ROUTE_SECTIONS: Record<SidebarSection, readonly TranslationSection[]> = {
   settings: ['settings', 'models', 'tiers', 'auth'],
 };
 
+// Cache route-section results so every useTranslation() consumer sees a
+// stable array reference per route. Without this, the fresh array literal
+// invalidates downstream useMemo/useEffect dep arrays on every render,
+// causing the same N sections to be re-evaluated by hundreds of components.
+const ROUTE_SECTIONS_CACHE = new Map<SidebarSection, readonly TranslationSection[]>();
+
 export function sectionsForRoute(section: SidebarSection): readonly TranslationSection[] {
-  return [...new Set([...BASE_SECTIONS, ...(ROUTE_SECTIONS[section] ?? [])])];
+  const cached = ROUTE_SECTIONS_CACHE.get(section);
+  if (cached) return cached;
+  const computed = Object.freeze([
+    ...new Set([...BASE_SECTIONS, ...(ROUTE_SECTIONS[section] ?? [])]),
+  ]);
+  ROUTE_SECTIONS_CACHE.set(section, computed);
+  return computed;
 }
 
 export function useActiveI18nSections(): readonly TranslationSection[] {
