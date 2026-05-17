@@ -7764,6 +7764,11 @@ export type Translations = {
     in_buffer: string;
     resume_label: string;
     pause_label: string;
+    hover_paused_label: string;
+    hover_paused_tooltip: string;
+    activity_chip_row_label: string;
+    activity_chip_filter_active: string;
+    activity_more_count: string;
     no_events_title: string;
     no_events_desc: string;
     connecting_to_bus: string;

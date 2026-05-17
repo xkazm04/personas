@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Cloud, Radio, Unplug, Pause, Play, Trash2 } from 'lucide-react';
+import { Cloud, Eye, Radio, Unplug, Pause, Play, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { DataGrid, type DataGridColumn } from '@/features/shared/components/display/DataGrid';
@@ -13,15 +13,20 @@ import type { PersonaEvent } from '@/lib/types/types';
 import { useEventBusListener } from '@/hooks/realtime/useEventBusListener';
 import { EventDetailModal } from './EventDetailModal';
 import { EventTypeChip } from './EventTypeChip';
+import { EVENT_TYPE_META, DEFAULT_EVENT_META } from './eventTypeMeta';
 import { useTranslation } from '@/i18n/useTranslation';
 
 const STREAM_WINDOW_MS = 60_000; // rolling window for events/min calculation
 const STREAM_TIMESTAMP_CAP = 10_000; // hard cap on timestamp buffer to prevent OOM under sustained bursts
+// Mouse-leave grace before auto-resume — long enough that nudging the cursor off briefly
+// doesn't yank the row out from under the user mid-read.
+const HOVER_RESUME_GRACE_MS = 1500;
+const TYPE_CHIP_VISIBLE_CAP = 8;
 
 const defaultStatus = { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20' };
 
 export function LiveStreamTab() {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
 
   const STATUS_OPTIONS = [
     { value: 'all', label: t.triggers.all_statuses },
@@ -40,6 +45,9 @@ export function LiveStreamTab() {
   const [selectedEvent, setSelectedEvent] = useState<PersonaEvent | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
+  // Hover-pause is a softer, automatic pause while the user is reading the table.
+  // Keeps the manual Pause button as the deliberate "freeze for a while" lever.
+  const [hoverPaused, setHoverPaused] = useState(false);
   const [pausedQueueCount, setPausedQueueCount] = useState(0);
   // Receive counts since component mounted (resets on Clear)
   const [totalReceived, setTotalReceived] = useState(0);
@@ -50,6 +58,9 @@ export function LiveStreamTab() {
   const newEventIds = useRef(new Set<string>());
   const eventIdIndex = useRef(new Set<string>());
   const pausedQueueRef = useRef<PersonaEvent[]>([]);
+  const hoverResumeTimerRef = useRef<number | null>(null);
+
+  const effectivePaused = isPaused || hoverPaused;
 
   useEffect(() => {
     let stale = false;
@@ -84,9 +95,10 @@ export function LiveStreamTab() {
     setTotalReceived((c) => c + 1);
     setEventsPerMin(recvTimestamps.current.length);
 
-    if (isPaused) {
+    if (effectivePaused) {
       // Buffer for replay on resume — but only NEW events; status updates on
       // already-displayed events still flow through to keep the UI honest.
+      // Applies to both deliberate Pause and the lighter hover-pause.
       if (!eventIdIndex.current.has(evt.id)) {
         pausedQueueRef.current.push(evt);
         setPausedQueueCount(pausedQueueRef.current.length);
@@ -123,8 +135,7 @@ export function LiveStreamTab() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleResume = useCallback(() => {
-    setIsPaused(false);
+  const drainPausedQueue = useCallback(() => {
     const queued = pausedQueueRef.current;
     pausedQueueRef.current = [];
     setPausedQueueCount(0);
@@ -148,6 +159,38 @@ export function LiveStreamTab() {
     });
   }, []);
 
+  const handleResume = useCallback(() => {
+    setIsPaused(false);
+    drainPausedQueue();
+  }, [drainPausedQueue]);
+
+  const handleStreamMouseEnter = useCallback(() => {
+    if (hoverResumeTimerRef.current !== null) {
+      window.clearTimeout(hoverResumeTimerRef.current);
+      hoverResumeTimerRef.current = null;
+    }
+    // Skip hover-pause when manually paused — Pause button is the explicit lever.
+    if (isPaused) return;
+    setHoverPaused(true);
+  }, [isPaused]);
+
+  const handleStreamMouseLeave = useCallback(() => {
+    if (isPaused) return;
+    if (hoverResumeTimerRef.current !== null) {
+      window.clearTimeout(hoverResumeTimerRef.current);
+    }
+    hoverResumeTimerRef.current = window.setTimeout(() => {
+      setHoverPaused(false);
+      drainPausedQueue();
+      hoverResumeTimerRef.current = null;
+    }, HOVER_RESUME_GRACE_MS);
+  }, [isPaused, drainPausedQueue]);
+
+  // Clear any pending hover-resume timer on unmount.
+  useEffect(() => () => {
+    if (hoverResumeTimerRef.current !== null) window.clearTimeout(hoverResumeTimerRef.current);
+  }, []);
+
   const handleClear = useCallback(() => {
     setEvents([]);
     eventIdIndex.current.clear();
@@ -165,6 +208,21 @@ export function LiveStreamTab() {
   );
 
   const availableTypes = useMemo(() => [...new Set(events.map((e) => e.event_type))].sort(), [events]);
+
+  // Activity chips: per-type counts over current buffer, sorted by frequency.
+  // Gives a glanceable view of stream composition without opening any filter.
+  const typeActivity = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const e of events) {
+      counts.set(e.event_type, (counts.get(e.event_type) ?? 0) + 1);
+    }
+    return Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([type, count]) => ({ type, count }));
+  }, [events]);
+  const visibleTypeChips = typeActivity.slice(0, TYPE_CHIP_VISIBLE_CAP);
+  const overflowTypeChipsCount = Math.max(0, typeActivity.length - TYPE_CHIP_VISIBLE_CAP);
+
   const filteredEvents = useMemo(() => events.filter((e) => {
     if (statusFilter !== 'all' && e.status !== statusFilter) return false;
     if (typeFilter !== 'all' && e.event_type !== typeFilter) return false;
@@ -354,6 +412,29 @@ export function LiveStreamTab() {
           <span className="text-foreground">{t.triggers.in_buffer}</span>
         </div>
 
+        <AnimatePresence>
+          {hoverPaused && !isPaused && (
+            <motion.span
+              key="hover-pause-pill"
+              initial={{ opacity: 0, scale: 0.92 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.92 }}
+              transition={{ duration: 0.15 }}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-card typo-caption bg-amber-500/10 text-amber-300 border border-amber-500/20 tabular-nums"
+              title={t.triggers.hover_paused_tooltip}
+            >
+              <Eye className="w-3 h-3" />
+              <span>{t.triggers.hover_paused_label}</span>
+              {pausedQueueCount > 0 && (
+                <>
+                  <span className="opacity-50">·</span>
+                  <span className="font-semibold">{pausedQueueCount}</span>
+                </>
+              )}
+            </motion.span>
+          )}
+        </AnimatePresence>
+
         <div className="ml-auto flex items-center gap-1">
           <button
             onClick={handleClear}
@@ -367,7 +448,45 @@ export function LiveStreamTab() {
         </div>
       </div>
 
+      {typeActivity.length > 0 && (
+        <div className="flex items-center gap-1.5 px-4 py-1.5 border-b border-primary/5 bg-secondary/[0.03] overflow-x-auto flex-shrink-0">
+          <span className="typo-caption text-foreground shrink-0 mr-1">{t.triggers.activity_chip_row_label}</span>
+          {visibleTypeChips.map(({ type, count }) => {
+            const meta = EVENT_TYPE_META[type] ?? DEFAULT_EVENT_META;
+            const ChipIcon = meta.Icon;
+            const isActive = typeFilter === type;
+            return (
+              <button
+                key={type}
+                onClick={() => setTypeFilter(isActive ? 'all' : type)}
+                className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-input typo-caption transition-colors shrink-0 ${
+                  isActive
+                    ? `${meta.bg} ${meta.text} border ${meta.border} ring-1 ring-primary/30`
+                    : 'bg-secondary/30 text-foreground border border-border/20 hover:bg-secondary/50 hover:text-foreground'
+                }`}
+                title={isActive ? t.triggers.activity_chip_filter_active : type}
+                aria-pressed={isActive}
+              >
+                <ChipIcon className={`w-3 h-3 ${isActive ? meta.text : 'text-foreground'}`} />
+                <span className="font-mono">{type}</span>
+                <span className="tabular-nums opacity-70">{count}</span>
+              </button>
+            );
+          })}
+          {overflowTypeChipsCount > 0 && (
+            <span className="typo-caption text-foreground shrink-0">
+              {tx(t.triggers.activity_more_count, { count: overflowTypeChipsCount })}
+            </span>
+          )}
+        </div>
+      )}
+
       <ContentBody flex>
+        <div
+          className="flex flex-1 min-h-0 flex-col"
+          onMouseEnter={handleStreamMouseEnter}
+          onMouseLeave={handleStreamMouseLeave}
+        >
         <DataGrid<PersonaEvent>
           columns={columns}
           data={filteredEvents}
@@ -391,6 +510,7 @@ export function LiveStreamTab() {
           emptyDescription={t.triggers.no_events_desc}
           className="flex-1"
         />
+        </div>
       </ContentBody>
 
       {selectedEvent && (

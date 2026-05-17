@@ -12,7 +12,7 @@ The Live Stream header includes a shortcut into `Overview -> Events` for the ful
 
 | Tab | Behavior | Implementation |
 | --- | --- | --- |
-| Live Stream | Real-time event stream with type chips, JSON highlighting, detail modal | `sub_live_stream` |
+| Live Stream | Real-time event stream with type chips, JSON highlighting, detail modal. Activity chip row above the grid shows per-type counts (top 8 by frequency, click to filter). Stream auto-pauses on table hover (1.5s grace on mouse leave) so a fast feed never yanks a row out from under the reader; deliberate Pause button is unchanged. | `sub_live_stream` |
 | Builder | Visual routing canvas from event sources to persona listeners | `sub_builder/EventCanvas.tsx`, `layouts/routing` |
 | Speed Limits | Rate-limit dashboard over trigger/event activity | `sub_speed_limits/RateLimitDashboard.tsx` |
 | Test | Manual event test surface | `sub_test/TestTab.tsx` |
