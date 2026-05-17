@@ -55,9 +55,14 @@ interface PersonaLayoutProps {
    *  petal is "active" when the centerOverlay is open. */
   heroActiveDim?: GlyphDimension | null;
 
-  /** Forwarded to PersonaHero.centerOverlay. Adoption renders its
-   *  answer-card here when a pending petal is clicked. */
+  /** Forwarded to PersonaHero.centerOverlay. Small content inside the
+   *  sigil's inner core (e.g. "N questions to answer" count button). */
   heroCenterOverlay?: ReactNode;
+
+  /** Forwarded to PersonaHero.wideOverlay. Wider content overlaying the
+   *  sigil stage (e.g. adoption answer card). When set, the
+   *  centerOverlay is hidden so they don't compete for visual space. */
+  heroWideOverlay?: ReactNode;
 
   /** Optional slot above the hero — adoption uses this for the
    *  QuestionnaireHeaderBand stepper. */
@@ -128,6 +133,7 @@ export function PersonaLayout({
   onHeroPetalClick,
   heroActiveDim,
   heroCenterOverlay,
+  heroWideOverlay,
   topSlot,
   rightSlot,
   belowHeroSlot,
@@ -177,6 +183,7 @@ export function PersonaLayout({
                       onPetalClick={onHeroPetalClick}
                       activeDim={heroActiveDim}
                       centerOverlay={heroCenterOverlay}
+                      wideOverlay={heroWideOverlay}
                       metadataRightSlot={heroRightSlot}
                     />
 

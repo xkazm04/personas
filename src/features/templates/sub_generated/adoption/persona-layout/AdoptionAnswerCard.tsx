@@ -114,12 +114,11 @@ export function AdoptionAnswerCard({
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.96 }}
         transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-        className="pointer-events-auto relative rounded-modal border bg-background/95 backdrop-blur-md shadow-elevation-3"
+        className="pointer-events-auto relative rounded-modal border bg-background/95 backdrop-blur-md shadow-elevation-3 w-full flex flex-col"
         style={{
           borderColor: `${dimColor}66`,
           boxShadow: `0 0 24px ${dimColor}33, 0 8px 32px rgba(0,0,0,0.35)`,
-          maxWidth: 'min(640px, 92vw)',
-          width: '100%',
+          maxHeight: 'min(85vh, 800px)',
         }}
       >
         {/* Dim-colored accent bar */}
@@ -158,7 +157,7 @@ export function AdoptionAnswerCard({
           </button>
         </div>
 
-        <div className="px-6 pb-4 max-h-[68vh] overflow-y-auto scrollbar-thin">
+        <div className="px-8 pb-4 flex-1 min-h-0 overflow-y-auto scrollbar-thin">
           <QuestionnaireHeroQuestion
             question={activeQuestion}
             answer={answer}
@@ -180,7 +179,7 @@ export function AdoptionAnswerCard({
         </div>
 
         {/* Footer — prev / next / done */}
-        <div className="flex items-center gap-2 px-6 py-3 border-t border-card-border bg-foreground/[0.02] rounded-b-modal">
+        <div className="shrink-0 flex items-center gap-2 px-6 py-3 border-t border-card-border bg-foreground/[0.02] rounded-b-modal">
           <button
             type="button"
             onClick={() => setActiveIdx((i) => Math.max(0, i - 1))}

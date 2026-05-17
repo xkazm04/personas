@@ -242,7 +242,18 @@ export function PersonaLayoutAdoption({
           : null
     : null;
 
-  const centerOverlay = activeDim ? (
+  // Open the first unanswered question (regardless of which dim it
+  // lands on) when the user clicks the center count-button.
+  const openFirstUnanswered = useCallback(() => {
+    const next = questions.find((q) => !userAnswers[q.id]);
+    if (!next) return;
+    setActiveDim(questionToDimension(next));
+  }, [questions, userAnswers]);
+
+  // Wide overlay — the answer card, positioned absolute over the sigil
+  // stage so it can be wider than the sigil itself (target: ~1280px on
+  // desktop, capped by PersonaHero's overlay container).
+  const wideOverlay = activeDim ? (
     <AdoptionAnswerCard
       dim={activeDim}
       questions={questionsByDim[activeDim]}
@@ -257,9 +268,35 @@ export function PersonaLayoutAdoption({
       onAnswerUpdated={onAnswerUpdated}
       onClose={() => setActiveDim(null)}
     />
-  ) : remaining > 0 ? (
-    <span className="typo-caption text-foreground/55 italic pointer-events-none">
-      {t.templates.adopt_modal.persona_layout_dim_open_hint}
+  ) : undefined;
+
+  // Center overlay — sits inside the sigil's inner core. When questions
+  // are pending, surface a click-to-open count button so the user has
+  // a clear "start here" affordance even without targeting a specific
+  // petal. Hidden once every question is answered.
+  const unansweredCount = remaining;
+  const centerOverlay = !activeDim && unansweredCount > 0 ? (
+    <button
+      type="button"
+      onClick={openFirstUnanswered}
+      className="pointer-events-auto group flex flex-col items-center gap-1.5 px-5 py-3 rounded-modal bg-status-warning/10 hover:bg-status-warning/20 border border-status-warning/40 hover:border-status-warning/65 text-foreground cursor-pointer transition-all"
+      title={t.templates.adopt_modal.persona_layout_center_open_questions_title}
+    >
+      <span className="typo-data font-mono text-2xl text-status-warning tabular-nums leading-none">
+        {unansweredCount}
+      </span>
+      <span className="typo-label uppercase tracking-[0.18em] text-foreground/85">
+        {unansweredCount === 1
+          ? t.templates.adopt_modal.persona_layout_center_questions_to_answer_one
+          : t.templates.adopt_modal.persona_layout_center_questions_to_answer_other}
+      </span>
+      <span className="typo-caption text-foreground/55 italic group-hover:text-foreground/80 transition-colors">
+        {t.templates.adopt_modal.persona_layout_center_click_to_start}
+      </span>
+    </button>
+  ) : !activeDim && unansweredCount === 0 && totalCount > 0 ? (
+    <span className="typo-caption text-status-success italic pointer-events-none">
+      {t.templates.adopt_modal.persona_layout_dim_all_answered}
     </span>
   ) : (
     <span aria-hidden />
@@ -307,6 +344,7 @@ export function PersonaLayoutAdoption({
           onHeroPetalClick={handlePetalClick}
           heroActiveDim={activeDim}
           heroCenterOverlay={centerOverlay}
+          heroWideOverlay={wideOverlay}
           belowHeroSlot={belowHero}
           emptyNode={
             <div className="rounded-modal border border-card-border bg-secondary/30 p-8 text-center">

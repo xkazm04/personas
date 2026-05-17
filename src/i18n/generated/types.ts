@@ -7029,6 +7029,14 @@ export type Translations = {
       persona_layout_dim_done: string;
       _comment_persona_layout_dim_open_hint: string;
       persona_layout_dim_open_hint: string;
+      _comment_persona_layout_center_questions_to_answer_one: string;
+      persona_layout_center_questions_to_answer_one: string;
+      _comment_persona_layout_center_questions_to_answer_other: string;
+      persona_layout_center_questions_to_answer_other: string;
+      _comment_persona_layout_center_click_to_start: string;
+      persona_layout_center_click_to_start: string;
+      _comment_persona_layout_center_open_questions_title: string;
+      persona_layout_center_open_questions_title: string;
       credentials_required_title: string;
       credentials_required_body: string;
       answered_of_total: string;
