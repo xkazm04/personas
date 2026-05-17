@@ -1,22 +1,29 @@
 /**
  * Top-level "What's New" view.
  *
- * Owns the selection state for which release tab is open and routes to either
- * the standard changelog detail view or the special roadmap timeline view.
+ * Selection (which release / roadmap entry is shown) used to live in a local
+ * `useState` here and be picked via the in-page `ReleasesNavBar` at the top.
+ * Both moved into the sidebar Level 3 push pane on 2026-05-17 — see
+ * `SidebarLevel2.tsx` → `HomeRoadmapL3`. This component now reads the
+ * selection from the system store and is responsible only for rendering the
+ * chosen release.
  *
  * Selection persistence:
- * - First mount → falls back to `releasesConfig.active`
- * - User picks a tab → stored in `sessionStorage` so navigating away/back
- *   keeps the view stable inside the session
- * - Persistence is intentionally session-scoped (not localStorage) so the
- *   user always lands on the active release at the start of a new session
+ * - First mount → read `sessionStorage`, fall back to `releasesConfig.active`
+ *   if no stored value exists. Hydrated into `systemStore.homeReleaseVersion`
+ *   so the sidebar L3 highlight matches the page on cold boot.
+ * - User picks a tab in the sidebar → store update + `sessionStorage` write
+ *   live in the sidebar's `handleSelect` so the page stays purely read-only
+ *   for selection state.
+ * - Session-scoped (not localStorage) so a new session lands on the active
+ *   release rather than wherever the user last clicked.
  */
 import { Rocket } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { useEffect } from 'react';
+import { useSystemStore } from '@/stores/systemStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
-import { getActiveRelease, getNavReleases, getReleaseByVersion } from '@/data/releases';
+import { getActiveRelease, getReleaseByVersion } from '@/data/releases';
 import { useReleasesTranslation } from './i18n/useReleasesTranslation';
-import { ReleasesNavBar } from './ReleasesNavBar';
 import ReleaseDetailView from './ReleaseDetailView';
 import HomeRoadmapView from './HomeRoadmapView';
 import { useLiveRoadmap } from './useLiveRoadmap';
@@ -42,25 +49,22 @@ function readInitialSelection(): string {
 
 export default function HomeReleases() {
   const { t } = useReleasesTranslation();
-  const [selectedVersion, setSelectedVersion] = useState<string>(() => readInitialSelection());
+  const homeReleaseVersion = useSystemStore((s) => s.homeReleaseVersion);
+  const setHomeReleaseVersion = useSystemStore((s) => s.setHomeReleaseVersion);
   const live = useLiveRoadmap();
 
-  const navReleases = getNavReleases();
-  const selected = getReleaseByVersion(selectedVersion) ?? getActiveRelease();
-
-  const handleSelect = useCallback((version: string) => {
-    setSelectedVersion(version);
-    // Only persist versions we can actually rehydrate. A caller could pass
-    // any string in principle, and persisting an unknown value would
-    // re-introduce the stale-selection flash that `readInitialSelection`
-    // is now defending against.
-    if (!getReleaseByVersion(version)) return;
-    try {
-      window.sessionStorage.setItem(SELECTION_STORAGE_KEY, version);
-    } catch {
-      // Storage may be unavailable; selection still works in-memory.
+  // Hydrate the store from sessionStorage on first mount. The store default
+  // is 'roadmap' (so the sidebar L3 lands on the timeline if the user just
+  // clicked "What's New" with no prior session); if a stored selection
+  // exists we honour it instead.
+  useEffect(() => {
+    const initial = readInitialSelection();
+    if (initial !== useSystemStore.getState().homeReleaseVersion) {
+      setHomeReleaseVersion(initial);
     }
-  }, []);
+  }, [setHomeReleaseVersion]);
+
+  const selected = getReleaseByVersion(homeReleaseVersion) ?? getActiveRelease();
 
   const subtitle =
     selected.status === 'roadmap' ? t.subtitle.roadmap : t.subtitle.changelog;
@@ -72,11 +76,6 @@ export default function HomeReleases() {
         iconColor="cyan"
         title={t.title}
         subtitle={subtitle}
-      />
-      <ReleasesNavBar
-        releases={navReleases}
-        selectedVersion={selected.version}
-        onSelect={handleSelect}
       />
       <ContentBody centered>
         {selected.status === 'roadmap' ? (

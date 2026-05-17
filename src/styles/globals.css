@@ -103,6 +103,17 @@
   background: rgba(0, 0, 0, 0.06);
 }
 
+/* Calendar event label color follows the agent color in dark themes but
+   darkens for light themes so the text retains AA contrast against the
+   lightly-tinted (~12% opacity) background fill. Drives the purple/orange/
+   green palette items that were too washed-out on light surfaces. */
+.event-block-label {
+  color: var(--ev-color);
+}
+[data-theme^="light"] .event-block-label {
+  color: color-mix(in srgb, var(--ev-color) 65%, #111827);
+}
+
 [data-theme="light"] .titlebar-btn-close:hover,
 [data-theme="light-ice"] .titlebar-btn-close:hover,
 [data-theme="light-news"] .titlebar-btn-close:hover {

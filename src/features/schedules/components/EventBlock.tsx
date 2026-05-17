@@ -35,15 +35,16 @@ export function EventBlock({
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-1 rounded text-left transition-all hover:scale-[1.02] hover:shadow-elevation-1 cursor-pointer max-w-full overflow-hidden ${compact ? 'px-1 py-px text-[9px] w-full' : 'px-1.5 py-0.5 text-[10px]'
+      className={`event-block flex items-center gap-1 rounded text-left transition-all hover:scale-[1.02] hover:shadow-elevation-1 cursor-pointer w-full max-w-full min-w-0 overflow-hidden ${compact ? 'px-1 py-px text-[9px]' : 'px-1.5 py-0.5 text-[10px]'
         }`}
       style={{
+        ['--ev-color' as string]: color,
         backgroundColor: bgColor,
         borderLeft: `${kindStyles[event.kind].borderStyle} ${borderColor}`,
         opacity: kindStyles[event.kind].opacity,
       }}
     >
-      <span className="truncate font-medium" style={{ color }}>{event.agentName}</span>
+      <span className="event-block-label truncate font-medium min-w-0">{event.agentName}</span>
       {event.kind === 'past-failure' && (
         <XCircle className="w-2.5 h-2.5 text-red-400 shrink-0" />
       )}

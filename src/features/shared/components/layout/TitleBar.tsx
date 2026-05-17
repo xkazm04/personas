@@ -94,7 +94,7 @@ export default function TitleBar() {
       <div className="flex items-center gap-0.5 mr-1">
         {/* Schedule calendar */}
         <button
-          className={`titlebar-btn relative transition-colors ${isScheduleActive ? 'text-blue-400' : ''}`}
+          className={`titlebar-btn relative transition-colors ${isScheduleActive ? 'text-primary' : ''}`}
           data-testid="titlebar-schedules"
           onClick={() => setSidebarSection(isScheduleActive ? 'home' : 'schedules')}
           aria-label={`Schedules${todayScheduleCount > 0 ? ` (${todayScheduleCount} today)` : ''}`}

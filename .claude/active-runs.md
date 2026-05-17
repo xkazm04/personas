@@ -32,6 +32,28 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+- **[2026-05-17 — started] overview-polish — Header unification + Events/Knowledge/Health fixes**
+  - **Source:** User-driven UX polish — Overview module. Header consistency across submodules, Events subtitle bug ("50 50 of 50"), Knowledge background-CLI review + drop Schedule, Health Reliability tab dedup + filter compaction.
+  - **Paths:** `src/features/overview/sub_events/components/EventLogList.tsx`, `src/features/overview/sub_knowledge/components/**`, `src/features/overview/sub_health/components/**`, possibly headers in other `src/features/overview/sub_*/components/**` for consistency, `src/i18n/locales/en.json` (additive `overview.*` keys only — disjoint from concurrent `schedules.*`/`appearance.*`/`plugins.*`/`shared.sidebar_extra.*`)
+  - **Status:** started
+  - **Branch:** master (surgical edits to overview/* — disjoint from all active worktrees which touch shared/, schedules/, plugins/*, styles/, stores/themeStore.ts, stores/slices/system/)
+  - **Note:** Path-disjoint from all 8 active sessions: none touch `src/features/overview/**`. Shared en.json: additive under `overview.*` only.
+
+- **[2026-05-17 — started] sidebar L3 — Home/Roadmap promotion to sidebar Level 3**
+  - **Source:** User-driven design session — redesign SidebarLevel2 to support a 3rd-level push/slide pane in modules that need it. Scope this pass: Home → Roadmap only (Agents L3/L4 deferred). Pattern locked: push/slide, L2 lists hidden when L3 active, back-arrow header.
+  - **Paths:** `src/features/shared/components/layout/sidebar/SidebarLevel3.tsx` (new), `src/features/shared/components/layout/sidebar/SidebarLevel2.tsx`, `src/features/home/components/releases/HomeReleases.tsx`, `src/features/home/components/releases/ReleasesNavBar.tsx` (delete), `src/stores/slices/system/` (add `homeReleaseVersion`), `src/i18n/locales/en.json` (additive `shared.sidebar_extra.back_to_home` only), `docs/features/home.md`, `.claude/active-runs.md`
+  - **Status:** started
+  - **Branch:** master (small surgical multi-file change, user-driven directly in main checkout; per CLAUDE.md "single-file fixes can stay on the main checkout" — this is borderline; staying on master per user proceed)
+  - **Note:** Path-disjoint from all 8+ concurrent /friend sessions (none touch `src/features/home/`, `src/features/shared/components/layout/sidebar/`, or `src/stores/slices/system/`). Shared en.json: additive under `shared.sidebar_extra.*` only (others touch `schedules.*`, `appearance.*`, `plugins.*`).
+
+- **[2026-05-17 12:34 — started] /friend — schedules (endless development loop)**
+  - **Source:** `/friend` with explicit topic — "develop the scheduling feature further". Fresh on top of master `3bd32e590` (which already includes today's UX-polish pass: removed Timeline view label, mock-schedule button, header subtitle; widened calendar columns; light-theme contrast fix; theme-aware titlebar icon).
+  - **Paths:** `src/features/schedules/`, `src/i18n/locales/en.json` (additive `schedules.*` keys only — coordinate with concurrent /friend-{theming,drive,companion-2,twin}), `src/styles/globals.css` (only if calendar visuals extend), possibly `src-tauri/src/engine/scheduler.rs` / `src-tauri/src/engine/cron.rs` / `src-tauri/src/commands/triggers/` (read-mostly; any IPC additions trigger Phase 3 gate), possibly `docs/features/schedules.md` per cycle, `.claude/active-runs.md`
+  - **Status:** started
+  - **Branch:** `worktree-friend-schedules-123440`
+  - **Worktree:** `.claude/worktrees/friend-schedules-123440/`
+  - **Note:** First /friend session over schedules. Path-disjoint from concurrent /friend-{theming, drive, companion-2, twin, artist-tests}: they touch `src/styles/` / `src/features/plugins/*` / tests. Shared en.json: additive `schedules.*` only. Bias higher-effort + deepen-existing-surfaces per Patterns/friend-preferences.md (rules 1+2). Net-new-surface cap = 1 of 5.
+
 - **[2026-05-16 14:42 — started] artist-test-coverage — Vitest + Playwright for plugins/artist**
   - **Paths:** `src/features/plugins/artist/**/__tests__/*.test.{ts,tsx}` (new), possibly `src/features/plugins/artist/sub_media_studio/hooks/useMediaExport.ts` (export `normalizeProgress` for unit test), possibly `tests/playwright/artist-*.spec.ts` + `tests/playwright/artist-bridge.ts` (Cycle D only)
   - **Status:** started
@@ -64,13 +86,6 @@ timestamp — the next session can recognize it as abandoned.
   - **Status:** started
   - **Note:** Session 2 over companion. Prior session (worktree-friend-companion-234310) NOT merged to master — building fresh on `201bfeec6`. Avoiding net-new-surface ideas (3× soft-skipped last session). Bias higher-effort per prior session feedback.
 
-- **[2026-05-16 13:09 — started] /friend — dev-tools (endless development loop)**
-  - **Paths:** `src/features/plugins/dev-tools/`, possibly `src-tauri/src/commands/dev_tools/` + `src/i18n/locales/en.json` (additive keys under `plugins.dev_tools.*`) + `docs/features/dev-tools.md` per cycle
-  - **Status:** started
-  - **Branch:** `worktree-friend-dev-tools-130945`
-  - **Worktree:** `.claude/worktrees/friend-dev-tools-130945/`
-  - **Note:** /friend loop — UX/product directions only, atomic commits per cycle. No overlap with concurrent /friend-companion or /research-hermes sessions. Bias higher-effort + deepen-existing-surfaces per prior /friend lessons.
-
 - **[2026-05-16 13:09 — started] /friend — twin plugin**
   - **Paths:** `src/features/plugins/twin/`, possibly `src-tauri/src/twin/` + `src-tauri/src/commands/twin/` + `src/lib/bindings/Twin*.ts` + `src/i18n/locales/en.json` (additive keys under `twin.*` only — coordinate with concurrent /friend-{drive,artist,companion,dev-tools,langfuse} on same en.json) + `docs/features/twin.md` per cycle
   - **Status:** started
@@ -86,6 +101,17 @@ timestamp — the next session can recognize it as abandoned.
 
 
 ## Recently completed (last 14 days)
+
+- **[2026-05-16 13:09 → 16:20 wrap] /friend — dev-tools (26 cycles, merged to master at `0728ecf23`)**
+  - **Worktree:** `.claude/worktrees/friend-dev-tools-130945/` — REMOVED post-merge
+  - **Branch:** `worktree-friend-dev-tools-130945` — DELETED post-merge
+  - **Status:** completed + merged + tested (cycle commits: `3b84c86dc..b8d146f30`, 26 atomic commits + 1 test commit `bf97b1c03`; merge commit on master: `0728ecf23`)
+  - **Paths shipped (39 files net):** `src/features/plugins/dev-tools/**` (every sub_ folder touched at least once — context/lifecycle/scanner/triage/runner/projects/skills/overview), `src/stores/slices/system/uiSlice.ts` (3 new pendingX slots: `pendingLifecycleSubTab`, `pendingTaskFocusId`, `pendingGoalSpotlightId`), `src/i18n/locales/en.json` (additive `plugins.dev_tools/dev_lifecycle/dev_scanner/dev_projects/project_overview.*` keys), `docs/features/dev-tools.md` (significantly expanded with each cycle's user-facing changes). Plus 6 test files / 53 Vitest tests under `__tests__/` for the highest-signal flows.
+  - **Headline:** Largest single /friend session on record (26 cycles + 53-test coverage commit, ~2,400 LOC net). Every dev-tools tab gained substantive new functionality; the cross-tab `pendingX-on-uiSlice` handoff convention now threads the whole plugin (4 uses); localStorage is the established per-project UI state spot (3 uses). 3 new modal flows shipped (GH issue import, prompt diff, ContextDetail goals panel). The TODAY feed on Overview ties it all together by pulling activity from Scanner/Triage/Runner/Lifecycle store slices in one panel.
+  - **Cycles (titles):** (1) Spotlight tasks `3b84c86dc` · (2) Kanban drag + ±5% nudge `721224f0e` · (3) Goal pill on Task Runner cards `895117169` · (4) Skills favorites + recents `bfb33e760` · (5) Spotlight task → Runner focus `dc0c6920a` · (6) Scan History filter + Rerun `2a473f8ab` · (7) Baseline click → Pulse seeded `7f037ab0c` · (8) ContextMap goal-coverage badge `3d09bf706` · (9) PM row quick actions (VS Code + folder) `dcdee5a9e` · (10) Triage card agent rank inline `0ac24b06e` · (11) Lifecycle step-stone readiness `c850cd8a7` · (12) GH issue import modal `f9b4d38d0` · (13) Overview drag-rearrange tiles `8c7a0fe09` · (14) ContextDetail linked goals + tasks `cb1218be9` · (15) Competitions prompt diff modal `2f18f1f2d` · (16) IdeaEvolution lifecycle strip `2093d6b01` · (17) TODAY cross-tab activity feed `cbaf0711b` · (18) Tracking stale highlight + Force pulse `d5114854c` · (19) WinnerInsightDialog diff prefill `f7eadac52` · (20) PR Bridge agent emoji + Copy reasoning `27f9d4854` · (21) Skills split-view live preview `f510fda0b` · (22) PM bulk-archive multi-select `077f8c59b` · (23) PR Bridge Copy git commands `20b5d8fa6` · (24) PR Bridge per-step checkmarks `f6f6041f3` · (25) Triage end-of-session toast `c0178593a` · (26) ContextMap lazy-expand large groups `b8d146f30`.
+  - **Test commit `bf97b1c03`:** 53 Vitest tests across 6 files — `PromptDiffModal.test.ts` (LCS diff + summarizer), `overviewHelpers.test.ts` (buildTodayActivity time-window + sort + cap), `ContextCard.test.tsx` (goal-coverage badge variants), `ReadinessGates.test.tsx` (step-stones + weights), `useSkillData.test.ts` (favorites + recents localStorage state machine + corrupted-storage guard), `GoalKanban.test.tsx` (±5% clamping + drag-drop dataTransfer contract). All 53 pass; ran in ~2.6s.
+  - **Merge approach:** Master had moved ahead by 10+ commits since the worktree base (`201bfeec6` → `ce295b348`), so not FF-eligible. Used the 2026-05-15 notif-webhooks `update-ref` pattern: created a detached worktree at master HEAD, ran `git merge --no-ff` (one conflict in generated `enSectionStrings.ts` — resolved by regenerating from auto-merged `en.json`), validated with `npx tsc --noEmit` (exit 0), committed as `0728ecf23`, then `git update-ref refs/heads/master 0728ecf23` to advance master without touching the main checkout's 53 in-flight i18n files from other sessions. Followed up with per-file `git checkout HEAD --` for the 39 merge-touched files (none had WIP overlap except the regenerated `enSectionStrings.ts`) so Vite HMR in the running `tauri:dev:test` could pick up the new code immediately. Cleaned up worktree + temp merge worktree + branch.
+  - **Concurrent-session note:** Main checkout had heavy WIP from 7+ parallel sessions (theming, drive, twin, langfuse, radio, artist-tests, openhands-research, plus pre-existing locale regen). My merge's 39 files were path-disjoint from all of those except the generated `enSectionStrings.ts`. The 53 i18n locale files in the main checkout's status are translation team's WIP for other features — preserved untouched throughout the merge.
 
 - **[2026-05-16 18:50 → 19:25] /research — openhands-codebase-analysis**
   - **Status:** completed (commit: `327889130`)

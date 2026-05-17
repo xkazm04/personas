@@ -43,6 +43,14 @@ export interface UiSlice {
   // State
   sidebarSection: SidebarSection;
   homeTab: HomeTab;
+  /**
+   * Selected release version on the Home → "What's New" surface. Driven by
+   * the sidebar Level 3 release nav; the page-body `<ReleasesNavBar>` was
+   * retired in favour of putting the release picker into the sidebar push
+   * pane. Defaults to `'roadmap'` so first-launch lands on the roadmap
+   * timeline view, matching the L2 entry users click to enter L3.
+   */
+  homeReleaseVersion: string;
   templateTab: TemplateTab;
   agentTab: AgentTab;
   editorTab: EditorTab;
@@ -86,6 +94,7 @@ export interface UiSlice {
   // Actions
   setSidebarSection: (section: SidebarSection) => void;
   setHomeTab: (tab: HomeTab) => void;
+  setHomeReleaseVersion: (version: string) => void;
   setTemplateTab: (tab: TemplateTab) => void;
   setAgentTab: (tab: AgentTab) => void;
   /** Accepts current EditorTab values plus legacy 'prompt' | 'connectors' | 'health', which are migrated to `design` with the matching sub-tab. */
@@ -151,6 +160,7 @@ export const NAV_HISTORY_MAX = 5;
 export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) => ({
   sidebarSection: "home" as SidebarSection,
   homeTab: "welcome" as HomeTab,
+  homeReleaseVersion: "roadmap",
   templateTab: "generated" as TemplateTab,
   agentTab: "all" as AgentTab,
   editorTab: "activity" as EditorTab,
@@ -192,6 +202,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) =
     return { sidebarSection: section, navigationHistory: next };
   })),
   setHomeTab: (tab) => startTransition(() => set({ homeTab: tab })),
+  setHomeReleaseVersion: (version) => startTransition(() => set({ homeReleaseVersion: version })),
   setTemplateTab: (tab) => startTransition(() => set({ templateTab: tab })),
   setAgentTab: (tab) => startTransition(() => set({ agentTab: tab })),
   setEditorTab: (tab) => startTransition(() => {

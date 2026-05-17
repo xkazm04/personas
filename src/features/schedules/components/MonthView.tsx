@@ -29,7 +29,7 @@ export function MonthView({
   return (
     <div className="border border-primary/10 rounded-modal overflow-hidden">
       {/* Weekday headers */}
-      <div className="grid grid-cols-7 border-b border-primary/10 bg-primary/[0.02]">
+      <div className="grid grid-cols-[repeat(7,minmax(0,1fr))] border-b border-primary/10 bg-primary/[0.02]">
         {Array.from({ length: 7 }, (_, i) => (
           <div key={i} className="px-2 py-1.5 text-center text-[10px] font-medium text-foreground uppercase tracking-wider">
             {weekdayShort(i)}
@@ -39,7 +39,7 @@ export function MonthView({
 
       {/* Week rows */}
       {weeks.map((week, wi) => (
-        <div key={wi} className="grid grid-cols-7 border-b border-primary/5 last:border-b-0">
+        <div key={wi} className="grid grid-cols-[repeat(7,minmax(0,1fr))] border-b border-primary/5 last:border-b-0">
           {week.map((day) => {
             const MAX_VISIBLE = 3;
             const visibleEvents = day.events.slice(0, MAX_VISIBLE);
@@ -50,7 +50,7 @@ export function MonthView({
             return (
               <div
                 key={day.date.toISOString()}
-                className={`min-h-[80px] px-1 py-1 border-l border-primary/5 first:border-l-0 transition-colors relative ${
+                className={`min-h-[80px] min-w-0 px-1 py-1 border-l border-primary/5 first:border-l-0 transition-colors relative ${
                   day.isToday
                     ? 'bg-blue-500/[0.04]'
                     : dayConflictCount > 0

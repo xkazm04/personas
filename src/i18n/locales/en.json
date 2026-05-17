@@ -8993,7 +8993,7 @@
     "mock_schedule": "Mock Schedule",
     "active_count": "{count} active",
     "paused_count": "{count} paused",
-    "view_grouped": "Grouped",
+    "view_grouped": "Timeline",
     "view_timeline": "Timeline",
     "view_calendar": "Calendar",
     "loading_schedules": "Loading schedules...",
@@ -12539,7 +12539,9 @@
       "dev_tools_label": "Dev Tools",
       "obsidian_brain": "Brain",
       "active_twin": "Active Twin",
-      "research_lab": "Research Lab"
+      "research_lab": "Research Lab",
+      "back_to_home": "Home",
+      "whats_new": "What's New"
     },
     "execution_detail": {
       "copy": "Copy",

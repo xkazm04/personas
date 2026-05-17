@@ -12546,6 +12546,8 @@ export type Translations = {
       obsidian_brain: string;
       active_twin: string;
       research_lab: string;
+      back_to_home: string;
+      whats_new: string;
     };
     execution_detail: {
       copy: string;

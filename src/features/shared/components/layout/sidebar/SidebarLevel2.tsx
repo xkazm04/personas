@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
-import { Key, Sparkles, CalendarClock } from 'lucide-react';
+import { AnimatePresence } from 'framer-motion';
+import { Key, Sparkles, CalendarClock, Map as MapIcon, Rocket } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { Button } from '@/features/shared/components/buttons';
 import { useSystemStore } from "@/stores/systemStore";
@@ -8,8 +9,11 @@ import { useOverviewStore } from "@/stores/overviewStore";
 // useBadgeCounts removed — badge counts now passed as props from Sidebar
 import type { HomeTab, OverviewTab, TemplateTab, SettingsTab, EventBusTab } from '@/lib/types/types';
 import { useCredentialNav, type CredentialNavKey } from '@/features/vault/shared/hooks/CredentialNavContext';
+import { getNavReleases, RELEASE_STATUS_META, type Release } from '@/data/releases';
+import { useReleasesTranslation } from '@/features/home/components/releases/i18n/useReleasesTranslation';
 
 import SidebarSubNav from './SidebarSubNav';
+import SidebarLevel3 from './SidebarLevel3';
 import type { SubNavBadge } from './SidebarSubNav';
 import {
   homeItems, overviewItems, credentialItems, templateItems,
@@ -105,26 +109,32 @@ export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0,
   switch (sidebarSection) {
     case 'home':
       return (
-        <>
-          <SidebarSubNav
-            items={homeItems}
-            activeId={homeTab}
-            onSelect={(id) => setHomeTab(id as HomeTab)}
-            onHoverItem={(id) => {
-              if (id === 'roadmap') void import('@/features/home/lib/prefetch').then(m => m.prefetchHomeReleases());
-              else if (id === 'learning') void import('@/features/home/lib/prefetch').then(m => m.prefetchHomeLearning());
-            }}
-            variant="overview"
-          />
-          <div className="flex-1" />
-          <div className="flex items-center justify-center py-6 opacity-[0.08] pointer-events-none select-none">
-            <img
-              src="/illustrations/logo-v1-geometric-nobg.png"
-              alt=""
-              className="w-24 h-24 object-contain"
-            />
-          </div>
-        </>
+        <AnimatePresence mode="wait" initial={false}>
+          {homeTab === 'roadmap' ? (
+            <HomeRoadmapL3 key="home-l3" onBack={() => setHomeTab('welcome')} />
+          ) : (
+            <div key="home-l2" className="flex flex-col h-full">
+              <SidebarSubNav
+                items={homeItems}
+                activeId={homeTab}
+                onSelect={(id) => setHomeTab(id as HomeTab)}
+                onHoverItem={(id) => {
+                  if (id === 'roadmap') void import('@/features/home/lib/prefetch').then(m => m.prefetchHomeReleases());
+                  else if (id === 'learning') void import('@/features/home/lib/prefetch').then(m => m.prefetchHomeLearning());
+                }}
+                variant="overview"
+              />
+              <div className="flex-1" />
+              <div className="flex items-center justify-center py-6 opacity-[0.08] pointer-events-none select-none">
+                <img
+                  src="/illustrations/logo-v1-geometric-nobg.png"
+                  alt=""
+                  className="w-24 h-24 object-contain"
+                />
+              </div>
+            </div>
+          )}
+        </AnimatePresence>
       );
 
     case 'overview':
@@ -314,4 +324,76 @@ function SchedulesSidebarNav() {
 // ── Health grade dot for agent sidebar items ──────────────────────────
 
 // HEALTH_DOT moved to sections/AgentsSidebarNav.tsx
+
+// -- Home → "What's New" L3 push pane (release picker) --------------------
+
+const HOME_RELEASE_STORAGE_KEY = 'home-releases-selected-version';
+
+function persistHomeReleaseVersion(version: string): void {
+  try {
+    window.sessionStorage.setItem(HOME_RELEASE_STORAGE_KEY, version);
+  } catch {
+    // sessionStorage may be unavailable (sandboxed iframe); store-side state still works.
+  }
+}
+
+function HomeRoadmapL3({ onBack }: { onBack: () => void }) {
+  const { t } = useTranslation();
+  const { t: releases } = useReleasesTranslation();
+  const homeReleaseVersion = useSystemStore((s) => s.homeReleaseVersion);
+  const setHomeReleaseVersion = useSystemStore((s) => s.setHomeReleaseVersion);
+  const navReleases = useMemo(() => getNavReleases(), []);
+
+  const items = useMemo(
+    () =>
+      navReleases.map((release: Release) => {
+        const isRoadmap = release.status === 'roadmap';
+        const releaseI18n = releases.releases[release.version as keyof typeof releases.releases];
+        const label = isRoadmap
+          ? releases.navBar.roadmapLabel
+          : releaseI18n?.label
+            ? `${releaseI18n.label} (${release.version})`
+            : release.version;
+        const meta = RELEASE_STATUS_META[release.status];
+        const statusLabel = releases.status[release.status];
+        return {
+          id: release.version,
+          icon: isRoadmap ? MapIcon : Rocket,
+          label,
+          rightSlot: isRoadmap ? null : (
+            <span
+              className={[
+                'rounded-full border px-1.5 py-0.5 typo-caption font-semibold uppercase tracking-wider',
+                meta.badgeBg,
+                meta.badgeText,
+                meta.badgeBorder,
+              ].join(' ')}
+            >
+              {statusLabel}
+            </span>
+          ),
+        };
+      }),
+    [navReleases, releases],
+  );
+
+  const handleSelect = useCallback(
+    (version: string) => {
+      setHomeReleaseVersion(version);
+      persistHomeReleaseVersion(version);
+    },
+    [setHomeReleaseVersion],
+  );
+
+  return (
+    <SidebarLevel3
+      backLabel={t.shared.sidebar_extra.back_to_home}
+      onBack={onBack}
+      items={items}
+      activeId={homeReleaseVersion}
+      onSelect={handleSelect}
+      ariaLabel={t.shared.sidebar_extra.whats_new}
+    />
+  );
+}
 
