@@ -109,7 +109,6 @@ function glyphRowToDisplay(row: GlyphRow): DisplayUseCase {
  */
 export function PersonaLayoutBuild({
   buildPhase,
-  completeness,
   isBuilding,
   buildActivity,
   cellStates,
@@ -273,9 +272,6 @@ export function PersonaLayoutBuild({
               {buildActivity}
             </span>
           )}
-          <span className="typo-data text-foreground/85 font-mono text-sm">
-            {Math.round(completeness * 100)}%
-          </span>
         </div>
       );
     }
@@ -296,7 +292,6 @@ export function PersonaLayoutBuild({
     buildPhase,
     isBuilding,
     buildActivity,
-    completeness,
     testPassed,
     testError,
     t,
