@@ -50,6 +50,13 @@ export function LiveStreamTab() {
   const newEventIds = useRef(new Set<string>());
   const eventIdIndex = useRef(new Set<string>());
   const pausedQueueRef = useRef<PersonaEvent[]>([]);
+  // rAF-batched event ingest: under high CDC throughput (50-200 evt/s), running
+  // setEvents per-event runs N prev→next array transforms inside React's frame.
+  // Batching into a single per-frame setEvents call collapses the work to one
+  // pass through the batch with a single array-allocation, regardless of how
+  // many events landed that frame.
+  const pendingEventsRef = useRef<PersonaEvent[]>([]);
+  const flushScheduledRef = useRef(false);
 
   useEffect(() => {
     let stale = false;
@@ -94,19 +101,34 @@ export function LiveStreamTab() {
       }
     }
 
-    setEvents((prev) => {
-      if (eventIdIndex.current.has(evt.id)) {
-        return prev.map((e) => (e.id === evt.id ? evt : e));
-      }
-      eventIdIndex.current.add(evt.id);
-      newEventIds.current.add(evt.id);
-      setTimeout(() => newEventIds.current.delete(evt.id), 1600);
-      const next = [evt, ...prev];
-      if (next.length > 200) {
-        eventIdIndex.current.delete(next[200]!.id);
-        return next.slice(0, 200);
-      }
-      return next;
+    pendingEventsRef.current.push(evt);
+    if (flushScheduledRef.current) return;
+    flushScheduledRef.current = true;
+    requestAnimationFrame(() => {
+      flushScheduledRef.current = false;
+      const batch = pendingEventsRef.current;
+      if (batch.length === 0) return;
+      pendingEventsRef.current = [];
+      setEvents((prev) => {
+        let next = prev;
+        for (const e of batch) {
+          if (eventIdIndex.current.has(e.id)) {
+            // Status update on an already-displayed event — replace in place.
+            // Reference inequality drives re-render only for the changed row.
+            next = next.map((existing) => (existing.id === e.id ? e : existing));
+            continue;
+          }
+          eventIdIndex.current.add(e.id);
+          newEventIds.current.add(e.id);
+          setTimeout(() => newEventIds.current.delete(e.id), 1600);
+          next = [e, ...next];
+        }
+        if (next.length > 200) {
+          for (let i = 200; i < next.length; i++) eventIdIndex.current.delete(next[i]!.id);
+          next = next.slice(0, 200);
+        }
+        return next;
+      });
     });
   });
 
