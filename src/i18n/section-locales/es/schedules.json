@@ -101,5 +101,9 @@
   "run_status_cancelled": "Cancelada",
   "run_duration": "{ms} ms",
   "run_cost_usd": "${cost}",
-  "run_view_in_activity": "Ver en Actividad →"
+  "run_view_in_activity": "Ver en Actividad →",
+  "sparkline_aria": "Minigráfico de historial de ejecuciones, últimos {days} días",
+  "sparkline_window": "Últimos {days} d",
+  "sparkline_no_data": "Sin ejecuciones en la ventana",
+  "sparkline_failure_rate": "{total} ejecuciones · {rate}% fallidas"
 }

@@ -101,5 +101,9 @@
   "run_status_cancelled": "Zrušeno",
   "run_duration": "{ms} ms",
   "run_cost_usd": "${cost}",
-  "run_view_in_activity": "Zobrazit v Aktivitě →"
+  "run_view_in_activity": "Zobrazit v Aktivitě →",
+  "sparkline_aria": "Sparkline historie spuštění, posledních {days} dní",
+  "sparkline_window": "Posledních {days} d",
+  "sparkline_no_data": "Žádná spuštění v okně",
+  "sparkline_failure_rate": "{total} spuštění · {rate}% selhalo"
 }

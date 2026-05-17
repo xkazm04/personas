@@ -101,5 +101,9 @@
   "run_status_cancelled": "أُلغي",
   "run_duration": "{ms} مللي ثانية",
   "run_cost_usd": "${cost}",
-  "run_view_in_activity": "عرض في النشاط ←"
+  "run_view_in_activity": "عرض في النشاط ←",
+  "sparkline_aria": "مخطط مصغر لسجل التشغيل، آخر {days} يوم",
+  "sparkline_window": "آخر {days} يوم",
+  "sparkline_no_data": "لا توجد عمليات تشغيل في النافذة",
+  "sparkline_failure_rate": "{total} عملية تشغيل · {rate}% فشلت"
 }

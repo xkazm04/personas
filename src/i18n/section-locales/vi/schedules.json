@@ -101,5 +101,9 @@
   "run_status_cancelled": "Đã hủy",
   "run_duration": "{ms}ms",
   "run_cost_usd": "${cost}",
-  "run_view_in_activity": "Xem trong Hoạt động →"
+  "run_view_in_activity": "Xem trong Hoạt động →",
+  "sparkline_aria": "Sparkline lịch sử chạy, {days} ngày gần nhất",
+  "sparkline_window": "{days} ngày gần nhất",
+  "sparkline_no_data": "Không có lần chạy trong khoảng",
+  "sparkline_failure_rate": "{total} lần chạy · {rate}% thất bại"
 }

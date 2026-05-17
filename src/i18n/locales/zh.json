@@ -9084,7 +9084,11 @@
     "run_status_cancelled": "已取消",
     "run_duration": "{ms}毫秒",
     "run_cost_usd": "${cost}",
-    "run_view_in_activity": "在活动中查看 →"
+    "run_view_in_activity": "在活动中查看 →",
+    "sparkline_aria": "运行历史迷你图，最近 {days} 天",
+    "sparkline_window": "最近 {days} 天",
+    "sparkline_no_data": "时间范围内无运行",
+    "sparkline_failure_rate": "{total} 次运行 · {rate}% 失败"
   },
   "recipes_catalog": {
     "_comment_section_RecipesBrowseList": "── RecipesBrowseList.tsx ──",

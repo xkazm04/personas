@@ -9094,6 +9094,10 @@ export type Translations = {
     run_duration: string;
     run_cost_usd: string;
     run_view_in_activity: string;
+    sparkline_aria: string;
+    sparkline_window: string;
+    sparkline_no_data: string;
+    sparkline_failure_rate: string;
   };
   recipes_catalog: {
     _comment_section_RecipesBrowseList: string;

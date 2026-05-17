@@ -1,17 +1,28 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, XCircle, Clock, AlertCircle, Loader2, Ban } from 'lucide-react';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import { listExecutionsByTrigger } from '@/api/agents/executions';
 import { formatRelative } from '../libs/scheduleHelpers';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
+import { useOverviewStore } from '@/stores/overviewStore';
 import { silentCatch } from '@/lib/silentCatch';
 
-// Stage 1 of the inline-history feature: fetches the last N executions for
-// a trigger and renders a compact peek beneath the row. Stage 2 (future
-// cycle) will add a failure-rate sparkline above this list and deep-link
-// each row to the specific execution in Activity instead of the tab root.
-const HISTORY_LIMIT = 5;
+// Stage 2 of the inline-history feature. Two additions on top of Stage 1:
+//
+//   1. Sparkline above the run list — 14 daily buckets, success vs failure
+//      proportion shown as a stacked column. Hovering a column reads out
+//      the date + counts. Surfaces trend faster than reading the list.
+//   2. "View in Activity →" now sets pendingExecutionFocus on the overview
+//      store before navigating, so the GlobalExecutionList effect at line
+//      140-150 of GlobalExecutionList.tsx pops the ExecutionDetailModal
+//      onto the matching row instead of dropping the user at the tab root.
+//
+// Bumped the fetch window from 5 to a wider one so the sparkline has enough
+// signal; the list still renders only the first LIST_LIMIT after sorting.
+const FETCH_LIMIT = 50;
+const LIST_LIMIT = 5;
+const SPARK_DAYS = 14;
 
 interface Props {
   triggerId: string;
@@ -25,7 +36,7 @@ export function ScheduleRowHistoryPanel({ triggerId }: Props) {
   useEffect(() => {
     let cancelled = false;
     setError(null);
-    listExecutionsByTrigger(triggerId, HISTORY_LIMIT)
+    listExecutionsByTrigger(triggerId, FETCH_LIMIT)
       .then((rows) => { if (!cancelled) setExecutions(rows); })
       .catch((err) => {
         if (!cancelled) setError(err instanceof Error ? err.message : 'failed');
@@ -57,10 +68,13 @@ export function ScheduleRowHistoryPanel({ triggerId }: Props) {
     );
   }
 
+  const recent = executions.slice(0, LIST_LIMIT);
+
   return (
-    <div className="px-4 py-2">
+    <div className="px-4 py-2 space-y-2">
+      <Sparkline executions={executions} />
       <ul className="divide-y divide-primary/5">
-        {executions.map((ex) => (
+        {recent.map((ex) => (
           <RunRow key={ex.id} execution={ex} />
         ))}
       </ul>
@@ -68,15 +82,120 @@ export function ScheduleRowHistoryPanel({ triggerId }: Props) {
   );
 }
 
+// -- Sparkline --------------------------------------------------------------
+
+function Sparkline({ executions }: { executions: PersonaExecution[] }) {
+  const { t, tx } = useTranslation();
+
+  const buckets = useMemo(() => bucketByDay(executions, SPARK_DAYS), [executions]);
+  const maxCount = Math.max(1, ...buckets.map((b) => b.total));
+
+  // Compute the headline failure rate across all 14 days so the user sees a
+  // single number anchoring the trend the bars depict.
+  const totals = buckets.reduce(
+    (acc, b) => ({ total: acc.total + b.total, failed: acc.failed + b.failed }),
+    { total: 0, failed: 0 },
+  );
+  const failureRate = totals.total > 0 ? (totals.failed / totals.total) * 100 : 0;
+
+  return (
+    <div className="flex items-end gap-2 px-1">
+      <div
+        className="flex items-end gap-[2px] h-8"
+        role="img"
+        aria-label={tx(t.schedules.sparkline_aria, { days: SPARK_DAYS })}
+      >
+        {buckets.map((b) => {
+          const ratio = b.total / maxCount;
+          const heightPct = Math.max(b.total > 0 ? 18 : 4, ratio * 100);
+          const failedRatio = b.total > 0 ? b.failed / b.total : 0;
+          return (
+            <div
+              key={b.dateKey}
+              className="relative w-1.5 bg-primary/10 rounded-sm overflow-hidden"
+              style={{ height: `${heightPct}%` }}
+              title={`${b.dateLabel}: ${b.total} run(s), ${b.failed} failed`}
+            >
+              {/* Success portion (bottom, emerald) */}
+              <div
+                className="absolute inset-x-0 bottom-0 bg-emerald-400/70"
+                style={{ height: `${(1 - failedRatio) * 100}%` }}
+              />
+              {/* Failure portion (top, red) */}
+              <div
+                className="absolute inset-x-0 top-0 bg-red-400/80"
+                style={{ height: `${failedRatio * 100}%` }}
+              />
+            </div>
+          );
+        })}
+      </div>
+      <div className="flex flex-col leading-none gap-0.5">
+        <span className="text-[10px] uppercase tracking-wider text-foreground/55">
+          {tx(t.schedules.sparkline_window, { days: SPARK_DAYS })}
+        </span>
+        <span className="typo-caption text-foreground/80">
+          {totals.total === 0
+            ? t.schedules.sparkline_no_data
+            : tx(t.schedules.sparkline_failure_rate, {
+                total: totals.total,
+                rate: failureRate.toFixed(0),
+              })}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+interface DayBucket {
+  dateKey: string;   // YYYY-MM-DD for keying
+  dateLabel: string; // short label for tooltip
+  total: number;
+  failed: number;
+}
+
+function bucketByDay(executions: PersonaExecution[], days: number): DayBucket[] {
+  // Build today-back-N-days descending bucket array, fill from executions.
+  const buckets: DayBucket[] = [];
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(start.getTime() - i * 24 * 3_600_000);
+    buckets.push({
+      dateKey: d.toISOString().slice(0, 10),
+      dateLabel: d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+      total: 0,
+      failed: 0,
+    });
+  }
+  const indexByKey = new Map(buckets.map((b, i) => [b.dateKey, i]));
+
+  for (const ex of executions) {
+    const tsRaw = ex.started_at ?? ex.created_at;
+    if (!tsRaw) continue;
+    const key = new Date(tsRaw).toISOString().slice(0, 10);
+    const idx = indexByKey.get(key);
+    if (idx === undefined) continue;
+    const bucket = buckets[idx]!;
+    bucket.total += 1;
+    if (ex.status === 'failed' || ex.status === 'error') {
+      bucket.failed += 1;
+    }
+  }
+  return buckets;
+}
+
+// -- Run row ---------------------------------------------------------------
+
 function RunRow({ execution }: { execution: PersonaExecution }) {
   const { t, tx } = useTranslation();
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
+  const setOverviewTab = useOverviewStore((s) => s.setOverviewTab);
+  const setPendingExecutionFocus = useOverviewStore((s) => s.setPendingExecutionFocus);
 
   const config: StatusConfigEntry = STATUS_CONFIG[execution.status] ?? UNKNOWN_STATUS;
   const statusLabel = STATUS_LABELS[config.labelKey](t);
 
-  // Each peek entry stays dense — status pill, relative time + duration, cost.
-  // The trigger row above already shows persona + cron, so we don't repeat it.
   const startedAt = execution.started_at ?? execution.created_at;
   const durationLabel = execution.duration_ms != null
     ? tx(t.schedules.run_duration, { ms: execution.duration_ms })
@@ -102,9 +221,12 @@ function RunRow({ execution }: { execution: PersonaExecution }) {
       </span>
       <button
         onClick={() => {
-          // Stage 1: jumps to Overview→Activity tab. Stage 2 will deep-link
-          // to the specific execution row via an executionFocusId pendingX
-          // slot on uiSlice (mirrors the dev-tools cross-tab handoff pattern).
+          // The GlobalExecutionList useEffect at ~L140 watches
+          // pendingExecutionFocus and pops the ExecutionDetailModal onto
+          // the matching row — so we drop the user into the modal in one
+          // click, not just the tab root.
+          setPendingExecutionFocus(execution.id);
+          setOverviewTab('executions');
           setSidebarSection('overview');
         }}
         className="text-[10px] text-foreground/55 hover:text-foreground/80 transition-colors shrink-0"
@@ -114,6 +236,8 @@ function RunRow({ execution }: { execution: PersonaExecution }) {
     </li>
   );
 }
+
+// -- Status icons + labels -------------------------------------------------
 
 type StatusLabelKey =
   | 'run_status_running'

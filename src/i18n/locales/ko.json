@@ -9084,7 +9084,11 @@
     "run_status_cancelled": "취소됨",
     "run_duration": "{ms}ms",
     "run_cost_usd": "${cost}",
-    "run_view_in_activity": "활동에서 보기 →"
+    "run_view_in_activity": "활동에서 보기 →",
+    "sparkline_aria": "실행 기록 스파크라인, 최근 {days}일",
+    "sparkline_window": "최근 {days}일",
+    "sparkline_no_data": "기간 내 실행 없음",
+    "sparkline_failure_rate": "{total}회 실행 · {rate}% 실패"
   },
   "recipes_catalog": {
     "_comment_section_RecipesBrowseList": "── RecipesBrowseList.tsx ──",

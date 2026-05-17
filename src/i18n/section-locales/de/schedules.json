@@ -101,5 +101,9 @@
   "run_status_cancelled": "Abgebrochen",
   "run_duration": "{ms} ms",
   "run_cost_usd": "${cost}",
-  "run_view_in_activity": "In Aktivität anzeigen →"
+  "run_view_in_activity": "In Aktivität anzeigen →",
+  "sparkline_aria": "Sparkline des Ausführungsverlaufs, letzte {days} Tage",
+  "sparkline_window": "Letzte {days} T",
+  "sparkline_no_data": "Keine Ausführungen im Zeitraum",
+  "sparkline_failure_rate": "{total} Ausführungen · {rate}% fehlgeschlagen"
 }

@@ -9084,7 +9084,11 @@
     "run_status_cancelled": "Dibatalkan",
     "run_duration": "{ms}ms",
     "run_cost_usd": "${cost}",
-    "run_view_in_activity": "Lihat di Aktivitas →"
+    "run_view_in_activity": "Lihat di Aktivitas →",
+    "sparkline_aria": "Sparkline riwayat run, {days} hari terakhir",
+    "sparkline_window": "{days} hari terakhir",
+    "sparkline_no_data": "Tidak ada run di jendela",
+    "sparkline_failure_rate": "{total} run · {rate}% gagal"
   },
   "recipes_catalog": {
     "_comment_section_RecipesBrowseList": "── RecipesBrowseList.tsx ──",

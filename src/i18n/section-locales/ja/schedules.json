@@ -101,5 +101,9 @@
   "run_status_cancelled": "キャンセル済み",
   "run_duration": "{ms}ミリ秒",
   "run_cost_usd": "${cost}",
-  "run_view_in_activity": "アクティビティで表示 →"
+  "run_view_in_activity": "アクティビティで表示 →",
+  "sparkline_aria": "実行履歴スパークライン、過去 {days} 日間",
+  "sparkline_window": "過去 {days} 日",
+  "sparkline_no_data": "期間内に実行なし",
+  "sparkline_failure_rate": "{total} 件の実行 · {rate}% 失敗"
 }

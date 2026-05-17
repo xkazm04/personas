@@ -101,5 +101,9 @@
   "run_status_cancelled": "रद्द किया गया",
   "run_duration": "{ms}ms",
   "run_cost_usd": "${cost}",
-  "run_view_in_activity": "गतिविधि में देखें →"
+  "run_view_in_activity": "गतिविधि में देखें →",
+  "sparkline_aria": "रन इतिहास स्पार्कलाइन, पिछले {days} दिन",
+  "sparkline_window": "पिछले {days} दिन",
+  "sparkline_no_data": "विंडो में कोई रन नहीं",
+  "sparkline_failure_rate": "{total} रन · {rate}% विफल"
 }

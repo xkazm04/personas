@@ -101,5 +101,9 @@
   "run_status_cancelled": "Отменено",
   "run_duration": "{ms} мс",
   "run_cost_usd": "${cost}",
-  "run_view_in_activity": "Открыть в Активности →"
+  "run_view_in_activity": "Открыть в Активности →",
+  "sparkline_aria": "Спарклайн истории запусков, последние {days} дн.",
+  "sparkline_window": "Последние {days} дн.",
+  "sparkline_no_data": "Нет запусков в окне",
+  "sparkline_failure_rate": "{total} запусков · {rate}% с ошибками"
 }
