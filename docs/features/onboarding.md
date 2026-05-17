@@ -15,17 +15,30 @@ Onboarding covers guided tour state, first persona/template setup, credentials g
 | Desktop discovery | Desktop capability discovery intro | `DesktopDiscoveryStep.tsx` |
 | Execution | Run/test intro | `ExecutionStep.tsx` |
 | Appearance | Theme and visual setup | `AppearanceStep.tsx`, `steps/TourAppearanceContent.tsx` |
-| Activation Quest | Persistent bottom-right pill tracking 7 first-run milestones (create persona, connect credential, run persona, save memory, schedule trigger, try recipe, share deployment). Auto-dismisses on completion; revivable from a Compass icon in the TitleBar. | `OnboardingQuestPill.tsx`, `stores/onboardingQuestStore.ts` |
-| Next-step coach card | Promotes the same activation quest into a first-class card on the Home > Welcome view above the hero, surfacing the next unfinished milestone (in `QUEST_MILESTONE_IDS` order) with a CTA that deep-links into the relevant surface. Hidden while the wizard is open and after the user dismisses the quest. | `src/features/home/components/NextStepCoachCard.tsx` |
+
+## Tour catalog
+
+Seven tours are registered in `TOUR_REGISTRY` (`src/stores/slices/system/tourSlice.ts`) and all of them surface in Home > Learning. Each tour follows the same step schema described in [`src/features/onboarding/README.md`](../../src/features/onboarding/README.md).
+
+| Tour id | Surface color | Purpose |
+| --- | --- | --- |
+| `getting-started` | violet | First-run for Power tier: appearance → credentials → first agent (3 steps). |
+| `getting-started-simple` | violet | First-run for Starter tier: same arc, simpler language (3 steps). Tier-partner of `getting-started` — completed step ids migrate when tier flips. |
+| `execution-observability` | blue | Overview dashboard, activity, messages, health monitoring, Lab (5 steps). |
+| `orchestration-events` | teal | Event bus log, trigger types, chaining via the event canvas, live-stream + dead-letter (4 steps). |
+| `plugins-explorer` | amber | Catalog → Companion → Twin → Dev Tools → the supporting cast (5 steps). |
+| `schedules-mastery` | emerald | Schedules dashboard, timeline vs calendar views, attaching a schedule to an agent (3 steps). |
+| `templates-recipes` | indigo | Templates gallery, adoption flow, Recipes tab (3 steps). |
+
+Tour copy currently lives inline in `tourSlice.ts` (`*_STEPS` arrays). The 2026-04-19 retire pass folded the onboarding section back into the main i18n bundle, but the tour titles/descriptions/hints have not been extracted yet — they remain English-only until the planned extraction. Don't block tour additions on that migration.
 
 ## State and persistence
 
 Tour/onboarding state is split between local hook state and system slices:
 
 - `onboardingSlice.ts`: onboarding progress and completion.
-- `tourSlice.ts`: guided tour visibility/current step.
+- `tourSlice.ts`: guided tour visibility/current step. Persisted to `localStorage` under `guided-tour-state` at `TOUR_STATE_VERSION = 4`. Bumping the version wipes all tour progress for all users — use sparingly.
 - `uiSlice.ts`: shared UI state that onboarding may route into.
-- `onboardingQuestStore.ts`: activation quest milestones + pill UI state, persisted to `app_settings.onboarding_quest_state` (JSON). Listeners on `persona-health-changed`, `credential-updated`, `memory-updated`, `trigger-updated` (CDC), `execution-status`, `recipe-execution-status`, and `share-link-received` mark milestones complete on first event.
 
 Onboarding can route users into Templates, Connections, Appearance, and execution-related surfaces; docs for those features should remain authoritative for the target workflow.
 

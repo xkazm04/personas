@@ -32,7 +32,7 @@ export default function PluginBrowsePage() {
   const togglePlugin = useSystemStore((s) => s.togglePlugin);
 
   return (
-    <ContentBox>
+    <ContentBox data-testid="plugin-browse-page">
       <ContentHeader
         icon={<Puzzle className="w-5 h-5 text-primary/80" />}
         iconColor="primary"

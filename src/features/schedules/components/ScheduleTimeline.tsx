@@ -161,7 +161,7 @@ export default function ScheduleTimeline() {
 
   return (
     <div ref={containerRef} className="flex-1 min-h-0 flex flex-col w-full">
-    <ContentBox>
+    <ContentBox data-testid="schedules-page">
       <ContentHeader
         icon={<CalendarClock className="w-5 h-5 text-blue-400" />}
         iconColor="blue"

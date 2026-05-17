@@ -1,9 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { Minus, Square, X, Copy, Bell, CalendarClock, Compass, ArrowLeft } from 'lucide-react';
+import { Minus, Square, X, Copy, Bell, CalendarClock, ArrowLeft } from 'lucide-react';
 import { IS_DESKTOP } from '@/lib/utils/platform/platform';
 import { useNotificationCenterStore } from '@/stores/notificationCenterStore';
-import { useOnboardingQuestStore } from '@/stores/onboardingQuestStore';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -21,9 +20,6 @@ export default function TitleBar() {
   const sidebarSection = useSystemStore((s) => s.sidebarSection);
   const navigationHistory = useSystemStore((s) => s.navigationHistory);
   const navigateBack = useSystemStore((s) => s.navigateBack);
-  const questDismissed = useOnboardingQuestStore((s) => s.dismissed || !s.visible);
-  const questHydrated = useOnboardingQuestStore((s) => s.hydrated);
-  const reviveQuest = useOnboardingQuestStore((s) => s.revive);
 
   const todayScheduleCount = useMemo(() => {
     const now = new Date();
@@ -110,19 +106,6 @@ export default function TitleBar() {
             </span>
           )}
         </button>
-
-        {/* Quest revival — only shown after the user dismissed/completed the quest pill */}
-        {questHydrated && questDismissed && (
-          <button
-            className="titlebar-btn"
-            data-testid="titlebar-quest-revive"
-            onClick={reviveQuest}
-            aria-label={t.onboarding.quest_revive}
-            title={t.onboarding.quest_revive}
-          >
-            <Compass size={20} strokeWidth={1.5} />
-          </button>
-        )}
 
         {/* Process activity indicator */}
         <ProcessActivityIndicator />

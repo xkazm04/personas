@@ -133,17 +133,17 @@ console.log('\nCase 3b: all four surfaces touched — clean');
 // Case 4: source with marketing target but NO onboarding coupling
 //         + doc touched → marketing still fires (exit 2)
 // ────────────────────────────────────────────────────────────────────────
-console.log('\nCase 4: schedules source + doc (no onboarding) — marketing still fires');
+console.log('\nCase 4: deployment source + doc (no onboarding) — marketing still fires');
 {
   const r = runHook([
-    { tool: 'Edit', path: 'src/features/schedules/components/ScheduleRow.tsx' },
-    { tool: 'Edit', path: 'docs/features/schedules.md' },
+    { tool: 'Edit', path: 'src/features/deployment/components/cloud/foo.tsx' },
+    { tool: 'Edit', path: 'docs/features/deployment/README.md' },
   ]);
   expect('exit code is 2 (marketing pending)', r.code === 2, `got ${r.code}`);
   expect('NO feature-doc nag', !r.stderr.includes('Doc-sync reminder'));
   expect('NO onboarding nag', !r.stderr.includes('Onboarding-tour reminder'));
   expect('marketing nag fires alone', r.stderr.includes('Marketing-guide reminder'));
-  expect('mentions module "schedules"', r.stderr.includes('module "schedules"'));
+  expect('mentions module "deployment"', r.stderr.includes('module "deployment"'));
 }
 
 // ────────────────────────────────────────────────────────────────────────

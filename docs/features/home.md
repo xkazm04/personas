@@ -28,8 +28,6 @@ As of 2026-05-17 the in-page `ReleasesNavBar` (top-of-page pill row) was retired
 
 Implementation contract: [live-roadmap/live-roadmap.md](live-roadmap/live-roadmap.md).
 
-## Activation Quest
+## First-run guidance
 
-A persistent bottom-right pill (`OnboardingQuestPill`) tracks 7 first-run milestones and is rendered globally so it remains visible while the user navigates away from Home. It is owned by the onboarding feature — see [onboarding.md](onboarding.md) for the milestone list, store, and event listeners.
-
-Above the hero on the Welcome tab, `NextStepCoachCard` (in `src/features/home/components/`) promotes the same quest into a first-class "Next step" coach card. While the onboarding wizard is open it stays hidden; once the wizard closes, it reads `useOnboardingQuestStore` and renders the next unfinished milestone in `QUEST_MILESTONE_IDS` order with a primary CTA that deep-links into the relevant surface (e.g. Save memory → Overview > Knowledge, Schedule trigger → Agents > Design > Triggers, Try a recipe → Templates > Recipes, Share a deployment → Agents > Cloud). The card auto-advances as `completeMilestone` fires from the existing CDC and event listeners; once all 7 are done or the user dismisses the quest it disappears.
+Welcome surfaces a `ResumeBanner` for unfinished work plus the `SetupCards` "Role → Tool → Goal" stepper. The deeper feature walkthroughs live in the guided tours panel (`TourLauncher` → `GuidedTour`) — see [onboarding.md](onboarding.md) for the tour registry and authoring contract.

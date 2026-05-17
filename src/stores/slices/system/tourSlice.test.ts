@@ -66,7 +66,7 @@ function seedPersistedTour(
   }>,
 ) {
   const existing = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null") ?? {
-    version: 3,
+    version: 4,
     tours: {},
   };
   existing.tours[tourId] = {
@@ -163,6 +163,18 @@ describe("tourSlice tier-switch migration", () => {
     expect(h.state().tourActiveTourId).toBe("execution-observability");
     expect(h.state().tourStepCompleted["appearance-setup"] ?? false).toBe(false);
     expect(h.state().tourStepCompleted["credentials-intro"] ?? false).toBe(false);
+  });
+
+  it("registers_all_seven_tours_in_completion_map", () => {
+    const h = makeHarness();
+    const map = h.state().tourCompletionMap;
+    expect(map["getting-started"]).toBe(false);
+    expect(map["getting-started-simple"]).toBe(false);
+    expect(map["execution-observability"]).toBe(false);
+    expect(map["orchestration-events"]).toBe(false);
+    expect(map["plugins-explorer"]).toBe(false);
+    expect(map["schedules-mastery"]).toBe(false);
+    expect(map["templates-recipes"]).toBe(false);
   });
 });
 
