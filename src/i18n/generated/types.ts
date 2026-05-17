@@ -7777,6 +7777,11 @@ export type Translations = {
     insights_recent_failures_tooltip: string;
     insights_dlq_label: string;
     insights_dlq_open_title: string;
+    heatmap_title: string;
+    heatmap_total: string;
+    heatmap_total_capped: string;
+    heatmap_legend_less: string;
+    heatmap_legend_more: string;
     no_events_title: string;
     no_events_desc: string;
     connecting_to_bus: string;
