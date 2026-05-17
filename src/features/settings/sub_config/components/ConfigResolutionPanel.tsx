@@ -69,40 +69,77 @@ const FIELDS: { key: keyof EffectiveModelConfig; labelKey: FieldLabelKey; mask?:
   { key: 'promptCachePolicy', labelKey: 'field_cache' },
 ];
 
+// Module-level result cache, scoped to one session. Re-mounting this panel
+// or any other settings tab (which also evidently triggers it — the
+// 2026-05-17 perf-walk saw the 52 resolve_effective_config fan-out on both
+// `L1/settings` and `settings/account`) re-uses cached results within
+// CACHE_TTL_MS. A Refresh click bypasses the cache (clearConfigCache).
+const configCache = new Map<string, { config: EffectiveModelConfig | null; error: string | null; ts: number }>();
+const CACHE_TTL_MS = 5 * 60 * 1000;
+
+function clearConfigCache(): void {
+  configCache.clear();
+}
+
+function isFresh(entry: { ts: number } | undefined): entry is { ts: number; config: EffectiveModelConfig | null; error: string | null } {
+  return entry !== undefined && (Date.now() - entry.ts) < CACHE_TTL_MS;
+}
+
 export default function ConfigResolutionPanel() {
   const [rows, setRows] = useState<PersonaRow[]>([]);
   const [globalLoading, setGlobalLoading] = useState(true);
   const { t } = useTranslation();
   const s = t.settings.config;
 
-  const load = async () => {
+  const load = async (forceRefresh = false) => {
     setGlobalLoading(true);
     try {
+      if (forceRefresh) clearConfigCache();
       const personas = await listPersonas();
-      const initial: PersonaRow[] = personas.map((p) => ({ persona: p, config: null, loading: true, error: null }));
+      const initial: PersonaRow[] = personas.map((p) => {
+        const cached = configCache.get(p.id);
+        if (isFresh(cached)) {
+          return { persona: p, config: cached.config, loading: false, error: cached.error };
+        }
+        return { persona: p, config: null, loading: true, error: null };
+      });
       setRows(initial);
 
+      // Only resolve personas whose cache is stale or missing.
+      const stale = personas.filter((p) => !isFresh(configCache.get(p.id)));
+      if (stale.length === 0) {
+        setGlobalLoading(false);
+        return;
+      }
+
       const results = await Promise.allSettled(
-        personas.map((p) => resolveEffectiveConfig(p.id))
+        stale.map((p) => resolveEffectiveConfig(p.id))
       );
 
-      setRows(personas.map((p, i) => {
+      const now = Date.now();
+      stale.forEach((p, i) => {
         const r = results[i];
         if (r && r.status === 'fulfilled') {
-          return { persona: p, config: r.value, loading: false, error: null };
+          configCache.set(p.id, { config: r.value, error: null, ts: now });
+        } else {
+          const reason = r && r.status === 'rejected' ? r.reason : new Error('Unknown error');
+          const message = reason instanceof Error
+            ? reason.message
+            : (typeof reason === 'object' && reason !== null && 'error' in reason)
+              ? String((reason as { error: string }).error)
+              : String(reason);
+          configCache.set(p.id, { config: null, error: message, ts: now });
         }
-        // `r.status === 'rejected'`: the persona's effective config could not
-        // be resolved. Capture the reason so the cell can render an explicit
-        // failure state — without this distinction the row pulses identically
-        // to "still loading" and the user has no way to know the resolve
-        // dropped silently.
-        const reason = r && r.status === 'rejected' ? r.reason : new Error('Unknown error');
-        const message = reason instanceof Error
-          ? reason.message
-          : (typeof reason === 'object' && reason !== null && 'error' in reason)
-            ? String((reason as { error: string }).error)
-            : String(reason);
-        return { persona: p, config: null, loading: false, error: message };
+      });
+
+      setRows(personas.map((p) => {
+        const cached = configCache.get(p.id);
+        return {
+          persona: p,
+          config: cached?.config ?? null,
+          loading: false,
+          error: cached?.error ?? null,
+        };
       }));
     } catch {
       setRows([]);
@@ -126,7 +163,7 @@ export default function ConfigResolutionPanel() {
         </div>
         <button
           type="button"
-          onClick={load}
+          onClick={() => load(true)}
           disabled={globalLoading}
           className="flex items-center gap-1 px-2 py-1 typo-caption text-foreground hover:text-foreground bg-secondary/30 hover:bg-secondary/50 rounded transition-colors disabled:opacity-50"
         >
