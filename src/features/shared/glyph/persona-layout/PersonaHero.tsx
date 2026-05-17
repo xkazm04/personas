@@ -24,9 +24,22 @@ interface PersonaHeroProps {
   /** Currently-active dim (e.g. the question card is open on this petal).
    *  Drives the "other petals dim" treatment in GlyphHeroSigil. */
   activeDim?: GlyphDimension | null;
-  /** Center overlay rendered inside the sigil core (answer card during
-   *  adoption pending-question state, status text during build, etc.). */
+  /** Center overlay rendered inside the sigil's inner core (~58% of size).
+   *  Best for small content like a "N questions" count button or short
+   *  status text. Larger content should use `wideOverlay`. */
   centerOverlay?: ReactNode;
+  /** Wide overlay rendered absolute over the sigil stage. Centered both
+   *  axes; can be wider than the sigil itself (capped at min(1280px, 96vw)
+   *  by the surrounding container — pass a narrower cap via inline
+   *  styling on your content if you want a smaller card). Use this for
+   *  the adoption answer card and any panel that needs to span more
+   *  horizontal space than the sigil's core box affords.
+   *
+   *  When set, the wide overlay sits on top of the sigil — petals
+   *  underneath are clipped by the overlay's own background. The
+   *  centerOverlay (if any) is hidden while the wide overlay is open
+   *  so they never compete for the same visual space. */
+  wideOverlay?: ReactNode;
   /** Optional content rendered on the right side of the metadata band
    *  (e.g. persona default model picker). */
   metadataRightSlot?: ReactNode;
@@ -53,6 +66,7 @@ export function PersonaHero({
   onPetalClick,
   activeDim: activeDimProp,
   centerOverlay,
+  wideOverlay,
   metadataRightSlot,
 }: PersonaHeroProps) {
   const { t, tx } = useTranslation();
@@ -186,9 +200,9 @@ export function PersonaHero({
       </div>
 
       {/* Sigil stage — centered, sized at 640px by default (matches scratch).
-       *  No surrounding card so the sigil reads as the focal element of
-       *  the page; subtle radial backdrop only.  */}
-      <div className="relative flex justify-center items-center py-4">
+       *  Stage is `relative` so the wideOverlay can position absolute
+       *  over it (extending past the sigil's own width when needed). */}
+      <div className="relative flex justify-center items-center py-4 min-h-0">
         <div
           aria-hidden
           className="absolute inset-0 pointer-events-none"
@@ -206,9 +220,27 @@ export function PersonaHero({
             onHoverDim={setHoveredDim}
             onClickDim={handleClickDim}
           >
-            {centerOverlay ?? <span aria-hidden />}
+            {/* centerOverlay is hidden while the wide overlay is open
+             *  so they never compete for the user's attention. */}
+            {!wideOverlay && (centerOverlay ?? <span aria-hidden />)}
+            {wideOverlay && <span aria-hidden />}
           </GlyphSigilCanvas>
         </div>
+
+        {/* Wide overlay — positions absolute over the sigil stage, so it
+         *  can exceed the sigil's width. Vertical scroll lives inside the
+         *  overlay content (the answer card supplies its own max-height
+         *  + overflow-y-auto). */}
+        {wideOverlay && (
+          <div className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none p-4">
+            <div
+              className="pointer-events-auto"
+              style={{ width: 'min(1280px, 96vw)', maxHeight: '100%' }}
+            >
+              {wideOverlay}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

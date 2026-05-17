@@ -4,7 +4,8 @@ import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { getMemoryCount } from '@/api/overview/memories';
 import { listManualReviews } from '@/api/overview/reviews';
 import { useSelectedCredentialLinks } from '@/stores/selectors/personaSelectors';
-import { PersonaLayout } from '@/features/shared/glyph/persona-layout';
+import { AddCapabilityRow, PersonaLayout } from '@/features/shared/glyph/persona-layout';
+import { useSystemStore } from '@/stores/systemStore';
 import type { CredentialMetadata } from '@/lib/types/types';
 import { useUseCasesTab } from '../../libs/useUseCasesTab';
 import { useCapabilityToggle } from '../../libs/useCapabilityToggle';
@@ -51,6 +52,17 @@ export function PersonaLayoutView({ credentials }: PersonaLayoutViewProps) {
     cancelDisable,
     requestSimulate,
   } = useCapabilityToggle();
+
+  // Open Templates → Recipes catalog. The selected persona stays
+  // anchored (agentStore is independent of the sidebar section), so
+  // adoption from the catalog lands back in this Use Cases tab — same
+  // navigation pattern the legacy SigilGrid's "recipe" empty-tile uses.
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
+  const setTemplateTab = useSystemStore((s) => s.setTemplateTab);
+  const openRecipeCatalog = () => {
+    setSidebarSection('design-reviews');
+    setTemplateTab('recipes');
+  };
 
   const [memoriesDefault, setMemoriesDefault] = useState(true);
   const [reviewsDefault, setReviewsDefault] = useState(true);
@@ -145,6 +157,7 @@ export function PersonaLayoutView({ credentials }: PersonaLayoutViewProps) {
               )
             : undefined
         }
+        appendRow={<AddCapabilityRow onClick={openRecipeCatalog} />}
         detailNode={detailNode}
         emptyNode={<EmptyState variant="use-cases-empty" />}
       />

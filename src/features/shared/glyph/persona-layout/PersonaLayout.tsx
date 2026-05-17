@@ -55,9 +55,14 @@ interface PersonaLayoutProps {
    *  petal is "active" when the centerOverlay is open. */
   heroActiveDim?: GlyphDimension | null;
 
-  /** Forwarded to PersonaHero.centerOverlay. Adoption renders its
-   *  answer-card here when a pending petal is clicked. */
+  /** Forwarded to PersonaHero.centerOverlay. Small content inside the
+   *  sigil's inner core (e.g. "N questions to answer" count button). */
   heroCenterOverlay?: ReactNode;
+
+  /** Forwarded to PersonaHero.wideOverlay. Wider content overlaying the
+   *  sigil stage (e.g. adoption answer card). When set, the
+   *  centerOverlay is hidden so they don't compete for visual space. */
+  heroWideOverlay?: ReactNode;
 
   /** Optional slot above the hero — adoption uses this for the
    *  QuestionnaireHeaderBand stepper. */
@@ -77,6 +82,12 @@ interface PersonaLayoutProps {
    *  decides what to render — view mode supplies TilePolicyToggles;
    *  adoption / scratch supply their own equivalents (or omit). */
   renderRowPolicySlot?: (uc: DisplayUseCase) => ReactNode;
+
+  /** Optional content rendered after the last capability row. View mode
+   *  uses this for the "Add capability" dashed-row affordance; adoption
+   *  / scratch typically leave it unset. Not rendered when items is
+   *  empty (the emptyNode covers that state). */
+  appendRow?: ReactNode;
 
   /** Detail panel rendered when `selectedItemId` is set. View mode passes
    *  UseCaseDetailExpanded; other modes can pass mode-specific drill-downs. */
@@ -128,10 +139,12 @@ export function PersonaLayout({
   onHeroPetalClick,
   heroActiveDim,
   heroCenterOverlay,
+  heroWideOverlay,
   topSlot,
   rightSlot,
   belowHeroSlot,
   renderRowPolicySlot,
+  appendRow,
   detailNode,
   emptyNode,
 }: PersonaLayoutProps) {
@@ -177,6 +190,7 @@ export function PersonaLayout({
                       onPetalClick={onHeroPetalClick}
                       activeDim={heroActiveDim}
                       centerOverlay={heroCenterOverlay}
+                      wideOverlay={heroWideOverlay}
                       metadataRightSlot={heroRightSlot}
                     />
 
@@ -201,6 +215,7 @@ export function PersonaLayout({
                               policySlot={renderRowPolicySlot?.(uc)}
                             />
                           ))}
+                          {appendRow}
                         </div>
                       </div>
                     )}
