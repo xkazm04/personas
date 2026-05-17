@@ -1,0 +1,259 @@
+import { test, expect } from '@playwright/test';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+
+/**
+ * Performance nav-walk: visits every reachable navigation stop in the app,
+ * captures render + IPC metrics per stop, and writes a structured JSON
+ * report under `docs/harness/perf-runs/`.
+ *
+ * The goal is to replace the audit-time finding catalogue (subagent
+ * estimates) with real measurements: when we have the actual render and
+ * IPC counts per surface, we know which Pipeline-B wave findings are real
+ * cost drivers vs. theoretical concerns.
+ *
+ * Pre-req:
+ *   npm run tauri:dev:test   (or tauri:dev:test:full)
+ *   Expects window.__TEST__ + window.__PERF__ live on port 17320.
+ *
+ * Run:
+ *   npx playwright test tests/playwright/perf-nav-walk.spec.ts
+ *
+ * Output:
+ *   docs/harness/perf-runs/<ISO-timestamp>.json
+ *
+ * Extending: add entries to the STOPS array below. Each stop is a label +
+ * an async function that drives the app into a state. The framework
+ * handles reset / wait-idle / snapshot per stop.
+ */
+
+const BASE = `http://127.0.0.1:${process.env.COMPANION_TEST_PORT ?? 17320}`;
+
+interface PerfSnapshot {
+  durationMs: number;
+  marks: Array<{ label: string; tMs: number }>;
+  ipc: {
+    totalCount: number;
+    totalDurationMs: number;
+    byCommand: Array<{ command: string; count: number; totalMs: number; avgMs: number }>;
+  };
+  render: {
+    commitCount: number;
+    totalActualDurationMs: number;
+    totalBaseDurationMs: number;
+    avgActualMs: number;
+  };
+  dom: { nodeCount: number };
+}
+
+async function postRaw(p: string, body: unknown = {}): Promise<unknown> {
+  const res = await fetch(`${BASE}${p}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    throw new Error(`POST ${p} → ${res.status}: ${await res.text().catch(() => '')}`);
+  }
+  const text = await res.text();
+  try { return JSON.parse(text); } catch { return text; }
+}
+
+async function getRaw<T = unknown>(p: string): Promise<T> {
+  const res = await fetch(`${BASE}${p}`);
+  if (!res.ok) {
+    throw new Error(`GET ${p} → ${res.status}: ${await res.text().catch(() => '')}`);
+  }
+  const text = await res.text();
+  try { return JSON.parse(text) as T; } catch { return text as unknown as T; }
+}
+
+/** Eval a named method on window.__TEST__ via /bridge-exec. */
+async function bridgeExec(method: string, params: Record<string, unknown> = {}, timeoutSecs = 30): Promise<unknown> {
+  const raw = await postRaw('/bridge-exec', { method, params, timeout_secs: timeoutSecs });
+  if (typeof raw === 'string') {
+    try { return JSON.parse(raw); } catch { return raw; }
+  }
+  return raw;
+}
+
+async function resetPerf(): Promise<void> { await postRaw('/perf/reset'); }
+async function snapshotPerf(): Promise<PerfSnapshot> { return getRaw<PerfSnapshot>('/perf/snapshot'); }
+/** Phase marker — unused by the default stops but exposed for future per-stop sub-phase slicing. */
+async function _markPerf(label: string): Promise<void> { await postRaw('/perf/mark', { label }); }
+async function navigate(section: string): Promise<unknown> { return postRaw('/navigate', { section }); }
+
+/** Wait until IPC count is stable for `stableMs`, or `maxMs` elapses. */
+async function waitForIdle(stableMs = 600, maxMs = 8_000): Promise<void> {
+  const deadline = Date.now() + maxMs;
+  let lastCount = -1;
+  let lastChangeAt = Date.now();
+  // Initial settle delay so the first navigate has a chance to kick off
+  // its work before we start polling.
+  await new Promise((r) => setTimeout(r, 100));
+  while (Date.now() < deadline) {
+    const snap = await snapshotPerf();
+    if (snap.ipc.totalCount !== lastCount) {
+      lastCount = snap.ipc.totalCount;
+      lastChangeAt = Date.now();
+    } else if (Date.now() - lastChangeAt >= stableMs) {
+      return;
+    }
+    await new Promise((r) => setTimeout(r, 120));
+  }
+  // Time-bounded; if we didn't settle that's still a useful data point.
+}
+
+// ── Stop catalogue ──────────────────────────────────────────────────────────
+// Add entries here to grow coverage. Each stop should leave the app in a
+// distinct, observable state — duplicates inflate the report without adding
+// signal. Use the L1 navigate path then any sub-nav setter the bridge exposes.
+
+interface NavStop {
+  id: string;
+  group: string;
+  description: string;
+  setup: () => Promise<unknown>;
+}
+
+const STOPS: NavStop[] = [
+  // L1 sections (sidebar top-level)
+  { id: 'L1/home',            group: 'L1', description: 'Home dashboard',         setup: () => navigate('home') },
+  { id: 'L1/overview',        group: 'L1', description: 'Overview dashboard',     setup: () => navigate('overview') },
+  { id: 'L1/personas',        group: 'L1', description: 'Personas list',          setup: () => navigate('personas') },
+  { id: 'L1/events',          group: 'L1', description: 'Events / Triggers',      setup: () => navigate('events') },
+  { id: 'L1/credentials',     group: 'L1', description: 'Credentials vault',      setup: () => navigate('credentials') },
+  { id: 'L1/design-reviews',  group: 'L1', description: 'Templates / recipes',    setup: () => navigate('design-reviews') },
+  { id: 'L1/plugins',         group: 'L1', description: 'Plugins (browse)',       setup: () => navigate('plugins') },
+  { id: 'L1/schedules',       group: 'L1', description: 'Schedules',              setup: () => navigate('schedules') },
+  { id: 'L1/settings',        group: 'L1', description: 'Settings (default tab)', setup: () => navigate('settings') },
+
+  // Plugin tabs (setPluginTab + navigate('plugins'))
+  { id: 'plugins/browse',         group: 'plugins', description: 'Plugin browse page',         setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'browse' }); } },
+  { id: 'plugins/companion',      group: 'plugins', description: 'Companion plugin page',      setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'companion' }); } },
+  { id: 'plugins/artist',         group: 'plugins', description: 'Artist plugin (default)',    setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'artist' }); } },
+  { id: 'plugins/dev-tools',      group: 'plugins', description: 'Dev tools plugin',           setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'dev-tools' }); } },
+  { id: 'plugins/obsidian-brain', group: 'plugins', description: 'Obsidian Brain plugin',      setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'obsidian-brain' }); } },
+  { id: 'plugins/research-lab',   group: 'plugins', description: 'Research Lab plugin',        setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'research-lab' }); } },
+  { id: 'plugins/drive',          group: 'plugins', description: 'Drive plugin',               setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'drive' }); } },
+  { id: 'plugins/twin',           group: 'plugins', description: 'Twin plugin',                setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'twin' }); } },
+  { id: 'plugins/langfuse',       group: 'plugins', description: 'Langfuse plugin',            setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'langfuse' }); } },
+
+  // Settings tabs (openSettingsTab)
+  { id: 'settings/account',       group: 'settings', description: 'Settings → Account',       setup: async () => { await navigate('settings'); await bridgeExec('openSettingsTab', { tab: 'account' }); } },
+  { id: 'settings/appearance',    group: 'settings', description: 'Settings → Appearance',    setup: async () => { await navigate('settings'); await bridgeExec('openSettingsTab', { tab: 'appearance' }); } },
+  { id: 'settings/notifications', group: 'settings', description: 'Settings → Notifications', setup: async () => { await navigate('settings'); await bridgeExec('openSettingsTab', { tab: 'notifications' }); } },
+  { id: 'settings/engine',        group: 'settings', description: 'Settings → Engine',        setup: async () => { await navigate('settings'); await bridgeExec('openSettingsTab', { tab: 'engine' }); } },
+  { id: 'settings/byom',          group: 'settings', description: 'Settings → BYOM',          setup: async () => { await navigate('settings'); await bridgeExec('openSettingsTab', { tab: 'byom' }); } },
+  { id: 'settings/portability',   group: 'settings', description: 'Settings → Portability',   setup: async () => { await navigate('settings'); await bridgeExec('openSettingsTab', { tab: 'portability' }); } },
+  { id: 'settings/config',        group: 'settings', description: 'Settings → Config',        setup: async () => { await navigate('settings'); await bridgeExec('openSettingsTab', { tab: 'config' }); } },
+
+  // Twin sub-tabs (when twin plugin is active)
+  { id: 'twin/profiles',  group: 'twin', description: 'Twin → Profiles',  setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'twin' }); await bridgeExec('setTwinTab', { tab: 'profiles' }); } },
+  { id: 'twin/identity',  group: 'twin', description: 'Twin → Identity',  setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'twin' }); await bridgeExec('setTwinTab', { tab: 'identity' }); } },
+  { id: 'twin/brain',     group: 'twin', description: 'Twin → Brain',     setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'twin' }); await bridgeExec('setTwinTab', { tab: 'brain' }); } },
+  { id: 'twin/voice',     group: 'twin', description: 'Twin → Voice',     setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'twin' }); await bridgeExec('setTwinTab', { tab: 'voice' }); } },
+
+  // Artist sub-tabs (when artist plugin is active)
+  { id: 'artist/blender',      group: 'artist', description: 'Artist → Blender',     setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'artist' }); await bridgeExec('setArtistTab', { tab: 'blender' }); } },
+  { id: 'artist/gallery',      group: 'artist', description: 'Artist → Gallery',     setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'artist' }); await bridgeExec('setArtistTab', { tab: 'gallery' }); } },
+  { id: 'artist/media-studio', group: 'artist', description: 'Artist → Media Studio', setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'artist' }); await bridgeExec('setArtistTab', { tab: 'media-studio' }); } },
+];
+
+// ── Report writer ───────────────────────────────────────────────────────────
+
+interface StopResult {
+  stop: { id: string; group: string; description: string };
+  perf: PerfSnapshot;
+  setupError?: string;
+}
+
+interface RunReport {
+  meta: {
+    timestamp: string;
+    bridgeUrl: string;
+    stopCount: number;
+    gitHead?: string;
+  };
+  stops: StopResult[];
+}
+
+function repoRoot(): string {
+  // tests/playwright/perf-nav-walk.spec.ts → ../../../ → repo root
+  return path.resolve(__dirname, '..', '..');
+}
+
+function reportPath(): string {
+  const ts = new Date().toISOString().replace(/[:.]/g, '-');
+  return path.join(repoRoot(), 'docs', 'harness', 'perf-runs', `${ts}.json`);
+}
+
+function writeReport(report: RunReport): string {
+  const out = reportPath();
+  fs.mkdirSync(path.dirname(out), { recursive: true });
+  fs.writeFileSync(out, JSON.stringify(report, null, 2), 'utf8');
+  return out;
+}
+
+// ── Test ────────────────────────────────────────────────────────────────────
+
+test.describe('perf-nav-walk', () => {
+  test.setTimeout(STOPS.length * 30_000 + 60_000);
+
+  test('walks every nav stop and writes a perf JSON report', async () => {
+    // Sanity-check the bridge + __PERF__ are alive before doing any work.
+    const health = await getRaw<{ status: string }>('/health');
+    expect(health.status).toBe('ok');
+    const probe = await snapshotPerf();
+    expect(typeof probe.ipc.totalCount).toBe('number');
+    // Ensure the JS-side patched window.__TAURI_INTERNALS__.invoke (otherwise
+    // the snapshot would always read 0 — a silent measurement bug).
+    // The bridge exposes `ipcPatched` via __PERF__, but the snapshot doesn't
+    // include it; verify by triggering a known IPC and seeing the counter move.
+    await resetPerf();
+    await navigate('home');
+    const probe2 = await snapshotPerf();
+    expect(probe2.ipc.totalCount).toBeGreaterThan(0);
+
+    const results: StopResult[] = [];
+    for (const stop of STOPS) {
+      const stopResult: StopResult = {
+        stop: { id: stop.id, group: stop.group, description: stop.description },
+        perf: probe2, // placeholder; replaced below
+      };
+      try {
+        await resetPerf();
+        await stop.setup();
+        await waitForIdle();
+        stopResult.perf = await snapshotPerf();
+        console.log(
+          `[${stop.id.padEnd(30)}] renders=${stopResult.perf.render.commitCount.toString().padStart(3)} ` +
+          `ipc=${stopResult.perf.ipc.totalCount.toString().padStart(3)} ` +
+          `actualMs=${stopResult.perf.render.totalActualDurationMs.toFixed(1).padStart(6)} ` +
+          `dom=${stopResult.perf.dom.nodeCount.toString().padStart(5)}`,
+        );
+      } catch (err) {
+        stopResult.setupError = err instanceof Error ? err.message : String(err);
+        console.warn(`[${stop.id}] FAILED: ${stopResult.setupError}`);
+      }
+      results.push(stopResult);
+    }
+
+    const report: RunReport = {
+      meta: {
+        timestamp: new Date().toISOString(),
+        bridgeUrl: BASE,
+        stopCount: STOPS.length,
+      },
+      stops: results,
+    };
+    const out = writeReport(report);
+    console.log(`\nReport written: ${out}`);
+    // A few stops may fail (e.g. langfuse plugin disabled in starter tier),
+    // but the suite passes overall as long as the report wrote successfully.
+    expect(fs.existsSync(out)).toBe(true);
+    // Sanity: at least L1 stops should have succeeded.
+    const l1Failures = results.filter((r) => r.stop.group === 'L1' && r.setupError);
+    expect(l1Failures.length).toBe(0);
+  });
+});

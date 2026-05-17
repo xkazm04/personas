@@ -94,6 +94,11 @@ struct EvalRequest {
 }
 
 #[derive(Deserialize)]
+struct PerfMarkRequest {
+    label: String,
+}
+
+#[derive(Deserialize)]
 struct ScreenshotRequest {
     /// Absolute directory to save the PNG into. Created if missing.
     save_dir: String,
@@ -314,6 +319,36 @@ async fn handle_eval(
     })?;
 
     Ok(r#"{"success": true}"#.to_string())
+}
+
+// ── Perf instrumentation handlers ───────────────────────────────────────────
+//
+// Bridge to window.__PERF__ on the JS side (set up by
+// src/test/automation/perfInstrument.ts in test mode). The JS instrumentation
+// patches window.__TAURI_INTERNALS__.invoke to count + time every Tauri
+// command, and consumes React `<Profiler>` commits via App.tsx. These three
+// endpoints expose reset/snapshot/mark to the Playwright nav-walk suite.
+
+async fn handle_perf_reset(
+    AxumState(state): AxumState<ServerState>,
+) -> Result<String, (StatusCode, String)> {
+    let params = serde_json::json!({});
+    eval_bridge_method(&state, "perfReset", &params).await
+}
+
+async fn handle_perf_snapshot(
+    AxumState(state): AxumState<ServerState>,
+) -> Result<String, (StatusCode, String)> {
+    let params = serde_json::json!({});
+    eval_bridge_method(&state, "perfSnapshot", &params).await
+}
+
+async fn handle_perf_mark(
+    AxumState(state): AxumState<ServerState>,
+    Json(req): Json<PerfMarkRequest>,
+) -> Result<String, (StatusCode, String)> {
+    let params = serde_json::json!({ "label": req.label });
+    eval_bridge_method(&state, "perfMark", &params).await
 }
 
 async fn handle_screenshot(
@@ -1232,6 +1267,9 @@ fn build_router(state: ServerState) -> Router {
         .route("/list-interactive", get(handle_list_interactive))
         .route("/eval", post(handle_eval))
         .route("/screenshot", post(handle_screenshot))
+        .route("/perf/reset", post(handle_perf_reset))
+        .route("/perf/snapshot", get(handle_perf_snapshot))
+        .route("/perf/mark", post(handle_perf_mark))
         // Workflow macros
         .route("/select-agent", post(handle_select_agent))
         .route("/open-editor-tab", post(handle_open_editor_tab))
