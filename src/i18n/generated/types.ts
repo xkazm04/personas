@@ -40,6 +40,10 @@ export type Translations = {
     connectors: string;
     add: string;
     test: string;
+    _comment_reject: string;
+    reject: string;
+    _comment_refine: string;
+    refine: string;
     actions: string;
     status: string;
     name: string;
@@ -7037,6 +7041,10 @@ export type Translations = {
       persona_layout_center_click_to_start: string;
       _comment_persona_layout_center_open_questions_title: string;
       persona_layout_center_open_questions_title: string;
+      _comment_persona_layout_build_draft_ready_hint: string;
+      persona_layout_build_draft_ready_hint: string;
+      _comment_persona_layout_build_refine_default_prompt: string;
+      persona_layout_build_refine_default_prompt: string;
       credentials_required_title: string;
       credentials_required_body: string;
       answered_of_total: string;

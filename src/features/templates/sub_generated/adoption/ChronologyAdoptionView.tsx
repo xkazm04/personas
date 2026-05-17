@@ -15,6 +15,7 @@ import { PersonaChronologyGlyph } from "./glyph";
 import { QuestionnaireForm } from "./questionnaire";
 import { UseCasePickerStep, type UseCaseOption } from "./ucPicker";
 import { PersonaLayoutAdoption } from "./persona-layout";
+import { PersonaLayoutBuild } from "./persona-layout/PersonaLayoutBuild";
 import { useBuild } from "@/features/agents/components/matrix/useBuild";
 import { useLifecycle } from "@/features/agents/components/matrix/useLifecycle";
 import { useAgentStore } from "@/stores/agentStore";
@@ -1312,27 +1313,56 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
 
   return (
     <div className={`flex-1 min-h-0 flex flex-col w-full overflow-x-auto overflow-y-auto px-4 pt-2 transition-opacity duration-400 ${fadeOut ? 'opacity-0' : 'opacity-100'}`}>
-      <PersonaChronologyGlyph
-        buildPhase={build.buildPhase}
-        completeness={build.completeness}
-        isRunning={build.isBuilding}
-        buildActivity={build.buildActivity}
-        pendingQuestions={build.pendingQuestions}
-        onAnswerBuildQuestion={build.handleAnswer}
-        onSubmitAllAnswers={build.handleSubmitAnswers}
-        onStartTest={lifecycle.handleStartTest}
-        onApproveTest={lifecycle.handlePromote}
-        onApproveTestAnyway={() => { void lifecycle.handlePromote({ force: true }); }}
-        onRejectTest={lifecycle.handleRejectTest}
-        onDeleteDraft={handleDeleteDraft}
-        onRefine={lifecycle.handleRefine}
-        testOutputLines={build.buildTestOutputLines}
-        testPassed={build.buildTestPassed}
-        testError={build.buildTestError}
-        toolTestResults={lifecycle.buildToolTestResults}
-        testSummary={lifecycle.buildTestSummary}
-        onViewAgent={handleViewAgent}
-      />
+      {layout === 'persona-layout' ? (
+        // Build / test / promote phases live INSIDE the Persona Layout
+        // shell — Persona Sigil hero + capability rows + phase-aware
+        // controls below. Mirrors the user's intent that the adoption
+        // build runs in the same screen the user just configured.
+        <PersonaLayoutBuild
+          buildPhase={build.buildPhase}
+          completeness={build.completeness}
+          isBuilding={build.isBuilding}
+          buildActivity={build.buildActivity}
+          cellStates={build.cellStates}
+          pendingQuestions={build.pendingQuestions}
+          onAnswerBuildQuestion={build.handleAnswer}
+          onStartTest={lifecycle.handleStartTest}
+          onApproveTest={lifecycle.handlePromote}
+          onApproveTestAnyway={() => { void lifecycle.handlePromote({ force: true }); }}
+          onRejectTest={lifecycle.handleRejectTest}
+          onDeleteDraft={handleDeleteDraft}
+          onRefine={lifecycle.handleRefine}
+          onViewAgent={handleViewAgent}
+          templateName={templateName}
+          testOutputLines={build.buildTestOutputLines}
+          testPassed={build.buildTestPassed}
+          testError={build.buildTestError}
+          toolTestResults={lifecycle.buildToolTestResults}
+          testSummary={lifecycle.buildTestSummary}
+        />
+      ) : (
+        <PersonaChronologyGlyph
+          buildPhase={build.buildPhase}
+          completeness={build.completeness}
+          isRunning={build.isBuilding}
+          buildActivity={build.buildActivity}
+          pendingQuestions={build.pendingQuestions}
+          onAnswerBuildQuestion={build.handleAnswer}
+          onSubmitAllAnswers={build.handleSubmitAnswers}
+          onStartTest={lifecycle.handleStartTest}
+          onApproveTest={lifecycle.handlePromote}
+          onApproveTestAnyway={() => { void lifecycle.handlePromote({ force: true }); }}
+          onRejectTest={lifecycle.handleRejectTest}
+          onDeleteDraft={handleDeleteDraft}
+          onRefine={lifecycle.handleRefine}
+          testOutputLines={build.buildTestOutputLines}
+          testPassed={build.buildTestPassed}
+          testError={build.buildTestError}
+          toolTestResults={lifecycle.buildToolTestResults}
+          testSummary={lifecycle.buildTestSummary}
+          onViewAgent={handleViewAgent}
+        />
+      )}
       {/* Legacy: handleApplyEdits / handleDiscardEdits were wired to the
           original PersonaMatrix variant; keep the callbacks live for build
           flow even though no surface currently invokes them. */}
