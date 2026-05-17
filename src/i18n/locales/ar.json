@@ -7519,7 +7519,16 @@
       "budget_unavailable": "بيانات الميزانية غير متاحة",
       "unknown_budget": "ميزانية غير معروفة",
       "budget_exceeded": "تجاوزت الميزانية الشهرية — المُشغّل متوقف",
-      "budget": "الميزانية"
+      "budget": "الميزانية",
+      "filter_toolbar_label": "تصفية المشغلات",
+      "filter_all": "الكل",
+      "filter_enabled": "ممكّن",
+      "filter_disabled": "معطّل",
+      "filter_healthy": "سليم",
+      "filter_degraded": "متدهور",
+      "filter_failing": "فاشل",
+      "filter_throttled": "مقيّد",
+      "no_match_filter": "لا توجد مشغلات تطابق هذه التصفية."
     },
     "config": {
       "no_persona": "لم يتم تحديد وكيل",

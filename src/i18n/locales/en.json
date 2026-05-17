@@ -7522,7 +7522,16 @@
       "budget_unavailable": "Budget data unavailable",
       "unknown_budget": "Unknown Budget",
       "budget_exceeded": "Monthly budget exceeded -- trigger paused",
-      "budget": "Budget"
+      "budget": "Budget",
+      "filter_toolbar_label": "Filter triggers",
+      "filter_all": "All",
+      "filter_enabled": "Enabled",
+      "filter_disabled": "Disabled",
+      "filter_healthy": "Healthy",
+      "filter_degraded": "Degraded",
+      "filter_failing": "Failing",
+      "filter_throttled": "Throttled",
+      "no_match_filter": "No triggers match this filter."
     },
     "config": {
       "no_persona": "No persona selected",

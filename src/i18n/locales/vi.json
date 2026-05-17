@@ -7519,7 +7519,16 @@
       "budget_unavailable": "Dữ liệu ngân sách không khả dụng",
       "unknown_budget": "Ngân sách không rõ",
       "budget_exceeded": "Ngân sách tháng vượt quá -- trình kích hoạt đã tạm dừng",
-      "budget": "Ngân sách"
+      "budget": "Ngân sách",
+      "filter_toolbar_label": "Lọc trình kích hoạt",
+      "filter_all": "Tất cả",
+      "filter_enabled": "Đang bật",
+      "filter_disabled": "Đang tắt",
+      "filter_healthy": "Khỏe mạnh",
+      "filter_degraded": "Suy giảm",
+      "filter_failing": "Lỗi",
+      "filter_throttled": "Bị giới hạn",
+      "no_match_filter": "Không có trình kích hoạt nào khớp với bộ lọc này."
     },
     "config": {
       "no_persona": "Chưa chọn persona",

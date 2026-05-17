@@ -32,6 +32,7 @@ The Live Stream header includes a shortcut into `Overview -> Events` for the ful
 - `NlTriggerInput` and `nlTriggerParser.ts` translate natural-language schedule text into structured trigger config.
 - `TriggerSchedulePreview`, `RadialCountdownRing`, and `TriggerCountdown` make schedule timing visible before and after save.
 - `CronFireHeatmap` adds a 30-day forecast strip below the cron preview: each day is a colored cell (low/medium/high density buckets) showing how many fires fall in that day, with a total count and density legend. Wire-driven by `useCronFireTimesInRange` so timezone and cron semantics match what the engine will actually do.
+- `TriggerList` ships a single-select chip filter row above the per-persona groupings: All / Enabled / Disabled / Healthy / Degraded / Failing / Throttled. Counts are taken from the full unfiltered set so the badges stay stable as the user toggles between chips; chips with zero matches are disabled.
 - `TriggerExecutionHistory` links a trigger back to executions it caused. The drawer hoists the underlying `useTriggerHistory` hook and passes its state into both `TriggerInsightsStrip` (always-visible top metrics) and the expand-on-demand history list, so opening the drawer only spends one IPC for both.
 - `TriggerInsightsStrip` shows last fire timestamp, 24h fire count, success rate, recent-failure warning (3+ of last 5), and a DLQ count badge that links to the Dead Letter Queue tab.
 - `DryRunResultView` displays backend dry-run feedback.

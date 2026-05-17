@@ -184,7 +184,16 @@
     "budget_unavailable": "बजट डेटा उपलब्ध नहीं",
     "unknown_budget": "अज्ञात बजट",
     "budget_exceeded": "मासिक बजट पार हो गया -- ट्रिगर रुका",
-    "budget": "बजट"
+    "budget": "बजट",
+    "filter_toolbar_label": "ट्रिगर फ़िल्टर करें",
+    "filter_all": "सभी",
+    "filter_enabled": "सक्षम",
+    "filter_disabled": "अक्षम",
+    "filter_healthy": "स्वस्थ",
+    "filter_degraded": "गिरावट",
+    "filter_failing": "विफल",
+    "filter_throttled": "थ्रॉटल",
+    "no_match_filter": "इस फ़िल्टर से मेल खाने वाला कोई ट्रिगर नहीं।"
   },
   "config": {
     "no_persona": "कोई एजेंट नहीं चुना",

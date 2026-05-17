@@ -7519,7 +7519,16 @@
       "budget_unavailable": "Data rozpočtu nedostupná",
       "unknown_budget": "Neznámý rozpočet",
       "budget_exceeded": "Měsíční rozpočet překročen -- spouštěč pozastaven",
-      "budget": "Rozpočet"
+      "budget": "Rozpočet",
+      "filter_toolbar_label": "Filtrovat triggery",
+      "filter_all": "Vše",
+      "filter_enabled": "Povolené",
+      "filter_disabled": "Zakázané",
+      "filter_healthy": "Zdravé",
+      "filter_degraded": "Degradované",
+      "filter_failing": "Selhávající",
+      "filter_throttled": "Omezené",
+      "no_match_filter": "Této filtr neodpovídá žádný trigger."
     },
     "config": {
       "no_persona": "Není vybrána žádná persona",

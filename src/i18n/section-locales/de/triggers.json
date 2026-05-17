@@ -184,7 +184,16 @@
     "budget_unavailable": "Budget-Daten nicht verfügbar",
     "unknown_budget": "Unbekanntes Budget",
     "budget_exceeded": "Monatliches Budget überschritten -- Trigger pausiert",
-    "budget": "Budget"
+    "budget": "Budget",
+    "filter_toolbar_label": "Trigger filtern",
+    "filter_all": "Alle",
+    "filter_enabled": "Aktiviert",
+    "filter_disabled": "Deaktiviert",
+    "filter_healthy": "Gesund",
+    "filter_degraded": "Beeinträchtigt",
+    "filter_failing": "Fehlerhaft",
+    "filter_throttled": "Gedrosselt",
+    "no_match_filter": "Keine Trigger entsprechen diesem Filter."
   },
   "config": {
     "no_persona": "Keine Persona ausgewählt",

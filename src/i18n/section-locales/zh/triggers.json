@@ -184,7 +184,16 @@
     "budget_unavailable": "预算数据不可用",
     "unknown_budget": "未知预算",
     "budget_exceeded": "月度预算已超出 — 触发器已暂停",
-    "budget": "预算"
+    "budget": "预算",
+    "filter_toolbar_label": "筛选触发器",
+    "filter_all": "全部",
+    "filter_enabled": "已启用",
+    "filter_disabled": "已禁用",
+    "filter_healthy": "健康",
+    "filter_degraded": "降级",
+    "filter_failing": "失败",
+    "filter_throttled": "限流",
+    "no_match_filter": "没有触发器匹配此筛选器。"
   },
   "config": {
     "no_persona": "未选择代理",

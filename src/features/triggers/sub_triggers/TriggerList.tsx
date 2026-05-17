@@ -4,7 +4,7 @@ import { useAgentStore } from "@/stores/agentStore";
 import { createLogger } from "@/lib/log";
 
 const logger = createLogger("trigger-list");
-import { ChevronRight, Zap, Shield } from 'lucide-react';
+import { ChevronRight, Zap, Shield, Filter as FilterIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { listAllTriggers } from "@/api/pipeline/triggers";
 
@@ -24,12 +24,15 @@ interface TriggerListProps {
   onNavigateToPersona?: (personaId: string) => void;
 }
 
+type FilterChipId = 'all' | 'enabled' | 'disabled' | 'healthy' | 'degraded' | 'failing' | 'throttled';
+
 export function TriggerList({ onNavigateToPersona }: TriggerListProps) {
   const { t, tx } = useTranslation();
   const personas = useAgentStore((state) => state.personas);
   const triggerRateLimits = usePipelineStore((s) => s.triggerRateLimits);
   const [allTriggers, setAllTriggers] = useState<Record<string, PersonaTrigger[]>>({});
   const [triggerHealthMap, setTriggerHealthMap] = useState<Record<string, TriggerHealth>>({});
+  const [filter, setFilter] = useState<FilterChipId>('all');
   const { density, setDensity, tokens: densityTokens } = useDensity('trigger-list');
 
   useEffect(() => {
@@ -70,24 +73,76 @@ export function TriggerList({ onNavigateToPersona }: TriggerListProps) {
     return () => { stale = true; };
   }, [personas]);
 
+  const passesFilter = (trigger: PersonaTrigger): boolean => {
+    switch (filter) {
+      case 'all': return true;
+      case 'enabled': return trigger.enabled;
+      case 'disabled': return !trigger.enabled;
+      case 'healthy': return triggerHealthMap[trigger.id] === 'healthy';
+      case 'degraded': return triggerHealthMap[trigger.id] === 'degraded';
+      case 'failing': return triggerHealthMap[trigger.id] === 'failing';
+      case 'throttled': return !!triggerRateLimits[trigger.id]?.isThrottled;
+    }
+  };
+
+  // Total counts per chip — derived from unfiltered allTriggers so the badges
+  // stay stable as the user toggles chips. Without this the active-chip count
+  // would always read 100% and the others would drop to 0, which is useless.
+  const chipCounts = useMemo(() => {
+    const flat = Object.values(allTriggers).flat();
+    return {
+      all: flat.length,
+      enabled: flat.filter((t) => t.enabled).length,
+      disabled: flat.filter((t) => !t.enabled).length,
+      healthy: flat.filter((t) => triggerHealthMap[t.id] === 'healthy').length,
+      degraded: flat.filter((t) => triggerHealthMap[t.id] === 'degraded').length,
+      failing: flat.filter((t) => triggerHealthMap[t.id] === 'failing').length,
+      throttled: flat.filter((t) => !!triggerRateLimits[t.id]?.isThrottled).length,
+    };
+  }, [allTriggers, triggerHealthMap, triggerRateLimits]);
+
+  const hasAnyTriggers = chipCounts.all > 0;
+
   const groupedTriggers = useMemo(() => {
     const groups: Record<string, { persona: typeof personas[0]; triggers: PersonaTrigger[] }> = {};
 
     personas.forEach((persona) => {
-      const personaTriggers = allTriggers[persona.id] || [];
+      const personaTriggers = (allTriggers[persona.id] || []).filter(passesFilter);
       if (personaTriggers.length > 0) {
         groups[persona.id] = { persona, triggers: personaTriggers };
       }
     });
 
     return groups;
-  }, [personas, allTriggers]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- passesFilter
+    // captures filter+health+rate-limit state via closure; depending on those
+    // directly is what we want.
+  }, [personas, allTriggers, filter, triggerHealthMap, triggerRateLimits]);
+
+  const chipDefs: { id: FilterChipId; label: string; tone: 'neutral' | 'emerald' | 'muted' | 'amber' | 'red' | 'red-strong' }[] = [
+    { id: 'all', label: t.triggers.list.filter_all, tone: 'neutral' },
+    { id: 'enabled', label: t.triggers.list.filter_enabled, tone: 'emerald' },
+    { id: 'disabled', label: t.triggers.list.filter_disabled, tone: 'muted' },
+    { id: 'healthy', label: t.triggers.list.filter_healthy, tone: 'emerald' },
+    { id: 'degraded', label: t.triggers.list.filter_degraded, tone: 'amber' },
+    { id: 'failing', label: t.triggers.list.filter_failing, tone: 'red' },
+    { id: 'throttled', label: t.triggers.list.filter_throttled, tone: 'red-strong' },
+  ];
+
+  const CHIP_TONE_ACTIVE: Record<typeof chipDefs[number]['tone'], string> = {
+    neutral: 'bg-primary/15 text-primary border-primary/30',
+    emerald: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+    muted: 'bg-secondary/60 text-foreground border-border/30',
+    amber: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+    red: 'bg-red-500/15 text-red-400 border-red-500/30',
+    'red-strong': 'bg-red-500/20 text-red-300 border-red-500/40',
+  };
 
 
   return (
     <div className="flex-1 min-h-0 flex flex-col w-full overflow-hidden">
       <div className="flex-1 overflow-y-auto flex flex-col">
-        {Object.keys(groupedTriggers).length === 0 ? (
+        {!hasAnyTriggers ? (
           <div className="flex-1 flex items-center justify-center p-6">
             <EmptyState
               icon={Zap}
@@ -110,6 +165,40 @@ export function TriggerList({ onNavigateToPersona }: TriggerListProps) {
               <h3 className="typo-code font-mono text-foreground uppercase tracking-wider">{t.triggers.list.event_triggers}</h3>
               <DensityToggle density={density} onChange={setDensity} scopeId="trigger-list" />
             </div>
+
+            {/* Filter chip row — single-select. Counts are over the full set so
+                badges stay stable as the user toggles between chips. */}
+            <div className="flex items-center gap-1.5 flex-wrap" role="toolbar" aria-label={t.triggers.list.filter_toolbar_label}>
+              <FilterIcon className="w-3.5 h-3.5 text-foreground shrink-0 mr-0.5" />
+              {chipDefs.map((chip) => {
+                const isActive = filter === chip.id;
+                const count = chipCounts[chip.id];
+                const isDisabled = chip.id !== 'all' && count === 0 && !isActive;
+                return (
+                  <button
+                    key={chip.id}
+                    type="button"
+                    onClick={() => setFilter(isActive ? 'all' : chip.id)}
+                    disabled={isDisabled}
+                    aria-pressed={isActive}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-modal typo-body transition-colors border ${
+                      isActive
+                        ? CHIP_TONE_ACTIVE[chip.tone]
+                        : 'bg-secondary/30 text-foreground border-border/30 hover:bg-secondary/50 hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-secondary/30'
+                    }`}
+                  >
+                    <span>{chip.label}</span>
+                    <span className="tabular-nums opacity-80">{count}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {Object.keys(groupedTriggers).length === 0 && (
+              <div className="flex items-center justify-center py-12 typo-body text-foreground">
+                {t.triggers.list.no_match_filter}
+              </div>
+            )}
 
             {Object.values(groupedTriggers).map(({ persona, triggers }) => (
               <div key={persona.id} className="space-y-2">

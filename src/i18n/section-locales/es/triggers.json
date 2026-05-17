@@ -184,7 +184,16 @@
     "budget_unavailable": "Datos de presupuesto no disponibles",
     "unknown_budget": "Presupuesto Desconocido",
     "budget_exceeded": "Presupuesto mensual excedido — disparador pausado",
-    "budget": "Presupuesto"
+    "budget": "Presupuesto",
+    "filter_toolbar_label": "Filtrar disparadores",
+    "filter_all": "Todos",
+    "filter_enabled": "Activados",
+    "filter_disabled": "Desactivados",
+    "filter_healthy": "Saludables",
+    "filter_degraded": "Degradados",
+    "filter_failing": "Fallando",
+    "filter_throttled": "Limitados",
+    "no_match_filter": "Ningún disparador coincide con este filtro."
   },
   "config": {
     "no_persona": "Ninguna persona seleccionada",

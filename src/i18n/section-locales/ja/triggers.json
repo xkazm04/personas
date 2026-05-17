@@ -184,7 +184,16 @@
     "budget_unavailable": "予算データが利用できません",
     "unknown_budget": "不明な予算",
     "budget_exceeded": "月間予算超過 — トリガーが一時停止されています",
-    "budget": "予算"
+    "budget": "予算",
+    "filter_toolbar_label": "トリガーを絞り込む",
+    "filter_all": "すべて",
+    "filter_enabled": "有効",
+    "filter_disabled": "無効",
+    "filter_healthy": "正常",
+    "filter_degraded": "低下",
+    "filter_failing": "失敗",
+    "filter_throttled": "制限中",
+    "no_match_filter": "このフィルタに一致するトリガーはありません。"
   },
   "config": {
     "no_persona": "ペルソナが選択されていません",

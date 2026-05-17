@@ -7529,6 +7529,15 @@ export type Translations = {
       unknown_budget: string;
       budget_exceeded: string;
       budget: string;
+      filter_toolbar_label: string;
+      filter_all: string;
+      filter_enabled: string;
+      filter_disabled: string;
+      filter_healthy: string;
+      filter_degraded: string;
+      filter_failing: string;
+      filter_throttled: string;
+      no_match_filter: string;
     };
     config: {
       no_persona: string;

@@ -184,7 +184,16 @@
     "budget_unavailable": "Données de budget non disponibles",
     "unknown_budget": "Budget inconnu",
     "budget_exceeded": "Budget mensuel dépassé — déclencheur suspendu",
-    "budget": "Budget"
+    "budget": "Budget",
+    "filter_toolbar_label": "Filtrer les déclencheurs",
+    "filter_all": "Tous",
+    "filter_enabled": "Activés",
+    "filter_disabled": "Désactivés",
+    "filter_healthy": "Sains",
+    "filter_degraded": "Dégradés",
+    "filter_failing": "En échec",
+    "filter_throttled": "Limités",
+    "no_match_filter": "Aucun déclencheur ne correspond à ce filtre."
   },
   "config": {
     "no_persona": "Aucun persona sélectionné",

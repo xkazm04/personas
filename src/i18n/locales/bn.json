@@ -7519,7 +7519,16 @@
       "budget_unavailable": "বাজেট ডেটা পাওয়া যাচ্ছে না",
       "unknown_budget": "অজানা বাজেট",
       "budget_exceeded": "মাসিক বাজেট অতিক্রান্ত -- ট্রিগার বিরতিতে",
-      "budget": "বাজেট"
+      "budget": "বাজেট",
+      "filter_toolbar_label": "ট্রিগার ফিল্টার করুন",
+      "filter_all": "সব",
+      "filter_enabled": "সক্রিয়",
+      "filter_disabled": "নিষ্ক্রিয়",
+      "filter_healthy": "সুস্থ",
+      "filter_degraded": "অবনতি",
+      "filter_failing": "ব্যর্থ",
+      "filter_throttled": "থ্রটল্ড",
+      "no_match_filter": "এই ফিল্টারের সাথে মেলে এমন কোনো ট্রিগার নেই।"
     },
     "config": {
       "no_persona": "কোনো পার্সোনা নির্বাচিত নেই",

@@ -7519,7 +7519,16 @@
       "budget_unavailable": "Данные бюджета недоступны",
       "unknown_budget": "Неизвестный бюджет",
       "budget_exceeded": "Ежемесячный бюджет превышен — триггер приостановлен",
-      "budget": "Бюджет"
+      "budget": "Бюджет",
+      "filter_toolbar_label": "Фильтр триггеров",
+      "filter_all": "Все",
+      "filter_enabled": "Включены",
+      "filter_disabled": "Отключены",
+      "filter_healthy": "Здоровые",
+      "filter_degraded": "Деградация",
+      "filter_failing": "Сбои",
+      "filter_throttled": "Ограничены",
+      "no_match_filter": "Нет триггеров, соответствующих этому фильтру."
     },
     "config": {
       "no_persona": "Агент не выбран",

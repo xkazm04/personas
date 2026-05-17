@@ -184,7 +184,16 @@
     "budget_unavailable": "Data anggaran tidak tersedia",
     "unknown_budget": "Anggaran Tidak Diketahui",
     "budget_exceeded": "Anggaran bulanan terlampaui -- pemicu dijeda",
-    "budget": "Anggaran"
+    "budget": "Anggaran",
+    "filter_toolbar_label": "Filter pemicu",
+    "filter_all": "Semua",
+    "filter_enabled": "Aktif",
+    "filter_disabled": "Nonaktif",
+    "filter_healthy": "Sehat",
+    "filter_degraded": "Menurun",
+    "filter_failing": "Gagal",
+    "filter_throttled": "Dibatasi",
+    "no_match_filter": "Tidak ada pemicu yang cocok dengan filter ini."
   },
   "config": {
     "no_persona": "Tidak ada persona yang dipilih",
