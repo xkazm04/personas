@@ -9045,7 +9045,11 @@ export type Translations = {
     today: string;
     projected: string;
     success: string;
+    failed: string;
     overlap: string;
+    filter_reset: string;
+    filter_reset_aria: string;
+    filter_toggle_tooltip: string;
     week: string;
     month: string;
     backfill_title: string;
