@@ -68,12 +68,11 @@ pub fn spawn_session(
     if !cwd.is_dir() {
         return Err(format!("cwd is not a directory: {}", cwd.display()));
     }
-    if registry().has_active_cwd(&cwd) {
-        return Err(format!(
-            "a Fleet session is already active for {} — close it first",
-            cwd.display()
-        ));
-    }
+    // Multiple sessions per cwd are allowed — users routinely want 2-5
+    // parallel claude runs on the same project (one drafting tests, one
+    // refactoring, one running e2e). The hook router in hooks.rs handles
+    // the bootstrap-window cwd ambiguity by preferring the most-recently-
+    // spawned still-unbound session for cwd-based routing.
 
     let pty_system = native_pty_system();
     let pair = pty_system

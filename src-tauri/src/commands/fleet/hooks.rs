@@ -97,10 +97,17 @@ async fn receive_hook(
 ///
 /// Strategy:
 /// 1. If we've already bound `claude_session_id` to a Fleet session
-///    (i.e. SessionStart fired before this hook), match on that.
-/// 2. Otherwise fall back to `cwd` — the spawn enforces one Fleet
-///    session per cwd at any time.
-/// 3. Otherwise `None` (we ignore the hook).
+///    (i.e. SessionStart fired before this hook), match on that. This
+///    is the steady-state path — unambiguous regardless of how many
+///    sessions share the same cwd.
+/// 2. Otherwise fall back to `cwd`. Multiple non-Exited sessions can
+///    coexist for the same cwd (parallel claude runs on one project),
+///    so we need a tiebreaker: prefer the most-recently-spawned
+///    session that doesn't yet have a `claude_session_id` bound. That
+///    is by construction the session currently in its bootstrap window
+///    — the one this unbound SessionStart most likely belongs to.
+/// 3. If every cwd-matching session is already bound (or none exist),
+///    return `None` and the hook is logged + dropped.
 fn resolve_session_id(
     claude_session_id: &Option<String>,
     cwd: &Option<String>,
@@ -116,10 +123,39 @@ fn resolve_session_id(
     }
     if let Some(cwd_str) = cwd {
         let cwd_path = std::path::Path::new(cwd_str);
+
+        // Pass 1: most-recently-created unbound session for this cwd
+        // (the bootstrap-window candidate).
+        let mut best_unbound: Option<&super::registry::FleetSessionInner> = None;
         for sess in map.values() {
-            if !matches!(sess.state, FleetSessionState::Exited) && sess.cwd == cwd_path {
-                return Some(sess.id.clone());
+            if matches!(sess.state, FleetSessionState::Exited) { continue; }
+            if sess.cwd != cwd_path { continue; }
+            if sess.claude_session_id.is_some() { continue; }
+            if best_unbound.is_none()
+                || sess.created_at_ms > best_unbound.unwrap().created_at_ms
+            {
+                best_unbound = Some(sess);
             }
+        }
+        if let Some(s) = best_unbound {
+            return Some(s.id.clone());
+        }
+
+        // Pass 2: every cwd-matching session is already bound. Fall back
+        // to the most-recently-active one so we still apply *some* state
+        // update (better than dropping the hook entirely).
+        let mut best_bound: Option<&super::registry::FleetSessionInner> = None;
+        for sess in map.values() {
+            if matches!(sess.state, FleetSessionState::Exited) { continue; }
+            if sess.cwd != cwd_path { continue; }
+            if best_bound.is_none()
+                || sess.last_activity_ms > best_bound.unwrap().last_activity_ms
+            {
+                best_bound = Some(sess);
+            }
+        }
+        if let Some(s) = best_bound {
+            return Some(s.id.clone());
         }
     }
     None

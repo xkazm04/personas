@@ -6,6 +6,12 @@ import {
   Play,
   RefreshCw,
   Send,
+  Hourglass,
+  Loader2,
+  CheckCircle2,
+  Clock,
+  Ban,
+  Sparkle,
 } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { ActionRow } from '@/features/shared/components/layout/ActionRow';
@@ -14,11 +20,29 @@ import { toastCatch, silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import { EventName } from '@/lib/eventRegistry';
 import { spawnSession } from '@/api/fleet/fleet';
+import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import { FleetSessionCard } from '../FleetSessionCard';
 import { FleetTerminalPane } from '../FleetTerminalPane';
 import { FleetHooksPill } from '../FleetHooksPill';
 import { FleetBroadcastModal } from '../FleetBroadcastModal';
+
+// Visual order + label + icon + accent for the per-state group headers
+// in the left list. Attention-grabbing first; terminal states last.
+const GROUP_ORDER: ReadonlyArray<{
+  id: FleetSessionState;
+  label: string;
+  icon: typeof Hourglass;
+  /** Tailwind text-color class for the icon + count badge. */
+  accent: string;
+}> = [
+  { id: 'awaiting_input', label: 'Awaiting input', icon: Hourglass,    accent: 'text-violet-400' },
+  { id: 'running',        label: 'Working',        icon: Loader2,      accent: 'text-blue-400' },
+  { id: 'spawning',       label: 'Spawning',       icon: Sparkle,      accent: 'text-cyan-400' },
+  { id: 'idle',           label: 'Idle',           icon: CheckCircle2, accent: 'text-emerald-400' },
+  { id: 'stale',          label: 'Stale',          icon: Clock,        accent: 'text-orange-400' },
+  { id: 'exited',         label: 'Exited',         icon: Ban,          accent: 'text-foreground/50' },
+];
 
 /**
  * Sessions view — the only Fleet tab the user navigates between (Settings
@@ -157,6 +181,24 @@ export default function FleetGridPage() {
     return { waiting, working, idle, exited };
   }, [sessions]);
 
+  // Group sessions by lifecycle state. Order matters: attention-grabbing
+  // first (awaiting_input → working → spawning → idle → stale → exited).
+  // Within a group, newest activity first.
+  const groups = useMemo(() => {
+    const buckets = new Map<FleetSessionState, FleetSession[]>();
+    for (const s of sessions) {
+      const arr = buckets.get(s.state) ?? [];
+      arr.push(s);
+      buckets.set(s.state, arr);
+    }
+    for (const arr of buckets.values()) {
+      arr.sort((a, b) => Number(b.lastActivityMs) - Number(a.lastActivityMs));
+    }
+    return GROUP_ORDER
+      .filter((g) => buckets.has(g.id))
+      .map((g) => ({ ...g, sessions: buckets.get(g.id)! }));
+  }, [sessions]);
+
   const subtitle = activeProject
     ? `Project: ${activeProject.name} · ${sessions.length} session${sessions.length === 1 ? '' : 's'} · ${counts.waiting} waiting · ${counts.working} working · ${counts.idle} idle${counts.exited > 0 ? ` · ${counts.exited} exited` : ''}`
     : 'No project selected — pick one in Dev Tools → Projects';
@@ -206,8 +248,14 @@ export default function FleetGridPage() {
         </ActionRow>
 
         <div className="grid grid-cols-12 gap-3 mt-3 min-h-[400px]">
-          {/* Compact session list (left) */}
-          <div className="col-span-4 space-y-0.5 max-h-[calc(100vh-300px)] overflow-y-auto pr-1">
+          {/* Compact session list, grouped by state (left).
+              Group header → divider → rows. Empty groups are filtered
+              out by `groups` so the dividers never strand a zero-row
+              section. */}
+          <div
+            data-testid="fleet-session-list"
+            className="col-span-4 max-h-[calc(100vh-300px)] overflow-y-auto pr-1"
+          >
             {sessions.length === 0 ? (
               <div className="text-center py-8 border border-dashed border-primary/10 rounded-modal">
                 <div className="w-10 h-10 rounded-xl bg-primary/8 border border-primary/15 flex items-center justify-center mx-auto mb-2">
@@ -221,15 +269,41 @@ export default function FleetGridPage() {
                 </p>
               </div>
             ) : (
-              sessions.map((s) => (
-                <FleetSessionCard
-                  key={s.id}
-                  session={s}
-                  isActive={s.id === activeSessionId}
-                  onActivate={handleActivate}
-                  onRemovedLocal={handleRemovedLocal}
-                />
-              ))
+              groups.map((g, idx) => {
+                const GroupIcon = g.icon;
+                const isFirst = idx === 0;
+                return (
+                  <div
+                    key={g.id}
+                    data-testid={`fleet-group-${g.id}`}
+                    className={isFirst ? '' : 'pt-2 mt-2 border-t border-primary/10'}
+                  >
+                    <div className="flex items-center gap-1.5 px-2 mb-1">
+                      <GroupIcon className={`w-3 h-3 ${g.accent} ${g.id === 'running' ? 'animate-spin' : ''}`} />
+                      <span className="typo-label uppercase tracking-wider text-foreground/60">
+                        {g.label}
+                      </span>
+                      <span
+                        className={`ml-auto text-[10px] font-semibold ${g.accent}`}
+                        aria-label={`${g.sessions.length} session${g.sessions.length === 1 ? '' : 's'}`}
+                      >
+                        {g.sessions.length}
+                      </span>
+                    </div>
+                    <div className="space-y-0.5">
+                      {g.sessions.map((s) => (
+                        <FleetSessionCard
+                          key={s.id}
+                          session={s}
+                          isActive={s.id === activeSessionId}
+                          onActivate={handleActivate}
+                          onRemovedLocal={handleRemovedLocal}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })
             )}
           </div>
 
