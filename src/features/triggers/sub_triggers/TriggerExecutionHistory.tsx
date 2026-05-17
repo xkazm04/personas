@@ -6,7 +6,7 @@ import {
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import { formatDuration, formatRelativeTime, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
-import { useTriggerHistory } from '../hooks/useTriggerHistory';
+import { useTriggerHistory, type TriggerHistoryActions, type TriggerHistoryState } from '../hooks/useTriggerHistory';
 import { TriggerHealthSparkline } from './TriggerHealthSparkline';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -140,19 +140,26 @@ interface TriggerExecutionHistoryProps {
   personaId: string;
   /** Whether the section starts open (replaces the old activityOpen toggle) */
   defaultOpen?: boolean;
+  /** Hoisted history state. When provided, skips the internal hook so callers
+   * (e.g. TriggerDetailDrawer) can share one fetch across multiple consumers. */
+  historyState?: TriggerHistoryState & TriggerHistoryActions;
 }
 
-export function TriggerExecutionHistory({ triggerId, personaId, defaultOpen = false }: TriggerExecutionHistoryProps) {
+export function TriggerExecutionHistory({ triggerId, personaId, defaultOpen = false, historyState }: TriggerExecutionHistoryProps) {
   const { t } = useTranslation();
-  const history = useTriggerHistory(triggerId, personaId);
+  const internalHistory = useTriggerHistory(triggerId, personaId);
+  const history = historyState ?? internalHistory;
   const [open, setOpen] = useState(defaultOpen);
 
-  // Auto-fetch on first open
+  // Auto-fetch on first open — only when we own the hook. When a parent hoisted
+  // it, the parent decides when to fetch (the drawer fetches eagerly so the
+  // insights strip is populated even before this section is expanded).
   useEffect(() => {
+    if (historyState) return;
     if (open && history.executions.length === 0 && !history.loading) {
       void history.fetch();
     }
-  }, [open]);
+  }, [open, historyState]);
 
   const toggle = () => setOpen((v) => !v);
 
