@@ -15,6 +15,18 @@ import { createCredential, createCredentialEvent, deleteCredential, deleteCreden
 
 import { encryptWithSessionKey } from "@/lib/utils/platform/crypto";
 
+// Module-scoped cache + in-flight tracking for fetchCredentials.
+// Mirrors the executionSlice.fetchExecutions pattern (executionSlice.ts:471-506)
+// so a persona-switch burst of 3-4 concurrent callers collapses to one IPC.
+// State of the world: 31 callsites under src/features/vault + a handful of
+// outside-vault consumers (matrix, connectors, home cockpit) all reach for
+// fetchCredentials on mount. Optimistic mutations update state directly, so
+// the cache (which IS the slice state) stays consistent without an explicit
+// bust path — the TTL window simply re-confirms against the backend.
+const CREDENTIALS_CACHE_TTL_MS = 30_000;
+let inflightCredentialsFetch: Promise<void> | null = null;
+let credentialsLastFetchedAt = 0;
+
 export interface CredentialSlice {
   // State
   credentials: CredentialMetadata[];
@@ -59,14 +71,25 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
   pendingDeleteEventIds: new Set<string>(),
 
   fetchCredentials: async () => {
-    try {
-      const raw = await listCredentials();
-      const credentials = raw.map(toCredMeta);
-      set({ credentials, error: null });
-    } catch (err) {
-      reportError(err, "Failed to fetch credentials", set);
-      throw err;
-    }
+    // Reuse any in-flight fetch — collapses concurrent mounts to one IPC.
+    if (inflightCredentialsFetch) return inflightCredentialsFetch;
+    // Serve from existing slice state within the TTL window — no IPC.
+    if (Date.now() - credentialsLastFetchedAt < CREDENTIALS_CACHE_TTL_MS) return;
+    const doFetch = async () => {
+      try {
+        const raw = await listCredentials();
+        const credentials = raw.map(toCredMeta);
+        set({ credentials, error: null });
+        credentialsLastFetchedAt = Date.now();
+      } catch (err) {
+        reportError(err, "Failed to fetch credentials", set);
+        throw err;
+      } finally {
+        inflightCredentialsFetch = null;
+      }
+    };
+    inflightCredentialsFetch = doFetch();
+    return inflightCredentialsFetch;
   },
 
   createCredential: async (input) => {

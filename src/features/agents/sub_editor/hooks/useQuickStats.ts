@@ -25,8 +25,12 @@ export function useQuickStats(personaId: string | undefined) {
     if (!personaId) return;
     let cancelled = false;
     setLoading(true);
-    listExecutions(personaId, 10)
-      .then((list) => { if (!cancelled) setExecutions(list); })
+    // Fetch 50 to match ActivityTab's request shape — identical args let
+    // tauriInvoke's 250ms read-only auto-dedup catch concurrent mounts in
+    // the persona editor. Slice locally so quick-stats math still runs over
+    // the most-recent 10 rows (unchanged semantics).
+    listExecutions(personaId, 50)
+      .then((list) => { if (!cancelled) setExecutions(list.slice(0, 10)); })
       .catch((err) => {
         silentCatch('useQuickStats:listExecutions')(err);
         if (!cancelled) setExecutions([]);
