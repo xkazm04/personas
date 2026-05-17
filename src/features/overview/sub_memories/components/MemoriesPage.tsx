@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { Brain, CalendarClock, Plus, Search, X, Sparkles, Shield } from 'lucide-react';
+import { Brain, Plus, Search, X, Sparkles, Shield } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useAgentStore } from "@/stores/agentStore";
@@ -13,10 +13,8 @@ import { InlineAddMemoryForm } from './CreateMemoryForm';
 import { MemoryConflictReview } from './MemoryConflictReview';
 import ReviewResultsModal from './ReviewResultsModal';
 import MemoryDetailModal from './MemoryDetailModal';
-import CurationScheduleModal from './CurationScheduleModal';
 import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
 import { MEMORY_CATEGORY_COLORS, ALL_MEMORY_CATEGORIES } from '@/lib/utils/formatters';
-import type { MemoryReviewResult } from '@/api/overview/memories';
 import type { PersonaMemory } from '@/lib/types/types';
 
 const CATEGORY_HEX_COLORS: Record<string, string> = {
@@ -41,6 +39,7 @@ export default function MemoriesPage() {
   const personas = useAgentStore((s) => s.personas);
   const {
     memories, memoriesTotal, memoryStats, fetchMemories, deleteMemory, reviewMemories,
+    memoryReviewRunning, memoryReviewResult, memoryReviewError, clearMemoryReviewResult,
   } = useOverviewStore(useShallow((s) => ({
     memories: s.memories,
     memoriesTotal: s.memoriesTotal,
@@ -48,6 +47,10 @@ export default function MemoriesPage() {
     fetchMemories: s.fetchMemories,
     deleteMemory: s.deleteMemory,
     reviewMemories: s.reviewMemories,
+    memoryReviewRunning: s.memoryReviewRunning,
+    memoryReviewResult: s.memoryReviewResult,
+    memoryReviewError: s.memoryReviewError,
+    clearMemoryReviewResult: s.clearMemoryReviewResult,
   })));
 
   const [search, setSearch] = useState('');
@@ -59,10 +62,6 @@ export default function MemoriesPage() {
   const [viewTab, setViewTab] = useState<ViewTab>('memories');
 
   const [selectedMemory, setSelectedMemory] = useState<PersonaMemory | null>(null);
-  const [isReviewing, setIsReviewing] = useState(false);
-  const [reviewResult, setReviewResult] = useState<MemoryReviewResult | null>(null);
-  const [reviewError, setReviewError] = useState<string | null>(null);
-  const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
 
   useEffect(() => {
     const requestId = ++latestFilterRequestRef.current;
@@ -122,17 +121,13 @@ export default function MemoriesPage() {
     }
   }, [memories, focusedIndex, deleteMemory, pendingDeleteId]);
 
-  const handleReview = useCallback(async () => {
-    setIsReviewing(true); setReviewResult(null); setReviewError(null);
-    try {
-      const result = await reviewMemories(selectedPersonaId || undefined);
-      setReviewResult(result);
-    } catch (err) {
-      setReviewError(err instanceof Error ? err.message : String(err));
-    } finally { setIsReviewing(false); }
+  const handleReview = useCallback(() => {
+    // Fire-and-forget: the slice owns the in-flight task + result, so this
+    // survives unmount (e.g. user switches tabs while the CLI review runs).
+    void reviewMemories(selectedPersonaId || undefined).catch(() => {
+      // Slice already records memoryReviewError; toast is surfaced by reportError.
+    });
   }, [reviewMemories, selectedPersonaId]);
-
-  const closeReviewModal = useCallback(() => { setReviewResult(null); setReviewError(null); }, []);
 
   const categoryFilterOptions = useMemo(() => {
     const categoryItems = ALL_MEMORY_CATEGORIES.map((cat) => ({
@@ -177,22 +172,9 @@ export default function MemoriesPage() {
 
             <div className="w-px h-6 bg-primary/10" />
 
-            <button onClick={handleReview} disabled={isReviewing || memoriesTotal === 0} title={isReviewing ? 'Review in progress...' : memoriesTotal === 0 ? 'No memories to review' : undefined} className="flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-modal border transition-all bg-cyan-500/15 text-cyan-300 border-cyan-500/25 hover:bg-cyan-500/25 disabled:opacity-40">
-              {isReviewing ? <LoadingSpinner size="sm" /> : <Sparkles className="w-3.5 h-3.5" />}
-              {isReviewing ? 'Reviewing...' : 'Review'}
-            </button>
-            <button
-              onClick={() => setScheduleModalOpen(true)}
-              disabled={!selectedPersonaId}
-              title={
-                selectedPersonaId
-                  ? t.overview.memories.curation_schedule_button_hint
-                  : t.overview.memories.curation_schedule_button_no_persona
-              }
-              className="flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-modal border transition-all bg-secondary/30 hover:bg-secondary/50 border-primary/15 text-foreground disabled:opacity-40"
-            >
-              <CalendarClock className="w-3.5 h-3.5" />
-              {t.overview.memories.curation_schedule_button}
+            <button onClick={handleReview} disabled={memoryReviewRunning || memoriesTotal === 0} title={memoryReviewRunning ? 'Review running in background — you can switch tabs and come back' : memoriesTotal === 0 ? 'No memories to review' : undefined} className="flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-modal border transition-all bg-cyan-500/15 text-cyan-300 border-cyan-500/25 hover:bg-cyan-500/25 disabled:opacity-40">
+              {memoryReviewRunning ? <LoadingSpinner size="sm" /> : <Sparkles className="w-3.5 h-3.5" />}
+              {memoryReviewRunning ? 'Reviewing...' : 'Review'}
             </button>
             <button
               onClick={() => setShowAddForm((v) => !v)}
@@ -321,14 +303,7 @@ export default function MemoriesPage() {
         </ContentBody>
       )}
 
-      <ReviewResultsModal reviewResult={reviewResult} reviewError={reviewError} onClose={closeReviewModal} />
-
-      <CurationScheduleModal
-        personaId={selectedPersonaId}
-        personaName={selectedPersonaId ? personaMap.get(selectedPersonaId)?.name : undefined}
-        isOpen={scheduleModalOpen}
-        onClose={() => setScheduleModalOpen(false)}
-      />
+      <ReviewResultsModal reviewResult={memoryReviewResult} reviewError={memoryReviewError} onClose={clearMemoryReviewResult} />
 
       {selectedMemory && (() => {
           const persona = personaMap.get(selectedMemory.persona_id);

@@ -259,7 +259,7 @@ export default function EventLogList() {
         icon={<Zap className="w-5 h-5 text-status-warning" />}
         iconColor="amber"
         title={t.overview.events.title}
-        subtitle={`${filteredEvents.length}${serverHasMore ? '+' : ''} ${tx(recentEvents.length === 1 ? t.overview.events.subtitle_one : t.overview.events.subtitle, { filtered: filteredEvents.length, total: recentEvents.length })}`}
+        subtitle={tx(recentEvents.length === 1 ? t.overview.events.subtitle_one : t.overview.events.subtitle, { filtered: filteredEvents.length, total: `${recentEvents.length}${serverHasMore ? '+' : ''}` })}
         actions={
           <div className="flex items-center gap-2">
             {import.meta.env.DEV && (

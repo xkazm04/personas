@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Share2, Plus, Package, Eye, GitFork, Trash2 } from 'lucide-react';
+import { Share2, Plus, Package, Eye, GitFork, Trash2, WifiOff } from 'lucide-react';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useAgentStore } from "@/stores/agentStore";
@@ -214,6 +214,7 @@ export default function ExposureManager() {
   const fetchExposedResources = useSystemStore((s) => s.fetchExposedResources);
   const createExposedResource = useSystemStore((s) => s.createExposedResource);
   const deleteExposedResource = useSystemStore((s) => s.deleteExposedResource);
+  const p2pUnavailable = useSystemStore((s) => s.p2pUnavailable);
   const fetchPersonas = useAgentStore((s) => s.fetchPersonas);
   const addToast = useToastStore((s) => s.addToast);
 
@@ -225,6 +226,32 @@ export default function ExposureManager() {
   useEffect(() => {
     Promise.all([fetchExposedResources(), fetchPersonas()]).finally(() => setLoading(false));
   }, []);
+
+  if (p2pUnavailable) {
+    return (
+      <ContentBox>
+        <ContentHeader
+          icon={<Share2 className="w-5 h-5 text-cyan-400" />}
+          iconColor="cyan"
+          title={st.network_sharing_title}
+          subtitle={st.network_sharing_subtitle}
+        />
+        <ContentBody centered>
+          <div className="rounded-modal border border-dashed border-border p-8 text-center max-w-md mx-auto">
+            <WifiOff className="w-8 h-8 text-foreground/40 mx-auto mb-3" />
+            <h3 className="typo-body font-medium text-foreground mb-1">
+              P2P networking unavailable
+            </h3>
+            <p className="typo-caption text-foreground/70 leading-relaxed">
+              This build was compiled without the <code className="typo-code">p2p</code> feature.
+              Identity, peer discovery, and resource exposure are inactive. Run
+              <code className="typo-code"> npm run tauri:dev</code> (full build) to enable them.
+            </p>
+          </div>
+        </ContentBody>
+      </ContentBox>
+    );
+  }
 
   const handleAdd = async (input: CreateExposedResourceInput) => {
     try {

@@ -137,6 +137,7 @@ export function FirstUseConsentModal({ onAccept, isVersionBump }: FirstUseConsen
       containerClassName="fixed inset-0 z-[9999] flex items-center justify-center p-4"
       maxWidthClass="max-w-3xl"
       panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden max-h-[90vh]"
+      staggerChildren={false}
     >
         {/* Header */}
         <div className="px-6 pt-6 pb-4 border-b border-primary/10">

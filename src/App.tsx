@@ -74,7 +74,6 @@ const AlertToastContainer = lazy(() => import("@/features/overview/sub_observabi
 const NotificationCenter = lazy(() => import("@/features/shared/components/feedback/notifications/NotificationCenter").then(m => ({ default: m.NotificationCenter })));
 const ShareLinkHandler = lazy(() => import("@/features/sharing/components/ShareLinkHandler").then(m => ({ default: m.ShareLinkHandler })));
 const CompanionPanel = lazy(() => import("@/features/plugins/companion/CompanionPanel"));
-const OnboardingQuestPill = lazy(() => import("@/features/onboarding/components/OnboardingQuestPill"));
 // Idle-prefetch list: same modules as the lazy() declarations above. Hits the
 // V8 module cache so the corresponding lazy() resolves synchronously when the
 // overlays mount (or when the user triggers them via Cmd+K, the floating
@@ -91,7 +90,6 @@ const LAZY_OVERLAY_IMPORTS = [
   () => import("@/features/shared/components/feedback/notifications/NotificationCenter"),
   () => import("@/features/sharing/components/ShareLinkHandler"),
   () => import("@/features/plugins/companion/CompanionPanel"),
-  () => import("@/features/onboarding/components/OnboardingQuestPill"),
 ] as const;
 
 function DevMobilePreviewShortcut() {
@@ -246,7 +244,6 @@ export default function App() {
                 <NotificationCenter />
                 <ShareLinkHandler />
                 <CompanionPanel />
-                <OnboardingQuestPill />
               </Suspense>
             </>
           )}

@@ -95,8 +95,10 @@ When you add a new step, add an entry to both maps. Missing entries fall back si
 1. Add a new `*_STEPS` array and a new `TourDef` entry to `TOUR_REGISTRY` in `tourSlice.ts`.
 2. Add the tour id to the `TourId` union.
 3. Extend the `completionMap` initializer in `createTourSlice` to include the new id.
-4. Pick a tour-level `color` that exists in `COLOR_BY_KEY` (or add a new `ColorScheme` constant).
-5. Follow the per-step checklist above for each step.
+4. Pick a tour-level `color` that exists in `COLOR_BY_KEY` (or add a new `ColorScheme` constant). Existing palette: `violet` (getting-started), `blue` (execution-observability), `teal` (orchestration-events), `amber` (plugins-explorer), `emerald` (schedules-mastery), `indigo` (templates-recipes).
+5. Add the icon name to the `TOUR_ICONS` map in `src/features/home/components/HomeLearning.tsx` so the tour card renders properly in Home > Learning.
+6. Add a per-tour `COLORS` entry in the same file (matching the color key from step 4).
+7. Follow the per-step checklist above for each step.
 
 ## State persistence
 

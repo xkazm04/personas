@@ -20,7 +20,7 @@ import { useOverviewStore } from '@/stores/overviewStore';
 import { useAttention } from '@/hooks/useAttention';
 import { useOverviewFilterValues, useOverviewFilterActions } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { PersonaSelect } from '@/features/overview/sub_usage/components/PersonaSelect';
-import { ContentBox, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { ContentBox, ContentBody, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { HeroMesh } from '@/features/shared/components/display/HeroMesh';
 import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCounter';
 import { KpiTile } from '@/features/overview/components/shared/KpiTile';
@@ -150,18 +150,13 @@ export default function DashboardHomeMissionControl() {
     <ContentBox>
       <HeroMesh preset="dashboard" />
 
-      {/* Thin mono-accented header */}
-      <div className="relative px-4 md:px-6 xl:px-8 py-4 border-b border-primary/10 bg-primary/5 flex-shrink-0 flex items-center gap-4">
-        <div className="flex-1 min-w-0">
-          <div className="typo-caption uppercase tracking-[0.3em] text-foreground/50 font-mono">
-            Mission Control
-          </div>
-          <h1 className="typo-heading-lg text-foreground mt-0.5">
-            {greeting}, {displayName}
-          </h1>
-        </div>
-        <PersonaSelect value={selectedPersonaId} onChange={setSelectedPersonaId} personas={personas} />
-      </div>
+      <ContentHeader
+        eyebrow={t.overview.dashboard.mission_control_eyebrow}
+        title={`${greeting}, ${displayName}`}
+        actions={
+          <PersonaSelect value={selectedPersonaId} onChange={setSelectedPersonaId} personas={personas} />
+        }
+      />
 
       <ContentBody centered>
         <div className="space-y-4 pb-6 pt-2">

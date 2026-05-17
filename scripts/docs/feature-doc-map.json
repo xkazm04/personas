@@ -71,6 +71,61 @@
       "stepFile": "src/features/onboarding/components/DesktopDiscoveryStep.tsx",
       "tourEvent": null,
       "description": "Spotlights sidebar nav items so the user knows where to find things"
+    },
+    "plugins-browse": {
+      "stepFile": null,
+      "tourEvent": "tour:plugins-browse-explored",
+      "description": "Exploration step — plugin catalog page (PluginBrowsePage), highlights the toggle row"
+    },
+    "plugin-companion": {
+      "stepFile": null,
+      "tourEvent": "tour:plugin-surface-visited",
+      "description": "Exploration step — opens Companion plugin surface and walks proactive/autonomous modes"
+    },
+    "plugin-twin": {
+      "stepFile": null,
+      "tourEvent": "tour:plugin-surface-visited",
+      "description": "Exploration step — Twin plugin overview, profiles + tone + channels"
+    },
+    "plugin-dev-tools": {
+      "stepFile": null,
+      "tourEvent": "tour:plugin-surface-visited",
+      "description": "Exploration step — Dev Tools projects + idea scanner + task runner"
+    },
+    "plugin-others": {
+      "stepFile": null,
+      "tourEvent": "tour:plugin-surface-visited",
+      "description": "Exploration step — Artist, Drive, Obsidian Brain, Research Lab, Fleet, Langfuse"
+    },
+    "schedules-page": {
+      "stepFile": null,
+      "tourEvent": "tour:schedules-page-viewed",
+      "description": "Exploration step — Schedules dashboard overview (timeline + engine toggle)"
+    },
+    "schedules-views": {
+      "stepFile": null,
+      "tourEvent": "tour:schedules-view-toggled",
+      "description": "Exploration step — Schedules timeline vs calendar view toggle"
+    },
+    "schedules-attach": {
+      "stepFile": null,
+      "tourEvent": "tour:schedule-attached",
+      "description": "Exploration step — Attach a schedule trigger to an agent via Design > Triggers"
+    },
+    "templates-page": {
+      "stepFile": null,
+      "tourEvent": "tour:templates-page-viewed",
+      "description": "Exploration step — Templates gallery (generated + n8n + recipes tabs)"
+    },
+    "templates-adopt": {
+      "stepFile": null,
+      "tourEvent": "tour:template-adopted",
+      "description": "Exploration step — Adoption flow walkthrough (credentials + parameters + promote)"
+    },
+    "recipes-tab": {
+      "stepFile": null,
+      "tourEvent": "tour:recipes-explored",
+      "description": "Exploration step — Recipes catalog, playground, and attach-to-agent flow"
     }
   },
   "entries": [
@@ -98,7 +153,7 @@
         "src-tauri/src/engine/template_checksums.rs",
         "src-tauri/src/engine/build_session/**"
       ],
-      "onboardingFlows": ["template-picker", "persona-creation"],
+      "onboardingFlows": ["template-picker", "persona-creation", "templates-page", "templates-adopt"],
       "marketingModule": "templates"
     },
     {
@@ -149,6 +204,7 @@
         "src/features/recipes/**",
         "src-tauri/src/commands/recipes/**"
       ],
+      "onboardingFlows": ["recipes-tab"],
       "marketingModule": "agents"
     },
     {
@@ -186,8 +242,10 @@
     {
       "doc": "docs/features/onboarding.md",
       "sourceGlobs": [
-        "src/features/onboarding/**"
+        "src/features/onboarding/**",
+        "src/stores/slices/system/tourSlice.ts"
       ],
+      "onboardingFlows": ["plugins-browse", "plugin-others"],
       "marketingModule": "home"
     },
     {
@@ -212,7 +270,7 @@
         "src/features/plugins/companion/**",
         "src-tauri/src/commands/companion/**"
       ],
-      "onboardingFlows": ["messages-tab"],
+      "onboardingFlows": ["messages-tab", "plugin-companion"],
       "marketingModule": "plugins"
     },
     {
@@ -221,6 +279,7 @@
         "src/features/plugins/dev-tools/**",
         "src-tauri/src/commands/infrastructure/dev_tools.rs"
       ],
+      "onboardingFlows": ["plugin-dev-tools"],
       "marketingModule": "plugins"
     },
     {
@@ -262,6 +321,7 @@
         "src/features/plugins/twin/**",
         "src-tauri/src/commands/infrastructure/twin.rs"
       ],
+      "onboardingFlows": ["plugin-twin"],
       "marketingModule": "plugins"
     },
     {
@@ -307,6 +367,7 @@
       "sourceGlobs": [
         "src/features/schedules/**"
       ],
+      "onboardingFlows": ["schedules-page", "schedules-views", "schedules-attach"],
       "marketingModule": "schedules"
     },
     {

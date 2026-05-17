@@ -23,6 +23,7 @@ import { useEffect } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { getActiveRelease, getReleaseByVersion } from '@/data/releases';
+import { silentCatch } from '@/lib/silentCatch';
 import { useReleasesTranslation } from './i18n/useReleasesTranslation';
 import ReleaseDetailView from './ReleaseDetailView';
 import HomeRoadmapView from './HomeRoadmapView';
@@ -41,8 +42,8 @@ function readInitialSelection(): string {
       // every mount and keep flashing the wrong tab before the fallback.
       window.sessionStorage.removeItem(SELECTION_STORAGE_KEY);
     }
-  } catch {
-    // sessionStorage may be unavailable (e.g. SSR, sandboxed iframes) — fall back silently.
+  } catch (err) {
+    silentCatch('HomeReleases:readInitialSelection')(err);
   }
   return getActiveRelease().version;
 }

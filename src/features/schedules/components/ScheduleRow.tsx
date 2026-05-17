@@ -1,13 +1,15 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Play, Clock, Settings2, Pause, ToggleLeft, ToggleRight,
-  CheckCircle2, AlertTriangle, XCircle, History,
+  CheckCircle2, AlertTriangle, XCircle, History, ChevronDown, SkipForward, Timer,
+  ChevronRight,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { ScheduleEntry } from '../libs/scheduleHelpers';
 import { formatRelative } from '../libs/scheduleHelpers';
 import FrequencyEditor from './FrequencyEditor';
 import BackfillModal from './BackfillModal';
+import { ScheduleRowHistoryPanel } from './ScheduleRowHistoryPanel';
 import type { BackfillResult } from '@/api/pipeline/scheduler';
 import { useThemeStore } from '@/stores/themeStore';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
@@ -25,6 +27,8 @@ interface ScheduleRowProps {
   onUpdateFrequency: (cron: string | null, intervalSeconds: number | null, timezone?: string) => void;
   onBackfill: (startIso: string, endIso: string) => Promise<void>;
   onPreviewCron: (expression: string, timezone?: string) => Promise<import('@/api/pipeline/triggers').CronPreview | null>;
+  onSkipNextFire: () => void;
+  onRunIn: (delayMs: number) => void;
 }
 
 export default function ScheduleRow({
@@ -39,6 +43,8 @@ export default function ScheduleRow({
   onUpdateFrequency,
   onBackfill,
   onPreviewCron,
+  onSkipNextFire,
+  onRunIn,
 }: ScheduleRowProps) {
   const { t } = useTranslation();
 
@@ -52,6 +58,27 @@ export default function ScheduleRow({
 
   const [showFreqEditor, setShowFreqEditor] = useState(false);
   const [showBackfill, setShowBackfill] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const advancedRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!showAdvanced) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (advancedRef.current && !advancedRef.current.contains(e.target as Node)) {
+        setShowAdvanced(false);
+      }
+    };
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowAdvanced(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [showAdvanced]);
   const timezone = useThemeStore((s) => s.timezone);
   const tzLabel = timezone === 'local' ? Intl.DateTimeFormat().resolvedOptions().timeZone.split('/').pop()?.replace(/_/g, ' ') || 'Local'
     : timezone === 'utc' ? 'UTC'
@@ -64,10 +91,14 @@ export default function ScheduleRow({
 
   return (
     <>
-      <div className={`group flex items-center gap-3 px-4 py-3 rounded-modal border border-l-[3px] transition-all ${healthAccent} ${disabled
+      <div className={`group border border-l-[3px] transition-all ${healthAccent} ${
+        showHistory ? 'rounded-modal' : 'rounded-modal'
+      } ${
+        disabled
           ? 'border-primary/5 bg-primary/[0.02] opacity-60'
           : 'border-primary/10 bg-primary/[0.03] hover:bg-primary/[0.05] hover:border-primary/20'
-        }`}>
+      }`}>
+      <div className="flex items-center gap-3 px-4 py-3">
         {/* Agent icon */}
         <PersonaIcon icon={agent.persona_icon} color={agent.persona_color} display="framed" frameSize={"lg"} />
 
@@ -126,9 +157,16 @@ export default function ScheduleRow({
             <div className="typo-caption text-foreground">--</div>
           )}
           {lastRun && (
-            <div className="text-[10px] text-foreground mt-0.5">
-              last {formatRelative(lastRun.toISOString())}
-            </div>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setShowHistory((v) => !v); }}
+              aria-expanded={showHistory}
+              aria-label={showHistory ? t.schedules.recent_runs_hide_aria : t.schedules.recent_runs_aria}
+              className="inline-flex items-center gap-1 text-[10px] text-foreground mt-0.5 hover:text-foreground/80 transition-colors group/peek"
+            >
+              <ChevronRight className={`w-2.5 h-2.5 transition-transform ${showHistory ? 'rotate-90' : ''} text-foreground/55 group-hover/peek:text-foreground/80`} />
+              <span>last {formatRelative(lastRun.toISOString())}</span>
+            </button>
           )}
         </div>
 
@@ -148,20 +186,84 @@ export default function ScheduleRow({
         </div>
 
         {/* Action panel */}
-        <div className="flex items-center gap-0.5 shrink-0 ml-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          {/* Manual execute */}
-          <button
-            onClick={onManualExecute}
-            disabled={isExecuting || disabled}
-            className="p-2 rounded-card hover:bg-emerald-500/15 text-foreground hover:text-emerald-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            title={t.schedules.run_now}
-          >
-            {isExecuting ? (
-              <LoadingSpinner size="sm" />
-            ) : (
-              <Play className="w-4 h-4" />
+        <div className="flex items-center gap-0.5 shrink-0 ml-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+          {/* Manual execute + advanced-actions caret (segmented) */}
+          <div className="relative inline-flex" ref={advancedRef}>
+            <button
+              onClick={onManualExecute}
+              disabled={isExecuting || disabled}
+              className="p-2 rounded-l-card hover:bg-emerald-500/15 text-foreground hover:text-emerald-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              title={t.schedules.run_now}
+            >
+              {isExecuting ? (
+                <LoadingSpinner size="sm" />
+              ) : (
+                <Play className="w-4 h-4" />
+              )}
+            </button>
+            <button
+              onClick={() => setShowAdvanced((v) => !v)}
+              disabled={disabled}
+              aria-haspopup="menu"
+              aria-expanded={showAdvanced}
+              aria-label={t.schedules.advanced_actions_aria}
+              className={`px-1 py-2 rounded-r-card border-l border-primary/10 text-foreground hover:bg-emerald-500/15 hover:text-emerald-400 transition-colors disabled:opacity-40 ${
+                showAdvanced ? 'bg-emerald-500/10 text-emerald-400' : ''
+              }`}
+              title={t.schedules.more_actions}
+            >
+              <ChevronDown className={`w-3 h-3 transition-transform ${showAdvanced ? 'rotate-180' : ''}`} />
+            </button>
+            {showAdvanced && (
+              <div
+                role="menu"
+                className="absolute right-0 top-full mt-1 w-[224px] rounded-card border border-primary/15 bg-background shadow-elevation-3 z-20 overflow-hidden"
+              >
+                <button
+                  role="menuitem"
+                  onClick={() => { setShowAdvanced(false); onSkipNextFire(); }}
+                  disabled={!entry.nextRun || disabled}
+                  className="w-full flex items-start gap-2 px-3 py-2 text-left typo-caption hover:bg-secondary/50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  <SkipForward className="w-3.5 h-3.5 mt-0.5 shrink-0 text-foreground" />
+                  <span className="flex-1">
+                    <span className="block text-foreground/90 font-medium">{t.schedules.skip_next_fire}</span>
+                    <span className="block text-[10px] text-foreground/60 mt-0.5 leading-snug">
+                      {t.schedules.skip_next_fire_hint}
+                    </span>
+                  </span>
+                </button>
+                <div className="border-t border-primary/10" />
+                <div className="px-3 pt-2 pb-1 flex items-center gap-1.5">
+                  <Timer className="w-3 h-3 text-foreground/60" />
+                  <span className="text-[10px] uppercase tracking-wider text-foreground/60">
+                    {t.schedules.delayed_run_heading}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-1 px-2 pb-1">
+                  {[
+                    { label: t.schedules.run_in_5min, ms: 5 * 60_000 },
+                    { label: t.schedules.run_in_15min, ms: 15 * 60_000 },
+                    { label: t.schedules.run_in_30min, ms: 30 * 60_000 },
+                    { label: t.schedules.run_in_1h, ms: 60 * 60_000 },
+                  ].map((opt) => (
+                    <button
+                      key={opt.ms}
+                      role="menuitem"
+                      onClick={() => { setShowAdvanced(false); onRunIn(opt.ms); }}
+                      disabled={disabled}
+                      className="px-2 py-1.5 typo-caption rounded-card bg-secondary/40 hover:bg-emerald-500/15 hover:text-emerald-400 text-foreground/80 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="px-3 pb-2 text-[10px] text-foreground/55 leading-snug">
+                  {t.schedules.delayed_run_hint}
+                </p>
+              </div>
             )}
-          </button>
+          </div>
 
           {/* Backfill missed runs */}
           {canBackfill && (
@@ -202,6 +304,20 @@ export default function ScheduleRow({
             )}
           </button>
         </div>
+      </div>
+
+      {/* Inline run-history peek (Stage 1) */}
+      {showHistory && (
+        <div role="region" aria-label={t.schedules.recent_runs} className="border-t border-primary/10 bg-primary/[0.015]">
+          <div className="px-4 pt-2 flex items-center gap-1.5">
+            <History className="w-3 h-3 text-foreground/55" />
+            <span className="text-[10px] uppercase tracking-wider text-foreground/55">
+              {t.schedules.recent_runs}
+            </span>
+          </div>
+          <ScheduleRowHistoryPanel triggerId={agent.trigger_id} />
+        </div>
+      )}
       </div>
 
       {/* Frequency editor modal */}

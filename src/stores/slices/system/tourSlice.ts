@@ -8,7 +8,14 @@ import { en } from "@/i18n/en";
 
 export type TourStepId = string;
 
-export type TourId = "getting-started" | "getting-started-simple" | "execution-observability" | "orchestration-events";
+export type TourId =
+  | "getting-started"
+  | "getting-started-simple"
+  | "execution-observability"
+  | "orchestration-events"
+  | "plugins-explorer"
+  | "schedules-mastery"
+  | "templates-recipes";
 
 /**
  * The single source of truth for tour completion event keys.
@@ -44,6 +51,18 @@ export const TOUR_EVENTS = [
   'tour:triggers-explored',
   'tour:chaining-understood',
   'tour:livestream-viewed',
+  // Plugins Explorer
+  'tour:plugins-browse-explored',
+  'tour:plugin-enabled',
+  'tour:plugin-surface-visited',
+  // Schedules Mastery
+  'tour:schedules-page-viewed',
+  'tour:schedules-view-toggled',
+  'tour:schedule-attached',
+  // Templates & Recipes
+  'tour:templates-page-viewed',
+  'tour:template-adopted',
+  'tour:recipes-explored',
 ] as const;
 
 export type TourEventKey = (typeof TOUR_EVENTS)[number];
@@ -76,6 +95,19 @@ export const EXPLORATION_TOUR_EVENTS = new Set<TourEventKey>([
   'tour:triggers-explored',
   'tour:chaining-understood',
   'tour:livestream-viewed',
+  // Plugins Explorer — all steps are walk-around stops; we can't reliably
+  // observe "user understood this plugin". Acknowledge-button advances.
+  'tour:plugins-browse-explored',
+  'tour:plugin-enabled',
+  'tour:plugin-surface-visited',
+  // Schedules Mastery
+  'tour:schedules-page-viewed',
+  'tour:schedules-view-toggled',
+  'tour:schedule-attached',
+  // Templates & Recipes
+  'tour:templates-page-viewed',
+  'tour:template-adopted',
+  'tour:recipes-explored',
 ]);
 
 /** True when a step's completion is gated on the user clicking acknowledge rather than a real interaction. */
@@ -167,16 +199,17 @@ const GETTING_STARTED_STEPS: TourStepDef[] = [
   {
     id: "persona-creation",
     title: "Build Your First Agent",
-    description: "Let's build an AI agent together. Describe what you want it to do, and the system will design an 8-dimension specification.",
+    description: "Let's build an AI agent together. Describe what you want it to do — the build session asks clarifying questions, drafts an 8-dimension matrix, runs a built-in smoke test, and lets you promote when you're happy.",
     hint: "Describe your agent's purpose in the intent field.",
     nav: { sidebarSection: "personas" },
     completeOn: "tour:persona-promoted",
     panelWidth: 320,
     subSteps: [
-      { id: "enter-intent", label: "Describe your agent", hint: "Type what your agent should do.", highlightTestId: "agent-intent-input" },
-      { id: "answer-questions", label: "Answer questions", hint: "The AI is asking clarifying questions to refine your agent." },
-      { id: "review-draft", label: "Review the matrix", hint: "The 8-cell matrix shows your agent's full specification." },
-      { id: "test-promote", label: "Test & promote", hint: "Run the test and promote to production.", highlightTestId: "agent-test-btn" },
+      { id: "enter-intent", label: "Describe your agent", hint: "Type a one-line job description. Be concrete — \"summarize my GitHub PR reviews each morning\" beats \"helps with code\".", highlightTestId: "agent-intent-input" },
+      { id: "answer-questions", label: "Answer follow-ups", hint: "The system asks clarifying questions in-line. Each answer narrows what the draft will look like." },
+      { id: "review-draft", label: "Inspect the matrix", hint: "The 8-cell matrix is your agent's full specification — purpose, voice, tools, triggers, output, guardrails, memory, escalation. Edit any cell to refine.", highlightTestId: "build-layout-prototype" },
+      { id: "open-test-report", label: "Open the test report", hint: "Once the smoke test finishes, click here to see what passed and what to fix.", highlightTestId: "build-test-report-open" },
+      { id: "promote", label: "Promote to production", hint: "When the test report is green, promote the build. The agent goes live and the tour completes." },
     ],
   },
 ];
@@ -233,16 +266,17 @@ const EXECUTION_OBSERVABILITY_STEPS: TourStepDef[] = [
   {
     id: "lab-arena",
     title: "Lab: Test & Optimize",
-    description: "The Lab lets you compare AI models head-to-head, optimize prompts with AI assistance, and track version history. Select an agent and open the Lab tab to explore.",
+    description: "The Lab is where you sharpen a live agent: compare models head-to-head in Arena, A/B-test prompt variants, browse the full version history, and watch how use-cases score across changes.",
     hint: "Select an agent, open the Lab tab, and explore Arena mode.",
     nav: { sidebarSection: "personas" },
     completeOn: "tour:lab-explored",
     panelWidth: 360,
     subSteps: [
-      { id: "select-agent", label: "Select an agent", hint: "Click any agent in the list to open its editor." },
-      { id: "open-lab", label: "Open Lab tab", hint: "Click the Lab tab (flask icon) to enter the testing environment.", highlightTestId: "tab-lab" },
-      { id: "arena-mode", label: "Arena mode", hint: "Arena compares models head-to-head. Select models and run a test." },
-      { id: "versions", label: "Version history", hint: "The Versions tab tracks all prompt changes. You can rollback or A/B test any pair." },
+      { id: "select-agent", label: "Pick a promoted agent", hint: "Lab works on agents that already have a promoted build — click one in the list to open its editor." },
+      { id: "open-lab", label: "Open the Lab tab", hint: "Click the flask icon in the editor tab bar. Lab is Team-tier and up.", highlightTestId: "editor-tab-lab" },
+      { id: "arena-mode", label: "Run Arena", hint: "Arena pits multiple models against the same use-case in parallel. Pick 2–3 models and hit start to see side-by-side outputs." },
+      { id: "ab-mode", label: "Try A/B mode", hint: "A/B compares two prompt variants on the same model. Useful when you're tightening copy rather than swapping providers." },
+      { id: "versions", label: "Browse version history", hint: "Every promote creates a version. Diff any two, rollback, or send a pair to Arena to back up the rollback decision with data." },
     ],
   },
 ];
@@ -251,52 +285,57 @@ const ORCHESTRATION_EVENTS_STEPS: TourStepDef[] = [
   {
     id: "events-intro",
     title: "The Event Bus",
-    description: "Every action in Personas generates events — executions completing, webhooks arriving, schedules firing. The Events module lets you see, filter, and act on this real-time event stream.",
-    hint: "Explore the event log and filter by type.",
+    description: "Every action in Personas generates events — executions completing, webhooks arriving, schedules firing. The Overview > Events tab is the read-only log; the Events sidebar section is where you wire and inspect routing.",
+    hint: "Browse the recent event log and try filtering by type.",
     nav: { sidebarSection: "overview", subTab: "events", subTabSetter: "setOverviewTab" },
     completeOn: "tour:events-viewed",
+    highlightTestId: "overview-page",
     subSteps: [
-      { id: "event-log", label: "Event log", hint: "Each row shows an event with type, source, target agent, and status." },
-      { id: "event-types", label: "Event types", hint: "Filter by type to see: execution_completed, webhook_received, schedule_fired, and more." },
-      { id: "event-detail", label: "Event details", hint: "Click any event to inspect its full JSON payload." },
+      { id: "event-log", label: "Event log", hint: "Each row shows an event with its type, source, target agent, and outcome status." },
+      { id: "event-types", label: "Filter by type", hint: "Try filtering: execution_completed, webhook_received, schedule_fired, manual_trigger, escalation, and the healing/incident events." },
+      { id: "event-detail", label: "Inspect payload", hint: "Click any row to open the JSON payload viewer — that's exactly what listeners receive." },
     ],
   },
   {
     id: "trigger-types",
     title: "Trigger Types: Pull, Push & Compose",
-    description: "Triggers define when and how agents activate. PULL triggers watch for changes (schedule, polling). PUSH triggers receive signals (webhook, event listener). COMPOSE triggers chain agents together.",
-    hint: "Look at the trigger configuration on an agent.",
+    description: "Triggers define when an agent activates. PULL watches for changes (schedule, polling), PUSH receives signals (webhook, event_listener), COMPOSE chains agents (chain trigger). Every agent has at least one.",
+    hint: "Open an agent's Design > Triggers tab to see what it listens to.",
     nav: { sidebarSection: "personas" },
     completeOn: "tour:triggers-explored",
     panelWidth: 360,
     subSteps: [
-      { id: "view-triggers", label: "View triggers", hint: "Select an agent and check its Connectors tab to see configured triggers." },
-      { id: "trigger-categories", label: "Pull vs Push vs Compose", hint: "Schedule = Pull (watch), Webhook = Push (listen), Chain = Compose (combine)." },
+      { id: "view-triggers", label: "Open Design > Triggers", hint: "Select an agent → editor opens → click Design tab → Triggers sub-tab. The list shows every trigger currently attached." },
+      { id: "trigger-categories", label: "Three trigger families", hint: "Schedule/cron = Pull. Webhook/email/event_listener = Push. Chain = Compose. The badge color on each card hints at the family." },
+      { id: "add-trigger", label: "Add a trigger", hint: "The \"Add trigger\" picker shows every available type with its required credentials. Most need only a service connection in the Vault." },
     ],
   },
   {
     id: "event-chaining",
     title: "Chaining Agents Together",
-    description: "The chain trigger is the key to orchestration. When Persona A completes, it emits 'execution_completed'. Persona B listens via an event_listener trigger and auto-executes. This creates powerful multi-agent workflows.",
-    hint: "Understand how the chain trigger connects agents.",
+    description: "The chain trigger is the key to multi-agent workflows. Agent A completes → emits execution_completed → Agent B's event_listener fires → Agent B runs. The Event Canvas visualises this graph and lets you wire new chains by dragging.",
+    hint: "Look at the canvas — sources on the left, consumers on the right.",
     nav: { sidebarSection: "events", subTab: "builder", subTabSetter: "setEventBusTab" },
     completeOn: "tour:chaining-understood",
+    highlightTestId: "triggers-page",
     subSteps: [
-      { id: "chain-concept", label: "Chain concept", hint: "A→B chaining: Agent A finishes → emits event → Agent B's trigger fires → Agent B executes." },
-      { id: "event-canvas", label: "Event canvas", hint: "The visual canvas shows event sources on the left and consuming agents on the right." },
-      { id: "source-filter", label: "Source filters", hint: "Use source_filter to listen only to specific agents, e.g., 'persona-a'." },
+      { id: "chain-concept", label: "Chain concept", hint: "A→B chaining: A finishes → emits event → B's trigger matches → B executes. Chain B→C and you have a pipeline." },
+      { id: "event-canvas", label: "Walk the canvas", hint: "Sources column (left) lists every event type emitters can produce. The middle shows fan-out edges. Consumers (right) are agents subscribed to those events." },
+      { id: "source-filter", label: "Source filters", hint: "An event_listener with source_filter: \"persona-a\" only fires on events from persona-a. Without it, it fires on any agent emitting that event type." },
     ],
   },
   {
     id: "live-stream",
     title: "Live Event Stream",
-    description: "Watch events flow through your system in real-time. See which agents trigger which, track execution chains, and debug event routing. Events appear instantly as they're published.",
-    hint: "Watch the live stream to see events arriving.",
+    description: "The live-stream tab is the same event bus, but rendered in real-time. Use it to debug chains while they fire, watch a webhook propagate, or sanity-check rate-limits when something seems silently dropped.",
+    hint: "Watch the stream tick. Trigger a manual execution to see the events arrive.",
     nav: { sidebarSection: "events", subTab: "live-stream", subTabSetter: "setEventBusTab" },
     completeOn: "tour:livestream-viewed",
+    highlightTestId: "triggers-page",
     subSteps: [
-      { id: "stream-watch", label: "Watch events", hint: "Events appear in real-time with type, source, target, and status." },
-      { id: "stream-filter", label: "Filter events", hint: "Filter by event type or persona to focus on specific chains." },
+      { id: "stream-watch", label: "Watch events", hint: "Events appear top-to-bottom as they're published. Color codes match the Overview log — green success, red failure, amber warning." },
+      { id: "stream-filter", label: "Filter the stream", hint: "Filter by event type or persona to focus on a specific chain. Combine with the rate-limits tab when chains are dropping events." },
+      { id: "dead-letter", label: "Check dead-letter", hint: "Events that exceeded retry caps land in dead-letter. The tab next to live-stream lists them — replay individually or in bulk after fixing the consumer." },
     ],
   },
 ];
@@ -328,15 +367,186 @@ const GETTING_STARTED_SIMPLE_STEPS: TourStepDef[] = [
   {
     id: "persona-creation",
     title: "Create Your First Agent",
-    description: "Describe what you want your agent to do in plain language. The system will set everything up for you.",
+    description: "Describe what you want your agent to do in plain language. The system will draft it for you, run a quick test, and let you promote it live.",
     hint: "Type a simple description like \"Summarize my daily emails\" or \"Monitor Slack for urgent messages\".",
     nav: { sidebarSection: "personas" },
     completeOn: "tour:persona-promoted",
     panelWidth: 320,
     subSteps: [
       { id: "enter-intent", label: "Describe it", hint: "What should your agent do?", highlightTestId: "agent-intent-input" },
-      { id: "review-draft", label: "Review", hint: "Check the agent looks right." },
-      { id: "test-promote", label: "Try it out", hint: "Run a test to see it in action.", highlightTestId: "agent-test-btn" },
+      { id: "review-draft", label: "Review the draft", hint: "Skim the matrix — each cell is a behavior the agent will follow." },
+      { id: "open-test-report", label: "Open the test report", hint: "When the smoke test finishes, click it to see what passed.", highlightTestId: "build-test-report-open" },
+      { id: "promote", label: "Promote it", hint: "When the test report looks good, hit promote. Your agent is live." },
+    ],
+  },
+];
+
+const PLUGINS_EXPLORER_STEPS: TourStepDef[] = [
+  {
+    id: "plugins-browse",
+    title: "The Plugins Browser",
+    description: "Plugins extend Personas with new surfaces — image generation, repository tooling, Obsidian sync, research workflows, voice cloning, observability, and an AI companion. This is the catalog: toggle a plugin on and it shows up in the Plugins sidebar.",
+    hint: "Toggle one plugin on, then off — watch the sidebar nav react.",
+    nav: { sidebarSection: "plugins", subTab: "browse" },
+    completeOn: "tour:plugins-browse-explored",
+    highlightTestId: "plugin-browse-page",
+    panelWidth: 360,
+    subSteps: [
+      { id: "scan-catalog", label: "Scan the catalog", hint: "Each card shows what the plugin does in one line. Disabled cards are dimmed; enabled ones get a colored border." },
+      { id: "toggle-plugin", label: "Toggle one on", hint: "Flip the switch on any plugin to add it to your workspace. The sidebar updates immediately." },
+      { id: "tier-gating", label: "Tier gates", hint: "Some plugins (Twin, Research Lab, Fleet) require Team tier or higher. The catalog still shows them — useful for understanding what's available." },
+    ],
+  },
+  {
+    id: "plugin-companion",
+    title: "Companion — your AI sidekick",
+    description: "Companion is an always-available chat panel that knows about your agents, executions, and recent activity. It can answer questions, draft persona descriptions, and propose actions you can run with one click.",
+    hint: "Open the Companion panel (footer icon) and ask it about your fleet.",
+    nav: { sidebarSection: "plugins", subTab: "companion" },
+    completeOn: "tour:plugin-surface-visited",
+    highlightTestId: "companion-panel",
+    subSteps: [
+      { id: "open-companion", label: "Open the panel", hint: "The companion icon lives in the footer. Click to expand the chat surface." },
+      { id: "proactive-cards", label: "Proactive cards", hint: "Companion sometimes surfaces \"Did you know?\" cards inline. Engage or dismiss." },
+      { id: "autonomous", label: "Autonomous mode", hint: "Toggle autonomous to let Companion act on its own when it has high-confidence suggestions. Manual review stays default." },
+    ],
+  },
+  {
+    id: "plugin-twin",
+    title: "Twin — your AI identity",
+    description: "Twin captures your communication style, knowledge, and voice so agents can speak as you. Train it on past emails, set tone profiles, and route channels (Slack, email) through your twin.",
+    hint: "Open Twin and look at the eight sub-tabs.",
+    nav: { sidebarSection: "plugins", subTab: "twin" },
+    completeOn: "tour:plugin-surface-visited",
+    highlightTestId: "twin-page",
+    panelWidth: 360,
+    subSteps: [
+      { id: "twin-profiles", label: "Profiles", hint: "Each profile is a distinct identity — \"work me\", \"weekend me\". Agents can pick which one to channel." },
+      { id: "twin-tone", label: "Tone & voice", hint: "The Tone tab teaches the system how you write. The Voice tab handles audio cloning (Team+)." },
+      { id: "twin-channels", label: "Channel routing", hint: "Connect Slack/email so messages drafted by an agent get reviewed-as-you before sending." },
+    ],
+  },
+  {
+    id: "plugin-dev-tools",
+    title: "Dev Tools — projects, ideas, runners",
+    description: "Dev Tools is the workspace-management plugin. Track local projects, scan a repo for idea seeds, triage the backlog, and dispatch task-runners. Useful when an agent's job is to wrangle code.",
+    hint: "Open Dev Tools and skim the seven sub-tabs.",
+    nav: { sidebarSection: "plugins", subTab: "dev-tools" },
+    completeOn: "tour:plugin-surface-visited",
+    highlightTestId: "dev-tools-page",
+    subSteps: [
+      { id: "dev-projects", label: "Projects", hint: "Register a local repo so agents can chat with its files, scan for issues, or run scripts." },
+      { id: "dev-idea-scanner", label: "Idea scanner / triage", hint: "Scan a project for backlog candidates, then approve or reject them in Idea Triage. Approved ideas become tasks." },
+      { id: "dev-task-runner", label: "Task runner", hint: "Dispatch tasks to remote workers (or Claude Code sessions). Watch progress with live logs." },
+    ],
+  },
+  {
+    id: "plugin-others",
+    title: "The Rest of the Plugins",
+    description: "Five more plugins round out the catalog: Artist (image generation), Drive (file sync), Obsidian Brain (note vault), Research Lab (literature → hypotheses → experiments), Langfuse (observability), and Fleet (multi-agent orchestration).",
+    hint: "Browse each plugin from the catalog and enable any that look useful.",
+    nav: { sidebarSection: "plugins", subTab: "browse" },
+    completeOn: "tour:plugin-surface-visited",
+    highlightTestId: "plugin-browse-page",
+    panelWidth: 360,
+    subSteps: [
+      { id: "artist", label: "Artist", hint: "Leonardo + Blender + media studio. Agents that produce images or video assets use this." },
+      { id: "drive-obsidian", label: "Drive & Obsidian Brain", hint: "Drive syncs files; Obsidian Brain indexes your vault for knowledge retrieval and graph navigation." },
+      { id: "research-fleet", label: "Research Lab & Fleet", hint: "Research Lab structures literature reviews and experiments. Fleet orchestrates many agents on a grid with shared decisions." },
+      { id: "langfuse", label: "Langfuse", hint: "External observability. Pipe execution traces to Langfuse for cost, latency, and prompt analysis." },
+    ],
+  },
+];
+
+const SCHEDULES_MASTERY_STEPS: TourStepDef[] = [
+  {
+    id: "schedules-page",
+    title: "The Schedules Dashboard",
+    description: "Schedules is the at-a-glance view of every cron- and interval-driven agent in your fleet. It shows what fires next, what's paused, and lets you flip the global scheduler engine on or off.",
+    hint: "Browse the active and paused schedules.",
+    nav: { sidebarSection: "schedules" },
+    completeOn: "tour:schedules-page-viewed",
+    highlightTestId: "schedules-page",
+    subSteps: [
+      { id: "engine-toggle", label: "Engine toggle", hint: "The green/red badge in the header is the global scheduler. Pause it during deploys; resume to bring everything back." },
+      { id: "active-paused", label: "Active vs paused", hint: "Active triggers have a blue badge with the count. Paused ones sit grouped with a pause icon — useful when debugging chains." },
+      { id: "filter-by-persona", label: "Filter by persona", hint: "Click a persona name in the sidebar to filter schedules to just that agent. The blue indicator shows when a filter is active." },
+    ],
+  },
+  {
+    id: "schedules-views",
+    title: "Timeline vs Calendar",
+    description: "Two views of the same data. Timeline groups by time window (now, today, this week, later) — great for \"what's about to fire?\". Calendar shows month/week grids — better for \"how dense is Tuesday?\".",
+    hint: "Toggle between Timeline and Calendar views.",
+    nav: { sidebarSection: "schedules" },
+    completeOn: "tour:schedules-view-toggled",
+    highlightTestId: "schedules-page",
+    subSteps: [
+      { id: "timeline-view", label: "Timeline view", hint: "Default view. Groups by relative time so the next-to-fire schedule is always at the top." },
+      { id: "calendar-view", label: "Calendar view", hint: "Click the view-tabs to switch to month/week. Hover any event to see persona, trigger config, and next fire time." },
+      { id: "backfill", label: "Backfill missed runs", hint: "If the engine was paused and you want missed runs to execute now, the Backfill modal on any schedule replays the window." },
+    ],
+  },
+  {
+    id: "schedules-attach",
+    title: "Attach a Schedule to an Agent",
+    description: "Schedules are just triggers under the hood. Open any agent's Design > Triggers tab, add a schedule trigger, set a cron expression or fixed interval, and save. It appears here on the next refresh.",
+    hint: "Open an agent's Design > Triggers tab and add a schedule trigger.",
+    nav: { sidebarSection: "personas" },
+    completeOn: "tour:schedule-attached",
+    panelWidth: 360,
+    subSteps: [
+      { id: "open-agent", label: "Open an agent", hint: "Pick any agent from the list to enter its editor." },
+      { id: "open-design-triggers", label: "Open Design > Triggers", hint: "Click the Design tab, then the Triggers sub-tab. The current trigger list shows what already fires the agent." },
+      { id: "add-schedule", label: "Add a schedule trigger", hint: "Hit \"Add trigger\" → pick Schedule. Choose cron or interval, set the frequency, save." },
+      { id: "verify-in-list", label: "Verify on the dashboard", hint: "Navigate back to Schedules. Your new trigger appears with its next fire time and a fresh \"active\" badge." },
+    ],
+  },
+];
+
+const TEMPLATES_RECIPES_STEPS: TourStepDef[] = [
+  {
+    id: "templates-page",
+    title: "Templates Gallery",
+    description: "Templates are pre-built agents you can adopt with one click — the catalog covers ~200 patterns (research, monitoring, code review, support, etc). Adoption opens a guided form that asks only for credentials and parameters that template needs.",
+    hint: "Browse the generated templates and the n8n importer.",
+    nav: { sidebarSection: "design-reviews" },
+    completeOn: "tour:templates-page-viewed",
+    highlightTestId: "templates-page",
+    subSteps: [
+      { id: "generated-tab", label: "Generated templates", hint: "AI-curated patterns sorted by popularity and capability match. Each card shows required connectors as chips so you know what to set up first." },
+      { id: "n8n-tab", label: "n8n importer", hint: "Got a working n8n workflow? Paste the JSON or drop the file — the importer translates nodes into a Personas agent draft." },
+      { id: "recipes-tab", label: "Recipes tab", hint: "Recipes are reusable multi-step plays (not full agents). We'll dig in next." },
+    ],
+  },
+  {
+    id: "templates-adopt",
+    title: "Adopting a Template",
+    description: "Pick a template card → the adoption flow opens. It walks you through three things: credentials (which Vault connectors to attach), parameters (slots the template asks the user to fill), and review (final matrix before promoting).",
+    hint: "Click any generated template to start its adoption flow.",
+    nav: { sidebarSection: "design-reviews", subTab: "generated", subTabSetter: "setTemplateTab" },
+    completeOn: "tour:template-adopted",
+    panelWidth: 360,
+    highlightTestId: "templates-page",
+    subSteps: [
+      { id: "pick-template", label: "Pick a template", hint: "Click the most relevant card. Filters at the top help narrow by capability." },
+      { id: "connect-credentials", label: "Connect credentials", hint: "The adoption form lists required connectors. Click \"Add\" on each missing one to open the Vault picker inline." },
+      { id: "fill-parameters", label: "Fill parameters", hint: "Template-specific slots (Slack channel, GitHub repo, etc.) live below credentials. They become part of the prompt." },
+      { id: "promote", label: "Approve & promote", hint: "Review the rendered matrix → Approve. The agent goes live just like a hand-built one." },
+    ],
+  },
+  {
+    id: "recipes-tab",
+    title: "Recipes — Reusable Plays",
+    description: "Recipes are multi-step prompt sequences you can run against any agent: \"give it a code review checklist\", \"escalate to manager\", \"summarize the last 20 executions\". They live separately from templates because they're cross-cutting, not agent-shaped.",
+    hint: "Switch to the Recipes tab and browse the catalog.",
+    nav: { sidebarSection: "design-reviews", subTab: "recipes", subTabSetter: "setTemplateTab" },
+    completeOn: "tour:recipes-explored",
+    highlightTestId: "templates-page",
+    subSteps: [
+      { id: "recipes-list", label: "Browse recipes", hint: "Each card shows the recipe steps and inputs. Click to inspect the full prompt chain before running." },
+      { id: "recipe-playground", label: "Recipe playground", hint: "Run a recipe against a real agent in a sandboxed playground — output is captured but not persisted to the agent's history." },
+      { id: "recipe-attach", label: "Attach to an agent", hint: "Once tested, attach a recipe to an agent so it runs automatically as part of that agent's playbook." },
     ],
   },
 ];
@@ -374,6 +584,30 @@ export const TOUR_REGISTRY: TourDef[] = [
     color: "teal",
     steps: ORCHESTRATION_EVENTS_STEPS,
   },
+  {
+    id: "plugins-explorer",
+    title: "Plugins Explorer",
+    description: "Walk through every plugin in the catalog — Companion, Twin, Dev Tools, and the supporting cast.",
+    icon: "Puzzle",
+    color: "amber",
+    steps: PLUGINS_EXPLORER_STEPS,
+  },
+  {
+    id: "schedules-mastery",
+    title: "Schedules Mastery",
+    description: "Read the schedules dashboard, switch between timeline and calendar views, and attach a schedule to an agent.",
+    icon: "CalendarClock",
+    color: "emerald",
+    steps: SCHEDULES_MASTERY_STEPS,
+  },
+  {
+    id: "templates-recipes",
+    title: "Templates & Recipes",
+    description: "Adopt pre-built agents from the template gallery and reuse multi-step recipes across your fleet.",
+    icon: "FlaskConical",
+    color: "indigo",
+    steps: TEMPLATES_RECIPES_STEPS,
+  },
 ];
 
 /** Backward compat: the original tour steps (Tour 1) */
@@ -390,7 +624,7 @@ export function getActiveTourSteps(tourId: TourId): TourStepDef[] {
 // -- Persistence --------------------------------------------------------
 
 const TOUR_STORAGE_KEY = "guided-tour-state";
-const TOUR_STATE_VERSION = 3;
+const TOUR_STATE_VERSION = 4;
 
 /**
  * Probe key separate from the real state key so a probe failure can't
@@ -648,6 +882,9 @@ export const createTourSlice: StateCreator<
     "getting-started-simple": persisted?.tours?.["getting-started-simple"]?.completed ?? false,
     "execution-observability": persisted?.tours?.["execution-observability"]?.completed ?? false,
     "orchestration-events": persisted?.tours?.["orchestration-events"]?.completed ?? false,
+    "plugins-explorer": persisted?.tours?.["plugins-explorer"]?.completed ?? false,
+    "schedules-mastery": persisted?.tours?.["schedules-mastery"]?.completed ?? false,
+    "templates-recipes": persisted?.tours?.["templates-recipes"]?.completed ?? false,
   };
 
   function getPersistedTours(): PersistedTourState['tours'] {
