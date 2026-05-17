@@ -7045,6 +7045,12 @@ export type Translations = {
       persona_layout_build_draft_ready_hint: string;
       _comment_persona_layout_build_refine_default_prompt: string;
       persona_layout_build_refine_default_prompt: string;
+      _comment_persona_layout_build_view_logs: string;
+      persona_layout_build_view_logs: string;
+      _comment_persona_layout_build_refine_placeholder: string;
+      persona_layout_build_refine_placeholder: string;
+      _comment_persona_layout_build_refine_send: string;
+      persona_layout_build_refine_send: string;
       credentials_required_title: string;
       credentials_required_body: string;
       answered_of_total: string;

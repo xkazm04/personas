@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { Loader2, Play, Rocket, RefreshCw, X, ScrollText, CheckCircle2, AlertCircle } from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
+import { Loader2, Play, Rocket, RefreshCw, X, ScrollText, CheckCircle2, AlertCircle, Send } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useAgentStore } from '@/stores/agentStore';
 import { PersonaLayout } from '@/features/shared/glyph/persona-layout';
@@ -12,6 +12,8 @@ import type {
   CellBuildStatus,
   ToolTestResult,
 } from '@/lib/types/buildTypes';
+import { GlyphAnswerCard } from '@/features/agents/components/glyph/GlyphAnswerCard';
+import { TestReportModal } from '../chronology/TestReportModal';
 import { useUseCaseChronology } from '../chronology/useUseCaseChronology';
 import {
   type DisplayUseCase,
@@ -118,14 +120,33 @@ export function PersonaLayoutBuild({
   onRejectTest,
   onDeleteDraft,
   onRefine,
+  onAnswerBuildQuestion,
   onViewAgent,
   templateName,
   testPassed,
   testError,
+  toolTestResults,
+  testSummary,
 }: PersonaLayoutBuildProps) {
   const { t } = useTranslation();
   const rows = useUseCaseChronology();
   const buildDraft = useAgentStore((s) => s.buildDraft);
+
+  // Which pending-question petal the user is currently focused on.
+  // When null, the wide overlay is empty (no card visible). Clicking
+  // any pending petal sets this to that dim; submitting/closing the
+  // card clears it back to null.
+  const [activeQuestionDim, setActiveQuestionDim] = useState<GlyphDimension | null>(null);
+
+  // Inline refine composer state — toggled by clicking "Refine" in the
+  // footer. Captures the user's freeform feedback before sending to
+  // onRefine.
+  const [refineOpen, setRefineOpen] = useState(false);
+  const [refineText, setRefineText] = useState('');
+
+  // Rich test-results modal — shown when the user clicks "View Logs"
+  // after a test_complete phase.
+  const [reportOpen, setReportOpen] = useState(false);
 
   const items = useMemo<DisplayUseCase[]>(
     () => rows.map(glyphRowToDisplay),
@@ -137,20 +158,25 @@ export function PersonaLayoutBuild({
     return typeof draftName === 'string' && draftName.trim() ? draftName : templateName;
   }, [buildDraft, templateName]);
 
+  // Look up pending question by dim — used by petal click + auto-focus.
+  const pendingQuestionByDim = useMemo(() => {
+    const out = new Map<GlyphDimension, BuildQuestion>();
+    if (pendingQuestions) {
+      for (const q of pendingQuestions) {
+        const dim = CELL_KEY_TO_DIM[q.cellKey];
+        if (dim && !out.has(dim)) out.set(dim, q);
+      }
+    }
+    return out;
+  }, [pendingQuestions]);
+
   // Derive petal states from cellStates. Pending build questions surface
   // as `pending` on the matching petal; building-phase cells render as
   // `filling`; resolved cells stay `resolved`.
   const petalStates = useMemo<Record<GlyphDimension, PetalState>>(() => {
-    const pendingDims = new Set<GlyphDimension>();
-    if (pendingQuestions) {
-      for (const q of pendingQuestions) {
-        const dim = CELL_KEY_TO_DIM[q.cellKey];
-        if (dim) pendingDims.add(dim);
-      }
-    }
     const out = {} as Record<GlyphDimension, PetalState>;
     for (const dim of GLYPH_DIMENSIONS) {
-      if (pendingDims.has(dim)) {
+      if (pendingQuestionByDim.has(dim)) {
         out[dim] = 'pending';
         continue;
       }
@@ -166,7 +192,32 @@ export function PersonaLayoutBuild({
       }
     }
     return out;
-  }, [cellStates, pendingQuestions]);
+  }, [cellStates, pendingQuestionByDim]);
+
+  // Petal click — only meaningful when the petal carries a pending
+  // question. Opens the answer card for that dim.
+  const handlePetalClick = useCallback((dim: GlyphDimension) => {
+    if (pendingQuestionByDim.has(dim)) {
+      setActiveQuestionDim((prev) => (prev === dim ? null : dim));
+    }
+  }, [pendingQuestionByDim]);
+
+  // When the user submits an answer to a pending question, advance to
+  // the next pending one if there is one (so the user doesn't lose
+  // momentum); otherwise close the overlay.
+  const handleAnswerAndAdvance = useCallback((cellKey: string, answer: string) => {
+    if (!onAnswerBuildQuestion) return;
+    onAnswerBuildQuestion(cellKey, answer);
+    // Find the next pending question after this one.
+    const others = (pendingQuestions ?? []).filter((q) => q.cellKey !== cellKey);
+    const next = others[0];
+    if (next) {
+      const nextDim = CELL_KEY_TO_DIM[next.cellKey];
+      setActiveQuestionDim(nextDim ?? null);
+    } else {
+      setActiveQuestionDim(null);
+    }
+  }, [onAnswerBuildQuestion, pendingQuestions]);
 
   // Center sigil overlay — phase-aware status card. Shows progress,
   // current activity, or terminal state (pass/fail).
@@ -283,6 +334,16 @@ export function PersonaLayoutBuild({
               <Rocket className="w-3.5 h-3.5" />
               {testPassed ? t.templates.matrix_variants.approve_and_promote : t.templates.matrix_variants.approve_anyway}
             </button>
+            {(toolTestResults?.length ?? 0) > 0 && (
+              <button
+                type="button"
+                onClick={() => setReportOpen(true)}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-foreground/5 hover:bg-foreground/10 border border-border/30 typo-body text-foreground/85 cursor-pointer"
+              >
+                <ScrollText className="w-3.5 h-3.5" />
+                {t.templates.adopt_modal.persona_layout_build_view_logs}
+              </button>
+            )}
             <button
               type="button"
               onClick={() => void onStartTest()}
@@ -330,8 +391,12 @@ export function PersonaLayoutBuild({
         {onRefine && (phaseDraftReady || phaseTestComplete) && (
           <button
             type="button"
-            onClick={() => void onRefine(t.templates.adopt_modal.persona_layout_build_refine_default_prompt)}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-foreground/60 hover:text-foreground typo-caption cursor-pointer"
+            onClick={() => setRefineOpen((v) => !v)}
+            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-full typo-caption cursor-pointer transition-colors ${
+              refineOpen
+                ? 'bg-primary/15 border border-primary/35 text-foreground'
+                : 'text-foreground/60 hover:text-foreground'
+            }`}
           >
             <RefreshCw className="w-3.5 h-3.5" />
             {t.common.refine}
@@ -349,8 +414,39 @@ export function PersonaLayoutBuild({
     onDeleteDraft,
     onRefine,
     onViewAgent,
+    refineOpen,
+    toolTestResults,
     t,
   ]);
+
+  // Wide overlay — priorities (only one shows at a time):
+  //   1. refine composer (user toggled "Refine")
+  //   2. mid-build answer card (a pending question's petal is active)
+  //   3. nothing
+  const activeQuestion =
+    activeQuestionDim != null
+      ? pendingQuestionByDim.get(activeQuestionDim) ?? null
+      : null;
+  const wideOverlay = refineOpen ? (
+    <RefineComposer
+      initialText={refineText}
+      onCancel={() => {
+        setRefineOpen(false);
+        setRefineText('');
+      }}
+      onSend={(text) => {
+        setRefineOpen(false);
+        setRefineText('');
+        void onRefine?.(text);
+      }}
+    />
+  ) : activeQuestion ? (
+    <GlyphAnswerCard
+      question={activeQuestion}
+      onAnswer={handleAnswerAndAdvance}
+      onClose={() => setActiveQuestionDim(null)}
+    />
+  ) : undefined;
 
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -364,10 +460,104 @@ export function PersonaLayoutBuild({
         onRowToggle={() => {
           // Same.
         }}
+        onHeroPetalClick={handlePetalClick}
+        heroActiveDim={activeQuestionDim}
         heroPetalStatesOverride={petalStates}
         heroCenterOverlay={centerOverlay}
+        heroWideOverlay={wideOverlay}
         belowHeroSlot={belowHero}
       />
+
+      {reportOpen && (toolTestResults?.length ?? 0) > 0 && (
+        <TestReportModal
+          results={toolTestResults ?? []}
+          summary={testSummary}
+          onClose={() => setReportOpen(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── Inline refine composer ────────────────────────────────────────────
+
+interface RefineComposerProps {
+  initialText: string;
+  onCancel: () => void;
+  onSend: (text: string) => void;
+}
+
+/** Inline textarea + send for the post-draft refine flow. Wrapped in a
+ *  small card so it sits cleanly inside the wide-overlay container. */
+function RefineComposer({ initialText, onCancel, onSend }: RefineComposerProps) {
+  const { t } = useTranslation();
+  const [text, setText] = useState(initialText);
+
+  const submit = () => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    onSend(trimmed);
+  };
+
+  return (
+    <div
+      className="pointer-events-auto relative rounded-modal bg-background/95 backdrop-blur-md shadow-elevation-3 border border-primary/30 flex flex-col"
+      style={{
+        boxShadow: '0 0 24px rgba(96,165,250,0.25), 0 8px 32px rgba(0,0,0,0.35)',
+        maxWidth: 'min(720px, 92vw)',
+      }}
+    >
+      <div className="absolute top-0 left-0 w-full h-1 rounded-t-modal bg-gradient-to-r from-primary to-transparent" />
+      <div className="flex items-center gap-2 px-5 pt-4 pb-2">
+        <RefreshCw className="w-4 h-4 text-primary" />
+        <span className="typo-label uppercase tracking-[0.2em] text-primary font-bold">
+          {t.common.refine}
+        </span>
+        <div className="flex-1" />
+        <button
+          type="button"
+          onClick={onCancel}
+          className="p-1 rounded-card text-foreground/55 hover:text-foreground hover:bg-foreground/[0.06] transition-colors cursor-pointer"
+          aria-label={t.common.close}
+          title={t.common.close}
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+      <div className="px-5 pb-3">
+        <textarea
+          autoFocus
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+              e.preventDefault();
+              submit();
+            }
+          }}
+          placeholder={t.templates.adopt_modal.persona_layout_build_refine_placeholder}
+          rows={4}
+          className="w-full px-3 py-2 rounded-modal bg-primary/5 border border-primary/20 typo-body text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-primary/40 resize-none"
+        />
+      </div>
+      <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-primary/10 bg-foreground/[0.02] rounded-b-modal">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="typo-caption px-3 py-1.5 rounded-full text-foreground/65 hover:text-foreground transition-colors cursor-pointer"
+        >
+          {t.common.cancel}
+        </button>
+        <button
+          type="button"
+          onClick={submit}
+          disabled={!text.trim()}
+          className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-primary/25 hover:bg-primary/40 border border-primary/40 typo-body text-foreground disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+        >
+          <Send className="w-3.5 h-3.5" />
+          {t.templates.adopt_modal.persona_layout_build_refine_send}
+        </button>
+      </div>
     </div>
   );
 }
