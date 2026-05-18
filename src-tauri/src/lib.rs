@@ -2107,6 +2107,7 @@ pub fn run() {
             commands::companion::chat::companion_cancel_autonomy,
             commands::companion::fleet_bridge::companion_record_fleet_event,
             commands::companion::fleet_bridge::companion_get_operative_memory_digest,
+            commands::companion::fleet_bridge::companion_extract_fleet_patterns,
             commands::companion::mcp_bridge::companion_mcp_resolve_request,
             commands::companion::mcp_bridge::companion_mcp_pending_snapshot,
             #[cfg(feature = "test-automation")]
