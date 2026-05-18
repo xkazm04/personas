@@ -94,6 +94,15 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Recently completed (last 14 days)
 
+- **[2026-05-18 → merge `61a234d50`] athena-polish — humanize backend slugs + chat-panel polish (workstreams 1 + 2 of optimization pass)**
+  - **Branch:** `worktree-athena-polish` (2 commits, merged via `61a234d50` using detached-worktree + update-ref pattern; worktree removed, branch deleted)
+  - **Status:** completed (workstream 3 quality audit deferred to next session)
+  - **Commits:** `5e16ad39b` jargon humanization (athenaLabels.ts + 5 chat surfaces) · `411ede604` chat polish (strip OP/QR/TTS flash + AnimatePresence on cards)
+  - **Paths shipped:** `src/features/plugins/companion/athenaLabels.ts` (new — centralized action/trigger/capability/connector slug → label maps + stripModelDirectives + titleCase), `src/features/plugins/companion/{ApprovalCard,ProactiveCard,ConnectorCallCard,BrainViewer,InlineChatCard}.tsx` (route raw slugs through helpers), `src/features/plugins/companion/CompanionPanel.tsx` (stripModelDirectives at streaming render + AnimatePresence wraps for proactive/approval/chat-card/streaming bubble), `src/features/home/components/cockpit/widgets/PersonaOverview{Widget,Constellation,Roster,Atelier}.tsx` (i18n the 4 hardcoded English strings from the prototype round), `src/i18n/locales/en.json` (+54 keys: 7 proactive_kind_*, 31 action_label_*, 6 capability_label_*, 5 connector_label_*, brain_kind_unknown_fallback, chat_card_unknown_kind, persona_overview_{empty,open_in_editor,hover_hint}), `src/i18n/generated/{types,enSectionStrings}.ts` (regen).
+  - **Headline:** Five chat surfaces (ApprovalCard / ProactiveCard / ConnectorCallCard / BrainViewer / InlineChatCard) no longer leak raw backend slugs to users. Streaming bubble no longer flashes raw OP:/QR:/TTS:/`{"op":` lines before the dispatcher strips them server-side. Proactive / approval / chat-card / streaming-bubble mounts and exits via AnimatePresence (180-220ms ease).
+  - **Tests:** tsc clean both phases; pre-commit lint passed (eslint-staged 2.5s).
+  - **Concurrent-session note:** Detached-worktree + update-ref pattern again — main checkout had heavy WIP from ~30 parallel sessions. Master ref advanced cleanly; no other session's working tree touched. Phase 0 ledger entry was implicit (worktree creation only); Phase 11 entry recorded retroactively in the same merge.
+
 - **[2026-05-18 → merge `9668a22c0`] prototype-cockpit-persona — Cockpit + PersonaOverviewWidget directional variants + companion auto-shrink**
   - **Branch:** `worktree-prototype-cockpit-persona` (1 commit `376723ac8`, merged via `9668a22c0` using detached-worktree + update-ref pattern; worktree removed, branch deleted)
   - **Status:** completed (round 1 of /prototype; winner selection deferred to next session)
