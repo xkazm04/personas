@@ -1,5 +1,5 @@
-import { useEffect, useMemo } from 'react';
-import { Bot } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Bot, Compass, Orbit, Table } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 
 import { useAgentStore } from '@/stores/agentStore';
@@ -9,15 +9,86 @@ import { firstGrapheme } from '@/features/plugins/companion/inbox/_shared/graphe
 import type { Persona } from '@/lib/bindings/Persona';
 
 import type { CockpitWidgetProps } from '../widgetRegistry';
+import { PersonaOverviewConstellation } from './PersonaOverviewConstellation';
+import { PersonaOverviewRoster } from './PersonaOverviewRoster';
+import { PersonaOverviewAtelier } from './PersonaOverviewAtelier';
 
 /**
- * Persona overview — illustrated card grid. Click a card to navigate to
- * Agents → that persona.
+ * Persona overview — prototyping shell.
  *
- * Config:
- *   { "limit": N, "filter": "active" | "all" }
+ * Wraps the baseline + three directional variants behind a tab strip so
+ * we can A/B them live in the running cockpit. Once we pick a winner,
+ * the tab strip + losers will be deleted and only the winner remains.
+ *
+ * Variants explore directionally different mental models:
+ *   - Baseline   — current flat illustrated grid (the bar we're clearing)
+ *   - Constellation — spatial / orbital SVG with stats encoded as size + color
+ *   - Roster     — dense data-row scan view (model tier, budget, trust, last-run)
+ *   - Atelier    — Twin-Atelier polish pattern (header band + hero card + story)
+ *
+ * Config still flows through to whichever variant is active:
+ *   { "limit": N, "filter": "active" | "all", "variant"?: VariantKey }
  */
+type VariantKey = 'baseline' | 'constellation' | 'roster' | 'atelier';
+
+const TABS: { key: VariantKey; label: string; subtitle: string; icon: typeof Bot }[] = [
+  { key: 'baseline', label: 'Baseline', subtitle: 'today’s grid', icon: Bot },
+  { key: 'constellation', label: 'Constellation', subtitle: 'orbital, visual', icon: Orbit },
+  { key: 'roster', label: 'Roster', subtitle: 'data-dense scan', icon: Table },
+  { key: 'atelier', label: 'Atelier', subtitle: 'narrative + KPI', icon: Compass },
+];
+
 export function PersonaOverviewWidget({ config, title }: CockpitWidgetProps) {
+  // Config may pin a variant for ops-style explicit choice; otherwise the
+  // local tab state controls. Defaults to baseline so the cockpit looks
+  // identical to today's behavior until the user clicks a tab.
+  const configVariant = (config?.variant as VariantKey | undefined);
+  const [variant, setVariant] = useState<VariantKey>(configVariant ?? 'baseline');
+
+  return (
+    <div className="rounded-card border border-foreground/10 bg-foreground/[0.02] h-full flex flex-col min-h-0 overflow-hidden">
+      {/* Tab strip — throwaway scaffold, removed in Phase 5 consolidation. */}
+      <div className="flex-shrink-0 flex items-center gap-1 px-2 pt-2 pb-1 border-b border-foreground/5 bg-background/40">
+        {TABS.map((tab) => {
+          const Icon = tab.icon;
+          const active = tab.key === variant;
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setVariant(tab.key)}
+              className={`group relative flex items-center gap-1.5 px-2.5 py-1 rounded-input typo-caption transition-colors ${
+                active
+                  ? 'bg-primary/10 text-primary border border-primary/20'
+                  : 'text-foreground/60 hover:text-foreground/85 hover:bg-foreground/[0.04] border border-transparent'
+              }`}
+              data-testid={`persona-overview-variant-${tab.key}`}
+              aria-pressed={active}
+            >
+              <Icon className="w-3 h-3" />
+              <span className="font-medium">{tab.label}</span>
+              <span className="text-foreground/40 hidden md:inline">· {tab.subtitle}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="flex-1 min-h-0 overflow-hidden">
+        {variant === 'baseline' && <PersonaOverviewBaseline config={config} title={title} />}
+        {variant === 'constellation' && <PersonaOverviewConstellation config={config} title={title} />}
+        {variant === 'roster' && <PersonaOverviewRoster config={config} title={title} />}
+        {variant === 'atelier' && <PersonaOverviewAtelier config={config} title={title} />}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Baseline — preserved verbatim from pre-prototype so we have an
+ * accurate A/B reference. Do not improve it during prototyping; the
+ * baseline is the bar variants must clear.
+ */
+function PersonaOverviewBaseline({ config, title }: CockpitWidgetProps) {
   const limit = (config?.limit as number) ?? 8;
   const filter = ((config?.filter as string) ?? 'active') === 'all' ? 'all' : 'active';
 
@@ -43,7 +114,7 @@ export function PersonaOverviewWidget({ config, title }: CockpitWidgetProps) {
   };
 
   return (
-    <div className="rounded-card border border-foreground/10 bg-foreground/[0.02] p-4 h-full flex flex-col min-h-0">
+    <div className="h-full flex flex-col min-h-0 p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="typo-caption text-foreground/60 uppercase tracking-wide">
           {title ?? 'Your personas'}
