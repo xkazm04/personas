@@ -9,6 +9,18 @@ import { UseCaseRow } from './UseCaseRow';
 
 export type PersonaLayoutMode = 'view' | 'adoption' | 'scratch';
 
+/** Compose the CSS Grid template column list for the main grid: a leading
+ *  320px track for `leftSlot` (when present), a flexible main column, and
+ *  a trailing 320px track for `rightSlot` (when present). The bare main
+ *  column (no slots) skips the grid entirely so layout matches the
+ *  pre-slot version when no caller opts in. */
+function gridClass(leftSlot: unknown, rightSlot: unknown): string {
+  if (leftSlot && rightSlot) return 'grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)_320px]';
+  if (leftSlot) return 'grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]';
+  if (rightSlot) return 'grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]';
+  return '';
+}
+
 interface PersonaLayoutProps {
   /** Drives mode-specific chrome (top/right slots, padding, etc.). */
   mode: PersonaLayoutMode;
@@ -72,6 +84,24 @@ interface PersonaLayoutProps {
    *  for the QuestionnaireStoryThread. Takes 320px on lg+ screens; wraps
    *  below on narrow screens. */
   rightSlot?: ReactNode;
+
+  /** Optional slot to the LEFT of the main column — typically a
+   *  PersonaSigilSummary listing the saved value for each dimension. Same
+   *  ~320px width as rightSlot, sticks to top on lg+ screens. Wraps to
+   *  the top of the column on narrow screens (above the hero). */
+  leftSlot?: ReactNode;
+
+  /** When true, skip rendering the persona-name + capabilities band at
+   *  the top of the hero. View mode uses this — the sigil + sidebars
+   *  carry all the information so the header is redundant. */
+  hideMetadataBand?: boolean;
+
+  /** When true, the main column omits its inline capability rows — the
+   *  caller is rendering them elsewhere (typically in rightSlot as a
+   *  compact list). View mode with a compact capabilities sidebar uses
+   *  this to avoid double-rendering. Has no effect when `selectedItemId`
+   *  is set (the detail view is mode-independent). */
+  hideCapabilityRows?: boolean;
 
   /** Optional slot rendered between the hero and the capability rows.
    *  Adoption uses this for stepper controls, scratch may use it for
@@ -142,6 +172,9 @@ export function PersonaLayout({
   heroWideOverlay,
   topSlot,
   rightSlot,
+  leftSlot,
+  hideMetadataBand,
+  hideCapabilityRows,
   belowHeroSlot,
   renderRowPolicySlot,
   appendRow,
@@ -181,7 +214,13 @@ export function PersonaLayout({
               <div className="w-full px-4 lg:px-8 py-4 flex flex-col gap-4">
                 {topSlot}
 
-                <div className={rightSlot ? 'grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]' : ''}>
+                <div className={gridClass(leftSlot, rightSlot)}>
+                  {leftSlot && (
+                    <aside className="lg:sticky lg:top-4 lg:self-start order-first">
+                      {leftSlot}
+                    </aside>
+                  )}
+
                   <div className="flex flex-col gap-6 min-w-0">
                     <PersonaHero
                       personaName={personaName}
@@ -192,11 +231,12 @@ export function PersonaLayout({
                       centerOverlay={heroCenterOverlay}
                       wideOverlay={heroWideOverlay}
                       metadataRightSlot={heroRightSlot}
+                      hideMetadataBand={hideMetadataBand}
                     />
 
                     {belowHeroSlot}
 
-                    {items.length === 0 ? (
+                    {hideCapabilityRows ? null : items.length === 0 ? (
                       emptyNode ?? null
                     ) : (
                       <div className="flex flex-col gap-2 mx-auto w-full max-w-[960px]">

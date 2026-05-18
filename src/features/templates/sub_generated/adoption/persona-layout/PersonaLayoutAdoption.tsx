@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { ChevronRight, AlertCircle } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { PersonaLayout } from '@/features/shared/glyph/persona-layout';
+import { PersonaSigilSummary, type PersonaSigilSummaryEntry } from '@/features/shared/glyph/persona-layout/PersonaSigilSummary';
 import { GLYPH_DIMENSIONS } from '@/features/shared/glyph';
 import type { GlyphDimension } from '@/features/shared/glyph';
 import type { PetalState } from '@/features/shared/glyph/persona-sigil';
@@ -221,6 +222,42 @@ export function PersonaLayoutAdoption({
     return first;
   }, [questions, activeDim]);
 
+  // Summary sidebar entries — one row per dim with at least one answered
+  // question. Each row shows the dim label (colored to match the petal)
+  // and a `·`-joined list of the user's picked values, so the user can
+  // see what they've decided at a glance while the sigil itself stays
+  // colour-coded for "still pending vs resolved".
+  const summaryEntries = useMemo<Partial<Record<GlyphDimension, PersonaSigilSummaryEntry>>>(() => {
+    const dimLabels: Record<GlyphDimension, string> = {
+      trigger: t.templates.chronology.dim_trigger,
+      task: t.templates.chronology.dim_task,
+      connector: t.templates.chronology.dim_apps,
+      message: t.templates.chronology.dim_messages,
+      review: t.templates.chronology.dim_human_review,
+      memory: t.templates.chronology.dim_memory,
+      event: t.templates.chronology.dim_events,
+      error: t.templates.chronology.dim_error_handling,
+    };
+    const byDim = new Map<GlyphDimension, string[]>();
+    for (const q of questions) {
+      const ans = userAnswers[q.id];
+      if (!ans) continue;
+      const dim = questionToDimension(q);
+      const list = byDim.get(dim);
+      if (list) list.push(ans);
+      else byDim.set(dim, [ans]);
+    }
+    const out: Partial<Record<GlyphDimension, PersonaSigilSummaryEntry>> = {};
+    for (const [dim, values] of byDim) {
+      out[dim] = { label: dimLabels[dim], value: values.join(' · ') };
+    }
+    return out;
+  }, [questions, userAnswers, t]);
+
+  const leftSlot = Object.keys(summaryEntries).length > 0 ? (
+    <PersonaSigilSummary entries={summaryEntries} heading={null} />
+  ) : null;
+
   const topSlot =
     totalCount > 0 ? (
       <QuestionnaireHeaderBand
@@ -358,6 +395,7 @@ export function PersonaLayoutAdoption({
           }}
           onRowToggle={(uc) => onToggleUseCase(uc.id)}
           topSlot={topSlot}
+          leftSlot={leftSlot}
           rightSlot={rightSlot}
           heroPetalStatesOverride={petalStates}
           onHeroPetalClick={handlePetalClick}

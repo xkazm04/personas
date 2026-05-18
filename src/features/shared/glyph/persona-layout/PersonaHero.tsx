@@ -43,6 +43,11 @@ interface PersonaHeroProps {
   /** Optional content rendered on the right side of the metadata band
    *  (e.g. persona default model picker). */
   metadataRightSlot?: ReactNode;
+
+  /** When true, the persona-name + capabilities band is omitted. View
+   *  mode uses this — the leftSlot summary + the sigil itself carry the
+   *  identity info, so a separate header band is duplicative. */
+  hideMetadataBand?: boolean;
 }
 
 const DEFAULT_SIGIL_SIZE = 640;
@@ -68,6 +73,7 @@ export function PersonaHero({
   centerOverlay,
   wideOverlay,
   metadataRightSlot,
+  hideMetadataBand,
 }: PersonaHeroProps) {
   const { t, tx } = useTranslation();
   const [hoveredDim, setHoveredDim] = useState<GlyphDimension | null>(null);
@@ -112,6 +118,7 @@ export function PersonaHero({
     <div className="flex flex-col items-stretch gap-6">
       {/* Metadata band — full-width row above the sigil so it never
        *  constrains the sigil's available size. */}
+      {!hideMetadataBand && (
       <div
         className="relative overflow-hidden rounded-modal border border-card-border bg-gradient-to-r from-secondary/55 via-secondary/30 to-secondary/55 px-6 py-4"
         style={{
@@ -198,6 +205,7 @@ export function PersonaHero({
           )}
         </div>
       </div>
+      )}
 
       {/* Sigil stage — centered, sized at 640px by default (matches scratch).
        *  Stage is `relative` so the wideOverlay can position absolute
