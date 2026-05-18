@@ -183,3 +183,15 @@ fn parse_state_token(s: &str) -> Option<FleetSessionState> {
         _ => None,
     }
 }
+
+/// Read-only inspector for the in-process operative-memory digest.
+/// Same string that lands in Athena's prompt every turn — useful for
+/// debugging the orchestration view from the chat panel or from
+/// integration tests without taking a turn.
+#[tauri::command]
+pub async fn companion_get_operative_memory_digest(
+    state: State<'_, Arc<AppState>>,
+) -> Result<String, AppError> {
+    crate::ipc_auth::require_auth(&state).await?;
+    Ok(crate::companion::orchestration::operative_memory::memory().digest_for_prompt())
+}

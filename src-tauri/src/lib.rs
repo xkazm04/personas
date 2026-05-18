@@ -2098,6 +2098,7 @@ pub fn run() {
             commands::companion::chat::companion_interrupt_turn,
             commands::companion::chat::companion_cancel_autonomy,
             commands::companion::fleet_bridge::companion_record_fleet_event,
+            commands::companion::fleet_bridge::companion_get_operative_memory_digest,
             commands::companion::approvals::companion_list_pending_approvals,
             commands::companion::approvals::companion_approve_action,
             commands::companion::approvals::companion_reject_action,
