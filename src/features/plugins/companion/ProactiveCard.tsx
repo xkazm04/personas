@@ -6,6 +6,7 @@ import {
   companionEngageProactive,
   type ProactiveMessage,
 } from '@/api/companion';
+import { triggerKindLabel } from './athenaLabels';
 
 /**
  * "Athena reached out" card. Rendered inline in the chat transcript at
@@ -48,21 +49,10 @@ export function ProactiveCard({
     }
   };
 
-  // Trigger-kind specific accent so the card type is glanceable. Each of
-  // the four known kinds gets its own band; the primary fallback is
-  // reserved for future/unknown kinds so they're still visually anchored.
-  const accent =
-    message.triggerKind === 'goal_target_approaching'
-      ? 'border-amber-500/30 bg-amber-500/[0.06]'
-      : message.triggerKind === 'backlog_aging'
-        ? 'border-rose-500/30 bg-rose-500/[0.06]'
-        : message.triggerKind === 'on_this_day'
-          ? 'border-violet-500/30 bg-violet-500/[0.06]'
-          : message.triggerKind === 'cadence_due'
-            ? 'border-emerald-500/30 bg-emerald-500/[0.06]'
-            : message.triggerKind === 'athena_scheduled'
-              ? 'border-sky-500/30 bg-sky-500/[0.06]'
-              : 'border-primary/30 bg-primary/[0.06]';
+  // Trigger-kind specific accent so the card type is glanceable. Each
+  // known kind gets its own band; unknown kinds fall through to the
+  // primary accent so they're still visually anchored.
+  const accent = accentForTrigger(message.triggerKind);
 
   return (
     <div
@@ -77,7 +67,7 @@ export function ProactiveCard({
           {t.plugins.companion.proactive_label}
         </span>
         <span className="typo-caption text-foreground/50">
-          · {triggerLabel(t, message.triggerKind)}
+          · {triggerKindLabel(t, message.triggerKind)}
         </span>
       </div>
       <p className="typo-body text-foreground/90 leading-relaxed">
@@ -120,22 +110,29 @@ export function ProactiveCard({
   );
 }
 
-function triggerLabel(
-  t: ReturnType<typeof useTranslation>['t'],
-  kind: string,
-): string {
+function accentForTrigger(kind: string): string {
   switch (kind) {
     case 'goal_target_approaching':
-      return t.plugins.companion.proactive_kind_goal;
+      return 'border-amber-500/30 bg-amber-500/[0.06]';
     case 'backlog_aging':
-      return t.plugins.companion.proactive_kind_backlog;
-    case 'cadence_due':
-      return t.plugins.companion.proactive_kind_cadence;
+      return 'border-rose-500/30 bg-rose-500/[0.06]';
     case 'on_this_day':
-      return t.plugins.companion.proactive_kind_on_this_day;
+      return 'border-violet-500/30 bg-violet-500/[0.06]';
+    case 'cadence_due':
+      return 'border-emerald-500/30 bg-emerald-500/[0.06]';
     case 'athena_scheduled':
-      return t.plugins.companion.proactive_kind_athena_scheduled;
+      return 'border-sky-500/30 bg-sky-500/[0.06]';
+    case 'ambient_match':
+      return 'border-cyan-500/30 bg-cyan-500/[0.06]';
+    case 'fleet_failed':
+    case 'fleet_stuck_dispatched':
+      return 'border-rose-500/30 bg-rose-500/[0.06]';
+    case 'fleet_awaiting':
+    case 'fleet_stale':
+      return 'border-amber-500/30 bg-amber-500/[0.06]';
+    case 'fleet_op_completed':
+      return 'border-emerald-500/30 bg-emerald-500/[0.06]';
     default:
-      return kind;
+      return 'border-primary/30 bg-primary/[0.06]';
   }
 }

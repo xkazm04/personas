@@ -10,6 +10,7 @@ import {
 } from '@/api/companion';
 import { useSystemStore } from '@/stores/systemStore';
 import type { SidebarSection } from '@/lib/types/types';
+import { actionLabel } from './athenaLabels';
 
 const VALID_ROUTES: SidebarSection[] = [
   'home',
@@ -125,9 +126,12 @@ export function ApprovalCard({
         <span className="inline-flex items-center gap-1.5 typo-caption font-medium text-primary">
           {t.plugins.companion.proposed_action}
         </span>
-        <code className="typo-caption text-foreground/70 px-1.5 py-0.5 rounded bg-foreground/5">
-          {approval.action}
-        </code>
+        <span
+          className="typo-caption font-medium text-foreground/85 px-2 py-0.5 rounded-input bg-foreground/5"
+          title={approval.action}
+        >
+          {actionLabel(t, approval.action)}
+        </span>
       </div>
 
       {approval.rationale && (

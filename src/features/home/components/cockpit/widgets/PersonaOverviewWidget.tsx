@@ -4,6 +4,7 @@ import { useShallow } from 'zustand/react/shallow';
 
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useIllustration } from '@/features/plugins/companion/inbox/hooks/useIllustration';
 import { firstGrapheme } from '@/features/plugins/companion/inbox/_shared/grapheme';
 import type { Persona } from '@/lib/bindings/Persona';
@@ -89,6 +90,7 @@ export function PersonaOverviewWidget({ config, title }: CockpitWidgetProps) {
  * baseline is the bar variants must clear.
  */
 function PersonaOverviewBaseline({ config, title }: CockpitWidgetProps) {
+  const { t } = useTranslation();
   const limit = (config?.limit as number) ?? 8;
   const filter = ((config?.filter as string) ?? 'active') === 'all' ? 'all' : 'active';
 
@@ -126,7 +128,7 @@ function PersonaOverviewBaseline({ config, title }: CockpitWidgetProps) {
       {visible.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center gap-2 text-foreground/40">
           <Bot className="w-6 h-6" />
-          <div className="typo-caption">No personas yet</div>
+          <div className="typo-caption">{t.plugins.companion.persona_overview_empty}</div>
         </div>
       ) : (
         <div className="flex-1 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 overflow-y-auto auto-rows-min">

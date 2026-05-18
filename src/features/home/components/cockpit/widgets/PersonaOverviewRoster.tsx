@@ -20,6 +20,7 @@ import { AlertCircle, Bot, ChevronRight, Pause, ShieldAlert } from 'lucide-react
 
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { Persona } from '@/lib/bindings/Persona';
 
 import type { CockpitWidgetProps } from '../widgetRegistry';
@@ -34,6 +35,7 @@ import {
 } from './personaStats';
 
 export function PersonaOverviewRoster({ config, title }: CockpitWidgetProps) {
+  const { t } = useTranslation();
   const limit = (config?.limit as number) ?? 12;
   const filter = ((config?.filter as string) ?? 'active') === 'all' ? 'all' : 'active';
 
@@ -91,7 +93,7 @@ export function PersonaOverviewRoster({ config, title }: CockpitWidgetProps) {
       {visible.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center gap-2 text-foreground/40">
           <Bot className="w-6 h-6" />
-          <div className="typo-caption">No personas yet</div>
+          <div className="typo-caption">{t.plugins.companion.persona_overview_empty}</div>
         </div>
       ) : (
         <div className="flex-1 min-h-0 overflow-y-auto">

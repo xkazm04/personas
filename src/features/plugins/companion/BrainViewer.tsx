@@ -31,6 +31,7 @@ import {
   type BrainListItem,
 } from '@/api/companion';
 import { useCompanionStore } from './companionStore';
+import { titleCase } from './athenaLabels';
 
 type KindLabelKey =
   | 'episodes'
@@ -198,7 +199,10 @@ function kindLabel(
     case 'design_decision':
       return t.plugins.companion.design_decisions;
     default:
-      return kind;
+      // Unknown kind — never show the raw slug. Title-case it so it
+      // still reads as English even if the backend added a new kind
+      // ahead of the frontend.
+      return titleCase(kind);
   }
 }
 
