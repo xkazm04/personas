@@ -9,30 +9,14 @@ import { UseCaseRow } from './UseCaseRow';
 
 export type PersonaLayoutMode = 'view' | 'adoption' | 'scratch';
 
-/** Compose the CSS Grid template column list for the main grid: narrow
- *  side tracks for `leftSlot` and `rightSlot` (when present), a flexible
- *  main column in between. The bare main column (no slots) skips the
- *  grid entirely so the layout matches the pre-slot version when no
- *  caller opts in.
- *
- *  Sidebar width grows with the breakpoint (220 → 260 → 320 px). At
- *  common 1366-1440 viewports a pair of 320 px tracks ate so much of
- *  the content area that the sigil floored at its minimum size; 220 px
- *  there reads as compact-but-functional and frees ~200 px back to the
- *  sigil column. Wide monitors (2xl+) get the full 320 px back since
- *  the sigil hits its cap with plenty of room to spare. */
-function gridClass(leftSlot: unknown, rightSlot: unknown): string {
-  if (leftSlot && rightSlot) {
-    return 'grid gap-4 lg:gap-6 lg:grid-cols-[220px_minmax(0,1fr)_220px] 2xl:grid-cols-[260px_minmax(0,1fr)_260px] 3xl:grid-cols-[320px_minmax(0,1fr)_320px]';
-  }
-  if (leftSlot) {
-    return 'grid gap-4 lg:gap-6 lg:grid-cols-[220px_minmax(0,1fr)] 2xl:grid-cols-[260px_minmax(0,1fr)] 3xl:grid-cols-[320px_minmax(0,1fr)]';
-  }
-  if (rightSlot) {
-    return 'grid gap-4 lg:gap-6 lg:grid-cols-[minmax(0,1fr)_220px] 2xl:grid-cols-[minmax(0,1fr)_260px] 3xl:grid-cols-[minmax(0,1fr)_320px]';
-  }
-  return '';
-}
+/** Width class for an aside sidebar — narrow at lg, roomy on widescreen.
+ *  Same scale as the previous grid-track values; the difference is that
+ *  sidebars now sit at fixed widths within a flex container instead of
+ *  being inner grid tracks, which lets the hero column claim the full
+ *  remaining width between the sidebars (rather than being centered
+ *  inside a 1fr track with empty space on either side). */
+const SIDEBAR_WIDTH_CLASSES =
+  'w-full lg:w-[220px] 2xl:w-[260px] 3xl:w-[320px] shrink-0';
 
 interface PersonaLayoutProps {
   /** Drives mode-specific chrome (top/right slots, padding, etc.). */
@@ -232,17 +216,30 @@ export function PersonaLayout({
             className="flex-1 min-h-0 flex flex-col"
           >
             <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin">
-              <div className="w-full px-4 lg:px-8 py-4 flex flex-col gap-4">
+              {/* px-4 keeps the sidebars a hair off the viewport edge
+                  without eating much width — the ContentBox above already
+                  enforces the page-level min-width (matches the header),
+                  so all we need here is breathing room from the absolute
+                  border. `w-full` claims the full content area so the
+                  flex distribution below can spread the sidebars to the
+                  edges and let the sigil column expand into the middle. */}
+              <div className="w-full px-4 py-4 flex flex-col gap-4">
                 {topSlot}
 
-                <div className={gridClass(leftSlot, rightSlot)}>
+                <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 lg:gap-6 w-full">
                   {leftSlot && (
-                    <aside className="lg:sticky lg:top-4 lg:self-start order-first">
+                    <aside className={`lg:sticky lg:top-4 lg:self-start ${SIDEBAR_WIDTH_CLASSES} order-first`}>
                       {leftSlot}
                     </aside>
                   )}
 
-                  <div className="flex flex-col gap-6 min-w-0">
+                  {/* Hero column: flex-1 so it claims every pixel between
+                      the sidebars. The sigil inside centers itself; the
+                      flex-1 means the PersonaHero's stage gets the full
+                      width and lets its ResizeObserver pick the largest
+                      sigil that fits both the column AND the viewport
+                      height. */}
+                  <div className="flex-1 flex flex-col gap-6 min-w-0 items-stretch">
                     <PersonaHero
                       personaName={personaName}
                       useCases={items}
@@ -285,7 +282,7 @@ export function PersonaLayout({
                   </div>
 
                   {rightSlot && (
-                    <aside className="lg:sticky lg:top-4 lg:self-start">
+                    <aside className={`lg:sticky lg:top-4 lg:self-start ${SIDEBAR_WIDTH_CLASSES}`}>
                       {rightSlot}
                     </aside>
                   )}
