@@ -11016,6 +11016,15 @@ export type Translations = {
       dictate_start_hint: string;
       dictate_listening_hint: string;
       dictate_error: string;
+      orchestration: {
+        guidance_from: string;
+        guidance_placeholder: string;
+        guidance_send: string;
+        approval_from: string;
+        approval_note_placeholder: string;
+        approval_approve: string;
+        approval_deny: string;
+      };
     };
     ocr: {
       title: string;
