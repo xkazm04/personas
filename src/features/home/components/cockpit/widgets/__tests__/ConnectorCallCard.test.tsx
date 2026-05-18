@@ -23,10 +23,13 @@ function job(over: Partial<BackgroundJob> = {}): BackgroundJob {
 }
 
 describe('ConnectorCallCard', () => {
-  it('renders the connector name and capability', () => {
+  it('renders the connector name and capability (humanized)', () => {
+    // ConnectorCallCard humanizes the raw service-type + capability slugs
+    // via athenaLabels.{connectorDisplayName, capabilityLabel}. Users
+    // never see "slack · list_channels" — they see "Slack · Your channels".
     render(<ConnectorCallCard job={job()} />);
-    expect(screen.getByText('slack')).toBeInTheDocument();
-    expect(screen.getByText('list_channels')).toBeInTheDocument();
+    expect(screen.getByText('Slack')).toBeInTheDocument();
+    expect(screen.getByText('Your channels')).toBeInTheDocument();
   });
 
   it('shows the queued status label when job is queued', () => {

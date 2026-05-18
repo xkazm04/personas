@@ -60,8 +60,8 @@ const INCLUDED_DOCS: &[&str] = &[
     // Events / recipes / artist / live roadmap.
     "features/events/event-routing.md",
     "features/recipes/recipe-templates.md",
-    "features/artist/media-studio-architecture.md",
-    "features/artist/media-studio-render-plan.md",
+    "features/plugins/artist/media-studio-architecture.md",
+    "features/plugins/artist/media-studio-render-plan.md",
     "features/live-roadmap/live-roadmap.md",
     // Top-level concepts — design philosophy.
     "concepts/adoption-creation-unification.md",
@@ -157,12 +157,12 @@ const EMBEDDED_DOCS: &[(&str, &str)] = &[
         include_str!("../../../../docs/features/recipes/recipe-templates.md"),
     ),
     (
-        "features/artist/media-studio-architecture.md",
-        include_str!("../../../../docs/features/artist/media-studio-architecture.md"),
+        "features/plugins/artist/media-studio-architecture.md",
+        include_str!("../../../../docs/features/plugins/artist/media-studio-architecture.md"),
     ),
     (
-        "features/artist/media-studio-render-plan.md",
-        include_str!("../../../../docs/features/artist/media-studio-render-plan.md"),
+        "features/plugins/artist/media-studio-render-plan.md",
+        include_str!("../../../../docs/features/plugins/artist/media-studio-render-plan.md"),
     ),
     (
         "features/live-roadmap/live-roadmap.md",
