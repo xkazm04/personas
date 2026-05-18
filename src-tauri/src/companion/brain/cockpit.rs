@@ -21,6 +21,13 @@ const COCKPIT_REL_PATH: &str = "cockpit.md";
 
 /// Save (insert or replace) the cockpit spec. `spec_json` is the
 /// already-serialized JSON body the frontend will parse.
+///
+/// This is the LOW-LEVEL write — it overwrites everything. The compose
+/// path (Athena's `compose_cockpit`) should call
+/// [`save_cockpit_preserving_pinned`] instead, which extracts any
+/// user-pinned widgets from the existing spec and merges them into the
+/// new one. Direct callers (the pin flow itself, which already merges
+/// against the loaded spec) use this function.
 pub fn save_cockpit(pool: &UserDbPool, spec_json: &str) -> Result<(), AppError> {
     let now = Utc::now().to_rfc3339();
     let abs_path = disk::brain_root()?.join(COCKPIT_REL_PATH);
@@ -42,6 +49,91 @@ pub fn save_cockpit(pool: &UserDbPool, spec_json: &str) -> Result<(), AppError> 
         params![COCKPIT_ID, COCKPIT_REL_PATH, hash, excerpt, now],
     )?;
     Ok(())
+}
+
+/// Save a cockpit spec while preserving any user-pinned widgets from the
+/// previous spec. Used by Athena's `compose_cockpit` op so a user who
+/// pins a widget doesn't lose it the next time Athena composes anything.
+///
+/// "Pinned" widgets are detected by a top-level `"pinned": true` field
+/// on the widget object — `companion_pin_widget_to_cockpit` stamps this
+/// flag. Athena's own `compose_cockpit` payloads never carry `pinned`,
+/// so freshly-composed widgets stay non-pinned (and remain overwritable
+/// by subsequent composes).
+///
+/// Pinned widgets are APPENDED after Athena's freshly-composed ones so
+/// the layout Athena designed reads first; the user's persistent pins
+/// follow as a tail section. Dedupes pinned widgets that already
+/// appear in the new spec (same `kind` + same `config`) to avoid
+/// rendering the same surface twice when Athena's compose happens to
+/// match a pin.
+pub fn save_cockpit_preserving_pinned(
+    pool: &UserDbPool,
+    new_spec_json: &str,
+) -> Result<(), AppError> {
+    let merged_json = match merge_with_pinned(pool, new_spec_json)? {
+        Some(merged) => merged,
+        None => new_spec_json.to_string(),
+    };
+    save_cockpit(pool, &merged_json)
+}
+
+/// Pure helper: load existing cockpit, extract pinned widgets, append
+/// them to `new_spec_json`'s widgets array (dropping duplicates), return
+/// the merged JSON. Returns `None` if no merge was needed (no current
+/// spec, no pinned widgets, or new spec malformed — falls back to plain
+/// save with the new spec as-is).
+fn merge_with_pinned(
+    pool: &UserDbPool,
+    new_spec_json: &str,
+) -> Result<Option<String>, AppError> {
+    let prior = match load_cockpit(pool)? {
+        Some(c) => c,
+        None => return Ok(None),
+    };
+    let prior_spec: serde_json::Value = match serde_json::from_str(&prior.spec_json) {
+        Ok(v) => v,
+        Err(_) => return Ok(None),
+    };
+    let pinned: Vec<serde_json::Value> = prior_spec
+        .get("widgets")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter(|w| w.get("pinned").and_then(|p| p.as_bool()).unwrap_or(false))
+                .cloned()
+                .collect()
+        })
+        .unwrap_or_default();
+    if pinned.is_empty() {
+        return Ok(None);
+    }
+    let mut new_spec: serde_json::Value = match serde_json::from_str(new_spec_json) {
+        Ok(v) => v,
+        Err(_) => return Ok(None),
+    };
+    let new_widgets = match new_spec
+        .get_mut("widgets")
+        .and_then(|v| v.as_array_mut())
+    {
+        Some(arr) => arr,
+        None => return Ok(None),
+    };
+    // Dedupe — skip pinned widgets whose (kind, config) is already in the
+    // freshly-composed spec. Athena re-composing a surface she's pinned
+    // to shouldn't render it twice.
+    for pin in pinned {
+        let pin_kind = pin.get("kind").and_then(|v| v.as_str());
+        let pin_config = pin.get("config").unwrap_or(&serde_json::Value::Null);
+        let dup = new_widgets.iter().any(|w| {
+            w.get("kind").and_then(|v| v.as_str()) == pin_kind
+                && w.get("config").unwrap_or(&serde_json::Value::Null) == pin_config
+        });
+        if !dup {
+            new_widgets.push(pin);
+        }
+    }
+    Ok(Some(new_spec.to_string()))
 }
 
 #[derive(Debug, Clone)]

@@ -1008,6 +1008,19 @@ export async function companionPinWidgetToCockpit(payload: {
   });
 }
 
+/**
+ * Remove a cockpit widget by id. Backed by
+ * `companion_unpin_widget_from_cockpit`. Idempotent — removing a
+ * widget id that doesn't exist (already removed) resolves cleanly.
+ *
+ * Use case: per-widget "remove from cockpit" affordance on the
+ * cockpit grid. Pinned widgets are durable across Athena composes;
+ * this is the explicit user opt-out.
+ */
+export async function companionUnpinWidgetFromCockpit(widgetId: string): Promise<void> {
+  return invoke<void>('companion_unpin_widget_from_cockpit', { widgetId });
+}
+
 /** Tauri event for `compose_cockpit` auto-fire. Payload is empty. */
 export const COMPANION_COMPOSE_COCKPIT_EVENT = 'companion://compose-cockpit';
 

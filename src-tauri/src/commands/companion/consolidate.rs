@@ -366,14 +366,45 @@ pub fn companion_pin_widget_to_cockpit(
         .ok_or_else(|| AppError::Internal("cockpit spec missing `widgets` array".into()))?;
 
     let new_config = config.clone().unwrap_or_else(|| serde_json::json!({}));
-    // Idempotency guard — skip the insert if an existing widget has the
-    // same kind + same config. Accidental double-clicks shouldn't bloat
-    // the cockpit. Stringify both sides via canonical JSON for equality.
-    let existing_match = widgets.iter().any(|w| {
-        w.get("kind").and_then(|v| v.as_str()) == Some(kind.as_str())
-            && w.get("config").unwrap_or(&serde_json::Value::Null) == &new_config
-    });
-    if existing_match {
+    // Idempotency guard with durability promotion. Three cases:
+    //
+    // 1. Matching widget already exists AND is pinned — no-op. Pin is
+    //    already durable; user accidentally double-clicked.
+    // 2. Matching widget exists but is NOT pinned (Athena composed it
+    //    in the same spec) — promote it to pinned and save. Otherwise
+    //    Athena's next compose would silently evict the user's intent.
+    // 3. No match — fall through to the normal insert below.
+    //
+    // Equality is on (kind, config). Stringify-via-JSON-Value compares
+    // structurally; canonical-form differences (key order, whitespace)
+    // are normalized by serde_json's PartialEq.
+    let mut promoted = false;
+    for w in widgets.iter_mut() {
+        let kind_match =
+            w.get("kind").and_then(|v| v.as_str()) == Some(kind.as_str());
+        let config_match =
+            w.get("config").unwrap_or(&serde_json::Value::Null) == &new_config;
+        if kind_match && config_match {
+            let already_pinned = w
+                .get("pinned")
+                .and_then(|p| p.as_bool())
+                .unwrap_or(false);
+            if already_pinned {
+                return Ok(());
+            }
+            if let Some(obj) = w.as_object_mut() {
+                obj.insert("pinned".into(), serde_json::Value::Bool(true));
+            }
+            promoted = true;
+            break;
+        }
+    }
+    if promoted {
+        if let Some(spec_obj) = spec.as_object_mut() {
+            spec_obj.insert("updated_at".into(), serde_json::Value::String(now));
+        }
+        let spec_json = spec.to_string();
+        cockpit::save_cockpit(&state.user_db, &spec_json)?;
         return Ok(());
     }
 
@@ -383,6 +414,11 @@ pub fn companion_pin_widget_to_cockpit(
         "kind": kind,
         "span": 4,
         "config": new_config,
+        // `pinned: true` is the durability flag. Athena's next
+        // compose_cockpit calls save_cockpit_preserving_pinned which
+        // looks for this and carries the widget through. Without it,
+        // user pins would evaporate on every Athena compose.
+        "pinned": true,
     });
     if let Some(t) = title {
         widget["title"] = serde_json::Value::String(t);
@@ -393,6 +429,44 @@ pub fn companion_pin_widget_to_cockpit(
         spec_obj.insert("updated_at".into(), serde_json::Value::String(now));
     }
 
+    let spec_json = spec.to_string();
+    cockpit::save_cockpit(&state.user_db, &spec_json)?;
+    Ok(())
+}
+
+/// Remove a widget from the cockpit by id. Used by the cockpit UI's
+/// per-widget "remove" / "unpin" affordance.
+///
+/// Idempotent: removing a non-existent id (already unpinned, or never
+/// existed) is a no-op success, not an error. The user pressed "remove"
+/// expecting "this widget should no longer be on my cockpit" — that's
+/// the post-state either way.
+#[tauri::command]
+pub fn companion_unpin_widget_from_cockpit(
+    state: State<'_, Arc<AppState>>,
+    widget_id: String,
+) -> Result<(), AppError> {
+    ipc_auth::require_auth_sync(&state)?;
+    let now = chrono::Utc::now().to_rfc3339();
+    let mut spec: serde_json::Value = match cockpit::load_cockpit(&state.user_db)? {
+        Some(c) => match serde_json::from_str(&c.spec_json) {
+            Ok(v) => v,
+            Err(_) => return Ok(()),
+        },
+        None => return Ok(()),
+    };
+    let widgets = match spec.get_mut("widgets").and_then(|v| v.as_array_mut()) {
+        Some(arr) => arr,
+        None => return Ok(()),
+    };
+    let before = widgets.len();
+    widgets.retain(|w| w.get("id").and_then(|v| v.as_str()) != Some(widget_id.as_str()));
+    if widgets.len() == before {
+        return Ok(());
+    }
+    if let Some(spec_obj) = spec.as_object_mut() {
+        spec_obj.insert("updated_at".into(), serde_json::Value::String(now));
+    }
     let spec_json = spec.to_string();
     cockpit::save_cockpit(&state.user_db, &spec_json)?;
     Ok(())
