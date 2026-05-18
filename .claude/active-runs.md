@@ -32,13 +32,6 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
-- **[2026-05-18 — started] prototype-cockpit-persona — Cockpit + PersonaOverviewWidget redesign + companion-shrink hook**
-  - **Source:** User-driven `/prototype` skill — cockpit is underused, PersonaOverviewWidget is anemic, chat window covers cockpit content. Designing 3-4 directional variants behind a tab switcher.
-  - **Paths:** `src/features/home/components/cockpit/widgets/PersonaOverviewWidget.tsx` (baseline + 3-4 variants), `src/features/home/components/cockpit/widgets/PersonaOverviewVariant{1..N}.tsx` (new — variants), possibly `src/features/home/components/cockpit/CockpitPanel.tsx` (variant tab switcher), possibly `src/features/plugins/companion/CompanionPanel.tsx` (single-line `panelCompact` auto-trigger on `compose_cockpit` for the shrink behavior), possibly `src/i18n/locales/en.json` (additive `overview.cockpit.*` keys for variant labels), `.claude/active-runs.md`
-  - **Status:** started
-  - **Branch:** `worktree-prototype-cockpit-persona` (worktree at `.claude/worktrees/prototype-cockpit-persona/`)
-  - **Note:** Path-disjoint from all active sessions. `friend-companion` (2026-05-16) declared `src/features/plugins/companion/` but is >2 days stale; my touchpoint there is surgical (1-line hook on existing `panelCompact` state). en.json edits additive under `overview.cockpit.*` — coordinate with concurrent `schedules.*`/`appearance.*`/`plugins.*`/`shared.sidebar_extra.*` sub-trees (disjoint).
-
 - **[2026-05-17 — started] overview-polish — Header unification + Events/Knowledge/Health fixes**
   - **Source:** User-driven UX polish — Overview module. Header consistency across submodules, Events subtitle bug ("50 50 of 50"), Knowledge background-CLI review + drop Schedule, Health Reliability tab dedup + filter compaction.
   - **Paths:** `src/features/overview/sub_events/components/EventLogList.tsx`, `src/features/overview/sub_knowledge/components/**`, `src/features/overview/sub_health/components/**`, possibly headers in other `src/features/overview/sub_*/components/**` for consistency, `src/i18n/locales/en.json` (additive `overview.*` keys only — disjoint from concurrent `schedules.*`/`appearance.*`/`plugins.*`/`shared.sidebar_extra.*`)
@@ -100,6 +93,14 @@ timestamp — the next session can recognize it as abandoned.
 
 
 ## Recently completed (last 14 days)
+
+- **[2026-05-18 → merge `9668a22c0`] prototype-cockpit-persona — Cockpit + PersonaOverviewWidget directional variants + companion auto-shrink**
+  - **Branch:** `worktree-prototype-cockpit-persona` (1 commit `376723ac8`, merged via `9668a22c0` using detached-worktree + update-ref pattern; worktree removed, branch deleted)
+  - **Status:** completed (round 1 of /prototype; winner selection deferred to next session)
+  - **Paths shipped:** `src/features/home/components/cockpit/widgets/PersonaOverviewWidget.tsx` (added tab switcher + baseline preserved verbatim), `src/features/home/components/cockpit/widgets/PersonaOverviewConstellation.tsx` (new — orbital SVG variant), `src/features/home/components/cockpit/widgets/PersonaOverviewRoster.tsx` (new — data-dense scan variant), `src/features/home/components/cockpit/widgets/PersonaOverviewAtelier.tsx` (new — Twin-Atelier hero+KPI variant), `src/features/home/components/cockpit/widgets/personaStats.ts` (new — shared tier/trust/budget helpers), `src/features/plugins/companion/CompanionPanel.tsx` (1-line auto-shrink hook on COMPANION_COMPOSE_COCKPIT_EVENT: panelCompact=true so cockpit content isn't covered).
+  - **Headline:** Tab strip in PersonaOverviewWidget renders Baseline / Constellation / Roster / Atelier. Constellation = orbital nodes around an "active count" pill, size/color/halo encoding. Roster = dense table sorted by attention flags first. Atelier = single hero card + KPI strip + 3-step story trail (Twin-Atelier vocabulary). Plus universal companion auto-shrink to 380px when Athena composes a cockpit.
+  - **Tests:** tsc clean; lint clean of net-new errors (93 incremental-migration warnings on touched files, all baseline-style).
+  - **Concurrent-session note:** Used detached-worktree + update-ref pattern (langfuse 2026-05-16 / triggers 2026-05-17 precedent) because main checkout had heavy WIP from ~30 parallel sessions (allPersonas rename, glyph work, Atelier edits). Master ref advanced at `9668a22c0` without touching any other session's working tree. A concurrent /prototype session (PersonaOverviewPage in allPersonas/) overwrote my Active-section entry on the main checkout's working tree — preserved their edit untouched.
 
 - **[2026-05-18 → merge `50052d67e`] companion-d6710 — D6 (proactive wrap-up) + D7 (live ops view) + D9 (mid-flight intervention) + D10 (pattern extraction)**
   - **Branch:** `worktree-companion-d6710` (5 commits, merged via `50052d67e`; worktree removed, branch deleted).
