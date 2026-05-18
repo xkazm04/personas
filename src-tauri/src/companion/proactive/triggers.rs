@@ -77,6 +77,9 @@ pub fn collect_all(pool: &UserDbPool) -> Result<Vec<Nudge>, AppError> {
     // Fleet attention — failed / long-waiting / stale sessions.
     // No DB lookup (reads the in-process fleet registry); no error path.
     out.extend(super::fleet_triggers::fleet_attention());
+    // D9 — stuck sessions inside dispatched_by_athena ops, suggesting
+    // a `fleet_intervene` proposal.
+    out.extend(super::fleet_triggers::stuck_dispatched_sessions());
     Ok(out)
 }
 

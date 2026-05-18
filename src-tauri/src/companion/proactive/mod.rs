@@ -125,6 +125,30 @@ pub fn evaluate_with_extra_candidates(
     Ok(new_msgs)
 }
 
+/// Trigger kind for D6 — fleet operation wrap-up. Reconciler writes
+/// one of these per `dispatched_by_athena` op when every session has
+/// reached a terminal state. Bypasses the budget gate (this is a
+/// user-requested action's completion, not a speculative nudge).
+pub const FLEET_OP_COMPLETED_TRIGGER_KIND: &str = "fleet_op_completed";
+
+/// Insert a Nudge from a caller outside the trigger evaluator, with
+/// the same dedupe guard but no budget cost. Used by:
+///   - the D6 reconciler in
+///     `commands::companion::fleet_bridge::reconcile_if_dispatched`
+///     (fleet operation wrap-ups land here)
+///   - any future direct-from-source notification path that needs
+///     dedupe-by-(trigger_kind, trigger_ref) but shouldn't compete
+///     with the daily nudge budget.
+///
+/// Returns the persisted message in `queued` status. The caller is
+/// responsible for transitioning to `delivered` + emitting the
+/// `companion://proactive` Tauri event — typically by re-running
+/// `companion_evaluate_proactive_now` (which handles both), but for
+/// snappy delivery the caller can also write its own emit path.
+pub fn enqueue_external(pool: &UserDbPool, nudge: &Nudge) -> Result<Option<ProactiveMessage>, AppError> {
+    enqueue_if_new(pool, nudge)
+}
+
 /// Insert a new proactive message *unless* an unresolved one with
 /// matching `(trigger_kind, trigger_ref)` already exists. Returns
 /// `Some` for new inserts, `None` when deduped.

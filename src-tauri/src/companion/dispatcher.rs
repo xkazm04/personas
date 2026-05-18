@@ -151,6 +151,13 @@ const ALLOWED_ACTIONS: &[&str] = &[
     // commands/companion/fleet_bridge.rs synthesizes the final
     // summary once every dispatched session has exited.
     "fleet_dispatch",
+    // Direction 9 — mid-flight intervention. The proactive evaluator
+    // proposes one of these when a session belonging to a
+    // `dispatched_by_athena` op gets stuck (recent_failure set + no
+    // checkpoint in N minutes). Cap of one intervention per session
+    // is enforced in operative_memory::record_intervention.
+    "fleet_intervene",
+    "fleet_redirect_op",
 ];
 
 /// Lab modes valid for `open_lab`. Mirrors the `lab-mode-*` testids in

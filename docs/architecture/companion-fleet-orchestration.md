@@ -260,20 +260,128 @@ recursion. For dispatch, `operation.dispatched_by_athena` gives a
 second signal: the evaluator can skip any session belonging to such
 an op, no matter what its visible name is.
 
+## Direction 6 — Proactive wrap-up delivery
+
+The reconciler doesn't just emit a Tauri event for the chat panel —
+it also enqueues a `companion_proactive_message` with
+`trigger_kind = "fleet_op_completed"`, `trigger_ref = op_id`. The
+reconciler bypasses the daily nudge budget (this isn't a speculative
+nudge — the user explicitly dispatched the op and should always
+hear how it landed) and delivers immediately rather than waiting for
+the 5-min scheduler tick: queued→delivered + `companion://proactive`
+emit happen in one shot.
+
+The existing `enqueue_if_new` dedupe-by-(trigger_kind, trigger_ref)
+guard still applies, so a duplicate Exited event firing the
+reconciler twice can't double-deliver. Public surface is the new
+`enqueue_external` helper in `companion::proactive`.
+
+Card body shape:
+```
+Operation "<intent>" {completed|failed}. <first-line-of-summary>
+```
+Headline-only — the full synthesized summary lives in episodic
+memory for Athena to retrieve when the user asks for details.
+
+## Direction 7 — Live ops view
+
+Backend emits `athena://orchestration/digest-changed` (empty
+payload) from every operative-memory mutation entry point:
+- `companion_record_fleet_event` (lifecycle path)
+- MCP `report_intent` + `checkpoint` handlers
+- `execute_fleet_dispatch` after spawning sessions
+- PTY reaper's `rust_reconcile_after_exit`
+- `reconcile_if_dispatched` after cross-session synth
+
+Frontend (`useOperativeMemoryBridge` in
+`features/plugins/companion/orchestration/`) debounces 250ms and
+re-fetches the digest via `companion_get_operative_memory_digest`.
+Stable wire format — re-fetch beats wire-format delta protocol so
+the digest text can evolve freely.
+
+`LiveOpsStrip` is a collapsible strip mounted above `McpRequestPanel`
+in `CompanionPanel`. Empty digest → strip hides (no vertical
+footprint when no ops are in flight). Collapsed by default; one-line
+count when collapsed; full mono-font scrollable digest when expanded.
+
+## Direction 9 — Mid-flight intervention
+
+Two new dispatcher actions in `ALLOWED_ACTIONS`:
+
+| Action | Effect | Cap |
+|--------|--------|-----|
+| `fleet_intervene { session_id, message }` | Write `message + "\n"` to the named session's PTY stdin | 1 per session per process lifetime |
+| `fleet_redirect_op { op_id, new_intent, message? }` | Update `op.user_intent` + broadcast to every active session in the op | 1 per session per process lifetime |
+
+Cap enforced by `OperativeMemory::record_intervention(fleet_session_id)`
+— returns `Err` when the per-session counter is already at
+`MAX_INTERVENTIONS_PER_SESSION = 1`. The choice of 1 is deliberate:
+if Athena's first nudge doesn't unstick the session, repeating it
+usually doesn't either, and we'd rather escalate to "ask the user"
+than spam stdin.
+
+`fleet_redirect_op` counts each broadcast as an intervention
+against its target session, so a session that's already been
+intervened on individually is skipped (logged) instead of getting
+a second push.
+
+Proactive detector (`fleet_triggers::stuck_dispatched_sessions`)
+runs in the standard 5-minute evaluator pass. Conditions for
+emitting a `fleet_session_stuck` Nudge:
+- Session belongs to a `dispatched_by_athena` op
+- Session is not Exited/Idle
+- `recent_failure` is set
+- No event in the last `STUCK_THRESHOLD_MS` (4 min)
+- `interventions == 0`
+
+The Nudge is *informational* — it surfaces text suggesting Athena
+could propose a `fleet_intervene`. The user (or Athena under
+autonomous mode) acts via the normal chat/approval flow. We don't
+auto-fire intervention at this maturity.
+
+## Direction 10 — Pattern extraction (v1: rule-based)
+
+`companion::brain::fleet_patterns::extract_patterns(pool)` reads
+recent `fleet-orchestration op:…` episodes, aggregates by role
+combination, and writes one low-confidence procedural per combo
+that has the minimum-sample threshold of runs.
+
+```
+LOOKBACK_DAYS = 30
+MAX_EPISODES  = 200 per pass
+MIN_SAMPLES   = 3
+```
+
+Per-combo procedural shape:
+- **scope**: `Action`
+- **trigger**: `When dispatching fleet sessions with roles \`runner\` + \`writer\``
+- **behavior**: `Recent track record in the last 30 days: 7/9 ops completed
+  cleanly (78% success rate); 2 hit failures. Usually works; the failed
+  cases are worth reviewing for shared root cause.`
+- **confidence**: 0.3 (flat — rule-based, no LLM verification)
+- **importance**: scales 1–3 by success-rate band (≥90%, ≥70%, ≥40%, <40%)
+- **sources**: up to 10 contributing episode ids — satisfies the
+  brain's anti-hallucination contract that every procedural cite
+  ≥1 source episode
+
+Not auto-scheduled in v1 — invoked via the new Tauri command
+`companion_extract_fleet_patterns`. v2 can layer LLM synthesis on
+top reusing the same episode index + role-combo aggregator
+(`recent_orchestration_episodes`, `parse_episode`,
+`aggregate_by_role_combo`).
+
 ## Test surface
 
-- **Rust unit tests** (`operative_memory.rs::tests` + `mcp::*::tests`,
-  26 cases total): ad-hoc op creation, state transitions, tool-event
-  mapping, failure tail capture, summary synthesis (per-session AND
-  cross-session), digest formatting, completion detection, MCP token
-  round-trip, pending hub submit/resolve/cancel/snapshot, tool
-  descriptors, intent record (ad-hoc upgrade + dispatched-op preservation),
-  checkpoint cap, full dispatched lifecycle. Run with
-  `cargo test --features desktop --lib companion::orchestration`.
-- **Vitest** (`useFleetCompanionBridge.test.tsx` + `useMcpRequestBridge.test.tsx`,
-  12 cases): event-to-payload mapping, race protection, debounced added
-  path, MCP snapshot seed, guidance + approval live events, dedup,
-  resolve round-trip.
+- **Rust unit tests**: 30 cases under `companion::orchestration::*`
+  (ad-hoc/dispatched op lifecycle, MCP token + pending hub,
+  intent/checkpoint paths, intervention cap + redirect, op_active
+  filtering, snapshot helpers) + 5 cases under
+  `companion::brain::fleet_patterns` (parser, role extractor,
+  aggregator, hint thresholds). Run with
+  `cargo test --features desktop --lib companion`.
+- **Vitest**: 17 cases across `useFleetCompanionBridge` (6),
+  `useMcpRequestBridge` (6), and `useOperativeMemoryBridge` (5) —
+  event mapping, debounce + coalesce, store invariants.
 - **Playwright** (`companion-fleet-orchestration.spec.ts`, 3 cases):
   digest exposed; exited events produce synthesized-summary episode
   bodies; non-zero exits flip ops to Failed.

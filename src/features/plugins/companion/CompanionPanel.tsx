@@ -55,6 +55,7 @@ import {
 import type { SidebarSection } from '@/lib/types/types';
 import { ApprovalCard } from './ApprovalCard';
 import { McpRequestPanel } from './mcp/McpRequestPanel';
+import { LiveOpsStrip } from './orchestration/LiveOpsStrip';
 import { InlineChatCard } from './InlineChatCard';
 import { ProactiveCard } from './ProactiveCard';
 import { AthenaAvatar } from './AthenaAvatar';
@@ -984,6 +985,14 @@ function Body(props: BodyProps) {
               {t.plugins.companion.init_failed}: {initError}
             </div>
           )}
+          {/*
+            D7 — live operative-memory digest strip. Pinned at the top
+            of the panel so the user can see what Athena's working set
+            looks like (same text she sees in her prompt every turn).
+            Collapsed by default; hidden entirely when no ops are in
+            flight.
+          */}
+          <LiveOpsStrip />
           {/*
             MCP pending-request strip — pinned above proactive because
             the spawned claude session is *blocked* until it gets an
