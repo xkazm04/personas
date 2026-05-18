@@ -59,8 +59,11 @@ export function InlineChatCard({ card }: { card: ChatCard }) {
   const Component = cockpitWidgetRegistry[card.kind];
   if (!Component) {
     return (
-      <div className="rounded-card border border-rose-500/30 bg-rose-500/[0.06] p-3 typo-caption text-rose-300">
-        Unknown chat-card kind: {card.kind}
+      <div
+        className="rounded-card border border-rose-500/30 bg-rose-500/[0.06] p-3 typo-caption text-rose-300"
+        title={card.kind}
+      >
+        {t.plugins.companion.chat_card_unknown_kind}
       </div>
     );
   }

@@ -24,6 +24,7 @@ import { ArrowRight, Bot, Coins, Compass, Gauge, Shield, Sparkles } from 'lucide
 
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useIllustration } from '@/features/plugins/companion/inbox/hooks/useIllustration';
 import { firstGrapheme } from '@/features/plugins/companion/inbox/_shared/grapheme';
 import type { Persona } from '@/lib/bindings/Persona';
@@ -41,6 +42,7 @@ import {
 } from './personaStats';
 
 export function PersonaOverviewAtelier({ config, title }: CockpitWidgetProps) {
+  const { t } = useTranslation();
   const limit = (config?.limit as number) ?? 6;
   const filter = ((config?.filter as string) ?? 'active') === 'all' ? 'all' : 'active';
   const heroId = config?.hero as string | undefined;
@@ -81,7 +83,7 @@ export function PersonaOverviewAtelier({ config, title }: CockpitWidgetProps) {
     return (
       <div className="h-full flex flex-col items-center justify-center gap-2 text-foreground/40 p-6">
         <Bot className="w-6 h-6" />
-        <div className="typo-caption">No personas yet</div>
+        <div className="typo-caption">{t.plugins.companion.persona_overview_empty}</div>
       </div>
     );
   }

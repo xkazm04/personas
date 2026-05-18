@@ -11,6 +11,7 @@ import {
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { BackgroundJob } from '@/api/companion';
+import { capabilityLabel, connectorDisplayName } from './athenaLabels';
 
 /**
  * Inline chat-card that surfaces the live state of a `connector_use`
@@ -76,9 +77,13 @@ export function ConnectorCallCard({ job }: { job: BackgroundJob }) {
           }`}
         />
         <span className="flex-1 truncate">
-          <span className="font-medium">{connectorName || '?'}</span>
+          <span className="font-medium">
+            {connectorName ? connectorDisplayName(t, connectorName) : '?'}
+          </span>
           <span className="text-foreground/50"> · </span>
-          <span className="text-foreground/70">{capability || '?'}</span>
+          <span className="text-foreground/70">
+            {capability ? capabilityLabel(t, capability) : '?'}
+          </span>
         </span>
         <span className="typo-caption text-foreground/50 shrink-0">
           {statusLabel}

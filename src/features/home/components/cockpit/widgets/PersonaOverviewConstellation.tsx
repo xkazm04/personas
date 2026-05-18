@@ -21,6 +21,7 @@ import { Bot, Sparkles } from 'lucide-react';
 
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
+import { useTranslation } from '@/i18n/useTranslation';
 import { firstGrapheme } from '@/features/plugins/companion/inbox/_shared/grapheme';
 import type { Persona } from '@/lib/bindings/Persona';
 
@@ -222,6 +223,7 @@ export function PersonaOverviewConstellation({ config, title }: CockpitWidgetPro
 }
 
 function PersonaDetail({ persona, onOpen }: { persona: Persona; onOpen: (id: string) => void }) {
+  const { t } = useTranslation();
   const tier = modelTierAccent(persona.model_profile);
   const tierLabel = modelTierLabel(persona.model_profile);
   const trustTone = trustToneFor(persona.trust_level, persona.trust_score);
@@ -263,7 +265,7 @@ function PersonaDetail({ persona, onOpen }: { persona: Persona; onOpen: (id: str
         onClick={() => onOpen(persona.id)}
         className={`mt-auto inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-input typo-caption font-medium ${tier.btnClass}`}
       >
-        Open in editor
+        {t.plugins.companion.persona_overview_open_in_editor}
       </button>
     </>
   );
@@ -278,6 +280,7 @@ function ConstellationSummary({
   ready: number;
   needsSetup: number;
 }) {
+  const { t } = useTranslation();
   return (
     <>
       <div className="flex items-center gap-1.5 text-foreground/65">
@@ -293,7 +296,7 @@ function ConstellationSummary({
         <SummaryRow label="Needs setup" value={needsSetup} tone="warn" />
       </div>
       <p className="typo-caption text-foreground/45 mt-auto leading-snug">
-        Hover a node to inspect it. Click to open in the editor.
+        {t.plugins.companion.persona_overview_hover_hint}
       </p>
     </>
   );
@@ -349,10 +352,11 @@ function ConstellationBackdrop() {
 }
 
 function ConstellationEmpty() {
+  const { t } = useTranslation();
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-foreground/40">
       <Bot className="w-6 h-6" />
-      <div className="typo-caption">No personas yet</div>
+      <div className="typo-caption">{t.plugins.companion.persona_overview_empty}</div>
     </div>
   );
 }
