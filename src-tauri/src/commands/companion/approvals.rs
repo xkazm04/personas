@@ -1451,6 +1451,18 @@ fn execute_fleet_spawn(
 ///   ]
 /// }
 /// ```
+/// Test-only public wrapper around `execute_fleet_dispatch` so the
+/// real-claude E2E spec can fire a dispatch without going through the
+/// approval pipeline. Returns the human-readable message that the
+/// approval flow would otherwise surface.
+#[cfg(feature = "test-automation")]
+pub fn test_only_execute_fleet_dispatch(
+    app: &tauri::AppHandle,
+    params: &serde_json::Value,
+) -> Result<String, AppError> {
+    execute_fleet_dispatch(app, params).map(|r| r.message)
+}
+
 fn execute_fleet_dispatch(
     app: &tauri::AppHandle,
     params: &serde_json::Value,

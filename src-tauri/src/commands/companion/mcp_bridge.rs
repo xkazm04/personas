@@ -61,3 +61,25 @@ pub struct PendingRequestDto {
     pub kind: String,
     pub fleet_session_id: String,
 }
+
+/// Test-only — fire `fleet_dispatch` directly, bypassing the approval
+/// card pipeline. Used by the real-claude E2E spec to exercise the
+/// D5 v2 multi-session dispatch + reconciler path without round-
+/// tripping through Athena's chat. Only compiled into the test-
+/// automation build; regular dev/release builds don't expose it.
+///
+/// Mirrors the `params` shape that approvals::execute_fleet_dispatch
+/// reads: `{ operation_intent, role_specs: [{ role, cwd, args?, … }] }`.
+#[cfg(feature = "test-automation")]
+#[tauri::command]
+pub async fn companion_test_fleet_dispatch(
+    state: State<'_, Arc<AppState>>,
+    app: tauri::AppHandle,
+    params: Value,
+) -> Result<String, AppError> {
+    crate::ipc_auth::require_auth(&state).await?;
+    let result = crate::commands::companion::approvals::test_only_execute_fleet_dispatch(
+        &app, &params,
+    )?;
+    Ok(result)
+}

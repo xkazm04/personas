@@ -2109,6 +2109,8 @@ pub fn run() {
             commands::companion::fleet_bridge::companion_get_operative_memory_digest,
             commands::companion::mcp_bridge::companion_mcp_resolve_request,
             commands::companion::mcp_bridge::companion_mcp_pending_snapshot,
+            #[cfg(feature = "test-automation")]
+            commands::companion::mcp_bridge::companion_test_fleet_dispatch,
             commands::companion::approvals::companion_list_pending_approvals,
             commands::companion::approvals::companion_approve_action,
             commands::companion::approvals::companion_reject_action,
