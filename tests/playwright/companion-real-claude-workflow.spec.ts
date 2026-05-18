@@ -44,10 +44,12 @@ test.describe('Companion real-claude orchestration', () => {
 
   test.beforeAll(async () => {
     test.skip(!REAL, 'set RUN_REAL_CLAUDE_TESTS=1 to enable');
-    test.skip(
-      !process.env.ANTHROPIC_API_KEY && !process.env.CLAUDE_API_KEY,
-      'set ANTHROPIC_API_KEY (or CLAUDE_API_KEY) so spawned claude can authenticate',
-    );
+    // Auth note: spawned claudes inherit the user's OAuth/keychain
+    // credentials (monthly subscription path — same as the rest of
+    // the app's claude spawns). We do NOT require ANTHROPIC_API_KEY
+    // here; if the host has it set, claude will prefer it but the
+    // test still passes. The session.rs comment at line ~783 is the
+    // canonical reference for "why we don't use --bare".
 
     app = bridge();
     const h = await app.health();

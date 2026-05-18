@@ -13,11 +13,19 @@ chat panel.
 
 ## Prerequisites
 
-- `ANTHROPIC_API_KEY` (or `CLAUDE_API_KEY`) configured in the
-  environment so spawned claudes can authenticate.
 - `claude` on PATH (or the appropriate shim — `claude.cmd` /
   `claude.ps1` on Windows; the spawn path picks the right one
   automatically).
+- You are signed into `claude` via `claude login` — the spawned
+  sessions inherit your OAuth/keychain credentials, i.e. they
+  authenticate via your **monthly Claude Code subscription**. This
+  matches what every other claude spawn in Personas does
+  (`companion/session.rs`, `brain/reflection.rs`,
+  `brain/consolidation.rs`, etc.) — we deliberately avoid `--bare`
+  and `ANTHROPIC_API_KEY` so the subscription path is the default.
+  If you happen to have `ANTHROPIC_API_KEY` set in your environment,
+  claude will prefer it; nothing breaks, but it's not the path the
+  rest of the app uses.
 - This worktree built and running:
 
   ```bash

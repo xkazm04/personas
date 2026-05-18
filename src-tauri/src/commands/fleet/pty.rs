@@ -147,6 +147,17 @@ pub fn spawn_session(
     cmd.cwd(&cwd);
     // xterm-256color is what xterm.js natively understands.
     cmd.env("TERM", "xterm-256color");
+    // Match the env contract used by the rest of the app's claude
+    // spawns (companion/session.rs, brain/reflection.rs, etc.). These
+    // shut off telemetry chatter and terminal-title rewriting that
+    // would otherwise leak into the PTY stream and confuse xterm.js.
+    // Critically we do NOT set ANTHROPIC_API_KEY — claude falls back
+    // to its OAuth/keychain credentials, which is the monthly-
+    // subscription path. See `companion/session.rs:783` for the
+    // canonical comment on why --bare + API-key auth is the wrong
+    // choice for processes the user is signed into.
+    cmd.env("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC", "1");
+    cmd.env("CLAUDE_CODE_DISABLE_TERMINAL_TITLE", "1");
 
     let child = pair
         .slave
