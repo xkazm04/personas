@@ -115,26 +115,47 @@ pub fn spawn_session(
     //   • `claude.ps1` (PowerShell)  — works under powershell.exe
     // We pick the .cmd path on Windows and bare `claude` everywhere else.
     let mut cmd = if cfg!(windows) {
-        // `cmd.exe /c claude <args>` lets PATHEXT resolve to claude.cmd.
-        // We pass ONE composed string to `/c` so the whole pipeline is
-        // parsed by cmd.exe consistently. Per-arg quoting is essential:
-        // a fleet_dispatch role often passes `--print "List the
-        // files..."` whose second token contains spaces, and without
-        // quoting cmd.exe splits it into separate argv entries that
-        // claude can't reassemble.
-        let mut c = CommandBuilder::new("cmd.exe");
-        c.arg("/c");
-        let mut composed = String::from("claude");
+        // Bypass the `cmd.exe /c <composed-string>` path on Windows.
+        // That path requires composing one big string for /c and
+        // re-deals with Windows argv quoting twice (cmd.exe parsing,
+        // then claude's argv parser), which makes any role spec
+        // carrying a quoted prompt — `--print "List files. Exit."` —
+        // arrive at claude as `"List` plus stray bare tokens.
+        //
+        // Direct invocation of `claude.cmd` via its absolute path lets
+        // portable-pty's CommandBuilder pass each arg as a separate
+        // argv entry through CreateProcessW. CreateProcessW handles
+        // the Windows-specific argv→command-line quoting per the
+        // standard CRT rules, and claude.cmd's batch wrapper
+        // re-forwards %* to the underlying node script. Each arg
+        // stays whole.
+        let claude_cmd = match locate_claude_cmd() {
+            Some(p) => p,
+            None => {
+                return Err(
+                    "fleet spawn: claude.cmd not found on PATH or in %APPDATA%\\npm \
+                     — install Claude Code (`npm i -g @anthropic-ai/claude-code`) first"
+                        .to_string(),
+                );
+            }
+        };
+        let mut c = CommandBuilder::new(&claude_cmd);
         if let Some(p) = mcp.config_path.as_deref() {
-            // Path may contain spaces (e.g. "C:\Users\My Name\..."),
-            // so quote unconditionally.
-            composed.push_str(&format!(" --mcp-config \"{}\"", p.display()));
+            // Same forward-slash conversion as before — avoids
+            // `--mcp-config` parsing the path as inline JSON when the
+            // backslashed Windows form ends up double-escaped.
+            let p_fwd = p.display().to_string().replace('\\', "/");
+            c.arg("--mcp-config");
+            c.arg(p_fwd);
         }
         for a in &args {
-            composed.push(' ');
-            composed.push_str(&quote_cmd_arg(a));
+            c.arg(a);
         }
-        c.arg(composed);
+        tracing::debug!(
+            program = %claude_cmd,
+            args = ?args,
+            "fleet spawn: direct claude.cmd invocation"
+        );
         c
     } else {
         let mut c = CommandBuilder::new("claude");
@@ -236,68 +257,36 @@ pub fn spawn_session(
     Ok(id)
 }
 
-/// Quote one argv entry for `cmd.exe /c` composition.
+/// Locate `claude.cmd` for direct CreateProcessW spawn (Windows). We
+/// avoid going through `cmd.exe /c` so portable-pty handles argv
+/// quoting per the standard CRT rules — that way a role spec carrying
+/// `--print "Multi word prompt."` arrives intact at the underlying
+/// node script.
 ///
-/// Rules (per Microsoft's "Parsing C Command-Line Arguments" + cmd.exe's
-/// own quirks):
-///   - No spaces, no `"`, no shell-metachars → pass through bare.
-///   - Otherwise wrap in `"…"` and double any embedded `"`. Preceding
-///     backslashes ahead of an embedded `"` also need doubling so the
-///     final escape pattern survives cmd.exe + CRT parsing.
+/// Resolution order:
+///   1. `%APPDATA%\npm\claude.cmd` (the npm-global default on Windows).
+///   2. Walk `PATH` looking for the first directory containing
+///      `claude.cmd`.
 ///
-/// We deliberately do NOT escape `^` / `&` / `|` — those are cmd.exe
-/// metacharacters that *should* be neutralized by the surrounding
-/// `"…"` wrapping. Test: `claude --print "list & echo done"` works
-/// because the whole arg is quoted.
+/// Returns the absolute path as a String. None when the binary isn't
+/// installed.
 #[cfg(windows)]
-fn quote_cmd_arg(arg: &str) -> String {
-    if !arg.is_empty()
-        && !arg
-            .chars()
-            .any(|c| c.is_whitespace() || matches!(c, '"' | '&' | '|' | '<' | '>' | '^' | '(' | ')'))
-    {
-        return arg.to_string();
+fn locate_claude_cmd() -> Option<String> {
+    if let Some(appdata) = std::env::var_os("APPDATA") {
+        let cand = std::path::PathBuf::from(&appdata).join("npm").join("claude.cmd");
+        if cand.exists() {
+            return cand.to_str().map(str::to_string);
+        }
     }
-    let mut out = String::with_capacity(arg.len() + 2);
-    out.push('"');
-    let mut backslashes = 0usize;
-    for ch in arg.chars() {
-        match ch {
-            '\\' => backslashes += 1,
-            '"' => {
-                // Double the run of backslashes (so they survive CRT
-                // parsing as literal slashes), then double-escape the
-                // quote itself.
-                for _ in 0..(backslashes * 2) {
-                    out.push('\\');
-                }
-                backslashes = 0;
-                out.push('\\');
-                out.push('"');
-            }
-            _ => {
-                for _ in 0..backslashes {
-                    out.push('\\');
-                }
-                backslashes = 0;
-                out.push(ch);
+    if let Some(path) = std::env::var_os("PATH") {
+        for dir in std::env::split_paths(&path) {
+            let cand = dir.join("claude.cmd");
+            if cand.exists() {
+                return cand.to_str().map(str::to_string);
             }
         }
     }
-    // Any trailing backslashes need doubling because the closing `"`
-    // follows them — without doubling, the parser would treat the
-    // closing quote as escaped.
-    for _ in 0..(backslashes * 2) {
-        out.push('\\');
-    }
-    out.push('"');
-    out
-}
-
-#[cfg(not(windows))]
-#[allow(dead_code)]
-fn quote_cmd_arg(arg: &str) -> String {
-    arg.to_string()
+    None
 }
 
 /// Mint an MCP session token and write a per-session `mcp.json` that
