@@ -123,33 +123,166 @@ recursion guard sentinel — Direction 5's proactive evaluator will grow
 a "skip nudges for athena-named sessions" branch so she doesn't nudge
 herself in a loop.
 
-## What's coming (Directions 3 + 5)
+## Direction 3 — Athena as MCP server
 
-- **Direction 3 — Athena as MCP server.** Sessions discover Athena via
-  `--mcp-config` and invoke tools (`athena.report_intent`,
-  `athena.checkpoint`, `athena.request_guidance`,
-  `athena.request_approval`). Replaces hook-scraping with a structured
-  RPC surface.
-- **Direction 5 — `fleet_dispatch` with reconciliation.** One ApprovalCard
-  fans out N sessions under one Operation; Athena's autonomous loop polls
-  the reconciliation context, synthesizes per-session outcomes into a
-  single wrap-up message. The full meta-agent loop.
+Hooks are passive — they fire when claude does something and we infer
+what's going on. With MCP, the session **tells** us, and Athena can
+answer back synchronously.
 
-Both build on the operative-memory layer landed here — they're refinements,
-not replacements.
+### Transport
+
+JSON-RPC 2.0 over HTTP, mounted as `/mcp/rpc` on the existing
+`local_http` axum server. Same port as `/fleet/hooks/*` — no new
+listener, no new port to discover. The server speaks the MCP
+`initialize` / `tools/list` / `tools/call` /
+`notifications/initialized` handshake.
+
+### Session identity
+
+Every spawned claude gets a per-session UUID token, minted at PTY
+spawn time by `mcp::mint_session_token(fleet_session_id)` and written
+into a per-session `mcp.json` under `<TMP>/fleet-mcp-<id>/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "athena": {
+      "type": "http",
+      "url": "http://127.0.0.1:<local_http_port>/mcp/rpc",
+      "headers": { "X-Athena-Session": "<token>" }
+    }
+  }
+}
+```
+
+PTY spawn injects `--mcp-config <path>` into the claude argv. Every
+MCP tool call carries the `X-Athena-Session` header; the dispatcher
+resolves the token → Fleet session id. The PTY reaper releases the
+token + cancels any pending blocking RPCs + removes the temp dir on
+session exit.
+
+### Tools
+
+| Tool | Effect | Blocking |
+|------|--------|----------|
+| `athena.report_intent { intent, role?, operation_id? }` | Set SessionRef.intent + optional role; upgrade ad-hoc op label, or join an explicit op | No |
+| `athena.checkpoint { progress, blockers? }` | Append a `Checkpoint` (capped at 20 per session, oldest rolls off) | No |
+| `athena.request_guidance { question, context? }` | Emit `athena://mcp/guidance-request`; block until frontend resolves with `{ text }` | **Yes** |
+| `athena.request_approval { action, rationale, details? }` | Emit `athena://mcp/approval-request`; block until frontend resolves with `{ approved, note? }` (denied → `isError: true`) | **Yes** |
+
+The two blocking tools use a process-wide `PendingHub`
+(`oneshot::Sender` registry, TTL 10m) that the frontend resolves via
+`companion_mcp_resolve_request(request_id, response)`. On session
+exit the hub cancels every pending entry for that session so the
+blocking RPC returns with an `exited` error instead of hanging until
+TTL.
+
+### Coexistence with hooks
+
+Hooks stay — they're cheap and cover the legacy path. When both fire
+for the same effect (e.g. PreToolUse + a near-simultaneous
+`checkpoint`), MCP wins for intent fidelity; hooks for tool granularity.
+
+### Frontend
+
+`useMcpRequestBridge` (mounted in `PersonasPage` alongside
+`useFleetCompanionBridge`) listens for the two `athena://mcp/*-request`
+events and seeds the `mcpRequestStore` Zustand store. A hard reload
+also fetches `companion_mcp_pending_snapshot` so pending requests
+survive a remount. `McpRequestPanel` (inside `CompanionPanel`,
+pinned above proactive nudges since the session is blocked until the
+user replies) renders one inline card per pending request.
+
+## Direction 5 v2 — `fleet_dispatch` with cross-session reconciler
+
+One ApprovalCard, N sessions under one Operation, one synthesized
+wrap-up.
+
+### Action
+
+`fleet_dispatch` is in the dispatcher's `ALLOWED_ACTIONS` like the
+other Tier-2 actions. Params:
+
+```json
+{
+  "operation_intent": "add tests for login flow",
+  "role_specs": [
+    { "role": "writer", "cwd": "C:/path/to/proj", "args": [], "cols": 120, "rows": 32 },
+    { "role": "runner", "cwd": "C:/path/to/proj", "args": [], "cols": 120, "rows": 32 }
+  ]
+}
+```
+
+Capped at 8 sessions per op to bound the blast radius of a runaway
+dispatcher. When the user approves:
+
+1. `OperativeMemory::begin_dispatched_operation(intent)` mints an op
+   with `dispatched_by_athena = true`.
+2. For each `role_spec`: `pty::spawn_session` →
+   `attach_session_to_operation` (so the SessionRef lands on the op
+   immediately, not on first hook) → `registry.rename(id, "athena-<role>")`
+   for the recursion-guard sentinel + visible role tag.
+3. The approval card shows the count + per-role list so the user
+   can verify before clicking Approve.
+
+### Reconciler
+
+Lives in `commands/companion/fleet_bridge.rs::reconcile_if_dispatched`.
+Fires inline at the end of every `companion_record_fleet_event`
+exit-event path:
+
+```
+session exits → find_operation_for_session → snapshot_operation
+  → if op.dispatched_by_athena AND op.status in {Completed, Failed}
+       AND op.completion_summary is None:
+     synthesize_operation_summary → write System episode
+       → emit `athena://orchestration/operation-completed`
+```
+
+Idempotency comes from the `completion_summary.is_none()` guard — a
+duplicate Exited event just no-ops. The synthesized wrap-up has:
+
+- Op-level status line (intent + outcome + N exited / M failed)
+- Per-session bullet: short id + role + state + intent + last
+  summary OR last checkpoint, with failure tail if any
+- Union of files touched across all sessions — Athena can spot
+  "two sessions both edited utils.ts" patterns
+
+The episode body uses marker tokens
+`fleet-orchestration op:… state:op_{completed,failed}` so retrieval
+finds it the same way per-session summaries land.
+
+### Recursion guard
+
+The proactive evaluator's existing
+`"skip if session name == 'athena'"` branch covers single-spawn
+recursion. For dispatch, `operation.dispatched_by_athena` gives a
+second signal: the evaluator can skip any session belonging to such
+an op, no matter what its visible name is.
 
 ## Test surface
 
-- **Rust unit tests** (`operative_memory.rs::tests`, 8 cases):
-  ad-hoc op creation, state transitions, tool-event mapping, failure
-  tail capture, summary synthesis, digest formatting, completion
-  detection. Run with `cargo test --features desktop --lib operative_memory`.
-- **Vitest** (`useFleetCompanionBridge.test.tsx`, 6 cases): event-to-payload
-  mapping, race protection, debounced added path.
+- **Rust unit tests** (`operative_memory.rs::tests` + `mcp::*::tests`,
+  26 cases total): ad-hoc op creation, state transitions, tool-event
+  mapping, failure tail capture, summary synthesis (per-session AND
+  cross-session), digest formatting, completion detection, MCP token
+  round-trip, pending hub submit/resolve/cancel/snapshot, tool
+  descriptors, intent record (ad-hoc upgrade + dispatched-op preservation),
+  checkpoint cap, full dispatched lifecycle. Run with
+  `cargo test --features desktop --lib companion::orchestration`.
+- **Vitest** (`useFleetCompanionBridge.test.tsx` + `useMcpRequestBridge.test.tsx`,
+  12 cases): event-to-payload mapping, race protection, debounced added
+  path, MCP snapshot seed, guidance + approval live events, dedup,
+  resolve round-trip.
 - **Playwright** (`companion-fleet-orchestration.spec.ts`, 3 cases):
-  digest exposed via `companion_get_operative_memory_digest`; exited
-  events produce synthesized-summary episode bodies; non-zero exits
-  flip operations to Failed in the digest.
+  digest exposed; exited events produce synthesized-summary episode
+  bodies; non-zero exits flip ops to Failed.
+- **Real-claude E2E** (`companion-real-claude-workflow.spec.ts`,
+  gated by `RUN_REAL_CLAUDE_TESTS=1`): spawns 2 real claude sessions
+  via `fleet_dispatch` against a temp hello-world repo, polls until
+  the reconciler stamps a terminal status, asserts the wrap-up names
+  both roles. Manual playbook for the human-in-the-loop version lives
+  at [`docs/development/companion-fleet-real-claude-playbook.md`](../development/companion-fleet-real-claude-playbook.md).
 
 ## Sharp edges
 
@@ -171,3 +304,20 @@ not replacements.
   as separate tasks). After many spawns, the digest could get noisy;
   the 5-minute "keep recent" window on completed ops bounds this in
   practice.
+- **MCP session identity is per-spawn**, not per-claude-session-id.
+  Token → `fleet_session_id` mapping. If a future feature reuses a
+  PTY across Claude Code reincarnations (it doesn't today), we'd
+  need to either re-mint a token per `SessionStart` hook or move
+  identity onto the claude_session_id.
+- **Blocking MCP RPC + frontend disconnection.** If the chat panel
+  is never opened, a `request_guidance` call hangs for the 10-minute
+  TTL and the session waits with it. Mitigation: the TTL eventually
+  fires and returns an `expired` error so the session can fall
+  through, and the bridge fetches `pending_snapshot` on mount so a
+  late-opened panel still sees the question. The bigger fix —
+  decay-aware timeout based on session activity — is a future v2.
+- **Dispatched operations bypass proactive nudge gating** for the
+  whole op, not just per-session. If you wire the proactive
+  evaluator to react to one of these sessions, route it through the
+  `dispatched_by_athena` check on the parent op or accept that
+  Athena will see herself nudging.
