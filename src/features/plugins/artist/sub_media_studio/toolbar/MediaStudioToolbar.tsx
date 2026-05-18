@@ -113,7 +113,7 @@ export default function MediaStudioToolbar({
   );
 
   return (
-    <div className="flex flex-col border-b border-primary/10 bg-card/40">
+    <div className="flex flex-col border-b border-primary/10 bg-card/70">
     <div className="flex items-stretch gap-2 px-4 md:px-6 xl:px-8 py-2">
       {/* -- Left: composition identity + metadata -------------------------- */}
       <CompositionIdentity
@@ -123,8 +123,7 @@ export default function MediaStudioToolbar({
       />
 
       {/* -- Middle: property popovers (light up on selection) -------------- */}
-      <div className="flex items-center gap-0.5">
-        <div className="w-px h-5 bg-primary/10 mx-1 self-center" aria-hidden />
+      <div className="flex items-center gap-0.5 bg-secondary/30 rounded-card border border-primary/10 p-0.5">
 
         {/* Composition settings — always available */}
         <IconPopover icon={Settings2} title="Composition settings">
@@ -391,25 +390,36 @@ export default function MediaStudioToolbar({
           </button>
         )}
 
-        <Button variant="ghost" size="sm" onClick={persistence.openFile} title="Open composition">
-          <FolderOpen className="w-3.5 h-3.5" />
-          <span className="hidden md:inline">Open</span>
-        </Button>
-        <Button variant="ghost" size="sm" onClick={persistence.save} title="Save">
-          <Save className="w-3.5 h-3.5" />
-          <span className="hidden md:inline">Save</span>
-        </Button>
-        <Button
-          variant="accent"
-          accentColor="rose"
-          size="sm"
-          onClick={onExport}
-          disabled={exportDisabled || exporting}
-          title="Export MP4"
-        >
-          {exporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileVideo className="w-3.5 h-3.5" />}
-          <span className="hidden md:inline">Export</span>
-        </Button>
+        <div className="flex items-center gap-0.5 bg-secondary/30 rounded-card border border-primary/10 p-0.5">
+          <button
+            type="button"
+            onClick={persistence.openFile}
+            title="Open composition"
+            aria-label="Open composition"
+            className="w-9 h-9 flex items-center justify-center rounded-card border border-transparent text-foreground/70 hover:bg-secondary/40 hover:text-foreground transition-colors"
+          >
+            <FolderOpen className="w-[18px] h-[18px]" />
+          </button>
+          <button
+            type="button"
+            onClick={persistence.save}
+            title="Save"
+            aria-label="Save"
+            className="w-9 h-9 flex items-center justify-center rounded-card border border-transparent text-foreground/70 hover:bg-secondary/40 hover:text-foreground transition-colors"
+          >
+            <Save className="w-[18px] h-[18px]" />
+          </button>
+          <button
+            type="button"
+            onClick={onExport}
+            disabled={exportDisabled || exporting}
+            title="Export MP4"
+            aria-label="Export MP4"
+            className="w-9 h-9 flex items-center justify-center rounded-card border border-rose-500/25 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-rose-500/10"
+          >
+            {exporting ? <Loader2 className="w-[18px] h-[18px] animate-spin" /> : <FileVideo className="w-[18px] h-[18px]" />}
+          </button>
+        </div>
       </div>
     </div>
 

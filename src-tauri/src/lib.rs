@@ -2097,6 +2097,7 @@ pub fn run() {
             commands::companion::chat::companion_reset_conversation,
             commands::companion::chat::companion_interrupt_turn,
             commands::companion::chat::companion_cancel_autonomy,
+            commands::companion::fleet_bridge::companion_record_fleet_event,
             commands::companion::approvals::companion_list_pending_approvals,
             commands::companion::approvals::companion_approve_action,
             commands::companion::approvals::companion_reject_action,
@@ -2177,6 +2178,7 @@ pub fn run() {
             commands::infrastructure::system::health_check_circuit_breaker,
             commands::infrastructure::system::health_check_subscriptions,
             commands::infrastructure::system::open_external_url,
+            commands::infrastructure::system::open_local_path,
             commands::infrastructure::system::register_claude_desktop_mcp,
             commands::infrastructure::system::unregister_claude_desktop_mcp,
             commands::infrastructure::system::check_claude_desktop_mcp,
@@ -2633,6 +2635,7 @@ pub fn run() {
             commands::fleet::commands::fleet_install_hooks,
             commands::fleet::commands::fleet_uninstall_hooks,
             commands::fleet::commands::fleet_check_hooks,
+            commands::fleet::commands::fleet_rename_session,
         ]))
         .run(tauri::generate_context!())
         .unwrap_or_else(|e| {

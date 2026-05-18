@@ -8,6 +8,7 @@ import {
   GraduationCap, BookOpen, Trophy, AlertOctagon,
   User, Mic, Volume2, Sparkles,
   Wand2, Image as ImageIcon, Film, Gauge as GaugeIcon, Bell,
+  Terminal, RefreshCw, FolderOpen,
   type LucideIcon,
 } from 'lucide-react';
 import type { SidebarSection, HomeTab, OverviewTab } from '@/lib/types/types';
@@ -115,6 +116,12 @@ export const devToolsItems: SubNavItem[] = [
   { id: 'idea-triage', label: 'Idea Triage', icon: ArrowLeftRight },
   { id: 'task-runner', label: 'Task Runner', icon: Play },
   { id: 'skills', label: 'Skills', icon: BookOpen },
+  // Fleet — Claude Code session aggregator for the active project.
+  // Inherits the active project's root_path as the spawn cwd. Not
+  // tier-gated here because the PluginsSidebarNav devToolsItems map
+  // doesn't apply tier/dev filtering today; the underlying Rust module
+  // always compiles so showing it is safe across builds.
+  { id: 'fleet', label: 'Fleet', icon: Terminal },
 ];
 
 export const twinItems: SubNavItem[] = [
@@ -154,12 +161,16 @@ export const companionItems: SubNavItem[] = [
   { id: 'voice', label: 'Voice', icon: Mic },
 ];
 
-// Fleet plugin sub-nav (DEV-only). Aggregates Claude Code CLI sessions
-// across terminals via PTY ownership + hooks. See docs/features/fleet.md.
-export const fleetItems: SubNavItem[] = [
-  { id: 'grid', label: 'Sessions', icon: LayoutDashboard },
-  { id: 'decisions', label: 'Decisions', icon: MessageSquare },
-  { id: 'settings', label: 'Settings', icon: Settings },
+// Obsidian Brain plugin sub-nav: promoted to sidebar L3 on 2026-05-17.
+// Mirrors the in-page header tab bar that previously lived in
+// ObsidianBrainPage.tsx — the page now renders only the active panel,
+// matching the L3-pattern adopted by Artist / Dev Tools / Twin etc.
+export const obsidianBrainItems: SubNavItem[] = [
+  { id: 'setup',  label: 'Setup',        icon: Settings },
+  { id: 'sync',   label: 'Sync',         icon: RefreshCw },
+  { id: 'browse', label: 'Browse Vault', icon: FolderOpen },
+  { id: 'graph',  label: 'Graph',        icon: Network },
+  { id: 'cloud',  label: 'Cloud',        icon: Cloud },
 ];
 
 export function getSettingsItems(isDev: boolean, activeTier?: Tier): SubNavItem[] {

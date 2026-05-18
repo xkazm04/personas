@@ -1,10 +1,7 @@
 {
   "selector": {
-    "noTwin": "No twin configured",
-    "createFirst": "Create a twin first so personas have an identity to speak as.",
     "createTwin": "Buat twin baru",
     "selectTwin": "Select a twin...",
-    "progressGroupLabel": "Twin setup progress",
     "pickerLabel": "Pilih twin aktif",
     "searchPlaceholder": "Cari berdasarkan nama atau peran…",
     "noMatches": "Tidak ada twin yang cocok dengan pencarian Anda."

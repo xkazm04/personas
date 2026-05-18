@@ -12566,11 +12566,8 @@
   },
   "twin": {
     "selector": {
-      "noTwin": "No twin configured",
-      "createFirst": "Create a twin first so personas have an identity to speak as.",
       "createTwin": "नया ट्विन बनाएँ",
       "selectTwin": "Select a twin...",
-      "progressGroupLabel": "Twin setup progress",
       "pickerLabel": "सक्रिय ट्विन चुनें",
       "searchPlaceholder": "नाम या भूमिका से खोजें…",
       "noMatches": "आपकी खोज से मेल खाता कोई ट्विन नहीं है।"

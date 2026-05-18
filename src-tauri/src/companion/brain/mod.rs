@@ -13,6 +13,7 @@ pub mod decisions;
 pub mod doctrine;
 pub mod embeddings;
 pub mod episodic;
+pub mod fleet;
 pub mod goals;
 pub mod graph;
 pub mod identity;

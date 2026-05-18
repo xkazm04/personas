@@ -137,6 +137,15 @@ const ALLOWED_ACTIONS: &[&str] = &[
     // proactive ping needs explicit "yes, ping me about this then"
     // consent.
     "schedule_proactive",
+    // Phase J — Fleet integration (companion ↔ Claude Code workers).
+    // All four go through approval because every one of them moves
+    // a real subprocess (writing keystrokes, killing it, spawning
+    // a new one). Single approval click is the user's "yes, do that"
+    // for one batched fleet operation.
+    "fleet_send_input",
+    "fleet_broadcast",
+    "fleet_kill",
+    "fleet_spawn",
 ];
 
 /// Lab modes valid for `open_lab`. Mirrors the `lab-mode-*` testids in

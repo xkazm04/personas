@@ -1,8 +1,16 @@
 import { lazy, Suspense, useEffect, useRef } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
 import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
-import { TwinSelector } from './TwinSelector';
+import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { useHydrateActiveTwin } from './useTwinReadiness';
+
+// Mirrors ContentBox's responsive ladder (see ContentLayout.tsx). Twin
+// Atelier pages render their own hero band instead of ContentHeader, so
+// the ladder lives here to give every Twin subpage the same width
+// contract Overview pages get for free.
+const TWIN_PAGE_MIN_WIDTH = IS_MOBILE
+  ? ''
+  : 'min-w-[640px] md:min-w-[800px] xl:min-w-[920px] 2xl:min-w-[1180px] 3xl:min-w-[1560px] 4xl:min-w-[2200px]';
 
 const ProfilesPage = lazy(() => import('./sub_profiles/ProfilesPage'));
 const IdentityPage = lazy(() => import('./sub_identity/IdentityPage'));
@@ -44,11 +52,10 @@ export default function TwinPage() {
 
   return (
     <div className="h-full w-full flex flex-col">
-      <TwinSelector />
       <div
         data-testid="twin-page"
         key={twinTab}
-        className="animate-fade-slide-in flex-1 min-h-0 flex flex-col"
+        className={`animate-fade-slide-in flex-1 min-h-0 flex flex-col w-full overflow-hidden ${TWIN_PAGE_MIN_WIDTH}`}
       >
         <Suspense fallback={<SuspenseFallback />}>
           {twinTab === 'profiles' && <ProfilesPage />}

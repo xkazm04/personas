@@ -60,7 +60,7 @@ export function IconPopover({
         title={title}
         aria-label={title}
         aria-expanded={open}
-        className={`w-8 h-8 flex items-center justify-center rounded-card border transition-colors ${
+        className={`w-9 h-9 flex items-center justify-center rounded-card border transition-colors ${
           disabled
             ? 'border-transparent text-foreground/30 cursor-not-allowed'
             : active
@@ -70,7 +70,7 @@ export function IconPopover({
                 : 'border-transparent text-foreground/70 hover:bg-secondary/30 hover:text-foreground'
         }`}
       >
-        <Icon className="w-4 h-4" />
+        <Icon className="w-[18px] h-[18px]" />
       </button>
       {open && !disabled && (
         <div

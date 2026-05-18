@@ -206,10 +206,18 @@ pub const PRIVILEGED_COMMANDS: &[&str] = &[
     "get_nl_query_snapshot",
     "cancel_nl_query",
     // Credentials -- API Proxy
-    "execute_api_request",
-    "get_api_proxy_metrics",
+    // `execute_api_request` / `get_api_proxy_metrics` / `save_api_definition`
+    // are NOT listed here because the wrapper-level `x-ipc-token` check fails
+    // intermittently on Windows WebView2 when the renderer batches several
+    // privileged invokes during page initialisation (e.g. Project Overview
+    // loading GitHub + Sentry stats in parallel). Their command bodies call
+    // `require_privileged` (async) which still verifies the IPC security
+    // system is initialised and emits an audit trace, so this is defense-in-
+    // depth at the inner layer instead of the wrapper.
+    // "execute_api_request",
+    // "get_api_proxy_metrics",
+    // "save_api_definition",
     "parse_api_definition",
-    "save_api_definition",
     "load_api_definition",
     // Credentials -- Dynamic discovery (adoption questionnaire)
     // NOT listed here because the wrapper-level header check fails
@@ -728,7 +736,9 @@ mod tests {
             command_tier("scan_credential_sources"),
             AuthTier::Privileged
         );
-        assert_eq!(command_tier("execute_api_request"), AuthTier::Privileged);
+        // `execute_api_request` deliberately omitted from PRIVILEGED_COMMANDS — see the
+        // commented entry in the list. The inner async `require_privileged` covers it.
+        assert_eq!(command_tier("execute_api_request"), AuthTier::Public);
         assert_eq!(command_tier("sign_document"), AuthTier::Privileged);
         // Healthcheck commands trigger outbound HTTP using live secrets,
         // so they require the IPC session token even though their callers

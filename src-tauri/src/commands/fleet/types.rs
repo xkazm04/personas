@@ -62,6 +62,11 @@ pub struct FleetSession {
     /// Human-readable project label — last path segment of `cwd` by default,
     /// overrideable in settings.
     pub project_label: String,
+    /// User-supplied per-session name. `None` by default; the UI shows it
+    /// next to `project_label` when set so users can disambiguate
+    /// multiple parallel sessions on the same project (e.g. "refactor",
+    /// "tests", "smoke run"). Settable via `fleet_rename_session`.
+    pub name: Option<String>,
     /// Extra CLI arguments passed to `claude` at spawn time. Empty by default.
     pub args: Vec<String>,
     /// Current lifecycle state. See [`FleetSessionState`].

@@ -500,7 +500,22 @@ async fn try_refresh_oauth_token(
     connector_name: &str,
     override_client: Option<(&str, &str)>,
 ) -> Option<OAuthRefreshOk> {
-    let refresh_token = fields.get("refresh_token").filter(|v| !v.is_empty())?;
+    let Some(refresh_token) = fields.get("refresh_token").filter(|v| !v.is_empty()) else {
+        // Upgraded from silent return: when a credential has an OAuth-shaped
+        // schema but no refresh_token, runtime tools will use whatever
+        // access_token is on file — if it's expired they get 401 and the
+        // user sees the "credentials need to be refreshed" failure with
+        // no hint of why. Surfacing this in the dev console makes the
+        // first 30 seconds of diagnosis cost nothing.
+        tracing::warn!(
+            connector = connector_name,
+            "OAuth refresh skipped: credential has no refresh_token. \
+             Tools will use the stored access_token as-is; expect 401 \
+             once it expires. Re-authorize the credential to get a \
+             refresh_token."
+        );
+        return None;
+    };
 
     // Resolve client credentials: prefer fields, then override, then fail
     let (cid, csec) = if let (Some(id), Some(secret)) = (
@@ -511,9 +526,23 @@ async fn try_refresh_oauth_token(
     } else if let Some((id, secret)) = override_client {
         (id.to_string(), secret.to_string())
     } else {
-        tracing::debug!(
-            "No client credentials available for OAuth refresh of '{}'",
-            connector_name
+        // Upgraded from `debug!` to `warn!`. This is the most common silent
+        // failure for app-managed Google credentials in dev builds: the
+        // credential stores no client_id (app_managed=true) and the dev
+        // binary wasn't built with GCP_DESKTOP_CLIENT_ID /
+        // GOOGLE_CLIENT_ID env vars set, so refresh has no client
+        // identity to send. The user sees a "healthy" credential
+        // in the catalog (the catalog uses a different refresh path
+        // via run_healthcheck → connector_strategy::resolve_auth_token)
+        // and is then surprised when the build-test gets 401.
+        tracing::warn!(
+            connector = connector_name,
+            "OAuth refresh skipped: no client credentials available. \
+             For Google/Microsoft platform OAuth, set GCP_DESKTOP_CLIENT_ID + \
+             GCP_DESKTOP_CLIENT_SECRET (or GOOGLE_CLIENT_ID/SECRET, \
+             MICROSOFT_CLIENT_ID/SECRET) at build time, or store client \
+             credentials per-credential in the vault. Tools will use the \
+             stored access_token as-is; expect 401 once it expires."
         );
         return None;
     };
@@ -532,7 +561,19 @@ async fn try_refresh_oauth_token(
         "microsoft" => "https://login.microsoftonline.com/common/oauth2/v2.0/token",
         "slack" => "https://slack.com/api/oauth.v2.access",
         "github" => "https://github.com/login/oauth/access_token",
-        _ => return None, // Unknown provider -- skip refresh
+        _ => {
+            // Upgraded from silent return. If a connector with OAuth shape
+            // isn't in this list, we can't refresh — but we also can't tell
+            // the user why their tool fails 401 without surfacing it.
+            tracing::warn!(
+                connector = connector_name,
+                "OAuth refresh skipped: connector not in the known token-endpoint \
+                 list. Tools will use the stored access_token as-is. To add \
+                 support, extend the match arm in \
+                 engine/runner/credentials.rs::try_refresh_oauth_token."
+            );
+            return None;
+        }
     };
 
     tracing::info!(
@@ -540,7 +581,7 @@ async fn try_refresh_oauth_token(
         connector_name
     );
 
-    let response = crate::SHARED_HTTP
+    let response = match crate::SHARED_HTTP
         .post(token_url)
         .header("Accept", "application/json")
         .form(&[
@@ -552,7 +593,18 @@ async fn try_refresh_oauth_token(
         .timeout(std::time::Duration::from_secs(10))
         .send()
         .await
-        .ok()?;
+    {
+        Ok(r) => r,
+        Err(e) => {
+            tracing::warn!(
+                connector = connector_name,
+                error = %e,
+                "OAuth refresh HTTP request failed; tools will use stored \
+                 access_token as-is and likely hit 401 if it's expired."
+            );
+            return None;
+        }
+    };
 
     if !response.status().is_success() {
         let status = response.status();

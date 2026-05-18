@@ -1,10 +1,7 @@
 {
   "selector": {
-    "noTwin": "No twin configured",
-    "createFirst": "Create a twin first so personas have an identity to speak as.",
     "createTwin": "새 트윈 만들기",
     "selectTwin": "Select a twin...",
-    "progressGroupLabel": "Twin setup progress",
     "pickerLabel": "활성 트윈 선택",
     "searchPlaceholder": "이름 또는 역할로 검색…",
     "noMatches": "검색과 일치하는 트윈이 없습니다."

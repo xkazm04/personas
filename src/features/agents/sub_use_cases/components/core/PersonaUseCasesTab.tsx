@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { RecipesVariantSigilGrid } from '../recipes-prototype/RecipesVariantSigilGrid';
-import { ConsolidatedSigilLayout } from '../consolidated-prototype';
+import { PersonaLayoutView } from '../persona-layout';
 import type { PersonaDraft } from '@/features/agents/sub_editor';
 import type { CredentialMetadata } from '@/lib/types/types';
 
@@ -12,13 +12,16 @@ interface PersonaUseCasesTabProps {
   credentials: CredentialMetadata[];
 }
 
-type UseCasesLayout = 'sigil-grid' | 'consolidated';
+type UseCasesLayout = 'sigil-grid' | 'persona-layout';
 const LAYOUT_STORAGE_KEY = 'personas:use-cases-layout';
 
 function readLayout(): UseCasesLayout {
   try {
     const raw = localStorage.getItem(LAYOUT_STORAGE_KEY);
-    if (raw === 'sigil-grid' || raw === 'consolidated') return raw;
+    if (raw === 'sigil-grid' || raw === 'persona-layout') return raw;
+    // Migrate the previous 'consolidated' value (renamed to 'persona-layout'
+    // when the dictionary was clarified — Persona Layout is the canonical name).
+    if (raw === 'consolidated') return 'persona-layout';
   } catch {
     /* SSR or disabled localStorage */
   }
@@ -36,9 +39,9 @@ function writeLayout(value: UseCasesLayout): void {
 /**
  * Persona editor → Use Cases tab. Hosts a layout switcher above the
  * canonical RecipesVariantSigilGrid surface; the second option is the
- * Consolidated prototype (persona-level hero + capability rows) used to
- * validate the persona-hero + use-case-grid shape before applying it to
- * adoption and build flows. See docs/concepts/glyph-consolidation.md.
+ * Persona Layout prototype (Persona Sigil hero + Capability Sigil rows)
+ * used to validate the persona-hero + use-case-grid shape before applying
+ * it to adoption and scratch flows. See docs/concepts/glyph-consolidation.md.
  */
 export function PersonaUseCasesTab(props: PersonaUseCasesTabProps) {
   const [layout, setLayout] = useState<UseCasesLayout>(() => readLayout());
@@ -53,7 +56,7 @@ export function PersonaUseCasesTab(props: PersonaUseCasesTabProps) {
         {layout === 'sigil-grid' ? (
           <RecipesVariantSigilGrid {...props} />
         ) : (
-          <ConsolidatedSigilLayout credentials={props.credentials} />
+          <PersonaLayoutView credentials={props.credentials} />
         )}
       </div>
     </div>
@@ -83,10 +86,10 @@ function LayoutSwitcher({ value, onChange }: LayoutSwitcherProps) {
           {t.agents.use_cases.layout_tab_sigil_grid}
         </LayoutTab>
         <LayoutTab
-          active={value === 'consolidated'}
-          onClick={() => onChange('consolidated')}
+          active={value === 'persona-layout'}
+          onClick={() => onChange('persona-layout')}
         >
-          {t.agents.use_cases.layout_tab_consolidated}
+          {t.agents.use_cases.layout_tab_persona_layout}
           <span className="ml-1.5 typo-label uppercase tracking-wider text-primary/85">
             {t.agents.use_cases.layout_tab_prototype_badge}
           </span>

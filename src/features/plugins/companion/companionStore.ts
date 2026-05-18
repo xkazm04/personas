@@ -56,6 +56,28 @@ export interface PendingPlayback {
   audioUrl: string | null;
 }
 
+/**
+ * Lightweight "Athena has something new" cue surfaced above the footer
+ * icon. Lives in the store rather than as component state because two
+ * surfaces emit notices (streaming-finish in the footer icon itself, and
+ * proactive deliveries that arrive via the always-mounted CompanionPanel
+ * Tauri listeners) and one surface renders them. Cleared when the user
+ * opens the panel, clicks the popover, or after a short auto-dismiss.
+ *
+ * `ttsSpoken` is flipped after the optional spoken announcement so the
+ * effect doesn't fire twice if the component re-renders for unrelated
+ * reasons (e.g., voice settings tweak mid-flight).
+ */
+export type FooterNoticeKind = 'analysis_complete' | 'proactive';
+
+export interface FooterNotice {
+  id: string;
+  kind: FooterNoticeKind;
+  subject: string;
+  ttsSpoken: boolean;
+  createdAt: number;
+}
+
 interface CompanionStore {
   // UI state
   state: CompanionState;
@@ -130,6 +152,13 @@ interface CompanionStore {
   setPlaybackAudioUrl: (audioUrl: string) => void;
   /** Mark the active playback as already heard (footer Play hides itself). */
   markPlaybackPlayed: () => void;
+
+  // Footer notice — "Athena has something new" cue shown above the bot
+  // icon. One slot, latest-wins. See FooterNotice docstring.
+  footerNotice: FooterNotice | null;
+  setFooterNotice: (notice: FooterNotice | null) => void;
+  markFooterNoticeSpoken: () => void;
+  clearFooterNotice: () => void;
 
   /**
    * One-shot prompt injected into the composer by external surfaces
@@ -288,6 +317,16 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
         ? { pendingPlayback: { ...s.pendingPlayback, played: true } }
         : s,
     ),
+
+  footerNotice: null,
+  setFooterNotice: (footerNotice) => set({ footerNotice }),
+  markFooterNoticeSpoken: () =>
+    set((s) =>
+      s.footerNotice
+        ? { footerNotice: { ...s.footerNotice, ttsSpoken: true } }
+        : s,
+    ),
+  clearFooterNotice: () => set({ footerNotice: null }),
 
   pendingPrompt: null,
   setPendingPrompt: (pendingPrompt: PendingPromptPayload | null) => set({ pendingPrompt }),

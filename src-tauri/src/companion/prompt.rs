@@ -163,6 +163,18 @@ pub async fn build_system_prompt(
         .map(observability::format_for_prompt)
         .unwrap_or_default();
 
+    // Append the operative-memory digest — active orchestration view
+    // for Athena (live per-session work, files touched, recent
+    // failures). Empty string when no operations are tracked so the
+    // prompt stays clean for users not using fleet. This *replaces*
+    // the older flat fleet-state digest with an operation-grouped
+    // narrative tied to user intent.
+    let observability_md = format!(
+        "{}{}",
+        observability_md,
+        crate::companion::orchestration::operative_memory::memory().digest_for_prompt(),
+    );
+
     let recall = match embedder {
         Some(emb) => retrieval::retrieve(user_db, emb, session_id, query)
             .await
@@ -263,6 +275,18 @@ pub async fn build_system_prompt(
         .as_ref()
         .map(observability::format_for_prompt)
         .unwrap_or_default();
+
+    // Append the operative-memory digest — active orchestration view
+    // for Athena (live per-session work, files touched, recent
+    // failures). Empty string when no operations are tracked so the
+    // prompt stays clean for users not using fleet. This *replaces*
+    // the older flat fleet-state digest with an operation-grouped
+    // narrative tied to user intent.
+    let observability_md = format!(
+        "{}{}",
+        observability_md,
+        crate::companion::orchestration::operative_memory::memory().digest_for_prompt(),
+    );
 
     let recall = Recall {
         episodes: episodic::list_recent(user_db, session_id, 20).unwrap_or_default(),

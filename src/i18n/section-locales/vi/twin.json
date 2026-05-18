@@ -1,10 +1,7 @@
 {
   "selector": {
-    "noTwin": "No twin configured",
-    "createFirst": "Create a twin first so personas have an identity to speak as.",
     "createTwin": "Tạo twin mới",
     "selectTwin": "Select a twin...",
-    "progressGroupLabel": "Twin setup progress",
     "pickerLabel": "Chọn twin đang hoạt động",
     "searchPlaceholder": "Tìm theo tên hoặc vai trò…",
     "noMatches": "Không có twin nào khớp với tìm kiếm của bạn."

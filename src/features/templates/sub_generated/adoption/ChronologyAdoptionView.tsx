@@ -14,7 +14,8 @@ const logger = createLogger("template-adoption");
 import { PersonaChronologyGlyph } from "./glyph";
 import { QuestionnaireForm } from "./questionnaire";
 import { UseCasePickerStep, type UseCaseOption } from "./ucPicker";
-import { ConsolidatedAdoptionView } from "./consolidated";
+import { PersonaLayoutAdoption } from "./persona-layout";
+import { PersonaLayoutBuild } from "./persona-layout/PersonaLayoutBuild";
 import { useBuild } from "@/features/agents/components/matrix/useBuild";
 import { useLifecycle } from "@/features/agents/components/matrix/useLifecycle";
 import { useAgentStore } from "@/stores/agentStore";
@@ -25,7 +26,7 @@ import type { CellBuildStatus } from "@/lib/types/buildTypes";
 import type { ActiveProcess } from "@/stores/slices/processActivitySlice";
 import type { TransformQuestionResponse } from "@/api/templates/n8nTransform";
 import type { AgentIR } from "@/lib/types/designTypes";
-import { matchVaultToQuestions } from "../shared/vaultAdoptionMatcher";
+import { hasMatchingCredential, matchVaultToQuestions } from "../shared/vaultAdoptionMatcher";
 import { useDynamicQuestionOptions } from "./useDynamicQuestionOptions";
 import { categoryOrderIndex } from "./questionnaireCategoryOrder";
 import { useTranslation } from '@/i18n/useTranslation';
@@ -420,13 +421,16 @@ function applyTriggerSelections(
   };
 }
 
-type AdoptionLayout = 'classic' | 'consolidated';
+type AdoptionLayout = 'classic' | 'persona-layout';
 const ADOPTION_LAYOUT_STORAGE_KEY = 'personas:adoption-layout';
 
 function readAdoptionLayout(): AdoptionLayout {
   try {
     const raw = localStorage.getItem(ADOPTION_LAYOUT_STORAGE_KEY);
-    if (raw === 'classic' || raw === 'consolidated') return raw;
+    if (raw === 'classic' || raw === 'persona-layout') return raw;
+    // Migrate the previous 'consolidated' value (renamed to 'persona-layout'
+    // when the dictionary was clarified — Persona Layout is the canonical name).
+    if (raw === 'consolidated') return 'persona-layout';
   } catch {
     /* SSR or disabled localStorage */
   }
@@ -1112,6 +1116,56 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
     setAdoptionAnswers((prev) => ({ ...prev, [ctx.targetQuestionId!]: serviceType }));
   }, [quickAddContext]);
 
+  // Wrapper around the plain `setAdoptionAnswers` that also auto-prompts
+  // for credential setup when the user picks an option whose service_type
+  // has no matching vault credential. Without this, the user would pick
+  // "Gmail OAuth" (just a label) and proceed to build, only to see tests
+  // fail with "Missing keys: email" — because the answer doesn't create
+  // a credential, it just records intent.
+  //
+  // Behaviour: set the answer first (so the picked option stays selected
+  // visually); then, if the question carries a vault_category and the
+  // picked option's service_type has no matching credential in the vault,
+  // open the QuickAddCredentialModal scoped to that category. If the user
+  // dismisses the modal, the answer remains — they can add the credential
+  // later. If they complete the add flow, handleCredentialAdded re-sets
+  // the answer to the freshly created service_type.
+  const credentialServiceTypesSet = useMemo(
+    () => new Set(credentialServiceTypes),
+    [credentialServiceTypes],
+  );
+  const handleAnswerUpdated = useCallback(
+    (id: string, answer: string) => {
+      setAdoptionAnswers((prev) => ({ ...prev, [id]: answer }));
+      const q = filteredAdoptionQuestions.find((qq) => qq.id === id);
+      if (!q) return;
+      // Resolve the picked option's service_type via the parallel
+      // option_service_types[] array. Skip if the question doesn't
+      // declare option types or the value isn't a known option (free
+      // text fallthrough).
+      const options = q.options ?? [];
+      const ost = q.option_service_types ?? [];
+      if (options.length === 0 || ost.length !== options.length) return;
+      const idx = options.indexOf(answer);
+      if (idx < 0) return;
+      const serviceType = ost[idx];
+      if (!serviceType) return; // null fallback option = no credential needed
+      if (!q.vault_category) return;
+      if (hasMatchingCredential(serviceType, credentialServiceTypesSet)) return;
+      // Open the QuickAddCredentialModal — handleAddCredentialForCategory
+      // resolves the vault category and sets `quickAddContext`, which
+      // mounts QuickAddCredentialModal. After the user completes the add
+      // flow, handleCredentialAdded re-sets the answer to the freshly
+      // created credential's service_type.
+      handleAddCredentialForCategory(q.vault_category);
+    },
+    [
+      filteredAdoptionQuestions,
+      credentialServiceTypesSet,
+      handleAddCredentialForCategory,
+    ],
+  );
+
   // Discard the current draft persona and close the adoption modal.
   // Shown as "Delete Draft" in the Command Hub when tests are skipped/failed
   // and the user wants to abandon the adoption rather than retry or approve.
@@ -1236,9 +1290,7 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
             dynamicOptions={dynamicOptions}
             onRetryDynamic={retryDynamic}
             onAddCredential={handleAddCredentialForCategory}
-            onAnswerUpdated={(id, answer) =>
-              setAdoptionAnswers((prev) => ({ ...prev, [id]: answer }))
-            }
+            onAnswerUpdated={handleAnswerUpdated}
             onSubmit={() => setQuestionsComplete(true)}
             onClose={onClose}
             templateName={templateName}
@@ -1253,17 +1305,22 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
       );
     })();
 
-    const consolidatedBranch = (
-      <ConsolidatedAdoptionView
+    const personaLayoutBranch = (
+      <PersonaLayoutAdoption
         designResult={designResult}
         templateName={templateName}
         selectedUseCaseIds={selectedUseCaseIds}
         onToggleUseCase={toggleUseCase}
         questions={filteredAdoptionQuestions}
         userAnswers={adoptionAnswers}
+        onAnswerUpdated={handleAnswerUpdated}
         autoDetectedIds={autoDetectedIds}
         blockedQuestionIds={blockedQuestionIds}
-        onSwitchToClassic={() => setLayout('classic')}
+        filteredOptions={filteredOptions}
+        dynamicOptions={dynamicOptions}
+        onRetryDynamic={retryDynamic}
+        onAddCredential={handleAddCredentialForCategory}
+        useCaseTitleById={useCaseTitleById}
         onContinue={() => {
           if (showUseCasePicker && !useCasesPicked) setUseCasesPicked(true);
           if (hasFilteredQuestions && !questionsComplete) setQuestionsComplete(true);
@@ -1273,38 +1330,85 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
     );
 
     return (
-      <div className="flex flex-col h-full min-h-0">
+      // `flex-1 min-h-0` (not `h-full`) so this wrapper takes the *remaining*
+      // height after AdoptionWizardModal's title bar inside the 92vh modal
+      // panel. With `h-full`, the wrapper was 92vh on top of the ~60px title
+      // bar — the bottom overflowed `overflow-hidden` on the modal's inner
+      // container, the inner scroll container's parent never had a bounded
+      // height, and the main content (sigil + rows) wasn't scrollable.
+      <div className="flex-1 min-h-0 flex flex-col">
         <AdoptionLayoutSwitcher value={layout} onChange={setLayout} />
         <div className="flex-1 min-h-0 flex flex-col">
-          {layout === 'classic' ? classicBranch : consolidatedBranch}
+          {layout === 'classic' ? classicBranch : personaLayoutBranch}
         </div>
+        {/* QuickAddCredentialModal is needed in BOTH branches (Classic and
+         *  Persona Layout fire `handleAddCredentialForCategory` which sets
+         *  `quickAddContext`). Previously the modal only mounted in the
+         *  post-seed return below, so clicking "Add credential" in pre-seed
+         *  set state but rendered nothing. */}
+        {quickAddContext && (
+          <QuickAddCredentialModal
+            category={quickAddContext.category}
+            onCredentialAdded={handleCredentialAdded}
+            onClose={() => setQuickAddContext(null)}
+          />
+        )}
       </div>
     );
   }
 
   return (
     <div className={`flex-1 min-h-0 flex flex-col w-full overflow-x-auto overflow-y-auto px-4 pt-2 transition-opacity duration-400 ${fadeOut ? 'opacity-0' : 'opacity-100'}`}>
-      <PersonaChronologyGlyph
-        buildPhase={build.buildPhase}
-        completeness={build.completeness}
-        isRunning={build.isBuilding}
-        buildActivity={build.buildActivity}
-        pendingQuestions={build.pendingQuestions}
-        onAnswerBuildQuestion={build.handleAnswer}
-        onSubmitAllAnswers={build.handleSubmitAnswers}
-        onStartTest={lifecycle.handleStartTest}
-        onApproveTest={lifecycle.handlePromote}
-        onApproveTestAnyway={() => { void lifecycle.handlePromote({ force: true }); }}
-        onRejectTest={lifecycle.handleRejectTest}
-        onDeleteDraft={handleDeleteDraft}
-        onRefine={lifecycle.handleRefine}
-        testOutputLines={build.buildTestOutputLines}
-        testPassed={build.buildTestPassed}
-        testError={build.buildTestError}
-        toolTestResults={lifecycle.buildToolTestResults}
-        testSummary={lifecycle.buildTestSummary}
-        onViewAgent={handleViewAgent}
-      />
+      {layout === 'persona-layout' ? (
+        // Build / test / promote phases live INSIDE the Persona Layout
+        // shell — Persona Sigil hero + capability rows + phase-aware
+        // controls below. Mirrors the user's intent that the adoption
+        // build runs in the same screen the user just configured.
+        <PersonaLayoutBuild
+          buildPhase={build.buildPhase}
+          completeness={build.completeness}
+          isBuilding={build.isBuilding}
+          buildActivity={build.buildActivity}
+          cellStates={build.cellStates}
+          pendingQuestions={build.pendingQuestions}
+          onAnswerBuildQuestion={build.handleAnswer}
+          onStartTest={lifecycle.handleStartTest}
+          onApproveTest={lifecycle.handlePromote}
+          onApproveTestAnyway={() => { void lifecycle.handlePromote({ force: true }); }}
+          onRejectTest={lifecycle.handleRejectTest}
+          onDeleteDraft={handleDeleteDraft}
+          onRefine={lifecycle.handleRefine}
+          onViewAgent={handleViewAgent}
+          templateName={templateName}
+          testOutputLines={build.buildTestOutputLines}
+          testPassed={build.buildTestPassed}
+          testError={build.buildTestError}
+          toolTestResults={lifecycle.buildToolTestResults}
+          testSummary={lifecycle.buildTestSummary}
+        />
+      ) : (
+        <PersonaChronologyGlyph
+          buildPhase={build.buildPhase}
+          completeness={build.completeness}
+          isRunning={build.isBuilding}
+          buildActivity={build.buildActivity}
+          pendingQuestions={build.pendingQuestions}
+          onAnswerBuildQuestion={build.handleAnswer}
+          onSubmitAllAnswers={build.handleSubmitAnswers}
+          onStartTest={lifecycle.handleStartTest}
+          onApproveTest={lifecycle.handlePromote}
+          onApproveTestAnyway={() => { void lifecycle.handlePromote({ force: true }); }}
+          onRejectTest={lifecycle.handleRejectTest}
+          onDeleteDraft={handleDeleteDraft}
+          onRefine={lifecycle.handleRefine}
+          testOutputLines={build.buildTestOutputLines}
+          testPassed={build.buildTestPassed}
+          testError={build.buildTestError}
+          toolTestResults={lifecycle.buildToolTestResults}
+          testSummary={lifecycle.buildTestSummary}
+          onViewAgent={handleViewAgent}
+        />
+      )}
       {/* Legacy: handleApplyEdits / handleDiscardEdits were wired to the
           original PersonaMatrix variant; keep the callbacks live for build
           flow even though no surface currently invokes them. */}
@@ -1332,7 +1436,7 @@ interface AdoptionLayoutSwitcherProps {
 
 /**
  * Tab switcher rendered above the pre-seed adoption surface so the user
- * can opt into the Consolidated prototype without losing the proven
+ * can opt into the Persona Layout prototype without losing the proven
  * 3-step Classic flow. Persisted via localStorage so the choice survives
  * modal reopens. Hidden after seed.
  */
@@ -1363,15 +1467,15 @@ function AdoptionLayoutSwitcher({ value, onChange }: AdoptionLayoutSwitcherProps
         <button
           type="button"
           role="tab"
-          aria-selected={value === 'consolidated'}
-          onClick={() => onChange('consolidated')}
+          aria-selected={value === 'persona-layout'}
+          onClick={() => onChange('persona-layout')}
           className={`relative inline-flex items-center px-3 py-1 rounded-full typo-caption transition-colors cursor-pointer ${
-            value === 'consolidated'
+            value === 'persona-layout'
               ? 'bg-primary/20 text-foreground'
               : 'text-foreground/65 hover:text-foreground hover:bg-secondary/60'
           }`}
         >
-          {t.templates.adopt_modal.layout_tab_consolidated}
+          {t.templates.adopt_modal.layout_tab_persona_layout}
           <span className="ml-1.5 typo-label uppercase tracking-wider text-primary/85">
             {t.templates.adopt_modal.layout_tab_prototype_badge}
           </span>

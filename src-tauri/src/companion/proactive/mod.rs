@@ -21,6 +21,7 @@
 //! Tauri command in v1, tokio-task via `companion_init` in v1.5.
 
 pub mod budget;
+pub mod fleet_triggers;
 pub mod quiet;
 pub mod triggers;
 

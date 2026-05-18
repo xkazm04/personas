@@ -1,7 +1,7 @@
 import { startTransition } from "react";
 import type { StateCreator } from "zustand";
 import type { SystemStore } from "../../storeTypes";
-import type { SidebarSection, HomeTab, EditorTab, DesignSubTab, TemplateTab, CloudTab, SettingsTab, DevToolsTab, AgentTab, PluginTab, EventBusTab, ResearchLabTab, FleetTab } from "@/lib/types/types";
+import type { SidebarSection, HomeTab, EditorTab, DesignSubTab, TemplateTab, CloudTab, SettingsTab, DevToolsTab, AgentTab, PluginTab, EventBusTab, ResearchLabTab } from "@/lib/types/types";
 import type { CompanionCockpitSpecBody } from "@/api/companion";
 
 /**
@@ -117,8 +117,6 @@ export interface UiSlice {
   setAdoptionDraft: (draft: AdoptionDraft | null) => void;
   setPluginTab: (tab: PluginTab) => void;
   setDevToolsTab: (tab: DevToolsTab) => void;
-  fleetTab: FleetTab;
-  setFleetTab: (tab: FleetTab) => void;
   setEventBusTab: (tab: EventBusTab) => void;
   setResearchLabTab: (tab: ResearchLabTab) => void;
   setContextScanActive: (active: boolean) => void;
@@ -182,7 +180,6 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) =
   templateGalleryTotal: 0,
   pluginTab: "browse" as PluginTab,
   devToolsTab: "projects" as DevToolsTab,
-  fleetTab: "grid" as FleetTab,
   eventBusTab: "live-stream" as EventBusTab,
   researchLabTab: "dashboard" as ResearchLabTab,
   adoptionDraft: null,
@@ -232,7 +229,6 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) =
   setAdoptionDraft: (draft) => set({ adoptionDraft: draft }),
   setPluginTab: (tab) => set({ pluginTab: tab }),
   setDevToolsTab: (tab) => set({ devToolsTab: tab }),
-  setFleetTab: (tab) => set({ fleetTab: tab }),
   setResearchLabTab: (tab) => startTransition(() => set({ researchLabTab: tab })),
   setEventBusTab: (tab) => startTransition(() => set({ eventBusTab: tab })),
   setContextScanActive: (active) => set({ contextScanActive: active }),
@@ -245,8 +241,6 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) =
   setLiveStreamHighlightEventId: (id) => set({ liveStreamHighlightEventId: id }),
   enabledPlugins: new Set<PluginTab>([
     'dev-tools', 'artist', 'obsidian-brain', 'research-lab', 'drive', 'twin', 'companion',
-    // Fleet is a DEV-only experimental plugin (Claude Code session aggregator).
-    ...(import.meta.env.DEV ? (['fleet'] as PluginTab[]) : []),
   ]),
   togglePlugin: (plugin) => set((state) => {
     const next = new Set(state.enabledPlugins);

@@ -391,12 +391,8 @@ export default function DesktopFooter() {
 
   return (
     <div role="contentinfo" className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-between px-4 h-8 border-t border-primary/10 bg-background">
-      {/* Left cluster: Companion + Collapse + Account + Theme + Network */}
+      {/* Left cluster: Collapse + Account + Theme + Network */}
       <div className="flex items-center gap-1.5">
-        <Suspense fallback={null}>
-          <CompanionFooterIcon />
-        </Suspense>
-        <div className="w-px h-4 bg-primary/10" />
         <CollapseFooterIcon />
         <div className="w-px h-4 bg-primary/10" />
         <AccountFooterIcon />
@@ -421,9 +417,15 @@ export default function DesktopFooter() {
         </div>
       )}
 
-      {/* Right cluster: quick active-project switcher (Dev Tools plugin) */}
+      {/* Right cluster: project picker + Athena companion. Companion sits
+          rightmost so the notice popover anchors against the window edge
+          and never collides with sibling footer popovers. */}
       <div className="flex items-center gap-1.5">
         <ProjectPickerFooterIcon />
+        <div className="w-px h-4 bg-primary/10" />
+        <Suspense fallback={null}>
+          <CompanionFooterIcon />
+        </Suspense>
       </div>
     </div>
   );

@@ -68,12 +68,11 @@ pub fn spawn_session(
     if !cwd.is_dir() {
         return Err(format!("cwd is not a directory: {}", cwd.display()));
     }
-    if registry().has_active_cwd(&cwd) {
-        return Err(format!(
-            "a Fleet session is already active for {} — close it first",
-            cwd.display()
-        ));
-    }
+    // Multiple sessions per cwd are allowed — users routinely want 2-5
+    // parallel claude runs on the same project (one drafting tests, one
+    // refactoring, one running e2e). The hook router in hooks.rs handles
+    // the bootstrap-window cwd ambiguity by preferring the most-recently-
+    // spawned still-unbound session for cwd-based routing.
 
     let pty_system = native_pty_system();
     let pair = pty_system
@@ -85,11 +84,35 @@ pub fn spawn_session(
         })
         .map_err(|e| format!("openpty failed: {e}"))?;
 
-    let mut cmd = CommandBuilder::new("claude");
+    // `claude` is published to npm as a Unix shell script with no
+    // extension. PATH-searching for it on Windows finds the bare script,
+    // which CreateProcessW then refuses to exec (OS error 193 — "is
+    // not a valid Win32 application"). Two coexisting shims handle this:
+    //   • `claude.cmd` (batch shim)  — works under cmd.exe
+    //   • `claude.ps1` (PowerShell)  — works under powershell.exe
+    // We pick the .cmd path on Windows and bare `claude` everywhere else.
+    let mut cmd = if cfg!(windows) {
+        // `cmd.exe /c claude <args>` lets PATHEXT resolve to claude.cmd.
+        // Single composed string for the /c arg avoids per-arg quoting
+        // pitfalls for the common no-arg case (the `args` Vec is empty
+        // by default from fleet_spawn_session).
+        let mut c = CommandBuilder::new("cmd.exe");
+        c.arg("/c");
+        let mut composed = String::from("claude");
+        for a in &args {
+            composed.push(' ');
+            composed.push_str(a);
+        }
+        c.arg(composed);
+        c
+    } else {
+        let mut c = CommandBuilder::new("claude");
+        for a in &args {
+            c.arg(a);
+        }
+        c
+    };
     cmd.cwd(&cwd);
-    for a in &args {
-        cmd.arg(a);
-    }
     // xterm-256color is what xterm.js natively understands.
     cmd.env("TERM", "xterm-256color");
 
@@ -124,6 +147,7 @@ pub fn spawn_session(
         claude_session_id: None,
         cwd: cwd.clone(),
         project_label,
+        name: None,
         args: args.clone(),
         state: FleetSessionState::Spawning,
         last_activity_ms: now,

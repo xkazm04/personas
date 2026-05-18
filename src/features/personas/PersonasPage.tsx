@@ -13,6 +13,7 @@ import { ErrorBanner } from '@/features/shared/components/feedback/ErrorBanner';
 import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
 import { CanvasDragProvider } from '@/features/pipeline/sub_canvas';
 import DesktopFooter from '@/features/shared/components/layout/DesktopFooter';
+import { useFleetCompanionBridge } from '@/features/plugins/companion/useFleetCompanionBridge';
 
 // Lazy-load all section content — only Sidebar stays eager (always visible)
 const HomePage = lazy(() => import('@/features/home/components/HomePage'));
@@ -36,7 +37,6 @@ const DrivePage = lazy(() => import('@/features/plugins/drive/DrivePage'));
 const TwinPage = lazy(() => import('@/features/plugins/twin/TwinPage'));
 const CompanionPluginPage = lazy(() => import('@/features/plugins/companion/CompanionPluginPage'));
 const LangfusePage = lazy(() => import('@/features/plugins/langfuse/LangfusePage'));
-const FleetPage = lazy(() => import('@/features/plugins/fleet/FleetPage'));
 const PluginBrowsePage = lazy(() => import('@/features/plugins/PluginBrowsePage'));
 const SchedulesPage = lazy(() => import('@/features/schedules/components/ScheduleTimeline'));
 
@@ -45,6 +45,10 @@ const SectionFallback = null;
 
 export default function PersonasPage() {
   const { shouldAnimate, transition } = useMotion();
+  // Always-on bridge: writes Fleet lifecycle events to Athena's
+  // episodic memory regardless of which sidebar section is active.
+  // No-op when no fleet sessions exist.
+  useFleetCompanionBridge();
   const { sidebarSection, cloudTab, agentTab, pluginTab, isCreatingPersona, isLoading, error } = useSystemStore(
     useShallow((s) => ({
       sidebarSection: s.sidebarSection,
@@ -228,9 +232,6 @@ export default function PersonasPage() {
       }
       if (pluginTab === 'langfuse') {
         return <ErrorBoundary name="Langfuse"><Suspense fallback={SectionFallback}><LangfusePage /></Suspense></ErrorBoundary>;
-      }
-      if (pluginTab === 'fleet') {
-        return <ErrorBoundary name="Fleet"><Suspense fallback={SectionFallback}><FleetPage /></Suspense></ErrorBoundary>;
       }
       // Browse view — plugin cards with enable/disable toggles
       return <ErrorBoundary name="PluginBrowse"><Suspense fallback={SectionFallback}><PluginBrowsePage /></Suspense></ErrorBoundary>;

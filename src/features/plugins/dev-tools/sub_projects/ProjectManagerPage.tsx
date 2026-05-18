@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   FolderKanban, Plus, ChevronRight, Folder, Network, Code2, GitBranch, Archive, CheckSquare, Square, X as XIcon,
 } from 'lucide-react';
-import { open as openExternal } from '@tauri-apps/plugin-shell';
+import { openLocalPath } from '@/api/system/system';
 import { toastCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
 import { GitHubIssueImportModal } from './GitHubIssueImportModal';
@@ -362,7 +362,7 @@ export default function ProjectManagerPage() {
                       )}
                       <button
                         type="button"
-                        onClick={() => { openExternal(`vscode://file/${project.path}`).catch(toastCatch('Failed to open in VS Code')); }}
+                        onClick={() => { openLocalPath(`vscode://file/${project.path}`).catch(toastCatch('Failed to open in VS Code')); }}
                         title={t.plugins.dev_tools.row_open_vscode}
                         aria-label={t.plugins.dev_tools.row_open_vscode}
                         className="w-7 h-7 flex items-center justify-center rounded-interactive text-foreground/60 hover:text-primary hover:bg-primary/10 transition-colors"
@@ -371,7 +371,7 @@ export default function ProjectManagerPage() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => { openExternal(project.path).catch(toastCatch('Failed to open project folder')); }}
+                        onClick={() => { openLocalPath(project.path).catch(toastCatch('Failed to open project folder')); }}
                         title={t.plugins.dev_tools.row_open_folder}
                         aria-label={t.plugins.dev_tools.row_open_folder}
                         className="w-7 h-7 flex items-center justify-center rounded-interactive text-foreground/60 hover:text-primary hover:bg-primary/10 transition-colors"

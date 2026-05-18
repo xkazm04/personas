@@ -29,6 +29,13 @@ cwd: string,
  */
 projectLabel: string, 
 /**
+ * User-supplied per-session name. `None` by default; the UI shows it
+ * next to `project_label` when set so users can disambiguate
+ * multiple parallel sessions on the same project (e.g. "refactor",
+ * "tests", "smoke run"). Settable via `fleet_rename_session`.
+ */
+name: string | null, 
+/**
  * Extra CLI arguments passed to `claude` at spawn time. Empty by default.
  */
 args: Array<string>, 

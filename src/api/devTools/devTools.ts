@@ -842,11 +842,16 @@ export interface SkillFileContent {
   content: string;
 }
 
-export const listSkills = () =>
-  safeInvoke<SkillEntry[]>([], "skill_files_list");
+export const listSkills = (projectId?: string | null) =>
+  safeInvoke<SkillEntry[]>([], "skill_files_list", { projectId: projectId ?? null });
 
-export const readSkillFile = (skillName: string, fileName: string) =>
-  invoke<SkillFileContent>("skill_files_read", { skillName, fileName });
+export const readSkillFile = (skillName: string, fileName: string, projectId?: string | null) =>
+  invoke<SkillFileContent>("skill_files_read", { skillName, fileName, projectId: projectId ?? null });
 
-export const writeSkillFile = (skillName: string, fileName: string, content: string) =>
-  invoke<void>("skill_files_write", { skillName, fileName, content });
+export const writeSkillFile = (
+  skillName: string,
+  fileName: string,
+  content: string,
+  projectId?: string | null,
+) =>
+  invoke<void>("skill_files_write", { skillName, fileName, content, projectId: projectId ?? null });

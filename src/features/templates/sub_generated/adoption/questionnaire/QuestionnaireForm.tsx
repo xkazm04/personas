@@ -52,7 +52,18 @@ export function QuestionnaireForm({
     () => questions.filter((q) => !!userAnswers[q.id]).length,
     [questions, userAnswers],
   );
-  const blockedCount = blockedQuestionIds?.size ?? 0;
+  // `blockedQuestionIds` is derived from the VAULT only — it doesn't
+  // know about user answers. Once a question has a value in
+  // userAnswers, the user has resolved it (the picked service_type
+  // may or may not have a vault credential, but the persona builder
+  // can proceed and the user can add the credential later). Subtract
+  // answered questions so picking a valid option clears the gate.
+  const blockedCount = useMemo(() => {
+    if (!blockedQuestionIds) return 0;
+    let n = 0;
+    for (const id of blockedQuestionIds) if (!userAnswers[id]) n++;
+    return n;
+  }, [blockedQuestionIds, userAnswers]);
   const canSubmit = answeredCount === totalCount && blockedCount === 0;
   const isAtEnd = activeIdx === totalCount - 1;
   const progressPct = totalCount > 0 ? answeredCount / totalCount : 0;

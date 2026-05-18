@@ -1,10 +1,7 @@
 {
   "selector": {
-    "noTwin": "No twin configured",
-    "createFirst": "Create a twin first so personas have an identity to speak as.",
     "createTwin": "Vytvořit nového dvojníka",
     "selectTwin": "Select a twin...",
-    "progressGroupLabel": "Twin setup progress",
     "pickerLabel": "Vyberte aktivního dvojníka",
     "searchPlaceholder": "Hledat podle jména nebo role…",
     "noMatches": "Žádní dvojníci neodpovídají vašemu hledání."

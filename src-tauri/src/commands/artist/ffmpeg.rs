@@ -87,10 +87,114 @@ static MEDIA_EXPORT_JOBS: BackgroundJobManager<MediaExportExtra> = BackgroundJob
 async fn find_ffmpeg_path() -> Option<PathBuf> {
     #[cfg(target_os = "windows")]
     {
+        // 1. Common system-wide install locations.
+        let mut candidates: Vec<PathBuf> = vec![
+            PathBuf::from(r"C:\ffmpeg\bin\ffmpeg.exe"),
+            PathBuf::from(r"C:\Program Files\ffmpeg\bin\ffmpeg.exe"),
+            PathBuf::from(r"C:\Program Files (x86)\ffmpeg\bin\ffmpeg.exe"),
+            PathBuf::from(r"C:\ProgramData\chocolatey\bin\ffmpeg.exe"),
+            PathBuf::from(r"C:\ProgramData\chocolatey\lib\ffmpeg\tools\ffmpeg\bin\ffmpeg.exe"),
+        ];
+
+        // 2. Per-user package managers (scoop, winget shims).
+        if let Ok(userprofile) = std::env::var("USERPROFILE") {
+            let up = PathBuf::from(&userprofile);
+            candidates.push(up.join(r"scoop\shims\ffmpeg.exe"));
+            candidates.push(up.join(r"scoop\apps\ffmpeg\current\bin\ffmpeg.exe"));
+            candidates.push(up.join(r"scoop\apps\ffmpeg-shared\current\bin\ffmpeg.exe"));
+        }
+        if let Ok(localappdata) = std::env::var("LOCALAPPDATA") {
+            let la = PathBuf::from(&localappdata);
+            candidates.push(la.join(r"Microsoft\WinGet\Links\ffmpeg.exe"));
+        }
+
+        for c in &candidates {
+            if c.exists() {
+                return Some(c.clone());
+            }
+        }
+
+        // 3. WinGet installs the binary inside a versioned subdirectory under
+        //    `%LOCALAPPDATA%\Microsoft\WinGet\Packages\<package>\...\bin\ffmpeg.exe`.
+        //    Walk any package whose name contains "ffmpeg" and look for the
+        //    binary at depth 1 or 2.
+        if let Ok(localappdata) = std::env::var("LOCALAPPDATA") {
+            let packages_dir =
+                PathBuf::from(&localappdata).join(r"Microsoft\WinGet\Packages");
+            if let Ok(mut entries) = tokio::fs::read_dir(&packages_dir).await {
+                while let Ok(Some(entry)) = entries.next_entry().await {
+                    let pkg_path = entry.path();
+                    let lower = pkg_path
+                        .file_name()
+                        .and_then(|s| s.to_str())
+                        .map(|s| s.to_lowercase())
+                        .unwrap_or_default();
+                    if !lower.contains("ffmpeg") {
+                        continue;
+                    }
+                    let direct = pkg_path.join("ffmpeg.exe");
+                    if direct.exists() {
+                        return Some(direct);
+                    }
+                    let bin = pkg_path.join("bin").join("ffmpeg.exe");
+                    if bin.exists() {
+                        return Some(bin);
+                    }
+                    if let Ok(mut inner) = tokio::fs::read_dir(&pkg_path).await {
+                        while let Ok(Some(sub)) = inner.next_entry().await {
+                            let sub_path = sub.path();
+                            let cand = sub_path.join("bin").join("ffmpeg.exe");
+                            if cand.exists() {
+                                return Some(cand);
+                            }
+                            let cand2 = sub_path.join("ffmpeg.exe");
+                            if cand2.exists() {
+                                return Some(cand2);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 4. Walk PATH explicitly. This catches installs the user wired up
+        //    manually but missed by the heuristic locations above.
+        if let Ok(path) = std::env::var("PATH") {
+            for dir in path.split(';') {
+                if dir.is_empty() {
+                    continue;
+                }
+                let p = PathBuf::from(dir).join("ffmpeg.exe");
+                if p.exists() {
+                    return Some(p);
+                }
+            }
+        }
+
+        // 5. Final fallback: ask Windows itself via `where ffmpeg`. This uses
+        //    the same lookup the shell would.
+        let mut cmd = TokioCommand::new("where");
+        cmd.arg("ffmpeg");
+        cmd.creation_flags(0x08000000);
+        if let Ok(output) = cmd.output().await {
+            if output.status.success() {
+                let stdout = String::from_utf8_lossy(&output.stdout);
+                if let Some(line) = stdout.lines().next() {
+                    let p = PathBuf::from(line.trim());
+                    if p.exists() {
+                        return Some(p);
+                    }
+                }
+            }
+        }
+    }
+    #[cfg(target_os = "macos")]
+    {
         let candidates = [
-            r"C:\ffmpeg\bin\ffmpeg.exe",
-            r"C:\Program Files\ffmpeg\bin\ffmpeg.exe",
-            r"C:\ProgramData\chocolatey\bin\ffmpeg.exe",
+            "/usr/local/bin/ffmpeg",
+            "/opt/homebrew/bin/ffmpeg",
+            "/opt/local/bin/ffmpeg",
+            "/usr/bin/ffmpeg",
         ];
         for c in &candidates {
             let p = PathBuf::from(c);
@@ -99,9 +203,14 @@ async fn find_ffmpeg_path() -> Option<PathBuf> {
             }
         }
     }
-    #[cfg(target_os = "macos")]
+    #[cfg(target_os = "linux")]
     {
-        let candidates = ["/usr/local/bin/ffmpeg", "/opt/homebrew/bin/ffmpeg"];
+        let candidates = [
+            "/usr/bin/ffmpeg",
+            "/usr/local/bin/ffmpeg",
+            "/snap/bin/ffmpeg",
+            "/var/lib/flatpak/exports/bin/ffmpeg",
+        ];
         for c in &candidates {
             let p = PathBuf::from(c);
             if p.exists() {
@@ -110,7 +219,25 @@ async fn find_ffmpeg_path() -> Option<PathBuf> {
         }
     }
 
-    // Fallback: try PATH (async)
+    // POSIX PATH walk — same idea as the Windows step 4. Cheap and covers any
+    // PATH entry the explicit candidate list missed.
+    #[cfg(not(target_os = "windows"))]
+    if let Ok(path) = std::env::var("PATH") {
+        for dir in path.split(':') {
+            if dir.is_empty() {
+                continue;
+            }
+            let p = PathBuf::from(dir).join("ffmpeg");
+            if p.exists() {
+                return Some(p);
+            }
+        }
+    }
+
+    // Last resort: spawn `ffmpeg -version` and hope CreateProcess / execvp
+    // resolves it. If this succeeds the caller still gets a usable Command
+    // by name; we return the bare name so subsequent invocations don't have
+    // to repeat the search.
     let mut cmd = TokioCommand::new("ffmpeg");
     cmd.arg("-version");
     #[cfg(target_os = "windows")]

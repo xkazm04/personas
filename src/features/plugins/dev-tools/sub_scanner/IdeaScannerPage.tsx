@@ -527,14 +527,19 @@ export default function IdeaScannerPage() {
             </motion.div>
           )}
 
-          {/* Agent selection — 4 category columns side-by-side, agents stacked as rows within each column */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-            {AGENT_CATEGORIES.map((cat) => {
+          {/* Agent selection — 4 category columns side-by-side, agents stacked as rows within each column.
+              Subtle vertical dividers sit in the gutter between columns at each breakpoint:
+              - sm (2-col): col 1 + col 3 get a left border (column-2 in each row)
+              - xl (4-col): cols 1/2/3 get a left border (every column except the first row-leader) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-x-4 gap-y-6">
+            {AGENT_CATEGORIES.map((cat, idx) => {
               const agents = agentsByCategory.get(cat.key) ?? [];
               const catTw = CATEGORY_TW[cat.key] ?? DEFAULT_CATEGORY_TW;
               if (agents.length === 0) return null;
+              const smBorder = idx % 2 === 1 ? 'sm:border-l sm:border-primary/10 sm:pl-4' : '';
+              const xlBorder = idx > 0 ? 'xl:border-l xl:border-primary/10 xl:pl-4' : '';
               return (
-                <div key={cat.key} className="flex flex-col gap-2">
+                <div key={cat.key} className={`flex flex-col gap-2 ${smBorder} ${xlBorder}`}>
                   <h3 className="typo-label text-primary flex items-center gap-2">
                     <span className={`w-2 h-2 rounded-full ${catTw.dot}`} />
                     {cat.label}

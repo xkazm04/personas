@@ -12566,11 +12566,8 @@
   },
   "twin": {
     "selector": {
-      "noTwin": "No twin configured",
-      "createFirst": "Create a twin first so personas have an identity to speak as.",
       "createTwin": "Crear gemelo nuevo",
       "selectTwin": "Select a twin...",
-      "progressGroupLabel": "Twin setup progress",
       "pickerLabel": "Elige el gemelo activo",
       "searchPlaceholder": "Buscar por nombre o rol…",
       "noMatches": "Ningún gemelo coincide con tu búsqueda."

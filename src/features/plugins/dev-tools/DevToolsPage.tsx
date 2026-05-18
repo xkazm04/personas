@@ -12,6 +12,7 @@ const IdeaTriagePage = lazy(() => import('./sub_triage/IdeaTriagePage'));
 const TaskRunnerPage = lazy(() => import('./sub_runner/TaskRunnerPage'));
 const LifecyclePage = lazy(() => import('./sub_lifecycle/LifecyclePage'));
 const SkillBrowserPage = lazy(() => import('./sub_skills/SkillBrowserPage'));
+const FleetPage = lazy(() => import('@/features/plugins/fleet/FleetPage'));
 
 
 // ---------------------------------------------------------------------------
@@ -123,6 +124,7 @@ export default function DevToolsPage() {
             {devToolsTab === 'task-runner' && <TaskRunnerPage />}
             {devToolsTab === 'lifecycle' && <LifecyclePage />}
             {devToolsTab === 'skills' && <SkillBrowserPage />}
+            {devToolsTab === 'fleet' && <FleetPage />}
           </Suspense>
         </div>
     </div>

@@ -12566,11 +12566,8 @@
   },
   "twin": {
     "selector": {
-      "noTwin": "No twin configured",
-      "createFirst": "Create a twin first so personas have an identity to speak as.",
       "createTwin": "新しいツインを作成",
       "selectTwin": "Select a twin...",
-      "progressGroupLabel": "Twin setup progress",
       "pickerLabel": "アクティブなツインを選択",
       "searchPlaceholder": "名前またはロールで検索…",
       "noMatches": "検索に一致するツインはありません。"

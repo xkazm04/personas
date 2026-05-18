@@ -31,6 +31,15 @@ export const healthCheckSubscriptions = () =>
 export const openExternalUrl = (url: string) =>
   invoke<void>("open_external_url", { url });
 
+/**
+ * Open an arbitrary local path or known editor protocol URL (vscode://,
+ * cursor://, ...) via the host OS. Use this for "open folder", "open in
+ * VS Code", etc. — this app does NOT ship `@tauri-apps/plugin-shell`, so
+ * the shell-plugin `open()` will silently no-op.
+ */
+export const openLocalPath = (target: string) =>
+  invoke<void>("open_local_path", { target });
+
 // Claude Desktop MCP integration
 export const registerClaudeDesktopMcp = () =>
   invoke<string>("register_claude_desktop_mcp");
