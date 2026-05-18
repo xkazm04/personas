@@ -1342,4 +1342,81 @@ mod tests {
         let _g = lock_and_reset();
         assert!(memory().synthesize_operation_summary("op_nonsense").is_none());
     }
+
+    // ── D9 — intervention bookkeeping ─────────────────────────────────
+
+    #[test]
+    fn record_intervention_caps_at_one_per_session() {
+        let _g = lock_and_reset();
+        memory().record_session_event(
+            "fs-int",
+            None,
+            "personas",
+            "/tmp/p",
+            FleetSessionState::Running,
+        );
+        // First intervention is allowed.
+        memory().record_intervention("fs-int").unwrap();
+        // Second is refused.
+        let err = memory().record_intervention("fs-int").unwrap_err();
+        assert!(err.contains("cap reached"));
+        // The cap value flows from MAX_INTERVENTIONS_PER_SESSION.
+        let ops = memory().operations.read().unwrap();
+        let s = &ops.values().next().unwrap().sessions[0];
+        assert_eq!(s.interventions, 1);
+    }
+
+    #[test]
+    fn record_intervention_for_unknown_session_errors() {
+        let _g = lock_and_reset();
+        let err = memory().record_intervention("never-seen").unwrap_err();
+        assert!(err.contains("not tracked"));
+    }
+
+    #[test]
+    fn op_active_sessions_filters_exited() {
+        let _g = lock_and_reset();
+        let op_id = memory().begin_dispatched_operation("test".to_string());
+        memory().attach_session_to_operation(&op_id, "fs-a", "writer", "/tmp/p");
+        memory().attach_session_to_operation(&op_id, "fs-b", "runner", "/tmp/p");
+        // Make fs-b exit.
+        memory().record_session_event(
+            "fs-b",
+            None,
+            "personas",
+            "/tmp/p",
+            FleetSessionState::Exited,
+        );
+        let active = memory().op_active_sessions(&op_id);
+        assert_eq!(active.len(), 1);
+        assert_eq!(active[0], "fs-a");
+    }
+
+    #[test]
+    fn redirect_operation_updates_intent() {
+        let _g = lock_and_reset();
+        let op_id = memory().begin_dispatched_operation("original".to_string());
+        assert!(memory().redirect_operation(&op_id, "new direction"));
+        let ops = memory().operations.read().unwrap();
+        assert_eq!(ops.get(&op_id).unwrap().user_intent, "new direction");
+    }
+
+    #[test]
+    fn redirect_operation_unknown_returns_false() {
+        let _g = lock_and_reset();
+        assert!(!memory().redirect_operation("op_missing", "x"));
+    }
+
+    #[test]
+    fn snapshot_all_operations_returns_every_op() {
+        let _g = lock_and_reset();
+        let _op1 = memory().begin_dispatched_operation("a".to_string());
+        let _op2 = memory().begin_dispatched_operation("b".to_string());
+        let snapshot = memory().snapshot_all_operations();
+        assert_eq!(snapshot.len(), 2);
+        // Both are flagged dispatched (the proactive detector relies on this).
+        for op in &snapshot {
+            assert!(op.dispatched_by_athena);
+        }
+    }
 }
