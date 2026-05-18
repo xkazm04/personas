@@ -649,7 +649,7 @@ mod tests {
 
     fn lock_and_reset() -> std::sync::MutexGuard<'static, ()> {
         let g = TEST_LOCK.lock().unwrap_or_else(|p| p.into_inner());
-        let _g = lock_and_reset();
+        memory().reset();
         g
     }
 
