@@ -435,7 +435,16 @@ impl OperativeMemory {
             .iter_mut()
             .find(|s| s.fleet_session_id == fleet_session_id)?;
 
-        let duration_ms = session.last_event_at_ms - session.started_at_ms;
+        // Stamp last_event_at_ms first — the session is ending right
+        // now, so "duration of the session's lifetime" is `now - start`.
+        // Computing from the stale `last_event_at_ms` was wrong for
+        // `--print`-mode claude sessions that emit no intermediate
+        // lifecycle hooks (the value sat at session-creation time
+        // and made every such session render as "<1s" in the digest
+        // even when wall time was 30+ seconds).
+        let now = now_ms();
+        session.last_event_at_ms = now;
+        let duration_ms = now - session.started_at_ms;
         let duration = format_duration(duration_ms.max(0));
 
         let mut parts: Vec<String> = Vec::new();
@@ -1163,6 +1172,48 @@ mod tests {
         let s = &ops.values().next().unwrap().sessions[0];
         assert!(s.current_tool.is_none()); // cleared on post
         assert!(s.recent_failure.is_some());
+    }
+
+    #[test]
+    fn synthesize_summary_uses_wall_time_not_last_event_for_print_sessions() {
+        // Regression for the "<1s" bug observed when claude is spawned
+        // in `--print` mode: no SessionStart/PreToolUse hooks fire, so
+        // last_event_at_ms stays pinned to started_at_ms. Computing
+        // duration from `now - started_at_ms` instead of
+        // `last_event_at_ms - started_at_ms` makes the synthesized
+        // summary reflect real wall time.
+        let _g = lock_and_reset();
+        memory().record_session_event(
+            "fs-print",
+            None,
+            "personas",
+            "/tmp/p",
+            FleetSessionState::Spawning,
+        );
+        // Force the session's started_at_ms back in time by 30 seconds
+        // — simulating a 30-second-long `--print` run that never fired
+        // a single lifecycle hook between Spawning and Exited.
+        {
+            let mut ops = memory().operations.write().unwrap();
+            for op in ops.values_mut() {
+                for s in op.sessions.iter_mut() {
+                    if s.fleet_session_id == "fs-print" {
+                        s.started_at_ms -= 30_000;
+                        // Critically: leave last_event_at_ms alone
+                        // (matches the no-hooks-fired state).
+                    }
+                }
+            }
+        }
+        let summary = memory()
+            .synthesize_session_summary("fs-print", Some(0))
+            .unwrap();
+        // Format helper renders 30s as "30s"; allow some slop in case
+        // the test machine is slow.
+        assert!(
+            summary.contains("Ran for 3") || summary.contains("Ran for 2"),
+            "expected ~30s duration in '{summary}'"
+        );
     }
 
     #[test]
