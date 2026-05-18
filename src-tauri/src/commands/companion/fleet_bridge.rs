@@ -86,9 +86,90 @@ pub async fn companion_record_fleet_event(
         claude_session_id: input.claude_session_id.as_deref(),
         project_label: &input.project_label,
         cwd: &input.cwd,
-        kind,
+        kind: kind.clone(),
     };
+
+    // Update operative memory alongside the episode write. Operative
+    // memory is in-process, no DB; the call is sync and cheap. Doing
+    // it here (not in a separate command) keeps Athena's "what's
+    // happening now" view consistent with her "what happened" memory.
+    let mem = crate::companion::orchestration::operative_memory::memory();
+    match &kind {
+        FleetEventKind::StateChanged { state: fs_state, .. } => {
+            mem.record_session_event(
+                &input.session_id,
+                input.claude_session_id.as_deref(),
+                &input.project_label,
+                &input.cwd,
+                *fs_state,
+            );
+        }
+        FleetEventKind::Spawned { .. } => {
+            mem.record_session_event(
+                &input.session_id,
+                input.claude_session_id.as_deref(),
+                &input.project_label,
+                &input.cwd,
+                crate::commands::fleet::types::FleetSessionState::Spawning,
+            );
+        }
+        FleetEventKind::Exited { exit_code } => {
+            // Run the synthesizer first so the SessionRef.summary is
+            // populated before record_fleet_event reads it for the
+            // episode body (Direction 4 — replaces UUID-only episodes
+            // with synthesized work logs).
+            let synthesized = mem.synthesize_session_summary(&input.session_id, *exit_code);
+            mem.record_session_event(
+                &input.session_id,
+                input.claude_session_id.as_deref(),
+                &input.project_label,
+                &input.cwd,
+                crate::commands::fleet::types::FleetSessionState::Exited,
+            );
+            // The synthesized summary is available via SessionRef but
+            // not currently propagated into the episode body — that
+            // path requires record_fleet_event to consult operative
+            // memory. We pull that thread inline below.
+            if let Some(summary) = synthesized {
+                return write_episode_with_summary(
+                    &state.user_db,
+                    &input,
+                    *exit_code,
+                    &summary,
+                );
+            }
+        }
+    }
+
     record_fleet_event(&state.user_db, event)
+}
+
+/// Direction 4 helper — write an Exited episode whose body uses the
+/// operative-memory synthesized summary instead of the bare
+/// "exited code N" line. The marker tokens stay so retrieval still
+/// works; the human-readable summary is appended below.
+fn write_episode_with_summary(
+    pool: &crate::db::UserDbPool,
+    input: &CompanionRecordFleetEventInput,
+    exit_code: Option<i32>,
+    summary: &str,
+) -> Result<String, AppError> {
+    use crate::companion::brain::episodic::{append_episode, EpisodeRole};
+    use crate::companion::session::DEFAULT_SESSION_ID;
+
+    let csid = input.claude_session_id.as_deref().unwrap_or("-");
+    let exit_token = match exit_code {
+        Some(0) => "exited_clean",
+        Some(_) => "exited_failed",
+        None => "exited_abnormal",
+    };
+    let body = format!(
+        "fleet-event session:{sid} cc:{csid} state:{tok} project:{proj}\n\nSession **{sid}** ({proj}) {summary}",
+        sid = input.session_id,
+        tok = exit_token,
+        proj = input.project_label,
+    );
+    append_episode(pool, DEFAULT_SESSION_ID, EpisodeRole::System, &body)
 }
 
 fn parse_state_token(s: &str) -> Option<FleetSessionState> {

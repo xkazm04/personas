@@ -14,6 +14,7 @@ pub mod disk;
 pub mod dispatcher;
 pub mod jobs;
 pub mod observability;
+pub mod orchestration;
 pub mod plugins;
 pub mod proactive;
 pub mod projects;

@@ -73,7 +73,32 @@ async fn receive_hook(
     // Update state + emit.
     let event_kind = event.to_ascii_lowercase();
     if let Some(sid) = session_id.as_deref() {
-        apply_hook(sid, &event_kind, claude_session_id.clone(), &app);
+        // Tool events feed operative memory directly (Rust path —
+        // they're volume-heavy and don't need the JS roundtrip the
+        // lifecycle events take). Lifecycle events still go through
+        // apply_hook so the FleetSessionState machine + FE event
+        // emission stay in one place.
+        if event_kind == "pretooluse" || event_kind == "posttooluse" {
+            let tool_name = body
+                .get("tool_name")
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
+            let empty = serde_json::Value::Null;
+            let tool_input = body.get("tool_input").unwrap_or(&empty);
+            let tool_result = body.get("tool_result");
+            if !tool_name.is_empty() {
+                crate::companion::orchestration::operative_memory::memory()
+                    .record_tool_event(
+                        sid,
+                        tool_name,
+                        tool_input,
+                        event_kind == "posttooluse",
+                        tool_result,
+                    );
+            }
+        } else {
+            apply_hook(sid, &event_kind, claude_session_id.clone(), &app);
+        }
     } else {
         tracing::debug!(
             event = %event_kind,

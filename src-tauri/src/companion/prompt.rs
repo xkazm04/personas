@@ -163,13 +163,16 @@ pub async fn build_system_prompt(
         .map(observability::format_for_prompt)
         .unwrap_or_default();
 
-    // Append a live Fleet digest if any sessions are running. Returns
-    // empty when fleet is idle, so the prompt stays clean for users who
-    // don't use it.
+    // Append the operative-memory digest — active orchestration view
+    // for Athena (live per-session work, files touched, recent
+    // failures). Empty string when no operations are tracked so the
+    // prompt stays clean for users not using fleet. This *replaces*
+    // the older flat fleet-state digest with an operation-grouped
+    // narrative tied to user intent.
     let observability_md = format!(
         "{}{}",
         observability_md,
-        crate::companion::brain::fleet::current_state_digest(),
+        crate::companion::orchestration::operative_memory::memory().digest_for_prompt(),
     );
 
     let recall = match embedder {
@@ -273,13 +276,16 @@ pub async fn build_system_prompt(
         .map(observability::format_for_prompt)
         .unwrap_or_default();
 
-    // Append a live Fleet digest if any sessions are running. Returns
-    // empty when fleet is idle, so the prompt stays clean for users who
-    // don't use it.
+    // Append the operative-memory digest — active orchestration view
+    // for Athena (live per-session work, files touched, recent
+    // failures). Empty string when no operations are tracked so the
+    // prompt stays clean for users not using fleet. This *replaces*
+    // the older flat fleet-state digest with an operation-grouped
+    // narrative tied to user intent.
     let observability_md = format!(
         "{}{}",
         observability_md,
-        crate::companion::brain::fleet::current_state_digest(),
+        crate::companion::orchestration::operative_memory::memory().digest_for_prompt(),
     );
 
     let recall = Recall {

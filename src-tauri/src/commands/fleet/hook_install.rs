@@ -41,6 +41,12 @@ const FLEET_EVENTS: &[&str] = &[
     "Notification",
     "Stop",
     "PreToolUse",
+    // Added for operative memory enrichment — PostToolUse carries the
+    // tool_result which lets us flag failures (non-zero exit_code,
+    // error_message) and clear the "current_tool" busy line. Without
+    // it, Athena's digest would always show sessions stuck at their
+    // last tool name with no idea whether it succeeded.
+    "PostToolUse",
     "SessionEnd",
     "UserPromptSubmit",
 ];
