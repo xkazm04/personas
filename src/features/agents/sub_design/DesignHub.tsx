@@ -86,9 +86,12 @@ export function DesignHub({ draft, patch, modelDirty, onConnectorsMissingChange 
       <div className="flex-1 min-h-0 pt-4">
         <Suspense fallback={<SuspenseFallback />}>
           {activeSubTab === 'use-cases' && (
-            <EditorTabContent>
-              <PersonaUseCasesTab draft={draft} patch={patch} modelDirty={modelDirty} credentials={credentials} />
-            </EditorTabContent>
+            // No EditorTabContent wrapper here — PersonaUseCasesTab now
+            // owns its own per-layout width policy. The Persona Layout
+            // mode wants the full content area (sigil + side panels
+            // spread to the edges); the legacy sigil-grid layout still
+            // applies the 900 px prose cap internally.
+            <PersonaUseCasesTab draft={draft} patch={patch} modelDirty={modelDirty} credentials={credentials} />
           )}
           {activeSubTab === 'prompt' && <DesignTab />}
           {activeSubTab === 'connectors' && (

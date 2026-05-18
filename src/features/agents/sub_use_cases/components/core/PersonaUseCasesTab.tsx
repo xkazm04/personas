@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { RecipesVariantSigilGrid } from '../recipes-prototype/RecipesVariantSigilGrid';
 import { PersonaLayoutView } from '../persona-layout';
+import { EditorTabContent } from '@/features/agents/sub_editor/components/EditorTabContent';
 import type { PersonaDraft } from '@/features/agents/sub_editor';
 import type { CredentialMetadata } from '@/lib/types/types';
 
@@ -49,12 +50,21 @@ export function PersonaUseCasesTab(props: PersonaUseCasesTabProps) {
     writeLayout(layout);
   }, [layout]);
 
+  // Width policy is per-layout, not page-level — DesignHub used to wrap
+  // the whole tab in EditorTabContent (max-w-[900px]) but that clipped
+  // the Persona Layout view, whose sigil + side panels want to claim
+  // the full content area. We now apply the prose-width cap inline,
+  // only when the legacy sigil-grid is active; the Persona Layout
+  // branch returns the unwrapped view and uses its own internal flex
+  // distribution (sidebars at edges, sigil centered).
   return (
     <div className="flex flex-col h-full min-h-0">
       <LayoutSwitcher value={layout} onChange={setLayout} />
       <div className="flex-1 min-h-0">
         {layout === 'sigil-grid' ? (
-          <RecipesVariantSigilGrid {...props} />
+          <EditorTabContent>
+            <RecipesVariantSigilGrid {...props} />
+          </EditorTabContent>
         ) : (
           <PersonaLayoutView credentials={props.credentials} />
         )}
