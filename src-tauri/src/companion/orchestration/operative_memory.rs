@@ -1119,4 +1119,143 @@ mod tests {
         assert!(d.contains("user spawn in personas"));
         assert!(d.contains("Edit"));
     }
+
+    // ── Direction 3 + 5 v2 — MCP signals + dispatched-op reconciler ──
+
+    #[test]
+    fn record_intent_upgrades_ad_hoc_user_intent_and_sets_role() {
+        let _g = lock_and_reset();
+        memory().record_session_event(
+            "fs-mcp",
+            None,
+            "personas",
+            "/tmp/p",
+            FleetSessionState::Running,
+        );
+        let op_id = memory().record_intent(
+            "fs-mcp",
+            "add login flow tests",
+            Some("writer"),
+            None,
+            "personas",
+            "/tmp/p",
+        );
+        let ops = memory().operations.read().unwrap();
+        let op = ops.get(&op_id).unwrap();
+        // Ad-hoc placeholder upgraded to the real intent.
+        assert_eq!(op.user_intent, "add login flow tests");
+        // Role + intent landed on the SessionRef.
+        let s = &op.sessions[0];
+        assert_eq!(s.role.as_deref(), Some("writer"));
+        assert_eq!(s.intent.as_deref(), Some("add login flow tests"));
+    }
+
+    #[test]
+    fn record_intent_does_not_overwrite_dispatched_op_label() {
+        let _g = lock_and_reset();
+        let op_id = memory().begin_dispatched_operation("PARENT INTENT".to_string());
+        memory().attach_session_to_operation(&op_id, "fs-d", "writer", "/tmp/p");
+        memory().record_intent(
+            "fs-d",
+            "writer's own description",
+            Some("writer"),
+            Some(&op_id),
+            "personas",
+            "/tmp/p",
+        );
+        let ops = memory().operations.read().unwrap();
+        let op = ops.get(&op_id).unwrap();
+        // The dispatcher's parent intent wins over the child session's
+        // self-description — the user-facing operation label stays stable.
+        assert_eq!(op.user_intent, "PARENT INTENT");
+        let s = op.sessions.iter().find(|s| s.fleet_session_id == "fs-d").unwrap();
+        // SessionRef still carries the child intent for digest rendering.
+        assert_eq!(s.intent.as_deref(), Some("writer's own description"));
+    }
+
+    #[test]
+    fn record_checkpoint_appends_and_caps_at_max() {
+        let _g = lock_and_reset();
+        memory().record_session_event(
+            "fs-cp",
+            None,
+            "personas",
+            "/tmp/p",
+            FleetSessionState::Running,
+        );
+        // Push more than the cap.
+        for i in 0..(MAX_CHECKPOINTS_PER_SESSION + 5) {
+            assert!(memory().record_checkpoint("fs-cp", &format!("step {i}"), None));
+        }
+        let ops = memory().operations.read().unwrap();
+        let s = &ops.values().next().unwrap().sessions[0];
+        assert_eq!(s.checkpoints.len(), MAX_CHECKPOINTS_PER_SESSION);
+        // Oldest rolled off — the first surviving checkpoint is step #5.
+        assert!(s.checkpoints.first().unwrap().progress.contains("step 5"));
+    }
+
+    #[test]
+    fn dispatched_operation_reconciles_after_all_sessions_exit() {
+        let _g = lock_and_reset();
+        let op_id = memory().begin_dispatched_operation("ship tests".to_string());
+        memory().attach_session_to_operation(&op_id, "fs-a", "writer", "/tmp/p");
+        memory().attach_session_to_operation(&op_id, "fs-b", "runner", "/tmp/p");
+        memory().record_intent("fs-a", "draft the tests", Some("writer"), Some(&op_id), "personas", "/tmp/p");
+        memory().record_intent("fs-b", "run the tests", Some("runner"), Some(&op_id), "personas", "/tmp/p");
+
+        // One session writes a file, then exits clean.
+        memory().record_tool_event(
+            "fs-a",
+            "Edit",
+            &json!({"file_path": "src/login.test.ts"}),
+            false,
+            None,
+        );
+        memory().record_session_event("fs-a", None, "personas", "/tmp/p", FleetSessionState::Exited);
+        let _ = memory().synthesize_session_summary("fs-a", Some(0));
+
+        // Both still need to exit before the op completes — confirm
+        // the op is still active at this point.
+        {
+            let ops = memory().operations.read().unwrap();
+            assert!(matches!(
+                ops.get(&op_id).unwrap().status,
+                OperationStatus::Active
+            ));
+        }
+
+        // Second session exits with a failure tail.
+        memory().record_tool_event(
+            "fs-b",
+            "Bash",
+            &json!({"command": "npm test"}),
+            true,
+            Some(&json!({ "exit_code": 1, "stderr": "expected 2, got 1" })),
+        );
+        memory().record_session_event("fs-b", None, "personas", "/tmp/p", FleetSessionState::Exited);
+        let _ = memory().synthesize_session_summary("fs-b", Some(1));
+
+        // Reconciler call — synthesizing fills completion_summary AND
+        // crosses sessions ("Files touched across all sessions").
+        let summary = memory().synthesize_operation_summary(&op_id).unwrap();
+        assert!(summary.contains("ship tests"));
+        // Op escalates to Failed because one session exited non-zero.
+        assert!(summary.contains("failed"));
+        // Cross-session aggregation includes the edited file.
+        assert!(summary.contains("src/login.test.ts"));
+        // Per-session intent text is in the digest.
+        assert!(summary.contains("draft the tests"));
+        assert!(summary.contains("run the tests"));
+
+        let ops = memory().operations.read().unwrap();
+        let op = ops.get(&op_id).unwrap();
+        assert!(op.dispatched_by_athena);
+        assert!(op.completion_summary.is_some());
+    }
+
+    #[test]
+    fn synthesize_operation_summary_unknown_op_returns_none() {
+        let _g = lock_and_reset();
+        assert!(memory().synthesize_operation_summary("op_nonsense").is_none());
+    }
 }

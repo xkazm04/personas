@@ -23,10 +23,11 @@
 
 use std::sync::Arc;
 
-use tauri::State;
+use tauri::{Emitter, State};
 
 use crate::commands::fleet::types::FleetSessionState;
 use crate::companion::brain::fleet::{record_fleet_event, FleetEpisodeInput, FleetEventKind};
+use crate::companion::orchestration::operative_memory::OperationStatus;
 use crate::error::AppError;
 use crate::AppState;
 
@@ -53,6 +54,7 @@ pub struct CompanionRecordFleetEventInput {
 #[tauri::command]
 pub async fn companion_record_fleet_event(
     state: State<'_, Arc<AppState>>,
+    app: tauri::AppHandle,
     input: CompanionRecordFleetEventInput,
 ) -> Result<String, AppError> {
     crate::ipc_auth::require_auth(&state).await?;
@@ -130,18 +132,100 @@ pub async fn companion_record_fleet_event(
             // not currently propagated into the episode body — that
             // path requires record_fleet_event to consult operative
             // memory. We pull that thread inline below.
-            if let Some(summary) = synthesized {
-                return write_episode_with_summary(
-                    &state.user_db,
-                    &input,
-                    *exit_code,
-                    &summary,
-                );
-            }
+            //
+            // After writing the per-session summary, run the operation
+            // reconciler — if this session was the last one in a
+            // dispatched_by_athena operation to exit, synthesize the
+            // cross-session wrap-up and surface it (Direction 5 v2).
+            let episode_id_result = if let Some(summary) = synthesized {
+                write_episode_with_summary(&state.user_db, &input, *exit_code, &summary)
+            } else {
+                record_fleet_event(&state.user_db, event)
+            };
+            reconcile_if_dispatched(&state.user_db, &app, &input.session_id);
+            return episode_id_result;
         }
     }
 
     record_fleet_event(&state.user_db, event)
+}
+
+/// Direction 5 v2 reconciler — fired after each session-exit event.
+/// When the exiting session belongs to a `dispatched_by_athena`
+/// operation whose every session has reached a terminal state,
+/// synthesize the operation-level wrap-up, write it as an episode,
+/// and emit a Tauri event so the chat panel can render an inline
+/// notice. No-op for ad-hoc operations or partial completions.
+fn reconcile_if_dispatched(
+    pool: &crate::db::UserDbPool,
+    app: &tauri::AppHandle,
+    fleet_session_id: &str,
+) {
+    let mem = crate::companion::orchestration::operative_memory::memory();
+    let Some(op_id) = mem.find_operation_for_session(fleet_session_id) else {
+        return;
+    };
+    let Some(op) = mem.snapshot_operation(&op_id) else {
+        return;
+    };
+    if !op.dispatched_by_athena {
+        return; // ad-hoc ops don't get cross-session wrap-ups
+    }
+    if !matches!(op.status, OperationStatus::Completed | OperationStatus::Failed) {
+        return; // sessions still running
+    }
+    // Idempotency: only synthesize once. The summary field is set by
+    // synthesize_operation_summary; if it's already populated, this
+    // op has been reconciled.
+    if op.completion_summary.is_some() {
+        return;
+    }
+
+    let Some(summary) = mem.synthesize_operation_summary(&op_id) else {
+        return;
+    };
+
+    // Write an episode so Athena's next turn can recall the wrap-up
+    // even after the operative-memory entry ages out. Same marker
+    // shape as per-session summaries so retrieval is uniform.
+    use crate::companion::brain::episodic::{append_episode, EpisodeRole};
+    use crate::companion::session::DEFAULT_SESSION_ID;
+    let status_token = match op.status {
+        OperationStatus::Completed => "op_completed",
+        OperationStatus::Failed => "op_failed",
+        OperationStatus::Active => "op_active",
+    };
+    let body = format!(
+        "fleet-orchestration op:{op_id} state:{status_token} intent:{intent}\n\n{summary}",
+        op_id = op.id,
+        intent = op.user_intent.replace('\n', " "),
+    );
+    if let Err(e) = append_episode(pool, DEFAULT_SESSION_ID, EpisodeRole::System, &body) {
+        tracing::warn!(error = %e, op_id = %op.id, "reconcile: episode append failed");
+    }
+
+    // Notify the frontend so the chat panel can render an inline
+    // "operation X just wrapped" card. Payload is structured so the
+    // panel can choose its own affordance (expand/collapse summary,
+    // click-through to the brain viewer for the underlying episode).
+    let payload = ReconciledPayload {
+        operation_id: op.id.clone(),
+        intent: op.user_intent.clone(),
+        status: status_token,
+        summary: summary.clone(),
+    };
+    if let Err(e) = app.emit("athena://orchestration/operation-completed", &payload) {
+        tracing::warn!(error = %e, op_id = %op.id, "reconcile: emit failed");
+    }
+}
+
+#[derive(serde::Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+struct ReconciledPayload {
+    operation_id: String,
+    intent: String,
+    status: &'static str,
+    summary: String,
 }
 
 /// Direction 4 helper — write an Exited episode whose body uses the

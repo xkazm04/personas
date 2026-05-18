@@ -217,6 +217,7 @@ pub async fn companion_approve_action(
         "fleet_broadcast" => execute_fleet_broadcast(&params),
         "fleet_kill" => execute_fleet_kill(&params),
         "fleet_spawn" => execute_fleet_spawn(&app, &params),
+        "fleet_dispatch" => execute_fleet_dispatch(&app, &params),
         other => Err(AppError::Internal(format!(
             "approval `{approval_id}`: unknown action `{other}`"
         ))),
@@ -1431,4 +1432,140 @@ fn execute_fleet_spawn(
         &id[..id.len().min(8)],
         cwd,
     )))
+}
+
+/// D5 v2 — `fleet_dispatch`: one ApprovalCard, N sessions under one
+/// Operation. Athena creates the Operation upfront, spawns each role
+/// as its own claude session (PTY), pre-attaches the SessionRef so the
+/// op carries every session even before the first hook fires. The
+/// reconciler in `commands::companion::fleet_bridge` synthesizes the
+/// cross-session wrap-up once all dispatched sessions have exited.
+///
+/// `params` shape:
+/// ```json
+/// {
+///   "operation_intent": "add tests for login flow",
+///   "role_specs": [
+///     { "role": "writer", "cwd": "C:/path/to/project", "args": [] },
+///     { "role": "reviewer", "cwd": "C:/path/to/project", "args": [] }
+///   ]
+/// }
+/// ```
+fn execute_fleet_dispatch(
+    app: &tauri::AppHandle,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    let intent = params
+        .get("operation_intent")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| AppError::Internal("fleet_dispatch: missing `operation_intent`".into()))?;
+    let specs = params
+        .get("role_specs")
+        .and_then(|v| v.as_array())
+        .ok_or_else(|| AppError::Internal("fleet_dispatch: missing `role_specs`".into()))?;
+    if specs.is_empty() {
+        return Err(AppError::Internal(
+            "fleet_dispatch: role_specs must not be empty".into(),
+        ));
+    }
+    if specs.len() > 8 {
+        return Err(AppError::Internal(
+            "fleet_dispatch: role_specs capped at 8 sessions per operation".into(),
+        ));
+    }
+
+    // Create the operation in operative memory before spawning any
+    // sessions — this way even if a spawn fails partway through, the
+    // op exists and the reconciler can finalize from whatever sessions
+    // did make it. dispatched_by_athena=true so the proactive evaluator
+    // can skip nudging sessions Athena herself spawned.
+    let op_id = crate::companion::orchestration::operative_memory::memory()
+        .begin_dispatched_operation(intent.to_string());
+
+    let mut spawned: Vec<(String, String)> = Vec::new(); // (session_id_prefix, role)
+    let mut failures: Vec<String> = Vec::new();
+
+    for (i, spec) in specs.iter().enumerate() {
+        let role = spec
+            .get("role")
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .map(str::to_string)
+            .unwrap_or_else(|| format!("role-{i}"));
+        let cwd = match spec.get("cwd").and_then(|v| v.as_str()) {
+            Some(c) => c,
+            None => {
+                failures.push(format!("role `{role}`: missing `cwd`"));
+                continue;
+            }
+        };
+        let args: Vec<String> = spec
+            .get("args")
+            .and_then(|v| v.as_array())
+            .map(|arr| {
+                arr.iter()
+                    .filter_map(|x| x.as_str().map(str::to_string))
+                    .collect()
+            })
+            .unwrap_or_default();
+        let cols = spec.get("cols").and_then(|v| v.as_u64()).unwrap_or(120) as u16;
+        let rows = spec.get("rows").and_then(|v| v.as_u64()).unwrap_or(32) as u16;
+
+        let id = match crate::commands::fleet::pty::spawn_session(
+            app.clone(),
+            std::path::PathBuf::from(cwd),
+            args,
+            cols,
+            rows,
+        ) {
+            Ok(id) => id,
+            Err(e) => {
+                failures.push(format!("role `{role}`: spawn failed: {e}"));
+                continue;
+            }
+        };
+
+        // Pre-attach SessionRef on the op so the reconciler sees this
+        // session immediately, even before the SessionStart hook fires.
+        let _ = crate::companion::orchestration::operative_memory::memory()
+            .attach_session_to_operation(&op_id, &id, &role, cwd);
+
+        // Visible-name = "athena-<role>" so the user sees both the
+        // recursion-guard sentinel AND the role in the Fleet UI.
+        let _ = crate::commands::fleet::registry::registry()
+            .rename(&id, Some(format!("athena-{role}")));
+
+        spawned.push((id[..id.len().min(8)].to_string(), role));
+    }
+
+    if spawned.is_empty() {
+        return Err(AppError::Internal(format!(
+            "fleet_dispatch: every spawn failed.\n{}",
+            failures.join("\n"),
+        )));
+    }
+
+    let mut msg = format!(
+        "Dispatched operation `{intent}` (op_id `{}`) across {} session(s):",
+        &op_id[..op_id.len().min(8)],
+        spawned.len(),
+    );
+    for (id8, role) in &spawned {
+        msg.push_str(&format!("\n  - `{id8}` ({role})"));
+    }
+    if !failures.is_empty() {
+        msg.push_str("\nFailures:");
+        for f in &failures {
+            msg.push_str(&format!("\n  ⚠ {f}"));
+        }
+    }
+    msg.push_str(
+        "\n\nThe reconciler will synthesize a wrap-up summary once \
+every session in this operation has exited.",
+    );
+
+    Ok(ExecuteResult::message(msg))
 }

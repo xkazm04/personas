@@ -160,15 +160,24 @@ fn sweep_expired(h: &mut PendingHub) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Mutex;
 
-    fn reset() {
+    // Hub is process-wide; tests must serialise to avoid cross-test
+    // contamination (one test's pending entry leaking into another's
+    // snapshot count). Same pattern as
+    // operative_memory::tests::TEST_LOCK.
+    static TEST_LOCK: Mutex<()> = Mutex::new(());
+
+    fn lock_and_reset() -> std::sync::MutexGuard<'static, ()> {
+        let g = TEST_LOCK.lock().unwrap_or_else(|p| p.into_inner());
         let mut h = hub().lock().unwrap_or_else(|p| p.into_inner());
         h.by_id.clear();
+        g
     }
 
     #[tokio::test(flavor = "current_thread")]
     async fn submit_and_resolve_round_trip() {
-        reset();
+        let _g = lock_and_reset();
         let (id, rx) = submit("sess-1", RequestKind::Guidance);
         assert!(id.starts_with("mcpreq_"));
         assert!(resolve(&id, Ok(serde_json::json!({"text": "go for it"}))));
@@ -178,13 +187,13 @@ mod tests {
 
     #[tokio::test(flavor = "current_thread")]
     async fn resolve_unknown_id_returns_false() {
-        reset();
+        let _g = lock_and_reset();
         assert!(!resolve("mcpreq_does-not-exist", Ok(Value::Null)));
     }
 
     #[tokio::test(flavor = "current_thread")]
     async fn cancel_for_session_releases_waiters() {
-        reset();
+        let _g = lock_and_reset();
         let (_id, rx) = submit("sess-cancel", RequestKind::Approval);
         cancel_for_session("sess-cancel");
         let r = rx.await.unwrap();
@@ -194,7 +203,7 @@ mod tests {
 
     #[test]
     fn snapshot_reports_pending() {
-        reset();
+        let _g = lock_and_reset();
         let (id1, _rx1) = submit("sess-A", RequestKind::Guidance);
         let (id2, _rx2) = submit("sess-B", RequestKind::Approval);
         let snap = snapshot();
