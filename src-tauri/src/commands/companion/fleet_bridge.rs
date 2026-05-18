@@ -150,6 +150,19 @@ pub async fn companion_record_fleet_event(
     record_fleet_event(&state.user_db, event)
 }
 
+/// Public re-export so the PTY reaper (`commands::fleet::pty`) can fire
+/// the same reconciliation path the frontend bridge takes when a
+/// session exits before the JS-side `useFleetCompanionBridge` has
+/// primed its store. Both call sites are idempotent — see the
+/// `op.completion_summary.is_none()` guard inside.
+pub fn reconcile_if_dispatched_public(
+    pool: &crate::db::UserDbPool,
+    app: &tauri::AppHandle,
+    fleet_session_id: &str,
+) {
+    reconcile_if_dispatched(pool, app, fleet_session_id);
+}
+
 /// Direction 5 v2 reconciler — fired after each session-exit event.
 /// When the exiting session belongs to a `dispatched_by_athena`
 /// operation whose every session has reached a terminal state,

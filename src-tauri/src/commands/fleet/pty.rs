@@ -16,7 +16,7 @@ use std::sync::Mutex;
 
 use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use serde::Serialize;
-use tauri::{AppHandle, Emitter};
+use tauri::{AppHandle, Emitter, Manager};
 
 use crate::engine::event_registry::event_name;
 
@@ -116,20 +116,23 @@ pub fn spawn_session(
     // We pick the .cmd path on Windows and bare `claude` everywhere else.
     let mut cmd = if cfg!(windows) {
         // `cmd.exe /c claude <args>` lets PATHEXT resolve to claude.cmd.
-        // Single composed string for the /c arg avoids per-arg quoting
-        // pitfalls for the common no-arg case (the `args` Vec is empty
-        // by default from fleet_spawn_session).
+        // We pass ONE composed string to `/c` so the whole pipeline is
+        // parsed by cmd.exe consistently. Per-arg quoting is essential:
+        // a fleet_dispatch role often passes `--print "List the
+        // files..."` whose second token contains spaces, and without
+        // quoting cmd.exe splits it into separate argv entries that
+        // claude can't reassemble.
         let mut c = CommandBuilder::new("cmd.exe");
         c.arg("/c");
         let mut composed = String::from("claude");
         if let Some(p) = mcp.config_path.as_deref() {
-            // Path may contain spaces (e.g. "C:\Users\My Name\..."), so
-            // quote unconditionally.
+            // Path may contain spaces (e.g. "C:\Users\My Name\..."),
+            // so quote unconditionally.
             composed.push_str(&format!(" --mcp-config \"{}\"", p.display()));
         }
         for a in &args {
             composed.push(' ');
-            composed.push_str(a);
+            composed.push_str(&quote_cmd_arg(a));
         }
         c.arg(composed);
         c
@@ -231,6 +234,70 @@ pub fn spawn_session(
     });
 
     Ok(id)
+}
+
+/// Quote one argv entry for `cmd.exe /c` composition.
+///
+/// Rules (per Microsoft's "Parsing C Command-Line Arguments" + cmd.exe's
+/// own quirks):
+///   - No spaces, no `"`, no shell-metachars → pass through bare.
+///   - Otherwise wrap in `"…"` and double any embedded `"`. Preceding
+///     backslashes ahead of an embedded `"` also need doubling so the
+///     final escape pattern survives cmd.exe + CRT parsing.
+///
+/// We deliberately do NOT escape `^` / `&` / `|` — those are cmd.exe
+/// metacharacters that *should* be neutralized by the surrounding
+/// `"…"` wrapping. Test: `claude --print "list & echo done"` works
+/// because the whole arg is quoted.
+#[cfg(windows)]
+fn quote_cmd_arg(arg: &str) -> String {
+    if !arg.is_empty()
+        && !arg
+            .chars()
+            .any(|c| c.is_whitespace() || matches!(c, '"' | '&' | '|' | '<' | '>' | '^' | '(' | ')'))
+    {
+        return arg.to_string();
+    }
+    let mut out = String::with_capacity(arg.len() + 2);
+    out.push('"');
+    let mut backslashes = 0usize;
+    for ch in arg.chars() {
+        match ch {
+            '\\' => backslashes += 1,
+            '"' => {
+                // Double the run of backslashes (so they survive CRT
+                // parsing as literal slashes), then double-escape the
+                // quote itself.
+                for _ in 0..(backslashes * 2) {
+                    out.push('\\');
+                }
+                backslashes = 0;
+                out.push('\\');
+                out.push('"');
+            }
+            _ => {
+                for _ in 0..backslashes {
+                    out.push('\\');
+                }
+                backslashes = 0;
+                out.push(ch);
+            }
+        }
+    }
+    // Any trailing backslashes need doubling because the closing `"`
+    // follows them — without doubling, the parser would treat the
+    // closing quote as escaped.
+    for _ in 0..(backslashes * 2) {
+        out.push('\\');
+    }
+    out.push('"');
+    out
+}
+
+#[cfg(not(windows))]
+#[allow(dead_code)]
+fn quote_cmd_arg(arg: &str) -> String {
+    arg.to_string()
 }
 
 /// Mint an MCP session token and write a per-session `mcp.json` that
@@ -364,6 +431,55 @@ fn reaper_loop(
         },
     );
     emit_registry_changed(&app, "updated", &session_id);
+
+    // Update operative memory directly. The JS bridge in
+    // useFleetCompanionBridge.ts ALSO writes here on the next tick,
+    // but a fast-exit session can race the frontend store priming
+    // (findSession returns undefined because the 'added' setTimeout
+    // hasn't fired yet) and the JS update silently bails. Doing it
+    // from the reaper too means dispatched_by_athena reconciliation
+    // happens even when the frontend bridge missed the event.
+    //
+    // Both calls are idempotent:
+    //   - synthesize_session_summary stamps SessionRef.summary and
+    //     escalates the op to Failed for non-zero exits; calling
+    //     twice writes the same summary string.
+    //   - record_session_event with Exited is a state upsert.
+    //   - reconcile_if_dispatched checks op.completion_summary.is_none()
+    //     before doing anything, so the second caller no-ops.
+    //
+    // The JS path still owns episode writes (the brain bridge has
+    // the pool reference); this path owns operative-memory state.
+    rust_reconcile_after_exit(&app, &session_id, exit_code);
+}
+
+fn rust_reconcile_after_exit(app: &AppHandle, session_id: &str, exit_code: Option<i32>) {
+    let mem = crate::companion::orchestration::operative_memory::memory();
+    let _ = mem.synthesize_session_summary(session_id, exit_code);
+
+    // Use the registry's stored project_label + cwd so the operative-
+    // memory upsert lands on the right SessionRef even when the
+    // session was never bound (claude exited before SessionStart).
+    let (project_label, cwd) = registry()
+        .lookup_meta(session_id)
+        .unwrap_or_else(|| ("unknown".to_string(), String::new()));
+    mem.record_session_event(
+        session_id,
+        None,
+        &project_label,
+        &cwd,
+        super::types::FleetSessionState::Exited,
+    );
+
+    // Hand off to the cross-session reconciler — same code path the
+    // frontend bridge takes through companion_record_fleet_event.
+    if let Some(state) = app.try_state::<std::sync::Arc<crate::AppState>>() {
+        crate::commands::companion::fleet_bridge::reconcile_if_dispatched_public(
+            &state.user_db,
+            app,
+            session_id,
+        );
+    }
 }
 
 /// Emit a registry-changed event from a Tauri command.

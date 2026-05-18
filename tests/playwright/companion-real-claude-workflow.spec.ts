@@ -113,13 +113,25 @@ test.describe('Companion real-claude orchestration', () => {
     expect(dispatchResult.result ?? '').toMatch(/Dispatched operation/);
     expect(dispatchResult.result ?? '').toMatch(/inspect the hello-world repo/);
 
-    // Poll the digest until the op shows up as completed or failed.
-    // Reconciler fires after both sessions exit; that synthesizes the
-    // wrap-up and stamps op.completion_summary. Polling at 2s
-    // intervals is fast enough for the human-visible feedback case
-    // but cheap enough not to thrash on the singleton's RwLock.
+    // Extract the dispatched op's short id so we can scope the polling
+    // condition to *this* op specifically — without that, leftover
+    // state from earlier orchestration tests (which all live in the
+    // process-wide operative-memory singleton) makes a `failed` /
+    // `completed` substring match on the wrong line and the test
+    // exits before our real-claude sessions have actually run.
+    const opIdMatch = /op_id `(op_[a-f0-9]+)`/.exec(dispatchResult.result ?? '');
+    expect(opIdMatch, 'dispatcher should print op_id `op_xxx`').not.toBeNull();
+    const opId = opIdMatch![1];
+
+    // Poll the digest until the dispatched op (by its short id)
+    // reaches a terminal state. The digest renders the op header as
+    // `**<intent>** (`<op_short>`, <status>, …)` — we extract that
+    // status word for the *one* op we care about.
     const deadline = Date.now() + 8 * 60 * 1000;
     let lastDigest = '';
+    let lastOpStatus = '';
+    const opShort = opId.slice(0, 8); // digest truncates to 8 chars
+    const opStatusRe = new RegExp(`\`${opShort}\`,\\s*(\\w+)`);
     while (Date.now() < deadline) {
       const digestRes = await invoke<{ success: boolean; result?: string }>(
         app,
@@ -127,22 +139,18 @@ test.describe('Companion real-claude orchestration', () => {
         {},
       );
       lastDigest = (digestRes.result as string) ?? '';
-      // Reconciler done when at least one of completed/failed is in
-      // the digest line for our op (recently-completed ops linger 5m).
-      if (
-        lastDigest.includes('inspect the hello-world repo') &&
-        (lastDigest.includes('completed') || lastDigest.includes('failed'))
-      ) {
+      const m = opStatusRe.exec(lastDigest);
+      lastOpStatus = m?.[1] ?? '';
+      if (lastOpStatus === 'completed' || lastOpStatus === 'failed') {
         break;
       }
       await new Promise((r) => setTimeout(r, 2000));
     }
 
-    // Final assertions on the digest shape.
+    // Final assertions — note we assert on *this op's* status,
+    // not a blanket substring match.
+    expect(lastOpStatus, 'op should reach terminal status').toMatch(/completed|failed/);
     expect(lastDigest).toContain('inspect the hello-world repo');
-    expect(lastDigest).toMatch(/completed|failed/);
-    // Each role-tagged session should be visible by its short id +
-    // role label ("inspector"/"summarizer").
     expect(lastDigest).toMatch(/inspector/);
     expect(lastDigest).toMatch(/summarizer/);
   });
