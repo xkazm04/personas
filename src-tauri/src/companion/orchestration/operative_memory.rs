@@ -74,6 +74,16 @@ impl OperationStatus {
     }
 }
 
+/// A single MCP `athena.checkpoint` from inside a session — Athena reads
+/// the most recent one to know how the session itself thinks it's
+/// doing, separately from what we can infer from tool calls.
+#[derive(Debug, Clone)]
+pub struct Checkpoint {
+    pub at_ms: i64,
+    pub progress: String,
+    pub blockers: Option<String>,
+}
+
 #[derive(Debug, Clone)]
 pub struct SessionRef {
     pub fleet_session_id: String,
@@ -97,9 +107,21 @@ pub struct SessionRef {
     /// brain bridge uses this as the episode body in place of the bare
     /// lifecycle marker.
     pub summary: Option<String>,
+    /// Self-reported intent from `athena.report_intent` (MCP). What
+    /// the session itself says it is working on, separate from what
+    /// we infer from tool calls. None when the session hasn't called
+    /// report_intent (legacy / opt-out path).
+    pub intent: Option<String>,
+    /// Append-only `athena.checkpoint` log. Bounded to the last
+    /// `MAX_CHECKPOINTS_PER_SESSION` to keep memory and digest
+    /// bounded.
+    pub checkpoints: Vec<Checkpoint>,
     pub started_at_ms: i64,
     pub last_event_at_ms: i64,
 }
+
+/// Hard cap on per-session checkpoints. Older entries roll off on push.
+const MAX_CHECKPOINTS_PER_SESSION: usize = 20;
 
 impl SessionRef {
     fn new(fleet_session_id: &str, cwd: &str, started_at_ms: i64) -> Self {
@@ -113,6 +135,8 @@ impl SessionRef {
             files_touched: HashSet::new(),
             recent_failure: None,
             summary: None,
+            intent: None,
+            checkpoints: Vec::new(),
             started_at_ms,
             last_event_at_ms: started_at_ms,
         }
@@ -128,8 +152,14 @@ pub struct Operation {
     pub started_at_ms: i64,
     pub ended_at_ms: Option<i64>,
     /// Final wrap-up across the whole operation (filled by Athena's
-    /// reconciliation in Direction 5). v1 leaves this `None`.
+    /// reconciliation in Direction 5). Set by
+    /// [`OperativeMemory::synthesize_operation_summary`].
     pub completion_summary: Option<String>,
+    /// True when Athena's dispatcher created this operation via
+    /// `fleet_dispatch` (Direction 5). The proactive evaluator uses
+    /// this as a recursion guard — Athena should not nudge sessions
+    /// that are part of an operation she herself launched.
+    pub dispatched_by_athena: bool,
 }
 
 #[derive(Default)]
@@ -168,6 +198,17 @@ impl OperativeMemory {
     /// v1 (Direction 1) all sessions get assigned to ad-hoc operations
     /// via [`Self::record_session_event`].
     pub fn begin_operation(&self, user_intent: String) -> String {
+        self.begin_operation_inner(user_intent, false)
+    }
+
+    /// D5 path: begin an operation explicitly dispatched by Athena.
+    /// Sets `dispatched_by_athena = true` so the proactive evaluator
+    /// can skip nudges for sessions Athena herself spawned.
+    pub fn begin_dispatched_operation(&self, user_intent: String) -> String {
+        self.begin_operation_inner(user_intent, true)
+    }
+
+    fn begin_operation_inner(&self, user_intent: String, dispatched_by_athena: bool) -> String {
         let id = fresh_op_id();
         let now = now_ms();
         let mut ops = self.operations.write().unwrap_or_else(|e| e.into_inner());
@@ -181,6 +222,7 @@ impl OperativeMemory {
                 started_at_ms: now,
                 ended_at_ms: None,
                 completion_summary: None,
+                dispatched_by_athena,
             },
         );
         id
@@ -224,6 +266,7 @@ impl OperativeMemory {
                 started_at_ms: now,
                 ended_at_ms: None,
                 completion_summary: None,
+                dispatched_by_athena: false,
             },
         );
         id
@@ -428,6 +471,255 @@ impl OperativeMemory {
         Some(summary)
     }
 
+    // ── MCP signal recorders (Direction 3) ────────────────────────────
+
+    /// Record an `athena.report_intent` MCP call. If `operation_id` is
+    /// provided and matches an existing operation, the session joins
+    /// it (D5 path). Otherwise the session's existing ad-hoc op gets
+    /// its `user_intent` upgraded to the MCP-reported one, and the
+    /// SessionRef gains the intent + role labels.
+    ///
+    /// Returns the operation id the session now belongs to (so the
+    /// caller can echo it back to the session via the MCP response).
+    pub fn record_intent(
+        &self,
+        fleet_session_id: &str,
+        intent: &str,
+        role: Option<&str>,
+        operation_id: Option<&str>,
+        project_label: &str,
+        cwd: &str,
+    ) -> String {
+        let mut ops = self.operations.write().unwrap_or_else(|e| e.into_inner());
+
+        // 1. If the client explicitly named an op id, prefer it — but only
+        //    if it exists. Unknown ids fall through to the ad-hoc path so
+        //    a stale id doesn't silently drop the intent.
+        if let Some(opid) = operation_id {
+            if let Some(op) = ops.get_mut(opid) {
+                ensure_session_ref(op, fleet_session_id, cwd);
+                set_session_intent(op, fleet_session_id, intent, role);
+                return opid.to_string();
+            }
+        }
+
+        // 2. Find the session's existing op (created by an earlier hook
+        //    or by a prior MCP call).
+        let existing_op_id = ops
+            .iter()
+            .find(|(_, op)| {
+                op.sessions
+                    .iter()
+                    .any(|s| s.fleet_session_id == fleet_session_id)
+            })
+            .map(|(id, _)| id.clone());
+
+        if let Some(opid) = existing_op_id {
+            let op = ops.get_mut(&opid).expect("just found");
+            // Upgrade the ad-hoc intent (the "user spawn in X" line) to
+            // the session's self-reported one, but only if the op was
+            // created ad-hoc — don't overwrite an Athena-dispatched
+            // operation's deliberate intent label.
+            if !op.dispatched_by_athena && op.user_intent.starts_with("user spawn in ") {
+                op.user_intent = intent.to_string();
+            }
+            set_session_intent(op, fleet_session_id, intent, role);
+            return opid;
+        }
+
+        // 3. No op for this session yet — create an ad-hoc op carrying
+        //    the MCP intent directly (skip the "user spawn in X" placeholder).
+        let id = self.ensure_op_for_session(&mut ops, fleet_session_id, project_label, cwd);
+        let op = ops.get_mut(&id).expect("ensure_op_for_session just inserted");
+        op.user_intent = intent.to_string();
+        set_session_intent(op, fleet_session_id, intent, role);
+        id
+    }
+
+    /// Record an `athena.checkpoint` MCP call. Appends to the
+    /// session's checkpoint log (oldest rolls off at
+    /// [`MAX_CHECKPOINTS_PER_SESSION`]).
+    pub fn record_checkpoint(
+        &self,
+        fleet_session_id: &str,
+        progress: &str,
+        blockers: Option<&str>,
+    ) -> bool {
+        let mut ops = self.operations.write().unwrap_or_else(|e| e.into_inner());
+        let op_id = ops
+            .iter()
+            .find(|(_, op)| {
+                op.sessions
+                    .iter()
+                    .any(|s| s.fleet_session_id == fleet_session_id)
+            })
+            .map(|(id, _)| id.clone());
+        let Some(opid) = op_id else {
+            return false;
+        };
+        let op = ops.get_mut(&opid).expect("just found");
+        let Some(s) = op
+            .sessions
+            .iter_mut()
+            .find(|s| s.fleet_session_id == fleet_session_id)
+        else {
+            return false;
+        };
+        let now = now_ms();
+        s.last_event_at_ms = now;
+        s.checkpoints.push(Checkpoint {
+            at_ms: now,
+            progress: progress.to_string(),
+            blockers: blockers.map(str::to_string),
+        });
+        if s.checkpoints.len() > MAX_CHECKPOINTS_PER_SESSION {
+            let drop = s.checkpoints.len() - MAX_CHECKPOINTS_PER_SESSION;
+            s.checkpoints.drain(0..drop);
+        }
+        true
+    }
+
+    /// D5 path: pre-attach a SessionRef to an Athena-dispatched
+    /// operation before any hook has fired. Called by the dispatcher
+    /// after [`begin_dispatched_operation`] so the session is bound
+    /// to the op even if the first event we see is a tool call.
+    pub fn attach_session_to_operation(
+        &self,
+        operation_id: &str,
+        fleet_session_id: &str,
+        role: &str,
+        cwd: &str,
+    ) -> bool {
+        let mut ops = self.operations.write().unwrap_or_else(|e| e.into_inner());
+        let Some(op) = ops.get_mut(operation_id) else {
+            return false;
+        };
+        if op
+            .sessions
+            .iter()
+            .any(|s| s.fleet_session_id == fleet_session_id)
+        {
+            return true;
+        }
+        let mut sref = SessionRef::new(fleet_session_id, cwd, now_ms());
+        sref.role = Some(role.to_string());
+        op.sessions.push(sref);
+        true
+    }
+
+    /// D5 path: cross-session synthesis. Reads the operation's
+    /// sessions (with their MCP-reported intents, checkpoints,
+    /// per-session summaries, failures) and builds a single
+    /// human-readable wrap-up. Stamps `op.completion_summary` and
+    /// returns it. Returns None if the operation doesn't exist.
+    pub fn synthesize_operation_summary(&self, operation_id: &str) -> Option<String> {
+        let mut ops = self.operations.write().unwrap_or_else(|e| e.into_inner());
+        let op = ops.get_mut(operation_id)?;
+
+        let total = op.sessions.len();
+        if total == 0 {
+            return None;
+        }
+        let exited = op
+            .sessions
+            .iter()
+            .filter(|s| matches!(s.last_state, FleetSessionState::Exited))
+            .count();
+        let failed = op
+            .sessions
+            .iter()
+            .filter(|s| {
+                s.recent_failure.is_some()
+                    || s.summary.as_deref().map(|t| t.contains("non-zero")).unwrap_or(false)
+            })
+            .count();
+
+        let mut lines: Vec<String> = Vec::new();
+        let outcome = match op.status {
+            OperationStatus::Completed => "completed",
+            OperationStatus::Failed => "failed",
+            OperationStatus::Active => "in progress",
+        };
+        lines.push(format!(
+            "Operation **{}** {} — {}/{} sessions exited, {} with failures.",
+            op.user_intent, outcome, exited, total, failed,
+        ));
+
+        // Per-session bullets — role/intent + last-known summary or
+        // checkpoint, plus failure tail if any.
+        let mut session_lines = Vec::new();
+        let mut all_files: HashSet<&PathBuf> = HashSet::new();
+        for s in &op.sessions {
+            for f in &s.files_touched {
+                all_files.insert(f);
+            }
+            let role = s.role.as_deref().unwrap_or("session");
+            let id8 = &s.fleet_session_id[..s.fleet_session_id.len().min(8)];
+            let intent = s
+                .intent
+                .as_deref()
+                .map(|i| format!(" — {}", truncate_one_line(i, 80)))
+                .unwrap_or_default();
+            let last_state = state_label(s.last_state);
+            let trailer = if let Some(summary) = &s.summary {
+                format!(" · {}", truncate_one_line(summary, 160))
+            } else if let Some(cp) = s.checkpoints.last() {
+                format!(" · last checkpoint: {}", truncate_one_line(&cp.progress, 160))
+            } else {
+                String::new()
+            };
+            let mut line = format!("- `{id8}` ({role}) [{last_state}]{intent}{trailer}");
+            if let Some(failure) = &s.recent_failure {
+                line.push_str(&format!("\n    ⚠ {}", truncate_one_line(failure, 200)));
+            }
+            session_lines.push(line);
+        }
+        lines.extend(session_lines);
+
+        // Cross-session file overlap is worth surfacing — Athena can
+        // spot "two sessions both edited utils.ts" patterns.
+        if !all_files.is_empty() {
+            let mut files: Vec<&PathBuf> = all_files.iter().copied().collect();
+            files.sort();
+            let preview: Vec<String> = files
+                .iter()
+                .take(10)
+                .map(|p| p.to_string_lossy().into_owned())
+                .collect();
+            let more = if files.len() > 10 {
+                format!(" (+{} more)", files.len() - 10)
+            } else {
+                String::new()
+            };
+            lines.push(format!("Files touched across all sessions: {}{}", preview.join(", "), more));
+        }
+
+        let summary = lines.join("\n");
+        op.completion_summary = Some(summary.clone());
+        Some(summary)
+    }
+
+    // ── Snapshots for diagnostics / D5 reconciler ─────────────────────
+
+    /// Best-effort lookup of which Operation owns a given Fleet session.
+    pub fn find_operation_for_session(&self, fleet_session_id: &str) -> Option<String> {
+        let ops = self.operations.read().unwrap_or_else(|e| e.into_inner());
+        ops.iter()
+            .find(|(_, op)| {
+                op.sessions
+                    .iter()
+                    .any(|s| s.fleet_session_id == fleet_session_id)
+            })
+            .map(|(id, _)| id.clone())
+    }
+
+    /// Clone an Operation snapshot. Returns None if the id is unknown.
+    /// Used by the reconciler to read state without holding the lock.
+    pub fn snapshot_operation(&self, operation_id: &str) -> Option<Operation> {
+        let ops = self.operations.read().unwrap_or_else(|e| e.into_inner());
+        ops.get(operation_id).cloned()
+    }
+
     /// Format the active operations for Athena's prompt. Empty string
     /// if nothing is in flight. Replaces the old fleet-state digest.
     pub fn digest_for_prompt(&self) -> String {
@@ -471,6 +763,21 @@ impl OperativeMemory {
                     .map(|t| format!(" → {t}"))
                     .unwrap_or_default();
                 s.push_str(&format!("  - `{id8}`{role}: {state}{tool}\n"));
+                if let Some(intent) = &sess.intent {
+                    s.push_str(&format!("    intent: {}\n", truncate_one_line(intent, 200)));
+                }
+                if let Some(cp) = sess.checkpoints.last() {
+                    let blockers = cp
+                        .blockers
+                        .as_deref()
+                        .map(|b| format!(" · blockers: {}", truncate_one_line(b, 120)))
+                        .unwrap_or_default();
+                    s.push_str(&format!(
+                        "    checkpoint: {}{}\n",
+                        truncate_one_line(&cp.progress, 200),
+                        blockers,
+                    ));
+                }
                 if !sess.files_touched.is_empty() {
                     let files: Vec<String> = sess
                         .files_touched
@@ -525,6 +832,41 @@ files line is what they've touched so far this run.\n",
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────
+
+/// Ensure a SessionRef exists for `fleet_session_id` inside `op`. No-op
+/// if one is already there. Used by the MCP intent path: the session
+/// may report intent BEFORE its first lifecycle hook lands, in which
+/// case we materialize a placeholder SessionRef so the intent has
+/// somewhere to live.
+fn ensure_session_ref(op: &mut Operation, fleet_session_id: &str, cwd: &str) {
+    if op
+        .sessions
+        .iter()
+        .any(|s| s.fleet_session_id == fleet_session_id)
+    {
+        return;
+    }
+    op.sessions.push(SessionRef::new(fleet_session_id, cwd, now_ms()));
+}
+
+fn set_session_intent(
+    op: &mut Operation,
+    fleet_session_id: &str,
+    intent: &str,
+    role: Option<&str>,
+) {
+    if let Some(s) = op
+        .sessions
+        .iter_mut()
+        .find(|s| s.fleet_session_id == fleet_session_id)
+    {
+        s.intent = Some(intent.to_string());
+        if let Some(r) = role {
+            s.role = Some(r.to_string());
+        }
+        s.last_event_at_ms = now_ms();
+    }
+}
 
 /// Render a tool invocation into one short user-facing line. We choose
 /// per-tool whether to show the input (Bash command, file path) or

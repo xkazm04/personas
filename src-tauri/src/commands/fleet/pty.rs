@@ -23,6 +23,16 @@ use crate::engine::event_registry::event_name;
 use super::registry::{now_ms, registry, FleetSessionInner};
 use super::types::FleetSessionState;
 
+/// MCP wiring artefacts created at spawn time. Returned so we can hand
+/// them to the cmd builder and the reaper (which cleans up the temp
+/// file on session exit).
+struct McpSpawn {
+    /// Absolute path to the per-session mcp.json. Empty Option when
+    /// MCP couldn't be wired (local_http not yet started, or write
+    /// failed) — caller proceeds without `--mcp-config`.
+    config_path: Option<PathBuf>,
+}
+
 /// `fleet-session-output` event payload.
 #[derive(Serialize, Clone)]
 struct OutputPayload<'a> {
@@ -84,6 +94,19 @@ pub fn spawn_session(
         })
         .map_err(|e| format!("openpty failed: {e}"))?;
 
+    // We need the session id before building the command so MCP can
+    // bind its session-token to the right Fleet session. Generating it
+    // here (instead of after spawn) is safe — registry insertion still
+    // happens after spawn_command, so a failed spawn doesn't leak an
+    // entry into the registry.
+    let id = uuid::Uuid::new_v4().to_string();
+
+    // Wire MCP: mint a per-session token, write a per-session
+    // mcp.json, return the path so we can inject `--mcp-config` into
+    // the claude argv. Best-effort — a failure here doesn't abort the
+    // spawn; the session just runs without Athena MCP tools.
+    let mcp = build_mcp_spawn(&id);
+
     // `claude` is published to npm as a Unix shell script with no
     // extension. PATH-searching for it on Windows finds the bare script,
     // which CreateProcessW then refuses to exec (OS error 193 — "is
@@ -99,6 +122,11 @@ pub fn spawn_session(
         let mut c = CommandBuilder::new("cmd.exe");
         c.arg("/c");
         let mut composed = String::from("claude");
+        if let Some(p) = mcp.config_path.as_deref() {
+            // Path may contain spaces (e.g. "C:\Users\My Name\..."), so
+            // quote unconditionally.
+            composed.push_str(&format!(" --mcp-config \"{}\"", p.display()));
+        }
         for a in &args {
             composed.push(' ');
             composed.push_str(a);
@@ -107,6 +135,10 @@ pub fn spawn_session(
         c
     } else {
         let mut c = CommandBuilder::new("claude");
+        if let Some(p) = mcp.config_path.as_deref() {
+            c.arg("--mcp-config");
+            c.arg(p.as_os_str());
+        }
         for a in &args {
             c.arg(a);
         }
@@ -134,7 +166,6 @@ pub fn spawn_session(
         .take_writer()
         .map_err(|e| format!("take writer failed: {e}"))?;
 
-    let id = uuid::Uuid::new_v4().to_string();
     let now = now_ms();
     let project_label = cwd
         .file_name()
@@ -171,9 +202,92 @@ pub fn spawn_session(
     // Reaper task — owns the child directly, waits, marks exit, emits.
     let app_reaper = app.clone();
     let id_reaper = id.clone();
-    tokio::task::spawn_blocking(move || reaper_loop(app_reaper, id_reaper, child));
+    let mcp_config_for_reaper = mcp.config_path.clone();
+    tokio::task::spawn_blocking(move || {
+        reaper_loop(app_reaper, id_reaper.clone(), child);
+        // Release MCP token + cancel blocking requests + clean up
+        // the temp config file. These all need to happen exactly
+        // once per session — coupling them to the reaper exit is
+        // simpler than coordinating across the registry mark-exited
+        // path.
+        crate::companion::orchestration::mcp::release_session_tokens(&id_reaper);
+        crate::companion::orchestration::mcp::pending::cancel_for_session(&id_reaper);
+        if let Some(p) = mcp_config_for_reaper {
+            if let Some(parent) = p.parent() {
+                let _ = std::fs::remove_dir_all(parent);
+            }
+        }
+    });
 
     Ok(id)
+}
+
+/// Mint an MCP session token and write a per-session `mcp.json` that
+/// points the spawned claude at our localhost MCP endpoint. Returns
+/// `McpSpawn { config_path: None }` if MCP can't be wired right now
+/// (local_http server not yet started, write failed, etc) — callers
+/// proceed without `--mcp-config` rather than failing the spawn.
+fn build_mcp_spawn(fleet_session_id: &str) -> McpSpawn {
+    let port = match crate::local_http::port() {
+        Some(p) => p,
+        None => {
+            tracing::warn!(
+                "fleet spawn: local_http port not yet bound — MCP wiring skipped"
+            );
+            return McpSpawn { config_path: None };
+        }
+    };
+
+    let token = crate::companion::orchestration::mcp::mint_session_token(fleet_session_id);
+
+    // Per-session subdir under tmp so the file is uniquely-named and
+    // the parent can be removed on exit. Avoids stale configs piling
+    // up across restarts.
+    let dir = std::env::temp_dir().join(format!("fleet-mcp-{fleet_session_id}"));
+    if let Err(e) = std::fs::create_dir_all(&dir) {
+        tracing::warn!(error = %e, "fleet spawn: temp dir creation failed — MCP wiring skipped");
+        crate::companion::orchestration::mcp::release_session_tokens(fleet_session_id);
+        return McpSpawn { config_path: None };
+    }
+    let config_path = dir.join("mcp.json");
+
+    // The MCP HTTP transport spec lets us declare headers that the
+    // client sends on every JSON-RPC call. We use that to carry the
+    // per-session token — no per-request crypto, just a UUID lookup
+    // on our side. Header name MUST match `mcp::SESSION_HEADER`
+    // (case-insensitive per HTTP).
+    let body = serde_json::json!({
+        "mcpServers": {
+            "athena": {
+                "type": "http",
+                "url": format!("http://127.0.0.1:{port}/mcp/rpc"),
+                "headers": {
+                    "X-Athena-Session": token
+                }
+            }
+        }
+    });
+    let serialized = match serde_json::to_string_pretty(&body) {
+        Ok(s) => s,
+        Err(e) => {
+            tracing::warn!(error = %e, "fleet spawn: mcp.json serialise failed");
+            crate::companion::orchestration::mcp::release_session_tokens(fleet_session_id);
+            return McpSpawn { config_path: None };
+        }
+    };
+    if let Err(e) = std::fs::write(&config_path, serialized) {
+        tracing::warn!(error = %e, "fleet spawn: mcp.json write failed");
+        crate::companion::orchestration::mcp::release_session_tokens(fleet_session_id);
+        let _ = std::fs::remove_dir_all(&dir);
+        return McpSpawn { config_path: None };
+    }
+
+    tracing::debug!(
+        session_id = %fleet_session_id,
+        path = %config_path.display(),
+        "fleet spawn: MCP config wired"
+    );
+    McpSpawn { config_path: Some(config_path) }
 }
 
 /// Reader loop — blocks on `reader.read`, emits chunks, exits on EOF/error.

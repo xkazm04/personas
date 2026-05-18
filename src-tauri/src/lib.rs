@@ -737,6 +737,14 @@ pub fn run() {
                 "fleet",
                 commands::fleet::hooks::router(app.handle().clone()),
             );
+            // Athena MCP server (Direction 3) — Claude Code sessions
+            // discover this via per-session `--mcp-config` and call
+            // athena.* tools (report_intent, checkpoint,
+            // request_guidance, request_approval).
+            local_http::register_router(
+                "mcp",
+                companion::orchestration::mcp::router(app.handle().clone()),
+            );
             // Fleet background workers — staleness ticker + JSONL watcher.
             // Both fire-and-forget; the staleness ticker is safe everywhere,
             // the JSONL watcher is desktop-only because `notify` is feature-gated.
@@ -2099,6 +2107,8 @@ pub fn run() {
             commands::companion::chat::companion_cancel_autonomy,
             commands::companion::fleet_bridge::companion_record_fleet_event,
             commands::companion::fleet_bridge::companion_get_operative_memory_digest,
+            commands::companion::mcp_bridge::companion_mcp_resolve_request,
+            commands::companion::mcp_bridge::companion_mcp_pending_snapshot,
             commands::companion::approvals::companion_list_pending_approvals,
             commands::companion::approvals::companion_approve_action,
             commands::companion::approvals::companion_reject_action,

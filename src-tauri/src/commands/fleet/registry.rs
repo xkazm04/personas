@@ -95,6 +95,23 @@ impl FleetRegistry {
         out
     }
 
+    /// Look up `(project_label, cwd)` for a session id. Returns
+    /// `None` when the session has been pruned or never existed.
+    ///
+    /// Used by the MCP layer to label operative-memory entries when
+    /// a session reports its intent before any lifecycle hook has
+    /// fired (the registry has the metadata; operative memory
+    /// doesn't yet).
+    pub fn lookup_meta(&self, session_id: &str) -> Option<(String, String)> {
+        let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        map.get(session_id).map(|s| {
+            (
+                s.project_label.clone(),
+                s.cwd.to_string_lossy().into_owned(),
+            )
+        })
+    }
+
     /// Returns `true` if a non-exited session with this `cwd` is tracked.
     /// Drives the duplicate-spawn guard.
     pub fn has_active_cwd(&self, cwd: &std::path::Path) -> bool {

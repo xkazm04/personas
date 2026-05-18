@@ -13,6 +13,7 @@ pub mod decisions;
 pub mod feedback;
 pub mod fleet_bridge;
 pub mod jobs;
+pub mod mcp_bridge;
 pub mod observability;
 pub mod plugins;
 pub mod proactive;
