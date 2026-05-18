@@ -2108,6 +2108,9 @@ export type Translations = {
       new_agent: string;
       failed_to_create: string;
       build_failed: string;
+      header_title: string;
+      header_subtitle_new: string;
+      header_subtitle_editing: string;
     };
     build_webhook_source: {
       header: string;

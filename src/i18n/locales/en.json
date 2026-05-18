@@ -2101,7 +2101,10 @@
     "matrix_entry": {
       "new_agent": "New Agent",
       "failed_to_create": "Failed to create draft agent.",
-      "build_failed": "Build failed to start. Check CLI configuration."
+      "build_failed": "Build failed to start. Check CLI configuration.",
+      "header_title": "Build",
+      "header_subtitle_new": "Compose a new agent from scratch",
+      "header_subtitle_editing": "Editing {name}"
     },
     "build_webhook_source": {
       "header": "Webhook source",

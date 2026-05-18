@@ -151,8 +151,8 @@ export default function DashboardHomeMissionControl() {
       <HeroMesh preset="dashboard" />
 
       <ContentHeader
-        eyebrow={t.overview.dashboard.mission_control_eyebrow}
-        title={`${greeting}, ${displayName}`}
+        title={t.overview.dashboard.mission_control_eyebrow}
+        subtitle={`${greeting}, ${displayName}`}
         actions={
           <PersonaSelect value={selectedPersonaId} onChange={setSelectedPersonaId} personas={personas} />
         }

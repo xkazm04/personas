@@ -70,27 +70,69 @@ consumes immediately, with a flash of the `shows` avatar clip:
 
 ## Inline chat cards
 
-Three widget kinds Athena can drop mid-transcript via `propose_action`
-(also auto-fire, no approval):
+Auto-fire widgets Athena drops mid-transcript via `propose_action`. No
+approval. Cards render inline through `InlineChatCard`; the JSON config
+Athena emits is forwarded verbatim as the widget's data. Two families.
 
-- **`show_persona_overview`** — per-persona metadata card.
+**State-of-the-app cards** — surface live info from the app's own data:
+
+- **`show_persona_overview`** — per-persona metadata grid.
 - **`show_connected_services`** — pinned connector list with
   enable/disable badges.
 - **`show_decisions`** — pending human-review / approvals card.
+- **`show_recent_decisions`** — chip strip of 1–5 of Athena's most
+  recent saved design decisions for a given `persona_context`. Widget
+  fetches rows on mount via `companion_list_design_decisions`. Validates
+  `persona_context` is non-empty; clamps `limit` to 1–5.
 
-Cards render inline through `InlineChatCard`; the JSON config Athena
-emits is forwarded verbatim as the widget's data.
+**Persona-design cards** — Athena composes structured guidance from
+doctrine. Each validates required params at the dispatcher and rejects
+malformed ops with a warning:
+
+- **`show_design_capabilities`** — onboarding-style "what can I help you
+  design?" menu. Hard-coded vocabulary in the widget; the op carries an
+  optional `intro` line.
+- **`show_persona_walkthrough`** — long-form markdown plan applied to a
+  user intent, pulled from `concepts/persona-design-best-practices.md`.
+  Requires non-empty `content`.
+- **`show_template_suggestions`** — keyword-matched gallery hits via
+  `companion_match_templates`. Requires non-empty `intent`; clamps
+  `limit` to 1–5.
+- **`show_use_case_set`** — 3–5 use cases tagged `golden | variant |
+  out_of_scope`. Caps at 5; rejects invalid role slugs and oversize
+  arrays (>8).
+- **`show_trigger_set`** — 1–4 trigger configs (label / source /
+  condition, optional grain + idempotency). Caps at 4; rejects missing
+  fields and oversize arrays (>6).
+- **`show_model_tier_choice`** — three-tier comparison (haiku / sonnet
+  / opus) with one `recommended`. Rejects unknown recommended values
+  and bad tier slugs / empty rationales.
+- **`show_observability_plan`** — error-handling + success-metric pair.
+  `success_metric.kind` must be `count_by_status | cost_per_run |
+  latency | custom`.
+- **`show_decision_log`** — audit-trail of label / choice / rationale
+  triples (2–12 entries; widget caps display at 8). Best-effort
+  **persists to `companion_design_decision`** so the log survives
+  session reload; persist failures don't block the card render.
+- **`show_persona_ready`** — end-of-design recap with primary
+  "Commit to build" button. `recommended_action` must be
+  `build_oneshot | interactive | use_template`; `summary.intent_line`
+  is required.
 
 ## Approval-gated actions (cards)
 
-Athena proposes; the user clicks **Approve** / **Reject**. Each
-creates a `pending_approval` row; the chat surfaces a card with the
-action's parameters until resolved. Surface:
+Athena proposes; the user clicks **Approve** / **Reject**. Each creates
+a `pending_approval` row; the chat surfaces a card with the action's
+parameters until resolved. Surface:
 
-- **Personas** — `run_persona` (execute with given inputs),
-  `prefill_persona_create` (pre-populate the create-persona form),
-  `run_arena` (launch lab Arena mode), `register_project` /
-  `enqueue_dev_job` (project registry + background work).
+- **Personas / builds** — `run_persona` (execute with given inputs),
+  `prefill_persona_create` (pre-populate the create-persona form;
+  default `mode: interactive`), `build_oneshot` (autonomous build
+  shortcut — same effect as `prefill_persona_create` with
+  `auto_launch=true, mode=one_shot`; OS notification on completion),
+  `run_arena` (launch lab Arena mode with a list of model configs +
+  optional use-case filter), `register_project` / `enqueue_dev_job`
+  (project registry + background work).
 - **Reviews** — `resolve_human_review` (decide on a pending design or
   execution review).
 - **Identity & memory** — `update_identity` (edit identity.md);
@@ -101,6 +143,30 @@ action's parameters until resolved. Surface:
   `set_ritual_active` / `delete_ritual` (quiet hours, cadences,
   focus windows); `write_backlog_item` / `resolve_backlog_item`
   (commitments + capability gaps Athena has spotted in herself).
+- **Future commitments** — `schedule_proactive` (Athena commits to a
+  future check-in with `{ message, when_iso }`; the deliver-due sweep
+  in `proactive::deliver_due_scheduled` releases it through the same
+  `companion://proactive` channel as trigger-driven nudges).
+- **Fleet integration (Phase J — Claude Code workers)** — each moves a
+  real subprocess, so all approval-gated:
+  - `fleet_send_input` — write text (optional `press_enter`) to one
+    fleet session's PTY stdin.
+  - `fleet_broadcast` — same payload to multiple sessions, targeted by
+    `all_waiting | all | ids`.
+  - `fleet_kill` — soft kill (PTY EOF) one session.
+  - `fleet_spawn` — start a new fleet session at `cwd` (tagged
+    "athena" for visibility, so the user can see which were
+    Athena-spawned).
+  - `fleet_dispatch` (D5 v2) — one ApprovalCard launches N sessions
+    (up to 8) under a single Operation. The reconciler in
+    `commands::companion::fleet_bridge` synthesizes one cross-session
+    wrap-up once every session exits.
+  - `fleet_intervene` (D9) — write a guidance message into a stuck
+    session's PTY stdin. Capped at **one intervention per session**
+    via operative_memory tracking.
+  - `fleet_redirect_op` (D9) — update an operation's `user_intent` +
+    broadcast a redirection message to every active session in the
+    op. Per-session intervention cap still applies.
 
 Every memory write requires at least one source episode citation —
 anti-hallucination contract enforced at the repo layer.
@@ -117,10 +183,19 @@ reads the result on the next turn. Registered kinds:
   `WALK_TIMEOUT_SECS=60`), skips `node_modules`/`.git`/build outputs,
   emits a markdown summary.
 - **`connector_use`** — see the **Connectors** section below.
-- **`curation_run`** — placeholder for the curation/synthesis pass.
+- **`memory_curation_run`** — wraps the consolidation / reflection
+  curators as a background-job kind so they don't block the IPC
+  caller. `params.scope` is `consolidate` (calls
+  `brain::consolidation::run_consolidation`) or `reflect` (calls
+  `brain::reflection::run_reflection`). Optional `instructions`
+  (≤4096 chars) steers the curator. Concept borrowed from Anthropic
+  Managed Agents' dream pipeline; the shape is theirs, the
+  implementation is personas's existing curators in a worker context.
 
 Orphan recovery: any job in `running` status at startup is marked
-`failed` (process restart killed it mid-execution).
+`failed` (process restart killed it mid-execution). Terminal rows are
+pruned after a 30-day retention window so the queued-lookup query
+stays fast as history grows.
 
 ## Connectors
 
@@ -196,7 +271,9 @@ items Athena spotted).
 
 ## Proactive nudges
 
-Scheduler runs every 5 minutes. Four trigger kinds:
+Scheduler runs every 5 minutes. Trigger kinds:
+
+**Brain-state triggers** (subject to daily budget):
 
 - **`goal_target_approaching`** — active goal with `target_date`
   within 24h, not completed.
@@ -208,14 +285,44 @@ Scheduler runs every 5 minutes. Four trigger kinds:
 - **`on_this_day`** — episode/reflection from the same calendar day
   30 / 90 / 365 days ago, scored against active goal mentions for
   affinity.
+- **`ambient_match`** (`desktop` feature) — reads the rolling ambient
+  context window and runs each signal through the
+  `ContextRuleEngine`. Each match becomes a Nudge keyed on `rule_id`,
+  with the engine's per-rule cooldown layered on top of dedupe.
+
+**Fleet attention triggers** (read in-process fleet registry, no DB
+hit):
+
+- **`fleet_failed`** — session exited with non-zero exit code within
+  the last 10 minutes.
+- **`fleet_awaiting`** — session in `AwaitingInput` for >2 minutes.
+- **`fleet_stale`** — session reached `Stale` state (no activity for
+  5+ min).
+- **`fleet_stuck_dispatched`** (D9) — session inside a
+  `dispatched_by_athena` op that's stuck (recent failure + no
+  checkpoint), surfacing a candidate `fleet_intervene` proposal. Cap
+  of one intervention per session is enforced server-side.
+
+**Direct-source triggers** (bypass budget gate, still dedupe):
+
+- **`fleet_op_completed`** (D6) — reconciler writes one of these per
+  `dispatched_by_athena` op when every session has reached terminal
+  state. Surfaces as the cross-session wrap-up.
+- **`athena_scheduled`** — Athena's own `schedule_proactive`
+  commitments held in `queued` until `scheduled_for` arrives, then
+  released via `deliver_due_scheduled`.
 
 Gating: **quiet_hours** blocks all delivery during active windows;
-**daily budget cap** defaults to 3 nudges/day; **dedupe window**
-allows one nudge per `(trigger_kind, trigger_ref)` until resolved.
+**daily budget cap** defaults to 3 nudges/day (direct-source triggers
+bypass); **dedupe window** allows one nudge per `(trigger_kind,
+trigger_ref)` until resolved.
 
 Each delivery emits a `companion://proactive` Tauri event. If voice is
 enabled, the panel speaks the nudge body immediately (arrival-TTS) —
-regardless of whether the chat is open.
+regardless of whether the chat is open. Resolution: user clicks
+through → `engaged` (engagement on a `backlog_aging` nudge bumps the
+backlog item's `reminded_count` to ratchet future delivery cadence
+down); user dismisses → `dismissed`.
 
 ## Voice
 
@@ -241,6 +348,102 @@ If voice is on, Athena is also instructed to write her **chat-bubble
 text** in a tighter, skimmable format (short sentences, lean on QR
 chips) — the assumption being that the spoken summary carries the
 nuance, the visual is the scannable index.
+
+## Athena as an MCP server (Direction 3)
+
+Beyond the four built-in tools Athena has *as a Claude session*, she
+also **exposes** four tools to *other* Claude Code sessions (the
+fleet workers) via MCP. Claude Code sessions discover Athena via
+`--mcp-config <file>` at spawn time, pointing at her HTTP endpoint
+(`/mcp/rpc`, JSON-RPC 2.0, same axum server that hosts
+`/fleet/hooks/*`). Per-session tokens are minted at spawn time and
+threaded via the `X-Athena-Session` header.
+
+The four tools — definitions in
+`src-tauri/src/companion/orchestration/mcp/handlers.rs`:
+
+| Tool | Effect | Blocking |
+| --- | --- | --- |
+| **`athena.report_intent`** | Claim or join an Operation; set role + intent string. Replaces the auto-generated "user spawn in <project>" label in Athena's prompt digest. Optional `operation_id` joins an existing op. | No |
+| **`athena.checkpoint`** | Append progress / optional blockers to operative memory. Athena uses this to decide whether to pre-empt with guidance. Don't call on every tool use — the hook layer covers that. | No |
+| **`athena.request_guidance`** | Ask Athena a question and **block** until she answers. Surfaced in the chat panel as a pending request; Athena sees the session's intent/checkpoints/recent failures in context. | **Yes** |
+| **`athena.request_approval`** | Propose a destructive / cost-bearing action and **block** until the user approves or denies via an ApprovalCard. | **Yes** |
+
+Blocking handlers register a pending request, emit a Tauri event, and
+await a oneshot. Resolution comes back through the
+`companion_mcp_resolve_request` Tauri command. The MCP layer is what
+turns hooks (passive, one-way) into a real conversation between the
+workers and Athena.
+
+## Operative memory (orchestration digest)
+
+A **live**, in-process working set of fleet operations — distinct
+from `brain/` (long-term episodic + semantic memory). Tracks:
+
+- **Operations** — a unit of intent with one or more sessions
+  attached. Created by `fleet_dispatch` (Athena-dispatched) or by an
+  ad-hoc spawn (session reports intent → auto-create).
+- **Sessions per op** — each session's role, intent, checkpoints,
+  recent failures, intervention status.
+- **Mutations** — every change emits `athena://orchestration/digest-changed`
+  so the frontend re-pulls the digest via
+  `companion_get_operative_memory_digest`.
+
+The digest is appended to Athena's prompt every turn under
+observability. Empty string for users not using fleet.
+Evaporates on app restart by design — long-term memory is in
+`brain/`.
+
+## Plugin toggles
+
+A "plugin" here is a contextual capability the user toggles **on**
+so Athena becomes aware of it and can lead the user through using
+it. Distinct from connectors (external credentials).
+
+- **`dev_tools`** — codebase scan / idea generation / task
+  batching / projects state. Toggle on → prompt builder appends an
+  awareness block; toggle off → Athena loses that awareness next
+  turn. New plugin slugs slot into `plugins::PLUGIN_*` constants.
+
+## Project registry
+
+Repos/projects Athena's Dev Tools knows about. The Personas repo is
+seeded on first run so "list projects" and "scan project X" work
+out-of-the-box. Each row: `{ id, name, path, description,
+last_scan_at, last_scan_summary }`.
+
+Surface for Athena:
+
+- **`register_project`** (approval-gated) — add a new project by
+  name + path.
+- **`enqueue_dev_job`** (approval-gated) — currently supports
+  `scan_codebase`; passes `project_id` to the worker so the scan
+  outcome rolls up under that project's `last_scan_summary`.
+
+## Per-turn UI side-channel events
+
+Beyond `STREAM_EVENT` (raw stream-json chunks), `APPROVALS_EVENT`,
+and the navigation events (`NAVIGATE_EVENT`, `OPEN_LAB_EVENT`,
+`COMPOSE_DASHBOARD_EVENT`, `COMPOSE_COCKPIT_EVENT`, `CHAT_CARDS_EVENT`),
+the session emits two glanceable rollups per turn that the panel uses
+to render thin info strips:
+
+- **`companion://recall-preview`** (`RECALL_PREVIEW_EVENT`) — fires
+  once per turn, right after the prompt is built and right before
+  the CLI spawn. Payload is `{ sessionId, turnId, preview }` where
+  `preview` carries episode count + (id, title) entries for each
+  consulted memory kind (doctrine, facts, procedurals, goals,
+  backlog) plus a `synthesized` flag (was the synthesis layer hit?).
+  Renders as "Athena consulted N memories" above the streaming
+  bubble.
+- **`companion://turn-summary`** (`TURN_SUMMARY_EVENT`) — fires once
+  after the dispatcher block, keyed on the persisted assistant
+  episode id. Carries counts of approvals filed, navigations,
+  lab_opens, dashboards, cockpits, chat_cards, plus a `continuation`
+  flag (Athena emitted `continue_autonomously`).
+
+Both are session-scoped UI only — no persistence, no replay across
+panel reload.
 
 ## Tools Athena has direct access to
 
@@ -333,3 +536,210 @@ deliver. As of this session, the list is shorter:
 
 When in doubt: this doc gets out of date. The dispatcher, the
 capability registry, and `prompt.rs::compose` are the ground truth.
+
+## Capability inventory — for tests + optimization passes
+
+A flat, grouped list of every Athena-driven capability shipping on
+`master`. Use this as the test matrix; each row should have at least
+one happy-path scenario and (where applicable) one rejection scenario.
+Numbers in brackets indicate the constitution version that introduced
+the op (current: **v18**).
+
+### A. Op grammar (chat-emitted JSON envelopes)
+
+**A1. Auto-fire UI navigation** — no approval card, fires on parse:
+
+- `open_route { route }` — sidebar nav. Allowlist of 9 routes.
+- `open_lab { persona_id, mode }` — persona editor + lab mode. 7 modes.
+- `compose_dashboard { title, widgets[] }` — persists + navigates to
+  Companion → Dashboard. 9 widget kinds.
+- `compose_cockpit { title, widgets[] }` — persists + navigates to
+  Home → Cockpit. 6 widget kinds.
+- `continue_autonomously { rationale }` — autonomous-mode only;
+  schedules next tick.
+
+**A2. Auto-fire chat cards** — `propose_action`, no approval card,
+renders inline:
+
+- `show_persona_overview { config }`
+- `show_connected_services { config }`
+- `show_decisions { config }`
+- `show_recent_decisions { persona_context, limit }`
+- `show_design_capabilities { intro? }` [v17]
+- `show_persona_walkthrough { intent, content }` [v9]
+- `show_template_suggestions { intent, limit }` [v10]
+- `show_use_case_set { intent, use_cases[] }` [v11]
+- `show_trigger_set { intent, triggers[] }` [v12]
+- `show_model_tier_choice { intent, recommended, tiers[] }` [v13]
+- `show_observability_plan { intent, error_handling, success_metric }` [v14]
+- `show_decision_log { intent, decisions[] }` [v15] — also persists to
+  `companion_design_decision`
+- `show_persona_ready { intent, recommended_action, summary }` [v16]
+
+**A3. Auto-fire background job** — no approval card, enqueues:
+
+- `use_connector { connector_name, capability, args }` — validates
+  (pinned + enabled) and (capability in registry) before enqueue.
+
+**A4. Approval-gated — personas / build / lab**:
+
+- `run_persona { persona_id, input? }`
+- `prefill_persona_create { intent, name?, auto_launch, mode }`
+- `build_oneshot { intent, name? }` [2026-05-06]
+- `run_arena { persona_id, models[], use_case_filter? }`
+
+**A5. Approval-gated — reviews**:
+
+- `resolve_human_review { review_id, decision, comment? }`
+
+**A6. Approval-gated — memory & identity** (provenance contract: every
+`write_fact`/`write_procedural` must have a non-empty `sources` array
+or the dispatcher rejects at parse time):
+
+- `update_identity { content }`
+- `write_fact { scope, key, value, sources[], importance, confidence, supersedes_id? }`
+- `delete_fact { id }`
+- `write_procedural { scope, trigger, behavior, sources[], importance, confidence, supersedes_id? }`
+- `delete_procedural { id }`
+- `write_goal { title, description, priority, target_date? }`
+- `update_goal_status { id, status }`
+- `delete_goal { id }`
+- `write_ritual { kind, description, schedule }`
+- `set_ritual_active { id, active }`
+- `delete_ritual { id }`
+- `write_backlog_item { kind, summary, source_episode_id }`
+- `resolve_backlog_item { id, dropped }`
+
+**A7. Approval-gated — future commitments**:
+
+- `schedule_proactive { message, when_iso }` [v8]
+
+**A8. Approval-gated — projects + dev jobs**:
+
+- `register_project { name, path, description? }`
+- `enqueue_dev_job { kind, project_id?, params? }` — currently only
+  supports `scan_codebase`.
+
+**A9. Approval-gated — fleet (Phase J)**:
+
+- `fleet_send_input { session_id, text, press_enter? }`
+- `fleet_broadcast { target, text, ids?, press_enter? }` (target ∈
+  `all_waiting | all | ids`)
+- `fleet_kill { session_id }`
+- `fleet_spawn { cwd, args?, cols?, rows? }`
+- `fleet_dispatch { operation_intent, role_specs[] }` — D5 v2; ≤8
+  sessions per op
+- `fleet_intervene { session_id, message }` — D9; capped at 1 per
+  session
+- `fleet_redirect_op { op_id, new_intent, message? }` — D9
+
+**A10. Reply-shaping helpers** (stripped from display, transient):
+
+- `TTS: "..."` — spoken summary line; first wins per turn
+- `QR: ["..."]` — up to 6 quick-reply chips
+
+### B. MCP server tools (Athena exposes to fleet workers)
+
+| Tool | Blocking | Endpoint | Schema |
+|---|---|---|---|
+| `athena.report_intent { intent, role?, operation_id? }` | No | `/mcp/rpc` | `tool_descriptors()` |
+| `athena.checkpoint { progress, blockers? }` | No | `/mcp/rpc` | same |
+| `athena.request_guidance { question, context? }` | **Yes** | `/mcp/rpc` | same |
+| `athena.request_approval { action, rationale, details? }` | **Yes** | `/mcp/rpc` | same |
+
+### C. Connector capabilities (real handlers in `connector_use.rs`)
+
+| Connector | Capability | Required args | Status |
+|---|---|---|---|
+| `sentry` | `list_issues` | `limit?` (≤100) | wired |
+| `sentry` | `get_issue` | `issue_id` | wired |
+| `github` | `list_repos` | `limit?` (≤100) | wired |
+| `github` | `list_open_prs` | `owner, repo, limit?` (≤100) | wired |
+| `slack` | `list_channels` | `limit?` (≤200) | wired |
+| `gmail` / `google_workspace` | `list_recent_threads` | `limit?` (≤50) | wired |
+| any other registered service-type | (any) | — | stub markdown only |
+
+### D. Background job kinds
+
+| Kind | Params | Output |
+|---|---|---|
+| `scan_codebase` | `{ project_id? }` | markdown summary (file walk) |
+| `connector_use` | `{ connector_name, capability, args }` | per-handler markdown |
+| `memory_curation_run` | `{ scope: "consolidate" \| "reflect", instructions? }` | run id + UI pointer |
+
+### E. Proactive trigger kinds
+
+| Kind | Source | Budget | Bypass quiet? |
+|---|---|---|---|
+| `goal_target_approaching` | brain (goals) | counts | no |
+| `backlog_aging` | brain (backlog) | counts | no |
+| `cadence_due` | brain (rituals) | counts | no |
+| `on_this_day` | brain (episodes) | counts | no |
+| `ambient_match` | engine (ambient_ctx + rules) | counts | no |
+| `fleet_failed` | in-proc fleet registry | counts | no |
+| `fleet_awaiting` | in-proc fleet registry | counts | no |
+| `fleet_stale` | in-proc fleet registry | counts | no |
+| `fleet_stuck_dispatched` | operative memory + registry | counts | no |
+| `fleet_op_completed` | D6 reconciler | bypasses | no |
+| `athena_scheduled` | `schedule_proactive` approval | counts at delivery | no |
+
+### F. Subagent dispatches (Athena's `Task` tool)
+
+| Subagent | Purpose | File |
+|---|---|---|
+| `athena-persona-auditor` | Read a persona's runs/artifacts, summarize failures | `.claude/agents/athena-persona-auditor.md` |
+| `athena-backlog-scout` | Surface candidate backlog items with provenance | `.claude/agents/athena-backlog-scout.md` |
+| `athena-doc-reader` | Read docs/code excerpts without polluting Athena's ctx | `.claude/agents/athena-doc-reader.md` |
+| `athena-web-researcher` | Synthesize WebSearch+WebFetch results with source URLs | `.claude/agents/athena-web-researcher.md` |
+
+All dispatch with `CLAUDE_CODE_FORK_SUBAGENT=1`.
+
+### G. Voice playback paths
+
+| Path | Engine | Triggers |
+|---|---|---|
+| Send-flow TTS | ElevenLabs or Piper | Athena emits `TTS:` in reply |
+| Arrival-TTS | same | proactive nudge / background-job system episode |
+| Replay | same | footer "🔊 Play it again" button |
+
+### H. Memory tiers (read by retrieval each turn)
+
+| Tier | Storage | Provenance required? |
+|---|---|---|
+| Episodic | `episodes/<Y>/<M>/<D>/<id>.md` + `companion_node` | n/a (is the source) |
+| Semantic (facts) | `companion_node` + `companion_fact` | yes — non-empty `sources[]` |
+| Procedural | `companion_node` + `companion_procedural` | yes — non-empty `sources[]` |
+| Doctrine | embedded MD chunks via `AllMiniLML6V2Q` | n/a (read-only allowlist) |
+| Identity | `identity.md` | n/a (single file) |
+| Goals | `companion_goal` | no |
+| Rituals | `companion_ritual` | no |
+| Backlog | `companion_backlog_item` | yes — `source_episode_id` for `self_promise` |
+
+### I. Per-turn UI events (Tauri channels)
+
+| Channel | Lifecycle | Payload shape |
+|---|---|---|
+| `companion://stream` | per CLI line | `StreamEvent { sessionId, turnId, kind, payload }` |
+| `companion://approvals` | once per turn with approvals | approval list |
+| `companion://navigate` | per `open_route` | `{ route }` |
+| `companion://open-lab` | per `open_lab` | `{ personaId, mode }` |
+| `companion://compose-dashboard` | per `compose_dashboard` | empty (spec already persisted) |
+| `companion://compose-cockpit` | per `compose_cockpit` | empty (spec already persisted) |
+| `companion://chat-cards` | per turn with cards | `ChatCard[]` |
+| `companion://recall-preview` | once per turn (pre-CLI) | `RecallPreviewEvent` |
+| `companion://turn-summary` | once per turn (post-dispatch) | `TurnSummaryEvent` |
+| `companion://job` | job state transitions | `BackgroundJob` |
+| `companion://proactive` | per nudge delivery | `ProactiveMessage` |
+| `athena://orchestration/digest-changed` | operative memory mutation | empty (re-pull) |
+
+### J. Known stubs / not-wired-yet (test exclusions)
+
+- Connectors registered without a real handler — `connector_use`
+  returns a "registered but not wired" markdown block; no real API call.
+- Daemon binary (`personas-daemon`) — scaffolding exists, job worker
+  is `AppHandle`-decoupled, but the daemon doesn't actually run the
+  worker. In-flight jobs marked `failed` on next desktop startup.
+- Autonomous chain past 20 ticks — hard cap, by design.
+- `companion_reset_conversation(true)` — wipes SQL transcript + CLI
+  session pointer. Disk episodes survive; brain index loses continuity
+  until next ingest.

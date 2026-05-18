@@ -23,7 +23,7 @@ export const prefetchHomeLearning = cache(() => import('@/features/home/componen
 // Top-level sidebar section targets (mirrors the lazy imports in PersonasPage).
 const NAV_PREFETCHERS: Record<string, Prefetcher> = {
   overview: cache(() => import('@/features/overview/components/dashboard/OverviewPage')),
-  personas: cache(() => import('@/features/agents/components/persona/PersonaOverviewPage')),
+  personas: cache(() => import('@/features/agents/components/allPersonas/PersonaOverviewPage')),
   events: cache(() => import('@/features/triggers/TriggersPage')),
   credentials: cache(() => import('@/features/vault/sub_credentials/manager/CredentialManager')),
   'design-reviews': cache(() => import('@/features/templates/components/DesignReviewsPage')),

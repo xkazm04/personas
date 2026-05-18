@@ -30,6 +30,7 @@ import type { ChannelSpecV2 } from "@/lib/bindings/ChannelSpecV2";
 import type { ActiveProcess } from "@/stores/slices/processActivitySlice";
 import { createLogger } from "@/lib/log";
 import { useTranslation } from '@/i18n/useTranslation';
+import { ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 
 // Layout preference — persists across sessions via localStorage.
 // Two modes after 2026-05-05: the flagship "glyph-full" and the new
@@ -603,9 +604,19 @@ export function UnifiedBuildEntry() {
 
   return (
     <div
-      className="flex-1 min-h-0 flex flex-col w-full overflow-x-auto overflow-y-hidden px-4 md:px-6 xl:px-8 pt-4 transition-opacity duration-400 ease-out"
+      className="flex-1 min-h-0 flex flex-col w-full overflow-x-auto overflow-y-hidden transition-opacity duration-400 ease-out"
       style={{ opacity: fadeOut ? 0 : 1 }}
     >
+      <ContentHeader
+        title={t.agents.matrix_entry.header_title}
+        subtitle={
+          agentName && agentName !== 'New Agent'
+            ? `${t.agents.matrix_entry.header_subtitle_editing.replace('{name}', agentName)}`
+            : t.agents.matrix_entry.header_subtitle_new
+        }
+      />
+
+      <div className="flex-1 min-h-0 flex flex-col w-full px-4 md:px-6 xl:px-8 pt-4">
       {/* 2026-05-06 — inline GlyphQuestionPanel removed. Both remaining
           layouts (glyph-full and composer-prototype) host Q&A through the
           GlyphAnswerCard overlay on the sigil; the inline panel was a
@@ -751,6 +762,7 @@ export function UnifiedBuildEntry() {
         </div>
       )}
 
+      </div>
     </div>
   );
 }

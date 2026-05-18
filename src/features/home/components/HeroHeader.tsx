@@ -50,7 +50,11 @@ export default function HeroHeader({ greeting, displayName }: HeroHeaderProps) {
   const pngSrc = `${bgBase}.png`;
 
   return (
-    <div className="relative w-full">
+    // min-w-[80vw] mirrors the ContentHeader minimum-width contract so the
+    // Welcome hero anchors to the same horizontal extent as every other
+    // module header. HeroHeader is visually unique (centered greeting, no
+    // sticky bar, no border), but the layout constraint is shared.
+    <div className="relative w-full min-w-[80vw]">
       {showHero && (
         <>
           {/* React 19 hoists <link> to <head>; preload kicks off the WebP fetch

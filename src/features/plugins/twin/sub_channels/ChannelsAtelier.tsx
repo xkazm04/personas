@@ -111,7 +111,8 @@ export default function ChannelsAtelier() {
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
       {/* ── Header band — broadcast waves ────────────────────────── */}
-      <div className="flex-shrink-0 relative overflow-hidden border-b border-primary/10">
+      {/* min-w-[80vw] mirrors the ContentHeader / TwinHeaderBand contract. */}
+      <div className="flex-shrink-0 relative overflow-hidden border-b border-primary/10 min-w-[80vw]">
         <div className="absolute inset-0 bg-gradient-to-r from-violet-500/15 via-cyan-500/8 to-emerald-500/8" />
         <svg className="absolute inset-0 w-full h-full opacity-25 pointer-events-none" viewBox="0 0 800 200" preserveAspectRatio="xMaxYMid slice">
           {[80, 60, 40, 20].map((r, i) => (

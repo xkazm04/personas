@@ -32,6 +32,14 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+
+- **[2026-05-18 — started] /prototype — PersonaOverviewPage A/B variants (Grid + Wildcard)**
+  - **Source:** User-driven /prototype skill — directional variants for the All Personas list view. Two variants requested: (1) a uniform card grid with simplified metadata (icon, title, connector icons, status dot, trust level, triggers, last run), (2) a wildcard with a different mental model.
+  - **Paths:** `src/features/agents/components/allPersonas/PersonaOverviewPage.tsx` (add tab switcher), `src/features/agents/components/allPersonas/PersonaOverviewVariantGrid.tsx` (new), `src/features/agents/components/allPersonas/PersonaOverviewVariantConstellation.tsx` (new), `.claude/active-runs.md`
+  - **Status:** started
+  - **Branch:** master (small surgical multi-file change — variants are new sibling files next to PersonaOverviewPage, single orchestrator edit for tab switcher; staying on master to coexist with user's in-flight allPersonas rename)
+  - **Note:** Coexists with user's uncommitted rename of `src/features/agents/components/persona/` → `allPersonas/` (shown as `D persona/* + ?? allPersonas/` in git status). Will NOT stash, reset, or otherwise disturb that work. Variants will be deleted at consolidation time.
+
 - **[2026-05-17 — started] overview-polish — Header unification + Events/Knowledge/Health fixes**
   - **Source:** User-driven UX polish — Overview module. Header consistency across submodules, Events subtitle bug ("50 50 of 50"), Knowledge background-CLI review + drop Schedule, Health Reliability tab dedup + filter compaction.
   - **Paths:** `src/features/overview/sub_events/components/EventLogList.tsx`, `src/features/overview/sub_knowledge/components/**`, `src/features/overview/sub_health/components/**`, possibly headers in other `src/features/overview/sub_*/components/**` for consistency, `src/i18n/locales/en.json` (additive `overview.*` keys only — disjoint from concurrent `schedules.*`/`appearance.*`/`plugins.*`/`shared.sidebar_extra.*`)
@@ -93,23 +101,6 @@ timestamp — the next session can recognize it as abandoned.
 
 
 ## Recently completed (last 14 days)
-
-- **[2026-05-18 → merge `61a234d50`] athena-polish — humanize backend slugs + chat-panel polish (workstreams 1 + 2 of optimization pass)**
-  - **Branch:** `worktree-athena-polish` (2 commits, merged via `61a234d50` using detached-worktree + update-ref pattern; worktree removed, branch deleted)
-  - **Status:** completed (workstream 3 quality audit deferred to next session)
-  - **Commits:** `5e16ad39b` jargon humanization (athenaLabels.ts + 5 chat surfaces) · `411ede604` chat polish (strip OP/QR/TTS flash + AnimatePresence on cards)
-  - **Paths shipped:** `src/features/plugins/companion/athenaLabels.ts` (new — centralized action/trigger/capability/connector slug → label maps + stripModelDirectives + titleCase), `src/features/plugins/companion/{ApprovalCard,ProactiveCard,ConnectorCallCard,BrainViewer,InlineChatCard}.tsx` (route raw slugs through helpers), `src/features/plugins/companion/CompanionPanel.tsx` (stripModelDirectives at streaming render + AnimatePresence wraps for proactive/approval/chat-card/streaming bubble), `src/features/home/components/cockpit/widgets/PersonaOverview{Widget,Constellation,Roster,Atelier}.tsx` (i18n the 4 hardcoded English strings from the prototype round), `src/i18n/locales/en.json` (+54 keys: 7 proactive_kind_*, 31 action_label_*, 6 capability_label_*, 5 connector_label_*, brain_kind_unknown_fallback, chat_card_unknown_kind, persona_overview_{empty,open_in_editor,hover_hint}), `src/i18n/generated/{types,enSectionStrings}.ts` (regen).
-  - **Headline:** Five chat surfaces (ApprovalCard / ProactiveCard / ConnectorCallCard / BrainViewer / InlineChatCard) no longer leak raw backend slugs to users. Streaming bubble no longer flashes raw OP:/QR:/TTS:/`{"op":` lines before the dispatcher strips them server-side. Proactive / approval / chat-card / streaming-bubble mounts and exits via AnimatePresence (180-220ms ease).
-  - **Tests:** tsc clean both phases; pre-commit lint passed (eslint-staged 2.5s).
-  - **Concurrent-session note:** Detached-worktree + update-ref pattern again — main checkout had heavy WIP from ~30 parallel sessions. Master ref advanced cleanly; no other session's working tree touched. Phase 0 ledger entry was implicit (worktree creation only); Phase 11 entry recorded retroactively in the same merge.
-
-- **[2026-05-18 → merge `9668a22c0`] prototype-cockpit-persona — Cockpit + PersonaOverviewWidget directional variants + companion auto-shrink**
-  - **Branch:** `worktree-prototype-cockpit-persona` (1 commit `376723ac8`, merged via `9668a22c0` using detached-worktree + update-ref pattern; worktree removed, branch deleted)
-  - **Status:** completed (round 1 of /prototype; winner selection deferred to next session)
-  - **Paths shipped:** `src/features/home/components/cockpit/widgets/PersonaOverviewWidget.tsx` (added tab switcher + baseline preserved verbatim), `src/features/home/components/cockpit/widgets/PersonaOverviewConstellation.tsx` (new — orbital SVG variant), `src/features/home/components/cockpit/widgets/PersonaOverviewRoster.tsx` (new — data-dense scan variant), `src/features/home/components/cockpit/widgets/PersonaOverviewAtelier.tsx` (new — Twin-Atelier hero+KPI variant), `src/features/home/components/cockpit/widgets/personaStats.ts` (new — shared tier/trust/budget helpers), `src/features/plugins/companion/CompanionPanel.tsx` (1-line auto-shrink hook on COMPANION_COMPOSE_COCKPIT_EVENT: panelCompact=true so cockpit content isn't covered).
-  - **Headline:** Tab strip in PersonaOverviewWidget renders Baseline / Constellation / Roster / Atelier. Constellation = orbital nodes around an "active count" pill, size/color/halo encoding. Roster = dense table sorted by attention flags first. Atelier = single hero card + KPI strip + 3-step story trail (Twin-Atelier vocabulary). Plus universal companion auto-shrink to 380px when Athena composes a cockpit.
-  - **Tests:** tsc clean; lint clean of net-new errors (93 incremental-migration warnings on touched files, all baseline-style).
-  - **Concurrent-session note:** Used detached-worktree + update-ref pattern (langfuse 2026-05-16 / triggers 2026-05-17 precedent) because main checkout had heavy WIP from ~30 parallel sessions (allPersonas rename, glyph work, Atelier edits). Master ref advanced at `9668a22c0` without touching any other session's working tree. A concurrent /prototype session (PersonaOverviewPage in allPersonas/) overwrote my Active-section entry on the main checkout's working tree — preserved their edit untouched.
 
 - **[2026-05-18 → merge `50052d67e`] companion-d6710 — D6 (proactive wrap-up) + D7 (live ops view) + D9 (mid-flight intervention) + D10 (pattern extraction)**
   - **Branch:** `worktree-companion-d6710` (5 commits, merged via `50052d67e`; worktree removed, branch deleted).

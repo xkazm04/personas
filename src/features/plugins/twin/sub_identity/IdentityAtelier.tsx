@@ -97,7 +97,10 @@ export default function IdentityAtelier() {
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
       {/* ── Manuscript header band ────────────────────────────────────── */}
-      <div className="flex-shrink-0 relative overflow-hidden border-b border-primary/10">
+      {/* min-w-[80vw] mirrors the ContentHeader / TwinHeaderBand contract so
+          this bespoke hero anchors to the same horizontal extent as every
+          other module header. */}
+      <div className="flex-shrink-0 relative overflow-hidden border-b border-primary/10 min-w-[80vw]">
         <div className={`absolute inset-0 bg-gradient-to-r ${genderTint} opacity-60`} />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background/85 pointer-events-none" />
         <div className="relative px-4 md:px-6 xl:px-8 py-5 flex items-center gap-4">

@@ -78,9 +78,16 @@ export function UseCaseRow({
   };
 
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onOpen}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onOpen();
+        }
+      }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       className={`group relative w-full text-left rounded-card border bg-secondary/25 hover:bg-secondary/40 transition-all cursor-pointer overflow-hidden ${
@@ -225,6 +232,6 @@ export function UseCaseRow({
           </button>
         </div>
       </div>
-    </button>
+    </div>
   );
 }

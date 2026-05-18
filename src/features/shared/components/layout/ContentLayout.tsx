@@ -86,11 +86,13 @@ interface ContentHeaderProps {
    *  for headers that lead with text only. */
   icon?: ReactNode;
   iconColor?: IconColor;
-  /** Small mono-uppercase label rendered above the title (Home/"Mission
-   *  Control" pattern). Keep to 1–3 words; longer eyebrows degrade
-   *  readability at this size. */
-  eyebrow?: ReactNode;
+  /** Page identifier — rendered SMALL as a mono-uppercase caption (the
+   *  "Mission Control" treatment from the Home dashboard). This is the
+   *  context line, not the most visually prominent text. Keep to 1–4 words. */
   title: string;
+  /** Primary informational line — rendered LARGE as the dominant heading
+   *  (the "Good Evening, Operator" treatment). This is what the user reads
+   *  first. May be a dynamic count, status phrase, greeting, etc. */
   subtitle?: ReactNode;
   actions?: ReactNode;
   children?: ReactNode;
@@ -102,7 +104,6 @@ interface ContentHeaderProps {
 export function ContentHeader({
   icon,
   iconColor,
-  eyebrow,
   title,
   subtitle,
   actions,
@@ -129,13 +130,11 @@ export function ContentHeader({
       style={style}
       className={[
         IS_MOBILE ? 'px-3 py-2.5' : 'px-4 md:px-6 xl:px-8 py-4',
-        // bg-card-bg maps to --color-card-bg via @theme; the previous
-        // bg-primary/5 fallback (used pre-backdrop-filter) introduced a
-        // brand-tinted variant that didn't match the theme's neutral
-        // surface tokens. Single-token surface keeps the header coherent
-        // across all themes and removes the discoloration on browsers
-        // without backdrop-filter support.
-        'border-b border-card-border bg-card-bg flex-shrink-0 min-w-[80vw]',
+        // Mission-Control treatment: subtle brand tint + matching border.
+        // bg-primary/5 + border-primary/10 give every header the same
+        // "operator console" feel as the Home dashboard. Themes derive
+        // these from --color-primary, so each theme paints its own accent.
+        'border-b border-primary/10 bg-primary/5 flex-shrink-0 min-w-[80vw]',
         'sticky top-0 z-10 backdrop-blur',
         'transition-shadow duration-150',
         scrolled ? 'shadow-elevation-2' : 'shadow-none',
@@ -144,14 +143,13 @@ export function ContentHeader({
       <div className="flex items-center gap-3 pr-20">
         {iconElement}
         <div className="flex-1 min-w-0">
-          {eyebrow && (
-            <div className="typo-caption uppercase tracking-[0.3em] text-foreground/50 font-mono mb-0.5">
-              {eyebrow}
-            </div>
-          )}
-          <h1 className="typo-heading-lg text-foreground/90">{title}</h1>
+          {/* Title = small mono-uppercase context label (Mission Control style). */}
+          <div className="typo-caption uppercase tracking-[0.3em] text-foreground/50 font-mono">
+            {title}
+          </div>
+          {/* Subtitle = the visually dominant line (Good Evening, Operator style). */}
           {subtitle && (
-            <p className="typo-body text-foreground">{subtitle}</p>
+            <h1 className="typo-heading-lg text-foreground mt-0.5">{subtitle}</h1>
           )}
         </div>
         {actions}

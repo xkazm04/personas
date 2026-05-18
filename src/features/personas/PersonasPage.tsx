@@ -20,7 +20,7 @@ import { useOperativeMemoryBridge } from '@/features/plugins/companion/orchestra
 // Lazy-load all section content — only Sidebar stays eager (always visible)
 const HomePage = lazy(() => import('@/features/home/components/HomePage'));
 const PersonaEditor = lazy(() => import('@/features/agents/sub_editor').then(m => ({ default: m.PersonaEditor })));
-const PersonaOverviewPage = lazy(() => import('@/features/agents/components/persona/PersonaOverviewPage'));
+const PersonaOverviewPage = lazy(() => import('@/features/agents/components/allPersonas/PersonaOverviewPage'));
 const UnifiedBuildEntry = lazy(() => import('@/features/agents/components/matrix/UnifiedBuildEntry').then(m => ({ default: m.UnifiedBuildEntry })));
 const OverviewPage = lazy(() => import('@/features/overview/components/dashboard/OverviewPage'));
 const CredentialManager = lazy(() => import('@/features/vault/sub_credentials/manager/CredentialManager').then(m => ({ default: m.CredentialManager })));
@@ -125,7 +125,7 @@ export default function PersonasPage() {
   // Hydrate persisted persona selection on app restart
   useEffect(() => {
     if (selectedPersonaId) {
-      fetchDetail(selectedPersonaId).catch(() => {/* non-critical: persisted selection may be stale */});
+      fetchDetail(selectedPersonaId).catch(() => {/* non-critical: persisted selection may be stale */ });
     }
   }, []);
 
@@ -175,26 +175,26 @@ export default function PersonasPage() {
       if (agentTab === 'cloud') {
         return (
           <ErrorBoundary name="Cloud">
-          <Suspense fallback={SectionFallback}>
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div
-              key={cloudTab}
-              initial={{ opacity: 0, x: shouldAnimate ? (cloudTab === 'gitlab' ? 14 : -14) : 0 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: shouldAnimate ? (cloudTab === 'gitlab' ? -14 : 14) : 0 }}
-              transition={transition}
-              className="h-full w-full"
-            >
-              {cloudTab === 'unified' ? (
-                <UnifiedDeploymentDashboard />
-              ) : cloudTab === 'gitlab' ? (
-                <GitLabPanel />
-              ) : (
-                <CloudDeployPanel />
-              )}
-            </motion.div>
-          </AnimatePresence>
-          </Suspense>
+            <Suspense fallback={SectionFallback}>
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={cloudTab}
+                  initial={{ opacity: 0, x: shouldAnimate ? (cloudTab === 'gitlab' ? 14 : -14) : 0 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: shouldAnimate ? (cloudTab === 'gitlab' ? -14 : 14) : 0 }}
+                  transition={transition}
+                  className="h-full w-full"
+                >
+                  {cloudTab === 'unified' ? (
+                    <UnifiedDeploymentDashboard />
+                  ) : cloudTab === 'gitlab' ? (
+                    <GitLabPanel />
+                  ) : (
+                    <CloudDeployPanel />
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            </Suspense>
           </ErrorBoundary>
         );
       }
@@ -257,37 +257,37 @@ export default function PersonasPage() {
 
   return (
     <CanvasDragProvider>
-    <CredentialNavProvider>
-      <div className="flex flex-col h-full bg-background text-foreground overflow-hidden" style={{ contain: 'layout style' }}>
-      {/* Background effects — blur removed (causes WebView2 compositor freeze on ARM64) */}
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.03)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
-      <div className="absolute inset-0 bg-gradient-to-b from-background/0 via-background/0 to-background/80 pointer-events-none" />
+      <CredentialNavProvider>
+        <div className="flex flex-col h-full bg-background text-foreground overflow-hidden" style={{ contain: 'layout style' }}>
+          {/* Background effects — blur removed (causes WebView2 compositor freeze on ARM64) */}
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.03)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/0 via-background/0 to-background/80 pointer-events-none" />
 
-      {/* Main layout */}
-      <div className="relative z-10 flex flex-1 overflow-hidden">
-        <Sidebar />
+          {/* Main layout */}
+          <div className="relative z-10 flex flex-1 overflow-hidden">
+            <Sidebar />
 
-        {/* Content area */}
-        <div id="main-content" role="main" className={`flex-1 flex flex-col ${IS_MOBILE ? 'overflow-x-hidden' : 'overflow-x-auto'} overflow-y-hidden ${IS_MOBILE ? '' : 'pb-8'}`}>
-          {error && (
-            <ErrorBanner
-              message={error}
-              variant="banner"
-              onRetry={runStartup}
-              onDismiss={() => setError(null)}
-            />
-          )}
-          {/* AnimatePresence disabled — testing if framer-motion layout measurement causes freeze */}
-          <div className="flex-1 flex flex-col w-full min-w-0 overflow-y-hidden">
-            {renderContent()}
+            {/* Content area */}
+            <div id="main-content" role="main" className={`flex-1 flex flex-col ${IS_MOBILE ? 'overflow-x-hidden' : 'overflow-x-auto'} overflow-y-hidden ${IS_MOBILE ? '' : 'pb-8'}`}>
+              {error && (
+                <ErrorBanner
+                  message={error}
+                  variant="banner"
+                  onRetry={runStartup}
+                  onDismiss={() => setError(null)}
+                />
+              )}
+              {/* AnimatePresence disabled — testing if framer-motion layout measurement causes freeze */}
+              <div className="flex-1 flex flex-col w-full min-w-0 overflow-y-hidden">
+                {renderContent()}
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
 
-      {/* Desktop footer bar */}
-      <DesktopFooter />
-      </div>
-    </CredentialNavProvider>
+          {/* Desktop footer bar */}
+          <DesktopFooter />
+        </div>
+      </CredentialNavProvider>
     </CanvasDragProvider>
   );
 }

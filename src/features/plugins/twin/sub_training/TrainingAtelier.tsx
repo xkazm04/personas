@@ -46,7 +46,8 @@ export default function TrainingAtelier() {
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
       {/* ── Header band ──────────────────────────────────────────── */}
-      <div className="flex-shrink-0 relative overflow-hidden border-b border-primary/10">
+      {/* min-w-[80vw] mirrors the ContentHeader / TwinHeaderBand contract. */}
+      <div className="flex-shrink-0 relative overflow-hidden border-b border-primary/10 min-w-[80vw]">
         <div className="absolute inset-0 bg-gradient-to-r from-violet-500/20 via-fuchsia-500/12 to-amber-500/8" />
         <div className="absolute inset-0 opacity-25 pointer-events-none">
           <svg className="w-full h-full" viewBox="0 0 800 200" preserveAspectRatio="xMaxYMid slice">

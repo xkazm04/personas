@@ -117,7 +117,8 @@ export default function ToneAtelier() {
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
       {/* ── Header band with sound-wave decoration ──────────────────── */}
-      <div className="flex-shrink-0 relative overflow-hidden border-b border-primary/10">
+      {/* min-w-[80vw] mirrors the ContentHeader / TwinHeaderBand contract. */}
+      <div className="flex-shrink-0 relative overflow-hidden border-b border-primary/10 min-w-[80vw]">
         <div className={`absolute inset-0 bg-gradient-to-r ${palette.tint} opacity-90 transition-colors duration-500`} />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background/85" />
         {/* Decorative waveform */}

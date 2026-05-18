@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Bot, Trash2 } from 'lucide-react';
+import { Bot, Grid3x3, Orbit, Rows3, Trash2 } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
@@ -12,12 +12,34 @@ import { PersonaOverviewBatchBar } from './PersonaOverviewBatchBar';
 import { PersonaOverviewToolbar } from './PersonaOverviewToolbar';
 import { PersonaOverviewCardList } from './PersonaOverviewCardList';
 import { PersonaOverviewEmptyState } from './PersonaOverviewEmptyState';
+import { PersonaOverviewVariantGrid } from './PersonaOverviewVariantGrid';
+import { PersonaOverviewVariantConstellation } from './PersonaOverviewVariantConstellation';
 import { usePersonaColumns } from './PersonaOverviewColumns';
 import { usePersonaListFilters } from './PersonaOverviewFilters';
 import { usePersonaActions } from './PersonaOverviewActions';
 import { useIsMobile } from './PersonaOverviewResponsive';
 import type { Persona } from '@/lib/bindings/Persona';
 import { useTranslation } from '@/i18n/useTranslation';
+
+type LayoutVariant = 'baseline' | 'grid' | 'constellation';
+
+const LAYOUT_TABS: { id: LayoutVariant; label: string; sub: string; Icon: typeof Rows3 }[] = [
+  { id: 'baseline', label: 'Table', sub: 'data-dense rows with sortable columns', Icon: Rows3 },
+  { id: 'grid', label: 'Grid', sub: 'uniform icon-first cards', Icon: Grid3x3 },
+  { id: 'constellation', label: 'Constellation', sub: 'spatial fleet map by last run', Icon: Orbit },
+];
+
+const LAYOUT_STORAGE_KEY = 'persona-overview:layout';
+
+function readPersistedLayout(): LayoutVariant {
+  try {
+    const v = localStorage.getItem(LAYOUT_STORAGE_KEY);
+    if (v === 'baseline' || v === 'grid' || v === 'constellation') return v;
+  } catch {
+    /* localStorage may be unavailable (private mode, embedded contexts) */
+  }
+  return 'baseline';
+}
 
 const DRAFT_PROMPT = 'You are a helpful AI assistant.';
 
@@ -37,7 +59,12 @@ export default function PersonaOverviewPage() {
   const [view, setView] = useState<AgentListViewConfig>(DEFAULT_VIEW_CONFIG);
   const [search, setSearch] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [layout, setLayout] = useState<LayoutVariant>(readPersistedLayout);
   const isMobile = useIsMobile();
+
+  useEffect(() => {
+    try { localStorage.setItem(LAYOUT_STORAGE_KEY, layout); } catch { /* see readPersistedLayout */ }
+  }, [layout]);
 
   // A persona is "draft" only if it never finished a build (no design result
   // was ever saved) AND still carries the placeholder / empty system prompt.
@@ -148,8 +175,9 @@ export default function PersonaOverviewPage() {
         }
       />
       <ContentBody>
-        <div className="px-3 py-2 border-b border-primary/5">
+        <div className="px-3 py-2 border-b border-primary/5 flex items-center justify-between gap-3 flex-wrap">
           <PersonaOverviewToolbar search={search} onSearchChange={setSearch} view={view} onViewChange={setView} />
+          {!isMobile && <LayoutModeTabs value={layout} onChange={setLayout} />}
         </div>
 
         {filteredData.length === 0 && hasActiveFilter ? (
@@ -164,6 +192,28 @@ export default function PersonaOverviewPage() {
             onRowClick={handleRowClick}
             isDraft={isDraft}
             connectorNamesMap={connectorNamesMap}
+          />
+        ) : layout === 'grid' ? (
+          <PersonaOverviewVariantGrid
+            data={filteredData}
+            selectedIds={selectedIds}
+            onToggleSelect={handleToggleSelect}
+            isFavorite={isFavorite}
+            toggleFavorite={toggleFavorite}
+            onRowClick={handleRowClick}
+            isDraft={isDraft}
+            connectorNamesMap={connectorNamesMap}
+          />
+        ) : layout === 'constellation' ? (
+          <PersonaOverviewVariantConstellation
+            data={filteredData}
+            triggerCounts={triggerCounts}
+            lastRunMap={lastRunMap}
+            healthMap={healthMap}
+            connectorNamesMap={connectorNamesMap}
+            isBuilding={isBuilding}
+            isDraft={isDraft}
+            onRowClick={handleRowClick}
           />
         ) : (
           <DataGrid
@@ -192,5 +242,47 @@ export default function PersonaOverviewPage() {
 
       <ConfirmDestructiveModal {...modal} />
     </ContentBox>
+  );
+}
+
+/* Segmented control that switches the persona list between its three
+ * production layouts: Table (data-dense default), Grid (icon-first
+ * cards), Constellation (spatial fleet map). User choice persists to
+ * localStorage so the selection survives reloads. */
+function LayoutModeTabs({
+  value,
+  onChange,
+}: {
+  value: LayoutVariant;
+  onChange: (v: LayoutVariant) => void;
+}) {
+  return (
+    <div
+      role="tablist"
+      aria-label="Persona list layout"
+      className="inline-flex items-center gap-0.5 p-0.5 rounded-card bg-secondary/40 border border-primary/10"
+    >
+      {LAYOUT_TABS.map(({ id, label, sub, Icon }) => {
+        const active = value === id;
+        return (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            onClick={() => onChange(id)}
+            title={sub}
+            aria-selected={active}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-input text-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40 ${
+              active
+                ? 'bg-primary/15 text-primary shadow-sm'
+                : 'text-foreground/70 hover:text-foreground hover:bg-secondary/60'
+            }`}
+          >
+            <Icon className="w-3.5 h-3.5" />
+            {label}
+          </button>
+        );
+      })}
+    </div>
   );
 }

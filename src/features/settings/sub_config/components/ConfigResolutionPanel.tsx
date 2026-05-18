@@ -6,6 +6,7 @@ import type { EffectiveModelConfig } from '@/lib/bindings/EffectiveModelConfig';
 import type { ConfigSource } from '@/lib/bindings/ConfigSource';
 import type { ConfigField } from '@/lib/bindings/ConfigField';
 import { useTranslation } from '@/i18n/useTranslation';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 
 const SOURCE_ICON: Record<ConfigSource, typeof Globe> = {
   agent: User,
@@ -151,27 +152,27 @@ export default function ConfigResolutionPanel() {
   useEffect(() => { load(); }, []);
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col gap-4 p-4 overflow-y-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Layers className="w-4 h-4 text-primary/60" />
-          <h2 className="typo-heading font-semibold text-foreground/90">{s.title}</h2>
-          <span className="text-[10px] text-foreground">
-            {s.subtitle}
-          </span>
-        </div>
-        <button
-          type="button"
-          onClick={() => load(true)}
-          disabled={globalLoading}
-          className="flex items-center gap-1 px-2 py-1 typo-caption text-foreground hover:text-foreground bg-secondary/30 hover:bg-secondary/50 rounded transition-colors disabled:opacity-50"
-        >
-          <RefreshCw className={`w-3 h-3 ${globalLoading ? 'animate-spin' : ''}`} />
-          {s.refresh}
-        </button>
-      </div>
+    <ContentBox>
+      <ContentHeader
+        icon={<Layers className="w-5 h-5 text-primary" />}
+        iconColor="primary"
+        title={s.title}
+        subtitle={s.subtitle}
+        actions={
+          <button
+            type="button"
+            onClick={() => load(true)}
+            disabled={globalLoading}
+            className="flex items-center gap-1 px-2 py-1 typo-caption text-foreground hover:text-foreground bg-secondary/30 hover:bg-secondary/50 rounded transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3 h-3 ${globalLoading ? 'animate-spin' : ''}`} />
+            {s.refresh}
+          </button>
+        }
+      />
 
+      <ContentBody>
+        <div className="flex flex-col gap-4">
       {/* Legend */}
       <div className="flex items-center gap-3 text-[10px] text-foreground">
         <span className="flex items-center gap-1"><User className="w-2.5 h-2.5 text-violet-400" /> {s.agent_level}</span>
@@ -251,6 +252,8 @@ export default function ConfigResolutionPanel() {
           </tbody>
         </table>
       </div>
-    </div>
+        </div>
+      </ContentBody>
+    </ContentBox>
   );
 }
