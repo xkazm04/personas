@@ -12622,6 +12622,7 @@ export type Translations = {
       back_to_home: string;
       whats_new: string;
       back_to_plugins: string;
+      roadmap: string;
     };
     execution_detail: {
       copy: string;

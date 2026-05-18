@@ -211,8 +211,8 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
           aria-current={agentTab === 'all' && !isCreatingPersona ? 'page' : undefined}
           className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
             agentTab === 'all' && !isCreatingPersona
-              ? 'bg-primary/10 text-foreground/90'
-              : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80'
+              ? 'bg-primary/10 text-foreground/90 font-semibold'
+              : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80 font-normal'
           }`}
         >
           <List className="w-4 h-4 flex-shrink-0" />
@@ -243,11 +243,11 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
                   className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
                     isActive
                       ? needsAnswers
-                        ? 'bg-amber-500/10 text-amber-300 border border-amber-500/20'
-                        : 'bg-violet-500/10 text-violet-300 border border-violet-500/15'
+                        ? 'bg-amber-500/10 text-amber-300 border border-amber-500/20 font-semibold'
+                        : 'bg-violet-500/10 text-violet-300 border border-violet-500/15 font-semibold'
                       : needsAnswers
-                        ? 'text-foreground hover:bg-amber-500/5 hover:text-amber-300'
-                        : 'text-foreground hover:bg-violet-500/5 hover:text-violet-300'
+                        ? 'text-foreground hover:bg-amber-500/5 hover:text-amber-300 font-normal'
+                        : 'text-foreground hover:bg-violet-500/5 hover:text-violet-300 font-normal'
                   }`}
                   title={
                     needsAnswers
@@ -510,8 +510,8 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
               aria-current={agentTab === 'team' ? 'page' : undefined}
               className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ring-1 ring-amber-500/40 ${
                 agentTab === 'team'
-                  ? 'bg-amber-500/10 text-foreground/90'
-                  : 'text-foreground hover:bg-amber-500/5 hover:text-foreground/80'
+                  ? 'bg-amber-500/10 text-foreground/90 font-semibold'
+                  : 'text-foreground hover:bg-amber-500/5 hover:text-foreground/80 font-normal'
               }`}
             >
               <Users className="w-4 h-4 flex-shrink-0" />
@@ -522,8 +522,8 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
               aria-current={agentTab === 'cloud' ? 'page' : undefined}
               className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ring-1 ring-amber-500/40 ${
                 agentTab === 'cloud'
-                  ? 'bg-amber-500/10 text-foreground/90'
-                  : 'text-foreground hover:bg-amber-500/5 hover:text-foreground/80'
+                  ? 'bg-amber-500/10 text-foreground/90 font-semibold'
+                  : 'text-foreground hover:bg-amber-500/5 hover:text-foreground/80 font-normal'
               }`}
             >
               <Cloud className="w-4 h-4 flex-shrink-0" />

@@ -276,8 +276,8 @@ function SchedulesSidebarNav() {
           aria-current={selectedPersonaId === null ? 'page' : undefined}
           className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
             selectedPersonaId === null
-              ? 'bg-primary/10 text-foreground/90'
-              : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80'
+              ? 'bg-primary/10 text-foreground/90 font-semibold'
+              : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80 font-normal'
           }`}
         >
           <CalendarClock className="w-4 h-4 flex-shrink-0" />
@@ -298,8 +298,8 @@ function SchedulesSidebarNav() {
             aria-current={selectedPersonaId === p.id ? 'page' : undefined}
             className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
               selectedPersonaId === p.id
-                ? 'bg-primary/10 text-foreground/90'
-                : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80'
+                ? 'bg-primary/10 text-foreground/90 font-semibold'
+                : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80 font-normal'
             }`}
           >
             <PersonaIcon icon={p.icon} color={p.color} />
@@ -357,14 +357,19 @@ function HomeRoadmapL3({ onBack }: { onBack: () => void }) {
             : release.version;
         const meta = RELEASE_STATUS_META[release.status];
         const statusLabel = releases.status[release.status];
+        // Status tag rendered as a secondary row beneath the release label
+        // (not as a same-row rightSlot) so the row reads as
+        //   "Alpha (v1.0)"
+        //   "[Current]"
+        // The roadmap entry has no shipping status, so it just shows the label.
         return {
           id: release.version,
           icon: isRoadmap ? MapIcon : Rocket,
           label,
-          rightSlot: isRoadmap ? null : (
+          belowRow: isRoadmap ? null : (
             <span
               className={[
-                'rounded-full border px-1.5 py-0.5 typo-caption font-semibold uppercase tracking-wider',
+                'inline-flex rounded-full border px-1.5 py-0.5 typo-caption font-semibold uppercase tracking-wider',
                 meta.badgeBg,
                 meta.badgeText,
                 meta.badgeBorder,
@@ -388,7 +393,7 @@ function HomeRoadmapL3({ onBack }: { onBack: () => void }) {
 
   return (
     <SidebarLevel3
-      backLabel={t.shared.sidebar_extra.back_to_home}
+      backLabel={t.shared.sidebar_extra.roadmap}
       onBack={onBack}
       items={items}
       activeId={homeReleaseVersion}

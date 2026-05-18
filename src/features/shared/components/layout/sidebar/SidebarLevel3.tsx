@@ -26,6 +26,13 @@ export interface SidebarLevel3Item {
   label: string;
   /** Optional renderer for an inline pill to the right of the label. */
   rightSlot?: ReactNode;
+  /**
+   * Optional renderer for a secondary row beneath the label (indented to
+   * align with the label, not the icon). Use for tags/badges that
+   * shouldn't compete with the label on the same line — e.g. release
+   * status pills under a release version row.
+   */
+  belowRow?: ReactNode;
 }
 
 export interface SidebarLevel3Props {
@@ -83,6 +90,7 @@ export default function SidebarLevel3({
         {items.map((item) => {
           const Icon = item.icon;
           const isActive = activeId === item.id;
+          const hasBelowRow = !!item.belowRow;
           return (
             <button
               key={item.id}
@@ -91,17 +99,26 @@ export default function SidebarLevel3({
               aria-selected={isActive}
               aria-current={isActive ? 'page' : undefined}
               onClick={() => onSelect(item.id)}
-              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
+              className={`w-full flex ${hasBelowRow ? 'items-start' : 'items-center'} gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
                 isActive
-                  ? 'bg-primary/10 text-foreground/90'
-                  : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80'
+                  ? 'bg-primary/10 text-foreground/90 font-semibold'
+                  : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80 font-normal'
               }`}
             >
-              {Icon && <Icon className="w-4 h-4 flex-shrink-0" />}
-              <span className="truncate min-w-0 flex-1 text-left">{item.label}</span>
-              {item.rightSlot && (
-                <span className="ml-auto flex-shrink-0">{item.rightSlot}</span>
+              {Icon && (
+                <Icon className={`w-4 h-4 flex-shrink-0 ${hasBelowRow ? 'mt-0.5' : ''}`} />
               )}
+              <span className="flex-1 min-w-0 text-left">
+                <span className="flex items-center gap-2">
+                  <span className="truncate min-w-0 flex-1">{item.label}</span>
+                  {item.rightSlot && (
+                    <span className="ml-auto flex-shrink-0">{item.rightSlot}</span>
+                  )}
+                </span>
+                {hasBelowRow && (
+                  <span className="mt-1 flex">{item.belowRow}</span>
+                )}
+              </span>
             </button>
           );
         })}

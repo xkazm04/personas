@@ -144,8 +144,8 @@ export function PluginsSidebarNav() {
                   onClick={() => setPluginTab('browse')}
                   className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
                     isActive
-                      ? 'bg-primary/10 text-primary'
-                      : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80'
+                      ? 'bg-primary/10 text-primary font-semibold'
+                      : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80 font-normal'
                   }`}
                 >
                   <Icon className="w-4 h-4 flex-shrink-0" />
@@ -172,8 +172,8 @@ export function PluginsSidebarNav() {
                     onClick={() => setPluginTab(plugin.id)}
                     className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
                       isActive
-                        ? 'bg-primary/10 text-primary'
-                        : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80'
+                        ? 'bg-primary/10 text-primary font-semibold'
+                        : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80 font-normal'
                     }`}
                   >
                     <Icon className="w-4 h-4 flex-shrink-0" />

@@ -115,7 +115,7 @@ export default function SidebarSubNav({
             }`}>
               <Icon className={`${iconSize} ${isActive ? activeIconColor : 'text-foreground'}`} />
             </div>
-            <span className={`typo-heading ${isActive ? 'text-foreground font-medium' : isOverview ? 'text-foreground' : 'text-foreground'}`}>
+            <span className={`typo-heading text-foreground ${isActive ? 'font-semibold' : 'font-normal'}`}>
               {labelOf(item.id, item.label)}
             </span>
             {badge && badge.count > 0 && (
