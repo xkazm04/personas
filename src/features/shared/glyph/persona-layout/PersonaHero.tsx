@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { GLYPH_DIMENSIONS } from '@/features/shared/glyph';
 import type { GlyphDimension } from '@/features/shared/glyph';
@@ -9,9 +9,12 @@ import type { DisplayUseCase } from '@/features/agents/sub_use_cases/components/
 interface PersonaHeroProps {
   personaName: string;
   useCases: DisplayUseCase[];
-  /** Sigil canvas size in px. Default 640 — matches the scratch flow's
-   *  GlyphFullLayout / GlyphPrototypeLayout so the persona's main glyph
-   *  reads identically across view / adoption / scratch surfaces. */
+  /** Maximum sigil canvas size in px. The sigil scales responsively with
+   *  the available column width (square aspect, capped at this value)
+   *  rather than rendering at a fixed size — view mode complained that
+   *  640px wasted horizontal space when the column was wider than that.
+   *  Default 880px. Floors at 320px so the inner core stays usable on
+   *  narrow viewports. */
   sigilSize?: number;
   /** Override petalStates derivation. View mode computes from useCases
    *  (resolved if any active capability uses dim, else idle); adoption
@@ -60,7 +63,8 @@ interface PersonaHeroProps {
   showOrbit?: boolean;
 }
 
-const DEFAULT_SIGIL_SIZE = 640;
+const DEFAULT_SIGIL_SIZE = 880;
+const MIN_SIGIL_SIZE = 320;
 
 /**
  * Persona-level hero — the canonical Persona Sigil (8 petals = 8 persona
@@ -91,6 +95,28 @@ export function PersonaHero({
   const [hoveredDim, setHoveredDim] = useState<GlyphDimension | null>(null);
   const [localActiveDim, setLocalActiveDim] = useState<GlyphDimension | null>(null);
   const activeDim = activeDimProp !== undefined ? activeDimProp : localActiveDim;
+
+  // Sigil scales with available column width — observe the stage element
+  // and pick a size in [MIN_SIGIL_SIZE, sigilSize] so the canvas isn't
+  // clipped on narrow viewports nor frozen at 640px on wide ones.
+  const stageRef = useRef<HTMLDivElement>(null);
+  const [measuredSize, setMeasuredSize] = useState<number>(sigilSize);
+  useEffect(() => {
+    const el = stageRef.current;
+    if (!el) return;
+    const compute = (w: number) => {
+      const next = Math.max(MIN_SIGIL_SIZE, Math.min(sigilSize, Math.floor(w - 16)));
+      setMeasuredSize(next);
+    };
+    compute(el.clientWidth);
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        compute(entry.contentRect.width);
+      }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [sigilSize]);
 
   const stats = useMemo(() => {
     const total = useCases.length;
@@ -219,10 +245,14 @@ export function PersonaHero({
       </div>
       )}
 
-      {/* Sigil stage — centered, sized at 640px by default (matches scratch).
-       *  Stage is `relative` so the wideOverlay can position absolute
-       *  over it (extending past the sigil's own width when needed). */}
-      <div className="relative flex justify-center items-center py-4 min-h-0">
+      {/* Sigil stage — centered, size scales with available column width
+       *  up to the configured cap. Stage is `relative` so the wideOverlay
+       *  can position absolute over it (extending past the sigil's own
+       *  width when needed). */}
+      <div
+        ref={stageRef}
+        className="relative flex justify-center items-center py-4 min-h-0 w-full"
+      >
         <div
           aria-hidden
           className="absolute inset-0 pointer-events-none"
@@ -231,9 +261,9 @@ export function PersonaHero({
               'radial-gradient(ellipse 50% 70% at 50% 50%, rgba(96,165,250,0.06) 0%, transparent 70%)',
           }}
         />
-        <div className="relative" style={{ width: sigilSize, maxWidth: '100%' }}>
+        <div className="relative" style={{ width: measuredSize }}>
           <GlyphSigilCanvas
-            size={sigilSize}
+            size={measuredSize}
             petalStates={petalStates}
             hoveredDim={hoveredDim}
             activeDim={activeDim}
