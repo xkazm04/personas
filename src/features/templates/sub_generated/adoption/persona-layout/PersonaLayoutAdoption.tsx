@@ -258,21 +258,10 @@ export function PersonaLayoutAdoption({
     <PersonaSigilSummary entries={summaryEntries} heading={null} />
   ) : null;
 
-  const topSlot =
-    totalCount > 0 ? (
-      <QuestionnaireHeaderBand
-        templateName={templateName}
-        questions={questions}
-        userAnswers={userAnswers}
-        blockedQuestionIds={blockedQuestionIds}
-        activeIdx={activeStoryIdx}
-        answeredCount={answeredCount}
-        totalCount={totalCount}
-        blockedCount={blockedCount}
-        progressPct={progressPct}
-        onJumpTo={handleHeaderJumpTo}
-      />
-    ) : null;
+  // topSlot is defined below the `continueDisabledReason` derivation so
+  // we can fold the Continue action into the header band. User feedback
+  // (2026-05-17): the action panel below the sigil and the band above
+  // it were doing two-bar duty; merge into one.
 
   const rightSlot =
     totalCount > 0 ? (
@@ -297,6 +286,52 @@ export function PersonaLayoutAdoption({
           ? t.templates.adopt_modal.persona_layout_continue_no_capabilities
           : null
     : null;
+
+  const headerAction =
+    totalCount > 0 ? (
+      <div className="flex items-center gap-3 self-center shrink-0">
+        {continueDisabledReason && (
+          <span className="typo-caption text-status-warning inline-flex items-center gap-1.5">
+            <AlertCircle className="w-3.5 h-3.5" />
+            {continueDisabledReason}
+          </span>
+        )}
+        <button
+          type="button"
+          onClick={onContinue}
+          disabled={!canContinue}
+          className={`inline-flex items-center gap-1.5 px-5 py-2 rounded-full border transition-colors typo-body ${
+            canContinue
+              ? 'bg-primary/25 hover:bg-primary/40 border-primary/40 text-foreground cursor-pointer'
+              : 'bg-secondary/40 border-border/30 text-foreground/40 cursor-not-allowed'
+          }`}
+        >
+          {t.templates.adopt_modal.persona_layout_continue_to_build}
+          <ChevronRight className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    ) : null;
+
+  const topSlot =
+    totalCount > 0 ? (
+      <div className="flex items-stretch gap-3 flex-wrap">
+        <div className="flex-1 min-w-0">
+          <QuestionnaireHeaderBand
+            templateName={templateName}
+            questions={questions}
+            userAnswers={userAnswers}
+            blockedQuestionIds={blockedQuestionIds}
+            activeIdx={activeStoryIdx}
+            answeredCount={answeredCount}
+            totalCount={totalCount}
+            blockedCount={blockedCount}
+            progressPct={progressPct}
+            onJumpTo={handleHeaderJumpTo}
+          />
+        </div>
+        {headerAction}
+      </div>
+    ) : null;
 
   // Open the first unanswered question (regardless of which dim it
   // lands on) when the user clicks the center count-button.
@@ -358,30 +393,6 @@ export function PersonaLayoutAdoption({
     <span aria-hidden />
   );
 
-  const belowHero = (
-    <div className="flex items-center justify-center gap-3 flex-wrap">
-      {continueDisabledReason && (
-        <span className="typo-caption text-status-warning inline-flex items-center gap-1.5">
-          <AlertCircle className="w-3.5 h-3.5" />
-          {continueDisabledReason}
-        </span>
-      )}
-      <button
-        type="button"
-        onClick={onContinue}
-        disabled={!canContinue}
-        className={`inline-flex items-center gap-1.5 px-5 py-2 rounded-full border transition-colors typo-body ${
-          canContinue
-            ? 'bg-primary/25 hover:bg-primary/40 border-primary/40 text-foreground cursor-pointer'
-            : 'bg-secondary/40 border-border/30 text-foreground/40 cursor-not-allowed'
-        }`}
-      >
-        {t.templates.adopt_modal.persona_layout_continue_to_build}
-        <ChevronRight className="w-3.5 h-3.5" />
-      </button>
-    </div>
-  );
-
   return (
     <div className="flex flex-col h-full min-h-0">
       <div className="flex-1 min-h-0">
@@ -402,7 +413,6 @@ export function PersonaLayoutAdoption({
           heroActiveDim={activeDim}
           heroCenterOverlay={centerOverlay}
           heroWideOverlay={wideOverlay}
-          belowHeroSlot={belowHero}
           emptyNode={
             <div className="rounded-modal border border-card-border bg-secondary/30 p-8 text-center">
               <span className="typo-body text-foreground/70 italic">

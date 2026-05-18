@@ -461,6 +461,8 @@ export function PersonaLayoutBuild({
         heroCenterOverlay={centerOverlay}
         heroWideOverlay={wideOverlay}
         belowHeroSlot={belowHero}
+        sigilDimmed={isBuilding || buildPhase === 'testing'}
+        sigilShowOrbit={isBuilding || buildPhase === 'testing'}
       />
 
       {reportOpen && (toolTestResults?.length ?? 0) > 0 && (

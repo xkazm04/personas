@@ -103,6 +103,12 @@ interface PersonaLayoutProps {
    *  is set (the detail view is mode-independent). */
   hideCapabilityRows?: boolean;
 
+  /** Pass-through to PersonaHero: dim the sigil's petals + show the
+   *  orbital progress sweep. Adoption's build phase uses both for parity
+   *  with scratch's "I'm working" visual. */
+  sigilDimmed?: boolean;
+  sigilShowOrbit?: boolean;
+
   /** Optional slot rendered between the hero and the capability rows.
    *  Adoption uses this for stepper controls, scratch may use it for
    *  intent composer artifacts. */
@@ -175,6 +181,8 @@ export function PersonaLayout({
   leftSlot,
   hideMetadataBand,
   hideCapabilityRows,
+  sigilDimmed,
+  sigilShowOrbit,
   belowHeroSlot,
   renderRowPolicySlot,
   appendRow,
@@ -232,6 +240,8 @@ export function PersonaLayout({
                       wideOverlay={heroWideOverlay}
                       metadataRightSlot={heroRightSlot}
                       hideMetadataBand={hideMetadataBand}
+                      dimmed={sigilDimmed}
+                      showOrbit={sigilShowOrbit}
                     />
 
                     {belowHeroSlot}

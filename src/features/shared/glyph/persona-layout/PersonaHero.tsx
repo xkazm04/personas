@@ -48,6 +48,16 @@ interface PersonaHeroProps {
    *  mode uses this — the leftSlot summary + the sigil itself carry the
    *  identity info, so a separate header band is duplicative. */
   hideMetadataBand?: boolean;
+
+  /** Dim the sigil's petals — scratch passes this during isBuilding so
+   *  the build phase signals "I'm working" without the petals competing
+   *  visually with the loading state. */
+  dimmed?: boolean;
+
+  /** Show the orbital progress sweep around the sigil — scratch passes
+   *  this during isBuilding to indicate the LLM is processing. Pair with
+   *  `dimmed` for the canonical "agent is thinking" treatment. */
+  showOrbit?: boolean;
 }
 
 const DEFAULT_SIGIL_SIZE = 640;
@@ -74,6 +84,8 @@ export function PersonaHero({
   wideOverlay,
   metadataRightSlot,
   hideMetadataBand,
+  dimmed,
+  showOrbit,
 }: PersonaHeroProps) {
   const { t, tx } = useTranslation();
   const [hoveredDim, setHoveredDim] = useState<GlyphDimension | null>(null);
@@ -227,6 +239,8 @@ export function PersonaHero({
             activeDim={activeDim}
             onHoverDim={setHoveredDim}
             onClickDim={handleClickDim}
+            dimmed={dimmed}
+            showOrbit={showOrbit}
           >
             {/* centerOverlay is hidden while the wide overlay is open
              *  so they never compete for the user's attention. */}
