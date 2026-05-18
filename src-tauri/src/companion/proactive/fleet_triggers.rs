@@ -103,3 +103,77 @@ pub fn fleet_attention() -> Vec<Nudge> {
     }
     out
 }
+
+/// How long a session in a dispatched_by_athena op must sit with a
+/// `recent_failure` set AND no new event before we surface it as a
+/// stuck-session candidate. 4 minutes — short enough that the user
+/// catches a stall before they've moved on, long enough to filter out
+/// brief failures that the session is already recovering from.
+const STUCK_THRESHOLD_MS: i64 = 4 * 60 * 1000;
+
+/// D9 — stuck-session detector. Scans operative memory for sessions
+/// in `dispatched_by_athena` ops that look stuck (recent_failure
+/// stamped, no event in `STUCK_THRESHOLD_MS`) AND haven't been
+/// intervened on yet (the operative_memory cap allows one
+/// intervention per session). Emits one Nudge per stuck session with
+/// a suggested intervention prompt — the user can act on it via the
+/// normal chat/approval flow, or Athena can pick it up on her next
+/// turn and propose a `fleet_intervene` action.
+///
+/// Deliberately informational, not auto-fire — at this maturity we
+/// want a human (or Athena under explicit autonomous-mode consent)
+/// to decide whether to write into a running session's stdin.
+pub fn stuck_dispatched_sessions() -> Vec<Nudge> {
+    let now_ms = chrono::Utc::now().timestamp_millis();
+    let mem = crate::companion::orchestration::operative_memory::memory();
+    let mut out = Vec::new();
+    for op in mem.snapshot_all_operations() {
+        if !op.dispatched_by_athena {
+            continue;
+        }
+        for s in &op.sessions {
+            if matches!(
+                s.last_state,
+                FleetSessionState::Exited | FleetSessionState::Idle
+            ) {
+                continue; // not a live, working session
+            }
+            let Some(failure) = s.recent_failure.as_ref() else {
+                continue;
+            };
+            if s.interventions > 0 {
+                continue; // already intervened — escalating would loop
+            }
+            let stuck_for_ms = now_ms - s.last_event_at_ms;
+            if stuck_for_ms < STUCK_THRESHOLD_MS {
+                continue;
+            }
+            let role = s.role.as_deref().unwrap_or("session");
+            let id_prefix = &s.fleet_session_id[..s.fleet_session_id.len().min(8)];
+            let op_id_short = &op.id[..op.id.len().min(8)];
+            let minutes = stuck_for_ms / 60_000;
+            // Truncate the failure tail to keep the nudge body short.
+            let tail = truncate_one_line(failure, 160);
+            out.push(Nudge {
+                trigger_kind: "fleet_session_stuck".into(),
+                trigger_ref: Some(s.fleet_session_id.clone()),
+                message: format!(
+                    "Dispatched session `{id_prefix}` ({role}) in op `{op_id_short}` looks stuck — no \
+event for ~{minutes}m and the last failure was: {tail}. Want me to propose a `fleet_intervene`?"
+                ),
+            });
+        }
+    }
+    out
+}
+
+fn truncate_one_line(s: &str, max: usize) -> String {
+    let one_line = s.replace('\n', " / ").replace('\r', "");
+    if one_line.chars().count() <= max {
+        one_line
+    } else {
+        let mut out: String = one_line.chars().take(max).collect();
+        out.push('…');
+        out
+    }
+}

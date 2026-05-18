@@ -218,6 +218,8 @@ pub async fn companion_approve_action(
         "fleet_kill" => execute_fleet_kill(&params),
         "fleet_spawn" => execute_fleet_spawn(&app, &params),
         "fleet_dispatch" => execute_fleet_dispatch(&app, &params),
+        "fleet_intervene" => execute_fleet_intervene(&app, &params),
+        "fleet_redirect_op" => execute_fleet_redirect_op(&app, &params),
         other => Err(AppError::Internal(format!(
             "approval `{approval_id}`: unknown action `{other}`"
         ))),
@@ -1583,5 +1585,140 @@ fn execute_fleet_dispatch(
 every session in this operation has exited.",
     );
 
+    Ok(ExecuteResult::message(msg))
+}
+
+/// D9 — `fleet_intervene`: write a guidance message into a running
+/// session's PTY stdin. Capped at one intervention per session via
+/// operative_memory tracking — second invocation refuses with a
+/// reason. The session sees the message text + a newline (so its
+/// REPL processes it as a turn).
+///
+/// `params`: `{ session_id: string, message: string }`. Used by the
+/// proactive evaluator's stuck-session detector — see
+/// `proactive/fleet_triggers.rs`. The user approves before this
+/// fires; auto-fire would be too aggressive at this maturity.
+fn execute_fleet_intervene(
+    app: &tauri::AppHandle,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    let session_id = params
+        .get("session_id")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| AppError::Internal("fleet_intervene: missing `session_id`".into()))?;
+    let message = params
+        .get("message")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| AppError::Internal("fleet_intervene: missing `message`".into()))?;
+
+    // Cap check + bookkeeping first. If we already intervened, refuse
+    // before touching the PTY — easier to debug a clean refusal than
+    // a no-op write.
+    crate::companion::orchestration::operative_memory::memory()
+        .record_intervention(session_id)
+        .map_err(|e| AppError::Internal(format!("fleet_intervene: {e}")))?;
+
+    let bytes = format!("{message}\n");
+    crate::commands::fleet::registry::registry()
+        .write_input(session_id, bytes.as_bytes())
+        .map_err(|e| AppError::Internal(format!("fleet_intervene: PTY write failed: {e}")))?;
+
+    crate::companion::orchestration::emit_digest_changed(app);
+
+    Ok(ExecuteResult::message(format!(
+        "Intervention delivered to session `{}`. Message: {message}",
+        &session_id[..session_id.len().min(8)],
+    )))
+}
+
+/// D9 — `fleet_redirect_op`: update the operation's user_intent +
+/// broadcast a redirection message to every active (non-Exited)
+/// session in the op. Useful when Athena spots that the whole op is
+/// going in a wrong direction (not just one session).
+///
+/// `params`: `{ op_id: string, new_intent: string, message?: string }`.
+/// `message` defaults to a synthesized "New direction: {new_intent}"
+/// when omitted. Each broadcast counts as an intervention against its
+/// session — the per-session cap still applies, so a session that's
+/// already been intervened on is skipped (logged).
+fn execute_fleet_redirect_op(
+    app: &tauri::AppHandle,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    let op_id = params
+        .get("op_id")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| AppError::Internal("fleet_redirect_op: missing `op_id`".into()))?;
+    let new_intent = params
+        .get("new_intent")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| AppError::Internal("fleet_redirect_op: missing `new_intent`".into()))?;
+    let message = params
+        .get("message")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+        .unwrap_or_else(|| format!("New direction from Athena: {new_intent}"));
+
+    let mem = crate::companion::orchestration::operative_memory::memory();
+    if !mem.redirect_operation(op_id, new_intent) {
+        return Err(AppError::Internal(format!(
+            "fleet_redirect_op: operation `{op_id}` not found in operative memory",
+        )));
+    }
+    let targets = mem.op_active_sessions(op_id);
+    if targets.is_empty() {
+        crate::companion::orchestration::emit_digest_changed(app);
+        return Ok(ExecuteResult::message(format!(
+            "Updated op `{op}` intent to \"{new_intent}\". No active sessions to broadcast to.",
+            op = &op_id[..op_id.len().min(8)],
+        )));
+    }
+
+    let mut delivered: Vec<String> = Vec::new();
+    let mut skipped: Vec<String> = Vec::new();
+    for sid in &targets {
+        match mem.record_intervention(sid) {
+            Ok(()) => {
+                let bytes = format!("{message}\n");
+                if let Err(e) = crate::commands::fleet::registry::registry()
+                    .write_input(sid, bytes.as_bytes())
+                {
+                    skipped.push(format!("`{}` PTY write failed: {e}", &sid[..sid.len().min(8)]));
+                    continue;
+                }
+                delivered.push(format!("`{}`", &sid[..sid.len().min(8)]));
+            }
+            Err(reason) => {
+                skipped.push(format!("`{}` skipped: {reason}", &sid[..sid.len().min(8)]));
+            }
+        }
+    }
+
+    crate::companion::orchestration::emit_digest_changed(app);
+
+    let mut msg = format!(
+        "Redirected op `{op}` to \"{new_intent}\". Broadcast to {} session(s).",
+        delivered.len(),
+        op = &op_id[..op_id.len().min(8)],
+    );
+    if !delivered.is_empty() {
+        msg.push_str(&format!("\nDelivered: {}", delivered.join(", ")));
+    }
+    if !skipped.is_empty() {
+        msg.push_str("\nSkipped:");
+        for s in &skipped {
+            msg.push_str(&format!("\n  ⚠ {s}"));
+        }
+    }
     Ok(ExecuteResult::message(msg))
 }

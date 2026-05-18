@@ -116,12 +116,25 @@ pub struct SessionRef {
     /// `MAX_CHECKPOINTS_PER_SESSION` to keep memory and digest
     /// bounded.
     pub checkpoints: Vec<Checkpoint>,
+    /// Count of mid-flight interventions Athena has dispatched into
+    /// this session via `fleet_intervene` (Direction 9). Capped at
+    /// [`MAX_INTERVENTIONS_PER_SESSION`] to prevent runaway loops —
+    /// if her first nudge doesn't unstick the session, repeating it
+    /// usually doesn't either, and we'd rather have the user notice.
+    pub interventions: u32,
     pub started_at_ms: i64,
     pub last_event_at_ms: i64,
 }
 
 /// Hard cap on per-session checkpoints. Older entries roll off on push.
 const MAX_CHECKPOINTS_PER_SESSION: usize = 20;
+
+/// D9 — at most this many `fleet_intervene` calls per session. The
+/// proactive evaluator surfaces a nudge proposal once; if the user
+/// approves and the session is still stuck after, that's the limit.
+/// Set low because the evaluator should escalate to "ask the user"
+/// rather than keep pushing into a stuck session.
+const MAX_INTERVENTIONS_PER_SESSION: u32 = 1;
 
 impl SessionRef {
     fn new(fleet_session_id: &str, cwd: &str, started_at_ms: i64) -> Self {
@@ -137,6 +150,7 @@ impl SessionRef {
             summary: None,
             intent: None,
             checkpoints: Vec::new(),
+            interventions: 0,
             started_at_ms,
             last_event_at_ms: started_at_ms,
         }
@@ -699,6 +713,67 @@ impl OperativeMemory {
         Some(summary)
     }
 
+    // ── D9 — intervention bookkeeping ─────────────────────────────────
+
+    /// Try to record a `fleet_intervene` call against `fleet_session_id`.
+    /// Returns `Ok(())` when the intervention is allowed (count was
+    /// below the per-session cap) and bumps the counter. Returns
+    /// `Err(reason)` when the cap is already reached — caller should
+    /// refuse the action and surface the reason to Athena's chat.
+    pub fn record_intervention(&self, fleet_session_id: &str) -> Result<(), String> {
+        let mut ops = self.operations.write().unwrap_or_else(|e| e.into_inner());
+        for op in ops.values_mut() {
+            if let Some(s) = op
+                .sessions
+                .iter_mut()
+                .find(|s| s.fleet_session_id == fleet_session_id)
+            {
+                if s.interventions >= MAX_INTERVENTIONS_PER_SESSION {
+                    return Err(format!(
+                        "intervention cap reached for session {} (max {})",
+                        fleet_session_id, MAX_INTERVENTIONS_PER_SESSION,
+                    ));
+                }
+                s.interventions += 1;
+                s.last_event_at_ms = now_ms();
+                return Ok(());
+            }
+        }
+        Err(format!(
+            "session {} not tracked in operative memory",
+            fleet_session_id,
+        ))
+    }
+
+    /// Return the fleet session ids of every non-Exited session in
+    /// the given operation. Used by `fleet_redirect_op` to know which
+    /// sessions to broadcast to. Empty Vec if the operation is
+    /// unknown or has no live sessions.
+    pub fn op_active_sessions(&self, operation_id: &str) -> Vec<String> {
+        let ops = self.operations.read().unwrap_or_else(|e| e.into_inner());
+        let Some(op) = ops.get(operation_id) else {
+            return Vec::new();
+        };
+        op.sessions
+            .iter()
+            .filter(|s| !matches!(s.last_state, FleetSessionState::Exited))
+            .map(|s| s.fleet_session_id.clone())
+            .collect()
+    }
+
+    /// Update an operation's `user_intent` after creation. Used by
+    /// `fleet_redirect_op` so Athena can change the focus of a
+    /// dispatched op mid-flight. No-op when the op doesn't exist.
+    /// Returns true when the intent was changed.
+    pub fn redirect_operation(&self, operation_id: &str, new_intent: &str) -> bool {
+        let mut ops = self.operations.write().unwrap_or_else(|e| e.into_inner());
+        let Some(op) = ops.get_mut(operation_id) else {
+            return false;
+        };
+        op.user_intent = new_intent.to_string();
+        true
+    }
+
     // ── Snapshots for diagnostics / D5 reconciler ─────────────────────
 
     /// Best-effort lookup of which Operation owns a given Fleet session.
@@ -718,6 +793,15 @@ impl OperativeMemory {
     pub fn snapshot_operation(&self, operation_id: &str) -> Option<Operation> {
         let ops = self.operations.read().unwrap_or_else(|e| e.into_inner());
         ops.get(operation_id).cloned()
+    }
+
+    /// Snapshot every Operation. Used by the D9 stuck-session
+    /// detector in `proactive/fleet_triggers.rs` to scan for sessions
+    /// in `dispatched_by_athena` ops that have been stuck without
+    /// an intervention yet.
+    pub fn snapshot_all_operations(&self) -> Vec<Operation> {
+        let ops = self.operations.read().unwrap_or_else(|e| e.into_inner());
+        ops.values().cloned().collect()
     }
 
     /// Format the active operations for Athena's prompt. Empty string
