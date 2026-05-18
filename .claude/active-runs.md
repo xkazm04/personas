@@ -32,6 +32,12 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+- **[2026-05-18 — started] prototype-cockpit-persona — Cockpit + PersonaOverviewWidget redesign + companion-shrink hook**
+  - **Source:** User-driven `/prototype` skill — cockpit is underused, PersonaOverviewWidget is anemic, chat window covers cockpit content. Designing 3-4 directional variants behind a tab switcher.
+  - **Paths:** `src/features/home/components/cockpit/widgets/PersonaOverviewWidget.tsx` (baseline + 3-4 variants), `src/features/home/components/cockpit/widgets/PersonaOverviewVariant{1..N}.tsx` (new — variants), possibly `src/features/home/components/cockpit/CockpitPanel.tsx` (variant tab switcher), possibly `src/features/plugins/companion/CompanionPanel.tsx` (single-line `panelCompact` auto-trigger on `compose_cockpit` for the shrink behavior), possibly `src/i18n/locales/en.json` (additive `overview.cockpit.*` keys for variant labels), `.claude/active-runs.md`
+  - **Status:** started
+  - **Branch:** `worktree-prototype-cockpit-persona` (worktree at `.claude/worktrees/prototype-cockpit-persona/`)
+  - **Note:** Path-disjoint from all active sessions. `friend-companion` (2026-05-16) declared `src/features/plugins/companion/` but is >2 days stale; my touchpoint there is surgical (1-line hook on existing `panelCompact` state). en.json edits additive under `overview.cockpit.*` — coordinate with concurrent `schedules.*`/`appearance.*`/`plugins.*`/`shared.sidebar_extra.*` sub-trees (disjoint).
 
 - **[2026-05-17 — started] overview-polish — Header unification + Events/Knowledge/Health fixes**
   - **Source:** User-driven UX polish — Overview module. Header consistency across submodules, Events subtitle bug ("50 50 of 50"), Knowledge background-CLI review + drop Schedule, Health Reliability tab dedup + filter compaction.

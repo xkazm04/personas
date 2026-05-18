@@ -740,12 +740,20 @@ function Body(props: BodyProps) {
   // compose_cockpit auto-fire — same shape as compose_dashboard but
   // destinations are Home → Cockpit. Spec is already persisted server-side;
   // we just navigate the user there so they see what Athena built.
+  //
+  // Also: when Athena composes a cockpit she's signalling "look at the
+  // thing I just built, not at me" — so we auto-shrink the panel to its
+  // compact mode (380px → 760px is too dominant over the cockpit content
+  // it's pointing at). The user can always expand back with the toggle
+  // in the header. We don't auto-collapse, only auto-narrow; full-collapse
+  // would hide the conversational thread that explains the cockpit.
   useTauriEvent<unknown>(
     COMPANION_COMPOSE_COCKPIT_EVENT,
     useCallback(() => {
       const sys = useSystemStore.getState();
       sys.setSidebarSection('home');
       sys.setHomeTab('cockpit');
+      sys.setCompanionPanelCompact(true);
     }, []),
     'companion_compose_cockpit_listen',
   );
