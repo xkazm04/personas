@@ -50,6 +50,67 @@ export function hasMatchingCredential(
 }
 
 /**
+ * Build the `credential_bindings` map sent to the backend so
+ * `apply_credential_bindings_to_connectors` can rewrite placeholder connector
+ * entries (e.g. `name: "email"`) to the user's concrete picks
+ * (e.g. `service_type: "gmail"`).
+ *
+ * Two question shapes contribute bindings:
+ *
+ *  1. **Static-options vault question** — `vault_category` + `option_service_types`
+ *     + `options`. The selected option's index maps into `option_service_types`.
+ *     Example: q.vault_category = "ai", picked "Leonardo AI",
+ *     option_service_types[idx] = "leonardo_ai" → binding["ai"] = "leonardo_ai".
+ *
+ *  2. **Dynamic-source vault question** — `dynamic_source.source === "vault"`.
+ *     Options are synthesized at runtime from the user's vault credentials and
+ *     `useDynamicQuestionOptions` stores each option's `value` as the credential's
+ *     `service_type`. So the picked answer IS already the target service_type, and
+ *     the binding category is `dynamic_source.service_type`.
+ *     Example: q.dynamic_source = { source: "vault", service_type: "email" },
+ *     picked answer = "gmail" → binding["email"] = "gmail".
+ *
+ * Without case (2), templates that ship a credential picker as a `dynamic_source`
+ * question (e.g. Email Morning Digest) never produce a binding, and the backend
+ * leaves `required_connectors[].name = "email"` un-rewritten. At runtime the tool
+ * lookup misses (no vault credential has service_type = "email") and the persona
+ * detail panel shows no credential link — both symptoms of the same bug.
+ *
+ * Both `q.options`-style and dynamic_source cases write the SAME binding map shape
+ * the backend already understands; no backend change is needed.
+ */
+export function deriveCredentialBindings(
+  questions: readonly TransformQuestionResponse[],
+  answers: Readonly<Record<string, string>>,
+): Record<string, string> {
+  const bindings: Record<string, string> = {};
+  for (const q of questions) {
+    const answer = answers[q.id];
+    if (!answer) continue;
+
+    // Case 1: static-options vault category.
+    if (q.vault_category && q.option_service_types && q.options) {
+      const idx = q.options.indexOf(answer);
+      if (idx >= 0 && idx < q.option_service_types.length) {
+        const serviceType = q.option_service_types[idx];
+        if (serviceType) bindings[q.vault_category] = serviceType;
+      }
+      continue;
+    }
+
+    // Case 2: dynamic_source vault picker — the answer IS the picked service_type
+    // (see useDynamicQuestionOptions: items.push({ value: c.service_type, ... })).
+    // Skip `source: "scope"` (resource picker) and `source: undefined` (operation
+    // call) — those don't carry credential bindings.
+    if (q.dynamic_source?.source === 'vault') {
+      const category = q.dynamic_source.service_type;
+      if (category) bindings[category] = answer;
+    }
+  }
+  return bindings;
+}
+
+/**
  * Match adoption questions against the user's credential vault.
  *
  * For questions with `vault_category` + `option_service_types`, the behaviour

@@ -26,7 +26,11 @@ import type { CellBuildStatus } from "@/lib/types/buildTypes";
 import type { ActiveProcess } from "@/stores/slices/processActivitySlice";
 import type { TransformQuestionResponse } from "@/api/templates/n8nTransform";
 import type { AgentIR } from "@/lib/types/designTypes";
-import { hasMatchingCredential, matchVaultToQuestions } from "../shared/vaultAdoptionMatcher";
+import {
+  deriveCredentialBindings,
+  hasMatchingCredential,
+  matchVaultToQuestions,
+} from "../shared/vaultAdoptionMatcher";
 import { useDynamicQuestionOptions } from "./useDynamicQuestionOptions";
 import { categoryOrderIndex } from "./questionnaireCategoryOrder";
 import { useTranslation } from '@/i18n/useTranslation';
@@ -812,22 +816,12 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
     // Persist answers to the backend so test_build_draft and promote use them.
     const sessionId = useAgentStore.getState().buildSessionId;
     if (sessionId && Object.keys(answerMap).length > 0) {
-      // Derive credential bindings from vault-category questions: when the user
-      // picks a specific provider (e.g. "Google Cloud Platform" mapped to
-      // option_service_types[0] = "gcp_cloud"), record that binding so the
-      // backend can prefer the right credential during test and runtime.
-      const credentialBindings: Record<string, string> = {};
-      for (const q of filteredAdoptionQuestions) {
-        if (q.vault_category && q.option_service_types && q.options && answerMap[q.id]) {
-          const selectedIdx = q.options.indexOf(answerMap[q.id]!);
-          if (selectedIdx >= 0 && selectedIdx < q.option_service_types.length) {
-            const serviceType = q.option_service_types[selectedIdx];
-            if (serviceType) {
-              credentialBindings[q.vault_category] = serviceType;
-            }
-          }
-        }
-      }
+      // Derive credential bindings from BOTH static-options vault questions
+      // (e.g. "ai" → "leonardo_ai") AND dynamic_source vault pickers (e.g.
+      // "email" → "gmail"). The shared helper keeps the two cases in lockstep
+      // so templates like Email Morning Digest — which ship the credential
+      // picker as a dynamic_source question — actually produce a binding.
+      const credentialBindings = deriveCredentialBindings(filteredAdoptionQuestions, answerMap);
 
       const payload = {
         answers: answerMap,
@@ -867,19 +861,12 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
     if (hasFilteredQuestions && !questionsComplete) return;
     seedInFlight.current = true;
 
-    // Derive credential bindings from vault-category questions so the Apps &
-    // Services matrix cell reflects the user's concrete picks (e.g. Leonardo
-    // AI) instead of the template's generic placeholder (e.g. "image_ai").
-    const credentialBindings: Record<string, string> = {};
-    for (const q of filteredAdoptionQuestions) {
-      if (q.vault_category && q.option_service_types && q.options && adoptionAnswers[q.id]) {
-        const idx = q.options.indexOf(adoptionAnswers[q.id]!);
-        if (idx >= 0 && idx < q.option_service_types.length) {
-          const serviceType = q.option_service_types[idx];
-          if (serviceType) credentialBindings[q.vault_category] = serviceType;
-        }
-      }
-    }
+    // Derive credential bindings so the Apps & Services matrix cell reflects
+    // the user's concrete picks (Leonardo AI from a static-options question,
+    // Gmail from a dynamic_source vault picker, …) instead of the template's
+    // generic placeholder (`image_ai`, `email`). See `deriveCredentialBindings`
+    // for the two question shapes it handles.
+    const credentialBindings = deriveCredentialBindings(filteredAdoptionQuestions, adoptionAnswers);
 
     // Materialize the user's trigger selections onto the design result
     // before extracting cell data — otherwise the persona gets built with
