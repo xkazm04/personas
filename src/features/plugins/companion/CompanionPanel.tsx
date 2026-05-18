@@ -58,6 +58,7 @@ import { McpRequestPanel } from './mcp/McpRequestPanel';
 import { LiveOpsStrip } from './orchestration/LiveOpsStrip';
 import { InlineChatCard } from './InlineChatCard';
 import { ProactiveCard } from './ProactiveCard';
+import { stripModelDirectives } from './athenaLabels';
 import { AthenaAvatar } from './AthenaAvatar';
 import { BrainViewer } from './BrainViewer';
 import { CompanionToolbar } from './CompanionToolbar';
@@ -1015,17 +1016,26 @@ function Body(props: BodyProps) {
             pipeline (creating an assistant turn that responds to it),
             "Dismiss" silently resolves and removes the card.
           */}
-          {proactive.map((m) => (
-            <ProactiveCard
-              key={m.id}
-              message={m}
-              onEngaged={(text) => {
-                removeProactive(m.id);
-                void send(text);
-              }}
-              onDismissed={() => removeProactive(m.id)}
-            />
-          ))}
+          <AnimatePresence initial={false}>
+            {proactive.map((m) => (
+              <motion.div
+                key={m.id}
+                initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.98 }}
+                transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <ProactiveCard
+                  message={m}
+                  onEngaged={(text) => {
+                    removeProactive(m.id);
+                    void send(text);
+                  }}
+                  onDismissed={() => removeProactive(m.id)}
+                />
+              </motion.div>
+            ))}
+          </AnimatePresence>
           {initialized && messages.length === 0 && !streaming && proactive.length === 0 && (
             <p className="typo-body text-foreground/50">
               {t.plugins.companion.empty_transcript}
@@ -1082,55 +1092,97 @@ function Body(props: BodyProps) {
               );
             });
           })()}
-          {streaming && (
-            <div className="space-y-1">
-              {streamingRecall && <RecallStrip preview={streamingRecall} />}
-              <div className="relative group">
-                <Bubble role="assistant" streaming index={messages.length}>
-                  {streamingText || t.plugins.companion.thinking}
-                </Bubble>
-                <button
-                  type="button"
-                  onClick={handleInterrupt}
-                  className="absolute -top-2 -right-2 rounded-full bg-foreground/80 hover:bg-foreground text-background w-6 h-6 flex items-center justify-center shadow-elevation-2 transition-opacity opacity-0 group-hover:opacity-100 focus:opacity-100"
-                  aria-label={t.plugins.companion.stop_turn}
-                  title={t.plugins.companion.stop_turn}
-                  data-testid="companion-stop-turn"
-                >
-                  <Square className="w-3 h-3" fill="currentColor" />
-                </button>
-              </div>
-              {pendingConnectorJobIds.map((jobId) => {
-                const job = jobsById[jobId];
-                return job ? (
-                  <ConnectorCallCard key={jobId} job={job} />
-                ) : null;
-              })}
-            </div>
-          )}
+          <AnimatePresence initial={false}>
+            {streaming && (
+              <motion.div
+                key="companion-streaming-bubble"
+                className="space-y-1"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+              >
+                {streamingRecall && <RecallStrip preview={streamingRecall} />}
+                <div className="relative group">
+                  <Bubble role="assistant" streaming index={messages.length}>
+                    {/*
+                      Strip OP:/QR:/TTS:/raw {"op": directive lines from
+                      the streaming view so the user never sees Athena's
+                      machine grammar flash. The backend dispatcher does
+                      the same strip server-side when persisting the
+                      episode; the persisted bubble that replaces this
+                      one is already clean.
+
+                      When the stream produces ONLY directive lines
+                      (early in an autonomous tick, say), we still want
+                      the "thinking…" placeholder rather than an empty
+                      bubble.
+                    */}
+                    {stripModelDirectives(streamingText) ||
+                      t.plugins.companion.thinking}
+                  </Bubble>
+                  <button
+                    type="button"
+                    onClick={handleInterrupt}
+                    className="absolute -top-2 -right-2 rounded-full bg-foreground/80 hover:bg-foreground text-background w-6 h-6 flex items-center justify-center shadow-elevation-2 transition-opacity opacity-0 group-hover:opacity-100 focus:opacity-100"
+                    aria-label={t.plugins.companion.stop_turn}
+                    title={t.plugins.companion.stop_turn}
+                    data-testid="companion-stop-turn"
+                  >
+                    <Square className="w-3 h-3" fill="currentColor" />
+                  </button>
+                </div>
+                {pendingConnectorJobIds.map((jobId) => {
+                  const job = jobsById[jobId];
+                  return job ? (
+                    <ConnectorCallCard key={jobId} job={job} />
+                  ) : null;
+                })}
+              </motion.div>
+            )}
+          </AnimatePresence>
           {improving && (
             <div className="rounded-card border border-amber-500/30 bg-amber-500/5 px-3.5 py-2.5 typo-body text-amber-300/90 flex items-center gap-2">
               <Loader2 className="w-4 h-4 animate-spin" />
               <span>{t.plugins.companion.improving}</span>
             </div>
           )}
-          {approvals.map((a) => (
-            <ApprovalCard
-              key={a.id}
-              approval={a}
-              onResolved={(id) => {
-                removeApproval(id);
-                // Pull the canonical transcript so the system episode the
-                // backend just logged (action outcome) shows up.
-                companionListRecentMessages(50)
-                  .then((msgs) => setMessages(msgs))
-                  .catch(silentCatch('companion_list_recent_messages'));
-              }}
-            />
-          ))}
-          {chatCards.map((card, idx) => (
-            <InlineChatCard key={`${card.kind}-${idx}`} card={card} />
-          ))}
+          <AnimatePresence initial={false}>
+            {approvals.map((a) => (
+              <motion.div
+                key={a.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.98 }}
+                transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <ApprovalCard
+                  approval={a}
+                  onResolved={(id) => {
+                    removeApproval(id);
+                    // Pull the canonical transcript so the system episode the
+                    // backend just logged (action outcome) shows up.
+                    companionListRecentMessages(50)
+                      .then((msgs) => setMessages(msgs))
+                      .catch(silentCatch('companion_list_recent_messages'));
+                  }}
+                />
+              </motion.div>
+            ))}
+          </AnimatePresence>
+          <AnimatePresence initial={false}>
+            {chatCards.map((card, idx) => (
+              <motion.div
+                key={`${card.kind}-${idx}`}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <InlineChatCard card={card} />
+              </motion.div>
+            ))}
+          </AnimatePresence>
           {sendError && (
             <div className="rounded-card border border-rose-500/30 bg-rose-500/10 px-3 py-2 typo-caption text-rose-400">
               {sendError}
