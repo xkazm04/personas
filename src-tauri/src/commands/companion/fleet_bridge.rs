@@ -143,11 +143,17 @@ pub async fn companion_record_fleet_event(
                 record_fleet_event(&state.user_db, event)
             };
             reconcile_if_dispatched(&state.user_db, &app, &input.session_id);
+            crate::companion::orchestration::emit_digest_changed(&app);
             return episode_id_result;
         }
     }
 
-    record_fleet_event(&state.user_db, event)
+    let result = record_fleet_event(&state.user_db, event);
+    // D7 — notify the live-ops strip that the digest changed. Cheap;
+    // frontend debounces and re-fetches via
+    // `companion_get_operative_memory_digest`.
+    crate::companion::orchestration::emit_digest_changed(&app);
+    result
 }
 
 /// Public re-export so the PTY reaper (`commands::fleet::pty`) can fire
@@ -230,6 +236,87 @@ fn reconcile_if_dispatched(
     if let Err(e) = app.emit("athena://orchestration/operation-completed", &payload) {
         tracing::warn!(error = %e, op_id = %op.id, "reconcile: emit failed");
     }
+
+    // D6 — also enqueue a proactive message so Athena surfaces the
+    // wrap-up in the chat panel even when the user isn't watching the
+    // live ops view. `enqueue_external` skips the daily budget gate
+    // because this isn't a speculative trigger — the user explicitly
+    // dispatched the op and should always hear how it landed. The
+    // (trigger_kind, trigger_ref) dedupe still applies, so a duplicate
+    // exit-event firing the reconciler twice can't double-deliver.
+    let proactive_message = format_proactive_wrap_up(&op.user_intent, status_token, &summary);
+    let nudge = crate::companion::proactive::Nudge {
+        trigger_kind: crate::companion::proactive::FLEET_OP_COMPLETED_TRIGGER_KIND.to_string(),
+        trigger_ref: Some(op.id.clone()),
+        message: proactive_message,
+    };
+    match crate::companion::proactive::enqueue_external(pool, &nudge) {
+        Ok(Some(msg)) => {
+            // Snappy delivery — don't wait for the 5-minute scheduler
+            // tick. Transition queued→delivered immediately and emit
+            // the same `companion://proactive` event the scheduler
+            // would. The frontend's existing proactive subscription
+            // renders the card without code changes.
+            if let Err(e) = crate::companion::proactive::mark_delivered(pool, &msg.id) {
+                tracing::warn!(id = %msg.id, error = %e, "reconcile: mark_delivered failed");
+            }
+            let delivered = crate::companion::proactive::ProactiveMessage {
+                status: "delivered".into(),
+                ..msg
+            };
+            let payload = crate::commands::companion::proactive::ProactiveDelivery {
+                messages: vec![delivered],
+            };
+            if let Err(e) = app.emit(
+                crate::commands::companion::proactive::PROACTIVE_EVENT,
+                payload,
+            ) {
+                tracing::warn!(error = %e, op_id = %op.id, "reconcile: proactive emit failed");
+            }
+        }
+        Ok(None) => {
+            // Dedupe — same op_id already has an unresolved wrap-up
+            // queued/delivered. Expected when reconcile_if_dispatched
+            // fires twice (Rust reaper path + JS bridge path).
+        }
+        Err(e) => {
+            tracing::warn!(error = %e, op_id = %op.id, "reconcile: enqueue_external failed");
+        }
+    }
+}
+
+/// Build the user-facing chat-card body for a fleet wrap-up. Keep it
+/// short — the proactive card shows it in a constrained surface; the
+/// full synthesized summary lives in the episode body for Athena to
+/// retrieve when the user asks for details.
+fn format_proactive_wrap_up(
+    intent: &str,
+    status_token: &'static str,
+    summary: &str,
+) -> String {
+    let outcome = match status_token {
+        "op_completed" => "completed",
+        "op_failed" => "failed",
+        _ => "finished",
+    };
+    // Take the first non-empty line of the summary as the headline;
+    // everything else stays in episodic memory for retrieval. This
+    // keeps the proactive card glance-readable.
+    let headline = summary
+        .lines()
+        .find(|l| !l.trim().is_empty())
+        .unwrap_or("")
+        .trim();
+    let headline = if headline.chars().count() > 240 {
+        let mut s: String = headline.chars().take(240).collect();
+        s.push('…');
+        s
+    } else {
+        headline.to_string()
+    };
+    format!(
+        "Operation \"{intent}\" {outcome}. {headline}"
+    )
 }
 
 #[derive(serde::Serialize, Clone)]

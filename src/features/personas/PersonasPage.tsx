@@ -15,6 +15,7 @@ import { CanvasDragProvider } from '@/features/pipeline/sub_canvas';
 import DesktopFooter from '@/features/shared/components/layout/DesktopFooter';
 import { useFleetCompanionBridge } from '@/features/plugins/companion/useFleetCompanionBridge';
 import { useMcpRequestBridge } from '@/features/plugins/companion/mcp/useMcpRequestBridge';
+import { useOperativeMemoryBridge } from '@/features/plugins/companion/orchestration/useOperativeMemoryBridge';
 
 // Lazy-load all section content — only Sidebar stays eager (always visible)
 const HomePage = lazy(() => import('@/features/home/components/HomePage'));
@@ -54,6 +55,9 @@ export default function PersonasPage() {
   // approval requests from claude sessions so the chat panel can
   // render them inline (Direction 3).
   useMcpRequestBridge();
+  // D7 — subscribes to `athena://orchestration/digest-changed` and
+  // populates the operative-memory store the LiveOpsStrip reads.
+  useOperativeMemoryBridge();
   const { sidebarSection, cloudTab, agentTab, pluginTab, isCreatingPersona, isLoading, error } = useSystemStore(
     useShallow((s) => ({
       sidebarSection: s.sidebarSection,

@@ -11024,6 +11024,9 @@ export type Translations = {
         approval_note_placeholder: string;
         approval_approve: string;
         approval_deny: string;
+        live_view_title: string;
+        live_view_op_count_one: string;
+        live_view_op_count_other: string;
       };
     };
     ocr: {

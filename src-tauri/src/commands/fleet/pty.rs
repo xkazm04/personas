@@ -469,6 +469,10 @@ fn rust_reconcile_after_exit(app: &AppHandle, session_id: &str, exit_code: Optio
             session_id,
         );
     }
+
+    // D7 — exited session has updated state + the reconciler may have
+    // synthesized + mutated. Nudge the live-ops strip.
+    crate::companion::orchestration::emit_digest_changed(app);
 }
 
 /// Emit a registry-changed event from a Tauri command.

@@ -1560,6 +1560,10 @@ fn execute_fleet_dispatch(
         )));
     }
 
+    // D7 — fresh dispatched op + attached sessions; nudge the
+    // live-ops strip to re-fetch.
+    crate::companion::orchestration::emit_digest_changed(app);
+
     let mut msg = format!(
         "Dispatched operation `{intent}` (op_id `{}`) across {} session(s):",
         &op_id[..op_id.len().min(8)],

@@ -11017,7 +11017,10 @@
         "approval_from": "Approval request from",
         "approval_note_placeholder": "Optional note for the session…",
         "approval_approve": "Approve",
-        "approval_deny": "Deny"
+        "approval_deny": "Deny",
+        "live_view_title": "Live operations",
+        "live_view_op_count_one": "1 op",
+        "live_view_op_count_other": "{count} ops"
       }
     },
     "ocr": {
