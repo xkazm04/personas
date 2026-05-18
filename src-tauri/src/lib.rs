@@ -2138,6 +2138,7 @@ pub fn run() {
             commands::companion::consolidate::companion_get_dashboard,
             commands::companion::consolidate::companion_get_cockpit,
             commands::companion::consolidate::companion_pin_widget_to_cockpit,
+            commands::companion::consolidate::companion_unpin_widget_from_cockpit,
             commands::companion::consolidate::companion_enqueue_curation_run,
             commands::companion::consolidate::companion_discard_consolidation_run,
             commands::companion::proactive::companion_evaluate_proactive_now,

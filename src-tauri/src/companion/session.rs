@@ -588,8 +588,14 @@ pub async fn send_turn(
     // compose_cockpit auto-fire. Same shape as dashboards above — persist
     // each spec then emit the navigate event so the frontend jumps to
     // Home → Cockpit on receipt.
+    //
+    // Uses `save_cockpit_preserving_pinned` so any user-pinned widgets
+    // from the prior spec carry through. Without that, the user would
+    // pin a widget → Athena composes anything → pin disappears.
     for spec_json in &dispatched.cockpits {
-        if let Err(e) = crate::companion::brain::cockpit::save_cockpit(&user_db, spec_json) {
+        if let Err(e) =
+            crate::companion::brain::cockpit::save_cockpit_preserving_pinned(&user_db, spec_json)
+        {
             tracing::warn!(error = %e, "companion compose_cockpit save failed");
             continue;
         }
