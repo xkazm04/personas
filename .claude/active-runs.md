@@ -32,6 +32,7 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+
 - **[2026-05-17 — started] overview-polish — Header unification + Events/Knowledge/Health fixes**
   - **Source:** User-driven UX polish — Overview module. Header consistency across submodules, Events subtitle bug ("50 50 of 50"), Knowledge background-CLI review + drop Schedule, Health Reliability tab dedup + filter compaction.
   - **Paths:** `src/features/overview/sub_events/components/EventLogList.tsx`, `src/features/overview/sub_knowledge/components/**`, `src/features/overview/sub_health/components/**`, possibly headers in other `src/features/overview/sub_*/components/**` for consistency, `src/i18n/locales/en.json` (additive `overview.*` keys only — disjoint from concurrent `schedules.*`/`appearance.*`/`plugins.*`/`shared.sidebar_extra.*`)
@@ -93,6 +94,13 @@ timestamp — the next session can recognize it as abandoned.
 
 
 ## Recently completed (last 14 days)
+
+- **[2026-05-18 → merge `<pending>`] companion-d6710 — D6 (proactive wrap-up) + D7 (live ops view) + D9 (mid-flight intervention) + D10 (pattern extraction)**
+  - **Branch:** `worktree-companion-d6710` (5 commits, merged via `<sha>`; worktree to be removed).
+  - **Status:** completed (pending Phase 13 cleanup)
+  - **Commits:** `d5bb5dce7` D6 + D7 · `499a745c4` D9 actions + detector · `bb3cc3671` D10 fleet_patterns · `41b42b5c4` tests · `1af960a05` docs.
+  - **Tests:** 30 Rust unit tests in `companion::orchestration` + 5 in `companion::brain::fleet_patterns`; 17 vitest cases across Fleet/MCP/OperativeMemory bridges. Pre-existing `companion::tts::downloader::is_voice_downloaded_requires_both_files` failure (filesystem-dependent test, unrelated to this work).
+  - **Note:** D1–D10 of the companion↔fleet orchestration plan ship on master. D8 (cost/budget per op) explicitly deferred per design call — not critical against the user's monthly Claude Code subscription.
 
 - **[2026-05-18 → merge `f3292ea04`] companion-mcp-dispatch — D3 (Athena as MCP) + D5v2 (fleet_dispatch + reconciler)**
   - **Branch:** `worktree-companion-mcp-dispatch` (7 commits, merged via `f3292ea04`; worktree removed, branch deleted)
