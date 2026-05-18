@@ -1,6 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Users, Plus, List, Star, ChevronDown, Cloud, Clock, Activity, FolderGit2 } from 'lucide-react';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
@@ -21,22 +20,29 @@ const PROGRESS_COLORS: Record<AgentActivityType, { dot: string; ping: string; te
   lab:   { dot: 'bg-orange-500',  ping: 'bg-orange-500/40',  text: 'text-orange-300',  bg: 'bg-orange-500/5',  border: 'border-orange-500/20' },
 };
 
-const HEALTH_DOT: Record<string, string> = {
-  healthy: 'bg-emerald-400',
-  degraded: 'bg-amber-400',
-  critical: 'bg-red-400',
-  unhealthy: 'bg-red-400',
+// Health status rendered as a colored 3px left border on the persona row
+// instead of a separate icon + dot. Frees the full row width for the
+// persona name. Running state (orange) takes precedence over health so
+// in-flight execution is the dominant signal when both apply. The
+// `border-l-[3px]` width is always reserved so rows align horizontally
+// regardless of whether a status color is present.
+const HEALTH_BORDER: Record<string, string> = {
+  healthy:   'border-l-emerald-400',
+  degraded:  'border-l-amber-400',
+  critical:  'border-l-red-400',
+  unhealthy: 'border-l-red-400',
 };
 
-export function HealthDot({ grade }: { grade: string | undefined }) {
-  if (!grade || !HEALTH_DOT[grade]) return null;
-  return (
-    <span
-      className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${HEALTH_DOT[grade]}`}
-      title={`Health: ${grade}`}
-      aria-label={`Health: ${grade}`}
-    />
-  );
+function rowStatusBorder(grade: string | undefined, isRunning: boolean): string {
+  if (isRunning) return 'border-l-[3px] border-l-orange-500';
+  const healthClass = grade ? HEALTH_BORDER[grade] : undefined;
+  return `border-l-[3px] ${healthClass ?? 'border-l-transparent'}`;
+}
+
+function rowStatusTitle(grade: string | undefined, isRunning: boolean): string | undefined {
+  if (isRunning) return 'Running';
+  if (grade) return `Health: ${grade}`;
+  return undefined;
 }
 
 export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => void }) {
@@ -293,13 +299,16 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
                 {activeProjectPersonas.map((p) => {
                   const isRunning = executingPersonaIds.has(p.id);
                   const isActive = selectedPersonaId === p.id && !isCreatingPersona;
+                  const statusBorder = rowStatusBorder(healthGrades[p.id], isRunning);
+                  const statusTitle = rowStatusTitle(healthGrades[p.id], isRunning);
                   return (
                     <button
                       key={p.id}
                       {...getPrefetchProps(p.id)}
                       onClick={() => selectPersona(p.id)}
                       aria-current={isActive ? 'page' : undefined}
-                      className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg typo-body transition-colors group ${
+                      title={statusTitle}
+                      className={`w-full flex items-center gap-2 pl-2.5 pr-3 py-1.5 rounded-lg typo-body transition-colors group ${statusBorder} ${
                         isActive
                           ? 'bg-primary/10 text-foreground/90 shadow-[0_0_12px_rgba(99,102,241,0.12)] border border-indigo-500/20'
                           : isRunning
@@ -307,18 +316,9 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
                             : 'hover:bg-secondary/40'
                       }`}
                     >
-                      {isRunning ? (
-                        <span className="relative flex h-5 w-5 items-center justify-center flex-shrink-0">
-                          <span className="absolute w-3 h-3 rounded-full animate-ping bg-orange-500/40" />
-                          <span className="relative w-2.5 h-2.5 rounded-full bg-orange-500 border border-orange-600/50" />
-                        </span>
-                      ) : (
-                        <PersonaIcon icon={p.icon} color={p.color} />
-                      )}
                       <span className={`truncate text-[13px] min-w-0 flex-1 text-left ${
                         isActive ? 'text-foreground/90 font-medium' : isRunning ? 'text-orange-300/90' : 'text-foreground'
                       }`}>{p.name}</span>
-                      {!isRunning && <HealthDot grade={healthGrades[p.id]} />}
                     </button>
                   );
                 })}
@@ -342,29 +342,33 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
             </button>
             {!favoritesCollapsed && (
               <div className="mt-1 space-y-0.5">
-                {favoritePersonas.map((p) => (
-                  <button
-                    key={p.id}
-                    {...getPrefetchProps(p.id)}
-                    onClick={() => selectPersona(p.id)}
-                    className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg typo-body transition-colors hover:bg-secondary/40 group"
-                  >
-                    <PersonaIcon icon={p.icon} color={p.color} />
-                    <span className="text-foreground/90 truncate text-[13px] min-w-0">{p.name}</span>
-                    <HealthDot grade={healthGrades[p.id]} />
-                    <span
-                      role="button"
-                      tabIndex={0}
-                      onClick={(e) => { e.stopPropagation(); toggleFavorite(p.id); }}
-                      onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); toggleFavorite(p.id); } }}
-                      className="ml-auto flex-shrink-0 p-0.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-amber-500/10 rounded cursor-pointer"
-                      title={t.shared.sidebar_extra.remove_favorites}
-                      aria-label={t.shared.sidebar_extra.remove_favorites}
+                {favoritePersonas.map((p) => {
+                  const isRunning = executingPersonaIds.has(p.id);
+                  const statusBorder = rowStatusBorder(healthGrades[p.id], isRunning);
+                  const statusTitle = rowStatusTitle(healthGrades[p.id], isRunning);
+                  return (
+                    <button
+                      key={p.id}
+                      {...getPrefetchProps(p.id)}
+                      onClick={() => selectPersona(p.id)}
+                      title={statusTitle}
+                      className={`w-full flex items-center gap-2 pl-2.5 pr-3 py-1.5 rounded-lg typo-body transition-colors hover:bg-secondary/40 group ${statusBorder}`}
                     >
-                      <Star className="w-3 h-3 text-amber-400 fill-amber-400" aria-hidden="true" />
-                    </span>
-                  </button>
-                ))}
+                      <span className="text-foreground/90 truncate text-[13px] min-w-0 flex-1 text-left">{p.name}</span>
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        onClick={(e) => { e.stopPropagation(); toggleFavorite(p.id); }}
+                        onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); toggleFavorite(p.id); } }}
+                        className="flex-shrink-0 p-0.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-amber-500/10 rounded cursor-pointer"
+                        title={t.shared.sidebar_extra.remove_favorites}
+                        aria-label={t.shared.sidebar_extra.remove_favorites}
+                      >
+                        <Star className="w-3 h-3 text-amber-400 fill-amber-400" aria-hidden="true" />
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -388,13 +392,16 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
                 {recentPersonas.map((p) => {
                   const isRunning = executingPersonaIds.has(p.id);
                   const isActive = selectedPersonaId === p.id && !isCreatingPersona;
+                  const statusBorder = rowStatusBorder(healthGrades[p.id], isRunning);
+                  const statusTitle = rowStatusTitle(healthGrades[p.id], isRunning);
                   return (
                     <button
                       key={p.id}
                       {...getPrefetchProps(p.id)}
                       onClick={() => selectPersona(p.id)}
                       aria-current={isActive ? 'page' : undefined}
-                      className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg typo-body transition-colors group ${
+                      title={statusTitle}
+                      className={`w-full flex items-center gap-2 pl-2.5 pr-3 py-1.5 rounded-lg typo-body transition-colors group ${statusBorder} ${
                         isActive
                           ? 'bg-primary/10 text-foreground/90 shadow-[0_0_12px_rgba(59,130,246,0.12)] border border-primary/20'
                           : isRunning
@@ -402,24 +409,15 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
                             : 'hover:bg-secondary/40'
                       }`}
                     >
-                      {isRunning ? (
-                        <span className="relative flex h-5 w-5 items-center justify-center flex-shrink-0">
-                          <span className="absolute w-3 h-3 rounded-full animate-ping bg-orange-500/40" />
-                          <span className="relative w-2.5 h-2.5 rounded-full bg-orange-500 border border-orange-600/50" />
-                        </span>
-                      ) : (
-                        <PersonaIcon icon={p.icon} color={p.color} />
-                      )}
-                      <span className={`truncate text-[13px] min-w-0 ${
+                      <span className={`truncate text-[13px] min-w-0 flex-1 text-left ${
                         isActive ? 'text-foreground/90 font-medium' : isRunning ? 'text-orange-300/90' : 'text-foreground'
                       }`}>{p.name}</span>
-                      {!isRunning && <HealthDot grade={healthGrades[p.id]} />}
                       <span
                         role="button"
                         tabIndex={0}
                         onClick={(e) => { e.stopPropagation(); toggleFavorite(p.id); }}
                         onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); toggleFavorite(p.id); } }}
-                        className="ml-auto flex-shrink-0 p-0.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-amber-500/10 rounded cursor-pointer"
+                        className="flex-shrink-0 p-0.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-amber-500/10 rounded cursor-pointer"
                         title={t.shared.sidebar_extra.add_favorites}
                         aria-label={t.shared.sidebar_extra.add_favorites}
                       >
@@ -451,8 +449,9 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
             {!progressCollapsed && (
               <div className="mt-1 space-y-0.5">
                 {progressEntries.map((entry) => {
-                  const persona = personas.find((p) => p.id === entry.personaId);
                   const isActive = selectedPersonaId === entry.personaId && !isCreatingPersona;
+                  const isRunning = executingPersonaIds.has(entry.personaId);
+                  const statusBorder = rowStatusBorder(healthGrades[entry.personaId], isRunning);
                   // Tooltip: show all active task labels for this persona.
                   const tooltip = `${entry.personaName}\n${entry.labels.join(' · ')}`;
                   return (
@@ -462,17 +461,12 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
                       onClick={() => selectPersona(entry.personaId)}
                       aria-current={isActive ? 'page' : undefined}
                       title={tooltip}
-                      className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg typo-body transition-colors group ${
+                      className={`w-full flex items-center gap-2 pl-2.5 pr-3 py-1.5 rounded-lg typo-body transition-colors group ${statusBorder} ${
                         isActive
                           ? 'bg-primary/10 text-foreground/90 shadow-[0_0_12px_rgba(59,130,246,0.12)] border border-primary/20'
                           : 'hover:bg-secondary/40'
                       }`}
                     >
-                      {persona ? (
-                        <PersonaIcon icon={persona.icon} color={persona.color} />
-                      ) : (
-                        <span className="w-5 h-5 rounded-full bg-secondary/60 flex-shrink-0" />
-                      )}
                       <span className={`truncate text-[13px] min-w-0 flex-1 text-left ${
                         isActive ? 'text-foreground/90 font-medium' : 'text-foreground'
                       }`}>{entry.personaName}</span>
