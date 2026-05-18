@@ -54,6 +54,7 @@ import {
 } from '@/api/companion';
 import type { SidebarSection } from '@/lib/types/types';
 import { ApprovalCard } from './ApprovalCard';
+import { McpRequestPanel } from './mcp/McpRequestPanel';
 import { InlineChatCard } from './InlineChatCard';
 import { ProactiveCard } from './ProactiveCard';
 import { AthenaAvatar } from './AthenaAvatar';
@@ -983,6 +984,13 @@ function Body(props: BodyProps) {
               {t.plugins.companion.init_failed}: {initError}
             </div>
           )}
+          {/*
+            MCP pending-request strip — pinned above proactive because
+            the spawned claude session is *blocked* until it gets an
+            answer here. Empty when no request is in flight; renders one
+            inline card per pending guidance/approval request.
+          */}
+          <McpRequestPanel />
           {/*
             Proactive nudges land at the top of the transcript so they
             stay glanceable even when scroll-pinned at the bottom.

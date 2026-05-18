@@ -13,4 +13,5 @@
 //! pollute episodic with every tool-call) while giving Athena a
 //! prompt-friendly digest of live work.
 
+pub mod mcp;
 pub mod operative_memory;

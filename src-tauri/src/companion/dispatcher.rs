@@ -146,6 +146,11 @@ const ALLOWED_ACTIONS: &[&str] = &[
     "fleet_broadcast",
     "fleet_kill",
     "fleet_spawn",
+    // Direction 5 (v2) — multi-session dispatch under one Operation.
+    // One ApprovalCard, N sessions, one wrap-up; the reconciler in
+    // commands/companion/fleet_bridge.rs synthesizes the final
+    // summary once every dispatched session has exited.
+    "fleet_dispatch",
 ];
 
 /// Lab modes valid for `open_lab`. Mirrors the `lab-mode-*` testids in

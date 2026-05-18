@@ -14,6 +14,7 @@ import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBounda
 import { CanvasDragProvider } from '@/features/pipeline/sub_canvas';
 import DesktopFooter from '@/features/shared/components/layout/DesktopFooter';
 import { useFleetCompanionBridge } from '@/features/plugins/companion/useFleetCompanionBridge';
+import { useMcpRequestBridge } from '@/features/plugins/companion/mcp/useMcpRequestBridge';
 
 // Lazy-load all section content — only Sidebar stays eager (always visible)
 const HomePage = lazy(() => import('@/features/home/components/HomePage'));
@@ -49,6 +50,10 @@ export default function PersonasPage() {
   // episodic memory regardless of which sidebar section is active.
   // No-op when no fleet sessions exist.
   useFleetCompanionBridge();
+  // Same lifetime as the Fleet bridge: subscribes to MCP guidance /
+  // approval requests from claude sessions so the chat panel can
+  // render them inline (Direction 3).
+  useMcpRequestBridge();
   const { sidebarSection, cloudTab, agentTab, pluginTab, isCreatingPersona, isLoading, error } = useSystemStore(
     useShallow((s) => ({
       sidebarSection: s.sidebarSection,
