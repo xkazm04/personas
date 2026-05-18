@@ -96,16 +96,24 @@ export function PersonaHero({
   const [localActiveDim, setLocalActiveDim] = useState<GlyphDimension | null>(null);
   const activeDim = activeDimProp !== undefined ? activeDimProp : localActiveDim;
 
-  // Sigil scales with available column width — observe the stage element
-  // and pick a size in [MIN_SIGIL_SIZE, sigilSize] so the canvas isn't
-  // clipped on narrow viewports nor frozen at 640px on wide ones.
+  // Sigil scales with available column width AND viewport height — the
+  // canvas is square, so we pick a size in [MIN_SIGIL_SIZE, sigilSize]
+  // bounded by both dimensions. Width-only sizing made the sigil overflow
+  // vertically on shorter viewports (1080p with a 640px tall sigil ate
+  // most of the chrome budget) and let it freeze too small when the
+  // column shrank without the height changing. Reserve ~220 px of
+  // vertical chrome (header band + padding + below-hero action panel)
+  // so the sigil + its halo fit the viewport.
   const stageRef = useRef<HTMLDivElement>(null);
   const [measuredSize, setMeasuredSize] = useState<number>(sigilSize);
   useEffect(() => {
     const el = stageRef.current;
     if (!el) return;
     const compute = (w: number) => {
-      const next = Math.max(MIN_SIGIL_SIZE, Math.min(sigilSize, Math.floor(w - 16)));
+      const viewportH = typeof window !== 'undefined' ? window.innerHeight : sigilSize;
+      const heightCap = Math.max(MIN_SIGIL_SIZE, viewportH - 220);
+      const widthCap = Math.max(MIN_SIGIL_SIZE, Math.floor(w - 16));
+      const next = Math.min(sigilSize, widthCap, heightCap);
       setMeasuredSize(next);
     };
     compute(el.clientWidth);
@@ -115,7 +123,12 @@ export function PersonaHero({
       }
     });
     ro.observe(el);
-    return () => ro.disconnect();
+    const onWindowResize = () => compute(el.clientWidth);
+    window.addEventListener('resize', onWindowResize);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', onWindowResize);
+    };
   }, [sigilSize]);
 
   const stats = useMemo(() => {

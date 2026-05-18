@@ -6,6 +6,7 @@ import { listManualReviews } from '@/api/overview/reviews';
 import { useSelectedCredentialLinks } from '@/stores/selectors/personaSelectors';
 import { AddCapabilityRow, PersonaLayout } from '@/features/shared/glyph/persona-layout';
 import { PersonaSigilSummary, type PersonaSigilSummaryEntry } from '@/features/shared/glyph/persona-layout/PersonaSigilSummary';
+import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
 import type { GlyphDimension } from '@/features/shared/glyph';
 import { Power, Play } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
@@ -120,7 +121,8 @@ export function PersonaLayoutView({ credentials }: PersonaLayoutViewProps) {
     const enabled = items.filter((u) => u.health !== 'disabled');
     const out: Partial<Record<GlyphDimension, PersonaSigilSummaryEntry>> = {};
     const triggers = new Set<string>();
-    const connectors = new Set<string>();
+    const connectorKeys = new Set<string>();
+    const connectorFallbackNames = new Set<string>();
     const channels = new Set<string>();
     const capabilityNames = new Set<string>();
     let touchesReview = 0;
@@ -130,7 +132,8 @@ export function PersonaLayoutView({ credentials }: PersonaLayoutViewProps) {
     for (const u of enabled) {
       capabilityNames.add(u.title);
       if (u.triggerLabel) triggers.add(u.triggerLabel);
-      if (u.connector) connectors.add(u.connector);
+      if (u.connectorKey) connectorKeys.add(u.connectorKey);
+      else if (u.connector) connectorFallbackNames.add(u.connector);
       for (const c of u.notificationChannels) channels.add(c);
       for (const d of u.dimensions) {
         if (d === 'review') touchesReview += 1;
@@ -141,7 +144,37 @@ export function PersonaLayoutView({ credentials }: PersonaLayoutViewProps) {
     }
     if (triggers.size > 0) out.trigger = { label: dimLabels.trigger, value: [...triggers].join(' · ') };
     if (capabilityNames.size > 0) out.task = { label: dimLabels.task, value: tx(t.agents.use_cases.capabilities_active, { count: capabilityNames.size }) };
-    if (connectors.size > 0) out.connector = { label: dimLabels.connector, value: [...connectors].join(' · ') };
+
+    // Apps row: render brand icons for each unique connector (matched
+    // through getConnectorMeta) so the row visually reads "Gmail, Slack,
+    // GitHub" without the text labels. Unknown connectors (no
+    // CONNECTOR_META entry) fall through to a name list so the user
+    // still sees *something*.
+    if (connectorKeys.size > 0 || connectorFallbackNames.size > 0) {
+      out.connector = {
+        label: dimLabels.connector,
+        value: (
+          <span className="inline-flex items-center gap-2 flex-wrap align-middle">
+            {[...connectorKeys].map((key) => {
+              const meta = getConnectorMeta(key);
+              return (
+                <span
+                  key={key}
+                  title={meta.label}
+                  className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-foreground/5 border border-card-border/40"
+                >
+                  <ConnectorIcon meta={meta} size="w-4 h-4" />
+                </span>
+              );
+            })}
+            {connectorFallbackNames.size > 0 && (
+              <span className="typo-body text-foreground/65">{[...connectorFallbackNames].join(' · ')}</span>
+            )}
+          </span>
+        ),
+      };
+    }
+
     if (channels.size > 0) out.message = { label: dimLabels.message, value: [...channels].join(' · ') };
     if (touchesReview > 0) out.review = { label: dimLabels.review, value: tx(t.agents.use_cases.capabilities_active, { count: touchesReview }) };
     if (touchesMemory > 0) out.memory = { label: dimLabels.memory, value: tx(t.agents.use_cases.capabilities_active, { count: touchesMemory }) };

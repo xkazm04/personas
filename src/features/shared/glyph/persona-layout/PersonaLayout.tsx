@@ -9,15 +9,28 @@ import { UseCaseRow } from './UseCaseRow';
 
 export type PersonaLayoutMode = 'view' | 'adoption' | 'scratch';
 
-/** Compose the CSS Grid template column list for the main grid: a leading
- *  320px track for `leftSlot` (when present), a flexible main column, and
- *  a trailing 320px track for `rightSlot` (when present). The bare main
- *  column (no slots) skips the grid entirely so layout matches the
- *  pre-slot version when no caller opts in. */
+/** Compose the CSS Grid template column list for the main grid: narrow
+ *  side tracks for `leftSlot` and `rightSlot` (when present), a flexible
+ *  main column in between. The bare main column (no slots) skips the
+ *  grid entirely so the layout matches the pre-slot version when no
+ *  caller opts in.
+ *
+ *  Sidebar width grows with the breakpoint (220 → 260 → 320 px). At
+ *  common 1366-1440 viewports a pair of 320 px tracks ate so much of
+ *  the content area that the sigil floored at its minimum size; 220 px
+ *  there reads as compact-but-functional and frees ~200 px back to the
+ *  sigil column. Wide monitors (2xl+) get the full 320 px back since
+ *  the sigil hits its cap with plenty of room to spare. */
 function gridClass(leftSlot: unknown, rightSlot: unknown): string {
-  if (leftSlot && rightSlot) return 'grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)_320px]';
-  if (leftSlot) return 'grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]';
-  if (rightSlot) return 'grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]';
+  if (leftSlot && rightSlot) {
+    return 'grid gap-4 lg:gap-6 lg:grid-cols-[220px_minmax(0,1fr)_220px] 2xl:grid-cols-[260px_minmax(0,1fr)_260px] 3xl:grid-cols-[320px_minmax(0,1fr)_320px]';
+  }
+  if (leftSlot) {
+    return 'grid gap-4 lg:gap-6 lg:grid-cols-[220px_minmax(0,1fr)] 2xl:grid-cols-[260px_minmax(0,1fr)] 3xl:grid-cols-[320px_minmax(0,1fr)]';
+  }
+  if (rightSlot) {
+    return 'grid gap-4 lg:gap-6 lg:grid-cols-[minmax(0,1fr)_220px] 2xl:grid-cols-[minmax(0,1fr)_260px] 3xl:grid-cols-[minmax(0,1fr)_320px]';
+  }
   return '';
 }
 
