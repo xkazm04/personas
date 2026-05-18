@@ -95,8 +95,8 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Recently completed (last 14 days)
 
-- **[2026-05-18 → merge `<pending>`] companion-d6710 — D6 (proactive wrap-up) + D7 (live ops view) + D9 (mid-flight intervention) + D10 (pattern extraction)**
-  - **Branch:** `worktree-companion-d6710` (5 commits, merged via `<sha>`; worktree to be removed).
+- **[2026-05-18 → merge `50052d67e`] companion-d6710 — D6 (proactive wrap-up) + D7 (live ops view) + D9 (mid-flight intervention) + D10 (pattern extraction)**
+  - **Branch:** `worktree-companion-d6710` (5 commits, merged via `50052d67e`; worktree removed, branch deleted).
   - **Status:** completed (pending Phase 13 cleanup)
   - **Commits:** `d5bb5dce7` D6 + D7 · `499a745c4` D9 actions + detector · `bb3cc3671` D10 fleet_patterns · `41b42b5c4` tests · `1af960a05` docs.
   - **Tests:** 30 Rust unit tests in `companion::orchestration` + 5 in `companion::brain::fleet_patterns`; 17 vitest cases across Fleet/MCP/OperativeMemory bridges. Pre-existing `companion::tts::downloader::is_voice_downloaded_requires_both_files` failure (filesystem-dependent test, unrelated to this work).
