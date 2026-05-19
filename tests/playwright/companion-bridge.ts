@@ -343,10 +343,15 @@ export class CompanionBridge {
   async forceStreaming(
     streaming: boolean,
     streamingText?: string,
+    streamingPhase?: {
+      kind: 'thinking' | 'tool_use' | 'reviewing';
+      toolName?: string;
+    } | null,
   ): Promise<void> {
     await this.bridgeExec('forceCompanionStreaming', {
       streaming,
       streamingText,
+      streamingPhase,
     });
   }
 

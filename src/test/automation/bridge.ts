@@ -1823,6 +1823,16 @@ const bridge: TestBridge = {
   forceCompanionStreaming(params: {
     streaming: boolean;
     streamingText?: string;
+    /**
+     * Optional streamingPhase override. Lets specs verify the phase
+     * indicator behavior (e.g. that `{kind: 'tool_use', toolName: 'Read'}`
+     * renders as "Reading files…" in the bubble) without driving a real
+     * stream-event channel. Pass `null` to clear an existing phase.
+     */
+    streamingPhase?: {
+      kind: "thinking" | "tool_use" | "reviewing";
+      toolName?: string;
+    } | null;
   }): { success: boolean } {
     const store = useCompanionStore.getState();
     store.setStreaming(params.streaming);
@@ -1831,6 +1841,14 @@ const bridge: TestBridge = {
       store.appendStreamingText(params.streamingText);
     } else if (!params.streaming) {
       store.resetStreamingText();
+    }
+    if (params.streamingPhase !== undefined) {
+      store.setStreamingPhase(params.streamingPhase);
+    } else if (!params.streaming) {
+      // No-op pass-through unless caller explicitly opted in; but if
+      // we're turning streaming off, also clear any stale phase so the
+      // next forceStreaming(true) starts clean.
+      store.setStreamingPhase(null);
     }
     return { success: true };
   },
