@@ -22,7 +22,7 @@ type T = ReturnType<typeof useTranslation>['t'];
 type Tx = ReturnType<typeof useTranslation>['tx'];
 
 export interface StreamPhase {
-  kind: 'thinking' | 'tool_use' | 'system' | 'reviewing';
+  kind: 'thinking' | 'tool_use' | 'reviewing';
   /** Tool name when kind === 'tool_use'. e.g. 'Read', 'WebSearch', 'Task'. */
   toolName?: string;
 }
@@ -39,7 +39,6 @@ export interface StreamPhase {
  */
 export function phaseLabel(t: T, tx: Tx, phase: StreamPhase): string {
   const c = t.plugins.companion;
-  if (phase.kind === 'system') return c.phase_connecting;
   if (phase.kind === 'reviewing') return c.phase_reviewing;
   if (phase.kind === 'thinking') return c.phase_thinking;
   // tool_use
@@ -73,10 +72,15 @@ export function extractStreamPhase(line: string): StreamPhase | null {
   try {
     const json = JSON.parse(line);
     const t = json?.type;
-    // CLI session lifecycle line — the very first chunk announces a
-    // session id + config. Treat as "connecting" so the user sees
-    // something before any model response arrives.
-    if (t === 'system') return { kind: 'system' };
+    // `type === 'system'` is the session-init announcement — it
+    // arrives near-instant, but the next CLI line (the model's actual
+    // response) can be 5-20s later as the model warms up. Surfacing
+    // "Connecting…" during that wait was misleading: we're past
+    // connecting, we're thinking. Return null so the bubble falls
+    // through to its default "Thinking…" placeholder, which is
+    // accurate during the pre-text wait. The empirical effect
+    // (2026-05-19): users no longer get "stuck on Connecting…".
+    if (t === 'system') return null;
     // User-role lines on the CLI's perspective are tool_result echoes
     // (the result of a tool call coming back to Claude). Briefly show
     // "Reviewing result…" before the next assistant chunk lands.

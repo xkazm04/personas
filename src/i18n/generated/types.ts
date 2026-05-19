@@ -10628,7 +10628,6 @@ export type Translations = {
       brain_at: string;
       empty_transcript: string;
       thinking: string;
-      phase_connecting: string;
       phase_reviewing: string;
       phase_thinking: string;
       phase_websearch: string;
