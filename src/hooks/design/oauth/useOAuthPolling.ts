@@ -244,7 +244,12 @@ export function useOAuthPolling<
         setSessionId(null);
         setIsAuthorizing(false);
         isAuthorizingRef.current = false;
-        const detail = err instanceof Error ? err.message : typeof err === 'string' ? err : 'unknown error';
+        // Tauri serialises AppError as `{ error, kind }`, so a backend
+        // rejection (e.g. "Google OAuth client credentials are missing
+        // — set GCP_CLIENT_ID and GCP_CLIENT_SECRET …") lands here as
+        // a plain object — neither Error nor string. Without unwrapping
+        // we'd surface "unknown error" and hide the actionable hint.
+        const detail = extractErrorDetail(err);
         setMessage({
           success: false,
           message: `${configRef.current.label} authorization did not start: ${detail}`,
@@ -272,4 +277,19 @@ export function useOAuthPolling<
   }, [clearStartTimeout]);
 
   return { getValues, valuesVersion, isAuthorizing, completedAt, message, startConsent, reset };
+}
+
+/** Pull a human-readable message out of a Tauri IPC rejection.
+ *  Tauri's `AppError` serialises to `{ error: string, kind?: string }` —
+ *  the bare `instanceof Error` / `typeof string` checks miss this shape
+ *  and the user gets "unknown error" instead of the actionable message. */
+function extractErrorDetail(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === 'string') return err;
+  if (err && typeof err === 'object') {
+    const obj = err as Record<string, unknown>;
+    if (typeof obj.error === 'string' && obj.error.length > 0) return obj.error;
+    if (typeof obj.message === 'string' && obj.message.length > 0) return obj.message;
+  }
+  return 'unknown error';
 }

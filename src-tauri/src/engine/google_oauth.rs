@@ -89,7 +89,13 @@ pub fn resolve_google_oauth_env_credentials() -> Result<(String, String), crate:
     match (client_id, client_secret) {
         (Some(id), Some(secret)) => Ok((id, secret)),
         _ => Err(crate::error::AppError::Validation(
-            "Google OAuth client credentials are missing. Set GCP_CLIENT_ID and GCP_CLIENT_SECRET in app env/.env (or pass client credentials explicitly).".into(),
+            "Google OAuth client credentials are missing. Set one of: \
+             GCP_DESKTOP_CLIENT_ID/GCP_DESKTOP_CLIENT_SECRET (preferred for connector OAuth) \
+             or GCP_CLIENT_ID/GCP_CLIENT_SECRET (fallback). Accepts compile-time env, runtime env, \
+             or a .env file in the working directory. Without these, Google OAuth (initial \
+             authorization + token refresh) cannot complete — the Vault catalog's Reconnect \
+             button and the periodic refresh tick both depend on them."
+                .into(),
         )),
     }
 }
