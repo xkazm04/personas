@@ -119,14 +119,20 @@ export interface ExecutionRow {
   created_at: string;
 }
 
-/** Read the most recent N executions for a persona via the bridge. */
+/** Read the most recent N executions for a persona via the bridge.
+ *  `list_executions` is the real command name; it accepts a personaId
+ *  filter as `persona_id` (snake_case on the wire). */
 export async function listPersonaExecutions(personaId: string, limit = 5): Promise<ExecutionRow[]> {
-  const out = await bridgeExec<{ executions?: ExecutionRow[] }>(
+  const out = await bridgeExec<{ executions?: ExecutionRow[] } | ExecutionRow[]>(
     'invokeCommand',
-    { command: 'list_persona_executions', params: { personaId, limit } },
+    { command: 'list_executions', params: { persona_id: personaId, limit } },
     30,
   );
-  return out?.executions ?? [];
+  // The command may return either `{ executions: [...] }` or a bare array
+  // depending on which list endpoint the bridge resolved — defensively
+  // unwrap both shapes.
+  if (Array.isArray(out)) return out;
+  return (out as { executions?: ExecutionRow[] })?.executions ?? [];
 }
 
 /** Wait for a new completed (or failed) execution row for `personaId`,
@@ -178,12 +184,18 @@ export async function readAdoptionState(): Promise<{
   });
 }
 
-/** Switch the adoption modal's variant tab. The classic tab is the
- *  legacy questionnaire-only flow; persona-layout is the Glyph variant
- *  the marathon drives. */
+/** Switch the adoption modal's variant tab. The switcher uses
+ *  role="tab" buttons without explicit data-testids, so we click by
+ *  visible text label (matches the i18n key
+ *  `templates.adopt_modal.layout_tab_persona_layout`). */
 export async function selectAdoptionVariant(variant: 'classic' | 'persona-layout'): Promise<void> {
-  const testId = variant === 'persona-layout' ? 'adoption-variant-persona-layout' : 'adoption-variant-classic';
-  await clickTestId(testId);
+  const label = variant === 'persona-layout' ? 'Persona Layout' : 'Classic';
+  // Find the tab in the AdoptionLayoutSwitcher region. innerText match
+  // is asymmetric with CSS uppercasing, but these labels don't use
+  // text-transform — safe to match raw.
+  await post('/eval', {
+    code: `(()=>{const btn = Array.from(document.querySelectorAll('[role="tab"]')).find(b => (b.innerText||'').trim().startsWith(${JSON.stringify(label)})); if(btn) btn.click(); })();`,
+  });
   await sleep(200);
 }
 
