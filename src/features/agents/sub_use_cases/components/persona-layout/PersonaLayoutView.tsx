@@ -6,9 +6,11 @@ import { listManualReviews } from '@/api/overview/reviews';
 import { useSelectedCredentialLinks } from '@/stores/selectors/personaSelectors';
 import { AddCapabilityRow, PersonaLayout } from '@/features/shared/glyph/persona-layout';
 import { PersonaSigilSummary, type PersonaSigilSummaryEntry } from '@/features/shared/glyph/persona-layout/PersonaSigilSummary';
+import { CapabilityTabBar } from '@/features/shared/glyph/persona-layout/CapabilityTabBar';
 import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
+import { GLYPH_DIMENSIONS } from '@/features/shared/glyph';
 import type { GlyphDimension } from '@/features/shared/glyph';
-import { Power, Play } from 'lucide-react';
+import type { PetalState } from '@/features/shared/glyph/persona-sigil';
 import { useSystemStore } from '@/stores/systemStore';
 import type { CredentialMetadata } from '@/lib/types/types';
 import { useUseCasesTab } from '../../libs/useUseCasesTab';
@@ -37,7 +39,7 @@ interface PersonaLayoutViewProps {
  * compose the same layout with mode-specific data sources.
  */
 export function PersonaLayoutView({ credentials }: PersonaLayoutViewProps) {
-  const { t, tx } = useTranslation();
+  const { t } = useTranslation();
   const {
     selectedPersona,
     isExecuting,
@@ -98,6 +100,32 @@ export function PersonaLayoutView({ credentials }: PersonaLayoutViewProps) {
     [rawUseCases, personaConnectors],
   );
 
+  // Active capability for the per-capability View — drives the hero
+  // glyph + left summary derivation. Defaults to the first capability
+  // (no aggregate "All" view per the 2026-05-17 design directive). The
+  // ID is local UI state, separate from `selectedUseCaseId` which is
+  // the "drilled into detail" navigation lever — that's still useful
+  // for the expanded UseCaseDetail surface (opened from the hero core
+  // or a detail button), but it doesn't drive the per-cap tab strip.
+  const [activeCapabilityId, setActiveCapabilityId] = useState<string | null>(null);
+  useEffect(() => {
+    // Re-anchor when items load or the first capability changes. Don't
+    // reset if the current pick is still valid — switching personas /
+    // re-fetching design preserves the user's tab choice when possible.
+    if (items.length === 0) {
+      setActiveCapabilityId(null);
+      return;
+    }
+    if (!activeCapabilityId || !items.some((u) => u.id === activeCapabilityId)) {
+      setActiveCapabilityId(items[0]!.id);
+    }
+  }, [items, activeCapabilityId]);
+
+  const activeCapability = useMemo(
+    () => items.find((u) => u.id === activeCapabilityId) ?? null,
+    [items, activeCapabilityId],
+  );
+
   const activeUc = selectedUseCaseId
     ? items.find((u) => u.id === selectedUseCaseId) ?? null
     : null;
@@ -111,39 +139,24 @@ export function PersonaLayoutView({ credentials }: PersonaLayoutViewProps) {
     );
   }
 
-  // Summary sidebar — one row per dim with at least one active capability
-  // touching it, plus values aggregated from the matching use cases.
-  // Disabled capabilities don't contribute (they're not part of the
-  // persona's current behaviour). The label is colour-tinted by dim via
-  // PersonaSigilSummary's DIM_META lookup.
+  // Summary sidebar — derived from the ACTIVE capability only, not
+  // aggregated across the persona. Each row shows the saved value for
+  // a single dim of `activeCapability`. Empty when no active cap (yet)
+  // — the PersonaSigilSummary renders nothing in that case.
   const summaryEntries = useMemo<Partial<Record<GlyphDimension, PersonaSigilSummaryEntry>>>(() => {
+    if (!activeCapability) return {};
     const dimLabels = getDimLabels(t);
-    const enabled = items.filter((u) => u.health !== 'disabled');
+    const u = activeCapability;
     const out: Partial<Record<GlyphDimension, PersonaSigilSummaryEntry>> = {};
-    const triggers = new Set<string>();
     const connectorKeys = new Set<string>();
     const connectorFallbackNames = new Set<string>();
-    const channels = new Set<string>();
-    const capabilityNames = new Set<string>();
-    let touchesReview = 0;
-    let touchesMemory = 0;
-    let touchesEvent = 0;
-    let touchesError = 0;
-    for (const u of enabled) {
-      capabilityNames.add(u.title);
-      if (u.triggerLabel) triggers.add(u.triggerLabel);
-      if (u.connectorKey) connectorKeys.add(u.connectorKey);
-      else if (u.connector) connectorFallbackNames.add(u.connector);
-      for (const c of u.notificationChannels) channels.add(c);
-      for (const d of u.dimensions) {
-        if (d === 'review') touchesReview += 1;
-        else if (d === 'memory') touchesMemory += 1;
-        else if (d === 'event') touchesEvent += 1;
-        else if (d === 'error') touchesError += 1;
-      }
-    }
-    if (triggers.size > 0) out.trigger = { label: dimLabels.trigger, value: [...triggers].join(' · ') };
-    if (capabilityNames.size > 0) out.task = { label: dimLabels.task, value: tx(t.agents.use_cases.capabilities_active, { count: capabilityNames.size }) };
+    if (u.connectorKey) connectorKeys.add(u.connectorKey);
+    else if (u.connector) connectorFallbackNames.add(u.connector);
+    const channels = new Set(u.notificationChannels);
+    const triggers = u.triggerLabel ? [u.triggerLabel] : [];
+    const touches = new Set(u.dimensions);
+    if (triggers.length > 0) out.trigger = { label: dimLabels.trigger, value: triggers.join(' · ') };
+    out.task = { label: dimLabels.task, value: u.title };
 
     // Apps row: render brand icons for each unique connector (matched
     // through getConnectorMeta) so the row visually reads "Gmail, Slack,
@@ -176,67 +189,56 @@ export function PersonaLayoutView({ credentials }: PersonaLayoutViewProps) {
     }
 
     if (channels.size > 0) out.message = { label: dimLabels.message, value: [...channels].join(' · ') };
-    if (touchesReview > 0) out.review = { label: dimLabels.review, value: tx(t.agents.use_cases.capabilities_active, { count: touchesReview }) };
-    if (touchesMemory > 0) out.memory = { label: dimLabels.memory, value: tx(t.agents.use_cases.capabilities_active, { count: touchesMemory }) };
-    if (touchesEvent > 0) out.event = { label: dimLabels.event, value: tx(t.agents.use_cases.capabilities_active, { count: touchesEvent }) };
-    if (touchesError > 0) out.error = { label: dimLabels.error, value: tx(t.agents.use_cases.capabilities_active, { count: touchesError }) };
+    // Boolean-shaped dims: render "Activated" when the active capability
+    // touches the dim (i.e. memory/review/event/error_handling is on for
+    // this capability). The dim sigil's lit state already conveys the
+    // same signal visually; the sidebar word lets users read the state
+    // without parsing the petal colour.
+    // TODO i18n: the `dim_status_activated` key landed in a parallel
+    // session's en.json edit (in flight at commit time); fall back to a
+    // local literal so this works regardless of which session merges
+    // first. Replace with `t.agents.use_cases.dim_status_activated`
+    // once the key is in the generated types.
+    const activatedLabel = 'Activated';
+    if (touches.has('review')) out.review = { label: dimLabels.review, value: activatedLabel };
+    if (touches.has('memory')) out.memory = { label: dimLabels.memory, value: activatedLabel };
+    if (touches.has('event')) out.event = { label: dimLabels.event, value: activatedLabel };
+    if (touches.has('error')) out.error = { label: dimLabels.error, value: activatedLabel };
     return out;
-  }, [items, t, tx]);
+  }, [activeCapability, t]);
 
-  // View-mode capability sidebar — a compact list version of UseCaseRow:
-  // power toggle + name only, no description, single column. Lives in the
-  // PersonaLayout.rightSlot so the main column can give the sigil all the
-  // available width.
-  const capabilitiesSidebar = items.length > 0 ? (
-    <div className="flex flex-col gap-2">
-      <span className="typo-label uppercase tracking-[0.18em] text-foreground/55 px-1">
-        {t.agents.use_cases.persona_layout_capabilities_heading}
-      </span>
-      <ul className="flex flex-col gap-1.5">
-        {items.map((uc) => {
-          const isExecutingThis = isExecuting && selectedUseCaseId === uc.id;
-          const isPending = pendingUseCaseId === uc.id;
-          const isDisabled = uc.health === 'disabled';
-          return (
-            <li
-              key={uc.id}
-              className={`group flex items-center gap-1.5 px-2 py-2 rounded-card bg-secondary/20 border border-card-border hover:bg-secondary/35 transition-colors ${isDisabled ? 'opacity-60' : ''}`}
-            >
-              <button
-                type="button"
-                onClick={() => {
-                  if (!personaId) return;
-                  requestToggle(personaId, uc.id, uc.title, uc.health === 'disabled');
-                }}
-                disabled={isPending}
-                className={`shrink-0 inline-flex items-center justify-center w-6 h-6 rounded-full transition-colors disabled:opacity-50 ${isDisabled ? 'bg-foreground/10 text-foreground/45 hover:bg-foreground/20' : 'bg-status-success/15 text-status-success hover:bg-status-success/25'}`}
-                title={isDisabled ? t.agents.use_cases.activate_capability : t.agents.use_cases.pause_capability}
-              >
-                <Power className="w-3 h-3" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setSelectedUseCaseId(uc.id)}
-                className="flex-1 min-w-0 text-left typo-body text-foreground/85 truncate hover:text-foreground transition-colors cursor-pointer"
-              >
-                {uc.title}
-              </button>
-              {!isDisabled && (
-                <button
-                  type="button"
-                  onClick={() => handleExecute(uc.id, uc.raw.sample_input ?? undefined)}
-                  disabled={isExecuting}
-                  className="shrink-0 inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary/15 hover:bg-primary/30 text-primary disabled:opacity-50 transition-colors"
-                  title={isExecutingThis ? t.agents.use_cases.running_label : tx(t.agents.use_cases.run_title, { title: uc.title })}
-                >
-                  <Play className="w-3 h-3" />
-                </button>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-      <AddCapabilityRow onClick={openRecipeCatalog} />
+  // Per-capability hero petal states. The hero glyph now reflects the
+  // ACTIVE capability's dim coverage (resolved petals where the cap
+  // touches the dim, idle where it doesn't), not the persona-wide union.
+  // Returning `undefined` lets PersonaHero fall back to its built-in
+  // useCases-derived computation when no active cap is selected yet —
+  // briefly happens during the items-load tick before the effect picks
+  // the first cap.
+  const heroPetalStates = useMemo<Record<GlyphDimension, PetalState> | undefined>(() => {
+    if (!activeCapability) return undefined;
+    const touches = new Set(activeCapability.dimensions);
+    const out = {} as Record<GlyphDimension, PetalState>;
+    for (const dim of GLYPH_DIMENSIONS) {
+      out[dim] = touches.has(dim) ? 'resolved' : 'idle';
+    }
+    return out;
+  }, [activeCapability]);
+
+  // Header tab strip + Add-capability affordance. Replaces the
+  // right-side compact list — capabilities live in the header now so
+  // the hero column owns the full content width.
+  const capabilityTabs = items.length > 0 ? (
+    <div className="flex items-end gap-3">
+      <div className="flex-1 min-w-0">
+        <CapabilityTabBar
+          items={items}
+          activeId={activeCapabilityId}
+          onActiveChange={setActiveCapabilityId}
+        />
+      </div>
+      <div className="shrink-0 pb-1">
+        <AddCapabilityRow onClick={openRecipeCatalog} />
+      </div>
     </div>
   ) : null;
 
@@ -293,12 +295,13 @@ export function PersonaLayoutView({ credentials }: PersonaLayoutViewProps) {
         }
         hideMetadataBand
         hideCapabilityRows
+        topSlot={capabilityTabs}
+        heroPetalStatesOverride={heroPetalStates}
         leftSlot={
           Object.keys(summaryEntries).length > 0 ? (
             <PersonaSigilSummary entries={summaryEntries} heading={null} />
           ) : null
         }
-        rightSlot={capabilitiesSidebar}
         detailNode={detailNode}
         emptyNode={<EmptyState variant="use-cases-empty" />}
       />
