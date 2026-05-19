@@ -9,7 +9,8 @@
  */
 import { test, expect } from '@playwright/test';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   clickByText,
   clickTestId,
@@ -27,6 +28,8 @@ import {
 import { DEFAULT_VAULT, loadAllTemplates, matchVault } from './template-marathon-fixtures';
 
 const TEMPLATE_ID = process.env.TEMPLATE_ID;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 const RESULTS_DIR = join(__dirname, '..', '..', 'tests', 'results', 'marathon');
 
 if (!TEMPLATE_ID) {
