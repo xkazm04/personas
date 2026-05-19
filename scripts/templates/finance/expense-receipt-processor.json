@@ -207,6 +207,7 @@
           "uc_receipt_ingest",
           "uc_weekly_summary"
         ],
+        "use_case_id": "uc_receipt_ingest",
         "category": "configuration",
         "question": "Which spreadsheet should hold the expense ledger?",
         "type": "select",
@@ -218,7 +219,7 @@
         "maps_to": "use_cases[uc_receipt_ingest].sample_input.expense_sheet_id",
         "variable_name": "expense_sheet",
         "context": "Options come from your connected spreadsheet credential. The agent creates 13-column headers if the sheet is empty and never writes to a Summary tab.",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_arrival_pattern",
@@ -226,6 +227,7 @@
         "use_case_ids": [
           "uc_receipt_ingest"
         ],
+        "use_case_id": "uc_receipt_ingest",
         "category": "configuration",
         "question": "How do receipts typically arrive in your inbox?",
         "type": "select",
@@ -239,7 +241,7 @@
         "maps_to": "use_cases[uc_receipt_ingest].sample_input.arrival_pattern",
         "variable_name": "arrival_pattern",
         "context": "Sets parsing priority. The agent always checks both body and attachments regardless; this just orders the lookup.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_categories",
@@ -247,6 +249,7 @@
         "use_case_ids": [
           "uc_receipt_ingest"
         ],
+        "use_case_id": "uc_receipt_ingest",
         "category": "configuration",
         "question": "Which expense categories should the agent use?",
         "type": "text",
@@ -255,7 +258,7 @@
         "maps_to": "use_cases[uc_receipt_ingest].sample_input.categories",
         "variable_name": "categories",
         "context": "Comma-separated list. 8 defaults are provided; customize to match your chart of accounts.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_anomaly_threshold",
@@ -263,6 +266,7 @@
         "use_case_ids": [
           "uc_anomaly_alerts"
         ],
+        "use_case_id": "uc_anomaly_alerts",
         "category": "configuration",
         "question": "Flag individual expenses above what amount?",
         "type": "select",
@@ -276,7 +280,7 @@
         "maps_to": "use_cases[uc_anomaly_alerts].sample_input.anomaly_threshold",
         "variable_name": "anomaly_threshold",
         "context": "Real-time messaging alert threshold. Below this, expenses are logged silently and appear only in the weekly summary.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_spike_multiplier",
@@ -284,6 +288,7 @@
         "use_case_ids": [
           "uc_anomaly_alerts"
         ],
+        "use_case_id": "uc_anomaly_alerts",
         "category": "configuration",
         "question": "When should a category's weekly spend be flagged as a spike?",
         "type": "select",
@@ -296,7 +301,7 @@
         "maps_to": "use_cases[uc_anomaly_alerts].sample_input.category_spike_multiplier",
         "variable_name": "spike_multiplier",
         "context": "Applied weekly in uc_weekly_summary. Lower multiplier = more spike flags, noisier summary.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_monthly_budget",
@@ -304,6 +309,7 @@
         "use_case_ids": [
           "uc_weekly_summary"
         ],
+        "use_case_id": "uc_weekly_summary",
         "category": "configuration",
         "question": "What is your monthly expense budget to track against?",
         "type": "text",
@@ -312,11 +318,12 @@
         "maps_to": "use_cases[uc_weekly_summary].sample_input.monthly_budget",
         "variable_name": "monthly_budget",
         "context": "Used in the weekly summary to show month-to-date spend vs budget and a projected month-end based on the current run rate. Leave empty to skip the budget gauge.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_email_credential",
         "scope": "connector",
+        "use_case_id": "uc_receipt_ingest",
         "connector_names": [
           "email"
         ],
@@ -331,11 +338,12 @@
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
         "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_spreadsheet_credential",
         "scope": "connector",
+        "use_case_id": "uc_receipt_ingest",
         "connector_names": [
           "spreadsheet"
         ],
@@ -350,11 +358,12 @@
         "maps_to": "persona.connectors[spreadsheet].credential_fields[provider].value",
         "variable_name": "spreadsheet_credential",
         "context": "Options are auto-detected from your spreadsheet credentials in the Vault (spreadsheet, spreadsheet, spreadsheet, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_messaging_credential",
         "scope": "connector",
+        "use_case_id": "uc_anomaly_alerts",
         "connector_names": [
           "messaging"
         ],
@@ -369,7 +378,7 @@
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
         "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

@@ -207,6 +207,7 @@
         "connector_names": [
           "messaging"
         ],
+        "use_case_id": "uc_flag_audit",
         "category": "configuration",
         "question": "Which messaging channels should receive flag audit posts, collision alerts, and weekly digests?",
         "type": "select",
@@ -214,7 +215,7 @@
         "maps_to": "persona.notification_channels_default[0].description",
         "variable_name": "slack_audit_channel",
         "context": "formatted messaging layout audit cards and the weekly stale-flag digest both land here. Pick a low-noise governance channel.",
-        "dimension": "messages",
+        "dimension": "message",
         "vault_category": "messaging",
         "option_service_types": [
           "slack"
@@ -230,6 +231,7 @@
         "use_case_ids": [
           "uc_flag_audit"
         ],
+        "use_case_id": "uc_flag_audit",
         "category": "configuration",
         "question": "What flag naming convention does your team enforce?",
         "type": "text",
@@ -237,7 +239,7 @@
         "maps_to": "use_cases[uc_flag_audit].sample_input.naming_convention",
         "variable_name": "naming_convention",
         "context": "Keys must be lowercase kebab-case, start with one of your team's allowed domain prefixes (payments-, auth-, ui-, infra-), be ≤60 chars, and avoid generic names (test, flag, temp, new, old). The agent flags violations via the messaging channel + knowledge base governance notes.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_autonomy_level",
@@ -245,6 +247,7 @@
         "use_case_ids": [
           "uc_flag_audit"
         ],
+        "use_case_id": "uc_flag_audit",
         "category": "boundaries",
         "question": "How autonomously should the agent act on naming collisions?",
         "type": "select",
@@ -257,7 +260,7 @@
         "maps_to": "use_cases[uc_flag_audit].sample_input.autonomy_level",
         "variable_name": "autonomy_level",
         "context": "collision_blocks is the strictest — use for high-value product flags. advisory is the balanced default. Off is for read-only observability deployments.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_stale_threshold_days",
@@ -265,6 +268,7 @@
         "use_case_ids": [
           "uc_stale_cleanup"
         ],
+        "use_case_id": "uc_stale_cleanup",
         "category": "configuration",
         "question": "After how many days of inactivity should a flag be flagged stale?",
         "type": "select",
@@ -278,7 +282,7 @@
         "maps_to": "use_cases[uc_stale_cleanup].sample_input.stale_threshold_days",
         "variable_name": "stale_threshold_days",
         "context": "Controls the weekly Monday stale-scan cutoff. 90 is the battle-tested default; tighten to 60 if your team ships fast-iterating flags, loosen to 180 for slow-moving products.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_ld_project_keys",
@@ -286,6 +290,7 @@
         "use_case_ids": [
           "uc_stale_cleanup"
         ],
+        "use_case_id": "uc_stale_cleanup",
         "category": "configuration",
         "question": "Which LaunchDarkly project keys should the weekly scan cover? (comma-separated, leave empty for default)",
         "type": "text",
@@ -293,7 +298,7 @@
         "maps_to": "use_cases[uc_stale_cleanup].sample_input.ld_project_keys",
         "variable_name": "ld_project_keys",
         "context": "Scans the configured projects for stale flags. Empty uses only the default project key from the LaunchDarkly connector credential.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_messaging_credential",
@@ -301,6 +306,7 @@
         "connector_names": [
           "messaging"
         ],
+        "use_case_id": "uc_flag_audit",
         "category": "credentials",
         "question": "Which team messaging platform should this persona post to?",
         "type": "select",
@@ -312,7 +318,7 @@
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
         "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_ticketing_credential",
@@ -320,6 +326,7 @@
         "connector_names": [
           "ticketing"
         ],
+        "use_case_id": "uc_flag_audit",
         "category": "credentials",
         "question": "Which ticketing system should this persona write to?",
         "type": "select",
@@ -331,7 +338,7 @@
         "maps_to": "persona.connectors[ticketing].credential_fields[provider].value",
         "variable_name": "ticketing_credential",
         "context": "Options are auto-detected from your ticketing credentials in the Vault (Jira, Linear, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_knowledge_base_credential",
@@ -339,6 +346,7 @@
         "connector_names": [
           "knowledge_base"
         ],
+        "use_case_id": "uc_flag_audit",
         "category": "credentials",
         "question": "Which knowledge base should this persona read from and write to?",
         "type": "select",
@@ -350,7 +358,7 @@
         "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
         "variable_name": "knowledge_base_credential",
         "context": "Options are auto-detected from your knowledge_base credentials in the Vault (knowledge base, knowledge base, Obsidian, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

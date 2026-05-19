@@ -187,6 +187,7 @@
         "use_case_ids": [
           "uc_event_routing"
         ],
+        "use_case_id": "uc_event_routing",
         "category": "configuration",
         "question": "How should messaging notifications be routed?",
         "type": "select",
@@ -200,7 +201,7 @@
         "maps_to": "use_cases[uc_event_routing].sample_input.channel_routing",
         "variable_name": "channel_routing",
         "context": "Determines messaging channels mapping across the three monitored tables. Separate-by-type is the noisier-but-cleaner default.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_anomaly_sensitivity",
@@ -209,6 +210,7 @@
           "uc_event_routing",
           "uc_baseline_refresh"
         ],
+        "use_case_id": "uc_event_routing",
         "category": "configuration",
         "question": "How sensitive should the order-value anomaly detector be?",
         "type": "select",
@@ -222,7 +224,7 @@
         "maps_to": "use_cases[uc_event_routing].sample_input.anomaly_sensitivity",
         "variable_name": "anomaly_sensitivity",
         "context": "Sets the multiplier applied during the 6-hour baseline refresh. Tune based on how volatile your order values are.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_enrichment_depth",
@@ -230,6 +232,7 @@
         "use_case_ids": [
           "uc_event_routing"
         ],
+        "use_case_id": "uc_event_routing",
         "category": "quality",
         "question": "How much enrichment context should messaging notifications include?",
         "type": "select",
@@ -243,7 +246,7 @@
         "maps_to": "use_cases[uc_event_routing].sample_input.enrichment_depth",
         "variable_name": "enrichment_depth",
         "context": "Balances channel readability against acting-on-notification depth. Adaptive is the ergonomics-aware default.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_digest_channel",
@@ -251,6 +254,7 @@
         "use_case_ids": [
           "uc_weekly_digest"
         ],
+        "use_case_id": "uc_weekly_digest",
         "category": "configuration",
         "question": "Which messaging channels should receive the weekly operations digest?",
         "type": "select",
@@ -258,7 +262,7 @@
         "maps_to": "use_cases[uc_weekly_digest].sample_input.digest_channel",
         "variable_name": "digest_channel",
         "context": "The Monday 09:00 digest posts here. Typically a low-frequency summary channel.",
-        "dimension": "messages",
+        "dimension": "message",
         "vault_category": "messaging",
         "option_service_types": [
           "slack"
@@ -274,6 +278,7 @@
         "use_case_ids": [
           "uc_event_routing"
         ],
+        "use_case_id": "uc_event_routing",
         "category": "human_in_the_loop",
         "question": "At what anomaly severity should the agent route to manual_review instead of auto-escalating?",
         "type": "select",
@@ -287,7 +292,7 @@
         "maps_to": null,
         "variable_name": "anomaly_review_level",
         "context": "Balances responsiveness against alert fatigue. HIGH-only catches the signals that usually warrant a human eye.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_messaging_credential",
@@ -295,6 +300,7 @@
         "connector_names": [
           "messaging"
         ],
+        "use_case_id": "uc_event_routing",
         "category": "credentials",
         "question": "Which team messaging platform should this persona post to?",
         "type": "select",
@@ -306,7 +312,7 @@
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
         "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_email_credential",
@@ -314,6 +320,7 @@
         "connector_names": [
           "email"
         ],
+        "use_case_id": "uc_event_routing",
         "category": "credentials",
         "question": "Which email provider should this persona use?",
         "type": "select",
@@ -325,7 +332,7 @@
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
         "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

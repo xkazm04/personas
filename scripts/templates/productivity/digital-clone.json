@@ -150,6 +150,7 @@
         "use_case_ids": [
           "uc_inbound_triage"
         ],
+        "use_case_id": "uc_inbound_triage",
         "category": "configuration",
         "question": "Which channels should the triage pass include?",
         "type": "select",
@@ -162,7 +163,7 @@
         "maps_to": "use_cases[uc_inbound_triage].sample_input.monitored_channels",
         "variable_name": "monitored_channels",
         "context": "Channels you skip at the credential step are excluded regardless of this pick. The clone degrades gracefully.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_auto_send_threshold",
@@ -170,6 +171,7 @@
         "use_case_ids": [
           "uc_draft_and_review"
         ],
+        "use_case_id": "uc_draft_and_review",
         "category": "configuration",
         "question": "How many consecutive unedited approvals before a contact graduates to auto-send?",
         "type": "select",
@@ -183,7 +185,7 @@
         "maps_to": "use_cases[uc_draft_and_review].sample_input.auto_send_threshold",
         "variable_name": "auto_send_threshold",
         "context": "Controls when drafts move from the approval queue to direct send. Safety overrides (financial, legal) always require review regardless of threshold.",
-        "dimension": "human-review"
+        "dimension": "review"
       },
       {
         "id": "aq_safety_exclusions",
@@ -191,6 +193,7 @@
         "use_case_ids": [
           "uc_draft_and_review"
         ],
+        "use_case_id": "uc_draft_and_review",
         "category": "boundaries",
         "question": "Which categories should NEVER be auto-sent regardless of graduation?",
         "type": "select",
@@ -204,7 +207,7 @@
         "maps_to": "use_cases[uc_draft_and_review].sample_input.safety_exclusions",
         "variable_name": "safety_exclusions",
         "context": "Permanent exclusions from the auto-send graduation logic — these categories stay in the approval queue even for graduated contacts.",
-        "dimension": "error-handling"
+        "dimension": "error"
       },
       {
         "id": "aq_digest_detail",
@@ -212,6 +215,7 @@
         "use_case_ids": [
           "uc_periodic_digest"
         ],
+        "use_case_id": "uc_periodic_digest",
         "category": "quality",
         "question": "How detailed should the periodic digest be?",
         "type": "select",
@@ -224,11 +228,12 @@
         "maps_to": "use_cases[uc_periodic_digest].sample_input.digest_detail",
         "variable_name": "digest_detail",
         "context": "Shapes the periodic summary. Concise for steady-state; full during initial trust-building.",
-        "dimension": "messages"
+        "dimension": "message"
       },
       {
         "id": "aq_personal_rules",
         "scope": "persona",
+        "use_case_id": "uc_draft_and_review",
         "category": "memory",
         "question": "Any personal rules the clone should always reflect in your replies (sign-off name, scheduling preferences, topics to avoid over email)?",
         "type": "textarea",
@@ -242,6 +247,7 @@
       {
         "id": "aq_email_credential",
         "scope": "connector",
+        "use_case_id": "uc_inbound_triage",
         "connector_names": [
           "email"
         ],
@@ -256,11 +262,12 @@
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
         "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_messaging_credential",
         "scope": "connector",
+        "use_case_id": "uc_inbound_triage",
         "connector_names": [
           "messaging"
         ],
@@ -275,7 +282,7 @@
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
         "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

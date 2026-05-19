@@ -125,7 +125,8 @@
         "maps_to": "use_cases[uc_discovery].sample_input.target_niche",
         "variable_name": "niche",
         "context": "Business category: HVAC, Plumbing, Landscaping, Roofing, Dental, etc. Can change per run at build time.",
-        "dimension": "use-cases"
+        "dimension": "task",
+        "use_case_id": "uc_discovery"
       },
       {
         "id": "aq_location",
@@ -142,7 +143,8 @@
         "maps_to": "use_cases[uc_discovery].sample_input.target_location",
         "variable_name": "location",
         "context": "City and state. Google Maps searches within the default radius of this location.",
-        "dimension": "use-cases"
+        "dimension": "task",
+        "use_case_id": "uc_discovery"
       },
       {
         "id": "aq_radius",
@@ -163,7 +165,8 @@
         "maps_to": "use_cases[uc_discovery].sample_input.search_radius",
         "variable_name": "radius",
         "context": "Wider radius finds more prospects but includes businesses outside the service area.",
-        "dimension": "use-cases"
+        "dimension": "task",
+        "use_case_id": "uc_discovery"
       },
       {
         "id": "aq_min_reviews",
@@ -184,7 +187,8 @@
         "maps_to": "use_cases[uc_discovery].sample_input.min_reviews",
         "variable_name": "min_reviews",
         "context": "Higher minimums focus on established businesses more likely to pay for a website.",
-        "dimension": "use-cases"
+        "dimension": "task",
+        "use_case_id": "uc_discovery"
       },
       {
         "id": "aq_max_results",
@@ -205,7 +209,8 @@
         "maps_to": "use_cases[uc_discovery].sample_input.max_results",
         "variable_name": "max_results",
         "context": "More results take longer but give a more complete picture of the local market.",
-        "dimension": "use-cases"
+        "dimension": "task",
+        "use_case_id": "uc_discovery"
       }
     ],
     "persona_meta": {

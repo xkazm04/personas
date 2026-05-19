@@ -192,6 +192,7 @@
           "github",
           "gitlab"
         ],
+        "use_case_id": "uc_implementation",
         "category": "configuration",
         "question": "Which source-control credential should Dev Clone operate with?",
         "type": "select",
@@ -203,7 +204,7 @@
         "maps_to": "persona.connectors[source_control].credential_fields[provider].value",
         "variable_name": "source_control_provider",
         "context": "Options are auto-detected from your source_control-category credentials in the Vault (GitHub, GitLab). The concrete repository is resolved at build time via the provider's API (GitHub: /user/repos, GitLab: /projects?membership=true) — if no repo is configured yet, the building process will walk you through picking one. The persona's webhook is installed on the selected repo so PR-comment events reach uc_implementation.",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_target_repository",
@@ -212,6 +213,7 @@
           "github",
           "gitlab"
         ],
+        "use_case_id": "uc_implementation",
         "category": "configuration",
         "question": "Which repository should Dev Clone work in?",
         "type": "select",
@@ -225,7 +227,7 @@
         "maps_to": "persona.connectors[github].credential_fields[repo].value",
         "variable_name": "target_repository",
         "context": "Auto-fills from the scoped repositories on the selected credential. If you scoped to a single repo at vault time, this question is answered for you; if you scoped to several, pick the one this Dev Clone should operate in.",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_codebase",
@@ -233,6 +235,7 @@
         "connector_names": [
           "codebase"
         ],
+        "use_case_id": "uc_backlog_scan",
         "category": "configuration",
         "question": "Which registered codebase should Dev Clone analyze and modify?",
         "type": "select",
@@ -241,7 +244,7 @@
         "maps_to": "persona.connectors[codebase].credential_fields[codebase_root].value",
         "variable_name": "target_codebase",
         "context": "Pick from your registered codebases. If only one is registered, it's auto-selected. This codebase is read + write: Dev Clone creates branches, applies diffs, commits. It should be the same repository as the GitHub repo above.",
-        "dimension": "connectors",
+        "dimension": "connector",
         "ui_component": "CodebaseSelector",
         "connector_ref": "codebase",
         "option_service_types": [
@@ -258,6 +261,7 @@
         "use_case_ids": [
           "uc_backlog_scan"
         ],
+        "use_case_id": "uc_backlog_scan",
         "category": "domain",
         "question": "What kinds of findings should the hourly scan surface?",
         "type": "select",
@@ -270,11 +274,12 @@
         "maps_to": "use_cases[uc_backlog_scan].sample_input.improvement_scope",
         "variable_name": "improvement_scope",
         "context": "Start narrow; widen after you've triaged a few cycles and the memory of rejected categories has stabilized.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_autonomy_level",
         "scope": "persona",
+        "use_case_id": "uc_backlog_scan",
         "category": "boundaries",
         "question": "How autonomous should Dev Clone be?",
         "type": "select",
@@ -287,7 +292,7 @@
         "maps_to": null,
         "variable_name": "autonomy_level",
         "context": "Shapes every PR's review gate in uc_implementation AND the release approval gate in uc_release_management. Architectural concerns ALWAYS escalate to human regardless of this setting.",
-        "dimension": "use-cases"
+        "dimension": "task"
       }
     ],
     "persona_meta": {

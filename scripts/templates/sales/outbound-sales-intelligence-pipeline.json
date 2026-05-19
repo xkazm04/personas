@@ -206,7 +206,8 @@
         "maps_to": "persona.connectors[messaging].credential_fields[bot_token].value",
         "variable_name": "messaging_credential",
         "context": "Options are auto-detected from your messaging-category credentials in the Vault. The bot must be in the target channel.",
-        "dimension": "connectors"
+        "dimension": "connector",
+        "use_case_id": "uc_daily_summary"
       },
       {
         "id": "aq_dedup_window_days",
@@ -227,7 +228,8 @@
         "maps_to": "use_cases[uc_enrichment_pipeline].sample_input.dedup_window_days",
         "variable_name": "dedup_window_days",
         "context": "Shorter windows re-enrich more often (useful for rapidly-changing titles); longer windows preserve API budget.",
-        "dimension": "use-cases"
+        "dimension": "task",
+        "use_case_id": "uc_enrichment_pipeline"
       },
       {
         "id": "aq_batch_size",
@@ -248,7 +250,8 @@
         "maps_to": "use_cases[uc_enrichment_pipeline].sample_input.batch_size_per_cycle",
         "variable_name": "batch_size",
         "context": "Higher batches speed up initial runs but consume more API quota. Defaults fit Hunter free tier + Clearbit growth.",
-        "dimension": "use-cases"
+        "dimension": "task",
+        "use_case_id": "uc_enrichment_pipeline"
       },
       {
         "id": "aq_high_value_threshold",
@@ -269,7 +272,8 @@
         "maps_to": "use_cases[uc_enrichment_pipeline].sample_input.high_value_score_threshold",
         "variable_name": "high_value_score_threshold",
         "context": "Immediate alerts fire in addition to the daily summary. Tight threshold = fewer interruptions; loose threshold = real-time pipeline visibility.",
-        "dimension": "messages"
+        "dimension": "message",
+        "use_case_id": "uc_enrichment_pipeline"
       },
       {
         "id": "aq_spreadsheet_credential",
@@ -288,7 +292,8 @@
         "maps_to": "persona.connectors[spreadsheet].credential_fields[provider].value",
         "variable_name": "spreadsheet_credential",
         "context": "Options are auto-detected from your spreadsheet credentials in the Vault (spreadsheet, spreadsheet, spreadsheet, …).",
-        "dimension": "connectors"
+        "dimension": "connector",
+        "use_case_id": "uc_enrichment_pipeline"
       }
     ],
     "persona_meta": {

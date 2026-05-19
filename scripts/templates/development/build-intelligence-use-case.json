@@ -165,6 +165,7 @@
       {
         "id": "aq_alert_channel",
         "scope": "persona",
+        "use_case_id": "uc_failure_analysis",
         "category": "configuration",
         "question": "Which messaging channels should receive build failure alerts and flaky-test digests?",
         "type": "select",
@@ -173,7 +174,7 @@
         "maps_to": "persona.notification_channels_default[0].description",
         "variable_name": "alert_channel",
         "context": "Failure alerts, recovery notices, and the weekly flaky-test digest all post here. Options are auto-detected from your messaging credentials in the Vault.",
-        "dimension": "messages",
+        "dimension": "message",
         "vault_category": "messaging",
         "option_service_types": [
           "slack"
@@ -189,6 +190,7 @@
         "use_case_ids": [
           "uc_failure_analysis"
         ],
+        "use_case_id": "uc_failure_analysis",
         "category": "domain",
         "question": "What is the primary language or runtime in your CircleCI pipelines?",
         "type": "select",
@@ -204,7 +206,7 @@
         "maps_to": "use_cases[uc_failure_analysis].sample_input.primary_language",
         "variable_name": "primary_language",
         "context": "Selects log-parsing heuristics — stack trace shape, test output, dependency error signatures all differ by language.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_branch_scope",
@@ -213,6 +215,7 @@
           "uc_failure_analysis",
           "uc_pr_comment_lifecycle"
         ],
+        "use_case_id": "uc_failure_analysis",
         "category": "configuration",
         "question": "Which branches trigger full failure analysis and PR comments?",
         "type": "select",
@@ -226,7 +229,7 @@
         "maps_to": "use_cases[uc_failure_analysis].sample_input.branch_scope",
         "variable_name": "branch_scope",
         "context": "Controls analysis scope and PR-comment volume. Restricting to PR branches balances signal vs. noise for larger teams.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_pr_comment_depth",
@@ -234,6 +237,7 @@
         "use_case_ids": [
           "uc_pr_comment_lifecycle"
         ],
+        "use_case_id": "uc_pr_comment_lifecycle",
         "category": "quality",
         "question": "How detailed should PR comments be?",
         "type": "select",
@@ -247,7 +251,7 @@
         "maps_to": null,
         "variable_name": "pr_comment_depth",
         "context": "Shapes the body of the bot's PR analysis comment.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_flakiness_definition",
@@ -255,6 +259,7 @@
         "use_case_ids": [
           "uc_flaky_digest"
         ],
+        "use_case_id": "uc_flaky_digest",
         "category": "memory",
         "question": "How should a 'flaky' test be defined for tracking and the weekly digest?",
         "type": "select",
@@ -268,11 +273,12 @@
         "maps_to": "use_cases[uc_flaky_digest].sample_input.flakiness_definition",
         "variable_name": "flakiness_definition",
         "context": "Too sensitive = noise; too loose = real flaky tests slip through.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_never_do",
         "scope": "persona",
+        "use_case_id": "uc_failure_analysis",
         "category": "boundaries",
         "question": "What should the agent NEVER do without explicit human instruction?",
         "type": "select",
@@ -286,7 +292,7 @@
         "maps_to": null,
         "variable_name": "boundary_rule",
         "context": "Hard guardrails that prevent noise and automated actions requiring human judgment.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_messaging_credential",
@@ -294,6 +300,7 @@
         "connector_names": [
           "messaging"
         ],
+        "use_case_id": "uc_failure_analysis",
         "category": "credentials",
         "question": "Which team messaging platform should this persona post to?",
         "type": "select",
@@ -305,7 +312,7 @@
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
         "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_source_control_credential",
@@ -313,6 +320,7 @@
         "connector_names": [
           "source_control"
         ],
+        "use_case_id": "uc_pr_comment_lifecycle",
         "category": "credentials",
         "question": "Which source-control credential should this persona operate with?",
         "type": "select",
@@ -324,7 +332,7 @@
         "maps_to": "persona.connectors[source_control].credential_fields[provider].value",
         "variable_name": "source_control_credential",
         "context": "Options are auto-detected from your source_control credentials in the Vault (source control, source control, source control, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

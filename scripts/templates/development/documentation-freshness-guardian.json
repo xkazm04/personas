@@ -198,6 +198,7 @@
         "use_case_ids": [
           "uc_staleness_scan"
         ],
+        "use_case_id": "uc_staleness_scan",
         "category": "domain",
         "question": "Which knowledge base spaces should the guardian monitor?",
         "type": "select",
@@ -211,7 +212,7 @@
         "maps_to": "use_cases[uc_staleness_scan].sample_input.spaces_filter",
         "variable_name": "spaces_filter",
         "context": "Scanning personal spaces is noisy; high-trust lists give tighter signal.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_warning_threshold_days",
@@ -219,6 +220,7 @@
         "use_case_ids": [
           "uc_staleness_scan"
         ],
+        "use_case_id": "uc_staleness_scan",
         "category": "configuration",
         "question": "How many days without edits should trigger the first Warning notification?",
         "type": "select",
@@ -232,7 +234,7 @@
         "maps_to": "use_cases[uc_staleness_scan].sample_input.warning_threshold_days",
         "variable_name": "warning_threshold_days",
         "context": "Sets the Warning tier threshold — Stale and Critical scale proportionally (Stale = 2×, Critical = ~4×).",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_follow_up_buffer_days",
@@ -240,6 +242,7 @@
         "use_case_ids": [
           "uc_owner_notify"
         ],
+        "use_case_id": "uc_owner_notify",
         "category": "memory",
         "question": "After an owner promises to update a page by a date, how long should the guardian wait past that date before following up?",
         "type": "select",
@@ -253,7 +256,7 @@
         "maps_to": "use_cases[uc_owner_notify].sample_input.follow_up_buffer_days",
         "variable_name": "follow_up_buffer_days",
         "context": "Balances accountability with respect for the owner's stated timeline.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_tone",
@@ -261,6 +264,7 @@
         "use_case_ids": [
           "uc_owner_notify"
         ],
+        "use_case_id": "uc_owner_notify",
         "category": "quality",
         "question": "What tone should owner notification emails use?",
         "type": "select",
@@ -274,7 +278,7 @@
         "maps_to": "use_cases[uc_owner_notify].sample_input.tone",
         "variable_name": "tone",
         "context": "Escalating urgency matches actual risk level; friendly tone lowers response friction at lower tiers.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_digest_channel",
@@ -282,6 +286,7 @@
         "use_case_ids": [
           "uc_slack_digest"
         ],
+        "use_case_id": "uc_slack_digest",
         "category": "configuration",
         "question": "Which messaging channels receives the weekly digest?",
         "type": "select",
@@ -290,7 +295,7 @@
         "maps_to": "persona.notification_channels_default[0].description",
         "variable_name": "digest_channel",
         "context": "A dedicated docs-health channel avoids alert fatigue. Options come from your messaging credential.",
-        "dimension": "messages",
+        "dimension": "message",
         "vault_category": "messaging",
         "option_service_types": [
           "slack"
@@ -303,6 +308,7 @@
       {
         "id": "aq_boundaries",
         "scope": "persona",
+        "use_case_id": "uc_staleness_scan",
         "category": "boundaries",
         "question": "Which action should the guardian never perform autonomously?",
         "type": "select",
@@ -316,7 +322,7 @@
         "maps_to": null,
         "variable_name": "boundary_rule",
         "context": "Hard safety rails — prevents irreversible or politically sensitive actions.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_escalation_gate",
@@ -324,6 +330,7 @@
         "use_case_ids": [
           "uc_owner_notify"
         ],
+        "use_case_id": "uc_owner_notify",
         "category": "human_in_the_loop",
         "question": "Which escalations require human approval before the guardian proceeds?",
         "type": "select",
@@ -337,7 +344,7 @@
         "maps_to": null,
         "variable_name": "escalation_gate",
         "context": "Escalating beyond the page owner is high-stakes and gated on human approval.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_knowledge_base_credential",
@@ -345,6 +352,7 @@
         "connector_names": [
           "knowledge_base"
         ],
+        "use_case_id": "uc_staleness_scan",
         "category": "credentials",
         "question": "Which knowledge base should this persona read from and write to?",
         "type": "select",
@@ -356,7 +364,7 @@
         "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
         "variable_name": "knowledge_base_credential",
         "context": "Options are auto-detected from your knowledge_base credentials in the Vault (knowledge base, knowledge base, Obsidian, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_email_credential",
@@ -364,6 +372,7 @@
         "connector_names": [
           "email"
         ],
+        "use_case_id": "uc_owner_notify",
         "category": "credentials",
         "question": "Which email provider should this persona use?",
         "type": "select",
@@ -375,7 +384,7 @@
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
         "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_messaging_credential",
@@ -383,6 +392,7 @@
         "connector_names": [
           "messaging"
         ],
+        "use_case_id": "uc_slack_digest",
         "category": "credentials",
         "question": "Which team messaging platform should this persona post to?",
         "type": "select",
@@ -394,7 +404,7 @@
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
         "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

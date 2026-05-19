@@ -113,6 +113,7 @@
         "connector_names": [
           "codebase"
         ],
+        "use_case_id": "uc_context_map_refresh",
         "category": "configuration",
         "question": "Which registered codebase should the health scanner analyze?",
         "type": "select",
@@ -121,7 +122,7 @@
         "maps_to": "persona.connectors[codebase].credential_fields[codebase_root].value",
         "variable_name": "target_codebase",
         "context": "Pick from your registered codebases. If only one is registered, it's auto-selected. The scanner is read-only.",
-        "dimension": "connectors",
+        "dimension": "connector",
         "ui_component": "CodebaseSelector",
         "connector_ref": "codebase",
         "option_service_types": [
@@ -138,6 +139,7 @@
         "use_case_ids": [
           "uc_dimension_scan"
         ],
+        "use_case_id": "uc_dimension_scan",
         "category": "domain",
         "question": "Which dimensions should the scanner score?",
         "type": "multi_select",
@@ -156,7 +158,7 @@
         "maps_to": "use_cases[uc_dimension_scan].sample_input.dimensions",
         "variable_name": "dimensions",
         "context": "Pick the dimensions that matter most for your project. Any unselected dimension is skipped in scoring and the report.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_report_verbosity",
@@ -164,6 +166,7 @@
         "use_case_ids": [
           "uc_health_report"
         ],
+        "use_case_id": "uc_health_report",
         "category": "quality",
         "question": "How detailed should the monthly health report be?",
         "type": "select",
@@ -176,7 +179,7 @@
         "maps_to": "use_cases[uc_health_report].sample_input.report_verbosity",
         "variable_name": "report_verbosity",
         "context": "Controls verbosity of the Messages post. The snapshot JSON is always full-fidelity for trend analysis.",
-        "dimension": "use-cases"
+        "dimension": "task"
       }
     ],
     "persona_meta": {

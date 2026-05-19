@@ -111,6 +111,7 @@
         "connector_names": [
           "codebase"
         ],
+        "use_case_id": "uc_lean_sweep",
         "category": "configuration",
         "question": "Which registered codebase should the sentinel sweep?",
         "type": "select",
@@ -119,7 +120,7 @@
         "maps_to": "persona.connectors[codebase].credential_fields[codebase_root].value",
         "variable_name": "target_codebase",
         "context": "Pick from your registered codebases. The static-analysis CLI runs inside this directory — make sure the tool you pick supports the codebase's primary language.",
-        "dimension": "connectors",
+        "dimension": "connector",
         "ui_component": "CodebaseSelector",
         "connector_ref": "codebase",
         "option_service_types": [
@@ -136,6 +137,7 @@
         "use_case_ids": [
           "uc_lean_sweep"
         ],
+        "use_case_id": "uc_lean_sweep",
         "category": "configuration",
         "question": "Which static-analysis CLI should the sentinel run?",
         "type": "select",
@@ -150,7 +152,7 @@
         "maps_to": "use_cases[uc_lean_sweep].sample_input.tool_argv",
         "variable_name": "tool_argv",
         "context": "Pick whichever static-analysis CLI your codebase already uses (or install one). Fallow is the broadest coverage for TS/JS projects and is what this template is designed around. The persona spawns the chosen tool inside the codebase root and parses its JSON output — make sure to install the tool as a devDependency or globally first.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_sweep_cadence",
@@ -158,6 +160,7 @@
         "use_case_ids": [
           "uc_lean_sweep"
         ],
+        "use_case_id": "uc_lean_sweep",
         "category": "scheduling",
         "question": "How often should the sentinel sweep?",
         "type": "select",
@@ -171,7 +174,7 @@
         "maps_to": "use_cases[uc_lean_sweep].suggested_trigger.config.cron",
         "variable_name": "sweep_cadence",
         "context": "Per-commit gives the fastest feedback loop but can be noisy on monorepos. Daily is the safe default. Hourly catches drift quickly without watcher overhead. Manual leaves the trigger out and relies on the Idea Scanner page's Static Scan button.",
-        "dimension": "use-cases"
+        "dimension": "task"
       }
     ],
     "persona_meta": {

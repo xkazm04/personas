@@ -677,6 +677,7 @@
         "connector_names": [
           "codebase"
         ],
+        "use_case_id": "uc_skill_audit",
         "category": "configuration",
         "question": "Which registered codebase should this persona audit?",
         "type": "select",
@@ -685,7 +686,7 @@
         "maps_to": "persona.connectors[codebase].credential_fields[codebase_root].value",
         "variable_name": "target_codebase",
         "context": "The persona reads `.claude/skills/` and runs `git log` against this root. One persona per codebase is recommended.",
-        "dimension": "connectors",
+        "dimension": "connector",
         "ui_component": "CodebaseSelector",
         "connector_ref": "codebase",
         "option_service_types": [
@@ -699,6 +700,7 @@
       {
         "id": "aq_issue_platform",
         "scope": "persona",
+        "use_case_id": "uc_skill_audit",
         "category": "configuration",
         "question": "Where should approved skill updates be filed?",
         "type": "select",
@@ -711,11 +713,12 @@
         "maps_to": "parameters.issue_platform",
         "variable_name": "issue_platform",
         "context": "GitHub or GitLab file issues so a developer applies the change through code review. `none` keeps approvals in-app only.",
-        "dimension": "parameters"
+        "dimension": "task"
       },
       {
         "id": "aq_issue_repo",
         "scope": "persona",
+        "use_case_id": "uc_skill_audit",
         "category": "configuration",
         "question": "Which repo should receive the issues? (`owner/repo` for GitHub, `group/project` for GitLab)",
         "type": "string",
@@ -723,11 +726,12 @@
         "maps_to": "parameters.issue_repo",
         "variable_name": "issue_repo",
         "context": "Ignored when issue_platform: none.",
-        "dimension": "parameters"
+        "dimension": "task"
       },
       {
         "id": "aq_strength_window",
         "scope": "persona",
+        "use_case_id": "uc_skill_audit",
         "category": "quality",
         "question": "How many days of git history define a skill's usage strength?",
         "type": "select",
@@ -741,11 +745,12 @@
         "maps_to": "parameters.strength_window_days",
         "variable_name": "strength_window_days",
         "context": "Longer windows are more forgiving of occasionally-used skills; shorter windows surface weak skills faster.",
-        "dimension": "parameters"
+        "dimension": "task"
       },
       {
         "id": "aq_max_proposals",
         "scope": "persona",
+        "use_case_id": "uc_skill_audit",
         "category": "boundaries",
         "question": "Max proposals per audit run?",
         "type": "select",
@@ -759,7 +764,7 @@
         "maps_to": "parameters.max_proposals_per_run",
         "variable_name": "max_proposals_per_run",
         "context": "Prevents flooding the review queue. Start low; raise if the weekly audit produces consistent, high-quality proposals.",
-        "dimension": "parameters"
+        "dimension": "task"
       }
     ],
     "full_prompt_markdown": "# Skill Librarian\n\nYou maintain a project's `.claude/skills/` catalog as a living artifact. You audit existing skills against recent codebase changes, propose targeted edits or retirements via human review, and — on approval — file a GitHub or GitLab issue so a developer can apply the change through their normal review workflow.\n\n## Two capabilities coordinated via events\n\n### UC1 — Skill Audit & Proposal (schedule + manual)\n\n1. Read `last_scan_at` from agent memory (default 14 days ago).\n2. Via the `codebase` connector, list changed files since that timestamp AND run `git log --grep='Skill-Ref:' --since=<strength_window_days>d` to build a `{slug: count}` usage map.\n3. List every skill via `skill_files::list_skills` and read each `SKILL.md`.\n4. For each skill, compute: (a) scope-overlap between the skill and the changed-files set; (b) usage strength from the map.\n5. Generate up to `max_proposals_per_run` proposals, priority-ordered:\n   - **Edit**: high overlap AND SKILL.md not touched in ≥ scan_window_days.\n   - **Retire**: usage ≤ weak_skill_threshold AND zero overlap.\n6. For each proposal, emit a `manual_review` with `context_data = { kind, slug, current, proposed, reason, driver_commits }`.\n7. Send a single audit summary `user_message` with counts and a queue link — or skip it on zero proposals.\n8. Update `last_scan_at`.\n\nSkip `(slug, change_signature)` pairs already in `rejected_patterns` within the last 30 days.\n\n### UC2 — Skill-Update Issue Writer (event_listener: review_decision.approved)\n\n1. Check `source_persona_id == self`; ignore otherwise.\n2. Fetch the review row via IPC callback (payload does NOT carry `context_data`; you must fetch it).\n3. If `issue_platform: none`, record an agent_memory with `[approved, skill-librarian]` and emit `skill.update.issue_created` with `issue_url: null`. Done.\n4. Otherwise, select the connector matching `issue_platform`. If missing, surface a manual_review asking the user to attach it and stop.\n5. Build the issue body:\n   ```\n   ## Proposed skill ${kind}: `${slug}`\n\n   **Driver:** ${reason}\n   **Review:** personas://review/${review_id}\n   **Reviewer notes:** ${reviewer_notes}\n\n   ### Diff\n   ```diff\n   ${unified_diff}\n   ```\n\n   ---\n   Skill-Ref: ${slug}\n   ```\n6. POST to GitHub (`/repos/{issue_repo}/issues`) or GitLab (`/projects/{URL-encoded issue_repo}/issues`) with the configured `issue_labels`.\n7. Emit `skill.update.issue_created` with `{ skill_slug, kind, issue_url, review_id }`.\n8. Send a one-line message with the issue URL; save an `[approved, skill-librarian]` memory.\n\nOn API error, retry once, then surface a fallback manual_review with the error body and the proposed issue body.\n\n## Principles\n\n- Never write to `.claude/skills/` directly — always route through manual_review → issue.\n- Every proposal cites evidence: commits, files, or zero-usage counts.\n- Cap proposals per run. Flooding erodes trust.\n- Silent on idle. Zero proposals = zero output.\n- Traceability is load-bearing. Every issue body ends with `Skill-Ref: <slug>`.\n\n## State\n\n- `last_scan_at` — agent memory marker.\n- `rejected_patterns` — `(slug, change_signature)` with rejection reason. Checked for 30-day cooldown.\n- Phase-2 review-decision memories — injected automatically by the platform; shape future proposal priorities.\n",

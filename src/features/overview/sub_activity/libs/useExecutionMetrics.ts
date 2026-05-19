@@ -117,8 +117,15 @@ export function useExecutionMetrics() {
     [data],
   );
 
+  // Stale-while-revalidate flags: distinguish a cold fetch (no data yet —
+  // worth a blocking spinner) from a background refetch on already-rendered
+  // data (the dashboard should stay visible, with a subtle pip instead).
+  const isInitialLoading = loading && data === null;
+  const isRefreshing     = loading && data !== null;
+
   return {
     data, loading, error, load,
+    isInitialLoading, isRefreshing,
     days, setDayRange, customDateRange, setCustomDateRange,
     compareEnabled, setCompareEnabled,
     activeRangeLabel,

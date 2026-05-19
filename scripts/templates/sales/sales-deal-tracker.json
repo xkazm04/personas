@@ -177,7 +177,8 @@
         "maps_to": "persona.connectors[crm].credential_fields[refresh_token].value",
         "variable_name": "crm_provider",
         "context": "Options auto-detected from your Vault's crm-category credentials. CRM, CRM, CRM supported; the agent adapts its queries per provider.",
-        "dimension": "connectors"
+        "dimension": "connector",
+        "use_case_id": "uc_change_monitor"
       },
       {
         "id": "aq_messaging_channel",
@@ -196,7 +197,8 @@
         "maps_to": "persona.connectors[messaging].credential_fields[bot_token].value",
         "variable_name": "messaging_provider",
         "context": "Auto-detected from your Vault's messaging-category credentials. Alerts land here in near-real-time plus the daily summary.",
-        "dimension": "connectors"
+        "dimension": "connector",
+        "use_case_id": "uc_change_monitor"
       },
       {
         "id": "aq_poll_interval",
@@ -217,7 +219,8 @@
         "maps_to": "use_cases[uc_change_monitor].sample_input.poll_interval_minutes",
         "variable_name": "poll_interval_minutes",
         "context": "3 minutes gives near-real-time detection within typical CRM API budgets. Drop to 5-15 minutes for very large pipelines or strict rate-limit envelopes.",
-        "dimension": "use-cases"
+        "dimension": "task",
+        "use_case_id": "uc_change_monitor"
       },
       {
         "id": "aq_notification_threshold",
@@ -239,7 +242,8 @@
         "maps_to": "use_cases[uc_change_monitor].sample_input.notification_threshold_usd",
         "variable_name": "notification_threshold_usd",
         "context": "Deals below this threshold still appear in the daily summary but won't trigger immediate alerts.",
-        "dimension": "use-cases"
+        "dimension": "task",
+        "use_case_id": "uc_change_monitor"
       },
       {
         "id": "aq_history_days",
@@ -261,7 +265,8 @@
         "maps_to": "use_cases[uc_daily_summary].sample_input.max_stage_history_days",
         "variable_name": "max_stage_history_days",
         "context": "Longer retention sharpens velocity pattern accuracy but uses more memory. Aggregate stats survive pruning.",
-        "dimension": "use-cases"
+        "dimension": "task",
+        "use_case_id": "uc_daily_summary"
       }
     ],
     "persona_meta": {

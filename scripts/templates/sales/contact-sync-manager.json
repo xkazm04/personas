@@ -169,7 +169,8 @@
         "maps_to": "use_cases[uc_signature_extraction].sample_input.confidence_threshold",
         "variable_name": "confidence_threshold",
         "context": "Extractions between 0.5 and this threshold are queued for review; below 0.5 are logged only.",
-        "dimension": "use-cases"
+        "dimension": "task",
+        "use_case_id": "uc_signature_extraction"
       },
       {
         "id": "aq_max_contacts_per_run",
@@ -191,7 +192,8 @@
         "maps_to": "use_cases[uc_signature_extraction].sample_input.max_contacts_per_run",
         "variable_name": "max_contacts_per_run",
         "context": "Caps per-cycle API spend on high-volume mailboxes. Unprocessed emails are picked up next cycle.",
-        "dimension": "use-cases"
+        "dimension": "task",
+        "use_case_id": "uc_signature_extraction"
       },
       {
         "id": "aq_conflict_strategy",
@@ -212,7 +214,8 @@
         "maps_to": "use_cases[uc_signature_extraction].sample_input.conflict_strategy",
         "variable_name": "conflict_strategy",
         "context": "Controls the default behavior when extracted data contradicts stored data. `flag` is safest; `merge_non_empty` is lowest-friction for new deployments.",
-        "dimension": "human-review"
+        "dimension": "review",
+        "use_case_id": "uc_signature_extraction"
       },
       {
         "id": "aq_stale_days",
@@ -233,7 +236,8 @@
         "maps_to": "use_cases[uc_freshness_audit].sample_input.stale_contact_days",
         "variable_name": "stale_contact_days",
         "context": "Stale contacts are flagged but never deleted. Lower values surface stale records sooner; higher values reduce alert volume.",
-        "dimension": "use-cases"
+        "dimension": "task",
+        "use_case_id": "uc_freshness_audit"
       },
       {
         "id": "aq_retention_days",
@@ -255,7 +259,8 @@
         "maps_to": "use_cases[uc_freshness_audit].sample_input.change_history_retention_days",
         "variable_name": "retention_days",
         "context": "Older entries are archived to control file size. Unlimited retention keeps the full audit trail but grows the file indefinitely.",
-        "dimension": "memory"
+        "dimension": "memory",
+        "use_case_id": "uc_freshness_audit"
       },
       {
         "id": "aq_email_credential",
@@ -274,7 +279,8 @@
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
         "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
-        "dimension": "connectors"
+        "dimension": "connector",
+        "use_case_id": "uc_signature_extraction"
       }
     ],
     "persona_meta": {

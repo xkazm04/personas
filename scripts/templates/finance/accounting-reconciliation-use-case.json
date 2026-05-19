@@ -259,6 +259,7 @@
           "uc_daily_reconciliation",
           "uc_weekly_email_summary"
         ],
+        "use_case_id": "uc_daily_reconciliation",
         "category": "configuration",
         "question": "Which spreadsheet should hold the reconciliation ledger?",
         "type": "select",
@@ -270,7 +271,7 @@
         "maps_to": "use_cases[uc_daily_reconciliation].sample_input.tracker_spreadsheet_id",
         "variable_name": "tracker_sheet",
         "context": "Must have two tabs: 'Discrepancies' (the agent appends rows here) and 'Summary' (daily totals; reserved for user-authored formulas). Options come from your connected spreadsheet credential.",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_date_tolerance",
@@ -278,6 +279,7 @@
         "use_case_ids": [
           "uc_daily_reconciliation"
         ],
+        "use_case_id": "uc_daily_reconciliation",
         "category": "configuration",
         "question": "How many business days of date tolerance when matching a bank entry to a finance platform entry?",
         "type": "select",
@@ -291,7 +293,7 @@
         "maps_to": "use_cases[uc_daily_reconciliation].sample_input.date_tolerance_days",
         "variable_name": "date_tolerance",
         "context": "Amount is always exact. Date is fuzzy to absorb bank clearing delays, weekends, and processing offsets. 2 is the typical default.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_alert_threshold",
@@ -299,6 +301,7 @@
         "use_case_ids": [
           "uc_discrepancy_alerts"
         ],
+        "use_case_id": "uc_discrepancy_alerts",
         "category": "configuration",
         "question": "Above what amount should a single unmatched transaction trigger an individual messaging alert?",
         "type": "select",
@@ -313,7 +316,7 @@
         "maps_to": "use_cases[uc_discrepancy_alerts].sample_input.alert_threshold",
         "variable_name": "alert_threshold",
         "context": "Low thresholds are thorough but noisy. Low-value items below the threshold still land in the daily grouped summary — nothing is dropped.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_escalation_threshold",
@@ -321,6 +324,7 @@
         "use_case_ids": [
           "uc_discrepancy_alerts"
         ],
+        "use_case_id": "uc_discrepancy_alerts",
         "category": "configuration",
         "question": "Above what daily discrepancy total should the alert escalate with an @-mention?",
         "type": "select",
@@ -334,7 +338,7 @@
         "maps_to": "use_cases[uc_discrepancy_alerts].sample_input.escalation_threshold",
         "variable_name": "escalation_threshold",
         "context": "Escalation fires once per day when the cumulative unmatched amount crosses this line — intended for the finance lead's attention.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_confidence_cutoff",
@@ -342,6 +346,7 @@
         "use_case_ids": [
           "uc_discrepancy_alerts"
         ],
+        "use_case_id": "uc_discrepancy_alerts",
         "category": "configuration",
         "question": "At what confidence should a partial match be flagged for review instead of auto-accepted?",
         "type": "select",
@@ -355,7 +360,7 @@
         "maps_to": "use_cases[uc_discrepancy_alerts].sample_input.confidence_review_cutoff",
         "variable_name": "confidence_cutoff",
         "context": "Lower cutoffs = more auto-accepts, less manual work, higher mis-match risk. 'Never auto-accept' routes every partial through human review.",
-        "dimension": "human-review"
+        "dimension": "review"
       },
       {
         "id": "aq_email_recipients",
@@ -363,6 +368,7 @@
         "use_case_ids": [
           "uc_weekly_email_summary"
         ],
+        "use_case_id": "uc_weekly_email_summary",
         "category": "configuration",
         "question": "Who should receive the weekly reconciliation summary email?",
         "type": "text",
@@ -371,7 +377,7 @@
         "maps_to": "use_cases[uc_weekly_email_summary].sample_input.email_recipients",
         "variable_name": "email_recipients",
         "context": "Comma-separated distribution list. The email is sent from your connected email credential. If email is skipped, the report is written to disk and announced in the messaging channel instead.",
-        "dimension": "messages"
+        "dimension": "message"
       },
       {
         "id": "aq_summary_depth",
@@ -379,6 +385,7 @@
         "use_case_ids": [
           "uc_weekly_email_summary"
         ],
+        "use_case_id": "uc_weekly_email_summary",
         "category": "quality",
         "question": "How detailed should the weekly email be?",
         "type": "select",
@@ -391,7 +398,7 @@
         "maps_to": "use_cases[uc_weekly_email_summary].sample_input.summary_depth",
         "variable_name": "summary_depth",
         "context": "Pick based on the primary audience. Executive suits CFO-level recipients; Detailed suits bookkeepers who want the full listing.",
-        "dimension": "messages"
+        "dimension": "message"
       },
       {
         "id": "aq_recurring_seed",
@@ -399,6 +406,7 @@
         "use_case_ids": [
           "uc_daily_reconciliation"
         ],
+        "use_case_id": "uc_daily_reconciliation",
         "category": "memory",
         "question": "Any known recurring transactions to seed the pattern memory with (payroll, rent, SaaS, etc.)?",
         "type": "textarea",
@@ -412,6 +420,7 @@
       {
         "id": "aq_spreadsheet_credential",
         "scope": "connector",
+        "use_case_id": "uc_daily_reconciliation",
         "connector_names": [
           "spreadsheet"
         ],
@@ -426,11 +435,12 @@
         "maps_to": "persona.connectors[spreadsheet].credential_fields[provider].value",
         "variable_name": "spreadsheet_credential",
         "context": "Options are auto-detected from your spreadsheet credentials in the Vault (spreadsheet, spreadsheet, spreadsheet, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_messaging_credential",
         "scope": "connector",
+        "use_case_id": "uc_discrepancy_alerts",
         "connector_names": [
           "messaging"
         ],
@@ -445,11 +455,12 @@
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
         "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_email_credential",
         "scope": "connector",
+        "use_case_id": "uc_weekly_email_summary",
         "connector_names": [
           "email"
         ],
@@ -464,7 +475,7 @@
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
         "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

@@ -194,6 +194,7 @@
         "use_case_ids": [
           "uc_ingest_documents"
         ],
+        "use_case_id": "uc_ingest_documents",
         "category": "configuration",
         "question": "Which cloud storage folders should be monitored?",
         "type": "text",
@@ -201,7 +202,7 @@
         "maps_to": "use_cases[uc_ingest_documents].sample_input.monitored_folders",
         "variable_name": "monitored_folders",
         "context": "Comma-separated Drive folder IDs (from each folder's URL). Folders are traversed recursively. Leave narrow to control API quota; you can add more over time.",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_analysis_depth",
@@ -209,6 +210,7 @@
         "use_case_ids": [
           "uc_ingest_documents"
         ],
+        "use_case_id": "uc_ingest_documents",
         "category": "quality",
         "question": "How thorough should document analysis be?",
         "type": "select",
@@ -221,7 +223,7 @@
         "maps_to": "use_cases[uc_ingest_documents].sample_input.analysis_depth",
         "variable_name": "analysis_depth",
         "context": "Deep mode is best for high-value strategy or compliance docs; Fast is cheapest and still usable for search.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_excluded_patterns",
@@ -229,6 +231,7 @@
         "use_case_ids": [
           "uc_ingest_documents"
         ],
+        "use_case_id": "uc_ingest_documents",
         "category": "boundaries",
         "question": "Which folders or filename patterns should NEVER be indexed?",
         "type": "text",
@@ -236,7 +239,7 @@
         "maps_to": "use_cases[uc_ingest_documents].sample_input.excluded_patterns",
         "variable_name": "excluded_patterns",
         "context": "Sensitive content (compensation, PII, legal holds, drafts) stays out of the shared knowledge base. Comma-separated folder names or filename prefixes.",
-        "dimension": "error-handling"
+        "dimension": "error"
       },
       {
         "id": "aq_tag_policy",
@@ -244,6 +247,7 @@
         "use_case_ids": [
           "uc_ingest_documents"
         ],
+        "use_case_id": "uc_ingest_documents",
         "category": "memory",
         "question": "How should document tags be generated?",
         "type": "select",
@@ -264,6 +268,7 @@
         "use_case_ids": [
           "uc_weekly_report"
         ],
+        "use_case_id": "uc_weekly_report",
         "category": "configuration",
         "question": "Which messaging channels receives the weekly growth digest?",
         "type": "text",
@@ -271,11 +276,12 @@
         "maps_to": "use_cases[uc_weekly_report].sample_input.report_channel",
         "variable_name": "report_channel",
         "context": "Channel ID or name. The bot must be invited to the channel first. Leave blank only if uc_weekly_report is disabled.",
-        "dimension": "messages"
+        "dimension": "message"
       },
       {
         "id": "aq_storage_credential",
         "scope": "connector",
+        "use_case_id": "uc_ingest_documents",
         "connector_names": [
           "storage"
         ],
@@ -290,11 +296,12 @@
         "maps_to": "persona.connectors[storage].credential_fields[provider].value",
         "variable_name": "storage_credential",
         "context": "Options are auto-detected from your storage credentials in the Vault (cloud storage, cloud storage, cloud storage, S3, R2, Local Drive, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_knowledge_base_credential",
         "scope": "connector",
+        "use_case_id": "uc_ingest_documents",
         "connector_names": [
           "knowledge_base"
         ],
@@ -309,11 +316,12 @@
         "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
         "variable_name": "knowledge_base_credential",
         "context": "Options are auto-detected from your knowledge_base credentials in the Vault (knowledge base, knowledge base, Obsidian, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_messaging_credential",
         "scope": "connector",
+        "use_case_id": "uc_search_queries",
         "connector_names": [
           "messaging"
         ],
@@ -328,7 +336,7 @@
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
         "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

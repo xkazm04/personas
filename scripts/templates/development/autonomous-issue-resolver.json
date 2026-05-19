@@ -184,6 +184,7 @@
       {
         "id": "aq_jira_projects",
         "scope": "connector",
+        "use_case_id": "uc_stale_triage",
         "connector_names": [
           "jira"
         ],
@@ -195,7 +196,7 @@
         "maps_to": "persona.connectors[jira].credential_fields[scope].value",
         "variable_name": "jira_projects",
         "context": "The agent polls these projects for stale issues using JQL. Comma-separate multiple keys if needed.",
-        "dimension": "connectors",
+        "dimension": "connector",
         "vault_category": "project_management",
         "option_service_types": [
           "jira"
@@ -212,6 +213,7 @@
         "use_case_ids": [
           "uc_stale_triage"
         ],
+        "use_case_id": "uc_stale_triage",
         "category": "configuration",
         "question": "After how many days should an issue be considered stale?",
         "type": "select",
@@ -227,11 +229,12 @@
         "maps_to": "use_cases[uc_stale_triage].sample_input.stale_days",
         "variable_name": "stale_days",
         "context": "Issues open without updates beyond this threshold become candidates for auto-resolution or escalation.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_alert_channel",
         "scope": "persona",
+        "use_case_id": "uc_daily_digest",
         "category": "configuration",
         "question": "Which messaging channels for daily digests and weekly reports?",
         "type": "select",
@@ -240,7 +243,7 @@
         "maps_to": "persona.notification_channels_default[0].description",
         "variable_name": "alert_channel",
         "context": "Daily digests, weekly health reports, and auto-resolution notifications all post here.",
-        "dimension": "messages",
+        "dimension": "message",
         "vault_category": "messaging",
         "option_service_types": [
           "slack"
@@ -256,6 +259,7 @@
         "use_case_ids": [
           "uc_stale_triage"
         ],
+        "use_case_id": "uc_stale_triage",
         "category": "configuration",
         "question": "Which messaging channels for high-priority escalations?",
         "type": "select",
@@ -264,7 +268,7 @@
         "maps_to": "use_cases[uc_stale_triage].sample_input.escalation_channel",
         "variable_name": "escalation_channel",
         "context": "Angry + P1/P2 issues get posted here for immediate team visibility.",
-        "dimension": "messages",
+        "dimension": "message",
         "vault_category": "messaging",
         "option_service_types": [
           "slack"
@@ -280,6 +284,7 @@
         "use_case_ids": [
           "uc_stale_triage"
         ],
+        "use_case_id": "uc_stale_triage",
         "category": "configuration",
         "question": "Engineering manager email for DM escalations?",
         "type": "text",
@@ -288,11 +293,12 @@
         "maps_to": "use_cases[uc_stale_triage].sample_input.eng_manager_email",
         "variable_name": "eng_manager_email",
         "context": "Angry + P1/P2 issues trigger a direct direct messages to this person.",
-        "dimension": "messages"
+        "dimension": "message"
       },
       {
         "id": "aq_notion_kb_database_id",
         "scope": "connector",
+        "use_case_id": "uc_stale_triage",
         "connector_names": [
           "knowledge_base"
         ],
@@ -304,7 +310,7 @@
         "maps_to": "persona.connectors[notion].credential_fields[database_id].value",
         "variable_name": "notion_kb_database_id",
         "context": "The knowledge base databases containing runbooks, troubleshooting guides, and FAQ entries used for solution matching.",
-        "dimension": "connectors",
+        "dimension": "connector",
         "vault_category": "database",
         "option_service_types": [
           "notion"
@@ -320,6 +326,7 @@
         "use_case_ids": [
           "uc_stale_triage"
         ],
+        "use_case_id": "uc_stale_triage",
         "category": "boundaries",
         "question": "Should abandoned issues be auto-closed after 30 days of inactivity?",
         "type": "boolean",
@@ -328,7 +335,7 @@
         "maps_to": "use_cases[uc_stale_triage].sample_input.auto_close_enabled",
         "variable_name": "auto_close_enabled",
         "context": "When enabled, issues with no reporter activity for 30+ days receive a polite closing comment and transition to Closed.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_confidence_threshold",
@@ -336,6 +343,7 @@
         "use_case_ids": [
           "uc_stale_triage"
         ],
+        "use_case_id": "uc_stale_triage",
         "category": "quality",
         "question": "Minimum confidence score (0-100) for auto-posting resolution suggestions?",
         "type": "select",
@@ -350,11 +358,12 @@
         "maps_to": "use_cases[uc_stale_triage].sample_input.confidence_threshold",
         "variable_name": "confidence_threshold",
         "context": "Only KB matches at or above this threshold are posted as solution comments. Lower thresholds resolve more issues but risk low-quality suggestions.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_knowledge_base_credential",
         "scope": "connector",
+        "use_case_id": "uc_stale_triage",
         "connector_names": [
           "knowledge_base"
         ],
@@ -369,11 +378,12 @@
         "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
         "variable_name": "knowledge_base_credential",
         "context": "Options are auto-detected from your knowledge_base credentials in the Vault (knowledge base, knowledge base, Obsidian, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_messaging_credential",
         "scope": "connector",
+        "use_case_id": "uc_stale_triage",
         "connector_names": [
           "messaging"
         ],
@@ -388,7 +398,7 @@
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
         "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

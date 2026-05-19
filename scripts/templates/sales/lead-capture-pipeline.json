@@ -246,7 +246,8 @@
         "maps_to": "use_cases[uc_intake].sample_input.sales_motion",
         "variable_name": "sales_motion",
         "context": "Calibrates lead scoring weights and urgency thresholds. PLG treats 'exploring' very differently from enterprise chasing net-new logos.",
-        "dimension": "use-cases"
+        "dimension": "task",
+        "use_case_id": "uc_intake"
       },
       {
         "id": "aq_target_forms",
@@ -263,7 +264,8 @@
         "maps_to": "use_cases[uc_intake].sample_input.target_form_ids",
         "variable_name": "target_form_ids",
         "context": "Scopes the pipeline to the right form tool sources. Comma-separate if leads flow from multiple entry points.",
-        "dimension": "use-cases"
+        "dimension": "task",
+        "use_case_id": "uc_intake"
       },
       {
         "id": "aq_alert_threshold",
@@ -284,7 +286,8 @@
         "maps_to": "use_cases[uc_alert].sample_input.alert_threshold",
         "variable_name": "alert_threshold",
         "context": "Tight thresholds prevent alert fatigue. Pinging sales on every Cold lead trains them to ignore the channel.",
-        "dimension": "messages"
+        "dimension": "message",
+        "use_case_id": "uc_alert"
       },
       {
         "id": "aq_channel_routing",
@@ -304,7 +307,8 @@
         "maps_to": "use_cases[uc_alert].sample_input.channel_routing",
         "variable_name": "channel_routing",
         "context": "Routes alerts to the right audience. Options are auto-detected from your messaging-category credentials in the Vault. For per-tier routing, the build process will prompt for the mapping.",
-        "dimension": "connectors"
+        "dimension": "connector",
+        "use_case_id": "uc_alert"
       },
       {
         "id": "aq_welcome_email_gate",
@@ -325,7 +329,8 @@
         "maps_to": "use_cases[uc_welcome].sample_input.welcome_email_gate",
         "variable_name": "welcome_email_gate",
         "context": "Strategic or high-ACV leads may warrant a human-crafted first email. Gating ensures automated pipelines hand off gracefully before touching your best prospects.",
-        "dimension": "human-review"
+        "dimension": "review",
+        "use_case_id": "uc_welcome"
       },
       {
         "id": "aq_personalization_depth",
@@ -346,7 +351,8 @@
         "maps_to": "use_cases[uc_welcome].sample_input.personalization_depth",
         "variable_name": "personalization_depth",
         "context": "Heavier personalization increases relevance but also prompt complexity and per-lead latency.",
-        "dimension": "use-cases"
+        "dimension": "task",
+        "use_case_id": "uc_welcome"
       },
       {
         "id": "aq_crm_credential",
@@ -365,7 +371,8 @@
         "maps_to": "persona.connectors[crm].credential_fields[provider].value",
         "variable_name": "crm_credential",
         "context": "Options are auto-detected from your crm credentials in the Vault (CRM, CRM, CRM, …).",
-        "dimension": "connectors"
+        "dimension": "connector",
+        "use_case_id": "uc_intake"
       },
       {
         "id": "aq_email_credential",
@@ -384,7 +391,8 @@
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
         "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
-        "dimension": "connectors"
+        "dimension": "connector",
+        "use_case_id": "uc_welcome"
       },
       {
         "id": "aq_messaging_credential",
@@ -403,7 +411,8 @@
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
         "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
-        "dimension": "connectors"
+        "dimension": "connector",
+        "use_case_id": "uc_alert"
       }
     ],
     "persona_meta": {

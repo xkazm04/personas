@@ -168,6 +168,7 @@
       {
         "id": "aq_intent",
         "scope": "persona",
+        "use_case_id": "uc_triage_feedback",
         "category": "configuration",
         "question": "How should the agent work with customer feedback?",
         "type": "textarea",
@@ -175,11 +176,12 @@
         "maps_to": "persona.goal",
         "variable_name": "intent",
         "context": "Free-form intent: what to emphasize, what to downweight, how aggressive to be. The persona re-reads this on every run; update it when your focus shifts.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_linear_team",
         "scope": "connector",
+        "use_case_id": "uc_triage_feedback",
         "connector_names": [
           "ticketing"
         ],
@@ -191,7 +193,7 @@
         "maps_to": "persona.connectors[linear].credential_fields[default_team_id].value",
         "variable_name": "linear_team",
         "context": "Issues land in this team with Customer Feedback + type + priority labels applied.",
-        "dimension": "connectors",
+        "dimension": "connector",
         "vault_category": "project_management",
         "option_service_types": [
           "linear"
@@ -208,6 +210,7 @@
         "use_case_ids": [
           "uc_triage_feedback"
         ],
+        "use_case_id": "uc_triage_feedback",
         "category": "configuration",
         "question": "Which messaging channels receives per-batch triage summaries?",
         "type": "select",
@@ -216,7 +219,7 @@
         "maps_to": "persona.notification_channels_default[0].description",
         "variable_name": "triage_channel",
         "context": "Per-batch messaging summaries post here with new issues, duplicates, and review flags.",
-        "dimension": "messages",
+        "dimension": "message",
         "vault_category": "messaging",
         "option_service_types": [
           "slack"
@@ -233,6 +236,7 @@
         "use_case_ids": [
           "uc_weekly_digest"
         ],
+        "use_case_id": "uc_weekly_digest",
         "category": "configuration",
         "question": "Which messaging channels receives the weekly digest?",
         "type": "select",
@@ -241,7 +245,7 @@
         "maps_to": "use_cases[uc_weekly_digest].sample_input.digest_channel",
         "variable_name": "digest_channel",
         "context": "Can be the same as the triage channel or a separate audience (e.g., #product-leads).",
-        "dimension": "messages",
+        "dimension": "message",
         "vault_category": "messaging",
         "option_service_types": [
           "slack"
@@ -258,6 +262,7 @@
         "use_case_ids": [
           "uc_triage_feedback"
         ],
+        "use_case_id": "uc_triage_feedback",
         "category": "quality",
         "question": "Minimum classification confidence (0-100) for auto-creating a Linear issue?",
         "type": "select",
@@ -272,7 +277,7 @@
         "maps_to": "use_cases[uc_triage_feedback].sample_input.confidence_threshold",
         "variable_name": "confidence_threshold",
         "context": "Below this threshold the conversation routes to manual review instead of auto-creating.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_dedup_window",
@@ -281,6 +286,7 @@
           "uc_triage_feedback",
           "uc_weekly_digest"
         ],
+        "use_case_id": "uc_triage_feedback",
         "category": "memory",
         "question": "How long should an issue stay in deduplication memory?",
         "type": "select",
@@ -303,6 +309,7 @@
         "use_case_ids": [
           "uc_triage_feedback"
         ],
+        "use_case_id": "uc_triage_feedback",
         "category": "memory",
         "question": "Should deduplication only match against open Linear issues?",
         "type": "boolean",
@@ -310,7 +317,7 @@
         "maps_to": "use_cases[uc_triage_feedback].sample_input.dedup_open_only",
         "variable_name": "dedup_open_only",
         "context": "When true, closed issues can be re-raised as regressions; when false, closed issues keep suppressing duplicates.",
-        "dimension": "use-cases"
+        "dimension": "memory"
       },
       {
         "id": "aq_excluded_topics",
@@ -318,6 +325,7 @@
         "use_case_ids": [
           "uc_triage_feedback"
         ],
+        "use_case_id": "uc_triage_feedback",
         "category": "boundaries",
         "question": "Which conversation topics should never auto-create a Linear issue?",
         "type": "text",
@@ -325,11 +333,12 @@
         "maps_to": "use_cases[uc_triage_feedback].sample_input.excluded_topics",
         "variable_name": "excluded_topics",
         "context": "Comma-separated topics routed to a non-actionable bucket (no Linear issue, optional messaging note). Typical: billing, churn, internal test accounts.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_ticketing_credential",
         "scope": "connector",
+        "use_case_id": "uc_triage_feedback",
         "connector_names": [
           "ticketing"
         ],
@@ -344,11 +353,12 @@
         "maps_to": "persona.connectors[ticketing].credential_fields[provider].value",
         "variable_name": "ticketing_credential",
         "context": "Options are auto-detected from your ticketing credentials in the Vault (Jira, Linear, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_messaging_credential",
         "scope": "connector",
+        "use_case_id": "uc_triage_feedback",
         "connector_names": [
           "messaging"
         ],
@@ -363,7 +373,7 @@
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
         "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

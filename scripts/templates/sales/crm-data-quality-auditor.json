@@ -191,7 +191,8 @@
         "maps_to": "persona.connectors[messaging].credential_fields[bot_token].value",
         "variable_name": "messaging_credential",
         "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, etc.). The bot must be invited to the target channel.",
-        "dimension": "connectors"
+        "dimension": "connector",
+        "use_case_id": "uc_report_distribution"
       },
       {
         "id": "aq_auto_fix_level",
@@ -211,7 +212,8 @@
         "maps_to": "use_cases[uc_weekly_audit].sample_input.auto_fix_level",
         "variable_name": "auto_fix_level",
         "context": "You can always change this later. Even with auto-fix enabled, original values are preserved for rollback (4-week backup retention).",
-        "dimension": "error-handling"
+        "dimension": "error",
+        "use_case_id": "uc_weekly_audit"
       },
       {
         "id": "aq_contact_stale_days",
@@ -232,7 +234,8 @@
         "maps_to": "use_cases[uc_weekly_audit].sample_input.contact_stale_days",
         "variable_name": "contact_stale_days",
         "context": "Contacts with no emails/calls/meetings for this many days AND no open deals are flagged. Tighter values surface stale records sooner.",
-        "dimension": "use-cases"
+        "dimension": "task",
+        "use_case_id": "uc_weekly_audit"
       },
       {
         "id": "aq_deal_stale_days",
@@ -253,7 +256,8 @@
         "maps_to": "use_cases[uc_weekly_audit].sample_input.deal_stale_days",
         "variable_name": "deal_stale_days",
         "context": "Deals stuck in the same pipeline stage longer than this are surfaced as at-risk.",
-        "dimension": "use-cases"
+        "dimension": "task",
+        "use_case_id": "uc_weekly_audit"
       },
       {
         "id": "aq_company_stale_days",
@@ -273,7 +277,8 @@
         "maps_to": "use_cases[uc_weekly_audit].sample_input.company_stale_days",
         "variable_name": "company_stale_days",
         "context": "Companies without updates longer than this are flagged in the audit, but never auto-archived.",
-        "dimension": "use-cases"
+        "dimension": "task",
+        "use_case_id": "uc_weekly_audit"
       },
       {
         "id": "aq_crm_credential",
@@ -292,7 +297,8 @@
         "maps_to": "persona.connectors[crm].credential_fields[provider].value",
         "variable_name": "crm_credential",
         "context": "Options are auto-detected from your crm credentials in the Vault (CRM, CRM, CRM, …).",
-        "dimension": "connectors"
+        "dimension": "connector",
+        "use_case_id": "uc_weekly_audit"
       },
       {
         "id": "aq_knowledge_base_credential",
@@ -311,7 +317,8 @@
         "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
         "variable_name": "knowledge_base_credential",
         "context": "Options are auto-detected from your knowledge_base credentials in the Vault (knowledge base, knowledge base, Obsidian, …).",
-        "dimension": "connectors"
+        "dimension": "connector",
+        "use_case_id": "uc_report_distribution"
       }
     ],
     "persona_meta": {

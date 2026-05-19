@@ -113,6 +113,7 @@
         "use_case_ids": [
           "uc_morning_briefing"
         ],
+        "use_case_id": "uc_morning_briefing",
         "category": "domain",
         "question": "Which sources should ground the briefing's research?",
         "type": "source_definition",
@@ -120,7 +121,7 @@
         "maps_to": "use_cases[uc_morning_briefing].sample_input.briefing_sources",
         "variable_name": "briefing_sources",
         "context": "Attach a local folder, a registered codebase, a database credential, or a URL list. The persona reads these at each run and grounds findings in them — your long-term ground truth instead of ad-hoc keyword guesses. Sources can be expanded later.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_briefing_intent",
@@ -128,6 +129,7 @@
         "use_case_ids": [
           "uc_morning_briefing"
         ],
+        "use_case_id": "uc_morning_briefing",
         "category": "domain",
         "question": "What's the long-term goal of this briefing, and how should the persona work with your sources?",
         "type": "textarea",
@@ -136,7 +138,7 @@
         "maps_to": "use_cases[uc_morning_briefing].sample_input.briefing_intent",
         "variable_name": "briefing_intent",
         "context": "Free-form. Covers role context, how to weigh sources, what to emphasize / suppress, and length preferences. The building process may ask clarifying follow-ups after the questionnaire if the intent is thin — no need to over-specify here.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_goals",
@@ -145,6 +147,7 @@
           "uc_morning_briefing",
           "uc_weekly_review"
         ],
+        "use_case_id": "uc_morning_briefing",
         "category": "domain",
         "question": "What are your current top 3-5 goals with deadlines?",
         "type": "textarea",
@@ -153,7 +156,7 @@
         "maps_to": null,
         "variable_name": "goals",
         "context": "One goal per line. Include a concrete deadline or cadence. Personal briefing checks progress; weekly review runs the retrospective. You can edit goals anytime.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_content_type",
@@ -161,6 +164,7 @@
         "use_case_ids": [
           "uc_weekly_review"
         ],
+        "use_case_id": "uc_weekly_review",
         "category": "configuration",
         "question": "Which captured ideas should the Sunday review triage?",
         "type": "select",
@@ -173,7 +177,7 @@
         "maps_to": "use_cases[uc_weekly_review].sample_input.content_type",
         "variable_name": "content_type",
         "context": "Scopes the Sunday triage. Work-only is faster; everything_captured is thorough but longer. Change anytime.",
-        "dimension": "use-cases"
+        "dimension": "task"
       }
     ],
     "persona_meta": {

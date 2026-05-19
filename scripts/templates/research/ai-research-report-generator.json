@@ -149,6 +149,7 @@
         "use_case_ids": [
           "uc_research_report"
         ],
+        "use_case_id": "uc_research_report",
         "category": "domain",
         "question": "Which reference sources should ground the research?",
         "type": "source_definition",
@@ -156,7 +157,7 @@
         "maps_to": "use_cases[uc_research_report].sample_input.research_sources",
         "variable_name": "research_sources",
         "context": "Attach a local folder, a registered codebase, a database credential, or a URL list. The persona reads these at each run and weights them above generic web findings.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_research_intent",
@@ -164,6 +165,7 @@
         "use_case_ids": [
           "uc_research_report"
         ],
+        "use_case_id": "uc_research_report",
         "category": "domain",
         "question": "How should the persona interpret the topic and work with your sources?",
         "type": "textarea",
@@ -172,7 +174,7 @@
         "maps_to": "use_cases[uc_research_report].sample_input.research_intent",
         "variable_name": "research_intent",
         "context": "Free-form. Covers domain framing, how to weigh sources, what to emphasize/suppress, style preferences. The build process may ask clarifying follow-ups after the questionnaire if the intent is thin.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_default_scope",
@@ -180,6 +182,7 @@
         "use_case_ids": [
           "uc_research_report"
         ],
+        "use_case_id": "uc_research_report",
         "category": "configuration",
         "question": "What default scope should be used when a request doesn't specify?",
         "type": "select",
@@ -192,7 +195,7 @@
         "maps_to": "use_cases[uc_research_report].sample_input.default_scope",
         "variable_name": "default_scope",
         "context": "Sets the fallback depth for quick-intake requests. Explicit scope in the incoming request always overrides.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_default_audience",
@@ -200,6 +203,7 @@
         "use_case_ids": [
           "uc_research_report"
         ],
+        "use_case_id": "uc_research_report",
         "category": "quality",
         "question": "Who is the primary audience for delivered reports?",
         "type": "select",
@@ -212,7 +216,7 @@
         "maps_to": "use_cases[uc_research_report].sample_input.default_audience",
         "variable_name": "default_audience",
         "context": "Calibrates tone and which details surface. Per-request audience field in the incoming payload always overrides.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_knowledge_base",
@@ -220,6 +224,7 @@
         "connector_names": [
           "knowledge_base"
         ],
+        "use_case_id": "uc_research_report",
         "category": "configuration",
         "question": "Which knowledge-base workspace should store reports?",
         "type": "select",
@@ -231,7 +236,7 @@
         "maps_to": "persona.connectors[knowledge_base].credential_fields[workspace_id].value",
         "variable_name": "knowledge_base_provider",
         "context": "Auto-detected from your `knowledge_base`-category credentials (knowledge base, knowledge base, etc.). Add one first if the list is empty.",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_messaging_channel",
@@ -239,6 +244,7 @@
         "connector_names": [
           "messaging"
         ],
+        "use_case_id": "uc_research_report",
         "category": "configuration",
         "question": "Which messaging channel should deliver report summaries?",
         "type": "select",
@@ -250,7 +256,7 @@
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_provider",
         "context": "Pick from your `messaging`-category credentials (messaging, messaging, messaging, in-app). Skip if you prefer email-only delivery.",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_email_credential",
@@ -258,6 +264,7 @@
         "connector_names": [
           "email"
         ],
+        "use_case_id": "uc_research_report",
         "category": "credentials",
         "question": "Which email provider should this persona use?",
         "type": "select",
@@ -269,7 +276,7 @@
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
         "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

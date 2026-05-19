@@ -177,6 +177,7 @@
         "use_case_ids": [
           "uc_experiment_analysis"
         ],
+        "use_case_id": "uc_experiment_analysis",
         "category": "configuration",
         "question": "Which messaging channels should receive experiment result summaries and stale flag digests?",
         "type": "select",
@@ -185,7 +186,7 @@
         "maps_to": "use_cases[uc_experiment_analysis].sample_input.results_channel",
         "variable_name": "results_channel",
         "context": "Options auto-detected from your messaging credential. Pick a channel the bot has been invited to.",
-        "dimension": "messages",
+        "dimension": "message",
         "vault_category": "messaging",
         "option_service_types": [
           "slack"
@@ -201,6 +202,7 @@
         "use_case_ids": [
           "uc_flag_monitoring"
         ],
+        "use_case_id": "uc_flag_monitoring",
         "category": "configuration",
         "question": "Which messaging channels should receive flag change alerts?",
         "type": "select",
@@ -209,7 +211,7 @@
         "maps_to": "use_cases[uc_flag_monitoring].sample_input.change_channel",
         "variable_name": "change_channel",
         "context": "Routing flag changes separately from experiment results keeps each channel focused. Same channel is fine if your team prefers consolidated notifications.",
-        "dimension": "messages",
+        "dimension": "message",
         "vault_category": "messaging",
         "option_service_types": [
           "slack"
@@ -225,6 +227,7 @@
         "use_case_ids": [
           "uc_experiment_analysis"
         ],
+        "use_case_id": "uc_experiment_analysis",
         "category": "quality",
         "question": "What statistical confidence should trigger a 'winning variant' declaration?",
         "type": "select",
@@ -237,7 +240,7 @@
         "maps_to": "use_cases[uc_experiment_analysis].sample_input.confidence_threshold",
         "variable_name": "confidence_threshold",
         "context": "Lower thresholds speed up rollouts; higher thresholds reduce false winners.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_ticket_gate",
@@ -245,6 +248,7 @@
         "use_case_ids": [
           "uc_experiment_analysis"
         ],
+        "use_case_id": "uc_experiment_analysis",
         "category": "human_in_the_loop",
         "question": "Should winning experiments auto-create Linear tickets, post for approval, or always require explicit approval?",
         "type": "select",
@@ -257,7 +261,7 @@
         "maps_to": "use_cases[uc_experiment_analysis].sample_input.ticket_gate",
         "variable_name": "ticket_gate",
         "context": "Controls whether ticket creation is fully automated or gated on human confirmation to avoid noisy Linear backlogs.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_summary_verbosity",
@@ -265,6 +269,7 @@
         "use_case_ids": [
           "uc_experiment_analysis"
         ],
+        "use_case_id": "uc_experiment_analysis",
         "category": "quality",
         "question": "How much detail should winning-experiment messaging summaries include?",
         "type": "select",
@@ -277,7 +282,7 @@
         "maps_to": "use_cases[uc_experiment_analysis].sample_input.summary_verbosity",
         "variable_name": "summary_verbosity",
         "context": "Concise suits high-volume teams; verbose suits data-driven teams who audit before acting.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_stale_threshold_days",
@@ -285,6 +290,7 @@
         "use_case_ids": [
           "uc_stale_flag_digest"
         ],
+        "use_case_id": "uc_stale_flag_digest",
         "category": "configuration",
         "question": "After how many days without modification should a feature flag enter the stale digest?",
         "type": "select",
@@ -298,7 +304,7 @@
         "maps_to": "use_cases[uc_stale_flag_digest].sample_input.stale_threshold_days",
         "variable_name": "stale_threshold_days",
         "context": "Calibrate to your release cadence. The 60-day tier is always used for escalation.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_deny_list_prefixes",
@@ -307,6 +313,7 @@
           "uc_flag_monitoring",
           "uc_stale_flag_digest"
         ],
+        "use_case_id": "uc_flag_monitoring",
         "category": "boundaries",
         "question": "Which flag-key prefixes should never be reported, archived, or digested?",
         "type": "text",
@@ -314,7 +321,7 @@
         "maps_to": "use_cases[uc_flag_monitoring].sample_input.deny_list_prefixes",
         "variable_name": "deny_list_prefixes",
         "context": "Protects infrastructure kill-switches and compliance-sensitive flags from being surfaced as stale or change-alerted.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_deny_list_tags",
@@ -322,6 +329,7 @@
         "use_case_ids": [
           "uc_experiment_analysis"
         ],
+        "use_case_id": "uc_experiment_analysis",
         "category": "boundaries",
         "question": "Which experiment tags should skip analysis entirely?",
         "type": "text",
@@ -329,7 +337,7 @@
         "maps_to": "use_cases[uc_experiment_analysis].sample_input.deny_list_tags",
         "variable_name": "deny_list_tags",
         "context": "Embargoed / compliance-sensitive experiments stay out of the feed. Comma-separated.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_messaging_credential",
@@ -337,6 +345,7 @@
         "connector_names": [
           "messaging"
         ],
+        "use_case_id": "uc_flag_monitoring",
         "category": "credentials",
         "question": "Which team messaging platform should this persona post to?",
         "type": "select",
@@ -348,7 +357,7 @@
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
         "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_ticketing_credential",
@@ -356,6 +365,7 @@
         "connector_names": [
           "ticketing"
         ],
+        "use_case_id": "uc_experiment_analysis",
         "category": "credentials",
         "question": "Which ticketing system should this persona write to?",
         "type": "select",
@@ -367,7 +377,7 @@
         "maps_to": "persona.connectors[ticketing].credential_fields[provider].value",
         "variable_name": "ticketing_credential",
         "context": "Options are auto-detected from your ticketing credentials in the Vault (Jira, Linear, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

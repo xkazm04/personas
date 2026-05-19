@@ -129,6 +129,7 @@
       {
         "id": "aq_cloud_provider",
         "scope": "connector",
+        "use_case_id": "uc_weekly_spending_check",
         "connector_names": [
           "cloud_billing"
         ],
@@ -143,7 +144,7 @@
         "maps_to": "persona.connectors[cloud_billing]",
         "variable_name": "cloud_provider",
         "context": "Options come from cloud-billing credentials in your Vault (cloud, cloud, cloud, or another billing-category connector). Add a credential first if the list is empty — the persona needs billing API access to monitor.",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_spending_threshold",
@@ -151,6 +152,7 @@
         "use_case_ids": [
           "uc_weekly_spending_check"
         ],
+        "use_case_id": "uc_weekly_spending_check",
         "category": "configuration",
         "question": "What is your weekly spending threshold?",
         "type": "text",
@@ -159,7 +161,7 @@
         "maps_to": "use_cases[uc_weekly_spending_check].sample_input.spending_threshold",
         "variable_name": "spending_threshold",
         "context": "Alerts trigger when weekly total spend exceeds this value. This becomes a free parameter you can adjust anytime via {{param.spending_threshold}} without rebuilding the persona.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_currency",
@@ -167,6 +169,7 @@
         "use_case_ids": [
           "uc_weekly_spending_check"
         ],
+        "use_case_id": "uc_weekly_spending_check",
         "category": "configuration",
         "question": "What currency are your billing costs in?",
         "type": "select",
@@ -183,7 +186,7 @@
         "maps_to": "use_cases[uc_weekly_spending_check].sample_input.currency",
         "variable_name": "currency",
         "context": "Used for display formatting in alerts. Cost data uses the provider's native currency — the agent does not convert.",
-        "dimension": "messages"
+        "dimension": "message"
       },
       {
         "id": "aq_sensitivity",
@@ -191,6 +194,7 @@
         "use_case_ids": [
           "uc_weekly_spending_check"
         ],
+        "use_case_id": "uc_weekly_spending_check",
         "category": "quality",
         "question": "How sensitive should anomaly detection be?",
         "type": "select",
@@ -203,7 +207,7 @@
         "maps_to": "use_cases[uc_weekly_spending_check].sample_input.sensitivity",
         "variable_name": "sensitivity",
         "context": "Conservative keeps the agent maximally silent; Aggressive catches smaller deviations. Balanced is the right default for most infrastructures.",
-        "dimension": "use-cases"
+        "dimension": "task"
       }
     ],
     "suggested_parameters": [

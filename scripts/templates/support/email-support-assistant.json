@@ -140,6 +140,7 @@
         "use_case_ids": [
           "uc_email_triage"
         ],
+        "use_case_id": "uc_email_triage",
         "category": "quality",
         "question": "What confidence threshold should gate auto-replies?",
         "type": "select",
@@ -153,7 +154,7 @@
         "maps_to": "use_cases[uc_email_triage].sample_input.confidence_threshold",
         "variable_name": "confidence_threshold",
         "context": "Below this score the persona drafts for review instead of sending. 0.8 is the recommended conservative default.",
-        "dimension": "human-review"
+        "dimension": "review"
       },
       {
         "id": "aq_reply_tone",
@@ -161,6 +162,7 @@
         "use_case_ids": [
           "uc_email_triage"
         ],
+        "use_case_id": "uc_email_triage",
         "category": "configuration",
         "question": "What tone should auto-generated replies use?",
         "type": "select",
@@ -173,7 +175,7 @@
         "maps_to": "use_cases[uc_email_triage].sample_input.reply_tone",
         "variable_name": "reply_tone",
         "context": "Professional is balanced and clear. Friendly warms up the language. Formal fits enterprise/regulated contexts.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_escalation_timeout",
@@ -181,6 +183,7 @@
         "use_case_ids": [
           "uc_knowledge_gap"
         ],
+        "use_case_id": "uc_knowledge_gap",
         "category": "configuration",
         "question": "How many hours should the customer-facing acknowledgment promise for a human follow-up?",
         "type": "select",
@@ -195,7 +198,7 @@
         "maps_to": "use_cases[uc_knowledge_gap].sample_input.escalation_timeout_hours",
         "variable_name": "escalation_timeout",
         "context": "Appears in the acknowledgment email sent when the KB has no match. Tighten or loosen to match your SLA.",
-        "dimension": "messages"
+        "dimension": "message"
       },
       {
         "id": "aq_report_channel",
@@ -203,6 +206,7 @@
         "use_case_ids": [
           "uc_daily_report"
         ],
+        "use_case_id": "uc_daily_report",
         "category": "configuration",
         "question": "Which messaging target receives the daily report?",
         "type": "select",
@@ -211,7 +215,7 @@
         "maps_to": "persona.notification_channels_default[0].description",
         "variable_name": "report_channel",
         "context": "Daily metrics (auto-reply rate, approval rate, top categories, gaps, confidence trend) post here each morning.",
-        "dimension": "messages",
+        "dimension": "message",
         "vault_category": "messaging",
         "option_service_types": [
           "slack",
@@ -227,6 +231,7 @@
       {
         "id": "aq_email_credential",
         "scope": "connector",
+        "use_case_id": "uc_email_triage",
         "connector_names": [
           "email"
         ],
@@ -241,7 +246,7 @@
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
         "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

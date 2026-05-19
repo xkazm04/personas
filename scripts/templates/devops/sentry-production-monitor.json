@@ -151,6 +151,7 @@
         "use_case_ids": [
           "uc_issue_scan"
         ],
+        "use_case_id": "uc_issue_scan",
         "category": "configuration",
         "question": "Which Sentry projects should be monitored?",
         "type": "select",
@@ -164,7 +165,7 @@
         "maps_to": "persona.connectors[sentry].scope",
         "variable_name": "sentry_projects",
         "context": "Loaded live from your connected Sentry organization. Pick one or more projects, or 'All' to monitor every project your token can access.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_codebase_scope",
@@ -172,6 +173,7 @@
         "use_case_ids": [
           "uc_root_cause"
         ],
+        "use_case_id": "uc_root_cause",
         "category": "configuration",
         "question": "Which codebases should be available for root cause analysis?",
         "type": "select",
@@ -185,7 +187,7 @@
         "maps_to": "persona.connectors[codebases].credential_fields[codebases_scope].value",
         "variable_name": "codebases_scope",
         "context": "Loaded from codebases registered under Connections. 'All' enables cross-project search (recommended). Narrow the scope only if your portfolio is large enough to slow per-issue analysis.",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_environment_filter",
@@ -193,6 +195,7 @@
         "use_case_ids": [
           "uc_issue_scan"
         ],
+        "use_case_id": "uc_issue_scan",
         "category": "configuration",
         "question": "Which environment should be monitored?",
         "type": "select",
@@ -204,7 +207,7 @@
         "maps_to": "use_cases[uc_issue_scan].sample_input.environment_filter",
         "variable_name": "environment_filter",
         "context": "Loaded from environment tag values reported by your Sentry org. Production-only keeps signal clean; adding staging catches issues before users see them.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_severity_threshold",
@@ -212,6 +215,7 @@
         "use_case_ids": [
           "uc_issue_scan"
         ],
+        "use_case_id": "uc_issue_scan",
         "category": "quality",
         "question": "Minimum error occurrence count to surface an issue?",
         "type": "select",
@@ -228,7 +232,7 @@
         "maps_to": "use_cases[uc_issue_scan].sample_input.severity_threshold",
         "variable_name": "severity_threshold",
         "context": "Issues below this threshold are skipped entirely. Lower = more issues surfaced; higher = only high-impact issues. Adjustable per run without rebuild.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_lookback_hours",
@@ -236,6 +240,7 @@
         "use_case_ids": [
           "uc_issue_scan"
         ],
+        "use_case_id": "uc_issue_scan",
         "category": "quality",
         "question": "How many hours back should each scan look?",
         "type": "select",
@@ -251,7 +256,7 @@
         "maps_to": "use_cases[uc_issue_scan].sample_input.lookback_hours",
         "variable_name": "lookback_hours",
         "context": "Match this to your run cadence. 24 for daily runs, 168 for weekly. Longer windows smooth out quiet days but dilute signal.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_report_depth",
@@ -259,6 +264,7 @@
         "use_case_ids": [
           "uc_root_cause"
         ],
+        "use_case_id": "uc_root_cause",
         "category": "quality",
         "question": "How detailed should the per-issue reports be?",
         "type": "select",
@@ -271,7 +277,7 @@
         "maps_to": "use_cases[uc_root_cause].sample_input.report_depth",
         "variable_name": "report_depth",
         "context": "Summary is a quick triage list. Standard is the full ticket-ready report. Deep is for senior engineers investigating complex cross-project issues.",
-        "dimension": "use-cases"
+        "dimension": "task"
       }
     ],
     "persona_meta": {

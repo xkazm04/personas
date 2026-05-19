@@ -199,6 +199,7 @@
         "use_case_ids": [
           "uc_detect_and_distribute"
         ],
+        "use_case_id": "uc_detect_and_distribute",
         "category": "configuration",
         "question": "Which Buffer-connected platforms should receive auto-scheduled posts?",
         "type": "select",
@@ -212,7 +213,7 @@
         "maps_to": "use_cases[uc_detect_and_distribute].sample_input.platforms",
         "variable_name": "platforms",
         "context": "Only selected platforms receive captions. Also scopes which engagement data the review step consumes.",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_caption_tone",
@@ -220,6 +221,7 @@
         "use_case_ids": [
           "uc_detect_and_distribute"
         ],
+        "use_case_id": "uc_detect_and_distribute",
         "category": "quality",
         "question": "What baseline caption tone should the agent use?",
         "type": "select",
@@ -233,7 +235,7 @@
         "maps_to": "use_cases[uc_detect_and_distribute].sample_input.caption_tone",
         "variable_name": "caption_tone",
         "context": "Sets the baseline voice. The agent nudges per-platform (e.g., slightly more formal on LinkedIn).",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_review_mode",
@@ -241,6 +243,7 @@
         "use_case_ids": [
           "uc_detect_and_distribute"
         ],
+        "use_case_id": "uc_detect_and_distribute",
         "category": "human_in_the_loop",
         "question": "Should captions queue to Buffer as drafts for your review, or schedule directly?",
         "type": "select",
@@ -253,7 +256,7 @@
         "maps_to": "use_cases[uc_detect_and_distribute].sample_input.review_mode",
         "variable_name": "review_mode",
         "context": "Draft mode adds a review step but prevents unintended live posts.",
-        "dimension": "human-review"
+        "dimension": "review"
       },
       {
         "id": "aq_excluded_categories",
@@ -261,6 +264,7 @@
         "use_case_ids": [
           "uc_detect_and_distribute"
         ],
+        "use_case_id": "uc_detect_and_distribute",
         "category": "boundaries",
         "question": "Which CMS categories or tags should NEVER be auto-distributed?",
         "type": "text",
@@ -268,7 +272,7 @@
         "maps_to": "use_cases[uc_detect_and_distribute].sample_input.excluded_categories",
         "variable_name": "excluded_categories",
         "context": "Comma-separated category or tag names. Internal announcements, gated content, legal notices often belong here.",
-        "dimension": "error-handling"
+        "dimension": "error"
       },
       {
         "id": "aq_blackout_policy",
@@ -276,6 +280,7 @@
         "use_case_ids": [
           "uc_detect_and_distribute"
         ],
+        "use_case_id": "uc_detect_and_distribute",
         "category": "boundaries",
         "question": "Should the agent skip scheduling during weekends or outside business hours?",
         "type": "select",
@@ -289,7 +294,7 @@
         "maps_to": "use_cases[uc_detect_and_distribute].sample_input.blackout_policy",
         "variable_name": "blackout_policy",
         "context": "Prevents posts going live at low-engagement times or during company blackout periods.",
-        "dimension": "error-handling"
+        "dimension": "error"
       },
       {
         "id": "aq_strategy_change_policy",
@@ -297,6 +302,7 @@
         "use_case_ids": [
           "uc_weekly_strategy_digest"
         ],
+        "use_case_id": "uc_weekly_strategy_digest",
         "category": "human_in_the_loop",
         "question": "When the weekly digest recommends a strategy change, how should it be applied?",
         "type": "select",
@@ -309,7 +315,7 @@
         "maps_to": "use_cases[uc_weekly_strategy_digest].sample_input.strategy_change_policy",
         "variable_name": "strategy_change_policy",
         "context": "Strategy changes affect all future posts, so human sign-off on platform removals avoids over-correcting on a small data sample.",
-        "dimension": "human-review"
+        "dimension": "review"
       }
     ],
     "persona_meta": {

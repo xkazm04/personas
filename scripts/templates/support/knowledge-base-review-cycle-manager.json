@@ -188,6 +188,7 @@
         "use_case_ids": [
           "uc_evening_complete"
         ],
+        "use_case_id": "uc_evening_complete",
         "category": "configuration",
         "question": "What is the default review frequency when an article has no explicit Review Frequency set?",
         "type": "select",
@@ -201,7 +202,7 @@
         "maps_to": "use_cases[uc_evening_complete].sample_input.default_frequency",
         "variable_name": "default_frequency",
         "context": "Used as the fallback when calculating next-due dates. Articles with an explicit frequency in knowledge base override this.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_max_per_reviewer",
@@ -209,6 +210,7 @@
         "use_case_ids": [
           "uc_morning_assign"
         ],
+        "use_case_id": "uc_morning_assign",
         "category": "configuration",
         "question": "Maximum articles assigned to a single reviewer per cycle?",
         "type": "select",
@@ -222,7 +224,7 @@
         "maps_to": "use_cases[uc_morning_assign].sample_input.max_per_reviewer",
         "variable_name": "max_per_reviewer",
         "context": "Cap prevents burnout. Surplus rolls to the next reviewer in rotation.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_review_channel",
@@ -232,6 +234,7 @@
           "uc_evening_complete",
           "uc_overdue_reminder"
         ],
+        "use_case_id": "uc_morning_assign",
         "category": "configuration",
         "question": "Which messaging channels receives assignment summaries, completion shoutouts, and overdue nudges?",
         "type": "select",
@@ -240,7 +243,7 @@
         "maps_to": "use_cases[uc_morning_assign].sample_input.review_channel",
         "variable_name": "review_channel",
         "context": "All review-cycle messaging posts go here. Make sure the bot is invited to the channel.",
-        "dimension": "messages",
+        "dimension": "message",
         "vault_category": "messaging",
         "option_service_types": [
           "slack"

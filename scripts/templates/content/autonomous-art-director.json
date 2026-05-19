@@ -140,6 +140,7 @@
         "use_case_ids": [
           "uc_generate_and_curate"
         ],
+        "use_case_id": "uc_generate_and_curate",
         "category": "domain",
         "question": "What kind of art do you want the agent to generate?",
         "type": "textarea",
@@ -147,7 +148,7 @@
         "maps_to": "use_cases[uc_generate_and_curate].sample_input.art_subject",
         "variable_name": "art_subject",
         "context": "Describe subject matter, themes, and mood. Examples: 'fantasy landscapes with magical creatures', 'abstract geometric art inspired by architecture', 'character portraits in anime style'. The persona reads this each run.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_art_style",
@@ -155,6 +156,7 @@
         "use_case_ids": [
           "uc_generate_and_curate"
         ],
+        "use_case_id": "uc_generate_and_curate",
         "category": "configuration",
         "question": "What art style do you prefer?",
         "type": "select",
@@ -172,7 +174,7 @@
         "maps_to": "use_cases[uc_generate_and_curate].sample_input.art_style",
         "variable_name": "art_style",
         "context": "Sets the visual approach. Refined over time from approve/reject feedback.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_color_mood",
@@ -180,6 +182,7 @@
         "use_case_ids": [
           "uc_generate_and_curate"
         ],
+        "use_case_id": "uc_generate_and_curate",
         "category": "configuration",
         "question": "What color mood do you prefer?",
         "type": "select",
@@ -197,7 +200,7 @@
         "maps_to": "use_cases[uc_generate_and_curate].sample_input.color_mood",
         "variable_name": "color_mood",
         "context": "Guides the palette. Refined through approve/reject feedback.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_dimensions",
@@ -205,6 +208,7 @@
         "use_case_ids": [
           "uc_generate_and_curate"
         ],
+        "use_case_id": "uc_generate_and_curate",
         "category": "configuration",
         "question": "What image dimensions do you prefer?",
         "type": "select",
@@ -219,11 +223,12 @@
         "maps_to": "use_cases[uc_generate_and_curate].sample_input.dimensions",
         "variable_name": "dimensions",
         "context": "Larger dimensions cost more API credits.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_image_model",
         "scope": "connector",
+        "use_case_id": "uc_generate_and_curate",
         "connector_names": [
           "image_ai"
         ],
@@ -238,7 +243,7 @@
         "maps_to": "persona.connectors[image_ai].credential_fields[provider].value",
         "variable_name": "image_model",
         "context": "Options are auto-detected from the image_generation-category credentials in your Vault (image generation AI, image generation AI, …). Connect a provider first if the list is empty.",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

@@ -149,7 +149,8 @@
         "maps_to": "use_cases[uc_single_audit].sample_input.business_type",
         "variable_name": "business_type",
         "context": "Industry shapes the scoring calibration and competitive-context section of the audit report.",
-        "dimension": "use-cases"
+        "dimension": "task",
+        "use_case_id": "uc_single_audit"
       },
       {
         "id": "aq_audit_depth",
@@ -169,7 +170,8 @@
         "maps_to": "use_cases[uc_single_audit].sample_input.audit_depth",
         "variable_name": "audit_depth",
         "context": "You can override per audit. Standard covers the pages most prospects care about.",
-        "dimension": "use-cases"
+        "dimension": "task",
+        "use_case_id": "uc_single_audit"
       },
       {
         "id": "aq_redesign_prompt_mode",
@@ -189,7 +191,8 @@
         "maps_to": "use_cases[uc_single_audit].sample_input.redesign_prompt_mode",
         "variable_name": "redesign_prompt_mode",
         "context": "The redesign prompt pastes directly into Google Stitch, v0, Lovable, etc. so the agency can produce a before/after mockup immediately.",
-        "dimension": "messages"
+        "dimension": "message",
+        "use_case_id": "uc_single_audit"
       },
       {
         "id": "aq_improvement_threshold",
@@ -210,7 +213,8 @@
         "maps_to": "use_cases[uc_portfolio_reaudit].sample_input.improvement_threshold",
         "variable_name": "improvement_threshold",
         "context": "Lower = noisier summary. 3 points is a meaningful change across a 100-point scale without being overly chatty.",
-        "dimension": "use-cases"
+        "dimension": "task",
+        "use_case_id": "uc_portfolio_reaudit"
       },
       {
         "id": "aq_messaging_channel",
@@ -229,7 +233,8 @@
         "maps_to": "persona.connectors[messaging].credential_fields[bot_token].value",
         "variable_name": "messaging_provider",
         "context": "Optional — if skipped, audit reports are delivered via in-app user_message and files in data/audits/. Add a messaging credential to push reports to a team channel.",
-        "dimension": "connectors"
+        "dimension": "connector",
+        "use_case_id": "uc_single_audit"
       }
     ],
     "persona_meta": {

@@ -125,6 +125,7 @@
         "use_case_ids": [
           "uc_weekly_briefing"
         ],
+        "use_case_id": "uc_weekly_briefing",
         "category": "domain",
         "question": "Which reference sources should ground the AI briefing?",
         "type": "source_definition",
@@ -132,7 +133,7 @@
         "maps_to": "use_cases[uc_weekly_briefing].sample_input.research_sources",
         "variable_name": "research_sources",
         "context": "Folder of curated PDFs, URL list of trusted outlets/blogs, or connected knowledge base. The persona reads these first and weights them above generic web results.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_research_intent",
@@ -140,6 +141,7 @@
         "use_case_ids": [
           "uc_weekly_briefing"
         ],
+        "use_case_id": "uc_weekly_briefing",
         "category": "domain",
         "question": "How should the persona interpret the AI landscape for you?",
         "type": "textarea",
@@ -148,7 +150,7 @@
         "maps_to": "use_cases[uc_weekly_briefing].sample_input.research_intent",
         "variable_name": "research_intent",
         "context": "Free-form. Covers role, depth, what to emphasize / suppress, handling of contentious topics. The build process may ask follow-ups if the intent is thin.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_focus_subdomains",
@@ -156,6 +158,7 @@
         "use_case_ids": [
           "uc_weekly_briefing"
         ],
+        "use_case_id": "uc_weekly_briefing",
         "category": "domain",
         "question": "Which AI subdomain should be the primary focus?",
         "type": "select",
@@ -170,7 +173,7 @@
         "maps_to": "use_cases[uc_weekly_briefing].sample_input.focus_subdomains",
         "variable_name": "focus_subdomains",
         "context": "Primary angle focus. Drives which sources get queried each week.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_highlight_count",
@@ -178,6 +181,7 @@
         "use_case_ids": [
           "uc_weekly_briefing"
         ],
+        "use_case_id": "uc_weekly_briefing",
         "category": "quality",
         "question": "How dense should the weekly highlights list be?",
         "type": "select",
@@ -190,7 +194,7 @@
         "maps_to": "use_cases[uc_weekly_briefing].sample_input.highlight_count",
         "variable_name": "highlight_count",
         "context": "Shorter = higher signal threshold per item. Longer = broader coverage with more incremental items.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_messaging_channel",
@@ -198,6 +202,7 @@
         "connector_names": [
           "messaging"
         ],
+        "use_case_id": "uc_weekly_briefing",
         "category": "configuration",
         "question": "Which messaging channel should deliver the weekly briefing?",
         "type": "select",
@@ -209,7 +214,7 @@
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_provider",
         "context": "Auto-detected from your `messaging`-category credentials. Skip to read the briefing in-app only.",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

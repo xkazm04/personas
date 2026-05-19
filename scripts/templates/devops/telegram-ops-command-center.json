@@ -197,6 +197,7 @@
           "uc_command",
           "uc_confirm"
         ],
+        "use_case_id": "uc_command",
         "category": "configuration",
         "question": "Which Telegram user IDs are authorized to execute ops commands?",
         "type": "text",
@@ -205,11 +206,12 @@
         "maps_to": "use_cases[uc_command].sample_input.authorized_users",
         "variable_name": "authorized_users",
         "context": "Comma-separated Telegram user IDs. Each team member can find their ID via @userinfobot. Only listed users can execute commands; everyone else gets a polite rejection.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_secondary_messaging",
         "scope": "connector",
+        "use_case_id": "uc_confirm",
         "connector_names": [
           "secondary_messaging"
         ],
@@ -224,7 +226,7 @@
         "maps_to": "persona.connectors[secondary_messaging].credential_fields[provider].value",
         "variable_name": "secondary_messaging_provider",
         "context": "Options come from your vault's messaging-category credentials (Slack, Discord, Microsoft Teams, built-in Messages). Skip this connector to route alerts only through Telegram.",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_confirmation_timeout",
@@ -232,6 +234,7 @@
         "use_case_ids": [
           "uc_confirm"
         ],
+        "use_case_id": "uc_confirm",
         "category": "quality",
         "question": "How many minutes should a pending destructive-action confirmation stay valid?",
         "type": "select",
@@ -246,7 +249,7 @@
         "maps_to": "use_cases[uc_confirm].sample_input.confirmation_timeout_minutes",
         "variable_name": "confirmation_timeout_minutes",
         "context": "Shorter = safer (less chance of stale confirmations firing); longer = more forgiving if the operator steps away. 5 minutes is the standard default.",
-        "dimension": "use-cases"
+        "dimension": "task"
       }
     ],
     "persona_meta": {

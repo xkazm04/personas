@@ -150,6 +150,7 @@
           "source_control",
           "gitlab"
         ],
+        "use_case_id": "uc_pr_review",
         "category": "configuration",
         "question": "Which source-control credential should QA Guardian review PRs on?",
         "type": "select",
@@ -161,7 +162,7 @@
         "maps_to": "persona.connectors[github].credential_fields[provider].value",
         "variable_name": "source_control_provider",
         "context": "Auto-detected from your source_control-category credentials in the Vault. Should match the Dev Clone target repo when QA Guardian runs as its companion.",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_target_codebase",
@@ -169,6 +170,7 @@
         "connector_names": [
           "codebase"
         ],
+        "use_case_id": "uc_pr_review",
         "category": "configuration",
         "question": "Which registered codebase should QA Guardian analyze and run tests against?",
         "type": "select",
@@ -177,7 +179,7 @@
         "maps_to": "use_cases[uc_pr_review].sample_input.target_codebase",
         "variable_name": "target_codebase",
         "context": "Pick from your registered codebases. Should be the same repository as the source control repo above. QA Guardian needs read + test-run access.",
-        "dimension": "connectors",
+        "dimension": "connector",
         "ui_component": "CodebaseSelector",
         "connector_ref": "codebase",
         "option_service_types": [
@@ -194,6 +196,7 @@
         "use_case_ids": [
           "uc_pr_review"
         ],
+        "use_case_id": "uc_pr_review",
         "category": "configuration",
         "question": "What composite score should trigger an APPROVE review?",
         "type": "select",
@@ -207,7 +210,7 @@
         "maps_to": "use_cases[uc_pr_review].sample_input.approve_threshold",
         "variable_name": "approve_threshold",
         "context": "Scores at or above this get APPROVE. Scores in [5, threshold) get COMMENT. Scores <5 get REQUEST_CHANGES. 7 is the battle-tested default.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_dimension_weighting",
@@ -215,6 +218,7 @@
         "use_case_ids": [
           "uc_pr_review"
         ],
+        "use_case_id": "uc_pr_review",
         "category": "configuration",
         "question": "Which review dimensions matter most for this codebase?",
         "type": "select",
@@ -228,7 +232,7 @@
         "maps_to": "use_cases[uc_pr_review].sample_input.dimension_weighting",
         "variable_name": "dimension_weighting",
         "context": "Initial dimension weights. The weights adapt over time via the override-learning memory pass.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_write_tests",
@@ -237,6 +241,7 @@
           "uc_pr_review",
           "uc_test_remediation"
         ],
+        "use_case_id": "uc_pr_review",
         "category": "boundaries",
         "question": "Should QA Guardian write missing tests and commit them to the PR branch when coverage gaps are found?",
         "type": "boolean",
@@ -244,7 +249,7 @@
         "maps_to": "use_cases[uc_pr_review].sample_input.write_tests",
         "variable_name": "write_tests",
         "context": "When enabled, uc_test_remediation writes tests in the project's conventions and commits with `[qa-guardian]` in the message. Disable for review-only behavior.",
-        "dimension": "use-cases"
+        "dimension": "task"
       }
     ],
     "persona_meta": {

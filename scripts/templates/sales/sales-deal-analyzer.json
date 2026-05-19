@@ -160,7 +160,8 @@
         "maps_to": "persona.connectors[crm].credential_fields[access_token].value",
         "variable_name": "crm_provider",
         "context": "Options are auto-detected from your Vault's crm-category credentials (CRM, CRM, CRM, local database). Add one first if the list is empty.",
-        "dimension": "connectors"
+        "dimension": "connector",
+        "use_case_id": "uc_multidim_analysis"
       },
       {
         "id": "aq_analysis_period",
@@ -180,7 +181,8 @@
         "maps_to": "use_cases[uc_multidim_analysis].sample_input.analysis_period_days",
         "variable_name": "analysis_period_days",
         "context": "Shorter windows run more often but have less statistical power. Longer windows produce deeper insights less frequently.",
-        "dimension": "use-cases"
+        "dimension": "task",
+        "use_case_id": "uc_multidim_analysis"
       },
       {
         "id": "aq_min_sample",
@@ -201,7 +203,8 @@
         "maps_to": "use_cases[uc_multidim_analysis].sample_input.min_sample_size",
         "variable_name": "min_sample_size",
         "context": "Smaller teams use 3-5. Large teams with high deal volume should use 10-20 for tighter confidence.",
-        "dimension": "use-cases"
+        "dimension": "task",
+        "use_case_id": "uc_multidim_analysis"
       },
       {
         "id": "aq_confidence_threshold",
@@ -223,7 +226,8 @@
         "maps_to": "use_cases[uc_multidim_analysis].sample_input.confidence_threshold",
         "variable_name": "confidence_threshold",
         "context": "Lower surfaces more findings (noisier). Higher reduces false positives. 15pp is the sweet spot for monthly cadence.",
-        "dimension": "use-cases"
+        "dimension": "task",
+        "use_case_id": "uc_multidim_analysis"
       },
       {
         "id": "aq_max_recommendations",
@@ -245,7 +249,8 @@
         "maps_to": "use_cases[uc_insight_documentation].sample_input.max_recommendations",
         "variable_name": "max_recommendations",
         "context": "Recommendation fatigue is real — cap at a number your leadership team will actually read.",
-        "dimension": "messages"
+        "dimension": "message",
+        "use_case_id": "uc_insight_documentation"
       },
       {
         "id": "aq_knowledge_base_credential",
@@ -264,7 +269,8 @@
         "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
         "variable_name": "knowledge_base_credential",
         "context": "Options are auto-detected from your knowledge_base credentials in the Vault (knowledge base, knowledge base, Obsidian, …).",
-        "dimension": "connectors"
+        "dimension": "connector",
+        "use_case_id": "uc_insight_documentation"
       }
     ],
     "persona_meta": {

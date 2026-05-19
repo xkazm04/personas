@@ -164,7 +164,8 @@
         "maps_to": "persona.connectors[crm].credential_fields[access_token].value",
         "variable_name": "crm_provider",
         "context": "Auto-detected from your Vault's crm-category credentials (CRM, CRM, CRM, local database).",
-        "dimension": "connectors"
+        "dimension": "connector",
+        "use_case_id": "uc_proposal_generation"
       },
       {
         "id": "aq_research_depth",
@@ -184,7 +185,8 @@
         "maps_to": "use_cases[uc_proposal_generation].sample_input.auto_research_depth",
         "variable_name": "auto_research_depth",
         "context": "Depth scales research quality. Deep is recommended for enterprise deals; standard works for most mid-market; quick for SMB / rush-turn proposals.",
-        "dimension": "use-cases"
+        "dimension": "task",
+        "use_case_id": "uc_proposal_generation"
       },
       {
         "id": "aq_template_override",
@@ -205,7 +207,8 @@
         "maps_to": "use_cases[uc_proposal_generation].sample_input.proposal_template",
         "variable_name": "proposal_template",
         "context": "'auto' picks startup <$10K, standard $10K-$100K, enterprise >$100K. Override to force a specific tier regardless of deal value.",
-        "dimension": "use-cases"
+        "dimension": "task",
+        "use_case_id": "uc_proposal_generation"
       },
       {
         "id": "aq_max_per_run",
@@ -227,7 +230,8 @@
         "maps_to": "use_cases[uc_proposal_generation].sample_input.max_proposals_per_run",
         "variable_name": "max_proposals_per_run",
         "context": "Caps review-queue load. Deals processed in descending deal-value order so the highest-impact deals get proposals first.",
-        "dimension": "use-cases"
+        "dimension": "task",
+        "use_case_id": "uc_proposal_generation"
       },
       {
         "id": "aq_knowledge_base_credential",
@@ -246,7 +250,8 @@
         "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
         "variable_name": "knowledge_base_credential",
         "context": "Options are auto-detected from your knowledge_base credentials in the Vault (knowledge base, knowledge base, Obsidian, …).",
-        "dimension": "connectors"
+        "dimension": "connector",
+        "use_case_id": "uc_proposal_generation"
       }
     ],
     "persona_meta": {

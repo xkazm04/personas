@@ -200,7 +200,8 @@
         "maps_to": "persona.connectors[crm].credential_fields[access_token].value",
         "variable_name": "crm_provider",
         "context": "Auto-detected from your Vault's crm-category credentials (CRM, CRM, CRM).",
-        "dimension": "connectors"
+        "dimension": "connector",
+        "use_case_id": "uc_stage_response"
       },
       {
         "id": "aq_email_source",
@@ -219,7 +220,8 @@
         "maps_to": "persona.connectors[email].credential_fields[refresh_token].value",
         "variable_name": "email_provider",
         "context": "Auto-detected from your Vault's email-category credentials. email is most common; email 365 also supported.",
-        "dimension": "connectors"
+        "dimension": "connector",
+        "use_case_id": "uc_stage_response"
       },
       {
         "id": "aq_messaging_channel",
@@ -238,7 +240,8 @@
         "maps_to": "persona.connectors[messaging].credential_fields[bot_token].value",
         "variable_name": "messaging_provider",
         "context": "Auto-detected from your Vault's messaging-category credentials (messaging, messaging, messaging).",
-        "dimension": "connectors"
+        "dimension": "connector",
+        "use_case_id": "uc_stage_response"
       },
       {
         "id": "aq_review_mode",
@@ -259,7 +262,8 @@
         "maps_to": "use_cases[uc_stage_response].sample_input.review_mode",
         "variable_name": "review_mode",
         "context": "Won and lost transitions carry the most brand risk. Queuing them prevents impersonal automated messages at critical inflection points.",
-        "dimension": "human-review"
+        "dimension": "review",
+        "use_case_id": "uc_stage_response"
       },
       {
         "id": "aq_email_tone",
@@ -280,7 +284,8 @@
         "maps_to": "use_cases[uc_stage_response].sample_input.email_tone",
         "variable_name": "email_tone",
         "context": "Emails represent your brand voice to active prospects. Match how your reps already communicate.",
-        "dimension": "use-cases"
+        "dimension": "task",
+        "use_case_id": "uc_stage_response"
       },
       {
         "id": "aq_stale_threshold",
@@ -302,7 +307,8 @@
         "maps_to": "use_cases[uc_stale_watch].sample_input.stale_threshold_days",
         "variable_name": "stale_threshold_days",
         "context": "Channel alert fires at this threshold; owner DM escalates at 2× this threshold. Pick lower for transactional sales, higher for enterprise cycles.",
-        "dimension": "use-cases"
+        "dimension": "task",
+        "use_case_id": "uc_stale_watch"
       }
     ],
     "persona_meta": {

@@ -35,6 +35,7 @@ const moduleLoaders = import.meta.glob<TemplateCatalogEntry>(
   [
     '../../../../scripts/templates/**/*.json',
     '!../../../../scripts/templates/_*/**',
+    '!../../../../scripts/templates/**/_*.json',
   ],
   { import: 'default' },
 );

@@ -160,6 +160,7 @@
         "use_case_ids": [
           "uc_version_handoff"
         ],
+        "use_case_id": "uc_version_handoff",
         "category": "configuration",
         "question": "Which Figma file keys should this persona track? (Comma-separated)",
         "type": "text",
@@ -167,7 +168,7 @@
         "maps_to": "use_cases[uc_version_handoff].sample_input.tracked_files",
         "variable_name": "tracked_files",
         "context": "File keys are the path segment in a Figma URL between /file/ and the next slash. Multiple keys are comma-separated.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_change_filter",
@@ -175,6 +176,7 @@
         "use_case_ids": [
           "uc_version_handoff"
         ],
+        "use_case_id": "uc_version_handoff",
         "category": "boundaries",
         "question": "Which Figma change types should be suppressed before filing tickets or posting to the messaging channel?",
         "type": "select",
@@ -188,7 +190,7 @@
         "maps_to": "use_cases[uc_version_handoff].sample_input.change_filter",
         "variable_name": "change_filter",
         "context": "Prevents ticket spam from cosmetic or work-in-progress Figma edits.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_linear_team",
@@ -196,6 +198,7 @@
         "use_case_ids": [
           "uc_linear_sync"
         ],
+        "use_case_id": "uc_linear_sync",
         "category": "configuration",
         "question": "Which Linear team should handoff tickets be filed under?",
         "type": "select",
@@ -204,7 +207,7 @@
         "maps_to": "use_cases[uc_linear_sync].sample_input.team_id",
         "variable_name": "linear_team",
         "context": "Options are auto-detected from your Linear credential. Tickets are created with the figma-sync label in this team.",
-        "dimension": "connectors",
+        "dimension": "connector",
         "vault_category": "project_management",
         "option_service_types": [
           "linear"
@@ -220,6 +223,7 @@
         "use_case_ids": [
           "uc_linear_sync"
         ],
+        "use_case_id": "uc_linear_sync",
         "category": "human_in_the_loop",
         "question": "Should REMOVED components pause for human approval before filing their Linear ticket?",
         "type": "boolean",
@@ -227,7 +231,7 @@
         "maps_to": "use_cases[uc_linear_sync].sample_input.removed_requires_approval",
         "variable_name": "removed_requires_approval",
         "context": "REMOVED components can break existing implementations. Gating on removals reduces risk without slowing routine handoffs.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_handoff_channel",
@@ -235,6 +239,7 @@
         "use_case_ids": [
           "uc_slack_summary"
         ],
+        "use_case_id": "uc_slack_summary",
         "category": "configuration",
         "question": "Which messaging channels receives the design handoff summaries?",
         "type": "select",
@@ -243,7 +248,7 @@
         "maps_to": "persona.notification_channels_default[0].description",
         "variable_name": "handoff_channel",
         "context": "Options are auto-detected from your messaging credential. The bot must already be a member of the chosen channel.",
-        "dimension": "messages",
+        "dimension": "message",
         "vault_category": "messaging",
         "option_service_types": [
           "slack"
@@ -259,6 +264,7 @@
         "use_case_ids": [
           "uc_slack_summary"
         ],
+        "use_case_id": "uc_slack_summary",
         "category": "quality",
         "question": "How detailed should the messaging handoff summary be?",
         "type": "select",
@@ -271,7 +277,7 @@
         "maps_to": "use_cases[uc_slack_summary].sample_input.summary_verbosity",
         "variable_name": "summary_verbosity",
         "context": "Standard is usually enough; verbose suits design-system teams with many stakeholders.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_ticketing_credential",
@@ -279,6 +285,7 @@
         "connector_names": [
           "ticketing"
         ],
+        "use_case_id": "uc_linear_sync",
         "category": "credentials",
         "question": "Which ticketing system should this persona write to?",
         "type": "select",
@@ -290,7 +297,7 @@
         "maps_to": "persona.connectors[ticketing].credential_fields[provider].value",
         "variable_name": "ticketing_credential",
         "context": "Options are auto-detected from your ticketing credentials in the Vault (Jira, Linear, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_messaging_credential",
@@ -298,6 +305,7 @@
         "connector_names": [
           "messaging"
         ],
+        "use_case_id": "uc_slack_summary",
         "category": "credentials",
         "question": "Which team messaging platform should this persona post to?",
         "type": "select",
@@ -309,7 +317,7 @@
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
         "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

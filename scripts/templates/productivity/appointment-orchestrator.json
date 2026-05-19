@@ -200,6 +200,7 @@
         "use_case_ids": [
           "uc_booking_intake"
         ],
+        "use_case_id": "uc_booking_intake",
         "category": "domain",
         "question": "What types of meetings does this orchestrator primarily manage?",
         "type": "select",
@@ -213,7 +214,7 @@
         "maps_to": "use_cases[uc_booking_intake].sample_input.meeting_focus",
         "variable_name": "meeting_focus",
         "context": "Determines default CRM deals-stage mapping and prep material templates.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_slack_channel",
@@ -221,6 +222,7 @@
         "use_case_ids": [
           "uc_booking_intake"
         ],
+        "use_case_id": "uc_booking_intake",
         "category": "configuration",
         "question": "Which messaging channels should receive booking notifications?",
         "type": "select",
@@ -228,7 +230,7 @@
         "maps_to": "use_cases[uc_booking_intake].sample_input.slack_channel",
         "variable_name": "slack_channel",
         "context": "messaging channels for team booking alerts and cancellations. Pick from your connected messaging workspaces.",
-        "dimension": "connectors",
+        "dimension": "connector",
         "dynamic_source": {
           "service_type": "messaging",
           "operation": "list_channels",
@@ -241,6 +243,7 @@
         "use_case_ids": [
           "uc_booking_intake"
         ],
+        "use_case_id": "uc_booking_intake",
         "category": "configuration",
         "question": "Which CRM pipelines should new deals land in?",
         "type": "select",
@@ -248,7 +251,7 @@
         "maps_to": "use_cases[uc_booking_intake].sample_input.hubspot_pipeline",
         "variable_name": "hubspot_pipeline",
         "context": "CRM supports multiple pipelines; the orchestrator needs the exact pipeline name to place deals correctly.",
-        "dimension": "connectors",
+        "dimension": "connector",
         "dynamic_source": {
           "service_type": "crm",
           "operation": "list_deal_pipelines",
@@ -261,6 +264,7 @@
         "use_case_ids": [
           "uc_pre_meeting_reminder"
         ],
+        "use_case_id": "uc_pre_meeting_reminder",
         "category": "configuration",
         "question": "How far in advance should the reminder email go out?",
         "type": "select",
@@ -273,7 +277,7 @@
         "maps_to": "use_cases[uc_pre_meeting_reminder].sample_input.reminder_lead_hours",
         "variable_name": "reminder_lead_hours",
         "context": "Sets the lead window the daily scan uses to pick which meetings to remind. The scan itself runs on the cadence you pick at the trigger-composition step.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_followup_tone",
@@ -281,6 +285,7 @@
         "use_case_ids": [
           "uc_post_meeting_followup"
         ],
+        "use_case_id": "uc_post_meeting_followup",
         "category": "quality",
         "question": "What tone should post-meeting follow-up emails use?",
         "type": "select",
@@ -294,11 +299,12 @@
         "maps_to": "use_cases[uc_post_meeting_followup].sample_input.followup_tone",
         "variable_name": "followup_tone",
         "context": "Shapes the follow-up email copy. Adaptive mode reads the CRM deals stage to vary tone.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_calendar_credential",
         "scope": "connector",
+        "use_case_id": "uc_booking_intake",
         "connector_names": [
           "calendar"
         ],
@@ -313,11 +319,12 @@
         "maps_to": "persona.connectors[calendar].credential_fields[provider].value",
         "variable_name": "calendar_credential",
         "context": "Options are auto-detected from your calendar credentials in the Vault (calendar, email Calendar, Cal.com, Calendly).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_crm_credential",
         "scope": "connector",
+        "use_case_id": "uc_booking_intake",
         "connector_names": [
           "crm"
         ],
@@ -332,11 +339,12 @@
         "maps_to": "persona.connectors[crm].credential_fields[provider].value",
         "variable_name": "crm_credential",
         "context": "Options are auto-detected from your crm credentials in the Vault (CRM, CRM, CRM, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_email_credential",
         "scope": "connector",
+        "use_case_id": "uc_booking_intake",
         "connector_names": [
           "email"
         ],
@@ -351,11 +359,12 @@
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
         "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_messaging_credential",
         "scope": "connector",
+        "use_case_id": "uc_booking_intake",
         "connector_names": [
           "messaging"
         ],
@@ -370,7 +379,7 @@
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
         "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

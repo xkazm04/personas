@@ -110,6 +110,7 @@
         "use_case_ids": [
           "uc_intake"
         ],
+        "use_case_id": "uc_intake",
         "category": "configuration",
         "question": "Which severity labels should your team use?",
         "type": "select",
@@ -122,7 +123,7 @@
         "maps_to": "use_cases[uc_intake].sample_input.severity_scale_label",
         "variable_name": "severity_scale_label",
         "context": "Display label only — the agent maps whichever convention you pick to the internal S1-S4 escalation tiers so timers and routing stay consistent.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_auto_escalate_s1",
@@ -130,6 +131,7 @@
         "use_case_ids": [
           "uc_tracking"
         ],
+        "use_case_id": "uc_tracking",
         "category": "quality",
         "question": "Minutes of no update before a Critical (S1) incident auto-escalates?",
         "type": "select",
@@ -144,7 +146,7 @@
         "maps_to": "use_cases[uc_tracking].sample_input.auto_escalate_s1_minutes",
         "variable_name": "auto_escalate_s1_minutes",
         "context": "Shorter = faster response but more alert fatigue. 30 minutes matches most standard SEV1 SLAs. S2/S3/S4 deadlines scale from this.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_postmortem_delay",
@@ -152,6 +154,7 @@
         "use_case_ids": [
           "uc_postmortem"
         ],
+        "use_case_id": "uc_postmortem",
         "category": "quality",
         "question": "How many hours after resolution should the post-mortem be generated?",
         "type": "select",
@@ -167,7 +170,7 @@
         "maps_to": "use_cases[uc_postmortem].sample_input.postmortem_delay_hours",
         "variable_name": "postmortem_delay_hours",
         "context": "Longer delay lets responders add final notes and lets dust settle before documentation. 24h is the standard for S1/S2 reviews.",
-        "dimension": "use-cases"
+        "dimension": "task"
       }
     ],
     "persona_meta": {

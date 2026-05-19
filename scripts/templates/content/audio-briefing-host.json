@@ -164,6 +164,7 @@
         "use_case_ids": [
           "uc_script_draft"
         ],
+        "use_case_id": "uc_script_draft",
         "category": "domain",
         "question": "What conversation style fits your briefings?",
         "type": "select",
@@ -177,7 +178,7 @@
         "maps_to": "use_cases[uc_script_draft].sample_input.briefing_style",
         "variable_name": "briefing_style",
         "context": "Picks the host roles. You can override per-run via the briefing_style parameter.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_target_duration",
@@ -185,6 +186,7 @@
         "use_case_ids": [
           "uc_script_draft"
         ],
+        "use_case_id": "uc_script_draft",
         "category": "configuration",
         "question": "What target duration should briefings aim for?",
         "type": "select",
@@ -198,7 +200,7 @@
         "maps_to": "use_cases[uc_script_draft].sample_input.target_duration_minutes",
         "variable_name": "target_duration",
         "context": "The agent auto-shrinks scripts that overshoot by more than 20%. Override per-run with target_duration_minutes.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_briefing_intent",
@@ -206,6 +208,7 @@
         "use_case_ids": [
           "uc_script_draft"
         ],
+        "use_case_id": "uc_script_draft",
         "category": "domain",
         "question": "Briefing intent — how should the persona handle tone, emphasis, and audience?",
         "type": "textarea",
@@ -218,6 +221,7 @@
       {
         "id": "aq_tts_provider",
         "scope": "connector",
+        "use_case_id": "uc_audio_production",
         "connector_names": [
           "tts_provider"
         ],
@@ -232,7 +236,7 @@
         "maps_to": "persona.connectors[tts_provider].credential_fields[provider].value",
         "variable_name": "tts_provider_pick",
         "context": "Options are auto-detected from the tts-category credentials in your Vault. voice generation AI has the strongest voice quality for briefings; Google Cloud TTS is cheapest at scale. Connect a TTS provider first if the list is empty.",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

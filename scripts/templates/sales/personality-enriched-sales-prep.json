@@ -246,7 +246,8 @@
         "maps_to": "use_cases[uc_meeting_prep].sample_input.prep_scope",
         "variable_name": "prep_scope",
         "context": "External-only skips internal standups. Small-meetings-only caps at 5 attendees so enrichment stays focused.",
-        "dimension": "use-cases"
+        "dimension": "task",
+        "use_case_id": "uc_meeting_prep"
       },
       {
         "id": "aq_reminder_offset",
@@ -266,7 +267,8 @@
         "maps_to": "use_cases[uc_prebrief_reminder].sample_input.reminder_offset_minutes",
         "variable_name": "reminder_offset_minutes",
         "context": "30 minutes is the sweet spot for most sales meetings — enough time to skim the brief without being early-morning noise.",
-        "dimension": "use-cases"
+        "dimension": "task",
+        "use_case_id": "uc_prebrief_reminder"
       },
       {
         "id": "aq_messaging_channel",
@@ -285,7 +287,8 @@
         "maps_to": "persona.connectors[messaging].credential_fields[bot_token].value",
         "variable_name": "messaging_provider",
         "context": "Options come from your Vault's messaging-category credentials (messaging, messaging, messaging, etc.). Add one if the list is empty.",
-        "dimension": "connectors"
+        "dimension": "connector",
+        "use_case_id": "uc_prebrief_reminder"
       },
       {
         "id": "aq_calendar_source",
@@ -304,7 +307,8 @@
         "maps_to": "persona.connectors[calendar].credential_fields[refresh_token].value",
         "variable_name": "calendar_provider",
         "context": "Options come from your Vault's scheduling-category credentials. calendar is the most common; Calendly webhooks augment polling when configured.",
-        "dimension": "connectors"
+        "dimension": "connector",
+        "use_case_id": "uc_meeting_prep"
       },
       {
         "id": "aq_email_credential",
@@ -323,7 +327,8 @@
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
         "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
-        "dimension": "connectors"
+        "dimension": "connector",
+        "use_case_id": "uc_meeting_prep"
       },
       {
         "id": "aq_knowledge_base_credential",
@@ -342,7 +347,8 @@
         "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
         "variable_name": "knowledge_base_credential",
         "context": "Options are auto-detected from your knowledge_base credentials in the Vault (knowledge base, knowledge base, Obsidian, …).",
-        "dimension": "connectors"
+        "dimension": "connector",
+        "use_case_id": "uc_meeting_prep"
       }
     ],
     "persona_meta": {

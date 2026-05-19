@@ -197,6 +197,7 @@
           "uc_pr_lifecycle",
           "uc_issue_sync"
         ],
+        "use_case_id": "uc_pr_lifecycle",
         "category": "configuration",
         "question": "Which messaging channels should receive PR and issue notifications?",
         "type": "select",
@@ -205,7 +206,7 @@
         "maps_to": "persona.notification_channels_default[0].description",
         "variable_name": "dev_channel",
         "context": "Options are auto-detected from your messaging credential. The bot must be a member of the chosen channel.",
-        "dimension": "messages",
+        "dimension": "message",
         "vault_category": "messaging",
         "option_service_types": [
           "slack"
@@ -221,6 +222,7 @@
         "use_case_ids": [
           "uc_release_management"
         ],
+        "use_case_id": "uc_release_management",
         "category": "configuration",
         "question": "Which messaging channels should receive release announcements?",
         "type": "select",
@@ -229,7 +231,7 @@
         "maps_to": "persona.notification_channels_default[1].description",
         "variable_name": "releases_channel",
         "context": "Separate channel for release changelog posts keeps dev-channel noise down. Pick any channel — the bot must be a member.",
-        "dimension": "messages",
+        "dimension": "message",
         "vault_category": "messaging",
         "option_service_types": [
           "slack"
@@ -245,6 +247,7 @@
         "use_case_ids": [
           "uc_pr_lifecycle"
         ],
+        "use_case_id": "uc_pr_lifecycle",
         "category": "configuration",
         "question": "What line-change thresholds should trigger LARGE / EXTRA_LARGE PR flags?",
         "type": "select",
@@ -258,7 +261,7 @@
         "maps_to": "use_cases[uc_pr_lifecycle].sample_input.size_thresholds",
         "variable_name": "size_thresholds",
         "context": "Oversized PRs emit a review gate regardless of autonomy level — this sets where the gate fires.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_oversized_policy",
@@ -266,6 +269,7 @@
         "use_case_ids": [
           "uc_pr_lifecycle"
         ],
+        "use_case_id": "uc_pr_lifecycle",
         "category": "human_in_the_loop",
         "question": "When a PR is flagged LARGE or EXTRA_LARGE, what should happen?",
         "type": "select",
@@ -279,7 +283,7 @@
         "maps_to": "use_cases[uc_pr_lifecycle].sample_input.oversized_policy",
         "variable_name": "oversized_policy",
         "context": "Defines the escalation path for oversized PRs so they get human attention without stopping the whole pipeline.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_branch_pattern",
@@ -287,6 +291,7 @@
         "use_case_ids": [
           "uc_pr_lifecycle"
         ],
+        "use_case_id": "uc_pr_lifecycle",
         "category": "configuration",
         "question": "What branch naming convention links PRs to Jira tickets?",
         "type": "select",
@@ -300,7 +305,7 @@
         "maps_to": "use_cases[uc_pr_lifecycle].sample_input.branch_pattern",
         "variable_name": "branch_pattern",
         "context": "Controls how Jira keys are extracted. 'Mixed' is most forgiving but slightly noisier; 'Standard' is most precise.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_urgent_labels",
@@ -308,6 +313,7 @@
         "use_case_ids": [
           "uc_issue_sync"
         ],
+        "use_case_id": "uc_issue_sync",
         "category": "configuration",
         "question": "Which source control labels should trigger an urgent messaging @channel mention?",
         "type": "text",
@@ -315,11 +321,12 @@
         "maps_to": "use_cases[uc_issue_sync].sample_input.urgent_labels",
         "variable_name": "urgent_labels",
         "context": "Comma-separated labels. Matching issues post to the messaging channel with @channel; non-matching post silently.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_boundaries",
         "scope": "persona",
+        "use_case_id": "uc_pr_lifecycle",
         "category": "boundaries",
         "question": "Which actions should the agent NEVER take automatically without explicit human approval?",
         "type": "select",
@@ -333,7 +340,7 @@
         "maps_to": null,
         "variable_name": "boundary_rule",
         "context": "Hard guardrails prevent irreversible actions that could corrupt project tracking or spam channels.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_source_control_credential",
@@ -341,6 +348,7 @@
         "connector_names": [
           "source_control"
         ],
+        "use_case_id": "uc_pr_lifecycle",
         "category": "credentials",
         "question": "Which source-control credential should this persona operate with?",
         "type": "select",
@@ -352,7 +360,7 @@
         "maps_to": "persona.connectors[source_control].credential_fields[provider].value",
         "variable_name": "source_control_credential",
         "context": "Options are auto-detected from your source_control credentials in the Vault (source control, source control, source control, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_ticketing_credential",
@@ -360,6 +368,7 @@
         "connector_names": [
           "ticketing"
         ],
+        "use_case_id": "uc_pr_lifecycle",
         "category": "credentials",
         "question": "Which ticketing system should this persona write to?",
         "type": "select",
@@ -371,7 +380,7 @@
         "maps_to": "persona.connectors[ticketing].credential_fields[provider].value",
         "variable_name": "ticketing_credential",
         "context": "Options are auto-detected from your ticketing credentials in the Vault (Jira, Linear, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_messaging_credential",
@@ -379,6 +388,7 @@
         "connector_names": [
           "messaging"
         ],
+        "use_case_id": "uc_pr_lifecycle",
         "category": "credentials",
         "question": "Which team messaging platform should this persona post to?",
         "type": "select",
@@ -390,7 +400,7 @@
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
         "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

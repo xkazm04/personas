@@ -1,10 +1,12 @@
 import { Suspense } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { OverviewFilterProvider } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { useExecutionDashboardPipeline } from '@/hooks/overview/useExecutionDashboardPipeline';
 import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
 import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
 import { lazyRetry } from '@/lib/lazyRetry';
+import { pageTransition } from '@/features/overview/libs/animations';
 
 // Lazy-load each subtab -- only the active one ships to the render tree.
 // On Desktop these become separate chunks; on Android inlineDynamicImports
@@ -26,27 +28,33 @@ function OverviewContent() {
   const overviewTab = useOverviewStore((s) => s.overviewTab);
 
   return (
-    <div
-      key={overviewTab}
-      className="animate-fade-slide-in flex-1 min-h-0 flex flex-col w-full overflow-hidden"
-    >
-      <ErrorBoundary name={`Overview/${overviewTab}`}>
-      <Suspense fallback={<SuspenseFallback />}>
-        {overviewTab === 'home' ? <DashboardWithSubtabs /> :
-        overviewTab === 'incidents' ? <IncidentsInbox /> :
-        overviewTab === 'executions' ? <ExecutionsWithSubtabs /> :
-        overviewTab === 'manual-review' ? <ManualReviewList /> :
-        overviewTab === 'messages' ? <MessageList /> :
-        overviewTab === 'events' ? <EventLogList /> :
-        overviewTab === 'knowledge' ? <KnowledgeHub /> :
-        overviewTab === 'sla' ? <SLADashboard /> :
+    <AnimatePresence mode="wait" initial={false}>
+      <motion.div
+        key={overviewTab}
+        variants={pageTransition}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+        className="flex-1 min-h-0 flex flex-col w-full overflow-hidden"
+      >
+        <ErrorBoundary name={`Overview/${overviewTab}`}>
+        <Suspense fallback={<SuspenseFallback />}>
+          {overviewTab === 'home' ? <DashboardWithSubtabs /> :
+          overviewTab === 'incidents' ? <IncidentsInbox /> :
+          overviewTab === 'executions' ? <ExecutionsWithSubtabs /> :
+          overviewTab === 'manual-review' ? <ManualReviewList /> :
+          overviewTab === 'messages' ? <MessageList /> :
+          overviewTab === 'events' ? <EventLogList /> :
+          overviewTab === 'knowledge' ? <KnowledgeHub /> :
+          overviewTab === 'sla' ? <SLADashboard /> :
 
-        overviewTab === 'health' ? <PersonaHealthDashboard /> :
-        overviewTab === 'leaderboard' ? <LeaderboardPage /> :
-        <DashboardWithSubtabs />}
-      </Suspense>
-      </ErrorBoundary>
-    </div>
+          overviewTab === 'health' ? <PersonaHealthDashboard /> :
+          overviewTab === 'leaderboard' ? <LeaderboardPage /> :
+          <DashboardWithSubtabs />}
+        </Suspense>
+        </ErrorBoundary>
+      </motion.div>
+    </AnimatePresence>
   );
 }
 

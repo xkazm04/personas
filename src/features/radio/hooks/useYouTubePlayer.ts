@@ -107,6 +107,10 @@ export function useYouTubePlayer(
           height: '200',
           width: '200',
           videoId: '',
+          // Reduced-tracking embed host — strips ads/analytics scripts that
+          // throw "Cannot read properties of undefined (reading 'plugins')"
+          // inside Tauri's WebView2. CSP frame-src already allows it.
+          host: 'https://www.youtube-nocookie.com',
           playerVars: {
             autoplay: 0,
             controls: 0,
