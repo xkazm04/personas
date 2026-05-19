@@ -10628,6 +10628,17 @@ export type Translations = {
       brain_at: string;
       empty_transcript: string;
       thinking: string;
+      phase_connecting: string;
+      phase_reviewing: string;
+      phase_thinking: string;
+      phase_websearch: string;
+      phase_webfetch: string;
+      phase_reading: string;
+      phase_searching_code: string;
+      phase_editing: string;
+      phase_running_command: string;
+      phase_subagent: string;
+      phase_using_tool: string;
       stop_turn: string;
       recall_empty: string;
       recall_episodes_only: string;

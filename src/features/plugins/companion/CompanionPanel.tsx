@@ -19,6 +19,7 @@ import { Bubble } from './Bubble';
 import { Composer } from './Composer';
 import { QuickReplies } from './QuickReplies';
 import { extractAssistantText } from './extractAssistantText';
+import { extractStreamPhase, phaseLabel } from './extractStreamPhase';
 import {
   COMPANION_APPROVALS_EVENT,
   COMPANION_CHAT_CARDS_EVENT,
@@ -526,12 +527,17 @@ function Body(props: BodyProps) {
     setPlaybackAudioUrl,
     markPlaybackPlayed,
   } = props;
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   // Recall preview state is read directly from the store (rather than
   // threaded through Body's props) — these are display-only fields with
   // no setter callbacks that the parent needs to coordinate.
   const streamingRecall = useCompanionStore((s) => s.streamingRecall);
   const recallByEpisodeId = useCompanionStore((s) => s.recallByEpisodeId);
+  // Live progress phase for the streaming bubble — what Athena is
+  // currently doing (thinking / using a tool / reviewing a result).
+  // Replaces the dead "thinking…" placeholder so the user sees activity
+  // even when prose text hasn't started arriving yet.
+  const streamingPhase = useCompanionStore((s) => s.streamingPhase);
   const turnSummaryByEpisodeId = useCompanionStore(
     (s) => s.turnSummaryByEpisodeId,
   );
@@ -580,10 +586,26 @@ function Body(props: BodyProps) {
           // backend will re-emit `recall-preview` once the new prompt
           // is built.
           useCompanionStore.getState().setStreamingRecall(null);
+          // Clear any stale phase from a prior turn so the new turn
+          // starts cleanly on the placeholder until the first CLI line
+          // arrives.
+          useCompanionStore.getState().setStreamingPhase(null);
         } else if (ev.kind === 'cli') {
           // Try to extract assistant text deltas from stream-json.
           const text = extractAssistantText(ev.payload);
-          if (text) appendStreamingText(text);
+          // Also extract a progress phase (thinking / tool_use / etc.)
+          // so the streaming bubble can report what Athena is currently
+          // doing instead of a dead "thinking…" placeholder. Returns
+          // null on text blocks (the visible text is the signal then).
+          const phase = extractStreamPhase(ev.payload);
+          if (text) {
+            // Prose is arriving — clear phase so it doesn't shadow the
+            // streaming text below.
+            useCompanionStore.getState().setStreamingPhase(null);
+            appendStreamingText(text);
+          } else if (phase) {
+            useCompanionStore.getState().setStreamingPhase(phase);
+          }
         } else if (ev.kind === 'finished') {
           // Promote the streaming recall AND any pending connector_use
           // jobs onto the just-persisted assistant episode so they pin
@@ -597,10 +619,12 @@ function Body(props: BodyProps) {
           } else {
             useCompanionStore.getState().setStreamingRecall(null);
           }
+          useCompanionStore.getState().setStreamingPhase(null);
           currentTurnIdRef.current = null;
         } else if (ev.kind === 'error') {
           setSendError(ev.payload);
           useCompanionStore.getState().setStreamingRecall(null);
+          useCompanionStore.getState().setStreamingPhase(null);
           currentTurnIdRef.current = null;
         }
       },
@@ -1111,13 +1135,17 @@ function Body(props: BodyProps) {
                       episode; the persisted bubble that replaces this
                       one is already clean.
 
-                      When the stream produces ONLY directive lines
-                      (early in an autonomous tick, say), we still want
-                      the "thinking…" placeholder rather than an empty
-                      bubble.
+                      When prose text hasn't arrived yet, fall through
+                      to the streamingPhase placeholder ("Searching the
+                      web…", "Reading files…", etc.) — surfaces what
+                      Athena is currently doing instead of a dead
+                      "Thinking…" string. Final fallback when no phase
+                      has landed either (very first ms of a turn).
                     */}
                     {stripModelDirectives(streamingText) ||
-                      t.plugins.companion.thinking}
+                      (streamingPhase
+                        ? phaseLabel(t, tx, streamingPhase)
+                        : t.plugins.companion.thinking)}
                   </Bubble>
                   <button
                     type="button"

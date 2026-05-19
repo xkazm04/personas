@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { CompanionState } from './types';
+import type { StreamPhase } from './extractStreamPhase';
 import type {
   BackgroundJob,
   BrainKind,
@@ -90,6 +91,17 @@ interface CompanionStore {
   streaming: boolean;
   /** Live-accumulated assistant text for the current turn. */
   streamingText: string;
+  /**
+   * Live progress hint while a turn is streaming — what Athena is
+   * currently doing (thinking, using a tool, etc.). Surfaces under the
+   * streaming bubble so the user sees activity instead of a dead
+   * "thinking…" placeholder when text hasn't arrived yet.
+   *
+   * Populated from `extractStreamPhase` on each CLI line. Cleared when
+   * actual prose text starts arriving (the visible text IS the signal)
+   * and again when the turn finishes / errors / is interrupted.
+   */
+  streamingPhase: StreamPhase | null;
   sendError: string | null;
 
   setState: (state: CompanionState) => void;
@@ -102,6 +114,7 @@ interface CompanionStore {
   setStreaming: (value: boolean) => void;
   appendStreamingText: (chunk: string) => void;
   resetStreamingText: () => void;
+  setStreamingPhase: (phase: StreamPhase | null) => void;
   setSendError: (err: string | null) => void;
 
   // Phase 3: approvals
@@ -237,6 +250,7 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
   messages: [],
   streaming: false,
   streamingText: '',
+  streamingPhase: null,
   sendError: null,
 
   setState: (state) => set({ state }),
@@ -251,6 +265,7 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
   appendStreamingText: (chunk) =>
     set((s) => ({ streamingText: s.streamingText + chunk })),
   resetStreamingText: () => set({ streamingText: '' }),
+  setStreamingPhase: (streamingPhase) => set({ streamingPhase }),
   setSendError: (sendError) => set({ sendError }),
 
   approvals: [],
