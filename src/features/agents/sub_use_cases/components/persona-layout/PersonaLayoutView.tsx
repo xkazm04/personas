@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { getMemoryCount } from '@/api/overview/memories';
@@ -7,6 +7,8 @@ import { useSelectedCredentialLinks } from '@/stores/selectors/personaSelectors'
 import { AddCapabilityRow, PersonaLayout } from '@/features/shared/glyph/persona-layout';
 import { PersonaSigilSummary, type PersonaSigilSummaryEntry } from '@/features/shared/glyph/persona-layout/PersonaSigilSummary';
 import { CapabilityTabBar } from '@/features/shared/glyph/persona-layout/CapabilityTabBar';
+import { SigilEditModal } from '@/features/shared/glyph/persona-layout/SigilEditModal';
+import { resolveSigilEditBody } from '@/features/shared/glyph/persona-layout/sigilEditBodies';
 import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
 import { GLYPH_DIMENSIONS } from '@/features/shared/glyph';
 import type { GlyphDimension } from '@/features/shared/glyph';
@@ -108,6 +110,35 @@ export function PersonaLayoutView({ credentials }: PersonaLayoutViewProps) {
   // for the expanded UseCaseDetail surface (opened from the hero core
   // or a detail button), but it doesn't drive the per-cap tab strip.
   const [activeCapabilityId, setActiveCapabilityId] = useState<string | null>(null);
+
+  // Petal click → open the SigilEditModal for that dim of the active
+  // capability. `editingPetal` is local UI state; closes on X / Escape
+  // / backdrop. The modal's toggle writes into `disabledDims` below.
+  const [editingPetal, setEditingPetal] = useState<GlyphDimension | null>(null);
+
+  // Phase 4 frontend stub — `disabledDims` per capability. Toggling a
+  // sigil off in the modal flips the matching dim into this set so the
+  // hero glyph dims that petal and (eventually) the build runner skips
+  // the bound questions. For now state is local: persistence to the
+  // persona row + build-session row lands in a follow-up commit.
+  const [disabledDimsByCap, setDisabledDimsByCap] = useState<Record<string, Set<GlyphDimension>>>({});
+  const disabledDimsForActive = useMemo(() => {
+    if (!activeCapabilityId) return new Set<GlyphDimension>();
+    return disabledDimsByCap[activeCapabilityId] ?? new Set<GlyphDimension>();
+  }, [activeCapabilityId, disabledDimsByCap]);
+
+  const toggleDimDisabled = useCallback(
+    (dim: GlyphDimension, nextActive: boolean) => {
+      if (!activeCapabilityId) return;
+      setDisabledDimsByCap((prev) => {
+        const cur = new Set(prev[activeCapabilityId] ?? []);
+        if (nextActive) cur.delete(dim);
+        else cur.add(dim);
+        return { ...prev, [activeCapabilityId]: cur };
+      });
+    },
+    [activeCapabilityId],
+  );
   useEffect(() => {
     // Re-anchor when items load or the first capability changes. Don't
     // reset if the current pick is still valid — switching personas /
@@ -219,10 +250,18 @@ export function PersonaLayoutView({ credentials }: PersonaLayoutViewProps) {
     const touches = new Set(activeCapability.dimensions);
     const out = {} as Record<GlyphDimension, PetalState>;
     for (const dim of GLYPH_DIMENSIONS) {
-      out[dim] = touches.has(dim) ? 'resolved' : 'idle';
+      if (disabledDimsForActive.has(dim)) {
+        // Disabled dim renders as idle regardless of whether the
+        // capability declares it — the user has explicitly turned it
+        // off via the SigilEditModal. Once persistence lands the
+        // backend gating will skip the bound questions too.
+        out[dim] = 'idle';
+      } else {
+        out[dim] = touches.has(dim) ? 'resolved' : 'idle';
+      }
     }
     return out;
-  }, [activeCapability]);
+  }, [activeCapability, disabledDimsForActive]);
 
   // Header tab strip + Add-capability affordance. Replaces the
   // right-side compact list — capabilities live in the header now so
@@ -297,6 +336,29 @@ export function PersonaLayoutView({ credentials }: PersonaLayoutViewProps) {
         hideCapabilityRows
         topSlot={capabilityTabs}
         heroPetalStatesOverride={heroPetalStates}
+        onHeroPetalClick={(dim) => {
+          // Only opens when an active capability exists — the empty
+          // state has no dim semantics to edit. Clicking the same
+          // petal twice toggles closed (matches the adoption petal
+          // toggle UX).
+          if (!activeCapability) return;
+          setEditingPetal((prev) => (prev === dim ? null : dim));
+        }}
+        heroActiveDim={editingPetal}
+        heroWideOverlay={
+          editingPetal && activeCapability ? (
+            <SigilEditModal
+              dim={editingPetal}
+              isActive={
+                activeCapability.dimensions.includes(editingPetal) &&
+                !disabledDimsForActive.has(editingPetal)
+              }
+              body={resolveSigilEditBody(editingPetal, { uc: activeCapability })}
+              onToggleActive={(next) => toggleDimDisabled(editingPetal, next)}
+              onClose={() => setEditingPetal(null)}
+            />
+          ) : undefined
+        }
         leftSlot={
           Object.keys(summaryEntries).length > 0 ? (
             <PersonaSigilSummary entries={summaryEntries} heading={null} />
