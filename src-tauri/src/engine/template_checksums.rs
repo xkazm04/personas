@@ -12,7 +12,7 @@ use std::sync::LazyLock;
 /// Embedded checksum manifest: maps relative template path → expected hash.
 /// Populated at compile time from the same source of truth as the frontend.
 static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLock::new(|| {
-    let mut m = HashMap::with_capacity(113);
+    let mut m = HashMap::with_capacity(109);
     m.insert("content/ai-document-intelligence-hub.json", "00197facd1d01c02");
     m.insert("content/analytics-content-distribution-use-case.json", "001cf516b81f9d45");
     m.insert("content/audio-briefing-host.json", "00133541bcc75c67");
@@ -73,9 +73,8 @@ static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLo
     m.insert("productivity/appointment-orchestrator.json", "000684d1af42d74e");
     m.insert("productivity/daily-standup-compiler.json", "0010ac5967d6e573");
     m.insert("productivity/digital-clone.json", "00048ec76b518ee2");
-    m.insert("productivity/email-follow-up-tracker.json", "0014064c362969ac");
+    m.insert("productivity/email-intelligence-operator.json", "001705017d6cd444");
     m.insert("productivity/email-morning-digest.json", "0019c09408fb1bd0");
-    m.insert("productivity/email-task-extractor.json", "000c86eb16d1e2e6");
     m.insert("productivity/idea-harvester.json", "001a47bcc32bf8b9");
     m.insert("productivity/meeting-lifecycle-manager.json", "000b96af2bb2aced");
     m.insert("productivity/personal-capture-bot.json", "000e26309015ab93");
@@ -105,13 +104,11 @@ static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLo
     m.insert("sales/contact-enrichment-agent.json", "00136f1cfece1c99");
     m.insert("sales/contact-sync-manager.json", "001356ee5803b61b");
     m.insert("sales/crm-data-quality-auditor.json", "001290395e4e7aa5");
-    m.insert("sales/email-lead-extractor.json", "001f0841c5b349ac");
     m.insert("sales/lead-capture-pipeline.json", "00007a689d82c044");
     m.insert("sales/local-business-lead-prospector.json", "0000db709d3a6a50");
     m.insert("sales/outbound-sales-intelligence-pipeline.json", "00017a72daf5a7d0");
     m.insert("sales/personality-enriched-sales-prep.json", "001d504c7c4d93b1");
-    m.insert("sales/sales-deal-analyzer.json", "0009de7ba5f1e7bf");
-    m.insert("sales/sales-deal-tracker.json", "000b924affa89b9b");
+    m.insert("sales/sales-deal-intelligence.json", "0003dbbee844494d");
     m.insert("sales/sales-pipeline-autopilot.json", "000160cceca45a06");
     m.insert("sales/sales-proposal-generator.json", "0001277a83cf3749");
     m.insert("sales/sheets-e-commerce-command-center.json", "00004e89b5e6d541");
@@ -121,9 +118,8 @@ static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLo
     m.insert("security/brand-protection-sentinel.json", "000f32cdae70eb33");
     m.insert("security/security-vulnerability-pipeline.json", "0011dd811434cdb9");
     m.insert("support/customer-feedback-router.json", "001eb7a4156477f9");
-    m.insert("support/email-support-assistant.json", "001d68135baf1c2f");
+    m.insert("support/email-support-operator.json", "00078c7a5e85747d");
     m.insert("support/knowledge-base-review-cycle-manager.json", "00177fc9bf8b0866");
-    m.insert("support/support-email-router.json", "0017268eda892be8");
     m.insert("support/support-escalation-engine.json", "0009ee193db1997c");
     m.insert("support/support-intelligence-use-case.json", "001c39e1696c0ba4");
     m
