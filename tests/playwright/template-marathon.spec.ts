@@ -13,6 +13,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   clickByText,
+  clickTestId,
   findText,
   health,
   navigate,
@@ -175,82 +176,50 @@ test('marathon-template', async () => {
       if (!any) throw new Error('gallery-empty');
     }
 
-    // The gallery's search-input was rejected as a narrowing strategy —
-    // searching for the full template name returns zero rows in some
-    // cases (looks like the search is more restrictive than substring
-    // match). Walk the virtualised list directly via /eval.
-
     // Gallery rendering uses `ComfortableRow` (data-testid="template-row-<id>"),
     // not the standalone TemplateCard. Rows collapse by default; Adopt
-    // button is in the ExpandedRowContent that only appears after the
-    // row is clicked to expand.
+    // button is in the ExpandedRowContent (data-testid="template-adopt-button")
+    // and only appears after the row is clicked to expand.
     //
-    // Strategy:
-    //   1. Find the row whose innerText contains `target.name`
-    //   2. Scroll into view + click to expand
-    //   3. Wait for the ExpandedRowContent siblings to appear (the
-    //      Adopt button is a descendant of the row's expanded panel)
-    //   4. Click Adopt
-    const port = Number(process.env.COMPANION_TEST_PORT ?? 17320);
-    let expandResult: { found: boolean; rowId?: string; alreadyExpanded?: boolean } = { found: false };
+    // We avoid /eval entirely here — Tauri's webview.eval queue has been
+    // observed to silently drop scripts mid-session. clickTestId goes
+    // through a different bridge code path (__test_respond) and is the
+    // reliable path. Strategy:
+    //   1. Enumerate visible rows via /query
+    //   2. Match by innerText substring against target.name
+    //   3. clickTestId(rowTestId) to expand
+    //   4. clickTestId('template-adopt-button')
+    let matchedRowId: string | null = null;
     {
       const deadline = Date.now() + 45_000;
       while (Date.now() < deadline) {
-        const probe = await fetch(`http://127.0.0.1:${port}/eval`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            js: `(()=>{
-              const wanted = ${JSON.stringify(target.name)};
-              const rows = Array.from(document.querySelectorAll('[data-testid^="template-row-"]'));
-              const row = rows.find(r => (r.innerText||'').includes(wanted));
-              if (!row) return { found: false, total: rows.length };
-              row.scrollIntoView({ block: 'center' });
-              const rowId = (row.getAttribute('data-testid')||'').replace('template-row-','');
-              // Check for ChevronDown to detect already-expanded state
-              const hasChevronDown = !!row.querySelector('svg[class*="ChevronDown"], svg.lucide-chevron-down');
-              if (!hasChevronDown) row.click();
-              return { found: true, rowId, alreadyExpanded: hasChevronDown };
-            })();`,
-          }),
-        });
-        // /eval still fire-and-forget; do another round-trip to read
-        // the result via a tagged query.
-        const rowsCheck = await fetch(`http://127.0.0.1:${port}/find-text`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: target.name }),
-        });
-        if (rowsCheck.ok) {
-          const arr = (await rowsCheck.json()) as Array<{ visible: boolean }>;
-          if (arr.some((n) => n.visible)) {
-            expandResult = { found: true };
-            void probe;
-            break;
-          }
+        const rows = await query('[data-testid^="template-row-"]');
+        const hit = rows.find(
+          (r) => r.visible && r.testId && r.text && r.text.includes(target.name),
+        );
+        if (hit?.testId) {
+          matchedRowId = hit.testId;
+          break;
         }
-        await sleep(1_000);
+        await sleep(750);
       }
     }
-    if (!expandResult.found) throw new Error('template-row-not-found');
-    // Allow the expanded panel to mount
-    await sleep(1_000);
+    if (!matchedRowId) throw new Error('template-row-not-found');
 
-    // Click Adopt button — globally search after expansion. There's
-    // only one expanded row at a time so an unscoped innerText match
-    // is safe.
-    await fetch(`http://127.0.0.1:${port}/eval`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        js: `(()=>{
-          const btns = Array.from(document.querySelectorAll('button'));
-          const adopt = btns.find(b => (b.innerText||'').trim() === 'Adopt');
-          if (adopt) adopt.click();
-        })();`,
-      }),
-    });
-    await sleep(800);
+    // Expand the row. clickTestId may need a retry if the row hasn't
+    // fully mounted into the virtualised list yet.
+    await clickTestId(matchedRowId);
+    // Wait for the Adopt button (testid added 2026-05-19 in ExpandedRowContent.tsx)
+    // to appear in the expanded panel.
+    try {
+      await waitForVisible('[data-testid="template-adopt-button"]', 10_000);
+    } catch {
+      // One retry — row click may have collapsed an already-expanded row.
+      await clickTestId(matchedRowId);
+      await waitForVisible('[data-testid="template-adopt-button"]', 10_000);
+    }
+    await clickTestId('template-adopt-button');
+    await sleep(500);
     // Wait for the adoption modal. BaseModal uses role="dialog";
     // there's no specific testid on the AdoptionWizardModal so we
     // match the dialog + the id of the title node.

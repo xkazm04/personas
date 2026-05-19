@@ -86,6 +86,7 @@ export function ExpandedRowContent({
       <div className="flex items-center gap-2 flex-shrink-0">
         <button
           onClick={onAdopt}
+          data-testid="template-adopt-button"
           className={`px-3 py-1.5 typo-body rounded-modal border transition-colors inline-flex items-center gap-1.5 ${BUTTON_VARIANTS.adopt.bg} ${BUTTON_VARIANTS.adopt.text} ${BUTTON_VARIANTS.adopt.border} ${BUTTON_VARIANTS.adopt.hover}`}
         >
           <Download className="w-3.5 h-3.5" />
