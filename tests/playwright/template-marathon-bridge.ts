@@ -162,8 +162,15 @@ export async function waitForExecution(
   return null;
 }
 
-/** Read the current adoption modal's state — used by the questionnaire
- *  loop to know which dim is active + what questions are pending. */
+/** Read the current adoption modal's state — used by the post-promote
+ *  step to capture the newly-created persona id. The bridge's
+ *  `invokeCommand` wraps the underlying result as
+ *  `{success, result, error}`, so we read `r.result` for the real
+ *  session payload (the earlier code read `r.personaId` which always
+ *  resolved to undefined → persona_id null → execute phase couldn't
+ *  fire). When the build session has already torn down after promote,
+ *  fall back to reading the agentStore via `getState` which still
+ *  carries the most-recent buildPersonaId. */
 export async function readAdoptionState(): Promise<{
   open: boolean;
   activeVariant: 'classic' | 'persona-layout' | null;
@@ -173,25 +180,30 @@ export async function readAdoptionState(): Promise<{
   buildPhase: string | null;
   personaId: string | null;
 }> {
-  return bridgeExec('invokeCommand', {
-    command: 'get_active_build_session',
-    params: { personaId: '' },
-  }, 10).then((r) => {
-    // get_active_build_session returns the session for a persona; in the
-    // adoption flow we don't yet have the persona id, so the spec also
-    // reads bridge.getSnapshot() to learn what's open. The structure
-    // below is conservative — falls back to defaults if anything is null.
-    const session = r as { id?: string; personaId?: string; phase?: string } | null;
-    return {
-      open: !!session,
-      activeVariant: null,
-      activeCap: null,
-      unansweredCount: 0,
-      blockedCount: 0,
-      buildPhase: session?.phase ?? null,
-      personaId: session?.personaId ?? null,
-    };
-  });
+  type SessionPayload = { id?: string; personaId?: string; phase?: string } | null;
+  const r = await bridgeExec<{ success: boolean; result?: SessionPayload }>(
+    'invokeCommand',
+    { command: 'get_active_build_session', params: { personaId: '' } },
+    10,
+  );
+  let session: SessionPayload = r?.result ?? null;
+  // Fallback when the session was torn down on promote — the agent
+  // store still mirrors the last buildPersonaId.
+  if (!session) {
+    const snap = await bridgeExec<Record<string, unknown>>('getState', {}, 10);
+    const buildPersonaId = (snap?.buildPersonaId as string | null | undefined) ?? null;
+    const buildPhase = (snap?.buildPhase as string | null | undefined) ?? null;
+    if (buildPersonaId) session = { personaId: buildPersonaId, phase: buildPhase ?? undefined };
+  }
+  return {
+    open: !!session,
+    activeVariant: null,
+    activeCap: null,
+    unansweredCount: 0,
+    blockedCount: 0,
+    buildPhase: session?.phase ?? null,
+    personaId: session?.personaId ?? null,
+  };
 }
 
 /** Seed the open adoption modal's questionnaire with `answers` in a

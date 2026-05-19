@@ -322,9 +322,10 @@ test('marathon-template', async () => {
     return;
   }
 
-  // Read capabilities from the template (we already have them on `target`,
-  // but the post-promote persona may have different ids). Re-read via
-  // bridge's design context for accuracy.
+  // Read capabilities from the persona's stored design_context. The
+  // adopted persona stores the IR in camelCase (`useCases`) while the
+  // template JSON on disk uses snake_case (`use_cases`); read both
+  // shapes so the marathon works regardless of which path stored it.
   const designCtx = await fetch(`http://127.0.0.1:${Number(process.env.COMPANION_TEST_PORT ?? 17320)}/bridge-exec`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -334,19 +335,24 @@ test('marathon-template', async () => {
       timeout_secs: 15,
     }),
   });
-  const personaRaw = (await designCtx.json().catch(() => null)) as string | null;
-  let parsedDesignContext: { use_cases?: Array<{ id?: string; suggested_trigger?: { type?: string } }> } = {};
+  const personaWrapRaw = (await designCtx.json().catch(() => null)) as string | { result?: unknown } | null;
+  type CapShape = { id?: string; suggested_trigger?: { type?: string }; suggestedTrigger?: { type?: string } };
+  let parsedDesignContext: { use_cases?: CapShape[]; useCases?: CapShape[] } = {};
   try {
-    if (personaRaw) {
-      const persona = JSON.parse(personaRaw) as { design_context?: string };
-      if (persona.design_context) parsedDesignContext = JSON.parse(persona.design_context);
-    }
+    const wrap = typeof personaWrapRaw === 'string' ? JSON.parse(personaWrapRaw) : personaWrapRaw;
+    const personaPayload = wrap && typeof wrap === 'object' && 'result' in (wrap as Record<string, unknown>)
+      ? (wrap as { result: unknown }).result
+      : wrap;
+    const persona = (typeof personaPayload === 'string' ? JSON.parse(personaPayload) : personaPayload) as
+      | { design_context?: string }
+      | null;
+    if (persona?.design_context) parsedDesignContext = JSON.parse(persona.design_context);
   } catch { /* fall through with empty */ }
 
-  const capabilities = parsedDesignContext.use_cases ?? [];
+  const capabilities: CapShape[] = parsedDesignContext.useCases ?? parsedDesignContext.use_cases ?? [];
   for (const cap of capabilities) {
     const capId = cap.id ?? '?';
-    const triggerType = cap.suggested_trigger?.type ?? 'manual';
+    const triggerType = cap.suggestedTrigger?.type ?? cap.suggested_trigger?.type ?? 'manual';
     if (triggerType === 'event_listener') {
       result.capability_results.push({ cap_id: capId, outcome: 'skipped', detail: 'event-listener (not manually invokable)' });
       continue;
