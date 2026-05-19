@@ -324,6 +324,7 @@ export function PersonaLayoutBuild({
             <button
               type="button"
               onClick={testPassed ? onApproveTest : onApproveTestAnyway}
+              data-testid="adopt-approve-and-promote"
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary/25 hover:bg-primary/40 border border-primary/40 typo-body text-foreground cursor-pointer"
             >
               <Rocket className="w-3.5 h-3.5" />
@@ -365,6 +366,7 @@ export function PersonaLayoutBuild({
           <button
             type="button"
             onClick={onViewAgent}
+            data-testid="adopt-view-agent"
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-status-success/25 hover:bg-status-success/40 border border-status-success/40 text-foreground typo-body cursor-pointer"
           >
             <ScrollText className="w-3.5 h-3.5" />

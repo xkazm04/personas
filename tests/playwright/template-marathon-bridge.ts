@@ -16,6 +16,10 @@ interface QueryNode {
   id: string | null;
   testId: string | null;
   visible: boolean;
+  /** Server includes className when emitting /query results; surface it
+   *  for tests that need to discriminate visual state (disabled vs
+   *  enabled, active tab, etc.). */
+  className?: string;
 }
 
 async function post<T = unknown>(path: string, body: unknown = {}): Promise<T> {
@@ -188,6 +192,24 @@ export async function readAdoptionState(): Promise<{
       personaId: session?.personaId ?? null,
     };
   });
+}
+
+/** Seed the open adoption modal's questionnaire with `answers` in a
+ *  single bridge call. The modal listens for `test:seed-adoption` and
+ *  merges answers + marks questionsComplete=true, unlocking the
+ *  Continue-to-Build CTA without per-question UI driving.
+ *
+ *  Falls back to a generic placeholder for empty-default questions so
+ *  every required key has a non-empty string (canContinue checks
+ *  `!!userAnswers[q.id]`, so the empty string was the blocker for
+ *  Demo Recorder's `aq_output_dir` and similar). */
+export async function seedAdoptionAnswers(answers: Record<string, string>): Promise<void> {
+  const result = await bridgeExec<{ success: boolean; count?: number; error?: string }>(
+    'seedAdoptionAnswers',
+    { answers },
+    10,
+  );
+  if (!result.success) throw new Error(`seedAdoptionAnswers: ${result.error ?? 'unknown'}`);
 }
 
 /** Switch the adoption modal's variant tab. The switcher uses

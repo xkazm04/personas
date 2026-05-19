@@ -12,20 +12,19 @@ import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  clickByText,
   clickTestId,
-  findText,
   health,
   navigate,
   query,
   readAdoptionState,
+  seedAdoptionAnswers,
   selectAdoptionVariant,
   sleep,
   waitForBuildPhase,
   waitForExecution,
   waitForVisible,
 } from './template-marathon-bridge';
-import { DEFAULT_VAULT, loadAllTemplates, matchVault } from './template-marathon-fixtures';
+import { buildAdoptionAnswers, DEFAULT_VAULT, loadAllTemplates, matchVault } from './template-marathon-fixtures';
 
 const TEMPLATE_ID = process.env.TEMPLATE_ID;
 const __filename = fileURLToPath(import.meta.url);
@@ -238,45 +237,32 @@ test('marathon-template', async () => {
   }
 
   // --- Phase 2-3: capability picker + questionnaire ---
-  // These are tightly coupled: the answer card appears after the picker.
-  // Implementation: drive the bridge's `answerPendingBuildQuestions` for
-  // each pending question OR find the answer-card and click default.
+  // The Glyph variant's questionnaire gates Continue-to-Build on every
+  // question having a non-empty answer (canContinue: remaining === 0).
+  // Rather than drive each option click through /eval (which the
+  // session-1 smoke showed silently drops scripts mid-session), we use
+  // the seedAdoptionAnswers bridge helper to merge template defaults +
+  // placeholders into local state in one shot and mark
+  // questionsComplete=true. Trade-off: doesn't exercise the
+  // questionnaire UI itself — only validates everything downstream
+  // (seeding, build, promote, execute) — which is what the user
+  // explicitly approved for the marathon.
   await runPhase(result.phases, 'questionnaire', async () => {
-    // Loop up to 60 iterations (cap at ~2 min of questionnaire driving)
-    for (let i = 0; i < 60; i++) {
-      const state = await readAdoptionState();
-      if (state.buildPhase && state.buildPhase !== 'initializing') break;
-      // Look for the AdoptionAnswerCard's "Send" or "Done" affordance
-      const sendNodes = await findText('Send answer');
-      const doneNodes = await findText('Done');
-      if (doneNodes.some((n) => n.visible)) {
-        await clickByText('Done', 5_000);
-        await sleep(500);
+    const answers = buildAdoptionAnswers(target);
+    await seedAdoptionAnswers(answers);
+    // Wait for Continue-to-Build to actually enable (modal needs the
+    // event-driven state update to flush through React). Detect by
+    // class change — cursor-not-allowed → cursor-pointer.
+    const deadline = Date.now() + 8_000;
+    while (Date.now() < deadline) {
+      const nodes = await query('[data-testid="adopt-continue-to-build"]');
+      const btn = nodes[0];
+      if (btn && !(btn.className ?? '').includes('cursor-not-allowed')) {
         break;
       }
-      if (sendNodes.some((n) => n.visible)) {
-        // Pick first visible option in the answer card; the bridge's
-        // /eval helper handles the click. Production iteration would
-        // refine which option is "best" — for now first-visible
-        // matches the migration spec's vault-detected behaviour.
-        await fetch(`http://127.0.0.1:${Number(process.env.COMPANION_TEST_PORT ?? 17320)}/eval`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            js: `(()=>{const opt=document.querySelector('[data-testid*="question-option"]:not([disabled])'); if(opt) opt.click(); })();`,
-          }),
-        });
-        await sleep(300);
-        await clickByText('Send answer', 5_000).catch(() => {});
-        await sleep(400);
-        continue;
-      }
-      // No question — perhaps all answered. Try Continue.
-      const continueNodes = await findText('Continue to Build');
-      if (continueNodes.some((n) => n.visible)) break;
-      await sleep(700);
+      await sleep(200);
     }
-    return { answered: true };
+    return { answered: true, seeded: Object.keys(answers).length };
   });
 
   // --- Phase 4: Continue + Build wait ---
@@ -305,10 +291,11 @@ test('marathon-template', async () => {
 
   // --- Phase 5: Promote ---
   const promoteResult = await runPhase(result.phases, 'promote', async () => {
-    await clickByText('Promote', 8_000).catch(async () => {
-      // Try Force Promote when the standard promote button isn't present
-      await clickByText('Approve & Promote', 5_000);
-    });
+    // PersonaLayoutBuild renders a single approve CTA in the
+    // test_complete phase — testid landed alongside the marathon work
+    // 2026-05-19. clickByText through /eval was unreliable.
+    await waitForVisible('[data-testid="adopt-approve-and-promote"]', 15_000);
+    await clickTestId('adopt-approve-and-promote');
     const phase = await waitForBuildPhase(['promoted', 'failed', 'cancelled'], 3 * 60_000);
     if (phase !== 'promoted') throw new Error(`promote-ended:${phase}`);
     // Capture the persona id from the latest build session

@@ -491,6 +491,26 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
   const [autoDetectedIds, setAutoDetectedIds] = useState<Set<string>>(new Set());
   const defaultsLoaded = useRef(false);
 
+  // Test-automation hook — when the test-automation server fires a
+  // `test:seed-adoption` window event, merge the supplied answers into
+  // local state and force the picker/questionnaire to be considered
+  // complete so Continue-to-Build becomes enabled without UI clicks.
+  // Production users never see this; the listener is a no-op without
+  // the event. Lives here (not in a separate hook) because the
+  // setters it needs are component-local.
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ answers?: Record<string, string> }>).detail ?? {};
+      const answers = detail.answers ?? {};
+      if (Object.keys(answers).length > 0) {
+        setAdoptionAnswers((prev) => ({ ...prev, ...answers }));
+      }
+      setQuestionsComplete(true);
+    };
+    window.addEventListener('test:seed-adoption', handler);
+    return () => window.removeEventListener('test:seed-adoption', handler);
+  }, []);
+
   // Reactive subscription to vault credential service_types — changes here
   // (new credential added via QuickAddCredentialModal, or user returns from
   // the catalog after adding one) flow through and recompute blocked state

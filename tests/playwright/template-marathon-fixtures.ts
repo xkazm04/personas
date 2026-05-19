@@ -12,6 +12,17 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+export interface TemplateQuestion {
+  id: string;
+  /** Template-declared default value. Empty string means "user must
+   *  supply" — the marathon falls back to a placeholder so the
+   *  adoption modal's Continue-to-Build CTA enables. */
+  default: string;
+  /** Optional input type hint (path, url, number, …) used to pick
+   *  a sensible placeholder for empty defaults. */
+  kind: string;
+}
+
 export interface TemplateMeta {
   /** Absolute path to the JSON file. */
   path: string;
@@ -34,6 +45,32 @@ export interface TemplateMeta {
   /** Connectors that have no vault match — non-empty means the template
    *  would block at adoption time. */
   missingConnectors: string[];
+  /** Adoption questions with their template-declared defaults. */
+  questions: TemplateQuestion[];
+}
+
+/** Heuristic for picking a non-empty placeholder when an adoption
+ *  question ships with `default: ""`. canContinue requires every
+ *  question to have a truthy answer; the placeholder shape matches
+ *  what a user might paste in for that field's likely role. */
+export function placeholderFor(q: TemplateQuestion): string {
+  if (q.default) return q.default;
+  const k = (q.kind ?? '').toLowerCase();
+  const id = q.id.toLowerCase();
+  if (k.includes('path') || id.includes('dir') || id.includes('path')) return './marathon-output';
+  if (k.includes('url') || id.includes('url') || id.includes('endpoint')) return 'http://localhost:3000';
+  if (k.includes('email') || id.includes('email')) return 'marathon@test.local';
+  if (k.includes('number') || id.includes('count') || id.includes('max') || id.includes('limit')) return '5';
+  return 'marathon-default';
+}
+
+/** Build the answers dict the marathon will pass to `seedAdoptionAnswers`. */
+export function buildAdoptionAnswers(t: TemplateMeta): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const q of t.questions) {
+    out[q.id] = placeholderFor(q);
+  }
+  return out;
 }
 
 const BUILTIN_CONNECTORS = new Set([
@@ -108,13 +145,22 @@ export function loadAllTemplates(): TemplateMeta[] {
         payload?: {
           persona?: { connectors?: Array<{ name?: string; role?: string; category?: string; required?: boolean }> };
           use_cases?: unknown[];
-          adoption_questions?: unknown[];
+          adoption_questions?: Array<{ id?: string; default?: unknown; type?: string; kind?: string }>;
         };
       };
       if (!j.id || !j.name) continue;
       const conns = (j.payload?.persona?.connectors ?? []).filter(
         (c) => c.required !== false,
       );
+      const questions: TemplateQuestion[] = (j.payload?.adoption_questions ?? [])
+        .filter((q): q is { id: string; default?: unknown; type?: string; kind?: string } =>
+          typeof q?.id === 'string',
+        )
+        .map((q) => ({
+          id: q.id,
+          default: q.default == null ? '' : String(q.default),
+          kind: (q.kind ?? q.type ?? '').toString(),
+        }));
       out.push({
         path: f,
         relPath: relative(root, f).replace(/\\/g, '/'),
@@ -125,6 +171,7 @@ export function loadAllTemplates(): TemplateMeta[] {
         questionCount: (j.payload?.adoption_questions ?? []).length,
         requiredConnectors: conns.map((c) => c.name ?? c.role ?? c.category ?? '').filter(Boolean),
         missingConnectors: [],
+        questions,
       });
     } catch {
       // Skip unparseable templates — they shouldn't exist post-migration

@@ -86,6 +86,7 @@ interface TestBridge {
   answerPendingBuildQuestions(answers: Record<string, string>): Promise<{ success: boolean; answered?: string[]; pendingKeys?: string[]; error?: string }>;
   waitForBuildPhase(phases: string[] | string, timeoutMs?: number): Promise<{ success: boolean; phase?: string; pendingCount?: number; error?: string }>;
   listPendingBuildQuestions(): { success: boolean; questions: unknown[] };
+  seedAdoptionAnswers(answers: Record<string, string>): { success: boolean; count?: number; error?: string };
   driveWriteText(relPath: string, content: string): Promise<{ success: boolean; entry?: unknown; error?: string }>;
   driveReadText(relPath: string): Promise<{ success: boolean; content?: string; error?: string }>;
   driveList(relPath?: string): Promise<{ success: boolean; count?: number; entries?: unknown[]; error?: string }>;
@@ -1641,6 +1642,25 @@ const bridge: TestBridge = {
   listPendingBuildQuestions() {
     const pending = useAgentStore.getState().buildPendingQuestions ?? [];
     return { success: true, questions: pending };
+  },
+
+  /** Seed the OPEN adoption modal's questionnaire answers in one shot.
+   *  Fires a `test:seed-adoption` window event that the
+   *  ChronologyAdoptionView listens to; merges `answers` into local
+   *  state and marks questionsComplete=true so the Continue-to-Build
+   *  CTA enables. Used by the template-marathon harness to skip the
+   *  per-question UI driving when validating downstream phases
+   *  (build/promote/execute) rather than the questionnaire itself. */
+  seedAdoptionAnswers(answers: Record<string, string>) {
+    if (!answers || typeof answers !== 'object') {
+      return { success: false, error: 'seedAdoptionAnswers: answers must be a Record<string,string>' };
+    }
+    try {
+      window.dispatchEvent(new CustomEvent('test:seed-adoption', { detail: { answers } }));
+      return { success: true, count: Object.keys(answers).length };
+    } catch (e: unknown) {
+      return { success: false, error: _fmtBridgeErr(e) };
+    }
   },
 
   /** Write a text document through the built-in Local Drive. Triggers
