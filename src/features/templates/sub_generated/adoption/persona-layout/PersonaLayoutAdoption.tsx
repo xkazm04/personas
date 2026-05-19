@@ -4,6 +4,9 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { PersonaLayout } from '@/features/shared/glyph/persona-layout';
 import { PersonaSigilSummary, type PersonaSigilSummaryEntry } from '@/features/shared/glyph/persona-layout/PersonaSigilSummary';
 import { CapabilityTabBar } from '@/features/shared/glyph/persona-layout/CapabilityTabBar';
+import { updateBuildSessionDisabledDims } from '@/api/agents/buildSession';
+import { silentCatch } from '@/lib/silentCatch';
+import { useAgentStore } from '@/stores/agentStore';
 import { GLYPH_DIMENSIONS } from '@/features/shared/glyph';
 import type { GlyphDimension } from '@/features/shared/glyph';
 import type { PetalState } from '@/features/shared/glyph/persona-sigil';
@@ -122,6 +125,64 @@ export function PersonaLayoutAdoption({
   // height on a one-item nav.
   const [activeCapabilityId, setActiveCapabilityId] = useState<string | null>(null);
 
+  // Per-capability disabled-dims map — drives the petal-disabled state +
+  // question filtering. Toggle UX in adoption lives inside the existing
+  // AdoptionAnswerCard (added as a footer affordance) rather than a
+  // separate SigilEditModal, since the AnswerCard already occupies the
+  // hero's wideOverlay slot during the questionnaire flow. Persists to
+  // the build session row via updateBuildSessionDisabledDims so the
+  // runner reads the same shape the View mode persists on the persona.
+  const [disabledDimsByCap, setDisabledDimsByCap] = useState<Record<string, Set<GlyphDimension>>>({});
+  const sessionId = useAgentStore((s) => s.buildSessionId);
+  const sessionDisabledDims = useAgentStore((s) => s.activeBuildSessionId
+    ? (s.buildSessions[s.activeBuildSessionId] as unknown as { disabledDims?: Record<string, string[]> } | undefined)?.disabledDims
+    : undefined);
+  // Hydrate from session on first render or session change. Failures
+  // (malformed shape) leave the map empty rather than blocking the panel.
+  useEffect(() => {
+    if (!sessionDisabledDims) {
+      setDisabledDimsByCap({});
+      return;
+    }
+    try {
+      const next: Record<string, Set<GlyphDimension>> = {};
+      for (const [capId, dims] of Object.entries(sessionDisabledDims)) {
+        if (Array.isArray(dims)) next[capId] = new Set(dims as GlyphDimension[]);
+      }
+      setDisabledDimsByCap(next);
+    } catch {
+      setDisabledDimsByCap({});
+    }
+  }, [sessionDisabledDims]);
+
+  const disabledDimsForActive = useMemo(() => {
+    if (!activeCapabilityId) return new Set<GlyphDimension>();
+    return disabledDimsByCap[activeCapabilityId] ?? new Set<GlyphDimension>();
+  }, [activeCapabilityId, disabledDimsByCap]);
+
+  const toggleDimDisabled = useCallback(
+    (dim: GlyphDimension, nextActive: boolean) => {
+      if (!activeCapabilityId || !sessionId) return;
+      setDisabledDimsByCap((prev) => {
+        const cur = new Set(prev[activeCapabilityId] ?? []);
+        if (nextActive) cur.delete(dim);
+        else cur.add(dim);
+        const next = { ...prev, [activeCapabilityId]: cur };
+        // Serialise and persist; empty sets stripped so the wire shape
+        // stays clean.
+        const wire: Record<string, GlyphDimension[]> = {};
+        for (const [capId, set] of Object.entries(next)) {
+          if (set.size > 0) wire[capId] = [...set];
+        }
+        const json = Object.keys(wire).length > 0 ? JSON.stringify(wire) : null;
+        void updateBuildSessionDisabledDims(sessionId, json)
+          .catch(silentCatch('PersonaLayoutAdoption:toggleDimDisabled'));
+        return next;
+      });
+    },
+    [activeCapabilityId, sessionId],
+  );
+
   // Template use cases → display rows. Honour the include/skip toggle by
   // overriding `enabled` before the adapter computes the health pill.
   const items = useMemo<DisplayUseCase[]>(() => {
@@ -150,22 +211,28 @@ export function PersonaLayoutAdoption({
     }
   }, [items, activeCapabilityId]);
 
-  // Questions filtered by the active capability. Each template question
-  // now carries `use_case_id` (sigil migration §1), so we keep only the
-  // ones bound to the active cap. When there's no active cap yet (first
-  // render before the effect fires) or a question lacks `use_case_id`
-  // for some reason, fall through to the unfiltered set so the user
-  // doesn't see an empty questionnaire on a stale shape.
+  // Questions filtered by the active capability AND skipping any whose
+  // dim has been toggled off via the SigilEditModal toggle. Each template
+  // question carries `use_case_id` (sigil migration §1) and `dimension`
+  // (sigil migration §2), so the filter is a single lookup. Questions
+  // without `use_case_id` (legacy fallback) show under every cap; same
+  // for ones without `dimension` (treat them as ungated).
   const filteredQuestions = useMemo(() => {
-    if (!activeCapabilityId || items.length <= 1) return questions;
     return questions.filter((q) => {
       const ucId = (q as { use_case_id?: string }).use_case_id;
-      // Questions without use_case_id default to ALL caps (legacy shape
-      // fallback) — show them regardless.
-      if (!ucId) return true;
-      return ucId === activeCapabilityId;
+      const dim = (q as { dimension?: string }).dimension;
+      // Cap scope (skip when activeCapabilityId is set and cap differs)
+      if (ucId && activeCapabilityId && items.length > 1 && ucId !== activeCapabilityId) {
+        return false;
+      }
+      // Disabled-dim gate
+      if (ucId && dim) {
+        const dis = disabledDimsByCap[ucId];
+        if (dis && dis.has(dim as GlyphDimension)) return false;
+      }
+      return true;
     });
-  }, [questions, activeCapabilityId, items.length]);
+  }, [questions, activeCapabilityId, items.length, disabledDimsByCap]);
 
   // Questions grouped by their target dim — drives petal state + the
   // answer-card's question stack on click. Built from the cap-filtered
@@ -190,6 +257,14 @@ export function PersonaLayoutAdoption({
 
     const out = {} as Record<GlyphDimension, PetalState>;
     for (const dim of GLYPH_DIMENSIONS) {
+      // Disabled-dim trumps everything — render as idle so the petal
+      // visually communicates "off" regardless of underlying question
+      // state. The dim's questions are already filtered out of
+      // `filteredQuestions` (and thus `questionsByDim`) above.
+      if (disabledDimsForActive.has(dim)) {
+        out[dim] = 'idle';
+        continue;
+      }
       const dimQuestions = questionsByDim[dim];
       const hasUnanswered = dimQuestions.some(
         (q) => !userAnswers[q.id] && !blockedQuestionIds.has(q.id),
@@ -204,7 +279,7 @@ export function PersonaLayoutAdoption({
       }
     }
     return out;
-  }, [items, questionsByDim, userAnswers, blockedQuestionIds]);
+  }, [items, questionsByDim, userAnswers, blockedQuestionIds, disabledDimsForActive]);
 
   const handlePetalClick = useCallback(
     (dim: GlyphDimension) => {
@@ -451,6 +526,8 @@ export function PersonaLayoutAdoption({
       onAnswerUpdated={onAnswerUpdated}
       pinnedQuestionId={activeQuestionId}
       onQuestionChange={setActiveQuestionId}
+      isDimActive={!disabledDimsForActive.has(activeDim)}
+      onToggleDim={(next) => toggleDimDisabled(activeDim, next)}
       onClose={() => {
         setActiveDim(null);
         setActiveQuestionId(null);

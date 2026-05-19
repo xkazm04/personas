@@ -298,6 +298,34 @@ pub async fn save_adoption_answers(
     Ok(())
 }
 
+/// Update the per-capability disabled-dims map on a build session row.
+/// Pass `None` (i.e. the wire-level `null`) to clear the column; pass a
+/// JSON string `{ [use_case_id]: GlyphDimension[] }` to set it. Drives
+/// the SigilEditModal's "Disable for this capability" toggle in
+/// adoption + build modes — separate command from save_adoption_answers
+/// so the modal can fire its writes without dragging the (potentially
+/// large) answers payload along.
+#[tauri::command]
+pub async fn update_build_session_disabled_dims(
+    state: State<'_, Arc<AppState>>,
+    session_id: String,
+    disabled_dims_json: Option<String>,
+) -> Result<(), AppError> {
+    require_auth(&state).await?;
+
+    build_session_repo::update(
+        &state.db,
+        &session_id,
+        &UpdateBuildSession {
+            disabled_dims_json: Some(disabled_dims_json),
+            ..Default::default()
+        },
+    )?;
+
+    tracing::debug!(session_id = %session_id, "update_build_session_disabled_dims: persisted");
+    Ok(())
+}
+
 /// Send a user answer to a pending question in a build session.
 ///
 /// When `reference` is supplied (C7 — clarifying questions with

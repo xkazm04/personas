@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X, ChevronLeft, ChevronRight, Check } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Check, Power } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
 import type { GlyphDimension } from '@/features/shared/glyph';
@@ -50,6 +50,16 @@ interface AdoptionAnswerCardProps {
    *  parent can keep activeQuestionId in sync — story-thread highlight
    *  follows along instead of staying stuck on the click-pinned id. */
   onQuestionChange?: (questionId: string) => void;
+
+  /** Whether the dim is currently active for the active capability. Drives
+   *  the footer toggle's "Enabled / Disabled" copy. Omit when no toggle
+   *  affordance is desired. */
+  isDimActive?: boolean;
+
+  /** Toggle the active state of the dim. Bound to a "Disable for this
+   *  capability" footer button. The parent persists the new state to the
+   *  build session row (or persona row in View mode). */
+  onToggleDim?: (nextActive: boolean) => void;
 }
 
 /**
@@ -78,6 +88,8 @@ export function AdoptionAnswerCard({
   onClose,
   pinnedQuestionId,
   onQuestionChange,
+  isDimActive,
+  onToggleDim,
 }: AdoptionAnswerCardProps) {
   const { t, tx } = useTranslation();
 
@@ -212,8 +224,30 @@ export function AdoptionAnswerCard({
           />
         </div>
 
-        {/* Footer — prev / next / done */}
+        {/* Footer — prev / next / done, plus per-cap dim toggle */}
         <div className="shrink-0 flex items-center gap-2 px-6 py-3 border-t border-card-border bg-foreground/[0.02] rounded-b-modal">
+          {/* Dim toggle — only when the parent wired it. Disabling the dim
+              skips this capability's bound questions (filtered out
+              upstream) and dims the petal. Re-enabling restores. */}
+          {onToggleDim && (
+            <button
+              type="button"
+              onClick={() => onToggleDim(isDimActive === false)}
+              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full typo-caption transition-colors cursor-pointer ${
+                isDimActive === false
+                  ? 'bg-primary/15 hover:bg-primary/30 text-primary border border-primary/40'
+                  : 'bg-foreground/5 hover:bg-foreground/10 text-foreground/75'
+              }`}
+              title={
+                isDimActive === false
+                  ? 'Re-enable this sigil for the active capability — its questions will reappear.'
+                  : 'Disable this sigil for the active capability — its questions will be skipped during build.'
+              }
+            >
+              <Power className="w-3 h-3" />
+              {isDimActive === false ? 'Disabled' : 'Disable'}
+            </button>
+          )}
           <button
             type="button"
             onClick={() => {

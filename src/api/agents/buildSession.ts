@@ -88,6 +88,22 @@ export async function cancelBuildSession(sessionId: string): Promise<void> {
   return invokeWithTimeout("cancel_build_session", { sessionId });
 }
 
+/**
+ * Update the per-capability disabled-dims map on a build session row.
+ * Pass `null` to clear the column; pass a JSON string
+ * `{ [use_case_id]: GlyphDimension[] }` to set it. Drives the
+ * SigilEditModal toggle in adoption + build modes.
+ */
+export async function updateBuildSessionDisabledDims(
+  sessionId: string,
+  disabledDimsJson: string | null,
+): Promise<void> {
+  return invokeWithTimeout("update_build_session_disabled_dims", {
+    sessionId,
+    disabledDimsJson,
+  });
+}
+
 /** Get the active (non-completed, non-cancelled) build session for a persona. */
 export async function getActiveBuildSession(
   personaId: string,

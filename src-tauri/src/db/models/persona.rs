@@ -545,6 +545,26 @@ impl Persona {
         parse_design_context(self.design_context.as_deref())
     }
 
+    /// Parse `disabled_dims_json` into a `{ use_case_id → set<dim> }` map.
+    /// Returns an empty map on NULL or parse failure — the column is purely
+    /// advisory and a corrupt row must not block execution.
+    pub fn parsed_disabled_dims(&self) -> std::collections::HashMap<String, Vec<String>> {
+        let Some(raw) = self.disabled_dims_json.as_deref() else {
+            return std::collections::HashMap::new();
+        };
+        serde_json::from_str(raw).unwrap_or_default()
+    }
+
+    /// Convenience: is `dim` disabled for the given capability id?
+    /// Returns `false` on NULL column, unknown cap, or empty set — so the
+    /// runtime executor's call site reads as "skip iff this returns true",
+    /// no extra option chain needed.
+    pub fn is_dim_disabled_for_cap(&self, cap_id: &str, dim: &str) -> bool {
+        self.parsed_disabled_dims()
+            .get(cap_id)
+            .is_some_and(|dims| dims.iter().any(|d| d == dim))
+    }
+
     /// Extract only the design-files section as a JSON string for prompt building.
     /// Returns `None` if there are no files or references.
     pub fn design_files_for_prompt(&self) -> Option<String> {

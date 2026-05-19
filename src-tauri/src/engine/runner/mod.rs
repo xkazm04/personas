@@ -599,7 +599,24 @@ pub async fn run_execution(
     // frequency, and (Phase C5) scoped to the execution's capability when one
     // is set — so capability-attributed learnings only surface under their
     // own capability, while persona-wide memories surface everywhere.
-    let prompt_text = if !is_session_resume {
+    //
+    // 2026-05-18 — honour `persona.disabled_dims_json`: when the user has
+    // toggled the Memory petal off for the active capability via the View-mode
+    // SigilEditModal, skip memory injection entirely for this execution. The
+    // capability still runs; it just doesn't see prior memories on this turn
+    // (and the post-run write-back below is also gated). Persona-wide
+    // executions (no use_case_id) ignore the gate because there's no
+    // capability scope to apply.
+    let memory_disabled_for_cap = execution_use_case_id
+        .as_deref()
+        .is_some_and(|uc_id| persona.is_dim_disabled_for_cap(uc_id, "memory"));
+    if memory_disabled_for_cap {
+        logger.log(&format!(
+            "[MEMORY] Skipped — Memory sigil is disabled for capability {}",
+            execution_use_case_id.as_deref().unwrap_or("?")
+        ));
+    }
+    let prompt_text = if !is_session_resume && !memory_disabled_for_cap {
         if let Some(memory_ids) = prepared_memory_ids {
             if !memory_ids.is_empty() {
                 logger.log(&format!(
