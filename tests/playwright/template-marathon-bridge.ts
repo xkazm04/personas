@@ -98,7 +98,7 @@ export async function clickByText(text: string, timeoutMs = 10_000): Promise<voi
       // (CSS-uppercase labels return innerText uppercase even when the
       // i18n string is "Continue"); rendered case is what we matched on.
       await post('/eval', {
-        code: `Array.from(document.querySelectorAll('button,a')).find(b => (b.innerText||'').trim() === ${JSON.stringify(text)})?.click();`,
+        js: `Array.from(document.querySelectorAll('button,a')).find(b => (b.innerText||'').trim() === ${JSON.stringify(text)})?.click();`,
       });
       return;
     }
@@ -194,7 +194,7 @@ export async function selectAdoptionVariant(variant: 'classic' | 'persona-layout
   // is asymmetric with CSS uppercasing, but these labels don't use
   // text-transform — safe to match raw.
   await post('/eval', {
-    code: `(()=>{const btn = Array.from(document.querySelectorAll('[role="tab"]')).find(b => (b.innerText||'').trim().startsWith(${JSON.stringify(label)})); if(btn) btn.click(); })();`,
+    js: `(()=>{const btn = Array.from(document.querySelectorAll('[role="tab"]')).find(b => (b.innerText||'').trim().startsWith(${JSON.stringify(label)})); if(btn) btn.click(); })();`,
   });
   await sleep(200);
 }

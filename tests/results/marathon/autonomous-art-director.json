@@ -2,18 +2,18 @@
   "template_id": "autonomous-art-director",
   "template_name": "Autonomous Art Director",
   "category": "content",
-  "started_at": "2026-05-19T19:24:08.653Z",
-  "ended_at": "2026-05-19T19:24:39.211Z",
+  "started_at": "2026-05-19T19:44:56.462Z",
+  "ended_at": "2026-05-19T19:45:14.152Z",
   "outcome": "hard-fail",
   "phases": [
     {
       "phase": "open",
       "status": "hard-fail",
-      "detail": "POST /navigate → 504: Bridge response timeout (15s)",
-      "durationMs": 30543
+      "detail": "waitForVisible: [role=\"dialog\"], #adoption-matrix-title not visible in 15000ms",
+      "durationMs": 17672
     }
   ],
   "persona_id": null,
-  "failure_signature": "phase:open:POST /navigate → 504: Bridge response timeout (15s)",
+  "failure_signature": "phase:open:waitForVisible: [role=\"dialog\"], #adoption-matrix-title not visible in 15000ms",
   "capability_results": []
 }

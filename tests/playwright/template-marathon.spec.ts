@@ -13,7 +13,6 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   clickByText,
-  clickTestId,
   findText,
   health,
   navigate,
@@ -126,38 +125,139 @@ test('marathon-template', async () => {
     capability_results: [],
   };
 
-  // --- Health gate ---
+  // --- Health gate + bridge warm-up ---
   await health();
+  // Bridge can take up to 60s to be responsive after a fresh app start
+  // (tti_ms ~ 61201 observed). Probe with cheap getState() calls until
+  // the bridge stops timing out. This is the difference between "smoke
+  // #1 504'd on navigate" and "smoke #N actually drives the UI."
+  {
+    const deadline = Date.now() + 90_000;
+    let ready = false;
+    while (Date.now() < deadline) {
+      try {
+        const r = await fetch(`http://127.0.0.1:${Number(process.env.COMPANION_TEST_PORT ?? 17320)}/bridge-exec`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ method: 'getState', params: {}, timeout_secs: 5 }),
+        });
+        if (r.ok) { ready = true; break; }
+      } catch { /* retry */ }
+      await sleep(2_000);
+    }
+    if (!ready) {
+      result.failure_signature = 'phase:open:bridge-warmup-timeout';
+      result.ended_at = new Date().toISOString();
+      writeResult(result);
+      expect(ready, 'Bridge never became responsive within 90s').toBe(true);
+      return;
+    }
+  }
 
   // --- Phase 1: Open template + Glyph variant ---
   const openResult = await runPhase(result.phases, 'open', async () => {
     await navigate('design-reviews');
-    await sleep(500);
-    // Switch to recipes tab if not already
-    await query('[data-testid="template-tab-recipes"]').then((nodes) => {
-      if (nodes.some((n) => n.visible)) return clickTestId('template-tab-recipes');
-      return Promise.resolve();
-    });
-    await sleep(300);
-    // Find template card by name
-    const card = await findText(target.name);
-    if (card.length === 0) throw new Error('template-card-not-found');
-    // Click first matching card
-    await Promise.resolve(); // bridge `findText` returns nodes; clicking needs a selector
-    // Workaround: use /eval to click by innerText (asymmetric case handling).
-    await fetch(`http://127.0.0.1:${Number(process.env.COMPANION_TEST_PORT ?? 17320)}/eval`, {
+    await sleep(800);
+    // The default templateTab is 'generated' (uiSlice.ts:164) — exactly
+    // the gallery we want. No tab switching needed; the legacy click on
+    // 'template-tab-recipes' from earlier smoke runs landed on Recipes
+    // (which does not show templates) and ate the Adopt-button search.
+
+    // Wait for the gallery to render at least one template row.
+    {
+      const deadline = Date.now() + 30_000;
+      let any = false;
+      while (Date.now() < deadline) {
+        const rows = await query('[data-testid^="template-row-"]');
+        if (rows.some((n) => n.visible)) { any = true; break; }
+        await sleep(500);
+      }
+      if (!any) throw new Error('gallery-empty');
+    }
+
+    // The gallery's search-input was rejected as a narrowing strategy —
+    // searching for the full template name returns zero rows in some
+    // cases (looks like the search is more restrictive than substring
+    // match). Walk the virtualised list directly via /eval.
+
+    // Gallery rendering uses `ComfortableRow` (data-testid="template-row-<id>"),
+    // not the standalone TemplateCard. Rows collapse by default; Adopt
+    // button is in the ExpandedRowContent that only appears after the
+    // row is clicked to expand.
+    //
+    // Strategy:
+    //   1. Find the row whose innerText contains `target.name`
+    //   2. Scroll into view + click to expand
+    //   3. Wait for the ExpandedRowContent siblings to appear (the
+    //      Adopt button is a descendant of the row's expanded panel)
+    //   4. Click Adopt
+    const port = Number(process.env.COMPANION_TEST_PORT ?? 17320);
+    let expandResult: { found: boolean; rowId?: string; alreadyExpanded?: boolean } = { found: false };
+    {
+      const deadline = Date.now() + 45_000;
+      while (Date.now() < deadline) {
+        const probe = await fetch(`http://127.0.0.1:${port}/eval`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            js: `(()=>{
+              const wanted = ${JSON.stringify(target.name)};
+              const rows = Array.from(document.querySelectorAll('[data-testid^="template-row-"]'));
+              const row = rows.find(r => (r.innerText||'').includes(wanted));
+              if (!row) return { found: false, total: rows.length };
+              row.scrollIntoView({ block: 'center' });
+              const rowId = (row.getAttribute('data-testid')||'').replace('template-row-','');
+              // Check for ChevronDown to detect already-expanded state
+              const hasChevronDown = !!row.querySelector('svg[class*="ChevronDown"], svg.lucide-chevron-down');
+              if (!hasChevronDown) row.click();
+              return { found: true, rowId, alreadyExpanded: hasChevronDown };
+            })();`,
+          }),
+        });
+        // /eval still fire-and-forget; do another round-trip to read
+        // the result via a tagged query.
+        const rowsCheck = await fetch(`http://127.0.0.1:${port}/find-text`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: target.name }),
+        });
+        if (rowsCheck.ok) {
+          const arr = (await rowsCheck.json()) as Array<{ visible: boolean }>;
+          if (arr.some((n) => n.visible)) {
+            expandResult = { found: true };
+            void probe;
+            break;
+          }
+        }
+        await sleep(1_000);
+      }
+    }
+    if (!expandResult.found) throw new Error('template-row-not-found');
+    // Allow the expanded panel to mount
+    await sleep(1_000);
+
+    // Click Adopt button — globally search after expansion. There's
+    // only one expanded row at a time so an unscoped innerText match
+    // is safe.
+    await fetch(`http://127.0.0.1:${port}/eval`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        code: `(()=>{const m=Array.from(document.querySelectorAll('[role="button"], button, a, [data-testid*="template-card"]')).find(el => (el.innerText||'').trim().startsWith(${JSON.stringify(target.name)})); if(m) m.click(); })();`,
+        js: `(()=>{
+          const btns = Array.from(document.querySelectorAll('button'));
+          const adopt = btns.find(b => (b.innerText||'').trim() === 'Adopt');
+          if (adopt) adopt.click();
+        })();`,
       }),
     });
     await sleep(800);
-    // Wait for Adopt button on the detail panel
-    await clickByText('Adopt', 10_000);
-    await waitForVisible('[data-testid="adoption-wizard"], [data-consolidated-mode]', 10_000);
+    // Wait for the adoption modal. BaseModal uses role="dialog";
+    // there's no specific testid on the AdoptionWizardModal so we
+    // match the dialog + the id of the title node.
+    await waitForVisible('[role="dialog"], #adoption-matrix-title', 15_000);
     // Switch to persona-layout (Glyph) variant
     await selectAdoptionVariant('persona-layout');
+    await sleep(300);
     return { opened: true };
   });
   if (!openResult.ok) {
@@ -194,7 +294,7 @@ test('marathon-template', async () => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            code: `(()=>{const opt=document.querySelector('[data-testid*="question-option"]:not([disabled])'); if(opt) opt.click(); })();`,
+            js: `(()=>{const opt=document.querySelector('[data-testid*="question-option"]:not([disabled])'); if(opt) opt.click(); })();`,
           }),
         });
         await sleep(300);
