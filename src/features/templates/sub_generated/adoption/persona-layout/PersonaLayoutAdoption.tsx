@@ -440,6 +440,7 @@ export function PersonaLayoutAdoption({
           type="button"
           onClick={onContinue}
           disabled={!canContinue}
+          data-testid="adopt-continue-to-build"
           className={`inline-flex items-center gap-1.5 px-5 py-2 rounded-full border transition-colors typo-body ${
             canContinue
               ? 'bg-primary/25 hover:bg-primary/40 border-primary/40 text-foreground cursor-pointer'

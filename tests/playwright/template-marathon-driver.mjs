@@ -142,6 +142,31 @@ async function checkAppHealth() {
   }
 }
 
+/** Query the running gallery for template-row testids → return the set
+ *  of display names currently rendered. The fixture's loadAllTemplates
+ *  reads from `scripts/templates/` (disk) but the app's DB may carry a
+ *  different subset (e.g. a template was removed/re-seeded). The
+ *  marathon should only attempt templates that physically exist in
+ *  the gallery — otherwise phase 1 hits template-row-not-found on
+ *  every absent template. */
+async function liveGalleryNames() {
+  const port = process.env.COMPANION_TEST_PORT ?? '17320';
+  const post = (path, body) =>
+    fetch(`http://127.0.0.1:${port}${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  await post('/navigate', { section: 'design-reviews' });
+  await new Promise((r) => setTimeout(r, 1500));
+  await post('/click-testid', { test_id: 'tab-generated' });
+  await new Promise((r) => setTimeout(r, 800));
+  const res = await post('/query', { selector: '[data-testid^="template-row-"]' });
+  if (!res.ok) return new Set();
+  const rows = await res.json();
+  return new Set(rows.map((r) => (r.text ?? '').split('\n')[0].trim()).filter(Boolean));
+}
+
 // --- Spec invocation ---
 
 function runSpecForTemplate(templateId) {
@@ -177,14 +202,25 @@ function matchSignature(signature) {
 
 async function main() {
   console.log('Template marathon driver — starting');
-  const targets = await loadTargets();
-  const selection = ONLY ? targets.filter((t) => ONLY.includes(t.id)) : targets.slice(0, TARGET);
-  console.log(`Selected ${selection.length} templates (target=${TARGET}, only=${ONLY?.join(',') ?? '∅'})`);
 
   if (!(await checkAppHealth())) {
     console.error('❌ App not reachable at /health. Start `npm run tauri:dev:test` and re-run.');
     process.exit(2);
   }
+
+  const targets = await loadTargets();
+  // Intersect with the running gallery — disk has ~70 template JSONs
+  // but the app DB may have a different subset; phase 1 only finds
+  // templates physically present in the gallery.
+  const galleryNames = await liveGalleryNames();
+  console.log(`Live gallery has ${galleryNames.size} templates`);
+  const inGallery = targets.filter((t) => galleryNames.has(t.name));
+  const missing = targets.length - inGallery.length;
+  if (missing > 0) {
+    console.log(`Filtered ${missing} disk templates not present in gallery (DB drift)`);
+  }
+  const selection = ONLY ? inGallery.filter((t) => ONLY.includes(t.id)) : inGallery.slice(0, TARGET);
+  console.log(`Selected ${selection.length} templates (target=${TARGET}, only=${ONLY?.join(',') ?? '∅'})`);
 
   const state = readState();
   if (!existsSync(RESULTS_DIR)) mkdirSync(RESULTS_DIR, { recursive: true });

@@ -91,7 +91,13 @@ export async function clickByText(text: string, timeoutMs = 10_000): Promise<voi
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     const nodes = await findText(text);
-    const button = nodes.find((n) => n.visible && (n.tag === 'BUTTON' || n.tag === 'A'));
+    // Bridge's /find-text returns DOM tag lowercased ("button", "a"), but
+    // older code compared against uppercase — every clickByText silently
+    // hit its 15s timeout because no node ever matched.
+    const button = nodes.find((n) => {
+      const tag = (n.tag ?? '').toLowerCase();
+      return n.visible && (tag === 'button' || tag === 'a');
+    });
     if (button) {
       // Click via /eval since /find-text doesn't surface a stable selector
       // for arbitrary elements. innerText match is asymmetric in case
@@ -200,18 +206,41 @@ export async function selectAdoptionVariant(variant: 'classic' | 'persona-layout
 }
 
 /** Wait for the build phase to transition into one of the target phases.
- *  Reuses the existing `waitForBuildPhase` bridge method. */
+ *  The underlying bridge method caps its internal wait at 20s
+ *  (src/test/automation/bridge.ts:1618), so we re-invoke in a loop until
+ *  the overall timeoutMs is reached. Logs intermediate phase progression
+ *  for diagnostics. */
 export async function waitForBuildPhase(
   phases: string[],
   timeoutMs = 5 * 60_000,
 ): Promise<string> {
-  const result = await bridgeExec<{ success: boolean; phase?: string; error?: string }>(
-    'waitForBuildPhase',
-    { phases, timeoutMs },
-    Math.ceil(timeoutMs / 1000),
-  );
-  if (!result.success) throw new Error(`waitForBuildPhase: ${result.error ?? 'unknown'}`);
-  return result.phase ?? 'unknown';
+  const deadline = Date.now() + timeoutMs;
+  let lastPhase: string | undefined;
+  while (Date.now() < deadline) {
+    const remaining = deadline - Date.now();
+    const slice = Math.min(remaining, 18_000);
+    const result = await bridgeExec<{
+      success: boolean;
+      phase?: string;
+      error?: string;
+      timedOut?: boolean;
+      pendingCount?: number;
+    }>('waitForBuildPhase', { phases, timeoutMs: slice }, Math.ceil(slice / 1000) + 5);
+    if (result.success && result.phase) return result.phase;
+    if (result.error) throw new Error(`waitForBuildPhase: ${result.error}`);
+    // Hard-error on phases that mean the build will never reach `phases`.
+    if (result.phase === 'failed' || result.phase === 'cancelled') {
+      throw new Error(`build-ended:${result.phase}`);
+    }
+    if (result.phase && result.phase !== lastPhase) {
+      // eslint-disable-next-line no-console
+      console.log(`  [build] phase=${result.phase} pending=${result.pendingCount ?? 0}`);
+      lastPhase = result.phase;
+    }
+    // Brief breather between probes so we don't spam bridge-exec.
+    await sleep(500);
+  }
+  throw new Error(`waitForBuildPhase:timeout (last phase=${lastPhase ?? 'unknown'})`);
 }
 
 /** Cancel any in-flight build session for the given persona — used by

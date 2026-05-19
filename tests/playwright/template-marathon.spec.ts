@@ -281,7 +281,14 @@ test('marathon-template', async () => {
 
   // --- Phase 4: Continue + Build wait ---
   const buildResult = await runPhase(result.phases, 'build', async () => {
-    await clickByText('Continue to Build', 15_000);
+    // Wait for the Continue button to be enabled, then click via testid
+    // (the modal's primary CTA was hardcoded English before the testid
+    // landed; clickByText also worked through /eval which has been
+    // observed to silently drop queued scripts mid-session). Routing
+    // through __test_respond is the reliable path.
+    await waitForVisible('[data-testid="adopt-continue-to-build"]', 15_000);
+    await clickTestId('adopt-continue-to-build');
+    await sleep(600);
     const phase = await waitForBuildPhase(['draft_ready', 'test_complete', 'failed', 'cancelled'], 6 * 60_000);
     if (phase === 'failed' || phase === 'cancelled') {
       throw new Error(`build-ended:${phase}`);
