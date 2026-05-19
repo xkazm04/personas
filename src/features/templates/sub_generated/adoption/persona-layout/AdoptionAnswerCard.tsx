@@ -38,6 +38,18 @@ interface AdoptionAnswerCardProps {
   onAnswerUpdated: (questionId: string, answer: string) => void;
   /** Close the card. Caller clears the active dim. */
   onClose: () => void;
+
+  /** Optional question pin from the parent — when set, the card lands on
+   *  THIS question instead of falling back to "first unanswered for the
+   *  dim". Story-thread / header-band clicks use this so the activated
+   *  question matches what the user picked, even when multiple questions
+   *  share a dim. `null` means "no pin — pick first unanswered". */
+  pinnedQuestionId?: string | null;
+
+  /** Emitted when the user navigates inside the card (prev / next) so the
+   *  parent can keep activeQuestionId in sync — story-thread highlight
+   *  follows along instead of staying stuck on the click-pinned id. */
+  onQuestionChange?: (questionId: string) => void;
 }
 
 /**
@@ -64,6 +76,8 @@ export function AdoptionAnswerCard({
   useCaseTitleById,
   onAnswerUpdated,
   onClose,
+  pinnedQuestionId,
+  onQuestionChange,
 }: AdoptionAnswerCardProps) {
   const { t, tx } = useTranslation();
 
@@ -80,10 +94,23 @@ export function AdoptionAnswerCard({
 
   // Re-anchor when the dim or question set changes (e.g. user clicked a
   // different petal). Land on the first unanswered question in the new
-  // ordering.
+  // ordering — unless the parent has pinned a specific question id (the
+  // pin-sync effect below claims it on the next render).
   useEffect(() => {
     setActiveIdx(0);
   }, [dim, questions.length]);
+
+  // Pin sync — when the parent updates `pinnedQuestionId` (story-thread
+  // or header-band click), jump local activeIdx to that question's
+  // position in the current ordering. No-op when the pin is null or
+  // points at a question that isn't in the current dim's bucket. The
+  // dim-change effect above runs FIRST (resetting to 0); this pin
+  // effect runs after and reclaims the correct slot.
+  useEffect(() => {
+    if (!pinnedQuestionId) return;
+    const idx = orderedQuestions.findIndex((q) => q.id === pinnedQuestionId);
+    if (idx >= 0) setActiveIdx(idx);
+  }, [pinnedQuestionId, orderedQuestions]);
 
   if (orderedQuestions.length === 0) {
     return null;
@@ -189,7 +216,11 @@ export function AdoptionAnswerCard({
         <div className="shrink-0 flex items-center gap-2 px-6 py-3 border-t border-card-border bg-foreground/[0.02] rounded-b-modal">
           <button
             type="button"
-            onClick={() => setActiveIdx((i) => Math.max(0, i - 1))}
+            onClick={() => {
+              const next = Math.max(0, activeIdx - 1);
+              setActiveIdx(next);
+              onQuestionChange?.(orderedQuestions[next]!.id);
+            }}
             disabled={activeIdx === 0}
             className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full typo-caption text-foreground/75 hover:text-foreground hover:bg-foreground/[0.06] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
           >
@@ -215,7 +246,11 @@ export function AdoptionAnswerCard({
           {activeIdx < orderedQuestions.length - 1 ? (
             <button
               type="button"
-              onClick={() => setActiveIdx((i) => Math.min(orderedQuestions.length - 1, i + 1))}
+              onClick={() => {
+                const next = Math.min(orderedQuestions.length - 1, activeIdx + 1);
+                setActiveIdx(next);
+                onQuestionChange?.(orderedQuestions[next]!.id);
+              }}
               className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full typo-caption text-foreground/75 hover:text-foreground hover:bg-foreground/[0.06] cursor-pointer transition-colors"
             >
               {t.templates.adopt_modal.next}

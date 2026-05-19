@@ -101,6 +101,15 @@ export function PersonaLayoutAdoption({
 }: PersonaLayoutAdoptionProps) {
   const { t, tx } = useTranslation();
   const [activeDim, setActiveDim] = useState<GlyphDimension | null>(null);
+  // Tracks which specific question within `activeDim` is on screen. Story-
+  // thread clicks set both this AND activeDim so the answer card lands on
+  // the EXACT question the user picked, not just the first one for its
+  // dim. Without this, clicking the 2nd/3rd question in a dim's bucket
+  // would silently route to the dim's first question (the bug Classic
+  // didn't have because it indexed questions absolutely, not by dim).
+  // Cleared whenever the dim changes via petal click (the card defaults
+  // to first-unanswered in the new dim).
+  const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null);
 
   // Template use cases → display rows. Honour the include/skip toggle by
   // overriding `enabled` before the adapter computes the health pill.
@@ -156,9 +165,11 @@ export function PersonaLayoutAdoption({
 
   const handlePetalClick = useCallback(
     (dim: GlyphDimension) => {
-      // Only opens when this dim has questions tied to it; otherwise
-      // there's nothing to answer and the click is a no-op (with a
-      // small toggle for the highlight).
+      // Petal click clears any explicit question pin — the card lands on
+      // the new dim's first-unanswered. The two paths into the card need
+      // to disagree here: story-thread clicks pick a specific question;
+      // petal clicks pick a dim and let the card choose.
+      setActiveQuestionId(null);
       if (questionsByDim[dim].length === 0) {
         setActiveDim((prev) => (prev === dim ? null : dim));
         return;
@@ -168,13 +179,19 @@ export function PersonaLayoutAdoption({
     [questionsByDim],
   );
 
-  // Story-thread item click → jump to the question's dim and open its
-  // answer card (no more bouncing back to Classic).
+  // Story-thread item click → jump to the EXACT question the user clicked,
+  // not just its dim. Both activeDim (drives which card opens) and
+  // activeQuestionId (drives which entry inside the card is active) are
+  // set in the same tick so the card lands precisely. Without this pair,
+  // clicking the 2nd/3rd question in a dim's bucket silently routed to
+  // the dim's first question — the bug Classic didn't have because it
+  // indexed questions absolutely.
   const handleStoryJumpTo = useCallback(
     (idx: number) => {
       const q = questions[idx];
       if (!q) return;
       setActiveDim(questionToDimension(q));
+      setActiveQuestionId(q.id);
     },
     [questions],
   );
@@ -216,11 +233,16 @@ export function PersonaLayoutAdoption({
 
   const activeStoryIdx = useMemo(() => {
     if (!activeDim) return -1;
-    // Light up every question for the active dim in the thread (use the
-    // first one as the "current" anchor).
-    const first = questions.findIndex((q) => questionToDimension(q) === activeDim);
-    return first;
-  }, [questions, activeDim]);
+    // Prefer the explicit question pin (set by story-thread / header-band
+    // clicks) so the highlighted item matches what the user actually
+    // clicked. Falls back to the first question for the dim when the dim
+    // was opened via petal click (no specific question targeted).
+    if (activeQuestionId) {
+      const exact = questions.findIndex((q) => q.id === activeQuestionId);
+      if (exact >= 0) return exact;
+    }
+    return questions.findIndex((q) => questionToDimension(q) === activeDim);
+  }, [questions, activeDim, activeQuestionId]);
 
   // Summary sidebar entries — one row per dim with at least one answered
   // question. Each row shows the dim label (colored to match the petal)
@@ -357,7 +379,12 @@ export function PersonaLayoutAdoption({
       onAddCredential={onAddCredential}
       useCaseTitleById={useCaseTitleById}
       onAnswerUpdated={onAnswerUpdated}
-      onClose={() => setActiveDim(null)}
+      pinnedQuestionId={activeQuestionId}
+      onQuestionChange={setActiveQuestionId}
+      onClose={() => {
+        setActiveDim(null);
+        setActiveQuestionId(null);
+      }}
     />
   ) : undefined;
 
