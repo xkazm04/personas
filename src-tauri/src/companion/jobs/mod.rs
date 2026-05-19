@@ -301,19 +301,35 @@ pub async fn worker_tick(
             if let Err(e2) = mark_failed(pool, &job.id, &err_text) {
                 tracing::warn!(job_id = %job.id, error = %e2, "job: mark_failed failed");
             }
-            let summary = format!(
-                "[Background job `{kind}` FAILED — id `{id}`]\n\n{err}",
-                kind = job.kind,
-                id = job.id,
-                err = err_text
-            );
-            append_system_episode(
-                pool,
-                #[cfg(feature = "ml")]
-                embedder,
-                &summary,
-            )
-            .await;
+            // Job-kind-aware noise reduction: `connector_use` failures
+            // already surface to the user via the inline ConnectorCallCard
+            // (it reads error_text directly from the BackgroundJob row).
+            // Writing a parallel `[FAILED]` system episode just double-
+            // surfaces the same error AND drags the raw stderr into
+            // Athena's prompt next turn for no benefit. Skip the system
+            // episode for connector failures; other job kinds
+            // (scan_codebase, memory_curation_run) have no inline UI
+            // and still need the system episode so Athena is aware.
+            if job.kind != "connector_use" {
+                let summary = format!(
+                    "[Background job `{kind}` FAILED — id `{id}`]\n\n{err}",
+                    kind = job.kind,
+                    id = job.id,
+                    err = err_text
+                );
+                append_system_episode(
+                    pool,
+                    #[cfg(feature = "ml")]
+                    embedder,
+                    &summary,
+                )
+                .await;
+            } else {
+                tracing::info!(
+                    job_id = %job.id,
+                    "connector_use failure — skipping system-episode write; card surfaces the error inline"
+                );
+            }
         }
     }
 
