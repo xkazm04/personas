@@ -872,6 +872,10 @@ async fn run_cli(
     // single line.
     interrupt_tick.tick().await;
     let mut interrupted = false;
+    // Mid-stream read failure preserved here so the loop can break and
+    // the partial-reply tail handling below can tag whatever we
+    // accumulated rather than losing the work to a hard error return.
+    let mut stdout_read_error: Option<String> = None;
 
     loop {
         tokio::select! {
@@ -920,7 +924,11 @@ async fn run_cli(
                     }
                     Ok(None) => break, // EOF — CLI finished naturally
                     Err(e) => {
-                        return Err(AppError::Internal(format!("read claude stdout: {e}")));
+                        // Don't hard-error and lose accumulated text.
+                        // Record the failure, break, and let the
+                        // partial-reply tail tag it for the user.
+                        stdout_read_error = Some(format!("read claude stdout: {e}"));
+                        break;
                     }
                 }
             }
@@ -973,12 +981,44 @@ async fn run_cli(
         return Ok(body);
     }
 
+    // Stdout-mid-stream failure path: the CLI was producing output and
+    // then the pipe broke (process crashed, signal, OOM, etc.). We
+    // already accumulated some text — preserve it rather than dropping
+    // the whole turn. Tag with the underlying error so the user sees
+    // what went wrong without losing the partial reply.
+    if let Some(err_msg) = stdout_read_error {
+        if let Some(sid) = new_claude_session_id {
+            upsert_claude_session_id(pool, session_id, &sid)?;
+        }
+        let body = if assistant_text.trim().is_empty() {
+            format!("_(stream ended before any reply: {err_msg})_")
+        } else {
+            format!("{assistant_text}\n\n_[interrupted by error: {err_msg}]_")
+        };
+        return Ok(body);
+    }
+
     if !status.success() {
         let trimmed = if stderr_text.len() > 600 {
             format!("{}…", &stderr_text[..600])
         } else {
             stderr_text.clone()
         };
+        // Non-zero exit AFTER partial text streamed: preserve the
+        // partial — same logic as stdout_read_error above. The stderr
+        // tail goes into the tag so the user (and Athena, next turn)
+        // sees the diagnostic context.
+        if !assistant_text.trim().is_empty() {
+            if let Some(sid) = new_claude_session_id {
+                upsert_claude_session_id(pool, session_id, &sid)?;
+            }
+            let body = format!(
+                "{assistant_text}\n\n_[interrupted by error: claude exited with status {status}{}]_",
+                if trimmed.is_empty() { String::new() } else { format!(": {trimmed}") }
+            );
+            return Ok(body);
+        }
+        // No partial — fall through to hard error as before.
         return Err(AppError::Internal(format!(
             "claude exited with status {status}: {trimmed}"
         )));
