@@ -1,0 +1,19 @@
+{
+  "template_id": "demo-recorder",
+  "template_name": "Demo Recorder",
+  "category": "content",
+  "started_at": "2026-05-19T19:24:40.983Z",
+  "ended_at": "2026-05-19T19:25:11.543Z",
+  "outcome": "hard-fail",
+  "phases": [
+    {
+      "phase": "open",
+      "status": "hard-fail",
+      "detail": "POST /navigate → 504: Bridge response timeout (15s)",
+      "durationMs": 30549
+    }
+  ],
+  "persona_id": null,
+  "failure_signature": "phase:open:POST /navigate → 504: Bridge response timeout (15s)",
+  "capability_results": []
+}

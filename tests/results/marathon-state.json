@@ -1,0 +1,25 @@
+{
+  "started_at": "2026-05-19T19:24:06.886Z",
+  "templates_attempted": [
+    "autonomous-art-director",
+    "demo-recorder",
+    "scientific-writing-editor"
+  ],
+  "bugs_observed": [
+    {
+      "template_id": "autonomous-art-director",
+      "signature": "phase:open:POST /navigate → 504: Bridge response timeout (15s)",
+      "action": "logged"
+    },
+    {
+      "template_id": "demo-recorder",
+      "signature": "phase:open:POST /navigate → 504: Bridge response timeout (15s)",
+      "action": "logged"
+    },
+    {
+      "template_id": "scientific-writing-editor",
+      "signature": "phase:open:clickByText: \"Adopt\" not found in 10000ms",
+      "action": "logged"
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "template_id": "scientific-writing-editor",
+  "template_name": "Scientific Writing Editor",
+  "category": "content",
+  "started_at": "2026-05-19T19:25:13.288Z",
+  "ended_at": "2026-05-19T19:25:40.585Z",
+  "outcome": "hard-fail",
+  "phases": [
+    {
+      "phase": "open",
+      "status": "hard-fail",
+      "detail": "clickByText: \"Adopt\" not found in 10000ms",
+      "durationMs": 27285
+    }
+  ],
+  "persona_id": null,
+  "failure_signature": "phase:open:clickByText: \"Adopt\" not found in 10000ms",
+  "capability_results": []
+}
