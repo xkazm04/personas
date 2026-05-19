@@ -522,6 +522,14 @@ pub struct Persona {
     /// `instant_adopt_template_inner` and `promote_build_draft_inner`.
     #[serde(default = "default_setup_status")]
     pub setup_status: String,
+    /// JSON-encoded `{ [use_case_id]: GlyphDimension[] }` recording per-
+    /// capability dim disables set in the View mode SigilEditModal.
+    /// Durable — survives rebuilds + runtime executions. Read by the
+    /// runtime executor (skips actions bound to disabled dims) and by
+    /// re-build flows (seeds the build session's disabled_dims_json).
+    /// NULL = no disables; this is the default for fresh + legacy rows.
+    #[serde(default)]
+    pub disabled_dims_json: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -715,4 +723,9 @@ pub struct UpdatePersonaInput {
     pub gateway_exposure: Option<PersonaGatewayExposure>,
     /// Phase 5 v1: per-persona Claude CLI session-resume awareness gate.
     pub cli_awareness_enabled: Option<bool>,
+    /// Per-capability dim disables — JSON `{ [use_case_id]: GlyphDimension[] }`.
+    /// Outer `Option` follows the partial-update pattern (`None` = leave
+    /// unchanged); inner `Option<String>` lets callers explicitly clear
+    /// the column with `Some(None)`. Set by the View-mode SigilEditModal.
+    pub disabled_dims_json: Option<Option<String>>,
 }

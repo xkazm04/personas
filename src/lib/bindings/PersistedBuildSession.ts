@@ -12,4 +12,10 @@ mode: string | null,
 /**
  * Companion chat session that originated this build, when applicable.
  */
-companionSessionId: string | null, createdAt: string, updatedAt: string, };
+companionSessionId: string | null, 
+/**
+ * Parsed JSON of build_sessions.disabled_dims_json — front-end
+ * reads this on hydration to restore the SigilEditModal toggles
+ * the user set in a prior visit to this session.
+ */
+disabledDims: JsonValue | null, createdAt: string, updatedAt: string, };

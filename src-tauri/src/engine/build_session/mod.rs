@@ -173,6 +173,7 @@ impl BuildSessionManager {
             parser_result_json: parser_result_json.clone(),
             mode: normalized_mode,
             companion_session_id: companion_session_id.clone(),
+            disabled_dims_json: None,
             created_at: now.clone(),
             updated_at: now,
         };

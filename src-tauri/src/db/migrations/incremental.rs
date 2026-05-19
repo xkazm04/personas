@@ -2501,6 +2501,32 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // -- disabled_dims_json on build_sessions + personas ---------------
+    // 2026-05-18 — sigil-driven adoption (Phase 4): when the user toggles
+    // a petal "off" in the SigilEditModal, that capability's bound
+    // questions become inert. The runner skips emitting them; the
+    // runtime executor won't surface the dim in any UI summary. Two
+    // storage paths because the lifecycle differs:
+    //   - build_sessions.disabled_dims_json: in-flight adoption state.
+    //     Cleared when the session ends (along with the rest of the
+    //     row). The runner reads this to decide whether to emit a
+    //     question (`use_case_id` + `dimension` must NOT match any
+    //     entry in the disabled map).
+    //   - personas.disabled_dims_json: durable per-persona override.
+    //     Survives past adoption — a user editing a view-mode persona
+    //     can disable a dim on a capability, and that choice persists
+    //     to future re-builds + runtime.
+    // Shape: JSON object `{ [use_case_id: string]: GlyphDimension[] }`.
+    // NULL is treated as "no disabled dims".
+    if !has_column(conn, "build_sessions", "disabled_dims_json")? {
+        ddl_step(conn, "ALTER TABLE build_sessions ADD COLUMN disabled_dims_json TEXT;")?;
+        tracing::info!("Added disabled_dims_json column to build_sessions");
+    }
+    if !has_column(conn, "personas", "disabled_dims_json")? {
+        ddl_step(conn, "ALTER TABLE personas ADD COLUMN disabled_dims_json TEXT;")?;
+        tracing::info!("Added disabled_dims_json column to personas");
+    }
+
     // Twin pending memories — back-cite the source communication when the
     // memory was queued via `record_interaction`. NULL for legacy rows and
     // for memories created by URL ingest / wiki audit (where no single

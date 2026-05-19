@@ -16,8 +16,9 @@ const UPDATE_BUILD_SESSION_SQL: &str = "
         cli_pid = CASE WHEN ?13 THEN ?14 ELSE cli_pid END,
         mode = CASE WHEN ?15 THEN ?16 ELSE mode END,
         companion_session_id = CASE WHEN ?17 THEN ?18 ELSE companion_session_id END,
-        updated_at = ?19
-    WHERE id = ?20";
+        disabled_dims_json = CASE WHEN ?19 THEN ?20 ELSE disabled_dims_json END,
+        updated_at = ?21
+    WHERE id = ?22";
 
 fn row_to_build_session(row: &Row) -> rusqlite::Result<BuildSession> {
     let phase_str: String = row.get("phase")?;
@@ -43,6 +44,7 @@ fn row_to_build_session(row: &Row) -> rusqlite::Result<BuildSession> {
         parser_result_json: row.get("parser_result_json").unwrap_or(None),
         mode: row.get("mode").unwrap_or(None),
         companion_session_id: row.get("companion_session_id").unwrap_or(None),
+        disabled_dims_json: row.get("disabled_dims_json").unwrap_or(None),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })
@@ -56,8 +58,9 @@ pub fn create(pool: &DbPool, session: &BuildSession) -> Result<(), AppError> {
             "INSERT INTO build_sessions
              (id, persona_id, phase, resolved_cells, pending_question, agent_ir,
               adoption_answers, intent, error_message, cli_pid, workflow_json,
-              parser_result_json, mode, companion_session_id, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)",
+              parser_result_json, mode, companion_session_id, disabled_dims_json,
+              created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17)",
         )?;
         stmt.execute(params![
             session.id,
@@ -74,6 +77,7 @@ pub fn create(pool: &DbPool, session: &BuildSession) -> Result<(), AppError> {
             session.parser_result_json,
             session.mode,
             session.companion_session_id,
+            session.disabled_dims_json,
             session.created_at,
             session.updated_at,
         ])?;
@@ -184,6 +188,11 @@ pub fn update(pool: &DbPool, id: &str, updates: &UpdateBuildSession) -> Result<(
             updates.companion_session_id.is_some(),
             updates
                 .companion_session_id
+                .as_ref()
+                .and_then(|value| value.as_deref()),
+            updates.disabled_dims_json.is_some(),
+            updates
+                .disabled_dims_json
                 .as_ref()
                 .and_then(|value| value.as_deref()),
             now,

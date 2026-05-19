@@ -412,6 +412,10 @@ fn row_to_persona_with_mode(row: &Row, mode: ProfileMode) -> rusqlite::Result<Pe
             .ok()
             .flatten()
             .unwrap_or_else(|| "ready".to_string()),
+        disabled_dims_json: row
+            .get::<_, Option<String>>("disabled_dims_json")
+            .ok()
+            .flatten(),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })
@@ -861,6 +865,14 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
             param_idx,
             param_values,
             bool
+        );
+        push_field_param!(
+            input.disabled_dims_json,
+            "disabled_dims_json",
+            sets,
+            param_idx,
+            param_values,
+            clone
         );
 
         let sql = format!(

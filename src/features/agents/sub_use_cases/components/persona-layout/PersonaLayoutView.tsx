@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { updatePersona, buildUpdateInput } from '@/api/agents/personas';
+import { silentCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { getMemoryCount } from '@/api/overview/memories';
@@ -116,12 +118,48 @@ export function PersonaLayoutView({ credentials }: PersonaLayoutViewProps) {
   // / backdrop. The modal's toggle writes into `disabledDims` below.
   const [editingPetal, setEditingPetal] = useState<GlyphDimension | null>(null);
 
-  // Phase 4 frontend stub — `disabledDims` per capability. Toggling a
-  // sigil off in the modal flips the matching dim into this set so the
-  // hero glyph dims that petal and (eventually) the build runner skips
-  // the bound questions. For now state is local: persistence to the
-  // persona row + build-session row lands in a follow-up commit.
+  // Phase 4 — `disabledDimsByCap` is persisted to the persona row's
+  // `disabled_dims_json` column so toggles survive across navigations,
+  // re-builds, and runtime executions. Shape on the wire is
+  // `{ [use_case_id]: GlyphDimension[] }`. Hydration runs once per
+  // persona selection (the effect below); the toggle handler writes
+  // back optimistically and silentCatches the network error (toast
+  // would be too loud for a UI affordance).
   const [disabledDimsByCap, setDisabledDimsByCap] = useState<Record<string, Set<GlyphDimension>>>({});
+
+  // Hydrate disabledDimsByCap from the persona row on persona change.
+  // The persona's `disabled_dims_json` column carries the persisted shape;
+  // parse it into the Set-of-dim map this component drives the modal off.
+  // Failures (malformed JSON, missing column on a legacy row) leave the
+  // map empty — strictly degrade to "no disables" rather than blocking
+  // the panel.
+  const hydratedForPersonaRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!personaId) {
+      setDisabledDimsByCap({});
+      hydratedForPersonaRef.current = null;
+      return;
+    }
+    if (hydratedForPersonaRef.current === personaId) return;
+    hydratedForPersonaRef.current = personaId;
+    const rawJson = (selectedPersona as { disabled_dims_json?: string | null } | null)?.disabled_dims_json;
+    if (!rawJson) {
+      setDisabledDimsByCap({});
+      return;
+    }
+    try {
+      const parsed = JSON.parse(rawJson) as Record<string, string[]>;
+      const next: Record<string, Set<GlyphDimension>> = {};
+      for (const [capId, dims] of Object.entries(parsed)) {
+        if (Array.isArray(dims)) {
+          next[capId] = new Set(dims as GlyphDimension[]);
+        }
+      }
+      setDisabledDimsByCap(next);
+    } catch {
+      setDisabledDimsByCap({});
+    }
+  }, [personaId, selectedPersona]);
   const disabledDimsForActive = useMemo(() => {
     if (!activeCapabilityId) return new Set<GlyphDimension>();
     return disabledDimsByCap[activeCapabilityId] ?? new Set<GlyphDimension>();
@@ -129,15 +167,27 @@ export function PersonaLayoutView({ credentials }: PersonaLayoutViewProps) {
 
   const toggleDimDisabled = useCallback(
     (dim: GlyphDimension, nextActive: boolean) => {
-      if (!activeCapabilityId) return;
+      if (!activeCapabilityId || !personaId) return;
       setDisabledDimsByCap((prev) => {
         const cur = new Set(prev[activeCapabilityId] ?? []);
         if (nextActive) cur.delete(dim);
         else cur.add(dim);
-        return { ...prev, [activeCapabilityId]: cur };
+        const next = { ...prev, [activeCapabilityId]: cur };
+        // Persist the new shape to the persona row. Serialise to the
+        // wire shape `{ [capId]: dim[] }`. Empty sets are kept in the
+        // map but stripped on serialise so we don't carry forever the
+        // capability ids the user briefly opened.
+        const wire: Record<string, GlyphDimension[]> = {};
+        for (const [capId, set] of Object.entries(next)) {
+          if (set.size > 0) wire[capId] = [...set];
+        }
+        const json = Object.keys(wire).length > 0 ? JSON.stringify(wire) : null;
+        void updatePersona(personaId, buildUpdateInput({ disabled_dims_json: json }))
+          .catch(silentCatch('PersonaLayoutView:toggleDimDisabled'));
+        return next;
       });
     },
-    [activeCapabilityId],
+    [activeCapabilityId, personaId],
   );
   useEffect(() => {
     // Re-anchor when items load or the first capability changes. Don't

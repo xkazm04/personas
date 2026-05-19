@@ -123,6 +123,13 @@ export interface PartialPersonaUpdate {
    * before the runner injects a "Claude CLI session" block into the prompt.
    */
   cli_awareness_enabled?: boolean;
+  /**
+   * Per-capability dim disables — JSON string `{ [use_case_id]: GlyphDimension[] }`.
+   * Set by the View-mode SigilEditModal when the user toggles a petal off.
+   * Pass `null` to clear; omit to leave unchanged. The runtime executor reads
+   * this and skips actions for a capability whose dim is in its set.
+   */
+  disabled_dims_json?: string | null;
 }
 
 // ============================================================================
@@ -282,5 +289,6 @@ export function buildUpdateInput(partial: PartialPersonaUpdate): UpdatePersonaIn
     parameters: partial.parameters !== undefined ? partial.parameters : null,
     gateway_exposure: partial.gateway_exposure !== undefined ? partial.gateway_exposure : null,
     cli_awareness_enabled: partial.cli_awareness_enabled !== undefined ? partial.cli_awareness_enabled : null,
+    disabled_dims_json: partial.disabled_dims_json !== undefined ? partial.disabled_dims_json : null,
   };
 }

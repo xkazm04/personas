@@ -1940,6 +1940,7 @@ mod tests {
             template_category: None,
             cli_awareness_enabled: false,
             setup_status: "ready".to_string(),
+            disabled_dims_json: None,
             created_at: now.clone(),
             updated_at: now,
         };
@@ -1988,6 +1989,7 @@ mod tests {
             template_category: None,
             cli_awareness_enabled: false,
             setup_status: "ready".to_string(),
+            disabled_dims_json: None,
             created_at: now.clone(),
             updated_at: now,
         };

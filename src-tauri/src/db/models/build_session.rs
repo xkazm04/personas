@@ -265,6 +265,11 @@ pub struct BuildSession {
     /// chat's episode log on terminal phase. NULL when the session was
     /// started from the regular UI (not via Companion).
     pub companion_session_id: Option<String>,
+    /// JSON-encoded `{ [use_case_id]: GlyphDimension[] }` recording which
+    /// dims the user has toggled off per capability via the SigilEditModal.
+    /// The runner respects this when deciding whether to emit a pending
+    /// question. NULL = no disabled dims (default for fresh + legacy rows).
+    pub disabled_dims_json: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -376,6 +381,10 @@ pub struct PersistedBuildSession {
     pub mode: Option<String>,
     /// Companion chat session that originated this build, when applicable.
     pub companion_session_id: Option<String>,
+    /// Parsed JSON of build_sessions.disabled_dims_json — front-end
+    /// reads this on hydration to restore the SigilEditModal toggles
+    /// the user set in a prior visit to this session.
+    pub disabled_dims: Option<serde_json::Value>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -405,6 +414,10 @@ impl PersistedBuildSession {
             error_message: s.error_message.clone(),
             mode: Some(s.mode.clone().unwrap_or_else(|| "interactive".to_string())),
             companion_session_id: s.companion_session_id.clone(),
+            disabled_dims: s
+                .disabled_dims_json
+                .as_deref()
+                .and_then(|d| serde_json::from_str(d).ok()),
             created_at: s.created_at.clone(),
             updated_at: s.updated_at.clone(),
         }
@@ -426,4 +439,5 @@ pub struct UpdateBuildSession {
     pub cli_pid: Option<Option<u32>>,
     pub mode: Option<Option<String>>,
     pub companion_session_id: Option<Option<String>>,
+    pub disabled_dims_json: Option<Option<String>>,
 }
