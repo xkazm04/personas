@@ -292,7 +292,7 @@
         "maps_to": null,
         "variable_name": "autonomy_level",
         "context": "Shapes every PR's review gate in uc_implementation AND the release approval gate in uc_release_management. Architectural concerns ALWAYS escalate to human regardless of this setting.",
-        "dimension": "task"
+        "dimension": "review"
       }
     ],
     "persona_meta": {

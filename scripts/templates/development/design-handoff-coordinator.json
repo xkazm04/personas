@@ -277,7 +277,7 @@
         "maps_to": "use_cases[uc_slack_summary].sample_input.summary_verbosity",
         "variable_name": "summary_verbosity",
         "context": "Standard is usually enough; verbose suits design-system teams with many stakeholders.",
-        "dimension": "task"
+        "dimension": "message"
       },
       {
         "id": "aq_ticketing_credential",

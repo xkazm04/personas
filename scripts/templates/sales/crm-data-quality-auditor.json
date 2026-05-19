@@ -212,7 +212,7 @@
         "maps_to": "use_cases[uc_weekly_audit].sample_input.auto_fix_level",
         "variable_name": "auto_fix_level",
         "context": "You can always change this later. Even with auto-fix enabled, original values are preserved for rollback (4-week backup retention).",
-        "dimension": "error",
+        "dimension": "review",
         "use_case_id": "uc_weekly_audit"
       },
       {

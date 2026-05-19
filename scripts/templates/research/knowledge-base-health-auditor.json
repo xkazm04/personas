@@ -176,7 +176,7 @@
         "maps_to": null,
         "variable_name": "max_issues_per_category",
         "context": "Caps the review-queue size. Old vaults can generate thousands of orphans on the first run — the cap keeps the queue triageable.",
-        "dimension": "memory"
+        "dimension": "task"
       }
     ],
     "persona_meta": {

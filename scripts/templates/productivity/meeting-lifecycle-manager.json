@@ -231,7 +231,7 @@
         "maps_to": "use_cases[uc_calendar_watch].sample_input.excluded_events",
         "variable_name": "excluded_events",
         "context": "Prevents unwanted messaging status or prep emails for events that shouldn't trigger the lifecycle.",
-        "dimension": "error"
+        "dimension": "task"
       },
       {
         "id": "aq_followup_style",
@@ -253,7 +253,7 @@
         "maps_to": "use_cases[uc_post_meeting_followup].sample_input.followup_style",
         "variable_name": "followup_style",
         "context": "Drives the follow-up template and whether email or messaging is the primary distribution channel.",
-        "dimension": "task"
+        "dimension": "message"
       },
       {
         "id": "aq_calendar_credential",

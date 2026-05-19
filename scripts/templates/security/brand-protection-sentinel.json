@@ -235,7 +235,7 @@
         "maps_to": "use_cases[uc_threat_analysis].sample_input.alert_threshold",
         "variable_name": "alert_threshold",
         "context": "Score 7+ is 'active brand impersonation with content mimicry and email capability'. Raise the bar to 8+ when your brand is a common English word (otherwise false-positive risk climbs).",
-        "dimension": "error"
+        "dimension": "task"
       },
       {
         "id": "aq_slack_channel",

@@ -144,7 +144,7 @@
         "maps_to": "use_cases[uc_process_and_analyze].sample_input.min_responses_for_analysis",
         "variable_name": "min_responses_for_analysis",
         "context": "Lower thresholds give faster feedback with wider confidence intervals; higher thresholds are more reliable for theme extraction.",
-        "dimension": "error"
+        "dimension": "task"
       },
       {
         "id": "aq_trend_comparison_periods",

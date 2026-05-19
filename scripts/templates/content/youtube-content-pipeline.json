@@ -258,7 +258,7 @@
         "maps_to": "use_cases[uc_cut_edit].sample_input.retake_mode",
         "variable_name": "retake_mode",
         "context": "Aggressive works best when the creator does clean retakes. Conservative keeps more performance options.",
-        "dimension": "error"
+        "dimension": "task"
       },
       {
         "id": "aq_business_context",

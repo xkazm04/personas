@@ -269,7 +269,7 @@
         "maps_to": "use_cases[uc_transaction_sync].sample_input.exclusions",
         "variable_name": "exclusions",
         "context": "Prevents noise from inter-account movements and investment activity that aren't true spending events.",
-        "dimension": "error"
+        "dimension": "task"
       },
       {
         "id": "aq_whitelist_merchants",

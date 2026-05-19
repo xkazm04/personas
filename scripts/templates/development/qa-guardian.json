@@ -249,7 +249,7 @@
         "maps_to": "use_cases[uc_pr_review].sample_input.write_tests",
         "variable_name": "write_tests",
         "context": "When enabled, uc_test_remediation writes tests in the project's conventions and commits with `[qa-guardian]` in the message. Disable for review-only behavior.",
-        "dimension": "task"
+        "dimension": "review"
       }
     ],
     "persona_meta": {

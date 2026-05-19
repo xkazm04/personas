@@ -278,7 +278,7 @@
         "maps_to": "use_cases[uc_owner_notify].sample_input.tone",
         "variable_name": "tone",
         "context": "Escalating urgency matches actual risk level; friendly tone lowers response friction at lower tiers.",
-        "dimension": "task"
+        "dimension": "message"
       },
       {
         "id": "aq_digest_channel",
@@ -322,7 +322,7 @@
         "maps_to": null,
         "variable_name": "boundary_rule",
         "context": "Hard safety rails — prevents irreversible or politically sensitive actions.",
-        "dimension": "task"
+        "dimension": "review"
       },
       {
         "id": "aq_escalation_gate",

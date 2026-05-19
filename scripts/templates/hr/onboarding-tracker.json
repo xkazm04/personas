@@ -175,7 +175,7 @@
         "maps_to": "use_cases[uc_deadline_check].sample_input.max_overdue_alerts_per_task",
         "variable_name": "max_overdue",
         "context": "Alert #1 notifies assignee, #2 CCs manager, final alert escalates to HR. Fewer alerts = faster escalation; more = more chance to self-resolve.",
-        "dimension": "error"
+        "dimension": "task"
       },
       {
         "id": "aq_tone",

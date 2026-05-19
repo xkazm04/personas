@@ -254,7 +254,7 @@
         "maps_to": "use_cases[uc_review_initiation].sample_input.communication_tone",
         "variable_name": "communication_tone",
         "context": "Sets the voice for all outbound messages.",
-        "dimension": "task"
+        "dimension": "message"
       },
       {
         "id": "aq_notion_database_ref",
@@ -299,7 +299,7 @@
         "maps_to": "use_cases[uc_approval_resolution].sample_input.hard_stops",
         "variable_name": "hard_stops",
         "context": "Hard stops prevent the agent from taking irreversible or politically sensitive actions autonomously.",
-        "dimension": "error"
+        "dimension": "review"
       },
       {
         "id": "aq_rejection_delivery",

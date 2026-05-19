@@ -216,7 +216,7 @@
         "maps_to": "use_cases[uc_research_report].sample_input.default_audience",
         "variable_name": "default_audience",
         "context": "Calibrates tone and which details surface. Per-request audience field in the incoming payload always overrides.",
-        "dimension": "task"
+        "dimension": "message"
       },
       {
         "id": "aq_knowledge_base",

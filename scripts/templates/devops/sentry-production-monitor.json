@@ -277,7 +277,7 @@
         "maps_to": "use_cases[uc_root_cause].sample_input.report_depth",
         "variable_name": "report_depth",
         "context": "Summary is a quick triage list. Standard is the full ticket-ready report. Deep is for senior engineers investigating complex cross-project issues.",
-        "dimension": "task"
+        "dimension": "message"
       }
     ],
     "persona_meta": {

@@ -299,7 +299,7 @@
         "maps_to": "use_cases[uc_post_meeting_followup].sample_input.followup_tone",
         "variable_name": "followup_tone",
         "context": "Shapes the follow-up email copy. Adaptive mode reads the CRM deals stage to vary tone.",
-        "dimension": "task"
+        "dimension": "message"
       },
       {
         "id": "aq_calendar_credential",

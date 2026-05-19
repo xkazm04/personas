@@ -345,7 +345,7 @@
         "maps_to": "use_cases[uc_onboarding_drip].sample_input.email_tone",
         "variable_name": "email_tone",
         "context": "Applied consistently across welcome, drip, confirmation, and farewell emails.",
-        "dimension": "task"
+        "dimension": "message"
       },
       {
         "id": "aq_deletion_requires_approval",

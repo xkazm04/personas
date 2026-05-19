@@ -260,7 +260,7 @@
         "maps_to": "use_cases[uc_flag_audit].sample_input.autonomy_level",
         "variable_name": "autonomy_level",
         "context": "collision_blocks is the strictest — use for high-value product flags. advisory is the balanced default. Off is for read-only observability deployments.",
-        "dimension": "task"
+        "dimension": "review"
       },
       {
         "id": "aq_stale_threshold_days",

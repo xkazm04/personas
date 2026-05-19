@@ -251,7 +251,7 @@
         "maps_to": null,
         "variable_name": "pr_comment_depth",
         "context": "Shapes the body of the bot's PR analysis comment.",
-        "dimension": "task"
+        "dimension": "message"
       },
       {
         "id": "aq_flakiness_definition",
@@ -292,7 +292,7 @@
         "maps_to": null,
         "variable_name": "boundary_rule",
         "context": "Hard guardrails that prevent noise and automated actions requiring human judgment.",
-        "dimension": "task"
+        "dimension": "review"
       },
       {
         "id": "aq_messaging_credential",

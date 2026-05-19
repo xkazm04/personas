@@ -179,7 +179,7 @@
         "maps_to": "use_cases[uc_health_report].sample_input.report_verbosity",
         "variable_name": "report_verbosity",
         "context": "Controls verbosity of the Messages post. The snapshot JSON is always full-fidelity for trend analysis.",
-        "dimension": "task"
+        "dimension": "message"
       }
     ],
     "persona_meta": {

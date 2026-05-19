@@ -351,7 +351,7 @@
         "maps_to": "use_cases[uc_welcome].sample_input.personalization_depth",
         "variable_name": "personalization_depth",
         "context": "Heavier personalization increases relevance but also prompt complexity and per-lead latency.",
-        "dimension": "task",
+        "dimension": "message",
         "use_case_id": "uc_welcome"
       },
       {

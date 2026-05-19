@@ -246,7 +246,7 @@
         "maps_to": "use_cases[uc_event_routing].sample_input.enrichment_depth",
         "variable_name": "enrichment_depth",
         "context": "Balances channel readability against acting-on-notification depth. Adaptive is the ergonomics-aware default.",
-        "dimension": "task"
+        "dimension": "message"
       },
       {
         "id": "aq_digest_channel",

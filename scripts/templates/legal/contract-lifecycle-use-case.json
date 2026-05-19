@@ -496,7 +496,7 @@
         "maps_to": null,
         "variable_name": "boundaries",
         "context": "Hard stops to prevent high-stakes irreversible actions without human oversight.",
-        "dimension": "error"
+        "dimension": "review"
       },
       {
         "id": "aq_human_approval",

@@ -241,7 +241,7 @@
         "maps_to": "use_cases[uc_stage_transitions].sample_input.hard_boundary",
         "variable_name": "hard_boundary",
         "context": "Hard guardrail that overrides email_scope when the two conflict.",
-        "dimension": "error"
+        "dimension": "review"
       },
       {
         "id": "aq_approval_scope",
@@ -329,7 +329,7 @@
         "maps_to": "use_cases[uc_stage_transitions].sample_input.email_tone",
         "variable_name": "email_tone",
         "context": "Sets the tone and creative latitude for every candidate-facing email.",
-        "dimension": "task"
+        "dimension": "message"
       },
       {
         "id": "aq_retention_policy",

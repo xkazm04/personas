@@ -176,7 +176,7 @@
         "maps_to": "use_cases[uc_weekly_health].sample_input.health_check_enabled",
         "variable_name": "health_check_enabled",
         "context": "When enabled, Monday 09:00 audits stale / contradictory / gap memories and surfaces them via manual_review. Disable to run just capture + daily flush.",
-        "dimension": "task"
+        "dimension": "memory"
       },
       {
         "id": "aq_obsidian_vault_lint",
@@ -192,7 +192,7 @@
         "maps_to": "use_cases[uc_weekly_health].sample_input.obsidian_vault_lint",
         "variable_name": "obsidian_vault_lint",
         "context": "Requires the Obsidian Brain feature to be configured. When enabled, the Monday audit additionally calls obsidian_brain_lint_vault. Skipped silently if Obsidian Brain isn't set up.",
-        "dimension": "task"
+        "dimension": "memory"
       },
       {
         "id": "aq_hooks_sidecar_enabled",

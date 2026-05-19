@@ -266,7 +266,7 @@
         "maps_to": "use_cases[uc_qualification].sample_input.alert_tier_threshold",
         "variable_name": "alert_tier_threshold",
         "context": "On Fire leads always trigger manual_review in uc_human_review regardless of this setting; this controls the immediate-alert threshold for other tiers.",
-        "dimension": "review",
+        "dimension": "task",
         "use_case_id": "uc_qualification"
       },
       {

@@ -235,7 +235,7 @@
         "maps_to": "use_cases[uc_detect_and_distribute].sample_input.caption_tone",
         "variable_name": "caption_tone",
         "context": "Sets the baseline voice. The agent nudges per-platform (e.g., slightly more formal on LinkedIn).",
-        "dimension": "task"
+        "dimension": "message"
       },
       {
         "id": "aq_review_mode",
@@ -294,7 +294,7 @@
         "maps_to": "use_cases[uc_detect_and_distribute].sample_input.blackout_policy",
         "variable_name": "blackout_policy",
         "context": "Prevents posts going live at low-engagement times or during company blackout periods.",
-        "dimension": "error"
+        "dimension": "task"
       },
       {
         "id": "aq_strategy_change_policy",

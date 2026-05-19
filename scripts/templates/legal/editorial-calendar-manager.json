@@ -278,7 +278,7 @@
         "maps_to": null,
         "variable_name": "reminder_boundaries",
         "context": "Defines hard guardrails on automated writer outreach. Sensitive communications route through the review step before send.",
-        "dimension": "error"
+        "dimension": "review"
       },
       {
         "id": "aq_report_recipients",

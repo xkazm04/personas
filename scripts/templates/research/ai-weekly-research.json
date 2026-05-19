@@ -194,7 +194,7 @@
         "maps_to": "use_cases[uc_weekly_briefing].sample_input.highlight_count",
         "variable_name": "highlight_count",
         "context": "Shorter = higher signal threshold per item. Longer = broader coverage with more incremental items.",
-        "dimension": "task"
+        "dimension": "message"
       },
       {
         "id": "aq_messaging_channel",

@@ -340,7 +340,7 @@
         "maps_to": null,
         "variable_name": "boundary_rule",
         "context": "Hard guardrails prevent irreversible actions that could corrupt project tracking or spam channels.",
-        "dimension": "task"
+        "dimension": "review"
       },
       {
         "id": "aq_source_control_credential",

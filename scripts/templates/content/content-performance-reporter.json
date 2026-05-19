@@ -170,7 +170,7 @@
         "maps_to": "use_cases[uc_weekly_report].sample_input.min_pageviews_for_inclusion",
         "variable_name": "min_pageviews_for_inclusion",
         "context": "Filters out statistical noise from very low-traffic pages.",
-        "dimension": "memory"
+        "dimension": "task"
       },
       {
         "id": "aq_anomaly_threshold_percent",
@@ -192,7 +192,7 @@
         "maps_to": "use_cases[uc_weekly_report].sample_input.anomaly_threshold_percent",
         "variable_name": "anomaly_threshold_percent",
         "context": "Content below 200 weekly views automatically uses 2x this threshold to dampen noise.",
-        "dimension": "memory"
+        "dimension": "task"
       },
       {
         "id": "aq_anomaly_review_mode",

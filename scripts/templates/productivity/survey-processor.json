@@ -260,7 +260,7 @@
         "maps_to": "use_cases[uc_send_followup_email].sample_input.email_tone",
         "variable_name": "email_tone",
         "context": "Guides the email template so messaging feels appropriate to both the respondent relationship and their expressed sentiment.",
-        "dimension": "task"
+        "dimension": "message"
       },
       {
         "id": "aq_spreadsheet_credential",

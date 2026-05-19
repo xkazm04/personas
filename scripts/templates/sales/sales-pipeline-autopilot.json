@@ -284,7 +284,7 @@
         "maps_to": "use_cases[uc_stage_response].sample_input.email_tone",
         "variable_name": "email_tone",
         "context": "Emails represent your brand voice to active prospects. Match how your reps already communicate.",
-        "dimension": "task",
+        "dimension": "message",
         "use_case_id": "uc_stage_response"
       },
       {

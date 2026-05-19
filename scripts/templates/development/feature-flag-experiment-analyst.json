@@ -282,7 +282,7 @@
         "maps_to": "use_cases[uc_experiment_analysis].sample_input.summary_verbosity",
         "variable_name": "summary_verbosity",
         "context": "Concise suits high-volume teams; verbose suits data-driven teams who audit before acting.",
-        "dimension": "task"
+        "dimension": "message"
       },
       {
         "id": "aq_stale_threshold_days",
@@ -321,7 +321,7 @@
         "maps_to": "use_cases[uc_flag_monitoring].sample_input.deny_list_prefixes",
         "variable_name": "deny_list_prefixes",
         "context": "Protects infrastructure kill-switches and compliance-sensitive flags from being surfaced as stale or change-alerted.",
-        "dimension": "task"
+        "dimension": "error"
       },
       {
         "id": "aq_deny_list_tags",
@@ -337,7 +337,7 @@
         "maps_to": "use_cases[uc_experiment_analysis].sample_input.deny_list_tags",
         "variable_name": "deny_list_tags",
         "context": "Embargoed / compliance-sensitive experiments stay out of the feed. Comma-separated.",
-        "dimension": "task"
+        "dimension": "error"
       },
       {
         "id": "aq_messaging_credential",
