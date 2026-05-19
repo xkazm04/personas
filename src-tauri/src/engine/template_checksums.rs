@@ -19,7 +19,7 @@ static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLo
     m.insert("content/autonomous-art-director.json", "0007a4e045d75f66");
     m.insert("content/content-approval-workflow.json", "000a2fce493fab93");
     m.insert("content/content-performance-reporter.json", "000fc08460dbb553");
-    m.insert("content/demo-recorder.json", "0019bbfd4d97e84d");
+    m.insert("content/demo-recorder.json", "00077655e0ff78b9");
     m.insert("content/feature-video-creator.json", "0003437ceb53f8d5");
     m.insert("content/game-character-animator.json", "000a60c8fd40fc33");
     m.insert("content/newsletter-curator.json", "000fba2ef9927179");

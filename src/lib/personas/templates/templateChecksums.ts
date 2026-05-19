@@ -10,7 +10,7 @@ export const TEMPLATE_CHECKSUMS: Record<string, string> = {
   'content/autonomous-art-director.json': '0007a4e045d75f66',
   'content/content-approval-workflow.json': '000a2fce493fab93',
   'content/content-performance-reporter.json': '000fc08460dbb553',
-  'content/demo-recorder.json': '0019bbfd4d97e84d',
+  'content/demo-recorder.json': '00077655e0ff78b9',
   'content/feature-video-creator.json': '0003437ceb53f8d5',
   'content/game-character-animator.json': '000a60c8fd40fc33',
   'content/newsletter-curator.json': '000fba2ef9927179',

@@ -1,4 +1,5 @@
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
+import { connectorCategoryTags } from '@/lib/credentials/builtinConnectors';
 
 /**
  * Aliases for connector service_types. The same logical provider gets stored
@@ -35,16 +36,31 @@ function expandAliases(serviceType: string): readonly string[] {
 }
 
 /** Does the vault contain any credential whose service_type matches the
- *  canonical name OR any of its known aliases? Exported so callers that
- *  need to react to a single picked-option's credential status (e.g. the
- *  adoption flow's post-pick auto-prompt) can use the same alias-aware
- *  semantics matchVaultToQuestions does. */
+ *  canonical name OR any of its known aliases?
+ *
+ *  Three match paths, in priority order:
+ *  1. Direct match on service_type (`gmail` ↔ `gmail`).
+ *  2. Alias match via SERVICE_TYPE_ALIASES (handles spelling drift across
+ *     creator paths: catalog UI vs CLI probe vs foraging).
+ *  3. Category-tag match via the builtin connector catalog — when the
+ *     template asks for a CATEGORY-level credential (e.g. `image_generation`,
+ *     `messaging`, `email`), any credential whose
+ *     `connectorCategoryTags(service_type)` includes that category counts
+ *     as a match. This is what lets a `leonardo` credential satisfy an
+ *     `image_generation`-typed template slot, a `personas_messages`
+ *     credential satisfy a `messaging` slot, etc. Before this branch,
+ *     templates with category-level connector slots would silently mark
+ *     legit credentials as "not available" because the alias map only
+ *     covered cloud providers. */
 export function hasMatchingCredential(
   canonical: string,
   credentialServiceTypes: Set<string>,
 ): boolean {
   for (const alias of expandAliases(canonical)) {
     if (credentialServiceTypes.has(alias)) return true;
+  }
+  for (const st of credentialServiceTypes) {
+    if (connectorCategoryTags(st).includes(canonical)) return true;
   }
   return false;
 }
