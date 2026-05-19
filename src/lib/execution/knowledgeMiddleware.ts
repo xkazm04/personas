@@ -15,6 +15,7 @@ import {
   type PipelineMiddleware,
 } from '@/lib/execution/pipeline';
 import { createLogger } from '@/lib/log';
+import { extractMessage } from '@/lib/silentCatch';
 
 const logger = createLogger("knowledge-middleware");
 
@@ -82,7 +83,7 @@ const knowledgeInjectionMiddleware: PipelineMiddleware<'validate'> = async (
       }
     }
   } catch (err) {
-    logger.warn('Knowledge injection failed, continuing without', { personaId: payload.personaId, error: String(err) });
+    logger.warn('Knowledge injection failed, continuing without', { personaId: payload.personaId, error: extractMessage(err) });
   }
 
   return payload;

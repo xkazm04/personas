@@ -1,6 +1,7 @@
 import { getPendingReviewCount } from '@/api/overview/reviews';
 import { useNotificationCenterStore } from '@/stores/notificationCenterStore';
 import { createLogger } from '@/lib/log';
+import { extractMessage } from '@/lib/silentCatch';
 
 const logger = createLogger('check-human-reviews');
 
@@ -32,6 +33,6 @@ export async function checkNewHumanReviews(
       useOverviewStore.getState().fetchPendingReviewCount();
     });
   } catch (err) {
-    logger.warn('Failed to check human reviews after execution', { personaId, error: String(err) });
+    logger.warn('Failed to check human reviews after execution', { personaId, error: extractMessage(err) });
   }
 }

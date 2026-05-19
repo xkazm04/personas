@@ -1,5 +1,6 @@
 import { getSessionPublicKey } from "@/api/vault/credentials";
 import { createLogger } from "@/lib/log";
+import { extractMessage } from "@/lib/silentCatch";
 
 const logger = createLogger("crypto");
 
@@ -141,7 +142,7 @@ export async function encryptWithSessionKey(data: string): Promise<string> {
     // 5. Return as "rsaEncryptedKey.ivPlusCiphertext" (both base64)
     return arrayBufferToBase64(encryptedAesKey) + "." + arrayBufferToBase64(ivAndCiphertext.buffer);
   } catch (err) {
-    logger.error("Hybrid encryption failed", { detail: String(err) });
+    logger.error("Hybrid encryption failed", { detail: extractMessage(err) });
     const wrapped = new Error("Failed to encrypt sensitive data for IPC");
     (wrapped as unknown as { cause: unknown }).cause = err;
     throw wrapped;

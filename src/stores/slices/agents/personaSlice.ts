@@ -2,29 +2,9 @@ import type { StateCreator } from "zustand";
 import type { AgentStore } from "../../storeTypes";
 import { errMsg, reportError } from "../../storeTypes";
 import { createLogger } from "@/lib/log";
+import { extractMessage } from "@/lib/silentCatch";
 
 const logger = createLogger("persona");
-
-/**
- * Coerce a rejected-promise reason into a readable string. `String(obj)`
- * on a plain object produces `"[object Object]"` which leaks into
- * console warnings as useless noise; this helper does the right thing
- * for Error instances, strings, and falls back to JSON.stringify for
- * structured Tauri error payloads (which arrive as objects with `code`/
- * `message` fields).
- */
-function stringifyReason(reason: unknown): string {
-  if (reason instanceof Error) return reason.message;
-  if (typeof reason === "string") return reason;
-  if (reason && typeof reason === "object") {
-    try {
-      return JSON.stringify(reason);
-    } catch {
-      // Fall through to String() for cyclic / non-serializable objects.
-    }
-  }
-  return String(reason);
-}
 import type {
   Persona,
   PersonaWithDetails,
@@ -310,11 +290,11 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
           };
         });
       } else if (detailResult.status === "rejected") {
-        logger.warn("prefetchPersona detail failed", { personaId: id, error: stringifyReason(detailResult.reason) });
+        logger.warn("prefetchPersona detail failed", { personaId: id, error: extractMessage(detailResult.reason) });
       }
 
       if (toolsResult.status === "rejected") {
-        logger.warn("prefetchPersona tools failed", { personaId: id, error: stringifyReason(toolsResult.reason) });
+        logger.warn("prefetchPersona tools failed", { personaId: id, error: extractMessage(toolsResult.reason) });
       }
 
       if (executionsResult.status === "fulfilled" && executionsResult.value) {
@@ -324,7 +304,7 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
           executionsCacheAt: { ...state.executionsCacheAt, [id]: Date.now() },
         }));
       } else if (executionsResult.status === "rejected") {
-        logger.warn("prefetchPersona executions failed", { personaId: id, error: stringifyReason(executionsResult.reason) });
+        logger.warn("prefetchPersona executions failed", { personaId: id, error: extractMessage(executionsResult.reason) });
       }
     })().finally(() => {
       if (prefetchInflight.get(id) === promise) {

@@ -13,6 +13,7 @@ import { addMiddleware, type PipelineMiddleware } from '@/lib/execution/pipeline
 import { detectDesignDrift, saveDriftEvents } from '@/lib/design/designDrift';
 import type { AgentIR } from '@/lib/types/designTypes';
 import { createLogger } from '@/lib/log';
+import { extractMessage } from '@/lib/silentCatch';
 
 const logger = createLogger("drift-middleware");
 
@@ -75,7 +76,7 @@ const driftDetectionMiddleware: PipelineMiddleware<'frontend_complete'> = async 
       useAgentStore.setState({ designDriftEvents: all });
     }
   } catch (err) {
-    logger.warn('Drift detection failed', { executionId, personaId, error: String(err) });
+    logger.warn('Drift detection failed', { executionId, personaId, error: extractMessage(err) });
   }
 
   return payload;

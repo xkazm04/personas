@@ -67,6 +67,7 @@ export const AccessorKey = {
 // ---------------------------------------------------------------------------
 
 import { createLogger } from "@/lib/log";
+import { extractMessage } from "@/lib/silentCatch";
 
 const logger = createLogger("store-bus");
 
@@ -85,7 +86,7 @@ function emit<K extends keyof StoreBusEventMap>(
     try {
       (fn as (p: StoreBusEventMap[K]) => void)(payload!);
     } catch (e) {
-      logger.error("Handler error", { event, detail: String(e) });
+      logger.error("Handler error", { event, detail: extractMessage(e) });
     }
   }
 }

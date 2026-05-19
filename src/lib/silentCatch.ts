@@ -2,10 +2,39 @@ import * as Sentry from "@sentry/react";
 import { log } from "./log";
 import { useToastStore } from "@/stores/toastStore";
 
-/** Extract a human-readable message from any error shape (Error, Tauri { error }, or unknown). */
-function extractMessage(err: unknown): string {
+/**
+ * Extract a human-readable message from any error shape — Error
+ * instances, Tauri-style `{ error }` envelopes, structured Tauri
+ * rejections (`{ code, message, data }`), plain strings, or unknown.
+ *
+ * Crucial property: never returns the literal "[object Object]" — that
+ * leaks into console.warn / toast strings as opaque noise and is the
+ * single most common UX regression in shipped error handling.
+ *
+ * Exported so callers outside this file can standardize on one helper
+ * (zustand slices, store buses, middleware logs, anywhere a rejected
+ * promise reason or caught thrown value needs to be rendered as text).
+ */
+export function extractMessage(err: unknown): string {
+  if (err == null) return "";
+  if (typeof err === "string") return err;
   if (err instanceof Error) return err.message;
-  if (typeof err === "object" && err !== null && "error" in err) return String((err as Record<string, unknown>).error);
+  if (typeof err === "object") {
+    const obj = err as Record<string, unknown>;
+    // Common Tauri / API envelope shapes — prefer named text fields
+    // before falling through to JSON stringification.
+    if (typeof obj.message === "string" && obj.message) return obj.message;
+    if (typeof obj.error === "string" && obj.error) return obj.error;
+    if (typeof obj.detail === "string" && obj.detail) return obj.detail;
+    try {
+      // JSON.stringify on plain objects produces readable text like
+      // {"code":"X","message":"Y"} — far better than "[object Object]".
+      const json = JSON.stringify(obj);
+      if (json && json !== "{}") return json;
+    } catch {
+      // Cyclic structure — fall through to String().
+    }
+  }
   return String(err);
 }
 
