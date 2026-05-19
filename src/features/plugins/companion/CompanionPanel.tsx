@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   BookOpen,
@@ -68,7 +68,7 @@ import { RefineChips } from './RefineChips';
 import { TurnSummaryChip } from './TurnSummaryChip';
 import { useToastStore } from '@/stores/toastStore';
 import { useSystemStore } from '@/stores/systemStore';
-import { silentCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
 import { play as playAudio, synthesize as synthesizeTts } from './voicePlayback';
 import { useTtsSettings } from './useTtsSettings';
 import { useAgentStore } from '@/stores/agentStore';
@@ -574,12 +574,45 @@ function Body(props: BodyProps) {
   // the listener closure stays stable.
   const currentTurnIdRef = useRef<string | null>(null);
 
+  /*
+   * Soft progress timeout. If no CLI line arrives for ~30s mid-turn we
+   * surface a gentle "still working" hint; at ~2min we sharpen the hint
+   * to suggest the Stop button. The hard timeout is 15min server-side
+   * (TURN_TIMEOUT in session.rs) — way too long to leave the user
+   * staring at a static bubble.
+   *
+   * `lastStreamEventAtRef` updates on every CLI line, started, and
+   * finished. `slowLevel` is checked every 5s while streaming.
+   */
+  const lastStreamEventAtRef = useRef<number>(0);
+  const [slowLevel, setSlowLevel] = useState<0 | 1 | 2>(0);
+
+  useEffect(() => {
+    if (!streaming) {
+      setSlowLevel(0);
+      return;
+    }
+    // Poll every 5s — fine-grained enough that the chip appears within
+    // a heartbeat of crossing each threshold, coarse enough that the
+    // setInterval is cheap.
+    const id = setInterval(() => {
+      const since = Date.now() - lastStreamEventAtRef.current;
+      if (since > 120_000) setSlowLevel(2);
+      else if (since > 30_000) setSlowLevel(1);
+      else setSlowLevel(0);
+    }, 5000);
+    return () => clearInterval(id);
+  }, [streaming]);
+
   // Subscribe to streaming events from the backend.
   useTauriEvent<CompanionStreamEvent>(
     COMPANION_STREAM_EVENT,
     useCallback(
       (event) => {
         const ev = event.payload;
+        // Every event resets the soft-progress clock — silence (no
+        // events arriving) is what we surface as "still working".
+        lastStreamEventAtRef.current = Date.now();
         if (ev.kind === 'started') {
           currentTurnIdRef.current = ev.turnId;
           // New turn — drop any leftover in-flight recall strip; the
@@ -870,6 +903,9 @@ function Body(props: BodyProps) {
       appendMessage(optimistic);
       setStreaming(true);
       resetStreamingText();
+      // Seed the soft-progress clock so the chip-threshold effect
+      // doesn't trip immediately based on a stale prior-turn timestamp.
+      lastStreamEventAtRef.current = Date.now();
       try {
         const result = await companionSendMessage(
           trimmed,
@@ -917,12 +953,25 @@ function Body(props: BodyProps) {
             .catch(silentCatch('companion_tts_synthesize'));
         }
       } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
+        // extractMessage prevents "[object Object]" leaking into the
+        // user-visible error chip when the IPC rejection is a Tauri
+        // envelope rather than an Error instance.
+        const msg = extractMessage(err);
         setSendError(msg);
         silentCatch('companion_send_message')(err);
       } finally {
+        // Reset order matters for the streaming bubble's AnimatePresence
+        // exit: setStreaming(false) first unmounts the bubble, then we
+        // clear the in-flight scratch fields. If we wiped streamingText
+        // first the bubble would briefly show an empty body mid-exit.
         setStreaming(false);
         resetStreamingText();
+        // streamingPhase is owned by the store but cleaned up here too
+        // — the stream-event handler clears it on `finished`/`error`
+        // but the IPC rejection path skips the stream-event channel
+        // entirely (the backend never got far enough to emit one), so
+        // an explicit reset here is the safety net.
+        useCompanionStore.getState().setStreamingPhase(null);
       }
     },
     [
@@ -1158,6 +1207,36 @@ function Body(props: BodyProps) {
                     <Square className="w-3 h-3" fill="currentColor" />
                   </button>
                 </div>
+                {/*
+                  Slow-progress hint chip. Surfaces below the streaming
+                  bubble when no CLI events have arrived in 30s (soft) /
+                  120s (firm). The hard timeout server-side is 15min,
+                  which is way too long to leave the user wondering if
+                  things are stuck. AnimatePresence handles enter/exit
+                  fade so the chip doesn't pop in abruptly.
+                */}
+                <AnimatePresence>
+                  {slowLevel > 0 && (
+                    <motion.div
+                      key="companion-slow-progress"
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+                      className={`rounded-card border px-3 py-1.5 typo-caption ${
+                        slowLevel === 2
+                          ? 'border-amber-500/30 bg-amber-500/[0.06] text-amber-300'
+                          : 'border-foreground/10 bg-foreground/[0.04] text-foreground/70'
+                      }`}
+                      data-testid="companion-slow-progress"
+                      data-slow-level={slowLevel}
+                    >
+                      {slowLevel === 2
+                        ? t.plugins.companion.slow_progress_firm
+                        : t.plugins.companion.slow_progress_soft}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
                 {pendingConnectorJobIds.map((jobId) => {
                   const job = jobsById[jobId];
                   return job ? (

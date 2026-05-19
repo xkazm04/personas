@@ -10639,6 +10639,8 @@ export type Translations = {
       phase_running_command: string;
       phase_subagent: string;
       phase_using_tool: string;
+      slow_progress_soft: string;
+      slow_progress_firm: string;
       stop_turn: string;
       recall_empty: string;
       recall_episodes_only: string;

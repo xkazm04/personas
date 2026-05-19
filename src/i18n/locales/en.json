@@ -10633,6 +10633,8 @@
       "phase_running_command": "Running a command…",
       "phase_subagent": "Asking a subagent…",
       "phase_using_tool": "Using {tool}…",
+      "slow_progress_soft": "Still working — taking a bit longer than usual.",
+      "slow_progress_firm": "Athena is still working. Click the stop button if you'd like to interrupt.",
       "stop_turn": "Stop this reply",
       "recall_empty": "Athena spoke from a blank brain this turn.",
       "recall_episodes_only": "Athena replayed {count} recent turns.",
