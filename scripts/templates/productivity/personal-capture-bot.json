@@ -183,6 +183,7 @@
         "use_case_ids": [
           "uc_capture_and_route"
         ],
+        "use_case_id": "uc_capture_and_route",
         "category": "configuration",
         "question": "What fields do you track for tasks?",
         "type": "select",
@@ -196,7 +197,7 @@
         "maps_to": "use_cases[uc_capture_and_route].sample_input.task_fields",
         "variable_name": "task_fields",
         "context": "Determines how much structured data the bot extracts from task captures before writing to spreadsheet.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_notion_structure",
@@ -204,6 +205,7 @@
         "use_case_ids": [
           "uc_capture_and_route"
         ],
+        "use_case_id": "uc_capture_and_route",
         "category": "configuration",
         "question": "How are your knowledge base databases organized for captures?",
         "type": "select",
@@ -217,7 +219,7 @@
         "maps_to": "use_cases[uc_capture_and_route].sample_input.notion_structure",
         "variable_name": "notion_structure",
         "context": "Determines whether the bot routes to one knowledge base target or multiple databases based on classification.",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_confirmation_behavior",
@@ -225,6 +227,7 @@
         "use_case_ids": [
           "uc_capture_and_route"
         ],
+        "use_case_id": "uc_capture_and_route",
         "category": "human_in_the_loop",
         "question": "When should the bot confirm a classification before routing?",
         "type": "select",
@@ -238,7 +241,7 @@
         "maps_to": "use_cases[uc_capture_and_route].sample_input.confirmation_behavior",
         "variable_name": "confirmation_behavior",
         "context": "Controls how much the bot interrupts you for clarification vs. acting autonomously.",
-        "dimension": "human-review"
+        "dimension": "review"
       },
       {
         "id": "aq_digest_detail",
@@ -246,6 +249,7 @@
         "use_case_ids": [
           "uc_daily_digest"
         ],
+        "use_case_id": "uc_daily_digest",
         "category": "quality",
         "question": "How detailed should the nightly digest be?",
         "type": "select",
@@ -259,11 +263,12 @@
         "maps_to": "use_cases[uc_daily_digest].sample_input.digest_detail",
         "variable_name": "digest_detail",
         "context": "Shapes the nightly digest format. Too verbose and you stop reading; too terse and it loses review value.",
-        "dimension": "messages"
+        "dimension": "message"
       },
       {
         "id": "aq_personal_shorthand",
         "scope": "persona",
+        "use_case_id": "uc_capture_and_route",
         "category": "memory",
         "question": "Any personal shorthand the bot should always recognize?",
         "type": "textarea",
@@ -277,6 +282,7 @@
       {
         "id": "aq_messaging_credential",
         "scope": "connector",
+        "use_case_id": "uc_capture_and_route",
         "connector_names": [
           "messaging"
         ],
@@ -291,11 +297,12 @@
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
         "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_knowledge_base_credential",
         "scope": "connector",
+        "use_case_id": "uc_capture_and_route",
         "connector_names": [
           "knowledge_base"
         ],
@@ -310,11 +317,12 @@
         "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
         "variable_name": "knowledge_base_credential",
         "context": "Options are auto-detected from your knowledge_base credentials in the Vault (knowledge base, knowledge base, Obsidian, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_spreadsheet_credential",
         "scope": "connector",
+        "use_case_id": "uc_capture_and_route",
         "connector_names": [
           "spreadsheet"
         ],
@@ -329,7 +337,7 @@
         "maps_to": "persona.connectors[spreadsheet].credential_fields[provider].value",
         "variable_name": "spreadsheet_credential",
         "context": "Options are auto-detected from your spreadsheet credentials in the Vault (spreadsheet, spreadsheet, spreadsheet, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

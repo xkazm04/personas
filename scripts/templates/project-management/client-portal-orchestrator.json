@@ -215,6 +215,7 @@
           "uc_client_onboarding",
           "uc_phase_monitoring"
         ],
+        "use_case_id": "uc_client_onboarding",
         "category": "configuration",
         "question": "What tone should client emails use?",
         "type": "select",
@@ -228,7 +229,7 @@
         "maps_to": "use_cases[uc_client_onboarding].sample_input.email_tone",
         "variable_name": "email_tone",
         "context": "Controls the AI voice used in welcome emails, milestone updates, weekly progress notes, and testimonial requests.",
-        "dimension": "messages"
+        "dimension": "message"
       },
       {
         "id": "aq_weekly_progress",
@@ -236,6 +237,7 @@
         "use_case_ids": [
           "uc_phase_monitoring"
         ],
+        "use_case_id": "uc_phase_monitoring",
         "category": "configuration",
         "question": "Should clients receive weekly progress emails during the Active phase?",
         "type": "select",
@@ -249,7 +251,7 @@
         "maps_to": "use_cases[uc_phase_monitoring].sample_input.weekly_progress_cadence",
         "variable_name": "weekly_progress_cadence",
         "context": "Frequency of Active-phase progress emails pulled from the Project's Active sub-page content.",
-        "dimension": "use-cases"
+        "dimension": "trigger"
       },
       {
         "id": "aq_stall_threshold",
@@ -257,6 +259,7 @@
         "use_case_ids": [
           "uc_stall_escalation"
         ],
+        "use_case_id": "uc_stall_escalation",
         "category": "configuration",
         "question": "How long should a project be inactive before it's flagged as stalled?",
         "type": "select",
@@ -269,7 +272,7 @@
         "maps_to": "use_cases[uc_stall_escalation].sample_input.stall_threshold_days",
         "variable_name": "stall_threshold_days",
         "context": "Sets the first rung of the escalation ladder; 14- and 21-day tiers are fixed relative to this threshold.",
-        "dimension": "triggers"
+        "dimension": "trigger"
       },
       {
         "id": "aq_report_recipients",
@@ -277,6 +280,7 @@
         "use_case_ids": [
           "uc_portfolio_report"
         ],
+        "use_case_id": "uc_portfolio_report",
         "category": "configuration",
         "question": "Who should receive the monthly portfolio report by email (in addition to the messaging channel)?",
         "type": "text",
@@ -284,11 +288,12 @@
         "maps_to": "use_cases[uc_portfolio_report].sample_input.report_recipients",
         "variable_name": "report_recipients",
         "context": "Comma-separated email addresses. Leave blank to send only to the messaging channel.",
-        "dimension": "messages"
+        "dimension": "message"
       },
       {
         "id": "aq_knowledge_base_credential",
         "scope": "connector",
+        "use_case_id": "uc_client_onboarding",
         "connector_names": [
           "knowledge_base"
         ],
@@ -303,11 +308,12 @@
         "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
         "variable_name": "knowledge_base_credential",
         "context": "Options are auto-detected from your knowledge_base credentials in the Vault (knowledge base, knowledge base, Obsidian, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_email_credential",
         "scope": "connector",
+        "use_case_id": "uc_client_onboarding",
         "connector_names": [
           "email"
         ],
@@ -322,11 +328,12 @@
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
         "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_messaging_credential",
         "scope": "connector",
+        "use_case_id": "uc_stall_escalation",
         "connector_names": [
           "messaging"
         ],
@@ -341,7 +348,7 @@
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
         "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

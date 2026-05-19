@@ -176,6 +176,7 @@
         "use_case_ids": [
           "uc_daily_briefing"
         ],
+        "use_case_id": "uc_daily_briefing",
         "category": "domain",
         "question": "Which metric family should lead the briefing?",
         "type": "select",
@@ -189,7 +190,7 @@
         "maps_to": "use_cases[uc_daily_briefing].sample_input.metric_focus",
         "variable_name": "metric_focus",
         "context": "Controls which metrics appear at the top of the briefing and drive the health status.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_anomaly_sensitivity",
@@ -197,6 +198,7 @@
         "use_case_ids": [
           "uc_daily_briefing"
         ],
+        "use_case_id": "uc_daily_briefing",
         "category": "quality",
         "question": "How sensitive should anomaly detection be?",
         "type": "select",
@@ -209,7 +211,7 @@
         "maps_to": "use_cases[uc_daily_briefing].sample_input.anomaly_sensitivity",
         "variable_name": "anomaly_sensitivity",
         "context": "Sets the threshold for flagging a metric. Conservative reduces noise; Aggressive catches subtle regressions earlier at the cost of more yellow/red days.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_briefing_intent",
@@ -217,6 +219,7 @@
         "use_case_ids": [
           "uc_daily_briefing"
         ],
+        "use_case_id": "uc_daily_briefing",
         "category": "domain",
         "question": "What's the long-term goal of this briefing, and what should the persona emphasize or suppress?",
         "type": "textarea",
@@ -225,7 +228,7 @@
         "maps_to": "use_cases[uc_daily_briefing].sample_input.briefing_intent",
         "variable_name": "briefing_intent",
         "context": "Free-form. Covers goal context, privacy constraints, weekend handling, and what counts as an 'interesting' anomaly for your team.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_analytics_provider",
@@ -233,6 +236,7 @@
         "connector_names": [
           "analytics_tool"
         ],
+        "use_case_id": "uc_daily_briefing",
         "category": "configuration",
         "question": "Which analytics tool should supply the metrics?",
         "type": "select",
@@ -244,7 +248,7 @@
         "maps_to": "persona.connectors[analytics_tool].credential_fields[provider].value",
         "variable_name": "analytics_tool_provider",
         "context": "Auto-detected from your Vault's analytics-category credentials (analytics, analytics, analytics, analytics, and any other analytics connectors). Add one in Vault → Catalog first if the list is empty.",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_kb_provider",
@@ -252,6 +256,7 @@
         "connector_names": [
           "knowledge_base"
         ],
+        "use_case_id": "uc_longitudinal_log",
         "category": "configuration",
         "question": "Which knowledge base should store the longitudinal log?",
         "type": "select",
@@ -263,7 +268,7 @@
         "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
         "variable_name": "knowledge_base_provider",
         "context": "Auto-detected from your Vault's knowledge-base-category credentials (knowledge base, Obsidian, etc.). Skip this if you don't want a longitudinal log — the daily briefing still runs.",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

@@ -208,6 +208,7 @@
         "use_case_ids": [
           "uc_brief_generation"
         ],
+        "use_case_id": "uc_brief_generation",
         "category": "domain",
         "question": "Where should the design brief be extracted from?",
         "type": "source_definition",
@@ -215,7 +216,7 @@
         "maps_to": "use_cases[uc_brief_generation].sample_input.brief_source_intent",
         "variable_name": "brief_source_intent",
         "context": "Pick the source the agent should read at persona build time. Local file or folder — paste a full local path (e.g. a design.md, a style guide, a project root). Codebase — pick a Dev Tools project and the agent will crawl its CSS/Tailwind for colors, typography, and emotional tone. Database — pick a database credential and the agent will query brand assets from it. Whatever source you pick becomes the empathy and sensory-language source for every asset generation.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_brief_mode",
@@ -223,6 +224,7 @@
         "use_case_ids": [
           "uc_brief_generation"
         ],
+        "use_case_id": "uc_brief_generation",
         "category": "configuration",
         "question": "How should the design.md brief be produced?",
         "type": "select",
@@ -235,7 +237,7 @@
         "maps_to": "use_cases[uc_brief_generation].sample_input.brief_mode",
         "variable_name": "brief_mode",
         "context": "Determines how build-time Step 0 runs. Auto-extract reads the source you picked above. User-pasted accepts a brief verbatim. On-demand defers and falls back to live source analysis on every asset run.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_asset_type",
@@ -243,6 +245,7 @@
         "use_case_ids": [
           "uc_asset_generation"
         ],
+        "use_case_id": "uc_asset_generation",
         "category": "domain",
         "question": "What kind of assets will you generate most often?",
         "type": "select",
@@ -258,11 +261,12 @@
         "maps_to": "use_cases[uc_asset_generation].sample_input.asset_type",
         "variable_name": "asset_type",
         "context": "Shapes the agent's default per-type prompt templates and memory lookup. You can always generate other types on demand — this just seeds the default memory buckets.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_image_model",
         "scope": "connector",
+        "use_case_id": "uc_asset_generation",
         "connector_names": [
           "image_ai"
         ],
@@ -277,11 +281,12 @@
         "maps_to": "persona.connectors[image_ai].credential_fields[provider].value",
         "variable_name": "image_model",
         "context": "Options are auto-detected from the image_generation-category credentials in your Vault (image generation AI, OpenAI image generation AI, Stability AI, …). image generation AI has the strongest style control; image generation AI has the best prompt following. If the list is empty, connect an image-generation provider first.",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_vision_model",
         "scope": "connector",
+        "use_case_id": "uc_asset_generation",
         "connector_names": [
           "multimodal_ai"
         ],
@@ -296,7 +301,7 @@
         "maps_to": "persona.connectors[multimodal_ai].credential_fields[provider].value",
         "variable_name": "vision_model",
         "context": "Options are auto-detected from the ai-category credentials in your Vault that support vision (Gemini, Claude, GPT-4). Skip this connector entirely to go straight from generation to human review without automated scoring.",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_quality_threshold",
@@ -304,6 +309,7 @@
         "use_case_ids": [
           "uc_asset_generation"
         ],
+        "use_case_id": "uc_asset_generation",
         "category": "quality",
         "question": "What quality threshold should auto-evaluation require before human review?",
         "type": "select",
@@ -316,7 +322,7 @@
         "maps_to": "use_cases[uc_asset_generation].sample_input.quality_threshold",
         "variable_name": "quality_threshold",
         "context": "Controls multimodal AI strictness. Higher threshold = more auto-regeneration cycles and higher quality, but slower per-asset delivery.",
-        "dimension": "use-cases"
+        "dimension": "task"
       }
     ],
     "persona_meta": {

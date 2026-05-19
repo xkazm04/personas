@@ -156,6 +156,7 @@
         "use_case_ids": [
           "uc_scan_and_enrich"
         ],
+        "use_case_id": "uc_scan_and_enrich",
         "category": "domain",
         "question": "Which email senders should the scout scan?",
         "type": "textarea",
@@ -164,7 +165,7 @@
         "maps_to": "use_cases[uc_scan_and_enrich].sample_input.senders",
         "variable_name": "senders",
         "context": "One sender per line. Full email addresses (vendor@example.com) or domain wildcards (@domain.com). The scout only reads mail from listed senders — no broader inbox access.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_enrichment_depth",
@@ -172,6 +173,7 @@
         "use_case_ids": [
           "uc_scan_and_enrich"
         ],
+        "use_case_id": "uc_scan_and_enrich",
         "category": "quality",
         "question": "How deep should web enrichment go?",
         "type": "select",
@@ -184,7 +186,7 @@
         "maps_to": "use_cases[uc_scan_and_enrich].sample_input.enrichment_depth",
         "variable_name": "enrichment_depth",
         "context": "Deeper enrichment produces richer triage cards but increases scan runtime. Medium is a good starting point.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_card_verbosity",
@@ -192,6 +194,7 @@
         "use_case_ids": [
           "uc_triage"
         ],
+        "use_case_id": "uc_triage",
         "category": "configuration",
         "question": "How detailed should triage cards be?",
         "type": "select",
@@ -204,7 +207,7 @@
         "maps_to": "use_cases[uc_triage].sample_input.card_verbosity",
         "variable_name": "card_verbosity",
         "context": "Controls card length in Messages. Full cards enable faster solo triage; Minimal is better for high-volume weeks.",
-        "dimension": "use-cases"
+        "dimension": "message"
       },
       {
         "id": "aq_email_provider",
@@ -212,6 +215,7 @@
         "connector_names": [
           "email"
         ],
+        "use_case_id": "uc_scan_and_enrich",
         "category": "configuration",
         "question": "Which email provider should the scout pull from?",
         "type": "select",
@@ -223,7 +227,7 @@
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_provider",
         "context": "Auto-detected from your Vault's email-category credentials (email, email, IMAP). Add one in Vault → Catalog if the list is empty.",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

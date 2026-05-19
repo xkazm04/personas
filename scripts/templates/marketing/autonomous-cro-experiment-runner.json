@@ -147,6 +147,7 @@
       {
         "id": "aq_cro_backend",
         "scope": "connector",
+        "use_case_id": "uc_experiment_watch",
         "connector_names": [
           "cro_backend"
         ],
@@ -161,7 +162,7 @@
         "maps_to": "persona.connectors[cro_backend].credential_fields[provider].value",
         "variable_name": "cro_backend_provider",
         "context": "Options are auto-detected from the analytics-category credentials you've already connected in the Vault (Humbalytics, analytics, etc.). Humbalytics is preferred — dynamic content rewrite via its JS snippet, no code deploy needed. analytics requires pre-existing feature-flag gates in your site code. If the list is empty, add one first.",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_target_pages_intent",
@@ -169,6 +170,7 @@
         "use_case_ids": [
           "uc_variant_proposals"
         ],
+        "use_case_id": "uc_variant_proposals",
         "category": "domain",
         "question": "Which pages should the agent be allowed to experiment on, and which must never be touched?",
         "type": "textarea",
@@ -176,7 +178,7 @@
         "maps_to": "use_cases[uc_variant_proposals].sample_input.target_pages",
         "variable_name": "target_pages_intent",
         "context": "Describe the allowed URL paths (e.g. `/`, `/pricing`, `/features`) and the hard-excluded ones (legal, checkout, brand-critical). The persona will refuse to propose variants for anything not explicitly allowed, and treat excluded pages as untouchable regardless of how poorly they perform.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_min_sample_size",
@@ -184,6 +186,7 @@
         "use_case_ids": [
           "uc_experiment_watch"
         ],
+        "use_case_id": "uc_experiment_watch",
         "category": "configuration",
         "question": "Minimum visitors per arm before a winner can be called?",
         "type": "select",
@@ -197,7 +200,7 @@
         "maps_to": "use_cases[uc_experiment_watch].sample_input.min_sample_size",
         "variable_name": "min_sample_size",
         "context": "Lower numbers mean faster cycles but more false positives. Higher numbers slow iteration but are more reliable. 1000 is the balanced default. The agent refuses to call winners before this threshold regardless of p-value.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_min_duration_days",
@@ -205,6 +208,7 @@
         "use_case_ids": [
           "uc_experiment_watch"
         ],
+        "use_case_id": "uc_experiment_watch",
         "category": "configuration",
         "question": "Minimum experiment duration before a winner can be called?",
         "type": "select",
@@ -217,7 +221,7 @@
         "maps_to": "use_cases[uc_experiment_watch].sample_input.min_duration_days",
         "variable_name": "min_duration_days",
         "context": "A full week is the minimum to avoid weekday/weekend traffic bias. Longer durations smooth out traffic spikes but slow learning. The agent refuses to call winners before this threshold regardless of sample size.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_max_variants",
@@ -225,6 +229,7 @@
         "use_case_ids": [
           "uc_variant_proposals"
         ],
+        "use_case_id": "uc_variant_proposals",
         "category": "configuration",
         "question": "How many new variant proposals per weekly run?",
         "type": "select",
@@ -237,7 +242,7 @@
         "maps_to": "use_cases[uc_variant_proposals].sample_input.max_new_variants_per_run",
         "variable_name": "max_new_variants_per_run",
         "context": "Fewer proposals mean cleaner statistical signals but slower coverage. More proposals can interact on the same page and muddy measurement. 3 is the balanced default.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_report_depth",
@@ -245,6 +250,7 @@
         "use_case_ids": [
           "uc_weekly_report"
         ],
+        "use_case_id": "uc_weekly_report",
         "category": "quality",
         "question": "How detailed should the combined weekly briefing be?",
         "type": "select",
@@ -257,7 +263,7 @@
         "maps_to": null,
         "variable_name": "report_depth",
         "context": "Applies to the combined weekly briefing. New variant proposals stay full-detail regardless — they're the actionable part.",
-        "dimension": "messages"
+        "dimension": "message"
       }
     ],
     "persona_meta": {

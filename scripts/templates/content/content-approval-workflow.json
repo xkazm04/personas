@@ -196,6 +196,7 @@
         "use_case_ids": [
           "uc_review_initiation"
         ],
+        "use_case_id": "uc_review_initiation",
         "category": "domain",
         "question": "What type of content does this approval workflow primarily manage?",
         "type": "select",
@@ -210,7 +211,7 @@
         "maps_to": "use_cases[uc_review_initiation].sample_input.content_type",
         "variable_name": "content_type",
         "context": "Shapes urgency framing, email tone, and how the agent describes content in cards.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_team_structure",
@@ -218,6 +219,7 @@
         "use_case_ids": [
           "uc_review_initiation"
         ],
+        "use_case_id": "uc_review_initiation",
         "category": "domain",
         "question": "How is your review team structured?",
         "type": "select",
@@ -231,7 +233,7 @@
         "maps_to": "use_cases[uc_review_initiation].sample_input.team_structure",
         "variable_name": "team_structure",
         "context": "Shapes how the agent routes notifications and determines when an item is truly approved.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_communication_tone",
@@ -239,6 +241,7 @@
         "use_case_ids": [
           "uc_review_initiation"
         ],
+        "use_case_id": "uc_review_initiation",
         "category": "quality",
         "question": "What tone should reviewer notifications use?",
         "type": "select",
@@ -251,7 +254,7 @@
         "maps_to": "use_cases[uc_review_initiation].sample_input.communication_tone",
         "variable_name": "communication_tone",
         "context": "Sets the voice for all outbound messages.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_notion_database_ref",
@@ -262,6 +265,7 @@
         "use_case_ids": [
           "uc_review_initiation"
         ],
+        "use_case_id": "uc_review_initiation",
         "category": "configuration",
         "question": "Which knowledge base databases should the agent poll for Ready-for-Review items?",
         "type": "select",
@@ -273,7 +277,7 @@
         "maps_to": "use_cases[uc_review_initiation].sample_input.notion_database_ref",
         "variable_name": "notion_database_ref",
         "context": "Options are auto-detected from your knowledge base integration's accessible databases. The database must expose a Status property with values including 'Ready for Review', 'Published', 'Needs Revision'.",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_hard_stops",
@@ -281,6 +285,7 @@
         "use_case_ids": [
           "uc_approval_resolution"
         ],
+        "use_case_id": "uc_approval_resolution",
         "category": "boundaries",
         "question": "What should the agent NEVER do without explicit human action?",
         "type": "select",
@@ -294,7 +299,7 @@
         "maps_to": "use_cases[uc_approval_resolution].sample_input.hard_stops",
         "variable_name": "hard_stops",
         "context": "Hard stops prevent the agent from taking irreversible or politically sensitive actions autonomously.",
-        "dimension": "error-handling"
+        "dimension": "error"
       },
       {
         "id": "aq_rejection_delivery",
@@ -302,6 +307,7 @@
         "use_case_ids": [
           "uc_approval_resolution"
         ],
+        "use_case_id": "uc_approval_resolution",
         "category": "configuration",
         "question": "How should rejection feedback reach the content author?",
         "type": "select",
@@ -315,7 +321,7 @@
         "maps_to": "use_cases[uc_approval_resolution].sample_input.rejection_delivery",
         "variable_name": "rejection_delivery",
         "context": "Determines delivery channels for rejection notes.",
-        "dimension": "messages"
+        "dimension": "message"
       },
       {
         "id": "aq_sla_hours",
@@ -323,6 +329,7 @@
         "use_case_ids": [
           "uc_sla_watch"
         ],
+        "use_case_id": "uc_sla_watch",
         "category": "configuration",
         "question": "What is your standard review SLA?",
         "type": "select",
@@ -336,7 +343,7 @@
         "maps_to": "use_cases[uc_sla_watch].sample_input.sla_hours",
         "variable_name": "sla_hours",
         "context": "Used to time reminder emails and escalation triggers precisely.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_escalation_policy",
@@ -344,6 +351,7 @@
         "use_case_ids": [
           "uc_sla_watch"
         ],
+        "use_case_id": "uc_sla_watch",
         "category": "human_in_the_loop",
         "question": "If a reviewer has not responded within your SLA, what should the agent do?",
         "type": "select",
@@ -357,11 +365,12 @@
         "maps_to": "use_cases[uc_sla_watch].sample_input.escalation_policy",
         "variable_name": "escalation_policy",
         "context": "Defines escalation so stalled reviews don't silently block publication pipelines.",
-        "dimension": "human-review"
+        "dimension": "review"
       },
       {
         "id": "aq_knowledge_base_credential",
         "scope": "connector",
+        "use_case_id": "uc_review_initiation",
         "connector_names": [
           "knowledge_base"
         ],
@@ -376,11 +385,12 @@
         "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
         "variable_name": "knowledge_base_credential",
         "context": "Options are auto-detected from your knowledge_base credentials in the Vault (knowledge base, knowledge base, Obsidian, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_email_credential",
         "scope": "connector",
+        "use_case_id": "uc_review_initiation",
         "connector_names": [
           "email"
         ],
@@ -395,11 +405,12 @@
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
         "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_messaging_credential",
         "scope": "connector",
+        "use_case_id": "uc_review_initiation",
         "connector_names": [
           "messaging"
         ],
@@ -414,7 +425,7 @@
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
         "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

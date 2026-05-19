@@ -88,6 +88,7 @@
         "use_case_ids": [
           "uc_edit_draft"
         ],
+        "use_case_id": "uc_edit_draft",
         "category": "configuration",
         "question": "How strict should the editor be by default?",
         "type": "select",
@@ -100,7 +101,7 @@
         "maps_to": "use_cases[uc_edit_draft].sample_input.strictness",
         "variable_name": "default_strictness",
         "context": "Strict gives the most learning signal early on but produces longer diffs. The agent will adapt to your voice over time regardless of starting point.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_primary_document_types",
@@ -108,6 +109,7 @@
         "use_case_ids": [
           "uc_edit_draft"
         ],
+        "use_case_id": "uc_edit_draft",
         "category": "domain",
         "question": "What kinds of documents will you mostly edit?",
         "type": "select",
@@ -120,7 +122,7 @@
         "default": "Mixed (varies by submission)",
         "variable_name": "primary_document_types",
         "context": "Shapes document-type-specific rule weighting. Methods sections allow some passive voice; abstracts get the strictest rules.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_jargon_handling",
@@ -128,6 +130,7 @@
         "use_case_ids": [
           "uc_edit_draft"
         ],
+        "use_case_id": "uc_edit_draft",
         "category": "configuration",
         "question": "How should the agent handle domain vocabulary?",
         "type": "select",
@@ -139,7 +142,7 @@
         "default": "Learn over time — start flagging, I'll add terms as I reject jargon flags",
         "variable_name": "jargon_handling",
         "context": "When you reject a jargon flag, the agent adds the term to your vocabulary so it isn't flagged again. The starter-list option lets you provide allowed terms immediately.",
-        "dimension": "use-cases"
+        "dimension": "task"
       }
     ],
     "persona_meta": {

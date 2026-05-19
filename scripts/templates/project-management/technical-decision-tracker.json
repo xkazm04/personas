@@ -141,6 +141,7 @@
         "use_case_ids": [
           "uc_decision_intake"
         ],
+        "use_case_id": "uc_decision_intake",
         "category": "quality",
         "question": "Minimum number of alternatives required before a decision can be accepted?",
         "type": "select",
@@ -154,7 +155,7 @@
         "maps_to": "use_cases[uc_decision_intake].sample_input.require_alternatives_count",
         "variable_name": "require_alternatives_count",
         "context": "Forces thorough evaluation. 2 for lightweight decisions; 4+ for high-impact architecture choices.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_require_sign_off",
@@ -162,6 +163,7 @@
         "use_case_ids": [
           "uc_decision_intake"
         ],
+        "use_case_id": "uc_decision_intake",
         "category": "human_in_the_loop",
         "question": "Require stakeholder sign-off before a decision reaches Accepted?",
         "type": "boolean",
@@ -169,7 +171,7 @@
         "maps_to": "use_cases[uc_decision_intake].sample_input.require_stakeholder_sign_off",
         "variable_name": "require_stakeholder_sign_off",
         "context": "Recommended for teams larger than 3 engineers. Off = author can accept immediately after documentation.",
-        "dimension": "human-review"
+        "dimension": "review"
       },
       {
         "id": "aq_doc_format",
@@ -177,6 +179,7 @@
         "use_case_ids": [
           "uc_decision_intake"
         ],
+        "use_case_id": "uc_decision_intake",
         "category": "configuration",
         "question": "What documentation format should decisions follow?",
         "type": "select",
@@ -189,7 +192,7 @@
         "maps_to": "use_cases[uc_decision_intake].sample_input.documentation_format",
         "variable_name": "documentation_format",
         "context": "Sets the structure used in knowledge base. ADR is most comprehensive; Lightweight is for routine tooling choices.",
-        "dimension": "messages"
+        "dimension": "message"
       },
       {
         "id": "aq_source_control",
@@ -198,6 +201,7 @@
           "uc_code_linking",
           "uc_review_cycle"
         ],
+        "use_case_id": "uc_code_linking",
         "category": "configuration",
         "question": "Which source-control provider should the agent link decisions to?",
         "type": "select",
@@ -205,7 +209,7 @@
         "maps_to": "use_cases[uc_code_linking].sample_input.source_control_credential",
         "variable_name": "source_control_credential",
         "context": "Pick a source control, source control, or other source-control credential from your Vault. The agent searches this provider's PRs and commits to auto-link ADRs to the code they govern. Skip this to keep ADRs unlinked.",
-        "dimension": "connectors",
+        "dimension": "connector",
         "dynamic_source": {
           "service_type": "source_control",
           "operation": "list_credentials",
@@ -218,6 +222,7 @@
         "use_case_ids": [
           "uc_review_cycle"
         ],
+        "use_case_id": "uc_review_cycle",
         "category": "configuration",
         "question": "How frequently should accepted decisions be reviewed?",
         "type": "select",
@@ -231,7 +236,7 @@
         "maps_to": "use_cases[uc_review_cycle].sample_input.decision_review_period_days",
         "variable_name": "decision_review_period_days",
         "context": "More frequent reviews catch invalidated assumptions earlier but create more review overhead.",
-        "dimension": "use-cases"
+        "dimension": "trigger"
       },
       {
         "id": "aq_archive_after",
@@ -239,6 +244,7 @@
         "use_case_ids": [
           "uc_review_cycle"
         ],
+        "use_case_id": "uc_review_cycle",
         "category": "configuration",
         "question": "How long should deprecated decisions stay active before being archived?",
         "type": "select",
@@ -252,11 +258,12 @@
         "maps_to": "use_cases[uc_review_cycle].sample_input.auto_archive_after_days",
         "variable_name": "auto_archive_after_days",
         "context": "Archived ADRs remain searchable but are excluded from review cycles. Use 'Never' if you want every deprecated decision to stay visible indefinitely.",
-        "dimension": "use-cases"
+        "dimension": "memory"
       },
       {
         "id": "aq_knowledge_base_credential",
         "scope": "connector",
+        "use_case_id": "uc_decision_intake",
         "connector_names": [
           "knowledge_base"
         ],
@@ -271,11 +278,12 @@
         "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
         "variable_name": "knowledge_base_credential",
         "context": "Options are auto-detected from your knowledge_base credentials in the Vault (knowledge base, knowledge base, Obsidian, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_source_control_credential",
         "scope": "connector",
+        "use_case_id": "uc_code_linking",
         "connector_names": [
           "source_control"
         ],
@@ -290,7 +298,7 @@
         "maps_to": "persona.connectors[source_control].credential_fields[provider].value",
         "variable_name": "source_control_credential",
         "context": "Options are auto-detected from your source_control credentials in the Vault (source control, source control, source control, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

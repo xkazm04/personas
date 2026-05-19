@@ -135,6 +135,7 @@
         "use_case_ids": [
           "uc_invoice_ingest"
         ],
+        "use_case_id": "uc_invoice_ingest",
         "category": "configuration",
         "question": "How do invoices typically arrive in your inbox?",
         "type": "select",
@@ -148,7 +149,7 @@
         "maps_to": "use_cases[uc_invoice_ingest].sample_input.arrival_pattern",
         "variable_name": "arrival_pattern",
         "context": "Sets parsing priority. Agent always checks both body and attachments regardless of this setting; this just orders the lookup.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_high_value_threshold",
@@ -156,6 +157,7 @@
         "use_case_ids": [
           "uc_invoice_ingest"
         ],
+        "use_case_id": "uc_invoice_ingest",
         "category": "human_in_the_loop",
         "question": "Above what amount should invoices require manual approval?",
         "type": "select",
@@ -171,7 +173,7 @@
         "maps_to": "use_cases[uc_invoice_ingest].sample_input.high_value_threshold",
         "variable_name": "high_value_threshold",
         "context": "Invoices above this amount are always flagged for manual review regardless of extraction confidence — a financial safety net.",
-        "dimension": "human-review"
+        "dimension": "review"
       },
       {
         "id": "aq_primary_currency",
@@ -179,6 +181,7 @@
         "use_case_ids": [
           "uc_invoice_ingest"
         ],
+        "use_case_id": "uc_invoice_ingest",
         "category": "configuration",
         "question": "What is the primary currency for your invoices?",
         "type": "select",
@@ -196,7 +199,7 @@
         "maps_to": "use_cases[uc_invoice_ingest].sample_input.primary_currency",
         "variable_name": "primary_currency",
         "context": "Default when an invoice doesn't specify currency. Also used for display formatting in summaries and alerts.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_reminder_days_before_due",
@@ -204,6 +207,7 @@
         "use_case_ids": [
           "uc_payment_monitor"
         ],
+        "use_case_id": "uc_payment_monitor",
         "category": "quality",
         "question": "How many days before the due date should reminders be sent?",
         "type": "select",
@@ -217,7 +221,7 @@
         "maps_to": "use_cases[uc_payment_monitor].sample_input.reminder_days_before_due",
         "variable_name": "reminder_days_before_due",
         "context": "Longer lead-times are useful when payments need internal approval or bank-transfer processing time. Drives {{param.reminder_days_before_due}}.",
-        "dimension": "use-cases"
+        "dimension": "message"
       },
       {
         "id": "aq_overdue_alert_frequency",
@@ -225,6 +229,7 @@
         "use_case_ids": [
           "uc_payment_monitor"
         ],
+        "use_case_id": "uc_payment_monitor",
         "category": "quality",
         "question": "How often should overdue alerts repeat for unpaid invoices?",
         "type": "select",
@@ -238,7 +243,7 @@
         "maps_to": "use_cases[uc_payment_monitor].sample_input.overdue_alert_frequency_hours",
         "variable_name": "overdue_alert_frequency",
         "context": "In hours. Lower values = more aggressive follow-up. Drives {{param.overdue_alert_frequency_hours}}.",
-        "dimension": "use-cases"
+        "dimension": "message"
       },
       {
         "id": "aq_default_payment_terms",
@@ -246,6 +251,7 @@
         "use_case_ids": [
           "uc_invoice_ingest"
         ],
+        "use_case_id": "uc_invoice_ingest",
         "category": "configuration",
         "question": "What default payment terms should be assumed when no due date is found?",
         "type": "select",
@@ -260,11 +266,12 @@
         "maps_to": "use_cases[uc_invoice_ingest].sample_input.default_payment_terms",
         "variable_name": "default_payment_terms",
         "context": "Applied to invoices with no explicit due date so every record enters monitoring with a deadline. Calculated from invoice_date.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_email_credential",
         "scope": "connector",
+        "use_case_id": "uc_invoice_ingest",
         "connector_names": [
           "email"
         ],
@@ -279,7 +286,7 @@
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
         "context": "Options are auto-detected from your email-category credentials in the Vault (Email, email, Resend, SendGrid, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "suggested_parameters": [

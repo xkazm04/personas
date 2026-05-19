@@ -203,6 +203,7 @@
         "use_case_ids": [
           "uc_research"
         ],
+        "use_case_id": "uc_research",
         "category": "configuration",
         "question": "How strict should the niche gate be?",
         "type": "select",
@@ -215,7 +216,7 @@
         "maps_to": "use_cases[uc_research].sample_input.niche_gate_threshold",
         "variable_name": "niche_threshold",
         "context": "Below 2K is always hard-stop regardless of this setting.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_target_words",
@@ -223,6 +224,7 @@
         "use_case_ids": [
           "uc_script"
         ],
+        "use_case_id": "uc_script",
         "category": "domain",
         "question": "Target script word count?",
         "type": "select",
@@ -235,7 +237,7 @@
         "maps_to": "use_cases[uc_script].sample_input.target_words",
         "variable_name": "target_words",
         "context": "~150 words per minute of natural spoken pace.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_retake_mode",
@@ -243,6 +245,7 @@
         "use_case_ids": [
           "uc_cut_edit"
         ],
+        "use_case_id": "uc_cut_edit",
         "category": "boundaries",
         "question": "How aggressive should Pass 1 retake removal be?",
         "type": "select",
@@ -255,11 +258,12 @@
         "maps_to": "use_cases[uc_cut_edit].sample_input.retake_mode",
         "variable_name": "retake_mode",
         "context": "Aggressive works best when the creator does clean retakes. Conservative keeps more performance options.",
-        "dimension": "use-cases"
+        "dimension": "error"
       },
       {
         "id": "aq_business_context",
         "scope": "persona",
+        "use_case_id": "uc_script",
         "category": "domain",
         "question": "Do you have a business context file (USP, audience, offer, tone rules) to upload?",
         "type": "boolean",
@@ -272,6 +276,7 @@
       {
         "id": "aq_social_feed_credential",
         "scope": "connector",
+        "use_case_id": "uc_research",
         "connector_names": [
           "social_feed"
         ],
@@ -286,7 +291,7 @@
         "maps_to": "persona.connectors[social_feed].credential_fields[provider].value",
         "variable_name": "social_feed_credential",
         "context": "Options are auto-detected from your social_feed credentials in the Vault (Reddit, X/Twitter, LinkedIn, YouTube, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

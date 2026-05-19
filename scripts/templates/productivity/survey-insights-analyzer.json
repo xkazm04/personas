@@ -130,6 +130,7 @@
         "use_case_ids": [
           "uc_process_and_analyze"
         ],
+        "use_case_id": "uc_process_and_analyze",
         "category": "boundaries",
         "question": "What minimum sample size should trigger a full report?",
         "type": "select",
@@ -143,7 +144,7 @@
         "maps_to": "use_cases[uc_process_and_analyze].sample_input.min_responses_for_analysis",
         "variable_name": "min_responses_for_analysis",
         "context": "Lower thresholds give faster feedback with wider confidence intervals; higher thresholds are more reliable for theme extraction.",
-        "dimension": "error-handling"
+        "dimension": "error"
       },
       {
         "id": "aq_trend_comparison_periods",
@@ -151,6 +152,7 @@
         "use_case_ids": [
           "uc_process_and_analyze"
         ],
+        "use_case_id": "uc_process_and_analyze",
         "category": "memory",
         "question": "How many prior periods should feed trend comparison?",
         "type": "select",
@@ -172,6 +174,7 @@
         "use_case_ids": [
           "uc_deliver_report"
         ],
+        "use_case_id": "uc_deliver_report",
         "category": "configuration",
         "question": "Where should insight reports be delivered?",
         "type": "select",
@@ -185,7 +188,7 @@
         "maps_to": "use_cases[uc_deliver_report].sample_input.report_delivery",
         "variable_name": "report_delivery",
         "context": "In-app works out of the box; knowledge base/Slack/email require additional connectors.",
-        "dimension": "messages"
+        "dimension": "message"
       },
       {
         "id": "aq_flag_low_confidence",
@@ -193,6 +196,7 @@
         "use_case_ids": [
           "uc_deliver_report"
         ],
+        "use_case_id": "uc_deliver_report",
         "category": "quality",
         "question": "Should low-confidence theme extractions be flagged for review before inclusion?",
         "type": "boolean",
@@ -200,11 +204,12 @@
         "maps_to": "use_cases[uc_deliver_report].sample_input.flag_low_confidence",
         "variable_name": "flag_low_confidence",
         "context": "Uncertain pattern detections and ambiguous classifications go through manual review before reaching stakeholders. Recommended for high-stakes surveys.",
-        "dimension": "human-review"
+        "dimension": "review"
       },
       {
         "id": "aq_knowledge_base_credential",
         "scope": "connector",
+        "use_case_id": "uc_deliver_report",
         "connector_names": [
           "knowledge_base"
         ],
@@ -219,7 +224,7 @@
         "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
         "variable_name": "knowledge_base_credential",
         "context": "Options are auto-detected from your knowledge_base credentials in the Vault (knowledge base, knowledge base, Obsidian, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

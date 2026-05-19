@@ -91,6 +91,7 @@
         "use_case_ids": [
           "uc_paper_discovery"
         ],
+        "use_case_id": "uc_paper_discovery",
         "category": "domain",
         "question": "Which keyword groups define your research coverage?",
         "type": "textarea",
@@ -99,7 +100,7 @@
         "maps_to": "use_cases[uc_paper_discovery].sample_input.keyword_groups",
         "variable_name": "keyword_groups",
         "context": "One group per line: `group_name: term1, term2, term3`. Each group runs against every enabled database. Groups drive both discovery and the per-topic trend lines.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_enabled_databases",
@@ -107,6 +108,7 @@
         "use_case_ids": [
           "uc_paper_discovery"
         ],
+        "use_case_id": "uc_paper_discovery",
         "category": "configuration",
         "question": "Which academic databases should be queried?",
         "type": "select",
@@ -120,7 +122,7 @@
         "maps_to": "use_cases[uc_paper_discovery].sample_input.enabled_databases",
         "variable_name": "enabled_databases",
         "context": "arXiv = CS / Physics / Math. PubMed = biomedical. Semantic Scholar = broad coverage + citation counts. All three are public APIs — no credentials required.",
-        "dimension": "use-cases"
+        "dimension": "task"
       }
     ],
     "persona_meta": {

@@ -233,6 +233,7 @@
         "use_case_ids": [
           "uc_transaction_sync"
         ],
+        "use_case_id": "uc_transaction_sync",
         "category": "configuration",
         "question": "At what transaction amount should an immediate anomaly alert be triggered?",
         "type": "select",
@@ -246,7 +247,7 @@
         "maps_to": "use_cases[uc_transaction_sync].sample_input.anomaly_threshold",
         "variable_name": "anomaly_threshold",
         "context": "Adjust to match your typical spending patterns. The template escalates to high severity at 2× this amount.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_exclusions",
@@ -254,6 +255,7 @@
         "use_case_ids": [
           "uc_transaction_sync"
         ],
+        "use_case_id": "uc_transaction_sync",
         "category": "boundaries",
         "question": "Which account types or categories should the sync exclude from reports and alerts?",
         "type": "select",
@@ -267,7 +269,7 @@
         "maps_to": "use_cases[uc_transaction_sync].sample_input.exclusions",
         "variable_name": "exclusions",
         "context": "Prevents noise from inter-account movements and investment activity that aren't true spending events.",
-        "dimension": "use-cases"
+        "dimension": "error"
       },
       {
         "id": "aq_whitelist_merchants",
@@ -275,6 +277,7 @@
         "use_case_ids": [
           "uc_anomaly_escalation"
         ],
+        "use_case_id": "uc_anomaly_escalation",
         "category": "memory",
         "question": "List recurring merchants or subscriptions that should never be flagged as anomalies.",
         "type": "text",
@@ -291,6 +294,7 @@
         "use_case_ids": [
           "uc_anomaly_escalation"
         ],
+        "use_case_id": "uc_anomaly_escalation",
         "category": "human_in_the_loop",
         "question": "For high-severity anomalies (foreign currency + $1,000+, multi-signal flags), what action should the agent take?",
         "type": "select",
@@ -304,7 +308,7 @@
         "maps_to": "use_cases[uc_anomaly_escalation].sample_input.escalation_mode",
         "variable_name": "escalation_mode",
         "context": "Controls whether the agent acts autonomously on high-severity signals or waits for confirmation.",
-        "dimension": "human-review"
+        "dimension": "review"
       },
       {
         "id": "aq_report_depth",
@@ -312,6 +316,7 @@
         "use_case_ids": [
           "uc_weekly_summary"
         ],
+        "use_case_id": "uc_weekly_summary",
         "category": "quality",
         "question": "How detailed should the Monday weekly spending summary be?",
         "type": "select",
@@ -325,11 +330,12 @@
         "maps_to": "use_cases[uc_weekly_summary].sample_input.report_depth",
         "variable_name": "report_depth",
         "context": "Controls the verbosity of the Monday report across both the messaging summary and the email detailed report.",
-        "dimension": "messages"
+        "dimension": "message"
       },
       {
         "id": "aq_spreadsheet_credential",
         "scope": "connector",
+        "use_case_id": "uc_transaction_sync",
         "connector_names": [
           "spreadsheet"
         ],
@@ -344,11 +350,12 @@
         "maps_to": "persona.connectors[spreadsheet].credential_fields[provider].value",
         "variable_name": "spreadsheet_credential",
         "context": "Options are auto-detected from your spreadsheet credentials in the Vault (spreadsheet, spreadsheet, spreadsheet, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_messaging_credential",
         "scope": "connector",
+        "use_case_id": "uc_anomaly_escalation",
         "connector_names": [
           "messaging"
         ],
@@ -363,11 +370,12 @@
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
         "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_email_credential",
         "scope": "connector",
+        "use_case_id": "uc_anomaly_escalation",
         "connector_names": [
           "email"
         ],
@@ -382,7 +390,7 @@
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
         "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

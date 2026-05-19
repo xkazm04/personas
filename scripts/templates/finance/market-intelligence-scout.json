@@ -176,6 +176,7 @@
         "use_case_ids": [
           "uc_market_watch"
         ],
+        "use_case_id": "uc_market_watch",
         "category": "domain",
         "question": "Which Kalshi market categories should the scan prioritize?",
         "type": "select",
@@ -192,7 +193,7 @@
         "maps_to": "use_cases[uc_market_watch].sample_input.focus_categories",
         "variable_name": "focus_categories",
         "context": "Controls which Kalshi categories get priority during scanning and which News API categories are queried for cross-referencing. Multi-select supported — comma-separate if you pick multiple.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_sensitivity",
@@ -200,6 +201,7 @@
         "use_case_ids": [
           "uc_market_watch"
         ],
+        "use_case_id": "uc_market_watch",
         "category": "quality",
         "question": "How sensitive should anomaly detection be?",
         "type": "select",
@@ -212,7 +214,7 @@
         "maps_to": "use_cases[uc_market_watch].sample_input.sensitivity",
         "variable_name": "sensitivity",
         "context": "Conservative surfaces only the strongest anomalies. Aggressive casts a wider net but requires more review. The agent calibrates over time regardless of initial setting.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_max_news_articles",
@@ -220,6 +222,7 @@
         "use_case_ids": [
           "uc_news_correlation"
         ],
+        "use_case_id": "uc_news_correlation",
         "category": "configuration",
         "question": "How many news articles should the correlation step retrieve per flagged market?",
         "type": "select",
@@ -233,7 +236,7 @@
         "maps_to": "use_cases[uc_news_correlation].sample_input.max_news_articles",
         "variable_name": "max_news_articles",
         "context": "Higher counts = better correlation signal but faster consumption of the News API daily quota (100 req/day on the free tier).",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_digest_depth",
@@ -241,6 +244,7 @@
         "use_case_ids": [
           "uc_confidence_digest"
         ],
+        "use_case_id": "uc_confidence_digest",
         "category": "quality",
         "question": "How detailed should the daily digest be?",
         "type": "select",
@@ -253,7 +257,7 @@
         "maps_to": "use_cases[uc_confidence_digest].sample_input.digest_depth",
         "variable_name": "digest_depth",
         "context": "Executive is a quick morning scan. Deep dive is for users who want to examine every signal the agent considered.",
-        "dimension": "messages"
+        "dimension": "message"
       },
       {
         "id": "aq_recipient_email",
@@ -261,6 +265,7 @@
         "use_case_ids": [
           "uc_confidence_digest"
         ],
+        "use_case_id": "uc_confidence_digest",
         "category": "configuration",
         "question": "What email address should receive the daily intelligence digest?",
         "type": "text",
@@ -269,11 +274,12 @@
         "maps_to": "use_cases[uc_confidence_digest].sample_input.recipient_email",
         "variable_name": "recipient_email",
         "context": "The digest arrives every morning at the configured cadence. You can update this address at any time.",
-        "dimension": "messages"
+        "dimension": "message"
       },
       {
         "id": "aq_email_credential",
         "scope": "connector",
+        "use_case_id": "uc_confidence_digest",
         "connector_names": [
           "email"
         ],
@@ -288,7 +294,7 @@
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
         "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

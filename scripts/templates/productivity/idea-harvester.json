@@ -179,6 +179,7 @@
         "use_case_ids": [
           "uc_harvest"
         ],
+        "use_case_id": "uc_harvest",
         "category": "configuration",
         "question": "Which sources should the harvester scan?",
         "type": "select",
@@ -192,7 +193,7 @@
         "maps_to": "use_cases[uc_harvest].sample_input.sources",
         "variable_name": "sources",
         "context": "Connectors you skip at the credential step are excluded here regardless of what you pick. A messaging+knowledge base scan without either credential gracefully degrades to 'URL queue only'.",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_content_types",
@@ -200,6 +201,7 @@
         "use_case_ids": [
           "uc_harvest"
         ],
+        "use_case_id": "uc_harvest",
         "category": "configuration",
         "question": "What kinds of content should the harvester consider?",
         "type": "select",
@@ -212,7 +214,7 @@
         "maps_to": "use_cases[uc_harvest].sample_input.content_types",
         "variable_name": "content_types",
         "context": "Discussions are noisier than articles; enable them once you've triaged a few weeks and trust the category filtering.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_ideas_per_source",
@@ -220,6 +222,7 @@
         "use_case_ids": [
           "uc_harvest"
         ],
+        "use_case_id": "uc_harvest",
         "category": "quality",
         "question": "How many ideas should be extracted per source per scan?",
         "type": "select",
@@ -234,7 +237,7 @@
         "maps_to": "use_cases[uc_harvest].sample_input.ideas_per_source",
         "variable_name": "ideas_per_source",
         "context": "More ideas = higher recall but higher triage load. Start at 5; bump after you've learned which categories you reliably accept.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_backlog_format",
@@ -242,6 +245,7 @@
         "use_case_ids": [
           "uc_triage"
         ],
+        "use_case_id": "uc_triage",
         "category": "configuration",
         "question": "What format should accepted backlog items use?",
         "type": "select",
@@ -256,7 +260,7 @@
         "maps_to": "use_cases[uc_triage].sample_input.backlog_format",
         "variable_name": "backlog_format",
         "context": "Shapes the structure emitted by the final harvester.backlog.new event. Downstream automations (e.g., a GitHub auto-create persona) subscribe to that event and expect a specific shape.",
-        "dimension": "messages"
+        "dimension": "message"
       },
       {
         "id": "aq_target_codebase",
@@ -264,6 +268,7 @@
         "use_case_ids": [
           "uc_codebase_analysis"
         ],
+        "use_case_id": "uc_codebase_analysis",
         "category": "configuration",
         "question": "Which codebase should feasibility analysis run against?",
         "type": "select",
@@ -272,7 +277,7 @@
         "maps_to": "use_cases[uc_codebase_analysis].sample_input.target_codebase",
         "variable_name": "target_codebase",
         "context": "Registered codebase from your Codebase connector. If you have multiple codebases registered, pick the one this persona will analyze against. Required — the codebase connector is mandatory for this capability.",
-        "dimension": "connectors",
+        "dimension": "connector",
         "ui_component": "CodebaseSelector",
         "connector_ref": "codebase",
         "option_service_types": [
@@ -289,6 +294,7 @@
         "use_case_ids": [
           "uc_codebase_analysis"
         ],
+        "use_case_id": "uc_codebase_analysis",
         "category": "quality",
         "question": "How detailed should the feasibility analysis be?",
         "type": "select",
@@ -301,11 +307,12 @@
         "maps_to": "use_cases[uc_codebase_analysis].sample_input.analysis_depth",
         "variable_name": "analysis_depth",
         "context": "Deep analysis adds ~30-60s per accepted idea but produces a materially better feasibility call. Start at Standard; go Deep for backlog decisions that will trigger real implementation work.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_messaging_credential",
         "scope": "connector",
+        "use_case_id": "uc_harvest",
         "connector_names": [
           "messaging"
         ],
@@ -320,11 +327,12 @@
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
         "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_knowledge_base_credential",
         "scope": "connector",
+        "use_case_id": "uc_harvest",
         "connector_names": [
           "knowledge_base"
         ],
@@ -339,7 +347,7 @@
         "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
         "variable_name": "knowledge_base_credential",
         "context": "Options are auto-detected from your knowledge_base credentials in the Vault (knowledge base, knowledge base, Obsidian, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

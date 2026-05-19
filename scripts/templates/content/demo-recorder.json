@@ -154,6 +154,7 @@
         "use_case_ids": [
           "uc_record_demo"
         ],
+        "use_case_id": "uc_record_demo",
         "category": "configuration",
         "question": "What URL does the web application run on?",
         "type": "text",
@@ -161,7 +162,7 @@
         "default": "http://localhost:3000",
         "variable_name": "app_url",
         "context": "The URL where the web app is served during development. The recorder navigates here to perform walkthroughs. If the app is not running, the recorder attempts to start the dev server from the codebase.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_output_dir",
@@ -169,6 +170,7 @@
         "use_case_ids": [
           "uc_record_demo"
         ],
+        "use_case_id": "uc_record_demo",
         "category": "configuration",
         "question": "Where should recordings be saved on your computer?",
         "type": "text",
@@ -176,7 +178,7 @@
         "default": "",
         "variable_name": "output_directory",
         "context": "Local directory path where screenshots, videos, guides, and manifests are saved. Created if missing. Each recording gets its own subdirectory.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_recording_mode",
@@ -184,6 +186,7 @@
         "use_case_ids": [
           "uc_record_demo"
         ],
+        "use_case_id": "uc_record_demo",
         "category": "configuration",
         "question": "Default recording mode?",
         "type": "select",
@@ -196,7 +199,7 @@
         "maps_to": "use_cases[uc_record_demo].sample_input.recording_mode",
         "variable_name": "recording_mode",
         "context": "Auto-detect picks Playwright when available, then Game Bar, then CDP screenshots. Choose screenshots to lock in Tier 1. Choose video to prefer video and fall back gracefully.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_walkthrough_speed",
@@ -204,6 +207,7 @@
         "use_case_ids": [
           "uc_record_demo"
         ],
+        "use_case_id": "uc_record_demo",
         "category": "configuration",
         "question": "Default walkthrough speed?",
         "type": "select",
@@ -216,7 +220,7 @@
         "maps_to": "use_cases[uc_record_demo].sample_input.walkthrough_speed",
         "variable_name": "walkthrough_speed",
         "context": "Slow is best for complex features or when animations/data loading take time. Fast works for simple flows that settle quickly.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_commentary",
@@ -224,6 +228,7 @@
         "use_case_ids": [
           "uc_record_demo"
         ],
+        "use_case_id": "uc_record_demo",
         "category": "configuration",
         "question": "Should the recorder generate commentary scripts alongside recordings?",
         "type": "select",
@@ -234,7 +239,7 @@
         "default": "No — visuals only",
         "variable_name": "include_commentary",
         "context": "Commentary scripts provide timestamped narration describing what the viewer sees. Useful for voiceover recording or documentation. Delivered via Messages.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_max_review_iterations",
@@ -242,6 +247,7 @@
         "use_case_ids": [
           "uc_record_demo"
         ],
+        "use_case_id": "uc_record_demo",
         "category": "configuration",
         "question": "Max re-recording attempts before escalating?",
         "type": "select",
@@ -253,7 +259,7 @@
         "default": "5",
         "variable_name": "max_review_iterations",
         "context": "After this many rejected recordings, the recorder escalates with a manual-recording suggestion instead of silently retrying.",
-        "dimension": "use-cases"
+        "dimension": "review"
       }
     ],
     "persona_meta": {

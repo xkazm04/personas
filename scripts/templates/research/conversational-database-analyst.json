@@ -144,6 +144,7 @@
         "connector_names": [
           "database"
         ],
+        "use_case_id": "uc_ask_question",
         "category": "configuration",
         "question": "Which database should the analyst query against?",
         "type": "select",
@@ -155,7 +156,7 @@
         "maps_to": "use_cases[uc_ask_question].sample_input.target_database",
         "variable_name": "target_database",
         "context": "Auto-detected from your `database`-category credentials (Supabase, database-REST, etc.). Required — add one first if the list is empty.",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_allowed_tables",
@@ -163,6 +164,7 @@
         "use_case_ids": [
           "uc_ask_question"
         ],
+        "use_case_id": "uc_ask_question",
         "category": "boundaries",
         "question": "Which tables should the analyst have access to?",
         "type": "textarea",
@@ -171,7 +173,7 @@
         "maps_to": "use_cases[uc_ask_question].sample_input.allowed_tables",
         "variable_name": "allowed_tables",
         "context": "Comma-separated allowlist. Blank allows all tables in the default schema (not recommended — scoping tightly improves both security and generated-SQL accuracy).",
-        "dimension": "use-cases"
+        "dimension": "error"
       },
       {
         "id": "aq_messaging_channel",
@@ -179,6 +181,7 @@
         "connector_names": [
           "messaging"
         ],
+        "use_case_id": "uc_ask_question",
         "category": "configuration",
         "question": "Which messaging channel should the analyst read questions from and deliver answers to?",
         "type": "select",
@@ -190,7 +193,7 @@
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_provider",
         "context": "Auto-detected from your `messaging`-category credentials. Required — the analyst needs a place to receive questions and deliver answers.",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

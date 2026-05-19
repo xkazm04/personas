@@ -115,6 +115,7 @@
           "uc_weekly_health_audit",
           "uc_monthly_deep_audit"
         ],
+        "use_case_id": "uc_weekly_health_audit",
         "category": "configuration",
         "question": "Which knowledge layers should the audit cover?",
         "type": "select",
@@ -128,7 +129,7 @@
         "maps_to": null,
         "variable_name": "audit_scope",
         "context": "Vault audit is auto-skipped when no Obsidian vault is configured, regardless of this setting.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_stale_threshold",
@@ -137,6 +138,7 @@
           "uc_weekly_health_audit",
           "uc_monthly_deep_audit"
         ],
+        "use_case_id": "uc_weekly_health_audit",
         "category": "quality",
         "question": "How aggressive should staleness detection be?",
         "type": "select",
@@ -150,7 +152,7 @@
         "maps_to": null,
         "variable_name": "stale_threshold_days",
         "context": "Days after which unaccessed memories, KB documents, or vault notes count as stale. Lower = tighter quality bar, more findings per run.",
-        "dimension": "use-cases"
+        "dimension": "memory"
       },
       {
         "id": "aq_max_issues",
@@ -159,6 +161,7 @@
           "uc_weekly_health_audit",
           "uc_monthly_deep_audit"
         ],
+        "use_case_id": "uc_weekly_health_audit",
         "category": "quality",
         "question": "Maximum findings to queue per category per run?",
         "type": "select",
@@ -173,7 +176,7 @@
         "maps_to": null,
         "variable_name": "max_issues_per_category",
         "context": "Caps the review-queue size. Old vaults can generate thousands of orphans on the first run — the cap keeps the queue triageable.",
-        "dimension": "use-cases"
+        "dimension": "memory"
       }
     ],
     "persona_meta": {

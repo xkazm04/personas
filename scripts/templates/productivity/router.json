@@ -194,6 +194,7 @@
         "use_case_ids": [
           "uc_classify_and_route"
         ],
+        "use_case_id": "uc_classify_and_route",
         "category": "domain",
         "question": "What are the primary webhook sources you plan to connect?",
         "type": "select",
@@ -208,7 +209,7 @@
         "maps_to": "use_cases[uc_classify_and_route].sample_input.webhook_focus",
         "variable_name": "webhook_focus",
         "context": "Seeds the default classification heuristics and routing-rule presets.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_unknown_payload_handling",
@@ -216,6 +217,7 @@
         "use_case_ids": [
           "uc_classify_and_route"
         ],
+        "use_case_id": "uc_classify_and_route",
         "category": "error-handling",
         "question": "How should Router handle a webhook it can't classify or match to any rule?",
         "type": "select",
@@ -229,7 +231,7 @@
         "maps_to": "use_cases[uc_classify_and_route].sample_input.unknown_payload_handling",
         "variable_name": "unknown_payload_handling",
         "context": "Critical for preventing silent data loss when new webhook sources are onboarded.",
-        "dimension": "error-handling"
+        "dimension": "error"
       },
       {
         "id": "aq_urgent_approval",
@@ -237,6 +239,7 @@
         "use_case_ids": [
           "uc_classify_and_route"
         ],
+        "use_case_id": "uc_classify_and_route",
         "category": "human_in_the_loop",
         "question": "Which event priority levels require your approval before routes execute?",
         "type": "select",
@@ -250,7 +253,7 @@
         "maps_to": "use_cases[uc_classify_and_route].sample_input.urgent_approval",
         "variable_name": "urgent_approval",
         "context": "Determines when Router pauses and notifies you vs. proceeds automatically.",
-        "dimension": "human-review"
+        "dimension": "review"
       },
       {
         "id": "aq_rule_initialization",
@@ -258,6 +261,7 @@
         "use_case_ids": [
           "uc_manage_rules"
         ],
+        "use_case_id": "uc_manage_rules",
         "category": "configuration",
         "question": "How should the initial routing_rules.json be populated?",
         "type": "select",
@@ -275,6 +279,7 @@
       {
         "id": "aq_messaging_credential",
         "scope": "connector",
+        "use_case_id": "uc_classify_and_route",
         "connector_names": [
           "messaging"
         ],
@@ -289,11 +294,12 @@
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
         "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_knowledge_base_credential",
         "scope": "connector",
+        "use_case_id": "uc_classify_and_route",
         "connector_names": [
           "knowledge_base"
         ],
@@ -308,11 +314,12 @@
         "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
         "variable_name": "knowledge_base_credential",
         "context": "Options are auto-detected from your knowledge_base credentials in the Vault (knowledge base, knowledge base, Obsidian, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_spreadsheet_credential",
         "scope": "connector",
+        "use_case_id": "uc_classify_and_route",
         "connector_names": [
           "spreadsheet"
         ],
@@ -327,11 +334,12 @@
         "maps_to": "persona.connectors[spreadsheet].credential_fields[provider].value",
         "variable_name": "spreadsheet_credential",
         "context": "Options are auto-detected from your spreadsheet credentials in the Vault (spreadsheet, spreadsheet, spreadsheet, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_email_credential",
         "scope": "connector",
+        "use_case_id": "uc_classify_and_route",
         "connector_names": [
           "email"
         ],
@@ -346,7 +354,7 @@
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
         "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

@@ -152,6 +152,7 @@
         "use_case_ids": [
           "uc_scan_and_extract"
         ],
+        "use_case_id": "uc_scan_and_extract",
         "category": "quality",
         "question": "What confidence threshold should gate automatic task creation?",
         "type": "select",
@@ -164,7 +165,7 @@
         "maps_to": "use_cases[uc_scan_and_extract].sample_input.confidence_threshold",
         "variable_name": "confidence_threshold",
         "context": "Items below the threshold route through human review instead of auto-creating. Lower = higher recall, higher = higher precision.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_default_priority",
@@ -172,6 +173,7 @@
         "use_case_ids": [
           "uc_scan_and_extract"
         ],
+        "use_case_id": "uc_scan_and_extract",
         "category": "configuration",
         "question": "What priority should tasks get when no urgency signal is detected?",
         "type": "select",
@@ -184,7 +186,7 @@
         "maps_to": "use_cases[uc_scan_and_extract].sample_input.default_priority",
         "variable_name": "default_priority",
         "context": "Baseline when the email lacks explicit urgency words or deadline proximity signals.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_flag_ambiguous_for_review",
@@ -192,6 +194,7 @@
         "use_case_ids": [
           "uc_create_or_review"
         ],
+        "use_case_id": "uc_create_or_review",
         "category": "quality",
         "question": "Should ambiguous action items route through human review before creating tasks?",
         "type": "boolean",
@@ -199,11 +202,12 @@
         "maps_to": "use_cases[uc_create_or_review].sample_input.flag_ambiguous_for_review",
         "variable_name": "flag_ambiguous_for_review",
         "context": "When true, low-confidence extractions queue for approval. When false, they're dropped silently (the confidence threshold is the only gate).",
-        "dimension": "human-review"
+        "dimension": "review"
       },
       {
         "id": "aq_email_credential",
         "scope": "connector",
+        "use_case_id": "uc_scan_and_extract",
         "connector_names": [
           "email"
         ],
@@ -218,11 +222,12 @@
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
         "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_knowledge_base_credential",
         "scope": "connector",
+        "use_case_id": "uc_create_or_review",
         "connector_names": [
           "knowledge_base"
         ],
@@ -237,7 +242,7 @@
         "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
         "variable_name": "knowledge_base_credential",
         "context": "Options are auto-detected from your knowledge_base credentials in the Vault (knowledge base, knowledge base, Obsidian, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

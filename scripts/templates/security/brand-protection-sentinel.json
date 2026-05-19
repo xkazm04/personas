@@ -170,6 +170,7 @@
         "use_case_ids": [
           "uc_domain_scan"
         ],
+        "use_case_id": "uc_domain_scan",
         "category": "domain",
         "question": "What is your brand name to monitor?",
         "type": "text",
@@ -178,7 +179,7 @@
         "maps_to": "use_cases[uc_domain_scan].sample_input.brand_name",
         "variable_name": "brand_name",
         "context": "The exact brand name used to generate lookalike variants (typosquat, homoglyph, combosquat). Common English words raise false-positive risk — the persona adjusts thresholds automatically.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_primary_domain",
@@ -186,6 +187,7 @@
         "use_case_ids": [
           "uc_domain_scan"
         ],
+        "use_case_id": "uc_domain_scan",
         "category": "domain",
         "question": "What is your primary domain?",
         "type": "text",
@@ -194,7 +196,7 @@
         "maps_to": "use_cases[uc_domain_scan].sample_input.primary_domain",
         "variable_name": "primary_domain",
         "context": "Your main website. Used for content-similarity comparison on lookalike findings and to ensure your own domain is excluded from threat flagging.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_monitored_tlds",
@@ -202,6 +204,7 @@
         "use_case_ids": [
           "uc_domain_scan"
         ],
+        "use_case_id": "uc_domain_scan",
         "category": "configuration",
         "question": "Which TLDs should be monitored beyond the defaults?",
         "type": "text",
@@ -210,7 +213,7 @@
         "maps_to": "use_cases[uc_domain_scan].sample_input.monitored_tlds",
         "variable_name": "monitored_tlds",
         "context": "Defaults monitored:.com,.net,.org,.io,.co,.app,.dev,.xyz,.info,.biz,.online,.site,.tech. Add country-code TLDs relevant to your markets.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_alert_threshold",
@@ -218,6 +221,7 @@
         "use_case_ids": [
           "uc_threat_analysis"
         ],
+        "use_case_id": "uc_threat_analysis",
         "category": "quality",
         "question": "At what threat score should immediate messaging alerts fire?",
         "type": "select",
@@ -231,7 +235,7 @@
         "maps_to": "use_cases[uc_threat_analysis].sample_input.alert_threshold",
         "variable_name": "alert_threshold",
         "context": "Score 7+ is 'active brand impersonation with content mimicry and email capability'. Raise the bar to 8+ when your brand is a common English word (otherwise false-positive risk climbs).",
-        "dimension": "error-handling"
+        "dimension": "error"
       },
       {
         "id": "aq_slack_channel",
@@ -240,6 +244,7 @@
           "uc_threat_analysis",
           "uc_weekly_report"
         ],
+        "use_case_id": "uc_threat_analysis",
         "category": "configuration",
         "question": "Which messaging channels should receive alerts and weekly reports?",
         "type": "select",
@@ -248,7 +253,7 @@
         "maps_to": "use_cases[uc_weekly_report].sample_input.slack_channel",
         "variable_name": "slack_channel",
         "context": "Dedicated #brand-protection channel recommended. High-threat alerts post immediately; medium findings go in a daily digest; weekly reports post on Monday.",
-        "dimension": "messages",
+        "dimension": "message",
         "option_service_types": [
           "slack"
         ],
@@ -261,6 +266,7 @@
       {
         "id": "aq_knowledge_base_credential",
         "scope": "connector",
+        "use_case_id": "uc_threat_analysis",
         "connector_names": [
           "knowledge_base"
         ],
@@ -275,11 +281,12 @@
         "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
         "variable_name": "knowledge_base_credential",
         "context": "Options are auto-detected from your knowledge_base credentials in the Vault (knowledge base, knowledge base, Obsidian, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_messaging_credential",
         "scope": "connector",
+        "use_case_id": "uc_threat_analysis",
         "connector_names": [
           "messaging"
         ],
@@ -294,7 +301,7 @@
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
         "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

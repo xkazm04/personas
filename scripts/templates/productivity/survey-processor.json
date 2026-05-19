@@ -181,6 +181,7 @@
         "use_case_ids": [
           "uc_process_responses"
         ],
+        "use_case_id": "uc_process_responses",
         "category": "configuration",
         "question": "Which response classification should the processor apply?",
         "type": "select",
@@ -194,7 +195,7 @@
         "maps_to": "use_cases[uc_process_responses].sample_input.rubric",
         "variable_name": "rubric",
         "context": "Determines how multi-choice answers are scored, what tier labels appear in spreadsheet and messaging, and which tier triggers detractor escalation.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_slack_channel",
@@ -202,6 +203,7 @@
         "use_case_ids": [
           "uc_process_responses"
         ],
+        "use_case_id": "uc_process_responses",
         "category": "configuration",
         "question": "Where should messaging response summaries be posted?",
         "type": "select",
@@ -209,7 +211,7 @@
         "maps_to": "use_cases[uc_process_responses].sample_input.slack_channel",
         "variable_name": "slack_channel",
         "context": "Primary messaging channels for summaries. Detractor escalations route to a separate support channel.",
-        "dimension": "connectors",
+        "dimension": "connector",
         "dynamic_source": {
           "service_type": "messaging",
           "operation": "list_channels",
@@ -222,6 +224,7 @@
         "use_case_ids": [
           "uc_process_responses"
         ],
+        "use_case_id": "uc_process_responses",
         "category": "human_in_the_loop",
         "question": "Which responses should pause the pipeline for human review?",
         "type": "select",
@@ -235,7 +238,7 @@
         "maps_to": "use_cases[uc_process_responses].sample_input.detractor_gate",
         "variable_name": "detractor_gate",
         "context": "Controls the gate before detractor escalation and follow-up send. Stricter gates give more control; looser gates are faster.",
-        "dimension": "human-review"
+        "dimension": "review"
       },
       {
         "id": "aq_email_tone",
@@ -243,6 +246,7 @@
         "use_case_ids": [
           "uc_send_followup_email"
         ],
+        "use_case_id": "uc_send_followup_email",
         "category": "quality",
         "question": "What tone should follow-up emails use?",
         "type": "select",
@@ -256,11 +260,12 @@
         "maps_to": "use_cases[uc_send_followup_email].sample_input.email_tone",
         "variable_name": "email_tone",
         "context": "Guides the email template so messaging feels appropriate to both the respondent relationship and their expressed sentiment.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_spreadsheet_credential",
         "scope": "connector",
+        "use_case_id": "uc_process_responses",
         "connector_names": [
           "spreadsheet"
         ],
@@ -275,11 +280,12 @@
         "maps_to": "persona.connectors[spreadsheet].credential_fields[provider].value",
         "variable_name": "spreadsheet_credential",
         "context": "Options are auto-detected from your spreadsheet credentials in the Vault (spreadsheet, spreadsheet, spreadsheet, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_messaging_credential",
         "scope": "connector",
+        "use_case_id": "uc_process_responses",
         "connector_names": [
           "messaging"
         ],
@@ -294,11 +300,12 @@
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
         "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_email_credential",
         "scope": "connector",
+        "use_case_id": "uc_send_followup_email",
         "connector_names": [
           "email"
         ],
@@ -313,7 +320,7 @@
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
         "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

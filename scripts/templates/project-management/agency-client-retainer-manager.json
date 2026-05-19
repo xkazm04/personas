@@ -156,6 +156,7 @@
         "use_case_ids": [
           "uc_request_intake"
         ],
+        "use_case_id": "uc_request_intake",
         "category": "configuration",
         "question": "SLA hours for urgent-priority requests?",
         "type": "select",
@@ -169,7 +170,7 @@
         "maps_to": "use_cases[uc_request_intake].sample_input.urgent_sla_hours",
         "variable_name": "urgent_sla_hours",
         "context": "Urgent = site broken, visibly down, or ASAP-flagged. Shorter SLA = faster response, more pager-duty pressure.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_normal_sla",
@@ -177,6 +178,7 @@
         "use_case_ids": [
           "uc_request_intake"
         ],
+        "use_case_id": "uc_request_intake",
         "category": "configuration",
         "question": "SLA hours for normal-priority requests?",
         "type": "select",
@@ -190,7 +192,7 @@
         "maps_to": "use_cases[uc_request_intake].sample_input.normal_sla_hours",
         "variable_name": "normal_sla_hours",
         "context": "Applies to standard update requests — text changes, image swaps, content additions.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_low_sla",
@@ -198,6 +200,7 @@
         "use_case_ids": [
           "uc_request_intake"
         ],
+        "use_case_id": "uc_request_intake",
         "category": "configuration",
         "question": "SLA hours for low-priority ('no rush') requests?",
         "type": "select",
@@ -211,7 +214,7 @@
         "maps_to": "use_cases[uc_request_intake].sample_input.low_sla_hours",
         "variable_name": "low_sla_hours",
         "context": "Explicitly low-priority asks — lets you batch these without starving normal work.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_complexity_gate",
@@ -219,6 +222,7 @@
         "use_case_ids": [
           "uc_work_execution"
         ],
+        "use_case_id": "uc_work_execution",
         "category": "configuration",
         "question": "What level of changes should be auto-applied without manual review?",
         "type": "select",
@@ -231,7 +235,7 @@
         "maps_to": "use_cases[uc_work_execution].sample_input.complexity_gate",
         "variable_name": "complexity_gate",
         "context": "Changes above this threshold are flagged for your manual review before being applied. Higher tiers move faster but require more trust in the persona's judgement.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_report_day",
@@ -239,6 +243,7 @@
         "use_case_ids": [
           "uc_monthly_report"
         ],
+        "use_case_id": "uc_monthly_report",
         "category": "configuration",
         "question": "Default day of the month to send client reports?",
         "type": "select",
@@ -251,11 +256,12 @@
         "maps_to": "use_cases[uc_monthly_report].sample_input.report_day_of_month",
         "variable_name": "report_day_of_month",
         "context": "Seeds the monthly trigger default; final cadence still tunable at the trigger-composition step.",
-        "dimension": "use-cases"
+        "dimension": "trigger"
       },
       {
         "id": "aq_email_credential",
         "scope": "connector",
+        "use_case_id": "uc_request_intake",
         "connector_names": [
           "email"
         ],
@@ -270,7 +276,7 @@
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
         "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

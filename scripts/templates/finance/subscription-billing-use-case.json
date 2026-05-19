@@ -232,6 +232,7 @@
         "use_case_ids": [
           "uc_event_sync"
         ],
+        "use_case_id": "uc_event_sync",
         "category": "configuration",
         "question": "Should monthly renewal events skip messaging notifications (to reduce noise)?",
         "type": "select",
@@ -243,7 +244,7 @@
         "maps_to": "use_cases[uc_event_sync].sample_input.skip_monthly_renewal_slack",
         "variable_name": "skip_monthly_renewal_slack",
         "context": "Monthly renewals are high-volume + repetitive. Annual renewals mark retention milestones worth celebrating.",
-        "dimension": "messages"
+        "dimension": "message"
       },
       {
         "id": "aq_tone",
@@ -251,6 +252,7 @@
         "use_case_ids": [
           "uc_dunning_sequence"
         ],
+        "use_case_id": "uc_dunning_sequence",
         "category": "configuration",
         "question": "What tone should the dunning emails use?",
         "type": "select",
@@ -263,7 +265,7 @@
         "maps_to": "use_cases[uc_dunning_sequence].sample_input.tone",
         "variable_name": "tone",
         "context": "Shapes the copy across all 3 tiers. Urgency still escalates tier-by-tier regardless of tone.",
-        "dimension": "voice"
+        "dimension": "task"
       },
       {
         "id": "aq_tier3_approval",
@@ -271,6 +273,7 @@
         "use_case_ids": [
           "uc_dunning_sequence"
         ],
+        "use_case_id": "uc_dunning_sequence",
         "category": "human_in_the_loop",
         "question": "Should tier 3 (the final 48-hour warning email) require human approval before sending?",
         "type": "select",
@@ -282,7 +285,7 @@
         "maps_to": "use_cases[uc_dunning_sequence].sample_input.tier3_approval",
         "variable_name": "tier3_approval",
         "context": "Tier 3 is the last shot before cancellation. Approval-gated sends preserve the customer relationship in edge cases; auto-send scales better once the team trusts the templates.",
-        "dimension": "human-review"
+        "dimension": "review"
       },
       {
         "id": "aq_finance_recipients",
@@ -290,6 +293,7 @@
         "use_case_ids": [
           "uc_monthly_mrr_report"
         ],
+        "use_case_id": "uc_monthly_mrr_report",
         "category": "configuration",
         "question": "Who should receive the detailed monthly MRR report via email?",
         "type": "text",
@@ -298,11 +302,12 @@
         "maps_to": "use_cases[uc_monthly_mrr_report].sample_input.finance_recipients",
         "variable_name": "finance_recipients",
         "context": "Comma-separated. The messaging summary posts to #revenue regardless.",
-        "dimension": "messages"
+        "dimension": "message"
       },
       {
         "id": "aq_spreadsheet_credential",
         "scope": "connector",
+        "use_case_id": "uc_event_sync",
         "connector_names": [
           "spreadsheet"
         ],
@@ -317,11 +322,12 @@
         "maps_to": "persona.connectors[spreadsheet].credential_fields[provider].value",
         "variable_name": "spreadsheet_credential",
         "context": "Options are auto-detected from your spreadsheet credentials in the Vault (spreadsheet, spreadsheet, spreadsheet, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_messaging_credential",
         "scope": "connector",
+        "use_case_id": "uc_event_sync",
         "connector_names": [
           "messaging"
         ],
@@ -336,11 +342,12 @@
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
         "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_email_credential",
         "scope": "connector",
+        "use_case_id": "uc_dunning_sequence",
         "connector_names": [
           "email"
         ],
@@ -355,7 +362,7 @@
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
         "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

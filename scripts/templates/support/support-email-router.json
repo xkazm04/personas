@@ -160,6 +160,7 @@
         "use_case_ids": [
           "uc_email_triage"
         ],
+        "use_case_id": "uc_email_triage",
         "category": "configuration",
         "question": "Which routing categories should tickets use?",
         "type": "select",
@@ -172,7 +173,7 @@
         "maps_to": "use_cases[uc_email_triage].sample_input.categories",
         "variable_name": "categories",
         "context": "Classification labels assigned to each ticket. Match these to the Select options in your knowledge base support database.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_confidence_threshold",
@@ -180,6 +181,7 @@
         "use_case_ids": [
           "uc_email_triage"
         ],
+        "use_case_id": "uc_email_triage",
         "category": "quality",
         "question": "Below what classification confidence should an email route to manual review instead of auto-creating a ticket?",
         "type": "select",
@@ -194,7 +196,7 @@
         "maps_to": "use_cases[uc_email_triage].sample_input.confidence_threshold",
         "variable_name": "confidence_threshold",
         "context": "Below this score the agent holds the ticket and asks a human. Higher = more reviews, stronger accuracy.",
-        "dimension": "human-review"
+        "dimension": "review"
       },
       {
         "id": "aq_sla_high_hours",
@@ -203,6 +205,7 @@
           "uc_email_triage",
           "uc_sla_monitor"
         ],
+        "use_case_id": "uc_email_triage",
         "category": "configuration",
         "question": "SLA hours for High-priority tickets?",
         "type": "select",
@@ -216,7 +219,7 @@
         "maps_to": "use_cases[uc_email_triage].sample_input.sla_high_hours",
         "variable_name": "sla_high_hours",
         "context": "Outages, security, data loss. Tighten for enterprise SLAs.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_sla_medium_hours",
@@ -225,6 +228,7 @@
           "uc_email_triage",
           "uc_sla_monitor"
         ],
+        "use_case_id": "uc_email_triage",
         "category": "configuration",
         "question": "SLA hours for Medium-priority tickets?",
         "type": "select",
@@ -238,7 +242,7 @@
         "maps_to": "use_cases[uc_email_triage].sample_input.sla_medium_hours",
         "variable_name": "sla_medium_hours",
         "context": "Bugs, integration issues, feature requests with technical detail.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_sla_low_hours",
@@ -247,6 +251,7 @@
           "uc_email_triage",
           "uc_sla_monitor"
         ],
+        "use_case_id": "uc_email_triage",
         "category": "configuration",
         "question": "SLA hours for Low-priority tickets?",
         "type": "select",
@@ -260,7 +265,7 @@
         "maps_to": "use_cases[uc_email_triage].sample_input.sla_low_hours",
         "variable_name": "sla_low_hours",
         "context": "General inquiries, feedback, non-urgent questions.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_warning_percent",
@@ -268,6 +273,7 @@
         "use_case_ids": [
           "uc_sla_monitor"
         ],
+        "use_case_id": "uc_sla_monitor",
         "category": "configuration",
         "question": "At what percent of SLA elapsed should the warning fire?",
         "type": "select",
@@ -281,11 +287,12 @@
         "maps_to": "use_cases[uc_sla_monitor].sample_input.warning_percent",
         "variable_name": "warning_percent",
         "context": "Lower = earlier warnings, more noise. 80% is the balanced default.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_notion_database",
         "scope": "connector",
+        "use_case_id": "uc_email_triage",
         "connector_names": [
           "knowledge_base"
         ],
@@ -297,7 +304,7 @@
         "maps_to": "persona.connectors[notion].credential_fields[database_id].value",
         "variable_name": "notion_database",
         "context": "Must have columns: Title, Priority, Status, Category, Customer Email, Customer Name, SLA Deadline, Created At, Source Email ID, Classification Confidence, Agent Notes.",
-        "dimension": "connectors",
+        "dimension": "connector",
         "vault_category": "database",
         "option_service_types": [
           "notion"
@@ -311,6 +318,7 @@
       {
         "id": "aq_email_credential",
         "scope": "connector",
+        "use_case_id": "uc_email_triage",
         "connector_names": [
           "email"
         ],
@@ -325,11 +333,12 @@
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
         "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_knowledge_base_credential",
         "scope": "connector",
+        "use_case_id": "uc_email_triage",
         "connector_names": [
           "knowledge_base"
         ],
@@ -344,7 +353,7 @@
         "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
         "variable_name": "knowledge_base_credential",
         "context": "Options are auto-detected from your knowledge_base credentials in the Vault (knowledge base, knowledge base, Obsidian, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

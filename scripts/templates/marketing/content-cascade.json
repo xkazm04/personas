@@ -217,6 +217,7 @@
         "use_case_ids": [
           "uc_repurpose_artifact"
         ],
+        "use_case_id": "uc_repurpose_artifact",
         "category": "domain",
         "question": "Which platforms should the agent fan content out to?",
         "type": "multi_select",
@@ -230,7 +231,7 @@
         "maps_to": "use_cases[uc_repurpose_artifact].sample_input.target_platforms",
         "variable_name": "target_platforms",
         "context": "Pick any subset of platforms. The agent only generates drafts for the platforms you select — and only if the platform's voice doc exists. You can change this later by re-running the persona with different targets.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_voice_sample_posts",
@@ -238,6 +239,7 @@
         "use_case_ids": [
           "uc_voice_profile_build"
         ],
+        "use_case_id": "uc_voice_profile_build",
         "category": "domain",
         "question": "Paste 3-5 of your best posts per target platform (separate platforms with `===PLATFORM:linkedin===` headers).",
         "type": "long_text",
@@ -245,7 +247,7 @@
         "maps_to": "use_cases[uc_voice_profile_build].sample_input.sample_posts",
         "variable_name": "voice_sample_posts",
         "context": "These samples are the source for the per-platform voice docs. 3-5 per platform is the sweet spot — fewer makes the doc thin, more dilutes the signal. The agent stores each platform's voice doc separately at `design_context.design_files['content_cascade_voices/<platform>_voice.md']`.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_max_drafts_per_run",
@@ -253,6 +255,7 @@
         "use_case_ids": [
           "uc_repurpose_artifact"
         ],
+        "use_case_id": "uc_repurpose_artifact",
         "category": "configuration",
         "question": "Maximum platform variants per run?",
         "type": "select",
@@ -266,7 +269,7 @@
         "maps_to": "use_cases[uc_repurpose_artifact].sample_input.max_drafts_per_run",
         "variable_name": "max_drafts_per_run",
         "context": "Caps the number of drafts surfaced for review at once. Lower = more focused review; higher = full fan-out per run. Capped at 4 to keep human review tractable.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_scheduling_preference",
@@ -274,6 +277,7 @@
         "use_case_ids": [
           "uc_publish_after_approval"
         ],
+        "use_case_id": "uc_publish_after_approval",
         "category": "configuration",
         "question": "When you approve a draft, should it publish immediately or schedule via Buffer?",
         "type": "select",
@@ -285,7 +289,7 @@
         "maps_to": "use_cases[uc_publish_after_approval].sample_input.scheduling_preference",
         "variable_name": "scheduling_preference",
         "context": "Choose immediate posting (faster, no third-party scheduler) or queueing through Buffer (requires the Buffer connector and uses your Buffer account's posting schedule). You can change this later per run.",
-        "dimension": "use-cases"
+        "dimension": "task"
       }
     ],
     "persona_meta": {

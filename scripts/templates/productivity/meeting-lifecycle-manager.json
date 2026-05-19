@@ -195,6 +195,7 @@
         "use_case_ids": [
           "uc_calendar_watch"
         ],
+        "use_case_id": "uc_calendar_watch",
         "category": "configuration",
         "question": "How far in advance should prep emails arrive?",
         "type": "select",
@@ -208,7 +209,7 @@
         "maps_to": "use_cases[uc_calendar_watch].sample_input.prep_lead_minutes",
         "variable_name": "prep_lead_minutes",
         "context": "Sets the window the polling scan uses to pick which meetings to prep.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_excluded_events",
@@ -216,6 +217,7 @@
         "use_case_ids": [
           "uc_calendar_watch"
         ],
+        "use_case_id": "uc_calendar_watch",
         "category": "boundaries",
         "question": "Which calendar events should be completely excluded from automation?",
         "type": "select",
@@ -229,7 +231,7 @@
         "maps_to": "use_cases[uc_calendar_watch].sample_input.excluded_events",
         "variable_name": "excluded_events",
         "context": "Prevents unwanted messaging status or prep emails for events that shouldn't trigger the lifecycle.",
-        "dimension": "error-handling"
+        "dimension": "error"
       },
       {
         "id": "aq_followup_style",
@@ -237,6 +239,7 @@
         "use_case_ids": [
           "uc_post_meeting_followup"
         ],
+        "use_case_id": "uc_post_meeting_followup",
         "category": "quality",
         "question": "What format should post-meeting follow-ups use?",
         "type": "select",
@@ -250,11 +253,12 @@
         "maps_to": "use_cases[uc_post_meeting_followup].sample_input.followup_style",
         "variable_name": "followup_style",
         "context": "Drives the follow-up template and whether email or messaging is the primary distribution channel.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_calendar_credential",
         "scope": "connector",
+        "use_case_id": "uc_calendar_watch",
         "connector_names": [
           "calendar"
         ],
@@ -269,11 +273,12 @@
         "maps_to": "persona.connectors[calendar].credential_fields[provider].value",
         "variable_name": "calendar_credential",
         "context": "Options are auto-detected from your calendar credentials in the Vault (calendar, email Calendar, Cal.com, Calendly).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_email_credential",
         "scope": "connector",
+        "use_case_id": "uc_calendar_watch",
         "connector_names": [
           "email"
         ],
@@ -288,11 +293,12 @@
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
         "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_messaging_credential",
         "scope": "connector",
+        "use_case_id": "uc_calendar_watch",
         "connector_names": [
           "messaging"
         ],
@@ -307,7 +313,7 @@
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
         "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

@@ -160,6 +160,7 @@
         "connector_names": [
           "analytics"
         ],
+        "use_case_id": "uc_event_classification",
         "category": "configuration",
         "question": "Which product analytics provider sends events to this persona?",
         "type": "select",
@@ -171,7 +172,7 @@
         "maps_to": "persona.connectors[analytics].credential_fields[provider].value",
         "variable_name": "analytics_provider",
         "context": "Auto-detected from your `analytics`-category credentials (analytics, analytics, analytics, analytics, etc.). Required — add one first if the list is empty.",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_messaging_channel",
@@ -179,6 +180,7 @@
         "connector_names": [
           "messaging"
         ],
+        "use_case_id": "uc_event_classification",
         "category": "configuration",
         "question": "Which messaging channel should receive the alerts?",
         "type": "select",
@@ -190,7 +192,7 @@
         "maps_to": "persona.connectors[messaging].credential_fields[sales_channel].value",
         "variable_name": "messaging_channel",
         "context": "Auto-detected from your `messaging`-category credentials. Required — the alerts need a destination.",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_high_intent_threshold",
@@ -198,6 +200,7 @@
         "use_case_ids": [
           "uc_event_classification"
         ],
+        "use_case_id": "uc_event_classification",
         "category": "quality",
         "question": "Minimum intent score that triggers an immediate sales alert?",
         "type": "select",
@@ -210,7 +213,7 @@
         "maps_to": "use_cases[uc_event_classification].sample_input.high_intent_threshold",
         "variable_name": "high_intent_threshold",
         "context": "70 = more alerts (most meaningful signals). 80 = default, high-confidence only. 90 = only strongest buying signals (pricing page, checkout).",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_power_features",
@@ -218,6 +221,7 @@
         "use_case_ids": [
           "uc_event_classification"
         ],
+        "use_case_id": "uc_event_classification",
         "category": "domain",
         "question": "Which features count as 'power feature activation'?",
         "type": "text",
@@ -226,7 +230,7 @@
         "maps_to": "use_cases[uc_event_classification].sample_input.power_features",
         "variable_name": "power_features",
         "context": "Activation of these features receives an elevated intent score. Replace the defaults with your product's real activation milestones.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_blocklist_segments",
@@ -234,6 +238,7 @@
         "use_case_ids": [
           "uc_event_classification"
         ],
+        "use_case_id": "uc_event_classification",
         "category": "boundaries",
         "question": "Which users or segments should NEVER trigger alerts?",
         "type": "text",
@@ -242,7 +247,7 @@
         "maps_to": "use_cases[uc_event_classification].sample_input.blocklist_segments",
         "variable_name": "blocklist_segments",
         "context": "Prevents alert fatigue from internal testing, churned accounts, or segments your sales team doesn't work.",
-        "dimension": "use-cases"
+        "dimension": "error"
       },
       {
         "id": "aq_alert_context_depth",
@@ -250,6 +255,7 @@
         "use_case_ids": [
           "uc_event_classification"
         ],
+        "use_case_id": "uc_event_classification",
         "category": "quality",
         "question": "How much behavioral context should each alert include?",
         "type": "select",
@@ -262,7 +268,7 @@
         "maps_to": "use_cases[uc_event_classification].sample_input.alert_context_depth",
         "variable_name": "alert_context_depth",
         "context": "More context = faster rep decisions but longer messages. Match to how your sales team actually works in their chat tool.",
-        "dimension": "messages"
+        "dimension": "message"
       },
       {
         "id": "aq_pattern_threshold",
@@ -270,6 +276,7 @@
         "use_case_ids": [
           "uc_pattern_escalation"
         ],
+        "use_case_id": "uc_pattern_escalation",
         "category": "quality",
         "question": "Cumulative pattern score that triggers a sustained-interest escalation?",
         "type": "select",
@@ -282,7 +289,7 @@
         "maps_to": "use_cases[uc_pattern_escalation].sample_input.pattern_threshold",
         "variable_name": "pattern_threshold",
         "context": "Recency-weighted sum of medium signals. Lower = more escalations, higher = conservative. 200 is the default.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_pattern_suppression_hours",
@@ -290,6 +297,7 @@
         "use_case_ids": [
           "uc_pattern_escalation"
         ],
+        "use_case_id": "uc_pattern_escalation",
         "category": "quality",
         "question": "Suppression window after a pattern escalation fires (hours)?",
         "type": "select",
@@ -303,7 +311,7 @@
         "maps_to": "use_cases[uc_pattern_escalation].sample_input.suppression_hours",
         "variable_name": "pattern_suppression_hours",
         "context": "Prevents re-alerting on the same user repeatedly while the pattern continues to accumulate.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_escalation_review",
@@ -311,6 +319,7 @@
         "use_case_ids": [
           "uc_pattern_escalation"
         ],
+        "use_case_id": "uc_pattern_escalation",
         "category": "human_in_the_loop",
         "question": "How should pattern escalations be routed?",
         "type": "select",
@@ -324,7 +333,7 @@
         "maps_to": "use_cases[uc_pattern_escalation].sample_input.escalation_review",
         "variable_name": "escalation_review",
         "context": "Pattern escalations are less certain than single high-intent events. Choose how much human gate you want before the escalation enters the CRM/KB pipeline.",
-        "dimension": "human-review"
+        "dimension": "review"
       },
       {
         "id": "aq_knowledge_base_credential",
@@ -332,6 +341,7 @@
         "connector_names": [
           "knowledge_base"
         ],
+        "use_case_id": "uc_event_classification",
         "category": "credentials",
         "question": "Which knowledge base should this persona read from and write to?",
         "type": "select",
@@ -343,7 +353,7 @@
         "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
         "variable_name": "knowledge_base_credential",
         "context": "Options are auto-detected from your knowledge_base credentials in the Vault (knowledge base, knowledge base, Obsidian, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

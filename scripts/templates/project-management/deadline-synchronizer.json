@@ -193,6 +193,7 @@
         "use_case_ids": [
           "uc_calendar_sync"
         ],
+        "use_case_id": "uc_calendar_sync",
         "category": "configuration",
         "question": "Which calendar should deadlines be mirrored into?",
         "type": "text",
@@ -200,7 +201,7 @@
         "maps_to": "use_cases[uc_calendar_sync].sample_input.calendar_id",
         "variable_name": "calendar_id",
         "context": "Use 'primary' for your default calendar, or paste a specific calendar ID (e.g., a shared team calendar).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_reminder_thresholds",
@@ -208,6 +209,7 @@
         "use_case_ids": [
           "uc_deadline_reminders"
         ],
+        "use_case_id": "uc_deadline_reminders",
         "category": "configuration",
         "question": "Which messaging reminder thresholds should trigger notifications?",
         "type": "select",
@@ -221,7 +223,7 @@
         "maps_to": "use_cases[uc_deadline_reminders].sample_input.reminder_thresholds",
         "variable_name": "reminder_thresholds",
         "context": "High-frequency reminders reduce missed deadlines but cause notification fatigue. Match to your team's rhythm.",
-        "dimension": "triggers"
+        "dimension": "trigger"
       },
       {
         "id": "aq_message_verbosity",
@@ -229,6 +231,7 @@
         "use_case_ids": [
           "uc_deadline_reminders"
         ],
+        "use_case_id": "uc_deadline_reminders",
         "category": "quality",
         "question": "How detailed should messaging reminder messages be?",
         "type": "select",
@@ -242,7 +245,7 @@
         "maps_to": "use_cases[uc_deadline_reminders].sample_input.message_verbosity",
         "variable_name": "message_verbosity",
         "context": "Escalating detail matches urgency to information density — less noise at 48h, more actionable detail at 15min.",
-        "dimension": "messages"
+        "dimension": "message"
       },
       {
         "id": "aq_confirm_blocked",
@@ -250,6 +253,7 @@
         "use_case_ids": [
           "uc_overdue_enforcement"
         ],
+        "use_case_id": "uc_overdue_enforcement",
         "category": "human_in_the_loop",
         "question": "Require a messaging confirmation before moving overdue cards to the Blocked list?",
         "type": "boolean",
@@ -257,11 +261,12 @@
         "maps_to": "use_cases[uc_overdue_enforcement].sample_input.confirm_before_blocked",
         "variable_name": "confirm_before_blocked",
         "context": "Off = fully autonomous (recommended for seasoned teams). On = the PM gets a messaging prompt and must approve each move.",
-        "dimension": "human-review"
+        "dimension": "review"
       },
       {
         "id": "aq_calendar_credential",
         "scope": "connector",
+        "use_case_id": "uc_calendar_sync",
         "connector_names": [
           "calendar"
         ],
@@ -276,11 +281,12 @@
         "maps_to": "persona.connectors[calendar].credential_fields[provider].value",
         "variable_name": "calendar_credential",
         "context": "Options are auto-detected from your calendar credentials in the Vault (calendar, calendar, Cal.com, Calendly).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_messaging_credential",
         "scope": "connector",
+        "use_case_id": "uc_deadline_reminders",
         "connector_names": [
           "messaging"
         ],
@@ -295,7 +301,7 @@
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
         "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

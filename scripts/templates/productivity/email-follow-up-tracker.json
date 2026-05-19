@@ -154,6 +154,7 @@
         "use_case_ids": [
           "uc_scheduled_scan"
         ],
+        "use_case_id": "uc_scheduled_scan",
         "category": "configuration",
         "question": "How long should the tracker wait before flagging an unanswered email?",
         "type": "select",
@@ -167,7 +168,7 @@
         "maps_to": "use_cases[uc_scheduled_scan].sample_input.follow_up_threshold_hours",
         "variable_name": "follow_up_threshold_hours",
         "context": "Sets the base threshold after which a thread is overdue. VIP contacts use a reduced threshold via the priority boost.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_scan_lookback_days",
@@ -175,6 +176,7 @@
         "use_case_ids": [
           "uc_scheduled_scan"
         ],
+        "use_case_id": "uc_scheduled_scan",
         "category": "configuration",
         "question": "How far back should the sent-email scan reach?",
         "type": "select",
@@ -188,7 +190,7 @@
         "maps_to": "use_cases[uc_scheduled_scan].sample_input.scan_lookback_days",
         "variable_name": "scan_lookback_days",
         "context": "Longer windows catch slower-paced correspondence at the cost of more email API usage. Threads older than this drop out of tracking.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_vip_recipients",
@@ -196,6 +198,7 @@
         "use_case_ids": [
           "uc_scheduled_scan"
         ],
+        "use_case_id": "uc_scheduled_scan",
         "category": "domain",
         "question": "Which VIP contacts or domains should receive priority tracking?",
         "type": "textarea",
@@ -204,11 +207,12 @@
         "maps_to": "use_cases[uc_scheduled_scan].sample_input.vip_recipients",
         "variable_name": "vip_recipients",
         "context": "One entry per line — email addresses or @domain patterns. VIPs are flagged at a reduced threshold (default 50% cut).",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_email_credential",
         "scope": "connector",
+        "use_case_id": "uc_scheduled_scan",
         "connector_names": [
           "email"
         ],
@@ -223,11 +227,12 @@
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
         "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_messaging_credential",
         "scope": "connector",
+        "use_case_id": "uc_scheduled_scan",
         "connector_names": [
           "messaging"
         ],
@@ -242,7 +247,7 @@
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
         "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

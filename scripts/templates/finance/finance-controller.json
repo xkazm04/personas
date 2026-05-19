@@ -277,6 +277,7 @@
         "use_case_ids": [
           "uc_daily_sync"
         ],
+        "use_case_id": "uc_daily_sync",
         "category": "configuration",
         "question": "Which spreadsheet is the ledger?",
         "type": "select",
@@ -288,7 +289,7 @@
         "maps_to": "use_cases[uc_daily_sync].sample_input.ledger_spreadsheet_id",
         "variable_name": "ledger_sheet",
         "context": "Must have Invoices, Expenses, and Dashboard tabs. Options come from your connected spreadsheet credential.",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_anomaly_rule",
@@ -296,6 +297,7 @@
         "use_case_ids": [
           "uc_daily_sync"
         ],
+        "use_case_id": "uc_daily_sync",
         "category": "human_in_the_loop",
         "question": "At what transaction amount should an anomalous expense be flagged?",
         "type": "select",
@@ -309,7 +311,7 @@
         "maps_to": "use_cases[uc_daily_sync].sample_input.anomaly_rule",
         "variable_name": "anomaly_rule",
         "context": "Below this threshold, expenses are logged and categorized silently. Above it, a user_message fires (up to 10/day, then batched).",
-        "dimension": "human-review"
+        "dimension": "review"
       },
       {
         "id": "aq_reminder_cadence",
@@ -317,6 +319,7 @@
         "use_case_ids": [
           "uc_overdue_reminders"
         ],
+        "use_case_id": "uc_overdue_reminders",
         "category": "configuration",
         "question": "What overdue reminder cadence should the agent follow?",
         "type": "select",
@@ -329,7 +332,7 @@
         "maps_to": "use_cases[uc_overdue_reminders].sample_input.reminder_cadence",
         "variable_name": "reminder_cadence",
         "context": "Defines the tiered reminder schedule and cooldown windows. Regardless of cadence, 31+ day overdue invoices always escalate to manual review.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_exclusions",
@@ -337,6 +340,7 @@
         "use_case_ids": [
           "uc_overdue_reminders"
         ],
+        "use_case_id": "uc_overdue_reminders",
         "category": "boundaries",
         "question": "Which customers/situations should NEVER receive an auto-reminder?",
         "type": "select",
@@ -350,7 +354,7 @@
         "maps_to": "use_cases[uc_overdue_reminders].sample_input.exclusions",
         "variable_name": "exclusions",
         "context": "Exclusions hard-stop the reminder flow — these customers escalate to manual review instead. Protects key relationships.",
-        "dimension": "error-handling"
+        "dimension": "error"
       },
       {
         "id": "aq_tone",
@@ -358,6 +362,7 @@
         "use_case_ids": [
           "uc_overdue_reminders"
         ],
+        "use_case_id": "uc_overdue_reminders",
         "category": "quality",
         "question": "What tone should payment reminder emails use?",
         "type": "select",
@@ -371,7 +376,7 @@
         "maps_to": "use_cases[uc_overdue_reminders].sample_input.tone",
         "variable_name": "tone",
         "context": "Controls the email reminder copy across all tiers. 'Escalating' adjusts automatically by days-overdue.",
-        "dimension": "messages"
+        "dimension": "message"
       },
       {
         "id": "aq_slack_channel",
@@ -379,6 +384,7 @@
         "use_case_ids": [
           "uc_weekly_summary"
         ],
+        "use_case_id": "uc_weekly_summary",
         "category": "configuration",
         "question": "Which messaging channels receives the weekly cash flow summary?",
         "type": "select",
@@ -390,11 +396,12 @@
         "maps_to": "use_cases[uc_weekly_summary].sample_input.slack_channel",
         "variable_name": "slack_channel",
         "context": "Options come from your connected messaging credential. The summary is concise formatted messaging layout with trends and a link to the Dashboard sheet.",
-        "dimension": "messages"
+        "dimension": "message"
       },
       {
         "id": "aq_spreadsheet_credential",
         "scope": "connector",
+        "use_case_id": "uc_daily_sync",
         "connector_names": [
           "spreadsheet"
         ],
@@ -409,11 +416,12 @@
         "maps_to": "persona.connectors[spreadsheet].credential_fields[provider].value",
         "variable_name": "spreadsheet_credential",
         "context": "Options are auto-detected from your spreadsheet credentials in the Vault (spreadsheet, spreadsheet, spreadsheet, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_email_credential",
         "scope": "connector",
+        "use_case_id": "uc_overdue_reminders",
         "connector_names": [
           "email"
         ],
@@ -428,11 +436,12 @@
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
         "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_messaging_credential",
         "scope": "connector",
+        "use_case_id": "uc_weekly_summary",
         "connector_names": [
           "messaging"
         ],
@@ -447,7 +456,7 @@
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
         "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

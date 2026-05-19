@@ -160,6 +160,7 @@
         "use_case_ids": [
           "uc_polling_ingestion"
         ],
+        "use_case_id": "uc_polling_ingestion",
         "category": "domain",
         "question": "Which sources should the aggregator monitor?",
         "type": "source_definition",
@@ -167,7 +168,7 @@
         "maps_to": "use_cases[uc_polling_ingestion].sample_input.news_sources",
         "variable_name": "news_sources",
         "context": "RSS feeds, competitor pages, curated URL list. The persona reads these every cycle and weights them above generic web findings.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_research_intent",
@@ -175,6 +176,7 @@
         "use_case_ids": [
           "uc_polling_ingestion"
         ],
+        "use_case_id": "uc_polling_ingestion",
         "category": "domain",
         "question": "How should the persona interpret your industry and score articles?",
         "type": "textarea",
@@ -183,7 +185,7 @@
         "maps_to": "use_cases[uc_polling_ingestion].sample_input.research_intent",
         "variable_name": "research_intent",
         "context": "Free-form. Covers industry framing, priority entities, scoring tweaks, style preferences. The build process may ask follow-ups if the intent is thin.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_breaking_threshold",
@@ -191,6 +193,7 @@
         "use_case_ids": [
           "uc_polling_ingestion"
         ],
+        "use_case_id": "uc_polling_ingestion",
         "category": "quality",
         "question": "What importance score triggers a real-time messaging alert?",
         "type": "select",
@@ -203,7 +206,7 @@
         "maps_to": "use_cases[uc_polling_ingestion].sample_input.breaking_threshold",
         "variable_name": "breaking_threshold",
         "context": "3 = frequent alerts. 4 = default, breaking news only. 5 = very rare alerts (only transformative).",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_blocklist",
@@ -211,6 +214,7 @@
         "use_case_ids": [
           "uc_polling_ingestion"
         ],
+        "use_case_id": "uc_polling_ingestion",
         "category": "boundaries",
         "question": "Topics, sources, or entities the aggregator should NEVER include or alert on?",
         "type": "textarea",
@@ -219,7 +223,7 @@
         "maps_to": "use_cases[uc_polling_ingestion].sample_input.blocklist",
         "variable_name": "blocklist",
         "context": "Applied before summarization — blocklisted items never reach the knowledge base or messaging.",
-        "dimension": "use-cases"
+        "dimension": "error"
       },
       {
         "id": "aq_priority_entities",
@@ -227,6 +231,7 @@
         "use_case_ids": [
           "uc_polling_ingestion"
         ],
+        "use_case_id": "uc_polling_ingestion",
         "category": "memory",
         "question": "Which competitors or entities should boost importance when mentioned?",
         "type": "textarea",
@@ -235,7 +240,7 @@
         "maps_to": "use_cases[uc_polling_ingestion].sample_input.priority_entities",
         "variable_name": "priority_entities",
         "context": "Stored as a watchlist — mentions boost importance +1 (capped at 5) and are more likely to fire breaking alerts.",
-        "dimension": "use-cases"
+        "dimension": "memory"
       },
       {
         "id": "aq_summary_style",
@@ -243,6 +248,7 @@
         "use_case_ids": [
           "uc_polling_ingestion"
         ],
+        "use_case_id": "uc_polling_ingestion",
         "category": "messages",
         "question": "What style should AI summaries use?",
         "type": "select",
@@ -255,7 +261,7 @@
         "maps_to": "use_cases[uc_polling_ingestion].sample_input.summary_style",
         "variable_name": "summary_style",
         "context": "Sets tone for both knowledge-base records and the daily email briefing.",
-        "dimension": "messages"
+        "dimension": "message"
       },
       {
         "id": "aq_briefing_review",
@@ -263,6 +269,7 @@
         "use_case_ids": [
           "uc_daily_briefing"
         ],
+        "use_case_id": "uc_daily_briefing",
         "category": "human_in_the_loop",
         "question": "Should the daily briefing send automatically or wait for review?",
         "type": "select",
@@ -275,7 +282,7 @@
         "maps_to": "use_cases[uc_daily_briefing].sample_input.briefing_review",
         "variable_name": "briefing_review",
         "context": "Controls whether the persona operates fully autonomously or pauses for approval before distributing intelligence.",
-        "dimension": "human-review"
+        "dimension": "review"
       },
       {
         "id": "aq_knowledge_base",
@@ -283,6 +290,7 @@
         "connector_names": [
           "knowledge_base"
         ],
+        "use_case_id": "uc_polling_ingestion",
         "category": "configuration",
         "question": "Which knowledge-base workspace should store article records?",
         "type": "select",
@@ -294,7 +302,7 @@
         "maps_to": "persona.connectors[knowledge_base].credential_fields[database_id].value",
         "variable_name": "knowledge_base_provider",
         "context": "Auto-detected from your `knowledge_base`-category credentials. Required — this is where every article record lives.",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_messaging_channel",
@@ -302,6 +310,7 @@
         "connector_names": [
           "messaging"
         ],
+        "use_case_id": "uc_polling_ingestion",
         "category": "configuration",
         "question": "Which messaging channel should receive breaking-news alerts?",
         "type": "select",
@@ -313,7 +322,7 @@
         "maps_to": "persona.connectors[messaging].credential_fields[channel].value",
         "variable_name": "messaging_channel",
         "context": "Auto-detected from your `messaging`-category credentials. Skip to run email+knowledge-base only.",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_email_provider",
@@ -321,6 +330,7 @@
         "connector_names": [
           "email"
         ],
+        "use_case_id": "uc_daily_briefing",
         "category": "configuration",
         "question": "Which email credential should deliver the daily briefing?",
         "type": "select",
@@ -332,7 +342,7 @@
         "maps_to": "persona.connectors[email].credential_fields[recipients].value",
         "variable_name": "email_provider",
         "context": "Auto-detected from your `email`-category credentials. Skip to run messaging + knowledge-base only.",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

@@ -103,6 +103,7 @@
           "uc_pattern_digest",
           "uc_journal_rescan"
         ],
+        "use_case_id": "uc_journal_reflection",
         "category": "configuration",
         "question": "How many weeks of journal history should the coach consider when looking for recurring themes?",
         "type": "number",
@@ -112,7 +113,7 @@
         "maps_to": "persona.parameters[pattern_lookback_weeks]",
         "variable_name": "pattern_lookback_weeks",
         "context": "Longer windows surface slow-burn themes but increase false-positive risk. 4 weeks (~30 entries assuming daily journaling) is a reasonable default that catches month-long struggles without dredging up resolved concerns from a quarter ago.",
-        "dimension": "configuration"
+        "dimension": "task"
       },
       {
         "id": "aq_min_pattern_recurrence",
@@ -121,6 +122,7 @@
           "uc_journal_reflection",
           "uc_pattern_digest"
         ],
+        "use_case_id": "uc_journal_reflection",
         "category": "configuration",
         "question": "How many distinct journal entries must mention the same struggle before the coach flags it as a pattern?",
         "type": "number",
@@ -130,7 +132,7 @@
         "maps_to": "persona.parameters[min_pattern_recurrence]",
         "variable_name": "min_pattern_recurrence",
         "context": "Higher values reduce nagging at the cost of missing patterns. 3 distinct entries within the lookback window is the floor that distinguishes 'three bad days in a row' from 'a recurring theme'.",
-        "dimension": "configuration"
+        "dimension": "task"
       },
       {
         "id": "aq_coach_tone",
@@ -139,6 +141,7 @@
           "uc_journal_reflection",
           "uc_journal_rescan"
         ],
+        "use_case_id": "uc_journal_reflection",
         "category": "voice",
         "question": "Which coaching voice fits how you want to be reflected back to?",
         "type": "select",
@@ -151,7 +154,7 @@
         "maps_to": "persona.parameters[coach_tone]",
         "variable_name": "coach_tone",
         "context": "gentle softens framing and adds permission ('no need to fix it today'). direct cuts straight to observation + recommendation. socratic asks rather than tells — never asserts what you 'are' feeling. Pick the tone you'd actually read; nothing about the choice is morally weighted.",
-        "dimension": "voice"
+        "dimension": "task"
       },
       {
         "id": "aq_enable_messages_digest",
@@ -159,6 +162,7 @@
         "use_case_ids": [
           "uc_pattern_digest"
         ],
+        "use_case_id": "uc_pattern_digest",
         "category": "configuration",
         "question": "Send a weekly pattern digest to Messages on Sundays?",
         "type": "boolean",
@@ -166,7 +170,7 @@
         "maps_to": "persona.parameters[enable_messages_digest]",
         "variable_name": "enable_messages_digest",
         "context": "Off by default — most users want the journal to stay in the journal. Turn on if you want a weekly outside-the-vault summary of slow-burn themes.",
-        "dimension": "configuration"
+        "dimension": "task"
       },
       {
         "id": "aq_min_chars_to_trigger",
@@ -174,6 +178,7 @@
         "use_case_ids": [
           "uc_journal_reflection"
         ],
+        "use_case_id": "uc_journal_reflection",
         "category": "configuration",
         "question": "Minimum characters in a journal entry before the coach reads it?",
         "type": "number",
@@ -183,7 +188,7 @@
         "maps_to": "persona.parameters[min_chars_to_trigger]",
         "variable_name": "min_chars_to_trigger",
         "context": "Below this floor, the coach stays silent — short check-ins, gratitude lists, or single-line notes don't get reflected on. 200 chars (~3-4 sentences) is the threshold for a real entry vs a quick capture.",
-        "dimension": "configuration"
+        "dimension": "task"
       }
     ],
     "persona_meta": {

@@ -189,6 +189,7 @@
         "use_case_ids": [
           "uc_subscription_sync"
         ],
+        "use_case_id": "uc_subscription_sync",
         "category": "domain",
         "question": "What type of subscription business does this hub operate?",
         "type": "select",
@@ -202,7 +203,7 @@
         "maps_to": "use_cases[uc_subscription_sync].sample_input.business_type",
         "variable_name": "business_type",
         "context": "Shapes how MRR is calculated, what plan tiers exist, and how customer emails are framed.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_refund_review_threshold",
@@ -210,6 +211,7 @@
         "use_case_ids": [
           "uc_subscription_sync"
         ],
+        "use_case_id": "uc_subscription_sync",
         "category": "boundaries",
         "question": "Above what refund amount (USD) should the agent require human approval before logging as resolved?",
         "type": "select",
@@ -223,7 +225,7 @@
         "maps_to": "use_cases[uc_subscription_sync].sample_input.refund_review_threshold",
         "variable_name": "refund_review_threshold",
         "context": "Prevents large-dollar refunds from being silently absorbed into the tracker without finance team awareness.",
-        "dimension": "human-review"
+        "dimension": "review"
       },
       {
         "id": "aq_escalation_mode",
@@ -231,6 +233,7 @@
         "use_case_ids": [
           "uc_payment_recovery"
         ],
+        "use_case_id": "uc_payment_recovery",
         "category": "human_in_the_loop",
         "question": "How should the payment recovery sequence escalate when automated emails aren't working?",
         "type": "select",
@@ -244,7 +247,7 @@
         "maps_to": "use_cases[uc_payment_recovery].sample_input.escalation_mode",
         "variable_name": "escalation_mode",
         "context": "Controls when automated recovery hands off to a human to preserve customer relationships.",
-        "dimension": "human-review"
+        "dimension": "review"
       },
       {
         "id": "aq_tone",
@@ -252,6 +255,7 @@
         "use_case_ids": [
           "uc_payment_recovery"
         ],
+        "use_case_id": "uc_payment_recovery",
         "category": "configuration",
         "question": "What tone should the failed-payment recovery emails use?",
         "type": "select",
@@ -264,7 +268,7 @@
         "maps_to": "use_cases[uc_payment_recovery].sample_input.tone",
         "variable_name": "tone",
         "context": "Directly shapes the copy generated at each dunning tier.",
-        "dimension": "voice"
+        "dimension": "task"
       },
       {
         "id": "aq_recipients",
@@ -272,6 +276,7 @@
         "use_case_ids": [
           "uc_daily_summary"
         ],
+        "use_case_id": "uc_daily_summary",
         "category": "configuration",
         "question": "Who should receive the daily revenue summary?",
         "type": "text",
@@ -280,7 +285,7 @@
         "maps_to": "use_cases[uc_daily_summary].sample_input.recipients",
         "variable_name": "recipients",
         "context": "Comma-separated. Changes take effect immediately on the next daily run.",
-        "dimension": "messages"
+        "dimension": "message"
       },
       {
         "id": "aq_kpi_focus",
@@ -288,6 +293,7 @@
         "use_case_ids": [
           "uc_daily_summary"
         ],
+        "use_case_id": "uc_daily_summary",
         "category": "quality",
         "question": "Which KPIs should the daily summary lead with?",
         "type": "select",
@@ -301,11 +307,12 @@
         "maps_to": "use_cases[uc_daily_summary].sample_input.kpi_focus",
         "variable_name": "kpi_focus",
         "context": "Shapes the report's lead section and table ordering.",
-        "dimension": "messages"
+        "dimension": "message"
       },
       {
         "id": "aq_spreadsheet_credential",
         "scope": "connector",
+        "use_case_id": "uc_subscription_sync",
         "connector_names": [
           "spreadsheet"
         ],
@@ -320,11 +327,12 @@
         "maps_to": "persona.connectors[spreadsheet].credential_fields[provider].value",
         "variable_name": "spreadsheet_credential",
         "context": "Options are auto-detected from your spreadsheet credentials in the Vault (spreadsheet, spreadsheet, spreadsheet, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_email_credential",
         "scope": "connector",
+        "use_case_id": "uc_payment_recovery",
         "connector_names": [
           "email"
         ],
@@ -339,7 +347,7 @@
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
         "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

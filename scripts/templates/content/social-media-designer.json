@@ -115,13 +115,14 @@
         "use_case_ids": [
           "uc_design_batch"
         ],
+        "use_case_id": "uc_design_batch",
         "category": "domain",
         "question": "What is your brand or business, and what do you create content about?",
         "type": "textarea",
         "placeholder": "e.g., 'B2B SaaS for product managers — I post about PM tooling, career advice, and weekly productivity tips.'",
         "variable_name": "brand_context",
         "context": "Establishes the content niche for topic interpretation and copy tone. Fed into generation so the designer knows what's on-brand.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_primary_platform",
@@ -129,6 +130,7 @@
         "use_case_ids": [
           "uc_design_batch"
         ],
+        "use_case_id": "uc_design_batch",
         "category": "domain",
         "question": "Which platform is your primary focus?",
         "type": "select",
@@ -144,7 +146,7 @@
         "maps_to": "use_cases[uc_design_batch].sample_input.platform",
         "variable_name": "primary_platform",
         "context": "Sets the default platform parameter. The designer still accepts any platform per run — this just pre-fills the form.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_default_tone",
@@ -152,6 +154,7 @@
         "use_case_ids": [
           "uc_design_batch"
         ],
+        "use_case_id": "uc_design_batch",
         "category": "configuration",
         "question": "Default brand voice?",
         "type": "select",
@@ -166,7 +169,7 @@
         "maps_to": "use_cases[uc_design_batch].sample_input.tone",
         "variable_name": "default_tone",
         "context": "Seeds the default tone. The agent refines via review feedback over time.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_variations_count",
@@ -174,6 +177,7 @@
         "use_case_ids": [
           "uc_design_batch"
         ],
+        "use_case_id": "uc_design_batch",
         "category": "configuration",
         "question": "How many design variations do you typically want to choose from?",
         "type": "select",
@@ -187,7 +191,7 @@
         "maps_to": "use_cases[uc_design_batch].sample_input.variations_count",
         "variable_name": "variations_count",
         "context": "More variations = more choice but more Canva quota. The agent may reduce count automatically once memory confidence is high.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_social_handle",
@@ -195,6 +199,7 @@
         "use_case_ids": [
           "uc_design_batch"
         ],
+        "use_case_id": "uc_design_batch",
         "category": "configuration",
         "question": "Your social media handle?",
         "type": "text",
@@ -202,7 +207,7 @@
         "maps_to": "use_cases[uc_design_batch].sample_input.handle",
         "variable_name": "social_handle",
         "context": "Included on each slide as a branding element. Leave blank to skip.",
-        "dimension": "use-cases"
+        "dimension": "task"
       }
     ],
     "persona_meta": {

@@ -94,6 +94,7 @@
         "use_case_ids": [
           "uc_standard_audit"
         ],
+        "use_case_id": "uc_standard_audit",
         "category": "domain",
         "question": "Which website should this persona audit by default?",
         "type": "text",
@@ -101,7 +102,7 @@
         "maps_to": "use_cases[uc_standard_audit].sample_input.target_url",
         "variable_name": "target_url",
         "context": "Full URL of the website to audit (e.g. https://example-hvac.com). You can override this on individual manual runs.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_business_type",
@@ -109,6 +110,7 @@
         "use_case_ids": [
           "uc_standard_audit"
         ],
+        "use_case_id": "uc_standard_audit",
         "category": "domain",
         "question": "What type of local service business is this?",
         "type": "select",
@@ -129,7 +131,7 @@
         "maps_to": "use_cases[uc_standard_audit].sample_input.business_type",
         "variable_name": "business_type",
         "context": "Drives industry-specific benchmarks. Trades (HVAC, plumbing, roofing) need before/after photos and license numbers; cleaning and landscaping lean harder on reviews; auto repair needs service-area clarity.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_audit_depth",
@@ -137,6 +139,7 @@
         "use_case_ids": [
           "uc_standard_audit"
         ],
+        "use_case_id": "uc_standard_audit",
         "category": "configuration",
         "question": "How thorough should each audit be?",
         "type": "select",
@@ -149,7 +152,7 @@
         "maps_to": "use_cases[uc_standard_audit].sample_input.audit_depth",
         "variable_name": "audit_depth",
         "context": "Quick: homepage only — fastest but narrowest signal. Standard: homepage + /contact + /about + /reviews + /services — the balanced default. Deep: all discoverable pages — most complete but slow.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_min_severity",
@@ -157,6 +160,7 @@
         "use_case_ids": [
           "uc_standard_audit"
         ],
+        "use_case_id": "uc_standard_audit",
         "category": "quality",
         "question": "Only include findings at or above this severity?",
         "type": "select",
@@ -170,7 +174,7 @@
         "maps_to": "use_cases[uc_standard_audit].sample_input.min_severity",
         "variable_name": "min_severity",
         "context": "Filters the report. Critical only = existential lead-losing gaps; Low = everything including optimization opportunities. Teams just starting out should pick High or Critical to stay focused.",
-        "dimension": "messages"
+        "dimension": "message"
       },
       {
         "id": "aq_competitor_urls_intent",
@@ -178,6 +182,7 @@
         "use_case_ids": [
           "uc_competitor_compare"
         ],
+        "use_case_id": "uc_competitor_compare",
         "category": "domain",
         "question": "Which competitor URLs should the side-by-side comparison include?",
         "type": "text",
@@ -185,7 +190,7 @@
         "maps_to": "use_cases[uc_competitor_compare].sample_input.competitor_urls",
         "variable_name": "competitor_urls_intent",
         "context": "Comma-separated list of competitor URLs. Each one gets scored with the same 8-category weighted system and appears in the side-by-side section of the report. Leave blank to skip competitor comparison entirely.",
-        "dimension": "use-cases"
+        "dimension": "task"
       }
     ],
     "persona_meta": {

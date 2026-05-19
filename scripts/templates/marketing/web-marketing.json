@@ -207,6 +207,7 @@
       {
         "id": "aq_ad_platform",
         "scope": "connector",
+        "use_case_id": "uc_performance_scan",
         "connector_names": [
           "ad_platform"
         ],
@@ -221,11 +222,12 @@
         "maps_to": "persona.connectors[ad_platform].credential_fields[provider].value",
         "variable_name": "ad_platform_provider",
         "context": "Options are auto-detected from the advertising-category credentials you've already connected in the Vault. If the list is empty, add ad platform, ad platform, ad platform, or another advertising connector first.",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_analytics_tool",
         "scope": "connector",
+        "use_case_id": "uc_performance_scan",
         "connector_names": [
           "analytics_tool"
         ],
@@ -240,11 +242,12 @@
         "maps_to": "persona.connectors[analytics_tool].credential_fields[provider].value",
         "variable_name": "analytics_tool_provider",
         "context": "Options are auto-detected from the analytics-category credentials in your Vault (analytics, analytics, and any other analytics connectors you've added). Add one first if the list is empty.",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_business_type",
         "scope": "persona",
+        "use_case_id": "uc_performance_scan",
         "category": "domain",
         "question": "What kind of business does this persona serve?",
         "type": "select",
@@ -260,7 +263,7 @@
         "maps_to": null,
         "variable_name": "business_type",
         "context": "Shapes every UC's interpretation — what counts as a 'conversion', how ROAS is judged, which cannibalization savings matter.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_proposal_count",
@@ -268,6 +271,7 @@
         "use_case_ids": [
           "uc_optimization_proposals"
         ],
+        "use_case_id": "uc_optimization_proposals",
         "category": "quality",
         "question": "How many optimization proposals per week?",
         "type": "select",
@@ -283,7 +287,7 @@
         "maps_to": "use_cases[uc_optimization_proposals].sample_input.proposal_count",
         "variable_name": "proposal_count",
         "context": "Choose 'Leave up to LLM' to let the persona size each week's proposal batch to signal density (it will target 5-8 when data is rich, fewer when signals are thin). Pick a fixed number to cap triage load.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_report_depth",
@@ -292,6 +296,7 @@
           "uc_performance_scan",
           "uc_cannibalization_watch"
         ],
+        "use_case_id": "uc_performance_scan",
         "category": "quality",
         "question": "How detailed should the performance + cannibalization sections of the combined briefing be?",
         "type": "select",
@@ -304,7 +309,7 @@
         "maps_to": null,
         "variable_name": "report_depth",
         "context": "Applies to both the performance scan and cannibalization findings. Optimization proposals stay full-detail regardless — they're the actionable part.",
-        "dimension": "messages"
+        "dimension": "message"
       }
     ],
     "persona_meta": {

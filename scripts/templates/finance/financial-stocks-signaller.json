@@ -125,6 +125,7 @@
         "use_case_ids": [
           "uc_signals"
         ],
+        "use_case_id": "uc_signals",
         "category": "domain",
         "question": "Which stock tickers should this agent track?",
         "type": "text",
@@ -134,7 +135,7 @@
         "maps_to": "use_cases[uc_signals].sample_input.watchlist",
         "variable_name": "tickers",
         "context": "Comma-separated tickers. Alpha Vantage free tier (~25 req/day) comfortably handles 4-5 tickers per weekly run. More tickers → relies more on web_search fallback.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_signal_weighting",
@@ -142,6 +143,7 @@
         "use_case_ids": [
           "uc_signals"
         ],
+        "use_case_id": "uc_signals",
         "category": "configuration",
         "question": "How should signals be weighted?",
         "type": "select",
@@ -154,7 +156,7 @@
         "maps_to": "use_cases[uc_signals].sample_input.signal_weighting",
         "variable_name": "signal_weighting",
         "context": "Controls what the signal table leads with. Strong technical overrides cover the edge cases either way.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_sector_interest",
@@ -163,6 +165,7 @@
           "uc_congressional_scan",
           "uc_gems"
         ],
+        "use_case_id": "uc_congressional_scan",
         "category": "domain",
         "question": "Which sectors of interest drive the congressional scan and gem discovery?",
         "type": "select",
@@ -178,7 +181,7 @@
         "maps_to": null,
         "variable_name": "sector_interest",
         "context": "Shared across the congressional and gem-discovery use cases. Multi-select supported — comma-separate sectors.",
-        "dimension": "use-cases"
+        "dimension": "task"
       }
     ],
     "persona_meta": {

@@ -200,6 +200,7 @@
         "use_case_ids": [
           "uc_curate_issue"
         ],
+        "use_case_id": "uc_curate_issue",
         "category": "domain",
         "question": "Who is the primary target audience for your newsletter?",
         "type": "select",
@@ -212,7 +213,7 @@
         "default": "General subscribers",
         "variable_name": "target_audience",
         "context": "Shapes tone defaults and content selection criteria. Internal teams tolerate more insider vocabulary; general subscribers need more framing context.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_editorial_tone",
@@ -220,6 +221,7 @@
         "use_case_ids": [
           "uc_curate_issue"
         ],
+        "use_case_id": "uc_curate_issue",
         "category": "configuration",
         "question": "Editorial tone?",
         "type": "select",
@@ -234,7 +236,7 @@
         "maps_to": "use_cases[uc_curate_issue].sample_input.editorial_tone",
         "variable_name": "editorial_tone",
         "context": "Writing voice for headlines, commentary, and section intros. The agent refines tone based on reviewer feedback over time.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_max_articles_per_issue",
@@ -242,6 +244,7 @@
         "use_case_ids": [
           "uc_curate_issue"
         ],
+        "use_case_id": "uc_curate_issue",
         "category": "configuration",
         "question": "Max articles per issue?",
         "type": "select",
@@ -256,7 +259,7 @@
         "maps_to": "use_cases[uc_curate_issue].sample_input.max_articles_per_issue",
         "variable_name": "max_articles_per_issue",
         "context": "Upper bound. The curator ships fewer if quality candidates are scarce — it never pads with filler.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_source_scan_depth",
@@ -264,6 +267,7 @@
         "use_case_ids": [
           "uc_curate_issue"
         ],
+        "use_case_id": "uc_curate_issue",
         "category": "configuration",
         "question": "Days back to scan from each source?",
         "type": "select",
@@ -277,7 +281,7 @@
         "maps_to": "use_cases[uc_curate_issue].sample_input.source_scan_depth",
         "variable_name": "source_scan_depth",
         "context": "Articles older than this are filtered out unless from a high-priority source. 7 is standard for weekly cadence; widen for monthly.",
-        "dimension": "use-cases"
+        "dimension": "task"
       }
     ],
     "persona_meta": {

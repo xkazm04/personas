@@ -142,6 +142,7 @@
       {
         "id": "aq_messaging_provider",
         "scope": "connector",
+        "use_case_id": "uc_pattern_detection",
         "connector_names": [
           "messaging"
         ],
@@ -156,7 +157,7 @@
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_provider",
         "context": "Options come from your vault's messaging-category credentials (messaging, messaging, messaging, built-in Messages). Add a messaging credential first if the list is empty.",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_severity_threshold",
@@ -164,6 +165,7 @@
         "use_case_ids": [
           "uc_pattern_detection"
         ],
+        "use_case_id": "uc_pattern_detection",
         "category": "quality",
         "question": "Minimum severity level that triggers a real-time alert?",
         "type": "select",
@@ -177,7 +179,7 @@
         "maps_to": "use_cases[uc_pattern_detection].sample_input.severity_threshold",
         "variable_name": "severity_threshold",
         "context": "Lower thresholds = more alerts and more noise. 'high' is the recommended default; adjust after a week of observing alert volume.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_recurring_threshold",
@@ -185,6 +187,7 @@
         "use_case_ids": [
           "uc_pattern_detection"
         ],
+        "use_case_id": "uc_pattern_detection",
         "category": "quality",
         "question": "How many occurrences of the same error in 1 hour triggers a `recurring failure` pattern?",
         "type": "select",
@@ -197,7 +200,7 @@
         "maps_to": "use_cases[uc_pattern_detection].sample_input.recurring_threshold",
         "variable_name": "recurring_threshold",
         "context": "Lower values catch issues faster but generate more noise. 3 is the recommended default for most setups.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_retention_days",
@@ -205,6 +208,7 @@
         "use_case_ids": [
           "uc_ingestion"
         ],
+        "use_case_id": "uc_ingestion",
         "category": "configuration",
         "question": "How many days of error history to retain?",
         "type": "select",
@@ -218,7 +222,7 @@
         "maps_to": "use_cases[uc_ingestion].sample_input.retention_days",
         "variable_name": "retention_days",
         "context": "Longer retention enables better trend analysis and pattern detection. 90 days balances storage vs insight for weekly reporting.",
-        "dimension": "use-cases"
+        "dimension": "memory"
       },
       {
         "id": "aq_daily_digest_hour",
@@ -226,6 +230,7 @@
         "use_case_ids": [
           "uc_reporting"
         ],
+        "use_case_id": "uc_reporting",
         "category": "quality",
         "question": "What hour (local, 24h format) should the daily digest ship?",
         "type": "select",
@@ -242,7 +247,7 @@
         "maps_to": "use_cases[uc_reporting].sample_input.daily_digest_hour",
         "variable_name": "daily_digest_hour",
         "context": "The digest covers the previous 24 hours of errors. 9 AM local is the standard default — matches most team stand-ups.",
-        "dimension": "use-cases"
+        "dimension": "trigger"
       }
     ],
     "persona_meta": {

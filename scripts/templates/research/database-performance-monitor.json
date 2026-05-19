@@ -130,6 +130,7 @@
         "connector_names": [
           "database"
         ],
+        "use_case_id": "uc_continuous_monitoring",
         "category": "configuration",
         "question": "Which database should the monitor watch?",
         "type": "select",
@@ -141,7 +142,7 @@
         "maps_to": "persona.connectors[database].credential_fields[connection_string].value",
         "variable_name": "target_database",
         "context": "Auto-detected from your `database`-category credentials. Required. Supported engines: database, database, database.",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_baseline_days",
@@ -149,6 +150,7 @@
         "use_case_ids": [
           "uc_continuous_monitoring"
         ],
+        "use_case_id": "uc_continuous_monitoring",
         "category": "configuration",
         "question": "How long should the silent baseline learning period run?",
         "type": "select",
@@ -162,7 +164,7 @@
         "maps_to": "use_cases[uc_continuous_monitoring].sample_input.baseline_days",
         "variable_name": "baseline_days",
         "context": "No alerts during this period. 7 days captures weekly patterns. Minimum 3 for statistical significance; prefer 5+ unless you know the workload is stable.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_metrics_scope",
@@ -170,6 +172,7 @@
         "use_case_ids": [
           "uc_continuous_monitoring"
         ],
+        "use_case_id": "uc_continuous_monitoring",
         "category": "configuration",
         "question": "Which metrics should the monitor track?",
         "type": "select",
@@ -183,7 +186,7 @@
         "maps_to": "use_cases[uc_continuous_monitoring].sample_input.metrics_scope",
         "variable_name": "metrics_scope",
         "context": "Controls which dimensions feed baselines and thresholds. More metrics = better correlation analysis but higher monitoring query overhead.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_critical_multiplier",
@@ -191,6 +194,7 @@
         "use_case_ids": [
           "uc_continuous_monitoring"
         ],
+        "use_case_id": "uc_continuous_monitoring",
         "category": "quality",
         "question": "Critical threshold multiplier (stddevs above baseline mean)?",
         "type": "select",
@@ -203,7 +207,7 @@
         "maps_to": "use_cases[uc_continuous_monitoring].sample_input.critical_multiplier",
         "variable_name": "critical_multiplier",
         "context": "Higher = fewer critical escalations, less noise. Lower = more sensitive, more human interruptions. Warning stays at 2.0 stddevs.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_require_review",
@@ -211,6 +215,7 @@
         "use_case_ids": [
           "uc_anomaly_response"
         ],
+        "use_case_id": "uc_anomaly_response",
         "category": "human_in_the_loop",
         "question": "Should critical alerts require human acknowledgment before any automated response?",
         "type": "boolean",
@@ -218,7 +223,7 @@
         "maps_to": "use_cases[uc_anomaly_response].sample_input.require_review",
         "variable_name": "require_review",
         "context": "When true, severe performance anomalies are held for human review. Recommended on.",
-        "dimension": "human-review"
+        "dimension": "review"
       },
       {
         "id": "aq_messaging_channel",
@@ -226,6 +231,7 @@
         "connector_names": [
           "messaging"
         ],
+        "use_case_id": "uc_continuous_monitoring",
         "category": "configuration",
         "question": "Which messaging channel should receive alerts?",
         "type": "select",
@@ -237,7 +243,7 @@
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_provider",
         "context": "Auto-detected from your `messaging`-category credentials. Skip to route alerts only to the in-app inbox.",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

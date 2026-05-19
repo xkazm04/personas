@@ -141,6 +141,7 @@
           "uc_manual_curation",
           "uc_feed_scanning"
         ],
+        "use_case_id": "uc_manual_curation",
         "category": "domain",
         "question": "How should the curator work with your sources — what to emphasize, what taxonomy dimensions matter?",
         "type": "textarea",
@@ -149,7 +150,7 @@
         "maps_to": "use_cases[uc_manual_curation].sample_input.curation_intent",
         "variable_name": "curation_intent",
         "context": "Free-form. Tells the persona what to optimize for: depth vs breadth, which taxonomy dimensions carry weight, how to handle thin articles.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_feed_urls",
@@ -157,6 +158,7 @@
         "use_case_ids": [
           "uc_feed_scanning"
         ],
+        "use_case_id": "uc_feed_scanning",
         "category": "domain",
         "question": "Which RSS/Atom feeds should be scanned?",
         "type": "textarea",
@@ -165,7 +167,7 @@
         "maps_to": "use_cases[uc_feed_scanning].sample_input.feed_urls",
         "variable_name": "feed_urls",
         "context": "One feed URL per line. Both RSS and Atom supported. Add / remove feeds later via state/feed_config.json or re-run this step.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_max_article_age",
@@ -173,6 +175,7 @@
         "use_case_ids": [
           "uc_feed_scanning"
         ],
+        "use_case_id": "uc_feed_scanning",
         "category": "quality",
         "question": "How old can feed items be before they're skipped?",
         "type": "select",
@@ -187,7 +190,7 @@
         "maps_to": "use_cases[uc_feed_scanning].sample_input.max_article_age_days",
         "variable_name": "max_article_age_days",
         "context": "Days. The KB isn't a backfill tool — items older than this from a feed are skipped. Doesn't apply to manual URL submissions.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_batch_size",
@@ -195,6 +198,7 @@
         "use_case_ids": [
           "uc_feed_scanning"
         ],
+        "use_case_id": "uc_feed_scanning",
         "category": "quality",
         "question": "How many new articles should a single feed scan process?",
         "type": "select",
@@ -209,7 +213,7 @@
         "maps_to": "use_cases[uc_feed_scanning].sample_input.batch_size",
         "variable_name": "batch_size",
         "context": "Cap on per-scan volume. Larger batches give better coverage; smaller stays within API quota and keeps runs fast.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_kb_provider",
@@ -217,6 +221,7 @@
         "connector_names": [
           "knowledge_base"
         ],
+        "use_case_id": "uc_manual_curation",
         "category": "configuration",
         "question": "Which knowledge base should receive the curated pages?",
         "type": "select",
@@ -228,7 +233,7 @@
         "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
         "variable_name": "knowledge_base_provider",
         "context": "Auto-detected from your Vault's knowledge-base credentials (knowledge base, Obsidian, etc.). Add one in Vault → Catalog if the list is empty.",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

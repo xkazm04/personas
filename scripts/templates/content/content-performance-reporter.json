@@ -111,6 +111,7 @@
         "use_case_ids": [
           "uc_weekly_report"
         ],
+        "use_case_id": "uc_weekly_report",
         "category": "domain",
         "question": "Which metrics matter most for your content performance?",
         "type": "select",
@@ -124,7 +125,7 @@
         "maps_to": "use_cases[uc_weekly_report].sample_input.key_metrics",
         "variable_name": "key_metrics",
         "context": "Focuses the report on the metrics your team actively tracks.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_top_n_content",
@@ -132,6 +133,7 @@
         "use_case_ids": [
           "uc_weekly_report"
         ],
+        "use_case_id": "uc_weekly_report",
         "category": "configuration",
         "question": "How many URLs should appear in the top/bottom performer lists?",
         "type": "select",
@@ -145,7 +147,7 @@
         "maps_to": "use_cases[uc_weekly_report].sample_input.top_n_content",
         "variable_name": "top_n_content",
         "context": "More items = richer insight but longer reports.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_min_pageviews_for_inclusion",
@@ -153,6 +155,7 @@
         "use_case_ids": [
           "uc_weekly_report"
         ],
+        "use_case_id": "uc_weekly_report",
         "category": "quality",
         "question": "Minimum weekly page views for a URL to appear in rankings/anomaly detection?",
         "type": "select",
@@ -167,7 +170,7 @@
         "maps_to": "use_cases[uc_weekly_report].sample_input.min_pageviews_for_inclusion",
         "variable_name": "min_pageviews_for_inclusion",
         "context": "Filters out statistical noise from very low-traffic pages.",
-        "dimension": "use-cases"
+        "dimension": "memory"
       },
       {
         "id": "aq_anomaly_threshold_percent",
@@ -176,6 +179,7 @@
           "uc_weekly_report",
           "uc_midweek_anomaly_check"
         ],
+        "use_case_id": "uc_weekly_report",
         "category": "quality",
         "question": "Deviation threshold from baseline that flags an anomaly?",
         "type": "select",
@@ -188,7 +192,7 @@
         "maps_to": "use_cases[uc_weekly_report].sample_input.anomaly_threshold_percent",
         "variable_name": "anomaly_threshold_percent",
         "context": "Content below 200 weekly views automatically uses 2x this threshold to dampen noise.",
-        "dimension": "use-cases"
+        "dimension": "memory"
       },
       {
         "id": "aq_anomaly_review_mode",
@@ -196,6 +200,7 @@
         "use_case_ids": [
           "uc_weekly_report"
         ],
+        "use_case_id": "uc_weekly_report",
         "category": "human_in_the_loop",
         "question": "Should anomalies trigger a manual review request alongside the report?",
         "type": "select",
@@ -208,7 +213,7 @@
         "maps_to": "use_cases[uc_weekly_report].sample_input.anomaly_review_mode",
         "variable_name": "anomaly_review_mode",
         "context": "High-severity = multi-metric anomaly on top-tier content OR sustained decline on a previously top-10 piece.",
-        "dimension": "human-review"
+        "dimension": "review"
       }
     ],
     "persona_meta": {

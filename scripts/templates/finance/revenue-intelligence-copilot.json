@@ -213,6 +213,7 @@
         "use_case_ids": [
           "uc_payment_event_scan"
         ],
+        "use_case_id": "uc_payment_event_scan",
         "category": "quality",
         "question": "How aggressive should the threshold-crossing alerts be?",
         "type": "select",
@@ -225,7 +226,7 @@
         "maps_to": "use_cases[uc_payment_event_scan].sample_input.alert_threshold",
         "variable_name": "alert_threshold",
         "context": "Controls how often the persona interrupts owners. The model calibrates weights monthly regardless of initial setting.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_outreach_mode",
@@ -233,6 +234,7 @@
         "use_case_ids": [
           "uc_alert_and_outreach"
         ],
+        "use_case_id": "uc_alert_and_outreach",
         "category": "human_in_the_loop",
         "question": "Should the persona auto-send outreach emails or draft them for owner review?",
         "type": "select",
@@ -245,7 +247,7 @@
         "maps_to": "use_cases[uc_alert_and_outreach].sample_input.outreach_mode",
         "variable_name": "outreach_mode",
         "context": "Retention and upgrade emails go to real customers. Draft-mode is the safer default; auto-send works well once the team trusts the scoring.",
-        "dimension": "human-review"
+        "dimension": "review"
       },
       {
         "id": "aq_finance_recipients",
@@ -253,6 +255,7 @@
         "use_case_ids": [
           "uc_monthly_calibration"
         ],
+        "use_case_id": "uc_monthly_calibration",
         "category": "configuration",
         "question": "Who should receive the detailed monthly revenue report?",
         "type": "text",
@@ -261,11 +264,12 @@
         "maps_to": "use_cases[uc_monthly_calibration].sample_input.finance_recipients",
         "variable_name": "finance_recipients",
         "context": "Comma-separated email addresses. The same report posts to #revenue-reports in the messaging channel regardless.",
-        "dimension": "messages"
+        "dimension": "message"
       },
       {
         "id": "aq_crm_credential",
         "scope": "connector",
+        "use_case_id": "uc_payment_event_scan",
         "connector_names": [
           "crm"
         ],
@@ -280,11 +284,12 @@
         "maps_to": "persona.connectors[crm].credential_fields[provider].value",
         "variable_name": "crm_credential",
         "context": "Options are auto-detected from your crm credentials in the Vault (CRM, CRM, CRM, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_messaging_credential",
         "scope": "connector",
+        "use_case_id": "uc_alert_and_outreach",
         "connector_names": [
           "messaging"
         ],
@@ -299,11 +304,12 @@
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
         "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_email_credential",
         "scope": "connector",
+        "use_case_id": "uc_alert_and_outreach",
         "connector_names": [
           "email"
         ],
@@ -318,7 +324,7 @@
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
         "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

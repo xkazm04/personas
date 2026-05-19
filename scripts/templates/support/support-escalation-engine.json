@@ -215,6 +215,7 @@
         "use_case_ids": [
           "uc_sla_watch"
         ],
+        "use_case_id": "uc_sla_watch",
         "category": "configuration",
         "question": "How far in advance of an SLA deadline should the early-warning alert fire?",
         "type": "select",
@@ -228,7 +229,7 @@
         "maps_to": "use_cases[uc_sla_watch].sample_input.warning_window_minutes",
         "variable_name": "warning_window",
         "context": "Minutes before the SLA deadline for a Low-severity heads-up. 0 = only alert on confirmed breaches.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_tiers_enabled",
@@ -236,6 +237,7 @@
         "use_case_ids": [
           "uc_sla_watch"
         ],
+        "use_case_id": "uc_sla_watch",
         "category": "boundaries",
         "question": "Which customer tiers should breach detection include?",
         "type": "select",
@@ -248,7 +250,7 @@
         "maps_to": "use_cases[uc_sla_watch].sample_input.tiers_enabled",
         "variable_name": "tiers_enabled",
         "context": "Drop lower tiers to reduce noise. Free-tier breaches still appear in the daily digest even if silenced in the messaging channel.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_escalation_channel",
@@ -256,6 +258,7 @@
         "use_case_ids": [
           "uc_sla_watch"
         ],
+        "use_case_id": "uc_sla_watch",
         "category": "configuration",
         "question": "Which messaging channels receives SLA escalation alerts?",
         "type": "select",
@@ -264,7 +267,7 @@
         "maps_to": "use_cases[uc_sla_watch].sample_input.escalation_channel",
         "variable_name": "escalation_channel",
         "context": "All formatted messaging layout escalation posts land here. Use a dedicated channel — this can get noisy during incidents.",
-        "dimension": "messages",
+        "dimension": "message",
         "vault_category": "messaging",
         "option_service_types": [
           "slack"
@@ -281,6 +284,7 @@
         "use_case_ids": [
           "uc_sla_watch"
         ],
+        "use_case_id": "uc_sla_watch",
         "category": "configuration",
         "question": "messaging user ID of the support lead for Critical-breach DMs?",
         "type": "text",
@@ -288,7 +292,7 @@
         "maps_to": "use_cases[uc_sla_watch].sample_input.lead_user_id",
         "variable_name": "lead_user_id",
         "context": "Critical (Enterprise + first_response breach) alerts DM this person in addition to the channel post. Leave blank to skip DMs.",
-        "dimension": "messages"
+        "dimension": "message"
       },
       {
         "id": "aq_require_confirmation",
@@ -296,6 +300,7 @@
         "use_case_ids": [
           "uc_sla_watch"
         ],
+        "use_case_id": "uc_sla_watch",
         "category": "boundaries",
         "question": "Should Critical escalations require human confirmation before posting to the messaging channel?",
         "type": "boolean",
@@ -303,7 +308,7 @@
         "maps_to": "use_cases[uc_sla_watch].sample_input.require_confirmation",
         "variable_name": "require_confirmation",
         "context": "Fully automated is the default (speed matters). Enable for teams with strict comms policies — adds a confirm step before broadcasting.",
-        "dimension": "human-review"
+        "dimension": "review"
       },
       {
         "id": "aq_lead_email",
@@ -311,6 +316,7 @@
         "use_case_ids": [
           "uc_daily_digest"
         ],
+        "use_case_id": "uc_daily_digest",
         "category": "configuration",
         "question": "Email address of the support lead for the daily digest?",
         "type": "text",
@@ -318,11 +324,12 @@
         "maps_to": "use_cases[uc_daily_digest].sample_input.lead_email",
         "variable_name": "lead_email",
         "context": "Recipient of the HTML escalation digest sent each evening.",
-        "dimension": "messages"
+        "dimension": "message"
       },
       {
         "id": "aq_messaging_credential",
         "scope": "connector",
+        "use_case_id": "uc_sla_watch",
         "connector_names": [
           "messaging"
         ],
@@ -337,11 +344,12 @@
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
         "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_knowledge_base_credential",
         "scope": "connector",
+        "use_case_id": "uc_sla_watch",
         "connector_names": [
           "knowledge_base"
         ],
@@ -356,11 +364,12 @@
         "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
         "variable_name": "knowledge_base_credential",
         "context": "Options are auto-detected from your knowledge_base credentials in the Vault (knowledge base, knowledge base, Obsidian, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_email_credential",
         "scope": "connector",
+        "use_case_id": "uc_daily_digest",
         "connector_names": [
           "email"
         ],
@@ -375,7 +384,7 @@
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
         "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

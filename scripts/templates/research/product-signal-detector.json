@@ -176,6 +176,7 @@
         "use_case_ids": [
           "uc_detect_and_post"
         ],
+        "use_case_id": "uc_detect_and_post",
         "category": "quality",
         "question": "How sensitive should anomaly detection be?",
         "type": "select",
@@ -188,7 +189,7 @@
         "maps_to": "use_cases[uc_detect_and_post].sample_input.sensitivity",
         "variable_name": "sensitivity",
         "context": "Sets the percentage-deviation threshold for flagging. Conservative reduces noise; Aggressive catches subtle regressions earlier.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_card_verbosity",
@@ -196,6 +197,7 @@
         "use_case_ids": [
           "uc_detect_and_post"
         ],
+        "use_case_id": "uc_detect_and_post",
         "category": "configuration",
         "question": "How detailed should insight cards be?",
         "type": "select",
@@ -208,7 +210,7 @@
         "maps_to": "use_cases[uc_detect_and_post].sample_input.card_verbosity",
         "variable_name": "card_verbosity",
         "context": "Verbose cards are useful for async teams who want the full context in Messages. Compact is better for high-signal-volume days.",
-        "dimension": "use-cases"
+        "dimension": "message"
       },
       {
         "id": "aq_warning_persistence",
@@ -216,6 +218,7 @@
         "use_case_ids": [
           "uc_ticket_critical"
         ],
+        "use_case_id": "uc_ticket_critical",
         "category": "quality",
         "question": "How many consecutive runs should a Warning persist before auto-ticketing?",
         "type": "select",
@@ -229,7 +232,7 @@
         "maps_to": "use_cases[uc_ticket_critical].sample_input.warning_persistence_runs",
         "variable_name": "warning_persistence_runs",
         "context": "Catches slow-burn regressions without noise from one-day blips. 3 is a good default; raise to 5-7 for very noisy metrics.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_approval_required",
@@ -237,6 +240,7 @@
         "use_case_ids": [
           "uc_ticket_critical"
         ],
+        "use_case_id": "uc_ticket_critical",
         "category": "boundaries",
         "question": "Should ticket creation require human approval before firing?",
         "type": "boolean",
@@ -244,7 +248,7 @@
         "maps_to": "use_cases[uc_ticket_critical].sample_input.approval_required",
         "variable_name": "approval_required",
         "context": "Default false: Critical signals auto-create tickets immediately. Set true if your team prefers human-in-the-loop on every ticket.",
-        "dimension": "human-review"
+        "dimension": "review"
       },
       {
         "id": "aq_analytics_provider",
@@ -252,6 +256,7 @@
         "connector_names": [
           "analytics_tool"
         ],
+        "use_case_id": "uc_detect_and_post",
         "category": "configuration",
         "question": "Which analytics tool should supply the signals?",
         "type": "select",
@@ -263,7 +268,7 @@
         "maps_to": "persona.connectors[analytics_tool].credential_fields[provider].value",
         "variable_name": "analytics_tool_provider",
         "context": "Auto-detected from your Vault's analytics-category credentials. Add analytics / analytics / analytics / analytics in Vault → Catalog first if the list is empty.",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_ticketing_provider",
@@ -271,6 +276,7 @@
         "connector_names": [
           "ticketing_tool"
         ],
+        "use_case_id": "uc_ticket_critical",
         "category": "configuration",
         "question": "Which ticketing tool should receive auto-created investigation tickets?",
         "type": "select",
@@ -282,7 +288,7 @@
         "maps_to": "persona.connectors[ticketing_tool].credential_fields[provider].value",
         "variable_name": "ticketing_tool_provider",
         "context": "Auto-detected from your Vault's project-management credentials (Linear, Jira, GitHub Issues). Skip this to run without auto-ticketing — Critical signals still surface in Messages.",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

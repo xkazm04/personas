@@ -183,6 +183,7 @@
         "use_case_ids": [
           "uc_intake_triage"
         ],
+        "use_case_id": "uc_intake_triage",
         "category": "intent",
         "question": "What is the primary type of email this processor should focus on?",
         "type": "select",
@@ -197,7 +198,7 @@
         "maps_to": "use_cases[uc_intake_triage].sample_input.focus_type",
         "variable_name": "focus_type",
         "context": "Biases the classification vocabulary and routing priority rules — the agent still handles other types, but weights signals toward the focus.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_confidential_categories",
@@ -206,6 +207,7 @@
           "uc_intake_triage",
           "uc_notion_tracking"
         ],
+        "use_case_id": "uc_intake_triage",
         "category": "boundaries",
         "question": "Which email types should NEVER be auto-posted to the messaging channel or logged in knowledge base?",
         "type": "select",
@@ -220,7 +222,7 @@
         "maps_to": "use_cases[uc_intake_triage].sample_input.confidential_categories",
         "variable_name": "confidential_categories",
         "context": "Hard guardrail: emails matching these categories bypass the messaging and knowledge base steps regardless of urgency or sender memory.",
-        "dimension": "error-handling"
+        "dimension": "error"
       },
       {
         "id": "aq_urgency_signals",
@@ -228,6 +230,7 @@
         "use_case_ids": [
           "uc_intake_triage"
         ],
+        "use_case_id": "uc_intake_triage",
         "category": "configuration",
         "question": "What urgency signals should trigger immediate high-priority routing?",
         "type": "select",
@@ -241,7 +244,7 @@
         "maps_to": "use_cases[uc_intake_triage].sample_input.urgency_signals",
         "variable_name": "urgency_signals",
         "context": "Determines when the agent routes directly to #intake-urgent instead of the topic-matched channel.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_sender_seed",
@@ -249,6 +252,7 @@
         "use_case_ids": [
           "uc_intake_triage"
         ],
+        "use_case_id": "uc_intake_triage",
         "category": "memory",
         "question": "Optional: list known sender domains or addresses to pre-classify (one per line, e.g., @acme.com → Sales, support@vendor.com → Ops). Leave blank to let the agent learn from scratch.",
         "type": "textarea",
@@ -264,6 +268,7 @@
         "use_case_ids": [
           "uc_intake_triage"
         ],
+        "use_case_id": "uc_intake_triage",
         "category": "connectors",
         "question": "Which messaging channels should catch unclassified or low-confidence emails?",
         "type": "select",
@@ -271,7 +276,7 @@
         "maps_to": "use_cases[uc_intake_triage].sample_input.fallback_channel",
         "variable_name": "fallback_channel",
         "context": "The agent posts here when no category matches or when classification confidence is below 60%. Category-matched channels (#intake-support, #intake-sales, etc.) are derived from the topic and don't need explicit configuration.",
-        "dimension": "connectors",
+        "dimension": "message",
         "vault_category": "messaging",
         "option_service_types": [
           "slack"
@@ -288,6 +293,7 @@
         "use_case_ids": [
           "uc_intake_triage"
         ],
+        "use_case_id": "uc_intake_triage",
         "category": "quality",
         "question": "How verbose should messaging summaries be?",
         "type": "select",
@@ -300,11 +306,12 @@
         "maps_to": "use_cases[uc_intake_triage].sample_input.summary_format",
         "variable_name": "summary_format",
         "context": "Matches your team's preferred signal-to-noise ratio in the messaging channel.",
-        "dimension": "use-cases"
+        "dimension": "message"
       },
       {
         "id": "aq_email_credential",
         "scope": "connector",
+        "use_case_id": "uc_intake_triage",
         "connector_names": [
           "email"
         ],
@@ -319,11 +326,12 @@
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
         "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_messaging_credential",
         "scope": "connector",
+        "use_case_id": "uc_intake_triage",
         "connector_names": [
           "messaging"
         ],
@@ -338,11 +346,12 @@
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
         "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_knowledge_base_credential",
         "scope": "connector",
+        "use_case_id": "uc_notion_tracking",
         "connector_names": [
           "knowledge_base"
         ],
@@ -357,7 +366,7 @@
         "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
         "variable_name": "knowledge_base_credential",
         "context": "Options are auto-detected from your knowledge_base credentials in the Vault (knowledge base, knowledge base, Obsidian, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

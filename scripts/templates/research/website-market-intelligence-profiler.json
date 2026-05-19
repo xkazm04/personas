@@ -135,6 +135,7 @@
         "use_case_ids": [
           "uc_profile_urls"
         ],
+        "use_case_id": "uc_profile_urls",
         "category": "domain",
         "question": "What signals matter most for your profiling, and what should the Tech Signals dimension prioritize?",
         "type": "textarea",
@@ -143,7 +144,7 @@
         "maps_to": "use_cases[uc_profile_urls].sample_input.profiling_intent",
         "variable_name": "profiling_intent",
         "context": "Free-form. Tells the persona which dimensions carry weight, any taxonomy preferences, and what counts as an interesting signal for your team.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_batch_size",
@@ -151,6 +152,7 @@
         "use_case_ids": [
           "uc_profile_urls"
         ],
+        "use_case_id": "uc_profile_urls",
         "category": "quality",
         "question": "How many URLs should be processed per batch?",
         "type": "select",
@@ -164,7 +166,7 @@
         "maps_to": "use_cases[uc_profile_urls].sample_input.batch_size",
         "variable_name": "batch_size",
         "context": "Smaller batches are gentler on target sites and less likely to trigger rate limits. 10 is a good default.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_source_provider",
@@ -172,6 +174,7 @@
         "connector_names": [
           "source_list"
         ],
+        "use_case_id": "uc_profile_urls",
         "category": "configuration",
         "question": "Where should the URL list be read from (and classifications written back to)?",
         "type": "select",
@@ -183,7 +186,7 @@
         "maps_to": "persona.connectors[source_list].credential_fields[provider].value",
         "variable_name": "source_list_provider",
         "context": "Auto-detected from your Vault's database-category credentials (Google Sheets, Postgres, DuckDB). Add one in Vault → Catalog if the list is empty.",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

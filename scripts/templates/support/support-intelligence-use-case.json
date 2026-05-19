@@ -188,6 +188,7 @@
       {
         "id": "aq_intent",
         "scope": "persona",
+        "use_case_id": "uc_ticket_triage",
         "category": "configuration",
         "question": "How should Support Intelligence work for your team?",
         "type": "textarea",
@@ -195,7 +196,7 @@
         "maps_to": "persona.goal",
         "variable_name": "intent",
         "context": "Free-form intent the persona re-reads each run: emphasize, suppress, tone, auto-reply boundaries.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_confidence_threshold",
@@ -203,6 +204,7 @@
         "use_case_ids": [
           "uc_ticket_triage"
         ],
+        "use_case_id": "uc_ticket_triage",
         "category": "quality",
         "question": "Minimum KB match confidence to surface an auto-suggestion?",
         "type": "select",
@@ -216,7 +218,7 @@
         "maps_to": "use_cases[uc_ticket_triage].sample_input.confidence_threshold",
         "variable_name": "confidence_threshold",
         "context": "Higher = fewer, more precise suggestions. Lower = more volume, more noise.",
-        "dimension": "human-review"
+        "dimension": "review"
       },
       {
         "id": "aq_auto_reply_mode",
@@ -224,6 +226,7 @@
         "use_case_ids": [
           "uc_ticket_triage"
         ],
+        "use_case_id": "uc_ticket_triage",
         "category": "boundaries",
         "question": "Should the agent ever post a reply directly to the customer?",
         "type": "select",
@@ -236,7 +239,7 @@
         "maps_to": "use_cases[uc_ticket_triage].sample_input.auto_reply_mode",
         "variable_name": "auto_reply_mode",
         "context": "suggest_only = internal notes + drafts only (recommended). auto_reply_low_medium = low/med tickets reply automatically. auto_reply_all_high_conf = all tiers auto-reply above confidence threshold.",
-        "dimension": "human-review"
+        "dimension": "review"
       },
       {
         "id": "aq_escalation_channel",
@@ -245,6 +248,7 @@
           "uc_ticket_triage",
           "uc_sla_watch"
         ],
+        "use_case_id": "uc_ticket_triage",
         "category": "configuration",
         "question": "Which messaging channels receives Critical/High escalations and SLA warnings?",
         "type": "select",
@@ -253,7 +257,7 @@
         "maps_to": "use_cases[uc_ticket_triage].sample_input.escalation_channel",
         "variable_name": "escalation_channel",
         "context": "High-urgency routing lands here. Use a dedicated channel — this gets loud during incidents.",
-        "dimension": "messages",
+        "dimension": "message",
         "vault_category": "messaging",
         "option_service_types": [
           "slack"
@@ -270,6 +274,7 @@
         "use_case_ids": [
           "uc_ticket_triage"
         ],
+        "use_case_id": "uc_ticket_triage",
         "category": "configuration",
         "question": "Which messaging channels receives routine triage summaries and auto-suggestions?",
         "type": "select",
@@ -278,7 +283,7 @@
         "maps_to": "use_cases[uc_ticket_triage].sample_input.triage_channel",
         "variable_name": "triage_channel",
         "context": "Medium/Low tickets and auto-suggestions post here. Keep this separate from the escalation channel.",
-        "dimension": "messages",
+        "dimension": "message",
         "vault_category": "messaging",
         "option_service_types": [
           "slack"
@@ -295,6 +300,7 @@
         "use_case_ids": [
           "uc_ticket_triage"
         ],
+        "use_case_id": "uc_ticket_triage",
         "category": "messages",
         "question": "messaging user ID for Critical-escalation DMs?",
         "type": "text",
@@ -302,7 +308,7 @@
         "maps_to": "use_cases[uc_ticket_triage].sample_input.lead_user_id",
         "variable_name": "lead_user_id",
         "context": "On Critical + no-KB-match, this person gets a DM in addition to the channel post. Leave blank to skip DMs.",
-        "dimension": "messages"
+        "dimension": "message"
       },
       {
         "id": "aq_sla_critical_minutes",
@@ -310,6 +316,7 @@
         "use_case_ids": [
           "uc_sla_watch"
         ],
+        "use_case_id": "uc_sla_watch",
         "category": "configuration",
         "question": "SLA minutes for Critical tickets (first-response)?",
         "type": "select",
@@ -323,11 +330,12 @@
         "maps_to": "use_cases[uc_sla_watch].sample_input.sla_critical_minutes",
         "variable_name": "sla_critical_minutes",
         "context": "Warning fires at half the remaining SLA. Tighten for enterprise commitments.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_messaging_credential",
         "scope": "connector",
+        "use_case_id": "uc_ticket_triage",
         "connector_names": [
           "messaging"
         ],
@@ -342,11 +350,12 @@
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
         "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_knowledge_base_credential",
         "scope": "connector",
+        "use_case_id": "uc_ticket_triage",
         "connector_names": [
           "knowledge_base"
         ],
@@ -361,7 +370,7 @@
         "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
         "variable_name": "knowledge_base_credential",
         "context": "Options are auto-detected from your knowledge_base credentials in the Vault (knowledge base, knowledge base, Obsidian, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {
