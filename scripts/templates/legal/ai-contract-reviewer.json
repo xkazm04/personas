@@ -194,6 +194,7 @@
         "use_case_ids": [
           "uc_analyze_contract"
         ],
+        "use_case_id": "uc_analyze_contract",
         "category": "domain",
         "question": "What types of contracts do you review most frequently?",
         "type": "select",
@@ -212,7 +213,7 @@
         "maps_to": "use_cases[uc_analyze_contract].sample_input.contract_types",
         "variable_name": "contract_types",
         "context": "Shapes which clause patterns and risk factors the six-pass analysis emphasizes.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_risk_tolerance",
@@ -220,6 +221,7 @@
         "use_case_ids": [
           "uc_analyze_contract"
         ],
+        "use_case_id": "uc_analyze_contract",
         "category": "configuration",
         "question": "What is your organization's general risk tolerance for contract terms?",
         "type": "select",
@@ -232,7 +234,7 @@
         "maps_to": "use_cases[uc_analyze_contract].sample_input.risk_tolerance",
         "variable_name": "risk_tolerance",
         "context": "Controls red-flag sensitivity and risk-rating thresholds.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_gmail_label",
@@ -240,6 +242,7 @@
         "use_case_ids": [
           "uc_analyze_contract"
         ],
+        "use_case_id": "uc_analyze_contract",
         "category": "configuration",
         "question": "What email tags/folders will you use for contracts submitted for review?",
         "type": "select",
@@ -248,7 +251,7 @@
         "maps_to": null,
         "variable_name": "gmail_label",
         "context": "Create this label in email and apply it to emails containing contracts you want analyzed. The picker lists labels on your configured email account.",
-        "dimension": "connectors",
+        "dimension": "connector",
         "option_service_types": [
           "gmail"
         ],
@@ -264,6 +267,7 @@
         "use_case_ids": [
           "uc_publish_and_alert"
         ],
+        "use_case_id": "uc_publish_and_alert",
         "category": "configuration",
         "question": "What messaging channels should high-risk contract alerts be posted to?",
         "type": "select",
@@ -272,7 +276,7 @@
         "maps_to": "use_cases[uc_publish_and_alert].sample_input.legal_team_channel",
         "variable_name": "legal_team_channel",
         "context": "The messaging channels where your legal team monitors alerts. Picker lists channels on your configured messaging workspaces.",
-        "dimension": "connectors",
+        "dimension": "connector",
         "option_service_types": [
           "slack"
         ],
@@ -288,6 +292,7 @@
         "use_case_ids": [
           "uc_deadline_reminders"
         ],
+        "use_case_id": "uc_deadline_reminders",
         "category": "configuration",
         "question": "Who should receive deadline reminders besides the original submitter?",
         "type": "text",
@@ -296,11 +301,12 @@
         "maps_to": "use_cases[uc_deadline_reminders].sample_input.reminder_recipients",
         "variable_name": "reminder_recipients",
         "context": "Comma-separated email addresses. Leave blank for submitter-only reminders.",
-        "dimension": "messages"
+        "dimension": "message"
       },
       {
         "id": "aq_email_credential",
         "scope": "connector",
+        "use_case_id": "uc_analyze_contract",
         "connector_names": [
           "email"
         ],
@@ -315,11 +321,12 @@
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
         "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_knowledge_base_credential",
         "scope": "connector",
+        "use_case_id": "uc_publish_and_alert",
         "connector_names": [
           "knowledge_base"
         ],
@@ -334,11 +341,12 @@
         "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
         "variable_name": "knowledge_base_credential",
         "context": "Options are auto-detected from your knowledge_base credentials in the Vault (knowledge base, knowledge base, Obsidian, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_messaging_credential",
         "scope": "connector",
+        "use_case_id": "uc_publish_and_alert",
         "connector_names": [
           "messaging"
         ],
@@ -353,7 +361,7 @@
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
         "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

@@ -201,6 +201,7 @@
       {
         "id": "aq_editorial_scope",
         "scope": "persona",
+        "use_case_id": "uc_sync",
         "category": "intent",
         "question": "What is the primary editorial operation you want this agent to optimize?",
         "type": "select",
@@ -214,11 +215,12 @@
         "maps_to": null,
         "variable_name": "editorial_scope",
         "context": "Shapes reminder tone, report framing, and what the gap analysis considers a balanced schedule.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_team_size",
         "scope": "persona",
+        "use_case_id": "uc_sync",
         "category": "domain",
         "question": "How many active writers or contributors does your editorial calendar typically track at once?",
         "type": "select",
@@ -232,7 +234,7 @@
         "maps_to": null,
         "variable_name": "team_size",
         "context": "Affects reminder batching, report verbosity, and whether the agent highlights cross-writer deadline clusters.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_reminder_tiers",
@@ -240,6 +242,7 @@
         "use_case_ids": [
           "uc_reminders"
         ],
+        "use_case_id": "uc_reminders",
         "category": "configuration",
         "question": "At what intervals before a deadline should the agent send reminder emails to writers?",
         "type": "select",
@@ -253,7 +256,7 @@
         "maps_to": "use_cases[uc_reminders].sample_input.tier_schedule",
         "variable_name": "reminder_tiers",
         "context": "Sets the tier schedule for the reminder pipeline. Writers flagged as late-shipping get bumped one tier earlier automatically.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_boundaries",
@@ -261,6 +264,7 @@
         "use_case_ids": [
           "uc_reminders"
         ],
+        "use_case_id": "uc_reminders",
         "category": "boundaries",
         "question": "Which writer communications should the agent NEVER send without your explicit approval?",
         "type": "select",
@@ -274,7 +278,7 @@
         "maps_to": null,
         "variable_name": "reminder_boundaries",
         "context": "Defines hard guardrails on automated writer outreach. Sensitive communications route through the review step before send.",
-        "dimension": "error-handling"
+        "dimension": "error"
       },
       {
         "id": "aq_report_recipients",
@@ -282,6 +286,7 @@
         "use_case_ids": [
           "uc_weekly_report"
         ],
+        "use_case_id": "uc_weekly_report",
         "category": "configuration",
         "question": "Who should receive the weekly editorial status report?",
         "type": "select",
@@ -295,7 +300,7 @@
         "maps_to": "use_cases[uc_weekly_report].sample_input.recipients",
         "variable_name": "report_recipients",
         "context": "Determines the distribution list for the Monday report. External stakeholders trigger the staging review policy.",
-        "dimension": "messages"
+        "dimension": "message"
       },
       {
         "id": "aq_content_types",
@@ -304,6 +309,7 @@
           "uc_sync",
           "uc_weekly_report"
         ],
+        "use_case_id": "uc_sync",
         "category": "domain",
         "question": "What content types does your knowledge base editorial calendar track?",
         "type": "select",
@@ -317,7 +323,7 @@
         "maps_to": null,
         "variable_name": "content_types",
         "context": "Shapes sync categorization and what the gap analysis considers a balanced schedule.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_gap_alert_mode",
@@ -325,6 +331,7 @@
         "use_case_ids": [
           "uc_weekly_report"
         ],
+        "use_case_id": "uc_weekly_report",
         "category": "human_in_the_loop",
         "question": "When the agent detects a content gap (e.g., a week with no scheduled posts), what should it do?",
         "type": "select",
@@ -338,11 +345,12 @@
         "maps_to": "use_cases[uc_weekly_report].sample_input.gap_alert_mode",
         "variable_name": "gap_alert_mode",
         "context": "Controls how assertive the agent is when schedule gaps surface between weekly reports.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_knowledge_base_credential",
         "scope": "connector",
+        "use_case_id": "uc_sync",
         "connector_names": [
           "knowledge_base"
         ],
@@ -357,11 +365,12 @@
         "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
         "variable_name": "knowledge_base_credential",
         "context": "Options are auto-detected from your knowledge_base credentials in the Vault (knowledge base, knowledge base, Obsidian, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_spreadsheet_credential",
         "scope": "connector",
+        "use_case_id": "uc_sync",
         "connector_names": [
           "spreadsheet"
         ],
@@ -376,11 +385,12 @@
         "maps_to": "persona.connectors[spreadsheet].credential_fields[provider].value",
         "variable_name": "spreadsheet_credential",
         "context": "Options are auto-detected from your spreadsheet credentials in the Vault (spreadsheet, spreadsheet, spreadsheet, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_email_credential",
         "scope": "connector",
+        "use_case_id": "uc_reminders",
         "connector_names": [
           "email"
         ],
@@ -395,7 +405,7 @@
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
         "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

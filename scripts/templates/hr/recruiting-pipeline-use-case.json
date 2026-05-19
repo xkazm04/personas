@@ -184,6 +184,7 @@
         "use_case_ids": [
           "uc_stage_transitions"
         ],
+        "use_case_id": "uc_stage_transitions",
         "category": "intent",
         "question": "Which candidate-facing email touchpoints should the agent send autonomously?",
         "type": "select",
@@ -197,7 +198,7 @@
         "maps_to": "use_cases[uc_stage_transitions].sample_input.email_scope",
         "variable_name": "email_scope",
         "context": "Offer emails are always gated by manual review regardless of this setting — this controls the rest of the lifecycle.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_volume_tier",
@@ -205,6 +206,7 @@
         "use_case_ids": [
           "uc_stage_transitions"
         ],
+        "use_case_id": "uc_stage_transitions",
         "category": "domain",
         "question": "What is your typical monthly hiring volume and how many open roles does this agent track simultaneously?",
         "type": "select",
@@ -217,7 +219,7 @@
         "maps_to": "use_cases[uc_stage_transitions].sample_input.volume_tier",
         "variable_name": "volume_tier",
         "context": "Affects state management complexity and whether per-role or team-level messaging channels are appropriate.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_hard_boundary",
@@ -225,6 +227,7 @@
         "use_case_ids": [
           "uc_stage_transitions"
         ],
+        "use_case_id": "uc_stage_transitions",
         "category": "boundaries",
         "question": "What should the agent NEVER do without explicit human instruction?",
         "type": "select",
@@ -238,7 +241,7 @@
         "maps_to": "use_cases[uc_stage_transitions].sample_input.hard_boundary",
         "variable_name": "hard_boundary",
         "context": "Hard guardrail that overrides email_scope when the two conflict.",
-        "dimension": "error-handling"
+        "dimension": "error"
       },
       {
         "id": "aq_approval_scope",
@@ -246,6 +249,7 @@
         "use_case_ids": [
           "uc_offer_approval"
         ],
+        "use_case_id": "uc_offer_approval",
         "category": "human_in_the_loop",
         "question": "Which outgoing communications require a recruiter to approve the draft before sending?",
         "type": "select",
@@ -259,7 +263,7 @@
         "maps_to": "use_cases[uc_offer_approval].sample_input.approval_scope",
         "variable_name": "approval_scope",
         "context": "Offer emails are always gated by manual review. This question extends the gate to other sensitive communications.",
-        "dimension": "human-review"
+        "dimension": "review"
       },
       {
         "id": "aq_hiring_manager_mention",
@@ -267,6 +271,7 @@
         "use_case_ids": [
           "uc_offer_approval"
         ],
+        "use_case_id": "uc_offer_approval",
         "category": "configuration",
         "question": "When should the agent @-mention the hiring manager in the messaging channel?",
         "type": "select",
@@ -279,7 +284,7 @@
         "maps_to": "use_cases[uc_offer_approval].sample_input.hiring_manager_mention",
         "variable_name": "hiring_manager_mention",
         "context": "Limits hiring-manager notification noise to the moments that genuinely need their eyes.",
-        "dimension": "messages"
+        "dimension": "message"
       },
       {
         "id": "aq_slack_routing",
@@ -288,6 +293,7 @@
           "uc_stage_transitions",
           "uc_weekly_funnel_report"
         ],
+        "use_case_id": "uc_stage_transitions",
         "category": "connectors",
         "question": "Which messaging channels layout should receive candidate stage updates and the weekly report?",
         "type": "select",
@@ -301,7 +307,7 @@
         "maps_to": "use_cases[uc_stage_transitions].sample_input.slack_routing",
         "variable_name": "slack_routing",
         "context": "Shapes messaging routing and whether the agent needs to map roles → channels.",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_email_tone",
@@ -309,6 +315,7 @@
         "use_case_ids": [
           "uc_stage_transitions"
         ],
+        "use_case_id": "uc_stage_transitions",
         "category": "quality",
         "question": "What tone and personalization level should candidate emails use?",
         "type": "select",
@@ -322,7 +329,7 @@
         "maps_to": "use_cases[uc_stage_transitions].sample_input.email_tone",
         "variable_name": "email_tone",
         "context": "Sets the tone and creative latitude for every candidate-facing email.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_retention_policy",
@@ -330,6 +337,7 @@
         "use_case_ids": [
           "uc_weekly_funnel_report"
         ],
+        "use_case_id": "uc_weekly_funnel_report",
         "category": "memory",
         "question": "How long should the agent retain candidate history after a pipeline closes (hired or rejected)?",
         "type": "select",
@@ -351,6 +359,7 @@
         "use_case_ids": [
           "uc_stage_transitions"
         ],
+        "use_case_id": "uc_stage_transitions",
         "category": "configuration",
         "question": "Which email address should send all candidate and hiring team communications?",
         "type": "text",
@@ -358,7 +367,7 @@
         "maps_to": "use_cases[uc_stage_transitions].sample_input.sender_alias",
         "variable_name": "sender_alias",
         "context": "Branded sender identity for outbound emails — candidates and hiring managers see a consistent recruiting address rather than a personal account.",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_report_recipients",
@@ -366,6 +375,7 @@
         "use_case_ids": [
           "uc_weekly_funnel_report"
         ],
+        "use_case_id": "uc_weekly_funnel_report",
         "category": "messages",
         "question": "Who should receive the emailed weekly funnel report?",
         "type": "text",
@@ -373,11 +383,12 @@
         "maps_to": "use_cases[uc_weekly_funnel_report].sample_input.report_recipients",
         "variable_name": "report_recipients",
         "context": "Distribution list for the Monday email. The messaging post goes to the hiring channel in parallel.",
-        "dimension": "messages"
+        "dimension": "message"
       },
       {
         "id": "aq_email_credential",
         "scope": "connector",
+        "use_case_id": "uc_stage_transitions",
         "connector_names": [
           "email"
         ],
@@ -392,11 +403,12 @@
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
         "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_messaging_credential",
         "scope": "connector",
+        "use_case_id": "uc_stage_transitions",
         "connector_names": [
           "messaging"
         ],
@@ -411,7 +423,7 @@
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
         "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

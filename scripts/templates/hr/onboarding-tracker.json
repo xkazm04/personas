@@ -139,6 +139,7 @@
         "use_case_ids": [
           "uc_deadline_check"
         ],
+        "use_case_id": "uc_deadline_check",
         "category": "configuration",
         "question": "How many days before a deadline should the first reminder fire?",
         "type": "select",
@@ -153,7 +154,7 @@
         "maps_to": "use_cases[uc_deadline_check].sample_input.reminder_days_before_deadline",
         "variable_name": "reminder_days",
         "context": "Earlier reminders give assignees more time but may feel premature on long-deadline tasks.",
-        "dimension": "messages"
+        "dimension": "message"
       },
       {
         "id": "aq_max_overdue",
@@ -161,6 +162,7 @@
         "use_case_ids": [
           "uc_deadline_check"
         ],
+        "use_case_id": "uc_deadline_check",
         "category": "boundaries",
         "question": "How many overdue reminders per task before HR escalation?",
         "type": "select",
@@ -173,11 +175,12 @@
         "maps_to": "use_cases[uc_deadline_check].sample_input.max_overdue_alerts_per_task",
         "variable_name": "max_overdue",
         "context": "Alert #1 notifies assignee, #2 CCs manager, final alert escalates to HR. Fewer alerts = faster escalation; more = more chance to self-resolve.",
-        "dimension": "error-handling"
+        "dimension": "error"
       },
       {
         "id": "aq_tone",
         "scope": "persona",
+        "use_case_id": "uc_new_hire_setup",
         "category": "domain",
         "question": "How formal should reminders and reports read?",
         "type": "select",
@@ -190,11 +193,12 @@
         "maps_to": "persona.voice.style",
         "variable_name": "voice_tone",
         "context": "Affects how every user-facing message reads across all capabilities.",
-        "dimension": "voice"
+        "dimension": "task"
       },
       {
         "id": "aq_knowledge_base_credential",
         "scope": "connector",
+        "use_case_id": "uc_new_hire_setup",
         "connector_names": [
           "knowledge_base"
         ],
@@ -209,7 +213,7 @@
         "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
         "variable_name": "knowledge_base_credential",
         "context": "Options are auto-detected from your knowledge_base credentials in the Vault (knowledge base, knowledge base, Obsidian, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

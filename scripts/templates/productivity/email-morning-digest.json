@@ -113,6 +113,7 @@
         "use_case_ids": [
           "uc_morning_digest"
         ],
+        "use_case_id": "uc_morning_digest",
         "category": "configuration",
         "question": "Which email categories should the scan include?",
         "type": "select",
@@ -126,7 +127,7 @@
         "maps_to": "use_cases[uc_morning_digest].sample_input.gmail_categories",
         "variable_name": "gmail_categories",
         "context": "Primary-only keeps the digest focused on person-to-person communication.",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_max_emails",
@@ -134,6 +135,7 @@
         "use_case_ids": [
           "uc_morning_digest"
         ],
+        "use_case_id": "uc_morning_digest",
         "category": "domain",
         "question": "How many emails should the digest include at most?",
         "type": "select",
@@ -147,7 +149,7 @@
         "maps_to": "use_cases[uc_morning_digest].sample_input.max_digest_emails",
         "variable_name": "max_digest_emails",
         "context": "More emails = broader coverage but longer read.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_summary_depth",
@@ -155,6 +157,7 @@
         "use_case_ids": [
           "uc_morning_digest"
         ],
+        "use_case_id": "uc_morning_digest",
         "category": "domain",
         "question": "How detailed should email summaries be?",
         "type": "select",
@@ -168,7 +171,7 @@
         "maps_to": "use_cases[uc_morning_digest].sample_input.summary_depth",
         "variable_name": "summary_depth",
         "context": "Shorter summaries keep the digest scannable.",
-        "dimension": "messages"
+        "dimension": "message"
       },
       {
         "id": "aq_include_automated",
@@ -176,6 +179,7 @@
         "use_case_ids": [
           "uc_morning_digest"
         ],
+        "use_case_id": "uc_morning_digest",
         "category": "boundaries",
         "question": "Should the digest include emails from automated senders (GitHub, Jira, CI/CD bots)?",
         "type": "select",
@@ -189,7 +193,7 @@
         "maps_to": "use_cases[uc_morning_digest].sample_input.automated_policy",
         "variable_name": "automated_policy",
         "context": "Automated notifications can dominate by volume.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_memory_learning",
@@ -197,6 +201,7 @@
         "use_case_ids": [
           "uc_morning_digest"
         ],
+        "use_case_id": "uc_morning_digest",
         "category": "quality",
         "question": "Should the agent learn and improve sender importance rankings over time?",
         "type": "boolean",
@@ -210,6 +215,7 @@
       {
         "id": "aq_tone",
         "scope": "persona",
+        "use_case_id": "uc_morning_digest",
         "category": "domain",
         "question": "How formal should the digest read?",
         "type": "select",
@@ -222,11 +228,12 @@
         "maps_to": "persona.voice.style",
         "variable_name": "voice_tone",
         "context": "Influences the summariser's register across every capability.",
-        "dimension": "voice"
+        "dimension": "task"
       },
       {
         "id": "aq_email_credential",
         "scope": "connector",
+        "use_case_id": "uc_morning_digest",
         "connector_names": [
           "email"
         ],
@@ -241,7 +248,7 @@
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
         "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {

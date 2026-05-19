@@ -234,6 +234,7 @@
       {
         "id": "aq_primary_problem",
         "scope": "persona",
+        "use_case_id": "uc_process_events",
         "category": "intent",
         "question": "What is the primary contract management problem this agent should solve?",
         "type": "select",
@@ -247,11 +248,12 @@
         "maps_to": null,
         "variable_name": "primary_problem",
         "context": "Determines which capabilities to prioritize and how aggressively to configure reminders versus renewal alerts.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_contract_portfolio",
         "scope": "persona",
+        "use_case_id": "uc_process_events",
         "category": "domain",
         "question": "What types of contracts does your team manage?",
         "type": "select",
@@ -265,11 +267,12 @@
         "maps_to": null,
         "variable_name": "contract_portfolio",
         "context": "Shapes how the agent labels and routes contract events in spreadsheet and messaging notifications.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_owning_team",
         "scope": "persona",
+        "use_case_id": "uc_process_events",
         "category": "domain",
         "question": "Which team owns contract operations at your organization?",
         "type": "select",
@@ -284,7 +287,7 @@
         "maps_to": null,
         "variable_name": "owning_team",
         "context": "Determines messaging channels routing, escalation contacts, and tone of reminder communications.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_reminder_thresholds_remind",
@@ -292,6 +295,7 @@
         "use_case_ids": [
           "uc_reminder_sweep"
         ],
+        "use_case_id": "uc_reminder_sweep",
         "category": "configuration",
         "question": "After how many days unsigned should the agent start reminding the signer?",
         "type": "select",
@@ -305,7 +309,7 @@
         "maps_to": "use_cases[uc_reminder_sweep].sample_input.remind_threshold_days",
         "variable_name": "reminder_thresholds_remind",
         "context": "First-tier threshold for the unsigned-contract reminder ladder.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_reminder_thresholds_escalate",
@@ -313,6 +317,7 @@
         "use_case_ids": [
           "uc_reminder_sweep"
         ],
+        "use_case_id": "uc_reminder_sweep",
         "category": "configuration",
         "question": "After how many days unsigned should reminders escalate to the contract owner?",
         "type": "select",
@@ -326,7 +331,7 @@
         "maps_to": "use_cases[uc_reminder_sweep].sample_input.escalate_threshold_days",
         "variable_name": "reminder_thresholds_escalate",
         "context": "Escalation threshold — past this point, direct signer reminders stop and the contract owner gets pinged via direct messages + email.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_renewal_tiers",
@@ -334,6 +339,7 @@
         "use_case_ids": [
           "uc_renewal_monitor"
         ],
+        "use_case_id": "uc_renewal_monitor",
         "category": "configuration",
         "question": "At what renewal lead times should the agent send tiered notifications?",
         "type": "select",
@@ -346,7 +352,7 @@
         "maps_to": "use_cases[uc_renewal_monitor].sample_input.renewal_tiers_days",
         "variable_name": "renewal_tiers",
         "context": "Sets the lookahead tiers for the renewal monitoring sweep.",
-        "dimension": "use-cases"
+        "dimension": "task"
       },
       {
         "id": "aq_completed_channel",
@@ -354,6 +360,7 @@
         "use_case_ids": [
           "uc_process_events"
         ],
+        "use_case_id": "uc_process_events",
         "category": "configuration",
         "question": "Which messaging channels should receive completed / signed contract celebrations?",
         "type": "select",
@@ -362,7 +369,7 @@
         "maps_to": "use_cases[uc_process_events].sample_input.completed_channel",
         "variable_name": "completed_channel",
         "context": "Picker lists channels on your configured messaging workspaces.",
-        "dimension": "connectors",
+        "dimension": "connector",
         "option_service_types": [
           "slack"
         ],
@@ -378,6 +385,7 @@
         "use_case_ids": [
           "uc_process_events"
         ],
+        "use_case_id": "uc_process_events",
         "category": "configuration",
         "question": "Which messaging channels should receive declined-contract and urgent alerts?",
         "type": "select",
@@ -386,7 +394,7 @@
         "maps_to": "use_cases[uc_process_events].sample_input.alerts_channel",
         "variable_name": "alerts_channel",
         "context": "Picker lists channels on your configured messaging workspaces.",
-        "dimension": "connectors",
+        "dimension": "connector",
         "option_service_types": [
           "slack"
         ],
@@ -402,6 +410,7 @@
         "use_case_ids": [
           "uc_process_events"
         ],
+        "use_case_id": "uc_process_events",
         "category": "configuration",
         "question": "Which messaging channels should receive stale unsigned-contract nudges?",
         "type": "select",
@@ -410,7 +419,7 @@
         "maps_to": "use_cases[uc_process_events].sample_input.pending_channel",
         "variable_name": "pending_channel",
         "context": "Picker lists channels on your configured messaging workspaces.",
-        "dimension": "connectors",
+        "dimension": "connector",
         "option_service_types": [
           "slack"
         ],
@@ -426,6 +435,7 @@
         "use_case_ids": [
           "uc_process_events"
         ],
+        "use_case_id": "uc_process_events",
         "category": "configuration",
         "question": "Which messaging channels should receive the new-envelope activity feed?",
         "type": "select",
@@ -434,7 +444,7 @@
         "maps_to": "use_cases[uc_process_events].sample_input.activity_channel",
         "variable_name": "activity_channel",
         "context": "Low-priority awareness feed. Picker lists channels on your configured messaging workspaces.",
-        "dimension": "connectors",
+        "dimension": "connector",
         "option_service_types": [
           "slack"
         ],
@@ -450,6 +460,7 @@
         "use_case_ids": [
           "uc_renewal_monitor"
         ],
+        "use_case_id": "uc_renewal_monitor",
         "category": "configuration",
         "question": "Which messaging channels should receive upcoming renewal notifications?",
         "type": "select",
@@ -458,7 +469,7 @@
         "maps_to": "use_cases[uc_renewal_monitor].sample_input.renewals_channel",
         "variable_name": "renewals_channel",
         "context": "Picker lists channels on your configured messaging workspaces.",
-        "dimension": "connectors",
+        "dimension": "connector",
         "option_service_types": [
           "slack"
         ],
@@ -471,6 +482,7 @@
       {
         "id": "aq_boundaries",
         "scope": "persona",
+        "use_case_id": "uc_process_events",
         "category": "boundaries",
         "question": "What should this agent NEVER do autonomously?",
         "type": "select",
@@ -484,7 +496,7 @@
         "maps_to": null,
         "variable_name": "boundaries",
         "context": "Hard stops to prevent high-stakes irreversible actions without human oversight.",
-        "dimension": "error-handling"
+        "dimension": "error"
       },
       {
         "id": "aq_human_approval",
@@ -493,6 +505,7 @@
           "uc_reminder_sweep",
           "uc_renewal_monitor"
         ],
+        "use_case_id": "uc_reminder_sweep",
         "category": "human_in_the_loop",
         "question": "Which outbound communications require human approval before the agent sends them?",
         "type": "select",
@@ -506,7 +519,7 @@
         "maps_to": null,
         "variable_name": "human_approval",
         "context": "Configures human-in-the-loop checkpoints to balance automation speed with oversight requirements.",
-        "dimension": "human-review"
+        "dimension": "review"
       },
       {
         "id": "aq_slack_verbosity",
@@ -514,6 +527,7 @@
         "use_case_ids": [
           "uc_process_events"
         ],
+        "use_case_id": "uc_process_events",
         "category": "quality",
         "question": "How verbose should messaging notifications be when contract status changes?",
         "type": "select",
@@ -527,11 +541,12 @@
         "maps_to": null,
         "variable_name": "slack_verbosity",
         "context": "Shapes messages verbosity to keep stakeholders informed without causing channel noise.",
-        "dimension": "messages"
+        "dimension": "message"
       },
       {
         "id": "aq_spreadsheet_credential",
         "scope": "connector",
+        "use_case_id": "uc_process_events",
         "connector_names": [
           "spreadsheet"
         ],
@@ -546,11 +561,12 @@
         "maps_to": "persona.connectors[spreadsheet].credential_fields[provider].value",
         "variable_name": "spreadsheet_credential",
         "context": "Options are auto-detected from your spreadsheet credentials in the Vault (spreadsheet, spreadsheet, spreadsheet, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_messaging_credential",
         "scope": "connector",
+        "use_case_id": "uc_process_events",
         "connector_names": [
           "messaging"
         ],
@@ -565,11 +581,12 @@
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
         "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       },
       {
         "id": "aq_email_credential",
         "scope": "connector",
+        "use_case_id": "uc_reminder_sweep",
         "connector_names": [
           "email"
         ],
@@ -584,7 +601,7 @@
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
         "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
-        "dimension": "connectors"
+        "dimension": "connector"
       }
     ],
     "persona_meta": {
