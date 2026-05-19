@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { Brain, Plus, Search, X, Sparkles, Shield } from 'lucide-react';
+import { Brain, Plus, Search, X, Sparkles, Shield, Layers, Table2, GitFork } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useAgentStore } from "@/stores/agentStore";
@@ -16,6 +16,66 @@ import MemoryDetailModal from './MemoryDetailModal';
 import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
 import { MEMORY_CATEGORY_COLORS, ALL_MEMORY_CATEGORIES } from '@/lib/utils/formatters';
 import type { PersonaMemory } from '@/lib/types/types';
+import MemoriesPageDense from './MemoriesPageDense';
+import MemoriesPageGraph from './MemoriesPageGraph';
+
+// -- Prototype tab switcher (throwaway scaffold) -----------------------------
+// Three directional variants of the same data + actions surface:
+//  - "baseline" - the current virtualized list (default)
+//  - "dense"    - numeric KPI strip + sortable 8-column matrix
+//  - "graph"    - SVG cluster layout, memories grouped by category
+type PrototypeVariant = 'baseline' | 'dense' | 'graph';
+
+const VARIANT_TABS: { key: PrototypeVariant; label: string; subtitle: string; icon: typeof Brain }[] = [
+  { key: 'baseline', label: 'Baseline', subtitle: 'current production layout', icon: Layers },
+  { key: 'dense', label: 'Dense', subtitle: 'KPI strip + sortable matrix', icon: Table2 },
+  { key: 'graph', label: 'Graph', subtitle: 'category clusters with persona edges', icon: GitFork },
+];
+
+export default function MemoriesPage() {
+  const [variant, setVariant] = useState<PrototypeVariant>('baseline');
+
+  return (
+    <div className="flex-1 min-h-0 flex flex-col w-full overflow-hidden">
+      <PrototypeTabStrip variant={variant} setVariant={setVariant} />
+      {variant === 'baseline' && <MemoriesPageBaseline />}
+      {variant === 'dense' && <MemoriesPageDense />}
+      {variant === 'graph' && <MemoriesPageGraph />}
+    </div>
+  );
+}
+
+function PrototypeTabStrip({ variant, setVariant }: { variant: PrototypeVariant; setVariant: (v: PrototypeVariant) => void }) {
+  return (
+    <div className="flex items-center gap-2 px-4 md:px-6 py-2 border-b border-primary/10 bg-secondary/10 flex-shrink-0">
+      <span className="typo-label text-foreground/60">Prototype</span>
+      <div className="flex items-center gap-1 rounded-modal border border-primary/15 bg-background/50 p-1">
+        {VARIANT_TABS.map((tab) => {
+          const Icon = tab.icon;
+          const active = variant === tab.key;
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setVariant(tab.key)}
+              title={tab.subtitle}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-input typo-body font-medium transition-all ${
+                active
+                  ? 'bg-primary/15 text-foreground border border-primary/25 shadow-elevation-1'
+                  : 'text-foreground/60 hover:text-foreground hover:bg-secondary/30 border border-transparent'
+              }`}
+            >
+              <Icon className="w-3.5 h-3.5" />
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+      <span className="typo-caption text-foreground/50 hidden md:inline">
+        {VARIANT_TABS.find((t) => t.key === variant)?.subtitle}
+      </span>
+    </div>
+  );
+}
 
 const CATEGORY_HEX_COLORS: Record<string, string> = {
   fact: '#3b82f6',
@@ -34,7 +94,7 @@ type ViewTab = 'memories' | 'conflicts';
 
 const GRID_COLUMNS = '180px minmax(0,2fr) 100px 80px 100px 40px';
 
-export default function MemoriesPage() {
+function MemoriesPageBaseline() {
   const { t } = useTranslation();
   const personas = useAgentStore((s) => s.personas);
   const {
