@@ -1,8 +1,9 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ChevronRight, AlertCircle } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { PersonaLayout } from '@/features/shared/glyph/persona-layout';
 import { PersonaSigilSummary, type PersonaSigilSummaryEntry } from '@/features/shared/glyph/persona-layout/PersonaSigilSummary';
+import { CapabilityTabBar } from '@/features/shared/glyph/persona-layout/CapabilityTabBar';
 import { GLYPH_DIMENSIONS } from '@/features/shared/glyph';
 import type { GlyphDimension } from '@/features/shared/glyph';
 import type { PetalState } from '@/features/shared/glyph/persona-sigil';
@@ -111,6 +112,16 @@ export function PersonaLayoutAdoption({
   // to first-unanswered in the new dim).
   const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null);
 
+  // Active capability for the per-cap tab strip. Default = first item;
+  // re-anchor when items load or the prior pick disappears. Drives:
+  //   - which capability the hero glyph renders
+  //   - which capability's questions feed the questionnaire flow
+  //   - which capability the left summary describes
+  // Single-cap templates skip the tab strip entirely (see capabilityTabs
+  // below) so a template like Email Morning Digest doesn't waste header
+  // height on a one-item nav.
+  const [activeCapabilityId, setActiveCapabilityId] = useState<string | null>(null);
+
   // Template use cases → display rows. Honour the include/skip toggle by
   // overriding `enabled` before the adapter computes the health pill.
   const items = useMemo<DisplayUseCase[]>(() => {
@@ -126,11 +137,43 @@ export function PersonaLayoutAdoption({
       .filter((u): u is DisplayUseCase => u !== null);
   }, [designResult, selectedUseCaseIds]);
 
+  // Re-anchor active capability when items load / change. Preserve the
+  // user's choice when still valid; only fall back to items[0] when the
+  // prior pick disappears (e.g. template re-fetch dropped a cap).
+  useEffect(() => {
+    if (items.length === 0) {
+      setActiveCapabilityId(null);
+      return;
+    }
+    if (!activeCapabilityId || !items.some((u) => u.id === activeCapabilityId)) {
+      setActiveCapabilityId(items[0]!.id);
+    }
+  }, [items, activeCapabilityId]);
+
+  // Questions filtered by the active capability. Each template question
+  // now carries `use_case_id` (sigil migration §1), so we keep only the
+  // ones bound to the active cap. When there's no active cap yet (first
+  // render before the effect fires) or a question lacks `use_case_id`
+  // for some reason, fall through to the unfiltered set so the user
+  // doesn't see an empty questionnaire on a stale shape.
+  const filteredQuestions = useMemo(() => {
+    if (!activeCapabilityId || items.length <= 1) return questions;
+    return questions.filter((q) => {
+      const ucId = (q as { use_case_id?: string }).use_case_id;
+      // Questions without use_case_id default to ALL caps (legacy shape
+      // fallback) — show them regardless.
+      if (!ucId) return true;
+      return ucId === activeCapabilityId;
+    });
+  }, [questions, activeCapabilityId, items.length]);
+
   // Questions grouped by their target dim — drives petal state + the
-  // answer-card's question stack on click.
+  // answer-card's question stack on click. Built from the cap-filtered
+  // set so the hero glyph + answer card see only the active cap's
+  // questions.
   const questionsByDim = useMemo(
-    () => groupQuestionsByDimension(questions),
-    [questions],
+    () => groupQuestionsByDimension(filteredQuestions),
+    [filteredQuestions],
   );
 
   // Petal states: pending when any question for the dim is unanswered,
@@ -188,12 +231,12 @@ export function PersonaLayoutAdoption({
   // indexed questions absolutely.
   const handleStoryJumpTo = useCallback(
     (idx: number) => {
-      const q = questions[idx];
+      const q = filteredQuestions[idx];
       if (!q) return;
       setActiveDim(questionToDimension(q));
       setActiveQuestionId(q.id);
     },
-    [questions],
+    [filteredQuestions],
   );
 
   // Header-band stepper click → same behaviour as the story thread.
@@ -203,10 +246,10 @@ export function PersonaLayoutAdoption({
   );
 
   const answeredCount = useMemo(
-    () => questions.filter((q) => !!userAnswers[q.id]).length,
-    [questions, userAnswers],
+    () => filteredQuestions.filter((q) => !!userAnswers[q.id]).length,
+    [filteredQuestions, userAnswers],
   );
-  const totalCount = questions.length;
+  const totalCount = filteredQuestions.length;
   // `blockedQuestionIds` is derived from the VAULT (matchVaultToQuestions)
   // and never inspects user answers — once a question has been picked
   // from the stackable options, the user has explicitly resolved it,
@@ -238,11 +281,11 @@ export function PersonaLayoutAdoption({
     // clicked. Falls back to the first question for the dim when the dim
     // was opened via petal click (no specific question targeted).
     if (activeQuestionId) {
-      const exact = questions.findIndex((q) => q.id === activeQuestionId);
+      const exact = filteredQuestions.findIndex((q) => q.id === activeQuestionId);
       if (exact >= 0) return exact;
     }
-    return questions.findIndex((q) => questionToDimension(q) === activeDim);
-  }, [questions, activeDim, activeQuestionId]);
+    return filteredQuestions.findIndex((q) => questionToDimension(q) === activeDim);
+  }, [filteredQuestions, activeDim, activeQuestionId]);
 
   // Summary sidebar entries — one row per dim with at least one answered
   // question. Each row shows the dim label (colored to match the petal)
@@ -261,7 +304,7 @@ export function PersonaLayoutAdoption({
       error: t.templates.chronology.dim_error_handling,
     };
     const byDim = new Map<GlyphDimension, string[]>();
-    for (const q of questions) {
+    for (const q of filteredQuestions) {
       const ans = userAnswers[q.id];
       if (!ans) continue;
       const dim = questionToDimension(q);
@@ -274,7 +317,7 @@ export function PersonaLayoutAdoption({
       out[dim] = { label: dimLabels[dim], value: values.join(' · ') };
     }
     return out;
-  }, [questions, userAnswers, t]);
+  }, [filteredQuestions, userAnswers, t]);
 
   const leftSlot = Object.keys(summaryEntries).length > 0 ? (
     <PersonaSigilSummary entries={summaryEntries} heading={null} />
@@ -288,7 +331,7 @@ export function PersonaLayoutAdoption({
   const rightSlot =
     totalCount > 0 ? (
       <QuestionnaireStoryThread
-        questions={questions}
+        questions={filteredQuestions}
         userAnswers={userAnswers}
         activeIdx={activeStoryIdx}
         autoDetectedIds={autoDetectedIds}
@@ -334,34 +377,61 @@ export function PersonaLayoutAdoption({
       </div>
     ) : null;
 
+  // Tab strip rendered above the questionnaire header band when the
+  // template ships more than one capability. Single-cap templates skip
+  // the strip (zero-info nav). On tab click, swap the active cap; the
+  // questionnaire below auto-filters via `filteredQuestions`. The
+  // existing pin state (activeDim + activeQuestionId) is cleared on
+  // cap change so the answer card lands fresh on the new cap's first
+  // unanswered question.
+  const handleActiveCapChange = useCallback(
+    (id: string) => {
+      setActiveCapabilityId(id);
+      setActiveDim(null);
+      setActiveQuestionId(null);
+    },
+    [],
+  );
+
+  const capabilityTabs = items.length > 1 ? (
+    <CapabilityTabBar
+      items={items}
+      activeId={activeCapabilityId}
+      onActiveChange={handleActiveCapChange}
+    />
+  ) : null;
+
   const topSlot =
     totalCount > 0 ? (
-      <div className="flex items-stretch gap-3 flex-wrap">
-        <div className="flex-1 min-w-0">
-          <QuestionnaireHeaderBand
-            templateName={templateName}
-            questions={questions}
-            userAnswers={userAnswers}
-            blockedQuestionIds={blockedQuestionIds}
-            activeIdx={activeStoryIdx}
-            answeredCount={answeredCount}
-            totalCount={totalCount}
-            blockedCount={blockedCount}
-            progressPct={progressPct}
-            onJumpTo={handleHeaderJumpTo}
-          />
+      <div className="flex flex-col gap-3">
+        {capabilityTabs}
+        <div className="flex items-stretch gap-3 flex-wrap">
+          <div className="flex-1 min-w-0">
+            <QuestionnaireHeaderBand
+              templateName={templateName}
+              questions={filteredQuestions}
+              userAnswers={userAnswers}
+              blockedQuestionIds={blockedQuestionIds}
+              activeIdx={activeStoryIdx}
+              answeredCount={answeredCount}
+              totalCount={totalCount}
+              blockedCount={blockedCount}
+              progressPct={progressPct}
+              onJumpTo={handleHeaderJumpTo}
+            />
+          </div>
+          {headerAction}
         </div>
-        {headerAction}
       </div>
-    ) : null;
+    ) : capabilityTabs;
 
   // Open the first unanswered question (regardless of which dim it
   // lands on) when the user clicks the center count-button.
   const openFirstUnanswered = useCallback(() => {
-    const next = questions.find((q) => !userAnswers[q.id]);
+    const next = filteredQuestions.find((q) => !userAnswers[q.id]);
     if (!next) return;
     setActiveDim(questionToDimension(next));
-  }, [questions, userAnswers]);
+  }, [filteredQuestions, userAnswers]);
 
   // Wide overlay — the answer card, positioned absolute over the sigil
   // stage so it can be wider than the sigil itself (target: ~1280px on
