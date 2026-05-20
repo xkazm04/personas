@@ -390,7 +390,14 @@ test('marathon-template', async () => {
         result.capability_results.push({ cap_id: capId, outcome: 'hard-fail', execution_id: row.id, detail: `execution-failed (${mode})` });
         continue;
       }
-      // Phase 7: minimal metadata check — at least one tool step
+      // Phase 7: metadata check. Real executions should produce at
+      // least one tool step. Simulations short-circuit real tool
+      // delivery (`_simulation: true`), so 0 tool steps is EXPECTED —
+      // a simulation that completed with a real model response
+      // (cost > 0) confirms the persona's prompt + tool metadata
+      // assembled correctly and the model engaged, which is the
+      // "metadata in place for real functionality" signal the marathon
+      // is after. So: execute → need tool steps; simulate → need cost.
       let toolStepCount = 0;
       if (row.tool_steps) {
         try {
@@ -398,13 +405,17 @@ test('marathon-template', async () => {
           if (Array.isArray(parsed)) toolStepCount = parsed.length;
         } catch { /* corrupt JSON */ }
       }
+      const modelRan = (row.cost_usd ?? 0) > 0;
+      const ok = mode === 'simulate' ? modelRan : toolStepCount > 0;
       result.capability_results.push({
         cap_id: capId,
-        outcome: toolStepCount > 0 ? 'pass' : 'soft-fail',
+        outcome: ok ? 'pass' : 'soft-fail',
         execution_id: row.id,
         tool_steps: toolStepCount,
         cost_usd: row.cost_usd,
-        detail: toolStepCount === 0 ? `empty-execution (${mode})` : `${mode}`,
+        detail: ok
+          ? (mode === 'simulate' ? 'simulate (model ran, tools stubbed)' : 'execute')
+          : (mode === 'simulate' ? 'simulate-no-model-cost' : 'empty-execution'),
       });
     } catch (e) {
       const detail = e instanceof Error ? e.message : String(e);
