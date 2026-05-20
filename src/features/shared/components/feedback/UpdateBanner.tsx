@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { useAutoUpdater } from "@/hooks/utility/data/useAutoUpdater";
+import { useOverviewStore } from "@/stores/overviewStore";
 import { useTranslation, interpolate } from '@/i18n/useTranslation';
 
 export default function UpdateBanner() {
@@ -12,8 +14,27 @@ export default function UpdateBanner() {
     dismissUpdate,
   } = useAutoUpdater();
   const { t } = useTranslation();
+  // Number of personas mid-execution. Installing restarts the app, which
+  // silently kills running runs — so warn before that happens.
+  const runningCount = useOverviewStore(
+    (s) => Object.values(s.activeProcesses).filter((p) => p.status === "running").length,
+  );
+  const [confirmPending, setConfirmPending] = useState(false);
 
   if (!updateAvailable || !updateInfo) return null;
+
+  const handleInstallClick = () => {
+    if (runningCount > 0) {
+      setConfirmPending(true);
+    } else {
+      void installUpdate();
+    }
+  };
+
+  const confirmInstall = () => {
+    setConfirmPending(false);
+    void installUpdate();
+  };
 
   const installLabel = isInstalling
     ? downloadProgress !== null
@@ -52,7 +73,7 @@ export default function UpdateBanner() {
 
         <div className="ml-auto flex items-center gap-2 shrink-0">
           <button
-            onClick={installUpdate}
+            onClick={handleInstallClick}
             disabled={isInstalling}
             className="px-3 py-1 rounded-xl bg-accent text-accent-foreground typo-heading hover:bg-accent/90 disabled:opacity-50 transition-colors"
           >
@@ -77,6 +98,28 @@ export default function UpdateBanner() {
           </button>
         </div>
       </div>
+
+      {confirmPending && !isInstalling && (
+        <div className="flex items-center gap-3 px-4 py-2 typo-caption bg-amber-500/10 border-b border-amber-500/20">
+          <span className="text-amber-300/90 shrink min-w-0">
+            {interpolate(t.chrome.update_jobs_running_warning, { count: runningCount })}
+          </span>
+          <div className="ml-auto flex items-center gap-2 shrink-0">
+            <button
+              onClick={confirmInstall}
+              className="px-2.5 py-1 rounded-xl bg-amber-500/20 text-amber-200 typo-heading hover:bg-amber-500/30 transition-colors"
+            >
+              {t.chrome.update_install_anyway}
+            </button>
+            <button
+              onClick={() => setConfirmPending(false)}
+              className="px-2.5 py-1 rounded-xl text-foreground typo-heading hover:bg-accent/10 transition-colors"
+            >
+              {t.chrome.update_keep_working}
+            </button>
+          </div>
+        </div>
+      )}
 
       {isInstalling && downloadProgress !== null && (
         <div
