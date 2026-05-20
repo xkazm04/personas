@@ -17,8 +17,10 @@ pub fn assemble_resume_prompt(
 
     if let Some(hints) = credential_hints {
         if !hints.is_empty() {
-            prompt.push_str("## Available Credentials (via proxy)\n");
-            prompt.push_str("Use the credential proxy as described earlier. Credential IDs:\n");
+            prompt.push_str("## Available Credentials\n");
+            prompt.push_str(
+                "Credentials are injected as environment variables — reference them as `$NAME`:\n",
+            );
             for hint in hints {
                 prompt.push_str(&format!("- {hint}\n"));
             }

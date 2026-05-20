@@ -121,10 +121,9 @@ pub fn build_skill_md(hint: &ResolvedConnectorHint) -> String {
 
     out.push_str("## How to invoke\n\n");
     out.push_str(
-        "Authenticated calls go through the credential proxy described in your \
-         system prompt's `## Available Credentials` section — POST to \
-         `$PERSONAS_PROXY_URL/<credential_id>` with Bearer auth from \
-         `$PERSONAS_PROXY_KEY`. Credential secrets are NOT in the environment.\n",
+        "Authenticate with the credential environment variables listed in your \
+         system prompt's `## Available Credentials` section — reference them as \
+         `$NAME` (e.g. in an `Authorization` header).\n",
     );
 
     out
