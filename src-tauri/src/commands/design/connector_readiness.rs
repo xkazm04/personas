@@ -17,6 +17,8 @@
 //!
 //! Full rationale: `docs/architecture/connector-classification.md`.
 
+use std::collections::HashMap;
+
 use rusqlite::Connection;
 
 use crate::db::models::{classify_connector, ConnectorClass};
@@ -270,6 +272,96 @@ where
         .collect()
 }
 
+/// Find the single concrete vault credential a `Credential`-class connector
+/// should bind to. An exact `service_type` match wins; otherwise the
+/// connector name is treated as a role and matched against the
+/// `connector_definitions.category` of the user's credentials.
+///
+/// Returns `None` when there is no candidate OR more than one — an ambiguous
+/// bind (e.g. role `ai` with both ElevenLabs and Leonardo in the vault) must
+/// be a user choice, not a guess. The build surfaces that as a
+/// scope-clarifying question rather than picking arbitrarily.
+fn resolve_one_credential(conn: &Connection, connector_name: &str) -> Option<String> {
+    let name = connector_name.trim();
+    if name.is_empty() {
+        return None;
+    }
+    // 1. Exact service_type match — the connector name IS a concrete
+    //    credential service_type (`notion`, `gmail`, …).
+    let exact: Vec<String> = conn
+        .prepare("SELECT id FROM persona_credentials WHERE LOWER(service_type) = LOWER(?1)")
+        .ok()
+        .and_then(|mut stmt| {
+            stmt.query_map([name], |r| r.get::<_, String>(0))
+                .ok()
+                .map(|rows| rows.filter_map(|r| r.ok()).collect())
+        })
+        .unwrap_or_default();
+    if exact.len() == 1 {
+        return Some(exact[0].clone());
+    }
+    if exact.len() > 1 {
+        return None; // ambiguous — user must pick
+    }
+    // 2. Category match — the connector name is an abstract role (`crm`,
+    //    `email`, `knowledge_base`); bind it to the user's credential whose
+    //    connector category matches the (normalized) role.
+    let role = normalize_connector_role(name).to_ascii_lowercase();
+    let by_category: Vec<String> = conn
+        .prepare(
+            "SELECT pc.id
+             FROM persona_credentials pc
+             JOIN connector_definitions cd ON LOWER(cd.name) = LOWER(pc.service_type)
+             WHERE LOWER(cd.category) = ?1",
+        )
+        .ok()
+        .and_then(|mut stmt| {
+            stmt.query_map([role], |r| r.get::<_, String>(0))
+                .ok()
+                .map(|rows| rows.filter_map(|r| r.ok()).collect())
+        })
+        .unwrap_or_default();
+    if by_category.len() == 1 {
+        return Some(by_category[0].clone());
+    }
+    None
+}
+
+/// Resolve, for every `Credential`-class connector in `connector_names`, the
+/// concrete vault credential it should bind to — a `connectorName ->
+/// credentialId` map written into `design_context.credentialLinks`, which the
+/// execution runtime honours when injecting credentials.
+///
+/// `ZeroConfig` / `GlobalProbe` connectors carry no vault credential and are
+/// skipped. A `Credential` connector with zero or multiple candidate
+/// credentials is left unbound (the build surfaces a scope-clarifying
+/// question rather than guessing).
+///
+/// Without this, an abstract role like `crm` declared by a template — with
+/// no covering vault-category adoption question — reaches runtime unbound,
+/// and the persona executes with no credential at all.
+pub fn resolve_credential_links<I, S>(conn: &Connection, connector_names: I) -> HashMap<String, String>
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<str>,
+{
+    let mut links = HashMap::new();
+    for name in connector_names {
+        let name = name.as_ref().trim();
+        if name.is_empty() || links.contains_key(name) {
+            continue;
+        }
+        let metadata = load_connector_metadata(conn, name);
+        if classify_connector(name, metadata.as_deref()) != ConnectorClass::Credential {
+            continue;
+        }
+        if let Some(credential_id) = resolve_one_credential(conn, name) {
+            links.insert(name.to_string(), credential_id);
+        }
+    }
+    links
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -278,8 +370,8 @@ mod tests {
     fn test_db() -> Connection {
         let conn = Connection::open_in_memory().unwrap();
         conn.execute_batch(
-            "CREATE TABLE connector_definitions (name TEXT, metadata TEXT);
-             CREATE TABLE persona_credentials (service_type TEXT);
+            "CREATE TABLE connector_definitions (name TEXT, metadata TEXT, category TEXT);
+             CREATE TABLE persona_credentials (id TEXT, service_type TEXT);
              CREATE TABLE dev_projects (id TEXT, status TEXT);
              CREATE TABLE twin_profiles (id TEXT);
              CREATE TABLE app_settings (key TEXT, value TEXT);",
@@ -292,6 +384,24 @@ mod tests {
         conn.execute(
             "INSERT INTO connector_definitions (name, metadata) VALUES (?1, ?2)",
             rusqlite::params![name, metadata],
+        )
+        .unwrap();
+    }
+
+    /// Register a connector definition with a category (for binding tests).
+    fn def_cat(conn: &Connection, name: &str, metadata: &str, category: &str) {
+        conn.execute(
+            "INSERT INTO connector_definitions (name, metadata, category) VALUES (?1, ?2, ?3)",
+            rusqlite::params![name, metadata, category],
+        )
+        .unwrap();
+    }
+
+    /// Add a vault credential row.
+    fn cred(conn: &Connection, id: &str, service_type: &str) {
+        conn.execute(
+            "INSERT INTO persona_credentials (id, service_type) VALUES (?1, ?2)",
+            rusqlite::params![id, service_type],
         )
         .unwrap();
     }
@@ -422,5 +532,64 @@ mod tests {
         // local_drive (zero-config) + web_search (native) are ready; notion +
         // codebase are not.
         assert_eq!(missing.len(), 2);
+    }
+
+    // --- Phase 1: credential-link resolution ---
+
+    #[test]
+    fn abstract_role_binds_to_the_single_category_credential() {
+        // Template declares connector `crm`; the user has one `attio`
+        // credential whose connector category is `crm`. The role binds.
+        let conn = test_db();
+        def(&conn, "crm", r#"{"auth_type":"api_key"}"#);
+        def_cat(&conn, "attio", r#"{"auth_type":"api_key"}"#, "crm");
+        cred(&conn, "cred-attio-1", "attio");
+        let links = resolve_credential_links(&conn, ["crm"]);
+        assert_eq!(links.get("crm"), Some(&"cred-attio-1".to_string()));
+    }
+
+    #[test]
+    fn exact_service_type_binds_directly() {
+        let conn = test_db();
+        def(&conn, "notion", r#"{"auth_type":"api_key"}"#);
+        cred(&conn, "cred-notion-1", "notion");
+        let links = resolve_credential_links(&conn, ["notion"]);
+        assert_eq!(links.get("notion"), Some(&"cred-notion-1".to_string()));
+    }
+
+    #[test]
+    fn ambiguous_role_is_left_unbound() {
+        // Role `ai` matches two vault credentials (ElevenLabs + Leonardo) —
+        // an arbitrary pick would be wrong, so the connector stays unbound
+        // and the build surfaces a scope-clarifying question instead.
+        let conn = test_db();
+        def(&conn, "ai", r#"{"auth_type":"api_key"}"#);
+        def_cat(&conn, "elevenlabs", r#"{"auth_type":"api_key"}"#, "ai");
+        def_cat(&conn, "leonardo_ai", r#"{"auth_type":"api_key"}"#, "ai");
+        cred(&conn, "c1", "elevenlabs");
+        cred(&conn, "c2", "leonardo_ai");
+        let links = resolve_credential_links(&conn, ["ai"]);
+        assert!(!links.contains_key("ai"));
+    }
+
+    #[test]
+    fn zero_config_and_global_probe_connectors_are_not_bound() {
+        // ZeroConfig (local_drive) and GlobalProbe (codebase) carry no vault
+        // credential — they must never appear in the credential-link map.
+        let conn = test_db();
+        def(&conn, "local_drive", r#"{"always_active":true}"#);
+        def(&conn, "codebase", r#"{"always_active":true,"connection_mode":"desktop_bridge"}"#);
+        let links = resolve_credential_links(&conn, ["local_drive", "codebase"]);
+        assert!(links.is_empty());
+    }
+
+    #[test]
+    fn unbindable_credential_connector_is_omitted() {
+        // A Credential connector with no matching vault credential is simply
+        // absent from the map (Phase 2 promote-gating flags it; Phase 4 asks).
+        let conn = test_db();
+        def(&conn, "hubspot", r#"{"auth_type":"api_key"}"#);
+        let links = resolve_credential_links(&conn, ["hubspot"]);
+        assert!(links.is_empty());
     }
 }
