@@ -2,49 +2,49 @@
   "template_id": "codebase-health-scanner",
   "template_name": "Codebase Health Scanner",
   "category": "development",
-  "started_at": "2026-05-20T10:14:35.230Z",
-  "ended_at": "2026-05-20T10:17:02.419Z",
+  "started_at": "2026-05-20T11:43:22.817Z",
+  "ended_at": "2026-05-20T11:45:17.539Z",
   "outcome": "pass",
   "phases": [
     {
       "phase": "open",
       "status": "pass",
-      "durationMs": 2018
+      "durationMs": 2042
     },
     {
       "phase": "questionnaire",
       "status": "pass",
-      "durationMs": 14
+      "durationMs": 18
     },
     {
       "phase": "build",
       "status": "pass",
-      "durationMs": 84472
+      "durationMs": 36892
     },
     {
       "phase": "promote",
       "status": "pass",
-      "durationMs": 414
+      "durationMs": 427
     }
   ],
-  "persona_id": "4aa72675-9563-415d-96a9-d126a55bb754",
+  "persona_id": "e5f45a0a-0d73-48c8-aaf4-0fb663504fdf",
   "failure_signature": null,
   "capability_results": [
     {
-      "cap_id": "uc-2cec85a1-54dc-4c31-aa5a-133e18e42aae",
+      "cap_id": "uc-4ce61ed1-30fd-45e7-8509-33edf4d4a6e7",
       "outcome": "pass",
-      "execution_id": "83623d3f-9027-413b-ab9e-e72112aa731f",
+      "execution_id": "e5d1a29e-b69c-4ebd-a93b-e4872f761798",
       "tool_steps": 3,
-      "cost_usd": 0.32931550000000004,
-      "detail": "simulate (model ran, tools stubbed)"
+      "cost_usd": 0.29092250000000003,
+      "detail": "execute"
     },
     {
-      "cap_id": "uc-31281d09-f3ec-4f60-b4f6-c07768fc6715",
+      "cap_id": "uc-0ff91ca1-327c-4573-b73e-8ebf928e21ee",
       "outcome": "skipped",
       "detail": "event-listener (not manually invokable)"
     },
     {
-      "cap_id": "uc-924a9eb9-caa3-4051-82df-a22ede2daa1f",
+      "cap_id": "uc-76fb77b7-97e8-4b92-b7cd-a208c998d4f6",
       "outcome": "skipped",
       "detail": "event-listener (not manually invokable)"
     }
