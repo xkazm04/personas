@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { check, type Update, type DownloadEvent } from "@tauri-apps/plugin-updater";
+import { getVersion } from "@tauri-apps/api/app";
 import * as Sentry from "@sentry/react";
 import { silentCatch } from "@/lib/silentCatch";
+import { recordVersion } from "@/lib/updateHistory";
 
 export interface UpdateInfo {
   version: string;
@@ -125,6 +127,12 @@ export function useAutoUpdater() {
   }, []);
 
   useEffect(() => {
+    // Record the running version once per launch so Settings can show an
+    // update-history timeline. Idempotent — only appends on version change.
+    getVersion()
+      .then((v) => { recordVersion(v); })
+      .catch(silentCatch("useAutoUpdater:recordVersion"));
+
     // Check after a 5-second delay on mount, then every 6 hours.
     // Outcome is intentionally ignored — checkForUpdate already routes
     // failures through silentCatch and successes through Sentry breadcrumbs.

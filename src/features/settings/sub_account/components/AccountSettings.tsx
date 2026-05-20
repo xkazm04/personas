@@ -8,6 +8,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { useAutoUpdater, type CheckOutcome } from '@/hooks/utility/data/useAutoUpdater';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { isTelemetryEnabled, setTelemetryEnabled } from '@/lib/telemetryPreference';
+import { getUpdateHistory, type UpdateHistoryEntry } from '@/lib/updateHistory';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { useTranslation, interpolate } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
@@ -30,6 +31,7 @@ export default function AccountSettings() {
   // Last manual-check result, surfaced inline in the card so the result
   // persists after the toast auto-dismisses. Cleared after 6s.
   const [lastOutcome, setLastOutcome] = useState<CheckOutcome | null>(null);
+  const [history, setHistory] = useState<UpdateHistoryEntry[]>([]);
   const outcomeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const clearError = () => useAuthStore.setState({ error: null });
   const { t } = useTranslation();
@@ -37,6 +39,7 @@ export default function AccountSettings() {
 
   useEffect(() => {
     getVersion().then(setAppVersion).catch(silentCatch('AccountSettings:getVersion'));
+    setHistory(getUpdateHistory());
     return () => { if (outcomeTimer.current) clearTimeout(outcomeTimer.current); };
   }, []);
 
@@ -145,6 +148,27 @@ export default function AccountSettings() {
               </span>
             )}
           </div>
+
+          {history.length > 0 && (
+            <div className="border-t border-primary/10 pt-4 space-y-2">
+              <p className="typo-caption font-medium text-foreground uppercase tracking-wide">
+                {s.updates_history_title}
+              </p>
+              <ul className="space-y-1.5">
+                {history.map((entry) => (
+                  <li
+                    key={`${entry.version}-${entry.at}`}
+                    className="flex items-center justify-between gap-3 typo-caption"
+                  >
+                    <span className="font-mono text-foreground">v{entry.version}</span>
+                    <span className="text-foreground">
+                      {formatRelativeTime(new Date(entry.at).toISOString())}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
 
         <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-6">

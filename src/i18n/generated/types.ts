@@ -8112,6 +8112,7 @@ export type Translations = {
       updates_check_failed: string;
       updates_current_version: string;
       updates_last_checked: string;
+      updates_history_title: string;
     };
     appearance_extra: {
       simple: string;

@@ -8038,6 +8038,7 @@
       "updates_check_failed": "Couldn't check for updates. Try again in a moment.",
       "updates_current_version": "Máte verzi v{version}",
       "updates_last_checked": "Naposledy zkontrolováno {time}",
+      "updates_history_title": "Nedávné aktualizace",
       "avatar_alt": "Profile picture"
     },
     "appearance_extra": {

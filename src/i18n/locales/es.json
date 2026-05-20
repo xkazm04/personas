@@ -8038,6 +8038,7 @@
       "updates_check_failed": "Couldn't check for updates. Try again in a moment.",
       "updates_current_version": "Tienes la v{version}",
       "updates_last_checked": "Última comprobación {time}",
+      "updates_history_title": "Actualizaciones recientes",
       "avatar_alt": "Profile picture"
     },
     "appearance_extra": {
