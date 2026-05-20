@@ -269,3 +269,158 @@ where
         })
         .collect()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Minimal in-memory schema — only the tables the resolver probes.
+    fn test_db() -> Connection {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE connector_definitions (name TEXT, metadata TEXT);
+             CREATE TABLE persona_credentials (service_type TEXT);
+             CREATE TABLE dev_projects (id TEXT, status TEXT);
+             CREATE TABLE twin_profiles (id TEXT);
+             CREATE TABLE app_settings (key TEXT, value TEXT);",
+        )
+        .unwrap();
+        conn
+    }
+
+    fn def(conn: &Connection, name: &str, metadata: &str) {
+        conn.execute(
+            "INSERT INTO connector_definitions (name, metadata) VALUES (?1, ?2)",
+            rusqlite::params![name, metadata],
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn zero_config_connector_is_ready() {
+        let conn = test_db();
+        def(&conn, "local_drive", r#"{"is_builtin":true,"always_active":true}"#);
+        assert_eq!(connector_readiness(&conn, "local_drive"), Readiness::Ready);
+    }
+
+    #[test]
+    fn native_capability_is_ready_without_a_definition() {
+        let conn = test_db();
+        assert_eq!(connector_readiness(&conn, "web_search"), Readiness::Ready);
+    }
+
+    #[test]
+    fn credential_connector_needs_a_vault_row() {
+        let conn = test_db();
+        def(&conn, "notion", r#"{"auth_type":"api_key"}"#);
+        match connector_readiness(&conn, "notion") {
+            Readiness::NeedsSetup { kind, .. } => assert_eq!(kind, SetupKind::VaultCredential),
+            other => panic!("expected NeedsSetup, got {other:?}"),
+        }
+        conn.execute(
+            "INSERT INTO persona_credentials (service_type) VALUES ('notion')",
+            [],
+        )
+        .unwrap();
+        assert_eq!(connector_readiness(&conn, "notion"), Readiness::Ready);
+    }
+
+    #[test]
+    fn codebase_needs_a_dev_project() {
+        let conn = test_db();
+        def(
+            &conn,
+            "codebase",
+            r#"{"is_builtin":true,"always_active":true,"connection_mode":"desktop_bridge"}"#,
+        );
+        // No project — not ready, and the kind routes to Dev Tools.
+        match connector_readiness(&conn, "codebase") {
+            Readiness::NeedsSetup { kind, .. } => assert_eq!(kind, SetupKind::DevProject),
+            other => panic!("expected NeedsSetup, got {other:?}"),
+        }
+        // An active project satisfies it.
+        conn.execute(
+            "INSERT INTO dev_projects (id, status) VALUES ('p1', 'active')",
+            [],
+        )
+        .unwrap();
+        assert_eq!(connector_readiness(&conn, "codebase"), Readiness::Ready);
+    }
+
+    #[test]
+    fn twin_needs_a_twin_profile() {
+        let conn = test_db();
+        def(&conn, "twin", r#"{"is_builtin":true,"always_active":true}"#);
+        match connector_readiness(&conn, "twin") {
+            Readiness::NeedsSetup { kind, .. } => assert_eq!(kind, SetupKind::TwinProfile),
+            other => panic!("expected NeedsSetup, got {other:?}"),
+        }
+        conn.execute("INSERT INTO twin_profiles (id) VALUES ('t1')", [])
+            .unwrap();
+        assert_eq!(connector_readiness(&conn, "twin"), Readiness::Ready);
+    }
+
+    #[test]
+    fn obsidian_memory_needs_a_vault_config() {
+        let conn = test_db();
+        def(
+            &conn,
+            "obsidian_memory",
+            r#"{"is_builtin":true,"always_active":false,"connection_mode":"desktop_bridge"}"#,
+        );
+        match connector_readiness(&conn, "obsidian_memory") {
+            Readiness::NeedsSetup { kind, .. } => assert_eq!(kind, SetupKind::ObsidianVault),
+            other => panic!("expected NeedsSetup, got {other:?}"),
+        }
+        conn.execute(
+            "INSERT INTO app_settings (key, value) VALUES (?1, ?2)",
+            rusqlite::params![
+                crate::db::settings_keys::OBSIDIAN_BRAIN_CONFIG,
+                r#"{"vault_path":"/home/u/vault"}"#
+            ],
+        )
+        .unwrap();
+        assert_eq!(
+            connector_readiness(&conn, "obsidian_memory"),
+            Readiness::Ready
+        );
+    }
+
+    #[test]
+    fn obsidian_memory_empty_vault_path_is_not_ready() {
+        let conn = test_db();
+        def(&conn, "obsidian_memory", r#"{"always_active":false}"#);
+        conn.execute(
+            "INSERT INTO app_settings (key, value) VALUES (?1, ?2)",
+            rusqlite::params![
+                crate::db::settings_keys::OBSIDIAN_BRAIN_CONFIG,
+                r#"{"vault_path":""}"#
+            ],
+        )
+        .unwrap();
+        assert!(!connector_readiness(&conn, "obsidian_memory").is_ready());
+    }
+
+    #[test]
+    fn codebases_aggregate_is_ready_with_zero_projects() {
+        let conn = test_db();
+        def(
+            &conn,
+            "codebases",
+            r#"{"is_builtin":true,"always_active":true,"connection_mode":"desktop_bridge"}"#,
+        );
+        assert_eq!(connector_readiness(&conn, "codebases"), Readiness::Ready);
+    }
+
+    #[test]
+    fn missing_connectors_returns_only_not_ready() {
+        let conn = test_db();
+        def(&conn, "local_drive", r#"{"always_active":true}"#);
+        def(&conn, "notion", r#"{"auth_type":"api_key"}"#);
+        def(&conn, "codebase", r#"{"always_active":true}"#);
+        let missing = missing_connectors(&conn, ["local_drive", "notion", "codebase", "web_search"]);
+        // local_drive (zero-config) + web_search (native) are ready; notion +
+        // codebase are not.
+        assert_eq!(missing.len(), 2);
+    }
+}
