@@ -14,6 +14,7 @@ import { fileURLToPath } from 'node:url';
 import {
   clickTestId,
   health,
+  invokeCommandRaw,
   navigate,
   query,
   readAdoptionState,
@@ -358,22 +359,35 @@ test('marathon-template', async () => {
       continue;
     }
     try {
-      await fetch(`http://127.0.0.1:${Number(process.env.COMPANION_TEST_PORT ?? 17320)}/bridge-exec`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          method: 'invokeCommand',
-          params: { command: 'execute_persona', params: { name_or_id: result.persona_id, use_case_id: capId } },
-          timeout_secs: 30,
-        }),
-      });
+      // Try a real execution first. If the persona was flagged
+      // needs_credentials at promote time (e.g. a desktop_bridge
+      // builtin like `codebase` that the Rust BUILTIN_LOCAL_CONNECTORS
+      // list doesn't recognise), execute_persona returns a validation
+      // error — fall back to simulate_use_case, which the validation
+      // message itself recommends as the credential-free path. The
+      // capability detail records which path ran so the post-mortem
+      // distinguishes "really executed" from "simulated".
+      let mode: 'execute' | 'simulate' = 'execute';
+      const exec = await invokeCommandRaw(
+        'execute_persona',
+        { personaId: result.persona_id, useCaseId: capId },
+        30,
+      );
+      if (!exec.success && (exec.error ?? '').includes('needs_credentials')) {
+        mode = 'simulate';
+        await invokeCommandRaw(
+          'simulate_use_case',
+          { personaId: result.persona_id, useCaseId: capId },
+          30,
+        );
+      }
       const row = await waitForExecution(result.persona_id, preExecuteIso, 4 * 60_000);
       if (!row) {
-        result.capability_results.push({ cap_id: capId, outcome: 'hard-fail', detail: 'execution-timeout' });
+        result.capability_results.push({ cap_id: capId, outcome: 'hard-fail', detail: `execution-timeout (${mode})` });
         continue;
       }
       if (row.status === 'failed') {
-        result.capability_results.push({ cap_id: capId, outcome: 'hard-fail', execution_id: row.id, detail: 'execution-failed' });
+        result.capability_results.push({ cap_id: capId, outcome: 'hard-fail', execution_id: row.id, detail: `execution-failed (${mode})` });
         continue;
       }
       // Phase 7: minimal metadata check — at least one tool step
@@ -390,7 +404,7 @@ test('marathon-template', async () => {
         execution_id: row.id,
         tool_steps: toolStepCount,
         cost_usd: row.cost_usd,
-        detail: toolStepCount === 0 ? 'empty-execution' : undefined,
+        detail: toolStepCount === 0 ? `empty-execution (${mode})` : `${mode}`,
       });
     } catch (e) {
       const detail = e instanceof Error ? e.message : String(e);

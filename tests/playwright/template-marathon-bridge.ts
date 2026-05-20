@@ -56,6 +56,25 @@ async function bridgeExec<T = unknown>(
 
 export const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
+/** Invoke a Tauri command through the bridge's generic passthrough.
+ *  Returns the {success, result, error} envelope WITHOUT throwing on a
+ *  command-level error — the caller inspects `success`/`error` to make
+ *  decisions (e.g. fall back to simulate_use_case when execute_persona
+ *  reports needs_credentials). */
+export async function invokeCommandRaw(
+  command: string,
+  params: Record<string, unknown> = {},
+  timeoutSecs = 30,
+): Promise<{ success: boolean; result?: unknown; error?: string }> {
+  const raw = await post<string>('/bridge-exec', {
+    method: 'invokeCommand',
+    params: { command, params },
+    timeout_secs: timeoutSecs,
+  });
+  const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+  return parsed as { success: boolean; result?: unknown; error?: string };
+}
+
 /** Confirm the test-automation server is reachable. Throws on failure. */
 export async function health(): Promise<void> {
   const h = await get<{ status: string }>('/health');
@@ -130,19 +149,19 @@ export interface ExecutionRow {
 }
 
 /** Read the most recent N executions for a persona via the bridge.
- *  `list_executions` is the real command name; it accepts a personaId
- *  filter as `persona_id` (snake_case on the wire). */
+ *  `list_executions` expects camelCase `personaId` per Tauri convention. */
 export async function listPersonaExecutions(personaId: string, limit = 5): Promise<ExecutionRow[]> {
-  const out = await bridgeExec<{ executions?: ExecutionRow[] } | ExecutionRow[]>(
+  const out = await bridgeExec<{ executions?: ExecutionRow[] } | ExecutionRow[] | { result?: unknown }>(
     'invokeCommand',
-    { command: 'list_executions', params: { persona_id: personaId, limit } },
+    { command: 'list_executions', params: { personaId, limit } },
     30,
   );
-  // The command may return either `{ executions: [...] }` or a bare array
-  // depending on which list endpoint the bridge resolved — defensively
-  // unwrap both shapes.
-  if (Array.isArray(out)) return out;
-  return (out as { executions?: ExecutionRow[] })?.executions ?? [];
+  // invokeCommand wraps the command response as {success, result}. The
+  // raw result may itself be `{executions: [...]}` or a bare array
+  // depending on which list endpoint resolved — unwrap defensively.
+  const payload = (out as { result?: unknown })?.result ?? out;
+  if (Array.isArray(payload)) return payload as ExecutionRow[];
+  return ((payload as { executions?: ExecutionRow[] })?.executions) ?? [];
 }
 
 /** Wait for a new completed (or failed) execution row for `personaId`,
