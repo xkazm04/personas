@@ -1,0 +1,41 @@
+{
+  "template_id": "ai-weekly-research",
+  "template_name": "AI Weekly Research",
+  "category": "research",
+  "started_at": "2026-05-20T09:00:23.361Z",
+  "ended_at": "2026-05-20T09:04:57.649Z",
+  "outcome": "pass",
+  "phases": [
+    {
+      "phase": "open",
+      "status": "pass",
+      "durationMs": 2088
+    },
+    {
+      "phase": "questionnaire",
+      "status": "pass",
+      "durationMs": 24
+    },
+    {
+      "phase": "build",
+      "status": "pass",
+      "durationMs": 30703
+    },
+    {
+      "phase": "promote",
+      "status": "pass",
+      "durationMs": 419
+    }
+  ],
+  "persona_id": "31075a3a-2a66-440a-a90c-7304b16080b7",
+  "failure_signature": null,
+  "capability_results": [
+    {
+      "executions_total": 2,
+      "executions_completed": 2,
+      "executions_failed": 0,
+      "total_tool_steps": 18,
+      "total_cost_usd": 1.9149
+    }
+  ]
+}

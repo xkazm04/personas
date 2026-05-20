@@ -1,0 +1,41 @@
+{
+  "template_id": "incident-logger",
+  "template_name": "Incident Logger",
+  "category": "devops",
+  "started_at": "2026-05-20T08:01:51.499Z",
+  "ended_at": "2026-05-20T08:04:35.647Z",
+  "outcome": "pass",
+  "phases": [
+    {
+      "phase": "open",
+      "status": "pass",
+      "durationMs": 1991
+    },
+    {
+      "phase": "questionnaire",
+      "status": "pass",
+      "durationMs": 13
+    },
+    {
+      "phase": "build",
+      "status": "pass",
+      "durationMs": 38087
+    },
+    {
+      "phase": "promote",
+      "status": "pass",
+      "durationMs": 418
+    }
+  ],
+  "persona_id": "a826b9a6-8240-4aea-834a-e49cb72e80ac",
+  "failure_signature": null,
+  "capability_results": [
+    {
+      "executions_total": 3,
+      "executions_completed": 3,
+      "executions_failed": 0,
+      "total_tool_steps": 4,
+      "total_cost_usd": 0.8106
+    }
+  ]
+}

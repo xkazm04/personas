@@ -1,0 +1,41 @@
+{
+  "template_id": "intake-processor",
+  "template_name": "Intake Processor",
+  "category": "email",
+  "started_at": "2026-05-20T08:07:26.971Z",
+  "ended_at": "2026-05-20T08:11:02.424Z",
+  "outcome": "pass",
+  "phases": [
+    {
+      "phase": "open",
+      "status": "pass",
+      "durationMs": 2001
+    },
+    {
+      "phase": "questionnaire",
+      "status": "pass",
+      "durationMs": 17
+    },
+    {
+      "phase": "build",
+      "status": "pass",
+      "durationMs": 23111
+    },
+    {
+      "phase": "promote",
+      "status": "pass",
+      "durationMs": 423
+    }
+  ],
+  "persona_id": "a6697ab2-7818-4679-9d48-cd4e5f1005fc",
+  "failure_signature": null,
+  "capability_results": [
+    {
+      "executions_total": 3,
+      "executions_completed": 3,
+      "executions_failed": 0,
+      "total_tool_steps": 8,
+      "total_cost_usd": 1.027
+    }
+  ]
+}

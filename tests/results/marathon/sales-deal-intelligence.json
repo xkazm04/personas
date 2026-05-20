@@ -1,0 +1,41 @@
+{
+  "template_id": "sales-deal-intelligence",
+  "template_name": "Sales Deal Intelligence",
+  "category": "sales",
+  "started_at": "2026-05-20T09:36:57.237Z",
+  "ended_at": "2026-05-20T09:38:28.602Z",
+  "outcome": "soft-fail",
+  "phases": [
+    {
+      "phase": "open",
+      "status": "pass",
+      "durationMs": 1985
+    },
+    {
+      "phase": "questionnaire",
+      "status": "pass",
+      "durationMs": 15
+    },
+    {
+      "phase": "build",
+      "status": "pass",
+      "durationMs": 28649
+    },
+    {
+      "phase": "promote",
+      "status": "pass",
+      "durationMs": 423
+    }
+  ],
+  "persona_id": "841e203c-0526-40b3-9a4b-35e1685431d6",
+  "failure_signature": "phase:execute:1-of-4-failed",
+  "capability_results": [
+    {
+      "executions_total": 4,
+      "executions_completed": 3,
+      "executions_failed": 1,
+      "total_tool_steps": 15,
+      "total_cost_usd": 1.3782
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "template_id": "codebase-health-scanner",
+  "template_name": "Codebase Health Scanner",
+  "category": "development",
+  "started_at": "2026-05-20T07:44:15.848Z",
+  "ended_at": "2026-05-20T07:50:19.473Z",
+  "outcome": "hard-fail",
+  "phases": [
+    {
+      "phase": "open",
+      "status": "pass",
+      "durationMs": 1998
+    },
+    {
+      "phase": "questionnaire",
+      "status": "pass",
+      "durationMs": 15
+    },
+    {
+      "phase": "build",
+      "status": "hard-fail",
+      "detail": "waitForBuildPhase:timeout (last phase=initializing)",
+      "durationMs": 361589
+    }
+  ],
+  "persona_id": null,
+  "failure_signature": "phase:build:waitForBuildPhase:timeout (last phase=initializing)",
+  "capability_results": []
+}

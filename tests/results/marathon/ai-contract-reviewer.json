@@ -1,0 +1,41 @@
+{
+  "template_id": "ai-contract-reviewer",
+  "template_name": "AI Contract Reviewer",
+  "category": "legal",
+  "started_at": "2026-05-20T08:22:05.472Z",
+  "ended_at": "2026-05-20T08:25:37.901Z",
+  "outcome": "pass",
+  "phases": [
+    {
+      "phase": "open",
+      "status": "pass",
+      "durationMs": 2005
+    },
+    {
+      "phase": "questionnaire",
+      "status": "pass",
+      "durationMs": 28
+    },
+    {
+      "phase": "build",
+      "status": "pass",
+      "durationMs": 35146
+    },
+    {
+      "phase": "promote",
+      "status": "pass",
+      "durationMs": 424
+    }
+  ],
+  "persona_id": "522d46f5-8a11-4d4a-9bd4-1d3b6c71f8d1",
+  "failure_signature": null,
+  "capability_results": [
+    {
+      "executions_total": 2,
+      "executions_completed": 2,
+      "executions_failed": 0,
+      "total_tool_steps": 13,
+      "total_cost_usd": 0.7916
+    }
+  ]
+}

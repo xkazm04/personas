@@ -1,0 +1,80 @@
+{
+  "started_at": "2026-05-20T07:37:59.677Z",
+  "templates_attempted": [
+    "demo-recorder",
+    "scientific-writing-editor",
+    "content-approval-workflow",
+    "qa-guardian",
+    "codebase-health-scanner",
+    "documentation-freshness-guardian",
+    "real-time-database-watcher",
+    "self-evolving-codebase-memory",
+    "dev-clone",
+    "sentry-production-monitor",
+    "incident-logger",
+    "workflow-error-intelligence",
+    "intake-processor",
+    "invoice-tracker",
+    "financial-stocks-signaller",
+    "onboarding-tracker",
+    "ai-contract-reviewer",
+    "website-conversion-audit",
+    "email-morning-digest",
+    "personal-capture-bot",
+    "router",
+    "survey-insights-analyzer",
+    "appointment-orchestrator",
+    "daily-standup-compiler",
+    "digital-clone",
+    "idea-harvester",
+    "meeting-lifecycle-manager",
+    "vault-grounded-journal-coach",
+    "email-intelligence-operator",
+    "technical-decision-tracker",
+    "client-portal-orchestrator",
+    "ai-research-report-generator",
+    "ai-weekly-research",
+    "industry-intelligence-aggregator",
+    "knowledge-base-health-auditor",
+    "product-scout",
+    "research-paper-indexer",
+    "research-knowledge-curator",
+    "local-business-lead-prospector",
+    "sales-proposal-generator",
+    "contact-enrichment-agent",
+    "contact-sync-manager",
+    "crm-data-quality-auditor",
+    "personality-enriched-sales-prep",
+    "sales-pipeline-autopilot",
+    "sales-deal-intelligence",
+    "access-request-manager",
+    "ai-environment-posture-audit",
+    "knowledge-base-review-cycle-manager",
+    "email-support-operator"
+  ],
+  "bugs_observed": [
+    {
+      "template_id": "codebase-health-scanner",
+      "signature": "phase:build:waitForBuildPhase:timeout (last phase=initializing)",
+      "action": "logged"
+    },
+    {
+      "template_id": "financial-stocks-signaller",
+      "signature": "phase:execute:execution-timeout (execute)",
+      "action": "skipped",
+      "detail": "External API rate-limit or slow tool. Continue with next template."
+    },
+    {
+      "template_id": "ai-weekly-research",
+      "signature": "phase:execute:execution-timeout (execute)",
+      "action": "skipped",
+      "detail": "External API rate-limit or slow tool. Continue with next template."
+    },
+    {
+      "template_id": "research-paper-indexer",
+      "signature": "phase:execute:execution-timeout (execute)",
+      "action": "skipped",
+      "detail": "External API rate-limit or slow tool. Continue with next template."
+    }
+  ]
+}

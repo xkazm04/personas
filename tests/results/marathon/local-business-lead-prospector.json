@@ -1,0 +1,41 @@
+{
+  "template_id": "local-business-lead-prospector",
+  "template_name": "Local Business Lead Prospector",
+  "category": "sales",
+  "started_at": "2026-05-20T09:21:27.840Z",
+  "ended_at": "2026-05-20T09:24:08.231Z",
+  "outcome": "pass",
+  "phases": [
+    {
+      "phase": "open",
+      "status": "pass",
+      "durationMs": 1971
+    },
+    {
+      "phase": "questionnaire",
+      "status": "pass",
+      "durationMs": 13
+    },
+    {
+      "phase": "build",
+      "status": "pass",
+      "durationMs": 19356
+    },
+    {
+      "phase": "promote",
+      "status": "pass",
+      "durationMs": 422
+    }
+  ],
+  "persona_id": "5c59d2e0-6947-49cb-ab50-d962b757984d",
+  "failure_signature": null,
+  "capability_results": [
+    {
+      "executions_total": 2,
+      "executions_completed": 2,
+      "executions_failed": 0,
+      "total_tool_steps": 11,
+      "total_cost_usd": 0.8055
+    }
+  ]
+}

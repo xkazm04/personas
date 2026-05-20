@@ -1,0 +1,41 @@
+{
+  "template_id": "survey-insights-analyzer",
+  "template_name": "Survey Insights Analyzer",
+  "category": "productivity",
+  "started_at": "2026-05-20T08:35:02.744Z",
+  "ended_at": "2026-05-20T08:39:00.729Z",
+  "outcome": "pass",
+  "phases": [
+    {
+      "phase": "open",
+      "status": "pass",
+      "durationMs": 1973
+    },
+    {
+      "phase": "questionnaire",
+      "status": "pass",
+      "durationMs": 16
+    },
+    {
+      "phase": "build",
+      "status": "pass",
+      "durationMs": 30717
+    },
+    {
+      "phase": "promote",
+      "status": "pass",
+      "durationMs": 424
+    }
+  ],
+  "persona_id": "40edbca4-33ef-47b7-b933-2d10c9a29095",
+  "failure_signature": null,
+  "capability_results": [
+    {
+      "executions_total": 3,
+      "executions_completed": 3,
+      "executions_failed": 0,
+      "total_tool_steps": 18,
+      "total_cost_usd": 1.2684
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "template_id": "industry-intelligence-aggregator",
+  "template_name": "Industry Intelligence Aggregator",
+  "category": "research",
+  "started_at": "2026-05-20T09:04:59.524Z",
+  "ended_at": "2026-05-20T09:08:58.284Z",
+  "outcome": "pass",
+  "phases": [
+    {
+      "phase": "open",
+      "status": "pass",
+      "durationMs": 1978
+    },
+    {
+      "phase": "questionnaire",
+      "status": "pass",
+      "durationMs": 17
+    },
+    {
+      "phase": "build",
+      "status": "pass",
+      "durationMs": 49660
+    },
+    {
+      "phase": "promote",
+      "status": "pass",
+      "durationMs": 423
+    }
+  ],
+  "persona_id": "7098b3fd-5e2d-4dc6-8ff2-ac9de22b34c7",
+  "failure_signature": null,
+  "capability_results": [
+    {
+      "executions_total": 3,
+      "executions_completed": 3,
+      "executions_failed": 0,
+      "total_tool_steps": 13,
+      "total_cost_usd": 2.1459
+    }
+  ]
+}

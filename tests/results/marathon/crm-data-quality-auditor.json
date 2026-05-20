@@ -1,0 +1,41 @@
+{
+  "template_id": "crm-data-quality-auditor",
+  "template_name": "CRM Data Quality Auditor",
+  "category": "sales",
+  "started_at": "2026-05-20T09:31:29.268Z",
+  "ended_at": "2026-05-20T09:33:06.307Z",
+  "outcome": "pass",
+  "phases": [
+    {
+      "phase": "open",
+      "status": "pass",
+      "durationMs": 2046
+    },
+    {
+      "phase": "questionnaire",
+      "status": "pass",
+      "durationMs": 17
+    },
+    {
+      "phase": "build",
+      "status": "pass",
+      "durationMs": 28699
+    },
+    {
+      "phase": "promote",
+      "status": "pass",
+      "durationMs": 424
+    }
+  ],
+  "persona_id": "5ad031e8-7118-4861-86f8-5366fbc06529",
+  "failure_signature": null,
+  "capability_results": [
+    {
+      "executions_total": 2,
+      "executions_completed": 2,
+      "executions_failed": 0,
+      "total_tool_steps": 5,
+      "total_cost_usd": 0.5943
+    }
+  ]
+}

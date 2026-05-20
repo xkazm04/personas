@@ -1,0 +1,41 @@
+{
+  "template_id": "email-intelligence-operator",
+  "template_name": "Email Intelligence Operator",
+  "category": "productivity",
+  "started_at": "2026-05-20T08:52:42.589Z",
+  "ended_at": "2026-05-20T08:55:04.594Z",
+  "outcome": "pass",
+  "phases": [
+    {
+      "phase": "open",
+      "status": "pass",
+      "durationMs": 1984
+    },
+    {
+      "phase": "questionnaire",
+      "status": "pass",
+      "durationMs": 17
+    },
+    {
+      "phase": "build",
+      "status": "pass",
+      "durationMs": 25020
+    },
+    {
+      "phase": "promote",
+      "status": "pass",
+      "durationMs": 432
+    }
+  ],
+  "persona_id": "f310d99d-f09d-4889-b7b1-530d036a10a4",
+  "failure_signature": null,
+  "capability_results": [
+    {
+      "executions_total": 4,
+      "executions_completed": 4,
+      "executions_failed": 0,
+      "total_tool_steps": 39,
+      "total_cost_usd": 2.2058
+    }
+  ]
+}

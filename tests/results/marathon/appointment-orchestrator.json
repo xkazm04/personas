@@ -1,0 +1,41 @@
+{
+  "template_id": "appointment-orchestrator",
+  "template_name": "Appointment Orchestrator",
+  "category": "productivity",
+  "started_at": "2026-05-20T08:39:02.961Z",
+  "ended_at": "2026-05-20T08:41:09.270Z",
+  "outcome": "pass",
+  "phases": [
+    {
+      "phase": "open",
+      "status": "pass",
+      "durationMs": 1980
+    },
+    {
+      "phase": "questionnaire",
+      "status": "pass",
+      "durationMs": 16
+    },
+    {
+      "phase": "build",
+      "status": "pass",
+      "durationMs": 42431
+    },
+    {
+      "phase": "promote",
+      "status": "pass",
+      "durationMs": 422
+    }
+  ],
+  "persona_id": "88b8d10e-b7aa-46cc-bb90-2c37db11d982",
+  "failure_signature": null,
+  "capability_results": [
+    {
+      "executions_total": 3,
+      "executions_completed": 3,
+      "executions_failed": 0,
+      "total_tool_steps": 10,
+      "total_cost_usd": 0.8241
+    }
+  ]
+}

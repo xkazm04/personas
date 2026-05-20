@@ -1,0 +1,41 @@
+{
+  "template_id": "knowledge-base-health-auditor",
+  "template_name": "Knowledge Base Health Auditor",
+  "category": "research",
+  "started_at": "2026-05-20T09:09:00.376Z",
+  "ended_at": "2026-05-20T09:11:06.322Z",
+  "outcome": "soft-fail",
+  "phases": [
+    {
+      "phase": "open",
+      "status": "pass",
+      "durationMs": 1977
+    },
+    {
+      "phase": "questionnaire",
+      "status": "pass",
+      "durationMs": 12
+    },
+    {
+      "phase": "build",
+      "status": "pass",
+      "durationMs": 21028
+    },
+    {
+      "phase": "promote",
+      "status": "pass",
+      "durationMs": 425
+    }
+  ],
+  "persona_id": "7602e399-c286-4769-9419-015f38d94879",
+  "failure_signature": "phase:execute:1-of-2-failed",
+  "capability_results": [
+    {
+      "executions_total": 2,
+      "executions_completed": 1,
+      "executions_failed": 1,
+      "total_tool_steps": 2,
+      "total_cost_usd": 0.4278
+    }
+  ]
+}

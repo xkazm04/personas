@@ -1,0 +1,41 @@
+{
+  "template_id": "ai-research-report-generator",
+  "template_name": "AI Research Report Generator",
+  "category": "research",
+  "started_at": "2026-05-20T08:58:33.691Z",
+  "ended_at": "2026-05-20T09:00:21.118Z",
+  "outcome": "pass",
+  "phases": [
+    {
+      "phase": "open",
+      "status": "pass",
+      "durationMs": 1993
+    },
+    {
+      "phase": "questionnaire",
+      "status": "pass",
+      "durationMs": 14
+    },
+    {
+      "phase": "build",
+      "status": "pass",
+      "durationMs": 32696
+    },
+    {
+      "phase": "promote",
+      "status": "pass",
+      "durationMs": 421
+    }
+  ],
+  "persona_id": "df0ff737-abd0-454d-be5c-86dca1c64f77",
+  "failure_signature": null,
+  "capability_results": [
+    {
+      "executions_total": 3,
+      "executions_completed": 3,
+      "executions_failed": 0,
+      "total_tool_steps": 5,
+      "total_cost_usd": 0.6089
+    }
+  ]
+}

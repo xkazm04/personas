@@ -1,0 +1,41 @@
+{
+  "template_id": "financial-stocks-signaller",
+  "template_name": "Financial Stocks Signaller",
+  "category": "finance",
+  "started_at": "2026-05-20T08:14:21.952Z",
+  "ended_at": "2026-05-20T08:18:59.757Z",
+  "outcome": "pass",
+  "phases": [
+    {
+      "phase": "open",
+      "status": "pass",
+      "durationMs": 1998
+    },
+    {
+      "phase": "questionnaire",
+      "status": "pass",
+      "durationMs": 14
+    },
+    {
+      "phase": "build",
+      "status": "pass",
+      "durationMs": 28192
+    },
+    {
+      "phase": "promote",
+      "status": "pass",
+      "durationMs": 426
+    }
+  ],
+  "persona_id": "718f7ce9-0a69-4cd6-af62-62b73a25711a",
+  "failure_signature": null,
+  "capability_results": [
+    {
+      "executions_total": 5,
+      "executions_completed": 5,
+      "executions_failed": 0,
+      "total_tool_steps": 53,
+      "total_cost_usd": 3.9331
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "template_id": "meeting-lifecycle-manager",
+  "template_name": "Meeting Lifecycle Manager",
+  "category": "productivity",
+  "started_at": "2026-05-20T08:48:59.555Z",
+  "ended_at": "2026-05-20T08:51:13.498Z",
+  "outcome": "pass",
+  "phases": [
+    {
+      "phase": "open",
+      "status": "pass",
+      "durationMs": 2000
+    },
+    {
+      "phase": "questionnaire",
+      "status": "pass",
+      "durationMs": 15
+    },
+    {
+      "phase": "build",
+      "status": "pass",
+      "durationMs": 29010
+    },
+    {
+      "phase": "promote",
+      "status": "pass",
+      "durationMs": 425
+    }
+  ],
+  "persona_id": "1d3c4729-1e0c-466c-bfd1-3476903076f2",
+  "failure_signature": null,
+  "capability_results": [
+    {
+      "executions_total": 2,
+      "executions_completed": 2,
+      "executions_failed": 0,
+      "total_tool_steps": 8,
+      "total_cost_usd": 0.6284
+    }
+  ]
+}

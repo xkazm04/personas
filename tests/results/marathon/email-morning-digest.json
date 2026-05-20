@@ -1,0 +1,41 @@
+{
+  "template_id": "email-morning-digest",
+  "template_name": "Email Morning Digest",
+  "category": "productivity",
+  "started_at": "2026-05-20T08:27:02.867Z",
+  "ended_at": "2026-05-20T08:30:05.431Z",
+  "outcome": "pass",
+  "phases": [
+    {
+      "phase": "open",
+      "status": "pass",
+      "durationMs": 1990
+    },
+    {
+      "phase": "questionnaire",
+      "status": "pass",
+      "durationMs": 15
+    },
+    {
+      "phase": "build",
+      "status": "pass",
+      "durationMs": 23397
+    },
+    {
+      "phase": "promote",
+      "status": "pass",
+      "durationMs": 420
+    }
+  ],
+  "persona_id": "aed6bc51-eaf8-4777-9936-51d77e10626e",
+  "failure_signature": null,
+  "capability_results": [
+    {
+      "executions_total": 5,
+      "executions_completed": 5,
+      "executions_failed": 0,
+      "total_tool_steps": 32,
+      "total_cost_usd": 1.8548
+    }
+  ]
+}
