@@ -618,67 +618,6 @@ pub fn instant_adopt_template_inner(
     Ok(response)
 }
 
-/// Built-in local connectors that don't need a vault credential — they're
-/// resources the app provides directly.
-const BUILTIN_LOCAL_CONNECTORS: &[&str] = &[
-    "local_drive",
-    "personas_database",
-    "personas_messages",
-    "personas_vector_db",
-];
-
-/// Synonym map for connector role names emitted by templates that don't
-/// match a `connector_definitions.category` literally. E.g. v3 templates
-/// often say `codebase` when they mean a source-control system, or
-/// `image_generation` when they mean any AI image connector. Mapping these
-/// to the actual category names lets the vault check succeed when a
-/// credential is configured for that category, even if the template author
-/// picked an ad-hoc role label.
-fn normalize_connector_role(name: &str) -> &str {
-    match name.to_ascii_lowercase().as_str() {
-        "codebase" | "source_code" | "vcs" | "git" => "source_control",
-        "image_generation" | "image" | "image_ai" | "media_generation" => "ai",
-        "llm" | "language_model" => "ai",
-        "inbox" | "mail" => "email",
-        "chat" | "notifications" => "messaging",
-        "docs" | "wiki" | "documents" => "knowledge_base",
-        "files" | "fs" | "object_storage" => "storage",
-        "metrics" | "observability" | "errors" => "monitoring",
-        "tasks" | "issues" => "project_management",
-        _ => name,
-    }
-}
-
-/// Capabilities Claude Code provides natively (WebSearch, WebFetch, Bash,
-/// File*, etc.) so no vault credential is required. A template that lists
-/// any of these as a "connector" is just declaring what the persona will
-/// do, not asking the user to wire an external service. Skip these in
-/// the credential pre-flight regardless of any `auth_type` declaration —
-/// they're satisfied by the CLI itself.
-///
-/// Compared (case-insensitive) against the connector's `name` AND its
-/// `category` so a template can use either as the discriminator.
-fn is_native_cli_capability(name: &str) -> bool {
-    matches!(
-        name.to_ascii_lowercase().as_str(),
-        "web_search"
-            | "websearch"
-            | "web_fetch"
-            | "webfetch"
-            | "web_scraping"
-            | "web_scrape"
-            | "web"
-            | "code_execution"
-            | "shell"
-            | "bash"
-            | "file_read"
-            | "file_write"
-            | "filesystem"
-            | "rss"
-            | "rss_feeds"
-    )
-}
-
 /// Auth types that mean "no vault credential needed". Templates use these
 /// when the "connector" is really a config-only data source (e.g. a list of
 /// RSS URLs the persona reads directly, no auth) or when access is handled
@@ -715,22 +654,24 @@ fn lookup_connector_auth_type<'a>(
 }
 
 /// Walk the persona's declared connector list and return the names of any
-/// that don't have a matching vault credential. A required connector is
-/// considered satisfied when ANY of the following holds:
-///  1. it's a native CLI capability the runtime provides (`web_search`,
-///     `web_fetch`, `web_scraping`, `bash`, `filesystem`, …) — see
-///     `is_native_cli_capability`,
-///  2. its template entry declares `auth_type: "none"` (or other
-///     credential-free auth shape) — see `is_credential_free_auth`,
-///  3. it names a built-in local resource (local_drive, personas_database,
-///     personas_messages, personas_vector_db),
-///  4. it matches an exact `service_type` in `persona_credentials`,
-///  5. after `normalize_connector_role`, it matches a category of any
-///     `connector_definitions` row whose `name` is configured in the vault.
-/// Returns an empty list when every required connector resolves.
+/// that still need setup.
 ///
-/// `design` is the normalized template payload; we read per-connector
-/// `auth_type` off `design.persona.connectors[]` when present.
+/// The authoritative readiness check is the unified resolver in
+/// `commands::design::connector_readiness` — the same one the build promote
+/// path uses, so adoption pre-flight and promote can no longer disagree. It
+/// understands every connector class: zero-config builtins, vault-credential
+/// connectors, binding-backed builtins (`codebase` → a Dev Tools project),
+/// and global-singleton builtins (`obsidian_memory` → an Obsidian vault).
+///
+/// Two escape hatches stay HERE rather than in the resolver because they
+/// depend on the raw template payload, which the resolver never sees:
+///  1. a connector whose template `category` is a native CLI capability
+///     (some templates write `category: web_scraping`, `name: rss_feeds`);
+///  2. a connector whose template entry explicitly declares a
+///     credential-free `auth_type` (a config-only data source).
+///
+/// `design` is the normalized template payload; per-connector `auth_type`
+/// and `category` are read off `design.persona.connectors[]` when present.
 fn check_persona_runnability(
     pool: &crate::db::DbPool,
     required: &Option<Vec<super::n8n_transform::types::N8nConnectorRef>>,
@@ -742,36 +683,14 @@ fn check_persona_runnability(
     };
     let conn = pool.get()?;
 
-    // Preload the set of categories the user has at least one configured
-    // credential for. One query, then in-memory checks per connector.
-    let mut cat_stmt = conn.prepare(
-        "SELECT DISTINCT cd.category
-         FROM connector_definitions cd
-         JOIN persona_credentials pc ON LOWER(pc.service_type) = LOWER(cd.name)",
-    )?;
-    let configured_categories: std::collections::HashSet<String> = cat_stmt
-        .query_map([], |row| row.get::<_, String>(0))?
-        .filter_map(|r| r.ok())
-        .map(|s| s.to_ascii_lowercase())
-        .collect();
-
     let mut missing = Vec::new();
     for c in required {
         let name = c.name.trim();
-        if name.is_empty() || BUILTIN_LOCAL_CONNECTORS.iter().any(|b| b.eq_ignore_ascii_case(name)) {
+        if name.is_empty() {
             continue;
         }
-        // 1. Native CLI capability — Claude Code handles it without a vault entry.
-        if is_native_cli_capability(name) {
-            tracing::debug!(
-                connector = %name,
-                "adoption pre-flight: connector satisfied by native CLI capability"
-            );
-            continue;
-        }
-        // Also check the connector's declared category against the native list
-        // (some templates write `category: web_scraping`, `name: rss_feeds`).
-        let auth_type = lookup_connector_auth_type(design, name);
+        // Template-payload escape hatch: the connector's declared category
+        // resolves to a native CLI capability.
         let category_from_template = design
             .and_then(|d| d.get("persona"))
             .and_then(|p| p.get("connectors"))
@@ -786,47 +705,28 @@ fn check_persona_runnability(
             .and_then(|e| e.get("category"))
             .and_then(|v| v.as_str());
         if let Some(cat) = category_from_template {
-            if is_native_cli_capability(cat) {
-                tracing::debug!(
-                    connector = %name,
-                    category = %cat,
-                    "adoption pre-flight: connector category resolves to native CLI capability"
-                );
+            if super::connector_readiness::is_native_cli_capability(cat) {
                 continue;
             }
         }
-        // 2. Template explicitly declared no-auth (config-only data source).
-        if is_credential_free_auth(auth_type) && auth_type.is_some() {
-            tracing::debug!(
-                connector = %name,
-                auth_type = %auth_type.unwrap_or(""),
-                "adoption pre-flight: connector is credential-free per template auth_type"
-            );
+        // Template-payload escape hatch: template explicitly declared a
+        // credential-free auth_type (config-only data source).
+        let auth_type = lookup_connector_auth_type(design, name);
+        if auth_type.is_some() && is_credential_free_auth(auth_type) {
             continue;
         }
-        // 3. Exact service_type match in vault.
-        let by_service_type: bool = conn
-            .query_row(
-                "SELECT 1 FROM persona_credentials WHERE LOWER(service_type) = LOWER(?1) LIMIT 1",
-                rusqlite::params![name],
-                |_| Ok(true),
-            )
-            .unwrap_or(false);
-        if by_service_type {
-            continue;
+        // Authoritative, class-aware readiness check.
+        match super::connector_readiness::connector_readiness(&conn, name) {
+            super::connector_readiness::Readiness::Ready => {}
+            super::connector_readiness::Readiness::NeedsSetup { connector, kind } => {
+                tracing::debug!(
+                    connector = %connector,
+                    setup_kind = %kind.as_str(),
+                    "adoption pre-flight: connector needs setup"
+                );
+                missing.push(connector);
+            }
         }
-        // 4. Category match after synonym normalization (vault has a
-        //    credential of this category).
-        let normalized = normalize_connector_role(name).to_ascii_lowercase();
-        if configured_categories.contains(&normalized) {
-            tracing::debug!(
-                connector = %name,
-                normalized = %normalized,
-                "adoption pre-flight: connector satisfied by category match"
-            );
-            continue;
-        }
-        missing.push(name.to_string());
     }
     Ok(missing)
 }

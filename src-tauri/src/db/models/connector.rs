@@ -105,22 +105,18 @@ pub struct UpdateConnectorDefinitionInput {
 // vault credential" or not), enforced by two byte-identical
 // `BUILTIN_LOCAL_CONNECTORS` allowlists. That binary has no slot for a
 // builtin connector whose "configured?" signal lives somewhere other than
-// `persona_credentials` — e.g. `codebase` (a Dev Tools project) or
-// `obsidian_memory` (an Obsidian vault). Full rationale:
-// `docs/architecture/connector-classification.md`.
+// `persona_credentials` — e.g. `codebase` (a Dev Tools project), `twin`
+// (a Twin profile), or `obsidian_memory` (an Obsidian vault). Full
+// rationale: `docs/architecture/connector-classification.md`.
 
-/// Connectors whose configuration is a single global object — there is only
-/// ever one, so there is nothing to pick per-persona. Readiness is a probe
-/// against that global object (a settings blob). Kept here, next to
-/// `classify_connector`, as the single source of truth.
-pub const GLOBAL_SINGLETON_CONNECTORS: &[&str] = &["obsidian_memory"];
-
-/// Builtin connectors whose `persona_credentials` row stores a *reference* to
-/// a local entity (a Dev Tools project, a Twin profile) rather than an API
-/// secret. Readiness = the row exists AND the referenced entity still
-/// resolves. New binding-backed builtins are added here + given a probe in
-/// `connector_readiness`.
-pub const BOUND_CREDENTIAL_CONNECTORS: &[&str] = &["codebase", "twin"];
+/// Builtin connectors that are ready iff a backing local entity exists —
+/// resolved globally at runtime (there is no per-persona binding, and the
+/// connector seed declares no picker). `codebase` → a Dev Tools project,
+/// `twin` → a Twin profile, `obsidian_memory` → an Obsidian vault. Each gets
+/// a probe in `connector_readiness`. This registry encodes connector-specific
+/// facts the `metadata` blob cannot express, so it is consulted before the
+/// metadata-derived `ZeroConfig` rule.
+pub const GLOBAL_PROBE_CONNECTORS: &[&str] = &["codebase", "twin", "obsidian_memory"];
 
 /// How a connector's readiness is determined.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
@@ -128,17 +124,15 @@ pub const BOUND_CREDENTIAL_CONNECTORS: &[&str] = &["codebase", "twin"];
 #[serde(rename_all = "snake_case")]
 pub enum ConnectorClass {
     /// Always ready — backed by a local service present from first launch
-    /// (`local_drive`, `personas_database`, `codebases`, …). No credential,
-    /// no binding.
+    /// (`local_drive`, `personas_database`, `codebases`, …). No setup gate.
     ZeroConfig,
-    /// Needs a `persona_credentials` row carrying an API secret.
+    /// Needs a `persona_credentials` row (an API secret). API connectors,
+    /// `mcp_gateway`.
     Credential,
-    /// Needs a `persona_credentials` row whose payload references a local
-    /// entity chosen via a picker (`codebase` → a Dev Tools project,
-    /// `twin` → a Twin profile).
-    BoundCredential,
-    /// Ready iff a single global configuration exists (`obsidian_memory`).
-    GlobalSingleton,
+    /// A builtin that is ready iff a backing local entity exists, resolved
+    /// globally at runtime — `codebase`, `twin`, `obsidian_memory`. Readiness
+    /// is a connector-specific probe (see `connector_readiness`).
+    GlobalProbe,
 }
 
 /// Subset of a connector's `metadata` JSON blob relevant to classification.
@@ -150,33 +144,24 @@ pub struct ConnectorClassMetadata {
     pub connection_mode: Option<String>,
     #[serde(default)]
     pub auth_type: Option<String>,
-    #[serde(default)]
-    pub requires_picker: Option<String>,
 }
 
 /// Classify a connector by name + its `metadata` JSON blob.
 ///
-/// Order matters: the connector-specific registries (`GLOBAL_SINGLETON_*`,
-/// `BOUND_CREDENTIAL_*`) are consulted first because they encode facts that
-/// metadata cannot express (e.g. that `obsidian_memory`'s state is a settings
-/// blob). Only then does the metadata-derived `ZeroConfig` check run — so a
-/// connector mistakenly seeded `always_active: true` (as `codebase` was)
-/// still classifies correctly.
+/// `GLOBAL_PROBE_CONNECTORS` is consulted first: those connectors are seeded
+/// `always_active` (the seed authors' "exposed automatically" intent) yet do
+/// nothing useful until their backing entity exists, so they must NOT fall
+/// through to `ZeroConfig`. Everything else is metadata-derived.
 pub fn classify_connector(name: &str, metadata_json: Option<&str>) -> ConnectorClass {
     let name_l = name.trim().to_ascii_lowercase();
-    if GLOBAL_SINGLETON_CONNECTORS.contains(&name_l.as_str()) {
-        return ConnectorClass::GlobalSingleton;
-    }
-    if BOUND_CREDENTIAL_CONNECTORS.contains(&name_l.as_str()) {
-        return ConnectorClass::BoundCredential;
+    if GLOBAL_PROBE_CONNECTORS.contains(&name_l.as_str()) {
+        return ConnectorClass::GlobalProbe;
     }
     let meta: ConnectorClassMetadata = metadata_json
         .and_then(|m| serde_json::from_str(m).ok())
         .unwrap_or_default();
-    // Zero-config: a local service that is up from first launch and offers
-    // nothing to pick. `requires_picker` rules out a connector that needs a
-    // per-persona binding choice.
-    if meta.always_active && meta.requires_picker.is_none() {
+    // Zero-config: a local service that is up from first launch.
+    if meta.always_active {
         return ConnectorClass::ZeroConfig;
     }
     // Credential-free local services seeded with auth_type "none" + a "local"
@@ -213,8 +198,9 @@ mod classification_tests {
 
     #[test]
     fn codebases_aggregate_is_zero_config() {
-        // `codebases` (all-projects) is always_active and not in the bound
-        // registry — the all-projects scope needs no per-persona binding.
+        // `codebases` (all-projects) is always_active and NOT in the probe
+        // registry — the all-projects aggregate works even with zero
+        // projects, so it never gates a persona.
         let meta = r#"{"is_builtin":true,"always_active":true,"connection_mode":"desktop_bridge"}"#;
         assert_eq!(
             classify_connector("codebases", Some(meta)),
@@ -223,32 +209,32 @@ mod classification_tests {
     }
 
     #[test]
-    fn codebase_is_bound_even_if_wrongly_always_active() {
-        // `codebase` was historically mis-seeded `always_active:true`. The
-        // bound registry is checked first, so it classifies correctly
-        // regardless of the stale flag.
+    fn codebase_is_global_probe_despite_always_active() {
+        // `codebase` is seeded `always_active:true`, but it does nothing
+        // useful until a Dev Tools project exists — the probe registry is
+        // checked first, so it classifies as GlobalProbe, not ZeroConfig.
         let meta = r#"{"is_builtin":true,"always_active":true,"connection_mode":"desktop_bridge"}"#;
         assert_eq!(
             classify_connector("codebase", Some(meta)),
-            ConnectorClass::BoundCredential
+            ConnectorClass::GlobalProbe
         );
     }
 
     #[test]
-    fn twin_is_bound_credential() {
-        let meta = r#"{"is_builtin":true,"connection_mode":"desktop_bridge","requires_picker":"twin"}"#;
+    fn twin_is_global_probe() {
+        let meta = r#"{"is_builtin":true,"always_active":true,"connection_mode":"desktop_bridge"}"#;
         assert_eq!(
             classify_connector("twin", Some(meta)),
-            ConnectorClass::BoundCredential
+            ConnectorClass::GlobalProbe
         );
     }
 
     #[test]
-    fn obsidian_memory_is_global_singleton() {
-        let meta = r#"{"is_builtin":true,"connection_mode":"desktop_bridge","requires_plugin":"obsidian-brain"}"#;
+    fn obsidian_memory_is_global_probe() {
+        let meta = r#"{"is_builtin":true,"always_active":false,"connection_mode":"desktop_bridge"}"#;
         assert_eq!(
             classify_connector("obsidian_memory", Some(meta)),
-            ConnectorClass::GlobalSingleton
+            ConnectorClass::GlobalProbe
         );
     }
 
@@ -273,7 +259,7 @@ mod classification_tests {
     fn name_match_is_case_insensitive() {
         assert_eq!(
             classify_connector("CodeBase", None),
-            ConnectorClass::BoundCredential
+            ConnectorClass::GlobalProbe
         );
     }
 }

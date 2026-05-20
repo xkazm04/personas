@@ -2,6 +2,7 @@ pub mod analysis;
 pub mod build_sessions;
 pub mod build_simulate;
 pub mod connector_explorer;
+pub mod connector_readiness;
 pub mod conversations;
 pub mod n8n_limits;
 pub mod n8n_sessions;
