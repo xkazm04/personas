@@ -13,6 +13,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   clickTestId,
+  countToolSteps,
   health,
   invokeCommandRaw,
   navigate,
@@ -313,8 +314,6 @@ test('marathon-template', async () => {
   }
 
   // --- Phase 6: Execute each capability ---
-  // Pre-execution timestamp to filter "new" executions.
-  const preExecuteIso = new Date().toISOString();
   if (!result.persona_id) {
     result.failure_signature = 'phase:execute:no-persona-id';
     result.outcome = 'hard-fail';
@@ -359,6 +358,11 @@ test('marathon-template', async () => {
       continue;
     }
     try {
+      // Per-capability timestamp — captured fresh before each execute so
+      // waitForExecution matches THIS capability's execution, not a
+      // prior one that finished late. A shared pre-loop timestamp let
+      // capability N match capability N-1's slow execution.
+      const capStartIso = new Date().toISOString();
       // Try a real execution first. If the persona was flagged
       // needs_credentials at promote time (e.g. a desktop_bridge
       // builtin like `codebase` that the Rust BUILTIN_LOCAL_CONNECTORS
@@ -381,7 +385,11 @@ test('marathon-template', async () => {
           30,
         );
       }
-      const row = await waitForExecution(result.persona_id, preExecuteIso, 4 * 60_000);
+      // Real persona executions routinely run 4-6.5 min (observed range
+      // 75s-385s across the 50-template marathon). A 4-min cap produced
+      // false execution-timeout hard-fails on templates whose work
+      // genuinely took longer — give it 10 min.
+      const row = await waitForExecution(result.persona_id, capStartIso, 10 * 60_000);
       if (!row) {
         result.capability_results.push({ cap_id: capId, outcome: 'hard-fail', detail: `execution-timeout (${mode})` });
         continue;
@@ -398,13 +406,7 @@ test('marathon-template', async () => {
       // assembled correctly and the model engaged, which is the
       // "metadata in place for real functionality" signal the marathon
       // is after. So: execute → need tool steps; simulate → need cost.
-      let toolStepCount = 0;
-      if (row.tool_steps) {
-        try {
-          const parsed = JSON.parse(row.tool_steps);
-          if (Array.isArray(parsed)) toolStepCount = parsed.length;
-        } catch { /* corrupt JSON */ }
-      }
+      const toolStepCount = countToolSteps(row.tool_steps);
       const modelRan = (row.cost_usd ?? 0) > 0;
       const ok = mode === 'simulate' ? modelRan : toolStepCount > 0;
       result.capability_results.push({

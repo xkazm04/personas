@@ -136,16 +136,34 @@ export async function clickByText(text: string, timeoutMs = 10_000): Promise<voi
   throw new Error(`clickByText: "${text}" not found in ${timeoutMs}ms`);
 }
 
-/** Persona executions row shape (read via invokeCommand("list_persona_executions")
- *  which the bridge exposes). Loose typing — we only need a few fields. */
+/** Persona executions row shape (read via invokeCommand("list_executions")).
+ *  Loose typing — we only need a few fields. `tool_steps` comes back
+ *  ALREADY deserialized as an array (the command parses the stored JSON
+ *  before returning), not as a string — callers must not JSON.parse it. */
 export interface ExecutionRow {
   id: string;
   persona_id: string;
   status: string;
   cost_usd?: number;
   duration_ms?: number;
-  tool_steps?: string | null;
+  tool_steps?: unknown;
   created_at: string;
+}
+
+/** Normalize an execution's `tool_steps` to a step count regardless of
+ *  whether the bridge returned it as an array (current behaviour) or a
+ *  JSON string (defensive). Returns 0 for null/empty/corrupt. */
+export function countToolSteps(toolSteps: unknown): number {
+  if (Array.isArray(toolSteps)) return toolSteps.length;
+  if (typeof toolSteps === 'string' && toolSteps.trim()) {
+    try {
+      const parsed = JSON.parse(toolSteps);
+      return Array.isArray(parsed) ? parsed.length : 0;
+    } catch {
+      return 0;
+    }
+  }
+  return 0;
 }
 
 /** Read the most recent N executions for a persona via the bridge.

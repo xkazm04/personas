@@ -55,6 +55,82 @@ fn has_table(conn: &Connection, table: &str) -> Result<bool, AppError> {
     Ok(count > 0)
 }
 
+/// Rebuild `persona_executions` to widen the status CHECK constraint with
+/// `'incomplete'`. The `ExecutionState` enum has a valid `Incomplete`
+/// terminal state (`Running -> Incomplete`) but the original table CHECK
+/// omitted it, so any execution that ended `Incomplete` failed to persist
+/// with `CHECK constraint failed: status IN (...)` and was force-written
+/// as `failed` with a misleading error. SQLite cannot `ALTER` a CHECK
+/// constraint, so the table is rebuilt.
+///
+/// Follows SQLite's documented safe-rebuild procedure:
+///   - foreign_keys OFF — six tables `CASCADE`-reference `persona_executions`;
+///     a plain `DROP TABLE` with FK enforcement on would empty those child
+///     tables via the implicit delete.
+///   - recreate the table from its OWN stored DDL with only the CHECK
+///     widened, so the column set/order is byte-identical and `SELECT *`
+///     copies cleanly regardless of how many `ALTER ... ADD COLUMN`
+///     migrations ran before this point.
+///   - replay the index + trigger DDL captured from `sqlite_master`.
+///   - rebuild the `executions_fts` external-content index (the bulk
+///     `INSERT ... SELECT` does not fire the FTS sync triggers).
+fn rebuild_executions_table_with_incomplete_status(conn: &Connection) -> Result<(), AppError> {
+    let _fk_guard = crate::db::FkDisabledGuard::new(conn).map_err(AppError::Database)?;
+
+    let create_sql: String = conn.query_row(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name='persona_executions'",
+        [],
+        |r| r.get(0),
+    )?;
+
+    // Index + trigger DDL to replay after the rename. Auto-indexes (PK)
+    // have a NULL `sql` and are skipped — they are recreated implicitly.
+    let aux_sql: Vec<String> = {
+        let mut stmt = conn.prepare(
+            "SELECT sql FROM sqlite_master
+             WHERE tbl_name='persona_executions'
+               AND type IN ('index','trigger')
+               AND sql IS NOT NULL",
+        )?;
+        let rows = stmt.query_map([], |r| r.get::<_, String>(0))?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?
+    };
+
+    // `'cancelled'` occurs exactly once in the executions DDL — the status
+    // CHECK list. Insert `'incomplete'` immediately before it.
+    let widened = create_sql.replacen("'cancelled'", "'incomplete', 'cancelled'", 1);
+    if widened == create_sql {
+        // CHECK clause not in the expected shape — bail rather than build a
+        // table that silently keeps the old constraint.
+        return Err(AppError::Database(rusqlite::Error::InvalidQuery));
+    }
+    // Re-point the CREATE at the staging name. `persona_executions` appears
+    // once (the table name); the FK clauses reference `personas` and
+    // `persona_triggers`, neither of which contains this token.
+    let staged = widened.replacen("persona_executions", "persona_executions_new", 1);
+
+    let fts_present = has_table(conn, "executions_fts")?;
+
+    let mut batch = String::new();
+    batch.push_str("DROP TABLE IF EXISTS persona_executions_new;\n");
+    batch.push_str(&staged);
+    batch.push_str(";\n");
+    batch.push_str("INSERT INTO persona_executions_new SELECT * FROM persona_executions;\n");
+    batch.push_str("DROP TABLE persona_executions;\n");
+    batch.push_str("ALTER TABLE persona_executions_new RENAME TO persona_executions;\n");
+    for s in &aux_sql {
+        batch.push_str(s);
+        batch.push_str(";\n");
+    }
+    if fts_present {
+        batch.push_str("INSERT INTO executions_fts(executions_fts) VALUES('rebuild');\n");
+    }
+
+    ddl_step(conn, &batch)?;
+    Ok(())
+}
+
 /// Incremental migrations for columns added after the initial schema.
 /// Uses "ADD COLUMN ... IF NOT EXISTS" equivalent via PRAGMA table_info check.
 pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
@@ -2579,6 +2655,75 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
                 )?;
                 Ok(())
             },
+        },
+    )?;
+
+    // Discord inbound polling — cursor state per (persona, channel) and a log
+    // of messages we've fanned out to execute_persona so we can dedupe across
+    // restarts and post replies once the run finishes. See
+    // `engine/discord_poller.rs` for the loop that consumes these tables.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "discord_inbound_polling",
+            description: "Create discord_poll_state and discord_inbound_messages",
+            already_applied: |conn| has_table(conn, "discord_poll_state"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS discord_poll_state (
+                        persona_id      TEXT NOT NULL,
+                        channel_id      TEXT NOT NULL,
+                        last_message_id TEXT NOT NULL DEFAULT '',
+                        last_polled_at  TEXT NOT NULL DEFAULT (datetime('now')),
+                        PRIMARY KEY (persona_id, channel_id)
+                    );
+                     CREATE TABLE IF NOT EXISTS discord_inbound_messages (
+                        message_id          TEXT PRIMARY KEY,
+                        persona_id          TEXT NOT NULL,
+                        channel_id          TEXT NOT NULL,
+                        credential_id       TEXT NOT NULL,
+                        author_id           TEXT NOT NULL DEFAULT '',
+                        execution_id        TEXT,
+                        replied_message_id  TEXT,
+                        received_at         TEXT NOT NULL DEFAULT (datetime('now')),
+                        replied_at          TEXT,
+                        error               TEXT
+                    );
+                     CREATE INDEX IF NOT EXISTS idx_discord_inbound_pending
+                         ON discord_inbound_messages(persona_id, channel_id, replied_message_id);
+                     CREATE INDEX IF NOT EXISTS idx_discord_inbound_received
+                         ON discord_inbound_messages(received_at DESC);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
+    // Widen persona_executions.status CHECK to include 'incomplete' — a
+    // valid ExecutionState terminal variant the original constraint
+    // omitted. Must run last: the rebuild copies the table via its own
+    // stored DDL, so every prior `ADD COLUMN` migration must already be
+    // applied for the new table to carry the full column set.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "persona_executions_incomplete_status",
+            description: "Add 'incomplete' to persona_executions.status CHECK constraint",
+            already_applied: |conn| {
+                let sql: String = conn
+                    .query_row(
+                        "SELECT COALESCE(sql, '') FROM sqlite_master
+                         WHERE type='table' AND name='persona_executions'",
+                        [],
+                        |r| r.get(0),
+                    )
+                    .unwrap_or_default();
+                // Empty == table not created yet (fresh DB): base schema
+                // already carries the widened CHECK, so treat as applied.
+                Ok(sql.is_empty() || sql.contains("'incomplete'"))
+            },
+            apply: rebuild_executions_table_with_incomplete_status,
         },
     )?;
 

@@ -110,7 +110,7 @@ CREATE TABLE IF NOT EXISTS persona_executions (
     persona_id        TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
     trigger_id        TEXT REFERENCES persona_triggers(id) ON DELETE SET NULL,
     status            TEXT NOT NULL DEFAULT 'queued'
-                      CHECK(status IN ('queued', 'running', 'completed', 'failed', 'cancelled')),
+                      CHECK(status IN ('queued', 'running', 'completed', 'failed', 'incomplete', 'cancelled')),
     input_data        TEXT,
     output_data       TEXT,
     claude_session_id TEXT,
