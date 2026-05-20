@@ -8,8 +8,9 @@
 //!
 //! Dispatch is driven by `ConnectorClass` (see `db::models::connector`):
 //!   - `ZeroConfig`   → always ready.
-//!   - `Credential`   → a `persona_credentials` row of that service_type
-//!                      (or a category-synonym match).
+//!   - `Credential`   → uniquely bindable to one concrete vault credential
+//!                      (exact service_type, else a category match). An
+//!                      ambiguous or absent match is NeedsSetup.
 //!   - `GlobalProbe`  → a connector-specific probe against a backing local
 //!                      entity: a Dev Tools project (`codebase`), a Twin
 //!                      profile (`twin`), an Obsidian vault (`obsidian_
@@ -121,35 +122,6 @@ fn load_connector_metadata(conn: &Connection, name: &str) -> Option<String> {
     .flatten()
 }
 
-/// True when the vault holds a credential for `service_type`, or for a
-/// category-synonym of it. The vault (`persona_credentials`) is global —
-/// keyed by `service_type`, not scoped per persona.
-fn vault_has_credential(conn: &Connection, name: &str) -> bool {
-    let exact: bool = conn
-        .query_row(
-            "SELECT 1 FROM persona_credentials WHERE LOWER(service_type) = LOWER(?1) LIMIT 1",
-            rusqlite::params![name],
-            |_| Ok(true),
-        )
-        .unwrap_or(false);
-    if exact {
-        return true;
-    }
-    // Category-synonym fallback: the vault has a credential whose connector
-    // category matches the (normalized) role this connector names.
-    let normalized = normalize_connector_role(name).to_ascii_lowercase();
-    conn.query_row(
-        "SELECT 1
-         FROM connector_definitions cd
-         JOIN persona_credentials pc ON LOWER(pc.service_type) = LOWER(cd.name)
-         WHERE LOWER(cd.category) = ?1
-         LIMIT 1",
-        rusqlite::params![normalized],
-        |_| Ok(true),
-    )
-    .unwrap_or(false)
-}
-
 /// `codebase` probe — ready when at least one active Dev Tools project
 /// exists. The codebase connector resolves its project globally at runtime,
 /// so any active project satisfies it.
@@ -221,7 +193,14 @@ pub fn connector_readiness(conn: &Connection, connector_name: &str) -> Readiness
     match classify_connector(name, metadata.as_deref()) {
         ConnectorClass::ZeroConfig => Readiness::Ready,
         ConnectorClass::Credential => {
-            if vault_has_credential(conn, name) {
+            // Phase 2 (build-readiness redesign): a Credential connector is
+            // ready only if it is *uniquely bindable* to one concrete vault
+            // credential. "A credential of this kind exists" is too weak —
+            // an ambiguous match (2+ candidates) is a user choice the build
+            // must surface, and a persona promoted with an unbindable
+            // connector executes blind. `resolve_one_credential` returns
+            // Some only for an unambiguous bind.
+            if resolve_one_credential(conn, name).is_some() {
                 Readiness::Ready
             } else {
                 needs(SetupKind::VaultCredential)
@@ -427,11 +406,7 @@ mod tests {
             Readiness::NeedsSetup { kind, .. } => assert_eq!(kind, SetupKind::VaultCredential),
             other => panic!("expected NeedsSetup, got {other:?}"),
         }
-        conn.execute(
-            "INSERT INTO persona_credentials (service_type) VALUES ('notion')",
-            [],
-        )
-        .unwrap();
+        cred(&conn, "notion-cred-1", "notion");
         assert_eq!(connector_readiness(&conn, "notion"), Readiness::Ready);
     }
 
@@ -591,5 +566,19 @@ mod tests {
         def(&conn, "hubspot", r#"{"auth_type":"api_key"}"#);
         let links = resolve_credential_links(&conn, ["hubspot"]);
         assert!(links.is_empty());
+    }
+
+    #[test]
+    fn credential_connector_with_ambiguous_candidates_needs_setup() {
+        // Phase 2: two `email`-category credentials → not uniquely bindable.
+        // Readiness must be NeedsSetup so the build asks which one, rather
+        // than promoting `ready` off a connector it can't unambiguously wire.
+        let conn = test_db();
+        def(&conn, "email", r#"{"auth_type":"api_key"}"#);
+        def_cat(&conn, "gmail", r#"{"auth_type":"api_key"}"#, "email");
+        def_cat(&conn, "outlook", r#"{"auth_type":"api_key"}"#, "email");
+        cred(&conn, "c1", "gmail");
+        cred(&conn, "c2", "outlook");
+        assert!(!connector_readiness(&conn, "email").is_ready());
     }
 }
