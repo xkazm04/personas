@@ -2,14 +2,14 @@
   "template_id": "knowledge-base-health-auditor",
   "template_name": "Knowledge Base Health Auditor",
   "category": "research",
-  "started_at": "2026-05-20T09:09:00.376Z",
-  "ended_at": "2026-05-20T09:11:06.322Z",
-  "outcome": "soft-fail",
+  "started_at": "2026-05-20T10:17:04.318Z",
+  "ended_at": "2026-05-20T10:19:23.259Z",
+  "outcome": "pass",
   "phases": [
     {
       "phase": "open",
       "status": "pass",
-      "durationMs": 1977
+      "durationMs": 1985
     },
     {
       "phase": "questionnaire",
@@ -19,7 +19,7 @@
     {
       "phase": "build",
       "status": "pass",
-      "durationMs": 21028
+      "durationMs": 28592
     },
     {
       "phase": "promote",
@@ -27,15 +27,24 @@
       "durationMs": 425
     }
   ],
-  "persona_id": "7602e399-c286-4769-9419-015f38d94879",
-  "failure_signature": "phase:execute:1-of-2-failed",
+  "persona_id": "001fc02b-a898-4763-961f-03549d80708f",
+  "failure_signature": null,
   "capability_results": [
     {
-      "executions_total": 2,
-      "executions_completed": 1,
-      "executions_failed": 1,
-      "total_tool_steps": 2,
-      "total_cost_usd": 0.4278
+      "cap_id": "uc-7da68d0d-c29b-4119-874d-6861f26d80ee",
+      "outcome": "pass",
+      "execution_id": "1c1111bc-2609-44a6-a3b6-4f92ccd283bf",
+      "tool_steps": 2,
+      "cost_usd": 0.21333800000000003,
+      "detail": "simulate (model ran, tools stubbed)"
+    },
+    {
+      "cap_id": "uc-07fada5d-298f-42de-84f8-83f689692a0e",
+      "outcome": "pass",
+      "execution_id": "04957207-3864-48a2-accf-e680781471e0",
+      "tool_steps": 1,
+      "cost_usd": 0.2721215,
+      "detail": "simulate (model ran, tools stubbed)"
     }
   ]
 }

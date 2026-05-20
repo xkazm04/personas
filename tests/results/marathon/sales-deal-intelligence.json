@@ -2,40 +2,65 @@
   "template_id": "sales-deal-intelligence",
   "template_name": "Sales Deal Intelligence",
   "category": "sales",
-  "started_at": "2026-05-20T09:36:57.237Z",
-  "ended_at": "2026-05-20T09:38:28.602Z",
-  "outcome": "soft-fail",
+  "started_at": "2026-05-20T10:19:25.026Z",
+  "ended_at": "2026-05-20T10:24:19.654Z",
+  "outcome": "pass",
   "phases": [
     {
       "phase": "open",
       "status": "pass",
-      "durationMs": 1985
+      "durationMs": 1986
     },
     {
       "phase": "questionnaire",
       "status": "pass",
-      "durationMs": 15
+      "durationMs": 14
     },
     {
       "phase": "build",
       "status": "pass",
-      "durationMs": 28649
+      "durationMs": 21457
     },
     {
       "phase": "promote",
       "status": "pass",
-      "durationMs": 423
+      "durationMs": 416
     }
   ],
-  "persona_id": "841e203c-0526-40b3-9a4b-35e1685431d6",
-  "failure_signature": "phase:execute:1-of-4-failed",
+  "persona_id": "1f36e951-e885-417e-8450-50a572de88df",
+  "failure_signature": null,
   "capability_results": [
     {
-      "executions_total": 4,
-      "executions_completed": 3,
-      "executions_failed": 1,
-      "total_tool_steps": 15,
-      "total_cost_usd": 1.3782
+      "cap_id": "uc-c5a5a7ff-b2b9-415e-82f5-d022de7ad54c",
+      "outcome": "pass",
+      "execution_id": "9af1728c-c745-4e88-9467-89d20ec355a4",
+      "tool_steps": 4,
+      "cost_usd": 0.2560965,
+      "detail": "execute"
+    },
+    {
+      "cap_id": "uc-f36f4e65-8925-4e25-b00c-1eb8a8256ac7",
+      "outcome": "pass",
+      "execution_id": "140d22e5-07f1-4f7d-bb40-2053ebe476c6",
+      "tool_steps": 3,
+      "cost_usd": 0.23295175,
+      "detail": "execute"
+    },
+    {
+      "cap_id": "uc-86d703c8-0bfb-4121-8d0c-1d2a4c92310d",
+      "outcome": "pass",
+      "execution_id": "ec7310ff-ccdf-47e5-bb9d-fdc8cc455830",
+      "tool_steps": 7,
+      "cost_usd": 0.50601025,
+      "detail": "execute"
+    },
+    {
+      "cap_id": "uc-9eccae7d-3619-4eef-be73-9ec77bbaf1a3",
+      "outcome": "pass",
+      "execution_id": "63e6ecf7-f7d5-4995-bf4b-23c8e86190b9",
+      "tool_steps": 2,
+      "cost_usd": 0.23199125,
+      "detail": "execute"
     }
   ]
 }
