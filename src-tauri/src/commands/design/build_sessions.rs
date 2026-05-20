@@ -788,18 +788,81 @@ pub async fn test_build_draft(
 #[tauri::command]
 pub async fn promote_build_draft(
     state: State<'_, Arc<AppState>>,
+    app: tauri::AppHandle,
     session_id: String,
     persona_id: String,
     excluded_use_case_ids: Option<Vec<String>>,
 ) -> Result<serde_json::Value, AppError> {
     require_auth(&state).await?;
-    promote_build_draft_inner(
+    let result = promote_build_draft_inner(
         &state,
         session_id,
-        persona_id,
+        persona_id.clone(),
         excluded_use_case_ids.unwrap_or_default(),
     )
-    .await
+    .await?;
+    // Phase 3b (build-readiness redesign) — realistic build verification.
+    // Promote has materialized the persona; now run it once and withhold
+    // `ready` if it cannot deliver value. See
+    // docs/architecture/build-readiness-redesign.md.
+    gate_setup_status_on_verification(&state, app, &persona_id).await;
+    Ok(result)
+}
+
+/// Phase 3b — after promote materializes the persona, run its first
+/// manually-invokable capability once (simulated) and downgrade
+/// `setup_status` to `needs_credentials` if the run cannot deliver value.
+///
+/// Only runs when promote left the persona `ready`: a persona already
+/// flagged for missing connectors would precondition-fail anyway, so the
+/// run would be redundant cost. The verification is fail-open — a run that
+/// can't be assessed leaves `ready` untouched.
+async fn gate_setup_status_on_verification(
+    state: &Arc<AppState>,
+    app: tauri::AppHandle,
+    persona_id: &str,
+) {
+    let setup_status = match persona_repo::get_by_id(&state.db, persona_id) {
+        Ok(p) => p.setup_status,
+        Err(_) => return,
+    };
+    if setup_status != "ready" {
+        return;
+    }
+    let outcome =
+        crate::commands::core::use_cases::verify_promoted_persona(state, app, persona_id).await;
+    // `precondition_failed` / `failed` → the persona ran but cannot deliver
+    // value (a missing data source, an unmet precondition). `no_input_
+    // available` is EXPECTED at build time — there is no real triggering
+    // data — and must NOT block; the persona is correctly built.
+    // `value_delivered` / `partial` / an unassessed run all leave `ready`.
+    let blocked = matches!(
+        outcome.as_deref(),
+        Some("precondition_failed") | Some("failed")
+    );
+    if blocked {
+        if let Ok(conn) = state.db.get() {
+            let _ = conn.execute(
+                "UPDATE personas SET setup_status = ?1, updated_at = ?2 WHERE id = ?3",
+                rusqlite::params![
+                    "needs_credentials",
+                    chrono::Utc::now().to_rfc3339(),
+                    persona_id
+                ],
+            );
+        }
+        tracing::info!(
+            persona_id = %persona_id,
+            outcome = ?outcome,
+            "promote: build verification could not deliver value — withheld `ready`"
+        );
+    } else {
+        tracing::info!(
+            persona_id = %persona_id,
+            outcome = ?outcome,
+            "promote: build verification passed"
+        );
+    }
 }
 
 // ============================================================================

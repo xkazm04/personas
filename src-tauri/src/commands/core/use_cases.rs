@@ -603,6 +603,60 @@ pub async fn simulate_use_case(
     .await
 }
 
+/// Build-time verification (Phase 3b of the build-readiness redesign).
+///
+/// Runs a freshly-promoted persona's first manually-invokable capability and
+/// returns its `business_outcome`. The promote path uses this to gate
+/// `setup_status` — a persona that runs but reports `precondition_failed`
+/// must not ship as `ready`.
+///
+/// The run is a **simulation** (`is_simulation = true`): it makes real
+/// connector READ calls — so it genuinely validates that credentials and
+/// data sources resolve, which is exactly where `precondition_failed`
+/// originates — but stubs outbound delivery, so promoting a persona does not
+/// fire real emails / messages every build. To make this a full real
+/// execution instead, flip the final argument to `false`.
+///
+/// Returns `None` when the persona has no manually-invokable capability
+/// (all `event_listener`) or the run could not be started — the caller
+/// treats `None` as "leave `ready`".
+pub async fn verify_promoted_persona(
+    state: &Arc<AppState>,
+    app: tauri::AppHandle,
+    persona_id: &str,
+) -> Option<String> {
+    let persona = persona_repo::get_by_id(&state.db, persona_id).ok()?;
+    let dc: serde_json::Value = serde_json::from_str(persona.design_context.as_deref()?).ok()?;
+    let use_cases = crate::engine::design_context::pick_use_cases_array(&dc)?;
+    // First capability that can be invoked directly — an `event_listener`
+    // capability only fires on an external event, so there is nothing to
+    // run as a build check.
+    let use_case = use_cases.iter().find(|uc| {
+        let trigger_type = uc
+            .get("suggestedTrigger")
+            .or_else(|| uc.get("suggested_trigger"))
+            .and_then(|t| t.get("type"))
+            .and_then(|v| v.as_str());
+        trigger_type != Some("event_listener")
+    })?;
+    let use_case_id = use_case.get("id").and_then(|v| v.as_str())?.to_string();
+    let input_data = build_simulation_input(use_case, None).ok()?;
+    let execution = crate::commands::execution::executions::execute_persona_inner(
+        state,
+        app,
+        persona_id.to_string(),
+        /* trigger_id */ None,
+        Some(input_data),
+        Some(use_case_id),
+        /* continuation */ None,
+        /* idempotency_key */ None,
+        /* is_simulation */ true,
+    )
+    .await
+    .ok()?;
+    Some(execution.business_outcome)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
