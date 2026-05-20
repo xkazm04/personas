@@ -440,30 +440,29 @@ pub fn assemble_prompt(
         ));
     }
 
-    // Available Credentials (via proxy)
+    // Available Credentials (direct environment variables).
+    //
+    // Credentials are injected straight into the child process environment by
+    // `runner/credentials.rs` as `{CONNECTOR}_{FIELD}` variables. The prompt
+    // used to advertise a credential proxy (`$PERSONAS_PROXY_URL`) instead,
+    // but those env vars were never set — so the agent wasted a step
+    // discovering the proxy was absent before falling back to the direct
+    // vars. The section now tells the truth.
     if let Some(hints) = credential_hints {
         if !hints.is_empty() {
-            prompt.push_str("## Available Credentials (via secure proxy)\n");
-            prompt
-                .push_str("Authenticated API calls are routed through a local credential proxy.\n");
-            prompt.push_str("Credential secrets are NOT in your environment -- use the proxy endpoint instead.\n\n");
-            prompt.push_str("Credential IDs available:\n");
+            prompt.push_str("## Available Credentials\n");
+            prompt.push_str(
+                "Authenticated API credentials are injected directly into your environment \
+                 as environment variables. Reference them with the shell form `$NAME` in your \
+                 API calls -- e.g. an `Authorization: Bearer` header or a query parameter.\n\n",
+            );
+            prompt.push_str("Environment variables available:\n");
             for hint in hints {
                 prompt.push_str(&format!("- {hint}\n"));
             }
             prompt.push_str(
-                "\n### How to use the proxy\n\
-                 Send a POST request to `$PERSONAS_PROXY_URL/<credential_id>` with a JSON body:\n\
-                 ```\n\
-                 curl -s -X POST \"$PERSONAS_PROXY_URL/<credential_id>\" \\\n\
-                   -H \"Authorization: Bearer $PERSONAS_PROXY_KEY\" \\\n\
-                   -H \"Content-Type: application/json\" \\\n\
-                   -d '{\"method\":\"GET\",\"path\":\"/your/api/endpoint\",\"headers\":{},\"body\":null}'\n\
-                 ```\n\
-                 The proxy resolves the credential's base URL, injects auth headers, enforces rate limits,\n\
-                 and returns `{\"success\":true,\"data\":{\"status\":200,\"body\":\"...\",\"headers\":{...}}}`.\n\n\
-                 IMPORTANT: `$PERSONAS_PROXY_URL` and `$PERSONAS_PROXY_KEY` are pre-set. Just use them.\n\
-                 IMPORTANT: Do NOT attempt to read or echo credential secrets -- they are not in your environment.\n\n",
+                "\nDo NOT echo, print, or write credential values anywhere -- reference them \
+                 only via `$NAME` to authenticate outbound API calls.\n\n",
             );
         }
     }
