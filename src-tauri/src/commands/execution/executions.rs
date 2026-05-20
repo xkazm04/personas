@@ -193,10 +193,16 @@ pub(crate) async fn execute_persona_inner(
     // of a false-positive run. Simulations bypass this gate so the user
     // can still test a persona's prompt behavior before wiring creds.
     if !is_simulation && persona.setup_status == "needs_credentials" {
+        // The remediation is connector-class-specific — a vault credential,
+        // a Dev Tools project, or an Obsidian vault — so the message points
+        // at the persona's Connections panel (which shows per-connector
+        // readiness) rather than asserting "Settings → Vault", which is
+        // wrong for builtin connectors like `codebase` or `obsidian_memory`.
         return Err(AppError::Validation(format!(
-            "Persona '{}' has setup_status='needs_credentials' — one or more declared connectors have no vault binding. \
-             Configure the missing credentials in Settings → Vault, then re-enable the persona. \
-             (You can run a simulation via `simulate_use_case` to test prompt behaviour without credentials.)",
+            "Persona '{}' is not ready to run — one or more of its connectors still need setup. \
+             Open the persona's Connections panel to see what each connector requires \
+             (an API credential, a Dev Tools project, or an Obsidian vault), then re-enable the persona. \
+             (You can run a simulation via `simulate_use_case` to test prompt behaviour without connectors configured.)",
             persona.name
         )));
     }
