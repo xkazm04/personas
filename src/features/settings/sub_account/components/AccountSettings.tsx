@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { getVersion } from '@tauri-apps/api/app';
 import { Globe, LogOut, User, AlertCircle, RefreshCw, Activity, Download } from 'lucide-react';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
@@ -7,7 +8,9 @@ import { useToastStore } from '@/stores/toastStore';
 import { useAutoUpdater } from '@/hooks/utility/data/useAutoUpdater';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { isTelemetryEnabled, setTelemetryEnabled } from '@/lib/telemetryPreference';
-import { useTranslation } from '@/i18n/useTranslation';
+import { formatRelativeTime } from '@/lib/utils/formatters';
+import { useTranslation, interpolate } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
 import Button from '@/features/shared/components/buttons/Button';
 import RadioSettingsCard from '@/features/radio/components/RadioSettingsCard';
 
@@ -22,10 +25,15 @@ export default function AccountSettings() {
 
   const [telemetryOn, setTelemetryOn] = useState(isTelemetryEnabled);
   const [telemetryChanged, setTelemetryChanged] = useState(false);
-  const { isChecking, checkForUpdate } = useAutoUpdater();
+  const { isChecking, lastChecked, checkForUpdate } = useAutoUpdater();
+  const [appVersion, setAppVersion] = useState<string | null>(null);
   const clearError = () => useAuthStore.setState({ error: null });
   const { t } = useTranslation();
   const s = t.settings.account;
+
+  useEffect(() => {
+    getVersion().then(setAppVersion).catch(silentCatch('AccountSettings:getVersion'));
+  }, []);
 
   const handleCheckForUpdate = async () => {
     const outcome = await checkForUpdate();
@@ -93,6 +101,20 @@ export default function AccountSettings() {
           <p className="typo-body text-foreground leading-relaxed">
             {s.updates_description}
           </p>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+            {appVersion && (
+              <span className="inline-flex items-center px-2 py-0.5 typo-caption font-medium rounded-full bg-secondary/30 border border-primary/10 text-foreground">
+                {interpolate(s.updates_current_version, { version: appVersion })}
+              </span>
+            )}
+            {lastChecked !== null && (
+              <span className="typo-caption text-foreground">
+                {interpolate(s.updates_last_checked, {
+                  time: formatRelativeTime(new Date(lastChecked).toISOString()),
+                })}
+              </span>
+            )}
+          </div>
           <Button
             variant="secondary"
             icon={<RefreshCw className={`w-4 h-4 ${isChecking ? 'animate-spin' : ''}`} />}

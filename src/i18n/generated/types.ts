@@ -8106,6 +8106,8 @@ export type Translations = {
       updates_up_to_date: string;
       updates_available_toast: string;
       updates_check_failed: string;
+      updates_current_version: string;
+      updates_last_checked: string;
     };
     appearance_extra: {
       simple: string;

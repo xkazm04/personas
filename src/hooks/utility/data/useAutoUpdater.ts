@@ -17,6 +17,10 @@ export function useAutoUpdater() {
   const [isChecking, setIsChecking] = useState(false);
   const [isInstalling, setIsInstalling] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Epoch ms of the last completed check (any outcome), or null before the
+  // first check resolves. Surfaced in Settings so the user can confirm the
+  // background poll is actually running.
+  const [lastChecked, setLastChecked] = useState<number | null>(null);
   const updateRef = useRef<Update | null>(null);
 
   const checkForUpdate = useCallback(async (): Promise<CheckOutcome> => {
@@ -50,6 +54,7 @@ export function useAutoUpdater() {
       return "failed";
     } finally {
       setIsChecking(false);
+      setLastChecked(Date.now());
     }
   }, [isChecking]);
 
@@ -112,6 +117,7 @@ export function useAutoUpdater() {
     isChecking,
     isInstalling,
     error,
+    lastChecked,
     checkForUpdate,
     installUpdate,
     dismissUpdate,
