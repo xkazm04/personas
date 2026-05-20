@@ -179,6 +179,8 @@ export type Translations = {
     update_install_retry: string;
     update_jobs_running_warning: string;
     update_install_anyway: string;
+    update_install_when_idle: string;
+    update_install_when_idle_status: string;
     update_keep_working: string;
     expand_sidebar: string;
     collapse_sidebar: string;

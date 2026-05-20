@@ -169,6 +169,8 @@
     "update_install_retry": "Thử lại",
     "update_jobs_running_warning": "{count} tác vụ đang chạy sẽ bị gián đoạn nếu bạn cài đặt ngay và khởi động lại.",
     "update_install_anyway": "Vẫn cài đặt",
+    "update_install_when_idle": "Cài khi rảnh",
+    "update_install_when_idle_status": "Bản cập nhật sẽ cài đặt khi {count} tác vụ đang chạy hoàn tất.",
     "update_keep_working": "Tiếp tục làm việc",
     "expand_sidebar": "Mở rộng thanh bên",
     "collapse_sidebar": "Thu gọn thanh bên",

@@ -173,6 +173,8 @@
     "update_install_retry": "Retry",
     "update_jobs_running_warning": "{count} running task(s) will be interrupted if you install now and restart.",
     "update_install_anyway": "Install anyway",
+    "update_install_when_idle": "Install when idle",
+    "update_install_when_idle_status": "Update will install once {count} running task(s) finish.",
     "update_keep_working": "Keep working",
     "expand_sidebar": "Expand sidebar",
     "collapse_sidebar": "Collapse sidebar",

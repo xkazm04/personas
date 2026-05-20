@@ -169,6 +169,8 @@
     "update_install_retry": "Erneut versuchen",
     "update_jobs_running_warning": "{count} laufende Aufgabe(n) werden unterbrochen, wenn Sie jetzt installieren und neu starten.",
     "update_install_anyway": "Trotzdem installieren",
+    "update_install_when_idle": "Bei Leerlauf installieren",
+    "update_install_when_idle_status": "Das Update wird installiert, sobald {count} laufende Aufgabe(n) abgeschlossen sind.",
     "update_keep_working": "Weiterarbeiten",
     "expand_sidebar": "Seitenleiste erweitern",
     "collapse_sidebar": "Seitenleiste einklappen",

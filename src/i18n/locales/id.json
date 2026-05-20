@@ -169,6 +169,8 @@
     "update_install_retry": "Coba lagi",
     "update_jobs_running_warning": "{count} tugas yang berjalan akan terhenti jika Anda memasang sekarang dan memulai ulang.",
     "update_install_anyway": "Tetap pasang",
+    "update_install_when_idle": "Pasang saat senggang",
+    "update_install_when_idle_status": "Pembaruan akan dipasang setelah {count} tugas yang berjalan selesai.",
     "update_keep_working": "Lanjutkan bekerja",
     "expand_sidebar": "Perluas bilah samping",
     "collapse_sidebar": "Ciutkan bilah samping",

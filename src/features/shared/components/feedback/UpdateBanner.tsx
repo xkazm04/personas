@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAutoUpdater } from "@/hooks/utility/data/useAutoUpdater";
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useTranslation, interpolate } from '@/i18n/useTranslation';
@@ -20,6 +20,16 @@ export default function UpdateBanner() {
     (s) => Object.values(s.activeProcesses).filter((p) => p.status === "running").length,
   );
   const [confirmPending, setConfirmPending] = useState(false);
+  // When set, install is deferred until every running task finishes; the
+  // effect below fires the install the moment runningCount drops to 0.
+  const [installWhenIdle, setInstallWhenIdle] = useState(false);
+
+  useEffect(() => {
+    if (installWhenIdle && runningCount === 0 && !isInstalling) {
+      setInstallWhenIdle(false);
+      void installUpdate();
+    }
+  }, [installWhenIdle, runningCount, isInstalling, installUpdate]);
 
   if (!updateAvailable || !updateInfo) return null;
 
@@ -33,7 +43,13 @@ export default function UpdateBanner() {
 
   const confirmInstall = () => {
     setConfirmPending(false);
+    setInstallWhenIdle(false);
     void installUpdate();
+  };
+
+  const scheduleInstallWhenIdle = () => {
+    setConfirmPending(false);
+    setInstallWhenIdle(true);
   };
 
   const installLabel = isInstalling
@@ -112,12 +128,32 @@ export default function UpdateBanner() {
               {t.chrome.update_install_anyway}
             </button>
             <button
+              onClick={scheduleInstallWhenIdle}
+              className="px-2.5 py-1 rounded-xl bg-amber-500/10 text-amber-200 typo-heading hover:bg-amber-500/20 transition-colors"
+            >
+              {t.chrome.update_install_when_idle}
+            </button>
+            <button
               onClick={() => setConfirmPending(false)}
               className="px-2.5 py-1 rounded-xl text-foreground typo-heading hover:bg-accent/10 transition-colors"
             >
               {t.chrome.update_keep_working}
             </button>
           </div>
+        </div>
+      )}
+
+      {installWhenIdle && !isInstalling && (
+        <div className="flex items-center gap-3 px-4 py-2 typo-caption bg-amber-500/10 border-b border-amber-500/20">
+          <span className="text-amber-300/90 shrink min-w-0">
+            {interpolate(t.chrome.update_install_when_idle_status, { count: runningCount })}
+          </span>
+          <button
+            onClick={() => setInstallWhenIdle(false)}
+            className="ml-auto shrink-0 px-2.5 py-1 rounded-xl text-foreground typo-heading hover:bg-accent/10 transition-colors"
+          >
+            {t.common.cancel}
+          </button>
         </div>
       )}
 

@@ -169,6 +169,8 @@
     "update_install_retry": "আবার চেষ্টা করুন",
     "update_jobs_running_warning": "আপনি এখন ইনস্টল করে পুনরায় চালু করলে {count}টি চলমান কাজ বন্ধ হয়ে যাবে।",
     "update_install_anyway": "তবুও ইনস্টল করুন",
+    "update_install_when_idle": "নিষ্ক্রিয় হলে ইনস্টল করুন",
+    "update_install_when_idle_status": "{count}টি চলমান কাজ শেষ হলে আপডেট ইনস্টল হবে।",
     "update_keep_working": "কাজ চালিয়ে যান",
     "expand_sidebar": "সাইডবার প্রসারিত করুন",
     "collapse_sidebar": "সাইডবার সংকুচিত করুন",

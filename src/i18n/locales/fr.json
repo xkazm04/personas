@@ -169,6 +169,8 @@
     "update_install_retry": "Réessayer",
     "update_jobs_running_warning": "{count} tâche(s) en cours seront interrompues si vous installez maintenant et redémarrez.",
     "update_install_anyway": "Installer quand même",
+    "update_install_when_idle": "Installer une fois inactif",
+    "update_install_when_idle_status": "La mise à jour s’installera une fois {count} tâche(s) en cours terminées.",
     "update_keep_working": "Continuer à travailler",
     "expand_sidebar": "Développer la barre latérale",
     "collapse_sidebar": "Réduire la barre latérale",
