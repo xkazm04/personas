@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getVersion } from '@tauri-apps/api/app';
-import { Globe, LogOut, User, AlertCircle, RefreshCw, Activity, Download } from 'lucide-react';
+import { Globe, LogOut, User, AlertCircle, RefreshCw, Activity, Download, CheckCircle2 } from 'lucide-react';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { useAuthStore } from '@/stores/authStore';
 import { useToastStore } from '@/stores/toastStore';
-import { useAutoUpdater } from '@/hooks/utility/data/useAutoUpdater';
+import { useAutoUpdater, type CheckOutcome } from '@/hooks/utility/data/useAutoUpdater';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { isTelemetryEnabled, setTelemetryEnabled } from '@/lib/telemetryPreference';
 import { formatRelativeTime } from '@/lib/utils/formatters';
@@ -27,12 +27,17 @@ export default function AccountSettings() {
   const [telemetryChanged, setTelemetryChanged] = useState(false);
   const { isChecking, lastChecked, checkForUpdate } = useAutoUpdater();
   const [appVersion, setAppVersion] = useState<string | null>(null);
+  // Last manual-check result, surfaced inline in the card so the result
+  // persists after the toast auto-dismisses. Cleared after 6s.
+  const [lastOutcome, setLastOutcome] = useState<CheckOutcome | null>(null);
+  const outcomeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const clearError = () => useAuthStore.setState({ error: null });
   const { t } = useTranslation();
   const s = t.settings.account;
 
   useEffect(() => {
     getVersion().then(setAppVersion).catch(silentCatch('AccountSettings:getVersion'));
+    return () => { if (outcomeTimer.current) clearTimeout(outcomeTimer.current); };
   }, []);
 
   const handleCheckForUpdate = async () => {
@@ -45,6 +50,9 @@ export default function AccountSettings() {
     } else {
       addToast(s.updates_check_failed, 'error');
     }
+    setLastOutcome(outcome);
+    if (outcomeTimer.current) clearTimeout(outcomeTimer.current);
+    outcomeTimer.current = setTimeout(() => setLastOutcome(null), 6000);
   };
 
   return (
@@ -115,14 +123,28 @@ export default function AccountSettings() {
               </span>
             )}
           </div>
-          <Button
-            variant="secondary"
-            icon={<RefreshCw className={`w-4 h-4 ${isChecking ? 'animate-spin' : ''}`} />}
-            onClick={() => { void handleCheckForUpdate(); }}
-            disabled={isChecking}
-          >
-            {isChecking ? s.updates_checking : s.updates_check_button}
-          </Button>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              variant="secondary"
+              icon={<RefreshCw className={`w-4 h-4 ${isChecking ? 'animate-spin' : ''}`} />}
+              onClick={() => { void handleCheckForUpdate(); }}
+              disabled={isChecking}
+            >
+              {isChecking ? s.updates_checking : s.updates_check_button}
+            </Button>
+            {!isChecking && lastOutcome === 'up-to-date' && (
+              <span className="inline-flex items-center gap-1.5 typo-caption text-emerald-400 animate-fade-slide-in">
+                <CheckCircle2 className="w-4 h-4" />
+                {s.updates_up_to_date}
+              </span>
+            )}
+            {!isChecking && lastOutcome === 'failed' && (
+              <span className="inline-flex items-center gap-1.5 typo-caption text-red-400 animate-fade-slide-in">
+                <AlertCircle className="w-4 h-4" />
+                {s.updates_check_failed}
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-6">
