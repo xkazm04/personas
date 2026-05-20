@@ -164,6 +164,7 @@
     "update_available": "アップデート: v{version}",
     "install_and_restart": "インストールして再起動",
     "installing": "インストール中...",
+    "installing_progress": "インストール中 {percent}%",
     "update_install_failed": "アップデートのインストールに失敗しました",
     "update_install_retry": "再試行",
     "expand_sidebar": "サイドバーを展開",

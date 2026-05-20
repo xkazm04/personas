@@ -174,6 +174,7 @@ export type Translations = {
     update_available: string;
     install_and_restart: string;
     installing: string;
+    installing_progress: string;
     update_install_failed: string;
     update_install_retry: string;
     expand_sidebar: string;

@@ -164,6 +164,7 @@
     "update_available": "Mise à jour disponible : v{version}",
     "install_and_restart": "Installer et redémarrer",
     "installing": "Installation...",
+    "installing_progress": "Installation {percent}%",
     "update_install_failed": "Échec de l'installation de la mise à jour",
     "update_install_retry": "Réessayer",
     "expand_sidebar": "Développer la barre latérale",

@@ -164,6 +164,7 @@
     "update_available": "Dostupná aktualizace: v{version}",
     "install_and_restart": "Instalovat a restartovat",
     "installing": "Instalace...",
+    "installing_progress": "Instaluje se {percent}%",
     "update_install_failed": "Instalace aktualizace selhala",
     "update_install_retry": "Zkusit znovu",
     "expand_sidebar": "Rozbalit boční panel",

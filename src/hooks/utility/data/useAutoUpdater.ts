@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { check, type Update } from "@tauri-apps/plugin-updater";
+import { check, type Update, type DownloadEvent } from "@tauri-apps/plugin-updater";
 import * as Sentry from "@sentry/react";
 import { silentCatch } from "@/lib/silentCatch";
 
@@ -16,6 +16,9 @@ export function useAutoUpdater() {
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
   const [isChecking, setIsChecking] = useState(false);
   const [isInstalling, setIsInstalling] = useState(false);
+  // 0–100 while the update payload is downloading, or null when the total
+  // size is unknown / not downloading. Drives the banner's progress bar.
+  const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   // Epoch ms of the last completed check (any outcome), or null before the
   // first check resolves. Surfaced in Settings so the user can confirm the
@@ -63,6 +66,7 @@ export function useAutoUpdater() {
     if (!update) return;
     const installVersion = update.version;
     setIsInstalling(true);
+    setDownloadProgress(null);
     setError(null);
     Sentry.addBreadcrumb({
       category: "update",
@@ -70,7 +74,31 @@ export function useAutoUpdater() {
       level: "info",
     });
     try {
-      await update.downloadAndInstall();
+      let downloaded = 0;
+      let contentLength = 0;
+      await update.downloadAndInstall((event: DownloadEvent) => {
+        switch (event.event) {
+          case "Started":
+            downloaded = 0;
+            contentLength = event.data.contentLength ?? 0;
+            // 0 when the server omitted Content-Length — keep null so the
+            // banner shows an indeterminate "Installing…" rather than a bar
+            // stuck at a bogus percentage.
+            setDownloadProgress(contentLength > 0 ? 0 : null);
+            break;
+          case "Progress":
+            downloaded += event.data.chunkLength;
+            if (contentLength > 0) {
+              setDownloadProgress(
+                Math.min(100, Math.round((downloaded / contentLength) * 100)),
+              );
+            }
+            break;
+          case "Finished":
+            setDownloadProgress(100);
+            break;
+        }
+      });
       // downloadAndInstall typically relaunches the app; this breadcrumb only
       // fires if install completed without an immediate restart.
       Sentry.addBreadcrumb({
@@ -82,6 +110,7 @@ export function useAutoUpdater() {
       const message = err instanceof Error ? err.message : "Failed to install update";
       setError(message);
       setIsInstalling(false);
+      setDownloadProgress(null);
       Sentry.captureException(err, {
         tags: { event: "update.install.failed" },
         extra: { version: installVersion },
@@ -116,6 +145,7 @@ export function useAutoUpdater() {
     updateInfo,
     isChecking,
     isInstalling,
+    downloadProgress,
     error,
     lastChecked,
     checkForUpdate,

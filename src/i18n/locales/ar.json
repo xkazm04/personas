@@ -164,6 +164,7 @@
     "update_available": "تحديث متاح: v{version}",
     "install_and_restart": "تثبيت وإعادة التشغيل",
     "installing": "جارٍ التثبيت...",
+    "installing_progress": "جارٍ التثبيت {percent}%",
     "update_install_failed": "فشل تثبيت التحديث",
     "update_install_retry": "إعادة المحاولة",
     "expand_sidebar": "توسيع الشريط الجانبي",

@@ -164,6 +164,7 @@
     "update_available": "Pembaruan tersedia: v{version}",
     "install_and_restart": "Instal & Mulai Ulang",
     "installing": "Menginstal...",
+    "installing_progress": "Memasang {percent}%",
     "update_install_failed": "Gagal memasang pembaruan",
     "update_install_retry": "Coba lagi",
     "expand_sidebar": "Perluas bilah samping",

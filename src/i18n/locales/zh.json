@@ -164,6 +164,7 @@
     "update_available": "有可用更新: v{version}",
     "install_and_restart": "安装并重启",
     "installing": "安装中...",
+    "installing_progress": "正在安装 {percent}%",
     "update_install_failed": "更新安装失败",
     "update_install_retry": "重试",
     "expand_sidebar": "展开侧栏",

@@ -168,6 +168,7 @@
     "update_available": "Update available: v{version}",
     "install_and_restart": "Install & Restart",
     "installing": "Installing...",
+    "installing_progress": "Installing {percent}%",
     "update_install_failed": "Update install failed",
     "update_install_retry": "Retry",
     "expand_sidebar": "Expand sidebar",

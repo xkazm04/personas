@@ -164,6 +164,7 @@
     "update_available": "Доступно обновление: v{version}",
     "install_and_restart": "Установить и перезапустить",
     "installing": "Установка...",
+    "installing_progress": "Установка {percent}%",
     "update_install_failed": "Не удалось установить обновление",
     "update_install_retry": "Повторить",
     "expand_sidebar": "Развернуть панель",

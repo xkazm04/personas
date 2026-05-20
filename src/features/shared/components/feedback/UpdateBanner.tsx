@@ -6,6 +6,7 @@ export default function UpdateBanner() {
     updateAvailable,
     updateInfo,
     isInstalling,
+    downloadProgress,
     error,
     installUpdate,
     dismissUpdate,
@@ -13,6 +14,14 @@ export default function UpdateBanner() {
   const { t } = useTranslation();
 
   if (!updateAvailable || !updateInfo) return null;
+
+  const installLabel = isInstalling
+    ? downloadProgress !== null
+      ? interpolate(t.chrome.installing_progress, { percent: downloadProgress })
+      : t.chrome.installing
+    : error
+      ? t.chrome.update_install_retry
+      : t.chrome.install_and_restart;
 
   // Tone the banner red when an install attempt has failed so the user can
   // see at a glance that the previous click didn't succeed.
@@ -47,11 +56,7 @@ export default function UpdateBanner() {
             disabled={isInstalling}
             className="px-3 py-1 rounded-xl bg-accent text-accent-foreground typo-heading hover:bg-accent/90 disabled:opacity-50 transition-colors"
           >
-            {isInstalling
-              ? t.chrome.installing
-              : error
-                ? t.chrome.update_install_retry
-                : t.chrome.install_and_restart}
+            {installLabel}
           </button>
           <button
             onClick={dismissUpdate}
@@ -72,6 +77,22 @@ export default function UpdateBanner() {
           </button>
         </div>
       </div>
+
+      {isInstalling && downloadProgress !== null && (
+        <div
+          className="h-0.5 bg-accent/15"
+          role="progressbar"
+          aria-valuenow={downloadProgress}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label={t.chrome.installing}
+        >
+          <div
+            className="h-full bg-accent transition-[width] duration-300 ease-out"
+            style={{ width: `${downloadProgress}%` }}
+          />
+        </div>
+      )}
     </div>
   );
 }

@@ -164,6 +164,7 @@
     "update_available": "अपडेट उपलब्ध: v{version}",
     "install_and_restart": "इंस्टॉल करें और पुनः प्रारंभ करें",
     "installing": "इंस्टॉल हो रहा है...",
+    "installing_progress": "इंस्टॉल हो रहा है {percent}%",
     "update_install_failed": "अपडेट इंस्टॉल नहीं हो पाया",
     "update_install_retry": "फिर से प्रयास करें",
     "expand_sidebar": "साइडबार विस्तृत करें",

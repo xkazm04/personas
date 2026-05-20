@@ -164,6 +164,7 @@
     "update_available": "업데이트 가능: v{version}",
     "install_and_restart": "설치 및 재시작",
     "installing": "설치 중...",
+    "installing_progress": "설치 중 {percent}%",
     "update_install_failed": "업데이트 설치 실패",
     "update_install_retry": "다시 시도",
     "expand_sidebar": "사이드바 펼치기",
