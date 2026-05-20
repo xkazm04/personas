@@ -58,6 +58,36 @@ function countToolSteps(toolSteps) {
   return 0;
 }
 
+/** True when every capability on the persona is an event_listener — such
+ *  personas are purely event-driven and have nothing the marathon can
+ *  manually invoke, so 0 executions is the EXPECTED shape, not a fault. */
+async function allCapabilitiesAreEventDriven(personaId) {
+  const res = await fetch(`http://127.0.0.1:${PORT}/bridge-exec`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      method: 'invokeCommand',
+      params: { command: 'get_persona', params: { id: personaId } },
+      timeout_secs: 15,
+    }),
+  });
+  const raw = await res.json();
+  const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+  const persona = parsed?.result ?? parsed;
+  let dc;
+  try {
+    dc = JSON.parse(persona?.design_context ?? '{}');
+  } catch {
+    return false;
+  }
+  const ucs = dc.useCases ?? dc.use_cases ?? [];
+  if (ucs.length === 0) return false;
+  return ucs.every((uc) => {
+    const t = (uc.suggestedTrigger ?? uc.suggested_trigger ?? {}).type;
+    return t === 'event_listener';
+  });
+}
+
 async function main() {
   const files = readdirSync(RESULTS_DIR).filter((f) => f.endsWith('.json'));
   const summary = { pass: 0, 'soft-fail': 0, 'hard-fail': 0 };
@@ -108,8 +138,16 @@ async function main() {
 
     let outcome;
     if (execs.length === 0) {
-      outcome = 'soft-fail';
-      d.failure_signature = 'phase:execute:no-executions';
+      // 0 executions is a pass when the persona is purely event-driven
+      // (nothing manually invokable); a soft-fail otherwise.
+      if (await allCapabilitiesAreEventDriven(d.persona_id)) {
+        outcome = 'pass';
+        d.failure_signature = null;
+        d.capability_results = [{ note: 'all capabilities are event_listener — no manual execution path' }];
+      } else {
+        outcome = 'soft-fail';
+        d.failure_signature = 'phase:execute:no-executions';
+      }
     } else if (failed > 0 && completed === 0) {
       outcome = 'hard-fail';
       d.failure_signature = 'phase:execute:all-executions-failed';
