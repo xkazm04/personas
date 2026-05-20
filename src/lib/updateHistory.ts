@@ -45,3 +45,11 @@ export function recordVersion(version: string): UpdateHistoryEntry[] {
   }
   return next;
 }
+
+export function clearUpdateHistory(): void {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch (err) {
+    silentCatch("updateHistory:clear")(err);
+  }
+}

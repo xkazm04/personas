@@ -8,7 +8,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { useAutoUpdater, type CheckOutcome } from '@/hooks/utility/data/useAutoUpdater';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { isTelemetryEnabled, setTelemetryEnabled } from '@/lib/telemetryPreference';
-import { getUpdateHistory, type UpdateHistoryEntry } from '@/lib/updateHistory';
+import { getUpdateHistory, clearUpdateHistory, type UpdateHistoryEntry } from '@/lib/updateHistory';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { useTranslation, interpolate } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
@@ -151,9 +151,17 @@ export default function AccountSettings() {
 
           {history.length > 0 && (
             <div className="border-t border-primary/10 pt-4 space-y-2">
-              <p className="typo-caption font-medium text-foreground uppercase tracking-wide">
-                {s.updates_history_title}
-              </p>
+              <div className="flex items-center justify-between gap-3">
+                <p className="typo-caption font-medium text-foreground uppercase tracking-wide">
+                  {s.updates_history_title}
+                </p>
+                <button
+                  onClick={() => { clearUpdateHistory(); setHistory([]); }}
+                  className="typo-caption text-foreground hover:text-primary transition-colors"
+                >
+                  {t.common.clear}
+                </button>
+              </div>
               <ul className="space-y-1.5">
                 {history.map((entry) => (
                   <li
