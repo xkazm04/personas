@@ -1476,6 +1476,7 @@ fn build_design_json(
     ir: &crate::db::models::AgentIr,
     structured_use_cases: &[serde_json::Value],
     tool_names: &[String],
+    credential_links: &std::collections::HashMap<String, String>,
 ) -> (String, String) {
     let ir_triggers: Option<&Vec<crate::db::models::agent_ir::AgentIrTrigger>> =
         if ir.triggers.is_empty() {
@@ -1503,7 +1504,13 @@ fn build_design_json(
         "summary": summary,
         "builderMeta": {
             "creationMethod": "matrix"
-        }
+        },
+        // connectorName -> credentialId. The execution runtime
+        // (`inject_design_context_credentials`) honours this map first when
+        // resolving which vault credential to inject — so an abstract
+        // connector role (`crm`) bound here to a concrete credential
+        // (`attio`) actually reaches the running persona.
+        "credentialLinks": credential_links,
     });
 
     let design_result = serde_json::json!({
@@ -2408,8 +2415,29 @@ pub async fn promote_build_draft_inner(
     let (tool_actions, tool_names) = prepare_tool_actions(&ir, &state.db, &all_connectors);
     validate_triggers(&ir)?;
     let notification_channels = prepare_notification_channels(&ir)?;
+    // Phase 1 (build-readiness redesign) — bind every Credential-class
+    // connector to a concrete vault credential and bake the resulting
+    // connectorName->credentialId map into design_context.credentialLinks.
+    // Without this, an abstract connector role declared by a template (e.g.
+    // `crm`) with no covering vault-category question reaches runtime
+    // unbound and the persona executes with no credential. See
+    // docs/architecture/build-readiness-redesign.md.
+    let credential_links: std::collections::HashMap<String, String> = {
+        let connector_names: Vec<String> = ir
+            .required_connectors
+            .iter()
+            .filter_map(|c| c.name().map(|n| n.to_string()))
+            .collect();
+        match state.db.get() {
+            Ok(conn) => super::connector_readiness::resolve_credential_links(
+                &conn,
+                connector_names.iter(),
+            ),
+            Err(_) => std::collections::HashMap::new(),
+        }
+    };
     let (design_context_str, design_result_str) =
-        build_design_json(&ir, &use_cases.structured, &tool_names);
+        build_design_json(&ir, &use_cases.structured, &tool_names, &credential_links);
     let connectors_needing_setup = find_connectors_needing_setup(&ir);
 
     // ================================================================
