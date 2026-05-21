@@ -2,40 +2,28 @@
   "template_id": "email-morning-digest",
   "template_name": "Email Morning Digest",
   "category": "productivity",
-  "started_at": "2026-05-20T08:27:02.867Z",
-  "ended_at": "2026-05-20T08:30:05.431Z",
-  "outcome": "pass",
+  "started_at": "2026-05-21T09:04:53.169Z",
+  "ended_at": "2026-05-21T09:05:24.044Z",
+  "outcome": "hard-fail",
   "phases": [
     {
       "phase": "open",
       "status": "pass",
-      "durationMs": 1990
+      "durationMs": 2127
     },
     {
       "phase": "questionnaire",
       "status": "pass",
-      "durationMs": 15
+      "durationMs": 8078
     },
     {
       "phase": "build",
-      "status": "pass",
-      "durationMs": 23397
-    },
-    {
-      "phase": "promote",
-      "status": "pass",
-      "durationMs": 420
+      "status": "hard-fail",
+      "detail": "waitForVisible: [data-testid=\"adopt-continue-to-build\"] not visible in 15000ms",
+      "durationMs": 15127
     }
   ],
-  "persona_id": "aed6bc51-eaf8-4777-9936-51d77e10626e",
-  "failure_signature": null,
-  "capability_results": [
-    {
-      "executions_total": 5,
-      "executions_completed": 5,
-      "executions_failed": 0,
-      "total_tool_steps": 32,
-      "total_cost_usd": 1.8548
-    }
-  ]
+  "persona_id": null,
+  "failure_signature": "phase:build:waitForVisible: [data-testid=\"adopt-continue-to-build\"] not visible in 15000ms",
+  "capability_results": []
 }

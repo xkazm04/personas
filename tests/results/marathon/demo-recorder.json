@@ -2,40 +2,41 @@
   "template_id": "demo-recorder",
   "template_name": "Demo Recorder",
   "category": "content",
-  "started_at": "2026-05-20T07:38:01.329Z",
-  "ended_at": "2026-05-20T07:40:37.112Z",
+  "started_at": "2026-05-21T08:58:54.300Z",
+  "ended_at": "2026-05-21T09:00:58.282Z",
   "outcome": "pass",
   "phases": [
     {
       "phase": "open",
       "status": "pass",
-      "durationMs": 1991
+      "durationMs": 2057
     },
     {
       "phase": "questionnaire",
       "status": "pass",
-      "durationMs": 14
+      "durationMs": 23
     },
     {
       "phase": "build",
       "status": "pass",
-      "durationMs": 38794
+      "durationMs": 43014
     },
     {
       "phase": "promote",
       "status": "pass",
-      "durationMs": 419
+      "durationMs": 417
     }
   ],
-  "persona_id": "7d09ada8-8f53-4ab5-8a4d-9363c2a50d5c",
+  "persona_id": "20dd8e3b-2996-4ca4-bcda-b6193138782d",
   "failure_signature": null,
   "capability_results": [
     {
-      "executions_total": 1,
-      "executions_completed": 1,
-      "executions_failed": 0,
-      "total_tool_steps": 5,
-      "total_cost_usd": 0.3472
+      "cap_id": "uc-62b919f5-5be5-4527-80f0-6f49e14b7e51",
+      "outcome": "pass",
+      "execution_id": "f9360f25-e1a9-47f3-b3da-1dd0711221be",
+      "tool_steps": 3,
+      "cost_usd": 0.276407,
+      "detail": "execute"
     }
   ]
 }

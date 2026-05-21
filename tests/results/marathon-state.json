@@ -75,6 +75,16 @@
       "signature": "phase:execute:execution-timeout (execute)",
       "action": "skipped",
       "detail": "External API rate-limit or slow tool. Continue with next template."
+    },
+    {
+      "template_id": "email-morning-digest",
+      "signature": "phase:build:waitForVisible: [data-testid=\"adopt-continue-to-build\"] not visible in 15000ms",
+      "action": "logged"
+    },
+    {
+      "template_id": "research-paper-indexer",
+      "signature": "phase:build:fetch failed",
+      "action": "logged"
     }
   ]
 }

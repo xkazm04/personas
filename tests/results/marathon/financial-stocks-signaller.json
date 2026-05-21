@@ -2,40 +2,57 @@
   "template_id": "financial-stocks-signaller",
   "template_name": "Financial Stocks Signaller",
   "category": "finance",
-  "started_at": "2026-05-20T08:14:21.952Z",
-  "ended_at": "2026-05-20T08:18:59.757Z",
+  "started_at": "2026-05-21T09:01:00.245Z",
+  "ended_at": "2026-05-21T09:04:51.105Z",
   "outcome": "pass",
   "phases": [
     {
       "phase": "open",
       "status": "pass",
-      "durationMs": 1998
+      "durationMs": 2113
     },
     {
       "phase": "questionnaire",
       "status": "pass",
-      "durationMs": 14
+      "durationMs": 17
     },
     {
       "phase": "build",
       "status": "pass",
-      "durationMs": 28192
+      "durationMs": 32854
     },
     {
       "phase": "promote",
       "status": "pass",
-      "durationMs": 426
+      "durationMs": 420
     }
   ],
-  "persona_id": "718f7ce9-0a69-4cd6-af62-62b73a25711a",
+  "persona_id": "f0b4e3a4-29f9-46bc-a7b5-2c8c223374cc",
   "failure_signature": null,
   "capability_results": [
     {
-      "executions_total": 5,
-      "executions_completed": 5,
-      "executions_failed": 0,
-      "total_tool_steps": 53,
-      "total_cost_usd": 3.9331
+      "cap_id": "uc-c564e6f1-bb12-4243-96ac-2d0b6ee3cd87",
+      "outcome": "pass",
+      "execution_id": "6c3a66e1-1b45-4cd1-bf8c-50ca77f98174",
+      "tool_steps": 3,
+      "cost_usd": 0.2393795,
+      "detail": "execute"
+    },
+    {
+      "cap_id": "uc-eed6790b-5c5d-4798-855c-4d7c9f8ee156",
+      "outcome": "pass",
+      "execution_id": "e3058be2-f639-4b6d-9be2-cecbdd0ae144",
+      "tool_steps": 2,
+      "cost_usd": 0.19620425,
+      "detail": "execute"
+    },
+    {
+      "cap_id": "uc-11178534-f128-4389-8814-0488470a96b5",
+      "outcome": "pass",
+      "execution_id": "af33e189-95a3-4b78-94c8-6726b0f121d2",
+      "tool_steps": 3,
+      "cost_usd": 0.20633125,
+      "detail": "execute"
     }
   ]
 }

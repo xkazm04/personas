@@ -2,40 +2,28 @@
   "template_id": "research-paper-indexer",
   "template_name": "Research Paper Indexer",
   "category": "research",
-  "started_at": "2026-05-20T09:13:00.244Z",
-  "ended_at": "2026-05-20T09:19:49.605Z",
-  "outcome": "pass",
+  "started_at": "2026-05-21T09:05:26.373Z",
+  "ended_at": "2026-05-21T09:09:39.135Z",
+  "outcome": "hard-fail",
   "phases": [
     {
       "phase": "open",
       "status": "pass",
-      "durationMs": 1987
+      "durationMs": 2057
     },
     {
       "phase": "questionnaire",
       "status": "pass",
-      "durationMs": 11
+      "durationMs": 16
     },
     {
       "phase": "build",
-      "status": "pass",
-      "durationMs": 21343
-    },
-    {
-      "phase": "promote",
-      "status": "pass",
-      "durationMs": 421
+      "status": "hard-fail",
+      "detail": "fetch failed",
+      "durationMs": 245142
     }
   ],
-  "persona_id": "5f64695e-4d9f-4f51-b1ac-2618f1df8302",
-  "failure_signature": null,
-  "capability_results": [
-    {
-      "executions_total": 3,
-      "executions_completed": 3,
-      "executions_failed": 0,
-      "total_tool_steps": 27,
-      "total_cost_usd": 2.0648
-    }
-  ]
+  "persona_id": null,
+  "failure_signature": "phase:build:fetch failed",
+  "capability_results": []
 }
