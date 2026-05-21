@@ -1,7 +1,8 @@
 import { Bot } from 'lucide-react';
-import { sanitizeIconUrl, isIconUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
-import { isAgentIcon, resolveAgentIconSrc } from '@/lib/icons/agentIconCatalog';
+import { resolveAgentIconSrc } from '@/lib/icons/agentIconCatalog';
+import { resolvePersonaIcon } from '@/lib/icons/resolvePersonaIcon';
+import { useCustomIconSrc } from '@/lib/icons/customIconStore';
 import { useIsDarkTheme } from '@/stores/themeStore';
 
 type AvatarSize = 'sm' | 'md' | 'lg';
@@ -22,6 +23,14 @@ interface PersonaAvatarProps {
   className?: string;
 }
 
+/**
+ * Persona avatar — larger, name-aware sibling of `PersonaIcon`.
+ *
+ * Icon classification is delegated to `resolvePersonaIcon` so this renderer
+ * and `PersonaIcon` always agree on what an `icon` string means. Unrecognised
+ * values (and a custom icon whose file hasn't resolved yet) fall through to
+ * the Bot / initial fallback.
+ */
 export function PersonaAvatar({
   icon,
   name,
@@ -35,46 +44,44 @@ export function PersonaAvatar({
   const defaultColor = fallbackStyle === 'bot' ? '#8b5cf6' : '#6B7280';
   const resolvedColor = color || defaultColor;
 
-  if (icon) {
-    // Agent icon WebPs (theme-aware)
-    if (isAgentIcon(icon)) {
-      const src = resolveAgentIconSrc(icon, isDark);
-      return (
-        <img
-          src={src}
-          alt=""
-          className={`${cfg.img} ${className}`}
-          loading="lazy"
-        />
-      );
-    }
+  const resolved = resolvePersonaIcon(icon);
+  // Hook must run unconditionally; passes null for non-custom icons.
+  const customSrc = useCustomIconSrc(resolved.kind === 'custom' ? resolved.assetId : null);
 
-    const safeUrl = sanitizeIconUrl(icon);
-    if (safeUrl) {
-      return (
-        <img
-          src={safeUrl}
-          alt=""
-          className={`${cfg.img} ${className}`}
-          referrerPolicy="no-referrer"
-          crossOrigin="anonymous"
-        />
-      );
-    }
-    // Only render as emoji if it actually looks like one: short strings (≤8 chars)
-    // that aren't plain ASCII identifiers (Lucide names, "persona:Foo", etc.).
-    // Matches the heuristic in PersonaIcon.tsx so both renderers agree.
-    const trimmed = icon.trim();
-    const isEmoji = !isIconUrl(icon)
-      && trimmed.length > 0
-      && trimmed.length <= 8
-      && !/^[a-zA-Z0-9_:.\-/]+$/.test(trimmed);
-    if (isEmoji) {
-      return <span className={`${cfg.emoji} ${className}`}>{icon}</span>;
-    }
-    // Unknown string (stale Lucide name, garbage) → fall through to Bot/initial fallback
+  if (resolved.kind === 'builtin') {
+    return (
+      <img
+        src={resolveAgentIconSrc(resolved.value, isDark)}
+        alt=""
+        className={`${cfg.img} ${className}`}
+        loading="lazy"
+      />
+    );
   }
 
+  if (resolved.kind === 'custom' && customSrc) {
+    return (
+      <img src={customSrc} alt="" className={`${cfg.img} ${className}`} loading="lazy" />
+    );
+  }
+
+  if (resolved.kind === 'url') {
+    return (
+      <img
+        src={resolved.url}
+        alt=""
+        className={`${cfg.img} ${className}`}
+        referrerPolicy="no-referrer"
+        crossOrigin="anonymous"
+      />
+    );
+  }
+
+  if (resolved.kind === 'emoji') {
+    return <span className={`${cfg.emoji} ${className}`}>{resolved.char}</span>;
+  }
+
+  // fallback (or a custom icon still resolving)
   if (fallbackStyle === 'bot') {
     return (
       <div

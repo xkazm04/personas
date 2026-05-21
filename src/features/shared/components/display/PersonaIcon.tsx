@@ -1,5 +1,7 @@
 import { Bot } from 'lucide-react';
-import { isAgentIcon, resolveAgentIconSprite, resolveAgentIconSrc } from '@/lib/icons/agentIconCatalog';
+import { resolveAgentIconSprite, resolveAgentIconSrc } from '@/lib/icons/agentIconCatalog';
+import { resolvePersonaIcon, type ResolvedIcon } from '@/lib/icons/resolvePersonaIcon';
+import { useCustomIconSrc } from '@/lib/icons/customIconStore';
 import { useIsDarkTheme } from '@/stores/themeStore';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -51,6 +53,9 @@ interface PersonaIconProps {
  *
  * Pop mode is the recommended default for all agent display contexts.
  *
+ * Icon classification is delegated entirely to `resolvePersonaIcon` so this
+ * renderer and `PersonaAvatar` always agree on what a given `icon` string means.
+ *
  * ```tsx
  * // Simple — 3× expanded icon with 32px anchor:
  * <PersonaIcon icon={p.icon} color={p.color} display="pop" />
@@ -59,9 +64,6 @@ interface PersonaIconProps {
  * <PersonaIcon icon={p.icon} color={p.color} display="pop"
  *   frameClass="border border-primary/15"
  *   frameStyle={{ backgroundColor: `${p.color}15` }} />
- *
- * // Small frame (24px anchor, 72px rendered):
- * <PersonaIcon icon={p.icon} color={p.color} display="pop" frameSize="sm" />
  * ```
  */
 export function PersonaIcon({
@@ -79,22 +81,27 @@ export function PersonaIcon({
   const isDark = useIsDarkTheme();
   const style = { color: color ?? 'var(--primary)' };
 
+  const resolved = resolvePersonaIcon(icon);
+  // Hook must run unconditionally; passes null for non-custom icons.
+  const customSrc = useCustomIconSrc(resolved.kind === 'custom' ? resolved.assetId : null);
+
+  // A custom icon whose file URL hasn't resolved yet renders as the fallback
+  // until it's ready (the app-data dir is warmed at startup, so this is rare).
+  const effectiveKind: ResolvedIcon['kind'] =
+    resolved.kind === 'custom' && !customSrc ? 'fallback' : resolved.kind;
+
   // Backwards compat: framed without display → treat as "framed"
   const requestedDisplay = display ?? (framed ? 'framed' : undefined);
 
-  // Detect emoji-like icons: short strings (≤8 chars) that aren't plain ASCII identifiers.
-  // Anything longer or ASCII-only (like "persona:Foo") is not a valid icon → fall back to Bot.
-  const isEmoji = typeof icon === 'string' && icon.trim().length > 0
-    && icon.trim().length <= 8 && !/^[a-zA-Z0-9_:.\-/]+$/.test(icon.trim());
-
-  // The "pop" variant intentionally bursts the icon ~3× past its frame for
-  // branded persona art. The generic Bot fallback isn't art — at 3× it
-  // becomes an oversized blob that bleeds into adjacent text. Downgrade to
-  // "framed" so the fallback stays contained within its colored chip.
-  const willFallbackToBot = !isAgentIcon(icon) && !isEmoji;
-  const resolvedDisplay = requestedDisplay === 'pop' && willFallbackToBot
-    ? 'framed'
-    : requestedDisplay;
+  // The "pop" variant intentionally bursts the icon ~3× past its frame. That
+  // suits the curated agent art (transparent margins) and emoji, but not the
+  // generic Bot fallback or a full-bleed user upload / remote image — at 3×
+  // those become oversized blobs that bleed into adjacent text. Downgrade
+  // those kinds to "framed" so they stay contained within the chip.
+  const willNotPop =
+    effectiveKind === 'fallback' || effectiveKind === 'custom' || effectiveKind === 'url';
+  const resolvedDisplay =
+    requestedDisplay === 'pop' && willNotPop ? 'framed' : requestedDisplay;
 
   // Determine if we're in wrapped mode
   const isWrapped = resolvedDisplay === 'framed' || resolvedDisplay === 'pop';
@@ -102,8 +109,9 @@ export function PersonaIcon({
   // Build the inner element — no size classes when wrapped (CSS handles it)
   let inner: React.ReactNode;
 
-  if (isAgentIcon(icon)) {
-    const sprite = resolveAgentIconSprite(icon!, isDark);
+  if (effectiveKind === 'builtin') {
+    const value = (resolved as Extract<ResolvedIcon, { kind: 'builtin' }>).value;
+    const sprite = resolveAgentIconSprite(value, isDark);
     inner = sprite ? (
       <div
         aria-hidden="true"
@@ -116,13 +124,35 @@ export function PersonaIcon({
       />
     ) : (
       <img
-        src={resolveAgentIconSrc(icon!, isDark)}
+        src={resolveAgentIconSrc(value, isDark)}
         alt=""
         className={isWrapped ? undefined : `${size} flex-shrink-0 object-contain ${className}`.trim()}
         loading="lazy"
       />
     );
-  } else if (isEmoji) {
+  } else if (effectiveKind === 'custom') {
+    inner = (
+      <img
+        src={customSrc!}
+        alt=""
+        className={isWrapped ? undefined : `${size} flex-shrink-0 object-contain ${className}`.trim()}
+        loading="lazy"
+      />
+    );
+  } else if (effectiveKind === 'url') {
+    const url = (resolved as Extract<ResolvedIcon, { kind: 'url' }>).url;
+    inner = (
+      <img
+        src={url}
+        alt=""
+        className={isWrapped ? undefined : `${size} flex-shrink-0 object-contain ${className}`.trim()}
+        referrerPolicy="no-referrer"
+        crossOrigin="anonymous"
+        loading="lazy"
+      />
+    );
+  } else if (effectiveKind === 'emoji') {
+    const char = (resolved as Extract<ResolvedIcon, { kind: 'emoji' }>).char;
     inner = (
       <span
         className={isWrapped
@@ -133,7 +163,7 @@ export function PersonaIcon({
         role="img"
         aria-label={t.shared.agent_icon_label}
       >
-        {icon}
+        {char}
       </span>
     );
   } else {

@@ -33,6 +33,12 @@ timestamp — the next session can recognize it as abandoned.
 ## Active
 
 
+- **[2026-05-22 — started] custom-persona-icons — Phases 0-2 (renderer unification + upload pipeline + picker)**
+  - **Source:** User-driven feature — let users upload custom persona icons (local-only scope). Phase 0: unify icon rendering behind `resolvePersonaIcon`. Phase 1: Tauri upload pipeline (decode→downscale→re-encode PNG, app-data storage). Phase 2: extend the icon picker with Upload + "Your icons".
+  - **Paths:** `src/lib/icons/{resolvePersonaIcon,customIconStore}.ts` (new), `src/features/shared/components/display/{PersonaIcon,PersonaAvatar}.tsx`, `src/features/agents/sub_settings/components/PersonaSettingsTab.tsx`, `src/features/shared/components/forms/AgentIconPickerModal.tsx`, `src/main.tsx`, `src-tauri/src/commands/core/persona_icons.rs` (new), `src-tauri/src/commands/core/mod.rs`, `src-tauri/src/lib.rs`, `src-tauri/Cargo.toml`, `src/api/agents/personaIcons.ts` (new), `src/i18n/locales/en.json` (additive `persona_icons.*` / `shared.forms_extra.*`), `.claude/active-runs.md`
+  - **Status:** started
+  - **Branch:** master (user explicitly authorized working + committing on master; atomic commit per phase)
+
 - **[2026-05-18 — started] /prototype — PersonaOverviewPage A/B variants (Grid + Wildcard)**
   - **Source:** User-driven /prototype skill — directional variants for the All Personas list view. Two variants requested: (1) a uniform card grid with simplified metadata (icon, title, connector icons, status dot, trust level, triggers, last run), (2) a wildcard with a different mental model.
   - **Paths:** `src/features/agents/components/allPersonas/PersonaOverviewPage.tsx` (add tab switcher), `src/features/agents/components/allPersonas/PersonaOverviewVariantGrid.tsx` (new), `src/features/agents/components/allPersonas/PersonaOverviewVariantConstellation.tsx` (new), `.claude/active-runs.md`

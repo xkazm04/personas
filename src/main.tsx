@@ -22,6 +22,7 @@ import { sectionsForRoute } from "./i18n/routeSections";
 import type { SidebarSection } from "./lib/types/types";
 import "./styles/globals.css";
 import { silentCatch } from '@/lib/silentCatch';
+import { ensureAppDataDir } from '@/lib/icons/customIconStore';
 
 
 const globalErrorLogger = createLogger("global-error");
@@ -234,6 +235,11 @@ function mountReact(root: HTMLElement) {
     );
   }
 }
+
+// Warm the app-data directory lookup so the first custom persona-icon render
+// is synchronous (see customIconStore.ts). Fire-and-forget — failure just
+// means custom icons resolve a tick later.
+void ensureAppDataDir().catch(() => { /* resolved lazily on first use */ });
 
 if (root) {
   void preloadPersistedLocaleBeforeMount()

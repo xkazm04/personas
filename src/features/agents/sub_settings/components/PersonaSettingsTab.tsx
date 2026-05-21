@@ -12,12 +12,8 @@ const MAX_PERSONA_TIMEOUT_S = MAX_PERSONA_TIMEOUT_MS / 1000;
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { AgentIconPickerModal } from '@/features/shared/components/forms/AgentIconPickerModal';
 import { PopupColorPicker } from '@/features/shared/components/forms/PopupColorPicker';
-import {
-  isAgentIcon,
-  resolveAgentIconSprite,
-  resolveAgentIconSrc,
-} from '@/lib/icons/agentIconCatalog';
-import { useIsDarkTheme } from '@/stores/themeStore';
+import { resolvePersonaIcon } from '@/lib/icons/resolvePersonaIcon';
+import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { FieldHint } from '@/features/shared/components/display/FieldHint';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { SettingsStatusBar } from './SettingsStatusBar';
@@ -49,18 +45,15 @@ export function PersonaSettingsTab({
   const { t } = useTranslation();
   const personaId = useAgentStore((s) => s.selectedPersonaId);
   const { isStarter: isSimple } = useTier();
-  const isDark = useIsDarkTheme();
   const [retentionMonths, setRetentionMonths] = useState<number>(2);
   const [iconPickerOpen, setIconPickerOpen] = useState(false);
 
-  // When the persona has an agent-icon selected, render it as a watermark on
-  // the Identity card. Uses the sprite when available (single network image
-  // for all themes); falls back to the per-id WebP path for safety.
-  const draftIconIsAgent = isAgentIcon(draft.icon);
-  const watermarkSprite = draftIconIsAgent ? resolveAgentIconSprite(draft.icon, isDark) : null;
-  const watermarkSrc = draftIconIsAgent && !watermarkSprite
-    ? resolveAgentIconSrc(draft.icon, isDark)
-    : null;
+  // Classify the persona's icon once. `hasArtIcon` (built-in art, a custom
+  // upload, or a remote image) gates the watermark; `hasIcon` (any of those
+  // plus emoji) gates the picker-button preview.
+  const iconKind = resolvePersonaIcon(draft.icon).kind;
+  const hasIcon = iconKind !== 'fallback';
+  const hasArtIcon = iconKind === 'builtin' || iconKind === 'custom' || iconKind === 'url';
 
   useEffect(() => {
     if (!personaId) return;
@@ -84,27 +77,16 @@ export function PersonaSettingsTab({
           {t.agents.settings_status.identity}
         </h4>
         <div className="relative bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-modal p-3 space-y-3 overflow-hidden">
-          {/* Semi-transparent agent-icon watermark. Renders behind the form
-              fields when the persona has an agent icon selected; positioned
-              right-edge so it reads as accent art without obscuring inputs.
+          {/* Semi-transparent icon watermark. Renders behind the form fields
+              when the persona has an art icon selected; positioned right-edge
+              so it reads as accent art without obscuring inputs.
               Pointer-events-none so it never intercepts clicks. */}
-          {(watermarkSprite || watermarkSrc) && (
+          {hasArtIcon && (
             <div
               aria-hidden="true"
               className="pointer-events-none absolute inset-y-0 right-0 w-[55%] flex items-center justify-end pr-2 opacity-[0.09]"
             >
-              {watermarkSprite ? (
-                <div
-                  className="agent-icon-sprite w-64 h-64"
-                  style={{
-                    backgroundImage: `url(${watermarkSprite.src})`,
-                    backgroundSize: `${watermarkSprite.columns * 100}% 100%`,
-                    backgroundPosition: `${watermarkSprite.columns <= 1 ? 0 : (watermarkSprite.index / (watermarkSprite.columns - 1)) * 100}% 0%`,
-                  }}
-                />
-              ) : (
-                <img src={watermarkSrc!} alt="" className="w-64 h-64 object-contain" />
-              )}
+              <PersonaIcon icon={draft.icon} color={draft.color} size="w-64 h-64" />
             </div>
           )}
           <div className="relative">
@@ -136,18 +118,8 @@ export function PersonaSettingsTab({
                 title={t.shared.forms_extra.choose_icon}
                 className="w-10 h-10 rounded-card border border-primary/15 bg-background/50 hover:border-primary/30 hover:bg-secondary/40 flex items-center justify-center transition-all cursor-pointer"
               >
-                {watermarkSprite ? (
-                  <div
-                    aria-hidden="true"
-                    className="agent-icon-sprite w-7 h-7"
-                    style={{
-                      backgroundImage: `url(${watermarkSprite.src})`,
-                      backgroundSize: `${watermarkSprite.columns * 100}% 100%`,
-                      backgroundPosition: `${watermarkSprite.columns <= 1 ? 0 : (watermarkSprite.index / (watermarkSprite.columns - 1)) * 100}% 0%`,
-                    }}
-                  />
-                ) : watermarkSrc ? (
-                  <img src={watermarkSrc} alt="" className="w-7 h-7 object-contain" />
+                {hasIcon ? (
+                  <PersonaIcon icon={draft.icon} color={draft.color} size="w-7 h-7" />
                 ) : (
                   <ImagePlus className="w-4 h-4 text-foreground" />
                 )}
