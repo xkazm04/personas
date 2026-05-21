@@ -71,6 +71,19 @@ export const listPersonasUsingConnector = (connectorName: string) =>
 export const resolveEffectiveConfig = (personaId: string) =>
   invoke<EffectiveModelConfig>("resolve_effective_config", { personaId });
 
+/**
+ * Resolve effective model config for many personas in a single IPC call.
+ *
+ * The backend fetches all personas, all groups, and the global-tier
+ * settings exactly once, so this is O(1) IPC roundtrips regardless of how
+ * many personas are requested — replacing the per-persona fan-out that
+ * cost ~10 s on the Settings → Config panel with ~142 personas. IDs that
+ * don't match a persona are omitted; callers should key the result by
+ * `personaId`.
+ */
+export const resolveEffectiveConfigBulk = (personaIds: string[]) =>
+  invoke<EffectiveModelConfig[]>("resolve_effective_config_bulk", { personaIds });
+
 // ============================================================================
 // Import / Export
 // ============================================================================

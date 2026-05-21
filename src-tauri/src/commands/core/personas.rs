@@ -4,8 +4,9 @@ use tauri::State;
 use ts_rs::TS;
 
 use crate::db::models::{
-    CreatePersonaInput, Persona, PersonaAutomation, PersonaEventSubscription, PersonaSummary,
-    PersonaToolDefinition, PersonaTrigger, UpdateExecutionStatus, UpdatePersonaInput,
+    CreatePersonaInput, Persona, PersonaAutomation, PersonaEventSubscription, PersonaGroup,
+    PersonaSummary, PersonaToolDefinition, PersonaTrigger, UpdateExecutionStatus,
+    UpdatePersonaInput,
 };
 use crate::db::repos::communication::events as event_repo;
 use crate::db::repos::core::groups as group_repo;
@@ -616,4 +617,49 @@ pub fn resolve_effective_config(
         &persona,
         workspace.as_ref(),
     ))
+}
+
+/// Resolve effective model config for many personas in a single IPC call.
+///
+/// The per-persona `resolve_effective_config` command was being fanned out
+/// one IPC + ~4 DB queries per persona by the Settings → Config panel —
+/// ~142 personas turned that page's cold mount into 10 s of IPC traffic
+/// (measured in the 2026-05-21 perf-walk). This bulk variant fetches all
+/// personas, all groups, and the global-tier settings exactly once, then
+/// resolves entirely in memory: N IPC roundtrips collapse to 1, and
+/// ~4·N DB queries collapse to ~4 total.
+///
+/// IDs that don't match a persona are silently skipped, so the result
+/// vector may be shorter than `persona_ids` and is keyed by `personaId`.
+#[tauri::command]
+#[requires(auth)]
+pub fn resolve_effective_config_bulk(
+    state: State<'_, Arc<AppState>>,
+    persona_ids: Vec<String>,
+) -> Result<Vec<EffectiveModelConfig>, AppError> {
+    // Global tier — three DB reads, shared across every persona below.
+    let ctx = config_merge::GlobalConfigContext::load(&state.db);
+
+    // One query each for personas and groups; index by id for O(1) lookup.
+    let personas = repo::get_all(&state.db)?;
+    let persona_by_id: std::collections::HashMap<&str, &Persona> =
+        personas.iter().map(|p| (p.id.as_str(), p)).collect();
+    let groups = group_repo::get_all(&state.db)?;
+    let group_by_id: std::collections::HashMap<&str, &PersonaGroup> =
+        groups.iter().map(|g| (g.id.as_str(), g)).collect();
+
+    let mut out = Vec::with_capacity(persona_ids.len());
+    for id in &persona_ids {
+        let Some(persona) = persona_by_id.get(id.as_str()) else {
+            continue;
+        };
+        let workspace = persona
+            .group_id
+            .as_deref()
+            .and_then(|gid| group_by_id.get(gid).copied());
+        out.push(config_merge::resolve_effective_config_with_globals(
+            persona, workspace, &ctx,
+        ));
+    }
+    Ok(out)
 }

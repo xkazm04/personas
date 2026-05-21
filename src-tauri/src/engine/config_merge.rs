@@ -55,6 +55,37 @@ pub struct EffectiveModelConfig {
     pub prompt_cache_policy: ConfigField<String>,
 }
 
+/// Global-tier config inputs, fetched once from `app_settings` and reused
+/// across many persona resolutions.
+///
+/// The global tier (model profile, provider auth keys) is identical for
+/// every persona. Resolving N personas one IPC at a time re-queried these
+/// rows N times — `resolve_effective_config_bulk` builds a single context
+/// and shares it, turning N×(global settings queries) into exactly 3.
+pub struct GlobalConfigContext {
+    global_profile: Option<ModelProfile>,
+    ollama_api_key: Option<String>,
+    litellm_master_key: Option<String>,
+}
+
+impl GlobalConfigContext {
+    /// Load the global-tier config from `app_settings`. Three DB reads,
+    /// independent of how many personas are resolved against the result.
+    pub fn load(pool: &DbPool) -> Self {
+        Self {
+            global_profile: resolve_global_model_profile(pool),
+            ollama_api_key: settings::get(pool, settings_keys::OLLAMA_API_KEY)
+                .ok()
+                .flatten()
+                .filter(|k| !k.is_empty()),
+            litellm_master_key: settings::get(pool, settings_keys::LITELLM_MASTER_KEY)
+                .ok()
+                .flatten()
+                .filter(|k| !k.is_empty()),
+        }
+    }
+}
+
 /// Resolve the effective model configuration for a persona by merging:
 /// 1. Global settings (lowest priority)
 /// 2. Workspace/group defaults (medium priority)
@@ -62,10 +93,27 @@ pub struct EffectiveModelConfig {
 ///
 /// Each resolved field logs which tier supplied the value so that config
 /// inheritance is visible in traces rather than implicit in code.
+///
+/// This is the single-persona convenience entry point: it loads a fresh
+/// [`GlobalConfigContext`] then delegates. To resolve many personas, build
+/// the context once and call [`resolve_effective_config_with_globals`]
+/// directly (see the `resolve_effective_config_bulk` command).
 pub fn resolve_effective_config(
     pool: &DbPool,
     persona: &Persona,
     workspace: Option<&PersonaGroup>,
+) -> EffectiveModelConfig {
+    let ctx = GlobalConfigContext::load(pool);
+    resolve_effective_config_with_globals(persona, workspace, &ctx)
+}
+
+/// Like [`resolve_effective_config`] but merges against a pre-loaded
+/// [`GlobalConfigContext`] instead of querying `app_settings` itself. This
+/// is the hot path for bulk resolution — zero DB reads per persona.
+pub fn resolve_effective_config_with_globals(
+    persona: &Persona,
+    workspace: Option<&PersonaGroup>,
+    ctx: &GlobalConfigContext,
 ) -> EffectiveModelConfig {
     // Parse model profiles at each level
     let agent_profile = prompt::parse_model_profile(persona.model_profile.as_deref());
@@ -73,8 +121,8 @@ pub fn resolve_effective_config(
         .and_then(|ws| ws.default_model_profile.as_deref())
         .and_then(|s| prompt::parse_model_profile(Some(s)));
 
-    // Build global-level model profile from settings
-    let global_profile = resolve_global_model_profile(pool);
+    // Global-level model profile, pre-loaded into the shared context
+    let global_profile = &ctx.global_profile;
 
     // Resolve each field through the cascade
     let model = resolve_string_field(
@@ -97,7 +145,7 @@ pub fn resolve_effective_config(
 
     // Auth token: also check global provider-specific keys (Ollama API key, LiteLLM master key)
     let effective_provider = provider.value.as_deref();
-    let global_auth = resolve_global_auth_token(pool, effective_provider, &global_profile);
+    let global_auth = resolve_global_auth_token(ctx, effective_provider);
     let auth_token = resolve_string_field(
         agent_profile.as_ref().and_then(|p| p.auth_token.clone()),
         ws_profile.as_ref().and_then(|p| p.auth_token.clone()),
@@ -194,29 +242,23 @@ fn resolve_global_model_profile(pool: &DbPool) -> Option<ModelProfile> {
     }
 }
 
-/// Resolve the global auth token based on the effective provider.
+/// Resolve the global auth token based on the effective provider, reading
+/// from the pre-loaded [`GlobalConfigContext`] rather than the DB.
 fn resolve_global_auth_token(
-    pool: &DbPool,
+    ctx: &GlobalConfigContext,
     effective_provider: Option<&str>,
-    global_profile: &Option<ModelProfile>,
 ) -> Option<String> {
     // First check the global profile's own auth_token
-    if let Some(ref gp) = global_profile {
+    if let Some(ref gp) = ctx.global_profile {
         if gp.auth_token.is_some() {
             return gp.auth_token.clone();
         }
     }
 
-    // Then check provider-specific global settings
+    // Then check provider-specific global keys (pre-loaded into the context)
     match effective_provider {
-        Some("ollama") => settings::get(pool, settings_keys::OLLAMA_API_KEY)
-            .ok()
-            .flatten()
-            .filter(|k| !k.is_empty()),
-        Some("litellm") => settings::get(pool, settings_keys::LITELLM_MASTER_KEY)
-            .ok()
-            .flatten()
-            .filter(|k| !k.is_empty()),
+        Some("ollama") => ctx.ollama_api_key.clone(),
+        Some("litellm") => ctx.litellm_master_key.clone(),
         _ => None,
     }
 }
