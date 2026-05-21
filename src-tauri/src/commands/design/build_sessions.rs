@@ -796,11 +796,15 @@ pub async fn promote_build_draft(
     require_auth(&state).await?;
     let result = promote_build_draft_inner(
         &state,
-        session_id,
+        session_id.clone(),
         persona_id.clone(),
         excluded_use_case_ids.unwrap_or_default(),
     )
     .await?;
+    // D2 (adoption-honesty) — materialize the persona's first-run state
+    // files before the verification run, so a persona that depends on a
+    // seeded `state.json` is not missing it on its very first execution.
+    materialize_persona_initial_state(&app, &state.db, &session_id, &persona_id);
     // Phase 3b (build-readiness redesign) — realistic build verification.
     // Promote has materialized the persona; now run it once and withhold
     // `ready` if it cannot deliver value. See
@@ -902,6 +906,79 @@ async fn gate_setup_status_on_verification(
             outcome = ?outcome,
             "promote: build verification passed"
         );
+    }
+}
+
+/// D2 (adoption-honesty) — materialize a persona's first-run state files.
+///
+/// A template may declare `payload.initial_state: [{path, content}]` — state
+/// files its persona assumes already exist (`dev_config.json`,
+/// `approval_state.json`, …). Each is written to the managed drive under
+/// `state/<persona-id>/<path>`, with `{{param.KEY}}` / `${KEY}` placeholders
+/// resolved from the user's adoption answers — but ONLY when the file does
+/// not already exist, so a prior run's evolving state is never clobbered.
+///
+/// Best-effort: a failure here logs and continues; the persona still works,
+/// it just may report `no_input_available` on a first run that expected the
+/// seeded file.
+fn materialize_persona_initial_state(
+    app: &tauri::AppHandle,
+    pool: &crate::db::DbPool,
+    session_id: &str,
+    persona_id: &str,
+) {
+    let session = match build_session_repo::get_by_id(pool, session_id) {
+        Ok(Some(s)) => s,
+        _ => return,
+    };
+    let ir: crate::db::models::AgentIr = match session
+        .agent_ir
+        .as_deref()
+        .and_then(|j| serde_json::from_str(j).ok())
+    {
+        Some(ir) => ir,
+        None => return,
+    };
+    if ir.initial_state.is_empty() {
+        return;
+    }
+    let answers: std::collections::HashMap<String, String> = session
+        .adoption_answers
+        .as_deref()
+        .and_then(|raw| {
+            serde_json::from_str::<crate::engine::adoption_answers::AdoptionAnswers>(raw).ok()
+        })
+        .map(|a| a.answers)
+        .unwrap_or_default();
+
+    for file in &ir.initial_state {
+        let rel = file.path.trim().trim_start_matches(['/', '\\']);
+        if rel.is_empty() {
+            continue;
+        }
+        let drive_path = format!("state/{persona_id}/{rel}");
+        // Never clobber state a prior run produced.
+        if crate::commands::drive::drive_read_text(app.clone(), drive_path.clone()).is_ok() {
+            continue;
+        }
+        let mut content = file.content.clone();
+        for (key, value) in &answers {
+            content = content.replace(&format!("{{{{param.{key}}}}}"), value);
+            content = content.replace(&format!("${{{key}}}"), value);
+        }
+        match crate::commands::drive::drive_write_text(app.clone(), drive_path.clone(), content) {
+            Ok(_) => tracing::info!(
+                persona_id = %persona_id,
+                path = %drive_path,
+                "promote: materialized first-run state file"
+            ),
+            Err(e) => tracing::warn!(
+                persona_id = %persona_id,
+                path = %drive_path,
+                error = %e,
+                "promote: failed to materialize first-run state file"
+            ),
+        }
     }
 }
 
