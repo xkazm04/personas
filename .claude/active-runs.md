@@ -102,6 +102,11 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Recently completed (last 14 days)
 
+- **[2026-05-21] /research — claude-code-2-1-141-to-146**
+  - **Status:** completed (commits: `06e37e5bd` CLI floor bump 2.1.140→2.1.146, `ca16092de` MCP tools/list nextCursor pagination)
+  - **Paths shipped:** `src-tauri/src/engine/provider/claude.rs`, `src-tauri/src/engine/mcp_tools.rs`. Obsidian vault: `Research/2026-05-21-claude-code-2-1-141-to-146.md`, `Lessons/2026-05-21-research.md`.
+  - **Note:** 8th "CLI release log of a wrapped binary" run. 2 findings + 14 catches. `cargo check --lib` clean. Release log (Phase 12) skipped per user. No descoped-reopenable changes.
+
 - **[2026-05-19 → branch `worktree-friend-platform-214520`] /friend — desktop packaging / auto-update polish (platform area)**
   - **Status:** completed (branch: `worktree-friend-platform-214520`, commits: 7, last: `1eee60eea`) — NOT merged; left for user merge decision.
   - **Commits:** `d20fa1797` version+last-checked · `17dc8aff4` download progress bar · `10ce5045f` preflight warn (Stage 1) · `21d80cd77` inline check result · `0b22a4471` update-history timeline · `04a1237ac` install-when-idle (Stage 2) · `1eee60eea` clear-history control.
