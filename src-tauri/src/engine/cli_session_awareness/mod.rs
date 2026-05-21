@@ -117,6 +117,7 @@ mod integration_tests {
             template_category: None,
             cli_awareness_enabled: true,
             setup_status: "ready".to_string(),
+            setup_detail: None,
             created_at: "2026-05-09T00:00:00Z".into(),
             updated_at: "2026-05-09T00:00:00Z".into(),
         }

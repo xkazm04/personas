@@ -1680,18 +1680,26 @@ fn find_connectors_needing_setup(ir: &crate::db::models::AgentIr) -> Vec<String>
 /// binding-backed connector (`codebase`, …). A pool failure is treated as
 /// "all flagged are missing" — better to surface a setup warning than
 /// silently let a misconfigured persona run.
-fn connectors_missing_setup(pool: &crate::db::DbPool, flagged: &[String]) -> Vec<String> {
+fn connectors_missing_setup(
+    pool: &crate::db::DbPool,
+    flagged: &[String],
+) -> Vec<super::connector_readiness::Readiness> {
+    use super::connector_readiness::{Readiness, SetupKind};
     let conn = match pool.get() {
         Ok(c) => c,
-        Err(_) => return flagged.to_vec(),
+        // Pool failure — treat every flagged connector as missing rather
+        // than silently letting a misconfigured persona run.
+        Err(_) => {
+            return flagged
+                .iter()
+                .map(|f| Readiness::NeedsSetup {
+                    connector: f.clone(),
+                    kind: SetupKind::VaultCredential,
+                })
+                .collect();
+        }
     };
     super::connector_readiness::missing_connectors(&conn, flagged.iter())
-        .into_iter()
-        .filter_map(|r| match r {
-            super::connector_readiness::Readiness::NeedsSetup { connector, .. } => Some(connector),
-            super::connector_readiness::Readiness::Ready => None,
-        })
-        .collect()
 }
 
 // ============================================================================
@@ -2615,6 +2623,38 @@ pub async fn promote_build_draft_inner(
                 missing = ?runtime_missing,
                 "promote: persona marked needs_credentials"
             );
+        }
+    }
+
+    // Adoption-honesty (D1+D3) — write the structured `setup_detail`: the
+    // typed connector blockers, the wired trigger types, and a
+    // human-readable readiness preview. `setup_status` above stays the
+    // coarse execute-gate; this is the detail the UI routes on.
+    {
+        let blockers: Vec<super::connector_readiness::SetupBlocker> = runtime_missing
+            .iter()
+            .filter_map(super::connector_readiness::SetupBlocker::from_readiness)
+            .collect();
+        let trigger_types: Vec<String> = ir
+            .triggers
+            .iter()
+            .map(|t| {
+                t.trigger_type
+                    .clone()
+                    .unwrap_or_else(|| "manual".to_string())
+            })
+            .collect();
+        let setup = super::connector_readiness::build_persona_setup(blockers, trigger_types);
+        match serde_json::to_string(&setup) {
+            Ok(json) => {
+                if let Ok(conn) = state.db.get() {
+                    let _ = conn.execute(
+                        "UPDATE personas SET setup_detail = ?1, updated_at = ?2 WHERE id = ?3",
+                        rusqlite::params![json, chrono::Utc::now().to_rfc3339(), persona_id],
+                    );
+                }
+            }
+            Err(e) => tracing::warn!(persona_id = %persona_id, error = %e, "promote: failed to serialize setup_detail"),
         }
     }
 

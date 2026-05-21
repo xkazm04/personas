@@ -2727,6 +2727,26 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // Structured setup detail (adoption-honesty redesign). The flat
+    // `setup_status` string stays as the coarse execute-gate; this nullable
+    // JSON column carries the rich `PersonaSetup` — typed blockers + wired
+    // triggers + a human-readable readiness preview — that the UI routes on.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "personas_setup_detail",
+            description: "Add setup_detail JSON column to personas",
+            already_applied: |conn| has_column(conn, "personas", "setup_detail"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE personas ADD COLUMN setup_detail TEXT;",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 

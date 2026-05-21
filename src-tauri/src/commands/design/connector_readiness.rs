@@ -21,12 +21,16 @@
 use std::collections::HashMap;
 
 use rusqlite::Connection;
+use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
 use crate::db::models::{classify_connector, ConnectorClass};
 
 /// What kind of setup a not-ready connector needs — drives the remediation
 /// the UI routes the user to (which is NOT always "Settings → Vault").
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "snake_case")]
 pub enum SetupKind {
     /// An API credential configured in Settings → Vault.
     VaultCredential,
@@ -39,13 +43,26 @@ pub enum SetupKind {
 }
 
 impl SetupKind {
-    /// Short machine token for logs / UI routing.
+    /// Short machine token for logs / UI routing. Matches the serde
+    /// `snake_case` representation.
     pub fn as_str(&self) -> &'static str {
         match self {
             SetupKind::VaultCredential => "vault_credential",
             SetupKind::DevProject => "dev_project",
             SetupKind::ObsidianVault => "obsidian_vault",
             SetupKind::TwinProfile => "twin_profile",
+        }
+    }
+
+    /// One-line remediation hint — what the user does, and where.
+    pub fn remediation(&self) -> &'static str {
+        match self {
+            SetupKind::VaultCredential => "add the credential in Settings → Vault",
+            SetupKind::DevProject => "register a project in Dev Tools",
+            SetupKind::ObsidianVault => {
+                "configure your vault in the Obsidian Brain plugin"
+            }
+            SetupKind::TwinProfile => "create a Twin profile in the Twin plugin",
         }
     }
 }
@@ -61,6 +78,53 @@ impl Readiness {
     pub fn is_ready(&self) -> bool {
         matches!(self, Readiness::Ready)
     }
+}
+
+/// One concrete thing standing between a persona and a working run — a
+/// connector that is not ready, plus where the user fixes it. Serialized
+/// into `personas.setup_detail`.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct SetupBlocker {
+    /// The connector name as the persona declares it.
+    pub connector: String,
+    /// What kind of setup it needs — drives UI routing.
+    pub kind: SetupKind,
+    /// Human-readable one-liner: the connector + its remediation hint.
+    pub detail: String,
+}
+
+impl SetupBlocker {
+    /// Build a blocker from a not-ready `Readiness`. Returns `None` for
+    /// `Readiness::Ready`.
+    pub fn from_readiness(readiness: &Readiness) -> Option<Self> {
+        match readiness {
+            Readiness::Ready => None,
+            Readiness::NeedsSetup { connector, kind } => Some(SetupBlocker {
+                connector: connector.clone(),
+                kind: *kind,
+                detail: format!("`{}` — {}", connector, kind.remediation()),
+            }),
+        }
+    }
+}
+
+/// The honest, structured account of what a persona needs before it can
+/// deliver value — serialized into the `personas.setup_detail` JSON column.
+/// The flat `personas.setup_status` string remains the coarse execute-gate;
+/// this carries the detail the UI routes on.
+#[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct PersonaSetup {
+    /// Connectors / resources still needing setup. Empty = nothing blocks.
+    pub blockers: Vec<SetupBlocker>,
+    /// True when the persona has a non-`manual` trigger — it will run on
+    /// its own. False means the user must invoke it.
+    pub has_autonomous_trigger: bool,
+    /// The wired trigger types (`schedule`, `polling`, `manual`, …).
+    pub triggers: Vec<String>,
+    /// A plain-language summary of what the persona needs and when it runs.
+    pub preview: String,
 }
 
 /// Capabilities Claude Code provides natively (WebSearch, WebFetch, Bash,
@@ -249,6 +313,52 @@ where
             other => Some(other),
         })
         .collect()
+}
+
+/// Assemble the human-readable `preview` line for a `PersonaSetup`.
+fn assemble_preview(
+    blockers: &[SetupBlocker],
+    trigger_types: &[String],
+    has_autonomous: bool,
+) -> String {
+    let run = if trigger_types.is_empty() {
+        "No trigger is wired — it has no way to run yet.".to_string()
+    } else if has_autonomous {
+        let kinds: Vec<&str> = trigger_types
+            .iter()
+            .filter(|t| t.as_str() != "manual")
+            .map(|s| s.as_str())
+            .collect();
+        format!("Runs automatically on its {} trigger.", kinds.join(" / "))
+    } else {
+        "Runs only when you start it yourself — no automatic trigger is wired.".to_string()
+    };
+    if blockers.is_empty() {
+        format!("Connectors resolved. {run}")
+    } else {
+        let needs: Vec<String> = blockers.iter().map(|b| b.detail.clone()).collect();
+        format!(
+            "Needs setup before it can deliver value: {}. {run}",
+            needs.join("; ")
+        )
+    }
+}
+
+/// Build the structured `PersonaSetup` written to `personas.setup_detail`.
+/// `blockers` is the not-ready connector set (from `missing_connectors`);
+/// `trigger_types` is the persona's wired trigger types.
+pub fn build_persona_setup(
+    blockers: Vec<SetupBlocker>,
+    trigger_types: Vec<String>,
+) -> PersonaSetup {
+    let has_autonomous_trigger = trigger_types.iter().any(|t| t.as_str() != "manual");
+    let preview = assemble_preview(&blockers, &trigger_types, has_autonomous_trigger);
+    PersonaSetup {
+        blockers,
+        has_autonomous_trigger,
+        triggers: trigger_types,
+        preview,
+    }
 }
 
 /// Find the single concrete vault credential a `Credential`-class connector
