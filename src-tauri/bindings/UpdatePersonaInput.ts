@@ -5,4 +5,11 @@ export type UpdatePersonaInput = { name: string | null, description: string | nu
 /**
  * Phase 5 v1: per-persona Claude CLI session-resume awareness gate.
  */
-cli_awareness_enabled: boolean | null, };
+cli_awareness_enabled: boolean | null, 
+/**
+ * Per-capability dim disables — JSON `{ [use_case_id]: GlyphDimension[] }`.
+ * Outer `Option` follows the partial-update pattern (`None` = leave
+ * unchanged); inner `Option<String>` lets callers explicitly clear
+ * the column with `Some(None)`. Set by the View-mode SigilEditModal.
+ */
+disabled_dims_json: string | null | null, };

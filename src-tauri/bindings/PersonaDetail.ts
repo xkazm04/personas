@@ -64,4 +64,22 @@ cli_awareness_enabled: boolean,
  * auto-execution until the user fixes it. Set by
  * `instant_adopt_template_inner` and `promote_build_draft_inner`.
  */
-setup_status: string, created_at: string, updated_at: string, };
+setup_status: string, 
+/**
+ * JSON-encoded `PersonaSetup` (adoption-honesty redesign) — the
+ * structured account of what the persona needs: typed connector
+ * blockers, wired trigger types, and a human-readable readiness
+ * preview. `setup_status` above stays the coarse execute-gate;
+ * this carries the detail the UI routes on. NULL on legacy rows and
+ * until the next promote writes it.
+ */
+setup_detail: string | null, 
+/**
+ * JSON-encoded `{ [use_case_id]: GlyphDimension[] }` recording per-
+ * capability dim disables set in the View mode SigilEditModal.
+ * Durable — survives rebuilds + runtime executions. Read by the
+ * runtime executor (skips actions bound to disabled dims) and by
+ * re-build flows (seeds the build session's disabled_dims_json).
+ * NULL = no disables; this is the default for fresh + legacy rows.
+ */
+disabled_dims_json: string | null, created_at: string, updated_at: string, };
