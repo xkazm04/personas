@@ -12729,6 +12729,14 @@ export type Translations = {
       choose_icon: string;
       select_agent_icon: string;
       select_agent_icon_desc: string;
+      select_persona_icon: string;
+      select_persona_icon_desc: string;
+      builtin_icons: string;
+      your_icons: string;
+      upload_icon: string;
+      uploading_icon: string;
+      no_custom_icons: string;
+      remove_custom_icon: string;
       clear_icon: string;
       filter_placeholder: string;
       reset_to_default: string;

@@ -10,7 +10,7 @@ import {
 const MIN_PERSONA_TIMEOUT_S = MIN_PERSONA_TIMEOUT_MS / 1000;
 const MAX_PERSONA_TIMEOUT_S = MAX_PERSONA_TIMEOUT_MS / 1000;
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
-import { AgentIconPickerModal } from '@/features/shared/components/forms/AgentIconPickerModal';
+import { PersonaIconPickerModal } from '@/features/shared/components/forms/PersonaIconPickerModal';
 import { PopupColorPicker } from '@/features/shared/components/forms/PopupColorPicker';
 import { resolvePersonaIcon } from '@/lib/icons/resolvePersonaIcon';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
@@ -137,7 +137,7 @@ export function PersonaSettingsTab({
         </div>
       </div>
 
-      <AgentIconPickerModal
+      <PersonaIconPickerModal
         isOpen={iconPickerOpen}
         value={draft.icon}
         onChange={(icon) => patch({ icon })}
