@@ -82,6 +82,28 @@ pub struct PersonaManualReview {
     pub use_case_id: Option<String>,
 }
 
+/// Status-bucketed manual-review counts — the L0 (skeleton) layer of the overview layered-fetch contract (see docs/architecture/overview-layered-fetch.md).
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct ManualReviewCounts {
+    pub total: i64,
+    pub pending: i64,
+    pub approved: i64,
+    pub rejected: i64,
+    pub resolved: i64,
+}
+
+/// One keyset-paginated page of manual reviews, newest-first — the L1/L2 layer of the overview layered-fetch contract. `nextCursor` is null once the list is exhausted.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct ManualReviewPage {
+    pub rows: Vec<PersonaManualReview>,
+    pub next_cursor: Option<String>,
+    pub has_more: bool,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub struct CreateManualReviewInput {

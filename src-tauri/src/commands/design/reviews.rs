@@ -8,8 +8,8 @@ use tokio::io::AsyncBufReadExt;
 
 use crate::db::models::{
     CategoryWithCount, ConnectorWithCount, CreateDesignReviewInput, CreatePersonaEventInput,
-    CreateReviewMessageInput, ImportDesignReviewInput, PersonaDesignReview, PersonaManualReview,
-    ReviewMessage,
+    CreateReviewMessageInput, ImportDesignReviewInput, ManualReviewCounts, ManualReviewPage,
+    PersonaDesignReview, PersonaManualReview, ReviewMessage,
 };
 use crate::db::repos::communication::{
     events as event_repo, manual_reviews as manual_repo, reviews as repo,
@@ -859,6 +859,65 @@ pub fn list_manual_reviews(
         Some(pid) => manual_repo::get_by_persona(&state.db, &pid, status.as_deref()),
         None => manual_repo::get_all(&state.db, status.as_deref()),
     }
+}
+
+/// Decode an opaque `"<created_at>|<id>"` page cursor. `created_at` is
+/// RFC3339 and `id` a UUID — neither contains `|`, so a first-`|` split is
+/// unambiguous. Returns `None` for malformed cursors (treated as page 1).
+fn parse_review_cursor(raw: &str) -> Option<(String, String)> {
+    let (created_at, id) = raw.split_once('|')?;
+    if created_at.is_empty() || id.is_empty() {
+        return None;
+    }
+    Some((created_at.to_string(), id.to_string()))
+}
+
+/// Keyset-paginated manual reviews — the L1/L2 ("first viewport" + "lazy
+/// continuation") layer of the overview layered-fetch contract.
+///
+/// Replaces the unbounded `list_manual_reviews` fetch for list rendering:
+/// pass `cursor = None` for the first page, then feed back `next_cursor`
+/// from each response. `limit` is clamped to 1..=200 (default 40).
+#[tauri::command]
+pub fn list_manual_reviews_page(
+    state: State<'_, Arc<AppState>>,
+    persona_id: Option<String>,
+    status: Option<String>,
+    cursor: Option<String>,
+    limit: Option<u32>,
+) -> Result<ManualReviewPage, AppError> {
+    require_auth_sync(&state)?;
+    let limit = limit.unwrap_or(40).clamp(1, 200) as i64;
+    let cursor_parts = cursor.as_deref().and_then(parse_review_cursor);
+    let (rows, has_more) = manual_repo::list_page(
+        &state.db,
+        persona_id.as_deref(),
+        status.as_deref(),
+        cursor_parts.as_ref().map(|(c, i)| (c.as_str(), i.as_str())),
+        limit,
+    )?;
+    let next_cursor = if has_more {
+        rows.last().map(|r| format!("{}|{}", r.created_at, r.id))
+    } else {
+        None
+    };
+    Ok(ManualReviewPage {
+        rows,
+        next_cursor,
+        has_more,
+    })
+}
+
+/// Status-bucketed manual-review counts — the L0 ("skeleton") layer.
+/// One `GROUP BY` query; drives filter-tab badges and virtual-list sizing
+/// without loading any row data.
+#[tauri::command]
+pub fn get_manual_review_counts(
+    state: State<'_, Arc<AppState>>,
+    persona_id: Option<String>,
+) -> Result<ManualReviewCounts, AppError> {
+    require_auth_sync(&state)?;
+    manual_repo::counts(&state.db, persona_id.as_deref())
 }
 
 /// A-grade Phase 8 (2026-05-04) — auto-resolve manual reviews left in

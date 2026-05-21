@@ -1,6 +1,8 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { ManualReviewStatus } from "@/lib/bindings/ManualReviewStatus";
+import type { ManualReviewCounts } from "@/lib/bindings/ManualReviewCounts";
+import type { ManualReviewPage } from "@/lib/bindings/ManualReviewPage";
 import type { PersonaDesignReview } from "@/lib/bindings/PersonaDesignReview";
 import type { PersonaManualReview } from "@/lib/bindings/PersonaManualReview";
 import type { ReviewMessage } from "@/lib/bindings/ReviewMessage";
@@ -151,6 +153,33 @@ export const listManualReviews = (personaId?: string, status?: string) =>
   invoke<PersonaManualReview[]>("list_manual_reviews", {
     personaId: personaId,
     status: status,
+  });
+
+/**
+ * Keyset-paginated manual reviews — L1/L2 of the overview layered-fetch
+ * contract. Pass `cursor: undefined` for the first page, then feed back
+ * `nextCursor` from each {@link ManualReviewPage} to load the next.
+ */
+export const listManualReviewsPage = (opts: {
+  personaId?: string;
+  status?: string;
+  cursor?: string;
+  limit?: number;
+}) =>
+  invoke<ManualReviewPage>("list_manual_reviews_page", {
+    personaId: opts.personaId,
+    status: opts.status,
+    cursor: opts.cursor,
+    limit: opts.limit,
+  });
+
+/**
+ * Status-bucketed manual-review counts — L0 (skeleton) of the layered
+ * fetch. One `GROUP BY` query; renders filter badges + list size instantly.
+ */
+export const getManualReviewCounts = (personaId?: string) =>
+  invoke<ManualReviewCounts>("get_manual_review_counts", {
+    personaId: personaId,
   });
 
 export const updateManualReviewStatus = (

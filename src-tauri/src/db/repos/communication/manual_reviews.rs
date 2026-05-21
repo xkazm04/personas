@@ -1,8 +1,8 @@
 use rusqlite::params;
 
 use crate::db::models::{
-    CreateManualReviewInput, CreateReviewMessageInput, ManualReviewStatus, PersonaManualReview,
-    ReviewMessage,
+    CreateManualReviewInput, CreateReviewMessageInput, ManualReviewCounts, ManualReviewStatus,
+    PersonaManualReview, ReviewMessage,
 };
 use crate::db::repos::utils::collect_rows;
 use crate::db::DbPool;
@@ -369,6 +369,107 @@ pub fn get_pending_count(pool: &DbPool, persona_id: Option<&str>) -> Result<i64,
             )?;
             Ok(count)
         }
+    })
+}
+
+/// Keyset-paginated manual reviews, newest-first.
+///
+/// `cursor` is the `(created_at, id)` of the last row of the previous page.
+/// Pages cost O(`limit`) regardless of scroll depth and stay stable under
+/// concurrent inserts — the scalability backbone for the reviews queue,
+/// replacing the unbounded `get_all` fetch. Returns the page rows plus
+/// whether more rows exist beyond them.
+pub fn list_page(
+    pool: &DbPool,
+    persona_id: Option<&str>,
+    status: Option<&str>,
+    cursor: Option<(&str, &str)>,
+    limit: i64,
+) -> Result<(Vec<PersonaManualReview>, bool), AppError> {
+    timed_query!("manual_reviews", "manual_reviews::list_page", {
+        let conn = pool.get()?;
+        // Fetch one extra row to detect whether a further page exists.
+        let fetch = limit.max(1) + 1;
+
+        let mut sql = String::from("SELECT * FROM persona_manual_reviews WHERE 1 = 1");
+        let mut binds: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
+        if let Some(pid) = persona_id {
+            sql.push_str(" AND persona_id = ?");
+            binds.push(Box::new(pid.to_string()));
+        }
+        if let Some(st) = status {
+            sql.push_str(" AND status = ?");
+            binds.push(Box::new(st.to_string()));
+        }
+        if let Some((c_created, c_id)) = cursor {
+            // Newest-first keyset: rows strictly "older" than the cursor,
+            // with `id` as the tie-break for rows sharing a `created_at`.
+            sql.push_str(" AND (created_at < ? OR (created_at = ? AND id < ?))");
+            binds.push(Box::new(c_created.to_string()));
+            binds.push(Box::new(c_created.to_string()));
+            binds.push(Box::new(c_id.to_string()));
+        }
+        sql.push_str(" ORDER BY created_at DESC, id DESC LIMIT ?");
+        binds.push(Box::new(fetch));
+
+        let mut stmt = conn.prepare(&sql)?;
+        let param_refs: Vec<&dyn rusqlite::ToSql> = binds.iter().map(|b| b.as_ref()).collect();
+        let rows = stmt.query_map(rusqlite::params_from_iter(param_refs), row_to_review)?;
+        let mut collected = collect_rows(rows, "manual_reviews::list_page");
+
+        let has_more = collected.len() as i64 > limit;
+        if has_more {
+            collected.truncate(limit as usize);
+        }
+        Ok((collected, has_more))
+    })
+}
+
+/// Status-bucketed review counts via a single `GROUP BY` query — the L0
+/// (skeleton) layer. Cheap regardless of table size; never loads row data.
+pub fn counts(pool: &DbPool, persona_id: Option<&str>) -> Result<ManualReviewCounts, AppError> {
+    timed_query!("manual_reviews", "manual_reviews::counts", {
+        let conn = pool.get()?;
+        let mut counts = ManualReviewCounts {
+            total: 0,
+            pending: 0,
+            approved: 0,
+            rejected: 0,
+            resolved: 0,
+        };
+        let mut apply = |status: &str, n: i64| {
+            counts.total += n;
+            match status {
+                "pending" => counts.pending = n,
+                "approved" => counts.approved = n,
+                "rejected" => counts.rejected = n,
+                "resolved" => counts.resolved = n,
+                _ => {}
+            }
+        };
+        if let Some(pid) = persona_id {
+            let mut stmt = conn.prepare(
+                "SELECT status, COUNT(*) FROM persona_manual_reviews
+                 WHERE persona_id = ?1 GROUP BY status",
+            )?;
+            let rows =
+                stmt.query_map(params![pid], |r| Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?)))?;
+            for row in rows {
+                let (status, n) = row?;
+                apply(&status, n);
+            }
+        } else {
+            let mut stmt = conn
+                .prepare("SELECT status, COUNT(*) FROM persona_manual_reviews GROUP BY status")?;
+            let rows =
+                stmt.query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?)))?;
+            for row in rows {
+                let (status, n) = row?;
+                apply(&status, n);
+            }
+        }
+        drop(apply);
+        Ok(counts)
     })
 }
 
