@@ -1,23 +1,27 @@
-import { useState } from "react";
 import { motion } from "framer-motion";
 import { ActivityPulseIcon } from "@/features/shared/components/icons/ActivityPulseIcon";
 import { useOverviewStore } from "@/stores/overviewStore";
+import { useSystemStore } from "@/stores/systemStore";
 import { useTranslation } from "@/i18n/useTranslation";
 import { PersonaMonitor } from "@/features/monitor";
 
 /**
  * Titlebar entry point for the Persona Monitor.
  *
- * The badge counts **attention** — pending human reviews plus processes
- * blocked on the user (`input_required` / `draft_ready`). Live work
- * (`running`) is shown instead as a pulsing ring around the icon, so colour
- * answers "do I need to act?" and the pulse answers "is the fleet busy?".
+ * The badge counts **attention** — pending human reviews, unread messages,
+ * and processes blocked on the user (`input_required` / `draft_ready`). Live
+ * work (`running`) is shown instead as a pulsing ring around the icon, so
+ * colour answers "do I need to act?" and the pulse answers "is the fleet
+ * busy?". Open state lives in the system store so Athena can open the
+ * Monitor too (see `uiSlice.monitorOpen`).
  */
 export default function ProcessActivityIndicator() {
   const { t, tx } = useTranslation();
-  const [monitorOpen, setMonitorOpen] = useState(false);
+  const monitorOpen = useSystemStore((s) => s.monitorOpen);
+  const setMonitorOpen = useSystemStore((s) => s.setMonitorOpen);
 
   const pendingReviewCount = useOverviewStore((s) => s.pendingReviewCount);
+  const unreadMessageCount = useOverviewStore((s) => s.unreadMessageCount);
   // Derived counts — selectors return primitives, so with Object.is equality
   // the button re-renders only when a count/flag actually transitions.
   const actionCount = useOverviewStore((s) =>
@@ -29,14 +33,14 @@ export default function ProcessActivityIndicator() {
     Object.values(s.activeProcesses).some((p) => p.status === "running"),
   );
 
-  const attention = pendingReviewCount + actionCount;
+  const attention = pendingReviewCount + unreadMessageCount + actionCount;
 
   return (
     <>
       <button
         className="titlebar-btn relative"
         data-testid="titlebar-process-activity"
-        onClick={() => setMonitorOpen((v) => !v)}
+        onClick={() => setMonitorOpen(!monitorOpen)}
         aria-label={attention > 0 ? tx(t.monitor.titlebar_attention, { count: attention }) : t.monitor.titlebar}
         title={attention > 0 ? tx(t.monitor.titlebar_tooltip, { count: attention }) : t.monitor.titlebar}
       >

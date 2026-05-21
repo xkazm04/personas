@@ -175,6 +175,10 @@ const ALLOWED_LAB_MODES: &[&str] = &[
 /// Allowed sidebar routes for `open_route`. Mirrors the SidebarSection
 /// type on the frontend; mismatches get rejected with a warning so a
 /// hallucinated route doesn't crash the navigation handler.
+///
+/// `monitor` is a pseudo-route — not a sidebar section. The frontend
+/// navigate handler special-cases it to open the full-screen Persona
+/// Monitor overlay (fleet-wide review + activity grid).
 const ALLOWED_ROUTES: &[&str] = &[
     "home",
     "overview",
@@ -185,6 +189,7 @@ const ALLOWED_ROUTES: &[&str] = &[
     "plugins",
     "schedules",
     "settings",
+    "monitor",
 ];
 
 /// Scan assistant text for op JSON blocks, persist them as approval rows,

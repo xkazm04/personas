@@ -13,6 +13,18 @@ export type Translations = {
     no_personas: string;
     idle: string;
     footer_legend: string;
+    reviews: string;
+    messages: string;
+    activity: string;
+    section_messages: string;
+    no_reviews: string;
+    no_messages: string;
+    no_activity: string;
+    mark_read: string;
+    open_reviews: string;
+    open_messages: string;
+    open_activity: string;
+    last_failed: string;
     footer_counts: string;
     system: string;
     section_reviews: string;

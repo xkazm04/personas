@@ -41,7 +41,7 @@ Athena actions can create pending approvals. The panel lists them through `compa
 Events:
 
 - `companion://approvals`: newly created approval rows.
-- `companion://navigate`: direct route switch requested by Athena.
+- `companion://navigate`: direct route switch requested by Athena. The route `monitor` is a pseudo-route — it opens the full-screen [Persona Monitor](../monitor.md) overlay instead of switching a sidebar section. Athena fires it (after a short spoken/written summary) when the user asks for a fleet overview.
 - `companion://stream`: streaming turn output from the backend.
 - `companion://recall-preview`: per-turn rollup of what the brain pulled into the system prompt (counts + titles per memory kind).
 - `companion://turn-summary`: per-turn rollup of dispatcher side-effects keyed by assistant episode id (approvals / navigations / lab opens / dashboards / cockpits / chat cards / continuation flag).

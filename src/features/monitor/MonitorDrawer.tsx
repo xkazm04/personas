@@ -1,11 +1,11 @@
 // MonitorDrawer — the top-down triage drawer for one persona.
 //
 // Slides DOWN from the top over the Monitor grid (the grid stays mounted).
-// Two stacked sections: Reviews (inline human-review triage) and Activity
-// (live process rows with reasoning-trace expansion + navigation).
+// Three switchable sections — Reviews, Messages, Activity — opened directly
+// to whichever badge the user clicked on the card.
 
 import { useState, useCallback, useMemo } from 'react';
-import { X, Check, MessageSquare, Clock } from 'lucide-react';
+import { X, Check, MessageSquare, Clock, Mail, AlertCircle } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import ReasoningTrace from '@/features/shared/components/layout/ReasoningTrace';
 import { useReasoningTrace } from '@/hooks/execution/useReasoningTrace';
@@ -18,16 +18,19 @@ import { useAgentStore } from '@/stores/agentStore';
 import type { ManualReviewItem, SidebarSection, DevToolsTab, PluginTab } from '@/lib/types/types';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 import type { ActiveProcess } from '@/stores/slices/processActivitySlice';
+import type { PersonaMessage } from '@/lib/bindings/PersonaMessage';
 import {
-  ATTENTION_META, reviewBucket, processStatusMeta, processStatusLabel, attentionLabel, elapsedStr,
-  type PersonaCardModel, type SeverityBucket, type ProcessEntry,
+  SEVERITY_META, severityBucket, severityLabel, processStatusMeta, processStatusLabel, elapsedStr,
+  type PersonaCardModel, type SeverityBucket, type ProcessEntry, type DrawerSection,
 } from './monitorModel';
 
 interface MonitorDrawerProps {
   card: PersonaCardModel;
+  initialSection: DrawerSection;
   isProcessing: boolean;
   now: number;
-  onAction: (id: string, status: ManualReviewStatus, notes?: string) => void;
+  onReviewAction: (id: string, status: ManualReviewStatus, notes?: string) => void;
+  onMarkRead: (id: string) => void;
   onClose: () => void;
 }
 
@@ -56,23 +59,32 @@ function navigateToProcess(proc: ActiveProcess, dismiss: () => void) {
   dismiss();
 }
 
-export function MonitorDrawer({ card, isProcessing, now, onAction, onClose }: MonitorDrawerProps) {
+export function MonitorDrawer({
+  card, initialSection, isProcessing, now, onReviewAction, onMarkRead, onClose,
+}: MonitorDrawerProps) {
   const { t, tx } = useTranslation();
+  const [section, setSection] = useState<DrawerSection>(initialSection);
+
   const sortedReviews = useMemo(
     () => [...card.reviews].sort(
-      (a, b) => ATTENTION_META[reviewBucket(a.severity)].rank - ATTENTION_META[reviewBucket(b.severity)].rank,
+      (a, b) => SEVERITY_META[severityBucket(a.severity)].rank - SEVERITY_META[severityBucket(b.severity)].rank,
     ),
     [card.reviews],
   );
-  // Action states first (input_required, draft_ready), then running, then queued.
+  const sortedMessages = useMemo(
+    () => [...card.messages].sort((a, b) => b.created_at.localeCompare(a.created_at)),
+    [card.messages],
+  );
   const sortedProcesses = useMemo(() => {
     const order: Record<string, number> = { input_required: 0, draft_ready: 1, running: 2, queued: 3 };
-    return [...card.processes].sort(
-      (a, b) => (order[a.proc.status] ?? 9) - (order[b.proc.status] ?? 9),
-    );
+    return [...card.processes].sort((a, b) => (order[a.proc.status] ?? 9) - (order[b.proc.status] ?? 9));
   }, [card.processes]);
 
-  const empty = sortedReviews.length === 0 && sortedProcesses.length === 0;
+  const tabs: Array<{ id: DrawerSection; label: string; count: number }> = [
+    { id: 'reviews', label: t.monitor.reviews, count: sortedReviews.length },
+    { id: 'messages', label: t.monitor.messages, count: sortedMessages.length },
+    { id: 'activity', label: t.monitor.activity, count: sortedProcesses.length },
+  ];
 
   return (
     <>
@@ -96,55 +108,82 @@ export function MonitorDrawer({ card, isProcessing, now, onAction, onClose }: Mo
         </button>
       </div>
 
-      {/* Drawer body */}
+      {/* Section tabs */}
+      <div className="flex-shrink-0 flex items-center gap-1 px-4 py-2 border-b border-primary/8 bg-secondary/10">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setSection(tab.id)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-heading font-medium transition-colors ${
+              section === tab.id
+                ? 'bg-primary/15 text-primary border border-primary/25'
+                : 'text-foreground hover:bg-secondary/40 border border-transparent'
+            }`}
+          >
+            {tab.label}
+            <span className={`typo-caption tabular-nums ${section === tab.id ? 'text-primary' : 'text-foreground/60'}`}>
+              {tab.count}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* Section body */}
       <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4">
-        {empty ? (
-          <div className="h-full min-h-[180px] flex flex-col items-center justify-center gap-3 text-center">
-            <div className="w-12 h-12 rounded-full bg-emerald-500/12 border border-emerald-500/25 flex items-center justify-center">
-              <Check className="w-6 h-6 text-emerald-400" />
+        {section === 'reviews' && (
+          sortedReviews.length === 0 ? (
+            <EmptySection icon={AlertCircle} text={t.monitor.no_reviews} />
+          ) : (
+            <div className="space-y-3">
+              {sortedReviews.map((review) => (
+                <DrawerReviewCard
+                  key={review.id}
+                  review={review}
+                  personaName={card.personaName}
+                  isProcessing={isProcessing}
+                  onAction={onReviewAction}
+                />
+              ))}
             </div>
-            <p className="typo-body font-medium text-foreground">{t.monitor.drawer_empty}</p>
-            <button
-              onClick={onClose}
-              className="px-3 py-1.5 rounded-modal border border-primary/15 bg-secondary/20 typo-heading font-medium text-foreground hover:bg-secondary/40 transition-colors"
-            >
-              {t.monitor.back_to_grid}
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-5">
-            {sortedReviews.length > 0 && (
-              <section className="space-y-3">
-                <h4 className="typo-caption uppercase tracking-wider text-foreground">
-                  {tx(t.monitor.section_reviews, { count: sortedReviews.length })}
-                </h4>
-                {sortedReviews.map((review) => (
-                  <DrawerReviewCard
-                    key={review.id}
-                    review={review}
-                    personaName={card.personaName}
-                    isProcessing={isProcessing}
-                    onAction={onAction}
-                  />
-                ))}
-              </section>
-            )}
-            {sortedProcesses.length > 0 && (
-              <section className="space-y-2">
-                <h4 className="typo-caption uppercase tracking-wider text-foreground">
-                  {tx(t.monitor.section_activity, { count: sortedProcesses.length })}
-                </h4>
-                <div className="rounded-card border border-primary/10 bg-secondary/15 overflow-hidden">
-                  {sortedProcesses.map((entry) => (
-                    <MonitorActivityRow key={entry.key} entry={entry} now={now} onNavigate={onClose} />
-                  ))}
-                </div>
-              </section>
-            )}
-          </div>
+          )
+        )}
+
+        {section === 'messages' && (
+          sortedMessages.length === 0 ? (
+            <EmptySection icon={Mail} text={t.monitor.no_messages} />
+          ) : (
+            <div className="space-y-2.5">
+              {sortedMessages.map((message) => (
+                <DrawerMessageCard key={message.id} message={message} onMarkRead={onMarkRead} />
+              ))}
+            </div>
+          )
+        )}
+
+        {section === 'activity' && (
+          sortedProcesses.length === 0 ? (
+            <EmptySection icon={Clock} text={t.monitor.no_activity} />
+          ) : (
+            <div className="rounded-card border border-primary/10 bg-secondary/15 overflow-hidden">
+              {sortedProcesses.map((entry) => (
+                <MonitorActivityRow key={entry.key} entry={entry} now={now} onNavigate={onClose} />
+              ))}
+            </div>
+          )
         )}
       </div>
     </>
+  );
+}
+
+function EmptySection({ icon: Icon, text }: { icon: React.ComponentType<{ className?: string }>; text: string }) {
+  return (
+    <div className="h-full min-h-[160px] flex flex-col items-center justify-center gap-2 text-center">
+      <div className="w-11 h-11 rounded-full bg-secondary/40 border border-primary/10 flex items-center justify-center">
+        <Icon className="w-5 h-5 text-foreground/50" />
+      </div>
+      <p className="typo-body text-foreground">{text}</p>
+    </div>
   );
 }
 
@@ -163,8 +202,8 @@ function DrawerReviewCard({ review, personaName, isProcessing, onAction }: Drawe
   const { t } = useTranslation();
   const [notes, setNotes] = useState('');
   const [showNotes, setShowNotes] = useState(false);
-  const sev: SeverityBucket = reviewBucket(review.severity);
-  const M = ATTENTION_META[sev];
+  const sev: SeverityBucket = severityBucket(review.severity);
+  const M = SEVERITY_META[sev];
   const Icon = M.icon;
 
   const act = useCallback(
@@ -183,7 +222,7 @@ function DrawerReviewCard({ review, personaName, isProcessing, onAction }: Drawe
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-0.5">
-            <span className={`typo-caption font-medium uppercase ${M.text}`}>{attentionLabel(t, sev)}</span>
+            <span className={`typo-caption font-medium uppercase ${M.text}`}>{severityLabel(t, sev)}</span>
             {review.source === 'cloud' && (
               <>
                 <span className="typo-caption text-foreground">·</span>
@@ -244,6 +283,44 @@ function DrawerReviewCard({ review, personaName, isProcessing, onAction }: Drawe
         >
           <Check className="w-4 h-4" />
           <span className="typo-heading font-medium">{t.monitor.approve}</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Message card
+// ---------------------------------------------------------------------------
+
+function DrawerMessageCard({ message, onMarkRead }: { message: PersonaMessage; onMarkRead: (id: string) => void }) {
+  const { t } = useTranslation();
+  const isHighPriority = message.priority === 'high' || message.priority === 'urgent';
+  return (
+    <div className="rounded-card border border-primary/10 bg-secondary/20 px-4 py-3">
+      <div className="flex items-start gap-3">
+        <div className="w-8 h-8 rounded-modal border border-cyan-500/25 bg-cyan-500/10 flex items-center justify-center flex-shrink-0">
+          <Mail className="w-4 h-4 text-cyan-400" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 mb-0.5">
+            {isHighPriority && (
+              <span className="w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" />
+            )}
+            <Clock className="w-3 h-3 text-foreground" />
+            <span className="typo-caption text-foreground">{formatRelativeTime(message.created_at)}</span>
+          </div>
+          {message.title && (
+            <h5 className="typo-body font-semibold text-foreground leading-snug">{message.title}</h5>
+          )}
+          <p className="typo-body text-foreground/85 whitespace-pre-wrap leading-relaxed mt-1">{message.content}</p>
+        </div>
+        <button
+          onClick={() => onMarkRead(message.id)}
+          className="flex-shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal border border-primary/15 bg-secondary/20 typo-heading font-medium text-foreground hover:bg-secondary/45 transition-colors"
+        >
+          <Check className="w-3.5 h-3.5" />
+          {t.monitor.mark_read}
         </button>
       </div>
     </div>

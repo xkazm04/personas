@@ -8,6 +8,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { PersonaColumnFilter } from '@/features/shared/components/forms/PersonaColumnFilter';
 import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';
+import { useColumnWidths, ColumnResizeHandle } from '@/features/shared/components/display/ColumnResize';
 import { MemoryRow } from './MemoryCard';
 import { InlineAddMemoryForm } from './CreateMemoryForm';
 import { MemoryConflictReview } from './MemoryConflictReview';
@@ -94,7 +95,17 @@ interface SortState { column: SortColumn; direction: SortDirection }
 
 type ViewTab = 'memories' | 'conflicts';
 
-const GRID_COLUMNS = '180px minmax(0,2fr) 100px 80px 100px 40px';
+// Ordered columns for the memory grid. Widths are defaults — users can
+// drag-resize them; overrides persist via useColumnWidths('overview-memories').
+// The header (here) and each MemoryRow share this template so columns align.
+const MEMORY_COLUMNS: { key: string; width: string }[] = [
+  { key: 'persona', width: '180px' },
+  { key: 'title', width: 'minmax(0,2fr)' },
+  { key: 'category', width: '100px' },
+  { key: 'priority', width: '80px' },
+  { key: 'created', width: '100px' },
+  { key: 'actions', width: '40px' },
+];
 
 function MemoriesPageBaseline() {
   const { t } = useTranslation();
@@ -150,6 +161,8 @@ function MemoriesPageBaseline() {
   const clearFilters = useCallback(() => { setSearch(''); setSelectedPersonaId(null); setSelectedCategory(null); }, []);
 
   const { parentRef: memoryListRef, virtualizer } = useVirtualList(memories, 48);
+  const colWidths = useColumnWidths('overview-memories');
+  const memGridTemplate = colWidths.template(MEMORY_COLUMNS);
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
@@ -317,16 +330,28 @@ function MemoriesPageBaseline() {
           ) : (
             <>
               {/* Column headers with inline filters */}
-              <div className="hidden md:grid gap-0 border-b border-primary/10 bg-background sticky top-0 z-10" style={{ gridTemplateColumns: GRID_COLUMNS }}>
-                <div className="px-4 py-1.5 flex items-center">
+              <div className="hidden md:grid gap-0 border-b border-primary/10 bg-background sticky top-0 z-10" style={{ gridTemplateColumns: memGridTemplate }}>
+                <div className="relative px-4 py-1.5 flex items-center">
                   <PersonaColumnFilter
                     value={selectedPersonaId ?? ''}
                     onChange={(v) => setSelectedPersonaId(v || null)}
                     personas={personas}
                   />
+                  <ColumnResizeHandle
+                    label={t.shared.resize_column}
+                    onBeginResize={(w, x) => colWidths.beginResize('persona', w, x)}
+                    onReset={() => colWidths.clearColumn('persona')}
+                  />
                 </div>
-                <div className="flex items-center px-4 py-1.5 typo-label text-foreground">Title</div>
-                <div className="px-2 py-1.5 flex items-center">
+                <div className="relative flex items-center px-4 py-1.5 typo-label text-foreground">
+                  Title
+                  <ColumnResizeHandle
+                    label={t.shared.resize_column}
+                    onBeginResize={(w, x) => colWidths.beginResize('title', w, x)}
+                    onReset={() => colWidths.clearColumn('title')}
+                  />
+                </div>
+                <div className="relative px-2 py-1.5 flex items-center">
                   <ColumnDropdownFilter
                     label="Type"
                     value={selectedCategory ?? ''}
@@ -334,8 +359,20 @@ function MemoriesPageBaseline() {
                     onChange={(v) => setSelectedCategory(v || null)}
                     allValue=""
                   />
+                  <ColumnResizeHandle
+                    label={t.shared.resize_column}
+                    onBeginResize={(w, x) => colWidths.beginResize('category', w, x)}
+                    onReset={() => colWidths.clearColumn('category')}
+                  />
                 </div>
-                <div className="flex items-center px-4 py-1.5 typo-label text-foreground">Priority</div>
+                <div className="relative flex items-center px-4 py-1.5 typo-label text-foreground">
+                  Priority
+                  <ColumnResizeHandle
+                    label={t.shared.resize_column}
+                    onBeginResize={(w, x) => colWidths.beginResize('priority', w, x)}
+                    onReset={() => colWidths.clearColumn('priority')}
+                  />
+                </div>
                 <div className="flex items-center justify-end px-4 py-1.5 typo-label text-foreground">Created</div>
                 <div className="px-2 py-1.5" />
               </div>
@@ -345,7 +382,7 @@ function MemoriesPageBaseline() {
                   <p className="typo-body text-foreground"><DebtText k="auto_no_memories_match_current_filters_06cb075f" /></p>
                 </div>
               ) : (
-                <div ref={memoryListRef} className="flex-1 overflow-y-auto focus:outline-none" tabIndex={0} role="grid" aria-label={debtText("auto_memory_list_a2a82929")} onKeyDown={handleListKeyDown}>
+                <div ref={memoryListRef} className={`flex-1 overflow-y-auto focus:outline-none ${colWidths.isResizing ? 'select-none cursor-col-resize' : ''}`} tabIndex={0} role="grid" aria-label={debtText("auto_memory_list_a2a82929")} onKeyDown={handleListKeyDown}>
                   <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
                     {virtualizer.getVirtualItems().map((virtualRow) => {
                       const memory = memories[virtualRow.index]!;
@@ -353,7 +390,7 @@ function MemoriesPageBaseline() {
                       const isFocused = virtualRow.index === focusedIndex;
                       return (
                         <div key={memory.id} data-index={virtualRow.index} role="row" aria-selected={isFocused} style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%' }} className={`${isFocused ? 'ring-1 ring-primary/40 ring-inset z-[1]' : ''} ${pendingDeleteId === memory.id ? 'bg-red-500/10' : ''}`}>
-                          <MemoryRow memory={memory} personaName={persona?.name || 'Unknown'} index={virtualRow.index} onDelete={() => deleteMemory(memory.id)} onSelect={() => setSelectedMemory(memory)} />
+                          <MemoryRow memory={memory} personaName={persona?.name || 'Unknown'} index={virtualRow.index} gridTemplate={memGridTemplate} onDelete={() => deleteMemory(memory.id)} onSelect={() => setSelectedMemory(memory)} />
                         </div>
                       );
                     })}

@@ -31,7 +31,7 @@ The active tab comes from `useOverviewStore().overviewTab`. Sidebar-visible tabs
 | `sub_observability` | Trace/healing/metrics/alerts dashboards. Includes the `ToolPerformancePanel` (latency + error rate per tool, sourced from `tool_execution_audit_log` via the `get_tool_performance_summary` IPC command). |
 | `sub_sla` | SLA cards and dashboard |
 | `sub_usage` | Usage charts, period comparison, tool usage pivoting |
-| `sub_memories` | Memory list, conflict review, merge actions |
+| `sub_memories` | Memory list, conflict review, merge actions. The baseline list is a grid table with user-resizable columns. |
 | `sub_cron_agents` | Schedule-focused persona cards |
 | `sub_analytics` | Rotation analytics helpers/panels, plus the GitHub-style 365-day **execution heatmap** (`ExecutionHeatmap.tsx`) embedded on the dashboard (fleet aggregate, respects the persona filter) and on each per-persona Activity tab. Backed by the `get_execution_heatmap` IPC command, which serves a 1-hour server-side cached daily aggregation plus derived insights (longest streak, dormant-since, peak day, week-over-week trend). |
 
@@ -39,7 +39,7 @@ The local source README at `src/features/overview/README.md` defines folder boun
 
 ## Resizable table columns
 
-The Events, Activity, and Messages tables support drag-to-resize columns. The shared primitive is `src/features/shared/components/display/ColumnResize.tsx` — `useColumnWidths(tableId)` holds per-table px overrides and `ColumnResizeHandle` is the divider rendered on each column header's right edge. Drag a divider to resize; double-click it to restore the default width. Overrides persist to `localStorage` under `table-col-widths:<tableId>` (`overview-events`, `overview-activity`, `overview-messages`). `UnifiedTable` enables this whenever a `tableId` prop is passed; the custom grid tables in Activity and Messages wire the hook directly. Knowledge is an expandable card list (not a column grid) and is intentionally excluded.
+The Events, Activity, Messages, and Memories tables support drag-to-resize columns. The shared primitive is `src/features/shared/components/display/ColumnResize.tsx` — `useColumnWidths(tableId)` holds per-table px overrides and `ColumnResizeHandle` is the divider rendered on each column header's right edge. Drag a divider to resize; double-click it to restore the default width. Overrides persist to `localStorage` under `table-col-widths:<tableId>` (`overview-events`, `overview-activity`, `overview-messages`, `overview-memories`). `UnifiedTable` enables this whenever a `tableId` prop is passed; the custom grid tables in Activity, Messages, and the Memories baseline view wire the hook directly. The Memories table header and each `MemoryRow` share one grid template so columns stay aligned. Knowledge's annotation view is an expandable card list (not a column grid) and is intentionally excluded.
 
 ## Data source boundaries
 

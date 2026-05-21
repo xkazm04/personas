@@ -1,95 +1,95 @@
 // monitorModel — pure logic for the Persona Monitor.
 //
-// The Monitor fuses two orthogonal signals onto one persona card:
-//   • Attention — does the persona need a human? → drives the card COLOUR.
-//   • Activity  — is the persona working right now? → drives the live PULSE.
+// Two orthogonal signal layers per persona card:
+//   • Execution state → card COLOUR. running (pulsing) > failed (red) >
+//     attention (default tone) > idle (muted).
+//   • Required attention → BADGES. Human reviews and unread messages each
+//     get their own icon+count badge; clicking one opens that drawer section.
 //
-// Attention priority (highest wins): critical review > input-required process
-// > warning review > draft-ready process > info review. A persona can be both
-// "attention" and "active" at once — the colour and the pulse are independent.
+// A persona can be running AND have pending reviews — colour and badges are
+// independent.
 
-import { AlertCircle, AlertTriangle, Info, MessageCircleQuestion, FileText } from 'lucide-react';
+import { AlertCircle, AlertTriangle, Info } from 'lucide-react';
 import type { ComponentType } from 'react';
 import type { ManualReviewItem } from '@/lib/types/types';
 import type { ActiveProcess } from '@/stores/slices/processActivitySlice';
 import type { Persona } from '@/lib/bindings/Persona';
+import type { PersonaMessage } from '@/lib/bindings/PersonaMessage';
+import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
 import type { Translations } from '@/i18n/generated/types';
 
 export type SeverityBucket = 'critical' | 'warning' | 'info';
 
-/** What can make a persona card demand a human, in priority order. */
-export type AttentionBucket = 'critical' | 'input_required' | 'warning' | 'draft_ready' | 'info';
+/** Execution lifecycle state — drives the persona card colour. */
+export type ExecState = 'running' | 'failed' | 'attention' | 'idle';
+
+/** Which drawer section a badge / affordance opens. */
+export type DrawerSection = 'reviews' | 'messages' | 'activity';
 
 /** Collapse a raw review severity string into one of three buckets. */
-export function reviewBucket(sev: string): SeverityBucket {
+export function severityBucket(sev: string): SeverityBucket {
   if (sev === 'critical') return 'critical';
   if (sev === 'warning' || sev === 'high') return 'warning';
   return 'info';
 }
 
-interface AttentionMeta {
+interface SeverityMeta {
   /** Lower = higher priority. */
   rank: number;
-  /** Persona card background + border. */
-  card: string;
-  /** Bordered chip (header / drawer). */
   chip: string;
-  /** Count badge. */
   badge: string;
-  /** Solid dot. */
   dot: string;
-  /** Accent text. */
   text: string;
   icon: ComponentType<{ className?: string }>;
 }
 
-export const ATTENTION_META: Record<AttentionBucket, AttentionMeta> = {
+export const SEVERITY_META: Record<SeverityBucket, SeverityMeta> = {
   critical: {
     rank: 0, icon: AlertCircle,
-    card: 'bg-red-500/10 border-red-500/30 hover:bg-red-500/16',
     chip: 'bg-red-500/10 text-red-400 border-red-500/30',
-    badge: 'bg-red-500/20 text-red-300', dot: 'bg-red-400', text: 'text-red-400',
-  },
-  input_required: {
-    rank: 1, icon: MessageCircleQuestion,
-    card: 'bg-orange-500/10 border-orange-500/30 hover:bg-orange-500/16',
-    chip: 'bg-orange-500/10 text-orange-400 border-orange-500/30',
-    badge: 'bg-orange-500/20 text-orange-300', dot: 'bg-orange-400', text: 'text-orange-400',
+    badge: 'bg-red-500/15 text-red-300 border-red-500/30',
+    dot: 'bg-red-400', text: 'text-red-400',
   },
   warning: {
-    rank: 2, icon: AlertTriangle,
-    card: 'bg-amber-500/10 border-amber-500/25 hover:bg-amber-500/16',
+    rank: 1, icon: AlertTriangle,
     chip: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
-    badge: 'bg-amber-500/20 text-amber-300', dot: 'bg-amber-400', text: 'text-amber-400',
-  },
-  draft_ready: {
-    rank: 3, icon: FileText,
-    card: 'bg-violet-500/10 border-violet-500/30 hover:bg-violet-500/16',
-    chip: 'bg-violet-500/10 text-violet-400 border-violet-500/30',
-    badge: 'bg-violet-500/20 text-violet-300', dot: 'bg-violet-400', text: 'text-violet-400',
+    badge: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
+    dot: 'bg-amber-400', text: 'text-amber-400',
   },
   info: {
-    rank: 4, icon: Info,
-    card: 'bg-blue-500/10 border-blue-500/22 hover:bg-blue-500/16',
+    rank: 2, icon: Info,
     chip: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
-    badge: 'bg-blue-500/20 text-blue-300', dot: 'bg-blue-400', text: 'text-blue-400',
+    badge: 'bg-blue-500/15 text-blue-300 border-blue-500/30',
+    dot: 'bg-blue-400', text: 'text-blue-400',
   },
 };
 
-/** Translated label for an attention bucket. */
-export function attentionLabel(t: Translations, b: AttentionBucket): string {
+/** Translated label for a review severity bucket. */
+export function severityLabel(t: Translations, b: SeverityBucket): string {
   switch (b) {
     case 'critical': return t.monitor.attention_critical;
-    case 'input_required': return t.monitor.attention_input_required;
     case 'warning': return t.monitor.attention_warning;
-    case 'draft_ready': return t.monitor.attention_draft_ready;
     case 'info': return t.monitor.attention_info;
   }
 }
 
-/** A clear (no attention) but live persona card, and the "busy" sort tier. */
-export const MUTED_CARD = 'bg-secondary/15 border-primary/8';
-export const BUSY_CARD = 'bg-primary/[0.06] border-primary/20 hover:bg-primary/10';
+export interface ExecStateMeta {
+  /** Persona card background + border. */
+  card: string;
+  /** True when the card should carry the pulsing live-work ring. */
+  pulse: boolean;
+}
+
+export const EXEC_STATE_META: Record<ExecState, ExecStateMeta> = {
+  // Bright, pulsing — the persona is doing live work right now.
+  running: { card: 'bg-primary/[0.08] border-primary/45', pulse: true },
+  // Red — the most recent execution failed.
+  failed: { card: 'bg-red-500/[0.09] border-red-500/35 hover:bg-red-500/[0.14]', pulse: false },
+  // Default app tone — idle, but something needs the user.
+  attention: { card: 'bg-secondary/40 border-primary/15 hover:bg-secondary/55', pulse: false },
+  // Muted — nothing happening, nothing pending.
+  idle: { card: 'bg-secondary/15 border-primary/8', pulse: false },
+};
 
 export interface ProcessStatusMeta {
   dot: string;
@@ -139,17 +139,21 @@ export interface PersonaCardModel {
   personaColor: string | null;
   reviews: ManualReviewItem[];
   reviewCounts: Record<SeverityBucket, number>;
+  /** Highest-severity review bucket present — tints the review badge. */
+  topReviewSeverity: SeverityBucket | null;
+  /** Unread messages for this persona. */
+  messages: PersonaMessage[];
   processes: ProcessEntry[];
-  /** Highest-priority attention bucket present, or null when the card is clear. */
-  attention: AttentionBucket | null;
   running: number;
   queued: number;
   inputRequired: number;
   draftReady: number;
-  /** Items demanding a human: reviews + input-required + draft-ready processes. */
-  attentionCount: number;
   /** Earliest `startedAt` among running processes, for the live elapsed timer. */
   runningSince: number | null;
+  /** Execution lifecycle state — drives the card colour. */
+  execState: ExecState;
+  /** Reviews + unread messages — total badge-able attention. */
+  attentionCount: number;
 }
 
 export interface MonitorModel {
@@ -160,27 +164,21 @@ export interface MonitorModel {
 
 /**
  * Build the full Monitor model: one card per persona (fleet-wide, including
- * idle personas) plus the leftover app-level / unattributable processes.
+ * idle personas) plus leftover app-level processes.
  *
- * Process → persona attribution is best-effort: `personaId`, then
- * `navigateTo.personaId`, then an exact `label === persona.name` match.
- * `PROCESS_ACTIVITY` "started" events carry no persona id, so a running
- * execution only lands on a card when its label matches a persona name —
- * everything else falls through to `systemProcesses`.
+ * `unreadMessages` should already be filtered to unread. `healthMap` is the
+ * agent store's per-persona `PersonaHealth` — `recentStatuses[0]` is the most
+ * recent execution outcome and drives the `failed` colour.
  */
 export function buildMonitorModel(
   personas: Persona[],
   reviews: ManualReviewItem[],
+  unreadMessages: PersonaMessage[],
   activeProcesses: Record<string, ActiveProcess>,
+  healthMap: Record<string, PersonaHealth>,
 ): MonitorModel {
-  // --- reviews grouped by persona ------------------------------------------
-  const reviewsByPersona = new Map<string, ManualReviewItem[]>();
-  for (const r of reviews) {
-    const key = r.persona_id || 'unassigned';
-    const list = reviewsByPersona.get(key);
-    if (list) list.push(r);
-    else reviewsByPersona.set(key, [r]);
-  }
+  const reviewsByPersona = groupBy(reviews, (r) => r.persona_id || 'unassigned');
+  const messagesByPersona = groupBy(unreadMessages, (m) => m.persona_id || 'unassigned');
 
   // --- process attribution -------------------------------------------------
   const personaIds = new Set(personas.map((p) => p.id));
@@ -199,13 +197,8 @@ export function buildMonitorModel(
     } else if (proc.label && nameToId.has(proc.label)) {
       owner = nameToId.get(proc.label)!;
     }
-    if (owner) {
-      const list = processesByPersona.get(owner);
-      if (list) list.push(entry);
-      else processesByPersona.set(owner, [entry]);
-    } else {
-      systemProcesses.push(entry);
-    }
+    if (owner) push(processesByPersona, owner, entry);
+    else systemProcesses.push(entry);
   }
 
   const makeCard = (
@@ -214,10 +207,17 @@ export function buildMonitorModel(
     icon: string | null,
     color: string | null,
     revs: ManualReviewItem[],
+    msgs: PersonaMessage[],
     procs: ProcessEntry[],
+    health: PersonaHealth | undefined,
   ): PersonaCardModel => {
     const reviewCounts: Record<SeverityBucket, number> = { critical: 0, warning: 0, info: 0 };
-    for (const r of revs) reviewCounts[reviewBucket(r.severity)] += 1;
+    for (const r of revs) reviewCounts[severityBucket(r.severity)] += 1;
+    const topReviewSeverity: SeverityBucket | null =
+      reviewCounts.critical > 0 ? 'critical'
+        : reviewCounts.warning > 0 ? 'warning'
+          : reviewCounts.info > 0 ? 'info'
+            : null;
 
     let running = 0, queued = 0, inputRequired = 0, draftReady = 0;
     let runningSince: number | null = null;
@@ -234,20 +234,21 @@ export function buildMonitorModel(
       }
     }
 
-    const attention: AttentionBucket | null =
-      reviewCounts.critical > 0 ? 'critical'
-        : inputRequired > 0 ? 'input_required'
-          : reviewCounts.warning > 0 ? 'warning'
-            : draftReady > 0 ? 'draft_ready'
-              : reviewCounts.info > 0 ? 'info'
-                : null;
+    const attentionCount = revs.length + msgs.length;
+    const hasAttention = attentionCount > 0 || queued > 0 || inputRequired > 0 || draftReady > 0;
+    const lastFailed = health?.recentStatuses[0] === 'failed';
+    const execState: ExecState =
+      running > 0 ? 'running'
+        : lastFailed ? 'failed'
+          : hasAttention ? 'attention'
+            : 'idle';
 
     return {
       personaId: id, personaName: name, personaIcon: icon, personaColor: color,
-      reviews: revs, reviewCounts, processes: procs,
-      attention, running, queued, inputRequired, draftReady,
-      attentionCount: revs.length + inputRequired + draftReady,
-      runningSince,
+      reviews: revs, reviewCounts, topReviewSeverity,
+      messages: msgs, processes: procs,
+      running, queued, inputRequired, draftReady, runningSince,
+      execState, attentionCount,
     };
   };
 
@@ -256,29 +257,32 @@ export function buildMonitorModel(
     cards.push(makeCard(
       p.id, p.name, p.icon, p.color,
       reviewsByPersona.get(p.id) ?? [],
+      messagesByPersona.get(p.id) ?? [],
       processesByPersona.get(p.id) ?? [],
+      healthMap[p.id],
     ));
   }
-  // Orphan reviews — persona deleted or unassigned. Render so nothing is lost.
-  for (const [key, revs] of reviewsByPersona) {
-    if (key !== 'unassigned' && personaIds.has(key)) continue;
-    if (key === 'unassigned') {
-      cards.push(makeCard('unassigned', 'Unassigned', null, null, revs, []));
-    } else {
-      const first = revs[0]!;
-      cards.push(makeCard(
-        key, first.persona_name || 'Unknown persona',
-        first.persona_icon ?? null, first.persona_color ?? null, revs, [],
-      ));
-    }
+  // Orphan reviews/messages — persona deleted or unassigned.
+  const orphanKeys = new Set<string>();
+  for (const k of reviewsByPersona.keys()) if (!personaIds.has(k)) orphanKeys.add(k);
+  for (const k of messagesByPersona.keys()) if (!personaIds.has(k)) orphanKeys.add(k);
+  for (const key of orphanKeys) {
+    const revs = reviewsByPersona.get(key) ?? [];
+    const msgs = messagesByPersona.get(key) ?? [];
+    const sample = revs[0];
+    const name = key === 'unassigned' ? 'Unassigned' : (sample?.persona_name || 'Unknown persona');
+    cards.push(makeCard(
+      key, name, sample?.persona_icon ?? null, sample?.persona_color ?? null,
+      revs, msgs, [], undefined,
+    ));
   }
 
-  // Sort: attention tier (by rank) → busy-but-clear → idle. Within a tier,
-  // most attention-bearing first, then most active, then alphabetical.
+  // Sort: failures → things needing the user → just-busy → idle.
   const sortRank = (c: PersonaCardModel): number => {
-    if (c.attention) return ATTENTION_META[c.attention].rank;   // 0..4
-    if (c.running > 0 || c.queued > 0) return 5;                 // busy, clear
-    return 6;                                                    // idle
+    if (c.execState === 'failed') return 0;
+    if (c.attentionCount > 0 || c.inputRequired > 0 || c.draftReady > 0) return 1;
+    if (c.running > 0 || c.queued > 0) return 2;
+    return 3;
   };
   cards.sort((a, b) => {
     const ra = sortRank(a);
@@ -300,4 +304,18 @@ export function elapsedStr(startedAt: number, now: number): string {
   if (m < 60) return `${m}m ${s % 60}s`;
   const h = Math.floor(m / 60);
   return `${h}h ${m % 60}m`;
+}
+
+// --- small helpers ----------------------------------------------------------
+
+function groupBy<T>(items: T[], keyOf: (x: T) => string): Map<string, T[]> {
+  const map = new Map<string, T[]>();
+  for (const item of items) push(map, keyOf(item), item);
+  return map;
+}
+
+function push<T>(map: Map<string, T[]>, key: string, value: T): void {
+  const list = map.get(key);
+  if (list) list.push(value);
+  else map.set(key, [value]);
 }

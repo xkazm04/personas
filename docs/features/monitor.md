@@ -1,9 +1,9 @@
 # Persona Monitor
 
 The **Persona Monitor** is the full-screen fleet view, launched from the
-titlebar. It fuses two signals — human reviews awaiting a decision and live
-process activity — onto a single grid of persona cards, so the state of a
-100+ persona fleet is legible at a glance.
+titlebar. It puts every persona on one grid so the state of a 100+ persona
+fleet is legible at a glance, and lets you triage reviews, read messages, and
+inspect live activity without leaving it.
 
 ## Opening it
 
@@ -11,9 +11,12 @@ The titlebar **activity** button (between the schedule calendar and the
 notification bell) opens the Monitor. The button shows:
 
 - **Attention badge** — a count of items that need you: pending human
-  reviews + processes blocked on input (`input_required`, `draft_ready`).
+  reviews + unread messages + processes blocked on input.
 - **Pulsing ring** — appears while any persona has a `running` process.
-  Colour answers "do I need to act?"; the pulse answers "is the fleet busy?".
+
+The companion, **Athena**, can also open it — ask her for a fleet overview
+("how are my personas doing?") and she summarises in chat and opens the grid.
+See [companion](./companion/README.md).
 
 Press `Esc` (or click the titlebar button again) to close.
 
@@ -21,38 +24,50 @@ Press `Esc` (or click the titlebar button again) to close.
 
 One card per persona, fleet-wide — including idle personas.
 
-- **Card colour = attention.** The highest-priority unresolved item wins:
-  `critical review` → `input needed` → `warning review` → `draft ready` →
-  `info review`. A persona with nothing pending is **muted** ("Idle").
-- **Live pulse = activity.** A pulsing dot marks personas with running work;
-  cards also show an elapsed timer, queued count, and per-severity review
-  badges.
-- Cards are sorted worst-first: critical attention → … → busy-but-clear →
-  idle.
+### Card colour = execution state
+
+The card colour encodes the persona's execution lifecycle:
+
+- **Running** — bright, with a pulsing ring. A process is executing now.
+- **Failed** — red. The most recent execution failed.
+- **Attention** — the default app tone. Idle, but something is pending.
+- **Idle** — muted. Nothing running, nothing pending.
+
+### Badges = required attention
+
+Below the persona name, each pending-attention type gets its own badge —
+**reviews** (tinted by highest severity) and **unread messages** — as
+`icon + count`. The activity dot (top-right, shown when the persona has
+processes) is the third affordance.
+
+There is **no whole-card click** — every badge is its own button:
+
+- Review badge → opens the drawer's **Reviews** section.
+- Messages badge → opens the **Messages** section.
+- Activity dot → opens the **Activity** section.
+
+Cards sort worst-first: failures → things needing you → just-busy → idle.
 
 ### System band
 
-App-level activity that isn't tied to a persona — idea scans, context maps,
-the task runner, queued runs with no persona — appears in the **System band**
-above the grid. The band is hidden when there is no such activity.
+App-level activity not tied to a persona — idea scans, context maps, the task
+runner — appears in the **System band** above the grid.
 
-> A process is placed on a persona card via its `personaId`, its navigation
+> A process is attributed to a persona via its `personaId`, navigation
 > target, or an exact `label === persona.name` match. Execution rows emitted
-> by the runner carry the persona name as their label, so live runs land on
-> the right card; genuinely app-level work (idea scans, context maps, the
-> task runner) has no persona and is shown in the System band by design. The
-> only edge case is two personas sharing an identical name — a label-matched
-> process then attributes to one of them.
+> by the runner carry the persona name, so live runs land on the right card;
+> genuinely app-level work has no persona and shows in the System band.
 
 ## The drawer
 
-Clicking a card opens a drawer that slides **down** from the top over the
-grid (the grid stays mounted underneath). It has two stacked sections:
+Opening a badge slides a drawer **down** from the top over the grid (the grid
+stays mounted). It has three switchable sections:
 
-- **Reviews** — inline triage. Each review can be approved or rejected, with
-  an optional note. Local and cloud reviews are both handled here.
-- **Activity** — the persona's live processes. Execution rows expand into a
-  reasoning trace; rows with a navigation target jump to the relevant screen.
+- **Reviews** — inline triage: approve / reject with an optional note. Local
+  and cloud reviews both appear here.
+- **Messages** — unread messages for the persona, each with mark-as-read.
+- **Activity** — the persona's live processes; execution rows expand into a
+  reasoning trace, and rows with a navigation target jump to that screen.
 
 ## Relationship to Overview → Approvals
 

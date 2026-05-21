@@ -1,22 +1,29 @@
 // useMonitorData — data layer for the Persona Monitor.
 //
-// Gathers the three feeds the Monitor fuses: the persona roster, the pending
-// human-review queue (local + cloud), and live process activity. Self-
-// contained — the Monitor can mount this from the titlebar without depending
-// on the Overview dashboard pipeline.
+// Gathers every feed the Monitor fuses: the persona roster + health, the
+// pending human-review queue (local + cloud), unread messages, and live
+// process activity. Self-contained — the Monitor can mount this from the
+// titlebar without depending on the Overview dashboard pipeline.
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAgentStore } from '@/stores/agentStore';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { listManualReviews, updateManualReviewStatus } from '@/api/overview/reviews';
+import { listMessages, markMessageRead } from '@/api/overview/messages';
 import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
 import type { ManualReviewItem } from '@/lib/types/types';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 import type { PersonaManualReview } from '@/lib/bindings/PersonaManualReview';
+import type { PersonaMessage } from '@/lib/bindings/PersonaMessage';
+import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
+import type { ActiveProcess } from '@/stores/slices/processActivitySlice';
 import { createLogger } from '@/lib/log';
 
 const logger = createLogger('persona-monitor');
+
+/** Most recent messages scanned for unread state — unread skews recent. */
+const MESSAGE_SCAN_LIMIT = 300;
 
 /** Shape a raw `PersonaManualReview` row into the `ManualReviewItem` the UI consumes. */
 function shapeReview(r: PersonaManualReview): ManualReviewItem {
@@ -40,27 +47,34 @@ function shapeReview(r: PersonaManualReview): ManualReviewItem {
 
 export interface MonitorData {
   personas: ReturnType<typeof useAgentStore.getState>['personas'];
+  healthMap: Record<string, PersonaHealth>;
   reviews: ManualReviewItem[];
-  activeProcesses: Record<string, import('@/stores/slices/processActivitySlice').ActiveProcess>;
+  unreadMessages: PersonaMessage[];
+  activeProcesses: Record<string, ActiveProcess>;
   loading: boolean;
   isProcessing: boolean;
-  handleAction: (id: string, status: ManualReviewStatus, notes?: string) => Promise<void>;
+  handleReviewAction: (id: string, status: ManualReviewStatus, notes?: string) => Promise<void>;
+  handleMarkRead: (id: string) => Promise<void>;
 }
 
 export function useMonitorData(): MonitorData {
   const personas = useAgentStore((s) => s.personas);
+  const healthMap = useAgentStore((s) => s.personaHealthMap);
+  const fetchPersonaSummaries = useAgentStore((s) => s.fetchPersonaSummaries);
   const activeProcesses = useOverviewStore((s) => s.activeProcesses);
   const cloudReviews = useOverviewStore((s) => s.cloudReviews);
   const fetchCloudReviews = useOverviewStore((s) => s.fetchCloudReviews);
   const respondToCloudReview = useOverviewStore((s) => s.respondToCloudReview);
   const fetchPendingReviewCount = useOverviewStore((s) => s.fetchPendingReviewCount);
+  const fetchUnreadMessageCount = useOverviewStore((s) => s.fetchUnreadMessageCount);
   const isCloudConnected = useSystemStore((s) => s.cloudConfig?.is_connected ?? false);
 
   const [localReviews, setLocalReviews] = useState<ManualReviewItem[]>([]);
+  const [unreadMessages, setUnreadMessages] = useState<PersonaMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const reloadLocal = useCallback(async () => {
+  const reloadReviews = useCallback(async () => {
     try {
       const raw = await listManualReviews(undefined, 'pending');
       setLocalReviews(raw.map(shapeReview));
@@ -71,13 +85,28 @@ export function useMonitorData(): MonitorData {
     }
   }, []);
 
-  useEffect(() => { void reloadLocal(); }, [reloadLocal]);
+  const reloadMessages = useCallback(async () => {
+    try {
+      const raw = await listMessages(MESSAGE_SCAN_LIMIT);
+      setUnreadMessages(raw.filter((m) => !m.is_read));
+    } catch (err) {
+      logger.error('Failed to load messages', { error: err });
+    }
+  }, []);
+
+  useEffect(() => {
+    void reloadReviews();
+    void reloadMessages();
+    void fetchPersonaSummaries();
+  }, [reloadReviews, reloadMessages, fetchPersonaSummaries]);
   useEffect(() => { if (isCloudConnected) void fetchCloudReviews(); }, [isCloudConnected, fetchCloudReviews]);
 
-  // Local reviews aren't event-driven — poll to catch ones created by
-  // executions while the Monitor is open. Process activity is already live
-  // via the PROCESS_ACTIVITY event bridge, so it needs no poll here.
-  usePolling(reloadLocal, { interval: POLLING_CONFIG.dashboardRefresh.interval, enabled: true });
+  // Reviews/messages aren't event-driven — poll to catch ones created while
+  // the Monitor is open. Process activity is already live via the
+  // PROCESS_ACTIVITY event bridge.
+  usePolling(reloadReviews, { interval: POLLING_CONFIG.dashboardRefresh.interval, enabled: true });
+  usePolling(reloadMessages, { interval: POLLING_CONFIG.dashboardRefresh.interval, enabled: true });
+  usePolling(fetchPersonaSummaries, { interval: POLLING_CONFIG.dashboardRefresh.interval, enabled: true });
   usePolling(fetchCloudReviews, {
     interval: POLLING_CONFIG.cloudReviews.interval,
     enabled: isCloudConnected,
@@ -89,7 +118,7 @@ export function useMonitorData(): MonitorData {
     [localReviews, cloudReviews],
   );
 
-  const handleAction = useCallback(
+  const handleReviewAction = useCallback(
     async (id: string, status: ManualReviewStatus, notes?: string) => {
       if (isProcessing) return;
       const review = reviews.find((r) => r.id === id);
@@ -106,10 +135,8 @@ export function useMonitorData(): MonitorData {
         } else {
           await updateManualReviewStatus(id, status, notes);
         }
-        await reloadLocal();
+        await reloadReviews();
         if (isCloudConnected) await fetchCloudReviews();
-        // Keep the titlebar attention badge in sync without waiting for the
-        // 30s sidebar poll.
         void fetchPendingReviewCount();
       } catch (err) {
         logger.error('Failed to action review', { error: err });
@@ -117,8 +144,26 @@ export function useMonitorData(): MonitorData {
         setIsProcessing(false);
       }
     },
-    [isProcessing, reviews, respondToCloudReview, reloadLocal, isCloudConnected, fetchCloudReviews, fetchPendingReviewCount],
+    [isProcessing, reviews, respondToCloudReview, reloadReviews, isCloudConnected, fetchCloudReviews, fetchPendingReviewCount],
   );
 
-  return { personas, reviews, activeProcesses, loading, isProcessing, handleAction };
+  const handleMarkRead = useCallback(
+    async (id: string) => {
+      // Optimistic — drop it from the unread set immediately.
+      setUnreadMessages((prev) => prev.filter((m) => m.id !== id));
+      try {
+        await markMessageRead(id);
+        void fetchUnreadMessageCount();
+      } catch (err) {
+        logger.error('Failed to mark message read', { error: err });
+        void reloadMessages();
+      }
+    },
+    [fetchUnreadMessageCount, reloadMessages],
+  );
+
+  return {
+    personas, healthMap, reviews, unreadMessages, activeProcesses,
+    loading, isProcessing, handleReviewAction, handleMarkRead,
+  };
 }

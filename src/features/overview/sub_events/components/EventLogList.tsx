@@ -199,7 +199,9 @@ export default function EventLogList() {
           : event.source_id;
         const persona = getPersona(personaId ?? null);
         if (persona) {
-          return <span className="typo-body text-foreground truncate">{persona.name}</span>;
+          // No truncation — the full persona name is always shown (wraps if
+          // the column is too narrow). Users can drag the column wider.
+          return <span className="typo-body text-foreground break-words">{persona.name}</span>;
         }
         if (personaId) {
           return (

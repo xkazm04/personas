@@ -71,10 +71,16 @@ export function ImportanceBar({ value }: { value: number }) {
 export const ImportanceDots = ImportanceBar;
 
 // -- Memory Row ---------------------------------------------------------------
+
+/** Fallback grid template — kept in sync with MEMORY_COLUMNS in MemoriesPage. */
+const DEFAULT_MEMORY_GRID = '180px minmax(0,2fr) 100px 80px 100px 40px';
+
 export function MemoryRow({
-  memory, personaName, onDelete, onSelect, index = 0,
+  memory, personaName, onDelete, onSelect, index = 0, gridTemplate = DEFAULT_MEMORY_GRID,
 }: {
   memory: PersonaMemory; personaName: string; onDelete: () => void; onSelect: () => void; index?: number;
+  /** Shared grid-template-columns so the row's cells align with the table header. */
+  gridTemplate?: string;
 }) {
   const { t } = useTranslation();
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -147,15 +153,14 @@ export function MemoryRow({
 
   return (
     <div data-testid={`memory-row-${memory.id}`} className={`animate-fade-slide-in border-b border-primary/10 hover:bg-white/[0.05] transition-colors ${index % 2 === 0 ? 'bg-white/[0.015]' : ''}`}>
-      {/* Desktop row */}
-      <div className="hidden md:flex items-center gap-4 px-6 py-3 cursor-pointer" onClick={onSelect}>
-        <div className="w-[140px] flex items-center gap-2 flex-shrink-0"><span className="typo-body text-foreground/90 truncate">{personaName}</span></div>
-        <div className="flex-1 min-w-0"><span className="typo-body text-foreground truncate block">{stripHtml(memory.title)}</span></div>
-        {scopeBadge}
-        {categoryBadge}
-        <div className="w-[60px] flex-shrink-0"><ImportanceBar value={memory.importance} /></div>
-        <span className="typo-body text-foreground w-[60px] text-right flex-shrink-0">{formatRelativeTime(memory.created_at).replace(/ ago$/, '')}</span>
-        <div className="w-[32px] flex-shrink-0">{deleteButton}</div>
+      {/* Desktop row — grid columns mirror the table header in MemoriesPage */}
+      <div className="hidden md:grid items-center py-3 cursor-pointer" style={{ gridTemplateColumns: gridTemplate }} onClick={onSelect}>
+        <div className="px-4 flex items-center gap-2 min-w-0"><span className="typo-body text-foreground/90 truncate">{personaName}</span></div>
+        <div className="px-4 min-w-0"><span className="typo-body text-foreground truncate block">{stripHtml(memory.title)}</span></div>
+        <div className="px-2 flex items-center gap-1 min-w-0">{scopeBadge}{categoryBadge}</div>
+        <div className="px-4 min-w-0"><ImportanceBar value={memory.importance} /></div>
+        <span className="px-4 typo-body text-foreground text-right">{formatRelativeTime(memory.created_at).replace(/ ago$/, '')}</span>
+        <div className="px-2 flex justify-end">{deleteButton}</div>
       </div>
 
       {/* Mobile card */}

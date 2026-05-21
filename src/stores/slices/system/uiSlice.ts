@@ -93,8 +93,17 @@ export interface UiSlice {
   canvasEdgeFocus: { edgeId: string; eventType: string; sourceFilter: string | null } | null;
   liveStreamHighlightEventId: string | null;
 
+  /**
+   * Whether the full-screen Persona Monitor overlay is open. Lifted to the
+   * store (from local titlebar state) so the companion — Athena — can open
+   * it via her `open_route` "monitor" pseudo-route when the user asks for a
+   * fleet overview.
+   */
+  monitorOpen: boolean;
+
   // Actions
   setSidebarSection: (section: SidebarSection) => void;
+  setMonitorOpen: (open: boolean) => void;
   setHomeTab: (tab: HomeTab) => void;
   setHomeReleaseVersion: (version: string) => void;
   setTemplateTab: (tab: TemplateTab) => void;
@@ -159,6 +168,7 @@ export const NAV_HISTORY_MAX = 5;
 
 export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) => ({
   sidebarSection: "home" as SidebarSection,
+  monitorOpen: false,
   homeTab: "welcome" as HomeTab,
   homeReleaseVersion: "roadmap",
   templateTab: "generated" as TemplateTab,
@@ -193,6 +203,8 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) =
   pendingGoalSpotlightId: null,
   canvasEdgeFocus: null,
   liveStreamHighlightEventId: null,
+
+  setMonitorOpen: (open) => set({ monitorOpen: open }),
 
   setSidebarSection: (section) => startTransition(() => set((state) => {
     // Idempotent — re-clicking the current section is a no-op for history.

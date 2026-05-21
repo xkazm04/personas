@@ -735,9 +735,15 @@ function Body(props: BodyProps) {
   useTauriEvent<string>(
     COMPANION_NAVIGATE_EVENT,
     useCallback((event) => {
-      const route = event.payload as SidebarSection;
-      if (!VALID_NAV_ROUTES.includes(route)) return;
-      useSystemStore.getState().setSidebarSection(route);
+      const route = event.payload;
+      // "monitor" is a pseudo-route — it opens the full-screen Persona
+      // Monitor overlay rather than switching a sidebar section.
+      if (route === 'monitor') {
+        useSystemStore.getState().setMonitorOpen(true);
+        return;
+      }
+      if (!VALID_NAV_ROUTES.includes(route as SidebarSection)) return;
+      useSystemStore.getState().setSidebarSection(route as SidebarSection);
     }, []),
     'companion_navigate_listen',
   );
