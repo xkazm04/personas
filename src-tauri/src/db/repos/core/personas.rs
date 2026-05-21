@@ -412,6 +412,10 @@ fn row_to_persona_with_mode(row: &Row, mode: ProfileMode) -> rusqlite::Result<Pe
             .ok()
             .flatten()
             .unwrap_or_else(|| "ready".to_string()),
+        setup_detail: row
+            .get::<_, Option<String>>("setup_detail")
+            .ok()
+            .flatten(),
         disabled_dims_json: row
             .get::<_, Option<String>>("disabled_dims_json")
             .ok()

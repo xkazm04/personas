@@ -108,6 +108,25 @@ pub struct AgentIr {
     /// runtime helpers can query it post-promote.
     #[serde(default)]
     pub persona: Option<serde_json::Value>,
+
+    /// First-run state files (adoption-honesty redesign). A template may
+    /// declare state files its persona assumes exist from a prior run
+    /// (`dev_config.json`, `approval_state.json`, …). Promote materializes
+    /// each into the managed drive under `state/<persona-id>/<path>` so the
+    /// persona's FIRST run is not missing files it depends on.
+    #[serde(default)]
+    pub initial_state: Vec<InitialStateFile>,
+}
+
+/// One first-run state file a template seeds for its persona.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InitialStateFile {
+    /// Relative path under the persona's drive state dir
+    /// (`state/<persona-id>/<path>`).
+    pub path: String,
+    /// Initial file contents. May contain `{{param.KEY}}` placeholders
+    /// resolved from the user's adoption answers before the file is written.
+    pub content: String,
 }
 
 // ---- Sub-types ----

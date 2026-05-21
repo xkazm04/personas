@@ -453,6 +453,7 @@ impl EphemeralPersona {
             template_category: None,
             cli_awareness_enabled: false,
             setup_status: "ready".to_string(),
+            setup_detail: None,
             disabled_dims_json: None,
             created_at: now.clone(),
             updated_at: now,

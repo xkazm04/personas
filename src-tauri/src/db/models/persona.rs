@@ -522,6 +522,14 @@ pub struct Persona {
     /// `instant_adopt_template_inner` and `promote_build_draft_inner`.
     #[serde(default = "default_setup_status")]
     pub setup_status: String,
+    /// JSON-encoded `PersonaSetup` (adoption-honesty redesign) — the
+    /// structured account of what the persona needs: typed connector
+    /// blockers, wired trigger types, and a human-readable readiness
+    /// preview. `setup_status` above stays the coarse execute-gate;
+    /// this carries the detail the UI routes on. NULL on legacy rows and
+    /// until the next promote writes it.
+    #[serde(default)]
+    pub setup_detail: Option<String>,
     /// JSON-encoded `{ [use_case_id]: GlyphDimension[] }` recording per-
     /// capability dim disables set in the View mode SigilEditModal.
     /// Durable — survives rebuilds + runtime executions. Read by the
