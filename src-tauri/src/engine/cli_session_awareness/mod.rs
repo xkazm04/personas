@@ -118,6 +118,7 @@ mod integration_tests {
             cli_awareness_enabled: true,
             setup_status: "ready".to_string(),
             setup_detail: None,
+            disabled_dims_json: None,
             created_at: "2026-05-09T00:00:00Z".into(),
             updated_at: "2026-05-09T00:00:00Z".into(),
         }
