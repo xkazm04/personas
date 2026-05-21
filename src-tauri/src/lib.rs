@@ -1257,6 +1257,7 @@ pub fn run() {
             commands::core::personas::get_persona_detail,
             commands::core::personas::list_personas_using_connector,
             commands::core::personas::resolve_effective_config,
+            commands::core::personas::resolve_effective_config_bulk,
             // Core -- Use Cases (Phase C3: capability toggle + simulate;
             // Phase C5b: per-capability generation policy + event rename)
             commands::core::use_cases::get_use_case_cascade,

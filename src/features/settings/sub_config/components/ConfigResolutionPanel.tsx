@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Layers, RefreshCw, Globe, FolderOpen, User, Minus, AlertTriangle } from 'lucide-react';
-import { listPersonas, resolveEffectiveConfig } from '@/api/agents/personas';
+import { listPersonas, resolveEffectiveConfigBulk } from '@/api/agents/personas';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { EffectiveModelConfig } from '@/lib/bindings/EffectiveModelConfig';
 import type { ConfigSource } from '@/lib/bindings/ConfigSource';
@@ -113,25 +113,32 @@ export default function ConfigResolutionPanel() {
         return;
       }
 
-      const results = await Promise.allSettled(
-        stale.map((p) => resolveEffectiveConfig(p.id))
-      );
-
+      // One IPC for every stale persona. The backend fetches personas,
+      // groups and global settings once and resolves in memory — replacing
+      // the per-persona fan-out that cost ~10s with ~142 personas.
       const now = Date.now();
-      stale.forEach((p, i) => {
-        const r = results[i];
-        if (r && r.status === 'fulfilled') {
-          configCache.set(p.id, { config: r.value, error: null, ts: now });
-        } else {
-          const reason = r && r.status === 'rejected' ? r.reason : new Error('Unknown error');
-          const message = reason instanceof Error
-            ? reason.message
-            : (typeof reason === 'object' && reason !== null && 'error' in reason)
-              ? String((reason as { error: string }).error)
-              : String(reason);
+      try {
+        const configs = await resolveEffectiveConfigBulk(stale.map((p) => p.id));
+        const byId = new Map(configs.map((c) => [c.personaId, c]));
+        stale.forEach((p) => {
+          const config = byId.get(p.id) ?? null;
+          // A persona absent from the bulk result couldn't be resolved;
+          // `error: null` lets the cell fall back to the generic
+          // "config could not be resolved" tooltip rather than a raw string.
+          configCache.set(p.id, { config, error: null, ts: now });
+        });
+      } catch (reason) {
+        // The whole bulk call failed — surface the message on every row
+        // that was waiting on it.
+        const message = reason instanceof Error
+          ? reason.message
+          : (typeof reason === 'object' && reason !== null && 'error' in reason)
+            ? String((reason as { error: string }).error)
+            : String(reason);
+        stale.forEach((p) => {
           configCache.set(p.id, { config: null, error: message, ts: now });
-        }
-      });
+        });
+      }
 
       setRows(personas.map((p) => {
         const cached = configCache.get(p.id);
