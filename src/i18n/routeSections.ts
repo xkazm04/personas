@@ -13,6 +13,8 @@ const BASE_SECTIONS: readonly TranslationSection[] = [
   'status_tokens',
   'process_labels',
   'radio',
+  // Persona Monitor is reachable from the always-mounted titlebar button.
+  'monitor',
 ];
 
 const ROUTE_SECTIONS: Record<SidebarSection, readonly TranslationSection[]> = {

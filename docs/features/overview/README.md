@@ -14,10 +14,10 @@ The active tab comes from `useOverviewStore().overviewTab`. Sidebar-visible tabs
 | --- | --- | --- |
 | Dashboard | Mission-control home, summary widgets, knowledge/recent change/routine/fleet cards | `components/dashboard/DashboardHome.tsx`, `cards/*`, `widgets/*` |
 | Inbox | Unified triage view that aggregates pending items from four sources (manual-review approvals, unread messages, output artifacts, open healing issues) into Today / This Week / Snoozed / Resolved swimlanes. Keyboard triage (J/K move, Enter open, A approve, R reject/resolve, S snooze, X select, Esc clear), per-row chips, and a floating bulk-action toolbar. Snooze persists in localStorage; resolved is session-local. Reuses `useUnifiedInbox` from simple-mode for the source aggregation. | `sub_inbox/InboxTriagePage.tsx` plus `components/`, `hooks/`, `libs/` |
-| Activity / Executions | Global execution list and metrics | `sub_activity/components/GlobalExecutionList.tsx`, `ExecutionRow.tsx`, `useExecutionMetrics.ts` |
+| Activity / Executions | Global execution list and metrics. List columns are user-resizable. | `sub_activity/components/GlobalExecutionList.tsx`, `ExecutionRow.tsx`, `useExecutionMetrics.ts` |
 | Approvals | Manual review inbox, focused decision flow, bulk actions, triage player | `sub_manual-review` |
-| Messages | Message list, thread/detail modal, read/delete/count behavior | `sub_messages`, `commands/communication/messages.rs` |
-| Events | Durable event log with search/filter and detail modal | `sub_events`, `commands/communication/events.rs` |
+| Messages | Message list, thread/detail modal, read/delete/count behavior. Flat-view columns are user-resizable. | `sub_messages`, `commands/communication/messages.rs` |
+| Events | Durable event log with search/filter and detail modal. Table columns are user-resizable. | `sub_events`, `commands/communication/events.rs` |
 | Knowledge | Knowledge rows, graph dashboard, annotations | `sub_knowledge` |
 | Health | Persona health cards, heartbeat, predictive alerts, burn-rate/cascade views | `sub_health` |
 | Leaderboard | Persona rankings, podium, radar score details | `sub_leaderboard` |
@@ -26,7 +26,7 @@ The active tab comes from `useOverviewStore().overviewTab`. Sidebar-visible tabs
 
 | Module | Purpose |
 | --- | --- |
-| `sub_incidents` | Incident inbox, taxonomy, filters, actions |
+| `sub_incidents` | Incident inbox, taxonomy, filters, actions. **Dev-only** — no data source is wired yet, so the Incidents tab is hidden from production builds and rendered with a golden border in the DEV L2 sidebar. |
 | `sub_realtime` | Live in-memory event-bus visualization |
 | `sub_observability` | Trace/healing/metrics/alerts dashboards. Includes the `ToolPerformancePanel` (latency + error rate per tool, sourced from `tool_execution_audit_log` via the `get_tool_performance_summary` IPC command). |
 | `sub_sla` | SLA cards and dashboard |
@@ -36,6 +36,10 @@ The active tab comes from `useOverviewStore().overviewTab`. Sidebar-visible tabs
 | `sub_analytics` | Rotation analytics helpers/panels, plus the GitHub-style 365-day **execution heatmap** (`ExecutionHeatmap.tsx`) embedded on the dashboard (fleet aggregate, respects the persona filter) and on each per-persona Activity tab. Backed by the `get_execution_heatmap` IPC command, which serves a 1-hour server-side cached daily aggregation plus derived insights (longest streak, dormant-since, peak day, week-over-week trend). |
 
 The local source README at `src/features/overview/README.md` defines folder boundaries: realtime, persisted events, and observability are separate tiers and should not be mixed.
+
+## Resizable table columns
+
+The Events, Activity, and Messages tables support drag-to-resize columns. The shared primitive is `src/features/shared/components/display/ColumnResize.tsx` — `useColumnWidths(tableId)` holds per-table px overrides and `ColumnResizeHandle` is the divider rendered on each column header's right edge. Drag a divider to resize; double-click it to restore the default width. Overrides persist to `localStorage` under `table-col-widths:<tableId>` (`overview-events`, `overview-activity`, `overview-messages`). `UnifiedTable` enables this whenever a `tableId` prop is passed; the custom grid tables in Activity and Messages wire the hook directly. Knowledge is an expandable card list (not a column grid) and is intentionally excluded.
 
 ## Data source boundaries
 

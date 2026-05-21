@@ -18,7 +18,18 @@ import type { PersonaMessage as RawPersonaMessage } from '@/lib/bindings/Persona
 import { seedMockMessage } from '@/api/overview/messages';
 import { PersonaColumnFilter } from '@/features/shared/components/forms/PersonaColumnFilter';
 import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';
-import { priorityConfig, GRID_TEMPLATE_COLUMNS, MESSAGE_ROW_HEIGHT } from '../libs/messageHelpers';
+import { priorityConfig, MESSAGE_ROW_HEIGHT } from '../libs/messageHelpers';
+import { useColumnWidths, ColumnResizeHandle } from '@/features/shared/components/display/ColumnResize';
+
+// Ordered columns for the flat message grid. Widths are defaults — users can
+// drag-resize them; overrides persist via useColumnWidths('overview-messages').
+const MESSAGE_COLUMNS: { key: string; width: string }[] = [
+  { key: 'persona', width: '280px' },
+  { key: 'title', width: 'minmax(0,2fr)' },
+  { key: 'priority', width: '180px' },
+  { key: 'status', width: '120px' },
+  { key: 'created', width: '140px' },
+];
 
 type PriorityFilter = 'all' | 'high' | 'normal' | 'low';
 type ReadFilter = 'all' | 'unread' | 'read';
@@ -171,6 +182,8 @@ export default function MessageList() {
 
   const remaining = messagesTotal - messages.length;
   const { parentRef, virtualizer } = useVirtualList(filteredMessages, MESSAGE_ROW_HEIGHT);
+  const colWidths = useColumnWidths('overview-messages');
+  const msgGridTemplate = colWidths.template(MESSAGE_COLUMNS);
 
   // Keyboard navigation inside the open modal: Left/Right arrows step through
   // the currently-filtered messages. Wrapping to find the index each keypress
@@ -392,31 +405,53 @@ export default function MessageList() {
               />
             </div>
           ) : (
-            <div ref={parentRef} className="flex-1 overflow-y-auto">
+            <div ref={parentRef} className={`flex-1 overflow-y-auto ${colWidths.isResizing ? 'select-none cursor-col-resize' : ''}`}>
               <div role="grid" aria-rowcount={filteredMessages.length} aria-colcount={6} className="w-full">
-                <div role="row" className="sticky top-0 z-10 bg-primary/5 border-b border-primary/10 grid" style={{ gridTemplateColumns: GRID_TEMPLATE_COLUMNS }}>
-                  <div role="columnheader" className="px-4 py-1.5 flex items-center">
+                <div role="row" className="sticky top-0 z-10 bg-primary/5 border-b border-primary/10 grid" style={{ gridTemplateColumns: msgGridTemplate }}>
+                  <div role="columnheader" className="relative px-4 py-1.5 flex items-center">
                     <PersonaColumnFilter
                       value={selectedPersonaId}
                       onChange={setSelectedPersonaId}
                       personas={personas}
                     />
+                    <ColumnResizeHandle
+                      label={t.shared.resize_column}
+                      onBeginResize={(w, x) => colWidths.beginResize('persona', w, x)}
+                      onReset={() => colWidths.clearColumn('persona')}
+                    />
                   </div>
-                  <div role="columnheader" className="flex items-center px-4 py-1.5 typo-label text-foreground">{t.overview.messages_view.col_title}</div>
-                  <div role="columnheader" className="px-2 py-1.5 flex items-center">
+                  <div role="columnheader" className="relative flex items-center px-4 py-1.5 typo-label text-foreground">
+                    {t.overview.messages_view.col_title}
+                    <ColumnResizeHandle
+                      label={t.shared.resize_column}
+                      onBeginResize={(w, x) => colWidths.beginResize('title', w, x)}
+                      onReset={() => colWidths.clearColumn('title')}
+                    />
+                  </div>
+                  <div role="columnheader" className="relative px-2 py-1.5 flex items-center">
                     <ColumnDropdownFilter
                       label="Priority"
                       value={priorityFilter}
                       options={PRIORITY_FILTER_OPTIONS}
                       onChange={(v) => setPriorityFilter(v as PriorityFilter)}
                     />
+                    <ColumnResizeHandle
+                      label={t.shared.resize_column}
+                      onBeginResize={(w, x) => colWidths.beginResize('priority', w, x)}
+                      onReset={() => colWidths.clearColumn('priority')}
+                    />
                   </div>
-                  <div role="columnheader" className="px-4 py-1.5 flex items-center justify-center">
+                  <div role="columnheader" className="relative px-4 py-1.5 flex items-center justify-center">
                     <ColumnDropdownFilter
                       label="Status"
                       value={readFilter}
                       options={READ_FILTER_OPTIONS}
                       onChange={(v) => setReadFilter(v as ReadFilter)}
+                    />
+                    <ColumnResizeHandle
+                      label={t.shared.resize_column}
+                      onBeginResize={(w, x) => colWidths.beginResize('status', w, x)}
+                      onReset={() => colWidths.clearColumn('status')}
                     />
                   </div>
                   <div role="columnheader" className="flex items-center justify-end px-4 py-1.5 typo-label text-foreground">{t.overview.messages_view.col_created}</div>
@@ -433,7 +468,7 @@ export default function MessageList() {
                       return (
                         <div key={message.id} role="row" tabIndex={0} data-testid={`message-row-${message.id}`} onClick={() => handleRowClick(message)}
                           onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); handleRowClick(message); } }}
-                          style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%', height: `${virtualRow.size}px`, gridTemplateColumns: GRID_TEMPLATE_COLUMNS }}
+                          style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%', height: `${virtualRow.size}px`, gridTemplateColumns: msgGridTemplate }}
                           className={`grid items-center hover:bg-primary/[0.08] cursor-pointer transition-colors border-b ${ROW_SEPARATOR} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 ${virtualRow.index % 2 === 0 ? 'bg-primary/[0.03]' : ''}`}
                         >
                           <div role="gridcell" className="flex items-center gap-2 px-4 min-w-0">

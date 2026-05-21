@@ -176,8 +176,10 @@ export default function EventLogList() {
     },
     {
       key: 'persona',
+      // Widened (was minmax(160px, 1fr)) so roughly twice as much of a
+      // persona's name is visible before the cell truncates.
       label: 'Persona',
-      width: 'minmax(160px, 1fr)',
+      width: 'minmax(320px, 2fr)',
       filterComponent: (
         <PersonaColumnFilter
           value={selectedPersonaId}
@@ -403,6 +405,7 @@ export default function EventLogList() {
               emptyTitle={t.overview.events.no_filter_match}
               rowHeight={44}
               className="flex-1"
+              tableId="overview-events"
             />
             {(hasMoreOlder || isLoadingOlder) && displayedEvents.length > 0 && (
               <div ref={loadMoreSentinelRef} className="flex items-center justify-center py-2 border-t border-primary/5">

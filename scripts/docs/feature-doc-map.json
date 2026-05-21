@@ -257,6 +257,13 @@
       "marketingModule": "overview"
     },
     {
+      "doc": "docs/features/monitor.md",
+      "sourceGlobs": [
+        "src/features/monitor/**",
+        "src/features/shared/components/layout/ProcessActivityIndicator.tsx"
+      ]
+    },
+    {
       "doc": "docs/features/artist.md",
       "sourceGlobs": [
         "src/features/plugins/artist/**",

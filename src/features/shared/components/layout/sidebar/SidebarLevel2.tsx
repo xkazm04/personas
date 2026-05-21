@@ -138,16 +138,25 @@ export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0,
         </AnimatePresence>
       );
 
-    case 'overview':
+    case 'overview': {
+      // Dev-only tabs (e.g. Incidents — no data source wired yet) are hidden
+      // from production builds and rendered with a golden border in DEV so
+      // they're recognizably not user-facing.
+      const visibleOverviewItems = isDev ? overviewItems : overviewItems.filter((i) => !i.devOnly);
+      const overviewDevSet = isDev
+        ? new Set(overviewItems.filter((i) => i.devOnly).map((i) => i.id))
+        : undefined;
       return (
         <SidebarSubNav
-          items={filterSimple(overviewItems)}
+          items={filterSimple(visibleOverviewItems)}
           activeId={overviewTab}
           onSelect={(id) => setOverviewTab(id as OverviewTab)}
           badges={overviewBadges}
           variant="overview"
+          devItems={overviewDevSet}
         />
       );
+    }
 
     case 'personas':
       return <AgentsSidebarNav onCreatePersona={onCreatePersona} />;

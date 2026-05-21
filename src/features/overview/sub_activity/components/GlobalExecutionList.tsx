@@ -16,6 +16,7 @@ import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { PersonaColumnFilter } from '@/features/shared/components/forms/PersonaColumnFilter';
 import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';
 import { SortableColumnHeader, type SortDirection } from '@/features/shared/components/forms/SortableColumnHeader';
+import { useColumnWidths, ColumnResizeHandle } from '@/features/shared/components/display/ColumnResize';
 import { formatDuration, formatRelativeTime, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
 import type { GlobalExecution } from '@/lib/types/types';
 import { useOverviewFilterValues, useOverviewFilterActions } from '@/features/overview/components/dashboard/OverviewFilterContext';
@@ -31,7 +32,14 @@ const FILTER_LABELS: Record<FilterStatus, string> = {
 };
 // Note: FILTER_LABELS values are used at module scope; runtime t() calls below.
 
-const EXEC_GRID_COLUMNS = 'minmax(280px,2fr) minmax(0,1fr) 120px 160px';
+// Ordered columns for the desktop grid. Widths are defaults — users can
+// drag-resize them; overrides persist via useColumnWidths('overview-activity').
+const EXEC_COLUMNS: { key: string; width: string }[] = [
+  { key: 'persona', width: 'minmax(280px,2fr)' },
+  { key: 'status', width: 'minmax(0,1fr)' },
+  { key: 'duration', width: '120px' },
+  { key: 'started', width: '160px' },
+];
 const EXEC_ROW_HEIGHT = 56;
 
 const STATUS_FILTER_OPTIONS = [
@@ -184,6 +192,8 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
 
   const hasMore = globalExecutionsHasMore;
   const { parentRef, virtualizer } = useVirtualList(filteredExecutions, EXEC_ROW_HEIGHT);
+  const colWidths = useColumnWidths('overview-activity');
+  const execGridTemplate = colWidths.template(EXEC_COLUMNS);
 
   return (
     <ContentBox>
@@ -253,21 +263,38 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                 />
               </div>
             ) : (
-              <div ref={parentRef} className="flex-1 overflow-y-auto">
+              <div ref={parentRef} className={`flex-1 overflow-y-auto ${colWidths.isResizing ? 'select-none cursor-col-resize' : ''}`}>
                 {!IS_MOBILE && (
-                  <div role="row" className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-primary/10 grid" style={{ gridTemplateColumns: EXEC_GRID_COLUMNS }}>
-                    <div role="columnheader" className="px-4 py-1.5 flex items-center">
+                  <div role="row" className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-primary/10 grid" style={{ gridTemplateColumns: execGridTemplate }}>
+                    <div role="columnheader" className="relative px-4 py-1.5 flex items-center">
                       <PersonaColumnFilter value={selectedPersonaId} onChange={setSelectedPersonaId} personas={personas} />
+                      <ColumnResizeHandle
+                        label={t.shared.resize_column}
+                        onBeginResize={(w, x) => colWidths.beginResize('persona', w, x)}
+                        onReset={() => colWidths.clearColumn('persona')}
+                      />
                     </div>
-                    <div role="columnheader" className="px-4 py-1.5 flex items-center">
+                    <div role="columnheader" className="relative px-4 py-1.5 flex items-center">
                       <ColumnDropdownFilter
                         label="Status"
                         value={filter}
                         options={STATUS_FILTER_OPTIONS}
                         onChange={(v) => setFilter(v as FilterStatus)}
                       />
+                      <ColumnResizeHandle
+                        label={t.shared.resize_column}
+                        onBeginResize={(w, x) => colWidths.beginResize('status', w, x)}
+                        onReset={() => colWidths.clearColumn('status')}
+                      />
                     </div>
-                    <div role="columnheader" className="flex items-center justify-end px-4 py-1.5 typo-label text-foreground">{t.overview.activity.col_duration}</div>
+                    <div role="columnheader" className="relative flex items-center justify-end px-4 py-1.5 typo-label text-foreground">
+                      {t.overview.activity.col_duration}
+                      <ColumnResizeHandle
+                        label={t.shared.resize_column}
+                        onBeginResize={(w, x) => colWidths.beginResize('duration', w, x)}
+                        onReset={() => colWidths.clearColumn('duration')}
+                      />
+                    </div>
                     <div role="columnheader" className="flex items-center justify-end px-4 py-1.5">
                       <SortableColumnHeader label={t.overview.activity.col_started} direction={startedSort} onToggle={toggleStartedSort} />
                     </div>
@@ -310,7 +337,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                         key={exec.id} role="row" tabIndex={0}
                         onClick={() => setSelectedExec(exec)}
                         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedExec(exec); } }}
-                        style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%', height: `${virtualRow.size}px`, gridTemplateColumns: EXEC_GRID_COLUMNS }}
+                        style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%', height: `${virtualRow.size}px`, gridTemplateColumns: execGridTemplate }}
                         className={`grid items-center cursor-pointer transition-colors border-b border-primary/[0.06] border-l-2 ${borderAccent} hover:bg-white/[0.05] ${virtualRow.index % 2 === 0 ? 'bg-white/[0.015]' : ''}`}
                       >
                         <div className="flex items-center gap-2 px-4 min-w-0">

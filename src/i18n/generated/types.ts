@@ -5,6 +5,47 @@
 // ============================================================================
 
 export type Translations = {
+  monitor: {
+    title: string;
+    subtitle: string;
+    close: string;
+    close_hint: string;
+    no_personas: string;
+    idle: string;
+    footer_legend: string;
+    footer_counts: string;
+    system: string;
+    section_reviews: string;
+    section_activity: string;
+    drawer_summary: string;
+    drawer_empty: string;
+    back_to_grid: string;
+    cloud: string;
+    context: string;
+    reject: string;
+    approve: string;
+    notes: string;
+    notes_placeholder: string;
+    toggle_notes: string;
+    untitled: string;
+    tool_calls: string;
+    queue_position: string;
+    titlebar: string;
+    titlebar_attention: string;
+    titlebar_tooltip: string;
+    attention_critical: string;
+    attention_input_required: string;
+    attention_warning: string;
+    attention_draft_ready: string;
+    attention_info: string;
+    status_running: string;
+    status_queued: string;
+    status_input_required: string;
+    status_draft_ready: string;
+    status_completed: string;
+    status_failed: string;
+    status_cancelled: string;
+  };
   common: {
     unknown_error: string;
     loading: string;
@@ -12536,6 +12577,7 @@ export type Translations = {
     filter_label: string;
     search_ellipsis: string;
     search_label: string;
+    resize_column: string;
     copy_full_id: string;
     copy_tooltip: string;
     copy_copied: string;

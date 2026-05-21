@@ -9,6 +9,7 @@ import { useState, useMemo, useRef, useCallback, type ReactNode } from 'react';
 import { ArrowUpDown, ArrowUp, ArrowDown, Filter, Search, X } from 'lucide-react';
 import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useColumnWidths, ColumnResizeHandle } from './ColumnResize';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -57,6 +58,11 @@ export interface UnifiedTableProps<T> {
   emptyDescription?: string;
   isLoading?: boolean;
   className?: string;
+  /**
+   * When set, columns become user-resizable and the layout is persisted to
+   * localStorage under this id. Omit for a fixed-width table.
+   */
+  tableId?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -64,12 +70,14 @@ export interface UnifiedTableProps<T> {
 // ---------------------------------------------------------------------------
 
 function ColumnHeader<T>({
-  col, sortKey, sortDir, onSort,
+  col, sortKey, sortDir, onSort, resizeHandle,
 }: {
   col: TableColumn<T>;
   sortKey: string | null;
   sortDir: 'asc' | 'desc';
   onSort: (key: string) => void;
+  /** Drag-divider rendered on the cell's right edge (omitted for the last column). */
+  resizeHandle?: ReactNode;
 }) {
   const { t } = useTranslation();
   const [showFilter, setShowFilter] = useState(false);
@@ -92,14 +100,15 @@ function ColumnHeader<T>({
   // Custom filter component takes full control
   if (col.filterComponent) {
     return (
-      <div className={`flex items-center gap-1 px-4 py-2.5 ${col.align === 'right' ? 'justify-end' : ''}`}>
+      <div className={`relative flex items-center gap-1 px-4 py-2.5 ${col.align === 'right' ? 'justify-end' : ''}`}>
         {col.filterComponent}
+        {resizeHandle}
       </div>
     );
   }
 
   return (
-    <div className={`flex items-center gap-1 px-4 py-2.5 ${col.align === 'right' ? 'justify-end' : ''}`}>
+    <div className={`relative flex items-center gap-1 px-4 py-2.5 ${col.align === 'right' ? 'justify-end' : ''}`}>
       <span className="typo-heading font-semibold text-foreground uppercase tracking-wider">{col.label}</span>
 
       {/* Sort icon */}
@@ -176,6 +185,8 @@ function ColumnHeader<T>({
           )}
         </>
       )}
+
+      {resizeHandle}
     </div>
   );
 }
@@ -194,9 +205,12 @@ export function UnifiedTable<T>({
   emptyDescription,
   isLoading,
   className,
+  tableId,
 }: UnifiedTableProps<T>) {
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const resize = useColumnWidths(tableId ?? '');
+  const resizable = !!tableId;
 
   const handleSort = useCallback((key: string) => {
     if (sortKey === key) {
@@ -225,7 +239,9 @@ export function UnifiedTable<T>({
     return sortDir === 'desc' ? sorted.reverse() : sorted;
   }, [data, sortKey, sortDir, columns]);
 
-  const gridTemplate = columns.map((c) => c.width).join(' ');
+  const gridTemplate = resizable
+    ? resize.template(columns)
+    : columns.map((c) => c.width).join(' ');
 
   // Virtual list: enable whenever rowHeight is provided so rows are always in a
   // bounded scroll container (important on small displays).
@@ -239,14 +255,27 @@ export function UnifiedTable<T>({
   }
 
   return (
-    <div className={`border border-primary/10 rounded-xl overflow-hidden flex flex-col min-h-0 ${className ?? ''}`}>
+    <div className={`border border-primary/10 rounded-xl overflow-hidden flex flex-col min-h-0 ${resize.isResizing ? 'select-none cursor-col-resize' : ''} ${className ?? ''}`}>
       {/* Header */}
       <div
         className="grid bg-primary/5 border-b border-primary/10"
         style={{ gridTemplateColumns: gridTemplate }}
       >
-        {columns.map((col) => (
-          <ColumnHeader key={col.key} col={col} sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+        {columns.map((col, i) => (
+          <ColumnHeader
+            key={col.key}
+            col={col}
+            sortKey={sortKey}
+            sortDir={sortDir}
+            onSort={handleSort}
+            resizeHandle={resizable && i < columns.length - 1 ? (
+              <ColumnResizeHandle
+                label={t.shared.resize_column}
+                onBeginResize={(w, x) => resize.beginResize(col.key, w, x)}
+                onReset={() => resize.clearColumn(col.key)}
+              />
+            ) : null}
+          />
         ))}
       </div>
 

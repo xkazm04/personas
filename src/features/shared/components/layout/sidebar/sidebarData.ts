@@ -61,9 +61,12 @@ export const homeItems: Array<{ id: HomeTab; icon: LucideIcon; label: string }> 
   ...(import.meta.env.DEV ? [{ id: 'system-check' as HomeTab, icon: Monitor, label: 'System Check' }] : []),
 ];
 
-export const overviewItems: Array<{ id: OverviewTab; icon: LucideIcon; label: string; minTier?: Tier; simpleHidden?: boolean }> = [
+export const overviewItems: Array<{ id: OverviewTab; icon: LucideIcon; label: string; minTier?: Tier; simpleHidden?: boolean; devOnly?: boolean }> = [
   { id: 'home', icon: LayoutDashboard, label: 'Dashboard' },
-  { id: 'incidents', icon: AlertOctagon, label: 'Incidents', minTier: TIERS.TEAM },
+  // Incidents has no data source wired yet — dev-only until the feature
+  // lands. In DEV the L2 sidebar marks it with a golden border so it's
+  // recognizably not user-facing; in production builds it's hidden entirely.
+  { id: 'incidents', icon: AlertOctagon, label: 'Incidents', minTier: TIERS.TEAM, devOnly: true },
   { id: 'executions', icon: Activity, label: 'Activity', minTier: TIERS.TEAM },
   { id: 'manual-review', icon: ClipboardCheck, label: 'Approvals', minTier: TIERS.TEAM },
   { id: 'messages', icon: MessageSquare, label: 'Messages' },

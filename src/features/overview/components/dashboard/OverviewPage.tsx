@@ -76,7 +76,9 @@ function OverviewContent() {
         <ErrorBoundary name={`Overview/${overviewTab}`}>
         <Suspense fallback={<OverviewRouteSkeleton />}>
           {overviewTab === 'home' ? <DashboardWithSubtabs /> :
-          overviewTab === 'incidents' ? <IncidentsInbox /> :
+          // Incidents is dev-only (no data source wired). In production a
+          // persisted 'incidents' tab falls through to the dashboard.
+          overviewTab === 'incidents' ? (import.meta.env.DEV ? <IncidentsInbox /> : <DashboardWithSubtabs />) :
           overviewTab === 'executions' ? <ExecutionsWithSubtabs /> :
           overviewTab === 'manual-review' ? <ManualReviewList /> :
           overviewTab === 'messages' ? <MessageList /> :
