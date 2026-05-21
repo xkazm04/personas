@@ -54,8 +54,24 @@ impl CliProvider for ClaudeProvider {
     }
 
     fn minimum_version(&self) -> Option<&str> {
-        // CLI ≥ 2.1.140 — floor advances when a newer CLI fixes the wrapping
+        // CLI ≥ 2.1.146 — floor advances when a newer CLI fixes the wrapping
         // contract personas depends on. Recent floor:
+        // - 2.1.141–2.1.146: six releases, overwhelmingly Claude-Code-internal
+        //   (the `claude agents`/`/bg` background-session swath, plugins, themes,
+        //   terminal rendering) — none touch personas's `-p`/stream-json wrapping
+        //   surface. Two items mattered for the Phase 6 catch pass: (a) the MCP
+        //   `tools/list` pagination fix (2.1.144) + `resources/list`/`prompts/list`
+        //   pagination fix (2.1.146) flagged the *same* defect in personas's own
+        //   INBOUND MCP client `engine/mcp_tools.rs`, which followed no
+        //   `nextCursor` cursor — fixed in the same /research run that advanced
+        //   this floor; (b) the 2.1.143 `/goal`-evaluator-vs-background-shells
+        //   fix is again informational only against the descoped `/goal` entry
+        //   — it does not publish the `-p`-mode wire contract trigger (i)
+        //   requires. Near-misses already mitigated here: api.anthropic.com
+        //   startup-hang 15s timeout + pre-response stream-stall recovery
+        //   (2.1.144) overlap personas's own `timeout_ms` + `engine/healing.rs`;
+        //   Haiku side-query fallback fixes on Bedrock/Vertex/custom base URL
+        //   (2.1.141, 2.1.144) benefit BYOM users passively.
         // - 2.1.140: pure upstream bug-fix release; no personas wrapping
         //   contract changes. None of the fixes affect `-p`/stream-json mode,
         //   `hooks_sidecar`, `cli_mcp_config`, or `build_cli_args` callers.
@@ -104,7 +120,7 @@ impl CliProvider for ClaudeProvider {
         // against the 2.1.126 floor lives in `Patterns/descoped-reopenable.md`.
         // The check is advisory: `provider::check_cli_version` returns an Err
         // string below the floor; no caller turns that into a hard refusal.
-        Some("2.1.140")
+        Some("2.1.146")
     }
 }
 
@@ -191,6 +207,6 @@ mod tests {
         let provider = ClaudeProvider;
         let min = provider.minimum_version();
         assert!(min.is_some());
-        assert_eq!(min.unwrap(), "2.1.140");
+        assert_eq!(min.unwrap(), "2.1.146");
     }
 }
