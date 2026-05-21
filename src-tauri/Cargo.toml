@@ -187,7 +187,7 @@ keyring = { version = "3", optional = true, features = ["apple-native", "windows
 which = { version = "8.0.1", optional = true }
 # Screen capture for validation loops (see engine/ambient_context.rs::capture_validation_screenshot)
 xcap = { version = "0.7", optional = true }
-image = { version = "0.25", default-features = false, features = ["png"], optional = true }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "gif"], optional = true }
 
 # Fleet plugin (DEV-only Claude Code session aggregator).
 # `portable-pty` (wezterm) wraps ConPTY on Windows + posix_openpt on Unix

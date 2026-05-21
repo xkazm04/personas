@@ -1300,6 +1300,13 @@ pub fn run() {
             commands::core::persona_jobs::cancel_persona_job,
             commands::core::persona_jobs::set_persona_curation_schedule,
             commands::core::persona_jobs::get_persona_curation_schedule,
+            // Core -- Custom persona icons (desktop only — image decode pipeline)
+            #[cfg(feature = "desktop")]
+            commands::core::persona_icons::import_persona_icon,
+            #[cfg(feature = "desktop")]
+            commands::core::persona_icons::list_persona_icons,
+            #[cfg(feature = "desktop")]
+            commands::core::persona_icons::delete_persona_icon,
             // Core -- Import/Export
             commands::core::import_export::export_persona,
             commands::core::import_export::import_persona,
