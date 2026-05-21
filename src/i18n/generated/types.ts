@@ -25,6 +25,13 @@ export type Translations = {
     open_messages: string;
     open_activity: string;
     last_failed: string;
+    capabilities: string;
+    no_capabilities: string;
+    run: string;
+    executing: string;
+    view_capabilities: string;
+    clear_filter: string;
+    no_project_personas: string;
     footer_counts: string;
     system: string;
     section_reviews: string;
@@ -232,6 +239,7 @@ export type Translations = {
     expand_sidebar: string;
     collapse_sidebar: string;
     network_settings: string;
+    project_picker_none: string;
     dark: string;
     light: string;
     sign_in_google: string;

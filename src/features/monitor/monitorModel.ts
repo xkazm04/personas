@@ -24,7 +24,7 @@ export type SeverityBucket = 'critical' | 'warning' | 'info';
 export type ExecState = 'running' | 'failed' | 'attention' | 'idle';
 
 /** Which drawer section a badge / affordance opens. */
-export type DrawerSection = 'reviews' | 'messages' | 'activity';
+export type DrawerSection = 'reviews' | 'messages' | 'activity' | 'capabilities';
 
 /** Collapse a raw review severity string into one of three buckets. */
 export function severityBucket(sev: string): SeverityBucket {

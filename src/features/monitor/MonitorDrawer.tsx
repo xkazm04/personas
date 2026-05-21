@@ -5,7 +5,7 @@
 // to whichever badge the user clicked on the card.
 
 import { useState, useCallback, useMemo } from 'react';
-import { X, Check, MessageSquare, Clock, Mail, AlertCircle } from 'lucide-react';
+import { X, Check, MessageSquare, Clock, Mail, AlertCircle, Zap } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import ReasoningTrace from '@/features/shared/components/layout/ReasoningTrace';
 import { useReasoningTrace } from '@/hooks/execution/useReasoningTrace';
@@ -13,6 +13,9 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { stripPersonaPrefix } from '@/features/overview/sub_manual-review/libs/reviewHelpers';
 import { ContextDataPreview } from '@/features/overview/sub_manual-review/components/ReviewListItem';
+import { getUseCases } from '@/features/agents/sub_use_cases/libs/useCaseHelpers';
+import { toDisplayUseCase } from '@/features/agents/sub_use_cases/components/recipes-prototype/shared/displayUseCase';
+import { MonitorCapabilities } from './MonitorCapabilities';
 import { useSystemStore } from '@/stores/systemStore';
 import { useAgentStore } from '@/stores/agentStore';
 import type { ManualReviewItem, SidebarSection, DevToolsTab, PluginTab } from '@/lib/types/types';
@@ -27,6 +30,8 @@ import {
 interface MonitorDrawerProps {
   card: PersonaCardModel;
   initialSection: DrawerSection;
+  /** Raw `design_context` JSON of the selected persona — source of capabilities. */
+  designContext: string | null;
   isProcessing: boolean;
   now: number;
   onReviewAction: (id: string, status: ManualReviewStatus, notes?: string) => void;
@@ -60,10 +65,15 @@ function navigateToProcess(proc: ActiveProcess, dismiss: () => void) {
 }
 
 export function MonitorDrawer({
-  card, initialSection, isProcessing, now, onReviewAction, onMarkRead, onClose,
+  card, initialSection, designContext, isProcessing, now, onReviewAction, onMarkRead, onClose,
 }: MonitorDrawerProps) {
   const { t, tx } = useTranslation();
   const [section, setSection] = useState<DrawerSection>(initialSection);
+
+  const useCases = useMemo(
+    () => getUseCases(designContext).map((uc) => toDisplayUseCase(uc)),
+    [designContext],
+  );
 
   const sortedReviews = useMemo(
     () => [...card.reviews].sort(
@@ -84,6 +94,7 @@ export function MonitorDrawer({
     { id: 'reviews', label: t.monitor.reviews, count: sortedReviews.length },
     { id: 'messages', label: t.monitor.messages, count: sortedMessages.length },
     { id: 'activity', label: t.monitor.activity, count: sortedProcesses.length },
+    { id: 'capabilities', label: t.monitor.capabilities, count: useCases.length },
   ];
 
   return (
@@ -169,6 +180,14 @@ export function MonitorDrawer({
                 <MonitorActivityRow key={entry.key} entry={entry} now={now} onNavigate={onClose} />
               ))}
             </div>
+          )
+        )}
+
+        {section === 'capabilities' && (
+          useCases.length === 0 ? (
+            <EmptySection icon={Zap} text={t.monitor.no_capabilities} />
+          ) : (
+            <MonitorCapabilities personaId={card.personaId} useCases={useCases} />
           )
         )}
       </div>

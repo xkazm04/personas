@@ -8,9 +8,11 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X, Activity, Mail } from 'lucide-react';
+import { X, Activity, Mail, FolderGit2 } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useSystemStore } from '@/stores/systemStore';
+import { useCodebasePersonas } from '@/hooks/sidebar/useCodebasePersonas';
 import { useMonitorData } from './useMonitorData';
 import { MonitorDrawer } from './MonitorDrawer';
 import {
@@ -40,6 +42,22 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
   const { cards, systemProcesses } = useMemo(
     () => buildMonitorModel(personas, reviews, unreadMessages, activeProcesses, healthMap),
     [personas, reviews, unreadMessages, activeProcesses, healthMap],
+  );
+
+  // Dev Tools project filter — when a project is active in the footer
+  // picker, narrow the grid to personas wired to a codebase connector
+  // (mirrors the Agents sidebar's active-project section).
+  const activeProjectId = useSystemStore((s) => s.activeProjectId);
+  const projects = useSystemStore((s) => s.projects);
+  const setActiveProject = useSystemStore((s) => s.setActiveProject);
+  const codebasePersonaIds = useCodebasePersonas();
+  const activeProject = useMemo(
+    () => projects.find((p) => p.id === activeProjectId) ?? null,
+    [projects, activeProjectId],
+  );
+  const displayCards = useMemo(
+    () => (activeProjectId ? cards.filter((c) => codebasePersonaIds.has(c.personaId)) : cards),
+    [cards, activeProjectId, codebasePersonaIds],
   );
 
   // Tick once a second only while something is running.
@@ -76,7 +94,12 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
     return c;
   }, [reviews]);
 
-  const attentionCards = cards.filter((c) => c.attentionCount > 0).length;
+  const selectedPersona = useMemo(
+    () => personas.find((p) => p.id === selection?.personaId) ?? null,
+    [personas, selection],
+  );
+
+  const attentionCards = displayCards.filter((c) => c.attentionCount > 0).length;
   const runningCount = useMemo(
     () => Object.values(activeProcesses).filter((p) => p.status === 'running').length,
     [activeProcesses],
@@ -100,11 +123,25 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
           <div className="min-w-0">
             <h2 className="typo-heading font-semibold text-foreground leading-tight">{t.monitor.title}</h2>
             <p className="typo-caption text-foreground leading-tight">
-              {tx(t.monitor.subtitle, { personas: cards.length, attention: attentionCards, running: runningCount })}
+              {tx(t.monitor.subtitle, { personas: displayCards.length, attention: attentionCards, running: runningCount })}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {activeProject && (
+            <span className="inline-flex items-center gap-1.5 pl-2.5 pr-1 py-1 rounded-full border border-indigo-500/30 bg-indigo-500/10 text-indigo-300 typo-caption">
+              <FolderGit2 className="w-3 h-3" />
+              <span className="max-w-[140px] truncate">{activeProject.name}</span>
+              <button
+                onClick={() => void setActiveProject(null)}
+                aria-label={t.monitor.clear_filter}
+                title={t.monitor.clear_filter}
+                className="p-0.5 rounded-full hover:bg-indigo-500/20 transition-colors"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
           {SEVERITIES.map((sev) =>
             severityCounts[sev] > 0 ? (
               <span
@@ -139,16 +176,24 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
       {/* Body — persona grid with the drawer layered over it */}
       <div className="relative flex-1 min-h-0 overflow-hidden">
         <div className="absolute inset-0 overflow-y-auto px-5 py-4">
-          {cards.length === 0 ? (
-            <div className="h-full flex items-center justify-center typo-body text-foreground">
-              {t.monitor.no_personas}
+          {displayCards.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center gap-3 typo-body text-foreground">
+              {activeProjectId ? t.monitor.no_project_personas : t.monitor.no_personas}
+              {activeProjectId && (
+                <button
+                  onClick={() => void setActiveProject(null)}
+                  className="px-3 py-1.5 rounded-modal border border-primary/15 bg-secondary/20 typo-heading font-medium text-foreground hover:bg-secondary/40 transition-colors"
+                >
+                  {t.monitor.clear_filter}
+                </button>
+              )}
             </div>
           ) : (
             <div
               className="grid gap-2.5"
               style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(168px, 1fr))' }}
             >
-              {cards.map((card) => (
+              {displayCards.map((card) => (
                 <PersonaCardTile
                   key={card.personaId}
                   card={card}
@@ -184,6 +229,7 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
                 <MonitorDrawer
                   card={selectedCard}
                   initialSection={selection.section}
+                  designContext={selectedPersona?.design_context ?? null}
                   isProcessing={isProcessing}
                   now={now}
                   onReviewAction={(id, status, notes) => void handleReviewAction(id, status, notes)}
@@ -262,12 +308,30 @@ function PersonaCardTile({ card, now, isSelected, onOpen }: PersonaCardTileProps
           : 'queued',
   );
 
+  // Idle cards carry no badges, so the whole card becomes the affordance —
+  // a click opens the drawer's Capabilities section for quick execution.
+  const idleProps = muted
+    ? {
+        role: 'button' as const,
+        tabIndex: 0,
+        'aria-label': `${card.personaName} — ${t.monitor.view_capabilities}`,
+        onClick: () => onOpen('capabilities'),
+        onKeyDown: (e: React.KeyboardEvent) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onOpen('capabilities');
+          }
+        },
+      }
+    : {};
+
   return (
     <div
+      {...idleProps}
       title={card.personaName}
       className={`relative flex flex-col gap-2 rounded-card border px-3 py-2.5 transition-colors ${M.card} ${
         isSelected ? 'ring-2 ring-primary/45' : ''
-      }`}
+      } ${muted ? 'cursor-pointer hover:bg-secondary/30' : ''}`}
     >
       {/* Pulsing ring — live work */}
       {M.pulse && (

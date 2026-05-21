@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, lazy, Suspense, useMemo } from 'react';
-import { Palette, Check, Share2, LogOut, PanelLeftClose, PanelLeft, FolderGit2, ChevronUp } from 'lucide-react';
+import { Palette, Check, Share2, LogOut, PanelLeftClose, PanelLeft, FolderGit2, ChevronUp, X } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { useThemeStore, THEMES } from '@/stores/themeStore';
 import type { ThemeId } from '@/stores/themeStore';
@@ -295,6 +295,7 @@ function ProjectPickerFooterIcon() {
   const setActiveProject = useSystemStore((s) => s.setActiveProject);
   const fetchProjects = useSystemStore((s) => s.fetchProjects);
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const loadedRef = useRef(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -347,6 +348,19 @@ function ProjectPickerFooterIcon() {
             <p className="text-[10px] uppercase tracking-wider text-foreground font-mono"><DebtText k="auto_active_project_687de263" /></p>
           </div>
           <div className="max-h-64 overflow-y-auto">
+            {/* Deselect — clears the active project (show all personas). */}
+            <button
+              onClick={() => { void setActiveProject(null); setOpen(false); }}
+              className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg typo-caption transition-colors text-left ${
+                activeProjectId === null
+                  ? 'bg-indigo-500/10 text-indigo-300'
+                  : 'text-foreground hover:bg-secondary/40'
+              }`}
+            >
+              <X className="w-3.5 h-3.5 flex-shrink-0" />
+              <div className="flex-1 min-w-0 text-[12px] font-medium truncate">{t.chrome.project_picker_none}</div>
+              {activeProjectId === null && <Check className="w-3 h-3 text-indigo-300 flex-shrink-0" />}
+            </button>
             {projects.map((p) => {
               const isActive = p.id === activeProjectId;
               return (
