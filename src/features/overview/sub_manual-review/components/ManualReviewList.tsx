@@ -195,7 +195,7 @@ export default function ManualReviewList() {
       // Refresh L0 counts + L1 page so the acted-on row leaves the list.
       reviewQueue.reload();
     } finally { setIsProcessing(false); }
-  }, [activeReview, allReviews, isProcessing, respondToCloudReview, filteredReviews, reviewQueue]);
+  }, [activeReview, allReviews, isProcessing, respondToCloudReview, filteredReviews, reviewQueue.reload]);
 
   const handleBulkAction = useCallback(async (status: ManualReviewStatus) => {
     setIsBulkProcessing(true);
@@ -211,7 +211,7 @@ export default function ManualReviewList() {
       setConfirmAction(null);
       reviewQueue.reload();
     } finally { setIsBulkProcessing(false); }
-  }, [selectedIds, reviewMap, respondToCloudReview, reviewQueue]);
+  }, [selectedIds, reviewMap, respondToCloudReview, reviewQueue.reload]);
 
   const activeSelectionCount = useMemo(() => Array.from(selectedIds).filter((id) => selectablePendingIds.has(id)).length, [selectedIds, selectablePendingIds]);
 
@@ -220,7 +220,7 @@ export default function ManualReviewList() {
   const handleSeedReview = useCallback(async () => {
     try { await seedMockManualReview(); reviewQueue.reload(); }
     catch (err) { logger.error('Failed to seed mock review', { error: err }); }
-  }, [reviewQueue]);
+  }, [reviewQueue.reload]);
 
   // A-grade Phase 8 (2026-05-04) — on-demand stale-review GC. The same
   // sweep runs once at startup via `engine::background`, but giving the
@@ -254,7 +254,7 @@ export default function ManualReviewList() {
     } finally {
       setIsGcing(false);
     }
-  }, [isGcing, reviewQueue]);
+  }, [isGcing, reviewQueue.reload]);
 
   return (
     <>
