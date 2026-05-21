@@ -42,6 +42,24 @@ const TARGET = argValue('--target') ? Number(argValue('--target')) : 50;
 const ONLY = argValue('--only')?.split(',').map((s) => s.trim()).filter(Boolean) ?? null;
 const PAUSE_ON_FAIL = !argFlag('--continue-on-fail'); // default: pause
 
+/**
+ * `--golden` — the curated regression subset. Five templates chosen to
+ * span the connector classes and to have UNAMBIGUOUS connector bindings
+ * for a typical populated vault, so the marathon auto-drives them cleanly
+ * (vault questions resolve to a single credential via the modal's
+ * auto-detect — see D4.1). All five delivered business value in the
+ * 2026-05 50-template run. Use this as the fast pre-release regression
+ * check: `node template-marathon-driver.mjs --golden`.
+ */
+const GOLDEN_TEMPLATES = [
+  'ai-environment-posture-audit', // zero-config — audits the runtime itself
+  'email-morning-digest',         // credential — gmail (single account)
+  'financial-stocks-signaller',   // credential — alpha_vantage
+  'demo-recorder',                // global-probe — codebase (Dev Tools project)
+  'research-paper-indexer',       // public web fetch, no user credential
+];
+const GOLDEN = argFlag('--golden');
+
 // --- State helpers ---
 
 function readState() {
@@ -219,8 +237,22 @@ async function main() {
   if (missing > 0) {
     console.log(`Filtered ${missing} disk templates not present in gallery (DB drift)`);
   }
-  const selection = ONLY ? inGallery.filter((t) => ONLY.includes(t.id)) : inGallery.slice(0, TARGET);
-  console.log(`Selected ${selection.length} templates (target=${TARGET}, only=${ONLY?.join(',') ?? '∅'})`);
+  // Selection precedence: --golden (curated regression subset) > --only
+  // (explicit ids) > --target (first N).
+  const idFilter = GOLDEN ? GOLDEN_TEMPLATES : ONLY;
+  const selection = idFilter
+    ? inGallery.filter((t) => idFilter.includes(t.id))
+    : inGallery.slice(0, TARGET);
+  if (GOLDEN) {
+    const found = new Set(selection.map((t) => t.id));
+    const absent = GOLDEN_TEMPLATES.filter((id) => !found.has(id));
+    if (absent.length > 0) {
+      console.log(`⚠ golden templates not in the live gallery: ${absent.join(', ')}`);
+    }
+    console.log(`Golden regression subset — ${selection.length}/${GOLDEN_TEMPLATES.length} templates`);
+  } else {
+    console.log(`Selected ${selection.length} templates (target=${TARGET}, only=${ONLY?.join(',') ?? '∅'})`);
+  }
 
   const state = readState();
   if (!existsSync(RESULTS_DIR)) mkdirSync(RESULTS_DIR, { recursive: true });

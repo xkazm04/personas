@@ -45,12 +45,33 @@ Lives in `tests/playwright/`:
 # Smoke one template first — always.
 node tests/playwright/template-marathon-driver.mjs --target 1
 
+# Golden regression subset — 5 curated templates spanning the connector
+# classes. The fast pre-release / post-change regression check.
+node tests/playwright/template-marathon-driver.mjs --golden
+
 # Full run, don't halt on per-template failures.
 node tests/playwright/template-marathon-driver.mjs --target 50 --continue-on-fail
 
 # Re-run specific templates after a fix.
 node tests/playwright/template-marathon-driver.mjs --only codebase-health-scanner,demo-recorder
 ```
+
+## Golden regression subset (`--golden`)
+
+`--golden` runs five curated templates — `ai-environment-posture-audit`,
+`email-morning-digest`, `financial-stocks-signaller`, `demo-recorder`,
+`research-paper-indexer` — chosen to span the connector classes
+(zero-config / credential / global-probe) with **unambiguous** vault
+bindings, so the marathon auto-drives them cleanly. All five delivered
+business value in the 2026-05 50-template run; a regression in adoption,
+build, or promote will surface here in ~12 minutes.
+
+A full marathon needs a live app, real credentials and metered model
+runs — it cannot be a per-PR CI gate. **Run `--golden` before any
+release** and after any change to the adoption / build / promote path.
+The harness's own pure logic *is* CI-gated — see
+`tests/playwright/__tests__/template-marathon-fixtures.test.ts`
+(`npm run test`).
 
 Per-template results land in `tests/results/marathon/<id>.json`; the
 driver state is `tests/results/marathon-state.json`. Budget ~2-3 min
@@ -112,12 +133,17 @@ Classify each from the output before concluding a defect.
 
 ## Known confounds — read this before trusting any number
 
-1. **`seedAdoptionAnswers` poisons connector binding.** The harness
-   seeds placeholder answers (`marathon-default`) into questionnaire
-   answers, including connector-selection questions. A marathon-built
-   persona therefore records `marathon-default` connectors, not real
-   roles. **The marathon cannot validate connector/credential-binding
-   logic** — use a real (non-marathon) adoption for that.
+1. **(FIXED 2026-05-21, D4)** `seedAdoptionAnswers` used to poison
+   connector binding — it seeded a `marathon-default` placeholder into
+   every question, including connector-selection ones, so a
+   marathon-built persona recorded fake connectors. `buildAdoptionAnswers`
+   now SKIPS vault questions (`isVaultQuestion`); the adoption modal's
+   own vault auto-detect resolves them to the user's real credential.
+   The marathon now validates real connector binding. Consequence: a
+   template whose connector is *ambiguous* in the vault (2+ candidate
+   credentials) now correctly blocks the Continue button — the marathon
+   cannot auto-drive it (a real user would pick). The `--golden` subset
+   is curated to unambiguous-connector templates for this reason.
 2. **Tauri `/eval` silently drops scripts mid-session.** Use
    `clickTestId` (routes through `__test_respond`), not `/eval`, for
    click dispatch. Add `data-testid` to any control the harness clicks.
