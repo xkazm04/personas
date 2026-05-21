@@ -1,4 +1,31 @@
+import { existsSync, readFileSync } from 'node:fs';
 import { defineConfig } from '@playwright/test';
+
+/**
+ * Load `.env` into `process.env` before specs read it — no `dotenv`
+ * dependency. Only fills keys that aren't already set, so a value passed
+ * on the command line still wins. Used by the Discord E2E specs for
+ * DISCORD_BOT_TOKEN / DISCORD_TEST_CHANNEL_ID / etc.
+ */
+function loadDotEnv(): void {
+  if (!existsSync('.env')) return;
+  for (const rawLine of readFileSync('.env', 'utf-8').split('\n')) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('#')) continue;
+    const eq = line.indexOf('=');
+    if (eq < 0) continue;
+    const key = line.slice(0, eq).trim();
+    let value = line.slice(eq + 1).trim();
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+    if (key && process.env[key] === undefined) process.env[key] = value;
+  }
+}
+loadDotEnv();
 
 /**
  * Playwright config for Athena E2E tests.

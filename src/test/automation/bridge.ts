@@ -1194,6 +1194,92 @@ const bridge: TestBridge = {
     }
   },
 
+  /**
+   * Provision a Discord-replying persona for the discord-twin-replier E2E.
+   *
+   * The Discord *credential* is created through the real catalog UI by the
+   * setup spec (testId-driven). The persona itself can't be: creating a
+   * persona from scratch goes through the AI build-session flow in the
+   * glyph editor, which is non-deterministic and slow — unsuitable for a
+   * setup step. So the spec calls this method, which writes the persona
+   * row directly via `create_persona`:
+   *   - an enabled persona with a reply-oriented system prompt
+   *   - a `notification_channels` Discord entry with
+   *     `config.pollInbound = true` + `config.channelId` — the exact shape
+   *     `engine/discord_poller.rs` scans for
+   *   - `design_context.twinId` pinned to a twin profile when one is
+   *     supplied, so the persona answers *as that twin*
+   *
+   * Idempotent: if a persona with `name` already exists it is deleted
+   * first, so re-running the suite doesn't pile up duplicates that would
+   * each fan out on one Discord message.
+   */
+  async setupDiscordTwinPersona(
+    name: string,
+    discordCredentialId: string,
+    channelId: string,
+    twinProfileId?: string,
+    systemPrompt?: string,
+  ) {
+    try {
+      // Idempotency — drop any prior persona of the same name.
+      const existing = await invoke<Array<{ id: string; name: string }>>('list_personas');
+      for (const p of existing) {
+        if (p.name === name) {
+          await invoke('delete_persona', { id: p.id }).catch(() => {});
+        }
+      }
+
+      const channels = [
+        {
+          type: 'discord',
+          enabled: true,
+          credential_id: discordCredentialId,
+          use_case_ids: '*',
+          config: { channelId, pollInbound: true },
+        },
+      ];
+
+      const designContext = twinProfileId
+        ? JSON.stringify({ twinId: twinProfileId })
+        : undefined;
+
+      const persona = await invoke<{ id: string; name: string }>('create_persona', {
+        input: {
+          name,
+          system_prompt:
+            systemPrompt ??
+            'You are a Discord assistant. A user has sent you a message in a Discord channel. ' +
+              'Read the message in the input data (field `content`) and write a friendly, concise, ' +
+              'directly-useful reply. Reply with ONLY the message text — no preamble, no markdown headings.',
+          enabled: true,
+          notification_channels: JSON.stringify(channels),
+          design_context: designContext,
+          icon: 'message-circle',
+          color: '#5865F2',
+        },
+      });
+
+      return { success: true, personaId: persona.id, personaName: persona.name };
+    } catch (e: unknown) {
+      return { success: false, error: unpackError(e) };
+    }
+  },
+
+  /** Resolve the globally-active twin profile id (for pinning a persona to
+   *  it during Discord-twin E2E setup). Returns null when no twin exists. */
+  async getActiveTwinProfileId() {
+    try {
+      const profiles = await invoke<Array<{ id: string; name: string; is_active: boolean }>>(
+        'twin_list_profiles',
+      );
+      const active = profiles.find((p) => p.is_active) ?? profiles[0];
+      return { success: true, twinProfileId: active?.id ?? null, twinName: active?.name ?? null };
+    } catch (e: unknown) {
+      return { success: false, error: unpackError(e) };
+    }
+  },
+
   /** Introspect a promoted persona's IR — trigger / connectors / event_subs
    *  per use case. Lets scenario runners assert the build's structural
    *  outcome without poking SQLite or the get_persona response shape. */

@@ -24,16 +24,24 @@
  * - DISCORD_BOT_TOKEN           Bot token (read perm on the channel).
  * - DISCORD_TEST_CHANNEL_ID     Channel id where you'll type the prompt.
  * - DISCORD_PERSONA_NAME        Persona name (resolved to id via bridge).
- * - DISCORD_USER_AUTHOR_ID      Your Discord user id — used to scope the
+ * - DISCORD_USER_AUTHOR_ID      Your Discord identity — used to scope the
  *                               watcher so we don't catch the bot's
  *                               own messages or someone else's traffic.
+ *                               Accepts EITHER a numeric user id
+ *                               (snowflake → matched against author.id)
+ *                               OR a username handle (matched against
+ *                               author.username, case-insensitive).
  *
  * ## Optional
  *
- * - DISCORD_PROMPT_HINT         What to print as the cue. Default:
- *                               "ping {timestamp}".
+ * - DISCORD_PROMPT_HINT         If set, only a message *containing* this
+ *                               substring counts as your prompt. If unset
+ *                               (the normal case), the test catches the
+ *                               first message you post after it starts
+ *                               watching — so you can type any of your
+ *                               real questions.
  * - DISCORD_WAIT_PROMPT_MS      How long to wait for you to type
- *                               (default 60s).
+ *                               (default 120s).
  * - DISCORD_WAIT_REPLY_MS       How long to wait for the bot reply
  *                               (default 180s — real Claude run + post).
  * - COMPANION_TEST_PORT         App test-automation port (default 17320).
@@ -41,7 +49,7 @@
  * Run with:
  *   DISCORD_BOT_TOKEN=... DISCORD_TEST_CHANNEL_ID=... \
  *   DISCORD_PERSONA_NAME='Discord Twin' DISCORD_USER_AUTHOR_ID=... \
- *   npx playwright test discord-twin-replier
+ *   npx playwright test discord-twin-2-replier
  */
 
 import { test, expect } from '@playwright/test';
@@ -54,8 +62,9 @@ const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN ?? '';
 const CHANNEL_ID = process.env.DISCORD_TEST_CHANNEL_ID ?? '';
 const PERSONA_NAME = process.env.DISCORD_PERSONA_NAME ?? '';
 const USER_AUTHOR_ID = process.env.DISCORD_USER_AUTHOR_ID ?? '';
-const PROMPT_HINT = process.env.DISCORD_PROMPT_HINT ?? `ping ${Date.now()}`;
-const WAIT_PROMPT_MS = Number(process.env.DISCORD_WAIT_PROMPT_MS ?? 60_000);
+// Empty hint ⇒ match the first message you post after watch start.
+const PROMPT_HINT = process.env.DISCORD_PROMPT_HINT ?? '';
+const WAIT_PROMPT_MS = Number(process.env.DISCORD_WAIT_PROMPT_MS ?? 120_000);
 const WAIT_REPLY_MS = Number(process.env.DISCORD_WAIT_REPLY_MS ?? 180_000);
 const POLL_INTERVAL_MS = 3_000;
 
@@ -164,6 +173,19 @@ function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+/**
+ * Match a Discord message author against DISCORD_USER_AUTHOR_ID, which may
+ * be a numeric snowflake (→ author.id) or a username handle
+ * (→ author.username, case-insensitive). Discord's post-discriminator
+ * username system makes the handle unique, so username matching is safe.
+ */
+function authorMatches(author: DiscordMessage['author']): boolean {
+  if (/^\d+$/.test(USER_AUTHOR_ID)) {
+    return author.id === USER_AUTHOR_ID;
+  }
+  return author.username?.toLowerCase() === USER_AUTHOR_ID.toLowerCase();
+}
+
 // ── Spec ────────────────────────────────────────────────────────────
 
 test('discord poller picks up user message, persona replies', async () => {
@@ -177,7 +199,11 @@ test('discord poller picks up user message, persona replies', async () => {
   console.log(`[discord-smoke] persona "${PERSONA_NAME}" → id=${personaId}`);
   // eslint-disable-next-line no-console
   console.log(
-    `\n[discord-smoke] Now go to Discord and post this in <#${CHANNEL_ID}>:\n  ${PROMPT_HINT}\n`,
+    PROMPT_HINT
+      ? `\n[discord-smoke] >>> Post a message CONTAINING "${PROMPT_HINT}" in the Discord #test channel now. <<<\n`
+      : `\n[discord-smoke] >>> Post any message (try one of your questions) in the Discord #test channel now. Waiting up to ${Math.round(
+          WAIT_PROMPT_MS / 1000,
+        )}s… <<<\n`,
   );
 
   // 2. Wait for your message to land.
@@ -187,7 +213,7 @@ test('discord poller picks up user message, persona replies', async () => {
     const recent = await discordFetchMessages();
     userMessage = recent.find(
       (m) =>
-        m.author.id === USER_AUTHOR_ID &&
+        authorMatches(m.author) &&
         !m.author.bot &&
         m.content.includes(PROMPT_HINT) &&
         new Date(m.timestamp).getTime() >= watchStart,
@@ -221,12 +247,22 @@ test('discord poller picks up user message, persona replies', async () => {
   console.log(`[discord-smoke] execution ${execution!.id} completed`);
 
   // 4. Verify the bot replied in Discord with a message_reference to ours.
-  const recent = await discordFetchMessages();
-  const reply = recent.find(
-    (m) => m.message_reference?.message_id === userMessageId && m.author.bot,
-  );
-  expect(reply, 'Bot reply not found in last 50 messages').toBeTruthy();
+  //
+  // The reply is posted by the poller's *next* tick after the execution
+  // finishes (the run completing and the reply being posted are two
+  // separate poller passes), so we poll here rather than checking once.
+  let reply: DiscordMessage | undefined;
+  const replyDeadline = Date.now() + 60_000;
+  while (Date.now() < replyDeadline) {
+    const recent = await discordFetchMessages();
+    reply = recent.find(
+      (m) => m.message_reference?.message_id === userMessageId && m.author.bot,
+    );
+    if (reply) break;
+    await sleep(POLL_INTERVAL_MS);
+  }
+  expect(reply, 'Bot reply not found in #' + CHANNEL_ID + ' within 60s of the run completing').toBeTruthy();
   expect(reply!.content.length, 'Reply was empty').toBeGreaterThan(0);
   // eslint-disable-next-line no-console
-  console.log(`[discord-smoke] bot replied: ${reply!.content.slice(0, 80)}…`);
+  console.log(`[discord-smoke] bot replied: ${reply!.content.slice(0, 120)}`);
 });

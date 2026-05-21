@@ -180,6 +180,13 @@ async fn poll_channel(
 
     let mut dispatched = 0usize;
     let mut newest_id: Option<String> = cursor.clone();
+    // Count non-bot messages whose content came back empty. If EVERY human
+    // message in a fetch is empty, the bot almost certainly lacks the
+    // privileged Message Content Intent — Discord strips `content` from
+    // REST responses without it. We surface that as a warning instead of
+    // silently doing nothing forever.
+    let mut human_msgs = 0usize;
+    let mut empty_human_msgs = 0usize;
 
     // Discord returns messages newest-first. Reverse so we dispatch in
     // chronological order — easier to read in logs and matches the order a
@@ -198,8 +205,12 @@ async fn poll_channel(
         if msg.author_is_bot {
             continue;
         }
+        human_msgs += 1;
         if msg.content.trim().is_empty() {
-            // Attachment-only / sticker / embed messages aren't supported yet.
+            // Either an attachment/sticker/embed-only message, or — if this
+            // is true for every human message — a missing Message Content
+            // Intent. The post-loop check below disambiguates.
+            empty_human_msgs += 1;
             continue;
         }
         if message_already_logged(pool, &msg.id)? {
@@ -263,6 +274,21 @@ async fn poll_channel(
 
     if let Some(id) = newest_id {
         write_cursor(pool, persona_id, channel_id, &id)?;
+    }
+
+    // Every human message in this fetch had empty content — the bot is
+    // almost certainly missing the privileged Message Content Intent.
+    if human_msgs > 0 && empty_human_msgs == human_msgs {
+        tracing::warn!(
+            persona_id = persona_id,
+            channel_id = channel_id,
+            messages = human_msgs,
+            "discord_poller: all {} user message(s) had empty content — enable the \
+             Message Content Intent for this bot in the Discord Developer Portal \
+             (Application → Bot → Privileged Gateway Intents), or the poller can \
+             never see what users type",
+            human_msgs,
+        );
     }
 
     Ok(dispatched)
@@ -680,10 +706,23 @@ fn build_reply_text(pool: &DbPool, execution_id: &str) -> Result<Option<String>,
     }
 }
 
-/// `persona_executions.output` is sometimes a JSON envelope from the runner
-/// and sometimes plain text. Pull the user-facing string out if it's an
-/// envelope; otherwise return as-is.
+/// Pull the user-facing reply text out of a persona execution's
+/// `output_data`.
+///
+/// A persona with notification channels emits the **dispatch protocol** —
+/// standalone JSON objects interleaved with prose: `{"user_message": {...}}`,
+/// `{"agent_memory": {...}}`, `{"emit_event": {...}}`, etc. The reply we
+/// want to post to Discord is `user_message.content`. So we scan the output
+/// for every brace-delimited JSON object and return the first
+/// `user_message.content` we find.
+///
+/// Falls back to legacy envelope keys (`reply`/`message`/`text`/...) and
+/// finally the raw output, so a persona that just prints plain text still
+/// works.
 fn extract_reply_from_output(output: &str) -> String {
+    if let Some(content) = find_protocol_user_message(output) {
+        return content;
+    }
     let trimmed = output.trim();
     if trimmed.starts_with('{') {
         if let Ok(v) = serde_json::from_str::<JsonValue>(trimmed) {
@@ -697,6 +736,66 @@ fn extract_reply_from_output(output: &str) -> String {
         }
     }
     output.to_string()
+}
+
+/// Scan `output` for the first dispatch-protocol `user_message` block and
+/// return its `content`. Walks every `{`-delimited JSON object (protocol
+/// blocks are emitted as standalone objects, often multi-line).
+fn find_protocol_user_message(output: &str) -> Option<String> {
+    let bytes = output.as_bytes();
+    let mut i = 0;
+    while i < bytes.len() {
+        if bytes[i] == b'{' {
+            if let Some(end) = match_json_object(bytes, i) {
+                if let Ok(v) = serde_json::from_str::<JsonValue>(&output[i..=end]) {
+                    if let Some(content) = v
+                        .get("user_message")
+                        .and_then(|um| um.get("content"))
+                        .and_then(JsonValue::as_str)
+                        .filter(|s| !s.trim().is_empty())
+                    {
+                        return Some(content.to_string());
+                    }
+                }
+                i = end + 1;
+                continue;
+            }
+        }
+        i += 1;
+    }
+    None
+}
+
+/// Index of the `}` that closes the `{` at `start`, respecting JSON string
+/// literals (so braces inside strings don't throw off the depth count).
+fn match_json_object(bytes: &[u8], start: usize) -> Option<usize> {
+    let mut depth = 0i32;
+    let mut in_string = false;
+    let mut escaped = false;
+    for (offset, &b) in bytes.iter().enumerate().skip(start) {
+        if in_string {
+            if escaped {
+                escaped = false;
+            } else if b == b'\\' {
+                escaped = true;
+            } else if b == b'"' {
+                in_string = false;
+            }
+        } else {
+            match b {
+                b'"' => in_string = true,
+                b'{' => depth += 1,
+                b'}' => {
+                    depth -= 1;
+                    if depth == 0 {
+                        return Some(offset);
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+    None
 }
 
 /// Discord IDs are snowflake u64s; their natural string ordering only matches
@@ -748,5 +847,30 @@ mod tests {
     fn extract_reply_falls_back_when_no_known_key() {
         let envelope = r#"{"other":"foo"}"#;
         assert_eq!(extract_reply_from_output(envelope), envelope);
+    }
+
+    #[test]
+    fn extract_reply_pulls_user_message_from_dispatch_protocol() {
+        // Real-world shape: prose preamble, then standalone protocol blocks.
+        let output = "I'll reply via the protocol output.\n\n\
+            Here's my reply:\n\n\
+            {\"user_message\": {\"title\": \"Reply\", \"content\": \"Hey! I'm your assistant.\", \"priority\": \"normal\"}}\n\n\
+            {\"agent_memory\": {\"title\": \"note\", \"content\": \"something\", \"importance\": 3}}\n\n\
+            {\"outcome_assessment\": {\"accomplished\": true}}";
+        assert_eq!(
+            extract_reply_from_output(output),
+            "Hey! I'm your assistant.",
+        );
+    }
+
+    #[test]
+    fn extract_reply_handles_braces_inside_strings() {
+        // A `}` inside the content string must not end the object early.
+        let output =
+            r#"{"user_message": {"content": "use {curly} braces like {this}"}}"#;
+        assert_eq!(
+            extract_reply_from_output(output),
+            "use {curly} braces like {this}",
+        );
     }
 }
