@@ -7,7 +7,8 @@
 // Labels like "TRIAGE", "VITALS", "STREAM", "STATUS" are prototype-only;
 // they'll be extracted to i18n only if this direction wins.
 
-import { Suspense, useMemo, useCallback } from 'react';
+import { Suspense, useMemo, useCallback, memo } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 import {
   ClipboardCheck, AlertTriangle, Activity, Cpu, Bell,
   CheckCircle2, AlertCircle, ArrowRight,
@@ -35,6 +36,8 @@ import { TrafficErrorsChart } from './widgets/TrafficErrorsChart';
 import { TopPerformersWidget } from './widgets/TopPerformersWidget';
 import { ExecutionHeatmap } from '@/features/overview/sub_analytics/components/ExecutionHeatmap';
 import { lazyRetry } from '@/lib/lazyRetry';
+import { DeferUntilIdle } from '@/features/shared/components/layout/DeferUntilIdle';
+import { fadeUp, staggerContainer } from '@/features/overview/libs/animations';
 import { DashboardEmptyState } from './DashboardEmptyState';
 import { DebtText } from '@/i18n/DebtText';
 
@@ -148,6 +151,15 @@ export default function DashboardHomeMissionControl() {
 
   const isEmpty = personas.length === 0 && globalExecutions.length === 0;
 
+  // Honour the OS reduced-motion setting: skip the entrance cascade entirely
+  // (content renders straight at its final state) rather than just shortening it.
+  const reduceMotion = useReducedMotion();
+  const enterInitial = reduceMotion ? false : 'hidden';
+
+  // Stable handler so the memoized panes below don't re-render on every
+  // parent render just because an inline arrow changed identity.
+  const goToExecutions = useCallback(() => setOverviewTab('executions'), [setOverviewTab]);
+
   return (
     <ContentBox>
       <HeroMesh preset="dashboard" />
@@ -161,10 +173,24 @@ export default function DashboardHomeMissionControl() {
       />
 
       <ContentBody centered>
-        <div className="space-y-4 pb-6 pt-2">
+        {/*
+          Initial-load choreography:
+          - Above-the-fold panes render in the first commit and cascade in
+            via the `staggerContainer` → `fadeUp` variants.
+          - Below-the-fold sections (heatmap, instruments, memory, routines)
+            are held out of the first DOM commit by `<DeferUntilIdle>` and
+            mounted one frame later, then run their own cascade. This keeps
+            the first paint to just the header + three panes.
+        */}
+        <motion.div
+          className="space-y-4 pb-6 pt-2"
+          variants={staggerContainer}
+          initial={enterInitial}
+          animate="visible"
+        >
 
           {pipelineErrorCount > 0 && (
-            <div className="space-y-2">
+            <motion.div variants={fadeUp} className="space-y-2">
               {Object.entries(pipelineErrors).map(([source, msg]) => (
                 <InlineErrorBanner
                   key={source}
@@ -176,76 +202,97 @@ export default function DashboardHomeMissionControl() {
                   actions={<StalenessIndicator fetchedAt={pipelineFetchedAt[source]} hasError label={source} />}
                 />
               ))}
-            </div>
+            </motion.div>
           )}
 
-          <ResumeSetupCard />
+          <motion.div variants={fadeUp}>
+            <ResumeSetupCard />
+          </motion.div>
 
-          {isEmpty ? (
-            <DashboardEmptyState />
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-[minmax(260px,320px)_1fr_minmax(280px,340px)] gap-4">
-              <TriagePane items={triageItems} />
-              <VitalsConsole
-                successRate={stats.successRate}
-                activeAgents={stats.activeAgents}
-                activeAlertCount={activeAlertCount}
-                totalExecutions={globalExecutionCounts.total}
-                pendingReviews={pendingReviewCount}
-                points={executionDashboard?.daily_points ?? []}
-              />
-              <ActivityStreamLog
-                executions={stats.recentExecs}
-                onViewAll={() => setOverviewTab('executions')}
-              />
-            </div>
-          )}
-
-          <StatusTicker
-            pipelineSources={Object.keys(pipelineFetchedAt).length}
-            pipelineErrors={pipelineErrorCount}
-            totalExecutions={globalExecutionCounts.total}
-            lastSyncedLabel={lastSyncedLabel}
-          />
-
-          {!isEmpty && (
-            <ExecutionHeatmap
-              personaId={selectedPersonaId || undefined}
-              onDayClick={() => setOverviewTab('executions')}
-            />
-          )}
-
-          {!isEmpty && (
-            <InstrumentsBay
-              chartData={chartData}
-              chartTotals={chartTotals}
-              executionDashboardFetchedAt={pipelineFetchedAt.executionDashboard}
-              executionDashboardError={!!pipelineErrors.executionDashboard}
-            />
-          )}
-
-          {memoryActions.length > 0 && (
-            <div className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden">
-              <PaneHeader label="Memory" subtitle={`${memoryActions.length} suggestions`} />
-              <div className="p-3">
-                <MemoryActionsPanel actions={memoryActions} onDismiss={dismissMemoryAction} />
+          <motion.div variants={fadeUp}>
+            {isEmpty ? (
+              <DashboardEmptyState />
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-[minmax(260px,320px)_1fr_minmax(280px,340px)] gap-4">
+                <TriagePane items={triageItems} />
+                <VitalsConsole
+                  successRate={stats.successRate}
+                  activeAgents={stats.activeAgents}
+                  activeAlertCount={activeAlertCount}
+                  totalExecutions={globalExecutionCounts.total}
+                  pendingReviews={pendingReviewCount}
+                  points={executionDashboard?.daily_points ?? []}
+                />
+                <ActivityStreamLog
+                  executions={stats.recentExecs}
+                  onViewAll={goToExecutions}
+                />
               </div>
-            </div>
-          )}
+            )}
+          </motion.div>
 
-          <FleetOptimizationCard />
+          <motion.div variants={fadeUp}>
+            <StatusTicker
+              pipelineSources={Object.keys(pipelineFetchedAt).length}
+              pipelineErrors={pipelineErrorCount}
+              totalExecutions={globalExecutionCounts.total}
+              lastSyncedLabel={lastSyncedLabel}
+            />
+          </motion.div>
 
-          {!isEmpty && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <Suspense fallback={null}>
-                <UpcomingRoutinesCard />
-              </Suspense>
-              <Suspense fallback={null}>
-                <VaultRecentChangesCard />
-              </Suspense>
-            </div>
-          )}
-        </div>
+          <DeferUntilIdle priority="next-frame">
+            <motion.div
+              className="space-y-4"
+              variants={staggerContainer}
+              initial={enterInitial}
+              animate="visible"
+            >
+              {!isEmpty && (
+                <motion.div variants={fadeUp}>
+                  <ExecutionHeatmap
+                    personaId={selectedPersonaId || undefined}
+                    onDayClick={goToExecutions}
+                  />
+                </motion.div>
+              )}
+
+              {!isEmpty && (
+                <motion.div variants={fadeUp}>
+                  <InstrumentsBay
+                    chartData={chartData}
+                    chartTotals={chartTotals}
+                    executionDashboardFetchedAt={pipelineFetchedAt.executionDashboard}
+                    executionDashboardError={!!pipelineErrors.executionDashboard}
+                  />
+                </motion.div>
+              )}
+
+              {memoryActions.length > 0 && (
+                <motion.div variants={fadeUp} className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden">
+                  <PaneHeader label="Memory" subtitle={`${memoryActions.length} suggestions`} />
+                  <div className="p-3">
+                    <MemoryActionsPanel actions={memoryActions} onDismiss={dismissMemoryAction} />
+                  </div>
+                </motion.div>
+              )}
+
+              <motion.div variants={fadeUp}>
+                <FleetOptimizationCard />
+              </motion.div>
+
+              {!isEmpty && (
+                <motion.div variants={fadeUp} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <Suspense fallback={null}>
+                    <UpcomingRoutinesCard />
+                  </Suspense>
+                  <Suspense fallback={null}>
+                    <VaultRecentChangesCard />
+                  </Suspense>
+                </motion.div>
+              )}
+            </motion.div>
+          </DeferUntilIdle>
+        </motion.div>
       </ContentBody>
     </ContentBox>
   );
@@ -257,7 +304,7 @@ export default function DashboardHomeMissionControl() {
 // baseline renders in its main grid, styled as a cockpit sub-panel.
 // ---------------------------------------------------------------------------
 
-export function InstrumentsBay({
+export const InstrumentsBay = memo(function InstrumentsBay({
   chartData, chartTotals, executionDashboardFetchedAt, executionDashboardError,
 }: {
   chartData: { date: string; traffic: number; errors: number }[];
@@ -303,7 +350,7 @@ export function InstrumentsBay({
       </div>
     </div>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // TriagePane — ranked queue of items needing the operator's attention
@@ -314,7 +361,7 @@ const TRIAGE_META: Record<TriageKind, { Icon: typeof ClipboardCheck; color: stri
   alert:  { Icon: AlertTriangle,  color: 'text-red-400',   bg: 'bg-red-500/10',   border: 'border-red-500/20',   tag: 'ALT' },
 };
 
-export function TriagePane({ items }: { items: TriageItem[] }) {
+export const TriagePane = memo(function TriagePane({ items }: { items: TriageItem[] }) {
   const { t, tx } = useTranslation();
   return (
     <div className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden flex flex-col">
@@ -355,13 +402,13 @@ export function TriagePane({ items }: { items: TriageItem[] }) {
       </div>
     </div>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // VitalsConsole — central pane: success ring + four big readouts + sparkline
 // ---------------------------------------------------------------------------
 
-export function VitalsConsole({
+export const VitalsConsole = memo(function VitalsConsole({
   successRate, activeAgents, activeAlertCount, totalExecutions, pendingReviews, points,
 }: {
   successRate: number;
@@ -411,7 +458,7 @@ export function VitalsConsole({
       </div>
     </div>
   );
-}
+});
 
 function SuccessRing({ rate }: { rate: number }) {
   const size = 164;
@@ -450,7 +497,7 @@ function SuccessRing({ rate }: { rate: number }) {
 // ActivityStreamLog — mono-styled execution log
 // ---------------------------------------------------------------------------
 
-export function ActivityStreamLog({
+export const ActivityStreamLog = memo(function ActivityStreamLog({
   executions, onViewAll,
 }: {
   executions: { id: string; status: string; persona_name?: string; created_at: string }[];
@@ -500,13 +547,13 @@ export function ActivityStreamLog({
       </div>
     </div>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // StatusTicker — bottom strip with pipeline metadata
 // ---------------------------------------------------------------------------
 
-export function StatusTicker({
+export const StatusTicker = memo(function StatusTicker({
   pipelineSources, pipelineErrors, totalExecutions, lastSyncedLabel,
 }: {
   pipelineSources: number;
@@ -536,7 +583,7 @@ export function StatusTicker({
       </div>
     </div>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // Shared pane header
