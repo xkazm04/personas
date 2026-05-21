@@ -24,7 +24,7 @@ interface FieldCaptureRowProps {
   helpText?: string;
   error?: string;
   inputType?: FieldInputType;
-  options?: string[];
+  options?: Array<string | { value: string; label: string }>;
   allowPaste?: boolean;
   allowCopy?: boolean;
   testIdBase?: string;
@@ -103,9 +103,14 @@ export function FieldCaptureRow({
           className={`rounded-modal ${error ? 'border-red-500/50' : ''}`}
         >
           <option value="">{placeholder || 'Select...'}</option>
-          {options.map((option) => (
-            <option key={option} value={option}>{option}</option>
-          ))}
+          {options.map((option) => {
+            const isPair = typeof option === 'object' && option !== null;
+            const optValue = isPair ? option.value : option;
+            const optLabel = isPair ? option.label : option;
+            return (
+              <option key={optValue} value={optValue}>{optLabel}</option>
+            );
+          })}
         </ThemedSelect>
       ) : (
         <input

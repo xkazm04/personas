@@ -104,6 +104,11 @@ npm run clean:rust             # nuclear: full cargo clean (~10 min rebuild)
 npm run clean:ort              # surgical: just ort + ort-sys (often enough)
 ```
 
+For *size* management — `target/` is uncapped and balloons across profiles,
+triples, and per-worktree caches — see [build-cache.md](build-cache.md)
+(`npm run cache:report` / `clean:cache` / `clean:worktrees`). `clean:rust`
+above is for *correctness* recovery; the cache budget is for disk pressure.
+
 CI was vulnerable to the same trap — `release.yml`'s build job has matrix
 entries for `windows-x64` and `windows-arm64` both on `windows-latest`,
 sharing a single GitHub Actions cache. The rust-cache action is now keyed

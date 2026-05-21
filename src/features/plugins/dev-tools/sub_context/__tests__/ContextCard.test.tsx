@@ -4,14 +4,12 @@ import { render, screen, fireEvent } from '@testing-library/react';
 // useSystemStore is touched from ContextCard for the click-jump handoff —
 // minimal mock returns vi.fn() setters so we can assert call shape.
 const setDevToolsTab = vi.fn();
-const setPendingLifecycleSubTab = vi.fn();
 const setPendingGoalSpotlightId = vi.fn();
 
 vi.mock('@/stores/systemStore', () => ({
   useSystemStore: (selector: (s: Record<string, unknown>) => unknown) =>
     selector({
       setDevToolsTab,
-      setPendingLifecycleSubTab,
       setPendingGoalSpotlightId,
     }),
 }));
@@ -23,7 +21,7 @@ vi.mock('@/i18n/useTranslation', () => ({
         dev_tools: {
           context_goal_singular: 'goal',
           context_goal_plural: 'goals',
-          context_goal_coverage_tooltip: 'Open in Lifecycle → Goals',
+          context_goal_coverage_tooltip: 'Open in Goals',
           context_no_goal_label: 'no goal',
           context_no_goal_tooltip: 'No goal references this context yet',
         },
@@ -52,7 +50,6 @@ function makeCtx(overrides: Partial<ContextItem> = {}): ContextItem {
 describe('ContextCard goal-coverage badge', () => {
   beforeEach(() => {
     setDevToolsTab.mockClear();
-    setPendingLifecycleSubTab.mockClear();
     setPendingGoalSpotlightId.mockClear();
   });
 
@@ -71,28 +68,26 @@ describe('ContextCard goal-coverage badge', () => {
     expect(screen.getByText(/3\s+goals\b/)).toBeInTheDocument();
   });
 
-  it('clicking the goal badge sets pendingX slots and jumps to lifecycle', () => {
+  it('clicking the goal badge seeds the spotlight and jumps to Goals', () => {
     render(<ContextCard ctx={makeCtx()} selected={false} onSelect={() => {}} goalCount={2} firstGoalId="goal-XYZ" />);
-    const badge = screen.getByTitle(/open in lifecycle/i);
+    const badge = screen.getByTitle(/open in goals/i);
     fireEvent.click(badge);
     expect(setPendingGoalSpotlightId).toHaveBeenCalledWith('goal-XYZ');
-    expect(setPendingLifecycleSubTab).toHaveBeenCalledWith('goals');
-    expect(setDevToolsTab).toHaveBeenCalledWith('lifecycle');
+    expect(setDevToolsTab).toHaveBeenCalledWith('goals');
   });
 
   it('clicking the goal badge does NOT trigger the card onSelect handler', () => {
     const onSelect = vi.fn();
     render(<ContextCard ctx={makeCtx()} selected={false} onSelect={onSelect} goalCount={2} firstGoalId="g-1" />);
-    fireEvent.click(screen.getByTitle(/open in lifecycle/i));
+    fireEvent.click(screen.getByTitle(/open in goals/i));
     expect(onSelect).not.toHaveBeenCalled();
   });
 
-  it('still works (no jump) when firstGoalId is undefined but goalCount > 0', () => {
+  it('still jumps when firstGoalId is undefined but goalCount > 0', () => {
     // Defensive — shouldn't normally happen but the badge logic should not crash.
     render(<ContextCard ctx={makeCtx()} selected={false} onSelect={() => {}} goalCount={1} />);
-    fireEvent.click(screen.getByTitle(/open in lifecycle/i));
+    fireEvent.click(screen.getByTitle(/open in goals/i));
     expect(setPendingGoalSpotlightId).not.toHaveBeenCalled();
-    expect(setPendingLifecycleSubTab).toHaveBeenCalledWith('goals');
-    expect(setDevToolsTab).toHaveBeenCalledWith('lifecycle');
+    expect(setDevToolsTab).toHaveBeenCalledWith('goals');
   });
 });

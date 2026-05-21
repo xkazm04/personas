@@ -5,6 +5,9 @@ import {
 import { openLocalPath } from '@/api/system/system';
 import { toastCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
+import { listCredentials } from '@/api/vault/credentials';
+import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
+import { isGitHubCred } from '../sub_overview/useOverviewData';
 import { GitHubIssueImportModal } from './GitHubIssueImportModal';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { ActionRow } from '@/features/shared/components/layout/ActionRow';
@@ -57,6 +60,21 @@ export default function ProjectManagerPage() {
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
   const [importProjectId, setImportProjectId] = useState<string | null>(null);
   const importProject = projects.find((p) => p.id === importProjectId);
+
+  // GitHub PAT detection — the "Import GitHub issues as goals" row icon only
+  // shows when the vault contains at least one GitHub-typed credential.
+  // We refresh the lookup on each ProjectManager mount so newly-added PATs
+  // appear without a full reload.
+  const [hasGitHubPat, setHasGitHubPat] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    listCredentials()
+      .then((creds: PersonaCredential[]) => {
+        if (!cancelled) setHasGitHubPat(creds.some(isGitHubCred));
+      })
+      .catch(() => { if (!cancelled) setHasGitHubPat(false); });
+    return () => { cancelled = true; };
+  }, []);
 
   // Bulk-archive selection — checkbox column + sticky action bar above the
   // table. Archive flows through updateProject({status: 'archived'}) per id
@@ -349,7 +367,7 @@ export default function ProjectManagerPage() {
                     <span className="self-center"><StatusBadge status={project.status} /></span>
                     <span className="typo-caption text-foreground self-center">{project.createdAt}</span>
                     <div className="self-center flex items-center gap-0.5 justify-end" onClick={(e) => e.stopPropagation()}>
-                      {project.githubUrl && (
+                      {project.githubUrl && hasGitHubPat && (
                         <button
                           type="button"
                           onClick={() => setImportProjectId(project.id)}

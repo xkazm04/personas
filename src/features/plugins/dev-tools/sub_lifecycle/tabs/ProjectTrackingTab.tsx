@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, Circle, GitBranch, FileText, Save, Zap, AlertTriangle } from 'lucide-react';
-import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { CheckCircle2, Circle, GitBranch, FileText, Save, Zap, AlertTriangle, Radio } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
@@ -146,18 +145,13 @@ export function ProjectTrackingTab() {
   );
 
   return (
-    <ContentBox>
-      <ContentHeader
-        icon={<GitBranch className="w-5 h-5 text-indigo-400" />}
-        iconColor="indigo"
-        title={t.plugins.dev_lifecycle.tracking_title}
+    <div className="flex flex-col gap-3">
+      <ProjectTrackingIntro
         subtitle={t.plugins.dev_lifecycle.tracking_subtitle}
+        masterHint={masterHint}
       />
-      <ContentBody>
-        <div className="px-3 py-2 typo-caption rounded-card border border-primary/15 bg-secondary/10 text-foreground/70 mb-4">
-          {masterHint}
-        </div>
 
+      <div>
         {loading && rows.length === 0 ? (
           <div className="typo-caption text-foreground/60">…</div>
         ) : rows.length === 0 ? (
@@ -276,8 +270,34 @@ export function ProjectTrackingTab() {
             })}
           </div>
         )}
-      </ContentBody>
-    </ContentBox>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Project-tracking intro — replaces the duplicated ContentHeader that used
+// to sit inside the tab. Keeps the feature self-introducing without
+// stealing visual weight from the parent Lifecycle header.
+// ---------------------------------------------------------------------------
+
+function ProjectTrackingIntro({
+  subtitle,
+  masterHint,
+}: {
+  subtitle: string;
+  masterHint: string;
+}) {
+  return (
+    <div className="rounded-card border border-indigo-500/20 bg-indigo-500/[0.04] px-4 py-3 flex items-start gap-3">
+      <div className="w-8 h-8 rounded-modal bg-indigo-500/15 border border-indigo-500/25 flex items-center justify-center shrink-0">
+        <Radio className="w-4 h-4 text-indigo-300" />
+      </div>
+      <div className="min-w-0 flex-1 space-y-1">
+        <p className="typo-body text-foreground/90">{subtitle}</p>
+        <p className="typo-caption text-foreground/60">{masterHint}</p>
+      </div>
+    </div>
   );
 }
 

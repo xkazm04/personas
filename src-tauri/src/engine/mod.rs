@@ -66,6 +66,7 @@ pub mod desktop_runtime;
 pub mod desktop_security;
 pub mod digest;
 pub mod director;
+pub mod discord_poller;
 pub mod discovery;
 pub mod dispatch;
 pub mod dream_replay;

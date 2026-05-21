@@ -11,7 +11,7 @@ import { resolve, extname } from 'path';
 
 const API_KEY = process.env.GEMINI_API_KEY;
 const BASE_URL = process.env.GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta';
-const MODEL = 'gemini-3-flash-preview';
+const MODEL = 'gemini-3.5-flash';
 
 function parseArgs(argv) {
   const args = {};

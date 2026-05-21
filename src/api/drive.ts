@@ -184,7 +184,7 @@ export interface OcrDriveResult {
 /**
  * Run Gemini OCR on a drive file. Uses the managed-root sandbox + fetches
  * the Gemini API key from the vault credential server-side (key never
- * touches the frontend). Pinned to gemini-3-flash-preview in the backend.
+ * touches the frontend). Pinned to gemini-3.5-flash in the backend.
  */
 export const ocrDriveFileGemini = (
   relPath: string,

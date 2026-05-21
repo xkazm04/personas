@@ -216,6 +216,20 @@ const EMBEDDED_DOCS: &[(&str, &str)] = &[
 /// section together than split it just for tidiness.
 const CHUNK_SOFT_CAP_BYTES: usize = 8_000;
 
+/// Iterate every embedded doc as `(relative_path, content)` pairs. Used by
+/// the Twin plugin's "Ingest docs/features" button to seed a Twin's
+/// knowledge base with product documentation without re-reading the repo
+/// from disk (which doesn't exist in a production install).
+pub fn embedded_docs() -> impl Iterator<Item = (&'static str, &'static str)> {
+    EMBEDDED_DOCS.iter().copied()
+}
+
+/// Same as [`embedded_docs`] but filtered to `features/*` paths only —
+/// what the Twin's "Ingest docs/features" button should feed in.
+pub fn embedded_feature_docs() -> impl Iterator<Item = (&'static str, &'static str)> {
+    embedded_docs().filter(|(p, _)| p.starts_with("features/"))
+}
+
 /// Read a curated doc, preferring on-disk content (so dev edits are
 /// hot-reloadable) and falling back to the embedded compile-time copy
 /// (so production builds with no repo on disk still have all 22 docs).

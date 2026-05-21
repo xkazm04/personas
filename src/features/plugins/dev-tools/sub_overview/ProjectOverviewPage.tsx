@@ -111,7 +111,6 @@ export default function ProjectOverviewPage() {
 
   const setPendingTaskFocusId = useSystemStore((s) => s.setPendingTaskFocusId);
   const setPendingGoalSpotlightId = useSystemStore((s) => s.setPendingGoalSpotlightId);
-  const setPendingLifecycleSubTab = useSystemStore((s) => s.setPendingLifecycleSubTab);
   const handleActivityJump = (event: ActivityEvent) => {
     if (!event.sourceId) return;
     if (event.kind === 'task_created' || event.kind === 'task_completed' || event.kind === 'task_failed') {
@@ -119,8 +118,7 @@ export default function ProjectOverviewPage() {
       setDevToolsTab('task-runner');
     } else if (event.kind === 'goal_signal') {
       setPendingGoalSpotlightId(event.sourceId);
-      setPendingLifecycleSubTab('goals');
-      setDevToolsTab('lifecycle');
+      setDevToolsTab('goals');
     } else if (event.kind === 'scan_run') {
       setDevToolsTab('idea-scanner');
     }
@@ -155,6 +153,7 @@ export default function ProjectOverviewPage() {
           icon={<LayoutDashboard className="w-5 h-5 text-primary" />}
           iconColor="primary"
           title={po.codebase}
+          subtitle="—"
           actions={<LifecycleProjectPicker />}
         />
         <ContentBody centered>
@@ -204,19 +203,7 @@ export default function ProjectOverviewPage() {
         iconColor="primary"
         title={activeProject.name}
         subtitle={activeProject.root_path}
-        actions={
-          <div className="flex items-center gap-2">
-            <LifecycleProjectPicker />
-            <Button
-              variant="secondary"
-              size="sm"
-              icon={<RefreshCw className="w-3.5 h-3.5" />}
-              onClick={refresh}
-            >
-              {po.retry}
-            </Button>
-          </div>
-        }
+        actions={<LifecycleProjectPicker />}
       />
 
       <ContentBody>

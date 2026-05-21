@@ -10,7 +10,6 @@ export default function ContextDetail({ ctx, onClose }: { ctx: ContextItem; onCl
   const goals = useSystemStore((s) => s.goals);
   const tasks = useSystemStore((s) => s.tasks);
   const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
-  const setPendingLifecycleSubTab = useSystemStore((s) => s.setPendingLifecycleSubTab);
   const setPendingGoalSpotlightId = useSystemStore((s) => s.setPendingGoalSpotlightId);
 
   // Goals scoped to this context + per-goal task summary (done / total).
@@ -25,8 +24,7 @@ export default function ContextDetail({ ctx, onClose }: { ctx: ContextItem; onCl
 
   const handleGoalJump = (goalId: string) => {
     setPendingGoalSpotlightId(goalId);
-    setPendingLifecycleSubTab('goals');
-    setDevToolsTab('lifecycle');
+    setDevToolsTab('goals');
   };
 
   return (

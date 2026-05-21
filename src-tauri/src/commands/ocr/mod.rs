@@ -22,7 +22,7 @@ use crate::SHARED_HTTP;
 // Gemini Vision OCR
 // ---------------------------------------------------------------------------
 
-const DEFAULT_GEMINI_MODEL: &str = "gemini-3-flash-preview";
+const DEFAULT_GEMINI_MODEL: &str = "gemini-3.5-flash";
 const OCR_SYSTEM_PROMPT: &str =
     "Extract ALL text from this image/document. Preserve the original structure, \
      paragraphs, headers, lists, and tables as closely as possible. \
@@ -275,7 +275,7 @@ async fn run_gemini_ocr(
 /// Drive-integrated Gemini OCR. Takes a drive-relative path and a vault
 /// credential ID, resolves the managed drive root + sandbox-validates the
 /// path, fetches the credential's decrypted `api_key` field, and runs
-/// Gemini OCR pinned to the backend default model (`gemini-3-flash-preview`).
+/// Gemini OCR pinned to the backend default model (`gemini-3.5-flash`).
 ///
 /// This is the entry point used by the Drive plugin's "Extract text" flow.
 #[tauri::command]

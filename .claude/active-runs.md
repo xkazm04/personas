@@ -102,6 +102,11 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Recently completed (last 14 days)
 
+- **[2026-05-19 → branch `worktree-friend-platform-214520`] /friend — desktop packaging / auto-update polish (platform area)**
+  - **Status:** completed (branch: `worktree-friend-platform-214520`, commits: 7, last: `1eee60eea`) — NOT merged; left for user merge decision.
+  - **Commits:** `d20fa1797` version+last-checked · `17dc8aff4` download progress bar · `10ce5045f` preflight warn (Stage 1) · `21d80cd77` inline check result · `0b22a4471` update-history timeline · `04a1237ac` install-when-idle (Stage 2) · `1eee60eea` clear-history control.
+  - **Note:** All frontend + i18n + docs, 0 Rust. tsc-clean, lint-clean (0 errors), i18n coverage 0 extras. Live updater flow unverifiable in dev (needs packaged build vs real release). Worktree intact at `.claude/worktrees/friend-platform-214520/`.
+
 - **[2026-05-18 → merge `50052d67e`] companion-d6710 — D6 (proactive wrap-up) + D7 (live ops view) + D9 (mid-flight intervention) + D10 (pattern extraction)**
   - **Branch:** `worktree-companion-d6710` (5 commits, merged via `50052d67e`; worktree removed, branch deleted).
   - **Status:** completed (pending Phase 13 cleanup)

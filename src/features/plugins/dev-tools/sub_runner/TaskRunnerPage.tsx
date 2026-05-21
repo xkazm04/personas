@@ -276,10 +276,8 @@ function TaskCard({
     task.goalId ? s.goals.find((g) => g.id === task.goalId) ?? null : null,
   );
   const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
-  const setPendingLifecycleSubTab = useSystemStore((s) => s.setPendingLifecycleSubTab);
   const handleGoalJump = () => {
-    setPendingLifecycleSubTab('goals');
-    setDevToolsTab('lifecycle');
+    setDevToolsTab('goals');
   };
 
   return (

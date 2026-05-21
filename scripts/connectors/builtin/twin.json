@@ -8,7 +8,17 @@
   "categories": [
     "personalization"
   ],
-  "fields": [],
+  "fields": [
+    {
+      "key": "twin_profile_id",
+      "label": "Twin Profile",
+      "type": "select",
+      "required": true,
+      "placeholder": "Pick a twin from the Twin plugin",
+      "helpText": "Which Twin profile this binding points to. Create or edit profiles in the Twin plugin under Profiles.",
+      "sensitive": false
+    }
+  ],
   "healthcheck_config": null,
   "services": [
     {
@@ -82,9 +92,9 @@
   "metadata": {
     "template_enabled": true,
     "is_builtin": true,
-    "always_active": true,
     "connection_mode": "desktop_bridge",
-    "summary": "Speak as the user. Provides identity, per-channel tone, memory recall, and interaction tracking to any persona. The active twin is resolved automatically — no per-persona attach step needed.",
+    "requires_picker": "twin",
+    "summary": "Speak as a Twin. Bind a persona to a specific Twin profile from the Twin plugin — provides identity, per-channel tone, memory recall, and interaction tracking. Create multiple bindings to switch a persona between Twins; the binding's name is yours to choose.",
     "auth_type": "builtin",
     "auth_type_label": "Twin",
     "auth_methods": [

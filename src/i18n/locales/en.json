@@ -2836,7 +2836,9 @@
         "channel_id": "Numeric channel ID",
         "team_id": "Microsoft Teams team ID",
         "to": "user@example.com"
-      }
+      },
+      "discord_poll_inbound_label": "Poll for incoming Discord messages",
+      "discord_poll_inbound_help": "When checked, the persona reads new messages in this channel every 5s and replies with its run output. The bot must already be in the channel."
     }
   },
   "vault": {
@@ -10035,7 +10037,7 @@
       "scan_or_create": "Scan your codebase or create groups manually",
       "context_goal_singular": "goal",
       "context_goal_plural": "goals",
-      "context_goal_coverage_tooltip": "Open in Lifecycle → Goals",
+      "context_goal_coverage_tooltip": "Open in Goals",
       "context_no_goal_label": "no goal",
       "context_no_goal_tooltip": "No goal references this context yet",
       "group_show_all": "Show all ({hidden} more)",
@@ -13267,7 +13269,13 @@
       "noConversationsYet": "No conversations yet",
       "conversationsHint": "Interactions appear here when personas use the Twin connector on any channel.",
       "sent": "Sent",
-      "received": "Received"
+      "received": "Received",
+      "ingestDocsTitle": "Seed from product docs",
+      "ingestDocsDescription": "Embed every page under docs/features/ into this twin's knowledge base. Lets the twin answer questions about Personas itself (events, triggers, recipes, …).",
+      "ingestDocsButton": "Ingest docs/features",
+      "ingestDocsLoading": "Ingesting…",
+      "ingestDocsSuccess": "Ingested {files} file(s) ({chunks} chunks). {skipped} already up-to-date.",
+      "ingestDocsErrorNoKb": "Bind a knowledge base in the Knowledge tab first."
     },
     "profiles": {
       "title": "Twin Profiles",

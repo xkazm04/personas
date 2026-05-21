@@ -34,6 +34,12 @@ interface PluginMeta {
   icon: LucideIcon;
   /** True when clicking this plugin should push to L3 with its sub-items. */
   hasSubItems: boolean;
+  /**
+   * In-development plugins. Hidden from production builds entirely; in
+   * DEV they appear in the L2 list only (never in Browse), styled with
+   * a golden border so the developer remembers they're not shipped.
+   */
+  devOnly?: boolean;
 }
 
 const PLUGINS_WITH_SUBITEMS = new Set<PluginTab>([
@@ -75,20 +81,20 @@ export function PluginsSidebarNav() {
   // translated label.
   const allPlugins = useMemo<PluginMeta[]>(() => [
     { id: 'browse',          label: 'Browse',                              icon: Puzzle,    hasSubItems: false },
-    { id: 'artist',          label: 'Artist',                              icon: Palette,   hasSubItems: true },
+    { id: 'artist',          label: 'Artist',                              icon: Palette,   hasSubItems: true, devOnly: true },
     { id: 'dev-tools',       label: t.shared.sidebar_extra.dev_tools_label, icon: Wrench,   hasSubItems: true },
     { id: 'obsidian-brain',  label: t.shared.sidebar_extra.obsidian_brain,  icon: Brain,    hasSubItems: true },
     { id: 'drive',           label: 'Drive',                               icon: HardDrive, hasSubItems: false },
     { id: 'twin',            label: 'Twin',                                icon: Sparkles,  hasSubItems: true },
     { id: 'companion',       label: 'Companion',                           icon: Bot,       hasSubItems: true },
-    { id: 'research-lab',    label: t.shared.sidebar_extra.research_lab,    icon: BookOpen, hasSubItems: true },
+    { id: 'research-lab',    label: t.shared.sidebar_extra.research_lab,    icon: BookOpen, hasSubItems: true, devOnly: true },
     { id: 'langfuse',        label: 'Langfuse',                            icon: LineChart, hasSubItems: false },
   ], [t]);
 
   const browseMeta = allPlugins.find((p) => p.id === 'browse')!;
   const sortedPlugins = useMemo<PluginMeta[]>(
     () => allPlugins
-      .filter((p) => p.id !== 'browse' && enabledPlugins.has(p.id))
+      .filter((p) => p.id !== 'browse' && enabledPlugins.has(p.id) && (!p.devOnly || import.meta.env.DEV))
       .sort((a, b) => a.label.localeCompare(b.label)),
     [allPlugins, enabledPlugins],
   );
@@ -98,7 +104,9 @@ export function PluginsSidebarNav() {
     [allPlugins, pluginTab],
   );
 
-  const isL3 = PLUGINS_WITH_SUBITEMS.has(pluginTab) && enabledPlugins.has(pluginTab);
+  const activePluginMeta = allPlugins.find((p) => p.id === pluginTab);
+  const activePluginGated = activePluginMeta?.devOnly && !import.meta.env.DEV;
+  const isL3 = PLUGINS_WITH_SUBITEMS.has(pluginTab) && enabledPlugins.has(pluginTab) && !activePluginGated;
 
   return (
     <AnimatePresence mode="wait" initial={false}>
@@ -162,6 +170,7 @@ export function PluginsSidebarNav() {
                 const isActive = pluginTab === plugin.id;
                 const showArtistRunning = plugin.id === 'artist' && creativeSessionRunning;
                 const showTwinMissing = plugin.id === 'twin' && !activeTwin && twinProfiles.length === 0 && pluginTab === 'twin';
+                const devBorder = plugin.devOnly ? 'border border-amber-400/60 ring-1 ring-amber-400/20' : 'border border-transparent';
                 return (
                   <button
                     key={plugin.id}
@@ -170,14 +179,23 @@ export function PluginsSidebarNav() {
                     aria-selected={isActive}
                     aria-current={isActive ? 'page' : undefined}
                     onClick={() => setPluginTab(plugin.id)}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
+                    title={plugin.devOnly ? `${plugin.label} — in development (dev builds only)` : undefined}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${devBorder} ${
                       isActive
                         ? 'bg-primary/10 text-primary font-semibold'
                         : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80 font-normal'
                     }`}
                   >
-                    <Icon className="w-4 h-4 flex-shrink-0" />
+                    <Icon className={`w-4 h-4 flex-shrink-0 ${plugin.devOnly ? 'text-amber-400' : ''}`} />
                     <span className="flex-1 text-left truncate">{plugin.label}</span>
+                    {plugin.devOnly && (
+                      <span
+                        className="px-1.5 py-0.5 rounded-full typo-caption font-semibold text-amber-300 bg-amber-400/10 border border-amber-400/40 uppercase tracking-wide"
+                        aria-label="In development"
+                      >
+                        Dev
+                      </span>
+                    )}
                     {showArtistRunning && (
                       <span className="relative flex h-2.5 w-2.5">
                         <span className="absolute inset-0 rounded-full animate-ping bg-orange-500/40" />

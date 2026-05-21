@@ -1008,6 +1008,27 @@ pub fn run() {
             }
             st.checkpoint("webhook_notifier");
 
+            // Discord inbound poller. For every persona whose notification
+            // channels include an enabled `type: "discord"` entry with
+            // `config.pollInbound == true`, fetch new messages every 5s,
+            // dispatch them through `execute_persona_inner`, then post the
+            // run's final output back to the same channel. See
+            // `engine/discord_poller.rs`.
+            {
+                let pool_for_discord = pool.clone();
+                let app_for_discord = app.handle().clone();
+                let state_for_discord = state_arc.clone();
+                tauri::async_runtime::spawn(async move {
+                    engine::discord_poller::run_poller(
+                        pool_for_discord,
+                        app_for_discord,
+                        state_for_discord,
+                    )
+                    .await;
+                });
+            }
+            st.checkpoint("discord_poller");
+
             // Test automation HTTP server.
             //
             // Bind happens synchronously here so an EADDRINUSE failure is logged
@@ -2507,6 +2528,7 @@ pub fn run() {
             commands::infrastructure::twin::twin_list_reflections,
             commands::infrastructure::twin::twin_delete_reflection,
             commands::infrastructure::twin::twin_recall,
+            commands::infrastructure::twin::twin_ingest_doctrine_docs,
             // Notifications
             notifications::send_app_notification,
             notifications::test_notification_channel,

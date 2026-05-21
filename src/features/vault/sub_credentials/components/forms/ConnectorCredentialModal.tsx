@@ -1,13 +1,15 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { X, Plug, ExternalLink, Check } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { CredentialEditForm } from '@/features/vault/sub_credentials/components/forms/CredentialEditForm';
 import { useCredentialHealth } from '@/features/vault/shared/hooks/health/useCredentialHealth';
 import type { SuggestedConnector } from '@/lib/types/designTypes';
-import type { ConnectorDefinition, CredentialMetadata, CredentialTemplateField } from '@/lib/types/types';
+import { parseConnectorMetadata, type ConnectorDefinition, type CredentialMetadata, type CredentialTemplateField } from '@/lib/types/types';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { useTranslation } from '@/i18n/useTranslation';
+import { listProfiles as listTwinProfiles, type TwinProfile } from '@/api/twin/twin';
+import { silentCatch } from '@/lib/silentCatch';
 
 interface ConnectorCredentialModalProps {
   connector: SuggestedConnector;
@@ -29,7 +31,7 @@ export function ConnectorCredentialModal({
   const health = useCredentialHealth(`connector:${connector.name}`);
 
   // Merge field definitions: DB connector fields take priority, then CLI-generated ones
-  const fields: CredentialTemplateField[] = connectorDefinition?.fields?.length
+  const baseFields: CredentialTemplateField[] = connectorDefinition?.fields?.length
     ? connectorDefinition.fields
     : (connector.credential_fields ?? []).map((f) => ({
         key: f.key,
@@ -39,6 +41,45 @@ export function ConnectorCredentialModal({
         helpText: f.helpText,
         required: f.required,
       }));
+
+  // Connectors with `metadata.requires_picker` need their options hydrated at
+  // modal-open time from a Tauri command. Today only "twin" is wired — the
+  // form shows a select of existing TwinProfile rows so each binding points to
+  // a real profile in the Twin plugin. If the load fails, we still render the
+  // form (with an empty picker) so the user can see what's broken instead of
+  // a blank modal.
+  const requiresPicker = useMemo(
+    () => parseConnectorMetadata(connectorDefinition?.metadata).requires_picker,
+    [connectorDefinition?.metadata],
+  );
+  const [twinProfiles, setTwinProfiles] = useState<TwinProfile[] | null>(null);
+  useEffect(() => {
+    if (requiresPicker !== 'twin') return;
+    let alive = true;
+    listTwinProfiles()
+      .then((profiles) => {
+        if (alive) setTwinProfiles(profiles);
+      })
+      .catch(silentCatch('ConnectorCredentialModal:listTwinProfiles'));
+    return () => {
+      alive = false;
+    };
+  }, [requiresPicker]);
+
+  const fields: CredentialTemplateField[] = useMemo(() => {
+    if (requiresPicker !== 'twin') return baseFields;
+    return baseFields.map((f) =>
+      f.key === 'twin_profile_id'
+        ? {
+            ...f,
+            options: (twinProfiles ?? []).map((p) => ({
+              value: p.id,
+              label: p.name,
+            })),
+          }
+        : f,
+    );
+  }, [baseFields, requiresPicker, twinProfiles]);
 
   const label = connectorDefinition?.label || connector.name;
   const category = connectorDefinition?.category;

@@ -30,6 +30,11 @@ const TASKS = {
   checksums: "scripts/generate-template-checksums.mjs",
   "n8n-limits": "scripts/generate-n8n-limits.mjs",
   "host-check": "scripts/check-build-cache.mjs",
+  // Advisory Rust build-cache size check. Argless spawn = --guard mode: reads
+  // a cached measurement, warns above 80% of CACHE_BUDGET_GB, refreshes the
+  // cache in a detached background process. Exits 0 unconditionally — it must
+  // never block or fail a build.
+  "cache-budget": "scripts/cache-budget.mjs",
   // Composes per-agent WebP icons into sprite sheets. Previously orphaned
   // in vite buildStart only (asymmetric: `npm run dev` regenerated, plain
   // `npm run predev` did not). Listing here keeps the documented codegen
@@ -38,8 +43,8 @@ const TASKS = {
 };
 
 const PRESETS = {
-  predev:   ["commands", "i18n", "i18n-split", "connectors", "n8n-limits", "host-check", "sprites"],
-  prebuild: ["commands", "i18n", "i18n-split", "connectors", "n8n-limits", "checksums", "sprites"],
+  predev:   ["commands", "i18n", "i18n-split", "connectors", "n8n-limits", "host-check", "cache-budget", "sprites"],
+  prebuild: ["commands", "i18n", "i18n-split", "connectors", "n8n-limits", "checksums", "cache-budget", "sprites"],
 };
 
 const TIMEOUT_MS = Number(process.env.CODEGEN_TIMEOUT_MS) || 60_000;

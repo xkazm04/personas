@@ -221,13 +221,13 @@ export default function PersonasPage() {
       if (pluginTab === 'dev-tools') {
         return <ErrorBoundary name="DevTools"><Suspense fallback={SectionFallback}><DevToolsPage /></Suspense></ErrorBoundary>;
       }
-      if (pluginTab === 'artist') {
+      if (pluginTab === 'artist' && import.meta.env.DEV) {
         return <ErrorBoundary name="Artist"><Suspense fallback={SectionFallback}><ArtistPage /></Suspense></ErrorBoundary>;
       }
       if (pluginTab === 'obsidian-brain') {
         return <ErrorBoundary name="ObsidianBrain"><Suspense fallback={SectionFallback}><ObsidianBrainPage /></Suspense></ErrorBoundary>;
       }
-      if (pluginTab === 'research-lab') {
+      if (pluginTab === 'research-lab' && import.meta.env.DEV) {
         return <ErrorBoundary name="ResearchLab"><Suspense fallback={SectionFallback}><ResearchLabPage /></Suspense></ErrorBoundary>;
       }
       if (pluginTab === 'drive') {

@@ -2843,6 +2843,8 @@ export type Translations = {
         team_id: string;
         to: string;
       };
+      discord_poll_inbound_label: string;
+      discord_poll_inbound_help: string;
     };
   };
   vault: {
@@ -13274,6 +13276,12 @@ export type Translations = {
       conversationsHint: string;
       sent: string;
       received: string;
+      ingestDocsTitle: string;
+      ingestDocsDescription: string;
+      ingestDocsButton: string;
+      ingestDocsLoading: string;
+      ingestDocsSuccess: string;
+      ingestDocsErrorNoKb: string;
     };
     profiles: {
       title: string;

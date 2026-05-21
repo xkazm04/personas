@@ -303,6 +303,21 @@ export const generateBio = (
 export const ingestUrl = (url: string, twinId?: string) =>
   invoke<string>("twin_ingest_url", { url, twinId });
 
+export interface TwinIngestDocsSummary {
+  filesIngested: number;
+  chunksAdded: number;
+  filesSkipped: number;
+}
+
+/**
+ * Seed a Twin's bound knowledge base with the curated `docs/features/*`
+ * pages embedded at compile time. Returns counts for the UI to surface.
+ * Errors if the twin has no knowledge base bound or the binary was built
+ * without the `ml` feature.
+ */
+export const ingestDoctrineDocs = (twinId: string) =>
+  invoke<TwinIngestDocsSummary>("twin_ingest_doctrine_docs", { twinId });
+
 /**
  * Compile the full twin's approved memories into a navigable markdown wiki.
  * `outputDir` is optional — when omitted, files land in the per-twin slot

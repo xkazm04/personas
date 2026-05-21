@@ -1,10 +1,11 @@
 import { lazy, Suspense, useState } from 'react';
-import { Terminal, LayoutDashboard, Settings as SettingsIcon } from 'lucide-react';
+import { Terminal, LayoutDashboard, Settings as SettingsIcon, BookOpen } from 'lucide-react';
 import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 
 const FleetGridPage = lazy(() => import('./sub_grid/FleetGridPage'));
 const FleetSettingsPage = lazy(() => import('./sub_settings/FleetSettingsPage'));
+const SkillBrowserPage = lazy(() => import('./sub_skills/SkillBrowserPage'));
 
 type InternalTab = 'grid' | 'settings';
 
@@ -19,13 +20,17 @@ const TABS: { id: InternalTab; label: string; icon: typeof Terminal }[] = [
 /**
  * Fleet — Claude Code session aggregator, rendered as a Dev Tools sub-tab.
  *
- * Three internal tabs (Sessions / Decisions / Settings) live inside one
- * Dev Tools slot rather than expanding the dev-tools sidebar by three
- * entries. The active project (from the dev-tools project picker) is the
- * implicit cwd for any session spawned here.
+ * Two internal tabs (Sessions / Settings) live inside one Dev Tools slot
+ * rather than expanding the dev-tools sidebar. The active project (from the
+ * dev-tools project picker) is the implicit cwd for any session spawned
+ * here. The header also surfaces a "Show skills" toggle that replaces the
+ * body with the relocated Skills browser (formerly its own Dev Tools tab),
+ * giving Fleet operators inline access to the skill library without
+ * leaving the session aggregator.
  */
 export default function FleetPage() {
   const [tab, setTab] = useState<InternalTab>('grid');
+  const [showSkills, setShowSkills] = useState(false);
 
   return (
     <div className="h-full w-full flex flex-col" data-testid="fleet-page">
@@ -36,12 +41,12 @@ export default function FleetPage() {
         <span className="typo-caption font-semibold text-foreground mr-3">Fleet</span>
         {TABS.map((t) => {
           const Icon = t.icon;
-          const active = tab === t.id;
+          const active = !showSkills && tab === t.id;
           return (
             <button
               key={t.id}
               data-testid={`fleet-tab-${t.id}`}
-              onClick={() => setTab(t.id)}
+              onClick={() => { setShowSkills(false); setTab(t.id); }}
               className={`flex items-center gap-1.5 px-3 py-1 rounded-card text-[12px] transition-colors ${
                 active
                   ? 'bg-primary/10 text-primary border border-primary/25'
@@ -53,16 +58,36 @@ export default function FleetPage() {
             </button>
           );
         })}
+        <button
+          data-testid="fleet-show-skills"
+          onClick={() => setShowSkills((v) => !v)}
+          aria-pressed={showSkills}
+          title={showSkills ? 'Hide skills' : 'Show skills — browse the local skill library'}
+          className={`ml-auto flex items-center gap-1.5 px-3 py-1 rounded-card text-[12px] transition-colors ${
+            showSkills
+              ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
+              : 'text-foreground/60 hover:text-foreground hover:bg-secondary/40 border border-transparent'
+          }`}
+        >
+          <BookOpen className="w-3.5 h-3.5" />
+          {showSkills ? 'Hide skills' : 'Show skills'}
+        </button>
       </div>
 
       <div
-        data-testid={`fleet-active-${tab}`}
-        key={tab}
+        data-testid={`fleet-active-${showSkills ? 'skills' : tab}`}
+        key={showSkills ? 'skills' : tab}
         className="animate-fade-slide-in flex-1 min-h-0 flex flex-col"
       >
         <Suspense fallback={<SuspenseFallback />}>
-          {tab === 'grid' && <FleetGridPage />}
-          {tab === 'settings' && <FleetSettingsPage />}
+          {showSkills ? (
+            <SkillBrowserPage />
+          ) : (
+            <>
+              {tab === 'grid' && <FleetGridPage />}
+              {tab === 'settings' && <FleetSettingsPage />}
+            </>
+          )}
         </Suspense>
       </div>
     </div>

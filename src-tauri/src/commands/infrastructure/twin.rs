@@ -128,16 +128,23 @@ pub fn twin_get_profile(
 
 /// Resolve which twin a persona should adopt.
 ///
-/// - When `persona_id` is `Some` and the persona's parsed
-///   `design_context.twin_id` is also `Some`, return that pinned twin —
-///   provided it still exists. (A deleted twin id silently falls back
-///   to the global active twin so the persona never errors out.)
-/// - Otherwise return the row marked `is_active` in `twin_profiles`.
+/// Lookup chain (first hit wins):
+/// 1. `design_context.credential_links["twin"]` — a Twin connector binding the
+///    user created in the vault catalog. Read its `twin_profile_id` field and
+///    return that profile. This is the multi-twin path: a persona can be
+///    bound to any of the user's Twin profiles via a named catalog entry.
+/// 2. `design_context.twin_id` — legacy explicit pin set by some templates /
+///    older personas. Kept for backwards compat.
+/// 3. The row marked `is_active` in `twin_profiles` — the global active twin.
 ///
-/// `persona_id` is optional so existing callers (the Twin plugin UI,
-/// which reads the globally-active twin for the selector banner) keep
-/// working without a code change. Connector tool calls invoked on
-/// behalf of a persona pass the persona id and pick up the override.
+/// At every step, a credential or twin id that no longer exists silently
+/// falls through to the next rule so a deleted binding never crashes a
+/// persona mid-execution.
+///
+/// `persona_id` is optional so existing callers (the Twin plugin UI, which
+/// reads the globally-active twin for the selector banner) keep working
+/// without a code change. Connector tool calls invoked on behalf of a
+/// persona pass the persona id and pick up the override.
 #[tauri::command]
 pub fn twin_get_active_profile(
     state: State<'_, Arc<AppState>>,
@@ -147,11 +154,38 @@ pub fn twin_get_active_profile(
     if let Some(pid) = persona_id.as_deref().filter(|s| !s.is_empty()) {
         match crate::db::repos::core::personas::get_by_id(&state.db, pid) {
             Ok(persona) => {
-                if let Some(twin_id) = persona.parsed_design_context().twin_id {
-                    // Pinned twin id from design_context. Look it up; if it
-                    // was deleted, fall through to the global active twin
-                    // rather than erroring — the connector should never
-                    // crash a persona on a stale design_context entry.
+                let dc = persona.parsed_design_context();
+
+                // 1. Catalog binding via credential_links["twin"]
+                if let Some(cred_id) = dc
+                    .credential_links
+                    .as_ref()
+                    .and_then(|m| m.get("twin"))
+                    .filter(|s| !s.is_empty())
+                {
+                    if let Ok(cred) = crate::db::repos::resources::credentials::get_by_id(
+                        &state.db, cred_id,
+                    ) {
+                        if let Ok(fields) =
+                            crate::db::repos::resources::credentials::get_decrypted_fields(
+                                &state.db, &cred,
+                            )
+                        {
+                            if let Some(twin_pid) =
+                                fields.get("twin_profile_id").filter(|s| !s.is_empty())
+                            {
+                                if let Ok(profile) =
+                                    repo::get_profile_by_id(&state.db, twin_pid)
+                                {
+                                    return Ok(Some(profile));
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 2. Legacy explicit pin
+                if let Some(twin_id) = dc.twin_id {
                     if let Ok(pinned) = repo::get_profile_by_id(&state.db, &twin_id) {
                         return Ok(Some(pinned));
                     }
@@ -165,6 +199,7 @@ pub fn twin_get_active_profile(
             Err(e) => return Err(e),
         }
     }
+    // 3. Global active
     repo::get_active_profile(&state.db)
 }
 
@@ -1332,4 +1367,101 @@ pub async fn twin_reflect(
         ));
     }
     repo::create_reflection(&state.db, &twin_id, seed, content)
+}
+
+// ============================================================================
+// twin_ingest_doctrine_docs
+//
+// Seed the twin's bound knowledge base with the curated `docs/features/*`
+// pages embedded at compile time by `companion::brain::doctrine`. The Twin
+// plugin's Knowledge atelier surfaces this as a "Ingest docs/features"
+// button so the user can give a Twin product-level grounding with one click.
+//
+// We deliberately reuse `doctrine::embedded_feature_docs()` (the same
+// content the Athena companion already ships) rather than walking disk —
+// production installs don't have the repo, and the embedded copy is the
+// authoritative one.
+// ============================================================================
+
+/// Summary returned to the UI after a docs ingest pass.
+#[derive(Debug, serde::Serialize, ts_rs::TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct TwinIngestDocsSummary {
+    pub files_ingested: usize,
+    pub chunks_added: usize,
+    pub files_skipped: usize,
+}
+
+#[cfg(feature = "ml")]
+#[tauri::command]
+pub async fn twin_ingest_doctrine_docs(
+    state: State<'_, Arc<AppState>>,
+    twin_id: String,
+) -> Result<TwinIngestDocsSummary, AppError> {
+    require_auth(&state).await?;
+
+    let twin = repo::get_profile_by_id(&state.db, &twin_id)?;
+    let kb_id = twin.knowledge_base_id.clone().ok_or_else(|| {
+        AppError::Validation(
+            "Twin has no bound knowledge base. Bind one in the Knowledge tab first."
+                .into(),
+        )
+    })?;
+
+    let embedder = state.embedding_manager.as_ref().ok_or_else(|| {
+        AppError::Internal("Embedding manager not initialized (ml feature off)".into())
+    })?;
+    let vector_store = state.vector_store.as_ref().ok_or_else(|| {
+        AppError::Internal("Vector store not initialized (ml feature off)".into())
+    })?;
+
+    let kb = crate::engine::kb_ingest::get_kb(&state.user_db, &kb_id)?;
+
+    let mut files_ingested = 0usize;
+    let mut chunks_added = 0usize;
+    let mut files_skipped = 0usize;
+    for (rel, content) in crate::companion::brain::doctrine::embedded_feature_docs() {
+        // `ingest_text` returns 0 when the same content_hash is already
+        // indexed — count that as a skip so the UI can tell the difference
+        // between "ingested fresh" and "already there".
+        match crate::engine::kb_ingest::ingest_text(
+            &state.user_db,
+            embedder,
+            vector_store,
+            &kb,
+            rel,
+            content,
+        )
+        .await
+        {
+            Ok(0) => files_skipped += 1,
+            Ok(n) => {
+                files_ingested += 1;
+                chunks_added += n;
+            }
+            Err(e) => {
+                tracing::warn!(rel = %rel, error = %e, "twin_ingest_doctrine_docs: file failed");
+            }
+        }
+    }
+    Ok(TwinIngestDocsSummary {
+        files_ingested,
+        chunks_added,
+        files_skipped,
+    })
+}
+
+#[cfg(not(feature = "ml"))]
+#[tauri::command]
+pub async fn twin_ingest_doctrine_docs(
+    state: State<'_, Arc<AppState>>,
+    twin_id: String,
+) -> Result<TwinIngestDocsSummary, AppError> {
+    require_auth(&state).await?;
+    let _ = twin_id;
+    Err(AppError::Internal(
+        "Twin docs ingest requires the ml feature (vector search is not built into this binary)."
+            .into(),
+    ))
 }

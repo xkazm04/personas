@@ -2,64 +2,64 @@
   "template_id": "sales-deal-intelligence",
   "template_name": "Sales Deal Intelligence",
   "category": "sales",
-  "started_at": "2026-05-20T10:19:25.026Z",
-  "ended_at": "2026-05-20T10:24:19.654Z",
+  "started_at": "2026-05-20T13:27:50.462Z",
+  "ended_at": "2026-05-20T13:33:10.121Z",
   "outcome": "pass",
   "phases": [
     {
       "phase": "open",
       "status": "pass",
-      "durationMs": 1986
+      "durationMs": 2014
     },
     {
       "phase": "questionnaire",
       "status": "pass",
-      "durationMs": 14
+      "durationMs": 17
     },
     {
       "phase": "build",
       "status": "pass",
-      "durationMs": 21457
+      "durationMs": 54941
     },
     {
       "phase": "promote",
       "status": "pass",
-      "durationMs": 416
+      "durationMs": 421
     }
   ],
-  "persona_id": "1f36e951-e885-417e-8450-50a572de88df",
+  "persona_id": "6494a2a4-247f-4e8f-bbad-79707fbb90cc",
   "failure_signature": null,
   "capability_results": [
     {
-      "cap_id": "uc-c5a5a7ff-b2b9-415e-82f5-d022de7ad54c",
+      "cap_id": "uc-d3e3371e-ac58-4245-8643-00d1d2b7f3a8",
       "outcome": "pass",
-      "execution_id": "9af1728c-c745-4e88-9467-89d20ec355a4",
-      "tool_steps": 4,
-      "cost_usd": 0.2560965,
+      "execution_id": "2041ef68-f958-4849-9747-f1e82dc5947c",
+      "tool_steps": 1,
+      "cost_usd": 0.24887175,
       "detail": "execute"
     },
     {
-      "cap_id": "uc-f36f4e65-8925-4e25-b00c-1eb8a8256ac7",
+      "cap_id": "uc-8a3954f3-ae93-4bfb-94c3-8f65e4537221",
       "outcome": "pass",
-      "execution_id": "140d22e5-07f1-4f7d-bb40-2053ebe476c6",
-      "tool_steps": 3,
-      "cost_usd": 0.23295175,
-      "detail": "execute"
-    },
-    {
-      "cap_id": "uc-86d703c8-0bfb-4121-8d0c-1d2a4c92310d",
-      "outcome": "pass",
-      "execution_id": "ec7310ff-ccdf-47e5-bb9d-fdc8cc455830",
+      "execution_id": "66af7343-d413-49ea-bd3d-12b5d1fde4d8",
       "tool_steps": 7,
-      "cost_usd": 0.50601025,
+      "cost_usd": 0.42407675,
       "detail": "execute"
     },
     {
-      "cap_id": "uc-9eccae7d-3619-4eef-be73-9ec77bbaf1a3",
+      "cap_id": "uc-3a795511-2333-4951-b2a7-a7bebd8a8252",
       "outcome": "pass",
-      "execution_id": "63e6ecf7-f7d5-4995-bf4b-23c8e86190b9",
-      "tool_steps": 2,
-      "cost_usd": 0.23199125,
+      "execution_id": "59205de1-b1f6-43e9-9227-182a03e3de35",
+      "tool_steps": 5,
+      "cost_usd": 0.387429,
+      "detail": "execute"
+    },
+    {
+      "cap_id": "uc-e72555a3-63c8-41b3-b9d1-23a032bb6c91",
+      "outcome": "pass",
+      "execution_id": "70e1e0ed-3afe-4aae-a50c-f3bff8f7329d",
+      "tool_steps": 3,
+      "cost_usd": 0.3901515,
       "detail": "execute"
     }
   ]

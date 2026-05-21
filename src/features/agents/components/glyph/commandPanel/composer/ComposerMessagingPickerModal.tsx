@@ -435,6 +435,42 @@ export function ComposerMessagingPickerModal({
                         })}
                       </div>
                     )}
+                    {spec.type === 'discord' && (
+                      <label className="flex items-start gap-2 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={(() => {
+                            const cfg = spec.config as Record<string, unknown> | null;
+                            return cfg?.pollInbound === true;
+                          })()}
+                          onChange={(e) => {
+                            const next = e.target.checked;
+                            setDraft((prev) =>
+                              prev.map((s) => {
+                                if (s !== spec) return s;
+                                const cfg = (s.config as Record<string, JsonValue> | null) ?? {};
+                                const merged: Record<string, JsonValue> = { ...cfg };
+                                if (next) {
+                                  merged.pollInbound = true;
+                                } else {
+                                  delete merged.pollInbound;
+                                }
+                                return {
+                                  ...s,
+                                  config: Object.keys(merged).length > 0 ? (merged as JsonValue) : null,
+                                };
+                              }),
+                            );
+                          }}
+                          className="mt-0.5 accent-primary"
+                          data-testid={`discord-poll-inbound-${spec.credential_id ?? ''}`}
+                        />
+                        <span className="typo-caption text-foreground/80">
+                          <span className="font-medium text-foreground/90">{t.agents.messaging_picker.discord_poll_inbound_label}</span>
+                          <span className="block text-foreground/60">{t.agents.messaging_picker.discord_poll_inbound_help}</span>
+                        </span>
+                      </label>
+                    )}
                     {!complete && (
                       <p className="typo-caption text-amber-400/80">
                         {t.agents.messaging_picker.fallback_hint}

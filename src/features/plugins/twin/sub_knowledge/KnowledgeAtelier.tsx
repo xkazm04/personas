@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { BookOpen, CheckCircle2, XCircle, Clock, MessageSquare, ArrowDownLeft, ArrowUpRight, Inbox, History, Library, Star, Quote } from 'lucide-react';
+import { BookOpen, CheckCircle2, XCircle, Clock, MessageSquare, ArrowDownLeft, ArrowUpRight, Inbox, History, Library, Star, Quote, Download } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
+import { useToastStore } from '@/stores/toastStore';
 import { TwinEmptyState } from '../TwinEmptyState';
 import { TwinWikiPanel } from '../_shared/TwinWikiPanel';
 import { useTranslation } from '@/i18n/useTranslation';
+import { ingestDoctrineDocs } from '@/api/twin/twin';
 
 /* ------------------------------------------------------------------ *
  *  Atelier — "Archive"
@@ -54,6 +56,33 @@ export default function KnowledgeAtelier() {
 
   const [filter, setFilter] = useState<MemoryFilter>('pending');
   const [reviewingId, setReviewingId] = useState<string | null>(null);
+  const [ingestingDocs, setIngestingDocs] = useState(false);
+  const addToast = useToastStore((s) => s.addToast);
+  const hasBoundKb = !!activeTwin?.knowledge_base_id;
+
+  const handleIngestDocs = async () => {
+    if (!activeTwinId) return;
+    if (!hasBoundKb) {
+      addToast(t.knowledge.ingestDocsErrorNoKb, 'error');
+      return;
+    }
+    setIngestingDocs(true);
+    try {
+      const summary = await ingestDoctrineDocs(activeTwinId);
+      addToast(
+        tx(t.knowledge.ingestDocsSuccess, {
+          files: summary.filesIngested,
+          chunks: summary.chunksAdded,
+          skipped: summary.filesSkipped,
+        }),
+        'success',
+      );
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : String(err), 'error');
+    } finally {
+      setIngestingDocs(false);
+    }
+  };
 
   useEffect(() => {
     if (activeTwinId) { fetchPending(activeTwinId, filter); fetchComms(activeTwinId); }
@@ -117,6 +146,36 @@ export default function KnowledgeAtelier() {
 
       {/* ── Wiki panel (Direction 4 — collapsed by default) ────────── */}
       <TwinWikiPanel activeTwinId={activeTwinId} />
+
+      {/* ── Seed-from-docs panel ─────────────────────────────────── */}
+      <div className="px-4 md:px-6 xl:px-8 py-3 border-b border-primary/10 flex items-center gap-4">
+        <div className="w-9 h-9 rounded-card bg-cyan-500/10 border border-cyan-400/30 flex items-center justify-center flex-shrink-0">
+          <Download className="w-4 h-4 text-cyan-300" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="typo-card-label text-foreground/90">{t.knowledge.ingestDocsTitle}</p>
+          <p className="typo-caption text-foreground/60">{t.knowledge.ingestDocsDescription}</p>
+        </div>
+        <button
+          type="button"
+          onClick={handleIngestDocs}
+          disabled={ingestingDocs || !hasBoundKb}
+          data-testid="twin-ingest-docs-button"
+          className="px-3 py-1.5 rounded-interactive text-[12px] font-medium border border-cyan-400/30 bg-cyan-500/10 text-cyan-200 hover:bg-cyan-500/20 hover:border-cyan-400/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+        >
+          {ingestingDocs ? (
+            <>
+              <Clock className="w-3 h-3 animate-spin" />
+              {t.knowledge.ingestDocsLoading}
+            </>
+          ) : (
+            <>
+              <Download className="w-3 h-3" />
+              {t.knowledge.ingestDocsButton}
+            </>
+          )}
+        </button>
+      </div>
 
       {/* ── Body ─────────────────────────────────────────────────── */}
       <div className="flex-1 min-h-0 overflow-hidden grid grid-cols-1 lg:grid-cols-2">

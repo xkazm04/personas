@@ -363,9 +363,14 @@ function CredentialField({ field, value, onChange }: CredentialFieldProps) {
           className="w-full px-3 py-2 typo-body rounded-card border border-border bg-foreground/[0.03] text-foreground focus:outline-none focus:border-primary/30 transition-all"
         >
           <option value="">— Select —</option>
-          {(field.options ?? []).map((opt) => (
-            <option key={opt} value={opt}>{opt}</option>
-          ))}
+          {(field.options ?? []).map((opt) => {
+            const isPair = typeof opt === 'object' && opt !== null;
+            const optValue = isPair ? opt.value : opt;
+            const optLabel = isPair ? opt.label : opt;
+            return (
+              <option key={optValue} value={optValue}>{optLabel}</option>
+            );
+          })}
         </select>
       ) : (
         <input

@@ -18,13 +18,11 @@ export default function ContextCard({
 }) {
   const { t } = useTranslation();
   const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
-  const setPendingLifecycleSubTab = useSystemStore((s) => s.setPendingLifecycleSubTab);
   const setPendingGoalSpotlightId = useSystemStore((s) => s.setPendingGoalSpotlightId);
 
   const handleGoalsJump = () => {
     if (firstGoalId) setPendingGoalSpotlightId(firstGoalId);
-    setPendingLifecycleSubTab('goals');
-    setDevToolsTab('lifecycle');
+    setDevToolsTab('goals');
   };
 
   return (

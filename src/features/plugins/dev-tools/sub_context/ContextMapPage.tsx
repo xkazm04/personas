@@ -8,6 +8,7 @@ import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/compon
 import { ActionRow } from '@/features/shared/components/layout/ActionRow';
 import { Button } from '@/features/shared/components/buttons';
 import { useDevToolsActions } from '../hooks/useDevToolsActions';
+import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker';
 import { useSystemStore } from '@/stores/systemStore';
 import { cancelScanCodebase } from '@/api/devTools/devTools';
 import { useOverviewStore } from '@/stores/overviewStore';
@@ -349,7 +350,8 @@ export default function ContextMapPage() {
         icon={<MapIcon className="w-5 h-5 text-amber-400" />}
         iconColor="amber"
         title={t.plugins.dev_tools.context_map_title}
-        subtitle={t.plugins.dev_tools.context_map_subtitle}
+        subtitle={activeProject?.root_path ?? t.plugins.dev_tools.context_map_subtitle}
+        actions={<LifecycleProjectPicker />}
       />
 
       <ContentBody>

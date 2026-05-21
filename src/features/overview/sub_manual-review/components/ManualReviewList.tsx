@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ClipboardCheck, Plus, BookOpen, Trash2 } from 'lucide-react';
+import { ClipboardCheck, Plus, BookOpen, Trash2, LayoutGrid, Sparkles } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { useOverviewStore } from "@/stores/overviewStore";
@@ -26,6 +26,13 @@ import { ReviewInboxPanel } from './ReviewInboxPanel';
 import { ReviewFilterTrailing } from './ReviewFilterTrailing';
 import type { TriageReview } from './TriagePlayer';
 import { ReviewFocusFlow } from './ReviewFocusFlow';
+// PROTOTYPE — directional variants for full-screen triage. Tracked under
+// /prototype skill; temporary tab-switcher in the header. Remove after
+// consolidation.
+import { TriageGridVariant } from './TriageGridVariant';
+import { TriageWildcardVariant } from './TriageWildcardVariant';
+
+type PrototypeVariant = 'grid' | 'wildcard' | null;
 
 export default function ManualReviewList() {
   const { t } = useTranslation();
@@ -55,6 +62,8 @@ export default function ManualReviewList() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [confirmAction, setConfirmAction] = useState<ManualReviewStatus | null>(null);
   const [isBulkProcessing, setIsBulkProcessing] = useState(false);
+  // PROTOTYPE — temporary full-screen variant switcher.
+  const [prototypeVariant, setPrototypeVariant] = useState<PrototypeVariant>(null);
 
   useEffect(() => { fetchManualReviews(); }, [fetchManualReviews]);
 
@@ -198,6 +207,7 @@ export default function ManualReviewList() {
   }, [isGcing, fetchManualReviews]);
 
   return (
+    <>
     <ContentBox>
       <ContentHeader
         icon={<ClipboardCheck className="w-5 h-5 text-amber-400" />}
@@ -206,6 +216,24 @@ export default function ManualReviewList() {
         subtitle={`${allReviews.length} ${t.overview.review.subtitle.replace('{count}', '')} · ${statusCounts.pending ?? 0} ${t.overview.review.filter_pending.toLowerCase()}${cloudReviews.length > 0 ? ` · ${cloudReviews.length} ${t.overview.review.cloud_badge.toLowerCase()}` : ''}`}
         actions={(
           <div className="flex items-center gap-2">
+            {/* PROTOTYPE — full-screen variant triggers (temporary tab
+                switcher; remove after /prototype consolidation). */}
+            <button
+              onClick={() => setPrototypeVariant('grid')}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading bg-primary/10 text-primary border border-primary/25 hover:bg-primary/15 transition-colors"
+              title="Full-screen persona × priority grid (prototype)"
+            >
+              <LayoutGrid className="w-3.5 h-3.5" />
+              Grid
+            </button>
+            <button
+              onClick={() => setPrototypeVariant('wildcard')}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading bg-fuchsia-500/10 text-fuchsia-400 border border-fuchsia-500/25 hover:bg-fuchsia-500/20 transition-colors"
+              title="Full-screen experimental priority river (prototype)"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              Wildcard
+            </button>
             {/* A-grade Phase 8 — on-demand sweep. Always visible (unlike
                 the dev-only seed button below) because it's idempotent
                 and safe; matches the auto-aging contract that runs at
@@ -319,5 +347,28 @@ export default function ManualReviewList() {
         onDeselect={() => setSelectedIds(new Set())}
       />
     </ContentBox>
+    {/* PROTOTYPE — full-screen variants. Rendered outside ContentBox so they
+        cover the whole viewport, not just the module bounds. */}
+    <AnimatePresence>
+      {prototypeVariant === 'grid' && (
+        <TriageGridVariant
+          key="grid"
+          reviews={allReviews}
+          isProcessing={isProcessing}
+          onAction={(id, status, notes) => void handleAction(id, status, notes)}
+          onClose={() => setPrototypeVariant(null)}
+        />
+      )}
+      {prototypeVariant === 'wildcard' && (
+        <TriageWildcardVariant
+          key="wildcard"
+          reviews={allReviews}
+          isProcessing={isProcessing}
+          onAction={(id, status, notes) => void handleAction(id, status, notes)}
+          onClose={() => setPrototypeVariant(null)}
+        />
+      )}
+    </AnimatePresence>
+    </>
   );
 }

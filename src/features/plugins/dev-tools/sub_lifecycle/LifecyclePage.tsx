@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  GitBranch, Zap, RefreshCw, Settings, Target, Swords, Activity,
+  GitBranch, Zap, RefreshCw, Settings, Swords, Activity,
 } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { ActionRow } from '@/features/shared/components/layout/ActionRow';
@@ -14,7 +14,6 @@ import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaTrigger } from '@/lib/bindings/PersonaTrigger';
 import { LifecycleProjectPicker } from './LifecycleProjectPicker';
 import { SetupTab } from './tabs/SetupTab';
-import { GoalsTab } from './tabs/GoalsTab';
 import { CompetitionsTab } from './tabs/CompetitionsTab';
 import { ProjectTrackingTab } from './tabs/ProjectTrackingTab';
 
@@ -22,11 +21,10 @@ import { ProjectTrackingTab } from './tabs/ProjectTrackingTab';
 // Constants
 // ---------------------------------------------------------------------------
 
-type LifecycleTab = 'setup' | 'goals' | 'competitions' | 'tracking';
+type LifecycleTab = 'setup' | 'competitions' | 'tracking';
 
-const TAB_DEFS: { id: LifecycleTab; labelKey: 'tab_setup' | 'tab_goals' | 'tab_competitions' | 'tab_tracking'; icon: typeof Settings }[] = [
+const TAB_DEFS: { id: LifecycleTab; labelKey: 'tab_setup' | 'tab_competitions' | 'tab_tracking'; icon: typeof Settings }[] = [
   { id: 'setup', labelKey: 'tab_setup', icon: Settings },
-  { id: 'goals', labelKey: 'tab_goals', icon: Target },
   { id: 'competitions', labelKey: 'tab_competitions', icon: Swords },
   { id: 'tracking', labelKey: 'tab_tracking', icon: Activity },
 ];
@@ -82,9 +80,8 @@ export default function LifecyclePage() {
   useEffect(() => { refresh(); }, [refresh]);
   useEffect(() => { if (activeProjectId) fetchGoals(activeProjectId); }, [activeProjectId, fetchGoals]);
 
-  // Consume any pending sub-tab handoff (e.g. Task Runner goal pill jumping
-  // straight to the Goals sub-tab). Read once on mount and clear so a stale
-  // value can't survive an unmount/remount race.
+  // Consume any pending sub-tab handoff. Read once on mount and clear so a
+  // stale value can't survive an unmount/remount race.
   useEffect(() => {
     const pending = useSystemStore.getState().pendingLifecycleSubTab;
     if (pending) setTab(pending);
@@ -127,26 +124,15 @@ export default function LifecyclePage() {
         icon={<GitBranch className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
         title={t.plugins.dev_tools.lifecycle_title}
+        subtitle={activeProject?.root_path ?? '—'}
         actions={<LifecycleProjectPicker />}
-      >
-        {/* Tab menu below header */}
-        <div className="flex items-center gap-1 mt-3">
-          {TAB_DEFS.map((tabItem) => {
-            const Icon = tabItem.icon;
-            return (
-              <button key={tabItem.id} onClick={() => setTab(tabItem.id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-interactive typo-heading transition-colors ${
-                  tab === tabItem.id
-                    ? 'bg-violet-500/10 text-violet-400 border border-violet-500/20'
-                    : 'text-foreground hover:bg-secondary/40 hover:text-foreground border border-transparent'
-                }`}>
-                <Icon className="w-4 h-4" />
-                {dl[tabItem.labelKey]}
-              </button>
-            );
-          })}
-        </div>
-      </ContentHeader>
+      />
+
+      {/* Tab strip — lives outside the header so the header card stays
+          dedicated to identity (title + path + project picker). The strip
+          sits flush against the top of the body but is its own row so the
+          header doesn't grow visually with each new tab. */}
+      <LifecycleTabStrip tab={tab} onChange={setTab} />
 
       <ContentBody centered>
         <ActionRow>
@@ -176,12 +162,55 @@ export default function LifecyclePage() {
                 hasScheduleTrigger={hasSchedule} loading={loading} onRefresh={refresh}
               />
             )}
-            {tab === 'goals' && <GoalsTab />}
             {tab === 'competitions' && <CompetitionsTab />}
             {tab === 'tracking' && <ProjectTrackingTab />}
           </>
         )}
       </ContentBody>
     </ContentBox>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Tab strip — extracted so the ContentHeader card stays dedicated to
+// project identity. Lives between header and body as its own row.
+// ---------------------------------------------------------------------------
+
+function LifecycleTabStrip({
+  tab,
+  onChange,
+}: {
+  tab: LifecycleTab;
+  onChange: (next: LifecycleTab) => void;
+}) {
+  const { t } = useTranslation();
+  const dl = t.plugins.dev_lifecycle;
+  return (
+    <div
+      role="tablist"
+      aria-label={t.plugins.dev_tools.lifecycle_title}
+      className="flex items-center gap-1 px-4 pt-3 pb-2 border-b border-primary/5"
+    >
+      {TAB_DEFS.map((tabItem) => {
+        const Icon = tabItem.icon;
+        const active = tab === tabItem.id;
+        return (
+          <button
+            key={tabItem.id}
+            role="tab"
+            aria-selected={active}
+            onClick={() => onChange(tabItem.id)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-interactive typo-heading transition-colors ${
+              active
+                ? 'bg-violet-500/10 text-violet-400 border border-violet-500/20'
+                : 'text-foreground hover:bg-secondary/40 hover:text-foreground border border-transparent'
+            }`}
+          >
+            <Icon className="w-4 h-4" />
+            {dl[tabItem.labelKey]}
+          </button>
+        );
+      })}
+    </div>
   );
 }

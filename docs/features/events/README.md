@@ -58,4 +58,17 @@ The Live Stream header includes a shortcut into `Overview -> Events` for the ful
 
 A separate dispatcher (`src-tauri/src/engine/webhook_notifier.rs`) routes the same `persona_events` stream out to user-configured HTTP endpoints — Slack incoming webhooks, Discord channel webhooks, Microsoft Teams incoming webhooks, or a generic JSON POST. Each subscription declares one or more event-type patterns (`execution.finished`, `healing.*`, or the wildcard `*`); the dispatcher polls events on a 5s tick, matches them against enabled subscriptions, renders a Mustache-style template against the event payload, and POSTs the provider-shaped body via `SSRF_SAFE_HTTP`. A single-row watermark in `notification_dispatch_watermark` keeps deliveries idempotent across restarts. The configuration UI lives under Settings → Notifications (`src/features/settings/sub_notifications/components/WebhookSubscriptionsPanel.tsx`); the four `*-webhook` connectors in the vault catalog hand-roll the URL credential for credential-backed subscriptions.
 
+## Discord inbound polling
+
+`src-tauri/src/engine/discord_poller.rs` is the mirror of `webhook_notifier` for the receive side. A 5s background tick scans every enabled persona whose `notification_channels` contains at least one `type: "discord"` entry with `config.pollInbound == true` and `config.channelId` set, then for each such (persona, channel) it:
+
+1. Reads the per-(persona, channel) cursor from `discord_poll_state` (`last_message_id`).
+2. Fetches `GET https://discord.com/api/v10/channels/{id}/messages?after={cursor}&limit=50` using the Bot token from the persona's Discord credential.
+3. Skips messages from bots (`author.bot == true`) and messages we've already logged in `discord_inbound_messages` (PRIMARY KEY on `message_id`), then for each new message fires `commands::execution::executions::execute_persona_inner` with `input_data = { source: "discord", channelId, messageId, author, content, timestamp }` and `idempotency_key = "discord:{channel_id}:{message_id}"`.
+4. Advances the cursor to the newest message id seen, even when the only new message was a bot's own — so the loop can't get stuck behind its own replies.
+
+A second pass within the same tick scans `discord_inbound_messages` for rows whose execution is finished but `replied_message_id IS NULL`, pulls the execution's `output_data` (extracting common envelope keys like `reply`, `message`, `text`, `content` when the output is JSON), and POSTs it back to the same channel via `POST /channels/{id}/messages` with a `message_reference` to the originating message. Replies are truncated to ~1990 chars with a `… (truncated)` marker so Claude's longer answers don't 400 the post. Failures land in the row's `error` column so a stuck delivery surfaces in inspection without blocking subsequent messages.
+
+Why polling, not Gateway WebSocket: Gateway is the right long-term answer, but polling is enough for the 1:1 test-channel use case the feature ships with, has no external dependency beyond the bot-token credential already in the vault, and survives restarts trivially via the persisted cursor. The upgrade path is to swap `fetch_new_messages` for a WSS consumer that pushes onto the same dispatch path.
+
 For deeper routing design details, see [event-routing.md](event-routing.md).

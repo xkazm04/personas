@@ -6,12 +6,12 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 const ProjectOverviewPage = lazy(() => import('./sub_overview/ProjectOverviewPage'));
 const ProjectManagerPage = lazy(() => import('./sub_projects/ProjectManagerPage'));
+const GoalsPage = lazy(() => import('./sub_goals/GoalsPage'));
 const ContextMapPage = lazy(() => import('./sub_context/ContextMapPage'));
 const IdeaScannerPage = lazy(() => import('./sub_scanner/IdeaScannerPage'));
 const IdeaTriagePage = lazy(() => import('./sub_triage/IdeaTriagePage'));
 const TaskRunnerPage = lazy(() => import('./sub_runner/TaskRunnerPage'));
 const LifecyclePage = lazy(() => import('./sub_lifecycle/LifecyclePage'));
-const SkillBrowserPage = lazy(() => import('./sub_skills/SkillBrowserPage'));
 const FleetPage = lazy(() => import('@/features/plugins/fleet/FleetPage'));
 
 
@@ -118,13 +118,13 @@ export default function DevToolsPage() {
           <Suspense fallback={<SuspenseFallback />}>
             {devToolsTab === 'overview' && <ProjectOverviewPage />}
             {devToolsTab === 'projects' && <ProjectManagerPage />}
+            {devToolsTab === 'goals' && <GoalsPage />}
             {devToolsTab === 'context-map' && <ContextMapPage />}
             {devToolsTab === 'idea-scanner' && <IdeaScannerPage />}
             {devToolsTab === 'idea-triage' && <IdeaTriagePage />}
             {devToolsTab === 'task-runner' && <TaskRunnerPage />}
             {devToolsTab === 'lifecycle' && <LifecyclePage />}
-            {devToolsTab === 'skills' && <SkillBrowserPage />}
-            {devToolsTab === 'fleet' && <FleetPage />}
+            {(devToolsTab === 'skills' || devToolsTab === 'fleet') && <FleetPage />}
           </Suspense>
         </div>
     </div>

@@ -123,7 +123,16 @@ export function GitHubIssueImportModal({ open, onClose, projectId, projectName, 
   }, [selected, issues, projectId, projectName, createGoal, addToast, tx, dt, onClose]);
 
   return (
-    <BaseModal isOpen={open} onClose={onClose} titleId="gh-issue-import-title" size="lg">
+    <BaseModal
+      isOpen={open}
+      onClose={onClose}
+      titleId="gh-issue-import-title"
+      size="lg"
+      // Solid surface — the default glass panel reads as washed-out on top
+      // of the projects table. A real card background gives the imported
+      // issues list enough contrast to scan quickly.
+      panelClassName="max-h-[85vh] bg-card rounded-2xl border border-primary/15 shadow-elevation-4 overflow-hidden"
+    >
       <div className="p-5 border-b border-primary/10 flex items-center gap-3">
         <GitBranch className="w-5 h-5 text-foreground" />
         <div className="flex-1 min-w-0">

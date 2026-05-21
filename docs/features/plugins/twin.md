@@ -202,7 +202,9 @@ This is the difference between "a shared brain" and "a brain that understands au
 
 ## Twin connector — agent-side execution layer
 
-The plugin exposes itself as the builtin connector **`builtin-twin`** (category `personalization`, `min_tier: builder`, `always_active: true`). Unlike most connectors it has **no fields and no auth** — the active twin row *is* the credential. The connector seed lives at `scripts/connectors/builtin/twin.json`.
+The plugin exposes itself as the builtin connector **`builtin-twin`** (category `personalization`, `min_tier: builder`). The catalog form is built around a **`twin_profile_id` picker** — at modal-open time `ConnectorCredentialModal` notices `metadata.requires_picker === "twin"`, fetches every row in `twin_profiles` via `listProfiles()`, and renders them as `{ value, label }` select options. The user picks one twin and names the binding ("Founder Twin", "Sales Twin", ...). The connector seed lives at `scripts/connectors/builtin/twin.json`.
+
+Multiple bindings per twin are allowed — they're distinct `persona_credentials` rows pointing at the same `twin_profile_id`, and a persona attaches one via `design_context.credential_links["twin"]`. Resolution chain in `twin_get_active_profile`: catalog binding (credential_links → field `twin_profile_id`) → legacy `design_context.twin_id` pin → globally-active twin. A binding whose target profile was deleted silently falls through to the next rule, so a stale binding never crashes a persona mid-execution.
 
 ### Tools the agent can call
 
@@ -227,7 +229,7 @@ The plugin exposes itself as the builtin connector **`builtin-twin`** (category 
 
 The connector keeps no state. Every tool call queries the DB fresh: which twin is active? what tone is set for this channel? what's in the KB? This means the twin can be edited in the plugin UI while an agent is mid-conversation and the next tool call picks up the new value without a restart.
 
-Per-persona overrides (Direction 3 above) are the next evolution: `design_context.twinId` lets a persona pin to a specific twin, but the runtime still resolves the global active twin today. Wiring the override is a ~20-line Rust change and turns Twin into a true multi-identity system.
+Per-persona overrides are wired: the resolution chain in `twin_get_active_profile` honours catalog bindings (`credential_links["twin"]` → credential's `twin_profile_id` field) first, then the legacy `design_context.twinId` pin, then the globally-active twin. The Twin connector now supports true multi-identity — a persona attached to a "Sales Twin" binding sees sales-channel tone and memory; a persona attached to a "Personal Twin" binding sees the personal layer.
 
 ---
 
@@ -278,7 +280,7 @@ src/api/twin/
 └── twin.ts                             # thin invokeWithTimeout wrappers around twin_* Tauri commands
 
 scripts/connectors/builtin/
-└── twin.json                           # builtin-twin connector seed (no fields, always_active, min_tier: builder)
+└── twin.json                           # builtin-twin connector seed (twin_profile_id picker, requires_picker:"twin", min_tier: builder)
 ```
 
 All copy lives under `t.twin.*` in the canonical locale bundle at `src/i18n/locales/en.json` (feature-scoped i18n directories were retired in the 2026-05-08 i18n consolidation pass). The `TwinBindingCard` in the persona editor reads/writes `design_context.twinId`, which is typed as `twin_id: Option<String>` in the Rust `DesignContextData` struct (`src-tauri/src/db/models/persona.rs`). Sidebar navigation for the 8 sub-tabs is defined as `twinItems` in `src/features/shared/components/layout/sidebar/sidebarData.ts`.

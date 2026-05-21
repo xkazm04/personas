@@ -5,10 +5,10 @@ import {
   Network, Database, Home, Compass, Shield, HardDriveDownload, Heart,
   FolderKanban, Map, Lightbulb, ArrowLeftRight, Play, Share2, Waypoints,
   Radio, Gauge, Unplug, Webhook, Puzzle, Store, Archive, Layers, Workflow,
-  GraduationCap, BookOpen, Trophy, AlertOctagon,
+  GraduationCap, BookOpen, Trophy, AlertOctagon, Target,
   User, Mic, Volume2, Sparkles,
   Wand2, Image as ImageIcon, Film, Gauge as GaugeIcon, Bell,
-  Terminal, RefreshCw, FolderOpen,
+  Terminal, RefreshCw, FolderOpen, ScrollText,
   type LucideIcon,
 } from 'lucide-react';
 import type { SidebarSection, HomeTab, OverviewTab } from '@/lib/types/types';
@@ -110,12 +110,12 @@ export const artistItems: SubNavItem[] = [
 export const devToolsItems: SubNavItem[] = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
   { id: 'projects', label: 'Projects', icon: FolderKanban },
+  { id: 'goals', label: 'Goals', icon: Target },
   { id: 'lifecycle', label: 'Lifecycle', icon: GitBranch },
   { id: 'context-map', label: 'Context Map', icon: Map },
   { id: 'idea-scanner', label: 'Idea Scanner', icon: Lightbulb },
   { id: 'idea-triage', label: 'Idea Triage', icon: ArrowLeftRight },
   { id: 'task-runner', label: 'Task Runner', icon: Play },
-  { id: 'skills', label: 'Skills', icon: BookOpen },
   // Fleet — Claude Code session aggregator for the active project.
   // Inherits the active project's root_path as the spawn cwd. Not
   // tier-gated here because the PluginsSidebarNav devToolsItems map
@@ -153,12 +153,15 @@ export const cloudItems: SubNavItem[] = [
 ];
 
 // Companion plugin sub-nav: Setup (toggles), Memory (brain viewer),
-// Voice (ElevenLabs credential picker + voice id). Voice playback in
-// chat is a separate downstream feature.
+// Voice (ElevenLabs credential picker + voice id), Dashboard (composed
+// widgets), Decisions (Athena's design-decision log). The in-page header
+// tab strip was retired — these all live in the L3 sidebar now.
 export const companionItems: SubNavItem[] = [
   { id: 'setup', label: 'Setup', icon: Settings },
   { id: 'memory', label: 'Memory', icon: Brain },
   { id: 'voice', label: 'Voice', icon: Mic },
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'decisions', label: 'Decisions', icon: ScrollText },
 ];
 
 // Obsidian Brain plugin sub-nav: promoted to sidebar L3 on 2026-05-17.

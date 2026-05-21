@@ -1,5 +1,5 @@
 import { useTranslation } from '@/i18n/useTranslation';
-import { TrendingUp, AlertTriangle, X, Zap, DollarSign, CheckCircle, Clock, Timer } from 'lucide-react';
+import { TrendingUp, AlertTriangle, X, Zap, DollarSign, CheckCircle, Clock, Timer, RefreshCw } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { DayRangePicker } from '@/features/overview/sub_usage/components/DayRangePicker';
 import { CompareToggle } from '@/features/overview/sub_usage/components/PersonaSelect';
@@ -18,7 +18,10 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
   const { t } = useTranslation();
   const m = useExecutionMetrics();
 
-  if (m.loading) {
+  // Stale-while-revalidate: only block on a cold fetch. A refetch over
+  // already-rendered data keeps the dashboard visible; the header shows a
+  // subtle refresh pip via `m.isRefreshing` below.
+  if (m.isInitialLoading) {
     return (
       <div className="flex-1 flex items-center justify-center p-8">
         <LoadingSpinner size="xl" className="text-primary/60" />
@@ -26,7 +29,7 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
     );
   }
 
-  if (m.error) {
+  if (m.error && !m.data) {
     return (
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="text-center">
@@ -62,6 +65,16 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
             <Timer className="w-3 h-3" />
             {m.activeRangeLabel}
           </span>
+          {m.isRefreshing && (
+            <span
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] text-blue-400/70"
+              aria-live="polite"
+              aria-label={t.common.refresh}
+              title={t.common.refresh}
+            >
+              <RefreshCw className="w-3 h-3 animate-spin" />
+            </span>
+          )}
         </div>
         {onClose && (
           <button onClick={onClose} className="p-1.5 rounded-card text-foreground hover:text-muted-foreground hover:bg-secondary/50 transition-colors">

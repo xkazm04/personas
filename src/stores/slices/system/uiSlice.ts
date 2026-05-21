@@ -80,8 +80,10 @@ export interface UiSlice {
   contextScanComplete: boolean;
   /** Pending category filter applied when the credentials catalog next mounts. */
   pendingCatalogCategoryFilter: string | null;
-  /** Pending sub-tab applied when the Lifecycle page next mounts (e.g. jump-to-goals from a Task Runner goal pill). */
-  pendingLifecycleSubTab: 'setup' | 'goals' | 'competitions' | 'tracking' | null;
+  /** Pending sub-tab applied when the Lifecycle page next mounts. Goals
+   *  lives in its own DevTools tab now, so any handoff that wants to
+   *  surface goals should call setDevToolsTab('goals') directly. */
+  pendingLifecycleSubTab: 'setup' | 'competitions' | 'tracking' | null;
   /** Pending task ID to scroll-into-view + highlight when TaskRunner next mounts (e.g. from a goal-spotlight task click). */
   pendingTaskFocusId: string | null;
   /** Pending goal ID to seed the Pulse variant of GoalConstellation on next mount (e.g. from a ContextMap goal-coverage badge click). */
@@ -122,7 +124,7 @@ export interface UiSlice {
   setContextScanActive: (active: boolean) => void;
   setContextScanComplete: (complete: boolean) => void;
   setPendingCatalogCategoryFilter: (category: string | null) => void;
-  setPendingLifecycleSubTab: (tab: 'setup' | 'goals' | 'competitions' | 'tracking' | null) => void;
+  setPendingLifecycleSubTab: (tab: 'setup' | 'competitions' | 'tracking' | null) => void;
   setPendingTaskFocusId: (id: string | null) => void;
   setPendingGoalSpotlightId: (id: string | null) => void;
   setCanvasEdgeFocus: (focus: { edgeId: string; eventType: string; sourceFilter: string | null } | null) => void;

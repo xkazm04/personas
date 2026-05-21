@@ -187,6 +187,12 @@ export interface ConnectorMetadata {
   pricing_tier?: string;
   /** Origin tag — e.g. 'cli' for credentials authored via the CLI panel. */
   source?: string;
+  /**
+   * Marker that the credential form needs a runtime data fetch to populate
+   * a field's options. Today only `"twin"` is wired — the modal loads
+   * existing TwinProfile rows so each binding points to a real profile.
+   */
+  requires_picker?: string;
 }
 
 /**
@@ -211,6 +217,7 @@ export function parseConnectorMetadata(raw: unknown): ConnectorMetadata {
   if (typeof m.template_enabled === 'boolean') out.template_enabled = m.template_enabled;
   if (typeof m.pricing_tier === 'string') out.pricing_tier = m.pricing_tier;
   if (typeof m.source === 'string') out.source = m.source;
+  if (typeof m.requires_picker === 'string') out.requires_picker = m.requires_picker;
   return out;
 }
 
@@ -343,7 +350,13 @@ export interface CredentialTemplateField {
   placeholder?: string;
   helpText?: string;
   required?: boolean;
-  options?: string[];
+  /**
+   * For `type: "select"` fields. Entries can be plain strings (value === label)
+   * or `{ value, label }` pairs when the stored value differs from what the
+   * user should see — e.g. the Twin connector's `twin_profile_id` field stores
+   * a UUID but displays the twin's name.
+   */
+  options?: Array<string | { value: string; label: string }>;
 }
 
 /** Credential template event definition */
@@ -392,7 +405,7 @@ export type OverviewTab = "home" | "incidents" | "executions" | "manual-review" 
 export type TemplateTab = "n8n" | "generated" | "recipes";
 export type CloudTab = "cloud" | "gitlab" | "unified";
 export type SettingsTab = "account" | "appearance" | "notifications" | "engine" | "byom" | "portability" | "network" | "admin" | "config" | "api-keys";
-export type DevToolsTab = "overview" | "projects" | "context-map" | "idea-scanner" | "idea-triage" | "task-runner" | "lifecycle" | "skills" | "fleet";
+export type DevToolsTab = "overview" | "projects" | "goals" | "context-map" | "idea-scanner" | "idea-triage" | "task-runner" | "lifecycle" | "skills" | "fleet";
 export type AgentTab = "all" | "create" | "team" | "cloud";
 export type PluginTab = "browse" | "dev-tools" | "artist" | "obsidian-brain" | "research-lab" | "drive" | "twin" | "companion" | "langfuse";
 export type ResearchLabTab = "dashboard" | "projects" | "literature" | "hypotheses" | "experiments" | "findings" | "reports" | "graph";
