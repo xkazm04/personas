@@ -39,6 +39,11 @@ const MCP_SESSION_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(
 /// TTL for cached `tools/list` responses (60 seconds).
 const TOOLS_LIST_CACHE_TTL: std::time::Duration = std::time::Duration::from_secs(60);
 
+/// Maximum number of `tools/list` pages to follow via `nextCursor` before
+/// stopping — guards against a buggy or hostile server returning an endless
+/// cursor chain. 50 pages is far above any realistic MCP server's tool count.
+const MCP_TOOLS_LIST_MAX_PAGES: usize = 50;
+
 /// Timeout for MCP stdin write + flush operations (prevents hung process accumulation).
 const MCP_WRITE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(30);
 
@@ -895,19 +900,57 @@ async fn execute_tool_stdio_inner(
     }
 }
 
+/// Drain a paginated `tools/list` over a pooled stdio session, following
+/// `result.nextCursor` until the server stops returning one. Returns the raw
+/// tool JSON objects accumulated across every page.
+///
+/// MCP servers may split `tools/list` across pages (`{ tools, nextCursor }`);
+/// a client that reads only the first page silently loses every tool past it.
+/// Capped at `MCP_TOOLS_LIST_MAX_PAGES`.
+async fn fetch_tools_paginated_stdio(
+    session: &mut PooledStdioSession,
+) -> Result<Vec<serde_json::Value>, AppError> {
+    let mut all_tools: Vec<serde_json::Value> = Vec::new();
+    let mut cursor: Option<String> = None;
+
+    for page in 0..MCP_TOOLS_LIST_MAX_PAGES {
+        let params = match &cursor {
+            Some(c) => serde_json::json!({ "cursor": c }),
+            None => serde_json::json!({}),
+        };
+        let list_req = jsonrpc_request(session.next_id, "tools/list", params);
+        session.next_id += 1;
+
+        write_session_jsonrpc(&mut session.stdin, &list_req).await?;
+        let list_resp = read_session_jsonrpc(&mut session.reader).await?;
+
+        let result = list_resp
+            .get("result")
+            .ok_or_else(|| AppError::Internal("Invalid tools/list response".into()))?;
+        let page_tools = result
+            .get("tools")
+            .and_then(|t| t.as_array())
+            .ok_or_else(|| AppError::Internal("Invalid tools/list response".into()))?;
+        all_tools.extend(page_tools.iter().cloned());
+
+        match result.get("nextCursor").and_then(|c| c.as_str()) {
+            Some(next) if !next.is_empty() => cursor = Some(next.to_string()),
+            _ => return Ok(all_tools),
+        }
+
+        if page + 1 == MCP_TOOLS_LIST_MAX_PAGES {
+            tracing::warn!(
+                pages = MCP_TOOLS_LIST_MAX_PAGES,
+                "MCP tools/list exceeded page cap — returning partial tool list"
+            );
+        }
+    }
+    Ok(all_tools)
+}
+
 /// Execute `tools/list` on an already-initialized session.
 async fn list_tools_on_session(session: &mut PooledStdioSession) -> Result<Vec<McpTool>, AppError> {
-    let list_req = jsonrpc_request(session.next_id, "tools/list", serde_json::json!({}));
-    session.next_id += 1;
-
-    write_session_jsonrpc(&mut session.stdin, &list_req).await?;
-    let list_resp = read_session_jsonrpc(&mut session.reader).await?;
-
-    let tools_val = list_resp
-        .get("result")
-        .and_then(|r| r.get("tools"))
-        .and_then(|t| t.as_array())
-        .ok_or_else(|| AppError::Internal("Invalid tools/list response".into()))?;
+    let tools_val = fetch_tools_paginated_stdio(session).await?;
 
     let tools: Vec<McpTool> = tools_val
         .iter()
@@ -928,12 +971,8 @@ async fn execute_tool_on_session(
     if let Some(schema_opt) = cached_schema {
         validate_arguments_against_schema(arguments, schema_opt.as_ref())?;
     } else {
-        let list_req = jsonrpc_request(session.next_id, "tools/list", serde_json::json!({}));
-        session.next_id += 1;
-        write_session_jsonrpc(&mut session.stdin, &list_req).await?;
-        let list_resp = read_session_jsonrpc(&mut session.reader).await?;
-
-        let schema = extract_tool_schema(&list_resp, tool_name)?;
+        let tools_val = fetch_tools_paginated_stdio(session).await?;
+        let schema = extract_tool_schema(&tools_val, tool_name)?;
         validate_arguments_against_schema(arguments, schema.as_ref())?;
     }
 
@@ -975,6 +1014,50 @@ fn is_io_error(e: &AppError) -> bool {
 // SSE transport
 // ============================================================================
 
+/// Drain a paginated `tools/list` over an SSE/HTTP MCP server, following
+/// `result.nextCursor` across pages. `start_id` is the first JSON-RPC id to
+/// use (the caller has already consumed lower ids for `initialize`). Capped at
+/// `MCP_TOOLS_LIST_MAX_PAGES`. See `fetch_tools_paginated_stdio` for rationale.
+async fn fetch_tools_paginated_sse(
+    client: &reqwest::Client,
+    url: &str,
+    auth_token: Option<&String>,
+    start_id: u64,
+) -> Result<Vec<serde_json::Value>, AppError> {
+    let mut all_tools: Vec<serde_json::Value> = Vec::new();
+    let mut cursor: Option<String> = None;
+
+    for page in 0..MCP_TOOLS_LIST_MAX_PAGES {
+        let params = match &cursor {
+            Some(c) => serde_json::json!({ "cursor": c }),
+            None => serde_json::json!({}),
+        };
+        let list_payload = jsonrpc_request(start_id + page as u64, "tools/list", params);
+        let list_resp = send_sse_request(client, url, auth_token, &list_payload).await?;
+
+        let result = list_resp.get("result").ok_or_else(|| {
+            AppError::Internal("Invalid tools/list response from SSE server".into())
+        })?;
+        let page_tools = result.get("tools").and_then(|t| t.as_array()).ok_or_else(|| {
+            AppError::Internal("Invalid tools/list response from SSE server".into())
+        })?;
+        all_tools.extend(page_tools.iter().cloned());
+
+        match result.get("nextCursor").and_then(|c| c.as_str()) {
+            Some(next) if !next.is_empty() => cursor = Some(next.to_string()),
+            _ => return Ok(all_tools),
+        }
+
+        if page + 1 == MCP_TOOLS_LIST_MAX_PAGES {
+            tracing::warn!(
+                pages = MCP_TOOLS_LIST_MAX_PAGES,
+                "MCP tools/list (SSE) exceeded page cap — returning partial tool list"
+            );
+        }
+    }
+    Ok(all_tools)
+}
+
 async fn list_tools_sse(fields: &HashMap<String, String>) -> Result<Vec<McpTool>, AppError> {
     let url = fields
         .get("url")
@@ -1001,15 +1084,8 @@ async fn list_tools_sse(fields: &HashMap<String, String>) -> Result<Vec<McpTool>
 
     let _init_resp = send_sse_request(&client, url, auth_token, &init_payload).await?;
 
-    // List tools
-    let list_payload = jsonrpc_request(2, "tools/list", serde_json::json!({}));
-    let list_resp = send_sse_request(&client, url, auth_token, &list_payload).await?;
-
-    let tools_val = list_resp
-        .get("result")
-        .and_then(|r| r.get("tools"))
-        .and_then(|t| t.as_array())
-        .ok_or_else(|| AppError::Internal("Invalid tools/list response from SSE server".into()))?;
+    // List tools — follow `nextCursor` so tools past page 1 are not dropped.
+    let tools_val = fetch_tools_paginated_sse(&client, url, auth_token, 2).await?;
 
     let tools: Vec<McpTool> = tools_val
         .iter()
@@ -1053,10 +1129,8 @@ async fn execute_tool_sse(
     if let Some(schema_opt) = cached_schema {
         validate_arguments_against_schema(arguments, schema_opt.as_ref())?;
     } else {
-        let list_payload = jsonrpc_request(2, "tools/list", serde_json::json!({}));
-        let list_resp = send_sse_request(&client, url, auth_token, &list_payload).await?;
-
-        let schema = extract_tool_schema(&list_resp, tool_name)?;
+        let tools_val = fetch_tools_paginated_sse(&client, url, auth_token, 2).await?;
+        let schema = extract_tool_schema(&tools_val, tool_name)?;
         validate_arguments_against_schema(arguments, schema.as_ref())?;
     }
 
@@ -1141,20 +1215,16 @@ fn json_depth(value: &serde_json::Value) -> usize {
     }
 }
 
-/// Extract the `input_schema` for a specific tool from a `tools/list` response.
+/// Extract the `input_schema` for a specific tool from an accumulated
+/// `tools/list` tool array (already drained across every page via
+/// `fetch_tools_paginated_*`).
 /// Returns `Ok(None)` if the tool exists but has no schema.
 /// Returns `Err` if the tool is not found in the server's tool list.
 fn extract_tool_schema(
-    list_resp: &serde_json::Value,
+    tools: &[serde_json::Value],
     tool_name: &str,
 ) -> Result<Option<serde_json::Value>, AppError> {
-    let tools_arr = list_resp
-        .get("result")
-        .and_then(|r| r.get("tools"))
-        .and_then(|t| t.as_array())
-        .ok_or_else(|| AppError::Internal("Invalid tools/list response".into()))?;
-
-    let tool = tools_arr
+    let tool = tools
         .iter()
         .find(|t| t.get("name").and_then(|n| n.as_str()) == Some(tool_name))
         .ok_or_else(|| {
