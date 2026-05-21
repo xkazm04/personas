@@ -24,6 +24,8 @@ import {
 } from '../_shared/tokens';
 import { NoActiveProject } from '../_shared/EmptyState';
 import { useIngestSource } from '../_shared/useIngestSource';
+import { DebtText, debtText } from '@/i18n/DebtText';
+
 
 const AddSourceForm = lazy(() => import('./AddSourceForm'));
 const ArxivSearchModal = lazy(() => import('./ArxivSearchModal'));
@@ -113,20 +115,20 @@ export default function LiteratureSearchPanelWorkbench() {
             </div>
             <div className="flex flex-col leading-tight">
               <span className="typo-section-title text-foreground">{t.research_lab.literature}</span>
-              <span className="text-xs uppercase tracking-[0.2em] text-foreground/60">
-                Workbench · {filtered.length} of {sources.length}
+              <span className="typo-label uppercase tracking-[0.2em] text-foreground">
+                <DebtText k="auto_workbench_361b6e18" /> {filtered.length} of {sources.length}
               </span>
             </div>
           </div>
           <div className="flex-1" />
           <div className="flex items-center gap-2 flex-wrap">
             <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground/40 pointer-events-none" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground pointer-events-none" />
               <input
                 type="search"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Filter cards…"
+                placeholder={debtText("auto_filter_cards_27ffc545")}
                 className="pl-8 pr-3 py-1.5 rounded-input bg-secondary/50 border border-border/30 text-foreground typo-caption placeholder:text-foreground/40 focus:outline-none focus:border-primary/40 w-44"
               />
             </div>
@@ -241,7 +243,7 @@ function TypeChip({
       className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full typo-caption transition-colors ${
         active
           ? 'bg-primary/20 text-primary'
-          : 'bg-foreground/[0.04] text-foreground/70 hover:bg-foreground/[0.08]'
+          : 'bg-foreground/[0.04] text-foreground hover:bg-foreground/[0.08]'
       }`}
     >
       <span>{label}</span>
@@ -283,7 +285,7 @@ function IndexCard({
       {/* Year stamp top-right */}
       {source.year != null && (
         <span
-          className="absolute top-2 right-2 px-1.5 py-0.5 text-[9px] font-mono tracking-wider rounded-sm border border-black/15 text-black/50"
+          className="absolute top-2 right-2 px-1.5 py-0.5 text-[9px] font-mono tracking-wider rounded-interactive border border-black/15 text-black/50"
           style={{ transform: 'rotate(2deg)' }}
         >
           {source.year}
@@ -292,7 +294,7 @@ function IndexCard({
 
       <div className="absolute inset-0 p-4 flex flex-col">
         <div className="flex items-center gap-1.5 mb-2">
-          <span className="px-1.5 py-0.5 text-[9px] font-mono tracking-wider rounded-sm bg-black/[0.04] text-black/65">
+          <span className="px-1.5 py-0.5 text-[9px] font-mono tracking-wider rounded-interactive bg-black/[0.04] text-black/65">
             {TYPE_GLYPH[source.sourceType as SourceType] ?? source.sourceType}
           </span>
           {source.relevanceScore != null && (
@@ -301,7 +303,7 @@ function IndexCard({
             </span>
           )}
         </div>
-        <p className="text-sm leading-snug font-medium text-black/85 line-clamp-3 mb-2">
+        <p className="typo-body leading-snug font-medium text-black/85 line-clamp-3 mb-2">
           {source.title}
         </p>
         {source.authors && (
@@ -379,13 +381,13 @@ function ReadingDrawer({
             )}
             {source.relevanceScore != null && (
               <span className="px-2 py-0.5 typo-caption rounded-full bg-primary/15 text-primary tabular-nums">
-                {Math.round(source.relevanceScore * 100)}% relevance
+                {Math.round(source.relevanceScore * 100)}<DebtText k="auto_relevance_6fe84b23" />
               </span>
             )}
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-interactive hover:bg-foreground/[0.06] text-foreground/65 hover:text-foreground transition-colors"
+            className="p-1.5 rounded-interactive hover:bg-foreground/[0.06] text-foreground hover:text-foreground transition-colors"
             aria-label="Close"
           >
             <X className="w-4 h-4" />
@@ -393,7 +395,7 @@ function ReadingDrawer({
         </div>
         <h2 className="typo-section-title text-foreground leading-tight mb-2">{source.title}</h2>
         {source.authors && (
-          <p className="typo-body text-foreground/75 mb-4">{source.authors}</p>
+          <p className="typo-body text-foreground mb-4">{source.authors}</p>
         )}
         {source.abstractText && (
           <p className="typo-body text-foreground/85 leading-relaxed mb-4">
@@ -452,7 +454,7 @@ function WorkbenchEmpty({
           onClick={onClearFilters}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive typo-caption bg-foreground/[0.06] text-foreground/85 hover:bg-foreground/[0.1] transition-colors"
         >
-          Clear filters
+          <DebtText k="auto_clear_filters_41222671" />
         </button>
       </div>
     );
@@ -463,7 +465,7 @@ function WorkbenchEmpty({
         <BookOpen className="w-6 h-6 text-primary" />
       </div>
       <p className="typo-body-lg text-foreground">{t.research_lab.no_sources}</p>
-      <p className="typo-body text-foreground/70 max-w-md mx-auto">{t.research_lab.no_sources_hint}</p>
+      <p className="typo-body text-foreground max-w-md mx-auto">{t.research_lab.no_sources_hint}</p>
       <div className="flex items-center justify-center gap-2">
         <button
           onClick={onArxiv}
@@ -477,7 +479,7 @@ function WorkbenchEmpty({
           className="inline-flex items-center gap-1.5 px-4 py-2 rounded-interactive typo-caption bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
         >
           <Plus className="w-3.5 h-3.5" />
-          Add source
+          <DebtText k="auto_add_source_3bab9497" />
         </button>
       </div>
     </div>

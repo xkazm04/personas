@@ -87,7 +87,7 @@ export function TileModelStrip({ personaId, uc, personaDefaultModelProfile }: Ti
           className={`w-full flex items-center justify-center gap-1 px-2 py-0.5 rounded-interactive border transition-colors cursor-pointer ${
             hasOverride
               ? 'bg-status-warning/10 border-status-warning/30 text-status-warning/95 hover:bg-status-warning/18'
-              : 'bg-secondary/40 border-card-border/60 text-foreground/70 hover:bg-secondary/60 hover:text-foreground/95 hover:border-foreground/30'
+              : 'bg-secondary/40 border-card-border/60 text-foreground hover:bg-secondary/60 hover:text-foreground/95 hover:border-foreground/30'
           }`}
         >
           <Cpu className="w-3 h-3 shrink-0" />
@@ -102,7 +102,7 @@ export function TileModelStrip({ personaId, uc, personaDefaultModelProfile }: Ti
       {({ close, focusIndex }) => (
         <div className="py-1 max-h-56 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
           {/* Persona Default group */}
-          <div className="px-3 pt-1.5 pb-1 typo-label uppercase tracking-wider text-foreground/55">
+          <div className="px-3 pt-1.5 pb-1 typo-label uppercase tracking-wider text-foreground">
             {t.agents.use_cases.model_persona_default_group}
           </div>
           <button
@@ -113,10 +113,10 @@ export function TileModelStrip({ personaId, uc, personaDefaultModelProfile }: Ti
               focusIndex === 0 ? 'bg-secondary/60' : 'hover:bg-secondary/40'
             } ${!hasOverride ? 'text-primary' : 'text-foreground'}`}
           >
-            <Link2 className="w-3 h-3 flex-shrink-0 text-foreground/70" />
+            <Link2 className="w-3 h-3 flex-shrink-0 text-foreground" />
             <span className="flex-1 text-left">
               {t.agents.use_cases.model_use_persona_default}
-              <span className="text-foreground/55 ml-1.5">({personaDefault.label})</span>
+              <span className="text-foreground ml-1.5">({personaDefault.label})</span>
             </span>
             {!hasOverride && <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />}
           </button>

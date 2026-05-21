@@ -49,7 +49,7 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
             data-testid="dry-run-from-execution-btn"
             onClick={dryRun.run}
             disabled={dryRun.loading}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-card typo-caption border border-primary/15 bg-secondary/30 text-foreground/80 hover:bg-secondary/50 hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-card typo-caption border border-primary/15 bg-secondary/30 text-foreground hover:bg-secondary/50 hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             title={t.agents.executions.dry_run.button_hint}
           >
             <FlaskConical className="w-3 h-3" />

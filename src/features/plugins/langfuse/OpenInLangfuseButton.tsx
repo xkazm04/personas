@@ -5,6 +5,8 @@ import { getExecutionTrace } from "@/api/agents/executions";
 import { open as openExternal } from "@tauri-apps/plugin-shell";
 import type { LangfuseConfig } from "@/lib/bindings/LangfuseConfig";
 import { silentCatch } from "@/lib/silentCatch";
+import { DebtText } from '@/i18n/DebtText';
+
 
 interface OpenInLangfuseButtonProps {
   executionId: string;
@@ -57,18 +59,14 @@ export function OpenInLangfuseButton({ executionId, personaId }: OpenInLangfuseB
       try {
         await langfuseOpenAuthenticatedUI(tracePath);
         return;
-      } catch {
-        // Fall through to the plain open path on failure.
-      }
+      } catch (err) { silentCatch("features/plugins/langfuse/OpenInLangfuseButton:catch1")(err); }
     }
     try {
       await openExternal(url);
     } catch {
       try {
         await langfuseStackOpenUI();
-      } catch {
-        // openExternal isn't available on every platform; best effort.
-      }
+      } catch (err) { silentCatch("features/plugins/langfuse/OpenInLangfuseButton:catch2")(err); }
     }
   };
 
@@ -80,7 +78,7 @@ export function OpenInLangfuseButton({ executionId, personaId }: OpenInLangfuseB
       title={url}
     >
       <ExternalLink className="w-3.5 h-3.5" />
-      Open in Langfuse
+      <DebtText k="auto_open_in_langfuse_10b35dbc" />
     </button>
   );
 }

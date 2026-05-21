@@ -43,7 +43,7 @@ export default function EqualizerBars({ accentColor, isPlaying }: EqualizerBarsP
       {bars.map((b, i) => (
         <div
           key={i}
-          className="flex-1 rounded-sm origin-bottom"
+          className="flex-1 rounded-interactive origin-bottom"
           style={{
             background: accentColor,
             opacity: 0.85,

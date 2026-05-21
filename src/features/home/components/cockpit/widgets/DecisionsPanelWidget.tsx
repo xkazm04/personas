@@ -9,6 +9,8 @@ import type { UnifiedInboxItem } from '@/features/plugins/companion/inbox/types'
 
 import type { CockpitWidgetProps } from '../widgetRegistry';
 import { DecisionDrawer } from './DecisionDrawer';
+import { DebtText } from '@/i18n/DebtText';
+
 
 /**
  * Decisions panel — flat list of unified inbox items (approvals + messages +
@@ -30,17 +32,17 @@ export function DecisionsPanelWidget({ config, title }: CockpitWidgetProps) {
   return (
     <div className="rounded-card border border-foreground/10 bg-foreground/[0.02] p-4 h-full flex flex-col min-h-0">
       <div className="flex items-center justify-between mb-3">
-        <div className="typo-caption text-foreground/60 uppercase tracking-wide">
+        <div className="typo-caption text-foreground uppercase tracking-wide">
           {title ?? 'Decisions to make'}
         </div>
-        <div className="typo-caption text-foreground/40">
+        <div className="typo-caption text-foreground">
           {rows.length} of {inbox.length}
         </div>
       </div>
       {rows.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center gap-2 text-foreground/40">
+        <div className="flex-1 flex flex-col items-center justify-center gap-2 text-foreground">
           <Inbox className="w-6 h-6" />
-          <div className="typo-caption">Nothing waiting</div>
+          <div className="typo-caption"><DebtText k="auto_nothing_waiting_c5cb3e55" /></div>
         </div>
       ) : (
         <ul className="flex-1 space-y-1 overflow-y-auto">
@@ -54,7 +56,7 @@ export function DecisionsPanelWidget({ config, title }: CockpitWidgetProps) {
                 <KindGlyph kind={item.kind} tone={toneForInboxItem(item)} />
                 <div className="flex-1 min-w-0">
                   <div className="typo-caption truncate text-foreground/85">{item.title}</div>
-                  <div className="typo-caption text-foreground/45 truncate">
+                  <div className="typo-caption text-foreground truncate">
                     {item.personaName} · {formatRelativeTime(item.createdAt, t)}
                   </div>
                 </div>

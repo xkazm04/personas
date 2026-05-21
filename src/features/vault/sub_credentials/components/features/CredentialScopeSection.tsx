@@ -53,7 +53,7 @@ export function CredentialScopeSection({ credential, connector }: CredentialScop
           variant="ghost"
           size="xs"
           icon={<Pencil className="w-3.5 h-3.5" />}
-          className="text-foreground/70 hover:text-foreground"
+          className="text-foreground hover:text-foreground"
         >
           {sh.scope_edit}
         </Button>
@@ -66,7 +66,7 @@ export function CredentialScopeSection({ credential, connector }: CredentialScop
           return (
             <div key={spec.id} className="space-y-1.5">
               <div className="flex items-center gap-2">
-                <span className="typo-caption font-medium text-foreground/80">
+                <span className="typo-caption font-medium text-foreground">
                   {spec.label}
                 </span>
                 {spec.required && isBroad && (
@@ -75,8 +75,8 @@ export function CredentialScopeSection({ credential, connector }: CredentialScop
               </div>
               {isBroad ? (
                 <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-input bg-secondary/30 border border-foreground/10">
-                  <Globe className="w-3 h-3 text-foreground/50" />
-                  <span className="typo-caption text-foreground/60">{sh.scope_broad}</span>
+                  <Globe className="w-3 h-3 text-foreground" />
+                  <span className="typo-caption text-foreground">{sh.scope_broad}</span>
                 </div>
               ) : (
                 <div className="flex flex-wrap gap-1.5">
@@ -88,7 +88,7 @@ export function CredentialScopeSection({ credential, connector }: CredentialScop
                     >
                       <span className="truncate max-w-[18ch]">{p.label}</span>
                       {p.sublabel && (
-                        <span className="text-foreground/50 truncate max-w-[14ch]">
+                        <span className="text-foreground truncate max-w-[14ch]">
                           · {p.sublabel}
                         </span>
                       )}

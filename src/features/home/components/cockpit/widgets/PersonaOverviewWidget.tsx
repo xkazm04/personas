@@ -76,7 +76,7 @@ export function PersonaOverviewWidget({ config, title }: CockpitWidgetProps) {
 
   if (!hero) {
     return (
-      <div className="h-full flex flex-col items-center justify-center gap-2 text-foreground/40 p-6">
+      <div className="h-full flex flex-col items-center justify-center gap-2 text-foreground p-6">
         <Bot className="w-6 h-6" />
         <div className="typo-caption">{t.plugins.companion.persona_overview_empty}</div>
       </div>
@@ -147,7 +147,7 @@ export function PersonaOverviewWidget({ config, title }: CockpitWidgetProps) {
             <StoryStrip />
             {rest.length > 0 && (
               <div className="rounded-card border border-foreground/8 bg-background/30 p-2.5">
-                <p className="text-[10px] uppercase tracking-[0.18em] text-foreground/55 font-medium mb-2 px-1">
+                <p className="text-[10px] uppercase tracking-[0.18em] text-foreground font-medium mb-2 px-1">
                   {t.plugins.companion.persona_overview_rest_heading}
                 </p>
                 <ul className="flex flex-col gap-1">
@@ -246,7 +246,7 @@ function HeroCard({
         <button
           type="button"
           onClick={() => onOpen(persona.id)}
-          className="typo-caption text-foreground/65 hover:text-foreground transition-colors inline-flex items-center gap-1"
+          className="typo-caption text-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
         >
           {t.plugins.companion.persona_overview_view_full}
           <ArrowRight className="w-3 h-3" />
@@ -276,7 +276,7 @@ function StoryStrip() {
     <div className="rounded-card border border-foreground/8 bg-background/30 p-3">
       <div className="flex items-center gap-1.5 mb-2">
         <Sparkles className="w-3 h-3 text-primary/70" />
-        <p className="text-[10px] uppercase tracking-[0.18em] text-foreground/55 font-medium">
+        <p className="text-[10px] uppercase tracking-[0.18em] text-foreground font-medium">
           {t.plugins.companion.persona_overview_next_steps_label}
         </p>
       </div>
@@ -288,7 +288,7 @@ function StoryStrip() {
             </span>
             <div className="min-w-0">
               <p className="typo-caption text-foreground/95 font-medium leading-snug">{s.label}</p>
-              <p className="text-[11px] text-foreground/55 leading-snug">{s.body}</p>
+              <p className="text-[11px] text-foreground leading-snug">{s.body}</p>
             </div>
           </li>
         ))}
@@ -318,7 +318,7 @@ function KpiPanel({
           : 'text-foreground/95';
   return (
     <div className="rounded-input border border-foreground/8 bg-background/40 px-2.5 py-2">
-      <div className="flex items-center gap-1.5 text-foreground/55">
+      <div className="flex items-center gap-1.5 text-foreground">
         <Icon className="w-3 h-3" />
         <span className="text-[10px] uppercase tracking-[0.16em] font-medium">{label}</span>
       </div>
@@ -347,11 +347,11 @@ function RosterThumb({ persona, onOpen }: { persona: Persona; onOpen: (id: strin
         <span className="typo-caption text-foreground/85 truncate block group-hover:text-foreground">
           {persona.name}
         </span>
-        <span className={`text-[10px] ${flag ? 'text-amber-300' : 'text-foreground/45'}`}>
+        <span className={`text-[10px] ${flag ? 'text-amber-300' : 'text-foreground'}`}>
           {flag ? flag.label : tierLabel}
         </span>
       </span>
-      <ArrowRight className="w-3 h-3 text-foreground/30 group-hover:text-foreground/65" />
+      <ArrowRight className="w-3 h-3 text-foreground group-hover:text-foreground/65" />
     </button>
   );
 }

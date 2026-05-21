@@ -86,7 +86,7 @@ export function DesignCapabilitiesWidget({ config, title }: CockpitWidgetProps) 
       className="rounded-card border border-foreground/15 bg-secondary/40 p-4 space-y-3"
       data-testid="companion-design-capabilities-widget"
     >
-      <header className="flex items-baseline gap-2 typo-caption text-foreground/80">
+      <header className="flex items-baseline gap-2 typo-caption text-foreground">
         <Sparkles className="w-3.5 h-3.5 text-amber-300/85" />
         <span className="font-medium">
           {title || t.plugins.companion.design_cap_title}
@@ -104,15 +104,15 @@ export function DesignCapabilitiesWidget({ config, title }: CockpitWidgetProps) 
               className="rounded-card border border-foreground/10 bg-secondary/50 p-2.5 space-y-1"
             >
               <div className="flex items-center gap-1.5">
-                <Icon className="w-3.5 h-3.5 text-foreground/55 shrink-0" />
+                <Icon className="w-3.5 h-3.5 text-foreground shrink-0" />
                 <span className="typo-body font-medium text-foreground/95">
                   {row.label}
                 </span>
               </div>
-              <p className="typo-caption text-foreground/70 pl-5">
+              <p className="typo-caption text-foreground pl-5">
                 {row.behavior}
               </p>
-              <p className="typo-caption text-foreground/45 pl-5 italic">
+              <p className="typo-caption text-foreground pl-5 italic">
                 {t.plugins.companion.design_cap_example_prefix} {row.example}
               </p>
             </li>

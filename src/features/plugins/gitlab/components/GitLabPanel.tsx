@@ -15,6 +15,8 @@ import { GitOpsVersionHistory } from '@/features/plugins/gitlab/components/GitOp
 import { DeploymentHistoryTab } from '@/features/plugins/gitlab/components/DeploymentHistoryTab';
 import type { CiCdTemplate } from '../data/cicdTemplates';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 // ---------------------------------------------------------------------------
 // Types
@@ -81,9 +83,7 @@ export default function GitLabPanel() {
     if (!gitlabCredential) return;
     try {
       await connectFromVault(gitlabCredential.id, instanceUrl);
-    } catch {
-      // intentional: error state handled locally via store + ErrorBanner
-    }
+    } catch (err) { silentCatch("features/plugins/gitlab/components/GitLabPanel:catch1")(err); }
   };
 
   const handleDisconnect = async () => {

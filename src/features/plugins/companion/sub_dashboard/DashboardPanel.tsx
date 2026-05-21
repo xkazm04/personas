@@ -59,10 +59,10 @@ export default function DashboardPanel() {
 
   if (!spec) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-foreground/60 gap-3">
-        <LayoutDashboard className="w-8 h-8 text-foreground/30" />
+      <div className="flex flex-col items-center justify-center py-20 text-foreground gap-3">
+        <LayoutDashboard className="w-8 h-8 text-foreground" />
         <div className="typo-body font-medium">{t.plugins.companion.dashboard_empty_title}</div>
-        <div className="typo-caption text-foreground/50 max-w-md text-center">
+        <div className="typo-caption text-foreground max-w-md text-center">
           {t.plugins.companion.dashboard_empty_body}
         </div>
       </div>
@@ -72,9 +72,7 @@ export default function DashboardPanel() {
   let body: CompanionDashboardSpecBody | null = null;
   try {
     body = JSON.parse(spec.specJson) as CompanionDashboardSpecBody;
-  } catch {
-    // Invalid saved specs render as an empty dashboard below.
-  }
+  } catch (err) { silentCatch("features/plugins/companion/sub_dashboard/DashboardPanel:catch1")(err); }
   const widgets = body?.widgets ?? [];
 
   return (
@@ -82,7 +80,7 @@ export default function DashboardPanel() {
       {body?.title && (
         <div className="flex items-center justify-between">
           <h2 className="typo-h3 font-semibold text-foreground">{body.title}</h2>
-          <div className="typo-caption text-foreground/40">
+          <div className="typo-caption text-foreground">
             {t.plugins.companion.dashboard_updated_at.replace(
               '{{when}}',
               formatRelative(spec.updatedAt),

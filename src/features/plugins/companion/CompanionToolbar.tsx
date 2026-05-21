@@ -274,7 +274,7 @@ function ToolbarButton({
       className={`w-8 h-8 rounded-interactive inline-flex items-center justify-center transition-colors focus-ring disabled:opacity-40 disabled:cursor-not-allowed ${
         active
           ? 'bg-primary/15 text-primary'
-          : 'text-foreground/60 hover:text-foreground hover:bg-foreground/5'
+          : 'text-foreground hover:text-foreground hover:bg-foreground/5'
       }`}
       aria-label={label}
       title={label}
@@ -313,7 +313,7 @@ function PluginToggleButton({
       className={`w-8 h-8 rounded-interactive inline-flex items-center justify-center transition-all focus-ring ${
         enabled
           ? 'bg-primary/25 text-primary ring-1 ring-primary/60 shadow-[0_0_10px_rgba(96,165,250,0.35)]'
-          : 'text-foreground/55 hover:text-foreground hover:bg-foreground/5'
+          : 'text-foreground hover:text-foreground hover:bg-foreground/5'
       }`}
       aria-label={label}
       title={label}

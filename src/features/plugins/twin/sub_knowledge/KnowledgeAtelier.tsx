@@ -130,7 +130,7 @@ export default function KnowledgeAtelier() {
           <div className="flex-1 min-w-0">
             <p className="text-[10px] uppercase tracking-[0.22em] text-violet-300/80 font-medium">{t.knowledge.eyebrowAtelier}</p>
             <h1 className="typo-heading-lg text-foreground/95">{t.knowledge.title} — {activeTwin?.name ?? ''}</h1>
-            <p className="typo-caption text-foreground/65 mt-0.5">{t.knowledge.subtitle}</p>
+            <p className="typo-caption text-foreground mt-0.5">{t.knowledge.subtitle}</p>
           </div>
           <div className="hidden md:flex items-center gap-3 px-3 py-2 rounded-full border border-primary/15 bg-card/40">
             <Stat label={t.knowledge.statPending} value={stats.pending} accent={stats.pending > 10 ? 'amber' : 'violet'} />
@@ -154,7 +154,7 @@ export default function KnowledgeAtelier() {
         </div>
         <div className="flex-1 min-w-0">
           <p className="typo-card-label text-foreground/90">{t.knowledge.ingestDocsTitle}</p>
-          <p className="typo-caption text-foreground/60">{t.knowledge.ingestDocsDescription}</p>
+          <p className="typo-caption text-foreground">{t.knowledge.ingestDocsDescription}</p>
         </div>
         <button
           type="button"
@@ -185,14 +185,14 @@ export default function KnowledgeAtelier() {
           <div className="px-4 md:px-6 py-4 border-b border-primary/5 flex items-center gap-3">
             <Inbox className="w-4 h-4 text-violet-300" />
             <h2 className="typo-section-title">{t.knowledge.memoryInbox}</h2>
-            <span className={`px-2 py-0.5 text-[10px] font-medium rounded-full border ${stats.pending > 0 ? 'bg-amber-500/15 text-amber-300 border-amber-500/25' : 'bg-secondary/40 text-foreground/55 border-primary/10'}`}>
+            <span className={`px-2 py-0.5 text-[10px] font-medium rounded-full border ${stats.pending > 0 ? 'bg-amber-500/15 text-amber-300 border-amber-500/25' : 'bg-secondary/40 text-foreground border-primary/10'}`}>
               {tx(t.knowledge.pendingCount, { count: stats.pending })}
             </span>
             <div className="ml-auto flex items-center gap-1 rounded-full border border-primary/10 bg-secondary/30 p-0.5">
               {(['pending', 'approved', 'rejected'] as const).map((f) => {
                 const labelMap = { pending: t.knowledge.filterPending, approved: t.knowledge.filterApproved, rejected: t.knowledge.filterRejected } as const;
                 return (
-                  <button key={f} onClick={() => setFilter(f)} className={`px-2.5 py-0.5 text-[11px] rounded-full transition-colors ${filter === f ? 'bg-violet-500/20 text-violet-200' : 'text-foreground/65 hover:text-foreground'}`}>
+                  <button key={f} onClick={() => setFilter(f)} className={`px-2.5 py-0.5 text-[11px] rounded-full transition-colors ${filter === f ? 'bg-violet-500/20 text-violet-200' : 'text-foreground hover:text-foreground'}`}>
                     {labelMap[f]}
                   </button>
                 );
@@ -201,12 +201,12 @@ export default function KnowledgeAtelier() {
           </div>
           <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4">
             {pendingLoading ? (
-              <div className="flex items-center justify-center py-12"><Clock className="w-5 h-5 text-foreground/55 animate-spin" /></div>
+              <div className="flex items-center justify-center py-12"><Clock className="w-5 h-5 text-foreground animate-spin" /></div>
             ) : pendingMemories.length === 0 ? (
               <div className="py-12 text-center">
-                <Inbox className="w-10 h-10 text-foreground/30 mx-auto mb-3" />
-                <p className="typo-body text-foreground/65">{filter === 'pending' ? t.knowledge.inboxEmpty : tx(t.knowledge.noFilteredMemories, { filter })}</p>
-                <p className="typo-caption text-foreground/55 mt-1">{filter === 'pending' ? t.knowledge.newMemoriesHint : t.knowledge.switchToPending}</p>
+                <Inbox className="w-10 h-10 text-foreground mx-auto mb-3" />
+                <p className="typo-body text-foreground">{filter === 'pending' ? t.knowledge.inboxEmpty : tx(t.knowledge.noFilteredMemories, { filter })}</p>
+                <p className="typo-caption text-foreground mt-1">{filter === 'pending' ? t.knowledge.newMemoriesHint : t.knowledge.switchToPending}</p>
               </div>
             ) : (
               <ol className="relative space-y-4 max-w-2xl">
@@ -234,13 +234,13 @@ export default function KnowledgeAtelier() {
                         {mem.title && <p className="typo-card-label mb-1">{mem.title}</p>}
                         <p className="typo-body text-foreground/85 leading-relaxed">{mem.content}</p>
                         <div className="flex items-center flex-wrap gap-2 mt-3 pt-3 border-t border-primary/5">
-                          {mem.channel && <span className="px-1.5 py-0.5 text-[9px] uppercase tracking-wider rounded-full bg-secondary/40 text-foreground/65">{mem.channel}</span>}
+                          {mem.channel && <span className="px-1.5 py-0.5 text-[9px] uppercase tracking-wider rounded-full bg-secondary/40 text-foreground">{mem.channel}</span>}
                           {mem.importance > 3 && (
                             <span className="flex items-center gap-1 px-1.5 py-0.5 text-[9px] rounded-full bg-violet-500/15 text-violet-300 border border-violet-500/25">
                               <Star className="w-2.5 h-2.5" /> {tx(t.knowledge.priorityWithCount, { count: mem.importance })}
                             </span>
                           )}
-                          <span className="typo-caption text-foreground/55">{new Date(mem.created_at).toLocaleDateString()}</span>
+                          <span className="typo-caption text-foreground">{new Date(mem.created_at).toLocaleDateString()}</span>
                           {isPending && (
                             <div className="ml-auto flex items-center gap-1">
                               <button onClick={() => handleReview(mem.id, true)} disabled={isReviewing} className="px-2 py-1 rounded-interactive text-[11px] font-medium text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors flex items-center gap-1">
@@ -269,16 +269,16 @@ export default function KnowledgeAtelier() {
           <div className="px-4 md:px-6 py-4 border-b border-primary/5 flex items-center gap-3">
             <History className="w-4 h-4 text-violet-300" />
             <h2 className="typo-section-title">{t.knowledge.conversationHistory}</h2>
-            <span className="text-[10px] uppercase tracking-wider text-foreground/55 ml-auto">{tx(communications.length === 1 ? t.knowledge.entriesCount_one : t.knowledge.entriesCount_other, { count: communications.length })}</span>
+            <span className="text-[10px] uppercase tracking-wider text-foreground ml-auto">{tx(communications.length === 1 ? t.knowledge.entriesCount_one : t.knowledge.entriesCount_other, { count: communications.length })}</span>
           </div>
           <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4">
             {commsLoading ? (
-              <div className="flex items-center justify-center py-12"><Clock className="w-5 h-5 text-foreground/55 animate-spin" /></div>
+              <div className="flex items-center justify-center py-12"><Clock className="w-5 h-5 text-foreground animate-spin" /></div>
             ) : communications.length === 0 ? (
               <div className="py-12 text-center">
-                <MessageSquare className="w-10 h-10 text-foreground/30 mx-auto mb-3" />
-                <p className="typo-body text-foreground/65">{t.knowledge.noConversationsYet}</p>
-                <p className="typo-caption text-foreground/55 mt-1">{t.knowledge.conversationsHint}</p>
+                <MessageSquare className="w-10 h-10 text-foreground mx-auto mb-3" />
+                <p className="typo-body text-foreground">{t.knowledge.noConversationsYet}</p>
+                <p className="typo-caption text-foreground mt-1">{t.knowledge.conversationsHint}</p>
               </div>
             ) : (
               <div className="space-y-5 max-w-2xl">
@@ -286,7 +286,7 @@ export default function KnowledgeAtelier() {
                   <div key={g.date}>
                     <div className="flex items-center gap-2 mb-2 sticky top-0 bg-background/80 backdrop-blur py-1.5 z-[1]">
                       <div className="h-px flex-1 bg-primary/10" />
-                      <span className="text-[10px] uppercase tracking-[0.2em] text-foreground/55 font-medium">{g.date}</span>
+                      <span className="text-[10px] uppercase tracking-[0.2em] text-foreground font-medium">{g.date}</span>
                       <div className="h-px flex-1 bg-primary/10" />
                     </div>
                     <div className="space-y-2">
@@ -300,13 +300,13 @@ export default function KnowledgeAtelier() {
                             <div className={`flex-1 min-w-0 max-w-[88%] p-3 rounded-card border ${isOut ? 'bg-violet-500/8 border-violet-500/15 rounded-tr-sm' : 'bg-cyan-500/5 border-cyan-500/15 rounded-tl-sm'}`}>
                               <div className="flex items-center gap-2 flex-wrap mb-1">
                                 <span className="typo-caption font-medium text-foreground/85">{isOut ? t.knowledge.sent : t.knowledge.received}</span>
-                                <span className="px-1.5 py-0.5 text-[9px] uppercase tracking-wider rounded-full bg-card/60 text-foreground/65 border border-primary/10">{comm.channel}</span>
-                                {comm.contact_handle && <span className="typo-caption text-foreground/55 truncate">· {comm.contact_handle}</span>}
-                                <span className="typo-caption text-foreground/45 ml-auto tabular-nums">{new Date(comm.occurred_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                <span className="px-1.5 py-0.5 text-[9px] uppercase tracking-wider rounded-full bg-card/60 text-foreground border border-primary/10">{comm.channel}</span>
+                                {comm.contact_handle && <span className="typo-caption text-foreground truncate">· {comm.contact_handle}</span>}
+                                <span className="typo-caption text-foreground ml-auto tabular-nums">{new Date(comm.occurred_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                               </div>
                               <p className="typo-body text-foreground/90 leading-relaxed line-clamp-4">{comm.content}</p>
                               {comm.summary && (
-                                <p className="flex items-start gap-1.5 typo-caption text-foreground/65 mt-2 italic">
+                                <p className="flex items-start gap-1.5 typo-caption text-foreground mt-2 italic">
                                   <Quote className="w-3 h-3 mt-0.5 flex-shrink-0 opacity-60" /> {comm.summary}
                                 </p>
                               )}
@@ -331,7 +331,7 @@ function Stat({ label, value, accent = 'violet' }: { label: string; value: numbe
   return (
     <div className="flex flex-col items-start leading-tight">
       <span className={`typo-data-lg tabular-nums ${tone}`}>{value}</span>
-      <span className="text-[9px] uppercase tracking-[0.18em] text-foreground/55">{label}</span>
+      <span className="text-[9px] uppercase tracking-[0.18em] text-foreground">{label}</span>
     </div>
   );
 }

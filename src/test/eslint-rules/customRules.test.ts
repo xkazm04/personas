@@ -126,11 +126,11 @@ ruleTester.run(
     ],
     invalid: [
       {
-        code: `function C() { return <p className="text-muted-foreground/60">body</p>; }`,
+        code: `function C() { return <p className="text-foreground">body</p>; }`,
         errors: 1,
       },
       {
-        code: `function C() { return <p className="text-foreground/70">body</p>; }`,
+        code: `function C() { return <p className="text-foreground">body</p>; }`,
         errors: 1,
       },
     ],
@@ -308,7 +308,7 @@ ruleTester.run("custom/no-direct-white-colors", noDirectWhiteColors, {
   ],
   invalid: [
     {
-      code: `function C() { return <p className="text-white">x</p>; }`,
+      code: `function C() { return <p className="text-foreground">x</p>; }`,
       errors: 1,
     },
     {

@@ -37,6 +37,8 @@ import {
   type ConditionBranch,
   type ChainEdgeData,
 } from './libs/triggerStudioConstants';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 const nodeTypes = {
   [NODE_TYPE_TRIGGER_SOURCE]: TriggerSourceNode,
@@ -62,7 +64,7 @@ function saveStudioLayout(nodes: Node[], edges: Edge[]) {
     nodes: nodes.map(n => ({ id: n.id, x: n.position.x, y: n.position.y, type: n.type ?? '', data: n.data })),
     edges: edges.map(e => ({ id: e.id, source: e.source, target: e.target, sourceHandle: e.sourceHandle, targetHandle: e.targetHandle, data: e.data })),
   };
-  try { localStorage.setItem(STUDIO_LAYOUT_KEY, JSON.stringify(layout)); } catch { /* localStorage may be full */ }
+  try { localStorage.setItem(STUDIO_LAYOUT_KEY, JSON.stringify(layout)); } catch (err) { silentCatch("features/triggers/sub_studio/TriggerStudioCanvas:catch1")(err); }
 }
 
 function loadStudioLayout(): SavedStudioLayout | null {
@@ -172,7 +174,9 @@ function TriggerStudioInner() {
   useEffect(() => {
     if (nodes.length === 0 && edges.length === 0) return;
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    saveTimerRef.current = setTimeout(() => saveStudioLayout(nodes, edges), 800);
+    const timer = setTimeout(() => saveStudioLayout(nodes, edges), 800);
+    saveTimerRef.current = timer;
+    return () => clearTimeout(timer);
   }, [nodes, edges]);
 
   // Load layout on mount

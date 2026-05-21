@@ -2,6 +2,8 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { TrendingUp, TrendingDown, Minus, ExternalLink } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import type { LeaderboardEntry, Medal, PerformanceTier } from '../libs/leaderboardScoring';
+import { DebtText } from '@/i18n/DebtText';
+
 
 // ── Medal display ──────────────────────────────────────────────────────
 
@@ -152,7 +154,7 @@ export function LeaderboardCard({ entry, selected, onClick, onNavigateToAgent, i
             className="inline-flex items-center gap-1 typo-caption font-medium text-primary/70 hover:text-primary transition-colors cursor-pointer"
           >
             <ExternalLink className="w-3 h-3" />
-            Open Agent
+            <DebtText k="auto_open_agent_e247e3d5" />
           </span>
         </div>
       )}

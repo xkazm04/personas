@@ -5,6 +5,8 @@ import Button from '@/features/shared/components/buttons/Button';
 import { listSavedViewsByType, createSavedView, deleteSavedView, type SavedView } from '@/api/overview/savedViews';
 import { log } from '@/lib/log';
 import { errMsg } from '@/stores/storeTypes';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 /** The filter/sort/grouping state persisted in view_config JSON. */
 export interface AgentListViewConfig {
@@ -143,9 +145,7 @@ export function ViewPresetBar({ currentConfig, onApplyConfig }: ViewPresetBarPro
     try {
       const config = JSON.parse(view.view_config) as AgentListViewConfig;
       applyPreset(view.id, { ...DEFAULT_VIEW_CONFIG, ...config });
-    } catch {
-      // intentional: non-critical parse failure
-    }
+    } catch (err) { silentCatch("features/agents/components/allPersonas/ViewPresetBar:catch1")(err); }
   };
 
   const handleReset = () => {

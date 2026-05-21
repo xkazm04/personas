@@ -74,7 +74,7 @@ export function ConfigurationPopup({
         setLoadError(true);
       })
       .finally(() => setLoaded(true));
-  }, []);
+  }, [fields]);
 
   const handleSave = async () => {
     setSaving(true);

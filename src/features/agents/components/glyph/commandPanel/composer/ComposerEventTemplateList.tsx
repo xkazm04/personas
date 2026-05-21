@@ -1,6 +1,8 @@
 import { Check, Users } from "lucide-react";
 import type { EventSubscription } from "@/features/agents/components/matrix/quickConfigTypes";
 import type { PersonaSummary } from "./ComposerEventPersonaList";
+import { DebtText, debtText } from '@/i18n/DebtText';
+
 
 export interface EventTemplate {
   triggerId: string;
@@ -31,11 +33,11 @@ export function ComposerEventTemplateList({
     return (
       <div className="p-5 flex flex-col items-center justify-center gap-3 text-center h-full">
         <div className="w-14 h-14 rounded-full bg-foreground/5 flex items-center justify-center">
-          <Users className="w-6 h-6 text-foreground/50" />
+          <Users className="w-6 h-6 text-foreground" />
         </div>
-        <div className="typo-body text-foreground/85">No persona selected</div>
-        <p className="typo-caption text-foreground/65 max-w-xs">
-          Pick a persona from the list to choose which of its events should trigger this agent.
+        <div className="typo-body text-foreground/85"><DebtText k="auto_no_persona_selected_0ea280b5" /></div>
+        <p className="typo-caption text-foreground max-w-xs">
+          <DebtText k="auto_pick_a_persona_from_the_list_to_choose_whi_2a2cea02" />
         </p>
       </div>
     );
@@ -57,8 +59,8 @@ export function ComposerEventTemplateList({
           <h3 className="typo-heading-sm text-foreground font-semibold truncate">
             {activePersona.name}
           </h3>
-          <p className="typo-caption text-foreground/70">
-            Pick the events from this persona that should trigger your new agent.
+          <p className="typo-caption text-foreground">
+            <DebtText k="auto_pick_the_events_from_this_persona_that_sho_127fc529" />
           </p>
         </div>
       </div>
@@ -81,18 +83,18 @@ export function ComposerEventTemplateList({
                 className="w-full flex items-start gap-3 p-3 text-left cursor-pointer rounded-card focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               >
                 <span
-                  className={`shrink-0 w-5 h-5 rounded-md border flex items-center justify-center transition-colors mt-0.5 ${
+                  className={`shrink-0 w-5 h-5 rounded-input border flex items-center justify-center transition-colors mt-0.5 ${
                     subscribed
                       ? "bg-primary border-primary"
                       : "border-border/50"
                   }`}
                   aria-hidden
                 >
-                  {subscribed && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
+                  {subscribed && <Check className="w-3 h-3 text-foreground" strokeWidth={3} />}
                 </span>
                 <div className="flex-1 min-w-0">
                   <div className="typo-body text-foreground font-medium">{tpl.label}</div>
-                  <div className="typo-caption text-foreground/75 mt-0.5">
+                  <div className="typo-caption text-foreground mt-0.5">
                     {tpl.description}
                   </div>
                 </div>
@@ -104,7 +106,7 @@ export function ComposerEventTemplateList({
                     value={freeTextByTrigger[tpl.triggerId] ?? ""}
                     onChange={(e) => onFreeTextChange(tpl.triggerId, e.target.value)}
                     onClick={(e) => e.stopPropagation()}
-                    placeholder="Optional — narrow it down (e.g. only high-priority tickets)"
+                    placeholder={debtText("auto_optional_narrow_it_down_e_g_only_high_prio_85950dd3")}
                     className="w-full px-2 py-1.5 rounded-interactive bg-foreground/5 border border-border/30 typo-caption text-foreground placeholder:text-foreground/45 focus:outline-none focus:border-primary/40"
                   />
                 </div>

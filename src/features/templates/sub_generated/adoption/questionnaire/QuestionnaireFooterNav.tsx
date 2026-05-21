@@ -31,7 +31,7 @@ export function QuestionnaireFooterNav({
           type="button"
           onClick={onPrev}
           disabled={activeIdx === 0}
-          className="flex items-center gap-1.5 text-base text-foreground hover:text-foreground/80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="flex items-center gap-1.5 typo-body-lg text-foreground hover:text-foreground/80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         >
           <ChevronLeft className="w-5 h-5" />
           {t.templates.adopt_modal.previous}
@@ -41,7 +41,7 @@ export function QuestionnaireFooterNav({
             <button
               type="button"
               onClick={onSubmit}
-              className="flex items-center gap-2 px-6 py-2.5 text-base font-medium rounded-modal bg-btn-primary text-white hover:bg-btn-primary/90 shadow-elevation-3 shadow-primary/20 transition-all"
+              className="flex items-center gap-2 px-6 py-2.5 typo-body-lg font-medium rounded-modal bg-btn-primary text-foreground hover:bg-btn-primary/90 shadow-elevation-3 shadow-primary/20 transition-all"
             >
               <Sparkles className="w-5 h-5" />
               {t.templates.adopt_modal.submit_all}
@@ -51,7 +51,7 @@ export function QuestionnaireFooterNav({
               type="button"
               onClick={onNext}
               disabled={isAtEnd}
-              className="flex items-center gap-2 px-5 py-2.5 text-base font-medium rounded-modal bg-btn-primary text-white hover:bg-btn-primary/90 disabled:opacity-40 disabled:cursor-not-allowed shadow-elevation-3 shadow-primary/20 transition-all"
+              className="flex items-center gap-2 px-5 py-2.5 typo-body-lg font-medium rounded-modal bg-btn-primary text-foreground hover:bg-btn-primary/90 disabled:opacity-40 disabled:cursor-not-allowed shadow-elevation-3 shadow-primary/20 transition-all"
             >
               {t.templates.adopt_modal.next}
               <ChevronRight className="w-5 h-5" />

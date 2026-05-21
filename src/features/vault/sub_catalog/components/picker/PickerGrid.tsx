@@ -16,7 +16,7 @@ interface PickerGridProps {
 
 export function PickerGrid({ filteredConnectors, ownedServiceTypes, recipeIndicators, onPickType }: PickerGridProps) {
   const { t } = useTranslation();
-  const now = useMemo(() => Date.now(), [filteredConnectors]);
+  const now = useMemo(() => Date.now(), []);
   return (
     <>
       <div className="grid [grid-template-columns:repeat(auto-fill,minmax(9rem,1fr))] gap-2.5">

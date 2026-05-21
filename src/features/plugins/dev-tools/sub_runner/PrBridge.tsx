@@ -34,7 +34,7 @@ function readDoneSteps(taskId: string): Set<PrStep> {
 function writeDoneSteps(taskId: string, steps: Set<PrStep>): void {
   try {
     localStorage.setItem(stepsStorageKey(taskId), JSON.stringify(Array.from(steps)));
-  } catch { /* quota / privacy mode — ignore */ }
+  } catch (err) { silentCatch("features/plugins/dev-tools/sub_runner/PrBridge:catch1")(err); }
 }
 import { Button } from '@/features/shared/components/buttons';
 import { useSystemStore } from '@/stores/systemStore';
@@ -45,6 +45,8 @@ import { SCAN_AGENTS } from '../constants/scanAgents';
 import type { DevIdea } from '@/lib/bindings/DevIdea';
 import type { DevTask } from '@/lib/bindings/DevTask';
 import type { DevProject } from '@/lib/bindings/DevProject';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 // ---------------------------------------------------------------------------
 // URL + slug helpers
@@ -486,7 +488,7 @@ export function PrBridge({ task }: { task: DevTask }) {
                 type="button"
                 onClick={resetSteps}
                 title={dt.pr_bridge_reset_steps_tooltip}
-                className="ml-auto inline-flex items-center gap-1 text-[10px] text-foreground/55 hover:text-foreground transition-colors"
+                className="ml-auto inline-flex items-center gap-1 text-[10px] text-foreground hover:text-foreground transition-colors"
               >
                 <RotateCcw className="w-3 h-3" />
                 {dt.pr_bridge_reset_steps}

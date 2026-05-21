@@ -161,9 +161,9 @@ function CompactMetric({ icon, label, value, sub, color }: {
       <div className="min-w-0">
         <div className="flex items-baseline gap-2">
           <span className={`typo-heading tabular-nums ${tone}`}>{value}</span>
-          <span className="typo-caption uppercase tracking-wider text-foreground/60 font-mono">{label}</span>
+          <span className="typo-caption uppercase tracking-wider text-foreground font-mono">{label}</span>
         </div>
-        <div className="typo-caption text-foreground/55 truncate">{sub}</div>
+        <div className="typo-caption text-foreground truncate">{sub}</div>
       </div>
     </div>
   );

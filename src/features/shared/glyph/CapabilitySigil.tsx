@@ -210,7 +210,7 @@ export function EmptyCapabilitySigil({ size = 84, isHovered = false }: EmptyCapa
   `;
 
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className={`block transition-colors ${isHovered ? 'text-primary' : 'text-foreground/35'}`}>
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className={`block transition-colors ${isHovered ? 'text-primary' : 'text-foreground'}`}>
       <circle
         cx={center} cy={center} r={ringR}
         fill="none"

@@ -175,7 +175,7 @@ export function InlineEditableText({
             e.stopPropagation();
             enterEdit();
           }}
-          className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 p-0.5 text-foreground/50 hover:text-foreground focus:outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-primary/40 rounded"
+          className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 p-0.5 text-foreground hover:text-foreground focus:outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-primary/40 rounded"
           aria-label={pencilLabel}
           tabIndex={-1}
         >

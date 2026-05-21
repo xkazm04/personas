@@ -21,6 +21,10 @@ import { useOverviewData } from './useOverviewData';
 // Re-export shared helpers so existing call sites keep resolving.
 export { formatErr } from './overviewHelpers';
 import { buildTodayActivity, type ActivityEvent, type ActivityKind } from './overviewHelpers';
+import { silentCatch } from '@/lib/silentCatch';
+import { DebtText, debtText } from '@/i18n/DebtText';
+
+
 
 // ---------------------------------------------------------------------------
 // Vital-tile ordering — persisted per project so each project can keep its
@@ -54,7 +58,7 @@ function readTileOrder(projectId: string): TileId[] {
 function writeTileOrder(projectId: string, order: TileId[]): void {
   try {
     localStorage.setItem(tileOrderStorageKey(projectId), JSON.stringify(order));
-  } catch { /* quota / privacy mode — ignore */ }
+  } catch (err) { silentCatch("features/plugins/dev-tools/sub_overview/ProjectOverviewPage:catch1")(err); }
 }
 
 /**
@@ -210,8 +214,8 @@ export default function ProjectOverviewPage() {
         {/* ==================== Vital signs strip ==================== */}
         <section className="mb-6">
           <div className="flex items-baseline justify-between mb-3">
-            <h2 className="typo-label text-foreground/70">VITAL SIGNS</h2>
-            <span className="typo-caption text-foreground/50">Last refresh just now</span>
+            <h2 className="typo-label text-foreground"><DebtText k="auto_vital_signs_5bf24670" /></h2>
+            <span className="typo-caption text-foreground"><DebtText k="auto_last_refresh_just_now_020e3c0a" /></span>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
             {(() => {
@@ -250,8 +254,8 @@ export default function ProjectOverviewPage() {
         {todayActivity.length > 0 && (
           <section className="mb-6">
             <div className="flex items-baseline justify-between mb-3">
-              <h2 className="typo-label text-foreground/70">{po.today_activity_heading}</h2>
-              <span className="typo-caption text-foreground/50 tabular-nums">{todayActivity.length}</span>
+              <h2 className="typo-label text-foreground">{po.today_activity_heading}</h2>
+              <span className="typo-caption text-foreground tabular-nums">{todayActivity.length}</span>
             </div>
             <ul className="rounded-card border border-primary/10 bg-card/30 divide-y divide-primary/5 max-h-72 overflow-y-auto">
               {todayActivity.map((event) => (
@@ -263,7 +267,7 @@ export default function ProjectOverviewPage() {
 
         {/* ==================== Connections rail ==================== */}
         <section>
-          <h2 className="typo-label text-foreground/70 mb-3">CONNECTIONS</h2>
+          <h2 className="typo-label text-foreground mb-3">CONNECTIONS</h2>
           <div className="rounded-card border border-primary/10 bg-card/30 divide-y divide-primary/5">
             {/* --- Codebase row --- */}
             <ConnectionRow
@@ -304,9 +308,9 @@ export default function ProjectOverviewPage() {
                     type="button"
                     onClick={() => setShowRepoChain((v) => !v)}
                     className="p-1 rounded-interactive hover:bg-primary/10 transition-colors"
-                    title="Show connection chain"
+                    title={debtText("auto_show_connection_chain_c0a20250")}
                   >
-                    <Settings className="w-3.5 h-3.5 text-foreground/60" />
+                    <Settings className="w-3.5 h-3.5 text-foreground" />
                   </button>
                 </div>
               }
@@ -323,7 +327,7 @@ export default function ProjectOverviewPage() {
                     onEditUrl={() => setDevToolsTab('projects')}
                   />
                 ) : (
-                  <p className="typo-caption text-foreground/60">Set a repo URL on this project to see the connection chain.</p>
+                  <p className="typo-caption text-foreground"><DebtText k="auto_set_a_repo_url_on_this_project_to_see_the__0fd8e832" /></p>
                 )}
                 {repoState === 'unmapped' && repoCreds.length > 0 && (
                   <p className="typo-caption text-foreground mt-2">{po.set_repo_url}</p>
@@ -365,9 +369,9 @@ export default function ProjectOverviewPage() {
                     type="button"
                     onClick={() => setShowMonitorChain((v) => !v)}
                     className="p-1 rounded-interactive hover:bg-primary/10 transition-colors"
-                    title="Show connection chain"
+                    title={debtText("auto_show_connection_chain_c0a20250")}
                   >
-                    <Settings className="w-3.5 h-3.5 text-foreground/60" />
+                    <Settings className="w-3.5 h-3.5 text-foreground" />
                   </button>
                 </div>
               }
@@ -400,9 +404,9 @@ export default function ProjectOverviewPage() {
         </section>
 
         {(!repoLinked || !monitorLinked) && (
-          <p className="typo-caption text-foreground/50 mt-4 flex items-center gap-1.5">
+          <p className="typo-caption text-foreground mt-4 flex items-center gap-1.5">
             <ExternalLink className="w-3 h-3" />
-            Connect more sources to enrich the dashboard. Use the cog on each row to inspect or fix the chain.
+            <DebtText k="auto_connect_more_sources_to_enrich_the_dashboa_10066c24" />
           </p>
         )}
       </ContentBody>
@@ -428,7 +432,7 @@ const TONE_TEXT: Record<Tone, string> = {
   warning: 'text-status-warning',
   error: 'text-status-error',
   info: 'text-status-info',
-  neutral: 'text-foreground/70',
+  neutral: 'text-foreground',
 };
 
 function VitalTile({
@@ -460,10 +464,10 @@ function VitalTile({
     >
       <div className="flex items-center justify-between mb-1.5">
         <Icon className={`w-3.5 h-3.5 ${TONE_TEXT[tone]}`} />
-        {loading && <RefreshCw className="w-3 h-3 animate-spin text-foreground/30" />}
+        {loading && <RefreshCw className="w-3 h-3 animate-spin text-foreground" />}
       </div>
       <p className={`typo-data-lg leading-none ${TONE_TEXT[tone]}`}>{value}</p>
-      <p className="typo-caption text-foreground/60 truncate mt-1">{label}</p>
+      <p className="typo-caption text-foreground truncate mt-1">{label}</p>
     </div>
   );
 }
@@ -498,7 +502,7 @@ function ConnectionRow({
       : status === 'error' ? AlertCircle
         : Key;
   const statusTone = status === 'connected' ? 'text-status-success'
-    : status === 'loading' ? 'text-foreground/40 animate-spin'
+    : status === 'loading' ? 'text-foreground animate-spin'
       : status === 'error' ? 'text-status-error'
         : 'text-status-warning';
   const StatusIcon = statusIcon;
@@ -533,8 +537,8 @@ function MetaPill({
   const cls = tone
     ? `${TONE_BG[tone]} ${TONE_TEXT[tone]}`
     : dim
-      ? 'border-primary/5 bg-card/40 text-foreground/50'
-      : 'border-primary/10 bg-card/30 text-foreground/80';
+      ? 'border-primary/5 bg-card/40 text-foreground'
+      : 'border-primary/10 bg-card/30 text-foreground';
   return (
     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-pill border typo-caption ${cls}`}>
       {Icon && <Icon className="w-3 h-3" />}
@@ -576,7 +580,7 @@ function ActivityRow({ event, onJump }: { event: ActivityEvent; onJump: (e: Acti
     <div className="flex items-center gap-2.5 px-4 py-2">
       <Icon className={`w-3.5 h-3.5 shrink-0 ${meta.tint}`} />
       <span className="text-md text-foreground truncate flex-1">{event.label}</span>
-      <span className="typo-caption text-foreground/50 tabular-nums shrink-0">{relativeTime(event.timestamp)}</span>
+      <span className="typo-caption text-foreground tabular-nums shrink-0">{relativeTime(event.timestamp)}</span>
     </div>
   );
   return (

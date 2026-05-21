@@ -19,6 +19,8 @@ import type { DynamicOptionState } from './useDynamicQuestionOptions';
 import { useTranslation } from '@/i18n/useTranslation';
 import { SelectPills } from './SelectPills';
 import { CredentialPickerCards } from '@/features/shared/components/picker/CredentialPickerCards';
+import { DebtText } from '@/i18n/DebtText';
+
 
 // Re-export so importers that imported from this file still resolve
 export { SelectPills } from './SelectPills';
@@ -149,7 +151,7 @@ function DynamicSelectBody({
           value={answer}
           onChange={(e) => onAnswer(e.target.value)}
           placeholder={question.default ?? t.templates.adopt_modal.type_a_value}
-          className="w-full max-w-sm px-3 py-1.5 text-sm rounded-card border border-border bg-foreground/[0.03] text-foreground placeholder:text-foreground focus:outline-none focus:border-primary/30 focus:bg-foreground/[0.05] transition-all"
+          className="w-full max-w-sm px-3 py-1.5 typo-body rounded-card border border-border bg-foreground/[0.03] text-foreground placeholder:text-foreground focus:outline-none focus:border-primary/30 focus:bg-foreground/[0.05] transition-all"
         />
       </div>
     );
@@ -159,7 +161,7 @@ function DynamicSelectBody({
     const isVaultSourced = src.source === 'vault';
     return (
       <div className="space-y-2">
-        <div className="flex items-center gap-2 text-sm text-foreground">
+        <div className="flex items-center gap-2 typo-body text-foreground">
           <Info className="w-3.5 h-3.5" />
           {tx(t.templates.adopt_modal.no_items_found, {
             item: src.operation.replace('list_', ''),
@@ -183,7 +185,7 @@ function DynamicSelectBody({
   const isVaultSourced = src.source === 'vault';
   return (
     <div className="space-y-1.5">
-      <div className="flex items-center gap-1.5 text-xs text-status-success/80">
+      <div className="flex items-center gap-1.5 typo-caption text-status-success/80">
         <Zap className="w-3 h-3" />
         {tx(t.templates.adopt_modal.loaded_live_from, { service: src.service_type })}
       </div>
@@ -235,7 +237,7 @@ function BooleanToggle({
             key={opt}
             type="button"
             onClick={() => onChange(opt.toLowerCase())}
-            className={`flex-1 px-3 py-1.5 text-xs rounded-card border transition-all ${
+            className={`flex-1 px-3 py-1.5 typo-caption rounded-card border transition-all ${
               selected
                 ? opt === 'Yes'
                   ? 'bg-status-success/15 border-status-success/30 text-status-success font-medium'
@@ -345,11 +347,11 @@ export function QuestionCard({
         ) : (
           <CircleDot className="w-5 h-5 text-status-warning/70 mt-1 flex-shrink-0" />
         )}
-        <span className="flex-1 text-xl font-medium text-foreground/90 leading-snug">
+        <span className="flex-1 typo-body-lg font-medium text-foreground/90 leading-snug">
           {question.question}
         </span>
         {isAutoDetected && !isBlocked && (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded bg-brand-purple/10 border border-brand-purple/30 text-brand-purple flex-shrink-0 mt-0.5">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 typo-caption font-medium rounded bg-brand-purple/10 border border-brand-purple/30 text-brand-purple flex-shrink-0 mt-0.5">
             <KeyRound className="w-3 h-3" />
             {t.templates.adopt_modal.auto_detected}
           </span>
@@ -374,7 +376,7 @@ export function QuestionCard({
       {/* Context — collapsed by default, expands on Info icon click */}
       {hasTip && tipOpen && (
         <div className="ml-5.5 mb-2 px-2.5 py-1.5 rounded-input bg-foreground/[0.02] border border-border">
-          <span className="text-sm text-foreground leading-relaxed">
+          <span className="typo-body text-foreground leading-relaxed">
             {question.context}
           </span>
         </div>
@@ -383,13 +385,13 @@ export function QuestionCard({
       {/* Blocked state: show the "Add credential" call-to-action */}
       {isBlocked && question.vault_category ? (
         <div className="ml-5.5 space-y-2">
-          <p className="text-xs text-status-error/80 leading-relaxed">
+          <p className="typo-caption text-status-error/80 leading-relaxed">
             {t.templates.adopt_modal.credential_required.replace('{category}', question.vault_category)}
           </p>
           <button
             type="button"
             onClick={() => onAddCredential?.(question.vault_category!)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-card bg-status-error/15 border border-status-error/30 text-status-error hover:bg-status-error/25 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption font-medium rounded-card bg-status-error/15 border border-status-error/30 text-status-error hover:bg-status-error/25 transition-colors"
           >
             <Plus className="w-3 h-3" />
             {t.templates.adopt_modal.add_credential}
@@ -478,8 +480,8 @@ export function QuestionCard({
         // adoption orchestrator always provides the map).
         const labels = ids.map((id) => useCaseTitleById?.[id] ?? id);
         return (
-          <div className="mt-1.5 typo-body text-foreground/55 italic">
-            Applies to: {labels.join(', ')}
+          <div className="mt-1.5 typo-body text-foreground italic">
+            <DebtText k="auto_applies_to_ef612870" /> {labels.join(', ')}
           </div>
         );
       })()}

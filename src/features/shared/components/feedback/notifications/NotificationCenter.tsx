@@ -141,7 +141,7 @@ function ProcessNotificationItem({ notification }: { notification: PipelineNotif
           </span>
         </div>
         <div className="flex items-center gap-2 mt-0.5">
-          <p className="typo-caption text-foreground/80 truncate flex-1">{bodyText}</p>
+          <p className="typo-caption text-foreground truncate flex-1">{bodyText}</p>
           {redirectSection && (
             <button
               onClick={(e) => { e.stopPropagation(); handleRedirect(); }}
@@ -221,7 +221,7 @@ function NotificationItem({ notification }: { notification: PipelineNotification
           </span>
         </div>
         <div className="flex items-center gap-2 mt-0.5">
-          <p className="typo-caption text-foreground/80 truncate flex-1 font-mono">{bodyText}</p>
+          <p className="typo-caption text-foreground truncate flex-1 font-mono">{bodyText}</p>
           <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
             {notification.webUrl && (
               <button
@@ -305,7 +305,7 @@ export function NotificationCenter() {
                 <Bell className="w-4 h-4 text-orange-400" />
                 <h2 className="typo-heading font-semibold text-foreground/90">{t.gitlab.notifications}</h2>
                 {unreadCount > 0 && (
-                  <span className="min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[10px] font-bold rounded-full bg-orange-500 text-white">
+                  <span className="min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[10px] font-bold rounded-full bg-orange-500 text-foreground">
                     {unreadCount > 99 ? '99+' : unreadCount}
                   </span>
                 )}

@@ -73,7 +73,7 @@ function ChipListEditor({
     <div className="flex flex-col gap-2" data-testid={testId}>
       <label className="typo-label text-foreground">{label}</label>
       {helperText ? (
-        <p className="typo-caption text-foreground/70">{helperText}</p>
+        <p className="typo-caption text-foreground">{helperText}</p>
       ) : null}
       <div className="flex flex-wrap gap-2">
         {values.map((v, i) => (
@@ -85,7 +85,7 @@ function ChipListEditor({
             <button
               type="button"
               onClick={() => removeChip(i)}
-              className="text-foreground/50 hover:text-foreground"
+              className="text-foreground hover:text-foreground"
               aria-label="Remove"
             >
               ×
@@ -145,7 +145,7 @@ export function BehaviorCoreEditor() {
       ? "text-red-500"
       : missionClass === "purpose"
         ? "text-emerald-500"
-        : "text-foreground/50";
+        : "text-foreground";
 
   return (
     <section
@@ -156,7 +156,7 @@ export function BehaviorCoreEditor() {
         <h3 className="typo-heading-sm text-foreground">
           {t.matrix_v3.behavior_core_section_title}
         </h3>
-        <p className="typo-body-sm text-foreground/70">
+        <p className="typo-body-sm text-foreground">
           {t.matrix_v3.behavior_core_section_subtitle}
         </p>
       </header>
@@ -172,7 +172,7 @@ export function BehaviorCoreEditor() {
           onChange={(e) => patchBehaviorCore({ mission: e.target.value })}
           placeholder={t.matrix_v3.mission_placeholder}
           rows={2}
-          className="w-full rounded-xl border border-border/40 bg-foreground/[0.06] px-3 py-2 typo-body text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/40"
+          className="w-full rounded-modal border border-border/40 bg-foreground/[0.06] px-3 py-2 typo-body text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/40"
           data-testid="behavior-core-mission-input"
         />
         <p className={`typo-caption ${missionHintClass}`} data-testid="behavior-core-mission-hint">
@@ -194,12 +194,12 @@ export function BehaviorCoreEditor() {
               patchBehaviorCore({ identity: { ...coreSafe.identity, role: e.target.value } })
             }
             placeholder={t.matrix_v3.identity_role_placeholder}
-            className="rounded-xl border border-border/40 bg-foreground/[0.06] px-3 py-2 typo-body-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/40"
+            className="rounded-modal border border-border/40 bg-foreground/[0.06] px-3 py-2 typo-body-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
         </div>
         <div className="flex flex-col gap-2" data-testid="behavior-core-identity-description">
           <label
-            className="typo-label text-foreground/80"
+            className="typo-label text-foreground"
             htmlFor="bc-identity-description"
           >
             {t.matrix_v3.identity_description_label}
@@ -214,7 +214,7 @@ export function BehaviorCoreEditor() {
               })
             }
             placeholder={t.matrix_v3.identity_description_placeholder}
-            className="rounded-xl border border-border/40 bg-foreground/[0.06] px-3 py-2 typo-body-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/40"
+            className="rounded-modal border border-border/40 bg-foreground/[0.06] px-3 py-2 typo-body-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
         </div>
       </div>
@@ -233,7 +233,7 @@ export function BehaviorCoreEditor() {
               patchBehaviorCore({ voice: { ...coreSafe.voice, style: e.target.value } })
             }
             placeholder={t.matrix_v3.voice_style_placeholder}
-            className="rounded-xl border border-border/40 bg-foreground/[0.06] px-3 py-2 typo-body-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/40"
+            className="rounded-modal border border-border/40 bg-foreground/[0.06] px-3 py-2 typo-body-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
         </div>
         <div className="flex flex-col gap-2" data-testid="behavior-core-voice-output-format">
@@ -250,7 +250,7 @@ export function BehaviorCoreEditor() {
               })
             }
             placeholder={t.matrix_v3.voice_output_format_placeholder}
-            className="rounded-xl border border-border/40 bg-foreground/[0.06] px-3 py-2 typo-body-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/40"
+            className="rounded-modal border border-border/40 bg-foreground/[0.06] px-3 py-2 typo-body-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
         </div>
       </div>

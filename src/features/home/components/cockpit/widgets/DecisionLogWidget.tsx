@@ -45,7 +45,7 @@ export function DecisionLogWidget({ config, title }: CockpitWidgetProps) {
 
   if (decisions.length === 0) {
     return (
-      <div className="rounded-card border border-foreground/10 bg-secondary/40 p-3 typo-caption text-foreground/55">
+      <div className="rounded-card border border-foreground/10 bg-secondary/40 p-3 typo-caption text-foreground">
         {t.plugins.companion.decision_log_empty}
       </div>
     );
@@ -62,12 +62,12 @@ export function DecisionLogWidget({ config, title }: CockpitWidgetProps) {
           {title || t.plugins.companion.decision_log_title}
         </span>
         {intent && (
-          <span className="text-foreground/55 truncate" title={intent}>
+          <span className="text-foreground truncate" title={intent}>
             · {intent}
           </span>
         )}
         <span
-          className="inline-flex items-center gap-1 text-foreground/45 ml-auto shrink-0"
+          className="inline-flex items-center gap-1 text-foreground ml-auto shrink-0"
           title={t.plugins.companion.decision_log_persisted_tooltip}
         >
           <Save className="w-3 h-3" />
@@ -91,17 +91,17 @@ export function DecisionLogWidget({ config, title }: CockpitWidgetProps) {
             />
             <div className="flex items-center gap-1.5 typo-caption text-foreground/85">
               <span className="font-medium">{d.label}</span>
-              <ChevronRight className="w-3 h-3 text-foreground/35 shrink-0" />
+              <ChevronRight className="w-3 h-3 text-foreground shrink-0" />
               <span className="text-foreground/95">{d.choice}</span>
               {d.timestamp && (
-                <span className="text-foreground/40 typo-caption ml-auto">
+                <span className="text-foreground typo-caption ml-auto">
                   {prettyTime(d.timestamp)}
                 </span>
               )}
             </div>
             {d.rationale && (
-              <div className="flex items-baseline gap-1.5 typo-caption text-foreground/70">
-                <GitBranch className="w-3 h-3 text-foreground/35 shrink-0" />
+              <div className="flex items-baseline gap-1.5 typo-caption text-foreground">
+                <GitBranch className="w-3 h-3 text-foreground shrink-0" />
                 <span className="leading-relaxed">{d.rationale}</span>
               </div>
             )}

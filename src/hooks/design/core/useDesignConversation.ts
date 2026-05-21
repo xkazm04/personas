@@ -15,6 +15,8 @@ import type {
 } from '@/lib/types/designTypes';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 /**
  * Manages persistent design conversations alongside the design analysis flow.
@@ -51,9 +53,7 @@ export function useDesignConversation(personaId: string | null) {
       ]);
       setConversations(list);
       setActiveConversation(active);
-    } catch {
-      // intentional: non-critical -- conversation preloading is best-effort
-    }
+    } catch (err) { silentCatch("hooks/design/core/useDesignConversation:catch1")(err); }
   }, [personaId]);
 
   useEffect(() => {
@@ -70,9 +70,7 @@ export function useDesignConversation(personaId: string | null) {
     if (current) {
       try {
         await updateDesignConversationStatus(current.id, 'abandoned');
-      } catch {
-        // non-critical -- best-effort abandon before creating new conversation
-      }
+      } catch (err) { silentCatch("hooks/design/core/useDesignConversation:catch2")(err); }
     }
 
     // Auto-generate title from instruction
@@ -108,9 +106,7 @@ export function useDesignConversation(personaId: string | null) {
       if (current) {
         try {
           await updateDesignConversationStatus(current.id, 'active');
-        } catch {
-          // non-critical -- best-effort revert
-        }
+        } catch (err) { silentCatch("hooks/design/core/useDesignConversation:catch3")(err); }
       }
       useToastStore.getState().addToast('Failed to start design conversation', 'error');
       return null;
@@ -170,7 +166,7 @@ export function useDesignConversation(personaId: string | null) {
       }
     };
     appendQueueRef.current = appendQueueRef.current.then(doAppend, doAppend);
-  }, []);
+  }, [t.design.conversation_truncated]);
 
   /** Append a user message (feedback/answer) to the active conversation. */
   const addUserMessage = useCallback((content: string, messageType: 'feedback' | 'answer') => {
@@ -243,9 +239,7 @@ export function useDesignConversation(personaId: string | null) {
       setConversations((prev) =>
         prev.map((c) => (c.id === updated.id ? updated : c))
       );
-    } catch {
-      // intentional: non-critical -- completing conversation status is best-effort
-    }
+    } catch (err) { silentCatch("hooks/design/core/useDesignConversation:catch4")(err); }
   }, []);
 
   /** Resume a previous conversation. */
@@ -262,9 +256,7 @@ export function useDesignConversation(personaId: string | null) {
       try {
         await updateDesignConversationStatus(current.id, 'abandoned');
         didAbandon = true;
-      } catch {
-        // non-critical -- best-effort abandon
-      }
+      } catch (err) { silentCatch("hooks/design/core/useDesignConversation:catch5")(err); }
     }
 
     // Re-activate the target conversation
@@ -285,9 +277,7 @@ export function useDesignConversation(personaId: string | null) {
       if (didAbandon && current) {
         try {
           await updateDesignConversationStatus(current.id, 'active');
-        } catch {
-          // non-critical -- best-effort revert
-        }
+        } catch (err) { silentCatch("hooks/design/core/useDesignConversation:catch6")(err); }
       }
       useToastStore.getState().addToast('Failed to resume conversation', 'error');
       return null;

@@ -7,6 +7,8 @@ import { listProjects } from '@/api/devTools/devTools';
 import { useSystemStore } from '@/stores/systemStore';
 import { ProjectList } from './ProjectList';
 import { useTranslation } from '@/i18n/useTranslation';
+import { DebtText } from '@/i18n/DebtText';
+
 
 interface DevProject {
   id: string;
@@ -115,7 +117,7 @@ export function CodebaseProjectPicker({ onSave, onCancel, credentialName, onCred
           <AlertTriangle className="w-7 h-7 text-amber-400/80" />
         </div>
         <div className="space-y-1">
-          <p className="typo-body font-medium text-foreground">Couldn't load projects</p>
+          <p className="typo-body font-medium text-foreground"><DebtText k="auto_couldn_t_load_projects_c5a25bd3" /></p>
           <p className="typo-caption text-foreground max-w-xs break-words">{loadError}</p>
         </div>
         <button
@@ -207,7 +209,7 @@ export function CodebaseProjectPicker({ onSave, onCancel, credentialName, onCred
           type="button"
           onClick={handleSave}
           disabled={!hasSelection}
-          className="flex-1 px-4 py-2 rounded-card typo-body font-medium bg-indigo-500 text-white hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="flex-1 px-4 py-2 rounded-card typo-body font-medium bg-indigo-500 text-foreground hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           {multiSelect ? `Connect ${selectedIds.size} Project${selectedIds.size !== 1 ? 's' : ''}` : 'Connect Project'}
         </button>

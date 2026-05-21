@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { artistCheckFfmpeg, type FfmpegStatus } from '@/api/artist/index';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 /**
  * Detect whether FFmpeg is available on the host machine.
@@ -39,9 +41,7 @@ export function useFfmpegDetect() {
       if (typeof cancelIdleCallback === 'function') {
         try {
           cancelIdleCallback(idle as number);
-        } catch {
-          /* ignore */
-        }
+        } catch (err) { silentCatch("features/plugins/artist/sub_media_studio/hooks/useFfmpegDetect:catch1")(err); }
       } else {
         clearTimeout(idle as unknown as number);
       }

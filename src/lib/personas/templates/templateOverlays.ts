@@ -15,6 +15,8 @@
 import type { LocaleCode } from '@/i18n/locales.manifest';
 import { createLogger } from '@/lib/log';
 import * as Sentry from '@sentry/react';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 const logger = createLogger('template-overlays');
 
@@ -45,7 +47,7 @@ function recordIdMismatch(mismatch: OverlayIdMismatch, locale?: LocaleCode, temp
       message: `Overlay id mismatch in ${mismatch.container}`,
       data: { ...mismatch, locale, templateId },
     });
-  } catch { /* intentional: Sentry may be uninitialized in dev */ }
+  } catch (err) { silentCatch("lib/personas/templates/templateOverlays:catch1")(err); }
   // In test (vitest), throw so locale-parity suites fail loudly; in dev warn
   // via the logger above; in prod the breadcrumb + warn is enough.
   const env = (import.meta as unknown as { vitest?: unknown; env?: { MODE?: string } });
@@ -288,7 +290,7 @@ export function loadOverlaysForLanguage(lang: LocaleCode): Promise<Map<string, u
                 message: `Overlay missing id: ${filename}`,
                 data: { path, locale: lang, expectedTemplateId, overlayKeys },
               });
-            } catch { /* intentional: Sentry may be uninitialized */ }
+            } catch (err) { silentCatch("lib/personas/templates/templateOverlays:catch2")(err); }
             return null;
           }
           return [id, overlay] as const;
@@ -301,7 +303,7 @@ export function loadOverlaysForLanguage(lang: LocaleCode): Promise<Map<string, u
               message: 'Failed to load overlay file',
               data: { path, locale: lang, error: err instanceof Error ? err.message : String(err) },
             });
-          } catch { /* intentional */ }
+          } catch (err) { silentCatch("lib/personas/templates/templateOverlays:catch3")(err); }
           return null;
         }
       }),

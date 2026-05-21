@@ -5,6 +5,8 @@ import {
   OLLAMA_CLOUD_PRESETS,
   OLLAMA_CLOUD_BASE_URL,
 } from '@/features/agents/sub_model_config/libs/OllamaCloudPresets';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 // -- Model helpers ---------------------------------------------------
 
@@ -105,9 +107,7 @@ export function resolveEffectiveModel(
         label: profileToLabel(parsed),
         source: 'persona',
       };
-    } catch {
-      // intentional: non-critical -- JSON parse fallback
-    }
+    } catch (err) { silentCatch("features/agents/sub_use_cases/libs/useCaseDetailHelpers:catch1")(err); }
   }
   return {
     profile: DEFAULT_PROFILE,

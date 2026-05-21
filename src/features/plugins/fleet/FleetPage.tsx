@@ -2,6 +2,8 @@ import { lazy, Suspense, useState } from 'react';
 import { Terminal, LayoutDashboard, Settings as SettingsIcon, BookOpen } from 'lucide-react';
 import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { debtText } from '@/i18n/DebtText';
+
 
 const FleetGridPage = lazy(() => import('./sub_grid/FleetGridPage'));
 const FleetSettingsPage = lazy(() => import('./sub_settings/FleetSettingsPage'));
@@ -50,7 +52,7 @@ export default function FleetPage() {
               className={`flex items-center gap-1.5 px-3 py-1 rounded-card text-[12px] transition-colors ${
                 active
                   ? 'bg-primary/10 text-primary border border-primary/25'
-                  : 'text-foreground/60 hover:text-foreground hover:bg-secondary/40 border border-transparent'
+                  : 'text-foreground hover:text-foreground hover:bg-secondary/40 border border-transparent'
               }`}
             >
               <Icon className="w-3.5 h-3.5" />
@@ -66,7 +68,7 @@ export default function FleetPage() {
           className={`ml-auto flex items-center gap-1.5 px-3 py-1 rounded-card text-[12px] transition-colors ${
             showSkills
               ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
-              : 'text-foreground/60 hover:text-foreground hover:bg-secondary/40 border border-transparent'
+              : 'text-foreground hover:text-foreground hover:bg-secondary/40 border border-transparent'
           }`}
         >
           <BookOpen className="w-3.5 h-3.5" />
@@ -102,13 +104,13 @@ export function FleetPhaseBanner({ phase, summary }: { phase: string; summary: s
     <ContentBox>
       <ContentHeader
         icon={<Terminal className="w-5 h-5 text-primary" />}
-        title="Fleet — Claude Code session aggregator"
+        title={debtText("auto_fleet_claude_code_session_aggregator_d33e41a2")}
         subtitle="Experimental — lives under Dev Tools, inherits the active project"
       />
       <ContentBody>
         <div className="border border-primary/20 rounded-modal bg-primary/5 px-4 py-3">
           <p className="typo-caption font-medium text-primary mb-1">{phase}</p>
-          <p className="text-[12px] text-foreground/80 leading-relaxed">{summary}</p>
+          <p className="text-[12px] text-foreground leading-relaxed">{summary}</p>
         </div>
       </ContentBody>
     </ContentBox>

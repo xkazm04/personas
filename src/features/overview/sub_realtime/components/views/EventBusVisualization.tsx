@@ -62,7 +62,7 @@ export default function EventBusVisualization({ events, personas, animationMapRe
       return { id: s.id, label: s.label, icon: null, color: colorForSource(s.id), sizeFactor: age > FADE_AFTER_MS ? sf * EVENT_BUS_NODE_SIZING.stalenessSizeMultiplier : sf };
     });
     return distributeOnRing(raw, ORBIT_R_OUTER);
-  }, [events.length]);
+  }, []);
 
   const innerNodes = useMemo(() => {
     const raw = personas.length > 0
@@ -128,6 +128,11 @@ export default function EventBusVisualization({ events, personas, animationMapRe
       }, durationMs);
       timeoutRef.current.set(animationId, tid);
     }
+    const timeouts = timeoutRef.current;
+    return () => {
+      for (const t of timeouts.values()) clearTimeout(t);
+      timeouts.clear();
+    };
   }, [animatedEvents, clearTimeouts, getSrc, getTgt, innerNodes]);
 
   // Only run the cleanup timer when there are active return flows to expire.

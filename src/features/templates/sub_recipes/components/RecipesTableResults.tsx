@@ -152,7 +152,7 @@ interface ThProps {
 }
 
 function Th({ children, className = '', sortable, active, dir, onClick }: ThProps) {
-  const base = 'group h-9 px-2 text-left typo-label uppercase tracking-wider text-foreground/65 font-medium select-none';
+  const base = 'group h-9 px-2 text-left typo-label uppercase tracking-wider text-foreground font-medium select-none';
   if (!sortable) {
     return <th className={`${base} ${className}`}>{children}</th>;
   }
@@ -223,7 +223,7 @@ function RecipeRow({ recipe, eligibility, onOpenDetail }: RecipeRowProps) {
 
       {/* Category */}
       <td className="px-2 align-middle">
-        <span className="typo-label uppercase tracking-wider text-foreground/75 truncate">
+        <span className="typo-label uppercase tracking-wider text-foreground truncate">
           {recipe.category.replace(/-/g, ' ')}
         </span>
       </td>
@@ -237,7 +237,7 @@ function RecipeRow({ recipe, eligibility, onOpenDetail }: RecipeRowProps) {
 
       {/* Version */}
       <td className="px-2 align-middle text-right">
-        <span className="typo-caption font-mono text-foreground/55">
+        <span className="typo-caption font-mono text-foreground">
           v{recipe.version}
         </span>
       </td>
@@ -255,7 +255,7 @@ function RecipeRow({ recipe, eligibility, onOpenDetail }: RecipeRowProps) {
           disabled={incompatible}
           className={`inline-flex items-center gap-1 px-2 py-1 rounded-interactive border typo-label uppercase tracking-wider transition-all cursor-pointer ${
             incompatible
-              ? 'border-card-border bg-secondary/40 text-foreground/45 opacity-0'
+              ? 'border-card-border bg-secondary/40 text-foreground opacity-0'
               : 'border-primary/35 bg-primary/12 text-primary opacity-0 group-hover:opacity-100 hover:bg-primary/22'
           }`}
         >

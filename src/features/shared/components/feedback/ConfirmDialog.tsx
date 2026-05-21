@@ -1,6 +1,5 @@
-import { useEffect } from "react";
-
 import { useTranslation } from "@/i18n/useTranslation";
+import { BaseModal } from "@/lib/ui/BaseModal";
 
 interface ConfirmDialogProps {
   title: string;
@@ -30,25 +29,16 @@ export function ConfirmDialog({
 }: ConfirmDialogProps) {
   const { t } = useTranslation();
 
-  useEffect(() => {
-    const esc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onCancel();
-    };
-    document.addEventListener("keydown", esc);
-    return () => document.removeEventListener("keydown", esc);
-  }, [onCancel]);
-
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      className="fixed inset-0 z-[9998] flex items-center justify-center bg-background/60 surface-blur-modal"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onCancel();
-      }}
+    <BaseModal
+      isOpen
+      onClose={onCancel}
+      titleId="confirm-dialog-title"
+      size="sm"
+      panelClassName="rounded-modal border border-primary/25 bg-background/95 shadow-elevation-3 p-4"
+      portal
     >
-      <div className="w-[400px] rounded-modal border border-primary/25 bg-background/95 shadow-elevation-3 p-4">
-        <div className="typo-section-title mb-2">{title}</div>
+        <div id="confirm-dialog-title" className="typo-section-title mb-2">{title}</div>
         {body && (
           <div className="typo-body text-foreground mb-4 leading-relaxed">{body}</div>
         )}
@@ -72,7 +62,6 @@ export function ConfirmDialog({
             {confirmLabel ?? t.common.confirm}
           </button>
         </div>
-      </div>
-    </div>
+    </BaseModal>
   );
 }

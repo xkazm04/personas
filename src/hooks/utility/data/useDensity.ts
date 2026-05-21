@@ -1,5 +1,7 @@
 import { useSyncExternalStore, useCallback } from 'react';
 import { DEFAULT_DENSITY, DENSITY_TOKENS, isDensity, type Density, type DensityTokens } from '@/lib/density';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 const STORAGE_PREFIX = 'density:';
 
@@ -10,9 +12,7 @@ function loadFromStorage(viewKey: string): Density {
   try {
     const raw = localStorage.getItem(STORAGE_PREFIX + viewKey);
     if (isDensity(raw)) return raw;
-  } catch {
-    // localStorage may be unavailable (private mode, SSR-ish) — fall through
-  }
+  } catch (err) { silentCatch("hooks/utility/data/useDensity:catch1")(err); }
   return DEFAULT_DENSITY;
 }
 
@@ -29,9 +29,7 @@ function setDensityValue(viewKey: string, density: Density) {
   valueByView.set(viewKey, density);
   try {
     localStorage.setItem(STORAGE_PREFIX + viewKey, density);
-  } catch {
-    // best-effort persistence
-  }
+  } catch (err) { silentCatch("hooks/utility/data/useDensity:catch2")(err); }
   const listeners = listenersByView.get(viewKey);
   if (listeners) for (const l of listeners) l();
 }

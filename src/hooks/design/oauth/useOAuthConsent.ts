@@ -53,7 +53,7 @@ export function useOAuthConsent(): OAuthConsentState {
       scopeRef.current = extraScopes ? extraScopes.join(' ') : null;
       polling.startConsent(connectorName || 'google', extraScopes);
     },
-    [polling.startConsent],
+    [polling],
   );
 
   return {

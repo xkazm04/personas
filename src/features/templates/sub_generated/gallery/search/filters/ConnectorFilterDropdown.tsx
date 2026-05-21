@@ -28,11 +28,13 @@ export function ConnectorFilterDropdown({
   const clampStyle = useViewportClampAbsolute(popupRef, isOpen);
 
   useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => searchInputRef.current?.focus(), 50);
-    } else {
+    if (!isOpen) {
       setDropdownSearch('');
+      return;
     }
+
+    const timer = setTimeout(() => searchInputRef.current?.focus(), 50);
+    return () => clearTimeout(timer);
   }, [isOpen]);
 
   const toggleConnector = (name: string) => {

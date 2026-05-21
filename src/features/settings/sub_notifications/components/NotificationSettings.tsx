@@ -55,7 +55,7 @@ function WeeklyDigestToggle() {
     }
     const timer = setTimeout(() => digestSetting.save(), 300);
     return () => clearTimeout(timer);
-  }, [digestSetting.value]);
+  }, [digestSetting, digestSetting.value]);
 
   if (!digestSetting.loaded) return null;
 
@@ -99,7 +99,7 @@ export default function NotificationSettings() {
     }
     const timer = setTimeout(() => setting.save(), 300);
     return () => clearTimeout(timer);
-  }, [setting.value]); // intentionally not including setting.save
+  }, [setting, setting.value]); // intentionally not including setting.save
 
   const prefs = useMemo<NotificationPrefs>(() => {
     try {

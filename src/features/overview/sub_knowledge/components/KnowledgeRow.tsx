@@ -7,6 +7,8 @@ import { KNOWLEDGE_TYPES, SCOPE_TYPES, COLOR_MAP, formatDuration, formatCost } f
 import { verifyKnowledgeAnnotation, dismissKnowledgeAnnotation } from '@/api/overview/intelligence/knowledge';
 import { ConfidenceArc } from '@/features/shared/components/display/ConfidenceArc';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 const cardVariants = { hidden: { opacity: 0, y: 4 }, visible: { opacity: 1, y: 0 } };
 const cardTransition = { type: 'spring' as const, stiffness: 400, damping: 30, mass: 0.8 };
@@ -195,7 +197,7 @@ export function KnowledgeRow({ entry, personaName, onMutated }: KnowledgeRowProp
     try {
       await verifyKnowledgeAnnotation(entry.id);
       onMutated?.();
-    } catch { /* ignore */ }
+    } catch (err) { silentCatch("features/overview/sub_knowledge/components/KnowledgeRow:catch1")(err); }
   };
 
   const handleDismiss = async (e: React.MouseEvent) => {
@@ -203,7 +205,7 @@ export function KnowledgeRow({ entry, personaName, onMutated }: KnowledgeRowProp
     try {
       await dismissKnowledgeAnnotation(entry.id);
       onMutated?.();
-    } catch { /* ignore */ }
+    } catch (err) { silentCatch("features/overview/sub_knowledge/components/KnowledgeRow:catch2")(err); }
   };
 
   return (

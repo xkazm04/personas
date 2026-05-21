@@ -80,12 +80,12 @@ export function useOAuthProtocol<
       // Only fire onError when the flow actually ended in failure
       onErrorRef.current?.(msg.message);
     }
-  }, [polling.message, polling.completedAt, polling.isAuthorizing, polling.getValues]);
+  }, [polling.message, polling.completedAt, polling.isAuthorizing, polling.getValues, polling]);
 
   // Aliased API for clarity
   const start = useCallback((...args: TStartArgs) => {
     polling.startConsent(...args);
-  }, [polling.startConsent]);
+  }, [polling]);
 
   return {
     start,

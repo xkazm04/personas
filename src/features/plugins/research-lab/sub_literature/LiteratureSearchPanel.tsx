@@ -10,6 +10,8 @@ import { sourceStatusColor, sourceStatusLabel, sourceTypeLabel } from '../_share
 import { useIngestSource } from '../_shared/useIngestSource';
 import LiteratureSearchPanelAtelier from './LiteratureSearchPanelAtelier';
 import LiteratureSearchPanelWorkbench from './LiteratureSearchPanelWorkbench';
+import { debtText } from '@/i18n/DebtText';
+
 
 const AddSourceForm = lazy(() => import('./AddSourceForm'));
 const ArxivSearchModal = lazy(() => import('./ArxivSearchModal'));
@@ -89,7 +91,7 @@ function LiteratureSearchPanelBaseline() {
             <button
               onClick={() => setShowArxiv(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption bg-blue-500/15 text-blue-300 hover:bg-blue-500/25 transition-colors"
-              title="Search arXiv"
+              title={debtText("auto_search_arxiv_794e6027")}
             >
               <Search className="w-3.5 h-3.5" />
               arXiv

@@ -36,7 +36,7 @@ export function Bubble({
   if (isAutonomousMarker) {
     return (
       <div
-        className="flex items-center gap-2 my-2 px-2 text-foreground/40"
+        className="flex items-center gap-2 my-2 px-2 text-foreground"
         data-testid="companion-autonomous-marker"
         data-companion-bubble-role="system-autonomous"
         data-companion-bubble-index={index}

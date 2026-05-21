@@ -184,7 +184,7 @@ export default function CompanionPanel() {
           className={`fixed bottom-12 left-4 z-[60] ${
             panelCompact ? 'w-[380px]' : 'w-[760px]'
           } h-[900px] max-h-[calc(100vh-5rem)] flex flex-col rounded-card bg-secondary/95 backdrop-blur-md border border-foreground/10 shadow-elevation-4 overflow-hidden transition-[width] duration-200 ease-out`}
-          role="dialog"
+          role="region"
           aria-label={t.plugins.companion.panel_label}
           data-testid="companion-panel"
           data-companion-streaming={streaming ? 'true' : 'false'}
@@ -361,7 +361,7 @@ function Header({
           <div className="typo-body font-medium leading-tight truncate">
             {t.plugins.companion.name}
           </div>
-          <div className="typo-caption text-foreground/60 leading-tight truncate">
+          <div className="typo-caption text-foreground leading-tight truncate">
             {t.plugins.companion.role}
           </div>
         </div>
@@ -374,7 +374,7 @@ function Header({
           className={`p-1.5 rounded-interactive transition-colors focus-ring ${
             autonomousMode
               ? 'bg-primary/15 text-primary hover:bg-primary/20'
-              : 'text-foreground/60 hover:text-foreground hover:bg-foreground/5'
+              : 'text-foreground hover:text-foreground hover:bg-foreground/5'
           }`}
           aria-label={
             autonomousMode
@@ -393,7 +393,7 @@ function Header({
           onClick={onToggleCompact}
           data-testid="companion-toggle-compact"
           aria-pressed={compact}
-          className="p-1.5 rounded-interactive text-foreground/60 hover:text-foreground hover:bg-foreground/5 transition-colors focus-ring"
+          className="p-1.5 rounded-interactive text-foreground hover:text-foreground hover:bg-foreground/5 transition-colors focus-ring"
           aria-label={
             compact
               ? t.plugins.companion.compact_toggle_expand
@@ -413,7 +413,7 @@ function Header({
         </button>
         <button
           onClick={onRefreshDoctrine}
-          className="p-1.5 rounded-interactive text-foreground/60 hover:text-foreground hover:bg-foreground/5 transition-colors focus-ring"
+          className="p-1.5 rounded-interactive text-foreground hover:text-foreground hover:bg-foreground/5 transition-colors focus-ring"
           aria-label={t.plugins.companion.refresh_doctrine}
           title={t.plugins.companion.refresh_doctrine}
         >
@@ -422,7 +422,7 @@ function Header({
         <button
           onClick={onReset}
           data-testid="companion-reset"
-          className="p-1.5 rounded-interactive text-foreground/60 hover:text-foreground hover:bg-foreground/5 transition-colors focus-ring"
+          className="p-1.5 rounded-interactive text-foreground hover:text-foreground hover:bg-foreground/5 transition-colors focus-ring"
           aria-label={t.plugins.companion.reset}
           title={t.plugins.companion.reset}
         >
@@ -431,7 +431,7 @@ function Header({
         <button
           onClick={onClose}
           data-testid="companion-close"
-          className="p-1.5 rounded-interactive text-foreground/60 hover:text-foreground hover:bg-foreground/5 transition-colors focus-ring"
+          className="p-1.5 rounded-interactive text-foreground hover:text-foreground hover:bg-foreground/5 transition-colors focus-ring"
           aria-label={t.common.close}
         >
           <X className="w-4 h-4" />
@@ -974,28 +974,7 @@ function Body(props: BodyProps) {
         useCompanionStore.getState().setStreamingPhase(null);
       }
     },
-    [
-      appendMessage,
-      markPlaybackPlayed,
-      resetStreamingText,
-      setMessages,
-      setPendingPlayback,
-      setPlaybackAudioUrl,
-      setQuickReplies,
-      setChatCards,
-      setSendError,
-      setStreaming,
-      voiceActive,
-      voiceEngine,
-      voiceCredentialId,
-      voiceId,
-      piperVoiceId,
-      synthesisCredentialId,
-      synthesisVoiceId,
-      voiceSettings,
-      recallSynthesisEnabled,
-      autonomousMode,
-    ],
+    [appendMessage, markPlaybackPlayed, resetStreamingText, setMessages, setPendingPlayback, setPlaybackAudioUrl, setQuickReplies, setChatCards, setSendError, setStreaming, voiceActive, voiceEngine, synthesisCredentialId, synthesisVoiceId, voiceSettings, recallSynthesisEnabled, autonomousMode],
   );
 
   // Wrench-send: pipe the textarea content into the self-improve loop.
@@ -1055,7 +1034,7 @@ function Body(props: BodyProps) {
       <div className="relative flex flex-col flex-1 min-w-0">
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-5 space-y-3">
           {!initialized && !initError && (
-            <div className="flex items-center gap-3 text-foreground/70 typo-body">
+            <div className="flex items-center gap-3 text-foreground typo-body">
               <LoadingSpinner size="sm" />
               <span>{t.plugins.companion.initializing}</span>
             </div>
@@ -1108,7 +1087,7 @@ function Body(props: BodyProps) {
             ))}
           </AnimatePresence>
           {initialized && messages.length === 0 && !streaming && proactive.length === 0 && (
-            <p className="typo-body text-foreground/50">
+            <p className="typo-body text-foreground">
               {t.plugins.companion.empty_transcript}
             </p>
           )}
@@ -1226,7 +1205,7 @@ function Body(props: BodyProps) {
                       className={`rounded-card border px-3 py-1.5 typo-caption ${
                         slowLevel === 2
                           ? 'border-amber-500/30 bg-amber-500/[0.06] text-amber-300'
-                          : 'border-foreground/10 bg-foreground/[0.04] text-foreground/70'
+                          : 'border-foreground/10 bg-foreground/[0.04] text-foreground'
                       }`}
                       data-testid="companion-slow-progress"
                       data-slow-level={slowLevel}
@@ -1334,4 +1313,3 @@ function Body(props: BodyProps) {
     </div>
   );
 }
-

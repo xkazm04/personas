@@ -14,7 +14,6 @@
  * images and the toolbar buttons hide for non-image entries.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import {
   ChevronLeft,
   ChevronRight,
@@ -27,6 +26,7 @@ import {
 
 import { driveRead, type DriveEntry } from "@/api/drive";
 import { useTranslation } from "@/i18n/useTranslation";
+import { BaseModal } from "@/lib/ui/BaseModal";
 import { silentCatch } from "@/lib/silentCatch";
 
 interface Props {
@@ -130,7 +130,7 @@ export function DriveImageLightbox({ entries, initialPath, onClose }: Props) {
         return { ...prev, zoom: next };
       });
     },
-    [],
+    [setTransform],
   );
 
   const rotate = useCallback(() => {
@@ -138,11 +138,11 @@ export function DriveImageLightbox({ entries, initialPath, onClose }: Props) {
       ...prev,
       rotation: (prev.rotation + 90) % 360,
     }));
-  }, []);
+  }, [setTransform]);
 
   const resetView = useCallback(() => {
     setTransform(IDENTITY);
-  }, []);
+  }, [setTransform]);
 
   // Global keyboard: Esc closes always; arrows cycle always; +/-/0/R only
   // fire on images (no-op on video / pdf).
@@ -256,7 +256,7 @@ export function DriveImageLightbox({ entries, initialPath, onClose }: Props) {
       document.removeEventListener("mousemove", handleMove);
       document.removeEventListener("mouseup", handleUp);
     };
-  }, []);
+  }, [setTransform]);
 
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
@@ -275,13 +275,16 @@ export function DriveImageLightbox({ entries, initialPath, onClose }: Props) {
   const isZoomed = kind === "image" && transform.zoom > MIN_ZOOM;
   const zoomPct = Math.round(transform.zoom * 100);
 
-  return createPortal(
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={current.name}
-      className="fixed inset-0 z-[100] flex flex-col bg-background/95 backdrop-blur-md"
-      onClick={onClose}
+  return (
+    <BaseModal
+      isOpen
+      onClose={onClose}
+      titleId="drive-preview-lightbox-title"
+      portal
+      size="full"
+      containerClassName="fixed inset-0 z-[100] flex"
+      panelClassName="relative h-full w-full flex flex-col bg-background/95 backdrop-blur-md"
+      staggerChildren={false}
     >
       {/* Chrome bar */}
       <div
@@ -289,7 +292,7 @@ export function DriveImageLightbox({ entries, initialPath, onClose }: Props) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex-1 min-w-0">
-          <div className="typo-section-title truncate">{current.name}</div>
+          <div id="drive-preview-lightbox-title" className="typo-section-title truncate">{current.name}</div>
           <div className="typo-caption text-foreground font-mono truncate">
             {current.path}
           </div>
@@ -304,7 +307,7 @@ export function DriveImageLightbox({ entries, initialPath, onClose }: Props) {
               onClick={() => zoomBy(1 / ZOOM_STEP)}
               disabled={transform.zoom <= MIN_ZOOM}
             />
-            <span className="typo-caption text-foreground/70 tabular-nums w-12 text-center select-none">
+            <span className="typo-caption text-foreground tabular-nums w-12 text-center select-none">
               {zoomPct}%
             </span>
             <ChromeIconButton
@@ -414,7 +417,7 @@ export function DriveImageLightbox({ entries, initialPath, onClose }: Props) {
             key={current.path}
             src={url}
             title={current.name}
-            className="w-full h-full bg-white rounded-card shadow-elevation-3"
+            className="w-full h-full bg-secondary rounded-card shadow-elevation-3"
             // Sandbox blocks scripts/forms/popups so a malicious PDF can't
             // jump out of its frame. allow-same-origin lets the PDF
             // renderer load its assets relative to the blob URL.
@@ -422,7 +425,7 @@ export function DriveImageLightbox({ entries, initialPath, onClose }: Props) {
           />
         )}
         {state === "ready" && url && kind === "other" && (
-          <div className="typo-body text-foreground/70 italic">
+          <div className="typo-body text-foreground italic">
             {t.plugins.drive.preview_binary}
           </div>
         )}
@@ -438,8 +441,7 @@ export function DriveImageLightbox({ entries, initialPath, onClose }: Props) {
           </button>
         )}
       </div>
-    </div>,
-    document.body,
+    </BaseModal>
   );
 }
 

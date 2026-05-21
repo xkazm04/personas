@@ -132,13 +132,13 @@ export function SensorySignalsModal({
             >
               {t.plugins.companion.sensory_signals_title}
             </h2>
-            <p className="typo-caption text-foreground/60 mt-0.5">
+            <p className="typo-caption text-foreground mt-0.5">
               {t.plugins.companion.sensory_signals_subtitle}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-interactive text-foreground/60 hover:text-foreground hover:bg-foreground/5 transition-colors focus-ring"
+            className="p-1.5 rounded-interactive text-foreground hover:text-foreground hover:bg-foreground/5 transition-colors focus-ring"
             aria-label={t.common.close}
           >
             <X className="w-4 h-4" />
@@ -153,7 +153,7 @@ export function SensorySignalsModal({
               className={`px-2.5 py-1 rounded-interactive typo-caption font-medium transition-colors focus-ring ${
                 filter === chip.id
                   ? 'bg-primary/15 text-primary'
-                  : 'bg-foreground/5 text-foreground/70 hover:bg-foreground/10'
+                  : 'bg-foreground/5 text-foreground hover:bg-foreground/10'
               }`}
               aria-pressed={filter === chip.id}
             >
@@ -169,16 +169,16 @@ export function SensorySignalsModal({
             </div>
           ) : filter === 'cli_session' ? (
             cliReads === null ? (
-              <div className="flex items-center gap-3 px-3 py-6 typo-body text-foreground/60">
+              <div className="flex items-center gap-3 px-3 py-6 typo-body text-foreground">
                 <LoadingSpinner size="sm" />
                 <span>{t.plugins.companion.loading}</span>
               </div>
             ) : cliReads.length === 0 ? (
               <div className="px-3 py-10 text-center">
-                <div className="typo-body text-foreground/60">
+                <div className="typo-body text-foreground">
                   {t.plugins.companion.sensory_cli_reads_empty}
                 </div>
-                <div className="typo-caption text-foreground/45 mt-1">
+                <div className="typo-caption text-foreground mt-1">
                   {t.plugins.companion.sensory_cli_reads_empty_hint}
                 </div>
               </div>
@@ -190,16 +190,16 @@ export function SensorySignalsModal({
               </ul>
             )
           ) : signals === null ? (
-            <div className="flex items-center gap-3 px-3 py-6 typo-body text-foreground/60">
+            <div className="flex items-center gap-3 px-3 py-6 typo-body text-foreground">
               <LoadingSpinner size="sm" />
               <span>{t.plugins.companion.loading}</span>
             </div>
           ) : signals.length === 0 ? (
             <div className="px-3 py-10 text-center">
-              <div className="typo-body text-foreground/60">
+              <div className="typo-body text-foreground">
                 {t.plugins.companion.sensory_signals_empty}
               </div>
-              <div className="typo-caption text-foreground/45 mt-1">
+              <div className="typo-caption text-foreground mt-1">
                 {t.plugins.companion.sensory_signals_empty_hint}
               </div>
             </div>
@@ -237,15 +237,15 @@ function SignalRow({
         <div className="typo-body text-foreground break-words">
           {signal.summary}
         </div>
-        <div className="typo-caption text-foreground/50 mt-0.5">
+        <div className="typo-caption text-foreground mt-0.5">
           {formatAge(t, signal.ageSecs)}
         </div>
         {signal.redactedContent ? (
           <div className="mt-2 px-2.5 py-1.5 rounded-interactive bg-foreground/[0.04] border border-foreground/5">
-            <div className="typo-caption font-medium text-foreground/55 mb-1">
+            <div className="typo-caption font-medium text-foreground mb-1">
               {t.plugins.companion.sensory_signals_redacted_label}
             </div>
-            <div className="typo-caption font-mono text-foreground/75 break-all whitespace-pre-wrap">
+            <div className="typo-caption font-mono text-foreground break-all whitespace-pre-wrap">
               {signal.redactedContent}
             </div>
           </div>
@@ -253,7 +253,7 @@ function SignalRow({
       </div>
       <button
         onClick={onDelete}
-        className="shrink-0 p-1.5 rounded-interactive text-foreground/50 hover:text-rose-400 hover:bg-rose-500/10 transition-colors focus-ring"
+        className="shrink-0 p-1.5 rounded-interactive text-foreground hover:text-rose-400 hover:bg-rose-500/10 transition-colors focus-ring"
         aria-label={t.plugins.companion.sensory_signals_delete_aria}
         title={t.plugins.companion.sensory_signals_delete_aria}
       >
@@ -298,7 +298,7 @@ function CliReadRow({ audit }: { audit: CliSessionReadAuditView }) {
             .replace('{persona}', audit.personaName)
             .replace('{count}', String(audit.turnCount))}
         </div>
-        <div className="typo-caption text-foreground/50 mt-0.5">
+        <div className="typo-caption text-foreground mt-0.5">
           {audit.project} · {formatAge(t, ageSecs)}
         </div>
       </div>

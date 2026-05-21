@@ -7,6 +7,8 @@ import type { TriggerSelection } from '../useCasePickerShared';
 import { ClockVariant } from './ucClockVariant';
 import { Panel } from './ucPanel';
 import type { TriggerDisplay } from './ucPickerTypes';
+import { DebtText } from '@/i18n/DebtText';
+
 
 interface Props {
   display: TriggerDisplay;
@@ -73,12 +75,12 @@ function EventVariant({ eventType, firing }: { eventType: string; firing: boolea
       </div>
       <div className="mt-4 flex flex-col items-center gap-1">
         <span className="font-mono text-xs uppercase tracking-[0.25em] text-status-info font-semibold">
-          On event
+          <DebtText k="auto_on_event_284498c2" />
         </span>
         <span className="font-mono text-base font-bold text-foreground/90 truncate max-w-[180px]">
           {tail}
         </span>
-        <span className="text-xs text-foreground/55 truncate max-w-[180px]">
+        <span className="typo-caption text-foreground truncate max-w-[180px]">
           {eventType || 'pick an event to listen for'}
         </span>
       </div>
@@ -96,7 +98,7 @@ function ManualVariant() {
           aria-hidden
           className="absolute w-24 h-24 rounded-full border-2 border-dashed border-foreground/15"
         />
-        <svg viewBox="0 0 24 24" className="relative w-14 h-14 text-foreground/35" fill="none" stroke="currentColor">
+        <svg viewBox="0 0 24 24" className="relative w-14 h-14 text-foreground" fill="none" stroke="currentColor">
           <path
             d="M 6 3 L 18 3 L 18 5 C 18 8 14 10 14 12 C 14 14 18 16 18 19 L 18 21 L 6 21 L 6 19 C 6 16 10 14 10 12 C 10 10 6 8 6 5 L 6 3 Z"
             strokeWidth={1.5}
@@ -108,11 +110,11 @@ function ManualVariant() {
         </svg>
       </div>
       <div className="mt-4 flex flex-col items-center gap-1">
-        <span className="font-mono text-xs uppercase tracking-[0.25em] text-foreground/50 font-semibold">
-          Manual only
+        <span className="font-mono text-xs uppercase tracking-[0.25em] text-foreground font-semibold">
+          <DebtText k="auto_manual_only_aaf64b3f" />
         </span>
-        <span className="font-mono text-base font-bold text-foreground/70">—:—</span>
-        <span className="text-xs text-foreground/45">run on demand</span>
+        <span className="font-mono text-base font-bold text-foreground">—:—</span>
+        <span className="typo-caption text-foreground"><DebtText k="auto_run_on_demand_548e874e" /></span>
       </div>
     </div>
   );

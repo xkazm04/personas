@@ -122,11 +122,11 @@ export default function ObservabilityDashboard() {
   const handleFailureBarClick = useCallback((date: string) => {
     d.setFailureDrilldownDate(date);
     d.setOverviewTab('knowledge');
-  }, [d.setFailureDrilldownDate, d.setOverviewTab]);
+  }, [d]);
 
   const handleAnomalyClick = useCallback((anomaly: import('@/lib/bindings/MetricAnomaly').MetricAnomaly) => {
     drilldown.openDrilldown(anomaly, d.selectedPersonaId);
-  }, [drilldown.openDrilldown, d.selectedPersonaId]);
+  }, [drilldown, d.selectedPersonaId]);
 
   return (
     <ContentBox>
@@ -146,7 +146,7 @@ export default function ObservabilityDashboard() {
             >
               <Bell className="w-3.5 h-3.5" />
               {activeAlertCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-red-500 text-[9px] font-bold text-white flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-red-500 text-[9px] font-bold text-foreground flex items-center justify-center">
                   {activeAlertCount > 9 ? '9+' : activeAlertCount}
                 </span>
               )}

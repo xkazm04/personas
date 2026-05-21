@@ -185,7 +185,7 @@ export function ReadinessGapPopover({ readiness, onJumpTo }: Props) {
               <p className="typo-caption text-foreground font-semibold">
                 {allSet ? t.gaps.allSetTitle : t.gaps.title}
               </p>
-              <p className="text-[11px] text-foreground/60 mt-0.5">
+              <p className="text-[11px] text-foreground mt-0.5">
                 {tx(t.gaps.subtitle, { pct: readiness.score })}
               </p>
             </div>
@@ -193,7 +193,7 @@ export function ReadinessGapPopover({ readiness, onJumpTo }: Props) {
               type="button"
               onClick={() => setOpen(false)}
               aria-label={t.gaps.close}
-              className="p-1 rounded-interactive text-foreground/55 hover:text-foreground hover:bg-secondary/40 transition-colors flex-shrink-0"
+              className="p-1 rounded-interactive text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors flex-shrink-0"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -227,15 +227,15 @@ export function ReadinessGapPopover({ readiness, onJumpTo }: Props) {
                       </span>
                       <span className="flex-1 min-w-0">
                         <span className="block typo-caption text-foreground font-medium truncate">{title}</span>
-                        <span className="block text-[11px] text-foreground/60 leading-snug mt-0.5">{hint}</span>
+                        <span className="block text-[11px] text-foreground leading-snug mt-0.5">{hint}</span>
                       </span>
-                      <ArrowRight className="w-3.5 h-3.5 text-foreground/40 flex-shrink-0 mt-1" />
+                      <ArrowRight className="w-3.5 h-3.5 text-foreground flex-shrink-0 mt-1" />
                     </button>
                   </li>
                 );
               })}
               {gaps.length > top.length && (
-                <li className="px-3 py-1.5 text-[10px] text-foreground/50 uppercase tracking-wider border-t border-primary/10">
+                <li className="px-3 py-1.5 text-[10px] text-foreground uppercase tracking-wider border-t border-primary/10">
                   {tx(t.gaps.moreCount, { count: gaps.length - top.length })}
                 </li>
               )}

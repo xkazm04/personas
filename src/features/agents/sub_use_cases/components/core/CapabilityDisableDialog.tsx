@@ -2,6 +2,8 @@ import { AlertTriangle, X } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
 import { BaseModal } from '@/features/shared/components/modals';
 import type { DisableConfirmationState } from '../../libs/useCapabilityToggle';
+import { DebtText } from '@/i18n/DebtText';
+
 
 interface CapabilityDisableDialogProps {
   state: DisableConfirmationState;
@@ -47,7 +49,7 @@ export function CapabilityDisableDialog({ state, onConfirm, onCancel }: Capabili
           <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
           <div>
             <h3 id={TITLE_ID} className="typo-heading text-foreground">
-              Pause capability
+              <DebtText k="auto_pause_capability_4b0c7b5f" />
             </h3>
             <p className="typo-body text-foreground mt-0.5">{useCaseTitle}</p>
           </div>
@@ -65,7 +67,7 @@ export function CapabilityDisableDialog({ state, onConfirm, onCancel }: Capabili
 
       <div className="px-4 py-3 space-y-2">
         <p id="capability-disable-description" className="typo-body text-foreground">
-          Pausing this capability will also pause:
+          <DebtText k="auto_pausing_this_capability_will_also_pause_dc740e52" />
         </p>
         <ul className="typo-body text-foreground/90 space-y-1 pl-4">
           {bits.map((b) => (
@@ -73,7 +75,7 @@ export function CapabilityDisableDialog({ state, onConfirm, onCancel }: Capabili
           ))}
         </ul>
         <p className="typo-caption text-foreground mt-2">
-          The persona&apos;s prompt will no longer list this capability. You can re-activate it at any time.
+          <DebtText k="auto_the_persona_apos_s_prompt_will_no_longer_l_c5c46fb8" />
         </p>
       </div>
 
@@ -88,7 +90,7 @@ export function CapabilityDisableDialog({ state, onConfirm, onCancel }: Capabili
           onClick={onConfirm}
           data-testid="capability-disable-confirm"
         >
-          Pause capability
+          <DebtText k="auto_pause_capability_4b0c7b5f" />
         </Button>
       </div>
     </BaseModal>

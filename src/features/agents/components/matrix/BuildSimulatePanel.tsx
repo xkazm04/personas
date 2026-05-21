@@ -179,7 +179,7 @@ export function BuildSimulatePanel({
             >
               {t.agents.build_simulate.title}
             </h2>
-            <p className="typo-body-sm text-foreground/65 mt-1">
+            <p className="typo-body-sm text-foreground mt-1">
               {t.agents.build_simulate.subtitle}
             </p>
           </div>
@@ -187,7 +187,7 @@ export function BuildSimulatePanel({
             type="button"
             onClick={onClose}
             aria-label={t.agents.build_simulate.close}
-            className="text-foreground/60 hover:text-foreground p-1 rounded-interactive"
+            className="text-foreground hover:text-foreground p-1 rounded-interactive"
           >
             <X className="w-4 h-4" />
           </button>
@@ -195,13 +195,13 @@ export function BuildSimulatePanel({
 
         <div className="p-5 space-y-4">
           {useCases.length === 0 ? (
-            <p className="typo-body text-foreground/60">
+            <p className="typo-body text-foreground">
               {t.agents.build_simulate.no_use_cases}
             </p>
           ) : (
             <>
               <label className="block">
-                <span className="typo-label uppercase tracking-wide text-foreground/60 mb-1.5 block">
+                <span className="typo-label uppercase tracking-wide text-foreground mb-1.5 block">
                   {t.agents.build_simulate.select_capability}
                 </span>
                 <select
@@ -217,14 +217,14 @@ export function BuildSimulatePanel({
                   ))}
                 </select>
                 {selectedUseCase?.description && (
-                  <p className="typo-caption text-foreground/55 mt-1">
+                  <p className="typo-caption text-foreground mt-1">
                     {selectedUseCase.description}
                   </p>
                 )}
               </label>
 
               <label className="block">
-                <span className="typo-label uppercase tracking-wide text-foreground/60 mb-1.5 block">
+                <span className="typo-label uppercase tracking-wide text-foreground mb-1.5 block">
                   {t.agents.build_simulate.input_label}
                 </span>
                 <textarea
@@ -334,7 +334,7 @@ function ArtefactsPreview({
     >
       <header className="mb-3 flex items-center justify-between">
         <h3 className="typo-heading-sm text-foreground">{artefactsTitleLabel}</h3>
-        <div className="flex gap-3 typo-caption text-foreground/55">
+        <div className="flex gap-3 typo-caption text-foreground">
           <span>
             {executionLabel}: <code>{execution.id.slice(0, 8)}…</code>
           </span>
@@ -345,15 +345,15 @@ function ArtefactsPreview({
       </header>
 
       {isEmpty ? (
-        <p className="typo-body text-foreground/55">{noArtefactsLabel}</p>
+        <p className="typo-body text-foreground">{noArtefactsLabel}</p>
       ) : (
         <div className="space-y-4">
           <div>
-            <h4 className="typo-label uppercase tracking-wide text-foreground/60 mb-2">
+            <h4 className="typo-label uppercase tracking-wide text-foreground mb-2">
               {reviewsHeading}
             </h4>
             {reviews.length === 0 ? (
-              <p className="typo-body-sm text-foreground/45">{noReviewsLabel}</p>
+              <p className="typo-body-sm text-foreground">{noReviewsLabel}</p>
             ) : (
               <ul className="space-y-1.5">
                 {reviews.map((r) => (
@@ -365,17 +365,17 @@ function ArtefactsPreview({
                       <span className="typo-body-sm font-medium text-foreground">
                         {r.title}
                       </span>
-                      <code className="typo-caption text-foreground/55">
+                      <code className="typo-caption text-foreground">
                         {r.status}
                       </code>
                     </div>
                     {r.description && (
-                      <p className="typo-caption text-foreground/65 mt-1 line-clamp-2">
+                      <p className="typo-caption text-foreground mt-1 line-clamp-2">
                         {r.description}
                       </p>
                     )}
                     {r.reviewer_notes && (
-                      <p className="typo-caption text-foreground/55 mt-1 italic">
+                      <p className="typo-caption text-foreground mt-1 italic">
                         {r.reviewer_notes}
                       </p>
                     )}
@@ -386,11 +386,11 @@ function ArtefactsPreview({
           </div>
 
           <div>
-            <h4 className="typo-label uppercase tracking-wide text-foreground/60 mb-2">
+            <h4 className="typo-label uppercase tracking-wide text-foreground mb-2">
               {memoriesHeading}
             </h4>
             {memories.length === 0 ? (
-              <p className="typo-body-sm text-foreground/45">{noMemoriesLabel}</p>
+              <p className="typo-body-sm text-foreground">{noMemoriesLabel}</p>
             ) : (
               <ul className="space-y-1.5">
                 {memories.map((m) => (
@@ -403,12 +403,12 @@ function ArtefactsPreview({
                         {m.title}
                       </span>
                       {m.category && (
-                        <code className="typo-caption text-foreground/55">
+                        <code className="typo-caption text-foreground">
                           {m.category}
                         </code>
                       )}
                     </div>
-                    <p className="typo-caption text-foreground/65 mt-1 line-clamp-2">
+                    <p className="typo-caption text-foreground mt-1 line-clamp-2">
                       {m.content}
                     </p>
                   </li>

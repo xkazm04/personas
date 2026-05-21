@@ -10,6 +10,8 @@ import {
 import type { DesignUseCase } from '@/lib/types/frontendTypes';
 import { useToastStore } from '@/stores/toastStore';
 import { toastCatch } from '@/lib/silentCatch';
+import { DebtText, debtText } from '@/i18n/DebtText';
+
 
 interface Props {
   personaId: string;
@@ -163,25 +165,25 @@ export function EventRenameModal({ personaId, useCase, settings, onClose, onSave
       >
         <div className="flex items-center justify-between px-5 py-3 border-b border-primary/10 bg-secondary/20">
           <div>
-            <h3 className="typo-heading text-foreground/95">Rename emitted events</h3>
-            <p className="typo-caption text-foreground/60">
-              Capability: <span className="text-foreground/85">{useCase.title}</span>
+            <h3 className="typo-heading text-foreground/95"><DebtText k="auto_rename_emitted_events_8b77a863" /></h3>
+            <p className="typo-caption text-foreground">
+              <DebtText k="auto_capability_e2d310aa" /> <span className="text-foreground/85">{useCase.title}</span>
             </p>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded hover:bg-secondary/60 text-foreground/60">
+          <button onClick={onClose} className="p-1.5 rounded hover:bg-secondary/60 text-foreground">
             <X className="w-4 h-4" />
           </button>
         </div>
 
         <div className="px-5 py-4 max-h-[65vh] overflow-y-auto space-y-3">
-          <p className="typo-body text-foreground/70">
-            Map each event the LLM emits to the name it should be published as. Subscribers listen to the published name.
+          <p className="typo-body text-foreground">
+            <DebtText k="auto_map_each_event_the_llm_emits_to_the_name_i_c161aceb" />
           </p>
 
           <div className="space-y-2">
-            <div className="flex items-center gap-2 typo-caption uppercase tracking-wider text-foreground/50">
-              <span className="flex-1">Emit (LLM&rsquo;s name)</span>
-              <span className="flex-1">Publish as</span>
+            <div className="flex items-center gap-2 typo-caption uppercase tracking-wider text-foreground">
+              <span className="flex-1"><DebtText k="auto_emit_llm_rsquo_s_name_d448de31" /></span>
+              <span className="flex-1"><DebtText k="auto_publish_as_dfb33055" /></span>
               <span className="w-8" />
             </div>
             {rows.map((r, i) => {
@@ -207,24 +209,24 @@ export function EventRenameModal({ personaId, useCase, settings, onClose, onSave
                     <button
                       onClick={() => removeRow(i)}
                       disabled={rows.length === 1}
-                      className="p-1.5 rounded text-foreground/50 hover:text-red-400 disabled:opacity-30"
-                      title="Remove row"
+                      className="p-1.5 rounded text-foreground hover:text-red-400 disabled:opacity-30"
+                      title={debtText("auto_remove_row_bd7f4b48")}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                   {r.from.trim() && (
-                    <div className="flex items-center gap-3 text-foreground/55 typo-caption pl-1">
+                    <div className="flex items-center gap-3 text-foreground typo-caption pl-1">
                       {fromConsumers > 0 ? (
                         <span className="inline-flex items-center gap-1 text-amber-400/80">
                           <AlertTriangle className="w-3 h-3" />
-                          {fromConsumers} consumer{fromConsumers === 1 ? '' : 's'} currently listen for &ldquo;{r.from}&rdquo;
+                          {fromConsumers} consumer{fromConsumers === 1 ? '' : 's'} <DebtText k="auto_currently_listen_for_ldquo_53607fbc" />{r.from}&rdquo;
                         </span>
                       ) : (
-                        <span>No external consumers listen for &ldquo;{r.from}&rdquo;</span>
+                        <span><DebtText k="auto_no_external_consumers_listen_for_ldquo_ad073aa3" />{r.from}&rdquo;</span>
                       )}
                       {r.to.trim() && toConsumers > 0 && (
-                        <span>{toConsumers} already listen for &ldquo;{r.to}&rdquo;</span>
+                        <span>{toConsumers} <DebtText k="auto_already_listen_for_ldquo_3aa796ca" />{r.to}&rdquo;</span>
                       )}
                     </div>
                   )}
@@ -233,9 +235,9 @@ export function EventRenameModal({ personaId, useCase, settings, onClose, onSave
             })}
             <button
               onClick={addRow}
-              className="inline-flex items-center gap-1 px-2 py-1 rounded border border-dashed border-primary/20 text-foreground/60 hover:text-primary hover:border-primary/40 typo-caption"
+              className="inline-flex items-center gap-1 px-2 py-1 rounded border border-dashed border-primary/20 text-foreground hover:text-primary hover:border-primary/40 typo-caption"
             >
-              <Plus className="w-3 h-3" /> Add another rename
+              <Plus className="w-3 h-3" /> <DebtText k="auto_add_another_rename_e1f065e8" />
             </button>
           </div>
 
@@ -243,11 +245,11 @@ export function EventRenameModal({ personaId, useCase, settings, onClose, onSave
             <div className="rounded border border-amber-500/25 bg-amber-500/5 p-3">
               <div className="flex items-center gap-2 typo-body text-amber-300/90 mb-2">
                 <AlertTriangle className="w-4 h-4" />
-                Consumers will be affected by this rename
+                <DebtText k="auto_consumers_will_be_affected_by_this_rename_fd48eb7b" />
               </div>
-              <p className="typo-caption text-foreground/70 mb-2">
-                Pick how to handle the {totalConsumers} existing consumer
-                {totalConsumers === 1 ? '' : 's'}. (Excludes this persona.)
+              <p className="typo-caption text-foreground mb-2">
+                <DebtText k="auto_pick_how_to_handle_the_d56a2f7e" /> {totalConsumers} <DebtText k="auto_existing_consumer_96dbcbe6" />
+                {totalConsumers === 1 ? '' : 's'}<DebtText k="auto_excludes_this_persona_eebbc8df" />
               </p>
               <div className="flex flex-col gap-1.5">
                 {(['update', 'delete', 'leave'] as RenameConsumerAction[]).map((opt) => (
@@ -263,13 +265,13 @@ export function EventRenameModal({ personaId, useCase, settings, onClose, onSave
                     <span>
                       <span className="font-medium capitalize">{opt}</span>
                       {opt === 'update' && (
-                        <span className="text-foreground/60"> — rewrite consumers to listen for the new name</span>
+                        <span className="text-foreground"> <DebtText k="auto_rewrite_consumers_to_listen_for_the_new_na_7f7ba29f" /></span>
                       )}
                       {opt === 'delete' && (
-                        <span className="text-foreground/60"> — drop those subscriptions/triggers entirely</span>
+                        <span className="text-foreground"> <DebtText k="auto_drop_those_subscriptions_triggers_entirely_566b5c5d" /></span>
                       )}
                       {opt === 'leave' && (
-                        <span className="text-foreground/60"> — consumers will silently stop receiving the event</span>
+                        <span className="text-foreground"> <DebtText k="auto_consumers_will_silently_stop_receiving_the_dd8f8ce5" /></span>
                       )}
                     </span>
                   </label>

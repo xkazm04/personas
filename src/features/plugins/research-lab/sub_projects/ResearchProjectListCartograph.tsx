@@ -20,6 +20,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 import type { Translations } from '@/i18n/en';
 import type { ResearchProject } from '@/api/researchLab/researchLab';
+import { DebtText, debtText } from '@/i18n/DebtText';
+
 import {
   domainLabel, projectStatusLabel, projectStatusColor,
   type ProjectStatus, type Domain, DOMAINS,
@@ -186,8 +188,8 @@ function CartoBand({
             <span className="typo-section-title text-foreground truncate">
               {t.research_lab.projects}
             </span>
-            <span className="text-xs uppercase tracking-[0.2em] text-foreground/60">
-              Cartograph · phase × domain
+            <span className="typo-label uppercase tracking-[0.2em] text-foreground">
+              <DebtText k="auto_cartograph_phase_domain_cd11034f" />
             </span>
           </div>
         </div>
@@ -212,7 +214,7 @@ function Stat({ label, value, accent }: { label: string; value: number | string;
   return (
     <div className="flex flex-col items-end leading-tight">
       <span className={`typo-data-lg ${accent ? 'text-primary' : 'text-foreground'}`}>{value}</span>
-      <span className="text-[10px] uppercase tracking-[0.18em] text-foreground/55">{label}</span>
+      <span className="text-[10px] uppercase tracking-[0.18em] text-foreground">{label}</span>
     </div>
   );
 }
@@ -251,10 +253,10 @@ function CartographChart({
         height={totalH}
         className="block"
         role="img"
-        aria-label="Project cartograph"
+        aria-label={debtText("auto_project_cartograph_b0dc2bb5")}
       >
         {/* Grid lines */}
-        <g stroke="currentColor" className="text-foreground/15" strokeWidth={0.5}>
+        <g stroke="currentColor" className="text-foreground" strokeWidth={0.5}>
           {phases.map((_, i) => (
             <line
               key={`v${i}`}
@@ -372,10 +374,10 @@ function DetailPane({
 }) {
   if (!project) {
     return (
-      <div className="flex flex-col items-start gap-2 typo-caption text-foreground/55">
-        <MapPin className="w-4 h-4 text-foreground/30" />
-        <p>Hover or click a marker to inspect.</p>
-        <p>Click again to unpin.</p>
+      <div className="flex flex-col items-start gap-2 typo-caption text-foreground">
+        <MapPin className="w-4 h-4 text-foreground" />
+        <p><DebtText k="auto_hover_or_click_a_marker_to_inspect_33f2a956" /></p>
+        <p><DebtText k="auto_click_again_to_unpin_1177bbaf" /></p>
       </div>
     );
   }
@@ -407,7 +409,7 @@ function DetailPane({
           onClick={() => onOpen(project.id)}
           className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-interactive typo-caption bg-primary/15 text-primary hover:bg-primary/25 transition-colors"
         >
-          Open project
+          <DebtText k="auto_open_project_3a6a0464" />
         </button>
         <div className="flex items-center gap-2">
           <button
@@ -437,7 +439,7 @@ function CartoEmpty({ t, onCreate }: { t: Translations; onCreate: () => void }) 
           <FolderSearch className="w-6 h-6 text-primary" />
         </div>
         <p className="typo-body-lg text-foreground">{t.research_lab.no_projects}</p>
-        <p className="typo-body text-foreground/70">{t.research_lab.no_projects_hint}</p>
+        <p className="typo-body text-foreground">{t.research_lab.no_projects_hint}</p>
         <button
           onClick={onCreate}
           className="inline-flex items-center gap-1.5 px-4 py-2 rounded-interactive typo-caption bg-primary/20 text-primary hover:bg-primary/30 transition-colors"

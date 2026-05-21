@@ -8,6 +8,8 @@ import { isDesktopBridge, isUniversalOAuthConnector, isGoogleOAuthConnector } fr
 import type { ConnectorDefinition, CredentialTemplateField } from '@/lib/types/types';
 import { toastCatch } from '@/lib/silentCatch';
 import { createLogger } from '@/lib/log';
+import { DebtText, debtText } from '@/i18n/DebtText';
+
 
 const logger = createLogger('quick-add-credential');
 
@@ -138,7 +140,7 @@ export function QuickAddCredentialModal({
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-3xl max-h-[90vh] flex flex-col bg-background border border-primary/15 rounded-modal shadow-2xl overflow-hidden"
+        className="relative w-full max-w-3xl max-h-[90vh] flex flex-col bg-background border border-primary/15 rounded-modal shadow-elevation-4 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -148,7 +150,7 @@ export function QuickAddCredentialModal({
               <button
                 onClick={handleBackToPicker}
                 className="p-1 rounded-card hover:bg-secondary/60 transition-colors"
-                aria-label="Back to picker"
+                aria-label={debtText("auto_back_to_picker_2d203d04")}
               >
                 <ArrowLeft className="w-4 h-4 text-foreground" />
               </button>
@@ -159,7 +161,7 @@ export function QuickAddCredentialModal({
                   ? `Connect a ${humanCategory} provider`
                   : `Set up ${picked?.label}`}
               </h2>
-              <p className="typo-body text-foreground/60 truncate">
+              <p className="typo-body text-foreground truncate">
                 {phase === 'pick'
                   ? 'Pick a provider to connect. The persona will use it once a healthy credential is saved.'
                   : 'Fields are stored encrypted; the healthcheck runs before the credential is saved.'}
@@ -191,18 +193,18 @@ export function QuickAddCredentialModal({
               </div>
             ) : (
               <div className="text-center py-10 space-y-3">
-                <p className="typo-body text-foreground/70">
-                  No connectors declare the <code className="px-1 py-0.5 rounded bg-secondary/40 text-foreground">{category}</code> category yet.
+                <p className="typo-body text-foreground">
+                  <DebtText k="auto_no_connectors_declare_the_6bf34e6e" /> <code className="px-1 py-0.5 rounded bg-secondary/40 text-foreground">{category}</code> <DebtText k="auto_category_yet_58439dd0" />
                 </p>
-                <p className="typo-body text-foreground/60">
-                  You can still add one from the Vault catalog — it will be picked up automatically here when tagged.
+                <p className="typo-body text-foreground">
+                  <DebtText k="auto_you_can_still_add_one_from_the_vault_catal_ac9cc338" />
                 </p>
                 <button
                   onClick={handleOpenVaultCatalog}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card border border-primary/20 hover:bg-primary/10 transition-colors typo-body text-foreground"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
-                  Open Vault Catalog
+                  <DebtText k="auto_open_vault_catalog_6e8c24e5" />
                 </button>
               </div>
             )
@@ -224,20 +226,18 @@ export function QuickAddCredentialModal({
               />
             ) : (
               <div className="space-y-3">
-                <p className="typo-body text-foreground/80">
-                  {picked.label} requires browser-based authentication, a local-app bridge, or CLI capture.
-                  Finish the connection in the Vault catalog — it only takes a moment.
+                <p className="typo-body text-foreground">
+                  {picked.label} <DebtText k="auto_requires_browser_based_authentication_a_lo_15c9d18b" />
                 </p>
-                <p className="typo-body text-foreground/60">
-                  Once the credential is healthy, close this questionnaire and re-open it. Your new
-                  provider will appear in the list automatically.
+                <p className="typo-body text-foreground">
+                  <DebtText k="auto_once_the_credential_is_healthy_close_this__e541af46" />
                 </p>
                 <button
                   onClick={handleOpenVaultCatalog}
                   className="inline-flex items-center gap-1.5 px-3 py-2 rounded-card bg-primary/15 hover:bg-primary/25 border border-primary/30 transition-colors typo-body text-foreground"
                 >
                   <ExternalLink className="w-4 h-4" />
-                  Open Vault → Catalog
+                  <DebtText k="auto_open_vault_catalog_efc2651a" />
                 </button>
               </div>
             )
@@ -276,11 +276,11 @@ function InlineCredentialForm({
   return (
     <div className="space-y-4">
       {summary && (
-        <p className="typo-body text-foreground/70 leading-relaxed">{summary}</p>
+        <p className="typo-body text-foreground leading-relaxed">{summary}</p>
       )}
 
       <div className="space-y-1.5">
-        <label className="typo-body text-foreground/80 font-medium">Name</label>
+        <label className="typo-body text-foreground font-medium">Name</label>
         <input
           type="text"
           value={credentialName}
@@ -300,10 +300,10 @@ function InlineCredentialForm({
 
       {setupGuide && (
         <details className="rounded-card border border-primary/10 bg-secondary/20">
-          <summary className="cursor-pointer px-3 py-2 typo-body text-foreground/70 hover:text-foreground">
-            Setup guide
+          <summary className="cursor-pointer px-3 py-2 typo-body text-foreground hover:text-foreground">
+            <DebtText k="auto_setup_guide_6b2f076c" />
           </summary>
-          <pre className="whitespace-pre-wrap px-3 py-2 typo-body text-foreground/70 font-sans border-t border-primary/10">
+          <pre className="whitespace-pre-wrap px-3 py-2 typo-body text-foreground font-sans border-t border-primary/10">
             {setupGuide}
           </pre>
         </details>
@@ -352,7 +352,7 @@ function CredentialField({ field, value, onChange }: CredentialFieldProps) {
 
   return (
     <div className="space-y-1.5">
-      <label className="typo-body text-foreground/80 font-medium">
+      <label className="typo-body text-foreground font-medium">
         {field.label}
         {field.required && <span className="text-status-error ml-0.5">*</span>}
       </label>
@@ -362,7 +362,7 @@ function CredentialField({ field, value, onChange }: CredentialFieldProps) {
           onChange={(e) => onChange(e.target.value)}
           className="w-full px-3 py-2 typo-body rounded-card border border-border bg-foreground/[0.03] text-foreground focus:outline-none focus:border-primary/30 transition-all"
         >
-          <option value="">— Select —</option>
+          <option value=""><DebtText k="auto_select_3fcf5699" /></option>
           {(field.options ?? []).map((opt) => {
             const isPair = typeof opt === 'object' && opt !== null;
             const optValue = isPair ? opt.value : opt;
@@ -383,7 +383,7 @@ function CredentialField({ field, value, onChange }: CredentialFieldProps) {
         />
       )}
       {field.helpText && (
-        <p className="typo-body text-foreground/55">{field.helpText}</p>
+        <p className="typo-body text-foreground">{field.helpText}</p>
       )}
     </div>
   );

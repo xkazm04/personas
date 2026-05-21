@@ -6,6 +6,8 @@ import { IMPORTANCE_DOTS, importanceToDots, dotsToImportance } from '../../libs/
 import MemoryRowDetail from './MemoryRowDetail';
 import MemoryRowActions from './MemoryRowActions';
 import { CategoryChip } from '@/features/shared/components/display/CategoryChip';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 interface Revision { title: string; content: string; category: string; importance: number; edited_at: string; }
 
@@ -15,7 +17,7 @@ function parseRevisions(tags: string | null): { source: string; revisions: Revis
     const parsed = JSON.parse(tags);
     if (typeof parsed === 'object' && parsed !== null && Array.isArray(parsed.revisions))
       return { source: parsed.source ?? '', revisions: parsed.revisions };
-  } catch { /* Simple string tag */ }
+  } catch (err) { silentCatch("features/pipeline/sub_teamMemory/components/panel/TeamMemoryRow:catch1")(err); }
   return { source: tags, revisions: [] };
 }
 

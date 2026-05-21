@@ -18,6 +18,8 @@ import { InlineAddMemoryForm } from './CreateMemoryForm';
 import { MEMORY_CATEGORY_COLORS, ALL_MEMORY_CATEGORIES, formatRelativeTime } from '@/lib/utils/formatters';
 import { stripHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
 import type { PersonaMemory } from '@/lib/types/types';
+import { DebtText } from '@/i18n/DebtText';
+
 
 // Hex colors per category — matches the chip palette but produces real
 // hex values usable in SVG stroke/fill, not Tailwind classes.
@@ -124,7 +126,7 @@ export default function MemoriesPageGraph() {
       <ContentBody flex>
         {/* Top stats + filter row */}
         <div className="flex items-center gap-3 flex-wrap px-4 md:px-6 py-2 border-b border-primary/10 bg-secondary/5 flex-shrink-0">
-          <div className="flex items-center gap-3 text-sm flex-wrap mr-auto">
+          <div className="flex items-center gap-3 typo-body flex-wrap mr-auto">
             <KpiMetric label="Nodes" value={stats.total} />
             <KpiDivider />
             <KpiMetric label="Personas" value={stats.personas} tone="text-cyan-300" />
@@ -146,7 +148,7 @@ export default function MemoriesPageGraph() {
                   className={`flex items-center gap-1 rounded-full px-2.5 py-1 typo-body font-medium transition-all border ${
                     active
                       ? `${colors.bg} ${colors.text} border-current/30`
-                      : 'text-foreground/50 hover:text-foreground hover:bg-secondary/30 border-transparent'
+                      : 'text-foreground hover:text-foreground hover:bg-secondary/30 border-transparent'
                   }`}
                 >
                   {colors.label}
@@ -235,8 +237,8 @@ export default function MemoriesPageGraph() {
           {filtered.length === 0 && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="flex flex-col items-center gap-3">
-                <GitFork className="w-8 h-8 text-foreground/30" />
-                <p className="typo-body text-foreground/50">No memories in this cluster</p>
+                <GitFork className="w-8 h-8 text-foreground" />
+                <p className="typo-body text-foreground"><DebtText k="auto_no_memories_in_this_cluster_29741022" /></p>
               </div>
             </div>
           )}
@@ -372,11 +374,11 @@ function PersonaLegend({ personas, memories }: { personas: { id: string; name: s
 
   return (
     <div className="absolute left-3 bottom-3 flex items-center gap-3 bg-background/80 backdrop-blur-sm rounded-card border border-primary/15 px-3 py-2">
-      <span className="typo-label text-foreground/50">Personas</span>
+      <span className="typo-label text-foreground">Personas</span>
       {personasInGraph.map((p) => (
         <div key={p.id} className="flex items-center gap-1.5">
           <div className="h-2 w-2 rounded-full" style={{ backgroundColor: p.color ?? '#6B7280' }} />
-          <span className="typo-caption text-foreground/70 truncate max-w-[100px]">{p.name}</span>
+          <span className="typo-caption text-foreground truncate max-w-[100px]">{p.name}</span>
         </div>
       ))}
     </div>
@@ -386,12 +388,12 @@ function PersonaLegend({ personas, memories }: { personas: { id: string; name: s
 function SizeLegend() {
   return (
     <div className="absolute left-3 top-3 flex items-center gap-2 bg-background/80 backdrop-blur-sm rounded-card border border-primary/15 px-3 py-2">
-      <span className="typo-label text-foreground/50">Size</span>
-      <span className="typo-caption text-foreground/60">Importance</span>
-      <svg width={10} height={10}><circle cx={5} cy={5} r={3} fill="currentColor" className="text-foreground/30" /></svg>
-      <span className="typo-caption text-foreground/60">low</span>
-      <svg width={16} height={16}><circle cx={8} cy={8} r={6} fill="currentColor" className="text-foreground/30" /></svg>
-      <span className="typo-caption text-foreground/60">high</span>
+      <span className="typo-label text-foreground">Size</span>
+      <span className="typo-caption text-foreground">Importance</span>
+      <svg width={10} height={10}><circle cx={5} cy={5} r={3} fill="currentColor" className="text-foreground" /></svg>
+      <span className="typo-caption text-foreground">low</span>
+      <svg width={16} height={16}><circle cx={8} cy={8} r={6} fill="currentColor" className="text-foreground" /></svg>
+      <span className="typo-caption text-foreground">high</span>
     </div>
   );
 }
@@ -416,14 +418,14 @@ function DetailPanel({
       <div className="flex items-start justify-between mb-3 gap-3">
         <div className="flex items-start gap-2 min-w-0">
           <div className={`flex h-7 w-7 items-center justify-center rounded-input flex-shrink-0 ${colors?.bg ?? 'bg-foreground/10'}`}>
-            <Brain className={`h-3.5 w-3.5 ${colors?.text ?? 'text-foreground/60'}`} />
+            <Brain className={`h-3.5 w-3.5 ${colors?.text ?? 'text-foreground'}`} />
           </div>
           <div className="min-w-0">
             <p className="typo-body font-semibold text-foreground leading-tight line-clamp-2">{stripHtml(memory.title)}</p>
-            <p className="typo-caption text-foreground/60 mt-0.5">{personaName}</p>
+            <p className="typo-caption text-foreground mt-0.5">{personaName}</p>
           </div>
         </div>
-        <button onClick={onClose} className="p-1 rounded-input hover:bg-secondary/40 text-foreground/60 flex-shrink-0">
+        <button onClick={onClose} className="p-1 rounded-input hover:bg-secondary/40 text-foreground flex-shrink-0">
           <X className="h-3.5 w-3.5" />
         </button>
       </div>
@@ -438,10 +440,10 @@ function DetailPanel({
         <motion.div className="h-full rounded-full" style={{ backgroundColor: color }} initial={{ width: 0 }} animate={{ width: `${(memory.importance / 5) * 100}%` }} transition={{ duration: 0.4 }} />
       </div>
 
-      <p className="typo-body text-foreground/70 line-clamp-4 mb-3">{stripHtml(memory.content)}</p>
+      <p className="typo-body text-foreground line-clamp-4 mb-3">{stripHtml(memory.content)}</p>
 
-      <div className="flex items-center justify-between typo-caption text-foreground/50 pt-2 border-t border-primary/10">
-        <span>Last seen {formatRelativeTime(lastSeen)}</span>
+      <div className="flex items-center justify-between typo-caption text-foreground pt-2 border-t border-primary/10">
+        <span><DebtText k="auto_last_seen_56462f81" /> {formatRelativeTime(lastSeen)}</span>
         <button onClick={onDelete} className="text-red-400/80 hover:text-red-400">Delete</button>
       </div>
     </motion.div>
@@ -451,7 +453,7 @@ function DetailPanel({
 function DetailStat({ label, value, tone = 'text-foreground' }: { label: string; value: string | number; tone?: string }) {
   return (
     <div className="rounded-input bg-secondary/40 px-2 py-1.5 text-center border border-primary/10">
-      <p className="typo-label text-foreground/50">{label}</p>
+      <p className="typo-label text-foreground">{label}</p>
       <p className={`typo-data font-semibold tabular-nums ${tone}`}>{value}</p>
     </div>
   );
@@ -459,7 +461,7 @@ function DetailStat({ label, value, tone = 'text-foreground' }: { label: string;
 
 function FilterPill({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button onClick={onClick} className={`rounded-full px-3 py-1 typo-body font-medium transition-all ${active ? 'bg-primary/15 text-foreground' : 'text-foreground/50 hover:text-foreground hover:bg-secondary/30'}`}>
+    <button onClick={onClick} className={`rounded-full px-3 py-1 typo-body font-medium transition-all ${active ? 'bg-primary/15 text-foreground' : 'text-foreground hover:text-foreground hover:bg-secondary/30'}`}>
       {children}
     </button>
   );
@@ -467,12 +469,12 @@ function FilterPill({ active, onClick, children }: { active: boolean; onClick: (
 
 function KpiMetric({ label, value, tone = 'text-foreground' }: { label: string; value: string | number; tone?: string }) {
   return (
-    <span className="typo-body text-foreground/50 whitespace-nowrap">
+    <span className="typo-body text-foreground whitespace-nowrap">
       {label} <span className={`${tone} font-bold tabular-nums typo-data`}>{value}</span>
     </span>
   );
 }
 
 function KpiDivider() {
-  return <span className="text-foreground/10">|</span>;
+  return <span className="text-foreground">|</span>;
 }

@@ -168,7 +168,6 @@ function inferCategory(name: string): ArchCategory {
   // fallback so the column never collapses, but a console.warn flags the gap
   // for the developer to map in connector-categories.json.
   if (import.meta.env.DEV) {
-    // eslint-disable-next-line no-console
     console.warn('[architecturalCategories] unmapped connector slot:', name);
   }
   return ARCH_CATEGORIES['productivity']!;

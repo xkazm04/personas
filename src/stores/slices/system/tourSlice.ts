@@ -3,6 +3,8 @@ import * as Sentry from "@sentry/react";
 import type { SystemStore } from "../../storeTypes";
 import { useToastStore } from "@/stores/toastStore";
 import { en } from "@/i18n/en";
+import { silentCatch } from '@/lib/silentCatch';
+
 
 // -- Types --------------------------------------------------------------
 
@@ -714,10 +716,7 @@ function probeTourStorage(): boolean {
       useToastStore
         .getState()
         .addToast(en.onboarding.tour_storage_unavailable_toast, "error", 8000);
-    } catch {
-      // intentional: see comment above. The probe still records the
-      // breadcrumb above so support has the diagnostic trail.
-    }
+    } catch (err) { silentCatch("stores/slices/system/tourSlice:catch1")(err); }
   }
 
   return false;
@@ -790,9 +789,7 @@ function persistState(state: Omit<PersistedTourState, 'version'>) {
         useToastStore
           .getState()
           .addToast(en.onboarding.tour_storage_unavailable_toast, "error", 8000);
-      } catch {
-        // see probeTourStorage(): toast may not be initialized in tests
-      }
+      } catch (err) { silentCatch("stores/slices/system/tourSlice:catch2")(err); }
     }
   }
 }

@@ -1,3 +1,4 @@
+import { silentCatch } from '@/lib/silentCatch';
 // -- Trailing-debounce wrapper around localStorage for zustand/persist ---
 //
 // Zustand's `persist` middleware writes to localStorage synchronously on every
@@ -31,9 +32,7 @@ function installFlushHook(): void {
       clearTimeout(pending.timer);
       try {
         window.localStorage.setItem(key, pending.value);
-      } catch {
-        // intentional: storage may be full / disabled — drop this snapshot
-      }
+      } catch (err) { silentCatch("lib/throttledStorage:catch1")(err); }
     }
     pendingByKey.clear();
   };
@@ -95,9 +94,7 @@ export function createThrottledLocalStorage(
         pendingByKey.delete(name);
         try {
           window.localStorage.setItem(name, value);
-        } catch {
-          // intentional: storage may be full / disabled
-        }
+        } catch (err) { silentCatch("lib/throttledStorage:catch2")(err); }
       }, debounceMs);
       pendingByKey.set(name, { value, timer });
     },
@@ -109,18 +106,14 @@ export function createThrottledLocalStorage(
       }
       try {
         window.localStorage.removeItem(name);
-      } catch {
-        // intentional
-      }
+      } catch (err) { silentCatch("lib/throttledStorage:catch3")(err); }
     },
     clear(): void {
       for (const pending of pendingByKey.values()) clearTimeout(pending.timer);
       pendingByKey.clear();
       try {
         window.localStorage.clear();
-      } catch {
-        // intentional
-      }
+      } catch (err) { silentCatch("lib/throttledStorage:catch4")(err); }
     },
   };
 
@@ -135,9 +128,7 @@ export function flushThrottledStorage(): void {
       if (typeof window !== "undefined") {
         window.localStorage.setItem(key, pending.value);
       }
-    } catch {
-      // intentional
-    }
+    } catch (err) { silentCatch("lib/throttledStorage:catch5")(err); }
   }
   pendingByKey.clear();
 }

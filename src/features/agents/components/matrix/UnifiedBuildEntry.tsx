@@ -31,6 +31,10 @@ import type { ActiveProcess } from "@/stores/slices/processActivitySlice";
 import { createLogger } from "@/lib/log";
 import { useTranslation } from '@/i18n/useTranslation';
 import { ContentHeader } from '@/features/shared/components/layout/ContentLayout';
+import { silentCatch } from '@/lib/silentCatch';
+import { DebtText, debtText } from '@/i18n/DebtText';
+
+
 
 // Layout preference — persists across sessions via localStorage.
 // Two modes after 2026-05-05: the flagship "glyph-full" and the new
@@ -45,11 +49,11 @@ function readLayoutPreference(): BuildLayout {
     if (raw === "glyph-full" || raw === "composer-prototype") return raw;
     // Migrate retired values so users don't land on a stale preference.
     if (raw === "legacy-dimensions" || raw === "v3-capabilities" || raw === "glyph") return "glyph-full";
-  } catch { /* SSR or disabled localStorage */ }
+  } catch (err) { silentCatch("features/agents/components/matrix/UnifiedBuildEntry:catch1")(err); }
   return "glyph-full";
 }
 function writeLayoutPreference(value: BuildLayout): void {
-  try { localStorage.setItem(LAYOUT_STORAGE_KEY, value); } catch { /* best-effort */ }
+  try { localStorage.setItem(LAYOUT_STORAGE_KEY, value); } catch (err) { silentCatch("features/agents/components/matrix/UnifiedBuildEntry:catch2")(err); }
 }
 
 const logger = createLogger("unified-matrix-entry");
@@ -204,7 +208,7 @@ export function UnifiedBuildEntry() {
         void import("@/stores/overviewStore").then(({ useOverviewStore }) => {
           useOverviewStore.getState().processEnded('agent_build', 'completed', personaId);
         });
-      } catch { /* best-effort */ }
+      } catch (err) { silentCatch("features/agents/components/matrix/UnifiedBuildEntry:catch3")(err); }
 
       // Reset build state and intent
       useAgentStore.getState().resetBuildSession();
@@ -228,11 +232,10 @@ export function UnifiedBuildEntry() {
   // Auto-redirect after promotion
   const buildPhaseForRedirect = useAgentStore((s) => s.buildPhase);
   useEffect(() => {
-    if (buildPhaseForRedirect === 'promoted' && draftPersonaId && !fadeOut) {
-      // Short delay so user sees the "Agent Promoted" success indicator
-      const timer = setTimeout(() => handleViewPromotedAgent(), 1500);
-      return () => clearTimeout(timer);
-    }
+    if (buildPhaseForRedirect !== 'promoted' || !draftPersonaId || fadeOut) return;
+    // Short delay so user sees the "Agent Promoted" success indicator
+    const timer = setTimeout(() => handleViewPromotedAgent(), 1500);
+    return () => clearTimeout(timer);
   }, [buildPhaseForRedirect, draftPersonaId, fadeOut, handleViewPromotedAgent]);
 
   // -- Build orchestration ------------------------------------------------
@@ -410,7 +413,7 @@ export function UnifiedBuildEntry() {
     if (typeof draftName === "string" && draftName.length > 0 && draftName !== agentName) {
       setAgentName(draftName);
     }
-  }, [buildDraft]);
+  }, [agentName, buildDraft]);
 
   // -- Handlers -----------------------------------------------------------
 
@@ -481,7 +484,7 @@ export function UnifiedBuildEntry() {
           { section: 'personas', tab: 'matrix', personaId },
         );
       });
-    } catch { /* best-effort */ }
+    } catch (err) { silentCatch("features/agents/components/matrix/UnifiedBuildEntry:catch4")(err); }
 
     try {
       // Mode resolution priority: Companion prefill mode (most deliberate
@@ -508,10 +511,10 @@ export function UnifiedBuildEntry() {
         void import("@/stores/overviewStore").then(({ useOverviewStore }) => {
           useOverviewStore.getState().processEnded('agent_build', 'failed', personaId);
         });
-      } catch { /* best-effort */ }
+      } catch (err) { silentCatch("features/agents/components/matrix/UnifiedBuildEntry:catch5")(err); }
       try {
         await deletePersona(personaId);
-      } catch { /* best-effort cleanup */ }
+      } catch (err) { silentCatch("features/agents/components/matrix/UnifiedBuildEntry:catch6")(err); }
       // Don't call setDraftPersonaId(null) — that calls resetBuildSession()
       // unconditionally, which would wipe whatever session is currently active
       // (potentially a *different* persona's in-progress build that the user
@@ -527,7 +530,7 @@ export function UnifiedBuildEntry() {
     } finally {
       setIsLaunching(false);
     }
-  }, [build, draftPersonaId, createPersona, deletePersona, isLaunching]); // intentText read via ref
+  }, [build, isLaunching, draftPersonaId, createPersona, setDraftPersonaId, t.agents.matrix_entry.failed_to_create, deletePersona]); // intentText read via ref
 
   // Phase F: if a prefill carried `autoLaunch`, fire handleLaunch once
   // intent is non-empty and we're not already mid-launch. The ref
@@ -635,7 +638,7 @@ export function UnifiedBuildEntry() {
           className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 typo-caption transition disabled:opacity-50 disabled:cursor-not-allowed ${
             oneShotEnabled
               ? "border-primary/40 bg-primary/15 text-primary"
-              : "border-border/30 bg-secondary/20 text-foreground/60 hover:text-foreground"
+              : "border-border/30 bg-secondary/20 text-foreground hover:text-foreground"
           }`}
           title={
             oneShotEnabled
@@ -659,12 +662,12 @@ export function UnifiedBuildEntry() {
             className={`rounded-full px-3 py-1 typo-caption transition ${
               layout === "glyph-full"
                 ? "bg-primary/20 text-primary"
-                : "text-foreground/60 hover:text-foreground"
+                : "text-foreground hover:text-foreground"
             }`}
-            title="Glyph Full — sigil-first flagship build surface"
+            title={debtText("auto_glyph_full_sigil_first_flagship_build_surf_61b25b83")}
             data-testid="build-layout-toggle-glyph-full"
           >
-            Glyph Full
+            <DebtText k="auto_glyph_full_a4abca63" />
           </button>
           <button
             type="button"
@@ -672,12 +675,12 @@ export function UnifiedBuildEntry() {
             className={`rounded-full px-3 py-1 typo-caption transition ${
               layout === "composer-prototype"
                 ? "bg-primary/20 text-primary"
-                : "text-foreground/60 hover:text-foreground"
+                : "text-foreground hover:text-foreground"
             }`}
-            title="Composer Prototype — periphery connectors + center prompt + glyph quick-setup"
+            title={debtText("auto_composer_prototype_periphery_connectors_ce_1a3d8c28")}
             data-testid="build-layout-toggle-prototype"
           >
-            Composer Prototype
+            <DebtText k="auto_composer_prototype_9b50c4fd" />
           </button>
         </div>
       </div>

@@ -256,13 +256,13 @@ export default function SetupPanel() {
       >
         <div className="flex items-start gap-3 px-1 py-2">
           <Wrench
-            className={`w-4 h-4 mt-0.5 ${selfImprove ? 'text-emerald-400' : 'text-foreground/40'}`}
+            className={`w-4 h-4 mt-0.5 ${selfImprove ? 'text-emerald-400' : 'text-foreground'}`}
           />
           <div className="flex-1 min-w-0">
             <div className="typo-body font-medium">
               {t.plugins.companion.setup_self_improve_label}
             </div>
-            <div className="typo-caption text-foreground/60 mt-0.5">
+            <div className="typo-caption text-foreground mt-0.5">
               {selfImprove === null
                 ? t.plugins.companion.loading
                 : selfImprove
@@ -274,7 +274,7 @@ export default function SetupPanel() {
             className={`shrink-0 typo-caption font-medium px-2 py-0.5 rounded-full border ${
               selfImprove
                 ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
-                : 'border-foreground/10 bg-foreground/5 text-foreground/60'
+                : 'border-foreground/10 bg-foreground/5 text-foreground'
             }`}
           >
             {selfImprove === null
@@ -292,13 +292,13 @@ export default function SetupPanel() {
       >
         <div className="flex items-start gap-3 px-1 py-2">
           <Activity
-            className={`w-4 h-4 mt-0.5 ${trackingEnabled ? 'text-emerald-400' : 'text-foreground/40'}`}
+            className={`w-4 h-4 mt-0.5 ${trackingEnabled ? 'text-emerald-400' : 'text-foreground'}`}
           />
           <div className="flex-1 min-w-0">
             <div className="typo-body font-medium">
               {t.plugins.companion.tracking_master_label}
             </div>
-            <div className="typo-caption text-foreground/60 mt-0.5">
+            <div className="typo-caption text-foreground mt-0.5">
               {trackingEnabled === null
                 ? t.plugins.companion.loading
                 : trackingEnabled
@@ -341,11 +341,11 @@ function ToggleRow({
       <div className="mt-0.5 shrink-0">{icon}</div>
       <div className="flex-1 min-w-0">
         <div className="typo-body font-medium">{label}</div>
-        <div className="typo-caption text-foreground/60 mt-0.5">
+        <div className="typo-caption text-foreground mt-0.5">
           {description}
         </div>
         {countLabel ? (
-          <div className="typo-caption text-foreground/45 mt-1">
+          <div className="typo-caption text-foreground mt-1">
             {countLabel}
           </div>
         ) : null}

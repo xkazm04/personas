@@ -18,6 +18,8 @@ import { useHealthyConnectors } from "@/features/agents/components/matrix/useHea
 import { ComposerPickerShell } from "./ComposerPickerShell";
 import { ComposerConnectorCard } from "./ComposerConnectorCard";
 import { ComposerConnectorsSearchBar } from "./ComposerConnectorsSearchBar";
+import { DebtText, debtText } from '@/i18n/DebtText';
+
 
 interface ComposerConnectorsPickerModalProps {
   open: boolean;
@@ -39,14 +41,13 @@ export function ComposerConnectorsPickerModal({
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (open) {
-      setDraft(selected);
-      setQuery("");
-      setCategory("__all__");
-      setFiltersOpen(false);
-      const t = setTimeout(() => inputRef.current?.focus(), 80);
-      return () => clearTimeout(t);
-    }
+    if (!open) return;
+    setDraft(selected);
+    setQuery("");
+    setCategory("__all__");
+    setFiltersOpen(false);
+    const t = setTimeout(() => inputRef.current?.focus(), 80);
+    return () => clearTimeout(t);
   }, [open, selected]);
 
   const categories = useMemo(() => {
@@ -89,7 +90,7 @@ export function ComposerConnectorsPickerModal({
       open={open}
       onClose={onClose}
       onApply={applyNow}
-      title="Connect your tools"
+      title={debtText("auto_connect_your_tools_1e2c90e0")}
       subtitle={draft.length === 0
         ? "Search or filter to pick apps from your vault"
         : `${draft.length} app${draft.length === 1 ? "" : "s"} selected`}
@@ -98,7 +99,7 @@ export function ComposerConnectorsPickerModal({
       solid={solid}
       footer={
         <>
-          <kbd className="typo-caption text-foreground/50">⌘ + Enter</kbd>
+          <kbd className="typo-caption text-foreground"><DebtText k="auto_enter_b0d98854" /></kbd>
           <button
             type="button"
             onClick={applyNow}
@@ -127,7 +128,7 @@ export function ComposerConnectorsPickerModal({
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-12 text-center">
             <div className="w-14 h-14 rounded-full bg-foreground/5 flex items-center justify-center">
-              <Package className="w-6 h-6 text-foreground/50" />
+              <Package className="w-6 h-6 text-foreground" />
             </div>
             <div className="typo-body text-foreground/85">
               {healthy.length === 0
@@ -135,8 +136,8 @@ export function ComposerConnectorsPickerModal({
                 : "No matches — try a different search."}
             </div>
             {healthy.length === 0 && (
-              <p className="typo-caption text-foreground/65 max-w-xs">
-                Add credentials in the vault, then come back here to attach them.
+              <p className="typo-caption text-foreground max-w-xs">
+                <DebtText k="auto_add_credentials_in_the_vault_then_come_bac_b79aa59c" />
               </p>
             )}
           </div>
@@ -156,7 +157,7 @@ export function ComposerConnectorsPickerModal({
 
       {selectedChips.length > 0 && (
         <div className="sticky bottom-0 border-t border-border/20 bg-card-bg px-5 py-3">
-          <div className="flex items-center gap-2 typo-label text-foreground/80 mb-2">
+          <div className="flex items-center gap-2 typo-label text-foreground mb-2">
             Selected
           </div>
           <div className="flex items-center gap-1.5 flex-wrap">
@@ -173,7 +174,7 @@ export function ComposerConnectorsPickerModal({
                 <button
                   type="button"
                   onClick={() => toggleDraft(c.name)}
-                  className="text-foreground/60 hover:text-foreground -mr-0.5"
+                  className="text-foreground hover:text-foreground -mr-0.5"
                   aria-label={`Remove ${c.label}`}
                 >
                   ×

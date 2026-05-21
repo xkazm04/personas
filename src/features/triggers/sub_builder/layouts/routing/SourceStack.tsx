@@ -12,6 +12,8 @@
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { EventRow } from '../routingHelpers';
+import { DebtText } from '@/i18n/DebtText';
+
 
 const NAME_CHIP_MAX = 2; // show up to N name chips; the rest collapse to a +N pill.
 
@@ -32,7 +34,7 @@ function NameChip({ persona, personaIdFallback }: NameChipProps) {
         display="framed"
         frameSize="sm"
       />
-      <span className="text-xs text-foreground truncate">
+      <span className="typo-caption text-foreground truncate">
         {persona?.name ?? personaIdFallback.slice(0, 8)}
       </span>
     </div>
@@ -56,14 +58,14 @@ export function SourceStack({ row }: { row: EventRow }) {
           </span>
         ))}
         {overflow > 0 && (
-          <span className="text-xs text-foreground/50 tabular-nums">+{overflow}</span>
+          <span className="typo-caption text-foreground tabular-nums">+{overflow}</span>
         )}
       </div>
     );
   }
 
   if (row.sourcePersonas.length === 0) {
-    return <span className="text-xs text-foreground/40 italic">no source</span>;
+    return <span className="typo-caption text-foreground italic"><DebtText k="auto_no_source_6809b771" /></span>;
   }
 
   const shown = row.sourcePersonas.slice(0, NAME_CHIP_MAX);
@@ -74,7 +76,7 @@ export function SourceStack({ row }: { row: EventRow }) {
         <NameChip key={s.personaId} persona={s.persona} personaIdFallback={s.personaId} />
       ))}
       {overflow > 0 && (
-        <span className="inline-flex items-center px-1.5 py-0.5 rounded-card bg-card border border-primary/20 text-[10px] font-semibold text-foreground/70 tabular-nums">
+        <span className="inline-flex items-center px-1.5 py-0.5 rounded-card bg-card border border-primary/20 text-[10px] font-semibold text-foreground tabular-nums">
           +{overflow}
         </span>
       )}

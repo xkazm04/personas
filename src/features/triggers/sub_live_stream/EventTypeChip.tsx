@@ -24,7 +24,7 @@ export function EventTypeChip({ eventType }: { eventType: string }) {
           {verb}
         </span>
         {namespace && (
-          <span className="typo-caption text-muted-foreground truncate font-mono">
+          <span className="typo-caption text-foreground truncate font-mono">
             {namespace}
           </span>
         )}

@@ -37,6 +37,8 @@ import { listProjects } from '@/api/devTools/devTools';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import { useTranslation } from '@/i18n/useTranslation';
 import { ThemedSelect } from './ThemedSelect';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 export type SourceKind = 'local' | 'codebase' | 'database';
 
@@ -60,9 +62,7 @@ export function parseSourceDefinition(raw: string): SourceDefinitionValue | null
     if (v && typeof v === 'object' && typeof v.kind === 'string') {
       return v as SourceDefinitionValue;
     }
-  } catch {
-    // fall through to legacy plain-string handling
-  }
+  } catch (err) { silentCatch("features/shared/components/forms/SourceDefinitionInput:catch1")(err); }
   // Legacy fallback: if the user previously stored a plain string (e.g. from
   // the old textarea), treat it as a local path so we don't lose data.
   return { kind: 'local', path: raw };
@@ -191,9 +191,7 @@ export function SourceDefinitionInput({
       if (typeof selected === 'string') {
         commit({ kind: 'local', path: selected });
       }
-    } catch {
-      // User cancelled or dialog unavailable — silent.
-    }
+    } catch (err) { silentCatch("features/shared/components/forms/SourceDefinitionInput:catch2")(err); }
   };
 
   const tabs: {
@@ -239,7 +237,7 @@ export function SourceDefinitionInput({
               onClick={() => !disabled && setActiveKind(kind)}
               disabled={disabled}
               title={disabled ? disabledHint : undefined}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border transition-all ${
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-lg border transition-all ${
                 active && !disabled
                   ? 'bg-primary/20 border-primary/30 text-primary font-medium'
                   : disabled
@@ -257,24 +255,24 @@ export function SourceDefinitionInput({
       {/* Active pane */}
       {activeKind === 'local' && (
         <div className="space-y-1.5">
-          <p className="text-xs text-foreground">
+          <p className="typo-caption text-foreground">
             {t.templates.adopt_modal.source_local_hint}
           </p>
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
-              <FolderOpen className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/60 pointer-events-none" />
+              <FolderOpen className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground pointer-events-none" />
               <input
                 type="text"
                 value={parsed?.kind === 'local' ? parsed.path ?? '' : ''}
                 onChange={(e) => commit({ kind: 'local', path: e.target.value })}
                 placeholder={localPlaceholder ?? t.templates.adopt_modal.source_local_placeholder}
-                className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-white/[0.08] bg-white/[0.03] text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-primary/30 focus:bg-white/[0.05] transition-all"
+                className="w-full pl-9 pr-3 py-2 typo-body rounded-lg border border-white/[0.08] bg-white/[0.03] text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-primary/30 focus:bg-white/[0.05] transition-all"
               />
             </div>
             <button
               type="button"
               onClick={handleBrowseLocal}
-              className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg border border-primary/15 bg-background/80 text-foreground hover:border-primary/25 hover:bg-primary/5 transition-all"
+              className="flex items-center gap-1.5 px-3 py-2 typo-body rounded-lg border border-primary/15 bg-background/80 text-foreground hover:border-primary/25 hover:bg-primary/5 transition-all"
               title={t.templates.adopt_modal.source_local}
             >
               <FolderOpen className="w-3.5 h-3.5" />
@@ -286,11 +284,11 @@ export function SourceDefinitionInput({
 
       {activeKind === 'codebase' && (
         <div className="space-y-1.5">
-          <p className="text-xs text-foreground">
+          <p className="typo-caption text-foreground">
             {t.templates.adopt_modal.source_codebase_hint}
           </p>
           {!hasCodebases ? (
-            <div className="flex items-center gap-2 text-sm text-rose-300/80 px-3 py-2 rounded-lg bg-rose-500/[0.06] border border-rose-500/20">
+            <div className="flex items-center gap-2 typo-body text-rose-300/80 px-3 py-2 rounded-lg bg-rose-500/[0.06] border border-rose-500/20">
               <AlertCircle className="w-3.5 h-3.5" />
               {t.templates.adopt_modal.source_no_codebases}
             </div>
@@ -334,11 +332,11 @@ export function SourceDefinitionInput({
 
       {activeKind === 'database' && (
         <div className="space-y-1.5">
-          <p className="text-xs text-foreground">
+          <p className="typo-caption text-foreground">
             {t.templates.adopt_modal.source_database_hint}
           </p>
           {!hasDatabases ? (
-            <div className="flex items-center gap-2 text-sm text-rose-300/80 px-3 py-2 rounded-lg bg-rose-500/[0.06] border border-rose-500/20">
+            <div className="flex items-center gap-2 typo-body text-rose-300/80 px-3 py-2 rounded-lg bg-rose-500/[0.06] border border-rose-500/20">
               <AlertCircle className="w-3.5 h-3.5" />
               {t.templates.adopt_modal.source_no_databases}
             </div>
@@ -400,7 +398,7 @@ function SingleCodebaseCard({
     <button
       type="button"
       onClick={onClick}
-      className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg border transition-all text-left ${
+      className={`w-full flex items-center gap-2.5 px-3 py-2 typo-body rounded-lg border transition-all text-left ${
         selected
           ? 'bg-primary/15 border-primary/30 text-primary'
           : 'bg-white/[0.03] border-white/[0.06] text-foreground hover:bg-white/[0.06]'
@@ -410,7 +408,7 @@ function SingleCodebaseCard({
       <div className="min-w-0 flex-1">
         <div className="font-medium truncate">{project.name}</div>
         {project.root_path && (
-          <div className="text-xs text-foreground truncate">{project.root_path}</div>
+          <div className="typo-caption text-foreground truncate">{project.root_path}</div>
         )}
       </div>
     </button>
@@ -432,7 +430,7 @@ function SingleCredentialCard({
     <button
       type="button"
       onClick={onClick}
-      className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg border transition-all text-left ${
+      className={`w-full flex items-center gap-2.5 px-3 py-2 typo-body rounded-lg border transition-all text-left ${
         selected
           ? 'bg-primary/15 border-primary/30 text-primary'
           : 'bg-white/[0.03] border-white/[0.06] text-foreground hover:bg-white/[0.06]'
@@ -441,7 +439,7 @@ function SingleCredentialCard({
       <Database className="w-4 h-4 flex-shrink-0" />
       <div className="min-w-0 flex-1">
         <div className="font-medium truncate">{name}</div>
-        <div className="text-xs text-foreground truncate">{serviceType}</div>
+        <div className="typo-caption text-foreground truncate">{serviceType}</div>
       </div>
     </button>
   );

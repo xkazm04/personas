@@ -21,7 +21,7 @@ import { useExecutionAnnotations } from '@/hooks/agents/useExecutionAnnotations'
 // Tolerate bindings that haven't been regenerated yet — use_case_id is
 // optional on every row that carries it after Phase C5.
 type WithUseCase = { use_case_id?: string | null };
-const useCaseIdOf = (raw: unknown): string | null =>
+const getUseCaseId = (raw: unknown): string | null =>
   ((raw as WithUseCase | null | undefined)?.use_case_id) ?? null;
 
 export function ActivityTab() {
@@ -63,7 +63,7 @@ export function ActivityTab() {
           subtitle: e.output_data?.slice(0, 80) || t.agents.activity.no_output,
           status: e.status,
           timestamp: e.started_at || e.created_at,
-          useCaseId: useCaseIdOf(e),
+          useCaseId: getUseCaseId(e),
           raw: e,
         })),
         ...personaEvents.map((e): ActivityItem => ({
@@ -72,7 +72,7 @@ export function ActivityTab() {
           subtitle: e.source_type || 'System',
           status: e.status === 'pending' ? 'delivered' : e.status,
           timestamp: e.created_at,
-          useCaseId: useCaseIdOf(e),
+          useCaseId: getUseCaseId(e),
           raw: e,
         })),
         ...memories.map((m): ActivityItem => ({
@@ -81,7 +81,7 @@ export function ActivityTab() {
           subtitle: m.category,
           status: `importance: ${m.importance}`,
           timestamp: m.created_at,
-          useCaseId: useCaseIdOf(m),
+          useCaseId: getUseCaseId(m),
           raw: m,
         })),
         ...reviews.map((r): ActivityItem => ({
@@ -90,7 +90,7 @@ export function ActivityTab() {
           subtitle: r.description?.slice(0, 80) || '',
           status: r.status,
           timestamp: r.created_at,
-          useCaseId: useCaseIdOf(r),
+          useCaseId: getUseCaseId(r),
           raw: r,
         })),
         ...personaMessages.map((m): ActivityItem => ({
@@ -99,7 +99,7 @@ export function ActivityTab() {
           subtitle: m.content?.slice(0, 80) || '',
           status: m.priority || 'normal',
           timestamp: m.created_at,
-          useCaseId: useCaseIdOf(m),
+          useCaseId: getUseCaseId(m),
           raw: m,
         })),
       ];
@@ -109,7 +109,7 @@ export function ActivityTab() {
     } finally {
       setIsLoading(false);
     }
-  }, [personaId]);
+  }, [personaId, t, tx]);
 
   useEffect(() => { loadData(); }, [loadData]);
 

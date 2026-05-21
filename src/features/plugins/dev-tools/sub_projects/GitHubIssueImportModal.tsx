@@ -137,7 +137,7 @@ export function GitHubIssueImportModal({ open, onClose, projectId, projectName, 
         <GitBranch className="w-5 h-5 text-foreground" />
         <div className="flex-1 min-w-0">
           <h3 id="gh-issue-import-title" className="typo-section-title">{dt.gh_import_title}</h3>
-          <p className="typo-caption text-foreground/70 truncate">
+          <p className="typo-caption text-foreground truncate">
             {parsed ? `${parsed.owner}/${parsed.repo}` : githubUrl}
           </p>
         </div>
@@ -145,7 +145,7 @@ export function GitHubIssueImportModal({ open, onClose, projectId, projectName, 
 
       <div className="p-5 min-h-[280px] max-h-[60vh] overflow-y-auto">
         {state === 'loading' && (
-          <div className="flex items-center justify-center py-16 text-foreground/70">
+          <div className="flex items-center justify-center py-16 text-foreground">
             <Loader2 className="w-4 h-4 animate-spin mr-2" />
             <span className="typo-body">{dt.gh_import_loading}</span>
           </div>
@@ -155,7 +155,7 @@ export function GitHubIssueImportModal({ open, onClose, projectId, projectName, 
           <div className="flex flex-col items-center gap-2 py-12 text-center">
             <AlertCircle className="w-7 h-7 text-amber-400" />
             <p className="typo-body text-foreground">{dt.gh_import_no_credential}</p>
-            <p className="typo-caption text-foreground/60 max-w-sm">{dt.gh_import_no_credential_hint}</p>
+            <p className="typo-caption text-foreground max-w-sm">{dt.gh_import_no_credential_hint}</p>
           </div>
         )}
 
@@ -163,13 +163,13 @@ export function GitHubIssueImportModal({ open, onClose, projectId, projectName, 
           <div className="flex flex-col items-center gap-2 py-12 text-center">
             <AlertCircle className="w-7 h-7 text-red-400" />
             <p className="typo-body text-foreground">{dt.gh_import_load_failed}</p>
-            <p className="typo-caption text-foreground/60 max-w-sm font-mono">{error}</p>
+            <p className="typo-caption text-foreground max-w-sm font-mono">{error}</p>
           </div>
         )}
 
         {state === 'ready' && issues.length === 0 && (
           <div className="flex flex-col items-center gap-2 py-12 text-center">
-            <Inbox className="w-7 h-7 text-foreground/40" />
+            <Inbox className="w-7 h-7 text-foreground" />
             <p className="typo-body text-foreground">{dt.gh_import_no_issues}</p>
           </div>
         )}
@@ -178,9 +178,9 @@ export function GitHubIssueImportModal({ open, onClose, projectId, projectName, 
           <>
             <div className="flex items-center gap-2 mb-3">
               <button type="button" onClick={selectAll} className="typo-caption text-primary hover:underline">{dt.gh_import_select_all}</button>
-              <span className="text-foreground/30">·</span>
-              <button type="button" onClick={clearAll} className="typo-caption text-foreground/70 hover:text-foreground">{dt.gh_import_clear}</button>
-              <span className="ml-auto typo-caption text-foreground/60 tabular-nums">{tx(dt.gh_import_selected_count, { selected: selected.size, total: issues.length })}</span>
+              <span className="text-foreground">·</span>
+              <button type="button" onClick={clearAll} className="typo-caption text-foreground hover:text-foreground">{dt.gh_import_clear}</button>
+              <span className="ml-auto typo-caption text-foreground tabular-nums">{tx(dt.gh_import_selected_count, { selected: selected.size, total: issues.length })}</span>
             </div>
             <ul className="space-y-1.5">
               {issues.map((it) => {
@@ -194,16 +194,16 @@ export function GitHubIssueImportModal({ open, onClose, projectId, projectName, 
                         isOn ? 'border-primary/40 bg-primary/8' : 'border-primary/10 bg-card/30 hover:border-primary/25'
                       }`}
                     >
-                      {isOn ? <CheckSquare className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0" /> : <Square className="w-3.5 h-3.5 text-foreground/40 mt-0.5 shrink-0" />}
+                      {isOn ? <CheckSquare className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0" /> : <Square className="w-3.5 h-3.5 text-foreground mt-0.5 shrink-0" />}
                       <div className="flex-1 min-w-0">
                         <p className="typo-body text-foreground line-clamp-2">
-                          <span className="text-foreground/50 mr-1 tabular-nums">#{it.number}</span>
+                          <span className="text-foreground mr-1 tabular-nums">#{it.number}</span>
                           {it.title}
                         </p>
                         {it.labels.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-1">
                             {it.labels.slice(0, 6).map((label) => (
-                              <span key={label} className="typo-caption px-1.5 py-0.5 rounded-full bg-primary/5 border border-primary/15 text-foreground/70">{label}</span>
+                              <span key={label} className="typo-caption px-1.5 py-0.5 rounded-full bg-primary/5 border border-primary/15 text-foreground">{label}</span>
                             ))}
                           </div>
                         )}

@@ -49,7 +49,7 @@ export function MessageSummaryWidget({ config, title }: CockpitWidgetProps) {
 
   if (!msg) {
     return (
-      <div className="rounded-card border border-foreground/10 bg-foreground/[0.02] p-4 h-full flex flex-col items-center justify-center gap-2 text-foreground/40">
+      <div className="rounded-card border border-foreground/10 bg-foreground/[0.02] p-4 h-full flex flex-col items-center justify-center gap-2 text-foreground">
         <MessageSquare className="w-5 h-5" />
         <div className="typo-caption">{t.overview.cockpit.message_unavailable}</div>
       </div>
@@ -62,13 +62,13 @@ export function MessageSummaryWidget({ config, title }: CockpitWidgetProps) {
       className="rounded-card border border-foreground/10 bg-foreground/[0.02] p-4 h-full flex flex-col min-h-0"
     >
       <div className="flex items-center justify-between mb-3">
-        <div className="typo-caption text-foreground/60 uppercase tracking-wide">
+        <div className="typo-caption text-foreground uppercase tracking-wide">
           {title ?? t.overview.cockpit.message_summary_title}
         </div>
         <button
           type="button"
           onClick={openMessages}
-          className="inline-flex items-center gap-1 typo-caption text-foreground/55 hover:text-foreground/85 transition-colors"
+          className="inline-flex items-center gap-1 typo-caption text-foreground hover:text-foreground/85 transition-colors"
         >
           {t.overview.cockpit.open_in_messages}
           <ExternalLink className="w-3 h-3" />
@@ -86,14 +86,14 @@ export function MessageSummaryWidget({ config, title }: CockpitWidgetProps) {
           <p className="typo-body-lg font-semibold text-foreground/95 truncate">
             {msg.title || t.overview.messages_view.message_label}
           </p>
-          <p className="typo-caption text-foreground/55 mt-0.5">
+          <p className="typo-caption text-foreground mt-0.5">
             {personaName} · {formatRelativeTime(msg.created_at)}
           </p>
         </div>
       </div>
 
-      <p className="typo-body text-foreground/80 leading-relaxed flex-1 overflow-y-auto min-h-0">
-        {excerpt || <span className="italic text-foreground/45">{t.overview.cockpit.message_empty}</span>}
+      <p className="typo-body text-foreground leading-relaxed flex-1 overflow-y-auto min-h-0">
+        {excerpt || <span className="italic text-foreground">{t.overview.cockpit.message_empty}</span>}
       </p>
     </div>
   );

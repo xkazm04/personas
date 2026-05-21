@@ -184,7 +184,7 @@ export function AdoptionAnswerCard({
             {dimLabel}
           </span>
           {orderedQuestions.length > 1 && (
-            <span className="typo-caption text-foreground/55 tabular-nums">
+            <span className="typo-caption text-foreground tabular-nums">
               · {tx(t.templates.adopt_modal.question_number_of, {
                 current: activeIdx + 1,
                 total: orderedQuestions.length,
@@ -195,7 +195,7 @@ export function AdoptionAnswerCard({
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-card text-foreground/55 hover:text-foreground hover:bg-foreground/[0.06] transition-colors cursor-pointer"
+            className="p-1 rounded-card text-foreground hover:text-foreground hover:bg-foreground/[0.06] transition-colors cursor-pointer"
             aria-label={t.common.close}
             title={t.common.close}
           >
@@ -236,7 +236,7 @@ export function AdoptionAnswerCard({
               className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full typo-caption transition-colors cursor-pointer ${
                 isDimActive === false
                   ? 'bg-primary/15 hover:bg-primary/30 text-primary border border-primary/40'
-                  : 'bg-foreground/5 hover:bg-foreground/10 text-foreground/75'
+                  : 'bg-foreground/5 hover:bg-foreground/10 text-foreground'
               }`}
               title={
                 isDimActive === false
@@ -256,7 +256,7 @@ export function AdoptionAnswerCard({
               onQuestionChange?.(orderedQuestions[next]!.id);
             }}
             disabled={activeIdx === 0}
-            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full typo-caption text-foreground/75 hover:text-foreground hover:bg-foreground/[0.06] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full typo-caption text-foreground hover:text-foreground hover:bg-foreground/[0.06] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
           >
             <ChevronLeft className="w-3.5 h-3.5" />
             {t.templates.adopt_modal.previous}
@@ -269,7 +269,7 @@ export function AdoptionAnswerCard({
                 {t.templates.adopt_modal.persona_layout_dim_all_answered}
               </span>
             ) : (
-              <span className="typo-caption text-foreground/55">
+              <span className="typo-caption text-foreground">
                 {tx(t.templates.adopt_modal.persona_layout_continue_remaining, {
                   count: unansweredCount,
                 })}
@@ -285,7 +285,7 @@ export function AdoptionAnswerCard({
                 setActiveIdx(next);
                 onQuestionChange?.(orderedQuestions[next]!.id);
               }}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full typo-caption text-foreground/75 hover:text-foreground hover:bg-foreground/[0.06] cursor-pointer transition-colors"
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full typo-caption text-foreground hover:text-foreground hover:bg-foreground/[0.06] cursor-pointer transition-colors"
             >
               {t.templates.adopt_modal.next}
               <ChevronRight className="w-3.5 h-3.5" />

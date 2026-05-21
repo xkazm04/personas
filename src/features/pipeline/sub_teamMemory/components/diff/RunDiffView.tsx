@@ -57,7 +57,7 @@ export default function RunDiffView({ stats, onClose }: RunDiffViewProps) {
 
   useEffect(() => {
     if (canCompare) handleCompare();
-  }, [runA, runB]);
+  }, [canCompare, handleCompare, runA, runB]);
 
   if (runs.length < 2) {
     return (

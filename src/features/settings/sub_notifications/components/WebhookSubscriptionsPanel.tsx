@@ -9,7 +9,7 @@ import {
   updateNotificationSubscription,
 } from '@/api/events/notificationSubscriptions';
 import type { NotificationSubscription } from '@/lib/bindings/NotificationSubscription';
-import { toastCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 
 type Provider = 'slack' | 'discord' | 'teams' | 'generic';
@@ -51,9 +51,7 @@ function eventTypesToString(arr: string): string {
   try {
     const parsed = JSON.parse(arr) as unknown;
     if (Array.isArray(parsed)) return parsed.join(', ');
-  } catch {
-    /* intentional: non-critical -- fall through to raw */
-  }
+  } catch (err) { silentCatch("features/settings/sub_notifications/components/WebhookSubscriptionsPanel:catch1")(err); }
   return arr;
 }
 
@@ -206,7 +204,7 @@ export function WebhookSubscriptionsPanel() {
       </div>
       <div className="divide-y divide-primary/10">
         {subscriptions.length === 0 && !draft && (
-          <div className="px-4 py-6 typo-body text-foreground/60 text-center">
+          <div className="px-4 py-6 typo-body text-foreground text-center">
             {s.webhook_subscriptions_empty}
           </div>
         )}
@@ -217,11 +215,11 @@ export function WebhookSubscriptionsPanel() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <span className="typo-body font-medium text-foreground truncate">{sub.label}</span>
-                  <span className="typo-caption text-foreground/50 uppercase tracking-wider">
+                  <span className="typo-caption text-foreground uppercase tracking-wider">
                     {sub.provider}
                   </span>
                 </div>
-                <div className="typo-caption text-foreground/60 truncate">
+                <div className="typo-caption text-foreground truncate">
                   {eventTypesToString(sub.eventTypes)}
                 </div>
                 {test && (
@@ -279,7 +277,7 @@ export function WebhookSubscriptionsPanel() {
           <div className="px-4 py-4 space-y-3 bg-primary/5">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <label className="block">
-                <span className="typo-caption text-foreground/70">{s.webhook_subscriptions_label}</span>
+                <span className="typo-caption text-foreground">{s.webhook_subscriptions_label}</span>
                 <input
                   type="text"
                   value={draft.label}
@@ -290,7 +288,7 @@ export function WebhookSubscriptionsPanel() {
                 />
               </label>
               <label className="block">
-                <span className="typo-caption text-foreground/70">{s.webhook_subscriptions_provider}</span>
+                <span className="typo-caption text-foreground">{s.webhook_subscriptions_provider}</span>
                 <select
                   value={draft.provider}
                   onChange={(e) => setDraft({ ...draft, provider: e.target.value as Provider })}
@@ -305,7 +303,7 @@ export function WebhookSubscriptionsPanel() {
               </label>
             </div>
             <label className="block">
-              <span className="typo-caption text-foreground/70">{s.webhook_subscriptions_url}</span>
+              <span className="typo-caption text-foreground">{s.webhook_subscriptions_url}</span>
               <input
                 type="text"
                 value={draft.webhookUrl}
@@ -316,7 +314,7 @@ export function WebhookSubscriptionsPanel() {
               />
             </label>
             <label className="block">
-              <span className="typo-caption text-foreground/70">{s.webhook_subscriptions_events}</span>
+              <span className="typo-caption text-foreground">{s.webhook_subscriptions_events}</span>
               <input
                 type="text"
                 value={draft.eventTypes}
@@ -324,12 +322,12 @@ export function WebhookSubscriptionsPanel() {
                 className="mt-1 w-full rounded-input border border-primary/15 bg-secondary/40 px-2 py-1 typo-body text-foreground font-mono"
                 placeholder={s.webhook_subscriptions_events_placeholder}
               />
-              <span className="typo-caption text-foreground/50 mt-1 block">
+              <span className="typo-caption text-foreground mt-1 block">
                 {s.webhook_subscriptions_events_hint}
               </span>
             </label>
             <label className="block">
-              <span className="typo-caption text-foreground/70">{s.webhook_subscriptions_template}</span>
+              <span className="typo-caption text-foreground">{s.webhook_subscriptions_template}</span>
               <textarea
                 value={draft.templateBody}
                 onChange={(e) => setDraft({ ...draft, templateBody: e.target.value })}
@@ -337,7 +335,7 @@ export function WebhookSubscriptionsPanel() {
                 className="mt-1 w-full rounded-input border border-primary/15 bg-secondary/40 px-2 py-1 typo-body text-foreground font-mono"
                 placeholder={s.webhook_subscriptions_template_placeholder}
               />
-              <span className="typo-caption text-foreground/50 mt-1 block">
+              <span className="typo-caption text-foreground mt-1 block">
                 {s.webhook_subscriptions_template_hint}
               </span>
             </label>

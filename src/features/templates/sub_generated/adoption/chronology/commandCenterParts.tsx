@@ -52,7 +52,7 @@ export function TestRunningIndicator({ testOutputLines = [], onCancelTest }: { t
   return (
     <div className="flex flex-col items-center gap-3 py-2 w-full">
       <BuildStatusIndicator phaseLabel="Testing agent..." />
-      <p className="text-xs text-foreground text-center leading-relaxed max-w-xs">
+      <p className="typo-caption text-foreground text-center leading-relaxed max-w-xs">
         {t.templates.matrix_variants.testing_background_hint}
       </p>
       {testOutputLines.length > 0 && (
@@ -62,7 +62,7 @@ export function TestRunningIndicator({ testOutputLines = [], onCancelTest }: { t
         <button
           type="button"
           onClick={onCancelTest}
-          className="text-xs text-foreground hover:text-muted-foreground/70 transition-colors"
+          className="typo-caption text-foreground hover:text-muted-foreground/70 transition-colors"
         >
           {t.templates.matrix_variants.cancel_test}
         </button>
@@ -111,11 +111,11 @@ export function TestResultsPanel({
       </div>
 
       <div className="flex items-center gap-2 pr-8">
-        <span className={`text-sm font-medium ${didPass ? 'text-status-success' : failedCount > 0 ? 'text-status-error' : 'text-status-warning'}`}>
+        <span className={`typo-heading font-medium ${didPass ? 'text-status-success' : failedCount > 0 ? 'text-status-error' : 'text-status-warning'}`}>
           {didPass ? 'Tests Passed' : failedCount > 0 ? 'Tests Failed' : 'Skipped'}
         </span>
         {toolResults.length > 0 && (
-          <span className="text-sm text-foreground">
+          <span className="typo-body text-foreground">
             {passedCount > 0 && <span className="text-status-success/70">{passedCount}</span>}
             {failedCount > 0 && <>{passedCount > 0 && '/'}<span className="text-status-error/70">{failedCount}</span></>}
             {skippedCount > 0 && <>{(passedCount > 0 || failedCount > 0) && '/'}<span className="text-foreground">{skippedCount}</span></>}
@@ -124,11 +124,11 @@ export function TestResultsPanel({
       </div>
 
       {error && !toolResults.length && (
-        <p className="text-sm text-status-error/80 leading-snug">{error}</p>
+        <p className="typo-body text-status-error/80 leading-snug">{error}</p>
       )}
 
       {hasConnectorGaps && (
-        <p className="text-sm text-status-warning/80 leading-snug">
+        <p className="typo-body text-status-warning/80 leading-snug">
           {t.templates.matrix_variants.missing_keys} <strong>{missingConnectors.map((c) => c.name).join(', ')}</strong>
         </p>
       )}
@@ -146,7 +146,7 @@ export function TestResultsPanel({
             }
           }}
           placeholder={t.templates.matrix_variants.refine_placeholder}
-          className="w-full px-3 py-1.5 typo-body rounded-lg border border-primary/15 bg-foreground/[0.03] text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-primary/30 transition-all"
+          className="w-full px-3 py-1.5 typo-body rounded-card border border-primary/15 bg-foreground/[0.03] text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-primary/30 transition-all"
         />
       )}
 
@@ -156,7 +156,7 @@ export function TestResultsPanel({
             type="button"
             onClick={onApprove}
             data-testid="agent-approve-btn"
-            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-modal text-sm font-medium cursor-pointer bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-elevation-3 shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-all"
+            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-modal typo-body font-medium cursor-pointer bg-gradient-to-r from-emerald-500 to-teal-500 text-foreground shadow-elevation-3 shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-all"
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
             Approve
@@ -170,7 +170,7 @@ export function TestResultsPanel({
             title={hasConnectorGaps
               ? `Promote without credentials for: ${missingConnectors.map((c) => c.name).join(', ')}`
               : 'Promote this agent despite skipped or failed tests'}
-            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-modal typo-body font-medium cursor-pointer bg-gradient-to-r from-amber-500/80 to-orange-500/80 text-white shadow-elevation-2 shadow-amber-500/20 hover:shadow-amber-500/30 hover:from-amber-500 hover:to-orange-500 transition-all"
+            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-modal typo-body font-medium cursor-pointer bg-gradient-to-r from-amber-500/80 to-orange-500/80 text-foreground shadow-elevation-2 shadow-amber-500/20 hover:shadow-amber-500/30 hover:from-amber-500 hover:to-orange-500 transition-all"
           >
             <AlertTriangle className="w-3.5 h-3.5" />
             {t.templates.matrix_variants.approve_anyway}

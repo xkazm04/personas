@@ -81,10 +81,11 @@ export function useSubscriptionManager(
     });
 
     return () => { cancelled = true; };
-  }, [persona?.id, loadEpoch]);
+  }, [persona?.id, loadEpoch, persona, tx, t.agents.connectors.lifecycle_error_load_triggers, t.agents.connectors.lifecycle_error_load_subscriptions]);
 
   useEffect(() => {
-    return () => { controllersRef.current.forEach((c) => c.abort()); controllersRef.current.clear(); };
+    const controllers = controllersRef.current;
+    return () => { controllers.forEach((c) => c.abort()); controllers.clear(); };
   }, []);
 
   useEffect(() => {
@@ -144,7 +145,7 @@ export function useSubscriptionManager(
       controllersRef.current.delete(item.key);
       setActivating((prev) => { const next = new Set(prev); next.delete(item.key); return next; });
     }
-  }, [persona, t, tx]);
+  }, [persona, t]);
 
   const retire = useCallback(async (item: UnifiedSubscription) => {
     if (!persona) return;

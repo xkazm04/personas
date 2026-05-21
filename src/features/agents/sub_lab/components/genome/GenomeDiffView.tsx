@@ -5,6 +5,8 @@ import {
 } from 'lucide-react';
 import type { PersonaGenome } from '@/lib/bindings/PersonaGenome';
 import { useTranslation } from '@/i18n/useTranslation';
+import { debtText } from '@/i18n/DebtText';
+
 
 type DiffKind = 'added' | 'removed' | 'changed' | 'unchanged';
 
@@ -221,7 +223,7 @@ export function GenomeDiffView({
     diff.config.filter((e) => e.kind !== 'unchanged').length;
 
   return (
-    <div className="space-y-2" role="region" aria-label="Genome comparison">
+    <div className="space-y-2" role="region" aria-label={debtText("auto_genome_comparison_89ea6461")}>
       <div className="flex items-center gap-2 typo-caption text-foreground">
         <GitCompare className="w-3.5 h-3.5 text-violet-400" />
         <span className="font-medium">{t.agents.lab.genome_diff}</span>
@@ -231,7 +233,7 @@ export function GenomeDiffView({
       </div>
 
       <DiffSection
-        title="Prompt Segments"
+        title={debtText("auto_prompt_segments_2787c142")}
         icon={<Layers className="w-3 h-3" />}
         entries={diff.prompt}
         defaultOpen={diff.prompt.some((e) => e.kind !== 'unchanged')}

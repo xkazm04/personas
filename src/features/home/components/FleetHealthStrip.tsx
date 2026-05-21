@@ -7,6 +7,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { CARD_PADDING } from '@/lib/utils/designTokens';
 import { hasFailureSpike } from '@/features/home/lib/fleetHealth';
 import type { SidebarSection } from '@/lib/types/types';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 interface FleetMetrics {
   executionsToday: number;
@@ -37,9 +39,7 @@ function useFleetMetrics() {
         credentialCount: credentials.length,
         hasFailureSpike: hasFailureSpike(summary.totalExecutions, summary.failedExecutions),
       });
-    } catch {
-      // Silently fail — strip just won't render
-    }
+    } catch (err) { silentCatch("features/home/components/FleetHealthStrip:catch1")(err); }
   }, []);
 
   useEffect(() => { load(); }, [load]);

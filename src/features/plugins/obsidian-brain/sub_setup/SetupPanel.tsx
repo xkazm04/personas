@@ -18,6 +18,8 @@ import {
 } from '@/api/obsidianBrain';
 import SavedConfigsSidebar from '../SavedConfigsSidebar';
 import { useSavedVaultConfigs } from '../useSavedVaultConfigs';
+import { DebtText } from '@/i18n/DebtText';
+
 
 export default function SetupPanel() {
   const { t, tx } = useTranslation();
@@ -265,7 +267,7 @@ export default function SetupPanel() {
             ))}
           </div>
           <p className="typo-caption text-foreground">
-            Preview: <code className="text-violet-400/60">{personasFolder}/AgentName/{memoriesFolder}/fact/memory-title.md</code>
+            <DebtText k="auto_preview_4bf30626" /> <code className="text-violet-400/60">{personasFolder}<DebtText k="auto_agentname_941ccfe3" />{memoriesFolder}<DebtText k="auto_fact_memory_title_md_d0042e52" /></code>
           </p>
         </div>
       </SectionCard>

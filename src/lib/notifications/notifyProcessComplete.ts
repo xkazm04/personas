@@ -6,6 +6,8 @@ import {
 import { useNotificationCenterStore } from '../../stores/notificationCenterStore';
 import type { ProcessType } from '../../stores/notificationCenterStore';
 import { en, type Translations } from '@/i18n/en';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 /** Map ProcessType (kebab-case) to the corresponding i18n key (snake_case). */
 const PROCESS_LABEL_KEYS: Record<ProcessType, keyof Translations['process_labels']> = {
@@ -56,9 +58,7 @@ export async function notifyProcessComplete(opts: {
     if (permitted) {
       sendNotification({ title, body });
     }
-  } catch {
-    // Tauri notification API unavailable (e.g., in dev browser)
-  }
+  } catch (err) { silentCatch("lib/notifications/notifyProcessComplete:catch1")(err); }
 
   // App notification center
   useNotificationCenterStore.getState().addProcessNotification({

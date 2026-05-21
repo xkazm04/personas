@@ -59,7 +59,7 @@ export function ConnectionForm({ settings, initial }: ConnectionFormProps) {
     host.trim().length > 0 && publicKey.trim().length > 0 && secretKey.trim().length > 0;
   const canSave = verified && !settings.saving;
 
-  const sectionHeading = "typo-caption uppercase tracking-widest text-foreground/80";
+  const sectionHeading = "typo-caption uppercase tracking-widest text-foreground";
   const inputClass =
     "w-full px-3 py-2 typo-body rounded-input bg-secondary/30 border border-primary/10 focus:border-indigo-400/40 focus-ring";
 
@@ -69,7 +69,7 @@ export function ConnectionForm({ settings, initial }: ConnectionFormProps) {
       <div className="space-y-2">
         <h3 className={sectionHeading}>{t.plugins.langfuse.host_label}</h3>
         <label className="block space-y-1">
-          <span className="typo-caption text-foreground/80 flex items-center gap-1">
+          <span className="typo-caption text-foreground flex items-center gap-1">
             <Globe className="w-3 h-3" />
             {t.plugins.langfuse.host_label}
           </span>
@@ -91,7 +91,7 @@ export function ConnectionForm({ settings, initial }: ConnectionFormProps) {
       <div className="space-y-2">
         <h3 className={sectionHeading}>{t.plugins.langfuse.public_key_label}</h3>
         <label className="block space-y-1">
-          <span className="typo-caption text-foreground/80 flex items-center gap-1">
+          <span className="typo-caption text-foreground flex items-center gap-1">
             <KeyRound className="w-3 h-3" />
             {t.plugins.langfuse.public_key_label}
           </span>
@@ -109,7 +109,7 @@ export function ConnectionForm({ settings, initial }: ConnectionFormProps) {
           />
         </label>
         <label className="block space-y-1">
-          <span className="typo-caption text-foreground/80 flex items-center gap-1">
+          <span className="typo-caption text-foreground flex items-center gap-1">
             <KeyRound className="w-3 h-3" />
             {t.plugins.langfuse.secret_key_label}
           </span>
@@ -125,9 +125,9 @@ export function ConnectionForm({ settings, initial }: ConnectionFormProps) {
             autoComplete="off"
           />
         </label>
-        <p className="typo-caption text-foreground/80">{t.plugins.langfuse.find_keys_hint}</p>
+        <p className="typo-caption text-foreground">{t.plugins.langfuse.find_keys_hint}</p>
         <label className="block space-y-1 pt-2">
-          <span className="typo-caption text-foreground/80">
+          <span className="typo-caption text-foreground">
             {t.plugins.langfuse.project_id_label}
           </span>
           <input
@@ -139,7 +139,7 @@ export function ConnectionForm({ settings, initial }: ConnectionFormProps) {
             spellCheck={false}
             autoComplete="off"
           />
-          <span className="typo-caption text-foreground/80">
+          <span className="typo-caption text-foreground">
             {t.plugins.langfuse.project_id_hint}
           </span>
         </label>
@@ -157,7 +157,7 @@ export function ConnectionForm({ settings, initial }: ConnectionFormProps) {
           />
           <div className="flex-1">
             <div className="typo-body text-foreground">{t.plugins.langfuse.enable_label}</div>
-            <div className="typo-caption text-foreground/80">{t.plugins.langfuse.enable_desc}</div>
+            <div className="typo-caption text-foreground">{t.plugins.langfuse.enable_desc}</div>
           </div>
         </label>
         <label className="flex items-start gap-3 cursor-pointer">
@@ -169,7 +169,7 @@ export function ConnectionForm({ settings, initial }: ConnectionFormProps) {
           />
           <div className="flex-1">
             <div className="typo-body text-foreground">{t.plugins.langfuse.redact_label}</div>
-            <div className="typo-caption text-foreground/80">{t.plugins.langfuse.redact_desc}</div>
+            <div className="typo-caption text-foreground">{t.plugins.langfuse.redact_desc}</div>
           </div>
         </label>
       </div>
@@ -195,7 +195,7 @@ export function ConnectionForm({ settings, initial }: ConnectionFormProps) {
           {settings.saving ? t.plugins.langfuse.saving : t.plugins.langfuse.save_button}
         </button>
         {!verified && lastTest === null && canTest && (
-          <span className="typo-caption text-foreground/80">{t.plugins.langfuse.test_required}</span>
+          <span className="typo-caption text-foreground">{t.plugins.langfuse.test_required}</span>
         )}
       </div>
 

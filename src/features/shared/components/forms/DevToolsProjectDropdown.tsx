@@ -88,7 +88,7 @@ export function DevToolsProjectDropdown({
         <button
           type="button"
           onClick={toggle}
-          className={`w-full flex items-center justify-between px-4 py-3 text-sm rounded-xl border border-primary/15 bg-background/80 text-foreground transition-all hover:border-primary/25 focus:outline-none ${
+          className={`w-full flex items-center justify-between px-4 py-3 typo-body rounded-xl border border-primary/15 bg-background/80 text-foreground transition-all hover:border-primary/25 focus:outline-none ${
             isOpen ? 'border-primary/25' : ''
           }`}
         >
@@ -100,12 +100,12 @@ export function DevToolsProjectDropdown({
                 {t.shared.devtools_loading_projects}
               </span>
             ) : error ? (
-              <span className="text-rose-400/80 text-xs">{t.shared.devtools_load_failed}</span>
+              <span className="text-rose-400/80 typo-caption">{t.shared.devtools_load_failed}</span>
             ) : selected ? (
               <div className="min-w-0">
                 <span className="font-medium">{selected.name}</span>
                 {selected.root_path && (
-                  <span className="text-foreground ml-2 text-xs truncate">
+                  <span className="text-foreground ml-2 typo-caption truncate">
                     {selected.root_path}
                   </span>
                 )}
@@ -125,25 +125,25 @@ export function DevToolsProjectDropdown({
       {({ close, focusIndex }) => (
         <div className="w-full bg-background border border-primary/15 rounded-xl shadow-elevation-3 overflow-hidden">
           {loading ? (
-            <div className="px-4 py-6 flex items-center justify-center gap-2 text-sm text-foreground">
+            <div className="px-4 py-6 flex items-center justify-center gap-2 typo-body text-foreground">
               <Loader2 className="w-4 h-4 animate-spin" />
               {t.shared.devtools_loading}
             </div>
           ) : error ? (
             <div className="px-4 py-6 text-center">
-              <p className="text-sm text-rose-400/80 mb-1">{t.shared.devtools_load_failed}</p>
-              <p className="text-xs text-foreground">{error}</p>
+              <p className="typo-body text-rose-400/80 mb-1">{t.shared.devtools_load_failed}</p>
+              <p className="typo-caption text-foreground">{error}</p>
             </div>
           ) : projects.length === 0 ? (
             <div className="px-5 py-6 text-center">
               <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
                 <Wrench className="w-5 h-5 text-primary/60" />
               </div>
-              <p className="text-sm font-medium text-foreground mb-1">{t.shared.devtools_no_projects}</p>
-              <p className="text-xs text-foreground mb-3">
+              <p className="typo-body font-medium text-foreground mb-1">{t.shared.devtools_no_projects}</p>
+              <p className="typo-caption text-foreground mb-3">
                 {t.shared.devtools_no_projects_hint}
               </p>
-              <p className="text-xs text-foreground">
+              <p className="typo-caption text-foreground">
                 {t.shared.devtools_no_projects_nav}
               </p>
             </div>
@@ -170,12 +170,12 @@ export function DevToolsProjectDropdown({
                   >
                     <FolderGit2 className="w-4 h-4 text-foreground flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-foreground/90 truncate">
+                      <div className="typo-body font-medium text-foreground/90 truncate">
                         {project.name}
                       </div>
                       <div className="flex items-center gap-2 mt-0.5">
                         {project.root_path && (
-                          <span className="text-xs text-foreground truncate">
+                          <span className="typo-caption text-foreground truncate">
                             {project.root_path}
                           </span>
                         )}

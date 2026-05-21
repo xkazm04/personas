@@ -57,7 +57,7 @@ export function UseCasePickerStep(props: UseCasePickerVariantProps) {
         </div>
 
         <div className="flex-shrink-0 flex items-center justify-end gap-3 px-6 py-3 border-t border-border bg-background">
-          <span className="typo-caption text-foreground/55">
+          <span className="typo-caption text-foreground">
             {selectedCount} of {useCases.length} capabilit
             {useCases.length === 1 ? 'y' : 'ies'} enabled
           </span>
@@ -65,7 +65,7 @@ export function UseCasePickerStep(props: UseCasePickerVariantProps) {
             type="button"
             onClick={props.onContinue}
             disabled={!canContinue}
-            className="focus-ring inline-flex items-center gap-2 px-5 py-2 rounded-modal bg-btn-primary text-white hover:bg-btn-primary/90 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="focus-ring inline-flex items-center gap-2 px-5 py-2 rounded-modal bg-btn-primary text-foreground hover:bg-btn-primary/90 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <CheckCircle2 className="w-4 h-4" /> Continue
           </button>

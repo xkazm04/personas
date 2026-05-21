@@ -26,7 +26,7 @@ export function CapabilityChip({
     primary: "bg-primary/15 text-primary",
     warn: "bg-amber-500/15 text-amber-400",
   };
-  const pendingClasses = "bg-secondary/20 text-foreground/45";
+  const pendingClasses = "bg-secondary/20 text-foreground";
 
   return (
     <span

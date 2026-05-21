@@ -65,9 +65,7 @@ export function useGenomeBreeding() {
         try {
           const g = await genomeApi.extractGenome(pid);
           genomeMap.set(pid, g);
-        } catch {
-          // parent may have been deleted
-        }
+        } catch (err) { silentCatch("features/agents/sub_lab/components/genome/useGenomeBreeding:catch1")(err); }
       }
       setParentGenomes(genomeMap);
     }

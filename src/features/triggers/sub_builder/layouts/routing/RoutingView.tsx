@@ -26,6 +26,8 @@ import { ClassPillsBar } from './ClassPillsBar';
 import { GroupPanel } from './GroupPanel';
 import { Toolbar } from './Toolbar';
 import { useRoutingFilters } from './useRoutingFilters';
+import { DebtText } from '@/i18n/DebtText';
+
 
 interface Props {
   initialTriggers: PersonaTrigger[];
@@ -110,8 +112,8 @@ export function RoutingView(props: Props) {
           >
             {filters.groupsList.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
-                <Radio className="w-8 h-8 text-foreground/40 mx-auto mb-3" />
-                <p className="text-sm text-foreground/60">No events match this filter.</p>
+                <Radio className="w-8 h-8 text-foreground mx-auto mb-3" />
+                <p className="typo-body text-foreground"><DebtText k="auto_no_events_match_this_filter_d0a806c3" /></p>
               </div>
             ) : filters.groupsList.map(group => (
               <GroupPanel

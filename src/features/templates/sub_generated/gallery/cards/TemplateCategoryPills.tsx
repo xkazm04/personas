@@ -45,7 +45,7 @@ export function TemplateCategoryPills({
             className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded border typo-caption leading-none ${
               pill.isUnknown
                 ? 'bg-status-warning/10 border-status-warning/30 text-status-warning'
-                : 'bg-foreground/[0.04] border-border text-foreground/80'
+                : 'bg-foreground/[0.04] border-border text-foreground'
             }`}
             style={pill.isUnknown ? undefined : { color }}
           >
@@ -56,7 +56,7 @@ export function TemplateCategoryPills({
       })}
       {overflow > 0 && (
         <span
-          className="inline-flex items-center px-1.5 py-0.5 rounded border border-border bg-foreground/[0.03] typo-caption text-foreground/60 font-medium"
+          className="inline-flex items-center px-1.5 py-0.5 rounded border border-border bg-foreground/[0.03] typo-caption text-foreground font-medium"
           title={tags
             .slice(maxVisible)
             .map((p) => p.label)

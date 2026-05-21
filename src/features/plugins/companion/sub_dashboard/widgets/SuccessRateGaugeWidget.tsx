@@ -38,7 +38,7 @@ export const SuccessRateGaugeWidget = memo(function SuccessRateGaugeWidget({ con
 
   return (
     <div className="rounded-card border border-foreground/10 bg-foreground/[0.02] p-4 h-full flex flex-col">
-      <div className="typo-caption text-foreground/60 uppercase tracking-wide mb-2">
+      <div className="typo-caption text-foreground uppercase tracking-wide mb-2">
         {title ?? `Success rate (last ${days}d)`}
       </div>
       <div className="flex-1 min-h-0 relative">
@@ -60,7 +60,7 @@ export const SuccessRateGaugeWidget = memo(function SuccessRateGaugeWidget({ con
           <div className="typo-h2 font-semibold tabular-nums" style={{ color }}>
             {pct}%
           </div>
-          <div className="typo-caption text-foreground/50">
+          <div className="typo-caption text-foreground">
             {data?.daily_points?.reduce((s, p) => s + (p.total_executions || 0), 0) ?? 0} runs
           </div>
         </div>

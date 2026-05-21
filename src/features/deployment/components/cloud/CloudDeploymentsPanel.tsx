@@ -10,6 +10,8 @@ import { DEPLOYMENT_TOKENS } from '../deploymentTokens';
 import { BUDGET_PRESETS } from './cloudDeploymentHelpers';
 import { DeploymentCard } from './DeploymentCard';
 import { useDeploymentTest } from '../../hooks/useDeploymentTest';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 // ---------------------------------------------------------------------------
 // Props
@@ -58,9 +60,7 @@ export function CloudDeploymentsPanel({
     try {
       await onDeploy(selectedPersonaId, selectedBudget);
       setSelectedPersonaId('');
-    } catch {
-      // error handled by store
-    }
+    } catch (err) { silentCatch("features/deployment/components/cloud/CloudDeploymentsPanel:catch1")(err); }
   };
 
   const handleRefresh = async () => {

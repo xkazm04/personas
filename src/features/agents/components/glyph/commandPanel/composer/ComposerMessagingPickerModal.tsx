@@ -28,6 +28,8 @@ import type { JsonValue } from "@/lib/bindings/serde_json/JsonValue";
 import { useTranslation } from "@/i18n/useTranslation";
 import { ComposerPickerShell } from "./ComposerPickerShell";
 import { ComposerBrandIcon } from "./ComposerBrandIcon";
+import { DebtText } from '@/i18n/DebtText';
+
 
 interface ComposerMessagingPickerModalProps {
   open: boolean;
@@ -163,12 +165,11 @@ export function ComposerMessagingPickerModal({
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (open) {
-      const hasBuiltIn = selected.some((s) => s.type === "built-in");
-      setDraft(hasBuiltIn ? selected : [BUILT_IN_INBOX, ...selected]);
-      const t = setTimeout(() => inputRef.current?.focus(), 80);
-      return () => clearTimeout(t);
-    }
+    if (!open) return;
+    const hasBuiltIn = selected.some((s) => s.type === "built-in");
+    setDraft(hasBuiltIn ? selected : [BUILT_IN_INBOX, ...selected]);
+    const t = setTimeout(() => inputRef.current?.focus(), 80);
+    return () => clearTimeout(t);
   }, [open, selected]);
 
   /** Healthy messaging-category credentials with a known channel-type adapter. */
@@ -277,7 +278,7 @@ export function ComposerMessagingPickerModal({
       solid={solid}
       footer={
         <>
-          <kbd className="typo-caption text-foreground/50">⌘ + Enter</kbd>
+          <kbd className="typo-caption text-foreground"><DebtText k="auto_enter_b0d98854" /></kbd>
           <button
             type="button"
             onClick={applyNow}
@@ -304,7 +305,7 @@ export function ComposerMessagingPickerModal({
             <div className="typo-body text-foreground font-medium">
               {t.agents.messaging_picker.builtin_label}
             </div>
-            <div className="typo-caption text-foreground/70">
+            <div className="typo-caption text-foreground">
               {t.agents.messaging_picker.builtin_help}
             </div>
           </div>
@@ -313,7 +314,7 @@ export function ComposerMessagingPickerModal({
             style={{ boxShadow: "0 0 10px rgba(96,165,250,0.8)" }}
             aria-label={t.agents.messaging_picker.builtin_always_on}
           >
-            <Check className="w-3 h-3 text-white" strokeWidth={3} />
+            <Check className="w-3 h-3 text-foreground" strokeWidth={3} />
           </span>
         </div>
 
@@ -321,7 +322,7 @@ export function ComposerMessagingPickerModal({
         {selectedRender.length > 0 && (
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
-              <div className="typo-label text-foreground/80">
+              <div className="typo-label text-foreground">
                 {t.agents.messaging_picker.section_configured}
               </div>
               {incompleteCount > 0 && (
@@ -376,7 +377,7 @@ export function ComposerMessagingPickerModal({
                         <div className="typo-body text-foreground font-medium truncate">
                           {meta.label}
                         </div>
-                        <div className="typo-caption text-foreground/70 truncate">
+                        <div className="typo-caption text-foreground truncate">
                           {spec.type}
                         </div>
                       </div>
@@ -387,7 +388,7 @@ export function ComposerMessagingPickerModal({
                           "{name}",
                           meta.label,
                         )}
-                        className="shrink-0 text-foreground/60 hover:text-foreground p-1.5 rounded-interactive hover:bg-foreground/10"
+                        className="shrink-0 text-foreground hover:text-foreground p-1.5 rounded-interactive hover:bg-foreground/10"
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -405,7 +406,7 @@ export function ComposerMessagingPickerModal({
                               key={field.key}
                               className="flex flex-col gap-1"
                             >
-                              <span className="typo-caption text-foreground/70">
+                              <span className="typo-caption text-foreground">
                                 {
                                   t.agents.messaging_picker.field_labels[
                                     field.labelKey
@@ -465,9 +466,9 @@ export function ComposerMessagingPickerModal({
                           className="mt-0.5 accent-primary"
                           data-testid={`discord-poll-inbound-${spec.credential_id ?? ''}`}
                         />
-                        <span className="typo-caption text-foreground/80">
+                        <span className="typo-caption text-foreground">
                           <span className="font-medium text-foreground/90">{t.agents.messaging_picker.discord_poll_inbound_label}</span>
-                          <span className="block text-foreground/60">{t.agents.messaging_picker.discord_poll_inbound_help}</span>
+                          <span className="block text-foreground">{t.agents.messaging_picker.discord_poll_inbound_help}</span>
                         </span>
                       </label>
                     )}
@@ -487,18 +488,18 @@ export function ComposerMessagingPickerModal({
         {pickable.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-10 text-center">
             <div className="w-14 h-14 rounded-full bg-foreground/5 flex items-center justify-center">
-              <Plug className="w-6 h-6 text-foreground/50" />
+              <Plug className="w-6 h-6 text-foreground" />
             </div>
             <div className="typo-body text-foreground/85">
               {t.agents.messaging_picker.empty_title}
             </div>
-            <p className="typo-caption text-foreground/65 max-w-xs">
+            <p className="typo-caption text-foreground max-w-xs">
               {t.agents.messaging_picker.empty_help}
             </p>
           </div>
         ) : unselectedPickables.length > 0 ? (
           <>
-            <div className="typo-label text-foreground/80">
+            <div className="typo-label text-foreground">
               {selectedRender.length > 0
                 ? t.agents.messaging_picker.section_available
                 : t.agents.messaging_picker.section_external}
@@ -531,7 +532,7 @@ export function ComposerMessagingPickerModal({
                       <div className="typo-body text-foreground font-medium truncate">
                         {meta.label}
                       </div>
-                      <div className="typo-caption text-foreground/70 truncate">
+                      <div className="typo-caption text-foreground truncate">
                         {p.channelType}
                       </div>
                     </div>
@@ -539,7 +540,7 @@ export function ComposerMessagingPickerModal({
                 );
               })}
             </div>
-            <p className="typo-caption text-foreground/55">
+            <p className="typo-caption text-foreground">
               {t.agents.messaging_picker.fanout_help}
             </p>
           </>

@@ -47,7 +47,7 @@ export function useCredentialDesignModal({ open, initialInstruction, onClose, on
         orch.start(initialInstruction.trim());
       }
     }
-  }, [open]);
+  }, [fetchConnectorDefinitions, importFlow, initialInstruction, open, orch]);
 
   // Capture auto-setup result when design completes
   const orchResult = orch.contextValue?.result;

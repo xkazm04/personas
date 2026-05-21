@@ -36,7 +36,7 @@ const OUTCOMES: Record<Outcome, OutcomeConfig> = {
   },
   unknown: {
     icon: HelpCircle,
-    color: 'text-foreground/50',
+    color: 'text-foreground',
     label: '—',
     title: 'No business outcome reported (older execution or LLM did not emit the assessment).',
   },

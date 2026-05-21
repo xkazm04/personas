@@ -104,7 +104,7 @@ export function useAutoUpdater() {
       clearTimeout(initialTimeout);
       clearInterval(interval);
     };
-  }, []);
+  }, [checkForUpdate]);
 
   return {
     updateAvailable,

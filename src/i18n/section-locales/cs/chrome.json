@@ -18,5 +18,6 @@
   "sign_in_google": "Přihlásit se přes Google",
   "signed_in": "Přihlášen",
   "sign_out": "Odhlásit se",
-  "offline": "Offline"
+  "offline": "Offline",
+  "mobile_preview": "Mobile preview"
 }

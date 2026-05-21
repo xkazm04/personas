@@ -12,6 +12,8 @@ import { LeaderboardCard } from './LeaderboardCard';
 import { Podium } from './Podium';
 import { DetailPanel } from './DetailPanel';
 import { EmptyState, SingleAgentView } from './EmptyStates';
+import { DebtText, debtText } from '@/i18n/DebtText';
+
 
 export default function LeaderboardPage() {
   const { t } = useTranslation();
@@ -20,17 +22,17 @@ export default function LeaderboardPage() {
 
   // Auto-load health data on first visit if empty
   useEffect(() => {
-    if (isEmpty && !loading) {
-      const run = () => void refresh();
-      if (typeof requestIdleCallback === 'function') {
-        const id = requestIdleCallback(run, { timeout: 2000 });
-        return () => cancelIdleCallback(id);
-      }
-      const handle = setTimeout(run, 200);
-      return () => clearTimeout(handle);
+    if (!isEmpty || loading) return;
+
+    const run = () => void refresh();
+    if (typeof requestIdleCallback === 'function') {
+      const id = requestIdleCallback(run, { timeout: 2000 });
+      return () => cancelIdleCallback(id);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+
+    const handle = setTimeout(run, 200);
+    return () => clearTimeout(handle);
+  }, [isEmpty, loading, refresh]);
 
   const handleSelect = useCallback((id: string) => {
     setSelectedId((prev) => (prev === id ? null : id));
@@ -60,7 +62,7 @@ export default function LeaderboardPage() {
             {leaderboard.length > 0 && (
               <div className="flex items-center gap-2 typo-caption">
                 <StatusBadge variant="info">{leaderboard.length} agents</StatusBadge>
-                <StatusBadge accent="amber">Fleet avg: {fleetAvgScore}</StatusBadge>
+                <StatusBadge accent="amber"><DebtText k="auto_fleet_avg_ca5a5f1f" /> {fleetAvgScore}</StatusBadge>
               </div>
             )}
             <Button
@@ -68,8 +70,8 @@ export default function LeaderboardPage() {
               size="icon-sm"
               loading={loading}
               onClick={() => void refresh()}
-              aria-label="Refresh leaderboard"
-              title="Refresh leaderboard"
+              aria-label={debtText("auto_refresh_leaderboard_c53e47fb")}
+              title={debtText("auto_refresh_leaderboard_c53e47fb")}
             >
               <RefreshCw className="w-4 h-4" />
             </Button>
@@ -81,7 +83,7 @@ export default function LeaderboardPage() {
         {loading && leaderboard.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
             <LoadingSpinner size="lg" />
-            <p className="typo-body text-foreground">Computing agent scores...</p>
+            <p className="typo-body text-foreground"><DebtText k="auto_computing_agent_scores_b273d5b0" /></p>
           </div>
         ) : leaderboard.length === 0 ? (
           <EmptyState />

@@ -3,6 +3,8 @@ import { useOverviewStore } from '@/stores/overviewStore';
 import { useShallow } from 'zustand/react/shallow';
 import { LazyChart } from '@/features/shared/charts/RechartsWrapper';
 import type { WidgetProps } from '../widgetRegistry';
+import { DebtText } from '@/i18n/DebtText';
+
 
 const PALETTE = [
   '#06b6d4', '#22c55e', '#f59e0b', '#a855f7', '#ec4899',
@@ -63,13 +65,13 @@ export const PersonaCostDonutWidget = memo(function PersonaCostDonutWidget({ con
 
   return (
     <div className="rounded-card border border-foreground/10 bg-foreground/[0.02] p-4 h-full flex flex-col">
-      <div className="typo-caption text-foreground/60 uppercase tracking-wide mb-2">
+      <div className="typo-caption text-foreground uppercase tracking-wide mb-2">
         {title ?? `Cost share by persona (last ${days}d)`}
       </div>
       <div className="flex-1 min-h-0">
         {slices.length === 0 ? (
-          <div className="h-full flex items-center justify-center typo-caption text-foreground/40">
-            No data
+          <div className="h-full flex items-center justify-center typo-caption text-foreground">
+            <DebtText k="auto_no_data_d802d232" />
           </div>
         ) : (
           <LazyChart render={(R) => (

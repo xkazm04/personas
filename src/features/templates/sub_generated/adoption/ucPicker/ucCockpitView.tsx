@@ -48,7 +48,7 @@ export function CockpitView({
       <button
         type="button"
         onClick={onEdit}
-        className="focus-ring absolute bottom-3 right-4 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full typo-caption uppercase tracking-wider font-semibold text-foreground/55 hover:text-primary hover:bg-primary/[0.08] transition-colors"
+        className="focus-ring absolute bottom-3 right-4 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full typo-caption uppercase tracking-wider font-semibold text-foreground hover:text-primary hover:bg-primary/[0.08] transition-colors"
       >
         <Pencil className="w-3 h-3" />
         Configure
@@ -63,7 +63,7 @@ function CapabilityCard({ subtitle }: { subtitle: string }) {
   return (
     <Panel ariaLabel="Capability">
       <div className="flex-1 flex items-center">
-        <p className="text-xl font-medium text-foreground/95 leading-snug">{subtitle}</p>
+        <p className="typo-body-lg font-medium text-foreground/95 leading-snug">{subtitle}</p>
       </div>
     </Panel>
   );

@@ -41,7 +41,7 @@ function CountBadge({ badge, suppressed = 0 }: { badge: BadgeDefinition; suppres
   const darkVariant = DARK_BADGE_COLORS[badge.color];
   return (
     <span className={`min-w-[16px] h-4 px-1 flex items-center justify-center typo-heading leading-none rounded-full shadow-elevation-1 ${
-      isDark && darkVariant ? darkVariant : `text-white ${badge.color}`
+      isDark && darkVariant ? darkVariant : `text-foreground ${badge.color}`
     }`}>
       {(badge.count ?? 0) > 99 ? '99+' : badge.count}
       {suppressed > 0 && <span className="ml-0.5 text-[8px] opacity-80">+{suppressed}</span>}

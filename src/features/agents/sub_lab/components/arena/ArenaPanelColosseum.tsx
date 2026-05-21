@@ -35,6 +35,10 @@ import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
 import { resolveEffectiveModel } from '@/features/agents/sub_use_cases/libs/useCaseDetailHelpers';
 import type { LabArenaRun } from '@/lib/bindings/LabArenaRun';
+import { silentCatch } from '@/lib/silentCatch';
+import { DebtText, debtText } from '@/i18n/DebtText';
+
+
 
 /* ------------------------------------------------------------------ */
 /* Model heraldry — sigils + cost/speed pips                          */
@@ -104,7 +108,7 @@ function computeAllTimeChampion(runs: LabArenaRun[]): { model: string; wins: num
       if (typeof winner !== 'string' || winner.length === 0) continue;
       tally.set(winner, (tally.get(winner) ?? 0) + 1);
       total++;
-    } catch { /* ignore malformed summary */ }
+    } catch (err) { silentCatch("features/agents/sub_lab/components/arena/ArenaPanelColosseum:catch1")(err); }
   }
   let best: { model: string; wins: number } | null = null;
   for (const [model, wins] of tally) {
@@ -316,14 +320,14 @@ export function ArenaPanelColosseum() {
         <SectionHeader
           icon={Feather}
           eyebrow="Act II"
-          title="Match Blueprint"
+          title={debtText("auto_match_blueprint_68403c7c")}
           subtitle="what enters the arena"
         />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Contenders */}
           <ParchmentCard title="Contenders" meta={`${contenderCount} selected`} icon={Swords}>
             {contenderCount === 0 ? (
-              <EmptyLine>No contenders drawn</EmptyLine>
+              <EmptyLine><DebtText k="auto_no_contenders_drawn_60288d55" /></EmptyLine>
             ) : (
               <ul className="space-y-2">
                 {ARENA_ROSTER
@@ -358,24 +362,24 @@ export function ArenaPanelColosseum() {
               <div>
                 {selectedUseCase ? (
                   <>
-                    <span className="typo-label text-primary/70">Chosen ground</span>
+                    <span className="typo-label text-primary/70"><DebtText k="auto_chosen_ground_79f67ac1" /></span>
                     <p className="typo-body-lg font-medium text-foreground mt-1">{selectedUseCase.title}</p>
                   </>
                 ) : useCases.length > 0 ? (
                   <>
-                    <span className="typo-label text-primary/70">All grounds</span>
+                    <span className="typo-label text-primary/70"><DebtText k="auto_all_grounds_a5b59189" /></span>
                     <p className="typo-body-lg text-foreground mt-1">
-                      Every authored use case will be fought.
+                      <DebtText k="auto_every_authored_use_case_will_be_fought_89fe171f" />
                     </p>
                   </>
                 ) : (
-                  <EmptyLine>No use cases authored — the match will run on defaults.</EmptyLine>
+                  <EmptyLine><DebtText k="auto_no_use_cases_authored_the_match_will_run_o_b21669d2" /></EmptyLine>
                 )}
               </div>
               <div className="pt-2 border-t border-primary/10 typo-body text-foreground/90">
                 <span className="flex items-center gap-1.5">
                   <Circle className="w-2 h-2 fill-current" />
-                  {useCases.length} total use case{useCases.length === 1 ? '' : 's'} on file
+                  {useCases.length} <DebtText k="auto_total_use_case_83fae38c" />{useCases.length === 1 ? '' : 's'} <DebtText k="auto_on_file_8b983a13" />
                 </span>
               </div>
             </div>
@@ -402,7 +406,7 @@ export function ArenaPanelColosseum() {
         <div className="rounded-modal border border-amber-500/25 bg-amber-500/[0.05] px-4 py-3 flex items-start gap-3">
           <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
           <div className="space-y-1 text-foreground/90">
-            <p className="typo-body-lg font-medium text-amber-300">Match conditions unmet</p>
+            <p className="typo-body-lg font-medium text-amber-300"><DebtText k="auto_match_conditions_unmet_a823c1a7" /></p>
             {!hasPrompt && <p className="typo-body-lg">{t.agents.lab.no_prompt_warning}</p>}
             {!hasTools && <p className="typo-body-lg">{t.agents.lab.no_tools_warning}</p>}
           </div>
@@ -414,7 +418,7 @@ export function ArenaPanelColosseum() {
         <SectionHeader
           icon={Scroll}
           eyebrow="Act III"
-          title="The Chronicle"
+          title={debtText("auto_the_chronicle_8f082ce5")}
           subtitle="what the matches remember"
         />
         <StandingChampionBanner champion={champion} totalRuns={arenaRuns.length} />
@@ -430,12 +434,12 @@ export function ArenaPanelColosseum() {
       {/* Status foot */}
       <div className="flex items-center justify-center gap-2 typo-body text-foreground/85 pt-2">
         <Medal className="w-3.5 h-3.5" />
-        {healthCheck.phase === 'idle' && <span>Systems on standby — run a health check to illuminate</span>}
-        {healthCheck.phase === 'running' && <span>The herald sweeps the field…</span>}
+        {healthCheck.phase === 'idle' && <span><DebtText k="auto_systems_on_standby_run_a_health_check_to_i_b5752441" /></span>}
+        {healthCheck.phase === 'running' && <span><DebtText k="auto_the_herald_sweeps_the_field_72846b2f" /></span>}
         {healthCheck.phase === 'done' && healthCheck.score && (
-          <span>Systems at {healthCheck.score.value}/100 · {healthCheck.score.grade}</span>
+          <span><DebtText k="auto_systems_at_ef34f231" /> {healthCheck.score.value}/100 · {healthCheck.score.grade}</span>
         )}
-        {healthCheck.phase === 'error' && <span>Herald fell silent — health check unavailable</span>}
+        {healthCheck.phase === 'error' && <span><DebtText k="auto_herald_fell_silent_health_check_unavailabl_71090920" /></span>}
       </div>
     </div>
   );
@@ -473,11 +477,11 @@ function ArenaMarquee({
           <Flame className={`w-4 h-4 ${ready ? 'text-amber-300' : 'text-foreground'}`} fill="currentColor" strokeWidth={1.25} />
         </div>
         <div className="min-w-0">
-          <h3 className="typo-heading-lg font-semibold text-foreground tracking-wide">The Arena</h3>
+          <h3 className="typo-heading-lg font-semibold text-foreground tracking-wide"><DebtText k="auto_the_arena_f7188466" /></h3>
           <p className="typo-body-lg text-foreground flex flex-wrap items-center gap-1">
             {personaName ? (
               <>
-                <span>A trial for</span>
+                <span><DebtText k="auto_a_trial_for_f551326f" /></span>
                 <span className="text-foreground font-medium">{personaName}</span>
                 <span>—</span>
                 <UseCasePopover
@@ -498,7 +502,7 @@ function ArenaMarquee({
                 )}
               </>
             ) : (
-              <span>Select a persona to open the gates</span>
+              <span><DebtText k="auto_select_a_persona_to_open_the_gates_421eca6d" /></span>
             )}
           </p>
         </div>
@@ -614,7 +618,7 @@ function OverrideChip({
       <Pin className="w-3 h-3 text-amber-300" strokeWidth={2} />
       <span className="text-foreground/85">{prefersLabel}</span>
       <span className="font-medium text-foreground">{modelLabel}</span>
-      <span className="mx-0.5 text-foreground/30" aria-hidden>·</span>
+      <span className="mx-0.5 text-foreground" aria-hidden>·</span>
       {trailing}
     </button>
   );
@@ -631,13 +635,13 @@ function Torch({ side, lit }: { side: 'left' | 'right'; lit: boolean }) {
           <div className="absolute inset-x-0 -top-1 h-10 rounded-full bg-gradient-to-t from-amber-400/50 via-amber-300/35 to-transparent blur-[6px]" />
         )}
         <Flame
-          className={`absolute inset-0 m-auto w-7 h-7 ${lit ? 'text-amber-300' : 'text-foreground/30'}`}
+          className={`absolute inset-0 m-auto w-7 h-7 ${lit ? 'text-amber-300' : 'text-foreground'}`}
           strokeWidth={1.5}
           fill="currentColor"
         />
       </div>
-      <div className="h-10 w-2.5 rounded-b-sm bg-gradient-to-b from-primary/40 via-primary/20 to-primary/5 border-x border-primary/20" />
-      <div className="h-1 w-5 rounded-sm bg-primary/30" />
+      <div className="h-10 w-2.5 rounded-b-interactive bg-gradient-to-b from-primary/40 via-primary/20 to-primary/5 border-x border-primary/20" />
+      <div className="h-1 w-5 rounded-interactive bg-primary/30" />
     </div>
   );
 }
@@ -690,7 +694,7 @@ function PersonaStandard({
 
       {/* Stone plinth base */}
       <div className="relative -mt-0.5 flex flex-col items-center">
-        <div className={`h-1.5 w-[188px] rounded-sm bg-gradient-to-r from-primary/10 via-primary/30 to-primary/10 border-x border-primary/20`} />
+        <div className={`h-1.5 w-[188px] rounded-interactive bg-gradient-to-r from-primary/10 via-primary/30 to-primary/10 border-x border-primary/20`} />
         <div className={`h-3 w-[172px] bg-gradient-to-b from-primary/15 to-primary/[0.02] border-x border-primary/15 border-b border-primary/10`} />
         <div className="h-1 w-[150px] rounded-full bg-primary/12 blur-sm mt-0.5" />
       </div>
@@ -892,7 +896,7 @@ function WaxSealButton({
           <Swords className={`w-4 h-4 ${canLaunch ? 'text-background' : 'text-foreground'}`} strokeWidth={2} />
         </span>
         <span className="flex flex-col items-start leading-tight">
-          <span className="typo-body-lg font-semibold">Begin the Match</span>
+          <span className="typo-body-lg font-semibold"><DebtText k="auto_begin_the_match_439d5782" /></span>
           <span className="typo-label text-foreground/90">
             {contenders} {contenders === 1 ? 'contender' : 'contenders'}
           </span>
@@ -939,10 +943,10 @@ function ParchmentCard({
 }) {
   return (
     <div className="relative rounded-modal border border-primary/20 bg-gradient-to-b from-secondary/50 to-background/40 backdrop-blur-sm overflow-hidden">
-      <span aria-hidden className="absolute top-1.5 left-1.5 h-3 w-3 border-l-2 border-t-2 border-primary/30 rounded-tl-sm" />
-      <span aria-hidden className="absolute top-1.5 right-1.5 h-3 w-3 border-r-2 border-t-2 border-primary/30 rounded-tr-sm" />
-      <span aria-hidden className="absolute bottom-1.5 left-1.5 h-3 w-3 border-l-2 border-b-2 border-primary/30 rounded-bl-sm" />
-      <span aria-hidden className="absolute bottom-1.5 right-1.5 h-3 w-3 border-r-2 border-b-2 border-primary/30 rounded-br-sm" />
+      <span aria-hidden className="absolute top-1.5 left-1.5 h-3 w-3 border-l-2 border-t-2 border-primary/30 rounded-tl-interactive" />
+      <span aria-hidden className="absolute top-1.5 right-1.5 h-3 w-3 border-r-2 border-t-2 border-primary/30 rounded-tr-interactive" />
+      <span aria-hidden className="absolute bottom-1.5 left-1.5 h-3 w-3 border-l-2 border-b-2 border-primary/30 rounded-bl-interactive" />
+      <span aria-hidden className="absolute bottom-1.5 right-1.5 h-3 w-3 border-r-2 border-b-2 border-primary/30 rounded-br-interactive" />
       <div className="px-4 py-3 border-b border-primary/10 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Icon className="w-4 h-4 text-primary" strokeWidth={1.75} />
@@ -965,7 +969,7 @@ function StatPips({ label, level, icon: Icon }: { label: string; level: number; 
   return (
     <span className="flex items-center gap-0.5" title={`${label}: ${level}/3`}>
       {[1, 2, 3].map((i) => (
-        <Icon key={i} className={`w-3 h-3 ${i <= level ? 'text-primary' : 'text-foreground/20'}`} strokeWidth={2} fill={i <= level ? 'currentColor' : 'none'} />
+        <Icon key={i} className={`w-3 h-3 ${i <= level ? 'text-primary' : 'text-foreground'}`} strokeWidth={2} fill={i <= level ? 'currentColor' : 'none'} />
       ))}
     </span>
   );
@@ -1003,7 +1007,7 @@ function ChampionCard({
         </div>
         <div className="flex items-center gap-2 typo-body text-foreground/90">
           <Crown className="w-3.5 h-3.5 text-primary" />
-          <span>Contenders must unseat this sword to win the chronicle.</span>
+          <span><DebtText k="auto_contenders_must_unseat_this_sword_to_win_t_2a31c866" /></span>
         </div>
       </div>
     </ParchmentCard>
@@ -1022,7 +1026,7 @@ function StandingChampionBanner({
       <div className="rounded-modal border border-primary/15 bg-secondary/30 px-4 py-3 flex items-center gap-3">
         <Trophy className="w-4 h-4 text-foreground" />
         <p className="typo-body-lg italic text-foreground/90">
-          No chronicle yet — the first match will crown a champion.
+          <DebtText k="auto_no_chronicle_yet_the_first_match_will_crow_32ef87e3" />
         </p>
       </div>
     );
@@ -1039,13 +1043,13 @@ function StandingChampionBanner({
         <div className="flex-1 min-w-0">
           <p className="typo-label text-primary/80 flex items-center gap-1.5">
             <Crown className="w-3.5 h-3.5" fill="currentColor" />
-            Standing Champion
+            <DebtText k="auto_standing_champion_97e028f7" />
           </p>
           <p className="typo-heading-lg font-semibold text-foreground capitalize mt-0.5 truncate">
             {champion.model}
           </p>
           <p className="typo-body text-foreground/90">
-            {champion.wins} victory{champion.wins === 1 ? '' : 'ies'} of {champion.total} judged match{champion.total === 1 ? '' : 'es'} · {totalRuns} run{totalRuns === 1 ? '' : 's'} logged
+            {champion.wins} victory{champion.wins === 1 ? '' : 'ies'} of {champion.total} <DebtText k="auto_judged_match_80f46ff7" />{champion.total === 1 ? '' : 'es'} · {totalRuns} run{totalRuns === 1 ? '' : 's'} logged
           </p>
         </div>
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-background/60 border border-primary/25 typo-body-lg text-foreground">

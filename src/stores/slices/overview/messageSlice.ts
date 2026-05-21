@@ -9,6 +9,8 @@ import { deleteMessage, getMessageCount, getUnreadMessageCount, listMessages, ma
 import type { MessageDeliverySummary } from "@/lib/bindings/MessageDeliverySummary";
 import type { MessageThreadSummary } from "@/lib/bindings/MessageThreadSummary";
 import { deduplicateFetch } from "@/lib/utils/deduplicateFetch";
+import { silentCatch } from '@/lib/silentCatch';
+
 
 
 export interface MessageSlice {
@@ -236,9 +238,7 @@ export const createMessageSlice: StateCreator<OverviewStore, [], [], MessageSlic
         for (const s of summaries) next.set(s.messageId, s);
         return { deliverySummaries: next };
       });
-    } catch {
-      // Non-critical: delivery badges just won't show
-    }
+    } catch (err) { silentCatch("stores/slices/overview/messageSlice:catch1")(err); }
   },
 
   setViewMode: (mode) => {

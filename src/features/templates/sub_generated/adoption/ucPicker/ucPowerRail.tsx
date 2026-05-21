@@ -16,6 +16,8 @@ import {
   type TriggerSelection,
 } from '../useCasePickerShared';
 import { LED, TimeControls } from './ucTimeControls';
+import { DebtText, debtText } from '@/i18n/DebtText';
+
 
 export function PowerRail({
   selection,
@@ -55,12 +57,12 @@ export function PowerRail({
             className={`w-10 h-10 rounded-full flex items-center justify-center ring-2 transition-colors ${
               powered
                 ? 'ring-primary/60 bg-primary/15 text-primary shadow-elevation-1'
-                : 'ring-border bg-background text-foreground/40'
+                : 'ring-border bg-background text-foreground'
             }`}
           >
             {powered ? <Radio className="w-5 h-5" /> : <PowerOff className="w-5 h-5" />}
           </div>
-          <span className="typo-caption uppercase tracking-wider text-foreground/55 font-semibold">
+          <span className="typo-caption uppercase tracking-wider text-foreground font-semibold">
             Source
           </span>
         </div>
@@ -68,13 +70,13 @@ export function PowerRail({
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1.5">
             <div className="inline-flex items-center gap-1.5 typo-caption font-mono uppercase tracking-wider text-primary">
-              <Clock className="w-3.5 h-3.5" /> Time trigger <LED on={poweredTime} accent="primary" />
+              <Clock className="w-3.5 h-3.5" /> <DebtText k="auto_time_trigger_c242fdeb" /> <LED on={poweredTime} accent="primary" />
             </div>
             {poweredTime ? (
               <button
                 type="button"
                 onClick={() => onChange(disableTimeFamily(selection))}
-                className="focus-ring p-0.5 rounded text-foreground/55 hover:text-foreground"
+                className="focus-ring p-0.5 rounded text-foreground hover:text-foreground"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -94,13 +96,13 @@ export function PowerRail({
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1.5">
             <div className="inline-flex items-center gap-1.5 typo-caption font-mono uppercase tracking-wider text-status-info">
-              <Zap className="w-3.5 h-3.5" /> Event trigger <LED on={poweredEvent} accent="info" />
+              <Zap className="w-3.5 h-3.5" /> <DebtText k="auto_event_trigger_ac6b34dc" /> <LED on={poweredEvent} accent="info" />
             </div>
             {poweredEvent ? (
               <button
                 type="button"
                 onClick={() => onChange(disableEventFamily(selection))}
-                className="focus-ring p-0.5 rounded text-foreground/55 hover:text-foreground"
+                className="focus-ring p-0.5 rounded text-foreground hover:text-foreground"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -124,18 +126,18 @@ export function PowerRail({
               }
               value={selection.event?.eventType ?? ''}
               onValueChange={(v) => onChange(updateEvent(selection, { eventType: v }))}
-              placeholder="Pick an event"
+              placeholder={debtText("auto_pick_an_event_ec6101e1")}
             />
           )}
         </div>
 
         <div className="flex flex-col items-end gap-1 pt-1 pr-1">
-          <div className="inline-flex items-center gap-1.5 typo-caption font-mono text-foreground/65">
+          <div className="inline-flex items-center gap-1.5 typo-caption font-mono text-foreground">
             <Cog className="w-3.5 h-3.5" />
             <span className="tabular-nums text-foreground font-semibold">{subscribedCount}</span>
             emitting
           </div>
-          <span className="typo-caption uppercase tracking-wider text-foreground/45 font-semibold">
+          <span className="typo-caption uppercase tracking-wider text-foreground font-semibold">
             events
           </span>
         </div>

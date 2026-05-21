@@ -18,5 +18,6 @@
   "sign_in_google": "Đăng nhập bằng Google",
   "signed_in": "Đã đăng nhập",
   "sign_out": "Đăng xuất",
-  "offline": "Ngoại tuyến"
+  "offline": "Ngoại tuyến",
+  "mobile_preview": "Mobile preview"
 }

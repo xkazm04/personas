@@ -96,7 +96,7 @@ export function modelTierAccent(profile: string | null | undefined): TierAccent 
         fillClass: 'fill-foreground/20 stroke-foreground/40',
         strokeClass: 'stroke-foreground/40',
         strokeHoverClass: 'stroke-foreground/60',
-        textClass: 'text-foreground/70',
+        textClass: 'text-foreground',
         bgSoftClass: 'bg-foreground/[0.04]',
         borderClass: 'border-foreground/15',
         btnClass: 'bg-foreground/[0.06] hover:bg-foreground/[0.10] text-foreground/85 border border-foreground/15',

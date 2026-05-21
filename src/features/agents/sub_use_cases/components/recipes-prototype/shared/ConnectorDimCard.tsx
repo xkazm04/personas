@@ -108,32 +108,32 @@ export function ConnectorDimCard({ uc, personaId, credentials }: ConnectorDimCar
             >
               <Plug className="w-3 h-3" style={{ color: active ? dimColor : '#94a3b8' }} />
             </span>
-            <span className="typo-label uppercase tracking-wider text-foreground/75">{t.agents.use_cases.connector_dim_title}</span>
-            <ChevronDown className={`ml-auto w-3 h-3 text-foreground/55 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+            <span className="typo-label uppercase tracking-wider text-foreground">{t.agents.use_cases.connector_dim_title}</span>
+            <ChevronDown className={`ml-auto w-3 h-3 text-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`} />
           </div>
           <div className="flex items-center gap-2">
             <span className="typo-caption font-medium" style={{ color: meta.color }}>
               {meta.label}
             </span>
             {currentCred && (
-              <span className="typo-caption text-foreground/65 truncate">
+              <span className="typo-caption text-foreground truncate">
                 · {triggerBody === meta.label ? '' : triggerBody}
               </span>
             )}
           </div>
           {triggerSubtitle && (
-            <div className="typo-caption text-foreground/55 mt-0.5">{triggerSubtitle}</div>
+            <div className="typo-caption text-foreground mt-0.5">{triggerSubtitle}</div>
           )}
         </button>
       )}
     >
       {({ close, focusIndex }) => (
         <div className="py-1 max-h-[40vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-          <div className="px-3 pt-1.5 pb-1 typo-label uppercase tracking-wider text-foreground/55">
+          <div className="px-3 pt-1.5 pb-1 typo-label uppercase tracking-wider text-foreground">
             {tx(t.agents.use_cases.connector_creds_group, { label: meta.label })}
           </div>
           {matchingCreds.length === 0 ? (
-            <div className="px-3 py-3 typo-caption text-foreground/65">
+            <div className="px-3 py-3 typo-caption text-foreground">
               {t.agents.use_cases.connector_creds_empty}
             </div>
           ) : (
@@ -155,7 +155,7 @@ export function ConnectorDimCard({ uc, personaId, credentials }: ConnectorDimCar
                 >
                   <div className="flex-1 min-w-0">
                     <div className="font-medium truncate">{c.name}</div>
-                    <div className="typo-label uppercase tracking-wider text-foreground/55 mt-0.5">
+                    <div className="typo-label uppercase tracking-wider text-foreground mt-0.5">
                       {t.agents.use_cases.connector_last_used} <span className="font-mono normal-case tracking-normal">{lastUsed}</span>
                     </div>
                   </div>
@@ -168,7 +168,7 @@ export function ConnectorDimCard({ uc, personaId, credentials }: ConnectorDimCar
             <button
               type="button"
               onClick={() => { setSidebarSection('credentials'); close(); }}
-              className="flex items-center gap-2 w-full px-3 py-2 typo-caption text-foreground/65 hover:text-foreground hover:bg-secondary/40 cursor-pointer"
+              className="flex items-center gap-2 w-full px-3 py-2 typo-caption text-foreground hover:text-foreground hover:bg-secondary/40 cursor-pointer"
             >
               <ExternalLink className="w-3 h-3" />
               {t.agents.use_cases.connector_manage_vault}
@@ -208,7 +208,7 @@ function ReadOnlyShell({ title, body, active }: ReadOnlyShellProps) {
         >
           <Plug className="w-3 h-3" style={{ color: active ? dimColor : '#94a3b8' }} />
         </span>
-        <span className="typo-label uppercase tracking-wider text-foreground/75">{title}</span>
+        <span className="typo-label uppercase tracking-wider text-foreground">{title}</span>
       </div>
       <div className="typo-caption text-foreground/85 leading-snug">{body}</div>
     </div>

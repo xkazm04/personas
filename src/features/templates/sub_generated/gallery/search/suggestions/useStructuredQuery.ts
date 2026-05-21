@@ -64,7 +64,7 @@ export function useStructuredQuery(
       if (diffs.length > 0) callbacks?.onDifficultyFilterChange?.(diffs);
       if (setups.length > 0) callbacks?.onSetupFilterChange?.(setups);
     }
-  }, []);
+  }, [callbacks, onCategoryFilterChange, onSearchChange]);
 
   // Detect if the user is typing a prefix like "category:"
   const { autocompletePrefix, autocompleteQuery, keywordText } = useMemo(() => {

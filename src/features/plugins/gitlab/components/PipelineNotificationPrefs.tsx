@@ -31,7 +31,7 @@ function Toggle({ checked, onChange, label, id }: {
         }`}
       >
         <span
-          className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow-elevation-1 transition-transform duration-200 ${
+          className={`inline-block h-3.5 w-3.5 rounded-full bg-secondary shadow-elevation-1 transition-transform duration-200 ${
             checked ? 'translate-x-4' : 'translate-x-0.5'
           }`}
         />
@@ -75,7 +75,7 @@ export function PipelineNotificationPrefs() {
           }`}
         >
           <span
-            className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow-elevation-1 transition-transform duration-200 ${
+            className={`inline-block h-3.5 w-3.5 rounded-full bg-secondary shadow-elevation-1 transition-transform duration-200 ${
               prefs.enabled ? 'translate-x-4' : 'translate-x-0.5'
             }`}
           />
@@ -123,7 +123,7 @@ export function PipelineNotificationPrefs() {
                 }`}
               >
                 <span
-                  className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow-elevation-1 transition-transform duration-200 ${
+                  className={`inline-block h-3.5 w-3.5 rounded-full bg-secondary shadow-elevation-1 transition-transform duration-200 ${
                     prefs.sound ? 'translate-x-4' : 'translate-x-0.5'
                   }`}
                 />

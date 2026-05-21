@@ -20,6 +20,10 @@ import { usePersonaActions } from './PersonaOverviewActions';
 import { useIsMobile } from './PersonaOverviewResponsive';
 import type { Persona } from '@/lib/bindings/Persona';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
+import { debtText } from '@/i18n/DebtText';
+
+
 
 type LayoutVariant = 'baseline' | 'grid' | 'constellation';
 
@@ -35,9 +39,7 @@ function readPersistedLayout(): LayoutVariant {
   try {
     const v = localStorage.getItem(LAYOUT_STORAGE_KEY);
     if (v === 'baseline' || v === 'grid' || v === 'constellation') return v;
-  } catch {
-    /* localStorage may be unavailable (private mode, embedded contexts) */
-  }
+  } catch (err) { silentCatch("features/agents/components/allPersonas/PersonaOverviewPage:catch1")(err); }
   return 'baseline';
 }
 
@@ -63,7 +65,7 @@ export default function PersonaOverviewPage() {
   const isMobile = useIsMobile();
 
   useEffect(() => {
-    try { localStorage.setItem(LAYOUT_STORAGE_KEY, layout); } catch { /* see readPersistedLayout */ }
+    try { localStorage.setItem(LAYOUT_STORAGE_KEY, layout); } catch (err) { silentCatch("features/agents/components/allPersonas/PersonaOverviewPage:catch2")(err); }
   }, [layout]);
 
   // A persona is "draft" only if it never finished a build (no design result
@@ -259,7 +261,7 @@ function LayoutModeTabs({
   return (
     <div
       role="tablist"
-      aria-label="Persona list layout"
+      aria-label={debtText("auto_persona_list_layout_f3abe698")}
       className="inline-flex items-center gap-0.5 p-0.5 rounded-card bg-secondary/40 border border-primary/10"
     >
       {LAYOUT_TABS.map(({ id, label, sub, Icon }) => {
@@ -275,7 +277,7 @@ function LayoutModeTabs({
             className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-input text-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40 ${
               active
                 ? 'bg-primary/15 text-primary shadow-sm'
-                : 'text-foreground/70 hover:text-foreground hover:bg-secondary/60'
+                : 'text-foreground hover:text-foreground hover:bg-secondary/60'
             }`}
           >
             <Icon className="w-3.5 h-3.5" />

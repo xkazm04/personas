@@ -46,7 +46,7 @@ export function TriggerSetWidget({ config, title }: CockpitWidgetProps) {
 
   if (triggers.length === 0) {
     return (
-      <div className="rounded-card border border-foreground/10 bg-secondary/40 p-3 typo-caption text-foreground/55">
+      <div className="rounded-card border border-foreground/10 bg-secondary/40 p-3 typo-caption text-foreground">
         {t.plugins.companion.trigger_set_empty}
       </div>
     );
@@ -63,7 +63,7 @@ export function TriggerSetWidget({ config, title }: CockpitWidgetProps) {
           {title || t.plugins.companion.trigger_set_title}
         </span>
         {intent && (
-          <span className="text-foreground/55 truncate" title={intent}>
+          <span className="text-foreground truncate" title={intent}>
             · {intent}
           </span>
         )}
@@ -77,17 +77,17 @@ export function TriggerSetWidget({ config, title }: CockpitWidgetProps) {
               className="rounded-card border border-foreground/10 bg-secondary/40 p-3 space-y-1.5"
             >
               <div className="flex items-center gap-2">
-                <SourceIcon className="w-3.5 h-3.5 text-foreground/55 shrink-0" />
+                <SourceIcon className="w-3.5 h-3.5 text-foreground shrink-0" />
                 <span className="typo-body font-medium text-foreground/95 flex-1">
                   {tr.label}
                 </span>
-                <span className="typo-caption text-foreground/55 shrink-0 truncate max-w-[40%]">
+                <span className="typo-caption text-foreground shrink-0 truncate max-w-[40%]">
                   {tr.source}
                 </span>
               </div>
-              <div className="pl-5 space-y-1 typo-caption text-foreground/70">
+              <div className="pl-5 space-y-1 typo-caption text-foreground">
                 <div>
-                  <span className="text-foreground/45">
+                  <span className="text-foreground">
                     {t.plugins.companion.trigger_set_condition}
                     {': '}
                   </span>
@@ -95,7 +95,7 @@ export function TriggerSetWidget({ config, title }: CockpitWidgetProps) {
                 </div>
                 {tr.grain && (
                   <div>
-                    <span className="text-foreground/45">
+                    <span className="text-foreground">
                       {t.plugins.companion.trigger_set_grain}
                       {': '}
                     </span>
@@ -104,7 +104,7 @@ export function TriggerSetWidget({ config, title }: CockpitWidgetProps) {
                 )}
                 {tr.idempotency_note && (
                   <div>
-                    <span className="text-foreground/45">
+                    <span className="text-foreground">
                       {t.plugins.companion.trigger_set_idempotency}
                       {': '}
                     </span>

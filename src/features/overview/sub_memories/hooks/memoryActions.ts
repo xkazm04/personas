@@ -1,5 +1,7 @@
 import type { MemoryReviewDetail } from '@/api/overview/memories';
 import type { PersonaMemory } from '@/lib/bindings/PersonaMemory';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 // -- Types -------------------------------------------------------
 
@@ -35,9 +37,7 @@ export function loadActions(): MemoryAction[] {
 export function saveActions(actions: MemoryAction[]): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(actions));
-  } catch {
-    // storage full -- actions still live in-memory
-  }
+  } catch (err) { silentCatch("features/overview/sub_memories/hooks/memoryActions:catch1")(err); }
 }
 
 // -- Rule extraction from review results -------------------------

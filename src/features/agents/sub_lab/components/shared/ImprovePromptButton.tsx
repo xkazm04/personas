@@ -6,6 +6,8 @@ import { buildTestMetadataForDesignContext } from '../../libs/labFeedbackLoop';
 import { parseDesignContext, serializeDesignContext } from '@/features/shared/components/use-cases/UseCasesList';
 import { selectedModelsToConfigs } from '@/lib/models/modelCatalog';
 import { useTranslation } from '@/i18n/useTranslation';
+import { DebtText } from '@/i18n/DebtText';
+
 
 interface ImprovePromptButtonProps {
   personaId: string;
@@ -107,7 +109,7 @@ export function ImprovePromptButton({ personaId, runId, mode, disabled }: Improv
     return (
       <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption font-medium bg-emerald-500/15 text-emerald-400">
         <CheckCircle2 className="w-3.5 h-3.5" />
-        Improvement run started
+        <DebtText k="auto_improvement_run_started_d6215b76" />
       </span>
     );
   }
@@ -171,7 +173,7 @@ export function ImprovePromptButton({ personaId, runId, mode, disabled }: Improv
       </button>
       {weakest && state === 'idle' && (
         <span className="typo-body text-foreground">
-          Will focus on <strong className="text-foreground">{weakest.name}</strong> (avg {weakest.score}/100)
+          <DebtText k="auto_will_focus_on_422f7052" /> <strong className="text-foreground">{weakest.name}</strong> <DebtText k="auto_avg_6d5ae115" /> {weakest.score}/100)
         </span>
       )}
     </div>

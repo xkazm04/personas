@@ -131,7 +131,7 @@ export default function Gallery3D({ assets, onDelete, onUpdateTags, onRename }: 
                 type="button"
                 onClick={(e) => { e.stopPropagation(); goPrev(); }}
                 aria-label={t.plugins.artist.viewer_prev_model}
-                className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-card bg-white/10 text-white hover:bg-white/20 transition-colors z-10"
+                className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-card bg-secondary/10 text-foreground hover:bg-secondary/20 transition-colors z-10"
               >
                 <ChevronLeft className="w-6 h-6" />
               </button>
@@ -139,7 +139,7 @@ export default function Gallery3D({ assets, onDelete, onUpdateTags, onRename }: 
                 type="button"
                 onClick={(e) => { e.stopPropagation(); goNext(); }}
                 aria-label={t.plugins.artist.viewer_next_model}
-                className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-card bg-white/10 text-white hover:bg-white/20 transition-colors z-10"
+                className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-card bg-secondary/10 text-foreground hover:bg-secondary/20 transition-colors z-10"
               >
                 <ChevronRight className="w-6 h-6" />
               </button>

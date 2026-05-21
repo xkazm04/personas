@@ -29,8 +29,8 @@ export function ClassPillsBar({ visibleClasses, classCounts, onToggle }: Props) 
             type="button"
             onClick={() => onToggle(key)}
             title={`${active ? 'Hide' : 'Show'} ${label} events (${classCounts[key]})`}
-            className={`px-2 py-0.5 rounded-pill text-xs font-semibold uppercase tracking-wider border transition-colors ${
-              active ? className : 'text-muted-foreground border-border/40 hover:border-border opacity-60 hover:opacity-100'
+            className={`px-2 py-0.5 rounded-pill typo-label font-semibold uppercase tracking-wider border transition-colors ${
+              active ? className : 'text-foreground border-border/40 hover:border-border opacity-60 hover:opacity-100'
             }`}
           >
             {label}

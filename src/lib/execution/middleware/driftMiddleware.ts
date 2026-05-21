@@ -13,7 +13,7 @@ import { addMiddleware, type PipelineMiddleware } from '@/lib/execution/pipeline
 import { detectDesignDrift, saveDriftEvents } from '@/lib/design/designDrift';
 import type { AgentIR } from '@/lib/types/designTypes';
 import { createLogger } from '@/lib/log';
-import { extractMessage } from '@/lib/silentCatch';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
 
 const logger = createLogger("drift-middleware");
 
@@ -48,7 +48,7 @@ const driftDetectionMiddleware: PipelineMiddleware<'frontend_complete'> = async 
 
     let lastDesignResult: AgentIR | null = null;
     if (persona.last_design_result) {
-      try { lastDesignResult = JSON.parse(persona.last_design_result); } catch { /* ignore */ }
+      try { lastDesignResult = JSON.parse(persona.last_design_result); } catch (err) { silentCatch("lib/execution/middleware/driftMiddleware:catch1")(err); }
     }
 
     const driftEvents = detectDesignDrift(

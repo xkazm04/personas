@@ -98,7 +98,7 @@ export function TurnSummaryChip({ summary }: { summary: StoredTurnSummary }) {
 
   return (
     <div
-      className="flex flex-wrap items-center gap-x-2 gap-y-0.5 typo-caption text-foreground/50 pl-2"
+      className="flex flex-wrap items-center gap-x-2 gap-y-0.5 typo-caption text-foreground pl-2"
       data-testid="companion-turn-summary-chip"
       aria-label={t.plugins.companion.turn_summary_label}
     >
@@ -107,7 +107,7 @@ export function TurnSummaryChip({ summary }: { summary: StoredTurnSummary }) {
         return (
           <span key={p.key} className="inline-flex items-center gap-1">
             {i > 0 && (
-              <span aria-hidden className="text-foreground/30">
+              <span aria-hidden className="text-foreground">
                 ·
               </span>
             )}

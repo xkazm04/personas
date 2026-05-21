@@ -18,5 +18,6 @@
   "sign_in_google": "تسجيل الدخول بـ Google",
   "signed_in": "تم تسجيل الدخول",
   "sign_out": "تسجيل الخروج",
-  "offline": "غير متصل بالإنترنت"
+  "offline": "غير متصل بالإنترنت",
+  "mobile_preview": "Mobile preview"
 }

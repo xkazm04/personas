@@ -2,6 +2,8 @@ import { X, AlertCircle } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { statusBadge } from '@/lib/eval/evalFramework';
 import { useTranslation } from '@/i18n/useTranslation';
+import { debtText } from '@/i18n/DebtText';
+
 
 interface LabResultModalProps {
   isOpen: boolean;
@@ -39,7 +41,7 @@ export function LabResultModal({
           </div>
           <div className="flex items-center gap-3 flex-shrink-0">
             <span className="typo-caption text-foreground">{new Date(run.createdAt).toLocaleString()}</span>
-            <button data-testid="lab-result-modal-close" onClick={onClose} aria-label="Close results" className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors">
+            <button data-testid="lab-result-modal-close" onClick={onClose} aria-label={debtText("auto_close_results_b9a0e746")} className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors">
               <X className="w-4 h-4" />
             </button>
           </div>

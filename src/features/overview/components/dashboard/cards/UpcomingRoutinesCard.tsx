@@ -80,7 +80,7 @@ export default function UpcomingRoutinesCard() {
           label={t.overview.upcoming_routines.title}
           subtitle={t.overview.upcoming_routines.subtitle}
         />
-        <div className="px-4 py-6 typo-body text-foreground/60 text-center">
+        <div className="px-4 py-6 typo-body text-foreground text-center">
           {t.overview.upcoming_routines.empty}
         </div>
       </div>
@@ -102,17 +102,17 @@ export default function UpcomingRoutinesCard() {
             <CalendarClock className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
             <div className="flex-1 min-w-0">
               <div className="typo-body text-foreground truncate">{row.personaName}</div>
-              <div className="typo-caption text-foreground/60 truncate font-mono uppercase tracking-wider">
+              <div className="typo-caption text-foreground truncate font-mono uppercase tracking-wider">
                 {row.trigger.trigger_type}
               </div>
             </div>
             <div className="typo-caption font-mono tabular-nums flex-shrink-0">
               {row.rel ? (
-                <span className={row.rel.overdue ? 'text-rose-400' : 'text-foreground/80'}>
+                <span className={row.rel.overdue ? 'text-rose-400' : 'text-foreground'}>
                   {row.rel.label}
                 </span>
               ) : (
-                <span className="text-foreground/40">{t.overview.upcoming_routines.never_fired}</span>
+                <span className="text-foreground">{t.overview.upcoming_routines.never_fired}</span>
               )}
             </div>
           </div>
@@ -126,14 +126,14 @@ function CardHeader({ label, subtitle }: { label: string; subtitle?: string }) {
   return (
     <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10 bg-primary/[0.04]">
       <div className="flex items-baseline gap-2">
-        <span className="typo-caption font-mono uppercase tracking-[0.3em] text-foreground/70">
+        <span className="typo-caption font-mono uppercase tracking-[0.3em] text-foreground">
           {label}
         </span>
         {subtitle && (
-          <span className="typo-caption text-foreground/40">{subtitle}</span>
+          <span className="typo-caption text-foreground">{subtitle}</span>
         )}
       </div>
-      <ArrowRight className="w-3 h-3 text-foreground/30" />
+      <ArrowRight className="w-3 h-3 text-foreground" />
     </div>
   );
 }

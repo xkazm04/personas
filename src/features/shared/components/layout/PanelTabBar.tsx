@@ -40,8 +40,8 @@ export function PanelTabBar<T extends string>({
               'px-4 py-2.5 typo-heading transition-colors relative focus-ring',
               active
                 ? 'text-foreground font-semibold'
-                : 'text-foreground/55 hover:text-foreground/80',
-              tab.disabled ? 'text-foreground/30 cursor-not-allowed' : 'cursor-pointer',
+                : 'text-foreground hover:text-foreground/80',
+              tab.disabled ? 'text-foreground cursor-not-allowed' : 'cursor-pointer',
             ].join(' ')}
           >
             {tab.label}

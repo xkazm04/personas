@@ -49,7 +49,7 @@ export function SelectCell({
           {selected && (
             <motion.svg
               key="check"
-              className="w-3 h-3 text-white"
+              className="w-3 h-3 text-foreground"
               viewBox="0 0 12 12"
               fill="none"
               initial={{ scale: 0.8 }}

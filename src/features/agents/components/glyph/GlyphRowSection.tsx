@@ -43,7 +43,7 @@ export function GlyphRowSection({
               exit={{ opacity: 0, y: -4 }}
               transition={{ duration: 0.18 }}
               className={`typo-heading-sm font-semibold text-center ${
-                isHoverPreview ? "text-foreground/65 italic" : "text-foreground"
+                isHoverPreview ? "text-foreground italic" : "text-foreground"
               }`}
             >
               {row.title}

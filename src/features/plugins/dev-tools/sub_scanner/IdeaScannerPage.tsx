@@ -15,7 +15,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useDevToolsActions } from '../hooks/useDevToolsActions';
 import { useSystemStore } from '@/stores/systemStore';
 import { runStaticScan } from '@/api/devTools/devTools';
-import { toastCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import {
   SCAN_AGENTS, AGENT_CATEGORIES,
 } from '../constants/scanAgents';
@@ -222,7 +222,7 @@ export default function IdeaScannerPage() {
         } else if (result.status === 'failed' || result.status === 'cancelled' || result.status === 'not_found') {
           finalizeScanRef.current('failed', result.error);
         }
-      } catch { /* ignore */ }
+      } catch (err) { silentCatch("features/plugins/dev-tools/sub_scanner/IdeaScannerPage:catch1")(err); }
     })();
 
     return () => { cancelled = true; };
@@ -386,9 +386,7 @@ export default function IdeaScannerPage() {
             };
             setTimeout(check, 3000);
           });
-        } catch {
-          // Continue with next context on individual failure
-        }
+        } catch (err) { silentCatch("features/plugins/dev-tools/sub_scanner/IdeaScannerPage:catch2")(err); }
         completed++;
       }
 
@@ -625,7 +623,7 @@ export default function IdeaScannerPage() {
             {/* Filter chips — only show when there's enough history to be worth filtering */}
             {historyAgentCounts.size > 1 && (
               <div className="flex flex-wrap items-center gap-1.5 mb-3">
-                <span className="typo-caption text-foreground/70 mr-1">
+                <span className="typo-caption text-foreground mr-1">
                   {t.plugins.dev_scanner.history_filter_label}
                 </span>
                 {Array.from(historyAgentCounts.entries()).map(([key, count]) => {
@@ -643,7 +641,7 @@ export default function IdeaScannerPage() {
                       }`}
                     >
                       <span className="mr-1">{agent?.emoji ?? '?'}</span>
-                      {agent?.label ?? key} <span className="text-foreground/60">({count})</span>
+                      {agent?.label ?? key} <span className="text-foreground">({count})</span>
                     </button>
                   );
                 })}

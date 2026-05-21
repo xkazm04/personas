@@ -29,7 +29,7 @@ export function PrototypeTabs({
   return (
     <div className="flex flex-col h-full min-h-0 overflow-hidden">
       <div className="flex-shrink-0 border-b border-border/50 bg-foreground/[0.02] px-6 py-2 flex items-center gap-1">
-        <span className="text-[10px] uppercase tracking-[0.18em] text-foreground/45 mr-3">
+        <span className="text-[10px] uppercase tracking-[0.18em] text-foreground mr-3">
           Prototype
         </span>
         {variants.map((v) => {
@@ -41,7 +41,7 @@ export function PrototypeTabs({
               className={`px-3 py-1.5 rounded-interactive typo-caption transition-colors flex flex-col items-start leading-tight ${
                 isActive
                   ? 'bg-primary/15 text-primary'
-                  : 'text-foreground/65 hover:text-foreground hover:bg-foreground/[0.04]'
+                  : 'text-foreground hover:text-foreground hover:bg-foreground/[0.04]'
               }`}
             >
               <span className="font-medium">{v.label}</span>

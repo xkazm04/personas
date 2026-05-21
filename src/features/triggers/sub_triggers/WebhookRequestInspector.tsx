@@ -15,6 +15,8 @@ import {
   webhookRequestToCurl,
 } from '@/api/pipeline/triggers';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 // --- Helpers ---------------------------------------------------------------
 
@@ -196,7 +198,7 @@ export function WebhookRequestInspector({ triggerId }: WebhookRequestInspectorPr
     if (open && logs.length === 0 && !loading) {
       void fetch();
     }
-  }, [open]);
+  }, [fetch, loading, logs.length, open]);
 
   const handleReplay = async (logId: string) => {
     setReplayingId(logId);
@@ -216,9 +218,7 @@ export function WebhookRequestInspector({ triggerId }: WebhookRequestInspectorPr
     try {
       const curl = await webhookRequestToCurl(logId);
       copy(logId, curl);
-    } catch {
-      // best-effort
-    }
+    } catch (err) { silentCatch("features/triggers/sub_triggers/WebhookRequestInspector:catch1")(err); }
   };
 
   const handleClear = async () => {
@@ -226,9 +226,7 @@ export function WebhookRequestInspector({ triggerId }: WebhookRequestInspectorPr
     try {
       await clearWebhookRequestLogs(triggerId);
       setLogs([]);
-    } catch {
-      // best-effort
-    } finally {
+    } catch (err) { silentCatch("features/triggers/sub_triggers/WebhookRequestInspector:catch2")(err); } finally {
       setClearing(false);
     }
   };

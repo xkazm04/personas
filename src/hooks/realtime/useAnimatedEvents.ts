@@ -42,7 +42,7 @@ export function useAnimatedEvents(
       });
     }
     return result;
-  }, [events, animationMap, _animTick]);
+  }, [events, animationMap]);
 }
 
 /**

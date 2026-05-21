@@ -62,7 +62,7 @@ export function TemplatePickerStep({
         <AlertCircle className="w-10 h-10 mx-auto text-amber-400 mb-3" />
         <p className="typo-body text-foreground">{t.onboarding.templates_load_error}</p>
         {loadState.error && (
-          <p className="typo-body text-foreground/70 mt-1">{loadState.error}</p>
+          <p className="typo-body text-foreground mt-1">{loadState.error}</p>
         )}
         <button
           onClick={onRetry}

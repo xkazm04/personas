@@ -81,7 +81,7 @@ export function DraftEditStep({
       {/* Editable persona header */}
       <div className="flex items-center gap-3 px-1 flex-shrink-0">
         <div
-          className="w-9 h-9 rounded-xl flex items-center justify-center text-sm border flex-shrink-0"
+          className="w-9 h-9 rounded-xl flex items-center justify-center typo-body border flex-shrink-0"
           style={{
             backgroundColor: `${draft.color ?? '#8b5cf6'}18`,
             borderColor: `${draft.color ?? '#8b5cf6'}30`,

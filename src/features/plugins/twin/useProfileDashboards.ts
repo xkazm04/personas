@@ -90,16 +90,17 @@ export function useProfileDashboards(profiles: TwinProfile[]): Record<string, Pr
       void loadOne(p);
     }
 
+    const loaded = loadedRef.current;
     return () => {
       cancelled = true;
       // Drop IDs no longer in the active list so a re-add triggers a fresh
       // fetch. IDs still present remain marked-loaded — see lifecycle note above.
       const stillPresent = new Set(profiles.map((p) => p.id));
-      for (const id of loadedRef.current) {
-        if (!stillPresent.has(id)) loadedRef.current.delete(id);
+      for (const id of loaded) {
+        if (!stillPresent.has(id)) loaded.delete(id);
       }
     };
-  }, [profileIds]);
+  }, [profileIds, profiles]);
 
   return data;
 }

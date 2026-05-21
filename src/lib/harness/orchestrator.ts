@@ -24,6 +24,8 @@ import {
   loadGuide as loadGuideFromDisk,
   saveGuide,
 } from './guide-generator';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 // ---------------------------------------------------------------------------
 //  Factory
@@ -78,9 +80,7 @@ export function createHarnessOrchestrator(
     for (const listener of listeners) {
       try {
         listener(full);
-      } catch {
-        // listeners should not throw
-      }
+      } catch (err) { silentCatch("lib/harness/orchestrator:catch1")(err); }
     }
   }
 

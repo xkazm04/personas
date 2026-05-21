@@ -67,9 +67,9 @@ export function ConnectorCallCard({ job }: { job: BackgroundJob }) {
         className="flex items-center gap-2 w-full text-left typo-body disabled:cursor-default"
       >
         {hasBody ? (
-          <Chevron className="w-3.5 h-3.5 text-foreground/45 shrink-0" />
+          <Chevron className="w-3.5 h-3.5 text-foreground shrink-0" />
         ) : (
-          <Wrench className="w-3.5 h-3.5 text-foreground/45 shrink-0" />
+          <Wrench className="w-3.5 h-3.5 text-foreground shrink-0" />
         )}
         <Icon
           className={`w-4 h-4 shrink-0 ${
@@ -80,17 +80,17 @@ export function ConnectorCallCard({ job }: { job: BackgroundJob }) {
           <span className="font-medium">
             {connectorName ? connectorDisplayName(t, connectorName) : '?'}
           </span>
-          <span className="text-foreground/50"> · </span>
-          <span className="text-foreground/70">
+          <span className="text-foreground"> · </span>
+          <span className="text-foreground">
             {capability ? capabilityLabel(t, capability) : '?'}
           </span>
         </span>
-        <span className="typo-caption text-foreground/50 shrink-0">
+        <span className="typo-caption text-foreground shrink-0">
           {statusLabel}
         </span>
       </button>
       {open && hasBody && (
-        <div className="mt-2 pl-5 border-l border-foreground/10 typo-caption text-foreground/75">
+        <div className="mt-2 pl-5 border-l border-foreground/10 typo-caption text-foreground">
           {failed && job.errorText ? (
             <div className="text-rose-300/90 whitespace-pre-wrap font-mono">
               {job.errorText}
@@ -101,7 +101,7 @@ export function ConnectorCallCard({ job }: { job: BackgroundJob }) {
         </div>
       )}
       {!isTerminal && (
-        <div className="mt-1 pl-5 typo-caption text-foreground/45">
+        <div className="mt-1 pl-5 typo-caption text-foreground">
           {t.plugins.companion.connector_call_in_flight_hint}
         </div>
       )}

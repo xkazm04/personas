@@ -63,7 +63,7 @@ export default function IncidentsInbox() {
         actions={
           <button
             onClick={() => void refresh()}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption rounded-card border border-primary/15 text-foreground/80 hover:bg-secondary/40 transition-colors focus-ring"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption rounded-card border border-primary/15 text-foreground hover:bg-secondary/40 transition-colors focus-ring"
             aria-label={t.overview.incidents.refresh}
           >
             <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
@@ -81,7 +81,7 @@ export default function IncidentsInbox() {
 
         {hasSelection && (
           <div className="flex items-center gap-2 px-4 py-2 border-b border-primary/10 bg-primary/5">
-            <span className="typo-caption text-foreground/70">
+            <span className="typo-caption text-foreground">
               {selectedArray.length} selected
             </span>
             <button
@@ -98,7 +98,7 @@ export default function IncidentsInbox() {
             </button>
             <button
               onClick={() => setSelectedIds(new Set())}
-              className="px-2 py-0.5 typo-caption rounded-card border border-transparent text-foreground/60 hover:bg-secondary/40 focus-ring"
+              className="px-2 py-0.5 typo-caption rounded-card border border-transparent text-foreground hover:bg-secondary/40 focus-ring"
             >
               {t.overview.incidents.bulk_clear_selection}
             </button>
@@ -119,7 +119,7 @@ export default function IncidentsInbox() {
             <LoadingSpinner size="lg" label={t.overview.incidents.loading} />
           </div>
         ) : incidents.length === 0 ? (
-          <div className="flex items-center justify-center py-16 typo-body text-foreground/60">
+          <div className="flex items-center justify-center py-16 typo-body text-foreground">
             {isFiltered
               ? t.overview.incidents.empty_state_filtered
               : t.overview.incidents.empty_state_open}

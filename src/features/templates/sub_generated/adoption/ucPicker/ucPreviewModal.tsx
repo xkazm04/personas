@@ -3,6 +3,8 @@
 
 import { Inbox, X } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
+import { debtText } from '@/i18n/DebtText';
+
 
 export function PreviewModal({
   title,
@@ -37,12 +39,12 @@ export function PreviewModal({
             </span>
             {title}
           </h3>
-          {subtitle && <p className="typo-body text-foreground/70 mt-1 leading-relaxed">{subtitle}</p>}
+          {subtitle && <p className="typo-body text-foreground mt-1 leading-relaxed">{subtitle}</p>}
         </div>
         <button
           onClick={onClose}
-          className="focus-ring p-1.5 rounded-card hover:bg-secondary/60 text-foreground/80 hover:text-foreground transition-colors"
-          aria-label="Close preview"
+          className="focus-ring p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors"
+          aria-label={debtText("auto_close_preview_baa55035")}
         >
           <X className="w-5 h-5" />
         </button>

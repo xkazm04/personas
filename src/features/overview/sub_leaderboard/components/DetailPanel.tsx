@@ -2,6 +2,8 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { ExternalLink } from 'lucide-react';
 import type { LeaderboardEntry } from '../libs/leaderboardScoring';
 import { ScoreRadar } from './ScoreRadar';
+import { DebtText } from '@/i18n/DebtText';
+
 
 interface DetailPanelProps {
   entry: LeaderboardEntry | null;
@@ -14,7 +16,7 @@ export function DetailPanel({ entry, onNavigateToAgent }: DetailPanelProps) {
   if (!entry) {
     return (
       <div className="p-4 rounded-modal border border-primary/[0.08] bg-secondary/[0.03]">
-        <p className="typo-body text-foreground text-center">No agent selected</p>
+        <p className="typo-body text-foreground text-center"><DebtText k="auto_no_agent_selected_fa58d163" /></p>
       </div>
     );
   }
@@ -53,7 +55,7 @@ export function DetailPanel({ entry, onNavigateToAgent }: DetailPanelProps) {
             className="mt-4 w-full flex items-center justify-center gap-1.5 typo-caption font-medium text-primary/70 hover:text-primary hover:bg-primary/5 py-1.5 rounded-card transition-colors"
           >
             <ExternalLink className="w-3 h-3" />
-            Open Agent
+            <DebtText k="auto_open_agent_e247e3d5" />
           </button>
         </motion.div>
       </AnimatePresence>

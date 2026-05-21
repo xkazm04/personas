@@ -9,6 +9,8 @@ import type { VaultStatus } from "@/api/vault/credentials";
 import { IS_DESKTOP } from '@/lib/utils/platform/platform';
 import { useRotateAll } from './useRotateAll';
 import { useCatalogHandlers } from './useCatalogHandlers';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 export function useCredentialManagerState() {
   const credentials = useVaultStore((s) => s.credentials);
@@ -88,7 +90,7 @@ export function useCredentialManagerState() {
     const cred = credentials.find((c) => c.id === credentialId);
     if (!cred) return;
     undoDelete.requestDelete(cred);
-  }, [credentials, undoDelete.requestDelete]);
+  }, [credentials, undoDelete]);
 
   useEffect(() => {
     const init = async () => {
@@ -96,7 +98,7 @@ export function useCredentialManagerState() {
       try {
         const vs = await vaultStatus();
         setVault(vs);
-      } catch { /* intentional: non-critical */ }
+      } catch (err) { silentCatch("features/vault/sub_credentials/manager/useCredentialManagerState:catch1")(err); }
       setLoading(false);
     };
     init();
@@ -117,7 +119,7 @@ export function useCredentialManagerState() {
     }
     const timer = setTimeout(run, 3000);
     return () => clearTimeout(timer);
-  }, [loading, healthcheckCredentials.length]);
+  }, [loading, healthcheckCredentials.length, healthcheckCredentials, bulk]);
 
   // Clear daily-run flag when bulk finishes
   useEffect(() => {

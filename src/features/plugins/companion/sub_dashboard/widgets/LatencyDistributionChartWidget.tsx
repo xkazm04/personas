@@ -43,7 +43,7 @@ export const LatencyDistributionChartWidget = memo(function LatencyDistributionC
 
   return (
     <div className="rounded-card border border-foreground/10 bg-foreground/[0.02] p-4 h-full flex flex-col">
-      <div className="typo-caption text-foreground/60 uppercase tracking-wide mb-2">
+      <div className="typo-caption text-foreground uppercase tracking-wide mb-2">
         {title ?? `Latency p50 / p95 / p99 (last ${days}d)`}
       </div>
       <div className="flex-1 min-h-0">

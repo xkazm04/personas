@@ -66,12 +66,12 @@ export function LinkedDecisionsWidget({ config, title }: CockpitWidgetProps) {
       className="rounded-card border border-foreground/10 bg-foreground/[0.02] p-4 h-full flex flex-col min-h-0"
     >
       <div className="flex items-center justify-between mb-3">
-        <div className="typo-caption text-foreground/60 uppercase tracking-wide flex items-center gap-1.5">
-          <ShieldCheck className="w-3 h-3 text-foreground/55" />
+        <div className="typo-caption text-foreground uppercase tracking-wide flex items-center gap-1.5">
+          <ShieldCheck className="w-3 h-3 text-foreground" />
           {title ?? t.overview.cockpit.linked_decisions_title}
         </div>
         {!loading && (
-          <span className="typo-caption text-foreground/40">{reviews.length}</span>
+          <span className="typo-caption text-foreground">{reviews.length}</span>
         )}
       </div>
 
@@ -82,7 +82,7 @@ export function LinkedDecisionsWidget({ config, title }: CockpitWidgetProps) {
           ))}
         </div>
       ) : reviews.length === 0 ? (
-        <div className="flex-1 flex items-center justify-center typo-caption text-foreground/45 italic">
+        <div className="flex-1 flex items-center justify-center typo-caption text-foreground italic">
           {t.overview.cockpit.linked_decisions_empty}
         </div>
       ) : (
@@ -98,7 +98,7 @@ export function LinkedDecisionsWidget({ config, title }: CockpitWidgetProps) {
                 <div className="min-w-0 flex-1">
                   <p className="typo-body font-medium text-foreground/95 truncate">{r.title}</p>
                   {r.description && (
-                    <p className="typo-caption text-foreground/65 mt-0.5 line-clamp-2">{r.description}</p>
+                    <p className="typo-caption text-foreground mt-0.5 line-clamp-2">{r.description}</p>
                   )}
                   {r.context_data && (
                     <div className="mt-1.5 px-2 py-1.5 rounded-input bg-foreground/[0.03] border border-foreground/[0.06]">

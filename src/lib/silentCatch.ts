@@ -2,6 +2,7 @@ import * as Sentry from "@sentry/react";
 import { log } from "./log";
 import { useToastStore } from "@/stores/toastStore";
 
+
 /**
  * Extract a human-readable message from any error shape — Error
  * instances, Tauri-style `{ error }` envelopes, structured Tauri
@@ -32,7 +33,7 @@ export function extractMessage(err: unknown): string {
       const json = JSON.stringify(obj);
       if (json && json !== "{}") return json;
     } catch {
-      // Cyclic structure — fall through to String().
+      return String(err);
     }
   }
   return String(err);

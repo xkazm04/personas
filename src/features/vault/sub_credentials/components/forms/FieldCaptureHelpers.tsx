@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import { Copy, ClipboardPaste, Eye, EyeOff, Check } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 export type ValidationGlow = 'none' | 'valid' | 'warning';
 
@@ -78,9 +80,7 @@ export function FieldActionButtons({
     try {
       const text = await navigator.clipboard.readText();
       if (text.trim()) onChange(text.trim());
-    } catch {
-      // intentional: non-critical
-    }
+    } catch (err) { silentCatch("features/vault/sub_credentials/components/forms/FieldCaptureHelpers:catch1")(err); }
   };
 
   const handleCopy = async () => {
@@ -102,14 +102,10 @@ export function FieldActionButtons({
             if (current === copiedValue) {
               await navigator.clipboard.writeText('');
             }
-          } catch {
-            // intentional: cannot verify, skip wipe
-          }
+          } catch (err) { silentCatch("features/vault/sub_credentials/components/forms/FieldCaptureHelpers:catch2")(err); }
         }, SECRET_CLIPBOARD_TTL_MS);
       }
-    } catch {
-      // intentional: non-critical
-    }
+    } catch (err) { silentCatch("features/vault/sub_credentials/components/forms/FieldCaptureHelpers:catch3")(err); }
   };
 
   return (

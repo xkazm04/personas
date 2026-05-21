@@ -6,6 +6,8 @@ import {
 } from '@/api/artist/index';
 import { EventName } from '@/lib/eventRegistry';
 import type { Composition, ExportState } from '../types';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 const IDLE_STATE: ExportState = {
   status: 'idle',
@@ -143,9 +145,7 @@ export function useMediaExport(composition: Composition) {
     if (exportState.jobId) {
       try {
         await artistCancelExport(exportState.jobId);
-      } catch {
-        // best-effort cancel
-      }
+      } catch (err) { silentCatch("features/plugins/artist/sub_media_studio/hooks/useMediaExport:catch1")(err); }
     }
     unlistenersRef.current.forEach((u) => u());
     unlistenersRef.current = [];

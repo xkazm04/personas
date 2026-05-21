@@ -142,7 +142,23 @@
     "previewStop": "Hentikan",
     "previewTooltip": "Sintesis sampel pendek dengan pengaturan saat ini",
     "previewNeedsConfig": "Atur voice ID dan credential ID sebelum melakukan pratinjau",
-    "previewSample": "Beginilah suara twin Anda ketika berbicara melalui kanal suara."
+    "previewSample": "Beginilah suara twin Anda ketika berbicara melalui kanal suara.",
+    "eyebrowAtelier": "Voice Studio",
+    "atelierVariantLabel": "Atelier",
+    "currentVariantLabel": "Current",
+    "stageEmptyHeadline": "No voice on file yet",
+    "stageEmptyBody": "Paste a Voice ID from your ElevenLabs library and link the API credential — the stage will preview here.",
+    "stageReadyHeadline": "Voice ready to synthesize",
+    "stageReadyBody": "Hit preview to hear how the twin sounds with the current synthesis settings.",
+    "kpiVoiceSet": "voice id",
+    "kpiCredential": "credential",
+    "kpiModel": "model",
+    "kpiPreview": "preview",
+    "kpiReady": "ready",
+    "kpiMissing": "missing",
+    "sectionIdentity": "Voice identity",
+    "sectionSynthesis": "Synthesis controls",
+    "sectionModel": "Model selection"
   },
   "training": {
     "title": "Training Room",
@@ -262,7 +278,13 @@
     "bulkRejectedToast": "Menolak {count} memori.",
     "bulkPartialToast": "{succeeded} ditinjau, {failed} gagal — lihat toast untuk detail.",
     "provenanceChip": "dari {id}…",
-    "provenanceTooltip": "ID komunikasi sumber: {id}"
+    "provenanceTooltip": "ID komunikasi sumber: {id}",
+    "ingestDocsTitle": "Seed from product docs",
+    "ingestDocsDescription": "Embed every page under docs/features/ into this twin's knowledge base. Lets the twin answer questions about Personas itself (events, triggers, recipes, …).",
+    "ingestDocsButton": "Ingest docs/features",
+    "ingestDocsLoading": "Ingesting…",
+    "ingestDocsSuccess": "Ingested {files} file(s) ({chunks} chunks). {skipped} already up-to-date.",
+    "ingestDocsErrorNoKb": "Bind a knowledge base in the Knowledge tab first."
   },
   "profiles": {
     "title": "Twin Profiles",

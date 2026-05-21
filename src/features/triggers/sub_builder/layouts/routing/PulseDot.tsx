@@ -12,6 +12,8 @@
  */
 import { formatAgo } from './activity';
 import type { ActivityEntry } from './types';
+import { debtText } from '@/i18n/DebtText';
+
 
 export function PulseDot({ activity }: { activity: ActivityEntry | undefined }) {
   const last = activity?.lastTs ?? null;
@@ -19,7 +21,7 @@ export function PulseDot({ activity }: { activity: ActivityEntry | undefined }) 
 
   if (deltaMs < 5 * 60 * 1000) {
     return (
-      <span className="relative inline-flex w-2.5 h-2.5" aria-label="Active within 5 minutes">
+      <span className="relative inline-flex w-2.5 h-2.5" aria-label={debtText("auto_active_within_5_minutes_dbae6408")}>
         <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400/60 animate-ping" />
         <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400 shadow shadow-emerald-400/50" />
       </span>
@@ -29,7 +31,7 @@ export function PulseDot({ activity }: { activity: ActivityEntry | undefined }) 
     return (
       <span
         className="inline-block w-2.5 h-2.5 rounded-full bg-amber-400 shadow shadow-amber-400/40"
-        aria-label="Active within 1 hour"
+        aria-label={debtText("auto_active_within_1_hour_55ece392")}
       />
     );
   }
@@ -44,7 +46,7 @@ export function PulseDot({ activity }: { activity: ActivityEntry | undefined }) 
   return (
     <span
       className="inline-block w-2.5 h-2.5 rounded-full border border-foreground/25"
-      aria-label="Never fired"
+      aria-label={debtText("auto_never_fired_7c1caf0c")}
     />
   );
 }

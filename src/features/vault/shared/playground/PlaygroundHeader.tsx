@@ -7,6 +7,8 @@ import { toCredentialMetadata } from '@/lib/types/types';
 import { useVaultStore } from '@/stores/vaultStore';
 import * as credApi from '@/api/vault/credentials';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 interface PlaygroundHeaderProps {
   credential: CredentialMetadata;
@@ -46,7 +48,7 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
       useVaultStore.setState((s) => ({
         credentials: s.credentials.map((c) => (c.id === credential.id ? updated : c)),
       }));
-    } catch { /* intentional: non-critical -- rename is best-effort */ }
+    } catch (err) { silentCatch("features/vault/shared/playground/PlaygroundHeader:catch1")(err); }
     setIsEditingName(false);
   }, [credential.id, credential.name, editName]);
 
@@ -70,7 +72,7 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
       useVaultStore.setState((s) => ({
         credentials: s.credentials.map((c) => (c.id === credential.id ? updated : c)),
       }));
-    } catch { /* intentional: non-critical -- tag metadata update is best-effort */ }
+    } catch (err) { silentCatch("features/vault/shared/playground/PlaygroundHeader:catch2")(err); }
   }, [credential]);
 
   const addTag = useCallback((tag: string) => {

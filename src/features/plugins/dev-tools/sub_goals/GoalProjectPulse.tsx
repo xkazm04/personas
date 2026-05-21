@@ -27,9 +27,11 @@ import type { DevGoalDependency } from '@/lib/bindings/DevGoalDependency';
 import type { DevTask } from '@/lib/bindings/DevTask';
 import * as devApi from '@/api/devTools/devTools';
 import { silentCatch } from '@/lib/silentCatch';
+import { DebtText } from '@/i18n/DebtText';
+
 
 const TASK_STATUS_TINT: Record<string, string> = {
-  pending:      'text-foreground/60',
+  pending:      'text-foreground',
   analyzing:    'text-blue-400',
   planning:     'text-blue-400',
   implementing: 'text-amber-400',
@@ -149,7 +151,7 @@ export function GoalProjectPulse({ goals, dependencies, initialSelectedId }: Pro
           <div className="px-4 py-3 border-b border-primary/10 flex items-center gap-2">
             <Target className="w-4 h-4 text-primary" />
             <h3 className="typo-section-title">{t.plugins.dev_lifecycle.goal_constellation}</h3>
-            <span className="ml-auto typo-caption text-foreground/70 tabular-nums">{goals.length} total</span>
+            <span className="ml-auto typo-caption text-foreground tabular-nums">{goals.length} total</span>
           </div>
           <div className="divide-y divide-primary/5">
             {STATUS_ORDER.filter((s) => grouped[s].length > 0).map((s) => (
@@ -194,10 +196,10 @@ function PulseTile({ status, count, total }: { status: StatusKey; count: number;
         <Icon className={`w-4 h-4 ${meta.tint}`} />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="typo-caption uppercase tracking-[0.18em] text-foreground/70">{meta.label}</p>
+        <p className="typo-caption uppercase tracking-[0.18em] text-foreground">{meta.label}</p>
         <div className="flex items-baseline gap-2">
           <p className={`typo-data-lg ${meta.tone} tabular-nums leading-none`}>{count}</p>
-          <p className="text-sm text-foreground/50 tabular-nums">{Math.round(pct)}%</p>
+          <p className="typo-data text-foreground tabular-nums">{Math.round(pct)}%</p>
         </div>
       </div>
     </div>
@@ -224,8 +226,8 @@ function StatusGroup({
     <div>
       <div className="flex items-center gap-2 px-4 py-2 bg-primary/5">
         <Icon className={`w-3.5 h-3.5 ${meta.tint}`} />
-        <span className="typo-caption uppercase tracking-[0.18em] text-foreground/80">{meta.label}</span>
-        <span className="typo-caption text-foreground/50 tabular-nums">{goals.length}</span>
+        <span className="typo-caption uppercase tracking-[0.18em] text-foreground">{meta.label}</span>
+        <span className="typo-caption text-foreground tabular-nums">{goals.length}</span>
       </div>
       <ul>
         {goals.map((g) => {
@@ -250,7 +252,7 @@ function StatusGroup({
                       <span className="shrink-0 typo-caption text-amber-400">blocks {blocksCount}</span>
                     )}
                     {requiresCount > 0 && (
-                      <span className="shrink-0 typo-caption text-foreground/60">needs {requiresCount}</span>
+                      <span className="shrink-0 typo-caption text-foreground">needs {requiresCount}</span>
                     )}
                   </div>
                   <div className="flex items-center gap-2 mt-1">
@@ -266,9 +268,9 @@ function StatusGroup({
                         style={{ width: `${g.progress}%` }}
                       />
                     </div>
-                    <span className="typo-caption text-foreground/60 tabular-nums">{g.progress}%</span>
+                    <span className="typo-caption text-foreground tabular-nums">{g.progress}%</span>
                     {days !== null && days <= 14 && status !== 'done' && (
-                      <span className={`typo-caption tabular-nums ${days < 0 ? 'text-red-400' : days <= 3 ? 'text-amber-400' : 'text-foreground/60'}`}>
+                      <span className={`typo-caption tabular-nums ${days < 0 ? 'text-red-400' : days <= 3 ? 'text-amber-400' : 'text-foreground'}`}>
                         {days < 0 ? `${Math.abs(days)}d late` : days === 0 ? 'today' : `${days}d`}
                       </span>
                     )}
@@ -304,8 +306,8 @@ function SpotlightPane({
   if (!goal) {
     return (
       <div className="rounded-card border border-dashed border-primary/15 bg-card/20 p-8 text-center">
-        <Target className="w-8 h-8 text-foreground/40 mx-auto mb-2" />
-        <p className="typo-body text-foreground/70">{t.plugins.dev_lifecycle.spotlight_pick_goal}</p>
+        <Target className="w-8 h-8 text-foreground mx-auto mb-2" />
+        <p className="typo-body text-foreground">{t.plugins.dev_lifecycle.spotlight_pick_goal}</p>
       </div>
     );
   }
@@ -334,14 +336,14 @@ function SpotlightPane({
             <p className={`typo-caption uppercase tracking-[0.18em] ${meta.tone}`}>{meta.label}</p>
             <h3 className="typo-section-title text-foreground mt-0.5">{goal.title}</h3>
             {parent && (
-              <p className="typo-caption text-foreground/60 mt-1 flex items-center gap-1">
+              <p className="typo-caption text-foreground mt-1 flex items-center gap-1">
                 <Layers className="w-3 h-3" />
-                child of <span className="text-foreground/80 font-medium">{parent.title}</span>
+                <DebtText k="auto_child_of_d45f31cf" /> <span className="text-foreground font-medium">{parent.title}</span>
               </p>
             )}
           </div>
           <div className="text-right shrink-0">
-            <p className="typo-caption uppercase tracking-[0.18em] text-foreground/60">Progress</p>
+            <p className="typo-caption uppercase tracking-[0.18em] text-foreground">Progress</p>
             <p className={`typo-data-lg ${meta.tone} tabular-nums leading-none mt-0.5`}>{goal.progress}%</p>
           </div>
         </div>
@@ -352,19 +354,19 @@ function SpotlightPane({
         {goal.description ? (
           <p className="typo-body text-foreground leading-relaxed">{goal.description}</p>
         ) : (
-          <p className="typo-body text-foreground/50 italic">No description.</p>
+          <p className="typo-body text-foreground italic"><DebtText k="auto_no_description_6934ceeb" /></p>
         )}
 
         {/* Deadline */}
         {goal.target_date && (
           <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-foreground/60" />
+            <Calendar className="w-4 h-4 text-foreground" />
             <span className="typo-body text-foreground">
-              Target: {new Date(goal.target_date).toLocaleDateString()}
+              <DebtText k="auto_target_652ac2cb" /> {new Date(goal.target_date).toLocaleDateString()}
             </span>
             {days !== null && (
               <span className={`typo-caption font-medium ${
-                days < 0 ? 'text-red-400' : days <= 3 ? 'text-amber-400' : 'text-foreground/70'
+                days < 0 ? 'text-red-400' : days <= 3 ? 'text-amber-400' : 'text-foreground'
               }`}>
                 {days < 0 ? `${Math.abs(days)} day${Math.abs(days) === 1 ? '' : 's'} overdue`
                 : days === 0 ? 'due today'
@@ -376,7 +378,7 @@ function SpotlightPane({
 
         {/* Activity timestamps */}
         {(goal.started_at || goal.completed_at) && (
-          <div className="flex items-center gap-3 text-sm text-foreground/70">
+          <div className="flex items-center gap-3 typo-body text-foreground">
             {goal.started_at && <span><Activity className="w-3 h-3 inline mr-1" />Started {new Date(goal.started_at).toLocaleDateString()}</span>}
             {goal.completed_at && <span><CheckCircle2 className="w-3 h-3 inline mr-1 text-emerald-400" />Done {new Date(goal.completed_at).toLocaleDateString()}</span>}
           </div>
@@ -403,7 +405,7 @@ function SpotlightPane({
         )}
 
         {requires.length === 0 && blocks.length === 0 && (
-          <p className="typo-caption text-foreground/60 pt-2 border-t border-primary/10 flex items-center gap-1.5">
+          <p className="typo-caption text-foreground pt-2 border-t border-primary/10 flex items-center gap-1.5">
             <Link2 className="w-3 h-3" /> {t.plugins.dev_lifecycle.spotlight_standalone}
           </p>
         )}
@@ -443,23 +445,23 @@ function TaskList({ tasks, loading }: { tasks: DevTask[]; loading: boolean }) {
   return (
     <div className="pt-3 border-t border-primary/10">
       <div className="flex items-baseline gap-2 mb-2">
-        <ListChecks className="w-3.5 h-3.5 text-foreground/70" />
-        <p className="typo-caption uppercase tracking-[0.18em] text-foreground/70">
+        <ListChecks className="w-3.5 h-3.5 text-foreground" />
+        <p className="typo-caption uppercase tracking-[0.18em] text-foreground">
           {t.plugins.dev_lifecycle.spotlight_tasks_heading}
         </p>
         {!loading && tasks.length > 0 && (
-          <p className="typo-caption text-foreground/60 tabular-nums">
+          <p className="typo-caption text-foreground tabular-nums">
             {counts.done}/{tasks.length} {t.plugins.dev_lifecycle.spotlight_tasks_done_suffix}
             {counts.failed > 0 && (
               <span className="text-red-400 ml-1.5">· {counts.failed} {t.plugins.dev_lifecycle.spotlight_tasks_failed_suffix}</span>
             )}
           </p>
         )}
-        {loading && <Loader2 className="w-3 h-3 text-foreground/50 animate-spin" />}
+        {loading && <Loader2 className="w-3 h-3 text-foreground animate-spin" />}
       </div>
 
       {!loading && tasks.length === 0 && (
-        <p className="typo-caption text-foreground/60 italic">
+        <p className="typo-caption text-foreground italic">
           {t.plugins.dev_lifecycle.spotlight_tasks_empty}
         </p>
       )}
@@ -467,7 +469,7 @@ function TaskList({ tasks, loading }: { tasks: DevTask[]; loading: boolean }) {
       {tasks.length > 0 && (
         <ul className="space-y-1.5">
           {tasks.map((task) => {
-            const tint = TASK_STATUS_TINT[task.status] ?? 'text-foreground/60';
+            const tint = TASK_STATUS_TINT[task.status] ?? 'text-foreground';
             const isComplete = task.status === 'complete';
             const isFailed = task.status === 'failed';
             return (
@@ -484,9 +486,9 @@ function TaskList({ tasks, loading }: { tasks: DevTask[]; loading: boolean }) {
                     : task.status === 'pending' ? 'bg-foreground/30'
                     : 'bg-amber-400 animate-pulse'
                   }`} />
-                  <span className="text-sm text-foreground truncate flex-1 min-w-0">{task.title}</span>
+                  <span className="typo-body text-foreground truncate flex-1 min-w-0">{task.title}</span>
                   {!isComplete && !isFailed && task.progress_pct > 0 && (
-                    <span className="typo-caption text-foreground/60 tabular-nums shrink-0">{task.progress_pct}%</span>
+                    <span className="typo-caption text-foreground tabular-nums shrink-0">{task.progress_pct}%</span>
                   )}
                   <span className={`typo-caption uppercase tracking-wide tabular-nums shrink-0 ${tint}`}>
                     {task.status}
@@ -505,8 +507,8 @@ function DependencyList({ title, hint, goals }: { title: string; hint?: string; 
   return (
     <div>
       <div className="flex items-baseline gap-2 mb-1.5">
-        <p className="typo-caption uppercase tracking-[0.18em] text-foreground/70">{title}</p>
-        {hint && <p className="typo-caption text-foreground/60">— {hint}</p>}
+        <p className="typo-caption uppercase tracking-[0.18em] text-foreground">{title}</p>
+        {hint && <p className="typo-caption text-foreground">— {hint}</p>}
       </div>
       <ul className="space-y-1">
         {goals.map((g) => {
@@ -514,10 +516,10 @@ function DependencyList({ title, hint, goals }: { title: string; hint?: string; 
           const m = STATUS_META[status];
           const Icon = m.icon;
           return (
-            <li key={g.id} className="flex items-center gap-2 text-sm">
+            <li key={g.id} className="flex items-center gap-2 typo-body">
               <Icon className={`w-3.5 h-3.5 ${m.tint} shrink-0`} />
               <span className="text-foreground truncate">{g.title}</span>
-              <span className="typo-caption text-foreground/50 tabular-nums shrink-0">{g.progress}%</span>
+              <span className="typo-caption text-foreground tabular-nums shrink-0">{g.progress}%</span>
             </li>
           );
         })}

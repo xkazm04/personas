@@ -4,6 +4,8 @@ import { X, Power, ChevronRight } from 'lucide-react';
 import { DIM_META } from '@/features/shared/glyph/dimMeta';
 import { DIM_LABEL } from '@/features/shared/glyph/persona-sigil';
 import type { GlyphDimension } from '@/features/shared/glyph';
+import { DebtText } from '@/i18n/DebtText';
+
 
 export interface SigilEditModalProps {
   /** Which dim's editor is open. The modal renders nothing when null. */
@@ -94,14 +96,14 @@ export function SigilEditModal({
           <span className={`typo-label uppercase tracking-[0.18em] ${meta.colorClass}`}>
             {dimLabel}
           </span>
-          <p className="typo-caption text-foreground/60 mt-0.5">
+          <p className="typo-caption text-foreground mt-0.5">
             {isActive ? 'Active for this capability' : 'Inactive — toggle on to enable'}
           </p>
         </div>
         <button
           type="button"
           onClick={onClose}
-          className="shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-full text-foreground/55 hover:text-foreground hover:bg-foreground/5 transition-colors"
+          className="shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-full text-foreground hover:text-foreground hover:bg-foreground/5 transition-colors"
           aria-label="Close"
         >
           <X className="w-4 h-4" />
@@ -111,10 +113,9 @@ export function SigilEditModal({
       {/* Body — caller-provided editor. Scrolls if it overflows. */}
       <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4">
         {body ?? (
-          <div className="flex items-center gap-2 typo-caption text-foreground/55 italic">
+          <div className="flex items-center gap-2 typo-caption text-foreground italic">
             <ChevronRight className="w-3.5 h-3.5" />
-            No editor wired for this dim yet — toggle below adjusts its
-            active state on this capability.
+            <DebtText k="auto_no_editor_wired_for_this_dim_yet_toggle_be_84d10bc5" />
           </div>
         )}
       </div>
@@ -128,7 +129,7 @@ export function SigilEditModal({
           onClick={() => onToggleActive(!isActive)}
           className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full typo-caption transition-colors cursor-pointer ${
             isActive
-              ? 'bg-foreground/5 hover:bg-foreground/10 text-foreground/75'
+              ? 'bg-foreground/5 hover:bg-foreground/10 text-foreground'
               : 'bg-primary/15 hover:bg-primary/30 text-primary border border-primary/40'
           }`}
         >

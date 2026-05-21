@@ -20,6 +20,8 @@ import { RegressionResultsView } from './RegressionResultsView';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useRegressionPanelState, REG_DEFAULT_THRESHOLD } from './useRegressionPanelState';
 import { compositeScore } from '@/lib/eval/evalFramework';
+import { DebtText } from '@/i18n/DebtText';
+
 
 type GateState = 'open' | 'verifying' | 'cleared' | 'held';
 
@@ -27,7 +29,7 @@ function StageHeader({ index, label, complete }: { index: number; label: string;
   return (
     <div className="flex items-center gap-2">
       <span className={`w-6 h-6 rounded-full flex items-center justify-center typo-caption font-bold ${
-        complete ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'bg-primary/10 text-foreground/70 border border-primary/20'
+        complete ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'bg-primary/10 text-foreground border border-primary/20'
       }`}>
         {complete ? '✓' : index}
       </span>
@@ -79,7 +81,7 @@ export function RegressionPanelGate() {
 
   // Verdict bar config
   const verdict = {
-    open:      { icon: Lock,         label: 'Gate open',          sub: 'Run regression to verify the comparison version against baseline.', tone: 'text-foreground/80', bg: 'bg-primary/5',     border: 'border-primary/15' },
+    open:      { icon: Lock,         label: 'Gate open',          sub: 'Run regression to verify the comparison version against baseline.', tone: 'text-foreground', bg: 'bg-primary/5',     border: 'border-primary/15' },
     verifying: { icon: Loader2,      label: 'Verifying…',         sub: 'Running scenarios against baseline.',                              tone: 'text-blue-300',     bg: 'bg-blue-500/10',   border: 'border-blue-500/30', spin: true },
     cleared:   { icon: ShieldCheck,  label: 'Gate cleared',       sub: 'No regressions detected above threshold.',                         tone: 'text-emerald-300',  bg: 'bg-emerald-500/10',border: 'border-emerald-500/30' },
     held:      { icon: ShieldAlert,  label: 'Gate held',          sub: 'Regressions detected. Review breakdown below.',                    tone: 'text-red-300',      bg: 'bg-red-500/10',    border: 'border-red-500/30' },
@@ -97,8 +99,8 @@ export function RegressionPanelGate() {
           <p className={`typo-heading ${verdict.tone}`}>{verdict.label}</p>
           <p className="typo-caption text-foreground">{verdict.sub}</p>
         </div>
-        <span className="typo-label text-foreground/60">
-          baseline · v{s.baselinePin.versionNumber}
+        <span className="typo-label text-foreground">
+          <DebtText k="auto_baseline_v_1daeceb5" />{s.baselinePin.versionNumber}
         </span>
       </div>
 
@@ -111,16 +113,16 @@ export function RegressionPanelGate() {
             <div>
               <p className="typo-caption text-amber-300/80">Baseline</p>
               <p className="typo-heading text-amber-300">v{s.baselinePin.versionNumber}</p>
-              <p className="typo-caption text-foreground/60">
+              <p className="typo-caption text-foreground">
                 pinned {new Date(s.baselinePin.pinnedAt).toLocaleDateString()}
               </p>
             </div>
           </div>
-          <div className="flex items-center justify-center text-foreground/40">
+          <div className="flex items-center justify-center text-foreground">
             <ChevronRight className="w-5 h-5" />
           </div>
           <div className="rounded-card border border-primary/15 bg-primary/5 px-4 py-3">
-            <p className="typo-caption text-foreground/70 mb-2">Comparison version</p>
+            <p className="typo-caption text-foreground mb-2"><DebtText k="auto_comparison_version_6c07d6d8" /></p>
             <div className="flex flex-wrap gap-2">
               {s.promptVersions
                 .filter((v) => v.id !== s.baselinePin?.versionId && v.tag !== 'archived')
@@ -148,11 +150,11 @@ export function RegressionPanelGate() {
         <StageHeader index={2} label="Calibrate — sensitivity + scope" complete={stage2Done} />
         <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-end">
           <div>
-            <p className="typo-caption text-foreground/70 mb-2">{t.agents.lab.models_to_test}</p>
+            <p className="typo-caption text-foreground mb-2">{t.agents.lab.models_to_test}</p>
             <ModelToggleGrid selectedModels={s.selectedModels} toggleModel={s.toggleModel} />
           </div>
           <div className="rounded-card bg-background/40 border border-primary/12 px-4 py-3">
-            <p className="typo-caption text-foreground/70">Regression threshold</p>
+            <p className="typo-caption text-foreground"><DebtText k="auto_regression_threshold_d8b35da0" /></p>
             <div className="flex items-baseline gap-2 mt-1">
               <input
                 type="number"
@@ -162,9 +164,9 @@ export function RegressionPanelGate() {
                 min={1}
                 max={50}
               />
-              <span className="typo-caption text-foreground/60">pts drop</span>
+              <span className="typo-caption text-foreground"><DebtText k="auto_pts_drop_3f43c7c7" /></span>
             </div>
-            <p className="typo-caption text-foreground/60 mt-1">{t.agents.lab.threshold_hint}</p>
+            <p className="typo-caption text-foreground mt-1">{t.agents.lab.threshold_hint}</p>
           </div>
         </div>
       </div>
@@ -200,7 +202,7 @@ export function RegressionPanelGate() {
           <div className="flex items-center gap-3 px-4 py-3 rounded-card border border-amber-500/15 bg-amber-500/5">
             <AlertTriangle className="w-4 h-4 text-amber-400" />
             <p className="typo-caption text-amber-400/80">
-              No eval results for baseline run. Run an eval on v{s.baselinePin.versionNumber} first, then pin it as baseline.
+              <DebtText k="auto_no_eval_results_for_baseline_run_run_an_ev_301f1ff0" />{s.baselinePin.versionNumber} <DebtText k="auto_first_then_pin_it_as_baseline_56c274cb" />
             </p>
           </div>
         )}

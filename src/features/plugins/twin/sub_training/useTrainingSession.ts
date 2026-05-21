@@ -83,10 +83,10 @@ export function useTrainingSession(): TrainingSession {
     }).catch(() => setGroundingFacts([]));
   }, [activeTwinId]);
 
-  const callAi = async (prompt: string): Promise<string> => {
+  const callAi = useCallback(async (prompt: string): Promise<string> => {
     if (!activeTwin) throw new Error('no active twin');
     return twinApi.generateBio(activeTwin.name, activeTwin.role ?? null, prompt);
-  };
+  }, [activeTwin]);
 
   const generateQuestions = useCallback(async (topicPrompt: string) => {
     if (!activeTwin) return;
@@ -109,7 +109,7 @@ export function useTrainingSession(): TrainingSession {
       ];
       setQuestions(fallback); setCurrentIdx(0); setPhase('interview');
     } finally { setGenerating(false); }
-  }, [activeTwin, groundingFacts]);
+  }, [activeTwin, callAi, groundingFacts]);
 
   const generateFollowup = async (parent: QAPair, parentAnswer: string): Promise<string | null> => {
     if (!activeTwin) return null;

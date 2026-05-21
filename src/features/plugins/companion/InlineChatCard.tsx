@@ -115,13 +115,13 @@ export function InlineChatCard({ card }: { card: ChatCard }) {
         disabled={pinDisabled}
         aria-label={pinLabel}
         title={pinLabel}
-        className="absolute top-2 right-2 inline-flex items-center gap-1 px-2 py-1 rounded-interactive bg-secondary/90 border border-foreground/15 typo-caption text-foreground/75 hover:text-foreground hover:bg-secondary opacity-0 group-hover:opacity-100 focus:opacity-100 disabled:opacity-100 disabled:cursor-default transition-opacity"
+        className="absolute top-2 right-2 inline-flex items-center gap-1 px-2 py-1 rounded-interactive bg-secondary/90 border border-foreground/15 typo-caption text-foreground hover:text-foreground hover:bg-secondary opacity-0 group-hover:opacity-100 focus:opacity-100 disabled:opacity-100 disabled:cursor-default transition-opacity"
         data-testid="companion-pin-to-cockpit"
       >
         <PinIcon
           className={`w-3 h-3 ${pinState === 'pinning' ? 'animate-spin' : ''}`}
         />
-        <span className="text-foreground/60">{pinLabel}</span>
+        <span className="text-foreground">{pinLabel}</span>
       </button>
     </div>
   );

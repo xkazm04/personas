@@ -7,6 +7,8 @@ import type { ExecutionHeatmapData } from '@/lib/bindings/ExecutionHeatmapData';
 import type { HeatmapDay } from '@/lib/bindings/HeatmapDay';
 import type { HeatmapInsights } from '@/lib/bindings/HeatmapInsights';
 import type { Translations } from '@/i18n/en';
+import { debtText } from '@/i18n/DebtText';
+
 
 interface ExecutionHeatmapProps {
   /** Persona ID for per-persona heatmap, or undefined for fleet-wide aggregate. */
@@ -215,7 +217,7 @@ export function ExecutionHeatmap({
       <div className="flex items-baseline justify-between gap-3 mb-3">
         <div className="min-w-0">
           <div className="typo-label text-foreground/90 truncate">{title}</div>
-          <div className="typo-caption text-foreground/50 mt-0.5">{subtitle}</div>
+          <div className="typo-caption text-foreground mt-0.5">{subtitle}</div>
         </div>
         {data?.insights && !isEmpty && !compact && (
           <Legend />
@@ -230,7 +232,7 @@ export function ExecutionHeatmap({
           <span>{error}</span>
         </div>
       ) : isEmpty ? (
-        <div className="flex flex-col items-center justify-center py-8 text-foreground/40">
+        <div className="flex flex-col items-center justify-center py-8 text-foreground">
           <Activity className="w-6 h-6 mb-2 opacity-50" />
           <span className="typo-caption">{t.overview.heatmap.no_activity}</span>
         </div>
@@ -252,7 +254,7 @@ export function ExecutionHeatmap({
           </div>
 
           {hover && (
-            <div className="mt-2 typo-caption text-foreground/70">
+            <div className="mt-2 typo-caption text-foreground">
               <HoverLine day={hover} t={t} tx={tx} />
             </div>
           )}
@@ -265,7 +267,7 @@ export function ExecutionHeatmap({
 function Legend() {
   const { t } = useTranslation();
   return (
-    <div className="flex items-center gap-2 typo-caption text-foreground/50 shrink-0">
+    <div className="flex items-center gap-2 typo-caption text-foreground shrink-0">
       <span>{t.overview.heatmap.less}</span>
       {INTENSITY_FILL.map((fill, i) => (
         <span
@@ -312,7 +314,7 @@ function HeatmapGrid({
       width={width}
       height={WEEK_HEIGHT + monthLabelHeight + 4}
       role="img"
-      aria-label="Execution activity over the last year"
+      aria-label={debtText("auto_execution_activity_over_the_last_year_d8c7055f")}
       style={{ display: 'block' }}
     >
       {monthLabels.map((m) => (
@@ -418,7 +420,7 @@ function InsightsRow({
       <InsightCell
         icon={
           insights.week_over_week_pct == null
-            ? <Activity className="w-3.5 h-3.5 text-foreground/50" />
+            ? <Activity className="w-3.5 h-3.5 text-foreground" />
             : insights.week_over_week_pct >= 0
               ? <TrendingUp className="w-3.5 h-3.5 text-emerald-400/80" />
               : <TrendingDown className="w-3.5 h-3.5 text-red-400/80" />
@@ -467,7 +469,7 @@ function InsightCell({
 }) {
   return (
     <div className="min-w-0">
-      <div className="flex items-center gap-1.5 typo-caption text-foreground/50">
+      <div className="flex items-center gap-1.5 typo-caption text-foreground">
         {icon}
         <span className="truncate">{label}</span>
       </div>

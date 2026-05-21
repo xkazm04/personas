@@ -15,6 +15,8 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useAgentStore } from '@/stores/agentStore';
 import type { GitLabDeploymentRecord } from '@/api/system/gitlab';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 interface DeploymentHistoryTabProps {
   projectId: number | null;
@@ -51,9 +53,7 @@ export function DeploymentHistoryTab({ projectId }: DeploymentHistoryTabProps) {
     try {
       await rollbackFromHistory(projectId, record.id);
       setConfirmRollback(null);
-    } catch {
-      // Error handled by store
-    }
+    } catch (err) { silentCatch("features/plugins/gitlab/components/DeploymentHistoryTab:catch1")(err); }
   };
 
   if (!projectId) {

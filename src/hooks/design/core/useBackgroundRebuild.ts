@@ -124,9 +124,7 @@ export function useBackgroundRebuild(onCompleted?: () => void): UseBackgroundReb
     if (rebuildId) {
       try {
         await cancelRebuild(rebuildId);
-      } catch {
-        // intentional: non-critical -- cancellation is best-effort
-      }
+      } catch (err) { silentCatch("hooks/design/core/useBackgroundRebuild:catch1")(err); }
     }
     setPhase('failed');
     setError('Cancelled by user');

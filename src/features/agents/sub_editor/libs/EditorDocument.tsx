@@ -285,14 +285,14 @@ export function EditorDirtyProvider({ children }: { children: React.ReactNode })
   );
 }
 
-function useDirtyStore(): DirtyStore | null {
+function useDirtyStoreContext(): DirtyStore | null {
   return useContext(DirtyContext);
 }
 
 /** Hook for child components to register their dirty state.
  *  Safe to call outside EditorDirtyProvider (no-op in that case). */
 export function useEditorDirty(tab: string, isDirty: boolean, save?: () => Promise<void>, cancel?: () => void) {
-  const store = useDirtyStore();
+  const store = useDirtyStoreContext();
 
   // Sync dirty state via effect -- calling setTabDirty during render would
   // trigger notify() -> useSyncExternalStore re-subscribe -> infinite loop.
@@ -331,7 +331,7 @@ export function useEditorDirty(tab: string, isDirty: boolean, save?: () => Promi
     // consuming component's unmount effect) is the canonical removal path.
     // We don't unregister on tab/store-id changes mid-mount because
     // setTabDirty's effect runs on the same deps and would race.
-  }, [store, tab, save !== undefined, cancel !== undefined]);
+  }, [cancel, save, store, tab]);
 
   // Cleanup on unmount -- wrapped in useCallback to stabilize
   const unregister = useCallback(() => {
@@ -343,7 +343,7 @@ export function useEditorDirty(tab: string, isDirty: boolean, save?: () => Promi
 
 /** Hook for PersonaEditor to read aggregate dirty state (must be within provider). */
 export function useEditorDirtyState() {
-  const store = useDirtyStore();
+  const store = useDirtyStoreContext();
   if (!store) throw new Error('useEditorDirtyState must be used within EditorDirtyProvider');
 
   const isDirty = useSyncExternalStore(
@@ -367,7 +367,7 @@ export function useEditorDirtyState() {
 
 /** Hook to access the undo/redo stack (must be within provider). */
 export function useEditorHistory() {
-  const store = useDirtyStore();
+  const store = useDirtyStoreContext();
   if (!store) throw new Error('useEditorHistory must be used within EditorDirtyProvider');
 
   const canUndo = useSyncExternalStore(store.subscribe, store.getCanUndo);

@@ -153,9 +153,9 @@ export function ProjectTrackingTab() {
 
       <div>
         {loading && rows.length === 0 ? (
-          <div className="typo-caption text-foreground/60">…</div>
+          <div className="typo-caption text-foreground">…</div>
         ) : rows.length === 0 ? (
-          <div className="typo-caption text-foreground/60">
+          <div className="typo-caption text-foreground">
             {t.plugins.dev_lifecycle.tracking_no_projects}
           </div>
         ) : (
@@ -178,7 +178,7 @@ export function ProjectTrackingTab() {
                       <div className="typo-body font-medium text-foreground/90 truncate">
                         {row.projectName}
                       </div>
-                      <div className="typo-caption text-foreground/55 truncate" title={row.projectPath}>
+                      <div className="typo-caption text-foreground truncate" title={row.projectPath}>
                         {row.projectPath}
                       </div>
                     </div>
@@ -224,18 +224,18 @@ export function ProjectTrackingTab() {
                     />
                   </div>
                   {obsidianVault === null ? (
-                    <div className="typo-micro text-foreground/45 mt-2">
+                    <div className="typo-micro text-foreground mt-2">
                       {t.plugins.dev_lifecycle.tracking_obsidian_no_credential}
                     </div>
                   ) : draft.watchObsidian ? (
-                    <div className="typo-micro text-foreground/55 mt-2">
+                    <div className="typo-micro text-foreground mt-2">
                       {t.plugins.dev_lifecycle.tracking_obsidian_vault_label}: <code>{draft.obsidianVaultPath ?? obsidianVault}</code>
                     </div>
                   ) : null}
 
                   <div className="flex items-center justify-between mt-3 pt-3 border-t border-primary/10 gap-3 flex-wrap">
                     <div className={`typo-caption inline-flex items-center gap-1.5 ${
-                      stale ? 'text-amber-400 font-medium' : 'text-foreground/55'
+                      stale ? 'text-amber-400 font-medium' : 'text-foreground'
                     }`}>
                       {stale && <AlertTriangle className="w-3 h-3" />}
                       {t.plugins.dev_lifecycle.tracking_column_last_pulse}: {row.lastPulseAt ?? t.plugins.dev_lifecycle.tracking_never_pulsed}
@@ -295,7 +295,7 @@ function ProjectTrackingIntro({
       </div>
       <div className="min-w-0 flex-1 space-y-1">
         <p className="typo-body text-foreground/90">{subtitle}</p>
-        <p className="typo-caption text-foreground/60">{masterHint}</p>
+        <p className="typo-caption text-foreground">{masterHint}</p>
       </div>
     </div>
   );
@@ -317,13 +317,13 @@ function Checkbox({ label, checked, onChange, disabled }: CheckboxProps) {
       className={`flex items-center gap-2 px-3 py-2 typo-caption rounded-input border ${
         checked
           ? 'border-primary/30 bg-primary/10 text-foreground/90'
-          : 'border-primary/10 bg-secondary/10 text-foreground/65'
+          : 'border-primary/10 bg-secondary/10 text-foreground'
       } ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:border-primary/25'}`}
     >
       {checked ? (
         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
       ) : (
-        <Circle className="w-3.5 h-3.5 text-foreground/40 shrink-0" />
+        <Circle className="w-3.5 h-3.5 text-foreground shrink-0" />
       )}
       {label}
     </button>
@@ -347,7 +347,7 @@ function ToggleButton({ pressed, onChange, ariaLabel, children }: ToggleButtonPr
       className={`px-3 py-1.5 typo-caption rounded-interactive border ${
         pressed
           ? 'border-emerald-500/30 bg-emerald-500/15 text-emerald-300'
-          : 'border-primary/15 bg-secondary/10 text-foreground/60'
+          : 'border-primary/15 bg-secondary/10 text-foreground'
       }`}
     >
       {children}

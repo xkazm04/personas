@@ -3,6 +3,8 @@ import { useAgentStore } from "@/stores/agentStore";
 import { useShallow } from "zustand/react/shallow";
 import { humanizeCron } from "@/features/shared/glyph/cron";
 import { getConnectorMeta, ConnectorIcon } from "@/features/shared/components/display/ConnectorMeta";
+import { DebtText, debtText } from '@/i18n/DebtText';
+
 
 interface GlyphCapabilityPreviewProps {
   /** A-grade Phase 5b: invoked when the user clicks "Split" on a capability.
@@ -102,12 +104,12 @@ export function GlyphCapabilityPreview({ onRequestSplit }: GlyphCapabilityPrevie
   return (
     <div className="w-full max-w-[420px] flex flex-col gap-1.5 mt-2">
       <div className="flex items-center gap-1.5 px-1">
-        <Layers className="w-3.5 h-3.5 text-foreground/55" />
-        <span className="typo-label uppercase tracking-[0.18em] text-foreground/60">
+        <Layers className="w-3.5 h-3.5 text-foreground" />
+        <span className="typo-label uppercase tracking-[0.18em] text-foreground">
           {activeCount === 1 ? "1 capability" : `${activeCount} capabilities`}
           {excludedSet.size > 0 && (
-            <span className="ml-1 text-foreground/35 normal-case tracking-normal">
-              ({excludedSet.size} removed)
+            <span className="ml-1 text-foreground normal-case tracking-normal">
+              ({excludedSet.size} <DebtText k="auto_removed_7a8146f4" />
             </span>
           )}
         </span>
@@ -133,15 +135,15 @@ export function GlyphCapabilityPreview({ onRequestSplit }: GlyphCapabilityPrevie
             >
               <div className="flex items-start gap-2">
                 <div className="flex-1 min-w-0">
-                  <div className={`typo-body truncate ${isExcluded ? "text-foreground/55 line-through" : "text-foreground/90"}`}>
+                  <div className={`typo-body truncate ${isExcluded ? "text-foreground line-through" : "text-foreground/90"}`}>
                     {cap.title || id}
                   </div>
                   {isExcluded ? (
-                    <div className="mt-1 typo-caption text-foreground/45">
-                      Will not be promoted
+                    <div className="mt-1 typo-caption text-foreground">
+                      <DebtText k="auto_will_not_be_promoted_7a454132" />
                     </div>
                   ) : (
-                    <div className="mt-1 flex items-center gap-2 flex-wrap typo-caption text-foreground/55">
+                    <div className="mt-1 flex items-center gap-2 flex-wrap typo-caption text-foreground">
                       <span className="inline-flex items-center gap-1">
                         <TriggerIcon className="w-3 h-3" />
                         {formatTriggerSummary(cap.suggested_trigger)}
@@ -152,20 +154,20 @@ export function GlyphCapabilityPreview({ onRequestSplit }: GlyphCapabilityPrevie
                             <ConnectorIcon key={slug} meta={getConnectorMeta(slug)} size="w-3.5 h-3.5" />
                           ))}
                           {connectorList.length > 4 ? (
-                            <span className="text-foreground/55">+{connectorList.length - 4}</span>
+                            <span className="text-foreground">+{connectorList.length - 4}</span>
                           ) : null}
                         </span>
                       )}
                       <span
                         className={`inline-flex items-center gap-1 ${
-                          review.tone === "warn" ? "text-amber-400/80" : "text-foreground/55"
+                          review.tone === "warn" ? "text-amber-400/80" : "text-foreground"
                         }`}
                       >
                         <Shield className="w-3 h-3" />
                         {review.label}
                       </span>
                       {memoryEnabled && (
-                        <span className="inline-flex items-center gap-1 text-foreground/55">
+                        <span className="inline-flex items-center gap-1 text-foreground">
                           <Brain className="w-3 h-3" />
                           Remembers
                         </span>
@@ -178,9 +180,9 @@ export function GlyphCapabilityPreview({ onRequestSplit }: GlyphCapabilityPrevie
                     <button
                       type="button"
                       onClick={() => toggleCapabilityExcluded(id)}
-                      className="px-2 py-1 rounded-md hover:bg-foreground/10 text-foreground/60 hover:text-foreground typo-caption inline-flex items-center gap-1 cursor-pointer"
-                      aria-label="Restore capability"
-                      title="Restore — include this capability when promoting"
+                      className="px-2 py-1 rounded-input hover:bg-foreground/10 text-foreground hover:text-foreground typo-caption inline-flex items-center gap-1 cursor-pointer"
+                      aria-label={debtText("auto_restore_capability_91a3b415")}
+                      title={debtText("auto_restore_include_this_capability_when_promo_e8f43ec9")}
                     >
                       <Undo2 className="w-3 h-3" />
                       Restore
@@ -191,9 +193,9 @@ export function GlyphCapabilityPreview({ onRequestSplit }: GlyphCapabilityPrevie
                         <button
                           type="button"
                           onClick={() => onRequestSplit(cap.title || id, buildSplitPrompt(cap.title || id, connectorList))}
-                          className="px-1.5 py-1 rounded-md hover:bg-primary/10 text-foreground/55 hover:text-primary typo-caption inline-flex items-center gap-1 cursor-pointer"
-                          aria-label="Split this capability via Refine"
-                          title="Open Refine with a prompt that asks the agent to break this capability into independent pieces"
+                          className="px-1.5 py-1 rounded-input hover:bg-primary/10 text-foreground hover:text-primary typo-caption inline-flex items-center gap-1 cursor-pointer"
+                          aria-label={debtText("auto_split_this_capability_via_refine_99e725c3")}
+                          title={debtText("auto_open_refine_with_a_prompt_that_asks_the_ag_c0e3037e")}
                         >
                           <Split className="w-3 h-3" />
                           Split
@@ -202,9 +204,9 @@ export function GlyphCapabilityPreview({ onRequestSplit }: GlyphCapabilityPrevie
                       <button
                         type="button"
                         onClick={() => toggleCapabilityExcluded(id)}
-                        className="px-1.5 py-1 rounded-md hover:bg-rose-500/10 text-foreground/45 hover:text-rose-400 typo-caption inline-flex items-center gap-1 cursor-pointer"
-                        aria-label="Remove capability from the promoted persona"
-                        title="Remove — exclude this capability when promoting"
+                        className="px-1.5 py-1 rounded-input hover:bg-rose-500/10 text-foreground hover:text-rose-400 typo-caption inline-flex items-center gap-1 cursor-pointer"
+                        aria-label={debtText("auto_remove_capability_from_the_promoted_person_a4d121d1")}
+                        title={debtText("auto_remove_exclude_this_capability_when_promot_dbf501b9")}
                       >
                         <X className="w-3 h-3" />
                         Remove

@@ -36,13 +36,13 @@ function FieldRow({
   optionalLabel,
 }: FieldRowProps) {
   const base =
-    "w-full rounded-xl border border-border/40 bg-background/60 px-3 py-2 typo-body text-foreground placeholder:text-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/40";
+    "w-full rounded-modal border border-border/40 bg-background/60 px-3 py-2 typo-body text-foreground placeholder:text-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/40";
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="flex items-center gap-2 typo-label text-foreground/80" htmlFor={id}>
+      <label className="flex items-center gap-2 typo-label text-foreground" htmlFor={id}>
         {label}
         {optional ? (
-          <span className="typo-caption font-normal text-foreground/40">
+          <span className="typo-caption font-normal text-foreground">
             {optionalLabel}
           </span>
         ) : null}
@@ -114,14 +114,14 @@ export function CapabilityAddModal({ open, onClose }: Props) {
       <div data-testid="capability-add-modal" className="contents">
         <header className="flex items-start justify-between gap-4 border-b border-border/20 p-5">
           <div className="flex items-start gap-3">
-            <div className="rounded-xl bg-primary/15 p-2 text-primary">
+            <div className="rounded-modal bg-primary/15 p-2 text-primary">
               <Sparkles className="h-4 w-4" />
             </div>
             <div>
               <h2 id={TITLE_ID} className="typo-heading-sm text-foreground">
                 {t.matrix_v3.add_capability_modal_title}
               </h2>
-              <p className="mt-1 typo-body-sm text-foreground/60">
+              <p className="mt-1 typo-body-sm text-foreground">
                 {t.matrix_v3.add_capability_modal_subtitle}
               </p>
             </div>
@@ -129,7 +129,7 @@ export function CapabilityAddModal({ open, onClose }: Props) {
           <button
             type="button"
             onClick={handleClose}
-            className="rounded-full p-1.5 text-foreground/60 hover:bg-secondary/40 hover:text-foreground"
+            className="rounded-full p-1.5 text-foreground hover:bg-secondary/40 hover:text-foreground"
             aria-label={t.common.close}
           >
             <X className="h-4 w-4" />
@@ -170,7 +170,7 @@ export function CapabilityAddModal({ open, onClose }: Props) {
           <button
             type="button"
             onClick={handleClose}
-            className="rounded-xl px-4 py-2 typo-body-sm text-foreground/70 hover:bg-secondary/40"
+            className="rounded-modal px-4 py-2 typo-body-sm text-foreground hover:bg-secondary/40"
           >
             {t.common.cancel}
           </button>
@@ -178,7 +178,7 @@ export function CapabilityAddModal({ open, onClose }: Props) {
             type="button"
             onClick={handleSubmit}
             disabled={!title.trim()}
-            className="rounded-xl bg-primary px-4 py-2 typo-body-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-40"
+            className="rounded-modal bg-primary px-4 py-2 typo-body-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-40"
             data-testid="capability-add-modal-submit"
           >
             {t.matrix_v3.add_capability_modal_cta}

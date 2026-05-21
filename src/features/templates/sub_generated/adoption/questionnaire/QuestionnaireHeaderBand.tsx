@@ -47,16 +47,16 @@ export function QuestionnaireHeaderBand({
             />
           </div>
           <div className="flex flex-col leading-tight min-w-0">
-            <span className="text-base font-semibold text-foreground truncate">
+            <span className="typo-body-lg font-semibold text-foreground truncate">
               {templateName ?? t.templates.adopt_modal.untitled_agent}
             </span>
-            <span className="text-xs uppercase tracking-[0.2em] text-foreground/60">
+            <span className="typo-label uppercase tracking-[0.2em] text-foreground">
               {t.templates.adopt_modal.configure_your_persona}
             </span>
           </div>
         </div>
         <div className="flex-1" />
-        <div className="flex items-center gap-4 text-sm text-foreground tabular-nums">
+        <div className="flex items-center gap-4 typo-data text-foreground tabular-nums">
           <span>
             {tx(t.templates.adopt_modal.answered_of_total, {
               answered: answeredCount,
@@ -69,7 +69,7 @@ export function QuestionnaireHeaderBand({
               {tx(t.templates.adopt_modal.blocked_count, { count: blockedCount })}
             </span>
           )}
-          <span className="text-base font-semibold text-primary">
+          <span className="typo-body-lg font-semibold text-primary">
             {Math.round(progressPct * 100)}%
           </span>
         </div>

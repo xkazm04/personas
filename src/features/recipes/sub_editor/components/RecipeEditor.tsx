@@ -7,6 +7,8 @@ import { useToastStore } from '@/stores/toastStore';
 import { TagChipInput } from './TagChipInput';
 import { SchemaFieldBuilder, type SchemaField } from './SchemaFieldBuilder';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 interface RecipeEditorProps {
   /** null = create mode, RecipeDefinition = edit mode */
@@ -119,7 +121,7 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
       // user previously saw 'Failed to save recipe' with no recovery path).
       const msg = err instanceof Error ? err.message : String(err);
       const draftJson = JSON.stringify(payload, null, 2);
-      try { await navigator.clipboard.writeText(draftJson); } catch { /* ignore */ }
+      try { await navigator.clipboard.writeText(draftJson); } catch (err) { silentCatch("features/recipes/sub_editor/components/RecipeEditor:catch1")(err); }
       useToastStore.getState().addToast(
         `Failed to save recipe: ${msg}. Draft copied to clipboard.`,
         'error',
@@ -144,7 +146,7 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
         <button
           onClick={handleSave}
           disabled={!isValid || saving}
-          className="flex items-center gap-1.5 rounded-modal bg-primary px-3 py-1.5 typo-body font-medium text-white hover:bg-primary/90 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+          className="flex items-center gap-1.5 rounded-modal bg-primary px-3 py-1.5 typo-body font-medium text-foreground hover:bg-primary/90 disabled:opacity-40 disabled:pointer-events-none transition-colors"
         >
           {saving ? <LoadingSpinner size="sm" /> : <Save className="w-3.5 h-3.5" />}
           {recipe ? t.recipes.save_changes : t.recipes.create_recipe}

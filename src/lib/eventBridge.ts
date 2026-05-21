@@ -19,6 +19,8 @@ import { useSystemStore } from "@/stores/systemStore";
 import { useToastStore } from "@/stores/toastStore";
 import { useNotificationCenterStore } from "@/stores/notificationCenterStore";
 import { createLogger } from "@/lib/log";
+import { silentCatch } from '@/lib/silentCatch';
+
 
 const logger = createLogger("event-bridge");
 
@@ -127,7 +129,6 @@ declare global {
   // Persist listener handles across Vite HMR module re-evaluation. The module
   // local `attached` flag resets under HMR, but Tauri listeners remain active
   // until their unlisten functions are called.
-  // eslint-disable-next-line no-var
   var __personasEventBridge: EventBridgeRuntime | undefined;
 }
 
@@ -724,7 +725,7 @@ export async function initAllListeners(): Promise<void> {
       if (outcome.ok) {
         if (generation.aborted) {
           for (const fn of outcome.unlisteners) {
-            try { fn(); } catch { /* best-effort cleanup */ }
+            try { fn(); } catch (err) { silentCatch("lib/eventBridge:catch1")(err); }
           }
           continue;
         }
@@ -836,7 +837,7 @@ async function retryFailedRegistrations(
           // Teardown happened mid-flight; immediately detach the unlisteners
           // we just produced rather than leaking them past the next init.
           for (const fn of outcome.unlisteners) {
-            try { fn(); } catch { /* best-effort cleanup */ }
+            try { fn(); } catch (err) { silentCatch("lib/eventBridge:catch2")(err); }
           }
         } else {
           unlisteners.push(...outcome.unlisteners);
@@ -885,9 +886,7 @@ export async function teardownAllListeners(): Promise<void> {
   for (const unlisten of unlisteners) {
     try {
       unlisten();
-    } catch {
-      // intentional: best-effort cleanup
-    }
+    } catch (err) { silentCatch("lib/eventBridge:catch3")(err); }
   }
   unlisteners.length = 0;
   attached = false;

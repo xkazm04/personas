@@ -3,6 +3,8 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useShallow } from 'zustand/react/shallow';
 import { TOUR_STEPS } from '@/stores/slices/system/tourSlice';
 import { useTranslation } from '@/i18n/useTranslation';
+import { DebtText } from '@/i18n/DebtText';
+
 
 export default function ResumeSetupCard() {
   const { t } = useTranslation();
@@ -45,9 +47,9 @@ export default function ResumeSetupCard() {
         <div className="flex-1 min-w-0">
           <h3 className="typo-heading text-foreground/90">{t.overview.resume_setup_card.resume_tour}</h3>
           <p className="typo-body text-foreground">
-            You left off at <span className="text-violet-400 font-medium">{currentStepLabel}</span>
+            <DebtText k="auto_you_left_off_at_046be05e" /> <span className="text-violet-400 font-medium">{currentStepLabel}</span>
             {completedCount > 0 && (
-              <> &mdash; {completedCount}/{TOUR_STEPS.length} steps completed</>
+              <> &mdash; {completedCount}/{TOUR_STEPS.length} <DebtText k="auto_steps_completed_880fda7c" /></>
             )}
           </p>
         </div>

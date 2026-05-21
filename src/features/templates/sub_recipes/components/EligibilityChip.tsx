@@ -34,7 +34,7 @@ export function EligibilityChip({ eligibility }: { eligibility: Eligibility }) {
   // incompatible
   return (
     <span
-      className="shrink-0 typo-label uppercase tracking-wider px-1.5 py-0.5 rounded border inline-flex items-center gap-1 bg-secondary/60 border-card-border text-foreground/55"
+      className="shrink-0 typo-label uppercase tracking-wider px-1.5 py-0.5 rounded border inline-flex items-center gap-1 bg-secondary/60 border-card-border text-foreground"
       title={eligibility.reason}
     >
       <Lock className="w-2.5 h-2.5" />

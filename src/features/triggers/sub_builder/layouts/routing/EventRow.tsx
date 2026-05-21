@@ -55,7 +55,7 @@ export function EventRow({
         style={{ gridTemplateColumns: GRID_COLUMNS }}
       >
         <motion.span animate={{ rotate: expanded ? 90 : 0 }} transition={{ duration: 0.15 }} className="inline-flex">
-          <ChevronRight className="w-3.5 h-3.5 text-foreground/60 group-hover:text-foreground transition-colors" />
+          <ChevronRight className="w-3.5 h-3.5 text-foreground group-hover:text-foreground transition-colors" />
         </motion.span>
 
         <PulseDot activity={activity} />
@@ -66,7 +66,7 @@ export function EventRow({
           <SourceStack row={row} />
         </div>
 
-        <ArrowRight className="w-3.5 h-3.5 text-foreground/25" />
+        <ArrowRight className="w-3.5 h-3.5 text-foreground" />
 
         {/* EVENT — type + label + class badge. */}
         <div className="min-w-0">
@@ -78,12 +78,12 @@ export function EventRow({
             <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${row.template?.color ?? accent.text}`} />
             <code className="font-mono text-sm text-foreground truncate">{row.eventType}</code>
             {row.template && (
-              <span className="text-xs text-foreground/50 truncate hidden xl:inline">· {row.template.label}</span>
+              <span className="typo-caption text-foreground truncate hidden xl:inline">· {row.template.label}</span>
             )}
           </div>
         </div>
 
-        <ArrowRight className="w-3.5 h-3.5 text-foreground/25" />
+        <ArrowRight className="w-3.5 h-3.5 text-foreground" />
 
         {/* LISTENERS — compact avatar stack; full names live in drawer. */}
         <div className="min-w-0">
@@ -91,12 +91,12 @@ export function EventRow({
           <ListenerStack row={row} />
         </div>
 
-        <span className="text-[10px] text-foreground/40 tabular-nums w-10 text-right flex-shrink-0">
+        <span className="text-[10px] text-foreground tabular-nums w-10 text-right flex-shrink-0">
           {formatAgo(activity?.lastTs ?? null)}
         </span>
 
         <span
-          className="text-[10px] text-foreground/30 tabular-nums flex-shrink-0"
+          className="text-[10px] text-foreground tabular-nums flex-shrink-0"
           title={`${activity?.count ?? 0} event${(activity?.count ?? 0) !== 1 ? 's' : ''} in window`}
         >
           {activity?.count ? `×${activity.count}` : '·'}
@@ -123,7 +123,7 @@ export function EventRow({
 
 function ColumnLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="text-[9px] font-semibold uppercase tracking-widest text-foreground/40 mb-0.5">
+    <div className="text-[9px] font-semibold uppercase tracking-widest text-foreground mb-0.5">
       {children}
     </div>
   );

@@ -9,6 +9,8 @@ import {
   requestPermission,
   sendNotification,
 } from '@tauri-apps/plugin-notification';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 /**
  * Launches a codebase context scan as a background process.
@@ -41,9 +43,7 @@ export function useContextScanBackground() {
           ),
         });
       }
-    } catch {
-      // Notification permission denied or unavailable -- silently ignore
-    }
+    } catch (err) { silentCatch("features/plugins/dev-tools/hooks/useContextScanBackground:catch1")(err); }
   }, [t, tx]);
 
   // Listen for scan completion event from backend.

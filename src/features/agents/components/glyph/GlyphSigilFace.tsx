@@ -5,6 +5,8 @@ import { GlyphSigilCanvas } from "./GlyphSigilCanvas";
 import { GlyphActivityStrip } from "./GlyphActivityStrip";
 import { GlyphCoreContent } from "./GlyphCoreContent";
 import type { PetalState } from "./glyphLayoutTypes";
+import { DebtText } from '@/i18n/DebtText';
+
 
 interface GlyphSigilFaceProps {
   size: number;
@@ -126,9 +128,9 @@ export function GlyphSigilFace(props: GlyphSigilFaceProps) {
         <motion.span
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="typo-caption text-foreground/55 italic"
+          className="typo-caption text-foreground italic"
         >
-          Tap a glowing leaf to answer.
+          <DebtText k="auto_tap_a_glowing_leaf_to_answer_05828504" />
         </motion.span>
       )}
 

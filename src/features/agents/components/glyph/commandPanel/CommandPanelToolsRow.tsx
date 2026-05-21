@@ -54,7 +54,7 @@ export function CommandPanelToolsRow({
                   type="button"
                   onClick={() => setSelectedConnectors((p) => p.filter((n) => n !== c.name))}
                   aria-label={`Remove ${c.label}`}
-                  className="text-foreground/60 hover:text-foreground"
+                  className="text-foreground hover:text-foreground"
                 >
                   <X className="w-3 h-3" />
                 </button>

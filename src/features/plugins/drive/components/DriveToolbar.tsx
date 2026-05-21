@@ -278,7 +278,7 @@ export function DriveToolbar({
           <button
             type="button"
             onClick={() => onPathEditingChange?.(true)}
-            className="ml-auto flex items-center justify-center w-5 h-5 rounded text-foreground/0 group-hover/breadcrumb:text-cyan-300/70 hover:!text-cyan-200 hover:bg-cyan-500/15 transition-all flex-shrink-0"
+            className="ml-auto flex items-center justify-center w-5 h-5 rounded text-foreground group-hover/breadcrumb:text-cyan-300/70 hover:!text-cyan-200 hover:bg-cyan-500/15 transition-all flex-shrink-0"
             title={t.plugins.drive.path_input_aria}
             aria-label={t.plugins.drive.path_input_aria}
           >
@@ -444,7 +444,7 @@ function MovePopover({
 
   return (
     <div
-      role="dialog"
+      role="region"
       aria-label={title}
       className="absolute right-0 top-full mt-1 z-30 w-72 rounded-modal border border-primary/15 bg-background/95 backdrop-blur-md shadow-elevation-3 overflow-hidden"
     >

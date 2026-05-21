@@ -208,7 +208,11 @@
     "dev_tools_label": "Инструменты разработчика",
     "obsidian_brain": "Мозг Obsidian",
     "active_twin": "Активный двойник",
-    "research_lab": "Исследовательская лаборатория"
+    "research_lab": "Исследовательская лаборатория",
+    "back_to_home": "Home",
+    "whats_new": "What's New",
+    "back_to_plugins": "Plugins",
+    "roadmap": "Roadmap"
   },
   "execution_detail": {
     "copy": "Копировать",

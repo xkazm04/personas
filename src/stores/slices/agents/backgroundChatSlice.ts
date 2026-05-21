@@ -23,6 +23,8 @@ import { executePersona, getExecution } from "@/api/agents/executions";
 import { sendAppNotification } from "@/api/system/system";
 import { useNotificationCenterStore } from "@/stores/notificationCenterStore";
 import { createLogger } from "@/lib/log";
+import { silentCatch } from '@/lib/silentCatch';
+
 
 const logger = createLogger("background-chat");
 
@@ -128,9 +130,7 @@ async function sendOsNotificationIfNotFocused(title: string, body: string): Prom
     const focused = await win.isFocused().catch(() => true);
     if (focused) return;
     await sendAppNotification(title, body).catch(() => {/* best-effort */});
-  } catch {
-    // Non-Tauri or plugin missing — skip silently
-  }
+  } catch (err) { silentCatch("stores/slices/agents/backgroundChatSlice:catch1")(err); }
 }
 
 // ---------------------------------------------------------------------------
@@ -182,9 +182,7 @@ export const createBackgroundChatSlice: StateCreator<
           chatSessionId: sessionId,
         },
       );
-    } catch {
-      /* best-effort */
-    }
+    } catch (err) { silentCatch("stores/slices/agents/backgroundChatSlice:catch2")(err); }
 
     try {
       // 1. Persist the user message into the chat_messages table. This makes
@@ -267,7 +265,7 @@ export const createBackgroundChatSlice: StateCreator<
       try {
         const { useOverviewStore } = await import("@/stores/overviewStore");
         useOverviewStore.getState().processEnded("feedback-chat", "failed", feedbackId);
-      } catch {/* best-effort */}
+      } catch (err) { silentCatch("stores/slices/agents/backgroundChatSlice:catch3")(err); }
 
       reportError(err, "Failed to start feedback chat", set);
       return feedbackId;
@@ -394,7 +392,7 @@ function setupBackgroundExecListeners(
             try {
               const exec = await getExecution(executionId, personaId);
               if (exec.claude_session_id) claudeSessionId = exec.claude_session_id;
-            } catch {/* non-critical */}
+            } catch (err) { silentCatch("stores/slices/agents/backgroundChatSlice:catch4")(err); }
 
             await saveChatSessionContext({
               sessionId,
@@ -432,7 +430,7 @@ function setupBackgroundExecListeners(
             succeeded ? "completed" : "failed",
             feedbackId,
           );
-        } catch {/* best-effort */}
+        } catch (err) { silentCatch("stores/slices/agents/backgroundChatSlice:catch5")(err); }
 
         // Fire notifications — OS only if app unfocused, bell always.
         const cur = get().backgroundChats[feedbackId];

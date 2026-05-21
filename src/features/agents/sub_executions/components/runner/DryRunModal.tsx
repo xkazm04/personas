@@ -49,14 +49,14 @@ export function DryRunModal({ open, loading, report, errorMessage, onClose }: Dr
               <h3 id="dry-run-modal-title" className="typo-heading text-foreground/90 truncate">
                 {d.modal_title}
               </h3>
-              <p className="typo-caption text-foreground/60 truncate">
+              <p className="typo-caption text-foreground truncate">
                 {report?.persona_name ?? ''}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-card hover:bg-secondary/40 text-foreground/60 hover:text-foreground transition-colors"
+            className="p-1.5 rounded-card hover:bg-secondary/40 text-foreground hover:text-foreground transition-colors"
             aria-label={t.common.close}
           >
             <X className="w-4 h-4" />
@@ -68,7 +68,7 @@ export function DryRunModal({ open, loading, report, errorMessage, onClose }: Dr
           {loading && (
             <div className="flex flex-col items-center justify-center py-12 gap-3" data-testid="dry-run-loading">
               <div className="w-8 h-8 rounded-full border-2 border-primary/40 border-t-primary animate-spin" />
-              <p className="typo-body text-foreground/70">{d.running}</p>
+              <p className="typo-body text-foreground">{d.running}</p>
             </div>
           )}
 
@@ -102,7 +102,7 @@ export function DryRunModal({ open, loading, report, errorMessage, onClose }: Dr
                   <p className={`typo-heading ${report.success ? 'text-emerald-300/90' : 'text-red-300/90'}`}>
                     {report.success ? d.status_passed : d.status_failed}
                   </p>
-                  <p className="typo-body text-foreground/70">
+                  <p className="typo-body text-foreground">
                     {report.success ? d.status_passed_hint : (report.error ?? d.status_failed_hint)}
                   </p>
                 </div>
@@ -119,7 +119,7 @@ export function DryRunModal({ open, loading, report, errorMessage, onClose }: Dr
               {/* Warnings */}
               {report.warnings.length > 0 && (
                 <section className="space-y-2">
-                  <h4 className="typo-heading text-foreground/80">{d.section_warnings}</h4>
+                  <h4 className="typo-heading text-foreground">{d.section_warnings}</h4>
                   <ul className="space-y-1.5">
                     {report.warnings.map((w, i) => (
                       <li
@@ -137,7 +137,7 @@ export function DryRunModal({ open, loading, report, errorMessage, onClose }: Dr
               {/* Credential failures */}
               {report.credential_failures.length > 0 && (
                 <section className="space-y-2">
-                  <h4 className="typo-heading text-foreground/80">{d.section_credential_failures}</h4>
+                  <h4 className="typo-heading text-foreground">{d.section_credential_failures}</h4>
                   <ul className="flex flex-wrap gap-1.5">
                     {report.credential_failures.map((c) => (
                       <li
@@ -153,9 +153,9 @@ export function DryRunModal({ open, loading, report, errorMessage, onClose }: Dr
 
               {/* Planned tool surface */}
               <section className="space-y-2">
-                <h4 className="typo-heading text-foreground/80">{d.section_tool_surface}</h4>
+                <h4 className="typo-heading text-foreground">{d.section_tool_surface}</h4>
                 {report.tools.length === 0 ? (
-                  <p className="typo-body text-foreground/60">{d.no_tools}</p>
+                  <p className="typo-body text-foreground">{d.no_tools}</p>
                 ) : (
                   <ul className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
                     {report.tools.map((tool) => (
@@ -163,10 +163,10 @@ export function DryRunModal({ open, loading, report, errorMessage, onClose }: Dr
                         key={tool.name}
                         className="flex items-center gap-2 px-2.5 py-1.5 rounded-card border border-primary/10 bg-secondary/30"
                       >
-                        <Wrench className="w-3 h-3 text-foreground/50 shrink-0" />
+                        <Wrench className="w-3 h-3 text-foreground shrink-0" />
                         <span className="typo-code text-foreground/90 truncate">{tool.name}</span>
                         {tool.requires_credential_type && (
-                          <span className="ml-auto typo-caption text-foreground/50">{tool.requires_credential_type}</span>
+                          <span className="ml-auto typo-caption text-foreground">{tool.requires_credential_type}</span>
                         )}
                       </li>
                     ))}
@@ -177,7 +177,7 @@ export function DryRunModal({ open, loading, report, errorMessage, onClose }: Dr
               {/* Resolved credentials */}
               {report.resolved_credentials.length > 0 && (
                 <section className="space-y-2">
-                  <h4 className="typo-heading text-foreground/80">{d.section_resolved_credentials}</h4>
+                  <h4 className="typo-heading text-foreground">{d.section_resolved_credentials}</h4>
                   <ul className="flex flex-wrap gap-1.5">
                     {report.resolved_credentials.map((c) => (
                       <li
@@ -194,10 +194,10 @@ export function DryRunModal({ open, loading, report, errorMessage, onClose }: Dr
               {/* Assembled prompt */}
               <section className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <h4 className="typo-heading text-foreground/80">{d.section_prompt}</h4>
+                  <h4 className="typo-heading text-foreground">{d.section_prompt}</h4>
                   <button
                     onClick={handleCopyPrompt}
-                    className="flex items-center gap-1.5 px-2 py-1 rounded-card typo-caption text-foreground/70 hover:text-foreground hover:bg-secondary/40 transition-colors"
+                    className="flex items-center gap-1.5 px-2 py-1 rounded-card typo-caption text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors"
                   >
                     <Copy className="w-3 h-3" />
                     {copied ? d.copied : d.copy_prompt}
@@ -213,7 +213,7 @@ export function DryRunModal({ open, loading, report, errorMessage, onClose }: Dr
 
               {/* Footer meta */}
               {report.log_file_path && (
-                <p className="typo-caption text-foreground/50 break-all">
+                <p className="typo-caption text-foreground break-all">
                   {d.log_file_path_label}: {report.log_file_path}
                 </p>
               )}
@@ -225,7 +225,7 @@ export function DryRunModal({ open, loading, report, errorMessage, onClose }: Dr
         <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-primary/10 bg-secondary/20">
           <button
             onClick={onClose}
-            className="px-4 py-1.5 typo-heading rounded-card text-foreground/80 hover:text-foreground hover:bg-secondary/40 transition-colors"
+            className="px-4 py-1.5 typo-heading rounded-card text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors"
           >
             {t.common.close}
           </button>
@@ -238,7 +238,7 @@ export function DryRunModal({ open, loading, report, errorMessage, onClose }: Dr
 function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
     <div className="flex flex-col gap-0.5 px-3 py-2 rounded-card border border-primary/10 bg-secondary/30">
-      <div className="flex items-center gap-1.5 text-foreground/55 typo-caption">
+      <div className="flex items-center gap-1.5 text-foreground typo-caption">
         {icon}
         <span>{label}</span>
       </div>

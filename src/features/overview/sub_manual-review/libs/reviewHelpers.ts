@@ -1,4 +1,6 @@
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 export const STATUS_LABELS: Record<string, string> = {
   pending: 'Pending',
@@ -34,9 +36,7 @@ export function parseSuggestedActions(raw: string | null | undefined): string[] 
   try {
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed)) return parsed.map(String);
-  } catch {
-    // not JSON -- split by newlines or semicolons
-  }
+  } catch (err) { silentCatch("features/overview/sub_manual-review/libs/reviewHelpers:catch1")(err); }
   return raw.split(/[;\n]+/).map((s) => s.trim()).filter(Boolean);
 }
 

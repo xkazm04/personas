@@ -169,7 +169,7 @@ function FileUploadTab({
       <PreviewCard preview={preview} FileIcon={FileIcon} onClick={preview?.kind === 'valid' ? handleManualProceed : undefined} />
       {preview?.kind === 'valid' && (
         <div className="animate-fade-slide-in mt-4 flex flex-col items-start gap-1.5">
-          <button onClick={handleManualProceed} className="px-4 py-2.5 typo-heading font-semibold rounded-modal bg-violet-500 text-white hover:bg-violet-400 transition-colors">
+          <button onClick={handleManualProceed} className="px-4 py-2.5 typo-heading font-semibold rounded-modal bg-violet-500 text-foreground hover:bg-violet-400 transition-colors">
             Continue
           </button>
           <p className="typo-body text-foreground">{t.templates.n8n.press_enter_or_click}</p>
@@ -291,7 +291,7 @@ function UrlTab({
       <PreviewCard preview={urlPreview} FileIcon={FileJson} onClick={urlPreview?.kind === 'valid' ? handleUrlImport : undefined} />
       {urlPreview?.kind === 'valid' && (
         <div className="animate-fade-slide-in mt-4 flex flex-col items-start gap-1.5">
-          <button onClick={handleUrlImport} className="px-4 py-2.5 typo-heading font-semibold rounded-modal bg-violet-500 text-white hover:bg-violet-400 transition-colors">
+          <button onClick={handleUrlImport} className="px-4 py-2.5 typo-heading font-semibold rounded-modal bg-violet-500 text-foreground hover:bg-violet-400 transition-colors">
             Continue
           </button>
           <p className="typo-body text-foreground">{t.templates.n8n.press_enter_or_click}</p>

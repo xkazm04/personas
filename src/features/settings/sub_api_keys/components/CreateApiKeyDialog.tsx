@@ -85,7 +85,7 @@ export function CreateApiKeyDialog({ onSubmit, onClose }: CreateApiKeyDialogProp
             type="button"
             onClick={onClose}
             disabled={submitting}
-            className="text-foreground/60 hover:text-foreground transition-colors disabled:opacity-50"
+            className="text-foreground hover:text-foreground transition-colors disabled:opacity-50"
           >
             <X size={16} />
           </button>
@@ -93,7 +93,7 @@ export function CreateApiKeyDialog({ onSubmit, onClose }: CreateApiKeyDialogProp
 
         <div className="p-4 space-y-4">
           <div>
-            <label className="block typo-caption text-foreground/80 mb-1.5">
+            <label className="block typo-caption text-foreground mb-1.5">
               {s.field_name_label}
             </label>
             <input
@@ -106,11 +106,11 @@ export function CreateApiKeyDialog({ onSubmit, onClose }: CreateApiKeyDialogProp
               disabled={submitting}
               className="w-full px-3 py-2 bg-background border border-border/40 rounded-input typo-body text-foreground focus:border-primary/60 focus:outline-none disabled:opacity-50"
             />
-            <p className="typo-caption text-foreground/50 mt-1">{s.field_name_hint}</p>
+            <p className="typo-caption text-foreground mt-1">{s.field_name_hint}</p>
           </div>
 
           <div>
-            <label className="block typo-caption text-foreground/80 mb-1.5">
+            <label className="block typo-caption text-foreground mb-1.5">
               {s.field_scopes_label}
             </label>
             <div className="space-y-1.5">
@@ -137,7 +137,7 @@ export function CreateApiKeyDialog({ onSubmit, onClose }: CreateApiKeyDialogProp
                     />
                     <div className="flex-1 min-w-0">
                       <code className="typo-code text-foreground">{scope.id}</code>
-                      <p className="typo-caption text-foreground/60 mt-0.5">
+                      <p className="typo-caption text-foreground mt-0.5">
                         {s[scope.descriptionKey]}
                       </p>
                     </div>
@@ -157,7 +157,7 @@ export function CreateApiKeyDialog({ onSubmit, onClose }: CreateApiKeyDialogProp
             type="button"
             onClick={onClose}
             disabled={submitting}
-            className="px-3 py-1.5 rounded-interactive typo-caption text-foreground/80 hover:bg-secondary/50 transition-colors disabled:opacity-50"
+            className="px-3 py-1.5 rounded-interactive typo-caption text-foreground hover:bg-secondary/50 transition-colors disabled:opacity-50"
           >
             {s.cancel}
           </button>

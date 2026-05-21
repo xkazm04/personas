@@ -103,7 +103,7 @@ export function RacingProgress({ slots }: RacingProgressProps) {
                 />
                 {isRunning && (
                   <div
-                    className="absolute top-0 h-full w-4 bg-white/20 rounded-full animate-pulse"
+                    className="absolute top-0 h-full w-4 bg-secondary/20 rounded-full animate-pulse"
                     style={{ left: `${Math.max(0, progressPct - 3)}%` }}
                   />
                 )}

@@ -3,6 +3,8 @@ import { TrendingUp, TrendingDown, Minus, CheckCircle2, XCircle, AlertTriangle }
 import { compositeScore } from '@/lib/eval/evalFramework';
 import type { LabEvalResult } from '@/lib/bindings/LabEvalResult';
 import { useTranslation } from '@/i18n/useTranslation';
+import { DebtText } from '@/i18n/DebtText';
+
 
 interface Props {
   baselineResults: LabEvalResult[];
@@ -102,7 +104,7 @@ export function RegressionResultsView({ baselineResults, currentResults, baselin
         <div className="flex-1">
           <p className={`typo-heading ${vc.color}`}>{vc.text}</p>
           <p className="typo-caption text-foreground">
-            v{baselineVersionNum} (baseline) → v{currentVersionNum} | Overall Δ: {overallDelta >= 0 ? '+' : ''}{overallDelta} pts | Threshold: -{threshold} pts
+            v{baselineVersionNum} <DebtText k="auto_baseline_v_6cc61267" />{currentVersionNum} <DebtText k="auto_overall_55be8ca6" /> {overallDelta >= 0 ? '+' : ''}{overallDelta} <DebtText k="auto_pts_threshold_93dd8ca9" />{threshold} pts
           </p>
         </div>
       </div>

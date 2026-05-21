@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { RefreshCw } from "lucide-react";
+import { debtText } from '@/i18n/DebtText';
+
 
 interface GlyphRefineComposerProps {
   onSubmit: (v: string) => void;
@@ -30,7 +32,7 @@ export function GlyphRefineComposer({ onSubmit, onCancel, initialText }: GlyphRe
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder="Tell the agent what to change…"
+        placeholder={debtText("auto_tell_the_agent_what_to_change_b0741749")}
         rows={3}
         autoFocus
         className="w-full px-3 py-2 rounded-modal bg-foreground/5 border border-primary/20 typo-body text-foreground placeholder:text-foreground/40 resize-none focus:outline-none focus:border-primary/60"
@@ -48,7 +50,7 @@ export function GlyphRefineComposer({ onSubmit, onCancel, initialText }: GlyphRe
         <button
           type="button"
           onClick={onCancel}
-          className="px-3 py-1.5 rounded-full border border-border/40 hover:border-foreground/30 typo-body text-foreground/70"
+          className="px-3 py-1.5 rounded-full border border-border/40 hover:border-foreground/30 typo-body text-foreground"
         >
           Cancel
         </button>

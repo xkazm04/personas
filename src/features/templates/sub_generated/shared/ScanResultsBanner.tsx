@@ -124,17 +124,17 @@ function FindingRow({ finding }: { finding: ScanFinding }) {
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-start gap-2.5 px-3 py-2.5 text-left hover:bg-white/[0.02] transition-colors"
+        className="w-full flex items-start gap-2.5 px-3 py-2.5 text-left hover:bg-secondary/[0.02] transition-colors"
       >
         <span className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${config.dotColor}`} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className={`text-sm font-medium ${config.text}`}>{finding.title}</span>
-            <span className="text-sm px-1.5 py-0.5 rounded bg-white/5 text-foreground uppercase tracking-wider">
+            <span className={`typo-body font-medium ${config.text}`}>{finding.title}</span>
+            <span className="typo-body px-1.5 py-0.5 rounded bg-secondary/5 text-foreground uppercase tracking-wider">
               {CATEGORY_LABELS[finding.category]}
             </span>
           </div>
-          <p className="text-sm text-foreground mt-0.5 leading-relaxed">
+          <p className="typo-body text-foreground mt-0.5 leading-relaxed">
             {finding.description}
           </p>
         </div>
@@ -148,7 +148,7 @@ function FindingRow({ finding }: { finding: ScanFinding }) {
       {expanded && finding.context && (
         <div className="px-3 pb-2.5 pt-0">
           <div className="ml-4 pl-3 border-l-2 border-white/5">
-            <p className="text-sm uppercase tracking-wider text-foreground mb-1">
+            <p className="typo-body uppercase tracking-wider text-foreground mb-1">
               {t.templates.scan.source_label} <span className="text-foreground">{finding.source}</span>
             </p>
             <pre className="text-sm text-foreground whitespace-pre-wrap font-mono bg-black/20 rounded-modal px-2.5 py-2 leading-relaxed">
@@ -182,7 +182,7 @@ function SeveritySection({
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 text-sm text-foreground hover:text-muted-foreground/80 transition-colors mb-1.5 w-full"
+        className="flex items-center gap-2 typo-body text-foreground hover:text-muted-foreground/80 transition-colors mb-1.5 w-full"
       >
         {open ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
         {icon}
@@ -210,8 +210,8 @@ export function ScanResultsBanner({ result, scanning, className = '' }: ScanResu
       <div className={`flex items-center gap-3 px-4 py-3 rounded-modal border border-blue-500/15 bg-blue-500/5 ${className}`}>
         <LoadingSpinner className="text-blue-400/60 flex-shrink-0" />
         <div>
-          <p className="text-sm text-blue-300/80 font-medium">{t.templates.scan.scanning_draft}</p>
-          <p className="text-sm text-blue-300/50">{t.templates.scan.checking_unsafe}</p>
+          <p className="typo-body text-blue-300/80 font-medium">{t.templates.scan.scanning_draft}</p>
+          <p className="typo-body text-blue-300/50">{t.templates.scan.checking_unsafe}</p>
         </div>
       </div>
     );
@@ -226,8 +226,8 @@ export function ScanResultsBanner({ result, scanning, className = '' }: ScanResu
       <div className={`flex items-center gap-3 px-4 py-3 rounded-modal border border-emerald-500/15 bg-emerald-500/5 ${className}`}>
         <ShieldThumbsUpIllustration className="text-emerald-400 flex-shrink-0" />
         <div>
-          <p className="text-sm text-emerald-300/80 font-medium">{t.templates.scan.scan_passed}</p>
-          <p className="text-sm text-emerald-300/50">{t.templates.scan.no_concerns}</p>
+          <p className="typo-body text-emerald-300/80 font-medium">{t.templates.scan.scan_passed}</p>
+          <p className="typo-body text-emerald-300/50">{t.templates.scan.no_concerns}</p>
         </div>
       </div>
     );
@@ -240,8 +240,8 @@ export function ScanResultsBanner({ result, scanning, className = '' }: ScanResu
         <div className="flex items-center gap-3 px-4 py-3">
           <ShieldThumbsUpIllustration className="text-emerald-400 flex-shrink-0" />
           <div className="flex-1">
-            <p className="text-sm text-emerald-300/80 font-medium">{t.templates.scan.scan_passed}</p>
-            <p className="text-sm text-emerald-300/50">
+            <p className="typo-body text-emerald-300/80 font-medium">{t.templates.scan.scan_passed}</p>
+            <p className="typo-body text-emerald-300/50">
               {t.templates.scan.info_notes.replace('{count}', String(result.info.length))}
             </p>
           </div>
@@ -275,10 +275,10 @@ export function ScanResultsBanner({ result, scanning, className = '' }: ScanResu
           <ShieldAlert className="w-4.5 h-4.5 text-amber-400 flex-shrink-0 mt-0.5" />
         )}
         <div className="flex-1 min-w-0">
-          <p className={`text-sm font-medium ${titleColor}`}>
+          <p className={`typo-body font-medium ${titleColor}`}>
             {hasCritical ? t.templates.scan.critical_issues : t.templates.scan.security_warnings}
           </p>
-          <p className={`text-sm ${subtitleColor} mt-0.5`}>
+          <p className={`typo-body ${subtitleColor} mt-0.5`}>
             {result.critical.length > 0 && `${result.critical.length} critical`}
             {result.critical.length > 0 && result.warnings.length > 0 && ', '}
             {result.warnings.length > 0 && `${result.warnings.length} warning${result.warnings.length !== 1 ? 's' : ''}`}

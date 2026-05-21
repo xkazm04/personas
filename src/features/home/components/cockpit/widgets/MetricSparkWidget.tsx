@@ -43,21 +43,21 @@ export function MetricSparkWidget({ config, title }: CockpitWidgetProps) {
       ? 'text-emerald-400'
       : trend === 'down'
         ? 'text-rose-400'
-        : 'text-foreground/50';
+        : 'text-foreground';
 
   const displayValue =
     value === null || value === undefined ? '—' : String(value);
 
   return (
     <div className="rounded-card border border-foreground/10 bg-foreground/[0.02] p-4 h-full flex flex-col min-h-0">
-      <div className="typo-caption text-foreground/60 uppercase tracking-wide mb-2">
+      <div className="typo-caption text-foreground uppercase tracking-wide mb-2">
         {label}
       </div>
       <div className="flex-1 flex flex-col items-start justify-center gap-1">
         <div className={`typo-display ${intentClass} tabular-nums`}>
           {displayValue}
           {unit ? (
-            <span className="typo-body text-foreground/50 ml-1">{unit}</span>
+            <span className="typo-body text-foreground ml-1">{unit}</span>
           ) : null}
         </div>
         {delta ? (

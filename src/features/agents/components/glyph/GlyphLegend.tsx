@@ -22,7 +22,7 @@ export function GlyphLegend({ petalStates, onSelectDim, onHoverDim }: GlyphLegen
             onClick={() => onSelectDim(dim)}
             onMouseEnter={() => onHoverDim(dim)}
             onMouseLeave={() => onHoverDim(null)}
-            className="flex items-center gap-1.5 typo-caption text-foreground/55 hover:text-foreground cursor-pointer transition-colors"
+            className="flex items-center gap-1.5 typo-caption text-foreground hover:text-foreground cursor-pointer transition-colors"
           >
             <span
               className="w-1.5 h-1.5 rounded-full"

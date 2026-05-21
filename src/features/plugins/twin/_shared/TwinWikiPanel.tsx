@@ -79,12 +79,12 @@ export function TwinWikiPanel({ activeTwinId }: { activeTwinId: string | null })
         <ScrollText className="w-4 h-4 text-violet-300 flex-shrink-0" />
         <div className="flex-1 min-w-0">
           <p className="typo-card-label text-foreground/95">{t.wiki.title}</p>
-          <p className="typo-caption text-foreground/65">{t.wiki.subtitle}</p>
+          <p className="typo-caption text-foreground">{t.wiki.subtitle}</p>
         </div>
         {open ? (
-          <ChevronUp className="w-4 h-4 text-foreground/55" />
+          <ChevronUp className="w-4 h-4 text-foreground" />
         ) : (
-          <ChevronDown className="w-4 h-4 text-foreground/55" />
+          <ChevronDown className="w-4 h-4 text-foreground" />
         )}
       </button>
 
@@ -124,11 +124,11 @@ export function TwinWikiPanel({ activeTwinId }: { activeTwinId: string | null })
           {compiled && (
             <section>
               <div className="flex items-center justify-between mb-1.5">
-                <p className="text-[10px] uppercase tracking-[0.18em] text-foreground/55 font-medium">{t.wiki.compiledLabel}</p>
+                <p className="text-[10px] uppercase tracking-[0.18em] text-foreground font-medium">{t.wiki.compiledLabel}</p>
                 <button
                   type="button"
                   onClick={() => handleCopy(compiled.dirPath)}
-                  className="flex items-center gap-1 text-[11px] text-foreground/65 hover:text-violet-300 transition-colors"
+                  className="flex items-center gap-1 text-[11px] text-foreground hover:text-violet-300 transition-colors"
                 >
                   <Copy className="w-3 h-3" /> {t.wiki.copyPath}
                 </button>
@@ -137,7 +137,7 @@ export function TwinWikiPanel({ activeTwinId }: { activeTwinId: string | null })
                 <p className="typo-caption text-foreground">
                   {tx(t.wiki.compiledSummary, { count: compiled.fileCount })}
                 </p>
-                <p className="font-mono text-[11px] text-foreground/60 break-all">{compiled.dirPath}</p>
+                <p className="font-mono text-[11px] text-foreground break-all">{compiled.dirPath}</p>
               </div>
             </section>
           )}
@@ -145,11 +145,11 @@ export function TwinWikiPanel({ activeTwinId }: { activeTwinId: string | null })
           {auditMemory && (
             <section>
               <div className="flex items-center justify-between mb-1.5">
-                <p className="text-[10px] uppercase tracking-[0.18em] text-foreground/55 font-medium">{t.wiki.auditReportLabel}</p>
+                <p className="text-[10px] uppercase tracking-[0.18em] text-foreground font-medium">{t.wiki.auditReportLabel}</p>
                 <button
                   type="button"
                   onClick={() => handleCopy(auditMemory.content)}
-                  className="flex items-center gap-1 text-[11px] text-foreground/65 hover:text-violet-300 transition-colors"
+                  className="flex items-center gap-1 text-[11px] text-foreground hover:text-violet-300 transition-colors"
                 >
                   <Copy className="w-3 h-3" /> {t.wiki.copy}
                 </button>

@@ -44,7 +44,7 @@ export default function RadioSettingsCard() {
       <div className="flex items-center justify-between gap-4 rounded-card border border-primary/8 bg-secondary/10 p-3">
         <div className="min-w-0">
           <p className="typo-body font-medium text-foreground">{t.radio.enable_label}</p>
-          <p className="typo-caption text-foreground/60">{t.radio.enable_description}</p>
+          <p className="typo-caption text-foreground">{t.radio.enable_description}</p>
         </div>
         <AccessibleToggle
           checked={radioEnabled}
@@ -60,7 +60,7 @@ export default function RadioSettingsCard() {
       >
         <div className="min-w-0">
           <p className="typo-body font-medium text-foreground">{t.radio.auto_resume_label}</p>
-          <p className="typo-caption text-foreground/60">{t.radio.auto_resume_description}</p>
+          <p className="typo-caption text-foreground">{t.radio.auto_resume_description}</p>
         </div>
         <AccessibleToggle
           checked={radioAutoResume}
@@ -93,7 +93,7 @@ export default function RadioSettingsCard() {
               <p className="typo-body font-medium text-foreground truncate flex-1">
                 {station.name}
               </p>
-              <span className="shrink-0 typo-caption text-foreground/55 px-1.5 py-0.5 rounded bg-secondary/30 flex items-center gap-1">
+              <span className="shrink-0 typo-caption text-foreground px-1.5 py-0.5 rounded bg-secondary/30 flex items-center gap-1">
                 {isYt ? <Music className="w-3 h-3" /> : <Radio className="w-3 h-3" />}
                 {station.sourceLabel ?? (isYt ? t.radio.kind_youtube : t.radio.kind_stream)}
               </span>

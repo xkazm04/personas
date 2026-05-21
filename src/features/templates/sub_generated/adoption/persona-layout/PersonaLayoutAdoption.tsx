@@ -444,7 +444,7 @@ export function PersonaLayoutAdoption({
           className={`inline-flex items-center gap-1.5 px-5 py-2 rounded-full border transition-colors typo-body ${
             canContinue
               ? 'bg-primary/25 hover:bg-primary/40 border-primary/40 text-foreground cursor-pointer'
-              : 'bg-secondary/40 border-border/30 text-foreground/40 cursor-not-allowed'
+              : 'bg-secondary/40 border-border/30 text-foreground cursor-not-allowed'
           }`}
         >
           {t.templates.adopt_modal.persona_layout_continue_to_build}
@@ -556,7 +556,7 @@ export function PersonaLayoutAdoption({
           ? t.templates.adopt_modal.persona_layout_center_questions_to_answer_one
           : t.templates.adopt_modal.persona_layout_center_questions_to_answer_other}
       </span>
-      <span className="typo-caption text-foreground/55 italic group-hover:text-foreground/80 transition-colors">
+      <span className="typo-caption text-foreground italic group-hover:text-foreground/80 transition-colors">
         {t.templates.adopt_modal.persona_layout_center_click_to_start}
       </span>
     </button>
@@ -590,7 +590,7 @@ export function PersonaLayoutAdoption({
           heroWideOverlay={wideOverlay}
           emptyNode={
             <div className="rounded-modal border border-card-border bg-secondary/30 p-8 text-center">
-              <span className="typo-body text-foreground/70 italic">
+              <span className="typo-body text-foreground italic">
                 {t.templates.adopt_modal.persona_layout_no_capabilities}
               </span>
             </div>
@@ -602,7 +602,7 @@ export function PersonaLayoutAdoption({
         <button
           type="button"
           onClick={onClose}
-          className="typo-caption text-foreground/65 hover:text-foreground transition-colors cursor-pointer"
+          className="typo-caption text-foreground hover:text-foreground transition-colors cursor-pointer"
         >
           {t.templates.adopt_modal.cancel}
         </button>

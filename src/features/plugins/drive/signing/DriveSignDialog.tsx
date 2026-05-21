@@ -3,11 +3,13 @@ import { FileSignature, CheckCircle2, Copy, Download, X } from "lucide-react";
 
 import type { DriveEntry } from "@/api/drive";
 import { useTranslation } from "@/i18n/useTranslation";
-import { toastCatch } from "@/lib/silentCatch";
+import { silentCatch, toastCatch } from "@/lib/silentCatch";
 import { useToastStore } from "@/stores/toastStore";
 import { BaseModal } from "@/features/shared/components/modals";
 
 import type { useSigning } from "./useSigning";
+import { debtText } from '@/i18n/DebtText';
+
 
 const TITLE_ID = "drive-sign-dialog-title";
 
@@ -72,9 +74,7 @@ export function DriveSignDialog({
     try {
       await navigator.clipboard.writeText(sidecarJson);
       addToast(t.plugins.doc_signing.copy, "success");
-    } catch {
-      /* clipboard blocked */
-    }
+    } catch (err) { silentCatch("features/plugins/drive/signing/DriveSignDialog:catch1")(err); }
   };
 
   return (
@@ -139,7 +139,7 @@ export function DriveSignDialog({
                 onChange={(e) => setMetadata(e.target.value)}
                 rows={3}
                 className="w-full px-3 py-2 rounded-input bg-secondary/40 border border-primary/20 typo-body text-foreground placeholder:text-foreground focus:outline-none focus:border-sky-500/50 focus:ring-2 focus:ring-sky-500/20 resize-none transition-colors"
-                placeholder="Optional context stored alongside the signature..."
+                placeholder={debtText("auto_optional_context_stored_alongside_the_sign_ab2cb9d2")}
               />
             </div>
           )}

@@ -30,6 +30,8 @@ import {
 import { FocusedDecisionCard } from './FocusedDecisionCard';
 import { ActionZone } from './ActionZone';
 import { useTranslation } from '@/i18n/useTranslation';
+import { DebtText } from '@/i18n/DebtText';
+
 
 // ---------------------------------------------------------------------------
 // Severity badge (local — only used in this view)
@@ -262,8 +264,8 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
         <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center">
           <Check className="w-8 h-8 text-emerald-400" />
         </div>
-        <p className="text-lg font-medium text-foreground">{t.overview.review_focus.all_caught_up}</p>
-        <p className="text-sm text-foreground">{t.overview.review_focus.no_pending}</p>
+        <p className="typo-body-lg font-medium text-foreground">{t.overview.review_focus.all_caught_up}</p>
+        <p className="typo-body text-foreground">{t.overview.review_focus.no_pending}</p>
       </div>
     );
   }
@@ -275,24 +277,24 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
       {/* ---- Queue Sidebar ---- */}
       <div className="w-[220px] flex-shrink-0 border-r border-primary/10 bg-secondary/20 flex flex-col">
         <div className="px-3 py-2.5 border-b border-primary/10 flex items-center justify-between">
-          <span className="text-xs font-semibold text-foreground uppercase tracking-wider">{t.overview.review_focus.queue} ({pending.length})</span>
+          <span className="typo-label font-semibold text-foreground uppercase tracking-wider">{t.overview.review_focus.queue} ({pending.length})</span>
           <div className="flex items-center gap-1.5">
             {sevCounts.critical > 0 && (
               <span className="flex items-center gap-1">
                 <span className="w-2 h-2 rounded-full bg-red-400" />
-                <span className="text-xs text-red-400">{sevCounts.critical}</span>
+                <span className="typo-caption text-red-400">{sevCounts.critical}</span>
               </span>
             )}
             {sevCounts.warning > 0 && (
               <span className="flex items-center gap-1">
                 <span className="w-2 h-2 rounded-full bg-amber-400" />
-                <span className="text-xs text-amber-400">{sevCounts.warning}</span>
+                <span className="typo-caption text-amber-400">{sevCounts.warning}</span>
               </span>
             )}
             {sevCounts.info > 0 && (
               <span className="flex items-center gap-1">
                 <span className="w-2 h-2 rounded-full bg-blue-400" />
-                <span className="text-xs text-blue-400">{sevCounts.info}</span>
+                <span className="typo-caption text-blue-400">{sevCounts.info}</span>
               </span>
             )}
           </div>
@@ -309,12 +311,12 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
               >
                 <div className="flex items-center gap-2">
                   <span className={`w-2 h-2 rounded-full flex-shrink-0 ${sevDot(r.severity)}`} />
-                  <span className={`text-xs truncate ${isActive ? 'text-foreground font-medium' : 'text-foreground'}`}>
+                  <span className={`typo-caption truncate ${isActive ? 'text-foreground font-medium' : 'text-foreground'}`}>
                     {stripPersonaPrefix(r.title, r.persona_name)}
                   </span>
                 </div>
                 {r.persona_name && (
-                  <span className="text-xs text-foreground ml-4 block truncate mt-0.5">{r.persona_name}</span>
+                  <span className="typo-caption text-foreground ml-4 block truncate mt-0.5">{r.persona_name}</span>
                 )}
               </button>
             );
@@ -326,7 +328,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
       <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
         {/* Top nav bar */}
         <div className="flex-shrink-0 flex items-center justify-between px-6 py-2 border-b border-primary/10 bg-background/80 backdrop-blur-sm">
-          <span className="text-sm font-medium text-foreground">Review {reviewIdx + 1} of {pending.length}</span>
+          <span className="typo-body font-medium text-foreground">Review {reviewIdx + 1} of {pending.length}</span>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon-sm" onClick={goPrevReview} disabled={reviewIdx === 0}>
               <ChevronLeft className="w-4 h-4" />
@@ -358,12 +360,12 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
                   {/* Header */}
                   <div className="flex items-start gap-3">
                     <PersonaIcon icon={current!.persona_icon ?? null} color={current!.persona_color ?? null} display="framed" frameSize={"lg"} />
-                    <span className="text-sm font-medium text-foreground mt-1">{current!.persona_name || 'Unknown'}</span>
+                    <span className="typo-body font-medium text-foreground mt-1">{current!.persona_name || 'Unknown'}</span>
                     <div className="mt-1"><SeverityBadge severity={current!.severity} /></div>
                     <div className="ml-auto flex flex-col items-end gap-1">
                       {hasMultipleDecisions && (
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-semibold uppercase tracking-wider text-foreground">
+                          <span className="typo-label font-semibold uppercase tracking-wider text-foreground">
                             Decision {decisionIdx + 1} of {decisions.length}
                           </span>
                           <Button variant="ghost" size="icon-sm" onClick={goPrevDecision} disabled={decisionIdx === 0}>
@@ -388,7 +390,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
                           {(acceptCount > 0 || rejectCount > 0) && (
                             <button
                               onClick={() => setDecisionVerdicts({})}
-                              className="text-xs text-foreground hover:text-foreground/80 transition-colors"
+                              className="typo-caption text-foreground hover:text-foreground/80 transition-colors"
                               title={t.overview.review_focus.clear_all_verdicts}
                             >
                               Clear
@@ -396,7 +398,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
                           )}
                         </div>
                       )}
-                      <span className="flex items-center gap-1 text-xs text-foreground">
+                      <span className="flex items-center gap-1 typo-caption text-foreground">
                         <Clock className="w-3 h-3" />
                         {formatRelativeTime(current!.created_at)}
                       </span>
@@ -404,18 +406,18 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
                   </div>
 
                   {/* Title */}
-                  <h2 className="text-xl font-bold text-foreground leading-tight">{stripPersonaPrefix(current!.title, current!.persona_name)}</h2>
+                  <h2 className="typo-heading-lg font-bold text-foreground leading-tight">{stripPersonaPrefix(current!.title, current!.persona_name)}</h2>
 
                   {/* Description */}
                   {current!.description && (
-                    <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap">{current!.description}</p>
+                    <p className="typo-body text-foreground/90 leading-relaxed whitespace-pre-wrap">{current!.description}</p>
                   )}
 
                   {/* Extra prose context preserved by the backend when
                       decisions are present — gives the user more than just
                       bare decision labels. */}
                   {contextText && (
-                    <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">{contextText}</p>
+                    <p className="typo-body text-foreground leading-relaxed whitespace-pre-wrap">{contextText}</p>
                   )}
 
                   {/* Gallery-level media (single image/video review like art director) */}
@@ -429,7 +431,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
                             controls
                             className="w-full max-h-[50vh] object-contain"
                           >
-                            Your browser does not support video playback.
+                            <DebtText k="auto_your_browser_does_not_support_video_playba_8f8c2d0d" />
                           </video>
                         ) : (
                           <img
@@ -473,7 +475,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
 
                       {/* Summary strip */}
                       {decisions.length > 0 && (acceptCount > 0 || rejectCount > 0) && (
-                        <div className="flex items-center gap-3 text-xs">
+                        <div className="flex items-center gap-3 typo-caption">
                           {acceptCount > 0 && <span className="text-emerald-400">{acceptCount} accepted</span>}
                           {rejectCount > 0 && <span className="text-red-400">{rejectCount} rejected</span>}
                           {undecidedCount > 0 && <span className="text-foreground">{undecidedCount} undecided</span>}
@@ -490,7 +492,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
                     <>
                       <div className="h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
                       <div className="flex flex-col gap-1.5">
-                        <div className="flex items-center gap-1.5 text-sm text-foreground">
+                        <div className="flex items-center gap-1.5 typo-body text-foreground">
                           <Zap className="w-3.5 h-3.5 flex-shrink-0" />
                           <span className="font-medium">{t.overview.review_focus.quick_actions}</span>
                         </div>
@@ -502,9 +504,9 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
                               setActiveAction('approve');
                               setActionNotes(action);
                             }}
-                            className="flex items-center gap-2 px-3 py-2 rounded-card text-sm text-foreground bg-primary/5 border border-primary/10 hover:bg-primary/10 hover:border-primary/20 transition-colors text-left"
+                            className="flex items-center gap-2 px-3 py-2 rounded-card typo-body text-foreground bg-primary/5 border border-primary/10 hover:bg-primary/10 hover:border-primary/20 transition-colors text-left"
                           >
-                            <span className="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center text-sm font-bold flex-shrink-0">{i + 1}</span>
+                            <span className="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center typo-heading font-bold flex-shrink-0">{i + 1}</span>
                             {action}
                           </button>
                         ))}
@@ -569,11 +571,11 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
                   <div className="text-center py-1.5 text-[11px] text-foreground border-t border-primary/5">
                     {hasMultipleDecisions ? (
                       <>
-                        <kbd className="px-1 py-0.5 rounded bg-foreground/5 text-foreground font-mono">&#8592;</kbd> Reject this
+                        <kbd className="px-1 py-0.5 rounded bg-foreground/5 text-foreground font-mono">&#8592;</kbd> <DebtText k="auto_reject_this_0105a5cc" />
                         <span className="mx-2 text-foreground">|</span>
                         <kbd className="px-1 py-0.5 rounded bg-foreground/5 text-foreground font-mono">&#8595;</kbd> Retry
                         <span className="mx-2 text-foreground">|</span>
-                        <kbd className="px-1 py-0.5 rounded bg-foreground/5 text-foreground font-mono">&#8594;</kbd> Accept this
+                        <kbd className="px-1 py-0.5 rounded bg-foreground/5 text-foreground font-mono">&#8594;</kbd> <DebtText k="auto_accept_this_d7066048" />
                       </>
                     ) : (
                       <>

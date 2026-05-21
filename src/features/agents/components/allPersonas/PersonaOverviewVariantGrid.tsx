@@ -152,7 +152,7 @@ const PersonaGridCard = memo(function PersonaGridCard({
             );
           })}
           {connectors.length > MAX_CONNECTORS_VISIBLE && (
-            <span className="text-md text-foreground/70 ml-0.5">
+            <span className="text-md text-foreground ml-0.5">
               +{connectors.length - MAX_CONNECTORS_VISIBLE}
             </span>
           )}
@@ -168,7 +168,7 @@ const PersonaGridCard = memo(function PersonaGridCard({
       </div>
 
       {/* Persona name — centered under icon */}
-      <div className="text-base font-medium text-foreground truncate leading-tight max-w-full mt-2">
+      <div className="typo-body-lg font-medium text-foreground truncate leading-tight max-w-full mt-2">
         {p.name}
       </div>
 
@@ -181,18 +181,18 @@ const PersonaGridCard = memo(function PersonaGridCard({
             </span>
           </Tooltip>
         ) : (
-          <span className="text-md text-foreground/40">{draft ? t.agents.persona_list.badge_draft : '--'}</span>
+          <span className="text-md text-foreground">{draft ? t.agents.persona_list.badge_draft : '--'}</span>
         )}
 
         <Tooltip content={`${triggerCount} active trigger${triggerCount === 1 ? '' : 's'}`}>
-          <span className="inline-flex items-center gap-1 text-md text-foreground/70 cursor-help">
+          <span className="inline-flex items-center gap-1 text-md text-foreground cursor-help">
             <Zap className="w-3 h-3" />
             {triggerCount}
           </span>
         </Tooltip>
 
         <Tooltip content={lastRun ?? t.agents.persona_list.never}>
-          <span className="inline-flex items-center gap-1 text-md text-foreground/70 cursor-help">
+          <span className="inline-flex items-center gap-1 text-md text-foreground cursor-help">
             <Clock className="w-3 h-3" />
             {lastRun ? formatRelativeTime(lastRun) : t.agents.persona_list.never}
           </span>
@@ -210,7 +210,7 @@ const PersonaGridCard = memo(function PersonaGridCard({
       >
         <Star
           className={`w-3.5 h-3.5 transition-colors ${
-            favorite ? 'text-amber-400 fill-amber-400' : 'text-foreground/70 hover:text-amber-400/80'
+            favorite ? 'text-amber-400 fill-amber-400' : 'text-foreground hover:text-amber-400/80'
           }`}
         />
       </button>
@@ -227,7 +227,7 @@ const PersonaGridCard = memo(function PersonaGridCard({
         }`}
       >
         {selected && (
-          <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none">
+          <svg className="w-3 h-3 text-foreground" viewBox="0 0 12 12" fill="none">
             <path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         )}

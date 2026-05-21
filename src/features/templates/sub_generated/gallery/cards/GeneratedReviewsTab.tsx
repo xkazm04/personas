@@ -25,6 +25,8 @@ import type { TemplateModal } from './reviewParseCache';
 import type { Density } from '../search/filters/DensityToggle';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 // Re-export for barrel compatibility
 export { getCachedLightFields, getCachedDesignResult };
@@ -108,7 +110,7 @@ export default function GeneratedReviewsTab({
         if (match) { modals.open({ type: 'adopt', review: match }); return; }
         logger.warn('Template not found for resume adoption', { templateName: parsed.templateName });
       }
-    } catch { /* intentional: non-critical */ }
+    } catch (err) { silentCatch("features/templates/sub_generated/gallery/cards/GeneratedReviewsTab:catch1")(err); }
   };
 
   const handleResumeDraft = (draft: import('@/stores/slices/system/uiSlice').AdoptionDraft) => {

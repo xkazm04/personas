@@ -37,6 +37,8 @@ import {
   type GitLabPersonaBranch,
   type GitLabDeploymentRecord,
 } from "@/api/system/gitlab";
+import { silentCatch } from '@/lib/silentCatch';
+
 
 export interface GitLabDeploymentMeta {
   personaId: string;
@@ -136,9 +138,7 @@ function loadDeploymentMeta(): Record<string, GitLabDeploymentMeta> {
 function saveDeploymentMeta(meta: Record<string, GitLabDeploymentMeta>) {
   try {
     localStorage.setItem(DEPLOY_META_KEY, JSON.stringify(meta));
-  } catch {
-    // intentional: localStorage quota exceeded or unavailable
-  }
+  } catch (err) { silentCatch("stores/slices/system/gitlabSlice:catch1")(err); }
 }
 
 export const createGitLabSlice: StateCreator<SystemStore, [], [], GitLabSlice> = (set, get) => ({
@@ -163,9 +163,7 @@ export const createGitLabSlice: StateCreator<SystemStore, [], [], GitLabSlice> =
     try {
       config = await gitlabGetConfig();
       set({ gitlabConfig: config });
-    } catch {
-      // intentional: non-critical -- no config stored yet is expected on first launch
-    }
+    } catch (err) { silentCatch("stores/slices/system/gitlabSlice:catch2")(err); }
 
     // 2. If already connected, nothing more to do
     if (config?.isConnected) return;

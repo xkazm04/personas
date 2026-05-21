@@ -156,7 +156,7 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
       // Stay in browser-error so the terminal log remains visible
       setPhase('browser-error');
     }
-  }, [designResult, adapter]);
+  }, [designResult, adapter, ace.err_no_adapter, ace.err_no_adapter_hint, ace.err_browser_session_failed, t]);
 
   /** Cancel a running browser session */
   const cancelBrowser = useCallback(() => {
@@ -179,7 +179,7 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
     } catch (err) {
       setHealthResult({ success: false, message: err instanceof Error ? err.message : ace.err_healthcheck_failed });
     }
-  }, [designResult, extractedValues, healthcheckPreview]);
+  }, [ace.err_healthcheck_failed, designResult, extractedValues, healthcheckPreview]);
 
   /**
    * Save the credential.
@@ -211,7 +211,7 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
       savingRef.current = false;
       setIsSaving(false);
     }
-  }, [designResult, credentialName, extractedValues, healthResult, createCredential, fetchCredentials]);
+  }, [designResult, healthResult?.success, createCredential, credentialName, tx, credentialSuffix, extractedValues, fetchCredentials, ace.err_save_failed, t]);
 
   /** Field-level completeness derived from extracted values and connector fields. */
   const completeness: ExtractionCompleteness | null = useMemo(() => {

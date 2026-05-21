@@ -49,6 +49,8 @@ import type {
 import { IconPopover } from './IconPopover';
 import { NumField, RangeField, ToggleRow } from './fields';
 import type { CompileWarning } from '@/lib/bindings/CompileWarning';
+import { DebtText, debtText } from '@/i18n/DebtText';
+
 
 // ---------------------------------------------------------------------------
 // MediaStudioToolbar — top-of-workspace controls.
@@ -126,7 +128,7 @@ export default function MediaStudioToolbar({
       <div className="flex items-center gap-0.5 bg-secondary/30 rounded-card border border-primary/10 p-0.5">
 
         {/* Composition settings — always available */}
-        <IconPopover icon={Settings2} title="Composition settings">
+        <IconPopover icon={Settings2} title={debtText("auto_composition_settings_e216d35d")}>
           <div className="flex flex-col gap-3">
             <div className="grid grid-cols-2 gap-3">
               <NumField
@@ -152,7 +154,7 @@ export default function MediaStudioToolbar({
               onChange={(v) => onUpdateComposition({ fps: Math.max(1, Math.round(v)) })}
             />
             <label className="flex flex-col gap-1">
-              <span className="typo-label text-foreground">Background color</span>
+              <span className="typo-label text-foreground"><DebtText k="auto_background_color_1a0371e3" /></span>
               <input
                 type="color"
                 value={composition.backgroundColor}
@@ -179,7 +181,7 @@ export default function MediaStudioToolbar({
         {/* Trim / timing — media clips */}
         <IconPopover
           icon={Scissors}
-          title="Trim & timing"
+          title={debtText("auto_trim_timing_83bd360a")}
           disabled={!selectedItem}
           active={Boolean(selectedItem && isMedia && ((selectedItem as VideoClip | AudioClip).trimStart > 0 || (selectedItem as VideoClip | AudioClip).trimEnd > 0))}
         >
@@ -217,7 +219,7 @@ export default function MediaStudioToolbar({
                 onClick={() => onSplit(selectedItem.id, engine.getTime())}
               >
                 <Scissors className="w-3.5 h-3.5" />
-                Split at playhead
+                <DebtText k="auto_split_at_playhead_b517494b" />
               </Button>
             </div>
           )}
@@ -329,7 +331,7 @@ export default function MediaStudioToolbar({
         {/* Beat description — text items are beats (timeline milestones) */}
         <IconPopover
           icon={Type}
-          title="Beat description"
+          title={debtText("auto_beat_description_cdb7e9b7")}
           disabled={!isText}
           active={Boolean(isText && selectedItem && (selectedItem as TextItem).text)}
           widthPx={320}
@@ -341,7 +343,7 @@ export default function MediaStudioToolbar({
                 rows={4}
                 value={(selectedItem as TextItem).text}
                 onChange={(e) => update({ text: e.target.value } as Partial<TimelineItem>)}
-                placeholder="What happens at this beat?"
+                placeholder={debtText("auto_what_happens_at_this_beat_c2751886")}
                 className="w-full px-2 py-1 text-md bg-secondary/40 border border-primary/10 rounded-card text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-rose-500/40 resize-none"
               />
             </label>
@@ -349,7 +351,7 @@ export default function MediaStudioToolbar({
         </IconPopover>
 
         {/* Image scale */}
-        <IconPopover icon={SlidersHorizontal} title="Image scale" disabled={!isImage}>
+        <IconPopover icon={SlidersHorizontal} title={debtText("auto_image_scale_f31fd127")} disabled={!isImage}>
           {isImage && selectedItem && (
             <RangeField
               label="Scale"
@@ -364,7 +366,7 @@ export default function MediaStudioToolbar({
         </IconPopover>
 
         {/* Clip actions (split, extract, thumbnail, trim-to-file, transcribe) */}
-        <IconPopover icon={Palette} title="Clip actions" disabled={!selectedItem} widthPx={260}>
+        <IconPopover icon={Palette} title={debtText("auto_clip_actions_7fc4a490")} disabled={!selectedItem} widthPx={260}>
           {selectedItem && (
             <ClipActions
               item={selectedItem}
@@ -394,9 +396,9 @@ export default function MediaStudioToolbar({
           <button
             type="button"
             onClick={persistence.openFile}
-            title="Open composition"
-            aria-label="Open composition"
-            className="w-9 h-9 flex items-center justify-center rounded-card border border-transparent text-foreground/70 hover:bg-secondary/40 hover:text-foreground transition-colors"
+            title={debtText("auto_open_composition_e37b3944")}
+            aria-label={debtText("auto_open_composition_e37b3944")}
+            className="w-9 h-9 flex items-center justify-center rounded-card border border-transparent text-foreground hover:bg-secondary/40 hover:text-foreground transition-colors"
           >
             <FolderOpen className="w-[18px] h-[18px]" />
           </button>
@@ -405,7 +407,7 @@ export default function MediaStudioToolbar({
             onClick={persistence.save}
             title="Save"
             aria-label="Save"
-            className="w-9 h-9 flex items-center justify-center rounded-card border border-transparent text-foreground/70 hover:bg-secondary/40 hover:text-foreground transition-colors"
+            className="w-9 h-9 flex items-center justify-center rounded-card border border-transparent text-foreground hover:bg-secondary/40 hover:text-foreground transition-colors"
           >
             <Save className="w-[18px] h-[18px]" />
           </button>
@@ -413,8 +415,8 @@ export default function MediaStudioToolbar({
             type="button"
             onClick={onExport}
             disabled={exportDisabled || exporting}
-            title="Export MP4"
-            aria-label="Export MP4"
+            title={debtText("auto_export_mp4_323a1180")}
+            aria-label={debtText("auto_export_mp4_323a1180")}
             className="w-9 h-9 flex items-center justify-center rounded-card border border-rose-500/25 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-rose-500/10"
           >
             {exporting ? <Loader2 className="w-[18px] h-[18px] animate-spin" /> : <FileVideo className="w-[18px] h-[18px]" />}
@@ -463,7 +465,7 @@ function WarningsRow({
             type="button"
             onClick={() => onDismiss(w)}
             className="text-amber-400/70 hover:text-amber-300"
-            aria-label="Dismiss warning"
+            aria-label={debtText("auto_dismiss_warning_a3da6a26")}
           >
             ×
           </button>
@@ -536,13 +538,13 @@ function CompositionIdentity({
             (e.currentTarget as HTMLInputElement).blur();
           }
         }}
-        aria-label="Composition name"
+        aria-label={debtText("auto_composition_name_1fa64ed9")}
       />
-      <div className="flex items-center gap-1.5 text-[11px] text-foreground/60 font-mono tabular-nums">
+      <div className="flex items-center gap-1.5 text-[11px] text-foreground font-mono tabular-nums">
         <span>{composition.width}×{composition.height}</span>
-        <span className="text-foreground/30">·</span>
+        <span className="text-foreground">·</span>
         <span>{composition.fps} fps</span>
-        <span className="text-foreground/30">·</span>
+        <span className="text-foreground">·</span>
         <span>{formatTotalDuration(totalDuration)}</span>
       </div>
     </div>
@@ -569,7 +571,7 @@ function StyleGuidePanel({
         placeholder={t.media_studio.style_guide_placeholder}
         className="w-full px-2 py-1.5 text-md bg-secondary/40 border border-primary/10 rounded-card text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-rose-500/40 resize-y font-mono"
       />
-      <p className="text-[11px] text-foreground/60">
+      <p className="text-[11px] text-foreground">
         {t.media_studio.style_guide_hint}
       </p>
       <div className="flex items-center justify-end gap-2">
@@ -788,19 +790,19 @@ function ClipActions({
       {isVideo && (
         <Button variant="ghost" size="sm" onClick={handleExtractAudio}>
           <Music className="w-3.5 h-3.5" />
-          Extract audio
+          <DebtText k="auto_extract_audio_8c971e31" />
         </Button>
       )}
       {isVideo && (
         <Button variant="ghost" size="sm" onClick={handleSaveThumbnail}>
           <Camera className="w-3.5 h-3.5" />
-          Save frame
+          <DebtText k="auto_save_frame_791f6a42" />
         </Button>
       )}
       {isMedia && (
         <Button variant="ghost" size="sm" onClick={handleTrimToFile}>
           <FileVideo className="w-3.5 h-3.5" />
-          Trim to file
+          <DebtText k="auto_trim_to_file_45e39f6b" />
         </Button>
       )}
       {isVideo && (
@@ -820,7 +822,7 @@ function ClipActions({
         </Button>
       )}
       {!isVideo && !isMedia && (
-        <p className="text-[11px] text-foreground/60">No actions available for this item type.</p>
+        <p className="text-[11px] text-foreground"><DebtText k="auto_no_actions_available_for_this_item_type_6571a2b2" /></p>
       )}
     </div>
   );
@@ -835,9 +837,9 @@ function SaveStatusChip({
 }) {
   if (status === 'saving') {
     return (
-      <span className="flex items-center gap-1 text-[11px] text-foreground/60">
+      <span className="flex items-center gap-1 text-[11px] text-foreground">
         <Loader2 className="w-3 h-3 animate-spin" />
-        Saving…
+        <DebtText k="auto_saving_56a2285c" />
       </span>
     );
   }
@@ -845,13 +847,13 @@ function SaveStatusChip({
     return (
       <span className="flex items-center gap-1 text-[11px] text-amber-400">
         <AlertTriangle className="w-3 h-3" />
-        Save failed
+        <DebtText k="auto_save_failed_0a444467" />
       </span>
     );
   }
   if (relativeSaved) {
     return (
-      <span className="flex items-center gap-1 text-[11px] text-foreground/50">
+      <span className="flex items-center gap-1 text-[11px] text-foreground">
         <Check className="w-3 h-3 text-emerald-400/70" />
         {relativeSaved}
       </span>

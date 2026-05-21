@@ -4,6 +4,8 @@ import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import type { Components } from 'react-markdown';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 interface MarkdownRendererProps {
   content: string;
@@ -30,7 +32,7 @@ function InlineBarChart({ raw }: { raw: string }) {
     <div className="my-3 space-y-1.5 p-3 rounded-xl border border-primary/10 bg-secondary/20">
       {entries.map((e, i) => (
         <div key={i} className="flex items-center gap-3">
-          <span className="text-xs text-foreground w-28 truncate text-right">{e.label}</span>
+          <span className="typo-caption text-foreground w-28 truncate text-right">{e.label}</span>
           <div className="flex-1 h-5 rounded bg-primary/[0.06] overflow-hidden">
             <div
               className="h-full rounded bg-gradient-to-r from-primary/40 to-primary/60 transition-all"
@@ -58,9 +60,7 @@ function filterMetaContent(content: string): string {
     try {
       const parsed = JSON.parse(cleaned);
       cleaned = '```json\n' + JSON.stringify(parsed, null, 2) + '\n```';
-    } catch {
-      // Not valid JSON, leave as-is
-    }
+    } catch (err) { silentCatch("features/shared/components/editors/MarkdownRenderer:catch1")(err); }
   }
 
   return cleaned;

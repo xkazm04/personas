@@ -40,7 +40,7 @@ export function ExecutionFactsWidget({ config, title }: CockpitWidgetProps) {
       className="rounded-card border border-foreground/10 bg-foreground/[0.02] p-4 h-full flex flex-col min-h-0"
     >
       <div className="flex items-center justify-between mb-3">
-        <div className="typo-caption text-foreground/60 uppercase tracking-wide">
+        <div className="typo-caption text-foreground uppercase tracking-wide">
           {title ?? t.overview.cockpit.execution_facts_title}
         </div>
       </div>
@@ -84,7 +84,7 @@ export function ExecutionFactsWidget({ config, title }: CockpitWidgetProps) {
             value={`${exec.input_tokens.toLocaleString()} / ${exec.output_tokens.toLocaleString()}`}
           />
           <KpiTile
-            icon={<Tag className="w-3.5 h-3.5 text-foreground/55" />}
+            icon={<Tag className="w-3.5 h-3.5 text-foreground" />}
             label={t.overview.cockpit.fact_status}
             value={exec.status}
             tone={statusTone(exec.status)}
@@ -117,7 +117,7 @@ function KpiTile({
     'text-foreground/95';
   return (
     <div className="rounded-input border border-foreground/10 bg-background/40 px-3 py-2 min-w-0">
-      <div className="flex items-center gap-1.5 typo-caption text-foreground/55">
+      <div className="flex items-center gap-1.5 typo-caption text-foreground">
         {icon}
         <span className="truncate">{label}</span>
       </div>

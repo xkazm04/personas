@@ -24,7 +24,7 @@ export function useAnimatedNumber(target: number): number {
       unregisterAnimation(key);
       keyRef.current = null;
     };
-  }, []);
+  }, [target]);
 
   useEffect(() => {
     if (keyRef.current) {

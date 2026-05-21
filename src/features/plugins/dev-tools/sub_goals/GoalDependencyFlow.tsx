@@ -21,6 +21,8 @@ import {
 import { useTranslation } from '@/i18n/useTranslation';
 import type { DevGoal } from '@/lib/bindings/DevGoal';
 import type { DevGoalDependency } from '@/lib/bindings/DevGoalDependency';
+import { DebtText } from '@/i18n/DebtText';
+
 
 interface Props {
   goals: DevGoal[];
@@ -105,7 +107,7 @@ export function GoalDependencyFlow({ goals, dependencies }: Props) {
       <div className="flex items-baseline gap-3 flex-wrap">
         <Target className="w-4 h-4 text-primary self-center" />
         <h3 className="typo-section-title">{t.plugins.dev_lifecycle.goal_constellation}</h3>
-        <span className="typo-caption text-foreground/60">flow view · hover a card to highlight its dependencies</span>
+        <span className="typo-caption text-foreground"><DebtText k="auto_flow_view_hover_a_card_to_highlight_its_de_2fe513cd" /></span>
       </div>
 
       {/* Swimlanes */}
@@ -121,16 +123,16 @@ export function GoalDependencyFlow({ goals, dependencies }: Props) {
               {/* Column header */}
               <div className="px-3 py-2.5 border-b border-primary/10 flex items-center gap-2 bg-background/30">
                 <Icon className={`w-4 h-4 ${col.tint}`} />
-                <span className="typo-caption uppercase tracking-[0.18em] text-foreground/80">{col.label}</span>
-                <span className="typo-caption text-foreground/50 tabular-nums">{items.length}</span>
-                <span className="ml-auto typo-caption text-foreground/50">{col.sub}</span>
+                <span className="typo-caption uppercase tracking-[0.18em] text-foreground">{col.label}</span>
+                <span className="typo-caption text-foreground tabular-nums">{items.length}</span>
+                <span className="ml-auto typo-caption text-foreground">{col.sub}</span>
               </div>
 
               {/* Cards */}
               <div className="p-2 space-y-2 flex-1">
                 {items.length === 0 ? (
                   <div className="px-3 py-6 text-center">
-                    <p className="typo-caption text-foreground/40">empty</p>
+                    <p className="typo-caption text-foreground">empty</p>
                   </div>
                 ) : (
                   items.map((g) => (
@@ -154,10 +156,10 @@ export function GoalDependencyFlow({ goals, dependencies }: Props) {
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 typo-caption text-foreground/60 flex-wrap">
+      <div className="flex items-center gap-4 typo-caption text-foreground flex-wrap">
         <LegendDot icon={Zap} className="text-violet-400" label="Next up — start here" />
         <LegendDot icon={GitBranch} className="text-amber-400" label="blocks N — finishing unblocks N goals" />
-        <LegendDot icon={Layers} className="text-foreground/70" label="needs N — waits on N goals" />
+        <LegendDot icon={Layers} className="text-foreground" label="needs N — waits on N goals" />
       </div>
     </div>
   );
@@ -201,8 +203,8 @@ function FlowCard({
       ].join(' ')}
     >
       {isNextUp && (
-        <span className="absolute -top-2 left-3 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-violet-500 text-white typo-caption font-semibold uppercase tracking-[0.15em]">
-          <Zap className="w-3 h-3" /> Next up
+        <span className="absolute -top-2 left-3 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-violet-500 text-foreground typo-caption font-semibold uppercase tracking-[0.15em]">
+          <Zap className="w-3 h-3" /> <DebtText k="auto_next_up_fc3817e3" />
         </span>
       )}
 
@@ -211,7 +213,7 @@ function FlowCard({
 
       {/* Parent breadcrumb */}
       {parent && (
-        <p className="typo-caption text-foreground/60 mt-0.5 flex items-center gap-1 truncate">
+        <p className="typo-caption text-foreground mt-0.5 flex items-center gap-1 truncate">
           <ChevronRight className="w-3 h-3 shrink-0" />
           <span className="truncate">{parent.title}</span>
         </p>
@@ -230,7 +232,7 @@ function FlowCard({
             style={{ width: `${goal.progress}%` }}
           />
         </div>
-        <span className="typo-caption text-foreground/60 tabular-nums shrink-0">{goal.progress}%</span>
+        <span className="typo-caption text-foreground tabular-nums shrink-0">{goal.progress}%</span>
       </div>
 
       {/* Badge row */}
@@ -267,7 +269,7 @@ function Badge({ tone, icon: Icon, children }: { tone: 'amber' | 'emerald' | 're
     amber:   'bg-amber-500/10   text-amber-400   border-amber-500/25',
     emerald: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25',
     red:     'bg-red-500/10     text-red-400     border-red-500/25',
-    neutral: 'bg-primary/5      text-foreground/80 border-primary/15',
+    neutral: 'bg-primary/5      text-foreground border-primary/15',
   }[tone];
   return (
     <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full border ${cls} typo-caption font-medium tabular-nums`}>

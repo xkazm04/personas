@@ -54,9 +54,9 @@ export function PopupIconSelector({ value, onChange, connectors = [], size = 'sm
           ) : safeUrl ? (
             <img src={safeUrl} alt="" className="w-5 h-5 rounded" referrerPolicy="no-referrer" crossOrigin="anonymous" />
           ) : isEmoji ? (
-            <span className="text-lg leading-none">{value}</span>
+            <span className="typo-body-lg leading-none">{value}</span>
           ) : (
-            <span className="text-lg leading-none">{value}</span>
+            <span className="typo-body-lg leading-none">{value}</span>
           )
         ) : (
           <Smile className="w-4 h-4 text-foreground" />

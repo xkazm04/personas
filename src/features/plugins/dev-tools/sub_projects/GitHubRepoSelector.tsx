@@ -10,6 +10,8 @@ const Github = ({ className }: { className?: string }) => (
 );
 import { listCredentials, healthcheckCredential } from '@/api/vault/credentials';
 import { executeApiRequest } from '@/api/system/apiProxy';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 interface GitHubRepo {
   full_name: string;
@@ -71,9 +73,7 @@ export function GitHubRepoSelector({ value, onChange }: Props) {
           setRepos(parsed);
           setHasSelector(true);
         }
-      } catch {
-        // Silently fail -- fall back to manual input
-      } finally {
+      } catch (err) { silentCatch("features/plugins/dev-tools/sub_projects/GitHubRepoSelector:catch1")(err); } finally {
         if (!cancelled) setLoading(false);
       }
     })();

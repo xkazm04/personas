@@ -7,6 +7,8 @@ import type { ManualReviewItem } from '@/lib/types/types';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 import { InboxItem } from './ReviewListItem';
 import { ConversationThread } from './ReviewDetailPanel';
+import { debtText } from '@/i18n/DebtText';
+
 
 type ViewMode = 'default' | 'table';
 
@@ -156,7 +158,7 @@ export function ReviewInboxPanel({
           <div
             onPointerDown={handleResizeStart}
             className="w-1 flex-shrink-0 cursor-col-resize group relative z-10 hover:bg-primary/20 active:bg-primary/30 transition-colors"
-            title="Drag to resize"
+            title={debtText("auto_drag_to_resize_01f90cde")}
           >
             <div className="absolute inset-y-0 -left-1 -right-1" />
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-8 rounded-full bg-muted-foreground/20 group-hover:bg-primary/40 transition-colors" />

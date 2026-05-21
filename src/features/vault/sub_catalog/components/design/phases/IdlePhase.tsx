@@ -119,7 +119,7 @@ export function IdlePhase({
           <button
             onClick={onAutoSetup}
             disabled={!instruction.trim()}
-            className="flex items-center gap-2 px-4 py-2.5 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-modal typo-body font-medium transition-all shadow-elevation-3 shadow-cyan-600/20"
+            className="flex items-center gap-2 px-4 py-2.5 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-40 disabled:cursor-not-allowed text-foreground rounded-modal typo-body font-medium transition-all shadow-elevation-3 shadow-cyan-600/20"
           >
             <Bot className="w-4 h-4" />
             {t.vault.design_phases.auto_setup}

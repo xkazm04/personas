@@ -60,7 +60,7 @@ export default function ContextCard({
         ) : (
           <span
             title={t.plugins.dev_tools.context_no_goal_tooltip}
-            className="inline-flex items-center gap-1 text-[10px] text-foreground/40 border border-dashed border-foreground/15 rounded-full px-2 py-0.5"
+            className="inline-flex items-center gap-1 text-[10px] text-foreground border border-dashed border-foreground/15 rounded-full px-2 py-0.5"
           >
             <Target className="w-3 h-3" />
             {t.plugins.dev_tools.context_no_goal_label}

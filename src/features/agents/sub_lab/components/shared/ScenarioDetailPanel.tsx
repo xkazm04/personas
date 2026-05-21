@@ -8,6 +8,8 @@ import { silentCatch } from '@/lib/silentCatch';
 import type { LabResultKind } from '@/lib/bindings/LabResultKind';
 import type { LabToolCall } from '@/lib/bindings/LabToolCall';
 import { useTranslation } from '@/i18n/useTranslation';
+import { DebtText, debtText } from '@/i18n/DebtText';
+
 
 interface ScenarioResult {
   scenarioName: string;
@@ -52,7 +54,7 @@ function parseRationale(raw: string | null): { structured: StructuredRationale |
     if (typeof parsed === 'object' && parsed !== null && (parsed.tool_accuracy || parsed.output_quality || parsed.protocol || parsed.verdict)) {
       return { structured: parsed, plain: null };
     }
-  } catch { /* not JSON — treat as plain string */ }
+  } catch (err) { silentCatch("features/agents/sub_lab/components/shared/ScenarioDetailPanel:catch1")(err); }
   return { structured: null, plain: raw };
 }
 
@@ -151,7 +153,7 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
           <span className="typo-body font-medium text-foreground/90 truncate">{result.scenarioName}</span>
           {result.modelId && <span className="typo-caption px-1.5 py-0.5 rounded bg-primary/10 text-primary/70">{result.modelId}</span>}
         </div>
-        <button onClick={onClose} aria-label="Close details" className="p-1 rounded hover:bg-secondary/50 text-foreground hover:text-foreground transition-colors">
+        <button onClick={onClose} aria-label={debtText("auto_close_details_433da6d1")} className="p-1 rounded hover:bg-secondary/50 text-foreground hover:text-foreground transition-colors">
           <X className="w-3.5 h-3.5" />
         </button>
       </div>
@@ -170,7 +172,7 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
           <div className={`typo-hero font-black tracking-tight ${scoreColor(composite)}`}>{composite ?? '—'}</div>
           <div>
             <span className={`typo-heading font-semibold ${scoreColor(composite)}`}>{scoreLabel(composite)}</span>
-            <p className="typo-caption text-foreground">Composite Score (TA 40% + OQ 40% + PC 20%)</p>
+            <p className="typo-caption text-foreground"><DebtText k="auto_composite_score_ta_40_oq_40_pc_20_0839893e" /></p>
           </div>
           <div className="flex-1" />
           <div className="text-right typo-caption text-foreground">

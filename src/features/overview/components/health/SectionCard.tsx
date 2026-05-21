@@ -68,7 +68,7 @@ export function SectionCard({
           /* Loading indicator — shown while this section's health check is in-flight */
           <div className="flex-1 flex flex-col items-center justify-center gap-2.5 py-6 px-4">
             <Loader2 className={`w-5 h-5 animate-spin ${sectionStyle.icon} opacity-60`} />
-            <span className="text-xs text-foreground">{t.overview.section_card.checking.replace('{section}', section.label.toLowerCase())}</span>
+            <span className="typo-caption text-foreground">{t.overview.section_card.checking.replace('{section}', section.label.toLowerCase())}</span>
           </div>
         ) : (
           section.items.map((check) => (

@@ -10,6 +10,8 @@ import type { RenderPlan } from '@/lib/bindings/RenderPlan';
 import type { SourceEntry } from '@/lib/bindings/SourceEntry';
 import type { VideoStage } from '@/lib/bindings/VideoStage';
 import { approxLoudnormGain, fadeEnvelope } from './renderPlanHelpers';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 interface CompositionPreviewProps {
   engine: PlaybackEngine;
@@ -129,22 +131,21 @@ function CompositionPreviewImpl(
       if (Math.abs(video.currentTime - target) > threshold) {
         try {
           video.currentTime = Math.max(0, target);
-        } catch {
-          /* media not ready — retry on loadedmetadata */
-        }
+        } catch (err) { silentCatch("features/plugins/artist/sub_media_studio/CompositionPreview:catch1")(err); }
       }
     };
 
     if (video.readyState >= 1) {
       applySync();
-    } else {
-      const onLoaded = () => {
-        applySync();
-        video.removeEventListener('loadedmetadata', onLoaded);
-      };
-      video.addEventListener('loadedmetadata', onLoaded);
-      return () => video.removeEventListener('loadedmetadata', onLoaded);
+      return;
     }
+
+    const onLoaded = () => {
+      applySync();
+      video.removeEventListener('loadedmetadata', onLoaded);
+    };
+    video.addEventListener('loadedmetadata', onLoaded);
+    return () => video.removeEventListener('loadedmetadata', onLoaded);
   }, [activeVideo, videoTargetSourceTime, playing]);
 
   useEffect(() => {
@@ -216,9 +217,7 @@ function CompositionPreviewImpl(
         try {
           nodes.source.disconnect();
           nodes.gain.disconnect();
-        } catch {
-          /* ignore */
-        }
+        } catch (err) { silentCatch("features/plugins/artist/sub_media_studio/CompositionPreview:catch2")(err); }
         audioNodesRef.current.delete(id);
       }
     }
@@ -273,9 +272,7 @@ function CompositionPreviewImpl(
       if (Math.abs(el.currentTime - targetLocal) > threshold) {
         try {
           el.currentTime = Math.max(0, targetLocal);
-        } catch {
-          /* ignore */
-        }
+        } catch (err) { silentCatch("features/plugins/artist/sub_media_studio/CompositionPreview:catch3")(err); }
       }
 
       if (playing && el.paused) el.play().catch(() => {});
@@ -388,12 +385,12 @@ function CompositionPreviewImpl(
 
           <div className="absolute bottom-2 right-2 flex items-center gap-1.5">
             {activeVideo && activeVideo.speed !== 1 && (
-              <span className="px-1.5 py-0.5 rounded bg-rose-500/80 typo-code text-white tabular-nums">
+              <span className="px-1.5 py-0.5 rounded bg-rose-500/80 typo-code text-foreground tabular-nums">
                 {activeVideo.speed.toFixed(2)}×
               </span>
             )}
             <div className="px-2 py-0.5 rounded bg-black/70 backdrop-blur-sm">
-              <span className="typo-code text-white/80 tabular-nums">
+              <span className="typo-code text-foreground tabular-nums">
                 {formatTimecode(currentTime)}
               </span>
             </div>

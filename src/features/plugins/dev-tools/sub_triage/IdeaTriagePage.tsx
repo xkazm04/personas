@@ -148,25 +148,25 @@ function SwipeCard({
         {/* Title + description */}
         <h3 className="typo-heading-lg font-semibold text-primary mb-2">{idea.title}</h3>
         {idea.agentLabel && (
-          <p className="text-md text-foreground/70 -mt-1 mb-2 flex items-center gap-1.5 flex-wrap">
+          <p className="text-md text-foreground -mt-1 mb-2 flex items-center gap-1.5 flex-wrap">
             <span>{idea.agentEmoji}</span>
             <span className="font-medium text-foreground/85">{idea.agentLabel}</span>
             {idea.agentRank !== null ? (
               <>
-                <span className="text-foreground/40">·</span>
-                <span className="text-foreground/70 tabular-nums">
+                <span className="text-foreground">·</span>
+                <span className="text-foreground tabular-nums">
                   {dt.triage_agent_rank_prefix}#{idea.agentRank}
                 </span>
                 {idea.agentAcceptRate !== null && (
-                  <span className="text-foreground/60 tabular-nums">
+                  <span className="text-foreground tabular-nums">
                     ({Math.round(idea.agentAcceptRate * 100)}{dt.triage_agent_accept_suffix})
                   </span>
                 )}
               </>
             ) : (
               <>
-                <span className="text-foreground/40">·</span>
-                <span className="text-foreground/50 italic">{dt.triage_agent_no_rank}</span>
+                <span className="text-foreground">·</span>
+                <span className="text-foreground italic">{dt.triage_agent_no_rank}</span>
               </>
             )}
           </p>

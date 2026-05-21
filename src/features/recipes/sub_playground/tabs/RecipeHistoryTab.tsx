@@ -4,6 +4,8 @@ import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownR
 import type { RecipeExecutionResult } from '@/lib/bindings/RecipeExecutionResult';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 interface RecipeHistoryTabProps {
   history: RecipeExecutionResult[];
@@ -76,7 +78,7 @@ export function RecipeHistoryTab({ history, onClear, onTryIt }: RecipeHistoryTab
                     (() => {
                       const trimmed = run.llm_output!.trim();
                       if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
-                        try { return '```json\n' + JSON.stringify(JSON.parse(trimmed), null, 2) + '\n```'; } catch { /* intentional: non-critical -- JSON parse fallback */ }
+                        try { return '```json\n' + JSON.stringify(JSON.parse(trimmed), null, 2) + '\n```'; } catch (err) { silentCatch("features/recipes/sub_playground/tabs/RecipeHistoryTab:catch1")(err); }
                       }
                       return trimmed;
                     })()

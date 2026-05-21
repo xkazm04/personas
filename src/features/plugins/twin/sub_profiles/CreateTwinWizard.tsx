@@ -6,8 +6,11 @@ import * as twinApi from '@/api/twin/twin';
 import { Button } from '@/features/shared/components/buttons';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { useTranslation } from '@/i18n/useTranslation';
+import { BaseModal } from '@/lib/ui/BaseModal';
 import { GENDERS, pronounsFromGender, type Gender } from '../_shared/gender';
 import { DEPLOYMENT_CHANNELS } from '../_shared/channels';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 /**
  * Four-step wizard for creating a twin with a chronological onboarding
@@ -147,9 +150,7 @@ export function CreateTwinWizard({ onClose }: { onClose: () => void }) {
             `twin.wizard.pending_tones.${profile.id}`,
             JSON.stringify([...selectedChannels]),
           );
-        } catch {
-          // localStorage unavailable — not critical
-        }
+        } catch (err) { silentCatch("features/plugins/twin/sub_profiles/CreateTwinWizard:catch1")(err); }
       }
 
       onClose();
@@ -163,14 +164,14 @@ export function CreateTwinWizard({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 surface-blur-modal"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="twin-wizard-title"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    <BaseModal
+      isOpen
+      onClose={onClose}
+      titleId="twin-wizard-title"
+      size="md"
+      panelClassName="rounded-card border border-violet-500/20 bg-card shadow-elevation-3 max-h-[90vh] flex flex-col overflow-hidden"
+      staggerChildren={false}
     >
-      <div className="w-full max-w-xl rounded-card border border-violet-500/20 bg-card shadow-elevation-3 max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-primary/10">
           <div className="flex items-center gap-2">
@@ -411,8 +412,7 @@ export function CreateTwinWizard({ onClose }: { onClose: () => void }) {
             </div>
           </div>
         )}
-      </div>
-    </div>
+    </BaseModal>
   );
 }
 

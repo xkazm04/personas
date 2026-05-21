@@ -22,6 +22,8 @@ import { RegressionResultsView } from './RegressionResultsView';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useRegressionPanelState, REG_DEFAULT_THRESHOLD } from './useRegressionPanelState';
 import { compositeScore } from '@/lib/eval/evalFramework';
+import { DebtText, debtText } from '@/i18n/DebtText';
+
 
 function ThresholdGauge({ value }: { value: number }) {
   // Render a quarter-circle dial that maps 0..50 → 0..270deg
@@ -53,7 +55,7 @@ function ThresholdGauge({ value }: { value: number }) {
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-end pb-1">
         <div className="typo-data-lg text-foreground leading-none">{value}</div>
-        <div className="typo-caption text-foreground/60">pts drop</div>
+        <div className="typo-caption text-foreground"><DebtText k="auto_pts_drop_3f43c7c7" /></div>
       </div>
     </div>
   );
@@ -70,13 +72,13 @@ function WarningLight({ dim, threshold }: { dim: DimSummary; threshold: number }
   const status = dim.delta > 0 ? 'pass' : dim.delta >= -threshold ? 'watch' : 'fail';
   const tone = {
     pass:  { dot: 'bg-emerald-400 shadow-[0_0_12px] shadow-emerald-400/40', label: 'pass',  text: 'text-emerald-300' },
-    watch: { dot: 'bg-foreground/50',                                         label: 'flat',  text: 'text-foreground/70' },
+    watch: { dot: 'bg-foreground/50',                                         label: 'flat',  text: 'text-foreground' },
     fail:  { dot: 'bg-red-400 shadow-[0_0_12px] shadow-red-400/40',           label: 'fail',  text: 'text-red-300' },
   }[status];
   return (
     <div className="flex items-center gap-3 rounded-card border border-primary/12 bg-background/40 px-3 py-2.5">
       <div className={`w-2.5 h-2.5 rounded-full ${tone.dot}`} aria-hidden />
-      <Icon className="w-3.5 h-3.5 text-foreground/60" />
+      <Icon className="w-3.5 h-3.5 text-foreground" />
       <span className="flex-1 typo-caption text-foreground">{dim.label}</span>
       <span className={`typo-data ${tone.text}`}>
         {dim.delta > 0 ? '+' : ''}{dim.delta}
@@ -145,8 +147,8 @@ export function RegressionPanelConsole() {
         {/* Left: vital signs */}
         <div className="rounded-card border border-primary/12 bg-secondary/15 p-3 space-y-3">
           <div className="flex items-center gap-2">
-            <Gauge className="w-4 h-4 text-foreground/70" />
-            <h3 className="typo-heading text-foreground">Vital signs</h3>
+            <Gauge className="w-4 h-4 text-foreground" />
+            <h3 className="typo-heading text-foreground"><DebtText k="auto_vital_signs_d773f8bb" /></h3>
           </div>
           <div className="rounded-card border border-amber-500/25 bg-amber-500/5 px-3 py-2.5">
             <div className="flex items-center gap-2">
@@ -154,32 +156,32 @@ export function RegressionPanelConsole() {
               <span className="typo-label text-amber-300">baseline</span>
             </div>
             <div className="typo-data-lg text-amber-300 mt-0.5">v{s.baselinePin.versionNumber}</div>
-            <div className="typo-caption text-foreground/60">
+            <div className="typo-caption text-foreground">
               pinned {new Date(s.baselinePin.pinnedAt).toLocaleDateString()}
             </div>
           </div>
           <div className="rounded-card border border-primary/12 bg-background/30 px-3 py-3">
-            <p className="typo-label text-foreground/60 mb-2 text-center">threshold</p>
+            <p className="typo-label text-foreground mb-2 text-center">threshold</p>
             <ThresholdGauge value={s.threshold} />
             <input
               type="range" min={1} max={50}
               value={s.threshold}
               onChange={(e) => s.setThreshold(Number(e.target.value) || REG_DEFAULT_THRESHOLD)}
               className="w-full mt-2 h-1 accent-primary"
-              aria-label="Regression threshold"
+              aria-label={debtText("auto_regression_threshold_d8b35da0")}
             />
           </div>
           <div className="rounded-card border border-primary/12 bg-background/30 px-3 py-2.5">
-            <p className="typo-label text-foreground/60">models</p>
+            <p className="typo-label text-foreground">models</p>
             <p className="typo-data-lg text-foreground">{s.selectedModels.size}</p>
-            <p className="typo-caption text-foreground/60">selected</p>
+            <p className="typo-caption text-foreground">selected</p>
           </div>
         </div>
 
         {/* Centre: specimen comparison */}
         <div className="rounded-card border border-primary/12 bg-secondary/15 p-4 flex flex-col">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="typo-heading text-foreground">Specimen comparison</h3>
+            <h3 className="typo-heading text-foreground"><DebtText k="auto_specimen_comparison_607579f4" /></h3>
             {overallDelta != null && (
               <span className={`typo-data ${overallDelta >= 0 ? 'text-emerald-300' : 'text-red-300'}`}>
                 Δ {overallDelta >= 0 ? '+' : ''}{overallDelta} pts
@@ -194,10 +196,10 @@ export function RegressionPanelConsole() {
                 <span className="typo-label text-amber-300">baseline</span>
               </div>
               <div className="typo-hero text-amber-300 leading-none">v{s.baselinePin.versionNumber}</div>
-              <div className="typo-caption text-foreground/60 mt-1">
-                {s.baselineResults.length} eval result{s.baselineResults.length !== 1 ? 's' : ''} on file
+              <div className="typo-caption text-foreground mt-1">
+                {s.baselineResults.length} <DebtText k="auto_eval_result_c54ed304" />{s.baselineResults.length !== 1 ? 's' : ''} <DebtText k="auto_on_file_8b983a13" />
               </div>
-              <div className="mt-auto pt-2 typo-caption text-foreground/60">
+              <div className="mt-auto pt-2 typo-caption text-foreground">
                 {s.baselinePin.runId
                   ? `run ${s.baselinePin.runId.slice(0, 8)}…`
                   : 'no eval run linked'}
@@ -213,13 +215,13 @@ export function RegressionPanelConsole() {
               {s.selectedVersion ? (
                 <>
                   <div className="typo-hero text-primary leading-none">v{s.selectedVersion.version_number}</div>
-                  <div className="typo-caption text-foreground/60 mt-1">
+                  <div className="typo-caption text-foreground mt-1">
                     {s.selectedVersion.tag}
                     {s.currentResults.length > 0 ? ` · ${s.currentResults.length} runs` : ''}
                   </div>
                 </>
               ) : (
-                <div className="typo-body text-foreground/60">No version selected</div>
+                <div className="typo-body text-foreground"><DebtText k="auto_no_version_selected_4180bfe5" /></div>
               )}
               <div className="mt-auto pt-2 flex flex-wrap gap-1.5">
                 {s.promptVersions
@@ -265,13 +267,13 @@ export function RegressionPanelConsole() {
         {/* Right: warning lights */}
         <div className="rounded-card border border-primary/12 bg-secondary/15 p-3 space-y-2">
           <div className="flex items-center gap-2 mb-1">
-            <ShieldCheck className="w-4 h-4 text-foreground/70" />
-            <h3 className="typo-heading text-foreground">Status panel</h3>
+            <ShieldCheck className="w-4 h-4 text-foreground" />
+            <h3 className="typo-heading text-foreground"><DebtText k="auto_status_panel_139bdebc" /></h3>
           </div>
           {dimDeltas.length === 0 ? (
             <div className="rounded-card border border-primary/10 bg-background/20 px-3 py-6 text-center">
-              <p className="typo-caption text-foreground/60">
-                Awaiting telemetry — run the gate to populate.
+              <p className="typo-caption text-foreground">
+                <DebtText k="auto_awaiting_telemetry_run_the_gate_to_populat_bae1f9a6" />
               </p>
             </div>
           ) : (
@@ -283,7 +285,7 @@ export function RegressionPanelConsole() {
             <div className="flex items-start gap-2 px-3 py-2.5 rounded-card border border-amber-500/15 bg-amber-500/5">
               <AlertTriangle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0 mt-0.5" />
               <p className="typo-caption text-amber-300/80 leading-relaxed">
-                No baseline eval results on file. Run an eval on v{s.baselinePin.versionNumber} first.
+                <DebtText k="auto_no_baseline_eval_results_on_file_run_an_ev_bb014e23" />{s.baselinePin.versionNumber} <DebtText k="auto_first_49ec0838" />
               </p>
             </div>
           )}

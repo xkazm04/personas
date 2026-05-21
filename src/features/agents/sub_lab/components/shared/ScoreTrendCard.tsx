@@ -7,6 +7,8 @@ import type { LabAbResult } from '@/lib/bindings/LabAbResult';
 import type { LabMatrixResult } from '@/lib/bindings/LabMatrixResult';
 import type { LabEvalResult } from '@/lib/bindings/LabEvalResult';
 import { useTranslation } from '@/i18n/useTranslation';
+import { DebtText } from '@/i18n/DebtText';
+
 
 interface ScoreTrendCardProps {
   personaId: string;
@@ -145,7 +147,7 @@ export function ScoreTrendCard({ personaId }: ScoreTrendCardProps) {
         <TrendingUp className="w-3.5 h-3.5 text-primary/70" />
         <span className="typo-caption font-medium text-foreground">{t.agents.lab.score_trend}</span>
         {bestScore != null && (
-          <span className="ml-auto typo-caption text-emerald-400 font-medium">Best: {bestScore}</span>
+          <span className="ml-auto typo-caption text-emerald-400 font-medium"><DebtText k="auto_best_33abaf20" /> {bestScore}</span>
         )}
       </div>
 
@@ -217,7 +219,7 @@ export function ScoreTrendCard({ personaId }: ScoreTrendCardProps) {
 
         {/* Visually-hidden table fallback for screen readers */}
         <table className="sr-only">
-          <caption>Score trend data points</caption>
+          <caption><DebtText k="auto_score_trend_data_points_adfed6de" /></caption>
           <thead><tr><th>Run</th><th>Score</th></tr></thead>
           <tbody>
             {dataPoints.map((dp, i) => (

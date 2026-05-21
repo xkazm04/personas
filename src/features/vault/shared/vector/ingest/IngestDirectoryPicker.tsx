@@ -184,7 +184,7 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
           <button
             onClick={() => void handleSubmit()}
             disabled={!canSubmit}
-            className="px-4 py-2 typo-body font-medium rounded-card bg-violet-600/80 hover:bg-violet-600 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="px-4 py-2 typo-body font-medium rounded-card bg-violet-600/80 hover:bg-violet-600 text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {ingesting ? (
               <span className="flex items-center gap-2">

@@ -11,6 +11,8 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
 import { EventName } from '@/lib/eventRegistry';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 export function useCreativeSession() {
   const { t, tx } = useTranslation();
@@ -94,9 +96,7 @@ export function useCreativeSession() {
           : tx(t.plugins.artist.imported_assets_other, { count: imported });
         appendOutput(`[System] ${msg}`);
       }
-    } catch {
-      // Scan failure is non-critical
-    }
+    } catch (err) { silentCatch("features/plugins/artist/hooks/useCreativeSession:catch1")(err); }
   }, [artistFolder, appendOutput, t, tx]);
 
   // Listen to streaming events

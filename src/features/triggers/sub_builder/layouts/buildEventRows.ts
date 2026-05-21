@@ -12,6 +12,8 @@ import type { PersonaEventSubscription } from '@/lib/bindings/PersonaEventSubscr
 import { EVENT_SOURCE_CATEGORIES, findTemplateByEventType } from '../libs/eventCanvasConstants';
 import { parseChainTrigger, type ChainTriggerView } from './routingHelpers';
 import type { EventRow, SourceClass } from './routingHelpers';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 export function buildEventRows(
   allTriggers: PersonaTrigger[],
@@ -144,7 +146,7 @@ export function buildEventRows(
         persona: personaMap.get(t.persona_id),
         useCaseId: t.use_case_id,
       });
-    } catch { /* skip */ }
+    } catch (err) { silentCatch("features/triggers/sub_builder/layouts/buildEventRows:catch1")(err); }
   }
 
   // Final pass: drop dead-noise rows.

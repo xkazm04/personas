@@ -61,11 +61,11 @@ export function QuestionnaireStackedOptions({
             }`}
           >
             <div className="flex-1 min-w-0">
-              <div className="text-base font-medium text-foreground leading-snug">
+              <div className="typo-body-lg font-medium text-foreground leading-snug">
                 {opt.label}
               </div>
               {opt.sublabel && (
-                <div className="text-sm text-foreground/65 leading-snug mt-1">
+                <div className="typo-body text-foreground leading-snug mt-1">
                   {opt.sublabel}
                 </div>
               )}
@@ -82,10 +82,10 @@ export function QuestionnaireStackedOptions({
                     exit={{ opacity: 0, scale: 0.85 }}
                     transition={fadeTransition}
                     aria-hidden="true"
-                    className={`hide-on-touch absolute top-2 right-2 px-1.5 min-w-[1.25rem] h-5 rounded-md flex items-center justify-center font-mono text-[11px] font-semibold border pointer-events-none ${
+                    className={`hide-on-touch absolute top-2 right-2 px-1.5 min-w-[1.25rem] h-5 rounded-input flex items-center justify-center font-mono text-[11px] font-semibold border pointer-events-none ${
                       isSelected
                         ? 'bg-primary/15 text-primary/85 border-primary/30'
-                        : 'bg-foreground/[0.04] text-foreground/55 border-border/60'
+                        : 'bg-foreground/[0.04] text-foreground border-border/60'
                     }`}
                   >
                     {num}

@@ -921,7 +921,7 @@ function AsyncColumnEntries(props: {
     return () => {
       cancelled = true;
     };
-  }, [props.path, props.cachedEntriesFor]);
+  }, [props.path, props.cachedEntriesFor, props]);
   if (!loaded) {
     return <ColumnLoadingLabel />;
   }

@@ -13,7 +13,7 @@ export function CapabilityTriggerPane({ capability }: Props) {
   if (!trig) {
     return (
       <p
-        className="typo-body-sm text-foreground/45 py-3"
+        className="typo-body-sm text-foreground py-3"
         data-testid={`capability-trigger-empty-${capability.id}`}
       >
         {t.matrix_v3.capability_row_field_pending}
@@ -42,17 +42,17 @@ export function CapabilityTriggerPane({ capability }: Props) {
           {trig.trigger_type}
         </span>
         {trig.description ? (
-          <span className="typo-body-sm text-foreground/70 truncate">
+          <span className="typo-body-sm text-foreground truncate">
             {trig.description}
           </span>
         ) : null}
       </div>
 
       {rows.length > 0 ? (
-        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 rounded-xl border border-border/30 bg-background/40 px-3 py-2">
+        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 rounded-modal border border-border/30 bg-background/40 px-3 py-2">
           {rows.map((row) => (
             <div key={row.key} className="contents">
-              <dt className="typo-caption font-medium text-foreground/50">{row.key}</dt>
+              <dt className="typo-caption font-medium text-foreground">{row.key}</dt>
               <dd className="typo-body-sm text-foreground break-all">{row.value}</dd>
             </div>
           ))}

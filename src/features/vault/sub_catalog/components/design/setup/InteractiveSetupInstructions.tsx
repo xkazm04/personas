@@ -15,6 +15,8 @@ import { parseSteps, simpleHash, readPersistedSteps, ProgressRingBadge } from '@
 import { buildComponents } from '@/features/vault/sub_catalog/components/design/setup/setupMarkdownComponents';
 import { SetupStepCard } from '@/features/vault/sub_catalog/components/design/setup/SetupStepCard';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 interface InteractiveSetupInstructionsProps {
   markdown: string;
@@ -50,14 +52,14 @@ export function InteractiveSetupInstructions({
     const saved = readPersistedSteps(storageKey);
     saved.forEach((i) => rawToggle(i));
     setRestored(true);
-  }, [storageKey]);
+  }, [rawToggle, storageKey]);
 
   // Persist whenever completedSteps changes (after initial restore)
   useEffect(() => {
     if (!restored) return;
     try {
       localStorage.setItem(storageKey, JSON.stringify([...completedSteps]));
-    } catch { /* intentional: non-critical -- localStorage fallback */ }
+    } catch (err) { silentCatch("features/vault/sub_catalog/components/design/setup/InteractiveSetupInstructions:catch1")(err); }
   }, [completedSteps, storageKey, restored]);
 
   const toggleStep = rawToggle;

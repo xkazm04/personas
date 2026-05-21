@@ -9,6 +9,8 @@ import { createLogger } from '@/lib/log';
 /** localStorage key for persisted adoption context (legacy wizard) */
 const ADOPT_CONTEXT_KEY = 'template-adopt-context-v1';
 import { sendOsNotification } from '@/lib/utils/platform/osNotification';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 const logger = createLogger('adoption-notifier');
 const POLL_INTERVAL_MS = 5_000;
@@ -37,7 +39,7 @@ export function useAdoptionCompletionNotifier(
      *  - terminal notifications don't fire repeatedly for the same adoption
      *  - dead/GC'd backend snapshots stop being polled */
     const clearStoredContext = () => {
-      try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch { /* ignore */ }
+      try { window.localStorage.removeItem(ADOPT_CONTEXT_KEY); } catch (err) { silentCatch("features/templates/sub_generated/gallery/cards/useAdoptionCompletionNotifier:catch1")(err); }
     };
 
     const check = async () => {

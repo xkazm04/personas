@@ -12,6 +12,8 @@ import type { TwinChannelKind } from '@/api/enums';
 import { TwinEmptyState } from '../TwinEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DEPLOYMENT_CHANNELS, getDeploymentChannelMeta, paletteOf } from '../_shared/channels';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 /* ------------------------------------------------------------------ *
  *  Atelier — "Antenna Grid"
@@ -86,11 +88,11 @@ export default function ChannelsAtelier() {
     catch (err: unknown) { setFormError(err instanceof Error ? err.message : typeof err === 'string' ? err : 'Failed to create channel'); }
     finally { setSubmitting(false); }
   };
-  const handleToggle = async (ch: TwinChannel) => { try { await updateChannel(ch.id, { isActive: !ch.is_active }); } catch { /* noop */ } };
+  const handleToggle = async (ch: TwinChannel) => { try { await updateChannel(ch.id, { isActive: !ch.is_active }); } catch (err) { silentCatch("features/plugins/twin/sub_channels/ChannelsAtelier:catch1")(err); } };
   const requestDelete = (ch: TwinChannel) => setConfirmRemove(ch);
   const performDelete = async () => {
     if (!confirmRemove) return;
-    try { await deleteChannel(confirmRemove.id); } catch { /* noop */ }
+    try { await deleteChannel(confirmRemove.id); } catch (err) { silentCatch("features/plugins/twin/sub_channels/ChannelsAtelier:catch2")(err); }
     setConfirmRemove(null);
   };
 
@@ -134,7 +136,7 @@ export default function ChannelsAtelier() {
           <div className="flex-1 min-w-0">
             <p className="text-[10px] uppercase tracking-[0.22em] text-violet-300/80 font-medium">{t.channels.eyebrowAtelier}</p>
             <h1 className="typo-heading-lg text-foreground/95">{t.channels.title}</h1>
-            <p className="typo-caption text-foreground/65 mt-0.5">{t.channels.subtitle}</p>
+            <p className="typo-caption text-foreground mt-0.5">{t.channels.subtitle}</p>
           </div>
           <div className="hidden md:flex items-center gap-3 px-3 py-2 rounded-full border border-primary/15 bg-card/40">
             <Stat label={t.channels.statActive} value={stats.active} accent="emerald" />
@@ -169,7 +171,7 @@ export default function ChannelsAtelier() {
                       <Plus className="w-4 h-4 text-violet-300" />
                       <h3 className="typo-section-title">{t.channels.addChannel}</h3>
                     </div>
-                    <button onClick={resetForm} className="text-foreground/65 hover:text-foreground"><X className="w-4 h-4" /></button>
+                    <button onClick={resetForm} className="text-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <FieldGroup label={t.channels.channelType}>
@@ -201,7 +203,7 @@ export default function ChannelsAtelier() {
 
           {/* Channel list */}
           {isLoading && channels.length === 0 ? (
-            <p className="typo-body text-foreground/65 text-center py-12">{t.channels.loading}</p>
+            <p className="typo-body text-foreground text-center py-12">{t.channels.loading}</p>
           ) : channels.length === 0 && !adding ? (
             <div className="py-16 text-center max-w-md mx-auto">
               <div className="relative w-20 h-20 mx-auto mb-4">
@@ -212,7 +214,7 @@ export default function ChannelsAtelier() {
                 </div>
               </div>
               <p className="typo-body text-foreground font-medium">{t.channels.noChannelsConfigured}</p>
-              <p className="typo-caption text-foreground/65 mt-1">{t.channels.noChannelsHint}</p>
+              <p className="typo-caption text-foreground mt-1">{t.channels.noChannelsHint}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
@@ -251,46 +253,46 @@ export default function ChannelsAtelier() {
                           <h3 className="typo-card-label truncate">{ch.label ?? meta.label}</h3>
                           <div className="flex items-center gap-2 mt-1">
                             <span className={`px-1.5 py-0.5 text-[9px] font-medium rounded-full bg-card/60 ${meta.text} uppercase tracking-wider`}>{meta.label}</span>
-                            {!ch.is_active && <span className="px-1.5 py-0.5 text-[9px] font-medium rounded-full bg-secondary/40 text-foreground/55 uppercase tracking-wider">{t.channels.paused}</span>}
+                            {!ch.is_active && <span className="px-1.5 py-0.5 text-[9px] font-medium rounded-full bg-secondary/40 text-foreground uppercase tracking-wider">{t.channels.paused}</span>}
                           </div>
                         </div>
                         <div className="flex items-center gap-0.5 flex-shrink-0">
-                          <button onClick={() => handleToggle(ch)} title={ch.is_active ? t.channels.pause : t.channels.activate} className="p-1.5 rounded-interactive text-foreground/65 hover:text-foreground hover:bg-secondary/40 transition-colors">
+                          <button onClick={() => handleToggle(ch)} title={ch.is_active ? t.channels.pause : t.channels.activate} className="p-1.5 rounded-interactive text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors">
                             {ch.is_active ? <PowerOff className="w-3.5 h-3.5" /> : <Power className="w-3.5 h-3.5" />}
                           </button>
-                          <button onClick={() => requestDelete(ch)} title={t.channels.remove} className="p-1.5 rounded-interactive text-foreground/65 hover:text-red-400 hover:bg-red-500/10 transition-colors">
+                          <button onClick={() => requestDelete(ch)} title={t.channels.remove} className="p-1.5 rounded-interactive text-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors">
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </div>
 
-                      <dl className="mt-3 pt-3 border-t border-primary/10 space-y-1.5 text-xs">
+                      <dl className="mt-3 pt-3 border-t border-primary/10 space-y-1.5 typo-caption">
                         <div className="flex items-center gap-2">
-                          <Key className="w-3 h-3 text-foreground/55 flex-shrink-0" />
-                          <dt className="text-[10px] uppercase tracking-wider text-foreground/55">{t.channels.fieldCred}</dt>
-                          <dd className="ml-auto truncate text-foreground/85 max-w-[160px]">{cred ? cred.name : <span className="font-mono text-foreground/55">{ch.credential_id.slice(0, 8)}…</span>}</dd>
+                          <Key className="w-3 h-3 text-foreground flex-shrink-0" />
+                          <dt className="text-[10px] uppercase tracking-wider text-foreground">{t.channels.fieldCred}</dt>
+                          <dd className="ml-auto truncate text-foreground/85 max-w-[160px]">{cred ? cred.name : <span className="font-mono text-foreground">{ch.credential_id.slice(0, 8)}…</span>}</dd>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Mic className="w-3 h-3 text-foreground/55 flex-shrink-0" />
-                          <dt className="text-[10px] uppercase tracking-wider text-foreground/55">{t.channels.fieldTone}</dt>
+                          <Mic className="w-3 h-3 text-foreground flex-shrink-0" />
+                          <dt className="text-[10px] uppercase tracking-wider text-foreground">{t.channels.fieldTone}</dt>
                           <dd className="ml-auto">
                             {hasTone ? (
-                              <span className="text-emerald-300 text-xs">{t.channels.statusConfigured}</span>
+                              <span className="text-emerald-300 typo-caption">{t.channels.statusConfigured}</span>
                             ) : (
-                              <button onClick={() => setTwinTab('tone')} className="text-amber-300 text-xs hover:text-amber-200 transition-colors">{t.channels.ctaAddTone}</button>
+                              <button onClick={() => setTwinTab('tone')} className="text-amber-300 typo-caption hover:text-amber-200 transition-colors">{t.channels.ctaAddTone}</button>
                             )}
                           </dd>
                         </div>
                         {ch.persona_id && (
                           <div className="flex items-center gap-2">
-                            <User className="w-3 h-3 text-foreground/55 flex-shrink-0" />
-                            <dt className="text-[10px] uppercase tracking-wider text-foreground/55">{t.channels.fieldPersona}</dt>
-                            <dd className="ml-auto font-mono text-[10px] text-foreground/65">{ch.persona_id.slice(0, 12)}…</dd>
+                            <User className="w-3 h-3 text-foreground flex-shrink-0" />
+                            <dt className="text-[10px] uppercase tracking-wider text-foreground">{t.channels.fieldPersona}</dt>
+                            <dd className="ml-auto font-mono text-[10px] text-foreground">{ch.persona_id.slice(0, 12)}…</dd>
                           </div>
                         )}
                         <div className="flex items-center gap-2">
-                          <Wifi className="w-3 h-3 text-foreground/55 flex-shrink-0" />
-                          <dt className="text-[10px] uppercase tracking-wider text-foreground/55">{t.channels.fieldSignal}</dt>
+                          <Wifi className="w-3 h-3 text-foreground flex-shrink-0" />
+                          <dt className="text-[10px] uppercase tracking-wider text-foreground">{t.channels.fieldSignal}</dt>
                           <dd className="ml-auto flex items-center gap-0.5">
                             {[0, 1, 2, 3].map((i) => (
                               <span key={i} className={`w-0.5 rounded-full ${i < signalLevels ? meta.dot : 'bg-foreground/15'}`} style={{ height: 4 + i * 2 }} />
@@ -323,7 +325,7 @@ export default function ChannelsAtelier() {
 function FieldGroup({ label, warn, children }: { label: string; warn?: boolean; children: React.ReactNode }) {
   return (
     <div className="space-y-1">
-      <span className={`text-[10px] uppercase tracking-[0.16em] font-medium ${warn ? 'text-amber-300' : 'text-foreground/65'}`}>{label}</span>
+      <span className={`text-[10px] uppercase tracking-[0.16em] font-medium ${warn ? 'text-amber-300' : 'text-foreground'}`}>{label}</span>
       {children}
     </div>
   );
@@ -334,7 +336,7 @@ function Stat({ label, value, accent = 'violet' }: { label: string; value: numbe
   return (
     <div className="flex flex-col items-start leading-tight">
       <span className={`typo-data-lg tabular-nums ${tone}`}>{value}</span>
-      <span className="text-[9px] uppercase tracking-[0.18em] text-foreground/55">{label}</span>
+      <span className="text-[9px] uppercase tracking-[0.18em] text-foreground">{label}</span>
     </div>
   );
 }

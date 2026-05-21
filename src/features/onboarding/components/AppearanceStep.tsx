@@ -32,7 +32,8 @@ export function AppearanceStep() {
   const setBrightness = useThemeStore((s) => s.setBrightness);
   const isDark = useIsDarkTheme();
   const brightnessLevels = isDark ? DARK_BRIGHTNESS_LEVELS : LIGHT_BRIGHTNESS_LEVELS;
-  const { language, setLanguage } = useI18nStore();
+  const language = useI18nStore((s) => s.language);
+  const setLanguage = useI18nStore((s) => s.setLanguage);
   const { prefetchNow, prefetchWithIntent, cancelPrefetch } = useLanguagePrefetch();
 
   const darkThemes = THEMES.filter((t) => !t.isLight);

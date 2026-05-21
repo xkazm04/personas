@@ -16,6 +16,8 @@ import { cloudDiagnose, type CloudDiagnostics } from '@/api/system/cloud';
 import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
 import { useCloudHealthMonitor } from '@/features/deployment/hooks/useCloudHealthMonitor';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 // ---------------------------------------------------------------------------
 // Types
@@ -126,9 +128,7 @@ export default function CloudDeployPanel() {
     setDiagnostics(null);
     try {
       await connect(url.trim(), apiKey.trim());
-    } catch {
-      // intentional: error state handled locally via store + ErrorBanner
-    }
+    } catch (err) { silentCatch("features/deployment/components/cloud/CloudDeployPanel:catch1")(err); }
   };
 
   const handleDiagnose = useCallback(async () => {
@@ -138,9 +138,7 @@ export default function CloudDeployPanel() {
     try {
       const result = await cloudDiagnose(url.trim(), apiKey.trim());
       setDiagnostics(result);
-    } catch {
-      // Diagnostics command itself failed -- ignore
-    } finally {
+    } catch (err) { silentCatch("features/deployment/components/cloud/CloudDeployPanel:catch2")(err); } finally {
       setIsDiagnosing(false);
     }
   }, [url, apiKey]);

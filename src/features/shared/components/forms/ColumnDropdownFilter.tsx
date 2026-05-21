@@ -76,7 +76,7 @@ export function ColumnDropdownFilter({
             <button
               key={opt.value}
               onClick={() => { onChange(opt.value); setOpen(false); }}
-              className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${
+              className={`w-full text-left px-3 py-1.5 typo-body transition-colors ${
                 value === opt.value
                   ? 'bg-primary/10 text-foreground'
                   : 'text-foreground hover:bg-secondary/30'

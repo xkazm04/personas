@@ -57,7 +57,7 @@ export function DatabaseListView({ onBack: _onBack }: DatabaseListViewProps) {
       { value: '', label: tx(db.all_types, { count: types.size }) },
       ...Array.from(types.entries()).sort(([, a], [, b]) => a.localeCompare(b)).map(([val, lab]) => ({ value: val, label: lab })),
     ];
-  }, [allRows]);
+  }, [allRows, db.all_types, tx]);
 
   const displayRows = useMemo(() => {
     let rows = allRows;

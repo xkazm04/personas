@@ -7,6 +7,8 @@
  */
 
 import { executeApiRequest } from '@/api/system/apiProxy';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 // ---------------------------------------------------------------------------
 // Universal stat types
@@ -323,9 +325,7 @@ export async function fetchSentryStats(
         eventsLast24h = lastBuckets.reduce((sum: number, [, count]: [number, number]) => sum + count, 0);
       }
     }
-  } catch {
-    // Stats endpoint may not be available on all Sentry plans
-  }
+  } catch (err) { silentCatch("features/plugins/dev-tools/sub_overview/adapters:catch1")(err); }
 
   return {
     unresolvedIssues,

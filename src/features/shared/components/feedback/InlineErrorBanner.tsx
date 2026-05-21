@@ -69,7 +69,7 @@ export function InlineErrorBanner({
         <Icon className={`w-4 h-4 ${tokens.text} flex-shrink-0 mt-0.5`} />
         <div className="flex-1 min-w-0">
           {title && <p className={`typo-heading ${tier.titleText}`}>{title}</p>}
-          <p className={`text-sm ${tier.bodyText}${title ? ' mt-0.5' : ''}`}>{message}</p>
+          <p className={`typo-body ${tier.bodyText}${title ? ' mt-0.5' : ''}`}>{message}</p>
         </div>
         {onRetry && (
           <button

@@ -1,5 +1,7 @@
 import { FileCode2, FileJson } from 'lucide-react';
 import { MAX_WORKFLOW_JSON_BYTES } from '@/lib/n8nLimits.generated';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 // Single source of truth: src-tauri/src/commands/design/n8n_limits.rs
 export const MAX_FILE_SIZE = MAX_WORKFLOW_JSON_BYTES;
@@ -31,7 +33,7 @@ export function fileNameFromUrl(url: string): string {
     const path = new URL(url).pathname;
     const lastSegment = path.split('/').filter(Boolean).pop() || '';
     if (/\.(json|ya?ml)$/i.test(lastSegment)) return lastSegment;
-  } catch { /* intentional: non-critical -- JSON parse fallback */ }
+  } catch (err) { silentCatch("features/templates/sub_n8n/steps/upload/n8nUploadTypes:catch1")(err); }
   return 'imported.json';
 }
 

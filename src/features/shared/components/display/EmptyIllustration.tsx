@@ -18,8 +18,8 @@ export function EmptyIllustration({ icon: Icon, heading, description, cta, class
           <Icon className="w-6 h-6 text-foreground" />
         </div>
       </div>
-      <h4 className="text-sm font-medium mb-1">{heading}</h4>
-      <p className="text-sm text-foreground max-w-xs mx-auto leading-relaxed">
+      <h4 className="typo-body font-medium mb-1">{heading}</h4>
+      <p className="typo-body text-foreground max-w-xs mx-auto leading-relaxed">
         {description}
       </p>
       {cta && <div className="mt-4">{cta}</div>}

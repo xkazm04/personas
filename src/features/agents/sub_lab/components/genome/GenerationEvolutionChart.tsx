@@ -3,6 +3,8 @@ import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import type { GenomeBreedingResult } from '@/lib/bindings/GenomeBreedingResult';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useChartTheme } from '../../shared/chartTheme';
+import { DebtText, debtText } from '@/i18n/DebtText';
+
 
 interface GenerationStats {
   generation: number;
@@ -83,7 +85,7 @@ export function GenerationEvolutionChart({
   const worstColor = chart.series[4];
 
   return (
-    <div className="space-y-3" role="region" aria-label="Generation evolution chart">
+    <div className="space-y-3" role="region" aria-label={debtText("auto_generation_evolution_chart_5659c044")}>
       <div className="flex items-center justify-between">
         <h4 className="typo-caption font-medium text-foreground">{t.agents.lab.evolution_progress}</h4>
         <span className="typo-caption text-foreground">
@@ -92,7 +94,7 @@ export function GenerationEvolutionChart({
       </div>
 
       {/* Bar chart */}
-      <div className="flex items-end gap-1.5 h-28" role="img" aria-label="Fitness progression across generations">
+      <div className="flex items-end gap-1.5 h-28" role="img" aria-label={debtText("auto_fitness_progression_across_generations_b4b4baa3")}>
         {stats.map((gen, _idx) => {
           const bestHeight = maxFitness > 0 ? (gen.bestFitness / maxFitness) * 100 : 0;
           const avgHeight = maxFitness > 0 ? (gen.avgFitness / maxFitness) * 100 : 0;
@@ -108,23 +110,23 @@ export function GenerationEvolutionChart({
               <div className="w-full flex items-end justify-center gap-px h-24 relative">
                 {/* Worst (background) */}
                 <div
-                  className="animate-fade-in w-2 rounded-t-sm"
+                  className="animate-fade-in w-2 rounded-t-interactive"
                   style={{ height: `${worstHeight}%`, backgroundColor: worstColor, opacity: 0.25 }}
                 />
                 {/* Average */}
                 <div
-                  className="animate-fade-in w-2 rounded-t-sm"
+                  className="animate-fade-in w-2 rounded-t-interactive"
                   style={{ height: `${avgHeight}%`, backgroundColor: avgColor, opacity: 0.55 }}
                 />
                 {/* Best */}
                 <div
-                  className="animate-fade-in w-2 rounded-t-sm transition-opacity group-hover:opacity-80"
+                  className="animate-fade-in w-2 rounded-t-interactive transition-opacity group-hover:opacity-80"
                   style={{ height: `${bestHeight}%`, backgroundColor: bestColor }}
                 />
 
                 {/* Tooltip on hover */}
                 <div className="absolute -top-8 left-1/2 -translate-x-1/2 hidden group-hover:block bg-popover border border-primary/15 rounded-input px-2 py-1 typo-caption whitespace-nowrap z-10 shadow-elevation-3">
-                  Best: {Math.round(gen.bestFitness * 100)}% | Avg: {Math.round(gen.avgFitness * 100)}%
+                  <DebtText k="auto_best_33abaf20" /> {Math.round(gen.bestFitness * 100)}<DebtText k="auto_avg_3a58f078" /> {Math.round(gen.avgFitness * 100)}%
                 </div>
               </div>
               <span className="text-[10px] text-foreground">G{gen.generation}</span>
@@ -166,7 +168,7 @@ export function GenerationEvolutionChart({
             </div>
             <span className="text-foreground">|</span>
             <span>
-              {results.length} total offspring
+              {results.length} <DebtText k="auto_total_offspring_064c292c" />
             </span>
           </div>
         );

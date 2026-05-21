@@ -5,6 +5,8 @@ import {
 import type { BuildPhase, BuildQuestion } from "@/lib/types/buildTypes";
 import { GlyphRefineComposer } from "./GlyphRefineComposer";
 import { GlyphTestCompleteCore } from "./GlyphTestCompleteCore";
+import { DebtText, debtText } from '@/i18n/DebtText';
+
 
 interface GlyphCoreContentProps {
   isPreBuild: boolean;
@@ -70,7 +72,7 @@ export function GlyphCoreContent(props: GlyphCoreContentProps) {
         transition={{ duration: 0.3 }}
         whileHover={{ scale: 1.04 }}
         whileTap={{ scale: 0.97 }}
-        aria-label="Click to begin — open intent composer"
+        aria-label={debtText("auto_click_to_begin_open_intent_composer_3188e888")}
         data-testid="glyph-compose-summon"
         className="flex flex-col items-center gap-2 px-6 pointer-events-auto cursor-pointer disabled:is-disabled group bg-transparent border-none outline-none focus-visible:ring-2 focus-visible:ring-primary/60 rounded-full"
       >
@@ -82,11 +84,11 @@ export function GlyphCoreContent(props: GlyphCoreContentProps) {
         >
           <Sparkles className="w-9 h-9 text-primary/85 group-hover:text-primary transition-colors" />
         </motion.div>
-        <span className="typo-label uppercase tracking-[0.22em] text-foreground/70 group-hover:text-foreground transition-colors">
-          Click to Begin
+        <span className="typo-label uppercase tracking-[0.22em] text-foreground group-hover:text-foreground transition-colors">
+          <DebtText k="auto_click_to_begin_a3efa65a" />
         </span>
-        <span className="typo-caption text-foreground/45 max-w-[220px] leading-snug">
-          Describe your persona
+        <span className="typo-caption text-foreground max-w-[220px] leading-snug">
+          <DebtText k="auto_describe_your_persona_276b0e90" />
         </span>
       </motion.button>
     );
@@ -128,7 +130,7 @@ export function GlyphCoreContent(props: GlyphCoreContentProps) {
             recovery loops), so a "70% done" number was misleading. The
             spinner + status label carries the right signal: "we're
             working" without a false ETA. */}
-        <div className="flex items-center gap-1.5 typo-caption text-foreground/60 uppercase tracking-[0.18em]">
+        <div className="flex items-center gap-1.5 typo-caption text-foreground uppercase tracking-[0.18em]">
           <Loader2 className="w-3 h-3 animate-spin" />
           {hasPending ? "Awaiting your answer" : "Weaving intent"}
         </div>
@@ -137,8 +139,8 @@ export function GlyphCoreContent(props: GlyphCoreContentProps) {
             answers are pending (the user IS the bottleneck) or in any
             other phase. Stays subtle: muted text, max-w cap, no chrome. */}
         {!hasPending && (
-          <span className="mt-2 typo-caption text-foreground/45 text-center max-w-[220px] leading-snug">
-            You can use the app freely while this builds — the draft will keep working in the background.
+          <span className="mt-2 typo-caption text-foreground text-center max-w-[220px] leading-snug">
+            <DebtText k="auto_you_can_use_the_app_freely_while_this_buil_c0d5f08b" />
           </span>
         )}
       </motion.div>
@@ -153,9 +155,9 @@ export function GlyphCoreContent(props: GlyphCoreContentProps) {
         className="flex flex-col items-center gap-2 w-full px-6 pointer-events-auto"
       >
         <Loader2 className="w-6 h-6 text-primary/70 animate-spin" />
-        <span className="typo-label uppercase tracking-[0.2em] text-foreground/60">Running Tests</span>
+        <span className="typo-label uppercase tracking-[0.2em] text-foreground"><DebtText k="auto_running_tests_7ec9eede" /></span>
         {testOutputLines && testOutputLines.length > 0 && (
-          <div className="mt-1 w-full max-h-20 overflow-y-auto typo-caption font-mono text-foreground/50 text-left">
+          <div className="mt-1 w-full max-h-20 overflow-y-auto typo-caption font-mono text-foreground text-left">
             {testOutputLines.slice(-4).map((l, i) => (
               <div key={i} className="truncate">{l}</div>
             ))}
@@ -177,7 +179,7 @@ export function GlyphCoreContent(props: GlyphCoreContentProps) {
         className="flex flex-col items-center gap-2 pointer-events-auto"
       >
         <CheckCircle2 className="w-10 h-10 text-emerald-400" />
-        <span className="typo-heading-sm text-foreground">Agent Promoted</span>
+        <span className="typo-heading-sm text-foreground"><DebtText k="auto_agent_promoted_8df1a174" /></span>
         <button
           type="button"
           onClick={onViewAgent}
@@ -196,8 +198,8 @@ export function GlyphCoreContent(props: GlyphCoreContentProps) {
         initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
         className="flex flex-col items-center gap-2 pointer-events-auto"
       >
-        <span className="typo-label uppercase tracking-[0.2em] text-foreground/60">Draft Ready</span>
-        <span className="typo-heading-sm text-foreground">{completenessPct}% complete</span>
+        <span className="typo-label uppercase tracking-[0.2em] text-foreground"><DebtText k="auto_draft_ready_96b5a4f6" /></span>
+        <span className="typo-heading-sm text-foreground">{completenessPct}<DebtText k="auto_complete_dfdcd775" /></span>
         <div className="flex items-center gap-1.5 flex-wrap justify-center">
           <button
             type="button"
@@ -205,13 +207,13 @@ export function GlyphCoreContent(props: GlyphCoreContentProps) {
             className="px-3 py-1.5 rounded-full bg-primary/25 hover:bg-primary/40 border border-primary/40 typo-body text-foreground cursor-pointer flex items-center gap-1.5"
           >
             <Play className="w-3.5 h-3.5" />
-            Run Test
+            <DebtText k="auto_run_test_e90380fe" />
           </button>
           {onRefine && (
             <button
               type="button"
               onClick={() => setRefining(true)}
-              className="px-2.5 py-1.5 rounded-full bg-foreground/5 hover:bg-foreground/10 border border-border/30 typo-caption text-foreground/75 cursor-pointer flex items-center gap-1"
+              className="px-2.5 py-1.5 rounded-full bg-foreground/5 hover:bg-foreground/10 border border-border/30 typo-caption text-foreground cursor-pointer flex items-center gap-1"
             >
               <RefreshCw className="w-3 h-3" />
               Refine

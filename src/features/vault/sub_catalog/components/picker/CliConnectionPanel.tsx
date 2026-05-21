@@ -76,7 +76,7 @@ export function CliConnectionPanel({
     if (!credentialName || credentialName === connector.label) {
       onCredentialNameChange(`${connector.label} CLI`);
     }
-  }, []);
+  }, [connector.label, credentialName, onCredentialNameChange]);
 
   const handleSave = async () => {
     setSaving(true);

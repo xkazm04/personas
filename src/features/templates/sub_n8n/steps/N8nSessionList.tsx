@@ -103,7 +103,7 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
   // Tracks AbortControllers for in-flight loads so delete can cancel them
   const loadAbortRef = useRef(new Map<string, AbortController>());
 
-  const fetchSessions = async () => {
+  const fetchSessions = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -115,11 +115,11 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [t.templates.n8n.failed_to_load_imports]);
 
   useEffect(() => {
     void fetchSessions();
-  }, []);
+  }, [fetchSessions]);
 
   const handleDelete = useCallback(async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
@@ -144,7 +144,7 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
       lockedIdsRef.current.delete(id);
       setDeletingId(null);
     }
-  }, []);
+  }, [t.templates.n8n.failed_to_delete_session]);
 
   const handleLoad = useCallback(async (session: N8nSessionSummary) => {
     const id = session.id;
@@ -240,7 +240,7 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
       loadAbortRef.current.delete(id);
       setLoadingId(null);
     }
-  }, [onLoadSession]);
+  }, [onLoadSession, t.templates.n8n.failed_to_load_session]);
 
   if (loading) {
     return (

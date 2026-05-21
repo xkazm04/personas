@@ -13,6 +13,8 @@ import { NetworkDashboard } from './NetworkDashboard';
 import { PeerList } from './PeerList';
 import { createLogger } from "@/lib/log";
 import { useTranslation } from '@/i18n/useTranslation';
+import { DebtText } from '@/i18n/DebtText';
+
 
 const logger = createLogger("exposure-manager");
 
@@ -194,7 +196,7 @@ function AddExposureForm({
         <button
           onClick={handleSubmit}
           disabled={!resourceId}
-          className="px-3 py-1.5 typo-caption rounded-card bg-primary text-white hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-3 py-1.5 typo-caption rounded-card bg-primary text-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {st.expose_resource}
         </button>
@@ -225,7 +227,7 @@ export default function ExposureManager() {
 
   useEffect(() => {
     Promise.all([fetchExposedResources(), fetchPersonas()]).finally(() => setLoading(false));
-  }, []);
+  }, [fetchExposedResources, fetchPersonas]);
 
   if (p2pUnavailable) {
     return (
@@ -238,14 +240,13 @@ export default function ExposureManager() {
         />
         <ContentBody centered>
           <div className="rounded-modal border border-dashed border-border p-8 text-center max-w-md mx-auto">
-            <WifiOff className="w-8 h-8 text-foreground/40 mx-auto mb-3" />
+            <WifiOff className="w-8 h-8 text-foreground mx-auto mb-3" />
             <h3 className="typo-body font-medium text-foreground mb-1">
-              P2P networking unavailable
+              <DebtText k="auto_p2p_networking_unavailable_47ff008f" />
             </h3>
-            <p className="typo-caption text-foreground/70 leading-relaxed">
-              This build was compiled without the <code className="typo-code">p2p</code> feature.
-              Identity, peer discovery, and resource exposure are inactive. Run
-              <code className="typo-code"> npm run tauri:dev</code> (full build) to enable them.
+            <p className="typo-caption text-foreground leading-relaxed">
+              <DebtText k="auto_this_build_was_compiled_without_the_18a8c54c" /> <code className="typo-code">p2p</code> <DebtText k="auto_feature_identity_peer_discovery_and_resour_fbab4d9e" />
+              <code className="typo-code"> <DebtText k="auto_npm_run_tauri_dev_55d5802d" /></code> <DebtText k="auto_full_build_to_enable_them_4f77d810" />
             </p>
           </div>
         </ContentBody>

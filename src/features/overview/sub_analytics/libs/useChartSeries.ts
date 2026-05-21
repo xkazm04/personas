@@ -28,7 +28,7 @@ export function useChartSeries() {
   const { setFailureDrilldownDate } = useOverviewFilterActions();
 
   const backendChartData = observabilityMetrics?.chartData;
-  const rawChartData = backendChartData?.chart_points ?? [];
+  const rawChartData = useMemo(() => backendChartData?.chart_points ?? [], [backendChartData?.chart_points]);
 
   const chartData = useMemo(() => {
     const base = (!compareEnabled || rawChartData.length === 0) ? rawChartData : mergePreviousPeriod(rawChartData, effectiveDays, ['cost', 'executions', 'success', 'failed']);

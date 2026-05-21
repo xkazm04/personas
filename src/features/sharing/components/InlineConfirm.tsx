@@ -51,7 +51,7 @@ export function InlineConfirm({ message, onConfirm, children }: InlineConfirmPro
                 setOpen(false);
                 onConfirm();
               }}
-              className="px-2 py-1 text-[11px] rounded-input bg-red-500/90 text-white hover:bg-red-500"
+              className="px-2 py-1 text-[11px] rounded-input bg-red-500/90 text-foreground hover:bg-red-500"
             >
               {st.confirm}
             </button>

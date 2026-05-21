@@ -26,7 +26,7 @@ export function ClockVariant({ display, firing }: { display: TriggerDisplay; fir
               <span
                 key={i}
                 className={`relative inline-flex items-center justify-center leading-none font-mono text-[22px] font-bold transition-colors ${
-                  on ? 'text-primary' : 'text-foreground/25'
+                  on ? 'text-primary' : 'text-foreground'
                 }`}
                 style={on ? { textShadow: '0 0 10px color-mix(in srgb, var(--color-primary) 60%, transparent)' } : undefined}
               >
@@ -132,7 +132,7 @@ export function ClockVariant({ display, firing }: { display: TriggerDisplay; fir
         <div className="text-[18px] font-bold tracking-tight text-foreground font-mono leading-tight tabular-nums">
           {display.primary} {display.secondary}
         </div>
-        <div className="text-[10px] text-foreground/55 leading-tight">{display.detail}</div>
+        <div className="text-[10px] text-foreground leading-tight">{display.detail}</div>
       </div>
     </>
   );

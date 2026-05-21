@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { convertFileSrc } from '@tauri-apps/api/core';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 /**
  * Module-level cache of video thumbnail strips keyed by filePath. Each entry
@@ -41,7 +43,7 @@ async function seekTo(video: HTMLVideoElement, t: number): Promise<void> {
 function teardownVideo(video: HTMLVideoElement): void {
   // Detach src so the element + decoded buffers can be GC'd. Wrapped because
   // some browsers throw on .load() when src has been removed; we don't care.
-  try { video.pause(); video.removeAttribute('src'); video.load(); } catch { /* ignore */ }
+  try { video.pause(); video.removeAttribute('src'); video.load(); } catch (err) { silentCatch("features/plugins/artist/sub_media_studio/hooks/useVideoThumbnails:catch1")(err); }
 }
 
 async function extractFrames(filePath: string, signal?: AbortSignal): Promise<string[]> {
@@ -98,9 +100,7 @@ async function extractFrames(filePath: string, signal?: AbortSignal): Promise<st
         await seekTo(video, Math.min(duration - 0.05, t));
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         frames.push(canvas.toDataURL('image/jpeg', 0.6));
-      } catch {
-        // Skip this sample; later ones may still work.
-      }
+      } catch (err) { silentCatch("features/plugins/artist/sub_media_studio/hooks/useVideoThumbnails:catch2")(err); }
     }
 
     return frames;

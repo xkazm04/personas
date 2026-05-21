@@ -161,7 +161,7 @@ export function useN8nTransform(
       setIsRestoring(false);
       setN8nTransformActive(false);
     },
-    [dispatch, resetTransformStream, setN8nTransformActive],
+    [clearPersistedContext, dispatch, resetTransformStream, setN8nTransformActive],
   );
 
   const handleSnapshotCompletedNoDraft = useCallback(() => {

@@ -82,7 +82,7 @@ export function RecipeAdoptionModal({ recipe, onClose, onAdopted }: RecipeAdopti
             <div id="recipe-adoption-title" className="typo-section-title text-foreground">
               {tx(t.recipes_catalog.modal_title, { name: recipe.name })}
             </div>
-            <div className="typo-caption text-foreground/65 mt-0.5">
+            <div className="typo-caption text-foreground mt-0.5">
               {selectedPersona
                 ? <>{tx(t.recipes_catalog.modal_subtitle_persona, { personaName: selectedPersona.name })}</>
                 : t.recipes_catalog.modal_subtitle_no_persona}
@@ -91,7 +91,7 @@ export function RecipeAdoptionModal({ recipe, onClose, onAdopted }: RecipeAdopti
           <button
             type="button"
             onClick={onClose}
-            className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full text-foreground/60 hover:text-foreground hover:bg-foreground/10 cursor-pointer"
+            className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full text-foreground hover:text-foreground hover:bg-foreground/10 cursor-pointer"
             title={t.common.close}
           >
             <X className="w-4 h-4" />
@@ -117,7 +117,7 @@ export function RecipeAdoptionModal({ recipe, onClose, onAdopted }: RecipeAdopti
                   primary CTA stays disabled. */}
               {eligibility.state !== 'incompatible' && recipe.bindings.length > 0 && (
                 <div className="space-y-3 mt-1">
-                  <div className="typo-label uppercase tracking-wider text-foreground/55">
+                  <div className="typo-label uppercase tracking-wider text-foreground">
                     {tx(recipe.bindings.length === 1 ? t.recipes_catalog.configure_settings_one : t.recipes_catalog.configure_settings_other, { count: recipe.bindings.length })}
                   </div>
                   {recipe.bindings.map((b) => (
@@ -137,7 +137,7 @@ export function RecipeAdoptionModal({ recipe, onClose, onAdopted }: RecipeAdopti
 
         {/* Footer */}
         <div className="flex items-center gap-2 px-4 py-3 border-t border-card-border/60 flex-shrink-0">
-          <span className="typo-caption text-foreground/55">
+          <span className="typo-caption text-foreground">
             {showErrors && missing.length > 0 && (
               <span className="text-status-warning">
                 <AlertTriangle className="w-3 h-3 inline mr-1 -mt-0.5" />
@@ -176,7 +176,7 @@ function NoPersonaState({ onClose }: { onClose: () => void }) {
   return (
     <div className="text-center py-8">
       <div className="typo-body text-foreground/85 mb-1">{t.recipes_catalog.no_persona_heading}</div>
-      <div className="typo-caption text-foreground/55 mb-4">
+      <div className="typo-caption text-foreground mb-4">
         {t.recipes_catalog.no_persona_body}
       </div>
       <button
@@ -220,7 +220,7 @@ function SetupRequiredCallout({ eligibility }: { eligibility: Eligibility & { st
               );
             })}
           </div>
-          <div className="typo-caption text-foreground/55 mt-2 inline-flex items-center gap-1">
+          <div className="typo-caption text-foreground mt-2 inline-flex items-center gap-1">
             <ExternalLink className="w-3 h-3" />
             {t.recipes_catalog.callout_setup_vault_link}
           </div>
@@ -234,7 +234,7 @@ function IncompatibleCallout({ eligibility }: { eligibility: Eligibility & { sta
   const { t } = useTranslation();
   return (
     <div className="mb-4 px-3 py-2.5 rounded-card border border-card-border bg-secondary/40">
-      <div className="typo-label uppercase tracking-wider text-foreground/65 mb-1">
+      <div className="typo-label uppercase tracking-wider text-foreground mb-1">
         {t.recipes_catalog.callout_incompatible_title}
       </div>
       <div className="typo-caption text-foreground/85">{eligibility.reason}</div>
@@ -263,7 +263,7 @@ function BindingField({ binding, value, onChange, error }: BindingFieldProps) {
     </div>
   );
   const helpEl = binding.description && (
-    <div className="typo-caption text-foreground/55 mt-1">{binding.description}</div>
+    <div className="typo-caption text-foreground mt-1">{binding.description}</div>
   );
   const wrapperCls = `rounded-card border bg-secondary/30 px-3 py-2.5 transition-colors ${
     error ? 'border-status-warning/45 bg-status-warning/8' : 'border-card-border'
@@ -432,7 +432,7 @@ function BindingInput({ kind, value, onChange }: BindingInputProps) {
               onChange(n);
             }}
           />
-          {kind.unit && <span className="typo-caption text-foreground/55">{kind.unit}</span>}
+          {kind.unit && <span className="typo-caption text-foreground">{kind.unit}</span>}
         </div>
       );
     }
@@ -452,7 +452,7 @@ function BindingInput({ kind, value, onChange }: BindingInputProps) {
                     className={`px-2 py-1 rounded-full border typo-label uppercase tracking-wider transition-colors cursor-pointer ${
                       isActive
                         ? 'bg-primary/15 border-primary/35 text-primary'
-                        : 'bg-secondary/40 border-card-border text-foreground/70 hover:text-foreground hover:border-foreground/30'
+                        : 'bg-secondary/40 border-card-border text-foreground hover:text-foreground hover:border-foreground/30'
                     }`}
                   >
                     {p.label}
@@ -491,7 +491,7 @@ function BindingInput({ kind, value, onChange }: BindingInputProps) {
                   className={`px-2 py-1 rounded-full border typo-caption transition-colors cursor-pointer ${
                     isActive
                       ? 'bg-primary/15 border-primary/35 text-primary'
-                      : 'bg-secondary/40 border-card-border text-foreground/70 hover:text-foreground hover:border-foreground/30'
+                      : 'bg-secondary/40 border-card-border text-foreground hover:text-foreground hover:border-foreground/30'
                   }`}
                 >
                   {opt.label}
@@ -513,7 +513,7 @@ function BindingInput({ kind, value, onChange }: BindingInputProps) {
                 className={`px-2 py-1 rounded-full border typo-caption transition-colors cursor-pointer ${
                   isActive
                     ? 'bg-primary/15 border-primary/35 text-primary'
-                    : 'bg-secondary/40 border-card-border text-foreground/70 hover:text-foreground hover:border-foreground/30'
+                    : 'bg-secondary/40 border-card-border text-foreground hover:text-foreground hover:border-foreground/30'
                 }`}
               >
                 {opt.label}

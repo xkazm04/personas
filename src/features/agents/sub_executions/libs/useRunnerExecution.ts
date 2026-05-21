@@ -7,6 +7,8 @@ import { useToastStore } from '@/stores/toastStore';
 import { useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 import { useRafCoalescedCallback } from '@/hooks/utility/timing/useRafCoalescedCallback';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 interface UseRunnerExecutionArgs {
   personaId: string;
@@ -96,12 +98,12 @@ export function useRunnerExecution({
       try {
         const exec = await getExecution(resumeExecId, selectedPersona.id);
         sessionId = exec.claude_session_id ?? null;
-      } catch { /* intentional */ }
+      } catch (err) { silentCatch("features/agents/sub_executions/libs/useRunnerExecution:catch1")(err); }
     }
 
     let parsedInput = {};
     if (inputData.trim()) {
-      try { parsedInput = JSON.parse(inputData); } catch { /* intentional */ }
+      try { parsedInput = JSON.parse(inputData); } catch (err) { silentCatch("features/agents/sub_executions/libs/useRunnerExecution:catch2")(err); }
     }
 
     const continuation: import('@/lib/bindings/Continuation').Continuation = sessionId
@@ -179,7 +181,7 @@ export function useRunnerExecution({
     }
   }, []);
 
-  const toggleTerminalFullscreen = useCallback(() => setIsTerminalFullscreen(prev => !prev), []);
+  const toggleTerminalFullscreen = useCallback(() => setIsTerminalFullscreen(prev => !prev), [setIsTerminalFullscreen]);
 
   useAppKeyboard((e) => {
     if (e.key !== 'Escape') return false;

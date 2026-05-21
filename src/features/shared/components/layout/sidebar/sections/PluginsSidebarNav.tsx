@@ -27,6 +27,8 @@ import type { CompanionPluginTab } from '@/stores/slices/system/companionPluginS
 import { artistItems, companionItems, devToolsItems, obsidianBrainItems, researchLabItems, twinItems } from '../sidebarData';
 import { useTranslation } from '@/i18n/useTranslation';
 import SidebarLevel3, { type SidebarLevel3Item } from '../SidebarLevel3';
+import { debtText } from '@/i18n/DebtText';
+
 
 interface PluginMeta {
   id: PluginTab;
@@ -191,7 +193,7 @@ export function PluginsSidebarNav() {
                     {plugin.devOnly && (
                       <span
                         className="px-1.5 py-0.5 rounded-full typo-caption font-semibold text-amber-300 bg-amber-400/10 border border-amber-400/40 uppercase tracking-wide"
-                        aria-label="In development"
+                        aria-label={debtText("auto_in_development_f6146d71")}
                       >
                         Dev
                       </span>

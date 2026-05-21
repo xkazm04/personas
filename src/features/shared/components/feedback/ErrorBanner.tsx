@@ -46,7 +46,7 @@ export function ErrorBanner({
             <button
               type="button"
               onClick={onRetry}
-              className="flex items-center gap-1.5 px-3 py-1.5 typo-heading text-white bg-red-500/80 hover:bg-red-500 rounded-lg transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 typo-heading text-foreground bg-red-500/80 hover:bg-red-500 rounded-lg transition-colors cursor-pointer"
             >
               <RefreshCw className="w-3.5 h-3.5" />
               {t.common.retry}

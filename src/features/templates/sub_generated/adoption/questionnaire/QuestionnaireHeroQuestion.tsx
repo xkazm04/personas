@@ -10,6 +10,8 @@ import { QuestionnaireBlockedCredentialCta } from './QuestionnaireBlockedCredent
 import { QuestionnaireKeyboardHint } from './QuestionnaireKeyboardHint';
 import { QuestionnaireStackedOptions } from './QuestionnaireStackedOptions';
 import type { QuestionnaireNormalizedOption } from './types';
+import { DebtText } from '@/i18n/DebtText';
+
 
 interface QuestionnaireHeroQuestionProps {
   question: TransformQuestionResponse;
@@ -80,11 +82,11 @@ export function QuestionnaireHeroQuestion({
         transition={{ duration: 0.25, ease: 'easeOut' }}
       >
         {/* Category crumb */}
-        <div className="flex items-center gap-2 mb-6 text-sm uppercase tracking-[0.18em]">
+        <div className="flex items-center gap-2 mb-6 typo-body uppercase tracking-[0.18em]">
           <Icon className={`w-4 h-4 ${meta.color}`} />
           <span className={`font-semibold ${meta.color}`}>{meta.label}</span>
-          <span className="text-foreground/50">·</span>
-          <span className="text-foreground/70 tabular-nums">
+          <span className="text-foreground">·</span>
+          <span className="text-foreground tabular-nums">
             {tx(t.templates.adopt_modal.question_number_of, {
               current: activeIdx + 1,
               total: totalCount,
@@ -94,11 +96,11 @@ export function QuestionnaireHeroQuestion({
 
         {/* Title + badges */}
         <div className="flex items-start gap-3 mb-2">
-          <h3 className="flex-1 text-2xl font-medium text-foreground leading-snug">
+          <h3 className="flex-1 typo-body-lg font-medium text-foreground leading-snug">
             {question.question}
           </h3>
           {isAutoDetected && !isBlocked && (
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-card bg-brand-purple/10 border border-brand-purple/30 text-brand-purple flex-shrink-0 mt-1">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 typo-caption font-semibold rounded-card bg-brand-purple/10 border border-brand-purple/30 text-brand-purple flex-shrink-0 mt-1">
               <KeyRound className="w-3.5 h-3.5" />
               {t.templates.adopt_modal.auto_detected}
             </span>
@@ -111,7 +113,7 @@ export function QuestionnaireHeroQuestion({
               className={`flex-shrink-0 mt-1 p-1.5 rounded-card transition-colors ${
                 tipOpen
                   ? 'bg-primary/15 text-primary'
-                  : 'text-foreground/55 hover:text-foreground hover:bg-foreground/[0.04]'
+                  : 'text-foreground hover:text-foreground hover:bg-foreground/[0.04]'
               }`}
             >
               <Info className="w-4 h-4" />
@@ -129,7 +131,7 @@ export function QuestionnaireHeroQuestion({
               className="overflow-hidden"
             >
               <div className="mt-3 px-4 py-3 rounded-card bg-foreground/[0.03] border border-border">
-                <p className="text-sm text-foreground/80 leading-relaxed">
+                <p className="typo-body text-foreground leading-relaxed">
                   {question.context}
                 </p>
               </div>
@@ -153,7 +155,7 @@ export function QuestionnaireHeroQuestion({
               onChange={(v) => onAnswerUpdated(question.id, v)}
             />
             {options.length > 1 && (
-              <div className="hide-on-touch mt-4 text-xs text-foreground/55 flex items-center gap-2">
+              <div className="hide-on-touch mt-4 typo-caption text-foreground flex items-center gap-2">
                 <span>Press</span>
                 <kbd className="px-1.5 py-0.5 rounded border border-border bg-foreground/[0.04] font-mono text-xs">
                   1
@@ -162,7 +164,7 @@ export function QuestionnaireHeroQuestion({
                 <kbd className="px-1.5 py-0.5 rounded border border-border bg-foreground/[0.04] font-mono text-xs">
                   {Math.min(options.length, 9)}
                 </kbd>
-                <span>to pick.</span>
+                <span><DebtText k="auto_to_pick_3354914b" /></span>
               </div>
             )}
           </>
@@ -184,8 +186,8 @@ export function QuestionnaireHeroQuestion({
         )}
 
         {!isBlocked && appliesToIds.length > 0 && (
-          <div className="mt-6 text-sm text-foreground/55 italic">
-            Applies to:{' '}
+          <div className="mt-6 typo-body text-foreground italic">
+            <DebtText k="auto_applies_to_ef612870" />{' '}
             {appliesToIds.map((id) => useCaseTitleById?.[id] ?? id).join(', ')}
           </div>
         )}

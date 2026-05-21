@@ -23,7 +23,7 @@ export function useHealthyConnectors(): HealthyConnector[] {
   useEffect(() => {
     if (!credentials.length) fetchCredentials();
     if (!connectorDefinitions.length) fetchConnectorDefinitions();
-  }, []);
+  }, [connectorDefinitions.length, credentials.length, fetchConnectorDefinitions, fetchCredentials]);
 
   return useMemo(() => {
     if (!credentials.length || !connectorDefinitions.length) return [];

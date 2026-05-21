@@ -7,6 +7,8 @@ import {
 import { executeDbQuery } from '@/api/vault/database/dbSchema';
 import { clearCacheForCredential } from '@/hooks/database/useTableIntrospection';
 import { splitSqlStatements } from '@/hooks/database/sqlStatementSplitter';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 // -- Types ------------------------------------------------------------
 
@@ -167,7 +169,7 @@ export function useSchemaProposal({
       setPhase('failed');
       setError(err instanceof Error ? err.message : 'Failed to start schema proposal.');
     }
-  }, [credentialId, templateName, templateContext, existingTables, startPolling]);
+  }, [credentialId, templateName, templateContext, existingTables, databaseType, startPolling]);
 
   const executeSchema = useCallback(async (credentialId: string, sql: string): Promise<boolean> => {
     setPhase('executing');
@@ -198,9 +200,7 @@ export function useSchemaProposal({
         // Roll back the partial changes
         try {
           await executeDbQuery(credentialId, 'ROLLBACK', undefined, true, true);
-        } catch {
-          // best-effort rollback
-        }
+        } catch (err) { silentCatch("hooks/database/useSchemaProposal:catch1")(err); }
         throw stmtErr;
       }
 
@@ -222,9 +222,7 @@ export function useSchemaProposal({
     if (proposalIdRef.current) {
       try {
         await cancelSchemaProposal(proposalIdRef.current);
-      } catch {
-        // best-effort
-      }
+      } catch (err) { silentCatch("hooks/database/useSchemaProposal:catch2")(err); }
     }
     setPhase('idle');
     setError(null);

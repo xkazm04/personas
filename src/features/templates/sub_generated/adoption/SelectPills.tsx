@@ -73,9 +73,9 @@ export function SelectPills({
   const customInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (showCustomInput) {
-      setTimeout(() => customInputRef.current?.focus(), 50);
-    }
+    if (!showCustomInput) return;
+    const timer = setTimeout(() => customInputRef.current?.focus(), 50);
+    return () => clearTimeout(timer);
   }, [showCustomInput]);
 
   const togglePill = (optValue: string) => {
@@ -155,7 +155,7 @@ export function SelectPills({
             data-pill="1"
             onClick={pickAll}
             onKeyDown={(e) => onPillKeyDown(e, 0)}
-            className={`px-3.5 py-1.5 text-base rounded-card border transition-all ${
+            className={`px-3.5 py-1.5 typo-body-lg rounded-card border transition-all ${
               isAllSelected
                 ? 'bg-primary/20 border-primary/30 text-primary font-medium'
                 : 'bg-foreground/[0.03] border-border text-foreground hover:bg-foreground/[0.06] hover:border-foreground/15'
@@ -177,7 +177,7 @@ export function SelectPills({
               data-pill="1"
               onClick={() => togglePill(opt.value)}
               onKeyDown={(e) => onPillKeyDown(e, pillIdx)}
-              className={`px-3.5 py-1.5 text-base rounded-card border transition-all ${
+              className={`px-3.5 py-1.5 typo-body-lg rounded-card border transition-all ${
                 selected
                   ? 'bg-primary/20 border-primary/30 text-primary font-medium'
                   : 'bg-foreground/[0.03] border-border text-foreground hover:bg-foreground/[0.06] hover:border-foreground/15'
@@ -193,7 +193,7 @@ export function SelectPills({
         {customValuesFromAnswer.map((v) => (
           <span
             key={`custom-${v}`}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-base rounded-card border border-primary/30 bg-primary/15 text-primary font-medium"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 typo-body-lg rounded-card border border-primary/30 bg-primary/15 text-primary font-medium"
           >
             {v}
             <button
@@ -210,7 +210,7 @@ export function SelectPills({
           <button
             type="button"
             onClick={() => setShowCustomInput((v) => !v)}
-            className={`px-3 py-1.5 text-sm rounded-card border transition-all ${
+            className={`px-3 py-1.5 typo-body rounded-card border transition-all ${
               showCustomInput
                 ? 'bg-primary/20 border-primary/30 text-primary font-medium'
                 : 'bg-foreground/[0.03] border-border text-foreground hover:bg-foreground/[0.06] hover:border-foreground/15'

@@ -18,13 +18,13 @@ export function CapabilityEventsPane({ capability }: Props) {
     >
       <section className="flex flex-col gap-2">
         <header className="flex items-center gap-2">
-          <Radio className="h-3.5 w-3.5 text-foreground/60" />
-          <h4 className="typo-label text-foreground/70">
+          <Radio className="h-3.5 w-3.5 text-foreground" />
+          <h4 className="typo-label text-foreground">
             {t.matrix_v3.capability_row_field_events}
           </h4>
         </header>
         {events.length === 0 ? (
-          <p className="typo-body-sm text-foreground/40">
+          <p className="typo-body-sm text-foreground">
             {t.matrix_v3.capability_row_field_pending}
           </p>
         ) : (
@@ -32,16 +32,16 @@ export function CapabilityEventsPane({ capability }: Props) {
             {events.map((ev, i) => (
               <li
                 key={`${ev.event_type}-${i}`}
-                className="flex items-center gap-2 rounded-lg bg-secondary/25 px-2 py-1.5"
+                className="flex items-center gap-2 rounded-card bg-secondary/25 px-2 py-1.5"
               >
-                <span className="typo-caption font-medium uppercase text-foreground/60">
+                <span className="typo-caption font-medium uppercase text-foreground">
                   {ev.direction}
                 </span>
                 <span className="typo-body-sm text-foreground truncate">
                   {ev.event_type}
                 </span>
                 {ev.description ? (
-                  <span className="typo-caption text-foreground/50 truncate">
+                  <span className="typo-caption text-foreground truncate">
                     {ev.description}
                   </span>
                 ) : null}
@@ -53,13 +53,13 @@ export function CapabilityEventsPane({ capability }: Props) {
 
       <section className="flex flex-col gap-2">
         <header className="flex items-center gap-2">
-          <Bell className="h-3.5 w-3.5 text-foreground/60" />
-          <h4 className="typo-label text-foreground/70">
+          <Bell className="h-3.5 w-3.5 text-foreground" />
+          <h4 className="typo-label text-foreground">
             {t.matrix_v3.capability_row_field_channels}
           </h4>
         </header>
         {channels.length === 0 ? (
-          <p className="typo-body-sm text-foreground/40">
+          <p className="typo-body-sm text-foreground">
             {t.matrix_v3.capability_row_field_pending}
           </p>
         ) : (
@@ -67,16 +67,16 @@ export function CapabilityEventsPane({ capability }: Props) {
             {channels.map((ch, i) => (
               <li
                 key={`${ch.channel}-${i}`}
-                className="flex items-center gap-2 rounded-lg bg-secondary/25 px-2 py-1.5"
+                className="flex items-center gap-2 rounded-card bg-secondary/25 px-2 py-1.5"
               >
-                <span className="typo-caption font-medium uppercase text-foreground/60">
+                <span className="typo-caption font-medium uppercase text-foreground">
                   {ch.channel}
                 </span>
                 <span className="typo-body-sm text-foreground truncate">
                   {ch.target}
                 </span>
                 {ch.format ? (
-                  <span className="typo-caption text-foreground/50">
+                  <span className="typo-caption text-foreground">
                     ({ch.format})
                   </span>
                 ) : null}

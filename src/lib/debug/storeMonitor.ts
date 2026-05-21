@@ -1,3 +1,4 @@
+import { silentCatch } from '@/lib/silentCatch';
 /**
  * Store & Memory Growth Monitor
  *
@@ -128,7 +129,7 @@ function tick(): void {
         (window as any).__TAURI_INTERNALS__?.invoke?.('log_frontend_error', {
           level: 'warn', message: alertMsg + '\n' + summary
         });
-      } catch { /* intentional: fire-and-forget IPC */ }
+      } catch (err) { silentCatch("lib/debug/storeMonitor:catch1")(err); }
     }
   }
 
@@ -142,7 +143,7 @@ function tick(): void {
       alerts,
       history: snapshots.slice(-5),
     }));
-  } catch { /* intentional: localStorage may be unavailable */ }
+  } catch (err) { silentCatch("lib/debug/storeMonitor:catch2")(err); }
 }
 
 export function startMonitor(): void {

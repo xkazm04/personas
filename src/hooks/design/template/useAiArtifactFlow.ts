@@ -49,7 +49,7 @@ export function useAiArtifactFlow<TPromptInput, TResult>(
     async (input: TPromptInput) => {
       await stream.start(() => startFn(input));
     },
-    [stream.start, startFn],
+    [stream, startFn],
   );
 
   return {

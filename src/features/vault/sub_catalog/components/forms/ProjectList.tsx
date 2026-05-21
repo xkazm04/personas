@@ -48,7 +48,7 @@ export function ProjectList({ projects, isSelected, onSelect, multiSelect }: Pro
             <div className={`w-4 h-4 mt-1 rounded border flex-shrink-0 flex items-center justify-center ${
               isSelected(project.id) ? 'bg-indigo-500 border-indigo-500' : 'border-primary/20'
             }`}>
-              {isSelected(project.id) && <span className="text-white text-[10px] font-bold">&#10003;</span>}
+              {isSelected(project.id) && <span className="text-foreground text-[10px] font-bold">&#10003;</span>}
             </div>
           )}
         </button>

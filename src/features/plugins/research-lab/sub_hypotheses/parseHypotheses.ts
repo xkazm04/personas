@@ -1,3 +1,4 @@
+import { silentCatch } from '@/lib/silentCatch';
 /**
  * Parse an LLM-generated hypothesis list into discrete statements.
  * Tolerant to numbered lists, bulleted lists, JSON arrays, or newline-split plain text.
@@ -16,9 +17,7 @@ export function parseHypothesesOutput(raw: string): string[] {
           .map((s) => s.trim())
           .filter(Boolean);
       }
-    } catch {
-      // Fall through
-    }
+    } catch (err) { silentCatch("features/plugins/research-lab/sub_hypotheses/parseHypotheses:catch1")(err); }
   }
 
   // Match numbered or bulleted lines

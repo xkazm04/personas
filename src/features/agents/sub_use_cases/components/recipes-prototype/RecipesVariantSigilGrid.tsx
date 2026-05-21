@@ -325,7 +325,7 @@ function ContainmentPanel({ attentionCount, openSlotCount, children }: Containme
       }}
     >
       <div className="flex items-center gap-3 px-4 py-2.5 border-b border-card-border/60">
-        <span className="typo-label uppercase tracking-wider text-foreground/65">
+        <span className="typo-label uppercase tracking-wider text-foreground">
           {t.agents.use_cases.constellation_label}
         </span>
         {attentionCount > 0 && (
@@ -334,7 +334,7 @@ function ContainmentPanel({ attentionCount, openSlotCount, children }: Containme
             {tx(t.agents.use_cases.attention_count, { count: attentionCount })}
           </span>
         )}
-        <span className="ml-auto typo-caption text-foreground/45">
+        <span className="ml-auto typo-caption text-foreground">
           {openSlotCount === 1
             ? tx(t.agents.use_cases.open_slot_one, { count: openSlotCount })
             : tx(t.agents.use_cases.open_slot_other, { count: openSlotCount })}
@@ -430,7 +430,7 @@ function SigilTile({
           className={`shrink-0 inline-flex items-center justify-center w-6 h-6 rounded-full border transition-colors cursor-pointer disabled:opacity-50 ${
             isDisabled
               ? 'border-status-success/30 bg-status-success/10 text-status-success hover:bg-status-success/20'
-              : 'border-card-border bg-secondary/80 text-foreground/80 hover:text-foreground hover:border-primary/40'
+              : 'border-card-border bg-secondary/80 text-foreground hover:text-foreground hover:border-primary/40'
           }`}
           title={isDisabled ? t.agents.use_cases.activate_capability : t.agents.use_cases.pause_capability}
         >
@@ -600,18 +600,18 @@ function EmptyTile({ variant, onPromptClick }: EmptyTileProps) {
     >
       <div className="absolute inset-x-0 top-9 bottom-14 flex items-center justify-center pointer-events-none">
         {isLocked
-          ? <Loader2 className="w-9 h-9 text-foreground/40 animate-spin" />
+          ? <Loader2 className="w-9 h-9 text-foreground animate-spin" />
           : <EmptyMiniSigil size={SIGIL_SIZE} isHovered={hovered} />
         }
       </div>
       <div className={`absolute inset-x-0 bottom-0 px-3 py-2.5 ${isRecipe || isLocked ? 'bg-gradient-to-t from-background/85 via-background/40 to-transparent' : ''}`}>
         {isLocked ? (
           <>
-            <div className="typo-heading text-center font-medium text-foreground/70 leading-tight inline-flex items-center justify-center gap-1.5 w-full">
-              <Loader2 className="w-3.5 h-3.5 text-foreground/55 animate-spin" />
+            <div className="typo-heading text-center font-medium text-foreground leading-tight inline-flex items-center justify-center gap-1.5 w-full">
+              <Loader2 className="w-3.5 h-3.5 text-foreground animate-spin" />
               {t.agents.use_cases.generating_version}
             </div>
-            <div className="typo-label text-foreground/40 mt-0.5 text-center">{t.agents.use_cases.notify_when_ready}</div>
+            <div className="typo-label text-foreground mt-0.5 text-center">{t.agents.use_cases.notify_when_ready}</div>
           </>
         ) : isRecipe ? (
           <>
@@ -619,15 +619,15 @@ function EmptyTile({ variant, onPromptClick }: EmptyTileProps) {
               <Sparkles className="w-3.5 h-3.5 text-primary/85" />
               {t.agents.use_cases.adopt_a_recipe}
             </div>
-            <div className="typo-label text-foreground/45 mt-0.5 text-center">{t.agents.use_cases.from_curated_catalog}</div>
+            <div className="typo-label text-foreground mt-0.5 text-center">{t.agents.use_cases.from_curated_catalog}</div>
           </>
         ) : (
           <>
-            <div className="typo-heading text-center font-medium text-foreground/80 leading-tight inline-flex items-center justify-center gap-1.5 w-full">
+            <div className="typo-heading text-center font-medium text-foreground leading-tight inline-flex items-center justify-center gap-1.5 w-full">
               <Wand2 className="w-3.5 h-3.5 text-violet-400/85" />
               {t.agents.use_cases.describe_new_capability}
             </div>
-            <div className="typo-label text-foreground/45 mt-0.5 text-center inline-flex items-center justify-center gap-1 w-full">
+            <div className="typo-label text-foreground mt-0.5 text-center inline-flex items-center justify-center gap-1 w-full">
               <Plus className="w-3 h-3" />
               {t.agents.use_cases.open_slot}
             </div>
@@ -696,7 +696,7 @@ function NewCapabilityPromptModal({ isOpen, onClose, onSubmit }: NewCapabilityPr
             }
           }}
         />
-        <p className="typo-caption text-foreground/55">{t.agents.use_cases.new_capability_hint}</p>
+        <p className="typo-caption text-foreground">{t.agents.use_cases.new_capability_hint}</p>
       </div>
 
       <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-primary/10 bg-secondary/20">

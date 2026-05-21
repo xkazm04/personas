@@ -66,7 +66,7 @@ export function useDataPortability() {
       setErrorMsg(errMsg(e, s.export_failed));
       setExportStatus('error');
     }
-  }, [exportStatus]);
+  }, [exportStatus, s.export_failed]);
 
   const handleExportSelective = useCallback(async (
     personaIds: string[],
@@ -86,7 +86,7 @@ export function useDataPortability() {
       setErrorMsg(errMsg(e, s.selective_export_failed));
       setExportStatus('error');
     }
-  }, [exportStatus]);
+  }, [exportStatus, s.selective_export_failed]);
 
   const handleImport = useCallback(async (passphrase?: string) => {
     if (importStatus === 'loading') return;
@@ -107,7 +107,7 @@ export function useDataPortability() {
       setErrorMsg(errMsg(e, s.import_failed));
       setImportStatus('error');
     }
-  }, [importStatus]);
+  }, [importStatus, s.import_failed]);
 
   const handleCredExport = useCallback(async () => {
     if (credExportStatus === 'loading') return;
@@ -129,7 +129,7 @@ export function useDataPortability() {
       setErrorMsg(errMsg(e, s.cred_export_failed));
       setCredExportStatus('error');
     }
-  }, [credExportPassphrase, credExportStatus]);
+  }, [credExportPassphrase, credExportStatus, s.cred_export_failed, s.passphrase_too_short]);
 
   const handleCredImport = useCallback(async () => {
     if (credImportStatus === 'loading') return;
@@ -169,7 +169,7 @@ export function useDataPortability() {
       setErrorMsg(errMsg(e, s.cred_import_failed));
       setCredImportStatus('error');
     }
-  }, [credImportPassphrase, credImportStatus, credImportFilePath]);
+  }, [credImportStatus, credImportFilePath, credImportPassphrase, s.please_enter_passphrase, s.passphrase_too_short, s.cred_import_failed]);
 
   const handleCredImportWithResolutions = useCallback(async (resolutions: Record<string, string>) => {
     if (credImportStatus === 'loading') return;
@@ -195,7 +195,7 @@ export function useDataPortability() {
       setErrorMsg(errMsg(e, s.cred_import_failed));
       setCredImportStatus('error');
     }
-  }, [credImportPassphrase, credImportStatus, credImportFilePath]);
+  }, [credImportStatus, credImportFilePath, s.no_import_file, s.cred_import_failed, credImportPassphrase]);
 
   return {
     stats,

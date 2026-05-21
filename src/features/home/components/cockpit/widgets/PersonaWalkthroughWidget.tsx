@@ -25,7 +25,7 @@ export function PersonaWalkthroughWidget({ config, title }: CockpitWidgetProps) 
 
   if (!content) {
     return (
-      <div className="rounded-card border border-foreground/10 bg-secondary/40 p-4 typo-caption text-foreground/50">
+      <div className="rounded-card border border-foreground/10 bg-secondary/40 p-4 typo-caption text-foreground">
         {t.plugins.companion.walkthrough_empty}
       </div>
     );
@@ -42,7 +42,7 @@ export function PersonaWalkthroughWidget({ config, title }: CockpitWidgetProps) 
           {title || t.plugins.companion.walkthrough_title}
         </span>
         {intent && (
-          <span className="text-foreground/55 truncate" title={intent}>
+          <span className="text-foreground truncate" title={intent}>
             · {intent}
           </span>
         )}
@@ -52,7 +52,7 @@ export function PersonaWalkthroughWidget({ config, title }: CockpitWidgetProps) 
       </div>
       {intent && (
         <footer className="flex items-center justify-between gap-2 pt-1">
-          <span className="typo-caption text-foreground/45">
+          <span className="typo-caption text-foreground">
             {t.plugins.companion.walkthrough_commit_hint}
           </span>
           <button

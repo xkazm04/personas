@@ -144,7 +144,7 @@ export default function ApiKeysSettings() {
           </div>
         )}
 
-        <p className="typo-body text-foreground/80 leading-relaxed mb-4">{s.description}</p>
+        <p className="typo-body text-foreground leading-relaxed mb-4">{s.description}</p>
 
         <McpServerInfoPanel />
 
@@ -154,13 +154,13 @@ export default function ApiKeysSettings() {
           </div>
 
           {loading && !keys && (
-            <div className="typo-caption text-foreground/60 py-6 text-center">
+            <div className="typo-caption text-foreground py-6 text-center">
               {s.loading_keys}
             </div>
           )}
 
           {!loading && visibleKeys.length === 0 && (
-            <div className="typo-caption text-foreground/60 py-6 text-center bg-secondary/20 rounded">
+            <div className="typo-caption text-foreground py-6 text-center bg-secondary/20 rounded">
               {s.empty}
             </div>
           )}
@@ -235,13 +235,13 @@ function ApiKeyRow({ apiKey, actioning, onRevoke, onDelete }: ApiKeyRowProps) {
           )}
         </div>
         <div className="flex items-center gap-3 mt-1">
-          <code className="typo-code text-foreground/60">{apiKey.key_prefix}…</code>
-          <span className="typo-caption text-foreground/50">·</span>
-          <span className="typo-caption text-foreground/60">
+          <code className="typo-code text-foreground">{apiKey.key_prefix}…</code>
+          <span className="typo-caption text-foreground">·</span>
+          <span className="typo-caption text-foreground">
             {scopes.length > 0 ? scopes.join(', ') : s.no_scopes}
           </span>
-          <span className="typo-caption text-foreground/50">·</span>
-          <span className="typo-caption text-foreground/60">
+          <span className="typo-caption text-foreground">·</span>
+          <span className="typo-caption text-foreground">
             {s.last_used}: {lastUsed}
           </span>
         </div>
@@ -252,7 +252,7 @@ function ApiKeyRow({ apiKey, actioning, onRevoke, onDelete }: ApiKeyRowProps) {
             type="button"
             onClick={onRevoke}
             disabled={actioning}
-            className="inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption text-foreground/70 hover:text-amber-400 hover:bg-amber-400/10 transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption text-foreground hover:text-amber-400 hover:bg-amber-400/10 transition-colors disabled:opacity-50"
             title={s.revoke_tooltip}
           >
             <ShieldOff size={12} />
@@ -274,7 +274,7 @@ function ApiKeyRow({ apiKey, actioning, onRevoke, onDelete }: ApiKeyRowProps) {
           className={`inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption transition-colors disabled:opacity-50 ${
             confirmDelete
               ? 'text-red-400 bg-red-400/10 hover:bg-red-400/20'
-              : 'text-foreground/70 hover:text-red-400 hover:bg-red-400/10'
+              : 'text-foreground hover:text-red-400 hover:bg-red-400/10'
           }`}
           title={s.delete_tooltip}
         >

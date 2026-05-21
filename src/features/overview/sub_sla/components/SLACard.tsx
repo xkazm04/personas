@@ -122,7 +122,7 @@ export function DailyTrendChart({ points }: { points: { date: string; success_ra
         return (
           <div key={i} className="flex flex-col items-center justify-end flex-shrink-0" style={{ width: barWidth }} title={`${p.date}: ${formatPercent(p.success_rate)} (${p.total} runs)`}>
             <div
-              className={`animate-fade-in w-full rounded-t-sm ${color}`}
+              className={`animate-fade-in w-full rounded-t-interactive ${color}`}
             />
           </div>
         );

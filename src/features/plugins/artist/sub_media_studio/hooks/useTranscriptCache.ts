@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { artistLoadTranscript } from '@/api/artist';
 import type { BeatAnchor, Composition, VideoClip, WordTimeline } from '../types';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 /**
  * Loads every VideoClip's transcript sidecar from disk and keeps a cache
@@ -38,9 +40,7 @@ export function useTranscriptCache(composition: Composition) {
           if (cancelled) return;
           next[p] = parsed;
           mutated = true;
-        } catch {
-          // Silently skip — UI will just fall back to manual startTime.
-        }
+        } catch (err) { silentCatch("features/plugins/artist/sub_media_studio/hooks/useTranscriptCache:catch1")(err); }
       }
       // Drop cached entries whose path is no longer referenced.
       for (const p of Object.keys(next)) {
@@ -54,9 +54,7 @@ export function useTranscriptCache(composition: Composition) {
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- cache is a
-    // value-cache; re-entering the effect on its identity would re-fetch.
-  }, [paths.join('|')]);
+  }, [cache, paths]);
 
   const resolve = useMemo(
     () => (anchor: BeatAnchor, items: Composition['items']): number | null => {

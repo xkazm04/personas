@@ -21,6 +21,8 @@ import ContextDetail from './ContextDetail';
 import GroupList from './GroupList';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/en';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 // ---------------------------------------------------------------------------
 // Completion handler — shared by event listener + resync polling.
@@ -297,7 +299,7 @@ export default function ContextMapPage() {
           finalizeContextScan({ outcome: 'failed', errorMessage: result.error }, () => setScanLines([]), t, tx);
         }
         // else: still running — listener will catch the event
-      } catch { /* ignore */ }
+      } catch (err) { silentCatch("features/plugins/dev-tools/sub_context/ContextMapPage:catch1")(err); }
     })();
 
     return () => { cancelled = true; };
@@ -306,7 +308,7 @@ export default function ContextMapPage() {
     // the activeScanId guard avoids work when no scan is pending.
   }, [t, tx]);
 
-  useEffect(() => { fetchContextMap(); }, []);
+  useEffect(() => { fetchContextMap(); }, [fetchContextMap]);
 
   const handleScan = useCallback(async () => {
     setScanLines([]);

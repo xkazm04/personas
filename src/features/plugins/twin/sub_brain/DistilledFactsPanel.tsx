@@ -3,7 +3,7 @@ import { Sparkles, Plus, Trash2, FileText, X } from 'lucide-react';
 import * as twinApi from '@/api/twin/twin';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
-import { toastCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { Button } from '@/features/shared/components/buttons';
 import type { TwinDistilledFact } from '@/lib/bindings/TwinDistilledFact';
@@ -104,7 +104,7 @@ export function DistilledFactsPanel({ twinId }: Props) {
   const importanceTint = (n: number) =>
     n >= 4 ? 'bg-violet-500/15 text-violet-300 border-violet-500/25'
     : n >= 3 ? 'bg-secondary/40 text-foreground border-primary/10'
-    : 'bg-secondary/30 text-foreground/70 border-primary/10';
+    : 'bg-secondary/30 text-foreground border-primary/10';
 
   return (
     <div className="p-4 rounded-card border border-primary/10 bg-card/40">
@@ -127,7 +127,7 @@ export function DistilledFactsPanel({ twinId }: Props) {
         <div className="p-3 mb-3 rounded-card border border-violet-500/20 bg-violet-500/5 space-y-3">
           <div className="flex items-center justify-between">
             <span className="typo-caption font-medium text-foreground">{t.distilled.addHeading}</span>
-            <button onClick={resetDraft} aria-label={t.distilled.cancel} className="text-foreground/60 hover:text-foreground">
+            <button onClick={resetDraft} aria-label={t.distilled.cancel} className="text-foreground hover:text-foreground">
               <X className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -160,15 +160,15 @@ export function DistilledFactsPanel({ twinId }: Props) {
                 onChange={(e) => setDraftImportance(Number(e.target.value))}
                 className="w-full"
               />
-              <span className="block text-[10px] text-foreground/60 text-right">{draftImportance} / 5</span>
+              <span className="block text-[10px] text-foreground text-right">{draftImportance} / 5</span>
             </label>
           </div>
 
           <div className="space-y-1">
             <span className="typo-caption text-foreground font-medium">{t.distilled.sourcesLabel}</span>
-            <p className="text-[10px] text-foreground/55">{t.distilled.sourcesHint}</p>
+            <p className="text-[10px] text-foreground">{t.distilled.sourcesHint}</p>
             {scopedComms.length === 0 ? (
-              <p className="typo-caption text-foreground/55 italic">{t.distilled.noCommsYet}</p>
+              <p className="typo-caption text-foreground italic">{t.distilled.noCommsYet}</p>
             ) : (
               <ul className="max-h-40 overflow-y-auto border border-primary/10 rounded-interactive divide-y divide-primary/5">
                 {scopedComms.map((c: TwinCommunication) => (
@@ -181,7 +181,7 @@ export function DistilledFactsPanel({ twinId }: Props) {
                         className="accent-violet-500 mt-1 flex-shrink-0"
                       />
                       <span className="flex-1 min-w-0">
-                        <span className="flex items-center gap-1.5 typo-caption text-foreground/70">
+                        <span className="flex items-center gap-1.5 typo-caption text-foreground">
                           <span className="px-1 py-0.5 text-[9px] rounded bg-secondary/40">{c.channel}</span>
                           <span>{c.direction === 'out' ? t.distilled.sent : t.distilled.received}</span>
                           {c.contact_handle && <span className="truncate">{c.contact_handle}</span>}
@@ -214,12 +214,12 @@ export function DistilledFactsPanel({ twinId }: Props) {
       )}
 
       {facts === null ? (
-        <p className="typo-caption text-foreground/55 py-2">{t.distilled.loading}</p>
+        <p className="typo-caption text-foreground py-2">{t.distilled.loading}</p>
       ) : facts.length === 0 ? (
         <div className="py-6 text-center">
-          <FileText className="w-7 h-7 text-foreground/30 mx-auto mb-2" />
+          <FileText className="w-7 h-7 text-foreground mx-auto mb-2" />
           <p className="typo-body text-foreground">{t.distilled.emptyTitle}</p>
-          <p className="typo-caption text-foreground/55 mt-1">{t.distilled.emptyBody}</p>
+          <p className="typo-caption text-foreground mt-1">{t.distilled.emptyBody}</p>
         </div>
       ) : (
         <ul className="space-y-2">
@@ -228,9 +228,7 @@ export function DistilledFactsPanel({ twinId }: Props) {
             try {
               const arr = JSON.parse(fact.sources_json) as string[];
               if (Array.isArray(arr)) sourceCount = arr.length;
-            } catch {
-              // ignore — provenance is malformed but we still want to render the fact
-            }
+            } catch (err) { silentCatch("features/plugins/twin/sub_brain/DistilledFactsPanel:catch1")(err); }
             return (
               <li key={fact.id} className="p-3 rounded-card border border-primary/10 bg-background/40 flex items-start gap-3">
                 <span className={`px-1.5 py-0.5 text-[9px] font-medium rounded-full border flex-shrink-0 ${importanceTint(fact.importance)}`}>
@@ -244,16 +242,16 @@ export function DistilledFactsPanel({ twinId }: Props) {
                         {fact.contact_handle}
                       </span>
                     )}
-                    <span className="text-[10px] text-foreground/55">
+                    <span className="text-[10px] text-foreground">
                       {tx(t.distilled.sourceCount, { count: sourceCount })}
                     </span>
-                    <span className="text-[10px] text-foreground/55">{new Date(fact.created_at).toLocaleDateString()}</span>
+                    <span className="text-[10px] text-foreground">{new Date(fact.created_at).toLocaleDateString()}</span>
                   </div>
                 </div>
                 <button
                   onClick={() => handleDelete(fact.id)}
                   aria-label={t.distilled.deleteAria}
-                  className="p-1 rounded-interactive text-foreground/55 hover:text-red-400 hover:bg-red-500/10 transition-colors flex-shrink-0"
+                  className="p-1 rounded-interactive text-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors flex-shrink-0"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>

@@ -76,7 +76,7 @@ export function PersonaDecisionsFooter({ personaId }: { personaId: string }) {
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="flex items-center gap-1.5 typo-caption text-foreground/65 hover:text-foreground/90 rounded-interactive"
+          className="flex items-center gap-1.5 typo-caption text-foreground hover:text-foreground/90 rounded-interactive"
           aria-expanded={open}
         >
           <Chevron className="w-3 h-3" />
@@ -93,7 +93,7 @@ export function PersonaDecisionsFooter({ personaId }: { personaId: string }) {
         <button
           type="button"
           onClick={handleOpenFullAudit}
-          className="ml-auto inline-flex items-center gap-1 typo-caption text-foreground/55 hover:text-foreground/80 rounded-interactive"
+          className="ml-auto inline-flex items-center gap-1 typo-caption text-foreground hover:text-foreground/80 rounded-interactive"
           title={t.agents.persona_decisions_footer_open_audit}
         >
           <ExternalLink className="w-3 h-3" />
@@ -106,11 +106,11 @@ export function PersonaDecisionsFooter({ personaId }: { personaId: string }) {
             <li key={d.id} className="space-y-0.5">
               <div className="flex items-baseline gap-1.5 typo-caption text-foreground/85">
                 <span className="font-medium">{d.label}</span>
-                <ChevronRight className="w-3 h-3 text-foreground/35 shrink-0" />
+                <ChevronRight className="w-3 h-3 text-foreground shrink-0" />
                 <span>{d.choice}</span>
               </div>
-              <div className="flex items-baseline gap-1.5 typo-caption text-foreground/65 pl-1">
-                <GitBranch className="w-3 h-3 text-foreground/35 shrink-0" />
+              <div className="flex items-baseline gap-1.5 typo-caption text-foreground pl-1">
+                <GitBranch className="w-3 h-3 text-foreground shrink-0" />
                 <span className="leading-snug">{d.rationale}</span>
               </div>
             </li>

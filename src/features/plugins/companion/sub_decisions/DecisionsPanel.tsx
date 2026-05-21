@@ -84,12 +84,12 @@ export default function DecisionsPanel() {
           <ScrollText className="w-5 h-5 text-fuchsia-400" />
           {t.plugins.companion.decisions_panel_title}
         </h1>
-        <p className="typo-body text-foreground/65 leading-relaxed">
+        <p className="typo-body text-foreground leading-relaxed">
           {t.plugins.companion.decisions_panel_subtitle}
         </p>
       </header>
       <div className="relative">
-        <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-foreground/45" />
+        <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-foreground" />
         <input
           type="text"
           value={filter}
@@ -100,7 +100,7 @@ export default function DecisionsPanel() {
         />
       </div>
       {loading && (
-        <div className="flex items-center gap-2 typo-caption text-foreground/55">
+        <div className="flex items-center gap-2 typo-caption text-foreground">
           <Loader2 className="w-3.5 h-3.5 animate-spin" />
           {t.plugins.companion.decisions_panel_loading}
         </div>
@@ -111,7 +111,7 @@ export default function DecisionsPanel() {
         </div>
       )}
       {!loading && !error && rows.length === 0 && (
-        <div className="rounded-card border border-foreground/10 bg-secondary/40 p-4 typo-caption text-foreground/55">
+        <div className="rounded-card border border-foreground/10 bg-secondary/40 p-4 typo-caption text-foreground">
           {filter.trim().length > 0
             ? t.plugins.companion.decisions_panel_empty_filtered
             : t.plugins.companion.decisions_panel_empty}
@@ -125,9 +125,9 @@ export default function DecisionsPanel() {
               className="space-y-2"
               data-context-key={group.key}
             >
-              <h2 className="typo-caption font-medium text-foreground/70 uppercase tracking-wide">
+              <h2 className="typo-caption font-medium text-foreground uppercase tracking-wide">
                 {group.label}{' '}
-                <span className="text-foreground/45 normal-case">
+                <span className="text-foreground normal-case">
                   ({group.items.length})
                 </span>
               </h2>
@@ -144,14 +144,14 @@ export default function DecisionsPanel() {
                     />
                     <div className="flex items-baseline gap-1.5 typo-body text-foreground/90">
                       <span className="font-medium">{row.label}</span>
-                      <ChevronRight className="w-3 h-3 text-foreground/35 shrink-0" />
+                      <ChevronRight className="w-3 h-3 text-foreground shrink-0" />
                       <span>{row.choice}</span>
-                      <span className="text-foreground/45 typo-caption ml-auto">
+                      <span className="text-foreground typo-caption ml-auto">
                         {prettyDate(row.decisionTimestamp ?? row.createdAt)}
                       </span>
                     </div>
-                    <div className="flex items-baseline gap-1.5 typo-caption text-foreground/70">
-                      <GitBranch className="w-3 h-3 text-foreground/35 shrink-0" />
+                    <div className="flex items-baseline gap-1.5 typo-caption text-foreground">
+                      <GitBranch className="w-3 h-3 text-foreground shrink-0" />
                       <span className="leading-relaxed">{row.rationale}</span>
                     </div>
                   </li>

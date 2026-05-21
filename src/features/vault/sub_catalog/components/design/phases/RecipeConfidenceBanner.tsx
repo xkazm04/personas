@@ -43,7 +43,7 @@ export function RecipeConfidenceBanner({ instruction }: RecipeConfidenceBannerPr
   return (
     <div className="flex items-center gap-2 px-3 py-2 rounded-modal border bg-emerald-500/8 border-emerald-500/20 animate-fade-slide-in">
       <BadgeCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-      <span className="text-sm text-emerald-300/90">
+      <span className="typo-body text-emerald-300/90">
         <span className="font-medium">{dp.verified_setup}</span>
         {match.usageCount > 0 && (
           <> {tx(match.usageCount === 1 ? dp.recipe_used_one : dp.recipe_used_other, { count: match.usageCount })}</>

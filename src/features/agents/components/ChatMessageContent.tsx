@@ -7,6 +7,8 @@ import { Check, Copy, FlaskConical } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 interface ChatMessageContentProps {
   content: string;
@@ -63,9 +65,7 @@ function CodeBlock({
       setCopied(true);
       addToast(t.agents.chat_thread.code_copied, 'success');
       setTimeout(() => setCopied(false), 1800);
-    } catch {
-      /* clipboard blocked */
-    }
+    } catch (err) { silentCatch("features/agents/components/ChatMessageContent:catch1")(err); }
   }, [rawText, addToast, t.agents.chat_thread.code_copied]);
 
   const showSendToLab = !!onSendToLab && (language ? LAB_ELIGIBLE_LANGUAGES.has(language) : false);
@@ -74,7 +74,7 @@ function CodeBlock({
     <div className="relative group/code my-3">
       {language && (
         <div className="flex items-center justify-between px-3 py-1.5 rounded-t-card border border-b-0 border-primary/12 bg-secondary/40">
-          <span className="typo-label text-foreground/60 uppercase tracking-wide">
+          <span className="typo-label text-foreground uppercase tracking-wide">
             {language}
           </span>
           <div className="flex items-center gap-1">
@@ -82,7 +82,7 @@ function CodeBlock({
               <button
                 type="button"
                 onClick={() => onSendToLab?.(rawText, language)}
-                className="flex items-center gap-1 px-2 py-0.5 rounded text-foreground/60 hover:text-primary hover:bg-primary/8 typo-label transition-colors"
+                className="flex items-center gap-1 px-2 py-0.5 rounded text-foreground hover:text-primary hover:bg-primary/8 typo-label transition-colors"
                 title={t.agents.chat_thread.send_to_lab}
               >
                 <FlaskConical className="w-3 h-3" />
@@ -92,7 +92,7 @@ function CodeBlock({
             <button
               type="button"
               onClick={handleCopy}
-              className="flex items-center gap-1 px-2 py-0.5 rounded text-foreground/60 hover:text-foreground hover:bg-foreground/5 typo-label transition-colors"
+              className="flex items-center gap-1 px-2 py-0.5 rounded text-foreground hover:text-foreground hover:bg-foreground/5 typo-label transition-colors"
               title={t.agents.chat_thread.copy_code}
               aria-label={t.agents.chat_thread.copy_code}
             >
@@ -111,7 +111,7 @@ function CodeBlock({
         <button
           type="button"
           onClick={handleCopy}
-          className="absolute top-1.5 right-1.5 p-1 rounded text-foreground/40 opacity-0 group-hover/code:opacity-100 hover:text-foreground hover:bg-foreground/5 transition-all"
+          className="absolute top-1.5 right-1.5 p-1 rounded text-foreground opacity-0 group-hover/code:opacity-100 hover:text-foreground hover:bg-foreground/5 transition-all"
           title={t.agents.chat_thread.copy_code}
           aria-label={t.agents.chat_thread.copy_code}
         >
@@ -154,7 +154,7 @@ export function ChatMessageContent({
     ),
     li: ({ children }) => <li className="text-foreground">{children}</li>,
     blockquote: ({ children }) => (
-      <blockquote className="border-l-2 border-primary/30 pl-3 my-2 italic text-foreground/80">
+      <blockquote className="border-l-2 border-primary/30 pl-3 my-2 italic text-foreground">
         {children}
       </blockquote>
     ),

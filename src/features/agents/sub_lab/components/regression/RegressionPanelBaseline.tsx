@@ -5,6 +5,8 @@ import { ModelToggleGrid } from '../../shared';
 import { RegressionResultsView } from './RegressionResultsView';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useRegressionPanelState, REG_DEFAULT_THRESHOLD } from './useRegressionPanelState';
+import { DebtText } from '@/i18n/DebtText';
+
 
 export function RegressionPanelBaseline() {
   const { t } = useTranslation();
@@ -34,7 +36,7 @@ export function RegressionPanelBaseline() {
       <div className="flex items-center gap-3 px-4 py-3 rounded-modal border border-amber-500/20 bg-amber-500/5">
         <Star className="w-5 h-5 text-amber-400 flex-shrink-0" />
         <div className="flex-1">
-          <p className="typo-heading text-amber-400">Baseline: v{s.baselinePin.versionNumber}</p>
+          <p className="typo-heading text-amber-400"><DebtText k="auto_baseline_v_5c0d5af6" />{s.baselinePin.versionNumber}</p>
           <p className="typo-caption text-foreground">
             Pinned {new Date(s.baselinePin.pinnedAt).toLocaleDateString()}
             {s.baselinePin.runId ? ` · Eval run: ${s.baselinePin.runId.slice(0, 8)}...` : ' · No eval run linked'}
@@ -105,7 +107,7 @@ export function RegressionPanelBaseline() {
         <div className="flex items-center gap-3 px-4 py-3 rounded-modal border border-amber-500/15 bg-amber-500/5">
           <AlertTriangle className="w-4 h-4 text-amber-400" />
           <p className="typo-caption text-amber-400/80">
-            No eval results for baseline run. Run an eval on v{s.baselinePin.versionNumber} first, then pin it as baseline.
+            <DebtText k="auto_no_eval_results_for_baseline_run_run_an_ev_301f1ff0" />{s.baselinePin.versionNumber} <DebtText k="auto_first_then_pin_it_as_baseline_56c274cb" />
           </p>
         </div>
       )}

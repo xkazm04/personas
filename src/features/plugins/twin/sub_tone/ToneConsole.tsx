@@ -8,6 +8,10 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { TONE_CHANNELS, paletteOf } from '../_shared/channels';
 import type { TwinTone } from '@/lib/bindings/TwinTone';
 import type { TwinChannelKind } from '@/api/enums';
+import { silentCatch } from '@/lib/silentCatch';
+import { DebtText } from '@/i18n/DebtText';
+
+
 
 /* ------------------------------------------------------------------ *
  *  Console — "Tone Matrix"
@@ -27,7 +31,7 @@ function exampleCount(raw: string): number {
   try {
     const p = JSON.parse(raw);
     if (Array.isArray(p)) return p.length;
-  } catch { /* fall through */ }
+  } catch (err) { silentCatch("features/plugins/twin/sub_tone/ToneConsole:catch1")(err); }
   return raw.split('\n').filter((s) => s.trim()).length;
 }
 
@@ -91,8 +95,8 @@ export default function ToneConsole() {
           <Terminal className="w-4 h-4 text-violet-300" />
         </div>
         <div className="flex flex-col leading-tight min-w-0">
-          <h1 className="typo-card-label">tone / matrix</h1>
-          <span className="typo-caption text-foreground/55 truncate">{t.tone.subtitle}</span>
+          <h1 className="typo-card-label"><DebtText k="auto_tone_matrix_1fba03a7" /></h1>
+          <span className="typo-caption text-foreground truncate">{t.tone.subtitle}</span>
         </div>
         <div className="flex-1" />
         <div className="flex items-stretch gap-2 mr-2">
@@ -103,8 +107,8 @@ export default function ToneConsole() {
         </div>
         <button
           onClick={() => setFilterConfigured(!filterConfigured)}
-          className={`px-2.5 py-1 text-xs font-medium rounded-interactive border transition-colors ${
-            filterConfigured ? 'bg-violet-500/15 text-violet-200 border-violet-500/30' : 'text-foreground/65 border-primary/15 hover:text-foreground hover:bg-secondary/40'
+          className={`px-2.5 py-1 typo-caption font-medium rounded-interactive border transition-colors ${
+            filterConfigured ? 'bg-violet-500/15 text-violet-200 border-violet-500/30' : 'text-foreground border-primary/15 hover:text-foreground hover:bg-secondary/40'
           }`}
         >
           {filterConfigured ? 'show all' : 'configured only'}
@@ -113,9 +117,9 @@ export default function ToneConsole() {
 
       {/* ── Table ────────────────────────────────────────────────── */}
       <div className="flex-1 min-h-0 overflow-auto">
-        <table className="w-full border-collapse text-sm">
+        <table className="w-full border-collapse typo-body">
           <thead className="sticky top-0 z-[2] bg-background/95 backdrop-blur">
-            <tr className="border-b border-primary/15 text-foreground/55">
+            <tr className="border-b border-primary/15 text-foreground">
               <th className="text-left font-medium px-3 py-2 pl-4 md:pl-6 xl:pl-8 w-44">
                 <span className="text-[10px] uppercase tracking-[0.16em]">channel</span>
               </th>
@@ -129,7 +133,7 @@ export default function ToneConsole() {
                 <div className="flex items-center gap-1.5"><ListChecks className="w-3 h-3" /><span className="text-[10px] uppercase tracking-[0.16em]">{t.tone.constraints}</span></div>
               </th>
               <th className="text-center font-medium px-3 py-2 w-20 hidden md:table-cell">
-                <div className="flex items-center justify-center gap-1.5"><Quote className="w-3 h-3" /><span className="text-[10px] uppercase tracking-[0.16em]">ex.</span></div>
+                <div className="flex items-center justify-center gap-1.5"><Quote className="w-3 h-3" /><span className="text-[10px] uppercase tracking-[0.16em]"><DebtText k="auto_ex_8463eaf7" /></span></div>
               </th>
               <th className="text-right font-medium px-3 py-2 pr-4 md:pr-6 xl:pr-8 w-32">
                 <span className="text-[10px] uppercase tracking-[0.16em]">status</span>
@@ -138,7 +142,7 @@ export default function ToneConsole() {
           </thead>
           <tbody>
             {isLoading && (
-              <tr><td colSpan={6} className="px-4 py-12 text-center typo-body text-foreground/65">{t.tone.loading}</td></tr>
+              <tr><td colSpan={6} className="px-4 py-12 text-center typo-body text-foreground">{t.tone.loading}</td></tr>
             )}
             {!isLoading && visible.map((c) => {
               const form = getForm(c.id);
@@ -157,35 +161,35 @@ export default function ToneConsole() {
                   >
                     <td className="pl-4 md:pl-6 xl:pl-8 pr-3 py-2.5">
                       <div className="flex items-center gap-2.5">
-                        <ChevronDown className={`w-3.5 h-3.5 text-foreground/55 transition-transform ${isExpanded ? '' : '-rotate-90'}`} />
+                        <ChevronDown className={`w-3.5 h-3.5 text-foreground transition-transform ${isExpanded ? '' : '-rotate-90'}`} />
                         <span className={`w-2 h-2 rounded-full ${exists ? paletteOf(c).dot : 'bg-foreground/20'}`} />
                         <span className="typo-card-label">{c.label}</span>
-                        {c.id === 'generic' && <span className="text-[9px] uppercase tracking-wider text-foreground/45">default</span>}
+                        {c.id === 'generic' && <span className="text-[9px] uppercase tracking-wider text-foreground">default</span>}
                       </div>
                     </td>
                     <td className="px-3 py-2.5">
-                      <span className={`text-xs ${form.voiceDirectives.trim() ? 'text-foreground/85' : 'text-foreground/35 italic'} line-clamp-1`}>
+                      <span className={`typo-caption ${form.voiceDirectives.trim() ? 'text-foreground/85' : 'text-foreground italic'} line-clamp-1`}>
                         {form.voiceDirectives.trim() || '—'}
                       </span>
                     </td>
                     <td className="px-3 py-2.5 hidden md:table-cell">
-                      <span className={`text-xs ${form.lengthHint.trim() ? 'text-foreground/85' : 'text-foreground/35 italic'} truncate`}>
+                      <span className={`typo-caption ${form.lengthHint.trim() ? 'text-foreground/85' : 'text-foreground italic'} truncate`}>
                         {form.lengthHint.trim() || '—'}
                       </span>
                     </td>
                     <td className="px-3 py-2.5 hidden lg:table-cell">
-                      <span className={`text-xs ${form.constraintsJson.trim() ? 'text-foreground/85 font-mono' : 'text-foreground/35 italic'} truncate`}>
+                      <span className={`typo-code ${form.constraintsJson.trim() ? 'text-foreground/85 font-mono' : 'text-foreground italic'} truncate`}>
                         {form.constraintsJson.trim() || '—'}
                       </span>
                     </td>
                     <td className="px-3 py-2.5 text-center hidden md:table-cell">
-                      <span className={`tabular-nums text-xs ${exCount > 0 ? 'text-foreground' : 'text-foreground/35'}`}>{exCount || '—'}</span>
+                      <span className={`tabular-nums typo-caption ${exCount > 0 ? 'text-foreground' : 'text-foreground'}`}>{exCount || '—'}</span>
                     </td>
                     <td className="pr-4 md:pr-6 xl:pr-8 pl-3 py-2.5 text-right">
                       {exists ? (
                         <span className={`px-2 py-0.5 text-[10px] font-medium rounded-full bg-violet-500/15 ${paletteOf(c).text} border border-violet-500/25`}>configured</span>
                       ) : (
-                        <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-secondary/40 text-foreground/55">{c.id === 'generic' ? '—' : 'fallback'}</span>
+                        <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-secondary/40 text-foreground">{c.id === 'generic' ? '—' : 'fallback'}</span>
                       )}
                     </td>
                   </tr>
@@ -220,7 +224,7 @@ export default function ToneConsole() {
                         </div>
                         <div className="flex items-center justify-between pt-3 border-t border-primary/5 mt-3">
                           {exists && c.id !== 'generic' ? (
-                            <button onClick={() => handleDelete(c.id)} className="flex items-center gap-1.5 text-xs text-foreground/65 hover:text-red-400 transition-colors">
+                            <button onClick={() => handleDelete(c.id)} className="flex items-center gap-1.5 typo-caption text-foreground hover:text-red-400 transition-colors">
                               <Trash2 className="w-3.5 h-3.5" />{t.tone.removeOverride}
                             </button>
                           ) : <span />}
@@ -235,13 +239,13 @@ export default function ToneConsole() {
               );
             })}
             {!isLoading && visible.length === 0 && (
-              <tr><td colSpan={6} className="px-4 py-10 text-center typo-caption text-foreground/55">no configured channels — click <span className="text-violet-300">show all</span> to add overrides</td></tr>
+              <tr><td colSpan={6} className="px-4 py-10 text-center typo-caption text-foreground"><DebtText k="auto_no_configured_channels_click_a382544f" /> <span className="text-violet-300"><DebtText k="auto_show_all_1c4778b9" /></span> <DebtText k="auto_to_add_overrides_13754acd" /></td></tr>
             )}
           </tbody>
         </table>
-        <div className="px-4 md:px-6 xl:px-8 py-3 border-t border-primary/10 flex items-center gap-3 text-[11px] text-foreground/55">
+        <div className="px-4 md:px-6 xl:px-8 py-3 border-t border-primary/10 flex items-center gap-3 text-[11px] text-foreground">
           <span className="font-medium uppercase tracking-[0.16em] text-[10px]">tip</span>
-          <span>click any row to inline edit · generic is the fallback for unset channels</span>
+          <span><DebtText k="auto_click_any_row_to_inline_edit_generic_is_th_166e15d9" /></span>
         </div>
       </div>
     </div>
@@ -253,7 +257,7 @@ function Tile({ label, value, accent = 'violet' }: { label: string; value: numbe
   return (
     <div className={`rounded-interactive border ${tone} bg-card/40 px-2.5 py-1 flex flex-col items-center min-w-[64px]`}>
       <span className="typo-data-lg tabular-nums leading-none">{value}</span>
-      <span className="text-[9px] uppercase tracking-[0.16em] text-foreground/55 mt-0.5">{label}</span>
+      <span className="text-[9px] uppercase tracking-[0.16em] text-foreground mt-0.5">{label}</span>
     </div>
   );
 }
@@ -263,7 +267,7 @@ function FieldCell({ span, label, required, children }: { span: 6 | 12; label: s
   return (
     <label className={`block space-y-1 ${SPAN[span] ?? SPAN[12]}`}>
       <div className="flex items-center gap-1.5">
-        <span className="text-[10px] uppercase tracking-[0.16em] text-foreground/65 font-medium">{label}</span>
+        <span className="text-[10px] uppercase tracking-[0.16em] text-foreground font-medium">{label}</span>
         {required && <span className="text-[10px] text-amber-300">*</span>}
       </div>
       {children}

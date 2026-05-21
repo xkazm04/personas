@@ -10,6 +10,8 @@ import { useScaledFontSize } from '@/stores/themeStore';
 import { CARD_CONTAINER } from '@/features/overview/utils/dashboardGrid';
 import { EmptyState } from '@/features/shared/components/display/EmptyState';
 import { useOverviewFilterValues } from '../OverviewFilterContext';
+import { debtText } from '@/i18n/DebtText';
+
 
 interface ChartDataPoint {
   date: string;
@@ -31,7 +33,7 @@ export const TrafficErrorsChart = memo(function TrafficErrorsChart({ chartData, 
   const formatCounter = useCallback((v: number) => Math.round(v).toLocaleString(), []);
 
   return (
-    <div className={`${CARD_CONTAINER} p-4 space-y-4 relative overflow-hidden [&_svg]:outline-none [&_.recharts-wrapper]:outline-none`} aria-label="Traffic and errors chart">
+    <div className={`${CARD_CONTAINER} p-4 space-y-4 relative overflow-hidden [&_svg]:outline-none [&_.recharts-wrapper]:outline-none`} aria-label={debtText("auto_traffic_and_errors_chart_9bc7679b")}>
       <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/5 blur-3xl rounded-full pointer-events-none" />
       <div className="flex items-center justify-between relative z-10">
         <h3 className="typo-label text-foreground flex items-center gap-2">

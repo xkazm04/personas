@@ -105,13 +105,13 @@ export function ExecutionList() {
       logger.warn('Failed to load retry chain', { error: err });
       useToastStore.getState().addToast(e.failed_to_load_chain, 'error');
     }
-  }, [personaId]);
+  }, [e.failed_to_load_chain, personaId]);
 
-  const handleCompareSelect = (executionId: string) => {
+  const handleCompareSelect = useCallback((executionId: string) => {
     if (!compareLeft) { setCompareLeft(executionId); }
     else if (!compareRight && executionId !== compareLeft) { setCompareRight(executionId); }
     else { setCompareLeft(executionId); setCompareRight(null); }
-  };
+  }, [compareLeft, compareRight]);
 
   const exitCompareMode = () => {
     setCompareMode(false); setCompareLeft(null); setCompareRight(null); setShowComparison(false);
@@ -161,7 +161,7 @@ export function ExecutionList() {
         logger.warn('Failed to hydrate execution detail', { executionId: nextExpandedId, error: err });
       });
     }
-  }, [bulkMode, compareMode, expandedId, toggleBulkSelected, hydrateExecution]);
+  }, [bulkMode, compareMode, expandedId, toggleBulkSelected, handleCompareSelect, hydrateExecution]);
 
   // Stable refs for the per-row handlers — pairs with React.memo on
   // ExecutionListRow so a parent re-render that doesn't touch these

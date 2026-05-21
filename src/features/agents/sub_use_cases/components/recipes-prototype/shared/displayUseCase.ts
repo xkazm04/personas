@@ -56,7 +56,7 @@ export function getHealthMeta(t: Translations): Record<UseCaseHealth, UseCaseHea
     },
     disabled: {
       label: t.agents.use_cases.health_paused,
-      toneText: 'text-foreground/50',
+      toneText: 'text-foreground',
       toneBg: 'bg-secondary/30',
       toneBorder: 'border-border/40',
       toneHex: '#94a3b8',
@@ -79,7 +79,7 @@ export function getModeMeta(t: Translations): Record<DisplayUseCase['mode'], { l
   return {
     e2e: { label: t.agents.use_cases.mode_e2e, tone: 'text-status-success border-status-success/25 bg-status-success/10' },
     mock: { label: t.agents.use_cases.mode_mock, tone: 'text-status-warning border-status-warning/25 bg-status-warning/10' },
-    non_executable: { label: t.agents.use_cases.mode_info, tone: 'text-foreground/70 border-border/40 bg-secondary/30' },
+    non_executable: { label: t.agents.use_cases.mode_info, tone: 'text-foreground border-border/40 bg-secondary/30' },
   };
 }
 
@@ -113,7 +113,7 @@ export const HEALTH_META: Record<UseCaseHealth, UseCaseHealthMeta> = {
   },
   disabled: {
     label: 'Paused',
-    toneText: 'text-foreground/50',
+    toneText: 'text-foreground',
     toneBg: 'bg-secondary/30',
     toneBorder: 'border-border/40',
     toneHex: '#94a3b8',
@@ -135,7 +135,7 @@ export const HEALTH_META: Record<UseCaseHealth, UseCaseHealthMeta> = {
 export const MODE_META: Record<DisplayUseCase['mode'], { label: string; tone: string }> = {
   e2e: { label: 'E2E', tone: 'text-status-success border-status-success/25 bg-status-success/10' },
   mock: { label: 'MOCK', tone: 'text-status-warning border-status-warning/25 bg-status-warning/10' },
-  non_executable: { label: 'INFO', tone: 'text-foreground/70 border-border/40 bg-secondary/30' },
+  non_executable: { label: 'INFO', tone: 'text-foreground border-border/40 bg-secondary/30' },
 };
 
 export const STATE_HEX: Record<UseCaseHealth, string> = {

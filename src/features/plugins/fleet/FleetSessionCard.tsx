@@ -5,6 +5,8 @@ import { killSession, removeSession, renameSession } from '@/api/fleet/fleet';
 import { useSystemStore } from '@/stores/systemStore';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import { FleetStatusDots } from './FleetStatusDots';
+import { debtText } from '@/i18n/DebtText';
+
 
 /**
  * Compact one-row session card for the left panel.
@@ -130,7 +132,7 @@ function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }:
             }
           }}
           onBlur={() => commitEdit()}
-          placeholder="name…"
+          placeholder={debtText("auto_name_d84da4a2")}
           className="typo-caption font-medium flex-1 min-w-0 bg-background border border-primary/30 rounded px-1.5 py-0 focus:outline-none focus:ring-1 focus:ring-primary/50"
         />
       ) : (
@@ -138,9 +140,9 @@ function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }:
           <span className="truncate">{session.projectLabel}</span>
           {session.name && (
             <>
-              <span className="text-foreground/30 select-none">·</span>
+              <span className="text-foreground select-none">·</span>
               <span
-                className="text-foreground/70 italic truncate min-w-0"
+                className="text-foreground italic truncate min-w-0"
                 data-testid={`fleet-session-name-${session.id}`}
               >
                 {session.name}

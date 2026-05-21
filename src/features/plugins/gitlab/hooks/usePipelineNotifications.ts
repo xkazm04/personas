@@ -2,6 +2,8 @@ import { useEffect, useRef } from 'react';
 import { isPermissionGranted, requestPermission, sendNotification } from '@tauri-apps/plugin-notification';
 import type { GitLabPipeline } from '@/lib/bindings/GitLabPipeline';
 import { useNotificationCenterStore } from '@/stores/notificationCenterStore';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 // ---------------------------------------------------------------------------
 // Notification preferences (persisted in localStorage)
@@ -38,9 +40,7 @@ export function loadPipelineNotificationPrefs(): PipelineNotificationPrefs {
 export function savePipelineNotificationPrefs(prefs: PipelineNotificationPrefs): void {
   try {
     localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
-  } catch {
-    // intentional: localStorage quota exceeded or unavailable
-  }
+  } catch (err) { silentCatch("features/plugins/gitlab/hooks/usePipelineNotifications:catch1")(err); }
 }
 
 // ---------------------------------------------------------------------------

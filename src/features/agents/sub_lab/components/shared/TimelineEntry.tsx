@@ -5,6 +5,8 @@ import type { PersonaPromptVersion } from '@/lib/bindings/PersonaPromptVersion';
 import { TAG_STYLES, formatRelative } from '../../shared/labPrimitives';
 import { InlineDiffPreview } from './InlineDiffPreview';
 import { useTranslation } from '@/i18n/useTranslation';
+import { DebtText } from '@/i18n/DebtText';
+
 
 interface TimelineEntryProps {
   version: PersonaPromptVersion;
@@ -118,7 +120,7 @@ export function TimelineEntry({
                 {previousVersion ? (
                   <InlineDiffPreview older={previousVersion} newer={version} />
                 ) : (
-                  <p className="text-[11px] text-foreground italic">Initial version — no previous version to compare</p>
+                  <p className="text-[11px] text-foreground italic"><DebtText k="auto_initial_version_no_previous_version_to_com_4630b990" /></p>
                 )}
 
                 {/* Actions */}

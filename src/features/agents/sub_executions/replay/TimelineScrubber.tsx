@@ -94,7 +94,7 @@ export function TimelineScrubber({
 
         {/* Playhead -- branded diamond marker */}
         <div
-          className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 rotate-45 bg-white border-2 border-violet-500 transition-[left] duration-75 z-20"
+          className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 rotate-45 bg-secondary border-2 border-violet-500 transition-[left] duration-75 z-20"
           style={{
             left: `calc(${pct}% - 7px)`,
             boxShadow: '0 1px 4px rgba(139, 92, 246, 0.4), 0 0 8px rgba(139, 92, 246, 0.15)',

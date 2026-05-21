@@ -9,6 +9,8 @@
 // and reload doesn't fix it.
 
 import { createLogger } from "@/lib/log";
+import { silentCatch } from '@/lib/silentCatch';
+
 
 export const RELOAD_KEY = "__vite_preload_reload_at";
 export const DEFAULT_THROTTLE_MS = 30_000;
@@ -56,9 +58,7 @@ export function installPreloadErrorRecovery(
     storage.setItem(RELOAD_KEY, String(t));
     try {
       evt.preventDefault?.();
-    } catch {
-      /* intentional no-op */
-    }
+    } catch (err) { silentCatch("lib/recovery/preloadErrorRecovery:catch1")(err); }
     logger.error("vite:preloadError — reloading to pick up fresh chunks", {
       message: evt.message,
     });

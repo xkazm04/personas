@@ -71,7 +71,7 @@ function BoolToggle({ on, loading, onClick, title, icon }: BoolToggleProps) {
       className={`inline-flex items-center justify-center w-6 h-6 rounded-full border transition-colors cursor-pointer disabled:cursor-wait ${
         on
           ? 'bg-status-success/12 border-status-success/35 text-status-success/95 hover:bg-status-success/20'
-          : 'bg-secondary/60 border-card-border text-foreground/55 hover:text-foreground/85 hover:border-foreground/30'
+          : 'bg-secondary/60 border-card-border text-foreground hover:text-foreground/85 hover:border-foreground/30'
       } ${loading ? 'opacity-50' : ''}`}
     >
       {icon}
@@ -100,7 +100,7 @@ function ReviewToggle({ value, loading, onClick }: ReviewToggleProps) {
     },
     off: {
       icon: <ShieldOff className="w-3 h-3" />,
-      cls: 'bg-secondary/60 border-card-border text-foreground/55 hover:text-foreground/85 hover:border-foreground/30',
+      cls: 'bg-secondary/60 border-card-border text-foreground hover:text-foreground/85 hover:border-foreground/30',
       title: t.agents.use_cases.review_off_title,
     },
   };

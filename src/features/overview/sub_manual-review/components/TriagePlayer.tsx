@@ -8,6 +8,8 @@ import {
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { ContextDataPreview } from './ReviewListItem';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 // ---------------------------------------------------------------------------
 // Types
@@ -83,7 +85,7 @@ export function TriagePlayer({ reviews, onApprove, onReject, isProcessing }: Tri
     try {
       const parsed = JSON.parse(current.context_data);
       if (Array.isArray(parsed?.decisions)) return parsed.decisions;
-    } catch { /* not JSON */ }
+    } catch (err) { silentCatch("features/overview/sub_manual-review/components/TriagePlayer:catch1")(err); }
     return [];
   }, [current?.context_data]);
 

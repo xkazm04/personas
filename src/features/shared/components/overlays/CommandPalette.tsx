@@ -88,15 +88,17 @@ export default function CommandPalette() {
     return map;
   }, [groups]);
 
-  const botIcon = <Bot className="w-4 h-4" />;
-  const powerIcon = <Power className="w-4 h-4 text-foreground" />;
-  const keyIcon = <Key className="w-4 h-4" />;
-  const flaskIcon = <FlaskConical className="w-4 h-4" />;
-  const playIcon = <Play className="w-4 h-4" />;
-  const toggleIcon = <ToggleLeft className="w-4 h-4" />;
-  const copyIcon = <Copy className="w-4 h-4" />;
-  const healthIcon = <HeartPulse className="w-4 h-4" />;
-  const pencilIcon = <Pencil className="w-4 h-4" />;
+  const paletteIcons = useMemo(() => ({
+    bot: <Bot className="w-4 h-4" />,
+    power: <Power className="w-4 h-4 text-foreground" />,
+    key: <Key className="w-4 h-4" />,
+    flask: <FlaskConical className="w-4 h-4" />,
+    play: <Play className="w-4 h-4" />,
+    toggle: <ToggleLeft className="w-4 h-4" />,
+    copy: <Copy className="w-4 h-4" />,
+    health: <HeartPulse className="w-4 h-4" />,
+    pencil: <Pencil className="w-4 h-4" />,
+  }), []);
 
   const agentActions = useCallback((): AgentActionCallbacks => ({
     onRun: (id: string) => {
@@ -142,16 +144,16 @@ export default function CommandPalette() {
   // Stage 1: stable entity lists (only recomputed when entities change, not on every keystroke)
   const stableItems = useMemo(() => {
     const agentItems = personas.map(p =>
-      agentItem(p, groupMap, selectPersona, setSidebarSection, botIcon, powerIcon),
+      agentItem(p, groupMap, selectPersona, setSidebarSection, paletteIcons.bot, paletteIcons.power),
     );
     const credItems = credentials.map(c =>
-      credentialItem(c, setSidebarSection, keyIcon),
+      credentialItem(c, setSidebarSection, paletteIcons.key),
     );
     const templateItems = recipes.map(r =>
-      templateItem(r, setSidebarSection, flaskIcon),
+      templateItem(r, setSidebarSection, paletteIcons.flask),
     );
     const autoItems = automations.map(a =>
-      automationItem(a, setSidebarSection, flaskIcon),
+      automationItem(a, setSidebarSection, paletteIcons.flask),
     );
     const navItems = NAV_ITEMS.map(nav => ({
       id: `nav:${nav.id}`, kind: 'navigation' as const, label: nav.label,
@@ -179,12 +181,12 @@ export default function CommandPalette() {
         icon: nav.icon, onSelect: () => setSidebarSection(nav.id),
       })),
       ...agentActionItems(personas, cbs, {
-        run: playIcon, toggle: toggleIcon, duplicate: copyIcon,
-        health: healthIcon, edit: pencilIcon,
+        run: paletteIcons.play, toggle: paletteIcons.toggle, duplicate: paletteIcons.copy,
+        health: paletteIcons.health, edit: paletteIcons.pencil,
       }),
     ];
     return { agentItems, credItems, templateItems, autoItems, navItems, commandItems };
-  }, [personas, groupMap, credentials, recipes, automations, selectPersona, setSidebarSection, setIsCreatingPersona, botIcon, powerIcon, keyIcon, flaskIcon, agentActions, playIcon, toggleIcon, copyIcon, healthIcon, pencilIcon]);
+  }, [personas, groupMap, credentials, recipes, automations, selectPersona, setSidebarSection, setIsCreatingPersona, paletteIcons, agentActions]);
 
   // Stage 2: filtered + scored (recomputed on deferred searchQuery)
   const items = useMemo((): PaletteItem[] => {

@@ -21,6 +21,8 @@ import {
   type LineageGraph,
 } from './libs/deriveLineageGraph';
 import { computeLineageLayout } from './libs/computeLineageLayout';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 const nodeTypes = {
   lineagePersona: LineagePersonaNode,
@@ -83,7 +85,7 @@ function TriggerLineageInner() {
         const cfg = JSON.parse(tr.config) as { source_persona_id?: string };
         if (!cfg.source_persona_id) continue;
         map.set(cfg.source_persona_id, (map.get(cfg.source_persona_id) ?? 0) + 1);
-      } catch { /* skip */ }
+      } catch (err) { silentCatch("features/triggers/sub_lineage/TriggerLineageCanvas:catch1")(err); }
     }
     return map;
   }, [allTriggers]);
@@ -265,7 +267,7 @@ function TriggerLineageInner() {
             </span>
             {orphanCount > 0 && (
               <span className="text-[10px] text-foreground">
-                <span className="text-foreground/70 font-medium">{orphanCount}</span> {t.triggers.lineage.orphans_label}
+                <span className="text-foreground font-medium">{orphanCount}</span> {t.triggers.lineage.orphans_label}
               </span>
             )}
             {cycleCount > 0 && (
@@ -279,7 +281,7 @@ function TriggerLineageInner() {
         {/* Blast-radius hint */}
         {!selectedPersonaId && !isEmpty && (
           <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 px-3 py-1.5 rounded-card bg-card/80 border border-primary/10 pointer-events-none">
-            <span className="text-[10px] text-foreground/70">{t.triggers.lineage.select_persona_for_blast}</span>
+            <span className="text-[10px] text-foreground">{t.triggers.lineage.select_persona_for_blast}</span>
           </div>
         )}
 

@@ -81,7 +81,7 @@ export function TemplateFormBody({
           <p className="typo-body font-medium text-foreground">
             {cf.no_config_required_heading}
           </p>
-          <p className="typo-body text-foreground/70">
+          <p className="typo-body text-foreground">
             {cf.no_config_required_description}
           </p>
         </div>

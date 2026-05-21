@@ -7,6 +7,8 @@ import type { BrowserLogEntry } from '../helpers/types';
 import { splitByUrls, formatLogsForCopy } from '../helpers/autoCredHelpers';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 // Re-export cards so existing imports from AutoCredBrowser still work
 export { WaitingCard, InputRequestCard } from './AutoCredCards';
@@ -46,7 +48,7 @@ export function UrlCard({
   const safeUrl = sanitizeExternalUrl(entry.url);
   let hostname = '';
   if (safeUrl) {
-    try { hostname = new URL(safeUrl).hostname; } catch { /* ignore */ }
+    try { hostname = new URL(safeUrl).hostname; } catch (err) { silentCatch("features/vault/sub_catalog/components/autoCred/display/AutoCredLogEntries:catch1")(err); }
   }
 
   return (

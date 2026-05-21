@@ -239,7 +239,7 @@ export default function CompanionFooterIcon() {
     ? 'bg-primary/15 text-primary'
     : streaming || hasNotice
       ? 'text-primary hover:bg-primary/10'
-      : 'text-foreground/70 hover:text-foreground hover:bg-secondary/50';
+      : 'text-foreground hover:text-foreground hover:bg-secondary/50';
 
   const onPlay = async () => {
     if (!pendingPlayback || !synthesisVoiceId) return;
@@ -286,14 +286,14 @@ export default function CompanionFooterIcon() {
             <span className="typo-caption text-foreground/90 truncate">
               {footerNotice.subject}
             </span>
-            <X className="w-3 h-3 flex-shrink-0 text-foreground/50" />
+            <X className="w-3 h-3 flex-shrink-0 text-foreground" />
           </motion.button>
         )}
       </AnimatePresence>
       <button
         onClick={() => setState(isOpen ? 'collapsed' : 'open')}
         data-testid="footer-companion"
-        className={`relative w-7 h-7 rounded-lg flex items-center justify-center transition-colors focus-ring ${buttonStateClass}`}
+        className={`relative w-7 h-7 rounded-card flex items-center justify-center transition-colors focus-ring ${buttonStateClass}`}
         title={t.plugins.companion.open_label}
         aria-label={t.plugins.companion.open_label}
         aria-pressed={isOpen}
@@ -305,10 +305,10 @@ export default function CompanionFooterIcon() {
           onClick={onPlay}
           disabled={!hasUnreadPlayback}
           data-testid="footer-companion-play"
-          className={`relative w-7 h-7 rounded-lg flex items-center justify-center transition-colors focus-ring disabled:opacity-30 disabled:cursor-not-allowed ${
+          className={`relative w-7 h-7 rounded-card flex items-center justify-center transition-colors focus-ring disabled:opacity-30 disabled:cursor-not-allowed ${
             hasUnreadPlayback
               ? 'text-primary hover:bg-primary/10 animate-pulse'
-              : 'text-foreground/70 hover:text-foreground hover:bg-secondary/50'
+              : 'text-foreground hover:text-foreground hover:bg-secondary/50'
           }`}
           title={
             hasUnreadPlayback

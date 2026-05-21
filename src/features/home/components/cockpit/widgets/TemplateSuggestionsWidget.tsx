@@ -70,13 +70,13 @@ export function TemplateSuggestionsWidget({ config, title }: CockpitWidgetProps)
           {title || t.plugins.companion.template_suggestions_title}
         </span>
         {intent && (
-          <span className="text-foreground/55 truncate" title={intent}>
+          <span className="text-foreground truncate" title={intent}>
             · {intent}
           </span>
         )}
       </header>
       {loading && (
-        <div className="flex items-center gap-2 typo-caption text-foreground/55">
+        <div className="flex items-center gap-2 typo-caption text-foreground">
           <Loader2 className="w-3.5 h-3.5 animate-spin" />
           <span>{t.plugins.companion.template_suggestions_loading}</span>
         </div>
@@ -87,7 +87,7 @@ export function TemplateSuggestionsWidget({ config, title }: CockpitWidgetProps)
         </div>
       )}
       {!loading && !error && matches.length === 0 && (
-        <div className="typo-caption text-foreground/55">
+        <div className="typo-caption text-foreground">
           {t.plugins.companion.template_suggestions_empty}
         </div>
       )}
@@ -104,12 +104,12 @@ export function TemplateSuggestionsWidget({ config, title }: CockpitWidgetProps)
                   {m.name}
                 </span>
                 {m.category && (
-                  <span className="typo-caption text-foreground/45 shrink-0">
+                  <span className="typo-caption text-foreground shrink-0">
                     {m.category}
                   </span>
                 )}
               </div>
-              <p className="typo-caption text-foreground/70 line-clamp-3">
+              <p className="typo-caption text-foreground line-clamp-3">
                 {m.snippet}
               </p>
               {m.connectors.length > 0 && (
@@ -117,7 +117,7 @@ export function TemplateSuggestionsWidget({ config, title }: CockpitWidgetProps)
                   {m.connectors.map((c) => (
                     <span
                       key={c}
-                      className="rounded-interactive bg-foreground/[0.06] border border-foreground/10 px-1.5 py-0.5 typo-caption text-foreground/65"
+                      className="rounded-interactive bg-foreground/[0.06] border border-foreground/10 px-1.5 py-0.5 typo-caption text-foreground"
                     >
                       {c}
                     </span>

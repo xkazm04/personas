@@ -226,19 +226,19 @@ export function CircuitBreakerIndicator() {
         <div className="px-3 pb-3 pt-2 border-t border-red-500/10 flex flex-col gap-3">
           {/* Global section */}
           <section>
-            <h4 className="typo-caption uppercase tracking-wide text-muted-foreground mb-1.5">
+            <h4 className="typo-caption uppercase tracking-wide text-foreground mb-1.5">
               {e.cb_section_global}
             </h4>
             <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 typo-body">
-              <span className="text-muted-foreground">{e.cb_label_state}</span>
+              <span className="text-foreground">{e.cb_label_state}</span>
               <span className={`tabular-nums ${status.globalPaused ? 'text-red-400' : 'text-foreground'}`}>
                 {status.globalPaused ? e.cb_paused : e.cb_connected}
               </span>
-              <span className="text-muted-foreground">{e.cb_label_failures}</span>
+              <span className="text-foreground">{e.cb_label_failures}</span>
               <span className="tabular-nums text-foreground">{status.globalFailureCount}</span>
               {status.globalPaused && status.globalCooldownRemainingSecs > 0 && (
                 <>
-                  <span className="text-muted-foreground">{e.cb_label_cooldown}</span>
+                  <span className="text-foreground">{e.cb_label_cooldown}</span>
                   <span className="tabular-nums text-foreground">{Math.ceil(status.globalCooldownRemainingSecs)}s</span>
                 </>
               )}
@@ -254,7 +254,7 @@ export function CircuitBreakerIndicator() {
 
           {/* Providers section */}
           <section>
-            <h4 className="typo-caption uppercase tracking-wide text-muted-foreground mb-1.5">
+            <h4 className="typo-caption uppercase tracking-wide text-foreground mb-1.5">
               {e.cb_section_providers}
             </h4>
             <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 typo-body">
@@ -270,7 +270,7 @@ export function CircuitBreakerIndicator() {
                     <span className="tabular-nums text-foreground">
                       {tx(e.cb_errors_retrying, { count: p.consecutiveFailures, seconds: Math.ceil(p.cooldownRemainingSecs) })}
                       {p.tripCount1h > 0 && (
-                        <span className="ml-1 text-muted-foreground">
+                        <span className="ml-1 text-foreground">
                           {tx(p.tripCount1h === 1 ? t.execution.interruptions_per_hour_one : t.execution.interruptions_per_hour_other, { count: p.tripCount1h })}
                         </span>
                       )}
@@ -283,7 +283,7 @@ export function CircuitBreakerIndicator() {
                     <span className="tabular-nums text-foreground">
                       {tx(e.cb_errors, { count: p.consecutiveFailures })}
                       {p.tripCount1h > 0 && (
-                        <span className="ml-1 text-muted-foreground">
+                        <span className="ml-1 text-foreground">
                           {tx(p.tripCount1h === 1 ? t.execution.interruptions_per_hour_one : t.execution.interruptions_per_hour_other, { count: p.tripCount1h })}
                         </span>
                       )}
@@ -293,7 +293,7 @@ export function CircuitBreakerIndicator() {
                   icon = <ShieldCheck className="w-3 h-3 text-emerald-400 shrink-0" />;
                   labelColor = 'text-emerald-400';
                   valueNode = (
-                    <span className="tabular-nums text-muted-foreground">
+                    <span className="tabular-nums text-foreground">
                       {e.cb_healthy}
                       {p.tripCount1h > 0 && (
                         <span className="ml-1">
@@ -320,12 +320,12 @@ export function CircuitBreakerIndicator() {
           {status.recentTransitions.length > 0 && (
             <section>
               <div className="flex items-center justify-between mb-1.5">
-                <h4 className="typo-caption uppercase tracking-wide text-muted-foreground">
+                <h4 className="typo-caption uppercase tracking-wide text-foreground">
                   {e.cb_section_transitions}
                 </h4>
                 <button
                   onClick={() => setShowHistory((v) => !v)}
-                  className="flex items-center gap-1.5 typo-caption text-muted-foreground hover:text-foreground"
+                  className="flex items-center gap-1.5 typo-caption text-foreground hover:text-foreground"
                 >
                   <History className="w-3 h-3" />
                   {showHistory ? tx(e.cb_hide_activity, { count: status.recentTransitions.length }) : tx(e.cb_show_activity, { count: status.recentTransitions.length })}
@@ -335,12 +335,12 @@ export function CircuitBreakerIndicator() {
                 <div className="grid grid-cols-[auto_auto_1fr_auto] gap-x-3 gap-y-0.5 typo-code max-h-40 overflow-y-auto">
                   {status.recentTransitions.slice(0, 20).map((tr, i) => (
                     <div key={i} className="contents">
-                      <span className="tabular-nums text-muted-foreground">{formatTransitionTime(tr.timestamp)}</span>
+                      <span className="tabular-nums text-foreground">{formatTransitionTime(tr.timestamp)}</span>
                       <span className="font-mono text-foreground">{providerLabel(tr.provider)}</span>
-                      <span className="text-muted-foreground">
+                      <span className="text-foreground">
                         {STATE_LABELS[tr.fromState] ?? tr.fromState} → {STATE_LABELS[tr.toState] ?? tr.toState}
                       </span>
-                      <span className="tabular-nums text-muted-foreground text-right">
+                      <span className="tabular-nums text-foreground text-right">
                         {tr.failureCount > 0 ? tr.failureCount : ''}
                       </span>
                     </div>

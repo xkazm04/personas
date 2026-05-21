@@ -3,6 +3,8 @@ import { PasswordToggleField } from '@/features/shared/components/forms/Password
 import type { ModelProfile } from '@/lib/types/frontendTypes';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { useTranslation } from '@/i18n/useTranslation';
+import { debtText } from '@/i18n/DebtText';
+
 
 interface UseCaseModelOverrideFormProps {
   visible: boolean;
@@ -39,7 +41,7 @@ export function UseCaseModelOverrideForm({ visible, customConfig, onFieldChange 
                 type="text"
                 value={customConfig.model || ''}
                 onChange={(e) => onFieldChange('model', e.target.value)}
-                placeholder="e.g. claude-sonnet-4-20250514"
+                placeholder={debtText("auto_e_g_claude_sonnet_4_20250514_ae971aa3")}
                 className={INPUT_FIELD}
               />
             </div>
@@ -49,7 +51,7 @@ export function UseCaseModelOverrideForm({ visible, customConfig, onFieldChange 
                 type="text"
                 value={customConfig.base_url || ''}
                 onChange={(e) => onFieldChange('base_url', e.target.value)}
-                placeholder="http://localhost:11434"
+                placeholder={debtText("auto_http_localhost_11434_5fbca273")}
                 className={INPUT_FIELD}
               />
             </div>
@@ -58,7 +60,7 @@ export function UseCaseModelOverrideForm({ visible, customConfig, onFieldChange 
               <PasswordToggleField
                 value={customConfig.auth_token || ''}
                 onChange={(e) => onFieldChange('auth_token', e.target.value)}
-                placeholder="Bearer token"
+                placeholder={debtText("auto_bearer_token_ffa64bcf")}
               />
             </div>
           </div>

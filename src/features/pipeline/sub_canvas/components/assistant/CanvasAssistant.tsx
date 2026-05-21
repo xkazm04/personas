@@ -45,7 +45,7 @@ export default function CanvasAssistant({
     } finally {
       setLoading(false);
     }
-  }, [query, loading, onSuggest]);
+  }, [query, loading, onSuggest, t.pipeline.no_matching_agents]);
 
   const handleApply = useCallback(async () => {
     if (!blueprint || isApplying) return;

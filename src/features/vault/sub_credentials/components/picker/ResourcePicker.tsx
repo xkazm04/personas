@@ -24,6 +24,8 @@ import {
   type ScopedResources,
 } from '@/api/credentials/scopedResources';
 import { toastCatch } from '@/lib/silentCatch';
+import { DebtText } from '@/i18n/DebtText';
+
 
 interface Props {
   credentialId: string;
@@ -177,14 +179,13 @@ export function ResourcePicker({
           <h2 id="resource-picker-title" className="typo-heading-md text-foreground">
             Scope {connectorLabel}
           </h2>
-          <p className="typo-body-sm text-foreground/60 mt-1">
-            Narrow this credential to specific resources. Templates that ask for a
-            scoped resource will auto-fill your picks.
+          <p className="typo-body-sm text-foreground mt-1">
+            <DebtText k="auto_narrow_this_credential_to_specific_resourc_5f20fe8a" />
           </p>
         </div>
         <button
           onClick={onClose}
-          className="text-foreground/50 hover:text-foreground transition-colors"
+          className="text-foreground hover:text-foreground transition-colors"
           aria-label="Close"
         >
           <X className="w-5 h-5" />
@@ -230,20 +231,20 @@ export function ResourcePicker({
                     )}
                   </h3>
                   {spec.description && (
-                    <p className="typo-caption text-foreground/60 mt-0.5">
+                    <p className="typo-caption text-foreground mt-0.5">
                       {spec.description}
                     </p>
                   )}
                 </div>
                 <div className="flex items-center gap-2">
                   {picked.length > 0 && (
-                    <span className="typo-caption text-foreground/60">
+                    <span className="typo-caption text-foreground">
                       {picked.length} picked
                     </span>
                   )}
                   <button
                     onClick={() => fetchSpec(spec, true)}
-                    className="p-1.5 rounded-interactive hover:bg-foreground/5 text-foreground/60 hover:text-foreground transition-colors"
+                    className="p-1.5 rounded-interactive hover:bg-foreground/5 text-foreground hover:text-foreground transition-colors"
                     title="Refresh"
                     disabled={st.loading}
                   >
@@ -269,7 +270,7 @@ export function ResourcePicker({
                   <AlertTriangle className="w-4 h-4 text-status-warning mt-0.5 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="typo-caption text-status-warning font-medium">
-                      {stalePicks.length} pick{stalePicks.length === 1 ? '' : 's'} no longer exist
+                      {stalePicks.length} pick{stalePicks.length === 1 ? '' : 's'} <DebtText k="auto_no_longer_exist_bcf3d173" />
                     </p>
                     <div className="flex flex-wrap gap-1 mt-1">
                       {stalePicks.map((p) => (
@@ -288,7 +289,7 @@ export function ResourcePicker({
                     data-testid={`resource-drop-stale-${spec.id}`}
                     className="typo-caption px-2 py-1 rounded-interactive bg-status-warning/20 hover:bg-status-warning/30 text-status-warning transition-colors flex-shrink-0"
                   >
-                    Drop stale
+                    <DebtText k="auto_drop_stale_1ac8b7f6" />
                   </button>
                 </div>
               )}
@@ -296,7 +297,7 @@ export function ResourcePicker({
               {!st.error && (
                 <>
                   <div className="relative mb-2">
-                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/40" />
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground" />
                     <input
                       type="text"
                       value={search[spec.id] ?? ''}
@@ -309,12 +310,12 @@ export function ResourcePicker({
                   </div>
                   <div className="max-h-48 overflow-y-auto border border-border rounded-input bg-secondary/20 divide-y divide-border">
                     {st.loading && (
-                      <p className="px-3 py-2 typo-caption text-foreground/40">
-                        Loading…
+                      <p className="px-3 py-2 typo-caption text-foreground">
+                        <DebtText k="auto_loading_33ce4174" />
                       </p>
                     )}
                     {!st.loading && visible.length === 0 && (
-                      <p className="px-3 py-2 typo-caption text-foreground/40">
+                      <p className="px-3 py-2 typo-caption text-foreground">
                         {q ? 'No matches' : 'Nothing to pick yet'}
                       </p>
                     )}
@@ -343,7 +344,7 @@ export function ResourcePicker({
                               {item.label}
                             </span>
                             {item.sublabel && (
-                              <span className="typo-caption text-foreground/50 truncate block">
+                              <span className="typo-caption text-foreground truncate block">
                                 {item.sublabel}
                               </span>
                             )}
@@ -364,9 +365,9 @@ export function ResourcePicker({
           onClick={handleSkip}
           disabled={saving}
           data-testid="resource-picker-skip"
-          className="typo-body-sm text-foreground/60 hover:text-foreground transition-colors disabled:opacity-50"
+          className="typo-body-sm text-foreground hover:text-foreground transition-colors disabled:opacity-50"
         >
-          Skip — use broad scope
+          <DebtText k="auto_skip_use_broad_scope_c91bd0ae" />
         </button>
         <div className="flex items-center gap-2">
           <button

@@ -51,9 +51,7 @@ export function useEngineCapabilities(opts?: { onSave?: () => void }): UseEngine
         try {
           const parsed = JSON.parse(savedResult.value) as Partial<EngineCapabilityMap>;
           setCapabilities(mergeCapabilities(parsed));
-        } catch {
-          // Malformed JSON — fall back to defaults silently.
-        }
+        } catch (err) { silentCatch("hooks/utility/data/useEngineCapabilities:catch1")(err); }
       }
 
       if (localResult.status === 'fulfilled') {

@@ -102,10 +102,10 @@ export function FormFieldGroup({
         aria-expanded={open}
         className="w-full flex items-center gap-2.5 px-4 py-3 text-left focus-ring rounded-card transition-colors hover:bg-secondary/[0.06]"
       >
-        {icon && <span className="flex-shrink-0 text-foreground/70">{icon}</span>}
+        {icon && <span className="flex-shrink-0 text-foreground">{icon}</span>}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="typo-caption uppercase tracking-wider text-foreground/70 font-semibold">
+            <span className="typo-caption uppercase tracking-wider text-foreground font-semibold">
               {label}
             </span>
             {showBadge && (
@@ -121,11 +121,11 @@ export function FormFieldGroup({
             )}
           </div>
           {hint && !open && (
-            <p className="typo-caption text-foreground/50 mt-0.5 truncate">{hint}</p>
+            <p className="typo-caption text-foreground mt-0.5 truncate">{hint}</p>
           )}
         </div>
         <ChevronDown
-          className={`w-4 h-4 text-foreground/50 flex-shrink-0 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+          className={`w-4 h-4 text-foreground flex-shrink-0 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
           aria-hidden="true"
         />
       </button>

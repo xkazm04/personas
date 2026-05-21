@@ -31,7 +31,7 @@ export function RouteToggle({
         className={`focus-ring w-8 h-8 rounded-full flex items-center justify-center transition-all ${
           active
             ? 'bg-primary/15 ring-2 ring-primary/55 text-primary shadow-elevation-1'
-            : 'bg-foreground/[0.04] ring-1 ring-border text-foreground/45 hover:text-foreground hover:ring-foreground/40'
+            : 'bg-foreground/[0.04] ring-1 ring-border text-foreground hover:text-foreground hover:ring-foreground/40'
         }`}
         animate={
           firing

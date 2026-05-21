@@ -37,7 +37,7 @@ export function TwinStat({ label, value, accent = 'violet' }: TwinStatProps) {
   return (
     <div className="flex flex-col items-start leading-tight">
       <span className={`typo-data-lg tabular-nums ${TEXT_TONE[accent]}`}>{value}</span>
-      <span className="text-xs uppercase tracking-[0.18em] text-foreground/55">{label}</span>
+      <span className="typo-label uppercase tracking-[0.18em] text-foreground">{label}</span>
     </div>
   );
 }
@@ -58,7 +58,7 @@ export function TwinTile({ label, value, accent = 'violet' }: TwinTileProps) {
   return (
     <div className={`rounded-interactive border ${BORDER_TONE[accent]} bg-card/40 px-2.5 py-1 flex flex-col items-center min-w-[68px]`}>
       <span className={`typo-data-lg tabular-nums leading-none ${TEXT_TONE[accent]}`}>{value}</span>
-      <span className="text-xs uppercase tracking-[0.16em] text-foreground/55 mt-0.5">{label}</span>
+      <span className="typo-label uppercase tracking-[0.16em] text-foreground mt-0.5">{label}</span>
     </div>
   );
 }

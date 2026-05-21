@@ -113,7 +113,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
         fetchPersonas(),
       ]).finally(() => setLoading(false));
     }
-  }, [isOpen]);
+  }, [fetchExposedResources, fetchPersonas, isOpen]);
 
   const toggleResource = (id: string) => {
     setSelected((prev) => {
@@ -360,7 +360,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
               <button
                 onClick={handleExportBundle}
                 disabled={selected.size === 0 || exporting || copying || creatingLink}
-                className="px-3 py-1.5 typo-caption rounded-card bg-primary text-white hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                className="px-3 py-1.5 typo-caption rounded-card bg-primary text-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
               >
                 {exporting ? <LoadingSpinner size="sm" /> : <Package className="w-3.5 h-3.5" />}
                 {exporting ? st.exporting : st.export_to_file}
@@ -370,7 +370,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
             <button
               onClick={handleSealEnclave}
               disabled={!selectedPersonaId || exporting}
-              className="px-3 py-1.5 typo-caption rounded-card bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+              className="px-3 py-1.5 typo-caption rounded-card bg-violet-600 text-foreground hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
             >
               {exporting ? <LoadingSpinner size="sm" /> : <Lock className="w-3.5 h-3.5" />}
               {exporting ? st.sealing : st.seal_enclave_btn}
@@ -492,7 +492,7 @@ function ResourceCheckItem({
       <div className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${
         checked ? 'bg-primary border-primary' : 'border-border'
       }`}>
-        {checked && <Check className="w-3 h-3 text-white" />}
+        {checked && <Check className="w-3 h-3 text-foreground" />}
       </div>
       <div className="min-w-0 flex-1">
         <div className="typo-body text-foreground truncate">

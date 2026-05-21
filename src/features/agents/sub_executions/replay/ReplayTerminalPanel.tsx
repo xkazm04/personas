@@ -2,6 +2,8 @@ import { useEffect, useRef, useMemo } from 'react';
 import { classifyLine, TERMINAL_STYLE_MAP } from '@/lib/utils/terminalColors';
 import { RunningIcon } from '../components/ExecutionLifecycleIcons';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 /** Try to syntax-highlight a line if it contains JSON or protocol messages. */
 function highlightLine(text: string): React.ReactNode {
@@ -14,7 +16,7 @@ function highlightLine(text: string): React.ReactNode {
       const parsed = JSON.parse(trimmed);
       const pretty = JSON.stringify(parsed, null, 2);
       return <JsonHighlight json={pretty} />;
-    } catch { /* not valid JSON, render as text */ }
+    } catch (err) { silentCatch("features/agents/sub_executions/replay/ReplayTerminalPanel:catch1")(err); }
   }
 
   // Detect inline JSON within text: "... {"key": ...} ..."
@@ -33,7 +35,7 @@ function highlightLine(text: string): React.ReactNode {
           {after && <span>{after}</span>}
         </>
       );
-    } catch { /* not valid JSON */ }
+    } catch (err) { silentCatch("features/agents/sub_executions/replay/ReplayTerminalPanel:catch2")(err); }
   }
 
   return text;

@@ -75,7 +75,7 @@ export function CascadeVisualization({ links, signals }: CascadeVisualizationPro
           </div>
           <div>
             <h3 className="typo-heading text-foreground/90">{t.overview.cascade.title}</h3>
-            <p className="text-xs text-foreground">{t.overview.cascade.no_chains}</p>
+            <p className="typo-caption text-foreground">{t.overview.cascade.no_chains}</p>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -83,7 +83,7 @@ export function CascadeVisualization({ links, signals }: CascadeVisualizationPro
             <div key={s.personaId} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-card bg-secondary/40 border border-primary/10">
               <div className={`w-2 h-2 rounded-full ${GRADE_DOT[s.grade]} ring-2 ${GRADE_RING[s.grade]}`} />
               <PersonaIcon icon={s.personaIcon} color={s.personaColor} display="framed" frameSize="xs" />
-              <span className="text-xs text-foreground truncate max-w-[120px]">{s.personaName}</span>
+              <span className="typo-caption text-foreground truncate max-w-[120px]">{s.personaName}</span>
             </div>
           ))}
         </div>
@@ -99,7 +99,7 @@ export function CascadeVisualization({ links, signals }: CascadeVisualizationPro
         </div>
         <div>
           <h3 className="typo-heading text-foreground/90">{t.overview.cascade.title}</h3>
-          <p className="text-xs text-foreground">{chains.length} chain{chains.length !== 1 ? 's' : ''} detected</p>
+          <p className="typo-caption text-foreground">{chains.length} chain{chains.length !== 1 ? 's' : ''} detected</p>
         </div>
       </div>
 

@@ -4,6 +4,8 @@ import { SchedulePreview, CronSchedulePreview } from './TriggerSchedulePreview';
 import { TimezoneSelect } from './TimezoneSelect';
 import { useTranslation } from '@/i18n/useTranslation';
 import { CRON_PRESETS } from '@/lib/utils/cronPresets';
+import { DebtText } from '@/i18n/DebtText';
+
 
 export function IntervalConfig({
   interval,
@@ -226,16 +228,14 @@ export function CronConfig({
         </label>
         <TimezoneSelect id="cron-timezone" value={timezone} onChange={setTimezone} />
         <p className="typo-caption text-foreground mt-1">
-          The cron expression evaluates in this zone. Without a zone the backend
-          falls back to the host machine&rsquo;s local time, which can differ across
-          dev and prod environments.
+          <DebtText k="auto_the_cron_expression_evaluates_in_this_zone_63aae79b" />
         </p>
       </div>
 
       {/* Max backfill */}
       <div>
         <label htmlFor="cron-max-backfill" className="block typo-body font-medium text-foreground mb-1.5">
-          Catch-up after downtime
+          <DebtText k="auto_catch_up_after_downtime_562fc6d6" />
         </label>
         <select
           id="cron-max-backfill"
@@ -246,18 +246,15 @@ export function CronConfig({
           }}
           className="px-3 py-2 bg-background/50 border border-primary/15 rounded-modal typo-body text-foreground focus-visible:border-primary/40 focus-ring transition-all"
         >
-          <option value={1}>Off &mdash; fire once when overdue (default)</option>
-          <option value={3}>Up to 3 catch-up runs</option>
-          <option value={5}>Up to 5 catch-up runs</option>
-          <option value={10}>Up to 10 catch-up runs</option>
-          <option value={25}>Up to 25 catch-up runs</option>
-          <option value={100}>Up to 100 catch-up runs (max)</option>
+          <option value={1}><DebtText k="auto_off_mdash_fire_once_when_overdue_default_b19943cc" /></option>
+          <option value={3}><DebtText k="auto_up_to_3_catch_up_runs_a2a0a059" /></option>
+          <option value={5}><DebtText k="auto_up_to_5_catch_up_runs_24475637" /></option>
+          <option value={10}><DebtText k="auto_up_to_10_catch_up_runs_b4ccf1b3" /></option>
+          <option value={25}><DebtText k="auto_up_to_25_catch_up_runs_e87f98ba" /></option>
+          <option value={100}><DebtText k="auto_up_to_100_catch_up_runs_max_f06cd3f2" /></option>
         </select>
         <p className="typo-caption text-foreground mt-1">
-          When the scheduler comes back online after several missed slots,
-          this many catch-up executions are emitted in addition to the live
-          one. Each respects the persona&rsquo;s budget gate. Backend hard-caps
-          at 100 per tick.
+          <DebtText k="auto_when_the_scheduler_comes_back_online_after_19b17e4a" />
         </p>
       </div>
 

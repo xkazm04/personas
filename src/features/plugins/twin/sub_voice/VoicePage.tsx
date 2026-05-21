@@ -30,7 +30,7 @@ export default function VoicePage() {
   return (
     <div className="flex-1 min-h-0 flex flex-col">
       <div className="flex-shrink-0 flex items-center gap-2 px-4 md:px-6 xl:px-8 py-2 border-b border-primary/10 bg-card/40 backdrop-blur">
-        <span className="text-[10px] uppercase tracking-[0.18em] text-foreground/55 font-medium mr-1 hidden sm:inline">
+        <span className="text-[10px] uppercase tracking-[0.18em] text-foreground font-medium mr-1 hidden sm:inline">
           {t.variantTabs.prototype}
         </span>
         <div className="flex items-center gap-1 rounded-full border border-primary/15 bg-secondary/30 p-0.5">
@@ -73,10 +73,10 @@ function VariantBtn({ label, icon: Icon, isActive, onClick }: VariantBtnProps) {
       type="button"
       onClick={onClick}
       className={[
-        'flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all',
+        'flex items-center gap-1.5 px-3 py-1 rounded-full typo-caption font-medium transition-all',
         isActive
           ? 'bg-violet-500/20 text-violet-300 shadow-elevation-1'
-          : 'text-foreground/60 hover:text-foreground hover:bg-secondary/50',
+          : 'text-foreground hover:text-foreground hover:bg-secondary/50',
       ].join(' ')}
     >
       <Icon className="w-3 h-3" />

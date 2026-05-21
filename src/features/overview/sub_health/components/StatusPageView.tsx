@@ -8,6 +8,8 @@ import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineE
 import { useStatusPageData } from '../libs/useStatusPageData';
 import type { CompositeHealthEntry, DayStatus } from '../libs/compositeHealthScore';
 import type { HealthGrade } from '@/stores/slices/overview/personaHealthSlice';
+import { DebtText } from '@/i18n/DebtText';
+
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -190,7 +192,7 @@ function StatusRow({ entry }: { entry: CompositeHealthEntry }) {
           {entry.consecutiveFailures > 0 && (
             <div className="mt-2 flex items-center gap-1.5 typo-caption text-red-400/80">
               <AlertTriangle className="w-3 h-3" />
-              {entry.consecutiveFailures} consecutive failure{entry.consecutiveFailures !== 1 ? 's' : ''}
+              {entry.consecutiveFailures} <DebtText k="auto_consecutive_failure_4ac1baa6" />{entry.consecutiveFailures !== 1 ? 's' : ''}
             </div>
           )}
         </div>

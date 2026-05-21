@@ -92,8 +92,8 @@ export function NotificationsDimCard({ uc, personaId }: NotificationsDimCardProp
             >
               <Bell className="w-3 h-3" style={{ color: active ? dimColor : '#94a3b8' }} />
             </span>
-            <span className="typo-label uppercase tracking-wider text-foreground/75">{t.agents.use_cases.notifications_dim_title}</span>
-            <ChevronDown className={`ml-auto w-3 h-3 text-foreground/55 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+            <span className="typo-label uppercase tracking-wider text-foreground">{t.agents.use_cases.notifications_dim_title}</span>
+            <ChevronDown className={`ml-auto w-3 h-3 text-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`} />
           </div>
           <div className="typo-caption text-foreground/85 leading-snug truncate">
             {summary}
@@ -103,7 +103,7 @@ export function NotificationsDimCard({ uc, personaId }: NotificationsDimCardProp
     >
       {({ close, focusIndex }) => (
         <div className="py-1" onClick={(e) => e.stopPropagation()}>
-          <div className="px-3 pt-1.5 pb-1 typo-label uppercase tracking-wider text-foreground/55">
+          <div className="px-3 pt-1.5 pb-1 typo-label uppercase tracking-wider text-foreground">
             {t.agents.use_cases.notifications_channel_types}
           </div>
           {CHANNEL_TYPES.map(({ type, label, Icon }, i) => {
@@ -128,13 +128,13 @@ export function NotificationsDimCard({ uc, personaId }: NotificationsDimCardProp
                 {isOn ? (
                   <Check className="w-3.5 h-3.5 text-status-success shrink-0" />
                 ) : (
-                  <span className="typo-label uppercase tracking-wider text-foreground/45">{t.agents.use_cases.notifications_channel_off}</span>
+                  <span className="typo-label uppercase tracking-wider text-foreground">{t.agents.use_cases.notifications_channel_off}</span>
                 )}
               </button>
             );
           })}
           <div className="border-t border-card-border/60 mt-1 pt-1">
-            <div className="px-3 py-2 typo-label uppercase tracking-wider text-foreground/45">
+            <div className="px-3 py-2 typo-label uppercase tracking-wider text-foreground">
               {t.agents.use_cases.notifications_config_hint}
             </div>
           </div>

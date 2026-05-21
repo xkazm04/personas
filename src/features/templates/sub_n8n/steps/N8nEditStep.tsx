@@ -137,12 +137,12 @@ export function N8nEditStep({
         />
       ),
     },
-  ], [stableDraft, adjustmentRequest, transforming, disabled, onAdjustmentChange, onApplyAdjustment, onTestUseCase, testingUseCaseId]);
+  ], [t.templates.n8n.use_cases_tab, stableDraft, adjustmentRequest, transforming, disabled, onAdjustmentChange, onApplyAdjustment, onTestUseCase, testingUseCaseId]);
 
   // Orange dot badge for connectors tab when action is needed
-  const connectorsBadge = connectorsMissing > 0 ? (
+  const connectorsBadge = useMemo(() => connectorsMissing > 0 ? (
     <span className="w-2 h-2 rounded-full bg-orange-400 flex-shrink-0" />
-  ) : null;
+  ) : null, [connectorsMissing]);
 
   // N8n-specific tabs: entities (tools+connectors+triggers) -- inserted after Settings
   const additionalTabs: DraftEditTab[] = useMemo(() => [
@@ -166,7 +166,7 @@ export function N8nEditStep({
         />
       ),
     },
-  ], [stableDraft, parsedResult, selectedToolIndices, selectedTriggerIndices, selectedConnectorNames, onGoToAnalyze, connectorsBadge, manualLinks, handleConnectorLink, handleMissingCountChange, updateDraft]);
+  ], [t.templates.n8n.tools_and_connectors_tab, connectorsBadge, stableDraft, parsedResult, selectedToolIndices, selectedTriggerIndices, selectedConnectorNames, manualLinks, updateDraft, handleConnectorLink, handleMissingCountChange, onGoToAnalyze]);
 
   // Show test output panel when a test has been started
   const showTestPanel = testPhase !== 'idle' || testLines.length > 0;

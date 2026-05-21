@@ -36,11 +36,11 @@ export function KpiTileWidget({ config, title }: WidgetProps) {
 
   return (
     <div className="rounded-card border border-foreground/10 bg-foreground/[0.02] p-4 h-full flex flex-col justify-between">
-      <div className="typo-caption text-foreground/60 uppercase tracking-wide">{label}</div>
+      <div className="typo-caption text-foreground uppercase tracking-wide">{label}</div>
       <div className="typo-h2 font-semibold text-foreground tabular-nums mt-2">
         {value === null ? '—' : `${unit}${value}`}
       </div>
-      <div className="typo-caption text-foreground/40 mt-1">last {days}d</div>
+      <div className="typo-caption text-foreground mt-1">last {days}d</div>
     </div>
   );
 }

@@ -15,6 +15,8 @@ import { useEvolutionPanelState } from './useEvolutionPanelState';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { EvolutionCycle } from '@/lib/bindings/EvolutionCycle';
 import type { FitnessObjective } from '@/lib/bindings/FitnessObjective';
+import { DebtText, debtText } from '@/i18n/DebtText';
+
 
 const STATUS_DOT: Record<string, string> = {
   breeding: 'bg-blue-500/70',
@@ -42,14 +44,14 @@ function GenerationNode({ cycle, idx, isLatest }: { cycle: EvolutionCycle; idx: 
       <div className={`flex-1 mb-3 rounded-card border ${isLatest ? 'border-violet-500/30 bg-violet-500/5' : 'border-primary/10 bg-secondary/20'} px-3 py-2`}>
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <span className="typo-label text-foreground/70">Gen {idx + 1}</span>
+            <span className="typo-label text-foreground">Gen {idx + 1}</span>
             {cycle.promoted && (
               <span className="flex items-center gap-1 typo-caption text-emerald-400">
                 <TrendingUp className="w-3 h-3" /> promoted
               </span>
             )}
           </div>
-          <span className="typo-caption text-foreground/60">
+          <span className="typo-caption text-foreground">
             {new Date(cycle.startedAt).toLocaleDateString()}
           </span>
         </div>
@@ -60,8 +62,8 @@ function GenerationNode({ cycle, idx, isLatest }: { cycle: EvolutionCycle; idx: 
           </span>
           {cycle.winnerFitness != null && cycle.incumbentFitness != null && (
             <div className="flex items-center gap-1 typo-data">
-              <span className="text-foreground/60">{Math.round(cycle.incumbentFitness * 100)}%</span>
-              <span className="text-foreground/40">→</span>
+              <span className="text-foreground">{Math.round(cycle.incumbentFitness * 100)}%</span>
+              <span className="text-foreground">→</span>
               <span className={improvement && improvement > 0 ? 'text-emerald-400' : 'text-foreground'}>
                 {Math.round(cycle.winnerFitness * 100)}%
               </span>
@@ -73,7 +75,7 @@ function GenerationNode({ cycle, idx, isLatest }: { cycle: EvolutionCycle; idx: 
             </div>
           )}
           {cycle.status === 'failed' && <XCircle className="w-3.5 h-3.5 text-red-400" />}
-          {cycle.status === 'completed' && !cycle.promoted && <CheckCircle2 className="w-3.5 h-3.5 text-foreground/50" />}
+          {cycle.status === 'completed' && !cycle.promoted && <CheckCircle2 className="w-3.5 h-3.5 text-foreground" />}
         </div>
       </div>
     </div>
@@ -102,15 +104,15 @@ function DnaStrand({ objective }: { objective: FitnessObjective }) {
                   style={{ height: `${heightPct}%` }}
                 />
               </div>
-              <span className="flex items-center gap-1 typo-caption text-foreground/70">
+              <span className="flex items-center gap-1 typo-caption text-foreground">
                 <Icon className="w-3 h-3" /> {seg.label}
               </span>
             </div>
           );
         })}
       </div>
-      <p className="typo-caption text-foreground/60 text-center">
-        Fitness genome — adjust below in the mutation lab
+      <p className="typo-caption text-foreground text-center">
+        <DebtText k="auto_fitness_genome_adjust_below_in_the_mutatio_b67d9f9f" />
       </p>
     </div>
   );
@@ -141,7 +143,7 @@ export function EvolutionPanelLineage() {
     : null;
 
   return (
-    <div className="space-y-4" role="region" aria-label="Auto-evolution panel — lineage">
+    <div className="space-y-4" role="region" aria-label={debtText("auto_auto_evolution_panel_lineage_cdb5cb26")}>
       {/* Three-pane core */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px_1fr] gap-3 items-stretch">
         {/* Lineage column */}
@@ -151,11 +153,11 @@ export function EvolutionPanelLineage() {
               <GitCommit className="w-4 h-4 text-violet-400" />
               <h3 className="typo-heading text-foreground">Lineage</h3>
             </div>
-            <span className="typo-caption text-foreground/60">{s.cycles.length} generation{s.cycles.length !== 1 ? 's' : ''}</span>
+            <span className="typo-caption text-foreground">{s.cycles.length} generation{s.cycles.length !== 1 ? 's' : ''}</span>
           </div>
           {s.cycles.length === 0 ? (
-            <div className="flex items-center justify-center h-72 typo-caption text-foreground/60 text-center px-4">
-              No generations yet. Trigger a cycle to begin the lineage.
+            <div className="flex items-center justify-center h-72 typo-caption text-foreground text-center px-4">
+              <DebtText k="auto_no_generations_yet_trigger_a_cycle_to_begi_a93bb324" />
             </div>
           ) : (
             <div className="overflow-y-auto max-h-96 pr-1">
@@ -190,26 +192,26 @@ export function EvolutionPanelLineage() {
               className="flex items-center gap-1 typo-caption focus-ring rounded-interactive"
               aria-label={s.isEnabled ? 'Disable auto-evolution' : 'Enable auto-evolution'}
             >
-              {s.isEnabled ? <ToggleRight className="w-7 h-7 text-emerald-400" /> : <ToggleLeft className="w-7 h-7 text-foreground/60" />}
+              {s.isEnabled ? <ToggleRight className="w-7 h-7 text-emerald-400" /> : <ToggleLeft className="w-7 h-7 text-foreground" />}
             </button>
           </div>
 
           <div className="space-y-2">
             <div className="rounded-card bg-primary/5 border border-primary/10 px-3 py-2">
-              <div className="typo-caption text-foreground/70">Total cycles</div>
+              <div className="typo-caption text-foreground"><DebtText k="auto_total_cycles_bac636ac" /></div>
               <div className="typo-data-lg text-foreground">{s.policy?.totalCycles ?? 0}</div>
             </div>
             <div className="rounded-card bg-primary/5 border border-primary/10 px-3 py-2">
-              <div className="typo-caption text-foreground/70">Promotions</div>
+              <div className="typo-caption text-foreground">Promotions</div>
               <div className="typo-data-lg text-emerald-400">{s.policy?.totalPromotions ?? 0}</div>
             </div>
             <div className="rounded-card bg-primary/5 border border-primary/10 px-3 py-2">
-              <div className="typo-caption text-foreground/70">Last cycle delta</div>
+              <div className="typo-caption text-foreground"><DebtText k="auto_last_cycle_delta_b3d9d914" /></div>
               <div className={`typo-data-lg ${lastDelta != null && lastDelta > 0 ? 'text-emerald-400' : lastDelta != null && lastDelta < 0 ? 'text-red-400' : 'text-foreground'}`}>
                 {lastDelta != null ? `${lastDelta > 0 ? '+' : ''}${(lastDelta * 100).toFixed(1)}%` : '—'}
               </div>
             </div>
-            <div className={`rounded-card px-3 py-2 border ${s.eligible ? 'bg-amber-500/10 border-amber-500/25 text-amber-400' : 'bg-primary/5 border-primary/10 text-foreground/70'}`}>
+            <div className={`rounded-card px-3 py-2 border ${s.eligible ? 'bg-amber-500/10 border-amber-500/25 text-amber-400' : 'bg-primary/5 border-primary/10 text-foreground'}`}>
               <div className="typo-caption">Status</div>
               <div className="typo-body font-medium">
                 {s.eligible ? t.agents.lab.ready_label : t.agents.lab.waiting_label}
@@ -222,7 +224,7 @@ export function EvolutionPanelLineage() {
             disabled={s.isTriggering}
             className="mt-3 flex items-center justify-center gap-2 px-3 py-2.5 typo-body font-medium rounded-card bg-violet-500/15 text-violet-300 hover:bg-violet-500/25 transition-colors disabled:opacity-40 focus-ring"
           >
-            {s.isTriggering ? <><Loader2 className="w-4 h-4 animate-spin" /> Evolving…</> : <><Play className="w-4 h-4" /> Trigger generation</>}
+            {s.isTriggering ? <><Loader2 className="w-4 h-4 animate-spin" /> <DebtText k="auto_evolving_416d12e5" /></> : <><Play className="w-4 h-4" /> <DebtText k="auto_trigger_generation_06fe1d47" /></>}
           </button>
         </div>
       </div>
@@ -232,9 +234,9 @@ export function EvolutionPanelLineage() {
         <summary className="flex items-center justify-between gap-2 cursor-pointer select-none px-3 py-2.5 hover:bg-secondary/25">
           <span className="flex items-center gap-2 typo-heading text-foreground">
             <FlaskConical className="w-4 h-4 text-violet-400" />
-            Mutation lab
+            <DebtText k="auto_mutation_lab_b38885e8" />
           </span>
-          <ChevronDown className="w-4 h-4 text-foreground/60 transition-transform group-open:rotate-180" />
+          <ChevronDown className="w-4 h-4 text-foreground transition-transform group-open:rotate-180" />
         </summary>
         <div className="px-3 pb-3 pt-1 space-y-3 border-t border-primary/8">
           <ObjectiveSliders objective={s.objective} setObjective={s.setObjective} />
@@ -293,7 +295,7 @@ function ObjectiveSliders({ objective, setObjective }: { objective: FitnessObjec
 function SliderField({ id, label, value, onChange, min, max }: { id: string; label: string; value: number; onChange: (n: number) => void; min: number; max: number }) {
   return (
     <div>
-      <label htmlFor={id} className="typo-caption text-foreground/70">{label}</label>
+      <label htmlFor={id} className="typo-caption text-foreground">{label}</label>
       <div className="flex items-center gap-2 mt-1">
         <input id={id} type="range" min={min} max={max} value={Math.round(value * 100)} onChange={(e) => onChange(Number(e.target.value) / 100)} className="flex-1 h-1 accent-violet-500" />
         <span className="typo-caption text-foreground w-9 text-right">{Math.round(value * 100)}%</span>
@@ -305,7 +307,7 @@ function SliderField({ id, label, value, onChange, min, max }: { id: string; lab
 function NumberSelect({ id, label, value, onChange, options }: { id: string; label: string; value: number; onChange: (n: number) => void; options: number[] }) {
   return (
     <div>
-      <label htmlFor={id} className="typo-caption text-foreground/70">{label}</label>
+      <label htmlFor={id} className="typo-caption text-foreground">{label}</label>
       <select
         id={id}
         value={value}

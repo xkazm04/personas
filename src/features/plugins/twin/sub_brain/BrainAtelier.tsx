@@ -66,10 +66,10 @@ export default function BrainAtelier() {
               </p>
               <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-interactive border border-primary/10 bg-card/60 font-mono text-xs">
                 <FolderTree className="w-3.5 h-3.5 text-violet-300 flex-shrink-0" />
-                <span className="text-foreground truncate">{activeTwin?.obsidian_subpath || <span className="italic text-foreground/40">{t.brain.noSubpathSet}</span>}</span>
-                <span className="ml-auto text-[10px] text-foreground/55 uppercase tracking-wider">{t.brain.obsidianTagShort}</span>
+                <span className="text-foreground truncate">{activeTwin?.obsidian_subpath || <span className="italic text-foreground">{t.brain.noSubpathSet}</span>}</span>
+                <span className="ml-auto text-[10px] text-foreground uppercase tracking-wider">{t.brain.obsidianTagShort}</span>
               </div>
-              <p className="typo-caption text-foreground/65 mt-3">{t.brain.obsidianHint}</p>
+              <p className="typo-caption text-foreground mt-3">{t.brain.obsidianHint}</p>
             </Layer>
 
             {/* ── Layer 2: Knowledge Base ─────────────────────────── */}
@@ -90,7 +90,7 @@ export default function BrainAtelier() {
               {kbLoading ? (
                 <div className="flex items-center gap-3 mt-4">
                   <div className="w-5 h-5 border-2 border-violet-400/30 border-t-violet-400 rounded-full animate-spin" />
-                  <span className="typo-caption text-foreground/65">{t.brain.loadingKb}</span>
+                  <span className="typo-caption text-foreground">{t.brain.loadingKb}</span>
                 </div>
               ) : kbInfo ? (
                 <>
@@ -125,17 +125,17 @@ export default function BrainAtelier() {
                     <div className="p-3 rounded-card border border-primary/15 bg-background space-y-1.5">
                       <p className="typo-caption text-foreground/85 font-medium mb-1">{t.brain.selectExistingKb}</p>
                       {allKbs.length === 0 ? (
-                        <p className="typo-caption text-foreground/55">{t.brain.noKbsFound}</p>
+                        <p className="typo-caption text-foreground">{t.brain.noKbsFound}</p>
                       ) : allKbs.map((kb) => (
                         <button key={kb.id} onClick={() => handleBind(kb.id)} className="w-full flex items-center justify-between px-3 py-2 rounded-interactive hover:bg-violet-500/10 transition-colors text-left group">
                           <div className="flex items-center gap-2">
                             <Database className="w-3.5 h-3.5 text-violet-300" />
                             <span className="typo-body text-foreground group-hover:text-violet-200">{kb.name}</span>
                           </div>
-                          <span className="typo-caption text-foreground/55">{kb.document_count} {t.brain.docs}</span>
+                          <span className="typo-caption text-foreground">{kb.document_count} {t.brain.docs}</span>
                         </button>
                       ))}
-                      <button onClick={() => setPickMode(false)} className="typo-caption text-foreground/55 hover:text-foreground mt-1 px-2">{t.profiles.cancel}</button>
+                      <button onClick={() => setPickMode(false)} className="typo-caption text-foreground hover:text-foreground mt-1 px-2">{t.profiles.cancel}</button>
                     </div>
                   )}
                 </div>
@@ -148,7 +148,7 @@ export default function BrainAtelier() {
             <div className="sticky top-4 rounded-card border border-primary/10 bg-card/40 p-4">
               <div className="flex items-center gap-2 mb-4">
                 <Sparkles className="w-4 h-4 text-violet-300" />
-                <p className="text-[10px] uppercase tracking-[0.2em] text-foreground/55 font-medium">{t.brain.howBrainGrows}</p>
+                <p className="text-[10px] uppercase tracking-[0.2em] text-foreground font-medium">{t.brain.howBrainGrows}</p>
               </div>
               <ol className="space-y-3">
                 {[t.brain.brainStep1, t.brain.brainStep2, t.brain.brainStep3, t.brain.brainStep4, t.brain.brainStep5].map((step, i) => (
@@ -189,10 +189,10 @@ interface LayerProps {
 function Layer({ index, title, tag, tagTone, icon: Icon, accentFrom, accentTo, borderColor, status, statusTone, children }: LayerProps) {
   const tagClass = tagTone === 'violet' ? 'bg-violet-500/15 text-violet-300 border-violet-500/25'
     : tagTone === 'emerald' ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/25'
-    : 'bg-secondary/40 text-foreground/65 border-primary/10';
+    : 'bg-secondary/40 text-foreground border-primary/10';
   const statusClass = statusTone === 'emerald' ? 'text-emerald-300'
     : statusTone === 'amber' ? 'text-amber-300'
-    : 'text-foreground/55';
+    : 'text-foreground';
   return (
     <section className={`relative rounded-card border ${borderColor} bg-gradient-to-br ${accentFrom} ${accentTo} p-5 md:p-6 shadow-elevation-1 overflow-hidden`}>
       <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full bg-gradient-to-br from-violet-500/15 to-transparent blur-3xl pointer-events-none" />
@@ -222,7 +222,7 @@ function KpiPanel({ label, value, icon: Icon, accent = 'violet', mono }: { label
     <div className="rounded-interactive border border-primary/10 bg-card/60 px-3 py-2.5">
       <div className="flex items-center gap-1.5 mb-1">
         <Icon className={`w-3 h-3 ${tone}`} />
-        <span className="text-[9px] uppercase tracking-[0.18em] text-foreground/55">{label}</span>
+        <span className="text-[9px] uppercase tracking-[0.18em] text-foreground">{label}</span>
       </div>
       <p className={`${mono ? 'font-mono text-xs' : 'typo-data-lg'} ${tone} truncate`}>{value}</p>
     </div>
@@ -234,7 +234,7 @@ function Stat({ label, value, accent = 'violet' }: { label: string; value: numbe
   return (
     <div className="flex flex-col items-start leading-tight">
       <span className={`typo-data-lg tabular-nums ${tone}`}>{value}</span>
-      <span className="text-[9px] uppercase tracking-[0.18em] text-foreground/55">{label}</span>
+      <span className="text-[9px] uppercase tracking-[0.18em] text-foreground">{label}</span>
     </div>
   );
 }

@@ -30,6 +30,8 @@ import { getTrustTier } from '@/lib/personas/personaThresholds';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
+import { DebtText } from '@/i18n/DebtText';
+
 
 interface PersonaOverviewVariantConstellationProps {
   data: Persona[];
@@ -398,13 +400,13 @@ export function PersonaOverviewVariantConstellation({
         {/* Legend overlay — pinned on the canvas container so it stays in
             place while the SVG scrolls underneath. */}
         <div className="absolute bottom-3 left-3 flex flex-col gap-1.5 pointer-events-none bg-background/70 backdrop-blur-sm rounded-card border border-primary/10 px-3 py-2">
-          <div className="text-md uppercase tracking-wider text-foreground/50 font-semibold">
-            Last run
+          <div className="text-md uppercase tracking-wider text-foreground font-semibold">
+            <DebtText k="auto_last_run_333c63a5" />
           </div>
-          <div className="text-md text-foreground/70 leading-snug">
-            inner = recently active · outer = dormant
+          <div className="text-md text-foreground leading-snug">
+            <DebtText k="auto_inner_recently_active_outer_dormant_27cfc39a" />
           </div>
-          <div className="flex items-center gap-3 text-md text-foreground/70 pt-1">
+          <div className="flex items-center gap-3 text-md text-foreground pt-1">
             <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-400" />ok</span>
             <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400" />degraded</span>
             <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-400" />failing</span>
@@ -465,11 +467,11 @@ const PersonaDossier = memo(function PersonaDossier({
   return (
     <div className="p-4 flex flex-col gap-4">
       <div className="flex items-start justify-between gap-2">
-        <div className="text-md uppercase tracking-wider text-foreground/50 font-semibold">Dossier</div>
+        <div className="text-md uppercase tracking-wider text-foreground font-semibold">Dossier</div>
         <button
           type="button"
           onClick={onClear}
-          className="text-md text-foreground/60 hover:text-foreground transition-colors"
+          className="text-md text-foreground hover:text-foreground transition-colors"
         >
           clear
         </button>
@@ -483,15 +485,15 @@ const PersonaDossier = memo(function PersonaDossier({
           <PersonaIcon icon={p.icon} color={p.color} size="w-5 h-5" framed frameSize="lg" />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="text-base font-medium text-foreground truncate">{p.name}</div>
+          <div className="typo-body-lg font-medium text-foreground truncate">{p.name}</div>
           {p.description && (
-            <div className="text-md text-foreground/60 leading-snug mt-0.5 line-clamp-3">{p.description}</div>
+            <div className="text-md text-foreground leading-snug mt-0.5 line-clamp-3">{p.description}</div>
           )}
         </div>
       </div>
 
       <div className="flex items-center justify-between gap-2">
-        <span className="inline-flex items-center gap-1.5 text-md text-foreground/80">
+        <span className="inline-flex items-center gap-1.5 text-md text-foreground">
           <span className="w-2 h-2 rounded-full" style={{ backgroundColor: laid.ring }} />
           <span className="capitalize">{statusLabel}</span>
         </span>
@@ -501,23 +503,23 @@ const PersonaDossier = memo(function PersonaDossier({
             <span className="opacity-60">· {Math.round(p.trust_score ?? 0)}</span>
           </span>
         ) : (
-          <span className="text-md text-foreground/40">--</span>
+          <span className="text-md text-foreground">--</span>
         )}
       </div>
 
       <div>
-        <div className="text-md uppercase tracking-wider text-foreground/50 font-semibold mb-2">
+        <div className="text-md uppercase tracking-wider text-foreground font-semibold mb-2">
           {t.common.connectors}
         </div>
         {connectors.length === 0 ? (
-          <div className="text-md text-foreground/40">{t.agents.persona_list.no_connectors}</div>
+          <div className="text-md text-foreground">{t.agents.persona_list.no_connectors}</div>
         ) : (
           <div className="flex flex-wrap items-center gap-1.5">
             {connectors.map((name) => {
               const meta = getConnectorMeta(name);
               return (
                 <Tooltip key={name} content={meta.label}>
-                  <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-input bg-secondary/40 border border-primary/10 text-md text-foreground/80 cursor-help">
+                  <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-input bg-secondary/40 border border-primary/10 text-md text-foreground cursor-help">
                     <ConnectorIcon meta={meta} size="w-3.5 h-3.5" />
                     <span className="truncate max-w-[90px]">{meta.label}</span>
                   </div>
@@ -530,16 +532,16 @@ const PersonaDossier = memo(function PersonaDossier({
 
       <div className="grid grid-cols-2 gap-2">
         <div className="rounded-card border border-primary/10 bg-secondary/30 px-3 py-2.5">
-          <div className="text-md uppercase tracking-wider text-foreground/50 font-semibold flex items-center gap-1">
+          <div className="text-md uppercase tracking-wider text-foreground font-semibold flex items-center gap-1">
             <Zap className="w-3 h-3" />
             {t.common.triggers}
           </div>
-          <div className="text-2xl font-semibold text-foreground tabular-nums leading-tight mt-1">
+          <div className="typo-data-lg font-semibold text-foreground tabular-nums leading-tight mt-1">
             {triggerCount}
           </div>
         </div>
         <div className="rounded-card border border-primary/10 bg-secondary/30 px-3 py-2.5">
-          <div className="text-md uppercase tracking-wider text-foreground/50 font-semibold flex items-center gap-1">
+          <div className="text-md uppercase tracking-wider text-foreground font-semibold flex items-center gap-1">
             <Clock className="w-3 h-3" />
             {t.agents.overview_columns.last_run}
           </div>
@@ -571,11 +573,11 @@ function FleetOverview({ stats }: { stats: { healthy: number; degraded: number; 
 
   return (
     <div className="p-4 flex flex-col gap-4">
-      <div className="text-md uppercase tracking-wider text-foreground/50 font-semibold">Fleet</div>
+      <div className="text-md uppercase tracking-wider text-foreground font-semibold">Fleet</div>
       <div className="flex items-end justify-between">
         <div>
-          <div className="text-4xl font-semibold text-foreground tabular-nums leading-none">{stats.total}</div>
-          <div className="text-md text-foreground/60 mt-1">personas in orbit</div>
+          <div className="typo-hero font-semibold text-foreground tabular-nums leading-none">{stats.total}</div>
+          <div className="text-md text-foreground mt-1"><DebtText k="auto_personas_in_orbit_a712646f" /></div>
         </div>
         <div className="inline-flex items-center gap-1 text-md text-emerald-400">
           <Activity className="w-3.5 h-3.5" />
@@ -591,18 +593,18 @@ function FleetOverview({ stats }: { stats: { healthy: number; degraded: number; 
       </div>
 
       <div className="rounded-card border border-primary/10 bg-secondary/30 px-3 py-2.5">
-        <div className="text-md uppercase tracking-wider text-foreground/50 font-semibold flex items-center gap-1">
+        <div className="text-md uppercase tracking-wider text-foreground font-semibold flex items-center gap-1">
           <Zap className="w-3 h-3" />
           {t.common.triggers}
         </div>
-        <div className="text-2xl font-semibold text-foreground tabular-nums leading-tight mt-1">
+        <div className="typo-data-lg font-semibold text-foreground tabular-nums leading-tight mt-1">
           {stats.totalTriggers}
         </div>
-        <div className="text-md text-foreground/50">across all personas</div>
+        <div className="text-md text-foreground"><DebtText k="auto_across_all_personas_7767efd7" /></div>
       </div>
 
-      <div className="text-md text-foreground/50 leading-snug pt-2 border-t border-primary/8">
-        Click a node to inspect a persona. Inner orbits = recently active. Ring colour = health.
+      <div className="text-md text-foreground leading-snug pt-2 border-t border-primary/8">
+        <DebtText k="auto_click_a_node_to_inspect_a_persona_inner_or_11190185" />
       </div>
     </div>
   );
@@ -611,7 +613,7 @@ function FleetOverview({ stats }: { stats: { healthy: number; degraded: number; 
 function StatLine({ label, value, accent }: { label: string; value: number; accent: string }) {
   return (
     <div className="flex items-center justify-between text-md">
-      <span className="inline-flex items-center gap-2 text-foreground/70">
+      <span className="inline-flex items-center gap-2 text-foreground">
         <span className={`w-2 h-2 rounded-full ${accent}`} />
         {label}
       </span>

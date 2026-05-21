@@ -1,6 +1,8 @@
 import { Target, FileText, Shield, DollarSign, Clock, ArrowUp, ArrowDown } from 'lucide-react';
 import { scoreColor } from '@/lib/eval/evalFramework';
 import { useTranslation } from '@/i18n/useTranslation';
+import { DebtText } from '@/i18n/DebtText';
+
 
 interface VariantScores {
   avgToolAccuracy: number;
@@ -71,16 +73,16 @@ export function MatrixScoreComparison({ currentAgg, draftAgg }: MatrixScoreCompa
 
       <div className="flex items-center gap-6 typo-body text-foreground px-1">
         <span className="flex items-center gap-1">
-          <DollarSign className="w-3 h-3" />Current: ${currentAgg.totalCost.toFixed(4)}
+          <DollarSign className="w-3 h-3" /><DebtText k="auto_current_7c5be6c4" />{currentAgg.totalCost.toFixed(4)}
         </span>
         <span className="flex items-center gap-1">
-          <DollarSign className="w-3 h-3" />Draft: ${draftAgg.totalCost.toFixed(4)}
+          <DollarSign className="w-3 h-3" /><DebtText k="auto_draft_da70e724" />{draftAgg.totalCost.toFixed(4)}
         </span>
         <span className="flex items-center gap-1">
-          <Clock className="w-3 h-3" />Current: {(currentAgg.avgDuration / 1000).toFixed(1)}s
+          <Clock className="w-3 h-3" /><DebtText k="auto_current_19889c90" /> {(currentAgg.avgDuration / 1000).toFixed(1)}s
         </span>
         <span className="flex items-center gap-1">
-          <Clock className="w-3 h-3" />Draft: {(draftAgg.avgDuration / 1000).toFixed(1)}s
+          <Clock className="w-3 h-3" /><DebtText k="auto_draft_017464f7" /> {(draftAgg.avgDuration / 1000).toFixed(1)}s
         </span>
       </div>
     </div>

@@ -67,7 +67,7 @@ export function DesignPhaseAppliedDetails({ result, onReset }: DesignPhaseApplie
       });
     }
     return steps;
-  }, [result, onReset, setSidebarSection, setEditorTab]);
+  }, [result?.suggested_connectors?.length, result?.suggested_triggers?.length, result?.full_prompt_markdown, t.agents.design.run_test_execution, t.agents.design.run_test_execution_desc, t.agents.design.configure_credentials, t.agents.design.configure_credentials_desc, t.agents.design.set_up_triggers, t.agents.design.set_up_triggers_desc, t.agents.design.review_prompt, t.agents.design.review_prompt_desc, onReset, setSidebarSection, setEditorTab]);
 
   return (
     <>

@@ -1,6 +1,8 @@
 import { useRef, useState, useCallback, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronRight } from 'lucide-react';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 type SectionCardSize = 'sm' | 'md' | 'lg';
 export type SectionCardStatus = 'success' | 'warning' | 'error' | 'info' | 'neutral';
@@ -66,7 +68,7 @@ function readStorage(key: string | undefined, fallback: boolean): boolean {
     const v = localStorage.getItem(key);
     if (v === 'true') return true;
     if (v === 'false') return false;
-  } catch { /* SSR / private browsing */ }
+  } catch (err) { silentCatch("features/shared/components/layout/SectionCard:catch1")(err); }
   return fallback;
 }
 
@@ -74,7 +76,7 @@ function writeStorage(key: string | undefined, collapsed: boolean) {
   if (!key) return;
   try {
     localStorage.setItem(key, String(collapsed));
-  } catch { /* ignore */ }
+  } catch (err) { silentCatch("features/shared/components/layout/SectionCard:catch2")(err); }
 }
 
 export function SectionCard(props: SectionCardProps) {

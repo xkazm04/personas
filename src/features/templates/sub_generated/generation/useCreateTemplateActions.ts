@@ -15,6 +15,8 @@ import {
 import type { PersistedCreateTemplateContext } from './useCreateTemplateReducer';
 import { persistContext, clearPersistedContext } from './modals/createTemplateTypes';
 import { useCreateTemplateSnapshot } from './useCreateTemplateSnapshot';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 export function useCreateTemplateActions(isOpen: boolean, onTemplateCreated: () => void) {
   const reducer = useCreateTemplateReducer();
@@ -65,7 +67,7 @@ export function useCreateTemplateActions(isOpen: boolean, onTemplateCreated: () 
     if (state.backgroundGenId) {
       try {
         await cancelTemplateGenerate(state.backgroundGenId);
-      } catch { /* intentional: non-critical -- best-effort cancellation */ }
+      } catch (err) { silentCatch("features/templates/sub_generated/generation/useCreateTemplateActions:catch1")(err); }
     }
     reducer.generateCancelled();
     clearPersistedContext();
@@ -108,7 +110,7 @@ export function useCreateTemplateActions(isOpen: boolean, onTemplateCreated: () 
       if (genIdRef.current) {
         try {
           await clearTemplateGenerateSnapshot(genIdRef.current);
-        } catch { /* intentional: non-critical -- snapshot cleanup */ }
+        } catch (err) { silentCatch("features/templates/sub_generated/generation/useCreateTemplateActions:catch2")(err); }
       }
 
       onTemplateCreated();

@@ -12,6 +12,8 @@ import type { RotationStatus } from '@/api/vault/rotation';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import { PlaygroundHeader } from './PlaygroundHeader';
 import { PlaygroundTabContent } from './PlaygroundTabContent';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 type PlaygroundTab = 'overview' | 'executions' | 'api-explorer' | 'recipes' | 'mcp-tools' | 'rotation';
 interface TabDef { id: PlaygroundTab; label: string; icon: typeof Eye; }
@@ -50,7 +52,7 @@ export function CredentialPlaygroundModal({ credential, connector, onClose, onDe
   const googleOAuth = useGoogleOAuth({ onSuccess: () => setEditError(null), onError: (msg) => setEditError(msg) });
 
   const fetchRotationStatus = useCallback(async () => {
-    try { const status = await getRotationStatus(credential.id); setRotationStatus(status); } catch { /* intentional */ }
+    try { const status = await getRotationStatus(credential.id); setRotationStatus(status); } catch (err) { silentCatch("features/vault/shared/playground/CredentialPlaygroundModal:catch1")(err); }
   }, [credential.id]);
 
   useEffect(() => { fetchRotationStatus(); }, [fetchRotationStatus]);

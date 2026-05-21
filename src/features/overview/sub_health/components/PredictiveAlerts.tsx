@@ -1,6 +1,7 @@
 import { AlertTriangle, Zap, ArrowRight, Shield, TrendingDown, DollarSign } from 'lucide-react';
 import type { PersonaHealthSignal, RoutingRecommendation } from '@/stores/slices/overview/personaHealthSlice';
 import { useTranslation } from '@/i18n/useTranslation';
+import type { Translations } from '@/i18n/generated/types';
 
 interface PredictiveAlertsProps {
   signals: PersonaHealthSignal[];
@@ -39,8 +40,7 @@ const SEVERITY_STYLES = {
   },
 };
 
-function buildPredictiveAlerts(signals: PersonaHealthSignal[]): PredictiveAlert[] {
-  const { t } = useTranslation();
+function buildPredictiveAlerts(signals: PersonaHealthSignal[], t: Translations): PredictiveAlert[] {
   const alerts: PredictiveAlert[] = [];
 
   for (const s of signals) {
@@ -112,7 +112,7 @@ function buildPredictiveAlerts(signals: PersonaHealthSignal[]): PredictiveAlert[
 
 export function PredictiveAlerts({ signals, recommendations }: PredictiveAlertsProps) {
   const { t } = useTranslation();
-  const alerts = buildPredictiveAlerts(signals);
+  const alerts = buildPredictiveAlerts(signals, t);
 
   if (alerts.length === 0 && recommendations.length === 0) {
     return (

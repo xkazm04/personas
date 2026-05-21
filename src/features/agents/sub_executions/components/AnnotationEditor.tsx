@@ -40,7 +40,7 @@ export function AnnotationEditor({
     setTags(annotation?.tags ?? []);
     setNote(annotation?.note ?? '');
     setStarred(annotation?.starred ?? false);
-  }, [annotation?.id, annotation?.execution_id]);
+  }, [annotation?.id, annotation?.execution_id, annotation?.tags, annotation?.note, annotation?.starred]);
 
   const tagSuggestions = useMemo(
     () =>
@@ -101,7 +101,7 @@ export function AnnotationEditor({
           aria-label={a.annotation_starred_aria}
           aria-pressed={starred}
           className={`p-1 rounded-interactive transition-colors ${
-            starred ? 'text-amber-400 hover:text-amber-300' : 'text-foreground/40 hover:text-foreground/70'
+            starred ? 'text-amber-400 hover:text-amber-300' : 'text-foreground hover:text-foreground/70'
           }`}
         >
           <Star className="w-4 h-4" fill={starred ? 'currentColor' : 'none'} />
@@ -109,7 +109,7 @@ export function AnnotationEditor({
       </div>
 
       <div className="space-y-1.5">
-        <span className="typo-code text-foreground/60 uppercase tracking-wider">
+        <span className="typo-code text-foreground uppercase tracking-wider">
           {a.annotation_tags_label}
         </span>
         <div className="flex flex-wrap gap-1.5 items-center">
@@ -148,7 +148,7 @@ export function AnnotationEditor({
             type="button"
             onClick={() => commitTag(draftTag)}
             disabled={!draftTag.trim()}
-            className="p-1 rounded-interactive text-foreground/60 hover:text-foreground disabled:opacity-30"
+            className="p-1 rounded-interactive text-foreground hover:text-foreground disabled:opacity-30"
           >
             <Plus className="w-3.5 h-3.5" />
           </button>
@@ -160,7 +160,7 @@ export function AnnotationEditor({
                 key={s}
                 type="button"
                 onClick={() => commitTag(s)}
-                className="px-2 py-0.5 typo-code rounded-card bg-secondary/40 text-foreground/70 hover:text-foreground hover:bg-secondary/60 border border-primary/10"
+                className="px-2 py-0.5 typo-code rounded-card bg-secondary/40 text-foreground hover:text-foreground hover:bg-secondary/60 border border-primary/10"
               >
                 + {s}
               </button>
@@ -170,7 +170,7 @@ export function AnnotationEditor({
       </div>
 
       <div className="space-y-1.5">
-        <span className="typo-code text-foreground/60 uppercase tracking-wider">
+        <span className="typo-code text-foreground uppercase tracking-wider">
           {a.annotation_note_label}
         </span>
         <textarea
@@ -197,7 +197,7 @@ export function AnnotationEditor({
             onClick={handleDelete}
             disabled={saving}
             aria-label={a.annotation_delete}
-            className="p-1 text-foreground/40 hover:text-rose-400 transition-colors"
+            className="p-1 text-foreground hover:text-rose-400 transition-colors"
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>

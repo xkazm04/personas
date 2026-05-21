@@ -22,7 +22,7 @@ export function ConnectorTotem({ connectors, tileSize, spacing, max = 6 }: Conne
         return (
           <div
             key={`${cn.name}-${i}`}
-            className="absolute rounded-md bg-card-bg/90 backdrop-blur border border-card-border flex items-center justify-center shadow-elevation-1"
+            className="absolute rounded-input bg-card-bg/90 backdrop-blur border border-card-border flex items-center justify-center shadow-elevation-1"
             style={{
               top: `calc(50% + ${offset * spacing}px)`,
               width: tileSize,
@@ -38,7 +38,7 @@ export function ConnectorTotem({ connectors, tileSize, spacing, max = 6 }: Conne
       })}
       {overflow > 0 && (
         <div
-          className="absolute rounded-md bg-card-bg/90 backdrop-blur border border-dashed border-card-border flex items-center justify-center text-foreground/65 typo-label tabular-nums"
+          className="absolute rounded-input bg-card-bg/90 backdrop-blur border border-dashed border-card-border flex items-center justify-center text-foreground typo-label tabular-nums"
           style={{
             top: `calc(50% + ${stackOffset(max) * spacing}px)`,
             width: tileSize,

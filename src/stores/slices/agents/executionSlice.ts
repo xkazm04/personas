@@ -29,6 +29,8 @@ import { classifyLine } from "@/lib/utils/terminalColors";
 import { createRunLifecycle } from "./runLifecycle";
 import { trackRecentAgent } from "@/hooks/agents/useRecentAgents";
 import { en } from "@/i18n/en";
+import { silentCatch } from '@/lib/silentCatch';
+
 
 const executionLifecycle = createRunLifecycle('isExecuting', 'executionProgress');
 
@@ -175,7 +177,7 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
           };
         }
       }
-    } catch { /* ignore corrupt localStorage */ }
+    } catch (err) { silentCatch("stores/slices/agents/executionSlice:catch1")(err); }
     return null;
   })();
 
@@ -193,7 +195,7 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
           logger.info("Recovered execution already finished — clearing stale state", { executionId: activeExecutionId, status: execution.status });
           executionLifecycle.markFinished(set);
           set({ activeExecutionId: null, lastExecutionId: activeExecutionId, executionPersonaId: null });
-          try { localStorage.removeItem('personas:active-execution'); } catch { /* ignore */ }
+          try { localStorage.removeItem('personas:active-execution'); } catch (err) { silentCatch("stores/slices/agents/executionSlice:catch2")(err); }
         } else {
           logger.info("Recovered execution still active — keeping state", { executionId: activeExecutionId, status: execution.status });
         }
@@ -328,7 +330,7 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
             executionPersonaId: personaId,
             isExecuting: true,
           }));
-        } catch { /* ignore */ }
+        } catch (err) { silentCatch("stores/slices/agents/executionSlice:catch3")(err); }
       }
       return execution.id;
     } catch (err) {
@@ -368,7 +370,7 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
       // Always reset execution state regardless of API success/failure.
       executionLifecycle.markCancelled(set);
       set({ activeExecutionId: null, lastExecutionId: lastId, executionPersonaId: null, activeUseCaseId: null, queuePosition: null, queueDepth: null });
-      try { localStorage.removeItem('personas:active-execution'); } catch { /* ignore */ }
+      try { localStorage.removeItem('personas:active-execution'); } catch (err) { silentCatch("stores/slices/agents/executionSlice:catch4")(err); }
       const personaId = get().selectedPersona?.id;
       if (personaId) get().fetchExecutions(personaId);
     }
@@ -465,7 +467,7 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
     // Health summaries are now pushed via PERSONA_HEALTH_CHANGED event from the backend
 
     // Clear recovery state
-    try { localStorage.removeItem('personas:active-execution'); } catch { /* ignore */ }
+    try { localStorage.removeItem('personas:active-execution'); } catch (err) { silentCatch("stores/slices/agents/executionSlice:catch5")(err); }
   },
 
   fetchExecutions: async (personaId) => {
@@ -574,7 +576,7 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
         logger.info("Recovered execution already finished — clearing stale state", { executionId: execId, status: execution.status });
         executionLifecycle.markFinished(set);
         set({ activeExecutionId: null, lastExecutionId: execId, executionPersonaId: null });
-        try { localStorage.removeItem('personas:active-execution'); } catch { /* ignore */ }
+        try { localStorage.removeItem('personas:active-execution'); } catch (err) { silentCatch("stores/slices/agents/executionSlice:catch6")(err); }
       } else {
         logger.info("Recovered execution still active — keeping state", { executionId: execId, status: execution.status });
       }
@@ -589,7 +591,7 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
     set({ executionVerificationFailed: false });
     executionLifecycle.markFinished(set);
     set({ activeExecutionId: null, lastExecutionId: execId, executionPersonaId: null });
-    try { localStorage.removeItem('personas:active-execution'); } catch { /* ignore */ }
+    try { localStorage.removeItem('personas:active-execution'); } catch (err) { silentCatch("stores/slices/agents/executionSlice:catch7")(err); }
   },
 });
 };

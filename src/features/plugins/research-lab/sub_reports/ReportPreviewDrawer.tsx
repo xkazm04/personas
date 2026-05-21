@@ -7,6 +7,8 @@ import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownR
 import { compileReport } from './compileReport';
 import { downloadStringAsFile, copyToClipboard } from '../_shared/downloadFile';
 import type { ResearchReport } from '@/api/researchLab/researchLab';
+import { DebtText } from '@/i18n/DebtText';
+
 
 interface Props {
   report: ResearchReport;
@@ -117,7 +119,7 @@ export default function ReportPreviewDrawer({ report, onClose }: Props) {
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption bg-primary/20 hover:bg-primary/30 text-primary transition-colors"
             >
               <Download className="w-3.5 h-3.5" />
-              .md
+              <DebtText k="auto_md_a2c73572" />
             </button>
             <button onClick={onClose} className="p-1.5 rounded hover:bg-secondary/50 text-foreground" aria-label={t.common.cancel}>
               <X className="w-4 h-4" />

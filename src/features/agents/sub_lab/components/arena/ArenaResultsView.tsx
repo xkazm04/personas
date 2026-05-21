@@ -7,6 +7,8 @@ import { ScenarioDetailPanel } from '../shared/ScenarioDetailPanel';
 import { aggregateArenaResults, type ArenaModelAggregate } from '../../libs/labAggregation';
 import { useTranslation } from '@/i18n/useTranslation';
 import { sanitizeRichSummary } from '@/lib/utils/sanitizers/sanitizeHtml';
+import { DebtText } from '@/i18n/DebtText';
+
 
 interface UserRatingEntry {
   rating: number;
@@ -144,7 +146,7 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
             </div>
             <div>
               <h4 className="typo-heading font-semibold text-foreground/90">{t.agents.lab.test_summary}</h4>
-              <p className="typo-caption text-foreground">{scenarios.length} scenarios across {models.length} models</p>
+              <p className="typo-caption text-foreground">{scenarios.length} <DebtText k="auto_scenarios_across_e82c5962" /> {models.length} models</p>
             </div>
           </div>
           {(llmSummary || summary) && (
@@ -195,7 +197,7 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
                     <span className={`typo-hero font-black tracking-tight ${scoreColor(agg.compositeScore)}`}>{agg.compositeScore}</span>
                     <div className="flex-1 min-w-0">
                       <span className={`typo-caption font-semibold ${scoreColor(agg.compositeScore)}`}>{scoreLabel(agg.compositeScore)}</span>
-                      <p className="text-[10px] text-foreground">Composite Score</p>
+                      <p className="text-[10px] text-foreground"><DebtText k="auto_composite_score_b7a389bd" /></p>
                     </div>
                     {idx > 0 && aggregates[0] && (
                       <div className="flex items-center gap-0.5 typo-caption text-foreground">
@@ -219,7 +221,7 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
                   {/* Cost & duration */}
                   <div className="flex items-center gap-3 pt-1 border-t border-primary/5 text-[11px] text-foreground">
                     <span className="flex items-center gap-1"><DollarSign className="w-3 h-3" />{agg.totalCost.toFixed(4)}</span>
-                    <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{(agg.avgDuration / 1000).toFixed(1)}s avg</span>
+                    <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{(agg.avgDuration / 1000).toFixed(1)}<DebtText k="auto_s_avg_eaee6bda" /></span>
                   </div>
                 </div>
               </div>

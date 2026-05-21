@@ -384,10 +384,7 @@ export function useConflictPreview(
       }
       setResult({ count: conflicts, loading: false });
     })();
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- sig captures the
-  // shape of existingEntries; including the array directly would re-fetch on
-  // unrelated re-renders.
-  }, [sig, candidateCron, candidateIntervalSeconds, candidateTimezone, excludeTriggerId]);
+  }, [sig, candidateCron, candidateIntervalSeconds, candidateTimezone, excludeTriggerId, existingEntries]);
 
   return result;
 }

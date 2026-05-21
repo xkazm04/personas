@@ -32,7 +32,7 @@ export default function IdentitySettings() {
   useEffect(() => {
     fetchLocalIdentity();
     fetchTrustedPeers();
-  }, []);
+  }, [fetchLocalIdentity, fetchTrustedPeers]);
 
   const handleSaveName = async () => {
     if (!nameInput.trim()) return;
@@ -128,7 +128,7 @@ export default function IdentitySettings() {
                       maxLength={64}
                       autoFocus
                     />
-                    <button onClick={handleSaveName} className="px-2 py-1 typo-caption rounded-card bg-primary text-white hover:bg-primary/90">{st.save}</button>
+                    <button onClick={handleSaveName} className="px-2 py-1 typo-caption rounded-card bg-primary text-foreground hover:bg-primary/90">{st.save}</button>
                     <button onClick={() => setEditingName(false)} className="px-2 py-1 typo-caption rounded-card border border-border hover:bg-secondary/50">{st.cancel}</button>
                   </div>
                 ) : (
@@ -187,7 +187,7 @@ export default function IdentitySettings() {
               <button
                 onClick={handleImportPeer}
                 disabled={!importInput.trim()}
-                className="px-3 py-1.5 typo-caption rounded-card bg-primary text-white hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-1.5 typo-caption rounded-card bg-primary text-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {st.add_trusted_peer}
               </button>

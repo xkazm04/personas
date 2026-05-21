@@ -8,11 +8,13 @@
  */
 import {
   getCredentialRecipe,
+  recordCredentialRecipeUse,
   upsertCredentialRecipe,
-  useCredentialRecipe,
   type CredentialRecipe,
 } from '@/api/vault/credentialRecipes';
 import type { CredentialDesignResult, CredentialDesignConnector } from '@/hooks/design/credential/useCredentialDesign';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 // -- In-memory cache -----------------------------------------------------
 // Avoids redundant IPC round-trips for the same connector within a session.
@@ -58,7 +60,7 @@ export async function lookupRecipeAsDesignResult(
   if (!recipe) return null;
 
   // Increment usage count in the background
-  void useCredentialRecipe(connectorName).catch(() => {/* non-critical */});
+  void recordCredentialRecipeUse(connectorName).catch(() => {/* non-critical */});
 
   return recipeToDesignResult(recipe);
 }
@@ -113,13 +115,13 @@ export function recipeToDesignResult(recipe: CredentialRecipe): CredentialDesign
   let fields: CredentialDesignConnector['fields'] = [];
   try {
     fields = JSON.parse(recipe.fields_json);
-  } catch { /* intentional: fallback to empty */ }
+  } catch (err) { silentCatch("lib/credentials/credentialRecipeRegistry:catch1")(err); }
 
   let healthcheckConfig: object | null = null;
   if (recipe.healthcheck_json) {
     try {
       healthcheckConfig = JSON.parse(recipe.healthcheck_json);
-    } catch { /* intentional: fallback to null */ }
+    } catch (err) { silentCatch("lib/credentials/credentialRecipeRegistry:catch2")(err); }
   }
 
   return {
@@ -145,7 +147,7 @@ export function recipeToConnectorContext(recipe: CredentialRecipe) {
   let fields: CredentialDesignConnector['fields'] = [];
   try {
     fields = JSON.parse(recipe.fields_json);
-  } catch { /* intentional: fallback to empty */ }
+  } catch (err) { silentCatch("lib/credentials/credentialRecipeRegistry:catch3")(err); }
 
   return {
     connectorName: recipe.connector_name,

@@ -31,11 +31,11 @@ function CategoryNavItem({
     >
       <div className="flex items-center gap-2 mb-2">
         <Icon className={`w-4 h-4 ${meta.color}`} />
-        <span className={`flex-1 text-sm font-semibold truncate ${meta.color}`}>
+        <span className={`flex-1 typo-heading font-semibold truncate ${meta.color}`}>
           {meta.label}
         </span>
         {isCurrent && (
-          <span className="text-xs uppercase tracking-wider text-primary font-semibold">
+          <span className="typo-label uppercase tracking-wider text-primary font-semibold">
             here
           </span>
         )}
@@ -57,7 +57,7 @@ function CategoryNavItem({
             transition={{ duration: 0.5, ease: 'easeOut' }}
           />
         </div>
-        <span className="text-xs text-foreground/60 font-mono tabular-nums">
+        <span className="text-xs text-foreground font-mono tabular-nums">
           {progress.answered}/{progress.total}
         </span>
       </div>
@@ -88,7 +88,7 @@ export function QuestionnaireCategoryRail({
   return (
     <aside className="w-[220px] flex-shrink-0 border-r border-border bg-foreground/[0.01] flex flex-col min-h-0">
       <div className="flex-shrink-0 px-4 py-3 border-b border-border flex items-center gap-2">
-        <span className="text-xs uppercase tracking-[0.2em] text-foreground/60 font-semibold">
+        <span className="typo-label uppercase tracking-[0.2em] text-foreground font-semibold">
           Categories
         </span>
       </div>

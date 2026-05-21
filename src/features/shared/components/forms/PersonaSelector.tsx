@@ -78,12 +78,12 @@ export function PersonaSelector({
         {selected ? (
           <>
             <PersonaIcon icon={selected.icon} color={selected.color} frameSize={"lg"} />
-            <span className="text-sm font-medium text-foreground/85 truncate flex-1 text-left">{selected.name}</span>
+            <span className="typo-body font-medium text-foreground/85 truncate flex-1 text-left">{selected.name}</span>
           </>
         ) : (
           <>
             <Bot className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
-            <span className="text-sm text-foreground flex-1 text-left">{showAll ? t.common.all_personas : placeholder}</span>
+            <span className="typo-body text-foreground flex-1 text-left">{showAll ? t.common.all_personas : placeholder}</span>
           </>
         )}
         <ChevronDown className={`w-3.5 h-3.5 text-foreground flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
@@ -103,7 +103,7 @@ export function PersonaSelector({
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder={t.common.search_ellipsis}
-                  className="flex-1 bg-transparent text-sm text-foreground placeholder:text-foreground outline-none"
+                  className="flex-1 bg-transparent typo-body text-foreground placeholder:text-foreground outline-none"
                 />
                 {search && (
                   <button type="button" onClick={() => setSearch('')} className="text-foreground hover:text-foreground">
@@ -125,7 +125,7 @@ export function PersonaSelector({
                   }`}
               >
                 <Bot className="w-4 h-4 text-foreground flex-shrink-0" />
-                <span className="text-sm font-medium flex-1">{t.common.all_personas}</span>
+                <span className="typo-body font-medium flex-1">{t.common.all_personas}</span>
                 {!value && <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />}
               </button>
             )}
@@ -143,7 +143,7 @@ export function PersonaSelector({
                 >
                   <PersonaIcon icon={p.icon} color={p.color} />
                   <div className="flex-1 min-w-0">
-                    <span className="text-sm font-medium truncate block">{p.name}</span>
+                    <span className="typo-body font-medium truncate block">{p.name}</span>
                     {p.description && (
                       <span className="text-[11px] text-foreground truncate block">{p.description.slice(0, 60)}</span>
                     )}
@@ -154,7 +154,7 @@ export function PersonaSelector({
             })}
 
             {filtered.length === 0 && search && (
-              <div className="px-3 py-4 text-xs text-foreground text-center">{t.common.no_personas_matching.replace('{query}', search)}</div>
+              <div className="px-3 py-4 typo-caption text-foreground text-center">{t.common.no_personas_matching.replace('{query}', search)}</div>
             )}
           </div>
         </div>

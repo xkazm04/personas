@@ -14,6 +14,8 @@ import { ChannelTotem } from './ChannelTotem';
 import { ConnectorTotem } from './ConnectorTotem';
 import { DimensionPanel } from './DimensionPanel';
 import { ModelBadge } from './ModelBadge';
+import { debtText } from '@/i18n/DebtText';
+
 
 interface GlyphCardProps {
   row: GlyphRow;
@@ -103,8 +105,8 @@ export function GlyphCard({
 
           {/* Header */}
           <div className="relative z-10 flex items-center gap-3 px-5 py-4 bg-gradient-to-b from-card-bg/95 via-card-bg/70 to-transparent backdrop-blur-sm">
-            <span className="typo-data text-foreground/55 tabular-nums">{String(index + 1).padStart(2, '0')}</span>
-            <span className={`typo-heading font-bold uppercase tracking-[0.12em] truncate flex-1 ${row.enabled ? 'text-foreground' : 'text-foreground/50'}`}>
+            <span className="typo-data text-foreground tabular-nums">{String(index + 1).padStart(2, '0')}</span>
+            <span className={`typo-heading font-bold uppercase tracking-[0.12em] truncate flex-1 ${row.enabled ? 'text-foreground' : 'text-foreground'}`}>
               {row.title}
             </span>
 
@@ -130,7 +132,7 @@ export function GlyphCard({
             </AnimatePresence>
 
             {!row.enabled && (
-              <span className="typo-label px-1.5 py-0.5 rounded bg-foreground/10 text-foreground/70 shrink-0">{c.off_badge}</span>
+              <span className="typo-label px-1.5 py-0.5 rounded bg-foreground/10 text-foreground shrink-0">{c.off_badge}</span>
             )}
             <ModelBadge
               model={row.recommendedModel ?? null}
@@ -146,8 +148,8 @@ export function GlyphCard({
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); setFlowOpen(true); }}
-                className="w-8 h-8 rounded-full bg-card-bg/80 backdrop-blur border border-card-border shadow-elevation-1 flex items-center justify-center text-foreground/75 hover:text-foreground hover:border-primary/35 cursor-pointer transition-colors shrink-0"
-                title="Open flow diagram"
+                className="w-8 h-8 rounded-full bg-card-bg/80 backdrop-blur border border-card-border shadow-elevation-1 flex items-center justify-center text-foreground hover:text-foreground hover:border-primary/35 cursor-pointer transition-colors shrink-0"
+                title={debtText("auto_open_flow_diagram_5e57c30e")}
               >
                 <Workflow className="w-4 h-4" />
               </button>
@@ -159,7 +161,7 @@ export function GlyphCard({
           {/* Footer — promoted subtitle + consumer-owned slot */}
           <div className="relative z-10 flex flex-col gap-2 px-5 py-4 bg-gradient-to-t from-card-bg/95 via-card-bg/75 to-transparent backdrop-blur-sm">
             {row.summary && (
-              <p className="text-base text-foreground leading-snug font-medium line-clamp-3">{row.summary}</p>
+              <p className="typo-body-lg text-foreground leading-snug font-medium line-clamp-3">{row.summary}</p>
             )}
             {footerSlot}
           </div>

@@ -1,4 +1,6 @@
 import { Brain } from 'lucide-react';
+import { DebtText } from '@/i18n/DebtText';
+
 
 interface MemoryEmptyStateProps {
   hasFilters: boolean;
@@ -11,7 +13,7 @@ export function MemoryEmptyState({ hasFilters }: MemoryEmptyStateProps) {
         <Brain className="w-8 h-8 text-violet-400/40" />
       </div>
       <div className="text-center">
-        <p className="typo-heading">No memories yet</p>
+        <p className="typo-heading"><DebtText k="auto_no_memories_yet_775ad944" /></p>
         <p className="typo-body text-foreground mt-1 max-w-xs">
           {hasFilters
             ? 'No memories match your filters. Try adjusting your search.'

@@ -223,13 +223,13 @@ export default function PiperVoicePanel() {
           {!hasVoicesForUserLocale && voices !== null && (
             <div className="rounded-card border border-amber-500/30 bg-amber-500/5 p-3 flex items-start gap-2">
               <Globe className="w-4 h-4 mt-0.5 shrink-0 text-amber-400" />
-              <p className="typo-caption text-foreground/80">
+              <p className="typo-caption text-foreground">
                 {t.plugins.companion.voice_piper_no_voices_for_language}
               </p>
             </div>
           )}
           {voicesLoading && voices === null ? (
-            <div className="flex items-center gap-3 typo-caption text-foreground/60">
+            <div className="flex items-center gap-3 typo-caption text-foreground">
               <LoadingSpinner size="sm" />
               <span>{t.plugins.companion.loading}</span>
             </div>
@@ -275,7 +275,7 @@ function EngineStatusCard({ engine, loading, onRecheck }: EngineStatusCardProps)
       <div className="px-1 py-2 space-y-3">
         <div className="flex items-center gap-3">
           <Cpu
-            className={`w-5 h-5 shrink-0 ${installed ? 'text-emerald-400' : 'text-foreground/40'}`}
+            className={`w-5 h-5 shrink-0 ${installed ? 'text-emerald-400' : 'text-foreground'}`}
           />
           <div className="flex-1 min-w-0">
             <div className="typo-body font-medium">
@@ -285,7 +285,7 @@ function EngineStatusCard({ engine, loading, onRecheck }: EngineStatusCardProps)
             </div>
             {installed && engine?.binaryPath && (
               <div
-                className="typo-code text-[11px] text-foreground/60 mt-0.5 truncate"
+                className="typo-code text-[11px] text-foreground mt-0.5 truncate"
                 title={engine.binaryPath}
               >
                 {engine.binaryPath}
@@ -296,7 +296,7 @@ function EngineStatusCard({ engine, loading, onRecheck }: EngineStatusCardProps)
             type="button"
             onClick={onRecheck}
             disabled={loading}
-            className="p-2 rounded-interactive bg-secondary/40 hover:bg-secondary/60 border border-foreground/10 text-foreground/70 hover:text-foreground transition-colors focus-ring disabled:opacity-50"
+            className="p-2 rounded-interactive bg-secondary/40 hover:bg-secondary/60 border border-foreground/10 text-foreground hover:text-foreground transition-colors focus-ring disabled:opacity-50"
             title={t.plugins.companion.voice_piper_engine_recheck}
             aria-label={t.plugins.companion.voice_piper_engine_recheck}
           >
@@ -305,14 +305,14 @@ function EngineStatusCard({ engine, loading, onRecheck }: EngineStatusCardProps)
         </div>
         {!installed && engine && (
           <div className="rounded-card border border-amber-500/30 bg-amber-500/5 p-3 space-y-2">
-            <p className="typo-caption text-foreground/70">
+            <p className="typo-caption text-foreground">
               {t.plugins.companion.voice_piper_engine_install_hint_release}
             </p>
             <div>
-              <div className="typo-caption text-foreground/60">
+              <div className="typo-caption text-foreground">
                 {t.plugins.companion.voice_piper_engine_install_hint_path_label}
               </div>
-              <code className="block typo-code text-[11px] text-foreground/80 bg-secondary/40 rounded-input px-2 py-1 mt-1 break-all">
+              <code className="block typo-code text-[11px] text-foreground bg-secondary/40 rounded-input px-2 py-1 mt-1 break-all">
                 {engine.expectedPath}
               </code>
             </div>
@@ -347,9 +347,9 @@ function LanguageGroup(props: LanguageGroupProps) {
   return (
     <div className="space-y-2">
       <div className="flex items-baseline gap-2">
-        <span className="typo-caption font-semibold text-foreground/80">{label}</span>
+        <span className="typo-caption font-semibold text-foreground">{label}</span>
         {native && native !== label && (
-          <span className="typo-caption text-foreground/50">· {native}</span>
+          <span className="typo-caption text-foreground">· {native}</span>
         )}
         {isUserLanguage && (
           <span className="inline-flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300">
@@ -419,7 +419,7 @@ function VoiceRow({ voice, selected, progress, onDownload, onDelete, onSelect, t
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="typo-body font-medium">{voice.speaker}</span>
-            <span className="typo-caption text-foreground/60">
+            <span className="typo-caption text-foreground">
               · {genderLabel[voice.gender]} · {qualityLabel[voice.quality]} · {voice.approxSizeMb} MB
             </span>
             {selected && (
@@ -429,7 +429,7 @@ function VoiceRow({ voice, selected, progress, onDownload, onDelete, onSelect, t
               </span>
             )}
           </div>
-          <p className="typo-caption text-foreground/60 mt-0.5">{voice.description}</p>
+          <p className="typo-caption text-foreground mt-0.5">{voice.description}</p>
           {downloading && (
             <DownloadProgressBar progress={progress!} />
           )}
@@ -457,7 +457,7 @@ function VoiceRow({ voice, selected, progress, onDownload, onDelete, onSelect, t
               <button
                 type="button"
                 onClick={onDelete}
-                className="inline-flex items-center gap-1 px-3 py-1 rounded-interactive bg-secondary/40 hover:bg-status-warning/20 text-foreground/60 hover:text-status-warning typo-caption transition-colors focus-ring"
+                className="inline-flex items-center gap-1 px-3 py-1 rounded-interactive bg-secondary/40 hover:bg-status-warning/20 text-foreground hover:text-status-warning typo-caption transition-colors focus-ring"
                 title={t.plugins.companion.voice_piper_voice_delete}
               >
                 <Trash2 className="w-3 h-3" />
@@ -468,7 +468,7 @@ function VoiceRow({ voice, selected, progress, onDownload, onDelete, onSelect, t
             <button
               type="button"
               disabled
-              className="inline-flex items-center gap-1 px-3 py-1 rounded-interactive bg-secondary/40 text-foreground/60 typo-caption opacity-70"
+              className="inline-flex items-center gap-1 px-3 py-1 rounded-interactive bg-secondary/40 text-foreground typo-caption opacity-70"
             >
               <Loader2 className="w-3 h-3 animate-spin" />
               {t.plugins.companion.voice_piper_voice_downloading}
@@ -505,7 +505,7 @@ function DownloadProgressBar({ progress }: { progress: TtsDownloadProgress }) {
           style={pct !== null ? { width: `${pct}%` } : undefined}
         />
       </div>
-      <div className="typo-caption text-foreground/50 text-[11px]">
+      <div className="typo-caption text-foreground text-[11px]">
         {pct !== null ? `${pct}% — ` : ''}
         {mbDownloaded} MB{mbTotal ? ` / ${mbTotal} MB` : ''}
       </div>

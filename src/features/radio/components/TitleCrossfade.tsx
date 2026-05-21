@@ -27,10 +27,12 @@ export default function TitleCrossfade({ text }: TitleCrossfadeProps) {
     setOutgoing(shown);
     setShown(text);
     if (timerRef.current !== null) window.clearTimeout(timerRef.current);
-    timerRef.current = window.setTimeout(() => {
+    const timer = window.setTimeout(() => {
       setOutgoing(null);
       timerRef.current = null;
     }, FADE_MS + 20);
+    timerRef.current = timer;
+    return () => window.clearTimeout(timer);
   }, [text, shown]);
 
   useEffect(

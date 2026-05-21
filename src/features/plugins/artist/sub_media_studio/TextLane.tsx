@@ -91,7 +91,7 @@ function BeatEditModal({
                 />
                 {t.media_studio.anchor_manual}
               </label>
-              <label className={`flex items-center gap-1.5 text-md cursor-pointer ${anchorableClips.length === 0 ? 'text-foreground/40 cursor-not-allowed' : 'text-foreground'}`}>
+              <label className={`flex items-center gap-1.5 text-md cursor-pointer ${anchorableClips.length === 0 ? 'text-foreground cursor-not-allowed' : 'text-foreground'}`}>
                 <input
                   type="radio"
                   checked={anchorMode === 'word'}
@@ -102,7 +102,7 @@ function BeatEditModal({
               </label>
             </div>
             {anchorMode === 'word' && anchorableClips.length === 0 && (
-              <p className="text-[11px] text-foreground/60">{t.media_studio.anchor_no_transcripts}</p>
+              <p className="text-[11px] text-foreground">{t.media_studio.anchor_no_transcripts}</p>
             )}
             {anchorMode === 'word' && anchorableClips.length > 0 && (
               <div className="grid grid-cols-[1fr_2fr_auto] gap-2">

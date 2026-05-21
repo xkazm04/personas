@@ -1,5 +1,7 @@
 import { Sparkles, Settings2 } from "lucide-react";
 import type { BuildPhase } from "@/lib/types/buildTypes";
+import { debtText } from '@/i18n/DebtText';
+
 
 interface GlyphTopBarProps {
   agentName: string;
@@ -34,9 +36,9 @@ export function GlyphTopBar({
           type="button"
           onClick={() => onFaceChange("glyph")}
           className={`rounded-full px-3 py-1 typo-caption flex items-center gap-1.5 transition ${
-            face === "glyph" ? "bg-primary/20 text-primary" : "text-foreground/60 hover:text-foreground"
+            face === "glyph" ? "bg-primary/20 text-primary" : "text-foreground hover:text-foreground"
           }`}
-          title="Glyph face"
+          title={debtText("auto_glyph_face_8225d4a3")}
         >
           <Sparkles className="w-3 h-3" /> Glyph
         </button>
@@ -45,7 +47,7 @@ export function GlyphTopBar({
           onClick={() => onFaceChange("edit")}
           disabled={editLocked}
           className={`rounded-full px-3 py-1 typo-caption flex items-center gap-1.5 transition ${
-            face === "edit" ? "bg-primary/20 text-primary" : "text-foreground/60 hover:text-foreground"
+            face === "edit" ? "bg-primary/20 text-primary" : "text-foreground hover:text-foreground"
           } ${editLocked ? "opacity-40 cursor-not-allowed" : ""}`}
           title={editLocked ? "Finish answering pending questions first" : "Advanced edit"}
           data-testid="glyph-full-edit-face"

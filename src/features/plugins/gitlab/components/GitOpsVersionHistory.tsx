@@ -18,6 +18,8 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useAgentStore } from '@/stores/agentStore';
 import type { GitLabPersonaVersion } from '@/api/system/gitlab';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 interface GitOpsVersionHistoryProps {
   projectId: number | null;
@@ -59,18 +61,14 @@ export function GitOpsVersionHistory({ projectId }: GitOpsVersionHistoryProps) {
     try {
       await rollbackPersona(projectId, selectedPersonaName, version.tagName);
       setConfirmRollback(null);
-    } catch {
-      // Error handled by store
-    }
+    } catch (err) { silentCatch("features/plugins/gitlab/components/GitOpsVersionHistory:catch1")(err); }
   };
 
   const handleSetupBranches = async () => {
     if (!projectId || !selectedPersonaName) return;
     try {
       await setupBranches(projectId, selectedPersonaName);
-    } catch {
-      // Error handled by store
-    }
+    } catch (err) { silentCatch("features/plugins/gitlab/components/GitOpsVersionHistory:catch2")(err); }
   };
 
   if (!projectId) {

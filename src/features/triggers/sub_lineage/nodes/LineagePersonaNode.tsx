@@ -44,7 +44,7 @@ function LineagePersonaNodeInner({ data, selected }: NodeProps) {
       <div className="flex flex-col min-w-0 flex-1">
         <span className="text-[10px] uppercase tracking-wider text-emerald-400/70 font-medium">{t.triggers.lineage.node_persona_label}</span>
         <span className="typo-caption font-semibold text-foreground truncate">{p.name}</span>
-        <span className="text-[10px] text-foreground/70">
+        <span className="text-[10px] text-foreground">
           {tx(t.triggers.lineage.node_persona_summary, { triggers: d.triggerCount, downstream: d.downstreamCount })}
         </span>
       </div>

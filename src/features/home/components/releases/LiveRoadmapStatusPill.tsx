@@ -90,7 +90,7 @@ export function LiveRoadmapStatusPill({
           type="button"
           onClick={onRefresh}
           disabled={refreshing}
-          className="ml-1 flex items-center gap-1 rounded-full border border-primary/8 bg-primary/[0.04] px-2 py-0.5 text-xs text-foreground transition-colors hover:border-primary/16 hover:bg-primary/[0.07] disabled:opacity-50"
+          className="ml-1 flex items-center gap-1 rounded-full border border-primary/8 bg-primary/[0.04] px-2 py-0.5 typo-caption text-foreground transition-colors hover:border-primary/16 hover:bg-primary/[0.07] disabled:opacity-50"
           aria-label={refreshLabel}
           title={refreshLabel}
         >

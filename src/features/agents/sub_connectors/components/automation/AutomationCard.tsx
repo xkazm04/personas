@@ -14,6 +14,8 @@ import { TOOLS_BTN_STANDARD, TOOLS_BTN_COMPACT, TOOLS_SECTION_GAP } from '@/lib/
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSelectedUseCases } from '@/stores/selectors/personaSelectors';
+import { debtText } from '@/i18n/DebtText';
+
 
 interface AutomationCardProps {
   automation: PersonaAutomation;
@@ -76,7 +78,7 @@ export function AutomationCard({
             {!automation.lastTriggeredAt && automation.deploymentStatus !== 'draft' && <span className="typo-body text-foreground">{t.agents.connectors.auto_never_triggered}</span>}
             {automation.deploymentStatus === 'draft' && <span className="typo-body text-foreground">{t.agents.connectors.auto_not_deployed}</span>}
             {automation.fallbackMode === 'connector' && (
-              <span className="inline-flex items-center gap-0.5 typo-body text-foreground" title="Falls back to direct connector on failure">
+              <span className="inline-flex items-center gap-0.5 typo-body text-foreground" title={debtText("auto_falls_back_to_direct_connector_on_failure_ba68aca9")}>
                 <ShieldCheck className="w-3 h-3" /> {t.agents.connectors.auto_fallback}
               </span>
             )}

@@ -66,7 +66,7 @@ export function UcCard({ uc, state }: Props) {
         {on && descExpanded && (
           <motion.div key="desc" {...HEIGHT_FADE} className="overflow-hidden">
             <div className="px-5 py-3.5 bg-foreground/[0.02] border-b border-border/50">
-              <p className="typo-body-lg text-foreground/80 leading-relaxed">{description}</p>
+              <p className="typo-body-lg text-foreground leading-relaxed">{description}</p>
             </div>
           </motion.div>
         )}

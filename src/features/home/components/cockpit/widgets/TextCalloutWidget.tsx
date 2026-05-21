@@ -3,6 +3,8 @@ import { Info, AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 
 import type { CockpitWidgetProps } from '../widgetRegistry';
+import { DebtText } from '@/i18n/DebtText';
+
 
 /**
  * `text_callout` — narrative panel with markdown body and an intent
@@ -32,7 +34,7 @@ export function TextCalloutWidget({ config, title }: CockpitWidgetProps) {
       <div className="flex items-center gap-2">
         <Icon className={`w-4 h-4 ${accent.iconColor} shrink-0`} />
         {title ? (
-          <div className="typo-caption text-foreground/70 uppercase tracking-wide">
+          <div className="typo-caption text-foreground uppercase tracking-wide">
             {title}
           </div>
         ) : null}
@@ -41,7 +43,7 @@ export function TextCalloutWidget({ config, title }: CockpitWidgetProps) {
         {body ? (
           <MarkdownRenderer content={body} />
         ) : (
-          <span className="text-foreground/40">No content.</span>
+          <span className="text-foreground"><DebtText k="auto_no_content_0c3fd88e" /></span>
         )}
       </div>
     </div>
@@ -61,7 +63,7 @@ const INTENT_STYLES: Record<
     border: 'border-foreground/10',
     bg: 'bg-foreground/[0.02]',
     icon: Info,
-    iconColor: 'text-foreground/60',
+    iconColor: 'text-foreground',
   },
   good: {
     border: 'border-emerald-500/20',

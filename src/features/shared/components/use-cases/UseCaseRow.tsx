@@ -2,6 +2,8 @@ import type { ReactNode } from 'react';
 import { Play, Clock, Info, Settings2, Cpu, Bell, FlaskConical, Power, PowerOff } from 'lucide-react';
 import type { UseCaseItem } from './UseCasesList';
 import { useTranslation } from '@/i18n/useTranslation';
+import { debtText } from '@/i18n/DebtText';
+
 
 const CATEGORY_STYLES: Record<string, { bg: string; text: string }> = {
   notification:   { bg: 'bg-rose-500/10 border-rose-500/15',   text: 'text-rose-400/70' },
@@ -199,7 +201,7 @@ export function UseCaseRow({
                     ? 'Simulation unavailable while another execution is running'
                     : 'Simulate — real API calls, no notifications delivered'
                 }
-                aria-label="Simulate capability"
+                aria-label={debtText("auto_simulate_capability_3ddcb2d1")}
               >
                 <FlaskConical className="w-3.5 h-3.5" />
               </button>

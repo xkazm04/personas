@@ -197,7 +197,7 @@ export function LiveStreamTab() {
   const typeOptions = useMemo(() => [
     { value: 'all', label: t.triggers.all_types },
     ...availableTypes.map((t) => ({ value: t, label: t.replace(/_/g, ' ') })),
-  ], [availableTypes]);
+  ], [availableTypes, t.triggers.all_types]);
 
   const getPersona = (id: string | null) =>
     id ? personas.find((p) => p.id === id) : null;

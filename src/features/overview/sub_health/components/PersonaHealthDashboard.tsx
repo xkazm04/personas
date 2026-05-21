@@ -12,6 +12,8 @@ import { PredictiveAlerts } from './PredictiveAlerts';
 import { HeartbeatIndicator } from './HeartbeatIndicator';
 import { CircuitBreakerIndicator } from '@/features/agents/sub_executions/components/CircuitBreakerIndicator';
 import type { HealthGrade, DataSourceStatusMap, DataSourceName } from '@/stores/slices/overview/personaHealthSlice';
+import { debtText } from '@/i18n/DebtText';
+
 
 const StatusPageView = lazy(() => import('./StatusPageView').then(m => ({ default: m.StatusPageView })));
 
@@ -43,16 +45,17 @@ export default function PersonaHealthDashboard() {
   // Initial load — deferred to idle to avoid blocking the main thread
   // during section navigation. The health computation is expensive (~400ms).
   useEffect(() => {
-    if (healthSignals.length === 0 && !healthLoading) {
-      const run = () => void refreshHealthDashboard();
-      if (typeof requestIdleCallback === 'function') {
-        const id = requestIdleCallback(run, { timeout: 2000 });
-        return () => cancelIdleCallback(id);
-      }
-      const t = setTimeout(run, 200);
-      return () => clearTimeout(t);
+    if (healthSignals.length > 0 || healthLoading) return;
+
+    const run = () => void refreshHealthDashboard();
+    if (typeof requestIdleCallback === 'function') {
+      const id = requestIdleCallback(run, { timeout: 2000 });
+      return () => cancelIdleCallback(id);
     }
-  }, []);
+
+    const t = setTimeout(run, 200);
+    return () => clearTimeout(t);
+  }, [healthSignals.length, healthLoading, refreshHealthDashboard]);
 
   const handleRefresh = useCallback(() => {
     void refreshHealthDashboard();
@@ -167,7 +170,7 @@ export default function PersonaHealthDashboard() {
           {healthError && (
             <InlineErrorBanner
               severity="error"
-              title="Health computation failed"
+              title={debtText("auto_health_computation_failed_fa3f611a")}
               message={healthError}
               onRetry={handleRefresh}
             />
@@ -282,7 +285,7 @@ function StalenessBanner({ status, onRetry }: { status: DataSourceStatusMap; onR
   return (
     <InlineErrorBanner
       severity="warning"
-      title="Incomplete health data"
+      title={debtText("auto_incomplete_health_data_a49b15ba")}
       message={detail}
       onRetry={onRetry}
     />

@@ -55,7 +55,7 @@ export function AgentIconPickerModal({ isOpen, value, onChange, onClose }: Agent
             >
               {t.shared.forms_extra.select_agent_icon}
             </h2>
-            <p className="text-[12px] text-foreground/70 mt-0.5">
+            <p className="text-[12px] text-foreground mt-0.5">
               {t.shared.forms_extra.select_agent_icon_desc}
             </p>
           </div>
@@ -106,7 +106,7 @@ export function AgentIconPickerModal({ isOpen, value, onChange, onClose }: Agent
                       loading="lazy"
                     />
                   )}
-                  <span className="typo-caption text-foreground/80 truncate w-full text-center">
+                  <span className="typo-caption text-foreground truncate w-full text-center">
                     {entry.label}
                   </span>
                 </button>
@@ -120,7 +120,7 @@ export function AgentIconPickerModal({ isOpen, value, onChange, onClose }: Agent
             <button
               type="button"
               onClick={handleClear}
-              className="px-3 py-1.5 typo-body rounded-card text-foreground/80 hover:text-foreground hover:bg-secondary/40 transition-colors cursor-pointer"
+              className="px-3 py-1.5 typo-body rounded-card text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors cursor-pointer"
             >
               {t.shared.forms_extra.clear_icon}
             </button>

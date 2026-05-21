@@ -155,6 +155,7 @@ export function FormField({
       el.removeEventListener('animationend', onEnd);
     };
     el.addEventListener('animationend', onEnd, { once: true });
+    return () => el.removeEventListener('animationend', onEnd);
   }, [effectiveError, shakeRef]);
 
   // Detect error → valid transition so we can pop the checkmark in.

@@ -98,7 +98,7 @@ export default function SwimLaneVisualization({ events, personas, animationMapRe
       return { id: s.id, label: s.label, icon: null, color: colorForSource(s.id), sizeFactor: age > FADE_AFTER_MS ? sf * SWIM_LANE_NODE_SIZING.stalenessSizeMultiplier : sf };
     });
     return distributeVertically(raw, PAD_Y + 4, 100 - PAD_Y - 4);
-  }, [events.length]);
+  }, []);
 
   const agentNodes = useMemo(() => {
     const raw = personas.length > 0

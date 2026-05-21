@@ -122,24 +122,24 @@ export default function StationPicker({
             <div className="flex items-center gap-2 min-w-0">
               <p className="typo-body font-medium truncate">{station.name}</p>
               {station.sourceLabel && (
-                <span className="ml-auto shrink-0 typo-caption text-foreground/60 px-1.5 py-0.5 rounded bg-secondary/30 flex items-center gap-1">
+                <span className="ml-auto shrink-0 typo-caption text-foreground px-1.5 py-0.5 rounded bg-secondary/30 flex items-center gap-1">
                   {isYt ? (
-                    <Music className="w-3 h-3 text-foreground/55" />
+                    <Music className="w-3 h-3 text-foreground" />
                   ) : (
-                    <Radio className="w-3 h-3 text-foreground/55" />
+                    <Radio className="w-3 h-3 text-foreground" />
                   )}
                   {station.sourceLabel}
                 </span>
               )}
             </div>
-            <p className="typo-caption text-foreground/60 truncate">
+            <p className="typo-caption text-foreground truncate">
               {station.description}
               {trackCount !== null && (
-                <span className="text-foreground/45"> · {trackCount}</span>
+                <span className="text-foreground"> · {trackCount}</span>
               )}
             </p>
           </div>
-          {active && <Check className="w-4 h-4 text-foreground/80 shrink-0" />}
+          {active && <Check className="w-4 h-4 text-foreground shrink-0" />}
         </button>
       </li>
     );
@@ -158,7 +158,7 @@ export default function StationPicker({
         <button
           type="button"
           onClick={() => setSourceKindCollapsed(kind, !collapsed)}
-          className="w-full flex items-center gap-2 px-3 py-1.5 typo-caption text-foreground/65 hover:text-foreground/90 hover:bg-secondary/15 transition-colors"
+          className="w-full flex items-center gap-2 px-3 py-1.5 typo-caption text-foreground hover:text-foreground/90 hover:bg-secondary/15 transition-colors"
           aria-label={t.radio.group_toggle_label}
           aria-expanded={!collapsed}
         >
@@ -167,9 +167,9 @@ export default function StationPicker({
           ) : (
             <ChevronDown className="w-3 h-3 shrink-0" />
           )}
-          <Icon className="w-3 h-3 shrink-0 text-foreground/55" />
+          <Icon className="w-3 h-3 shrink-0 text-foreground" />
           <span className="font-medium uppercase tracking-wide">{label}</span>
-          <span className="ml-auto text-foreground/45 tabular-nums">
+          <span className="ml-auto text-foreground tabular-nums">
             {tx(t.radio.group_count, { count: list.length })}
           </span>
         </button>
@@ -181,19 +181,19 @@ export default function StationPicker({
   return (
     <div
       ref={ref}
-      role="dialog"
+      role="region"
       aria-label={t.radio.stations_label}
       className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-80 rounded-card border border-primary/10 bg-background shadow-elevation-3 overflow-hidden"
     >
       <div className="px-3 py-2 border-b border-primary/8 flex items-center gap-2">
-        <Radio className="w-3.5 h-3.5 text-foreground/60" />
+        <Radio className="w-3.5 h-3.5 text-foreground" />
         <span className="typo-caption font-medium text-foreground/85">
           {t.radio.stations_label}
         </span>
       </div>
       <div className="max-h-72 overflow-y-auto">
         {visibleStations.length === 0 && (
-          <p className="px-3 py-3 typo-caption text-foreground/55 text-center">
+          <p className="px-3 py-3 typo-caption text-foreground text-center">
             {t.radio.picker_empty}
           </p>
         )}
@@ -224,7 +224,7 @@ export default function StationPicker({
               setContextMenu(null);
             }}
           >
-            <EyeOff className="w-3.5 h-3.5 text-foreground/55" />
+            <EyeOff className="w-3.5 h-3.5 text-foreground" />
             {t.radio.row_menu_hide}
           </button>
           {contextStation.sourceUrl && (
@@ -241,7 +241,7 @@ export default function StationPicker({
                 setContextMenu(null);
               }}
             >
-              <ExternalLink className="w-3.5 h-3.5 text-foreground/55" />
+              <ExternalLink className="w-3.5 h-3.5 text-foreground" />
               {t.radio.row_menu_open_source}
             </button>
           )}

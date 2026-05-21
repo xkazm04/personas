@@ -87,7 +87,7 @@ export function useUrlImport(
     } finally {
       if (mountedRef.current) setUrlFetching(false);
     }
-  }, [urlValue, onContentPaste, mountedRef]);
+  }, [urlValue, mountedRef]);
 
   const handleUrlImport = useCallback(() => {
     const validated = validatedUrlRef.current;

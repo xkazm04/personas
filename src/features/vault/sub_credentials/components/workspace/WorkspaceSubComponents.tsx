@@ -32,7 +32,7 @@ export function ServiceCheckbox({
           checked ? 'border-blue-500 bg-blue-500' : 'border-primary/25 bg-transparent'
         }`}
       >
-        {checked && <Check className="w-3 h-3 text-white" />}
+        {checked && <Check className="w-3 h-3 text-foreground" />}
       </div>
       <div
         className="w-8 h-8 rounded-card flex items-center justify-center flex-shrink-0"

@@ -470,7 +470,7 @@ export default function RadioFooter() {
         : null;
     stationTrackCountRef.current = tracks?.length ?? 0;
     skipBudgetRef.current = stationTrackCountRef.current;
-  }, [nowPlaying?.station.id]);
+  }, [nowPlaying?.station.id, nowPlaying?.station.source]);
 
   // Poll the YouTube player for current time + duration while playing.
   // Every Nth tick also reports the position to the backend so the
@@ -597,7 +597,7 @@ export default function RadioFooter() {
         type="button"
         onClick={onPrev}
         disabled={!isYoutube}
-        className="w-6 h-6 rounded-interactive flex items-center justify-center text-foreground/80 hover:bg-secondary/40 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+        className="w-6 h-6 rounded-interactive flex items-center justify-center text-foreground hover:bg-secondary/40 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
         aria-label={t.radio.prev_track}
         title={isYoutube ? t.radio.prev_track : t.radio.prev_track_disabled}
       >
@@ -622,7 +622,7 @@ export default function RadioFooter() {
         type="button"
         onClick={onNext}
         disabled={!isYoutube}
-        className="w-6 h-6 rounded-interactive flex items-center justify-center text-foreground/80 hover:bg-secondary/40 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+        className="w-6 h-6 rounded-interactive flex items-center justify-center text-foreground hover:bg-secondary/40 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
         aria-label={t.radio.next_track}
         title={isYoutube ? t.radio.next_track : t.radio.next_track_disabled}
       >
@@ -633,7 +633,7 @@ export default function RadioFooter() {
         <button
           type="button"
           onClick={() => setVolumeOpen((v) => !v)}
-          className="w-6 h-6 rounded-interactive flex items-center justify-center text-foreground/80 hover:bg-secondary/40 transition-colors"
+          className="w-6 h-6 rounded-interactive flex items-center justify-center text-foreground hover:bg-secondary/40 transition-colors"
           aria-label={t.radio.volume_button}
           title={t.radio.volume_button}
           aria-expanded={volumeOpen}
@@ -713,7 +713,7 @@ export default function RadioFooter() {
         <button
           type="button"
           onClick={() => setPickerOpen((v) => !v)}
-          className="w-6 h-6 rounded-interactive flex items-center justify-center text-foreground/80 hover:bg-secondary/40 transition-colors ml-1"
+          className="w-6 h-6 rounded-interactive flex items-center justify-center text-foreground hover:bg-secondary/40 transition-colors ml-1"
           aria-label={t.radio.switch_station}
           title={t.radio.switch_station}
           aria-expanded={pickerOpen}

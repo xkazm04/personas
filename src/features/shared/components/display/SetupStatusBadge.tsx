@@ -1,5 +1,7 @@
 import { AlertTriangle, Settings, CheckCircle2 } from 'lucide-react';
 import type { PersonaSetup } from '@/lib/bindings/PersonaSetup';
+import { DebtText, debtText } from '@/i18n/DebtText';
+
 
 type Status = 'ready' | 'needs_credentials' | 'misconfigured';
 
@@ -64,7 +66,7 @@ export function SetupStatusBadge({
         title={setupTooltip(parseSetup(setupDetail))}
       >
         <AlertTriangle className="w-3 h-3" />
-        Setup required
+        <DebtText k="auto_setup_required_9fa0e005" />
       </span>
     );
   }
@@ -73,7 +75,7 @@ export function SetupStatusBadge({
   return (
     <span
       className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-card typo-caption font-medium bg-red-500/10 text-red-400 border border-red-500/30 ${className}`}
-      title="This persona has a configuration problem — see the persona detail for specifics."
+      title={debtText("auto_this_persona_has_a_configuration_problem_s_f9c78e89")}
     >
       <Settings className="w-3 h-3" />
       Misconfigured

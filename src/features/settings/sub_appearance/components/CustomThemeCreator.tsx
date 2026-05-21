@@ -46,12 +46,12 @@ function ContrastReadout({ vars, labels }: {
       <div className="rounded-card border border-primary/8 bg-secondary/10 px-3 py-2 grid grid-cols-3 gap-3">
         {pairs.map((p) => (
           <div key={p.id} className="flex flex-col gap-1">
-            <span className="typo-caption text-foreground/70">{p.label}</span>
+            <span className="typo-caption text-foreground">{p.label}</span>
             <div className="flex items-center gap-1.5">
               <span className={`px-1.5 py-0.5 rounded-pill text-[9px] font-semibold tracking-wide ${badgeClass(p.level)}`}>
                 {badgeText(p.level)}
               </span>
-              <span className="typo-code font-mono text-foreground/80 text-[11px]">{p.ratio.toFixed(1)}:1</span>
+              <span className="typo-code font-mono text-foreground text-[11px]">{p.ratio.toFixed(1)}:1</span>
             </div>
           </div>
         ))}

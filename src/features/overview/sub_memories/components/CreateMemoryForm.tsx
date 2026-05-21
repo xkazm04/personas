@@ -8,6 +8,8 @@ import { MEMORY_CATEGORY_COLORS, ALL_MEMORY_CATEGORIES } from '@/lib/utils/forma
 import { CategoryChip } from '@/features/shared/components/display/CategoryChip';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { getImportanceGradient } from './MemoryCard';
+import { debtText } from '@/i18n/DebtText';
+
 
 function InteractiveImportanceBar({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   const maxScale = 5;
@@ -33,7 +35,7 @@ function InteractiveImportanceBar({ value, onChange }: { value: number; onChange
         aria-valuemin={1}
         aria-valuemax={maxScale}
         aria-valuenow={value}
-        aria-label="Set importance"
+        aria-label={debtText("auto_set_importance_f41e6686")}
         tabIndex={0}
         onKeyDown={(e) => {
           if (e.key === 'ArrowRight' || e.key === 'ArrowUp') onChange(Math.min(maxScale, value + 1));

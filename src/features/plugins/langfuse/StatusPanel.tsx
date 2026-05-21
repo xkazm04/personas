@@ -27,7 +27,7 @@ export function StatusPanel({ config, onDisconnect, disconnecting }: StatusPanel
   const { t, tx } = useTranslation();
   if (!config) {
     return (
-      <div className="flex items-center gap-2 px-3 py-2 typo-body rounded-card border border-primary/10 bg-secondary/20 text-foreground/80">
+      <div className="flex items-center gap-2 px-3 py-2 typo-body rounded-card border border-primary/10 bg-secondary/20 text-foreground">
         <Circle className="w-4 h-4" />
         {t.plugins.langfuse.not_connected}
       </div>
@@ -46,24 +46,24 @@ export function StatusPanel({ config, onDisconnect, disconnecting }: StatusPanel
             {t.plugins.langfuse.connected} — {config.host.replace(/^https?:\/\//, "")}
           </div>
           {relative && (
-            <div className="typo-caption text-foreground/80">
+            <div className="typo-caption text-foreground">
               {tx(t.plugins.langfuse.last_tested, { when: relative })}
             </div>
           )}
         </div>
-        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full typo-caption ${isOn ? "bg-emerald-500/15 text-emerald-300" : "bg-secondary/40 text-foreground/80"}`}>
+        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full typo-caption ${isOn ? "bg-emerald-500/15 text-emerald-300" : "bg-secondary/40 text-foreground"}`}>
           <Power className="w-3 h-3" />
           {isOn ? "ON" : "OFF"}
         </span>
       </div>
 
       {!isOn && (
-        <div className="px-3 py-2 typo-caption text-foreground/80 rounded-card border border-amber-500/20 bg-amber-500/5">
+        <div className="px-3 py-2 typo-caption text-foreground rounded-card border border-amber-500/20 bg-amber-500/5">
           {t.plugins.langfuse.export_off}
         </div>
       )}
 
-      <div className="px-3 py-2 typo-caption text-foreground/80 rounded-card border border-primary/10 bg-secondary/10">
+      <div className="px-3 py-2 typo-caption text-foreground rounded-card border border-primary/10 bg-secondary/10">
         {t.plugins.langfuse.no_export_yet}
       </div>
 

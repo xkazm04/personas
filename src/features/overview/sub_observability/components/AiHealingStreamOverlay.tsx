@@ -2,6 +2,8 @@ import { useRef, useEffect, useState, useCallback } from 'react';
 import { Stethoscope, Search, Wrench, CheckCircle2, XCircle, ChevronDown, ChevronUp, X } from 'lucide-react';
 import type { AiHealingState, AiHealingPhase } from '@/hooks/execution/useAiHealingStream';
 import { useTranslation } from '@/i18n/useTranslation';
+import { DebtText } from '@/i18n/DebtText';
+
 
 function useElapsedTime(active: boolean): number {
   const startRef = useRef<number | null>(null);
@@ -116,7 +118,7 @@ export function AiHealingStreamOverlay({ healing, onDismiss }: AiHealingStreamOv
             )}
           </div>
           <span className="typo-heading text-foreground/90 uppercase tracking-widest typo-body">
-            AI Healing {isFailed ? 'Failed' : isDone ? 'Complete' : 'In Progress'}
+            <DebtText k="auto_ai_healing_2ec57639" /> {isFailed ? 'Failed' : isDone ? 'Complete' : 'In Progress'}
           </span>
           {isDone && elapsed > 0 && (
             <span className="typo-caption text-foreground">{elapsed}s</span>
@@ -197,14 +199,14 @@ export function AiHealingStreamOverlay({ healing, onDismiss }: AiHealingStreamOv
           {/* Diagnosis summary */}
           {healing.diagnosis && (
             <div className="px-3 py-2 rounded-card bg-cyan-500/5 border border-cyan-500/15 typo-body text-cyan-300/90">
-              <span className="font-medium text-cyan-400">Diagnosis:</span> {healing.diagnosis}
+              <span className="font-medium text-cyan-400"><DebtText k="auto_diagnosis_d4ef703f" /></span> {healing.diagnosis}
             </div>
           )}
 
           {/* Fixes applied */}
           {healing.fixesApplied.length > 0 && (
             <div className="px-3 py-2 rounded-card bg-emerald-500/5 border border-emerald-500/15 typo-body space-y-1">
-              <span className="font-medium text-emerald-400 typo-caption uppercase tracking-wider">Fixes Applied</span>
+              <span className="font-medium text-emerald-400 typo-caption uppercase tracking-wider"><DebtText k="auto_fixes_applied_239ec9a7" /></span>
               {healing.fixesApplied.map((fix, i) => (
                 <div key={i} className="flex items-start gap-2 text-emerald-300/80">
                   <CheckCircle2 className="w-3 h-3 mt-0.5 flex-shrink-0" />
@@ -218,7 +220,7 @@ export function AiHealingStreamOverlay({ healing, onDismiss }: AiHealingStreamOv
           {healing.lines.length > 0 && (
             <div className="relative">
               {/* Frosted fade at top */}
-              <div className="absolute top-0 left-0 right-0 h-6 bg-gradient-to-b from-secondary/80 to-transparent backdrop-blur-sm z-10 rounded-t-lg pointer-events-none" />
+              <div className="absolute top-0 left-0 right-0 h-6 bg-gradient-to-b from-secondary/80 to-transparent backdrop-blur-sm z-10 rounded-t-card pointer-events-none" />
               <div
                 ref={logRef}
                 className="max-h-48 overflow-y-auto rounded-card bg-background/60 border border-primary/10 p-3 typo-code leading-relaxed text-foreground scroll-smooth"

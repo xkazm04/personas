@@ -75,7 +75,7 @@ export const TONE_CHANNELS: readonly ChannelMeta[] = [
 
 const FOREGROUND_FALLBACK: PaletteVisuals = {
   dot: 'bg-foreground/20',
-  text: 'text-foreground/65',
+  text: 'text-foreground',
   textBaseline: 'text-foreground',
   bg: 'bg-secondary/40',
   tint: 'from-violet-500/15 to-fuchsia-500/10',

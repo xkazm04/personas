@@ -211,7 +211,7 @@ export function CompetitionCard({ competition, onRefresh }: { competition: DevCo
               )}
 
               {detail.slots.length >= 2 && (
-                <div className="flex items-center gap-2 typo-caption text-foreground/70">
+                <div className="flex items-center gap-2 typo-caption text-foreground">
                   <span>{dl.prompt_diff_picker_label}</span>
                   <span className="tabular-nums">{tx(dl.prompt_diff_picker_count, { selected: compareSelected.size })}</span>
                   <Button
@@ -227,7 +227,7 @@ export function CompetitionCard({ competition, onRefresh }: { competition: DevCo
                     <button
                       type="button"
                       onClick={() => setCompareSelected(new Set())}
-                      className="typo-caption text-foreground/60 hover:text-foreground underline"
+                      className="typo-caption text-foreground hover:text-foreground underline"
                     >
                       {t.common.clear}
                     </button>

@@ -88,7 +88,7 @@ export function useDesignRunnerState({
   // Reset animation index on new run
   useEffect(() => {
     if (isRunning) { animateFromRef.current = lines.length; }
-  }, [isRunning]);
+  }, [isRunning, lines.length]);
 
   const parseBulletPoints = (text: string): string[] => {
     return text.split('\n').map((l) => l.trim()).filter((l) => l.startsWith('-')).map((l) => l.slice(1).trim()).filter((l) => l.length > 0);

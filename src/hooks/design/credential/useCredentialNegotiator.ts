@@ -103,9 +103,9 @@ export function useCredentialNegotiator(context?: NegotiatorContext) {
   // Re-evaluates when the plan or captured values change so steps can
   // become skipped mid-flow (e.g. after autoCred fills fields).
 
-  const prefilled = context?.prefilledValues ?? {};
+  const prefilled = useMemo(() => context?.prefilledValues ?? {}, [context?.prefilledValues]);
 
-  const authServices = context?.authenticatedServices ?? [];
+  const authServices = useMemo(() => context?.authenticatedServices ?? [], [context?.authenticatedServices]);
 
   const graphContext = useMemo<StepGraphContext>(() => {
     const fieldKeys = flow.result
@@ -178,7 +178,7 @@ export function useCredentialNegotiator(context?: NegotiatorContext) {
       : undefined;
 
     await flow.start(serviceName, connector as unknown as Record<string, unknown>, fieldKeys, authForBackend);
-  }, [flow.start, flow.setResult, flow.setPhase, sp.reset, authServices]);
+  }, [sp, authServices, flow]);
 
   // completeStep operates on visible indices -- translates to original for refs/playbook
   const completeStep = useCallback((visibleIndex: number) => {
@@ -204,12 +204,12 @@ export function useCredentialNegotiator(context?: NegotiatorContext) {
         usageCount: 0,
       });
     }
-  }, [flow.result, flow.setPhase, sp.completeStep, sp.capturedValues, resolved.visible.length]);
+  }, [sp, flow, resolved.visible.length]);
 
   const goToStep = useCallback((visibleIndex: number) => {
     sp.goToStep(visibleIndex);
     setStepHelp(null);
-  }, [sp.goToStep]);
+  }, [sp]);
 
   const requestStepHelp = useCallback(async (visibleIndex: number, question: string) => {
     if (!flow.result) return;
@@ -248,7 +248,7 @@ export function useCredentialNegotiator(context?: NegotiatorContext) {
     sp.reset();
     completedStepsRef.current = new Set();
     setStepHelp(null);
-  }, [flow.reset, sp.reset]);
+  }, [flow, sp]);
 
   return {
     phase: flow.phase as NegotiatorPhase,

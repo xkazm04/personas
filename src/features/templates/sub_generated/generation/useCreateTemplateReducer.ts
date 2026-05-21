@@ -119,7 +119,7 @@ export function useCreateTemplateReducer() {
 
   const appendGenerateLine = useCallback((line: string) => {
     core.updateFn((prev) => ({ ...prev, generateLines: [...prev.generateLines, line] }));
-  }, [core.updateFn]);
+  }, [core]);
 
   const generatePhase = useCallback((phase: CliRunPhase) => {
     update({ generatePhase: phase });

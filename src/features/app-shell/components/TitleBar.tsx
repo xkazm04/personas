@@ -6,8 +6,8 @@ import { useNotificationCenterStore } from '@/stores/notificationCenterStore';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
-import ProcessActivityIndicator from './ProcessActivityIndicator';
-import { TitleBarAmbient } from './TitleBarAmbient';
+import ProcessActivityIndicator from '@/features/shared/components/layout/ProcessActivityIndicator';
+import { TitleBarAmbient } from '@/features/shared/components/layout/TitleBarAmbient';
 
 const appWindow = IS_DESKTOP ? getCurrentWindow() : null;
 
@@ -120,7 +120,7 @@ export default function TitleBar() {
         >
           <Bell size={22} strokeWidth={1.5} />
           {unreadCount > 0 && (
-            <span className="absolute top-2 right-1.5 min-w-[16px] h-[16px] px-[3px] flex items-center justify-center text-[9px] font-bold leading-none rounded-full bg-orange-500 text-white shadow-elevation-1">
+            <span className="absolute top-2 right-1.5 min-w-[16px] h-[16px] px-[3px] flex items-center justify-center text-[9px] font-bold leading-none rounded-full bg-orange-500 text-foreground shadow-elevation-1">
               {unreadCount > 9 ? '9+' : unreadCount}
             </span>
           )}

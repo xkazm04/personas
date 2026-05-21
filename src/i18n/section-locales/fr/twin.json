@@ -142,7 +142,23 @@
     "previewStop": "Arrêter",
     "previewTooltip": "Synthétiser un court échantillon avec les paramètres actuels",
     "previewNeedsConfig": "Définissez un voice id et un credential id avant l'aperçu",
-    "previewSample": "Voici à quoi ressemblera votre twin lorsqu'il parlera via le canal voix."
+    "previewSample": "Voici à quoi ressemblera votre twin lorsqu'il parlera via le canal voix.",
+    "eyebrowAtelier": "Voice Studio",
+    "atelierVariantLabel": "Atelier",
+    "currentVariantLabel": "Current",
+    "stageEmptyHeadline": "No voice on file yet",
+    "stageEmptyBody": "Paste a Voice ID from your ElevenLabs library and link the API credential — the stage will preview here.",
+    "stageReadyHeadline": "Voice ready to synthesize",
+    "stageReadyBody": "Hit preview to hear how the twin sounds with the current synthesis settings.",
+    "kpiVoiceSet": "voice id",
+    "kpiCredential": "credential",
+    "kpiModel": "model",
+    "kpiPreview": "preview",
+    "kpiReady": "ready",
+    "kpiMissing": "missing",
+    "sectionIdentity": "Voice identity",
+    "sectionSynthesis": "Synthesis controls",
+    "sectionModel": "Model selection"
   },
   "training": {
     "title": "Training Room",
@@ -262,7 +278,13 @@
     "bulkRejectedToast": "{count} mémoires rejetées.",
     "bulkPartialToast": "{succeeded} traités, {failed} en échec — voir les toasts pour les détails.",
     "provenanceChip": "depuis {id}…",
-    "provenanceTooltip": "ID de communication source : {id}"
+    "provenanceTooltip": "ID de communication source : {id}",
+    "ingestDocsTitle": "Seed from product docs",
+    "ingestDocsDescription": "Embed every page under docs/features/ into this twin's knowledge base. Lets the twin answer questions about Personas itself (events, triggers, recipes, …).",
+    "ingestDocsButton": "Ingest docs/features",
+    "ingestDocsLoading": "Ingesting…",
+    "ingestDocsSuccess": "Ingested {files} file(s) ({chunks} chunks). {skipped} already up-to-date.",
+    "ingestDocsErrorNoKb": "Bind a knowledge base in the Knowledge tab first."
   },
   "profiles": {
     "title": "Twin Profiles",

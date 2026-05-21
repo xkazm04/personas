@@ -47,7 +47,7 @@ export default function ContextDetail({ ctx, onClose }: { ctx: ContextItem; onCl
           {t.plugins.dev_tools.context_detail_goals_heading} ({linkedGoals.length})
         </h4>
         {linkedGoals.length === 0 ? (
-          <p className="typo-caption text-foreground/55 italic">{t.plugins.dev_tools.context_detail_no_goals}</p>
+          <p className="typo-caption text-foreground italic">{t.plugins.dev_tools.context_detail_no_goals}</p>
         ) : (
           <ul className="space-y-1.5">
             {linkedGoals.map(({ goal, tasksTotal, tasksDone }) => (
@@ -60,10 +60,10 @@ export default function ContextDetail({ ctx, onClose }: { ctx: ContextItem; onCl
                 >
                   <div className="flex items-center gap-2">
                     <span className="typo-caption text-foreground font-medium truncate flex-1">{goal.title}</span>
-                    <span className="typo-caption text-foreground/60 tabular-nums shrink-0">{goal.progress}%</span>
+                    <span className="typo-caption text-foreground tabular-nums shrink-0">{goal.progress}%</span>
                   </div>
                   {tasksTotal > 0 && (
-                    <p className="typo-caption text-foreground/60 mt-0.5 flex items-center gap-1">
+                    <p className="typo-caption text-foreground mt-0.5 flex items-center gap-1">
                       <ListChecks className="w-2.5 h-2.5" />
                       {tx(t.plugins.dev_tools.context_detail_task_summary, { done: tasksDone, total: tasksTotal })}
                     </p>

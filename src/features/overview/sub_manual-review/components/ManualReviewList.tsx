@@ -31,6 +31,8 @@ import { ReviewFocusFlow } from './ReviewFocusFlow';
 // consolidation.
 import { TriageGridVariant } from './TriageGridVariant';
 import { TriageWildcardVariant } from './TriageWildcardVariant';
+import { debtText } from '@/i18n/DebtText';
+
 
 type PrototypeVariant = 'grid' | 'wildcard' | null;
 
@@ -221,7 +223,7 @@ export default function ManualReviewList() {
             <button
               onClick={() => setPrototypeVariant('grid')}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading bg-primary/10 text-primary border border-primary/25 hover:bg-primary/15 transition-colors"
-              title="Full-screen persona × priority grid (prototype)"
+              title={debtText("auto_full_screen_persona_priority_grid_prototyp_2f1e4ebb")}
             >
               <LayoutGrid className="w-3.5 h-3.5" />
               Grid
@@ -229,7 +231,7 @@ export default function ManualReviewList() {
             <button
               onClick={() => setPrototypeVariant('wildcard')}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading bg-fuchsia-500/10 text-fuchsia-400 border border-fuchsia-500/25 hover:bg-fuchsia-500/20 transition-colors"
-              title="Full-screen experimental priority river (prototype)"
+              title={debtText("auto_full_screen_experimental_priority_river_pr_5b480960")}
             >
               <Sparkles className="w-3.5 h-3.5" />
               Wildcard
@@ -243,8 +245,8 @@ export default function ManualReviewList() {
               <button
                 onClick={() => void handleGcStale()}
                 disabled={isGcing}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading bg-foreground/5 text-foreground/70 border border-border/30 hover:bg-foreground/10 hover:text-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                title="Auto-resolve any review left in pending for more than 7 days. Each one writes a policy_events audit row tagged review.stale_gc.resolved."
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading bg-foreground/5 text-foreground border border-border/30 hover:bg-foreground/10 hover:text-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                title={debtText("auto_auto_resolve_any_review_left_in_pending_fo_07992b1b")}
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 {isGcing ? 'Clearing…' : 'Clear stale'}

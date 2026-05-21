@@ -48,19 +48,19 @@ export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<P
     connectorNamesMap, allConnectorNames,
   } = args;
 
-  const STATUS_FILTER_OPTIONS: FilterOption[] = [
+  const STATUS_FILTER_OPTIONS = useMemo<FilterOption[]>(() => [
     { value: 'all', label: t.agents.overview_columns.all_statuses },
     { value: 'enabled', label: t.agents.overview_columns.active_only },
     { value: 'disabled', label: t.agents.overview_columns.disabled_only },
     { value: 'building', label: t.agents.overview_columns.building_drafts },
-  ];
+  ], [t.agents.overview_columns.active_only, t.agents.overview_columns.all_statuses, t.agents.overview_columns.building_drafts, t.agents.overview_columns.disabled_only]);
 
-  const HEALTH_FILTER_OPTIONS: FilterOption[] = [
+  const HEALTH_FILTER_OPTIONS = useMemo<FilterOption[]>(() => [
     { value: 'all', label: t.agents.overview_columns.all_health },
     { value: 'healthy', label: HEALTH_STYLES.healthy!.label },
     { value: 'degraded', label: HEALTH_STYLES.degraded!.label },
     { value: 'failing', label: HEALTH_STYLES.failing!.label },
-  ];
+  ], [t.agents.overview_columns.all_health]);
 
   const connectorOptions = useMemo<FilterOption[]>(
     () => [
@@ -174,10 +174,6 @@ export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<P
           ),
       },
     ],
-    [
-      view, setView, selectedIds, onToggleSelect, isFavorite, toggleFavorite, onRowClick,
-      isBuilding, isDraft, healthMap, triggerCounts, lastRunMap,
-      connectorNamesMap, connectorOptions,
-    ],
+    [t.agents.persona_list.col_persona, t.agents.persona_list.never, t.agents.overview_columns.status, t.agents.overview_columns.trust, t.agents.overview_columns.last_run, t.common.connectors, t.common.triggers, view, connectorOptions, STATUS_FILTER_OPTIONS, HEALTH_FILTER_OPTIONS, selectedIds, onToggleSelect, isFavorite, toggleFavorite, onRowClick, setView, connectorNamesMap, isBuilding, healthMap, isDraft, triggerCounts, lastRunMap],
   );
 }

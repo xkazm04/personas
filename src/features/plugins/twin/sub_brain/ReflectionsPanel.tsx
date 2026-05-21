@@ -120,12 +120,12 @@ export function ReflectionsPanel({ twinId }: Props) {
       </div>
 
       {reflections === null ? (
-        <p className="typo-caption text-foreground/55 py-2">{t.reflections.loading}</p>
+        <p className="typo-caption text-foreground py-2">{t.reflections.loading}</p>
       ) : reflections.length === 0 ? (
         <div className="py-6 text-center">
-          <BookHeart className="w-7 h-7 text-foreground/30 mx-auto mb-2" />
+          <BookHeart className="w-7 h-7 text-foreground mx-auto mb-2" />
           <p className="typo-body text-foreground">{t.reflections.emptyTitle}</p>
-          <p className="typo-caption text-foreground/55 mt-1">{t.reflections.emptyBody}</p>
+          <p className="typo-caption text-foreground mt-1">{t.reflections.emptyBody}</p>
         </div>
       ) : (
         <ul className="space-y-2">
@@ -133,7 +133,7 @@ export function ReflectionsPanel({ twinId }: Props) {
             <li key={r.id} className="p-3 rounded-card border border-primary/10 bg-background/40">
               <div className="flex items-start gap-3">
                 <div className="flex-1 min-w-0">
-                  <p className="text-[10px] uppercase tracking-[0.18em] text-foreground/55 mb-1">
+                  <p className="text-[10px] uppercase tracking-[0.18em] text-foreground mb-1">
                     {new Date(r.created_at).toLocaleString()}
                   </p>
                   <p className="typo-caption text-violet-300 italic mb-1.5">&ldquo;{r.prompt_seed}&rdquo;</p>
@@ -142,7 +142,7 @@ export function ReflectionsPanel({ twinId }: Props) {
                 <button
                   onClick={() => handleDelete(r.id)}
                   aria-label={t.reflections.deleteAria}
-                  className="p-1.5 rounded-interactive text-foreground/55 hover:text-red-400 hover:bg-red-500/10 transition-colors flex-shrink-0"
+                  className="p-1.5 rounded-interactive text-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors flex-shrink-0"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>

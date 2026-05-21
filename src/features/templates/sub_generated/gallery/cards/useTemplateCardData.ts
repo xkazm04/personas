@@ -46,7 +46,7 @@ export function useTemplateCardData(
         })();
 
     return { connectors, triggerTypes, designResult, displayFlows };
-  }, [review.connectors_used, review.trigger_types, review.design_result, review.use_case_flows]);
+  }, [review]);
 
   const { connectors, triggerTypes, designResult, displayFlows } = parsedData;
 
@@ -64,7 +64,7 @@ export function useTemplateCardData(
   const verification = useMemo(() => {
     if (!isActive) return verifyTemplateLight(review);
     return getCachedVerification(review, verifyTemplate);
-  }, [isActive, review.test_case_id, review.test_run_id, review.design_result]);
+  }, [isActive, review]);
 
   // Deferred: only compute adoption readiness score on hover/expand.
   const readinessScore = useMemo(() => {
@@ -86,11 +86,11 @@ export function useTemplateCardData(
     return identity.length > 200 ? identity.slice(0, 200) + '...' : identity;
   }, [designResult]);
 
-  const difficulty = useMemo(() => computeDifficulty(review), [review.connectors_used, review.use_case_flows, review.trigger_types, review.design_result]);
+  const difficulty = useMemo(() => computeDifficulty(review), [review]);
   const difficultyMeta = DIFFICULTY_META[difficulty];
-  const setupLevel = useMemo(() => computeSetupLevel(review), [review.connectors_used, review.trigger_types, review.design_result]);
+  const setupLevel = useMemo(() => computeSetupLevel(review), [review]);
   const setupMeta = SETUP_META[setupLevel];
-  const setupMinutes = useMemo(() => estimateSetupMinutes(review), [review.connectors_used, review.trigger_types, review.design_result]);
+  const setupMinutes = useMemo(() => estimateSetupMinutes(review), [review]);
 
   return {
     connectors,

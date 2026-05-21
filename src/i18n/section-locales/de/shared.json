@@ -208,7 +208,11 @@
     "dev_tools_label": "Dev Tools",
     "obsidian_brain": "Obsidian Brain",
     "active_twin": "Aktiver Twin",
-    "research_lab": "Research Lab"
+    "research_lab": "Research Lab",
+    "back_to_home": "Home",
+    "whats_new": "What's New",
+    "back_to_plugins": "Plugins",
+    "roadmap": "Roadmap"
   },
   "execution_detail": {
     "copy": "Kopieren",

@@ -50,7 +50,8 @@ function langIllustration(code: string) {
 
 /** Inline card grid for embedding in Welcome page */
 export function LanguageCardGrid() {
-  const { language, setLanguage } = useI18nStore();
+  const language = useI18nStore((s) => s.language);
+  const setLanguage = useI18nStore((s) => s.setLanguage);
   const { prefetchNow, prefetchWithIntent, cancelPrefetch } = useLanguagePrefetch();
   const sorted = sortLanguages(language);
   return (
@@ -88,7 +89,7 @@ export function LanguageCardGrid() {
                   <div className="min-w-0 flex-1 text-left">
                     <div className={`truncate ${isActive ? 'text-primary typo-card-label' : 'typo-card-label group-hover:text-foreground'}`}>{lang.label}</div>
                     {lang.code !== 'en' && (
-                      <div className="typo-caption text-foreground/60 truncate">{lang.english}</div>
+                      <div className="typo-caption text-foreground truncate">{lang.english}</div>
                     )}
                   </div>
                 </div>
@@ -102,7 +103,8 @@ export function LanguageCardGrid() {
 }
 
 export default function LanguageSwitcher() {
-  const { language, setLanguage } = useI18nStore();
+  const language = useI18nStore((s) => s.language);
+  const setLanguage = useI18nStore((s) => s.setLanguage);
   const fontReady = useI18nStore((s) => s.fontReady);
   const [isOpen, setIsOpen] = useState(false);
   const { prefetchNow, prefetchWithIntent, cancelPrefetch } = useLanguagePrefetch();
@@ -193,7 +195,7 @@ export default function LanguageSwitcher() {
                               {lang.label}
                             </div>
                             {lang.code !== 'en' && (
-                              <div className="typo-caption text-foreground/60 truncate">{lang.english}</div>
+                              <div className="typo-caption text-foreground truncate">{lang.english}</div>
                             )}
                           </div>
                         </div>

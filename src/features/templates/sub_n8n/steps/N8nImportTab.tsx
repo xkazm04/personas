@@ -11,6 +11,8 @@ import { N8nSessionList } from './N8nSessionList';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 // -- Slide animation variants --
 
@@ -73,7 +75,7 @@ export default function N8nImportTab() {
           { section: 'personas' },
         );
       });
-    } catch { /* best-effort */ }
+    } catch (err) { silentCatch("features/templates/sub_n8n/steps/N8nImportTab:catch1")(err); }
 
     // Show progress dot on design-reviews sidebar
     setN8nTransformActive(true);

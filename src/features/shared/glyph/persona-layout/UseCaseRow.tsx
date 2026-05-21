@@ -172,7 +172,7 @@ export function UseCaseRow({
               </span>
             )}
           </div>
-          <div className="mt-1 typo-caption text-foreground/60 truncate">
+          <div className="mt-1 typo-caption text-foreground truncate">
             {uc.triggerLabel}
           </div>
         </div>
@@ -220,7 +220,7 @@ export function UseCaseRow({
             className={`inline-flex items-center justify-center w-8 h-8 rounded-full border transition-colors cursor-pointer disabled:opacity-50 ${
               isDisabled
                 ? 'border-status-success/30 bg-status-success/10 text-status-success hover:bg-status-success/20'
-                : 'border-card-border bg-secondary/80 text-foreground/80 hover:text-foreground hover:border-primary/40'
+                : 'border-card-border bg-secondary/80 text-foreground hover:text-foreground hover:border-primary/40'
             }`}
             title={
               isDisabled

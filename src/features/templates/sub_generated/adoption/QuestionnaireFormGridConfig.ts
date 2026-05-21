@@ -37,7 +37,7 @@ export const CATEGORY_META: Record<
 export const FALLBACK_CATEGORY = {
   label: 'Other',
   Icon: Settings2,
-  color: 'text-foreground/55',
+  color: 'text-foreground',
   bg: 'bg-foreground/[0.03]',
   border: 'border-border',
 };

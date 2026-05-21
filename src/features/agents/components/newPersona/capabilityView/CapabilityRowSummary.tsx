@@ -33,7 +33,7 @@ export function CapabilityRowSummary({ capability }: Props) {
             style={{ width: `${pct}%` }}
           />
         </div>
-        <span className="typo-caption font-medium text-foreground/70">
+        <span className="typo-caption font-medium text-foreground">
           {resolved}/{total}
         </span>
       </div>

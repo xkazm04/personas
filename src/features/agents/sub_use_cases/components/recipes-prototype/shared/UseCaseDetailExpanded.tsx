@@ -86,7 +86,7 @@ export function UseCaseDetailExpanded({
         <button
           type="button"
           onClick={onBack}
-          className="mt-0.5 inline-flex items-center justify-center w-8 h-8 rounded-full border border-card-border bg-secondary/40 text-foreground/75 hover:text-foreground hover:border-primary/40 cursor-pointer transition-colors"
+          className="mt-0.5 inline-flex items-center justify-center w-8 h-8 rounded-full border border-card-border bg-secondary/40 text-foreground hover:text-foreground hover:border-primary/40 cursor-pointer transition-colors"
           title={t.agents.use_cases.back_to_grid}
         >
           <ArrowLeft className="w-4 h-4" />
@@ -102,7 +102,7 @@ export function UseCaseDetailExpanded({
               {modeMeta[uc.mode].label}
             </span>
           </div>
-          <div className="typo-caption text-foreground/65 mt-0.5">{uc.description}</div>
+          <div className="typo-caption text-foreground mt-0.5">{uc.description}</div>
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
           {/* Rename event aliases — sits left of Pause */}
@@ -188,7 +188,7 @@ export function UseCaseDetailExpanded({
             <motion.div className="relative" layoutId={`sigil-${uc.id}`} transition={{ duration: 0.32, ease: [0.32, 0.72, 0, 1] }}>
               <MiniSigil uc={uc} size={228} isActive petalStyle="wedge" />
             </motion.div>
-            <div className="typo-label uppercase tracking-wider text-foreground/55 mt-3">
+            <div className="typo-label uppercase tracking-wider text-foreground mt-3">
               {tx(t.agents.use_cases.dimensions_of_eight, { count: uc.dimensions.length })}
             </div>
             <div className="flex flex-wrap gap-1 justify-center mt-2 max-w-[200px]">
@@ -255,14 +255,14 @@ export function UseCaseDetailExpanded({
         {/* Tabs: History · Config */}
         <div className="mt-1 mx-1 rounded-card border border-card-border bg-secondary/30 overflow-hidden">
           <div className="flex items-center gap-2 px-3 py-2 border-b border-card-border/60">
-            <div className="flex items-center gap-1 rounded-lg bg-secondary/60 border border-card-border/50 p-0.5">
+            <div className="flex items-center gap-1 rounded-card bg-secondary/60 border border-card-border/50 p-0.5">
               {(['history', 'config'] as const).map((id) => (
                 <button
                   key={id}
                   type="button"
                   onClick={() => setTab(id)}
-                  className={`px-2.5 py-1 rounded-md typo-caption transition-colors cursor-pointer ${
-                    tab === id ? 'bg-primary/15 text-primary' : 'text-foreground/70 hover:text-foreground'
+                  className={`px-2.5 py-1 rounded-input typo-caption transition-colors cursor-pointer ${
+                    tab === id ? 'bg-primary/15 text-primary' : 'text-foreground hover:text-foreground'
                   }`}
                 >
                   {id === 'history' ? t.agents.use_cases.tab_history : t.agents.use_cases.tab_config}
@@ -347,7 +347,7 @@ function DimCard({ dim, title, body, icon: Icon, active, tone, activeColor }: Di
         >
           <Icon className="w-3 h-3" style={{ color: active ? color : '#94a3b8' }} />
         </span>
-        <span className="typo-label uppercase tracking-wider text-foreground/75">{title}</span>
+        <span className="typo-label uppercase tracking-wider text-foreground">{title}</span>
       </div>
       <div className="typo-caption text-foreground/85 leading-snug">{body}</div>
     </div>
@@ -394,12 +394,12 @@ function ToggleDimCard({ dim, title, icon: Icon, state, loading, onClick, bodyOn
         >
           <Icon className="w-3 h-3" style={{ color: on ? color : '#94a3b8' }} />
         </span>
-        <span className="typo-label uppercase tracking-wider text-foreground/75">{title}</span>
+        <span className="typo-label uppercase tracking-wider text-foreground">{title}</span>
         <span
           className={`ml-auto typo-label uppercase tracking-wider px-1.5 py-0.5 rounded border ${
             on
               ? 'bg-status-success/15 border-status-success/35 text-status-success/95'
-              : 'bg-secondary/60 border-card-border text-foreground/55'
+              : 'bg-secondary/60 border-card-border text-foreground'
           } ${loading ? 'opacity-50' : ''}`}
           aria-pressed={on}
         >
@@ -438,7 +438,7 @@ function ReviewDimCard({ state, loading, onClick, reviewsDefault }: ReviewDimCar
     },
     off: {
       label: 'OFF',
-      pill: 'bg-secondary/60 border-card-border text-foreground/55',
+      pill: 'bg-secondary/60 border-card-border text-foreground',
       icon: <ShieldOff className="w-2.5 h-2.5" />,
       body: reviewsDefault ? t.agents.use_cases.review_off_body_inherited : t.agents.use_cases.review_off_body_dropped,
     },
@@ -466,7 +466,7 @@ function ReviewDimCard({ state, loading, onClick, reviewsDefault }: ReviewDimCar
         >
           <UserCheck className="w-3 h-3" style={{ color: isOn ? color : '#94a3b8' }} />
         </span>
-        <span className="typo-label uppercase tracking-wider text-foreground/75">Review</span>
+        <span className="typo-label uppercase tracking-wider text-foreground">Review</span>
         <span
           className={`ml-auto inline-flex items-center gap-1 typo-label uppercase tracking-wider px-1.5 py-0.5 rounded border ${s.pill} ${
             loading ? 'opacity-50' : ''

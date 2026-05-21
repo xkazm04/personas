@@ -86,8 +86,8 @@ export function useByomSettings() {
 
   // --- Dirty-state tracking ---
   const savedSnapshotRef = useRef<ByomPolicy>(defaultPolicy());
-  const [saveGeneration, setSaveGeneration] = useState(0);
-  const isDirty = useMemo(() => !policyEqual(policy, savedSnapshotRef.current), [policy, saveGeneration]);
+  const [, setSaveGeneration] = useState(0);
+  const isDirty = useMemo(() => !policyEqual(policy, savedSnapshotRef.current), [policy]);
 
   // Guards handleSave against concurrent invocations (rapid double-clicks).
   const saveInFlightRef = useRef(false);

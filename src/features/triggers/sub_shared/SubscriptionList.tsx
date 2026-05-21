@@ -2,6 +2,8 @@ import { Rss, Trash2, AlertCircle } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { SharedEventSubscription } from '@/lib/bindings/SharedEventSubscription';
 import type { SharedEventCatalogEntry } from '@/lib/bindings/SharedEventCatalogEntry';
+import { DebtText } from '@/i18n/DebtText';
+
 
 interface Props {
   subscriptions: SharedEventSubscription[];
@@ -51,7 +53,7 @@ export function SubscriptionList({ subscriptions, catalog, onUnsubscribe }: Prop
                 </td>
                 <td className="px-4 py-2.5">
                   <code className="text-[10px] px-1.5 py-0.5 rounded bg-secondary/60 text-foreground">
-                    shared:{sub.slug}
+                    <DebtText k="auto_shared_17407031" />{sub.slug}
                   </code>
                 </td>
                 <td className="px-4 py-2.5 text-right tabular-nums">

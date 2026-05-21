@@ -14,7 +14,7 @@ interface UseCaseFilterPickerProps {
 export function UseCaseFilterPicker({ selectedUseCaseId, setSelectedUseCaseId, label = 'Focus', testIdPrefix }: UseCaseFilterPickerProps) {
   const { t } = useTranslation();
   const useCases = useSelectedUseCases();
-  const useCaseOptions = useMemo(() => [{ value: '__all__', label: t.agents.lab.all_use_cases }, ...useCases.map((uc) => ({ value: uc.id, label: uc.title }))], [useCases]);
+  const useCaseOptions = useMemo(() => [{ value: '__all__', label: t.agents.lab.all_use_cases }, ...useCases.map((uc) => ({ value: uc.id, label: uc.title }))], [t.agents.lab.all_use_cases, useCases]);
 
   if (useCases.length === 0) return null;
 

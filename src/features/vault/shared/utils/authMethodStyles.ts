@@ -15,7 +15,7 @@ export function getAuthBadgeClasses(method: ConnectorAuthMethod): string {
     return 'bg-purple-500/10 border-purple-500/20 text-purple-400';
 
   // Default: neutral variant
-  return 'bg-white/10 border-white/20 text-white/80';
+  return 'bg-white/10 border-white/20 text-foreground/80';
 }
 
 /** Map auth type id -> lucide icon component. */

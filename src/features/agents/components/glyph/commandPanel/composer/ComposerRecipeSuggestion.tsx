@@ -125,7 +125,7 @@ export function ComposerRecipeSuggestion({ task, onApply, onRunDirect }: Props) 
         >
           <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" aria-hidden />
           <span className="truncate">
-            <span className="text-foreground/60">{t.recipes.composer_suggestion.label}: </span>
+            <span className="text-foreground">{t.recipes.composer_suggestion.label}: </span>
             <span className="font-medium text-foreground">{match.recipe_name}</span>
           </span>
           <span className="ml-auto flex items-center gap-1.5 shrink-0">
@@ -161,7 +161,7 @@ export function ComposerRecipeSuggestion({ task, onApply, onRunDirect }: Props) 
                 setDismissed(match.recipe_id);
               }}
               aria-label={t.recipes.composer_suggestion.dismiss}
-              className="rounded-input p-1 text-foreground/50 hover:text-foreground hover:bg-secondary/60 transition-colors"
+              className="rounded-input p-1 text-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
             >
               <X className="h-3 w-3" aria-hidden />
             </button>

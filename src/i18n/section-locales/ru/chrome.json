@@ -18,5 +18,6 @@
   "sign_in_google": "Войти через Google",
   "signed_in": "Вы вошли",
   "sign_out": "Выйти",
-  "offline": "Офлайн"
+  "offline": "Офлайн",
+  "mobile_preview": "Mobile preview"
 }

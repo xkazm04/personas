@@ -5,6 +5,8 @@ import type { FiredAlert } from '@/lib/bindings/FiredAlert';
 import { EmptyState } from '@/features/shared/components/display/EmptyState';
 import { StatusDot, type SeverityState } from '@/features/shared/components/display/StatusDot';
 import { useTranslation } from '@/i18n/useTranslation';
+import { DebtText } from '@/i18n/DebtText';
+
 
 const SEVERITY_BY_KEY: Record<string, SeverityState> = {
   info: 'info',
@@ -70,7 +72,7 @@ export function AlertHistoryPanel() {
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h3 className="typo-heading text-foreground">Alert History</h3>
+          <h3 className="typo-heading text-foreground"><DebtText k="auto_alert_history_50da1d4f" /></h3>
           {activeCount > 0 && (
             <span className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-red-500/15 text-red-400 border border-red-500/20">
               {activeCount}

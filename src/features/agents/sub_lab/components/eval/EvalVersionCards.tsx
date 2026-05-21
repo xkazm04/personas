@@ -2,6 +2,8 @@ import { Trophy, Target, FileText, Shield, DollarSign, Clock } from 'lucide-reac
 import { scoreColor } from '@/lib/eval/evalFramework';
 import type { VersionAggregate } from '../../libs/evalAggregation';
 import { useTranslation } from '@/i18n/useTranslation';
+import { DebtText } from '@/i18n/DebtText';
+
 
 interface EvalVersionCardsProps {
   versionAggs: VersionAggregate[];
@@ -97,7 +99,7 @@ export function EvalVersionCards({ versionAggs, winnerId, celebrateWinnerId }: E
 
                 <div className="flex items-center gap-3 pt-1 border-t border-primary/5 text-[11px] text-foreground">
                   <span className="flex items-center gap-1"><DollarSign className="w-3 h-3" />{agg.totalCost.toFixed(4)}</span>
-                  <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{(agg.avgDuration / 1000).toFixed(1)}s avg</span>
+                  <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{(agg.avgDuration / 1000).toFixed(1)}<DebtText k="auto_s_avg_eaee6bda" /></span>
                 </div>
               </div>
             </div>

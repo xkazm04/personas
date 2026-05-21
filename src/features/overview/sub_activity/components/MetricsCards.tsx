@@ -2,6 +2,8 @@ import { AlertTriangle } from 'lucide-react';
 import type { DashboardCostAnomaly } from '@/lib/bindings/DashboardCostAnomaly';
 import { fmtCost, fmtDate } from '../libs/executionMetricsHelpers';
 import { useTranslation } from '@/i18n/useTranslation';
+import { DebtText } from '@/i18n/DebtText';
+
 
 // -- Anomaly Badge ----------------------------------------------------
 
@@ -17,9 +19,9 @@ export function AnomalyBadge({ anomaly, onClickExecution }: AnomalyBadgeProps) {
       <AlertTriangle className="w-3.5 h-3.5 text-amber-400 mt-0.5 flex-shrink-0" />
       <div className="min-w-0">
         <p className="typo-heading text-amber-300">
-          {fmtDate(anomaly.date)} -- Cost spike {fmtCost(anomaly.cost)}
+          {fmtDate(anomaly.date)} <DebtText k="auto_cost_spike_a1385f95" /> {fmtCost(anomaly.cost)}
           <span className="text-amber-400/70 ml-1">
-            ({anomaly.deviation_sigma.toFixed(1)} above avg {fmtCost(anomaly.moving_avg)})
+            ({anomaly.deviation_sigma.toFixed(1)} <DebtText k="auto_above_avg_e49f3ce5" /> {fmtCost(anomaly.moving_avg)})
           </span>
         </p>
         {anomaly.execution_ids.length > 0 && (

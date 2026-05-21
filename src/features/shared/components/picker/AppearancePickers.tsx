@@ -216,7 +216,7 @@ export function SimpleThemePicker({
               className={`${d.swatchSize} rounded-full border border-black/10 flex items-center justify-center`}
               style={{ backgroundColor: theme.primaryColor }}
             >
-              {isActive && <Check className={`${d.checkSize} text-white drop-shadow-elevation-1`} />}
+              {isActive && <Check className={`${d.checkSize} text-foreground drop-shadow-elevation-1`} />}
             </div>
             <span className={`${d.themeLabelSize} ${isActive ? 'text-foreground/90 font-medium' : 'text-foreground'}`}>
               {theme.label}

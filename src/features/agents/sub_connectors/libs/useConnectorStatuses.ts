@@ -24,7 +24,7 @@ export function useConnectorStatuses() {
   const inFlightTestsRef = useRef<Set<string>>(new Set());
   const lastAutoTestedCredentialRef = useRef<Map<string, string>>(new Map());
 
-  const tools = selectedPersona?.tools ?? [];
+  const tools = useMemo(() => selectedPersona?.tools ?? [], [selectedPersona?.tools]);
 
   const requiredCredTypes = useMemo(() => {
     const types = new Set<string>();

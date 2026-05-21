@@ -46,7 +46,7 @@ export function CredentialDeleteDialog({
       onConfirm: onConfirmDelete,
       onCancel: onCancelDelete,
     };
-  }, [deleteConfirm, blastItems, blastLoading, onConfirmDelete, onCancelDelete]);
+  }, [deleteConfirm, t.vault.delete_dialog.title, t.vault.delete_dialog.cannot_undo, t.vault.delete_dialog.label_name, t.vault.delete_dialog.label_type, t.vault.delete_dialog.unverified_warning, blastItems, blastLoading, onConfirmDelete, onCancelDelete]);
 
   return (
     <ConfirmDestructiveModal

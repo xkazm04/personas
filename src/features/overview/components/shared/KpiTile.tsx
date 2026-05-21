@@ -149,7 +149,7 @@ export const KpiTile = memo(function KpiTile({
       <div className="rounded-card border border-primary/10 bg-primary/[0.03] px-3 py-2.5 flex items-center gap-2.5">
         <span className={color}>{renderIcon(icon)}</span>
         <div className="flex-1 min-w-0">
-          <div className="typo-caption uppercase tracking-widest text-foreground/50 font-mono">{label}</div>
+          <div className="typo-caption uppercase tracking-widest text-foreground font-mono">{label}</div>
           <div className={`font-mono text-xl tabular-nums ${color}`}>
             {renderValue(value, numericValue, format, density)}
           </div>

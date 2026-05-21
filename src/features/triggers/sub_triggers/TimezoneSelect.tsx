@@ -1,4 +1,6 @@
 import { useMemo } from 'react';
+import { DebtText } from '@/i18n/DebtText';
+
 
 /**
  * IANA-zone picker for schedule triggers. Users can pick "system local"
@@ -64,7 +66,7 @@ export function TimezoneSelect({ value, onChange, className, id }: TimezoneSelec
         'px-3 py-2 bg-background/50 border border-primary/15 rounded-modal typo-body text-foreground focus-visible:border-primary/40 focus-ring transition-all'
       }
     >
-      <option value="">System local (fallback)</option>
+      <option value=""><DebtText k="auto_system_local_fallback_03fd9916" /></option>
       {options.map((tz) => (
         <option key={tz} value={tz}>
           {tz}

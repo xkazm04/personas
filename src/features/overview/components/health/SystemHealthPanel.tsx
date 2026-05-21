@@ -14,6 +14,8 @@ import { LogDiskUsageSection } from './LogDiskUsageSection';
 import { SectionCard } from './SectionCard';
 import { FooterActions } from './FooterActions';
 import { useHealthChecks } from './useHealthChecks';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
   const { t } = useTranslation();
@@ -36,14 +38,13 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
   }, [isAuthenticated, runChecks]);
 
   useEffect(() => {
-    if (nodeState.phase === 'completed' || claudeState.phase === 'completed') {
-      const timer = setTimeout(() => { runChecks(); }, 3000);
-      return () => clearTimeout(timer);
-    }
+    if (nodeState.phase !== 'completed' && claudeState.phase !== 'completed') return;
+    const timer = setTimeout(() => { runChecks(); }, 3000);
+    return () => clearTimeout(timer);
   }, [nodeState.phase, claudeState.phase, runChecks]);
 
   const handleSignIn = async () => {
-    try { await loginWithGoogle(); } catch { /* error handled by auth store */ }
+    try { await loginWithGoogle(); } catch (err) { silentCatch("features/overview/components/health/SystemHealthPanel:catch1")(err); }
   };
 
   const hasNodeIssue = sections

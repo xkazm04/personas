@@ -40,12 +40,12 @@ function StatusDot({ status }: { status: ActiveProcess["status"] }) {
     return <span className="inline-block w-2 h-2 rounded-full bg-violet-400 shrink-0" />;
   }
   if (status === "completed") {
-    return <span className="text-green-400 shrink-0 text-xs">{"\u2713"}</span>;
+    return <span className="text-green-400 shrink-0 typo-caption">{"\u2713"}</span>;
   }
   if (status === "failed") {
-    return <span className="text-red-400 shrink-0 text-xs">{"\u2717"}</span>;
+    return <span className="text-red-400 shrink-0 typo-caption">{"\u2717"}</span>;
   }
-  return <span className="text-foreground shrink-0 text-xs">{"\u2014"}</span>;
+  return <span className="text-foreground shrink-0 typo-caption">{"\u2014"}</span>;
 }
 
 function useStatusLabel() {
@@ -115,7 +115,7 @@ function ProcessRow({
             : statusLabel(process.status, process.queuePosition)}
         </div>
         {hasNav && (
-          <span className="text-primary/40 text-xs shrink-0 ml-1">&rsaquo;</span>
+          <span className="text-primary/40 typo-caption shrink-0 ml-1">&rsaquo;</span>
         )}
       </button>
 

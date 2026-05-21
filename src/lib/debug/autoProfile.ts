@@ -1,3 +1,4 @@
+import { silentCatch } from '@/lib/silentCatch';
 /**
  * Auto-profiler — starts a Performance recording before the freeze hits,
  * then saves the trace data when (if) the thread recovers.
@@ -48,7 +49,7 @@ channel.port1.onmessage = () => {
         (window as any).__TAURI_INTERNALS__?.invoke?.('log_frontend_error', {
           level: 'error', message: report
         });
-      } catch { /* intentional: fire-and-forget IPC */ }
+      } catch (err) { silentCatch("lib/debug/autoProfile:catch1")(err); }
     }
     // Persist to localStorage
     try {
@@ -59,7 +60,7 @@ channel.port1.onmessage = () => {
         messageChannelFires,
         elapsedMs: Math.round(elapsed),
       }));
-    } catch { /* intentional: localStorage may be unavailable */ }
+    } catch (err) { silentCatch("lib/debug/autoProfile:catch2")(err); }
     microCount = 0;
     promiseThenCount = 0;
     messageChannelFires = 0;

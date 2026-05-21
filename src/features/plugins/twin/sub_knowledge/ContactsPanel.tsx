@@ -94,12 +94,12 @@ export function ContactsPanel({ twinId }: Props) {
       <p className="typo-caption text-foreground mb-3">{t.contacts.subtitle}</p>
 
       {contacts === null ? (
-        <p className="typo-caption text-foreground/55 py-2">{t.contacts.loading}</p>
+        <p className="typo-caption text-foreground py-2">{t.contacts.loading}</p>
       ) : contacts.length === 0 ? (
         <div className="py-6 text-center">
-          <Users className="w-7 h-7 text-foreground/30 mx-auto mb-2" />
+          <Users className="w-7 h-7 text-foreground mx-auto mb-2" />
           <p className="typo-body text-foreground">{t.contacts.emptyTitle}</p>
-          <p className="typo-caption text-foreground/55 mt-1">{t.contacts.emptyBody}</p>
+          <p className="typo-caption text-foreground mt-1">{t.contacts.emptyBody}</p>
         </div>
       ) : (
         <ul className="space-y-2">
@@ -131,17 +131,17 @@ export function ContactsPanel({ twinId }: Props) {
                       <>
                         <p className="typo-body text-foreground font-medium truncate">{display}</p>
                         {c.alias && (
-                          <p className="text-[10px] text-foreground/55 font-mono truncate">{c.handle}</p>
+                          <p className="text-[10px] text-foreground font-mono truncate">{c.handle}</p>
                         )}
                         {c.notes && (
                           <p className="typo-caption text-foreground mt-1 italic line-clamp-2">{c.notes}</p>
                         )}
                         <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                          <span className="flex items-center gap-1 typo-caption text-foreground/65">
+                          <span className="flex items-center gap-1 typo-caption text-foreground">
                             <Clock className="w-3 h-3" />
                             {tx(t.contacts.lastSeen, { rel: relativeAge(tFull, c.last_seen_at ?? null) })}
                           </span>
-                          <span className="typo-caption text-foreground/65">
+                          <span className="typo-caption text-foreground">
                             {tx(t.contacts.messageCount, { count: Number(c.message_count) })}
                           </span>
                         </div>
@@ -158,7 +158,7 @@ export function ContactsPanel({ twinId }: Props) {
                         <button
                           onClick={cancelEdit}
                           aria-label={t.contacts.cancel}
-                          className="p-1.5 rounded-interactive text-foreground/55 hover:bg-secondary/40 transition-colors"
+                          className="p-1.5 rounded-interactive text-foreground hover:bg-secondary/40 transition-colors"
                         >
                           <X className="w-3.5 h-3.5" />
                         </button>
@@ -168,7 +168,7 @@ export function ContactsPanel({ twinId }: Props) {
                         onClick={() => startEdit(c)}
                         aria-label={t.contacts.editAria}
                         title={t.contacts.editAria}
-                        className="p-1.5 rounded-interactive text-foreground/55 hover:text-violet-300 hover:bg-violet-500/10 transition-colors"
+                        className="p-1.5 rounded-interactive text-foreground hover:text-violet-300 hover:bg-violet-500/10 transition-colors"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>

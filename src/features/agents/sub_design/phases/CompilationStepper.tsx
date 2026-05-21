@@ -94,7 +94,7 @@ export function CompilationStepper({ outputLines, isRunning }: CompilationSteppe
                 </div>
 
                 <span
-                  className={`text-xs font-medium truncate transition-colors duration-300 ${
+                  className={`typo-caption font-medium truncate transition-colors duration-300 ${
                     isActive
                       ? 'text-foreground'
                       : isCompleted

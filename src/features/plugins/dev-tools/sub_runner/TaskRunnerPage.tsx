@@ -20,7 +20,7 @@ import { SelfHealingPanel } from './SelfHealingPanel';
 import { PrBridge } from './PrBridge';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
-import { toastCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { startAutoRun, cancelAutoRun } from '@/api/devTools/devTools';
 import type { DevTask } from '@/lib/bindings/DevTask';
@@ -718,7 +718,7 @@ export default function TaskRunnerPage() {
             if (task) {
               try {
                 await createTask({ title: `[Retry] ${task.title}`, description: task.description, goalId: task.goalId });
-              } catch { /* ignore */ }
+              } catch (err) { silentCatch("features/plugins/dev-tools/sub_runner/TaskRunnerPage:catch1")(err); }
             }
           }} />
 

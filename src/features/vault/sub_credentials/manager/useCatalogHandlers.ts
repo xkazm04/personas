@@ -70,7 +70,7 @@ export function useCatalogHandlers({
     const values = universalOAuth.getValues();
     if (!values.access_token) return;
     dispatch({ type: 'SET_OAUTH_VALUES', values });
-  }, [universalOAuth.completedAt]);
+  }, [catalogFormData, dispatch, universalOAuth, universalOAuth.completedAt]);
 
   const handlePickType = useCallback((connector: ConnectorDefinition) => {
     oauth.reset();

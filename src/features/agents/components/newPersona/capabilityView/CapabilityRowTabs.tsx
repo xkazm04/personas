@@ -76,7 +76,7 @@ export function CapabilityRowTabs({ capability }: Props) {
               className={`inline-flex items-center gap-1.5 border-b-2 px-3 py-2 typo-body-sm transition ${
                 selected
                   ? "border-primary text-foreground"
-                  : "border-transparent text-foreground/55 hover:text-foreground"
+                  : "border-transparent text-foreground hover:text-foreground"
               }`}
               data-testid={`capability-tab-${tab.key}-${capability.id}`}
               data-resolved={tab.resolved}

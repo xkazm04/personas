@@ -235,7 +235,7 @@ function ProjectHero({
 
       {project.scopeConstraints && (
         <div className="rounded-card border border-border/40 bg-foreground/[0.02] p-4">
-          <p className="text-[10px] uppercase tracking-[0.2em] text-foreground/55 mb-2">
+          <p className="text-[10px] uppercase tracking-[0.2em] text-foreground mb-2">
             {t.research_lab.project_scope}
           </p>
           <p className="typo-body text-foreground/85 leading-relaxed">
@@ -245,7 +245,7 @@ function ProjectHero({
       )}
 
       <div className="flex items-center justify-between gap-3 pt-2 flex-wrap">
-        <span className="typo-caption text-foreground/55">
+        <span className="typo-caption text-foreground">
           {`${t.research_lab.updated_prefix.replace('{date}', new Date(project.updatedAt).toLocaleDateString())}`}
         </span>
         <div className="flex items-center gap-2 flex-wrap">
@@ -307,7 +307,7 @@ function PhaseTrack({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <span className="text-xs uppercase tracking-[0.2em] text-foreground/55">{t.research_lab.phase}</span>
+        <span className="typo-label uppercase tracking-[0.2em] text-foreground">{t.research_lab.phase}</span>
         <span className="typo-caption text-foreground/85">
           {projectStatusLabel(t, status)}
         </span>
@@ -353,7 +353,7 @@ export function AtelierBand({
             <span className="typo-section-title text-foreground truncate">
               {title}
             </span>
-            <span className="text-xs uppercase tracking-[0.2em] text-foreground/60 truncate">
+            <span className="typo-label uppercase tracking-[0.2em] text-foreground truncate">
               {subtitle}
             </span>
           </div>
@@ -389,7 +389,7 @@ function DomainRail({
 
   return (
     <aside className="hidden lg:flex w-56 flex-shrink-0 flex-col border-r border-border/40 px-3 py-6 gap-1 overflow-y-auto">
-      <p className="text-xs uppercase tracking-[0.2em] text-foreground/55 px-2 mb-2">
+      <p className="typo-label uppercase tracking-[0.2em] text-foreground px-2 mb-2">
         {t.research_lab.domains}
       </p>
       <RailItem label={t.research_lab.all_projects} count={totalProjects} selected={selected === null} onClick={() => onSelect(null)} />
@@ -439,7 +439,7 @@ function ChronologyThread({
   const visible = projects.slice(0, 10);
   return (
     <aside className="hidden xl:flex w-72 flex-shrink-0 flex-col border-l border-border/40 px-4 py-6 gap-3 overflow-y-auto">
-      <p className="text-xs uppercase tracking-[0.2em] text-foreground/55 mb-1">
+      <p className="typo-label uppercase tracking-[0.2em] text-foreground mb-1">
         {t.research_lab.recent}
       </p>
       <div className="relative space-y-2">
@@ -470,7 +470,7 @@ function ChronologyThread({
                     {projectStatusLabel(t, p.status)}
                   </span>
                   {p.domain && (
-                    <span className="typo-caption text-foreground/55 truncate">
+                    <span className="typo-caption text-foreground truncate">
                       {domainLabel(t, p.domain)}
                     </span>
                   )}
@@ -522,7 +522,7 @@ function AtelierEmpty({
           <FolderSearch className="w-6 h-6 text-primary" />
         </div>
         <p className="typo-body-lg text-foreground">{t.research_lab.no_projects}</p>
-        <p className="typo-body text-foreground/70">{t.research_lab.no_projects_hint}</p>
+        <p className="typo-body text-foreground">{t.research_lab.no_projects_hint}</p>
         <button
           onClick={onCreate}
           className="inline-flex items-center gap-1.5 px-4 py-2 rounded-interactive typo-caption bg-primary/20 text-primary hover:bg-primary/30 transition-colors"

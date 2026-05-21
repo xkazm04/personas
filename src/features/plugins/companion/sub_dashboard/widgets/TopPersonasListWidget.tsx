@@ -2,6 +2,8 @@ import { useEffect, useMemo } from 'react';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useShallow } from 'zustand/react/shallow';
 import type { WidgetProps } from '../widgetRegistry';
+import { DebtText } from '@/i18n/DebtText';
+
 
 /**
  * Top personas by cost — a ranked list with cost bars.
@@ -39,12 +41,12 @@ export function TopPersonasListWidget({ config, title }: WidgetProps) {
 
   return (
     <div className="rounded-card border border-foreground/10 bg-foreground/[0.02] p-4 h-full flex flex-col">
-      <div className="typo-caption text-foreground/60 uppercase tracking-wide mb-3">
+      <div className="typo-caption text-foreground uppercase tracking-wide mb-3">
         {title ?? `Top personas by cost (last ${days}d)`}
       </div>
       {rows.length === 0 ? (
-        <div className="flex-1 flex items-center justify-center typo-caption text-foreground/40">
-          No data
+        <div className="flex-1 flex items-center justify-center typo-caption text-foreground">
+          <DebtText k="auto_no_data_d802d232" />
         </div>
       ) : (
         <ul className="flex-1 space-y-2 overflow-y-auto">
@@ -57,7 +59,7 @@ export function TopPersonasListWidget({ config, title }: WidgetProps) {
                   style={{ width: `${max > 0 ? (cost / max) * 100 : 0}%` }}
                 />
               </div>
-              <span className="typo-caption text-foreground/60 tabular-nums w-16 text-right">
+              <span className="typo-caption text-foreground tabular-nums w-16 text-right">
                 ${cost.toFixed(2)}
               </span>
             </li>

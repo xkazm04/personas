@@ -1,4 +1,4 @@
-import { toastCatch } from "@/lib/silentCatch";
+import { silentCatch, toastCatch } from "@/lib/silentCatch";
 import { useTranslation } from '@/i18n/useTranslation';
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { Check, X, Send, User, Cloud, ExternalLink, CheckCircle2, XCircle } from 'lucide-react';
@@ -84,7 +84,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
     try {
       const parsed = JSON.parse(contextData);
       if (Array.isArray(parsed?.decisions)) return parsed.decisions;
-    } catch { /* not JSON or no decisions */ }
+    } catch (err) { silentCatch("features/overview/sub_manual-review/components/ReviewDetailPanel:catch1")(err); }
     return [];
   }, [contextData]);
 

@@ -40,7 +40,7 @@ export function useDesignContextSync(
   useEffect(() => {
     const ctx = parseDesignContext(selectedPersona?.design_context);
     setDesignContext(ctx.designFiles ?? { files: [], references: [] });
-  }, [selectedPersona?.id]);
+  }, [selectedPersona?.design_context, selectedPersona?.id, setDesignContext]);
 }
 
 /**
@@ -88,7 +88,7 @@ export function useResultSelectionSync(
         setSelectedSubscriptionIndices(allIndices(result.suggested_event_subscriptions));
       }
     }
-  }, [resultId]);
+  }, [result, resultId, setSelectedChannelIndices, setSelectedSubscriptionIndices, setSelectedTools, setSelectedTriggerIndices]);
 }
 
 /**

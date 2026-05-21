@@ -1,6 +1,8 @@
 import { Plus } from "lucide-react";
 import { DIM_META, PETAL_ANGLES, GLYPH_DIMENSIONS } from "@/features/shared/glyph";
 import type { GlyphRow } from "@/features/shared/glyph";
+import { debtText } from '@/i18n/DebtText';
+
 
 interface MiniSigilProps {
   row: GlyphRow;
@@ -99,8 +101,8 @@ export function GlyphRowStrip({
         <button
           type="button"
           onClick={onAdd}
-          className="w-[68px] h-[68px] shrink-0 rounded-full border border-dashed border-border/40 hover:border-primary/40 flex items-center justify-center text-foreground/40 hover:text-foreground transition-colors"
-          title="Add capability"
+          className="w-[68px] h-[68px] shrink-0 rounded-full border border-dashed border-border/40 hover:border-primary/40 flex items-center justify-center text-foreground hover:text-foreground transition-colors"
+          title={debtText("auto_add_capability_f36f0950")}
         >
           <Plus className="w-5 h-5" />
         </button>

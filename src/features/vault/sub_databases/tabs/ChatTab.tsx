@@ -6,6 +6,8 @@ import type { ConversationTurn, NlQuerySnapshot } from '@/api/vault/database/nlQ
 import { ChatMessages, type ChatMessage } from './ChatMessages';
 import { ChatInput } from './ChatInput';
 import { extractErrorMessage } from '../safeModeUtils';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 interface ChatTabProps {
   credentialId: string;
@@ -99,7 +101,7 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
               ),
             );
           }
-        } catch { /* Transient poll failure, keep trying */ }
+        } catch (err) { silentCatch("features/vault/sub_databases/tabs/ChatTab:catch1")(err); }
       }, 800);
     } catch (err) {
       setGenerating(false);

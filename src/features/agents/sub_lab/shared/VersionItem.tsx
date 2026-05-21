@@ -8,6 +8,8 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import type { PersonaPromptVersion } from '@/lib/bindings/PersonaPromptVersion';
 import { TAG_STYLES, formatRelative } from './labPrimitives';
 import { useTranslation } from '@/i18n/useTranslation';
+import { DebtText, debtText } from '@/i18n/DebtText';
+
 
 export type VersionAction = 'promote' | 'archive' | 'unarchive' | 'rollback' | null;
 
@@ -135,7 +137,7 @@ export function VersionItem({
           onClick={(e) => { e.stopPropagation(); onSetCompareA(); }}
           data-testid={`version-compare-a-${version.version_number}`}
           className={`px-1.5 py-0.5 rounded typo-body transition-colors ${isCompareA ? 'bg-blue-500/20 text-blue-400' : 'text-foreground hover:text-blue-400 hover:bg-blue-500/10'}`}
-          title="Set as Compare A"
+          title={debtText("auto_set_as_compare_a_d2c952a0")}
         >
           A
         </button>
@@ -143,7 +145,7 @@ export function VersionItem({
           onClick={(e) => { e.stopPropagation(); onSetCompareB(); }}
           data-testid={`version-compare-b-${version.version_number}`}
           className={`px-1.5 py-0.5 rounded typo-body transition-colors ${isCompareB ? 'bg-violet-500/20 text-violet-400' : 'text-foreground hover:text-violet-400 hover:bg-violet-500/10'}`}
-          title="Set as Compare B"
+          title={debtText("auto_set_as_compare_b_7f13fd98")}
         >
           B
         </button>
@@ -199,7 +201,7 @@ export function VersionItem({
                   className="inline-flex items-center gap-1 px-2 py-1 typo-body rounded-card transition-colors bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 cursor-pointer"
                 >
                   <Star className="w-3 h-3" />
-                  Pin as Baseline
+                  <DebtText k="auto_pin_as_baseline_37ad415e" />
                 </button>
               ) : (
                 <button
@@ -208,7 +210,7 @@ export function VersionItem({
                   className="inline-flex items-center gap-1 px-2 py-1 typo-body rounded-card transition-colors bg-zinc-500/10 text-zinc-400 hover:bg-zinc-500/20 cursor-pointer"
                 >
                   <StarOff className="w-3 h-3" />
-                  Unpin Baseline
+                  <DebtText k="auto_unpin_baseline_f0457827" />
                 </button>
               )}
             </div>

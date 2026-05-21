@@ -55,7 +55,7 @@ export function ObservabilityPlanWidget({ config, title }: CockpitWidgetProps) {
 
   if (!errorHandling && !successMetric) {
     return (
-      <div className="rounded-card border border-foreground/10 bg-secondary/40 p-3 typo-caption text-foreground/55">
+      <div className="rounded-card border border-foreground/10 bg-secondary/40 p-3 typo-caption text-foreground">
         {t.plugins.companion.observability_plan_empty}
       </div>
     );
@@ -66,13 +66,13 @@ export function ObservabilityPlanWidget({ config, title }: CockpitWidgetProps) {
       className="rounded-card border border-foreground/15 bg-secondary/30 p-4 space-y-3"
       data-testid="companion-observability-plan-widget"
     >
-      <header className="flex items-baseline gap-2 typo-caption text-foreground/75">
+      <header className="flex items-baseline gap-2 typo-caption text-foreground">
         <Activity className="w-3.5 h-3.5" />
         <span className="font-medium">
           {title || t.plugins.companion.observability_plan_title}
         </span>
         {intent && (
-          <span className="text-foreground/55 truncate" title={intent}>
+          <span className="text-foreground truncate" title={intent}>
             · {intent}
           </span>
         )}
@@ -87,7 +87,7 @@ export function ObservabilityPlanWidget({ config, title }: CockpitWidgetProps) {
             {t.plugins.companion.observability_plan_error_path}
           </h4>
           {errorHandling.triggers.length > 0 && (
-            <ul className="space-y-1 pl-1 typo-caption text-foreground/80">
+            <ul className="space-y-1 pl-1 typo-caption text-foreground">
               {errorHandling.triggers.map((trig, i) => (
                 <li key={i} className="flex items-baseline gap-2">
                   <span className="text-rose-400/85 shrink-0">•</span>
@@ -97,8 +97,8 @@ export function ObservabilityPlanWidget({ config, title }: CockpitWidgetProps) {
             </ul>
           )}
           {errorHandling.escalation && (
-            <div className="typo-caption text-foreground/70 pt-1 border-t border-rose-500/15">
-              <span className="text-foreground/45">
+            <div className="typo-caption text-foreground pt-1 border-t border-rose-500/15">
+              <span className="text-foreground">
                 {t.plugins.companion.observability_plan_escalation}
                 {': '}
               </span>
@@ -123,13 +123,13 @@ export function ObservabilityPlanWidget({ config, title }: CockpitWidgetProps) {
             </span>
           </div>
           {successMetric.description && (
-            <p className="typo-caption text-foreground/75 leading-relaxed">
+            <p className="typo-caption text-foreground leading-relaxed">
               {successMetric.description}
             </p>
           )}
           {successMetric.target && (
-            <div className="typo-caption text-foreground/70 pt-1 border-t border-emerald-500/15">
-              <span className="text-foreground/45">
+            <div className="typo-caption text-foreground pt-1 border-t border-emerald-500/15">
+              <span className="text-foreground">
                 {t.plugins.companion.observability_plan_target}
                 {': '}
               </span>

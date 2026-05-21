@@ -30,7 +30,7 @@ export default function ByomSettings() {
   const guardCallbacks = useMemo(() => ({
     onSave: () => bm.handleSave(),
     onDiscard: () => bm.discardChanges(),
-  }), [bm.handleSave, bm.discardChanges]);
+  }), [bm]);
 
   const guard = useUnsavedGuard(bm.isDirty, guardCallbacks, { guardSettingsTab: true });
 

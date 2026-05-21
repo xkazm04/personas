@@ -26,7 +26,7 @@ export function StackProgress({ jobKind, fraction, etaSeconds, message }: StackP
     <div className="space-y-2 p-3 rounded-card border border-primary/10 bg-secondary/10">
       <div className="flex items-center justify-between gap-3">
         <span className="typo-body text-foreground truncate">{message}</span>
-        <span className="typo-caption text-foreground/80 flex-shrink-0">{pct}%</span>
+        <span className="typo-caption text-foreground flex-shrink-0">{pct}%</span>
       </div>
       <div className="h-1.5 rounded-full bg-secondary/40 overflow-hidden">
         <div
@@ -34,7 +34,7 @@ export function StackProgress({ jobKind, fraction, etaSeconds, message }: StackP
           style={{ width: `${pct}%` }}
         />
       </div>
-      <div className="flex items-center justify-between gap-3 typo-caption text-foreground/80">
+      <div className="flex items-center justify-between gap-3 typo-caption text-foreground">
         <span>{etaText}</span>
         <span>{t.plugins.langfuse.background_hint}</span>
       </div>

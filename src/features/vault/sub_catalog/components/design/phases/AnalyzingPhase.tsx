@@ -46,7 +46,7 @@ export function AnalyzingPhase({ outputLines, onCancel }: AnalyzingPhaseProps) {
   // Drive step progress from derived index
   useEffect(() => {
     sp.setDerivedIndex(derivedIdx);
-  }, [derivedIdx]);
+  }, [derivedIdx, sp]);
 
   // Progress: use derived index directly against total (4) for smooth 0->100
   const progress = Math.min((derivedIdx / STAGE_KEYS.length) * 100, 100);

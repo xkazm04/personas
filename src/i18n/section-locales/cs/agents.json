@@ -1457,7 +1457,18 @@
     "_comment_new_capability_hint": "Prompt modal helper text",
     "new_capability_hint": "Press ⌘/Ctrl + Enter to submit. The generation runs in the background — you can keep working.",
     "_comment_start_generation": "Prompt modal submit button label",
-    "start_generation": "Start generation"
+    "start_generation": "Start generation",
+    "_comment_section_PersonaLayout": "── PersonaUseCasesTab.tsx + persona-layout/ ──",
+    "_comment_layout_tab_label": "Label preceding the layout-switcher in the Use Cases tab",
+    "layout_tab_label": "Layout",
+    "_comment_layout_tab_sigil_grid": "Layout switcher option — current 3x3 sigil grid (default)",
+    "layout_tab_sigil_grid": "Sigil Grid",
+    "_comment_layout_tab_persona_layout": "Layout switcher option — Persona Sigil hero + Capability Sigil rows prototype",
+    "layout_tab_persona_layout": "Persona Layout",
+    "_comment_layout_tab_prototype_badge": "Badge marking a layout option as a prototype (small, uppercase)",
+    "layout_tab_prototype_badge": "Prototype",
+    "_comment_persona_layout_capabilities_heading": "Section heading above the capability rows in the Persona Layout",
+    "persona_layout_capabilities_heading": "Capabilities"
   },
   "tools": {
     "no_persona": "Žádná persona nevybrána",
@@ -1692,7 +1703,10 @@
   "matrix_entry": {
     "new_agent": "Nový agent",
     "failed_to_create": "Nepodařilo se vytvořit návrh agenta.",
-    "build_failed": "Sestavení se nepodařilo spustit. Zkontrolujte nastavení CLI."
+    "build_failed": "Sestavení se nepodařilo spustit. Zkontrolujte nastavení CLI.",
+    "header_title": "Build",
+    "header_subtitle_new": "Compose a new agent from scratch",
+    "header_subtitle_editing": "Editing {name}"
   },
   "build_webhook_source": {
     "header": "Webhook source",
@@ -2424,6 +2438,11 @@
       "channel_id": "Numeric channel ID",
       "team_id": "Microsoft Teams team ID",
       "to": "user@example.com"
-    }
-  }
+    },
+    "discord_poll_inbound_label": "Poll for incoming Discord messages",
+    "discord_poll_inbound_help": "When checked, the persona reads new messages in this channel every 5s and replies with its run output. The bot must already be in the channel."
+  },
+  "persona_decisions_footer_one": "1 design decision Athena logged",
+  "persona_decisions_footer_many": "{count} design decisions Athena logged",
+  "persona_decisions_footer_open_audit": "Open audit"
 }

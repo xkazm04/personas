@@ -15,6 +15,8 @@ import { useCompanionStore } from "@/features/plugins/companion/companionStore";
 import { sections as sidebarSections } from "@/features/shared/components/layout/sidebar/sidebarData";
 import { isTierVisible, TIERS, BUILD_MAX_TIER } from "@/lib/constants/uiModes";
 import type { SidebarSection } from "@/lib/types/types";
+import { silentCatch } from '@/lib/silentCatch';
+
 
 const VALID_SECTIONS: SidebarSection[] = [
   "home", "overview", "personas", "events", "credentials",
@@ -40,7 +42,7 @@ function unpackError(e: unknown): string {
       const inner = (msg as Record<string, unknown>).message ?? (msg as Record<string, unknown>).error;
       if (typeof inner === "string") return inner;
     }
-    try { return JSON.stringify(e); } catch { /* circular — fall through */ }
+    try { return JSON.stringify(e); } catch (err) { silentCatch("test/automation/bridge:catch1")(err); }
   }
   return String(e);
 }
@@ -785,9 +787,7 @@ const bridge: TestBridge = {
       try {
         const session = await invoke('get_active_build_session', { personaId: '' }) as { personaId?: string } | null;
         personaId = session?.personaId ?? null;
-      } catch {
-        // noop — try next fallback
-      }
+      } catch (err) { silentCatch("test/automation/bridge:catch2")(err); }
     }
     if (!personaId && state.personas.length > 0) {
       // Fallback: most recently created persona
@@ -1800,9 +1800,7 @@ const bridge: TestBridge = {
           });
         const done = recent.find((r) => ['completed', 'failed', 'cancelled'].includes(String(r.status)));
         if (done) return { success: true, execution: done, seen: recent.length };
-      } catch {
-        // swallow — keep polling
-      }
+      } catch (err) { silentCatch("test/automation/bridge:catch3")(err); }
       await new Promise((r) => setTimeout(r, 800));
     }
     // Slice expired with no execution yet — let the caller loop.

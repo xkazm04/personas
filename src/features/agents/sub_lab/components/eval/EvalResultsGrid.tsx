@@ -10,6 +10,8 @@ import { EvalRadarChart } from './EvalRadarChart';
 import type { LabEvalResult } from '@/lib/bindings/LabEvalResult';
 import { useTranslation } from '@/i18n/useTranslation';
 import { sanitizeRichSummary } from '@/lib/utils/sanitizers/sanitizeHtml';
+import { DebtText } from '@/i18n/DebtText';
+
 
 interface UserRatingEntry {
   rating: number;
@@ -138,7 +140,7 @@ export function EvalResultsGrid({ results, runId: _runId, userRatings, onRate }:
             </div>
             <div>
               <h4 className="typo-heading font-semibold text-foreground/90">{t.agents.lab.eval_summary}</h4>
-              <p className="typo-caption text-foreground">{versions.length} versions x {models.length} models x {scenarios.length} scenarios</p>
+              <p className="typo-caption text-foreground">{versions.length} <DebtText k="auto_versions_x_afea4bf7" /> {models.length} <DebtText k="auto_models_x_7e2fdee6" /> {scenarios.length} scenarios</p>
             </div>
           </div>
           {summary && (

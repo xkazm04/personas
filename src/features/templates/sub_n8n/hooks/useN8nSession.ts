@@ -138,19 +138,7 @@ export function useN8nSession(
         dbTimerRef.current = null;
       }
     };
-  }, [
-    state.sessionId,
-    state.step,
-    state.parsedResult,
-    state.draft,
-    state.questions,
-    state.userAnswers,
-    state.backgroundTransformId,
-    state.error,
-    state.transforming,
-    state.transformSubPhase,
-    state.created,
-  ]);
+  }, [state.sessionId, state.step, state.parsedResult, state.draft, state.questions, state.userAnswers, state.backgroundTransformId, state.error, state.transforming, state.transformSubPhase, state.created, state]);
 
   // -- Auto-sync to localStorage (debounced) -- only during active transform --
 

@@ -18,5 +18,6 @@
   "sign_in_google": "Google로 로그인",
   "signed_in": "로그인됨",
   "sign_out": "로그아웃",
-  "offline": "오프라인"
+  "offline": "오프라인",
+  "mobile_preview": "Mobile preview"
 }

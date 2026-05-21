@@ -126,7 +126,7 @@ export default function AssetCard({
           aria-pressed={selected}
           className={`absolute top-2 left-2 z-10 w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
             selected
-              ? 'bg-rose-500 border-rose-500 text-white'
+              ? 'bg-rose-500 border-rose-500 text-foreground'
               : 'bg-black/40 border-white/50 opacity-0 group-hover:opacity-100 hover:border-white'
           }`}
         >

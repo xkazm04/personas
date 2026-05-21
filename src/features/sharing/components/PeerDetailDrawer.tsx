@@ -12,6 +12,7 @@ import { useSystemStore } from "@/stores/systemStore";
 import { useToastStore } from '@/stores/toastStore';
 import type { DiscoveredPeer, ConnectionState, PeerManifestEntry } from '@/api/network/discovery';
 import { useTranslation } from '@/i18n/useTranslation';
+import { BaseModal } from '@/lib/ui/BaseModal';
 
 interface PeerDetailDrawerProps {
   peer: DiscoveredPeer;
@@ -66,7 +67,7 @@ export function PeerDetailDrawer({
     if (isConnected) {
       fetchPeerManifest(peer.peer_id);
     }
-  }, [peer.peer_id, isConnected]);
+  }, [peer.peer_id, isConnected, fetchPeerManifest]);
 
   // Close on Escape key
   useEffect(() => {
@@ -131,16 +132,19 @@ export function PeerDetailDrawer({
   })();
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true" aria-labelledby="peer-drawer-title">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-
-      {/* Drawer */}
+    <BaseModal
+      isOpen
+      onClose={onClose}
+      titleId="peer-drawer-title"
+      placement="right-drawer"
+      panelClassName="relative w-full max-w-md bg-background border-l border-border shadow-elevation-3 flex flex-col animate-in slide-in-from-right duration-200 outline-none"
+      staggerChildren={false}
+    >
       <div
         ref={drawerRef}
         tabIndex={-1}
         onKeyDown={handleFocusTrap}
-        className="relative w-full max-w-md bg-background border-l border-border shadow-elevation-3 flex flex-col animate-in slide-in-from-right duration-200 outline-none"
+        className="contents"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
@@ -190,7 +194,7 @@ export function PeerDetailDrawer({
             ) : (
               <button
                 onClick={() => onConnect(peer.peer_id)}
-                className="px-3 py-1.5 typo-caption rounded-card bg-primary text-white hover:bg-primary/90 transition-colors flex items-center gap-1.5"
+                className="px-3 py-1.5 typo-caption rounded-card bg-primary text-foreground hover:bg-primary/90 transition-colors flex items-center gap-1.5"
               >
                 <NodeConnectedIcon className="w-3.5 h-3.5" />
                 {st.connect}
@@ -285,7 +289,7 @@ export function PeerDetailDrawer({
           )}
         </div>
       </div>
-    </div>
+    </BaseModal>
   );
 }
 

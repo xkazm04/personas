@@ -58,14 +58,14 @@ export function useUniversalOAuth(): UniversalOAuthState {
       setProviderId(params.providerId);
       polling.startConsent(params);
     },
-    [polling.startConsent],
+    [polling],
   );
 
   const resetAll = useCallback(() => {
     providerRef.current = null;
     setProviderId(null);
     polling.reset();
-  }, [polling.reset]);
+  }, [polling]);
 
   return {
     getValues: polling.getValues,

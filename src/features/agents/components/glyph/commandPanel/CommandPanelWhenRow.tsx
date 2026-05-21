@@ -2,6 +2,8 @@ import { Clock, Zap, X } from "lucide-react";
 import type { Frequency, EventSubscription } from "@/features/agents/components/matrix/quickConfigTypes";
 import { CommandPanelRow, CommandPanelAttachButton } from "./CommandPanelRow";
 import type { IntentRowDef } from "./commandPanelHelpers";
+import { debtText } from '@/i18n/DebtText';
+
 
 interface CommandPanelWhenRowProps {
   rowDef: IntentRowDef;
@@ -59,8 +61,8 @@ export function CommandPanelWhenRow({
                   onKeyDown={handleClearScheduleKeyDown}
                   role="button"
                   tabIndex={0}
-                  aria-label="Clear schedule"
-                  className="text-foreground/60 hover:text-foreground -mr-0.5 cursor-pointer"
+                  aria-label={debtText("auto_clear_schedule_813eca32")}
+                  className="text-foreground hover:text-foreground -mr-0.5 cursor-pointer"
                 >
                   <X className="w-3 h-3" />
                 </span>
@@ -83,8 +85,8 @@ export function CommandPanelWhenRow({
                   onKeyDown={(e) => handleRemoveEventKeyDown(e, sub)}
                   role="button"
                   tabIndex={0}
-                  aria-label="Remove subscription"
-                  className="text-foreground/60 hover:text-foreground -mr-0.5 cursor-pointer"
+                  aria-label={debtText("auto_remove_subscription_5ab5e9bc")}
+                  className="text-foreground hover:text-foreground -mr-0.5 cursor-pointer"
                 >
                   <X className="w-3 h-3" />
                 </span>

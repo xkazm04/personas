@@ -208,7 +208,11 @@
     "dev_tools_label": "개발 도구",
     "obsidian_brain": "Obsidian Brain",
     "active_twin": "활성 트윈",
-    "research_lab": "연구 랩"
+    "research_lab": "연구 랩",
+    "back_to_home": "Home",
+    "whats_new": "What's New",
+    "back_to_plugins": "Plugins",
+    "roadmap": "Roadmap"
   },
   "execution_detail": {
     "copy": "Copy",

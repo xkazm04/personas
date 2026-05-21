@@ -201,10 +201,10 @@ function RoadmapHero({ item, t }: { item: DisplayItem; t: ReleasesTranslation })
             {t.itemStatus[item.status]}
           </span>
         </span>
-        <span className="font-mono text-xs text-foreground/60">·</span>
-        <span className="font-mono text-xs text-foreground/80">#{item.sort_order}</span>
-        <span className="font-mono text-xs text-foreground/60">·</span>
-        <span className="font-mono text-xs uppercase tracking-[0.22em] text-foreground/80">
+        <span className="font-mono text-xs text-foreground">·</span>
+        <span className="font-mono text-xs text-foreground">#{item.sort_order}</span>
+        <span className="font-mono text-xs text-foreground">·</span>
+        <span className="font-mono text-xs uppercase tracking-[0.22em] text-foreground">
           {t.priority[item.priority]}
         </span>
       </div>
@@ -237,7 +237,7 @@ function LaneCard({ item, t }: { item: DisplayItem; t: ReleasesTranslation }) {
             {item.title}
           </h3>
           <div className="mt-1.5">
-            <span className="font-mono text-xs uppercase tracking-wider text-foreground/80">
+            <span className="font-mono text-xs uppercase tracking-wider text-foreground">
               {t.itemStatus[item.status]}
             </span>
           </div>
@@ -266,7 +266,7 @@ function LaneColumn({
   return (
     <div className="flex flex-col gap-3">
       <header className="flex items-center justify-between border-b border-primary/8 pb-2">
-        <span className={`text-xs font-semibold uppercase tracking-[0.18em] ${accent.label}`}>
+        <span className={`typo-label font-semibold uppercase tracking-[0.18em] ${accent.label}`}>
           {label}
         </span>
         <span
@@ -276,7 +276,7 @@ function LaneColumn({
         </span>
       </header>
       {items.length === 0 ? (
-        <div className="flex h-24 items-center justify-center rounded-modal border border-dashed border-primary/8 text-xs text-foreground/60">
+        <div className="flex h-24 items-center justify-center rounded-modal border border-dashed border-primary/8 typo-caption text-foreground">
           —
         </div>
       ) : (

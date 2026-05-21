@@ -62,12 +62,12 @@ export function IconPopover({
         aria-expanded={open}
         className={`w-9 h-9 flex items-center justify-center rounded-card border transition-colors ${
           disabled
-            ? 'border-transparent text-foreground/30 cursor-not-allowed'
+            ? 'border-transparent text-foreground cursor-not-allowed'
             : active
               ? 'border-rose-500/30 bg-rose-500/10 text-rose-400 hover:bg-rose-500/15'
               : open
                 ? 'border-primary/20 bg-secondary/50 text-foreground'
-                : 'border-transparent text-foreground/70 hover:bg-secondary/30 hover:text-foreground'
+                : 'border-transparent text-foreground hover:bg-secondary/30 hover:text-foreground'
         }`}
       >
         <Icon className="w-[18px] h-[18px]" />

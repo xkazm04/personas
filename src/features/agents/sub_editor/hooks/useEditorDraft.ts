@@ -73,7 +73,7 @@ export function useEditorDraft() {
       setDismissedWarnings(false);
       clearHistory();
     }
-  }, [selectedPersona?.id, pendingPersonaId, clearHistory]);
+  }, [selectedPersona?.id, pendingPersonaId, clearHistory, selectedPersona]);
 
   // Clear draft when persona is deselected
   useEffect(() => {

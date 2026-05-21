@@ -281,7 +281,7 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl, shareLink
               <div className="flex items-center justify-center gap-2">
                 <button
                   onClick={handlePickFile}
-                  className="px-4 py-2 typo-body rounded-card bg-primary text-white hover:bg-primary/90"
+                  className="px-4 py-2 typo-body rounded-card bg-primary text-foreground hover:bg-primary/90"
                 >
                   {st.choose_file}
                 </button>
@@ -397,7 +397,7 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl, shareLink
             preview.signature_valid ? (
               <button
                 onClick={handleImport}
-                className="px-3 py-1.5 typo-caption rounded-card bg-primary text-white hover:bg-primary/90 flex items-center gap-1.5"
+                className="px-3 py-1.5 typo-caption rounded-card bg-primary text-foreground hover:bg-primary/90 flex items-center gap-1.5"
               >
                 <Download className="w-3.5 h-3.5" />
                 {st.import_btn}
@@ -412,7 +412,7 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl, shareLink
                 <button
                   onClick={matchedKind ? handleImport : undefined}
                   disabled={!matchedKind}
-                  className="px-3 py-1.5 typo-caption rounded-card bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                  className="px-3 py-1.5 typo-caption rounded-card bg-red-600 text-foreground hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
                 >
                   <ShieldOff className="w-3.5 h-3.5" />
                   {st.import_anyway}

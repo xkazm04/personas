@@ -61,10 +61,10 @@ export function RecipeCard({ recipe, onEdit, onPlayground, onDelete, onQuickTest
   const deleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (showDeleteConfirm) {
-      deleteTimerRef.current = setTimeout(() => setShowDeleteConfirm(false), 5000);
-      return () => { if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current); };
-    }
+    if (!showDeleteConfirm) return;
+    const timer = setTimeout(() => setShowDeleteConfirm(false), 5000);
+    deleteTimerRef.current = timer;
+    return () => clearTimeout(timer);
   }, [showDeleteConfirm]);
 
   return (

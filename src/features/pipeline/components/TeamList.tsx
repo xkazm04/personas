@@ -13,6 +13,8 @@ import { AutoTeamModal } from './AutoTeamModal';
 import { CreateTeamForm } from './CreateTeamForm';
 import { TeamCard } from './TeamCard';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 export default function TeamList() {
   const { t } = useTranslation();
@@ -77,9 +79,7 @@ export default function TeamList() {
           color: null,
           enabled: null,
         });
-      } catch {
-        // intentional: non-critical
-      }
+      } catch (err) { silentCatch("features/pipeline/components/TeamList:catch1")(err); }
       selectTeam(team.id);
     }
   };

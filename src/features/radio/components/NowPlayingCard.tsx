@@ -86,7 +86,7 @@ export default function NowPlayingCard({
   return (
     <div
       ref={ref}
-      role="dialog"
+      role="region"
       aria-label={t.radio.now_playing}
       className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-[360px] rounded-modal border border-primary/10 bg-background shadow-elevation-3 overflow-hidden"
     >
@@ -95,7 +95,7 @@ export default function NowPlayingCard({
         style={{ background: `linear-gradient(135deg, ${accent}25, transparent 70%)` }}
       >
         <div className="min-w-0">
-          <p className="typo-caption text-foreground/55 uppercase tracking-wide">
+          <p className="typo-caption text-foreground uppercase tracking-wide">
             {t.radio.now_playing}
           </p>
           <p className="typo-body font-medium text-foreground truncate">
@@ -105,7 +105,7 @@ export default function NowPlayingCard({
         <button
           type="button"
           onClick={onClose}
-          className="w-6 h-6 rounded-interactive flex items-center justify-center text-foreground/70 hover:bg-secondary/40 transition-colors shrink-0"
+          className="w-6 h-6 rounded-interactive flex items-center justify-center text-foreground hover:bg-secondary/40 transition-colors shrink-0"
           aria-label={t.radio.collapse}
           title={t.radio.collapse}
         >
@@ -130,7 +130,7 @@ export default function NowPlayingCard({
                 <p className="typo-body font-medium text-foreground truncate">
                   {nowPlaying.track.title}
                 </p>
-                <p className="typo-caption text-foreground/70 truncate">
+                <p className="typo-caption text-foreground truncate">
                   {nowPlaying.track.artist}
                 </p>
               </>
@@ -139,12 +139,12 @@ export default function NowPlayingCard({
                 <p className="typo-body font-medium text-foreground truncate">
                   {streamMetadata.title}
                 </p>
-                <p className="typo-caption text-foreground/70 truncate">
+                <p className="typo-caption text-foreground truncate">
                   {streamMetadata.artist}
                 </p>
               </>
             ) : (
-              <p className="typo-body text-foreground/80 leading-relaxed">
+              <p className="typo-body text-foreground leading-relaxed">
                 {nowPlaying.station.description}
               </p>
             )}
@@ -162,7 +162,7 @@ export default function NowPlayingCard({
                 }}
               />
             </div>
-            <div className="flex items-center justify-between mt-1 typo-caption text-foreground/55 tabular-nums">
+            <div className="flex items-center justify-between mt-1 typo-caption text-foreground tabular-nums">
               <span>{formatTime(progress.currentSec)}</span>
               <span>{formatTime(progress.durationSec)}</span>
             </div>
@@ -176,7 +176,7 @@ export default function NowPlayingCard({
             type="button"
             onClick={onPrev}
             disabled={!isYoutube}
-            className="w-8 h-8 rounded-interactive flex items-center justify-center text-foreground/80 hover:bg-secondary/40 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+            className="w-8 h-8 rounded-interactive flex items-center justify-center text-foreground hover:bg-secondary/40 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
             aria-label={t.radio.prev_track}
             title={isYoutube ? t.radio.prev_track : t.radio.prev_track_disabled}
           >
@@ -204,7 +204,7 @@ export default function NowPlayingCard({
             type="button"
             onClick={onNext}
             disabled={!isYoutube}
-            className="w-8 h-8 rounded-interactive flex items-center justify-center text-foreground/80 hover:bg-secondary/40 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+            className="w-8 h-8 rounded-interactive flex items-center justify-center text-foreground hover:bg-secondary/40 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
             aria-label={t.radio.next_track}
             title={isYoutube ? t.radio.next_track : t.radio.next_track_disabled}
           >
@@ -215,7 +215,7 @@ export default function NowPlayingCard({
 
       {isYoutube && tracks.length > 0 && (
         <div className="border-t border-primary/8">
-          <div className="px-4 py-1.5 typo-caption text-foreground/55 uppercase tracking-wide bg-secondary/10">
+          <div className="px-4 py-1.5 typo-caption text-foreground uppercase tracking-wide bg-secondary/10">
             {tx(t.radio.tracklist_label, { count: tracks.length })}
           </div>
           <ul className="max-h-48 overflow-y-auto py-1">
@@ -225,7 +225,7 @@ export default function NowPlayingCard({
                 <li
                   key={`${tr.videoId}-${idx}`}
                   className={`px-4 py-1.5 flex items-center gap-2 typo-caption ${
-                    active ? 'bg-secondary/30 text-foreground' : 'text-foreground/75'
+                    active ? 'bg-secondary/30 text-foreground' : 'text-foreground'
                   }`}
                 >
                   <span
@@ -236,7 +236,7 @@ export default function NowPlayingCard({
                   </span>
                   <span className="truncate min-w-0 flex-1">
                     <span className="font-medium">{tr.artist}</span>
-                    <span className="text-foreground/55"> — {tr.title}</span>
+                    <span className="text-foreground"> — {tr.title}</span>
                   </span>
                 </li>
               );
@@ -251,7 +251,7 @@ export default function NowPlayingCard({
             href={nowPlaying.station.sourceUrl}
             target="_blank"
             rel="noreferrer noopener"
-            className="inline-flex items-center gap-1 typo-caption text-foreground/65 hover:text-foreground/90 transition-colors"
+            className="inline-flex items-center gap-1 typo-caption text-foreground hover:text-foreground/90 transition-colors"
           >
             <ExternalLink className="w-3 h-3" />
             {nowPlaying.station.sourceLabel ?? t.radio.open_source}

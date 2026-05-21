@@ -142,12 +142,11 @@ export function AutoCredConsent({ designResult, onConsent, onCancel, mode = 'pla
         </button>
         <button
           onClick={onConsent}
-          // text-white is deliberate: bg-violet-600 / bg-cyan-600 are saturated
+          // text-foreground is deliberate: bg-violet-600 / bg-cyan-600 are saturated
           // and theme-stable. text-foreground would render dark-on-saturated on
           // light theme — passes WCAG but visually weaker. Keep until a
           // text-foreground-on-primary token lands.
-          // eslint-disable-next-line custom/no-direct-white-colors
-          className={`flex items-center gap-2 px-5 py-2.5 text-white rounded-modal typo-body font-medium transition-all shadow-elevation-3 ${
+          className={`flex items-center gap-2 px-5 py-2.5 text-foreground rounded-modal typo-body font-medium transition-all shadow-elevation-3 ${
             isGuided
               ? 'bg-violet-600 hover:bg-violet-500 shadow-violet-600/20'
               : 'bg-cyan-600 hover:bg-cyan-500 shadow-cyan-600/20'

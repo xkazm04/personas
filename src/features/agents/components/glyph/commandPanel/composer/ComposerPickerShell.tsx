@@ -77,13 +77,13 @@ export function ComposerPickerShell({
               <div className="flex-1 min-w-0">
                 <h2 className="typo-heading-sm text-foreground font-semibold truncate">{title}</h2>
                 {subtitle && (
-                  <p className="typo-caption text-foreground/70 mt-0.5 truncate">{subtitle}</p>
+                  <p className="typo-caption text-foreground mt-0.5 truncate">{subtitle}</p>
                 )}
               </div>
               <button
                 type="button"
                 onClick={onClose}
-                className="shrink-0 text-foreground/60 hover:text-foreground hover:bg-foreground/5 p-1.5 rounded-interactive transition-colors"
+                className="shrink-0 text-foreground hover:text-foreground hover:bg-foreground/5 p-1.5 rounded-interactive transition-colors"
                 aria-label="Close"
               >
                 <X className="w-5 h-5" />

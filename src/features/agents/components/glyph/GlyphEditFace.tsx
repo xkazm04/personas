@@ -3,6 +3,8 @@ import { useAgentStore } from "@/stores/agentStore";
 import { BehaviorCoreEditor } from "@/features/agents/components/matrix/BehaviorCoreEditor";
 import { SharedResourcesPanel } from "@/features/agents/components/matrix/SharedResourcesPanel";
 import { CapabilityRow } from "@/features/agents/components/newPersona/capabilityView";
+import { DebtText } from '@/i18n/DebtText';
+
 
 interface GlyphEditFaceProps {
   onAddCapability: () => void;
@@ -18,20 +20,20 @@ export function GlyphEditFace({ onAddCapability }: GlyphEditFaceProps) {
         <header className="flex items-start justify-between gap-3">
           <div>
             <h3 className="typo-heading-sm text-foreground">Capabilities</h3>
-            <p className="typo-body-sm text-foreground/70">Tune each capability's dimensions manually.</p>
+            <p className="typo-body-sm text-foreground"><DebtText k="auto_tune_each_capability_s_dimensions_manually_6fb50a3a" /></p>
           </div>
           <button
             type="button"
             onClick={onAddCapability}
-            className="rounded-xl bg-primary/20 px-3 py-1.5 typo-body-sm font-medium text-primary hover:bg-primary/30 flex items-center gap-1.5"
+            className="rounded-modal bg-primary/20 px-3 py-1.5 typo-body-sm font-medium text-primary hover:bg-primary/30 flex items-center gap-1.5"
           >
             <Plus className="w-3.5 h-3.5" />
             Add
           </button>
         </header>
         {capabilityOrder.length === 0 ? (
-          <p className="typo-body-sm text-foreground/70 py-4">
-            No capabilities yet. Start a build via the Glyph face — they'll appear here for manual adjustment.
+          <p className="typo-body-sm text-foreground py-4">
+            <DebtText k="auto_no_capabilities_yet_start_a_build_via_the__32ba6dac" />
           </p>
         ) : (
           <div className="flex flex-col gap-3">

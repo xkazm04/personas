@@ -54,11 +54,11 @@ export function IncidentRow({
           </span>
           <span className="typo-body text-foreground font-medium truncate">{incident.title}</span>
           {!isOpen && (
-            <span className="typo-caption text-foreground/60">· {statusLabel(t, incident.status)}</span>
+            <span className="typo-caption text-foreground">· {statusLabel(t, incident.status)}</span>
           )}
         </div>
 
-        <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 typo-caption text-foreground/60">
+        <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 typo-caption text-foreground">
           {incident.personaName && <span>{incident.personaName}</span>}
           <span>·</span>
           <span>{sourceTableLabel(t, incident.sourceTable)}</span>
@@ -75,7 +75,7 @@ export function IncidentRow({
         </div>
 
         {incident.detail && (
-          <p className="mt-1 typo-caption text-foreground/70 line-clamp-2">{incident.detail}</p>
+          <p className="mt-1 typo-caption text-foreground line-clamp-2">{incident.detail}</p>
         )}
       </div>
 
@@ -105,7 +105,7 @@ function ActionButton({ children, onClick }: { children: React.ReactNode; onClic
   return (
     <button
       onClick={onClick}
-      className="px-2 py-1 typo-caption rounded-card border border-primary/15 text-foreground/80 hover:bg-secondary/40 transition-colors focus-ring"
+      className="px-2 py-1 typo-caption rounded-card border border-primary/15 text-foreground hover:bg-secondary/40 transition-colors focus-ring"
     >
       {children}
     </button>

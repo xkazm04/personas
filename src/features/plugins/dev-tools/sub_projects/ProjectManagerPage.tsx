@@ -122,22 +122,22 @@ export default function ProjectManagerPage() {
 
   useEffect(() => {
     fetchProjects?.();
-  }, []);
+  }, [fetchProjects]);
 
   // Sync local active with store (e.g., when project selector changes it)
   useEffect(() => {
     if (storeActiveProjectId && storeActiveProjectId !== activeProjectId) {
       setLocalActiveProject(storeActiveProjectId);
     }
-  }, [storeActiveProjectId]);
+  }, [activeProjectId, storeActiveProjectId]);
 
   useEffect(() => {
     if (activeProjectId) fetchGoals?.(activeProjectId);
-  }, [activeProjectId]);
+  }, [activeProjectId, fetchGoals]);
 
   useEffect(() => {
     if (selectedGoalId) fetchGoalSignals?.(selectedGoalId);
-  }, [selectedGoalId]);
+  }, [fetchGoalSignals, selectedGoalId]);
 
   const handleCreateProject = useCallback(async (data: { name: string; path: string; projectType: ProjectType; githubUrl: string }) => {
     // If a project with this path already exists, activate it instead of creating a duplicate
@@ -233,7 +233,7 @@ export default function ProjectManagerPage() {
                 <h2 className="typo-section-title shrink-0">{activeProject.name}</h2>
                 <span className="typo-caption text-foreground truncate min-w-0 flex-1">{activeProject.path}</span>
                 {activeProject.techStack.length > 0 && (
-                  <span className="typo-caption text-foreground/70 shrink-0 hidden md:inline">
+                  <span className="typo-caption text-foreground shrink-0 hidden md:inline">
                     {activeProject.techStack.join(' · ')}
                   </span>
                 )}
@@ -303,7 +303,7 @@ export default function ProjectManagerPage() {
                     <button
                       type="button"
                       onClick={clearSelection}
-                      className="ml-auto inline-flex items-center gap-1 typo-caption text-foreground/60 hover:text-foreground"
+                      className="ml-auto inline-flex items-center gap-1 typo-caption text-foreground hover:text-foreground"
                     >
                       <XIcon className="w-3 h-3" /> {t.common.clear}
                     </button>
@@ -311,13 +311,13 @@ export default function ProjectManagerPage() {
                 )}
 
                 {/* Table header */}
-                <div className="grid grid-cols-[28px_1fr_1.2fr_0.8fr_0.5fr_0.6fr_0.7fr_110px] gap-3 px-4 py-2.5 bg-primary/5 border-b border-primary/10 typo-label font-medium text-primary uppercase tracking-wider rounded-t-xl">
+                <div className="grid grid-cols-[28px_1fr_1.2fr_0.8fr_0.5fr_0.6fr_0.7fr_110px] gap-3 px-4 py-2.5 bg-primary/5 border-b border-primary/10 typo-label font-medium text-primary uppercase tracking-wider rounded-t-modal">
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); toggleSelectAll(); }}
                     title={allVisibleSelected ? t.plugins.dev_projects.bulk_select_clear : t.plugins.dev_projects.bulk_select_all}
                     aria-label={allVisibleSelected ? t.plugins.dev_projects.bulk_select_clear : t.plugins.dev_projects.bulk_select_all}
-                    className="self-center text-foreground/60 hover:text-primary disabled:opacity-30"
+                    className="self-center text-foreground hover:text-primary disabled:opacity-30"
                     disabled={visibleNonArchivedIds.length === 0}
                   >
                     {allVisibleSelected
@@ -351,7 +351,7 @@ export default function ProjectManagerPage() {
                       disabled={project.status === 'archived'}
                       aria-label={t.plugins.dev_projects.bulk_select_row}
                       title={project.status === 'archived' ? t.plugins.dev_projects.bulk_already_archived : t.plugins.dev_projects.bulk_select_row}
-                      className="self-center text-foreground/40 hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed"
+                      className="self-center text-foreground hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed"
                     >
                       {selectedIds.has(project.id)
                         ? <CheckSquare className="w-3.5 h-3.5 text-primary" />
@@ -373,7 +373,7 @@ export default function ProjectManagerPage() {
                           onClick={() => setImportProjectId(project.id)}
                           title={t.plugins.dev_tools.row_import_gh_issues}
                           aria-label={t.plugins.dev_tools.row_import_gh_issues}
-                          className="w-7 h-7 flex items-center justify-center rounded-interactive text-foreground/60 hover:text-primary hover:bg-primary/10 transition-colors"
+                          className="w-7 h-7 flex items-center justify-center rounded-interactive text-foreground hover:text-primary hover:bg-primary/10 transition-colors"
                         >
                           <GitBranch className="w-3.5 h-3.5" />
                         </button>
@@ -383,7 +383,7 @@ export default function ProjectManagerPage() {
                         onClick={() => { openLocalPath(`vscode://file/${project.path}`).catch(toastCatch('Failed to open in VS Code')); }}
                         title={t.plugins.dev_tools.row_open_vscode}
                         aria-label={t.plugins.dev_tools.row_open_vscode}
-                        className="w-7 h-7 flex items-center justify-center rounded-interactive text-foreground/60 hover:text-primary hover:bg-primary/10 transition-colors"
+                        className="w-7 h-7 flex items-center justify-center rounded-interactive text-foreground hover:text-primary hover:bg-primary/10 transition-colors"
                       >
                         <Code2 className="w-3.5 h-3.5" />
                       </button>
@@ -392,7 +392,7 @@ export default function ProjectManagerPage() {
                         onClick={() => { openLocalPath(project.path).catch(toastCatch('Failed to open project folder')); }}
                         title={t.plugins.dev_tools.row_open_folder}
                         aria-label={t.plugins.dev_tools.row_open_folder}
-                        className="w-7 h-7 flex items-center justify-center rounded-interactive text-foreground/60 hover:text-primary hover:bg-primary/10 transition-colors"
+                        className="w-7 h-7 flex items-center justify-center rounded-interactive text-foreground hover:text-primary hover:bg-primary/10 transition-colors"
                       >
                         <Folder className="w-3.5 h-3.5" />
                       </button>

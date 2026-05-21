@@ -37,18 +37,18 @@ export function GlyphDimensionSummaryCard({
       />
       <div className="flex items-center gap-2">
         <span
-          className="w-6 h-6 rounded-md flex items-center justify-center"
+          className="w-6 h-6 rounded-input flex items-center justify-center"
           style={{ background: `${meta.color}33` }}
         >
           <Icon className="w-3.5 h-3.5" style={{ color: "#fff" }} />
         </span>
-        <span className="typo-label font-bold uppercase tracking-[0.18em] text-foreground/70 flex-1">
+        <span className="typo-label font-bold uppercase tracking-[0.18em] text-foreground flex-1">
           {DIM_LABEL[activeDim]}
         </span>
         <button
           type="button"
           onClick={onClose}
-          className="text-foreground/40 hover:text-foreground/80"
+          className="text-foreground hover:text-foreground/80"
           aria-label="Close"
         >
           <X className="w-4 h-4" />
@@ -61,7 +61,7 @@ export function GlyphDimensionSummaryCard({
           ))}
         </ul>
       ) : (
-        <p className="typo-body text-foreground/45 italic">
+        <p className="typo-body text-foreground italic">
           {isPreBuild
             ? "This leaf will fill in once you describe what you want to build."
             : "Not yet populated. Use Edit face to set it manually."}

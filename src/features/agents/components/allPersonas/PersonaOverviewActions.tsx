@@ -56,7 +56,7 @@ export function usePersonaActions({
         },
       });
     },
-    [personas, deletePersona, confirm, setSelectedIds],
+    [personas, confirm, t.agents.overview_actions.delete_agent, t.agents.overview_actions.delete_agent_message, deletePersona, setSelectedIds],
   );
 
   const handleBatchDelete = useCallback(() => {
@@ -77,7 +77,7 @@ export function usePersonaActions({
         }
       },
     });
-  }, [selectedIds, deletePersona, confirm, setSelectedIds]);
+  }, [selectedIds, confirm, tx, t.agents.overview_actions.delete_agents, t.agents.overview_actions.delete_agents_message, setSelectedIds, deletePersona]);
 
   const draftIds = useMemo(
     () => personas.filter((p) => isDraft(p)).map((p) => p.id),
@@ -100,7 +100,7 @@ export function usePersonaActions({
         }
       },
     });
-  }, [draftIds, deletePersona, confirm]);
+  }, [draftIds, confirm, tx, t.agents.overview_actions.delete_drafts, t.agents.overview_actions.delete_drafts_message, deletePersona]);
 
   const handleEdit = useCallback((id: string) => selectPersona(id), [selectPersona]);
 

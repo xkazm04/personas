@@ -35,18 +35,18 @@ export function LiveOpsStrip() {
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-2 px-3 py-1.5 typo-label text-foreground/70 hover:bg-secondary/30 transition-colors"
+        className="w-full flex items-center gap-2 px-3 py-1.5 typo-label text-foreground hover:bg-secondary/30 transition-colors"
       >
         {expanded ? (
           <ChevronDown className="size-3.5 shrink-0" />
         ) : (
           <ChevronRight className="size-3.5 shrink-0" />
         )}
-        <Activity className="size-3.5 shrink-0 text-foreground/60" />
+        <Activity className="size-3.5 shrink-0 text-foreground" />
         <span className="truncate">
           {t.plugins.companion.orchestration.live_view_title}
         </span>
-        <span className="ml-auto text-foreground/50 typo-caption shrink-0">
+        <span className="ml-auto text-foreground typo-caption shrink-0">
           {opCount === 1
             ? t.plugins.companion.orchestration.live_view_op_count_one
             : t.plugins.companion.orchestration.live_view_op_count_other.replace(
@@ -56,7 +56,7 @@ export function LiveOpsStrip() {
         </span>
       </button>
       {expanded && (
-        <pre className="max-h-[40vh] overflow-y-auto px-3 py-2 typo-caption text-foreground/80 whitespace-pre-wrap break-words font-mono leading-snug">
+        <pre className="max-h-[40vh] overflow-y-auto px-3 py-2 typo-caption text-foreground whitespace-pre-wrap break-words font-mono leading-snug">
           {digest.trim()}
         </pre>
       )}

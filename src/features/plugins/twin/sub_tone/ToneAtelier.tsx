@@ -9,6 +9,10 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { TONE_CHANNELS, paletteOf, type ChannelPalette } from '../_shared/channels';
 import type { TwinTone } from '@/lib/bindings/TwinTone';
 import type { TwinChannelKind } from '@/api/enums';
+import { silentCatch } from '@/lib/silentCatch';
+import { DebtText } from '@/i18n/DebtText';
+
+
 
 /* ------------------------------------------------------------------ *
  *  Atelier — "Voice Studio"
@@ -44,7 +48,7 @@ function parseExamples(raw: string): string[] {
   try {
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed)) return parsed.map(String).filter(Boolean).slice(0, 6);
-  } catch { /* fall through */ }
+  } catch (err) { silentCatch("features/plugins/twin/sub_tone/ToneAtelier:catch1")(err); }
   return raw.split('\n').map((s) => s.trim()).filter(Boolean).slice(0, 6);
 }
 function parseConstraints(raw: string): string[] {
@@ -52,7 +56,7 @@ function parseConstraints(raw: string): string[] {
   try {
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed)) return parsed.map(String).filter(Boolean).slice(0, 8);
-  } catch { /* fall through */ }
+  } catch (err) { silentCatch("features/plugins/twin/sub_tone/ToneAtelier:catch2")(err); }
   return raw.split(/[,;\n]/).map((s) => s.trim()).filter(Boolean).slice(0, 8);
 }
 
@@ -131,9 +135,9 @@ export default function ToneAtelier() {
             <Mic className={`w-5 h-5 ${palette.text}`} />
           </div>
           <div className="flex-1 min-w-0">
-            <p className={`text-[10px] uppercase tracking-[0.22em] ${palette.text} font-medium`}>Voice Studio</p>
+            <p className={`text-[10px] uppercase tracking-[0.22em] ${palette.text} font-medium`}><DebtText k="auto_voice_studio_fee2fee9" /></p>
             <h1 className="typo-heading-lg text-foreground/95">{t.tone.title}</h1>
-            <p className="typo-caption text-foreground/65 mt-0.5">{t.tone.subtitle}</p>
+            <p className="typo-caption text-foreground mt-0.5">{t.tone.subtitle}</p>
           </div>
           <div className="hidden md:flex items-center gap-3 px-3 py-2 rounded-full border border-primary/15 bg-card/40">
             <Stat label="configured" value={`${stats.configured}/${CHANNELS.length}`} />
@@ -151,7 +155,7 @@ export default function ToneAtelier() {
         {/* LEFT — channel stations */}
         <aside className="border-r border-primary/10 overflow-y-auto bg-card/20">
           <div className="px-4 py-4 space-y-1.5">
-            <p className="text-[10px] uppercase tracking-[0.2em] text-foreground/55 font-medium mb-2">channels</p>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-foreground font-medium mb-2">channels</p>
             {CHANNELS.map((c) => {
               const cPalette = paletteOf(c);
               const has = hasTone(c.id);
@@ -171,7 +175,7 @@ export default function ToneAtelier() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="typo-caption font-medium text-foreground">{c.label}</p>
-                    <p className="text-[10px] text-foreground/55">{c.id === 'generic' ? 'default fallback' : has ? 'overrides generic' : 'falls back to generic'}</p>
+                    <p className="text-[10px] text-foreground">{c.id === 'generic' ? 'default fallback' : has ? 'overrides generic' : 'falls back to generic'}</p>
                   </div>
                   <span className={`w-1.5 h-1.5 rounded-full ${has ? cPalette.dot : 'bg-foreground/15'}`} />
                 </button>
@@ -203,13 +207,13 @@ export default function ToneAtelier() {
                       <Mic className={`w-5 h-5 ${palette.text}`} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`text-[10px] uppercase tracking-[0.22em] ${palette.text} font-medium`}>active stage</p>
+                      <p className={`text-[10px] uppercase tracking-[0.22em] ${palette.text} font-medium`}><DebtText k="auto_active_stage_d9a23de2" /></p>
                       <h2 className="typo-section-title">{active.label}</h2>
                     </div>
                     {exists ? (
                       <span className={`px-2.5 py-0.5 text-[10px] font-medium rounded-full ${palette.text} bg-card/60 border ${extras.ring.replace('ring-', 'border-')}`}>configured</span>
                     ) : (
-                      <span className="px-2.5 py-0.5 text-[10px] font-medium rounded-full text-foreground/55 bg-secondary/40 border border-primary/10">{t.tone.fallsBackToGeneric}</span>
+                      <span className="px-2.5 py-0.5 text-[10px] font-medium rounded-full text-foreground bg-secondary/40 border border-primary/10">{t.tone.fallsBackToGeneric}</span>
                     )}
                   </div>
                 </div>
@@ -252,14 +256,14 @@ export default function ToneAtelier() {
                   />
                   {examples.length > 0 && (
                     <div className="mt-3 space-y-2">
-                      <p className="text-[10px] uppercase tracking-[0.18em] text-foreground/55 font-medium">preview</p>
+                      <p className="text-[10px] uppercase tracking-[0.18em] text-foreground font-medium">preview</p>
                       <div className="space-y-2">
                         {examples.map((ex, i) => (
                           <div key={i} className="flex items-end gap-2">
                             <div className="w-6 h-6 rounded-full bg-card/60 border border-primary/10 flex items-center justify-center flex-shrink-0">
                               <MessageCircle className={`w-3 h-3 ${palette.text}`} />
                             </div>
-                            <div className={`max-w-[80%] px-3 py-2 rounded-card rounded-bl-sm bg-gradient-to-br ${palette.tint} border border-primary/10`}>
+                            <div className={`max-w-[80%] px-3 py-2 rounded-card rounded-bl-interactive bg-gradient-to-br ${palette.tint} border border-primary/10`}>
                               <p className="typo-body text-foreground/90 leading-relaxed">{ex}</p>
                             </div>
                           </div>
@@ -272,7 +276,7 @@ export default function ToneAtelier() {
                 {/* Footer actions */}
                 <div className="flex items-center justify-between pt-2 border-t border-primary/10">
                   {exists && active.id !== 'generic' ? (
-                    <button onClick={() => handleDelete(active.id)} className="flex items-center gap-1.5 text-xs text-foreground/65 hover:text-red-400 transition-colors">
+                    <button onClick={() => handleDelete(active.id)} className="flex items-center gap-1.5 typo-caption text-foreground hover:text-red-400 transition-colors">
                       <Trash2 className="w-3.5 h-3.5" />{t.tone.removeOverride}
                     </button>
                   ) : <span />}
@@ -294,7 +298,7 @@ function Section({ icon: Icon, label, accent, children }: { icon: typeof Sparkle
     <section className="rounded-card border border-primary/10 bg-card/40 p-4">
       <div className="flex items-center gap-2 mb-2.5">
         <Icon className={`w-3.5 h-3.5 ${accent}`} />
-        <span className="typo-caption font-medium text-foreground/75">{label}</span>
+        <span className="typo-caption font-medium text-foreground">{label}</span>
       </div>
       {children}
     </section>
@@ -306,7 +310,7 @@ function Stat({ label, value, accent = 'violet' }: { label: string; value: numbe
   return (
     <div className="flex flex-col items-start leading-tight">
       <span className={`typo-data-lg tabular-nums ${tone}`}>{value}</span>
-      <span className="text-[9px] uppercase tracking-[0.18em] text-foreground/55">{label}</span>
+      <span className="text-[9px] uppercase tracking-[0.18em] text-foreground">{label}</span>
     </div>
   );
 }

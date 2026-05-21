@@ -6,6 +6,8 @@ import { UseCaseFixtureDropdown } from './UseCaseFixtureDropdown';
 import { InputStageSummary, PipelineArrow } from './UseCaseDetailSections';
 import { useUseCaseDetail } from '../../libs/useUseCaseDetail';
 import { useTranslation } from '@/i18n/useTranslation';
+import { DebtText } from '@/i18n/DebtText';
+
 
 interface UseCaseDetailPanelProps {
   useCaseId: string;
@@ -130,7 +132,7 @@ export function UseCaseDetailPanel({ useCaseId }: UseCaseDetailPanelProps) {
                   : 'Run this use case now — fires real execution and downstream events'
             }
           >
-            <Rocket className="w-3.5 h-3.5" /> Run now
+            <Rocket className="w-3.5 h-3.5" /> <DebtText k="auto_run_now_2af00e23" />
           </button>
           <button
             onClick={() => setEditorTab('lab')}

@@ -2,6 +2,8 @@ import { useEffect, useMemo } from 'react';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useShallow } from 'zustand/react/shallow';
 import type { WidgetProps } from '../widgetRegistry';
+import { DebtText } from '@/i18n/DebtText';
+
 
 /**
  * Activity heatmap — calendar grid colored by execution count, GitHub
@@ -61,13 +63,13 @@ export function ActivityHeatmapWidget({ config, title }: WidgetProps) {
 
   return (
     <div className="rounded-card border border-foreground/10 bg-foreground/[0.02] p-4 h-full flex flex-col">
-      <div className="typo-caption text-foreground/60 uppercase tracking-wide mb-2">
+      <div className="typo-caption text-foreground uppercase tracking-wide mb-2">
         {title ?? `Activity heatmap (last ${days}d)`}
       </div>
       <div className="flex-1 min-h-0 overflow-x-auto">
         {cells.length === 0 ? (
-          <div className="h-full flex items-center justify-center typo-caption text-foreground/40">
-            No data
+          <div className="h-full flex items-center justify-center typo-caption text-foreground">
+            <DebtText k="auto_no_data_d802d232" />
           </div>
         ) : (
           <div className="flex gap-1">
@@ -77,7 +79,7 @@ export function ActivityHeatmapWidget({ config, title }: WidgetProps) {
                   <div
                     key={di}
                     title={cell ? `${cell.date}: ${cell.count} runs` : ''}
-                    className="w-3 h-3 rounded-sm"
+                    className="w-3 h-3 rounded-interactive"
                     style={{ backgroundColor: cell ? colorFor(cell.count, max) : 'transparent' }}
                   />
                 ))}
@@ -86,12 +88,12 @@ export function ActivityHeatmapWidget({ config, title }: WidgetProps) {
           </div>
         )}
       </div>
-      <div className="flex items-center justify-end gap-1.5 mt-2 typo-caption text-foreground/40">
+      <div className="flex items-center justify-end gap-1.5 mt-2 typo-caption text-foreground">
         <span>less</span>
         {[0, 0.25, 0.5, 0.75, 1].map((t) => (
           <div
             key={t}
-            className="w-3 h-3 rounded-sm"
+            className="w-3 h-3 rounded-interactive"
             style={{ backgroundColor: colorFor(t * (max || 1), max || 1) }}
           />
         ))}

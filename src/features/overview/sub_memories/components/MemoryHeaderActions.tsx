@@ -1,5 +1,7 @@
 import { Plus, Sparkles } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { DebtText } from '@/i18n/DebtText';
+
 
 interface MemoryHeaderActionsProps {
   isReviewing: boolean;
@@ -35,7 +37,7 @@ export function MemoryHeaderActions({
         }`}
       >
         <Plus className={`w-3.5 h-3.5 transition-transform ${showAddForm ? 'rotate-45' : ''}`} />
-        Add Memory
+        <DebtText k="auto_add_memory_22012e09" />
       </button>
     </div>
   );

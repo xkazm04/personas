@@ -8,6 +8,8 @@ import { motion } from 'framer-motion';
 import { ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { Panel } from './ucPanel';
 import type { Destination, DestId } from './ucPickerTypes';
+import { DebtText } from '@/i18n/DebtText';
+
 
 export function DeliverCard({
   destinations,
@@ -32,8 +34,8 @@ export function DeliverCard({
             />
           ))}
           {destinations.length === 0 && (
-            <span className="col-span-2 text-sm text-foreground/55 italic text-center">
-              No channels
+            <span className="col-span-2 typo-body text-foreground italic text-center">
+              <DebtText k="auto_no_channels_0521898f" />
             </span>
           )}
         </div>
@@ -57,7 +59,7 @@ function IconTile({
     <motion.span
       title={destination.label}
       className={`group relative flex flex-col items-center justify-start cursor-default transition-[filter,color] duration-200 hover:brightness-125 ${
-        active ? 'text-primary' : 'text-foreground/35 hover:text-foreground/60'
+        active ? 'text-primary' : 'text-foreground hover:text-foreground/60'
       }`}
       animate={
         firing

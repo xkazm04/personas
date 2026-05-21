@@ -14,7 +14,7 @@ export function formatErr(err: unknown): string {
     for (const v of Object.values(obj)) {
       if (typeof v === 'string') return v;
     }
-    try { return JSON.stringify(obj); } catch { /* fall through */ }
+    try { return JSON.stringify(obj); } catch (err) { silentCatch("features/plugins/dev-tools/sub_overview/overviewHelpers:catch1")(err); }
   }
   return String(err);
 }
@@ -26,6 +26,8 @@ export function formatErr(err: unknown): string {
 import type { DevScan } from '@/lib/bindings/DevScan';
 import type { DevTask } from '@/lib/bindings/DevTask';
 import type { DevGoalSignal } from '@/lib/bindings/DevGoalSignal';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 export type ActivityKind =
   | 'scan_run'

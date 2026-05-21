@@ -26,7 +26,7 @@ export function resolveSigilEditBody(dim: GlyphDimension, { uc }: SigilBodyArgs)
         <div className="flex flex-col gap-2">
           <span className="typo-body-lg text-foreground">{uc.title}</span>
           {uc.description && (
-            <p className="typo-body text-foreground/75 leading-relaxed">
+            <p className="typo-body text-foreground leading-relaxed">
               {uc.description}
             </p>
           )}
@@ -38,7 +38,7 @@ export function resolveSigilEditBody(dim: GlyphDimension, { uc }: SigilBodyArgs)
       if (!label) return inactiveBody('No trigger configured on this capability.');
       return (
         <div className="flex flex-col gap-1.5">
-          <span className="typo-label uppercase tracking-wider text-foreground/55">When</span>
+          <span className="typo-label uppercase tracking-wider text-foreground">When</span>
           <span className="typo-body-lg text-foreground">{label}</span>
         </div>
       );
@@ -53,13 +53,13 @@ export function resolveSigilEditBody(dim: GlyphDimension, { uc }: SigilBodyArgs)
       return (
         <div className="flex items-center gap-3">
           {meta ? (
-            <span className="inline-flex items-center justify-center w-9 h-9 rounded-md bg-foreground/5 border border-card-border/40">
+            <span className="inline-flex items-center justify-center w-9 h-9 rounded-input bg-foreground/5 border border-card-border/40">
               <ConnectorIcon meta={meta} size="w-6 h-6" />
             </span>
           ) : null}
           <div className="flex flex-col">
             <span className="typo-body-lg text-foreground">{meta?.label ?? uc.connector}</span>
-            <span className="typo-caption text-foreground/55">
+            <span className="typo-caption text-foreground">
               {key ? `Service: ${key}` : 'Custom connector — no brand icon match.'}
             </span>
           </div>
@@ -74,7 +74,7 @@ export function resolveSigilEditBody(dim: GlyphDimension, { uc }: SigilBodyArgs)
       }
       return (
         <div className="flex flex-col gap-1.5">
-          <span className="typo-label uppercase tracking-wider text-foreground/55">Channels</span>
+          <span className="typo-label uppercase tracking-wider text-foreground">Channels</span>
           <ul className="flex flex-col gap-1">
             {channels.map((c, i) => (
               <li key={`${c}-${i}`} className="typo-body-lg text-foreground">{c}</li>
@@ -97,7 +97,7 @@ export function resolveSigilEditBody(dim: GlyphDimension, { uc }: SigilBodyArgs)
       };
       const copy = labels[dim];
       return (
-        <p className="typo-body text-foreground/80 leading-relaxed">
+        <p className="typo-body text-foreground leading-relaxed">
           {active ? copy.on : copy.off}
         </p>
       );
@@ -110,7 +110,7 @@ export function resolveSigilEditBody(dim: GlyphDimension, { uc }: SigilBodyArgs)
 
 function inactiveBody(text: string): ReactNode {
   return (
-    <p className="typo-body text-foreground/55 italic">
+    <p className="typo-body text-foreground italic">
       {text}
     </p>
   );

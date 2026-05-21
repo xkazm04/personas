@@ -199,7 +199,7 @@ function MultiSelectSummary({ entries }: { entries: DriveEntry[] }) {
         <div className="mt-1 typo-body text-foreground font-semibold tabular-nums">
           {entries.length}
           {totalBytes > 0 && (
-            <span className="ml-1.5 font-normal text-foreground/70">
+            <span className="ml-1.5 font-normal text-foreground">
               • {driveFormatBytes(totalBytes)}
             </span>
           )}
@@ -215,7 +215,7 @@ function MultiSelectSummary({ entries }: { entries: DriveEntry[] }) {
               className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-primary/10 border border-primary/15 typo-caption text-foreground"
             >
               <span className="font-semibold tabular-nums">{count}</span>
-              <span className="text-foreground/70">
+              <span className="text-foreground">
                 {kindGroupLabel(
                   t,
                   key as Parameters<typeof kindGroupLabel>[1],
@@ -228,7 +228,7 @@ function MultiSelectSummary({ entries }: { entries: DriveEntry[] }) {
 
       {/* Modified range. */}
       {newest && oldest && (
-        <div className="pt-1.5 border-t border-primary/10 typo-caption text-foreground/70">
+        <div className="pt-1.5 border-t border-primary/10 typo-caption text-foreground">
           {sameMoment
             ? formatRelativeTime(newest, t, tx)
             : tx(t.plugins.drive.details_modified_range, {

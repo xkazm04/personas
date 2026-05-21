@@ -5,6 +5,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useInboxActions } from '@/features/plugins/companion/inbox/hooks/useInboxActions';
 import { formatRelativeTime } from '@/features/plugins/companion/inbox/utils/formatRelativeTime';
 import type { UnifiedInboxItem } from '@/features/plugins/companion/inbox/types';
+import { DebtText } from '@/i18n/DebtText';
+
 
 /**
  * Drawer opened from DecisionsPanelWidget when the user clicks a row. Shows
@@ -56,7 +58,7 @@ export function DecisionDrawer({ item, onClose }: DecisionDrawerProps) {
           <KindBadge kind={item.kind} />
           <div className="flex-1 min-w-0">
             <div className="typo-body font-medium text-foreground truncate">{item.title}</div>
-            <div className="typo-caption text-foreground/50 flex items-center gap-2 mt-0.5">
+            <div className="typo-caption text-foreground flex items-center gap-2 mt-0.5">
               <span className="truncate">{item.personaName}</span>
               <span>·</span>
               <span>{formatRelativeTime(item.createdAt, t)}</span>
@@ -65,7 +67,7 @@ export function DecisionDrawer({ item, onClose }: DecisionDrawerProps) {
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-input text-foreground/50 hover:text-foreground/85 hover:bg-foreground/[0.06] transition-colors"
+            className="p-1 rounded-input text-foreground hover:text-foreground/85 hover:bg-foreground/[0.06] transition-colors"
             aria-label="Close"
           >
             <X className="w-4 h-4" />
@@ -79,8 +81,8 @@ export function DecisionDrawer({ item, onClose }: DecisionDrawerProps) {
         {item.kind === 'approval' && (
           <div className="px-5 pb-3">
             <label className="block">
-              <span className="typo-label uppercase tracking-wider text-foreground/40 block mb-1.5">
-                Notes (optional)
+              <span className="typo-label uppercase tracking-wider text-foreground block mb-1.5">
+                <DebtText k="auto_notes_optional_4d56ca9b" />
               </span>
               <textarea
                 value={notes}
@@ -98,7 +100,7 @@ export function DecisionDrawer({ item, onClose }: DecisionDrawerProps) {
               type="button"
               onClick={() => void run('tertiary')}
               disabled={busy !== null}
-              className="px-3 py-1.5 rounded-input typo-caption text-foreground/70 hover:text-foreground hover:bg-foreground/[0.06] transition-colors disabled:opacity-50"
+              className="px-3 py-1.5 rounded-input typo-caption text-foreground hover:text-foreground hover:bg-foreground/[0.06] transition-colors disabled:opacity-50"
             >
               {actionLabel(actions.tertiary.labelKey)}
             </button>
@@ -108,7 +110,7 @@ export function DecisionDrawer({ item, onClose }: DecisionDrawerProps) {
               type="button"
               onClick={() => void run('secondary')}
               disabled={busy !== null}
-              className="px-3 py-1.5 rounded-input typo-caption text-foreground/70 hover:text-foreground hover:bg-foreground/[0.06] transition-colors disabled:opacity-50"
+              className="px-3 py-1.5 rounded-input typo-caption text-foreground hover:text-foreground hover:bg-foreground/[0.06] transition-colors disabled:opacity-50"
             >
               {actionLabel(actions.secondary.labelKey)}
             </button>

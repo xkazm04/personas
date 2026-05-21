@@ -19,6 +19,8 @@ import type { DevCompetitionSlot } from '@/lib/bindings/DevCompetitionSlot';
 import type { DevTask } from '@/lib/bindings/DevTask';
 
 import { elapsedStr, durationStr } from './timeUtils';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 interface CompetitionSlotRowProps {
   slot: DevCompetitionSlot;
@@ -93,9 +95,7 @@ export function CompetitionSlotRow({
   const handleBrowse = useCallback(async () => {
     try {
       await switchToWorktree(slot.id);
-    } catch {
-      // silently ignore — user can still use Diff view
-    }
+    } catch (err) { silentCatch("features/plugins/dev-tools/sub_lifecycle/competitions/CompetitionSlotRow:catch1")(err); }
   }, [slot.id]);
 
   const taskStatusIcon =

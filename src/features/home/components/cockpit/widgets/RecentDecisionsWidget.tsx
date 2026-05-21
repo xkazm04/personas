@@ -71,13 +71,13 @@ export function RecentDecisionsWidget({ config, title }: CockpitWidgetProps) {
           {title || t.plugins.companion.recent_decisions_title}
         </span>
         {personaContext && (
-          <span className="text-foreground/45 truncate" title={personaContext}>
+          <span className="text-foreground truncate" title={personaContext}>
             · {personaContext}
           </span>
         )}
       </header>
       {loading ? (
-        <div className="flex items-center gap-1.5 typo-caption text-foreground/55 pl-4">
+        <div className="flex items-center gap-1.5 typo-caption text-foreground pl-4">
           <Loader2 className="w-3 h-3 animate-spin" />
           <span>{t.plugins.companion.recent_decisions_loading}</span>
         </div>
@@ -88,8 +88,8 @@ export function RecentDecisionsWidget({ config, title }: CockpitWidgetProps) {
               key={d.id}
               className="inline-flex items-baseline gap-1 rounded-interactive border border-foreground/10 bg-foreground/[0.04] px-2 py-0.5 typo-caption"
             >
-              <span className="text-foreground/55">{d.label}</span>
-              <ChevronRight className="w-2.5 h-2.5 text-foreground/35 shrink-0" />
+              <span className="text-foreground">{d.label}</span>
+              <ChevronRight className="w-2.5 h-2.5 text-foreground shrink-0" />
               <span className="text-foreground/85">{d.choice}</span>
             </li>
           ))}

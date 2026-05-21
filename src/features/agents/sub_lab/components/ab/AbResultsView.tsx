@@ -9,6 +9,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { sanitizeRichSummary } from '@/lib/utils/sanitizers/sanitizeHtml';
 import { AbResultsViewVersus } from './AbResultsViewVersus';
 import { AbResultsViewDiff } from './AbResultsViewDiff';
+import { DebtText, debtText } from '@/i18n/DebtText';
+
 
 export type AbVariant = 'baseline' | 'versus' | 'diff';
 
@@ -173,7 +175,7 @@ export function AbResultsView({ results, runId: _runId, userRatings, onRate, ini
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-1 pb-2 border-b border-primary/10" role="tablist" aria-label="Results view variant">
+      <div className="flex items-center gap-1 pb-2 border-b border-primary/10" role="tablist" aria-label={debtText("auto_results_view_variant_e5de107c")}>
         {VARIANT_TABS.map(({ id, label, subtitle, icon: Icon }) => {
           const active = variant === id;
           return (
@@ -187,14 +189,14 @@ export function AbResultsView({ results, runId: _runId, userRatings, onRate, ini
               className={`flex flex-col items-start gap-0.5 px-3 py-2 rounded-modal transition-colors border ${
                 active
                   ? 'bg-primary/10 text-foreground border-primary/20'
-                  : 'text-foreground/80 hover:bg-secondary/30 border-transparent'
+                  : 'text-foreground hover:bg-secondary/30 border-transparent'
               }`}
             >
               <span className="flex items-center gap-1.5 typo-body font-medium">
                 <Icon className="w-3.5 h-3.5" />
                 {label}
               </span>
-              <span className="text-[10px] text-foreground/60 font-mono tracking-wide">{subtitle}</span>
+              <span className="text-[10px] text-foreground font-mono tracking-wide">{subtitle}</span>
             </button>
           );
         })}
@@ -254,7 +256,7 @@ function AbResultsViewBaseline({ results, aggregation, selectedCell, onSelectCel
             <div>
               <h4 className="typo-heading font-semibold text-foreground/90">{t.agents.lab.ab_test_summary}</h4>
               <p className="typo-caption text-foreground">
-                v{versionAggs[0]?.versionNumber} vs v{versionAggs[1]?.versionNumber} across {scenarios.length} scenarios
+                v{versionAggs[0]?.versionNumber} <DebtText k="auto_vs_v_7def8181" />{versionAggs[1]?.versionNumber} across {scenarios.length} scenarios
               </p>
             </div>
           </div>
@@ -306,7 +308,7 @@ function AbResultsViewBaseline({ results, aggregation, selectedCell, onSelectCel
                       <span className={`typo-hero font-black tracking-tight ${scoreColor(agg.compositeScore)}`}>{agg.compositeScore}</span>
                       <div className="flex-1 min-w-0">
                         <span className={`typo-caption font-semibold ${scoreColor(agg.compositeScore)}`}>{scoreLabel(agg.compositeScore)}</span>
-                        <p className="text-[10px] text-foreground">Composite Score</p>
+                        <p className="text-[10px] text-foreground"><DebtText k="auto_composite_score_b7a389bd" /></p>
                       </div>
                       {other && (
                         <div className="flex items-center gap-0.5 typo-caption text-foreground">
@@ -328,7 +330,7 @@ function AbResultsViewBaseline({ results, aggregation, selectedCell, onSelectCel
 
                     <div className="flex items-center gap-3 pt-1 border-t border-primary/5 text-[11px] text-foreground">
                       <span className="flex items-center gap-1"><DollarSign className="w-3 h-3" />{agg.totalCost.toFixed(4)}</span>
-                      <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{(agg.avgDuration / 1000).toFixed(1)}s avg</span>
+                      <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{(agg.avgDuration / 1000).toFixed(1)}<DebtText k="auto_s_avg_eaee6bda" /></span>
                     </div>
                   </div>
                 </div>

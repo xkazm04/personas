@@ -2,6 +2,8 @@ import { motion } from 'framer-motion';
 import { Star } from 'lucide-react';
 import { FILTER_TABS, type ActivityType } from './activityTypes';
 import { useTranslation } from '@/i18n/useTranslation';
+import { DebtText, debtText } from '@/i18n/DebtText';
+
 
 interface ActivityFiltersProps {
   filter: ActivityType;
@@ -36,7 +38,7 @@ export function ActivityFilters({
             <button
               key={tab.id}
               onClick={() => { onFilterChange(tab.id); onStatusFilterChange('all'); }}
-              className={`relative px-3 py-1.5 typo-body font-medium rounded-t-lg transition-colors duration-150 ease-out ${
+              className={`relative px-3 py-1.5 typo-body font-medium rounded-t-card transition-colors duration-150 ease-out ${
                 isActive
                   ? 'bg-primary/10 text-primary'
                   : 'text-foreground hover:text-foreground hover:bg-primary/5'
@@ -90,10 +92,10 @@ export function ActivityFilters({
             value={useCaseFilter}
             onChange={(e) => onUseCaseFilterChange(e.target.value)}
             className="px-2 py-1 rounded-card border border-primary/15 bg-secondary/20 typo-body text-foreground outline-none"
-            title="Filter by capability"
+            title={debtText("auto_filter_by_capability_4c8f68bf")}
           >
-            <option value="all">All capabilities</option>
-            <option value="__none__">Persona-wide</option>
+            <option value="all"><DebtText k="auto_all_capabilities_1b93e8ca" /></option>
+            <option value="__none__"><DebtText k="auto_persona_wide_8f9b90e5" /></option>
             {useCaseOptions.map((uc) => (
               <option key={uc.id} value={uc.id}>{uc.title}</option>
             ))}

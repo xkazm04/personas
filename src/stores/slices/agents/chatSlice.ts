@@ -15,6 +15,8 @@ import {
 } from "@/api/agents/chat";
 import { executePersona, getExecution } from "@/api/agents/executions";
 import type { Continuation } from "@/lib/bindings/Continuation";
+import { silentCatch } from '@/lib/silentCatch';
+
 
 /** Active chat execution listener cleanup functions */
 let chatExecCleanup: (() => void) | null = null;
@@ -266,9 +268,7 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
           if (exec.claude_session_id) {
             capturedClaudeSessionId = exec.claude_session_id;
           }
-        } catch {
-          // Non-critical — fall back to full-context mode on next message
-        }
+        } catch (err) { silentCatch("stores/slices/agents/chatSlice:catch1")(err); }
       }
 
       // Update session context with latest summary and claude_session_id

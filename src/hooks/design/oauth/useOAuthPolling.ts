@@ -11,6 +11,8 @@ export interface OAuthStartResult {
 }
 
 import type { OAuthSessionStatus } from '@/lib/bindings/OAuthSessionStatus';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 /** Minimum shape a poll result must satisfy. */
 export interface OAuthPollResultBase {
@@ -216,17 +218,13 @@ export function useOAuthPolling<
         try {
           await openExternalUrl(safeAuthUrl);
           opened = true;
-        } catch {
-          // intentional: non-critical -- fallback to window.open below
-        }
+        } catch (err) { silentCatch("hooks/design/oauth/useOAuthPolling:catch1")(err); }
 
         if (!opened) {
           try {
             const popup = window.open(safeAuthUrl, '_blank', 'noopener,noreferrer');
             opened = popup !== null;
-          } catch {
-            // intentional: non-critical -- both open methods failed, handled below
-          }
+          } catch (err) { silentCatch("hooks/design/oauth/useOAuthPolling:catch2")(err); }
         }
 
         if (!opened) {

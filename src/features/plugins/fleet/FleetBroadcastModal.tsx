@@ -6,6 +6,8 @@ import { toastCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import { writeInput } from '@/api/fleet/fleet';
 import { FleetStatusDots } from './FleetStatusDots';
+import { DebtText, debtText } from '@/i18n/DebtText';
+
 
 /**
  * Broadcast composer — pulled out of the former Decisions tab and into a
@@ -84,7 +86,7 @@ export function FleetBroadcastModal({ open, onClose }: Props) {
       <div data-testid="fleet-broadcast-modal">
         <div className="flex items-center justify-between mb-4">
           <h2 id="fleet-broadcast-title" className="typo-section-title">
-            Broadcast prompt
+            <DebtText k="auto_broadcast_prompt_26edef52" />
           </h2>
           <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label="Close">
             <X className="w-4 h-4" />
@@ -97,27 +99,27 @@ export function FleetBroadcastModal({ open, onClose }: Props) {
             data-testid="fleet-broadcast-text"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="Type the prompt to broadcast to selected sessions…"
+            placeholder={debtText("auto_type_the_prompt_to_broadcast_to_selected_s_77990da6")}
             rows={5}
             className="w-full px-3 py-2 text-md bg-secondary/40 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary/30 resize-none font-mono"
             autoFocus
           />
         </label>
 
-        <label className="flex items-center gap-2 typo-caption text-foreground/80 cursor-pointer mb-3">
+        <label className="flex items-center gap-2 typo-caption text-foreground cursor-pointer mb-3">
           <input
             type="checkbox"
             checked={pressEnter}
             onChange={(e) => setPressEnter(e.target.checked)}
             className="rounded"
           />
-          Append <code className="font-mono px-1 py-0.5 bg-secondary/40 rounded">↵</code> so Claude submits immediately
+          Append <code className="font-mono px-1 py-0.5 bg-secondary/40 rounded">↵</code> <DebtText k="auto_so_claude_submits_immediately_14f3a1f0" />
         </label>
 
         <div className="mb-3">
           <div className="flex items-center justify-between mb-1.5">
             <span className="typo-caption font-medium text-foreground">
-              Targets ({selected.size}/{targetable.length})
+              <DebtText k="auto_targets_55d96a85" />{selected.size}/{targetable.length})
             </span>
             <div className="flex items-center gap-1">
               <Button
@@ -127,7 +129,7 @@ export function FleetBroadcastModal({ open, onClose }: Props) {
                 disabled={waiting.length === 0}
                 onClick={selectWaiting}
               >
-                Waiting ({waiting.length})
+                <DebtText k="auto_waiting_449531f9" />{waiting.length})
               </Button>
               <Button variant="ghost" size="sm" icon={<CheckSquare className="w-3 h-3" />} onClick={selectAll}>
                 All
@@ -139,7 +141,7 @@ export function FleetBroadcastModal({ open, onClose }: Props) {
           </div>
           <div className="max-h-[200px] overflow-y-auto border border-primary/10 rounded-modal p-1.5 bg-secondary/20 space-y-0.5">
             {targetable.length === 0 ? (
-              <p className="text-[11px] text-foreground/50 text-center py-3">No active sessions</p>
+              <p className="text-[11px] text-foreground text-center py-3"><DebtText k="auto_no_active_sessions_0dcbde78" /></p>
             ) : (
               targetable.map((s) => {
                 const isSel = selected.has(s.id);

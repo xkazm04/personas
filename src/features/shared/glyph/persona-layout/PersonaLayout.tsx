@@ -260,7 +260,7 @@ export function PersonaLayout({
                       emptyNode ?? null
                     ) : (
                       <div className="flex flex-col gap-2 mx-auto w-full max-w-[960px]">
-                        <span className="typo-label uppercase tracking-[0.18em] text-foreground/55 px-1">
+                        <span className="typo-label uppercase tracking-[0.18em] text-foreground px-1">
                           {t.agents.use_cases.persona_layout_capabilities_heading}
                         </span>
                         <div className="flex flex-col gap-2">

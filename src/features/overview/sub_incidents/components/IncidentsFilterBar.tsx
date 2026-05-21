@@ -54,7 +54,7 @@ export function IncidentsFilterBar({ filters, onChange }: Props) {
             className={`px-3 py-1 typo-caption rounded-card border transition-colors focus-ring ${
               currentStatus === status
                 ? 'bg-primary/15 text-primary border-primary/25'
-                : 'text-foreground/70 border-transparent hover:bg-secondary/40'
+                : 'text-foreground border-transparent hover:bg-secondary/40'
             }`}
           >
             {statusButtonLabel(t, status)}
@@ -107,13 +107,13 @@ function MultiSelectChips({ label, allLabel, options, selected, onChange }: Mult
   const allSelected = selected.length === 0;
   return (
     <div className="flex items-center gap-2">
-      <span className="typo-caption text-foreground/60">{label}:</span>
+      <span className="typo-caption text-foreground">{label}:</span>
       <button
         onClick={() => onChange([])}
         className={`px-2 py-0.5 typo-caption rounded-card border transition-colors focus-ring ${
           allSelected
             ? 'bg-primary/15 text-primary border-primary/25'
-            : 'text-foreground/70 border-transparent hover:bg-secondary/40'
+            : 'text-foreground border-transparent hover:bg-secondary/40'
         }`}
       >
         {allLabel}
@@ -127,7 +127,7 @@ function MultiSelectChips({ label, allLabel, options, selected, onChange }: Mult
             className={`px-2 py-0.5 typo-caption rounded-card border transition-colors focus-ring ${
               active
                 ? 'bg-primary/15 text-primary border-primary/25'
-                : 'text-foreground/70 border-transparent hover:bg-secondary/40'
+                : 'text-foreground border-transparent hover:bg-secondary/40'
             }`}
           >
             {option}

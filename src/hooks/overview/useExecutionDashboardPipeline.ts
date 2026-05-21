@@ -109,9 +109,11 @@ export function useExecutionDashboardPipeline() {
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => { void refresh(); }, 250);
+    const debounce = debounceRef;
+    const mounted = mountedRef;
     return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      mountedRef.current.cancelled = true;
+      if (debounce.current) clearTimeout(debounce.current);
+      mounted.current.cancelled = true;
     };
   }, [refresh]);
 

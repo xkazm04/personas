@@ -110,9 +110,9 @@ export function TwinHeaderBand({
           />
         </div>
         <div className="flex-1 min-w-0">
-          <p className={`text-xs uppercase tracking-[0.22em] ${a.eyebrow} font-medium`}>{eyebrow}</p>
+          <p className={`typo-label uppercase tracking-[0.22em] ${a.eyebrow} font-medium`}>{eyebrow}</p>
           <h1 className="typo-heading-lg text-foreground/95 truncate">{title}</h1>
-          {subtitle && <p className="typo-caption text-foreground/65 mt-0.5 truncate">{subtitle}</p>}
+          {subtitle && <p className="typo-caption text-foreground mt-0.5 truncate">{subtitle}</p>}
         </div>
         {kpis && (
           <div className="hidden md:flex items-center gap-3 px-3 py-2 rounded-full border border-primary/15 bg-card/40 backdrop-blur">

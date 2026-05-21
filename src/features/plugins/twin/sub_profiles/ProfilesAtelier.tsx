@@ -18,6 +18,8 @@ import { TwinHero } from './TwinHero';
 import type { TwinProfile } from '@/lib/bindings/TwinProfile';
 import type { LucideIcon } from 'lucide-react';
 import type { MilestoneStatus } from '../useTwinReadiness';
+import { DebtText } from '@/i18n/DebtText';
+
 
 /* ------------------------------------------------------------------ *
  *  Atelier — "Constellation of Twins"
@@ -37,7 +39,7 @@ function languagesFrom(raw: string | null): string[] {
 const MILESTONE_TINT: Record<MilestoneStatus, string> = {
   complete: 'text-emerald-300 bg-emerald-500/10 border-emerald-500/30',
   partial: 'text-amber-300 bg-amber-500/10 border-amber-500/30',
-  empty: 'text-foreground/55 bg-secondary/40 border-primary/10',
+  empty: 'text-foreground bg-secondary/40 border-primary/10',
 };
 
 interface MilestoneArcProps {
@@ -65,7 +67,7 @@ function MilestoneArc({ score, label, size = 72 }: MilestoneArcProps) {
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="typo-data-lg leading-none text-foreground">{score}</span>
-        <span className="text-[9px] uppercase tracking-[0.18em] text-foreground/55 mt-0.5">{label}</span>
+        <span className="text-[9px] uppercase tracking-[0.18em] text-foreground mt-0.5">{label}</span>
       </div>
     </div>
   );
@@ -74,7 +76,7 @@ function MilestoneArc({ score, label, size = 72 }: MilestoneArcProps) {
 interface MilestoneRowProps { icon: LucideIcon; label: string; status: MilestoneStatus; meta?: string }
 function MilestoneRow({ icon: Icon, label, status, meta }: MilestoneRowProps) {
   return (
-    <div className={`flex items-center gap-2 px-2.5 py-1.5 rounded-interactive border ${MILESTONE_TINT[status]} text-xs`}>
+    <div className={`flex items-center gap-2 px-2.5 py-1.5 rounded-interactive border ${MILESTONE_TINT[status]} typo-caption`}>
       <Icon className="w-3.5 h-3.5 flex-shrink-0" />
       <span className="font-medium truncate">{label}</span>
       {meta && <span className="ml-auto text-[10px] tabular-nums opacity-70">{meta}</span>}
@@ -207,9 +209,9 @@ export default function ProfilesAtelier() {
             {satellites.length > 0 && (
               <>
                 <div className="flex items-center gap-2 pt-2">
-                  <span className="text-[10px] uppercase tracking-[0.2em] text-foreground/55 font-medium">satellites</span>
+                  <span className="text-[10px] uppercase tracking-[0.2em] text-foreground font-medium">satellites</span>
                   <div className="h-px flex-1 bg-primary/10" />
-                  <span className="typo-caption text-foreground/55">{satellites.length}</span>
+                  <span className="typo-caption text-foreground">{satellites.length}</span>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {satellites.map((p) => (
@@ -237,7 +239,7 @@ export default function ProfilesAtelier() {
           <aside className="hidden xl:block">
             <div className="sticky top-4 space-y-4">
               <div className="rounded-card border border-primary/10 bg-card/40 p-4">
-                <p className="text-[10px] uppercase tracking-[0.2em] text-foreground/55 font-medium mb-3">roster spread</p>
+                <p className="text-[10px] uppercase tracking-[0.2em] text-foreground font-medium mb-3"><DebtText k="auto_roster_spread_14623828" /></p>
                 <dl className="space-y-3">
                   <KpiRow label="twins configured" value={agg.twins} />
                   <KpiRow label="avg readiness" value={`${agg.avgReadiness}%`} hi={agg.avgReadiness >= 80} />
@@ -247,7 +249,7 @@ export default function ProfilesAtelier() {
               </div>
               {agg.channelTypes.length > 0 && (
                 <div className="rounded-card border border-primary/10 bg-card/40 p-4">
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-foreground/55 font-medium mb-2">channels in use</p>
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-foreground font-medium mb-2"><DebtText k="auto_channels_in_use_3c2a5957" /></p>
                   <div className="flex flex-wrap gap-1.5">
                     {agg.channelTypes.map((ct) => (
                       <span key={ct} className="px-2 py-0.5 text-[10px] uppercase tracking-wider rounded-full bg-violet-500/10 text-violet-300 border border-violet-500/25">{ct}</span>
@@ -258,8 +260,8 @@ export default function ProfilesAtelier() {
               {agg.languages.length > 0 && (
                 <div className="rounded-card border border-primary/10 bg-card/40 p-4">
                   <div className="flex items-center gap-1.5 mb-2">
-                    <Globe className="w-3 h-3 text-foreground/65" />
-                    <p className="text-[10px] uppercase tracking-[0.2em] text-foreground/55 font-medium">languages</p>
+                    <Globe className="w-3 h-3 text-foreground" />
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-foreground font-medium">languages</p>
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {agg.languages.map((l) => (
@@ -298,7 +300,7 @@ function KpiCell({ label, value, accent = 'violet' }: { label: string; value: nu
   return (
     <div className="flex flex-col items-start leading-tight">
       <span className={`typo-data-lg tabular-nums ${ACCENT_TEXT[accent] ?? ACCENT_TEXT.violet}`}>{value}</span>
-      <span className="text-[9px] uppercase tracking-[0.18em] text-foreground/55">{label}</span>
+      <span className="text-[9px] uppercase tracking-[0.18em] text-foreground">{label}</span>
     </div>
   );
 }
@@ -306,7 +308,7 @@ function KpiCell({ label, value, accent = 'violet' }: { label: string; value: nu
 function KpiRow({ label, value, hi }: { label: string; value: number | string; hi?: boolean }) {
   return (
     <div className="flex items-center justify-between">
-      <dt className="typo-caption text-foreground/65">{label}</dt>
+      <dt className="typo-caption text-foreground">{label}</dt>
       <dd className={`typo-data-lg tabular-nums ${hi ? 'text-emerald-300' : 'text-foreground'}`}>{value}</dd>
     </div>
   );
@@ -358,7 +360,7 @@ function HeroCard(props: HeroCardProps) {
         {/* Avatar pillar */}
         <div className="flex flex-col items-center gap-3">
           <div className={`w-16 h-16 rounded-card bg-gradient-to-br ${sigil.tint} border border-violet-500/30 flex items-center justify-center`}>
-            <span className="text-3xl text-foreground/90 leading-none" aria-hidden>{sigil.glyph}</span>
+            <span className="typo-body-lg text-foreground/90 leading-none" aria-hidden>{sigil.glyph}</span>
           </div>
           {r && <MilestoneArc score={r.score} label="ready" size={84} />}
         </div>
@@ -368,12 +370,12 @@ function HeroCard(props: HeroCardProps) {
           <div className="flex items-center gap-2 flex-wrap">
             {isActive && <span className="px-2 py-0.5 text-[9px] uppercase tracking-[0.2em] font-medium rounded-full bg-violet-500/20 text-violet-200 border border-violet-400/40">{t.profiles.active}</span>}
             <h2 className="typo-section-title text-foreground/95">{profile.name}</h2>
-            {profile.role && <span className="typo-caption text-foreground/65">— {profile.role}</span>}
+            {profile.role && <span className="typo-caption text-foreground">— {profile.role}</span>}
           </div>
           {profile.bio && (
-            <p className="typo-body text-foreground/80 mt-2 leading-relaxed line-clamp-3">{profile.bio}</p>
+            <p className="typo-body text-foreground mt-2 leading-relaxed line-clamp-3">{profile.bio}</p>
           )}
-          <div className="flex items-center gap-1.5 mt-3 typo-caption text-foreground/55">
+          <div className="flex items-center gap-1.5 mt-3 typo-caption text-foreground">
             <FolderTree className="w-3 h-3" />
             <span className="font-mono text-[10px] truncate">{profile.obsidian_subpath}</span>
           </div>
@@ -398,7 +400,7 @@ function HeroCard(props: HeroCardProps) {
           )}
 
           {langs.length > 0 && (
-            <div className="flex flex-wrap items-center gap-1.5 mt-2 typo-caption text-foreground/65">
+            <div className="flex flex-wrap items-center gap-1.5 mt-2 typo-caption text-foreground">
               <Globe className="w-3 h-3" />
               {langs.map((l) => (
                 <span key={l} className="px-2 py-0.5 text-[10px] rounded-full bg-secondary/40 text-foreground">{l}</span>
@@ -410,14 +412,14 @@ function HeroCard(props: HeroCardProps) {
         {/* Action stack */}
         <div className="flex md:flex-col items-end gap-1.5">
           {!isActive && (
-            <button onClick={onSetActive} title={t.profiles.setActive} className="px-2.5 py-1.5 rounded-interactive text-xs font-medium text-violet-300 border border-violet-500/30 bg-violet-500/10 hover:bg-violet-500/20 transition-colors flex items-center gap-1.5">
+            <button onClick={onSetActive} title={t.profiles.setActive} className="px-2.5 py-1.5 rounded-interactive typo-caption font-medium text-violet-300 border border-violet-500/30 bg-violet-500/10 hover:bg-violet-500/20 transition-colors flex items-center gap-1.5">
               <Check className="w-3.5 h-3.5" /> {t.profiles.setActive}
             </button>
           )}
-          <button onClick={onStartEdit} title={t.profiles.edit} className="p-1.5 rounded-interactive text-foreground/70 hover:text-foreground hover:bg-secondary/40 transition-colors">
+          <button onClick={onStartEdit} title={t.profiles.edit} className="p-1.5 rounded-interactive text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors">
             <Pencil className="w-4 h-4" />
           </button>
-          <button onClick={onDelete} title={t.profiles.delete} className="p-1.5 rounded-interactive text-foreground/70 hover:text-red-400 hover:bg-red-500/10 transition-colors">
+          <button onClick={onDelete} title={t.profiles.delete} className="p-1.5 rounded-interactive text-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors">
             <Trash2 className="w-4 h-4" />
           </button>
         </div>
@@ -454,11 +456,11 @@ function SatelliteCard(props: SatelliteCardProps) {
     <div className="group relative rounded-card border border-primary/10 bg-card/40 p-3.5 hover:border-violet-500/30 hover:bg-violet-500/5 transition-colors">
       <div className="flex items-start gap-3">
         <div className={`w-10 h-10 rounded-card bg-gradient-to-br ${sigil.tint} border border-primary/15 flex items-center justify-center flex-shrink-0`}>
-          <span className="text-xl text-foreground/85 leading-none" aria-hidden>{sigil.glyph}</span>
+          <span className="typo-body-lg text-foreground/85 leading-none" aria-hidden>{sigil.glyph}</span>
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="typo-card-label truncate">{profile.name}</h3>
-          {profile.role && <p className="typo-caption text-foreground/65 truncate">{profile.role}</p>}
+          {profile.role && <p className="typo-caption text-foreground truncate">{profile.role}</p>}
         </div>
         {r && <MilestoneArc score={r.score} label="ready" size={48} />}
       </div>
@@ -476,7 +478,7 @@ function SatelliteCard(props: SatelliteCardProps) {
             <span key={k} className={`inline-flex items-center w-5 h-5 rounded-full justify-center ${
               r[k] === 'complete' ? 'bg-emerald-500/15 text-emerald-300' :
               r[k] === 'partial' ? 'bg-amber-500/15 text-amber-300' :
-              'bg-secondary/40 text-foreground/40'
+              'bg-secondary/40 text-foreground'
             }`} title={k}>
               <Icon className="w-3 h-3" />
             </span>
@@ -493,20 +495,20 @@ function SatelliteCard(props: SatelliteCardProps) {
       )}
 
       {langs.length > 0 && (
-        <div className="flex items-center gap-1 mt-1.5 typo-caption text-foreground/55">
+        <div className="flex items-center gap-1 mt-1.5 typo-caption text-foreground">
           <Globe className="w-3 h-3" />
           <span className="text-[10px] truncate">{langs.join(' · ')}</span>
         </div>
       )}
 
       <div className="flex items-center gap-0.5 mt-2.5 pt-2.5 border-t border-primary/5 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button onClick={onSetActive} title={t.profiles.setActive} className="p-1 rounded-interactive text-foreground/65 hover:text-violet-300 hover:bg-violet-500/10 transition-colors">
+        <button onClick={onSetActive} title={t.profiles.setActive} className="p-1 rounded-interactive text-foreground hover:text-violet-300 hover:bg-violet-500/10 transition-colors">
           <ArrowUpRight className="w-3.5 h-3.5" />
         </button>
-        <button onClick={onStartEdit} title={t.profiles.edit} className="p-1 rounded-interactive text-foreground/65 hover:text-foreground hover:bg-secondary/40 transition-colors">
+        <button onClick={onStartEdit} title={t.profiles.edit} className="p-1 rounded-interactive text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors">
           <Pencil className="w-3.5 h-3.5" />
         </button>
-        <button onClick={onDelete} title={t.profiles.delete} className="p-1 rounded-interactive text-foreground/65 hover:text-red-400 hover:bg-red-500/10 transition-colors">
+        <button onClick={onDelete} title={t.profiles.delete} className="p-1 rounded-interactive text-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors">
           <Trash2 className="w-3.5 h-3.5" />
         </button>
       </div>

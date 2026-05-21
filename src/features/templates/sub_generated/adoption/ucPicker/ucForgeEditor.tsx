@@ -11,6 +11,8 @@ import { RouteToggle } from './ucRouteToggle';
 import { StampGlyph } from './ucStampGlyph';
 import { classifyEvent } from './ucPickerHelpers';
 import type { Destination, DestId } from './ucPickerTypes';
+import { DebtText } from '@/i18n/DebtText';
+
 
 interface Props {
   ucId: string;
@@ -64,17 +66,17 @@ export function ForgeEditor({
       />
 
       <div className="grid grid-cols-[1fr_auto_1.5fr] items-stretch gap-0 mt-4">
-        <div className="flex flex-col gap-3 rounded-xl ring-1 ring-border/80 bg-foreground/[0.03] p-4">
+        <div className="flex flex-col gap-3 rounded-modal ring-1 ring-border/80 bg-foreground/[0.03] p-4">
           <ZoneHeader icon={Sparkles} label="Runs" accent="primary" />
-          <p className="typo-body text-foreground/75 leading-snug">{subtitle}</p>
+          <p className="typo-body text-foreground leading-snug">{subtitle}</p>
         </div>
 
         <PipelineArrow firing={firing} />
 
-        <div className="flex flex-col gap-3 rounded-xl ring-1 ring-border/80 bg-status-warning/[0.06] p-4">
+        <div className="flex flex-col gap-3 rounded-modal ring-1 ring-border/80 bg-status-warning/[0.06] p-4">
           <ZoneHeader icon={Zap} label="Events" accent="status-warning" count={subscribedCount} />
           <div className="flex flex-col gap-1">
-            {emits.length === 0 && <div className="typo-body text-foreground/60 italic">No events emitted</div>}
+            {emits.length === 0 && <div className="typo-body text-foreground italic"><DebtText k="auto_no_events_emitted_f61386b3" /></div>}
             {emits.map((ev, i) => {
               const routed = ucRoutes[ev.event_type] ?? new Set<DestId>();
               const subscribed = routed.size > 0;
@@ -86,7 +88,7 @@ export function ForgeEditor({
                   }`}
                 >
                   <div
-                    className="flex-shrink-0 w-7 h-7 rounded-md flex items-center justify-center"
+                    className="flex-shrink-0 w-7 h-7 rounded-input flex items-center justify-center"
                     style={{
                       color: subscribed ? 'var(--color-status-warning)' : 'var(--color-foreground)',
                       opacity: subscribed ? 1 : 0.35,
@@ -102,7 +104,7 @@ export function ForgeEditor({
                   </div>
                   <span
                     className={`flex-1 min-w-0 typo-body font-medium truncate ${
-                      subscribed ? 'text-foreground' : 'text-foreground/75'
+                      subscribed ? 'text-foreground' : 'text-foreground'
                     }`}
                   >
                     {ev.description}
@@ -122,7 +124,7 @@ export function ForgeEditor({
                     <button
                       type="button"
                       onClick={() => onAddChannel(ev.event_type)}
-                      className="focus-ring w-8 h-8 rounded-full border border-dashed border-border text-foreground/55 hover:text-foreground hover:border-foreground/40 flex items-center justify-center transition-colors"
+                      className="focus-ring w-8 h-8 rounded-full border border-dashed border-border text-foreground hover:text-foreground hover:border-foreground/40 flex items-center justify-center transition-colors"
                     >
                       <Plus className="w-4 h-4" />
                     </button>
@@ -172,7 +174,7 @@ function PipelineArrow({ firing }: { firing: boolean }) {
   return (
     <div className="self-center flex items-center mx-3" aria-hidden>
       <div className="w-3 h-px bg-foreground/25" />
-      <ArrowRight className={`w-6 h-6 ${firing ? 'text-status-warning' : 'text-foreground/45'}`} />
+      <ArrowRight className={`w-6 h-6 ${firing ? 'text-status-warning' : 'text-foreground'}`} />
     </div>
   );
 }

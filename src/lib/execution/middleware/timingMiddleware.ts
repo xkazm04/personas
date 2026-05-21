@@ -12,6 +12,8 @@
 import { addMiddleware, type PipelineMiddleware } from '@/lib/execution/pipeline';
 import { getTimingRecord, clearTimingRecord } from '@/lib/execution/pipeline';
 import { createLogger } from '@/lib/log';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 const logger = createLogger('timing-middleware');
 
@@ -54,9 +56,7 @@ const timingMiddleware: PipelineMiddleware<'frontend_complete'> = async (
 
     // Prune old timing entries (keep last 50 executions)
     _pruneTimingEntries(50);
-  } catch {
-    // localStorage full or unavailable -- non-critical
-  }
+  } catch (err) { silentCatch("lib/execution/middleware/timingMiddleware:catch1")(err); }
 
   // Clean up in-memory timing data
   clearTimingRecord(executionId);

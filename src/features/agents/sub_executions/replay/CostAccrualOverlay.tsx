@@ -10,7 +10,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 export function CostAccrualOverlay({
   entries,
   totalDurationMs,
-  pipelineStartMs,
+  pipelineStartMs: _pipelineStartMs,
   totalCostUsd,
 }: {
   entries: PipelineTraceEntry[];
@@ -20,10 +20,11 @@ export function CostAccrualOverlay({
 }) {
   const { t, tx } = useTranslation();
   const e = t.agents.executions;
-  if (totalCostUsd <= 0 || totalDurationMs <= 0) return null;
 
   // Build cost accrual points: cost accrues during stream_output and finalize_status
   const points = useMemo(() => {
+    if (totalCostUsd <= 0 || totalDurationMs <= 0) return [];
+
     const pts: Array<{ pct: number; costPct: number }> = [];
     let accrued = 0;
 
@@ -54,7 +55,7 @@ export function CostAccrualOverlay({
     }
 
     return pts;
-  }, [entries, totalDurationMs, pipelineStartMs, totalCostUsd]);
+  }, [entries, totalDurationMs, totalCostUsd]);
 
   if (points.length < 2) return null;
 

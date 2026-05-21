@@ -1,3 +1,4 @@
+import { silentCatch } from '@/lib/silentCatch';
 export interface InputField {
   key: string;
   type: string;
@@ -37,9 +38,7 @@ export function formatOutputForMarkdown(output: string): string {
     try {
       const formatted = JSON.stringify(JSON.parse(trimmed), null, 2);
       return '```json\n' + formatted + '\n```';
-    } catch {
-      // intentional: non-critical - JSON parse fallback
-    }
+    } catch (err) { silentCatch("features/recipes/sub_playground/tabs/recipeTestHelpers:catch1")(err); }
   }
   return trimmed;
 }

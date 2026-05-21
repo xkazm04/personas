@@ -20,6 +20,8 @@ import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
 
 import { AnnotateModal } from './AnnotateModal';
 import { createLogger } from "@/lib/log";
+import { DebtText, debtText } from '@/i18n/DebtText';
+
 
 const logger = createLogger("knowledge-graph");
 
@@ -170,7 +172,7 @@ export default function KnowledgeGraphDashboard() {
             </button>
             {showTypeDropdown && (
               <div className="absolute mt-8 z-50 min-w-[160px] rounded-modal border border-primary/15 bg-background shadow-elevation-3 overflow-hidden">
-                <button onClick={() => { setSelectedType(null); setShowTypeDropdown(false); }} className={`w-full text-left px-3 py-1.5 typo-body transition-colors ${!selectedType ? 'bg-primary/10 text-foreground' : 'text-foreground hover:bg-secondary/30'}`}>All Types</button>
+                <button onClick={() => { setSelectedType(null); setShowTypeDropdown(false); }} className={`w-full text-left px-3 py-1.5 typo-body transition-colors ${!selectedType ? 'bg-primary/10 text-foreground' : 'text-foreground hover:bg-secondary/30'}`}><DebtText k="auto_all_types_eb672cb3" /></button>
                 {Object.entries(KNOWLEDGE_TYPES).map(([key, val]) => (
                   <button key={key} onClick={() => { setSelectedType(key); setShowTypeDropdown(false); if (failureDrilldownDate && key !== 'failure_pattern') setFailureDrilldownDate(null); }}
                     className={`w-full text-left px-3 py-1.5 typo-body transition-colors ${selectedType === key ? 'bg-primary/10 text-foreground' : 'text-foreground hover:bg-secondary/30'}`}
@@ -193,7 +195,7 @@ export default function KnowledgeGraphDashboard() {
             </button>
             {showScopeDropdown && (
               <div className="absolute mt-8 z-50 min-w-[140px] rounded-modal border border-primary/15 bg-background shadow-elevation-3 overflow-hidden">
-                <button onClick={() => { setSelectedScope(null); setShowScopeDropdown(false); }} className={`w-full text-left px-3 py-1.5 typo-body transition-colors ${!selectedScope ? 'bg-primary/10 text-foreground' : 'text-foreground hover:bg-secondary/30'}`}>All Scopes</button>
+                <button onClick={() => { setSelectedScope(null); setShowScopeDropdown(false); }} className={`w-full text-left px-3 py-1.5 typo-body transition-colors ${!selectedScope ? 'bg-primary/10 text-foreground' : 'text-foreground hover:bg-secondary/30'}`}><DebtText k="auto_all_scopes_b64efd49" /></button>
                 {Object.entries(SCOPE_TYPES).map(([key, val]) => (
                   <button key={key} onClick={() => { setSelectedScope(key); setShowScopeDropdown(false); }}
                     className={`w-full text-left px-3 py-1.5 typo-body transition-colors ${selectedScope === key ? 'bg-primary/10 text-foreground' : 'text-foreground hover:bg-secondary/30'}`}
@@ -209,10 +211,10 @@ export default function KnowledgeGraphDashboard() {
                 <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="typo-body font-medium text-red-300">
-                    Failure drill-down: {new Date(failureDrilldownDate + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                    <DebtText k="auto_failure_drill_down_a3e4b117" /> {new Date(failureDrilldownDate + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
                   </p>
                   <p className="typo-body text-red-400/70 mt-0.5">
-                    Showing failure patterns active on or after this date.
+                    <DebtText k="auto_showing_failure_patterns_active_on_or_afte_4e0b968a" />
                     {allEntries.length === 0 && !loading && ' No matching patterns found -- try selecting a specific persona above.'}
                   </p>
                 </div>
@@ -234,7 +236,7 @@ export default function KnowledgeGraphDashboard() {
               <div className="flex items-start gap-3">
                 <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
-                  <p className="typo-body font-medium text-red-300">Knowledge data unavailable</p>
+                  <p className="typo-body font-medium text-red-300"><DebtText k="auto_knowledge_data_unavailable_273390d7" /></p>
                   <p className="typo-body text-red-400/70 mt-0.5">{fetchError}</p>
                 </div>
                 <Button
@@ -252,14 +254,14 @@ export default function KnowledgeGraphDashboard() {
             <div className="flex-1 flex items-center justify-center py-12">
               <div className="flex flex-col items-center gap-3">
                 <RefreshCw className="w-5 h-5 text-foreground animate-spin" />
-                <p className="typo-body text-foreground">Loading knowledge patterns...</p>
+                <p className="typo-body text-foreground"><DebtText k="auto_loading_knowledge_patterns_247c9e22" /></p>
               </div>
             </div>
           ) : allEntries.length === 0 && !selectedPersonaId && !selectedType && !selectedScope ? (
             <div className="flex-1 flex flex-col items-center justify-center gap-4 p-6">
               <EmptyState
                 icon={Brain}
-                title="No knowledge patterns yet"
+                title={debtText("auto_no_knowledge_patterns_yet_fab2639a")}
                 subtitle="Run agent executions to build up knowledge patterns. Agents get smarter over time."
                 iconColor="text-violet-400/80"
                 iconContainerClassName="bg-violet-500/10 border-violet-500/20"
@@ -270,12 +272,12 @@ export default function KnowledgeGraphDashboard() {
               {/* This dashboard surfaces auto-extracted execution knowledge. For curated docs,
                   personas also offers an Obsidian vault — cheaper and better for <1000 notes. */}
               <div className="max-w-md typo-caption text-foreground text-center px-4 py-2 rounded-card bg-violet-500/5 border border-violet-500/10">
-                <span className="font-medium text-foreground">Curating documents manually?</span> For fewer than ~1000 notes, an Obsidian vault is usually cheaper and better than a vector store — cross-links beat chunk similarity and the content stays human-editable.
+                <span className="font-medium text-foreground"><DebtText k="auto_curating_documents_manually_2fb8d7db" /></span> <DebtText k="auto_for_fewer_than_1000_notes_an_obsidian_vaul_a955006d" />
               </div>
             </div>
           ) : allEntries.length === 0 ? (
             <div className="py-8 text-center">
-              <p className="typo-body text-foreground">No patterns match current filters</p>
+              <p className="typo-body text-foreground"><DebtText k="auto_no_patterns_match_current_filters_99a6d5f1" /></p>
             </div>
           ) : (
             <ScrollShadowContainer
@@ -305,7 +307,7 @@ export default function KnowledgeGraphDashboard() {
           {!selectedPersonaId && summary && summary.recent_learnings.length > 0 && (
             <div className="space-y-3">
               <h3 className="flex items-center gap-2 typo-heading font-semibold text-foreground">
-                <RefreshCw className="w-3.5 h-3.5 text-primary/60" /> Recent Learnings
+                <RefreshCw className="w-3.5 h-3.5 text-primary/60" /> <DebtText k="auto_recent_learnings_1994aa0a" />
               </h3>
               <ScrollShadowContainer
                 scrollRef={recentListRef}

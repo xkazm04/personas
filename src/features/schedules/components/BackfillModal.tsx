@@ -169,7 +169,7 @@ export default function BackfillModal({
               )}
               {lastResult.slotTimes.length > 0 && (
                 <details className="mt-2">
-                  <summary className="typo-caption cursor-pointer text-foreground/80 hover:text-foreground">
+                  <summary className="typo-caption cursor-pointer text-foreground hover:text-foreground">
                     {t.schedules.backfill_result_show_slots}
                   </summary>
                   <div className="mt-2 max-h-32 overflow-y-auto space-y-0.5">

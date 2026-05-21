@@ -13,7 +13,6 @@ import * as api from "@/api/researchLab/researchLab";
  * component, so feedback isn't lost where it matters.
  */
 function logPassiveFetchFailure(action: string, err: unknown): void {
-  // eslint-disable-next-line no-console
   console.warn(`[research-lab] ${action} failed (showing empty state):`, errMsg(err, action), err);
   Sentry.withScope((scope) => {
     scope.setTag("error.action", action);

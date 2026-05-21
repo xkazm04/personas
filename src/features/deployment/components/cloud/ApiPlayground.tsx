@@ -119,8 +119,7 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
       <button
         type="button"
         onClick={() => setExpanded(true)}
-        className="flex items-center gap-1.5 text-xs text-foreground hover:text-indigo-400
-                   transition-colors cursor-pointer py-0.5"
+        className="flex items-center gap-1.5 typo-caption text-foreground hover:text-indigo-400 transition-colors cursor-pointer py-0.5"
       >
         <Terminal className="w-3 h-3" />
         <span>{dt.title}</span>
@@ -135,8 +134,7 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
       <button
         type="button"
         onClick={() => setExpanded(false)}
-        className="flex items-center gap-1.5 text-xs font-medium text-indigo-400
-                   hover:text-indigo-300 transition-colors cursor-pointer"
+        className="flex items-center gap-1.5 typo-caption font-medium text-indigo-400 hover:text-indigo-300 transition-colors cursor-pointer"
       >
         <Terminal className="w-3 h-3" />
         <span>{dt.title}</span>
@@ -168,11 +166,7 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
           type="button"
           onClick={handleSend}
           disabled={sending || !body.trim()}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-card
-                     bg-indigo-500/15 border border-indigo-500/25 text-indigo-400
-                     hover:bg-indigo-500/25 hover:text-indigo-300
-                     disabled:opacity-40 disabled:cursor-not-allowed
-                     transition-colors cursor-pointer"
+          className="flex items-center gap-1.5 px-3 py-1.5 typo-caption font-medium rounded-card bg-indigo-500/15 border border-indigo-500/25 text-indigo-400 hover:bg-indigo-500/25 hover:text-indigo-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
         >
           {sending
             ? <Loader2 className="w-3 h-3 animate-spin" />
@@ -183,9 +177,7 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
         <button
           type="button"
           onClick={() => setShowSnippets((p) => !p)}
-          className="flex items-center gap-1 px-2 py-1.5 text-xs text-foreground
-                     hover:text-foreground/80 rounded-card hover:bg-secondary/40
-                     transition-colors cursor-pointer"
+          className="flex items-center gap-1 px-2 py-1.5 typo-caption text-foreground hover:text-foreground/80 rounded-card hover:bg-secondary/40 transition-colors cursor-pointer"
         >
           <Code2 className="w-3 h-3" />
           {dt.snippets}

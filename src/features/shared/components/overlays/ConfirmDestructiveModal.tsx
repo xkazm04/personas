@@ -90,10 +90,10 @@ function ModalContent({ config, onClose, onConfirm }: {
           <AlertTriangle className="w-5 h-5 text-red-400" />
         </div>
         <div>
-          <h3 id="confirm-destructive-title" className="text-sm font-semibold text-foreground/90">
+          <h3 id="confirm-destructive-title" className="typo-heading font-semibold text-foreground/90">
             {config.title}
           </h3>
-          <p className="text-sm text-foreground mt-1">{config.message}</p>
+          <p className="typo-body text-foreground mt-1">{config.message}</p>
         </div>
       </div>
 
@@ -103,7 +103,7 @@ function ModalContent({ config, onClose, onConfirm }: {
           {config.details.map((d) => (
             <div key={d.label} className="flex items-center justify-between">
               <span className="text-sm font-mono uppercase text-foreground">{d.label}</span>
-              <span className="text-sm text-foreground truncate ml-3 max-w-[200px]">{d.value}</span>
+              <span className="typo-body text-foreground truncate ml-3 max-w-[200px]">{d.value}</span>
             </div>
           ))}
         </div>
@@ -113,7 +113,7 @@ function ModalContent({ config, onClose, onConfirm }: {
       {config.warningMessage && (
         <div className="flex items-start gap-2 rounded-xl border border-yellow-500/30 bg-yellow-500/10 px-3 py-2.5">
           <AlertTriangle className="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5" />
-          <p className="text-sm text-yellow-300/90">{config.warningMessage}</p>
+          <p className="typo-body text-yellow-300/90">{config.warningMessage}</p>
         </div>
       )}
 
@@ -125,7 +125,7 @@ function ModalContent({ config, onClose, onConfirm }: {
       {/* Type-to-confirm */}
       {needsTyping && (
         <div className="space-y-1.5">
-          <p className="text-xs text-foreground">
+          <p className="typo-caption text-foreground">
             {(() => {
               const parts = t.common.type_to_confirm.split('{name}');
               return <>{parts[0]}<span className="font-semibold text-foreground">{config.requireTypedConfirmation}</span>{parts[1]}</>;
@@ -136,7 +136,7 @@ function ModalContent({ config, onClose, onConfirm }: {
             value={typedValue}
             onChange={(e) => setTypedValue(e.target.value)}
             placeholder={config.requireTypedConfirmation}
-            className="w-full px-3 py-2 text-sm rounded-lg bg-secondary/50 border border-primary/15 text-foreground placeholder:text-foreground focus:outline-none focus:border-red-500/40 transition-colors"
+            className="w-full px-3 py-2 typo-body rounded-lg bg-secondary/50 border border-primary/15 text-foreground placeholder:text-foreground focus:outline-none focus:border-red-500/40 transition-colors"
             autoFocus
           />
         </div>
@@ -146,14 +146,14 @@ function ModalContent({ config, onClose, onConfirm }: {
       <div className="flex items-center justify-end gap-2 pt-1">
         <button
           onClick={handleClose}
-          className="px-4 py-2 text-sm text-foreground hover:text-foreground rounded-xl hover:bg-secondary/40 transition-colors"
+          className="px-4 py-2 typo-body text-foreground hover:text-foreground rounded-xl hover:bg-secondary/40 transition-colors"
         >
           {t.common.cancel}
         </button>
         <button
           onClick={handleConfirm}
           disabled={!typingMatches}
-          className="px-4 py-2 text-sm font-medium rounded-xl bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="px-4 py-2 typo-body font-medium rounded-xl bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {confirmLabel}
         </button>

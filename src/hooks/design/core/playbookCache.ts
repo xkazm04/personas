@@ -1,4 +1,6 @@
 import type { NegotiationPlan } from '../credential/useCredentialNegotiator';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 export interface PlaybookRecord {
   serviceName: string;
@@ -31,17 +33,13 @@ function hydrate() {
     for (const entry of entries) {
       cache.set(normalise(entry.serviceName), entry);
     }
-  } catch {
-    // corrupted data -- start fresh
-  }
+  } catch (err) { silentCatch("hooks/design/core/playbookCache:catch1")(err); }
 }
 
 function persist() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify([...cache.values()]));
-  } catch {
-    // storage full or unavailable -- cache still works in-memory
-  }
+  } catch (err) { silentCatch("hooks/design/core/playbookCache:catch2")(err); }
 }
 
 hydrate();

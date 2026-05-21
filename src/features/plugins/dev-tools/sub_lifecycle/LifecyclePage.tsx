@@ -16,6 +16,8 @@ import { LifecycleProjectPicker } from './LifecycleProjectPicker';
 import { SetupTab } from './tabs/SetupTab';
 import { CompetitionsTab } from './tabs/CompetitionsTab';
 import { ProjectTrackingTab } from './tabs/ProjectTrackingTab';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -73,7 +75,7 @@ export default function LifecyclePage() {
       }) ?? null;
       setDevClone(clone);
       setTriggers(clone ? await listTriggers(clone.id) : []);
-    } catch { /* not created yet */ }
+    } catch (err) { silentCatch("features/plugins/dev-tools/sub_lifecycle/LifecyclePage:catch1")(err); }
     finally { setLoading(false); }
   }, []);
 

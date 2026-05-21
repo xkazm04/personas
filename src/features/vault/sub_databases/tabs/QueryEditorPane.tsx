@@ -85,7 +85,7 @@ export function QueryEditorPane({
     if (!editorValue.trim()) return;
     setTerminalExpanded(false);
     await queryDebug.start(credentialId, editorValue, error, serviceType);
-  }, [credentialId, editorValue, error, serviceType, queryDebug.start]);
+  }, [editorValue, queryDebug, credentialId, error, serviceType]);
 
   const showTerminal = queryDebug.phase !== 'idle';
 

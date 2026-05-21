@@ -37,9 +37,7 @@ function countTemplateLoad(phase: TemplateLoadPhase, source: 'trending' | 'fallb
     Sentry.metrics.count('onboarding.templates.load', 1, {
       attributes: { phase, source: source ?? 'none' },
     });
-  } catch {
-    // intentional: Sentry may not be initialized
-  }
+  } catch (err) { silentCatch("features/onboarding/components/useOnboardingState:catch1")(err); }
 }
 
 export function useOnboardingState() {

@@ -39,7 +39,7 @@ export function BulkRerunStrip({ phase, items, cohort, onCancel, onOpenReport }:
             style={{ width: `${pct}%` }}
           />
         </div>
-        <span className="typo-code text-foreground/80">{pct}%</span>
+        <span className="typo-code text-foreground">{pct}%</span>
         {isDone ? (
           <button
             onClick={onOpenReport}
@@ -62,7 +62,7 @@ export function BulkRerunStrip({ phase, items, cohort, onCancel, onOpenReport }:
         {items.map((it) => (
           <span
             key={it.originalId}
-            className={`w-2 h-2 rounded-sm transition-colors ${
+            className={`w-2 h-2 rounded-interactive transition-colors ${
               it.status === 'success'
                 ? 'bg-emerald-400/70'
                 : it.status === 'failed'

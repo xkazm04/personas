@@ -37,7 +37,7 @@ export const ExecutionsStatusChartWidget = memo(function ExecutionsStatusChartWi
 
   return (
     <div className="rounded-card border border-foreground/10 bg-foreground/[0.02] p-4 h-full flex flex-col">
-      <div className="typo-caption text-foreground/60 uppercase tracking-wide mb-2">
+      <div className="typo-caption text-foreground uppercase tracking-wide mb-2">
         {title ?? `Executions by status (last ${days}d)`}
       </div>
       <div className="flex-1 min-h-0">

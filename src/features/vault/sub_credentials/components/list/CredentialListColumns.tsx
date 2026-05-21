@@ -95,7 +95,7 @@ export function useCredentialColumns({
         </div>
       );
     },
-  }), [isSimple, pendingDeleteIds]);
+  }), [isSimple, pendingDeleteIds, t.common.deleting]);
 
   return useMemo(() => {
     if (isSimple) {
@@ -172,5 +172,5 @@ export function useCredentialColumns({
         },
       },
     ];
-  }, [isSimple, nameColumn, categoryOptions, categoryFilter, healthOptions, healthFilter, onDelete, pendingDeleteIds, setCategoryFilter, setHealthFilter]);
+  }, [isSimple, nameColumn, categoryOptions, categoryFilter, setCategoryFilter, healthOptions, healthFilter, setHealthFilter, pendingDeleteIds, t.vault.credential_card.delete_credential, onDelete]);
 }

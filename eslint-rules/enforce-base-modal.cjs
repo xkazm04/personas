@@ -23,6 +23,13 @@ module.exports = {
     schema: [],
   },
   create(context) {
+    const filename = typeof context.getFilename === 'function'
+      ? context.getFilename()
+      : context.filename;
+    if (filename && filename.replace(/\\/g, '/').endsWith('/src/lib/ui/BaseModal.tsx')) {
+      return {};
+    }
+
     let importsBaseModal = false;
     let dialogRoleNode = null;
 

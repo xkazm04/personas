@@ -74,7 +74,7 @@ export function DesktopDiscoveryStep({
       <div className="text-center py-16">
         <AlertCircle className="w-10 h-10 mx-auto text-amber-400 mb-3" />
         <p className="typo-body text-foreground">{t.onboarding.desktop_scan_error}</p>
-        <p className="typo-body text-foreground/70 mt-1">
+        <p className="typo-body text-foreground mt-1">
           {scanState.error ?? t.onboarding.desktop_scan_error_hint}
         </p>
         <button

@@ -19,6 +19,8 @@ import {
 } from 'lucide-react';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useShallow } from 'zustand/react/shallow';
+import { DebtText } from '@/i18n/DebtText';
+
 import {
   generateFleetRecommendation,
   type FleetRecommendation,
@@ -182,7 +184,7 @@ export default function FleetOptimizationCard() {
     <div className="space-y-1.5">
       <h3 className="typo-label text-foreground px-1 flex items-center gap-1.5">
         <Sparkles className="w-3 h-3" />
-        Fleet Optimization
+        <DebtText k="auto_fleet_optimization_ca80ba93" />
       </h3>
       <RecommendationContent rec={recommendation} />
     </div>

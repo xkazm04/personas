@@ -17,6 +17,8 @@ import { SmeeRelayTab } from './sub_smee_relay/SmeeRelayTab';
 import { CloudWebhooksTab } from './sub_cloud_webhooks/CloudWebhooksTab';
 import { DeadLetterTab } from './sub_dead_letter/DeadLetterTab';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 const EventCanvas = lazy(() => import('./sub_builder/EventCanvas').then(m => ({ default: m.EventCanvas })));
 const TriggerStudioCanvas = lazy(() => import('./sub_studio/TriggerStudioCanvas').then(m => ({ default: m.TriggerStudioCanvas })));
@@ -105,15 +107,13 @@ export function TriggersPage() {
         if (healthValues.includes('failing')) setBusHealth('failing');
         else if (healthValues.includes('degraded')) setBusHealth('degraded');
         else if (healthValues.length > 0) setBusHealth('healthy');
-      } catch {
-        // non-critical
-      }
+      } catch (err) { silentCatch("features/triggers/TriggersPage:catch1")(err); }
     }
     load();
     return () => { stale = true; };
   }, [personas]);
 
-  const header = useMemo(() => TAB_HEADERS[eventBusTab] ?? TAB_HEADERS['live-stream'], [eventBusTab]);
+  const header = useMemo(() => TAB_HEADERS[eventBusTab] ?? TAB_HEADERS['live-stream'], [TAB_HEADERS, eventBusTab]);
   const HeaderIcon = header.icon;
 
   return (

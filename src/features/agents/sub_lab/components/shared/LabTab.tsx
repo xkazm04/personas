@@ -6,6 +6,10 @@ import { useSystemStore } from '@/stores/systemStore';
 import { managementFetch } from '@/api/system/managementApiAuth';
 import type { LabMode } from '@/stores/slices/agents/labSlice';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
+import { DebtText } from '@/i18n/DebtText';
+
+
 
 const ArenaPanel = lazy(() => import('../arena/ArenaPanel').then((m) => ({ default: m.ArenaPanel })));
 const AbPanel = lazy(() => import('../ab/AbPanel').then((m) => ({ default: m.AbPanel })));
@@ -127,7 +131,7 @@ function AutoOptimizeToggle() {
         const data = await resp.json();
         setEnabled(data?.data?.enabled || false);
       }
-    } catch { /* management API not running */ }
+    } catch (err) { silentCatch("features/agents/sub_lab/components/shared/LabTab:catch1")(err); }
   }, [persona]);
 
   useEffect(() => { fetchConfig(); }, [fetchConfig]);
@@ -147,7 +151,7 @@ function AutoOptimizeToggle() {
         }),
       });
       setEnabled(!enabled);
-    } catch { /* silent */ }
+    } catch (err) { silentCatch("features/agents/sub_lab/components/shared/LabTab:catch2")(err); }
     setLoading(false);
   };
 
@@ -164,7 +168,7 @@ function AutoOptimizeToggle() {
       title={enabled ? "Auto-optimization enabled (weekly arena + improve)" : "Enable automatic prompt optimization"}
     >
       <Zap className={`w-3 h-3 ${enabled ? 'text-emerald-400' : ''}`} />
-      Auto-Optimize
+      <DebtText k="auto_auto_optimize_14b37f99" />
       <span className={`w-1.5 h-1.5 rounded-full ${enabled ? 'bg-emerald-400' : 'bg-muted-foreground/30'}`} />
     </button>
   );

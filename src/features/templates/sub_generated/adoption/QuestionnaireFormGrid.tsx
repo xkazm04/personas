@@ -159,10 +159,10 @@ export function QuestionnaireFormGrid({
               <div className="flex items-start gap-3 mb-3">
                 <AlertCircle className="w-5 h-5 text-status-error flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
-                  <h3 className="text-base font-semibold text-status-error mb-1">
+                  <h3 className="typo-body-lg font-semibold text-status-error mb-1">
                     {t.templates.adopt_modal.credentials_required_title}
                   </h3>
-                  <p className="text-sm text-status-error/80 leading-relaxed">
+                  <p className="typo-body text-status-error/80 leading-relaxed">
                     {t.templates.adopt_modal.credentials_required_body}
                   </p>
                 </div>
@@ -171,15 +171,15 @@ export function QuestionnaireFormGrid({
                 {blockedCategories.map(({ category, questionLabels }) => (
                   <div key={category} className="flex items-center justify-between gap-3 p-2.5 rounded-card bg-status-error/10 border border-status-error/20">
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-foreground/90 capitalize">{category}</div>
-                      <div className="text-xs text-foreground truncate">
+                      <div className="typo-body font-medium text-foreground/90 capitalize">{category}</div>
+                      <div className="typo-caption text-foreground truncate">
                         {questionLabels.join(' · ')}
                       </div>
                     </div>
                     <button
                       type="button"
                       onClick={() => onAddCredential(category)}
-                      className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-card bg-status-error/15 border border-status-error/40 text-status-error hover:bg-status-error/25 transition-colors flex-shrink-0"
+                      className="flex items-center gap-1.5 px-3 py-2 typo-body font-medium rounded-card bg-status-error/15 border border-status-error/40 text-status-error hover:bg-status-error/25 transition-colors flex-shrink-0"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       {t.templates.adopt_modal.add_credential}
@@ -226,7 +226,7 @@ export function QuestionnaireFormGrid({
                     className="rounded-modal border border-border bg-foreground/[0.02] px-4 pt-3 pb-4"
                   >
                     <header className="flex items-center justify-between mb-3">
-                      <h3 className={`text-sm font-semibold tracking-wide ${accent}`}>
+                      <h3 className={`typo-heading font-semibold tracking-wide ${accent}`}>
                         {heading}
                       </h3>
                       <span className="text-[10px] text-foreground">
@@ -252,7 +252,7 @@ export function QuestionnaireFormGrid({
                           >
                             <div className="flex items-center gap-2 px-4 pt-3 pb-2">
                               <Icon className={`w-4 h-4 ${meta.color}`} />
-                              <span className={`text-xs font-semibold uppercase tracking-wider ${meta.color}`}>
+                              <span className={`typo-label font-semibold uppercase tracking-wider ${meta.color}`}>
                                 {meta.label}
                               </span>
                               <span className="text-[10px] text-foreground ml-auto">
@@ -309,7 +309,7 @@ export function QuestionnaireFormGrid({
                     {/* Category header */}
                     <div className="flex items-center gap-2 px-4 pt-3 pb-2">
                       <Icon className={`w-4 h-4 ${meta.color}`} />
-                      <span className={`text-xs font-semibold uppercase tracking-wider ${meta.color}`}>
+                      <span className={`typo-label font-semibold uppercase tracking-wider ${meta.color}`}>
                         {meta.label}
                       </span>
                       <span className="text-[10px] text-foreground ml-auto">
@@ -347,14 +347,14 @@ export function QuestionnaireFormGrid({
           <button
             type="button"
             onClick={onClose}
-            className="text-sm text-foreground hover:text-foreground/70 transition-colors"
+            className="typo-body text-foreground hover:text-foreground/70 transition-colors"
           >
             {t.templates.adopt_modal.cancel}
           </button>
 
           <div className="flex items-center gap-3">
             {blockedCount > 0 && (
-              <span className="text-xs text-status-error/80 flex items-center gap-1.5">
+              <span className="typo-caption text-status-error/80 flex items-center gap-1.5">
                 <AlertCircle className="w-3.5 h-3.5" />
                 {tx(t.templates.adopt_modal.blocked_blocking_submit, { count: blockedCount })}
               </span>
@@ -363,7 +363,7 @@ export function QuestionnaireFormGrid({
               type="button"
               onClick={onSubmit}
               disabled={!canSubmit}
-              className={`flex items-center gap-2 px-5 py-2 text-sm font-medium rounded-modal transition-all ${
+              className={`flex items-center gap-2 px-5 py-2 typo-heading font-medium rounded-modal transition-all ${
                 canSubmit
                   ? 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-elevation-3 shadow-primary/20'
                   : 'bg-foreground/[0.06] text-foreground cursor-not-allowed'

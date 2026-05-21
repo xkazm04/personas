@@ -6,6 +6,8 @@ import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
 import { updateRecipe } from '@/api/recipes/recipes';
 import type { InputField } from './recipeTestHelpers';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 interface RecipeInputSectionProps {
   recipe: RecipeDefinition;
@@ -44,9 +46,7 @@ export function RecipeInputSection({
     try {
       const mock = JSON.parse(recipe.sample_inputs) as Record<string, string>;
       onSetFieldValues((prev) => ({ ...prev, ...mock }));
-    } catch {
-      // intentional: non-critical - JSON parse fallback
-    }
+    } catch (err) { silentCatch("features/recipes/sub_playground/tabs/RecipeInputSection:catch1")(err); }
   }, [recipe.sample_inputs, onSetFieldValues]);
 
   const handleSaveMockValues = useCallback(async () => {

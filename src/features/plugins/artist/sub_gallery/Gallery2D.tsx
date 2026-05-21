@@ -299,7 +299,7 @@ function LightboxOverlay({ asset, index, total, onClose, onNext, onPrev }: Light
           disabled={zoom <= MIN_ZOOM}
           title={t.plugins.artist.lightbox_zoom_out}
           aria-label={t.plugins.artist.lightbox_zoom_out}
-          className="p-2 rounded-card bg-white/10 text-white hover:bg-white/20 transition-colors disabled:opacity-30 disabled:hover:bg-white/10"
+          className="p-2 rounded-card bg-secondary/10 text-foreground hover:bg-secondary/20 transition-colors disabled:opacity-30 disabled:hover:bg-secondary/10"
         >
           <ZoomOut className="w-4 h-4" />
         </button>
@@ -308,7 +308,7 @@ function LightboxOverlay({ asset, index, total, onClose, onNext, onPrev }: Light
           onClick={resetZoom}
           title={t.plugins.artist.lightbox_reset_zoom}
           aria-label={t.plugins.artist.lightbox_reset_zoom}
-          className="px-2 py-1 rounded-card bg-white/10 text-white hover:bg-white/20 transition-colors text-md tabular-nums min-w-[3rem]"
+          className="px-2 py-1 rounded-card bg-secondary/10 text-foreground hover:bg-secondary/20 transition-colors text-md tabular-nums min-w-[3rem]"
         >
           {Math.round(zoom * 100)}%
         </button>
@@ -318,7 +318,7 @@ function LightboxOverlay({ asset, index, total, onClose, onNext, onPrev }: Light
           disabled={zoom >= MAX_ZOOM}
           title={t.plugins.artist.lightbox_zoom_in}
           aria-label={t.plugins.artist.lightbox_zoom_in}
-          className="p-2 rounded-card bg-white/10 text-white hover:bg-white/20 transition-colors disabled:opacity-30 disabled:hover:bg-white/10"
+          className="p-2 rounded-card bg-secondary/10 text-foreground hover:bg-secondary/20 transition-colors disabled:opacity-30 disabled:hover:bg-secondary/10"
         >
           <ZoomIn className="w-4 h-4" />
         </button>
@@ -327,7 +327,7 @@ function LightboxOverlay({ asset, index, total, onClose, onNext, onPrev }: Light
           onClick={copyPath}
           title={t.plugins.artist.lightbox_copy_path}
           aria-label={t.plugins.artist.lightbox_copy_path}
-          className="p-2 rounded-card bg-white/10 text-white hover:bg-white/20 transition-colors"
+          className="p-2 rounded-card bg-secondary/10 text-foreground hover:bg-secondary/20 transition-colors"
         >
           <Copy className="w-4 h-4" />
         </button>
@@ -336,7 +336,7 @@ function LightboxOverlay({ asset, index, total, onClose, onNext, onPrev }: Light
           onClick={toggleFullscreen}
           title={isFullscreen ? t.plugins.artist.lightbox_exit_fullscreen : t.plugins.artist.lightbox_fullscreen}
           aria-label={isFullscreen ? t.plugins.artist.lightbox_exit_fullscreen : t.plugins.artist.lightbox_fullscreen}
-          className="p-2 rounded-card bg-white/10 text-white hover:bg-white/20 transition-colors"
+          className="p-2 rounded-card bg-secondary/10 text-foreground hover:bg-secondary/20 transition-colors"
         >
           {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
         </button>
@@ -345,7 +345,7 @@ function LightboxOverlay({ asset, index, total, onClose, onNext, onPrev }: Light
           onClick={onClose}
           title={t.common.close}
           aria-label={t.common.close}
-          className="p-2 rounded-card bg-white/10 text-white hover:bg-white/20 transition-colors"
+          className="p-2 rounded-card bg-secondary/10 text-foreground hover:bg-secondary/20 transition-colors"
         >
           <X className="w-5 h-5" />
         </button>
@@ -356,7 +356,7 @@ function LightboxOverlay({ asset, index, total, onClose, onNext, onPrev }: Light
         type="button"
         onClick={(e) => { e.stopPropagation(); onPrev(); }}
         aria-label={t.plugins.artist.lightbox_prev_image}
-        className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-card bg-white/10 text-white hover:bg-white/20 transition-colors"
+        className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-card bg-secondary/10 text-foreground hover:bg-secondary/20 transition-colors"
       >
         <ChevronLeft className="w-6 h-6" />
       </button>
@@ -364,7 +364,7 @@ function LightboxOverlay({ asset, index, total, onClose, onNext, onPrev }: Light
         type="button"
         onClick={(e) => { e.stopPropagation(); onNext(); }}
         aria-label={t.plugins.artist.lightbox_next_image}
-        className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-card bg-white/10 text-white hover:bg-white/20 transition-colors"
+        className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-card bg-secondary/10 text-foreground hover:bg-secondary/20 transition-colors"
       >
         <ChevronRight className="w-6 h-6" />
       </button>
@@ -385,9 +385,9 @@ function LightboxOverlay({ asset, index, total, onClose, onNext, onPrev }: Light
       />
 
       {/* Caption */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/60 rounded-card px-4 py-2 text-white text-md">
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/60 rounded-card px-4 py-2 text-foreground text-md">
         {asset.fileName}
-        <span className="ml-3 text-white/70 text-md">
+        <span className="ml-3 text-foreground text-md">
           {index + 1} / {total}
         </span>
       </div>
@@ -426,7 +426,7 @@ function LightboxImage({
   const dataUrl = useLocalImage(filePath);
 
   if (!dataUrl) {
-    return <Loader2 className="w-8 h-8 text-white animate-spin" />;
+    return <Loader2 className="w-8 h-8 text-foreground animate-spin" />;
   }
 
   return (

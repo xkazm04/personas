@@ -105,7 +105,7 @@ export default function ResearchDashboard() {
               <span className="typo-section-title text-foreground truncate">
                 {t.research_lab.dashboard}
               </span>
-              <span className="text-xs uppercase tracking-[0.2em] text-foreground/60">
+              <span className="typo-label uppercase tracking-[0.2em] text-foreground">
                 {t.research_lab.pipeline_subtitle}
               </span>
             </div>
@@ -167,10 +167,10 @@ export default function ResearchDashboard() {
             {/* Domain distribution strip */}
             <div className="mt-10 pt-6 border-t border-border/40">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-xs uppercase tracking-[0.2em] text-foreground/60">
+                <h3 className="typo-label uppercase tracking-[0.2em] text-foreground">
                   {t.research_lab.domains}
                 </h3>
-                <span className="typo-caption text-foreground/60 tabular-nums">
+                <span className="typo-caption text-foreground tabular-nums">
                   {tx(t.research_lab.projects_total, { count: projects.length })}
                 </span>
               </div>
@@ -205,7 +205,7 @@ function Counter({
       >
         {value}
       </span>
-      <span className="text-[10px] uppercase tracking-[0.18em] text-foreground/55">
+      <span className="text-[10px] uppercase tracking-[0.18em] text-foreground">
         {label}
       </span>
     </div>
@@ -243,7 +243,7 @@ function PhaseStation({
       >
         <Icon
           className={`w-5 h-5 ${
-            populated ? 'text-primary' : 'text-foreground/40'
+            populated ? 'text-primary' : 'text-foreground'
           }`}
         />
         {populated && (
@@ -254,7 +254,7 @@ function PhaseStation({
       </div>
 
       {/* Phase label */}
-      <span className={`typo-card-label text-center mb-2 ${populated ? 'text-foreground' : 'text-foreground/55'}`}>
+      <span className={`typo-card-label text-center mb-2 ${populated ? 'text-foreground' : 'text-foreground'}`}>
         {phase.shortLabel}
       </span>
 
@@ -271,19 +271,19 @@ function PhaseStation({
               {p.name}
             </p>
             {p.domain && (
-              <p className="text-[10px] tracking-wide text-foreground/55 truncate">
+              <p className="text-[10px] tracking-wide text-foreground truncate">
                 {domainLabel(t, p.domain)}
               </p>
             )}
           </button>
         ))}
         {overflow > 0 && (
-          <span className="px-2 py-1 typo-caption text-foreground/55 text-center">
+          <span className="px-2 py-1 typo-caption text-foreground text-center">
             +{overflow}
           </span>
         )}
         {!populated && (
-          <span className="px-2 py-1 typo-caption text-foreground/40 text-center">
+          <span className="px-2 py-1 typo-caption text-foreground text-center">
             —
           </span>
         )}
@@ -308,7 +308,7 @@ function DomainStrip({
 
   if (entries.length === 0) {
     return (
-      <p className="typo-caption text-foreground/55">
+      <p className="typo-caption text-foreground">
         {t.research_lab.no_projects}
       </p>
     );
@@ -358,7 +358,7 @@ function BenchEmptyState({ t, onCreate }: { t: Translations; onCreate: () => voi
         </div>
         <div className="space-y-2">
           <p className="typo-body-lg text-foreground">{t.research_lab.no_projects}</p>
-          <p className="typo-body text-foreground/70 max-w-sm mx-auto">
+          <p className="typo-body text-foreground max-w-sm mx-auto">
             {t.research_lab.no_projects_hint}
           </p>
         </div>

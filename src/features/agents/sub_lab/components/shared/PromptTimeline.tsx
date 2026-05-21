@@ -6,6 +6,8 @@ import ContentLoader from '@/features/shared/components/progress/ContentLoader';
 import type { PersonaPromptVersion } from '@/lib/bindings/PersonaPromptVersion';
 import { TimelineEntry } from './TimelineEntry';
 import { useTranslation } from '@/i18n/useTranslation';
+import { DebtText, debtText } from '@/i18n/DebtText';
+
 
 export function PromptTimeline() {
   const { t } = useTranslation();
@@ -60,7 +62,7 @@ export function PromptTimeline() {
         <GitBranch className="w-8 h-8 text-foreground" />
         <p className="typo-body font-medium text-foreground">{t.agents.lab.no_versions_yet}</p>
         <p className="typo-caption text-foreground max-w-xs text-center">
-          Versions are created automatically when the prompt is modified through the Lab or Matrix build.
+          <DebtText k="auto_versions_are_created_automatically_when_th_257e2db7" />
         </p>
       </div>
     );
@@ -81,7 +83,7 @@ export function PromptTimeline() {
           onClick={handleRefresh}
           disabled={loading}
           className="p-1 rounded-input text-foreground hover:text-muted-foreground/70 hover:bg-primary/5 transition-colors disabled:opacity-40"
-          title="Refresh versions"
+          title={debtText("auto_refresh_versions_293273c5")}
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
         </button>

@@ -5,6 +5,8 @@ import {
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/en';
 import type { PersonaTrigger } from '@/lib/bindings/PersonaTrigger';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 type TxFn = (template: string, vars: Record<string, string | number>) => string;
 
@@ -98,7 +100,7 @@ export function TriggerList({ triggers }: { triggers: PersonaTrigger[] }) {
             const cfg = JSON.parse(trigger.config ?? '{}');
             if (cfg.listen_event_type) configLabel = cfg.listen_event_type;
             else if (cfg.cron) configLabel = `cron: ${cfg.cron}`;
-          } catch { /* use default */ }
+          } catch (err) { silentCatch("features/plugins/dev-tools/sub_lifecycle/setup/FlowSteps:catch1")(err); }
           return (
             <div key={trigger.id} className="flex items-center gap-3 px-4 py-3 border-b border-primary/5 last:border-b-0">
               <Zap className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />

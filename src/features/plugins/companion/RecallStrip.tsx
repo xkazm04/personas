@@ -60,7 +60,7 @@ export function RecallStrip({ preview }: { preview: CompanionRecallPreview }) {
 
   return (
     <div
-      className="rounded-card border border-foreground/10 bg-secondary/40 px-3 py-1.5 typo-caption text-foreground/60"
+      className="rounded-card border border-foreground/10 bg-secondary/40 px-3 py-1.5 typo-caption text-foreground"
       data-testid="companion-recall-strip"
     >
       <button
@@ -120,11 +120,11 @@ function ChipGroup({
   if (entries.length === 0) return null;
   return (
     <div className="flex flex-wrap items-baseline gap-1.5">
-      <span className="text-foreground/45 shrink-0">{label}</span>
+      <span className="text-foreground shrink-0">{label}</span>
       {entries.map((e) => (
         <span
           key={e.id || e.title}
-          className="rounded-interactive bg-foreground/[0.06] border border-foreground/10 px-1.5 py-0.5 text-foreground/75"
+          className="rounded-interactive bg-foreground/[0.06] border border-foreground/10 px-1.5 py-0.5 text-foreground"
         >
           {e.title}
         </span>

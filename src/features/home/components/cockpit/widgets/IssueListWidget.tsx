@@ -1,6 +1,8 @@
 import { ExternalLink } from 'lucide-react';
 
 import type { CockpitWidgetProps } from '../widgetRegistry';
+import { debtText } from '@/i18n/DebtText';
+
 
 /**
  * `issue_list` — generic bulleted list of items with optional severity
@@ -42,12 +44,12 @@ export function IssueListWidget({ config, title }: CockpitWidgetProps) {
   return (
     <div className="rounded-card border border-foreground/10 bg-foreground/[0.02] p-4 h-full flex flex-col min-h-0">
       {title ? (
-        <div className="typo-caption text-foreground/60 uppercase tracking-wide mb-3">
+        <div className="typo-caption text-foreground uppercase tracking-wide mb-3">
           {title}
         </div>
       ) : null}
       {items.length === 0 ? (
-        <div className="flex-1 flex items-center justify-center text-foreground/40 typo-caption">
+        <div className="flex-1 flex items-center justify-center text-foreground typo-caption">
           {emptyLabel}
         </div>
       ) : (
@@ -63,7 +65,7 @@ export function IssueListWidget({ config, title }: CockpitWidgetProps) {
                   {item.title}
                 </div>
                 {item.sublabel ? (
-                  <div className="typo-caption text-foreground/50 truncate">
+                  <div className="typo-caption text-foreground truncate">
                     {item.sublabel}
                   </div>
                 ) : null}
@@ -72,8 +74,8 @@ export function IssueListWidget({ config, title }: CockpitWidgetProps) {
                 <button
                   type="button"
                   onClick={() => window.open(item.href, '_blank', 'noopener')}
-                  className="text-foreground/40 hover:text-foreground/80 transition-colors shrink-0"
-                  aria-label="Open in browser"
+                  className="text-foreground hover:text-foreground/80 transition-colors shrink-0"
+                  aria-label={debtText("auto_open_in_browser_052269b2")}
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
                 </button>

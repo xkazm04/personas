@@ -11,6 +11,10 @@ import {
 import { clearCrashLogs, getCrashLogs, getFrontendCrashes, clearFrontendCrashes } from "@/api/system/system";
 import { readCrashLogs, CRASH_STORAGE_KEY } from '@/lib/utils/crashPersistence';
 import type { CrashLogEntry, FrontendCrashRow } from "@/api/system/system";
+import { silentCatch } from '@/lib/silentCatch';
+import { DebtText } from '@/i18n/DebtText';
+
+
 
 export function CrashLogsSection() {
   const [expanded, setExpanded] = useState(false);
@@ -50,9 +54,7 @@ export function CrashLogsSection() {
       setFrontendDbLogs([]);
       setFrontendLsLogs([]);
       setSelectedLog(null);
-    } catch {
-      // intentional: non-critical -- crash log clear is best-effort
-    } finally {
+    } catch (err) { silentCatch("features/overview/components/health/CrashLogsSection:catch1")(err); } finally {
       setClearing(false);
     }
   };
@@ -70,7 +72,7 @@ export function CrashLogsSection() {
           <FileWarning className="w-3.5 h-3.5 text-red-300" />
         </div>
         <span className="typo-label text-foreground">
-          Crash Logs
+          <DebtText k="auto_crash_logs_c2b8b441" />
         </span>
         {totalCount > 0 && (
           <span className="ml-1 px-1.5 py-0.5 typo-heading rounded-full bg-red-500/15 text-red-400">
@@ -101,7 +103,7 @@ export function CrashLogsSection() {
           >
             <div className="border-t border-primary/5 px-4 py-3 space-y-2 max-h-80 overflow-y-auto">
               {totalCount === 0 && (
-                <p className="typo-body text-foreground py-2">No crash logs recorded.</p>
+                <p className="typo-body text-foreground py-2"><DebtText k="auto_no_crash_logs_recorded_e8d3237c" /></p>
               )}
 
               {/* Rust backend crash logs (panics, auto-cred) */}
@@ -154,7 +156,7 @@ export function CrashLogsSection() {
                       )}
                       {log.componentStack && (
                         <pre className="typo-code text-foreground whitespace-pre-wrap break-all max-h-24 overflow-y-auto leading-relaxed mt-1">
-                          --- Component Stack ---{'\n'}{log.componentStack}
+                          <DebtText k="auto_component_stack_f77592eb" />{'\n'}{log.componentStack}
                         </pre>
                       )}
                     </div>

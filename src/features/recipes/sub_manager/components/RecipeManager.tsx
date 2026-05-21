@@ -92,7 +92,7 @@ export function RecipeManager() {
           viewState.view === 'list' ? (
             <button
               onClick={() => dispatch({ type: 'GO_CREATE' })}
-              className="btn-md flex items-center gap-1.5 bg-primary font-medium text-white hover:bg-primary/90 transition-colors"
+              className="btn-md flex items-center gap-1.5 bg-primary font-medium text-foreground hover:bg-primary/90 transition-colors"
             >
               <Plus className="w-3.5 h-3.5" />
               {t.recipes.new_recipe}

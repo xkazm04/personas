@@ -157,11 +157,11 @@ interface DependencyGraphPanelProps {
 export function DependencyGraphPanel({ graph }: DependencyGraphPanelProps) {
   const { t, tx } = useTranslation();
 
-  const KIND_LABELS: Record<DepNodeKind, string> = {
+  const KIND_LABELS = useMemo<Record<DepNodeKind, string>>(() => ({
     credential: t.common.connectors,
     tool: t.common.tools,
     automation: t.agents.connectors.auto_title,
-  };
+  }), [t.agents.connectors.auto_title, t.common.connectors, t.common.tools]);
 
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [filterKind, setFilterKind] = useState<DepNodeKind | 'all'>('all');
@@ -221,7 +221,7 @@ export function DependencyGraphPanel({ graph }: DependencyGraphPanelProps) {
       }
     }
     return groups;
-  }, [filteredNodes]);
+  }, [KIND_LABELS, filteredNodes]);
 
   if (graph.nodes.length === 0) {
     return (

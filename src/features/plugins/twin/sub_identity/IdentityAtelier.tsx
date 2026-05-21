@@ -8,6 +8,8 @@ import { generateBio } from '@/api/twin/twin';
 import { TwinEmptyState } from '../TwinEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 import { GENDERS, genderFromPronouns, pronounsFromGender, genderDef, type Gender } from '../_shared/gender';
+import { DebtText } from '@/i18n/DebtText';
+
 
 /* ------------------------------------------------------------------ *
  *  Atelier — "Manuscript"
@@ -46,7 +48,7 @@ export default function IdentityAtelier() {
       setDirty(false);
       setShowBioGen(false);
     }
-  }, [activeTwin?.id]);
+  }, [activeTwin, activeTwin?.id]);
 
   useEffect(() => { if (twinProfiles.length === 0) fetchTwinProfiles(); }, [twinProfiles.length, fetchTwinProfiles]);
 
@@ -108,9 +110,9 @@ export default function IdentityAtelier() {
             <Feather className="w-5 h-5 text-violet-300" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[10px] uppercase tracking-[0.22em] text-foreground/55 font-medium">Identity Manuscript</p>
+            <p className="text-[10px] uppercase tracking-[0.22em] text-foreground font-medium"><DebtText k="auto_identity_manuscript_58ff3b34" /></p>
             <h1 className="typo-heading-lg text-foreground/95 truncate">{activeTwin.name || t.identity.promptNoName}</h1>
-            <p className="typo-caption text-foreground/65 mt-0.5">{role || t.identity.subtitle}</p>
+            <p className="typo-caption text-foreground mt-0.5">{role || t.identity.subtitle}</p>
           </div>
           <div className="hidden md:flex items-center gap-3 px-3 py-2 rounded-full border border-primary/15 bg-card/40">
             <Stat label="fields" value={`${fieldsFilled}/5`} />
@@ -154,10 +156,10 @@ export default function IdentityAtelier() {
                         className={`relative flex items-center gap-2.5 px-4 py-2.5 rounded-interactive border transition-all ${
                           isActive
                             ? `bg-gradient-to-br ${g.tint} text-foreground border-violet-500/40 shadow-elevation-1`
-                            : 'text-foreground/65 border-primary/10 hover:border-primary/20 hover:text-foreground'
+                            : 'text-foreground border-primary/10 hover:border-primary/20 hover:text-foreground'
                         }`}
                       >
-                        <span className="text-2xl leading-none">{g.glyph}</span>
+                        <span className="typo-body-lg leading-none">{g.glyph}</span>
                         <span className="typo-caption">{label}</span>
                       </button>
                     );
@@ -170,7 +172,7 @@ export default function IdentityAtelier() {
               <Field label={t.identity.bio} action={
                 <button
                   onClick={() => setShowBioGen(!showBioGen)}
-                  className="flex items-center gap-1.5 text-xs font-medium text-violet-300 hover:text-violet-200 transition-colors"
+                  className="flex items-center gap-1.5 typo-caption font-medium text-violet-300 hover:text-violet-200 transition-colors"
                 >
                   <Wand2 className="w-3.5 h-3.5" />
                   {showBioGen ? t.identity.cancel : t.identity.generateWithAi}
@@ -182,7 +184,7 @@ export default function IdentityAtelier() {
                     animate={{ opacity: 1, y: 0 }}
                     className="mb-2 p-3 rounded-card border border-violet-500/25 bg-violet-500/5 space-y-3"
                   >
-                    <p className="typo-caption text-foreground/65">{t.identity.bioGenHint}</p>
+                    <p className="typo-caption text-foreground">{t.identity.bioGenHint}</p>
                     <input type="text" placeholder={t.identity.bioKeywordsPlaceholder} value={bioKeywords} onChange={(e) => setBioKeywords(e.target.value)} className={INPUT_FIELD} autoFocus />
                     <div className="flex justify-end">
                       <Button onClick={handleGenerateBio} disabled={generating || !bioKeywords.trim()} size="sm" variant="accent" accentColor="violet">
@@ -199,7 +201,7 @@ export default function IdentityAtelier() {
                   onChange={(e) => { setBio(e.target.value); markDirty(); }}
                   className={`${INPUT_FIELD} resize-y leading-relaxed`}
                 />
-                <div className="flex items-center gap-3 mt-1.5 text-[10px] text-foreground/55 tabular-nums">
+                <div className="flex items-center gap-3 mt-1.5 text-[10px] text-foreground tabular-nums">
                   <span>{stats.bioWords} words</span>
                   <span>·</span>
                   <span>{stats.bioChars} chars</span>
@@ -225,36 +227,36 @@ export default function IdentityAtelier() {
                 <div className="flex items-center gap-2 px-4 py-2.5 border-b border-violet-500/15 bg-violet-500/8">
                   <Quote className="w-3.5 h-3.5 text-violet-300" />
                   <span className="text-[10px] uppercase tracking-[0.2em] text-violet-300 font-medium">{t.identity.promptPreview}</span>
-                  <span className="ml-auto typo-caption text-foreground/55 tabular-nums">{stats.bioChars} chars</span>
+                  <span className="ml-auto typo-caption text-foreground tabular-nums">{stats.bioChars} chars</span>
                 </div>
                 {/* Body */}
                 <div className="p-5 md:p-6 space-y-4">
-                  <p className="text-[11px] uppercase tracking-[0.22em] text-foreground/45 font-medium">opening line</p>
+                  <p className="text-[11px] uppercase tracking-[0.22em] text-foreground font-medium"><DebtText k="auto_opening_line_43ae017d" /></p>
                   <p className="typo-body text-foreground leading-relaxed">
-                    <span className="italic text-foreground/65">{t.identity.promptYouAreSpeaking}</span>{' '}
+                    <span className="italic text-foreground">{t.identity.promptYouAreSpeaking}</span>{' '}
                     <span className="font-semibold text-violet-200">{name.trim() || t.identity.promptNoName}</span>
                     {role.trim() && <span className="text-foreground/85">, {role.trim()}</span>}
-                    <span className="text-foreground/65">.</span>
+                    <span className="text-foreground">.</span>
                   </p>
 
                   <div className="flex items-center gap-2 pt-1">
                     <div className="h-px flex-1 bg-violet-500/15" />
-                    <p className="text-[11px] uppercase tracking-[0.22em] text-foreground/45 font-medium">biography</p>
+                    <p className="text-[11px] uppercase tracking-[0.22em] text-foreground font-medium">biography</p>
                     <div className="h-px flex-1 bg-violet-500/15" />
                   </div>
 
                   <p className="typo-body text-foreground/85 leading-relaxed whitespace-pre-wrap">
-                    {bio.trim() || <span className="italic text-foreground/40">{t.identity.promptNoBio}</span>}
+                    {bio.trim() || <span className="italic text-foreground">{t.identity.promptNoBio}</span>}
                   </p>
 
                   {obsidianSubpath.trim() && (
                     <>
                       <div className="flex items-center gap-2 pt-1">
                         <div className="h-px flex-1 bg-violet-500/15" />
-                        <p className="text-[11px] uppercase tracking-[0.22em] text-foreground/45 font-medium">memory anchor</p>
+                        <p className="text-[11px] uppercase tracking-[0.22em] text-foreground font-medium"><DebtText k="auto_memory_anchor_c12d3b02" /></p>
                         <div className="h-px flex-1 bg-violet-500/15" />
                       </div>
-                      <div className="flex items-center gap-2 typo-caption text-foreground/65">
+                      <div className="flex items-center gap-2 typo-caption text-foreground">
                         <FolderTree className="w-3.5 h-3.5" />
                         <span className="font-mono text-[11px]">{obsidianSubpath}</span>
                       </div>
@@ -263,15 +265,15 @@ export default function IdentityAtelier() {
                 </div>
                 {/* Footer signature */}
                 <div className="px-4 py-2.5 border-t border-violet-500/15 bg-card/40 flex items-center gap-2">
-                  <span className="text-[9px] uppercase tracking-[0.22em] text-foreground/45">signed</span>
-                  <span className="font-mono text-[10px] text-foreground/65">{activeTwin.id.slice(0, 8)}</span>
-                  <span className="ml-auto text-[10px] tabular-nums text-foreground/45">live preview</span>
+                  <span className="text-[9px] uppercase tracking-[0.22em] text-foreground">signed</span>
+                  <span className="font-mono text-[10px] text-foreground">{activeTwin.id.slice(0, 8)}</span>
+                  <span className="ml-auto text-[10px] tabular-nums text-foreground"><DebtText k="auto_live_preview_8f2e7bf3" /></span>
                 </div>
               </div>
 
               {/* Field readiness */}
               <div className="rounded-card border border-primary/10 bg-card/40 p-4">
-                <p className="text-[10px] uppercase tracking-[0.2em] text-foreground/55 font-medium mb-3">readiness</p>
+                <p className="text-[10px] uppercase tracking-[0.2em] text-foreground font-medium mb-3">readiness</p>
                 <div className="space-y-2">
                   <Pulse label={t.identity.name} on={stats.nameSet} />
                   <Pulse label={t.identity.roleTitle} on={stats.roleSet} />
@@ -295,7 +297,7 @@ function Section({ index, label, children }: { index: string; label: string; chi
     <section className="rounded-card border border-primary/10 bg-card/40 p-4 md:p-5">
       <div className="flex items-center gap-2 mb-4">
         <span className="font-mono text-[10px] text-violet-300 tracking-wider">{index}</span>
-        <span className="text-[10px] uppercase tracking-[0.22em] text-foreground/55 font-medium">{label}</span>
+        <span className="text-[10px] uppercase tracking-[0.22em] text-foreground font-medium">{label}</span>
         <div className="h-px flex-1 bg-primary/10" />
       </div>
       {children}
@@ -308,13 +310,13 @@ function Field({ label, hint, icon: Icon, action, className = '', children }: { 
     <label className={`block space-y-1.5 ${className}`}>
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5">
-          {Icon && <Icon className="w-3.5 h-3.5 text-foreground/55" />}
-          <span className="typo-caption text-foreground/75 font-medium">{label}</span>
+          {Icon && <Icon className="w-3.5 h-3.5 text-foreground" />}
+          <span className="typo-caption text-foreground font-medium">{label}</span>
         </div>
         {action}
       </div>
       {children}
-      {hint && <p className="typo-caption text-foreground/55 mt-1">{hint}</p>}
+      {hint && <p className="typo-caption text-foreground mt-1">{hint}</p>}
     </label>
   );
 }
@@ -324,7 +326,7 @@ function Stat({ label, value, accent = 'violet' }: { label: string; value: numbe
   return (
     <div className="flex flex-col items-start leading-tight">
       <span className={`typo-data-lg tabular-nums ${tone}`}>{value}</span>
-      <span className="text-[9px] uppercase tracking-[0.18em] text-foreground/55">{label}</span>
+      <span className="text-[9px] uppercase tracking-[0.18em] text-foreground">{label}</span>
     </div>
   );
 }
@@ -333,8 +335,8 @@ function Pulse({ label, on, pending }: { label: string; on: boolean; pending?: b
   return (
     <div className="flex items-center gap-2.5 typo-caption">
       <span className={`relative w-2 h-2 rounded-full ${on ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]' : pending ? 'bg-amber-400' : 'bg-foreground/15'}`} />
-      <span className="text-foreground/75">{label}</span>
-      <span className="ml-auto text-[10px] uppercase tracking-wider text-foreground/45">{on ? 'set' : pending ? 'draft' : 'empty'}</span>
+      <span className="text-foreground">{label}</span>
+      <span className="ml-auto text-[10px] uppercase tracking-wider text-foreground">{on ? 'set' : pending ? 'draft' : 'empty'}</span>
     </div>
   );
 }

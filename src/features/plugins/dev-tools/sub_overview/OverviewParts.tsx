@@ -17,6 +17,8 @@ import {
 } from './adapters';
 import { formatErr } from './overviewHelpers';
 import type { ConnectionState } from './useOverviewData';
+import { DebtText, debtText } from '@/i18n/DebtText';
+
 
 // ---------------------------------------------------------------------------
 // Stat tile (shared across baseline + variants)
@@ -159,7 +161,7 @@ export function ConnectionCard({
 // ---------------------------------------------------------------------------
 
 export function ChevronArrow() {
-  return <span className="typo-caption text-foreground/40 select-none">→</span>;
+  return <span className="typo-caption text-foreground select-none">→</span>;
 }
 
 export function ConnectorChain({
@@ -180,8 +182,8 @@ export function ConnectorChain({
   const activeCred = credentials.find((c) => c.id === activeCredId);
   return (
     <div className="rounded-modal border border-primary/10 bg-card/30 px-3 py-2.5">
-      <p className="typo-caption uppercase tracking-[0.18em] text-foreground/60 mb-2">
-        Connection chain
+      <p className="typo-caption uppercase tracking-[0.18em] text-foreground mb-2">
+        <DebtText k="auto_connection_chain_cb5a2bed" />
       </p>
       <div className="flex items-center gap-2 flex-wrap">
         <span className="inline-flex items-center gap-1 typo-caption text-foreground">
@@ -194,23 +196,23 @@ export function ConnectorChain({
           type="button"
           onClick={onEditUrl}
           className="inline-flex items-center gap-1 typo-caption text-foreground hover:text-primary transition-colors"
-          title="Edit project to change the repo URL"
+          title={debtText("auto_edit_project_to_change_the_repo_url_73afcda3")}
         >
           <GitBranch className="w-3 h-3 text-blue-400" />
-          {url ? <span className="font-mono truncate max-w-[260px]">{url}</span> : <span className="text-amber-400">no repo URL</span>}
+          {url ? <span className="font-mono truncate max-w-[260px]">{url}</span> : <span className="text-amber-400"><DebtText k="auto_no_repo_url_599e20cc" /></span>}
           <ExternalLink className="w-3 h-3 opacity-60" />
         </button>
         <ChevronArrow />
 
         {credentials.length === 0 ? (
           <span className="inline-flex items-center gap-1 typo-caption text-amber-400">
-            <Key className="w-3 h-3" /> no credential
+            <Key className="w-3 h-3" /> <DebtText k="auto_no_credential_5d557567" />
           </span>
         ) : credentials.length === 1 ? (
           <span className="inline-flex items-center gap-1 typo-caption text-foreground">
             <Key className="w-3 h-3 text-emerald-400" />
             <span className="font-medium">{credentials[0]!.name}</span>
-            <span className="text-foreground/50 font-mono">({credentials[0]!.serviceType})</span>
+            <span className="text-foreground font-mono">({credentials[0]!.serviceType})</span>
           </span>
         ) : (
           <div className="inline-flex items-center gap-1">
@@ -228,8 +230,8 @@ export function ConnectorChain({
         )}
       </div>
       {activeCred && (
-        <p className="typo-caption text-foreground/50 mt-1.5">
-          Stats are fetched through the API proxy using this credential's auth.
+        <p className="typo-caption text-foreground mt-1.5">
+          <DebtText k="auto_stats_are_fetched_through_the_api_proxy_us_e5df6a25" />
         </p>
       )}
     </div>
@@ -248,8 +250,8 @@ export function MonitoringChain({
   const [orgSlug, projectSlug] = splitSentrySlug(slug);
   return (
     <div className="rounded-modal border border-primary/10 bg-card/30 px-3 py-2.5">
-      <p className="typo-caption uppercase tracking-[0.18em] text-foreground/60 mb-2">
-        Connection chain
+      <p className="typo-caption uppercase tracking-[0.18em] text-foreground mb-2">
+        <DebtText k="auto_connection_chain_cb5a2bed" />
       </p>
       <div className="flex items-center gap-2 flex-wrap">
         <span className="inline-flex items-center gap-1 typo-caption text-foreground">
@@ -261,11 +263,11 @@ export function MonitoringChain({
           <span className="inline-flex items-center gap-1 typo-caption text-foreground">
             <Key className="w-3 h-3 text-emerald-400" />
             <span className="font-medium">{credential.name}</span>
-            <span className="text-foreground/50 font-mono">({credential.serviceType})</span>
+            <span className="text-foreground font-mono">({credential.serviceType})</span>
           </span>
         ) : (
           <span className="inline-flex items-center gap-1 typo-caption text-amber-400">
-            <Key className="w-3 h-3" /> no credential linked
+            <Key className="w-3 h-3" /> <DebtText k="auto_no_credential_linked_4b88fb9a" />
           </span>
         )}
         {credential && (
@@ -277,7 +279,7 @@ export function MonitoringChain({
                 <span className="font-mono">{orgSlug ? `${orgSlug}/${projectSlug}` : projectSlug}</span>
               </span>
             ) : (
-              <span className="typo-caption text-amber-400">no project slug</span>
+              <span className="typo-caption text-amber-400"><DebtText k="auto_no_project_slug_131aaa6d" /></span>
             )}
           </>
         )}
@@ -378,7 +380,7 @@ export function SentryProjectPicker({
 
       {credentials.length > 1 && (
         <div className="space-y-1">
-          <label className="typo-caption text-foreground/70">{po.credential_label}</label>
+          <label className="typo-caption text-foreground">{po.credential_label}</label>
           <select
             value={selectedCredId}
             onChange={(e) => setSelectedCredId(e.target.value)}
@@ -394,7 +396,7 @@ export function SentryProjectPicker({
       {manualMode ? (
         <>
           <div className="space-y-1">
-            <label className="typo-caption text-foreground/70">{po.org_slug_label}</label>
+            <label className="typo-caption text-foreground">{po.org_slug_label}</label>
             <input
               value={orgSlug}
               onChange={(e) => setOrgSlug(e.target.value.trim())}
@@ -403,7 +405,7 @@ export function SentryProjectPicker({
             />
           </div>
           <div className="space-y-1">
-            <label className="typo-caption text-foreground/70">{po.project_slug}</label>
+            <label className="typo-caption text-foreground">{po.project_slug}</label>
             <input
               value={projectSlug}
               onChange={(e) => setProjectSlug(e.target.value.trim())}
@@ -415,7 +417,7 @@ export function SentryProjectPicker({
       ) : (
         <>
           <div className="space-y-1">
-            <label className="typo-caption text-foreground/70">{po.org_label}</label>
+            <label className="typo-caption text-foreground">{po.org_label}</label>
             <select
               value={orgSlug}
               onChange={(e) => setOrgSlug(e.target.value)}
@@ -432,7 +434,7 @@ export function SentryProjectPicker({
           </div>
 
           <div className="space-y-1">
-            <label className="typo-caption text-foreground/70">{po.project_label}</label>
+            <label className="typo-caption text-foreground">{po.project_label}</label>
             <select
               value={projectSlug}
               onChange={(e) => setProjectSlug(e.target.value)}
@@ -457,8 +459,8 @@ export function SentryProjectPicker({
             <p className="typo-caption text-foreground break-words">
               {tx(po.sentry_discovery_failed, { error: discoveryError })}
             </p>
-            <p className="typo-caption text-foreground/60 mt-1">
-              Enter the slugs manually below — find them in your Sentry URL: <span className="font-mono">sentry.io/organizations/<b>your-org</b>/projects/<b>your-project</b>/</span>
+            <p className="typo-caption text-foreground mt-1">
+              <DebtText k="auto_enter_the_slugs_manually_below_find_them_i_79cccef5" /> <span className="font-mono"><DebtText k="auto_sentry_io_organizations_e9447370" /><b>your-org</b><DebtText k="auto_projects_efa335ad" /><b>your-project</b>/</span>
             </p>
           </div>
         </div>
@@ -471,7 +473,7 @@ export function SentryProjectPicker({
           setDiscoveryError(null);
           setOrgSlug(''); setProjectSlug('');
         }}
-        className="typo-caption text-foreground/70 hover:text-foreground underline-offset-2 hover:underline"
+        className="typo-caption text-foreground hover:text-foreground underline-offset-2 hover:underline"
       >
         {manualMode ? po.try_auto_discovery : po.enter_slugs_manually}
       </button>

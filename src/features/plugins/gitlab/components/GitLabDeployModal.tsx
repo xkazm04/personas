@@ -7,6 +7,8 @@ import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { CiCdTemplatesPicker } from './CiCdTemplatesPicker';
 import type { CiCdTemplate, GitLabTierId } from '../data/cicdTemplates';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 interface GitLabDeployModalProps {
   projects: GitLabProject[];
@@ -53,9 +55,7 @@ export function GitLabDeployModal({
     try {
       const newPersonaId = await onCreateFromTemplate(template);
       setSelectedPersonaId(newPersonaId);
-    } catch {
-      // intentional: error state handled locally via store + ErrorBanner
-    } finally {
+    } catch (err) { silentCatch("features/plugins/gitlab/components/GitLabDeployModal:catch1")(err); } finally {
       setIsCreatingFromTemplate(false);
     }
   };
@@ -80,9 +80,7 @@ export function GitLabDeployModal({
       }
       setResult(res);
       onDeploySuccess?.();
-    } catch {
-      // intentional: error state handled locally via store + ErrorBanner
-    } finally {
+    } catch (err) { silentCatch("features/plugins/gitlab/components/GitLabDeployModal:catch2")(err); } finally {
       setIsDeploying(false);
       deployingRef.current = false;
     }

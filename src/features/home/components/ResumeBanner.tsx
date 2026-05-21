@@ -2,6 +2,8 @@ import { AlertCircle, Compass, PenLine, ChevronRight, X } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useAgentStore } from '@/stores/agentStore';
 import { useResumeContext, clearLastEdited } from './useResumeContext';
+import { debtText } from '@/i18n/DebtText';
+
 
 /**
  * Resume-where-you-left-off banner. Surfaces a single high-signal
@@ -65,7 +67,7 @@ export default function ResumeBanner() {
         onClick={handleDismiss}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleDismiss(e as unknown as React.MouseEvent); } }}
         className="p-1 rounded-input text-foreground opacity-50 hover:opacity-100 hover:bg-secondary/40"
-        aria-label="Dismiss resume banner"
+        aria-label={debtText("auto_dismiss_resume_banner_ccff3f60")}
       >
         <X className="w-3.5 h-3.5" />
       </span>

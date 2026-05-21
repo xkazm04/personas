@@ -189,7 +189,7 @@ export function PersonaHero({
 
         <div className="relative flex items-center gap-6">
           <div className="flex-1 min-w-0">
-            <span className="typo-label uppercase tracking-[0.22em] text-foreground/55">
+            <span className="typo-label uppercase tracking-[0.22em] text-foreground">
               {t.agents.use_cases.persona_label}
             </span>
             <h2 className="typo-section-title text-foreground mt-0.5 truncate font-semibold">
@@ -202,7 +202,7 @@ export function PersonaHero({
               <span className="typo-data text-foreground font-mono text-xl">
                 {stats.total}
               </span>
-              <span className="typo-label uppercase tracking-wider text-foreground/65">
+              <span className="typo-label uppercase tracking-wider text-foreground">
                 {t.agents.use_cases.capabilities_label}
               </span>
             </span>
@@ -217,11 +217,11 @@ export function PersonaHero({
               </span>
             )}
             {stats.paused > 0 && (
-              <span className="typo-caption text-foreground/55">
+              <span className="typo-caption text-foreground">
                 {tx(t.agents.use_cases.capabilities_paused, { count: stats.paused })}
               </span>
             )}
-            <span className="typo-caption text-foreground/45 border-l border-card-border pl-4">
+            <span className="typo-caption text-foreground border-l border-card-border pl-4">
               {tx(t.agents.use_cases.dimensions_coverage, {
                 count: stats.allDims.size,
               })}
@@ -235,7 +235,7 @@ export function PersonaHero({
         <div className="md:hidden mt-3 flex items-center gap-3 flex-wrap">
           <span className="inline-flex items-baseline gap-1.5">
             <span className="typo-data text-foreground font-mono text-lg">{stats.total}</span>
-            <span className="typo-label uppercase tracking-wider text-foreground/65">
+            <span className="typo-label uppercase tracking-wider text-foreground">
               {t.agents.use_cases.capabilities_label}
             </span>
           </span>
@@ -250,7 +250,7 @@ export function PersonaHero({
             </span>
           )}
           {stats.paused > 0 && (
-            <span className="typo-caption text-foreground/55">
+            <span className="typo-caption text-foreground">
               {tx(t.agents.use_cases.capabilities_paused, { count: stats.paused })}
             </span>
           )}

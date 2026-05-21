@@ -38,7 +38,7 @@ const SCENARIO_STYLES: Record<EmptyStateVariant, Omit<ScenarioConfig, 'title' | 
   'use-cases-empty': { icon: ListChecks, iconColor: 'text-violet-400/75', iconContainerClassName: 'bg-violet-500/10 border-violet-500/20' },
   // Subtler illustration for the filter-reset case so it reads as "adjust, don't panic"
   // rather than a full first-run empty state.
-  'no-results': { icon: SearchX, iconColor: 'text-muted-foreground', iconContainerClassName: 'bg-secondary/40 border-primary/10' },
+  'no-results': { icon: SearchX, iconColor: 'text-foreground', iconContainerClassName: 'bg-secondary/40 border-primary/10' },
 };
 
 function useScenarioConfigs(): Record<EmptyStateVariant, ScenarioConfig> {

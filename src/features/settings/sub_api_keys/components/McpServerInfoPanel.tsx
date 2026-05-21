@@ -10,6 +10,8 @@
 import { useCallback, useState } from 'react';
 import { Copy, Check, ExternalLink, Server } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 const MCP_BASE_URL = 'http://127.0.0.1:9420';
 
@@ -44,9 +46,7 @@ export function McpServerInfoPanel() {
       await navigator.clipboard.writeText(MCP_BASE_URL);
       setUrlCopied(true);
       setTimeout(() => setUrlCopied(false), 2000);
-    } catch {
-      /* best-effort — manual select-copy still works */
-    }
+    } catch (err) { silentCatch("features/settings/sub_api_keys/components/McpServerInfoPanel:catch1")(err); }
   }, []);
 
   return (
@@ -59,7 +59,7 @@ export function McpServerInfoPanel() {
         </span>
       </div>
 
-      <p className="typo-caption text-foreground/70 leading-relaxed">{s.server_panel_description}</p>
+      <p className="typo-caption text-foreground leading-relaxed">{s.server_panel_description}</p>
 
       <div className="flex items-center gap-2">
         <code className="flex-1 typo-code text-foreground bg-background/60 border border-border/30 rounded-input px-2.5 py-1.5 truncate">
@@ -68,7 +68,7 @@ export function McpServerInfoPanel() {
         <button
           type="button"
           onClick={copyUrl}
-          className="inline-flex items-center gap-1 px-2 py-1.5 rounded-interactive typo-caption text-foreground/80 hover:bg-secondary/50 transition-colors"
+          className="inline-flex items-center gap-1 px-2 py-1.5 rounded-interactive typo-caption text-foreground hover:bg-secondary/50 transition-colors"
         >
           {urlCopied ? (
             <>
@@ -85,7 +85,7 @@ export function McpServerInfoPanel() {
       </div>
 
       <details className="group">
-        <summary className="cursor-pointer typo-caption text-foreground/70 hover:text-foreground transition-colors inline-flex items-center gap-1">
+        <summary className="cursor-pointer typo-caption text-foreground hover:text-foreground transition-colors inline-flex items-center gap-1">
           <ExternalLink size={11} />
           {s.endpoints_disclosure}
         </summary>
@@ -105,7 +105,7 @@ export function McpServerInfoPanel() {
                 {ep.method}
               </span>
               <code className="typo-code text-foreground/90">{ep.path}</code>
-              <span className="text-foreground/50 ml-auto truncate">
+              <span className="text-foreground ml-auto truncate">
                 {s[ep.descriptionKey]}
               </span>
             </div>
@@ -113,8 +113,8 @@ export function McpServerInfoPanel() {
         </div>
       </details>
 
-      <p className="typo-caption text-foreground/60 leading-relaxed bg-background/40 rounded p-2">
-        <span className="font-medium text-foreground/80">{s.server_auth_label}:</span>{' '}
+      <p className="typo-caption text-foreground leading-relaxed bg-background/40 rounded p-2">
+        <span className="font-medium text-foreground">{s.server_auth_label}:</span>{' '}
         {s.server_auth_description}
       </p>
     </div>

@@ -6,6 +6,8 @@ import { parseConversationMessages } from '@/lib/types/designTypes';
 import type { DesignDriftEvent } from '@/lib/design/designDrift';
 import { DRIFT_KIND_META } from '@/lib/design/designDrift';
 import { formatRelativeTime } from '@/lib/utils/formatters';
+import { debtText } from '@/i18n/DebtText';
+
 
 export function MessageBubble({ message }: { message: DesignConversationMessage }) {
   const isUser = message.role === 'user';
@@ -47,7 +49,7 @@ export function ConversationCard({
 
   return (
     <div className={`rounded-card border transition-colors ${isActive ? 'border-blue-500/40 bg-blue-500/5' : 'border-border/50 bg-card/50 hover:border-border'}`} data-testid={`conversation-card-${conversation.id}`}>
-      <div className="flex items-center gap-2 px-3 py-2" role="group" aria-label="Design conversation controls">
+      <div className="flex items-center gap-2 px-3 py-2" role="group" aria-label={debtText("auto_design_conversation_controls_ab77f46f")}>
         <button onClick={() => setExpanded(!expanded)} className="flex items-center gap-1.5 flex-1 min-w-0 text-left" data-testid={`conversation-expand-${conversation.id}`}>
           {expanded ? <ChevronDown className="w-3.5 h-3.5 text-foreground flex-shrink-0" /> : <ChevronRight className="w-3.5 h-3.5 text-foreground flex-shrink-0" />}
           <MessageSquare className="w-3.5 h-3.5 text-foreground flex-shrink-0" />

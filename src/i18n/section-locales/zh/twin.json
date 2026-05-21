@@ -142,7 +142,23 @@
     "previewStop": "停止",
     "previewTooltip": "用当前设置合成一段简短样本",
     "previewNeedsConfig": "试听前请先设置 voice id 和 credential id",
-    "previewSample": "这是你的 twin 通过语音通道说话时的声音。"
+    "previewSample": "这是你的 twin 通过语音通道说话时的声音。",
+    "eyebrowAtelier": "Voice Studio",
+    "atelierVariantLabel": "Atelier",
+    "currentVariantLabel": "Current",
+    "stageEmptyHeadline": "No voice on file yet",
+    "stageEmptyBody": "Paste a Voice ID from your ElevenLabs library and link the API credential — the stage will preview here.",
+    "stageReadyHeadline": "Voice ready to synthesize",
+    "stageReadyBody": "Hit preview to hear how the twin sounds with the current synthesis settings.",
+    "kpiVoiceSet": "voice id",
+    "kpiCredential": "credential",
+    "kpiModel": "model",
+    "kpiPreview": "preview",
+    "kpiReady": "ready",
+    "kpiMissing": "missing",
+    "sectionIdentity": "Voice identity",
+    "sectionSynthesis": "Synthesis controls",
+    "sectionModel": "Model selection"
   },
   "training": {
     "title": "Training Room",
@@ -262,7 +278,13 @@
     "bulkRejectedToast": "已拒绝 {count} 条记忆。",
     "bulkPartialToast": "{succeeded} 条已审核，{failed} 条失败 — 详见提示。",
     "provenanceChip": "来自 {id}…",
-    "provenanceTooltip": "来源通信 id：{id}"
+    "provenanceTooltip": "来源通信 id：{id}",
+    "ingestDocsTitle": "Seed from product docs",
+    "ingestDocsDescription": "Embed every page under docs/features/ into this twin's knowledge base. Lets the twin answer questions about Personas itself (events, triggers, recipes, …).",
+    "ingestDocsButton": "Ingest docs/features",
+    "ingestDocsLoading": "Ingesting…",
+    "ingestDocsSuccess": "Ingested {files} file(s) ({chunks} chunks). {skipped} already up-to-date.",
+    "ingestDocsErrorNoKb": "Bind a knowledge base in the Knowledge tab first."
   },
   "profiles": {
     "title": "Twin Profiles",

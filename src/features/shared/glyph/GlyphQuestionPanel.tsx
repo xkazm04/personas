@@ -6,6 +6,8 @@ import type { BuildQuestion } from '@/lib/types/buildTypes';
 import { VaultConnectorPicker } from '@/features/shared/components/picker/VaultConnectorPicker';
 import { DIM_META } from './dimMeta';
 import type { GlyphDimension } from './types';
+import { debtText } from '@/i18n/DebtText';
+
 
 /** Maps the backend cell keys to our 8-dimension vocabulary. Used so the
  *  question card can tint itself with the right dim colour. */
@@ -53,10 +55,10 @@ function GlyphQuestionCard({ question, onAnswer }: GlyphQuestionCardProps) {
     >
       <div className="absolute top-0 left-0 w-full h-1 rounded-t-modal" style={{ background: `linear-gradient(90deg, ${color}, transparent)` }} />
       <div className="flex items-center gap-2">
-        <span className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: `${color}33`, boxShadow: `0 0 8px ${color}55` }}>
+        <span className="w-6 h-6 rounded-input flex items-center justify-center" style={{ background: `${color}33`, boxShadow: `0 0 8px ${color}55` }}>
           <HelpCircle className="w-3.5 h-3.5" style={{ color: '#fff' }} />
         </span>
-        <span className="typo-label font-bold uppercase tracking-[0.18em] text-foreground/70">
+        <span className="typo-label font-bold uppercase tracking-[0.18em] text-foreground">
           {question.cellKey.replace(/-/g, ' ')}
         </span>
       </div>
@@ -83,8 +85,8 @@ function GlyphQuestionCard({ question, onAnswer }: GlyphQuestionCardProps) {
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-primary/10 hover:bg-primary/20 border border-card-border hover:border-primary/40 typo-body text-foreground transition-colors cursor-pointer"
                   data-testid={`glyph-option-${i}`}
                 >
-                  <Hash className="w-3 h-3 text-foreground/55" />
-                  <span className="tabular-nums text-foreground/55">{i + 1}</span>
+                  <Hash className="w-3 h-3 text-foreground" />
+                  <span className="tabular-nums text-foreground">{i + 1}</span>
                   <span>{opt}</span>
                 </button>
               ))}
@@ -96,7 +98,7 @@ function GlyphQuestionCard({ question, onAnswer }: GlyphQuestionCardProps) {
               value={freeText}
               onChange={(e) => setFreeText(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') submit(freeText); }}
-              placeholder="Answer in your own words…"
+              placeholder={debtText("auto_answer_in_your_own_words_28c70fc2")}
               className="flex-1 px-3 py-2 rounded-modal bg-primary/5 border border-card-border typo-body text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-primary/40"
               data-testid="glyph-freetext-input"
             />
@@ -131,7 +133,7 @@ export function GlyphQuestionPanel({ questions, onAnswer }: GlyphQuestionPanelPr
   if (questions.length === 0) return null;
   return (
     <div className="flex flex-col gap-2 mb-3">
-      <span className="typo-label font-bold uppercase tracking-[0.18em] text-foreground/60">
+      <span className="typo-label font-bold uppercase tracking-[0.18em] text-foreground">
         {t.templates.chronology.hub_phase_awaiting_input}
       </span>
       {questions.map((q) => (

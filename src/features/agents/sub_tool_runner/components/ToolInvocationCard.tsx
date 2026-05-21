@@ -15,6 +15,10 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import type { PersonaToolDefinition } from '@/lib/bindings/PersonaToolDefinition';
 import type { ToolInvocationResult } from '@/api/agents/tools';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
+import { debtText } from '@/i18n/DebtText';
+
+
 
 interface ToolInvocationCardProps {
   tool: PersonaToolDefinition;
@@ -104,7 +108,7 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
                       ? 'border-red-500/40 focus-visible:ring-red-500/30'
                       : 'border-primary/20 focus-visible:ring-violet-500/30'
                   }`}
-                  placeholder='{ "key": "value" }'
+                  placeholder={debtText("auto_key_value_9a434827")}
                   aria-invalid={!!jsonError}
                 />
                 {jsonError && (
@@ -196,7 +200,7 @@ function buildDefaultInput(tool: PersonaToolDefinition): string {
         }
         return JSON.stringify(defaults, null, 2);
       }
-    } catch { /* intentional: non-critical -- JSON parse fallback */ }
+    } catch (err) { silentCatch("features/agents/sub_tool_runner/components/ToolInvocationCard:catch1")(err); }
   }
   return '{}';
 }

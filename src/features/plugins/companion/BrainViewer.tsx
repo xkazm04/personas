@@ -130,7 +130,7 @@ export function BrainViewer({ onClose }: { onClose?: () => void }) {
           {(brainView.kind || brainView.id) ? (
             <button
               onClick={goBack}
-              className="p-1 rounded-interactive text-foreground/60 hover:text-foreground hover:bg-foreground/5 transition-colors focus-ring"
+              className="p-1 rounded-interactive text-foreground hover:text-foreground hover:bg-foreground/5 transition-colors focus-ring"
               aria-label={t.common.back}
               title={t.common.back}
             >
@@ -146,7 +146,7 @@ export function BrainViewer({ onClose }: { onClose?: () => void }) {
         {onClose && (
           <button
             onClick={onClose}
-            className="p-1.5 rounded-interactive text-foreground/60 hover:text-foreground hover:bg-foreground/5 transition-colors focus-ring"
+            className="p-1.5 rounded-interactive text-foreground hover:text-foreground hover:bg-foreground/5 transition-colors focus-ring"
             aria-label={t.common.close}
           >
             <X className="w-4 h-4" />
@@ -242,7 +242,7 @@ function TypesView() {
               {t.plugins.companion[labelKey]}
             </span>
           </div>
-          <div className="typo-caption text-foreground/60">
+          <div className="typo-caption text-foreground">
             {counts[kind] === undefined
               ? '…'
               : counts[kind] === 1
@@ -274,7 +274,7 @@ function ListView({ kind }: { kind: BrainKind }) {
 
   if (items === null) {
     return (
-      <div className="flex items-center gap-3 p-5 typo-body text-foreground/70">
+      <div className="flex items-center gap-3 p-5 typo-body text-foreground">
         <LoadingSpinner size="sm" />
         <span>{t.plugins.companion.brain_loading}</span>
       </div>
@@ -282,7 +282,7 @@ function ListView({ kind }: { kind: BrainKind }) {
   }
   if (items.length === 0) {
     return (
-      <p className="p-5 typo-body text-foreground/50">
+      <p className="p-5 typo-body text-foreground">
         {t.plugins.companion.brain_empty}
       </p>
     );
@@ -298,18 +298,18 @@ function ListView({ kind }: { kind: BrainKind }) {
           >
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-0.5">
-                <span className="typo-caption font-medium text-foreground/80 truncate">
+                <span className="typo-caption font-medium text-foreground truncate">
                   {item.title}
                 </span>
-                <span className="typo-caption text-foreground/40 shrink-0">
+                <span className="typo-caption text-foreground shrink-0">
                   · {formatRelativeTime(item.meta)}
                 </span>
               </div>
-              <div className="typo-caption text-foreground/60 line-clamp-2">
+              <div className="typo-caption text-foreground line-clamp-2">
                 {item.preview || '(empty)'}
               </div>
             </div>
-            <ChevronRight className="w-4 h-4 text-foreground/30 mt-1 shrink-0" />
+            <ChevronRight className="w-4 h-4 text-foreground mt-1 shrink-0" />
           </button>
         </li>
       ))}
@@ -366,7 +366,7 @@ function DetailView({ kind, id }: { kind: BrainKind; id: string }) {
   }
   if (!detail) {
     return (
-      <div className="flex items-center gap-3 p-5 typo-body text-foreground/70">
+      <div className="flex items-center gap-3 p-5 typo-body text-foreground">
         <LoadingSpinner size="sm" />
         <span>{t.plugins.companion.brain_loading}</span>
       </div>
@@ -378,7 +378,7 @@ function DetailView({ kind, id }: { kind: BrainKind; id: string }) {
       <div className="px-5 py-3 border-b border-foreground/5 shrink-0">
         <div className="typo-body font-medium truncate">{detail.title}</div>
         {detail.meta && (
-          <div className="typo-caption text-foreground/50 mt-0.5">
+          <div className="typo-caption text-foreground mt-0.5">
             {detail.meta}
           </div>
         )}

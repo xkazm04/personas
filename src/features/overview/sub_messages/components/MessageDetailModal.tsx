@@ -45,6 +45,8 @@ import type { PersonaMessage } from '@/lib/types/types';
 import type { PersonaMessageDelivery } from '@/lib/bindings/PersonaMessageDelivery';
 import type { PersonaManualReview } from '@/lib/bindings/PersonaManualReview';
 import type { PersonaMemory } from '@/lib/bindings/PersonaMemory';
+import { DebtText, debtText } from '@/i18n/DebtText';
+
 
 interface MessageDetailModalProps {
   message: PersonaMessage;
@@ -347,7 +349,7 @@ export function MessageDetailModal({
       // success AND cancel). Belt-and-braces timeout in case afterprint
       // doesn't reach us.
       const cleanup = () => {
-        try { iframe.remove(); } catch { /* already removed */ }
+        try { iframe.remove(); } catch (err) { silentCatch("features/overview/sub_messages/components/MessageDetailModal:catch1")(err); }
       };
       win.addEventListener('afterprint', cleanup, { once: true });
       window.setTimeout(cleanup, 120_000);
@@ -442,9 +444,9 @@ export function MessageDetailModal({
             type="button"
             onClick={() => go(-1)}
             disabled={!hasPrev}
-            className="p-1 rounded-card text-foreground/70 hover:text-foreground hover:bg-secondary/60 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-            title="Previous message (←)"
-            aria-label="Previous message"
+            className="p-1 rounded-card text-foreground hover:text-foreground hover:bg-secondary/60 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            title={debtText("auto_previous_message_a5f5266d")}
+            aria-label={debtText("auto_previous_message_93261bd8")}
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -452,9 +454,9 @@ export function MessageDetailModal({
             type="button"
             onClick={() => go(1)}
             disabled={!hasNext}
-            className="p-1 rounded-card text-foreground/70 hover:text-foreground hover:bg-secondary/60 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-            title="Next message (→)"
-            aria-label="Next message"
+            className="p-1 rounded-card text-foreground hover:text-foreground hover:bg-secondary/60 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            title={debtText("auto_next_message_5121d887")}
+            aria-label={debtText("auto_next_message_e3960a5d")}
           >
             <ChevronRight className="w-4 h-4" />
           </button>
@@ -506,7 +508,7 @@ export function MessageDetailModal({
               className="inline-flex items-center gap-1 hover:text-muted-foreground transition-colors"
               title={msgId}
             >
-              ID: <span className="font-mono">{msgId.slice(0, 8)}</span>
+              <DebtText k="auto_id_d789a1e9" /> <span className="font-mono">{msgId.slice(0, 8)}</span>
               {copiedId ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
             </button>
             {message.execution_id && (
@@ -526,7 +528,7 @@ export function MessageDetailModal({
 
           {confirmingDelete ? (
             <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon-sm" onClick={handleDelete} title="Confirm delete" className="text-red-400 bg-red-500/15 hover:bg-red-500/25">
+              <Button variant="ghost" size="icon-sm" onClick={handleDelete} title={debtText("auto_confirm_delete_c9f2829e")} className="text-red-400 bg-red-500/15 hover:bg-red-500/25">
                 <Check className="w-4 h-4" />
               </Button>
               <Button variant="ghost" size="icon-sm" onClick={() => setConfirmingDelete(false)} title="Cancel">
@@ -573,7 +575,7 @@ export function MessageDetailModal({
                   'typo-body-lg leading-[1.8] text-foreground',
                   '[&_p]:mb-5 [&_p:last-child]:mb-0',
                   '[&_p:first-of-type:first-letter]:float-left',
-                  '[&_p:first-of-type:first-letter]:text-5xl',
+                  '[&_p:first-of-type:first-letter]:typo-heading-lg',
                   '[&_p:first-of-type:first-letter]:leading-[0.9]',
                   '[&_p:first-of-type:first-letter]:font-semibold',
                   '[&_p:first-of-type:first-letter]:text-foreground/45',
@@ -661,7 +663,7 @@ export function MessageDetailModal({
                   placeholder={t.overview.messages_view.improve_placeholder}
                   rows={3}
                   autoFocus
-                  className="w-full px-4 py-3 rounded-xl border border-amber-400/15 bg-background/30 typo-body-lg leading-relaxed text-foreground placeholder-foreground/35 resize-none outline-none focus-visible:border-amber-400/40 focus-visible:bg-background/55 transition-colors"
+                  className="w-full px-4 py-3 rounded-modal border border-amber-400/15 bg-background/30 typo-body-lg leading-relaxed text-foreground placeholder-foreground/35 resize-none outline-none focus-visible:border-amber-400/40 focus-visible:bg-background/55 transition-colors"
                 />
                 <div className="flex items-center gap-2 mt-3">
                   <button
@@ -676,7 +678,7 @@ export function MessageDetailModal({
                   <button
                     type="button"
                     onClick={() => { setShowFeedback(false); setFeedbackText(''); }}
-                    className="px-3 py-2 typo-caption text-foreground/65 hover:text-foreground/85 transition-colors"
+                    className="px-3 py-2 typo-caption text-foreground hover:text-foreground/85 transition-colors"
                   >
                     {t.common.cancel}
                   </button>
@@ -690,11 +692,11 @@ export function MessageDetailModal({
             <SectionMark
               index="III"
               label={t.overview.messages_view.delivery_status}
-              icon={<Send className="w-3 h-3.5 text-foreground/45" />}
+              icon={<Send className="w-3 h-3.5 text-foreground" />}
               muted
             />
             {deliveriesLoading ? null : deliveries.length === 0 ? (
-              <p className="typo-body text-foreground/55 italic">
+              <p className="typo-body text-foreground italic">
                 {t.overview.messages_view.no_channels}
               </p>
             ) : (
@@ -713,7 +715,7 @@ export function MessageDetailModal({
                         {statusCfg.label}
                       </span>
                       {d.delivered_at && (
-                        <span className="typo-caption text-foreground/45 tabular-nums">
+                        <span className="typo-caption text-foreground tabular-nums">
                           · {formatRelativeTime(d.delivered_at)}
                         </span>
                       )}
@@ -737,11 +739,11 @@ export function MessageDetailModal({
             <SectionMark
               index="IV"
               label={t.overview.messages_view.section_pending_decisions}
-              icon={<ShieldCheck className="w-3 h-3.5 text-foreground/45" />}
+              icon={<ShieldCheck className="w-3 h-3.5 text-foreground" />}
               muted
             />
             {reviewsLoading ? null : linkedReviews.length === 0 ? (
-              <p className="typo-body text-foreground/55 italic">
+              <p className="typo-body text-foreground italic">
                 {t.overview.messages_view.pending_decisions_empty}
               </p>
             ) : (
@@ -791,7 +793,7 @@ function StarRatingRow({
       data-testid="msg-detail-rating"
       className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-secondary/[0.05] border border-primary/10"
     >
-      <span className="typo-label text-foreground/70 flex-shrink-0">
+      <span className="typo-label text-foreground flex-shrink-0">
         {t.overview.messages_view.rating_label}
       </span>
       <div
@@ -820,7 +822,7 @@ function StarRatingRow({
                 className={`w-5 h-5 transition-colors ${
                   filled
                     ? 'fill-amber-400 text-amber-400'
-                    : 'text-foreground/25'
+                    : 'text-foreground'
                 }`}
               />
             </button>
@@ -831,7 +833,7 @@ function StarRatingRow({
         <span
           data-testid="msg-detail-rating-saved"
           data-rating-saved={value}
-          className="typo-caption text-foreground/60 ml-auto"
+          className="typo-caption text-foreground ml-auto"
         >
           {saving
             ? <Loader2 className="inline w-3 h-3 animate-spin" />
@@ -904,12 +906,12 @@ function PendingDecisionCard({
             )}
           </div>
           {review.description && (
-            <p className="typo-body text-foreground/75 leading-relaxed mb-2">
+            <p className="typo-body text-foreground leading-relaxed mb-2">
               {review.description}
             </p>
           )}
           {contextText && (
-            <p className="typo-body text-foreground/70 leading-relaxed mb-2 whitespace-pre-wrap">
+            <p className="typo-body text-foreground leading-relaxed mb-2 whitespace-pre-wrap">
               {contextText}
             </p>
           )}
@@ -919,7 +921,7 @@ function PendingDecisionCard({
             </div>
           )}
         </div>
-        <span className="typo-caption text-foreground/45 tabular-nums flex-shrink-0">
+        <span className="typo-caption text-foreground tabular-nums flex-shrink-0">
           {formatRelativeTime(review.created_at)}
         </span>
       </div>
@@ -972,7 +974,7 @@ function PendingDecisionCard({
         <button
           type="button"
           onClick={onOpenInApprovals}
-          className="ml-auto inline-flex items-center gap-1 px-2.5 py-2 typo-caption text-foreground/55 hover:text-foreground/85 transition-colors"
+          className="ml-auto inline-flex items-center gap-1 px-2.5 py-2 typo-caption text-foreground hover:text-foreground/85 transition-colors"
         >
           <ShieldAlert className="w-3 h-3" />
           {t.overview.messages_view.pending_decisions_view_all}
@@ -1000,7 +1002,7 @@ function ContentActionButton({
     'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption font-medium transition-colors';
   const toneCls = highlight
     ? 'text-primary bg-primary/[0.08] hover:bg-primary/[0.14] border border-primary/15'
-    : 'text-foreground/75 bg-secondary/[0.05] hover:bg-secondary/[0.1] border border-primary/10';
+    : 'text-foreground bg-secondary/[0.05] hover:bg-secondary/[0.1] border border-primary/10';
   return (
     <button
       type="button"
@@ -1026,12 +1028,12 @@ function SectionMark({
   icon?: React.ReactNode;
   muted?: boolean;
 }) {
-  const numeralTone = muted ? 'text-foreground/30' : 'text-primary/55';
-  const labelTone   = muted ? 'text-foreground/55' : 'text-foreground/75';
+  const numeralTone = muted ? 'text-foreground' : 'text-primary/55';
+  const labelTone   = muted ? 'text-foreground' : 'text-foreground';
   const ruleTone    = muted ? 'bg-foreground/10'   : 'bg-primary/20';
   return (
     <div className="flex items-baseline gap-3 mb-4">
-      <span className={`font-serif text-4xl font-light leading-none ${numeralTone}`}>
+      <span className={`font-serif typo-heading-lg font-light leading-none ${numeralTone}`}>
         {index}
       </span>
       {icon}

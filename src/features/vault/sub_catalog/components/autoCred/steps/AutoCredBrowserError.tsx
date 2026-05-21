@@ -78,7 +78,7 @@ export function AutoCredBrowserError({
           {error.retryable && (
             <button
               onClick={onRetry}
-              className="px-5 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-modal typo-body font-medium transition-colors"
+              className="px-5 py-2 bg-cyan-600 hover:bg-cyan-500 text-foreground rounded-modal typo-body font-medium transition-colors"
             >
               {t.vault.auto_cred.retry}
             </button>

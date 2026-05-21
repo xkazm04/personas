@@ -17,11 +17,11 @@ export function GlyphActivityStrip({ lines }: GlyphActivityStripProps) {
         onClick={() => setExpanded((p) => !p)}
         className="w-full flex items-center gap-2 px-3 py-2 rounded-modal bg-foreground/[0.03] border border-border/20 hover:border-border/40 text-left transition-colors"
       >
-        <Terminal className="w-3.5 h-3.5 text-foreground/45 shrink-0" />
-        <span className="flex-1 truncate typo-caption text-foreground/55 font-mono">
+        <Terminal className="w-3.5 h-3.5 text-foreground shrink-0" />
+        <span className="flex-1 truncate typo-caption text-foreground font-mono">
           {latest}
         </span>
-        <ChevronDown className={`w-3.5 h-3.5 text-foreground/45 transition-transform ${expanded ? "rotate-180" : ""}`} />
+        <ChevronDown className={`w-3.5 h-3.5 text-foreground transition-transform ${expanded ? "rotate-180" : ""}`} />
       </button>
       <AnimatePresence>
         {expanded && (
@@ -33,7 +33,7 @@ export function GlyphActivityStrip({ lines }: GlyphActivityStripProps) {
           >
             <div className="mt-2 p-3 rounded-modal bg-black/20 border border-border/20 max-h-48 overflow-y-auto">
               {lines.slice(-100).map((line, i) => (
-                <div key={i} className="typo-caption font-mono text-foreground/65 leading-snug whitespace-pre-wrap break-words">
+                <div key={i} className="typo-caption font-mono text-foreground leading-snug whitespace-pre-wrap break-words">
                   {line}
                 </div>
               ))}

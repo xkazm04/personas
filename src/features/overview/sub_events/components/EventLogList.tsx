@@ -16,6 +16,8 @@ import { seedMockEvent } from '@/api/overview/events';
 import { useEventLog } from '../libs/useEventLog';
 import { EventDetailContent } from './EventLogItem';
 import { createLogger } from "@/lib/log";
+import { debtText } from '@/i18n/DebtText';
+
 
 const logger = createLogger("event-log");
 
@@ -26,7 +28,7 @@ const defaultStatus = { bg: 'bg-amber-500/10', text: 'text-amber-400', border: '
 const TRIGGER_ICON_MAP: Record<string, { icon: LucideIcon; tone: string }> = {
   persona:         { icon: Bot,            tone: 'text-violet-400' },
   user:            { icon: User,           tone: 'text-sky-400' },
-  system:          { icon: Cog,            tone: 'text-foreground/70' },
+  system:          { icon: Cog,            tone: 'text-foreground' },
   scheduler:       { icon: CalendarClock,  tone: 'text-amber-400' },
   local_drive:     { icon: HardDrive,      tone: 'text-emerald-400' },
   webhook:         { icon: Webhook,        tone: 'text-cyan-400' },
@@ -37,10 +39,10 @@ const TRIGGER_ICON_MAP: Record<string, { icon: LucideIcon; tone: string }> = {
   memory_engine:   { icon: Brain,          tone: 'text-fuchsia-400' },
   review_pipeline: { icon: ClipboardCheck, tone: 'text-emerald-400' },
   manual_review:   { icon: UserCheck,      tone: 'text-emerald-400' },
-  test:            { icon: FlaskConical,   tone: 'text-foreground/60' },
+  test:            { icon: FlaskConical,   tone: 'text-foreground' },
 };
 
-const FALLBACK_TRIGGER_ICON = { icon: HelpCircle, tone: 'text-foreground/60' };
+const FALLBACK_TRIGGER_ICON = { icon: HelpCircle, tone: 'text-foreground' };
 
 function resolveTriggerIcon(sourceType: string): { icon: LucideIcon; tone: string } {
   if (sourceType.startsWith('persona:')) return TRIGGER_ICON_MAP.persona ?? FALLBACK_TRIGGER_ICON;
@@ -59,12 +61,12 @@ export default function EventLogList() {
     { value: 'processing', label: 'Processing' },
     { value: 'skipped', label: 'Skipped' },
   ];
-  const SOURCE_TYPE_LABELS: Record<string, string> = {
+  const SOURCE_TYPE_LABELS = useMemo<Record<string, string>>(() => ({
     persona: t.overview.events.source_event,
     user: t.overview.events.source_manual,
     system: t.overview.events.source_system,
     scheduler: t.overview.events.source_scheduled,
-  };
+  }), [t.overview.events.source_event, t.overview.events.source_manual, t.overview.events.source_scheduled, t.overview.events.source_system]);
   const {
     recentEvents, personas, availableTypes,
     statusFilter, setStatusFilter, typeFilter, setTypeFilter,
@@ -122,7 +124,7 @@ export default function EventLogList() {
       .sort((a, b) => (SOURCE_TYPE_LABELS[a] ?? a).localeCompare(SOURCE_TYPE_LABELS[b] ?? b))
       .map((v) => ({ value: v, label: SOURCE_TYPE_LABELS[v] ?? v }));
     return [{ value: 'all', label: t.overview.events.all_triggers }, ...items];
-  }, [filteredEvents]);
+  }, [SOURCE_TYPE_LABELS, filteredEvents, t.overview.events.all_triggers]);
 
   const hasActiveFilters = statusFilter !== 'all' || typeFilter !== 'all' || selectedPersonaId || searchText.trim() || triggerFilter !== 'all';
 
@@ -199,7 +201,7 @@ export default function EventLogList() {
         }
         if (personaId) {
           return (
-            <span className="typo-body text-foreground/60 truncate font-mono" title={personaId}>
+            <span className="typo-body text-foreground truncate font-mono" title={personaId}>
               {personaId.length > 8 ? `${personaId.slice(0, 8)}…` : personaId}
             </span>
           );
@@ -306,14 +308,14 @@ export default function EventLogList() {
               <button
                 onClick={() => setShowSaveDialog(true)}
                 className="flex items-center gap-1 px-2 py-1.5 typo-caption rounded-card bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors whitespace-nowrap"
-                title="Save current filters as a view"
+                title={debtText("auto_save_current_filters_as_a_view_1680b016")}
               >
                 <Bookmark className="w-3 h-3" /> {t.overview.events.save_view}
               </button>
               <button
                 onClick={clearFilters}
                 className="flex items-center gap-1 px-2 py-1.5 typo-caption rounded-card bg-secondary/40 text-foreground border border-primary/10 hover:bg-secondary/60 transition-colors whitespace-nowrap"
-                title="Clear all filters"
+                title={debtText("auto_clear_all_filters_7dd6d199")}
               >
                 <X className="w-3 h-3" /> {t.common.clear}
               </button>

@@ -4,7 +4,7 @@ import { useAgentStore } from "@/stores/agentStore";
 import { useVaultStore } from "@/stores/vaultStore";
 import { CredentialDesignModal } from '@/features/vault/sub_catalog/components/design/CredentialDesignModal';
 import { mutateCredentialLink } from '@/hooks/design/core/useDesignContextMutator';
-import { toastCatch } from "@/lib/silentCatch";
+import { silentCatch, toastCatch } from "@/lib/silentCatch";
 import { useUnfulfilledCredentials, type UnfulfilledCredential } from '../../libs/useUnfulfilledCredentials';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -28,9 +28,7 @@ export function AgentCredentialDemands() {
     try {
       await mutateCredentialLink(selectedPersona.id, demand.connectorName, credentialId);
       await fetchCredentials();
-    } catch {
-      // intentional: non-critical -- link will retry on next attempt
-    }
+    } catch (err) { silentCatch("features/agents/sub_connectors/components/connectors/AgentCredentialDemands:catch1")(err); }
     setLinkingDemand(null);
   }, [selectedPersona, fetchCredentials]);
 

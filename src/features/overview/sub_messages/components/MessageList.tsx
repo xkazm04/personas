@@ -219,7 +219,7 @@ export default function MessageList() {
             )}
             <button
               onClick={() => setReadFilter((prev) => (prev === 'unread' ? 'all' : 'unread'))}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-heading text-foreground/80 hover:text-foreground bg-secondary/30 border border-primary/15 hover:bg-secondary/50 transition-all"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-heading text-foreground hover:text-foreground bg-secondary/30 border border-primary/15 hover:bg-secondary/50 transition-all"
               title={readFilter === 'unread' ? t.overview.messages_view.show_read_messages : t.overview.messages_view.show_only_unread}
             >
               {readFilter === 'unread' ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}

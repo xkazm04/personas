@@ -125,8 +125,8 @@ export function IntentResultExtras({ result }: IntentResultExtrasProps) {
           <div className="flex items-start gap-2">
             <Target className="w-3.5 h-3.5 text-violet-400/70 mt-0.5 shrink-0" />
             <div>
-              <span className="text-sm font-medium text-violet-400/80 uppercase tracking-wider">{t.agents.design.label_intent}</span>
-              <p className="text-sm text-foreground/85 mt-0.5">{intent_statement}</p>
+              <span className="typo-body font-medium text-violet-400/80 uppercase tracking-wider">{t.agents.design.label_intent}</span>
+              <p className="typo-body text-foreground/85 mt-0.5">{intent_statement}</p>
             </div>
           </div>
         </div>
@@ -140,7 +140,7 @@ export function IntentResultExtras({ result }: IntentResultExtrasProps) {
       {/* Use cases */}
       {use_cases && use_cases.length > 0 && (
         <div className="space-y-2">
-          <h4 className="flex items-center gap-2 text-sm font-semibold text-foreground/90 tracking-wide">
+          <h4 className="flex items-center gap-2 typo-heading font-semibold text-foreground/90 tracking-wide">
             <Layers className="w-3.5 h-3.5" />
             {t.agents.design.use_cases_title}
             <span className="text-sm font-mono text-foreground">({use_cases.length})</span>
@@ -156,7 +156,7 @@ export function IntentResultExtras({ result }: IntentResultExtrasProps) {
       {/* Test scenarios */}
       {test_scenarios && test_scenarios.length > 0 && (
         <div className="space-y-2">
-          <h4 className="flex items-center gap-2 text-sm font-semibold text-foreground/90 tracking-wide">
+          <h4 className="flex items-center gap-2 typo-heading font-semibold text-foreground/90 tracking-wide">
             <FlaskConical className="w-3.5 h-3.5" />
             {t.agents.design.test_scenarios_title}
             <span className="text-sm font-mono text-foreground">({test_scenarios.length})</span>

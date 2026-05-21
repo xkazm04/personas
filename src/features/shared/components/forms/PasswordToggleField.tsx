@@ -111,7 +111,7 @@ export const PasswordToggleField = forwardRef<HTMLInputElement, PasswordToggleFi
           aria-label={revealed ? t.common.hide_password : t.common.show_password}
           aria-pressed={revealed}
           tabIndex={-1}
-          className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-foreground/50 hover:text-foreground transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded"
+          className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-foreground hover:text-foreground transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded"
         >
           {revealed ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
         </button>

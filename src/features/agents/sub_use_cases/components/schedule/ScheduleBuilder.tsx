@@ -41,7 +41,7 @@ export function ScheduleBuilder({ suggestedTrigger, useCaseId, onActivate, isAct
 
   useEffect(() => { if (mode === 'cron') debouncedFetch(cronExpression); return () => clearTimeout(debounceRef.current); }, [cronExpression, mode, debouncedFetch]);
   useEffect(() => { if (mode === 'visual') { const expr = buildCronFromVisual(selectedDays, hour, minute); setCronExpression(expr); fetchPreview(expr); } }, [mode, selectedDays, hour, minute, fetchPreview]);
-  useEffect(() => { fetchPreview(cronExpression); }, []);
+  useEffect(() => { fetchPreview(cronExpression); }, [cronExpression, fetchPreview]);
 
   const handlePresetSelect = useCallback((cron: string) => {
     setCronExpression(cron);

@@ -7,6 +7,8 @@ import { TwinEmptyState } from '../TwinEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useTrainingSession, TRAINING_TOPIC_PRESETS } from './useTrainingSession';
 import { NextMovesPanel } from './NextMovesPanel';
+import { DebtText } from '@/i18n/DebtText';
+
 
 /* ------------------------------------------------------------------ *
  *  Atelier — "Studio Interview"
@@ -63,9 +65,9 @@ export default function TrainingAtelier() {
             <GraduationCap className="w-5 h-5 text-violet-300" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[10px] uppercase tracking-[0.22em] text-violet-300/80 font-medium">Studio Interview</p>
+            <p className="text-[10px] uppercase tracking-[0.22em] text-violet-300/80 font-medium"><DebtText k="auto_studio_interview_959ed683" /></p>
             <h1 className="typo-heading-lg text-foreground/95">{t.training.title} — {activeTwin.name}</h1>
-            <p className="typo-caption text-foreground/65 mt-0.5">{t.training.subtitle}</p>
+            <p className="typo-caption text-foreground mt-0.5">{t.training.subtitle}</p>
           </div>
           <div className="hidden md:flex items-center gap-3 px-3 py-2 rounded-full border border-primary/15 bg-card/40">
             <Stat label="grounding" value={session.groundingFacts.length} accent={groundingTier === 'strong' ? 'emerald' : groundingTier === 'medium' ? 'amber' : 'violet'} />
@@ -88,8 +90,8 @@ export default function TrainingAtelier() {
           <div className="h-full overflow-y-auto">
             <div className="max-w-3xl mx-auto px-4 md:px-6 xl:px-8 py-10">
               <div className="text-center mb-8">
-                <h2 className="text-2xl font-semibold text-foreground mb-2">{t.training.whatToTrain}</h2>
-                <p className="typo-body text-foreground/65">{t.training.topicHint}</p>
+                <h2 className="typo-heading-lg font-semibold text-foreground mb-2">{t.training.whatToTrain}</h2>
+                <p className="typo-body text-foreground">{t.training.topicHint}</p>
                 {session.groundingFacts.length > 0 && (
                   <p className="typo-caption text-violet-300 mt-2">{t.training.groundingHint.replace('{count}', String(session.groundingFacts.length))}</p>
                 )}
@@ -115,7 +117,7 @@ export default function TrainingAtelier() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="typo-card-label">{t.training[topic.labelKey as keyof typeof t.training] as string}</p>
-                          <p className="typo-caption text-foreground/65 mt-1.5 line-clamp-2 leading-relaxed">{t.training[topic.promptKey]}</p>
+                          <p className="typo-caption text-foreground mt-1.5 line-clamp-2 leading-relaxed">{t.training[topic.promptKey]}</p>
                         </div>
                       </div>
                     </motion.button>
@@ -124,7 +126,7 @@ export default function TrainingAtelier() {
               </div>
 
               <div className="rounded-card border border-violet-500/20 bg-violet-500/5 p-4">
-                <p className="text-[10px] uppercase tracking-[0.18em] text-violet-300 font-medium mb-2">custom topic</p>
+                <p className="text-[10px] uppercase tracking-[0.18em] text-violet-300 font-medium mb-2"><DebtText k="auto_custom_topic_a7724b35" /></p>
                 <div className="flex items-center gap-2">
                   <input
                     type="text"
@@ -150,7 +152,7 @@ export default function TrainingAtelier() {
             {/* Progress halo strip */}
             <div className="flex-shrink-0 px-4 md:px-6 xl:px-8 py-3 border-b border-primary/5">
               <div className="flex items-center justify-between mb-1.5">
-                <span className="typo-caption text-foreground/65">{t.training.questionProgress.replace('{current}', String(session.currentIdx + 1)).replace('{total}', String(session.questions.length))}</span>
+                <span className="typo-caption text-foreground">{t.training.questionProgress.replace('{current}', String(session.currentIdx + 1)).replace('{total}', String(session.questions.length))}</span>
                 <span className="typo-caption text-emerald-300">{t.training.savedCount.replace('{count}', String(session.savedCount))}</span>
               </div>
               <div className="h-1 rounded-full bg-secondary/40 overflow-hidden">
@@ -172,7 +174,7 @@ export default function TrainingAtelier() {
                         {qa.isFollowup ? <ArrowRight className="w-3 h-3 text-amber-300" /> : <GraduationCap className="w-3 h-3 text-violet-300" />}
                       </div>
                       <div className="flex-1">
-                        <p className="typo-caption text-foreground/65 leading-relaxed">{qa.question}</p>
+                        <p className="typo-caption text-foreground leading-relaxed">{qa.question}</p>
                         {qa.answer && (
                           <div className="mt-2 ml-1 pl-3 border-l-2 border-violet-500/20">
                             <p className="typo-body text-foreground/85 leading-relaxed line-clamp-3">{qa.answer}</p>
@@ -211,8 +213,8 @@ export default function TrainingAtelier() {
                                 {t.training.followupBadge}
                               </span>
                             )}
-                            <p className="text-lg font-medium text-foreground leading-relaxed">{currentQ.question}</p>
-                            <p className="text-[10px] uppercase tracking-[0.18em] text-foreground/45 mt-3 font-medium">your turn</p>
+                            <p className="typo-body-lg font-medium text-foreground leading-relaxed">{currentQ.question}</p>
+                            <p className="text-[10px] uppercase tracking-[0.18em] text-foreground mt-3 font-medium"><DebtText k="auto_your_turn_d9e169df" /></p>
                           </div>
                         </div>
                       </div>
@@ -250,7 +252,7 @@ export default function TrainingAtelier() {
                 />
                 {isOnFollowup && (
                   <button onClick={() => void session.handleSkipFollowup()} disabled={session.saving || session.followupLoading}
-                    className="flex-shrink-0 h-12 px-3 rounded-card border border-primary/15 text-xs text-foreground/65 hover:text-foreground hover:bg-secondary/40 transition-colors disabled:opacity-30">
+                    className="flex-shrink-0 h-12 px-3 rounded-card border border-primary/15 typo-caption text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors disabled:opacity-30">
                     {t.training.skipFollowup}
                   </button>
                 )}
@@ -259,7 +261,7 @@ export default function TrainingAtelier() {
                   {session.saving ? <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" /> : <Send className="w-4 h-4" />}
                 </button>
               </div>
-              <p className="text-[10px] text-foreground/55 mt-1.5 text-center select-none uppercase tracking-wider max-w-3xl mx-auto">
+              <p className="text-[10px] text-foreground mt-1.5 text-center select-none uppercase tracking-wider max-w-3xl mx-auto">
                 {t.training.enterToSubmit}
               </p>
             </div>
@@ -277,9 +279,9 @@ export default function TrainingAtelier() {
                     <BookOpen className="w-10 h-10 text-emerald-300" />
                   </div>
                 </div>
-                <p className="text-[10px] uppercase tracking-[0.22em] text-emerald-300 font-medium mb-2">session complete</p>
-                <h2 className="text-2xl font-semibold text-foreground mb-2">{t.training.sessionComplete}</h2>
-                <p className="typo-body text-foreground/65">
+                <p className="text-[10px] uppercase tracking-[0.22em] text-emerald-300 font-medium mb-2"><DebtText k="auto_session_complete_6f45bee9" /></p>
+                <h2 className="typo-heading-lg font-semibold text-foreground mb-2">{t.training.sessionComplete}</h2>
+                <p className="typo-body text-foreground">
                   {t.training.sessionCompleteDetail.replace('{saved}', String(session.savedCount)).replace('{total}', String(session.questions.length))}
                 </p>
               </motion.div>
@@ -293,7 +295,7 @@ export default function TrainingAtelier() {
                   </div>
                   <div className="p-5 md:p-6">
                     <p className="typo-body text-foreground leading-relaxed whitespace-pre-wrap">{session.sessionSummary}</p>
-                    <p className="typo-caption text-foreground/55 italic mt-4 pt-4 border-t border-violet-500/10">{t.training.summarySaved}</p>
+                    <p className="typo-caption text-foreground italic mt-4 pt-4 border-t border-violet-500/10">{t.training.summarySaved}</p>
                   </div>
                 </motion.div>
               )}
@@ -328,7 +330,7 @@ function Stat({ label, value, accent = 'violet' }: { label: string; value: numbe
   return (
     <div className="flex flex-col items-start leading-tight">
       <span className={`typo-data-lg tabular-nums ${tone}`}>{value}</span>
-      <span className="text-[9px] uppercase tracking-[0.18em] text-foreground/55">{label}</span>
+      <span className="text-[9px] uppercase tracking-[0.18em] text-foreground">{label}</span>
     </div>
   );
 }

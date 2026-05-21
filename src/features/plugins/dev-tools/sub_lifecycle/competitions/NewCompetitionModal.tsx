@@ -36,12 +36,12 @@ export function NewCompetitionModal({
 
   // Reset form fields and strategies when modal opens
   useEffect(() => { if (open) { setTitle(''); setDescription(''); setStrategies(generateStrategies(slotCount, previousWinnerGenes)); } },
-    [open], // only on open transition
+    [open, previousWinnerGenes, slotCount], // only on open transition
   );
 
   // Regenerate strategies when slot count changes while modal is open
   useEffect(() => { if (open) { regenerate(); } },
-    [slotCount], // slotCount drives regenerate identity
+    [open, regenerate, slotCount], // slotCount drives regenerate identity
   );
 
   const handleCreate = useCallback(async () => {

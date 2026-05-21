@@ -62,7 +62,7 @@ export function ImportanceBar({ value }: { value: number }) {
           style={{ width: `${pct}%`, background: getImportanceGradient(value) }}
         />
       </div>
-      <span className="text-xs text-foreground tabular-nums">{value}/{maxScale}</span>
+      <span className="typo-caption text-foreground tabular-nums">{value}/{maxScale}</span>
     </div>
   );
 }

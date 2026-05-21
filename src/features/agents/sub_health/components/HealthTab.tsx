@@ -20,7 +20,7 @@ export function HealthTab() {
       autoRefreshed.current = true;
       healthCheck.runHealthCheck(selectedPersona);
     }
-  }, [healthCheck.phase, healthCheck.result, selectedPersona, healthCheck.runHealthCheck]);
+  }, [healthCheck.phase, healthCheck.result, selectedPersona, healthCheck.runHealthCheck, healthCheck]);
 
   // Reset auto-refresh latch when persona changes
   useEffect(() => {

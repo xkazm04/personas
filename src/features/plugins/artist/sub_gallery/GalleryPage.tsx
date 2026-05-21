@@ -124,7 +124,7 @@ export default function GalleryPage() {
             onClick={toggleSort}
             title={sortDir === 'asc' ? t.plugins.artist.sort_date : t.plugins.artist.sort_date}
             aria-label={`Sort ${sortDir === 'asc' ? 'ascending' : 'descending'}`}
-            className="w-9 h-9 flex items-center justify-center rounded-card border border-transparent text-foreground/70 hover:bg-secondary/40 hover:text-foreground transition-colors"
+            className="w-9 h-9 flex items-center justify-center rounded-card border border-transparent text-foreground hover:bg-secondary/40 hover:text-foreground transition-colors"
           >
             {sortDir === 'asc' ? <SortAsc className="w-[18px] h-[18px]" /> : <SortDesc className="w-[18px] h-[18px]" />}
           </button>
@@ -135,7 +135,7 @@ export default function GalleryPage() {
             className={`w-9 h-9 flex items-center justify-center rounded-card border transition-colors ${
               grouped
                 ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
-                : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground border-transparent'
+                : 'text-foreground hover:bg-secondary/40 hover:text-foreground border-transparent'
             }`}
           >
             <CalendarDays className="w-[18px] h-[18px]" />
@@ -149,7 +149,7 @@ export default function GalleryPage() {
             disabled={!artistFolder}
             title={t.plugins.artist.open_folder}
             aria-label={t.plugins.artist.open_folder}
-            className="w-9 h-9 flex items-center justify-center rounded-card border border-transparent text-foreground/70 hover:bg-secondary/40 hover:text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-9 h-9 flex items-center justify-center rounded-card border border-transparent text-foreground hover:bg-secondary/40 hover:text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <FolderOpen className="w-[18px] h-[18px]" />
           </button>
@@ -201,7 +201,7 @@ export default function GalleryPage() {
             <section key={group.labelKey} className="space-y-2">
               <header className="flex items-baseline gap-2 sticky top-0 z-10 bg-background/95 backdrop-blur py-1 -mx-2 px-2">
                 <h3 className="typo-section-title">{groupLabel(group.labelKey)}</h3>
-                <span className="text-md text-foreground/60 tabular-nums">{group.assets.length}</span>
+                <span className="text-md text-foreground tabular-nums">{group.assets.length}</span>
               </header>
               {galleryMode === '2d' ? (
                 <Gallery2D

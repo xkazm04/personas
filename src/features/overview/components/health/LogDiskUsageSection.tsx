@@ -41,33 +41,33 @@ export function LogDiskUsageSection() {
 
       <div className="border-t border-primary/5 px-4 py-3 space-y-2">
         {unavailable && (
-          <p className="typo-body text-foreground/70">{t.system_health.log_disk_unavailable}</p>
+          <p className="typo-body text-foreground">{t.system_health.log_disk_unavailable}</p>
         )}
         {!unavailable && stats && (
           <>
             <div className="flex items-baseline justify-between gap-2">
-              <span className="typo-body text-foreground/80">{t.system_health.log_disk_tracing}</span>
+              <span className="typo-body text-foreground">{t.system_health.log_disk_tracing}</span>
               <span className="typo-code text-foreground">
                 {formatBytes(stats.log_bytes)}
-                <span className="text-foreground/60 ml-2">
+                <span className="text-foreground ml-2">
                   {tx(t.system_health.log_disk_files_count, { count: stats.log_file_count })}
                 </span>
               </span>
             </div>
-            <p className="typo-body text-foreground/50">
+            <p className="typo-body text-foreground">
               {tx(t.system_health.log_disk_retention_hint, { limit: stats.tracing_log_retention })}
             </p>
 
             <div className="flex items-baseline justify-between gap-2 pt-2 border-t border-primary/5">
-              <span className="typo-body text-foreground/80">{t.system_health.log_disk_crashes}</span>
+              <span className="typo-body text-foreground">{t.system_health.log_disk_crashes}</span>
               <span className="typo-code text-foreground">
                 {formatBytes(stats.crash_bytes)}
-                <span className="text-foreground/60 ml-2">
+                <span className="text-foreground ml-2">
                   {tx(t.system_health.log_disk_files_count, { count: stats.crash_file_count })}
                 </span>
               </span>
             </div>
-            <p className="typo-body text-foreground/50">
+            <p className="typo-body text-foreground">
               {tx(t.system_health.log_disk_crash_retention_hint, { limit: stats.crash_log_retention })}
             </p>
           </>

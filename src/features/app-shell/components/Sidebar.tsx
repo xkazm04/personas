@@ -10,10 +10,10 @@ import type { SidebarSection } from '@/lib/types/types';
 
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { useTier } from '@/hooks/utility/interaction/useTier';
-import { sections } from './sidebarData';
+import { sections } from '@/features/shared/components/layout/sidebar/sidebarData';
 import { SIDEBAR_TOGGLE_EVENT } from '@/features/shared/components/layout/DesktopFooter';
-import SidebarLevel1 from './SidebarLevel1';
-import SidebarLevel2 from './SidebarLevel2';
+import SidebarLevel1 from '@/features/shared/components/layout/sidebar/SidebarLevel1';
+import SidebarLevel2 from '@/features/shared/components/layout/sidebar/SidebarLevel2';
 import { useSidebarLabels } from '@/i18n/useSidebarTranslation';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -25,7 +25,7 @@ export default function Sidebar() {
   const toggleCollapsed = useCallback(() => {
     setCollapsed((prev) => {
       const next = !prev;
-      try { localStorage.setItem('sidebar-collapsed', next ? '1' : '0'); } catch { /* intentional no-op */ }
+      try { localStorage.setItem('sidebar-collapsed', next ? '1' : '0'); } catch (err) { silentCatch("features/shared/components/layout/sidebar/Sidebar:catch1")(err); }
       return next;
     });
   }, []);
@@ -114,7 +114,7 @@ export default function Sidebar() {
     if (currentSection?.minTier && !tier.isVisible(currentSection.minTier)) {
       setSidebarSection('home');
     }
-  }, [tier.current, sidebarSection, setSidebarSection]);
+  }, [sidebarSection, setSidebarSection, tier]);
 
   useEffect(() => {
     if (isDev) return;

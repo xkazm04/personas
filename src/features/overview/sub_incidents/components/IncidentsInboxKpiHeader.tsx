@@ -60,7 +60,7 @@ function Tile({ label, value, Icon, tone }: TileProps) {
         <Icon className="h-5 w-5" />
       </div>
       <div className="flex flex-col">
-        <span className="typo-caption text-foreground/70">{label}</span>
+        <span className="typo-caption text-foreground">{label}</span>
         <span className="typo-heading text-foreground">{value}</span>
       </div>
     </div>

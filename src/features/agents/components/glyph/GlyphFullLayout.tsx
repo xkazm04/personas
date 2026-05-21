@@ -8,6 +8,7 @@ import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertCircle } from "lucide-react";
 import { BuildSimulatePanel } from "@/features/agents/components/matrix/BuildSimulatePanel";
+import { BaseModal } from "@/lib/ui/BaseModal";
 // Reuse the legacy 8-dim Matrix view's test-report modal — the rich
 // split-pane viewer with structured ToolTestResult cards on the left
 // and parsed LLM summary sections on the right (with credential-add
@@ -26,6 +27,8 @@ import { GlyphDimensionSummaryCard } from "./GlyphDimensionSummaryCard";
 import { GlyphSigilFace } from "./GlyphSigilFace";
 import { useGlyphLayoutState } from "./useGlyphLayoutState";
 import type { GlyphFullLayoutProps } from "./glyphLayoutTypes";
+import { DebtText } from '@/i18n/DebtText';
+
 
 export type { GlyphFullLayoutProps } from "./glyphLayoutTypes";
 
@@ -323,35 +326,16 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
           loading sigil is the next thing the user sees. */}
       <AnimatePresence>
         {composerOpen && (
-          <motion.div
-            key="composer-overlay"
-            className="fixed inset-0 z-40 flex items-center justify-center px-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+          <BaseModal
+            isOpen
+            onClose={handleComposerClose}
+            titleId="glyph-composer-title"
+            maxWidthClass="max-w-none"
+            panelClassName="relative z-10 w-full flex justify-center bg-transparent shadow-none overflow-visible"
+            containerClassName="fixed inset-0 z-40 flex items-center justify-center px-4"
+            staggerChildren={false}
           >
-            <motion.div
-              role="presentation"
-              onClick={handleComposerClose}
-              className="absolute inset-0 bg-background/80 backdrop-blur-sm"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              data-testid="composer-overlay-scrim"
-            />
-            <motion.div
-              role="dialog"
-              aria-modal="true"
-              aria-label="Describe your agent"
-              className="relative z-10 w-full flex justify-center"
-              initial={{ opacity: 0, y: 16, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 8, scale: 0.97 }}
-              transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
-              onClick={(e) => e.stopPropagation()}
-            >
+              <h2 id="glyph-composer-title" className="sr-only"><DebtText k="auto_describe_your_agent_d2e2c1aa" /></h2>
               <CommandPanel
                 intentText={intentText}
                 onIntentChange={onIntentChange}
@@ -362,8 +346,7 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
                 isBuilding={isBuilding}
                 initialNotificationChannels={initialNotificationChannels}
               />
-            </motion.div>
-          </motion.div>
+          </BaseModal>
         )}
       </AnimatePresence>
 

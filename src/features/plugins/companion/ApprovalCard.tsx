@@ -135,10 +135,10 @@ export function ApprovalCard({
       </div>
 
       {approval.rationale && (
-        <p className="text-foreground/80 leading-relaxed">{approval.rationale}</p>
+        <p className="text-foreground leading-relaxed">{approval.rationale}</p>
       )}
 
-      <details className="text-foreground/70">
+      <details className="text-foreground">
         <summary className="cursor-pointer typo-caption hover:text-foreground transition-colors">
           {t.plugins.companion.action_params}
         </summary>
@@ -178,7 +178,7 @@ export function ApprovalCard({
         <button
           onClick={() => handle('reject')}
           disabled={busy !== null || failedOutcome !== null}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-foreground/5 text-foreground/80 typo-caption font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-foreground/10 transition-colors focus-ring"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-foreground/5 text-foreground typo-caption font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-foreground/10 transition-colors focus-ring"
         >
           {busy === 'reject' ? (
             <Loader2 className="w-3.5 h-3.5 animate-spin" />

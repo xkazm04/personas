@@ -10,6 +10,8 @@ import { useVaultStore } from '@/stores/vaultStore';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import type { PersonaDraft } from '@/features/agents/sub_editor';
 import type { DesignSubTab } from '@/lib/types/types';
+import { debtText } from '@/i18n/DebtText';
+
 
 const PersonaConnectorsTab = lazy(() =>
   import('@/features/agents/sub_connectors/components/connectors/PersonaConnectorsTab').then((m) => ({ default: m.PersonaConnectorsTab })),
@@ -103,7 +105,7 @@ export function DesignHub({ draft, patch, modelDirty, onConnectorsMissingChange 
             <div className="py-12">
               <EmptyState
                 icon={Zap}
-                title="Events & Triggers"
+                title={debtText("auto_events_triggers_6c0403bc")}
                 description="Per-persona event subscriptions and trigger configuration will land in this tab."
               />
             </div>

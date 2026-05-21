@@ -89,13 +89,9 @@ export function useEvolutionPanelState(): EvolutionPanelState {
           if (obj && typeof obj.speed === 'number' && typeof obj.quality === 'number' && typeof obj.cost === 'number') {
             setObjective(obj);
           }
-        } catch {
-          // keep defaults
-        }
+        } catch (err) { silentCatch("features/agents/sub_lab/components/evolution/useEvolutionPanelState:catch1")(err); }
       }
-    } catch {
-      // silent — policy may not exist yet
-    } finally {
+    } catch (err) { silentCatch("features/agents/sub_lab/components/evolution/useEvolutionPanelState:catch2")(err); } finally {
       setIsLoading(false);
     }
   }, [personaId]);

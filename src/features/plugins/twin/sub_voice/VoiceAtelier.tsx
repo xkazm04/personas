@@ -283,7 +283,7 @@ export default function VoiceAtelier() {
                     onChange={(e) => { setCredentialId(e.target.value); markDirty(); }}
                     className={`${INPUT_FIELD} font-mono`}
                   />
-                  <p className="typo-caption text-foreground/65">{t.voice.credentialIdHint}</p>
+                  <p className="typo-caption text-foreground">{t.voice.credentialIdHint}</p>
                 </label>
               </div>
             </Section>
@@ -302,11 +302,11 @@ export default function VoiceAtelier() {
                         'px-3 py-2 rounded-interactive border text-left transition-colors',
                         isActive
                           ? 'border-violet-500/40 bg-violet-500/10 text-violet-200'
-                          : 'border-primary/10 bg-secondary/30 text-foreground/75 hover:border-primary/20 hover:bg-secondary/50',
+                          : 'border-primary/10 bg-secondary/30 text-foreground hover:border-primary/20 hover:bg-secondary/50',
                       ].join(' ')}
                     >
                       <span className="typo-caption font-medium block truncate">{m.label}</span>
-                      <span className="text-[10px] font-mono text-foreground/55 truncate block">{m.id}</span>
+                      <span className="text-[10px] font-mono text-foreground truncate block">{m.id}</span>
                     </button>
                   );
                 })}
@@ -418,13 +418,13 @@ function StageCard(p: StageCardProps) {
           </div>
           <div className="flex-1 min-w-0">
             <h2 className="typo-section-title text-foreground/95">{ready ? p.readyHeadline : p.emptyHeadline}</h2>
-            <p className="typo-caption text-foreground/65 mt-1 max-w-prose">{ready ? p.readyBody : p.emptyBody}</p>
+            <p className="typo-caption text-foreground mt-1 max-w-prose">{ready ? p.readyBody : p.emptyBody}</p>
             {ready && p.configured && (
               <div className="flex flex-wrap items-center gap-2 mt-2">
                 <span className="px-2 py-0.5 text-[10px] uppercase tracking-wider rounded-full bg-violet-500/15 text-violet-300 border border-violet-500/25 font-mono">
                   {p.voiceId.slice(0, 12)}{p.voiceId.length > 12 ? '…' : ''}
                 </span>
-                <span className="px-2 py-0.5 text-[10px] rounded-full bg-secondary/50 text-foreground/75 border border-primary/10">{p.modelLabel}</span>
+                <span className="px-2 py-0.5 text-[10px] rounded-full bg-secondary/50 text-foreground border border-primary/10">{p.modelLabel}</span>
               </div>
             )}
           </div>
@@ -453,7 +453,7 @@ function Section({ icon: Icon, label, children }: { icon: LucideIcon; label: str
     <section className="rounded-card border border-primary/10 bg-card/40 p-4 md:p-5">
       <div className="flex items-center gap-2 mb-3">
         <Icon className="w-3.5 h-3.5 text-violet-300" />
-        <span className="typo-caption font-medium text-foreground/75">{label}</span>
+        <span className="typo-caption font-medium text-foreground">{label}</span>
       </div>
       {children}
     </section>
@@ -482,7 +482,7 @@ function SliderRow({ label, value, onChange, leftLabel, rightLabel }: SliderRowP
         className="w-full"
         style={{ ['--slider-progress' as string]: value }}
       />
-      <div className="flex justify-between typo-caption text-foreground/55 mt-0.5">
+      <div className="flex justify-between typo-caption text-foreground mt-0.5">
         <span>{leftLabel}</span>
         <span>{rightLabel}</span>
       </div>
@@ -502,7 +502,7 @@ function KpiCell({ label, value, accent = 'violet' }: { label: string; value: nu
   return (
     <div className="flex flex-col items-start leading-tight">
       <span className={`typo-data-md tabular-nums ${ACCENT_TEXT[accent] ?? ACCENT_TEXT.violet} truncate max-w-[120px]`}>{value}</span>
-      <span className="text-[9px] uppercase tracking-[0.18em] text-foreground/55">{label}</span>
+      <span className="text-[9px] uppercase tracking-[0.18em] text-foreground">{label}</span>
     </div>
   );
 }

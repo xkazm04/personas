@@ -39,6 +39,8 @@ import { QuickAddCredentialModal } from "./QuickAddCredentialModal";
 import { BUILTIN_CONNECTORS, connectorCategoryTags } from "@/lib/credentials/builtinConnectors";
 import type { TriggerSelection } from "./useCasePickerShared";
 import { resolveIconForTemplate } from "@/lib/icons/templateIconResolver";
+import { silentCatch } from '@/lib/silentCatch';
+
 
 interface ChronologyAdoptionViewProps {
   review: PersonaDesignReview;
@@ -435,18 +437,14 @@ function readAdoptionLayout(): AdoptionLayout {
     // Migrate the previous 'consolidated' value (renamed to 'persona-layout'
     // when the dictionary was clarified — Persona Layout is the canonical name).
     if (raw === 'consolidated') return 'persona-layout';
-  } catch {
-    /* SSR or disabled localStorage */
-  }
+  } catch (err) { silentCatch("features/templates/sub_generated/adoption/ChronologyAdoptionView:catch1")(err); }
   return 'classic';
 }
 
 function writeAdoptionLayout(value: AdoptionLayout): void {
   try {
     localStorage.setItem(ADOPTION_LAYOUT_STORAGE_KEY, value);
-  } catch {
-    /* best-effort */
-  }
+  } catch (err) { silentCatch("features/templates/sub_generated/adoption/ChronologyAdoptionView:catch2")(err); }
 }
 
 export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: ChronologyAdoptionViewProps) {
@@ -989,7 +987,7 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
               { lastEvent: initialEvent, runId: persona.id },
             );
           }
-        } catch { /* best-effort */ }
+        } catch (err) { silentCatch("features/templates/sub_generated/adoption/ChronologyAdoptionView:catch3")(err); }
 
         // Show progress dot on design-reviews sidebar
         useSystemStore.getState().setTemplateAdoptActive(true);
@@ -1017,7 +1015,7 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
         seedInFlight.current = false;
       }
     })();
-  }, [designResult, templateName, review.instruction, createPersona, hasFilteredQuestions, questionsComplete, useCaseStepDone, showUseCasePicker, selectedUseCaseIds, filteredAdoptionQuestions, adoptionAnswers, triggerSelections]);
+  }, [designResult, templateName, review.instruction, createPersona, hasFilteredQuestions, questionsComplete, useCaseStepDone, showUseCasePicker, selectedUseCaseIds, filteredAdoptionQuestions, adoptionAnswers, triggerSelections, t, tx]);
 
   const build = useBuild({ personaId });
   const lifecycle = useLifecycle({ personaId });
@@ -1204,7 +1202,7 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
         void import("@/stores/overviewStore").then(({ useOverviewStore }) => {
           useOverviewStore.getState().processEnded('template_adopt', 'completed', personaId);
         });
-      } catch { /* best-effort */ }
+      } catch (err) { silentCatch("features/templates/sub_generated/adoption/ChronologyAdoptionView:catch4")(err); }
       useSystemStore.getState().setTemplateAdoptActive(false);
 
       // Reset build state
@@ -1224,10 +1222,9 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
   // Auto-redirect after promotion (matches UnifiedBuildEntry behavior)
   const buildPhaseForRedirect = useAgentStore((s) => s.buildPhase);
   useEffect(() => {
-    if (buildPhaseForRedirect === 'promoted' && personaId && !fadeOut) {
-      const timer = setTimeout(() => handleViewAgent(), 1500);
-      return () => clearTimeout(timer);
-    }
+    if (buildPhaseForRedirect !== 'promoted' || !personaId || fadeOut) return;
+    const timer = setTimeout(() => handleViewAgent(), 1500);
+    return () => clearTimeout(timer);
   }, [buildPhaseForRedirect, personaId, fadeOut, handleViewAgent]);
 
   const handleApplyEdits = useCallback(async () => {
@@ -1261,7 +1258,7 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
       );
       store.patchActiveSession({ cellData: dimensionData, draft: effective });
     }
-  }, [designResult, showUseCasePicker, selectedUseCaseIds, triggerSelections]);
+  }, [designResult, triggerSelections.perUseCase, t, tx, showUseCasePicker, selectedUseCaseIds]);
 
   if (!seeded) {
     // Pre-seed surface — wrapped in a layout switcher so the user can opt
@@ -1451,7 +1448,7 @@ function AdoptionLayoutSwitcher({ value, onChange }: AdoptionLayoutSwitcherProps
   const { t } = useTranslation();
   return (
     <div className="flex items-center gap-2 px-5 pt-3 pb-2 shrink-0">
-      <span className="typo-label uppercase tracking-[0.18em] text-foreground/55">
+      <span className="typo-label uppercase tracking-[0.18em] text-foreground">
         {t.templates.adopt_modal.layout_tab_label}
       </span>
       <div
@@ -1466,7 +1463,7 @@ function AdoptionLayoutSwitcher({ value, onChange }: AdoptionLayoutSwitcherProps
           className={`relative inline-flex items-center px-3 py-1 rounded-full typo-caption transition-colors cursor-pointer ${
             value === 'classic'
               ? 'bg-primary/20 text-foreground'
-              : 'text-foreground/65 hover:text-foreground hover:bg-secondary/60'
+              : 'text-foreground hover:text-foreground hover:bg-secondary/60'
           }`}
         >
           {t.templates.adopt_modal.layout_tab_classic}
@@ -1479,7 +1476,7 @@ function AdoptionLayoutSwitcher({ value, onChange }: AdoptionLayoutSwitcherProps
           className={`relative inline-flex items-center px-3 py-1 rounded-full typo-caption transition-colors cursor-pointer ${
             value === 'persona-layout'
               ? 'bg-primary/20 text-foreground'
-              : 'text-foreground/65 hover:text-foreground hover:bg-secondary/60'
+              : 'text-foreground hover:text-foreground hover:bg-secondary/60'
           }`}
         >
           {t.templates.adopt_modal.layout_tab_persona_layout}

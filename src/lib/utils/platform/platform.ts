@@ -1,3 +1,4 @@
+import { silentCatch } from '@/lib/silentCatch';
 /**
  * Platform detection utilities for mobile vs desktop differentiation.
  *
@@ -34,7 +35,7 @@ export function onMobilePreviewChange(fn: () => void) {
 
 export function toggleMobilePreview(): boolean {
   _devMobileOverride = !_devMobileOverride;
-  try { localStorage.setItem('dev-mobile-preview', _devMobileOverride ? '1' : '0'); } catch { /* intentional no-op */ }
+  try { localStorage.setItem('dev-mobile-preview', _devMobileOverride ? '1' : '0'); } catch (err) { silentCatch("lib/utils/platform/platform:catch1")(err); }
   _listeners.forEach((fn) => fn());
   return _devMobileOverride;
 }

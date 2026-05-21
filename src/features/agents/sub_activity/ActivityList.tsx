@@ -67,7 +67,7 @@ function useColumns(
                 ))}
                 {annotation.note && (
                   <span
-                    className="typo-code text-foreground/60 italic truncate max-w-[180px]"
+                    className="typo-code text-foreground italic truncate max-w-[180px]"
                     title={annotation.note}
                   >
                     {annotation.note}

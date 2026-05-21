@@ -9,6 +9,8 @@ import { PersonaSelector } from '@/features/shared/components/forms/PersonaSelec
 import { ThemedSelect, type ThemedSelectOption } from '@/features/shared/components/forms/ThemedSelect';
 import { findTemplateByEventType } from '../sub_builder/libs/eventCanvasConstants';
 import { formatRelativeTime } from '@/lib/utils/formatters';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 const FALLBACK_PAYLOAD = '{}';
 const CUSTOM_EVENT_VALUE = '__custom__';
@@ -199,9 +201,7 @@ export function TestTab() {
       setTestResult(result);
       // Append the new event so the next prefill refresh sees it as history.
       setRecentEvents(prev => [result, ...prev]);
-    } catch {
-      // surfaced via toast/silent layers upstream
-    } finally {
+    } catch (err) { silentCatch("features/triggers/sub_test/TestTab:catch1")(err); } finally {
       setIsTesting(false);
     }
   };
@@ -213,7 +213,7 @@ export function TestTab() {
           <h3 className="typo-code font-mono text-foreground uppercase tracking-wider mb-2">
             {t.triggers.publish_test_event}
           </h3>
-          <p className="typo-body text-muted-foreground">
+          <p className="typo-body text-foreground">
             {t.triggers.publish_test_desc}
           </p>
         </div>
@@ -230,7 +230,7 @@ export function TestTab() {
               showAll={false}
               placeholder={t.triggers.test_select_persona_placeholder}
             />
-            <p className="typo-caption text-muted-foreground mt-1">{t.triggers.test_source_persona_help}</p>
+            <p className="typo-caption text-foreground mt-1">{t.triggers.test_source_persona_help}</p>
           </div>
 
           <div>
@@ -245,7 +245,7 @@ export function TestTab() {
               placeholder={t.triggers.test_select_event_placeholder}
               wrapperClassName={`w-full ${hasPersona ? '' : 'opacity-50 pointer-events-none'}`}
             />
-            <p className="typo-caption text-muted-foreground mt-1">{t.triggers.test_output_event_help}</p>
+            <p className="typo-caption text-foreground mt-1">{t.triggers.test_output_event_help}</p>
             {hasPersona && !eventOptionsAvailable && (
               <p className="typo-caption text-amber-400/90 mt-1.5 flex items-start gap-1.5">
                 <Info className="w-3 h-3 mt-0.5 flex-shrink-0" />
@@ -276,7 +276,7 @@ export function TestTab() {
                 <button
                   type="button"
                   onClick={() => refreshPrefill(selectedPersonaId, activeEventType)}
-                  className="flex items-center gap-1 typo-caption text-muted-foreground hover:text-foreground transition-colors"
+                  className="flex items-center gap-1 typo-caption text-foreground hover:text-foreground transition-colors"
                   title={t.triggers.test_payload_reset}
                 >
                   <RotateCcw className="w-3 h-3" />
@@ -297,7 +297,7 @@ export function TestTab() {
                   {tx(t.triggers.test_payload_from_history, { ago: formatRelativeTime(historyEvent.created_at) })}
                 </span>
               ) : (
-                <span className="text-muted-foreground flex items-start gap-1.5">
+                <span className="text-foreground flex items-start gap-1.5">
                   <Info className="w-3 h-3 mt-0.5 flex-shrink-0" />
                   {t.triggers.test_payload_no_history}
                 </span>

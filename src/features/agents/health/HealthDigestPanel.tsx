@@ -138,7 +138,7 @@ function HealthIssueModal({
               </h3>
               <div className="flex items-center gap-1.5 mt-1">
                 <div className={`w-2 h-2 rounded-full flex-shrink-0 ${STATUS_CONFIG[check.result.status].dotClass}`} />
-                <p className="typo-caption text-foreground/70">
+                <p className="typo-caption text-foreground">
                   {check.result.status === 'blocked'
                     ? t.agents.health_digest.critical_issues
                     : check.result.status === 'partial'
@@ -151,7 +151,7 @@ function HealthIssueModal({
 
           <div className="max-h-[50vh] overflow-y-auto space-y-2">
             {check.result.issues.length === 0 ? (
-              <p className="typo-body text-foreground/70">
+              <p className="typo-body text-foreground">
                 {t.agents.health_digest.issue_modal_no_issues}
               </p>
             ) : (
@@ -371,7 +371,7 @@ export function HealthDigestPanel() {
             className={groupIdx > 0 ? 'border-t border-border/40' : undefined}
           >
             <div className="px-4 pt-3 pb-1">
-              <span className="typo-caption uppercase tracking-wide text-muted-foreground/70 font-medium">
+              <span className="typo-caption uppercase tracking-wide text-foreground font-medium">
                 {group.label}
               </span>
             </div>

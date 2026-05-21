@@ -18,6 +18,8 @@ import type { Frequency } from "@/features/agents/components/matrix/quickConfigT
 import { ComposerPickerShell } from "./ComposerPickerShell";
 import { ComposerScheduleRhythmCard, type Rhythm } from "./ComposerScheduleRhythmCard";
 import { ComposerScheduleDetailForm, DAY_OPTIONS } from "./ComposerScheduleDetailForm";
+import { DebtText, debtText } from '@/i18n/DebtText';
+
 
 interface ComposerSchedulePickerModalProps {
   open: boolean;
@@ -96,7 +98,7 @@ export function ComposerSchedulePickerModal({
       open={open}
       onClose={onClose}
       onApply={applyCurrent}
-      title="When should this agent run?"
+      title={debtText("auto_when_should_this_agent_run_f33725ba")}
       subtitle={preview}
       icon={<Clock className="w-5 h-5" />}
       footer={
@@ -105,21 +107,21 @@ export function ComposerSchedulePickerModal({
             <button
               type="button"
               onClick={() => setStep("rhythm")}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-interactive text-foreground/80 hover:text-foreground hover:bg-foreground/5 typo-body transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-interactive text-foreground hover:text-foreground hover:bg-foreground/5 typo-body transition-colors"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
-              Change rhythm
+              <DebtText k="auto_change_rhythm_2697a991" />
             </button>
           )}
           <div className="flex items-center gap-2 ml-auto">
-            <kbd className="typo-caption text-foreground/50">⌘ + Enter</kbd>
+            <kbd className="typo-caption text-foreground"><DebtText k="auto_enter_b0d98854" /></kbd>
             <button
               type="button"
               onClick={applyCurrent}
               className="px-4 py-1.5 rounded-interactive bg-primary/30 hover:bg-primary/50 border border-primary/50 text-foreground typo-body font-medium transition-colors"
               style={{ boxShadow: "0 0 20px rgba(96,165,250,0.25)" }}
             >
-              Apply schedule
+              <DebtText k="auto_apply_schedule_c8f50c45" />
             </button>
           </div>
         </>
@@ -139,7 +141,7 @@ export function ComposerSchedulePickerModal({
               <ComposerScheduleRhythmCard
                 rhythm="once"
                 icon={<Clock className="w-5 h-5" />}
-                title="One-off"
+                title={debtText("auto_one_off_33219738")}
                 caption="Runs manually — no schedule"
                 active={draftRhythm === "once"}
                 onSelect={() => handleRhythmPick("once")}

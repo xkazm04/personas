@@ -184,7 +184,7 @@ export default function ScheduleCalendar({
                 type="button"
                 onClick={resetFilters}
                 aria-label={t.schedules.filter_reset_aria}
-                className="ml-1 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-card border border-primary/15 text-foreground/70 hover:text-foreground hover:bg-secondary/40 hover:border-primary/30 transition-colors"
+                className="ml-1 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-card border border-primary/15 text-foreground hover:text-foreground hover:bg-secondary/40 hover:border-primary/30 transition-colors"
               >
                 <RotateCcw className="w-2.5 h-2.5" />
                 {t.schedules.filter_reset}
@@ -266,7 +266,7 @@ function LegendToggle({
       className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-card border transition-all ${
         active
           ? 'border-primary/15 bg-primary/5 text-foreground/85 hover:bg-primary/10'
-          : 'border-primary/5 bg-transparent text-foreground/40 hover:text-foreground/60 hover:border-primary/15 line-through decoration-foreground/30'
+          : 'border-primary/5 bg-transparent text-foreground hover:text-foreground/60 hover:border-primary/15 line-through decoration-foreground/30'
       }`}
     >
       {children}

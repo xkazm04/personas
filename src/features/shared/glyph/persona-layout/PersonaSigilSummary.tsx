@@ -58,7 +58,7 @@ export function PersonaSigilSummary({
   return (
     <div className="flex flex-col gap-3">
       {heading !== null && heading !== undefined && (
-        <span className="typo-label uppercase tracking-[0.18em] text-foreground/55 px-1">
+        <span className="typo-label uppercase tracking-[0.18em] text-foreground px-1">
           {heading}
         </span>
       )}

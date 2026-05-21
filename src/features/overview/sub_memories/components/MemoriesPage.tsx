@@ -18,6 +18,8 @@ import { MEMORY_CATEGORY_COLORS, ALL_MEMORY_CATEGORIES } from '@/lib/utils/forma
 import type { PersonaMemory } from '@/lib/types/types';
 import MemoriesPageDense from './MemoriesPageDense';
 import MemoriesPageGraph from './MemoriesPageGraph';
+import { DebtText, debtText } from '@/i18n/DebtText';
+
 
 // -- Prototype tab switcher (throwaway scaffold) -----------------------------
 // Three directional variants of the same data + actions surface:
@@ -48,7 +50,7 @@ export default function MemoriesPage() {
 function PrototypeTabStrip({ variant, setVariant }: { variant: PrototypeVariant; setVariant: (v: PrototypeVariant) => void }) {
   return (
     <div className="flex items-center gap-2 px-4 md:px-6 py-2 border-b border-primary/10 bg-secondary/10 flex-shrink-0">
-      <span className="typo-label text-foreground/60">Prototype</span>
+      <span className="typo-label text-foreground">Prototype</span>
       <div className="flex items-center gap-1 rounded-modal border border-primary/15 bg-background/50 p-1">
         {VARIANT_TABS.map((tab) => {
           const Icon = tab.icon;
@@ -61,7 +63,7 @@ function PrototypeTabStrip({ variant, setVariant }: { variant: PrototypeVariant;
               className={`flex items-center gap-1.5 px-3 py-1 rounded-input typo-body font-medium transition-all ${
                 active
                   ? 'bg-primary/15 text-foreground border border-primary/25 shadow-elevation-1'
-                  : 'text-foreground/60 hover:text-foreground hover:bg-secondary/30 border border-transparent'
+                  : 'text-foreground hover:text-foreground hover:bg-secondary/30 border border-transparent'
               }`}
             >
               <Icon className="w-3.5 h-3.5" />
@@ -70,7 +72,7 @@ function PrototypeTabStrip({ variant, setVariant }: { variant: PrototypeVariant;
           );
         })}
       </div>
-      <span className="typo-caption text-foreground/50 hidden md:inline">
+      <span className="typo-caption text-foreground hidden md:inline">
         {VARIANT_TABS.find((t) => t.key === variant)?.subtitle}
       </span>
     </div>
@@ -264,7 +266,7 @@ function MemoriesPageBaseline() {
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search memories..."
+                placeholder={debtText("auto_search_memories_bc414f95")}
                 className="w-full pl-8 pr-8 py-1.5 typo-body rounded-card bg-secondary/30 border border-primary/10 text-foreground placeholder:text-foreground focus:outline-none focus:border-primary/30 transition-colors"
               />
               {search && (
@@ -308,8 +310,8 @@ function MemoriesPageBaseline() {
                 <Brain className="w-8 h-8 text-violet-400/40" />
               </div>
               <div className="text-center">
-                <p className="typo-body font-medium text-foreground">No memories yet</p>
-                <p className="typo-body text-foreground mt-1 max-w-xs">When agents run, they can store valuable notes and learnings here.</p>
+                <p className="typo-body font-medium text-foreground"><DebtText k="auto_no_memories_yet_775ad944" /></p>
+                <p className="typo-body text-foreground mt-1 max-w-xs"><DebtText k="auto_when_agents_run_they_can_store_valuable_no_4c99046a" /></p>
               </div>
             </div>
           ) : (
@@ -340,10 +342,10 @@ function MemoriesPageBaseline() {
 
               {memories.length === 0 ? (
                 <div className="py-8 text-center">
-                  <p className="typo-body text-foreground">No memories match current filters</p>
+                  <p className="typo-body text-foreground"><DebtText k="auto_no_memories_match_current_filters_06cb075f" /></p>
                 </div>
               ) : (
-                <div ref={memoryListRef} className="flex-1 overflow-y-auto focus:outline-none" tabIndex={0} role="grid" aria-label="Memory list" onKeyDown={handleListKeyDown}>
+                <div ref={memoryListRef} className="flex-1 overflow-y-auto focus:outline-none" tabIndex={0} role="grid" aria-label={debtText("auto_memory_list_a2a82929")} onKeyDown={handleListKeyDown}>
                   <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
                     {virtualizer.getVirtualItems().map((virtualRow) => {
                       const memory = memories[virtualRow.index]!;

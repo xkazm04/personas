@@ -4,6 +4,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { CATEGORY_META, FALLBACK_CATEGORY } from '../QuestionnaireFormGridConfig';
 import { summarizeAnswer } from './questionnaireHelpers';
 import type { QuestionnaireThreadState } from './types';
+import { DebtText } from '@/i18n/DebtText';
+
 
 function statusIconFor(state: QuestionnaireThreadState) {
   if (state === 'answered') return Check;
@@ -62,11 +64,11 @@ function ThreadItem({
       <div className="flex items-start gap-2.5">
         <StatusIcon className={`w-4 h-4 flex-shrink-0 mt-0.5 ${statusColor}`} />
         <div className="min-w-0 flex-1">
-          <div className="text-sm text-foreground leading-snug line-clamp-2">
+          <div className="typo-body text-foreground leading-snug line-clamp-2">
             {question.question}
           </div>
           {effectiveState === 'answered' && answer ? (
-            <div className="text-xs text-status-success/80 leading-tight mt-1 truncate italic">
+            <div className="typo-caption text-status-success/80 leading-tight mt-1 truncate italic">
               {summarizeAnswer(answer, question.type, t)}
               {isAuto && (
                 <span className="ml-1.5 text-[10px] uppercase tracking-wider text-brand-purple/80 font-semibold not-italic">
@@ -80,12 +82,12 @@ function ThreadItem({
               )}
             </div>
           ) : state === 'current' ? (
-            <div className="text-xs uppercase tracking-[0.18em] text-primary/80 font-semibold mt-1">
+            <div className="typo-label uppercase tracking-[0.18em] text-primary/80 font-semibold mt-1">
               current
             </div>
           ) : state === 'blocked' ? (
-            <div className="text-xs text-status-error/80 leading-tight mt-1">
-              credential needed
+            <div className="typo-caption text-status-error/80 leading-tight mt-1">
+              <DebtText k="auto_credential_needed_9bb284d0" />
             </div>
           ) : null}
         </div>
@@ -136,10 +138,10 @@ export function QuestionnaireStoryThread({
     <aside className="w-[320px] flex-shrink-0 border-l border-border bg-foreground/[0.01] flex flex-col min-h-0">
       <div className="flex-shrink-0 px-4 py-3 border-b border-border flex items-center gap-2">
         <BookOpen className="w-4 h-4 text-primary/70" />
-        <span className="text-xs uppercase tracking-[0.2em] text-foreground/60 font-semibold">
-          Story so far
+        <span className="typo-label uppercase tracking-[0.2em] text-foreground font-semibold">
+          <DebtText k="auto_story_so_far_615368df" />
         </span>
-        <span className="ml-auto text-sm text-foreground/60 tabular-nums">
+        <span className="ml-auto typo-data text-foreground tabular-nums">
           {answeredCount}/{totalCount}
         </span>
       </div>
@@ -154,7 +156,7 @@ export function QuestionnaireStoryThread({
               {showChapter && (
                 <div className="flex items-center gap-2 px-1 pt-3 pb-1.5">
                   <meta.Icon className={`w-3.5 h-3.5 ${meta.color}`} />
-                  <span className={`text-xs uppercase tracking-[0.18em] font-semibold ${meta.color}`}>
+                  <span className={`typo-label uppercase tracking-[0.18em] font-semibold ${meta.color}`}>
                     {meta.label}
                   </span>
                   <div className="flex-1 h-px bg-border" />

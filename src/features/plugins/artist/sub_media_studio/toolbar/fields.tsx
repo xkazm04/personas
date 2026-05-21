@@ -108,7 +108,7 @@ export function ToggleRow({
         }`}
       >
         <div
-          className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${
+          className={`absolute top-0.5 w-3 h-3 rounded-full bg-secondary transition-all ${
             value ? 'left-3.5' : 'left-0.5'
           }`}
         />

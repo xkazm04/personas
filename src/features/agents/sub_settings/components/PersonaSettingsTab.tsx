@@ -134,7 +134,7 @@ export function PersonaSettingsTab({
                 type="button"
                 onClick={() => setIconPickerOpen(true)}
                 title={t.shared.forms_extra.choose_icon}
-                className="w-10 h-10 rounded-lg border border-primary/15 bg-background/50 hover:border-primary/30 hover:bg-secondary/40 flex items-center justify-center transition-all cursor-pointer"
+                className="w-10 h-10 rounded-card border border-primary/15 bg-background/50 hover:border-primary/30 hover:bg-secondary/40 flex items-center justify-center transition-all cursor-pointer"
               >
                 {watermarkSprite ? (
                   <div

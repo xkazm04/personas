@@ -1,5 +1,7 @@
 import { useMemo } from 'react';
 import { useAgentStore } from "@/stores/agentStore";
+import { silentCatch } from '@/lib/silentCatch';
+
 
 /** i18n key under `t.agents.onboarding.checklist.*` for each checklist row. */
 export type ChecklistLabelKey =
@@ -100,7 +102,7 @@ export function useOnboardingScore(personaId: string): number {
         const useCases = ctx.useCases as unknown[] | undefined;
         if (useCases && useCases.length > 0) done++; // tools proxy (use cases imply tools)
       }
-    } catch { /* intentional */ }
+    } catch (err) { silentCatch("features/agents/components/onboarding/useOnboardingChecklist:catch1")(err); }
     if ((triggerCount ?? 0) > 0) done++;
     if (lastRun) done++;
 

@@ -54,6 +54,10 @@ export function CatalogAutoSetup({ connector, onComplete, onCancel }: CatalogAut
     return <DesktopBridgeBlock connector={connector} onCancel={onCancel} />;
   }
 
+  return <CatalogAutoSetupInner connector={connector} onComplete={onComplete} onCancel={onCancel} />;
+}
+
+function CatalogAutoSetupInner({ connector, onComplete, onCancel }: CatalogAutoSetupProps) {
   const metadata = parseConnectorMetadata(connector.metadata);
   const hasSetupInstructions = (metadata.setup_instructions ?? '').length > 0;
   const fetchCredentials = useVaultStore((s) => s.fetchCredentials);
@@ -90,7 +94,7 @@ export function CatalogAutoSetup({ connector, onComplete, onCancel }: CatalogAut
         design.start(`Analyze ${connector.label} (${connector.name}) connector and discover setup procedures for creating API credentials.`);
       }
     });
-  }, [phase]);
+  }, [connector.label, connector.name, design, phase]);
 
   useEffect(() => {
     if (phase === 'analyzing' && design.phase === 'preview' && design.result) {

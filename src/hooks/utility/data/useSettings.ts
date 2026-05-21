@@ -150,7 +150,7 @@ export function useSettings(keys: readonly string[]): UseSettingsResult {
     return () => {
       cancelled = true;
     };
-  }, [stableSignature]);
+  }, [stableKeys, stableSignature]);
 
   return { values, loaded, error };
 }

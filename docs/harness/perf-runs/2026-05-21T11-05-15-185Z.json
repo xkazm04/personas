@@ -1,0 +1,1558 @@
+{
+  "meta": {
+    "timestamp": "2026-05-21T11:05:15.184Z",
+    "bridgeUrl": "http://127.0.0.1:17320",
+    "stopCount": 36
+  },
+  "stops": [
+    {
+      "stop": {
+        "id": "L1/home",
+        "group": "L1",
+        "description": "Home dashboard"
+      },
+      "perf": {
+        "resetAt": 37770.5,
+        "snapshotAt": 38553.40000000596,
+        "durationMs": 782.9,
+        "marks": [],
+        "ipc": {
+          "totalCount": 0,
+          "totalDurationMs": 0,
+          "byCommand": []
+        },
+        "render": {
+          "commitCount": 5,
+          "totalActualDurationMs": 13.4,
+          "totalBaseDurationMs": 40.2,
+          "avgActualMs": 2.68
+        },
+        "dom": {
+          "nodeCount": 2550
+        },
+        "diagnostics": {
+          "ipcSubscribed": true
+        }
+      }
+    },
+    {
+      "stop": {
+        "id": "L1/overview",
+        "group": "L1",
+        "description": "Overview dashboard"
+      },
+      "perf": {
+        "resetAt": 38555.40000000596,
+        "snapshotAt": 39711.20000001788,
+        "durationMs": 1155.8,
+        "marks": [],
+        "ipc": {
+          "totalCount": 6,
+          "totalDurationMs": 353.3,
+          "byCommand": [
+            {
+              "command": "get_execution_heatmap",
+              "count": 1,
+              "totalMs": 81.9,
+              "avgMs": 81.9
+            },
+            {
+              "command": "list_all_triggers",
+              "count": 1,
+              "totalMs": 83.6,
+              "avgMs": 83.6
+            },
+            {
+              "command": "obsidian_brain_get_config",
+              "count": 1,
+              "totalMs": 83.5,
+              "avgMs": 83.5
+            },
+            {
+              "command": "obsidian_brain_get_sync_log",
+              "count": 1,
+              "totalMs": 24.8,
+              "avgMs": 24.8
+            },
+            {
+              "command": "get_execution_dashboard",
+              "count": 1,
+              "totalMs": 6.6,
+              "avgMs": 6.6
+            },
+            {
+              "command": "list_all_executions",
+              "count": 1,
+              "totalMs": 72.9,
+              "avgMs": 72.9
+            }
+          ]
+        },
+        "render": {
+          "commitCount": 64,
+          "totalActualDurationMs": 172.3,
+          "totalBaseDurationMs": 3037.9,
+          "avgActualMs": 2.69
+        },
+        "dom": {
+          "nodeCount": 2579
+        },
+        "diagnostics": {
+          "ipcSubscribed": true
+        }
+      }
+    },
+    {
+      "stop": {
+        "id": "L1/personas",
+        "group": "L1",
+        "description": "Personas list"
+      },
+      "perf": {
+        "resetAt": 39712.90000000596,
+        "snapshotAt": 40481.20000001788,
+        "durationMs": 768.3,
+        "marks": [],
+        "ipc": {
+          "totalCount": 1,
+          "totalDurationMs": 13.6,
+          "byCommand": [
+            {
+              "command": "list_personas_using_connector",
+              "count": 1,
+              "totalMs": 13.6,
+              "avgMs": 13.6
+            }
+          ]
+        },
+        "render": {
+          "commitCount": 80,
+          "totalActualDurationMs": 36.2,
+          "totalBaseDurationMs": 341,
+          "avgActualMs": 0.45
+        },
+        "dom": {
+          "nodeCount": 2621
+        },
+        "diagnostics": {
+          "ipcSubscribed": true
+        }
+      }
+    },
+    {
+      "stop": {
+        "id": "L1/events",
+        "group": "L1",
+        "description": "Events / Triggers"
+      },
+      "perf": {
+        "resetAt": 40483.09999999404,
+        "snapshotAt": 41267.59999999404,
+        "durationMs": 784.5,
+        "marks": [],
+        "ipc": {
+          "totalCount": 3,
+          "totalDurationMs": 60.1,
+          "byCommand": [
+            {
+              "command": "list_all_triggers",
+              "count": 1,
+              "totalMs": 11.5,
+              "avgMs": 11.5
+            },
+            {
+              "command": "list_events",
+              "count": 1,
+              "totalMs": 12.6,
+              "avgMs": 12.6
+            },
+            {
+              "command": "get_trigger_health_map",
+              "count": 1,
+              "totalMs": 36,
+              "avgMs": 36
+            }
+          ]
+        },
+        "render": {
+          "commitCount": 9,
+          "totalActualDurationMs": 35,
+          "totalBaseDurationMs": 99.8,
+          "avgActualMs": 3.89
+        },
+        "dom": {
+          "nodeCount": 850
+        },
+        "diagnostics": {
+          "ipcSubscribed": true
+        }
+      }
+    },
+    {
+      "stop": {
+        "id": "L1/credentials",
+        "group": "L1",
+        "description": "Credentials vault"
+      },
+      "perf": {
+        "resetAt": 41270.09999999404,
+        "snapshotAt": 42802.30000001192,
+        "durationMs": 1532.2,
+        "marks": [],
+        "ipc": {
+          "totalCount": 8,
+          "totalDurationMs": 454.4,
+          "byCommand": [
+            {
+              "command": "vault_status",
+              "count": 2,
+              "totalMs": 40.7,
+              "avgMs": 20.35
+            },
+            {
+              "command": "list_connectors",
+              "count": 1,
+              "totalMs": 10.5,
+              "avgMs": 10.5
+            },
+            {
+              "command": "get_pending_review_count",
+              "count": 1,
+              "totalMs": 1.2,
+              "avgMs": 1.2
+            },
+            {
+              "command": "list_events",
+              "count": 1,
+              "totalMs": 3.2,
+              "avgMs": 3.2
+            },
+            {
+              "command": "get_unread_message_count",
+              "count": 1,
+              "totalMs": 3.5,
+              "avgMs": 3.5
+            },
+            {
+              "command": "get_all_monthly_spend",
+              "count": 1,
+              "totalMs": 3.9,
+              "avgMs": 3.9
+            },
+            {
+              "command": "healthcheck_credential",
+              "count": 1,
+              "totalMs": 391.4,
+              "avgMs": 391.4
+            }
+          ]
+        },
+        "render": {
+          "commitCount": 13,
+          "totalActualDurationMs": 81,
+          "totalBaseDurationMs": 180.7,
+          "avgActualMs": 6.23
+        },
+        "dom": {
+          "nodeCount": 1091
+        },
+        "diagnostics": {
+          "ipcSubscribed": true
+        }
+      }
+    },
+    {
+      "stop": {
+        "id": "L1/design-reviews",
+        "group": "L1",
+        "description": "Templates / recipes"
+      },
+      "perf": {
+        "resetAt": 42804.09999999404,
+        "snapshotAt": 44231.30000001192,
+        "durationMs": 1427.2,
+        "marks": [],
+        "ipc": {
+          "totalCount": 12,
+          "totalDurationMs": 1461.7,
+          "byCommand": [
+            {
+              "command": "list_design_reviews_paginated",
+              "count": 5,
+              "totalMs": 433.6,
+              "avgMs": 86.72
+            },
+            {
+              "command": "backfill_review_categories",
+              "count": 1,
+              "totalMs": 135.6,
+              "avgMs": 135.6
+            },
+            {
+              "command": "list_review_connectors",
+              "count": 1,
+              "totalMs": 180.4,
+              "avgMs": 180.4
+            },
+            {
+              "command": "list_review_categories",
+              "count": 1,
+              "totalMs": 180.2,
+              "avgMs": 180.2
+            },
+            {
+              "command": "get_trending_templates",
+              "count": 1,
+              "totalMs": 180.1,
+              "avgMs": 180.1
+            },
+            {
+              "command": "list_design_reviews",
+              "count": 1,
+              "totalMs": 177.1,
+              "avgMs": 177.1
+            },
+            {
+              "command": "batch_import_design_reviews",
+              "count": 1,
+              "totalMs": 94,
+              "avgMs": 94
+            },
+            {
+              "command": "delete_stale_seed_templates",
+              "count": 1,
+              "totalMs": 80.7,
+              "avgMs": 80.7
+            }
+          ]
+        },
+        "render": {
+          "commitCount": 19,
+          "totalActualDurationMs": 306,
+          "totalBaseDurationMs": 611.4,
+          "avgActualMs": 16.11
+        },
+        "dom": {
+          "nodeCount": 4015
+        },
+        "diagnostics": {
+          "ipcSubscribed": true
+        }
+      }
+    },
+    {
+      "stop": {
+        "id": "L1/plugins",
+        "group": "L1",
+        "description": "Plugins (browse)"
+      },
+      "perf": {
+        "resetAt": 44234.40000000596,
+        "snapshotAt": 45034.30000001192,
+        "durationMs": 799.9,
+        "marks": [],
+        "ipc": {
+          "totalCount": 0,
+          "totalDurationMs": 0,
+          "byCommand": []
+        },
+        "render": {
+          "commitCount": 4,
+          "totalActualDurationMs": 82.3,
+          "totalBaseDurationMs": 45.1,
+          "avgActualMs": 20.58
+        },
+        "dom": {
+          "nodeCount": 532
+        },
+        "diagnostics": {
+          "ipcSubscribed": true
+        }
+      }
+    },
+    {
+      "stop": {
+        "id": "L1/schedules",
+        "group": "L1",
+        "description": "Schedules"
+      },
+      "perf": {
+        "resetAt": 45036.20000001788,
+        "snapshotAt": 45804.09999999404,
+        "durationMs": 767.9,
+        "marks": [],
+        "ipc": {
+          "totalCount": 0,
+          "totalDurationMs": 0,
+          "byCommand": []
+        },
+        "render": {
+          "commitCount": 4,
+          "totalActualDurationMs": 12.2,
+          "totalBaseDurationMs": 23.7,
+          "avgActualMs": 3.05
+        },
+        "dom": {
+          "nodeCount": 494
+        },
+        "diagnostics": {
+          "ipcSubscribed": true
+        }
+      }
+    },
+    {
+      "stop": {
+        "id": "L1/settings",
+        "group": "L1",
+        "description": "Settings (default tab)"
+      },
+      "perf": {
+        "resetAt": 45805.70000001788,
+        "snapshotAt": 47336,
+        "durationMs": 1530.3,
+        "marks": [],
+        "ipc": {
+          "totalCount": 143,
+          "totalDurationMs": 10000.4,
+          "byCommand": [
+            {
+              "command": "resolve_effective_config",
+              "count": 142,
+              "totalMs": 9964.5,
+              "avgMs": 70.17
+            },
+            {
+              "command": "list_personas",
+              "count": 1,
+              "totalMs": 35.9,
+              "avgMs": 35.9
+            }
+          ]
+        },
+        "render": {
+          "commitCount": 11,
+          "totalActualDurationMs": 65.5,
+          "totalBaseDurationMs": 222.6,
+          "avgActualMs": 5.95
+        },
+        "dom": {
+          "nodeCount": 2856
+        },
+        "diagnostics": {
+          "ipcSubscribed": true
+        }
+      }
+    },
+    {
+      "stop": {
+        "id": "plugins/browse",
+        "group": "plugins",
+        "description": "Plugin browse page"
+      },
+      "perf": {
+        "resetAt": 47338,
+        "snapshotAt": 48108.5,
+        "durationMs": 770.5,
+        "marks": [],
+        "ipc": {
+          "totalCount": 0,
+          "totalDurationMs": 0,
+          "byCommand": []
+        },
+        "render": {
+          "commitCount": 2,
+          "totalActualDurationMs": 9.3,
+          "totalBaseDurationMs": 14.9,
+          "avgActualMs": 4.65
+        },
+        "dom": {
+          "nodeCount": 532
+        },
+        "diagnostics": {
+          "ipcSubscribed": true
+        }
+      }
+    },
+    {
+      "stop": {
+        "id": "plugins/companion",
+        "group": "plugins",
+        "description": "Companion plugin page"
+      },
+      "perf": {
+        "resetAt": 48110.20000001788,
+        "snapshotAt": 48879.09999999404,
+        "durationMs": 768.9,
+        "marks": [],
+        "ipc": {
+          "totalCount": 0,
+          "totalDurationMs": 0,
+          "byCommand": []
+        },
+        "render": {
+          "commitCount": 4,
+          "totalActualDurationMs": 9.7,
+          "totalBaseDurationMs": 29.1,
+          "avgActualMs": 2.42
+        },
+        "dom": {
+          "nodeCount": 445
+        },
+        "diagnostics": {
+          "ipcSubscribed": true
+        }
+      }
+    },
+    {
+      "stop": {
+        "id": "plugins/artist",
+        "group": "plugins",
+        "description": "Artist plugin (default)"
+      },
+      "perf": {
+        "resetAt": 48880.59999999404,
+        "snapshotAt": 49635.30000001192,
+        "durationMs": 754.7,
+        "marks": [],
+        "ipc": {
+          "totalCount": 0,
+          "totalDurationMs": 0,
+          "byCommand": []
+        },
+        "render": {
+          "commitCount": 5,
+          "totalActualDurationMs": 7.8,
+          "totalBaseDurationMs": 32.6,
+          "avgActualMs": 1.56
+        },
+        "dom": {
+          "nodeCount": 430
+        },
+        "diagnostics": {
+          "ipcSubscribed": true
+        }
+      }
+    },
+    {
+      "stop": {
+        "id": "plugins/dev-tools",
+        "group": "plugins",
+        "description": "Dev tools plugin"
+      },
+      "perf": {
+        "resetAt": 49636.90000000596,
+        "snapshotAt": 50391.70000001788,
+        "durationMs": 754.8,
+        "marks": [],
+        "ipc": {
+          "totalCount": 0,
+          "totalDurationMs": 0,
+          "byCommand": []
+        },
+        "render": {
+          "commitCount": 4,
+          "totalActualDurationMs": 7.8,
+          "totalBaseDurationMs": 27.6,
+          "avgActualMs": 1.95
+        },
+        "dom": {
+          "nodeCount": 468
+        },
+        "diagnostics": {
+          "ipcSubscribed": true
+        }
+      }
+    },
+    {
+      "stop": {
+        "id": "plugins/obsidian-brain",
+        "group": "plugins",
+        "description": "Obsidian Brain plugin"
+      },
+      "perf": {
+        "resetAt": 50393.40000000596,
+        "snapshotAt": 51133.09999999404,
+        "durationMs": 739.7,
+        "marks": [],
+        "ipc": {
+          "totalCount": 0,
+          "totalDurationMs": 0,
+          "byCommand": []
+        },
+        "render": {
+          "commitCount": 6,
+          "totalActualDurationMs": 9.2,
+          "totalBaseDurationMs": 43.6,
+          "avgActualMs": 1.53
+        },
+        "dom": {
+          "nodeCount": 439
+        },
+        "diagnostics": {
+          "ipcSubscribed": true
+        }
+      }
+    },
+    {
+      "stop": {
+        "id": "plugins/research-lab",
+        "group": "plugins",
+        "description": "Research Lab plugin"
+      },
+      "perf": {
+        "resetAt": 51134.70000001788,
+        "snapshotAt": 51874.90000000596,
+        "durationMs": 740.2,
+        "marks": [],
+        "ipc": {
+          "totalCount": 0,
+          "totalDurationMs": 0,
+          "byCommand": []
+        },
+        "render": {
+          "commitCount": 6,
+          "totalActualDurationMs": 8.6,
+          "totalBaseDurationMs": 41.6,
+          "avgActualMs": 1.43
+        },
+        "dom": {
+          "nodeCount": 481
+        },
+        "diagnostics": {
+          "ipcSubscribed": true
+        }
+      }
+    },
+    {
+      "stop": {
+        "id": "plugins/drive",
+        "group": "plugins",
+        "description": "Drive plugin"
+      },
+      "perf": {
+        "resetAt": 51876.5,
+        "snapshotAt": 52639.70000001788,
+        "durationMs": 763.2,
+        "marks": [],
+        "ipc": {
+          "totalCount": 0,
+          "totalDurationMs": 0,
+          "byCommand": []
+        },
+        "render": {
+          "commitCount": 6,
+          "totalActualDurationMs": 9.9,
+          "totalBaseDurationMs": 42.4,
+          "avgActualMs": 1.65
+        },
+        "dom": {
+          "nodeCount": 456
+        },
+        "diagnostics": {
+          "ipcSubscribed": true
+        }
+      }
+    },
+    {
+      "stop": {
+        "id": "plugins/twin",
+        "group": "plugins",
+        "description": "Twin plugin"
+      },
+      "perf": {
+        "resetAt": 52641.20000001788,
+        "snapshotAt": 53381,
+        "durationMs": 739.8,
+        "marks": [],
+        "ipc": {
+          "totalCount": 0,
+          "totalDurationMs": 0,
+          "byCommand": []
+        },
+        "render": {
+          "commitCount": 3,
+          "totalActualDurationMs": 7.6,
+          "totalBaseDurationMs": 19.6,
+          "avgActualMs": 2.53
+        },
+        "dom": {
+          "nodeCount": 471
+        },
+        "diagnostics": {
+          "ipcSubscribed": true
+        }
+      }
+    },
+    {
+      "stop": {
+        "id": "plugins/langfuse",
+        "group": "plugins",
+        "description": "Langfuse plugin"
+      },
+      "perf": {
+        "resetAt": 53382.80000001192,
+        "snapshotAt": 54135.90000000596,
+        "durationMs": 753.1,
+        "marks": [],
+        "ipc": {
+          "totalCount": 0,
+          "totalDurationMs": 0,
+          "byCommand": []
+        },
+        "render": {
+          "commitCount": 4,
+          "totalActualDurationMs": 8.8,
+          "totalBaseDurationMs": 30.4,
+          "avgActualMs": 2.2
+        },
+        "dom": {
+          "nodeCount": 456
+        },
+        "diagnostics": {
+          "ipcSubscribed": true
+        }
+      }
+    },
+    {
+      "stop": {
+        "id": "settings/account",
+        "group": "settings",
+        "description": "Settings → Account"
+      },
+      "perf": {
+        "resetAt": 54137.80000001192,
+        "snapshotAt": 54940.40000000596,
+        "durationMs": 802.6,
+        "marks": [],
+        "ipc": {
+          "totalCount": 1,
+          "totalDurationMs": 44.1,
+          "byCommand": [
+            {
+              "command": "list_personas",
+              "count": 1,
+              "totalMs": 44.1,
+              "avgMs": 44.1
+            }
+          ]
+        },
+        "render": {
+          "commitCount": 9,
+          "totalActualDurationMs": 78.6,
+          "totalBaseDurationMs": 230,
+          "avgActualMs": 8.73
+        },
+        "dom": {
+          "nodeCount": 2859
+        },
+        "diagnostics": {
+          "ipcSubscribed": true
+        }
+      }
+    },
+    {
+      "stop": {
+        "id": "settings/appearance",
+        "group": "settings",
+        "description": "Settings → Appearance"
+      },
+      "perf": {
+        "resetAt": 54942.20000001788,
+        "snapshotAt": 56226.40000000596,
+        "durationMs": 1284.2,
+        "marks": [],
+        "ipc": {
+          "totalCount": 6,
+          "totalDurationMs": 19.6,
+          "byCommand": [
+            {
+              "command": "radio_get_state",
+              "count": 2,
+              "totalMs": 6.7,
+              "avgMs": 3.35
+            },
+            {
+              "command": "radio_get_now_playing",
+              "count": 2,
+              "totalMs": 6.6,
+              "avgMs": 3.3
+            },
+            {
+              "command": "radio_list_stations",
+              "count": 2,
+              "totalMs": 6.3,
+              "avgMs": 3.15
+            }
+          ]
+        },
+        "render": {
+          "commitCount": 6,
+          "totalActualDurationMs": 63,
+          "totalBaseDurationMs": 181.2,
+          "avgActualMs": 10.5
+        },
+        "dom": {
+          "nodeCount": 3074
+        },
+        "diagnostics": {
+          "ipcSubscribed": true
+        }
+      }
+    },
+    {
+      "stop": {
+        "id": "settings/notifications",
+        "group": "settings",
+        "description": "Settings → Notifications"
+      },
+      "perf": {
+        "resetAt": 56228,
+        "snapshotAt": 57047.40000000596,
+        "durationMs": 819.4,
+        "marks": [],
+        "ipc": {
+          "totalCount": 0,
+          "totalDurationMs": 0,
+          "byCommand": []
+        },
+        "render": {
+          "commitCount": 5,
+          "totalActualDurationMs": 69.9,
+          "totalBaseDurationMs": 161,
+          "avgActualMs": 13.98
+        },
+        "dom": {
+          "nodeCount": 3077
+        },
+        "diagnostics": {
+          "ipcSubscribed": true
+        }
+      }
+    },
+    {
+      "stop": {
+        "id": "settings/engine",
+        "group": "settings",
+        "description": "Settings → Engine"
+      },
+      "perf": {
+        "resetAt": 57048.90000000596,
+        "snapshotAt": 57823.09999999404,
+        "durationMs": 774.2,
+        "marks": [],
+        "ipc": {
+          "totalCount": 0,
+          "totalDurationMs": 0,
+          "byCommand": []
+        },
+        "render": {
+          "commitCount": 4,
+          "totalActualDurationMs": 43.7,
+          "totalBaseDurationMs": 97.4,
+          "avgActualMs": 10.93
+        },
+        "dom": {
+          "nodeCount": 3431
+        },
+        "diagnostics": {
+          "ipcSubscribed": true
+        }
+      }
+    },
+    {
+      "stop": {
+        "id": "settings/byom",
+        "group": "settings",
+        "description": "Settings → BYOM"
+      },
+      "perf": {
+        "resetAt": 57824.70000001788,
+        "snapshotAt": 59375.80000001192,
+        "durationMs": 1551.1,
+        "marks": [],
+        "ipc": {
+          "totalCount": 11,
+          "totalDurationMs": 139.1,
+          "byCommand": [
+            {
+              "command": "get_app_settings_bulk",
+              "count": 4,
+              "totalMs": 5.7,
+              "avgMs": 1.42
+            },
+            {
+              "command": "health_check_local",
+              "count": 2,
+              "totalMs": 110.2,
+              "avgMs": 55.1
+            },
+            {
+              "command": "list_notification_subscriptions",
+              "count": 1,
+              "totalMs": 2.4,
+              "avgMs": 2.4
+            },
+            {
+              "command": "get_ambient_context_snapshot",
+              "count": 1,
+              "totalMs": 2.6,
+              "avgMs": 2.6
+            },
+            {
+              "command": "get_ambient_sensory_policy",
+              "count": 1,
+              "totalMs": 4.7,
+              "avgMs": 4.7
+            },
+            {
+              "command": "list_context_rules",
+              "count": 1,
+              "totalMs": 6.2,
+              "avgMs": 6.2
+            },
+            {
+              "command": "get_context_stream_stats",
+              "count": 1,
+              "totalMs": 7.3,
+              "avgMs": 7.3
+            }
+          ]
+        },
+        "render": {
+          "commitCount": 15,
+          "totalActualDurationMs": 80.1,
+          "totalBaseDurationMs": 456.7,
+          "avgActualMs": 5.34
+        },
+        "dom": {
+          "nodeCount": 3755
+        },
+        "diagnostics": {
+          "ipcSubscribed": true
+        }
+      }
+    },
+    {
+      "stop": {
+        "id": "settings/portability",
+        "group": "settings",
+        "description": "Settings → Portability"
+      },
+      "perf": {
+        "resetAt": 59377.30000001192,
+        "snapshotAt": 60880,
+        "durationMs": 1502.7,
+        "marks": [],
+        "ipc": {
+          "totalCount": 9,
+          "totalDurationMs": 73.9,
+          "byCommand": [
+            {
+              "command": "set_app_setting",
+              "count": 4,
+              "totalMs": 24.5,
+              "avgMs": 6.13
+            },
+            {
+              "command": "get_app_settings_bulk",
+              "count": 2,
+              "totalMs": 39.3,
+              "avgMs": 19.65
+            },
+            {
+              "command": "get_byom_policy",
+              "count": 1,
+              "totalMs": 3.6,
+              "avgMs": 3.6
+            },
+            {
+              "command": "get_provider_usage_stats",
+              "count": 1,
+              "totalMs": 3.3,
+              "avgMs": 3.3
+            },
+            {
+              "command": "get_provider_usage_timeseries",
+              "count": 1,
+              "totalMs": 3.2,
+              "avgMs": 3.2
+            }
+          ]
+        },
+        "render": {
+          "commitCount": 9,
+          "totalActualDurationMs": 86.9,
+          "totalBaseDurationMs": 311.2,
+          "avgActualMs": 9.66
+        },
+        "dom": {
+          "nodeCount": 3857
+        },
+        "diagnostics": {
+          "ipcSubscribed": true
+        }
+      }
+    },
+    {
+      "stop": {
+        "id": "settings/config",
+        "group": "settings",
+        "description": "Settings → Config"
+      },
+      "perf": {
+        "resetAt": 60882.20000001788,
+        "snapshotAt": 63143.20000001788,
+        "durationMs": 2261,
+        "marks": [],
+        "ipc": {
+          "totalCount": 11,
+          "totalDurationMs": 47.2,
+          "byCommand": [
+            {
+              "command": "set_app_setting",
+              "count": 6,
+              "totalMs": 18.9,
+              "avgMs": 3.15
+            },
+            {
+              "command": "get_app_settings_bulk",
+              "count": 4,
+              "totalMs": 19.8,
+              "avgMs": 4.95
+            },
+            {
+              "command": "get_export_stats",
+              "count": 1,
+              "totalMs": 8.5,
+              "avgMs": 8.5
+            }
+          ]
+        },
+        "render": {
+          "commitCount": 13,
+          "totalActualDurationMs": 61.8,
+          "totalBaseDurationMs": 758.4,
+          "avgActualMs": 4.75
+        },
+        "dom": {
+          "nodeCount": 3934
+        },
+        "diagnostics": {
+          "ipcSubscribed": true
+        }
+      }
+    },
+    {
+      "stop": {
+        "id": "twin/profiles",
+        "group": "twin",
+        "description": "Twin → Profiles"
+      },
+      "perf": {
+        "resetAt": 63145,
+        "snapshotAt": 63984.09999999404,
+        "durationMs": 839.1,
+        "marks": [],
+        "ipc": {
+          "totalCount": 7,
+          "totalDurationMs": 75.8,
+          "byCommand": [
+            {
+              "command": "langfuse_get_config",
+              "count": 2,
+              "totalMs": 41.6,
+              "avgMs": 20.8
+            },
+            {
+              "command": "twin_list_profiles",
+              "count": 1,
+              "totalMs": 10.6,
+              "avgMs": 10.6
+            },
+            {
+              "command": "twin_list_tones",
+              "count": 1,
+              "totalMs": 6.3,
+              "avgMs": 6.3
+            },
+            {
+              "command": "twin_list_channels",
+              "count": 1,
+              "totalMs": 5.9,
+              "avgMs": 5.9
+            },
+            {
+              "command": "twin_get_voice_profile",
+              "count": 1,
+              "totalMs": 5.8,
+              "avgMs": 5.8
+            },
+            {
+              "command": "twin_list_pending_memories",
+              "count": 1,
+              "totalMs": 5.6,
+              "avgMs": 5.6
+            }
+          ]
+        },
+        "render": {
+          "commitCount": 6,
+          "totalActualDurationMs": 18.1,
+          "totalBaseDurationMs": 46.3,
+          "avgActualMs": 3.02
+        },
+        "dom": {
+          "nodeCount": 453
+        },
+        "diagnostics": {
+          "ipcSubscribed": true
+        }
+      }
+    },
+    {
+      "stop": {
+        "id": "twin/identity",
+        "group": "twin",
+        "description": "Twin → Identity"
+      },
+      "perf": {
+        "resetAt": 63986.09999999404,
+        "snapshotAt": 64767.09999999404,
+        "durationMs": 781,
+        "marks": [],
+        "ipc": {
+          "totalCount": 0,
+          "totalDurationMs": 0,
+          "byCommand": []
+        },
+        "render": {
+          "commitCount": 2,
+          "totalActualDurationMs": 1.7,
+          "totalBaseDurationMs": 16,
+          "avgActualMs": 0.85
+        },
+        "dom": {
+          "nodeCount": 453
+        },
+        "diagnostics": {
+          "ipcSubscribed": true
+        }
+      }
+    },
+    {
+      "stop": {
+        "id": "twin/brain",
+        "group": "twin",
+        "description": "Twin → Brain"
+      },
+      "perf": {
+        "resetAt": 64768.90000000596,
+        "snapshotAt": 65536.20000001788,
+        "durationMs": 767.3,
+        "marks": [],
+        "ipc": {
+          "totalCount": 2,
+          "totalDurationMs": 3377.8,
+          "byCommand": [
+            {
+              "command": "langfuse_stack_get_info",
+              "count": 2,
+              "totalMs": 3377.8,
+              "avgMs": 1688.9
+            }
+          ]
+        },
+        "render": {
+          "commitCount": 2,
+          "totalActualDurationMs": 2.5,
+          "totalBaseDurationMs": 17.4,
+          "avgActualMs": 1.25
+        },
+        "dom": {
+          "nodeCount": 453
+        },
+        "diagnostics": {
+          "ipcSubscribed": true
+        }
+      }
+    },
+    {
+      "stop": {
+        "id": "twin/voice",
+        "group": "twin",
+        "description": "Twin → Voice"
+      },
+      "perf": {
+        "resetAt": 65538,
+        "snapshotAt": 66320.70000001788,
+        "durationMs": 782.7,
+        "marks": [],
+        "ipc": {
+          "totalCount": 0,
+          "totalDurationMs": 0,
+          "byCommand": []
+        },
+        "render": {
+          "commitCount": 3,
+          "totalActualDurationMs": 3.2,
+          "totalBaseDurationMs": 24.5,
+          "avgActualMs": 1.07
+        },
+        "dom": {
+          "nodeCount": 471
+        },
+        "diagnostics": {
+          "ipcSubscribed": true
+        }
+      }
+    },
+    {
+      "stop": {
+        "id": "artist/blender",
+        "group": "artist",
+        "description": "Artist → Blender"
+      },
+      "perf": {
+        "resetAt": 66322.5,
+        "snapshotAt": 67079.80000001192,
+        "durationMs": 757.3,
+        "marks": [],
+        "ipc": {
+          "totalCount": 2,
+          "totalDurationMs": 17.6,
+          "byCommand": [
+            {
+              "command": "artist_list_assets",
+              "count": 2,
+              "totalMs": 17.6,
+              "avgMs": 8.8
+            }
+          ]
+        },
+        "render": {
+          "commitCount": 8,
+          "totalActualDurationMs": 10.5,
+          "totalBaseDurationMs": 67.8,
+          "avgActualMs": 1.31
+        },
+        "dom": {
+          "nodeCount": 430
+        },
+        "diagnostics": {
+          "ipcSubscribed": true
+        }
+      }
+    },
+    {
+      "stop": {
+        "id": "artist/gallery",
+        "group": "artist",
+        "description": "Artist → Gallery"
+      },
+      "perf": {
+        "resetAt": 67081.30000001192,
+        "snapshotAt": 67835.5,
+        "durationMs": 754.2,
+        "marks": [],
+        "ipc": {
+          "totalCount": 3,
+          "totalDurationMs": 19,
+          "byCommand": [
+            {
+              "command": "artist_list_assets",
+              "count": 2,
+              "totalMs": 9.6,
+              "avgMs": 4.8
+            },
+            {
+              "command": "artist_read_image_base64",
+              "count": 1,
+              "totalMs": 9.4,
+              "avgMs": 9.4
+            }
+          ]
+        },
+        "render": {
+          "commitCount": 4,
+          "totalActualDurationMs": 7.7,
+          "totalBaseDurationMs": 37,
+          "avgActualMs": 1.93
+        },
+        "dom": {
+          "nodeCount": 516
+        },
+        "diagnostics": {
+          "ipcSubscribed": true
+        }
+      }
+    },
+    {
+      "stop": {
+        "id": "artist/media-studio",
+        "group": "artist",
+        "description": "Artist → Media Studio"
+      },
+      "perf": {
+        "resetAt": 67837,
+        "snapshotAt": 68606.5,
+        "durationMs": 769.5,
+        "marks": [],
+        "ipc": {
+          "totalCount": 0,
+          "totalDurationMs": 0,
+          "byCommand": []
+        },
+        "render": {
+          "commitCount": 4,
+          "totalActualDurationMs": 2,
+          "totalBaseDurationMs": 33.5,
+          "avgActualMs": 0.5
+        },
+        "dom": {
+          "nodeCount": 429
+        },
+        "diagnostics": {
+          "ipcSubscribed": true
+        }
+      }
+    },
+    {
+      "stop": {
+        "id": "revisit/credentials-2nd",
+        "group": "revisit",
+        "description": "Credentials, second visit"
+      },
+      "perf": {
+        "resetAt": 68608.09999999404,
+        "snapshotAt": 69609,
+        "durationMs": 1000.9,
+        "marks": [],
+        "ipc": {
+          "totalCount": 4,
+          "totalDurationMs": 49.5,
+          "byCommand": [
+            {
+              "command": "vault_status",
+              "count": 2,
+              "totalMs": 32.9,
+              "avgMs": 16.45
+            },
+            {
+              "command": "list_credentials",
+              "count": 1,
+              "totalMs": 6.9,
+              "avgMs": 6.9
+            },
+            {
+              "command": "list_connectors",
+              "count": 1,
+              "totalMs": 9.7,
+              "avgMs": 9.7
+            }
+          ]
+        },
+        "render": {
+          "commitCount": 12,
+          "totalActualDurationMs": 49.9,
+          "totalBaseDurationMs": 123.9,
+          "avgActualMs": 4.16
+        },
+        "dom": {
+          "nodeCount": 1091
+        },
+        "diagnostics": {
+          "ipcSubscribed": true
+        }
+      }
+    },
+    {
+      "stop": {
+        "id": "revisit/overview-2nd",
+        "group": "revisit",
+        "description": "Overview, second visit"
+      },
+      "perf": {
+        "resetAt": 69611.20000001788,
+        "snapshotAt": 70881.90000000596,
+        "durationMs": 1270.7,
+        "marks": [],
+        "ipc": {
+          "totalCount": 9,
+          "totalDurationMs": 397.4,
+          "byCommand": [
+            {
+              "command": "companion_get_cockpit",
+              "count": 2,
+              "totalMs": 34.4,
+              "avgMs": 17.2
+            },
+            {
+              "command": "obsidian_brain_get_config",
+              "count": 2,
+              "totalMs": 129,
+              "avgMs": 64.5
+            },
+            {
+              "command": "get_execution_heatmap",
+              "count": 1,
+              "totalMs": 67,
+              "avgMs": 67
+            },
+            {
+              "command": "list_all_triggers",
+              "count": 1,
+              "totalMs": 65.8,
+              "avgMs": 65.8
+            },
+            {
+              "command": "obsidian_brain_get_sync_log",
+              "count": 1,
+              "totalMs": 28.1,
+              "avgMs": 28.1
+            },
+            {
+              "command": "get_execution_dashboard",
+              "count": 1,
+              "totalMs": 8.2,
+              "avgMs": 8.2
+            },
+            {
+              "command": "list_all_executions",
+              "count": 1,
+              "totalMs": 64.9,
+              "avgMs": 64.9
+            }
+          ]
+        },
+        "render": {
+          "commitCount": 68,
+          "totalActualDurationMs": 175.8,
+          "totalBaseDurationMs": 2200.8,
+          "avgActualMs": 2.59
+        },
+        "dom": {
+          "nodeCount": 2579
+        },
+        "diagnostics": {
+          "ipcSubscribed": true
+        }
+      }
+    },
+    {
+      "stop": {
+        "id": "revisit/settings-2nd",
+        "group": "revisit",
+        "description": "Settings, second visit"
+      },
+      "perf": {
+        "resetAt": 70883.40000000596,
+        "snapshotAt": 72422,
+        "durationMs": 1538.6,
+        "marks": [],
+        "ipc": {
+          "totalCount": 7,
+          "totalDurationMs": 62.3,
+          "byCommand": [
+            {
+              "command": "companion_get_cockpit",
+              "count": 2,
+              "totalMs": 7.8,
+              "avgMs": 3.9
+            },
+            {
+              "command": "list_personas",
+              "count": 1,
+              "totalMs": 38.8,
+              "avgMs": 38.8
+            },
+            {
+              "command": "get_pending_review_count",
+              "count": 1,
+              "totalMs": 2.5,
+              "avgMs": 2.5
+            },
+            {
+              "command": "get_unread_message_count",
+              "count": 1,
+              "totalMs": 4.1,
+              "avgMs": 4.1
+            },
+            {
+              "command": "list_events",
+              "count": 1,
+              "totalMs": 4.1,
+              "avgMs": 4.1
+            },
+            {
+              "command": "get_all_monthly_spend",
+              "count": 1,
+              "totalMs": 5,
+              "avgMs": 5
+            }
+          ]
+        },
+        "render": {
+          "commitCount": 10,
+          "totalActualDurationMs": 70.1,
+          "totalBaseDurationMs": 236.1,
+          "avgActualMs": 7.01
+        },
+        "dom": {
+          "nodeCount": 2856
+        },
+        "diagnostics": {
+          "ipcSubscribed": true
+        }
+      }
+    },
+    {
+      "stop": {
+        "id": "interaction/live-events-burst",
+        "group": "interaction",
+        "description": "Realtime burst on Events tab"
+      },
+      "perf": {
+        "resetAt": 72423.59999999404,
+        "snapshotAt": 75132.5,
+        "durationMs": 2708.9,
+        "marks": [],
+        "ipc": {
+          "totalCount": 3,
+          "totalDurationMs": 76.8,
+          "byCommand": [
+            {
+              "command": "list_events",
+              "count": 1,
+              "totalMs": 12.7,
+              "avgMs": 12.7
+            },
+            {
+              "command": "list_all_triggers",
+              "count": 1,
+              "totalMs": 32.1,
+              "avgMs": 32.1
+            },
+            {
+              "command": "get_trigger_health_map",
+              "count": 1,
+              "totalMs": 32,
+              "avgMs": 32
+            }
+          ]
+        },
+        "render": {
+          "commitCount": 5,
+          "totalActualDurationMs": 28.2,
+          "totalBaseDurationMs": 66.1,
+          "avgActualMs": 5.64
+        },
+        "dom": {
+          "nodeCount": 850
+        },
+        "diagnostics": {
+          "ipcSubscribed": true
+        }
+      }
+    }
+  ]
+}

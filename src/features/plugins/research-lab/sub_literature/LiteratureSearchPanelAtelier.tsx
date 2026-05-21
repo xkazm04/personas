@@ -22,6 +22,8 @@ import {
 } from '../_shared/tokens';
 import { NoActiveProject } from '../_shared/EmptyState';
 import { useIngestSource } from '../_shared/useIngestSource';
+import { DebtText } from '@/i18n/DebtText';
+
 
 const AddSourceForm = lazy(() => import('./AddSourceForm'));
 const ArxivSearchModal = lazy(() => import('./ArxivSearchModal'));
@@ -186,7 +188,7 @@ function AtelierHeader({
           </div>
           <div className="flex flex-col leading-tight min-w-0">
             <span className="typo-section-title text-foreground truncate">{title}</span>
-            <span className="text-xs uppercase tracking-[0.2em] text-foreground/60 truncate">
+            <span className="typo-label uppercase tracking-[0.2em] text-foreground truncate">
               {subtitle}
             </span>
           </div>
@@ -222,8 +224,8 @@ function SourceTypeRail({
 }) {
   return (
     <aside className="hidden lg:flex w-56 flex-shrink-0 flex-col border-r border-border/40 px-3 py-6 gap-1 overflow-y-auto">
-      <p className="text-xs uppercase tracking-[0.2em] text-foreground/55 px-2 mb-2">
-        Source types
+      <p className="typo-label uppercase tracking-[0.2em] text-foreground px-2 mb-2">
+        <DebtText k="auto_source_types_3f7312e0" />
       </p>
       <RailItem label="All sources" count={totalSources} selected={selected === null} onClick={() => onSelect(null)} />
       {SOURCE_TYPES.map((type) => {
@@ -284,7 +286,7 @@ function SourceHero({
         </span>
         {source.relevanceScore != null && (
           <span className="px-2.5 py-1 typo-caption rounded-full bg-primary/15 text-primary tabular-nums">
-            {Math.round(source.relevanceScore * 100)}% relevance
+            {Math.round(source.relevanceScore * 100)}<DebtText k="auto_relevance_6fe84b23" />
           </span>
         )}
         {source.year && (
@@ -317,13 +319,13 @@ function SourceHero({
         <div className="rounded-card border border-border/40 bg-foreground/[0.02] p-4 space-y-2">
           {source.doi && (
             <div className="flex items-center gap-2">
-              <span className="text-[10px] uppercase tracking-[0.2em] text-foreground/55 w-10">DOI</span>
+              <span className="text-[10px] uppercase tracking-[0.2em] text-foreground w-10">DOI</span>
               <span className="typo-body text-foreground font-mono">{source.doi}</span>
             </div>
           )}
           {source.url && (
             <div className="flex items-center gap-2">
-              <span className="text-[10px] uppercase tracking-[0.2em] text-foreground/55 w-10">URL</span>
+              <span className="text-[10px] uppercase tracking-[0.2em] text-foreground w-10">URL</span>
               <a
                 href={source.url}
                 target="_blank"
@@ -339,7 +341,7 @@ function SourceHero({
       )}
 
       <div className="flex items-center justify-between gap-3 pt-2 flex-wrap">
-        <span className="typo-caption text-foreground/55">
+        <span className="typo-caption text-foreground">
           Added {new Date(source.createdAt).toLocaleDateString()}
         </span>
         <div className="flex items-center gap-2">
@@ -377,11 +379,11 @@ function ChronologyThread({
   const visible = sources.slice(0, 12);
   return (
     <aside className="hidden xl:flex w-72 flex-shrink-0 flex-col border-l border-border/40 px-4 py-6 gap-3 overflow-y-auto">
-      <p className="text-xs uppercase tracking-[0.2em] text-foreground/55 mb-1">Recent</p>
+      <p className="typo-label uppercase tracking-[0.2em] text-foreground mb-1">Recent</p>
       {visible.length === 0 && (
-        <div className="flex items-center gap-2 typo-caption text-foreground/55">
+        <div className="flex items-center gap-2 typo-caption text-foreground">
           <AlertCircle className="w-3.5 h-3.5" />
-          No sources match.
+          <DebtText k="auto_no_sources_match_ff688378" />
         </div>
       )}
       <div className="relative space-y-2">
@@ -410,7 +412,7 @@ function ChronologyThread({
                   <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${sourceStatusColor(s.status)}`}>
                     {sourceStatusLabel(t, s.status)}
                   </span>
-                  <span className="typo-caption text-foreground/55 truncate">
+                  <span className="typo-caption text-foreground truncate">
                     {sourceTypeLabel(t, s.sourceType)}{s.year ? ` · ${s.year}` : ''}
                   </span>
                 </div>
@@ -458,7 +460,7 @@ function AtelierEmpty({
         <BookOpen className="w-6 h-6 text-primary" />
       </div>
       <p className="typo-body-lg text-foreground">{t.research_lab.no_sources}</p>
-      <p className="typo-body text-foreground/70 max-w-md mx-auto">{t.research_lab.no_sources_hint}</p>
+      <p className="typo-body text-foreground max-w-md mx-auto">{t.research_lab.no_sources_hint}</p>
       <div className="flex items-center justify-center gap-2">
         <button
           onClick={onArxiv}

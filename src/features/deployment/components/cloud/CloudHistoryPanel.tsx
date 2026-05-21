@@ -12,6 +12,8 @@ import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
 import { statusIcon as _statusIcon, formatDuration, formatCost, timeAgo as _timeAgo } from './CloudHistoryHelpers';
 import { StatCard } from './StatCard';
 import { DailyBreakdownChart } from './DailyBreakdownChart';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 // ---------------------------------------------------------------------------
 // Component
@@ -40,9 +42,7 @@ export function CloudHistoryPanel() {
       ]);
       setExecutions(execs);
       setStats(st);
-    } catch {
-      // Errors handled silently -- panel shows empty state
-    } finally {
+    } catch (err) { silentCatch("features/deployment/components/cloud/CloudHistoryPanel:catch1")(err); } finally {
       setIsLoading(false);
     }
   }, [filterPersona, filterStatus, period]);
@@ -64,7 +64,7 @@ export function CloudHistoryPanel() {
       if (oldest !== undefined) cache.delete(oldest);
       else break;
     }
-  }, []);
+  }, [OUTPUT_CACHE_TTL]);
 
   const fetchOutput = useCallback(async (execId: string) => {
     // Return cached output if still fresh (re-insert to mark as recently used)
@@ -91,7 +91,7 @@ export function CloudHistoryPanel() {
     } finally {
       fetchingRef.current.delete(execId);
     }
-  }, [evictCache]);
+  }, [OUTPUT_CACHE_TTL, evictCache]);
 
   // Debounce filter-driven refetches to avoid API spam when iterating filters
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);

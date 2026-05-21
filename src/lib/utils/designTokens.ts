@@ -201,7 +201,7 @@ export const STATE_DISABLED_OPACITY = 'disabled:is-disabled' as const;
 export const STATE_LOCKED = {
   container: 'cursor-not-allowed',
   overlay: 'bg-background/60',
-  icon: 'text-muted-foreground',
+  icon: 'text-foreground',
 } as const;
 
 /** Border for inactive / disabled elements — alias for BORDER_SUBTLE. */

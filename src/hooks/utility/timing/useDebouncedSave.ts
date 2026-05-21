@@ -65,7 +65,7 @@ export function useDebouncedSave(
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [isDirty, cancel, ...deps]);
+  }, [isDirty, cancel, delay, deps]);
 
   return { isSaving, lastError, cancel };
 }

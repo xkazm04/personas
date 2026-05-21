@@ -83,7 +83,7 @@ export function CreateTeamForm({
                     style={{ backgroundColor: hex }}
                   >
                     {isSelected && (
-                      <Check className="w-4 h-4 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]" />
+                      <Check className="w-4 h-4 text-foreground drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]" />
                     )}
                   </span>
                   <span className={`text-[10px] leading-tight ${isSelected ? 'text-foreground/90 font-medium' : 'text-foreground'}`}>

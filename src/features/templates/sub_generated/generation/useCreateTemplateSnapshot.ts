@@ -48,7 +48,7 @@ function reportSnapshotParseFailure(
       scope.setExtra('result_json_length', rawJson?.length ?? 0);
       Sentry.captureException(err instanceof Error ? err : new Error(String(err)));
     });
-  } catch { /* intentional: Sentry may be uninitialized */ }
+  } catch (err) { silentCatch("features/templates/sub_generated/generation/useCreateTemplateSnapshot:catch1")(err); }
   toastCatch(
     context,
     'Generation finished but the result was malformed. Please retry.',
@@ -172,5 +172,5 @@ export function useCreateTemplateSnapshot(
     return () => {
       unlistenPromise.then((unlisten) => unlisten()).catch(silentCatch("useCreateTemplateSnapshot:unlisten"));
     };
-  }, [backgroundGenId, reducer.appendGenerateLine]);
+  }, [backgroundGenId, reducer, reducer.appendGenerateLine]);
 }

@@ -114,7 +114,7 @@ export function EventsSection({
                         {trigger.trigger_type.replace(/_/g, ' ')}
                       </span>
                       {detail && (
-                        <span className="typo-caption text-foreground/60 font-mono block leading-snug">
+                        <span className="typo-caption text-foreground font-mono block leading-snug">
                           {detail}
                         </span>
                       )}

@@ -102,7 +102,7 @@ export function AgentCard({
         {selected ? (
           <CheckSquare className="w-3.5 h-3.5 text-amber-400" />
         ) : (
-          <Square className="w-3.5 h-3.5 text-foreground/40" />
+          <Square className="w-3.5 h-3.5 text-foreground" />
         )}
       </span>
 
@@ -112,7 +112,7 @@ export function AgentCard({
         onClick={(e) => e.stopPropagation()}
       >
         <Tooltip content={agent.description} placement="top">
-          <Info className="w-3.5 h-3.5 text-foreground/40 hover:text-foreground transition-colors" />
+          <Info className="w-3.5 h-3.5 text-foreground hover:text-foreground transition-colors" />
         </Tooltip>
       </span>
     </motion.button>

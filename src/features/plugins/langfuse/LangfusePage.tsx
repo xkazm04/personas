@@ -61,14 +61,14 @@ export default function LangfusePage() {
                 <div className="typo-heading text-foreground">
                   {t.plugins.langfuse.advanced_section}
                 </div>
-                <div className="typo-caption text-foreground/80">
+                <div className="typo-caption text-foreground">
                   {t.plugins.langfuse.advanced_intro}
                 </div>
               </div>
               {advancedOpen ? (
-                <ChevronDown className="w-4 h-4 text-foreground/80 flex-shrink-0" />
+                <ChevronDown className="w-4 h-4 text-foreground flex-shrink-0" />
               ) : (
-                <ChevronRight className="w-4 h-4 text-foreground/80 flex-shrink-0" />
+                <ChevronRight className="w-4 h-4 text-foreground flex-shrink-0" />
               )}
             </button>
             {advancedOpen && (

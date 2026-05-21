@@ -24,14 +24,14 @@ export function ComposerScheduleRhythmCard({
     >
       <div
         className={`w-10 h-10 rounded-interactive flex items-center justify-center transition-colors ${
-          active ? "bg-primary/25 text-primary" : "bg-foreground/5 text-foreground/70 group-hover:bg-primary/15 group-hover:text-primary"
+          active ? "bg-primary/25 text-primary" : "bg-foreground/5 text-foreground group-hover:bg-primary/15 group-hover:text-primary"
         }`}
       >
         {icon}
       </div>
       <div>
         <div className="typo-body text-foreground font-semibold">{title}</div>
-        <div className="typo-caption text-foreground/70 mt-0.5">{caption}</div>
+        <div className="typo-caption text-foreground mt-0.5">{caption}</div>
       </div>
       {active && (
         <span

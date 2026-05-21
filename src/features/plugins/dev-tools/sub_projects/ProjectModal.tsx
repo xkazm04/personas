@@ -15,6 +15,8 @@ import {
   type ProjectType, type EditProjectData, PROJECT_TYPES,
 } from './projectManagerTypes';
 import { GitHubRepoSelector } from './GitHubRepoSelector';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 type ModalStep = 'form' | 'created';
 
@@ -74,9 +76,7 @@ export function ProjectModal({
         const folderName = segments[segments.length - 1] || '';
         setName(folderName);
       }
-    } catch {
-      // User cancelled or error -- silently ignore
-    }
+    } catch (err) { silentCatch("features/plugins/dev-tools/sub_projects/ProjectModal:catch1")(err); }
   };
 
   const handleNameChange = (val: string) => {

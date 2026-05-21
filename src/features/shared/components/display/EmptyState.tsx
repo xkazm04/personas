@@ -114,7 +114,7 @@ export function EmptyState({ variant = 'chart', heading, description, className 
     <div className={`flex flex-col items-center justify-center py-12 gap-3 ${className}`}>
       <Svg />
       <h4 className="typo-heading text-foreground">{heading ?? preset.heading}</h4>
-      <p className="text-sm text-foreground max-w-xs text-center">{description ?? preset.description}</p>
+      <p className="typo-body text-foreground max-w-xs text-center">{description ?? preset.description}</p>
     </div>
   );
 }

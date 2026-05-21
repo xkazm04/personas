@@ -27,6 +27,8 @@ import {
   deleteSubscription,
 } from '@/api/overview/events';
 import { buildEventRows, type EventRow, type Connection } from './routingHelpers';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 export interface RoutingStateProps {
   initialTriggers: PersonaTrigger[];
@@ -81,7 +83,7 @@ export function useRoutingState({
       setAllTriggers(t);
       setRecentEvents(e);
       setSubscriptions(s);
-    } catch { /* best-effort */ }
+    } catch (err) { silentCatch("features/triggers/sub_builder/layouts/useRoutingState:catch1")(err); }
   }, []);
 
   const personaMap = useMemo(() => {
@@ -107,9 +109,8 @@ export function useRoutingState({
       for (const pid of personaIds) {
         try {
           total += await initializeEventHandlersForPersona(pid);
-        } catch { /* best-effort per persona */ }
+        } catch (err) { silentCatch("features/triggers/sub_builder/layouts/useRoutingState:catch2")(err); }
       }
-      // eslint-disable-next-line no-console
       console.info(`[builder] initialized ${total} event handler entries across ${personaIds.size} personas`);
       await reload();
     } finally {
@@ -125,7 +126,7 @@ export function useRoutingState({
       try {
         await linkPersonaToEvent(personaId, eventType, { useCaseId });
         await reload();
-      } catch { /* best-effort */ }
+      } catch (err) { silentCatch("features/triggers/sub_builder/layouts/useRoutingState:catch3")(err); }
     },
     [addPersonaForEvent, reload],
   );
@@ -152,7 +153,7 @@ export function useRoutingState({
         await deleteTrigger(connection.triggerId, connection.personaId);
       }
       await reload();
-    } catch { /* best-effort */ }
+    } catch (err) { silentCatch("features/triggers/sub_builder/layouts/useRoutingState:catch4")(err); }
     setDisconnectTarget(null);
   }, [disconnectTarget, reload]);
 

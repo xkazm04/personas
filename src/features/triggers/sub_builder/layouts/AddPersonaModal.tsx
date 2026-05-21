@@ -13,6 +13,8 @@ import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaGroup } from '@/lib/bindings/PersonaGroup';
 import { useTranslation } from '@/i18n/useTranslation';
 import { parseDesignContext } from '@/features/shared/components/use-cases/UseCasesList';
+import { DebtText, debtText } from '@/i18n/DebtText';
+
 
 interface Props {
   open: boolean;
@@ -114,7 +116,7 @@ export function AddPersonaModal({ open, personas, groups, alreadyActiveIds, even
             <button
               onClick={() => setCapabilityStep(null)}
               className="p-1 rounded-card hover:bg-secondary/60 text-foreground"
-              aria-label="Back to personas"
+              aria-label={debtText("auto_back_to_personas_10208a8d")}
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -150,14 +152,14 @@ export function AddPersonaModal({ open, personas, groups, alreadyActiveIds, even
                 <Users className="w-3.5 h-3.5 text-emerald-400" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-[11px] font-medium text-foreground">Persona-wide</div>
-                <div className="text-[9px] text-foreground">All capabilities run for this event</div>
+                <div className="text-[11px] font-medium text-foreground"><DebtText k="auto_persona_wide_8f9b90e5" /></div>
+                <div className="text-[9px] text-foreground"><DebtText k="auto_all_capabilities_run_for_this_event_18d928d7" /></div>
               </div>
             </button>
             {capabilityOptions.length > 0 && (
               <div className="pt-1">
                 <div className="px-2 py-1 text-[10px] font-semibold text-foreground uppercase tracking-wider">
-                  Scope to a capability
+                  <DebtText k="auto_scope_to_a_capability_dd2f86c8" />
                 </div>
                 <div className="space-y-1">
                   {capabilityOptions.map(uc => (

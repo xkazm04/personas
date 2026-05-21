@@ -123,7 +123,7 @@ export function useDesignAnalysis() {
       setQuestion(outcome.data);
       setDesignPhase('awaiting-input');
     }
-  }, [stream.result]);
+  }, [refreshPersonas, setDesignPhase, stream.result]);
 
   // Route stream errors -- refine failures fall back to 'preview' (preserving
   // the previous result), while analysis failures go to 'error'.
@@ -133,7 +133,7 @@ export function useDesignAnalysis() {
       traceSessionRef.current?.complete(stream.error);
       traceSessionRef.current = null;
     }
-  }, [stream.phase, stream.error]);
+  }, [stream.phase, stream.error, setDesignPhase]);
 
   // -- Derived output (filtered empty strings from design-id guard + capped) --
   const outputLines = useMemo(() => {
@@ -163,7 +163,7 @@ export function useDesignAnalysis() {
     traceSessionRef.current = SystemTraceSession.start('design_conversation', 'Design Analysis');
 
     await stream.start(() => startDesignAnalysis(instruction, personaId, clientDesignId));
-  }, [stream.start]);
+  }, [setDesignPhase, stream]);
 
   const startIntentCompilation = useCallback(async (personaId: string, intent: string) => {
     personaIdRef.current = personaId;
@@ -178,7 +178,7 @@ export function useDesignAnalysis() {
     setFailedOperations([]);
 
     await stream.start(() => compileFromIntent(personaId, intent, clientDesignId));
-  }, [stream.start]);
+  }, [setDesignPhase, stream]);
 
   const refineAnalysis = useCallback(async (feedback: string) => {
     if (!personaIdRef.current) return;
@@ -206,7 +206,7 @@ export function useDesignAnalysis() {
         conversationIdRef.current,
       ),
     );
-  }, [stream.start, designResult]);
+  }, [designResult, setDesignPhase, stream]);
 
   const answerQuestion = useCallback((answer: string) => {
     if (!personaIdRef.current) return;
@@ -220,7 +220,7 @@ export function useDesignAnalysis() {
     designIdRef.current = null;
     setDesignPhase('idle');
     setQuestion(null);
-  }, [stream.cancel]);
+  }, [setDesignPhase, stream]);
 
   // -- Apply result --------------------------------------------------
 
@@ -246,7 +246,7 @@ export function useDesignAnalysis() {
     } finally {
       applyingRef.current = false;
     }
-  }, [designResult, applyPersonaOp, refreshPersonas, stream.setError]);
+  }, [designResult, setDesignPhase, applyPersonaOp, refreshPersonas, stream]);
 
   const retryFailedCb = useCallback(async () => {
     if (!personaIdRef.current || failedOperations.length === 0 || applyingRef.current) return;
@@ -267,7 +267,7 @@ export function useDesignAnalysis() {
     } finally {
       applyingRef.current = false;
     }
-  }, [failedOperations, refreshPersonas, stream.setError]);
+  }, [failedOperations, refreshPersonas, setDesignPhase, stream]);
 
   const setConversationId = useCallback((id: string | null) => {
     conversationIdRef.current = id;
@@ -282,7 +282,7 @@ export function useDesignAnalysis() {
     setApplyWarnings([]);
     setFailedOperations([]);
     setQuestion(null);
-  }, [stream.reset]);
+  }, [setDesignPhase, stream]);
 
   return {
     phase: designPhase,

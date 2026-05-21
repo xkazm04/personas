@@ -85,10 +85,10 @@ export function DriveEmptyHint({
       >
         <Icon className={`${s.iconCls} text-cyan-300/80`} />
       </div>
-      <div className={`${s.title} italic text-foreground/70`}>{title}</div>
+      <div className={`${s.title} italic text-foreground`}>{title}</div>
       {body && (
         <div
-          className={`${s.body} italic text-foreground/50 max-w-[260px] leading-relaxed`}
+          className={`${s.body} italic text-foreground max-w-[260px] leading-relaxed`}
         >
           {body}
         </div>

@@ -1,3 +1,4 @@
+import { silentCatch } from '@/lib/silentCatch';
 /**
  * Freeze Watchdog — uses a Web Worker to monitor the main thread from outside.
  *
@@ -89,14 +90,14 @@ export function startWatchdog(): void {
           prev.push({ ...msg, report });
           if (prev.length > 10) prev.shift();
           localStorage.setItem('__watchdog_freezes', JSON.stringify(prev));
-        } catch { /* intentional: localStorage may be unavailable during freeze */ }
+        } catch (err) { silentCatch("lib/debug/freezeWatchdog:catch1")(err); }
         // Try IPC to Rust (may fail if thread is blocked)
         try {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (window as any).__TAURI_INTERNALS__?.invoke?.('log_frontend_error', {
             level: 'warn', message: report
           });
-        } catch { /* intentional: IPC may be blocked during freeze */ }
+        } catch (err) { silentCatch("lib/debug/freezeWatchdog:catch2")(err); }
       }
       if (msg.type === 'freeze_recovered') {
         console.warn(`[WATCHDOG] Thread recovered after ${msg.duration}ms`);

@@ -36,6 +36,8 @@ import { TopPerformersWidget } from './widgets/TopPerformersWidget';
 import { ExecutionHeatmap } from '@/features/overview/sub_analytics/components/ExecutionHeatmap';
 import { lazyRetry } from '@/lib/lazyRetry';
 import { DashboardEmptyState } from './DashboardEmptyState';
+import { DebtText } from '@/i18n/DebtText';
+
 
 const AnalyticsInserts = lazyRetry(() => import('./widgets/AnalyticsInserts'));
 const UpcomingRoutinesCard = lazyRetry(() => import('./cards/UpcomingRoutinesCard'));
@@ -322,7 +324,7 @@ export function TriagePane({ items }: { items: TriageItem[] }) {
       />
       <div className="flex-1 divide-y divide-primary/5 max-h-[28rem] overflow-y-auto">
         {items.length === 0 ? (
-          <div className="px-4 py-8 text-center typo-body text-foreground/60">
+          <div className="px-4 py-8 text-center typo-body text-foreground">
             {t.overview.dashboard.todos_empty}
           </div>
         ) : (
@@ -335,17 +337,17 @@ export function TriagePane({ items }: { items: TriageItem[] }) {
                 onClick={item.onClick}
                 className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-primary/[0.04] transition-colors group focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/30"
               >
-                <span className={`typo-caption font-mono px-1.5 py-0.5 rounded-sm border ${meta.bg} ${meta.border} ${meta.color} flex-shrink-0`}>
+                <span className={`typo-caption font-mono px-1.5 py-0.5 rounded-interactive border ${meta.bg} ${meta.border} ${meta.color} flex-shrink-0`}>
                   {meta.tag}
                 </span>
                 <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${meta.color}`} />
                 <div className="flex-1 min-w-0">
                   <div className="typo-body text-foreground truncate">{item.title}</div>
                   {item.detail && (
-                    <div className="typo-caption text-foreground/60 truncate">{item.detail}</div>
+                    <div className="typo-caption text-foreground truncate">{item.detail}</div>
                   )}
                 </div>
-                <ArrowRight className="w-3.5 h-3.5 text-foreground/40 group-hover:text-foreground/70 transition-colors flex-shrink-0" />
+                <ArrowRight className="w-3.5 h-3.5 text-foreground group-hover:text-foreground/70 transition-colors flex-shrink-0" />
               </button>
             );
           })
@@ -391,13 +393,13 @@ export function VitalsConsole({
         <div className="w-full grid grid-cols-2 gap-3">
           <KpiTile density="console" icon={<Activity className="w-3.5 h-3.5" />} label="Runs" numericValue={totalExecutions} format={formatCount} color="text-emerald-400" />
           <KpiTile density="console" icon={<Cpu className="w-3.5 h-3.5" />} label="Agents" numericValue={activeAgents} color="text-violet-400" />
-          <KpiTile density="console" icon={<Bell className="w-3.5 h-3.5" />} label="Alerts" numericValue={activeAlertCount} color={activeAlertCount > 0 ? 'text-red-400' : 'text-foreground/60'} />
-          <KpiTile density="console" icon={<ClipboardCheck className="w-3.5 h-3.5" />} label="Reviews" numericValue={pendingReviews} color={pendingReviews > 0 ? 'text-amber-400' : 'text-foreground/60'} />
+          <KpiTile density="console" icon={<Bell className="w-3.5 h-3.5" />} label="Alerts" numericValue={activeAlertCount} color={activeAlertCount > 0 ? 'text-red-400' : 'text-foreground'} />
+          <KpiTile density="console" icon={<ClipboardCheck className="w-3.5 h-3.5" />} label="Reviews" numericValue={pendingReviews} color={pendingReviews > 0 ? 'text-amber-400' : 'text-foreground'} />
         </div>
         {sparkline && (
           <div className="w-full pt-3 border-t border-primary/10">
-            <div className="flex items-center justify-between typo-caption uppercase tracking-widest text-foreground/50 mb-1.5 font-mono">
-              <span>traffic · errors</span>
+            <div className="flex items-center justify-between typo-caption uppercase tracking-widest text-foreground mb-1.5 font-mono">
+              <span><DebtText k="auto_traffic_errors_7c114a11" /></span>
               <span>{points.length}d</span>
             </div>
             <svg viewBox={`0 0 ${sparkline.w} ${sparkline.h}`} className="w-full h-10" preserveAspectRatio="none" aria-hidden="true">
@@ -434,9 +436,9 @@ function SuccessRing({ rate }: { rate: number }) {
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <div className="font-mono text-4xl tabular-nums text-foreground">
           <AnimatedCounter value={rate} formatFn={(v) => `${Math.round(v)}`} />
-          <span className="text-foreground/60 text-2xl">%</span>
+          <span className="text-foreground typo-body-lg">%</span>
         </div>
-        <div className="typo-caption uppercase tracking-[0.25em] text-foreground/50 mt-1 font-mono">
+        <div className="typo-caption uppercase tracking-[0.25em] text-foreground mt-1 font-mono">
           success
         </div>
       </div>
@@ -467,7 +469,7 @@ export function ActivityStreamLog({
       </PaneHeader>
       <div className="flex-1 divide-y divide-primary/5 max-h-[28rem] overflow-y-auto font-mono text-xs">
         {executions.length === 0 ? (
-          <div className="px-4 py-8 text-center typo-body text-foreground/60">No events.</div>
+          <div className="px-4 py-8 text-center typo-body text-foreground"><DebtText k="auto_no_events_11afa11c" /></div>
         ) : (
           executions.map((exec) => {
             const time = new Date(exec.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -485,7 +487,7 @@ export function ActivityStreamLog({
                 onClick={onViewAll}
                 className="w-full flex items-center gap-2.5 px-3 py-1.5 text-left hover:bg-primary/[0.04] transition-colors"
               >
-                <span className="text-foreground/50 tabular-nums flex-shrink-0">{time}</span>
+                <span className="text-foreground tabular-nums flex-shrink-0">{time}</span>
                 <Icon className={`w-3 h-3 flex-shrink-0 ${color}`} />
                 <span className="text-foreground/90 truncate flex-1 min-w-0 font-sans typo-body">
                   {exec.persona_name || 'agent'}
@@ -515,21 +517,21 @@ export function StatusTicker({
   const fieldCls = 'flex items-center gap-1.5 typo-caption font-mono uppercase tracking-widest';
   return (
     <div className="rounded-card border border-primary/10 bg-primary/[0.03] px-4 py-2 flex items-center gap-5 overflow-x-auto">
-      <span className="typo-caption font-mono uppercase tracking-[0.3em] text-foreground/50 flex-shrink-0">status</span>
-      <div className={`${fieldCls} text-foreground/70`}>
-        <span className="text-foreground/50">sources</span>
+      <span className="typo-caption font-mono uppercase tracking-[0.3em] text-foreground flex-shrink-0">status</span>
+      <div className={`${fieldCls} text-foreground`}>
+        <span className="text-foreground">sources</span>
         <span className="text-foreground tabular-nums">{pipelineSources}</span>
       </div>
       <div className={`${fieldCls}`}>
-        <span className="text-foreground/50">errors</span>
+        <span className="text-foreground">errors</span>
         <span className={`tabular-nums ${pipelineErrors > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>{pipelineErrors}</span>
       </div>
-      <div className={`${fieldCls} text-foreground/70`}>
-        <span className="text-foreground/50">runs</span>
+      <div className={`${fieldCls} text-foreground`}>
+        <span className="text-foreground">runs</span>
         <span className="text-foreground tabular-nums">{totalExecutions.toLocaleString()}</span>
       </div>
-      <div className={`${fieldCls} text-foreground/70 ml-auto flex-shrink-0`}>
-        <span className="text-foreground/50">synced</span>
+      <div className={`${fieldCls} text-foreground ml-auto flex-shrink-0`}>
+        <span className="text-foreground">synced</span>
         <span className="text-foreground tabular-nums">{lastSyncedLabel}</span>
       </div>
     </div>
@@ -546,9 +548,9 @@ function PaneHeader({
   return (
     <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10 bg-primary/[0.04]">
       <div className="flex items-baseline gap-2">
-        <span className="typo-caption font-mono uppercase tracking-[0.3em] text-foreground/70">{label}</span>
+        <span className="typo-caption font-mono uppercase tracking-[0.3em] text-foreground">{label}</span>
         {subtitle && (
-          <span className="typo-caption text-foreground/40">{subtitle}</span>
+          <span className="typo-caption text-foreground">{subtitle}</span>
         )}
       </div>
       {children}

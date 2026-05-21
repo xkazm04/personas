@@ -58,7 +58,7 @@ export default function BeatSidebar({
         <ChevronLeft className="w-3.5 h-3.5 text-foreground" />
         <Type className="w-3.5 h-3.5 text-amber-400" />
         {sorted.length > 0 && (
-          <span className="text-[11px] text-foreground/60 tabular-nums">{sorted.length}</span>
+          <span className="text-[11px] text-foreground tabular-nums">{sorted.length}</span>
         )}
       </button>
     );
@@ -70,7 +70,7 @@ export default function BeatSidebar({
         <div className="flex items-center gap-2">
           <Type className="w-3.5 h-3.5 text-amber-400" />
           <span className="typo-label text-foreground">{t.media_studio.beat_sidebar_title}</span>
-          <span className="text-[11px] text-foreground/60 tabular-nums">
+          <span className="text-[11px] text-foreground tabular-nums">
             {tx(t.media_studio.beat_sidebar_count, { count: sorted.length })}
           </span>
         </div>
@@ -87,7 +87,7 @@ export default function BeatSidebar({
 
       {sorted.length === 0 ? (
         <div className="flex-1 flex items-center justify-center px-3 text-center">
-          <p className="text-md text-foreground/60">{t.media_studio.beat_sidebar_empty}</p>
+          <p className="text-md text-foreground">{t.media_studio.beat_sidebar_empty}</p>
         </div>
       ) : (
         <ul className="flex-1 overflow-y-auto py-1">
@@ -106,7 +106,7 @@ export default function BeatSidebar({
                   }`}
                   title={beat.text || beat.label}
                 >
-                  <span className="text-[11px] text-foreground/60 font-mono tabular-nums w-10 flex-shrink-0">
+                  <span className="text-[11px] text-foreground font-mono tabular-nums w-10 flex-shrink-0">
                     {formatMMSS(beat.startTime)}
                   </span>
                   <span className={`text-md truncate ${active ? 'text-amber-300' : 'text-foreground'}`}>

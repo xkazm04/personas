@@ -109,7 +109,7 @@ export function useDesignTabState() {
       reset(); clearActive(); clearSelections(); setInstruction(''); setInputMode('design'); setExamplePairs([]); setRefinementMessage('');
     }
     prevPersonaIdRef.current = currentPersonaId;
-  }, [selectedPersona?.id, reset, clearActive]);
+  }, [selectedPersona?.id, reset, clearActive, clearSelections]);
 
   const handleStartAnalysis = useCallback(async () => {
     if (!selectedPersona) return;

@@ -102,20 +102,25 @@ export default function AlignmentGuides({ lines, isDragging }: AlignmentGuidesPr
   const fadeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
     if (isDragging && lines.length > 0) {
       if (fadeTimer.current) { clearTimeout(fadeTimer.current); fadeTimer.current = null; }
       setRenderLines(lines);
       setVisible(true);
     } else if (!isDragging && visible) {
-      fadeTimer.current = setTimeout(() => {
+      timer = setTimeout(() => {
         setVisible(false);
         setRenderLines([]);
         fadeTimer.current = null;
       }, FADE_DURATION_MS);
+      fadeTimer.current = timer;
     } else if (isDragging && lines.length === 0) {
       setVisible(false);
       setRenderLines([]);
     }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
   }, [isDragging, lines, visible]);
 
   useEffect(() => {

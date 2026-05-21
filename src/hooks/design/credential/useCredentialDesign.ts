@@ -8,6 +8,8 @@ import { EventName } from '@/lib/eventRegistry';
 import { useVaultStore } from "@/stores/vaultStore";
 import { useAiArtifactTask } from '../core/useAiArtifactTask';
 import { saveRecipeFromDesign } from '@/lib/credentials/credentialRecipeRegistry';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 export type CredentialDesignPhase = 'idle' | 'analyzing' | 'preview' | 'saving' | 'done' | 'error';
 
@@ -126,7 +128,7 @@ export function useCredentialDesign() {
       if (createdConnectorId) {
         try {
           await deleteConnectorDefinition(createdConnectorId);
-        } catch { /* intentional: non-critical -- rollback is best-effort */ }
+        } catch (err) { silentCatch("hooks/design/credential/useCredentialDesign:catch1")(err); }
       }
       flow.setError(err instanceof Error ? err.message : 'Failed to save credential');
       flow.setPhase('preview');
@@ -134,7 +136,7 @@ export function useCredentialDesign() {
       savingRef.current = false;
       setIsSaving(false);
     }
-  }, [flow.result, flow.setPhase, flow.setError, createConnectorDefinition, deleteConnectorDefinition, createCredential]);
+  }, [flow, createCredential, connectorDefinitions, createConnectorDefinition, deleteConnectorDefinition]);
 
   const reset = useCallback(() => {
     savingRef.current = false;
@@ -142,7 +144,7 @@ export function useCredentialDesign() {
     flow.reset();
     setSavedCredentialId(null);
     setRegisteredConnectorName(null);
-  }, [flow.reset]);
+  }, [flow]);
 
   const loadTemplate = useCallback((template: CredentialDesignResult) => {
     flow.cleanup();
@@ -150,7 +152,7 @@ export function useCredentialDesign() {
     flow.setError(null);
     flow.setResult(template);
     flow.setPhase('preview');
-  }, [flow.cleanup, flow.setLines, flow.setError, flow.setResult, flow.setPhase]);
+  }, [flow]);
 
   /**
    * Refine: restart the design stream with a new instruction while
@@ -166,7 +168,7 @@ export function useCredentialDesign() {
       flow.setError(null);
       flow.start(instruction);
     },
-    [flow.setLines, flow.setError, flow.start],
+    [flow],
   );
 
   return {

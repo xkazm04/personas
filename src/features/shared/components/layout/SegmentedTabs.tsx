@@ -125,8 +125,8 @@ export function SegmentedTabs<T extends string>({
               onClick={() => !tab.disabled && onTabChange(tab.id)}
               onKeyDown={(e) => handleKeyDown(e, index)}
               className={`relative ${fullWidth ? 'flex-1' : ''} flex items-center justify-center gap-1.5 px-3 py-2 typo-body rounded-modal transition-colors focus-ring ${
-                active ? 'text-foreground font-semibold' : 'text-foreground/55 hover:text-foreground/80 hover:bg-primary/5'
-              } ${tab.disabled ? 'text-foreground/30 cursor-not-allowed' : ''}`}
+                active ? 'text-foreground font-semibold' : 'text-foreground hover:text-foreground/80 hover:bg-primary/5'
+              } ${tab.disabled ? 'text-foreground cursor-not-allowed' : ''}`}
             >
               {active && (
                 <motion.div
@@ -159,8 +159,8 @@ export function SegmentedTabs<T extends string>({
             className={`px-3 py-1.5 typo-body font-medium transition-colors focus-ring ${
               index > 0 ? 'border-l border-primary/15' : ''
             } ${
-              active ? 'bg-primary/10 text-foreground font-semibold' : 'text-foreground/55 hover:text-foreground/80'
-            } ${tab.disabled ? 'text-foreground/30 cursor-not-allowed' : ''}`}
+              active ? 'bg-primary/10 text-foreground font-semibold' : 'text-foreground hover:text-foreground/80'
+            } ${tab.disabled ? 'text-foreground cursor-not-allowed' : ''}`}
           >
             {tab.label}
           </button>

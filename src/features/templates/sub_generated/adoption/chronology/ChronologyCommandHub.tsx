@@ -124,7 +124,7 @@ function DraftReadyRefinePanel({
           <span className="typo-heading font-bold uppercase tracking-[0.12em] text-foreground">
             {c.hub_draft_ready_title}
           </span>
-          <span className="typo-body text-foreground/80">
+          <span className="typo-body text-foreground">
             {c.hub_draft_ready_subtitle}
           </span>
         </div>
@@ -157,7 +157,7 @@ function DraftReadyRefinePanel({
           <button
             type="button"
             onClick={onStartTest}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-modal bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white typo-body font-semibold shadow-elevation-3 shadow-emerald-500/25 cursor-pointer"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-modal bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-foreground typo-body font-semibold shadow-elevation-3 shadow-emerald-500/25 cursor-pointer"
           >
             <Play className="w-4 h-4" /> {t.templates.matrix_variants.start_test}
           </button>
@@ -254,7 +254,7 @@ function HubTopBar({
         {onStartTest && buildPhase === 'draft_ready' && (
           <button
             onClick={onStartTest}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-modal bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white typo-body font-semibold shadow-elevation-3 shadow-emerald-500/25 cursor-pointer transition-all"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-modal bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-foreground typo-body font-semibold shadow-elevation-3 shadow-emerald-500/25 cursor-pointer transition-all"
           >
             <Play className="w-4 h-4" /> {startTestLabelOverride ?? t.templates.matrix_variants.start_test}
           </button>
@@ -270,7 +270,7 @@ function HubTopBar({
         {showToggle && (
           <button
             onClick={onToggleExpand}
-            className="p-2 rounded-modal text-foreground/70 hover:text-foreground hover:bg-primary/10 border border-transparent hover:border-primary/15 cursor-pointer transition-colors"
+            className="p-2 rounded-modal text-foreground hover:text-foreground hover:bg-primary/10 border border-transparent hover:border-primary/15 cursor-pointer transition-colors"
             title={expanded ? t.templates.chronology.hub_details_hide : t.templates.chronology.hub_details_show}
           >
             {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}

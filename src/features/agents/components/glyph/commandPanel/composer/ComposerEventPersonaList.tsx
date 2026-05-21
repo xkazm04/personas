@@ -1,6 +1,8 @@
 import { forwardRef } from "react";
 import { Search, Users, ChevronRight } from "lucide-react";
 import type { EventSubscription } from "@/features/agents/components/matrix/quickConfigTypes";
+import { debtText } from '@/i18n/DebtText';
+
 
 export interface PersonaSummary {
   id: string;
@@ -26,13 +28,13 @@ export const ComposerEventPersonaList = forwardRef<HTMLInputElement, ComposerEve
       <div className="border-r border-border/20 flex flex-col">
         <div className="sticky top-0 bg-card-bg p-3 border-b border-border/20">
           <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-foreground/50" />
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-foreground" />
             <input
               ref={ref}
               type="text"
               value={query}
               onChange={(e) => onQueryChange(e.target.value)}
-              placeholder="Find a persona…"
+              placeholder={debtText("auto_find_a_persona_4d77207b")}
               className="w-full pl-9 pr-3 py-2 rounded-interactive bg-foreground/5 border border-border/30 typo-body text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-primary/40"
             />
           </div>
@@ -41,9 +43,9 @@ export const ComposerEventPersonaList = forwardRef<HTMLInputElement, ComposerEve
           {filteredPersonas.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-8 text-center">
               <div className="w-12 h-12 rounded-full bg-foreground/5 flex items-center justify-center">
-                <Users className="w-5 h-5 text-foreground/50" />
+                <Users className="w-5 h-5 text-foreground" />
               </div>
-              <div className="typo-body text-foreground/80">
+              <div className="typo-body text-foreground">
                 {personas.length === 0 ? "No other personas to listen to yet." : "No matches."}
               </div>
             </div>
@@ -76,7 +78,7 @@ export const ComposerEventPersonaList = forwardRef<HTMLInputElement, ComposerEve
                       </div>
                     )}
                   </div>
-                  {active && <ChevronRight className="w-3.5 h-3.5 text-foreground/60" />}
+                  {active && <ChevronRight className="w-3.5 h-3.5 text-foreground" />}
                 </button>
               );
             })

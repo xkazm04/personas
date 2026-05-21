@@ -41,7 +41,7 @@ export function UseCaseSetWidget({ config, title }: CockpitWidgetProps) {
 
   if (useCases.length === 0) {
     return (
-      <div className="rounded-card border border-foreground/10 bg-secondary/40 p-3 typo-caption text-foreground/55">
+      <div className="rounded-card border border-foreground/10 bg-secondary/40 p-3 typo-caption text-foreground">
         {t.plugins.companion.use_case_set_empty}
       </div>
     );
@@ -64,7 +64,7 @@ export function UseCaseSetWidget({ config, title }: CockpitWidgetProps) {
           {title || t.plugins.companion.use_case_set_title}
         </span>
         {intent && (
-          <span className="text-foreground/55 truncate" title={intent}>
+          <span className="text-foreground truncate" title={intent}>
             · {intent}
           </span>
         )}
@@ -82,12 +82,12 @@ export function UseCaseSetWidget({ config, title }: CockpitWidgetProps) {
                 <span className="typo-body font-medium text-foreground/95 flex-1">
                   {uc.label}
                 </span>
-                <span className="typo-caption text-foreground/55 shrink-0">
+                <span className="typo-caption text-foreground shrink-0">
                   {roleLabel}
                 </span>
               </div>
               {uc.description && (
-                <p className="typo-caption text-foreground/70 leading-relaxed pl-5">
+                <p className="typo-caption text-foreground leading-relaxed pl-5">
                   {uc.description}
                 </p>
               )}

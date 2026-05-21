@@ -1,3 +1,4 @@
+import { silentCatch } from '@/lib/silentCatch';
 /** Structured output sections parsed from execution output_data (JSON or NDJSON). */
 export interface ParsedOutput {
   data: Record<string, unknown>;
@@ -34,7 +35,7 @@ export function parseOutputData(raw: string | null): ParsedOutput | null {
         return result;
       }
     }
-  } catch { /* try NDJSON */ }
+  } catch (err) { silentCatch("features/shared/components/modals/ExecutionDetailModal/outputParser:catch1")(err); }
 
   // Parse NDJSON
   let foundAny = false;
@@ -50,7 +51,7 @@ export function parseOutputData(raw: string | null): ParsedOutput | null {
       if (obj.manual_review && typeof obj.manual_review === 'object') { result.reviews.push(obj.manual_review as Record<string, unknown>); foundAny = true; }
       if (obj.knowledge_annotation && typeof obj.knowledge_annotation === 'object') { result.knowledgeAnnotation = obj.knowledge_annotation as Record<string, unknown>; foundAny = true; }
       if (obj.outcome_assessment && typeof obj.outcome_assessment === 'object') { (result.data as Record<string, unknown>).outcome_assessment = obj.outcome_assessment; foundAny = true; }
-    } catch { /* skip */ }
+    } catch (err) { silentCatch("features/shared/components/modals/ExecutionDetailModal/outputParser:catch2")(err); }
   }
   return foundAny ? result : null;
 }

@@ -7,6 +7,10 @@ import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
 import { SEVERITY_COLORS, HEALING_CATEGORY_COLORS } from '@/lib/utils/formatters';
 import { SEVERITY_STYLES } from '@/lib/utils/designTokens';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
+import { DebtText, debtText } from '@/i18n/DebtText';
+
+
 
 interface HealingIssueModalProps {
   issue: PersonaHealingIssue;
@@ -39,9 +43,7 @@ export default function HealingIssueModal({ issue, onResolve, onClose }: Healing
     try {
       await onResolve(issue.id);
       setResolved(true);
-    } catch {
-      // Error toast is handled by the store's reportError
-    } finally {
+    } catch (err) { silentCatch("features/overview/sub_observability/components/HealingIssueModal:catch1")(err); } finally {
       setResolving(false);
     }
   }, [onResolve, issue.id, resolving]);
@@ -133,7 +135,7 @@ function ModalContent({ issue, sev, cat, isAutoFixed, isAutoFixPending, isCircui
           <div className="flex items-center gap-2 flex-wrap">
             {isCircuitBreaker ? (
               <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-sm font-mono uppercase rounded-card ${SEVERITY_STYLES.error.bg} ${SEVERITY_STYLES.error.text} ${SEVERITY_STYLES.error.border}`}>
-                <Zap className="w-3 h-3" /> circuit breaker
+                <Zap className="w-3 h-3" /> <DebtText k="auto_circuit_breaker_e76dce35" />
               </span>
             ) : isAutoFixPending ? (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 text-sm font-mono uppercase rounded-card border bg-amber-500/10 text-amber-400 border-amber-500/20">
@@ -156,7 +158,7 @@ function ModalContent({ issue, sev, cat, isAutoFixed, isAutoFixPending, isCircui
             <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-sm font-mono uppercase rounded-card border ${cat.bg} ${cat.text} ${cat.border}`}>
               {issue.category}
             </span>
-            <span className="text-sm text-foreground">{new Date(issue.created_at).toLocaleDateString()}</span>
+            <span className="typo-body text-foreground">{new Date(issue.created_at).toLocaleDateString()}</span>
           </div>
         </div>
         <button onClick={onClose} className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground/95 transition-colors focus-ring" aria-label="Close">
@@ -171,15 +173,15 @@ function ModalContent({ issue, sev, cat, isAutoFixed, isAutoFixPending, isCircui
             <Zap className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="typo-heading text-red-300/90">{t.overview.healing_issue_modal.persona_auto_disabled}</p>
-              <p className="text-sm text-red-300/60 mt-1">
-                This persona was automatically disabled after 5 consecutive failures. Review the error pattern below and re-enable manually once the root cause is resolved.
+              <p className="typo-body text-red-300/60 mt-1">
+                <DebtText k="auto_this_persona_was_automatically_disabled_af_93e2b7d2" />
               </p>
             </div>
           </div>
         )}
         <div>
           <h4 className="text-sm font-mono uppercase text-foreground mb-2">{t.overview.healing_issue_modal.analysis}</h4>
-          <div className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{issue.description}</div>
+          <div className="typo-body text-foreground leading-relaxed whitespace-pre-wrap">{issue.description}</div>
         </div>
         {issue.suggested_fix && (
           <div className={`p-4 rounded-modal ${SEVERITY_STYLES.success.bg} ${SEVERITY_STYLES.success.border}`}>
@@ -193,11 +195,11 @@ function ModalContent({ issue, sev, cat, isAutoFixed, isAutoFixPending, isCircui
                 {copied ? t.overview.healing_issue_modal.copied : t.overview.healing_issue_modal.copy_fix}
               </button>
             </div>
-            <div className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{issue.suggested_fix}</div>
+            <div className="typo-body text-foreground leading-relaxed whitespace-pre-wrap">{issue.suggested_fix}</div>
           </div>
         )}
         {issue.execution_id && (
-          <div className="text-sm font-mono text-foreground">Execution: {issue.execution_id}</div>
+          <div className="text-sm font-mono text-foreground"><DebtText k="auto_execution_0cbb19a7" /> {issue.execution_id}</div>
         )}
       </div>
 
@@ -207,7 +209,7 @@ function ModalContent({ issue, sev, cat, isAutoFixed, isAutoFixPending, isCircui
           {(issue.severity === 'high' || issue.severity === 'critical') && (
             <div className="flex items-center gap-1.5 typo-body text-amber-400/60">
               <AlertTriangle className="w-3 h-3 flex-shrink-0" />
-              This issue is marked as {issue.severity} severity
+              <DebtText k="auto_this_issue_is_marked_as_08f3c756" /> {issue.severity} severity
             </div>
           )}
           <p className="typo-body text-foreground">
@@ -219,7 +221,7 @@ function ModalContent({ issue, sev, cat, isAutoFixed, isAutoFixPending, isCircui
         {isAutoFixPending && (
           <div className="flex items-center gap-1.5 mr-auto">
             <LoadingSpinner size="sm" className="text-amber-400" />
-            <span className="typo-body text-amber-400/60">Retry in progress — status will update when complete</span>
+            <span className="typo-body text-amber-400/60"><DebtText k="auto_retry_in_progress_status_will_update_when__0f8bc7c7" /></span>
           </div>
         )}
         {isAutoFixed && (
@@ -237,7 +239,7 @@ function ModalContent({ issue, sev, cat, isAutoFixed, isAutoFixPending, isCircui
           <button
             onClick={onResolve}
             disabled={resolving}
-            title="Manual fix applied outside the healing system"
+            title={debtText("auto_manual_fix_applied_outside_the_healing_sys_aaac4a33")}
             className="flex items-center gap-1.5 px-4 py-2 typo-heading text-emerald-300 bg-emerald-500/10 border border-emerald-500/25 rounded-modal hover:bg-emerald-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {resolving ? <LoadingSpinner size="xs" /> : <CheckCircle className="w-3.5 h-3.5" />}

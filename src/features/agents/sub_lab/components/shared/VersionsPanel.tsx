@@ -9,6 +9,8 @@ import ContentLoader from '@/features/shared/components/progress/ContentLoader';
 import { ScoreTrendCard } from './ScoreTrendCard';
 import { PromptTimeline } from './PromptTimeline';
 import { useTranslation } from '@/i18n/useTranslation';
+import { DebtText, debtText } from '@/i18n/DebtText';
+
 
 type VersionView = 'list' | 'timeline';
 const VIEW_KEY = 'dac-version-view';
@@ -169,7 +171,7 @@ export function VersionsPanel() {
             <ArrowLeftRight className="w-8 h-8 text-foreground mx-auto" />
             <p className="typo-body text-foreground">{t.agents.lab.select_two_compare}</p>
             <p className="typo-body text-foreground">
-              Click the <span className="font-mono bg-blue-500/10 text-blue-400 px-1 rounded">A</span> and <span className="font-mono bg-violet-500/10 text-violet-400 px-1 rounded">B</span> buttons on any version
+              <DebtText k="auto_click_the_4c521c2f" /> <span className="font-mono bg-blue-500/10 text-blue-400 px-1 rounded">A</span> and <span className="font-mono bg-violet-500/10 text-violet-400 px-1 rounded">B</span> <DebtText k="auto_buttons_on_any_version_1bdcaa1e" />
             </p>
           </div>
         )}
@@ -189,9 +191,9 @@ export function VersionsPanel() {
           <div className="animate-fade-slide-in flex items-center gap-3 px-4 py-3 rounded-modal border border-blue-500/15 bg-blue-500/5">
             <ShieldCheck className="w-5 h-5 text-blue-400 flex-shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="typo-heading text-blue-400">Newer versions since baseline v{baselinePin.versionNumber}</p>
+              <p className="typo-heading text-blue-400"><DebtText k="auto_newer_versions_since_baseline_v_24ddb97b" />{baselinePin.versionNumber}</p>
               <p className="typo-caption text-foreground">
-                Run a regression check to verify the new prompt doesn&apos;t degrade performance.
+                <DebtText k="auto_run_a_regression_check_to_verify_the_new_p_34c1a639" />
               </p>
             </div>
             <button
@@ -236,13 +238,13 @@ export function VersionsPanel() {
               onClick={() => void handleRefreshHealth()}
               disabled={healthLoading}
               className="p-1.5 rounded-card text-foreground hover:text-muted-foreground hover:bg-secondary/40 transition-colors"
-              title="Refresh error rate"
+              title={debtText("auto_refresh_error_rate_27711310")}
             >
               <RotateCcw className={`w-3.5 h-3.5 ${healthLoading ? 'animate-spin' : ''}`} />
             </button>
           </div>
           <p className="typo-body text-foreground">
-            If error rate exceeds 50% after a prompt change, rollback to the production version using the version list.
+            <DebtText k="auto_if_error_rate_exceeds_50_after_a_prompt_ch_aad3cf92" />
           </p>
         </div>
       </div>
@@ -260,8 +262,8 @@ function ViewToggle({ view, onChange }: { view: VersionView; onChange: (v: Versi
         className={`p-1.5 rounded-input transition-colors ${
           view === 'timeline' ? 'bg-primary/12 text-primary' : 'text-foreground hover:text-muted-foreground/60'
         }`}
-        title="Timeline view"
-        aria-label="Timeline view"
+        title={debtText("auto_timeline_view_641aafe5")}
+        aria-label={debtText("auto_timeline_view_641aafe5")}
       >
         <Clock className="w-3.5 h-3.5" />
       </button>
@@ -270,8 +272,8 @@ function ViewToggle({ view, onChange }: { view: VersionView; onChange: (v: Versi
         className={`p-1.5 rounded-input transition-colors ${
           view === 'list' ? 'bg-primary/12 text-primary' : 'text-foreground hover:text-muted-foreground/60'
         }`}
-        title="List view"
-        aria-label="List view"
+        title={debtText("auto_list_view_694bbd75")}
+        aria-label={debtText("auto_list_view_694bbd75")}
       >
         <List className="w-3.5 h-3.5" />
       </button>

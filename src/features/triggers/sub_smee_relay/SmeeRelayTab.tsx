@@ -18,6 +18,8 @@ import {
 import { openExternalUrl } from '@/api/system/system';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { useTranslation } from '@/i18n/useTranslation';
+import { DebtText } from '@/i18n/DebtText';
+
 
 interface SmeeRelayTabProps {
   onSwitchToLiveStream?: () => void;
@@ -50,9 +52,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
     try {
       const list = await smeeRelayList();
       setRelays(list);
-    } catch {
-      // non-critical
-    } finally {
+    } catch (err) { silentCatch("features/triggers/sub_smee_relay/SmeeRelayTab:catch1")(err); } finally {
       setIsLoading(false);
     }
   }, []);
@@ -100,9 +100,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
     try {
       await smeeRelaySetStatus(relay.id, newStatus);
       await fetchRelays();
-    } catch {
-      // handled
-    }
+    } catch (err) { silentCatch("features/triggers/sub_smee_relay/SmeeRelayTab:catch2")(err); }
   };
 
   const handleDelete = async (id: string) => {
@@ -116,9 +114,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
         setExitingIds((prev) => { const next = new Set(prev); next.delete(id); return next; });
       }, 300);
       setConfirmDeleteId(null);
-    } catch {
-      // handled
-    }
+    } catch (err) { silentCatch("features/triggers/sub_smee_relay/SmeeRelayTab:catch3")(err); }
   };
 
   const markTouched = (field: string) =>
@@ -171,7 +167,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
               title={t.triggers.smee_open_new_title}
             >
               <ExternalLink className="w-3 h-3" />
-              smee.io/new
+              <DebtText k="auto_smee_io_new_7ce5f637" />
             </button>
             {onSwitchToLiveStream && activeCount > 0 && (
               <button
@@ -308,7 +304,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                 {t.triggers.create_relay}
               </button>
               <p className="typo-caption text-foreground">
-                {t.triggers.get_channel_url_prompt} <button onClick={() => openExternalUrl('https://smee.io/new').catch(silentCatch("SmeeRelayTab:openSmeeNewInline"))} className="text-purple-400/60 hover:text-purple-400 underline">smee.io/new</button>
+                {t.triggers.get_channel_url_prompt} <button onClick={() => openExternalUrl('https://smee.io/new').catch(silentCatch("SmeeRelayTab:openSmeeNewInline"))} className="text-purple-400/60 hover:text-purple-400 underline"><DebtText k="auto_smee_io_new_7ce5f637" /></button>
               </p>
             </div>
           </div>

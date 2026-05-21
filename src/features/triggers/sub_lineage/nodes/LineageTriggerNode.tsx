@@ -64,13 +64,13 @@ function LineageTriggerNodeInner({ data, selected }: NodeProps) {
           {getTriggerTypeLabel(t.trigger_type)}
         </span>
         {d.eventType && (
-          <span className="text-[10px] font-mono text-foreground/80 truncate">{d.eventType}</span>
+          <span className="text-[10px] font-mono text-foreground truncate">{d.eventType}</span>
         )}
       </div>
 
       {d.isOrphan && (
         <span title={tr.triggers.lineage.node_orphan_tooltip} className="flex-shrink-0">
-          <AlertOctagon className="w-3 h-3 text-foreground/50" />
+          <AlertOctagon className="w-3 h-3 text-foreground" />
         </span>
       )}
       {d.inCycle && (

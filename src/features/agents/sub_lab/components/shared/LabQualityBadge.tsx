@@ -21,7 +21,7 @@ export function LabQualityBadge({ testMetadata, compact }: LabQualityBadgeProps)
   const { t, tx } = useTranslation();
   const colors = useMemo(
     () => (testMetadata ? scoreVariant(testMetadata.avgCompositeScore) : null),
-    [testMetadata?.avgCompositeScore],
+    [testMetadata],
   );
 
   if (!testMetadata || !colors) return null;

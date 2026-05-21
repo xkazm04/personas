@@ -164,7 +164,7 @@ export default function ScheduleRow({
               aria-label={showHistory ? t.schedules.recent_runs_hide_aria : t.schedules.recent_runs_aria}
               className="inline-flex items-center gap-1 text-[10px] text-foreground mt-0.5 hover:text-foreground/80 transition-colors group/peek"
             >
-              <ChevronRight className={`w-2.5 h-2.5 transition-transform ${showHistory ? 'rotate-90' : ''} text-foreground/55 group-hover/peek:text-foreground/80`} />
+              <ChevronRight className={`w-2.5 h-2.5 transition-transform ${showHistory ? 'rotate-90' : ''} text-foreground group-hover/peek:text-foreground/80`} />
               <span>last {formatRelative(lastRun.toISOString())}</span>
             </button>
           )}
@@ -228,15 +228,15 @@ export default function ScheduleRow({
                   <SkipForward className="w-3.5 h-3.5 mt-0.5 shrink-0 text-foreground" />
                   <span className="flex-1">
                     <span className="block text-foreground/90 font-medium">{t.schedules.skip_next_fire}</span>
-                    <span className="block text-[10px] text-foreground/60 mt-0.5 leading-snug">
+                    <span className="block text-[10px] text-foreground mt-0.5 leading-snug">
                       {t.schedules.skip_next_fire_hint}
                     </span>
                   </span>
                 </button>
                 <div className="border-t border-primary/10" />
                 <div className="px-3 pt-2 pb-1 flex items-center gap-1.5">
-                  <Timer className="w-3 h-3 text-foreground/60" />
-                  <span className="text-[10px] uppercase tracking-wider text-foreground/60">
+                  <Timer className="w-3 h-3 text-foreground" />
+                  <span className="text-[10px] uppercase tracking-wider text-foreground">
                     {t.schedules.delayed_run_heading}
                   </span>
                 </div>
@@ -252,13 +252,13 @@ export default function ScheduleRow({
                       role="menuitem"
                       onClick={() => { setShowAdvanced(false); onRunIn(opt.ms); }}
                       disabled={disabled}
-                      className="px-2 py-1.5 typo-caption rounded-card bg-secondary/40 hover:bg-emerald-500/15 hover:text-emerald-400 text-foreground/80 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="px-2 py-1.5 typo-caption rounded-card bg-secondary/40 hover:bg-emerald-500/15 hover:text-emerald-400 text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       {opt.label}
                     </button>
                   ))}
                 </div>
-                <p className="px-3 pb-2 text-[10px] text-foreground/55 leading-snug">
+                <p className="px-3 pb-2 text-[10px] text-foreground leading-snug">
                   {t.schedules.delayed_run_hint}
                 </p>
               </div>
@@ -310,8 +310,8 @@ export default function ScheduleRow({
       {showHistory && (
         <div role="region" aria-label={t.schedules.recent_runs} className="border-t border-primary/10 bg-primary/[0.015]">
           <div className="px-4 pt-2 flex items-center gap-1.5">
-            <History className="w-3 h-3 text-foreground/55" />
-            <span className="text-[10px] uppercase tracking-wider text-foreground/55">
+            <History className="w-3 h-3 text-foreground" />
+            <span className="text-[10px] uppercase tracking-wider text-foreground">
               {t.schedules.recent_runs}
             </span>
           </div>

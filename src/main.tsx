@@ -21,6 +21,8 @@ import { isLocaleCode, type LocaleCode } from "./i18n/locales.manifest";
 import { sectionsForRoute } from "./i18n/routeSections";
 import type { SidebarSection } from "./lib/types/types";
 import "./styles/globals.css";
+import { silentCatch } from '@/lib/silentCatch';
+
 
 const globalErrorLogger = createLogger("global-error");
 
@@ -79,7 +81,7 @@ function getErrorContext(): Record<string, unknown> {
         ctx.personaId = parsed.state.selectedPersonaId;
       }
     }
-  } catch { /* intentional: store may not exist yet */ }
+  } catch (err) { silentCatch("main:catch1")(err); }
   return ctx;
 }
 
@@ -94,7 +96,7 @@ window.onerror = (_message, _source, _lineno, _colno, error) => {
     ...ctx,
   });
   if (sentryReady) {
-    try { Sentry.captureException(err); } catch { /* intentional no-op */ }
+    try { Sentry.captureException(err); } catch (err) { silentCatch("main:catch2")(err); }
   }
   persistCrash("window.onerror", err);
 };
@@ -118,7 +120,7 @@ window.addEventListener("unhandledrejection", (event) => {
       Sentry.captureException(
         reason instanceof Error ? reason : new Error(String(reason)),
       );
-    } catch { /* intentional no-op */ }
+    } catch (err) { silentCatch("main:catch3")(err); }
   }
   persistCrash("unhandledrejection", reason);
 });
@@ -262,16 +264,14 @@ if (import.meta.env.DEV) (async () => {
     // Lazy stores monitored when they load
     import("./stores/overviewStore").then(({ useOverviewStore }) => monitorStore(useOverviewStore, 'overviewStore')).catch(() => {});
     import("./stores/vaultStore").then(({ useVaultStore }) => monitorStore(useVaultStore, 'vaultStore')).catch(() => {});
-  } catch { /* dev-only monitoring, safe to ignore */ }
+  } catch (err) { silentCatch("main:catch4")(err); }
 })();
 
 (async () => {
   let appVersion = "dev";
   try {
     appVersion = await getVersion();
-  } catch {
-    // non-critical: not in Tauri context or plugin not available
-  }
+  } catch (err) { silentCatch("main:catch5")(err); }
 
   if (isTelemetryEnabled()) {
     try {

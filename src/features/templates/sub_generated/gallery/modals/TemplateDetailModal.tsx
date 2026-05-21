@@ -98,7 +98,7 @@ export function TemplateDetailModal({
     setActiveTab(nextTab);
     const target = e.currentTarget.querySelector<HTMLElement>(`[data-tab="${nextTab}"]`);
     target?.focus();
-  }, [activeTab]);
+  }, [TAB_CONFIG, activeTab]);
 
   const difficulty = useMemo(() => review ? computeDifficulty(review) : null, [review]);
   const difficultyMeta = difficulty ? DIFFICULTY_META[difficulty] : null;
@@ -204,7 +204,7 @@ export function TemplateDetailModal({
                 tabIndex={isActive ? 0 : -1}
                 data-tab={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`relative flex items-center gap-2 px-4 py-3 typo-body font-medium transition-colors rounded-t-lg ${
+                className={`relative flex items-center gap-2 px-4 py-3 typo-body font-medium transition-colors rounded-t-card ${
                   isActive
                     ? 'text-violet-300'
                     : 'text-foreground hover:text-muted-foreground/80 hover:bg-white/3'

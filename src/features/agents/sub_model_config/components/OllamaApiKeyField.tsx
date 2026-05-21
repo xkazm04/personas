@@ -2,6 +2,8 @@ import { ExternalLink } from 'lucide-react';
 import { OLLAMA_API_KEY_SETTING } from '../libs/OllamaCloudPresets';
 import { ProviderCredentialField } from './ProviderCredentialField';
 import { useTranslation } from '@/i18n/useTranslation';
+import { DebtText } from '@/i18n/DebtText';
+
 
 export function OllamaApiKeyField() {
   const { t } = useTranslation();
@@ -21,7 +23,7 @@ export function OllamaApiKeyField() {
             rel="noopener noreferrer"
             className="text-primary/60 hover:text-primary inline-flex items-center gap-0.5"
           >
-            ollama.com <ExternalLink className="w-2.5 h-2.5" />
+            <DebtText k="auto_ollama_com_23ec2c6a" /> <ExternalLink className="w-2.5 h-2.5" />
           </a>
           {' '}{mc.ollama_copy_key}
         </>

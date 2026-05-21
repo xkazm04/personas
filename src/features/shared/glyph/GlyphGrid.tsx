@@ -60,7 +60,7 @@ export function GlyphGrid({
       )}
       {rows.length === 0 ? (
         <div className="rounded-modal bg-card-bg border border-card-border p-8 text-center shadow-elevation-2">
-          <span className="typo-body text-foreground/75 italic">
+          <span className="typo-body text-foreground italic">
             {emptyLabel ?? c.empty_seeding}
           </span>
         </div>

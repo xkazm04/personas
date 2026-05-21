@@ -19,6 +19,8 @@ import {
   getContextStreamStats,
 } from "@/api/system/ambientContext";
 import { reportError } from "../../storeTypes";
+import { silentCatch } from '@/lib/silentCatch';
+
 
 export interface AmbientContextSlice {
   // State
@@ -112,9 +114,7 @@ export const createAmbientContextSlice: StateCreator<SystemStore, [], [], Ambien
     try {
       const enabled = await getAmbientContextEnabled();
       set({ ambientEnabled: enabled });
-    } catch {
-      // Silently fail — ambient context may not be available on non-desktop
-    }
+    } catch (err) { silentCatch("stores/slices/system/ambientContextSlice:catch1")(err); }
   },
 
   updateSensoryPolicy: async (personaId: string, policy: SensoryPolicy) => {
@@ -164,9 +164,7 @@ export const createAmbientContextSlice: StateCreator<SystemStore, [], [], Ambien
       const rules = await listContextRules(personaId);
       if (latestRulesPersonaId !== personaId) return;
       set({ contextRules: rules });
-    } catch {
-      // Silently fail
-    }
+    } catch (err) { silentCatch("stores/slices/system/ambientContextSlice:catch2")(err); }
   },
 
   addContextRule: async (rule: ContextRule) => {
@@ -197,18 +195,14 @@ export const createAmbientContextSlice: StateCreator<SystemStore, [], [], Ambien
     try {
       const matches = await getContextRuleMatches();
       set({ contextRuleMatches: matches });
-    } catch {
-      // Silently fail
-    }
+    } catch (err) { silentCatch("stores/slices/system/ambientContextSlice:catch3")(err); }
   },
 
   fetchContextStreamStats: async () => {
     try {
       const stats = await getContextStreamStats();
       set({ contextStreamStats: stats });
-    } catch {
-      // Silently fail
-    }
+    } catch (err) { silentCatch("stores/slices/system/ambientContextSlice:catch4")(err); }
   },
   };
 };

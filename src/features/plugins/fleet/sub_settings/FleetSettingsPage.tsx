@@ -6,6 +6,8 @@ import { toastCatch, silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import { checkHooks, installHooks, uninstallHooks } from '@/api/fleet/fleet';
 import type { FleetHookStatus } from '@/lib/bindings/FleetHookStatus';
+import { DebtText, debtText } from '@/i18n/DebtText';
+
 
 /**
  * Settings sub-tab — diagnostics + uninstall.
@@ -69,7 +71,7 @@ export default function FleetSettingsPage() {
     <ContentBox>
       <ContentHeader
         icon={<SettingsIcon className="w-5 h-5 text-primary" />}
-        title="Fleet — Settings"
+        title={debtText("auto_fleet_settings_27ca3375")}
         subtitle="Hook diagnostics and uninstall (install lives in the Sessions tab header)"
       />
       <ContentBody>
@@ -80,7 +82,7 @@ export default function FleetSettingsPage() {
               className="border border-primary/10 rounded-modal bg-primary/5 px-4 py-3"
               data-testid="fleet-hooks-banner-loading"
             >
-              <p className="typo-caption text-foreground/60">Loading hook status…</p>
+              <p className="typo-caption text-foreground"><DebtText k="auto_loading_hook_status_23866317" /></p>
             </div>
           ) : portMismatch ? (
             <div
@@ -89,13 +91,11 @@ export default function FleetSettingsPage() {
             >
               <div className="flex items-center gap-2 mb-1">
                 <AlertCircle className="w-4 h-4 text-orange-400" />
-                <p className="typo-caption font-medium text-orange-300">Port mismatch</p>
+                <p className="typo-caption font-medium text-orange-300"><DebtText k="auto_port_mismatch_b07961a1" /></p>
               </div>
-              <p className="text-[12px] text-foreground/70 leading-relaxed">
-                Hooks point to port{' '}
-                <code className="font-mono">{status.installedPort ?? '?'}</code> but the current
-                in-app HTTP server bound to a different one (the previous app holding the canonical
-                port hadn't released it). Re-install to update the entries.
+              <p className="text-[12px] text-foreground leading-relaxed">
+                <DebtText k="auto_hooks_point_to_port_36464ae7" />{' '}
+                <code className="font-mono">{status.installedPort ?? '?'}</code> <DebtText k="auto_but_the_current_in_app_http_server_bound_t_ffe9bca1" />
               </p>
             </div>
           ) : installed ? (
@@ -105,14 +105,12 @@ export default function FleetSettingsPage() {
             >
               <div className="flex items-center gap-2 mb-1">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                <p className="typo-caption font-medium text-emerald-400">Hooks installed</p>
+                <p className="typo-caption font-medium text-emerald-400"><DebtText k="auto_hooks_installed_dfe5c9be" /></p>
               </div>
-              <p className="text-[12px] text-foreground/70 leading-relaxed">
-                Claude Code POSTs lifecycle events to{' '}
-                <code className="font-mono">http://127.0.0.1:{status.installedPort}/fleet/hooks/*</code>.
-                Sessions you spawn from Fleet, and any external{' '}
-                <code className="font-mono">claude</code> runs with the same cwd, report state in
-                real time.
+              <p className="text-[12px] text-foreground leading-relaxed">
+                <DebtText k="auto_claude_code_posts_lifecycle_events_to_f1cd7ead" />{' '}
+                <code className="font-mono"><DebtText k="auto_http_127_0_0_1_7c241e82" />{status.installedPort}<DebtText k="auto_fleet_hooks_40b93aeb" /></code><DebtText k="auto_sessions_you_spawn_from_fleet_and_any_exte_cbcbfcc7" />{' '}
+                <code className="font-mono">claude</code> <DebtText k="auto_runs_with_the_same_cwd_report_state_in_rea_26cd9b3d" />
               </p>
             </div>
           ) : (
@@ -120,13 +118,11 @@ export default function FleetSettingsPage() {
               className="border border-primary/15 rounded-modal bg-primary/5 px-4 py-3"
               data-testid="fleet-hooks-banner-missing"
             >
-              <p className="typo-caption font-medium text-foreground mb-1">Hooks not installed</p>
-              <p className="text-[12px] text-foreground/70 leading-relaxed">
-                Fleet needs six hook entries in{' '}
-                <code className="font-mono">~/.claude/settings.json</code> (SessionStart,
-                Notification, Stop, PreToolUse, SessionEnd, UserPromptSubmit). Install from the
-                Sessions tab header pill, or click below. Each entry carries a{' '}
-                <code className="font-mono">_fleet: true</code> marker so uninstall is surgical.
+              <p className="typo-caption font-medium text-foreground mb-1"><DebtText k="auto_hooks_not_installed_772fd030" /></p>
+              <p className="text-[12px] text-foreground leading-relaxed">
+                <DebtText k="auto_fleet_needs_six_hook_entries_in_27ce6397" />{' '}
+                <code className="font-mono"><DebtText k="auto_claude_settings_json_3ce7a994" /></code> <DebtText k="auto_sessionstart_notification_stop_pretooluse__9837beb9" />{' '}
+                <code className="font-mono"><DebtText k="auto_fleet_true_cfae4a45" /></code> <DebtText k="auto_marker_so_uninstall_is_surgical_a97c8e30" />
               </p>
             </div>
           )}
@@ -167,7 +163,7 @@ export default function FleetSettingsPage() {
           {/* Detailed breakdown */}
           {status && (
             <div className="border border-primary/10 rounded-modal px-4 py-3 bg-secondary/20">
-              <p className="typo-caption font-medium text-foreground mb-2">Hook entries</p>
+              <p className="typo-caption font-medium text-foreground mb-2"><DebtText k="auto_hook_entries_e7af67cb" /></p>
               <ul className="space-y-1">
                 {[...status.presentEvents, ...status.missingEvents].sort().map((event) => {
                   const present = status.presentEvents.includes(event);
@@ -176,10 +172,10 @@ export default function FleetSettingsPage() {
                       {present ? (
                         <CheckCircle2 className="w-3 h-3 text-emerald-400 flex-shrink-0" />
                       ) : (
-                        <AlertCircle className="w-3 h-3 text-foreground/40 flex-shrink-0" />
+                        <AlertCircle className="w-3 h-3 text-foreground flex-shrink-0" />
                       )}
-                      <code className="font-mono text-foreground/80">{event}</code>
-                      <span className="text-foreground/50">
+                      <code className="font-mono text-foreground">{event}</code>
+                      <span className="text-foreground">
                         {present ? '— installed' : '— not installed'}
                       </span>
                     </li>

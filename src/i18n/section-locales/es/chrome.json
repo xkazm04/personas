@@ -18,5 +18,6 @@
   "sign_in_google": "Iniciar sesion con Google",
   "signed_in": "Sesion iniciada",
   "sign_out": "Cerrar sesion",
-  "offline": "Sin conexion"
+  "offline": "Sin conexion",
+  "mobile_preview": "Mobile preview"
 }

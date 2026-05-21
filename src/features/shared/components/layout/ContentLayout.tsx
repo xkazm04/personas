@@ -144,7 +144,7 @@ export function ContentHeader({
         {iconElement}
         <div className="flex-1 min-w-0">
           {/* Title = small mono-uppercase context label (Mission Control style). */}
-          <div className="typo-caption uppercase tracking-[0.3em] text-foreground/50 font-mono">
+          <div className="typo-caption uppercase tracking-[0.3em] text-foreground font-mono">
             {title}
           </div>
           {/* Subtitle = the visually dominant line (Good Evening, Operator style). */}

@@ -75,10 +75,10 @@ export default function MemoryPanel() {
     <div className="h-full -mx-4 -mb-6 sm:-mx-6 lg:-mx-8 rounded-card overflow-hidden border border-foreground/10 bg-secondary/40 flex flex-col">
       <div className="px-4 py-2 border-b border-foreground/10 flex items-center justify-between gap-2 shrink-0">
         <div className="min-w-0">
-          <div className="typo-caption font-medium text-foreground/80">
+          <div className="typo-caption font-medium text-foreground">
             {t.plugins.companion.memory_bulk_actions_title}
           </div>
-          <div className="typo-caption text-foreground/55 hidden sm:block">
+          <div className="typo-caption text-foreground hidden sm:block">
             {t.plugins.companion.memory_bulk_actions_desc}
           </div>
         </div>

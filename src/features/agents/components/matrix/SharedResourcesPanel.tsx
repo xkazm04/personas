@@ -33,14 +33,14 @@ export function SharedResourcesPanel() {
         <h3 className="typo-heading-sm text-foreground">
           {t.matrix_v3.shared_resources_section_title}
         </h3>
-        <p className="typo-body-sm text-foreground/70">
+        <p className="typo-body-sm text-foreground">
           {t.matrix_v3.shared_resources_section_subtitle}
         </p>
       </header>
 
       {!hasAnything ? (
         <p
-          className="typo-body-sm text-foreground/40"
+          className="typo-body-sm text-foreground"
           data-testid="shared-resources-empty"
         >
           {t.matrix_v3.shared_resources_empty}
@@ -87,7 +87,7 @@ export function SharedResourcesPanel() {
                   className="flex items-center gap-2 typo-caption"
                 >
                   <span className="font-medium text-foreground">{c.name}</span>
-                  <span className="text-foreground/50">({c.service_type})</span>
+                  <span className="text-foreground">({c.service_type})</span>
                   {c.has_credential ? (
                     <span className="text-emerald-500">✓</span>
                   ) : (
@@ -109,7 +109,7 @@ export function SharedResourcesPanel() {
                 {t.matrix_v3.shared_resources_defaults_label}
               </span>
             </div>
-            <div className="flex flex-col gap-1.5 typo-caption text-foreground/60">
+            <div className="flex flex-col gap-1.5 typo-caption text-foreground">
               {(res.notification_channels_default ?? []).map((ch, i) => (
                 <span key={`${ch.channel}-${i}`}>
                   {ch.channel}: {ch.target}
@@ -127,7 +127,7 @@ export function SharedResourcesPanel() {
                   {t.matrix_v3.shared_resources_operating_instructions_label}
                 </span>
               </div>
-              <p className="typo-body-sm text-foreground/70 whitespace-pre-wrap">
+              <p className="typo-body-sm text-foreground whitespace-pre-wrap">
                 {res.operating_instructions}
               </p>
             </div>
@@ -142,7 +142,7 @@ export function SharedResourcesPanel() {
                   {t.matrix_v3.shared_resources_tool_guidance_label}
                 </span>
               </div>
-              <p className="typo-body-sm text-foreground/70 whitespace-pre-wrap">
+              <p className="typo-body-sm text-foreground whitespace-pre-wrap">
                 {res.tool_guidance}
               </p>
             </div>
@@ -157,7 +157,7 @@ export function SharedResourcesPanel() {
                   {t.matrix_v3.shared_resources_error_handling_label}
                 </span>
               </div>
-              <p className="typo-body-sm text-foreground/70 whitespace-pre-wrap">
+              <p className="typo-body-sm text-foreground whitespace-pre-wrap">
                 {res.error_handling}
               </p>
             </div>
@@ -172,7 +172,7 @@ export function SharedResourcesPanel() {
                   {t.matrix_v3.shared_resources_core_memories_label}
                 </span>
               </div>
-              <ul className="flex flex-col gap-1 typo-caption text-foreground/70">
+              <ul className="flex flex-col gap-1 typo-caption text-foreground">
                 {res.core_memories.map((m, i) => (
                   <li key={i}>
                     <span className="font-medium">{m.title}:</span> {m.content}

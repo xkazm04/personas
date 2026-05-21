@@ -17,6 +17,8 @@ import { useShallow } from 'zustand/react/shallow';
 import type { ConnectorDefinition } from '@/lib/types/types';
 import { CatalogCredentialModal } from '../../gallery/modals/CatalogCredentialModal';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 // ---------------------------------------------------------------------------
 // TestReportModal
@@ -238,9 +240,7 @@ function ConnectorHandshakeCard({
         setAddingConnector(null);
         await fetchCredentials().catch(() => {});
         onCredentialAdded?.();
-      } catch {
-        // CatalogCredentialModal shows its own error state
-      }
+      } catch (err) { silentCatch("features/templates/sub_generated/adoption/chronology/TestReportModal:catch1")(err); }
     },
     [addingConnector, createCredential, fetchCredentials, onCredentialAdded],
   );
@@ -277,7 +277,7 @@ function ConnectorHandshakeCard({
                 type="button"
                 onClick={() => handleAddKey(c.name)}
                 title={tx(t.templates.test_report.add_key_for, { connector: c.name })}
-                className="flex items-center gap-1 px-2.5 py-1 typo-caption font-medium rounded-lg bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 transition-colors"
+                className="flex items-center gap-1 px-2.5 py-1 typo-caption font-medium rounded-card bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 transition-colors"
               >
                 <Plus className="w-3 h-3" />
                 {t.templates.test_report.add_key}
@@ -348,7 +348,7 @@ function ReportOverview({ sections, summary, results, connectors = [], onCredent
         <div>
           <div className="flex items-center gap-2 mb-2">
             <Zap className="w-4 h-4 text-foreground" />
-            <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider">Results</h4>
+            <h4 className="typo-label font-semibold text-foreground uppercase tracking-wider">Results</h4>
           </div>
           <div className="space-y-1.5">{sections.results.trim().split('\n').filter(Boolean).map((line, i) => <MarkdownLine key={i} text={line} />)}</div>
         </div>
@@ -367,7 +367,7 @@ function SectionBlock({ icon, label, children }: { icon: React.ReactNode; label:
     <div className="rounded-modal border border-primary/10 bg-primary/[0.02] px-4 py-3">
       <div className="flex items-center gap-2 mb-2">
         {icon}
-        <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider">{label}</h4>
+        <h4 className="typo-label font-semibold text-foreground uppercase tracking-wider">{label}</h4>
       </div>
       <div className="space-y-1.5">{children}</div>
     </div>
@@ -384,9 +384,9 @@ function ResultCards({ passed, failed, credentialMissing, skipped }: { passed: T
     <div className="space-y-3">
       {passed.length > 0 && (
         <div className="rounded-modal border border-emerald-500/15 bg-emerald-500/5 px-4 py-3">
-          <div className="flex items-center gap-2 mb-2"><CheckCircle2 className="w-4 h-4 text-emerald-400" /><h4 className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">{t.templates.test_report.connected_successfully}</h4></div>
+          <div className="flex items-center gap-2 mb-2"><CheckCircle2 className="w-4 h-4 text-emerald-400" /><h4 className="typo-label font-semibold text-emerald-400 uppercase tracking-wider">{t.templates.test_report.connected_successfully}</h4></div>
           <div className="space-y-1">{passed.map((r) => (
-            <div key={r.tool_name} className="flex items-center justify-between text-sm">
+            <div key={r.tool_name} className="flex items-center justify-between typo-body">
               <span className="text-foreground">{toolLabel(r)}{r.connector ? <span className="text-foreground ml-1.5">via {r.connector}</span> : null}</span>
               {r.latency_ms != null && r.latency_ms > 0 && <span className="text-[10px] text-foreground font-mono">{r.latency_ms}ms</span>}
             </div>
@@ -395,24 +395,24 @@ function ResultCards({ passed, failed, credentialMissing, skipped }: { passed: T
       )}
       {credentialMissing.length > 0 && (
         <div className="rounded-modal border border-amber-500/15 bg-amber-500/5 px-4 py-3">
-          <div className="flex items-center gap-2 mb-2"><Key className="w-4 h-4 text-amber-400" /><h4 className="text-xs font-semibold text-amber-400 uppercase tracking-wider">{t.templates.test_report.needs_credentials}</h4></div>
-          <div className="space-y-1">{credentialMissing.map((r) => <div key={r.tool_name} className="text-sm text-foreground">{toolLabel(r)}{r.connector ? <span className="text-foreground ml-1.5">({r.connector})</span> : null}</div>)}</div>
+          <div className="flex items-center gap-2 mb-2"><Key className="w-4 h-4 text-amber-400" /><h4 className="typo-label font-semibold text-amber-400 uppercase tracking-wider">{t.templates.test_report.needs_credentials}</h4></div>
+          <div className="space-y-1">{credentialMissing.map((r) => <div key={r.tool_name} className="typo-body text-foreground">{toolLabel(r)}{r.connector ? <span className="text-foreground ml-1.5">({r.connector})</span> : null}</div>)}</div>
           <p className="text-[11px] text-amber-400/60 mt-2">{t.templates.test_report.add_keys_hint}</p>
         </div>
       )}
       {failed.length > 0 && (
         <div className="rounded-modal border border-red-500/15 bg-red-500/5 px-4 py-3">
-          <div className="flex items-center gap-2 mb-2"><XCircle className="w-4 h-4 text-red-400" /><h4 className="text-xs font-semibold text-red-400 uppercase tracking-wider">{t.templates.test_report.connection_failed}</h4></div>
+          <div className="flex items-center gap-2 mb-2"><XCircle className="w-4 h-4 text-red-400" /><h4 className="typo-label font-semibold text-red-400 uppercase tracking-wider">{t.templates.test_report.connection_failed}</h4></div>
           <div className="space-y-1">{failed.map((r) => {
             const hint = r.http_status ? httpStatusHint(t, r.http_status) : null;
-            return <div key={r.tool_name} className="text-sm"><span className="text-foreground">{toolLabel(r)}</span>{hint && <span className="text-red-400/50 ml-1.5 text-xs">{hint}</span>}</div>;
+            return <div key={r.tool_name} className="typo-body"><span className="text-foreground">{toolLabel(r)}</span>{hint && <span className="text-red-400/50 ml-1.5 typo-caption">{hint}</span>}</div>;
           })}</div>
         </div>
       )}
       {skipped.length > 0 && (
         <div className="rounded-modal border border-primary/10 bg-secondary/20 px-4 py-3">
-          <div className="flex items-center gap-2 mb-2"><Zap className="w-4 h-4 text-foreground" /><h4 className="text-xs font-semibold text-foreground uppercase tracking-wider">{t.templates.test_report.builtin_no_test}</h4></div>
-          <div className="flex flex-wrap gap-x-4 gap-y-0.5">{skipped.map((r) => <span key={r.tool_name} className="text-sm text-foreground">{toolLabel(r)}</span>)}</div>
+          <div className="flex items-center gap-2 mb-2"><Zap className="w-4 h-4 text-foreground" /><h4 className="typo-label font-semibold text-foreground uppercase tracking-wider">{t.templates.test_report.builtin_no_test}</h4></div>
+          <div className="flex flex-wrap gap-x-4 gap-y-0.5">{skipped.map((r) => <span key={r.tool_name} className="typo-body text-foreground">{toolLabel(r)}</span>)}</div>
         </div>
       )}
     </div>
@@ -426,9 +426,9 @@ function ResultCards({ passed, failed, credentialMissing, skipped }: { passed: T
 function MarkdownLine({ text }: { text: string }) {
   const trimmed = text.trim();
   if (!trimmed) return null;
-  if (/^####\s+/.test(trimmed)) return <h5 className="text-xs font-semibold text-primary/70 uppercase tracking-wider mt-3 mb-1">{trimmed.replace(/^####\s+/, '')}</h5>;
-  if (/^###\s+/.test(trimmed)) return <h4 className="text-sm font-semibold text-primary/80 mt-3 mb-1">{trimmed.replace(/^###\s+/, '')}</h4>;
-  if (/^##\s+/.test(trimmed)) return <h3 className="text-base font-bold text-foreground/90 mt-4 mb-1.5">{trimmed.replace(/^##\s+/, '')}</h3>;
+  if (/^####\s+/.test(trimmed)) return <h5 className="typo-label font-semibold text-primary/70 uppercase tracking-wider mt-3 mb-1">{trimmed.replace(/^####\s+/, '')}</h5>;
+  if (/^###\s+/.test(trimmed)) return <h4 className="typo-heading font-semibold text-primary/80 mt-3 mb-1">{trimmed.replace(/^###\s+/, '')}</h4>;
+  if (/^##\s+/.test(trimmed)) return <h3 className="typo-body-lg font-bold text-foreground/90 mt-4 mb-1.5">{trimmed.replace(/^##\s+/, '')}</h3>;
   if (/^---+$/.test(trimmed)) return <hr className="border-primary/10 my-3" />;
 
   const isBullet = /^[-*]\s/.test(trimmed);

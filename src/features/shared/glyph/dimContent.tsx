@@ -5,7 +5,7 @@ import { parseChannels, channelIcon, channelTint } from './channels';
 import { prettyTriggerType, triggerDetail } from './triggers';
 
 function EmptyNote({ label }: { label: string }) {
-  return <span className="typo-label text-foreground/50 italic">{label}</span>;
+  return <span className="typo-label text-foreground italic">{label}</span>;
 }
 
 /** Renders the body of the DimensionPanel for a given dim. Each branch
@@ -20,7 +20,7 @@ export function DimContent({ dim, row, t }: { dim: GlyphDimension; row: GlyphRow
           {row.triggers.map((tr, i) => (
             <div key={i} className="flex flex-col gap-0.5">
               <span className="typo-body font-semibold text-foreground">{prettyTriggerType(t, tr.trigger_type)}</span>
-              {triggerDetail(tr) && <span className="typo-label text-foreground/70">{triggerDetail(tr)}</span>}
+              {triggerDetail(tr) && <span className="typo-label text-foreground">{triggerDetail(tr)}</span>}
             </div>
           ))}
         </div>
@@ -32,14 +32,14 @@ export function DimContent({ dim, row, t }: { dim: GlyphDimension; row: GlyphRow
         <ol className="flex flex-col gap-1.5 list-none">
           {row.steps.slice(0, 8).map((s, i) => (
             <li key={s.id} className="flex gap-2">
-              <span className="typo-label text-foreground/50 tabular-nums shrink-0">{i + 1}.</span>
+              <span className="typo-label text-foreground tabular-nums shrink-0">{i + 1}.</span>
               <div className="flex flex-col min-w-0">
                 <span className="typo-body text-foreground truncate">{s.label}</span>
-                {s.detail && <span className="typo-label text-foreground/60 truncate">{s.detail}</span>}
+                {s.detail && <span className="typo-label text-foreground truncate">{s.detail}</span>}
               </div>
             </li>
           ))}
-          {row.steps.length > 8 && <li className="typo-label text-foreground/50 italic">+{row.steps.length - 8} more</li>}
+          {row.steps.length > 8 && <li className="typo-label text-foreground italic">+{row.steps.length - 8} more</li>}
         </ol>
       );
 
@@ -56,13 +56,13 @@ export function DimContent({ dim, row, t }: { dim: GlyphDimension; row: GlyphRow
                 </div>
                 <div className="flex flex-col min-w-0">
                   <span className="typo-body font-semibold text-foreground truncate">{cn.label || cn.name}</span>
-                  {cn.purpose && <span className="typo-label text-foreground/60 truncate">{cn.purpose}</span>}
+                  {cn.purpose && <span className="typo-label text-foreground truncate">{cn.purpose}</span>}
                 </div>
               </div>
             );
           })}
           {row.connectors.length > 6 && (
-            <div className="flex items-center justify-center rounded border border-dashed border-card-border typo-label text-foreground/65">
+            <div className="flex items-center justify-center rounded border border-dashed border-card-border typo-label text-foreground">
               +{row.connectors.length - 6} more
             </div>
           )}
@@ -84,7 +84,7 @@ export function DimContent({ dim, row, t }: { dim: GlyphDimension; row: GlyphRow
                 </div>
                 <div className="flex flex-col min-w-0">
                   <span className="typo-body font-semibold text-foreground capitalize">{ch.type}</span>
-                  {ch.description && <span className="typo-label text-foreground/65 truncate">{ch.description}</span>}
+                  {ch.description && <span className="typo-label text-foreground truncate">{ch.description}</span>}
                 </div>
               </div>
             );
@@ -110,7 +110,7 @@ export function DimContent({ dim, row, t }: { dim: GlyphDimension; row: GlyphRow
           {row.events.map((e, i) => (
             <div key={i} className="flex flex-col gap-0.5 p-1.5 rounded bg-primary/5 border border-card-border">
               <span className="typo-body font-semibold text-foreground">{e.event_type}</span>
-              {e.description && <span className="typo-label text-foreground/60">{e.description}</span>}
+              {e.description && <span className="typo-label text-foreground">{e.description}</span>}
             </div>
           ))}
         </div>

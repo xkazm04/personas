@@ -11,7 +11,7 @@ import { ChartGradientDefs } from "@/features/overview/sub_usage/components/Char
 import { ResourcePickerHost } from "@/features/vault/sub_credentials/components/picker/ResourcePickerHost";
 import { toggleMobilePreview } from "@/lib/utils/platform/platform";
 import { useMobilePreview } from "@/hooks/utility/interaction/useMobilePreview";
-import TitleBar from "@/features/shared/components/layout/TitleBar";
+import TitleBar from "@/features/app-shell/components/TitleBar";
 import { useTranslation } from '@/i18n/useTranslation';
 import { initPseudoLocale } from '@/i18n/pseudoLocale';
 import { useI18nStore } from '@/stores/i18nStore';
@@ -22,6 +22,7 @@ import { createLogger } from "@/lib/log";
 import { idlePrefetch } from "@/lib/idlePrefetch";
 import { AppKeyboardProvider, useAppKeyboard } from "@/lib/keyboard/AppKeyboardProvider";
 import { ModalStackProvider } from "@/lib/ui/ModalStackContext";
+import { CARD_PADDING, TOOLS_BTN_COMPACT } from "@/lib/utils/designTokens";
 
 initPseudoLocale();
 
@@ -69,7 +70,7 @@ const CommandPalette = lazy(() => import("@/features/shared/components/overlays/
 const GuidedTour = lazy(() => import("@/features/onboarding/components/GuidedTour"));
 const TourSpotlight = lazy(() => import("@/features/onboarding/components/TourSpotlight"));
 const ExecutionMiniPlayer = lazy(() => import("@/features/execution/components/ExecutionMiniPlayer"));
-const HealingToast = lazy(() => import("@/features/shared/components/feedback/HealingToast").then(m => ({ default: m.HealingToast })));
+const HealingToast = lazy(() => import("@/features/overview/components/feedback/HealingToast").then(m => ({ default: m.HealingToast })));
 const AlertToastContainer = lazy(() => import("@/features/overview/sub_observability/components/AlertToastContainer").then(m => ({ default: m.AlertToastContainer })));
 const NotificationCenter = lazy(() => import("@/features/shared/components/feedback/notifications/NotificationCenter").then(m => ({ default: m.NotificationCenter })));
 const ShareLinkHandler = lazy(() => import("@/features/sharing/components/ShareLinkHandler").then(m => ({ default: m.ShareLinkHandler })));
@@ -85,7 +86,7 @@ const LAZY_OVERLAY_IMPORTS = [
   () => import("@/features/onboarding/components/GuidedTour"),
   () => import("@/features/onboarding/components/TourSpotlight"),
   () => import("@/features/execution/components/ExecutionMiniPlayer"),
-  () => import("@/features/shared/components/feedback/HealingToast"),
+  () => import("@/features/overview/components/feedback/HealingToast"),
   () => import("@/features/overview/sub_observability/components/AlertToastContainer"),
   () => import("@/features/shared/components/feedback/notifications/NotificationCenter"),
   () => import("@/features/sharing/components/ShareLinkHandler"),
@@ -222,7 +223,7 @@ export default function App() {
         >
           <a
             href="#main-content"
-            className="sr-only focus:not-sr-only focus:fixed focus:top-1 focus:left-1 focus:z-[9999] focus:px-4 focus:py-2 focus:rounded-input focus:bg-primary focus:text-primary-foreground focus:typo-body focus:font-medium focus:shadow-elevation-3 focus:outline-none focus:ring-2 focus:ring-ring"
+            className={`sr-only focus:not-sr-only focus:fixed focus:top-1 focus:left-1 focus:z-[9999] ${CARD_PADDING.compact} focus:rounded-input focus:bg-primary focus:text-primary-foreground focus:typo-body focus:font-medium focus:shadow-elevation-3 focus:outline-none focus:ring-2 focus:ring-ring`}
           >
             {t.chrome.skip_to_content}
           </a>
@@ -269,8 +270,8 @@ export default function App() {
               or edit forms close after save. */}
           <ResourcePickerHost />
           {import.meta.env.DEV && isMobilePreview && (
-            <div className="fixed top-1 right-1 z-[999] px-2 py-1 rounded-card bg-cyan-500/90 text-white typo-caption font-bold shadow-elevation-3 pointer-events-none select-none">
-              MOBILE PREVIEW
+            <div className={`fixed top-1 right-1 z-[999] ${TOOLS_BTN_COMPACT} rounded-card bg-cyan-500/90 text-foreground typo-caption font-bold shadow-elevation-3 pointer-events-none select-none`}>
+              {t.chrome.mobile_preview}
             </div>
           )}
         </div>

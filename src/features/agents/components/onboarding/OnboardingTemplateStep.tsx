@@ -171,7 +171,7 @@ export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: Templa
             <AlertTriangle className="w-10 h-10 mx-auto text-amber-400 mb-3" />
             <p className="typo-body text-foreground">{tp.failed_title}</p>
             {errorSkips.length > 0 && (
-              <p className="typo-body text-foreground/70 mt-1">
+              <p className="typo-body text-foreground mt-1">
                 {tx(
                   errorSkips.length === 1 ? tp.template_failed_integrity_one : tp.template_failed_integrity_other,
                   { count: errorSkips.length },

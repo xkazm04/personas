@@ -8,6 +8,8 @@ import { SpanRow } from './SpanRow';
 import { TraceSummary } from './TraceSummary';
 import { useTraceData } from './useTraceData';
 import { useTranslation } from '@/i18n/useTranslation';
+import { DebtText } from '@/i18n/DebtText';
+
 
 interface TraceInspectorProps {
   execution: PersonaExecution;
@@ -72,7 +74,7 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
             {e.span}
           </div>
           <div className="flex justify-between typo-code text-foreground uppercase tracking-wider">
-            <span>0ms</span>
+            <span><DebtText k="auto_0ms_fcebf4a4" /></span>
             <span>{formatDuration(totalMs)}</span>
           </div>
         </div>

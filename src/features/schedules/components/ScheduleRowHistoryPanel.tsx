@@ -47,14 +47,14 @@ export function ScheduleRowHistoryPanel({ triggerId }: Props) {
 
   if (error) {
     return (
-      <div className="px-4 py-3 typo-caption text-foreground/70">
+      <div className="px-4 py-3 typo-caption text-foreground">
         {t.schedules.recent_runs_load_failed}
       </div>
     );
   }
   if (executions === null) {
     return (
-      <div className="px-4 py-3 flex items-center gap-2 typo-caption text-foreground/70">
+      <div className="px-4 py-3 flex items-center gap-2 typo-caption text-foreground">
         <Loader2 className="w-3 h-3 animate-spin" />
         {t.schedules.recent_runs_loading}
       </div>
@@ -62,7 +62,7 @@ export function ScheduleRowHistoryPanel({ triggerId }: Props) {
   }
   if (executions.length === 0) {
     return (
-      <div className="px-4 py-3 typo-caption text-foreground/60">
+      <div className="px-4 py-3 typo-caption text-foreground">
         {t.schedules.recent_runs_empty}
       </div>
     );
@@ -112,7 +112,7 @@ function Sparkline({ executions }: { executions: PersonaExecution[] }) {
           return (
             <div
               key={b.dateKey}
-              className="relative w-1.5 bg-primary/10 rounded-sm overflow-hidden"
+              className="relative w-1.5 bg-primary/10 rounded-interactive overflow-hidden"
               style={{ height: `${heightPct}%` }}
               title={`${b.dateLabel}: ${b.total} run(s), ${b.failed} failed`}
             >
@@ -131,10 +131,10 @@ function Sparkline({ executions }: { executions: PersonaExecution[] }) {
         })}
       </div>
       <div className="flex flex-col leading-none gap-0.5">
-        <span className="text-[10px] uppercase tracking-wider text-foreground/55">
+        <span className="text-[10px] uppercase tracking-wider text-foreground">
           {tx(t.schedules.sparkline_window, { days: SPARK_DAYS })}
         </span>
-        <span className="typo-caption text-foreground/80">
+        <span className="typo-caption text-foreground">
           {totals.total === 0
             ? t.schedules.sparkline_no_data
             : tx(t.schedules.sparkline_failure_rate, {
@@ -210,13 +210,13 @@ function RunRow({ execution }: { execution: PersonaExecution }) {
         <config.icon className={`w-2.5 h-2.5 ${execution.status === 'running' ? 'animate-spin' : ''}`} />
         {statusLabel}
       </span>
-      <span className="flex-1 min-w-0 typo-caption text-foreground/80 truncate">
+      <span className="flex-1 min-w-0 typo-caption text-foreground truncate">
         {formatRelative(startedAt)}
         {durationLabel && (
-          <span className="text-foreground/55 ml-2">· {durationLabel}</span>
+          <span className="text-foreground ml-2">· {durationLabel}</span>
         )}
         {costLabel && (
-          <span className="text-foreground/55 ml-2">· {costLabel}</span>
+          <span className="text-foreground ml-2">· {costLabel}</span>
         )}
       </span>
       <button
@@ -229,7 +229,7 @@ function RunRow({ execution }: { execution: PersonaExecution }) {
           setOverviewTab('executions');
           setSidebarSection('overview');
         }}
-        className="text-[10px] text-foreground/55 hover:text-foreground/80 transition-colors shrink-0"
+        className="text-[10px] text-foreground hover:text-foreground/80 transition-colors shrink-0"
       >
         {t.schedules.run_view_in_activity}
       </button>

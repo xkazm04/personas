@@ -12,6 +12,8 @@ import type { ManualReviewItem } from '@/lib/types/types';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 import { stripPersonaPrefix } from '../libs/reviewHelpers';
 import { ContextDataPreview } from './ReviewListItem';
+import { DebtText, debtText } from '@/i18n/DebtText';
+
 
 type SeverityBucket = 'critical' | 'warning' | 'info';
 
@@ -144,8 +146,8 @@ export function TriageGridVariant({ reviews, isProcessing, onAction, onClose }: 
             <span className="typo-code font-mono text-primary text-xs">▦</span>
           </div>
           <div className="min-w-0">
-            <h2 className="typo-heading font-semibold text-foreground leading-tight">Triage Grid</h2>
-            <p className="typo-caption text-foreground/60 leading-tight">Persona × priority matrix · {personaRows.length} personas · {counts.total} pending</p>
+            <h2 className="typo-heading font-semibold text-foreground leading-tight"><DebtText k="auto_triage_grid_caecd585" /></h2>
+            <p className="typo-caption text-foreground leading-tight"><DebtText k="auto_persona_priority_matrix_ad3a7fcf" /> {personaRows.length} <DebtText k="auto_personas_275792d2" /> {counts.total} pending</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -160,8 +162,8 @@ export function TriageGridVariant({ reviews, isProcessing, onAction, onClose }: 
           </span>
           <button
             onClick={onClose}
-            className="ml-2 p-1.5 rounded-modal border border-primary/15 text-foreground/60 hover:text-foreground hover:bg-secondary/30 transition-colors"
-            title="Close (Esc)"
+            className="ml-2 p-1.5 rounded-modal border border-primary/15 text-foreground hover:text-foreground hover:bg-secondary/30 transition-colors"
+            title={debtText("auto_close_esc_6ae84e4a")}
           >
             <X className="w-4 h-4" />
           </button>
@@ -174,7 +176,7 @@ export function TriageGridVariant({ reviews, isProcessing, onAction, onClose }: 
         <div className="flex-1 min-w-0 flex flex-col">
           {/* Column headers */}
           <div className="grid grid-cols-[180px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] gap-px px-4 pt-3 pb-2">
-            <div className="typo-caption text-foreground/50 uppercase tracking-wider">Persona</div>
+            <div className="typo-caption text-foreground uppercase tracking-wider">Persona</div>
             {(['critical', 'warning', 'info'] as SeverityBucket[]).map((sev) => {
               const M = SEV_META[sev];
               const Icon = M.icon;
@@ -199,8 +201,8 @@ export function TriageGridVariant({ reviews, isProcessing, onAction, onClose }: 
                 />
               ))}
               {personaRows.length === 0 && (
-                <div className="col-span-4 px-6 py-10 text-center typo-body text-foreground/60 bg-secondary/10">
-                  No pending reviews. The queue is clear.
+                <div className="col-span-4 px-6 py-10 text-center typo-body text-foreground bg-secondary/10">
+                  <DebtText k="auto_no_pending_reviews_the_queue_is_clear_11b3831a" />
                 </div>
               )}
             </div>
@@ -228,7 +230,7 @@ export function TriageGridVariant({ reviews, isProcessing, onAction, onClose }: 
                 )}
                 {activeReview.context_data && (
                   <div className="rounded-card border border-primary/10 bg-secondary/30 px-3 py-2.5">
-                    <div className="typo-caption font-mono uppercase text-foreground/55 mb-1.5">Context</div>
+                    <div className="typo-caption font-mono uppercase text-foreground mb-1.5">Context</div>
                     <ContextDataPreview raw={activeReview.context_data} />
                   </div>
                 )}
@@ -236,7 +238,7 @@ export function TriageGridVariant({ reviews, isProcessing, onAction, onClose }: 
                   <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Notes (optional)…"
+                    placeholder={debtText("auto_notes_optional_dbde2edd")}
                     rows={3}
                     autoFocus
                     className="w-full px-3 py-2 rounded-card border border-primary/15 bg-secondary/25 typo-body text-foreground placeholder:text-foreground/40 resize-none outline-none focus-visible:border-primary/40"
@@ -254,8 +256,8 @@ export function TriageGridVariant({ reviews, isProcessing, onAction, onClose }: 
                 </button>
                 <button
                   onClick={() => setShowNotes((s) => !s)}
-                  className={`flex items-center justify-center gap-1.5 py-2 rounded-modal border transition-colors ${showNotes ? 'border-primary/30 bg-primary/15 text-primary' : 'border-primary/15 bg-secondary/20 text-foreground/70 hover:text-foreground'}`}
-                  title="Toggle notes"
+                  className={`flex items-center justify-center gap-1.5 py-2 rounded-modal border transition-colors ${showNotes ? 'border-primary/30 bg-primary/15 text-primary' : 'border-primary/15 bg-secondary/20 text-foreground hover:text-foreground'}`}
+                  title={debtText("auto_toggle_notes_e84e3c00")}
                 >
                   <MessageSquare className="w-4 h-4" />
                   <span className="typo-heading font-medium">Notes</span>
@@ -275,9 +277,9 @@ export function TriageGridVariant({ reviews, isProcessing, onAction, onClose }: 
       </div>
 
       {/* Footer hint */}
-      <div className="flex-shrink-0 h-9 px-6 flex items-center justify-between border-t border-primary/8 bg-secondary/10 typo-caption text-foreground/50">
-        <span>Click any tile to triage · <kbd className="px-1 py-0.5 rounded bg-foreground/8 font-mono text-foreground/70">Esc</kbd> close</span>
-        <span>{personaRows.length} personas · {counts.total} pending reviews</span>
+      <div className="flex-shrink-0 h-9 px-6 flex items-center justify-between border-t border-primary/8 bg-secondary/10 typo-caption text-foreground">
+        <span><DebtText k="auto_click_any_tile_to_triage_67061019" /> <kbd className="px-1 py-0.5 rounded bg-foreground/8 font-mono text-foreground">Esc</kbd> close</span>
+        <span>{personaRows.length} <DebtText k="auto_personas_275792d2" /> {counts.total} <DebtText k="auto_pending_reviews_ba24020b" /></span>
       </div>
     </motion.div>
   );
@@ -296,7 +298,7 @@ function PersonaGridRow({ row, activeId, onPick }: PersonaGridRowProps) {
         <PersonaIcon icon={row.personaIcon} color={row.personaColor} display="framed" frameSize="lg" />
         <div className="min-w-0">
           <div className="typo-body text-foreground/90 truncate font-medium">{row.personaName}</div>
-          <div className="typo-caption text-foreground/50">{row.total} review{row.total === 1 ? '' : 's'}</div>
+          <div className="typo-caption text-foreground">{row.total} review{row.total === 1 ? '' : 's'}</div>
         </div>
       </div>
       {(['critical', 'warning', 'info'] as SeverityBucket[]).map((sev) => (
@@ -325,7 +327,7 @@ function GridCell({ severity, items, activeId, onPick }: GridCellProps) {
   const M = SEV_META[severity];
   const [expanded, setExpanded] = useState(false);
   if (items.length === 0) {
-    return <div className="bg-background/40 px-2 py-2 flex items-center justify-center typo-caption text-foreground/25">—</div>;
+    return <div className="bg-background/40 px-2 py-2 flex items-center justify-center typo-caption text-foreground">—</div>;
   }
   const visible = expanded ? items : items.slice(0, CELL_VISIBLE_CAP);
   const overflow = items.length - visible.length;
@@ -350,7 +352,7 @@ function GridCell({ severity, items, activeId, onPick }: GridCellProps) {
       {overflow > 0 && (
         <button
           onClick={() => setExpanded(true)}
-          className="inline-flex items-center px-2 py-0.5 rounded-card border border-primary/20 bg-secondary/30 text-foreground/70 hover:text-foreground hover:bg-secondary/50 typo-caption transition-colors"
+          className="inline-flex items-center px-2 py-0.5 rounded-card border border-primary/20 bg-secondary/30 text-foreground hover:text-foreground hover:bg-secondary/50 typo-caption transition-colors"
           title={`Show ${overflow} more`}
         >
           +{overflow}
@@ -359,7 +361,7 @@ function GridCell({ severity, items, activeId, onPick }: GridCellProps) {
       {expanded && items.length > CELL_VISIBLE_CAP && (
         <button
           onClick={() => setExpanded(false)}
-          className="inline-flex items-center px-2 py-0.5 rounded-card border border-primary/15 text-foreground/55 hover:text-foreground typo-caption transition-colors"
+          className="inline-flex items-center px-2 py-0.5 rounded-card border border-primary/15 text-foreground hover:text-foreground typo-caption transition-colors"
           title="Collapse"
         >
           collapse
@@ -383,19 +385,19 @@ function DetailHeader({ review, onClose }: { review: ManualReviewItem; onClose: 
           {review.persona_name && (
             <>
               <PersonaIcon icon={review.persona_icon ?? null} color={review.persona_color ?? null} size="w-3.5 h-3.5" />
-              <span className="typo-caption text-foreground/80">{review.persona_name}</span>
-              <span className="typo-caption text-foreground/30">·</span>
+              <span className="typo-caption text-foreground">{review.persona_name}</span>
+              <span className="typo-caption text-foreground">·</span>
             </>
           )}
           <span className={`typo-caption font-medium uppercase ${sevBucket === 'critical' ? 'text-red-400' : sevBucket === 'warning' ? 'text-amber-400' : 'text-blue-400'}`}>
             {M.label}
           </span>
-          <span className="typo-caption text-foreground/30">·</span>
-          <Clock className="w-3 h-3 text-foreground/40" />
-          <span className="typo-caption text-foreground/55">{formatRelativeTime(review.created_at)}</span>
+          <span className="typo-caption text-foreground">·</span>
+          <Clock className="w-3 h-3 text-foreground" />
+          <span className="typo-caption text-foreground">{formatRelativeTime(review.created_at)}</span>
         </div>
       </div>
-      <button onClick={onClose} className="p-1 rounded text-foreground/50 hover:text-foreground hover:bg-secondary/40 transition-colors">
+      <button onClick={onClose} className="p-1 rounded text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors">
         <X className="w-4 h-4" />
       </button>
     </div>

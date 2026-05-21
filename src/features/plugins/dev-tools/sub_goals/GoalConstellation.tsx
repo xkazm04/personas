@@ -8,6 +8,8 @@ import type { DevGoalDependency } from '@/lib/bindings/DevGoalDependency';
 import * as devApi from '@/api/devTools/devTools';
 import { GoalProjectPulse } from './GoalProjectPulse';
 import { GoalDependencyFlow } from './GoalDependencyFlow';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 // ---------------------------------------------------------------------------
 // Force-directed layout (pure JS, no D3)
@@ -173,7 +175,7 @@ export default function GoalConstellation() {
         try {
           const deps = await devApi.listGoalDependencies(g.id);
           allDeps.push(...deps);
-        } catch { /* ignore */ }
+        } catch (err) { silentCatch("features/plugins/dev-tools/sub_goals/GoalConstellation:catch1")(err); }
       }
       if (!cancelled) setDependencies(allDeps);
     }
@@ -205,11 +207,11 @@ export default function GoalConstellation() {
                 'px-3 py-1.5 rounded-interactive transition-colors text-left',
                 active
                   ? 'bg-violet-500/15 border border-violet-500/30 text-foreground'
-                  : 'border border-transparent text-foreground/70 hover:bg-secondary/30',
+                  : 'border border-transparent text-foreground hover:bg-secondary/30',
               ].join(' ')}
             >
-              <div className="text-sm font-semibold leading-tight">{v.label}</div>
-              <div className="text-xs text-foreground/50 leading-tight">{v.subtitle}</div>
+              <div className="typo-heading font-semibold leading-tight">{v.label}</div>
+              <div className="typo-caption text-foreground leading-tight">{v.subtitle}</div>
             </button>
           );
         })}

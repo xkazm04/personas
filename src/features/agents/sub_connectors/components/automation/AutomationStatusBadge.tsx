@@ -74,22 +74,22 @@ export function AutomationStatusBadge({ automationId, status }: AutomationStatus
 
   useEffect(() => {
     const prev = prevStatusRef.current;
-    if (prev !== status) {
-      // Status actually changed
-      const timer = triggerPulse();
+    if (prev === status) return;
 
-      // Confetti on first-ever activation
-      if (status === 'active' && !hasBeenActiveRef.current) {
-        hasBeenActiveRef.current = true;
-        setShowConfetti(true);
-        const confettiTimer = setTimeout(() => setShowConfetti(false), 800);
-        prevStatusRef.current = status;
-        return () => { clearTimeout(timer); clearTimeout(confettiTimer); };
-      }
+    // Status actually changed
+    const timer = triggerPulse();
 
+    // Confetti on first-ever activation
+    if (status === 'active' && !hasBeenActiveRef.current) {
+      hasBeenActiveRef.current = true;
+      setShowConfetti(true);
+      const confettiTimer = setTimeout(() => setShowConfetti(false), 800);
       prevStatusRef.current = status;
-      return () => clearTimeout(timer);
+      return () => { clearTimeout(timer); clearTimeout(confettiTimer); };
     }
+
+    prevStatusRef.current = status;
+    return () => clearTimeout(timer);
   }, [status, triggerPulse]);
 
   return (

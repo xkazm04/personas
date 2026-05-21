@@ -4,6 +4,8 @@ import { useAgentStore } from '@/stores/agentStore';
 import { updatePersonaParameters } from '@/api/agents/personaParameters';
 import { toastCatch } from '@/lib/silentCatch';
 import type { PersonaParameter } from '@/lib/bindings/PersonaParameter';
+import { DebtText, debtText } from '@/i18n/DebtText';
+
 
 /**
  * Live editor for the persona's free parameters. Reads `selectedPersona.parameters`
@@ -87,8 +89,8 @@ export function PersonaParametersCard() {
       <header className="flex items-center gap-2 mb-3">
         <Sliders className="w-4 h-4 text-primary/80" />
         <h3 className="typo-section-title text-foreground">Parameters</h3>
-        <span className="typo-caption text-foreground/55 ml-2">
-          Adjustable without rebuild
+        <span className="typo-caption text-foreground ml-2">
+          <DebtText k="auto_adjustable_without_rebuild_72b22655" />
         </span>
       </header>
       <div className="flex flex-col gap-3">
@@ -114,11 +116,11 @@ export function PersonaParametersCard() {
                   {param.label}
                 </label>
                 {param.unit && (
-                  <span className="typo-caption text-foreground/55">({param.unit})</span>
+                  <span className="typo-caption text-foreground">({param.unit})</span>
                 )}
                 <span className="ml-auto flex items-center gap-1.5">
                   {isSaving && (
-                    <span className="typo-caption text-foreground/55">Saving…</span>
+                    <span className="typo-caption text-foreground"><DebtText k="auto_saving_56a2285c" /></span>
                   )}
                   {isSaved && !isSaving && (
                     <span className="inline-flex items-center gap-1 typo-caption text-status-success">
@@ -129,8 +131,8 @@ export function PersonaParametersCard() {
                     <button
                       type="button"
                       onClick={() => reset(param)}
-                      className="inline-flex items-center gap-1 typo-caption text-foreground/55 hover:text-foreground cursor-pointer transition-colors"
-                      title="Reset to default"
+                      className="inline-flex items-center gap-1 typo-caption text-foreground hover:text-foreground cursor-pointer transition-colors"
+                      title={debtText("auto_reset_to_default_39c90eb7")}
                     >
                       <RotateCcw className="w-3 h-3" /> reset
                     </button>
@@ -144,7 +146,7 @@ export function PersonaParametersCard() {
                 onCommit={(v) => void commit(param, v)}
               />
               {param.description && (
-                <p className="typo-caption text-foreground/65 leading-snug">
+                <p className="typo-caption text-foreground leading-snug">
                   {param.description}
                 </p>
               )}
@@ -216,7 +218,7 @@ function ParameterEditor({
           className={`self-start inline-flex items-center gap-2 px-3 py-1.5 rounded-interactive border typo-label font-medium cursor-pointer transition-colors ${
             b
               ? 'bg-status-success/15 border-status-success/30 text-status-success'
-              : 'bg-foreground/[0.04] border-card-border text-foreground/70 hover:bg-foreground/[0.07]'
+              : 'bg-foreground/[0.04] border-card-border text-foreground hover:bg-foreground/[0.07]'
           }`}
         >
           <span

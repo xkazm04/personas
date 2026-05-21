@@ -23,7 +23,7 @@ export function ChannelTotem({ channels, tileSize, spacing, max = 5 }: ChannelTo
         return (
           <div
             key={`${ch.type}-${i}`}
-            className="absolute rounded-md bg-card-bg/90 backdrop-blur border border-card-border flex items-center justify-center"
+            className="absolute rounded-input bg-card-bg/90 backdrop-blur border border-card-border flex items-center justify-center"
             style={{
               top: `calc(50% + ${offset * spacing}px)`,
               width: tileSize,

@@ -14,6 +14,10 @@ import type { ManualReviewItem } from '@/lib/types/types';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 import { stripPersonaPrefix } from '../libs/reviewHelpers';
 import { ContextDataPreview } from './ReviewListItem';
+import { silentCatch } from '@/lib/silentCatch';
+import { DebtText, debtText } from '@/i18n/DebtText';
+
+
 
 type SeverityBucket = 'critical' | 'warning' | 'info';
 
@@ -195,7 +199,7 @@ export function TriageWildcardVariant({ reviews, isProcessing, onAction, onClose
       }
       return { ...prev, active: false };
     });
-    try { e.currentTarget.releasePointerCapture(e.pointerId); } catch { /* may not be captured */ }
+    try { e.currentTarget.releasePointerCapture(e.pointerId); } catch (err) { silentCatch("features/overview/sub_manual-review/components/TriageWildcardVariant:catch1")(err); }
   }, []);
 
   const handleSingle = useCallback((status: ManualReviewStatus) => {
@@ -237,8 +241,8 @@ export function TriageWildcardVariant({ reviews, isProcessing, onAction, onClose
             <Sparkles className="w-4 h-4 text-primary" />
           </div>
           <div className="min-w-0">
-            <h2 className="typo-heading font-semibold text-foreground leading-tight">Triage River</h2>
-            <p className="typo-caption text-foreground/60 leading-tight">Time-flow across severity lanes · {counts.total} pending · drag empty space to lasso</p>
+            <h2 className="typo-heading font-semibold text-foreground leading-tight"><DebtText k="auto_triage_river_51a81681" /></h2>
+            <p className="typo-caption text-foreground leading-tight"><DebtText k="auto_time_flow_across_severity_lanes_e7524094" /> {counts.total} <DebtText k="auto_pending_drag_empty_space_to_lasso_823476a3" /></p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -253,8 +257,8 @@ export function TriageWildcardVariant({ reviews, isProcessing, onAction, onClose
           </span>
           <button
             onClick={onClose}
-            className="ml-2 p-1.5 rounded-modal border border-primary/15 text-foreground/60 hover:text-foreground hover:bg-secondary/30 transition-colors"
-            title="Close (Esc)"
+            className="ml-2 p-1.5 rounded-modal border border-primary/15 text-foreground hover:text-foreground hover:bg-secondary/30 transition-colors"
+            title={debtText("auto_close_esc_6ae84e4a")}
           >
             <X className="w-4 h-4" />
           </button>
@@ -274,7 +278,7 @@ export function TriageWildcardVariant({ reviews, isProcessing, onAction, onClose
               <span className="typo-heading font-medium text-foreground">{selectedIds.size} selected</span>
               <button
                 onClick={() => setSelectedIds(new Set())}
-                className="typo-caption text-foreground/55 hover:text-foreground transition-colors px-2 py-0.5 rounded"
+                className="typo-caption text-foreground hover:text-foreground transition-colors px-2 py-0.5 rounded"
               >
                 Clear
               </button>
@@ -358,7 +362,7 @@ export function TriageWildcardVariant({ reviews, isProcessing, onAction, onClose
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="text-center">
                 <Check className="w-10 h-10 mx-auto text-emerald-400 mb-2" />
-                <p className="typo-body text-foreground/70">All clear — no pending reviews.</p>
+                <p className="typo-body text-foreground"><DebtText k="auto_all_clear_no_pending_reviews_71d77cf3" /></p>
               </div>
             </div>
           )}
@@ -385,7 +389,7 @@ export function TriageWildcardVariant({ reviews, isProcessing, onAction, onClose
                 )}
                 {activeReview.context_data && (
                   <div className="rounded-card border border-primary/10 bg-secondary/30 px-3 py-2.5">
-                    <div className="typo-caption font-mono uppercase text-foreground/55 mb-1.5">Context</div>
+                    <div className="typo-caption font-mono uppercase text-foreground mb-1.5">Context</div>
                     <ContextDataPreview raw={activeReview.context_data} />
                   </div>
                 )}
@@ -393,7 +397,7 @@ export function TriageWildcardVariant({ reviews, isProcessing, onAction, onClose
                   <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Notes (optional)…"
+                    placeholder={debtText("auto_notes_optional_dbde2edd")}
                     rows={3}
                     autoFocus
                     className="w-full px-3 py-2 rounded-card border border-primary/15 bg-secondary/25 typo-body text-foreground placeholder:text-foreground/40 resize-none outline-none focus-visible:border-primary/40"
@@ -411,8 +415,8 @@ export function TriageWildcardVariant({ reviews, isProcessing, onAction, onClose
                 </button>
                 <button
                   onClick={() => setShowNotes((s) => !s)}
-                  className={`flex items-center justify-center gap-1.5 py-2 rounded-modal border transition-colors ${showNotes ? 'border-primary/30 bg-primary/15 text-primary' : 'border-primary/15 bg-secondary/20 text-foreground/70 hover:text-foreground'}`}
-                  title="Toggle notes"
+                  className={`flex items-center justify-center gap-1.5 py-2 rounded-modal border transition-colors ${showNotes ? 'border-primary/30 bg-primary/15 text-primary' : 'border-primary/15 bg-secondary/20 text-foreground hover:text-foreground'}`}
+                  title={debtText("auto_toggle_notes_e84e3c00")}
                 >
                   <MessageSquare className="w-4 h-4" />
                   <span className="typo-heading font-medium">Notes</span>
@@ -432,9 +436,9 @@ export function TriageWildcardVariant({ reviews, isProcessing, onAction, onClose
       </div>
 
       {/* Time axis */}
-      <div className="flex-shrink-0 h-9 px-6 flex items-center justify-between border-t border-primary/8 bg-secondary/10 typo-caption text-foreground/50">
+      <div className="flex-shrink-0 h-9 px-6 flex items-center justify-between border-t border-primary/8 bg-secondary/10 typo-caption text-foreground">
         <span>{ageSpanLabel || '—'}</span>
-        <span>Click token to triage · <kbd className="px-1 py-0.5 rounded bg-foreground/8 font-mono text-foreground/70">⇧</kbd>+click to multi-select · drag to lasso · <kbd className="px-1 py-0.5 rounded bg-foreground/8 font-mono text-foreground/70">Esc</kbd> close</span>
+        <span><DebtText k="auto_click_token_to_triage_4dcaac69" /> <kbd className="px-1 py-0.5 rounded bg-foreground/8 font-mono text-foreground">⇧</kbd><DebtText k="auto_click_to_multi_select_drag_to_lasso_4d5a0e4a" /> <kbd className="px-1 py-0.5 rounded bg-foreground/8 font-mono text-foreground">Esc</kbd> close</span>
       </div>
     </motion.div>
   );
@@ -549,18 +553,18 @@ function DetailHeader({ review, onClose }: { review: ManualReviewItem; onClose: 
           {review.persona_name && (
             <>
               <PersonaIcon icon={review.persona_icon ?? null} color={review.persona_color ?? null} size="w-3.5 h-3.5" />
-              <span className="typo-caption text-foreground/80">{review.persona_name}</span>
-              <span className="typo-caption text-foreground/30">·</span>
+              <span className="typo-caption text-foreground">{review.persona_name}</span>
+              <span className="typo-caption text-foreground">·</span>
             </>
           )}
           <span className={`typo-caption font-medium uppercase ${sevBucket === 'critical' ? 'text-red-400' : sevBucket === 'warning' ? 'text-amber-400' : 'text-blue-400'}`}>
             {lane.label}
           </span>
-          <span className="typo-caption text-foreground/30">·</span>
-          <span className="typo-caption text-foreground/55">{formatRelativeTime(review.created_at)}</span>
+          <span className="typo-caption text-foreground">·</span>
+          <span className="typo-caption text-foreground">{formatRelativeTime(review.created_at)}</span>
         </div>
       </div>
-      <button onClick={onClose} className="p-1 rounded text-foreground/50 hover:text-foreground hover:bg-secondary/40 transition-colors">
+      <button onClick={onClose} className="p-1 rounded text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors">
         <X className="w-4 h-4" />
       </button>
     </div>

@@ -14,6 +14,8 @@ import { useCallback, useState } from 'react';
 import { Copy, Check, AlertTriangle, X } from 'lucide-react';
 import type { CreateApiKeyResponse } from '@/api/auth/externalApiKeys';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 interface CreatedKeyDialogProps {
   response: CreateApiKeyResponse;
@@ -52,10 +54,7 @@ export function CreatedKeyDialog({ response, onClose }: CreatedKeyDialogProps) {
       await navigator.clipboard.writeText(response.plaintext_token);
       setKeyCopied(true);
       setTimeout(() => setKeyCopied(false), 2000);
-    } catch {
-      // Best-effort — old browsers / non-https. The user can still
-      // select-and-copy manually from the readonly input.
-    }
+    } catch (err) { silentCatch("features/settings/sub_api_keys/components/CreatedKeyDialog:catch1")(err); }
   }, [response.plaintext_token]);
 
   const copyConfig = useCallback(async () => {
@@ -63,9 +62,7 @@ export function CreatedKeyDialog({ response, onClose }: CreatedKeyDialogProps) {
       await navigator.clipboard.writeText(mcpConfig);
       setConfigCopied(true);
       setTimeout(() => setConfigCopied(false), 2000);
-    } catch {
-      /* best-effort */
-    }
+    } catch (err) { silentCatch("features/settings/sub_api_keys/components/CreatedKeyDialog:catch2")(err); }
   }, [mcpConfig]);
 
   return (
@@ -85,7 +82,7 @@ export function CreatedKeyDialog({ response, onClose }: CreatedKeyDialogProps) {
             <button
               type="button"
               onClick={onClose}
-              className="text-foreground/60 hover:text-foreground transition-colors"
+              className="text-foreground hover:text-foreground transition-colors"
               aria-label={s.close}
             >
               <X size={16} />
@@ -100,7 +97,7 @@ export function CreatedKeyDialog({ response, onClose }: CreatedKeyDialogProps) {
           </div>
 
           <div>
-            <label className="block typo-caption text-foreground/80 mb-1.5">
+            <label className="block typo-caption text-foreground mb-1.5">
               {s.created_key_label}
             </label>
             <div className="flex gap-2">
@@ -129,11 +126,11 @@ export function CreatedKeyDialog({ response, onClose }: CreatedKeyDialogProps) {
                 )}
               </button>
             </div>
-            <p className="typo-caption text-foreground/50 mt-1">{s.created_key_hint}</p>
+            <p className="typo-caption text-foreground mt-1">{s.created_key_hint}</p>
           </div>
 
           <div>
-            <label className="block typo-caption text-foreground/80 mb-1.5">
+            <label className="block typo-caption text-foreground mb-1.5">
               {s.created_mcp_config_label}
             </label>
             <pre className="px-3 py-2 bg-background border border-border/40 rounded-input typo-code text-foreground/90 overflow-x-auto text-xs leading-relaxed max-h-48">
@@ -165,7 +162,7 @@ export function CreatedKeyDialog({ response, onClose }: CreatedKeyDialogProps) {
               onChange={(e) => setAcknowledged(e.target.checked)}
               className="mt-0.5"
             />
-            <span className="typo-caption text-foreground/80">{s.created_acknowledge}</span>
+            <span className="typo-caption text-foreground">{s.created_acknowledge}</span>
           </label>
         </div>
 

@@ -9,6 +9,8 @@ import { useOverviewStore } from "@/stores/overviewStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { useToastStore } from '@/stores/toastStore';
 import { formatRelative } from './scheduleHelpers';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 export interface ScheduleActionState {
   executing: string | null;   // trigger_id currently being executed
@@ -53,7 +55,7 @@ export function useScheduleActions() {
     } finally {
       setState((s) => ({ ...s, executing: null }));
     }
-  }, [fetchCronAgents, addToast]);
+  }, [isBudgetBlocked, addToast, fetchCronAgents]);
 
   // -- Change Cron Frequency -----------------------------------------------
 
@@ -83,11 +85,7 @@ export function useScheduleActions() {
           if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
             baseConfig = parsed as Record<string, unknown>;
           }
-        } catch {
-          // Existing config is malformed JSON. Fall back to empty merge — the
-          // schedule fields below still take effect; we don't want to block the
-          // user's edit because the prior write was corrupt.
-        }
+        } catch (err) { silentCatch("features/schedules/libs/useScheduleActions:catch1")(err); }
       }
 
       const configObj: Record<string, unknown> = { ...baseConfig, type: 'schedule' };

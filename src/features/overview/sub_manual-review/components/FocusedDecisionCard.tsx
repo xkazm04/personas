@@ -1,6 +1,8 @@
 import { CheckCircle2, XCircle, Image as ImageIcon, Video } from 'lucide-react';
 import { type DecisionItem, type DecisionVerdict, catBorder, isVideoUrl } from './reviewFocusHelpers';
 import { useTranslation } from '@/i18n/useTranslation';
+import { DebtText } from '@/i18n/DebtText';
+
 
 interface FocusedDecisionCardProps {
   decision: DecisionItem;
@@ -74,7 +76,7 @@ function MediaPanel({ url, alt }: { url: string; alt: string }) {
     <div className="md:w-1/2 bg-black/20 flex items-center justify-center min-h-[200px] max-h-[400px] overflow-hidden">
       {isVideoUrl(url) ? (
         <video src={url} controls className="w-full h-full object-contain" onError={handleMediaError}>
-          Your browser does not support video playback.
+          <DebtText k="auto_your_browser_does_not_support_video_playba_8f8c2d0d" />
         </video>
       ) : (
         <img src={url} alt={alt} className="w-full h-full object-contain" loading="lazy" onError={handleMediaError} />

@@ -43,11 +43,11 @@ export function GroupPanel({
         className={`w-full flex items-center gap-2.5 px-3 py-2 ${group.accentBg} hover:brightness-110 transition-all text-left`}
       >
         <motion.span animate={{ rotate: collapsed ? 0 : 90 }} transition={{ duration: 0.15 }} className="inline-flex">
-          <ChevronRight className="w-3.5 h-3.5 text-foreground/60" />
+          <ChevronRight className="w-3.5 h-3.5 text-foreground" />
         </motion.span>
         <Icon className={`w-4 h-4 ${group.accentText}`} />
-        <span className={`text-sm font-semibold uppercase tracking-wider ${group.accentText}`}>{group.label}</span>
-        <span className="text-xs text-foreground/60 tabular-nums">· {group.rows.length} event{group.rows.length !== 1 ? 's' : ''}</span>
+        <span className={`typo-heading font-semibold uppercase tracking-wider ${group.accentText}`}>{group.label}</span>
+        <span className="typo-caption text-foreground tabular-nums">· {group.rows.length} event{group.rows.length !== 1 ? 's' : ''}</span>
         {activeCount > 0 && (
           <span className="ml-auto flex items-center gap-1 px-1.5 py-0.5 rounded-card bg-emerald-500/10 border border-emerald-500/30">
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />

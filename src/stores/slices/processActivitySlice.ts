@@ -177,7 +177,6 @@ function findUniqueProcessKey(
     if (matches.length === 1) return matches[0]!;
     if (matches.length > 1) {
       // Ambiguous: refusing rather than reaping an arbitrary row.
-      // eslint-disable-next-line no-console
       console.warn(
         `[processActivity] processEnded("${domain}") refused — ${matches.length} active runs ` +
           `match domain "${domain}". Caller must supply runId. Active keys: ${matches.join(", ")}`,

@@ -24,6 +24,8 @@ import { createResearchLabSlice } from "./slices/system/researchLabSlice";
 import { createTwinSlice } from "./slices/system/twinSlice";
 import { createCompanionPluginSlice } from "./slices/system/companionPluginSlice";
 import { createRadioSlice } from "./slices/system/radioSlice";
+import { silentCatch } from '@/lib/silentCatch';
+
 
 export const useSystemStore = create<SystemStore>()(
   persist(
@@ -112,7 +114,7 @@ export const useSystemStore = create<SystemStore>()(
               message: 'Discarding unknown onboardingDismissedAtStep on hydrate',
               data: { persisted: String(state.onboardingDismissedAtStep) },
             });
-          } catch { /* intentional: Sentry may be uninitialized */ }
+          } catch (err) { silentCatch("stores/systemStore:catch1")(err); }
           state.onboardingDismissedAtStep = null;
         }
 

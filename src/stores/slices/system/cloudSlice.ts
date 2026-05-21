@@ -29,6 +29,8 @@ import {
   type CloudOAuthStatusResponse,
   type CloudDeployment,
 } from "@/api/system/cloud";
+import { silentCatch } from '@/lib/silentCatch';
+
 
 export interface CloudReconnectState {
   /** Whether auto-reconnection is in progress. */
@@ -141,9 +143,7 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
           // Network / unreachable errors -- stay disconnected silently
         }
       }
-    } catch {
-      // intentional: non-critical -- no config stored yet is expected on first launch
-    }
+    } catch (err) { silentCatch("stores/slices/system/cloudSlice:catch1")(err); }
   },
 
   cloudConnectAction: async (url: string, apiKey: string) => {

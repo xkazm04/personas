@@ -130,11 +130,11 @@ export function NextMovesPanel({ onPick }: Props) {
                 </span>
                 <span className="flex-1 min-w-0">
                   <span className="block typo-card-label text-foreground truncate">{label}</span>
-                  <span className="block text-[11px] text-foreground/65 mt-0.5">
+                  <span className="block text-[11px] text-foreground mt-0.5">
                     {tx(t.training.nextMovesCoverage, { count: r.count })}
                   </span>
                 </span>
-                <ArrowRight className="w-3.5 h-3.5 text-foreground/55 group-hover:text-foreground transition-colors flex-shrink-0" />
+                <ArrowRight className="w-3.5 h-3.5 text-foreground group-hover:text-foreground transition-colors flex-shrink-0" />
               </button>
             );
           })}

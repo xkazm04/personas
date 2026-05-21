@@ -31,12 +31,12 @@ export function CapabilityConnectorsPane({ capability }: Props) {
       className="flex flex-col gap-2"
       data-testid={`capability-connectors-pane-${capability.id}`}
     >
-      <label className="typo-label text-foreground/70">
+      <label className="typo-label text-foreground">
         {t.matrix_v3.capability_row_field_connectors}
       </label>
       <div className="flex flex-wrap gap-2">
         {value.length === 0 ? (
-          <span className="typo-body-sm text-foreground/40">
+          <span className="typo-body-sm text-foreground">
             {t.matrix_v3.capability_row_field_pending}
           </span>
         ) : null}
@@ -49,7 +49,7 @@ export function CapabilityConnectorsPane({ capability }: Props) {
             <button
               type="button"
               onClick={() => update(value.filter((_, idx) => idx !== i))}
-              className="text-foreground/50 hover:text-foreground"
+              className="text-foreground hover:text-foreground"
               aria-label="Remove"
             >
               ×

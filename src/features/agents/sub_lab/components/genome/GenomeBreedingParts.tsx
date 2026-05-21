@@ -23,6 +23,8 @@ import type { Persona } from '@/lib/bindings/Persona';
 import { GenomeDiffView } from './GenomeDiffView';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import { useTranslation } from '@/i18n/useTranslation';
+import { DebtText, debtText } from '@/i18n/DebtText';
+
 
 // ---------------------------------------------------------------------------
 // Internal helper
@@ -47,7 +49,7 @@ export function ParentSelector({
 }) {
   const { t } = useTranslation();
   return (
-    <div className="space-y-1.5" role="group" aria-label="Parent persona selection">
+    <div className="space-y-1.5" role="group" aria-label={debtText("auto_parent_persona_selection_8f33378c")}>
       <label className="typo-caption font-medium text-foreground">
         {t.agents.lab.select_parents}
       </label>
@@ -214,7 +216,7 @@ export function OffspringCard({
               onClick={() => setShowDiff(!showDiff)}
               className="p-0.5 rounded text-foreground hover:text-violet-400 transition-colors"
               aria-label={showDiff ? 'Hide genome diff' : 'Show genome diff'}
-              title="Compare with parent"
+              title={debtText("auto_compare_with_parent_cd8152c8")}
             >
               {showDiff ? <EyeOff className="w-3.5 h-3.5" /> : <GitCompare className="w-3.5 h-3.5" />}
             </button>
@@ -224,9 +226,9 @@ export function OffspringCard({
 
       {genome && (
         <div className="typo-caption text-foreground space-y-0.5">
-          <p>{genome.promptSegments.length} prompt segments, {genome.tools.toolIds.length} tools</p>
+          <p>{genome.promptSegments.length} <DebtText k="auto_prompt_segments_4d4424b2" /> {genome.tools.toolIds.length} tools</p>
           {genome.model.modelProfile && (
-            <p>Model: {genome.model.modelProfile}</p>
+            <p><DebtText k="auto_model_9e1279af" /> {genome.model.modelProfile}</p>
           )}
         </div>
       )}
@@ -237,7 +239,7 @@ export function OffspringCard({
         <div className="flex items-center gap-1.5 typo-caption">
           <Sparkles className="w-3 h-3 text-violet-400" aria-hidden="true" />
           <span className="text-violet-300 font-medium">
-            Fitness: {Math.round(result.fitnessOverall * 100)}%
+            <DebtText k="auto_fitness_b62800f1" /> {Math.round(result.fitnessOverall * 100)}%
           </span>
         </div>
       )}
@@ -312,7 +314,7 @@ export function RunCard({
         <div className="flex items-center gap-2">
           <Dna className="w-3.5 h-3.5 text-violet-400" aria-hidden="true" />
           <span className="typo-body font-medium">
-            {parentCount} parents &rarr; {run.offspringCount} offspring
+            {parentCount} <DebtText k="auto_parents_rarr_76eed8dc" /> {run.offspringCount} offspring
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -320,7 +322,7 @@ export function RunCard({
           <button
             onClick={(e) => { e.stopPropagation(); onDelete(); }}
             className="text-foreground hover:text-red-400 transition-colors"
-            aria-label="Delete breeding run"
+            aria-label={debtText("auto_delete_breeding_run_bab97d50")}
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>

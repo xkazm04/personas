@@ -142,7 +142,23 @@
     "previewStop": "停止",
     "previewTooltip": "現在の設定で短いサンプルを合成",
     "previewNeedsConfig": "プレビューする前に voice ID と認証情報 ID を設定してください",
-    "previewSample": "音声チャンネルで話すとき、ツインはこのように聞こえます。"
+    "previewSample": "音声チャンネルで話すとき、ツインはこのように聞こえます。",
+    "eyebrowAtelier": "Voice Studio",
+    "atelierVariantLabel": "Atelier",
+    "currentVariantLabel": "Current",
+    "stageEmptyHeadline": "No voice on file yet",
+    "stageEmptyBody": "Paste a Voice ID from your ElevenLabs library and link the API credential — the stage will preview here.",
+    "stageReadyHeadline": "Voice ready to synthesize",
+    "stageReadyBody": "Hit preview to hear how the twin sounds with the current synthesis settings.",
+    "kpiVoiceSet": "voice id",
+    "kpiCredential": "credential",
+    "kpiModel": "model",
+    "kpiPreview": "preview",
+    "kpiReady": "ready",
+    "kpiMissing": "missing",
+    "sectionIdentity": "Voice identity",
+    "sectionSynthesis": "Synthesis controls",
+    "sectionModel": "Model selection"
   },
   "training": {
     "title": "Training Room",
@@ -262,7 +278,13 @@
     "bulkRejectedToast": "{count} 件のメモリを拒否しました。",
     "bulkPartialToast": "{succeeded} 件レビュー、{failed} 件失敗 — 詳細はトーストを確認してください。",
     "provenanceChip": "from {id}…",
-    "provenanceTooltip": "ソースコミュニケーション ID: {id}"
+    "provenanceTooltip": "ソースコミュニケーション ID: {id}",
+    "ingestDocsTitle": "Seed from product docs",
+    "ingestDocsDescription": "Embed every page under docs/features/ into this twin's knowledge base. Lets the twin answer questions about Personas itself (events, triggers, recipes, …).",
+    "ingestDocsButton": "Ingest docs/features",
+    "ingestDocsLoading": "Ingesting…",
+    "ingestDocsSuccess": "Ingested {files} file(s) ({chunks} chunks). {skipped} already up-to-date.",
+    "ingestDocsErrorNoKb": "Bind a knowledge base in the Knowledge tab first."
   },
   "profiles": {
     "title": "Twin Profiles",

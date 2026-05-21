@@ -15,6 +15,8 @@ import { BaseModal } from '@/lib/ui/BaseModal';
 import { DocumentsTab } from './tabs/DocumentsTab';
 import { SearchTab } from './tabs/SearchTab';
 import { SettingsTab } from './tabs/SettingsTab';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 type VectorTab = 'documents' | 'search' | 'settings';
 
@@ -85,7 +87,7 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
       useVaultStore.setState((s) => ({
         credentials: s.credentials.map((c) => (c.id === credential.id ? updated : c)),
       }));
-    } catch { /* intentional: non-critical -- rename is best-effort */ }
+    } catch (err) { silentCatch("features/vault/shared/vector/VectorKbModal:catch1")(err); }
     setIsEditingName(false);
   }, [credential.id, credential.name, editName]);
 

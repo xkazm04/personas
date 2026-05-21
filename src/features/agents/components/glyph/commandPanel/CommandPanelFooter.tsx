@@ -1,5 +1,7 @@
 import { ArrowUp, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { DebtText } from '@/i18n/DebtText';
+
 
 interface CommandPanelFooterProps {
   launchDisabled: boolean;
@@ -44,9 +46,9 @@ export function CommandPanelFooter({
 
   return (
     <div className="border-t border-border/25 bg-foreground/[0.03] px-5 md:px-6 py-3 flex items-center justify-between gap-3">
-      <span className="typo-caption text-foreground/75">
-        <kbd className="font-medium text-foreground/90">Enter</kbd> to summon ·{" "}
-        <kbd className="font-medium text-foreground/90">Shift + Enter</kbd> for a new line
+      <span className="typo-caption text-foreground">
+        <kbd className="font-medium text-foreground/90">Enter</kbd> <DebtText k="auto_to_summon_e605aca1" />{" "}
+        <kbd className="font-medium text-foreground/90"><DebtText k="auto_shift_enter_b407b123" /></kbd> <DebtText k="auto_for_a_new_line_e7492ce0" />
       </span>
       <button
         type="button"

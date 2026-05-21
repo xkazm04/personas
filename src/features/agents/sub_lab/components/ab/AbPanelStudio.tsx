@@ -19,6 +19,8 @@ import { DiffViewer } from '@/features/agents/sub_lab/shared';
 import { AbHistory } from './AbHistory';
 import { ModelToggleGrid, UseCaseFilterPicker, LabPanelShell } from '../../shared';
 import { useTranslation } from '@/i18n/useTranslation';
+import { DebtText, debtText } from '@/i18n/DebtText';
+
 
 interface FighterCardProps {
   side: 'A' | 'B';
@@ -41,7 +43,7 @@ function FighterCard({ side, versionId, setVersionId, options, testIdPrefix }: F
     <div className={`rounded-modal border ${accent.border} ${accent.bg} px-4 py-4 flex flex-col gap-3`}>
       <div className="flex items-center justify-between">
         <span className={`px-2 py-0.5 typo-label rounded-pill ${accent.chip}`}>Corner {side}</span>
-        {selected && <Trophy className="w-4 h-4 text-foreground/30" aria-hidden />}
+        {selected && <Trophy className="w-4 h-4 text-foreground" aria-hidden />}
       </div>
 
       {/* Fighter identity */}
@@ -49,12 +51,12 @@ function FighterCard({ side, versionId, setVersionId, options, testIdPrefix }: F
         {selected ? (
           <>
             <div className={`typo-hero font-bold ${accent.text} leading-none`}>v{selected.versionNumber}</div>
-            <div className="flex items-center gap-1.5 typo-caption text-foreground/70">
+            <div className="flex items-center gap-1.5 typo-caption text-foreground">
               <Tag className="w-3 h-3" /> {selected.tag}
             </div>
           </>
         ) : (
-          <div className="typo-body text-foreground/50">No fighter selected</div>
+          <div className="typo-body text-foreground"><DebtText k="auto_no_fighter_selected_11363653" /></div>
         )}
       </div>
 
@@ -98,11 +100,11 @@ function FighterCard({ side, versionId, setVersionId, options, testIdPrefix }: F
       {selected && (
         <div className="grid grid-cols-2 gap-2 pt-2 border-t border-primary/10">
           <div>
-            <div className="typo-label text-foreground/50">version</div>
+            <div className="typo-label text-foreground">version</div>
             <div className="typo-data text-foreground">v{selected.versionNumber}</div>
           </div>
           <div>
-            <div className="typo-label text-foreground/50">stage</div>
+            <div className="typo-label text-foreground">stage</div>
             <div className="typo-data text-foreground capitalize">{selected.tag}</div>
           </div>
         </div>
@@ -145,12 +147,12 @@ export function AbPanelStudio() {
 
           <div className="flex flex-col items-center justify-center gap-1 px-2">
             <div className="w-12 h-12 rounded-full border border-primary/20 bg-secondary/30 flex items-center justify-center">
-              <Swords className="w-5 h-5 text-foreground/60" />
+              <Swords className="w-5 h-5 text-foreground" />
             </div>
-            <span className="typo-label text-foreground/60">vs</span>
+            <span className="typo-label text-foreground">vs</span>
             {s.versionA && s.versionB && (
               <span className="typo-caption text-emerald-400 flex items-center gap-1 mt-1">
-                <Calendar className="w-3 h-3" /> match set
+                <Calendar className="w-3 h-3" /> <DebtText k="auto_match_set_142b1767" />
               </span>
             )}
           </div>
@@ -168,9 +170,9 @@ export function AbPanelStudio() {
         {s.versionA && s.versionB && (
           <div className="rounded-card border border-primary/15 bg-background/30 px-4 py-3 animate-fade-slide-in">
             <div className="flex items-center gap-2 mb-2">
-              <span className="typo-label text-foreground/60">round card</span>
+              <span className="typo-label text-foreground"><DebtText k="auto_round_card_055138e8" /></span>
               <span className="flex-1 h-px bg-primary/10" />
-              <span className="typo-caption text-foreground/50">diff preview</span>
+              <span className="typo-caption text-foreground"><DebtText k="auto_diff_preview_abf5e471" /></span>
             </div>
             <DiffViewer versionA={s.versionA} versionB={s.versionB} />
           </div>
@@ -179,7 +181,7 @@ export function AbPanelStudio() {
         {/* Contested params */}
         <div className="space-y-3 rounded-card border border-primary/10 bg-secondary/15 px-4 py-3">
           <div className="flex items-center gap-2">
-            <span className="typo-label text-foreground/60">contested test</span>
+            <span className="typo-label text-foreground"><DebtText k="auto_contested_test_cedfc67f" /></span>
             <span className="flex-1 h-px bg-primary/10" />
           </div>
           <ModelToggleGrid selectedModels={s.selectedModels} toggleModel={s.toggleModel} />
@@ -189,7 +191,7 @@ export function AbPanelStudio() {
             <textarea
               value={s.testInput}
               onChange={(e) => s.setTestInput(e.target.value)}
-              placeholder='{"task": "Summarize the latest sales report"}'
+              placeholder={debtText("auto_task_summarize_the_latest_sales_report_6c4a91ed")}
               className="w-full h-20 px-3 py-2 typo-code bg-background/50 border border-primary/20 rounded-modal text-foreground placeholder-muted-foreground/30 focus-ring resize-none font-mono"
             />
           </div>

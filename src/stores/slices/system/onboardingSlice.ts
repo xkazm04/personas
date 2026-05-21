@@ -3,6 +3,8 @@ import type { SystemStore } from "../../storeTypes";
 import { storeBus, AccessorKey } from "@/lib/storeBus";
 import type { Persona } from "@/lib/types/types";
 import * as Sentry from "@sentry/react";
+import { silentCatch } from '@/lib/silentCatch';
+
 
 // -- Types --------------------------------------------------------------
 
@@ -66,9 +68,7 @@ export interface OnboardingSlice {
 function trackMetric(name: string, attributes?: Record<string, string>) {
   try {
     Sentry.metrics.count(name, 1, attributes ? { attributes } : undefined);
-  } catch {
-    // intentional: non-critical -- Sentry may not be initialized in dev
-  }
+  } catch (err) { silentCatch("stores/slices/system/onboardingSlice:catch1")(err); }
 }
 
 // -- Slice --------------------------------------------------------------

@@ -103,7 +103,6 @@ export function buildDraft(persona: { name: string; description?: string | null;
     // then persist that reset over the real config. Callers should check
     // checkModelProfileIntegrity() before accepting a model-fields save.
     const rawLen = persona.model_profile ? persona.model_profile.length : 0;
-    // eslint-disable-next-line no-console
     console.warn(
       '[PersonaDraft] model_profile JSON parse failed — fields reset; auto-save of model fields will be blocked until re-selected',
       { rawLength: rawLen, error: err instanceof Error ? err.message : String(err) },

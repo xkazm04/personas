@@ -303,7 +303,8 @@
     "from_templates": "টেমপ্লেট থেকে",
     "todos_label": "Todos",
     "todos_subtitle_open": "{count} open",
-    "todos_empty": "All clear."
+    "todos_empty": "All clear.",
+    "mission_control_eyebrow": "Mission Control"
   },
   "execution_metrics": {
     "title": "এক্সিকিউশন মেট্রিক্স",

@@ -78,7 +78,7 @@ export function ExpandedRowContent({
     { key: 'events',        label: t.templates.expanded.events,        icon: Zap,       color: '#f59e0b', count: eventCount },
     { key: 'reviews',       label: t.templates.expanded.reviews_label, icon: UserCheck, color: '#f97316', count: reviewCount },
     { key: 'notifications', label: t.templates.expanded.notifications, icon: Bell,      color: '#10b981', count: notifCount },
-  ], [flows.length, archCount, eventCount, reviewCount, notifCount]);
+  ], [t.templates.expanded.use_cases, t.templates.expanded.architecture, t.templates.expanded.events, t.templates.expanded.reviews_label, t.templates.expanded.notifications, flows.length, archCount, eventCount, reviewCount, notifCount]);
 
   return (
     <div className="py-3 px-4 flex items-center gap-4">

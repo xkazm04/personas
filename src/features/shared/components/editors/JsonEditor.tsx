@@ -2,6 +2,8 @@ import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { Check, X, AlignLeft } from 'lucide-react';
 import { Tooltip } from '../display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 interface JsonEditorProps {
   value: string;
@@ -127,7 +129,7 @@ export function JsonEditor({ value, onChange, placeholder }: JsonEditorProps) {
     } catch (e) {
       return { error: e instanceof SyntaxError ? e.message : t.shared.json_invalid };
     }
-  }, [value]);
+  }, [t.shared.json_invalid, value]);
 
   const isValid = validationState === 'valid';
   const isError = typeof validationState === 'object';
@@ -147,9 +149,7 @@ export function JsonEditor({ value, onChange, placeholder }: JsonEditorProps) {
     try {
       const parsed = JSON.parse(value);
       onChange(JSON.stringify(parsed, null, 2));
-    } catch {
-      // intentional: non-critical -- JSON parse fallback (can't format invalid JSON)
-    }
+    } catch (err) { silentCatch("features/shared/components/editors/JsonEditor:catch1")(err); }
   }, [value, onChange]);
 
   // Sync scroll between textarea and pre

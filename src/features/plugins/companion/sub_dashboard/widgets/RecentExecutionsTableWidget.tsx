@@ -3,6 +3,8 @@ import { CheckCircle2, XCircle, Clock, Loader2 } from 'lucide-react';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useShallow } from 'zustand/react/shallow';
 import type { WidgetProps } from '../widgetRegistry';
+import { DebtText } from '@/i18n/DebtText';
+
 
 /**
  * Recent executions table — last N runs with status, persona, cost,
@@ -31,17 +33,17 @@ export function RecentExecutionsTableWidget({ config, title }: WidgetProps) {
 
   return (
     <div className="rounded-card border border-foreground/10 bg-foreground/[0.02] p-4 h-full flex flex-col">
-      <div className="typo-caption text-foreground/60 uppercase tracking-wide mb-2">
+      <div className="typo-caption text-foreground uppercase tracking-wide mb-2">
         {title ?? `Recent executions (last ${limit})`}
       </div>
       <div className="flex-1 min-h-0 overflow-auto">
         {visible.length === 0 ? (
-          <div className="h-full flex items-center justify-center typo-caption text-foreground/40">
-            No executions
+          <div className="h-full flex items-center justify-center typo-caption text-foreground">
+            <DebtText k="auto_no_executions_6bfc0367" />
           </div>
         ) : (
           <table className="w-full typo-caption">
-            <thead className="text-foreground/50">
+            <thead className="text-foreground">
               <tr className="text-left">
                 <th className="font-medium pb-1.5">Status</th>
                 <th className="font-medium pb-1.5">Persona</th>
@@ -65,13 +67,13 @@ export function RecentExecutionsTableWidget({ config, title }: WidgetProps) {
                     <td className="py-1.5 text-foreground/85 truncate max-w-[180px]">
                       {(r as { persona_name?: string }).persona_name ?? r.persona_id.slice(0, 8)}
                     </td>
-                    <td className="py-1.5 text-right tabular-nums text-foreground/70">
+                    <td className="py-1.5 text-right tabular-nums text-foreground">
                       ${r.cost_usd.toFixed(4)}
                     </td>
-                    <td className="py-1.5 text-right tabular-nums text-foreground/70">
+                    <td className="py-1.5 text-right tabular-nums text-foreground">
                       {r.duration_ms != null ? `${(r.duration_ms / 1000).toFixed(1)}s` : '—'}
                     </td>
-                    <td className="py-1.5 text-right text-foreground/50">
+                    <td className="py-1.5 text-right text-foreground">
                       {formatRelative(r.started_at ?? r.created_at)}
                     </td>
                   </tr>

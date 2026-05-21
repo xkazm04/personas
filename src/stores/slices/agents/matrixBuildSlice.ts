@@ -40,6 +40,8 @@ import type {
 } from "@/lib/types/buildTypes";
 import { isBuildPhase, isCellBuildStatus } from "@/lib/types/buildTypes";
 import { storeBus } from "@/lib/storeBus";
+import { silentCatch } from '@/lib/silentCatch';
+
 
 // Inlined from the retired gallery/matrix/matrixEditTypes.ts.
 // All UI consumers (the *EditCell components) were deleted with the matrix
@@ -665,7 +667,7 @@ export const createMatrixBuildSlice: StateCreator<
           const summary = obj.summary as string | undefined;
           cellData[event.cell_key] = { items, summary, raw: obj };
         }
-      } catch { /* ignore parse errors */ }
+      } catch (err) { silentCatch("stores/slices/agents/matrixBuildSlice:catch1")(err); }
 
       const prevStatus = sess.cellStates[event.cell_key];
       // Validate against the CellBuildStatus union. Backend drift (rename or

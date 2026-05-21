@@ -54,7 +54,7 @@ const SECTION_LABEL = 'typo-heading uppercase tracking-wider text-foreground fle
 
 function ConnectorsToolsSection({ designResult }: { designResult: AgentIR }) {
   const { t } = useTranslation();
-  const suggestedConnectors = designResult.suggested_connectors ?? [];
+  const suggestedConnectors = useMemo(() => designResult.suggested_connectors ?? [], [designResult.suggested_connectors]);
 
   const connectorRows = useMemo(() => {
     const linkedTools = new Set<string>();

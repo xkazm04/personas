@@ -7,17 +7,9 @@ export default function ProcessActivityIndicator() {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   // Subscribe to the primitive count, maintained in sync with activeProcesses
-  // by the slice. Previously this read `Object.keys(activeProcesses).length`
-  // inside a useShallow selector that re-ran on every store mutation —
-  // including telemetry ticks (enrichProcess) that don't change the count.
-  // With Object.is equality on a number, the indicator now re-renders only
-  // when the count actually transitions.
-  let count = 0;
-  try {
-    count = useOverviewStore((s) => s.activeProcessCount);
-  } catch {
-    // Store broken — render icon with no badge
-  }
+  // by the slice. With Object.is equality on a number, the indicator re-renders
+  // only when the count actually transitions.
+  const count = useOverviewStore((s) => s.activeProcessCount);
 
   const isActive = count > 0;
 

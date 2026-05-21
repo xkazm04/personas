@@ -27,6 +27,8 @@ import { connectorCategoryTags } from '@/lib/credentials/builtinConnectors';
 import type { DiscoveredItem } from '@/api/discovery/discovery';
 import { CredentialPickerCards } from './CredentialPickerCards';
 import { QuickAddCredentialModal } from '@/features/templates/sub_generated/adoption/QuickAddCredentialModal';
+import { DebtText } from '@/i18n/DebtText';
+
 
 /** Sentinel value emitted when the user picks the "Use a different credential"
  *  card — the questionnaire host opens QuickAddCredentialModal in response. */
@@ -92,12 +94,12 @@ export function VaultConnectorPicker({
           className="flex flex-col items-start gap-2 rounded-card border border-dashed border-border bg-foreground/[0.02] p-4"
           data-testid="vault-connector-picker-empty"
         >
-          <span className="typo-body text-foreground/80">
+          <span className="typo-body text-foreground">
             {/* intentionally un-i18n'd pending translation key approval; see handoff */}
-            No <strong>{category}</strong> connector in your vault yet.
+            No <strong>{category}</strong> <DebtText k="auto_connector_in_your_vault_yet_852a324e" />
           </span>
-          <span className="typo-caption text-foreground/55">
-            Add one inline, or open the full Catalog.
+          <span className="typo-caption text-foreground">
+            <DebtText k="auto_add_one_inline_or_open_the_full_catalog_fc0bb46a" />
           </span>
           <div className="flex items-center gap-2">
             <button
@@ -113,10 +115,10 @@ export function VaultConnectorPicker({
               <button
                 type="button"
                 onClick={() => onAddFromCatalog(category)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-input bg-secondary/30 hover:bg-secondary/40 border border-border/40 typo-caption text-foreground/70 cursor-pointer transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-input bg-secondary/30 hover:bg-secondary/40 border border-border/40 typo-caption text-foreground cursor-pointer transition-colors"
                 data-testid="vault-connector-picker-add"
               >
-                Open Catalog
+                <DebtText k="auto_open_catalog_1e8f5a54" />
               </button>
             )}
           </div>

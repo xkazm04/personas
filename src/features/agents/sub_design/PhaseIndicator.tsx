@@ -94,7 +94,7 @@ export function PhaseIndicator({ phase }: PhaseIndicatorProps) {
                 />
               </div>
               <span
-                className={`text-sm font-medium truncate transition-colors duration-300 ${
+                className={`typo-heading font-medium truncate transition-colors duration-300 ${
                   isActive
                     ? isError
                       ? 'text-red-300'

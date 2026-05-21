@@ -8,6 +8,8 @@ import { getActiveSeedIds, getSeedReviews, SEED_RUN_ID } from '@/lib/personas/te
 import { invalidateTemplateCatalog } from '@/lib/personas/templates/templateCatalog';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import { createSWRFetcher, invalidateSWRCache } from '@/lib/utils/staleWhileRevalidate';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 const SWR_KEY = 'design-reviews';
 const fetchReviewsSWR = createSWRFetcher(SWR_KEY, () => listDesignReviews());
@@ -116,9 +118,7 @@ export function useDesignReviews() {
       invalidateSWRCache(SWR_KEY);
       const { data } = await fetchReviewsSWR();
       setReviews(data);
-    } catch {
-      // intentional: non-critical -- seeding catalog templates is best-effort
-    }
+    } catch (err) { silentCatch("hooks/design/template/useDesignReviews:catch1")(err); }
   }, []);
 
   useEffect(() => {
@@ -261,9 +261,7 @@ export function useDesignReviews() {
     if (currentRunId.current) {
       try {
         await cancelDesignReviewRun(currentRunId.current);
-      } catch {
-        // intentional: non-critical -- cancellation is best-effort
-      }
+      } catch (err) { silentCatch("hooks/design/template/useDesignReviews:catch2")(err); }
     }
     if (unlistenRef.current) {
       unlistenRef.current();

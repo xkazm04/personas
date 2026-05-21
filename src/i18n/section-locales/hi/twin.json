@@ -142,7 +142,23 @@
     "previewStop": "रोकें",
     "previewTooltip": "वर्तमान सेटिंग्स के साथ एक छोटा नमूना संश्लेषित करें",
     "previewNeedsConfig": "पूर्वावलोकन से पहले voice id और credential id सेट करें",
-    "previewSample": "voice चैनल के माध्यम से बोलते समय आपका ट्विन ऐसा सुनाई देगा।"
+    "previewSample": "voice चैनल के माध्यम से बोलते समय आपका ट्विन ऐसा सुनाई देगा।",
+    "eyebrowAtelier": "Voice Studio",
+    "atelierVariantLabel": "Atelier",
+    "currentVariantLabel": "Current",
+    "stageEmptyHeadline": "No voice on file yet",
+    "stageEmptyBody": "Paste a Voice ID from your ElevenLabs library and link the API credential — the stage will preview here.",
+    "stageReadyHeadline": "Voice ready to synthesize",
+    "stageReadyBody": "Hit preview to hear how the twin sounds with the current synthesis settings.",
+    "kpiVoiceSet": "voice id",
+    "kpiCredential": "credential",
+    "kpiModel": "model",
+    "kpiPreview": "preview",
+    "kpiReady": "ready",
+    "kpiMissing": "missing",
+    "sectionIdentity": "Voice identity",
+    "sectionSynthesis": "Synthesis controls",
+    "sectionModel": "Model selection"
   },
   "training": {
     "title": "Training Room",
@@ -262,7 +278,13 @@
     "bulkRejectedToast": "{count} स्मृतियाँ अस्वीकार की गईं।",
     "bulkPartialToast": "{succeeded} समीक्षित, {failed} विफल — विवरण के लिए टोस्ट देखें।",
     "provenanceChip": "{id}… से",
-    "provenanceTooltip": "स्रोत संचार id: {id}"
+    "provenanceTooltip": "स्रोत संचार id: {id}",
+    "ingestDocsTitle": "Seed from product docs",
+    "ingestDocsDescription": "Embed every page under docs/features/ into this twin's knowledge base. Lets the twin answer questions about Personas itself (events, triggers, recipes, …).",
+    "ingestDocsButton": "Ingest docs/features",
+    "ingestDocsLoading": "Ingesting…",
+    "ingestDocsSuccess": "Ingested {files} file(s) ({chunks} chunks). {skipped} already up-to-date.",
+    "ingestDocsErrorNoKb": "Bind a knowledge base in the Knowledge tab first."
   },
   "profiles": {
     "title": "Twin Profiles",

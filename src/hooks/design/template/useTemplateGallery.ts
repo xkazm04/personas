@@ -64,14 +64,14 @@ export function useTemplateGallery(coverageServiceTypes?: string[], perPage?: nu
     if (ai.aiSearchMode && !value.trim()) {
       ai.clearAiSearch();
     }
-  }, [ai.aiSearchMode, ai.clearAiSearch]);
+  }, [ai]);
 
   // When clearing AI search, also reset the search text so the subsequent
   // refetch doesn't use the stale AI query as a keyword filter.
   const clearAiSearch = useCallback(() => {
     ai.clearAiSearch();
     queryRef.current?.setSearch('');
-  }, [ai.clearAiSearch]);
+  }, [ai]);
 
   return {
     allItems: query.items,

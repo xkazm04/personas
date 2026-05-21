@@ -7,6 +7,8 @@ import { useToastStore } from '@/stores/toastStore';
 import { detectConflicts, type MemoryConflict, type ConflictResolution } from '../libs/memoryConflicts';
 import { mergeMemories } from '../libs/conflictHelpers';
 import ConflictCard from './ConflictCard';
+import { DebtText } from '@/i18n/DebtText';
+
 
 interface MemoryConflictReviewProps {
   onConflictsResolved?: () => void;
@@ -121,7 +123,7 @@ export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictRevi
               {unresolvedConflicts.length === 0 ? (
                 <div className="text-center py-6 typo-body text-foreground">
                   <Check className="w-5 h-5 mx-auto mb-2 text-emerald-400" />
-                  All conflicts resolved
+                  <DebtText k="auto_all_conflicts_resolved_b848395b" />
                 </div>
               ) : (
                 unresolvedConflicts.map((conflict) => (

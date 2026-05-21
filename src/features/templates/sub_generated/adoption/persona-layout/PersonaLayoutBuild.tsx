@@ -249,7 +249,7 @@ export function PersonaLayoutBuild({
                 {t.templates.chronology.hub_phase_test_complete}
               </span>
               {testError && (
-                <p className="typo-caption text-foreground/65 max-w-[220px] line-clamp-2 text-center">
+                <p className="typo-caption text-foreground max-w-[220px] line-clamp-2 text-center">
                   {testError}
                 </p>
               )}
@@ -268,7 +268,7 @@ export function PersonaLayoutBuild({
               : t.templates.chronology.hub_phase_analyzing}
           </span>
           {buildActivity && (
-            <span className="typo-caption text-foreground/65 max-w-[260px] text-center line-clamp-2">
+            <span className="typo-caption text-foreground max-w-[260px] text-center line-clamp-2">
               {buildActivity}
             </span>
           )}
@@ -281,7 +281,7 @@ export function PersonaLayoutBuild({
           <span className="typo-label uppercase tracking-[0.2em] text-status-info">
             {t.templates.chronology.hub_phase_draft_ready}
           </span>
-          <span className="typo-caption text-foreground/65 max-w-[260px] text-center">
+          <span className="typo-caption text-foreground max-w-[260px] text-center">
             {t.templates.adopt_modal.persona_layout_build_draft_ready_hint}
           </span>
         </div>
@@ -353,7 +353,7 @@ export function PersonaLayoutBuild({
               <button
                 type="button"
                 onClick={onRejectTest}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-foreground/60 hover:text-foreground typo-caption cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-foreground hover:text-foreground typo-caption cursor-pointer"
               >
                 <X className="w-3.5 h-3.5" />
                 {t.common.reject}
@@ -392,7 +392,7 @@ export function PersonaLayoutBuild({
             className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-full typo-caption cursor-pointer transition-colors ${
               refineOpen
                 ? 'bg-primary/15 border border-primary/35 text-foreground'
-                : 'text-foreground/60 hover:text-foreground'
+                : 'text-foreground hover:text-foreground'
             }`}
           >
             <RefreshCw className="w-3.5 h-3.5" />
@@ -516,7 +516,7 @@ function RefineComposer({ initialText, onCancel, onSend }: RefineComposerProps) 
         <button
           type="button"
           onClick={onCancel}
-          className="p-1 rounded-card text-foreground/55 hover:text-foreground hover:bg-foreground/[0.06] transition-colors cursor-pointer"
+          className="p-1 rounded-card text-foreground hover:text-foreground hover:bg-foreground/[0.06] transition-colors cursor-pointer"
           aria-label={t.common.close}
           title={t.common.close}
         >
@@ -543,7 +543,7 @@ function RefineComposer({ initialText, onCancel, onSend }: RefineComposerProps) 
         <button
           type="button"
           onClick={onCancel}
-          className="typo-caption px-3 py-1.5 rounded-full text-foreground/65 hover:text-foreground transition-colors cursor-pointer"
+          className="typo-caption px-3 py-1.5 rounded-full text-foreground hover:text-foreground transition-colors cursor-pointer"
         >
           {t.common.cancel}
         </button>

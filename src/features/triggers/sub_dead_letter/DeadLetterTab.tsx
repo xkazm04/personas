@@ -43,7 +43,7 @@ export function DeadLetterTab() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [addToast]);
 
   useEffect(() => { void loadEvents(); }, [loadEvents]);
 

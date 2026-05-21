@@ -67,7 +67,7 @@ export function RefineChips({
             type="button"
             disabled={disabled}
             onClick={() => onSend(`${priorUserMessage}${c.suffix}`)}
-            className="inline-flex items-center gap-1 rounded-interactive border border-foreground/15 bg-foreground/[0.04] hover:bg-foreground/[0.08] disabled:opacity-40 disabled:cursor-not-allowed px-2 py-0.5 typo-caption text-foreground/65 transition-colors"
+            className="inline-flex items-center gap-1 rounded-interactive border border-foreground/15 bg-foreground/[0.04] hover:bg-foreground/[0.08] disabled:opacity-40 disabled:cursor-not-allowed px-2 py-0.5 typo-caption text-foreground transition-colors"
           >
             <Icon className="w-3 h-3" />
             <span>{c.label}</span>

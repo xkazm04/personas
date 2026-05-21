@@ -6,6 +6,8 @@ import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import type { GlyphRow, GlyphDimension } from './types';
 import { DIM_META } from './dimMeta';
 import { DimContent } from './dimContent';
+import { DebtText, debtText } from '@/i18n/DebtText';
+
 
 interface DimensionPanelProps {
   dim: GlyphDimension;
@@ -58,13 +60,13 @@ export function DimensionPanel({ dim, row, onClose, onRefine, isBuilding }: Dime
         <button
           type="button"
           onClick={onClose}
-          className="w-7 h-7 rounded-full bg-primary/10 hover:bg-primary/20 border border-card-border flex items-center justify-center text-foreground/75 hover:text-foreground cursor-pointer transition-colors"
-          title="Back to leaves"
+          className="w-7 h-7 rounded-full bg-primary/10 hover:bg-primary/20 border border-card-border flex items-center justify-center text-foreground hover:text-foreground cursor-pointer transition-colors"
+          title={debtText("auto_back_to_leaves_84907682")}
         >
           <ArrowLeft className="w-3.5 h-3.5" />
         </button>
         <span
-          className="w-7 h-7 rounded-md flex items-center justify-center"
+          className="w-7 h-7 rounded-input flex items-center justify-center"
           style={{ background: `${meta.color}33`, boxShadow: `0 0 8px ${meta.color}55` }}
         >
           <Icon className="w-4 h-4" style={{ color: '#fff' }} />
@@ -81,8 +83,8 @@ export function DimensionPanel({ dim, row, onClose, onRefine, isBuilding }: Dime
           className="flex flex-col gap-2 px-4 py-3 border-t border-card-border"
           style={{ background: `linear-gradient(180deg, transparent, ${meta.color}0a)` }}
         >
-          <label className="typo-label font-semibold uppercase tracking-[0.18em] text-foreground/70">
-            Refine this dimension
+          <label className="typo-label font-semibold uppercase tracking-[0.18em] text-foreground">
+            <DebtText k="auto_refine_this_dimension_4c22b730" />
           </label>
           <textarea
             value={refineText}
@@ -94,7 +96,7 @@ export function DimensionPanel({ dim, row, onClose, onRefine, isBuilding }: Dime
               }
             }}
             rows={2}
-            placeholder="Describe the change — e.g. 'switch review to on_uncertainty only'"
+            placeholder={debtText("auto_describe_the_change_e_g_switch_review_to_o_6839e49f")}
             className="w-full px-3 py-2 rounded-input border border-card-border bg-card-bg typo-body text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-primary/40 resize-none"
           />
           <button
@@ -103,14 +105,14 @@ export function DimensionPanel({ dim, row, onClose, onRefine, isBuilding }: Dime
             onClick={submitRefine}
             className="self-end inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary/15 border border-primary/30 hover:bg-primary/25 disabled:opacity-40 disabled:cursor-not-allowed typo-label font-semibold text-foreground cursor-pointer transition-colors"
           >
-            <Send className="w-3.5 h-3.5" /> Apply on rebuild
+            <Send className="w-3.5 h-3.5" /> <DebtText k="auto_apply_on_rebuild_9a3f781c" />
           </button>
         </div>
       )}
       {!!isBuilding && (
         <div className="px-4 py-3 border-t border-card-border bg-foreground/[0.03]">
-          <span className="typo-label text-foreground/65 italic">
-            Build in progress — dimensions are locked until the rebuild completes.
+          <span className="typo-label text-foreground italic">
+            <DebtText k="auto_build_in_progress_dimensions_are_locked_un_eafcd432" />
           </span>
         </div>
       )}

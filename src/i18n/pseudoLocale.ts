@@ -13,6 +13,8 @@
  * unaffected.
  */
 import type { Translations } from './generated/types';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 const LS_KEY = 'personas-pseudo-locale';
 
@@ -79,9 +81,7 @@ function writeFlag(on: boolean): void {
   try {
     if (on) localStorage.setItem(LS_KEY, '1');
     else localStorage.removeItem(LS_KEY);
-  } catch {
-    /* storage unavailable — non-fatal */
-  }
+  } catch (err) { silentCatch("i18n/pseudoLocale:catch1")(err); }
 }
 
 let active = false;
@@ -101,9 +101,7 @@ export function initPseudoLocale(): void {
     const param = new URLSearchParams(window.location.search).get('pseudo');
     if (param === '1') writeFlag(true);
     else if (param === '0') writeFlag(false);
-  } catch {
-    /* URL parsing unavailable — ignore */
-  }
+  } catch (err) { silentCatch("i18n/pseudoLocale:catch2")(err); }
 
   active = readFlag();
 

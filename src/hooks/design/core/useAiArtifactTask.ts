@@ -150,7 +150,7 @@ export function useAiArtifactTask<TArgs extends unknown[], TResult>(
 
       await stream.start(() => startFn(...args));
     },
-    [stream.start, startFn, traceOperation, errorMessage],
+    [traceOperation, stream, errorMessage, startFn],
   );
 
   const cancel = useCallback(() => {
@@ -159,7 +159,7 @@ export function useAiArtifactTask<TArgs extends unknown[], TResult>(
       traceSessionRef.current = null;
     }
     stream.cancel(cancelFn ? async () => { await cancelFn(); return; } : undefined);
-  }, [stream.cancel, cancelFn]);
+  }, [stream, cancelFn]);
 
   return {
     phase: stream.phase,

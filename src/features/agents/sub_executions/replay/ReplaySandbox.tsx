@@ -105,7 +105,7 @@ export function ReplaySandbox({ execution }: ReplaySandboxProps) {
     }, null, 2);
 
     setRerunInputData(forkInput);
-  }, [state.forkPoint, state.toolSteps, execution, setRerunInputData, addToast]);
+  }, [state.forkPoint, state.toolSteps, execution.id, execution.input_data, setRerunInputData, addToast, e.fork_input_parse_error]);
 
   if (logLoading) {
     return (

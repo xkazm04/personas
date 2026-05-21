@@ -21,6 +21,10 @@ import type { LangfuseStackInfo } from "@/lib/bindings/LangfuseStackInfo";
 import type { LangfuseStackState } from "@/lib/bindings/LangfuseStackState";
 import { StackProgress } from "./StackProgress";
 import type { UseLangfuseStack } from "./hooks/useLangfuseStack";
+import { silentCatch } from '@/lib/silentCatch';
+import { DebtText } from '@/i18n/DebtText';
+
+
 
 interface ManagedStackPanelProps {
   stack: UseLangfuseStack;
@@ -76,9 +80,7 @@ export function ManagedStackPanel({ stack, preferredPort }: ManagedStackPanelPro
       await navigator.clipboard.writeText(value);
       setCopied(kind);
       setTimeout(() => setCopied(null), 1800);
-    } catch {
-      // Clipboard write rejected — user can manually select.
-    }
+    } catch (err) { silentCatch("features/plugins/langfuse/ManagedStackPanel:catch1")(err); }
   };
 
   return (
@@ -109,10 +111,10 @@ export function ManagedStackPanel({ stack, preferredPort }: ManagedStackPanelPro
             <div className="typo-body font-medium text-foreground">
               {t.plugins.langfuse.resource_warning_title}
             </div>
-            <div className="typo-caption text-foreground/80">
+            <div className="typo-caption text-foreground">
               {t.plugins.langfuse.resource_warning_body}
             </div>
-            <div className="typo-caption text-foreground/80 italic">
+            <div className="typo-caption text-foreground italic">
               {t.plugins.langfuse.first_start_note}
             </div>
           </div>
@@ -155,10 +157,10 @@ export function ManagedStackPanel({ stack, preferredPort }: ManagedStackPanelPro
       {showAdminReveal && stack.adminCredentials && (
         <div className="rounded-card border border-primary/10 bg-secondary/10 p-4 space-y-3">
           <div>
-            <div className="typo-caption uppercase tracking-widest text-foreground/80">
+            <div className="typo-caption uppercase tracking-widest text-foreground">
               {t.plugins.langfuse.credentials_section}
             </div>
-            <div className="typo-caption text-foreground/80 mt-1">
+            <div className="typo-caption text-foreground mt-1">
               {t.plugins.langfuse.credentials_intro}
             </div>
           </div>
@@ -189,10 +191,10 @@ export function ManagedStackPanel({ stack, preferredPort }: ManagedStackPanelPro
       {/* Port preference */}
       <div className="rounded-card border border-primary/10 bg-secondary/5 p-4 space-y-3">
         <div>
-          <div className="typo-caption uppercase tracking-widest text-foreground/80">
+          <div className="typo-caption uppercase tracking-widest text-foreground">
             {t.plugins.langfuse.port_section}
           </div>
-          <div className="typo-caption text-foreground/80 mt-1">
+          <div className="typo-caption text-foreground mt-1">
             {t.plugins.langfuse.port_desc}
           </div>
         </div>
@@ -217,7 +219,7 @@ export function ManagedStackPanel({ stack, preferredPort }: ManagedStackPanelPro
             {t.plugins.langfuse.port_save}
           </button>
           {info.stackInitialized && (
-            <span className="typo-caption text-foreground/80">
+            <span className="typo-caption text-foreground">
               {tx(t.plugins.langfuse.port_actual, { port: info.port })}
             </span>
           )}
@@ -236,14 +238,14 @@ export function ManagedStackPanel({ stack, preferredPort }: ManagedStackPanelPro
           <button
             type="button"
             onClick={() => setShowConfig((v) => !v)}
-            className="inline-flex items-center gap-2 typo-caption text-foreground/80 hover:text-foreground transition-colors"
+            className="inline-flex items-center gap-2 typo-caption text-foreground hover:text-foreground transition-colors"
           >
             <Folder className="w-3.5 h-3.5" />
             {showConfig ? t.plugins.langfuse.hide_config : t.plugins.langfuse.show_config}
           </button>
           {showConfig && (
             <div className="rounded-card border border-primary/10 bg-secondary/10 p-3 space-y-1">
-              <div className="typo-caption text-foreground/80">
+              <div className="typo-caption text-foreground">
                 {t.plugins.langfuse.config_files_intro}
               </div>
               <div className="typo-code text-foreground select-all break-all">{info.stackDir}</div>
@@ -255,7 +257,7 @@ export function ManagedStackPanel({ stack, preferredPort }: ManagedStackPanelPro
       {/* Maintenance — destructive ops behind explicit confirmation */}
       {info.stackInitialized && (
         <div className="rounded-card border border-primary/10 bg-secondary/5 p-4 space-y-3">
-          <div className="typo-caption uppercase tracking-widest text-foreground/80">
+          <div className="typo-caption uppercase tracking-widest text-foreground">
             {t.plugins.langfuse.maintenance_section}
           </div>
           <div className="flex flex-wrap items-center gap-3">
@@ -275,7 +277,7 @@ export function ManagedStackPanel({ stack, preferredPort }: ManagedStackPanelPro
               {refreshing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
               {refreshing ? t.plugins.langfuse.refreshing_images : t.plugins.langfuse.refresh_images_button}
             </button>
-            <span className="typo-caption text-foreground/80">
+            <span className="typo-caption text-foreground">
               {t.plugins.langfuse.refresh_images_hint}
             </span>
           </div>
@@ -390,7 +392,7 @@ function StatusRow({
       <Icon className={`w-4 h-4 ${tone} ${starting || stopping ? "animate-spin" : ""}`} />
       <div className="flex-1 min-w-0">
         <div className="typo-body font-medium text-foreground">{label}</div>
-        <div className="typo-caption text-foreground/80">
+        <div className="typo-caption text-foreground">
           {info.hostUrl.replace(/^https?:\/\//, "")}
         </div>
       </div>
@@ -408,16 +410,16 @@ function renderState(
     case "composeMissing":
       return { label: t.plugins.langfuse.docker_section, tone: "text-amber-300", Icon: AlertTriangle };
     case "notInstalled":
-      return { label: t.plugins.langfuse.status_not_installed, tone: "text-foreground/80", Icon: Circle };
+      return { label: t.plugins.langfuse.status_not_installed, tone: "text-foreground", Icon: Circle };
     case "stopped":
     case "partial":
-      return { label: t.plugins.langfuse.status_stopped, tone: "text-foreground/80", Icon: Circle };
+      return { label: t.plugins.langfuse.status_stopped, tone: "text-foreground", Icon: Circle };
     case "running":
       return { label: t.plugins.langfuse.status_running, tone: "text-emerald-400", Icon: CheckCircle2 };
     case "unhealthy":
       return { label: t.plugins.langfuse.status_unhealthy, tone: "text-amber-300", Icon: AlertTriangle };
     default:
-      return { label: t.plugins.langfuse.status_unknown, tone: "text-foreground/80", Icon: Circle };
+      return { label: t.plugins.langfuse.status_unknown, tone: "text-foreground", Icon: Circle };
   }
 }
 
@@ -438,7 +440,7 @@ function DockerPreflight({
           <div className="typo-body text-foreground">
             {t.plugins.langfuse.docker_not_installed}
           </div>
-          <div className="typo-caption text-foreground/80">
+          <div className="typo-caption text-foreground">
             {t.plugins.langfuse.install_intro}
           </div>
           <DockerInstallActions stack={stack} />
@@ -452,7 +454,7 @@ function DockerPreflight({
         <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
         <div className="space-y-1">
           <div>{t.plugins.langfuse.docker_not_running}</div>
-          <div className="text-foreground/80">{t.plugins.langfuse.docker_start_hint}</div>
+          <div className="text-foreground">{t.plugins.langfuse.docker_start_hint}</div>
         </div>
       </div>
     );
@@ -461,13 +463,13 @@ function DockerPreflight({
     return (
       <div className="flex items-start gap-2 p-3 typo-caption rounded-card border border-red-500/20 bg-red-500/5 text-red-300">
         <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-        <span>Docker Compose isn't available. Please update Docker Desktop.</span>
+        <span><DebtText k="auto_docker_compose_isn_t_available_please_upda_b5d10f6a" /></span>
       </div>
     );
   }
 
   return (
-    <div className="typo-caption text-foreground/80">
+    <div className="typo-caption text-foreground">
       {info.dockerVersion
         ? tx(t.plugins.langfuse.docker_detected, { version: info.dockerVersion })
         : t.plugins.langfuse.docker_detected.replace("({version})", "").trim()}
@@ -569,7 +571,7 @@ function OutcomeBanner({
       <button
         type="button"
         onClick={() => stack.clearOutcome()}
-        className="text-foreground/80 hover:text-foreground"
+        className="text-foreground hover:text-foreground"
         aria-label={t.plugins.langfuse.outcome_dismiss}
       >
         <X className="w-4 h-4" />
@@ -605,7 +607,7 @@ function CredentialRow({
 }: CredentialRowProps) {
   return (
     <div className="flex items-center gap-3">
-      <div className="w-20 typo-caption text-foreground/80 flex-shrink-0">{label}</div>
+      <div className="w-20 typo-caption text-foreground flex-shrink-0">{label}</div>
       <div className="flex-1 min-w-0 typo-code text-foreground select-all truncate">
         {visible ? value : "•".repeat(Math.min(value.length, 16))}
       </div>
@@ -613,7 +615,7 @@ function CredentialRow({
         <button
           type="button"
           onClick={onToggleVisibility}
-          className="inline-flex items-center gap-1 px-2 py-1 typo-caption rounded border border-primary/10 hover:bg-secondary/40 text-foreground/80"
+          className="inline-flex items-center gap-1 px-2 py-1 typo-caption rounded border border-primary/10 hover:bg-secondary/40 text-foreground"
         >
           {visible ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
           {visible ? hideLabel : revealLabel}
@@ -622,7 +624,7 @@ function CredentialRow({
       <button
         type="button"
         onClick={onCopy}
-        className="inline-flex items-center gap-1 px-2 py-1 typo-caption rounded border border-primary/10 hover:bg-secondary/40 text-foreground/80"
+        className="inline-flex items-center gap-1 px-2 py-1 typo-caption rounded border border-primary/10 hover:bg-secondary/40 text-foreground"
       >
         <Copy className="w-3 h-3" />
         {copied ? copiedLabel : copyLabel}

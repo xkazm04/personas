@@ -2,7 +2,7 @@ import type { StateCreator } from "zustand";
 import type { AgentStore } from "../../storeTypes";
 import { errMsg, reportError } from "../../storeTypes";
 import { createLogger } from "@/lib/log";
-import { extractMessage } from "@/lib/silentCatch";
+import { extractMessage, silentCatch } from "@/lib/silentCatch";
 
 const logger = createLogger("persona");
 import type {
@@ -374,7 +374,7 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
       try {
         const { markPersonaEdited } = await import("@/features/home/components/useResumeContext");
         markPersonaEdited(id);
-      } catch { /* best-effort */ }
+      } catch (err) { silentCatch("stores/slices/agents/personaSlice:catch1")(err); }
     } catch (err) {
       reportError(err, "Failed to update persona", set);
       throw err;

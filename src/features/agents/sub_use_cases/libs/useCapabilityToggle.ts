@@ -43,6 +43,35 @@ export function useCapabilityToggle() {
 
   const fetchDetail = useAgentStore((s) => s.fetchDetail);
 
+  /** Actually flip the capability and show the result toast. */
+  const applyToggle = useCallback(
+    async (personaId: string, useCaseId: string, enabled: boolean) => {
+      setPendingUseCaseId(useCaseId);
+      try {
+        const result = await setUseCaseEnabled(personaId, useCaseId, enabled);
+        const verb = enabled ? 'Activated' : 'Paused';
+        const bits: string[] = [];
+        if (result.triggers_updated > 0) bits.push(`${result.triggers_updated} trigger${result.triggers_updated === 1 ? '' : 's'}`);
+        if (result.subscriptions_updated > 0) bits.push(`${result.subscriptions_updated} subscription${result.subscriptions_updated === 1 ? '' : 's'}`);
+        if (result.automations_updated > 0) bits.push(`${result.automations_updated} automation${result.automations_updated === 1 ? '' : 's'}`);
+        const suffix = bits.length > 0 ? ` (cascaded: ${bits.join(', ')})` : '';
+        useToastStore.getState().addToast(`${verb} capability${suffix}`, 'success');
+        // Refresh so the UI picks up updated design_context + trigger rows.
+        await fetchDetail(personaId);
+      } catch (err) {
+        toastCatch('useCapabilityToggle:apply')(err);
+        logger.error('Failed to toggle capability', {
+          use_case_id: useCaseId,
+          enabled,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      } finally {
+        setPendingUseCaseId(null);
+      }
+    },
+    [fetchDetail],
+  );
+
   /**
    * Entry point for the toggle button. If the user is activating a
    * capability, apply immediately. If disabling and there are cascaded
@@ -73,36 +102,7 @@ export function useCapabilityToggle() {
         logger.error('Failed to preview cascade', { error: err instanceof Error ? err.message : String(err) });
       }
     },
-    [],
-  );
-
-  /** Actually flip the capability and show the result toast. */
-  const applyToggle = useCallback(
-    async (personaId: string, useCaseId: string, enabled: boolean) => {
-      setPendingUseCaseId(useCaseId);
-      try {
-        const result = await setUseCaseEnabled(personaId, useCaseId, enabled);
-        const verb = enabled ? 'Activated' : 'Paused';
-        const bits: string[] = [];
-        if (result.triggers_updated > 0) bits.push(`${result.triggers_updated} trigger${result.triggers_updated === 1 ? '' : 's'}`);
-        if (result.subscriptions_updated > 0) bits.push(`${result.subscriptions_updated} subscription${result.subscriptions_updated === 1 ? '' : 's'}`);
-        if (result.automations_updated > 0) bits.push(`${result.automations_updated} automation${result.automations_updated === 1 ? '' : 's'}`);
-        const suffix = bits.length > 0 ? ` (cascaded: ${bits.join(', ')})` : '';
-        useToastStore.getState().addToast(`${verb} capability${suffix}`, 'success');
-        // Refresh so the UI picks up updated design_context + trigger rows.
-        await fetchDetail(personaId);
-      } catch (err) {
-        toastCatch('useCapabilityToggle:apply')(err);
-        logger.error('Failed to toggle capability', {
-          use_case_id: useCaseId,
-          enabled,
-          error: err instanceof Error ? err.message : String(err),
-        });
-      } finally {
-        setPendingUseCaseId(null);
-      }
-    },
-    [fetchDetail],
+    [applyToggle],
   );
 
   const confirmDisable = useCallback(

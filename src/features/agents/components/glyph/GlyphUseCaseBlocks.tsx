@@ -29,6 +29,8 @@ import { useSelectedUseCases } from "@/stores/selectors/personaSelectors";
 import { useAgentStore } from "@/stores/agentStore";
 import { useCapabilityToggle } from "@/features/agents/sub_use_cases/libs/useCapabilityToggle";
 import type { DesignUseCase } from "@/lib/types/frontendTypes";
+import { DebtText } from '@/i18n/DebtText';
+
 
 interface GlyphUseCaseBlockProps {
   useCase: DesignUseCase;
@@ -80,14 +82,14 @@ function GlyphUseCaseBlock({
             {useCase.title}
           </span>
           {triggerSummary && (
-            <span className="block typo-caption text-foreground/60 truncate">
+            <span className="block typo-caption text-foreground truncate">
               {triggerSummary}
             </span>
           )}
         </span>
         <ChevronRight
           className={
-            "h-3.5 w-3.5 text-foreground/40 transition-transform " +
+            "h-3.5 w-3.5 text-foreground transition-transform " +
             (expanded ? "rotate-90" : "")
           }
           aria-hidden
@@ -109,8 +111,8 @@ function GlyphUseCaseBlock({
                 <p className="leading-relaxed line-clamp-3">{useCase.description}</p>
               )}
               {useCase.tool_hints && useCase.tool_hints.length > 0 && (
-                <p className="text-foreground/60">
-                  <span className="font-medium text-foreground/75">Tools: </span>
+                <p className="text-foreground">
+                  <span className="font-medium text-foreground"><DebtText k="auto_tools_a2074920" /> </span>
                   {useCase.tool_hints.slice(0, 4).join(", ")}
                   {useCase.tool_hints.length > 4 && ` +${useCase.tool_hints.length - 4}`}
                 </p>

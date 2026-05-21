@@ -10,6 +10,8 @@ import type { GitHubRepo, GitHubPermissions, ZapierZap } from '@/api/agents/auto
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { PLATFORM_CONFIG } from '../../libs/automationTypes';
 import type { DesignUseCase } from '@/lib/types/frontendTypes';
+import { DebtText } from '@/i18n/DebtText';
+
 
 interface AutomationTriggerStepProps {
   description: string;
@@ -97,13 +99,13 @@ export function AutomationTriggerStep({
       {/* Capability scope (Phase C4) — optional; persona-wide by default */}
       {availableUseCases.length > 0 && (
         <div className="flex items-center gap-3">
-          <label className="typo-body text-foreground">Capability scope</label>
+          <label className="typo-body text-foreground"><DebtText k="auto_capability_scope_ef5ef511" /></label>
           <ThemedSelect
             wrapperClassName="flex-1"
             value={useCaseId ?? ''}
             onValueChange={(v) => setUseCaseId(v || null)}
           >
-            <option value="">Persona-wide (all capabilities)</option>
+            <option value=""><DebtText k="auto_persona_wide_all_capabilities_88066753" /></option>
             {availableUseCases.map((uc) => (
               <option key={uc.id} value={uc.id}>{uc.title}</option>
             ))}

@@ -10,6 +10,8 @@ import { RefreshCw, Search, Wand2 } from 'lucide-react';
 import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';
 import { SORT_MODES, type SortMode } from './types';
 import type { SourceOption } from './useRoutingFilters';
+import { DebtText, debtText } from '@/i18n/DebtText';
+
 
 type ClassKey = 'persona' | 'common' | 'external';
 
@@ -39,13 +41,13 @@ export function Toolbar(props: Props) {
     <div className="flex flex-wrap items-center gap-3 px-4 py-2.5 border-b border-primary/10 bg-card-bg/40">
       {/* Search */}
       <div className="relative flex-1 min-w-[200px] max-w-sm">
-        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground" />
         <input
           type="text"
           value={props.search}
           onChange={e => props.onSearchChange(e.target.value)}
-          placeholder="Filter events…"
-          className="w-full pl-8 pr-3 py-1.5 text-sm bg-secondary/30 border border-primary/10 rounded-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/40"
+          placeholder={debtText("auto_filter_events_ce0f34d9")}
+          className="w-full pl-8 pr-3 py-1.5 typo-body bg-secondary/30 border border-primary/10 rounded-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/40"
         />
       </div>
 
@@ -60,14 +62,14 @@ export function Toolbar(props: Props) {
         />
       </div>
 
-      <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none">
+      <label className="flex items-center gap-1.5 typo-caption text-foreground cursor-pointer select-none">
         <input type="checkbox" checked={props.showUnconnected} onChange={e => props.onShowUnconnectedChange(e.target.checked)} className="accent-primary" />
-        Show unconnected ({props.unconnectedCount})
+        <DebtText k="auto_show_unconnected_591153d9" />{props.unconnectedCount})
       </label>
 
-      <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none">
+      <label className="flex items-center gap-1.5 typo-caption text-foreground cursor-pointer select-none">
         <input type="checkbox" checked={props.activeOnly} onChange={e => props.onActiveOnlyChange(e.target.checked)} className="accent-emerald-400" />
-        Active within 1h only
+        <DebtText k="auto_active_within_1h_only_82477852" />
       </label>
 
       {/* Sort — themed dropdown matching the Source Personas filter style. */}
@@ -83,20 +85,20 @@ export function Toolbar(props: Props) {
 
       {/* Stats + actions */}
       <div className="ml-auto flex items-center gap-3">
-        <span className="text-xs text-muted-foreground tabular-nums">
+        <span className="typo-caption text-foreground tabular-nums">
           {props.visibleCount} event{props.visibleCount !== 1 ? 's' : ''} · {props.totalConnections} connection{props.totalConnections !== 1 ? 's' : ''}
         </span>
         <button
           onClick={props.onBackfill}
           disabled={props.isBackfilling}
-          className="p-1.5 rounded-card hover:bg-secondary/60 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
-          title="Backfill event handlers"
+          className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors disabled:opacity-40"
+          title={debtText("auto_backfill_event_handlers_c8c56de6")}
         >
           <Wand2 className={`w-4 h-4 ${props.isBackfilling ? 'animate-pulse' : ''}`} />
         </button>
         <button
           onClick={props.onReload}
-          className="p-1.5 rounded-card hover:bg-secondary/60 text-muted-foreground hover:text-foreground transition-colors"
+          className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors"
           title="Reload"
         >
           <RefreshCw className="w-4 h-4" />

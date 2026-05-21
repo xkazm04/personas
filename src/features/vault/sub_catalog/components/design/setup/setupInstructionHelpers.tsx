@@ -1,3 +1,4 @@
+import { silentCatch } from '@/lib/silentCatch';
 // -- Helpers -----------------------------------------------------
 
 /** Split markdown into logical step blocks by numbered list items or headings. */
@@ -51,7 +52,7 @@ export function readPersistedSteps(key: string): number[] {
   try {
     const saved = localStorage.getItem(key);
     if (saved) return JSON.parse(saved) as number[];
-  } catch { /* intentional: non-critical -- localStorage fallback */ }
+  } catch (err) { silentCatch("features/vault/sub_catalog/components/design/setup/setupInstructionHelpers:catch1")(err); }
   return [];
 }
 

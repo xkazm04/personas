@@ -47,7 +47,7 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
 
   useEffect(() => {
     return () => versioning.reset();
-  }, [recipe.id]);
+  }, [recipe.id, versioning]);
 
   const handleGenerate = useCallback(async () => {
     if (!requirements.trim()) return;

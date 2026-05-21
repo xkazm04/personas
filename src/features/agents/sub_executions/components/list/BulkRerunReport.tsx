@@ -134,7 +134,7 @@ function SummaryCard({ label, value, sub, tone, icon }: SummaryCardProps) {
         {icon}
         <span>{value}</span>
       </div>
-      <div className="typo-body text-foreground/70 mt-0.5">{sub}</div>
+      <div className="typo-body text-foreground mt-0.5">{sub}</div>
     </div>
   );
 }
@@ -148,7 +148,7 @@ interface KvCellProps {
 function KvCell({ label, value, tone = 'text-foreground' }: KvCellProps) {
   return (
     <div className="px-3 py-2 bg-secondary/20 border border-primary/10 rounded-card">
-      <div className="typo-code uppercase text-foreground/70 tracking-wider">{label}</div>
+      <div className="typo-code uppercase text-foreground tracking-wider">{label}</div>
       <div className={`typo-code mt-0.5 ${tone}`}>{value}</div>
     </div>
   );
@@ -198,16 +198,16 @@ function CohortRowList({ rows, onCompareItem }: CohortRowListProps) {
           >
             <div className="col-span-3 flex items-center gap-2 typo-code text-foreground/90">
               <span>#{it.originalId.slice(0, 8)}</span>
-              <span className="text-foreground/50">→</span>
+              <span className="text-foreground">→</span>
               {it.newExecutionId ? (
                 <span className="text-foreground/90">#{it.newExecutionId.slice(0, 8)}</span>
               ) : (
-                <span className="text-foreground/50">—</span>
+                <span className="text-foreground">—</span>
               )}
             </div>
             <div className="col-span-3 flex items-center gap-1.5 typo-body">
-              <span className="text-foreground/70">{it.origStatus}</span>
-              <span className="text-foreground/50">→</span>
+              <span className="text-foreground">{it.origStatus}</span>
+              <span className="text-foreground">→</span>
               <span className="text-foreground/95">{it.newStatus ?? '—'}</span>
             </div>
             <div className="col-span-2 typo-code text-foreground/90 flex items-center">

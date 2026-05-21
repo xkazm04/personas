@@ -152,7 +152,7 @@ export function TriggerExecutionHistory({ triggerId, personaId, defaultOpen = fa
     if (open && history.executions.length === 0 && !history.loading) {
       void history.fetch();
     }
-  }, [open]);
+  }, [history, open]);
 
   const toggle = () => setOpen((v) => !v);
 

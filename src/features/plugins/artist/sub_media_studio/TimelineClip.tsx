@@ -150,7 +150,7 @@ export default function TimelineClip({
       {/* Hover time badge — visible on hover, hidden during drag */}
       {!isDragging && (
         <div className="absolute -top-5 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-40">
-          <span className="px-1.5 py-0.5 rounded text-md font-mono bg-black/80 text-white/80 whitespace-nowrap tabular-nums">
+          <span className="px-1.5 py-0.5 rounded text-md font-mono bg-black/80 text-foreground whitespace-nowrap tabular-nums">
             {tooltipText}
           </span>
         </div>
@@ -162,7 +162,7 @@ export default function TimelineClip({
           onPointerDown={(e) => handlePointerDown(e, 'trim-left')}
         >
           <div className={`absolute left-0 top-1 bottom-1 w-1 rounded-full transition-colors ${
-            dragMode === 'trim-left' ? 'bg-white/80' : 'bg-white/0 group-hover/trim-l:bg-white/40'
+            dragMode === 'trim-left' ? 'bg-secondary/80' : 'bg-secondary/0 group-hover/trim-l:bg-secondary/40'
           }`} />
         </div>
       )}
@@ -183,7 +183,7 @@ export default function TimelineClip({
           onPointerDown={(e) => handlePointerDown(e, 'trim-right')}
         >
           <div className={`absolute right-0 top-1 bottom-1 w-1 rounded-full transition-colors ${
-            dragMode === 'trim-right' ? 'bg-white/80' : 'bg-white/0 group-hover/trim-r:bg-white/40'
+            dragMode === 'trim-right' ? 'bg-secondary/80' : 'bg-secondary/0 group-hover/trim-r:bg-secondary/40'
           }`} />
         </div>
       )}

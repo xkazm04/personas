@@ -12,6 +12,8 @@ import { useRecipeGenerator } from '@/hooks/design/template/useRecipeGenerator';
 import { RecipePlaygroundModal } from '@/features/recipes/sub_playground/components/RecipePlaygroundModal';
 import { RecipeCreateFlow } from './RecipeCreateFlow';
 import { RecipeListItem } from './RecipeListItem';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 interface CredentialRecipesTabProps {
   credentialId: string;
@@ -39,9 +41,7 @@ export function CredentialRecipesTab({ credentialId }: CredentialRecipesTabProps
     try {
       const r = await recipeApi.getCredentialRecipes(credentialId);
       setRecipes(r);
-    } catch {
-      // intentional: non-critical -- initial recipe list load; empty list shown on failure
-    } finally {
+    } catch (err) { silentCatch("features/vault/shared/playground/tabs/CredentialRecipesTab:catch1")(err); } finally {
       setLoading(false);
     }
   }, [credentialId]);
@@ -52,7 +52,7 @@ export function CredentialRecipesTab({ credentialId }: CredentialRecipesTabProps
 
   useEffect(() => {
     return () => generator.reset();
-  }, [credentialId]);
+  }, [credentialId, generator]);
 
   const handleGenerate = useCallback(async () => {
     if (!description.trim()) return;

@@ -144,7 +144,7 @@ export function useFileUpload(onContentPaste?: (content: string, sourceName: str
       };
       reader.readAsText(file);
     },
-    [forwardContent],
+    [],
   );
 
   const handleDrop = useCallback((e: React.DragEvent) => {

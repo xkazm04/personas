@@ -46,20 +46,20 @@ export function PersonaCrest({ personaName, useCases, variant = 'compact', right
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline gap-2">
-          <span className="typo-label uppercase tracking-wider text-foreground/55 shrink-0">{t.agents.use_cases.persona_label}</span>
+          <span className="typo-label uppercase tracking-wider text-foreground shrink-0">{t.agents.use_cases.persona_label}</span>
           <span className="typo-section-title text-foreground truncate">{personaName}</span>
         </div>
         <div className="flex items-center gap-3 mt-1 flex-wrap">
           <span className="typo-data font-mono text-foreground">{totalCount}</span>
-          <span className="typo-label uppercase tracking-wider text-foreground/65">{t.agents.use_cases.capabilities_label}</span>
+          <span className="typo-label uppercase tracking-wider text-foreground">{t.agents.use_cases.capabilities_label}</span>
           <span className="typo-caption text-status-success">{tx(t.agents.use_cases.capabilities_active, { count: activeCount })}</span>
           {attentionCount > 0 && (
             <span className="typo-caption text-status-warning">{tx(t.agents.use_cases.capabilities_attention, { count: attentionCount })}</span>
           )}
           {pausedCount > 0 && (
-            <span className="typo-caption text-foreground/55">{tx(t.agents.use_cases.capabilities_paused, { count: pausedCount })}</span>
+            <span className="typo-caption text-foreground">{tx(t.agents.use_cases.capabilities_paused, { count: pausedCount })}</span>
           )}
-          <span className="typo-caption text-foreground/45 ml-auto">
+          <span className="typo-caption text-foreground ml-auto">
             {tx(t.agents.use_cases.dimensions_coverage, { count: usedDims.size })}
           </span>
         </div>

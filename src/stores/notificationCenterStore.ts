@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 // ---------------------------------------------------------------------------
 // Types
@@ -67,9 +69,7 @@ function loadNotifications(): PipelineNotification[] {
 function saveNotifications(items: PipelineNotification[]): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items.slice(0, MAX_NOTIFICATIONS)));
-  } catch {
-    // intentional: localStorage quota exceeded or unavailable
-  }
+  } catch (err) { silentCatch("stores/notificationCenterStore:catch1")(err); }
 }
 
 // ---------------------------------------------------------------------------

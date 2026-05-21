@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 /**
  * Athena's video avatar — two stacked `<video>` elements that crossfade
@@ -113,9 +115,7 @@ export function AthenaAvatar({
     if (inactive) {
       try {
         inactive.pause();
-      } catch {
-        /* not yet ready — fine */
-      }
+      } catch (err) { silentCatch("features/plugins/companion/AthenaAvatar:catch1")(err); }
       inactive.currentTime = 0;
     }
   }, []);

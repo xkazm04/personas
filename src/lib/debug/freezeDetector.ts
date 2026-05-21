@@ -3,6 +3,8 @@
  *  When absent the module is a complete no-op (zero overhead). */
 
 import { unpatchAll, currentCallback } from './callbackTracker';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 const FLAG = '__personas_freeze_detector';
 const STORAGE_KEY = '__personas_freeze_events';
@@ -26,14 +28,14 @@ function memMB(): number | null {
 function push(ev: FreezeEvent): void {
   ring.push(ev);
   if (ring.length > RING_SIZE) ring.shift();
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(ring)); } catch { /* quota */ }
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(ring)); } catch (err) { silentCatch("lib/debug/freezeDetector:catch1")(err); }
 }
 
 async function reportSevere(ev: FreezeEvent): Promise<void> {
   try {
     const { invoke } = await import('@tauri-apps/api/core');
     await invoke('log_frontend_error', { level: 'warn', message: `UI freeze: ${ev.duration}ms ${JSON.stringify(ev)}` });
-  } catch { /* not in Tauri context */ }
+  } catch (err) { silentCatch("lib/debug/freezeDetector:catch2")(err); }
 }
 
 function tick(now: number): void {

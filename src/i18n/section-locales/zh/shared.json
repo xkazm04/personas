@@ -208,7 +208,11 @@
     "dev_tools_label": "开发工具",
     "obsidian_brain": "Obsidian Brain",
     "active_twin": "活跃孪生",
-    "research_lab": "研究实验室"
+    "research_lab": "研究实验室",
+    "back_to_home": "Home",
+    "whats_new": "What's New",
+    "back_to_plugins": "Plugins",
+    "roadmap": "Roadmap"
   },
   "execution_detail": {
     "copy": "复制",

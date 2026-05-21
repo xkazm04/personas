@@ -66,7 +66,7 @@ export function LabVariantTabs<T extends string>({
             className={`flex ${stack} ${padding} rounded-modal transition-colors border focus-ring disabled:opacity-40 disabled:cursor-not-allowed ${
               active
                 ? 'bg-primary/10 text-foreground border-primary/20'
-                : 'text-foreground/80 hover:bg-secondary/30 border-transparent'
+                : 'text-foreground hover:bg-secondary/30 border-transparent'
             }`}
           >
             <span className="flex items-center gap-1.5 typo-body font-medium">
@@ -74,7 +74,7 @@ export function LabVariantTabs<T extends string>({
               {tab.label}
             </span>
             {tab.subtitle && (
-              <span className="typo-caption text-foreground/60">{tab.subtitle}</span>
+              <span className="typo-caption text-foreground">{tab.subtitle}</span>
             )}
           </button>
         );

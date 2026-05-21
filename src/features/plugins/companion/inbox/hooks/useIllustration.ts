@@ -199,6 +199,6 @@ export function resolveIllustration(persona: PersonaLike): ResolvedIllustration 
 export function useIllustration(persona: PersonaLike): ResolvedIllustration {
   return useMemo(
     () => resolveIllustration(persona),
-    [persona.id, persona.icon, persona.name, persona.description, persona.template_category],
+    [persona],
   );
 }

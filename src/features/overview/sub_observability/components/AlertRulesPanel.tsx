@@ -13,6 +13,10 @@ import {
   type AlertSeverity,
   type AlertEvalHealth,
 } from '@/stores/slices/overview/alertSlice';
+import { silentCatch } from '@/lib/silentCatch';
+import { DebtText } from '@/i18n/DebtText';
+
+
 
 // -- Rule Form ---------------------------------------------------------
 
@@ -114,7 +118,7 @@ function RuleForm({
           onChange={(e) => setForm({ ...form, personaId: e.target.value === '__global__' ? null : e.target.value })}
           className="px-2.5 py-1.5 typo-body rounded-card bg-secondary/40 border border-primary/15 text-foreground focus-visible:outline-none flex-1 min-w-[120px]"
         >
-          <option value="__global__">All agents (global)</option>
+          <option value="__global__"><DebtText k="auto_all_agents_global_0ca4bef1" /></option>
           {personas.map(p => (
             <option key={p.id} value={p.id}>{p.name}</option>
           ))}
@@ -129,7 +133,7 @@ function RuleForm({
             onSubmit(form);
           }}
           disabled={!form.name.trim() || !form.threshold}
-          className="flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-card bg-blue-600 hover:bg-blue-500 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-card bg-blue-600 hover:bg-blue-500 text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           <Check className="w-3.5 h-3.5" /> Save
         </button>
@@ -260,9 +264,7 @@ export function AlertRulesPanel() {
         enabled: true,
       });
       setShowForm(false);
-    } catch {
-      // Store already handles error state; form stays open so user can retry
-    }
+    } catch (err) { silentCatch("features/overview/sub_observability/components/AlertRulesPanel:catch1")(err); }
   };
 
   const handleEdit = async (id: string, data: RuleFormData) => {
@@ -278,9 +280,7 @@ export function AlertRulesPanel() {
         persona_id: data.personaId,
       });
       setEditingId(null);
-    } catch {
-      // Store already handles error state; form stays open so user can retry
-    }
+    } catch (err) { silentCatch("features/overview/sub_observability/components/AlertRulesPanel:catch2")(err); }
   };
 
   return (
@@ -294,7 +294,7 @@ export function AlertRulesPanel() {
           onClick={() => { setShowForm(true); setEditingId(null); }}
           className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption rounded-card border border-primary/15 text-foreground hover:bg-secondary/40 hover:text-foreground transition-colors"
         >
-          <Plus className="w-3 h-3" /> Add Rule
+          <Plus className="w-3 h-3" /> <DebtText k="auto_add_rule_05c4128d" />
         </button>
       </div>
 
@@ -306,7 +306,7 @@ export function AlertRulesPanel() {
 
       {alertRules.length === 0 && !showForm && (
         <p className="typo-body text-foreground text-center py-6">
-          No alert rules configured. Add a rule to get notified when metrics cross a threshold.
+          <DebtText k="auto_no_alert_rules_configured_add_a_rule_to_ge_665e9e77" />
         </p>
       )}
 

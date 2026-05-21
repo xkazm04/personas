@@ -56,7 +56,7 @@ function resolveTier(model: string): ModelTier {
   }
   return {
     label: 'Custom',
-    textColor: 'text-foreground/80',
+    textColor: 'text-foreground',
     bgColor: 'bg-foreground/10',
     borderColor: 'border-foreground/25',
   };

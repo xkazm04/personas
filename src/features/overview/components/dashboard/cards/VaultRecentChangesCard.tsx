@@ -64,17 +64,17 @@ export default function VaultRecentChangesCard() {
     <div className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden">
       <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10 bg-primary/[0.04]">
         <div className="flex items-baseline gap-2">
-          <span className="typo-caption font-mono uppercase tracking-[0.3em] text-foreground/70">
+          <span className="typo-caption font-mono uppercase tracking-[0.3em] text-foreground">
             {t.overview.vault_recent_changes.title}
           </span>
-          <span className="typo-caption text-foreground/40">
+          <span className="typo-caption text-foreground">
             {t.overview.vault_recent_changes.subtitle}
           </span>
         </div>
-        <ArrowRight className="w-3 h-3 text-foreground/30" />
+        <ArrowRight className="w-3 h-3 text-foreground" />
       </div>
       {entries.length === 0 ? (
-        <div className="px-4 py-6 typo-body text-foreground/60 text-center">
+        <div className="px-4 py-6 typo-body text-foreground text-center">
           {t.overview.vault_recent_changes.empty}
         </div>
       ) : (
@@ -82,13 +82,13 @@ export default function VaultRecentChangesCard() {
           {entries.map((entry) => (
             <div key={entry.id} className="flex items-center gap-3 px-3 py-1.5">
               <FileText className="w-3 h-3 text-indigo-400 flex-shrink-0" />
-              <span className="typo-caption font-mono uppercase tracking-wider text-foreground/60 flex-shrink-0">
+              <span className="typo-caption font-mono uppercase tracking-wider text-foreground flex-shrink-0">
                 {entry.action.slice(0, 4)}
               </span>
               <span className="typo-body text-foreground truncate flex-1 min-w-0">
                 {shortPath(entry.vaultFilePath) || entry.entityType}
               </span>
-              <span className="typo-caption font-mono tabular-nums text-foreground/60 flex-shrink-0">
+              <span className="typo-caption font-mono tabular-nums text-foreground flex-shrink-0">
                 {formatTime(entry.createdAt)}
               </span>
             </div>

@@ -67,12 +67,12 @@ export function useCredentialOAuth({ onSuccess, onError }: UseCredentialOAuthOpt
       : undefined;
     pendingValuesRef.current = values;
     googleOAuth.startConsent(connectorName, extraScopes);
-  }, [googleOAuth.startConsent]);
+  }, [googleOAuth]);
 
   const reset = useCallback(() => {
     googleOAuth.reset();
     pendingValuesRef.current = null;
-  }, [googleOAuth.reset]);
+  }, [googleOAuth]);
 
   return {
     isAuthorizing: googleOAuth.isAuthorizing,

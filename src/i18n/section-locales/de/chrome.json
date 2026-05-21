@@ -18,5 +18,6 @@
   "sign_in_google": "Mit Google anmelden",
   "signed_in": "Angemeldet",
   "sign_out": "Abmelden",
-  "offline": "Offline"
+  "offline": "Offline",
+  "mobile_preview": "Mobile preview"
 }

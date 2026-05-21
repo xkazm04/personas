@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { ObsidianVaultConfig } from '@/api/obsidianBrain';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 const STORAGE_KEY = 'obsidian-brain.saved-vault-configs.v1';
 
@@ -17,9 +19,7 @@ function readStorage(): ObsidianVaultConfig[] {
 function writeStorage(configs: ObsidianVaultConfig[]) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(configs));
-  } catch {
-    /* ignore quota errors */
-  }
+  } catch (err) { silentCatch("features/plugins/obsidian-brain/useSavedVaultConfigs:catch1")(err); }
   window.dispatchEvent(new CustomEvent('obsidian-brain:saved-configs-changed'));
 }
 

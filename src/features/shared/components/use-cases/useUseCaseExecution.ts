@@ -50,7 +50,7 @@ export function useUseCaseExecution(personaId: string, useCase: UseCaseItem, onE
     setInputData(useCase.sample_input ? JSON.stringify(useCase.sample_input, null, 2) : '{}');
     setJsonError(null);
     setOutputLines([]);
-  }, [useCase.id, buildFieldValues]);
+  }, [useCase.id, buildFieldValues, useCase]);
 
   useEffect(() => {
     if (isThisUseCaseExecution && executionOutput.length > 0) {

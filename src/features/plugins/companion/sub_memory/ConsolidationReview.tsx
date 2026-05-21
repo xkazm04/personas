@@ -11,6 +11,8 @@ import {
 import { useTranslation } from '@/i18n/useTranslation';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { silentCatch } from '@/lib/silentCatch';
+import { DebtText } from '@/i18n/DebtText';
+
 import {
   companionApplyConsolidationItem,
   companionGetConsolidationItems,
@@ -93,7 +95,7 @@ export function ConsolidationReview({
           {onClose && (
             <button
               onClick={onClose}
-              className="p-1 rounded-interactive text-foreground/60 hover:text-foreground hover:bg-foreground/5 focus-ring"
+              className="p-1 rounded-interactive text-foreground hover:text-foreground hover:bg-foreground/5 focus-ring"
               aria-label={t.common.close}
             >
               <ArrowLeft className="w-4 h-4" />
@@ -124,7 +126,7 @@ export function ConsolidationReview({
             <div className="typo-body font-medium">
               {t.plugins.companion.consolidation_running}
             </div>
-            <div className="typo-caption text-foreground/70 mt-1">
+            <div className="typo-caption text-foreground mt-1">
               {t.plugins.companion.consolidation_running_long}
             </div>
           </div>
@@ -139,12 +141,12 @@ export function ConsolidationReview({
 
       <div className="flex-1 overflow-y-auto">
         {runs === null ? (
-          <div className="flex items-center gap-3 p-5 typo-body text-foreground/70">
+          <div className="flex items-center gap-3 p-5 typo-body text-foreground">
             <LoadingSpinner size="sm" />
             <span>{t.plugins.companion.brain_loading}</span>
           </div>
         ) : runs.length === 0 ? (
-          <p className="p-5 typo-body text-foreground/50">
+          <p className="p-5 typo-body text-foreground">
             {t.plugins.companion.brain_empty}
           </p>
         ) : (
@@ -156,16 +158,16 @@ export function ConsolidationReview({
                   className="w-full text-left px-5 py-3 hover:bg-foreground/[0.04] focus-ring"
                 >
                   <div className="flex items-center justify-between gap-2 mb-1">
-                    <span className="typo-caption font-medium text-foreground/80">
+                    <span className="typo-caption font-medium text-foreground">
                       {run.summary
                         ? run.summary
                         : `${run.episodesCount} episodes reviewed`}
                     </span>
                     <RunStatusBadge run={run} />
                   </div>
-                  <div className="typo-caption text-foreground/50">
-                    {run.itemsTotal} proposals · {run.itemsPending} pending ·{' '}
-                    {run.itemsApplied} applied · {run.itemsRejected} rejected ·{' '}
+                  <div className="typo-caption text-foreground">
+                    {run.itemsTotal} <DebtText k="auto_proposals_52cac85b" /> {run.itemsPending} <DebtText k="auto_pending_5829114a" />{' '}
+                    {run.itemsApplied} <DebtText k="auto_applied_8858b48c" /> {run.itemsRejected} <DebtText k="auto_rejected_bb194a7a" />{' '}
                     {formatRelativeTime(run.triggeredAt)}
                   </div>
                   {run.errorText && (
@@ -250,7 +252,7 @@ function RunDetail({
         <div className="flex items-center gap-2 min-w-0">
           <button
             onClick={onBack}
-            className="p-1 rounded-interactive text-foreground/60 hover:text-foreground hover:bg-foreground/5 focus-ring"
+            className="p-1 rounded-interactive text-foreground hover:text-foreground hover:bg-foreground/5 focus-ring"
             aria-label={t.plugins.companion.consolidation_back_to_runs}
             title={t.plugins.companion.consolidation_back_to_runs}
           >
@@ -262,7 +264,7 @@ function RunDetail({
         </div>
         <button
           onClick={refresh}
-          className="p-1.5 rounded-interactive text-foreground/60 hover:text-foreground hover:bg-foreground/5 focus-ring"
+          className="p-1.5 rounded-interactive text-foreground hover:text-foreground hover:bg-foreground/5 focus-ring"
           aria-label="Refresh"
           title="Refresh"
         >
@@ -270,7 +272,7 @@ function RunDetail({
         </button>
       </header>
 
-      <p className="px-5 pt-3 typo-caption text-foreground/60">
+      <p className="px-5 pt-3 typo-caption text-foreground">
         {t.plugins.companion.consolidation_review_subtitle}
       </p>
 
@@ -282,12 +284,12 @@ function RunDetail({
 
       <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2">
         {items === null ? (
-          <div className="flex items-center gap-3 p-2 typo-body text-foreground/70">
+          <div className="flex items-center gap-3 p-2 typo-body text-foreground">
             <LoadingSpinner size="sm" />
             <span>{t.plugins.companion.brain_loading}</span>
           </div>
         ) : items.length === 0 ? (
-          <p className="p-2 typo-body text-foreground/50">
+          <p className="p-2 typo-body text-foreground">
             {t.plugins.companion.consolidation_no_proposals}
           </p>
         ) : (
@@ -390,15 +392,15 @@ function ItemCard({
         >
           {kindLabel}
         </span>
-        <code className="typo-caption text-foreground/70 px-1.5 py-0.5 rounded bg-foreground/5">
+        <code className="typo-caption text-foreground px-1.5 py-0.5 rounded bg-foreground/5">
           {item.scope}/{item.factKey}
         </code>
-        <span className="typo-caption text-foreground/50">
-          imp {item.importance} · conf {Math.round(item.confidence * 100)}% ·{' '}
+        <span className="typo-caption text-foreground">
+          imp {item.importance} <DebtText k="auto_conf_20ae73f6" /> {Math.round(item.confidence * 100)}% ·{' '}
           {item.sources.length} source{item.sources.length === 1 ? '' : 's'}
         </span>
         {isResolved && (
-          <span className="ml-auto typo-caption text-foreground/50">
+          <span className="ml-auto typo-caption text-foreground">
             {item.status === 'applied'
               ? t.plugins.companion.consolidation_applied
               : t.plugins.companion.consolidation_rejected}
@@ -409,7 +411,7 @@ function ItemCard({
       {editing ? (
         <div className="space-y-2">
           <label className="block">
-            <span className="typo-caption text-foreground/60">key</span>
+            <span className="typo-caption text-foreground">key</span>
             <input
               type="text"
               value={draftKey}
@@ -418,7 +420,7 @@ function ItemCard({
             />
           </label>
           <label className="block">
-            <span className="typo-caption text-foreground/60">value</span>
+            <span className="typo-caption text-foreground">value</span>
             <textarea
               value={draftValue}
               onChange={(e) => setDraftValue(e.target.value)}
@@ -427,8 +429,8 @@ function ItemCard({
             />
           </label>
           <label className="block">
-            <span className="typo-caption text-foreground/60">
-              importance (1-5)
+            <span className="typo-caption text-foreground">
+              <DebtText k="auto_importance_1_5_1bfa4b92" />
             </span>
             <input
               type="number"
@@ -449,18 +451,18 @@ function ItemCard({
       )}
 
       {item.rationale && (
-        <details className="text-foreground/70">
+        <details className="text-foreground">
           <summary className="cursor-pointer typo-caption hover:text-foreground">
             {t.plugins.companion.consolidation_rationale}
           </summary>
-          <p className="mt-1 typo-caption text-foreground/65 leading-relaxed">
+          <p className="mt-1 typo-caption text-foreground leading-relaxed">
             {item.rationale}
           </p>
         </details>
       )}
 
       {item.supersedesId && (
-        <div className="typo-caption text-foreground/60">
+        <div className="typo-caption text-foreground">
           {t.plugins.companion.consolidation_supersedes}:{' '}
           <code className="px-1 py-0.5 rounded bg-foreground/5">
             {item.supersedesId}
@@ -469,7 +471,7 @@ function ItemCard({
       )}
 
       {item.sources.length > 0 && (
-        <div className="typo-caption text-foreground/60">
+        <div className="typo-caption text-foreground">
           {t.plugins.companion.facts_sources_label}:{' '}
           {item.sources.map((s, i) => (
             <code key={s} className="ml-1 px-1 py-0.5 rounded bg-foreground/5">
@@ -513,7 +515,7 @@ function ItemCard({
           <button
             onClick={reject}
             disabled={busy !== null}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-foreground/5 text-foreground/80 hover:bg-foreground/10 typo-caption font-medium disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-foreground/5 text-foreground hover:bg-foreground/10 typo-caption font-medium disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
           >
             {busy === 'reject' ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />

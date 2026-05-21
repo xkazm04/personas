@@ -74,7 +74,7 @@ export function IdeaEvolutionPanel() {
           <div className="px-4 py-2.5 bg-primary/5 border-b border-primary/10 flex items-center gap-2">
             <Workflow className="w-3.5 h-3.5 text-primary" />
             <span className="text-md font-medium text-foreground">{t.plugins.dev_scanner.lifecycle_heading}</span>
-            <span className="text-md text-foreground/60 ml-auto">{lifecycle.length}</span>
+            <span className="text-md text-foreground ml-auto">{lifecycle.length}</span>
           </div>
           <ul className="divide-y divide-primary/5">
             {lifecycle.map(({ idea, task, totalTasks, shipped }) => (
@@ -82,7 +82,7 @@ export function IdeaEvolutionPanel() {
                 <p className="text-md text-foreground truncate font-medium mb-1.5">{idea.title}</p>
                 <div className="flex items-center gap-1.5">
                   <LifecycleStep icon={CheckCircle2} label={t.plugins.dev_scanner.lifecycle_stage_accepted} state="done" />
-                  <ArrowRight className="w-3 h-3 text-foreground/30 shrink-0" />
+                  <ArrowRight className="w-3 h-3 text-foreground shrink-0" />
                   {task ? (
                     <button
                       type="button"
@@ -105,7 +105,7 @@ export function IdeaEvolutionPanel() {
                   ) : (
                     <LifecycleStep icon={Circle} label={t.plugins.dev_scanner.lifecycle_stage_tasked} state="pending" />
                   )}
-                  <ArrowRight className="w-3 h-3 text-foreground/30 shrink-0" />
+                  <ArrowRight className="w-3 h-3 text-foreground shrink-0" />
                   <LifecycleStep
                     icon={shipped ? CheckCircle2 : Circle}
                     label={t.plugins.dev_scanner.lifecycle_stage_shipped}
@@ -210,7 +210,7 @@ export function IdeaEvolutionPanel() {
 
 type LifecycleStepState = 'pending' | 'running' | 'done' | 'failed';
 const STEP_TINT: Record<LifecycleStepState, string> = {
-  pending: 'text-foreground/40 border-foreground/15 bg-background/30',
+  pending: 'text-foreground border-foreground/15 bg-background/30',
   running: 'text-amber-400 border-amber-500/30 bg-amber-500/10',
   done:    'text-emerald-400 border-emerald-500/30 bg-emerald-500/10',
   failed:  'text-red-400 border-red-500/30 bg-red-500/10',

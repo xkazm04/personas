@@ -32,7 +32,7 @@ function ThemeHoverPreview({ theme }: { theme: ThemeDefinition }) {
           <span className="w-2 h-2 rounded-full bg-status-error" />
           <span className="w-2 h-2 rounded-full bg-status-warning" />
           <span className="w-2 h-2 rounded-full bg-status-success" />
-          <span className="ml-auto text-[10px] font-semibold tracking-wide text-foreground/80">
+          <span className="ml-auto text-[10px] font-semibold tracking-wide text-foreground">
             {theme.label}
           </span>
         </div>
@@ -198,7 +198,7 @@ const ThemeSwatch = memo(function ThemeSwatch({ theme, active, onSelect }: { the
 
           {/* Theme label rendered in the theme's foreground for true contrast preview */}
           <span
-            className="text-sm font-semibold mt-auto"
+            className="typo-heading font-semibold mt-auto"
             style={{ color: theme.foregroundSample }}
           >
             {theme.label}
@@ -260,7 +260,7 @@ function ThemingSection({ themeId, setTheme, darkThemes, lightThemes, labels }: 
       {themeTab === 'default' ? (
         <div className="space-y-4">
           <div className="space-y-2">
-            <span className="text-sm text-foreground">{labels.dark}</span>
+            <span className="typo-body text-foreground">{labels.dark}</span>
             <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
               {darkThemes.map((t) => (
                 <ThemeSwatch key={t.id} theme={t} active={themeId === t.id} onSelect={() => setTheme(t.id as ThemeId)} />
@@ -268,7 +268,7 @@ function ThemingSection({ themeId, setTheme, darkThemes, lightThemes, labels }: 
             </div>
           </div>
           <div className="space-y-2">
-            <span className="text-sm text-foreground">{labels.light}</span>
+            <span className="typo-body text-foreground">{labels.light}</span>
             <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
               {lightThemes.map((t) => (
                 <ThemeSwatch key={t.id} theme={t} active={themeId === t.id} onSelect={() => setTheme(t.id as ThemeId)} />
@@ -337,8 +337,8 @@ export default function AppearanceSettings() {
               {TEXT_SCALES.map((scale) => {
                 const isActive = textScale === scale.id;
                 const sizeClass =
-                  scale.id === 'large' ? 'text-base' :
-                  scale.id === 'larger' ? 'text-lg' : 'text-xl';
+                  scale.id === 'large' ? 'typo-body-lg' :
+                  scale.id === 'larger' ? 'typo-body-lg' : 'typo-body-lg';
                 return (
                   <button
                     type="button"
@@ -355,10 +355,10 @@ export default function AppearanceSettings() {
                     >
                       Aa
                     </span>
-                    <span className={`text-sm ${isActive ? 'text-foreground font-medium' : 'text-foreground'}`}>
+                    <span className={`typo-heading ${isActive ? 'text-foreground font-medium' : 'text-foreground'}`}>
                       {scale.label}
                     </span>
-                    <span className="text-[11px] text-foreground/70 leading-snug">
+                    <span className="text-[11px] text-foreground leading-snug">
                       {scale.description}
                     </span>
                     {isActive && (
@@ -375,7 +375,7 @@ export default function AppearanceSettings() {
           {/* Timezone */}
           <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
             <SectionHeading title={s.timezone} icon={<Globe />} />
-            <p className="text-xs text-foreground">
+            <p className="typo-caption text-foreground">
               {s.timezone_hint}
             </p>
             <div className="grid grid-cols-2 2xl:grid-cols-3 gap-3">
@@ -392,10 +392,10 @@ export default function AppearanceSettings() {
                         : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
                     }`}
                   >
-                    <span className={`text-sm font-medium ${isActive ? 'text-foreground/90' : 'text-foreground'}`}>
+                    <span className={`typo-heading font-medium ${isActive ? 'text-foreground/90' : 'text-foreground'}`}>
                       {s[tz.labelKey]}
                     </span>
-                    <span className="text-[11px] text-foreground/70 leading-snug">
+                    <span className="text-[11px] text-foreground leading-snug">
                       {s[tz.descriptionKey]}
                     </span>
                     {isActive && (
@@ -412,7 +412,7 @@ export default function AppearanceSettings() {
           {/* Brightness */}
           <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
             <SectionHeading title={s.brightness} icon={<Sun />} />
-            <p className="text-sm text-foreground">
+            <p className="typo-body text-foreground">
               {s.brightness_hint}
             </p>
             <div className="grid grid-cols-3 gap-3">
@@ -431,10 +431,10 @@ export default function AppearanceSettings() {
                     }`}
                   >
                     <Sun className={`w-5 h-5 ${iconOpacity} ${isActive ? 'text-amber-400' : 'text-foreground'}`} />
-                    <span className={`text-sm ${isActive ? 'text-foreground/90 font-medium' : 'text-foreground'}`}>
+                    <span className={`typo-heading ${isActive ? 'text-foreground/90 font-medium' : 'text-foreground'}`}>
                       {level.label}
                     </span>
-                    <span className="text-[11px] text-foreground/70 leading-snug">
+                    <span className="text-[11px] text-foreground leading-snug">
                       {level.description}
                     </span>
                     {isActive && (
@@ -450,8 +450,8 @@ export default function AppearanceSettings() {
                 color saturation across the entire app for late-night use */}
             <div className="flex items-start justify-between gap-4 pt-3 mt-1 border-t border-primary/10">
               <div className="flex-1">
-                <div className="text-sm text-foreground font-medium">{s.dim_mode_label}</div>
-                <div className="typo-body text-foreground/80">{s.dim_mode_hint}</div>
+                <div className="typo-body text-foreground font-medium">{s.dim_mode_label}</div>
+                <div className="typo-body text-foreground">{s.dim_mode_hint}</div>
               </div>
               <Button
                 variant="ghost"
@@ -470,8 +470,8 @@ export default function AppearanceSettings() {
                 via luminance (yellow vs saturated red) instead of red↔orange */}
             <div className="flex items-start justify-between gap-4 pt-3 mt-1 border-t border-primary/10">
               <div className="flex-1">
-                <div className="text-sm text-foreground font-medium">{s.cvd_safe_label}</div>
-                <div className="typo-body text-foreground/80">{s.cvd_safe_hint}</div>
+                <div className="typo-body text-foreground font-medium">{s.cvd_safe_label}</div>
+                <div className="typo-body text-foreground">{s.cvd_safe_hint}</div>
               </div>
               <Button
                 variant="ghost"
@@ -490,8 +490,8 @@ export default function AppearanceSettings() {
                 muted-foreground, and card borders. Stacks on top of CVD-safe. */}
             <div className="flex items-start justify-between gap-4 pt-3 mt-1 border-t border-primary/10">
               <div className="flex-1">
-                <div className="text-sm text-foreground font-medium">{s.high_contrast_label}</div>
-                <div className="typo-body text-foreground/80">{s.high_contrast_hint}</div>
+                <div className="typo-body text-foreground font-medium">{s.high_contrast_label}</div>
+                <div className="typo-body text-foreground">{s.high_contrast_hint}</div>
               </div>
               <Button
                 variant="ghost"
@@ -511,8 +511,8 @@ export default function AppearanceSettings() {
                 dim (saturation), CVD (hue), and high-contrast (luminance). */}
             <div className="flex items-start justify-between gap-4 pt-3 mt-1 border-t border-primary/10">
               <div className="flex-1">
-                <div className="text-sm text-foreground font-medium">{s.reduce_motion_label}</div>
-                <div className="typo-body text-foreground/80">{s.reduce_motion_hint}</div>
+                <div className="typo-body text-foreground font-medium">{s.reduce_motion_label}</div>
+                <div className="typo-body text-foreground">{s.reduce_motion_hint}</div>
               </div>
               <Button
                 variant="ghost"

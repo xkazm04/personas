@@ -41,6 +41,8 @@ import { ComposerSchedulePickerModal } from "./commandPanel/composer/ComposerSch
 import { ComposerMessagingPickerModal } from "./commandPanel/composer/ComposerMessagingPickerModal";
 import type { ChannelSpecV2 } from "@/lib/bindings/ChannelSpecV2";
 import type { GlyphFullLayoutProps } from "./glyphLayoutTypes";
+import { debtText } from '@/i18n/DebtText';
+
 
 const BUILT_IN_INBOX: ChannelSpecV2 = {
   type: "built-in",
@@ -485,7 +487,7 @@ export function GlyphPrototypeLayout(props: GlyphFullLayoutProps) {
                     value={intentText}
                     onChange={(e) => onIntentChange(e.target.value)}
                     onKeyDown={handleLaunchKey}
-                    placeholder="Describe what you want this agent to do…"
+                    placeholder={debtText("auto_describe_what_you_want_this_agent_to_do_ae7c256d")}
                     rows={3}
                     className="w-full px-3 py-2 rounded-card bg-secondary/30 border border-border/30 typo-body text-foreground placeholder:text-foreground/40 focus:outline-none resize-none"
                     data-testid="agent-intent-input"

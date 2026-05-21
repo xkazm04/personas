@@ -14,7 +14,7 @@ export function QuestionnaireKeyboardHint({
 }) {
   const { t } = useTranslation();
   return (
-    <div className="mt-8 flex flex-wrap items-center gap-2 text-sm text-foreground/60">
+    <div className="mt-8 flex flex-wrap items-center gap-2 typo-body text-foreground">
       <kbd className="px-1.5 py-0.5 rounded border border-border bg-foreground/[0.04] font-mono text-xs">
         ←
       </kbd>
@@ -24,7 +24,7 @@ export function QuestionnaireKeyboardHint({
       <span>{t.templates.adopt_modal.navigate_hint}</span>
       {isAtEnd && canSubmit && (
         <>
-          <span className="text-foreground/40">·</span>
+          <span className="text-foreground">·</span>
           <kbd className="px-1.5 py-0.5 rounded border border-border bg-foreground/[0.04] font-mono text-xs">
             Enter
           </kbd>

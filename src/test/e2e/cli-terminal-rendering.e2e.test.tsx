@@ -369,7 +369,7 @@ describe('E2E: TerminalStrip -- provider-specific rendering', () => {
       if (line.includes('[v]')) return 'text-emerald-400';
       if (line.includes('[x]')) return 'text-red-400';
       if (line.includes('Skipped')) return 'text-amber-400';
-      return 'text-muted-foreground';
+      return 'text-foreground';
     };
 
     const { container } = render(

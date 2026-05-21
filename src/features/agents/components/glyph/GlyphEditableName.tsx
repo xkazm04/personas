@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { Pencil } from "lucide-react";
+import { debtText } from '@/i18n/DebtText';
+
 
 interface GlyphEditableNameProps {
   value: string;
@@ -13,7 +15,7 @@ export function GlyphEditableName({ value, onChange, editable }: GlyphEditableNa
   useEffect(() => { if (!editing) setDraft(value); }, [value, editing]);
   if (!editable) {
     return (
-      <span className="typo-label font-bold uppercase tracking-[0.3em] text-foreground/50">
+      <span className="typo-label font-bold uppercase tracking-[0.3em] text-foreground">
         {value || "Describe Your Agent"}
       </span>
     );
@@ -39,7 +41,7 @@ export function GlyphEditableName({ value, onChange, editable }: GlyphEditableNa
       type="button"
       onClick={() => setEditing(true)}
       className="group inline-flex items-center gap-1.5 typo-heading-sm font-bold text-foreground hover:text-primary transition-colors"
-      title="Rename agent"
+      title={debtText("auto_rename_agent_90f3a81d")}
     >
       <span>{value || "Untitled agent"}</span>
       <Pencil className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />

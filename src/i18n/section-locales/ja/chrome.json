@@ -18,5 +18,6 @@
   "sign_in_google": "Googleでサインイン",
   "signed_in": "サインイン済み",
   "sign_out": "サインアウト",
-  "offline": "オフライン"
+  "offline": "オフライン",
+  "mobile_preview": "Mobile preview"
 }

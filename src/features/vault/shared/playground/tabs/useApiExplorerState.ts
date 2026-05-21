@@ -8,6 +8,8 @@ import {
 } from '@/api/system/apiProxy';
 import type { ApiEndpoint, ApiProxyResponse } from '@/api/system/apiProxy';
 import { mergeEndpoints } from './apiExplorerHelpers';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 export function useApiExplorerState(credentialId: string, catalogEndpoints?: ApiEndpoint[]) {
   const [endpoints, setEndpoints] = useState<ApiEndpoint[]>([]);
@@ -44,9 +46,7 @@ export function useApiExplorerState(credentialId: string, catalogEndpoints?: Api
         if (!cancelled && saved) {
           setEndpoints((prev) => mergeEndpoints(prev, saved));
         }
-      } catch {
-        // intentional: non-critical -- no saved API definition to restore
-      }
+      } catch (err) { silentCatch("features/vault/shared/playground/tabs/useApiExplorerState:catch1")(err); }
       // Merge catalog endpoints
       if (!cancelled && catalogEndpoints?.length) {
         setEndpoints((prev) => mergeEndpoints(prev, catalogEndpoints));

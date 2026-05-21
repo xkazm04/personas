@@ -42,7 +42,7 @@ export function ColorRow({
         style={{ backgroundColor: displayValue }}
         title={`Pick ${label}`}
         aria-expanded={open}
-        aria-haspopup="dialog"
+        aria-haspopup="true"
       />
       <span className="typo-caption font-medium text-foreground w-24 flex-shrink-0">{label}</span>
       <span className={`typo-code font-mono flex-1 min-w-0 truncate ${isOverridden ? 'text-foreground' : 'text-foreground'}`}>
@@ -65,7 +65,7 @@ export function ColorRow({
       <AnimatePresence>
         {open && (
           <motion.div
-            role="dialog"
+            role="region"
             aria-label={`${label} color picker`}
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}

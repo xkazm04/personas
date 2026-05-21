@@ -8,6 +8,8 @@ import type { LabAbResult } from '@/lib/bindings/LabAbResult';
 import { compositeScore, scoreColor } from '@/lib/eval/evalFramework';
 import type { AbVersionAggregate } from '../../libs/labAggregation';
 import type { AbVariantProps } from './AbResultsView';
+import { DebtText } from '@/i18n/DebtText';
+
 
 interface MetricRowSpec {
   label: string;
@@ -64,7 +66,7 @@ function VersusHeader({ left, right, winnerId }: { left: AbVersionAggregate; rig
           <div className={`w-14 h-14 rounded-full flex items-center justify-center border-2 ${
             tied ? 'border-primary/20 bg-primary/5' : 'border-primary/30 bg-gradient-to-br from-primary/15 to-primary/5 shadow-elevation-2 shadow-primary/10'
           }`}>
-            <Swords className={`w-6 h-6 ${tied ? 'text-foreground/40' : 'text-primary'}`} />
+            <Swords className={`w-6 h-6 ${tied ? 'text-foreground' : 'text-primary'}`} />
           </div>
           {!tied && (
             <div className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${
@@ -74,7 +76,7 @@ function VersusHeader({ left, right, winnerId }: { left: AbVersionAggregate; rig
               <span>+{absGap}</span>
             </div>
           )}
-          {tied && <span className="typo-caption text-foreground/60 uppercase tracking-wider">Draw</span>}
+          {tied && <span className="typo-caption text-foreground uppercase tracking-wider">Draw</span>}
         </div>
         <VersusCorner agg={right} isWinner={right.versionId === winnerId} align="left" />
       </div>
@@ -93,11 +95,11 @@ function VersusCorner({ agg, isWinner, align }: { agg: AbVersionAggregate; isWin
     <div className={`flex flex-col gap-1 ${align === 'right' ? 'items-end text-right' : 'items-start text-left'}`}>
       <div className="flex items-center gap-2">
         {align === 'right' && isWinner && <Crown className="w-3.5 h-3.5 text-primary" />}
-        <span className="typo-code font-mono font-bold text-foreground/80 text-sm">v{agg.versionNumber}</span>
+        <span className="typo-code font-mono font-bold text-foreground text-sm">v{agg.versionNumber}</span>
         {align === 'left' && isWinner && <Crown className="w-3.5 h-3.5 text-primary" />}
       </div>
       <div className={`typo-hero font-black tracking-tight ${scoreColor(agg.compositeScore)}`}>{agg.compositeScore}</div>
-      <div className="flex items-center gap-3 typo-caption text-foreground/70">
+      <div className="flex items-center gap-3 typo-caption text-foreground">
         <span className="flex items-center gap-1"><DollarSign className="w-3 h-3" />{agg.totalCost.toFixed(4)}</span>
         <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{(agg.avgDuration / 1000).toFixed(1)}s</span>
       </div>
@@ -115,7 +117,7 @@ function TaleOfTheTapeRow({ spec, left, right }: { spec: MetricRowSpec; left: Ab
   return (
     <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 py-2.5">
       <div className="flex items-center justify-end gap-2">
-        <span className={`typo-heading font-bold tabular-nums ${leftLeads ? scoreColor(lv) : 'text-foreground/60'}`}>{lv}</span>
+        <span className={`typo-heading font-bold tabular-nums ${leftLeads ? scoreColor(lv) : 'text-foreground'}`}>{lv}</span>
         <div className="flex-1 h-2 rounded-full bg-primary/5 overflow-hidden flex justify-end">
           <div
             className={`h-full rounded-full transition-all ${leftLeads ? 'bg-primary/60' : 'bg-primary/25'}`}
@@ -124,8 +126,8 @@ function TaleOfTheTapeRow({ spec, left, right }: { spec: MetricRowSpec; left: Ab
         </div>
       </div>
       <div className="flex flex-col items-center gap-0.5 px-2 min-w-[88px]">
-        <Icon className="w-3.5 h-3.5 text-foreground/70" />
-        <span className="text-[10px] uppercase tracking-widest text-foreground/70 font-semibold whitespace-nowrap">{spec.label}</span>
+        <Icon className="w-3.5 h-3.5 text-foreground" />
+        <span className="text-[10px] uppercase tracking-widest text-foreground font-semibold whitespace-nowrap">{spec.label}</span>
       </div>
       <div className="flex items-center gap-2">
         <div className="flex-1 h-2 rounded-full bg-primary/5 overflow-hidden flex justify-start">
@@ -134,7 +136,7 @@ function TaleOfTheTapeRow({ spec, left, right }: { spec: MetricRowSpec; left: Ab
             style={{ width: `${Math.max(rv, 2)}%` }}
           />
         </div>
-        <span className={`typo-heading font-bold tabular-nums ${rightLeads ? scoreColor(rv) : 'text-foreground/60'}`}>{rv}</span>
+        <span className={`typo-heading font-bold tabular-nums ${rightLeads ? scoreColor(rv) : 'text-foreground'}`}>{rv}</span>
       </div>
     </div>
   );
@@ -171,7 +173,7 @@ function FightCardRow({
           onClick={() => onSelectCell(leftSelected ? null : { scenario, versionId: leftAgg.versionId })}
         />
       </div>
-      <div className="text-center px-2 truncate typo-caption text-foreground/80" title={scenario}>
+      <div className="text-center px-2 truncate typo-caption text-foreground" title={scenario}>
         {scenario}
       </div>
       <div className="flex justify-start">
@@ -199,7 +201,7 @@ function FightScoreButton({
   onClick: () => void;
 }) {
   if (score === null) {
-    return <span className={`typo-caption text-foreground/40 ${align === 'right' ? 'text-right' : 'text-left'}`}>—</span>;
+    return <span className={`typo-caption text-foreground ${align === 'right' ? 'text-right' : 'text-left'}`}>—</span>;
   }
   return (
     <button
@@ -232,8 +234,8 @@ function CornerColumn({
     <div className={`rounded-modal border overflow-hidden ${isWinner ? 'border-primary/25 bg-primary/[0.03]' : 'border-primary/10 bg-secondary/15'}`}>
       <div className={`px-4 py-2 border-b flex items-center justify-between ${isWinner ? 'border-primary/15 bg-primary/[0.05]' : 'border-primary/10 bg-secondary/20'}`}>
         <div className="flex items-center gap-2">
-          <Megaphone className={`w-3.5 h-3.5 ${isWinner ? 'text-primary' : 'text-foreground/60'}`} />
-          <span className="typo-label font-semibold uppercase tracking-wider text-foreground/80">
+          <Megaphone className={`w-3.5 h-3.5 ${isWinner ? 'text-primary' : 'text-foreground'}`} />
+          <span className="typo-label font-semibold uppercase tracking-wider text-foreground">
             v{agg.versionNumber} Corner
           </span>
         </div>
@@ -242,7 +244,7 @@ function CornerColumn({
       <div className="p-4 space-y-3">
         {rationale.slice(0, 3).map((r, i) => (
           <div key={i} className="typo-body leading-relaxed">
-            <div className="text-[10px] uppercase tracking-wider text-foreground/50 font-semibold mb-0.5">{r.scenario}</div>
+            <div className="text-[10px] uppercase tracking-wider text-foreground font-semibold mb-0.5">{r.scenario}</div>
             <p className="text-foreground">{r.text.length > 200 ? r.text.slice(0, 200) + '…' : r.text}</p>
           </div>
         ))}
@@ -274,8 +276,8 @@ export function AbResultsViewVersus({ results, aggregation, selectedCell, onSele
 
   if (!left || !right) {
     return (
-      <div className="rounded-modal border border-primary/10 bg-secondary/10 px-4 py-8 text-center typo-body text-foreground/70">
-        Versus view needs two versions — only one was found in this run.
+      <div className="rounded-modal border border-primary/10 bg-secondary/10 px-4 py-8 text-center typo-body text-foreground">
+        <DebtText k="auto_versus_view_needs_two_versions_only_one_wa_765714a0" />
       </div>
     );
   }
@@ -286,7 +288,7 @@ export function AbResultsViewVersus({ results, aggregation, selectedCell, onSele
 
       <div className="rounded-modal border border-primary/10 bg-secondary/10 overflow-hidden">
         <div className="px-4 py-2 border-b border-primary/10 bg-secondary/20">
-          <span className="typo-label uppercase tracking-wider font-semibold text-foreground/80">Tale of the Tape</span>
+          <span className="typo-label uppercase tracking-wider font-semibold text-foreground"><DebtText k="auto_tale_of_the_tape_e9f348ab" /></span>
         </div>
         <div className="px-4 py-2">
           {METRICS.map((spec) => (
@@ -297,8 +299,8 @@ export function AbResultsViewVersus({ results, aggregation, selectedCell, onSele
 
       <div className="rounded-modal border border-primary/10 bg-secondary/10 overflow-hidden">
         <div className="px-4 py-2 border-b border-primary/10 bg-secondary/20 flex items-center justify-between">
-          <span className="typo-label uppercase tracking-wider font-semibold text-foreground/80">Fight Card</span>
-          <span className="text-[10px] text-foreground/50">Click a score for round details</span>
+          <span className="typo-label uppercase tracking-wider font-semibold text-foreground"><DebtText k="auto_fight_card_1e7fd4fe" /></span>
+          <span className="text-[10px] text-foreground"><DebtText k="auto_click_a_score_for_round_details_8341fa2b" /></span>
         </div>
         <div className="py-1">
           {scenarios.map((scenario) => (

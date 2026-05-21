@@ -38,7 +38,7 @@ export function CapabilityPoliciesPane({ capability }: Props) {
       data-testid={`capability-policies-pane-${capability.id}`}
     >
       <section className="flex flex-col gap-2">
-        <label className="typo-label text-foreground/70">
+        <label className="typo-label text-foreground">
           {t.matrix_v3.capability_row_field_review}
         </label>
         <div className="inline-flex rounded-full bg-secondary/30 p-0.5">
@@ -50,7 +50,7 @@ export function CapabilityPoliciesPane({ capability }: Props) {
               className={`rounded-full px-3 py-1 typo-body-sm transition ${
                 review.mode === m
                   ? "bg-primary/25 text-primary"
-                  : "text-foreground/60 hover:text-foreground"
+                  : "text-foreground hover:text-foreground"
               }`}
             >
               {reviewLabel(m)}
@@ -67,7 +67,7 @@ export function CapabilityPoliciesPane({ capability }: Props) {
       </section>
 
       <section className="flex flex-col gap-2">
-        <label className="typo-label text-foreground/70">
+        <label className="typo-label text-foreground">
           {t.matrix_v3.capability_row_field_memory}
         </label>
         <div className="flex items-center gap-2">
@@ -86,7 +86,7 @@ export function CapabilityPoliciesPane({ capability }: Props) {
               }`}
             />
           </button>
-          <span className="typo-body-sm text-foreground/70">
+          <span className="typo-body-sm text-foreground">
             {memory.enabled
               ? t.matrix_v3.memory_enabled_true
               : t.matrix_v3.memory_enabled_false}

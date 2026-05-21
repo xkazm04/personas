@@ -1,6 +1,8 @@
 import { reportFrontendCrash } from "@/api/system/system";
 import { sanitizeErrorMessage } from "@/lib/utils/sanitizers/maskSensitive";
 import { createLogger } from "@/lib/log";
+import { silentCatch } from '@/lib/silentCatch';
+
 
 const logger = createLogger("crash-persistence");
 
@@ -52,17 +54,13 @@ export function readCrashLogs(): Array<{ timestamp: string; component: string; m
         }
         sessionStorage.removeItem(CRASH_STORAGE_KEY);
       }
-    } catch {
-      // sessionStorage unavailable or corrupted -- ignore
-    }
+    } catch (err) { silentCatch("lib/utils/crashPersistence:catch1")(err); }
 
     const trimmed = parsed.slice(0, CRASH_MAX_ENTRIES);
     if (trimmed.length !== parsed.length) {
       try {
         localStorage.setItem(CRASH_STORAGE_KEY, JSON.stringify(trimmed));
-      } catch {
-        // best-effort save
-      }
+      } catch (err) { silentCatch("lib/utils/crashPersistence:catch2")(err); }
     }
     return trimmed as Array<{ timestamp: string; component: string; message: string; stack?: string }>;
   } catch {
@@ -123,9 +121,7 @@ export function persistCrash(
         }
       }
     }
-  } catch {
-    // intentional: non-critical -- localStorage may be full or unavailable
-  }
+  } catch (err) { silentCatch("lib/utils/crashPersistence:catch3")(err); }
 
   // 2. Backend persistence (async, fire-and-forget)
   reportFrontendCrash(label, message, stack, compStack).catch(() => {

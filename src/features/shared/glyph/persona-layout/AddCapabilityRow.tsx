@@ -43,12 +43,12 @@ export function AddCapabilityRow({ onClick }: AddCapabilityRowProps) {
             <Sparkles className="w-3.5 h-3.5 text-primary/85" />
             {t.agents.use_cases.adopt_a_recipe}
           </div>
-          <div className="mt-1 typo-caption text-foreground/55 truncate">
+          <div className="mt-1 typo-caption text-foreground truncate">
             {t.agents.use_cases.from_curated_catalog}
           </div>
         </div>
 
-        <div className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full border border-dashed border-foreground/25 group-hover:border-primary/55 text-foreground/55 group-hover:text-primary transition-colors">
+        <div className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full border border-dashed border-foreground/25 group-hover:border-primary/55 text-foreground group-hover:text-primary transition-colors">
           <Plus className="w-3.5 h-3.5" />
         </div>
       </div>

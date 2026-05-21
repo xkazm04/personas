@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useAgentStore } from '@/stores/agentStore';
 import { getActiveTourSteps, getTourById } from '@/stores/slices/system/tourSlice';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 /**
  * A single, ranked "resume" signal surfaced on Home above HeroHeader.
@@ -66,7 +68,7 @@ function subscribeLastEdited(listener: EditListener): () => void {
 
 function notifyLastEditedChange(): void {
   for (const l of editListeners) {
-    try { l(); } catch { /* listener errors must not break others */ }
+    try { l(); } catch (err) { silentCatch("features/home/components/useResumeContext:catch1")(err); }
   }
 }
 
@@ -93,14 +95,12 @@ export function readLastEdited(): PersistedEdit | null {
 export function markPersonaEdited(personaId: string): void {
   try {
     localStorage.setItem(LAST_EDITED_KEY, JSON.stringify({ personaId, at: Date.now() }));
-  } catch {
-    /* storage full or unavailable */
-  }
+  } catch (err) { silentCatch("features/home/components/useResumeContext:catch2")(err); }
   notifyLastEditedChange();
 }
 
 export function clearLastEdited(): void {
-  try { localStorage.removeItem(LAST_EDITED_KEY); } catch { /* best-effort */ }
+  try { localStorage.removeItem(LAST_EDITED_KEY); } catch (err) { silentCatch("features/home/components/useResumeContext:catch3")(err); }
   notifyLastEditedChange();
 }
 

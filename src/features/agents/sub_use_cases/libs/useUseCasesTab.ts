@@ -18,7 +18,7 @@ export function useUseCasesTab() {
   const personaId = selectedPersona?.id ?? '';
 
   const contextData = useParsedDesignContext();
-  const useCases: UseCaseItem[] = contextData.useCases ?? [];
+  const useCases = useMemo<UseCaseItem[]>(() => contextData.useCases ?? [], [contextData.useCases]);
 
   const selectedUseCase = useMemo(
     () => useCases.find((uc) => uc.id === selectedUseCaseId) ?? null,

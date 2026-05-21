@@ -49,7 +49,6 @@ export function useBreadcrumbTrail(): BreadcrumbSegment[] {
     homeTab,
     editorTab,
     agentTab,
-    cloudTab,
     settingsTab,
     templateTab,
     pluginTab,
@@ -62,7 +61,6 @@ export function useBreadcrumbTrail(): BreadcrumbSegment[] {
       homeTab: s.homeTab,
       editorTab: s.editorTab,
       agentTab: s.agentTab,
-      cloudTab: s.cloudTab,
       settingsTab: s.settingsTab,
       templateTab: s.templateTab,
       pluginTab: s.pluginTab,
@@ -202,9 +200,5 @@ export function useBreadcrumbTrail(): BreadcrumbSegment[] {
     }
 
     return trail;
-  }, [
-    sidebarSection, homeTab, editorTab, agentTab, cloudTab, settingsTab,
-    templateTab, pluginTab, devToolsTab, eventBusTab, isCreatingPersona,
-    selectedPersonaId, selectedPersona, credentialNav.currentKey,
-  ]);
+  }, [sidebarSection, homeTab, agentTab, isCreatingPersona, selectedPersonaId, selectedPersona, editorTab, credentialNav, eventBusTab, templateTab, settingsTab, pluginTab, devToolsTab]);
 }

@@ -1,5 +1,7 @@
 import { executePersona, getExecution } from '@/api/agents/executions';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 const TERMINAL = new Set(['completed', 'failed', 'cancelled', 'error', 'timeout']);
 
@@ -50,9 +52,7 @@ export async function runPersonaAndWait(opts: RunPersonaOptions): Promise<RunPer
       latest = await getExecution(started.id, callerPersonaId);
       opts.onStatus?.(latest.status);
       if (TERMINAL.has(latest.status)) break;
-    } catch {
-      // Ignore transient errors during polling; retry on next tick.
-    }
+    } catch (err) { silentCatch("features/plugins/research-lab/_shared/runPersona:catch1")(err); }
   }
 
   return {

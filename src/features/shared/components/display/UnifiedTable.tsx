@@ -100,7 +100,7 @@ function ColumnHeader<T>({
 
   return (
     <div className={`flex items-center gap-1 px-4 py-2.5 ${col.align === 'right' ? 'justify-end' : ''}`}>
-      <span className="text-sm font-semibold text-foreground uppercase tracking-wider">{col.label}</span>
+      <span className="typo-heading font-semibold text-foreground uppercase tracking-wider">{col.label}</span>
 
       {/* Sort icon */}
       {col.sortable && (
@@ -133,7 +133,7 @@ function ColumnHeader<T>({
                 <button
                   key={opt.value}
                   onClick={() => { col.onFilterChange!(opt.value); setShowFilter(false); }}
-                  className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${
+                  className={`w-full text-left px-3 py-1.5 typo-body transition-colors ${
                     col.filterValue === opt.value ? 'bg-primary/10 text-foreground' : 'text-foreground hover:bg-secondary/30'
                   }`}
                 >
@@ -156,7 +156,7 @@ function ColumnHeader<T>({
                 onChange={(e) => col.onSearchChange!(e.target.value)}
                 placeholder={t.shared.search_ellipsis}
                 autoFocus
-                className="w-24 px-2 py-0.5 rounded-lg text-sm bg-secondary/30 border border-primary/10 text-foreground placeholder:text-foreground/90 outline-none focus-visible:border-primary/25"
+                className="w-24 px-2 py-0.5 rounded-lg typo-body bg-secondary/30 border border-primary/10 text-foreground placeholder:text-foreground/90 outline-none focus-visible:border-primary/25"
               />
               <button
                 onClick={() => { col.onSearchChange!(''); setShowSearch(false); }}
@@ -235,7 +235,7 @@ export function UnifiedTable<T>({
   const { t } = useTranslation();
 
   if (isLoading) {
-    return <div className="py-8 text-center text-foreground text-sm">{t.common.loading}</div>;
+    return <div className="py-8 text-center text-foreground typo-body">{t.common.loading}</div>;
   }
 
   return (
@@ -252,8 +252,8 @@ export function UnifiedTable<T>({
 
       {sortedData.length === 0 ? (
         <div className="py-8 text-center">
-          <p className="text-sm text-foreground">{emptyTitle}</p>
-          {emptyDescription && <p className="text-sm text-foreground/90 mt-1">{emptyDescription}</p>}
+          <p className="typo-body text-foreground">{emptyTitle}</p>
+          {emptyDescription && <p className="typo-body text-foreground/90 mt-1">{emptyDescription}</p>}
         </div>
       ) : null}
 

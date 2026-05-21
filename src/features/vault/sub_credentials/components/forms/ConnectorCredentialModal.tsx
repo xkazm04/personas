@@ -93,7 +93,7 @@ export function ConnectorCredentialModal({
       { name: connector.name, label, fields },
       values,
     );
-  }, [connector.name, label, fields, health.checkDesign]);
+  }, [health, label, connector.name, fields]);
 
   return (
     <BaseModal

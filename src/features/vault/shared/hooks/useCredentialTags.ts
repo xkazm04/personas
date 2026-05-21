@@ -8,6 +8,8 @@ import {
   buildMetadataWithTags,
   SUGGESTED_TAGS,
 } from '@/features/vault/shared/utils/credentialTags';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 export function useCredentialTags(credential: CredentialMetadata) {
   const [tagInput, setTagInput] = useState('');
@@ -33,9 +35,7 @@ export function useCredentialTags(credential: CredentialMetadata) {
       useVaultStore.setState((s) => ({
         credentials: s.credentials.map((c) => (c.id === credential.id ? updated : c)),
       }));
-    } catch {
-      // intentional: non-critical -- tag metadata update is best-effort
-    }
+    } catch (err) { silentCatch("features/vault/shared/hooks/useCredentialTags:catch1")(err); }
   }, [credential]);
 
   const addTag = useCallback((tag: string) => {

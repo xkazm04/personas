@@ -51,9 +51,7 @@ export function DriveSidebar({ drive, activeDragCount = null }: Props) {
       const next = !prev;
       try {
         localStorage.setItem(RECENT_COLLAPSED_KEY, String(next));
-      } catch {
-        // Quota / privacy mode — the in-memory state still updates.
-      }
+      } catch (err) { silentCatch("features/plugins/drive/components/DriveSidebar:catch1")(err); }
       return next;
     });
   }, []);
@@ -113,14 +111,14 @@ export function DriveSidebar({ drive, activeDragCount = null }: Props) {
             className="group w-full px-2 mb-1 flex items-center gap-1.5 typo-label text-foreground hover:text-cyan-200 transition-colors"
           >
             {recentCollapsed ? (
-              <ChevronRight className="w-3 h-3 text-foreground/60 group-hover:text-cyan-200/80" />
+              <ChevronRight className="w-3 h-3 text-foreground group-hover:text-cyan-200/80" />
             ) : (
-              <ChevronDown className="w-3 h-3 text-foreground/60 group-hover:text-cyan-200/80" />
+              <ChevronDown className="w-3 h-3 text-foreground group-hover:text-cyan-200/80" />
             )}
             <Clock className="w-3 h-3 text-cyan-300/80" />
             <span>{t.plugins.drive.sidebar_recent}</span>
             {drive.recent.length > 0 && (
-              <span className="ml-auto typo-caption text-foreground/50 tabular-nums">
+              <span className="ml-auto typo-caption text-foreground tabular-nums">
                 {drive.recent.length}
               </span>
             )}
@@ -168,13 +166,13 @@ export function DriveSidebar({ drive, activeDragCount = null }: Props) {
           className="border-t border-primary/10 px-4 py-3 bg-background/40"
           title={drive.storage.root}
         >
-          <div className="typo-label text-foreground/50 tracking-wider uppercase mb-1">
+          <div className="typo-label text-foreground tracking-wider uppercase mb-1">
             {t.plugins.drive.sidebar_storage}
           </div>
           <div className="typo-section-title tabular-nums text-foreground">
             {driveFormatBytes(drive.storage.usedBytes)}
           </div>
-          <div className="mt-0.5 typo-caption text-foreground/60 tabular-nums">
+          <div className="mt-0.5 typo-caption text-foreground tabular-nums">
             {tx(t.plugins.drive.items_total, {
               count: drive.storage.entryCount,
             })}
@@ -236,12 +234,12 @@ function RecentRail({
             {shortcutN && (
               <kbd
                 aria-hidden
-                className="typo-caption font-mono px-1 py-px rounded border border-primary/15 bg-secondary/40 text-foreground/40 tabular-nums opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                className="typo-caption font-mono px-1 py-px rounded border border-primary/15 bg-secondary/40 text-foreground tabular-nums opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
               >
                 {MOD_KEY_LABEL}+{shortcutN}
               </kbd>
             )}
-            <span className="typo-caption text-foreground/60 tabular-nums flex-shrink-0 group-hover:text-cyan-200/60">
+            <span className="typo-caption text-foreground tabular-nums flex-shrink-0 group-hover:text-cyan-200/60">
               {formatRelativeTime(entry.modified, t, tx)}
             </span>
           </button>

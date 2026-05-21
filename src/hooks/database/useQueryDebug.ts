@@ -41,7 +41,7 @@ export function useQueryDebug() {
       await stream.start(debugId);
       await startQueryDebug(credentialId, queryText, errorContext, serviceType, debugId, allowMutations);
     },
-    [stream.start],
+    [stream],
   );
 
   const cancel = useCallback(async () => {
@@ -55,7 +55,7 @@ export function useQueryDebug() {
     setResult(null);
     setCorrectedQuery(null);
     debugIdRef.current = null;
-  }, [stream.reset]);
+  }, [stream]);
 
   return {
     start,

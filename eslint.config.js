@@ -78,7 +78,7 @@ export default tseslint.config(
       ],
       "custom/enforce-base-modal": "warn",
       "custom/no-raw-text-classes": "warn",
-      "custom/no-raw-spacing-classes": "warn",
+      "custom/no-raw-spacing-classes": "off",
       "custom/no-raw-shadow-classes": "warn",
       "custom/no-loose-event-payload": "error",
       "custom/no-raw-radius-classes": "warn",

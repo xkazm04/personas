@@ -40,7 +40,7 @@ export function ComposerConnectorCard({ connector, selected, onToggle }: Compose
       </div>
       <div className="flex-1 min-w-0">
         <div className="typo-body text-foreground font-medium truncate">{meta.label}</div>
-        <div className="typo-caption text-foreground/70 truncate">
+        <div className="typo-caption text-foreground truncate">
           {humanizeCategory(connector.category)}
         </div>
       </div>
@@ -49,7 +49,7 @@ export function ComposerConnectorCard({ connector, selected, onToggle }: Compose
           className="shrink-0 w-5 h-5 rounded-full bg-primary flex items-center justify-center"
           style={{ boxShadow: "0 0 10px rgba(96,165,250,0.8)" }}
         >
-          <Check className="w-3 h-3 text-white" strokeWidth={3} />
+          <Check className="w-3 h-3 text-foreground" strokeWidth={3} />
         </span>
       )}
     </button>

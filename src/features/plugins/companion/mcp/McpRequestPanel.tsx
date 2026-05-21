@@ -47,14 +47,14 @@ function GuidanceCard({ request }: { request: McpPendingRequest }) {
   return (
     <div className="rounded-card border border-border bg-card p-3 shadow-elevation-1">
       <div className="flex items-start gap-2 mb-2">
-        <HelpCircle className="size-4 text-foreground/70 shrink-0 mt-0.5" />
+        <HelpCircle className="size-4 text-foreground shrink-0 mt-0.5" />
         <div className="flex-1 min-w-0">
-          <div className="typo-label text-foreground/60">
+          <div className="typo-label text-foreground">
             {t.plugins.companion.orchestration.guidance_from} {sessionLabel(request.fleetSessionId)}
           </div>
           <div className="typo-body text-foreground mt-1">{payload.question}</div>
           {payload.context && (
-            <div className="typo-caption text-foreground/60 mt-1 whitespace-pre-wrap">
+            <div className="typo-caption text-foreground mt-1 whitespace-pre-wrap">
               {payload.context}
             </div>
           )}
@@ -111,14 +111,14 @@ function ApprovalCard({ request }: { request: McpPendingRequest }) {
   return (
     <div className="rounded-card border border-border bg-card p-3 shadow-elevation-1">
       <div className="flex items-start gap-2 mb-2">
-        <ShieldQuestion className="size-4 text-foreground/70 shrink-0 mt-0.5" />
+        <ShieldQuestion className="size-4 text-foreground shrink-0 mt-0.5" />
         <div className="flex-1 min-w-0">
-          <div className="typo-label text-foreground/60">
+          <div className="typo-label text-foreground">
             {t.plugins.companion.orchestration.approval_from} {sessionLabel(request.fleetSessionId)}
           </div>
           <div className="typo-body text-foreground mt-1">{payload.action}</div>
           {payload.rationale && (
-            <div className="typo-caption text-foreground/60 mt-1 whitespace-pre-wrap">
+            <div className="typo-caption text-foreground mt-1 whitespace-pre-wrap">
               {payload.rationale}
             </div>
           )}

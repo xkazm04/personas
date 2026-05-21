@@ -6,6 +6,8 @@ import { PeerCard } from './PeerCard';
 import { PeerDetailDrawer } from './PeerDetailDrawer';
 import { createLogger } from "@/lib/log";
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 const logger = createLogger("peer-list");
 
@@ -48,9 +50,7 @@ export function PeerList() {
     try {
       await fetchNetworkSnapshot();
       setLastScannedAt(Date.now());
-    } catch {
-      /* networkError store handles display */
-    }
+    } catch (err) { silentCatch("features/sharing/components/PeerList:catch1")(err); }
   }, [fetchNetworkSnapshot]);
 
   // No interval here — NetworkDashboard drives the shared 5s snapshot poll.

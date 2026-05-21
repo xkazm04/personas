@@ -303,7 +303,8 @@
     "from_templates": "Depuis les modèles",
     "todos_label": "Todos",
     "todos_subtitle_open": "{count} open",
-    "todos_empty": "All clear."
+    "todos_empty": "All clear.",
+    "mission_control_eyebrow": "Mission Control"
   },
   "execution_metrics": {
     "title": "Métriques d'exécution",

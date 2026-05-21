@@ -70,7 +70,7 @@ export default function SkillBrowserPage() {
               <div>
                 <div className="flex items-center gap-1.5 mb-1.5">
                   <Clock className="w-3 h-3 text-foreground" />
-                  <span className="typo-caption uppercase tracking-[0.18em] text-foreground/70">
+                  <span className="typo-caption uppercase tracking-[0.18em] text-foreground">
                     {t.plugins.dev_tools.skills_recent_heading}
                   </span>
                 </div>
@@ -194,7 +194,7 @@ export default function SkillBrowserPage() {
                       />
                       <div className="border border-primary/10 rounded-modal bg-card/30 p-3 overflow-y-auto">
                         <div className="flex items-center gap-1.5 mb-2 pb-2 border-b border-primary/5">
-                          <span className="text-[9px] uppercase tracking-[0.18em] text-foreground/55">
+                          <span className="text-[9px] uppercase tracking-[0.18em] text-foreground">
                             {t.plugins.dev_tools.skills_preview_heading}
                           </span>
                           {editContent !== fileContent && (
@@ -204,7 +204,7 @@ export default function SkillBrowserPage() {
                         {editContent.trim() ? (
                           <MarkdownRenderer content={editContent} />
                         ) : (
-                          <p className="text-md text-foreground/45 italic">{t.plugins.dev_tools.skills_preview_empty}</p>
+                          <p className="text-md text-foreground italic">{t.plugins.dev_tools.skills_preview_empty}</p>
                         )}
                       </div>
                     </div>
@@ -273,7 +273,7 @@ function SkillListItem({
             aria-label={favorited ? dt.skills_unfavorite : dt.skills_favorite}
             aria-pressed={favorited}
             className={`p-0.5 rounded transition-colors ${
-              favorited ? 'text-amber-400 hover:text-amber-300' : 'text-foreground/30 hover:text-amber-400'
+              favorited ? 'text-amber-400 hover:text-amber-300' : 'text-foreground hover:text-amber-400'
             }`}
           >
             <Star className={`w-3.5 h-3.5 ${favorited ? 'fill-amber-400' : ''}`} />

@@ -8,6 +8,8 @@ import { ChartErrorBoundary } from '@/features/overview/sub_usage/components/Cha
 import { fmtCost, fmtMs } from '../libs/executionMetricsHelpers';
 import { ChartTooltipContent } from './MetricsCards';
 import type { ExecutionDashboardData as ExecutionDashboard } from '@/lib/bindings/ExecutionDashboardData';
+import { DebtText } from '@/i18n/DebtText';
+
 
 // Stable tooltip element — Recharts compares by reference identity, so
 // hoisting avoids invalidating its internal shouldComponentUpdate.
@@ -164,7 +166,7 @@ export const MetricsCharts = memo(function MetricsCharts({
                     </div>
                     <div className="flex items-center gap-3 mt-1 typo-body text-foreground">
                       <span>{tx(t.overview.activity.executions_label, { count: p.total_executions })}</span>
-                      <span>~{fmtCost(p.avg_cost_per_exec)}/exec</span>
+                      <span>~{fmtCost(p.avg_cost_per_exec)}<DebtText k="auto_exec_3dc1bba2" /></span>
                     </div>
                   </div>
                   <ArrowUpRight className="w-3 h-3 text-foreground" />

@@ -49,7 +49,7 @@ export function CharBudget({ value, max, focused = true, className }: CharBudget
     ? 'text-red-400 ring-1 ring-red-400/50 rounded-sm px-1'
     : amber
       ? 'text-amber-400/90'
-      : 'text-foreground/70';
+      : 'text-foreground';
 
   return (
     <span

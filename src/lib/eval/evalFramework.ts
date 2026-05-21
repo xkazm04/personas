@@ -11,6 +11,8 @@
 
 import type { EvalStrategyKind } from '@/lib/bindings/EvalStrategyKind';
 import { en, type Translations } from '@/i18n/en';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 // Re-export for convenience
 export type { EvalStrategyKind };
@@ -73,9 +75,7 @@ export async function loadScoreWeightsOnce(): Promise<void> {
       _toolAccuracy = w.toolAccuracy;
       _outputQuality = w.outputQuality;
       _protocolCompliance = w.protocolCompliance;
-    } catch {
-      // Keep static values.
-    }
+    } catch (err) { silentCatch("lib/eval/evalFramework:catch1")(err); }
   })();
   return _weightsLoadOnce;
 }

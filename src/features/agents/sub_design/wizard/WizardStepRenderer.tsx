@@ -67,7 +67,7 @@ export function WizardStepRenderer({ step, answers, onAnswer }: WizardStepRender
                           : 'border-primary/20 bg-transparent'
                       }`}
                     >
-                      {isSelected && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
+                      {isSelected && <Check className="w-3 h-3 text-foreground" strokeWidth={3} />}
                     </div>
 
                     {/* Content */}

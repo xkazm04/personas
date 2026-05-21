@@ -6,6 +6,7 @@ import { TerminalOutput, ResultSummary } from './DesignReviewTerminal';
 import { ModeTabBar } from '../sources/ModeTabBar';
 import { useDesignRunnerState } from './useDesignRunnerState';
 import { useTranslation } from '@/i18n/useTranslation';
+import { BaseModal } from '@/lib/ui/BaseModal';
 
 export type { PredefinedTestCase } from './designRunnerConstants';
 
@@ -42,15 +43,14 @@ export default function DesignReviewRunner({
   if (!isOpen) return null;
 
   return (
-    <div
-        className="animate-fade-slide-in fixed inset-0 z-50 flex items-center justify-center bg-black/60 surface-blur-modal"
-        onClick={(e) => e.target === e.currentTarget && !isRunning && onClose()}
+    <BaseModal
+        isOpen
+        onClose={() => { if (!isRunning) onClose(); }}
+        titleId="design-runner-title"
+        size="lg"
+        panelClassName="animate-fade-slide-in max-h-[85vh] bg-background border border-primary/20 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden"
+        staggerChildren={false}
       >
-        <div
-          ref={state.modalRef}
-          role="dialog" aria-modal="true" aria-labelledby="design-runner-title"
-          className="animate-fade-slide-in max-w-3xl w-full mx-4 sm:mx-6 md:mx-auto max-h-[85vh] bg-background border border-primary/20 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden"
-        >
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-4 border-b border-primary/10 bg-primary/5">
             <div className="flex items-center gap-3">
@@ -190,7 +190,6 @@ export default function DesignReviewRunner({
               </div>
             )}
           </div>
-        </div>
-      </div>
+      </BaseModal>
   );
 }

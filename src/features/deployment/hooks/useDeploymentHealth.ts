@@ -98,7 +98,7 @@ export function useDeploymentHealth(
     })();
 
     return () => { cancelled = true; };
-  }, [stableKey, deploymentIdsKey]);
+  }, [stableKey, deploymentIdsKey, uniquePersonaIds]);
 
   return { healthMap, isLoading };
 }

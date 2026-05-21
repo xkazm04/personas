@@ -116,7 +116,7 @@ export function ExploreVariantA({
                     }`}>
                       <GroupIcon className="w-7 h-7 text-primary/80" />
                     </div>
-                    <h3 className="text-2xl font-semibold text-foreground flex-1 min-w-0 truncate drop-shadow-[0_1px_3px_rgba(0,0,0,0.4)]">{group.label}</h3>
+                    <h3 className="typo-heading-lg font-semibold text-foreground flex-1 min-w-0 truncate drop-shadow-[0_1px_3px_rgba(0,0,0,0.4)]">{group.label}</h3>
                   </div>
 
                   {/* Tags at the bottom */}

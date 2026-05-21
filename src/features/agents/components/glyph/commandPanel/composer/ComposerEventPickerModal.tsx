@@ -18,6 +18,8 @@ import type { EventSubscription } from "@/features/agents/components/matrix/quic
 import { ComposerPickerShell } from "./ComposerPickerShell";
 import { ComposerEventPersonaList, type PersonaSummary } from "./ComposerEventPersonaList";
 import { ComposerEventTemplateList, EVENT_TEMPLATES } from "./ComposerEventTemplateList";
+import { DebtText, debtText } from '@/i18n/DebtText';
+
 
 interface ComposerEventPickerModalProps {
   open: boolean;
@@ -45,14 +47,13 @@ export function ComposerEventPickerModal({
   const searchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (open) {
-      setDraft(selected);
-      setQuery("");
-      setActivePersonaId(list[0]?.id ?? null);
-      setFreeTextByTrigger({});
-      const t = setTimeout(() => searchRef.current?.focus(), 80);
-      return () => clearTimeout(t);
-    }
+    if (!open) return;
+    setDraft(selected);
+    setQuery("");
+    setActivePersonaId(list[0]?.id ?? null);
+    setFreeTextByTrigger({});
+    const t = setTimeout(() => searchRef.current?.focus(), 80);
+    return () => clearTimeout(t);
   }, [open, selected, list]);
 
   const filteredPersonas = useMemo(() => {
@@ -80,7 +81,7 @@ export function ComposerEventPickerModal({
       open={open}
       onClose={onClose}
       onApply={() => onApply(draft)}
-      title="Listen to another persona"
+      title={debtText("auto_listen_to_another_persona_aecc6493")}
       subtitle={draft.length === 0
         ? "Pick a persona and choose which events this agent should react to"
         : `${draft.length} subscription${draft.length === 1 ? "" : "s"} ready`}
@@ -88,7 +89,7 @@ export function ComposerEventPickerModal({
       size="lg"
       footer={
         <>
-          <kbd className="typo-caption text-foreground/50">⌘ + Enter</kbd>
+          <kbd className="typo-caption text-foreground"><DebtText k="auto_enter_b0d98854" /></kbd>
           <button
             type="button"
             onClick={() => onApply(draft)}
@@ -127,7 +128,7 @@ export function ComposerEventPickerModal({
 
       {draft.length > 0 && (
         <div className="sticky bottom-0 border-t border-border/20 bg-card-bg px-5 py-3">
-          <div className="typo-label text-foreground/80 mb-2">Subscriptions</div>
+          <div className="typo-label text-foreground mb-2">Subscriptions</div>
           <div className="flex items-center gap-1.5 flex-wrap">
             {draft.map((sub) => {
               const persona = list.find((p) => p.id === sub.personaId);
@@ -145,8 +146,8 @@ export function ComposerEventPickerModal({
                   <button
                     type="button"
                     onClick={() => setDraft((prev) => prev.filter((e) => !(e.personaId === sub.personaId && e.triggerId === sub.triggerId)))}
-                    className="text-foreground/60 hover:text-foreground -mr-0.5"
-                    aria-label="Remove subscription"
+                    className="text-foreground hover:text-foreground -mr-0.5"
+                    aria-label={debtText("auto_remove_subscription_5ab5e9bc")}
                   >
                     ×
                   </button>

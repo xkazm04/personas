@@ -7,6 +7,10 @@ import { useTier } from '@/hooks/utility/interaction/useTier';
 import { useSystemStore } from '@/stores/systemStore';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
+import { DebtText } from '@/i18n/DebtText';
+
+
 
 const CompanionFooterIcon = lazy(() => import('@/features/plugins/companion/CompanionFooterIcon'));
 const RadioFooter = lazy(() => import('@/features/radio/components/RadioFooter'));
@@ -159,7 +163,7 @@ function ThemeFooterIcon() {
                       }`}
                       style={{ backgroundColor: t.primaryColor }}
                     >
-                      {isActive && <Check className="w-3 h-3 text-white drop-shadow-elevation-1" />}
+                      {isActive && <Check className="w-3 h-3 text-foreground drop-shadow-elevation-1" />}
                     </span>
                     <span className={`text-[9px] leading-tight truncate w-full text-center ${
                       isActive ? 'text-foreground/90 font-medium' : 'text-foreground'
@@ -191,7 +195,7 @@ function ThemeFooterIcon() {
                         }`}
                         style={{ backgroundColor: t.primaryColor }}
                       >
-                        {isActive && <Check className="w-3 h-3 text-white drop-shadow-elevation-1" />}
+                        {isActive && <Check className="w-3 h-3 text-foreground drop-shadow-elevation-1" />}
                       </span>
                       <span className={`text-[9px] leading-tight truncate w-full text-center ${
                         isActive ? 'text-foreground/90 font-medium' : 'text-foreground'
@@ -254,7 +258,7 @@ function CollapseFooterIcon() {
   // Stay in sync when Sidebar itself changes localStorage (e.g. from another tab)
   useEffect(() => {
     const handler = () => {
-      try { setCollapsed(localStorage.getItem('sidebar-collapsed') === '1'); } catch { /* */ }
+      try { setCollapsed(localStorage.getItem('sidebar-collapsed') === '1'); } catch (err) { silentCatch("features/shared/components/layout/DesktopFooter:catch1")(err); }
     };
     window.addEventListener('storage', handler);
     return () => window.removeEventListener('storage', handler);
@@ -340,7 +344,7 @@ function ProjectPickerFooterIcon() {
       {open && (
         <div className="animate-fade-slide-in absolute bottom-full right-0 mb-2 w-64 rounded-xl border border-primary/15 bg-background shadow-elevation-3 p-2 z-50">
           <div className="px-2 py-1 mb-1 border-b border-primary/10">
-            <p className="text-[10px] uppercase tracking-wider text-foreground/60 font-mono">Active project</p>
+            <p className="text-[10px] uppercase tracking-wider text-foreground font-mono"><DebtText k="auto_active_project_687de263" /></p>
           </div>
           <div className="max-h-64 overflow-y-auto">
             {projects.map((p) => {
@@ -359,7 +363,7 @@ function ProjectPickerFooterIcon() {
                   <div className="flex-1 min-w-0">
                     <div className="text-[12px] font-medium truncate">{p.name}</div>
                     {p.root_path && (
-                      <div className="text-[10px] text-foreground/60 truncate">{p.root_path}</div>
+                      <div className="text-[10px] text-foreground truncate">{p.root_path}</div>
                     )}
                   </div>
                   {isActive && <Check className="w-3 h-3 text-indigo-300 flex-shrink-0" />}
@@ -370,9 +374,9 @@ function ProjectPickerFooterIcon() {
           <div className="mt-1 pt-1 border-t border-primary/10">
             <button
               onClick={() => { setSidebarSection('plugins'); setOpen(false); }}
-              className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-[11px] text-foreground/70 hover:bg-secondary/40 transition-colors"
+              className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-[11px] text-foreground hover:bg-secondary/40 transition-colors"
             >
-              Manage in Dev Tools
+              <DebtText k="auto_manage_in_dev_tools_70c6b5fa" />
             </button>
           </div>
         </div>
@@ -386,8 +390,8 @@ function ProjectPickerFooterIcon() {
 // ---------------------------------------------------------------------------
 
 export default function DesktopFooter() {
-  if (IS_MOBILE) return null;
   const radioEnabled = useSystemStore((s) => s.radioEnabled);
+  if (IS_MOBILE) return null;
 
   return (
     <div role="contentinfo" className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-between px-4 h-8 border-t border-primary/10 bg-background">

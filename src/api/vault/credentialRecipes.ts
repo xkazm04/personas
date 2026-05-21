@@ -27,5 +27,5 @@ export const upsertCredentialRecipe = (params: {
 }) => invoke<CredentialRecipe>('upsert_credential_recipe', params);
 
 /** Increment usage count when a recipe is consumed. */
-export const useCredentialRecipe = (connectorName: string) =>
+export const recordCredentialRecipeUse = (connectorName: string) =>
   invoke<void>('use_credential_recipe', { connectorName });

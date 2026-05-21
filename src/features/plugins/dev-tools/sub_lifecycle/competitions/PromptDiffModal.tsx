@@ -128,7 +128,7 @@ export function PromptDiffModal({ open, onClose, left, right }: Props) {
     <BaseModal isOpen={open} onClose={onClose} titleId="prompt-diff-title" size="xl">
       <div className="p-5 border-b border-primary/10">
         <h3 id="prompt-diff-title" className="typo-section-title mb-1">{dl.prompt_diff_title}</h3>
-        <p className="typo-caption text-foreground/70">
+        <p className="typo-caption text-foreground">
           {tx(dl.prompt_diff_stats, { same: stats.same, added: stats.add, removed: stats.remove })}
         </p>
       </div>
@@ -153,7 +153,7 @@ export function PromptDiffModal({ open, onClose, left, right }: Props) {
 
         {/* Diff body — render each diff line as a 2-cell grid row */}
         {lines.length === 0 ? (
-          <div className="col-span-2 p-8 text-center text-foreground/60 typo-body">{dl.prompt_diff_empty}</div>
+          <div className="col-span-2 p-8 text-center text-foreground typo-body">{dl.prompt_diff_empty}</div>
         ) : (
           lines.map((line, idx) => {
             const leftCls = line.op === 'same' ? 'bg-transparent' : line.op === 'remove' ? 'bg-red-500/10' : 'bg-foreground/[0.02]';

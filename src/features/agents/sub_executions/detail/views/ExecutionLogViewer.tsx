@@ -54,7 +54,7 @@ export function ExecutionLogViewer({ executionId, personaId }: ExecutionLogViewe
     } finally {
       setLogLoading(false);
     }
-  }, [showLog, logContent, executionId]);
+  }, [showLog, logContent, executionId, personaId, t.agents.executions.log_empty, t.agents.executions.failed_to_load_log]);
 
   return (
     <div>

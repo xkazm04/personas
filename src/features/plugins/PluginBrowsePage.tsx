@@ -73,7 +73,7 @@ export default function PluginBrowsePage() {
                         }`}
                       >
                         <span
-                          className={`absolute top-0.5 left-0.5 w-4.5 h-4.5 rounded-full bg-white shadow transition-transform ${
+                          className={`absolute top-0.5 left-0.5 w-4.5 h-4.5 rounded-full bg-secondary shadow transition-transform ${
                             enabled ? 'translate-x-[18px]' : 'translate-x-0'
                           }`}
                         />

@@ -175,10 +175,7 @@ export default function MediaStudioPage() {
           const probe = await artistProbeMedia(asset.filePath);
           width = probe.width;
           height = probe.height;
-        } catch {
-          // Non-critical — dimensions fall back to null and the preview will
-          // letterbox the image to its natural size.
-        }
+        } catch (err) { silentCatch("features/plugins/artist/sub_media_studio/MediaStudioPage:catch1")(err); }
         const clip: ImageItem = {
           id: crypto.randomUUID(),
           type: 'image',
@@ -260,9 +257,7 @@ export default function MediaStudioPage() {
               positionY: 0.5,
             });
           }
-        } catch {
-          // Silently skip unsupported files
-        }
+        } catch (err) { silentCatch("features/plugins/artist/sub_media_studio/MediaStudioPage:catch2")(err); }
       }
     },
     [addItem, videoItems, audioItems, imageItems],
@@ -467,18 +462,18 @@ export default function MediaStudioPage() {
 
           {exportState.status === 'exporting' && (
             <div className="flex items-center gap-2 px-4 py-1.5 border-t border-primary/10 bg-card/40">
-              <span className="text-[11px] text-foreground/60">{t.media_studio.exporting}</span>
+              <span className="text-[11px] text-foreground">{t.media_studio.exporting}</span>
               <div className="flex-1 h-1 rounded-full bg-secondary/40 overflow-hidden max-w-xs">
                 <div
                   className="h-full bg-rose-500 transition-all"
                   style={{ width: `${exportState.progress * 100}%` }}
                 />
               </div>
-              <span className="text-[11px] text-foreground/60 tabular-nums">
+              <span className="text-[11px] text-foreground tabular-nums">
                 {Math.round(exportState.progress * 100)}%
               </span>
               {exportState.elapsedMs >= 1000 && (
-                <span className="text-[11px] text-foreground/60 tabular-nums">
+                <span className="text-[11px] text-foreground tabular-nums">
                   ·{' '}
                   {tx(t.media_studio.export_elapsed, {
                     time: formatDurationHuman(exportState.elapsedMs / 1000),
@@ -486,7 +481,7 @@ export default function MediaStudioPage() {
                 </span>
               )}
               {exportState.etaMs !== null && (
-                <span className="text-[11px] text-foreground/60 tabular-nums">
+                <span className="text-[11px] text-foreground tabular-nums">
                   ·{' '}
                   {tx(t.media_studio.export_eta, {
                     time: formatDurationHuman(exportState.etaMs / 1000),
@@ -573,7 +568,7 @@ function RecentCompositionsRow({ onLoad }: { onLoad: (path: string) => Promise<v
             )}
             <div className="flex flex-col text-left min-w-0">
               <span className="text-md text-foreground truncate">{r.name}</span>
-              <span className="text-[11px] text-foreground/60">
+              <span className="text-[11px] text-foreground">
                 {tx(t.media_studio.recent_saved_ago, { time: formatRelativeSince(r.savedAt) })}
               </span>
             </div>
@@ -607,7 +602,7 @@ function StarterTemplatesRow({ onApply }: { onApply: (template: StarterTemplate)
             className="flex flex-col items-start gap-0.5 px-3 py-2 rounded-card border border-primary/10 bg-card/50 hover:border-rose-500/30 hover:bg-card/70 transition-colors min-w-[10rem]"
           >
             <span className="text-md text-foreground">{starterTemplateName(tpl.id, t)}</span>
-            <span className="text-[11px] text-foreground/60 tabular-nums">
+            <span className="text-[11px] text-foreground tabular-nums">
               {tpl.width}×{tpl.height} · {tpl.fps}fps
             </span>
           </button>
@@ -670,8 +665,8 @@ function ExportSuccessStrip({
   return (
     <div className="flex items-center gap-2 px-4 py-1.5 border-t border-primary/10 bg-emerald-500/5">
       <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-      <span className="text-[11px] text-foreground/80 font-medium">{t.media_studio.export_done}</span>
-      <span className="text-[11px] text-foreground/60 font-mono truncate flex-1" title={outputPath}>
+      <span className="text-[11px] text-foreground font-medium">{t.media_studio.export_done}</span>
+      <span className="text-[11px] text-foreground font-mono truncate flex-1" title={outputPath}>
         {fileName}
       </span>
       <Button variant="ghost" size="sm" onClick={playFile} title={t.media_studio.export_open_file}>

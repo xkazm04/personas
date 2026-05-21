@@ -26,6 +26,8 @@ import { FleetSessionCard } from '../FleetSessionCard';
 import { FleetTerminalPane } from '../FleetTerminalPane';
 import { FleetHooksPill } from '../FleetHooksPill';
 import { FleetBroadcastModal } from '../FleetBroadcastModal';
+import { DebtText, debtText } from '@/i18n/DebtText';
+
 
 // Visual order + label + icon + accent for the per-state group headers
 // in the left list. Attention-grabbing first; terminal states last.
@@ -41,7 +43,7 @@ const GROUP_ORDER: ReadonlyArray<{
   { id: 'spawning',       label: 'Spawning',       icon: Sparkle,      accent: 'text-cyan-400' },
   { id: 'idle',           label: 'Idle',           icon: CheckCircle2, accent: 'text-emerald-400' },
   { id: 'stale',          label: 'Stale',          icon: Clock,        accent: 'text-orange-400' },
-  { id: 'exited',         label: 'Exited',         icon: Ban,          accent: 'text-foreground/50' },
+  { id: 'exited',         label: 'Exited',         icon: Ban,          accent: 'text-foreground' },
 ];
 
 /**
@@ -207,7 +209,7 @@ export default function FleetGridPage() {
     <ContentBox>
       <ContentHeader
         icon={<TerminalIcon className="w-5 h-5 text-primary" />}
-        title="Fleet — Sessions"
+        title={debtText("auto_fleet_sessions_691c1118")}
         subtitle={subtitle}
         actions={<FleetHooksPill />}
       />
@@ -258,11 +260,11 @@ export default function FleetGridPage() {
           >
             {sessions.length === 0 ? (
               <div className="text-center py-8 border border-dashed border-primary/10 rounded-modal">
-                <div className="w-10 h-10 rounded-xl bg-primary/8 border border-primary/15 flex items-center justify-center mx-auto mb-2">
-                  <TerminalIcon className="w-5 h-5 text-foreground/40" />
+                <div className="w-10 h-10 rounded-modal bg-primary/8 border border-primary/15 flex items-center justify-center mx-auto mb-2">
+                  <TerminalIcon className="w-5 h-5 text-foreground" />
                 </div>
-                <p className="text-[11px] text-foreground/60">No sessions yet</p>
-                <p className="text-[10px] text-foreground/40 mt-1 px-3">
+                <p className="text-[11px] text-foreground"><DebtText k="auto_no_sessions_yet_9d7789c9" /></p>
+                <p className="text-[10px] text-foreground mt-1 px-3">
                   {activeProject
                     ? 'Click Spawn to launch claude, or run it externally once hooks are installed.'
                     : 'Pick a project in Dev Tools → Projects.'}
@@ -280,7 +282,7 @@ export default function FleetGridPage() {
                   >
                     <div className="flex items-center gap-1.5 px-2 mb-1">
                       <GroupIcon className={`w-3 h-3 ${g.accent} ${g.id === 'running' ? 'animate-spin' : ''}`} />
-                      <span className="typo-label uppercase tracking-wider text-foreground/60">
+                      <span className="typo-label uppercase tracking-wider text-foreground">
                         {g.label}
                       </span>
                       <span
@@ -311,8 +313,8 @@ export default function FleetGridPage() {
           <div className="col-span-8 border border-primary/10 rounded-modal overflow-hidden bg-[#0a0a0c]">
             {activeSession ? (
               activeSession.state === 'exited' ? (
-                <div className="h-full flex flex-col items-center justify-center text-foreground/60 p-6">
-                  <p className="typo-caption mb-2">Session exited</p>
+                <div className="h-full flex flex-col items-center justify-center text-foreground p-6">
+                  <p className="typo-caption mb-2"><DebtText k="auto_session_exited_a34ee64f" /></p>
                   <p className="text-[10px]">
                     {activeSession.exitCode !== null
                       ? `Exit code ${activeSession.exitCode}`
@@ -323,9 +325,9 @@ export default function FleetGridPage() {
                 <FleetTerminalPane sessionId={activeSession.id} />
               )
             ) : (
-              <div className="h-full flex flex-col items-center justify-center text-foreground/30 p-6">
+              <div className="h-full flex flex-col items-center justify-center text-foreground p-6">
                 <TerminalIcon className="w-10 h-10 mb-3" />
-                <p className="typo-caption">Select a session to view its terminal</p>
+                <p className="typo-caption"><DebtText k="auto_select_a_session_to_view_its_terminal_921aba6c" /></p>
               </div>
             )}
           </div>

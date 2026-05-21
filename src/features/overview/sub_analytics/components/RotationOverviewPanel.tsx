@@ -212,7 +212,7 @@ export const RotationOverviewPanel = memo(function RotationOverviewPanel() {
                 {/* Countdown */}
                 {countdown && (
                   <span className={`typo-caption font-mono flex-shrink-0 ${
-                    isDue ? 'text-amber-400 font-semibold' : 'text-foreground/70'
+                    isDue ? 'text-amber-400 font-semibold' : 'text-foreground'
                   }`}>
                     {countdown}
                   </span>

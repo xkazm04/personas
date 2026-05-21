@@ -7,6 +7,8 @@ import { selectedModelsToConfigs } from '@/lib/models/modelCatalog';
 import { usePanelRunState } from '../../libs/usePanelRunState';
 import { ModelToggleGrid, UseCaseFilterPicker, LabPanelShell } from '../../shared';
 import { useTranslation } from '@/i18n/useTranslation';
+import { DebtText, debtText } from '@/i18n/DebtText';
+
 
 export function EvalPanel() {
   const { t } = useTranslation();
@@ -83,13 +85,13 @@ export function EvalPanel() {
 
         <div className="space-y-1">
           <label className="typo-body text-foreground">{t.agents.lab.test_input_label}</label>
-          <textarea value={testInput} onChange={(e) => setTestInput(e.target.value)} placeholder='{"task": "Summarize the latest sales report"}' data-testid="eval-test-input"
+          <textarea value={testInput} onChange={(e) => setTestInput(e.target.value)} placeholder={debtText("auto_task_summarize_the_latest_sales_report_6c4a91ed")} data-testid="eval-test-input"
             className="w-full h-20 px-3 py-2 typo-code bg-background/50 border border-primary/20 rounded-modal text-foreground placeholder-muted-foreground/30 focus-ring resize-none font-mono disabled:opacity-50" />
         </div>
 
         {selectedVersionIds.values.size >= 2 && selectedModels.size > 0 && (
           <div className="typo-body text-foreground bg-secondary/30 rounded-modal px-3 py-2">
-            {selectedVersionIds.values.size} versions x {selectedModels.size} models = {selectedVersionIds.values.size * selectedModels.size} evaluation cells
+            {selectedVersionIds.values.size} <DebtText k="auto_versions_x_afea4bf7" /> {selectedModels.size} <DebtText k="auto_models_dbb4fd4b" /> {selectedVersionIds.values.size * selectedModels.size} <DebtText k="auto_evaluation_cells_a8853ed0" />
           </div>
         )}
       </LabPanelShell>

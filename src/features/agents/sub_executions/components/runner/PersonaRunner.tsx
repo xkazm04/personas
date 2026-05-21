@@ -17,6 +17,10 @@ import { MiniPlayerPinButton, StatusIcon } from './RunnerHeader';
 import { HealingCard, AiHealingCounters } from './RunnerToolCalls';
 import { RunnerPhaseTimeline } from './RunnerStreamView';
 import { StuckExecutionGuidance } from './StuckExecutionGuidance';
+import { silentCatch } from '@/lib/silentCatch';
+import { debtText } from '@/i18n/DebtText';
+
+
 
 export function PersonaRunner() {
   const selectedPersona = useAgentStore((state) => state.selectedPersona);
@@ -78,7 +82,7 @@ export function PersonaRunner() {
           </button>
           {state.showInputEditor && (
               <div className="animate-fade-slide-in">
-                <KeyValueEditor value={state.inputData} onChange={(v) => { state.setInputData(v); if (state.jsonError) state.setJsonError(null); }} placeholder='{"key": "value"}' />
+                <KeyValueEditor value={state.inputData} onChange={(v) => { state.setInputData(v); if (state.jsonError) state.setJsonError(null); }} placeholder={debtText("auto_key_value_e735dd8e")} />
                 {state.jsonError && <p className="text-red-400/80 typo-body mt-1">{state.jsonError}</p>}
               </div>
             )}
@@ -95,7 +99,7 @@ export function PersonaRunner() {
         )}
         {IS_MOBILE ? (
           <button
-            onClick={() => { try { window.open('https://claude.ai/code', '_blank'); } catch { /* intentional no-op */ } }}
+            onClick={() => { try { window.open('https://claude.ai/code', '_blank'); } catch (err) { silentCatch("features/agents/sub_executions/components/runner/PersonaRunner:catch1")(err); } }}
             className="w-full flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-modal typo-heading transition-all bg-gradient-to-r from-cyan-500/80 to-blue-500/80 hover:from-cyan-500 hover:to-blue-500 text-foreground shadow-elevation-3 shadow-cyan-500/20"
           >
             <Monitor className="w-5 h-5" />

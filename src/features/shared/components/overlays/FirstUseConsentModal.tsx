@@ -18,6 +18,8 @@ import {
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { useTranslation } from '@/i18n/useTranslation';
 import { setTelemetryEnabled } from '@/lib/telemetryPreference';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 /** localStorage key for first-use consent acceptance. Exported so admin /
  *  diagnostic surfaces (e.g. AdminSettings storage-key display) can render
@@ -45,17 +47,13 @@ export function storedConsentVersion(): string | null {
 export function resetUserConsent(): void {
   try {
     localStorage.removeItem(CONSENT_KEY);
-  } catch {
-    // no-op
-  }
+  } catch (err) { silentCatch("features/shared/components/overlays/FirstUseConsentModal:catch1")(err); }
 }
 
 function persistConsent() {
   try {
     localStorage.setItem(CONSENT_KEY, CONSENT_VERSION);
-  } catch {
-    // Fallback: consent is session-only if localStorage unavailable
-  }
+  } catch (err) { silentCatch("features/shared/components/overlays/FirstUseConsentModal:catch2")(err); }
 }
 
 interface SectionProps {
@@ -88,7 +86,7 @@ function ConsentSection({ icon, title, tldr, items, color, defaultOpen = false, 
               </span>
             )}
           </span>
-          <p className="text-sm text-foreground mt-0.5">{tldr}</p>
+          <p className="typo-body text-foreground mt-0.5">{tldr}</p>
         </div>
         {open ? <ChevronUp className="w-4 h-4 text-foreground shrink-0" /> : <ChevronDown className="w-4 h-4 text-foreground shrink-0" />}
       </button>
@@ -286,7 +284,7 @@ export function FirstUseConsentModal({ onAccept, isVersionBump }: FirstUseConsen
             href="https://github.com/xkazm04/personas"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-sm text-foreground hover:text-foreground transition-colors"
+            className="inline-flex items-center gap-1.5 typo-body text-foreground hover:text-foreground transition-colors"
           >
             <ExternalLink className="w-3 h-3" />
             {c.source_link}
@@ -296,7 +294,7 @@ export function FirstUseConsentModal({ onAccept, isVersionBump }: FirstUseConsen
             onClick={handleAccept}
             className={`flex items-center gap-2 px-6 py-2.5 rounded-xl typo-heading transition-all ${
               acknowledged
-                ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-elevation-3 shadow-blue-600/20 cursor-pointer'
+                ? 'bg-blue-600 hover:bg-blue-500 text-foreground shadow-elevation-3 shadow-blue-600/20 cursor-pointer'
                 : 'bg-secondary/40 text-foreground cursor-not-allowed'
             }`}
           >

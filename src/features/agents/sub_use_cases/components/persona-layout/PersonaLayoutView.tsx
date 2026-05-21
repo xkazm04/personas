@@ -211,15 +211,6 @@ export function PersonaLayoutView({ credentials }: PersonaLayoutViewProps) {
     ? items.find((u) => u.id === selectedUseCaseId) ?? null
     : null;
 
-  if (!selectedPersona) {
-    return (
-      <EmptyState
-        title={t.agents.use_cases.no_persona_selected_title}
-        description={t.agents.use_cases.no_persona_selected_desc}
-      />
-    );
-  }
-
   // Summary sidebar — derived from the ACTIVE capability only, not
   // aggregated across the persona. Each row shows the saved value for
   // a single dim of `activeCapability`. Empty when no active cap (yet)
@@ -255,14 +246,14 @@ export function PersonaLayoutView({ credentials }: PersonaLayoutViewProps) {
                 <span
                   key={key}
                   title={meta.label}
-                  className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-foreground/5 border border-card-border/40"
+                  className="inline-flex items-center justify-center w-6 h-6 rounded-input bg-foreground/5 border border-card-border/40"
                 >
                   <ConnectorIcon meta={meta} size="w-4 h-4" />
                 </span>
               );
             })}
             {connectorFallbackNames.size > 0 && (
-              <span className="typo-body text-foreground/65">{[...connectorFallbackNames].join(' · ')}</span>
+              <span className="typo-body text-foreground">{[...connectorFallbackNames].join(' · ')}</span>
             )}
           </span>
         ),
@@ -312,6 +303,15 @@ export function PersonaLayoutView({ credentials }: PersonaLayoutViewProps) {
     }
     return out;
   }, [activeCapability, disabledDimsForActive]);
+
+  if (!selectedPersona) {
+    return (
+      <EmptyState
+        title={t.agents.use_cases.no_persona_selected_title}
+        description={t.agents.use_cases.no_persona_selected_desc}
+      />
+    );
+  }
 
   // Header tab strip + Add-capability affordance. Replaces the
   // right-side compact list — capabilities live in the header now so

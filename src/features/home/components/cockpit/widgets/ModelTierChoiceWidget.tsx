@@ -47,7 +47,7 @@ export function ModelTierChoiceWidget({ config, title }: CockpitWidgetProps) {
 
   if (tiers.length === 0) {
     return (
-      <div className="rounded-card border border-foreground/10 bg-secondary/40 p-3 typo-caption text-foreground/55">
+      <div className="rounded-card border border-foreground/10 bg-secondary/40 p-3 typo-caption text-foreground">
         {t.plugins.companion.model_tier_empty}
       </div>
     );
@@ -68,7 +68,7 @@ export function ModelTierChoiceWidget({ config, title }: CockpitWidgetProps) {
           {title || t.plugins.companion.model_tier_title}
         </span>
         {intent && (
-          <span className="text-foreground/55 truncate" title={intent}>
+          <span className="text-foreground truncate" title={intent}>
             · {intent}
           </span>
         )}
@@ -87,7 +87,7 @@ export function ModelTierChoiceWidget({ config, title }: CockpitWidgetProps) {
               data-recommended={isReco ? 'true' : 'false'}
             >
               <div className="flex items-center gap-1.5">
-                <Zap className="w-3 h-3 text-foreground/55" />
+                <Zap className="w-3 h-3 text-foreground" />
                 <span className="typo-body font-medium text-foreground/95">
                   {tierLabel(entry.tier, t)}
                 </span>
@@ -98,7 +98,7 @@ export function ModelTierChoiceWidget({ config, title }: CockpitWidgetProps) {
                   </span>
                 )}
               </div>
-              <p className="typo-caption text-foreground/70 leading-snug">
+              <p className="typo-caption text-foreground leading-snug">
                 {entry.rationale}
               </p>
             </div>

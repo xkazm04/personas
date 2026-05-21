@@ -70,7 +70,7 @@ export function CredentialSchemaForm({
   const handleSubTypeChange = useCallback((id: string) => {
     setSubTypeId(id);
     health.invalidate();
-  }, [health.invalidate]);
+  }, [health]);
 
   const handleHealthcheck = useCallback(async (fieldValues: Record<string, string>) => {
     if (config.customHealthcheck) {
@@ -90,7 +90,7 @@ export function CredentialSchemaForm({
       { name: serviceType, healthcheck_config: hcConfig },
       fieldValues,
     );
-  }, [activeSubType, config.customHealthcheck, config.serviceTypePrefix, config.title, subTypeId, extraState, name, nameOverride, serviceTypeOverride, health.checkDesign, health.check]);
+  }, [config.customHealthcheck, config.serviceTypePrefix, config.title, activeSubType, serviceTypeOverride, nameOverride, name, health, subTypeId, extraState]);
 
   const handleSave = async (fieldValues: Record<string, string>) => {
     const effectiveName = nameOverride ?? name.trim();

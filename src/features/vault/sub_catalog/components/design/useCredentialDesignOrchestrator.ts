@@ -95,7 +95,7 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
 
   const mergedOAuthValues = useMemo(
     () => ({ ...oauth.getValues(), ...universalOAuth.getValues(), ...negotiatorValues }),
-    [oauth.valuesVersion, universalOAuth.valuesVersion, negotiatorValues],
+    [oauth, universalOAuth, negotiatorValues],
   );
 
   const { canSaveCredential } = useFieldValidation(effectiveFields, mergedOAuthValues, flow, health.result);
@@ -107,7 +107,7 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
       if (!text) return;
       design.start(text);
     },
-    [instruction, design.start],
+    [instruction, design],
   );
 
   const handleSave = useCallback(
@@ -131,7 +131,7 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
       const name = credentialName.trim() || fallback;
       design.save(name, values, hcConfig);
     },
-    [flow, credentialName, design.result, design.save, health.result, health.setResult, tx, t.vault.credential_forms.credential_suffix, t.vault.credential_forms.healthcheck_required],
+    [health, tx, t.vault.credential_forms.credential_suffix, t.vault.credential_forms.healthcheck_required, design, flow.kind, credentialName],
   );
 
   const handleHealthcheck = useCallback(
@@ -143,7 +143,7 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
         values,
       );
     },
-    [instruction, design.result, health.checkDesign],
+    [design.result, health, instruction],
   );
 
   const handleValuesChanged = useCallback(
@@ -151,7 +151,7 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
       health.invalidate();
       if (oauth.completedAt) oauth.reset();
     },
-    [health.invalidate, oauth.completedAt, oauth.reset],
+    [health, oauth],
   );
 
   const handleOAuthConsent = useCallback(
@@ -170,13 +170,13 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
         oauth.startConsent(design.result?.connector.name || 'google', values);
       }
     },
-    [flow, design.result, oauth.startConsent, universalOAuth.startConsent],
+    [flow, universalOAuth, oauth, design.result?.connector.name],
   );
 
   const handleReset = useCallback(() => {
     design.reset();
     health.invalidate();
-  }, [design.reset, health.invalidate]);
+  }, [design, health]);
 
   const handleRefine = useCallback(() => {
     const preserved = instruction;
@@ -185,7 +185,7 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
     setCredentialName('');
     health.invalidate();
     setNegotiatorValues({});
-  }, [instruction, design.reset, health.invalidate]);
+  }, [instruction, design, health]);
 
   const startRefinement = useCallback(
     (refinementText: string) => {
@@ -214,7 +214,7 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
       setInstruction(enriched);
       design.refine(enriched);
     },
-    [instruction, design.refine, health.invalidate, oauth.reset, universalOAuth.reset],
+    [instruction, health, oauth, universalOAuth, design],
   );
 
   const handleNegotiatorValues = useCallback(
@@ -222,7 +222,7 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
       setNegotiatorValues(values);
       health.invalidate();
     },
-    [health.invalidate],
+    [health],
   );
 
   const resetAll = useCallback(() => {
@@ -237,7 +237,7 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
     lastResultRef.current = null;
     authPrefetchedRef.current = false;
     setPrefetchedAuthDetections(undefined);
-  }, [design.reset, oauth.reset, universalOAuth.reset, health.invalidate]);
+  }, [design, oauth, universalOAuth, health]);
 
   // -- Context value --
   const contextValue: CredentialDesignContextValue | null = design.result

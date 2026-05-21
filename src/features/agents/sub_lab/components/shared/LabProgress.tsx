@@ -1,6 +1,8 @@
 import { Check, FileEdit, Sparkles, Play, BarChart3 } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { useTranslation } from '@/i18n/useTranslation';
+import { DebtText } from '@/i18n/DebtText';
+
 
 const LAB_PHASES = [
   { key: 'drafting', icon: FileEdit },
@@ -119,9 +121,9 @@ export function LabProgress() {
         {/* Scores */}
         {labProgress.scores && (
           <div className="flex items-center gap-4 typo-body text-foreground">
-            <span>Tool: {labProgress.scores.tool_accuracy ?? '--'}</span>
-            <span>Output: {labProgress.scores.output_quality ?? '--'}</span>
-            <span>Protocol: {labProgress.scores.protocol_compliance ?? '--'}</span>
+            <span><DebtText k="auto_tool_5bc72f59" /> {labProgress.scores.tool_accuracy ?? '--'}</span>
+            <span><DebtText k="auto_output_f3c8c95c" /> {labProgress.scores.output_quality ?? '--'}</span>
+            <span><DebtText k="auto_protocol_c4bba733" /> {labProgress.scores.protocol_compliance ?? '--'}</span>
           </div>
         )}
       </div>

@@ -123,10 +123,10 @@ export function TwinPicker({ profiles, activeTwinId, onSelect, onCreateNew }: Pr
         {activeTwin ? (
           <>
             {activeTwin.name}
-            {activeTwin.role && <span className="text-foreground/65 ml-1.5">— {activeTwin.role}</span>}
+            {activeTwin.role && <span className="text-foreground ml-1.5">— {activeTwin.role}</span>}
           </>
         ) : (
-          <span className="text-foreground/65">{t.selector.selectTwin}</span>
+          <span className="text-foreground">{t.selector.selectTwin}</span>
         )}
       </button>
       <Sparkles className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-violet-400/60 pointer-events-none" />
@@ -139,7 +139,7 @@ export function TwinPicker({ profiles, activeTwinId, onSelect, onCreateNew }: Pr
           aria-label={t.selector.pickerLabel}
         >
           <div className="relative border-b border-primary/10">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-foreground/55 pointer-events-none" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-foreground pointer-events-none" />
             <input
               ref={inputRef}
               type="text"
@@ -152,7 +152,7 @@ export function TwinPicker({ profiles, activeTwinId, onSelect, onCreateNew }: Pr
           </div>
           <ul className="max-h-64 overflow-y-auto py-1">
             {filtered.length === 0 ? (
-              <li className="px-3 py-2 typo-caption text-foreground/55">{t.selector.noMatches}</li>
+              <li className="px-3 py-2 typo-caption text-foreground">{t.selector.noMatches}</li>
             ) : (
               filtered.map((p, idx) => {
                 const isActive = p.id === activeTwinId;
@@ -174,10 +174,10 @@ export function TwinPicker({ profiles, activeTwinId, onSelect, onCreateNew }: Pr
                         isHighlighted ? 'bg-violet-500/10' : 'hover:bg-secondary/40'
                       }`}
                     >
-                      <Sparkles className={`w-3.5 h-3.5 flex-shrink-0 ${isActive ? 'text-violet-300' : 'text-foreground/40'}`} />
+                      <Sparkles className={`w-3.5 h-3.5 flex-shrink-0 ${isActive ? 'text-violet-300' : 'text-foreground'}`} />
                       <span className="flex-1 min-w-0">
                         <span className="block typo-caption text-foreground truncate">{p.name}</span>
-                        {p.role && <span className="block text-[10px] text-foreground/55 truncate">{p.role}</span>}
+                        {p.role && <span className="block text-[10px] text-foreground truncate">{p.role}</span>}
                       </span>
                       {isActive && <Check className="w-3.5 h-3.5 text-violet-300 flex-shrink-0" />}
                     </button>

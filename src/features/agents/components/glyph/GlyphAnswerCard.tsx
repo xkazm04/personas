@@ -6,6 +6,8 @@ import type { BuildQuestion } from "@/lib/types/buildTypes";
 import { VaultConnectorPicker } from "@/features/shared/components/picker/VaultConnectorPicker";
 import { useSystemStore } from "@/stores/systemStore";
 import { CELL_KEY_TO_DIM, DIM_LABEL } from "./glyphLayoutHelpers";
+import { debtText } from '@/i18n/DebtText';
+
 
 interface GlyphAnswerCardProps {
   question: BuildQuestion;
@@ -54,18 +56,18 @@ export function GlyphAnswerCard({ question, onAnswer, onClose }: GlyphAnswerCard
       />
       <div className="flex items-center gap-2">
         <span
-          className="w-7 h-7 rounded-md flex items-center justify-center"
+          className="w-7 h-7 rounded-input flex items-center justify-center"
           style={{ background: `${color}33`, boxShadow: `0 0 10px ${color}66` }}
         >
           <HelpCircle className="w-4 h-4 text-foreground" />
         </span>
-        <span className="typo-label font-bold uppercase tracking-[0.18em] text-foreground/70 flex-1">
+        <span className="typo-label font-bold uppercase tracking-[0.18em] text-foreground flex-1">
           {dim ? DIM_LABEL[dim] : question.cellKey.replace(/-/g, " ")}
         </span>
         <button
           type="button"
           onClick={onClose}
-          className="text-foreground/40 hover:text-foreground/80"
+          className="text-foreground hover:text-foreground/80"
           aria-label="Close"
         >
           <X className="w-4 h-4" />
@@ -102,7 +104,7 @@ export function GlyphAnswerCard({ question, onAnswer, onClose }: GlyphAnswerCard
               value={text}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") submit(text); }}
-              placeholder="Answer in your own words…"
+              placeholder={debtText("auto_answer_in_your_own_words_28c70fc2")}
               className="flex-1 px-3 py-2 rounded-modal bg-primary/5 border typo-body text-foreground placeholder:text-foreground/40 focus:outline-none"
               style={{ borderColor: `${color}40` }}
               autoFocus

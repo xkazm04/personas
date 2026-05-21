@@ -27,7 +27,7 @@ export function SectionHeading({ title, icon, action, children, className = '', 
   if (children !== undefined && children !== null) {
     const Tag = as ?? 'h3';
     return (
-      <Tag className={`text-sm font-medium text-foreground uppercase tracking-wider ${className}`}>
+      <Tag className={`typo-body font-medium text-foreground uppercase tracking-wider ${className}`}>
         {children}
       </Tag>
     );

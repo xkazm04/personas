@@ -72,7 +72,7 @@ export default function CloudSyncPanel() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [isAuthenticated]);
+  }, [isAuthenticated, setDriveConnected, setDriveEmail, setDriveFileCount, setDriveStorage, setLastDriveSyncAt]);
 
   const connectDrive = useCallback(async () => {
     setConnecting(true);

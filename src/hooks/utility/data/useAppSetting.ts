@@ -49,7 +49,7 @@ export function useAppSetting(
         logger.error('Failed to load app setting', { key, err: err instanceof Error ? err.message : String(err) });
       })
       .finally(() => setLoaded(true));
-  }, [key]);
+  }, [defaultValue, key, validate]);
 
   const setValue = useCallback((v: string) => {
     setValueRaw(v);

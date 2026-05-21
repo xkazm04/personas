@@ -5,6 +5,8 @@ import { addTeamMember, createTeamConnection, deleteTeam, listTeamMembers, sugge
 
 import type { TopologyBlueprint } from '@/lib/bindings/TopologyBlueprint';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 export type AutoTeamPhase =
   | 'idle'
@@ -131,7 +133,7 @@ export function useAutoTeam(): AutoTeamState {
       } catch (err) {
         // Roll back the partial team — best-effort, we've already surfaced the
         // failure via the outer catch.
-        try { await deleteTeam(team.id); } catch { /* best-effort cleanup */ }
+        try { await deleteTeam(team.id); } catch (err) { silentCatch("features/pipeline/components/useAutoTeam:catch1")(err); }
         setCreatedTeam(null);
         throw err;
       }
@@ -192,15 +194,11 @@ export function useAutoTeam(): AutoTeamState {
               });
               seeded++;
             }
-          } catch {
-            // Skip teams we can't read
-          }
+          } catch (err) { silentCatch("features/pipeline/components/useAutoTeam:catch2")(err); }
 
           if (seeded >= 10) break; // Cap seeded memories
         }
-      } catch {
-        // Memory seeding is best-effort
-      }
+      } catch (err) { silentCatch("features/pipeline/components/useAutoTeam:catch3")(err); }
 
       setMemoriesSeeded(seeded);
       await fetchTeams();

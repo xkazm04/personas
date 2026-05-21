@@ -19,6 +19,8 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import { silentCatch } from '@/lib/silentCatch';
 
 import { cockpitRowSpan, cockpitWidgetRegistry } from './widgetRegistry';
+import { DebtText } from '@/i18n/DebtText';
+
 
 /**
  * Home → Cockpit. The spec is composed by Athena via `compose_cockpit` and
@@ -68,9 +70,7 @@ export default function CockpitPanel() {
   if (spec) {
     try {
       persistentBody = JSON.parse(spec.specJson) as CompanionCockpitSpecBody;
-    } catch {
-      // Invalid saved specs render as an empty cockpit below.
-    }
+    } catch (err) { silentCatch("features/home/components/cockpit/CockpitPanel:catch1")(err); }
   }
   const body = contextualCockpit ? contextualCockpit.spec : persistentBody;
   const widgets = body?.widgets ?? [];
@@ -91,7 +91,7 @@ export default function CockpitPanel() {
       data-testid="cockpit-talk-to-athena"
     >
       <MessageCircle className="w-3.5 h-3.5" />
-      Talk to Athena
+      <DebtText k="auto_talk_to_athena_4a34b995" />
     </button>
   );
 
@@ -147,13 +147,13 @@ export default function CockpitPanel() {
 
 function CockpitEmptyState({ onTalk }: { onTalk: () => void }) {
   return (
-    <div className="flex flex-col items-center justify-center py-20 text-foreground/60 gap-4">
-      <Compass className="w-10 h-10 text-foreground/25" />
-      <div className="typo-body font-medium text-foreground/85">Your cockpit is empty</div>
-      <div className="typo-caption text-foreground/55 max-w-md text-center">
-        Ask Athena to compose a cockpit view — try
-        <span className="text-foreground/80"> "show me my personas" </span>
-        or <span className="text-foreground/80">"what needs my attention"</span>.
+    <div className="flex flex-col items-center justify-center py-20 text-foreground gap-4">
+      <Compass className="w-10 h-10 text-foreground" />
+      <div className="typo-body font-medium text-foreground/85"><DebtText k="auto_your_cockpit_is_empty_88e25bb2" /></div>
+      <div className="typo-caption text-foreground max-w-md text-center">
+        <DebtText k="auto_ask_athena_to_compose_a_cockpit_view_try_fcc2f4df" />
+        <span className="text-foreground"> <DebtText k="auto_show_me_my_personas_796e0c66" /> </span>
+        or <span className="text-foreground"><DebtText k="auto_what_needs_my_attention_70790810" /></span>.
       </div>
       <button
         type="button"
@@ -161,7 +161,7 @@ function CockpitEmptyState({ onTalk }: { onTalk: () => void }) {
         className="inline-flex items-center gap-1.5 px-4 py-2 rounded-input typo-caption font-medium bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 hover:border-primary/30 transition-colors"
       >
         <MessageCircle className="w-3.5 h-3.5" />
-        Talk to Athena
+        <DebtText k="auto_talk_to_athena_4a34b995" />
       </button>
     </div>
   );
@@ -183,7 +183,7 @@ function CockpitWidgetCell({ widget }: { widget: CompanionCockpitWidget }) {
         <Component title={widget.title} config={widget.config} />
       ) : (
         <div className="rounded-card border border-rose-500/30 bg-rose-500/[0.06] p-4 typo-caption text-rose-300 h-full flex items-center justify-center">
-          Unknown widget: {widget.kind}
+          <DebtText k="auto_unknown_widget_aedf060d" /> {widget.kind}
         </div>
       )}
     </div>

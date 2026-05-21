@@ -7,6 +7,8 @@ import type { CorrelatedEvent } from '@/lib/bindings/CorrelatedEvent';
 import type { RootCauseSuggestion } from '@/lib/bindings/RootCauseSuggestion';
 import type { MetricAnomaly } from '@/lib/bindings/MetricAnomaly';
 import { useTranslation } from '@/i18n/useTranslation';
+import { DebtText } from '@/i18n/DebtText';
+
 
 interface AnomalyDrilldownPanelProps {
   anomaly: MetricAnomaly;
@@ -102,7 +104,7 @@ const RootCauseCard = memo(function RootCauseCard({ suggestion }: { suggestion: 
         <span className={`ml-auto typo-caption font-medium ${
           pct >= 70 ? 'text-emerald-400' : pct >= 40 ? 'text-amber-400' : 'text-red-400'
         }`}>
-          {pct}% confidence
+          {pct}<DebtText k="auto_confidence_a89b4754" />
         </span>
       </div>
       <p className="typo-caption text-foreground leading-relaxed">{suggestion.description}</p>
@@ -146,7 +148,7 @@ export default function AnomalyDrilldownPanel({ anomaly, data, loading, error, o
                 {t.overview.anomaly_drilldown_extra.title}
               </h2>
               <p className="typo-caption text-foreground">
-                {metricLabel} spike on {new Date(anomaly.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+                {metricLabel} <DebtText k="auto_spike_on_64ee70a2" /> {new Date(anomaly.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
               </p>
             </div>
           </div>
@@ -207,7 +209,7 @@ export default function AnomalyDrilldownPanel({ anomaly, data, loading, error, o
             {/* Correlated Events Timeline */}
             <section>
               <h3 className="typo-label font-semibold text-foreground uppercase tracking-wider mb-2">
-                Correlated Events ({data.correlatedEvents.length})
+                <DebtText k="auto_correlated_events_4a6b6c7a" />{data.correlatedEvents.length})
               </h3>
               {sortedEvents.length === 0 ? (
                 <div className="text-center py-6 typo-body text-foreground">

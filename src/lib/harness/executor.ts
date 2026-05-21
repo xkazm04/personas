@@ -14,6 +14,8 @@ import type {
   ParsedAreaResult,
   ProgressEntry,
 } from './types';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 // ---------------------------------------------------------------------------
 //  Result Markers
@@ -184,9 +186,7 @@ export async function executeArea(
           const msg = JSON.parse(line);
           if (msg.session_id) sessionId = msg.session_id;
           if (msg.cost_usd != null) costUsd = msg.cost_usd;
-        } catch {
-          // not all lines are JSON
-        }
+        } catch (err) { silentCatch("lib/harness/executor:catch1")(err); }
       }
     });
 

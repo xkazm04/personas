@@ -70,9 +70,10 @@ export function DriveContextMenu({
     const esc = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
-    setTimeout(() => document.addEventListener("mousedown", handler), 0);
+    const timer = setTimeout(() => document.addEventListener("mousedown", handler), 0);
     document.addEventListener("keydown", esc);
     return () => {
+      clearTimeout(timer);
       document.removeEventListener("mousedown", handler);
       document.removeEventListener("keydown", esc);
     };

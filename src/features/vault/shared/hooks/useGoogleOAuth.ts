@@ -55,7 +55,7 @@ export function useGoogleOAuth(options: UseGoogleOAuthOptions = {}): GoogleOAuth
 
   const startConsent = useCallback((connectorName: string, extraScopes?: string[]) => {
     protocol.start(connectorName, extraScopes);
-  }, [protocol.start]);
+  }, [protocol]);
 
   return {
     isAuthorizing: protocol.isActive,

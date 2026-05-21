@@ -110,13 +110,13 @@ export function RecipesBrowseList({ recipes, onOpenDetail }: RecipesBrowseListPr
         </span>
         <div className="flex-1 min-w-0">
           <div className="typo-section-title text-foreground">{t.recipes_catalog.page_title}</div>
-          <div className="typo-caption text-foreground/65">
+          <div className="typo-caption text-foreground">
             {t.recipes_catalog.page_subtitle}
           </div>
         </div>
         <div className="text-right shrink-0">
           <div className="typo-data font-mono text-foreground">{recipes.length}</div>
-          <div className="typo-label uppercase tracking-wider text-foreground/55">{t.recipes_catalog.available_label}</div>
+          <div className="typo-label uppercase tracking-wider text-foreground">{t.recipes_catalog.available_label}</div>
         </div>
       </div>
 
@@ -124,7 +124,7 @@ export function RecipesBrowseList({ recipes, onOpenDetail }: RecipesBrowseListPr
       <div className="flex items-center gap-2 px-4 py-3 border-b border-card-border/40 flex-shrink-0 flex-wrap">
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground/45 pointer-events-none" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground pointer-events-none" />
           <input
             type="search"
             value={search}
@@ -177,8 +177,8 @@ export function RecipesBrowseList({ recipes, onOpenDetail }: RecipesBrowseListPr
       <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin">
         <div className="p-4">
           {filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center text-center py-16 typo-caption text-foreground/55">
-              <Search className="w-8 h-8 mb-2 text-foreground/35" />
+            <div className="flex flex-col items-center justify-center text-center py-16 typo-caption text-foreground">
+              <Search className="w-8 h-8 mb-2 text-foreground" />
               <div className="typo-body font-medium text-foreground/85 mb-1">{t.recipes_catalog.no_results_heading}</div>
               <div>{t.recipes_catalog.no_results_body}</div>
             </div>
@@ -285,14 +285,14 @@ function EligibilityFilterChip({ active, onClick, label, count, icon, tone }: El
     : tone === 'warning'
       ? 'bg-status-warning/12 border-status-warning/35 text-status-warning/95'
       : tone === 'muted'
-        ? 'bg-secondary/60 border-card-border text-foreground/55'
+        ? 'bg-secondary/60 border-card-border text-foreground'
         : 'bg-primary/12 border-primary/35 text-primary';
   return (
     <button
       type="button"
       onClick={onClick}
       className={`inline-flex items-center gap-1 px-2 py-1 rounded-full typo-caption transition-colors cursor-pointer border ${
-        active ? toneCls : 'bg-secondary/40 border-card-border/60 text-foreground/65 hover:text-foreground hover:border-foreground/30'
+        active ? toneCls : 'bg-secondary/40 border-card-border/60 text-foreground hover:text-foreground hover:border-foreground/30'
       }`}
     >
       {icon}

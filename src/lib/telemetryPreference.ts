@@ -1,3 +1,4 @@
+import { silentCatch } from '@/lib/silentCatch';
 /**
  * Telemetry preference — controls whether Sentry error reporting and
  * anonymous feature analytics are active.
@@ -22,7 +23,5 @@ export function isTelemetryEnabled(): boolean {
 export function setTelemetryEnabled(enabled: boolean): void {
   try {
     localStorage.setItem(TELEMETRY_KEY, enabled ? "true" : "false");
-  } catch {
-    // no-op if localStorage unavailable
-  }
+  } catch (err) { silentCatch("lib/telemetryPreference:catch1")(err); }
 }

@@ -7,6 +7,10 @@ import { useVaultStore } from '@/stores/vaultStore';
 import { useSystemStore } from '@/stores/systemStore';
 
 import type { CockpitWidgetProps } from '../widgetRegistry';
+import { silentCatch } from '@/lib/silentCatch';
+import { DebtText } from '@/i18n/DebtText';
+
+
 
 /**
  * Connected services — credentials in the vault + how many personas reference
@@ -50,9 +54,7 @@ export function ConnectedServicesWidget({ config, title }: CockpitWidgetProps) {
             }
           }
         }
-      } catch {
-        // Malformed design_context — skip silently.
-      }
+      } catch (err) { silentCatch("features/home/components/cockpit/widgets/ConnectedServicesWidget:catch1")(err); }
     }
     return counts;
   }, [personas]);
@@ -69,21 +71,21 @@ export function ConnectedServicesWidget({ config, title }: CockpitWidgetProps) {
   return (
     <div className="rounded-card border border-foreground/10 bg-foreground/[0.02] p-4 h-full flex flex-col min-h-0">
       <div className="flex items-center justify-between mb-3">
-        <div className="typo-caption text-foreground/60 uppercase tracking-wide">
+        <div className="typo-caption text-foreground uppercase tracking-wide">
           {title ?? 'Connected services'}
         </div>
         <button
           type="button"
           onClick={openConnections}
-          className="typo-caption text-foreground/50 hover:text-foreground/80 transition-colors"
+          className="typo-caption text-foreground hover:text-foreground/80 transition-colors"
         >
-          {credentials?.length ?? 0} total →
+          {credentials?.length ?? 0} <DebtText k="auto_total_716ca4a7" />
         </button>
       </div>
       {rows.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center gap-2 text-foreground/40">
+        <div className="flex-1 flex flex-col items-center justify-center gap-2 text-foreground">
           <Key className="w-6 h-6" />
-          <div className="typo-caption">No connections yet</div>
+          <div className="typo-caption"><DebtText k="auto_no_connections_yet_5bb01e90" /></div>
         </div>
       ) : (
         <ul className="flex-1 space-y-1 overflow-y-auto">
@@ -103,7 +105,7 @@ export function ConnectedServicesWidget({ config, title }: CockpitWidgetProps) {
                 >
                   <HealthIcon status={status} />
                   <span className="typo-caption truncate flex-1 text-foreground/85">{c.name}</span>
-                  <span className="typo-caption text-foreground/50 tabular-nums">
+                  <span className="typo-caption text-foreground tabular-nums">
                     {used > 0 ? `${used} persona${used === 1 ? '' : 's'}` : '—'}
                   </span>
                 </button>
@@ -119,5 +121,5 @@ export function ConnectedServicesWidget({ config, title }: CockpitWidgetProps) {
 function HealthIcon({ status }: { status: 'ok' | 'warn' | 'unknown' }) {
   if (status === 'ok') return <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />;
   if (status === 'warn') return <AlertCircle className="w-3.5 h-3.5 text-rose-400 shrink-0" />;
-  return <CircleHelp className="w-3.5 h-3.5 text-foreground/30 shrink-0" />;
+  return <CircleHelp className="w-3.5 h-3.5 text-foreground shrink-0" />;
 }

@@ -58,9 +58,7 @@ export function saveDriftEvents(events: DesignDriftEvent[]): void {
     // Keep only the most recent 50 events
     const trimmed = events.slice(-50);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
-  } catch {
-    // storage full
-  }
+  } catch (err) { silentCatch("lib/design/designDrift:catch1")(err); }
 }
 
 function makeId(): string {
@@ -203,6 +201,8 @@ function truncate(s: string, maxLen: number): string {
 // -- Drift kind metadata -----------------------------------------
 
 import { STATUS_PALETTE_EXTENDED } from './statusTokens';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 export const DRIFT_KIND_META: Record<DriftKind, { label: string; bgClass: string; borderClass: string; textClass: string }> = {
   error_pattern:    { label: 'Error Pattern',    bgClass: STATUS_PALETTE_EXTENDED.critical.bg, borderClass: STATUS_PALETTE_EXTENDED.critical.border, textClass: STATUS_PALETTE_EXTENDED.critical.text },

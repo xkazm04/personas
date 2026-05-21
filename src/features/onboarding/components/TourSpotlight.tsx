@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
 import { isSafeTourTestId } from '@/stores/slices/system/tourSlice';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 interface SpotlightRect {
   x: number;
@@ -110,7 +112,7 @@ export default function TourSpotlight() {
       setRect(null);
       // Auto-end the tour so the user isn't stuck behind a stale mask.
       // `dismissTour` is idempotent, so racing mutations can't stack dismissals.
-      try { dismissTour?.(); } catch { /* intentional: dismissTour may be a no-op */ }
+      try { dismissTour?.(); } catch (err) { silentCatch("features/onboarding/components/TourSpotlight:catch1")(err); }
     };
 
     const scheduleMissingRetry = () => {

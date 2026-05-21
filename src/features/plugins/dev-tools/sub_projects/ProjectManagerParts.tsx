@@ -135,7 +135,7 @@ export function GoalBoard({
 
         {goals.length === 0 ? (
           <div className="text-center py-8">
-            <Target className="w-7 h-7 text-foreground/60 mx-auto mb-2" />
+            <Target className="w-7 h-7 text-foreground mx-auto mb-2" />
             <p className="typo-body text-foreground">{t.plugins.dev_projects.no_goals_add_below}</p>
           </div>
         ) : (

@@ -4,6 +4,8 @@ import type { EffectiveModelConfig } from '@/lib/bindings/EffectiveModelConfig';
 import type { ConfigField } from '@/lib/bindings/ConfigField';
 import { ConfigInheritanceBadge } from './ConfigInheritanceBadge';
 import { useTranslation } from '@/i18n/useTranslation';
+import { DebtText } from '@/i18n/DebtText';
+
 
 interface EffectiveConfigPanelProps {
   config: EffectiveModelConfig | null;
@@ -96,7 +98,7 @@ export function EffectiveConfigPanel({ config, loading }: EffectiveConfigPanelPr
           {config.workspaceName && (
             <div className="pt-1.5 pb-0.5">
               <span className="text-[10px] text-blue-400/60 uppercase tracking-wider font-medium">
-                Workspace: {config.workspaceName}
+                <DebtText k="auto_workspace_92b51a97" /> {config.workspaceName}
               </span>
             </div>
           )}

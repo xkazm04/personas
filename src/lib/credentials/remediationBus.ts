@@ -12,6 +12,8 @@
  */
 
 import type { Remediation, AnomalyScore } from '@/api/vault/rotation';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 // -- Event Types -----------------------------------------------------
 
@@ -145,7 +147,7 @@ class RemediationBusImpl {
 
     // Notify subscribers
     for (const sub of this.subscribers) {
-      try { sub(fullEvent); } catch { /* subscriber error doesn't break bus */ }
+      try { sub(fullEvent); } catch (err) { silentCatch("lib/credentials/remediationBus:catch1")(err); }
     }
 
     return fullEvent;

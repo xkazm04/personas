@@ -10,6 +10,8 @@ import type { SharedEventSubscription } from '@/lib/bindings/SharedEventSubscrip
 import { CatalogCard } from './CatalogCard';
 import { SubscriptionList } from './SubscriptionList';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 type View = 'browse' | 'subscriptions';
 
@@ -32,9 +34,7 @@ export function SharedEventsTab() {
       ]);
       setCatalog(cat);
       setSubscriptions(subs);
-    } catch {
-      // non-critical
-    } finally {
+    } catch (err) { silentCatch("features/triggers/sub_shared/SharedEventsTab:catch1")(err); } finally {
       setLoading(false);
     }
   }, [category, debouncedSearch]);
@@ -47,9 +47,7 @@ export function SharedEventsTab() {
       const entries = await api.refreshCatalog();
       setCatalog(entries);
       setSubscriptions(await api.listSubscriptions());
-    } catch {
-      // cloud unavailable
-    } finally {
+    } catch (err) { silentCatch("features/triggers/sub_shared/SharedEventsTab:catch2")(err); } finally {
       setLoading(false);
     }
   };

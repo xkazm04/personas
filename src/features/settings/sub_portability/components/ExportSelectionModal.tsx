@@ -281,10 +281,10 @@ export function ExportSelectionModal({
   );
 
   // Selection helpers
-  const stateMap: Record<string, [Set<string>, React.Dispatch<React.SetStateAction<Set<string>>>]> = {
+  const stateMap = useMemo<Record<string, [Set<string>, React.Dispatch<React.SetStateAction<Set<string>>>]>>(() => ({
     personas: [selectedPersonaIds, setSelectedPersonaIds],
     credentials: [selectedCredentialIds, setSelectedCredentialIds],
-  };
+  }), [selectedCredentialIds, selectedPersonaIds]);
 
   const toggleAll = useCallback(
     (key: string, items: ExportableItem[]) => {
@@ -296,7 +296,7 @@ export function ExportSelectionModal({
         setSelected(new Set(items.map((i) => i.id)));
       }
     },
-    [selectedPersonaIds, selectedCredentialIds],
+    [stateMap],
   );
 
   const toggleItem = useCallback(
@@ -310,7 +310,7 @@ export function ExportSelectionModal({
       }
       setSelected(next);
     },
-    [selectedPersonaIds, selectedCredentialIds],
+    [stateMap],
   );
 
   // Global select/deselect all.

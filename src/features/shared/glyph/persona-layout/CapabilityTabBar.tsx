@@ -82,7 +82,7 @@ export function CapabilityTabBar({
             />
             <span
               className={`typo-caption text-center leading-tight line-clamp-2 ${
-                isActive ? 'text-foreground font-medium' : 'text-foreground/75 group-hover:text-foreground'
+                isActive ? 'text-foreground font-medium' : 'text-foreground group-hover:text-foreground'
               }`}
               style={{ minHeight: '2.2em' }}
             >

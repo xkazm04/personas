@@ -76,7 +76,7 @@ export function RecallPreviewPanel({ twinId }: Props) {
       </div>
 
       {bundle === null ? (
-        <p className="typo-caption text-foreground/55 py-2">{t.recall.loading}</p>
+        <p className="typo-caption text-foreground py-2">{t.recall.loading}</p>
       ) : (
         <div className="space-y-3">
           {bundle.contact_filter && (
@@ -87,13 +87,13 @@ export function RecallPreviewPanel({ twinId }: Props) {
 
           {/* Identity */}
           <section className="p-3 rounded-card border border-primary/10 bg-background/40">
-            <p className="text-[10px] uppercase tracking-[0.18em] text-foreground/55 mb-1.5 flex items-center gap-1">
+            <p className="text-[10px] uppercase tracking-[0.18em] text-foreground mb-1.5 flex items-center gap-1">
               <User className="w-3 h-3" />
               {t.recall.identitySection}
             </p>
             <p className="typo-body text-foreground font-medium">{bundle.profile.name}</p>
             {bundle.profile.role && (
-              <p className="typo-caption text-foreground/70">{bundle.profile.role}</p>
+              <p className="typo-caption text-foreground">{bundle.profile.role}</p>
             )}
             {bundle.profile.bio && (
               <p className="typo-body text-foreground mt-1.5 leading-relaxed">{bundle.profile.bio}</p>
@@ -102,7 +102,7 @@ export function RecallPreviewPanel({ twinId }: Props) {
 
           {/* Tone */}
           <section className="p-3 rounded-card border border-primary/10 bg-background/40">
-            <p className="text-[10px] uppercase tracking-[0.18em] text-foreground/55 mb-1.5 flex items-center gap-1">
+            <p className="text-[10px] uppercase tracking-[0.18em] text-foreground mb-1.5 flex items-center gap-1">
               <Mic className="w-3 h-3" />
               {t.recall.toneSection}
             </p>
@@ -110,22 +110,22 @@ export function RecallPreviewPanel({ twinId }: Props) {
               <>
                 <p className="typo-body text-foreground whitespace-pre-wrap">{bundle.tone.voice_directives}</p>
                 {bundle.tone.length_hint && (
-                  <p className="typo-caption text-foreground/65 mt-1 italic">{bundle.tone.length_hint}</p>
+                  <p className="typo-caption text-foreground mt-1 italic">{bundle.tone.length_hint}</p>
                 )}
               </>
             ) : (
-              <p className="typo-caption text-foreground/55 italic">{t.recall.toneEmpty}</p>
+              <p className="typo-caption text-foreground italic">{t.recall.toneEmpty}</p>
             )}
           </section>
 
           {/* Top facts */}
           <section className="p-3 rounded-card border border-primary/10 bg-background/40">
-            <p className="text-[10px] uppercase tracking-[0.18em] text-foreground/55 mb-1.5 flex items-center gap-1">
+            <p className="text-[10px] uppercase tracking-[0.18em] text-foreground mb-1.5 flex items-center gap-1">
               <Sparkles className="w-3 h-3" />
               {tx(t.recall.factsSection, { count: bundle.top_facts.length })}
             </p>
             {bundle.top_facts.length === 0 ? (
-              <p className="typo-caption text-foreground/55 italic">{t.recall.factsEmpty}</p>
+              <p className="typo-caption text-foreground italic">{t.recall.factsEmpty}</p>
             ) : (
               <ul className="space-y-1.5">
                 {bundle.top_facts.map((fact) => (
@@ -136,7 +136,7 @@ export function RecallPreviewPanel({ twinId }: Props) {
                     <span className="flex-1 min-w-0">
                       {fact.content}
                       {fact.contact_handle && (
-                        <span className="ml-1.5 text-[10px] text-foreground/55">({fact.contact_handle})</span>
+                        <span className="ml-1.5 text-[10px] text-foreground">({fact.contact_handle})</span>
                       )}
                     </span>
                   </li>
@@ -147,11 +147,11 @@ export function RecallPreviewPanel({ twinId }: Props) {
 
           {/* Recent comms */}
           <section className="p-3 rounded-card border border-primary/10 bg-background/40">
-            <p className="text-[10px] uppercase tracking-[0.18em] text-foreground/55 mb-1.5">
+            <p className="text-[10px] uppercase tracking-[0.18em] text-foreground mb-1.5">
               {tx(t.recall.commsSection, { count: bundle.recent_communications.length })}
             </p>
             {bundle.recent_communications.length === 0 ? (
-              <p className="typo-caption text-foreground/55 italic">{t.recall.commsEmpty}</p>
+              <p className="typo-caption text-foreground italic">{t.recall.commsEmpty}</p>
             ) : (
               <ul className="space-y-1.5">
                 {bundle.recent_communications.map((c) => {
@@ -162,7 +162,7 @@ export function RecallPreviewPanel({ twinId }: Props) {
                         ? <ArrowUpRight className="w-3 h-3 text-violet-400 mt-0.5 flex-shrink-0" />
                         : <ArrowDownLeft className="w-3 h-3 text-cyan-400 mt-0.5 flex-shrink-0" />}
                       <span className="flex-1 min-w-0">
-                        <span className="text-[10px] text-foreground/55">
+                        <span className="text-[10px] text-foreground">
                           {c.channel} · {c.contact_handle ?? '—'} · {new Date(c.occurred_at).toLocaleDateString()}
                         </span>
                         <span className="block line-clamp-2">{c.content}</span>
@@ -177,12 +177,12 @@ export function RecallPreviewPanel({ twinId }: Props) {
           {/* Top contacts (only for twin-wide) */}
           {!bundle.contact_filter && (
             <section className="p-3 rounded-card border border-primary/10 bg-background/40">
-              <p className="text-[10px] uppercase tracking-[0.18em] text-foreground/55 mb-1.5 flex items-center gap-1">
+              <p className="text-[10px] uppercase tracking-[0.18em] text-foreground mb-1.5 flex items-center gap-1">
                 <Users className="w-3 h-3" />
                 {tx(t.recall.contactsSection, { count: bundle.top_contacts.length })}
               </p>
               {bundle.top_contacts.length === 0 ? (
-                <p className="typo-caption text-foreground/55 italic">{t.recall.contactsEmpty}</p>
+                <p className="typo-caption text-foreground italic">{t.recall.contactsEmpty}</p>
               ) : (
                 <ul className="flex flex-wrap gap-1.5">
                   {bundle.top_contacts.map((c) => (
@@ -197,7 +197,7 @@ export function RecallPreviewPanel({ twinId }: Props) {
                         title={t.recall.scopeToTooltip}
                       >
                         {c.alias?.trim() || c.handle}
-                        <span className="ml-1 text-foreground/55">· {Number(c.message_count)}</span>
+                        <span className="ml-1 text-foreground">· {Number(c.message_count)}</span>
                       </button>
                     </li>
                   ))}

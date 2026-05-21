@@ -72,7 +72,7 @@ export function PersonaReadyWidget({ config, title }: CockpitWidgetProps) {
 
   if (!summary) {
     return (
-      <div className="rounded-card border border-foreground/10 bg-secondary/40 p-3 typo-caption text-foreground/55">
+      <div className="rounded-card border border-foreground/10 bg-secondary/40 p-3 typo-caption text-foreground">
         {t.plugins.companion.persona_ready_empty}
       </div>
     );
@@ -109,7 +109,7 @@ export function PersonaReadyWidget({ config, title }: CockpitWidgetProps) {
       </header>
       <div className="space-y-2">
         <div className="rounded-card bg-foreground/[0.04] border border-foreground/10 p-3">
-          <div className="typo-caption text-foreground/45 mb-1">
+          <div className="typo-caption text-foreground mb-1">
             {t.plugins.companion.persona_ready_intent_label}
           </div>
           <p className="typo-body text-foreground/95 leading-relaxed">
@@ -143,7 +143,7 @@ export function PersonaReadyWidget({ config, title }: CockpitWidgetProps) {
         />
       </div>
       <footer className="flex items-center justify-between gap-2 pt-1">
-        <span className="typo-caption text-foreground/55">
+        <span className="typo-caption text-foreground">
           {recommendedHint(recommended, t)}
         </span>
         <button
@@ -172,8 +172,8 @@ function Row({
   if (!value || !value.trim()) return null;
   return (
     <div className="flex items-baseline gap-2 typo-caption">
-      <Icon className="w-3 h-3 text-foreground/45 shrink-0 self-center" />
-      <span className="text-foreground/45 shrink-0">{label}</span>
+      <Icon className="w-3 h-3 text-foreground shrink-0 self-center" />
+      <span className="text-foreground shrink-0">{label}</span>
       <span className="text-foreground/85 flex-1">{value}</span>
     </div>
   );

@@ -38,7 +38,7 @@ export function TimeControls({
               className={`focus-ring inline-flex items-center gap-1 rounded px-2 py-0.5 typo-caption font-medium transition-colors ${
                 on
                   ? 'bg-primary/20 text-primary ring-1 ring-primary/40'
-                  : 'bg-foreground/[0.04] text-foreground/65 hover:bg-foreground/[0.08]'
+                  : 'bg-foreground/[0.04] text-foreground hover:bg-foreground/[0.08]'
               }`}
             >
               <Icon className="w-3 h-3" />
@@ -57,7 +57,7 @@ export function TimeControls({
                   type="button"
                   onClick={() => onChange(updateTime(selection, { weekday: i }))}
                   className={`rounded px-1.5 py-0.5 font-mono transition-colors ${
-                    weekday === i ? 'bg-primary/25 text-primary' : 'text-foreground/55 hover:text-foreground hover:bg-foreground/[0.05]'
+                    weekday === i ? 'bg-primary/25 text-primary' : 'text-foreground hover:text-foreground hover:bg-foreground/[0.05]'
                   }`}
                 >
                   {t.templates.adoption.weekdays[d]}
@@ -65,7 +65,7 @@ export function TimeControls({
               ))}
             </div>
           )}
-          <span className="text-foreground/55 font-mono ml-auto">@</span>
+          <span className="text-foreground font-mono ml-auto">@</span>
           <input
             type="number"
             min={0}
@@ -74,7 +74,7 @@ export function TimeControls({
             onChange={(e) => onChange(updateTime(selection, { hourOfDay: clampHour(e.target.value) }))}
             className="focus-ring w-12 rounded ring-1 ring-primary/30 bg-primary/10 px-1.5 py-0.5 font-mono text-foreground text-center tabular-nums"
           />
-          <span className="text-foreground/55 font-mono tabular-nums">:00</span>
+          <span className="text-foreground font-mono tabular-nums">:00</span>
         </div>
       )}
     </div>

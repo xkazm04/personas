@@ -2,6 +2,8 @@ import { forwardRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { humanizeCategory } from "./ComposerConnectorCard";
+import { DebtText, debtText } from '@/i18n/DebtText';
+
 
 interface CategoryEntry {
   cat: string;
@@ -28,13 +30,13 @@ export const ComposerConnectorsSearchBar = forwardRef<HTMLInputElement, Composer
       <div className="sticky top-0 z-10 bg-card-bg border-b border-border/20 px-5 py-3 flex flex-col gap-3">
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-foreground/50" />
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-foreground" />
             <input
               ref={ref}
               type="text"
               value={query}
               onChange={(e) => onQueryChange(e.target.value)}
-              placeholder="Search apps…"
+              placeholder={debtText("auto_search_apps_5d1c8a02")}
               className="w-full pl-9 pr-3 py-2 rounded-interactive bg-foreground/5 border border-border/30 typo-body text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-primary/40"
             />
           </div>
@@ -74,10 +76,10 @@ export const ComposerConnectorsSearchBar = forwardRef<HTMLInputElement, Composer
                   className={`px-2.5 py-1 rounded-full typo-caption transition-colors ${
                     category === "__all__"
                       ? "bg-primary/25 text-foreground border border-primary/50 font-medium"
-                      : "bg-foreground/5 text-foreground/80 border border-border/30 hover:border-primary/30"
+                      : "bg-foreground/5 text-foreground border border-border/30 hover:border-primary/30"
                   }`}
                 >
-                  All · {totalHealthy}
+                  <DebtText k="auto_all_c8fb9db1" /> {totalHealthy}
                 </button>
                 {categories.map(({ cat, n }) => {
                   const active = category === cat;
@@ -89,7 +91,7 @@ export const ComposerConnectorsSearchBar = forwardRef<HTMLInputElement, Composer
                       className={`px-2.5 py-1 rounded-full typo-caption transition-colors ${
                         active
                           ? "bg-primary/25 text-foreground border border-primary/50 font-medium"
-                          : "bg-foreground/5 text-foreground/80 border border-border/30 hover:border-primary/30"
+                          : "bg-foreground/5 text-foreground border border-border/30 hover:border-primary/30"
                       }`}
                     >
                       {humanizeCategory(cat)} · {n}

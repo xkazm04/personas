@@ -8,6 +8,8 @@ import { compositeScoreFromRow, scoreColor } from '@/lib/eval/evalFramework';
 import type { AbVersionAggregate } from '../../libs/labAggregation';
 import type { AbVariantProps, SelectedCell } from './AbResultsView';
 import { FileDiff, MessageSquare, Lightbulb, GitPullRequest, Plus, Minus, Equal } from 'lucide-react';
+import { DebtText } from '@/i18n/DebtText';
+
 
 interface MetricSpec {
   key: string;
@@ -38,13 +40,13 @@ function signed(n: number): string {
 function deltaClass(n: number): string {
   if (n > 0) return 'text-status-success';
   if (n < 0) return 'text-status-error';
-  return 'text-foreground/50';
+  return 'text-foreground';
 }
 
 function DeltaPill({ value, size = 'md' }: { value: number; size?: 'sm' | 'md' | 'lg' }) {
   const Icon = value > 0 ? Plus : value < 0 ? Minus : Equal;
   const bg = value > 0 ? 'bg-status-success/10 border-status-success/20' : value < 0 ? 'bg-status-error/10 border-status-error/20' : 'bg-secondary/30 border-primary/10';
-  const sizeClass = size === 'lg' ? 'px-3 py-1.5 text-base' : size === 'sm' ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-1 typo-caption';
+  const sizeClass = size === 'lg' ? 'px-3 py-1.5 typo-body-lg' : size === 'sm' ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-1 typo-caption';
   return (
     <span className={`inline-flex items-center gap-1 rounded-input border font-mono font-bold tabular-nums ${bg} ${deltaClass(value)} ${sizeClass}`}>
       <Icon className={size === 'lg' ? 'w-4 h-4' : size === 'sm' ? 'w-2.5 h-2.5' : 'w-3 h-3'} />
@@ -63,10 +65,10 @@ function DiffStripe({ left, right }: { left: AbVersionAggregate; right: AbVersio
       <div className="px-5 py-4 flex flex-wrap items-center gap-4 border-b border-primary/10">
         <div className="flex items-center gap-2">
           <GitPullRequest className="w-4 h-4 text-primary" />
-          <span className="typo-code font-mono text-foreground/70 text-sm">
+          <span className="typo-code font-mono text-foreground text-sm">
             v{left.versionNumber}
           </span>
-          <span className="text-foreground/40">→</span>
+          <span className="text-foreground">→</span>
           <span className="typo-code font-mono text-foreground text-sm font-semibold">
             v{right.versionNumber}
           </span>
@@ -81,7 +83,7 @@ function DiffStripe({ left, right }: { left: AbVersionAggregate; right: AbVersio
             <Minus className="w-3.5 h-3.5" />
             <span className="font-bold tabular-nums">{lost}</span>
           </span>
-          <span className="typo-caption text-foreground/60">composite</span>
+          <span className="typo-caption text-foreground">composite</span>
         </div>
         <div className="flex-1" />
         <DeltaPill value={delta} size="lg" />
@@ -94,12 +96,12 @@ function DiffStripe({ left, right }: { left: AbVersionAggregate; right: AbVersio
           const d = rv - lv;
           return (
             <div key={spec.key} className="px-4 py-3 flex flex-col gap-1">
-              <span className="text-[10px] uppercase tracking-wider text-foreground/60 font-semibold">{spec.label}</span>
+              <span className="text-[10px] uppercase tracking-wider text-foreground font-semibold">{spec.label}</span>
               <div className="flex items-baseline gap-2 font-mono">
-                <span className="text-foreground/50 text-sm tabular-nums">{lv}</span>
-                <span className="text-foreground/30">→</span>
-                <span className={`text-lg font-bold tabular-nums ${scoreColor(rv)}`}>{rv}</span>
-                <span className={`text-sm font-bold tabular-nums ${deltaClass(d)}`}>{signed(d)}</span>
+                <span className="text-foreground typo-data tabular-nums">{lv}</span>
+                <span className="text-foreground">→</span>
+                <span className={`typo-heading-lg font-bold tabular-nums ${scoreColor(rv)}`}>{rv}</span>
+                <span className={`typo-data font-bold tabular-nums ${deltaClass(d)}`}>{signed(d)}</span>
               </div>
             </div>
           );
@@ -117,9 +119,9 @@ function MetricDiffRow({ spec, left, right }: { spec: MetricSpec; left: AbVersio
 
   return (
     <div className="grid grid-cols-[140px_1fr_1fr_72px] items-center gap-3 py-2 font-mono">
-      <span className="typo-caption text-foreground/80 font-sans">{spec.label}</span>
+      <span className="typo-caption text-foreground font-sans">{spec.label}</span>
       <div className="flex items-center gap-2">
-        <span className={`text-sm tabular-nums w-10 text-right ${scoreColor(lv)}`}>{lv}</span>
+        <span className={`typo-data tabular-nums w-10 text-right ${scoreColor(lv)}`}>{lv}</span>
         <div className="flex-1 h-1.5 rounded-full bg-primary/5 overflow-hidden">
           <div className="h-full bg-primary/30 rounded-full" style={{ width: `${(lv / maxBar) * 100}%` }} />
         </div>
@@ -128,7 +130,7 @@ function MetricDiffRow({ spec, left, right }: { spec: MetricSpec; left: AbVersio
         <div className="flex-1 h-1.5 rounded-full bg-primary/5 overflow-hidden">
           <div className="h-full bg-primary/60 rounded-full" style={{ width: `${(rv / maxBar) * 100}%` }} />
         </div>
-        <span className={`text-sm tabular-nums w-10 ${scoreColor(rv)}`}>{rv}</span>
+        <span className={`typo-data tabular-nums w-10 ${scoreColor(rv)}`}>{rv}</span>
       </div>
       <div className="flex justify-end">
         <DeltaPill value={d} size="sm" />
@@ -200,7 +202,7 @@ function ScoreCell({
   tone: 'base' | 'left' | 'right';
 }) {
   if (score === null) {
-    return <span className="font-mono text-foreground/30">—</span>;
+    return <span className="font-mono text-foreground">—</span>;
   }
   const bg = tone === 'left' ? 'bg-status-error/[0.04] hover:bg-status-error/10'
     : tone === 'right' ? 'bg-status-success/[0.04] hover:bg-status-success/10'
@@ -234,7 +236,7 @@ function ScenarioDiffBlock({
   return (
     <div className="rounded-card border border-primary/10 overflow-hidden bg-background/30">
       <div className="grid grid-cols-[auto_1fr_auto_auto_auto] items-center gap-3 px-4 py-2 border-b border-primary/10 bg-secondary/15">
-        <FileDiff className="w-3.5 h-3.5 text-foreground/60" />
+        <FileDiff className="w-3.5 h-3.5 text-foreground" />
         <span className="typo-code font-mono text-sm text-foreground truncate">{diff.scenario}</span>
         <ScoreCell
           score={diff.leftScore}
@@ -242,7 +244,7 @@ function ScenarioDiffBlock({
           onClick={() => diff.leftResults.length > 0 && onSelectCell(leftSelected ? null : { scenario: diff.scenario, versionId: left.versionId })}
           tone="left"
         />
-        <span className="text-foreground/30 font-mono">→</span>
+        <span className="text-foreground font-mono">→</span>
         <div className="flex items-center gap-2">
           <ScoreCell
             score={diff.rightScore}
@@ -265,15 +267,15 @@ function ScenarioDiffBlock({
 
 function ReviewComment({ kind, author, body }: { kind: 'note' | 'suggestion'; author: string; body: string }) {
   const Icon = kind === 'note' ? MessageSquare : Lightbulb;
-  const tone = kind === 'note' ? 'border-primary/15 bg-secondary/20 text-foreground/80' : 'border-amber-500/20 bg-amber-500/[0.04] text-foreground/90';
-  const iconTone = kind === 'note' ? 'text-foreground/60' : 'text-amber-400/80';
+  const tone = kind === 'note' ? 'border-primary/15 bg-secondary/20 text-foreground' : 'border-amber-500/20 bg-amber-500/[0.04] text-foreground/90';
+  const iconTone = kind === 'note' ? 'text-foreground' : 'text-amber-400/80';
   return (
     <div className={`flex gap-2 rounded-input border ${tone} px-3 py-2`}>
       <Icon className={`w-3.5 h-3.5 mt-0.5 shrink-0 ${iconTone}`} />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1">
-          <span className="typo-code font-mono text-[11px] text-foreground/70">{author}</span>
-          <span className="text-[10px] uppercase tracking-wider text-foreground/50 font-semibold">
+          <span className="typo-code font-mono text-[11px] text-foreground">{author}</span>
+          <span className="text-[10px] uppercase tracking-wider text-foreground font-semibold">
             {kind === 'note' ? 'rationale' : 'suggestion'}
           </span>
         </div>
@@ -298,8 +300,8 @@ export function AbResultsViewDiff({ results: _results, aggregation, selectedCell
 
   if (!left || !right || left.versionId === right.versionId) {
     return (
-      <div className="rounded-modal border border-primary/10 bg-secondary/10 px-4 py-8 text-center typo-body text-foreground/70">
-        Diff view needs two versions — only one was found in this run.
+      <div className="rounded-modal border border-primary/10 bg-secondary/10 px-4 py-8 text-center typo-body text-foreground">
+        <DebtText k="auto_diff_view_needs_two_versions_only_one_was__405308f8" />
       </div>
     );
   }
@@ -312,8 +314,8 @@ export function AbResultsViewDiff({ results: _results, aggregation, selectedCell
 
       <div className="rounded-modal border border-primary/10 bg-background/20 overflow-hidden">
         <div className="px-4 py-2 border-b border-primary/10 bg-secondary/15 flex items-center justify-between">
-          <span className="typo-label uppercase tracking-wider font-semibold text-foreground/80">Metric Diff</span>
-          <span className="text-[10px] font-mono text-foreground/50">v{left.versionNumber} → v{right.versionNumber}</span>
+          <span className="typo-label uppercase tracking-wider font-semibold text-foreground"><DebtText k="auto_metric_diff_2e3c9553" /></span>
+          <span className="text-[10px] font-mono text-foreground">v{left.versionNumber} → v{right.versionNumber}</span>
         </div>
         <div className="px-4 py-2">
           {METRICS.map((spec) => (
@@ -324,8 +326,8 @@ export function AbResultsViewDiff({ results: _results, aggregation, selectedCell
 
       <div className="space-y-2">
         <div className="flex items-center justify-between px-1">
-          <span className="typo-label uppercase tracking-wider font-semibold text-foreground/80">Files Changed</span>
-          <span className="text-[10px] font-mono text-foreground/50">{sorted.length} scenarios · sorted by |Δ|</span>
+          <span className="typo-label uppercase tracking-wider font-semibold text-foreground"><DebtText k="auto_files_changed_74925826" /></span>
+          <span className="text-[10px] font-mono text-foreground">{sorted.length} <DebtText k="auto_scenarios_sorted_by_a50400af" /></span>
         </div>
         <div className="space-y-2">
           {sorted.map((d) => (

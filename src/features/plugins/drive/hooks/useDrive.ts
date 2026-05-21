@@ -18,7 +18,7 @@ import {
   driveStorageInfo,
   driveWriteText,
 } from "@/api/drive";
-import { toastCatch } from "@/lib/silentCatch";
+import { silentCatch, toastCatch } from "@/lib/silentCatch";
 import { kindBucketWeight, visualForEntry } from "../designTokens";
 
 // localStorage key holding the user's preferred view-state (viewMode +
@@ -38,9 +38,7 @@ function readPersistedViewState(): PersistedViewState {
     if (!raw) return {};
     const parsed = JSON.parse(raw);
     if (parsed && typeof parsed === "object") return parsed as PersistedViewState;
-  } catch {
-    // Quota / privacy mode / malformed JSON — degrade to defaults silently.
-  }
+  } catch (err) { silentCatch("features/plugins/drive/hooks/useDrive:catch1")(err); }
   return {};
 }
 
@@ -48,9 +46,7 @@ function writePersistedViewState(state: PersistedViewState) {
   try {
     const current = readPersistedViewState();
     localStorage.setItem(VIEW_STATE_KEY, JSON.stringify({ ...current, ...state }));
-  } catch {
-    // Quota / privacy mode — in-memory state still updates.
-  }
+  } catch (err) { silentCatch("features/plugins/drive/hooks/useDrive:catch2")(err); }
 }
 
 export type ClipboardMode = "copy" | "cut";

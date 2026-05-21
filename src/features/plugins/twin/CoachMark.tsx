@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Lightbulb, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 const STORAGE_PREFIX = 'twin.coachmarks.';
 
@@ -32,7 +34,7 @@ export function CoachMark({ id, title, body }: { id: string; title: string; body
 
   const handleDismiss = () => {
     setDismissed(true);
-    try { window.localStorage.setItem(storageKey(id), '1'); } catch { /* quota / private mode */ }
+    try { window.localStorage.setItem(storageKey(id), '1'); } catch (err) { silentCatch("features/plugins/twin/CoachMark:catch1")(err); }
   };
 
   if (dismissed) return null;

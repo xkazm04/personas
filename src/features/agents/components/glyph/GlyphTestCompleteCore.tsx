@@ -4,6 +4,8 @@ import {
 } from "lucide-react";
 import { useTranslation } from "@/i18n/useTranslation";
 import { GlyphCapabilityPreview } from "./GlyphCapabilityPreview";
+import { DebtText, debtText } from '@/i18n/DebtText';
+
 
 interface GlyphTestCompleteCoreProps {
   testPassed?: boolean | null;
@@ -50,14 +52,14 @@ export function GlyphTestCompleteCore({
         {testPassed ? (
           <>
             <CheckCircle2 className="w-8 h-8 text-emerald-400" />
-            <span className="typo-label uppercase tracking-[0.2em] text-emerald-400">Tests Passed</span>
+            <span className="typo-label uppercase tracking-[0.2em] text-emerald-400"><DebtText k="auto_tests_passed_acdb861b" /></span>
           </>
         ) : (
           <>
             <AlertCircle className="w-8 h-8 text-orange-400" />
-            <span className="typo-label uppercase tracking-[0.2em] text-orange-400">Tests Failed</span>
+            <span className="typo-label uppercase tracking-[0.2em] text-orange-400"><DebtText k="auto_tests_failed_30667b92" /></span>
             {testError && (
-              <p className="typo-caption text-foreground/60 max-w-[240px] line-clamp-2">{testError}</p>
+              <p className="typo-caption text-foreground max-w-[240px] line-clamp-2">{testError}</p>
             )}
           </>
         )}
@@ -81,12 +83,12 @@ export function GlyphTestCompleteCore({
               type="button"
               data-testid="build-test-report-open"
               onClick={onShowReport}
-              className="px-3 py-1.5 rounded-full bg-foreground/5 hover:bg-foreground/10 border border-border/30 typo-body text-foreground/80 cursor-pointer flex items-center gap-1.5"
-              aria-label="View test logs"
-              title="See full CLI output and error details"
+              className="px-3 py-1.5 rounded-full bg-foreground/5 hover:bg-foreground/10 border border-border/30 typo-body text-foreground cursor-pointer flex items-center gap-1.5"
+              aria-label={debtText("auto_view_test_logs_ba83000e")}
+              title={debtText("auto_see_full_cli_output_and_error_details_78e39f0a")}
             >
               <ScrollText className="w-3.5 h-3.5" />
-              View Logs
+              <DebtText k="auto_view_logs_651222f5" />
             </button>
           )}
           <button
@@ -94,7 +96,7 @@ export function GlyphTestCompleteCore({
             data-testid="build-simulate-open"
             onClick={onShowSimulate}
             disabled={!buildSessionId}
-            className="px-3 py-1.5 rounded-full bg-foreground/5 hover:bg-foreground/10 disabled:opacity-50 disabled:cursor-not-allowed border border-border/30 typo-body text-foreground/80 cursor-pointer flex items-center gap-1.5"
+            className="px-3 py-1.5 rounded-full bg-foreground/5 hover:bg-foreground/10 disabled:opacity-50 disabled:cursor-not-allowed border border-border/30 typo-body text-foreground cursor-pointer flex items-center gap-1.5"
             title={t.agents.build_simulate.subtitle}
           >
             <FlaskConical className="w-3.5 h-3.5" />
@@ -104,7 +106,7 @@ export function GlyphTestCompleteCore({
             <button
               type="button"
               onClick={() => setRefining(true)}
-              className="px-3 py-1.5 rounded-full bg-foreground/5 hover:bg-foreground/10 border border-border/30 typo-body text-foreground/80 cursor-pointer flex items-center gap-1.5"
+              className="px-3 py-1.5 rounded-full bg-foreground/5 hover:bg-foreground/10 border border-border/30 typo-body text-foreground cursor-pointer flex items-center gap-1.5"
             >
               <RefreshCw className="w-3.5 h-3.5" />
               Refine
@@ -114,7 +116,7 @@ export function GlyphTestCompleteCore({
             <button
               type="button"
               onClick={onRejectTest}
-              className="px-2.5 py-1.5 rounded-full text-foreground/55 hover:text-foreground typo-caption cursor-pointer flex items-center gap-1"
+              className="px-2.5 py-1.5 rounded-full text-foreground hover:text-foreground typo-caption cursor-pointer flex items-center gap-1"
             >
               <ThumbsDown className="w-3 h-3" />
               Reject

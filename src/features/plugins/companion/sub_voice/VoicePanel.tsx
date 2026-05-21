@@ -16,6 +16,8 @@ import {
   type CompanionVoiceModel,
 } from '@/stores/slices/system/companionPluginSlice';
 import PiperVoicePanel from './PiperVoicePanel';
+import { debtText } from '@/i18n/DebtText';
+
 
 /**
  * Voice tab entry point. Owns the engine segmented control at the top
@@ -96,14 +98,14 @@ function EngineButton({ active, onClick, icon, label, caption }: EngineButtonPro
       }`}
     >
       <div className="flex items-center gap-2">
-        <span className={active ? 'text-cyan-300' : 'text-foreground/70'}>{icon}</span>
+        <span className={active ? 'text-cyan-300' : 'text-foreground'}>{icon}</span>
         <span
           className={`typo-body font-medium ${active ? 'text-cyan-200' : 'text-foreground'}`}
         >
           {label}
         </span>
       </div>
-      <p className="typo-caption text-foreground/60 mt-1">{caption}</p>
+      <p className="typo-caption text-foreground mt-1">{caption}</p>
     </button>
   );
 }
@@ -252,7 +254,7 @@ function ElevenLabsVoicePanel() {
 
   if (credLoading) {
     return (
-      <div className="flex items-center gap-3 p-5 typo-body text-foreground/70">
+      <div className="flex items-center gap-3 p-5 typo-body text-foreground">
         <LoadingSpinner size="sm" />
         <span>{t.plugins.companion.loading}</span>
       </div>
@@ -274,7 +276,7 @@ function ElevenLabsVoicePanel() {
                   <div className="typo-body font-medium text-foreground">
                     {t.plugins.companion.voice_empty_title}
                   </div>
-                  <p className="typo-caption text-foreground/70 mt-1">
+                  <p className="typo-caption text-foreground mt-1">
                     {t.plugins.companion.voice_empty_desc}
                   </p>
                   <button
@@ -330,14 +332,14 @@ function ElevenLabsVoicePanel() {
             </select>
           ) : (
             <div className="flex items-center gap-2 px-3 py-2 rounded-input bg-secondary/40 border border-foreground/10 typo-body">
-              <KeyRound className="w-3.5 h-3.5 text-foreground/60" />
+              <KeyRound className="w-3.5 h-3.5 text-foreground" />
               <span className="truncate">{selectedCred?.name ?? '—'}</span>
               {selectedCred && (
                 <span
                   className={`ml-auto inline-flex items-center gap-1 typo-caption px-2 py-0.5 rounded-full ${
                     isHealthy
                       ? 'bg-emerald-500/10 text-emerald-400'
-                      : 'bg-foreground/5 text-foreground/60'
+                      : 'bg-foreground/5 text-foreground'
                   }`}
                 >
                   <ShieldCheck className="w-3 h-3" />
@@ -357,7 +359,7 @@ function ElevenLabsVoicePanel() {
       >
         <div className="px-1 py-2 space-y-2">
           {!credentialId ? (
-            <p className="typo-caption text-foreground/50">
+            <p className="typo-caption text-foreground">
               {t.plugins.companion.voice_credential_pick}
             </p>
           ) : (
@@ -392,7 +394,7 @@ function ElevenLabsVoicePanel() {
                   <button
                     onClick={() => fetchLiveVoices(true)}
                     disabled={voicesLoading}
-                    className="p-2 rounded-interactive bg-secondary/40 hover:bg-secondary/60 border border-foreground/10 text-foreground/70 hover:text-foreground transition-colors focus-ring disabled:opacity-50"
+                    className="p-2 rounded-interactive bg-secondary/40 hover:bg-secondary/60 border border-foreground/10 text-foreground hover:text-foreground transition-colors focus-ring disabled:opacity-50"
                     title={t.plugins.companion.voice_pick_refresh}
                     aria-label={t.plugins.companion.voice_pick_refresh}
                   >
@@ -403,7 +405,7 @@ function ElevenLabsVoicePanel() {
                 )}
               </div>
 
-              <p className="typo-caption text-foreground/50">
+              <p className="typo-caption text-foreground">
                 {hasScope
                   ? t.plugins.companion.voice_pick_scoped_hint
                   : t.plugins.companion.voice_pick_unscoped_hint}
@@ -418,7 +420,7 @@ function ElevenLabsVoicePanel() {
               <button
                 type="button"
                 onClick={() => setShowCustomId((v) => !v)}
-                className="typo-caption text-foreground/60 hover:text-foreground/80 underline-offset-2 hover:underline transition-colors"
+                className="typo-caption text-foreground hover:text-foreground/80 underline-offset-2 hover:underline transition-colors"
               >
                 {t.plugins.companion.voice_pick_custom_toggle}
               </button>
@@ -429,12 +431,12 @@ function ElevenLabsVoicePanel() {
                     type="text"
                     value={voiceId ?? ''}
                     onChange={(e) => setVoiceId(e.target.value || null)}
-                    placeholder="e.g. 21m00Tcm4TlvDq8ikWAM"
+                    placeholder={debtText("auto_e_g_21m00tcm4tlvdq8ikwam_8f2f27fb")}
                     spellCheck={false}
                     className="w-full bg-secondary/40 border border-foreground/10 rounded-input px-3 py-2 typo-code focus-ring"
                     aria-label={t.plugins.companion.voice_id_label}
                   />
-                  <p className="typo-caption text-foreground/50">
+                  <p className="typo-caption text-foreground">
                     {t.plugins.companion.voice_id_hint}
                   </p>
                 </div>
@@ -452,13 +454,13 @@ function ElevenLabsVoicePanel() {
       >
         <div className="flex items-start gap-3 px-1 py-2">
           <Mic
-            className={`w-4 h-4 mt-0.5 shrink-0 ${enabled ? 'text-cyan-400' : 'text-foreground/40'}`}
+            className={`w-4 h-4 mt-0.5 shrink-0 ${enabled ? 'text-cyan-400' : 'text-foreground'}`}
           />
           <div className="flex-1 min-w-0">
             <div className="typo-body font-medium">
               {t.plugins.companion.voice_enable_label}
             </div>
-            <div className="typo-caption text-foreground/60 mt-0.5">
+            <div className="typo-caption text-foreground mt-0.5">
               {!canEnable
                 ? t.plugins.companion.voice_enable_blocked
                 : enabled
@@ -519,7 +521,7 @@ function VoiceSettingsCard() {
       <div className="px-1 py-2 space-y-4">
         {/* Model dropdown */}
         <div className="space-y-1">
-          <label className="typo-caption text-foreground/70 font-medium">
+          <label className="typo-caption text-foreground font-medium">
             {t.plugins.companion.voice_settings_model_label}
           </label>
           <select
@@ -537,7 +539,7 @@ function VoiceSettingsCard() {
               </option>
             ))}
           </select>
-          <p className="typo-caption text-foreground/50">
+          <p className="typo-caption text-foreground">
             {t.plugins.companion.voice_settings_model_hint}
           </p>
         </div>
@@ -587,7 +589,7 @@ function VoiceSettingsCard() {
           <button
             type="button"
             onClick={reset}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-secondary/40 hover:bg-secondary/60 border border-foreground/10 text-foreground/80 hover:text-foreground typo-caption transition-colors focus-ring"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-secondary/40 hover:bg-secondary/60 border border-foreground/10 text-foreground hover:text-foreground typo-caption transition-colors focus-ring"
           >
             <RotateCcw className="w-3 h-3" />
             {t.plugins.companion.voice_settings_reset}
@@ -618,8 +620,8 @@ function SliderRow({ label, hint, value, onChange, min, max, step, defaultLabel 
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between">
-        <label className="typo-caption text-foreground/70 font-medium">{label}</label>
-        <span className="typo-code text-foreground/60 text-[11px]">{display}</span>
+        <label className="typo-caption text-foreground font-medium">{label}</label>
+        <span className="typo-code text-foreground text-[11px]">{display}</span>
       </div>
       <div className="flex items-center gap-2">
         <input
@@ -636,7 +638,7 @@ function SliderRow({ label, hint, value, onChange, min, max, step, defaultLabel 
           <button
             type="button"
             onClick={() => onChange(null)}
-            className="text-foreground/50 hover:text-foreground/80 transition-colors"
+            className="text-foreground hover:text-foreground/80 transition-colors"
             title={defaultLabel}
             aria-label={defaultLabel}
           >
@@ -644,7 +646,7 @@ function SliderRow({ label, hint, value, onChange, min, max, step, defaultLabel 
           </button>
         )}
       </div>
-      <p className="typo-caption text-foreground/50">{hint}</p>
+      <p className="typo-caption text-foreground">{hint}</p>
     </div>
   );
 }

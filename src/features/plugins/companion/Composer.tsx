@@ -130,7 +130,7 @@ export function Composer({
                 ? 'bg-red-500/15 text-red-400 hover:bg-red-500/25'
                 : dictation.error
                   ? 'bg-amber-500/10 text-amber-400 hover:bg-amber-500/20'
-                  : 'bg-foreground/5 text-foreground/70 hover:bg-foreground/10 hover:text-foreground'
+                  : 'bg-foreground/5 text-foreground hover:bg-foreground/10 hover:text-foreground'
             }`}
             aria-label={
               dictation.listening

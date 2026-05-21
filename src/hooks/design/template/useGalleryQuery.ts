@@ -65,7 +65,7 @@ function scoreRecommendations(
     let connectors: string[] = [];
     try {
       connectors = t.connectors_used ? JSON.parse(t.connectors_used) : [];
-    } catch { /* intentional: non-critical */ }
+    } catch (err) { silentCatch("hooks/design/template/useGalleryQuery:catch1")(err); }
 
     const matchCount = connectors.filter((c) => userServices.has(c.toLowerCase())).length;
     const connectorScore = matchCount * 2;
@@ -112,7 +112,7 @@ export function useGalleryQuery(
   // identical elements doesn't re-trigger the heavy mount effect (6+ API calls).
   const stableCoverageServiceTypes = useMemo(
     () => coverageServiceTypes,
-    [coverageServiceTypes?.join('\0')],
+    [coverageServiceTypes],
   );
 
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);

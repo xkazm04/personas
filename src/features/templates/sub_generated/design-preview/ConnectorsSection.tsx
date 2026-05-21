@@ -8,6 +8,8 @@ import type { AgentIR, SuggestedConnector } from '@/lib/types/designTypes';
 import type { PersonaToolDefinition, CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSelectedCredentialLinks } from '@/stores/selectors/personaSelectors';
+import { DebtText } from '@/i18n/DebtText';
+
 
 interface ConnectorsSectionProps {
   result: AgentIR;
@@ -40,9 +42,9 @@ export function ConnectorsSection({
   // credential of that service_type, regardless of link state.
   const credentialLinks = useSelectedCredentialLinks();
   const connectorNames = new Set(connectorDefinitions.map((c) => c.name));
-  const suggestedConnectors = result.suggested_connectors ?? [];
+  const suggestedConnectors = useMemo(() => result.suggested_connectors ?? [], [result.suggested_connectors]);
 
-  const suggestedTools = result.suggested_tools ?? [];
+  const suggestedTools = useMemo(() => result.suggested_tools ?? [], [result.suggested_tools]);
 
   const connectorToolMap = useMemo(() => {
     const linkedTools = new Set<string>();
@@ -150,7 +152,7 @@ export function ConnectorsSection({
                     title={runnability.reason}
                   >
                     <Sparkles className="w-3 h-3" />
-                    <span>Native capability — no credential needed</span>
+                    <span><DebtText k="auto_native_capability_no_credential_needed_0491f8a9" /></span>
                   </div>
                 ) : (onConnectorClick && requiresFields) || hasCredential ? (
                   <button

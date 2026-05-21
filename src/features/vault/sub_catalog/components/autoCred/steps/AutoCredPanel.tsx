@@ -94,7 +94,7 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
     if (modeChecked) {
       session.init(designResult);
     }
-  }, [designResult.connector.name, fieldsHash, modeChecked]);
+  }, [designResult, designResult.connector.name, fieldsHash, modeChecked, session]);
 
   const handleCancel = () => {
     session.reset();

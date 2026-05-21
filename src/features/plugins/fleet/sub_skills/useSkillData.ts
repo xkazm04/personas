@@ -4,6 +4,8 @@ import { useSystemStore } from '@/stores/systemStore';
 import * as devApi from '@/api/devTools/devTools';
 import type { SkillEntry } from '@/api/devTools/devTools';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
+
 
 const FAVORITES_STORAGE_KEY = 'personas.devtools.skill_favorites';
 const RECENT_STORAGE_KEY = 'personas.devtools.skill_recent';
@@ -23,7 +25,7 @@ function readStringArray(key: string): string[] {
 function writeStringArray(key: string, values: string[]): void {
   try {
     localStorage.setItem(key, JSON.stringify(values));
-  } catch { /* quota / privacy mode — ignore */ }
+  } catch (err) { silentCatch("features/plugins/fleet/sub_skills/useSkillData:catch1")(err); }
 }
 
 /**

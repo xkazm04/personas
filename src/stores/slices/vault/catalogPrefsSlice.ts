@@ -1,5 +1,7 @@
 import type { StateCreator } from "zustand";
 import type { VaultStore } from "../../storeTypes";
+import { silentCatch } from '@/lib/silentCatch';
+
 
 export type CatalogSortMode =
   | "alphabetical"
@@ -51,9 +53,7 @@ function savePersisted(prefs: PersistedPrefs): void {
   if (typeof localStorage === "undefined") return;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
-  } catch {
-    // Ignore quota / privacy-mode failures — sort pref is non-critical UX.
-  }
+  } catch (err) { silentCatch("stores/slices/vault/catalogPrefsSlice:catch1")(err); }
 }
 
 export interface CatalogPrefsSlice {
