@@ -21,6 +21,14 @@ export interface TemplateQuestion {
   /** Optional input type hint (path, url, number, …) used to pick
    *  a sensible placeholder for empty defaults. */
   kind: string;
+  /** True when the question selects a vault credential — it carries a
+   *  `vault_category` or a `dynamic_source: {source: "vault"}`. The
+   *  marathon must NOT seed these: a placeholder answer poisons the
+   *  persona's connector with a fake `marathon-default` binding. Left
+   *  unanswered, the adoption modal's own vault auto-detect resolves
+   *  them to the user's REAL credential — which is exactly what makes
+   *  the marathon able to validate connector binding end-to-end. */
+  isVaultQuestion: boolean;
 }
 
 export interface TemplateMeta {
@@ -64,10 +72,18 @@ export function placeholderFor(q: TemplateQuestion): string {
   return 'marathon-default';
 }
 
-/** Build the answers dict the marathon will pass to `seedAdoptionAnswers`. */
+/** Build the answers dict the marathon will pass to `seedAdoptionAnswers`.
+ *
+ *  Vault-credential questions are deliberately OMITTED — seeding them with
+ *  a placeholder used to poison the persona's connector with a fake
+ *  `marathon-default` binding, which is why the marathon could never
+ *  validate connector binding. Leaving them out lets the adoption modal's
+ *  own vault auto-detect resolve each to the user's real credential, so a
+ *  marathon-built persona records its REAL connectors. */
 export function buildAdoptionAnswers(t: TemplateMeta): Record<string, string> {
   const out: Record<string, string> = {};
   for (const q of t.questions) {
+    if (q.isVaultQuestion) continue;
     out[q.id] = placeholderFor(q);
   }
   return out;
@@ -145,7 +161,14 @@ export function loadAllTemplates(): TemplateMeta[] {
         payload?: {
           persona?: { connectors?: Array<{ name?: string; role?: string; category?: string; required?: boolean }> };
           use_cases?: unknown[];
-          adoption_questions?: Array<{ id?: string; default?: unknown; type?: string; kind?: string }>;
+          adoption_questions?: Array<{
+            id?: string;
+            default?: unknown;
+            type?: string;
+            kind?: string;
+            vault_category?: unknown;
+            dynamic_source?: { source?: string } | null;
+          }>;
         };
       };
       if (!j.id || !j.name) continue;
@@ -153,13 +176,13 @@ export function loadAllTemplates(): TemplateMeta[] {
         (c) => c.required !== false,
       );
       const questions: TemplateQuestion[] = (j.payload?.adoption_questions ?? [])
-        .filter((q): q is { id: string; default?: unknown; type?: string; kind?: string } =>
-          typeof q?.id === 'string',
-        )
+        .filter((q): q is NonNullable<typeof q> & { id: string } => typeof q?.id === 'string')
         .map((q) => ({
           id: q.id,
           default: q.default == null ? '' : String(q.default),
           kind: (q.kind ?? q.type ?? '').toString(),
+          isVaultQuestion:
+            q.vault_category != null || q.dynamic_source?.source === 'vault',
         }));
       out.push({
         path: f,
