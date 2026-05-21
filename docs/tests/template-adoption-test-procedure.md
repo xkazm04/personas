@@ -1,0 +1,150 @@
+# Template-Adoption Test Procedure
+
+A runbook for replicating the 50-template adoption stress test at the
+quality the 2026-05 session reached. Follow it top to bottom; the
+"Known confounds" section is the part that separates a useful run from
+a misleading one.
+
+## Purpose
+
+Drive a large batch of templates through the full adoption lifecycle —
+**open → questionnaire → build → promote → execute** — against a real
+running app, to measure how reliably the build process produces
+personas that actually work. The run surfaces real bugs (schema gaps,
+connector-binding gaps, ungated promotion) and produces per-template
+result JSON for triage.
+
+## Prerequisites
+
+1. **The test app must be running** with the test-automation HTTP
+   bridge: `npm run tauri:dev:test` (lite) — exposes the bridge on
+   `http://127.0.0.1:17320`. Confirm with
+   `curl -s http://127.0.0.1:17320/health` → `{"status":"ok",...}`.
+2. The app window must stay open for the whole run — closing it exits
+   `tauri dev`.
+3. A populated vault helps: templates that need `gmail`/`notion`/`attio`
+   etc. only deliver value if those credentials exist and have data.
+4. Work in a git worktree if you will edit source mid-run
+   (`docs/tests/parallel-cli-workflow.md`).
+
+## The harness
+
+Lives in `tests/playwright/`:
+
+| File | Role |
+| --- | --- |
+| `template-marathon-fixtures.ts` | Loads templates from `scripts/templates/`, vault-matches, selects targets, builds adoption answers. |
+| `template-marathon-bridge.ts` | HTTP-bridge wrappers — `clickTestId`, `query`, `navigate`, `waitForBuildPhase`, `seedAdoptionAnswers`, …. |
+| `template-marathon.spec.ts` | Single-template Playwright spec — the 7-phase contract. Reads `TEMPLATE_ID` env var. |
+| `template-marathon-driver.mjs` | Node driver — picks targets, shells the spec per template, signature-matches failures, writes state. |
+| `template-marathon-rescore.mjs` | Re-scores result JSON from the real DB executions (see below). |
+
+## Running the marathon
+
+```bash
+# Smoke one template first — always.
+node tests/playwright/template-marathon-driver.mjs --target 1
+
+# Full run, don't halt on per-template failures.
+node tests/playwright/template-marathon-driver.mjs --target 50 --continue-on-fail
+
+# Re-run specific templates after a fix.
+node tests/playwright/template-marathon-driver.mjs --only codebase-health-scanner,demo-recorder
+```
+
+Per-template results land in `tests/results/marathon/<id>.json`; the
+driver state is `tests/results/marathon-state.json`. Budget ~2-3 min
+and ~$0.30-0.50 per template.
+
+## Re-scoring from the database (mandatory)
+
+The spec's inline scoring has been wrong before — it once `JSON.parse`'d
+an already-parsed array and zeroed every tool-step count, turning 37
+healthy runs into false failures. **Always re-score against the real
+executions** after a run:
+
+```bash
+node tests/playwright/template-marathon-rescore.mjs
+```
+
+It reads each persona's executions from the DB and recomputes outcomes.
+Trust the re-scored numbers, not the raw driver tally.
+
+## Investigating business outcomes
+
+The DB is at
+`C:\Users\<user>\AppData\Roaming\com.personas.desktop\personas.db`.
+Key query — outcome distribution:
+
+```sql
+SELECT status, COALESCE(business_outcome,'(null)'), COUNT(*)
+FROM persona_executions GROUP BY status, business_outcome;
+```
+
+`business_outcome` values: `value_delivered`, `no_input_available`,
+`precondition_failed`, `partial`, `unknown`. To find genuinely-broken
+personas (promoted `ready`, never delivered value):
+
+```sql
+SELECT p.name, p.setup_status,
+  SUM(pe.business_outcome='value_delivered') val,
+  COUNT(pe.id) total
+FROM personas p JOIN persona_executions pe ON pe.persona_id=p.id
+WHERE p.created_at > '<run-date>'
+GROUP BY p.id;
+```
+
+Read `persona_executions.output_data` of the not-ready ones — the
+agent's own text says precisely why (missing connector, no source
+data, missing state file).
+
+## Verification re-runs
+
+A failed outcome is not automatically a bug. Re-run a sample with
+realistic intent and read the full `output_data`:
+
+- `no_input_available` where the persona reached a real source and
+  correctly found nothing → **healthy persona, test-method artifact**.
+- `precondition_failed` citing a missing connector the user HAS in the
+  vault → **genuine build gap**.
+
+Classify each from the output before concluding a defect.
+
+## Known confounds — read this before trusting any number
+
+1. **`seedAdoptionAnswers` poisons connector binding.** The harness
+   seeds placeholder answers (`marathon-default`) into questionnaire
+   answers, including connector-selection questions. A marathon-built
+   persona therefore records `marathon-default` connectors, not real
+   roles. **The marathon cannot validate connector/credential-binding
+   logic** — use a real (non-marathon) adoption for that.
+2. **Tauri `/eval` silently drops scripts mid-session.** Use
+   `clickTestId` (routes through `__test_respond`), not `/eval`, for
+   click dispatch. Add `data-testid` to any control the harness clicks.
+3. **`/find-text` returns tags lowercased** (`"button"`) — match
+   case-insensitively.
+4. **A persona run with no input is expected, not a failure.** The
+   marathon invokes capabilities manually with no real triggering
+   event; `no_input_available` is the correct result for many.
+5. **`waitForBuildPhase` bridge method caps internally at ~20s** — the
+   harness wrapper loops it; real executions run 75s-385s.
+
+## Triage loop
+
+1. Run smoke (`--target 1`). Fix any harness/spec break.
+2. Run the full batch with `--continue-on-fail`.
+3. Re-score from the DB.
+4. For each non-pass: read `output_data`, classify artifact vs defect.
+5. Fix genuine defects in a worktree, commit atomically, re-run
+   `--only <ids>`.
+6. Record findings; update this doc if a new confound appears.
+
+## What "done well" looked like (2026-05 session)
+
+50/50 templates passed the adoption→build→promote→execute pipeline
+after fixes. The run found and fixed: a missing `incomplete` value in
+the `persona_executions` status CHECK constraint; the connector
+mis-classification that wrongly flagged builtin connectors
+`needs_credentials`; and the build-readiness gap where `ready` did not
+mean "delivers value". See `docs/architecture/connector-classification.md`
+and `docs/architecture/build-readiness-redesign.md`.
