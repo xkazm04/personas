@@ -12,8 +12,11 @@ import { usePersonaMap, useEnrichedRecords } from "@/hooks/utility/data/usePerso
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { FilterBar } from '@/features/shared/components/overlays/FilterBar';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
-import { seedMockManualReview, gcStaleManualReviews } from '@/api/overview/reviews';
+import type { PersonaManualReview } from '@/lib/bindings/PersonaManualReview';
+import type { ManualReviewItem } from '@/lib/types/types';
+import { seedMockManualReview, gcStaleManualReviews, updateManualReviewStatus } from '@/api/overview/reviews';
 import { FILTER_LABELS, type FilterStatus, type SourceFilter } from '../libs/reviewHelpers';
+import { useManualReviewQueue } from '../hooks/useManualReviewQueue';
 import { useFilteredCollection } from '@/hooks/utility/data/useFilteredCollection';
 import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
 import { BulkActionBar } from './BulkActionBar';
@@ -36,25 +39,42 @@ import { debtText } from '@/i18n/DebtText';
 
 type PrototypeVariant = 'grid' | 'wildcard' | null;
 
+/**
+ * Shape a raw `PersonaManualReview` row (as returned by the layered
+ * `useManualReviewQueue`) into the `ManualReviewItem` the review UI
+ * consumes — mirrors the transform the old fetch-all `overviewSlice`
+ * path used to do.
+ */
+function shapeReview(r: PersonaManualReview): ManualReviewItem {
+  return {
+    id: r.id,
+    persona_id: r.persona_id,
+    execution_id: r.execution_id,
+    review_type: r.severity,
+    content: r.title + (r.description ? `\n${r.description}` : ''),
+    severity: r.severity,
+    status: r.status,
+    reviewer_notes: r.reviewer_notes,
+    context_data: r.context_data,
+    suggested_actions: r.suggested_actions,
+    title: r.title,
+    created_at: r.created_at,
+    resolved_at: r.resolved_at,
+  };
+}
+
 export default function ManualReviewList() {
   const { t } = useTranslation();
   const {
-    manualReviews, cloudReviews,
-    fetchManualReviews, fetchCloudReviews,
-    updateManualReview, respondToCloudReview,
+    cloudReviews, fetchCloudReviews, respondToCloudReview,
   } = useOverviewStore(useShallow((s) => ({
-    manualReviews: s.manualReviews,
     cloudReviews: s.cloudReviews,
-    fetchManualReviews: s.fetchManualReviews,
     fetchCloudReviews: s.fetchCloudReviews,
-    updateManualReview: s.updateManualReview,
     respondToCloudReview: s.respondToCloudReview,
   })));
   const isCloudConnected = useSystemStore((s) => s.cloudConfig?.is_connected ?? false);
   const personas = useAgentStore((s) => s.personas);
   const personaMap = usePersonaMap();
-  const enrichedManualReviews = useEnrichedRecords(manualReviews, personaMap);
-  const enrichedCloudReviews = useEnrichedRecords(cloudReviews, personaMap);
 
   const [filter, setFilter] = useState<FilterStatus>('pending');
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
@@ -67,7 +87,20 @@ export default function ManualReviewList() {
   // PROTOTYPE — temporary full-screen variant switcher.
   const [prototypeVariant, setPrototypeVariant] = useState<PrototypeVariant>(null);
 
-  useEffect(() => { fetchManualReviews(); }, [fetchManualReviews]);
+  // Layered fetch — L0 counts + L1/L2 keyset pages. Status + persona
+  // filters are pushed server-side; the client never materialises the
+  // whole persona_manual_reviews table (see useManualReviewQueue).
+  const reviewQueue = useManualReviewQueue({
+    status: filter === 'all' ? undefined : filter,
+    personaId: selectedPersonaId || undefined,
+  });
+
+  const localReviews = useMemo(
+    () => reviewQueue.rows.map(shapeReview),
+    [reviewQueue.rows],
+  );
+  const enrichedManualReviews = useEnrichedRecords(localReviews, personaMap);
+  const enrichedCloudReviews = useEnrichedRecords(cloudReviews, personaMap);
 
   usePolling(fetchCloudReviews, {
     interval: POLLING_CONFIG.cloudReviews.interval,
@@ -82,11 +115,23 @@ export default function ManualReviewList() {
     return merged;
   }, [enrichedManualReviews, enrichedCloudReviews]);
 
+  // Filter-tab badges read the L0 counts (one GROUP BY) for the local
+  // reviews — accurate over the whole table even though only a page is
+  // loaded — plus the (small, fully-loaded) cloud set.
   const statusCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: allReviews.length, pending: 0, approved: 0, rejected: 0 };
-    for (const r of allReviews) { if (r.status in counts) counts[r.status] = (counts[r.status] ?? 0) + 1; }
-    return counts;
-  }, [allReviews]);
+    const cloud = { pending: 0, approved: 0, rejected: 0, resolved: 0 };
+    for (const r of enrichedCloudReviews) {
+      if (r.status in cloud) cloud[r.status as keyof typeof cloud]++;
+    }
+    const c = reviewQueue.counts;
+    return {
+      all: (c?.total ?? 0) + enrichedCloudReviews.length,
+      pending: (c?.pending ?? 0) + cloud.pending,
+      approved: (c?.approved ?? 0) + cloud.approved,
+      rejected: (c?.rejected ?? 0) + cloud.rejected,
+      resolved: (c?.resolved ?? 0) + cloud.resolved,
+    };
+  }, [reviewQueue.counts, enrichedCloudReviews]);
 
   const reviewMap = useMemo(() => new Map(allReviews.map((r) => [r.id, r])), [allReviews]);
 
@@ -143,12 +188,14 @@ export default function ManualReviewList() {
       if (reviewToAct.source === 'cloud') {
         await respondToCloudReview(reviewToAct.id, reviewToAct.execution_id, status === 'approved' ? 'approve' : 'reject', notes ?? '');
       } else {
-        await updateManualReview(reviewToAct.id, { status, reviewer_notes: notes });
+        await updateManualReviewStatus(reviewToAct.id, status, notes);
       }
       const nextPending = filteredReviews.find((r) => r.id !== reviewToAct!.id && r.status === 'pending');
       if (nextPending) setActiveReviewId(nextPending.id);
+      // Refresh L0 counts + L1 page so the acted-on row leaves the list.
+      reviewQueue.reload();
     } finally { setIsProcessing(false); }
-  }, [activeReview, allReviews, isProcessing, updateManualReview, respondToCloudReview, filteredReviews]);
+  }, [activeReview, allReviews, isProcessing, respondToCloudReview, filteredReviews, reviewQueue]);
 
   const handleBulkAction = useCallback(async (status: ManualReviewStatus) => {
     setIsBulkProcessing(true);
@@ -158,21 +205,22 @@ export default function ManualReviewList() {
         const review = reviewMap.get(id);
         if (!review) return Promise.resolve();
         if (review.source === 'cloud') return respondToCloudReview(review.id, review.execution_id, decision, '');
-        return updateManualReview(id, { status });
+        return updateManualReviewStatus(id, status);
       }));
       setSelectedIds(new Set());
       setConfirmAction(null);
+      reviewQueue.reload();
     } finally { setIsBulkProcessing(false); }
-  }, [selectedIds, reviewMap, updateManualReview, respondToCloudReview]);
+  }, [selectedIds, reviewMap, respondToCloudReview, reviewQueue]);
 
   const activeSelectionCount = useMemo(() => Array.from(selectedIds).filter((id) => selectablePendingIds.has(id)).length, [selectedIds, selectablePendingIds]);
 
   const { shouldAnimate } = useMotion();
 
   const handleSeedReview = useCallback(async () => {
-    try { await seedMockManualReview(); await fetchManualReviews(); }
+    try { await seedMockManualReview(); reviewQueue.reload(); }
     catch (err) { logger.error('Failed to seed mock review', { error: err }); }
-  }, [fetchManualReviews]);
+  }, [reviewQueue]);
 
   // A-grade Phase 8 (2026-05-04) — on-demand stale-review GC. The same
   // sweep runs once at startup via `engine::background`, but giving the
@@ -185,7 +233,7 @@ export default function ManualReviewList() {
     setIsGcing(true);
     try {
       const resolved = await gcStaleManualReviews();
-      await fetchManualReviews();
+      reviewQueue.reload();
       const toastStore = useToastStore.getState();
       if (resolved > 0) {
         toastStore.addToast(
@@ -206,7 +254,7 @@ export default function ManualReviewList() {
     } finally {
       setIsGcing(false);
     }
-  }, [isGcing, fetchManualReviews]);
+  }, [isGcing, reviewQueue]);
 
   return (
     <>
@@ -215,7 +263,7 @@ export default function ManualReviewList() {
         icon={<ClipboardCheck className="w-5 h-5 text-amber-400" />}
         iconColor="amber"
         title={t.overview.review.title}
-        subtitle={`${allReviews.length} ${t.overview.review.subtitle.replace('{count}', '')} · ${statusCounts.pending ?? 0} ${t.overview.review.filter_pending.toLowerCase()}${cloudReviews.length > 0 ? ` · ${cloudReviews.length} ${t.overview.review.cloud_badge.toLowerCase()}` : ''}`}
+        subtitle={`${statusCounts.all} ${t.overview.review.subtitle.replace('{count}', '')} · ${statusCounts.pending ?? 0} ${t.overview.review.filter_pending.toLowerCase()}${cloudReviews.length > 0 ? ` · ${cloudReviews.length} ${t.overview.review.cloud_badge.toLowerCase()}` : ''}`}
         actions={(
           <div className="flex items-center gap-2">
             {/* PROTOTYPE — full-screen variant triggers (temporary tab
@@ -241,7 +289,7 @@ export default function ManualReviewList() {
                 and safe; matches the auto-aging contract that runs at
                 startup. Hidden when there are zero reviews of any kind
                 — nothing to clear. */}
-            {allReviews.length > 0 && (
+            {statusCounts.all > 0 && (
               <button
                 onClick={() => void handleGcStale()}
                 disabled={isGcing}
@@ -334,6 +382,9 @@ export default function ManualReviewList() {
               onSelectReview={setActiveReviewId}
               onToggleSelect={toggleSelect}
               onAction={handleAction}
+              sentinelRef={reviewQueue.sentinelRef}
+              hasMore={reviewQueue.hasMore}
+              loadingMore={reviewQueue.loadingMore}
             />
           </motion.div>
         )}

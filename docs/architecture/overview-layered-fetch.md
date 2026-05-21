@@ -104,29 +104,29 @@ drops any response whose epoch is stale. This replaces ad-hoc
 
 ## Reference implementation — Manual Reviews
 
-`sub_manual-review` is the first adopter (it was the worst offender).
+`sub_manual-review` is the first adopter (it was the worst offender), and
+the full L0/L1/L2 chain is landed end-to-end:
 
-**Landed (data layer — verified compiling):**
-
-1. Server: `manual_reviews::list_page` (keyset) + `manual_reviews::counts`
+1. **Server:** `manual_reviews::list_page` (keyset) + `manual_reviews::counts`
    (`GROUP BY`); commands `list_manual_reviews_page` +
    `get_manual_review_counts`, registered in `lib.rs`.
-2. Client API: `listManualReviewsPage` + `getManualReviewCounts` in
+2. **Client API:** `listManualReviewsPage` + `getManualReviewCounts` in
    `src/api/overview/reviews.ts`; bindings `ManualReviewPage` /
    `ManualReviewCounts`.
-3. `useManualReviewQueue` (`sub_manual-review/hooks/`) — the concrete,
-   typed adapter that composes `useLayeredList` with the manual-review
-   API. Status + persona filters fold into `filterKey`; L0 counts back
-   the filter-tab badges. This is the copy-me template for every other
-   module's adoption.
+3. **Adapter:** `useManualReviewQueue` (`sub_manual-review/hooks/`)
+   composes `useLayeredList` with the manual-review API — status + persona
+   filters fold into `filterKey`. The copy-me template for other modules.
+4. **Component:** `ManualReviewList` drives local reviews through
+   `useManualReviewQueue` — no more fetch-all `overviewSlice` path. Status
+   + persona filters resolve server-side; filter-tab badges read L0
+   `counts`; `ReviewInboxPanel` renders an L2 `sentinelRef` that pulls the
+   next keyset page on scroll; mutations call `reload()` (L0 + L1) instead
+   of a full-table refetch. Bulk "select all" scopes to loaded rows (see
+   Consequences). Cloud reviews keep their existing small-set polling.
 
-**Next step (component swap):** `ManualReviewList` still reads the
-fetch-all `manualReviews` array from `overviewSlice`. Swapping it to
-`useManualReviewQueue` means: status filter goes server-side, the inbox
-list renders `rows` into a virtualized list with a `sentinelRef` at the
-end, filter badges read `counts`, and bulk "select all" scopes to loaded
-rows (see Consequences). This is a contained follow-up — the data layer
-above is the hard, shared part and is done.
+**Remaining polish (not blocking):** the inbox rows are not yet
+virtualized — keyset paging bounds the *fetch*; `useVirtualList` would
+additionally bound the *DOM* once a user scrolls many pages.
 
 ## Per-module rollout
 

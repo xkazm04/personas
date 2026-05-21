@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
-import { CheckSquare, Square, X, MessageSquare, PanelRightClose, PanelRight } from 'lucide-react';
+import { CheckSquare, Square, X, MessageSquare, PanelRightClose, PanelRight, Loader2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { createRafCoalescer } from '@/lib/utils/interaction/rafCoalescer';
@@ -21,6 +21,12 @@ interface ReviewInboxPanelProps {
   onSelectReview: (id: string | null) => void;
   onToggleSelect: (id: string) => void;
   onAction: (status: ManualReviewStatus, notes?: string) => Promise<void>;
+  /** L2 lazy-load — callback ref for the keyset sentinel at the list end. */
+  sentinelRef?: (el: HTMLElement | null) => void;
+  /** Whether more keyset pages remain (renders the sentinel when true). */
+  hasMore?: boolean;
+  /** Whether the next page is currently loading (shows a spinner). */
+  loadingMore?: boolean;
 }
 
 export function ReviewInboxPanel({
@@ -32,6 +38,9 @@ export function ReviewInboxPanel({
   onSelectReview,
   onToggleSelect,
   onAction,
+  sentinelRef,
+  hasMore,
+  loadingMore,
 }: ReviewInboxPanelProps) {
   const { t } = useTranslation();
   const [viewMode, setViewMode] = useState<ViewMode>('default');
@@ -150,6 +159,12 @@ export function ReviewInboxPanel({
                 </div>
               </div>
             ))}
+            {/* L2 — keyset sentinel: scrolling near it pulls the next page. */}
+            {hasMore && (
+              <div ref={sentinelRef} className="py-3 flex items-center justify-center">
+                {loadingMore && <Loader2 className="w-4 h-4 animate-spin text-foreground/40" />}
+              </div>
+            )}
           </div>
         </div>
 
