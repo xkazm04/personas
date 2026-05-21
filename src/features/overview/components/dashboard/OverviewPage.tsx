@@ -4,7 +4,8 @@ import { useOverviewStore } from "@/stores/overviewStore";
 import { OverviewFilterProvider } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { useExecutionDashboardPipeline } from '@/hooks/overview/useExecutionDashboardPipeline';
 import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
-import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
+import { ContentBox, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { ContentHeaderSkeleton } from '@/features/shared/components/layout/ContentHeaderSkeleton';
 import { lazyRetry } from '@/lib/lazyRetry';
 import { pageTransition } from '@/features/overview/libs/animations';
 
@@ -23,6 +24,41 @@ const PersonaHealthDashboard = lazyRetry(() => import('@/features/overview/sub_h
 const LeaderboardPage = lazyRetry(() => import('@/features/overview/sub_leaderboard'));
 const IncidentsInbox = lazyRetry(() => import('@/features/overview/sub_incidents'));
 
+/** Pulsing panel placeholder matching the dashboard's card geometry. */
+function SkeletonPanel({ className }: { className: string }) {
+  return (
+    <div
+      aria-hidden="true"
+      className={`rounded-modal border border-primary/10 bg-secondary/[0.03] animate-pulse ${className}`}
+    />
+  );
+}
+
+/**
+ * Suspense fallback for the overview routes. Paints the real header
+ * chrome (via `ContentHeaderSkeleton`) plus a card-shaped body skeleton
+ * in the first frame, so switching tabs no longer flashes a bare spinner
+ * — the page frame is present immediately while the lazy chunk loads.
+ */
+function OverviewRouteSkeleton() {
+  return (
+    <ContentBox>
+      <ContentHeaderSkeleton showActions />
+      <ContentBody centered>
+        <div className="space-y-4 pb-6 pt-2">
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(260px,320px)_1fr_minmax(280px,340px)] gap-4">
+            <SkeletonPanel className="h-72" />
+            <SkeletonPanel className="h-72" />
+            <SkeletonPanel className="h-72" />
+          </div>
+          <SkeletonPanel className="h-11" />
+          <SkeletonPanel className="h-44" />
+        </div>
+      </ContentBody>
+    </ContentBox>
+  );
+}
+
 function OverviewContent() {
   useExecutionDashboardPipeline();
   const overviewTab = useOverviewStore((s) => s.overviewTab);
@@ -38,7 +74,7 @@ function OverviewContent() {
         className="flex-1 min-h-0 flex flex-col w-full overflow-hidden"
       >
         <ErrorBoundary name={`Overview/${overviewTab}`}>
-        <Suspense fallback={<SuspenseFallback />}>
+        <Suspense fallback={<OverviewRouteSkeleton />}>
           {overviewTab === 'home' ? <DashboardWithSubtabs /> :
           overviewTab === 'incidents' ? <IncidentsInbox /> :
           overviewTab === 'executions' ? <ExecutionsWithSubtabs /> :
