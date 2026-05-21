@@ -617,14 +617,17 @@ pub async fn simulate_use_case(
 /// fire real emails / messages every build. To make this a full real
 /// execution instead, flip the final argument to `false`.
 ///
-/// Returns `None` when the persona has no manually-invokable capability
-/// (all `event_listener`) or the run could not be started — the caller
-/// treats `None` as "leave `ready`".
+/// Returns the verification `PersonaExecution` — the caller reads its
+/// `business_outcome` to gate `setup_status`, and its `id` / `output_data`
+/// to raise a manual-review item when the run could not deliver value.
+/// `None` when the persona has no manually-invokable capability (all
+/// `event_listener`) or the run could not be started — the caller treats
+/// `None` as "leave `ready`".
 pub async fn verify_promoted_persona(
     state: &Arc<AppState>,
     app: tauri::AppHandle,
     persona_id: &str,
-) -> Option<String> {
+) -> Option<PersonaExecution> {
     let persona = persona_repo::get_by_id(&state.db, persona_id).ok()?;
     let dc: serde_json::Value = serde_json::from_str(persona.design_context.as_deref()?).ok()?;
     let use_cases = crate::engine::design_context::pick_use_cases_array(&dc)?;
@@ -654,7 +657,7 @@ pub async fn verify_promoted_persona(
     )
     .await
     .ok()?;
-    Some(execution.business_outcome)
+    Some(execution)
 }
 
 #[cfg(test)]
