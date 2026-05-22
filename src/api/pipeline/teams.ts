@@ -48,10 +48,10 @@ export const addTeamMember = (
   invoke<PersonaTeamMember>("add_team_member", {
     teamId,
     personaId,
-    role: role,
-    positionX: positionX,
-    positionY: positionY,
-    config: config,
+    role,
+    positionX,
+    positionY,
+    config,
   });
 
 export const updateTeamMember = (
@@ -63,10 +63,10 @@ export const updateTeamMember = (
 ) =>
   invoke<void>("update_team_member", {
     id,
-    role: role,
-    positionX: positionX,
-    positionY: positionY,
-    config: config,
+    role,
+    positionX,
+    positionY,
+    config,
   });
 
 export const removeTeamMember = (id: string) =>
@@ -87,9 +87,9 @@ export const createTeamConnection = (
     teamId,
     sourceMemberId,
     targetMemberId,
-    connectionType: connectionType,
-    condition: condition,
-    label: label,
+    connectionType,
+    condition,
+    label,
   });
 
 export const updateTeamConnection = (id: string, connectionType: string) =>
@@ -104,7 +104,7 @@ import type { PipelineRun } from "@/lib/bindings/PipelineRun";
 export type { PipelineRun } from "@/lib/bindings/PipelineRun";
 
 export const executeTeam = (teamId: string, inputData?: string) =>
-  invoke<string>("execute_team", { teamId, inputData: inputData });
+  invoke<string>("execute_team", { teamId, inputData });
 
 export const listPipelineRuns = (teamId: string) =>
   invoke<PipelineRun[]>("list_pipeline_runs", { teamId });
@@ -129,7 +129,7 @@ export const getPipelineAnalytics = (teamId: string) =>
 // -- Canvas Assistant -- Topology Suggestions -----------------------------
 
 export const suggestTopology = (query: string, teamId?: string) =>
-  invoke<TopologyBlueprint>("suggest_topology", { query, teamId: teamId });
+  invoke<TopologyBlueprint>("suggest_topology", { query, teamId });
 
 export const suggestTopologyLlm = (query: string, teamId?: string) =>
-  invoke<TopologyBlueprint>("suggest_topology_llm", { query, teamId: teamId });
+  invoke<TopologyBlueprint>("suggest_topology_llm", { query, teamId });
