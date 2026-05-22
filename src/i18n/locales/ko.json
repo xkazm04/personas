@@ -5083,6 +5083,7 @@
       "scope_fleet_hint": "모든 페르소나를 표시합니다 — 페르소나 필터는 이를 변경하지 않습니다.",
       "triage_jump": "가장 긴급",
       "triage_detail_pipelines": "동기화에 실패한 데이터 소스",
+      "triage_up_next": "다음",
       "mission_control_eyebrow": "Mission Control"
     },
     "execution_metrics": {

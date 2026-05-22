@@ -5083,6 +5083,7 @@
       "scope_fleet_hint": "Zeigt alle Personas — der Persona-Filter ändert dies nicht.",
       "triage_jump": "Dringendste",
       "triage_detail_pipelines": "Datenquellen synchronisieren nicht",
+      "triage_up_next": "Als Nächstes",
       "mission_control_eyebrow": "Mission Control"
     },
     "execution_metrics": {

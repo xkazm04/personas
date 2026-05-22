@@ -308,6 +308,7 @@
     "scope_fleet_hint": "Показывает все персоны — фильтр персон на это не влияет.",
     "triage_jump": "Самое срочное",
     "triage_detail_pipelines": "источники данных не синхронизируются",
+    "triage_up_next": "Далее",
     "mission_control_eyebrow": "Mission Control"
   },
   "execution_metrics": {

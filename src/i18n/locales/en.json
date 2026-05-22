@@ -5144,7 +5144,8 @@
       "scope_fleet": "Fleet",
       "scope_fleet_hint": "Shows all personas — the persona filter doesn't change this.",
       "triage_jump": "Most urgent",
-      "triage_detail_pipelines": "data sources failing to sync"
+      "triage_detail_pipelines": "data sources failing to sync",
+      "triage_up_next": "Up next"
     },
     "execution_metrics": {
       "title": "Execution Metrics",

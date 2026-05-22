@@ -5083,6 +5083,7 @@
       "scope_fleet_hint": "يعرض جميع الشخصيات — لا يؤثر مرشح الشخصية على هذا.",
       "triage_jump": "الأكثر إلحاحًا",
       "triage_detail_pipelines": "مصادر بيانات تفشل في المزامنة",
+      "triage_up_next": "التالي",
       "mission_control_eyebrow": "Mission Control"
     },
     "execution_metrics": {

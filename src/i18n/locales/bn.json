@@ -5083,6 +5083,7 @@
       "scope_fleet_hint": "সব পার্সোনা দেখায় — পার্সোনা ফিল্টার এটি পরিবর্তন করে না।",
       "triage_jump": "সবচেয়ে জরুরি",
       "triage_detail_pipelines": "ডেটা উৎস সিঙ্ক হতে ব্যর্থ",
+      "triage_up_next": "পরবর্তী",
       "mission_control_eyebrow": "Mission Control"
     },
     "execution_metrics": {

@@ -5083,6 +5083,7 @@
       "scope_fleet_hint": "Zobrazuje všechny persony — filtr person to nemění.",
       "triage_jump": "Nejnaléhavější",
       "triage_detail_pipelines": "zdroje dat se nedaří synchronizovat",
+      "triage_up_next": "Další",
       "mission_control_eyebrow": "Mission Control"
     },
     "execution_metrics": {

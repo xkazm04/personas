@@ -5151,6 +5151,7 @@ export type Translations = {
       scope_fleet_hint: string;
       triage_jump: string;
       triage_detail_pipelines: string;
+      triage_up_next: string;
     };
     execution_metrics: {
       title: string;

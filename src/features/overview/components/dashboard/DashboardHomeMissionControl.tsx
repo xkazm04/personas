@@ -485,6 +485,11 @@ export const TriagePane = memo(function TriagePane({
                     <div className="typo-caption text-foreground truncate">{item.detail}</div>
                   )}
                 </div>
+                {isTop && (
+                  <span className="typo-caption font-mono uppercase tracking-widest px-1.5 py-0.5 rounded-interactive bg-primary/10 text-primary flex-shrink-0">
+                    {t.overview.dashboard.triage_up_next}
+                  </span>
+                )}
                 <ArrowRight className="w-3.5 h-3.5 text-foreground group-hover:text-foreground/70 transition-colors flex-shrink-0" />
               </button>
             );

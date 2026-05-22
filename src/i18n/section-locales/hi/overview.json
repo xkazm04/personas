@@ -308,6 +308,7 @@
     "scope_fleet_hint": "सभी पर्सोना दिखाता है — पर्सोना फ़िल्टर इसे नहीं बदलता।",
     "triage_jump": "सबसे ज़रूरी",
     "triage_detail_pipelines": "डेटा स्रोत सिंक होने में विफल",
+    "triage_up_next": "अगला",
     "mission_control_eyebrow": "Mission Control"
   },
   "execution_metrics": {

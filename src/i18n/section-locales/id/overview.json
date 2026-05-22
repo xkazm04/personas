@@ -308,6 +308,7 @@
     "scope_fleet_hint": "Menampilkan semua persona — filter persona tidak mengubah ini.",
     "triage_jump": "Paling mendesak",
     "triage_detail_pipelines": "sumber data gagal disinkronkan",
+    "triage_up_next": "Berikutnya",
     "mission_control_eyebrow": "Mission Control"
   },
   "execution_metrics": {

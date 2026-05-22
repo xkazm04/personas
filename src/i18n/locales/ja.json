@@ -5083,6 +5083,7 @@
       "scope_fleet_hint": "すべてのペルソナを表示します — ペルソナフィルターはこれに影響しません。",
       "triage_jump": "最優先",
       "triage_detail_pipelines": "データソースの同期に失敗",
+      "triage_up_next": "次",
       "mission_control_eyebrow": "Mission Control"
     },
     "execution_metrics": {

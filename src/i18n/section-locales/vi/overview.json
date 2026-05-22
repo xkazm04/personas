@@ -308,6 +308,7 @@
     "scope_fleet_hint": "Hiển thị tất cả persona — bộ lọc persona không thay đổi điều này.",
     "triage_jump": "Khẩn cấp nhất",
     "triage_detail_pipelines": "nguồn dữ liệu không đồng bộ được",
+    "triage_up_next": "Tiếp theo",
     "mission_control_eyebrow": "Mission Control"
   },
   "execution_metrics": {

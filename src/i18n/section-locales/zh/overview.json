@@ -308,6 +308,7 @@
     "scope_fleet_hint": "显示所有角色 — 角色筛选器不会改变此项。",
     "triage_jump": "最紧急",
     "triage_detail_pipelines": "数据源同步失败",
+    "triage_up_next": "接下来",
     "mission_control_eyebrow": "Mission Control"
   },
   "execution_metrics": {
