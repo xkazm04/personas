@@ -7,7 +7,7 @@
 // Labels like "TRIAGE", "VITALS", "STREAM", "STATUS" are prototype-only;
 // they'll be extracted to i18n only if this direction wins.
 
-import { Suspense, useMemo, useCallback, memo } from 'react';
+import { Suspense, useMemo, useState, useEffect, useCallback, memo } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import {
   ClipboardCheck, AlertTriangle, Activity, Cpu, Bell,
@@ -19,6 +19,9 @@ import { useAgentStore } from '@/stores/agentStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useOverviewStore } from '@/stores/overviewStore';
 import type { OverviewTab } from '@/lib/types/types';
+import { getOverviewBundle } from '@/api/overview/observability';
+import type { OverviewBundle } from '@/lib/bindings/OverviewBundle';
+import { silentCatch } from '@/lib/silentCatch';
 import { useAttention } from '@/hooks/useAttention';
 import { useOverviewFilterValues, useOverviewFilterActions } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { PersonaSelect } from '@/features/overview/sub_usage/components/PersonaSelect';
@@ -62,8 +65,8 @@ export default function DashboardHomeMissionControl() {
   const personas = useAgentStore((s) => s.personas);
   const {
     globalExecutions, globalExecutionCounts, memoryActions, executionDashboard,
-    pipelineErrors, pipelineFetchedAt, setOverviewTab, dismissMemoryAction,
-    setPipelineError,
+    executionDashboardDays, pipelineErrors, pipelineFetchedAt, setOverviewTab,
+    dismissMemoryAction, setPipelineError,
   } = useOverviewStore(useShallow((s) => ({
     globalExecutions: s.globalExecutions,
     // Use the authoritative server-side counts for any "total executions"
@@ -73,6 +76,7 @@ export default function DashboardHomeMissionControl() {
     globalExecutionCounts: s.globalExecutionCounts,
     memoryActions: s.memoryActions,
     executionDashboard: s.executionDashboard,
+    executionDashboardDays: s.executionDashboardDays,
     pipelineErrors: s.pipelineErrors,
     pipelineFetchedAt: s.pipelineFetchedAt,
     setOverviewTab: s.setOverviewTab,
@@ -107,6 +111,38 @@ export default function DashboardHomeMissionControl() {
     ));
     return { successRate, activeAgents: personas.length, recentExecs: execs.slice(0, 20) };
   }, [globalExecutions, personas, selectedPersonaId]);
+
+  // Stage 2 — when a persona is selected, pull that persona's accurate metrics
+  // from get_overview_bundle (already persona-aware on the backend) so the
+  // Vitals success ring and traffic sparkline reflect the full period instead
+  // of the rough recent-feed estimate. The 4 KPI tiles and Triage stay
+  // fleet-wide — those need per-persona attention queries (a later stage).
+  const [personaMetrics, setPersonaMetrics] = useState<OverviewBundle | null>(null);
+  useEffect(() => {
+    if (!selectedPersonaId) { setPersonaMetrics(null); return; }
+    let cancelled = false;
+    setPersonaMetrics(null);
+    getOverviewBundle(executionDashboardDays ?? 30, selectedPersonaId)
+      .then((bundle) => { if (!cancelled) setPersonaMetrics(bundle); })
+      .catch(silentCatch('DashboardHomeMissionControl:personaMetrics'));
+    return () => { cancelled = true; };
+  }, [selectedPersonaId, executionDashboardDays]);
+
+  const vitals = useMemo(() => {
+    const fleetPoints = executionDashboard?.daily_points ?? [];
+    if (!selectedPersonaId || !personaMetrics) {
+      return { successRate: stats.successRate, points: fleetPoints };
+    }
+    const summary = personaMetrics.metricsSummary;
+    const successRate = Math.round(resolveMetricPercent(
+      SUCCESS_RATE_IDENTITIES.dashboardRecentExecutions,
+      { numerator: summary.successfulExecutions, denominator: summary.totalExecutions },
+    ));
+    const points = personaMetrics.metricsChartData.chart_points.map((p) => ({
+      date: p.date, total_executions: p.executions, failed: p.failed,
+    }));
+    return { successRate, points };
+  }, [selectedPersonaId, personaMetrics, executionDashboard, stats.successRate]);
 
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
@@ -240,12 +276,12 @@ export default function DashboardHomeMissionControl() {
               <div className="grid grid-cols-1 lg:grid-cols-[minmax(260px,320px)_1fr_minmax(280px,340px)] gap-4">
                 <TriagePane items={triageItems} personaScoped={!!personaName} />
                 <VitalsConsole
-                  successRate={stats.successRate}
+                  successRate={vitals.successRate}
                   activeAgents={stats.activeAgents}
                   activeAlertCount={activeAlertCount}
                   totalExecutions={globalExecutionCounts.total}
                   pendingReviews={pendingReviewCount}
-                  points={executionDashboard?.daily_points ?? []}
+                  points={vitals.points}
                   personaName={personaName}
                 />
                 <ActivityStreamLog
@@ -509,10 +545,7 @@ export const VitalsConsole = memo(function VitalsConsole({
           <div className="w-full pt-3 border-t border-primary/10">
             <div className="flex items-center justify-between typo-caption uppercase tracking-widest text-foreground mb-1.5 font-mono">
               <span><DebtText k="auto_traffic_errors_7c114a11" /></span>
-              <span className="flex items-center gap-2">
-                {personaName && <FleetTag />}
-                {points.length}d
-              </span>
+              <span>{points.length}d</span>
             </div>
             <svg viewBox={`0 0 ${sparkline.w} ${sparkline.h}`} className="w-full h-10" preserveAspectRatio="none" aria-hidden="true">
               <polyline fill="none" stroke="#06b6d4" strokeWidth="1.5" points={sparkline.traffic} />
