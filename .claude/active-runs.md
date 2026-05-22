@@ -33,15 +33,6 @@ timestamp — the next session can recognize it as abandoned.
 ## Active
 
 
-- **[2026-05-22 08:56 — started] /friend — overview (endless development loop)**
-  - **Source:** `/friend` endless development loop, area resolved from path `src\features\overview`
-  - **Paths:** `src/features/overview/`, `src/i18n/locales/*.json` (additive `overview.*` keys only), `docs/features/overview/README.md` (if user-visible change ships), `.claude/active-runs.md`
-  - **Status:** started
-  - **Branch:** `worktree-friend-overview-085643`
-  - **Worktree:** `.claude/worktrees/friend-overview-085643/`
-  - **Note:** Path-disjoint from concurrent custom-persona-icons (touches `src-tauri/` + shared/forms). Prior `overview-polish` ledger entry (2026-05-17) is 5 days stale — treated as abandoned.
-
-
 - **[2026-05-18 — started] /prototype — PersonaOverviewPage A/B variants (Grid + Wildcard)**
   - **Source:** User-driven /prototype skill — directional variants for the All Personas list view. Two variants requested: (1) a uniform card grid with simplified metadata (icon, title, connector icons, status dot, trust level, triggers, last run), (2) a wildcard with a different mental model.
   - **Paths:** `src/features/agents/components/allPersonas/PersonaOverviewPage.tsx` (add tab switcher), `src/features/agents/components/allPersonas/PersonaOverviewVariantGrid.tsx` (new), `src/features/agents/components/allPersonas/PersonaOverviewVariantConstellation.tsx` (new), `.claude/active-runs.md`
@@ -110,6 +101,11 @@ timestamp — the next session can recognize it as abandoned.
 
 
 ## Recently completed (last 14 days)
+
+- **[2026-05-22] /friend — overview (Mission Control dashboard, 7 cycles)**
+  - **Status:** completed (branch: `worktree-friend-overview-085643`, commits: 7, last: `98535a0fe`) — NOT merged; left for user merge decision.
+  - **Commits:** `801b9915a` persona filter Stage 1 · `571f7e2fa` Triage ranked queue · `146eb623a` StatusTicker click-through · `2328df36d` Vitals scoping Stage 2 · `7344464ce` Stream status filter · `7f833b866` Triage "Up next" tag · `98535a0fe` InstrumentsBay persona-scope.
+  - **Note:** All frontend (`DashboardHomeMissionControl.tsx` + `TopPerformersWidget.tsx`) + i18n (6 new keys, all 14 locales synced each cycle) + `docs/features/overview/README.md`. 0 Rust — Stage 2/cycle-7 reused the already persona-aware `get_overview_bundle`. tsc + lint clean every cycle. Worktree intact at `.claude/worktrees/friend-overview-085643/`. Deferred: Triage/KPI-tile persona scoping (needs per-persona attention queries — a Stage 3).
 
 - **[2026-05-22] custom-persona-icons — Phase 3 (AI generation) + 3.5 (export downgrade)**
   - **Status:** completed (commits: `db4cbf8bf` Phase 3.5 export downgrade, `9a37c36da` Phase 3 AI generation, `f3f20ed2d` docs)
