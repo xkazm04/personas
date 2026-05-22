@@ -13409,6 +13409,11 @@
       "reflectCta": "Refleksi",
       "generating": "Merefleksikan…",
       "deleteAria": "Hapus refleksi",
+      "digDeeperCta": "Gali lebih dalam",
+      "digDeeperGenerating": "Membuat pertanyaan…",
+      "digDeeperTooltip": "Minta AI menyusun pertanyaan pelatihan lanjutan dari refleksi ini",
+      "digDeeperToast": "Pertanyaan siap — membuka Training.",
+      "digDeeperError": "Tidak dapat membuat pertanyaan lanjutan.",
       "suggestedSeedLabels": {
         "voiceChange": "Pergeseran suara",
         "commsCadence": "Irama",

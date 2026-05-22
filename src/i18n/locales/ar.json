@@ -13409,6 +13409,11 @@
       "reflectCta": "تأمّل",
       "generating": "جارٍ التأمّل…",
       "deleteAria": "حذف التأمّل",
+      "digDeeperCta": "تعمَّق أكثر",
+      "digDeeperGenerating": "جارٍ توليد الأسئلة…",
+      "digDeeperTooltip": "اطلب من الذكاء الاصطناعي صياغة أسئلة تدريب متابعة من هذا التأمّل",
+      "digDeeperToast": "الأسئلة جاهزة — جارٍ فتح Training.",
+      "digDeeperError": "تعذّر توليد أسئلة المتابعة.",
       "suggestedSeedLabels": {
         "voiceChange": "انحراف الصوت",
         "commsCadence": "الإيقاع",

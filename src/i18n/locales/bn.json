@@ -13409,6 +13409,11 @@
       "reflectCta": "প্রতিফলিত করুন",
       "generating": "প্রতিফলিত হচ্ছে…",
       "deleteAria": "প্রতিফলন মুছুন",
+      "digDeeperCta": "আরও গভীরে যান",
+      "digDeeperGenerating": "প্রশ্ন তৈরি হচ্ছে…",
+      "digDeeperTooltip": "এই প্রতিফলন থেকে ফলো-আপ Training প্রশ্ন তৈরি করতে AI-কে বলুন",
+      "digDeeperToast": "প্রশ্ন প্রস্তুত — Training খোলা হচ্ছে।",
+      "digDeeperError": "ফলো-আপ প্রশ্ন তৈরি করা যায়নি।",
       "suggestedSeedLabels": {
         "voiceChange": "কণ্ঠস্বরে পরিবর্তন",
         "commsCadence": "ছন্দ",

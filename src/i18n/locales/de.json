@@ -13409,6 +13409,11 @@
       "reflectCta": "Reflektieren",
       "generating": "Reflektiere…",
       "deleteAria": "Reflexion löschen",
+      "digDeeperCta": "Tiefer graben",
+      "digDeeperGenerating": "Fragen werden generiert…",
+      "digDeeperTooltip": "KI bitten, aus dieser Reflexion weiterführende Training-Fragen zu entwerfen",
+      "digDeeperToast": "Fragen bereit — Training wird geöffnet.",
+      "digDeeperError": "Weiterführende Fragen konnten nicht generiert werden.",
       "suggestedSeedLabels": {
         "voiceChange": "Stimm-Drift",
         "commsCadence": "Kadenz",

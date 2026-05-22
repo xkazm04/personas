@@ -549,6 +549,11 @@
     "reflectCta": "회고",
     "generating": "회고 중…",
     "deleteAria": "회고 삭제",
+    "digDeeperCta": "더 깊이 파기",
+    "digDeeperGenerating": "질문 생성 중…",
+    "digDeeperTooltip": "이 회고에서 후속 Training 질문을 작성하도록 AI에 요청",
+    "digDeeperToast": "질문 준비 완료 — Training을 엽니다.",
+    "digDeeperError": "후속 질문을 생성하지 못했습니다.",
     "suggestedSeedLabels": {
       "voiceChange": "목소리 변화",
       "commsCadence": "리듬",

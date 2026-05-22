@@ -549,6 +549,11 @@
     "reflectCta": "反思",
     "generating": "反思中…",
     "deleteAria": "删除反思",
+    "digDeeperCta": "深入挖掘",
+    "digDeeperGenerating": "正在生成问题…",
+    "digDeeperTooltip": "让 AI 基于此反思草拟后续训练问题",
+    "digDeeperToast": "问题已准备就绪 — 正在打开 Training。",
+    "digDeeperError": "无法生成后续问题。",
     "suggestedSeedLabels": {
       "voiceChange": "语气漂移",
       "commsCadence": "节奏",

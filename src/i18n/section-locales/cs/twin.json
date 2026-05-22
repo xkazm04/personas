@@ -549,6 +549,11 @@
     "reflectCta": "Reflektovat",
     "generating": "Reflektuji…",
     "deleteAria": "Smazat reflexi",
+    "digDeeperCta": "Kopat hlouběji",
+    "digDeeperGenerating": "Generuji otázky…",
+    "digDeeperTooltip": "Požádat AI o návrh navazujících otázek pro Training z této reflexe",
+    "digDeeperToast": "Otázky připraveny — otevírám Training.",
+    "digDeeperError": "Navazující otázky se nepodařilo vygenerovat.",
     "suggestedSeedLabels": {
       "voiceChange": "Drift hlasu",
       "commsCadence": "Kadence",

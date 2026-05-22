@@ -13409,6 +13409,11 @@
       "reflectCta": "リフレクト",
       "generating": "リフレクション中…",
       "deleteAria": "リフレクションを削除",
+      "digDeeperCta": "深掘りする",
+      "digDeeperGenerating": "質問を生成中…",
+      "digDeeperTooltip": "このリフレクションから Training のフォローアップ質問を AI に作成してもらう",
+      "digDeeperToast": "質問の準備ができました — Training を開きます。",
+      "digDeeperError": "フォローアップ質問を生成できませんでした。",
       "suggestedSeedLabels": {
         "voiceChange": "ボイスのドリフト",
         "commsCadence": "ケイデンス",

@@ -13255,6 +13255,11 @@
       "reflectCta": "Reflect",
       "generating": "Reflecting…",
       "deleteAria": "Delete reflection",
+      "digDeeperCta": "Dig deeper",
+      "digDeeperGenerating": "Generating questions…",
+      "digDeeperTooltip": "Ask AI to draft follow-up training questions from this reflection",
+      "digDeeperToast": "Questions ready — opening Training.",
+      "digDeeperError": "Couldn't generate follow-up questions.",
       "suggestedSeedLabels": {
         "voiceChange": "Voice drift",
         "commsCadence": "Cadence",

@@ -13261,6 +13261,11 @@ export type Translations = {
       reflectCta: string;
       generating: string;
       deleteAria: string;
+      digDeeperCta: string;
+      digDeeperGenerating: string;
+      digDeeperTooltip: string;
+      digDeeperToast: string;
+      digDeeperError: string;
       suggestedSeedLabels: {
         voiceChange: string;
         commsCadence: string;

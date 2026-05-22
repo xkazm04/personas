@@ -549,6 +549,11 @@
     "reflectCta": "Reflexionar",
     "generating": "Reflexionando…",
     "deleteAria": "Eliminar reflexión",
+    "digDeeperCta": "Profundizar",
+    "digDeeperGenerating": "Generando preguntas…",
+    "digDeeperTooltip": "Pide a la IA que redacte preguntas de entrenamiento de seguimiento a partir de esta reflexión",
+    "digDeeperToast": "Preguntas listas — abriendo Training.",
+    "digDeeperError": "No se pudieron generar preguntas de seguimiento.",
     "suggestedSeedLabels": {
       "voiceChange": "Deriva de voz",
       "commsCadence": "Cadencia",

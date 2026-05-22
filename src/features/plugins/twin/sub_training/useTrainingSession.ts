@@ -83,6 +83,28 @@ export function useTrainingSession(): TrainingSession {
     }).catch(() => setGroundingFacts([]));
   }, [activeTwinId]);
 
+  // Cross-tab handoff: Reflections panel populates pendingTrainingQuestions
+  // when the user clicks "Dig deeper", then routes here. Consume on mount and
+  // clear immediately so a tab-switch back doesn't replay the same prefill.
+  const pendingTrainingQuestions = useSystemStore((s) => s.pendingTrainingQuestions);
+  const setPendingTrainingQuestions = useSystemStore((s) => s.setPendingTrainingQuestions);
+  useEffect(() => {
+    if (!pendingTrainingQuestions || pendingTrainingQuestions.length === 0) return;
+    const qaPairs: QAPair[] = pendingTrainingQuestions.slice(0, 5).map((q, i) => ({
+      id: `dd-${Date.now()}-${i}`,
+      question: q,
+      answer: '',
+      saved: false,
+    }));
+    followupSpawnedFor.current = new Set();
+    setQuestions(qaPairs);
+    setCurrentIdx(0);
+    setAnswerDraft('');
+    setSessionSummary(null);
+    setPhase('interview');
+    setPendingTrainingQuestions(null);
+  }, [pendingTrainingQuestions, setPendingTrainingQuestions]);
+
   const callAi = useCallback(async (prompt: string): Promise<string> => {
     if (!activeTwin) throw new Error('no active twin');
     return twinApi.generateBio(activeTwin.name, activeTwin.role ?? null, prompt);

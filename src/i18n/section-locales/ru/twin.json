@@ -549,6 +549,11 @@
     "reflectCta": "Отрефлексировать",
     "generating": "Рефлексия…",
     "deleteAria": "Удалить рефлексию",
+    "digDeeperCta": "Копнуть глубже",
+    "digDeeperGenerating": "Генерируем вопросы…",
+    "digDeeperTooltip": "Попросите ИИ составить уточняющие вопросы для тренировки на основе этой рефлексии",
+    "digDeeperToast": "Вопросы готовы — открываем Training.",
+    "digDeeperError": "Не удалось сгенерировать уточняющие вопросы.",
     "suggestedSeedLabels": {
       "voiceChange": "Дрейф голоса",
       "commsCadence": "Каденс",
