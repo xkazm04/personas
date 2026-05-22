@@ -95,6 +95,8 @@ export const useSystemStore = create<SystemStore>()(
         disabledStationIds: state.disabledStationIds,
         radioAutoResume: state.radioAutoResume,
         collapsedSourceKinds: state.collapsedSourceKinds,
+        monitorGroupBy: state.monitorGroupBy,
+        monitorCollapsedGroups: state.monitorCollapsedGroups,
       }),
       onRehydrateStorage: () => (state) => {
         if (!state) return;

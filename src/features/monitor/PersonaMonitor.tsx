@@ -65,17 +65,16 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
 
   // Group-by toggle — when enabled, partition cards by their persona's
   // group_id and render each group under a collapsible header. State is
-  // local to this Monitor session; Stage 2 could persist to systemStore.
+  // persisted in systemStore (cycle 8 promotion) so re-opening the Monitor
+  // preserves the user's last view across the session and across restarts.
   const groups = usePipelineStore((s) => s.groups);
-  const [groupBy, setGroupBy] = useState<'none' | 'group'>('none');
-  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => new Set());
-  const toggleGroupCollapse = (id: string) =>
-    setCollapsedGroups((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+  const groupBy = useSystemStore((s) => s.monitorGroupBy);
+  const setGroupBy = useSystemStore((s) => s.setMonitorGroupBy);
+  const collapsedGroupsArr = useSystemStore((s) => s.monitorCollapsedGroups);
+  const toggleMonitorGroupCollapsed = useSystemStore((s) => s.toggleMonitorGroupCollapsed);
+  // Local memo: arr → Set for O(1) lookup in render. Recomputes only when
+  // the persisted array identity changes (i.e. user toggled).
+  const collapsedGroups = useMemo(() => new Set(collapsedGroupsArr), [collapsedGroupsArr]);
 
   const groupedDisplay = useMemo(() => {
     if (groupBy === 'none') return null;
@@ -190,7 +189,7 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
           {groups.length > 0 && (
             <button
               type="button"
-              onClick={() => setGroupBy((g) => (g === 'group' ? 'none' : 'group'))}
+              onClick={() => setGroupBy(groupBy === 'group' ? 'none' : 'group')}
               aria-pressed={groupBy === 'group'}
               title={t.monitor.group_by_toggle_title}
               className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border typo-caption transition-colors ${
@@ -259,7 +258,7 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
                   <section key={id}>
                     <button
                       type="button"
-                      onClick={() => toggleGroupCollapse(id)}
+                      onClick={() => toggleMonitorGroupCollapsed(id)}
                       aria-expanded={!collapsed}
                       className="w-full flex items-center gap-2.5 px-2 py-2 rounded-card border border-primary/10 hover:bg-secondary/30 transition-colors"
                       style={{ borderLeft: `3px solid ${colorWithAlpha(color, 0.8)}` }}
