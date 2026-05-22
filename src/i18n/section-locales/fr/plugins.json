@@ -1712,7 +1712,14 @@
     "team_preview_canvas": "Canevas",
     "team_preview_canvas_unplaced": "membres pas encore disposés",
     "team_preview_canvas_aria": "Mini canevas — membres de l'équipe et leurs connexions",
-    "team_preview_canvas_open_persona": "ouvrir dans l'éditeur"
+    "team_preview_canvas_open_persona": "ouvrir dans l'éditeur",
+    "team_preview_member_enabled": "Activée",
+    "team_preview_member_disabled": "Désactivée",
+    "team_preview_member_trust": "Confiance",
+    "team_preview_member_last_run": "Dernière exécution",
+    "team_preview_member_never_run": "jamais",
+    "team_preview_member_budget": "Budget",
+    "team_preview_member_open": "Ouvrir dans l'éditeur"
   },
   "dev_runner": {
     "self_healing": "Auto-correction",

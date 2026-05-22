@@ -1,10 +1,13 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Activity, Users, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Activity, ChevronDown, ExternalLink, Layers, Users, X } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { Button } from '@/features/shared/components/buttons';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useAgentStore } from '@/stores/agentStore';
+import { useSystemStore } from '@/stores/systemStore';
+import { usePipelineStore } from '@/stores/pipelineStore';
+import { formatRelativeTime } from '@/lib/utils/formatters';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import type { PersonaTeamMember } from '@/lib/bindings/PersonaTeamMember';
 import type { PersonaTeamConnection } from '@/lib/bindings/PersonaTeamConnection';
@@ -34,11 +37,40 @@ interface ProjectTeamPreviewModalProps {
 export function ProjectTeamPreviewModal({ open, team, onClose }: ProjectTeamPreviewModalProps) {
   const { t, tx } = useTranslation();
   const personas = useAgentStore((s) => s.personas);
+  const personaLastRun = useAgentStore((s) => s.personaLastRun);
+  const personaHealthMap = useAgentStore((s) => s.personaHealthMap);
+  const selectPersona = useAgentStore((s) => s.selectPersona);
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
+  const setAgentTab = useSystemStore((s) => s.setAgentTab);
+  const groups = usePipelineStore((s) => s.groups);
+  const fetchGroups = usePipelineStore((s) => s.fetchGroups);
+  useEffect(() => {
+    if (open) void fetchGroups();
+  }, [open, fetchGroups]);
+  const groupMetaById = useMemo(
+    () => new Map(groups.map((g) => [g.id, { name: g.name, color: g.color }])),
+    [groups],
+  );
 
   const [members, setMembers] = useState<PersonaTeamMember[] | null>(null);
   const [connections, setConnections] = useState<PersonaTeamConnection[] | null>(null);
   const [runs, setRuns] = useState<PipelineRun[] | null>(null);
   const [loading, setLoading] = useState(false);
+  // Cycle 23 — inline member-detail expansion. Holds the team-member id
+  // whose detail panel is open; clicking the same row again closes it.
+  const [expandedMemberId, setExpandedMemberId] = useState<string | null>(null);
+  // Reset on team change so a previously-expanded row from another team
+  // doesn't ghost in.
+  useEffect(() => {
+    setExpandedMemberId(null);
+  }, [team.id]);
+
+  const handleOpenInEditor = (personaId: string) => {
+    setSidebarSection('personas');
+    setAgentTab('all');
+    selectPersona(personaId);
+    onClose();
+  };
   // Visual cue that the runs list updated from a live event in the last beat.
   // Resets after a short timeout so it pulses on each new tick rather than
   // staying lit forever once the first event arrives.
@@ -164,32 +196,130 @@ export function ProjectTeamPreviewModal({ open, team, onClose }: ProjectTeamPrev
             </p>
           )}
           {!loading && members && members.length > 0 && (
-            <ul className="grid grid-cols-2 gap-2">
+            <ul className="space-y-1.5">
               {members.map((m) => {
                 const persona = personas.find((p) => p.id === m.persona_id);
+                const isExpanded = expandedMemberId === m.id;
+                const health = persona ? personaHealthMap[persona.id] : undefined;
+                const lastRun = persona ? personaLastRun[persona.id] : null;
+                const personaGroup = persona?.group_id ? groupMetaById.get(persona.group_id) : null;
                 return (
-                  <li
-                    key={m.id}
-                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-card bg-secondary/30 border border-primary/10"
-                  >
-                    <PersonaIcon
-                      icon={persona?.icon ?? null}
-                      color={persona?.color ?? null}
-                      display="pop"
-                      frameSize="sm"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <div className="typo-body text-foreground/90 truncate">
-                        {persona?.name ?? (
-                          <span className="text-foreground/50">
-                            {t.plugins.dev_projects.team_preview_unknown_persona}
-                          </span>
+                  <li key={m.id} className="rounded-card bg-secondary/30 border border-primary/10">
+                    <button
+                      type="button"
+                      onClick={() => setExpandedMemberId(isExpanded ? null : m.id)}
+                      aria-expanded={isExpanded}
+                      disabled={!persona}
+                      className="w-full flex items-center gap-2 px-2.5 py-1.5 hover:bg-secondary/50 disabled:hover:bg-transparent transition-colors text-left rounded-card"
+                    >
+                      <PersonaIcon
+                        icon={persona?.icon ?? null}
+                        color={persona?.color ?? null}
+                        display="pop"
+                        frameSize="sm"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="typo-body text-foreground/90 truncate">
+                          {persona?.name ?? (
+                            <span className="text-foreground/50">
+                              {t.plugins.dev_projects.team_preview_unknown_persona}
+                            </span>
+                          )}
+                        </div>
+                        {m.role && (
+                          <div className="typo-caption text-foreground/60 truncate">{m.role}</div>
                         )}
                       </div>
-                      {m.role && (
-                        <div className="typo-caption text-foreground/60 truncate">{m.role}</div>
+                      {persona && (
+                        <ChevronDown
+                          className={`w-3.5 h-3.5 text-foreground/50 flex-shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                        />
                       )}
-                    </div>
+                    </button>
+                    {isExpanded && persona && (
+                      <div className="px-3 pb-3 pt-1 space-y-2 border-t border-primary/10">
+                        {persona.description && (
+                          <p className="typo-caption text-foreground/80 leading-relaxed">
+                            {persona.description}
+                          </p>
+                        )}
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 typo-caption">
+                          {/* Status pill — enabled vs disabled */}
+                          <span
+                            className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full border ${
+                              persona.enabled
+                                ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
+                                : 'border-foreground/20 bg-secondary/40 text-foreground/60'
+                            }`}
+                          >
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${
+                                persona.enabled ? 'bg-emerald-400' : 'bg-foreground/30'
+                              }`}
+                            />
+                            {persona.enabled
+                              ? t.plugins.dev_projects.team_preview_member_enabled
+                              : t.plugins.dev_projects.team_preview_member_disabled}
+                          </span>
+                          {/* Group binding */}
+                          {personaGroup && (
+                            <span
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full border"
+                              style={{
+                                backgroundColor: colorWithAlpha(personaGroup.color || '#6366f1', 0.1),
+                                borderColor: colorWithAlpha(personaGroup.color || '#6366f1', 0.4),
+                                color: personaGroup.color || '#6366f1',
+                              }}
+                            >
+                              <Layers className="w-3 h-3" />
+                              {personaGroup.name}
+                            </span>
+                          )}
+                          {/* Health badge — only when degraded/failing matters */}
+                          {health && health.status !== 'healthy' && (
+                            <span
+                              className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full border ${
+                                health.status === 'failing'
+                                  ? 'border-red-500/40 bg-red-500/10 text-red-300'
+                                  : 'border-amber-500/40 bg-amber-500/10 text-amber-300'
+                              }`}
+                            >
+                              <span className="capitalize">{health.status}</span>
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 typo-caption text-foreground/60">
+                          <span>
+                            {t.plugins.dev_projects.team_preview_member_trust}:{' '}
+                            <span className="font-mono text-foreground/80">
+                              {persona.trust_score?.toFixed(2) ?? '—'}
+                            </span>
+                          </span>
+                          <span>
+                            {t.plugins.dev_projects.team_preview_member_last_run}:{' '}
+                            <span className="text-foreground/80">
+                              {lastRun ? formatRelativeTime(lastRun) : t.plugins.dev_projects.team_preview_member_never_run}
+                            </span>
+                          </span>
+                          {persona.max_budget_usd != null && (
+                            <span>
+                              {t.plugins.dev_projects.team_preview_member_budget}:{' '}
+                              <span className="text-foreground/80">${persona.max_budget_usd}</span>
+                            </span>
+                          )}
+                        </div>
+                        <div className="pt-1">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenInEditor(persona.id)}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-card border border-indigo-500/30 bg-indigo-500/10 text-indigo-300 hover:bg-indigo-500/20 typo-caption font-medium transition-colors"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            {t.plugins.dev_projects.team_preview_member_open}
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </li>
                 );
               })}

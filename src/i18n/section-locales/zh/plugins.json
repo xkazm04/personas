@@ -1712,7 +1712,14 @@
     "team_preview_canvas": "画布",
     "team_preview_canvas_unplaced": "成员尚未布局",
     "team_preview_canvas_aria": "迷你画布 — 团队成员及其连接",
-    "team_preview_canvas_open_persona": "在编辑器中打开"
+    "team_preview_canvas_open_persona": "在编辑器中打开",
+    "team_preview_member_enabled": "已启用",
+    "team_preview_member_disabled": "已禁用",
+    "team_preview_member_trust": "信任度",
+    "team_preview_member_last_run": "最近运行",
+    "team_preview_member_never_run": "从未",
+    "team_preview_member_budget": "预算",
+    "team_preview_member_open": "在编辑器中打开"
   },
   "dev_runner": {
     "self_healing": "自愈",

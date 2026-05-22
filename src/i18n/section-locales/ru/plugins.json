@@ -1712,7 +1712,14 @@
     "team_preview_canvas": "Холст",
     "team_preview_canvas_unplaced": "участники ещё не размещены",
     "team_preview_canvas_aria": "Мини-холст — участники команды и их связи",
-    "team_preview_canvas_open_persona": "открыть в редакторе"
+    "team_preview_canvas_open_persona": "открыть в редакторе",
+    "team_preview_member_enabled": "Включена",
+    "team_preview_member_disabled": "Отключена",
+    "team_preview_member_trust": "Доверие",
+    "team_preview_member_last_run": "Последний запуск",
+    "team_preview_member_never_run": "никогда",
+    "team_preview_member_budget": "Бюджет",
+    "team_preview_member_open": "Открыть в редакторе"
   },
   "dev_runner": {
     "self_healing": "Самовосстановление",

@@ -1712,7 +1712,14 @@
     "team_preview_canvas": "ক্যানভাস",
     "team_preview_canvas_unplaced": "সদস্যদের এখনো বিন্যাস করা হয়নি",
     "team_preview_canvas_aria": "মিনি ক্যানভাস — টিমের সদস্য এবং তাদের সংযোগ",
-    "team_preview_canvas_open_persona": "এডিটরে খুলুন"
+    "team_preview_canvas_open_persona": "এডিটরে খুলুন",
+    "team_preview_member_enabled": "সক্রিয়",
+    "team_preview_member_disabled": "নিষ্ক্রিয়",
+    "team_preview_member_trust": "বিশ্বাস",
+    "team_preview_member_last_run": "শেষ রান",
+    "team_preview_member_never_run": "কখনো নয়",
+    "team_preview_member_budget": "বাজেট",
+    "team_preview_member_open": "এডিটরে খুলুন"
   },
   "dev_runner": {
     "self_healing": "স্ব-নিরাময়",

@@ -11351,7 +11351,14 @@
       "team_preview_canvas": "캔버스",
       "team_preview_canvas_unplaced": "멤버 아직 배치되지 않음",
       "team_preview_canvas_aria": "미니 캔버스 — 팀 멤버 및 연결",
-      "team_preview_canvas_open_persona": "에디터에서 열기"
+      "team_preview_canvas_open_persona": "에디터에서 열기",
+      "team_preview_member_enabled": "사용",
+      "team_preview_member_disabled": "사용 안 함",
+      "team_preview_member_trust": "신뢰도",
+      "team_preview_member_last_run": "마지막 실행",
+      "team_preview_member_never_run": "없음",
+      "team_preview_member_budget": "예산",
+      "team_preview_member_open": "에디터에서 열기"
     },
     "dev_runner": {
       "self_healing": "자가 복구",

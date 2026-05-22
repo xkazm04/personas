@@ -11351,7 +11351,14 @@
       "team_preview_canvas": "キャンバス",
       "team_preview_canvas_unplaced": "メンバーがまだレイアウトされていません",
       "team_preview_canvas_aria": "ミニキャンバス — チームメンバーと接続",
-      "team_preview_canvas_open_persona": "エディタで開く"
+      "team_preview_canvas_open_persona": "エディタで開く",
+      "team_preview_member_enabled": "有効",
+      "team_preview_member_disabled": "無効",
+      "team_preview_member_trust": "信頼度",
+      "team_preview_member_last_run": "最終実行",
+      "team_preview_member_never_run": "なし",
+      "team_preview_member_budget": "予算",
+      "team_preview_member_open": "エディタで開く"
     },
     "dev_runner": {
       "self_healing": "自己修復",

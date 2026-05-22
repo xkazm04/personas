@@ -1712,7 +1712,14 @@
     "team_preview_canvas": "Lienzo",
     "team_preview_canvas_unplaced": "miembros aún no dispuestos",
     "team_preview_canvas_aria": "Mini lienzo — miembros del equipo y sus conexiones",
-    "team_preview_canvas_open_persona": "abrir en editor"
+    "team_preview_canvas_open_persona": "abrir en editor",
+    "team_preview_member_enabled": "Habilitada",
+    "team_preview_member_disabled": "Deshabilitada",
+    "team_preview_member_trust": "Confianza",
+    "team_preview_member_last_run": "Última ejecución",
+    "team_preview_member_never_run": "nunca",
+    "team_preview_member_budget": "Presupuesto",
+    "team_preview_member_open": "Abrir en editor"
   },
   "dev_runner": {
     "self_healing": "Auto-Sanación",

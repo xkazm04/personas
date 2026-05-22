@@ -11351,7 +11351,14 @@
       "team_preview_canvas": "Kanvas",
       "team_preview_canvas_unplaced": "anggota belum ditata",
       "team_preview_canvas_aria": "Kanvas mini — anggota tim dan koneksinya",
-      "team_preview_canvas_open_persona": "buka di editor"
+      "team_preview_canvas_open_persona": "buka di editor",
+      "team_preview_member_enabled": "Aktif",
+      "team_preview_member_disabled": "Nonaktif",
+      "team_preview_member_trust": "Kepercayaan",
+      "team_preview_member_last_run": "Run terakhir",
+      "team_preview_member_never_run": "tidak pernah",
+      "team_preview_member_budget": "Anggaran",
+      "team_preview_member_open": "Buka di editor"
     },
     "dev_runner": {
       "self_healing": "Self-Healing",

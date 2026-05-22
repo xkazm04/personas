@@ -11533,6 +11533,13 @@ export type Translations = {
       team_preview_canvas_unplaced: string;
       team_preview_canvas_aria: string;
       team_preview_canvas_open_persona: string;
+      team_preview_member_enabled: string;
+      team_preview_member_disabled: string;
+      team_preview_member_trust: string;
+      team_preview_member_last_run: string;
+      team_preview_member_never_run: string;
+      team_preview_member_budget: string;
+      team_preview_member_open: string;
       group_binding_label: string;
       group_binding_none: string;
       group_binding_empty: string;

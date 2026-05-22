@@ -11351,7 +11351,14 @@
       "team_preview_canvas": "اللوحة",
       "team_preview_canvas_unplaced": "لم يتم تخطيط الأعضاء بعد",
       "team_preview_canvas_aria": "لوحة مصغرة — أعضاء الفريق وتوصيلاتهم",
-      "team_preview_canvas_open_persona": "افتح في المحرر"
+      "team_preview_canvas_open_persona": "افتح في المحرر",
+      "team_preview_member_enabled": "مفعّل",
+      "team_preview_member_disabled": "معطّل",
+      "team_preview_member_trust": "الثقة",
+      "team_preview_member_last_run": "آخر تشغيل",
+      "team_preview_member_never_run": "أبدًا",
+      "team_preview_member_budget": "الميزانية",
+      "team_preview_member_open": "فتح في المحرر"
     },
     "dev_runner": {
       "self_healing": "المعالجة الذاتية",

@@ -1712,7 +1712,14 @@
     "team_preview_canvas": "कैनवस",
     "team_preview_canvas_unplaced": "सदस्य अभी तक लेआउट नहीं किए गए",
     "team_preview_canvas_aria": "मिनी कैनवस — टीम के सदस्य और उनके कनेक्शन",
-    "team_preview_canvas_open_persona": "एडिटर में खोलें"
+    "team_preview_canvas_open_persona": "एडिटर में खोलें",
+    "team_preview_member_enabled": "सक्षम",
+    "team_preview_member_disabled": "अक्षम",
+    "team_preview_member_trust": "विश्वास",
+    "team_preview_member_last_run": "अंतिम रन",
+    "team_preview_member_never_run": "कभी नहीं",
+    "team_preview_member_budget": "बजट",
+    "team_preview_member_open": "एडिटर में खोलें"
   },
   "dev_runner": {
     "self_healing": "Self-Healing",

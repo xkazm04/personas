@@ -1712,7 +1712,14 @@
     "team_preview_canvas": "Canvas",
     "team_preview_canvas_unplaced": "Mitglieder noch nicht angeordnet",
     "team_preview_canvas_aria": "Mini-Canvas — Teammitglieder und ihre Verbindungen",
-    "team_preview_canvas_open_persona": "im Editor öffnen"
+    "team_preview_canvas_open_persona": "im Editor öffnen",
+    "team_preview_member_enabled": "Aktiviert",
+    "team_preview_member_disabled": "Deaktiviert",
+    "team_preview_member_trust": "Vertrauen",
+    "team_preview_member_last_run": "Letzter Lauf",
+    "team_preview_member_never_run": "nie",
+    "team_preview_member_budget": "Budget",
+    "team_preview_member_open": "Im Editor öffnen"
   },
   "dev_runner": {
     "self_healing": "Selbstheilung",

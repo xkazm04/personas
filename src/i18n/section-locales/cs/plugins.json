@@ -1712,7 +1712,14 @@
     "team_preview_canvas": "Plátno",
     "team_preview_canvas_unplaced": "členové dosud nerozmístění",
     "team_preview_canvas_aria": "Mini plátno — členové týmu a jejich propojení",
-    "team_preview_canvas_open_persona": "otevřít v editoru"
+    "team_preview_canvas_open_persona": "otevřít v editoru",
+    "team_preview_member_enabled": "Aktivní",
+    "team_preview_member_disabled": "Neaktivní",
+    "team_preview_member_trust": "Důvěra",
+    "team_preview_member_last_run": "Poslední spuštění",
+    "team_preview_member_never_run": "nikdy",
+    "team_preview_member_budget": "Rozpočet",
+    "team_preview_member_open": "Otevřít v editoru"
   },
   "dev_runner": {
     "self_healing": "Self-healing",

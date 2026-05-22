@@ -1712,7 +1712,14 @@
     "team_preview_canvas": "Canvas",
     "team_preview_canvas_unplaced": "thành viên chưa được sắp xếp",
     "team_preview_canvas_aria": "Canvas mini — thành viên nhóm và các kết nối",
-    "team_preview_canvas_open_persona": "mở trong trình chỉnh sửa"
+    "team_preview_canvas_open_persona": "mở trong trình chỉnh sửa",
+    "team_preview_member_enabled": "Bật",
+    "team_preview_member_disabled": "Tắt",
+    "team_preview_member_trust": "Tin cậy",
+    "team_preview_member_last_run": "Lần chạy gần nhất",
+    "team_preview_member_never_run": "chưa bao giờ",
+    "team_preview_member_budget": "Ngân sách",
+    "team_preview_member_open": "Mở trong trình chỉnh sửa"
   },
   "dev_runner": {
     "self_healing": "Tự phục hồi",
