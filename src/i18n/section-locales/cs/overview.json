@@ -306,6 +306,8 @@
     "todos_empty": "All clear.",
     "scope_fleet": "Flotila",
     "scope_fleet_hint": "Zobrazuje všechny persony — filtr person to nemění.",
+    "triage_jump": "Nejnaléhavější",
+    "triage_detail_pipelines": "zdroje dat se nedaří synchronizovat",
     "mission_control_eyebrow": "Mission Control"
   },
   "execution_metrics": {
@@ -664,6 +666,7 @@
     "success_badge": "Úspěch",
     "alerts_badge": "Upozornění",
     "agents_badge": "Agenti",
+    "pipelines_badge": "Kanály",
     "tool_performance": "Tool Performance",
     "tool_performance_subtitle": "Latency & error rate per tool",
     "tool_performance_col_tool": "Tool",

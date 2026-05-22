@@ -46,7 +46,7 @@ const AnalyticsInserts = lazyRetry(() => import('./widgets/AnalyticsInserts'));
 const UpcomingRoutinesCard = lazyRetry(() => import('./cards/UpcomingRoutinesCard'));
 const VaultRecentChangesCard = lazyRetry(() => import('./cards/VaultRecentChangesCard'));
 
-type TriageKind = 'review' | 'alert';
+type TriageKind = 'alert' | 'pipeline' | 'review' | 'message';
 interface TriageItem {
   id: string;
   kind: TriageKind;
@@ -116,15 +116,13 @@ export default function DashboardHomeMissionControl() {
 
   const displayName = user?.display_name || user?.email?.split('@')[0] || t.overview.dashboard.default_user;
 
+  const pipelineErrorCount = Object.keys(pipelineErrors).length;
+
+  // Triage is a ranked work queue, not a flat list: items are sorted by
+  // urgency (alert → pipeline → review → message). The pane accents whatever
+  // lands at rank 0 and the header "Most urgent" button jumps straight to it.
   const triageItems = useMemo<TriageItem[]>(() => {
     const out: TriageItem[] = [];
-    if (pendingReviewCount > 0) out.push({
-      id: 'reviews',
-      kind: 'review',
-      title: `${pendingReviewCount} ${t.overview.widgets.reviews_badge}`,
-      detail: 'manual review queue',
-      onClick: () => setOverviewTab('manual-review'),
-    });
     if (activeAlertCount > 0) out.push({
       id: 'alerts',
       kind: 'alert',
@@ -132,17 +130,31 @@ export default function DashboardHomeMissionControl() {
       detail: 'active health alerts',
       onClick: () => setOverviewTab('health'),
     });
+    if (pipelineErrorCount > 0) out.push({
+      id: 'pipelines',
+      kind: 'pipeline',
+      title: `${pipelineErrorCount} ${t.overview.widgets.pipelines_badge}`,
+      detail: t.overview.dashboard.triage_detail_pipelines,
+      onClick: () => setOverviewTab('health'),
+    });
+    if (pendingReviewCount > 0) out.push({
+      id: 'reviews',
+      kind: 'review',
+      title: `${pendingReviewCount} ${t.overview.widgets.reviews_badge}`,
+      detail: 'manual review queue',
+      onClick: () => setOverviewTab('manual-review'),
+    });
     if (unreadMessageCount > 0) out.push({
       id: 'messages',
-      kind: 'review',
+      kind: 'message',
       title: `${unreadMessageCount} ${t.overview.widgets.messages_badge}`,
       detail: 'unread in inbox',
       onClick: () => setOverviewTab('messages'),
     });
     // Memory suggestions get their own detailed panel in the Instruments bay
     // below — they're richer than the triage summary affords.
-    return out;
-  }, [pendingReviewCount, activeAlertCount, unreadMessageCount, t, setOverviewTab]);
+    return out.sort((a, b) => TRIAGE_SEVERITY[a.kind] - TRIAGE_SEVERITY[b.kind]);
+  }, [activeAlertCount, pipelineErrorCount, pendingReviewCount, unreadMessageCount, t, setOverviewTab]);
 
   const chartData = useMemo(() => {
     const points = executionDashboard?.daily_points ?? [];
@@ -155,7 +167,6 @@ export default function DashboardHomeMissionControl() {
     return { totalTraffic, totalErrors };
   }, [chartData]);
 
-  const pipelineErrorCount = Object.keys(pipelineErrors).length;
   const lastSyncedIso = Object.values(pipelineFetchedAt).filter(Boolean).sort().pop();
   const lastSyncedLabel = lastSyncedIso
     ? new Date(lastSyncedIso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -370,22 +381,40 @@ export const InstrumentsBay = memo(function InstrumentsBay({
 // TriagePane — ranked queue of items needing the operator's attention
 // ---------------------------------------------------------------------------
 
+// Lower rank = more urgent. Drives the triage queue sort + the rank-0 accent.
+const TRIAGE_SEVERITY: Record<TriageKind, number> = {
+  alert: 0, pipeline: 1, review: 2, message: 3,
+};
+
 const TRIAGE_META: Record<TriageKind, { Icon: typeof ClipboardCheck; color: string; bg: string; border: string; tag: string }> = {
-  review: { Icon: ClipboardCheck, color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20', tag: 'REV' },
-  alert:  { Icon: AlertTriangle,  color: 'text-red-400',   bg: 'bg-red-500/10',   border: 'border-red-500/20',   tag: 'ALT' },
+  alert:    { Icon: AlertTriangle,  color: 'text-red-400',    bg: 'bg-red-500/10',    border: 'border-red-500/20',    tag: 'ALT' },
+  pipeline: { Icon: AlertCircle,    color: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/20', tag: 'SYS' },
+  review:   { Icon: ClipboardCheck, color: 'text-amber-400',  bg: 'bg-amber-500/10',  border: 'border-amber-500/20',  tag: 'REV' },
+  message:  { Icon: Bell,           color: 'text-blue-400',   bg: 'bg-blue-500/10',   border: 'border-blue-500/20',   tag: 'MSG' },
 };
 
 export const TriagePane = memo(function TriagePane({
   items, personaScoped,
 }: { items: TriageItem[]; personaScoped: boolean }) {
   const { t, tx } = useTranslation();
+  const topItem = items[0];
   return (
     <div className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden flex flex-col">
       <PaneHeader
         label={t.overview.dashboard.todos_label}
         subtitle={tx(t.overview.dashboard.todos_subtitle_open, { count: items.length })}
       >
-        {personaScoped && <FleetTag />}
+        <div className="flex items-center gap-2">
+          {personaScoped && <FleetTag />}
+          {topItem && (
+            <button
+              onClick={topItem.onClick}
+              className="typo-caption font-mono uppercase tracking-widest text-primary/80 hover:text-primary transition-colors flex items-center gap-1"
+            >
+              {t.overview.dashboard.triage_jump} <ArrowRight className="w-3 h-3" />
+            </button>
+          )}
+        </div>
       </PaneHeader>
       <div className="flex-1 divide-y divide-primary/5 max-h-[28rem] overflow-y-auto">
         {items.length === 0 ? (
@@ -393,14 +422,19 @@ export const TriagePane = memo(function TriagePane({
             {t.overview.dashboard.todos_empty}
           </div>
         ) : (
-          items.map((item) => {
+          items.map((item, idx) => {
             const meta = TRIAGE_META[item.kind];
             const Icon = meta.Icon;
+            const isTop = idx === 0;
             return (
               <button
                 key={item.id}
                 onClick={item.onClick}
-                className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-primary/[0.04] transition-colors group focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/30"
+                className={`w-full flex items-center gap-3 px-3 py-2.5 text-left border-l-2 transition-colors group focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/30 ${
+                  isTop
+                    ? `${meta.border} bg-primary/[0.04] hover:bg-primary/[0.07]`
+                    : 'border-transparent hover:bg-primary/[0.04]'
+                }`}
               >
                 <span className={`typo-caption font-mono px-1.5 py-0.5 rounded-interactive border ${meta.bg} ${meta.border} ${meta.color} flex-shrink-0`}>
                   {meta.tag}

@@ -306,6 +306,8 @@
     "todos_empty": "All clear.",
     "scope_fleet": "Armada",
     "scope_fleet_hint": "Menampilkan semua persona — filter persona tidak mengubah ini.",
+    "triage_jump": "Paling mendesak",
+    "triage_detail_pipelines": "sumber data gagal disinkronkan",
     "mission_control_eyebrow": "Mission Control"
   },
   "execution_metrics": {
@@ -664,6 +666,7 @@
     "success_badge": "Berhasil",
     "alerts_badge": "Peringatan",
     "agents_badge": "Agen",
+    "pipelines_badge": "Pipeline",
     "tool_performance": "Tool Performance",
     "tool_performance_subtitle": "Latency & error rate per tool",
     "tool_performance_col_tool": "Tool",

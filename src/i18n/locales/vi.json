@@ -5081,6 +5081,8 @@
       "todos_empty": "All clear.",
       "scope_fleet": "Đội",
       "scope_fleet_hint": "Hiển thị tất cả persona — bộ lọc persona không thay đổi điều này.",
+      "triage_jump": "Khẩn cấp nhất",
+      "triage_detail_pipelines": "nguồn dữ liệu không đồng bộ được",
       "mission_control_eyebrow": "Mission Control"
     },
     "execution_metrics": {
@@ -5439,6 +5441,7 @@
       "success_badge": "Thành công",
       "alerts_badge": "Cảnh báo",
       "agents_badge": "Tác nhân",
+      "pipelines_badge": "Pipeline",
       "tool_performance": "Tool Performance",
       "tool_performance_subtitle": "Latency & error rate per tool",
       "tool_performance_col_tool": "Tool",

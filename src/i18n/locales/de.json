@@ -5081,6 +5081,8 @@
       "todos_empty": "All clear.",
       "scope_fleet": "Flotte",
       "scope_fleet_hint": "Zeigt alle Personas — der Persona-Filter ändert dies nicht.",
+      "triage_jump": "Dringendste",
+      "triage_detail_pipelines": "Datenquellen synchronisieren nicht",
       "mission_control_eyebrow": "Mission Control"
     },
     "execution_metrics": {
@@ -5439,6 +5441,7 @@
       "success_badge": "Erfolg",
       "alerts_badge": "Warnungen",
       "agents_badge": "Agenten",
+      "pipelines_badge": "Pipelines",
       "tool_performance": "Tool Performance",
       "tool_performance_subtitle": "Latency & error rate per tool",
       "tool_performance_col_tool": "Tool",

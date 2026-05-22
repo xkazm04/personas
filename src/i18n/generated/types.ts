@@ -5149,6 +5149,8 @@ export type Translations = {
       todos_empty: string;
       scope_fleet: string;
       scope_fleet_hint: string;
+      triage_jump: string;
+      triage_detail_pipelines: string;
     };
     execution_metrics: {
       title: string;
@@ -5538,6 +5540,7 @@ export type Translations = {
       success_badge: string;
       alerts_badge: string;
       agents_badge: string;
+      pipelines_badge: string;
     };
     cards: {
       fleet_optimization: string;

@@ -306,6 +306,8 @@
     "todos_empty": "All clear.",
     "scope_fleet": "플릿",
     "scope_fleet_hint": "모든 페르소나를 표시합니다 — 페르소나 필터는 이를 변경하지 않습니다.",
+    "triage_jump": "가장 긴급",
+    "triage_detail_pipelines": "동기화에 실패한 데이터 소스",
     "mission_control_eyebrow": "Mission Control"
   },
   "execution_metrics": {
@@ -664,6 +666,7 @@
     "success_badge": "성공",
     "alerts_badge": "알림",
     "agents_badge": "에이전트",
+    "pipelines_badge": "파이프라인",
     "tool_performance": "Tool Performance",
     "tool_performance_subtitle": "Latency & error rate per tool",
     "tool_performance_col_tool": "Tool",

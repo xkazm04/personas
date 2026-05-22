@@ -306,6 +306,8 @@
     "todos_empty": "All clear.",
     "scope_fleet": "الأسطول",
     "scope_fleet_hint": "يعرض جميع الشخصيات — لا يؤثر مرشح الشخصية على هذا.",
+    "triage_jump": "الأكثر إلحاحًا",
+    "triage_detail_pipelines": "مصادر بيانات تفشل في المزامنة",
     "mission_control_eyebrow": "Mission Control"
   },
   "execution_metrics": {
@@ -664,6 +666,7 @@
     "success_badge": "النجاح",
     "alerts_badge": "التنبيهات",
     "agents_badge": "الوكلاء",
+    "pipelines_badge": "خطوط الأنابيب",
     "tool_performance": "Tool Performance",
     "tool_performance_subtitle": "Latency & error rate per tool",
     "tool_performance_col_tool": "Tool",
