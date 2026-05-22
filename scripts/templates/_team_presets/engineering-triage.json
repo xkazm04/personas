@@ -1,0 +1,77 @@
+{
+  "id": "engineering-triage",
+  "schema_version": 1,
+  "name": "Engineering Triage",
+  "description": "Keep the codebase healthy. Scan for issues, prune dead code, guard documentation freshness, and gate quality — four agents that work the engineering hygiene backlog while you ship features.",
+  "icon": "Wrench",
+  "color": "#06B6D4",
+  "category": ["development"],
+  "team": {
+    "name": "Engineering Triage",
+    "description": "Scan → prune → guard → gate",
+    "color": "#06B6D4"
+  },
+  "group": {
+    "name": "Engineering Hygiene",
+    "color": "#06B6D4",
+    "shared_instructions": "Never auto-delete code without a confirmed reviewer ack. Every finding ships with a one-line evidence trail (file:line + reason). Prefer mechanical over speculative recommendations."
+  },
+  "members": [
+    {
+      "template_id": "codebase-health-scanner",
+      "role": "scanner",
+      "x": 0,
+      "y": 0
+    },
+    {
+      "template_id": "lean-codebase-sentinel",
+      "role": "pruner",
+      "x": 240,
+      "y": 0
+    },
+    {
+      "template_id": "documentation-freshness-guardian",
+      "role": "docs",
+      "x": 0,
+      "y": 180
+    },
+    {
+      "template_id": "qa-guardian",
+      "role": "gate",
+      "x": 240,
+      "y": 180
+    }
+  ],
+  "connections": [
+    {
+      "from": "scanner",
+      "to": "pruner",
+      "connection_type": "data",
+      "label": "candidate dead code"
+    },
+    {
+      "from": "scanner",
+      "to": "docs",
+      "connection_type": "data",
+      "label": "modules with drift"
+    },
+    {
+      "from": "pruner",
+      "to": "gate",
+      "connection_type": "data",
+      "label": "removal proposals"
+    },
+    {
+      "from": "docs",
+      "to": "gate",
+      "connection_type": "data",
+      "label": "doc updates"
+    },
+    {
+      "from": "gate",
+      "to": "scanner",
+      "connection_type": "feedback",
+      "label": "false-positive signals"
+    }
+  ]
+}
