@@ -11,6 +11,8 @@ import { useSidebarAgentActivity, type AgentActivityType } from '@/hooks/sidebar
 import { useCodebasePersonas } from '@/hooks/sidebar/useCodebasePersonas';
 import { cloudItems } from '../sidebarData';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useTier } from '@/hooks/utility/interaction/useTier';
+import { TIERS, isTierVisible } from '@/lib/constants/uiModes';
 
 // Color classes per activity type — mirror the SidebarLevel1 orbit dots so
 // users see the same signal at both hierarchy levels.
@@ -69,6 +71,8 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
   const [progressCollapsed, setProgressCollapsed] = useState(false);
   const [activeProjectCollapsed, setActiveProjectCollapsed] = useState(false);
   const isDev = import.meta.env.DEV;
+  const tier = useTier();
+  const isTeamVisible = isTierVisible(TIERS.TEAM, tier.current);
   const { getPrefetchProps } = usePrefetchOnHover();
 
   // Per-persona activity from the same aggregator powering the L1 orbit dots.
@@ -496,33 +500,40 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
           </div>
         )}
 
-        {/* Cloud & Teams (dev-only, gold border) */}
-        {isDev && (
-          <div className="mt-3 pt-3 border-t border-amber-500/20 space-y-1">
-            <button
-              onClick={() => { selectPersona(null); setAgentTab('team'); useSystemStore.getState().setIsCreatingPersona(false); }}
-              aria-current={agentTab === 'team' ? 'page' : undefined}
-              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ring-1 ring-amber-500/40 ${
-                agentTab === 'team'
-                  ? 'bg-amber-500/10 text-foreground/90 font-semibold'
-                  : 'text-foreground hover:bg-amber-500/5 hover:text-foreground/80 font-normal'
-              }`}
-            >
-              <Users className="w-4 h-4 flex-shrink-0" />
-              Teams
-            </button>
-            <button
-              onClick={() => { selectPersona(null); setAgentTab('cloud'); useSystemStore.getState().setIsCreatingPersona(false); }}
-              aria-current={agentTab === 'cloud' ? 'page' : undefined}
-              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ring-1 ring-amber-500/40 ${
-                agentTab === 'cloud'
-                  ? 'bg-amber-500/10 text-foreground/90 font-semibold'
-                  : 'text-foreground hover:bg-amber-500/5 hover:text-foreground/80 font-normal'
-              }`}
-            >
-              <Cloud className="w-4 h-4 flex-shrink-0" />
-              Cloud
-            </button>
+        {/* Teams (productionized at TEAM tier) + Cloud (still dev-only) */}
+        {(isTeamVisible || isDev) && (
+          <div className="mt-3 pt-3 border-t border-primary/10 space-y-1">
+            {isTeamVisible && (
+              <button
+                onClick={() => { selectPersona(null); setAgentTab('team'); useSystemStore.getState().setIsCreatingPersona(false); }}
+                aria-current={agentTab === 'team' ? 'page' : undefined}
+                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
+                  agentTab === 'team'
+                    ? 'bg-primary/10 text-foreground/90 font-semibold'
+                    : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80 font-normal'
+                }`}
+              >
+                <Users className="w-4 h-4 flex-shrink-0" />
+                {t.shared.sidebar_extra.teams_label}
+              </button>
+            )}
+            {isDev && (
+              <button
+                onClick={() => { selectPersona(null); setAgentTab('cloud'); useSystemStore.getState().setIsCreatingPersona(false); }}
+                aria-current={agentTab === 'cloud' ? 'page' : undefined}
+                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ring-1 ring-amber-500/40 ${
+                  agentTab === 'cloud'
+                    ? 'bg-amber-500/10 text-foreground/90 font-semibold'
+                    : 'text-foreground hover:bg-amber-500/5 hover:text-foreground/80 font-normal'
+                }`}
+              >
+                <Cloud className="w-4 h-4 flex-shrink-0" />
+                <span>{t.shared.sidebar_extra.cloud_label}</span>
+                <span className="ml-auto text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300/80 font-medium">
+                  {t.shared.sidebar_extra.cloud_dev_pill}
+                </span>
+              </button>
+            )}
             {/* Cloud sub-tabs */}
             {agentTab === 'cloud' && (
               <div className="ml-4 space-y-0.5">

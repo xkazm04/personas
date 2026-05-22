@@ -12784,6 +12784,9 @@ export type Translations = {
       whats_new: string;
       back_to_plugins: string;
       roadmap: string;
+      teams_label: string;
+      cloud_label: string;
+      cloud_dev_pill: string;
     };
     execution_detail: {
       copy: string;
