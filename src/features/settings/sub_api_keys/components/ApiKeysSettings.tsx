@@ -18,7 +18,7 @@
  *     user-facing list — it isn't theirs to manage.
  */
 import { useCallback, useEffect, useState } from 'react';
-import { Key, Plus, Check, AlertTriangle, Trash2, ShieldOff, RefreshCw } from 'lucide-react';
+import { Key, Plus, Check, AlertTriangle, Trash2, ShieldOff, RefreshCw, Clock3 } from 'lucide-react';
 import {
   ContentBox,
   ContentHeader,
@@ -32,7 +32,26 @@ import {
   type ExternalApiKey,
   type CreateApiKeyResponse,
 } from '@/api/auth/externalApiKeys';
+import { formatRelativeTime } from '@/lib/utils/formatters';
 import { useTranslation } from '@/i18n/useTranslation';
+
+// A key is considered "stale" — i.e. probably forgotten — when it's older than
+// the grace window AND either never used or unused for the inactivity window.
+// Pulled out so the threshold is one obvious knob to tune later.
+const STALE_GRACE_DAYS = 7;
+const STALE_INACTIVE_DAYS = 30;
+const DAY_MS = 86_400_000;
+
+function isStaleKey(key: ExternalApiKey): boolean {
+  if (key.revoked_at !== null || !key.enabled) return false;
+  const now = Date.now();
+  const created = new Date(key.created_at).getTime();
+  if (isNaN(created) || now - created < STALE_GRACE_DAYS * DAY_MS) return false;
+  if (key.last_used_at === null) return true;
+  const lastUsed = new Date(key.last_used_at).getTime();
+  if (isNaN(lastUsed)) return false;
+  return now - lastUsed >= STALE_INACTIVE_DAYS * DAY_MS;
+}
 import { McpServerInfoPanel } from './McpServerInfoPanel';
 import { CreateApiKeyDialog } from './CreateApiKeyDialog';
 import { CreatedKeyDialog } from './CreatedKeyDialog';
@@ -213,15 +232,23 @@ function ApiKeyRow({ apiKey, actioning, onRevoke, onDelete }: ApiKeyRowProps) {
       return [];
     }
   })();
-  const lastUsed = apiKey.last_used_at
+  const lastUsedRelative = formatRelativeTime(apiKey.last_used_at, s.never_used, {
+    dateFallbackDays: 30,
+  });
+  const lastUsedAbsolute = apiKey.last_used_at
     ? new Date(apiKey.last_used_at).toLocaleString()
-    : s.never_used;
+    : null;
+  const createdRelative = formatRelativeTime(apiKey.created_at, '', { dateFallbackDays: 60 });
+  const createdAbsolute = new Date(apiKey.created_at).toLocaleString();
+  const stale = !isRevoked && isStaleKey(apiKey);
 
   return (
     <div
       className={`flex items-center gap-3 px-3 py-2.5 rounded-card border ${
         isRevoked
           ? 'border-border/20 bg-secondary/10 opacity-60'
+          : stale
+          ? 'border-amber-400/30 bg-amber-400/5'
           : 'border-border/30 bg-secondary/20'
       }`}
     >
@@ -233,6 +260,15 @@ function ApiKeyRow({ apiKey, actioning, onRevoke, onDelete }: ApiKeyRowProps) {
               {s.revoked}
             </span>
           )}
+          {stale && (
+            <span
+              className="typo-caption text-amber-400 bg-amber-400/10 border border-amber-400/30 px-1.5 py-0.5 rounded inline-flex items-center gap-1"
+              title={s.stale_tooltip}
+            >
+              <Clock3 size={10} />
+              {s.stale_chip}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-3 mt-1">
           <code className="typo-code text-foreground">{apiKey.key_prefix}…</code>
@@ -241,8 +277,15 @@ function ApiKeyRow({ apiKey, actioning, onRevoke, onDelete }: ApiKeyRowProps) {
             {scopes.length > 0 ? scopes.join(', ') : s.no_scopes}
           </span>
           <span className="typo-caption text-foreground">·</span>
-          <span className="typo-caption text-foreground">
-            {s.last_used}: {lastUsed}
+          <span
+            className={`typo-caption ${stale ? 'text-amber-400/80' : 'text-foreground'}`}
+            title={lastUsedAbsolute ?? undefined}
+          >
+            {s.last_used}: {lastUsedRelative}
+          </span>
+          <span className="typo-caption text-foreground">·</span>
+          <span className="typo-caption text-foreground" title={createdAbsolute}>
+            {s.created_label}: {createdRelative}
           </span>
         </div>
       </div>
