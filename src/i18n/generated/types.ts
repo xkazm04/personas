@@ -11478,6 +11478,14 @@ export type Translations = {
       team_binding_bound: string;
       team_binding_orphan: string;
       team_binding_orphan_label: string;
+      team_binding_preview_title: string;
+      team_preview_members: string;
+      team_preview_loading: string;
+      team_preview_no_members: string;
+      team_preview_unknown_persona: string;
+      team_preview_recent_runs: string;
+      team_preview_recent_runs_total: string;
+      team_preview_no_runs: string;
     };
     dev_runner: {
       self_healing: string;

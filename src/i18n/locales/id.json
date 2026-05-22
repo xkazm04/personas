@@ -11290,7 +11290,15 @@
       "team_binding_empty": "Belum ada tim — buat di Agen → Tim untuk diikat di sini.",
       "team_binding_bound": "Proyek terikat ke pipeline PersonaTeam ini",
       "team_binding_orphan": "Tim terikat telah dihapus; buka proyek untuk mengikat ulang",
-      "team_binding_orphan_label": "tim dihapus"
+      "team_binding_orphan_label": "tim dihapus",
+      "team_binding_preview_title": "Buka pratinjau tim — anggota + run terbaru",
+      "team_preview_members": "Anggota",
+      "team_preview_loading": "Memuat…",
+      "team_preview_no_members": "Tim ini belum memiliki anggota.",
+      "team_preview_unknown_persona": "(persona dihapus)",
+      "team_preview_recent_runs": "Run terbaru",
+      "team_preview_recent_runs_total": "({count} terakhir)",
+      "team_preview_no_runs": "Tim ini belum pernah dijalankan."
     },
     "dev_runner": {
       "self_healing": "Self-Healing",

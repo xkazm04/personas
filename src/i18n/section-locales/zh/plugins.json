@@ -1693,7 +1693,15 @@
     "team_binding_empty": "尚无团队 — 在 智能体 → 团队 中创建后即可绑定。",
     "team_binding_bound": "项目已绑定到此 PersonaTeam 流水线",
     "team_binding_orphan": "绑定的团队已删除；打开项目以重新绑定",
-    "team_binding_orphan_label": "团队已删除"
+    "team_binding_orphan_label": "团队已删除",
+    "team_binding_preview_title": "打开团队预览 — 成员 + 近期运行",
+    "team_preview_members": "成员",
+    "team_preview_loading": "加载中…",
+    "team_preview_no_members": "此团队尚无成员。",
+    "team_preview_unknown_persona": "(人格已删除)",
+    "team_preview_recent_runs": "近期运行",
+    "team_preview_recent_runs_total": "(最近 {count} 次)",
+    "team_preview_no_runs": "此团队尚未执行过。"
   },
   "dev_runner": {
     "self_healing": "自愈",

@@ -1693,7 +1693,15 @@
     "team_binding_empty": "এখনো কোনো টিম নেই — এজেন্ট → টিম-এ একটি তৈরি করে এখানে বাঁধুন।",
     "team_binding_bound": "প্রোজেক্টটি এই PersonaTeam পাইপলাইনে বাঁধা",
     "team_binding_orphan": "বাঁধা টিম মুছে ফেলা হয়েছে; পুনরায় বাঁধতে প্রোজেক্ট খুলুন",
-    "team_binding_orphan_label": "টিম সরানো হয়েছে"
+    "team_binding_orphan_label": "টিম সরানো হয়েছে",
+    "team_binding_preview_title": "টিম প্রিভিউ খুলুন — সদস্য + সাম্প্রতিক রান",
+    "team_preview_members": "সদস্যরা",
+    "team_preview_loading": "লোড হচ্ছে…",
+    "team_preview_no_members": "এই টিমে এখনো কোনো সদস্য নেই।",
+    "team_preview_unknown_persona": "(পার্সোনা মুছে ফেলা হয়েছে)",
+    "team_preview_recent_runs": "সাম্প্রতিক রান",
+    "team_preview_recent_runs_total": "(সর্বশেষ {count})",
+    "team_preview_no_runs": "এই টিম এখনো চালানো হয়নি।"
   },
   "dev_runner": {
     "self_healing": "স্ব-নিরাময়",

@@ -1693,7 +1693,15 @@
     "team_binding_empty": "Chưa có nhóm — tạo trong Agents → Nhóm để liên kết tại đây.",
     "team_binding_bound": "Dự án được liên kết với pipeline PersonaTeam này",
     "team_binding_orphan": "Nhóm liên kết đã bị xóa; mở dự án để liên kết lại",
-    "team_binding_orphan_label": "nhóm đã xóa"
+    "team_binding_orphan_label": "nhóm đã xóa",
+    "team_binding_preview_title": "Mở xem trước nhóm — thành viên + lần chạy gần đây",
+    "team_preview_members": "Thành viên",
+    "team_preview_loading": "Đang tải…",
+    "team_preview_no_members": "Nhóm này chưa có thành viên.",
+    "team_preview_unknown_persona": "(persona đã bị xóa)",
+    "team_preview_recent_runs": "Lần chạy gần đây",
+    "team_preview_recent_runs_total": "({count} gần nhất)",
+    "team_preview_no_runs": "Nhóm này chưa được chạy."
   },
   "dev_runner": {
     "self_healing": "Tự phục hồi",

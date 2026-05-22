@@ -1693,7 +1693,15 @@
     "team_binding_empty": "अभी तक कोई टीम नहीं — एजेंट्स → टीम्स में बनाकर यहाँ बाँधें।",
     "team_binding_bound": "प्रोजेक्ट इस PersonaTeam पाइपलाइन से बंधा है",
     "team_binding_orphan": "बंधी हुई टीम हटा दी गई है; फिर से बाँधने के लिए प्रोजेक्ट खोलें",
-    "team_binding_orphan_label": "टीम हटाई गई"
+    "team_binding_orphan_label": "टीम हटाई गई",
+    "team_binding_preview_title": "टीम पूर्वावलोकन खोलें — सदस्य + हाल के रन",
+    "team_preview_members": "सदस्य",
+    "team_preview_loading": "लोड हो रहा है…",
+    "team_preview_no_members": "इस टीम में अभी कोई सदस्य नहीं है।",
+    "team_preview_unknown_persona": "(पर्सोना हटा दी गई)",
+    "team_preview_recent_runs": "हाल के रन",
+    "team_preview_recent_runs_total": "(पिछले {count})",
+    "team_preview_no_runs": "इस टीम को अभी तक निष्पादित नहीं किया गया है।"
   },
   "dev_runner": {
     "self_healing": "Self-Healing",

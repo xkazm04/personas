@@ -1693,7 +1693,15 @@
     "team_binding_empty": "Noch keine Teams — erstelle eines unter Agents → Teams, um es hier zu binden.",
     "team_binding_bound": "Projekt ist an diese PersonaTeam-Pipeline gebunden",
     "team_binding_orphan": "Gebundenes Team wurde gelöscht; Projekt öffnen, um neu zu binden",
-    "team_binding_orphan_label": "Team entfernt"
+    "team_binding_orphan_label": "Team entfernt",
+    "team_binding_preview_title": "Team-Vorschau öffnen — Mitglieder + letzte Läufe",
+    "team_preview_members": "Mitglieder",
+    "team_preview_loading": "Lädt…",
+    "team_preview_no_members": "Dieses Team hat noch keine Mitglieder.",
+    "team_preview_unknown_persona": "(Persona entfernt)",
+    "team_preview_recent_runs": "Letzte Läufe",
+    "team_preview_recent_runs_total": "(letzte {count})",
+    "team_preview_no_runs": "Dieses Team wurde noch nicht ausgeführt."
   },
   "dev_runner": {
     "self_healing": "Selbstheilung",

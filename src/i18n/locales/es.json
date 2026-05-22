@@ -11290,7 +11290,15 @@
       "team_binding_empty": "Aún no hay equipos — crea uno en Agentes → Equipos para vincularlo aquí.",
       "team_binding_bound": "Proyecto vinculado a este pipeline de PersonaTeam",
       "team_binding_orphan": "El equipo vinculado se eliminó; abre el proyecto para revincular",
-      "team_binding_orphan_label": "equipo eliminado"
+      "team_binding_orphan_label": "equipo eliminado",
+      "team_binding_preview_title": "Abrir vista previa del equipo — miembros + ejecuciones recientes",
+      "team_preview_members": "Miembros",
+      "team_preview_loading": "Cargando…",
+      "team_preview_no_members": "Este equipo todavía no tiene miembros.",
+      "team_preview_unknown_persona": "(persona eliminada)",
+      "team_preview_recent_runs": "Ejecuciones recientes",
+      "team_preview_recent_runs_total": "(últimas {count})",
+      "team_preview_no_runs": "Este equipo aún no se ha ejecutado."
     },
     "dev_runner": {
       "self_healing": "Auto-Sanación",

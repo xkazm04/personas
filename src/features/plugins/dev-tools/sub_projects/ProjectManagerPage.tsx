@@ -25,6 +25,8 @@ import { ProjectModal } from './ProjectModal';
 import { GoalBoard, ProjectRowMenu } from './ProjectManagerParts';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { Users } from 'lucide-react';
+import { ProjectTeamPreviewModal } from './ProjectTeamPreviewModal';
+import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 
 // ---------------------------------------------------------------------------
 // Main Page
@@ -61,6 +63,11 @@ export default function ProjectManagerPage() {
   const fetchTeamsForBadge = usePipelineStore((s) => s.fetchTeams);
   useEffect(() => { void fetchTeamsForBadge(); }, [fetchTeamsForBadge]);
   const teamNameById = new Map(teamsList.map((tm) => [tm.id, { name: tm.name, color: tm.color }]));
+  const teamFullById = new Map<string, PersonaTeam>(teamsList.map((tm) => [tm.id, tm]));
+
+  // Click-to-open team preview (cycle 11). Holds the team whose preview
+  // modal is open; closing nulls it.
+  const [previewingTeam, setPreviewingTeam] = useState<PersonaTeam | null>(null);
   const [activeProjectId, setLocalActiveProject] = useState<string | null>(storeActiveProjectId);
   const [showModal, setShowModal] = useState(false);
   const [showCrossProjectMap, setShowCrossProjectMap] = useState(false);
@@ -379,18 +386,34 @@ export default function ProjectManagerPage() {
                       <span className="truncate">{project.name}</span>
                       {project.teamId && (() => {
                         const teamMeta = teamNameById.get(project.teamId);
+                        const teamFull = teamFullById.get(project.teamId);
+                        const baseClass =
+                          'inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full border typo-caption font-medium flex-shrink-0';
+                        const style = teamMeta?.color
+                          ? { backgroundColor: `${teamMeta.color}1a`, borderColor: `${teamMeta.color}66`, color: teamMeta.color }
+                          : undefined;
+                        if (teamFull) {
+                          return (
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); setPreviewingTeam(teamFull); }}
+                              className={`${baseClass} cursor-pointer hover:scale-105 active:scale-95 transition-transform`}
+                              style={style}
+                              title={t.plugins.dev_projects.team_binding_preview_title}
+                            >
+                              <Users className="w-3 h-3" />
+                              {teamMeta?.name}
+                            </button>
+                          );
+                        }
                         return (
                           <span
-                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full border typo-caption font-medium flex-shrink-0"
-                            style={teamMeta?.color ? {
-                              backgroundColor: `${teamMeta.color}1a`,
-                              borderColor: `${teamMeta.color}66`,
-                              color: teamMeta.color,
-                            } : undefined}
-                            title={teamMeta ? t.plugins.dev_projects.team_binding_bound : t.plugins.dev_projects.team_binding_orphan}
+                            className={baseClass}
+                            style={style}
+                            title={t.plugins.dev_projects.team_binding_orphan}
                           >
                             <Users className="w-3 h-3" />
-                            {teamMeta?.name ?? t.plugins.dev_projects.team_binding_orphan_label}
+                            {t.plugins.dev_projects.team_binding_orphan_label}
                           </span>
                         );
                       })()}
@@ -453,6 +476,14 @@ export default function ProjectManagerPage() {
         open={showCrossProjectMap}
         onClose={() => setShowCrossProjectMap(false)}
       />
+
+      {previewingTeam && (
+        <ProjectTeamPreviewModal
+          open
+          team={previewingTeam}
+          onClose={() => setPreviewingTeam(null)}
+        />
+      )}
 
       {importProject && importProject.githubUrl && (
         <GitHubIssueImportModal
