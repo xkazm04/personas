@@ -8555,6 +8555,27 @@
       "filtered_empty": "Không có Agent nào khớp với bộ lọc hiện tại.",
       "showing_count": "Hiển thị {shown} trên {total}"
     },
+    "limits": {
+      "title": "Giới hạn chi tiêu",
+      "subtitle": "Trần chi phí hằng tháng và theo dõi ngân sách",
+      "description": "Đặt mức trần USD hằng tháng cho chi tiêu Personas của bạn. Giai đoạn 1 (bản dựng này) chỉ mang tính thông tin — hiển thị tiến độ và cảnh báo nhưng không chặn các lần chạy. Giai đoạn 2 sẽ thực thi mức trần tại thời điểm điều phối thực thi.",
+      "refresh": "Làm mới",
+      "ceiling_section": "Mức trần hằng tháng",
+      "ceiling_hint": "Tổng chi phí cho tất cả các persona, được làm mới khi bạn mở lại tab này. Đặt về 0 để vô hiệu hóa mức trần.",
+      "ceiling_placeholder": "0.00",
+      "ceiling_aria": "Mức trần chi phí hằng tháng tính bằng USD",
+      "ceiling_unit": "USD / tháng",
+      "set": "Đặt",
+      "saved": "Đã lưu",
+      "unlimited": "(không có mức trần)",
+      "usage_section": "Tháng hiện tại",
+      "of_ceiling": "trên {ceiling}",
+      "progress_aria": "Đã sử dụng {pct}% mức trần hằng tháng",
+      "over_budget": "Bạn đã vượt quá mức trần hằng tháng. Giai đoạn 2 sẽ chặn các lần thực thi mới khi điều này xảy ra; hiện tại, hãy xem đây là một cảnh báo.",
+      "approaching_budget": "Bạn đang tiến gần đến mức trần hằng tháng. Hãy cân nhắc xem lại các lần chạy gần đây.",
+      "no_ceiling_hint": "Chưa đặt mức trần nào. Nhập một số tiền USD ở trên để bắt đầu theo dõi theo ngân sách.",
+      "stage1_note": "Giai đoạn 1: chỉ mang tính thông tin. Giai đoạn 2 sẽ kiểm soát việc điều phối thực thi khi vượt qua mức trần."
+    },
     "history": {
       "title": "Lịch sử cài đặt",
       "subtitle": "Nhật ký kiểm tra các thay đổi đối với cài đặt",

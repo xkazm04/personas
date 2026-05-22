@@ -8555,6 +8555,27 @@
       "filtered_empty": "Tidak ada agen yang cocok dengan filter saat ini.",
       "showing_count": "Menampilkan {shown} dari {total}"
     },
+    "limits": {
+      "title": "Batas Pengeluaran",
+      "subtitle": "Plafon biaya bulanan dan pelacakan anggaran",
+      "description": "Tetapkan plafon USD bulanan untuk pengeluaran Personas Anda. Tahap 1 (build ini) bersifat informasional — menampilkan progres dan peringatan tetapi tidak memblokir run. Tahap 2 akan menerapkan plafon pada saat pengiriman eksekusi.",
+      "refresh": "Segarkan",
+      "ceiling_section": "Plafon bulanan",
+      "ceiling_hint": "Biaya gabungan di seluruh persona, disegarkan saat Anda membuka kembali tab ini. Setel ke 0 untuk menonaktifkan plafon.",
+      "ceiling_placeholder": "0.00",
+      "ceiling_aria": "Plafon biaya bulanan dalam USD",
+      "ceiling_unit": "USD / bulan",
+      "set": "Setel",
+      "saved": "Tersimpan",
+      "unlimited": "(tanpa plafon)",
+      "usage_section": "Bulan berjalan",
+      "of_ceiling": "dari {ceiling}",
+      "progress_aria": "{pct}% dari plafon bulanan telah digunakan",
+      "over_budget": "Anda telah melampaui plafon bulanan Anda. Tahap 2 akan memblokir eksekusi baru ketika hal ini terjadi; untuk saat ini, anggap ini sebagai peringatan.",
+      "approaching_budget": "Anda mendekati plafon bulanan Anda. Pertimbangkan untuk meninjau run terbaru.",
+      "no_ceiling_hint": "Tidak ada plafon yang disetel. Masukkan jumlah USD di atas untuk mulai melacak terhadap anggaran.",
+      "stage1_note": "Tahap 1: hanya informasional. Tahap 2 akan menggerbangi pengiriman eksekusi ketika plafon terlampaui."
+    },
     "history": {
       "title": "Riwayat Pengaturan",
       "subtitle": "Log audit perubahan yang dilakukan pada pengaturan",

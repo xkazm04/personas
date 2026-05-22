@@ -4491,6 +4491,27 @@
       "active_execution": "Exécution active",
       "claude_token": "Jeton Claude"
     },
+    "limits": {
+      "title": "Limites de dépenses",
+      "subtitle": "Plafond mensuel et suivi du budget",
+      "description": "Définissez un plafond mensuel en USD pour vos dépenses Personas. L'étape 1 (cette version) est informative — elle affiche la progression et des avertissements, mais ne bloque pas les exécutions. L'étape 2 appliquera le plafond au moment de la répartition des exécutions.",
+      "refresh": "Actualiser",
+      "ceiling_section": "Plafond mensuel",
+      "ceiling_hint": "Coût combiné de tous les agents, actualisé à la réouverture de cet onglet. Définissez sur 0 pour désactiver le plafond.",
+      "ceiling_placeholder": "0,00",
+      "ceiling_aria": "Plafond mensuel de coût en USD",
+      "ceiling_unit": "USD / mois",
+      "set": "Définir",
+      "saved": "Enregistré",
+      "unlimited": "(aucun plafond)",
+      "usage_section": "Mois en cours",
+      "of_ceiling": "sur {ceiling}",
+      "progress_aria": "{pct} % du plafond mensuel utilisé",
+      "over_budget": "Vous avez dépassé votre plafond mensuel. L'étape 2 bloquera les nouvelles exécutions dans ce cas ; pour l'instant, considérez-le comme un avertissement.",
+      "approaching_budget": "Vous approchez de votre plafond mensuel. Pensez à passer en revue les exécutions récentes.",
+      "no_ceiling_hint": "Aucun plafond n'est défini. Saisissez un montant en USD ci-dessus pour commencer le suivi par rapport à un budget.",
+      "stage1_note": "Étape 1 : à titre informatif uniquement. L'étape 2 contrôlera la répartition des exécutions lorsque le plafond sera dépassé."
+    },
     "history": {
       "just_now": "À l'instant",
       "minutes_ago": "Il y a {minutes} min",

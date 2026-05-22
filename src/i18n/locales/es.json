@@ -8555,6 +8555,27 @@
       "filtered_empty": "Ningún agente coincide con el filtro actual.",
       "showing_count": "Mostrando {shown} de {total}"
     },
+    "limits": {
+      "title": "Límites de gasto",
+      "subtitle": "Tope de coste mensual y seguimiento de presupuesto",
+      "description": "Establece un tope mensual en USD para tu gasto en Personas. La Fase 1 (esta versión) es informativa — muestra el progreso y las advertencias, pero no bloquea las ejecuciones. La Fase 2 aplicará el tope en el momento del despacho de ejecuciones.",
+      "refresh": "Actualizar",
+      "ceiling_section": "Tope mensual",
+      "ceiling_hint": "Coste combinado de todas las personas, actualizado cuando vuelves a abrir esta pestaña. Establece 0 para desactivar el tope.",
+      "ceiling_placeholder": "0,00",
+      "ceiling_aria": "Tope de coste mensual en USD",
+      "ceiling_unit": "USD / mes",
+      "set": "Establecer",
+      "saved": "Guardado",
+      "unlimited": "(sin tope)",
+      "usage_section": "Mes actual",
+      "of_ceiling": "de {ceiling}",
+      "progress_aria": "{pct}% del tope mensual utilizado",
+      "over_budget": "Has superado tu tope mensual. La Fase 2 bloqueará las nuevas ejecuciones cuando esto ocurra; por ahora, considéralo una advertencia.",
+      "approaching_budget": "Te estás acercando a tu tope mensual. Considera revisar las ejecuciones recientes.",
+      "no_ceiling_hint": "No se ha establecido ningún tope. Introduce un importe en USD arriba para empezar a hacer seguimiento frente a un presupuesto.",
+      "stage1_note": "Fase 1: solo informativa. La Fase 2 controlará el despacho de ejecuciones cuando se supere el tope."
+    },
     "history": {
       "title": "Historial de configuración",
       "subtitle": "Registro de auditoría de los cambios realizados en la configuración",

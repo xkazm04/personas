@@ -8555,6 +8555,27 @@
       "filtered_empty": "Žádný agent neodpovídá aktuálnímu filtru.",
       "showing_count": "Zobrazeno {shown} z {total}"
     },
+    "limits": {
+      "title": "Limity útraty",
+      "subtitle": "Měsíční stropy nákladů a sledování rozpočtu",
+      "description": "Nastav měsíční strop útraty v USD pro tvoje Personas. Fáze 1 (tato verze) je pouze informativní — zobrazuje postup a varování, ale neblokuje spuštění. Fáze 2 bude strop vynucovat v okamžiku odeslání spuštění.",
+      "refresh": "Obnovit",
+      "ceiling_section": "Měsíční strop",
+      "ceiling_hint": "Souhrnné náklady napříč všemi personami, obnovené při opětovném otevření této karty. Pro deaktivaci stropu nastav 0.",
+      "ceiling_placeholder": "0,00",
+      "ceiling_aria": "Měsíční strop nákladů v USD",
+      "ceiling_unit": "USD / měsíc",
+      "set": "Nastavit",
+      "saved": "Uloženo",
+      "unlimited": "(bez stropu)",
+      "usage_section": "Aktuální měsíc",
+      "of_ceiling": "z {ceiling}",
+      "progress_aria": "Využito {pct} % měsíčního stropu",
+      "over_budget": "Překročil jsi měsíční strop. Fáze 2 v takovém případě zablokuje nová spuštění; prozatím to ber jako varování.",
+      "approaching_budget": "Blížíš se měsíčnímu stropu. Zvaž revizi nedávných spuštění.",
+      "no_ceiling_hint": "Není nastaven žádný strop. Zadej výše částku v USD a začni sledovat rozpočet.",
+      "stage1_note": "Fáze 1: pouze informativně. Fáze 2 zablokuje odeslání spuštění při překročení stropu."
+    },
     "history": {
       "title": "Historie nastavení",
       "subtitle": "Audit log změn provedených v nastavení",

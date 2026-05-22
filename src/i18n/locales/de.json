@@ -8555,6 +8555,27 @@
       "filtered_empty": "Keine Agenten entsprechen dem aktuellen Filter.",
       "showing_count": "{shown} von {total} angezeigt"
     },
+    "limits": {
+      "title": "Ausgabenlimits",
+      "subtitle": "Monatliche Kostenobergrenze und Budgetverfolgung",
+      "description": "Legen Sie eine monatliche Obergrenze in USD für Ihre Personas-Ausgaben fest. Stufe 1 (dieser Build) ist rein informativ – sie zeigt Fortschritt und Warnungen an, blockiert jedoch keine Ausführungen. Stufe 2 wird die Obergrenze zum Zeitpunkt der Ausführungsverteilung erzwingen.",
+      "refresh": "Aktualisieren",
+      "ceiling_section": "Monatliche Obergrenze",
+      "ceiling_hint": "Gesamtkosten über alle Personas hinweg, werden beim erneuten Öffnen dieses Tabs aktualisiert. Auf 0 setzen, um die Obergrenze zu deaktivieren.",
+      "ceiling_placeholder": "0,00",
+      "ceiling_aria": "Monatliche Kostenobergrenze in USD",
+      "ceiling_unit": "USD / Monat",
+      "set": "Festlegen",
+      "saved": "Gespeichert",
+      "unlimited": "(keine Obergrenze)",
+      "usage_section": "Aktueller Monat",
+      "of_ceiling": "von {ceiling}",
+      "progress_aria": "{pct}% der monatlichen Obergrenze verbraucht",
+      "over_budget": "Sie haben Ihre monatliche Obergrenze überschritten. In Stufe 2 werden neue Ausführungen in diesem Fall blockiert; vorerst ist dies lediglich als Warnung zu verstehen.",
+      "approaching_budget": "Sie nähern sich Ihrer monatlichen Obergrenze. Erwägen Sie eine Überprüfung der letzten Ausführungen.",
+      "no_ceiling_hint": "Es ist keine Obergrenze festgelegt. Geben Sie oben einen USD-Betrag ein, um mit der Budgetverfolgung zu beginnen.",
+      "stage1_note": "Stufe 1: nur informativ. Stufe 2 wird die Ausführungsverteilung blockieren, sobald die Obergrenze überschritten wird."
+    },
     "history": {
       "title": "Einstellungsverlauf",
       "subtitle": "Audit-Protokoll der an den Einstellungen vorgenommenen Änderungen",

@@ -8616,6 +8616,27 @@
       "filtered_empty": "No agents match the current filter.",
       "showing_count": "Showing {shown} of {total}"
     },
+    "limits": {
+      "title": "Spending Limits",
+      "subtitle": "Monthly cost ceiling and budget tracking",
+      "description": "Set a monthly USD ceiling on your Personas spend. Stage 1 (this build) is informational — it shows progress and warnings but does not block runs. Stage 2 will enforce the ceiling at execution-dispatch time.",
+      "refresh": "Refresh",
+      "ceiling_section": "Monthly ceiling",
+      "ceiling_hint": "Combined cost across all personas, refreshed when you reopen this tab. Set to 0 to disable the ceiling.",
+      "ceiling_placeholder": "0.00",
+      "ceiling_aria": "Monthly cost ceiling in USD",
+      "ceiling_unit": "USD / month",
+      "set": "Set",
+      "saved": "Saved",
+      "unlimited": "(no ceiling)",
+      "usage_section": "Current month",
+      "of_ceiling": "of {ceiling}",
+      "progress_aria": "{pct}% of monthly ceiling used",
+      "over_budget": "You have exceeded your monthly ceiling. Stage 2 will block new executions when this happens; for now, treat this as a warning.",
+      "approaching_budget": "You are approaching your monthly ceiling. Consider reviewing recent runs.",
+      "no_ceiling_hint": "No ceiling is set. Enter a USD amount above to start tracking against a budget.",
+      "stage1_note": "Stage 1: informational only. Stage 2 will gate execution dispatch when the ceiling is crossed."
+    },
     "history": {
       "title": "Settings History",
       "subtitle": "Audit log of changes made to settings",

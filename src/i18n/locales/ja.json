@@ -8555,6 +8555,27 @@
       "filtered_empty": "現在のフィルターに一致するエージェントはありません。",
       "showing_count": "{total} 件中 {shown} 件を表示"
     },
+    "limits": {
+      "title": "支出上限",
+      "subtitle": "月次コスト上限と予算追跡",
+      "description": "Personas の支出に対して月次の USD 上限を設定します。ステージ 1（本ビルド）は情報提供のみで、進捗と警告を表示しますが実行をブロックしません。ステージ 2 では実行ディスパッチ時に上限を強制します。",
+      "refresh": "更新",
+      "ceiling_section": "月次上限",
+      "ceiling_hint": "すべてのペルソナを合算したコストで、本タブを再度開くと更新されます。上限を無効化するには 0 を設定してください。",
+      "ceiling_placeholder": "0.00",
+      "ceiling_aria": "月次コスト上限（USD）",
+      "ceiling_unit": "USD / 月",
+      "set": "設定",
+      "saved": "保存しました",
+      "unlimited": "（上限なし）",
+      "usage_section": "今月",
+      "of_ceiling": "{ceiling} のうち",
+      "progress_aria": "月次上限の {pct}% を使用",
+      "over_budget": "月次上限を超過しました。ステージ 2 ではこの時点で新規実行がブロックされますが、現時点では警告として扱ってください。",
+      "approaching_budget": "月次上限に近づいています。最近の実行内容を確認することをお勧めします。",
+      "no_ceiling_hint": "上限が設定されていません。予算に対する追跡を開始するには、上の欄に USD 金額を入力してください。",
+      "stage1_note": "ステージ 1: 情報提供のみ。ステージ 2 では上限を超えた時点で実行ディスパッチをゲートします。"
+    },
     "history": {
       "title": "設定の変更履歴",
       "subtitle": "設定への変更内容の監査ログ",

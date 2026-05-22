@@ -8555,6 +8555,27 @@
       "filtered_empty": "현재 필터와 일치하는 에이전트가 없습니다.",
       "showing_count": "{total}개 중 {shown}개 표시"
     },
+    "limits": {
+      "title": "지출 한도",
+      "subtitle": "월간 비용 상한 및 예산 추적",
+      "description": "Personas 지출에 대한 월간 USD 상한을 설정하세요. 1단계(현재 빌드)는 정보 제공 전용으로, 진행률과 경고를 표시하지만 실행을 차단하지는 않습니다. 2단계에서는 실행 디스패치 시점에 상한이 강제됩니다.",
+      "refresh": "새로 고침",
+      "ceiling_section": "월간 상한",
+      "ceiling_hint": "모든 페르소나의 총 비용으로, 이 탭을 다시 열 때 새로 고쳐집니다. 상한을 비활성화하려면 0으로 설정하세요.",
+      "ceiling_placeholder": "0.00",
+      "ceiling_aria": "월간 비용 상한(USD)",
+      "ceiling_unit": "USD / 월",
+      "set": "설정",
+      "saved": "저장됨",
+      "unlimited": "(상한 없음)",
+      "usage_section": "이번 달",
+      "of_ceiling": "/ {ceiling}",
+      "progress_aria": "월간 상한의 {pct}% 사용됨",
+      "over_budget": "월간 상한을 초과했습니다. 2단계에서는 이 상황이 발생하면 새 실행이 차단되지만, 현재는 경고로만 처리됩니다.",
+      "approaching_budget": "월간 상한에 근접하고 있습니다. 최근 실행을 검토해 보세요.",
+      "no_ceiling_hint": "설정된 상한이 없습니다. 예산 대비 추적을 시작하려면 위에 USD 금액을 입력하세요.",
+      "stage1_note": "1단계: 정보 제공 전용. 2단계에서는 상한을 초과할 때 실행 디스패치가 차단됩니다."
+    },
     "history": {
       "title": "설정 기록",
       "subtitle": "설정 변경 사항에 대한 감사 로그",
