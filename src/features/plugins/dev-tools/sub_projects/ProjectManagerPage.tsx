@@ -23,6 +23,8 @@ import {
 } from './projectManagerTypes';
 import { ProjectModal } from './ProjectModal';
 import { GoalBoard, ProjectRowMenu } from './ProjectManagerParts';
+import { usePipelineStore } from '@/stores/pipelineStore';
+import { Users } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
 // Main Page
@@ -53,6 +55,12 @@ export default function ProjectManagerPage() {
     return toProject(p, goalCount);
   });
   const storeActiveProjectId = useSystemStore((s) => s.activeProjectId);
+
+  // Teams roster for the bound-team badge in the project table (cycle 5).
+  const teamsList = usePipelineStore((s) => s.teams);
+  const fetchTeamsForBadge = usePipelineStore((s) => s.fetchTeams);
+  useEffect(() => { void fetchTeamsForBadge(); }, [fetchTeamsForBadge]);
+  const teamNameById = new Map(teamsList.map((tm) => [tm.id, { name: tm.name, color: tm.color }]));
   const [activeProjectId, setLocalActiveProject] = useState<string | null>(storeActiveProjectId);
   const [showModal, setShowModal] = useState(false);
   const [showCrossProjectMap, setShowCrossProjectMap] = useState(false);
@@ -139,7 +147,7 @@ export default function ProjectManagerPage() {
     if (selectedGoalId) fetchGoalSignals?.(selectedGoalId);
   }, [fetchGoalSignals, selectedGoalId]);
 
-  const handleCreateProject = useCallback(async (data: { name: string; path: string; projectType: ProjectType; githubUrl: string }) => {
+  const handleCreateProject = useCallback(async (data: { name: string; path: string; projectType: ProjectType; githubUrl: string; teamId: string | null }) => {
     // If a project with this path already exists, activate it instead of creating a duplicate
     const existing = storeProjects.find((p) => p.root_path === data.path);
     if (existing) {
@@ -148,18 +156,26 @@ export default function ProjectManagerPage() {
       return { id: existing.id };
     }
     try {
-      const project = await storeCreateProject(data.name, data.path, '', data.projectType, data.githubUrl || undefined);
+      const project = await storeCreateProject(
+        data.name,
+        data.path,
+        '',
+        data.projectType,
+        data.githubUrl || undefined,
+        data.teamId ?? undefined,
+      );
       return { id: project.id };
     } catch {
       return undefined;
     }
   }, [storeCreateProject, storeProjects, setActiveProject]);
 
-  const handleUpdateProject = useCallback(async (id: string, data: { name: string; projectType: ProjectType; githubUrl: string }) => {
+  const handleUpdateProject = useCallback(async (id: string, data: { name: string; projectType: ProjectType; githubUrl: string; teamId: string | null }) => {
     await storeUpdateProject(id, {
       name: data.name,
       techStack: data.projectType,
       githubUrl: data.githubUrl || undefined,
+      teamId: data.teamId,
     });
   }, [storeUpdateProject]);
 
@@ -175,6 +191,7 @@ export default function ProjectManagerPage() {
       path: raw.root_path,
       projectType: matchedType?.id ?? 'other',
       githubUrl: raw.github_url ?? '',
+      teamId: raw.team_id ?? null,
     });
     setShowModal(true);
   }, [storeProjects]);
@@ -359,7 +376,24 @@ export default function ProjectManagerPage() {
                     </button>
                     <span className="typo-body text-foreground font-medium flex items-center gap-2 truncate">
                       <ChevronRight className={`w-3.5 h-3.5 text-foreground transition-transform ${activeProjectId === project.id ? 'rotate-90' : ''}`} />
-                      {project.name}
+                      <span className="truncate">{project.name}</span>
+                      {project.teamId && (() => {
+                        const teamMeta = teamNameById.get(project.teamId);
+                        return (
+                          <span
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full border typo-caption font-medium flex-shrink-0"
+                            style={teamMeta?.color ? {
+                              backgroundColor: `${teamMeta.color}1a`,
+                              borderColor: `${teamMeta.color}66`,
+                              color: teamMeta.color,
+                            } : undefined}
+                            title={teamMeta ? t.plugins.dev_projects.team_binding_bound : t.plugins.dev_projects.team_binding_orphan}
+                          >
+                            <Users className="w-3 h-3" />
+                            {teamMeta?.name ?? t.plugins.dev_projects.team_binding_orphan_label}
+                          </span>
+                        );
+                      })()}
                     </span>
                     <span className="typo-caption text-foreground truncate self-center">{project.path}</span>
                     <span className="typo-caption text-foreground truncate self-center">{project.techStack.join(', ')}</span>

@@ -11280,7 +11280,14 @@
       "bulk_select_all": "Pilih semua proyek yang aktif",
       "bulk_select_clear": "Hapus pilihan",
       "bulk_select_row": "Pilih untuk tindakan massal",
-      "bulk_already_archived": "Sudah diarsipkan"
+      "bulk_already_archived": "Sudah diarsipkan",
+      "team_binding_label": "Tim Terikat",
+      "team_binding_optional": "opsional",
+      "team_binding_none": "Tanpa tim — jaga proyek mandiri",
+      "team_binding_empty": "Belum ada tim — buat di Agen → Tim untuk diikat di sini.",
+      "team_binding_bound": "Proyek terikat ke pipeline PersonaTeam ini",
+      "team_binding_orphan": "Tim terikat telah dihapus; buka proyek untuk mengikat ulang",
+      "team_binding_orphan_label": "tim dihapus"
     },
     "dev_runner": {
       "self_healing": "Self-Healing",

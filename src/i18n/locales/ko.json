@@ -11280,7 +11280,14 @@
       "bulk_select_all": "모든 활성 프로젝트를 선택하세요.",
       "bulk_select_clear": "선택 취소",
       "bulk_select_row": "일괄 작업을 위해 선택",
-      "bulk_already_archived": "이미 보관처리되었습니다."
+      "bulk_already_archived": "이미 보관처리되었습니다.",
+      "team_binding_label": "바인딩된 팀",
+      "team_binding_optional": "선택",
+      "team_binding_none": "팀 없음 — 프로젝트를 독립적으로 유지",
+      "team_binding_empty": "아직 팀이 없습니다 — 에이전트 → 팀에서 만들어 여기에 바인딩하세요.",
+      "team_binding_bound": "프로젝트가 이 PersonaTeam 파이프라인에 바인딩되었습니다",
+      "team_binding_orphan": "바인딩된 팀이 삭제되었습니다; 다시 바인딩하려면 프로젝트를 여세요",
+      "team_binding_orphan_label": "팀 제거됨"
     },
     "dev_runner": {
       "self_healing": "자가 복구",

@@ -11280,7 +11280,14 @@
       "bulk_select_all": "Vyberte všechny aktivní projekty",
       "bulk_select_clear": "Jasný výběr",
       "bulk_select_row": "Vyberte pro hromadnou akci",
-      "bulk_already_archived": "Již archivováno"
+      "bulk_already_archived": "Již archivováno",
+      "team_binding_label": "Připojený tým",
+      "team_binding_optional": "volitelné",
+      "team_binding_none": "Žádný tým — ponechat projekt samostatný",
+      "team_binding_empty": "Zatím žádné týmy — vytvořte v Agenti → Týmy a připojte zde.",
+      "team_binding_bound": "Projekt je připojen k této PersonaTeam pipeline",
+      "team_binding_orphan": "Připojený tým byl smazán; otevřete projekt pro opětovné připojení",
+      "team_binding_orphan_label": "tým odstraněn"
     },
     "dev_runner": {
       "self_healing": "Self-healing",

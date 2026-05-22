@@ -11280,7 +11280,14 @@
       "bulk_select_all": "Chọn tất cả các dự án đang hoạt động",
       "bulk_select_clear": "Xóa lựa chọn",
       "bulk_select_row": "Chọn để thực hiện hành động hàng loạt",
-      "bulk_already_archived": "Đã được lưu trữ"
+      "bulk_already_archived": "Đã được lưu trữ",
+      "team_binding_label": "Nhóm liên kết",
+      "team_binding_optional": "tùy chọn",
+      "team_binding_none": "Không có nhóm — giữ dự án độc lập",
+      "team_binding_empty": "Chưa có nhóm — tạo trong Agents → Nhóm để liên kết tại đây.",
+      "team_binding_bound": "Dự án được liên kết với pipeline PersonaTeam này",
+      "team_binding_orphan": "Nhóm liên kết đã bị xóa; mở dự án để liên kết lại",
+      "team_binding_orphan_label": "nhóm đã xóa"
     },
     "dev_runner": {
       "self_healing": "Tự phục hồi",

@@ -1686,7 +1686,14 @@
     "bulk_select_all": "सभी सक्रिय प्रोजेक्ट का चयन करें",
     "bulk_select_clear": "स्पष्ट चयन",
     "bulk_select_row": "सामूहिक कार्रवाई के लिए चयन करें",
-    "bulk_already_archived": "पहले से ही संग्रहीत"
+    "bulk_already_archived": "पहले से ही संग्रहीत",
+    "team_binding_label": "बंधी हुई टीम",
+    "team_binding_optional": "वैकल्पिक",
+    "team_binding_none": "कोई टीम नहीं — प्रोजेक्ट स्टैंडअलोन रखें",
+    "team_binding_empty": "अभी तक कोई टीम नहीं — एजेंट्स → टीम्स में बनाकर यहाँ बाँधें।",
+    "team_binding_bound": "प्रोजेक्ट इस PersonaTeam पाइपलाइन से बंधा है",
+    "team_binding_orphan": "बंधी हुई टीम हटा दी गई है; फिर से बाँधने के लिए प्रोजेक्ट खोलें",
+    "team_binding_orphan_label": "टीम हटाई गई"
   },
   "dev_runner": {
     "self_healing": "Self-Healing",

@@ -11280,7 +11280,14 @@
       "bulk_select_all": "アクティブなプロジェクトをすべて選択します",
       "bulk_select_clear": "選択をクリア",
       "bulk_select_row": "一括操作の選択",
-      "bulk_already_archived": "すでにアーカイブされています"
+      "bulk_already_archived": "すでにアーカイブされています",
+      "team_binding_label": "バインドされたチーム",
+      "team_binding_optional": "任意",
+      "team_binding_none": "チームなし — プロジェクトを独立して維持",
+      "team_binding_empty": "まだチームがありません — エージェント → チームで作成してここにバインドできます。",
+      "team_binding_bound": "プロジェクトはこの PersonaTeam パイプラインにバインドされています",
+      "team_binding_orphan": "バインドされたチームは削除されました; 再バインドするにはプロジェクトを開いてください",
+      "team_binding_orphan_label": "チーム削除済み"
     },
     "dev_runner": {
       "self_healing": "自己修復",

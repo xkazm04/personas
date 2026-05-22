@@ -15,6 +15,7 @@ export interface Project {
   status: 'active' | 'archived' | 'paused';
   createdAt: string;
   githubUrl?: string;
+  teamId?: string;
 }
 
 export interface Goal {
@@ -48,6 +49,7 @@ export function toProject(dp: import("@/lib/bindings/DevProject").DevProject, go
     status: (dp.status as Project["status"]) || "active",
     createdAt: dp.created_at.slice(0, 10),
     githubUrl: dp.github_url ?? undefined,
+    teamId: dp.team_id ?? undefined,
   };
 }
 
@@ -130,4 +132,5 @@ export interface EditProjectData {
   path: string;
   projectType: ProjectType;
   githubUrl: string;
+  teamId: string | null;
 }

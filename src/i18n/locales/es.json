@@ -11280,7 +11280,14 @@
       "bulk_select_all": "Seleccionar todos los proyectos activos",
       "bulk_select_clear": "Borrar selección",
       "bulk_select_row": "Seleccionar para acción masiva",
-      "bulk_already_archived": "Ya archivado"
+      "bulk_already_archived": "Ya archivado",
+      "team_binding_label": "Equipo vinculado",
+      "team_binding_optional": "opcional",
+      "team_binding_none": "Sin equipo — mantener proyecto independiente",
+      "team_binding_empty": "Aún no hay equipos — crea uno en Agentes → Equipos para vincularlo aquí.",
+      "team_binding_bound": "Proyecto vinculado a este pipeline de PersonaTeam",
+      "team_binding_orphan": "El equipo vinculado se eliminó; abre el proyecto para revincular",
+      "team_binding_orphan_label": "equipo eliminado"
     },
     "dev_runner": {
       "self_healing": "Auto-Sanación",

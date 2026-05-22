@@ -103,6 +103,13 @@ pub struct DevProject {
     /// when None and `auto_pr_on_success` is true the wiring emits a warning
     /// and skips PR creation.
     pub pr_credential_id: Option<String>,
+    /// Optional binding to a `PersonaTeam` (PipelineTeam). When set, the
+    /// project's surface in `ProjectManagerPage` shows the bound team's name
+    /// inline so the developer can see at a glance which pipeline owns the
+    /// work. No FK constraint by design — deleting a team leaves the project
+    /// orphan-bound; UI treats unresolved team_ids as "(team removed)" and
+    /// the user can re-bind. Added 2026-05-22.
+    pub team_id: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }

@@ -11280,7 +11280,14 @@
       "bulk_select_all": "选择所有活动项目",
       "bulk_select_clear": "清除选择",
       "bulk_select_row": "选择进行批量操作",
-      "bulk_already_archived": "已存档"
+      "bulk_already_archived": "已存档",
+      "team_binding_label": "绑定团队",
+      "team_binding_optional": "可选",
+      "team_binding_none": "不绑定团队 — 保持项目独立",
+      "team_binding_empty": "尚无团队 — 在 智能体 → 团队 中创建后即可绑定。",
+      "team_binding_bound": "项目已绑定到此 PersonaTeam 流水线",
+      "team_binding_orphan": "绑定的团队已删除；打开项目以重新绑定",
+      "team_binding_orphan_label": "团队已删除"
     },
     "dev_runner": {
       "self_healing": "自愈",

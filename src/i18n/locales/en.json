@@ -11461,7 +11461,14 @@
       "implementation_log": "Implementation Log",
       "loading_metadata": "Loading...",
       "no_metadata_yet": "No metadata map generated yet",
-      "generate_metadata_prompt": "to analyze all projects' context maps and extract shared patterns."
+      "generate_metadata_prompt": "to analyze all projects' context maps and extract shared patterns.",
+      "team_binding_label": "Bound Team",
+      "team_binding_optional": "optional",
+      "team_binding_none": "No team — keep project standalone",
+      "team_binding_empty": "No teams yet — create one under Agents → Teams to bind it here.",
+      "team_binding_bound": "Project is bound to this PersonaTeam pipeline",
+      "team_binding_orphan": "Bound team has been deleted; open project to rebind",
+      "team_binding_orphan_label": "team removed"
     },
     "dev_runner": {
       "self_healing": "Self-Healing",

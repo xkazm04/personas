@@ -1686,7 +1686,14 @@
     "bulk_select_all": "Wählen Sie alle aktiven Projekte aus",
     "bulk_select_clear": "Klare Auswahl",
     "bulk_select_row": "Für Massenaktion auswählen",
-    "bulk_already_archived": "Bereits archiviert"
+    "bulk_already_archived": "Bereits archiviert",
+    "team_binding_label": "Gebundenes Team",
+    "team_binding_optional": "optional",
+    "team_binding_none": "Kein Team — Projekt eigenständig belassen",
+    "team_binding_empty": "Noch keine Teams — erstelle eines unter Agents → Teams, um es hier zu binden.",
+    "team_binding_bound": "Projekt ist an diese PersonaTeam-Pipeline gebunden",
+    "team_binding_orphan": "Gebundenes Team wurde gelöscht; Projekt öffnen, um neu zu binden",
+    "team_binding_orphan_label": "Team entfernt"
   },
   "dev_runner": {
     "self_healing": "Selbstheilung",

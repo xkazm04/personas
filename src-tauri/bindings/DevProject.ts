@@ -18,4 +18,13 @@ auto_pr_on_success: boolean,
  * when None and `auto_pr_on_success` is true the wiring emits a warning
  * and skips PR creation.
  */
-pr_credential_id: string | null, created_at: string, updated_at: string, };
+pr_credential_id: string | null, 
+/**
+ * Optional binding to a `PersonaTeam` (PipelineTeam). When set, the
+ * project's surface in `ProjectManagerPage` shows the bound team's name
+ * inline so the developer can see at a glance which pipeline owns the
+ * work. No FK constraint by design — deleting a team leaves the project
+ * orphan-bound; UI treats unresolved team_ids as "(team removed)" and
+ * the user can re-bind. Added 2026-05-22.
+ */
+team_id: string | null, created_at: string, updated_at: string, };

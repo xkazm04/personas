@@ -2770,6 +2770,27 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // Dev-tools project ↔ PersonaTeam binding (2026-05-22). Lets developers
+    // bind a dev_projects row to a PersonaTeam (pipeline) so the project
+    // surface in ProjectManagerPage shows the bound pipeline inline. No FK
+    // by design — the same orphan-tolerance rationale as use_case_id.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "dev_projects_team_id",
+            description: "Add team_id column to dev_projects for pipeline binding",
+            already_applied: |conn| has_column(conn, "dev_projects", "team_id"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE dev_projects ADD COLUMN team_id TEXT;
+                     CREATE INDEX IF NOT EXISTS idx_dev_projects_team_id ON dev_projects(team_id);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 

@@ -11468,6 +11468,13 @@ export type Translations = {
       loading_metadata: string;
       no_metadata_yet: string;
       generate_metadata_prompt: string;
+      team_binding_label: string;
+      team_binding_optional: string;
+      team_binding_none: string;
+      team_binding_empty: string;
+      team_binding_bound: string;
+      team_binding_orphan: string;
+      team_binding_orphan_label: string;
     };
     dev_runner: {
       self_healing: string;

@@ -11280,7 +11280,14 @@
       "bulk_select_all": "حدد كافة المشاريع النشطة",
       "bulk_select_clear": "مسح التحديد",
       "bulk_select_row": "حدد للعمل المجمع",
-      "bulk_already_archived": "تمت أرشفته بالفعل"
+      "bulk_already_archived": "تمت أرشفته بالفعل",
+      "team_binding_label": "الفريق المرتبط",
+      "team_binding_optional": "اختياري",
+      "team_binding_none": "لا يوجد فريق — احتفظ بالمشروع مستقلاً",
+      "team_binding_empty": "لا توجد فرق بعد — أنشئ فريقًا من العملاء ← الفرق لربطه هنا.",
+      "team_binding_bound": "تم ربط المشروع بهذه السلسلة من PersonaTeam",
+      "team_binding_orphan": "تم حذف الفريق المرتبط؛ افتح المشروع لإعادة الربط",
+      "team_binding_orphan_label": "تمت إزالة الفريق"
     },
     "dev_runner": {
       "self_healing": "المعالجة الذاتية",

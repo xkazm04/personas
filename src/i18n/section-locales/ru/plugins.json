@@ -1686,7 +1686,14 @@
     "bulk_select_all": "Выбрать все активные проекты",
     "bulk_select_clear": "Очистить выбор",
     "bulk_select_row": "Выберите для массового действия",
-    "bulk_already_archived": "Уже в архиве"
+    "bulk_already_archived": "Уже в архиве",
+    "team_binding_label": "Привязанная команда",
+    "team_binding_optional": "необязательно",
+    "team_binding_none": "Без команды — оставить проект автономным",
+    "team_binding_empty": "Команд пока нет — создайте в Агенты → Команды, чтобы привязать здесь.",
+    "team_binding_bound": "Проект привязан к этому конвейеру PersonaTeam",
+    "team_binding_orphan": "Привязанная команда удалена; откройте проект, чтобы перепривязать",
+    "team_binding_orphan_label": "команда удалена"
   },
   "dev_runner": {
     "self_healing": "Самовосстановление",
