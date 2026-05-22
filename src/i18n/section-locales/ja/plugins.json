@@ -937,6 +937,7 @@
     "brain_items": "items",
     "brain_delete": "Delete",
     "brain_deleting": "Deleting…",
+    "brain_linked_label": "関連メモリ",
     "episodes": "Episodes",
     "doctrine": "Doctrine",
     "identity": "Identity",

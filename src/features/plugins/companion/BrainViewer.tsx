@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ArrowLeft,
   BookOpen,
@@ -8,6 +8,7 @@ import {
   Globe2,
   Inbox,
   Layers,
+  Link2,
   ListChecks,
   ScrollText,
   Sparkles,
@@ -32,6 +33,7 @@ import {
 } from '@/api/companion';
 import { useCompanionStore } from './companionStore';
 import { titleCase } from './athenaLabels';
+import { parseBrainLinks } from './parseBrainLinks';
 
 type KindLabelKey =
   | 'episodes'
@@ -357,6 +359,13 @@ function DetailView({ kind, id }: { kind: BrainKind; id: string }) {
     }
   }, [detail, kind, id, setBrainView]);
 
+  // Compute linked-memory chips before any conditional returns so hook
+  // ordering stays stable across the loading → loaded transitions.
+  const links = useMemo(
+    () => parseBrainLinks(detail?.content || ''),
+    [detail?.content],
+  );
+
   if (error) {
     return (
       <div className="m-5 rounded-card border border-rose-500/30 bg-rose-500/10 px-3 py-2 typo-body text-rose-400">
@@ -383,8 +392,36 @@ function DetailView({ kind, id }: { kind: BrainKind; id: string }) {
           </div>
         )}
       </div>
-      <div className="flex-1 overflow-y-auto px-5 py-4">
+      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
         <MarkdownRenderer content={detail.content || '(empty)'} />
+        {links.length > 0 && (
+          <div
+            className="rounded-card border border-foreground/10 bg-secondary/40 px-3 py-2"
+            data-testid="companion-brain-links"
+          >
+            <div className="inline-flex items-baseline gap-1.5 typo-caption text-foreground mb-1.5">
+              <Link2 className="w-3 h-3 self-center" />
+              <span>{t.plugins.companion.brain_linked_label}</span>
+            </div>
+            <div className="flex flex-wrap items-baseline gap-1.5">
+              {links.map((link) => (
+                <button
+                  key={link.raw}
+                  type="button"
+                  onClick={() =>
+                    setBrainView({ open: true, kind: link.kind, id: link.id })
+                  }
+                  className="inline-flex items-baseline gap-1 rounded-interactive border border-foreground/15 bg-foreground/[0.04] hover:bg-foreground/[0.08] hover:border-primary/30 px-1.5 py-0.5 typo-caption text-foreground transition-colors focus-ring"
+                  data-testid="companion-brain-link"
+                  data-kind={link.kind}
+                  data-id={link.id}
+                >
+                  <code className="font-mono">{link.raw}</code>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
       {detail.deletable && (
         <div className="border-t border-foreground/10 px-3 py-3 shrink-0">

@@ -10772,6 +10772,7 @@ export type Translations = {
       brain_items: string;
       brain_delete: string;
       brain_deleting: string;
+      brain_linked_label: string;
       episodes: string;
       doctrine: string;
       identity: string;

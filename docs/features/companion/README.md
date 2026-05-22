@@ -56,6 +56,8 @@ The panel renders this as a thin `RecallStrip` collapsed above each assistant bu
 
 Stage 2 wired: each chip is a button that calls `setBrainView({ open: true, kind, id })` to open the Brain Viewer as an overlay over the chat transcript, jumped straight to the detail view for that memory. Group→kind mapping matches the backend's parent kinds (`doctrine`, `fact`, `procedural`, `goal`, `backlog`) — `companion_get_brain_item` dispatches `fact` / `procedural` / `goal` / `backlog` to the scoped fetchers so the parent-kind lookup resolves whichever scoped variant owns the id. Closes the loop from "what did Athena consult this turn" to "what's actually in that memory."
 
+**Detail-view linked memories.** Inside the BrainViewer's DetailView, the rendered markdown is also scanned for memory-id tokens (`goal_xyz`, `procedural_abc`, `design_decision_def`, etc. — see `parseBrainLinks.ts` for the full kind list). Each unique reference becomes a small chip in a "Linked memories" strip below the content; click → opens that memory's DetailView in place. Lets the user traverse the brain as a graph instead of a flat list. Orchestration tokens (`op_xxxx`, `sess_yyyy`) are intentionally excluded — they don't have a BrainViewer destination.
+
 ## Turn-summary chip
 
 Below each assistant bubble, a tiny caption-sized chip (`TurnSummaryChip`) surfaces what Athena's reply *did* — distinct from what she *said*. The chip aggregates dispatcher outputs from the same turn (pending approvals, direct navigations, lab tab opens, dashboard / cockpit auto-fires, inline chat-cards) plus a flag for `continue_autonomously`. Total-zero turns render nothing.

@@ -10766,6 +10766,7 @@
       "brain_items": "items",
       "brain_delete": "Delete",
       "brain_deleting": "Deleting…",
+      "brain_linked_label": "Linked memories",
       "episodes": "Episodes",
       "doctrine": "Doctrine",
       "identity": "Identity",
