@@ -577,6 +577,11 @@
     "commsSection": "Các cuộc liên lạc gần đây ({count})",
     "commsEmpty": "Chưa ghi nhận cuộc liên lạc nào cho twin này.",
     "contactsSection": "Liên hệ hàng đầu theo hoạt động ({count})",
-    "contactsEmpty": "Twin này chưa có liên hệ nào."
+    "contactsEmpty": "Twin này chưa có liên hệ nào.",
+    "saveAsFact": "Lưu thành dữ kiện",
+    "saveAsFactSaved": "Đã lưu",
+    "saveAsFactToast": "Đã lưu vào dữ kiện chắt lọc.",
+    "saveAsFactTooltip": "Chuyển liên lạc này thành dữ kiện chắt lọc lâu dài",
+    "saveAsFactError": "Không thể lưu thành dữ kiện."
   }
 }

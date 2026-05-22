@@ -13437,7 +13437,12 @@
       "commsSection": "Comunicaciones recientes ({count})",
       "commsEmpty": "Aún no hay comunicaciones registradas para este gemelo.",
       "contactsSection": "Contactos principales por actividad ({count})",
-      "contactsEmpty": "Aún no hay contactos en este gemelo."
+      "contactsEmpty": "Aún no hay contactos en este gemelo.",
+      "saveAsFact": "Guardar como hecho",
+      "saveAsFactSaved": "Guardado",
+      "saveAsFactToast": "Guardado en hechos destilados.",
+      "saveAsFactTooltip": "Promover esta comunicación a un hecho destilado duradero",
+      "saveAsFactError": "No se pudo guardar como hecho."
     }
   },
   "recipe_shared": {

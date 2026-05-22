@@ -13437,7 +13437,12 @@
       "commsSection": "آخر communications ({count})",
       "commsEmpty": "لا توجد communications مسجلة لهذا التوأم بعد.",
       "contactsSection": "أبرز جهات الاتصال حسب النشاط ({count})",
-      "contactsEmpty": "لا توجد جهات اتصال على هذا التوأم بعد."
+      "contactsEmpty": "لا توجد جهات اتصال على هذا التوأم بعد.",
+      "saveAsFact": "حفظ كحقيقة",
+      "saveAsFactSaved": "تم الحفظ",
+      "saveAsFactToast": "تم الحفظ في الحقائق المقطرة.",
+      "saveAsFactTooltip": "ترقية هذا الاتصال إلى حقيقة مقطرة دائمة",
+      "saveAsFactError": "تعذر الحفظ كحقيقة."
     }
   },
   "recipe_shared": {

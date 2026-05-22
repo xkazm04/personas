@@ -13437,7 +13437,12 @@
       "commsSection": "最近のコミュニケーション ({count})",
       "commsEmpty": "このツインのコミュニケーションはまだ記録されていません。",
       "contactsSection": "アクティビティ別の上位コンタクト ({count})",
-      "contactsEmpty": "このツインにはまだコンタクトがありません。"
+      "contactsEmpty": "このツインにはまだコンタクトがありません。",
+      "saveAsFact": "ファクトとして保存",
+      "saveAsFactSaved": "保存済み",
+      "saveAsFactToast": "抽出済みファクトに保存しました。",
+      "saveAsFactTooltip": "このコミュニケーションを永続的な抽出ファクトに昇格します",
+      "saveAsFactError": "ファクトとして保存できませんでした。"
     }
   },
   "recipe_shared": {

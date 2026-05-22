@@ -577,6 +577,11 @@
     "commsSection": "Komunikasi terbaru ({count})",
     "commsEmpty": "Belum ada komunikasi yang tercatat untuk twin ini.",
     "contactsSection": "Kontak teratas berdasarkan aktivitas ({count})",
-    "contactsEmpty": "Belum ada kontak pada twin ini."
+    "contactsEmpty": "Belum ada kontak pada twin ini.",
+    "saveAsFact": "Simpan sebagai fakta",
+    "saveAsFactSaved": "Tersimpan",
+    "saveAsFactToast": "Disimpan ke fakta tersaring.",
+    "saveAsFactTooltip": "Promosikan komunikasi ini menjadi fakta tersaring yang permanen",
+    "saveAsFactError": "Gagal menyimpan sebagai fakta."
   }
 }

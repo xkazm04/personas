@@ -577,6 +577,11 @@
     "commsSection": "최근 communications ({count}개)",
     "commsEmpty": "이 트윈에 기록된 communication이 아직 없습니다.",
     "contactsSection": "활동 기준 상위 연락처 ({count}개)",
-    "contactsEmpty": "이 트윈에 연락처가 아직 없습니다."
+    "contactsEmpty": "이 트윈에 연락처가 아직 없습니다.",
+    "saveAsFact": "사실로 저장",
+    "saveAsFactSaved": "저장됨",
+    "saveAsFactToast": "정제된 사실에 저장되었습니다.",
+    "saveAsFactTooltip": "이 communication을 영구적인 정제된 사실로 승격",
+    "saveAsFactError": "사실로 저장할 수 없습니다."
   }
 }

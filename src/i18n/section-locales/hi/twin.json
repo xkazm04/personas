@@ -577,6 +577,11 @@
     "commsSection": "हाल के संचार ({count})",
     "commsEmpty": "इस ट्विन के लिए अभी तक कोई संचार रिकॉर्ड नहीं किया गया।",
     "contactsSection": "गतिविधि के अनुसार शीर्ष संपर्क ({count})",
-    "contactsEmpty": "इस ट्विन पर अभी तक कोई संपर्क नहीं।"
+    "contactsEmpty": "इस ट्विन पर अभी तक कोई संपर्क नहीं।",
+    "saveAsFact": "तथ्य के रूप में सहेजें",
+    "saveAsFactSaved": "सहेजा गया",
+    "saveAsFactToast": "आसुत तथ्यों में सहेजा गया।",
+    "saveAsFactTooltip": "इस संचार को टिकाऊ आसुत तथ्य में बदलें",
+    "saveAsFactError": "तथ्य के रूप में सहेजा नहीं जा सका।"
   }
 }

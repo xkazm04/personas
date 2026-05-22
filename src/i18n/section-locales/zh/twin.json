@@ -577,6 +577,11 @@
     "commsSection": "近期通信（{count}）",
     "commsEmpty": "该 twin 尚未记录任何通信。",
     "contactsSection": "活动最频繁的联系人（{count}）",
-    "contactsEmpty": "该 twin 还没有任何联系人。"
+    "contactsEmpty": "该 twin 还没有任何联系人。",
+    "saveAsFact": "保存为事实",
+    "saveAsFactSaved": "已保存",
+    "saveAsFactToast": "已保存到提炼事实。",
+    "saveAsFactTooltip": "将此通信提升为持久的提炼事实",
+    "saveAsFactError": "无法保存为事实。"
   }
 }

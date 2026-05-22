@@ -13245,6 +13245,11 @@ export type Translations = {
       commsEmpty: string;
       contactsSection: string;
       contactsEmpty: string;
+      saveAsFact: string;
+      saveAsFactSaved: string;
+      saveAsFactToast: string;
+      saveAsFactTooltip: string;
+      saveAsFactError: string;
     };
     reflections: {
       title: string;

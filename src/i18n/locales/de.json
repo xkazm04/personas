@@ -13437,7 +13437,12 @@
       "commsSection": "Jüngste Kommunikationen ({count})",
       "commsEmpty": "Für diesen Twin sind noch keine Kommunikationen erfasst.",
       "contactsSection": "Top-Kontakte nach Aktivität ({count})",
-      "contactsEmpty": "Noch keine Kontakte bei diesem Twin."
+      "contactsEmpty": "Noch keine Kontakte bei diesem Twin.",
+      "saveAsFact": "Als Fakt speichern",
+      "saveAsFactSaved": "Gespeichert",
+      "saveAsFactToast": "In destillierten Fakten gespeichert.",
+      "saveAsFactTooltip": "Diese Kommunikation als dauerhaften destillierten Fakt übernehmen",
+      "saveAsFactError": "Speichern als Fakt fehlgeschlagen."
     }
   },
   "recipe_shared": {

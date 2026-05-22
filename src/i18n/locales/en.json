@@ -13238,7 +13238,12 @@
       "commsSection": "Recent communications ({count})",
       "commsEmpty": "No communications recorded for this twin yet.",
       "contactsSection": "Top contacts by activity ({count})",
-      "contactsEmpty": "No contacts on this twin yet."
+      "contactsEmpty": "No contacts on this twin yet.",
+      "saveAsFact": "Save as fact",
+      "saveAsFactSaved": "Saved",
+      "saveAsFactToast": "Saved to distilled facts.",
+      "saveAsFactTooltip": "Promote this communication to a durable distilled fact",
+      "saveAsFactError": "Couldn't save as fact."
     },
     "reflections": {
       "title": "Reflections",

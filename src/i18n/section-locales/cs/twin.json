@@ -577,6 +577,11 @@
     "commsSection": "Nedávné komunikace ({count})",
     "commsEmpty": "Pro tohoto dvojníka zatím nejsou zaznamenány žádné komunikace.",
     "contactsSection": "Nejaktivnější kontakty ({count})",
-    "contactsEmpty": "Tento dvojník zatím nemá žádné kontakty."
+    "contactsEmpty": "Tento dvojník zatím nemá žádné kontakty.",
+    "saveAsFact": "Uložit jako fakt",
+    "saveAsFactSaved": "Uloženo",
+    "saveAsFactToast": "Uloženo do destilovaných faktů.",
+    "saveAsFactTooltip": "Povýšit tuto komunikaci na trvalý destilovaný fakt",
+    "saveAsFactError": "Nepodařilo se uložit jako fakt."
   }
 }
