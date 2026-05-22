@@ -18,6 +18,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useAgentStore } from '@/stores/agentStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useOverviewStore } from '@/stores/overviewStore';
+import type { OverviewTab } from '@/lib/types/types';
 import { useAttention } from '@/hooks/useAttention';
 import { useOverviewFilterValues, useOverviewFilterActions } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { PersonaSelect } from '@/features/overview/sub_usage/components/PersonaSelect';
@@ -262,6 +263,7 @@ export default function DashboardHomeMissionControl() {
               pipelineErrors={pipelineErrorCount}
               totalExecutions={globalExecutionCounts.total}
               lastSyncedLabel={lastSyncedLabel}
+              onNavigate={setOverviewTab}
             />
           </motion.div>
 
@@ -621,14 +623,18 @@ export const ActivityStreamLog = memo(function ActivityStreamLog({
 // ---------------------------------------------------------------------------
 
 export const StatusTicker = memo(function StatusTicker({
-  pipelineSources, pipelineErrors, totalExecutions, lastSyncedLabel,
+  pipelineSources, pipelineErrors, totalExecutions, lastSyncedLabel, onNavigate,
 }: {
   pipelineSources: number;
   pipelineErrors: number;
   totalExecutions: number;
   lastSyncedLabel: string;
+  onNavigate: (tab: OverviewTab) => void;
 }) {
   const fieldCls = 'flex items-center gap-1.5 typo-caption font-mono uppercase tracking-widest';
+  // errors / runs / synced are shortcuts into the tab that owns each metric;
+  // "sources" stays inert — it has no single dedicated destination.
+  const linkCls = `${fieldCls} text-foreground rounded-interactive px-1 -mx-1 hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/30`;
   return (
     <div className="rounded-card border border-primary/10 bg-primary/[0.03] px-4 py-2 flex items-center gap-5 overflow-x-auto">
       <span className="typo-caption font-mono uppercase tracking-[0.3em] text-foreground flex-shrink-0">status</span>
@@ -636,18 +642,18 @@ export const StatusTicker = memo(function StatusTicker({
         <span className="text-foreground">sources</span>
         <span className="text-foreground tabular-nums">{pipelineSources}</span>
       </div>
-      <div className={`${fieldCls}`}>
-        <span className="text-foreground">errors</span>
+      <button type="button" onClick={() => onNavigate('health')} className={linkCls}>
+        <span>errors</span>
         <span className={`tabular-nums ${pipelineErrors > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>{pipelineErrors}</span>
-      </div>
-      <div className={`${fieldCls} text-foreground`}>
-        <span className="text-foreground">runs</span>
-        <span className="text-foreground tabular-nums">{totalExecutions.toLocaleString()}</span>
-      </div>
-      <div className={`${fieldCls} text-foreground ml-auto flex-shrink-0`}>
-        <span className="text-foreground">synced</span>
-        <span className="text-foreground tabular-nums">{lastSyncedLabel}</span>
-      </div>
+      </button>
+      <button type="button" onClick={() => onNavigate('executions')} className={linkCls}>
+        <span>runs</span>
+        <span className="tabular-nums">{totalExecutions.toLocaleString()}</span>
+      </button>
+      <button type="button" onClick={() => onNavigate('observability')} className={`${linkCls} ml-auto flex-shrink-0`}>
+        <span>synced</span>
+        <span className="tabular-nums">{lastSyncedLabel}</span>
+      </button>
     </div>
   );
 });
