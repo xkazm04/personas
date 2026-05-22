@@ -3,6 +3,8 @@ import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaTeamMember } from '@/lib/bindings/PersonaTeamMember';
 import type { PersonaTeamConnection } from '@/lib/bindings/PersonaTeamConnection';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useAgentStore } from '@/stores/agentStore';
+import { useSystemStore } from '@/stores/systemStore';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 
 interface TeamGraphPreviewProps {
@@ -10,6 +12,12 @@ interface TeamGraphPreviewProps {
   connections: PersonaTeamConnection[];
   personas: Persona[];
   teamColor: string;
+  /**
+   * Called after a node click successfully navigates to that persona's
+   * editor. The modal owner uses this to dismiss its overlay so the user
+   * lands cleanly on the editor instead of stacking surfaces.
+   */
+  onPersonaOpened?: (personaId: string) => void;
 }
 
 // Final rendered canvas size in CSS pixels. SVG scales to fit this rect.
@@ -40,8 +48,22 @@ export function TeamGraphPreview({
   connections,
   personas,
   teamColor,
+  onPersonaOpened,
 }: TeamGraphPreviewProps) {
   const { t } = useTranslation();
+  const selectPersona = useAgentStore((s) => s.selectPersona);
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
+  const setAgentTab = useSystemStore((s) => s.setAgentTab);
+
+  const handleNodeClick = (personaId: string) => {
+    // Open the persona's editor: switch to the Agents section, set the
+    // "all" tab (not group/team subview), select the persona. Mirrors the
+    // navigation cockpit widgets do when surfacing a specific persona.
+    setSidebarSection('personas');
+    setAgentTab('all');
+    selectPersona(personaId);
+    onPersonaOpened?.(personaId);
+  };
 
   const layout = useMemo(() => {
     if (members.length === 0) return null;
@@ -53,6 +75,7 @@ export function TeamGraphPreview({
     const points = allUnplaced
       ? members.map((m, idx) => ({
           id: m.id,
+          personaId: m.persona_id,
           x: idx,
           y: 0,
           color: personaById.get(m.persona_id)?.color ?? teamColor,
@@ -60,6 +83,7 @@ export function TeamGraphPreview({
         }))
       : members.map((m) => ({
           id: m.id,
+          personaId: m.persona_id,
           x: m.position_x,
           y: m.position_y,
           color: personaById.get(m.persona_id)?.color ?? teamColor,
@@ -170,10 +194,26 @@ export function TeamGraphPreview({
           ))}
 
           {/* Nodes — circle filled with the persona's own color, ringed in
-              the team color so the team identity is consistent. */}
+              the team color so the team identity is consistent. Clickable:
+              opens the persona's editor. */}
           {layout.nodes.map((n) => (
-            <g key={n.id}>
-              <title>{n.name}</title>
+            <g
+              key={n.id}
+              role="button"
+              tabIndex={0}
+              style={{ cursor: 'pointer' }}
+              onClick={() => handleNodeClick(n.personaId)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleNodeClick(n.personaId);
+                }
+              }}
+              aria-label={`${n.name} — ${t.plugins.dev_projects.team_preview_canvas_open_persona}`}
+            >
+              <title>
+                {n.name} — {t.plugins.dev_projects.team_preview_canvas_open_persona}
+              </title>
               <circle
                 cx={n.x}
                 cy={n.y}
@@ -181,6 +221,18 @@ export function TeamGraphPreview({
                 fill={colorWithAlpha(n.color, 0.55)}
                 stroke={colorWithAlpha(teamColor, 0.9)}
                 strokeWidth={1.5}
+                className="transition-all hover:opacity-85"
+              />
+              {/* Subtle hover halo — pure CSS, costs nothing if user never hovers */}
+              <circle
+                cx={n.x}
+                cy={n.y}
+                r={NODE_RADIUS + 4}
+                fill="transparent"
+                stroke={colorWithAlpha(teamColor, 0)}
+                strokeWidth={1}
+                className="transition-all hover:stroke-current"
+                style={{ color: colorWithAlpha(teamColor, 0.5) }}
               />
             </g>
           ))}

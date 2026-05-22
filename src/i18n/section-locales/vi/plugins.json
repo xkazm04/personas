@@ -1711,7 +1711,8 @@
     "team_preview_live_label": "trực tiếp",
     "team_preview_canvas": "Canvas",
     "team_preview_canvas_unplaced": "thành viên chưa được sắp xếp",
-    "team_preview_canvas_aria": "Canvas mini — thành viên nhóm và các kết nối"
+    "team_preview_canvas_aria": "Canvas mini — thành viên nhóm và các kết nối",
+    "team_preview_canvas_open_persona": "mở trong trình chỉnh sửa"
   },
   "dev_runner": {
     "self_healing": "Tự phục hồi",

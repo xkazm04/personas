@@ -140,6 +140,7 @@ export function ProjectTeamPreviewModal({ open, team, onClose }: ProjectTeamPrev
             connections={connections}
             personas={personas}
             teamColor={teamColor}
+            onPersonaOpened={onClose}
           />
         )}
 

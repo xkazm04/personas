@@ -11317,7 +11317,8 @@
       "team_preview_live_label": "en direct",
       "team_preview_canvas": "Canevas",
       "team_preview_canvas_unplaced": "membres pas encore disposés",
-      "team_preview_canvas_aria": "Mini canevas — membres de l'équipe et leurs connexions"
+      "team_preview_canvas_aria": "Mini canevas — membres de l'équipe et leurs connexions",
+      "team_preview_canvas_open_persona": "ouvrir dans l'éditeur"
     },
     "dev_runner": {
       "self_healing": "Auto-correction",

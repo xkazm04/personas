@@ -1711,7 +1711,8 @@
     "team_preview_live_label": "실시간",
     "team_preview_canvas": "캔버스",
     "team_preview_canvas_unplaced": "멤버 아직 배치되지 않음",
-    "team_preview_canvas_aria": "미니 캔버스 — 팀 멤버 및 연결"
+    "team_preview_canvas_aria": "미니 캔버스 — 팀 멤버 및 연결",
+    "team_preview_canvas_open_persona": "에디터에서 열기"
   },
   "dev_runner": {
     "self_healing": "자가 복구",

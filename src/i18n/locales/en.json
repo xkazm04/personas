@@ -11493,6 +11493,7 @@
       "team_preview_canvas": "Canvas",
       "team_preview_canvas_unplaced": "members not laid out yet",
       "team_preview_canvas_aria": "Mini canvas — team members and their connections",
+      "team_preview_canvas_open_persona": "open in editor",
       "group_binding_label": "Bound Group",
       "group_binding_none": "No group — keep project standalone",
       "group_binding_empty": "No groups yet — create one under Agents → Groups to bind it here.",
