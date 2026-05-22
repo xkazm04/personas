@@ -304,6 +304,8 @@
     "todos_label": "Todos",
     "todos_subtitle_open": "{count} open",
     "todos_empty": "All clear.",
+    "scope_fleet": "フリート",
+    "scope_fleet_hint": "すべてのペルソナを表示します — ペルソナフィルターはこれに影響しません。",
     "mission_control_eyebrow": "Mission Control"
   },
   "execution_metrics": {

@@ -85,15 +85,27 @@ export default function DashboardHomeMissionControl() {
   const { selectedPersonaId } = useOverviewFilterValues();
   const { setSelectedPersonaId } = useOverviewFilterActions();
 
+  // Mission Control panes that derive from the loaded execution feed honour
+  // the header persona filter; fleet-wide aggregates (KPI tiles, traffic
+  // sparkline, triage counts) stay global and carry a <FleetTag/> so the mixed
+  // scope is never ambiguous. Stage 2 gives those aggregates their own
+  // persona-scoped backend query.
+  const personaName = useMemo(
+    () => personas.find((p) => p.id === selectedPersonaId)?.name ?? null,
+    [personas, selectedPersonaId],
+  );
+
   const stats = useMemo(() => {
-    const execs = globalExecutions;
+    const execs = selectedPersonaId
+      ? globalExecutions.filter((e) => e.persona_id === selectedPersonaId)
+      : globalExecutions;
     const successCount = execs.filter((e) => e.status === 'completed').length;
     const successRate = Math.round(resolveMetricPercent(
       SUCCESS_RATE_IDENTITIES.dashboardRecentExecutions,
       { numerator: successCount, denominator: execs.length },
     ));
     return { successRate, activeAgents: personas.length, recentExecs: execs.slice(0, 20) };
-  }, [globalExecutions, personas]);
+  }, [globalExecutions, personas, selectedPersonaId]);
 
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
@@ -214,7 +226,7 @@ export default function DashboardHomeMissionControl() {
               <DashboardEmptyState />
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-[minmax(260px,320px)_1fr_minmax(280px,340px)] gap-4">
-                <TriagePane items={triageItems} />
+                <TriagePane items={triageItems} personaScoped={!!personaName} />
                 <VitalsConsole
                   successRate={stats.successRate}
                   activeAgents={stats.activeAgents}
@@ -222,10 +234,12 @@ export default function DashboardHomeMissionControl() {
                   totalExecutions={globalExecutionCounts.total}
                   pendingReviews={pendingReviewCount}
                   points={executionDashboard?.daily_points ?? []}
+                  personaName={personaName}
                 />
                 <ActivityStreamLog
                   executions={stats.recentExecs}
                   onViewAll={goToExecutions}
+                  personaName={personaName}
                 />
               </div>
             )}
@@ -361,14 +375,18 @@ const TRIAGE_META: Record<TriageKind, { Icon: typeof ClipboardCheck; color: stri
   alert:  { Icon: AlertTriangle,  color: 'text-red-400',   bg: 'bg-red-500/10',   border: 'border-red-500/20',   tag: 'ALT' },
 };
 
-export const TriagePane = memo(function TriagePane({ items }: { items: TriageItem[] }) {
+export const TriagePane = memo(function TriagePane({
+  items, personaScoped,
+}: { items: TriageItem[]; personaScoped: boolean }) {
   const { t, tx } = useTranslation();
   return (
     <div className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden flex flex-col">
       <PaneHeader
         label={t.overview.dashboard.todos_label}
         subtitle={tx(t.overview.dashboard.todos_subtitle_open, { count: items.length })}
-      />
+      >
+        {personaScoped && <FleetTag />}
+      </PaneHeader>
       <div className="flex-1 divide-y divide-primary/5 max-h-[28rem] overflow-y-auto">
         {items.length === 0 ? (
           <div className="px-4 py-8 text-center typo-body text-foreground">
@@ -409,7 +427,7 @@ export const TriagePane = memo(function TriagePane({ items }: { items: TriageIte
 // ---------------------------------------------------------------------------
 
 export const VitalsConsole = memo(function VitalsConsole({
-  successRate, activeAgents, activeAlertCount, totalExecutions, pendingReviews, points,
+  successRate, activeAgents, activeAlertCount, totalExecutions, pendingReviews, points, personaName,
 }: {
   successRate: number;
   activeAgents: number;
@@ -417,6 +435,7 @@ export const VitalsConsole = memo(function VitalsConsole({
   totalExecutions: number;
   pendingReviews: number;
   points: { date: string; total_executions: number; failed: number }[];
+  personaName: string | null;
 }) {
   const formatCount = useCallback((v: number) => Math.round(v).toLocaleString(), []);
 
@@ -434,20 +453,30 @@ export const VitalsConsole = memo(function VitalsConsole({
 
   return (
     <div className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden flex flex-col">
-      <PaneHeader label="Vitals" subtitle="fleet health" />
+      <PaneHeader label="Vitals" subtitle={personaName ?? 'fleet health'} />
       <div className="flex-1 flex flex-col items-center gap-5 px-4 py-6">
         <SuccessRing rate={successRate} />
-        <div className="w-full grid grid-cols-2 gap-3">
-          <KpiTile density="console" icon={<Activity className="w-3.5 h-3.5" />} label="Runs" numericValue={totalExecutions} format={formatCount} color="text-emerald-400" />
-          <KpiTile density="console" icon={<Cpu className="w-3.5 h-3.5" />} label="Agents" numericValue={activeAgents} color="text-violet-400" />
-          <KpiTile density="console" icon={<Bell className="w-3.5 h-3.5" />} label="Alerts" numericValue={activeAlertCount} color={activeAlertCount > 0 ? 'text-red-400' : 'text-foreground'} />
-          <KpiTile density="console" icon={<ClipboardCheck className="w-3.5 h-3.5" />} label="Reviews" numericValue={pendingReviews} color={pendingReviews > 0 ? 'text-amber-400' : 'text-foreground'} />
+        <div className="w-full space-y-2">
+          {personaName && (
+            <div className="flex justify-end">
+              <FleetTag />
+            </div>
+          )}
+          <div className="grid grid-cols-2 gap-3">
+            <KpiTile density="console" icon={<Activity className="w-3.5 h-3.5" />} label="Runs" numericValue={totalExecutions} format={formatCount} color="text-emerald-400" />
+            <KpiTile density="console" icon={<Cpu className="w-3.5 h-3.5" />} label="Agents" numericValue={activeAgents} color="text-violet-400" />
+            <KpiTile density="console" icon={<Bell className="w-3.5 h-3.5" />} label="Alerts" numericValue={activeAlertCount} color={activeAlertCount > 0 ? 'text-red-400' : 'text-foreground'} />
+            <KpiTile density="console" icon={<ClipboardCheck className="w-3.5 h-3.5" />} label="Reviews" numericValue={pendingReviews} color={pendingReviews > 0 ? 'text-amber-400' : 'text-foreground'} />
+          </div>
         </div>
         {sparkline && (
           <div className="w-full pt-3 border-t border-primary/10">
             <div className="flex items-center justify-between typo-caption uppercase tracking-widest text-foreground mb-1.5 font-mono">
               <span><DebtText k="auto_traffic_errors_7c114a11" /></span>
-              <span>{points.length}d</span>
+              <span className="flex items-center gap-2">
+                {personaName && <FleetTag />}
+                {points.length}d
+              </span>
             </div>
             <svg viewBox={`0 0 ${sparkline.w} ${sparkline.h}`} className="w-full h-10" preserveAspectRatio="none" aria-hidden="true">
               <polyline fill="none" stroke="#06b6d4" strokeWidth="1.5" points={sparkline.traffic} />
@@ -498,15 +527,19 @@ function SuccessRing({ rate }: { rate: number }) {
 // ---------------------------------------------------------------------------
 
 export const ActivityStreamLog = memo(function ActivityStreamLog({
-  executions, onViewAll,
+  executions, onViewAll, personaName,
 }: {
   executions: { id: string; status: string; persona_name?: string; created_at: string }[];
   onViewAll: () => void;
+  personaName: string | null;
 }) {
   const { t } = useTranslation();
   return (
     <div className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden flex flex-col">
-      <PaneHeader label="Stream" subtitle={`${executions.length} events`}>
+      <PaneHeader
+        label="Stream"
+        subtitle={personaName ? `${personaName} · ${executions.length}` : `${executions.length} events`}
+      >
         <button
           onClick={onViewAll}
           className="typo-caption text-primary/80 hover:text-primary transition-colors flex items-center gap-1 font-mono uppercase tracking-widest"
@@ -602,5 +635,20 @@ function PaneHeader({
       </div>
       {children}
     </div>
+  );
+}
+
+// Small chip marking a pane (or sub-section) as fleet-wide — its data ignores
+// the header persona filter. Rendered wherever Mission Control mixes
+// persona-scoped and fleet-scoped readouts so the boundary stays visible.
+function FleetTag() {
+  const { t } = useTranslation();
+  return (
+    <span
+      title={t.overview.dashboard.scope_fleet_hint}
+      className="typo-caption font-mono uppercase tracking-widest px-1.5 py-0.5 rounded-interactive border border-primary/15 bg-primary/[0.04] text-foreground flex-shrink-0"
+    >
+      {t.overview.dashboard.scope_fleet}
+    </span>
   );
 }

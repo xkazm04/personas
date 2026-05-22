@@ -5147,6 +5147,8 @@ export type Translations = {
       todos_label: string;
       todos_subtitle_open: string;
       todos_empty: string;
+      scope_fleet: string;
+      scope_fleet_hint: string;
     };
     execution_metrics: {
       title: string;

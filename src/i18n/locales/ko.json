@@ -5079,6 +5079,8 @@
       "todos_label": "Todos",
       "todos_subtitle_open": "{count} open",
       "todos_empty": "All clear.",
+      "scope_fleet": "플릿",
+      "scope_fleet_hint": "모든 페르소나를 표시합니다 — 페르소나 필터는 이를 변경하지 않습니다.",
       "mission_control_eyebrow": "Mission Control"
     },
     "execution_metrics": {

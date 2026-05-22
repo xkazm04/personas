@@ -12,7 +12,7 @@ The active tab comes from `useOverviewStore().overviewTab`. Sidebar-visible tabs
 
 | Tab | Behavior | Implementation |
 | --- | --- | --- |
-| Dashboard | Mission-control home, summary widgets, knowledge/recent change/routine/fleet cards | `components/dashboard/DashboardHome.tsx`, `cards/*`, `widgets/*` |
+| Dashboard | Mission-control home (Triage / Vitals / activity Stream panes), summary widgets, knowledge/recent change/routine/fleet cards. The header persona selector scopes the success ring and activity Stream to that persona; fleet-wide readouts (KPI tiles, traffic sparkline, triage counts) stay global and carry a **Fleet** tag. | `components/dashboard/DashboardHomeMissionControl.tsx`, `cards/*`, `widgets/*` |
 | Inbox | Unified triage view that aggregates pending items from four sources (manual-review approvals, unread messages, output artifacts, open healing issues) into Today / This Week / Snoozed / Resolved swimlanes. Keyboard triage (J/K move, Enter open, A approve, R reject/resolve, S snooze, X select, Esc clear), per-row chips, and a floating bulk-action toolbar. Snooze persists in localStorage; resolved is session-local. Reuses `useUnifiedInbox` from simple-mode for the source aggregation. | `sub_inbox/InboxTriagePage.tsx` plus `components/`, `hooks/`, `libs/` |
 | Activity / Executions | Global execution list and metrics. List columns are user-resizable. | `sub_activity/components/GlobalExecutionList.tsx`, `ExecutionRow.tsx`, `useExecutionMetrics.ts` |
 | Approvals | Manual review inbox, focused decision flow, bulk actions, triage player | `sub_manual-review` |

@@ -5079,6 +5079,8 @@
       "todos_label": "Todos",
       "todos_subtitle_open": "{count} open",
       "todos_empty": "All clear.",
+      "scope_fleet": "Đội",
+      "scope_fleet_hint": "Hiển thị tất cả persona — bộ lọc persona không thay đổi điều này.",
       "mission_control_eyebrow": "Mission Control"
     },
     "execution_metrics": {

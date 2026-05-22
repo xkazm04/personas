@@ -5079,6 +5079,8 @@
       "todos_label": "Todos",
       "todos_subtitle_open": "{count} open",
       "todos_empty": "All clear.",
+      "scope_fleet": "फ़्लीट",
+      "scope_fleet_hint": "सभी पर्सोना दिखाता है — पर्सोना फ़िल्टर इसे नहीं बदलता।",
       "mission_control_eyebrow": "Mission Control"
     },
     "execution_metrics": {

@@ -5079,6 +5079,8 @@
       "todos_label": "Todos",
       "todos_subtitle_open": "{count} open",
       "todos_empty": "All clear.",
+      "scope_fleet": "Flotte",
+      "scope_fleet_hint": "Zeigt alle Personas — der Persona-Filter ändert dies nicht.",
       "mission_control_eyebrow": "Mission Control"
     },
     "execution_metrics": {

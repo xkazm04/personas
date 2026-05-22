@@ -5079,6 +5079,8 @@
       "todos_label": "Todos",
       "todos_subtitle_open": "{count} open",
       "todos_empty": "All clear.",
+      "scope_fleet": "Armada",
+      "scope_fleet_hint": "Menampilkan semua persona — filter persona tidak mengubah ini.",
       "mission_control_eyebrow": "Mission Control"
     },
     "execution_metrics": {

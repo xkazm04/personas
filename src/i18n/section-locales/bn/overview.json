@@ -304,6 +304,8 @@
     "todos_label": "Todos",
     "todos_subtitle_open": "{count} open",
     "todos_empty": "All clear.",
+    "scope_fleet": "ফ্লিট",
+    "scope_fleet_hint": "সব পার্সোনা দেখায় — পার্সোনা ফিল্টার এটি পরিবর্তন করে না।",
     "mission_control_eyebrow": "Mission Control"
   },
   "execution_metrics": {

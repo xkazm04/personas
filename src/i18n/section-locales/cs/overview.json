@@ -304,6 +304,8 @@
     "todos_label": "Todos",
     "todos_subtitle_open": "{count} open",
     "todos_empty": "All clear.",
+    "scope_fleet": "Flotila",
+    "scope_fleet_hint": "Zobrazuje všechny persony — filtr person to nemění.",
     "mission_control_eyebrow": "Mission Control"
   },
   "execution_metrics": {

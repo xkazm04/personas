@@ -5140,7 +5140,9 @@
       "from_templates": "From Templates",
       "todos_label": "Todos",
       "todos_subtitle_open": "{count} open",
-      "todos_empty": "All clear."
+      "todos_empty": "All clear.",
+      "scope_fleet": "Fleet",
+      "scope_fleet_hint": "Shows all personas — the persona filter doesn't change this."
     },
     "execution_metrics": {
       "title": "Execution Metrics",

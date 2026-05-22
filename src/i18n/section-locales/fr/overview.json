@@ -304,6 +304,8 @@
     "todos_label": "Todos",
     "todos_subtitle_open": "{count} open",
     "todos_empty": "All clear.",
+    "scope_fleet": "Flotte",
+    "scope_fleet_hint": "Affiche toutes les personas — le filtre de persona ne modifie pas ceci.",
     "mission_control_eyebrow": "Mission Control"
   },
   "execution_metrics": {

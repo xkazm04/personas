@@ -5079,6 +5079,8 @@
       "todos_label": "Todos",
       "todos_subtitle_open": "{count} open",
       "todos_empty": "All clear.",
+      "scope_fleet": "Флот",
+      "scope_fleet_hint": "Показывает все персоны — фильтр персон на это не влияет.",
       "mission_control_eyebrow": "Mission Control"
     },
     "execution_metrics": {
