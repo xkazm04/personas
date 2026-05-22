@@ -194,10 +194,25 @@ pub fn update(
     importance: Option<i32>,
 ) -> Result<TeamMemory, AppError> {
     timed_query!("team_memories", "team_memories::update", {
-        let conn = pool.get()?;
+        let mut conn = pool.get()?;
+        let tx = conn
+            .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)
+            .map_err(AppError::Database)?;
 
-        // Read existing memory to build revision log from current values
-        let existing = get_by_id(pool, id)?;
+        // Read the current row inside the transaction so appending to the
+        // revision log is a consistent read-modify-write: two concurrent
+        // edits to the same memory serialize on the write lock instead of
+        // each reading the same baseline and clobbering the other's revision.
+        let existing = {
+            let mut stmt = tx.prepare("SELECT * FROM team_memories WHERE id = ?1")?;
+            stmt.query_row(params![id], row_to_team_memory)
+                .map_err(|e| match e {
+                    rusqlite::Error::QueryReturnedNoRows => {
+                        AppError::NotFound(format!("TeamMemory {id}"))
+                    }
+                    other => AppError::Database(other),
+                })?
+        };
 
         // Build revision entry from current state (stored in tags as JSON array)
         let now = chrono::Utc::now().to_rfc3339();
@@ -251,10 +266,11 @@ pub fn update(
             return Err(AppError::Validation("Content cannot be empty".into()));
         }
 
-        conn.execute(
+        tx.execute(
             "UPDATE team_memories SET title = ?1, content = ?2, category = ?3, importance = ?4, tags = ?5, updated_at = ?6 WHERE id = ?7",
             params![new_title, new_content, new_category, new_importance, tags_str, now, id],
         )?;
+        tx.commit().map_err(AppError::Database)?;
 
         get_by_id(pool, id)
     })
