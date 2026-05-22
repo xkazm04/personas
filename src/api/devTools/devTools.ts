@@ -53,7 +53,7 @@ export type { TriageRule } from "@/lib/bindings/TriageRule";
 export const listProjects = (status?: string) =>
   safeInvoke<DevProject[]>([], "dev_tools_list_projects", { status: status });
 
-export const createProject = (name: string, rootPath: string, description?: string, techStack?: string, githubUrl?: string, teamId?: string) =>
+export const createProject = (name: string, rootPath: string, description?: string, techStack?: string, githubUrl?: string, teamId?: string, groupId?: string) =>
   invoke<DevProject>("dev_tools_create_project", {
     name,
     rootPath,
@@ -61,9 +61,10 @@ export const createProject = (name: string, rootPath: string, description?: stri
     techStack: techStack,
     githubUrl: githubUrl,
     teamId: teamId,
+    groupId: groupId,
   });
 
-export const updateProject = (id: string, updates: { name?: string; description?: string; status?: string; techStack?: string; githubUrl?: string; monitoringCredentialId?: string | null; monitoringProjectSlug?: string | null; teamId?: string | null }) =>
+export const updateProject = (id: string, updates: { name?: string; description?: string; status?: string; techStack?: string; githubUrl?: string; monitoringCredentialId?: string | null; monitoringProjectSlug?: string | null; teamId?: string | null; groupId?: string | null }) =>
   invoke<DevProject>("dev_tools_update_project", {
     id,
     name: updates.name,
@@ -74,6 +75,7 @@ export const updateProject = (id: string, updates: { name?: string; description?
     monitoringCredentialId: updates.monitoringCredentialId,
     monitoringProjectSlug: updates.monitoringProjectSlug,
     teamId: updates.teamId,
+    groupId: updates.groupId,
   });
 
 export const deleteProject = (id: string) =>

@@ -1701,7 +1701,13 @@
     "team_preview_unknown_persona": "(персона удалена)",
     "team_preview_recent_runs": "Последние запуски",
     "team_preview_recent_runs_total": "(последних {count})",
-    "team_preview_no_runs": "Эта команда ещё не запускалась."
+    "team_preview_no_runs": "Эта команда ещё не запускалась.",
+    "group_binding_label": "Привязанная группа",
+    "group_binding_none": "Без группы — оставить проект автономным",
+    "group_binding_empty": "Групп пока нет — создайте в Агенты → Группы, чтобы привязать здесь.",
+    "group_binding_bound": "Проект привязан к этому рабочему пространству PersonaGroup",
+    "group_binding_orphan": "Привязанная группа удалена; откройте проект, чтобы перепривязать",
+    "group_binding_orphan_label": "группа удалена"
   },
   "dev_runner": {
     "self_healing": "Самовосстановление",

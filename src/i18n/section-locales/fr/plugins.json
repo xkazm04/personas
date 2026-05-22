@@ -1701,7 +1701,13 @@
     "team_preview_unknown_persona": "(persona supprimée)",
     "team_preview_recent_runs": "Exécutions récentes",
     "team_preview_recent_runs_total": "({count} dernières)",
-    "team_preview_no_runs": "Cette équipe n'a pas encore été exécutée."
+    "team_preview_no_runs": "Cette équipe n'a pas encore été exécutée.",
+    "group_binding_label": "Groupe lié",
+    "group_binding_none": "Aucun groupe — garder le projet autonome",
+    "group_binding_empty": "Aucun groupe pour le moment — créez-en un dans Agents → Groupes pour le lier ici.",
+    "group_binding_bound": "Projet lié à cet espace de travail PersonaGroup",
+    "group_binding_orphan": "Le groupe lié a été supprimé ; ouvrez le projet pour relier",
+    "group_binding_orphan_label": "groupe supprimé"
   },
   "dev_runner": {
     "self_healing": "Auto-correction",

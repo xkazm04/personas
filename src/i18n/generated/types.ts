@@ -11494,6 +11494,12 @@ export type Translations = {
       team_preview_recent_runs: string;
       team_preview_recent_runs_total: string;
       team_preview_no_runs: string;
+      group_binding_label: string;
+      group_binding_none: string;
+      group_binding_empty: string;
+      group_binding_bound: string;
+      group_binding_orphan: string;
+      group_binding_orphan_label: string;
     };
     dev_runner: {
       self_healing: string;

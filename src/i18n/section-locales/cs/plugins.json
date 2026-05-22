@@ -1701,7 +1701,13 @@
     "team_preview_unknown_persona": "(persona odstraněna)",
     "team_preview_recent_runs": "Nedávná spuštění",
     "team_preview_recent_runs_total": "(posledních {count})",
-    "team_preview_no_runs": "Tento tým ještě nebyl spuštěn."
+    "team_preview_no_runs": "Tento tým ještě nebyl spuštěn.",
+    "group_binding_label": "Připojená skupina",
+    "group_binding_none": "Žádná skupina — ponechat projekt samostatný",
+    "group_binding_empty": "Zatím žádné skupiny — vytvořte v Agenti → Skupiny a připojte zde.",
+    "group_binding_bound": "Projekt je připojen k tomuto PersonaGroup workspace",
+    "group_binding_orphan": "Připojená skupina byla smazána; otevřete projekt pro opětovné připojení",
+    "group_binding_orphan_label": "skupina odstraněna"
   },
   "dev_runner": {
     "self_healing": "Self-healing",

@@ -2791,6 +2791,27 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // Dev-tools project ↔ PersonaGroup binding (2026-05-22). Complementary
+    // to team_id: team_id is the execution-time pipeline, group_id is the
+    // design-time workspace folder. Both can be set independently. Same
+    // orphan-tolerance policy.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "dev_projects_group_id",
+            description: "Add group_id column to dev_projects for workspace binding",
+            already_applied: |conn| has_column(conn, "dev_projects", "group_id"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE dev_projects ADD COLUMN group_id TEXT;
+                     CREATE INDEX IF NOT EXISTS idx_dev_projects_group_id ON dev_projects(group_id);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 

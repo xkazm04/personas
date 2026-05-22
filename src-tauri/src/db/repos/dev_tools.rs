@@ -33,6 +33,7 @@ fn row_to_project(row: &Row) -> rusqlite::Result<DevProject> {
             .unwrap_or(false),
         pr_credential_id: row.get("pr_credential_id").unwrap_or(None),
         team_id: row.get("team_id").unwrap_or(None),
+        group_id: row.get("group_id").unwrap_or(None),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })
@@ -233,6 +234,7 @@ pub fn create_project(
     tech_stack: Option<&str>,
     github_url: Option<&str>,
     team_id: Option<&str>,
+    group_id: Option<&str>,
 ) -> Result<DevProject, AppError> {
     if name.trim().is_empty() {
         return Err(AppError::Validation("Name cannot be empty".into()));
@@ -248,9 +250,9 @@ pub fn create_project(
 
         let conn = pool.get()?;
         conn.execute(
-            "INSERT INTO dev_projects (id, name, root_path, description, status, tech_stack, github_url, team_id, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9)",
-            params![id, name, root_path, description, status, tech_stack, github_url, team_id, now],
+            "INSERT INTO dev_projects (id, name, root_path, description, status, tech_stack, github_url, team_id, group_id, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?10)",
+            params![id, name, root_path, description, status, tech_stack, github_url, team_id, group_id, now],
         )?;
 
         get_project_by_id(pool, &id)
@@ -269,6 +271,7 @@ pub fn update_project(
     monitoring_credential_id: Option<Option<&str>>,
     monitoring_project_slug: Option<Option<&str>>,
     team_id: Option<Option<&str>>,
+    group_id: Option<Option<&str>>,
 ) -> Result<DevProject, AppError> {
     timed_query!("dev_projects", "dev_projects::update_project", {
         get_project_by_id(pool, id)?;
@@ -296,6 +299,7 @@ pub fn update_project(
             param_idx
         );
         push_field!(team_id, "team_id", sets, param_idx);
+        push_field!(group_id, "group_id", sets, param_idx);
 
         let sql = format!(
             "UPDATE dev_projects SET {} WHERE id = ?{}",
@@ -326,6 +330,9 @@ pub fn update_project(
             param_values.push(Box::new(v.map(|s| s.to_string())));
         }
         if let Some(v) = team_id {
+            param_values.push(Box::new(v.map(|s| s.to_string())));
+        }
+        if let Some(v) = group_id {
             param_values.push(Box::new(v.map(|s| s.to_string())));
         }
         param_values.push(Box::new(id.to_string()));

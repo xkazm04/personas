@@ -1701,7 +1701,13 @@
     "team_preview_unknown_persona": "(পার্সোনা মুছে ফেলা হয়েছে)",
     "team_preview_recent_runs": "সাম্প্রতিক রান",
     "team_preview_recent_runs_total": "(সর্বশেষ {count})",
-    "team_preview_no_runs": "এই টিম এখনো চালানো হয়নি।"
+    "team_preview_no_runs": "এই টিম এখনো চালানো হয়নি।",
+    "group_binding_label": "বাঁধা গ্রুপ",
+    "group_binding_none": "কোনও গ্রুপ নেই — প্রোজেক্ট স্বতন্ত্র রাখুন",
+    "group_binding_empty": "এখনো কোনো গ্রুপ নেই — এজেন্ট → গ্রুপ-এ একটি তৈরি করে এখানে বাঁধুন।",
+    "group_binding_bound": "প্রোজেক্টটি এই PersonaGroup ওয়ার্কস্পেসে বাঁধা",
+    "group_binding_orphan": "বাঁধা গ্রুপ মুছে ফেলা হয়েছে; পুনরায় বাঁধতে প্রোজেক্ট খুলুন",
+    "group_binding_orphan_label": "গ্রুপ সরানো হয়েছে"
   },
   "dev_runner": {
     "self_healing": "স্ব-নিরাময়",

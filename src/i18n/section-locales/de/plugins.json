@@ -1701,7 +1701,13 @@
     "team_preview_unknown_persona": "(Persona entfernt)",
     "team_preview_recent_runs": "Letzte Läufe",
     "team_preview_recent_runs_total": "(letzte {count})",
-    "team_preview_no_runs": "Dieses Team wurde noch nicht ausgeführt."
+    "team_preview_no_runs": "Dieses Team wurde noch nicht ausgeführt.",
+    "group_binding_label": "Gebundene Gruppe",
+    "group_binding_none": "Keine Gruppe — Projekt eigenständig belassen",
+    "group_binding_empty": "Noch keine Gruppen — erstelle eine unter Agents → Gruppen, um sie hier zu binden.",
+    "group_binding_bound": "Projekt ist an diesen PersonaGroup-Workspace gebunden",
+    "group_binding_orphan": "Gebundene Gruppe wurde gelöscht; Projekt öffnen, um neu zu binden",
+    "group_binding_orphan_label": "Gruppe entfernt"
   },
   "dev_runner": {
     "self_healing": "Selbstheilung",

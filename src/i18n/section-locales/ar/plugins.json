@@ -1701,7 +1701,13 @@
     "team_preview_unknown_persona": "(تمت إزالة الشخصية)",
     "team_preview_recent_runs": "التشغيلات الأخيرة",
     "team_preview_recent_runs_total": "(آخر {count})",
-    "team_preview_no_runs": "لم يتم تنفيذ هذا الفريق بعد."
+    "team_preview_no_runs": "لم يتم تنفيذ هذا الفريق بعد.",
+    "group_binding_label": "المجموعة المرتبطة",
+    "group_binding_none": "بدون مجموعة — احتفظ بالمشروع مستقلاً",
+    "group_binding_empty": "لا توجد مجموعات بعد — أنشئ واحدة من العملاء ← المجموعات لربطها هنا.",
+    "group_binding_bound": "تم ربط المشروع بمساحة عمل PersonaGroup هذه",
+    "group_binding_orphan": "تم حذف المجموعة المرتبطة؛ افتح المشروع لإعادة الربط",
+    "group_binding_orphan_label": "تمت إزالة المجموعة"
   },
   "dev_runner": {
     "self_healing": "المعالجة الذاتية",

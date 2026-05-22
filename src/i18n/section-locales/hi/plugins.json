@@ -1701,7 +1701,13 @@
     "team_preview_unknown_persona": "(पर्सोना हटा दी गई)",
     "team_preview_recent_runs": "हाल के रन",
     "team_preview_recent_runs_total": "(पिछले {count})",
-    "team_preview_no_runs": "इस टीम को अभी तक निष्पादित नहीं किया गया है।"
+    "team_preview_no_runs": "इस टीम को अभी तक निष्पादित नहीं किया गया है।",
+    "group_binding_label": "बंधा हुआ समूह",
+    "group_binding_none": "कोई समूह नहीं — प्रोजेक्ट स्टैंडअलोन रखें",
+    "group_binding_empty": "अभी तक कोई समूह नहीं — एजेंट्स → समूह में बनाकर यहाँ बाँधें।",
+    "group_binding_bound": "प्रोजेक्ट इस PersonaGroup कार्यक्षेत्र से बंधा है",
+    "group_binding_orphan": "बंधा हुआ समूह हटा दिया गया है; फिर से बाँधने के लिए प्रोजेक्ट खोलें",
+    "group_binding_orphan_label": "समूह हटाया गया"
   },
   "dev_runner": {
     "self_healing": "Self-Healing",

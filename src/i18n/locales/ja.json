@@ -11306,7 +11306,13 @@
       "team_preview_unknown_persona": "(ペルソナは削除されました)",
       "team_preview_recent_runs": "最近の実行",
       "team_preview_recent_runs_total": "(最新 {count} 件)",
-      "team_preview_no_runs": "このチームはまだ実行されていません。"
+      "team_preview_no_runs": "このチームはまだ実行されていません。",
+      "group_binding_label": "バインドされたグループ",
+      "group_binding_none": "グループなし — プロジェクトを独立して維持",
+      "group_binding_empty": "まだグループがありません — エージェント → グループで作成してここにバインドできます。",
+      "group_binding_bound": "プロジェクトはこの PersonaGroup ワークスペースにバインドされています",
+      "group_binding_orphan": "バインドされたグループは削除されました; 再バインドするにはプロジェクトを開いてください",
+      "group_binding_orphan_label": "グループ削除済み"
     },
     "dev_runner": {
       "self_healing": "自己修復",

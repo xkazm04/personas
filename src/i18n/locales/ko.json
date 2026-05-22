@@ -11306,7 +11306,13 @@
       "team_preview_unknown_persona": "(페르소나 제거됨)",
       "team_preview_recent_runs": "최근 실행",
       "team_preview_recent_runs_total": "(최근 {count}개)",
-      "team_preview_no_runs": "이 팀은 아직 실행되지 않았습니다."
+      "team_preview_no_runs": "이 팀은 아직 실행되지 않았습니다.",
+      "group_binding_label": "바인딩된 그룹",
+      "group_binding_none": "그룹 없음 — 프로젝트를 독립적으로 유지",
+      "group_binding_empty": "아직 그룹이 없습니다 — 에이전트 → 그룹에서 만들어 여기에 바인딩하세요.",
+      "group_binding_bound": "프로젝트가 이 PersonaGroup 워크스페이스에 바인딩되었습니다",
+      "group_binding_orphan": "바인딩된 그룹이 삭제되었습니다; 다시 바인딩하려면 프로젝트를 여세요",
+      "group_binding_orphan_label": "그룹 제거됨"
     },
     "dev_runner": {
       "self_healing": "자가 복구",

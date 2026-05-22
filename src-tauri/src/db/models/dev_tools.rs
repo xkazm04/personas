@@ -110,6 +110,12 @@ pub struct DevProject {
     /// orphan-bound; UI treats unresolved team_ids as "(team removed)" and
     /// the user can re-bind. Added 2026-05-22.
     pub team_id: Option<String>,
+    /// Optional binding to a `PersonaGroup` (workspace folder). Complementary
+    /// to `team_id`: team_id ties the project to an *execution-time* pipeline
+    /// while group_id ties it to a *design-time* workspace with shared
+    /// instructions and defaults. Both can be set independently. No FK by
+    /// design — same orphan-tolerance rationale as team_id. Added 2026-05-22.
+    pub group_id: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }
