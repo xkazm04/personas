@@ -86,7 +86,26 @@ pub fn get_all_team_counts(pool: &DbPool) -> Result<Vec<TeamCounts>, AppError> {
     })
 }
 
+/// Maximum length of a team name (mirrors `MAX_GROUP_NAME_LEN` in groups.rs).
+const MAX_TEAM_NAME_LEN: usize = 200;
+
 pub fn create(pool: &DbPool, input: CreateTeamInput) -> Result<PersonaTeam, AppError> {
+    // Validate + sanitize before touching the DB — mirrors persona_groups::create.
+    // Previously `input.name` went straight into the INSERT with no guard, so an
+    // empty, unbounded, or HTML-laden team name was silently accepted.
+    let name = crate::validation::strip_html_tags(input.name.trim());
+    if name.is_empty() {
+        return Err(AppError::Validation("Team name cannot be empty".into()));
+    }
+    if name.len() > MAX_TEAM_NAME_LEN {
+        return Err(AppError::Validation(format!(
+            "Team name exceeds maximum length of {MAX_TEAM_NAME_LEN} characters"
+        )));
+    }
+    let description = input
+        .description
+        .map(|d| crate::validation::strip_html_tags(&d));
+
     timed_query!("teams", "teams::create", {
         let id = uuid::Uuid::new_v4().to_string();
         let now = chrono::Utc::now().to_rfc3339();
@@ -102,8 +121,8 @@ pub fn create(pool: &DbPool, input: CreateTeamInput) -> Result<PersonaTeam, AppE
                 id,
                 input.project_id,
                 input.parent_team_id,
-                input.name,
-                input.description,
+                name,
+                description,
                 input.canvas_data,
                 input.team_config,
                 input.icon,
@@ -222,7 +241,7 @@ pub fn clone_team(pool: &DbPool, source_team_id: &str) -> Result<PersonaTeam, Ap
                 .map_err(AppError::Database)?;
             drop(mem_stmt);
 
-            for (run_id, old_member_id, persona_id, title, content, category, importance, tags) in
+            for (_run_id, old_member_id, persona_id, title, content, category, importance, tags) in
                 &mem_rows
             {
                 let new_mem_id = uuid::Uuid::new_v4().to_string();
@@ -230,13 +249,19 @@ pub fn clone_team(pool: &DbPool, source_team_id: &str) -> Result<PersonaTeam, Ap
                     .as_ref()
                     .and_then(|old| member_id_map.get(old).cloned())
                     .or_else(|| old_member_id.clone());
+                // run_id is intentionally dropped: the source's run_id points at
+                // a pipeline_run owned by the SOURCE team, and the clone has no
+                // runs of its own. Carrying it over would let queries-by-run
+                // (e.g. list_team_memories_by_run) mix both teams' memories
+                // under one run. A NULL run_id makes the cloned memory "manual",
+                // which is the correct semantics for a freshly forked team.
                 tx.execute(
                     "INSERT INTO team_memories (id, team_id, run_id, member_id, persona_id, title, content, category, importance, tags, created_at, updated_at)
                      VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?11)",
                     params![
                         new_mem_id,
                         new_team_id,
-                        run_id,
+                        Option::<String>::None,
                         remapped_member_id,
                         persona_id,
                         title,
