@@ -127,15 +127,16 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
           'success',
         );
       } else {
-        // Partial success — addToast only has success/error so we use
-        // success (members DID land; the failures show inline in the
-        // modal which stays open). Tone in the message conveys the mix.
+        // Partial success — Stage-6 added the warning tone (amber band,
+        // polite ARIA) for exactly this case: real value landed AND
+        // meaningful failures occurred, so neither success-tone-lie nor
+        // error-tone-panic fits.
         addToast(
           tx(t.templates.presets.toast_partial, {
             ok: res.members.length,
             failed: res.failed_members.length,
           }),
-          'success',
+          'warning',
         );
       }
     } catch (err) {
