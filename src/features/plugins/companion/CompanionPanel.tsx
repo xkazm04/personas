@@ -45,6 +45,7 @@ import {
   companionResetConversation,
   companionSendMessage,
   type BackgroundJob,
+  type BrainKind,
   type CompanionRecallPreviewEvent,
   type CompanionStreamEvent,
   type CompanionTurnSummaryEvent,
@@ -726,6 +727,16 @@ function Body(props: BodyProps) {
     companionInterruptTurn(turnId).catch(silentCatch('companion_interrupt_turn'));
   }, []);
 
+  // RecallStrip Stage 2: a click on a recall chip opens the Brain Viewer
+  // pinned to that memory id. `setBrainView({ kind, id })` jumps straight
+  // to DetailView; the overlay paints itself over the transcript.
+  const handleOpenInBrain = useCallback(
+    (kind: BrainKind, id: string) => {
+      setBrainView({ open: true, kind, id });
+    },
+    [setBrainView],
+  );
+
   // Subscribe to direct-navigation events fired by Athena's `open_route`
   // op. By design these bypass the approval flow — Athena just switches
   // the sidebar behind the chat. We deliberately do NOT collapse the
@@ -1126,7 +1137,12 @@ function Body(props: BodyProps) {
                   : [];
               return (
                 <div key={m.id} className="space-y-1">
-                  {recall && <RecallStrip preview={recall} />}
+                  {recall && (
+                    <RecallStrip
+                      preview={recall}
+                      onOpenInBrain={handleOpenInBrain}
+                    />
+                  )}
                   <Bubble role={m.role} index={i}>
                     {m.content}
                   </Bubble>
@@ -1158,7 +1174,12 @@ function Body(props: BodyProps) {
                 exit={{ opacity: 0, y: -4 }}
                 transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
               >
-                {streamingRecall && <RecallStrip preview={streamingRecall} />}
+                {streamingRecall && (
+                  <RecallStrip
+                    preview={streamingRecall}
+                    onOpenInBrain={handleOpenInBrain}
+                  />
+                )}
                 <div className="relative group">
                   <Bubble role="assistant" streaming index={messages.length}>
                     {/*

@@ -54,7 +54,7 @@ Each turn, after the prompt builder runs but before the CLI spawns, the backend 
 
 The panel renders this as a thin `RecallStrip` collapsed above each assistant bubble: a single-line summary ("Athena replayed 5 recent turns and consulted 12 memories") that expands on click to show the actual titles grouped by kind. The strip persists on the bubble for the rest of the session; an app restart drops the strip (recall is ephemeral working memory).
 
-Stage 1 of 2 — chips are read-only. Stage 2 will wire each chip to open the Brain Viewer scoped to that entry.
+Stage 2 wired: each chip is a button that calls `setBrainView({ open: true, kind, id })` to open the Brain Viewer as an overlay over the chat transcript, jumped straight to the detail view for that memory. Group→kind mapping matches the backend's parent kinds (`doctrine`, `fact`, `procedural`, `goal`, `backlog`) — `companion_get_brain_item` dispatches `fact` / `procedural` / `goal` / `backlog` to the scoped fetchers so the parent-kind lookup resolves whichever scoped variant owns the id. Closes the loop from "what did Athena consult this turn" to "what's actually in that memory."
 
 ## Turn-summary chip
 

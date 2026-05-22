@@ -76,4 +76,62 @@ describe('RecallStrip', () => {
     render(<RecallStrip preview={preview({ episodeCount: 1 })} />);
     expect(screen.queryByText(/synthesized/i)).toBeNull();
   });
+
+  it('renders chips as read-only spans when onOpenInBrain is not provided', () => {
+    render(
+      <RecallStrip
+        preview={preview({
+          episodeCount: 1,
+          facts: [{ id: 'fact_a', title: 'fact-key-alpha' }],
+        })}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button')); // expand header
+    expect(screen.queryByTestId('companion-recall-chip')).toBeNull();
+    expect(screen.getByText('fact-key-alpha').tagName).toBe('SPAN');
+  });
+
+  it('renders chips as buttons + calls onOpenInBrain with kind+id on click', () => {
+    const calls: { kind: string; id: string }[] = [];
+    render(
+      <RecallStrip
+        preview={preview({
+          episodeCount: 1,
+          facts: [{ id: 'fact_a', title: 'fact-key-alpha' }],
+          procedurals: [{ id: 'p1', title: 'rule-x' }],
+          doctrine: [{ id: 'd1', title: 'persona-design' }],
+          goals: [{ id: 'g1', title: 'goal-y' }],
+          backlog: [{ id: 'b1', title: 'backlog-z' }],
+        })}
+        onOpenInBrain={(kind, id) => calls.push({ kind, id })}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /Athena/i })); // expand header
+    const chips = screen.getAllByTestId('companion-recall-chip');
+    expect(chips).toHaveLength(5);
+    // Click each chip and verify kind+id flow through.
+    chips.forEach((chip) => fireEvent.click(chip));
+    expect(calls).toEqual([
+      { kind: 'doctrine', id: 'd1' },
+      { kind: 'fact', id: 'fact_a' },
+      { kind: 'procedural', id: 'p1' },
+      { kind: 'goal', id: 'g1' },
+      { kind: 'backlog', id: 'b1' },
+    ]);
+  });
+
+  it('falls back to a span when an entry has no id (defensive)', () => {
+    render(
+      <RecallStrip
+        preview={preview({
+          episodeCount: 1,
+          facts: [{ id: '', title: 'no-id-fact' }],
+        })}
+        onOpenInBrain={() => {}}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button'));
+    expect(screen.queryByTestId('companion-recall-chip')).toBeNull();
+    expect(screen.getByText('no-id-fact').tagName).toBe('SPAN');
+  });
 });

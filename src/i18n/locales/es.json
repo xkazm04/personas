@@ -10795,6 +10795,7 @@
       "recall_group_procedurals": "Rules",
       "recall_group_goals": "Goals",
       "recall_group_backlog": "Backlog",
+      "recall_open_in_brain": "Abrir en el Visor del Cerebro: {title}",
       "turn_summary_label": "What Athena did this turn",
       "turn_summary_nav": "navigated",
       "turn_summary_approval": "approval",
