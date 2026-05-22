@@ -131,6 +131,31 @@ The **Tool Runner** UI (inline invocation from the Connectors sub-tab)
 has been descoped; the backend `run_tool` command remains for future
 surfaces (Lab, test harnesses).
 
+### Persona icons
+
+A persona's `icon` column is a free-form string with four recognised
+shapes, all classified in one place — `resolvePersonaIcon()`
+(`src/lib/icons/resolvePersonaIcon.ts`). Both renderers, `PersonaIcon`
+and `PersonaAvatar`, route through it so they never disagree:
+
+| `icon` value | Kind | Source |
+|---|---|---|
+| `agent-icon:{id}` | built-in | curated 20-icon catalog (`agentIconCatalog.ts`), theme-aware sprite |
+| `custom-icon:{sha256}` | custom | user-uploaded image file |
+| `https://…` | url | remote image (SSRF-sanitized) |
+| a short glyph | emoji | literal emoji text |
+
+The Settings tab's icon picker (`PersonaIconPickerModal`) offers the
+built-in catalog plus **Upload image** and a **Your icons** library.
+Uploads go through `import_persona_icon`
+(`src-tauri/src/commands/core/persona_icons.rs`): the source file is
+size-gated, decoded, downscaled to ≤512 px, and re-encoded to PNG —
+the round trip strips metadata and format-specific payloads. Files are
+content-addressed and stored at `{app_data_dir}/persona-icons/{sha256}.png`;
+the directory is the reusable icon library (no DB table). Custom icons
+are **local-only** — they do not travel with a persona through export,
+bundle, or share-link, which fall back to a built-in icon.
+
 ## Gotchas that burn time
 
 1. **`design_context` has two formats.** Old personas store a flat
