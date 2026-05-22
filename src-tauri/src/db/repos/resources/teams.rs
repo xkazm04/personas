@@ -260,20 +260,13 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     timed_query!("teams", "teams::delete", {
         let mut conn = pool.get()?;
         let tx = conn.transaction().map_err(AppError::Database)?;
-        // pipeline_runs is now FK-CASCADE'd via the FK hygiene ADR
-        // (2026-05-02-fk-hygiene-cascade); the other three tables remain
-        // outside the FK-hygiene scope (persona_team_connections,
-        // persona_team_members, team_memories) and still need manual
-        // cleanup. PRAGMA foreign_keys = ON is the global default per
-        // db/mod.rs:83-86, so the CASCADE actually fires.
-        tx.execute(
-            "DELETE FROM persona_team_connections WHERE team_id = ?1",
-            params![id],
-        )?;
-        tx.execute(
-            "DELETE FROM persona_team_members WHERE team_id = ?1",
-            params![id],
-        )?;
+        // persona_team_members, persona_team_connections, and pipeline_runs all
+        // declare `REFERENCES persona_teams(id) ON DELETE CASCADE` in schema.rs
+        // (the last via the 2026-05-02-fk-hygiene-cascade ADR), and
+        // PRAGMA foreign_keys = ON is the global default (db/mod.rs), so
+        // deleting the team row cascades to all three automatically.
+        // team_memories.team_id has NO foreign key, so it is the only child
+        // table that still needs an explicit DELETE.
         tx.execute("DELETE FROM team_memories WHERE team_id = ?1", params![id])?;
         let rows = tx.execute("DELETE FROM persona_teams WHERE id = ?1", params![id])?;
         tx.commit().map_err(AppError::Database)?;
@@ -671,7 +664,13 @@ pub fn update_pipeline_run(
 ) -> Result<(), AppError> {
     timed_query!("teams", "teams::update_pipeline_run", {
         let conn = pool.get()?;
-        let completed_at = if status == "completed" || status == "failed" {
+        // A run is terminal — and therefore has a completion timestamp — for
+        // "cancelled" too, not just "completed"/"failed". The pipeline executor
+        // emits "cancelled" as a final status (pipeline_executor.rs); omitting
+        // it here left cancelled runs with completed_at = NULL forever, which
+        // breaks duration math in pipeline analytics.
+        let completed_at = if status == "completed" || status == "failed" || status == "cancelled"
+        {
             Some(chrono::Utc::now().to_rfc3339())
         } else {
             None
