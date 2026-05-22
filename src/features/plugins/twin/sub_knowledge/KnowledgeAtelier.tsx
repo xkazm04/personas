@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BookOpen, CheckCircle2, XCircle, Clock, MessageSquare, ArrowDownLeft, ArrowUpRight, Inbox, History, Library, Star, Quote, Download, X } from 'lucide-react';
+import { ArrowRightCircle, BookOpen, CheckCircle2, XCircle, Clock, Loader2, MessageSquare, ArrowDownLeft, ArrowUpRight, Inbox, History, Library, Star, Quote, Download, X } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
 import { TwinEmptyState } from '../TwinEmptyState';
 import { TwinWikiPanel } from '../_shared/TwinWikiPanel';
 import { useTranslation } from '@/i18n/useTranslation';
+import * as twinApi from '@/api/twin/twin';
 import { ingestDoctrineDocs } from '@/api/twin/twin';
 
 /* ------------------------------------------------------------------ *
@@ -57,8 +58,11 @@ export default function KnowledgeAtelier() {
   const reviewMemory = useSystemStore((s) => s.reviewTwinMemory);
   const fetchComms = useSystemStore((s) => s.fetchTwinCommunications);
 
+  const setTwinTab = useSystemStore((s) => s.setTwinTab);
+  const setPendingTrainingQuestions = useSystemStore((s) => s.setPendingTrainingQuestions);
   const [filter, setFilter] = useState<MemoryFilter>('pending');
   const [reviewingId, setReviewingId] = useState<string | null>(null);
+  const [digDeeperId, setDigDeeperId] = useState<string | null>(null);
   const [ingestingDocs, setIngestingDocs] = useState(false);
   // Reject reason capture — when set, the inline reason picker expands under
   // the memory card instead of immediately rejecting. The reviewer_notes column
@@ -102,6 +106,44 @@ export default function KnowledgeAtelier() {
   const handleReview = async (id: string, approved: boolean, reviewerNotes?: string) => {
     setReviewingId(id);
     try { await reviewMemory(id, approved, reviewerNotes); } finally { setReviewingId(null); }
+  };
+
+  // Mirror of the Reflections "Dig deeper" loop (cycle 5) for memories:
+  // approve + generate 2 follow-up training questions from this memory's body
+  // + hand off via the shared pendingTrainingQuestions slot + jump to Training.
+  // Reuses generateBio so all twin AI surfaces share one retry/timeout policy.
+  const handleDigDeeper = async (memId: string, memTitle: string | null, memContent: string) => {
+    if (!activeTwin || !activeTwinId || digDeeperId) return;
+    setDigDeeperId(memId);
+    try {
+      const seed = memTitle ? `${memTitle} — ${memContent}` : memContent;
+      const prompt = `Below is a recently-approved memory about ${activeTwin.name}${activeTwin.role ? ` (${activeTwin.role})` : ''}. Your job: generate exactly 2 specific, conversational interview questions that would help ${activeTwin.name} elaborate on what this memory captures — angles a thoughtful interviewer would explore next, not generic prompts and not re-asking what the memory already says.
+
+Output ONLY the 2 questions, one per line, numbered 1-2. No preamble.
+
+Memory: ${seed}`;
+      const result = await twinApi.generateBio(activeTwin.name, activeTwin.role ?? null, prompt);
+      const questions = result
+        .split('\n')
+        .map((l) => l.replace(/^\d+[.)]\s*/, '').trim())
+        .filter((l) => l.length > 8)
+        .slice(0, 2);
+      if (questions.length === 0) {
+        addToast(t.knowledge.digDeeperError, 'error');
+        return;
+      }
+      // Approve the memory inline as part of the dig-deeper gesture — the
+      // user's "dig deeper" is a stronger signal than approve alone, and a
+      // memory that prompted a follow-up shouldn't sit in pending limbo.
+      await reviewMemory(memId, true, 'dig_deeper');
+      setPendingTrainingQuestions(questions);
+      addToast(t.knowledge.digDeeperToast, 'success');
+      setTwinTab('training');
+    } catch (e) {
+      addToast(e instanceof Error ? e.message : t.knowledge.digDeeperError, 'error');
+    } finally {
+      setDigDeeperId(null);
+    }
   };
 
   const openRejectFlow = (id: string) => {
@@ -297,10 +339,21 @@ export default function KnowledgeAtelier() {
                           <span className="typo-caption text-foreground">{new Date(mem.created_at).toLocaleDateString()}</span>
                           {isPending && (
                             <div className="ml-auto flex items-center gap-1">
-                              <button onClick={() => handleReview(mem.id, true)} disabled={isReviewing || rejectingId !== null} className="px-2 py-1 rounded-interactive text-[11px] font-medium text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors flex items-center gap-1 disabled:opacity-50">
+                              <button onClick={() => handleReview(mem.id, true)} disabled={isReviewing || rejectingId !== null || digDeeperId !== null} className="px-2 py-1 rounded-interactive text-[11px] font-medium text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors flex items-center gap-1 disabled:opacity-50">
                                 <CheckCircle2 className="w-3 h-3" /> {t.knowledge.approveAction}
                               </button>
-                              <button onClick={() => openRejectFlow(mem.id)} disabled={isReviewing || rejectingId !== null} className="px-2 py-1 rounded-interactive text-[11px] font-medium text-red-300 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 transition-colors flex items-center gap-1 disabled:opacity-50">
+                              <button
+                                onClick={() => void handleDigDeeper(mem.id, mem.title, mem.content)}
+                                disabled={isReviewing || rejectingId !== null || digDeeperId !== null}
+                                title={t.knowledge.digDeeperTooltip}
+                                className="px-2 py-1 rounded-interactive text-[11px] font-medium text-violet-300 bg-violet-500/10 border border-violet-500/20 hover:bg-violet-500/20 transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {digDeeperId === mem.id
+                                  ? <Loader2 className="w-3 h-3 animate-spin" />
+                                  : <ArrowRightCircle className="w-3 h-3" />}
+                                {digDeeperId === mem.id ? t.knowledge.digDeeperGenerating : t.knowledge.digDeeperCta}
+                              </button>
+                              <button onClick={() => openRejectFlow(mem.id)} disabled={isReviewing || rejectingId !== null || digDeeperId !== null} className="px-2 py-1 rounded-interactive text-[11px] font-medium text-red-300 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 transition-colors flex items-center gap-1 disabled:opacity-50">
                                 <XCircle className="w-3 h-3" /> {t.knowledge.rejectAction}
                               </button>
                             </div>

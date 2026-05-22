@@ -13343,6 +13343,11 @@ export type Translations = {
       switchToPending: string;
       approveTitle: string;
       rejectTitle: string;
+      digDeeperCta: string;
+      digDeeperGenerating: string;
+      digDeeperTooltip: string;
+      digDeeperToast: string;
+      digDeeperError: string;
       rejectReasonHeading: string;
       rejectReasonIrrelevant: string;
       rejectReasonInaccurate: string;
