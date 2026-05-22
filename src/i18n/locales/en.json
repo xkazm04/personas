@@ -11185,7 +11185,10 @@
         "live_view_files_label": "files",
         "live_view_files_more": "+{count} more",
         "live_view_failure_label": "recent failure",
-        "live_view_summary_label": "summary"
+        "live_view_summary_label": "summary",
+        "batch_pending_label": "{count} approvals pending from {session}",
+        "batch_approve_all": "Approve all",
+        "batch_approving": "Approving…"
       }
     },
     "ocr": {

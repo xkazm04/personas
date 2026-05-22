@@ -1413,7 +1413,10 @@
       "live_view_files_label": "Dateien",
       "live_view_files_more": "+{count} weitere",
       "live_view_failure_label": "letzter Fehler",
-      "live_view_summary_label": "Zusammenfassung"
+      "live_view_summary_label": "Zusammenfassung",
+      "batch_pending_label": "{count} Freigaben ausstehend von {session}",
+      "batch_approve_all": "Alle genehmigen",
+      "batch_approving": "Wird genehmigt…"
     }
   },
   "ocr": {

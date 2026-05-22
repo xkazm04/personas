@@ -1413,7 +1413,10 @@
       "live_view_files_label": "soubory",
       "live_view_files_more": "+{count} dalších",
       "live_view_failure_label": "nedávné selhání",
-      "live_view_summary_label": "souhrn"
+      "live_view_summary_label": "souhrn",
+      "batch_pending_label": "{count} schválení čeká z {session}",
+      "batch_approve_all": "Schválit vše",
+      "batch_approving": "Schvaluje se…"
     }
   },
   "ocr": {

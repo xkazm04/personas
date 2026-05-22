@@ -11007,7 +11007,10 @@
         "live_view_files_label": "файлы",
         "live_view_files_more": "+{count} ещё",
         "live_view_failure_label": "недавняя ошибка",
-        "live_view_summary_label": "сводка"
+        "live_view_summary_label": "сводка",
+        "batch_pending_label": "{count} одобрений ожидает от {session}",
+        "batch_approve_all": "Одобрить все",
+        "batch_approving": "Одобрение…"
       }
     },
     "ocr": {

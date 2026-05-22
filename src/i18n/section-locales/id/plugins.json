@@ -1413,7 +1413,10 @@
       "live_view_files_label": "berkas",
       "live_view_files_more": "+{count} lainnya",
       "live_view_failure_label": "kegagalan terkini",
-      "live_view_summary_label": "ringkasan"
+      "live_view_summary_label": "ringkasan",
+      "batch_pending_label": "{count} persetujuan menunggu dari {session}",
+      "batch_approve_all": "Setujui semua",
+      "batch_approving": "Menyetujui…"
     }
   },
   "ocr": {

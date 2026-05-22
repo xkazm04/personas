@@ -1413,7 +1413,10 @@
       "live_view_files_label": "파일",
       "live_view_files_more": "+{count}개 더",
       "live_view_failure_label": "최근 실패",
-      "live_view_summary_label": "요약"
+      "live_view_summary_label": "요약",
+      "batch_pending_label": "{session}에서 {count}개 승인 대기 중",
+      "batch_approve_all": "모두 승인",
+      "batch_approving": "승인 중…"
     }
   },
   "ocr": {

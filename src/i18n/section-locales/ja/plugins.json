@@ -1413,7 +1413,10 @@
       "live_view_files_label": "ファイル",
       "live_view_files_more": "他 {count} 件",
       "live_view_failure_label": "最近の失敗",
-      "live_view_summary_label": "要約"
+      "live_view_summary_label": "要約",
+      "batch_pending_label": "{session} から {count} 件の承認待ち",
+      "batch_approve_all": "すべて承認",
+      "batch_approving": "承認中…"
     }
   },
   "ocr": {

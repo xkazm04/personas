@@ -91,6 +91,12 @@ Wire:
 
 Why approval-gated when `use_connector` isn't: a scheduled check-in puts a future obligation on the user's attention. Unlike connector calls (which run on pre-greenlit pinned credentials), the consent isn't already present — Athena's "I'll ping you about X in 3 days" needs the user to actually agree before the row lands.
 
+## MCP request panel (D3 — batched approvals)
+
+Pending MCP requests from fleet sessions land in `McpRequestPanel` above the chat transcript: one card per request, with guidance prompts taking text input and approvals taking ✓/✗ + an optional note. The panel groups by `fleetSessionId` so cards from the same session render together — and when a single session has 2+ pending `approval`-kind requests, the group header renders a primary "Approve all" button that fires `resolveMcpRequest(_, { approved: true, note: '' })` for every approval in that group in parallel (`Promise.allSettled` so one failure doesn't stall the rest). Guidance requests are never batched — they need typed answers.
+
+Common case the batch unblocks: a fleet session pauses on 3-5 file-writes / shell commands / API calls in a row. Without batching, the user clicks Approve five times; with batching, one click clears the queue and the session resumes.
+
 ## Live ops strip (D7 — operative-memory view)
 
 When orchestration is in flight, the strip above the chat transcript surfaces the same operative-memory digest Athena reads every turn. The frontend now parses the backend's markdown digest into structured rows (`parseDigest.ts`) and renders each in-flight operation as its own collapsible card: status badge, intent, duration, id, and a sessions count. Click an op → expand its sessions; each session shows its state, current tool, intent, latest checkpoint (with blockers if present), files touched, recent failure, and rolling summary — the same fields Athena sees, but navigable instead of one monospace blob.

@@ -1413,7 +1413,10 @@
       "live_view_files_label": "tệp",
       "live_view_files_more": "+{count} nữa",
       "live_view_failure_label": "lỗi gần đây",
-      "live_view_summary_label": "tóm tắt"
+      "live_view_summary_label": "tóm tắt",
+      "batch_pending_label": "{count} phê duyệt đang chờ từ {session}",
+      "batch_approve_all": "Phê duyệt tất cả",
+      "batch_approving": "Đang phê duyệt…"
     }
   },
   "ocr": {

@@ -11007,7 +11007,10 @@
         "live_view_files_label": "文件",
         "live_view_files_more": "另有 {count} 个",
         "live_view_failure_label": "最近故障",
-        "live_view_summary_label": "摘要"
+        "live_view_summary_label": "摘要",
+        "batch_pending_label": "{session} 有 {count} 个待批准",
+        "batch_approve_all": "全部批准",
+        "batch_approving": "批准中…"
       }
     },
     "ocr": {

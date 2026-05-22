@@ -1413,7 +1413,10 @@
       "live_view_files_label": "fichiers",
       "live_view_files_more": "+{count} de plus",
       "live_view_failure_label": "échec récent",
-      "live_view_summary_label": "résumé"
+      "live_view_summary_label": "résumé",
+      "batch_pending_label": "{count} approbations en attente de {session}",
+      "batch_approve_all": "Tout approuver",
+      "batch_approving": "Approbation…"
     }
   },
   "ocr": {

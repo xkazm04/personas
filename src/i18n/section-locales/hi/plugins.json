@@ -1413,7 +1413,10 @@
       "live_view_files_label": "फ़ाइलें",
       "live_view_files_more": "+{count} और",
       "live_view_failure_label": "हाल की विफलता",
-      "live_view_summary_label": "सारांश"
+      "live_view_summary_label": "सारांश",
+      "batch_pending_label": "{session} से {count} अनुमोदन लंबित",
+      "batch_approve_all": "सभी अनुमोदित करें",
+      "batch_approving": "अनुमोदन हो रहा है…"
     }
   },
   "ocr": {

@@ -1413,7 +1413,10 @@
       "live_view_files_label": "ফাইল",
       "live_view_files_more": "+{count} আরও",
       "live_view_failure_label": "সাম্প্রতিক ব্যর্থতা",
-      "live_view_summary_label": "সারাংশ"
+      "live_view_summary_label": "সারাংশ",
+      "batch_pending_label": "{session} থেকে {count}টি অনুমোদন মুলতুবি",
+      "batch_approve_all": "সব অনুমোদন",
+      "batch_approving": "অনুমোদন হচ্ছে…"
     }
   },
   "ocr": {

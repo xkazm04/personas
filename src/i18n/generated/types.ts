@@ -11192,6 +11192,9 @@ export type Translations = {
         live_view_files_more: string;
         live_view_failure_label: string;
         live_view_summary_label: string;
+        batch_pending_label: string;
+        batch_approve_all: string;
+        batch_approving: string;
       };
     };
     ocr: {

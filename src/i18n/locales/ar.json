@@ -11007,7 +11007,10 @@
         "live_view_files_label": "الملفات",
         "live_view_files_more": "+{count} أخرى",
         "live_view_failure_label": "فشل حديث",
-        "live_view_summary_label": "ملخص"
+        "live_view_summary_label": "ملخص",
+        "batch_pending_label": "{count} موافقات معلقة من {session}",
+        "batch_approve_all": "الموافقة على الكل",
+        "batch_approving": "جارٍ الموافقة…"
       }
     },
     "ocr": {
