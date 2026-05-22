@@ -34,6 +34,32 @@ function matches(query: string, profile: TwinProfile): boolean {
   );
 }
 
+// Locale-aware "2d ago" / "il y a 2 j" rendering — no per-locale i18n keys
+// needed because Intl.RelativeTimeFormat picks the right unit suffix from
+// the user's runtime locale. Returns '' for unparseable or future stamps.
+const RELATIVE_TIME = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto', style: 'short' });
+function relativeFromIso(iso: string | null | undefined): string {
+  if (!iso) return '';
+  const then = Date.parse(iso);
+  if (Number.isNaN(then)) return '';
+  const diffMs = then - Date.now();
+  if (diffMs > 0) return '';
+  const diffSec = Math.round(diffMs / 1000);
+  const absSec = Math.abs(diffSec);
+  if (absSec < 60) return RELATIVE_TIME.format(diffSec, 'second');
+  const diffMin = Math.round(diffSec / 60);
+  if (Math.abs(diffMin) < 60) return RELATIVE_TIME.format(diffMin, 'minute');
+  const diffHr = Math.round(diffMin / 60);
+  if (Math.abs(diffHr) < 24) return RELATIVE_TIME.format(diffHr, 'hour');
+  const diffDay = Math.round(diffHr / 24);
+  if (Math.abs(diffDay) < 7) return RELATIVE_TIME.format(diffDay, 'day');
+  const diffWeek = Math.round(diffDay / 7);
+  if (Math.abs(diffWeek) < 5) return RELATIVE_TIME.format(diffWeek, 'week');
+  const diffMonth = Math.round(diffDay / 30);
+  if (Math.abs(diffMonth) < 12) return RELATIVE_TIME.format(diffMonth, 'month');
+  return RELATIVE_TIME.format(Math.round(diffDay / 365), 'year');
+}
+
 export function TwinPicker({ profiles, activeTwinId, onSelect, onCreateNew }: Props) {
   const { t: tFull } = useTranslation();
   const t = tFull.twin;
@@ -45,12 +71,19 @@ export function TwinPicker({ profiles, activeTwinId, onSelect, onCreateNew }: Pr
   const itemsRef = useRef<Array<HTMLButtonElement | null>>([]);
 
   const ordered = useMemo(() => {
-    // Active twin always pinned at the top; rest alphabetical for stability.
+    // Active twin always pinned at the top; rest by most-recently-touched
+    // (updated_at desc). With 3+ twins the alphabetical order forced the
+    // user to scan every row; most return to the same 1-2 twins so recency
+    // is the better default. Name is the tiebreaker for stamps that share
+    // a second.
     const active = profiles.find((p) => p.id === activeTwinId);
     const rest = profiles
       .filter((p) => p.id !== activeTwinId)
       .slice()
-      .sort((a, b) => a.name.localeCompare(b.name));
+      .sort((a, b) => {
+        const cmp = (b.updated_at ?? '').localeCompare(a.updated_at ?? '');
+        return cmp !== 0 ? cmp : a.name.localeCompare(b.name);
+      });
     return active ? [active, ...rest] : rest;
   }, [profiles, activeTwinId]);
 
@@ -177,7 +210,13 @@ export function TwinPicker({ profiles, activeTwinId, onSelect, onCreateNew }: Pr
                       <Sparkles className={`w-3.5 h-3.5 flex-shrink-0 ${isActive ? 'text-violet-300' : 'text-foreground'}`} />
                       <span className="flex-1 min-w-0">
                         <span className="block typo-caption text-foreground truncate">{p.name}</span>
-                        {p.role && <span className="block text-[10px] text-foreground truncate">{p.role}</span>}
+                        {(p.role || p.updated_at) && (
+                          <span className="block text-[10px] text-foreground truncate">
+                            {p.role}
+                            {p.role && p.updated_at && <span className="mx-1 opacity-50">·</span>}
+                            {p.updated_at && <span className="tabular-nums opacity-70">{relativeFromIso(p.updated_at)}</span>}
+                          </span>
+                        )}
                       </span>
                       {isActive && <Check className="w-3.5 h-3.5 text-violet-300 flex-shrink-0" />}
                     </button>
