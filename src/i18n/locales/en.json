@@ -12612,7 +12612,10 @@
       "memory_modal_authored_by": "Authored by {name}",
       "memory_modal_importance": "importance {value}",
       "memory_modal_footer_count_one": "{count} memory",
-      "memory_modal_footer_count_other": "{count} memories"
+      "memory_modal_footer_count_other": "{count} memories",
+      "unshare_title": "Unshare from group — memory reverts to persona-private",
+      "unshare_success": "Memory unshared from group",
+      "unshare_failure": "Could not unshare memory"
     }
   },
   "auth": {

@@ -193,6 +193,9 @@
     "memory_modal_footer_count_one": "{count} memori",
     "memory_modal_footer_count_other": "{count} memori",
     "clear_defaults_action": "Hapus semua default",
-    "clear_defaults_title": "Kosongkan instruksi bersama + model + anggaran + giliran. Persona yang ada tidak terpengaruh."
+    "clear_defaults_title": "Kosongkan instruksi bersama + model + anggaran + giliran. Persona yang ada tidak terpengaruh.",
+    "unshare_title": "Hapus berbagi dari grup — memori kembali menjadi pribadi persona",
+    "unshare_success": "Memori dihapus dari berbagi grup",
+    "unshare_failure": "Tidak dapat membatalkan berbagi memori"
   }
 }

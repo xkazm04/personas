@@ -193,6 +193,9 @@
     "memory_modal_footer_count_one": "{count} 件のメモリ",
     "memory_modal_footer_count_other": "{count} 件のメモリ",
     "clear_defaults_action": "すべてのデフォルトをクリア",
-    "clear_defaults_title": "共有指示 + モデル + 予算 + ターンを空にします。既存のペルソナには影響しません。"
+    "clear_defaults_title": "共有指示 + モデル + 予算 + ターンを空にします。既存のペルソナには影響しません。",
+    "unshare_title": "グループから共有解除 — メモリはペルソナ非公開に戻ります",
+    "unshare_success": "メモリをグループから共有解除しました",
+    "unshare_failure": "メモリの共有解除に失敗しました"
   }
 }

@@ -193,6 +193,9 @@
     "memory_modal_footer_count_one": "{count} memoria",
     "memory_modal_footer_count_other": "{count} memorias",
     "clear_defaults_action": "Borrar todos los valores por defecto",
-    "clear_defaults_title": "Vaciar instrucciones compartidas + modelo + presupuesto + turnos. Las personas existentes no se ven afectadas."
+    "clear_defaults_title": "Vaciar instrucciones compartidas + modelo + presupuesto + turnos. Las personas existentes no se ven afectadas.",
+    "unshare_title": "Dejar de compartir con el grupo — la memoria vuelve a ser privada de la persona",
+    "unshare_success": "Memoria dejada de compartir con el grupo",
+    "unshare_failure": "No se pudo dejar de compartir la memoria"
   }
 }

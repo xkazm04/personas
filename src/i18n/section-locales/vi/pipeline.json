@@ -193,6 +193,9 @@
     "memory_modal_footer_count_one": "{count} ký ức",
     "memory_modal_footer_count_other": "{count} ký ức",
     "clear_defaults_action": "Xóa tất cả mặc định",
-    "clear_defaults_title": "Làm trống hướng dẫn chung + mô hình + ngân sách + lượt. Persona hiện có không bị ảnh hưởng."
+    "clear_defaults_title": "Làm trống hướng dẫn chung + mô hình + ngân sách + lượt. Persona hiện có không bị ảnh hưởng.",
+    "unshare_title": "Hủy chia sẻ với nhóm — ký ức trở lại riêng tư cho persona",
+    "unshare_success": "Đã hủy chia sẻ ký ức với nhóm",
+    "unshare_failure": "Không thể hủy chia sẻ ký ức"
   }
 }

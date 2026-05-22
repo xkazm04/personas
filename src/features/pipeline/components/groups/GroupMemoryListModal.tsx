@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
-import { Brain, X } from 'lucide-react';
+import { Brain, X, Link2Off } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { PersonaGroup } from '@/lib/bindings/PersonaGroup';
 import type { PersonaMemory } from '@/lib/bindings/PersonaMemory';
-import { listGroupMemories } from '@/api/overview/memories';
+import { listGroupMemories, updateMemoryGroupId } from '@/api/overview/memories';
 import { silentCatch } from '@/lib/silentCatch';
 import { useAgentStore } from '@/stores/agentStore';
+import { useToastStore } from '@/stores/toastStore';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 
 interface GroupMemoryListModalProps {
@@ -19,8 +20,33 @@ interface GroupMemoryListModalProps {
 export function GroupMemoryListModal({ open, group, onClose }: GroupMemoryListModalProps) {
   const { t, tx } = useTranslation();
   const personas = useAgentStore((s) => s.personas);
+  const addToast = useToastStore((s) => s.addToast);
   const [memories, setMemories] = useState<PersonaMemory[] | null>(null);
   const [loading, setLoading] = useState(false);
+  const [unsharing, setUnsharing] = useState<Set<string>>(() => new Set());
+
+  const handleUnshare = async (memoryId: string) => {
+    setUnsharing((prev) => {
+      const next = new Set(prev);
+      next.add(memoryId);
+      return next;
+    });
+    try {
+      await updateMemoryGroupId(memoryId, null);
+      // Optimistic local removal — the memory is no longer in this group's pool.
+      setMemories((prev) => (prev ? prev.filter((m) => m.id !== memoryId) : prev));
+      addToast(t.pipeline.groups.unshare_success, 'success');
+    } catch (err) {
+      silentCatch('features/pipeline/components/groups/GroupMemoryListModal:unshare')(err);
+      addToast(t.pipeline.groups.unshare_failure, 'error');
+    } finally {
+      setUnsharing((prev) => {
+        const next = new Set(prev);
+        next.delete(memoryId);
+        return next;
+      });
+    }
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -81,7 +107,7 @@ export function GroupMemoryListModal({ open, group, onClose }: GroupMemoryListMo
               return (
                 <li
                   key={m.id}
-                  className="p-3 rounded-card bg-secondary/30 border border-primary/10"
+                  className="group/row p-3 rounded-card bg-secondary/30 border border-primary/10"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
@@ -112,6 +138,16 @@ export function GroupMemoryListModal({ open, group, onClose }: GroupMemoryListMo
                         </span>
                       </div>
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => void handleUnshare(m.id)}
+                      disabled={unsharing.has(m.id)}
+                      title={t.pipeline.groups.unshare_title}
+                      aria-label={t.pipeline.groups.unshare_title}
+                      className="opacity-0 group-hover/row:opacity-100 disabled:opacity-30 p-1.5 rounded-card hover:bg-red-500/15 text-foreground/70 hover:text-red-300 transition-all flex-shrink-0"
+                    >
+                      <Link2Off className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </li>
               );

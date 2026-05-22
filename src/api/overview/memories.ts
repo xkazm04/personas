@@ -103,6 +103,14 @@ export const listMemoriesByExecution = (executionId: string) =>
 export const listGroupMemories = (groupId: string, limit?: number) =>
   invoke<PersonaMemory[]>("list_group_memories", { groupId, limit });
 
+/**
+ * Set or clear a memory's group attribution. Pass `null` to unshare the
+ * memory from its current group (reverts to persona-private). Surfaces as
+ * the "Unshare" action on each row of GroupMemoryListModal.
+ */
+export const updateMemoryGroupId = (id: string, groupId: string | null) =>
+  invoke<boolean>("update_memory_group_id", { id, groupId });
+
 export const deleteMemory = (id: string) =>
   invoke<boolean>("delete_memory", { id });
 

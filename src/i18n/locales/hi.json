@@ -12538,7 +12538,10 @@
       "memory_modal_footer_count_one": "{count} स्मृति",
       "memory_modal_footer_count_other": "{count} स्मृतियाँ",
       "clear_defaults_action": "सभी डिफ़ॉल्ट साफ़ करें",
-      "clear_defaults_title": "साझा निर्देश + मॉडल + बजट + बारी हटाएं। मौजूदा पर्सोना अप्रभावित।"
+      "clear_defaults_title": "साझा निर्देश + मॉडल + बजट + बारी हटाएं। मौजूदा पर्सोना अप्रभावित।",
+      "unshare_title": "समूह से अनशेयर करें — स्मृति पर्सोना-निजी हो जाएगी",
+      "unshare_success": "स्मृति समूह से अनशेयर की गई",
+      "unshare_failure": "स्मृति अनशेयर नहीं की जा सकी"
     }
   },
   "auth": {

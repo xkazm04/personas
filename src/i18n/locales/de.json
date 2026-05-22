@@ -12538,7 +12538,10 @@
       "memory_modal_footer_count_one": "{count} Erinnerung",
       "memory_modal_footer_count_other": "{count} Erinnerungen",
       "clear_defaults_action": "Alle Standardwerte löschen",
-      "clear_defaults_title": "Geteilte Anweisungen + Modell + Budget + Runden leeren. Bestehende Personas bleiben unverändert."
+      "clear_defaults_title": "Geteilte Anweisungen + Modell + Budget + Runden leeren. Bestehende Personas bleiben unverändert.",
+      "unshare_title": "Freigabe für Gruppe aufheben — Erinnerung wird wieder Persona-privat",
+      "unshare_success": "Erinnerung wurde aus der Gruppe entfernt",
+      "unshare_failure": "Erinnerung konnte nicht aus der Gruppe entfernt werden"
     }
   },
   "auth": {

@@ -12538,7 +12538,10 @@
       "memory_modal_footer_count_one": "{count} souvenir",
       "memory_modal_footer_count_other": "{count} souvenirs",
       "clear_defaults_action": "Effacer toutes les valeurs par défaut",
-      "clear_defaults_title": "Vider les instructions partagées + modèle + budget + tours. Les personas existantes ne sont pas affectées."
+      "clear_defaults_title": "Vider les instructions partagées + modèle + budget + tours. Les personas existantes ne sont pas affectées.",
+      "unshare_title": "Annuler le partage avec le groupe — le souvenir redevient privé de la persona",
+      "unshare_success": "Souvenir retiré du partage de groupe",
+      "unshare_failure": "Impossible d'annuler le partage"
     }
   },
   "auth": {

@@ -193,6 +193,9 @@
     "memory_modal_footer_count_one": "{count} vzpomínka",
     "memory_modal_footer_count_other": "{count} vzpomínek",
     "clear_defaults_action": "Vymazat všechny výchozí hodnoty",
-    "clear_defaults_title": "Vyprázdnit sdílené pokyny + model + rozpočet + kola. Stávající persony nejsou ovlivněny."
+    "clear_defaults_title": "Vyprázdnit sdílené pokyny + model + rozpočet + kola. Stávající persony nejsou ovlivněny.",
+    "unshare_title": "Zrušit sdílení se skupinou — vzpomínka se vrátí jako soukromá pro personu",
+    "unshare_success": "Vzpomínka byla odebrána ze sdílení skupiny",
+    "unshare_failure": "Sdílení vzpomínky se nepodařilo zrušit"
   }
 }

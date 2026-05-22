@@ -12619,6 +12619,9 @@ export type Translations = {
       memory_modal_importance: string;
       memory_modal_footer_count_one: string;
       memory_modal_footer_count_other: string;
+      unshare_title: string;
+      unshare_success: string;
+      unshare_failure: string;
     };
   };
   auth: {

@@ -756,6 +756,27 @@ pub fn merge(
 // -- Tier management ----------------------------------------------------------
 
 /// Update the tier of a single memory.
+/// Set or clear a memory's `group_id` attribution. `Some(group_id)` shares
+/// the memory with that group (surfaces in the group-scoped injection path
+/// for every member's prompt); `None` reverts the memory to persona-private.
+/// Returns `Ok(true)` if a row was updated. Used by the GroupMemoryListModal
+/// "Unshare" action (cycle 14).
+pub fn update_group_id(
+    pool: &DbPool,
+    id: &str,
+    group_id: Option<&str>,
+) -> Result<bool, AppError> {
+    timed_query!("persona_memories", "persona_memories::update_group_id", {
+        let conn = pool.get()?;
+        let now = chrono::Utc::now().to_rfc3339();
+        let rows = conn.execute(
+            "UPDATE persona_memories SET group_id = ?1, updated_at = ?2 WHERE id = ?3",
+            params![group_id, now, id],
+        )?;
+        Ok(rows > 0)
+    })
+}
+
 pub fn update_tier(pool: &DbPool, id: &str, tier: &str) -> Result<bool, AppError> {
     // Validate tier value
     match tier {

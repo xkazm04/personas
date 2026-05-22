@@ -195,6 +195,19 @@ pub fn batch_delete_memories(
     repo::batch_delete(&state.db, &ids)
 }
 
+/// Set or clear a memory's `group_id` attribution. Pass `None` to unshare
+/// the memory from its current group (memory reverts to persona-private).
+/// Surfaces as the "Unshare" action on each row in GroupMemoryListModal.
+#[tauri::command]
+pub fn update_memory_group_id(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+    group_id: Option<String>,
+) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
+    repo::update_group_id(&state.db, &id, group_id.as_deref())
+}
+
 // -- Tier Management --------------------------------------------------------
 
 #[tauri::command]
