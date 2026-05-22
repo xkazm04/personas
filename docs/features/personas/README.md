@@ -146,15 +146,29 @@ and `PersonaAvatar`, route through it so they never disagree:
 | a short glyph | emoji | literal emoji text |
 
 The Settings tab's icon picker (`PersonaIconPickerModal`) offers the
-built-in catalog plus **Upload image** and a **Your icons** library.
+built-in catalog, **Upload image**, a **Your icons** library, and
+**Generate with AI**.
+
 Uploads go through `import_persona_icon`
 (`src-tauri/src/commands/core/persona_icons.rs`): the source file is
 size-gated, decoded, downscaled to ≤512 px, and re-encoded to PNG —
 the round trip strips metadata and format-specific payloads. Files are
 content-addressed and stored at `{app_data_dir}/persona-icons/{sha256}.png`;
-the directory is the reusable icon library (no DB table). Custom icons
-are **local-only** — they do not travel with a persona through export,
-bundle, or share-link, which fall back to a built-in icon.
+the directory is the reusable icon library (no DB table).
+
+**Generate with AI** (`persona_icon_gen.rs`) appears only when the vault
+holds a credential for an image-generation connector (Leonardo AI or
+Higgsfield — an explicit allowlist, since the `ai` connector category
+also covers vision/analysis connectors). It runs the provider's async
+generation job, downloads the result, and stores it through the *same*
+upload pipeline — so a generated icon is an ordinary `custom-icon:` asset.
+
+Custom icons are **local-only**. At every export boundary
+(`data_portability.rs`, `import_export.rs`, `bundle.rs`)
+`engine::persona_icon::export_safe_icon` downgrades a `custom-icon:` value
+to a built-in `agent-icon:` inferred from the persona's `template_category`,
+so a shared persona arrives with a sensible catalog icon rather than a dead
+reference.
 
 ## Gotchas that burn time
 
