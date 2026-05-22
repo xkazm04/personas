@@ -1707,7 +1707,8 @@
     "group_binding_empty": "لا توجد مجموعات بعد — أنشئ واحدة من العملاء ← المجموعات لربطها هنا.",
     "group_binding_bound": "تم ربط المشروع بمساحة عمل PersonaGroup هذه",
     "group_binding_orphan": "تم حذف المجموعة المرتبطة؛ افتح المشروع لإعادة الربط",
-    "group_binding_orphan_label": "تمت إزالة المجموعة"
+    "group_binding_orphan_label": "تمت إزالة المجموعة",
+    "team_preview_live_label": "مباشر"
   },
   "dev_runner": {
     "self_healing": "المعالجة الذاتية",

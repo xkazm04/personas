@@ -11488,6 +11488,7 @@
       "team_preview_recent_runs": "Recent runs",
       "team_preview_recent_runs_total": "(last {count})",
       "team_preview_no_runs": "This team has not been executed yet.",
+      "team_preview_live_label": "live",
       "group_binding_label": "Bound Group",
       "group_binding_none": "No group — keep project standalone",
       "group_binding_empty": "No groups yet — create one under Agents → Groups to bind it here.",

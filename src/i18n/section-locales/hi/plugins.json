@@ -1707,7 +1707,8 @@
     "group_binding_empty": "अभी तक कोई समूह नहीं — एजेंट्स → समूह में बनाकर यहाँ बाँधें।",
     "group_binding_bound": "प्रोजेक्ट इस PersonaGroup कार्यक्षेत्र से बंधा है",
     "group_binding_orphan": "बंधा हुआ समूह हटा दिया गया है; फिर से बाँधने के लिए प्रोजेक्ट खोलें",
-    "group_binding_orphan_label": "समूह हटाया गया"
+    "group_binding_orphan_label": "समूह हटाया गया",
+    "team_preview_live_label": "लाइव"
   },
   "dev_runner": {
     "self_healing": "Self-Healing",

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Activity, Users, X } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { Button } from '@/features/shared/components/buttons';
@@ -11,6 +11,8 @@ import type { PipelineRun } from '@/lib/bindings/PipelineRun';
 import { listTeamMembers, listPipelineRuns } from '@/api/pipeline/teams';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import { silentCatch } from '@/lib/silentCatch';
+import { useTypedTauriEvent } from '@/hooks/useTauriEvent';
+import { EventName } from '@/lib/eventRegistry';
 
 const RECENT_RUN_LIMIT = 6;
 
@@ -34,6 +36,23 @@ export function ProjectTeamPreviewModal({ open, team, onClose }: ProjectTeamPrev
   const [members, setMembers] = useState<PersonaTeamMember[] | null>(null);
   const [runs, setRuns] = useState<PipelineRun[] | null>(null);
   const [loading, setLoading] = useState(false);
+  // Visual cue that the runs list updated from a live event in the last beat.
+  // Resets after a short timeout so it pulses on each new tick rather than
+  // staying lit forever once the first event arrives.
+  const [livePulseAt, setLivePulseAt] = useState(0);
+
+  // Re-fetch just the run list. Cheap (single indexed SELECT) — runs only
+  // when a PIPELINE_STATUS event for this team arrives, so the steady-state
+  // cost when nothing is running is zero.
+  const refetchRuns = useCallback(async () => {
+    try {
+      const r = await listPipelineRuns(team.id);
+      setRuns(r.slice(0, RECENT_RUN_LIMIT));
+      setLivePulseAt(Date.now());
+    } catch (err) {
+      silentCatch('features/plugins/dev-tools/sub_projects/ProjectTeamPreviewModal:refetchRuns')(err);
+    }
+  }, [team.id]);
 
   useEffect(() => {
     if (!open) return;
@@ -52,6 +71,20 @@ export function ProjectTeamPreviewModal({ open, team, onClose }: ProjectTeamPrev
       })
       .finally(() => setLoading(false));
   }, [open, team.id]);
+
+  // Subscribe to PIPELINE_STATUS while the modal is open. Backend emits this
+  // every time a pipeline run transitions (queued → running → completed/failed)
+  // OR a member node within a run flips status. Filtering by team_id keeps
+  // us from re-fetching for unrelated teams. The hook handles
+  // mount/unmount cleanup; closing the modal unmounts and unsubscribes.
+  useTypedTauriEvent(EventName.PIPELINE_STATUS, useCallback((payload) => {
+    if (!open) return;
+    if (payload.team_id !== team.id) return;
+    void refetchRuns();
+  }, [open, team.id, refetchRuns]));
+
+  // 250ms "live" pulse window — drives the eyebrow dot animation.
+  const isPulsing = livePulseAt > 0 && Date.now() - livePulseAt < 1500;
 
   const teamColor = team.color || '#6366f1';
 
@@ -150,6 +183,18 @@ export function ProjectTeamPreviewModal({ open, team, onClose }: ProjectTeamPrev
             {runs && (
               <span className="typo-label text-foreground/50">
                 {tx(t.plugins.dev_projects.team_preview_recent_runs_total, { count: runs.length })}
+              </span>
+            )}
+            {isPulsing && (
+              <span
+                className="ml-auto inline-flex items-center gap-1.5 typo-caption text-emerald-400/80"
+                title={t.plugins.dev_projects.team_preview_live_label}
+              >
+                <span className="relative flex w-2 h-2">
+                  <span className="absolute inline-flex w-full h-full rounded-full bg-emerald-400/70 opacity-70 animate-ping" />
+                  <span className="relative inline-flex w-2 h-2 rounded-full bg-emerald-400" />
+                </span>
+                {t.plugins.dev_projects.team_preview_live_label}
               </span>
             )}
           </div>

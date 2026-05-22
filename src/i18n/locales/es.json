@@ -11312,7 +11312,8 @@
       "group_binding_empty": "Aún no hay grupos — crea uno en Agentes → Grupos para vincularlo aquí.",
       "group_binding_bound": "Proyecto vinculado a este espacio de trabajo PersonaGroup",
       "group_binding_orphan": "El grupo vinculado se eliminó; abre el proyecto para revincular",
-      "group_binding_orphan_label": "grupo eliminado"
+      "group_binding_orphan_label": "grupo eliminado",
+      "team_preview_live_label": "en vivo"
     },
     "dev_runner": {
       "self_healing": "Auto-Sanación",

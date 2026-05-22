@@ -11312,7 +11312,8 @@
       "group_binding_empty": "এখনো কোনো গ্রুপ নেই — এজেন্ট → গ্রুপ-এ একটি তৈরি করে এখানে বাঁধুন।",
       "group_binding_bound": "প্রোজেক্টটি এই PersonaGroup ওয়ার্কস্পেসে বাঁধা",
       "group_binding_orphan": "বাঁধা গ্রুপ মুছে ফেলা হয়েছে; পুনরায় বাঁধতে প্রোজেক্ট খুলুন",
-      "group_binding_orphan_label": "গ্রুপ সরানো হয়েছে"
+      "group_binding_orphan_label": "গ্রুপ সরানো হয়েছে",
+      "team_preview_live_label": "লাইভ"
     },
     "dev_runner": {
       "self_healing": "স্ব-নিরাময়",

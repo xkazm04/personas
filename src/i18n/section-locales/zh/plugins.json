@@ -1707,7 +1707,8 @@
     "group_binding_empty": "尚无分组 — 在 智能体 → 分组 中创建后即可绑定。",
     "group_binding_bound": "项目已绑定到此 PersonaGroup 工作区",
     "group_binding_orphan": "绑定的分组已删除；打开项目以重新绑定",
-    "group_binding_orphan_label": "分组已删除"
+    "group_binding_orphan_label": "分组已删除",
+    "team_preview_live_label": "实时"
   },
   "dev_runner": {
     "self_healing": "自愈",

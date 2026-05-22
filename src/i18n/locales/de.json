@@ -11312,7 +11312,8 @@
       "group_binding_empty": "Noch keine Gruppen — erstelle eine unter Agents → Gruppen, um sie hier zu binden.",
       "group_binding_bound": "Projekt ist an diesen PersonaGroup-Workspace gebunden",
       "group_binding_orphan": "Gebundene Gruppe wurde gelöscht; Projekt öffnen, um neu zu binden",
-      "group_binding_orphan_label": "Gruppe entfernt"
+      "group_binding_orphan_label": "Gruppe entfernt",
+      "team_preview_live_label": "live"
     },
     "dev_runner": {
       "self_healing": "Selbstheilung",

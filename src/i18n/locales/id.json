@@ -11312,7 +11312,8 @@
       "group_binding_empty": "Belum ada grup — buat di Agen → Grup untuk diikat di sini.",
       "group_binding_bound": "Proyek terikat ke ruang kerja PersonaGroup ini",
       "group_binding_orphan": "Grup terikat telah dihapus; buka proyek untuk mengikat ulang",
-      "group_binding_orphan_label": "grup dihapus"
+      "group_binding_orphan_label": "grup dihapus",
+      "team_preview_live_label": "langsung"
     },
     "dev_runner": {
       "self_healing": "Self-Healing",

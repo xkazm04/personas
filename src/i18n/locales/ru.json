@@ -11312,7 +11312,8 @@
       "group_binding_empty": "Групп пока нет — создайте в Агенты → Группы, чтобы привязать здесь.",
       "group_binding_bound": "Проект привязан к этому рабочему пространству PersonaGroup",
       "group_binding_orphan": "Привязанная группа удалена; откройте проект, чтобы перепривязать",
-      "group_binding_orphan_label": "группа удалена"
+      "group_binding_orphan_label": "группа удалена",
+      "team_preview_live_label": "в эфире"
     },
     "dev_runner": {
       "self_healing": "Самовосстановление",
