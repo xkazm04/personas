@@ -150,6 +150,10 @@ export function PersonaGroupDropRail({
             type="button"
             onClick={() => handleChipClick(g.id)}
             aria-pressed={isActive}
+            // data attr lets non-HTML5 drag sources (constellation pointer
+            // events, cycle 22) find drop targets via elementFromPoint.
+            // The HTML5 onDrop path uses the regular drag handlers below.
+            data-persona-drop-target={g.id}
             {...dragOverProps(g.id)}
             onDrop={(e) => handleDrop(g.id, e)}
             className={`group/chip inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border typo-caption font-medium flex-shrink-0 transition-all cursor-pointer ${
@@ -177,6 +181,7 @@ export function PersonaGroupDropRail({
         type="button"
         onClick={() => handleChipClick('__ungrouped__')}
         aria-pressed={filterId === '__ungrouped__'}
+        data-persona-drop-target="__ungrouped__"
         {...dragOverProps('__ungrouped__')}
         onDrop={(e) => handleDrop(null, e)}
         className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-primary/15 bg-secondary/30 typo-caption font-medium text-foreground flex-shrink-0 transition-all cursor-pointer ${

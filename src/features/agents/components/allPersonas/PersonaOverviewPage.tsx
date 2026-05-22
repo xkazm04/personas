@@ -237,16 +237,13 @@ export default function PersonaOverviewPage() {
           <PersonaOverviewToolbar search={search} onSearchChange={setSearch} view={view} onViewChange={setView} />
           {!isMobile && <LayoutModeTabs value={layout} onChange={setLayout} />}
         </div>
-        {/* Drop rail is available in every layout that supports DnD on its
-            persona elements (cycle 16): grid + baseline DataGrid + mobile
-            card-list. Constellation is SVG-based; HTML5 DnD on SVG nodes
-            needs polyfilling, so it's skipped — opening a persona via the
-            constellation dossier still lets the user rebind via the editor.
-            Cycle 19: the rail is now also a CLICK FILTER — chips select on
-            tap and the persona list narrows. */}
-        {layout !== 'constellation' && (
-          <PersonaGroupDropRail filterId={groupFilter} onSelectFilter={setGroupFilter} />
-        )}
+        {/* Drop rail now renders in every layout (cycle 22 added
+            pointer-event DnD to constellation). Chips serve three roles:
+            click → filter, HTML5 drop (grid/baseline/card-list), and
+            pointer-event drop via elementFromPoint (constellation). The
+            data-persona-drop-target attr on each chip is how the
+            constellation drag locates them on pointerup. */}
+        <PersonaGroupDropRail filterId={groupFilter} onSelectFilter={setGroupFilter} />
 
         {filteredData.length === 0 && hasActiveFilter ? (
           <PersonaOverviewEmptyState onResetFilters={handleResetFilters} />
