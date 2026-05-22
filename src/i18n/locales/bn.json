@@ -8547,7 +8547,13 @@
       "field_turns": "Turns",
       "field_cache": "Cache",
       "failed_to_resolve": "Failed to resolve",
-      "config_could_not_be_resolved": "Config could not be resolved"
+      "config_could_not_be_resolved": "Config could not be resolved",
+      "search_placeholder": "নাম দিয়ে এজেন্ট ফিল্টার করুন…",
+      "clear_filter_aria": "ফিল্টার পরিষ্কার করুন",
+      "overrides_only_label": "শুধু ওভাররাইড",
+      "overrides_only_tooltip": "শুধুমাত্র এজেন্টদের দেখান যাদের ওয়ার্কস্পেস বা গ্লোবাল ডিফল্টের উপরে অন্তত একটি এজেন্ট-স্তরের ওভাররাইড আছে।",
+      "filtered_empty": "বর্তমান ফিল্টারের সাথে কোনো এজেন্ট মেলে না।",
+      "showing_count": "{total} এর মধ্যে {shown} দেখানো হচ্ছে"
     },
     "quality_gates": {
       "title": "গুণমানের দ্বার",

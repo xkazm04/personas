@@ -21,7 +21,7 @@ Tabs are declared by `getSettingsItems(isDev, activeTier)` in `sidebarData.ts`. 
 | API Keys | Team+ | Issue, revoke, and delete tokens that 3rd-party MCP/HTTP clients use to authenticate against the local management API (`engine/management_api.rs`, port 9420). Plaintext leaves the backend exactly once on creation; storage is SHA-256 with a `key_prefix` for display. Each row shows the key's relative `Last used` and `Created` timestamps (absolute timestamp on hover); keys created more than 7 days ago that have either never been used or been idle for 30+ days get a "Stale" chip and amber border as a revoke prompt. The internal `system` key is hidden from the list. | `sub_api_keys/components/{ApiKeysSettings,CreateApiKeyDialog,CreatedKeyDialog,McpServerInfoPanel}.tsx`, `src/api/auth/externalApiKeys.ts`, `src-tauri/src/commands/credentials/external_api_keys.rs` |
 | Network | Dev-only | Exposure manager and sharing/network controls | `src/features/sharing/components/ExposureManager.tsx` |
 | Quality Gates | Dev-only | Validation/test gate settings | `sub_quality_gates/components/QualityGateSettings.tsx` |
-| Config Resolution | Dev-only | Effective config inspection | `sub_config/components/ConfigResolutionPanel.tsx` |
+| Config Resolution | Dev-only | Per-persona effective config inspector showing which tier (agent / workspace / global) supplies each setting. Includes a name filter and an "Overrides only" toggle so admins can quickly find the personas that have escaped workspace/global defaults. | `sub_config/components/ConfigResolutionPanel.tsx` |
 | Admin | Dev-only | Administrative diagnostics | `sub_admin/components/AdminSettings.tsx` |
 
 ## Ambient context
