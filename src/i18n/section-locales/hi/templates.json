@@ -1086,5 +1086,33 @@
     "advanced": "Advanced",
     "minuteShort": "~{minutes}m",
     "minuteSetup": "~{minutes} min setup"
+  },
+  "presets": {
+    "loading": "प्रीसेट लोड हो रहे हैं…",
+    "empty_title": "अभी तक कोई टीम प्रीसेट नहीं",
+    "empty_hint": "टीम प्रीसेट कई पर्सोना टेम्पलेट्स को उनकी वायरिंग के साथ बंडल करते हैं। यहां देखने के लिए scripts/templates/_team_presets/ में मेनिफेस्ट डालें।",
+    "page_title": "टीम प्रीसेट",
+    "page_subtitle": "एक क्लिक में N पर्सोना को काम करने वाली टीम में बदलने वाले पूर्व-वायर्ड बंडल।",
+    "card_member_count_one": "{count} सदस्य",
+    "card_member_count_other": "{count} सदस्य",
+    "card_group_binding": "→ समूह: {name}",
+    "preview_graph_heading": "टीम ग्राफ",
+    "preview_graph_aria": "टीम के सदस्यों और कनेक्शनों का केवल-पढ़ने योग्य पूर्वावलोकन",
+    "preview_group_binding": "सदस्य नए पर्सोना समूह से बाँधे जाएंगे: {name}",
+    "preview_members_heading": "सदस्य",
+    "adopt_all_button_one": "{count} सदस्य अपनाएं",
+    "adopt_all_button_other": "सभी {count} सदस्य अपनाएं",
+    "open_team_button": "नई टीम खोलें",
+    "footer_preview_hint": "हर सदस्य अखंडता-जांचे एकल-टेम्पलेट पथ से अपनाया जाता है। समान नाम वाले मौजूदा पर्सोना को प्रत्यय मिलेगा।",
+    "footer_adopting_hint": "एक-एक करके सदस्यों को अपनाया जा रहा है — पंक्तियों को हरा होते देखें।",
+    "footer_done_hint": "{count} सदस्य अपनाए गए। टीम और समूह तैयार हैं।",
+    "footer_done_partial": "{ok} अपनाए गए, {failed} विफल। टीम तैयार है; विफल पंक्तियाँ पुनः प्रयास के लिए यहाँ रखी गई हैं।",
+    "status_queued": "कतार में",
+    "status_adopting": "अपना रहे हैं…",
+    "status_done": "पूर्ण",
+    "status_failed": "विफल",
+    "toast_success": "“{name}” से {count} सदस्य अपनाए गए",
+    "toast_partial": "{ok} सदस्य अपनाए गए, {failed} विफल",
+    "toast_failure": "प्रीसेट अंगीकरण विफल"
   }
 }

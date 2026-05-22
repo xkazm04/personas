@@ -1086,5 +1086,33 @@
     "advanced": "Advanced",
     "minuteShort": "~{minutes}m",
     "minuteSetup": "~{minutes} min setup"
+  },
+  "presets": {
+    "loading": "Đang tải các preset…",
+    "empty_title": "Chưa có preset nhóm nào",
+    "empty_hint": "Preset nhóm gói nhiều mẫu persona cùng với các kết nối của chúng. Đặt manifest vào scripts/templates/_team_presets/ để hiển thị tại đây.",
+    "page_title": "Preset nhóm",
+    "page_subtitle": "Các gói đã đấu nối sẵn biến N persona thành một nhóm hoạt động chỉ với một cú nhấp.",
+    "card_member_count_one": "{count} thành viên",
+    "card_member_count_other": "{count} thành viên",
+    "card_group_binding": "→ Nhóm: {name}",
+    "preview_graph_heading": "Đồ thị nhóm",
+    "preview_graph_aria": "Xem trước chỉ đọc các thành viên nhóm và các kết nối",
+    "preview_group_binding": "Thành viên sẽ được liên kết với Nhóm Persona mới: {name}",
+    "preview_members_heading": "Thành viên",
+    "adopt_all_button_one": "Áp dụng {count} thành viên",
+    "adopt_all_button_other": "Áp dụng tất cả {count} thành viên",
+    "open_team_button": "Mở nhóm mới",
+    "footer_preview_hint": "Mỗi thành viên được áp dụng qua đường dẫn template đơn được kiểm tra tính toàn vẹn. Persona hiện có cùng tên sẽ nhận hậu tố.",
+    "footer_adopting_hint": "Đang áp dụng từng thành viên — xem các hàng chuyển sang xanh.",
+    "footer_done_hint": "Đã áp dụng {count} thành viên. Nhóm và group đã sẵn sàng.",
+    "footer_done_partial": "{ok} đã áp dụng, {failed} thất bại. Nhóm đã sẵn sàng; các hàng thất bại được giữ lại để thử lại.",
+    "status_queued": "Đang xếp hàng",
+    "status_adopting": "Đang áp dụng…",
+    "status_done": "Xong",
+    "status_failed": "Thất bại",
+    "toast_success": "Đã áp dụng {count} thành viên từ «{name}»",
+    "toast_partial": "Đã áp dụng {ok} thành viên, {failed} thất bại",
+    "toast_failure": "Áp dụng preset thất bại"
   }
 }

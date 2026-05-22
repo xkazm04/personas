@@ -1086,5 +1086,33 @@
     "advanced": "Advanced",
     "minuteShort": "~{minutes}m",
     "minuteSetup": "~{minutes} min setup"
+  },
+  "presets": {
+    "loading": "প্রিসেট লোড হচ্ছে…",
+    "empty_title": "এখনো কোনো টিম প্রিসেট নেই",
+    "empty_hint": "টিম প্রিসেট একাধিক পার্সোনা টেমপ্লেট এবং তাদের ওয়্যারিং একত্রিত করে। এখানে দেখতে scripts/templates/_team_presets/ এ একটি ম্যানিফেস্ট রাখুন।",
+    "page_title": "টিম প্রিসেট",
+    "page_subtitle": "প্রি-ওয়্যারড বান্ডল যা এক ক্লিকে N পার্সোনাকে একটি কার্যকরী টিমে রূপান্তর করে।",
+    "card_member_count_one": "{count} সদস্য",
+    "card_member_count_other": "{count} সদস্য",
+    "card_group_binding": "→ গ্রুপ: {name}",
+    "preview_graph_heading": "টিম গ্রাফ",
+    "preview_graph_aria": "টিম সদস্য এবং তাদের সংযোগের শুধু-পড়ার পূর্বরূপ",
+    "preview_group_binding": "সদস্যরা নতুন পার্সোনা গ্রুপের সাথে বাঁধা হবে: {name}",
+    "preview_members_heading": "সদস্যরা",
+    "adopt_all_button_one": "{count} সদস্য গ্রহণ করুন",
+    "adopt_all_button_other": "সব {count} সদস্য গ্রহণ করুন",
+    "open_team_button": "নতুন টিম খুলুন",
+    "footer_preview_hint": "প্রতিটি সদস্য অখণ্ডতা-যাচাইকৃত একক-টেমপ্লেট পথে গ্রহণ করা হয়। একই নামের বিদ্যমান পার্সোনা একটি প্রত্যয় পাবে।",
+    "footer_adopting_hint": "সদস্যদের একে একে গ্রহণ করা হচ্ছে — সারিগুলি সবুজ হয়ে যেতে দেখুন।",
+    "footer_done_hint": "{count} সদস্য গ্রহণ করা হয়েছে। টিম এবং গ্রুপ প্রস্তুত।",
+    "footer_done_partial": "{ok} গ্রহণ করা হয়েছে, {failed} ব্যর্থ। টিম প্রস্তুত; ব্যর্থ সারি পুনঃচেষ্টার জন্য এখানে রাখা হয়েছে।",
+    "status_queued": "সারিতে",
+    "status_adopting": "গ্রহণ করছে…",
+    "status_done": "সম্পন্ন",
+    "status_failed": "ব্যর্থ",
+    "toast_success": "“{name}” থেকে {count} সদস্য গ্রহণ করা হয়েছে",
+    "toast_partial": "{ok} সদস্য গ্রহণ করা হয়েছে, {failed} ব্যর্থ",
+    "toast_failure": "প্রিসেট গ্রহণ ব্যর্থ"
   }
 }

@@ -102,6 +102,7 @@ export const templateItems: SubNavItem[] = [
   { id: 'n8n', label: 'n8n Import', icon: Upload, minTier: TIERS.TEAM },
   { id: 'generated', label: 'Generated', icon: List },
   { id: 'recipes', label: 'Recipes', icon: Sparkles },
+  { id: 'presets', label: 'Presets', icon: Layers, minTier: TIERS.TEAM },
 ];
 
 export const artistItems: SubNavItem[] = [

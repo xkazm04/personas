@@ -1086,5 +1086,33 @@
     "advanced": "Advanced",
     "minuteShort": "~{minutes}m",
     "minuteSetup": "~{minutes} min setup"
+  },
+  "presets": {
+    "loading": "Presets werden geladen…",
+    "empty_title": "Noch keine Team-Presets",
+    "empty_hint": "Team-Presets bündeln mehrere Persona-Templates mit ihrer Verdrahtung. Lege ein Manifest in scripts/templates/_team_presets/ ab, um es hier zu sehen.",
+    "page_title": "Team-Presets",
+    "page_subtitle": "Vorverdrahtete Bundles, die mit einem Klick N Personas in ein arbeitendes Team verwandeln.",
+    "card_member_count_one": "{count} Mitglied",
+    "card_member_count_other": "{count} Mitglieder",
+    "card_group_binding": "→ Gruppe: {name}",
+    "preview_graph_heading": "Team-Graph",
+    "preview_graph_aria": "Schreibgeschützte Vorschau der Teammitglieder und ihrer Verbindungen",
+    "preview_group_binding": "Mitglieder werden an eine neue Persona-Gruppe gebunden: {name}",
+    "preview_members_heading": "Mitglieder",
+    "adopt_all_button_one": "{count} Mitglied übernehmen",
+    "adopt_all_button_other": "Alle {count} Mitglieder übernehmen",
+    "open_team_button": "Neues Team öffnen",
+    "footer_preview_hint": "Jedes Mitglied wird über den integritätsgeprüften Einzeltemplate-Pfad übernommen. Bestehende Personas mit gleichem Namen erhalten einen Suffix.",
+    "footer_adopting_hint": "Mitglieder werden nacheinander übernommen — beobachte, wie die Zeilen grün werden.",
+    "footer_done_hint": "{count} Mitglieder übernommen. Team und Gruppe sind bereit.",
+    "footer_done_partial": "{ok} übernommen, {failed} fehlgeschlagen. Team ist bereit; fehlgeschlagene Zeilen bleiben für einen erneuten Versuch hier.",
+    "status_queued": "Warteschlange",
+    "status_adopting": "Übernehmen…",
+    "status_done": "Fertig",
+    "status_failed": "Fehlgeschlagen",
+    "toast_success": "{count} Mitglieder aus „{name}“ übernommen",
+    "toast_partial": "{ok} Mitglieder übernommen, {failed} fehlgeschlagen",
+    "toast_failure": "Preset-Übernahme fehlgeschlagen"
   }
 }

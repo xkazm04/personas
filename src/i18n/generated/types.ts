@@ -6401,6 +6401,34 @@ export type Translations = {
     memory_enabled_false: string;
   };
   templates: {
+    presets: {
+      loading: string;
+      empty_title: string;
+      empty_hint: string;
+      page_title: string;
+      page_subtitle: string;
+      card_member_count_one: string;
+      card_member_count_other: string;
+      card_group_binding: string;
+      preview_graph_heading: string;
+      preview_graph_aria: string;
+      preview_group_binding: string;
+      preview_members_heading: string;
+      adopt_all_button_one: string;
+      adopt_all_button_other: string;
+      open_team_button: string;
+      footer_preview_hint: string;
+      footer_adopting_hint: string;
+      footer_done_hint: string;
+      footer_done_partial: string;
+      status_queued: string;
+      status_adopting: string;
+      status_done: string;
+      status_failed: string;
+      toast_success: string;
+      toast_partial: string;
+      toast_failure: string;
+    };
     gallery: {
       ready_to_deploy: string;
       ready_to_deploy_hint: string;

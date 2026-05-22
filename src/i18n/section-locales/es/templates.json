@@ -1086,5 +1086,33 @@
     "advanced": "Advanced",
     "minuteShort": "~{minutes}m",
     "minuteSetup": "~{minutes} min setup"
+  },
+  "presets": {
+    "loading": "Cargando presets…",
+    "empty_title": "Aún no hay presets de equipo",
+    "empty_hint": "Los presets de equipo agrupan varias plantillas de personas con sus conexiones. Coloca un manifiesto en scripts/templates/_team_presets/ para verlo aquí.",
+    "page_title": "Presets de equipo",
+    "page_subtitle": "Paquetes pre-cableados que convierten N personas en un equipo funcional con un solo clic.",
+    "card_member_count_one": "{count} miembro",
+    "card_member_count_other": "{count} miembros",
+    "card_group_binding": "→ Grupo: {name}",
+    "preview_graph_heading": "Grafo del equipo",
+    "preview_graph_aria": "Vista previa de solo lectura de los miembros del equipo y sus conexiones",
+    "preview_group_binding": "Los miembros se vincularán a un nuevo Grupo de Personas: {name}",
+    "preview_members_heading": "Miembros",
+    "adopt_all_button_one": "Adoptar {count} miembro",
+    "adopt_all_button_other": "Adoptar los {count} miembros",
+    "open_team_button": "Abrir el nuevo equipo",
+    "footer_preview_hint": "Cada miembro se adopta vía la ruta de plantilla única con verificación de integridad. Las personas existentes con el mismo nombre obtendrán un sufijo.",
+    "footer_adopting_hint": "Adoptando miembros uno a uno — observa cómo las filas se vuelven verdes.",
+    "footer_done_hint": "Adoptados {count} miembros. El equipo y el grupo están listos.",
+    "footer_done_partial": "{ok} adoptados, {failed} fallaron. El equipo está listo; las filas fallidas se mantienen aquí para reintentar.",
+    "status_queued": "En cola",
+    "status_adopting": "Adoptando…",
+    "status_done": "Hecho",
+    "status_failed": "Falló",
+    "toast_success": "Adoptados {count} miembros de «{name}»",
+    "toast_partial": "Adoptados {ok} miembros, {failed} fallaron",
+    "toast_failure": "La adopción del preset falló"
   }
 }
