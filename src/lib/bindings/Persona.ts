@@ -51,7 +51,7 @@ cli_awareness_enabled: boolean,
  * auto-execution until the user fixes it. Set by
  * `instant_adopt_template_inner` and `promote_build_draft_inner`.
  */
-setup_status: string,
+setup_status: string, 
 /**
  * JSON-encoded `PersonaSetup` (adoption-honesty redesign) — the
  * structured account of what the persona needs: typed connector
@@ -60,7 +60,7 @@ setup_status: string,
  * this carries the detail the UI routes on. NULL on legacy rows and
  * until the next promote writes it.
  */
-setup_detail: string | null,
+setup_detail: string | null, 
 /**
  * JSON-encoded `{ [use_case_id]: GlyphDimension[] }` recording per-
  * capability dim disables set in the View mode SigilEditModal.
