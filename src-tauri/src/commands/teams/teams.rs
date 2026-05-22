@@ -205,8 +205,11 @@ pub async fn execute_team(
     use crate::engine::pipeline_executor::{self, PipelineContext};
     use tauri::Emitter;
 
-    // Reject if this team already has a running pipeline to prevent concurrent
-    // execution races (duplicate LLM calls, conflicting pipeline-status events).
+    // Fast-path pre-check: reject early (without a write lock) if this team
+    // already has a running pipeline. This is NOT the race-free guarantee —
+    // create_pipeline_run re-checks inside a BEGIN IMMEDIATE transaction and
+    // is the authoritative single-pipeline-per-team guard. Keeping this
+    // pre-check just avoids the round-trip for the common already-running case.
     if team_repo::has_running_pipeline(&state.db, &team_id)? {
         return Err(AppError::Validation(
             "This team already has a pipeline running. Wait for it to complete or cancel it first."
@@ -214,7 +217,7 @@ pub async fn execute_team(
         ));
     }
 
-    // Create pipeline run
+    // Create pipeline run (atomically re-checks the running-pipeline guard).
     let run_id = team_repo::create_pipeline_run(&state.db, &team_id, input_data.as_deref())?;
 
     // Load members and connections
