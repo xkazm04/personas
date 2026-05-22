@@ -846,6 +846,7 @@ fn try_import_vault_note(
             Some(crate::db::models::Json(tags))
         },
         use_case_id: None,
+        group_id: None,
     };
 
     let created = mem_repo::create(pool, input)?;

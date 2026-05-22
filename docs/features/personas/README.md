@@ -203,6 +203,24 @@ member graph, edges, pipeline runs, and a canvas editor. A persona can
 belong to at most one group (folder semantics) but participate in many
 teams (pipeline semantics).
 
+### Group-scoped shared memory
+
+`persona_memories.group_id` (added 2026-05-22) is an optional second
+scope alongside `use_case_id`. A memory authored by persona A with
+`group_id = G` is **shared with every other persona in group G** — when
+persona B (also a member of G) runs, the injection path
+(`get_for_injection_v2`) OR-s in `group_id = G` rows alongside B's own
+private memories. Semantics mirror the existing `use_case_id` orphan
+policy: no FK by design, so deleting a group leaves attributions in
+place — orphans simply stop matching live group filters until
+re-attributed.
+
+This is the FIRST direct user-visible payoff of the PersonaGroup
+schema's `sharedInstructions` cousin — a group now carries shared
+*prompt seed* (instructions) AND shared *learned context* (memories).
+See `MEMORY CONTRACT (5)` in `src-tauri/src/db/models/memory.rs` for
+invariants.
+
 ## Gotchas that burn time
 
 1. **`design_context` has two formats.** Old personas store a flat

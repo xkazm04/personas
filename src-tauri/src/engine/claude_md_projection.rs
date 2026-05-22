@@ -67,6 +67,7 @@ pub fn install_projection(
         pool,
         persona_id,
         use_case_id,
+        None,
         CORE_LIMIT,
         ACTIVE_LIMIT,
     ) {
@@ -255,6 +256,7 @@ mod tests {
                 importance: Some(importance),
                 tags: None,
                 use_case_id: None,
+                group_id: None,
             },
         )
         .unwrap();

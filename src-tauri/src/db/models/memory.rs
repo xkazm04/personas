@@ -144,6 +144,18 @@ pub fn all_category_info() -> Vec<MemoryCategoryInfo> {
 //         (see `migrations/helpers::install_persona_memory_invariants`),
 //         so a future direct-SQL bypass also fails closed.
 //
+// (5) **`group_id` is a SECOND scope (alongside `use_case_id`).** Added
+//     2026-05-22 to make PersonaGroups carry shared learning, not just
+//     shared instructions. Semantics mirror (2): no FK by design — deleting
+//     a group leaves orphan group_id attributions in place; injection treats
+//     orphans as "shared with a group nobody is in", so the row is
+//     functionally archived until re-attributed. `persona_id` stays NOT
+//     NULL — a group-scoped memory is still authored by ONE persona, just
+//     surfaced to all of that persona's group peers at injection time.
+//     Stage 1 (this column) ships the schema; Stage 2 will extend
+//     `get_for_injection_v2` to OR-in `group_id = ?` when the running
+//     persona has `group_id IS NOT NULL`.
+//
 // Any change to these rules must update this block and the cited entry
 // points together.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -188,6 +200,18 @@ pub struct PersonaMemory {
     /// for injection until re-attributed.
     #[serde(default)]
     pub use_case_id: Option<String>,
+    /// Group attribution. Memories with `group_id = Some(_)` are shared with
+    /// every persona that belongs to that group — when persona X (a member
+    /// of group Y) runs, the injection path will fetch X's own memories AND
+    /// every memory where `group_id = Y`, regardless of which group member
+    /// authored it. `None` means persona-private (default — existing rows
+    /// pre-2026-05-22 are private by definition).
+    ///
+    /// MEMORY CONTRACT (5): no FK by design — mirrors (2) for use_case_id.
+    /// Stage 1 (column live, injection path not yet wired); Stage 2 will
+    /// wire injection.
+    #[serde(default)]
+    pub group_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -202,4 +226,8 @@ pub struct CreatePersonaMemoryInput {
     pub tags: Option<Json<Vec<String>>>,
     #[serde(default)]
     pub use_case_id: Option<String>,
+    /// Optional group attribution — memories with this set are shared with
+    /// every persona in the same group. See MEMORY CONTRACT (5).
+    #[serde(default)]
+    pub group_id: Option<String>,
 }

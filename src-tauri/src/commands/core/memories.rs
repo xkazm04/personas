@@ -959,6 +959,8 @@ pub fn seed_mock_memory(_state: State<'_, Arc<AppState>>) -> Result<PersonaMemor
                 [t % MOCK_TAGS.len()]
             .to_string()])),
             use_case_id: None,
+        
+            group_id: None,
         };
 
         return repo::create(&_state.db, input);

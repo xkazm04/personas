@@ -636,6 +636,7 @@ pub async fn run_execution(
                 &pool,
                 &persona.id,
                 execution_use_case_id.as_deref(),
+                persona.group_id.as_deref(),
                 10,
                 40,
             ) {

@@ -2747,6 +2747,29 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // Group-scoped shared memory (PersonaGroup productionization, 2026-05-22).
+    // Mirrors the use_case_id pattern from Phase C5: nullable column, no FK
+    // by design — see MEMORY CONTRACT (5) in db/models/memory.rs. Stage 1
+    // ships the schema; Stage 2 will OR-in group_id matches in the injection
+    // hot path so memories authored in group context are shared with every
+    // group member's prompt.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "persona_memories_group_id",
+            description: "Add group_id column to persona_memories for group-scoped sharing",
+            already_applied: |conn| has_column(conn, "persona_memories", "group_id"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE persona_memories ADD COLUMN group_id TEXT;
+                     CREATE INDEX IF NOT EXISTS idx_pm_group_id ON persona_memories(group_id);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 

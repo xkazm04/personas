@@ -120,6 +120,7 @@ export const createMemorySlice: StateCreator<OverviewStore, [], [], MemorySlice>
         tags: input.tags,
         source_execution_id: null,
         use_case_id: null,
+        group_id: null,
       });
       set((state) => ({
         memories: [created, ...state.memories],
@@ -161,6 +162,7 @@ export const createMemorySlice: StateCreator<OverviewStore, [], [], MemorySlice>
           tags: input.tags,
           source_execution_id: null,
           use_case_id: null,
+          group_id: null,
         },
         deleteIdA,
         deleteIdB,

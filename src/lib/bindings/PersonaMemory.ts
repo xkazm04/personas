@@ -39,4 +39,17 @@ last_accessed_at: string | null, created_at: string, updated_at: string,
  * leaves orphan attributions in place; the row is functionally archived
  * for injection until re-attributed.
  */
-use_case_id: string | null, };
+use_case_id: string | null, 
+/**
+ * Group attribution. Memories with `group_id = Some(_)` are shared with
+ * every persona that belongs to that group — when persona X (a member
+ * of group Y) runs, the injection path will fetch X's own memories AND
+ * every memory where `group_id = Y`, regardless of which group member
+ * authored it. `None` means persona-private (default — existing rows
+ * pre-2026-05-22 are private by definition).
+ *
+ * MEMORY CONTRACT (5): no FK by design — mirrors (2) for use_case_id.
+ * Stage 1 (column live, injection path not yet wired); Stage 2 will
+ * wire injection.
+ */
+group_id: string | null, };

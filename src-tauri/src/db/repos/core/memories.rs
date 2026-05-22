@@ -100,6 +100,7 @@ row_mapper!(row_to_memory -> PersonaMemory {
     last_accessed_at [opt],
     created_at, updated_at,
     use_case_id [opt],
+    group_id [opt],
 });
 
 /// Map user-provided sort column to a safe SQL column name.
@@ -288,8 +289,8 @@ pub fn create(pool: &DbPool, input: CreatePersonaMemoryInput) -> Result<PersonaM
 
         conn.execute(
             "INSERT INTO persona_memories
-             (id, persona_id, title, content, category, source_execution_id, importance, tags, created_at, updated_at, use_case_id)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9, ?10)",
+             (id, persona_id, title, content, category, source_execution_id, importance, tags, created_at, updated_at, use_case_id, group_id)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9, ?10, ?11)",
             params![
                 id,
                 input.persona_id,
@@ -301,6 +302,7 @@ pub fn create(pool: &DbPool, input: CreatePersonaMemoryInput) -> Result<PersonaM
                 normalize_tags(input.tags.map(|j| serde_json::to_string(&j.0).unwrap_or_default())),
                 now,
                 input.use_case_id,
+                input.group_id,
             ],
         )?;
 
@@ -353,8 +355,8 @@ pub fn batch_create(
         {
             let mut stmt = tx.prepare(
                 "INSERT INTO persona_memories
-                 (id, persona_id, title, content, category, source_execution_id, importance, tags, created_at, updated_at, use_case_id)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9, ?10)",
+                 (id, persona_id, title, content, category, source_execution_id, importance, tags, created_at, updated_at, use_case_id, group_id)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9, ?10, ?11)",
             )?;
 
             for (index, input) in inputs.into_iter().enumerate() {
@@ -409,6 +411,7 @@ pub fn batch_create(
                     ),
                     now,
                     input.use_case_id,
+                    input.group_id,
                 ])?;
                 count += 1;
             }
@@ -719,8 +722,8 @@ pub fn merge(
 
         tx.execute(
             "INSERT INTO persona_memories
-             (id, persona_id, title, content, category, source_execution_id, importance, tags, created_at, updated_at, use_case_id)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9, ?10)",
+             (id, persona_id, title, content, category, source_execution_id, importance, tags, created_at, updated_at, use_case_id, group_id)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9, ?10, ?11)",
             params![
                 id,
                 input.persona_id,
@@ -732,6 +735,7 @@ pub fn merge(
                 tags,
                 now,
                 input.use_case_id,
+                input.group_id,
             ],
         )?;
 
@@ -797,7 +801,7 @@ pub fn get_for_injection(
     core_limit: i64,
     active_limit: i64,
 ) -> Result<TieredMemories, AppError> {
-    get_for_injection_v2(pool, persona_id, None, core_limit, active_limit)
+    get_for_injection_v2(pool, persona_id, None, None, core_limit, active_limit)
 }
 
 /// Phase C5 — capability-aware memory fetch for prompt injection.
@@ -812,12 +816,17 @@ pub fn get_for_injection(
 ///   - When `use_case_id = None`, fetch only persona-wide rows
 ///     (`use_case_id IS NULL`).
 ///
+/// 2026-05-22: when `group_id = Some(g)`, OR-in `group_id = g` at every
+/// tier so memories authored in group context are shared across every
+/// member's prompt assembly. See MEMORY CONTRACT (5).
+///
 /// Ordering: importance DESC, access_count DESC, created_at DESC for active;
 /// importance DESC, created_at DESC for core.
 pub fn get_for_injection_v2(
     pool: &DbPool,
     persona_id: &str,
     use_case_id: Option<&str>,
+    group_id: Option<&str>,
     core_limit: i64,
     active_limit: i64,
 ) -> Result<TieredMemories, AppError> {
@@ -835,17 +844,28 @@ pub fn get_for_injection_v2(
                 None => ("AND use_case_id IS NULL", None),
             };
 
+            // Persona-scope predicate widens to include the persona's group
+            // when the persona is in a group. ?5 carries the group_id (or
+            // empty string when unscoped — the SQL handles both via a single
+            // OR clause). The empty-string branch never matches because
+            // `group_id` is either NULL or a UUID, never an empty string.
+            let persona_scope_sql = match group_id {
+                Some(_) => "(persona_id = ?1 OR group_id = ?5)",
+                None => "persona_id = ?1",
+            };
+            let group_param = group_id.unwrap_or("");
+
             let sql = format!(
                 "SELECT * FROM (
                  SELECT * FROM persona_memories
-                 WHERE persona_id = ?1 AND tier = 'core'
+                 WHERE {persona_scope_sql} AND tier = 'core'
                  ORDER BY importance DESC, created_at DESC
                  LIMIT ?2
              )
              UNION ALL
              SELECT * FROM (
                  SELECT * FROM persona_memories
-                 WHERE persona_id = ?1 AND tier IN ('active', 'working')
+                 WHERE {persona_scope_sql} AND tier IN ('active', 'working')
                  {active_scope_sql}
                  ORDER BY importance DESC, access_count DESC, created_at DESC
                  LIMIT ?3
@@ -853,16 +873,35 @@ pub fn get_for_injection_v2(
             );
 
             let mut stmt = conn.prepare_cached(&sql)?;
-            let all: Vec<PersonaMemory> = if let Some(uc) = active_uc_param {
-                let rows = stmt.query_map(
-                    params![persona_id, core_limit, active_limit, uc],
-                    row_to_memory,
-                )?;
-                collect_rows(rows, "memories::get_for_injection_v2(scoped)")
-            } else {
-                let rows =
-                    stmt.query_map(params![persona_id, core_limit, active_limit], row_to_memory)?;
-                collect_rows(rows, "memories::get_for_injection_v2(unscoped)")
+            let all: Vec<PersonaMemory> = match (active_uc_param, group_id) {
+                (Some(uc), Some(_g)) => {
+                    let rows = stmt.query_map(
+                        params![persona_id, core_limit, active_limit, uc, group_param],
+                        row_to_memory,
+                    )?;
+                    collect_rows(rows, "memories::get_for_injection_v2(scoped+group)")
+                }
+                (Some(uc), None) => {
+                    let rows = stmt.query_map(
+                        params![persona_id, core_limit, active_limit, uc],
+                        row_to_memory,
+                    )?;
+                    collect_rows(rows, "memories::get_for_injection_v2(scoped)")
+                }
+                (None, Some(_g)) => {
+                    let rows = stmt.query_map(
+                        params![persona_id, core_limit, active_limit, "", group_param],
+                        row_to_memory,
+                    )?;
+                    collect_rows(rows, "memories::get_for_injection_v2(group)")
+                }
+                (None, None) => {
+                    let rows = stmt.query_map(
+                        params![persona_id, core_limit, active_limit],
+                        row_to_memory,
+                    )?;
+                    collect_rows(rows, "memories::get_for_injection_v2(unscoped)")
+                }
             };
 
             let (core, active) = all.into_iter().partition(|m| m.tier == "core");
@@ -1036,6 +1075,8 @@ mod tests {
                 importance: Some(5),
                 tags: Some(Json(vec!["ui".to_string(), "preference".to_string()])),
                 use_case_id: None,
+            
+                group_id: None,
             },
         )
         .unwrap();
@@ -1054,6 +1095,8 @@ mod tests {
                 importance: None, // defaults to 3
                 tags: None,
                 use_case_id: None,
+            
+                group_id: None,
             },
         )
         .unwrap();
@@ -1146,6 +1189,8 @@ mod tests {
             importance,
             tags: None,
             use_case_id: None,
+        
+            group_id: None,
         };
 
         // Valid boundaries
@@ -1205,6 +1250,8 @@ mod tests {
                 importance: Some(3),
                 tags: None,
                 use_case_id: None,
+            
+                group_id: None,
             },
         )
         .unwrap();
@@ -1220,6 +1267,8 @@ mod tests {
                 importance: Some(3),
                 tags: None,
                 use_case_id: None,
+            
+                group_id: None,
             },
         )
         .unwrap();
@@ -1306,6 +1355,7 @@ mod tests {
                 importance: Some(3),
                 tags: None,
                 use_case_id: use_case_id.map(|s| s.to_string()),
+                group_id: None,
             },
         )
         .unwrap();
@@ -1337,7 +1387,7 @@ mod tests {
         let active_other =
             insert_scoped_memory(&pool, &persona_id, "active other", "active", Some("uc-b"));
 
-        let tiered = get_for_injection_v2(&pool, &persona_id, Some("uc-a"), 10, 40).unwrap();
+        let tiered = get_for_injection_v2(&pool, &persona_id, Some("uc-a"), None, 10, 40).unwrap();
 
         let core_ids: Vec<&str> = tiered.core.iter().map(|m| m.id.as_str()).collect();
         // Both core memories surface regardless of use_case_id (rule: core is
@@ -1371,7 +1421,7 @@ mod tests {
         let active_scoped =
             insert_scoped_memory(&pool, &persona_id, "active scoped", "active", Some("uc-a"));
 
-        let tiered = get_for_injection_v2(&pool, &persona_id, None, 10, 40).unwrap();
+        let tiered = get_for_injection_v2(&pool, &persona_id, None, None, 10, 40).unwrap();
 
         assert_eq!(tiered.core.len(), 1);
         assert_eq!(tiered.core[0].id, core_global);
@@ -1394,9 +1444,89 @@ mod tests {
         insert_scoped_memory(&pool, &persona_id, "scoped", "active", Some("uc-a"));
 
         let v1 = get_for_injection(&pool, &persona_id, 10, 40).unwrap();
-        let v2 = get_for_injection_v2(&pool, &persona_id, None, 10, 40).unwrap();
+        let v2 = get_for_injection_v2(&pool, &persona_id, None, None, 10, 40).unwrap();
         assert_eq!(v1.core.len(), v2.core.len());
         assert_eq!(v1.active.len(), v2.active.len());
+    }
+
+    /// 2026-05-22 — group-scoped injection: when running persona X (member of
+    /// group G), the active-tier fetch should include persona-private rows
+    /// AND group-shared rows authored by ANY group member, but not memories
+    /// belonging to another group or to other personas with no group.
+    #[test]
+    fn test_get_for_injection_v2_group_scoped() {
+        let pool = init_test_db().unwrap();
+        let persona_a = make_persona(&pool, "group-A persona 1");
+        let persona_b = make_persona(&pool, "group-A persona 2");
+        let outsider = make_persona(&pool, "outsider");
+
+        // persona_a's private memory
+        let priv_a = create(
+            &pool,
+            CreatePersonaMemoryInput {
+                persona_id: persona_a.clone(),
+                title: "private to A".into(),
+                content: "x".into(),
+                category: Some("fact".into()),
+                source_execution_id: None,
+                importance: Some(3),
+                tags: None,
+                use_case_id: None,
+                group_id: None,
+            },
+        )
+        .unwrap()
+        .id;
+
+        // persona_b authors a group-shared memory in group-X
+        let shared_in_x = create(
+            &pool,
+            CreatePersonaMemoryInput {
+                persona_id: persona_b.clone(),
+                title: "shared in X".into(),
+                content: "y".into(),
+                category: Some("fact".into()),
+                source_execution_id: None,
+                importance: Some(3),
+                tags: None,
+                use_case_id: None,
+                group_id: Some("group-X".into()),
+            },
+        )
+        .unwrap()
+        .id;
+
+        // outsider's group-Y memory should NEVER leak into group-X queries
+        let shared_in_y = create(
+            &pool,
+            CreatePersonaMemoryInput {
+                persona_id: outsider.clone(),
+                title: "shared in Y".into(),
+                content: "z".into(),
+                category: Some("fact".into()),
+                source_execution_id: None,
+                importance: Some(3),
+                tags: None,
+                use_case_id: None,
+                group_id: Some("group-Y".into()),
+            },
+        )
+        .unwrap()
+        .id;
+
+        // Run injection for persona_a as if they were in group-X.
+        let tiered =
+            get_for_injection_v2(&pool, &persona_a, None, Some("group-X"), 10, 40).unwrap();
+        let ids: Vec<&str> = tiered.active.iter().map(|m| m.id.as_str()).collect();
+        assert!(ids.contains(&priv_a.as_str()), "persona's own memory missing");
+        assert!(
+            ids.contains(&shared_in_x.as_str()),
+            "group-X shared memory not surfaced for member"
+        );
+        assert!(
+            !ids.contains(&shared_in_y.as_str()),
+            "group-Y memory leaked into group-X injection"
+        );
     }
 
     /// `get_by_use_case_id` returns only memories attributed to the capability.
@@ -1430,6 +1560,8 @@ mod tests {
                 importance: Some(3),
                 tags: None,
                 use_case_id: Some("uc-x".into()),
+            
+                group_id: None,
             },
         )
         .unwrap();
@@ -1479,6 +1611,8 @@ mod tests {
                 importance: Some(3),
                 tags: None,
                 use_case_id: None,
+            
+                group_id: None,
             },
             // 1: empty content after strip → empty_title_or_content
             CreatePersonaMemoryInput {
@@ -1490,6 +1624,8 @@ mod tests {
                 importance: Some(3),
                 tags: None,
                 use_case_id: None,
+            
+                group_id: None,
             },
             // 2: bogus category → invalid_category
             CreatePersonaMemoryInput {
@@ -1501,6 +1637,8 @@ mod tests {
                 importance: Some(3),
                 tags: None,
                 use_case_id: None,
+            
+                group_id: None,
             },
             // 3: valid
             CreatePersonaMemoryInput {
@@ -1512,6 +1650,8 @@ mod tests {
                 importance: None,
                 tags: None,
                 use_case_id: None,
+            
+                group_id: None,
             },
         ];
 
@@ -1575,6 +1715,8 @@ mod tests {
                 importance: Some(3),
                 tags: None,
                 use_case_id: Some("uc-deleted-on-purpose".into()),
+            
+                group_id: None,
             },
         )
         .unwrap();
@@ -1589,6 +1731,8 @@ mod tests {
                 importance: Some(3),
                 tags: None,
                 use_case_id: None,
+            
+                group_id: None,
             },
         )
         .unwrap();
@@ -1605,7 +1749,7 @@ mod tests {
         //    surface the orphan. The persona-wide memory must surface (it has
         //    use_case_id IS NULL).
         let scoped =
-            get_for_injection_v2(&pool, &persona.id, Some("uc-something-else"), 10, 10).unwrap();
+            get_for_injection_v2(&pool, &persona.id, Some("uc-something-else"), None, 10, 10).unwrap();
         let active_ids: Vec<_> = scoped.active.iter().map(|m| m.id.as_str()).collect();
         assert!(
             !active_ids.contains(&orphan.id.as_str()),
@@ -1618,7 +1762,7 @@ mod tests {
 
         // 3. Unscoped injection (use_case_id = None) must also exclude the
         //    orphan — see CONTRACT (2): "use_case_id IS NULL only".
-        let unscoped = get_for_injection_v2(&pool, &persona.id, None, 10, 10).unwrap();
+        let unscoped = get_for_injection_v2(&pool, &persona.id, None, None, 10, 10).unwrap();
         let unscoped_ids: Vec<_> = unscoped.active.iter().map(|m| m.id.as_str()).collect();
         assert!(
             !unscoped_ids.contains(&orphan.id.as_str()),

@@ -896,6 +896,8 @@ fn apply_winner_insight_to_dev_clone_memory(
                 winning_strategy.to_lowercase(),
             ])),
             use_case_id: None,
+        
+            group_id: None,
         },
     );
 
