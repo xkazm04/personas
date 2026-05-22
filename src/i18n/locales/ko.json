@@ -12467,7 +12467,31 @@
     "clear_filter": "필터 지우기",
     "filter_to_run": "이 실행으로 필터링",
     "new_memories_one": "새 메모리 {count}개",
-    "new_memories_other": "새 메모리 {count}개"
+    "new_memories_other": "새 메모리 {count}개",
+    "groups": {
+      "page_title": "페르소나 그룹",
+      "page_subtitle": "페르소나를 워크스페이스로 정리하고 공통 지침과 기본값을 공유하세요",
+      "create_group": "새 그룹",
+      "edit_group": "그룹 편집",
+      "delete_group": "그룹 삭제",
+      "empty_title": "아직 그룹이 없습니다",
+      "empty_hint": "그룹을 만들어 페르소나를 목적별로 정리하고, 공통 지침을 공유하거나 기본 모델 및 예산 한도를 설정하세요.",
+      "ungrouped_label": "미분류",
+      "ungrouped_hint": "어떤 그룹에도 속하지 않은 페르소나",
+      "persona_count_one": "페르소나 {count}개",
+      "persona_count_other": "페르소나 {count}개",
+      "shared_label": "공유됨",
+      "shared_instructions_title": "이 그룹의 모든 페르소나에 공통 지침이 적용됩니다",
+      "field_name": "이름",
+      "field_name_placeholder": "예: 코드 리뷰 팀",
+      "field_color": "색상",
+      "field_color_custom": "사용자 지정 색상",
+      "field_description": "설명",
+      "field_description_placeholder": "이 그룹의 용도는 무엇인가요?",
+      "field_shared_instructions": "공통 지침",
+      "field_shared_instructions_hint": "이 그룹의 모든 페르소나 시스템 프롬프트에 추가됩니다. 톤, 정책 또는 조직 컨텍스트를 지정할 때 유용합니다.",
+      "field_shared_instructions_placeholder": "예: 항상 출처를 인용하세요. 간결한 답변을 선호합니다."
+    }
   },
   "auth": {
     "login_timed_out": "Login timed out. Please try again."
@@ -12688,6 +12712,7 @@
       "back_to_plugins": "Plugins",
       "roadmap": "Roadmap",
       "teams_label": "팀",
+      "groups_label": "그룹",
       "cloud_label": "클라우드",
       "cloud_dev_pill": "dev"
     },

@@ -148,5 +148,29 @@
   "clear_filter": "清除过滤器",
   "filter_to_run": "过滤到此运行",
   "new_memories_one": "{count} 条新记忆",
-  "new_memories_other": "{count} 条新记忆"
+  "new_memories_other": "{count} 条新记忆",
+  "groups": {
+    "page_title": "角色分组",
+    "page_subtitle": "将角色组织到工作区，共享指令和默认设置",
+    "create_group": "新建分组",
+    "edit_group": "编辑分组",
+    "delete_group": "删除分组",
+    "empty_title": "暂无分组",
+    "empty_hint": "创建分组以按用途组织角色、在角色间共享指令，或设置默认模型和预算限制。",
+    "ungrouped_label": "未分组",
+    "ungrouped_hint": "未分配到任何分组的角色",
+    "persona_count_one": "{count} 个角色",
+    "persona_count_other": "{count} 个角色",
+    "shared_label": "共享",
+    "shared_instructions_title": "此分组已对每个角色应用共享指令",
+    "field_name": "名称",
+    "field_name_placeholder": "例如：代码审查团队",
+    "field_color": "颜色",
+    "field_color_custom": "自定义颜色",
+    "field_description": "描述",
+    "field_description_placeholder": "此分组用于什么？",
+    "field_shared_instructions": "共享指令",
+    "field_shared_instructions_hint": "附加到此分组中每个角色的系统提示词。适用于语气、政策或组织上下文。",
+    "field_shared_instructions_placeholder": "例如：始终注明出处。优先简洁的回答。"
+  }
 }

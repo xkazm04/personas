@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Users, Plus, List, Star, ChevronDown, Cloud, Clock, Activity, FolderGit2 } from 'lucide-react';
+import { Users, Plus, List, Star, ChevronDown, Cloud, Clock, Activity, FolderGit2, Layers } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
@@ -503,6 +503,20 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
         {/* Teams (productionized at TEAM tier) + Cloud (still dev-only) */}
         {(isTeamVisible || isDev) && (
           <div className="mt-3 pt-3 border-t border-primary/10 space-y-1">
+            {isTeamVisible && (
+              <button
+                onClick={() => { selectPersona(null); setAgentTab('groups'); useSystemStore.getState().setIsCreatingPersona(false); }}
+                aria-current={agentTab === 'groups' ? 'page' : undefined}
+                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
+                  agentTab === 'groups'
+                    ? 'bg-primary/10 text-foreground/90 font-semibold'
+                    : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80 font-normal'
+                }`}
+              >
+                <Layers className="w-4 h-4 flex-shrink-0" />
+                {t.shared.sidebar_extra.groups_label}
+              </button>
+            )}
             {isTeamVisible && (
               <button
                 onClick={() => { selectPersona(null); setAgentTab('team'); useSystemStore.getState().setIsCreatingPersona(false); }}

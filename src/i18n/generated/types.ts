@@ -12545,6 +12545,30 @@ export type Translations = {
     filter_to_run: string;
     new_memories_one: string;
     new_memories_other: string;
+    groups: {
+      page_title: string;
+      page_subtitle: string;
+      create_group: string;
+      edit_group: string;
+      delete_group: string;
+      empty_title: string;
+      empty_hint: string;
+      ungrouped_label: string;
+      ungrouped_hint: string;
+      persona_count_one: string;
+      persona_count_other: string;
+      shared_label: string;
+      shared_instructions_title: string;
+      field_name: string;
+      field_name_placeholder: string;
+      field_color: string;
+      field_color_custom: string;
+      field_description: string;
+      field_description_placeholder: string;
+      field_shared_instructions: string;
+      field_shared_instructions_hint: string;
+      field_shared_instructions_placeholder: string;
+    };
   };
   auth: {
     login_timed_out: string;
@@ -12785,6 +12809,7 @@ export type Translations = {
       back_to_plugins: string;
       roadmap: string;
       teams_label: string;
+      groups_label: string;
       cloud_label: string;
       cloud_dev_pill: string;
     };

@@ -12467,7 +12467,31 @@
     "clear_filter": "Очистить фильтр",
     "filter_to_run": "Фильтр по этому запуску",
     "new_memories_one": "{count} новое воспоминание",
-    "new_memories_other": "{count} новых воспоминаний"
+    "new_memories_other": "{count} новых воспоминаний",
+    "groups": {
+      "page_title": "Группы агентов",
+      "page_subtitle": "Объединяйте агентов в рабочие пространства с общими инструкциями и настройками по умолчанию",
+      "create_group": "Новая группа",
+      "edit_group": "Редактировать группу",
+      "delete_group": "Удалить группу",
+      "empty_title": "Групп пока нет",
+      "empty_hint": "Создайте группу, чтобы объединить агентов по назначению, поделиться инструкциями или задать модель и лимиты бюджета по умолчанию.",
+      "ungrouped_label": "Без группы",
+      "ungrouped_hint": "Агенты, не входящие ни в одну группу",
+      "persona_count_one": "{count} агент",
+      "persona_count_other": "{count} агентов",
+      "shared_label": "Общие",
+      "shared_instructions_title": "В этой группе есть общие инструкции, применяемые к каждому агенту",
+      "field_name": "Название",
+      "field_name_placeholder": "напр. Команда код-ревью",
+      "field_color": "Цвет",
+      "field_color_custom": "Свой цвет",
+      "field_description": "Описание",
+      "field_description_placeholder": "Для чего нужна эта группа?",
+      "field_shared_instructions": "Общие инструкции",
+      "field_shared_instructions_hint": "Добавляются к системному промпту каждого агента в этой группе. Удобно для тона, политик или контекста организации.",
+      "field_shared_instructions_placeholder": "напр. Всегда указывайте источники. Отдавайте предпочтение кратким ответам."
+    }
   },
   "auth": {
     "login_timed_out": "Время входа истекло. Попробуйте снова."
@@ -12688,6 +12712,7 @@
       "back_to_plugins": "Plugins",
       "roadmap": "Roadmap",
       "teams_label": "Команды",
+      "groups_label": "Группы",
       "cloud_label": "Облако",
       "cloud_dev_pill": "dev"
     },

@@ -12467,7 +12467,31 @@
     "clear_filter": "フィルターをクリア",
     "filter_to_run": "この実行にフィルター",
     "new_memories_one": "{count} 件の新規メモリー",
-    "new_memories_other": "{count} 件の新規メモリー"
+    "new_memories_other": "{count} 件の新規メモリー",
+    "groups": {
+      "page_title": "ペルソナグループ",
+      "page_subtitle": "ペルソナをワークスペースにまとめ、共通の指示やデフォルト設定を共有します",
+      "create_group": "新規グループ",
+      "edit_group": "グループを編集",
+      "delete_group": "グループを削除",
+      "empty_title": "グループはまだありません",
+      "empty_hint": "グループを作成して、ペルソナを目的別に整理したり、共通の指示を適用したり、デフォルトのモデルや予算上限を設定したりできます。",
+      "ungrouped_label": "未分類",
+      "ungrouped_hint": "どのグループにも割り当てられていないペルソナ",
+      "persona_count_one": "{count}件のペルソナ",
+      "persona_count_other": "{count}件のペルソナ",
+      "shared_label": "共有",
+      "shared_instructions_title": "このグループにはすべてのペルソナに適用される共通の指示があります",
+      "field_name": "名前",
+      "field_name_placeholder": "例: コードレビューチーム",
+      "field_color": "カラー",
+      "field_color_custom": "カスタムカラー",
+      "field_description": "説明",
+      "field_description_placeholder": "このグループの目的は何ですか？",
+      "field_shared_instructions": "共通の指示",
+      "field_shared_instructions_hint": "このグループ内のすべてのペルソナのシステムプロンプトに追記されます。トーン、ポリシー、組織のコンテキストなどに便利です。",
+      "field_shared_instructions_placeholder": "例: 常に出典を明記すること。簡潔な回答を優先すること。"
+    }
   },
   "auth": {
     "login_timed_out": "ログインがタイムアウトしました。もう一度お試しください。"
@@ -12688,6 +12712,7 @@
       "back_to_plugins": "Plugins",
       "roadmap": "Roadmap",
       "teams_label": "チーム",
+      "groups_label": "グループ",
       "cloud_label": "クラウド",
       "cloud_dev_pill": "dev"
     },

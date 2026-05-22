@@ -12467,7 +12467,31 @@
     "clear_filter": "Effacer le filtre",
     "filter_to_run": "Filtrer par exécution",
     "new_memories_one": "{count} nouvelle mémorisation",
-    "new_memories_other": "{count} nouvelles mémorisations"
+    "new_memories_other": "{count} nouvelles mémorisations",
+    "groups": {
+      "page_title": "Groupes de personas",
+      "page_subtitle": "Organisez vos personas en espaces de travail avec des instructions et des paramètres par défaut partagés",
+      "create_group": "Nouveau groupe",
+      "edit_group": "Modifier le groupe",
+      "delete_group": "Supprimer le groupe",
+      "empty_title": "Aucun groupe pour l'instant",
+      "empty_hint": "Créez un groupe pour organiser les personas par objectif, partager des instructions entre eux ou définir un modèle et des limites de budget par défaut.",
+      "ungrouped_label": "Sans groupe",
+      "ungrouped_hint": "Personas non assignés à un groupe",
+      "persona_count_one": "{count} persona",
+      "persona_count_other": "{count} personas",
+      "shared_label": "Partagé",
+      "shared_instructions_title": "Ce groupe applique des instructions partagées à chaque persona",
+      "field_name": "Nom",
+      "field_name_placeholder": "ex. Équipe de revue de code",
+      "field_color": "Couleur",
+      "field_color_custom": "Couleur personnalisée",
+      "field_description": "Description",
+      "field_description_placeholder": "À quoi sert ce groupe ?",
+      "field_shared_instructions": "Instructions partagées",
+      "field_shared_instructions_hint": "Ajoutées au prompt système de chaque persona de ce groupe. Utile pour le ton, les règles ou le contexte de l'organisation.",
+      "field_shared_instructions_placeholder": "ex. Toujours citer les sources. Privilégier les réponses concises."
+    }
   },
   "auth": {
     "login_timed_out": "Connexion expirée. Veuillez réessayer."
@@ -12688,6 +12712,7 @@
       "back_to_plugins": "Plugins",
       "roadmap": "Roadmap",
       "teams_label": "Équipes",
+      "groups_label": "Groupes",
       "cloud_label": "Cloud",
       "cloud_dev_pill": "dev"
     },

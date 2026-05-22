@@ -12467,7 +12467,31 @@
     "clear_filter": "Filter zurücksetzen",
     "filter_to_run": "Auf diesen Lauf filtern",
     "new_memories_one": "{count} neue Erinnerung",
-    "new_memories_other": "{count} neue Erinnerungen"
+    "new_memories_other": "{count} neue Erinnerungen",
+    "groups": {
+      "page_title": "Persona-Gruppen",
+      "page_subtitle": "Personas in Arbeitsbereichen mit gemeinsamen Anweisungen und Voreinstellungen organisieren",
+      "create_group": "Neue Gruppe",
+      "edit_group": "Gruppe bearbeiten",
+      "delete_group": "Gruppe löschen",
+      "empty_title": "Noch keine Gruppen",
+      "empty_hint": "Erstellen Sie eine Gruppe, um Personas nach Zweck zu organisieren, gemeinsame Anweisungen zu teilen oder Standardmodell und Budgetlimits festzulegen.",
+      "ungrouped_label": "Nicht gruppiert",
+      "ungrouped_hint": "Personas, die keiner Gruppe zugeordnet sind",
+      "persona_count_one": "{count} Persona",
+      "persona_count_other": "{count} Personas",
+      "shared_label": "Geteilt",
+      "shared_instructions_title": "Diese Gruppe hat gemeinsame Anweisungen, die auf jede Persona angewendet werden",
+      "field_name": "Name",
+      "field_name_placeholder": "z. B. Code-Review-Team",
+      "field_color": "Farbe",
+      "field_color_custom": "Benutzerdefinierte Farbe",
+      "field_description": "Beschreibung",
+      "field_description_placeholder": "Wozu dient diese Gruppe?",
+      "field_shared_instructions": "Gemeinsame Anweisungen",
+      "field_shared_instructions_hint": "Wird an den System-Prompt jeder Persona in dieser Gruppe angehängt. Nützlich für Tonalität, Richtlinien oder Organisationskontext.",
+      "field_shared_instructions_placeholder": "z. B. Quellen stets angeben. Knappe Antworten bevorzugen."
+    }
   },
   "auth": {
     "login_timed_out": "Anmeldung hat sich zeitlich überschritten. Bitte erneut versuchen."
@@ -12688,6 +12712,7 @@
       "back_to_plugins": "Plugins",
       "roadmap": "Roadmap",
       "teams_label": "Teams",
+      "groups_label": "Gruppen",
       "cloud_label": "Cloud",
       "cloud_dev_pill": "dev"
     },

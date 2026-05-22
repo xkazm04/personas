@@ -148,5 +148,29 @@
   "clear_filter": "مسح التصفية",
   "filter_to_run": "تصفية إلى هذا التشغيل",
   "new_memories_one": "{count} ذاكرة جديدة",
-  "new_memories_other": "{count} ذكريات جديدة"
+  "new_memories_other": "{count} ذكريات جديدة",
+  "groups": {
+    "page_title": "مجموعات الشخصيات",
+    "page_subtitle": "نظّم الشخصيات في مساحات عمل بتعليمات وإعدادات افتراضية مشتركة",
+    "create_group": "مجموعة جديدة",
+    "edit_group": "تعديل المجموعة",
+    "delete_group": "حذف المجموعة",
+    "empty_title": "لا توجد مجموعات بعد",
+    "empty_hint": "أنشئ مجموعة لتنظيم الشخصيات حسب الغرض، أو مشاركة التعليمات بينها، أو تعيين النموذج الافتراضي وحدود الميزانية.",
+    "ungrouped_label": "غير مُصنَّفة",
+    "ungrouped_hint": "شخصيات غير مُسنَدة إلى أي مجموعة",
+    "persona_count_one": "{count} شخصية",
+    "persona_count_other": "{count} شخصية",
+    "shared_label": "مشترك",
+    "shared_instructions_title": "هذه المجموعة لديها تعليمات مشتركة مُطبَّقة على كل شخصية",
+    "field_name": "الاسم",
+    "field_name_placeholder": "مثلاً: فريق مراجعة الكود",
+    "field_color": "اللون",
+    "field_color_custom": "لون مخصص",
+    "field_description": "الوصف",
+    "field_description_placeholder": "ما الغرض من هذه المجموعة؟",
+    "field_shared_instructions": "التعليمات المشتركة",
+    "field_shared_instructions_hint": "تُضاف إلى موجّه النظام لكل شخصية في هذه المجموعة. مفيدة للأسلوب أو السياسات أو سياق المؤسسة.",
+    "field_shared_instructions_placeholder": "مثلاً: استشهد دائماً بالمصادر. فضّل الإجابات الموجزة."
+  }
 }

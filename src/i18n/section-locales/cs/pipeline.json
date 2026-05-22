@@ -148,5 +148,29 @@
   "clear_filter": "Vymazat filtr",
   "filter_to_run": "Filtrovat na tento běh",
   "new_memories_one": "{count} nová vzpomínka",
-  "new_memories_other": "{count} nových vzpomínek"
+  "new_memories_other": "{count} nových vzpomínek",
+  "groups": {
+    "page_title": "Skupiny person",
+    "page_subtitle": "Uspořádej persony do pracovních prostorů se sdílenými instrukcemi a výchozími hodnotami",
+    "create_group": "Nová skupina",
+    "edit_group": "Upravit skupinu",
+    "delete_group": "Smazat skupinu",
+    "empty_title": "Zatím žádné skupiny",
+    "empty_hint": "Vytvoř skupinu pro uspořádání person podle účelu, sdílení instrukcí mezi nimi nebo nastavení výchozího modelu a limitů rozpočtu.",
+    "ungrouped_label": "Bez skupiny",
+    "ungrouped_hint": "Persony, které nejsou přiřazeny do žádné skupiny",
+    "persona_count_one": "{count} persona",
+    "persona_count_other": "{count} person",
+    "shared_label": "Sdílené",
+    "shared_instructions_title": "Tato skupina má sdílené instrukce použité u každé persony",
+    "field_name": "Název",
+    "field_name_placeholder": "např. Tým pro kontrolu kódu",
+    "field_color": "Barva",
+    "field_color_custom": "Vlastní barva",
+    "field_description": "Popis",
+    "field_description_placeholder": "K čemu tato skupina slouží?",
+    "field_shared_instructions": "Sdílené instrukce",
+    "field_shared_instructions_hint": "Připojeno k systémovému promptu každé persony v této skupině. Užitečné pro tón, zásady nebo kontext organizace.",
+    "field_shared_instructions_placeholder": "např. Vždy uváděj zdroje. Preferuj stručné odpovědi."
+  }
 }

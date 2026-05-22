@@ -12538,7 +12538,31 @@
     "clear_filter": "Clear filter",
     "filter_to_run": "Filter to this run",
     "new_memories_one": "{count} new memory",
-    "new_memories_other": "{count} new memories"
+    "new_memories_other": "{count} new memories",
+    "groups": {
+      "page_title": "Persona Groups",
+      "page_subtitle": "Organize personas into workspaces with shared instructions and defaults",
+      "create_group": "New Group",
+      "edit_group": "Edit group",
+      "delete_group": "Delete group",
+      "empty_title": "No groups yet",
+      "empty_hint": "Create a group to organize personas by purpose, share instructions across them, or set default model and budget limits.",
+      "ungrouped_label": "Ungrouped",
+      "ungrouped_hint": "Personas not assigned to any group",
+      "persona_count_one": "{count} persona",
+      "persona_count_other": "{count} personas",
+      "shared_label": "Shared",
+      "shared_instructions_title": "This group has shared instructions applied to every persona",
+      "field_name": "Name",
+      "field_name_placeholder": "e.g. Code Review Team",
+      "field_color": "Color",
+      "field_color_custom": "Custom color",
+      "field_description": "Description",
+      "field_description_placeholder": "What is this group for?",
+      "field_shared_instructions": "Shared instructions",
+      "field_shared_instructions_hint": "Appended to every persona's system prompt in this group. Useful for tone, policies, or organization context.",
+      "field_shared_instructions_placeholder": "e.g. Always cite sources. Prefer concise answers."
+    }
   },
   "auth": {
     "login_timed_out": "Login timed out. Please try again."
@@ -12779,6 +12803,7 @@
       "back_to_plugins": "Plugins",
       "roadmap": "Roadmap",
       "teams_label": "Teams",
+      "groups_label": "Groups",
       "cloud_label": "Cloud",
       "cloud_dev_pill": "dev"
     },

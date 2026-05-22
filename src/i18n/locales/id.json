@@ -12467,7 +12467,31 @@
     "clear_filter": "Bersihkan filter",
     "filter_to_run": "Filter ke jalan ini",
     "new_memories_one": "{count} memori baru",
-    "new_memories_other": "{count} memori baru"
+    "new_memories_other": "{count} memori baru",
+    "groups": {
+      "page_title": "Grup Persona",
+      "page_subtitle": "Atur persona ke dalam ruang kerja dengan instruksi dan default bersama",
+      "create_group": "Grup Baru",
+      "edit_group": "Sunting grup",
+      "delete_group": "Hapus grup",
+      "empty_title": "Belum ada grup",
+      "empty_hint": "Buat grup untuk mengatur persona berdasarkan tujuan, berbagi instruksi di antara mereka, atau menetapkan model default dan batas anggaran.",
+      "ungrouped_label": "Tidak Dikelompokkan",
+      "ungrouped_hint": "Persona yang tidak ditetapkan ke grup mana pun",
+      "persona_count_one": "{count} persona",
+      "persona_count_other": "{count} persona",
+      "shared_label": "Dibagikan",
+      "shared_instructions_title": "Grup ini memiliki instruksi bersama yang diterapkan ke setiap persona",
+      "field_name": "Nama",
+      "field_name_placeholder": "mis. Tim Code Review",
+      "field_color": "Warna",
+      "field_color_custom": "Warna kustom",
+      "field_description": "Deskripsi",
+      "field_description_placeholder": "Untuk apa grup ini?",
+      "field_shared_instructions": "Instruksi bersama",
+      "field_shared_instructions_hint": "Ditambahkan ke prompt sistem setiap persona dalam grup ini. Berguna untuk nada, kebijakan, atau konteks organisasi.",
+      "field_shared_instructions_placeholder": "mis. Selalu kutip sumber. Lebih sukai jawaban yang ringkas."
+    }
   },
   "auth": {
     "login_timed_out": "Login habis waktu. Silakan coba lagi."
@@ -12688,6 +12712,7 @@
       "back_to_plugins": "Plugins",
       "roadmap": "Roadmap",
       "teams_label": "Tim",
+      "groups_label": "Grup",
       "cloud_label": "Cloud",
       "cloud_dev_pill": "dev"
     },
