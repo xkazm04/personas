@@ -1,13 +1,16 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ChevronRight,
   GitBranch,
   Loader2,
   ScrollText,
   Search,
+  Sparkles,
+  X,
 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
+import { useSystemStore } from '@/stores/systemStore';
 import {
   companionListDesignDecisions,
   type CompanionDesignDecision,
@@ -22,13 +25,33 @@ import {
  * Rows are immutable — there's no edit/delete UI here. To correct a
  * decision, the user asks Athena to re-emit a `show_decision_log` with
  * the updated entry; the original stays put as audit trail.
+ *
+ * Auto-scope: when `UnifiedBuildEntry` has a non-empty intent in the
+ * system store's `activeBuildIntent` slot, the panel pre-fills the
+ * filter to that intent on first mount and renders a "Currently
+ * designing" banner with a "Show all" toggle. After the user clicks
+ * "Show all" (or successfully launches the build), the panel reverts
+ * to the unfiltered view.
  */
 export default function DecisionsPanel() {
   const { t } = useTranslation();
-  const [filter, setFilter] = useState('');
+  const activeBuildIntent = useSystemStore((s) => s.activeBuildIntent);
+  const setActiveBuildIntent = useSystemStore((s) => s.setActiveBuildIntent);
+  // Snapshot the build intent that was active when the panel first
+  // mounted so the banner persists even if the user later opens a new
+  // build slate (which would wipe activeBuildIntent on its empty mount
+  // sync). Reading via state-setter form so the initial value is
+  // captured exactly once.
+  const initialScopedIntentRef = useRef<string | null>(activeBuildIntent);
+  const [filter, setFilter] = useState(activeBuildIntent ?? '');
+  const [showAllOverride, setShowAllOverride] = useState(false);
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<CompanionDesignDecision[]>([]);
   const [error, setError] = useState<string | null>(null);
+
+  const scopedIntent = showAllOverride ? null : initialScopedIntentRef.current;
+  const showScopeBanner =
+    !!scopedIntent && filter.trim() === scopedIntent.trim();
 
   // Server-side filter on the personaContext column. Empty filter → all
   // rows. We refetch on every filter commit so reloads stay
@@ -77,6 +100,15 @@ export default function DecisionsPanel() {
     }));
   }, [rows, t]);
 
+  const handleShowAll = () => {
+    setShowAllOverride(true);
+    setFilter('');
+    // Also clear the slice so reopening the panel doesn't re-scope
+    // until the user starts a new build. (The build's still in flight,
+    // but the user explicitly said "show me everything.")
+    setActiveBuildIntent(null);
+  };
+
   return (
     <div className="flex flex-col gap-4 p-6 max-w-4xl mx-auto w-full">
       <header className="space-y-2">
@@ -88,6 +120,31 @@ export default function DecisionsPanel() {
           {t.plugins.companion.decisions_panel_subtitle}
         </p>
       </header>
+      {showScopeBanner && scopedIntent && (
+        <div
+          className="flex items-start gap-2 rounded-card border border-fuchsia-500/30 bg-fuchsia-500/5 px-3 py-2"
+          data-testid="companion-decisions-scope-banner"
+        >
+          <Sparkles className="w-4 h-4 text-fuchsia-400 shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <div className="typo-caption text-foreground/90">
+              {t.plugins.companion.decisions_panel_currently_designing}
+            </div>
+            <div className="typo-body text-foreground truncate">
+              {scopedIntent}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleShowAll}
+            className="shrink-0 inline-flex items-center gap-1 typo-caption text-foreground hover:text-foreground/90 rounded-interactive px-1.5 py-0.5 hover:bg-foreground/[0.06] focus-ring transition-colors"
+            data-testid="companion-decisions-show-all"
+          >
+            <X className="w-3 h-3" />
+            {t.plugins.companion.decisions_panel_show_all}
+          </button>
+        </div>
+      )}
       <div className="relative">
         <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-foreground" />
         <input

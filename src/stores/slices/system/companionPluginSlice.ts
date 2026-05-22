@@ -143,6 +143,15 @@ export interface CompanionPluginSlice {
    * UX is "type anything").
    */
   companionAutonomousMode: boolean;
+  /**
+   * Currently-typed intent in `UnifiedBuildEntry`, mirrored into the
+   * slice so the Decisions panel can auto-scope its filter to the
+   * persona the user is actively designing. Not persisted (session-
+   * scoped UI affordance — surprising to resume "currently designing"
+   * state across app restarts). Cleared on launch success and on
+   * `UnifiedBuildEntry` re-mount with an empty initial intent.
+   */
+  activeBuildIntent: string | null;
 
   setCompanionPluginTab: (tab: CompanionPluginTab) => void;
   setCompanionFooterEnabled: (v: boolean) => void;
@@ -164,6 +173,7 @@ export interface CompanionPluginSlice {
   setCompanionPanelCompact: (v: boolean) => void;
   setCompanionRecallSynthesisEnabled: (v: boolean) => void;
   setCompanionAutonomousMode: (v: boolean) => void;
+  setActiveBuildIntent: (intent: string | null) => void;
 }
 
 export const createCompanionPluginSlice: StateCreator<
@@ -190,6 +200,7 @@ export const createCompanionPluginSlice: StateCreator<
   companionPanelCompact: false,
   companionRecallSynthesisEnabled: false,
   companionAutonomousMode: false,
+  activeBuildIntent: null,
 
   setCompanionPluginTab: (companionPluginTab) => set({ companionPluginTab }),
   setCompanionFooterEnabled: (companionFooterEnabled) =>
@@ -227,4 +238,5 @@ export const createCompanionPluginSlice: StateCreator<
     set({ companionRecallSynthesisEnabled }),
   setCompanionAutonomousMode: (companionAutonomousMode) =>
     set({ companionAutonomousMode }),
+  setActiveBuildIntent: (activeBuildIntent) => set({ activeBuildIntent }),
 });

@@ -15,9 +15,11 @@ vi.mock('@/api/companion', async () => {
 });
 
 import DecisionsPanel from '../DecisionsPanel';
+import { useSystemStore } from '@/stores/systemStore';
 
 beforeEach(() => {
   companionListDesignDecisions.mockReset();
+  useSystemStore.getState().setActiveBuildIntent(null);
 });
 
 describe('DecisionsPanel', () => {
@@ -124,6 +126,70 @@ describe('DecisionsPanel', () => {
     });
     await waitFor(() => {
       expect(screen.getByText(/No decisions match/i)).toBeInTheDocument();
+    });
+  });
+
+  it('auto-scopes the filter to activeBuildIntent on mount + renders scope banner', async () => {
+    useSystemStore.getState().setActiveBuildIntent('Triage Sentry issues hourly');
+    companionListDesignDecisions.mockResolvedValueOnce([]);
+    render(<DecisionsPanel />);
+    await waitFor(() => {
+      // First call should already be scoped to the active intent.
+      expect(companionListDesignDecisions).toHaveBeenCalledWith(
+        'Triage Sentry issues hourly',
+        200,
+      );
+    });
+    // Banner present, showing the snapshotted intent.
+    expect(
+      screen.getByTestId('companion-decisions-scope-banner'),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Triage Sentry issues hourly/)).toBeInTheDocument();
+    // Filter input pre-filled with the intent.
+    expect(
+      (screen.getByTestId('companion-decisions-filter') as HTMLInputElement)
+        .value,
+    ).toBe('Triage Sentry issues hourly');
+  });
+
+  it('"Show all" clears the filter, hides banner, and clears the slice', async () => {
+    useSystemStore.getState().setActiveBuildIntent('A working intent');
+    companionListDesignDecisions.mockResolvedValueOnce([]);
+    render(<DecisionsPanel />);
+    await waitFor(() => {
+      expect(
+        screen.getByTestId('companion-decisions-scope-banner'),
+      ).toBeInTheDocument();
+    });
+    companionListDesignDecisions.mockResolvedValueOnce([]);
+    fireEvent.click(screen.getByTestId('companion-decisions-show-all'));
+    await waitFor(() => {
+      // Filter cleared → refetch with null
+      expect(companionListDesignDecisions).toHaveBeenCalledWith(null, 200);
+    });
+    expect(
+      screen.queryByTestId('companion-decisions-scope-banner'),
+    ).toBeNull();
+    expect(useSystemStore.getState().activeBuildIntent).toBeNull();
+  });
+
+  it('hides the scope banner once the user edits the filter away from the intent', async () => {
+    useSystemStore.getState().setActiveBuildIntent('Initial intent');
+    companionListDesignDecisions.mockResolvedValueOnce([]);
+    render(<DecisionsPanel />);
+    await waitFor(() => {
+      expect(
+        screen.getByTestId('companion-decisions-scope-banner'),
+      ).toBeInTheDocument();
+    });
+    companionListDesignDecisions.mockResolvedValueOnce([]);
+    fireEvent.change(screen.getByTestId('companion-decisions-filter'), {
+      target: { value: 'something else' },
+    });
+    await waitFor(() => {
+      expect(
+        screen.queryByTestId('companion-decisions-scope-banner'),
+      ).toBeNull();
     });
   });
 });

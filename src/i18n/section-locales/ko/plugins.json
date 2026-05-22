@@ -1388,6 +1388,8 @@
     "decisions_panel_empty": "Athena hasn't logged any design decisions yet. Ask her to design a persona to see this fill up.",
     "decisions_panel_empty_filtered": "No decisions match that context. Try a shorter filter or clear it.",
     "decisions_panel_unscoped": "Unscoped",
+    "decisions_panel_currently_designing": "현재 설계 중",
+    "decisions_panel_show_all": "모두 표시",
     "orchestration": {
       "guidance_from": "Guidance request from",
       "guidance_placeholder": "Type your answer — claude is paused on this RPC.",

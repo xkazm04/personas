@@ -11055,6 +11055,8 @@
       "decisions_panel_empty": "Athena hasn't logged any design decisions yet. Ask her to design a persona to see this fill up.",
       "decisions_panel_empty_filtered": "No decisions match that context. Try a shorter filter or clear it.",
       "decisions_panel_unscoped": "Unscoped",
+      "decisions_panel_currently_designing": "Currently designing",
+      "decisions_panel_show_all": "Show all",
       "dashboard_empty_title": "No dashboard yet",
       "dashboard_empty_body": "Ask Athena to compose one for you — for example, \"Show me my agent activity for the past week.\"",
       "dashboard_unknown_widget": "Unknown widget",

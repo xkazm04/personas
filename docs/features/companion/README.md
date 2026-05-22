@@ -184,6 +184,8 @@ Retrieval surface: `companion_list_design_decisions(personaContext?, limit?)` Ta
 
 The Companion plugin page exposes a new **Decisions** sub-tab (`sub_decisions/DecisionsPanel.tsx`) that lists every saved decision grouped by `persona_context`, with a filter input that server-side scopes the query. Rows are immutable in the UI — to "correct" a decision the user asks Athena to re-emit a `show_decision_log` with the updated entry; the original stays put.
 
+**Auto-scope to active build intent.** When the user is mid-build, `UnifiedBuildEntry` mirrors the intent textarea into the system store's `activeBuildIntent` slot. On first mount, the Decisions panel snapshots that slot and pre-fills its filter with it — and renders a fuchsia "Currently designing: …" banner above the filter input with a "Show all" affordance that clears the filter and the slice. Clears automatically on successful build launch (the slot resets to null in `handleLaunch`'s success branch). State is not persisted (session-scoped UI affordance — surprising to resume across app restarts).
+
 ## `show_persona_ready` chat-card — design → build closer
 
 The end-of-design recap. Athena emits `show_persona_ready { intent, summary, recommended_action }` after she's worked the user through the design decomposition (walkthrough → use_cases → triggers → tier → observability) and there's enough decided to commit.
