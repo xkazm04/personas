@@ -12536,7 +12536,9 @@
       "memory_modal_authored_by": "بواسطة {name}",
       "memory_modal_importance": "الأهمية {value}",
       "memory_modal_footer_count_one": "{count} ذكرى",
-      "memory_modal_footer_count_other": "{count} ذكريات"
+      "memory_modal_footer_count_other": "{count} ذكريات",
+      "clear_defaults_action": "مسح كل الإعدادات الافتراضية",
+      "clear_defaults_title": "تفريغ التعليمات المشتركة + النموذج + الميزانية + الأدوار. الشخصيات الحالية لا تتأثر."
     }
   },
   "auth": {

@@ -191,6 +191,8 @@
     "memory_modal_authored_by": "Par {name}",
     "memory_modal_importance": "importance {value}",
     "memory_modal_footer_count_one": "{count} souvenir",
-    "memory_modal_footer_count_other": "{count} souvenirs"
+    "memory_modal_footer_count_other": "{count} souvenirs",
+    "clear_defaults_action": "Effacer toutes les valeurs par défaut",
+    "clear_defaults_title": "Vider les instructions partagées + modèle + budget + tours. Les personas existantes ne sont pas affectées."
   }
 }

@@ -12536,7 +12536,9 @@
       "memory_modal_authored_by": "作者：{name}",
       "memory_modal_importance": "重要性 {value}",
       "memory_modal_footer_count_one": "{count} 条记忆",
-      "memory_modal_footer_count_other": "{count} 条记忆"
+      "memory_modal_footer_count_other": "{count} 条记忆",
+      "clear_defaults_action": "清除所有默认值",
+      "clear_defaults_title": "将共享指令 + 模型 + 预算 + 轮次清空。现有人格不受影响。"
     }
   },
   "auth": {

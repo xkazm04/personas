@@ -191,6 +191,8 @@
     "memory_modal_authored_by": "Von {name}",
     "memory_modal_importance": "Wichtigkeit {value}",
     "memory_modal_footer_count_one": "{count} Erinnerung",
-    "memory_modal_footer_count_other": "{count} Erinnerungen"
+    "memory_modal_footer_count_other": "{count} Erinnerungen",
+    "clear_defaults_action": "Alle Standardwerte löschen",
+    "clear_defaults_title": "Geteilte Anweisungen + Modell + Budget + Runden leeren. Bestehende Personas bleiben unverändert."
   }
 }

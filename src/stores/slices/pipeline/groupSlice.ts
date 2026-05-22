@@ -4,7 +4,7 @@ import { reportError } from "../../storeTypes";
 import { storeBus } from "@/lib/storeBus";
 import type { PersonaGroup } from "@/lib/types/types";
 import type { UpdatePersonaGroupInput } from "@/lib/bindings/UpdatePersonaGroupInput";
-import { createGroup, deleteGroup, listGroups, reorderGroups, updateGroup } from "@/api/pipeline/groups";
+import { clearGroupDefaults, createGroup, deleteGroup, listGroups, reorderGroups, updateGroup } from "@/api/pipeline/groups";
 
 
 export interface GroupSlice {
@@ -26,6 +26,14 @@ export interface GroupSlice {
   }>) => Promise<void>;
   deleteGroup: (id: string) => Promise<void>;
   reorderGroups: (orderedIds: string[]) => Promise<void>;
+  /**
+   * Null out the four "default" caps (model profile, budget, turns,
+   * shared instructions). Calls the dedicated `clear_group_defaults` IPC
+   * — which exists because the single-Option semantics of `updateGroup`
+   * can't express "actively set to NULL". See `clearGroupDefaults` in
+   * `@/api/pipeline/groups`.
+   */
+  clearGroupDefaults: (id: string) => Promise<void>;
   movePersonaToGroup: (personaId: string, groupId: string | null) => Promise<void>;
 }
 
@@ -104,6 +112,17 @@ export const createGroupSlice: StateCreator<PipelineStore, [], [], GroupSlice> =
       }));
     } catch (err) {
       reportError(err, "Failed to reorder groups", set);
+    }
+  },
+
+  clearGroupDefaults: async (id) => {
+    try {
+      const refreshed = await clearGroupDefaults(id);
+      set((state) => ({
+        groups: state.groups.map((g) => (g.id === id ? refreshed : g)),
+      }));
+    } catch (err) {
+      reportError(err, "Failed to clear group defaults", set);
     }
   },
 

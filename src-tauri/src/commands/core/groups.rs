@@ -38,6 +38,18 @@ pub fn delete_group(state: State<'_, Arc<AppState>>, id: String) -> Result<bool,
     repo::delete(&state.db, &id)
 }
 
+/// Null out the four "default" caps on a group (model profile, budget,
+/// turns, shared instructions). Surfaces the only NULL-clear case the
+/// user can reach today; see `repo::clear_defaults` for the full rationale.
+#[tauri::command]
+pub fn clear_group_defaults(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+) -> Result<PersonaGroup, AppError> {
+    require_auth_sync(&state)?;
+    repo::clear_defaults(&state.db, &id)
+}
+
 #[tauri::command]
 pub fn reorder_groups(
     state: State<'_, Arc<AppState>>,

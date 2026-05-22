@@ -12536,7 +12536,9 @@
       "memory_modal_authored_by": "Autor {name}",
       "memory_modal_importance": "důležitost {value}",
       "memory_modal_footer_count_one": "{count} vzpomínka",
-      "memory_modal_footer_count_other": "{count} vzpomínek"
+      "memory_modal_footer_count_other": "{count} vzpomínek",
+      "clear_defaults_action": "Vymazat všechny výchozí hodnoty",
+      "clear_defaults_title": "Vyprázdnit sdílené pokyny + model + rozpočet + kola. Stávající persony nejsou ovlivněny."
     }
   },
   "auth": {

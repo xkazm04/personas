@@ -12536,7 +12536,9 @@
       "memory_modal_authored_by": "작성자 {name}",
       "memory_modal_importance": "중요도 {value}",
       "memory_modal_footer_count_one": "메모리 {count}개",
-      "memory_modal_footer_count_other": "메모리 {count}개"
+      "memory_modal_footer_count_other": "메모리 {count}개",
+      "clear_defaults_action": "모든 기본값 지우기",
+      "clear_defaults_title": "공유 지침 + 모델 + 예산 + 턴을 비웁니다. 기존 페르소나에는 영향이 없습니다."
     }
   },
   "auth": {

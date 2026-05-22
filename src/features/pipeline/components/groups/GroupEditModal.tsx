@@ -60,6 +60,7 @@ export function GroupEditModal({ open, group, onClose }: GroupEditModalProps) {
   const { t } = useTranslation();
   const createGroup = usePipelineStore((s) => s.createGroup);
   const updateGroup = usePipelineStore((s) => s.updateGroup);
+  const clearGroupDefaultsAction = usePipelineStore((s) => s.clearGroupDefaults);
 
   const [name, setName] = useState('');
   const [color, setColor] = useState('#6366f1');
@@ -238,7 +239,26 @@ export function GroupEditModal({ open, group, onClose }: GroupEditModalProps) {
 
         {/* Defaults — applied to new personas that land in this group. */}
         <div className="pt-2 border-t border-primary/10">
-          <h3 className="typo-heading text-foreground/90 mb-1">{t.pipeline.groups.defaults_heading}</h3>
+          <div className="flex items-baseline justify-between gap-3 mb-1">
+            <h3 className="typo-heading text-foreground/90">{t.pipeline.groups.defaults_heading}</h3>
+            {isEditing && (
+              <button
+                type="button"
+                onClick={async () => {
+                  await clearGroupDefaultsAction(group.id);
+                  // Mirror the cleared state in the form so the user sees the result.
+                  setDefaultModel('');
+                  setDefaultBudget('');
+                  setDefaultTurns('');
+                  setSharedInstructions('');
+                }}
+                className="typo-label text-foreground/60 hover:text-red-400 transition-colors underline-offset-2 hover:underline"
+                title={t.pipeline.groups.clear_defaults_title}
+              >
+                {t.pipeline.groups.clear_defaults_action}
+              </button>
+            )}
+          </div>
           <p className="typo-label text-foreground mb-3">{t.pipeline.groups.defaults_hint}</p>
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">

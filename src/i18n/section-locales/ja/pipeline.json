@@ -191,6 +191,8 @@
     "memory_modal_authored_by": "作成者: {name}",
     "memory_modal_importance": "重要度 {value}",
     "memory_modal_footer_count_one": "{count} 件のメモリ",
-    "memory_modal_footer_count_other": "{count} 件のメモリ"
+    "memory_modal_footer_count_other": "{count} 件のメモリ",
+    "clear_defaults_action": "すべてのデフォルトをクリア",
+    "clear_defaults_title": "共有指示 + モデル + 予算 + ターンを空にします。既存のペルソナには影響しません。"
   }
 }

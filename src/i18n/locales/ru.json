@@ -12536,7 +12536,9 @@
       "memory_modal_authored_by": "Автор: {name}",
       "memory_modal_importance": "Важность {value}",
       "memory_modal_footer_count_one": "{count} воспоминание",
-      "memory_modal_footer_count_other": "{count} воспоминаний"
+      "memory_modal_footer_count_other": "{count} воспоминаний",
+      "clear_defaults_action": "Сбросить все значения по умолчанию",
+      "clear_defaults_title": "Очистить общие инструкции + модель + бюджет + ходы. Существующие персоны не затрагиваются."
     }
   },
   "auth": {

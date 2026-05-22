@@ -12536,7 +12536,9 @@
       "memory_modal_authored_by": "Por {name}",
       "memory_modal_importance": "importancia {value}",
       "memory_modal_footer_count_one": "{count} memoria",
-      "memory_modal_footer_count_other": "{count} memorias"
+      "memory_modal_footer_count_other": "{count} memorias",
+      "clear_defaults_action": "Borrar todos los valores por defecto",
+      "clear_defaults_title": "Vaciar instrucciones compartidas + modelo + presupuesto + turnos. Las personas existentes no se ven afectadas."
     }
   },
   "auth": {

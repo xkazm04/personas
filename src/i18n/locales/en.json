@@ -12602,6 +12602,8 @@
       "field_model_haiku": "Haiku — fastest, lowest cost",
       "field_model_sonnet": "Sonnet — balanced",
       "field_model_opus": "Opus — strongest",
+      "clear_defaults_action": "Clear all defaults",
+      "clear_defaults_title": "Null out shared instructions + model + budget + turns. Existing personas are unaffected.",
       "view_memories_title": "View shared memories",
       "memory_modal_title": "Shared memories — {name}",
       "memory_modal_loading": "Loading…",

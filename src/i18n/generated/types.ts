@@ -12608,6 +12608,8 @@ export type Translations = {
       field_model_haiku: string;
       field_model_sonnet: string;
       field_model_opus: string;
+      clear_defaults_action: string;
+      clear_defaults_title: string;
       view_memories_title: string;
       memory_modal_title: string;
       memory_modal_loading: string;

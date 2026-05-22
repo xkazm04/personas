@@ -191,6 +191,8 @@
     "memory_modal_authored_by": "लेखक: {name}",
     "memory_modal_importance": "महत्व {value}",
     "memory_modal_footer_count_one": "{count} स्मृति",
-    "memory_modal_footer_count_other": "{count} स्मृतियाँ"
+    "memory_modal_footer_count_other": "{count} स्मृतियाँ",
+    "clear_defaults_action": "सभी डिफ़ॉल्ट साफ़ करें",
+    "clear_defaults_title": "साझा निर्देश + मॉडल + बजट + बारी हटाएं। मौजूदा पर्सोना अप्रभावित।"
   }
 }
