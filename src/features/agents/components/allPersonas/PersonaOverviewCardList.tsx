@@ -136,6 +136,13 @@ const PersonaOverviewCardItem = memo(function PersonaOverviewCardItem({
 
   return (
     <div
+      // Drag source for the persona → group rail (cycle 16).
+      // Mobile / card-list layout. Mirror of the Grid layout drag setup.
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData('application/x-personas-persona-id', id);
+        e.dataTransfer.effectAllowed = 'move';
+      }}
       className={`rounded-modal border border-primary/15 bg-secondary/20 backdrop-blur-sm border-l-2 ${accent} ${
         selected ? 'ring-1 ring-primary/40 bg-primary/[0.04]' : ''
       }`}

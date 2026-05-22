@@ -55,6 +55,13 @@ export interface DataGridProps<T> {
   emptyDescription?: string;
   /** Optional per-row className (e.g. highlight animations) */
   getRowClassName?: (row: T) => string;
+  /**
+   * Optional per-row HTML-attribute hook. Returned props are spread onto the
+   * row's outer element — useful for drag sources (`draggable` + `onDragStart`),
+   * drag-over highlighting, or context-menu wiring. Keep returned objects
+   * referentially stable across renders or React will re-spread on every tick.
+   */
+  getRowProps?: (row: T) => React.HTMLAttributes<HTMLDivElement> | undefined;
   /** Optional className for the outer container */
   className?: string;
   /** When true, hides column filters and reduces page size to 5. */
@@ -127,6 +134,7 @@ export function DataGrid<T>({
   emptyTitle = 'No data',
   emptyDescription,
   getRowClassName,
+  getRowProps,
   className,
   simplified = false,
   selectAll,
@@ -315,11 +323,18 @@ export function DataGrid<T>({
             ? 'border-l-primary bg-primary/[0.06]'
             : (getRowAccent?.(row) ?? '');
           const rowCls = getRowClassName?.(row) ?? '';
+          const extraRowProps = getRowProps?.(row);
           return (
             <motion.div
               key={getRowKey(row)}
               variants={rowVariants}
               {...(idx >= STAGGER_CAP ? { transition: { duration: 0.01 } } : {})}
+              // Cast: motion.div's own onDragStart (for framer pan drags) shadows
+              // the React HTML5 DragEvent signature in TypeScript, but at runtime
+              // React forwards the HTML5 drag handlers to the underlying DOM div
+              // — framer's pan system is inactive while `drag` prop is false
+              // (the default), so the two don't fight.
+              {...(extraRowProps as React.ComponentProps<typeof motion.div>)}
               onClick={onRowClick ? () => onRowClick(row) : undefined}
               data-selected={selected || undefined}
               className={`row-hover-lift grid gap-0 border-b border-primary/5 border-l-2 border-l-transparent hover:bg-primary/[0.12] ${accent} ${rowCls} ${

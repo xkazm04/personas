@@ -182,7 +182,12 @@ export default function PersonaOverviewPage() {
           <PersonaOverviewToolbar search={search} onSearchChange={setSearch} view={view} onViewChange={setView} />
           {!isMobile && <LayoutModeTabs value={layout} onChange={setLayout} />}
         </div>
-        {!isMobile && layout === 'grid' && <PersonaGroupDropRail />}
+        {/* Drop rail is available in every layout that supports DnD on its
+            persona elements (cycle 16): grid + baseline DataGrid + mobile
+            card-list. Constellation is SVG-based; HTML5 DnD on SVG nodes
+            needs polyfilling, so it's skipped — opening a persona via the
+            constellation dossier still lets the user rebind via the editor. */}
+        {layout !== 'constellation' && <PersonaGroupDropRail />}
 
         {filteredData.length === 0 && hasActiveFilter ? (
           <PersonaOverviewEmptyState onResetFilters={handleResetFilters} />
@@ -233,6 +238,16 @@ export default function PersonaOverviewPage() {
                 : healthMap[p.id]?.status === 'degraded' ? 'border-l-amber-400/60'
                 : 'border-l-emerald-400/40'
             }
+            getRowProps={(p) => ({
+              // Drag source for persona → group rail (cycle 16; baseline
+              // DataGrid layout). Identical contract to grid + card-list
+              // layouts: same MIME, same 'move' effect, same drop targets.
+              draggable: true,
+              onDragStart: (e) => {
+                e.dataTransfer.setData('application/x-personas-persona-id', p.id);
+                e.dataTransfer.effectAllowed = 'move';
+              },
+            })}
             sortKey={view.sortKey}
             sortDirection={view.sortDirection}
             onSort={handleSort}
