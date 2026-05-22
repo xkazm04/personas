@@ -1398,7 +1398,16 @@
       "approval_deny": "Deny",
       "live_view_title": "Live operations",
       "live_view_op_count_one": "1 op",
-      "live_view_op_count_other": "{count} ops"
+      "live_view_op_count_other": "{count} ops",
+      "live_view_session_count_one": "1 सत्र",
+      "live_view_session_count_other": "{count} सत्र",
+      "live_view_intent_label": "मंशा",
+      "live_view_checkpoint_label": "चेकपॉइंट",
+      "live_view_blockers_label": "अवरोधक",
+      "live_view_files_label": "फ़ाइलें",
+      "live_view_files_more": "+{count} और",
+      "live_view_failure_label": "हाल की विफलता",
+      "live_view_summary_label": "सारांश"
     }
   },
   "ocr": {

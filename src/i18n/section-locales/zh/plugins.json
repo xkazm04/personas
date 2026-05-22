@@ -1398,7 +1398,16 @@
       "approval_deny": "Deny",
       "live_view_title": "Live operations",
       "live_view_op_count_one": "1 op",
-      "live_view_op_count_other": "{count} ops"
+      "live_view_op_count_other": "{count} ops",
+      "live_view_session_count_one": "1 个会话",
+      "live_view_session_count_other": "{count} 个会话",
+      "live_view_intent_label": "意图",
+      "live_view_checkpoint_label": "检查点",
+      "live_view_blockers_label": "阻塞",
+      "live_view_files_label": "文件",
+      "live_view_files_more": "另有 {count} 个",
+      "live_view_failure_label": "最近故障",
+      "live_view_summary_label": "摘要"
     }
   },
   "ocr": {

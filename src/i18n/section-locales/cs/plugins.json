@@ -1398,7 +1398,16 @@
       "approval_deny": "Deny",
       "live_view_title": "Live operations",
       "live_view_op_count_one": "1 op",
-      "live_view_op_count_other": "{count} ops"
+      "live_view_op_count_other": "{count} ops",
+      "live_view_session_count_one": "1 sezení",
+      "live_view_session_count_other": "{count} sezení",
+      "live_view_intent_label": "záměr",
+      "live_view_checkpoint_label": "kontrolní bod",
+      "live_view_blockers_label": "blokátory",
+      "live_view_files_label": "soubory",
+      "live_view_files_more": "+{count} dalších",
+      "live_view_failure_label": "nedávné selhání",
+      "live_view_summary_label": "souhrn"
     }
   },
   "ocr": {

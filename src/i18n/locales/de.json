@@ -10992,7 +10992,16 @@
         "approval_deny": "Deny",
         "live_view_title": "Live operations",
         "live_view_op_count_one": "1 op",
-        "live_view_op_count_other": "{count} ops"
+        "live_view_op_count_other": "{count} ops",
+        "live_view_session_count_one": "1 Sitzung",
+        "live_view_session_count_other": "{count} Sitzungen",
+        "live_view_intent_label": "Absicht",
+        "live_view_checkpoint_label": "Checkpoint",
+        "live_view_blockers_label": "Blocker",
+        "live_view_files_label": "Dateien",
+        "live_view_files_more": "+{count} weitere",
+        "live_view_failure_label": "letzter Fehler",
+        "live_view_summary_label": "Zusammenfassung"
       }
     },
     "ocr": {

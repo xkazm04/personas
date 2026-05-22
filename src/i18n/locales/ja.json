@@ -10992,7 +10992,16 @@
         "approval_deny": "Deny",
         "live_view_title": "Live operations",
         "live_view_op_count_one": "1 op",
-        "live_view_op_count_other": "{count} ops"
+        "live_view_op_count_other": "{count} ops",
+        "live_view_session_count_one": "1 セッション",
+        "live_view_session_count_other": "{count} セッション",
+        "live_view_intent_label": "意図",
+        "live_view_checkpoint_label": "チェックポイント",
+        "live_view_blockers_label": "ブロッカー",
+        "live_view_files_label": "ファイル",
+        "live_view_files_more": "他 {count} 件",
+        "live_view_failure_label": "最近の失敗",
+        "live_view_summary_label": "要約"
       }
     },
     "ocr": {

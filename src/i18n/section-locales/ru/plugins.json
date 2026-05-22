@@ -1398,7 +1398,16 @@
       "approval_deny": "Deny",
       "live_view_title": "Live operations",
       "live_view_op_count_one": "1 op",
-      "live_view_op_count_other": "{count} ops"
+      "live_view_op_count_other": "{count} ops",
+      "live_view_session_count_one": "1 сессия",
+      "live_view_session_count_other": "{count} сессий",
+      "live_view_intent_label": "намерение",
+      "live_view_checkpoint_label": "контрольная точка",
+      "live_view_blockers_label": "блокировки",
+      "live_view_files_label": "файлы",
+      "live_view_files_more": "+{count} ещё",
+      "live_view_failure_label": "недавняя ошибка",
+      "live_view_summary_label": "сводка"
     }
   },
   "ocr": {

@@ -1398,7 +1398,16 @@
       "approval_deny": "Deny",
       "live_view_title": "Live operations",
       "live_view_op_count_one": "1 op",
-      "live_view_op_count_other": "{count} ops"
+      "live_view_op_count_other": "{count} ops",
+      "live_view_session_count_one": "세션 1개",
+      "live_view_session_count_other": "세션 {count}개",
+      "live_view_intent_label": "의도",
+      "live_view_checkpoint_label": "체크포인트",
+      "live_view_blockers_label": "차단 요인",
+      "live_view_files_label": "파일",
+      "live_view_files_more": "+{count}개 더",
+      "live_view_failure_label": "최근 실패",
+      "live_view_summary_label": "요약"
     }
   },
   "ocr": {

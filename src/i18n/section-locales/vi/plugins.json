@@ -1398,7 +1398,16 @@
       "approval_deny": "Deny",
       "live_view_title": "Live operations",
       "live_view_op_count_one": "1 op",
-      "live_view_op_count_other": "{count} ops"
+      "live_view_op_count_other": "{count} ops",
+      "live_view_session_count_one": "1 phiên",
+      "live_view_session_count_other": "{count} phiên",
+      "live_view_intent_label": "ý định",
+      "live_view_checkpoint_label": "checkpoint",
+      "live_view_blockers_label": "trở ngại",
+      "live_view_files_label": "tệp",
+      "live_view_files_more": "+{count} nữa",
+      "live_view_failure_label": "lỗi gần đây",
+      "live_view_summary_label": "tóm tắt"
     }
   },
   "ocr": {
