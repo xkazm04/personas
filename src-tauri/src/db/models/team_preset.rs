@@ -113,3 +113,70 @@ pub struct TeamPresetConnection {
     pub connection_type: String,
     pub label: Option<String>,
 }
+
+// ============================================================================
+// Adoption result types
+// ============================================================================
+//
+// `adopt_team_preset` runs N+1 sub-IPCs in sequence and returns this rich
+// shape so the frontend modal can render a per-member status table without
+// needing to refetch personas/team/group/connections. Partial-success
+// semantics: any member that fails (template missing, integrity check
+// fails, atomic create errors) is captured in `failed_members` while the
+// team + successfully-adopted personas + edges connecting only successful
+// pairs are still returned. The user keeps what worked and can retry the
+// rest later from the preview modal.
+
+/// Successfully-adopted preset member: one PersonaTeamMember row plus the
+/// underlying Persona id (so the frontend can navigate to the editor).
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct AdoptedTeamPresetMember {
+    pub role: String,
+    pub template_id: String,
+    pub persona_id: String,
+    pub team_member_id: String,
+}
+
+/// One per-member adoption failure. `reason` is a human-readable string
+/// from the underlying error chain; the frontend renders it inline next
+/// to the failed role in the preview modal's status table.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct AdoptedTeamPresetFailure {
+    pub role: String,
+    pub template_id: String,
+    pub reason: String,
+}
+
+/// Aggregate return from `adopt_team_preset`. `team_id` is always set
+/// (the team itself is the first thing created and never rolled back);
+/// `group_id` is set only when the manifest declared a group spec; the
+/// two lists partition the manifest's members into success vs. failure.
+/// `created_connections` is the count of edges actually wired (an edge
+/// is skipped silently when either endpoint role failed adoption).
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct AdoptedTeamPresetResult {
+    pub preset_id: String,
+    pub team_id: String,
+    pub group_id: Option<String>,
+    pub members: Vec<AdoptedTeamPresetMember>,
+    pub failed_members: Vec<AdoptedTeamPresetFailure>,
+    pub created_connections: i32,
+}
+
+/// Per-step progress emitted as `team-preset-adopt-progress` events while
+/// `adopt_team_preset` runs. The frontend uses this to drive the per-
+/// member status badges in the preview modal — every member transitions
+/// queued → adopting → done/failed in order.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct TeamPresetAdoptProgress {
+    pub preset_id: String,
+    pub role: String,
+    pub template_id: String,
+    /// `"queued" | "adopting" | "done" | "failed"`.
+    pub status: String,
+    pub error: Option<String>,
+}

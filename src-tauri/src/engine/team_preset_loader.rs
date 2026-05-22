@@ -149,3 +149,64 @@ pub fn get_preset(id: &str) -> Result<TeamPreset, AppError> {
     validate(&parsed)?;
     Ok(parsed)
 }
+
+/// Locate a single template's canonical JSON by its `id` (the `id` field
+/// inside the template manifest, which also matches the base filename
+/// minus `.json` and any locale suffix). Walks every category directory
+/// under `scripts/templates/` once per call; not cached because the
+/// adopter calls it N times per adoption (~6) and the read cost is
+/// dwarfed by `instant_adopt_template_inner`'s own work.
+///
+/// The function deliberately skips locale-suffixed files (e.g.
+/// `idea-harvester.zh.json`) — those are translations of the canonical
+/// `idea-harvester.json`, and adoption always goes through the
+/// canonical English source so `check_template_integrity` resolves
+/// against the right checksum.
+///
+/// Returns `NotFound` with the requested id when no canonical file
+/// matches.
+pub fn load_template_design_by_id(template_id: &str) -> Result<String, AppError> {
+    if template_id.is_empty() {
+        return Err(AppError::Validation("template_id is empty".into()));
+    }
+    if template_id.contains('/') || template_id.contains('\\') || template_id.contains("..") {
+        return Err(AppError::Validation(
+            "template_id must not contain path separators".into(),
+        ));
+    }
+    let templates_dir = std::path::Path::new("scripts/templates");
+    if !templates_dir.exists() {
+        return Err(AppError::NotFound(format!(
+            "Templates directory missing; cannot resolve '{template_id}'"
+        )));
+    }
+    let categories = std::fs::read_dir(templates_dir)
+        .map_err(|e| AppError::Validation(format!("read_dir templates: {e}")))?;
+    let target_filename = format!("{template_id}.json");
+    for cat_entry in categories.flatten() {
+        let cat_path = cat_entry.path();
+        if !cat_path.is_dir() {
+            continue;
+        }
+        // Skip private folders like `_team_presets/`.
+        if cat_path
+            .file_name()
+            .map(|n| n.to_string_lossy().starts_with('_'))
+            .unwrap_or(true)
+        {
+            continue;
+        }
+        let candidate = cat_path.join(&target_filename);
+        if candidate.exists() {
+            return std::fs::read_to_string(&candidate).map_err(|e| {
+                AppError::Validation(format!(
+                    "Failed to read template file '{}': {e}",
+                    candidate.display()
+                ))
+            });
+        }
+    }
+    Err(AppError::NotFound(format!(
+        "Template '{template_id}' not found under scripts/templates/<category>/"
+    )))
+}

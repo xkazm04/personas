@@ -7,10 +7,10 @@
 //! wrappers.
 
 use std::sync::Arc;
-use tauri::State;
+use tauri::{AppHandle, State};
 
-use crate::db::models::TeamPreset;
-use crate::engine::team_preset_loader;
+use crate::db::models::{AdoptedTeamPresetResult, TeamPreset};
+use crate::engine::{team_preset_adopter, team_preset_loader};
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
 use crate::AppState;
@@ -35,4 +35,23 @@ pub fn get_team_preset(
 ) -> Result<TeamPreset, AppError> {
     require_auth_sync(&state)?;
     team_preset_loader::get_preset(&id)
+}
+
+/// Run a preset's full adoption flow: create optional group, create team
+/// shell, adopt each member template, bind to group, add to team, wire
+/// connections. See `engine::team_preset_adopter` for the full step
+/// sequence and partial-success semantics.
+///
+/// Emits `team-preset-adopt-progress` events per member transition so
+/// the preview modal can render a per-row status table. Returns
+/// `AdoptedTeamPresetResult` with the new team_id, optional group_id,
+/// successfully-adopted members, and any per-template failures.
+#[tauri::command]
+pub fn adopt_team_preset(
+    state: State<'_, Arc<AppState>>,
+    app: AppHandle,
+    id: String,
+) -> Result<AdoptedTeamPresetResult, AppError> {
+    require_auth_sync(&state)?;
+    team_preset_adopter::adopt_preset(&state, Some(app), &id)
 }
