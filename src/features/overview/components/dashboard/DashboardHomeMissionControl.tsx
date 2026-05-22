@@ -195,9 +195,17 @@ export default function DashboardHomeMissionControl() {
   }, [activeAlertCount, pipelineErrorCount, pendingReviewCount, unreadMessageCount, t, setOverviewTab]);
 
   const chartData = useMemo(() => {
+    // Scope the Instruments traffic chart to the persona filter when a persona
+    // is selected, reusing the same get_overview_bundle data the Vitals
+    // sparkline draws from (see the personaMetrics fetch above).
+    if (selectedPersonaId && personaMetrics) {
+      return personaMetrics.metricsChartData.chart_points.map((p) => ({
+        date: p.date, traffic: p.executions, errors: p.failed,
+      }));
+    }
     const points = executionDashboard?.daily_points ?? [];
     return points.map((p) => ({ date: p.date, traffic: p.total_executions, errors: p.failed }));
-  }, [executionDashboard]);
+  }, [executionDashboard, selectedPersonaId, personaMetrics]);
 
   const chartTotals = useMemo(() => {
     const totalTraffic = chartData.reduce((s, d) => s + d.traffic, 0);
@@ -327,6 +335,8 @@ export default function DashboardHomeMissionControl() {
                     chartTotals={chartTotals}
                     executionDashboardFetchedAt={pipelineFetchedAt.executionDashboard}
                     executionDashboardError={!!pipelineErrors.executionDashboard}
+                    personaName={personaName}
+                    highlightPersonaId={selectedPersonaId}
                   />
                 </motion.div>
               )}
@@ -370,11 +380,14 @@ export default function DashboardHomeMissionControl() {
 
 export const InstrumentsBay = memo(function InstrumentsBay({
   chartData, chartTotals, executionDashboardFetchedAt, executionDashboardError,
+  personaName, highlightPersonaId,
 }: {
   chartData: { date: string; traffic: number; errors: number }[];
   chartTotals: { totalTraffic: number; totalErrors: number };
   executionDashboardFetchedAt: number | undefined;
   executionDashboardError: boolean;
+  personaName: string | null;
+  highlightPersonaId: string | null;
 }) {
   return (
     <div className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden">
@@ -382,7 +395,7 @@ export const InstrumentsBay = memo(function InstrumentsBay({
       <div className="p-3 grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Left — leaderboard snapshot */}
         <div>
-          <TopPerformersWidget />
+          <TopPerformersWidget highlightPersonaId={highlightPersonaId} />
         </div>
 
         {/* Center — traffic chart + analytics */}
@@ -393,6 +406,9 @@ export const InstrumentsBay = memo(function InstrumentsBay({
               hasError={executionDashboardError}
               label="Traffic"
             />
+            {personaName && (
+              <div className="typo-caption text-foreground mb-1 truncate">{personaName}</div>
+            )}
             <TrafficErrorsChart
               chartData={chartData}
               totalTraffic={chartTotals.totalTraffic}
