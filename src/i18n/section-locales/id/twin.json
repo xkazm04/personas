@@ -4,7 +4,9 @@
     "selectTwin": "Select a twin...",
     "pickerLabel": "Pilih twin aktif",
     "searchPlaceholder": "Cari berdasarkan nama atau peran…",
-    "noMatches": "Tidak ada twin yang cocok dengan pencarian Anda."
+    "noMatches": "Tidak ada twin yang cocok dengan pencarian Anda.",
+    "pinTwin": "Sematkan di atas",
+    "unpinTwin": "Lepas sematan"
   },
   "emptyState": {
     "subtitle": "You need an active twin to use this tab.",

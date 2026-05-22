@@ -4,7 +4,9 @@
     "selectTwin": "Select a twin...",
     "pickerLabel": "활성 트윈 선택",
     "searchPlaceholder": "이름 또는 역할로 검색…",
-    "noMatches": "검색과 일치하는 트윈이 없습니다."
+    "noMatches": "검색과 일치하는 트윈이 없습니다.",
+    "pinTwin": "상단 고정",
+    "unpinTwin": "고정 해제"
   },
   "emptyState": {
     "subtitle": "You need an active twin to use this tab.",

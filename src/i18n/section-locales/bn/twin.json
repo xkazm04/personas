@@ -4,7 +4,9 @@
     "selectTwin": "Select a twin...",
     "pickerLabel": "সক্রিয় টুইন বেছে নিন",
     "searchPlaceholder": "নাম বা ভূমিকা দিয়ে অনুসন্ধান করুন…",
-    "noMatches": "আপনার অনুসন্ধানের সাথে কোনো টুইন মেলে না।"
+    "noMatches": "আপনার অনুসন্ধানের সাথে কোনো টুইন মেলে না।",
+    "pinTwin": "উপরে পিন করুন",
+    "unpinTwin": "আনপিন করুন"
   },
   "emptyState": {
     "subtitle": "You need an active twin to use this tab.",

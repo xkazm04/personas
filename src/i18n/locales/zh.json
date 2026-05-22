@@ -12864,7 +12864,9 @@
       "selectTwin": "Select a twin...",
       "pickerLabel": "选择当前 twin",
       "searchPlaceholder": "按名称或角色搜索…",
-      "noMatches": "没有匹配的 twin。"
+      "noMatches": "没有匹配的 twin。",
+      "pinTwin": "置顶",
+      "unpinTwin": "取消置顶"
     },
     "emptyState": {
       "subtitle": "You need an active twin to use this tab.",

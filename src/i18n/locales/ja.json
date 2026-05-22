@@ -12864,7 +12864,9 @@
       "selectTwin": "Select a twin...",
       "pickerLabel": "アクティブなツインを選択",
       "searchPlaceholder": "名前またはロールで検索…",
-      "noMatches": "検索に一致するツインはありません。"
+      "noMatches": "検索に一致するツインはありません。",
+      "pinTwin": "上部に固定",
+      "unpinTwin": "固定を解除"
     },
     "emptyState": {
       "subtitle": "You need an active twin to use this tab.",

@@ -12955,6 +12955,8 @@ export type Translations = {
       pickerLabel: string;
       searchPlaceholder: string;
       noMatches: string;
+      pinTwin: string;
+      unpinTwin: string;
     };
     variantTabs: {
       prototype: string;

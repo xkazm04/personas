@@ -12864,7 +12864,9 @@
       "selectTwin": "Select a twin...",
       "pickerLabel": "Выберите активного twin",
       "searchPlaceholder": "Поиск по имени или роли…",
-      "noMatches": "Нет twin, подходящих под запрос."
+      "noMatches": "Нет twin, подходящих под запрос.",
+      "pinTwin": "Закрепить сверху",
+      "unpinTwin": "Открепить"
     },
     "emptyState": {
       "subtitle": "You need an active twin to use this tab.",

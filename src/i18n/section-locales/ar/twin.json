@@ -4,7 +4,9 @@
     "selectTwin": "Select a twin...",
     "pickerLabel": "اختر التوأم النشط",
     "searchPlaceholder": "ابحث بالاسم أو الدور…",
-    "noMatches": "لا توجد توائم تطابق بحثك."
+    "noMatches": "لا توجد توائم تطابق بحثك.",
+    "pinTwin": "تثبيت في الأعلى",
+    "unpinTwin": "إلغاء التثبيت"
   },
   "emptyState": {
     "subtitle": "You need an active twin to use this tab.",

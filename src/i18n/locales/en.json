@@ -12948,7 +12948,9 @@
       "selectTwin": "Select a twin...",
       "pickerLabel": "Pick the active twin",
       "searchPlaceholder": "Search by name or role…",
-      "noMatches": "No twins match your search."
+      "noMatches": "No twins match your search.",
+      "pinTwin": "Pin to top",
+      "unpinTwin": "Unpin"
     },
     "variantTabs": {
       "prototype": "Prototype",

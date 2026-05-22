@@ -12864,7 +12864,9 @@
       "selectTwin": "Select a twin...",
       "pickerLabel": "Elige el gemelo activo",
       "searchPlaceholder": "Buscar por nombre o rol…",
-      "noMatches": "Ningún gemelo coincide con tu búsqueda."
+      "noMatches": "Ningún gemelo coincide con tu búsqueda.",
+      "pinTwin": "Fijar arriba",
+      "unpinTwin": "Desfijar"
     },
     "emptyState": {
       "subtitle": "You need an active twin to use this tab.",

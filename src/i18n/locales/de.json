@@ -12864,7 +12864,9 @@
       "selectTwin": "Select a twin...",
       "pickerLabel": "Aktiven Twin auswählen",
       "searchPlaceholder": "Nach Name oder Rolle suchen…",
-      "noMatches": "Keine Twins entsprechen deiner Suche."
+      "noMatches": "Keine Twins entsprechen deiner Suche.",
+      "pinTwin": "Oben anheften",
+      "unpinTwin": "Lösen"
     },
     "emptyState": {
       "subtitle": "You need an active twin to use this tab.",

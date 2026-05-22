@@ -1,7 +1,32 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Check, ChevronDown, Plus, Search, Sparkles } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Check, ChevronDown, Pin, PinOff, Plus, Search, Sparkles } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
 import type { TwinProfile } from '@/lib/bindings/TwinProfile';
+
+const PINNED_TWINS_LS_KEY = 'personas.twin.pinned';
+
+function readPinned(): Set<string> {
+  if (typeof window === 'undefined') return new Set();
+  try {
+    const raw = window.localStorage.getItem(PINNED_TWINS_LS_KEY);
+    if (!raw) return new Set();
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return new Set(parsed.filter((x): x is string => typeof x === 'string'));
+  } catch (err) {
+    silentCatch('features/plugins/twin/_shared/TwinPicker:readPinned')(err);
+  }
+  return new Set();
+}
+
+function writePinned(pinned: Set<string>): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(PINNED_TWINS_LS_KEY, JSON.stringify(Array.from(pinned)));
+  } catch (err) {
+    silentCatch('features/plugins/twin/_shared/TwinPicker:writePinned')(err);
+  }
+}
 
 /**
  * Replaces the native <select> twin dropdown in TwinSelector with a
@@ -66,26 +91,38 @@ export function TwinPicker({ profiles, activeTwinId, onSelect, onCreateNew }: Pr
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [highlightIdx, setHighlightIdx] = useState(0);
+  const [pinned, setPinned] = useState<Set<string>>(() => readPinned());
   const rootRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const itemsRef = useRef<Array<HTMLButtonElement | null>>([]);
 
+  const togglePin = useCallback((id: string) => {
+    setPinned((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      writePinned(next);
+      return next;
+    });
+  }, []);
+
   const ordered = useMemo(() => {
-    // Active twin always pinned at the top; rest by most-recently-touched
-    // (updated_at desc). With 3+ twins the alphabetical order forced the
-    // user to scan every row; most return to the same 1-2 twins so recency
-    // is the better default. Name is the tiebreaker for stamps that share
-    // a second.
-    const active = profiles.find((p) => p.id === activeTwinId);
-    const rest = profiles
-      .filter((p) => p.id !== activeTwinId)
-      .slice()
-      .sort((a, b) => {
-        const cmp = (b.updated_at ?? '').localeCompare(a.updated_at ?? '');
-        return cmp !== 0 ? cmp : a.name.localeCompare(b.name);
-      });
-    return active ? [active, ...rest] : rest;
-  }, [profiles, activeTwinId]);
+    // Three-tier sort:
+    //   1. Active twin pinned to the top (always).
+    //   2. User-pinned twins (excluding active), recency desc within.
+    //   3. Everyone else, recency desc.
+    // Pinning earns the slot above recency: the user who taps the pin
+    // is saying "ignore the recency signal, this twin matters."
+    const active = profiles.find((p) => p.id === activeTwinId) ?? null;
+    const recency = (a: TwinProfile, b: TwinProfile) => {
+      const cmp = (b.updated_at ?? '').localeCompare(a.updated_at ?? '');
+      return cmp !== 0 ? cmp : a.name.localeCompare(b.name);
+    };
+    const nonActive = profiles.filter((p) => p.id !== activeTwinId);
+    const pinnedSorted = nonActive.filter((p) => pinned.has(p.id)).slice().sort(recency);
+    const unpinnedSorted = nonActive.filter((p) => !pinned.has(p.id)).slice().sort(recency);
+    return active ? [active, ...pinnedSorted, ...unpinnedSorted] : [...pinnedSorted, ...unpinnedSorted];
+  }, [profiles, activeTwinId, pinned]);
 
   const filtered = useMemo(() => ordered.filter((p) => matches(query, p)), [ordered, query]);
 
@@ -190,8 +227,9 @@ export function TwinPicker({ profiles, activeTwinId, onSelect, onCreateNew }: Pr
               filtered.map((p, idx) => {
                 const isActive = p.id === activeTwinId;
                 const isHighlighted = idx === highlightIdx;
+                const isPinned = pinned.has(p.id);
                 return (
-                  <li key={p.id}>
+                  <li key={p.id} className="group relative">
                     <button
                       ref={(el) => { itemsRef.current[idx] = el; }}
                       type="button"
@@ -203,7 +241,7 @@ export function TwinPicker({ profiles, activeTwinId, onSelect, onCreateNew }: Pr
                       onMouseEnter={() => setHighlightIdx(idx)}
                       role="option"
                       aria-selected={isActive}
-                      className={`w-full flex items-center gap-2.5 px-3 py-1.5 text-left transition-colors ${
+                      className={`w-full flex items-center gap-2.5 px-3 py-1.5 pr-9 text-left transition-colors ${
                         isHighlighted ? 'bg-violet-500/10' : 'hover:bg-secondary/40'
                       }`}
                     >
@@ -219,6 +257,23 @@ export function TwinPicker({ profiles, activeTwinId, onSelect, onCreateNew }: Pr
                         )}
                       </span>
                       {isActive && <Check className="w-3.5 h-3.5 text-violet-300 flex-shrink-0" />}
+                    </button>
+                    {/* Pin toggle layered as a sibling so the row click still
+                        selects. Always visible when pinned (so the user can
+                        see at a glance which rows are pinned); hover-only when
+                        not pinned to avoid visual noise. */}
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); togglePin(p.id); }}
+                      title={isPinned ? t.selector.unpinTwin : t.selector.pinTwin}
+                      aria-label={isPinned ? t.selector.unpinTwin : t.selector.pinTwin}
+                      className={`absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-interactive transition-colors ${
+                        isPinned
+                          ? 'text-violet-300 hover:bg-violet-500/15'
+                          : 'text-foreground/40 opacity-0 group-hover:opacity-100 focus:opacity-100 hover:text-violet-300 hover:bg-violet-500/10'
+                      }`}
+                    >
+                      {isPinned ? <Pin className="w-3 h-3" /> : <PinOff className="w-3 h-3" />}
                     </button>
                   </li>
                 );

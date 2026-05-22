@@ -12864,7 +12864,9 @@
       "selectTwin": "Select a twin...",
       "pickerLabel": "Vyberte aktivního dvojníka",
       "searchPlaceholder": "Hledat podle jména nebo role…",
-      "noMatches": "Žádní dvojníci neodpovídají vašemu hledání."
+      "noMatches": "Žádní dvojníci neodpovídají vašemu hledání.",
+      "pinTwin": "Připnout nahoru",
+      "unpinTwin": "Odepnout"
     },
     "emptyState": {
       "subtitle": "You need an active twin to use this tab.",

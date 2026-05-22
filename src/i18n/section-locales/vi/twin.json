@@ -4,7 +4,9 @@
     "selectTwin": "Select a twin...",
     "pickerLabel": "Chọn twin đang hoạt động",
     "searchPlaceholder": "Tìm theo tên hoặc vai trò…",
-    "noMatches": "Không có twin nào khớp với tìm kiếm của bạn."
+    "noMatches": "Không có twin nào khớp với tìm kiếm của bạn.",
+    "pinTwin": "Ghim lên đầu",
+    "unpinTwin": "Bỏ ghim"
   },
   "emptyState": {
     "subtitle": "You need an active twin to use this tab.",
