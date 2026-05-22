@@ -2240,7 +2240,12 @@
     "show_only_favorites": "শুধু প্রিয়গুলো দেখান",
     "clear_search": "অনুসন্ধান সাফ করুন",
     "col_persona": "পার্সোনা",
-    "no_connectors_configured": "কোনো কানেক্টর কনফিগার নেই"
+    "no_connectors_configured": "কোনো কানেক্টর কনফিগার নেই",
+    "batch_move_to_group": "গ্রুপে সরান…",
+    "batch_move_to_group_empty": "এখনো কোনো গ্রুপ নেই — এজেন্ট → গ্রুপ-এ তৈরি করুন",
+    "batch_move_to_ungrouped": "গ্রুপবিহীন",
+    "batch_moved_success": "{count}টি পার্সোনা {group}-এ সরানো হয়েছে",
+    "batch_moved_partial": "{ok}টি {group}-এ সরানো হয়েছে; {failed}টি ব্যর্থ"
   },
   "design_preview": {
     "preview": "প্রিভিউ",

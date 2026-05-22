@@ -2240,7 +2240,12 @@
     "show_only_favorites": "お気に入りのみ表示",
     "clear_search": "検索をクリア",
     "col_persona": "ペルソナ",
-    "no_connectors_configured": "コネクタ未設定"
+    "no_connectors_configured": "コネクタ未設定",
+    "batch_move_to_group": "グループに移動…",
+    "batch_move_to_group_empty": "まだグループがありません — エージェント → グループで作成してください",
+    "batch_move_to_ungrouped": "グループなし",
+    "batch_moved_success": "{count} 件のペルソナを {group} に移動しました",
+    "batch_moved_partial": "{ok} 件を {group} に移動; {failed} 件失敗"
   },
   "design_preview": {
     "preview": "プレビュー",

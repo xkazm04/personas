@@ -1,7 +1,9 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Bot, Grid3x3, Orbit, Rows3, Trash2 } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
+import { usePipelineStore } from '@/stores/pipelineStore';
+import { useToastStore } from '@/stores/toastStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import Button from '@/features/shared/components/buttons/Button';
 import { DataGrid } from '@/features/shared/components/display/DataGrid';
@@ -97,6 +99,52 @@ export default function PersonaOverviewPage() {
   const { modal, handleBatchDelete, handleDeleteDrafts, draftIds } =
     usePersonaActions({ personas, selectedIds, setSelectedIds, deletePersona, selectPersona, isDraft });
 
+  // Cycle 21 — bulk-assign selected personas to a group (or null to
+  // unassign). Reuses the existing movePersonaToGroup action which already
+  // emits the storeBus event the agentStore listens for. We do the moves
+  // sequentially rather than in parallel to keep the storeBus event order
+  // deterministic; for typical N (≤ a few dozen) this is well under 1s.
+  const movePersonaToGroupAction = usePipelineStore((s) => s.movePersonaToGroup);
+  const pipelineGroups = usePipelineStore((s) => s.groups);
+  const pipelineGroupNameById = useMemo(
+    () => new Map(pipelineGroups.map((g) => [g.id, g.name])),
+    [pipelineGroups],
+  );
+  const addToast = useToastStore((s) => s.addToast);
+  const handleBatchMoveToGroup = useCallback(
+    async (groupId: string | null) => {
+      const ids = [...selectedIds];
+      if (ids.length === 0) return;
+      let ok = 0;
+      let failed = 0;
+      for (const id of ids) {
+        try {
+          await movePersonaToGroupAction(id, groupId);
+          ok += 1;
+        } catch {
+          failed += 1;
+        }
+      }
+      // Selection stays so the user can do a follow-up bulk action; the rail
+      // and DataGrid auto-rerender from the agentStore update.
+      const groupName = groupId
+        ? pipelineGroupNameById.get(groupId) ?? ''
+        : t.agents.persona_list.batch_move_to_ungrouped;
+      if (failed === 0) {
+        addToast(
+          tx(t.agents.persona_list.batch_moved_success, { count: ok, group: groupName }),
+          'success',
+        );
+      } else {
+        addToast(
+          tx(t.agents.persona_list.batch_moved_partial, { ok, failed, group: groupName }),
+          'error',
+        );
+      }
+    },
+    [selectedIds, movePersonaToGroupAction, addToast, t, tx, pipelineGroupNameById],
+  );
+
   // Drop selections that no longer match the filtered data
   useEffect(() => {
     setSelectedIds((prev) => {
@@ -169,6 +217,7 @@ export default function PersonaOverviewPage() {
               count={selectedIds.size}
               onDelete={handleBatchDelete}
               onClear={() => setSelectedIds(new Set())}
+              onMoveToGroup={handleBatchMoveToGroup}
             />
             {draftIds.length > 0 && (
               <Button

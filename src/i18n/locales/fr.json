@@ -2636,7 +2636,12 @@
       "show_only_favorites": "Afficher uniquement les favoris",
       "clear_search": "Effacer la recherche",
       "col_persona": "Agent",
-      "no_connectors_configured": "Aucun connecteur configuré"
+      "no_connectors_configured": "Aucun connecteur configuré",
+      "batch_move_to_group": "Déplacer vers un groupe…",
+      "batch_move_to_group_empty": "Aucun groupe pour le moment — créez-en un dans Agents → Groupes",
+      "batch_move_to_ungrouped": "Sans groupe",
+      "batch_moved_success": "{count} personas déplacées vers {group}",
+      "batch_moved_partial": "{ok} déplacées vers {group} ; {failed} échouées"
     },
     "design_preview": {
       "preview": "Aperçu",

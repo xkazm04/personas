@@ -2240,7 +2240,12 @@
     "show_only_favorites": "Показать только избранных",
     "clear_search": "Очистить поиск",
     "col_persona": "Агент",
-    "no_connectors_configured": "Коннекторы не настроены"
+    "no_connectors_configured": "Коннекторы не настроены",
+    "batch_move_to_group": "Переместить в группу…",
+    "batch_move_to_group_empty": "Групп пока нет — создайте в Агенты → Группы",
+    "batch_move_to_ungrouped": "Без группы",
+    "batch_moved_success": "Перемещено {count} персон в {group}",
+    "batch_moved_partial": "Перемещено {ok} в {group}; {failed} не удалось"
   },
   "design_preview": {
     "preview": "Предпросмотр",

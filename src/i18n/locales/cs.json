@@ -2636,7 +2636,12 @@
       "show_only_favorites": "Zobrazit pouze oblíbené",
       "clear_search": "Smazat hledání",
       "col_persona": "Persona",
-      "no_connectors_configured": "Žádné konektory nejsou nastaveny"
+      "no_connectors_configured": "Žádné konektory nejsou nastaveny",
+      "batch_move_to_group": "Přesunout do skupiny…",
+      "batch_move_to_group_empty": "Zatím žádné skupiny — vytvořte v Agenti → Skupiny",
+      "batch_move_to_ungrouped": "Bez skupiny",
+      "batch_moved_success": "{count} person přesunuto do {group}",
+      "batch_moved_partial": "{ok} přesunuto do {group}; {failed} selhalo"
     },
     "design_preview": {
       "preview": "Náhled",

@@ -2709,6 +2709,11 @@ export type Translations = {
       batch_selected: string;
       batch_delete: string;
       batch_clear: string;
+      batch_move_to_group: string;
+      batch_move_to_group_empty: string;
+      batch_move_to_ungrouped: string;
+      batch_moved_success: string;
+      batch_moved_partial: string;
       no_personas_match: string;
       no_connectors: string;
       never: string;

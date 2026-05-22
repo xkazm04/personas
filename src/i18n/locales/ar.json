@@ -2636,7 +2636,12 @@
       "show_only_favorites": "عرض المفضلة فقط",
       "clear_search": "مسح البحث",
       "col_persona": "الوكيل",
-      "no_connectors_configured": "لا توجد موصّلات مضبوطة"
+      "no_connectors_configured": "لا توجد موصّلات مضبوطة",
+      "batch_move_to_group": "نقل إلى مجموعة…",
+      "batch_move_to_group_empty": "لا توجد مجموعات بعد — أنشئها من العملاء ← المجموعات",
+      "batch_move_to_ungrouped": "بدون مجموعة",
+      "batch_moved_success": "تم نقل {count} شخصية إلى {group}",
+      "batch_moved_partial": "تم نقل {ok} إلى {group}؛ {failed} فشل"
     },
     "design_preview": {
       "preview": "معاينة",

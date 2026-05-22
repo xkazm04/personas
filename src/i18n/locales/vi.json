@@ -2636,7 +2636,12 @@
       "show_only_favorites": "Chỉ hiển thị yêu thích",
       "clear_search": "Xóa tìm kiếm",
       "col_persona": "Tác nhân",
-      "no_connectors_configured": "Chưa cấu hình trình kết nối"
+      "no_connectors_configured": "Chưa cấu hình trình kết nối",
+      "batch_move_to_group": "Chuyển sang nhóm…",
+      "batch_move_to_group_empty": "Chưa có nhóm — tạo trong Agents → Nhóm",
+      "batch_move_to_ungrouped": "Không nhóm",
+      "batch_moved_success": "Đã chuyển {count} persona sang {group}",
+      "batch_moved_partial": "Đã chuyển {ok} sang {group}; {failed} thất bại"
     },
     "design_preview": {
       "preview": "Xem trước",

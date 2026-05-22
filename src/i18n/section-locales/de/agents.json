@@ -2240,7 +2240,12 @@
     "show_only_favorites": "Nur Favoriten anzeigen",
     "clear_search": "Suche löschen",
     "col_persona": "Persona",
-    "no_connectors_configured": "Keine Konnektoren konfiguriert"
+    "no_connectors_configured": "Keine Konnektoren konfiguriert",
+    "batch_move_to_group": "In Gruppe verschieben…",
+    "batch_move_to_group_empty": "Noch keine Gruppen — erstelle eine unter Agents → Gruppen",
+    "batch_move_to_ungrouped": "Ohne Gruppe",
+    "batch_moved_success": "{count} Personas nach {group} verschoben",
+    "batch_moved_partial": "{ok} nach {group} verschoben; {failed} fehlgeschlagen"
   },
   "design_preview": {
     "preview": "Vorschau",

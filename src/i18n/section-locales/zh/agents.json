@@ -2240,7 +2240,12 @@
     "show_only_favorites": "只显示收藏",
     "clear_search": "清除搜索",
     "col_persona": "代理",
-    "no_connectors_configured": "未配置连接器"
+    "no_connectors_configured": "未配置连接器",
+    "batch_move_to_group": "移动到分组…",
+    "batch_move_to_group_empty": "尚无分组 — 在 智能体 → 分组 中创建",
+    "batch_move_to_ungrouped": "未分组",
+    "batch_moved_success": "已将 {count} 个人格移至 {group}",
+    "batch_moved_partial": "已移动 {ok} 个到 {group}；{failed} 个失败"
   },
   "design_preview": {
     "preview": "预览",

@@ -2636,7 +2636,12 @@
       "show_only_favorites": "Mostrar solo favoritos",
       "clear_search": "Limpiar búsqueda",
       "col_persona": "Persona",
-      "no_connectors_configured": "Sin conectores configurados"
+      "no_connectors_configured": "Sin conectores configurados",
+      "batch_move_to_group": "Mover a grupo…",
+      "batch_move_to_group_empty": "Aún no hay grupos — crea uno en Agentes → Grupos",
+      "batch_move_to_ungrouped": "Sin grupo",
+      "batch_moved_success": "Movidas {count} personas a {group}",
+      "batch_moved_partial": "Movidas {ok} a {group}; {failed} fallidas"
     },
     "design_preview": {
       "preview": "Vista previa",

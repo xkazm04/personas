@@ -2240,7 +2240,12 @@
     "show_only_favorites": "केवल पसंदीदा दिखाएं",
     "clear_search": "खोज साफ़ करें",
     "col_persona": "पर्सोना",
-    "no_connectors_configured": "कोई कनेक्टर कॉन्फ़िगर नहीं"
+    "no_connectors_configured": "कोई कनेक्टर कॉन्फ़िगर नहीं",
+    "batch_move_to_group": "समूह में ले जाएं…",
+    "batch_move_to_group_empty": "अभी तक कोई समूह नहीं — एजेंट्स → समूह में बनाएं",
+    "batch_move_to_ungrouped": "बिना समूह",
+    "batch_moved_success": "{count} पर्सोना {group} में स्थानांतरित",
+    "batch_moved_partial": "{ok} {group} में स्थानांतरित; {failed} विफल"
   },
   "design_preview": {
     "preview": "प्रीव्यू",

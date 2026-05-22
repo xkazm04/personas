@@ -2636,7 +2636,12 @@
       "show_only_favorites": "Tampilkan hanya favorit",
       "clear_search": "Hapus pencarian",
       "col_persona": "Persona",
-      "no_connectors_configured": "Tidak ada konektor dikonfigurasi"
+      "no_connectors_configured": "Tidak ada konektor dikonfigurasi",
+      "batch_move_to_group": "Pindahkan ke grup…",
+      "batch_move_to_group_empty": "Belum ada grup — buat di Agen → Grup",
+      "batch_move_to_ungrouped": "Tanpa grup",
+      "batch_moved_success": "Memindahkan {count} persona ke {group}",
+      "batch_moved_partial": "Memindahkan {ok} ke {group}; {failed} gagal"
     },
     "design_preview": {
       "preview": "Pratinjau",
