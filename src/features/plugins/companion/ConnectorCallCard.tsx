@@ -6,11 +6,13 @@ import {
   ChevronRight,
   Hourglass,
   Loader2,
+  RefreshCcw,
   Wrench,
 } from 'lucide-react';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { useTranslation } from '@/i18n/useTranslation';
-import type { BackgroundJob } from '@/api/companion';
+import { companionEnqueueJob, type BackgroundJob } from '@/api/companion';
+import { silentCatch } from '@/lib/silentCatch';
 import { capabilityLabel, connectorDisplayName } from './athenaLabels';
 
 /**
@@ -25,8 +27,11 @@ import { capabilityLabel, connectorDisplayName } from './athenaLabels';
 export function ConnectorCallCard({ job }: { job: BackgroundJob }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  const [retryingState, setRetryingState] = useState<
+    { phase: 'idle' } | { phase: 'firing' } | { phase: 'fired'; newId: string } | { phase: 'error'; message: string }
+  >({ phase: 'idle' });
 
-  const { connectorName, capability } = useMemo(
+  const { connectorName, capability, rawParams } = useMemo(
     () => parseParams(job.paramsJson),
     [job.paramsJson],
   );
@@ -35,6 +40,22 @@ export function ConnectorCallCard({ job }: { job: BackgroundJob }) {
   const failed = job.status === 'failed';
 
   const { Icon, accent } = iconFor(job.status, failed);
+
+  const handleRetry = async () => {
+    if (retryingState.phase !== 'idle') return;
+    setRetryingState({ phase: 'firing' });
+    try {
+      // Re-enqueue with the same paramsJson the original job carried. The
+      // backend assigns a fresh id; the new job will surface via the
+      // existing companion://job listener as a pending card.
+      const newId = await companionEnqueueJob('connector_use', rawParams);
+      setRetryingState({ phase: 'fired', newId });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      setRetryingState({ phase: 'error', message });
+      silentCatch('companion_retry_connector_call')(err);
+    }
+  };
 
   const statusLabel =
     job.status === 'queued'
@@ -100,6 +121,48 @@ export function ConnectorCallCard({ job }: { job: BackgroundJob }) {
           ) : null}
         </div>
       )}
+      {failed && (
+        <div className="mt-2 pl-5 flex items-center gap-2 typo-caption">
+          {retryingState.phase === 'idle' && (
+            <button
+              type="button"
+              onClick={handleRetry}
+              className="inline-flex items-center gap-1 rounded-interactive border border-foreground/15 bg-foreground/[0.04] hover:bg-foreground/[0.08] px-2 py-0.5 text-foreground transition-colors focus-ring"
+              data-testid="companion-connector-retry"
+            >
+              <RefreshCcw className="w-3 h-3" />
+              <span>{t.plugins.companion.connector_call_retry}</span>
+            </button>
+          )}
+          {retryingState.phase === 'firing' && (
+            <span className="inline-flex items-center gap-1 text-foreground">
+              <Loader2 className="w-3 h-3 animate-spin" />
+              {t.plugins.companion.connector_call_retrying}
+            </span>
+          )}
+          {retryingState.phase === 'fired' && (
+            <span
+              className="inline-flex items-center gap-1 text-emerald-300/90"
+              data-testid="companion-connector-retried"
+            >
+              <CheckCircle2 className="w-3 h-3" />
+              {t.plugins.companion.connector_call_retried.replace(
+                '{id}',
+                retryingState.newId.slice(0, 8),
+              )}
+            </span>
+          )}
+          {retryingState.phase === 'error' && (
+            <span className="inline-flex items-center gap-1 text-rose-300/90">
+              <AlertCircle className="w-3 h-3" />
+              {t.plugins.companion.connector_call_retry_failed.replace(
+                '{message}',
+                retryingState.message,
+              )}
+            </span>
+          )}
+        </div>
+      )}
       {!isTerminal && (
         <div className="mt-1 pl-5 typo-caption text-foreground">
           {t.plugins.companion.connector_call_in_flight_hint}
@@ -112,18 +175,20 @@ export function ConnectorCallCard({ job }: { job: BackgroundJob }) {
 function parseParams(raw: string): {
   connectorName: string;
   capability: string;
+  rawParams: Record<string, unknown>;
 } {
   try {
-    const parsed = JSON.parse(raw) as {
+    const parsed = JSON.parse(raw) as Record<string, unknown> & {
       connector_name?: string;
       capability?: string;
     };
     return {
       connectorName: parsed.connector_name ?? '',
       capability: parsed.capability ?? '',
+      rawParams: parsed,
     };
   } catch {
-    return { connectorName: '', capability: '' };
+    return { connectorName: '', capability: '', rawParams: {} };
   }
 }
 

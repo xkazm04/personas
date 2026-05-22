@@ -59,33 +59,35 @@ export function parseDigest(digest: string): ParsedOp[] {
     const opMatch = /^- \*\*(.+?)\*\* \(`([^`]+)`, ([^,]+),\s*(.+?)\)\s*$/.exec(
       line,
     );
-    if (opMatch) {
-      currentOp = {
+    if (opMatch && opMatch[1] && opMatch[2] && opMatch[3] && opMatch[4]) {
+      const op: ParsedOp = {
         intent: opMatch[1],
         id8: opMatch[2],
         status: opMatch[3].trim(),
         duration: opMatch[4].trim(),
         sessions: [],
       };
-      ops.push(currentOp);
+      currentOp = op;
+      ops.push(op);
       currentSession = null;
       continue;
     }
 
     // Session header: `  - `<sess8>` "role": <state> → <tool>`  (role + tool optional)
     const sessMatch = /^ {2}- `([^`]+)`(?:\s+"([^"]+)")?:\s+(.+?)$/.exec(line);
-    if (sessMatch && currentOp) {
+    if (sessMatch && currentOp && sessMatch[1] && sessMatch[3]) {
       const tail = sessMatch[3];
       const arrowIdx = tail.indexOf(' → ');
       const state = arrowIdx >= 0 ? tail.slice(0, arrowIdx) : tail;
       const tool = arrowIdx >= 0 ? tail.slice(arrowIdx + 3) : undefined;
-      currentSession = {
+      const sess: ParsedSession = {
         id8: sessMatch[1],
         role: sessMatch[2],
         state: state.trim(),
         tool: tool?.trim(),
       };
-      currentOp.sessions.push(currentSession);
+      currentSession = sess;
+      currentOp.sessions.push(sess);
       continue;
     }
 

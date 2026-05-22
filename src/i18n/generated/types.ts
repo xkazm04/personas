@@ -10716,6 +10716,7 @@ export type Translations = {
       recall_group_procedurals: string;
       recall_group_goals: string;
       recall_group_backlog: string;
+      recall_open_in_brain: string;
       turn_summary_label: string;
       turn_summary_nav: string;
       turn_summary_approval: string;
@@ -10724,6 +10725,7 @@ export type Translations = {
       turn_summary_cockpit: string;
       turn_summary_card: string;
       turn_summary_continuation: string;
+      turn_summary_jump_to: string;
       refine_label: string;
       refine_shorter: string;
       refine_shorter_suffix: string;
@@ -10736,6 +10738,10 @@ export type Translations = {
       connector_call_completed: string;
       connector_call_failed: string;
       connector_call_in_flight_hint: string;
+      connector_call_retry: string;
+      connector_call_retrying: string;
+      connector_call_retried: string;
+      connector_call_retry_failed: string;
       autonomous_toggle_on: string;
       autonomous_toggle_off: string;
       composer_placeholder: string;
@@ -11059,6 +11065,8 @@ export type Translations = {
       decisions_panel_empty: string;
       decisions_panel_empty_filtered: string;
       decisions_panel_unscoped: string;
+      decisions_panel_currently_designing: string;
+      decisions_panel_show_all: string;
       dashboard_empty_title: string;
       dashboard_empty_body: string;
       dashboard_unknown_widget: string;
@@ -11175,6 +11183,15 @@ export type Translations = {
         live_view_title: string;
         live_view_op_count_one: string;
         live_view_op_count_other: string;
+        live_view_session_count_one: string;
+        live_view_session_count_other: string;
+        live_view_intent_label: string;
+        live_view_checkpoint_label: string;
+        live_view_blockers_label: string;
+        live_view_files_label: string;
+        live_view_files_more: string;
+        live_view_failure_label: string;
+        live_view_summary_label: string;
       };
     };
     ocr: {
