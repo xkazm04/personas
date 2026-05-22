@@ -182,6 +182,15 @@
     "field_model_inherit": "পার্সোনা থেকে উত্তরাধিকার (কোনো ওভাররাইড নেই)",
     "field_model_haiku": "Haiku — দ্রুততম, সর্বনিম্ন খরচ",
     "field_model_sonnet": "Sonnet — সুষম",
-    "field_model_opus": "Opus — সবচেয়ে শক্তিশালী"
+    "field_model_opus": "Opus — সবচেয়ে শক্তিশালী",
+    "view_memories_title": "শেয়ার করা স্মৃতি দেখুন",
+    "memory_modal_title": "শেয়ার করা স্মৃতি — {name}",
+    "memory_modal_loading": "লোড হচ্ছে…",
+    "memory_modal_empty_title": "এখনো কোনো শেয়ার করা স্মৃতি নেই",
+    "memory_modal_empty_hint": "এই গ্রুপের যেকোনো পার্সোনার জন্য স্মৃতি তৈরি করার সময় «গ্রুপের সাথে শেয়ার» টগল চালু করুন।",
+    "memory_modal_authored_by": "লেখক {name}",
+    "memory_modal_importance": "গুরুত্ব {value}",
+    "memory_modal_footer_count_one": "{count} স্মৃতি",
+    "memory_modal_footer_count_other": "{count} স্মৃতি"
   }
 }

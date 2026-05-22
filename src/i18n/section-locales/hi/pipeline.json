@@ -182,6 +182,15 @@
     "field_model_inherit": "पर्सोना से लें (कोई ओवरराइड नहीं)",
     "field_model_haiku": "Haiku — सबसे तेज़, सबसे कम लागत",
     "field_model_sonnet": "Sonnet — संतुलित",
-    "field_model_opus": "Opus — सबसे शक्तिशाली"
+    "field_model_opus": "Opus — सबसे शक्तिशाली",
+    "view_memories_title": "साझा यादें देखें",
+    "memory_modal_title": "साझा यादें — {name}",
+    "memory_modal_loading": "लोड हो रहा है…",
+    "memory_modal_empty_title": "अभी तक कोई साझा यादें नहीं",
+    "memory_modal_empty_hint": "इस समूह की किसी पर्सोना के लिए स्मृति बनाते समय «समूह के साथ साझा करें» को चालू करें।",
+    "memory_modal_authored_by": "लेखक: {name}",
+    "memory_modal_importance": "महत्व {value}",
+    "memory_modal_footer_count_one": "{count} स्मृति",
+    "memory_modal_footer_count_other": "{count} स्मृतियाँ"
   }
 }

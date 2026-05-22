@@ -5681,7 +5681,10 @@
       "saving": "Ukládání...",
       "created_success": "Vzpomínka úspěšně vytvořena",
       "fill_required": "Pro uložení vyplň všechna povinná pole",
-      "saving_memory": "Ukládání vzpomínky..."
+      "saving_memory": "Ukládání vzpomínky...",
+      "share_with_group": "Sdílet s",
+      "share_with_group_hint": "Každá persona v této skupině vidí tuto vzpomínku ve své promptě — užitečné pro celoorganizační kontext jako styl nebo zásady.",
+      "share_with_group_title": "Napsáno vybranou personou; viditelné pro každého člena její skupiny."
     },
     "memory_filter": {
       "search_placeholder": "Hledat vzpomínky...",
@@ -12508,7 +12511,16 @@
       "field_model_inherit": "Zdědit z persony (bez přepsání)",
       "field_model_haiku": "Haiku — nejrychlejší, nejnižší cena",
       "field_model_sonnet": "Sonnet — vyvážený",
-      "field_model_opus": "Opus — nejvýkonnější"
+      "field_model_opus": "Opus — nejvýkonnější",
+      "view_memories_title": "Zobrazit sdílené vzpomínky",
+      "memory_modal_title": "Sdílené vzpomínky — {name}",
+      "memory_modal_loading": "Načítání…",
+      "memory_modal_empty_title": "Zatím žádné sdílené vzpomínky",
+      "memory_modal_empty_hint": "Při vytváření vzpomínky pro libovolnou personu této skupiny zapněte «Sdílet se skupinou».",
+      "memory_modal_authored_by": "Autor {name}",
+      "memory_modal_importance": "důležitost {value}",
+      "memory_modal_footer_count_one": "{count} vzpomínka",
+      "memory_modal_footer_count_other": "{count} vzpomínek"
     }
   },
   "auth": {

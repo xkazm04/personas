@@ -5681,7 +5681,10 @@
       "saving": "保存中...",
       "created_success": "记忆创建成功",
       "fill_required": "填写所有必填字段以保存",
-      "saving_memory": "正在保存记忆..."
+      "saving_memory": "正在保存记忆...",
+      "share_with_group": "共享给",
+      "share_with_group_hint": "此分组中的每个人格都会在其提示中看到该记忆 — 适合风格指南或组织政策等共同上下文。",
+      "share_with_group_title": "由所选人格撰写；该分组每位成员都可见。"
     },
     "memory_filter": {
       "search_placeholder": "搜索记忆...",
@@ -12508,7 +12511,16 @@
       "field_model_inherit": "继承自人格 (不覆盖)",
       "field_model_haiku": "Haiku — 最快, 成本最低",
       "field_model_sonnet": "Sonnet — 均衡",
-      "field_model_opus": "Opus — 最强"
+      "field_model_opus": "Opus — 最强",
+      "view_memories_title": "查看共享记忆",
+      "memory_modal_title": "共享记忆 — {name}",
+      "memory_modal_loading": "加载中…",
+      "memory_modal_empty_title": "暂无共享记忆",
+      "memory_modal_empty_hint": "在创建表单中为该分组中的任意人格切换“与分组共享”即可在此添加。",
+      "memory_modal_authored_by": "作者：{name}",
+      "memory_modal_importance": "重要性 {value}",
+      "memory_modal_footer_count_one": "{count} 条记忆",
+      "memory_modal_footer_count_other": "{count} 条记忆"
     }
   },
   "auth": {

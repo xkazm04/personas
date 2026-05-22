@@ -182,6 +182,15 @@
     "field_model_inherit": "Наследовать от персоны (без переопределения)",
     "field_model_haiku": "Haiku — самый быстрый, самый дешёвый",
     "field_model_sonnet": "Sonnet — сбалансированный",
-    "field_model_opus": "Opus — самый мощный"
+    "field_model_opus": "Opus — самый мощный",
+    "view_memories_title": "Показать общие воспоминания",
+    "memory_modal_title": "Общие воспоминания — {name}",
+    "memory_modal_loading": "Загрузка…",
+    "memory_modal_empty_title": "Пока нет общих воспоминаний",
+    "memory_modal_empty_hint": "Создайте воспоминание для любой персоны в этой группе и включите «Поделиться с группой».",
+    "memory_modal_authored_by": "Автор: {name}",
+    "memory_modal_importance": "Важность {value}",
+    "memory_modal_footer_count_one": "{count} воспоминание",
+    "memory_modal_footer_count_other": "{count} воспоминаний"
   }
 }

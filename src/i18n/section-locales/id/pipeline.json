@@ -182,6 +182,15 @@
     "field_model_inherit": "Warisi dari persona (tanpa override)",
     "field_model_haiku": "Haiku — tercepat, biaya terendah",
     "field_model_sonnet": "Sonnet — seimbang",
-    "field_model_opus": "Opus — terkuat"
+    "field_model_opus": "Opus — terkuat",
+    "view_memories_title": "Lihat memori bersama",
+    "memory_modal_title": "Memori bersama — {name}",
+    "memory_modal_loading": "Memuat…",
+    "memory_modal_empty_title": "Belum ada memori bersama",
+    "memory_modal_empty_hint": "Saat membuat memori untuk persona di grup ini, aktifkan «Bagikan dengan grup».",
+    "memory_modal_authored_by": "Oleh {name}",
+    "memory_modal_importance": "Kepentingan {value}",
+    "memory_modal_footer_count_one": "{count} memori",
+    "memory_modal_footer_count_other": "{count} memori"
   }
 }

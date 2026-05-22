@@ -1279,6 +1279,7 @@ pub fn run() {
             commands::core::memories::get_memory_count,
             commands::core::memories::get_memory_stats,
             commands::core::memories::list_memories_by_execution,
+            commands::core::memories::list_group_memories,
             commands::core::memories::create_memory,
             commands::core::memories::delete_memory,
             commands::core::memories::merge_memories,

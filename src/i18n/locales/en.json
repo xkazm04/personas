@@ -5768,7 +5768,10 @@
       "saving": "Saving...",
       "created_success": "Memory created successfully",
       "fill_required": "Fill in all required fields to save",
-      "saving_memory": "Saving memory..."
+      "saving_memory": "Saving memory...",
+      "share_with_group": "Share with",
+      "share_with_group_hint": "Every persona in this group sees this memory in their prompt — useful for org-wide context like style or policies.",
+      "share_with_group_title": "Authored by the selected persona; surfaces for every member of its group."
     },
     "memory_filter": {
       "search_placeholder": "Search memories...",
@@ -12582,7 +12585,16 @@
       "field_model_inherit": "Inherit from persona (no override)",
       "field_model_haiku": "Haiku — fastest, lowest cost",
       "field_model_sonnet": "Sonnet — balanced",
-      "field_model_opus": "Opus — strongest"
+      "field_model_opus": "Opus — strongest",
+      "view_memories_title": "View shared memories",
+      "memory_modal_title": "Shared memories — {name}",
+      "memory_modal_loading": "Loading…",
+      "memory_modal_empty_title": "No shared memories yet",
+      "memory_modal_empty_hint": "When you author a memory for any persona in this group, toggle “Share with group” on the create form to add it here.",
+      "memory_modal_authored_by": "Authored by {name}",
+      "memory_modal_importance": "importance {value}",
+      "memory_modal_footer_count_one": "{count} memory",
+      "memory_modal_footer_count_other": "{count} memories"
     }
   },
   "auth": {

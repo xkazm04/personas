@@ -56,6 +56,20 @@ pub fn create_memory(
     repo::create(&state.db, input)
 }
 
+/// List memories shared into a specific group — the cross-persona pool a
+/// PersonaGroup has accumulated. Returns at most `limit` rows (default
+/// 200) in importance-desc / created-at-desc order. Used by the Group
+/// Memories panel in `GroupManagerPage`.
+#[tauri::command]
+pub fn list_group_memories(
+    state: State<'_, Arc<AppState>>,
+    group_id: String,
+    limit: Option<i64>,
+) -> Result<Vec<PersonaMemory>, AppError> {
+    require_auth_sync(&state)?;
+    repo::list_by_group(&state.db, &group_id, limit)
+}
+
 #[tauri::command]
 pub fn get_memory_count(
     state: State<'_, Arc<AppState>>,

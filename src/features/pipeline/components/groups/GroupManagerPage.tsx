@@ -7,6 +7,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { PersonaGroup } from '@/lib/bindings/PersonaGroup';
 import { GroupCard } from './GroupCard';
 import { GroupEditModal } from './GroupEditModal';
+import { GroupMemoryListModal } from './GroupMemoryListModal';
 
 /**
  * Persona group manager — the missing UI surface for PersonaGroups.
@@ -26,6 +27,7 @@ export default function GroupManagerPage() {
   const [editing, setEditing] = useState<PersonaGroup | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [memoriesForGroup, setMemoriesForGroup] = useState<PersonaGroup | null>(null);
 
   useEffect(() => {
     fetchGroups();
@@ -123,6 +125,7 @@ export default function GroupManagerPage() {
                   onEdit={openEdit}
                   onDelete={deleteGroup}
                   onConfirmDelete={setConfirmDeleteId}
+                  onOpenMemories={setMemoriesForGroup}
                 />
               ))}
             </div>
@@ -162,6 +165,14 @@ export default function GroupManagerPage() {
           setEditing(null);
         }}
       />
+
+      {memoriesForGroup && (
+        <GroupMemoryListModal
+          open
+          group={memoriesForGroup}
+          onClose={() => setMemoriesForGroup(null)}
+        />
+      )}
     </div>
   );
 }

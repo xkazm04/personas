@@ -5681,7 +5681,10 @@
       "saving": "सहेजा जा रहा है...",
       "created_success": "मेमोरी सफलतापूर्वक बनाई गई",
       "fill_required": "सहेजने के लिए सभी आवश्यक फ़ील्ड भरें",
-      "saving_memory": "मेमोरी सहेजी जा रही है..."
+      "saving_memory": "मेमोरी सहेजी जा रही है...",
+      "share_with_group": "साझा करें",
+      "share_with_group_hint": "इस समूह की हर पर्सोना अपनी प्रॉम्प्ट में यह स्मृति देखती है — संगठन-स्तर के संदर्भ जैसे शैली या नीतियों के लिए उपयोगी।",
+      "share_with_group_title": "चयनित पर्सोना द्वारा लिखित; उसके समूह के हर सदस्य के लिए दिखाई देती है।"
     },
     "memory_filter": {
       "search_placeholder": "मेमोरी खोजें...",
@@ -12508,7 +12511,16 @@
       "field_model_inherit": "पर्सोना से लें (कोई ओवरराइड नहीं)",
       "field_model_haiku": "Haiku — सबसे तेज़, सबसे कम लागत",
       "field_model_sonnet": "Sonnet — संतुलित",
-      "field_model_opus": "Opus — सबसे शक्तिशाली"
+      "field_model_opus": "Opus — सबसे शक्तिशाली",
+      "view_memories_title": "साझा यादें देखें",
+      "memory_modal_title": "साझा यादें — {name}",
+      "memory_modal_loading": "लोड हो रहा है…",
+      "memory_modal_empty_title": "अभी तक कोई साझा यादें नहीं",
+      "memory_modal_empty_hint": "इस समूह की किसी पर्सोना के लिए स्मृति बनाते समय «समूह के साथ साझा करें» को चालू करें।",
+      "memory_modal_authored_by": "लेखक: {name}",
+      "memory_modal_importance": "महत्व {value}",
+      "memory_modal_footer_count_one": "{count} स्मृति",
+      "memory_modal_footer_count_other": "{count} स्मृतियाँ"
     }
   },
   "auth": {

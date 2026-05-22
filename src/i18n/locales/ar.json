@@ -5681,7 +5681,10 @@
       "saving": "جارٍ الحفظ...",
       "created_success": "تم إنشاء الذاكرة بنجاح",
       "fill_required": "أكمل جميع الحقول المطلوبة للحفظ",
-      "saving_memory": "جارٍ حفظ الذاكرة..."
+      "saving_memory": "جارٍ حفظ الذاكرة...",
+      "share_with_group": "مشاركة مع",
+      "share_with_group_hint": "كل شخصية في هذه المجموعة ترى هذه الذكرى في موجهها — مفيد للسياق على مستوى المنظمة مثل الأسلوب أو السياسات.",
+      "share_with_group_title": "تأليف الشخصية المحددة؛ تظهر لكل عضو في مجموعتها."
     },
     "memory_filter": {
       "search_placeholder": "بحث في الذاكرة...",
@@ -12508,7 +12511,16 @@
       "field_model_inherit": "الوراثة من الشخصية (بدون استبدال)",
       "field_model_haiku": "Haiku — الأسرع، الأقل تكلفة",
       "field_model_sonnet": "Sonnet — متوازن",
-      "field_model_opus": "Opus — الأقوى"
+      "field_model_opus": "Opus — الأقوى",
+      "view_memories_title": "عرض الذكريات المشتركة",
+      "memory_modal_title": "الذكريات المشتركة — {name}",
+      "memory_modal_loading": "جارٍ التحميل…",
+      "memory_modal_empty_title": "لا توجد ذكريات مشتركة بعد",
+      "memory_modal_empty_hint": "عند إنشاء ذكرى لأي شخصية في هذه المجموعة، فعّل «مشاركة مع المجموعة» في نموذج الإنشاء.",
+      "memory_modal_authored_by": "بواسطة {name}",
+      "memory_modal_importance": "الأهمية {value}",
+      "memory_modal_footer_count_one": "{count} ذكرى",
+      "memory_modal_footer_count_other": "{count} ذكريات"
     }
   },
   "auth": {

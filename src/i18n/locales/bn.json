@@ -5681,7 +5681,10 @@
       "saving": "সংরক্ষণ হচ্ছে...",
       "created_success": "স্মৃতি সফলভাবে তৈরি হয়েছে",
       "fill_required": "সংরক্ষণ করতে সব প্রয়োজনীয় ফিল্ড পূরণ করুন",
-      "saving_memory": "স্মৃতি সংরক্ষণ হচ্ছে..."
+      "saving_memory": "স্মৃতি সংরক্ষণ হচ্ছে...",
+      "share_with_group": "শেয়ার করুন",
+      "share_with_group_hint": "এই গ্রুপের প্রতিটি পার্সোনা তার প্রম্পটে এই স্মৃতি দেখে — শৈলী বা নীতির মতো প্রতিষ্ঠান-স্তরের প্রসঙ্গের জন্য উপযোগী।",
+      "share_with_group_title": "নির্বাচিত পার্সোনা লেখক; এর গ্রুপের প্রতিটি সদস্যের কাছে প্রদর্শিত হয়।"
     },
     "memory_filter": {
       "search_placeholder": "স্মৃতি অনুসন্ধান করুন...",
@@ -12508,7 +12511,16 @@
       "field_model_inherit": "পার্সোনা থেকে উত্তরাধিকার (কোনো ওভাররাইড নেই)",
       "field_model_haiku": "Haiku — দ্রুততম, সর্বনিম্ন খরচ",
       "field_model_sonnet": "Sonnet — সুষম",
-      "field_model_opus": "Opus — সবচেয়ে শক্তিশালী"
+      "field_model_opus": "Opus — সবচেয়ে শক্তিশালী",
+      "view_memories_title": "শেয়ার করা স্মৃতি দেখুন",
+      "memory_modal_title": "শেয়ার করা স্মৃতি — {name}",
+      "memory_modal_loading": "লোড হচ্ছে…",
+      "memory_modal_empty_title": "এখনো কোনো শেয়ার করা স্মৃতি নেই",
+      "memory_modal_empty_hint": "এই গ্রুপের যেকোনো পার্সোনার জন্য স্মৃতি তৈরি করার সময় «গ্রুপের সাথে শেয়ার» টগল চালু করুন।",
+      "memory_modal_authored_by": "লেখক {name}",
+      "memory_modal_importance": "গুরুত্ব {value}",
+      "memory_modal_footer_count_one": "{count} স্মৃতি",
+      "memory_modal_footer_count_other": "{count} স্মৃতি"
     }
   },
   "auth": {

@@ -5681,7 +5681,10 @@
       "saving": "Guardando...",
       "created_success": "Memoria creada exitosamente",
       "fill_required": "Completa todos los campos requeridos para guardar",
-      "saving_memory": "Guardando memoria..."
+      "saving_memory": "Guardando memoria...",
+      "share_with_group": "Compartir con",
+      "share_with_group_hint": "Cada persona del grupo ve esta memoria en su prompt — útil para contexto a nivel de organización como estilo o políticas.",
+      "share_with_group_title": "Escrito por la persona seleccionada; aparece para cada miembro de su grupo."
     },
     "memory_filter": {
       "search_placeholder": "Buscar memorias...",
@@ -12508,7 +12511,16 @@
       "field_model_inherit": "Heredar de la persona (sin sobrescritura)",
       "field_model_haiku": "Haiku — el más rápido, menor costo",
       "field_model_sonnet": "Sonnet — equilibrado",
-      "field_model_opus": "Opus — el más potente"
+      "field_model_opus": "Opus — el más potente",
+      "view_memories_title": "Ver memorias compartidas",
+      "memory_modal_title": "Memorias compartidas — {name}",
+      "memory_modal_loading": "Cargando…",
+      "memory_modal_empty_title": "Aún no hay memorias compartidas",
+      "memory_modal_empty_hint": "Al crear una memoria para cualquier persona de este grupo, activa «Compartir con el grupo».",
+      "memory_modal_authored_by": "Por {name}",
+      "memory_modal_importance": "importancia {value}",
+      "memory_modal_footer_count_one": "{count} memoria",
+      "memory_modal_footer_count_other": "{count} memorias"
     }
   },
   "auth": {

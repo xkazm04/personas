@@ -957,6 +957,36 @@ pub fn get_for_injection_v2(
     )
 }
 
+/// Fetch every memory authored with `group_id = ?` — used by the Group
+/// Memories panel in `GroupManagerPage` to show the cross-persona shared
+/// pool a group has accumulated. Returns rows in importance-desc /
+/// created-at-desc order so the highest-value items lead. No tier filter
+/// because the editor surface wants to show core/active/working all in
+/// one place — promotions/demotions happen via the per-persona editor,
+/// not from the group view.
+pub fn list_by_group(
+    pool: &DbPool,
+    group_id: &str,
+    limit: Option<i64>,
+) -> Result<Vec<PersonaMemory>, AppError> {
+    timed_query!(
+        "persona_memories",
+        "persona_memories::list_by_group",
+        {
+            let limit = limit.unwrap_or(200);
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare_cached(
+                "SELECT * FROM persona_memories
+                 WHERE group_id = ?1
+                 ORDER BY importance DESC, created_at DESC
+                 LIMIT ?2",
+            )?;
+            let rows = stmt.query_map(params![group_id, limit], row_to_memory)?;
+            Ok(collect_rows(rows, "memories::list_by_group"))
+        }
+    )
+}
+
 /// Fetch memories attributed to a specific capability (use case) on a persona.
 /// Phase C5 — capability-scoped memory editor view.
 pub fn get_by_use_case_id(

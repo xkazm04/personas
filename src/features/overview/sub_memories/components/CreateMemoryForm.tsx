@@ -1,8 +1,9 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, Users } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { useOverviewStore } from "@/stores/overviewStore";
+import { usePipelineStore } from '@/stores/pipelineStore';
 import type { PersonaMemoryCategory } from '@/lib/types/frontendTypes';
 import { MEMORY_CATEGORY_COLORS, ALL_MEMORY_CATEGORIES } from '@/lib/utils/formatters';
 import { CategoryChip } from '@/features/shared/components/display/CategoryChip';
@@ -64,8 +65,30 @@ export function InlineAddMemoryForm({ onClose }: { onClose: () => void }) {
   const [category, setCategory] = useState<PersonaMemoryCategory>('fact');
   const [importance, setImportance] = useState(3);
   const [tagsInput, setTagsInput] = useState('');
+  const [shareWithGroup, setShareWithGroup] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+
+  // Persona's group binding determines whether the "share with group" toggle
+  // is offered. We pull the groups roster lazily so the form doesn't trigger
+  // a fetchGroups for users who never use the feature.
+  const groups = usePipelineStore((s) => s.groups);
+  const fetchGroups = usePipelineStore((s) => s.fetchGroups);
+  useEffect(() => { void fetchGroups(); }, [fetchGroups]);
+  const selectedPersona = useMemo(
+    () => personas.find((p) => p.id === personaId) ?? null,
+    [personas, personaId],
+  );
+  const personaGroup = useMemo(
+    () => (selectedPersona?.group_id ? groups.find((g) => g.id === selectedPersona.group_id) ?? null : null),
+    [selectedPersona, groups],
+  );
+  // Reset the share toggle when the persona changes — a memory scoped to
+  // group A would be confusingly shared if the user then switched to a
+  // persona in group B and submitted.
+  useEffect(() => {
+    setShareWithGroup(false);
+  }, [personaId]);
 
   const agentId = 'memory-persona';
   const titleId = 'memory-title';
@@ -83,10 +106,19 @@ export function InlineAddMemoryForm({ onClose }: { onClose: () => void }) {
     if (!canSave) return;
     setSaving(true);
     const tags = tagsInput.split(',').map((t) => t.trim()).filter(Boolean);
-    const ok = await createMemory({ persona_id: personaId, title: title.trim(), content: content.trim(), category, importance, tags });
+    const groupIdToShare = shareWithGroup && personaGroup ? personaGroup.id : null;
+    const ok = await createMemory({
+      persona_id: personaId,
+      title: title.trim(),
+      content: content.trim(),
+      category,
+      importance,
+      tags,
+      group_id: groupIdToShare,
+    });
     setSaving(false);
     if (ok) setShowSuccess(true);
-  }, [canSave, personaId, title, content, category, importance, tagsInput, createMemory]);
+  }, [canSave, personaId, title, content, category, importance, tagsInput, shareWithGroup, personaGroup, createMemory]);
 
   return (
     <div
@@ -147,6 +179,35 @@ export function InlineAddMemoryForm({ onClose }: { onClose: () => void }) {
             <input id={tagsId} value={tagsInput} onChange={(e) => setTagsInput(e.target.value)} placeholder={t.overview.memory_form.tags_placeholder} className="w-full px-3 py-2 typo-body bg-background/60 border border-primary/15 rounded-modal outline-none focus-visible:border-violet-500/40 text-foreground placeholder:text-foreground" />
           </div>
         </div>
+
+        {personaGroup && (
+          <label
+            className="flex items-start gap-2.5 px-3 py-2 rounded-modal bg-secondary/30 border border-primary/10 cursor-pointer hover:bg-secondary/40 transition-colors"
+            title={t.overview.memory_form.share_with_group_title}
+          >
+            <input
+              type="checkbox"
+              checked={shareWithGroup}
+              onChange={(e) => setShareWithGroup(e.target.checked)}
+              className="mt-0.5 w-4 h-4 rounded accent-indigo-500"
+            />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5">
+                <Users
+                  className="w-3.5 h-3.5 flex-shrink-0"
+                  style={{ color: personaGroup.color }}
+                />
+                <span className="typo-body font-medium text-foreground/90">
+                  {t.overview.memory_form.share_with_group}{' '}
+                  <span style={{ color: personaGroup.color }}>{personaGroup.name}</span>
+                </span>
+              </div>
+              <p className="typo-caption text-foreground mt-0.5">
+                {t.overview.memory_form.share_with_group_hint}
+              </p>
+            </div>
+          </label>
+        )}
 
         <div className="flex justify-end gap-2 pt-1">
           <button type="button" onClick={onClose} className="px-3 py-1.5 typo-body text-foreground hover:text-foreground/95 transition-colors">{t.common.cancel}</button>

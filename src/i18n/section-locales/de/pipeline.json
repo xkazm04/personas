@@ -182,6 +182,15 @@
     "field_model_inherit": "Von Persona erben (keine Überschreibung)",
     "field_model_haiku": "Haiku — am schnellsten, geringste Kosten",
     "field_model_sonnet": "Sonnet — ausgewogen",
-    "field_model_opus": "Opus — am stärksten"
+    "field_model_opus": "Opus — am stärksten",
+    "view_memories_title": "Geteilte Erinnerungen anzeigen",
+    "memory_modal_title": "Geteilte Erinnerungen — {name}",
+    "memory_modal_loading": "Lädt…",
+    "memory_modal_empty_title": "Noch keine geteilten Erinnerungen",
+    "memory_modal_empty_hint": "Aktiviere beim Anlegen einer Erinnerung für eine Persona dieser Gruppe «Mit Gruppe teilen».",
+    "memory_modal_authored_by": "Von {name}",
+    "memory_modal_importance": "Wichtigkeit {value}",
+    "memory_modal_footer_count_one": "{count} Erinnerung",
+    "memory_modal_footer_count_other": "{count} Erinnerungen"
   }
 }

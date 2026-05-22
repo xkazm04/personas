@@ -906,7 +906,10 @@
     "saving": "Enregistrement...",
     "created_success": "Mémoire créée avec succès",
     "fill_required": "Remplissez tous les champs requis pour enregistrer",
-    "saving_memory": "Enregistrement de la mémoire..."
+    "saving_memory": "Enregistrement de la mémoire...",
+    "share_with_group": "Partager avec",
+    "share_with_group_hint": "Chaque persona de ce groupe voit ce souvenir dans son prompt — utile pour le contexte de niveau organisation comme le style ou les politiques.",
+    "share_with_group_title": "Rédigé par la persona sélectionnée; visible pour chaque membre de son groupe."
   },
   "memory_filter": {
     "search_placeholder": "Rechercher des mémoires...",

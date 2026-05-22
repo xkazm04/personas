@@ -182,6 +182,15 @@
     "field_model_inherit": "ペルソナから継承 (上書きなし)",
     "field_model_haiku": "Haiku — 最速、最低コスト",
     "field_model_sonnet": "Sonnet — バランス型",
-    "field_model_opus": "Opus — 最強"
+    "field_model_opus": "Opus — 最強",
+    "view_memories_title": "共有メモリを表示",
+    "memory_modal_title": "共有メモリ — {name}",
+    "memory_modal_loading": "読み込み中…",
+    "memory_modal_empty_title": "まだ共有メモリはありません",
+    "memory_modal_empty_hint": "このグループのいずれかのペルソナに対してメモリを作成する際に「グループと共有」をオンにしてください。",
+    "memory_modal_authored_by": "作成者: {name}",
+    "memory_modal_importance": "重要度 {value}",
+    "memory_modal_footer_count_one": "{count} 件のメモリ",
+    "memory_modal_footer_count_other": "{count} 件のメモリ"
   }
 }

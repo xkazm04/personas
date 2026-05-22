@@ -182,6 +182,15 @@
     "field_model_inherit": "Hériter de la persona (sans surcharge)",
     "field_model_haiku": "Haiku — le plus rapide, coût le plus bas",
     "field_model_sonnet": "Sonnet — équilibré",
-    "field_model_opus": "Opus — le plus puissant"
+    "field_model_opus": "Opus — le plus puissant",
+    "view_memories_title": "Voir les souvenirs partagés",
+    "memory_modal_title": "Souvenirs partagés — {name}",
+    "memory_modal_loading": "Chargement…",
+    "memory_modal_empty_title": "Aucun souvenir partagé pour le moment",
+    "memory_modal_empty_hint": "Lors de la création d'un souvenir pour une persona de ce groupe, activez «Partager avec le groupe».",
+    "memory_modal_authored_by": "Par {name}",
+    "memory_modal_importance": "importance {value}",
+    "memory_modal_footer_count_one": "{count} souvenir",
+    "memory_modal_footer_count_other": "{count} souvenirs"
   }
 }

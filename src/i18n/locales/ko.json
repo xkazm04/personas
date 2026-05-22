@@ -5681,7 +5681,10 @@
       "saving": "저장 중...",
       "created_success": "메모리가 성공적으로 생성됨",
       "fill_required": "저장하려면 모든 필수 항목을 입력하세요",
-      "saving_memory": "메모리 저장 중..."
+      "saving_memory": "메모리 저장 중...",
+      "share_with_group": "공유 대상",
+      "share_with_group_hint": "이 그룹의 모든 페르소나는 프롬프트에서 이 메모리를 봅니다 — 스타일 가이드나 조직 정책 같은 조직 차원의 컨텍스트에 유용합니다.",
+      "share_with_group_title": "선택된 페르소나가 작성; 해당 그룹의 모든 구성원에게 표시됩니다."
     },
     "memory_filter": {
       "search_placeholder": "메모리 검색...",
@@ -12508,7 +12511,16 @@
       "field_model_inherit": "페르소나에서 상속 (재정의 없음)",
       "field_model_haiku": "Haiku — 가장 빠름, 가장 저렴",
       "field_model_sonnet": "Sonnet — 균형",
-      "field_model_opus": "Opus — 가장 강력"
+      "field_model_opus": "Opus — 가장 강력",
+      "view_memories_title": "공유 메모리 보기",
+      "memory_modal_title": "공유 메모리 — {name}",
+      "memory_modal_loading": "로딩 중…",
+      "memory_modal_empty_title": "아직 공유된 메모리가 없습니다",
+      "memory_modal_empty_hint": "이 그룹의 페르소나에 메모리를 만들 때 «그룹과 공유» 토글을 켜세요.",
+      "memory_modal_authored_by": "작성자 {name}",
+      "memory_modal_importance": "중요도 {value}",
+      "memory_modal_footer_count_one": "메모리 {count}개",
+      "memory_modal_footer_count_other": "메모리 {count}개"
     }
   },
   "auth": {

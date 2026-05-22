@@ -5775,6 +5775,9 @@ export type Translations = {
       created_success: string;
       fill_required: string;
       saving_memory: string;
+      share_with_group: string;
+      share_with_group_hint: string;
+      share_with_group_title: string;
     };
     memory_filter: {
       search_placeholder: string;
@@ -12589,6 +12592,15 @@ export type Translations = {
       field_model_haiku: string;
       field_model_sonnet: string;
       field_model_opus: string;
+      view_memories_title: string;
+      memory_modal_title: string;
+      memory_modal_loading: string;
+      memory_modal_empty_title: string;
+      memory_modal_empty_hint: string;
+      memory_modal_authored_by: string;
+      memory_modal_importance: string;
+      memory_modal_footer_count_one: string;
+      memory_modal_footer_count_other: string;
     };
   };
   auth: {

@@ -5681,7 +5681,10 @@
       "saving": "Đang lưu...",
       "created_success": "Đã tạo bộ nhớ thành công",
       "fill_required": "Điền tất cả các trường bắt buộc để lưu",
-      "saving_memory": "Đang lưu bộ nhớ..."
+      "saving_memory": "Đang lưu bộ nhớ...",
+      "share_with_group": "Chia sẻ với",
+      "share_with_group_hint": "Mọi persona trong nhóm này đều thấy ký ức này trong prompt — hữu ích cho bối cảnh cấp tổ chức như phong cách hay chính sách.",
+      "share_with_group_title": "Được persona đã chọn tạo; hiển thị cho mọi thành viên trong nhóm của nó."
     },
     "memory_filter": {
       "search_placeholder": "Tìm kiếm bộ nhớ...",
@@ -12508,7 +12511,16 @@
       "field_model_inherit": "Kế thừa từ persona (không ghi đè)",
       "field_model_haiku": "Haiku — nhanh nhất, chi phí thấp nhất",
       "field_model_sonnet": "Sonnet — cân bằng",
-      "field_model_opus": "Opus — mạnh nhất"
+      "field_model_opus": "Opus — mạnh nhất",
+      "view_memories_title": "Xem ký ức được chia sẻ",
+      "memory_modal_title": "Ký ức chung — {name}",
+      "memory_modal_loading": "Đang tải…",
+      "memory_modal_empty_title": "Chưa có ký ức nào được chia sẻ",
+      "memory_modal_empty_hint": "Khi tạo ký ức cho bất kỳ persona nào trong nhóm này, hãy bật «Chia sẻ với nhóm».",
+      "memory_modal_authored_by": "Tác giả {name}",
+      "memory_modal_importance": "tầm quan trọng {value}",
+      "memory_modal_footer_count_one": "{count} ký ức",
+      "memory_modal_footer_count_other": "{count} ký ức"
     }
   },
   "auth": {

@@ -182,6 +182,15 @@
     "field_model_inherit": "الوراثة من الشخصية (بدون استبدال)",
     "field_model_haiku": "Haiku — الأسرع، الأقل تكلفة",
     "field_model_sonnet": "Sonnet — متوازن",
-    "field_model_opus": "Opus — الأقوى"
+    "field_model_opus": "Opus — الأقوى",
+    "view_memories_title": "عرض الذكريات المشتركة",
+    "memory_modal_title": "الذكريات المشتركة — {name}",
+    "memory_modal_loading": "جارٍ التحميل…",
+    "memory_modal_empty_title": "لا توجد ذكريات مشتركة بعد",
+    "memory_modal_empty_hint": "عند إنشاء ذكرى لأي شخصية في هذه المجموعة، فعّل «مشاركة مع المجموعة» في نموذج الإنشاء.",
+    "memory_modal_authored_by": "بواسطة {name}",
+    "memory_modal_importance": "الأهمية {value}",
+    "memory_modal_footer_count_one": "{count} ذكرى",
+    "memory_modal_footer_count_other": "{count} ذكريات"
   }
 }

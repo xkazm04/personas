@@ -906,7 +906,10 @@
     "saving": "Ukládání...",
     "created_success": "Vzpomínka úspěšně vytvořena",
     "fill_required": "Pro uložení vyplň všechna povinná pole",
-    "saving_memory": "Ukládání vzpomínky..."
+    "saving_memory": "Ukládání vzpomínky...",
+    "share_with_group": "Sdílet s",
+    "share_with_group_hint": "Každá persona v této skupině vidí tuto vzpomínku ve své promptě — užitečné pro celoorganizační kontext jako styl nebo zásady.",
+    "share_with_group_title": "Napsáno vybranou personou; viditelné pro každého člena její skupiny."
   },
   "memory_filter": {
     "search_placeholder": "Hledat vzpomínky...",

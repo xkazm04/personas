@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { Pencil, Trash2, Users } from 'lucide-react';
+import { Brain, Pencil, Trash2, Users } from 'lucide-react';
 import type { PersonaGroup } from '@/lib/bindings/PersonaGroup';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -11,6 +11,7 @@ interface GroupCardProps {
   onEdit: (group: PersonaGroup) => void;
   onDelete: (id: string) => void;
   onConfirmDelete: (id: string | null) => void;
+  onOpenMemories: (group: PersonaGroup) => void;
 }
 
 export const GroupCard = memo(function GroupCard({
@@ -20,6 +21,7 @@ export const GroupCard = memo(function GroupCard({
   onEdit,
   onDelete,
   onConfirmDelete,
+  onOpenMemories,
 }: GroupCardProps) {
   const { t, tx } = useTranslation();
   const color = group.color || '#6366f1';
@@ -53,6 +55,14 @@ export const GroupCard = memo(function GroupCard({
         </div>
 
         <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+          <button
+            onClick={() => onOpenMemories(group)}
+            title={t.pipeline.groups.view_memories_title}
+            aria-label={t.pipeline.groups.view_memories_title}
+            className="opacity-0 group-hover:opacity-100 p-1.5 rounded-card hover:bg-indigo-500/15 text-foreground hover:text-indigo-400 transition-all"
+          >
+            <Brain className="w-3.5 h-3.5" />
+          </button>
           <button
             onClick={() => onEdit(group)}
             title={t.pipeline.groups.edit_group}
