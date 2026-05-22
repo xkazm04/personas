@@ -24,6 +24,7 @@ The system has five layers worth documenting separately:
 | [05-dynamic-discovery.md](05-dynamic-discovery.md) | Rust registry, auth strategies, per-connector ops | Adding a new connector op or debugging 401s during adoption |
 | [06-integrity-and-security.md](06-integrity-and-security.md) | Two-layer checksum verification, trust model | Touching template loading or checksum generation |
 | [07-adoption-answer-pipeline.md](07-adoption-answer-pipeline.md) | How questionnaire answers reach the persona's prompt at runtime | Debugging "my adoption answers aren't being used" or adding `{{param}}` support to a template |
+| [08-team-presets.md](08-team-presets.md) | Multi-template "preset team" bundles: manifest schema, adoption engine, library UI, Playwright E2E | Adding a new preset to ship or debugging the bulk-adoption flow |
 
 ## TL;DR architecture
 

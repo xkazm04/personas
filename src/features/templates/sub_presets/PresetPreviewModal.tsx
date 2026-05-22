@@ -227,6 +227,8 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
             {rowsWithResult.map((row) => (
               <li
                 key={row.role}
+                data-testid={`preset-row-${row.role}`}
+                data-status={row.status}
                 className="flex items-center gap-3 px-3 py-2 rounded-card bg-secondary/30 border border-primary/10"
               >
                 <span
@@ -271,6 +273,7 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
               size="sm"
               icon={<CheckCircle2 className="w-4 h-4" />}
               onClick={() => void handleAdopt()}
+              data-testid="preset-adopt-all-button"
             >
               {tx(
                 preset.members.length === 1
@@ -281,7 +284,12 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
             </Button>
           )}
           {adoptionState === 'done' && result && (
-            <Button variant="primary" size="sm" onClick={handleOpenTeam}>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleOpenTeam}
+              data-testid="preset-open-team-button"
+            >
               {t.templates.presets.open_team_button}
             </Button>
           )}

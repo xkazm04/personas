@@ -32,7 +32,7 @@ export default function PresetLibraryPage() {
   }, []);
 
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto p-6">
+    <div className="flex-1 min-h-0 overflow-y-auto p-6" data-testid="preset-library-page">
       <div className="max-w-5xl mx-auto">
         {presets === null && (
           <p className="typo-body text-foreground/60 text-center py-8">
@@ -103,6 +103,7 @@ function PresetCard({
     <button
       type="button"
       onClick={onOpen}
+      data-testid={`preset-card-${preset.id}`}
       className="group text-left p-4 rounded-modal bg-secondary/30 backdrop-blur-sm border border-primary/15 hover:border-indigo-500/30 transition-all hover:shadow-[0_0_20px_rgba(99,102,241,0.08)]"
     >
       <div
