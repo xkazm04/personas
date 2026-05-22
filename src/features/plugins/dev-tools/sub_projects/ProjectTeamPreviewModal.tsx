@@ -7,8 +7,10 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useAgentStore } from '@/stores/agentStore';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import type { PersonaTeamMember } from '@/lib/bindings/PersonaTeamMember';
+import type { PersonaTeamConnection } from '@/lib/bindings/PersonaTeamConnection';
 import type { PipelineRun } from '@/lib/bindings/PipelineRun';
-import { listTeamMembers, listPipelineRuns } from '@/api/pipeline/teams';
+import { listTeamMembers, listTeamConnections, listPipelineRuns } from '@/api/pipeline/teams';
+import { TeamGraphPreview } from './TeamGraphPreview';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import { silentCatch } from '@/lib/silentCatch';
 import { useTypedTauriEvent } from '@/hooks/useTauriEvent';
@@ -34,6 +36,7 @@ export function ProjectTeamPreviewModal({ open, team, onClose }: ProjectTeamPrev
   const personas = useAgentStore((s) => s.personas);
 
   const [members, setMembers] = useState<PersonaTeamMember[] | null>(null);
+  const [connections, setConnections] = useState<PersonaTeamConnection[] | null>(null);
   const [runs, setRuns] = useState<PipelineRun[] | null>(null);
   const [loading, setLoading] = useState(false);
   // Visual cue that the runs list updated from a live event in the last beat.
@@ -58,15 +61,22 @@ export function ProjectTeamPreviewModal({ open, team, onClose }: ProjectTeamPrev
     if (!open) return;
     setLoading(true);
     setMembers(null);
+    setConnections(null);
     setRuns(null);
-    Promise.all([listTeamMembers(team.id), listPipelineRuns(team.id)])
-      .then(([m, r]) => {
+    Promise.all([
+      listTeamMembers(team.id),
+      listTeamConnections(team.id),
+      listPipelineRuns(team.id),
+    ])
+      .then(([m, c, r]) => {
         setMembers(m);
+        setConnections(c);
         setRuns(r.slice(0, RECENT_RUN_LIMIT));
       })
       .catch((err) => {
         silentCatch('features/plugins/dev-tools/sub_projects/ProjectTeamPreviewModal:fetch')(err);
         setMembers([]);
+        setConnections([]);
         setRuns([]);
       })
       .finally(() => setLoading(false));
@@ -120,6 +130,19 @@ export function ProjectTeamPreviewModal({ open, team, onClose }: ProjectTeamPrev
       </div>
 
       <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
+        {/* Mini canvas — read-only fit-to-rect view of member positions +
+            connections. Hidden until both members and connections have
+            loaded; renders as a thin band above the textual lists so the
+            developer sees the shape of the pipeline at a glance. */}
+        {members && connections && members.length > 0 && (
+          <TeamGraphPreview
+            members={members}
+            connections={connections}
+            personas={personas}
+            teamColor={teamColor}
+          />
+        )}
+
         {/* Members */}
         <section>
           <div className="flex items-center gap-2 mb-2">

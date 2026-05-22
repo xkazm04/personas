@@ -11313,7 +11313,10 @@
       "group_binding_bound": "프로젝트가 이 PersonaGroup 워크스페이스에 바인딩되었습니다",
       "group_binding_orphan": "바인딩된 그룹이 삭제되었습니다; 다시 바인딩하려면 프로젝트를 여세요",
       "group_binding_orphan_label": "그룹 제거됨",
-      "team_preview_live_label": "실시간"
+      "team_preview_live_label": "실시간",
+      "team_preview_canvas": "캔버스",
+      "team_preview_canvas_unplaced": "멤버 아직 배치되지 않음",
+      "team_preview_canvas_aria": "미니 캔버스 — 팀 멤버 및 연결"
     },
     "dev_runner": {
       "self_healing": "자가 복구",

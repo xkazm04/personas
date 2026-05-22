@@ -11313,7 +11313,10 @@
       "group_binding_bound": "Proyek terikat ke ruang kerja PersonaGroup ini",
       "group_binding_orphan": "Grup terikat telah dihapus; buka proyek untuk mengikat ulang",
       "group_binding_orphan_label": "grup dihapus",
-      "team_preview_live_label": "langsung"
+      "team_preview_live_label": "langsung",
+      "team_preview_canvas": "Kanvas",
+      "team_preview_canvas_unplaced": "anggota belum ditata",
+      "team_preview_canvas_aria": "Kanvas mini — anggota tim dan koneksinya"
     },
     "dev_runner": {
       "self_healing": "Self-Healing",

@@ -11495,6 +11495,9 @@ export type Translations = {
       team_preview_recent_runs_total: string;
       team_preview_no_runs: string;
       team_preview_live_label: string;
+      team_preview_canvas: string;
+      team_preview_canvas_unplaced: string;
+      team_preview_canvas_aria: string;
       group_binding_label: string;
       group_binding_none: string;
       group_binding_empty: string;

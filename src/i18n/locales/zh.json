@@ -11313,7 +11313,10 @@
       "group_binding_bound": "项目已绑定到此 PersonaGroup 工作区",
       "group_binding_orphan": "绑定的分组已删除；打开项目以重新绑定",
       "group_binding_orphan_label": "分组已删除",
-      "team_preview_live_label": "实时"
+      "team_preview_live_label": "实时",
+      "team_preview_canvas": "画布",
+      "team_preview_canvas_unplaced": "成员尚未布局",
+      "team_preview_canvas_aria": "迷你画布 — 团队成员及其连接"
     },
     "dev_runner": {
       "self_healing": "自愈",

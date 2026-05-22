@@ -1708,7 +1708,10 @@
     "group_binding_bound": "プロジェクトはこの PersonaGroup ワークスペースにバインドされています",
     "group_binding_orphan": "バインドされたグループは削除されました; 再バインドするにはプロジェクトを開いてください",
     "group_binding_orphan_label": "グループ削除済み",
-    "team_preview_live_label": "ライブ"
+    "team_preview_live_label": "ライブ",
+    "team_preview_canvas": "キャンバス",
+    "team_preview_canvas_unplaced": "メンバーがまだレイアウトされていません",
+    "team_preview_canvas_aria": "ミニキャンバス — チームメンバーと接続"
   },
   "dev_runner": {
     "self_healing": "自己修復",

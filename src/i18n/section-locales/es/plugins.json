@@ -1708,7 +1708,10 @@
     "group_binding_bound": "Proyecto vinculado a este espacio de trabajo PersonaGroup",
     "group_binding_orphan": "El grupo vinculado se eliminó; abre el proyecto para revincular",
     "group_binding_orphan_label": "grupo eliminado",
-    "team_preview_live_label": "en vivo"
+    "team_preview_live_label": "en vivo",
+    "team_preview_canvas": "Lienzo",
+    "team_preview_canvas_unplaced": "miembros aún no dispuestos",
+    "team_preview_canvas_aria": "Mini lienzo — miembros del equipo y sus conexiones"
   },
   "dev_runner": {
     "self_healing": "Auto-Sanación",

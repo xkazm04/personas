@@ -11313,7 +11313,10 @@
       "group_binding_bound": "প্রোজেক্টটি এই PersonaGroup ওয়ার্কস্পেসে বাঁধা",
       "group_binding_orphan": "বাঁধা গ্রুপ মুছে ফেলা হয়েছে; পুনরায় বাঁধতে প্রোজেক্ট খুলুন",
       "group_binding_orphan_label": "গ্রুপ সরানো হয়েছে",
-      "team_preview_live_label": "লাইভ"
+      "team_preview_live_label": "লাইভ",
+      "team_preview_canvas": "ক্যানভাস",
+      "team_preview_canvas_unplaced": "সদস্যদের এখনো বিন্যাস করা হয়নি",
+      "team_preview_canvas_aria": "মিনি ক্যানভাস — টিমের সদস্য এবং তাদের সংযোগ"
     },
     "dev_runner": {
       "self_healing": "স্ব-নিরাময়",

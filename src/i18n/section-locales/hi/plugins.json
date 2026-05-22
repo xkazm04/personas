@@ -1708,7 +1708,10 @@
     "group_binding_bound": "प्रोजेक्ट इस PersonaGroup कार्यक्षेत्र से बंधा है",
     "group_binding_orphan": "बंधा हुआ समूह हटा दिया गया है; फिर से बाँधने के लिए प्रोजेक्ट खोलें",
     "group_binding_orphan_label": "समूह हटाया गया",
-    "team_preview_live_label": "लाइव"
+    "team_preview_live_label": "लाइव",
+    "team_preview_canvas": "कैनवस",
+    "team_preview_canvas_unplaced": "सदस्य अभी तक लेआउट नहीं किए गए",
+    "team_preview_canvas_aria": "मिनी कैनवस — टीम के सदस्य और उनके कनेक्शन"
   },
   "dev_runner": {
     "self_healing": "Self-Healing",
