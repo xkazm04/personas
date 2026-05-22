@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Radio, Plus, Trash2, Power, PowerOff, X, User, Mic, Antenna, Key, Wifi } from 'lucide-react';
+import { Radio, Plus, Trash2, Power, PowerOff, X, User, Mic, Antenna, Key, Wifi, Activity } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useVaultStore } from '@/stores/vaultStore';
 import { Button } from '@/features/shared/components/buttons';
@@ -13,6 +13,7 @@ import { TwinEmptyState } from '../TwinEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DEPLOYMENT_CHANNELS, getDeploymentChannelMeta, paletteOf } from '../_shared/channels';
 import { silentCatch } from '@/lib/silentCatch';
+import { useChannelActivity } from './useChannelActivity';
 
 
 /* ------------------------------------------------------------------ *
@@ -68,6 +69,8 @@ export default function ChannelsAtelier() {
   useEffect(() => { if (activeTwinId) fetchChannels(activeTwinId); }, [activeTwinId, fetchChannels]);
   useEffect(() => { fetchCredentials(); }, [fetchCredentials]);
 
+  const { lastByChannel } = useChannelActivity(activeTwinId);
+
   const channelDef = CHANNEL_TYPES.find((c) => c.id === newType);
   const filteredCredentials = useMemo(() => {
     if (!channelDef) return [];
@@ -107,6 +110,23 @@ export default function ChannelsAtelier() {
       .filter((type) => !tones.some((tn) => tn.twin_id === activeTwinId && tn.channel === type)).length;
     return { active, paused, types: types.size, missingTone };
   }, [channels, tones, activeTwinId]);
+
+  // Composes the already-shipped `t.channels.last*` key family into the
+  // localized "Last bridged 2h ago" / "Never used" line shown on each card.
+  // Pure string transform — the timestamps come from useChannelActivity which
+  // re-runs whenever twinCommunications changes.
+  const formatLastBridged = (iso: string | undefined): string => {
+    if (!iso) return t.channels.lastNever;
+    const then = Date.parse(iso);
+    if (Number.isNaN(then)) return t.channels.lastNever;
+    const diffMin = Math.floor((Date.now() - then) / 60_000);
+    let when: string;
+    if (diffMin < 1) when = t.channels.lastJustNow;
+    else if (diffMin < 60) when = tx(t.channels.lastMinutesAgo, { count: diffMin });
+    else if (diffMin < 1440) when = tx(t.channels.lastHoursAgo, { count: Math.floor(diffMin / 60) });
+    else when = tx(t.channels.lastDaysAgo, { count: Math.floor(diffMin / 1440) });
+    return tx(t.channels.lastBridged, { when });
+  };
 
   if (!activeTwinId) return <TwinEmptyState icon={Radio} title={t.channels.title} />;
 
@@ -300,6 +320,10 @@ export default function ChannelsAtelier() {
                           </dd>
                         </div>
                       </dl>
+                      <p className="flex items-center gap-1.5 mt-2 pt-2 border-t border-primary/5 text-[10px] italic text-foreground/85">
+                        <Activity className={`w-3 h-3 flex-shrink-0 ${lastByChannel.get(ch.channel_type) ? meta.text : 'text-foreground'}`} />
+                        <span className="truncate">{formatLastBridged(lastByChannel.get(ch.channel_type))}</span>
+                      </p>
                     </div>
                   </motion.div>
                 );
