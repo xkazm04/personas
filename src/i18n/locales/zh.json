@@ -13405,6 +13405,14 @@
       "emptyBody": "在审阅通信时添加事实 — 每条事实都引用其来源消息。后续阶段会自动提出事实建议。",
       "deleteAria": "删除提炼事实"
     },
+    "rejectionPatterns": {
+      "title": "拒绝模式",
+      "subtitle": "你为什么把记忆驳回。这是上游提取可能有偏差的信号。",
+      "empty": "尚无被拒绝的记忆 — 继续审阅以填充此视图。",
+      "totalRejected": "共 {count} 条已拒绝",
+      "otherBucket": "其他原因",
+      "noReasonBucket": "未填写原因"
+    },
     "reflections": {
       "title": "反思",
       "subtitle": "操作者审查日记。就该 twin 的近期活动提一个问题 — Claude 会读取 twin 资料和最近 40 条通信，写下一段简短、冻结的答案。",

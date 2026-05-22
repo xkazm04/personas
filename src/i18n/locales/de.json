@@ -13405,6 +13405,14 @@
       "emptyBody": "Füge Fakten hinzu, während du Kommunikationen durchsiehst — jeder Fakt zitiert die Nachrichten, aus denen er stammt. Spätere Stufen werden Fakten automatisch vorschlagen.",
       "deleteAria": "Destillierten Fakt löschen"
     },
+    "rejectionPatterns": {
+      "title": "Ablehnungsmuster",
+      "subtitle": "Warum du Erinnerungen zurückgewiesen hast. Ein Hinweis, dass die vorgelagerte Extraktion daneben liegen könnte.",
+      "empty": "Noch keine abgelehnten Erinnerungen — prüfe weiter, um diese Ansicht zu füllen.",
+      "totalRejected": "{count} insgesamt abgelehnt",
+      "otherBucket": "Anderer Grund",
+      "noReasonBucket": "Kein Grund angegeben"
+    },
     "reflections": {
       "title": "Reflexionen",
       "subtitle": "Operator-Audit-Journale. Stelle eine Frage zur jüngsten Aktivität dieses Twins — Claude liest das Twin-Profil + die letzten 40 Kommunikationen und schreibt eine kurze, eingefrorene Antwort.",

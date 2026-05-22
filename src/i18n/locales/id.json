@@ -13405,6 +13405,14 @@
       "emptyBody": "Tambahkan fakta saat Anda meninjau komunikasi — setiap fakta mengutip pesan asalnya. Tahap berikutnya akan mengusulkan fakta secara otomatis.",
       "deleteAria": "Hapus fakta suling"
     },
+    "rejectionPatterns": {
+      "title": "Pola penolakan",
+      "subtitle": "Mengapa Anda menolak memori. Sinyal bahwa ekstraksi di hulu mungkin meleset.",
+      "empty": "Belum ada memori yang ditolak — terus tinjau untuk mengisi tampilan ini.",
+      "totalRejected": "Total ditolak: {count}",
+      "otherBucket": "Alasan lain",
+      "noReasonBucket": "Tanpa alasan"
+    },
     "reflections": {
       "title": "Refleksi",
       "subtitle": "Jurnal audit operator. Ajukan pertanyaan tentang aktivitas terakhir twin ini — Claude membaca profil twin + 40 komunikasi terakhir dan menulis jawaban singkat yang dibekukan.",

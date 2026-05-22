@@ -5,6 +5,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useBrainConnection } from './useBrainConnection';
 import { TwinHeaderBand } from '../_shared/TwinHeaderBand';
 import { BrainDecoration } from '../_shared/decorations';
+import { RejectionPatternsPanel } from './RejectionPatternsPanel';
 
 /* ------------------------------------------------------------------ *
  *  Atelier — "Cortex"
@@ -141,6 +142,10 @@ export default function BrainAtelier() {
                 </div>
               )}
             </Layer>
+
+            {/* Rejection patterns — aggregate over the reviewer_notes column
+                that the knowledge inbox started populating in cycle 3. */}
+            <RejectionPatternsPanel twinId={activeTwinId} />
           </div>
 
           {/* RIGHT — Story trail */}

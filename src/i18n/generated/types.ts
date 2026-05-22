@@ -13319,6 +13319,14 @@ export type Translations = {
       emptyBody: string;
       deleteAria: string;
     };
+    rejectionPatterns: {
+      title: string;
+      subtitle: string;
+      empty: string;
+      totalRejected: string;
+      otherBucket: string;
+      noReasonBucket: string;
+    };
     knowledge: {
       title: string;
       subtitle: string;

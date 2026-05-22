@@ -545,6 +545,14 @@
     "emptyBody": "communication을 검토하면서 사실을 추가하세요 — 각 사실은 출처가 된 메시지를 인용합니다. 추후 단계에서는 사실을 자동으로 제안할 예정입니다.",
     "deleteAria": "정제된 사실 삭제"
   },
+  "rejectionPatterns": {
+    "title": "거절 패턴",
+    "subtitle": "기억을 되돌려 보낸 이유. 상류 추출이 어긋났을 가능성을 알리는 신호입니다.",
+    "empty": "아직 거절된 기억이 없습니다 — 검토를 계속해 이 화면을 채워보세요.",
+    "totalRejected": "총 {count}건 거절",
+    "otherBucket": "기타 사유",
+    "noReasonBucket": "사유 없음"
+  },
   "reflections": {
     "title": "회고",
     "subtitle": "운영자 감사용 저널. 이 트윈의 최근 활동에 대해 질문하면 — Claude가 트윈 프로필과 최근 communication 40개를 읽고 짧고 고정된 답변을 작성합니다.",

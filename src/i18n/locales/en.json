@@ -13313,6 +13313,14 @@
       "emptyBody": "Add facts as you review communications — each fact citing the messages it came from. Future stages will propose facts automatically.",
       "deleteAria": "Delete distilled fact"
     },
+    "rejectionPatterns": {
+      "title": "Rejection patterns",
+      "subtitle": "Why you've pushed memories back. A signal that upstream extraction may be off.",
+      "empty": "No rejected memories yet — keep reviewing to populate this view.",
+      "totalRejected": "{count} rejected total",
+      "otherBucket": "Other reason",
+      "noReasonBucket": "No reason given"
+    },
     "knowledge": {
       "title": "Knowledge",
       "subtitle": "Review what the twin remembers. Approved memories power semantic recall; conversations log all interactions.",

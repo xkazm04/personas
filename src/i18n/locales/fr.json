@@ -13405,6 +13405,14 @@
       "emptyBody": "Ajoutez des faits au fil de la revue des communications — chaque fait citant les messages dont il provient. Les étapes futures proposeront des faits automatiquement.",
       "deleteAria": "Supprimer le fait distillé"
     },
+    "rejectionPatterns": {
+      "title": "Schémas de rejet",
+      "subtitle": "Pourquoi vous avez renvoyé des souvenirs. Un signal que l'extraction en amont peut dériver.",
+      "empty": "Aucun souvenir rejeté pour l'instant — continuez la revue pour alimenter cette vue.",
+      "totalRejected": "{count} rejetés au total",
+      "otherBucket": "Autre raison",
+      "noReasonBucket": "Aucune raison donnée"
+    },
     "reflections": {
       "title": "Réflexions",
       "subtitle": "Journaux d'audit pour l'opérateur. Posez une question sur l'activité récente de ce twin — Claude lit le profil du twin + les 40 dernières communications et rédige une réponse courte et figée.",

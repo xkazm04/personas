@@ -545,6 +545,14 @@
     "emptyBody": "Agrega hechos a medida que revisas las comunicaciones — cada uno citando los mensajes que lo originaron. Etapas futuras propondrán hechos automáticamente.",
     "deleteAria": "Eliminar hecho destilado"
   },
+  "rejectionPatterns": {
+    "title": "Patrones de rechazo",
+    "subtitle": "Por qué has devuelto recuerdos. Una señal de que la extracción previa puede fallar.",
+    "empty": "Aún no hay recuerdos rechazados — sigue revisando para poblar esta vista.",
+    "totalRejected": "{count} rechazados en total",
+    "otherBucket": "Otro motivo",
+    "noReasonBucket": "Sin motivo indicado"
+  },
   "reflections": {
     "title": "Reflexiones",
     "subtitle": "Diarios de auditoría del operador. Pregunta algo sobre la actividad reciente de este gemelo — Claude lee el perfil del gemelo + las últimas 40 comunicaciones y escribe una respuesta breve y congelada.",

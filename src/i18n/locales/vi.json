@@ -13405,6 +13405,14 @@
       "emptyBody": "Thêm dữ kiện khi bạn duyệt các cuộc liên lạc — mỗi dữ kiện trích dẫn các tin nhắn đã sinh ra nó. Các giai đoạn sau sẽ đề xuất dữ kiện tự động.",
       "deleteAria": "Xóa dữ kiện chắt lọc"
     },
+    "rejectionPatterns": {
+      "title": "Mẫu từ chối",
+      "subtitle": "Tại sao bạn đẩy ngược các ký ức. Tín hiệu rằng việc trích xuất phía trên có thể lệch.",
+      "empty": "Chưa có ký ức bị từ chối — tiếp tục xem xét để lấp đầy chế độ xem này.",
+      "totalRejected": "Tổng bị từ chối: {count}",
+      "otherBucket": "Lý do khác",
+      "noReasonBucket": "Không nêu lý do"
+    },
     "reflections": {
       "title": "Suy ngẫm",
       "subtitle": "Nhật ký kiểm toán của vận hành viên. Đặt một câu hỏi về hoạt động gần đây của twin — Claude đọc hồ sơ twin + 40 cuộc liên lạc gần nhất rồi viết một câu trả lời ngắn, đóng băng lại.",

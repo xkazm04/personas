@@ -13405,6 +13405,14 @@
       "emptyBody": "Přidávejte fakta při procházení komunikací — každé fakt cituje zprávy, ze kterých vzniklo. Budoucí fáze budou fakta navrhovat automaticky.",
       "deleteAria": "Smazat destilované fakt"
     },
+    "rejectionPatterns": {
+      "title": "Vzorce odmítnutí",
+      "subtitle": "Proč jsi vracel/a vzpomínky zpět. Signál, že předchozí extrakce může mít odchylky.",
+      "empty": "Žádné odmítnuté vzpomínky zatím — pokračuj v revizi, ať se pohled naplní.",
+      "totalRejected": "Celkem odmítnuto: {count}",
+      "otherBucket": "Jiný důvod",
+      "noReasonBucket": "Bez uvedení důvodu"
+    },
     "reflections": {
       "title": "Reflexe",
       "subtitle": "Operátorské auditní deníky. Položte otázku o nedávné aktivitě tohoto dvojníka — Claude přečte profil dvojníka + posledních 40 komunikací a napíše krátkou, zmrazenou odpověď.",
