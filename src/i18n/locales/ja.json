@@ -12973,7 +12973,14 @@
       "saving": "Saving...",
       "save": "Save",
       "creating": "Creating...",
-      "create": "Create"
+      "create": "Create",
+      "autoSuggestCta": "最近の{channel}メッセージ{count}件からトーンを下書き",
+      "autoSuggestButton": "提案",
+      "autoSuggestGenerating": "メッセージを読み込み中…",
+      "autoSuggestTooltip": "最近の送信メッセージを読み取り、ボイスディレクティブと例を下書きします。確認して保存するのはあなたです。",
+      "autoSuggestSuccess": "提案を下書きしました — 確認して保存してください。",
+      "autoSuggestNoComms": "学習に十分な{channel}メッセージがまだありません。",
+      "autoSuggestError": "トーン提案を下書きできませんでした。"
     },
     "voice": {
       "title": "Voice",

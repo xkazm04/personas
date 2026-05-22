@@ -113,7 +113,14 @@
     "saving": "Saving...",
     "save": "Save",
     "creating": "Creating...",
-    "create": "Create"
+    "create": "Create",
+    "autoSuggestCta": "根据最近 {count} 条 {channel} 消息草拟语气",
+    "autoSuggestButton": "建议",
+    "autoSuggestGenerating": "正在读取消息…",
+    "autoSuggestTooltip": "读取最近发出的消息并草拟语气指令和示例。你仍需审核并保存。",
+    "autoSuggestSuccess": "已草拟建议 — 请审核并保存。",
+    "autoSuggestNoComms": "尚无足够的 {channel} 消息可供学习。",
+    "autoSuggestError": "无法草拟语气建议。"
   },
   "voice": {
     "title": "Voice",

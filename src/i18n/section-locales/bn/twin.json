@@ -113,7 +113,14 @@
     "saving": "Saving...",
     "save": "Save",
     "creating": "Creating...",
-    "create": "Create"
+    "create": "Create",
+    "autoSuggestCta": "{count}টি সাম্প্রতিক {channel} বার্তা থেকে টোন খসড়া করুন",
+    "autoSuggestButton": "প্রস্তাব দিন",
+    "autoSuggestGenerating": "বার্তা পড়া হচ্ছে…",
+    "autoSuggestTooltip": "সাম্প্রতিক বহির্গামী বার্তা পড়ে এবং ভয়েস নির্দেশিকা ও উদাহরণ খসড়া করে। আপনি এখনও পর্যালোচনা করে সংরক্ষণ করেন।",
+    "autoSuggestSuccess": "প্রস্তাব খসড়া করা হয়েছে — পর্যালোচনা করুন এবং সংরক্ষণ করুন।",
+    "autoSuggestNoComms": "শেখার জন্য এখনও পর্যাপ্ত {channel} বার্তা নেই।",
+    "autoSuggestError": "টোন প্রস্তাব খসড়া করা যায়নি।"
   },
   "voice": {
     "title": "Voice",

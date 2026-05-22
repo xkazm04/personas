@@ -113,7 +113,14 @@
     "saving": "Saving...",
     "save": "Save",
     "creating": "Creating...",
-    "create": "Create"
+    "create": "Create",
+    "autoSuggestCta": "Navrhnout tón z {count} posledních zpráv z {channel}",
+    "autoSuggestButton": "Navrhnout",
+    "autoSuggestGenerating": "Čtu zprávy…",
+    "autoSuggestTooltip": "Přečte poslední odchozí zprávy a navrhne hlasové pokyny a příklady. Stále si je sám zkontroluješ a uložíš.",
+    "autoSuggestSuccess": "Návrh připraven — zkontroluj a ulož.",
+    "autoSuggestNoComms": "Zatím není dostatek zpráv z {channel} k učení.",
+    "autoSuggestError": "Návrh tónu se nepodařilo vytvořit."
   },
   "voice": {
     "title": "Voice",

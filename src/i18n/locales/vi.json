@@ -12973,7 +12973,14 @@
       "saving": "Saving...",
       "save": "Save",
       "creating": "Creating...",
-      "create": "Create"
+      "create": "Create",
+      "autoSuggestCta": "Soạn thảo giọng điệu từ {count} tin nhắn {channel} gần đây",
+      "autoSuggestButton": "Đề xuất",
+      "autoSuggestGenerating": "Đang đọc tin nhắn…",
+      "autoSuggestTooltip": "Đọc các tin nhắn gửi đi gần đây và soạn thảo các chỉ dẫn giọng nói cùng ví dụ. Bạn vẫn xem lại và lưu.",
+      "autoSuggestSuccess": "Đã soạn đề xuất — xem lại và lưu.",
+      "autoSuggestNoComms": "Chưa đủ tin nhắn {channel} để học hỏi.",
+      "autoSuggestError": "Không thể soạn đề xuất giọng điệu."
     },
     "voice": {
       "title": "Voice",

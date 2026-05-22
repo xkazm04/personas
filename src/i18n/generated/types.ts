@@ -13105,6 +13105,13 @@ export type Translations = {
       save: string;
       creating: string;
       create: string;
+      autoSuggestCta: string;
+      autoSuggestButton: string;
+      autoSuggestGenerating: string;
+      autoSuggestTooltip: string;
+      autoSuggestSuccess: string;
+      autoSuggestNoComms: string;
+      autoSuggestError: string;
     };
     voice: {
       title: string;

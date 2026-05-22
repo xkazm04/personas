@@ -12973,7 +12973,14 @@
       "saving": "Saving...",
       "save": "Save",
       "creating": "Creating...",
-      "create": "Create"
+      "create": "Create",
+      "autoSuggestCta": "Tonfall aus {count} aktuellen {channel}-Nachrichten entwerfen",
+      "autoSuggestButton": "Vorschlagen",
+      "autoSuggestGenerating": "Nachrichten werden gelesen…",
+      "autoSuggestTooltip": "Liest aktuelle ausgehende Nachrichten und entwirft Stimmrichtlinien und Beispiele. Du prüfst und speicherst weiterhin selbst.",
+      "autoSuggestSuccess": "Vorschlag entworfen — prüfen und speichern.",
+      "autoSuggestNoComms": "Noch nicht genügend {channel}-Nachrichten zum Lernen vorhanden.",
+      "autoSuggestError": "Tonfall-Vorschlag konnte nicht entworfen werden."
     },
     "voice": {
       "title": "Voice",

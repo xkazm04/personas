@@ -113,7 +113,14 @@
     "saving": "Saving...",
     "save": "Save",
     "creating": "Creating...",
-    "create": "Create"
+    "create": "Create",
+    "autoSuggestCta": "हाल के {count} {channel} संदेशों से टोन ड्राफ़्ट करें",
+    "autoSuggestButton": "सुझाव",
+    "autoSuggestGenerating": "संदेश पढ़ रहे हैं…",
+    "autoSuggestTooltip": "हाल के भेजे गए संदेशों को पढ़कर voice directives और उदाहरण ड्राफ़्ट करता है। आप अब भी समीक्षा करके सहेजते हैं।",
+    "autoSuggestSuccess": "सुझाव ड्राफ़्ट किया गया — समीक्षा करें और सहेजें।",
+    "autoSuggestNoComms": "सीखने के लिए अभी पर्याप्त {channel} संदेश नहीं हैं।",
+    "autoSuggestError": "टोन सुझाव ड्राफ़्ट नहीं किया जा सका।"
   },
   "voice": {
     "title": "Voice",

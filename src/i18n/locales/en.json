@@ -13098,7 +13098,14 @@
       "saving": "Saving...",
       "save": "Save",
       "creating": "Creating...",
-      "create": "Create"
+      "create": "Create",
+      "autoSuggestCta": "Draft tone from {count} recent {channel} messages",
+      "autoSuggestButton": "Suggest",
+      "autoSuggestGenerating": "Reading messages…",
+      "autoSuggestTooltip": "Reads recent outbound messages and drafts voice directives + examples. You still review and save.",
+      "autoSuggestSuccess": "Suggestion drafted — review and save.",
+      "autoSuggestNoComms": "Not enough {channel} messages yet to learn from.",
+      "autoSuggestError": "Couldn't draft tone suggestion."
     },
     "voice": {
       "title": "Voice",

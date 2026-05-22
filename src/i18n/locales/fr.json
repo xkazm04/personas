@@ -12973,7 +12973,14 @@
       "saving": "Saving...",
       "save": "Save",
       "creating": "Creating...",
-      "create": "Create"
+      "create": "Create",
+      "autoSuggestCta": "Rédiger le ton à partir des {count} derniers messages {channel}",
+      "autoSuggestButton": "Suggérer",
+      "autoSuggestGenerating": "Lecture des messages…",
+      "autoSuggestTooltip": "Lit les messages sortants récents et rédige les directives de voix et des exemples. À toi de relire et d'enregistrer.",
+      "autoSuggestSuccess": "Suggestion rédigée — relis et enregistre.",
+      "autoSuggestNoComms": "Pas encore assez de messages {channel} pour apprendre.",
+      "autoSuggestError": "Impossible de rédiger la suggestion de ton."
     },
     "voice": {
       "title": "Voice",
