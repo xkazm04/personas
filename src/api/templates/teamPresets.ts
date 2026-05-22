@@ -1,7 +1,21 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
+import { useI18nStore } from "@/stores/i18nStore";
 
 import type { TeamPreset } from "@/lib/bindings/TeamPreset";
 import type { AdoptedTeamPresetResult } from "@/lib/bindings/AdoptedTeamPresetResult";
+
+/**
+ * Resolve the user's current locale to pass to the Rust preset loader.
+ * Returns `null` for English so the backend short-circuits the overlay
+ * lookup path entirely (canonical file IS English — no sibling needed).
+ *
+ * Read at call time (not module load) so a language switch mid-session
+ * affects the next preset operation without a reload.
+ */
+function currentLanguage(): string | null {
+  const lang = useI18nStore.getState().language;
+  return lang === "en" ? null : lang;
+}
 
 // ============================================================================
 // Team Presets — filesystem-shipped multi-template bundles
@@ -18,10 +32,10 @@ import type { AdoptedTeamPresetResult } from "@/lib/bindings/AdoptedTeamPresetRe
 // is worse than the few-ms read cost.
 
 export const listTeamPresets = () =>
-  invoke<TeamPreset[]>("list_team_presets");
+  invoke<TeamPreset[]>("list_team_presets", { language: currentLanguage() });
 
 export const getTeamPreset = (id: string) =>
-  invoke<TeamPreset>("get_team_preset", { id });
+  invoke<TeamPreset>("get_team_preset", { id, language: currentLanguage() });
 
 /**
  * Run a preset's full adoption flow. Emits `team-preset-adopt-progress`
@@ -36,7 +50,10 @@ export const getTeamPreset = (id: string) =>
  * rest without losing progress.
  */
 export const adoptTeamPreset = (id: string) =>
-  invoke<AdoptedTeamPresetResult>("adopt_team_preset", { id });
+  invoke<AdoptedTeamPresetResult>("adopt_team_preset", {
+    id,
+    language: currentLanguage(),
+  });
 
 /**
  * Retry the named failed roles of a previously-adopted preset. Reuses
@@ -60,4 +77,5 @@ export const retryTeamPresetMembers = (
     teamId,
     groupId,
     roles,
+    language: currentLanguage(),
   });

@@ -19,28 +19,47 @@ use crate::AppState;
 /// `scripts/templates/_team_presets/`. Invalid manifests are skipped
 /// silently (logged via `tracing::warn` in the loader). Result is sorted
 /// by `name` for stable gallery ordering.
+///
+/// `language` (e.g. `"zh"`, `"de"`) selects per-preset locale overlay
+/// siblings (`<id>.<lang>.json`) when present. `None` returns canonical
+/// English. Overlays are partial — fields absent from the overlay fall
+/// through to canonical, so a translation team can ship name +
+/// description first and add member-level translations later.
 #[tauri::command]
-pub fn list_team_presets(state: State<'_, Arc<AppState>>) -> Result<Vec<TeamPreset>, AppError> {
+pub fn list_team_presets(
+    state: State<'_, Arc<AppState>>,
+    language: Option<String>,
+) -> Result<Vec<TeamPreset>, AppError> {
     require_auth_sync(&state)?;
-    Ok(team_preset_loader::list_presets())
+    Ok(team_preset_loader::list_presets(language.as_deref()))
 }
 
 /// Return one preset by id (the on-disk filename minus `.json`). Returns
 /// `NotFound` for an unknown id, `Validation` for parse/schema/role
 /// failures.
+///
+/// `language` applies the matching `<id>.<lang>.json` overlay — same
+/// rules as `list_team_presets`.
 #[tauri::command]
 pub fn get_team_preset(
     state: State<'_, Arc<AppState>>,
     id: String,
+    language: Option<String>,
 ) -> Result<TeamPreset, AppError> {
     require_auth_sync(&state)?;
-    team_preset_loader::get_preset(&id)
+    team_preset_loader::get_preset(&id, language.as_deref())
 }
 
 /// Run a preset's full adoption flow: create optional group, create team
 /// shell, adopt each member template, bind to group, add to team, wire
 /// connections. See `engine::team_preset_adopter` for the full step
 /// sequence and partial-success semantics.
+///
+/// `language` is the user's current locale at the moment the adopt
+/// button was clicked — passed straight through to the loader so the
+/// persisted team + group names match what the user saw in the preview
+/// modal. Switching language AFTER adoption does not retranslate
+/// existing teams (they're frozen at the adopted locale).
 ///
 /// Emits `team-preset-adopt-progress` events per member transition so
 /// the preview modal can render a per-row status table. Returns
@@ -51,9 +70,10 @@ pub fn adopt_team_preset(
     state: State<'_, Arc<AppState>>,
     app: AppHandle,
     id: String,
+    language: Option<String>,
 ) -> Result<AdoptedTeamPresetResult, AppError> {
     require_auth_sync(&state)?;
-    team_preset_adopter::adopt_preset(&state, Some(app), &id)
+    team_preset_adopter::adopt_preset(&state, Some(app), &id, language.as_deref())
 }
 
 /// Retry the specified failed roles of a previously-adopted preset.
@@ -62,6 +82,11 @@ pub fn adopt_team_preset(
 /// existing per-row status badges animate identically. Idempotent on
 /// roles already adopted (silently skipped), so double-clicking is
 /// safe.
+///
+/// `language` should match the locale used for the original adoption
+/// so the retried members' persisted names stay consistent with the
+/// rest of the team. (The frontend keeps the locale from the initial
+/// adopt-click and passes the same value back here.)
 ///
 /// Returns the FULL member list (existing + newly-retried) so the
 /// modal can swap state in one assignment.
@@ -73,6 +98,7 @@ pub fn retry_team_preset_members(
     team_id: String,
     group_id: Option<String>,
     roles: Vec<String>,
+    language: Option<String>,
 ) -> Result<AdoptedTeamPresetResult, AppError> {
     require_auth_sync(&state)?;
     team_preset_adopter::retry_failed_members(
@@ -82,5 +108,6 @@ pub fn retry_team_preset_members(
         &team_id,
         group_id.as_deref(),
         &roles,
+        language.as_deref(),
     )
 }

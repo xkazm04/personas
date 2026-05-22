@@ -136,6 +136,65 @@ inline next to their role rows so the user can decide whether to
 retry the manifest or fix the failing template's prerequisites
 (usually missing credentials).
 
+## Locale overlays
+
+Each canonical preset can ship sibling translation files alongside it:
+
+```
+scripts/templates/_team_presets/
+  ├── backlog-execution.json           ← canonical (English, source of truth)
+  ├── backlog-execution.zh.json        ← Chinese overlay (partial)
+  └── backlog-execution.de.json        ← German overlay (partial)
+```
+
+Overlay files contain ONLY the user-facing strings that differ from
+canonical. Anything absent in the overlay falls through to English at
+load time, so a translation team can ship `name` + `description` first
+and add `group.shared_instructions`, member labels, and connection
+labels later without breaking anything.
+
+**Pipeline:**
+
+1. `team_preset_loader::list_presets(language)` / `get_preset(id,
+   language)` parse the canonical file into a `serde_json::Value`,
+   then recursively merge the matching `<id>.<lang>.json` sibling on
+   top (objects: overlay keys override; arrays: zip by index;
+   primitives: overlay wins). Result is then deserialized to the
+   typed `TeamPreset` model.
+2. The frontend wrappers in `src/api/templates/teamPresets.ts` read
+   the active language from `useI18nStore` at call time and pass it
+   to every IPC. English short-circuits to `null` (no overlay
+   lookup) — the canonical file IS English.
+3. The same `language` is threaded through `adopt_team_preset` and
+   `retry_team_preset_members` so the team / group / member names
+   that get persisted to SQLite match what the user saw in the
+   preview modal. Switching language AFTER adoption does NOT
+   re-translate existing teams; they're frozen at the locale active
+   when the adopt button was clicked.
+
+**Authoring rules:**
+
+- Structural fields (`id`, `schema_version`, `member.role`,
+  `member.template_id`, `connection.from`, `connection.to`) MUST stay
+  identical between canonical and overlay. A drift would fail
+  role-uniqueness or unknown-role validation and the loader silently
+  skips the whole preset (the gallery still shows English).
+- Array overlays zip by index. The overlay's `connections` array, if
+  present, must have the same length and the same ordering as
+  canonical — only the user-facing fields (`label` today) need
+  translation; structural fields can be omitted from each array
+  element and they fall through to canonical via the deep-merge.
+- Bad overlay files (missing file, parse error, validation failure
+  on the merged result) → canonical English is returned and the
+  failure is logged via `tracing::warn`. Translation lag never
+  breaks the gallery.
+
+If you add a new preset and want to ship a first translation along
+with it, copy the canonical, strip everything except user-facing
+fields, translate them, and save as `<id>.<lang>.json`. See
+`scripts/templates/_team_presets/backlog-execution.zh.json` for a
+minimal worked example.
+
 ## End-to-end test
 
 `tests/playwright/preset-team-adoption.spec.ts` drives the live app

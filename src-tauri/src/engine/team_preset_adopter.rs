@@ -119,12 +119,17 @@ fn persona_id_from_adopt_value(value: &serde_json::Value) -> Result<String, AppE
 /// Run a preset's full adoption flow. `app` is optional so unit tests can
 /// invoke the adopter without a real Tauri AppHandle — when `None`, no
 /// progress events are emitted but the rest of the flow runs.
+///
+/// `language` selects the locale-overlay sibling (`<id>.<lang>.json`) so
+/// the persisted team + group + member names match what the user saw in
+/// the preview modal. `None` adopts the canonical English manifest.
 pub fn adopt_preset(
     state: &Arc<AppState>,
     app: Option<AppHandle>,
     preset_id: &str,
+    language: Option<&str>,
 ) -> Result<AdoptedTeamPresetResult, AppError> {
-    let preset: TeamPreset = team_preset_loader::get_preset(preset_id)?;
+    let preset: TeamPreset = team_preset_loader::get_preset(preset_id, language)?;
 
     // 0. Emit a `queued` event per member up-front so the UI's per-row
     //    status table can render the full skeleton immediately. Then the
@@ -401,8 +406,9 @@ pub fn retry_failed_members(
     team_id: &str,
     group_id: Option<&str>,
     roles_to_retry: &[String],
+    language: Option<&str>,
 ) -> Result<AdoptedTeamPresetResult, AppError> {
-    let preset: TeamPreset = team_preset_loader::get_preset(preset_id)?;
+    let preset: TeamPreset = team_preset_loader::get_preset(preset_id, language)?;
 
     // Verify the team still exists. Returns NotFound if the user
     // deleted it between the failed adopt and the retry click.

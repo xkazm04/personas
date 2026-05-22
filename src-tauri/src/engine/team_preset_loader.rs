@@ -23,8 +23,36 @@
 //! that coupling would force the loader to read the entire template catalog
 //! on every list call. The adopter validates per-template at adoption time
 //! and returns a precise error if one is missing.
+//!
+//! ## Locale overlays
+//!
+//! Each preset manifest may have sibling translation files named
+//! `<id>.<lang>.json` (e.g. `backlog-execution.zh.json`). When the loader
+//! is called with `Some(lang)`, it parses canonical English first, then
+//! recursively merges any overlay file's fields on top BEFORE validation
+//! + typed deserialization. The merge is deep:
+//!
+//!   - objects: overlay keys override canonical, missing keys preserved
+//!   - arrays: zip by index — overlays must keep canonical member/conn
+//!     order, identical to the array-overlay rule for templates' partial
+//!     overlays (see `src/lib/personas/templates/templateOverlays.ts`)
+//!   - primitives: overlay wins
+//!
+//! Structural fields (`id`, `schema_version`, `member.role`,
+//! `member.template_id`, `connection.from`/`to`) MUST stay identical
+//! between canonical and overlay; an overlay that drifts on those
+//! values will fail role-uniqueness or unknown-role validation at the
+//! end and the loader will skip the whole preset rather than silently
+//! split it into two views.
+//!
+//! Overlay miss/parse failures are non-fatal — the canonical English
+//! is returned and the failure is logged as a tracing warning. Same
+//! rationale as the templates pipeline: translation lag must never
+//! break the gallery.
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+
+use serde_json::Value;
 
 use crate::db::models::TeamPreset;
 use crate::error::AppError;
@@ -34,6 +62,79 @@ const SUPPORTED_SCHEMA_VERSION: i32 = 1;
 
 fn presets_dir() -> PathBuf {
     PathBuf::from(PRESETS_RELATIVE_DIR)
+}
+
+/// Recursive deep-merge: overlay onto canonical in place.
+/// - Objects merge by key.
+/// - Arrays zip by index (overlay items beyond canonical length are dropped
+///   — translators are expected to keep the same length as canonical).
+/// - Primitives: overlay replaces canonical.
+/// - Null overlay slot preserves canonical (lets a partial overlay file
+///   leave structural fields untouched explicitly).
+fn merge_overlay(canonical: &mut Value, overlay: Value) {
+    match overlay {
+        Value::Null => { /* preserve canonical */ }
+        Value::Object(o) => {
+            if let Value::Object(c) = canonical {
+                for (k, v) in o {
+                    match c.get_mut(&k) {
+                        Some(slot) => merge_overlay(slot, v),
+                        None => {
+                            c.insert(k, v);
+                        }
+                    }
+                }
+            } else {
+                *canonical = Value::Object(o);
+            }
+        }
+        Value::Array(o) => {
+            if let Value::Array(c) = canonical {
+                for (i, v) in o.into_iter().enumerate() {
+                    if let Some(slot) = c.get_mut(i) {
+                        merge_overlay(slot, v);
+                    }
+                }
+            } else {
+                *canonical = Value::Array(o);
+            }
+        }
+        other => {
+            *canonical = other;
+        }
+    }
+}
+
+/// Apply a sibling `<id>.<lang>.json` overlay onto a canonical JSON value,
+/// if the file exists and parses. Missing/broken overlay → canonical
+/// untouched, warning logged. Never returns an error: translation lag
+/// must not break the gallery.
+fn apply_locale_overlay(canonical: &mut Value, dir: &Path, id: &str, lang: &str) {
+    // Reject anything that could escape the presets dir or hit an unintended
+    // file. Locale codes are 2-3 lowercase letters in the i18n manifest;
+    // be conservative and silently no-op anything else.
+    if !lang.chars().all(|c| c.is_ascii_lowercase()) || lang.len() < 2 || lang.len() > 3 {
+        return;
+    }
+    let overlay_path = dir.join(format!("{id}.{lang}.json"));
+    if !overlay_path.exists() {
+        return;
+    }
+    let content = match std::fs::read_to_string(&overlay_path) {
+        Ok(s) => s,
+        Err(err) => {
+            tracing::warn!(file = ?overlay_path, error = %err, "team_preset_loader: overlay read failed");
+            return;
+        }
+    };
+    let overlay: Value = match serde_json::from_str(&content) {
+        Ok(v) => v,
+        Err(err) => {
+            tracing::warn!(file = ?overlay_path, error = %err, "team_preset_loader: overlay parse failed");
+            return;
+        }
+    };
+    merge_overlay(canonical, overlay);
 }
 
 /// Validate a parsed preset and return it, or an explanatory error.
@@ -75,10 +176,34 @@ fn validate(preset: &TeamPreset) -> Result<(), AppError> {
     Ok(())
 }
 
+/// Returns true if `filename` looks like a locale-overlay sibling
+/// (`<id>.<lang>.json` with `<lang>` a 2-3 lowercase letter code) rather
+/// than a canonical preset manifest. Used by `list_presets` to skip
+/// overlay files in the gallery scan — they get folded into their
+/// canonical parent during the per-preset locale-overlay step.
+fn is_overlay_filename(filename: &str) -> bool {
+    let stem = match filename.strip_suffix(".json") {
+        Some(s) => s,
+        None => return false,
+    };
+    let Some(idx) = stem.rfind('.') else {
+        return false;
+    };
+    let lang = &stem[idx + 1..];
+    !lang.is_empty()
+        && lang.len() >= 2
+        && lang.len() <= 3
+        && lang.chars().all(|c| c.is_ascii_lowercase())
+}
+
 /// Read every `*.json` from `scripts/templates/_team_presets/`, parse it,
 /// validate, and return the sorted list. Invalid presets are LOGGED and
 /// SKIPPED — one bad manifest shouldn't take the whole gallery offline.
-pub fn list_presets() -> Vec<TeamPreset> {
+///
+/// When `language` is `Some(lang)`, each canonical preset is overlaid
+/// with its `<id>.<lang>.json` sibling (if present) so the gallery shows
+/// translated names + descriptions. `None` returns canonical English.
+pub fn list_presets(language: Option<&str>) -> Vec<TeamPreset> {
     let dir = presets_dir();
     if !dir.exists() {
         return Vec::new();
@@ -98,6 +223,16 @@ pub fn list_presets() -> Vec<TeamPreset> {
         if path.extension().map(|e| e != "json").unwrap_or(true) {
             continue;
         }
+        let filename = match path.file_name().and_then(|n| n.to_str()) {
+            Some(n) => n,
+            None => continue,
+        };
+        if is_overlay_filename(filename) {
+            // Sibling translation, picked up via apply_locale_overlay
+            // when its canonical parent loads. Skip the standalone scan.
+            continue;
+        }
+        let canonical_id = filename.trim_end_matches(".json");
         let content = match std::fs::read_to_string(&path) {
             Ok(s) => s,
             Err(err) => {
@@ -105,10 +240,20 @@ pub fn list_presets() -> Vec<TeamPreset> {
                 continue;
             }
         };
-        let parsed: TeamPreset = match serde_json::from_str(&content) {
-            Ok(p) => p,
+        let mut raw: Value = match serde_json::from_str(&content) {
+            Ok(v) => v,
             Err(err) => {
                 tracing::warn!(file = ?path, error = %err, "team_preset_loader: parse failed");
+                continue;
+            }
+        };
+        if let Some(lang) = language {
+            apply_locale_overlay(&mut raw, &dir, canonical_id, lang);
+        }
+        let parsed: TeamPreset = match serde_json::from_value(raw) {
+            Ok(p) => p,
+            Err(err) => {
+                tracing::warn!(file = ?path, error = %err, "team_preset_loader: typed parse failed");
                 continue;
             }
         };
@@ -128,13 +273,21 @@ pub fn list_presets() -> Vec<TeamPreset> {
 /// Read one preset by id (filename minus `.json`). Returns `NotFound` if
 /// the file is missing, `Validation` for parse / schema-version / unique-
 /// role / unknown-role-reference failures.
-pub fn get_preset(id: &str) -> Result<TeamPreset, AppError> {
+///
+/// When `language` is `Some(lang)`, the canonical preset is overlaid
+/// with its `<id>.<lang>.json` sibling (if present). The persisted team
+/// + group + member names that flow out of the adopter therefore match
+/// what the user saw in the preview modal — a Chinese-locale user
+/// clicking the preset gets a Chinese-named team, no language-switch
+/// drift after adoption.
+pub fn get_preset(id: &str, language: Option<&str>) -> Result<TeamPreset, AppError> {
     if id.contains('/') || id.contains('\\') || id.contains("..") {
         return Err(AppError::Validation(
             "Team preset id must not contain path separators".into(),
         ));
     }
-    let path = presets_dir().join(format!("{id}.json"));
+    let dir = presets_dir();
+    let path = dir.join(format!("{id}.json"));
     if !path.exists() {
         return Err(AppError::NotFound(format!("Team preset '{id}'")));
     }
@@ -144,8 +297,16 @@ pub fn get_preset(id: &str) -> Result<TeamPreset, AppError> {
             path.display()
         ))
     })?;
-    let parsed: TeamPreset = serde_json::from_str(&content)
+    let mut raw: Value = serde_json::from_str(&content)
         .map_err(|e| AppError::Validation(format!("Failed to parse team preset '{id}': {e}")))?;
+    if let Some(lang) = language {
+        apply_locale_overlay(&mut raw, &dir, id, lang);
+    }
+    let parsed: TeamPreset = serde_json::from_value(raw).map_err(|e| {
+        AppError::Validation(format!(
+            "Failed to deserialize team preset '{id}' into typed model: {e}"
+        ))
+    })?;
     validate(&parsed)?;
     Ok(parsed)
 }
@@ -209,4 +370,86 @@ pub fn load_template_design_by_id(template_id: &str) -> Result<String, AppError>
     Err(AppError::NotFound(format!(
         "Template '{template_id}' not found under scripts/templates/<category>/"
     )))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn merge_overlay_object_keys_override() {
+        let mut canonical = json!({"name": "EN", "color": "#000", "team": {"name": "EN"}});
+        let overlay = json!({"name": "DE", "team": {"name": "DE"}});
+        merge_overlay(&mut canonical, overlay);
+        assert_eq!(canonical["name"], "DE");
+        assert_eq!(canonical["color"], "#000", "untouched canonical preserved");
+        assert_eq!(canonical["team"]["name"], "DE");
+    }
+
+    #[test]
+    fn merge_overlay_arrays_zip_by_index() {
+        let mut canonical = json!([
+            {"label": "first-en", "from": "a", "to": "b"},
+            {"label": "second-en", "from": "b", "to": "c"}
+        ]);
+        let overlay = json!([
+            {"label": "first-de"},
+            {"label": "second-de"}
+        ]);
+        merge_overlay(&mut canonical, overlay);
+        assert_eq!(canonical[0]["label"], "first-de");
+        assert_eq!(canonical[0]["from"], "a", "structural field preserved");
+        assert_eq!(canonical[1]["label"], "second-de");
+        assert_eq!(canonical[1]["to"], "c", "structural field preserved");
+    }
+
+    #[test]
+    fn merge_overlay_short_overlay_array_leaves_tail_canonical() {
+        let mut canonical = json!([{"label": "a"}, {"label": "b"}, {"label": "c"}]);
+        let overlay = json!([{"label": "X"}]);
+        merge_overlay(&mut canonical, overlay);
+        assert_eq!(canonical[0]["label"], "X");
+        assert_eq!(canonical[1]["label"], "b");
+        assert_eq!(canonical[2]["label"], "c");
+    }
+
+    #[test]
+    fn merge_overlay_null_preserves_canonical() {
+        let mut canonical = json!({"keep": "yes"});
+        let overlay = Value::Null;
+        merge_overlay(&mut canonical, overlay);
+        assert_eq!(canonical["keep"], "yes");
+    }
+
+    #[test]
+    fn is_overlay_filename_detects_locale_siblings() {
+        assert!(is_overlay_filename("backlog-execution.zh.json"));
+        assert!(is_overlay_filename("daily-ops.de.json"));
+        assert!(is_overlay_filename("foo.es.json"));
+        // 3-letter codes also accepted (none in our manifest today but the
+        // overlay rule is "2-3 lowercase letters" — keep consistent).
+        assert!(is_overlay_filename("foo.fil.json"));
+
+        // Canonical filenames have NO inner dot in the stem.
+        assert!(!is_overlay_filename("backlog-execution.json"));
+        assert!(!is_overlay_filename("README.md"));
+        // NOTE: `foo.bar.json` IS treated as an overlay (`bar` matches the
+        // 2-3 lowercase rule). That's a known false-positive — the canonical
+        // parent `foo.json` wouldn't exist and the overlay would never be
+        // applied, but the list-scan would skip it from the gallery. The
+        // alternative (allow-list of known locale codes) would mean
+        // touching the loader every time the i18n manifest grew. The
+        // false-positive cost (an author accidentally naming a real
+        // preset `foo.bar.json` and being confused why it doesn't show
+        // up) is lower than the maintenance cost of the allow-list.
+    }
+
+    #[test]
+    fn is_overlay_filename_rejects_uppercase_and_long_codes() {
+        assert!(!is_overlay_filename("foo.ZH.json"));
+        assert!(!is_overlay_filename("foo.toolong.json"));
+        assert!(!is_overlay_filename("foo.1a.json"));
+        assert!(!is_overlay_filename("foo.x.json"), "single letter rejected");
+    }
 }
