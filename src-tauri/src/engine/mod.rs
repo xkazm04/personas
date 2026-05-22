@@ -157,6 +157,7 @@ pub mod smee_relay;
 pub mod ssrf_safe_dns;
 pub mod str_utils;
 pub mod subscription;
+pub mod team_preset_loader;
 pub mod template_checksums;
 pub mod template_v3;
 pub mod test_runner;
