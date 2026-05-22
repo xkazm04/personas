@@ -33,6 +33,15 @@ timestamp — the next session can recognize it as abandoned.
 ## Active
 
 
+- **[2026-05-22 08:56 — started] /friend — overview (endless development loop)**
+  - **Source:** `/friend` endless development loop, area resolved from path `src\features\overview`
+  - **Paths:** `src/features/overview/`, `src/i18n/locales/*.json` (additive `overview.*` keys only), `docs/features/overview/README.md` (if user-visible change ships), `.claude/active-runs.md`
+  - **Status:** started
+  - **Branch:** `worktree-friend-overview-085643`
+  - **Worktree:** `.claude/worktrees/friend-overview-085643/`
+  - **Note:** Path-disjoint from concurrent custom-persona-icons (touches `src-tauri/` + shared/forms). Prior `overview-polish` ledger entry (2026-05-17) is 5 days stale — treated as abandoned.
+
+
 - **[2026-05-18 — started] /prototype — PersonaOverviewPage A/B variants (Grid + Wildcard)**
   - **Source:** User-driven /prototype skill — directional variants for the All Personas list view. Two variants requested: (1) a uniform card grid with simplified metadata (icon, title, connector icons, status dot, trust level, triggers, last run), (2) a wildcard with a different mental model.
   - **Paths:** `src/features/agents/components/allPersonas/PersonaOverviewPage.tsx` (add tab switcher), `src/features/agents/components/allPersonas/PersonaOverviewVariantGrid.tsx` (new), `src/features/agents/components/allPersonas/PersonaOverviewVariantConstellation.tsx` (new), `.claude/active-runs.md`
@@ -101,6 +110,11 @@ timestamp — the next session can recognize it as abandoned.
 
 
 ## Recently completed (last 14 days)
+
+- **[2026-05-22] custom-persona-icons — Phase 3 (AI generation) + 3.5 (export downgrade)**
+  - **Status:** completed (commits: `db4cbf8bf` Phase 3.5 export downgrade, `9a37c36da` Phase 3 AI generation, `f3f20ed2d` docs)
+  - **Paths shipped:** `src-tauri/src/engine/persona_icon.rs` (new), `src-tauri/src/commands/core/persona_icon_gen.rs` (new), `src-tauri/src/commands/core/{persona_icons,mod}.rs`, `src-tauri/src/engine/{mod,bundle}.rs`, `src-tauri/src/commands/core/{data_portability,import_export}.rs`, `src-tauri/src/lib.rs`, `src-tauri/bindings/ImageGenCredential.ts` + `src/lib/bindings/ImageGenCredential.ts` (new), `src/api/agents/personaIcons.ts`, `src/features/shared/components/forms/PersonaIconPickerModal.tsx`, `src/features/agents/sub_settings/components/PersonaSettingsTab.tsx`, `src/i18n/locales/en.json`, `docs/features/personas/README.md`.
+  - **Note:** Phase 3 = `list_image_gen_credentials` + `generate_persona_icon` (Leonardo AI / Higgsfield allowlist, defensive JSON parsing for provider responses). Phase 3.5 = `export_safe_icon` downgrade at all three export boundaries. Verified: `cargo test --features desktop --lib` (668 pass incl. 8 new icon tests, exit 0), `npx tsc --noEmit` clean, eslint clean. **Caveat:** the two provider integrations are written from documented API shapes and were NOT exercised against the live Leonardo/Higgsfield APIs — first real generation may surface a model-id or response-shape fix. ts-rs still writes to `src-tauri/bindings/` (NOT honoring `TS_RS_EXPORT_DIR`) — had to manually copy the new binding to `src/lib/bindings/`; CLAUDE.md's "src-tauri/bindings retired" claim is stale.
 
 - **[2026-05-22] custom-persona-icons — Phases 0-2 (renderer unification + upload pipeline + picker)**
   - **Status:** completed (commits: `f9c1ce37d` Phase 0 renderer unification, `ac816de18` Phase 1 upload pipeline, `8ed11f84e` Phase 2 picker, `c876ee377` docs)
