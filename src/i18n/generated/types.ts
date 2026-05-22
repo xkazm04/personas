@@ -13333,6 +13333,15 @@ export type Translations = {
       switchToPending: string;
       approveTitle: string;
       rejectTitle: string;
+      rejectReasonHeading: string;
+      rejectReasonIrrelevant: string;
+      rejectReasonInaccurate: string;
+      rejectReasonPrivate: string;
+      rejectReasonWrongTone: string;
+      rejectReasonNotePlaceholder: string;
+      rejectReasonConfirm: string;
+      rejectReasonCancel: string;
+      rejectedReasonLabel: string;
       priority: string;
       bulkSelectAll: string;
       bulkSelectedCount: string;

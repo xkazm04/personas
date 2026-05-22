@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
-import { BookOpen, CheckCircle2, XCircle, Clock, MessageSquare, ArrowDownLeft, ArrowUpRight, Inbox, History, Library, Star, Quote, Download } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { BookOpen, CheckCircle2, XCircle, Clock, MessageSquare, ArrowDownLeft, ArrowUpRight, Inbox, History, Library, Star, Quote, Download, X } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
 import { TwinEmptyState } from '../TwinEmptyState';
@@ -15,6 +15,9 @@ import { ingestDoctrineDocs } from '@/api/twin/twin';
  * ------------------------------------------------------------------ */
 
 type MemoryFilter = 'pending' | 'approved' | 'rejected';
+
+type RejectPreset = 'irrelevant' | 'inaccurate' | 'private' | 'wrong_tone';
+const REJECT_PRESETS: ReadonlyArray<RejectPreset> = ['irrelevant', 'inaccurate', 'private', 'wrong_tone'];
 
 interface CommGroup {
   date: string;
@@ -57,6 +60,14 @@ export default function KnowledgeAtelier() {
   const [filter, setFilter] = useState<MemoryFilter>('pending');
   const [reviewingId, setReviewingId] = useState<string | null>(null);
   const [ingestingDocs, setIngestingDocs] = useState(false);
+  // Reject reason capture — when set, the inline reason picker expands under
+  // the memory card instead of immediately rejecting. The reviewer_notes column
+  // already exists; the user just had no way to populate it. Format stored is
+  // `<presetId>` or `<presetId>: <note>` or just `<note>` (no preset picked) —
+  // future aggregation can group by the preset prefix.
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [rejectPreset, setRejectPreset] = useState<RejectPreset | null>(null);
+  const [rejectNote, setRejectNote] = useState('');
   const addToast = useToastStore((s) => s.addToast);
   const hasBoundKb = !!activeTwin?.knowledge_base_id;
 
@@ -88,9 +99,52 @@ export default function KnowledgeAtelier() {
     if (activeTwinId) { fetchPending(activeTwinId, filter); fetchComms(activeTwinId); }
   }, [activeTwinId, filter, fetchPending, fetchComms]);
 
-  const handleReview = async (id: string, approved: boolean) => {
+  const handleReview = async (id: string, approved: boolean, reviewerNotes?: string) => {
     setReviewingId(id);
-    try { await reviewMemory(id, approved); } finally { setReviewingId(null); }
+    try { await reviewMemory(id, approved, reviewerNotes); } finally { setReviewingId(null); }
+  };
+
+  const openRejectFlow = (id: string) => {
+    setRejectingId(id);
+    setRejectPreset(null);
+    setRejectNote('');
+  };
+  const cancelRejectFlow = () => {
+    setRejectingId(null);
+    setRejectPreset(null);
+    setRejectNote('');
+  };
+  const confirmRejectFlow = async (id: string) => {
+    const note = rejectNote.trim();
+    const composed = rejectPreset
+      ? note ? `${rejectPreset}: ${note}` : rejectPreset
+      : note || undefined;
+    cancelRejectFlow();
+    await handleReview(id, false, composed);
+  };
+
+  const presetLabel = (preset: RejectPreset): string => {
+    switch (preset) {
+      case 'irrelevant': return t.knowledge.rejectReasonIrrelevant;
+      case 'inaccurate': return t.knowledge.rejectReasonInaccurate;
+      case 'private': return t.knowledge.rejectReasonPrivate;
+      case 'wrong_tone': return t.knowledge.rejectReasonWrongTone;
+    }
+  };
+
+  // Stored reviewer_notes are either `<preset>` / `<preset>: <note>` / `<note>`.
+  // Resolve the preset prefix to its localized label so the UI never echoes a
+  // raw machine token at the user.
+  const renderStoredReason = (notes: string): string => {
+    const split = notes.indexOf(':');
+    const head = split >= 0 ? notes.slice(0, split).trim() : notes.trim();
+    const tail = split >= 0 ? notes.slice(split + 1).trim() : '';
+    const matched = (REJECT_PRESETS as readonly string[]).includes(head)
+      ? presetLabel(head as RejectPreset)
+      : null;
+    if (matched && tail) return `${matched} — ${tail}`;
+    if (matched) return matched;
+    return notes;
   };
 
   const stats = useMemo(() => {
@@ -243,10 +297,10 @@ export default function KnowledgeAtelier() {
                           <span className="typo-caption text-foreground">{new Date(mem.created_at).toLocaleDateString()}</span>
                           {isPending && (
                             <div className="ml-auto flex items-center gap-1">
-                              <button onClick={() => handleReview(mem.id, true)} disabled={isReviewing} className="px-2 py-1 rounded-interactive text-[11px] font-medium text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors flex items-center gap-1">
+                              <button onClick={() => handleReview(mem.id, true)} disabled={isReviewing || rejectingId !== null} className="px-2 py-1 rounded-interactive text-[11px] font-medium text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors flex items-center gap-1 disabled:opacity-50">
                                 <CheckCircle2 className="w-3 h-3" /> {t.knowledge.approveAction}
                               </button>
-                              <button onClick={() => handleReview(mem.id, false)} disabled={isReviewing} className="px-2 py-1 rounded-interactive text-[11px] font-medium text-red-300 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 transition-colors flex items-center gap-1">
+                              <button onClick={() => openRejectFlow(mem.id)} disabled={isReviewing || rejectingId !== null} className="px-2 py-1 rounded-interactive text-[11px] font-medium text-red-300 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 transition-colors flex items-center gap-1 disabled:opacity-50">
                                 <XCircle className="w-3 h-3" /> {t.knowledge.rejectAction}
                               </button>
                             </div>
@@ -255,6 +309,66 @@ export default function KnowledgeAtelier() {
                             <span className={`ml-auto px-2 py-0.5 text-[9px] uppercase tracking-wider rounded-full ${mem.status === 'approved' ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/25' : 'bg-red-500/10 text-red-300 border border-red-500/20'}`}>{mem.status}</span>
                           )}
                         </div>
+                        {/* Inline reject reason picker — appears under the row the
+                            user just chose to reject. The reviewer_notes column
+                            already exists; this populates it. */}
+                        <AnimatePresence>
+                          {rejectingId === mem.id && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                              animate={{ opacity: 1, height: 'auto', marginTop: 12 }}
+                              exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                              className="overflow-hidden border-t border-red-500/15 pt-3"
+                            >
+                              <div className="flex items-center justify-between mb-2">
+                                <p className="text-[10px] uppercase tracking-[0.18em] text-red-300/85 font-medium">{t.knowledge.rejectReasonHeading}</p>
+                                <button onClick={cancelRejectFlow} aria-label={t.knowledge.rejectReasonCancel} className="text-foreground hover:text-foreground">
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                              <div className="flex flex-wrap gap-1.5 mb-2">
+                                {REJECT_PRESETS.map((p) => (
+                                  <button
+                                    key={p}
+                                    type="button"
+                                    onClick={() => setRejectPreset(rejectPreset === p ? null : p)}
+                                    className={`px-2 py-1 text-[10px] rounded-full border transition-colors ${
+                                      rejectPreset === p
+                                        ? 'bg-red-500/15 text-red-200 border-red-500/35'
+                                        : 'bg-secondary/40 text-foreground border-primary/10 hover:bg-red-500/8 hover:text-red-300'
+                                    }`}
+                                  >
+                                    {presetLabel(p)}
+                                  </button>
+                                ))}
+                              </div>
+                              <textarea
+                                rows={2}
+                                placeholder={t.knowledge.rejectReasonNotePlaceholder}
+                                value={rejectNote}
+                                onChange={(e) => setRejectNote(e.target.value)}
+                                className="w-full resize-y rounded-interactive border border-primary/15 bg-background px-2.5 py-1.5 typo-caption text-foreground placeholder:text-foreground/50 focus:border-red-500/40 focus:outline-none"
+                              />
+                              <div className="flex justify-end gap-2 mt-2">
+                                <button onClick={cancelRejectFlow} className="px-2 py-1 rounded-interactive text-[11px] text-foreground hover:bg-secondary/40 transition-colors">{t.knowledge.rejectReasonCancel}</button>
+                                <button
+                                  onClick={() => void confirmRejectFlow(mem.id)}
+                                  disabled={isReviewing || (!rejectPreset && !rejectNote.trim())}
+                                  className="px-2 py-1 rounded-interactive text-[11px] font-medium text-red-200 bg-red-500/15 border border-red-500/30 hover:bg-red-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1"
+                                >
+                                  <XCircle className="w-3 h-3" /> {t.knowledge.rejectReasonConfirm}
+                                </button>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                        {/* When viewing rejected memories, surface the stored reason
+                            so the user can see what they previously thought. */}
+                        {mem.status === 'rejected' && mem.reviewer_notes && (
+                          <p className="mt-2 pt-2 border-t border-red-500/10 text-[10px] italic text-red-300/85">
+                            {tx(t.knowledge.rejectedReasonLabel, { reason: renderStoredReason(mem.reviewer_notes) })}
+                          </p>
+                        )}
                       </div>
                     </motion.li>
                   );
