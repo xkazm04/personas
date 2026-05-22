@@ -16,6 +16,7 @@ const tabComponents: Record<SettingsTab, React.LazyExoticComponent<React.Compone
   admin: lazy(() => import('@/features/settings/sub_admin/components/AdminSettings')),
   config: lazy(() => import('@/features/settings/sub_config/components/ConfigResolutionPanel')),
   'api-keys': lazy(() => import('@/features/settings/sub_api_keys/components/ApiKeysSettings')),
+  history: lazy(() => import('@/features/settings/sub_history/components/SettingsHistoryTab')),
 };
 
 /** Unmount inactive settings tabs after this many ms of idleness. */

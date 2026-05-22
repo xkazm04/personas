@@ -8555,6 +8555,20 @@
       "filtered_empty": "Keine Agenten entsprechen dem aktuellen Filter.",
       "showing_count": "{shown} von {total} angezeigt"
     },
+    "history": {
+      "title": "Einstellungsverlauf",
+      "subtitle": "Audit-Protokoll der an den Einstellungen vorgenommenen Änderungen",
+      "description": "Schreibgeschütztes Protokoll, das festhält, wer welche Einstellung wann geändert hat. Damit lassen sich unerwartete Verhaltensweisen zurückverfolgen oder Audit-Prüfungen koordinieren. Derzeit werden nur das Erstellen und Widerrufen von API-Schlüsseln aufgezeichnet; die Abdeckung der übrigen Untermodule wird schrittweise erweitert.",
+      "refresh": "Aktualisieren",
+      "filter_category": "Kategorie",
+      "filter_all": "Alle",
+      "showing_max": "Es werden die 100 neuesten Einträge angezeigt – ältere Verlaufsdaten sind weiterhin in der Datenbank vorhanden.",
+      "loading": "Audit-Einträge werden geladen…",
+      "empty": "Bisher wurden keine Änderungen an den Einstellungen aufgezeichnet. Ab jetzt vorgenommene Änderungen erscheinen in dieser Liste.",
+      "empty_filtered": "Keine Einträge entsprechen dem aktuellen Kategoriefilter.",
+      "before": "Vorher",
+      "after": "Nachher"
+    },
     "quality_gates": {
       "title": "Qualitätstore",
       "loading": "Wird geladen...",

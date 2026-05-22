@@ -8555,6 +8555,20 @@
       "filtered_empty": "Tidak ada agen yang cocok dengan filter saat ini.",
       "showing_count": "Menampilkan {shown} dari {total}"
     },
+    "history": {
+      "title": "Riwayat Pengaturan",
+      "subtitle": "Log audit perubahan yang dilakukan pada pengaturan",
+      "description": "Catatan append-only tentang siapa yang mengubah pengaturan apa dan kapan. Gunakan ini untuk melacak perilaku yang mengejutkan atau mengoordinasikan tinjauan audit. Saat ini hanya tindakan pembuatan dan pencabutan API key yang dicatat; cakupan untuk sub-modul lainnya sedang ditambahkan.",
+      "refresh": "Segarkan",
+      "filter_category": "Kategori",
+      "filter_all": "Semua",
+      "showing_max": "Menampilkan 100 entri terbaru — riwayat yang lebih lama tetap tersimpan di database.",
+      "loading": "Memuat entri audit…",
+      "empty": "Belum ada perubahan pengaturan yang tercatat. Perubahan yang dilakukan mulai sekarang akan muncul dalam daftar ini.",
+      "empty_filtered": "Tidak ada entri yang cocok dengan filter kategori saat ini.",
+      "before": "Sebelum",
+      "after": "Sesudah"
+    },
     "quality_gates": {
       "title": "Gerbang Kualitas",
       "loading": "Memuat...",

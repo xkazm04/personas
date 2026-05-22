@@ -8,7 +8,7 @@ import {
   GraduationCap, BookOpen, Trophy, AlertOctagon, Target,
   User, Mic, Volume2, Sparkles,
   Wand2, Image as ImageIcon, Film, Gauge as GaugeIcon, Bell,
-  Terminal, RefreshCw, FolderOpen, ScrollText,
+  Terminal, RefreshCw, FolderOpen, ScrollText, History,
   type LucideIcon,
 } from 'lucide-react';
 import type { SidebarSection, HomeTab, OverviewTab } from '@/lib/types/types';
@@ -191,6 +191,7 @@ export function getSettingsItems(isDev: boolean, activeTier?: Tier): SubNavItem[
     { id: 'api-keys', label: 'API Keys', icon: Key, minTier: TIERS.TEAM },
     { id: 'network', label: 'Network', icon: Share2, devOnly: true },
     { id: 'config', label: 'Config Resolution', icon: Layers, devOnly: true },
+    { id: 'history', label: 'History', icon: History, devOnly: true },
     { id: 'admin', label: 'Admin', icon: Shield, devOnly: true },
   ].filter((item) => {
     if (item.devOnly && !isDev) return false;

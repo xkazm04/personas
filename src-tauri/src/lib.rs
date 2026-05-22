@@ -2252,6 +2252,7 @@ pub fn run() {
             commands::infrastructure::settings::get_quality_gate_config,
             commands::infrastructure::settings::set_quality_gate_config,
             commands::infrastructure::settings::reset_quality_gate_config,
+            commands::infrastructure::settings::list_settings_audit_entries,
             // Infrastructure -- BYOM (Bring Your Own Model)
             commands::infrastructure::byom::get_byom_policy,
             commands::infrastructure::byom::set_byom_policy,

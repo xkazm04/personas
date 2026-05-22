@@ -22,6 +22,7 @@ Tabs are declared by `getSettingsItems(isDev, activeTier)` in `sidebarData.ts`. 
 | Network | Dev-only | Exposure manager and sharing/network controls | `src/features/sharing/components/ExposureManager.tsx` |
 | Quality Gates | Dev-only | Validation/test gate settings | `sub_quality_gates/components/QualityGateSettings.tsx` |
 | Config Resolution | Dev-only | Per-persona effective config inspector showing which tier (agent / workspace / global) supplies each setting. Includes a name filter and an "Overrides only" toggle so admins can quickly find the personas that have escaped workspace/global defaults. | `sub_config/components/ConfigResolutionPanel.tsx` |
+| History | Dev-only | Append-only audit log of settings mutations across every sub-module. Each row records category, setting key, action verb, before/after values (sanitized for secrets), actor surface, and a relative timestamp; details disclose inline on click. Stage 1 only wires API-key create/revoke as write sites — coverage of the other sub-modules rolls in across Stages 2-3. Backed by the `settings_audit_log` SQLite table. | `sub_history/components/SettingsHistoryTab.tsx`, `src-tauri/src/db/repos/resources/settings_audit_log.rs`, `src-tauri/src/db/models/settings_audit_log.rs`, `list_settings_audit_entries` IPC |
 | Admin | Dev-only | Administrative diagnostics | `sub_admin/components/AdminSettings.tsx` |
 
 ## Ambient context

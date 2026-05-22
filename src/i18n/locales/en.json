@@ -8616,6 +8616,20 @@
       "filtered_empty": "No agents match the current filter.",
       "showing_count": "Showing {shown} of {total}"
     },
+    "history": {
+      "title": "Settings History",
+      "subtitle": "Audit log of changes made to settings",
+      "description": "Append-only record of who changed which setting and when. Use this to trace back surprising behavior or coordinate audit reviews. Today only API-key create and revoke actions are recorded; coverage of the other sub-modules is rolling in.",
+      "refresh": "Refresh",
+      "filter_category": "Category",
+      "filter_all": "All",
+      "showing_max": "Showing the most recent 100 entries — older history is still in the database.",
+      "loading": "Loading audit entries…",
+      "empty": "No settings changes recorded yet. Mutations made from here on will appear in this list.",
+      "empty_filtered": "No entries match the current category filter.",
+      "before": "Before",
+      "after": "After"
+    },
     "quality_gates": {
       "title": "Quality Gates",
       "action_reject": "Reject",

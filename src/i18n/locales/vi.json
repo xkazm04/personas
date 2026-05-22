@@ -8555,6 +8555,20 @@
       "filtered_empty": "Không có Agent nào khớp với bộ lọc hiện tại.",
       "showing_count": "Hiển thị {shown} trên {total}"
     },
+    "history": {
+      "title": "Lịch sử cài đặt",
+      "subtitle": "Nhật ký kiểm tra các thay đổi đối với cài đặt",
+      "description": "Bản ghi chỉ thêm về việc ai đã thay đổi cài đặt nào và khi nào. Sử dụng để truy ngược các hành vi bất thường hoặc phối hợp đánh giá kiểm tra. Hiện tại chỉ ghi nhận các thao tác tạo và thu hồi khóa API; phạm vi bao quát cho các tiểu mô-đun khác đang được triển khai dần.",
+      "refresh": "Làm mới",
+      "filter_category": "Danh mục",
+      "filter_all": "Tất cả",
+      "showing_max": "Đang hiển thị 100 mục gần đây nhất — lịch sử cũ hơn vẫn còn trong cơ sở dữ liệu.",
+      "loading": "Đang tải các mục kiểm tra…",
+      "empty": "Chưa có thay đổi cài đặt nào được ghi nhận. Các thay đổi thực hiện từ đây trở đi sẽ xuất hiện trong danh sách này.",
+      "empty_filtered": "Không có mục nào khớp với bộ lọc danh mục hiện tại.",
+      "before": "Trước",
+      "after": "Sau"
+    },
     "quality_gates": {
       "title": "Cổng chất lượng",
       "loading": "Đang tải...",

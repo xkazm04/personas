@@ -8555,6 +8555,20 @@
       "filtered_empty": "没有 Agent 匹配当前筛选。",
       "showing_count": "显示 {shown} / {total}"
     },
+    "history": {
+      "title": "设置历史",
+      "subtitle": "设置变更的审计日志",
+      "description": "仅追加的记录，用于追踪谁在何时更改了哪项设置。可借此回溯异常行为或协调审计审查。目前仅记录 API 密钥的创建和吊销操作；其他子模块的覆盖范围正在陆续推出。",
+      "refresh": "刷新",
+      "filter_category": "类别",
+      "filter_all": "全部",
+      "showing_max": "显示最近的 100 条记录 — 更早的历史仍保存在数据库中。",
+      "loading": "正在加载审计记录…",
+      "empty": "尚未记录任何设置变更。从此处起的修改将出现在此列表中。",
+      "empty_filtered": "没有记录与当前类别筛选匹配。",
+      "before": "变更前",
+      "after": "变更后"
+    },
     "quality_gates": {
       "title": "质量门禁",
       "loading": "加载中...",

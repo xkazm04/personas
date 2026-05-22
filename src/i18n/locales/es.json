@@ -8555,6 +8555,20 @@
       "filtered_empty": "Ningún agente coincide con el filtro actual.",
       "showing_count": "Mostrando {shown} de {total}"
     },
+    "history": {
+      "title": "Historial de configuración",
+      "subtitle": "Registro de auditoría de los cambios realizados en la configuración",
+      "description": "Registro de solo anexado de quién cambió qué configuración y cuándo. Úsalo para rastrear comportamientos inesperados o coordinar revisiones de auditoría. Actualmente solo se registran las acciones de creación y revocación de claves de API; la cobertura de los demás submódulos se está incorporando progresivamente.",
+      "refresh": "Actualizar",
+      "filter_category": "Categoría",
+      "filter_all": "Todas",
+      "showing_max": "Mostrando las 100 entradas más recientes — el historial más antiguo sigue en la base de datos.",
+      "loading": "Cargando entradas de auditoría…",
+      "empty": "Aún no se han registrado cambios de configuración. Las modificaciones realizadas a partir de ahora aparecerán en esta lista.",
+      "empty_filtered": "Ninguna entrada coincide con el filtro de categoría actual.",
+      "before": "Antes",
+      "after": "Después"
+    },
     "quality_gates": {
       "title": "Puertas de Calidad",
       "loading": "Cargando...",

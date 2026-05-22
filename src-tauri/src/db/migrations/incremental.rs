@@ -980,6 +980,34 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Created credential_audit_log table");
     }
 
+    // -- Settings Audit Log (append-only mutation trail per settings sub-module)
+    let has_settings_audit_log: bool = conn
+        .prepare(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='settings_audit_log'",
+        )?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_settings_audit_log {
+        ddl_step(
+            conn,
+            "CREATE TABLE IF NOT EXISTS settings_audit_log (
+                id            TEXT PRIMARY KEY,
+                category      TEXT NOT NULL,
+                setting_key   TEXT NOT NULL,
+                action        TEXT NOT NULL,
+                before_value  TEXT,
+                after_value   TEXT,
+                actor         TEXT,
+                created_at    TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_sal_category ON settings_audit_log(category);
+            CREATE INDEX IF NOT EXISTS idx_sal_created  ON settings_audit_log(created_at DESC);",
+        )?;
+        tracing::info!("Created settings_audit_log table");
+    }
+
     // -- Tool Execution Audit Log (append-only) --------------------------
     let has_tool_audit_log: bool = conn
         .prepare("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='tool_execution_audit_log'")?

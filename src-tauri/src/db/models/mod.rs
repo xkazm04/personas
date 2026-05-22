@@ -48,6 +48,7 @@ mod research_lab;
 mod review;
 mod rotation;
 mod saved_views;
+mod settings_audit_log;
 mod shared_event;
 #[cfg(feature = "p2p")]
 mod signing;
@@ -116,6 +117,7 @@ pub use research_lab::*;
 pub use review::*;
 pub use rotation::*;
 pub use saved_views::*;
+pub use settings_audit_log::*;
 pub use shared_event::*;
 #[cfg(feature = "p2p")]
 pub use signing::*;

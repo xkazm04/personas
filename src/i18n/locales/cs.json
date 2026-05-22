@@ -8555,6 +8555,20 @@
       "filtered_empty": "Žádný agent neodpovídá aktuálnímu filtru.",
       "showing_count": "Zobrazeno {shown} z {total}"
     },
+    "history": {
+      "title": "Historie nastavení",
+      "subtitle": "Audit log změn provedených v nastavení",
+      "description": "Záznam pouze pro připojování, kdo změnil jaké nastavení a kdy. Použij k dohledání překvapivého chování nebo ke koordinaci auditních kontrol. Dnes jsou zaznamenány pouze akce vytvoření a zrušení API klíčů; pokrytí ostatních submodulů se postupně doplňuje.",
+      "refresh": "Obnovit",
+      "filter_category": "Kategorie",
+      "filter_all": "Vše",
+      "showing_max": "Zobrazeno posledních 100 záznamů — starší historie zůstává v databázi.",
+      "loading": "Načítání auditních záznamů…",
+      "empty": "Zatím nebyly zaznamenány žádné změny nastavení. Úpravy provedené odsud se objeví v tomto seznamu.",
+      "empty_filtered": "Žádné záznamy neodpovídají aktuálnímu filtru kategorie.",
+      "before": "Před",
+      "after": "Po"
+    },
     "quality_gates": {
       "title": "Filtry obsahu",
       "loading": "Načítání...",

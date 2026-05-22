@@ -8555,6 +8555,20 @@
       "filtered_empty": "Aucun agent ne correspond au filtre actuel.",
       "showing_count": "Affichage de {shown} sur {total}"
     },
+    "history": {
+      "title": "Historique des paramètres",
+      "subtitle": "Journal d'audit des modifications apportées aux paramètres",
+      "description": "Registre en ajout seul indiquant qui a modifié quel paramètre et quand. Utilisez-le pour retracer un comportement inattendu ou coordonner des revues d'audit. Aujourd'hui, seules les actions de création et de révocation de clé API sont enregistrées ; la couverture des autres sous-modules est en cours de déploiement.",
+      "refresh": "Actualiser",
+      "filter_category": "Catégorie",
+      "filter_all": "Toutes",
+      "showing_max": "Affichage des 100 entrées les plus récentes — l'historique plus ancien reste dans la base de données.",
+      "loading": "Chargement des entrées d'audit…",
+      "empty": "Aucune modification de paramètre enregistrée pour le moment. Les modifications effectuées à partir de maintenant apparaîtront dans cette liste.",
+      "empty_filtered": "Aucune entrée ne correspond au filtre de catégorie actuel.",
+      "before": "Avant",
+      "after": "Après"
+    },
     "quality_gates": {
       "title": "Portes de qualité",
       "loading": "Chargement...",

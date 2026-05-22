@@ -8555,6 +8555,20 @@
       "filtered_empty": "현재 필터와 일치하는 에이전트가 없습니다.",
       "showing_count": "{total}개 중 {shown}개 표시"
     },
+    "history": {
+      "title": "설정 기록",
+      "subtitle": "설정 변경 사항에 대한 감사 로그",
+      "description": "누가 어떤 설정을 언제 변경했는지에 대한 추가 전용 기록입니다. 예상치 못한 동작의 원인을 추적하거나 감사 검토를 조정하는 데 사용하세요. 현재는 API 키 생성 및 취소 작업만 기록되며, 다른 하위 모듈의 범위는 점차 확대되고 있습니다.",
+      "refresh": "새로 고침",
+      "filter_category": "카테고리",
+      "filter_all": "전체",
+      "showing_max": "최근 100개 항목만 표시되며, 이전 기록은 데이터베이스에 그대로 보관되어 있습니다.",
+      "loading": "감사 항목을 불러오는 중…",
+      "empty": "아직 기록된 설정 변경 사항이 없습니다. 이후 이루어지는 변경 사항이 이 목록에 표시됩니다.",
+      "empty_filtered": "현재 카테고리 필터와 일치하는 항목이 없습니다.",
+      "before": "변경 전",
+      "after": "변경 후"
+    },
     "quality_gates": {
       "title": "Quality Gates",
       "loading": "Loading...",
