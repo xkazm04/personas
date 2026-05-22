@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
 import { useAgentStore } from '@/stores/agentStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useOverviewStore } from '@/stores/overviewStore';
@@ -595,6 +596,17 @@ function SuccessRing({ rate }: { rate: number }) {
 // ActivityStreamLog — mono-styled execution log
 // ---------------------------------------------------------------------------
 
+type StreamFilter = 'all' | 'completed' | 'failed' | 'running';
+const STREAM_FILTERS: StreamFilter[] = ['all', 'completed', 'failed', 'running'];
+
+// Buckets a raw execution status into a filterable group. Anything that isn't
+// a terminal completed/failed counts as "running" (queued, active, …).
+function streamBucket(status: string): 'completed' | 'failed' | 'running' {
+  if (status === 'completed') return 'completed';
+  if (status === 'failed') return 'failed';
+  return 'running';
+}
+
 export const ActivityStreamLog = memo(function ActivityStreamLog({
   executions, onViewAll, personaName,
 }: {
@@ -603,6 +615,10 @@ export const ActivityStreamLog = memo(function ActivityStreamLog({
   personaName: string | null;
 }) {
   const { t } = useTranslation();
+  const [filter, setFilter] = useState<StreamFilter>('all');
+  const filtered = filter === 'all'
+    ? executions
+    : executions.filter((e) => streamBucket(e.status) === filter);
   return (
     <div className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden flex flex-col">
       <PaneHeader
@@ -616,11 +632,24 @@ export const ActivityStreamLog = memo(function ActivityStreamLog({
           {t.overview.widgets.view_all} <ArrowRight className="w-3 h-3" />
         </button>
       </PaneHeader>
+      <div className="flex items-center gap-1 px-2 py-1.5 border-b border-primary/10 flex-shrink-0">
+        {STREAM_FILTERS.map((f) => (
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            className={`typo-caption font-mono uppercase tracking-widest px-1.5 py-0.5 rounded-interactive transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/30 ${
+              filter === f ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-primary/[0.06]'
+            }`}
+          >
+            {f === 'all' ? t.common.all : tokenLabel(t, 'execution', f)}
+          </button>
+        ))}
+      </div>
       <div className="flex-1 divide-y divide-primary/5 max-h-[28rem] overflow-y-auto font-mono text-xs">
-        {executions.length === 0 ? (
+        {filtered.length === 0 ? (
           <div className="px-4 py-8 text-center typo-body text-foreground"><DebtText k="auto_no_events_11afa11c" /></div>
         ) : (
-          executions.map((exec) => {
+          filtered.map((exec) => {
             const time = new Date(exec.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
             const color =
               exec.status === 'completed' ? 'text-emerald-400' :
