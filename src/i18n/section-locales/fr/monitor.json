@@ -1,1 +1,5 @@
-{}
+{
+  "group_by_toggle": "Par groupe",
+  "group_by_toggle_title": "Grouper les cartes de personas par groupe assigné",
+  "group_ungrouped": "Sans groupe"
+}

@@ -14076,5 +14076,10 @@
     "auto_your_browser_does_not_support_video_playba_8f8c2d0d": "Your browser does not support video playback.",
     "auto_your_cockpit_is_empty_88e25bb2": "Your cockpit is empty",
     "auto_your_turn_d9e169df": "your turn"
+  },
+  "monitor": {
+    "group_by_toggle": "Nach Gruppe",
+    "group_by_toggle_title": "Persona-Karten nach zugewiesener Gruppe gruppieren",
+    "group_ungrouped": "Ohne Gruppe"
   }
 }

@@ -1,1 +1,5 @@
-{}
+{
+  "group_by_toggle": "グループ別",
+  "group_by_toggle_title": "割り当てられたグループでペルソナカードをグループ化",
+  "group_ungrouped": "グループなし"
+}

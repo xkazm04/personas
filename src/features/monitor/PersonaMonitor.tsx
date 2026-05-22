@@ -8,11 +8,14 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X, Activity, Mail, FolderGit2 } from 'lucide-react';
+import { X, Activity, Mail, FolderGit2, Layers, ChevronDown } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
+import { usePipelineStore } from '@/stores/pipelineStore';
 import { useCodebasePersonas } from '@/hooks/sidebar/useCodebasePersonas';
+import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
+import type { PersonaGroup } from '@/lib/bindings/PersonaGroup';
 import { useMonitorData } from './useMonitorData';
 import { MonitorDrawer } from './MonitorDrawer';
 import {
@@ -59,6 +62,48 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
     () => (activeProjectId ? cards.filter((c) => codebasePersonaIds.has(c.personaId)) : cards),
     [cards, activeProjectId, codebasePersonaIds],
   );
+
+  // Group-by toggle — when enabled, partition cards by their persona's
+  // group_id and render each group under a collapsible header. State is
+  // local to this Monitor session; Stage 2 could persist to systemStore.
+  const groups = usePipelineStore((s) => s.groups);
+  const [groupBy, setGroupBy] = useState<'none' | 'group'>('none');
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => new Set());
+  const toggleGroupCollapse = (id: string) =>
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  const groupedDisplay = useMemo(() => {
+    if (groupBy === 'none') return null;
+    const byGroup = new Map<string, PersonaCardModel[]>();
+    const ungrouped: PersonaCardModel[] = [];
+    const personaGroupMap = new Map<string, string | null>();
+    for (const p of personas) personaGroupMap.set(p.id, p.group_id ?? null);
+
+    for (const card of displayCards) {
+      const gid = personaGroupMap.get(card.personaId) ?? null;
+      if (gid === null) {
+        ungrouped.push(card);
+      } else {
+        const bucket = byGroup.get(gid) ?? [];
+        bucket.push(card);
+        byGroup.set(gid, bucket);
+      }
+    }
+
+    const groupOrder = [...groups].sort((a, b) => a.sortOrder - b.sortOrder);
+    const sections: { group: PersonaGroup | null; cards: PersonaCardModel[] }[] = [];
+    for (const g of groupOrder) {
+      const bucket = byGroup.get(g.id);
+      if (bucket && bucket.length > 0) sections.push({ group: g, cards: bucket });
+    }
+    if (ungrouped.length > 0) sections.push({ group: null, cards: ungrouped });
+    return sections;
+  }, [groupBy, displayCards, personas, groups]);
 
   // Tick once a second only while something is running.
   const anyRunning = useMemo(
@@ -142,6 +187,22 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
               </button>
             </span>
           )}
+          {groups.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setGroupBy((g) => (g === 'group' ? 'none' : 'group'))}
+              aria-pressed={groupBy === 'group'}
+              title={t.monitor.group_by_toggle_title}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border typo-caption transition-colors ${
+                groupBy === 'group'
+                  ? 'border-indigo-500/40 bg-indigo-500/15 text-indigo-300'
+                  : 'border-primary/15 bg-secondary/20 text-foreground hover:bg-secondary/30'
+              }`}
+            >
+              <Layers className="w-3 h-3" />
+              {t.monitor.group_by_toggle}
+            </button>
+          )}
           {SEVERITIES.map((sev) =>
             severityCounts[sev] > 0 ? (
               <span
@@ -187,6 +248,52 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
                   {t.monitor.clear_filter}
                 </button>
               )}
+            </div>
+          ) : groupedDisplay ? (
+            <div className="space-y-5">
+              {groupedDisplay.map(({ group, cards: groupCards }) => {
+                const id = group?.id ?? '__ungrouped__';
+                const collapsed = collapsedGroups.has(id);
+                const color = group?.color ?? '#6b7280';
+                return (
+                  <section key={id}>
+                    <button
+                      type="button"
+                      onClick={() => toggleGroupCollapse(id)}
+                      aria-expanded={!collapsed}
+                      className="w-full flex items-center gap-2.5 px-2 py-2 rounded-card border border-primary/10 hover:bg-secondary/30 transition-colors"
+                      style={{ borderLeft: `3px solid ${colorWithAlpha(color, 0.8)}` }}
+                    >
+                      <Layers className="w-3.5 h-3.5" style={{ color: colorWithAlpha(color, 0.9) }} />
+                      <span className="typo-heading text-foreground/90 font-semibold">
+                        {group?.name ?? t.monitor.group_ungrouped}
+                      </span>
+                      <span className="typo-caption text-foreground font-mono">
+                        {groupCards.length}
+                      </span>
+                      <ChevronDown
+                        className={`w-3.5 h-3.5 ml-auto text-foreground transition-transform ${collapsed ? '-rotate-90' : ''}`}
+                      />
+                    </button>
+                    {!collapsed && (
+                      <div
+                        className="mt-2.5 grid gap-2.5"
+                        style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(168px, 1fr))' }}
+                      >
+                        {groupCards.map((card) => (
+                          <PersonaCardTile
+                            key={card.personaId}
+                            card={card}
+                            now={now}
+                            isSelected={card.personaId === selection?.personaId}
+                            onOpen={(section) => setSelection({ personaId: card.personaId, section })}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </section>
+                );
+              })}
             </div>
           ) : (
             <div

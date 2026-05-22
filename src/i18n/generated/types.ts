@@ -64,6 +64,9 @@ export type Translations = {
     status_completed: string;
     status_failed: string;
     status_cancelled: string;
+    group_by_toggle: string;
+    group_by_toggle_title: string;
+    group_ungrouped: string;
   };
   common: {
     unknown_error: string;

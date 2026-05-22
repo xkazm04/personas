@@ -1,1 +1,5 @@
-{}
+{
+  "group_by_toggle": "Por grupo",
+  "group_by_toggle_title": "Agrupa las tarjetas de personas por el grupo asignado",
+  "group_ungrouped": "Sin grupo"
+}

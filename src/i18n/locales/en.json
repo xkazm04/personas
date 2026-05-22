@@ -57,7 +57,10 @@
     "status_draft_ready": "Draft ready",
     "status_completed": "Completed",
     "status_failed": "Failed",
-    "status_cancelled": "Cancelled"
+    "status_cancelled": "Cancelled",
+    "group_by_toggle": "By group",
+    "group_by_toggle_title": "Group persona cards by their assigned group",
+    "group_ungrouped": "Ungrouped"
   },
   "common": {
     "unknown_error": "Unknown error",

@@ -1,1 +1,5 @@
-{}
+{
+  "group_by_toggle": "Podle skupiny",
+  "group_by_toggle_title": "Seskupit karty person podle přiřazené skupiny",
+  "group_ungrouped": "Bez skupiny"
+}
