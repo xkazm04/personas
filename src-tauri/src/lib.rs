@@ -1307,6 +1307,10 @@ pub fn run() {
             commands::core::persona_icons::list_persona_icons,
             #[cfg(feature = "desktop")]
             commands::core::persona_icons::delete_persona_icon,
+            #[cfg(feature = "desktop")]
+            commands::core::persona_icon_gen::list_image_gen_credentials,
+            #[cfg(feature = "desktop")]
+            commands::core::persona_icon_gen::generate_persona_icon,
             // Core -- Import/Export
             commands::core::import_export::export_persona,
             commands::core::import_export::import_persona,

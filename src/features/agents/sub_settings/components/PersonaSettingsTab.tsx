@@ -142,6 +142,8 @@ export function PersonaSettingsTab({
         value={draft.icon}
         onChange={(icon) => patch({ icon })}
         onClose={() => setIconPickerOpen(false)}
+        personaName={draft.name}
+        personaDescription={draft.description}
       />
 
       {/* Execution */}

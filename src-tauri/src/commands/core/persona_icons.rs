@@ -55,14 +55,13 @@ fn is_valid_asset_id(id: &str) -> bool {
     id.len() == 64 && id.bytes().all(|b| b.is_ascii_hexdigit())
 }
 
-/// Decode an arbitrary user image, downscale it to fit `MAX_ICON_EDGE`, and
+/// Decode an arbitrary image, downscale it to fit `MAX_ICON_EDGE`, and
 /// re-encode it as PNG. Synchronous + CPU-bound — call via `spawn_blocking`.
 ///
 /// The decode-then-re-encode round trip is the security boundary: the output
 /// is a freshly-encoded PNG with no metadata carried over from the source.
-fn decode_and_reencode(source_path: &str) -> Result<Vec<u8>, AppError> {
-    let mut reader = ImageReader::open(source_path)
-        .map_err(|e| AppError::NotFound(format!("Cannot open image: {e}")))?
+fn decode_and_reencode(bytes: &[u8]) -> Result<Vec<u8>, AppError> {
+    let mut reader = ImageReader::new(Cursor::new(bytes))
         .with_guessed_format()
         .map_err(|e| AppError::Validation(format!("Cannot read image header: {e}")))?;
 
@@ -89,38 +88,34 @@ fn decode_and_reencode(source_path: &str) -> Result<Vec<u8>, AppError> {
     Ok(png_bytes)
 }
 
-/// Import an image file as a custom persona icon.
+/// Validate, normalise, and store raw image bytes as a custom persona icon.
 ///
-/// `source_path` is a path the user picked via the file dialog. Returns the
-/// asset ID (hex SHA-256 of the stored PNG); the caller stores
-/// `custom-icon:{id}` in the persona's `icon` column.
-#[tauri::command]
-pub async fn import_persona_icon(app: AppHandle, source_path: String) -> Result<String, AppError> {
-    // 1. Size gate before reading anything large into memory.
-    let meta = fs::metadata(&source_path)
-        .await
-        .map_err(|e| AppError::NotFound(format!("Cannot read {source_path}: {e}")))?;
-    if meta.len() > MAX_SOURCE_BYTES {
+/// Shared by manual upload (`import_persona_icon`) and AI generation
+/// (`persona_icon_gen::generate_persona_icon`) — both produce untrusted bytes
+/// that must go through the same decode→downscale→re-encode→content-address
+/// pipeline. Returns the asset ID (hex SHA-256 of the stored PNG).
+pub(crate) async fn store_icon_bytes(app: &AppHandle, raw: Vec<u8>) -> Result<String, AppError> {
+    if raw.len() as u64 > MAX_SOURCE_BYTES {
         return Err(AppError::Validation(format!(
             "Image is too large ({:.1} MB). Maximum is {} MB.",
-            meta.len() as f64 / (1024.0 * 1024.0),
+            raw.len() as f64 / (1024.0 * 1024.0),
             MAX_SOURCE_BYTES / (1024 * 1024),
         )));
     }
 
-    // 2. Decode + downscale + re-encode off the IPC worker thread.
-    let png_bytes = tokio::task::spawn_blocking(move || decode_and_reencode(&source_path))
+    // Decode + downscale + re-encode off the IPC worker thread.
+    let png_bytes = tokio::task::spawn_blocking(move || decode_and_reencode(&raw))
         .await
         .map_err(|e| AppError::Internal(format!("Image task panicked: {e}")))??;
 
-    // 3. Content-address: the filename is the hash of the re-encoded bytes, so
-    //    identical uploads collapse to one file.
+    // Content-address: the filename is the hash of the re-encoded bytes, so
+    // identical images collapse to one file.
     let mut hasher = Sha256::new();
     hasher.update(&png_bytes);
     let asset_id = hex::encode(hasher.finalize());
 
-    // 4. Persist (skip the write when the content is already on disk).
-    let dir = persona_icons_dir(&app)?;
+    // Persist (skip the write when the content is already on disk).
+    let dir = persona_icons_dir(app)?;
     fs::create_dir_all(&dir)
         .await
         .map_err(|e| AppError::Internal(format!("Create persona-icons dir: {e}")))?;
@@ -132,6 +127,31 @@ pub async fn import_persona_icon(app: AppHandle, source_path: String) -> Result<
     }
 
     Ok(asset_id)
+}
+
+/// Import an image file as a custom persona icon.
+///
+/// `source_path` is a path the user picked via the file dialog. Returns the
+/// asset ID (hex SHA-256 of the stored PNG); the caller stores
+/// `custom-icon:{id}` in the persona's `icon` column.
+#[tauri::command]
+pub async fn import_persona_icon(app: AppHandle, source_path: String) -> Result<String, AppError> {
+    // Size-gate via metadata before reading the file into memory.
+    let meta = fs::metadata(&source_path)
+        .await
+        .map_err(|e| AppError::NotFound(format!("Cannot read {source_path}: {e}")))?;
+    if meta.len() > MAX_SOURCE_BYTES {
+        return Err(AppError::Validation(format!(
+            "Image is too large ({:.1} MB). Maximum is {} MB.",
+            meta.len() as f64 / (1024.0 * 1024.0),
+            MAX_SOURCE_BYTES / (1024 * 1024),
+        )));
+    }
+
+    let raw = fs::read(&source_path)
+        .await
+        .map_err(|e| AppError::NotFound(format!("Cannot read {source_path}: {e}")))?;
+    store_icon_bytes(&app, raw).await
 }
 
 /// List every custom icon asset ID currently in the library. Backs the

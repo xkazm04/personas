@@ -12737,6 +12737,10 @@ export type Translations = {
       uploading_icon: string;
       no_custom_icons: string;
       remove_custom_icon: string;
+      generate_with_ai: string;
+      generate_icon: string;
+      generating_icon: string;
+      generate_icon_prompt_placeholder: string;
       clear_icon: string;
       filter_placeholder: string;
       reset_to_default: string;

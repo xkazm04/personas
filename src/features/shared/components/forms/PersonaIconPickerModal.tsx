@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { X, Upload, Trash2, Loader2 } from 'lucide-react';
+import { X, Upload, Trash2, Loader2, Sparkles } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { AGENT_ICONS, toAgentIconValue } from '@/lib/icons/agentIconCatalog';
@@ -14,8 +14,12 @@ import {
   importPersonaIcon,
   listPersonaIcons,
   deletePersonaIcon,
+  listImageGenCredentials,
+  generatePersonaIcon,
 } from '@/api/agents/personaIcons';
+import type { ImageGenCredential } from '@/lib/bindings/ImageGenCredential';
 import { toastCatch } from '@/lib/silentCatch';
+import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface PersonaIconPickerModalProps {
@@ -23,10 +27,21 @@ interface PersonaIconPickerModalProps {
   value: string;
   onChange: (icon: string) => void;
   onClose: () => void;
+  /** Persona name — seeds the AI-generation prompt. */
+  personaName?: string;
+  /** Persona description — seeds the AI-generation prompt. */
+  personaDescription?: string | null;
 }
 
 /** Native dialog extension filter for uploadable persona icons. */
 const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'webp', 'gif'];
+
+/** Compose a default icon-generation prompt from the persona's identity. */
+function buildIconPrompt(name?: string, description?: string | null): string {
+  const subject = name?.trim() || 'an AI agent';
+  const purpose = description?.trim() ? ` Purpose: ${description.trim()}.` : '';
+  return `A minimal, modern app icon for "${subject}".${purpose} Flat vector style, single centered subject, bold simple shapes, solid background, no text or letters.`;
+}
 
 /**
  * Persona icon picker — built-in catalog icons plus user uploads.
@@ -43,10 +58,16 @@ export function PersonaIconPickerModal({
   value,
   onChange,
   onClose,
+  personaName,
+  personaDescription,
 }: PersonaIconPickerModalProps) {
   const { t } = useTranslation();
   const [customIcons, setCustomIcons] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [genCreds, setGenCreds] = useState<ImageGenCredential[]>([]);
+  const [selectedCredId, setSelectedCredId] = useState('');
+  const [prompt, setPrompt] = useState('');
+  const [generating, setGenerating] = useState(false);
 
   const refreshCustomIcons = useCallback(() => {
     listPersonaIcons()
@@ -54,10 +75,21 @@ export function PersonaIconPickerModal({
       .catch(toastCatch('PersonaIconPickerModal:listPersonaIcons'));
   }, []);
 
-  // Load the user's uploaded-icon library each time the modal opens.
+  // Load the uploaded-icon library + available image-gen credentials, and
+  // seed the generation prompt, each time the modal opens.
   useEffect(() => {
-    if (isOpen) refreshCustomIcons();
-  }, [isOpen, refreshCustomIcons]);
+    if (!isOpen) return;
+    refreshCustomIcons();
+    setPrompt(buildIconPrompt(personaName, personaDescription));
+    listImageGenCredentials()
+      .then((creds) => {
+        setGenCreds(creds);
+        setSelectedCredId((prev) =>
+          creds.some((c) => c.id === prev) ? prev : creds[0]?.id ?? '',
+        );
+      })
+      .catch(toastCatch('PersonaIconPickerModal:listImageGenCredentials'));
+  }, [isOpen, refreshCustomIcons, personaName, personaDescription]);
 
   const handlePick = useCallback((iconValue: string) => {
     onChange(iconValue);
@@ -98,6 +130,19 @@ export function PersonaIconPickerModal({
       })
       .catch(toastCatch('PersonaIconPickerModal:deletePersonaIcon'));
   }, [value, onChange]);
+
+  const handleGenerate = useCallback(async () => {
+    if (!selectedCredId || !prompt.trim()) return;
+    try {
+      setGenerating(true);
+      const assetId = await generatePersonaIcon(selectedCredId, prompt.trim());
+      handlePick(toCustomIconValue(assetId));
+    } catch (e) {
+      toastCatch('PersonaIconPickerModal:generatePersonaIcon')(e);
+    } finally {
+      setGenerating(false);
+    }
+  }, [selectedCredId, prompt, handlePick]);
 
   return (
     <BaseModal
@@ -228,6 +273,59 @@ export function PersonaIconPickerModal({
               </div>
             )}
           </section>
+
+          {/* AI generation — only when the vault has an image-gen credential */}
+          {genCreds.length > 0 && (
+            <section>
+              <h3 className="typo-caption font-semibold uppercase tracking-wide text-foreground mb-3 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5" />
+                {t.shared.forms_extra.generate_with_ai}
+              </h3>
+              <div className="space-y-3 rounded-modal border border-primary/15 bg-background/40 p-4">
+                <textarea
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  rows={3}
+                  disabled={generating}
+                  placeholder={t.shared.forms_extra.generate_icon_prompt_placeholder}
+                  className={`${INPUT_FIELD} resize-none`}
+                />
+                <div className="flex items-center justify-between gap-3">
+                  {genCreds.length > 1 ? (
+                    <select
+                      value={selectedCredId}
+                      onChange={(e) => setSelectedCredId(e.target.value)}
+                      disabled={generating}
+                      className={`${INPUT_FIELD} flex-1 min-w-0`}
+                    >
+                      {genCreds.map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <span className="typo-caption text-foreground truncate">
+                      {genCreds[0]?.name}
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleGenerate}
+                    disabled={generating || !prompt.trim() || !selectedCredId}
+                    className="flex items-center gap-1.5 px-3 py-1.5 typo-caption font-medium rounded-card border border-primary/30 bg-primary/10 text-foreground hover:bg-primary/20 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-default flex-shrink-0"
+                  >
+                    {generating ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-3.5 h-3.5" />
+                    )}
+                    {generating
+                      ? t.shared.forms_extra.generating_icon
+                      : t.shared.forms_extra.generate_icon}
+                  </button>
+                </div>
+              </div>
+            </section>
+          )}
         </div>
 
         {resolvePersonaIcon(value).kind !== 'fallback' && (

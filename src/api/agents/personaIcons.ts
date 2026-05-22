@@ -7,6 +7,7 @@
  * a persona's `icon` field.
  */
 import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
+import type { ImageGenCredential } from '@/lib/bindings/ImageGenCredential';
 
 /**
  * Import an image file (chosen via the file dialog) as a custom persona icon.
@@ -28,4 +29,26 @@ export function listPersonaIcons(): Promise<string[]> {
 /** Delete a custom icon file from the library. */
 export function deletePersonaIcon(assetId: string): Promise<void> {
   return invoke<void>('delete_persona_icon', { assetId });
+}
+
+/**
+ * List vault credentials capable of generating images (Leonardo AI,
+ * Higgsfield). Empty when the user has no such credential — the picker hides
+ * its "Generate with AI" section in that case.
+ */
+export function listImageGenCredentials(): Promise<ImageGenCredential[]> {
+  return invoke<ImageGenCredential[]>('list_image_gen_credentials');
+}
+
+/**
+ * Generate a persona icon from a text prompt using a vault image-gen
+ * credential. Returns the stored asset ID. The provider runs an async job
+ * (POST + poll), so this can take up to ~2 minutes — hence the long timeout.
+ */
+export function generatePersonaIcon(credentialId: string, prompt: string): Promise<string> {
+  return invoke<string>(
+    'generate_persona_icon',
+    { credentialId, prompt },
+    { timeoutMs: 150_000 },
+  );
 }
