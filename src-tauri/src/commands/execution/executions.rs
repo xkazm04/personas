@@ -484,7 +484,12 @@ pub fn prepare_persona_execution(
         None,
     );
     let mut memory_ids = Vec::new();
-    if let Ok(tiered) = mem_repo::get_for_injection_v2(&state.db, &persona_id, None, None, 10, 40) {
+    if let Ok(tiered) = mem_repo::get_for_injection_v2(
+        &state.db,
+        mem_repo::InjectionScope::for_persona(&persona_id),
+        10,
+        40,
+    ) {
         let (with_memories, ids, _, _) = prepared_run_cache::append_memories(prompt_text, &tiered);
         prompt_text = with_memories;
         memory_ids = ids;

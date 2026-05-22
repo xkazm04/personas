@@ -786,47 +786,122 @@ pub struct TieredMemories {
     pub active: Vec<PersonaMemory>,
 }
 
+/// Scope filter for memory injection. `persona_id` is always required —
+/// a persona's own memories are always in scope. Additional optional axes
+/// (capability + group) layer on top via OR clauses in the WHERE.
+///
+/// Adding a new scope axis is a 3-line change: a new `Option<&str>` field,
+/// a `with_*` builder method, and a `push` line in
+/// [`build_scope_predicates`]. The SQL composer and parameter binder both
+/// pick up the new axis without further edits, replacing the per-arm
+/// match-explosion this struct was introduced to retire (cycle 7).
+#[derive(Debug, Clone, Copy)]
+pub struct InjectionScope<'a> {
+    pub persona_id: &'a str,
+    /// When `Some(uc)`: active/working memories match `use_case_id = uc OR use_case_id IS NULL`.
+    /// When `None`: active/working memories match `use_case_id IS NULL`.
+    pub use_case_id: Option<&'a str>,
+    /// When `Some(g)`: rows owned by ANY persona but attributed to group `g`
+    /// also surface (group-shared memory, MEMORY CONTRACT §5).
+    /// When `None`: only persona-private rows surface.
+    pub group_id: Option<&'a str>,
+}
+
+impl<'a> InjectionScope<'a> {
+    /// Start a scope for a single persona with no additional filters.
+    pub fn for_persona(persona_id: &'a str) -> Self {
+        Self {
+            persona_id,
+            use_case_id: None,
+            group_id: None,
+        }
+    }
+    pub fn with_use_case(mut self, uc: Option<&'a str>) -> Self {
+        self.use_case_id = uc;
+        self
+    }
+    pub fn with_group(mut self, gid: Option<&'a str>) -> Self {
+        self.group_id = gid;
+        self
+    }
+}
+
+/// Compose the persona-scope and use-case-scope SQL fragments and matching
+/// param vector for an [`InjectionScope`]. Returns:
+///   - `persona_scope_sql`: goes into the per-tier `WHERE <persona_scope> ...`
+///   - `active_uc_sql`: trailing predicate for active/working tier only
+///   - `extra_params`: pushed AFTER the fixed [persona_id, core_limit, active_limit]
+///     prefix; SQL uses `?{base + i + 1}` for these.
+///
+/// The placeholder indices in returned SQL are 1-based and ALREADY account
+/// for the 3-param prefix — `?1` = persona_id, `?2` = core_limit, `?3` =
+/// active_limit, `?4..` = the values in `extra_params`.
+fn build_scope_predicates<'a>(
+    scope: &InjectionScope<'a>,
+) -> (String, String, Vec<&'a str>) {
+    let mut extra: Vec<&str> = Vec::new();
+    let mut next_idx: usize = 4; // ?1..?3 reserved
+
+    let persona_scope_sql = if let Some(gid) = scope.group_id {
+        let idx = next_idx;
+        next_idx += 1;
+        extra.push(gid);
+        format!("(persona_id = ?1 OR group_id = ?{idx})")
+    } else {
+        "persona_id = ?1".to_string()
+    };
+
+    let active_uc_sql = if let Some(uc) = scope.use_case_id {
+        let idx = next_idx;
+        // next_idx += 1; // not reused, drop to silence unused mutation warning
+        let _ = next_idx;
+        extra.push(uc);
+        format!("AND (use_case_id = ?{idx} OR use_case_id IS NULL)")
+    } else {
+        "AND use_case_id IS NULL".to_string()
+    };
+
+    (persona_scope_sql, active_uc_sql, extra)
+}
+
 /// Fetch memories suitable for injection into a prompt, split by tier.
+///
+/// Persona-wide convenience — no capability scope, no group scope. Forwards
+/// to [`get_for_injection_v2`] with `InjectionScope::for_persona(...)`.
 ///
 /// * `core_limit` — max number of core-tier memories to return.
 /// * `active_limit` — max number of active-tier memories to return (scored by
 ///   importance DESC, access_count DESC, created_at DESC).
-///
-/// **Note:** `get_for_injection` is the persona-wide entry point used by
-/// non-capability runs. Capability-aware execution should call
-/// [`get_for_injection_v2`] which scopes active/working memories by use_case.
 pub fn get_for_injection(
     pool: &DbPool,
     persona_id: &str,
     core_limit: i64,
     active_limit: i64,
 ) -> Result<TieredMemories, AppError> {
-    get_for_injection_v2(pool, persona_id, None, None, core_limit, active_limit)
+    get_for_injection_v2(pool, InjectionScope::for_persona(persona_id), core_limit, active_limit)
 }
 
-/// Phase C5 — capability-aware memory fetch for prompt injection.
+/// Capability- and group-aware memory fetch for prompt injection.
 ///
 /// Tier rules:
 /// - **Core** memories are always persona-wide regardless of `use_case_id`.
 ///   They define stable identity/principles and should be injected on every
 ///   execution.
 /// - **Active / working** memories are scoped:
-///   - When `use_case_id = Some(uc)`, fetch rows where
+///   - When `scope.use_case_id = Some(uc)`, fetch rows where
 ///     `use_case_id = uc OR use_case_id IS NULL` (capability-scoped + global).
-///   - When `use_case_id = None`, fetch only persona-wide rows
+///   - When `scope.use_case_id = None`, fetch only persona-wide rows
 ///     (`use_case_id IS NULL`).
 ///
-/// 2026-05-22: when `group_id = Some(g)`, OR-in `group_id = g` at every
-/// tier so memories authored in group context are shared across every
-/// member's prompt assembly. See MEMORY CONTRACT (5).
+/// When `scope.group_id = Some(g)`, OR-in `group_id = g` at every tier so
+/// memories authored in group context are shared across every member's
+/// prompt assembly (MEMORY CONTRACT §5).
 ///
 /// Ordering: importance DESC, access_count DESC, created_at DESC for active;
 /// importance DESC, created_at DESC for core.
 pub fn get_for_injection_v2(
     pool: &DbPool,
-    persona_id: &str,
-    use_case_id: Option<&str>,
-    group_id: Option<&str>,
+    scope: InjectionScope<'_>,
     core_limit: i64,
     active_limit: i64,
 ) -> Result<TieredMemories, AppError> {
@@ -836,24 +911,8 @@ pub fn get_for_injection_v2(
         {
             let conn = pool.get()?;
 
-            // Active-tier scope predicate depends on whether a capability is set.
-            // Inlining the column comparison (rather than using a parameter) keeps
-            // the prepared-statement signature stable across the two branches.
-            let (active_scope_sql, active_uc_param): (&str, Option<&str>) = match use_case_id {
-                Some(uc) => ("AND (use_case_id = ?4 OR use_case_id IS NULL)", Some(uc)),
-                None => ("AND use_case_id IS NULL", None),
-            };
-
-            // Persona-scope predicate widens to include the persona's group
-            // when the persona is in a group. ?5 carries the group_id (or
-            // empty string when unscoped — the SQL handles both via a single
-            // OR clause). The empty-string branch never matches because
-            // `group_id` is either NULL or a UUID, never an empty string.
-            let persona_scope_sql = match group_id {
-                Some(_) => "(persona_id = ?1 OR group_id = ?5)",
-                None => "persona_id = ?1",
-            };
-            let group_param = group_id.unwrap_or("");
+            let (persona_scope_sql, active_uc_sql, extra_params) =
+                build_scope_predicates(&scope);
 
             let sql = format!(
                 "SELECT * FROM (
@@ -866,43 +925,30 @@ pub fn get_for_injection_v2(
              SELECT * FROM (
                  SELECT * FROM persona_memories
                  WHERE {persona_scope_sql} AND tier IN ('active', 'working')
-                 {active_scope_sql}
+                 {active_uc_sql}
                  ORDER BY importance DESC, access_count DESC, created_at DESC
                  LIMIT ?3
              )"
             );
 
+            // Assemble the final params slice in the order the SQL expects:
+            // ?1 = persona_id, ?2 = core_limit, ?3 = active_limit, then the
+            // extras the scope builder produced in declaration order
+            // (group_id before use_case_id).
+            let mut boxed_params: Vec<Box<dyn rusqlite::ToSql>> = Vec::with_capacity(3 + extra_params.len());
+            boxed_params.push(Box::new(scope.persona_id.to_string()));
+            boxed_params.push(Box::new(core_limit));
+            boxed_params.push(Box::new(active_limit));
+            for v in &extra_params {
+                boxed_params.push(Box::new((*v).to_string()));
+            }
+            let params_ref: Vec<&dyn rusqlite::ToSql> =
+                boxed_params.iter().map(|b| b.as_ref()).collect();
+
             let mut stmt = conn.prepare_cached(&sql)?;
-            let all: Vec<PersonaMemory> = match (active_uc_param, group_id) {
-                (Some(uc), Some(_g)) => {
-                    let rows = stmt.query_map(
-                        params![persona_id, core_limit, active_limit, uc, group_param],
-                        row_to_memory,
-                    )?;
-                    collect_rows(rows, "memories::get_for_injection_v2(scoped+group)")
-                }
-                (Some(uc), None) => {
-                    let rows = stmt.query_map(
-                        params![persona_id, core_limit, active_limit, uc],
-                        row_to_memory,
-                    )?;
-                    collect_rows(rows, "memories::get_for_injection_v2(scoped)")
-                }
-                (None, Some(_g)) => {
-                    let rows = stmt.query_map(
-                        params![persona_id, core_limit, active_limit, "", group_param],
-                        row_to_memory,
-                    )?;
-                    collect_rows(rows, "memories::get_for_injection_v2(group)")
-                }
-                (None, None) => {
-                    let rows = stmt.query_map(
-                        params![persona_id, core_limit, active_limit],
-                        row_to_memory,
-                    )?;
-                    collect_rows(rows, "memories::get_for_injection_v2(unscoped)")
-                }
-            };
+            let rows = stmt.query_map(params_ref.as_slice(), row_to_memory)?;
+            let all: Vec<PersonaMemory> =
+                collect_rows(rows, "memories::get_for_injection_v2");
 
             let (core, active) = all.into_iter().partition(|m| m.tier == "core");
 
@@ -1387,7 +1433,7 @@ mod tests {
         let active_other =
             insert_scoped_memory(&pool, &persona_id, "active other", "active", Some("uc-b"));
 
-        let tiered = get_for_injection_v2(&pool, &persona_id, Some("uc-a"), None, 10, 40).unwrap();
+        let tiered = get_for_injection_v2(&pool, InjectionScope::for_persona(&persona_id).with_use_case(Some("uc-a")), 10, 40).unwrap();
 
         let core_ids: Vec<&str> = tiered.core.iter().map(|m| m.id.as_str()).collect();
         // Both core memories surface regardless of use_case_id (rule: core is
@@ -1421,7 +1467,7 @@ mod tests {
         let active_scoped =
             insert_scoped_memory(&pool, &persona_id, "active scoped", "active", Some("uc-a"));
 
-        let tiered = get_for_injection_v2(&pool, &persona_id, None, None, 10, 40).unwrap();
+        let tiered = get_for_injection_v2(&pool, InjectionScope::for_persona(&persona_id), 10, 40).unwrap();
 
         assert_eq!(tiered.core.len(), 1);
         assert_eq!(tiered.core[0].id, core_global);
@@ -1444,7 +1490,7 @@ mod tests {
         insert_scoped_memory(&pool, &persona_id, "scoped", "active", Some("uc-a"));
 
         let v1 = get_for_injection(&pool, &persona_id, 10, 40).unwrap();
-        let v2 = get_for_injection_v2(&pool, &persona_id, None, None, 10, 40).unwrap();
+        let v2 = get_for_injection_v2(&pool, InjectionScope::for_persona(&persona_id), 10, 40).unwrap();
         assert_eq!(v1.core.len(), v2.core.len());
         assert_eq!(v1.active.len(), v2.active.len());
     }
@@ -1516,7 +1562,7 @@ mod tests {
 
         // Run injection for persona_a as if they were in group-X.
         let tiered =
-            get_for_injection_v2(&pool, &persona_a, None, Some("group-X"), 10, 40).unwrap();
+            get_for_injection_v2(&pool, InjectionScope::for_persona(&persona_a).with_group(Some("group-X")), 10, 40).unwrap();
         let ids: Vec<&str> = tiered.active.iter().map(|m| m.id.as_str()).collect();
         assert!(ids.contains(&priv_a.as_str()), "persona's own memory missing");
         assert!(
@@ -1749,7 +1795,7 @@ mod tests {
         //    surface the orphan. The persona-wide memory must surface (it has
         //    use_case_id IS NULL).
         let scoped =
-            get_for_injection_v2(&pool, &persona.id, Some("uc-something-else"), None, 10, 10).unwrap();
+            get_for_injection_v2(&pool, InjectionScope::for_persona(&persona.id).with_use_case(Some("uc-something-else")), 10, 10).unwrap();
         let active_ids: Vec<_> = scoped.active.iter().map(|m| m.id.as_str()).collect();
         assert!(
             !active_ids.contains(&orphan.id.as_str()),
@@ -1762,7 +1808,7 @@ mod tests {
 
         // 3. Unscoped injection (use_case_id = None) must also exclude the
         //    orphan — see CONTRACT (2): "use_case_id IS NULL only".
-        let unscoped = get_for_injection_v2(&pool, &persona.id, None, None, 10, 10).unwrap();
+        let unscoped = get_for_injection_v2(&pool, InjectionScope::for_persona(&persona.id), 10, 10).unwrap();
         let unscoped_ids: Vec<_> = unscoped.active.iter().map(|m| m.id.as_str()).collect();
         assert!(
             !unscoped_ids.contains(&orphan.id.as_str()),

@@ -65,9 +65,7 @@ pub fn install_projection(
 
     let tiered = match mem_repo::get_for_injection_v2(
         pool,
-        persona_id,
-        use_case_id,
-        None,
+        mem_repo::InjectionScope::for_persona(persona_id).with_use_case(use_case_id),
         CORE_LIMIT,
         ACTIVE_LIMIT,
     ) {
