@@ -333,10 +333,17 @@ pub fn add_member(
         let px = position_x.unwrap_or(0.0);
         let py = position_y.unwrap_or(0.0);
 
-        let conn = pool.get()?;
+        let mut conn = pool.get()?;
+        let tx = conn
+            .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)
+            .map_err(AppError::Database)?;
 
-        // Prevent duplicate persona in the same team
-        let exists: bool = conn.query_row(
+        // Prevent duplicate persona in the same team. The EXISTS check and the
+        // INSERT run inside one BEGIN IMMEDIATE transaction so two concurrent
+        // add_member calls for the same persona serialize instead of both
+        // racing past the check — persona_team_members has no
+        // UNIQUE(team_id, persona_id) constraint to catch the loser.
+        let exists: bool = tx.query_row(
             "SELECT EXISTS(SELECT 1 FROM persona_team_members WHERE team_id = ?1 AND persona_id = ?2)",
             params![team_id, persona_id],
             |row| row.get(0),
@@ -348,11 +355,12 @@ pub fn add_member(
             )));
         }
 
-        conn.execute(
+        tx.execute(
             "INSERT INTO persona_team_members (id, team_id, persona_id, role, position_x, position_y, config, created_at)
              VALUES (?1,?2,?3,?4,?5,?6,?7,?8)",
             params![id, team_id, persona_id, role, px, py, config, now],
         )?;
+        tx.commit().map_err(AppError::Database)?;
 
         Ok(PersonaTeamMember {
             id,
@@ -475,10 +483,19 @@ pub fn create_connection(
         }
 
         let conn_type = connection_type.unwrap_or_else(|| "sequential".into());
-        let conn = pool.get()?;
+
+        // All validation (member-belongs, duplicate-edge, cycle detection) and
+        // the INSERT run inside one BEGIN IMMEDIATE transaction. Otherwise two
+        // concurrent create_connection calls can each pass cycle detection
+        // individually yet jointly form a cycle, or both insert a duplicate
+        // edge — persona_team_connections has no UNIQUE constraint to catch it.
+        let mut conn = pool.get()?;
+        let tx = conn
+            .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)
+            .map_err(AppError::Database)?;
 
         // Validate both member IDs belong to the specified team
-        let source_belongs: bool = conn
+        let source_belongs: bool = tx
             .query_row(
                 "SELECT COUNT(*) FROM persona_team_members WHERE id = ?1 AND team_id = ?2",
                 params![source_member_id, team_id],
@@ -493,7 +510,7 @@ pub fn create_connection(
             ));
         }
 
-        let target_belongs: bool = conn
+        let target_belongs: bool = tx
             .query_row(
                 "SELECT COUNT(*) FROM persona_team_members WHERE id = ?1 AND team_id = ?2",
                 params![target_member_id, team_id],
@@ -509,7 +526,7 @@ pub fn create_connection(
         }
 
         // Check for duplicate edge
-        let exists: bool = conn
+        let exists: bool = tx
             .query_row(
                 "SELECT COUNT(*) FROM persona_team_connections
                  WHERE team_id = ?1 AND source_member_id = ?2 AND target_member_id = ?3",
@@ -527,7 +544,14 @@ pub fn create_connection(
 
         // Cycle detection: reject non-feedback edges that would create a cycle.
         if conn_type != "feedback" {
-            let existing = get_connections(pool, team_id)?;
+            let existing = {
+                let mut stmt = tx.prepare(
+                    "SELECT * FROM persona_team_connections WHERE team_id = ?1 ORDER BY created_at ASC",
+                )?;
+                let rows = stmt.query_map(params![team_id], row_to_connection)?;
+                rows.collect::<Result<Vec<_>, _>>()
+                    .map_err(AppError::Database)?
+            };
             let mut member_set = std::collections::HashSet::new();
             for e in &existing {
                 member_set.insert(e.source_member_id.clone());
@@ -555,12 +579,13 @@ pub fn create_connection(
         let id = uuid::Uuid::new_v4().to_string();
         let now = chrono::Utc::now().to_rfc3339();
 
-        conn.execute(
+        tx.execute(
             "INSERT INTO persona_team_connections
              (id, team_id, source_member_id, target_member_id, connection_type, condition, label, created_at)
              VALUES (?1,?2,?3,?4,?5,?6,?7,?8)",
             params![id, team_id, source_member_id, target_member_id, conn_type, condition, label, now],
         )?;
+        tx.commit().map_err(AppError::Database)?;
 
         Ok(PersonaTeamConnection {
             id,
@@ -670,12 +695,35 @@ pub fn create_pipeline_run(
     timed_query!("teams", "teams::create_pipeline_run", {
         let id = uuid::Uuid::new_v4().to_string();
         let now = chrono::Utc::now().to_rfc3339();
-        let conn = pool.get()?;
-        conn.execute(
+        let mut conn = pool.get()?;
+        let tx = conn
+            .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)
+            .map_err(AppError::Database)?;
+
+        // Authoritative single-pipeline-per-team guard. execute_team also
+        // pre-checks has_running_pipeline as a fast path, but that pre-check
+        // and this INSERT are only race-free when the re-check and INSERT
+        // happen inside one BEGIN IMMEDIATE transaction — otherwise two
+        // concurrent execute_team calls both pass the pre-check and both
+        // start a pipeline (duplicate LLM calls, conflicting status events).
+        let running: i64 = tx.query_row(
+            "SELECT COUNT(*) FROM pipeline_runs WHERE team_id = ?1 AND status = 'running'",
+            params![team_id],
+            |row| row.get(0),
+        )?;
+        if running > 0 {
+            return Err(AppError::Validation(
+                "This team already has a pipeline running. Wait for it to complete or cancel it first."
+                    .into(),
+            ));
+        }
+
+        tx.execute(
             "INSERT INTO pipeline_runs (id, team_id, status, node_statuses, input_data, started_at)
              VALUES (?1, ?2, 'running', '[]', ?3, ?4)",
             params![id, team_id, input_data, now],
         )?;
+        tx.commit().map_err(AppError::Database)?;
         Ok(id)
     })
 }
