@@ -84,6 +84,7 @@
     "lastMinutesAgo": "{count} мин назад",
     "lastHoursAgo": "{count} ч назад",
     "lastDaysAgo": "{count} дн назад",
+    "staleTag": "похоже неактивен",
     "testTooltip": "Записать синтетический исходящий пинг",
     "testDisabledPaused": "Сначала активируйте канал, чтобы его протестировать",
     "testAria": "Отправить тестовое сообщение",

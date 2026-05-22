@@ -84,6 +84,7 @@
     "lastMinutesAgo": "před {count} min",
     "lastHoursAgo": "před {count} h",
     "lastDaysAgo": "před {count} d",
+    "staleTag": "vypadá nečinně",
     "testTooltip": "Zalogovat syntetický odchozí ping",
     "testDisabledPaused": "Nejprve kanál aktivujte, abyste ho mohli otestovat",
     "testAria": "Odeslat testovací zprávu",

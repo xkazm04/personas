@@ -84,6 +84,7 @@
     "lastMinutesAgo": "منذ {count} د",
     "lastHoursAgo": "منذ {count} س",
     "lastDaysAgo": "منذ {count} ي",
+    "staleTag": "يبدو خاملاً",
     "testTooltip": "تسجيل اختبار صادر اصطناعي",
     "testDisabledPaused": "فعّل القناة أولاً لاختبارها",
     "testAria": "إرسال رسالة اختبار",

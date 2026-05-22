@@ -13077,6 +13077,7 @@ export type Translations = {
       lastMinutesAgo: string;
       lastHoursAgo: string;
       lastDaysAgo: string;
+      staleTag: string;
       testTooltip: string;
       testDisabledPaused: string;
       testAria: string;

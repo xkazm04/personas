@@ -12944,6 +12944,7 @@
       "lastMinutesAgo": "{count} 分钟前",
       "lastHoursAgo": "{count} 小时前",
       "lastDaysAgo": "{count} 天前",
+      "staleTag": "似乎已闲置",
       "testTooltip": "记录一条合成的外发探测消息",
       "testDisabledPaused": "先激活该通道才能测试",
       "testAria": "发送测试消息",

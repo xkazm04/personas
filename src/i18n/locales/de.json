@@ -12944,6 +12944,7 @@
       "lastMinutesAgo": "vor {count} Min.",
       "lastHoursAgo": "vor {count} Std.",
       "lastDaysAgo": "vor {count} Tagen",
+      "staleTag": "wirkt inaktiv",
       "testTooltip": "Einen synthetischen ausgehenden Ping protokollieren",
       "testDisabledPaused": "Aktiviere den Kanal zuerst, um ihn zu testen",
       "testAria": "Testnachricht senden",

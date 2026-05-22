@@ -84,6 +84,7 @@
     "lastMinutesAgo": "{count} मिनट पहले",
     "lastHoursAgo": "{count} घंटे पहले",
     "lastDaysAgo": "{count} दिन पहले",
+    "staleTag": "निष्क्रिय प्रतीत",
     "testTooltip": "एक कृत्रिम आउटबाउंड पिंग लॉग करें",
     "testDisabledPaused": "परीक्षण करने के लिए पहले चैनल को सक्रिय करें",
     "testAria": "परीक्षण संदेश भेजें",

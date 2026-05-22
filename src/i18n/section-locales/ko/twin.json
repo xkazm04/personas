@@ -84,6 +84,7 @@
     "lastMinutesAgo": "{count}분 전",
     "lastHoursAgo": "{count}시간 전",
     "lastDaysAgo": "{count}일 전",
+    "staleTag": "활동 없음",
     "testTooltip": "합성 아웃바운드 핑 기록",
     "testDisabledPaused": "테스트하려면 먼저 채널을 활성화하세요",
     "testAria": "테스트 메시지 보내기",

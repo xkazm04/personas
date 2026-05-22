@@ -84,6 +84,7 @@
     "lastMinutesAgo": "{count} mnt lalu",
     "lastHoursAgo": "{count} jam lalu",
     "lastDaysAgo": "{count} hr lalu",
+    "staleTag": "tampak tak aktif",
     "testTooltip": "Catat ping keluar sintetis",
     "testDisabledPaused": "Aktifkan kanalnya terlebih dahulu untuk mengujinya",
     "testAria": "Kirim pesan uji",

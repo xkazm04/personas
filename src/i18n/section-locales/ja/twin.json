@@ -84,6 +84,7 @@
     "lastMinutesAgo": "{count}分前",
     "lastHoursAgo": "{count}時間前",
     "lastDaysAgo": "{count}日前",
+    "staleTag": "停滞気味",
     "testTooltip": "合成アウトバウンド ping をログに記録",
     "testDisabledPaused": "テストする前にチャンネルをアクティブ化してください",
     "testAria": "テストメッセージを送信",

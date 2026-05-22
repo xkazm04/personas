@@ -12944,6 +12944,7 @@
       "lastMinutesAgo": "{count} মিনিট আগে",
       "lastHoursAgo": "{count} ঘণ্টা আগে",
       "lastDaysAgo": "{count} দিন আগে",
+      "staleTag": "নিষ্ক্রিয় মনে হচ্ছে",
       "testTooltip": "একটি কৃত্রিম আউটবাউন্ড পিং লগ করুন",
       "testDisabledPaused": "পরীক্ষা করতে প্রথমে চ্যানেলটি সক্রিয় করুন",
       "testAria": "পরীক্ষামূলক বার্তা পাঠান",

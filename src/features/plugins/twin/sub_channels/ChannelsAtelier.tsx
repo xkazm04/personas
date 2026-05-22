@@ -69,7 +69,7 @@ export default function ChannelsAtelier() {
   useEffect(() => { if (activeTwinId) fetchChannels(activeTwinId); }, [activeTwinId, fetchChannels]);
   useEffect(() => { fetchCredentials(); }, [fetchCredentials]);
 
-  const { lastByChannel } = useChannelActivity(activeTwinId);
+  const { lastByChannel, staleByChannel } = useChannelActivity(activeTwinId);
 
   const channelDef = CHANNEL_TYPES.find((c) => c.id === newType);
   const filteredCredentials = useMemo(() => {
@@ -320,10 +320,26 @@ export default function ChannelsAtelier() {
                           </dd>
                         </div>
                       </dl>
-                      <p className="flex items-center gap-1.5 mt-2 pt-2 border-t border-primary/5 text-[10px] italic text-foreground/85">
-                        <Activity className={`w-3 h-3 flex-shrink-0 ${lastByChannel.get(ch.channel_type) ? meta.text : 'text-foreground'}`} />
-                        <span className="truncate">{formatLastBridged(lastByChannel.get(ch.channel_type))}</span>
-                      </p>
+                      {(() => {
+                        const isStale = staleByChannel.get(ch.channel_type) === true;
+                        const hasLast = !!lastByChannel.get(ch.channel_type);
+                        return (
+                          <p className={`flex items-center gap-1.5 mt-2 pt-2 border-t border-primary/5 text-[10px] italic ${isStale ? 'text-amber-300/90' : 'text-foreground/85'}`}>
+                            <span className="relative flex-shrink-0 inline-flex">
+                              <Activity className={`w-3 h-3 ${isStale ? 'text-amber-300' : hasLast ? meta.text : 'text-foreground'}`} />
+                              {isStale && (
+                                <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                              )}
+                            </span>
+                            <span className="truncate">{formatLastBridged(lastByChannel.get(ch.channel_type))}</span>
+                            {isStale && (
+                              <span className="ml-1 px-1.5 py-0.5 text-[9px] not-italic uppercase tracking-wider rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/25 flex-shrink-0">
+                                {t.channels.staleTag}
+                              </span>
+                            )}
+                          </p>
+                        );
+                      })()}
                     </div>
                   </motion.div>
                 );

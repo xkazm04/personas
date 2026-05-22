@@ -84,6 +84,7 @@
     "lastMinutesAgo": "hace {count} min",
     "lastHoursAgo": "hace {count} h",
     "lastDaysAgo": "hace {count} d",
+    "staleTag": "parece inactivo",
     "testTooltip": "Registrar un ping saliente sintético",
     "testDisabledPaused": "Activa el canal antes de probarlo",
     "testAria": "Enviar mensaje de prueba",

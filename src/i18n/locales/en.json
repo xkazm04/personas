@@ -13071,6 +13071,7 @@
       "lastMinutesAgo": "{count}m ago",
       "lastHoursAgo": "{count}h ago",
       "lastDaysAgo": "{count}d ago",
+      "staleTag": "looks stale",
       "testTooltip": "Log a synthetic outbound ping",
       "testDisabledPaused": "Activate the channel first to test it",
       "testAria": "Send test message",
