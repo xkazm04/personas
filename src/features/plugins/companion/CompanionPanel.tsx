@@ -575,6 +575,36 @@ function Body(props: BodyProps) {
   // the listener closure stays stable.
   const currentTurnIdRef = useRef<string | null>(null);
 
+  // TurnSummaryChip jump targets: refs to the in-panel approval and
+  // chat-card containers so the chip can scroll the user there with
+  // smooth `scrollIntoView`. Dashboard / cockpit jumps route through
+  // useSystemStore directly (same setSidebarSection chain the
+  // compose_* auto-fires use).
+  const approvalsAnchorRef = useRef<HTMLDivElement>(null);
+  const chatCardsAnchorRef = useRef<HTMLDivElement>(null);
+  const handleTurnSummaryJump = useCallback(
+    (target: 'approvals' | 'chatCards' | 'dashboard' | 'cockpit') => {
+      if (target === 'approvals' || target === 'chatCards') {
+        const el =
+          target === 'approvals'
+            ? approvalsAnchorRef.current
+            : chatCardsAnchorRef.current;
+        el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
+      const sys = useSystemStore.getState();
+      if (target === 'dashboard') {
+        sys.setSidebarSection('plugins');
+        sys.setPluginTab('companion');
+        sys.setCompanionPluginTab('dashboard');
+      } else {
+        sys.setSidebarSection('home');
+        sys.setHomeTab('cockpit');
+      }
+    },
+    [],
+  );
+
   /*
    * Soft progress timeout. If no CLI line arrives for ~30s mid-turn we
    * surface a gentle "still working" hint; at ~2min we sharpen the hint
@@ -1152,7 +1182,12 @@ function Body(props: BodyProps) {
                       <ConnectorCallCard key={jobId} job={job} />
                     ) : null;
                   })}
-                  {summary && <TurnSummaryChip summary={summary} />}
+                  {summary && (
+                    <TurnSummaryChip
+                      summary={summary}
+                      onJump={handleTurnSummaryJump}
+                    />
+                  )}
                   {isLastAssistant && priorUser && !streaming && !improving && (
                     <RefineChips
                       priorUserMessage={priorUser}
@@ -1258,42 +1293,46 @@ function Body(props: BodyProps) {
               <span>{t.plugins.companion.improving}</span>
             </div>
           )}
-          <AnimatePresence initial={false}>
-            {approvals.map((a) => (
-              <motion.div
-                key={a.id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.98 }}
-                transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-              >
-                <ApprovalCard
-                  approval={a}
-                  onResolved={(id) => {
-                    removeApproval(id);
-                    // Pull the canonical transcript so the system episode the
-                    // backend just logged (action outcome) shows up.
-                    companionListRecentMessages(50)
-                      .then((msgs) => setMessages(msgs))
-                      .catch(silentCatch('companion_list_recent_messages'));
-                  }}
-                />
-              </motion.div>
-            ))}
-          </AnimatePresence>
-          <AnimatePresence initial={false}>
-            {chatCards.map((card, idx) => (
-              <motion.div
-                key={`${card.kind}-${idx}`}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-              >
-                <InlineChatCard card={card} />
-              </motion.div>
-            ))}
-          </AnimatePresence>
+          <div ref={approvalsAnchorRef} data-companion-section="approvals">
+            <AnimatePresence initial={false}>
+              {approvals.map((a) => (
+                <motion.div
+                  key={a.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.98 }}
+                  transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  <ApprovalCard
+                    approval={a}
+                    onResolved={(id) => {
+                      removeApproval(id);
+                      // Pull the canonical transcript so the system episode the
+                      // backend just logged (action outcome) shows up.
+                      companionListRecentMessages(50)
+                        .then((msgs) => setMessages(msgs))
+                        .catch(silentCatch('companion_list_recent_messages'));
+                    }}
+                  />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+          <div ref={chatCardsAnchorRef} data-companion-section="chat-cards">
+            <AnimatePresence initial={false}>
+              {chatCards.map((card, idx) => (
+                <motion.div
+                  key={`${card.kind}-${idx}`}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  <InlineChatCard card={card} />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
           {sendError && (
             <div className="rounded-card border border-rose-500/30 bg-rose-500/10 px-3 py-2 typo-caption text-rose-400">
               {sendError}

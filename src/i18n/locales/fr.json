@@ -10804,6 +10804,7 @@
       "turn_summary_cockpit": "composed cockpit",
       "turn_summary_card": "inline card",
       "turn_summary_continuation": "will continue autonomously",
+      "turn_summary_jump_to": "Aller à : {label}",
       "refine_label": "Refine the previous turn",
       "refine_shorter": "Shorter",
       "refine_shorter_suffix": " — much shorter, please.",

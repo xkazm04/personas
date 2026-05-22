@@ -11,6 +11,18 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { StoredTurnSummary } from './companionStore';
 
 /**
+ * Targets a turn-summary chip part can jump to. Anything in this union
+ * has an in-panel scroll-into-view target (approvals / chatCards) or an
+ * app-level navigation target (dashboard / cockpit). Parts without a
+ * target (nav, lab, continuation) render as static labels.
+ */
+export type TurnSummaryJumpTarget =
+  | 'approvals'
+  | 'chatCards'
+  | 'dashboard'
+  | 'cockpit';
+
+/**
  * Tiny rollup chip rendered below an assistant bubble whenever Athena's
  * reply dispatched any side-effects this turn: pending approvals, direct
  * navigations, lab-tab opens, dashboard / cockpit auto-fires, inline
@@ -19,8 +31,23 @@ import type { StoredTurnSummary } from './companionStore';
  *
  * Source: backend's `companion://turn-summary` event, emitted once per
  * turn after the dispatcher block.
+ *
+ * Click-through: when `onJump` is provided, the parts that have a
+ * meaningful destination become buttons:
+ *   - approvals → scroll the panel to the ApprovalCard list
+ *   - chatCards → scroll the panel to the InlineChatCard list
+ *   - dashboard → navigate to the companion-plugin dashboard tab
+ *   - cockpit   → navigate to home → cockpit
+ * The remaining parts (nav already happened, lab opens carry no agent
+ * id, continuation is informational) stay as captions.
  */
-export function TurnSummaryChip({ summary }: { summary: StoredTurnSummary }) {
+export function TurnSummaryChip({
+  summary,
+  onJump,
+}: {
+  summary: StoredTurnSummary;
+  onJump?: (target: TurnSummaryJumpTarget) => void;
+}) {
   const { t } = useTranslation();
 
   const total =
@@ -33,7 +60,13 @@ export function TurnSummaryChip({ summary }: { summary: StoredTurnSummary }) {
 
   if (total === 0 && !summary.continuation) return null;
 
-  const parts: { icon: typeof Bot; label: string; key: string }[] = [];
+  type Part = {
+    icon: typeof Bot;
+    label: string;
+    key: string;
+    target?: TurnSummaryJumpTarget;
+  };
+  const parts: Part[] = [];
 
   if (summary.navigations > 0) {
     parts.push({
@@ -50,6 +83,7 @@ export function TurnSummaryChip({ summary }: { summary: StoredTurnSummary }) {
         t.plugins.companion.turn_summary_approval,
         summary.approvals,
       ),
+      target: 'approvals',
     });
   }
   if (summary.labOpens > 0) {
@@ -67,6 +101,7 @@ export function TurnSummaryChip({ summary }: { summary: StoredTurnSummary }) {
         t.plugins.companion.turn_summary_dashboard,
         summary.dashboards,
       ),
+      target: 'dashboard',
     });
   }
   if (summary.cockpits > 0) {
@@ -77,6 +112,7 @@ export function TurnSummaryChip({ summary }: { summary: StoredTurnSummary }) {
         t.plugins.companion.turn_summary_cockpit,
         summary.cockpits,
       ),
+      target: 'cockpit',
     });
   }
   if (summary.chatCards > 0) {
@@ -84,6 +120,7 @@ export function TurnSummaryChip({ summary }: { summary: StoredTurnSummary }) {
       icon: Sparkles,
       key: 'card',
       label: countLabel(t.plugins.companion.turn_summary_card, summary.chatCards),
+      target: 'chatCards',
     });
   }
   if (summary.continuation) {
@@ -104,15 +141,43 @@ export function TurnSummaryChip({ summary }: { summary: StoredTurnSummary }) {
     >
       {parts.map((p, i) => {
         const Icon = p.icon;
-        return (
-          <span key={p.key} className="inline-flex items-center gap-1">
-            {i > 0 && (
-              <span aria-hidden className="text-foreground">
-                ·
-              </span>
-            )}
+        const clickable = !!onJump && !!p.target;
+        const content = (
+          <>
             <Icon className="w-3 h-3" />
             <span>{p.label}</span>
+          </>
+        );
+        const sep = i > 0 && (
+          <span aria-hidden className="text-foreground">
+            ·
+          </span>
+        );
+        if (clickable) {
+          const tooltip = t.plugins.companion.turn_summary_jump_to.replace(
+            '{label}',
+            p.label,
+          );
+          return (
+            <span key={p.key} className="inline-flex items-center gap-1">
+              {sep}
+              <button
+                type="button"
+                onClick={() => onJump!(p.target!)}
+                className="inline-flex items-center gap-1 rounded-interactive hover:bg-foreground/[0.06] hover:text-foreground/90 transition-colors focus-ring px-1 -mx-1 cursor-pointer"
+                title={tooltip}
+                aria-label={tooltip}
+                data-testid={`companion-turn-summary-jump-${p.target}`}
+              >
+                {content}
+              </button>
+            </span>
+          );
+        }
+        return (
+          <span key={p.key} className="inline-flex items-center gap-1">
+            {sep}
+            {content}
           </span>
         );
       })}
