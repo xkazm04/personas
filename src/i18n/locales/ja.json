@@ -12497,7 +12497,18 @@
       "field_description_placeholder": "このグループの目的は何ですか？",
       "field_shared_instructions": "共通の指示",
       "field_shared_instructions_hint": "このグループ内のすべてのペルソナのシステムプロンプトに追記されます。トーン、ポリシー、組織のコンテキストなどに便利です。",
-      "field_shared_instructions_placeholder": "例: 常に出典を明記すること。簡潔な回答を優先すること。"
+      "field_shared_instructions_placeholder": "例: 常に出典を明記すること。簡潔な回答を優先すること。",
+      "defaults_heading": "デフォルト",
+      "defaults_hint": "このグループに追加された新しいペルソナはこれらを継承します。既存のペルソナはそのまま維持されます。",
+      "field_default_model": "デフォルトモデル",
+      "field_default_budget": "月間予算 (USD)",
+      "field_default_budget_placeholder": "例: 50.00",
+      "field_default_turns": "実行あたりの最大ターン",
+      "field_default_turns_placeholder": "例: 12",
+      "field_model_inherit": "ペルソナから継承 (上書きなし)",
+      "field_model_haiku": "Haiku — 最速、最低コスト",
+      "field_model_sonnet": "Sonnet — バランス型",
+      "field_model_opus": "Opus — 最強"
     }
   },
   "auth": {

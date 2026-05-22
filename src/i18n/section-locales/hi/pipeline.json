@@ -171,6 +171,17 @@
     "field_description_placeholder": "यह समूह किसलिए है?",
     "field_shared_instructions": "साझा निर्देश",
     "field_shared_instructions_hint": "इस समूह के हर पर्सोना के सिस्टम प्रॉम्प्ट के साथ जोड़े जाते हैं। टोन, नीतियों, या संगठन के संदर्भ के लिए उपयोगी।",
-    "field_shared_instructions_placeholder": "जैसे हमेशा स्रोतों का हवाला दें। संक्षिप्त उत्तर प्राथमिकता दें।"
+    "field_shared_instructions_placeholder": "जैसे हमेशा स्रोतों का हवाला दें। संक्षिप्त उत्तर प्राथमिकता दें।",
+    "defaults_heading": "डिफ़ॉल्ट्स",
+    "defaults_hint": "इस समूह में जोड़े गए नए पर्सोना ये डिफ़ॉल्ट प्राप्त करते हैं। मौजूदा पर्सोना अपने पहले के मान बनाए रखते हैं।",
+    "field_default_model": "डिफ़ॉल्ट मॉडल",
+    "field_default_budget": "मासिक बजट (USD)",
+    "field_default_budget_placeholder": "उदा. 50.00",
+    "field_default_turns": "प्रति निष्पादन अधिकतम बारी",
+    "field_default_turns_placeholder": "उदा. 12",
+    "field_model_inherit": "पर्सोना से लें (कोई ओवरराइड नहीं)",
+    "field_model_haiku": "Haiku — सबसे तेज़, सबसे कम लागत",
+    "field_model_sonnet": "Sonnet — संतुलित",
+    "field_model_opus": "Opus — सबसे शक्तिशाली"
   }
 }

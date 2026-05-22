@@ -12497,7 +12497,18 @@
       "field_description_placeholder": "এই গ্রুপটি কীসের জন্য?",
       "field_shared_instructions": "ভাগাভাগি করা নির্দেশনা",
       "field_shared_instructions_hint": "এই গ্রুপের প্রতিটি পার্সোনার সিস্টেম প্রম্পটে যোগ করা হয়। সুর, নীতি, বা প্রতিষ্ঠানের প্রসঙ্গের জন্য উপযোগী।",
-      "field_shared_instructions_placeholder": "যেমন সর্বদা উৎস উল্লেখ করুন। সংক্ষিপ্ত উত্তর পছন্দ করুন।"
+      "field_shared_instructions_placeholder": "যেমন সর্বদা উৎস উল্লেখ করুন। সংক্ষিপ্ত উত্তর পছন্দ করুন।",
+      "defaults_heading": "ডিফল্ট",
+      "defaults_hint": "এই গ্রুপে যুক্ত নতুন পার্সোনা এই ডিফল্ট মান উত্তরাধিকার পায়। বিদ্যমান পার্সোনাগুলি তাদের পূর্বের মান রাখে।",
+      "field_default_model": "ডিফল্ট মডেল",
+      "field_default_budget": "মাসিক বাজেট (USD)",
+      "field_default_budget_placeholder": "যেমন 50.00",
+      "field_default_turns": "প্রতি কার্যকরে সর্বাধিক টার্ন",
+      "field_default_turns_placeholder": "যেমন 12",
+      "field_model_inherit": "পার্সোনা থেকে উত্তরাধিকার (কোনো ওভাররাইড নেই)",
+      "field_model_haiku": "Haiku — দ্রুততম, সর্বনিম্ন খরচ",
+      "field_model_sonnet": "Sonnet — সুষম",
+      "field_model_opus": "Opus — সবচেয়ে শক্তিশালী"
     }
   },
   "auth": {

@@ -12578,6 +12578,17 @@ export type Translations = {
       field_shared_instructions: string;
       field_shared_instructions_hint: string;
       field_shared_instructions_placeholder: string;
+      defaults_heading: string;
+      defaults_hint: string;
+      field_default_model: string;
+      field_default_budget: string;
+      field_default_budget_placeholder: string;
+      field_default_turns: string;
+      field_default_turns_placeholder: string;
+      field_model_inherit: string;
+      field_model_haiku: string;
+      field_model_sonnet: string;
+      field_model_opus: string;
     };
   };
   auth: {

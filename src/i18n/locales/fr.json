@@ -12497,7 +12497,18 @@
       "field_description_placeholder": "À quoi sert ce groupe ?",
       "field_shared_instructions": "Instructions partagées",
       "field_shared_instructions_hint": "Ajoutées au prompt système de chaque persona de ce groupe. Utile pour le ton, les règles ou le contexte de l'organisation.",
-      "field_shared_instructions_placeholder": "ex. Toujours citer les sources. Privilégier les réponses concises."
+      "field_shared_instructions_placeholder": "ex. Toujours citer les sources. Privilégier les réponses concises.",
+      "defaults_heading": "Valeurs par défaut",
+      "defaults_hint": "Les nouvelles personas ajoutées à ce groupe héritent de ces valeurs. Les personas existantes conservent leurs réglages actuels.",
+      "field_default_model": "Modèle par défaut",
+      "field_default_budget": "Budget mensuel (USD)",
+      "field_default_budget_placeholder": "ex. 50,00",
+      "field_default_turns": "Tours max par exécution",
+      "field_default_turns_placeholder": "ex. 12",
+      "field_model_inherit": "Hériter de la persona (sans surcharge)",
+      "field_model_haiku": "Haiku — le plus rapide, coût le plus bas",
+      "field_model_sonnet": "Sonnet — équilibré",
+      "field_model_opus": "Opus — le plus puissant"
     }
   },
   "auth": {

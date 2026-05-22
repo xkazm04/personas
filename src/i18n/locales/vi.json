@@ -12497,7 +12497,18 @@
       "field_description_placeholder": "Nhóm này dùng để làm gì?",
       "field_shared_instructions": "Hướng dẫn dùng chung",
       "field_shared_instructions_hint": "Được thêm vào prompt hệ thống của mọi persona trong nhóm này. Hữu ích cho giọng văn, chính sách, hoặc bối cảnh tổ chức.",
-      "field_shared_instructions_placeholder": "ví dụ: Luôn trích dẫn nguồn. Ưu tiên câu trả lời ngắn gọn."
+      "field_shared_instructions_placeholder": "ví dụ: Luôn trích dẫn nguồn. Ưu tiên câu trả lời ngắn gọn.",
+      "defaults_heading": "Mặc định",
+      "defaults_hint": "Persona mới được thêm vào nhóm này sẽ kế thừa các giá trị này. Persona hiện tại giữ nguyên giá trị hiện có.",
+      "field_default_model": "Mô hình mặc định",
+      "field_default_budget": "Ngân sách hàng tháng (USD)",
+      "field_default_budget_placeholder": "ví dụ 50.00",
+      "field_default_turns": "Lượt tối đa mỗi lần chạy",
+      "field_default_turns_placeholder": "ví dụ 12",
+      "field_model_inherit": "Kế thừa từ persona (không ghi đè)",
+      "field_model_haiku": "Haiku — nhanh nhất, chi phí thấp nhất",
+      "field_model_sonnet": "Sonnet — cân bằng",
+      "field_model_opus": "Opus — mạnh nhất"
     }
   },
   "auth": {

@@ -171,6 +171,17 @@
     "field_description_placeholder": "Untuk apa grup ini?",
     "field_shared_instructions": "Instruksi bersama",
     "field_shared_instructions_hint": "Ditambahkan ke prompt sistem setiap persona dalam grup ini. Berguna untuk nada, kebijakan, atau konteks organisasi.",
-    "field_shared_instructions_placeholder": "mis. Selalu kutip sumber. Lebih sukai jawaban yang ringkas."
+    "field_shared_instructions_placeholder": "mis. Selalu kutip sumber. Lebih sukai jawaban yang ringkas.",
+    "defaults_heading": "Default",
+    "defaults_hint": "Persona baru di grup ini mewarisi nilai-nilai ini. Persona yang sudah ada tetap dengan nilai sebelumnya.",
+    "field_default_model": "Model default",
+    "field_default_budget": "Anggaran bulanan (USD)",
+    "field_default_budget_placeholder": "misal 50.00",
+    "field_default_turns": "Maks giliran per eksekusi",
+    "field_default_turns_placeholder": "misal 12",
+    "field_model_inherit": "Warisi dari persona (tanpa override)",
+    "field_model_haiku": "Haiku — tercepat, biaya terendah",
+    "field_model_sonnet": "Sonnet — seimbang",
+    "field_model_opus": "Opus — terkuat"
   }
 }

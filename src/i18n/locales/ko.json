@@ -12497,7 +12497,18 @@
       "field_description_placeholder": "이 그룹의 용도는 무엇인가요?",
       "field_shared_instructions": "공통 지침",
       "field_shared_instructions_hint": "이 그룹의 모든 페르소나 시스템 프롬프트에 추가됩니다. 톤, 정책 또는 조직 컨텍스트를 지정할 때 유용합니다.",
-      "field_shared_instructions_placeholder": "예: 항상 출처를 인용하세요. 간결한 답변을 선호합니다."
+      "field_shared_instructions_placeholder": "예: 항상 출처를 인용하세요. 간결한 답변을 선호합니다.",
+      "defaults_heading": "기본값",
+      "defaults_hint": "이 그룹에 추가된 새 페르소나는 이 값을 상속받습니다. 기존 페르소나는 기존 값을 유지합니다.",
+      "field_default_model": "기본 모델",
+      "field_default_budget": "월 예산 (USD)",
+      "field_default_budget_placeholder": "예: 50.00",
+      "field_default_turns": "실행당 최대 턴",
+      "field_default_turns_placeholder": "예: 12",
+      "field_model_inherit": "페르소나에서 상속 (재정의 없음)",
+      "field_model_haiku": "Haiku — 가장 빠름, 가장 저렴",
+      "field_model_sonnet": "Sonnet — 균형",
+      "field_model_opus": "Opus — 가장 강력"
     }
   },
   "auth": {

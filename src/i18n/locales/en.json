@@ -12571,7 +12571,18 @@
       "field_description_placeholder": "What is this group for?",
       "field_shared_instructions": "Shared instructions",
       "field_shared_instructions_hint": "Appended to every persona's system prompt in this group. Useful for tone, policies, or organization context.",
-      "field_shared_instructions_placeholder": "e.g. Always cite sources. Prefer concise answers."
+      "field_shared_instructions_placeholder": "e.g. Always cite sources. Prefer concise answers.",
+      "defaults_heading": "Defaults",
+      "defaults_hint": "New personas added to this group inherit these. Existing personas keep whatever they already have.",
+      "field_default_model": "Default model",
+      "field_default_budget": "Monthly budget (USD)",
+      "field_default_budget_placeholder": "e.g. 50.00",
+      "field_default_turns": "Max turns per execution",
+      "field_default_turns_placeholder": "e.g. 12",
+      "field_model_inherit": "Inherit from persona (no override)",
+      "field_model_haiku": "Haiku — fastest, lowest cost",
+      "field_model_sonnet": "Sonnet — balanced",
+      "field_model_opus": "Opus — strongest"
     }
   },
   "auth": {

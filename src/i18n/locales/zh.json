@@ -12497,7 +12497,18 @@
       "field_description_placeholder": "此分组用于什么？",
       "field_shared_instructions": "共享指令",
       "field_shared_instructions_hint": "附加到此分组中每个角色的系统提示词。适用于语气、政策或组织上下文。",
-      "field_shared_instructions_placeholder": "例如：始终注明出处。优先简洁的回答。"
+      "field_shared_instructions_placeholder": "例如：始终注明出处。优先简洁的回答。",
+      "defaults_heading": "默认值",
+      "defaults_hint": "添加到此分组的新人格会继承这些默认值。现有人格保留其原有设置。",
+      "field_default_model": "默认模型",
+      "field_default_budget": "月度预算 (美元)",
+      "field_default_budget_placeholder": "例如 50.00",
+      "field_default_turns": "每次执行的最大轮次",
+      "field_default_turns_placeholder": "例如 12",
+      "field_model_inherit": "继承自人格 (不覆盖)",
+      "field_model_haiku": "Haiku — 最快, 成本最低",
+      "field_model_sonnet": "Sonnet — 均衡",
+      "field_model_opus": "Opus — 最强"
     }
   },
   "auth": {
