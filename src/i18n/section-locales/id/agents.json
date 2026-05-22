@@ -2451,6 +2451,7 @@
     "chip_title": "Letakkan kartu persona di sini untuk menetapkannya ke grup ini",
     "ungrouped_label": "Tanpa grup",
     "ungrouped_title": "Letakkan kartu persona di sini untuk menghapus ikatan grup-nya",
-    "moved_toast": "{persona} dipindahkan ke {group}"
+    "moved_toast": "{persona} dipindahkan ke {group}",
+    "filter_clear_title": "Klik untuk menghapus filter ini"
   }
 }

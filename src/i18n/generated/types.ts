@@ -477,6 +477,7 @@ export type Translations = {
       ungrouped_label: string;
       ungrouped_title: string;
       moved_toast: string;
+      filter_clear_title: string;
     };
     overview: {
       title: string;

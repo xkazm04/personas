@@ -467,10 +467,11 @@
     "persona_groups_rail": {
       "aria_label": "Persona group drop targets",
       "heading": "Groups",
-      "chip_title": "Drop a persona card here to assign it to this group",
+      "chip_title": "Click to filter to this group, or drop a persona card to assign it here",
       "ungrouped_label": "Ungrouped",
-      "ungrouped_title": "Drop a persona card here to clear its group binding",
-      "moved_toast": "Moved {persona} to {group}"
+      "ungrouped_title": "Click to show only ungrouped personas, or drop a card to clear its group",
+      "moved_toast": "Moved {persona} to {group}",
+      "filter_clear_title": "Click to clear this filter"
     },
     "overview": {
       "title": "My Agents",

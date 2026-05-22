@@ -2451,6 +2451,7 @@
     "chip_title": "ペルソナカードをここにドロップしてこのグループに割り当てます",
     "ungrouped_label": "グループなし",
     "ungrouped_title": "ペルソナカードをここにドロップしてグループ割り当てを解除します",
-    "moved_toast": "{persona} を {group} に移動しました"
+    "moved_toast": "{persona} を {group} に移動しました",
+    "filter_clear_title": "クリックしてこのフィルターを解除"
   }
 }

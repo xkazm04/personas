@@ -2451,6 +2451,7 @@
     "chip_title": "将人格卡片拖到此处以分配到此分组",
     "ungrouped_label": "未分组",
     "ungrouped_title": "将人格卡片拖到此处以清除其分组",
-    "moved_toast": "已将 {persona} 移至 {group}"
+    "moved_toast": "已将 {persona} 移至 {group}",
+    "filter_clear_title": "点击以清除此筛选"
   }
 }

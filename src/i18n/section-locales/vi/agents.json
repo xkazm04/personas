@@ -2451,6 +2451,7 @@
     "chip_title": "Thả thẻ persona vào đây để gán nó vào nhóm này",
     "ungrouped_label": "Không nhóm",
     "ungrouped_title": "Thả thẻ persona vào đây để xóa ràng buộc nhóm của nó",
-    "moved_toast": "Đã chuyển {persona} sang {group}"
+    "moved_toast": "Đã chuyển {persona} sang {group}",
+    "filter_clear_title": "Nhấp để xóa bộ lọc này"
   }
 }

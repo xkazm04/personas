@@ -2847,7 +2847,8 @@
       "chip_title": "Déposez une carte de persona ici pour l'assigner à ce groupe",
       "ungrouped_label": "Sans groupe",
       "ungrouped_title": "Déposez une carte de persona ici pour supprimer son lien de groupe",
-      "moved_toast": "{persona} déplacée vers {group}"
+      "moved_toast": "{persona} déplacée vers {group}",
+      "filter_clear_title": "Cliquez pour effacer ce filtre"
     }
   },
   "vault": {

@@ -2847,7 +2847,8 @@
       "chip_title": "Sem upusťte kartu persony pro přiřazení do této skupiny",
       "ungrouped_label": "Bez skupiny",
       "ungrouped_title": "Sem upusťte kartu persony pro odstranění její vazby na skupinu",
-      "moved_toast": "{persona} přesunuta do {group}"
+      "moved_toast": "{persona} přesunuta do {group}",
+      "filter_clear_title": "Kliknutím vymažete tento filtr"
     }
   },
   "vault": {

@@ -2847,7 +2847,8 @@
       "chip_title": "اسحب بطاقة شخصية إلى هنا لإسنادها إلى هذه المجموعة",
       "ungrouped_label": "بدون مجموعة",
       "ungrouped_title": "اسحب بطاقة شخصية هنا لإزالة ارتباط المجموعة",
-      "moved_toast": "تم نقل {persona} إلى {group}"
+      "moved_toast": "تم نقل {persona} إلى {group}",
+      "filter_clear_title": "انقر لمسح هذا التصفية"
     }
   },
   "vault": {

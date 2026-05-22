@@ -2847,7 +2847,8 @@
       "chip_title": "이 그룹에 할당하려면 페르소나 카드를 여기에 놓으세요",
       "ungrouped_label": "그룹 없음",
       "ungrouped_title": "그룹 바인딩을 제거하려면 페르소나 카드를 여기에 놓으세요",
-      "moved_toast": "{persona}을(를) {group}(으)로 이동했습니다"
+      "moved_toast": "{persona}을(를) {group}(으)로 이동했습니다",
+      "filter_clear_title": "이 필터를 지우려면 클릭"
     }
   },
   "vault": {

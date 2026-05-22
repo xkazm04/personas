@@ -25,6 +25,12 @@ interface UsePersonaListFiltersArgs {
   isBuilding: (id: string) => boolean;
   isDraft: (p: Persona) => boolean;
   isFavorite: (id: string) => boolean;
+  /**
+   * Group-id filter from PersonaGroupDropRail (cycle 19). `null` =
+   * unfiltered; a group id narrows to members of that group; the literal
+   * `'__ungrouped__'` narrows to personas without `group_id`.
+   */
+  groupFilter: string | null;
 }
 
 export interface UsePersonaListFiltersResult {
@@ -52,6 +58,7 @@ export function usePersonaListFilters({
   isBuilding,
   isDraft,
   isFavorite,
+  groupFilter,
 }: UsePersonaListFiltersArgs): UsePersonaListFiltersResult {
   const { statusFilter, healthFilter, connectorFilter, favoriteOnly, sortKey, sortDirection } = view;
 
@@ -137,6 +144,13 @@ export function usePersonaListFilters({
     // Favorites
     if (favoriteOnly) result = result.filter((p) => isFavorite(p.id));
 
+    // Group (PersonaGroupDropRail chip selection — cycle 19)
+    if (groupFilter === '__ungrouped__') {
+      result = result.filter((p) => !p.group_id);
+    } else if (groupFilter) {
+      result = result.filter((p) => p.group_id === groupFilter);
+    }
+
     return result;
   }, [
     sortedPersonas,
@@ -150,6 +164,7 @@ export function usePersonaListFilters({
     isFavorite,
     healthMap,
     connectorNamesMap,
+    groupFilter,
   ]);
 
   return { data, connectorNamesMap, allConnectorNames };

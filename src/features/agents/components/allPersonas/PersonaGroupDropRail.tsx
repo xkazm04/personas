@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Layers, Users } from 'lucide-react';
+import { Layers, Users, X } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from '@/stores/agentStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
@@ -8,19 +8,38 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import { silentCatch } from '@/lib/silentCatch';
 
-const PERSONA_DRAG_MIME = 'application/x-personas-persona-id';
+export const PERSONA_DRAG_MIME = 'application/x-personas-persona-id';
+
+interface PersonaGroupDropRailProps {
+  /**
+   * Controlled filter id. `null` = all groups visible (no filter applied
+   * to the persona list); a group id selects that chip; `'__ungrouped__'`
+   * selects the trailing Ungrouped chip.
+   */
+  filterId?: string | null;
+  /** Called when the user clicks a chip to toggle the filter. */
+  onSelectFilter?: (filterId: string | null) => void;
+}
 
 /**
- * Horizontal rail of group chips that act as drop targets for persona
- * cards dragged from `PersonaOverviewVariantGrid`. Each chip carries the
- * group's color stripe and current count; a trailing "Ungrouped" chip
- * lets the user clear `group_id` by dropping a persona there.
+ * Horizontal rail of group chips that serve two roles (cycles 12 + 19):
+ *
+ *   1. Drop targets for persona cards dragged from any DnD-enabled
+ *      persona-overview layout — drops call `movePersonaToGroup` and
+ *      change the persona's `group_id`.
+ *
+ *   2. Click filters that narrow the persona list to that group. Selecting
+ *      a chip lights it with a thicker ring + a small "clear" X that
+ *      removes the filter on click. Only one filter is active at a time.
  *
  * Renders only when at least one group exists OR a persona is currently
  * grouped — there's no point showing the rail in a vanilla install with
  * no groups configured.
  */
-export function PersonaGroupDropRail() {
+export function PersonaGroupDropRail({
+  filterId = null,
+  onSelectFilter,
+}: PersonaGroupDropRailProps = {}) {
   const { t, tx } = useTranslation();
   const personas = useAgentStore((s) => s.personas);
   const movePersonaToGroup = usePipelineStore((s) => s.movePersonaToGroup);
@@ -98,6 +117,17 @@ export function PersonaGroupDropRail() {
     },
   });
 
+  /**
+   * Toggle the chip's filter state. Clicking the currently-selected chip
+   * clears the filter (single-chip semantics — pivot on group, not multi-
+   * select). When no callback is wired (rail used purely as drop targets),
+   * clicks are inert.
+   */
+  const handleChipClick = (chipId: string) => {
+    if (!onSelectFilter) return;
+    onSelectFilter(filterId === chipId ? null : chipId);
+  };
+
   return (
     <div
       role="region"
@@ -110,39 +140,58 @@ export function PersonaGroupDropRail() {
       </span>
       {sortedGroups.map((g) => {
         const isHover = hoverId === g.id;
+        const isActive = filterId === g.id;
         const count = countByGroup.get(g.id) ?? 0;
+        const tone = isHover || isActive ? 0.7 : 0.4;
+        const bgAlpha = isHover ? 0.25 : isActive ? 0.2 : 0.12;
         return (
-          <div
+          <button
             key={g.id}
+            type="button"
+            onClick={() => handleChipClick(g.id)}
+            aria-pressed={isActive}
             {...dragOverProps(g.id)}
             onDrop={(e) => handleDrop(g.id, e)}
-            className={`group/chip inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border typo-caption font-medium flex-shrink-0 transition-all ${
+            className={`group/chip inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border typo-caption font-medium flex-shrink-0 transition-all cursor-pointer ${
               isHover ? 'scale-105 ring-2 ring-offset-1 ring-offset-background' : ''
-            }`}
+            } ${isActive ? 'ring-1 ring-offset-1 ring-offset-background shadow-elevation-1' : ''}`}
             style={{
-              backgroundColor: colorWithAlpha(g.color || '#6366f1', isHover ? 0.25 : 0.12),
-              borderColor: colorWithAlpha(g.color || '#6366f1', isHover ? 0.7 : 0.4),
+              backgroundColor: colorWithAlpha(g.color || '#6366f1', bgAlpha),
+              borderColor: colorWithAlpha(g.color || '#6366f1', tone),
               color: g.color || '#6366f1',
             }}
-            title={t.agents.persona_groups_rail.chip_title}
+            title={
+              isActive
+                ? t.agents.persona_groups_rail.filter_clear_title
+                : t.agents.persona_groups_rail.chip_title
+            }
           >
             <Users className="w-3 h-3" />
             <span>{g.name}</span>
             <span className="text-foreground/60 typo-label font-mono">{count}</span>
-          </div>
+            {isActive && <X className="w-3 h-3" />}
+          </button>
         );
       })}
-      <div
+      <button
+        type="button"
+        onClick={() => handleChipClick('__ungrouped__')}
+        aria-pressed={filterId === '__ungrouped__'}
         {...dragOverProps('__ungrouped__')}
         onDrop={(e) => handleDrop(null, e)}
-        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-primary/15 bg-secondary/30 typo-caption font-medium text-foreground flex-shrink-0 transition-all ${
+        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-primary/15 bg-secondary/30 typo-caption font-medium text-foreground flex-shrink-0 transition-all cursor-pointer ${
           hoverId === '__ungrouped__' ? 'scale-105 ring-2 ring-offset-1 ring-offset-background ring-foreground/40' : ''
-        }`}
-        title={t.agents.persona_groups_rail.ungrouped_title}
+        } ${filterId === '__ungrouped__' ? 'ring-1 ring-offset-1 ring-offset-background ring-foreground/40 shadow-elevation-1' : ''}`}
+        title={
+          filterId === '__ungrouped__'
+            ? t.agents.persona_groups_rail.filter_clear_title
+            : t.agents.persona_groups_rail.ungrouped_title
+        }
       >
         <span>{t.agents.persona_groups_rail.ungrouped_label}</span>
         <span className="text-foreground/60 typo-label font-mono">{ungroupedCount}</span>
-      </div>
+        {filterId === '__ungrouped__' && <X className="w-3 h-3" />}
+      </button>
     </div>
   );
 }

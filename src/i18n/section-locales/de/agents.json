@@ -2451,6 +2451,7 @@
     "chip_title": "Eine Persona-Karte hier ablegen, um sie dieser Gruppe zuzuweisen",
     "ungrouped_label": "Ohne Gruppe",
     "ungrouped_title": "Eine Persona-Karte hier ablegen, um ihre Gruppenzuordnung zu entfernen",
-    "moved_toast": "{persona} nach {group} verschoben"
+    "moved_toast": "{persona} nach {group} verschoben",
+    "filter_clear_title": "Klicken, um diesen Filter zu löschen"
   }
 }

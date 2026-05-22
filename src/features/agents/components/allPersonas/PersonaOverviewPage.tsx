@@ -63,6 +63,11 @@ export default function PersonaOverviewPage() {
   const [search, setSearch] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [layout, setLayout] = useState<LayoutVariant>(readPersistedLayout);
+  // Group filter from PersonaGroupDropRail (cycle 19). null = unfiltered;
+  // a group id narrows to members; `'__ungrouped__'` narrows to no-group
+  // personas. Lives here rather than in `AgentListViewConfig` because the
+  // rail owns the toggle UX and it doesn't belong in the saved view preset.
+  const [groupFilter, setGroupFilter] = useState<string | null>(null);
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -86,6 +91,7 @@ export default function PersonaOverviewPage() {
 
   const { data: filteredData, connectorNamesMap, allConnectorNames } = usePersonaListFilters({
     personas, view, search, triggerCounts, lastRunMap, healthMap, isBuilding, isDraft, isFavorite,
+    groupFilter,
   });
 
   const { modal, handleBatchDelete, handleDeleteDrafts, draftIds } =
@@ -186,8 +192,12 @@ export default function PersonaOverviewPage() {
             persona elements (cycle 16): grid + baseline DataGrid + mobile
             card-list. Constellation is SVG-based; HTML5 DnD on SVG nodes
             needs polyfilling, so it's skipped — opening a persona via the
-            constellation dossier still lets the user rebind via the editor. */}
-        {layout !== 'constellation' && <PersonaGroupDropRail />}
+            constellation dossier still lets the user rebind via the editor.
+            Cycle 19: the rail is now also a CLICK FILTER — chips select on
+            tap and the persona list narrows. */}
+        {layout !== 'constellation' && (
+          <PersonaGroupDropRail filterId={groupFilter} onSelectFilter={setGroupFilter} />
+        )}
 
         {filteredData.length === 0 && hasActiveFilter ? (
           <PersonaOverviewEmptyState onResetFilters={handleResetFilters} />
