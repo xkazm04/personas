@@ -14,6 +14,7 @@ use tauri_plugin_dialog::DialogExt;
 use ts_rs::TS;
 
 use crate::db::repos::communication::events as event_repo;
+use crate::engine::persona_icon::export_safe_icon;
 use crate::db::repos::core::{
     groups as group_repo, memories as memory_repo, personas as persona_repo,
 };
@@ -646,7 +647,9 @@ fn build_export_bundle(pool: &DbPool, scope: ExportScope) -> Result<PortabilityB
             description: p.description.clone(),
             system_prompt: p.system_prompt.clone(),
             structured_prompt: p.structured_prompt.clone(),
-            icon: p.icon.clone(),
+            // Custom icons are local-only files — downgrade to a built-in so
+            // the exported persona doesn't carry a dead reference.
+            icon: export_safe_icon(p.icon.as_deref(), p.template_category.as_deref()),
             color: p.color.clone(),
             max_concurrent: p.max_concurrent,
             timeout_ms: p.timeout_ms,
@@ -752,7 +755,7 @@ fn build_export_bundle(pool: &DbPool, scope: ExportScope) -> Result<PortabilityB
             description: t.description.clone(),
             canvas_data: t.canvas_data.clone(),
             team_config: t.team_config.clone(),
-            icon: t.icon.clone(),
+            icon: export_safe_icon(t.icon.as_deref(), None),
             members: members
                 .iter()
                 .map(|m| TeamMemberExport {

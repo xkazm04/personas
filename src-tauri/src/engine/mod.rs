@@ -122,6 +122,7 @@ pub mod output_assertions;
 pub mod p2p;
 pub mod parser;
 pub mod path_safety;
+pub mod persona_icon;
 pub mod persona_jobs;
 pub mod pipeline;
 pub mod pipeline_executor;

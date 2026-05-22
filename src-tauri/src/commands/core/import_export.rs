@@ -170,7 +170,11 @@ pub async fn export_persona(
             description: persona.description,
             system_prompt: persona.system_prompt,
             structured_prompt: persona.structured_prompt,
-            icon: persona.icon,
+            // Custom icons are local-only files — downgrade to a built-in.
+            icon: crate::engine::persona_icon::export_safe_icon(
+                persona.icon.as_deref(),
+                persona.template_category.as_deref(),
+            ),
             color: persona.color,
             max_concurrent: persona.max_concurrent,
             timeout_ms: persona.timeout_ms,
@@ -399,7 +403,11 @@ pub async fn import_persona(
             project_id: None,
             description: p.description.clone(),
             structured_prompt: p.structured_prompt.clone(),
-            icon: p.icon.clone(),
+            // Defensive: a bundle exported before the export-side downgrade
+            // existed may still carry a `custom-icon:` value the importer has
+            // no file for. Downgrade on import too. (No template_category on
+            // the export struct → falls back to the default built-in.)
+            icon: crate::engine::persona_icon::export_safe_icon(p.icon.as_deref(), None),
             color: p.color.clone(),
             enabled: Some(false),
             max_concurrent: Some(p.max_concurrent),

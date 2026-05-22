@@ -220,6 +220,12 @@ pub fn export_bundle(
             match persona_repo::get_by_id(pool, &resource.resource_id) {
                 Ok(persona) => {
                     let mut value = serde_json::to_value(&persona)?;
+                    // Custom icons are local-only files — downgrade to a
+                    // built-in so the bundle doesn't ship a dead reference.
+                    crate::engine::persona_icon::downgrade_custom_icon_field(
+                        &mut value,
+                        persona.template_category.as_deref(),
+                    );
                     filter_fields(&mut value, &resource);
                     persona_data.push((resource.resource_id.clone(), value));
                 }
