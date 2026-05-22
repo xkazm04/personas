@@ -2840,7 +2840,15 @@
     },
     "persona_decisions_footer_one": "1 design decision Athena logged",
     "persona_decisions_footer_many": "{count} design decisions Athena logged",
-    "persona_decisions_footer_open_audit": "Open audit"
+    "persona_decisions_footer_open_audit": "Open audit",
+    "persona_groups_rail": {
+      "aria_label": "पर्सोना समूह ड्रॉप लक्ष्य",
+      "heading": "समूह",
+      "chip_title": "इस समूह में असाइन करने के लिए पर्सोना कार्ड यहाँ छोड़ें",
+      "ungrouped_label": "बिना समूह",
+      "ungrouped_title": "समूह बंधन हटाने के लिए पर्सोना कार्ड यहाँ छोड़ें",
+      "moved_toast": "{persona} को {group} में स्थानांतरित किया गया"
+    }
   },
   "vault": {
     "title": "वॉल्ट",

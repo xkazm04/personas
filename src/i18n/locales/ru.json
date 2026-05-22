@@ -2840,7 +2840,15 @@
     },
     "persona_decisions_footer_one": "1 design decision Athena logged",
     "persona_decisions_footer_many": "{count} design decisions Athena logged",
-    "persona_decisions_footer_open_audit": "Open audit"
+    "persona_decisions_footer_open_audit": "Open audit",
+    "persona_groups_rail": {
+      "aria_label": "Цели сброса для групп персон",
+      "heading": "Группы",
+      "chip_title": "Перетащите карточку персоны сюда, чтобы назначить её этой группе",
+      "ungrouped_label": "Без группы",
+      "ungrouped_title": "Перетащите карточку персоны сюда, чтобы очистить её привязку к группе",
+      "moved_toast": "{persona} перемещена в {group}"
+    }
   },
   "vault": {
     "title": "Хранилище",

@@ -464,6 +464,14 @@
     "persona_decisions_footer_one": "1 design decision Athena logged",
     "persona_decisions_footer_many": "{count} design decisions Athena logged",
     "persona_decisions_footer_open_audit": "Open audit",
+    "persona_groups_rail": {
+      "aria_label": "Persona group drop targets",
+      "heading": "Groups",
+      "chip_title": "Drop a persona card here to assign it to this group",
+      "ungrouped_label": "Ungrouped",
+      "ungrouped_title": "Drop a persona card here to clear its group binding",
+      "moved_toast": "Moved {persona} to {group}"
+    },
     "overview": {
       "title": "My Agents",
       "subtitle_one": "{count} agent -- sorted by relevance",

@@ -2444,5 +2444,13 @@
   },
   "persona_decisions_footer_one": "1 design decision Athena logged",
   "persona_decisions_footer_many": "{count} design decisions Athena logged",
-  "persona_decisions_footer_open_audit": "Open audit"
+  "persona_decisions_footer_open_audit": "Open audit",
+  "persona_groups_rail": {
+    "aria_label": "পার্সোনা গ্রুপ ড্রপ লক্ষ্য",
+    "heading": "গ্রুপ",
+    "chip_title": "এই গ্রুপে নিযুক্ত করতে এখানে একটি পার্সোনা কার্ড ছাড়ুন",
+    "ungrouped_label": "গ্রুপবিহীন",
+    "ungrouped_title": "এর গ্রুপ বাঁধন সাফ করতে এখানে একটি পার্সোনা কার্ড ছাড়ুন",
+    "moved_toast": "{persona} {group}-এ সরানো হয়েছে"
+  }
 }

@@ -11,6 +11,7 @@ import { DEFAULT_VIEW_CONFIG, type AgentListViewConfig } from './ViewPresetBar';
 import { PersonaOverviewBatchBar } from './PersonaOverviewBatchBar';
 import { PersonaOverviewToolbar } from './PersonaOverviewToolbar';
 import { PersonaOverviewCardList } from './PersonaOverviewCardList';
+import { PersonaGroupDropRail } from './PersonaGroupDropRail';
 import { PersonaOverviewEmptyState } from './PersonaOverviewEmptyState';
 import { PersonaOverviewVariantGrid } from './PersonaOverviewVariantGrid';
 import { PersonaOverviewVariantConstellation } from './PersonaOverviewVariantConstellation';
@@ -181,6 +182,7 @@ export default function PersonaOverviewPage() {
           <PersonaOverviewToolbar search={search} onSearchChange={setSearch} view={view} onViewChange={setView} />
           {!isMobile && <LayoutModeTabs value={layout} onChange={setLayout} />}
         </div>
+        {!isMobile && layout === 'grid' && <PersonaGroupDropRail />}
 
         {filteredData.length === 0 && hasActiveFilter ? (
           <PersonaOverviewEmptyState onResetFilters={handleResetFilters} />

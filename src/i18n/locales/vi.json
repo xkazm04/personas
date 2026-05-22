@@ -2840,7 +2840,15 @@
     },
     "persona_decisions_footer_one": "1 design decision Athena logged",
     "persona_decisions_footer_many": "{count} design decisions Athena logged",
-    "persona_decisions_footer_open_audit": "Open audit"
+    "persona_decisions_footer_open_audit": "Open audit",
+    "persona_groups_rail": {
+      "aria_label": "Mục tiêu thả nhóm persona",
+      "heading": "Nhóm",
+      "chip_title": "Thả thẻ persona vào đây để gán nó vào nhóm này",
+      "ungrouped_label": "Không nhóm",
+      "ungrouped_title": "Thả thẻ persona vào đây để xóa ràng buộc nhóm của nó",
+      "moved_toast": "Đã chuyển {persona} sang {group}"
+    }
   },
   "vault": {
     "title": "Kho lưu trữ",

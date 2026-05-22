@@ -2444,5 +2444,13 @@
   },
   "persona_decisions_footer_one": "1 design decision Athena logged",
   "persona_decisions_footer_many": "{count} design decisions Athena logged",
-  "persona_decisions_footer_open_audit": "Open audit"
+  "persona_decisions_footer_open_audit": "Open audit",
+  "persona_groups_rail": {
+    "aria_label": "人格分组放置目标",
+    "heading": "分组",
+    "chip_title": "将人格卡片拖到此处以分配到此分组",
+    "ungrouped_label": "未分组",
+    "ungrouped_title": "将人格卡片拖到此处以清除其分组",
+    "moved_toast": "已将 {persona} 移至 {group}"
+  }
 }

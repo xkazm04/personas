@@ -2444,5 +2444,13 @@
   },
   "persona_decisions_footer_one": "1 design decision Athena logged",
   "persona_decisions_footer_many": "{count} design decisions Athena logged",
-  "persona_decisions_footer_open_audit": "Open audit"
+  "persona_decisions_footer_open_audit": "Open audit",
+  "persona_groups_rail": {
+    "aria_label": "Cibles de dépôt pour les groupes de personas",
+    "heading": "Groupes",
+    "chip_title": "Déposez une carte de persona ici pour l'assigner à ce groupe",
+    "ungrouped_label": "Sans groupe",
+    "ungrouped_title": "Déposez une carte de persona ici pour supprimer son lien de groupe",
+    "moved_toast": "{persona} déplacée vers {group}"
+  }
 }

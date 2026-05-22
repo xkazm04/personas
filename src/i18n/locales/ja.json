@@ -2840,7 +2840,15 @@
     },
     "persona_decisions_footer_one": "1 design decision Athena logged",
     "persona_decisions_footer_many": "{count} design decisions Athena logged",
-    "persona_decisions_footer_open_audit": "Open audit"
+    "persona_decisions_footer_open_audit": "Open audit",
+    "persona_groups_rail": {
+      "aria_label": "ペルソナグループのドロップ先",
+      "heading": "グループ",
+      "chip_title": "ペルソナカードをここにドロップしてこのグループに割り当てます",
+      "ungrouped_label": "グループなし",
+      "ungrouped_title": "ペルソナカードをここにドロップしてグループ割り当てを解除します",
+      "moved_toast": "{persona} を {group} に移動しました"
+    }
   },
   "vault": {
     "title": "保管庫",

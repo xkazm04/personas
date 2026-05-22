@@ -2444,5 +2444,13 @@
   },
   "persona_decisions_footer_one": "1 design decision Athena logged",
   "persona_decisions_footer_many": "{count} design decisions Athena logged",
-  "persona_decisions_footer_open_audit": "Open audit"
+  "persona_decisions_footer_open_audit": "Open audit",
+  "persona_groups_rail": {
+    "aria_label": "페르소나 그룹 드롭 대상",
+    "heading": "그룹",
+    "chip_title": "이 그룹에 할당하려면 페르소나 카드를 여기에 놓으세요",
+    "ungrouped_label": "그룹 없음",
+    "ungrouped_title": "그룹 바인딩을 제거하려면 페르소나 카드를 여기에 놓으세요",
+    "moved_toast": "{persona}을(를) {group}(으)로 이동했습니다"
+  }
 }

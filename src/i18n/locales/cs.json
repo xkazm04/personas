@@ -2840,7 +2840,15 @@
     },
     "persona_decisions_footer_one": "1 design decision Athena logged",
     "persona_decisions_footer_many": "{count} design decisions Athena logged",
-    "persona_decisions_footer_open_audit": "Open audit"
+    "persona_decisions_footer_open_audit": "Open audit",
+    "persona_groups_rail": {
+      "aria_label": "Cíle pro upuštění skupin person",
+      "heading": "Skupiny",
+      "chip_title": "Sem upusťte kartu persony pro přiřazení do této skupiny",
+      "ungrouped_label": "Bez skupiny",
+      "ungrouped_title": "Sem upusťte kartu persony pro odstranění její vazby na skupinu",
+      "moved_toast": "{persona} přesunuta do {group}"
+    }
   },
   "vault": {
     "title": "Trezor",

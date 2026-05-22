@@ -2840,7 +2840,15 @@
     },
     "persona_decisions_footer_one": "1 design decision Athena logged",
     "persona_decisions_footer_many": "{count} design decisions Athena logged",
-    "persona_decisions_footer_open_audit": "Open audit"
+    "persona_decisions_footer_open_audit": "Open audit",
+    "persona_groups_rail": {
+      "aria_label": "Drop-Ziele für Persona-Gruppen",
+      "heading": "Gruppen",
+      "chip_title": "Eine Persona-Karte hier ablegen, um sie dieser Gruppe zuzuweisen",
+      "ungrouped_label": "Ohne Gruppe",
+      "ungrouped_title": "Eine Persona-Karte hier ablegen, um ihre Gruppenzuordnung zu entfernen",
+      "moved_toast": "{persona} nach {group} verschoben"
+    }
   },
   "vault": {
     "title": "Tresor",

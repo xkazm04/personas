@@ -470,6 +470,14 @@ export type Translations = {
     persona_decisions_footer_one: string;
     persona_decisions_footer_many: string;
     persona_decisions_footer_open_audit: string;
+    persona_groups_rail: {
+      aria_label: string;
+      heading: string;
+      chip_title: string;
+      ungrouped_label: string;
+      ungrouped_title: string;
+      moved_toast: string;
+    };
     overview: {
       title: string;
       subtitle_one: string;

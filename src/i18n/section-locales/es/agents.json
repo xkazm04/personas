@@ -2444,5 +2444,13 @@
   },
   "persona_decisions_footer_one": "1 design decision Athena logged",
   "persona_decisions_footer_many": "{count} design decisions Athena logged",
-  "persona_decisions_footer_open_audit": "Open audit"
+  "persona_decisions_footer_open_audit": "Open audit",
+  "persona_groups_rail": {
+    "aria_label": "Destinos de soltar para grupos de personas",
+    "heading": "Grupos",
+    "chip_title": "Suelta una tarjeta de persona aquí para asignarla a este grupo",
+    "ungrouped_label": "Sin grupo",
+    "ungrouped_title": "Suelta una tarjeta de persona aquí para quitar su vínculo de grupo",
+    "moved_toast": "{persona} movida a {group}"
+  }
 }
