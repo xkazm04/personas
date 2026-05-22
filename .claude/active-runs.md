@@ -33,6 +33,30 @@ timestamp — the next session can recognize it as abandoned.
 ## Active
 
 
+- **[2026-05-22 21:12 — started] /friend — settings (endless development loop)**
+  - **Source:** `/friend` with explicit path `src\features\settings` → resolved to platform area, scope restricted to settings
+  - **Paths:** `src/features/settings/` (EXCLUDING `sub_appearance/` to coexist with stale 2026-05-16 friend-theming session), `src/i18n/locales/en.json` (additive `settings.*` keys only — coordinate with concurrent /friend-twin, /friend-companion on disjoint sub-trees), 13 non-English locale files for parity, `docs/features/settings/README.md`
+  - **Status:** started
+  - **Branch:** `worktree-friend-settings-211251`
+  - **Worktree:** `.claude/worktrees/friend-settings-211251/`
+  - **Note:** Path-disjoint from concurrent /friend-{twin,companion} (different feature areas) and from stale /friend-theming (avoiding sub_appearance/). Vault: Session 1 over settings; learning artifacts empty. Recent area activity: heavy appearance/theme work, perf fix on resolve_effective_config, webhook subscriptions added to notifications, explorer pass on a11y/i18n/design tokens.
+
+- **[2026-05-22 21:11 — started] /friend — companion plugin (Athena chatbot)**
+  - **Source:** `/friend` endless development loop, area resolved from free-text hint `personas\src\features\plugins\companion`
+  - **Paths:** `src/features/plugins/companion/`, possibly `src-tauri/src/companion/` + `src-tauri/src/commands/companion/`, `src/i18n/locales/en.json` (additive `plugins.companion.*` only — disjoint from concurrent /friend-twin on `twin.*` keys), 13 non-English locale files (`src/i18n/locales/{zh,ar,hi,ru,id,es,fr,bn,ja,vi,de,ko,cs}.json`) for parity, `docs/features/companion.md`, `src/lib/bindings/Companion*.ts` (if ts-rs runs), `.claude/active-runs.md`
+  - **Status:** started
+  - **Branch:** `worktree-friend-companion-211134`
+  - **Worktree:** `.claude/worktrees/friend-companion-211134/`
+  - **Note:** Prior friend-companion entry (130838, 2026-05-16) is >6 days stale, treated as abandoned. Merged companion work since: `f3292ea04` (MCP dispatch + reconciler), `50052d67e` (D6/D7/D9/D10 orchestration) — new surface to build on. Path-disjoint from concurrent /friend-twin (211047), /prototype-persona-overview, /overview-polish, /sidebar-l3. Shared en.json: additive `plugins.companion.*` only. Vault: Session 1 on this machine (fresh Friend tree).
+
+- **[2026-05-22 21:10 — started] /friend — twin plugin (session 2)**
+  - **Source:** `/friend` endless development loop, area `src\features\plugins\twin`
+  - **Paths:** `src/features/plugins/twin/`, possibly `src-tauri/src/twin/`, `src-tauri/src/commands/twin/`, `src/lib/bindings/Twin*.ts`, `src/i18n/locales/en.json` (additive `twin.*` keys only — coordinate with concurrent sessions on shared en.json), `docs/features/twin.md` per cycle
+  - **Status:** started
+  - **Branch:** `worktree-friend-twin-211047`
+  - **Worktree:** `.claude/worktrees/friend-twin-211047/`
+  - **Note:** Prior 2026-05-16 twin /friend entry is stale (>6 days, no commits land on master). Building fresh on `57edb1653`. Bias higher-effort + deepen-existing-surfaces; avoid net-new-surface ideas.
+
 - **[2026-05-18 — started] /prototype — PersonaOverviewPage A/B variants (Grid + Wildcard)**
   - **Source:** User-driven /prototype skill — directional variants for the All Personas list view. Two variants requested: (1) a uniform card grid with simplified metadata (icon, title, connector icons, status dot, trust level, triggers, last run), (2) a wildcard with a different mental model.
   - **Paths:** `src/features/agents/components/allPersonas/PersonaOverviewPage.tsx` (add tab switcher), `src/features/agents/components/allPersonas/PersonaOverviewVariantGrid.tsx` (new), `src/features/agents/components/allPersonas/PersonaOverviewVariantConstellation.tsx` (new), `.claude/active-runs.md`
