@@ -33,12 +33,6 @@ timestamp — the next session can recognize it as abandoned.
 ## Active
 
 
-- **[2026-05-22 — started] custom-persona-icons — Phases 0-2 (renderer unification + upload pipeline + picker)**
-  - **Source:** User-driven feature — let users upload custom persona icons (local-only scope). Phase 0: unify icon rendering behind `resolvePersonaIcon`. Phase 1: Tauri upload pipeline (decode→downscale→re-encode PNG, app-data storage). Phase 2: extend the icon picker with Upload + "Your icons".
-  - **Paths:** `src/lib/icons/{resolvePersonaIcon,customIconStore}.ts` (new), `src/features/shared/components/display/{PersonaIcon,PersonaAvatar}.tsx`, `src/features/agents/sub_settings/components/PersonaSettingsTab.tsx`, `src/features/shared/components/forms/AgentIconPickerModal.tsx`, `src/main.tsx`, `src-tauri/src/commands/core/persona_icons.rs` (new), `src-tauri/src/commands/core/mod.rs`, `src-tauri/src/lib.rs`, `src-tauri/Cargo.toml`, `src/api/agents/personaIcons.ts` (new), `src/i18n/locales/en.json` (additive `persona_icons.*` / `shared.forms_extra.*`), `.claude/active-runs.md`
-  - **Status:** started
-  - **Branch:** master (user explicitly authorized working + committing on master; atomic commit per phase)
-
 - **[2026-05-18 — started] /prototype — PersonaOverviewPage A/B variants (Grid + Wildcard)**
   - **Source:** User-driven /prototype skill — directional variants for the All Personas list view. Two variants requested: (1) a uniform card grid with simplified metadata (icon, title, connector icons, status dot, trust level, triggers, last run), (2) a wildcard with a different mental model.
   - **Paths:** `src/features/agents/components/allPersonas/PersonaOverviewPage.tsx` (add tab switcher), `src/features/agents/components/allPersonas/PersonaOverviewVariantGrid.tsx` (new), `src/features/agents/components/allPersonas/PersonaOverviewVariantConstellation.tsx` (new), `.claude/active-runs.md`
@@ -107,6 +101,11 @@ timestamp — the next session can recognize it as abandoned.
 
 
 ## Recently completed (last 14 days)
+
+- **[2026-05-22] custom-persona-icons — Phases 0-2 (renderer unification + upload pipeline + picker)**
+  - **Status:** completed (commits: `f9c1ce37d` Phase 0 renderer unification, `ac816de18` Phase 1 upload pipeline, `8ed11f84e` Phase 2 picker, `c876ee377` docs)
+  - **Paths shipped:** `src/lib/icons/{resolvePersonaIcon,customIconStore}.ts` (new), `src/features/shared/components/display/{PersonaIcon,PersonaAvatar}.tsx`, `src/features/shared/components/forms/PersonaIconPickerModal.tsx` (new, replaces deleted `AgentIconPickerModal.tsx`), `src/features/agents/sub_settings/components/PersonaSettingsTab.tsx`, `src/main.tsx`, `src-tauri/src/commands/core/persona_icons.rs` (new), `src-tauri/src/commands/core/mod.rs`, `src-tauri/src/lib.rs`, `src-tauri/Cargo.toml`, `src/api/agents/personaIcons.ts` (new), `src/i18n/locales/en.json`, `docs/features/personas/README.md`.
+  - **Note:** Local-only scope (custom icons don't travel via export/bundle/share). Verified: `npx tsc --noEmit` clean, `cargo check --features desktop` clean (exit 0), eslint clean on touched files. Deferred for a later session: Phase 3 (AI icon generation via a vault image-gen connector) and Phase 3.5 (export-time `custom-icon:` → inferred built-in downgrade).
 
 - **[2026-05-21] /research — claude-code-2-1-141-to-146**
   - **Status:** completed (commits: `06e37e5bd` CLI floor bump 2.1.140→2.1.146, `ca16092de` MCP tools/list nextCursor pagination)
