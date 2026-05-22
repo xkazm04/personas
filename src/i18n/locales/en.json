@@ -6421,7 +6421,11 @@
       "status_failed": "Failed",
       "toast_success": "Adopted {count} members from “{name}”",
       "toast_partial": "Adopted {ok} members, {failed} failed",
-      "toast_failure": "Preset adoption failed"
+      "toast_failure": "Preset adoption failed",
+      "retry_failed_button": "Retry {count} failed",
+      "toast_retry_success": "All retried members adopted",
+      "toast_retry_partial": "Retried {ok} members, {failed} still failed",
+      "toast_retry_failure": "Retry failed"
     },
     "gallery": {
       "ready_to_deploy": "Ready to Use",

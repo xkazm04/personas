@@ -1536,6 +1536,7 @@ pub fn run() {
             commands::design::team_presets::list_team_presets,
             commands::design::team_presets::get_team_preset,
             commands::design::team_presets::adopt_team_preset,
+            commands::design::team_presets::retry_team_preset_members,
             commands::design::template_adopt::generate_template_background,
             commands::design::template_adopt::get_template_generate_snapshot,
             commands::design::template_adopt::clear_template_generate_snapshot,

@@ -1113,6 +1113,10 @@
     "status_failed": "Fehlgeschlagen",
     "toast_success": "{count} Mitglieder aus „{name}“ übernommen",
     "toast_partial": "{ok} Mitglieder übernommen, {failed} fehlgeschlagen",
-    "toast_failure": "Preset-Übernahme fehlgeschlagen"
+    "toast_failure": "Preset-Übernahme fehlgeschlagen",
+    "retry_failed_button": "{count} fehlgeschlagene erneut versuchen",
+    "toast_retry_success": "Alle erneut versuchten Mitglieder übernommen",
+    "toast_retry_partial": "{ok} Mitglieder erneut versucht, {failed} weiterhin fehlgeschlagen",
+    "toast_retry_failure": "Erneuter Versuch fehlgeschlagen"
   }
 }

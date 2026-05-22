@@ -6428,6 +6428,10 @@ export type Translations = {
       toast_success: string;
       toast_partial: string;
       toast_failure: string;
+      retry_failed_button: string;
+      toast_retry_success: string;
+      toast_retry_partial: string;
+      toast_retry_failure: string;
     };
     gallery: {
       ready_to_deploy: string;

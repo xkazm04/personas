@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, Layers, Loader2, Users, X, AlertCircle } from 'lucide-react';
+import { CheckCircle2, Layers, Loader2, RotateCcw, Users, X, AlertCircle } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -9,7 +9,7 @@ import { usePipelineStore } from '@/stores/pipelineStore';
 import { useToastStore } from '@/stores/toastStore';
 import type { TeamPreset } from '@/lib/bindings/TeamPreset';
 import type { AdoptedTeamPresetResult } from '@/lib/bindings/AdoptedTeamPresetResult';
-import { adoptTeamPreset } from '@/api/templates/teamPresets';
+import { adoptTeamPreset, retryTeamPresetMembers } from '@/api/templates/teamPresets';
 import { useTypedTauriEvent } from '@/hooks/useTauriEvent';
 import { EventName } from '@/lib/eventRegistry';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
@@ -152,6 +152,58 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
     onClose();
   }, [setSidebarSection, setAgentTab, onClose]);
 
+  /**
+   * Retry the currently-failed rows in place. The IPC reuses the same
+   * progress event stream so the existing per-row badges animate the
+   * same way; on resolution we replace `result` so failed_members
+   * reflects the new (possibly empty) failure set. State machine stays
+   * in `done` throughout — the modal doesn't go back to `adopting`
+   * because the team itself is already there; only specific roles are
+   * being refilled.
+   */
+  const handleRetry = useCallback(async () => {
+    if (!result) return;
+    const failedRoles = result.failed_members.map((f) => f.role);
+    if (failedRoles.length === 0) return;
+    // Optimistically reset failed rows to `adopting` so the user sees
+    // the spinner immediately while the IPC fires.
+    setRows((prev) =>
+      prev.map((r) =>
+        failedRoles.includes(r.role)
+          ? { ...r, status: 'adopting' as RowStatus, error: undefined }
+          : r,
+      ),
+    );
+    try {
+      const res = await retryTeamPresetMembers(
+        preset.id,
+        result.team_id,
+        result.group_id,
+        failedRoles,
+      );
+      setResult(res);
+      await Promise.all([
+        fetchPersonas?.().catch(silentCatch('PresetPreviewModal:fetchPersonas')),
+        fetchTeams().catch(silentCatch('PresetPreviewModal:fetchTeams')),
+        fetchGroups().catch(silentCatch('PresetPreviewModal:fetchGroups')),
+      ]);
+      if (res.failed_members.length === 0) {
+        addToast(t.templates.presets.toast_retry_success, 'success');
+      } else {
+        addToast(
+          tx(t.templates.presets.toast_retry_partial, {
+            ok: failedRoles.length - res.failed_members.length,
+            failed: res.failed_members.length,
+          }),
+          'warning',
+        );
+      }
+    } catch (err) {
+      silentCatch('PresetPreviewModal:retry')(err);
+      addToast(t.templates.presets.toast_retry_failure, 'error');
+    }
+  }, [result, preset.id, fetchPersonas, fetchTeams, fetchGroups, addToast, t, tx]);
+
   // Map result.failed_members onto the row state in case any failures
   // arrived faster than the progress events (very small race window).
   const rowsWithResult = useMemo(() => {
@@ -282,6 +334,19 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
                   : t.templates.presets.adopt_all_button_other,
                 { count: preset.members.length },
               )}
+            </Button>
+          )}
+          {adoptionState === 'done' && result && result.failed_members.length > 0 && (
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={<RotateCcw className="w-4 h-4" />}
+              onClick={() => void handleRetry()}
+              data-testid="preset-retry-failed-button"
+            >
+              {tx(t.templates.presets.retry_failed_button, {
+                count: result.failed_members.length,
+              })}
             </Button>
           )}
           {adoptionState === 'done' && result && (

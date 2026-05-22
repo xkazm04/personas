@@ -160,15 +160,8 @@ pub fn adopt_preset(
                 &state.db,
                 &created.id,
                 UpdatePersonaGroupInput {
-                    name: None,
-                    color: None,
-                    sort_order: None,
-                    collapsed: None,
-                    description: None,
-                    default_model_profile: None,
-                    default_max_budget_usd: None,
-                    default_max_turns: None,
-                    shared_instructions: Some(shared.clone()),
+                    shared_instructions: Some(Some(shared.clone())),
+                    ..Default::default()
                 },
             );
         }
@@ -380,6 +373,268 @@ pub fn adopt_preset(
         team_id: team.id,
         group_id,
         members,
+        failed_members: failures,
+        created_connections,
+    })
+}
+
+/// Retry the failed members of a previously-adopted preset, in place.
+/// Targeted at the "Retry N failed" affordance in `PresetPreviewModal`:
+/// the team + the members that succeeded are already in the DB, and the
+/// user just wants the failed roles to take another swing without re-
+/// adopting the whole thing.
+///
+/// Idempotent on roles already present in the team — silently skipped
+/// rather than failed, so double-clicking the retry button doesn't
+/// produce confusing duplicate errors.
+///
+/// Connection wiring is rebuilt at the end: any manifest connection
+/// whose endpoints now BOTH resolve to team-member ids (across old +
+/// newly-retried members) AND isn't already in the team is created.
+/// Connections from the original adoption that survived are left
+/// untouched (the existing-edge guard in `teams::create_connection`
+/// rejects duplicates with an error, which we catch + log + skip).
+pub fn retry_failed_members(
+    state: &Arc<AppState>,
+    app: Option<AppHandle>,
+    preset_id: &str,
+    team_id: &str,
+    group_id: Option<&str>,
+    roles_to_retry: &[String],
+) -> Result<AdoptedTeamPresetResult, AppError> {
+    let preset: TeamPreset = team_preset_loader::get_preset(preset_id)?;
+
+    // Verify the team still exists. Returns NotFound if the user
+    // deleted it between the failed adopt and the retry click.
+    let _team = team_repo::get_by_id(&state.db, team_id)?;
+
+    // Build the role → existing team_member_id map from the team's
+    // current members. Used to skip already-present roles AND to
+    // resolve connection endpoints that survived the first adopt.
+    let existing_members = team_repo::get_members(&state.db, team_id)?;
+    let mut role_to_member_id: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
+    for m in &existing_members {
+        role_to_member_id.insert(m.role.clone(), m.id.clone());
+    }
+    let existing_members_view: Vec<AdoptedTeamPresetMember> = existing_members
+        .iter()
+        .filter_map(|m| {
+            preset
+                .members
+                .iter()
+                .find(|pm| pm.role == m.role)
+                .map(|pm| AdoptedTeamPresetMember {
+                    role: m.role.clone(),
+                    template_id: pm.template_id.clone(),
+                    persona_id: m.persona_id.clone(),
+                    team_member_id: m.id.clone(),
+                })
+        })
+        .collect();
+
+    // Per-member retry loop. Reuses the same emit-progress contract so
+    // the UI's status badges animate the same way as on the first run.
+    let mut new_members: Vec<AdoptedTeamPresetMember> = Vec::new();
+    let mut failures: Vec<AdoptedTeamPresetFailure> = Vec::new();
+
+    for role in roles_to_retry {
+        let Some(manifest_member) = preset.members.iter().find(|m| &m.role == role) else {
+            failures.push(AdoptedTeamPresetFailure {
+                role: role.clone(),
+                template_id: String::new(),
+                reason: format!("Role '{role}' not found in preset manifest"),
+            });
+            continue;
+        };
+
+        // Idempotent skip — role already in the team means the retry
+        // already landed (perhaps via a previous attempt the user
+        // didn't see complete). Don't re-adopt.
+        if role_to_member_id.contains_key(role) {
+            continue;
+        }
+
+        emit_progress(
+            &app,
+            &preset.id,
+            role,
+            &manifest_member.template_id,
+            PROGRESS_ADOPTING,
+            None,
+        );
+
+        let design_json =
+            match team_preset_loader::load_template_design_by_id(&manifest_member.template_id) {
+                Ok(s) => s,
+                Err(err) => {
+                    let reason = err.to_string();
+                    failures.push(AdoptedTeamPresetFailure {
+                        role: role.clone(),
+                        template_id: manifest_member.template_id.clone(),
+                        reason: reason.clone(),
+                    });
+                    emit_progress(
+                        &app,
+                        &preset.id,
+                        role,
+                        &manifest_member.template_id,
+                        PROGRESS_FAILED,
+                        Some(reason),
+                    );
+                    continue;
+                }
+            };
+
+        let adopt_value = match instant_adopt_template_inner(
+            state,
+            manifest_member.template_id.clone(),
+            design_json,
+        ) {
+            Ok(v) => v,
+            Err(err) => {
+                let reason = err.to_string();
+                failures.push(AdoptedTeamPresetFailure {
+                    role: role.clone(),
+                    template_id: manifest_member.template_id.clone(),
+                    reason: reason.clone(),
+                });
+                emit_progress(
+                    &app,
+                    &preset.id,
+                    role,
+                    &manifest_member.template_id,
+                    PROGRESS_FAILED,
+                    Some(reason),
+                );
+                continue;
+            }
+        };
+
+        let persona_id = match persona_id_from_adopt_value(&adopt_value) {
+            Ok(id) => id,
+            Err(err) => {
+                let reason = err.to_string();
+                failures.push(AdoptedTeamPresetFailure {
+                    role: role.clone(),
+                    template_id: manifest_member.template_id.clone(),
+                    reason: reason.clone(),
+                });
+                emit_progress(
+                    &app,
+                    &preset.id,
+                    role,
+                    &manifest_member.template_id,
+                    PROGRESS_FAILED,
+                    Some(reason),
+                );
+                continue;
+            }
+        };
+
+        if let Some(gid) = group_id {
+            if let Err(e) = bind_persona_to_group(state, &persona_id, gid) {
+                tracing::warn!(
+                    persona_id = %persona_id,
+                    group_id = %gid,
+                    error = %e,
+                    "retry_failed_members: bind_persona_to_group failed (continuing)"
+                );
+            }
+        }
+
+        let team_member = match team_repo::add_member(
+            &state.db,
+            team_id,
+            &persona_id,
+            Some(role.clone()),
+            Some(manifest_member.x),
+            Some(manifest_member.y),
+            None,
+        ) {
+            Ok(tm) => tm,
+            Err(err) => {
+                let reason = err.to_string();
+                failures.push(AdoptedTeamPresetFailure {
+                    role: role.clone(),
+                    template_id: manifest_member.template_id.clone(),
+                    reason: reason.clone(),
+                });
+                emit_progress(
+                    &app,
+                    &preset.id,
+                    role,
+                    &manifest_member.template_id,
+                    PROGRESS_FAILED,
+                    Some(reason),
+                );
+                continue;
+            }
+        };
+
+        role_to_member_id.insert(role.clone(), team_member.id.clone());
+        new_members.push(AdoptedTeamPresetMember {
+            role: role.clone(),
+            template_id: manifest_member.template_id.clone(),
+            persona_id,
+            team_member_id: team_member.id,
+        });
+        emit_progress(
+            &app,
+            &preset.id,
+            role,
+            &manifest_member.template_id,
+            PROGRESS_DONE,
+            None,
+        );
+    }
+
+    // Wire any connections that NOW have both endpoints resolved.
+    // teams::create_connection's own dedupe rejects existing edges as a
+    // validation error — we swallow that one specific case so a retry
+    // doesn't surface harmless duplicate-attempt errors.
+    let mut created_connections: i32 = 0;
+    for c in &preset.connections {
+        let (Some(src), Some(dst)) = (role_to_member_id.get(&c.from), role_to_member_id.get(&c.to))
+        else {
+            continue;
+        };
+        match team_repo::create_connection(
+            &state.db,
+            team_id,
+            src,
+            dst,
+            Some(c.connection_type.clone()),
+            None,
+            c.label.clone(),
+        ) {
+            Ok(_) => created_connections += 1,
+            Err(AppError::Validation(msg)) if msg.contains("already exists") || msg.contains("Duplicate") => {
+                // Pre-existing edge from the original adoption — fine.
+            }
+            Err(e) => {
+                tracing::warn!(
+                    preset = %preset.id,
+                    from = %c.from,
+                    to = %c.to,
+                    error = %e,
+                    "retry_failed_members: create_connection failed (continuing)"
+                );
+            }
+        }
+    }
+
+    // Return the FULL member list (old + new) so the UI can swap the
+    // whole state without re-reading separately. Existing members
+    // mapped to AdoptedTeamPresetMember above.
+    let mut all_members = existing_members_view;
+    all_members.extend(new_members);
+
+    Ok(AdoptedTeamPresetResult {
+        preset_id: preset.id,
+        team_id: team_id.to_string(),
+        group_id: group_id.map(|s| s.to_string()),
+        members: all_members,
         failed_members: failures,
         created_connections,
     })

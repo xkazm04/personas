@@ -1113,6 +1113,10 @@
     "status_failed": "Échec",
     "toast_success": "Adopté {count} membres de «{name}»",
     "toast_partial": "Adopté {ok} membres, {failed} échecs",
-    "toast_failure": "L'adoption du préréglage a échoué"
+    "toast_failure": "L'adoption du préréglage a échoué",
+    "retry_failed_button": "Réessayer {count} échecs",
+    "toast_retry_success": "Tous les membres réessayés ont été adoptés",
+    "toast_retry_partial": "{ok} membres réessayés, {failed} échouent encore",
+    "toast_retry_failure": "Le réessai a échoué"
   }
 }

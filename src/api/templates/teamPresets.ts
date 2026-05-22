@@ -37,3 +37,27 @@ export const getTeamPreset = (id: string) =>
  */
 export const adoptTeamPreset = (id: string) =>
   invoke<AdoptedTeamPresetResult>("adopt_team_preset", { id });
+
+/**
+ * Retry the named failed roles of a previously-adopted preset. Reuses
+ * the same TEAM_PRESET_ADOPT_PROGRESS event stream so the modal's per-
+ * row status badges animate identically to the first attempt.
+ * Idempotent on roles already present in the team (silently skipped),
+ * so double-clicking is safe.
+ *
+ * Returns the FULL member list (old + newly-retried) plus any roles
+ * that still failed this round, so the modal can swap state in one
+ * assignment instead of merging two views.
+ */
+export const retryTeamPresetMembers = (
+  presetId: string,
+  teamId: string,
+  groupId: string | null,
+  roles: string[],
+) =>
+  invoke<AdoptedTeamPresetResult>("retry_team_preset_members", {
+    presetId,
+    teamId,
+    groupId,
+    roles,
+  });

@@ -7445,7 +7445,11 @@
       "status_failed": "Falló",
       "toast_success": "Adoptados {count} miembros de «{name}»",
       "toast_partial": "Adoptados {ok} miembros, {failed} fallaron",
-      "toast_failure": "La adopción del preset falló"
+      "toast_failure": "La adopción del preset falló",
+      "retry_failed_button": "Reintentar {count} fallidos",
+      "toast_retry_success": "Todos los miembros reintentados adoptados",
+      "toast_retry_partial": "Reintentados {ok} miembros, {failed} aún fallan",
+      "toast_retry_failure": "Reintento fallido"
     }
   },
   "triggers": {

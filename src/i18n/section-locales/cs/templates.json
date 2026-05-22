@@ -1113,6 +1113,10 @@
     "status_failed": "Selhalo",
     "toast_success": "Přijato {count} členů z „{name}“",
     "toast_partial": "Přijato {ok} členů, {failed} selhalo",
-    "toast_failure": "Přijetí předvolby selhalo"
+    "toast_failure": "Přijetí předvolby selhalo",
+    "retry_failed_button": "Opakovat {count} neúspěšných",
+    "toast_retry_success": "Všichni opakovaní členové přijati",
+    "toast_retry_partial": "Opakováno {ok} členů, {failed} stále neúspěšných",
+    "toast_retry_failure": "Opakování selhalo"
   }
 }

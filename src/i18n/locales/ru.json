@@ -7445,7 +7445,11 @@
       "status_failed": "Ошибка",
       "toast_success": "Принято {count} участников из «{name}»",
       "toast_partial": "Принято {ok}, не удалось {failed}",
-      "toast_failure": "Не удалось принять пресет"
+      "toast_failure": "Не удалось принять пресет",
+      "retry_failed_button": "Повторить {count} неудачных",
+      "toast_retry_success": "Все повторно принятые участники успешны",
+      "toast_retry_partial": "Повторено {ok} участников, {failed} всё ещё с ошибкой",
+      "toast_retry_failure": "Повтор не удался"
     }
   },
   "triggers": {

@@ -7445,7 +7445,11 @@
       "status_failed": "Gagal",
       "toast_success": "Diadopsi {count} anggota dari “{name}”",
       "toast_partial": "Diadopsi {ok} anggota, {failed} gagal",
-      "toast_failure": "Adopsi preset gagal"
+      "toast_failure": "Adopsi preset gagal",
+      "retry_failed_button": "Coba ulang {count} yang gagal",
+      "toast_retry_success": "Semua anggota dicoba ulang berhasil diadopsi",
+      "toast_retry_partial": "Dicoba ulang {ok} anggota, {failed} masih gagal",
+      "toast_retry_failure": "Coba ulang gagal"
     }
   },
   "triggers": {

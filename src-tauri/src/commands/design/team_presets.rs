@@ -55,3 +55,32 @@ pub fn adopt_team_preset(
     require_auth_sync(&state)?;
     team_preset_adopter::adopt_preset(&state, Some(app), &id)
 }
+
+/// Retry the specified failed roles of a previously-adopted preset.
+/// Surfaces as the "Retry N failed" button in `PresetPreviewModal` —
+/// reuses the same `team-preset-adopt-progress` event stream so the
+/// existing per-row status badges animate identically. Idempotent on
+/// roles already adopted (silently skipped), so double-clicking is
+/// safe.
+///
+/// Returns the FULL member list (existing + newly-retried) so the
+/// modal can swap state in one assignment.
+#[tauri::command]
+pub fn retry_team_preset_members(
+    state: State<'_, Arc<AppState>>,
+    app: AppHandle,
+    preset_id: String,
+    team_id: String,
+    group_id: Option<String>,
+    roles: Vec<String>,
+) -> Result<AdoptedTeamPresetResult, AppError> {
+    require_auth_sync(&state)?;
+    team_preset_adopter::retry_failed_members(
+        &state,
+        Some(app),
+        &preset_id,
+        &team_id,
+        group_id.as_deref(),
+        &roles,
+    )
+}

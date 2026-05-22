@@ -1113,6 +1113,10 @@
     "status_failed": "فشل",
     "toast_success": "تم اعتماد {count} أعضاء من «{name}»",
     "toast_partial": "تم اعتماد {ok} أعضاء، {failed} فشلوا",
-    "toast_failure": "فشل اعتماد الإعداد المسبق"
+    "toast_failure": "فشل اعتماد الإعداد المسبق",
+    "retry_failed_button": "إعادة محاولة {count} فاشل",
+    "toast_retry_success": "تم اعتماد جميع الأعضاء المُعاد محاولتهم",
+    "toast_retry_partial": "تمت إعادة محاولة {ok} عضواً، {failed} لا يزالون فاشلين",
+    "toast_retry_failure": "فشلت إعادة المحاولة"
   }
 }
