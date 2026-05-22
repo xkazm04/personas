@@ -102,6 +102,11 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Recently completed (last 14 days)
 
+- **[2026-05-22] /friend — teams productionization (5 cycles, all 5 directions executed)**
+  - **Status:** completed (branch: `worktree-friend-teams-prod-125228`, commits: 5, last: `f2de2c470`) — NOT merged; left for user merge decision.
+  - **Commits:** `e7ed7e0cf` Lift Teams dev gate to TIERS.TEAM · `6b8882294` Persona Group Manager page (Stage 1) · `92f0290d9` Group-aware PersonaMonitor "By group" toggle · `f09923c5d` Group-scoped shared memory (Stage 1, includes injection wiring) · `f2de2c470` Dev-tools Projects ↔ PersonaTeam binding (Stage 1).
+  - **Note:** User requested designing + executing all 5 proposed directions in sequence with a memory-system analysis before cycle 4. Memory analysis (TeamMemory vs PersonaMemory vs MemoryReviewProposal) recorded in the cycle-4 commit message; decision was to extend PersonaMemory with `group_id` column (mirror use_case_id orphan policy) rather than create a third memory store. All cycles ship: schema migration where needed, ts-rs regen (still manually copying from `src-tauri/bindings/` per known shim drift), tsc-clean, cargo-check clean (1 new test passes: `test_get_for_injection_v2_group_scoped`), lint clean, all 13 non-English locales translated in the SAME commit per /friend i18n override (13 parallel sub-agents on cycle 2; targeted Python script for cycles 1, 3, 5; one es agent mis-nested keys and required surgical relocation). Stage 2 deferrals: group memory UI panel, drag-to-assign personas, dev-project canvas thumbnail + run history, monitor group-by persistence, team-id pipeline grouping in monitor.
+
 - **[2026-05-22] /friend — overview (Mission Control dashboard, 7 cycles)**
   - **Status:** completed (branch: `worktree-friend-overview-085643`, commits: 7, last: `98535a0fe`) — NOT merged; left for user merge decision.
   - **Commits:** `801b9915a` persona filter Stage 1 · `571f7e2fa` Triage ranked queue · `146eb623a` StatusTicker click-through · `2328df36d` Vitals scoping Stage 2 · `7344464ce` Stream status filter · `7f833b866` Triage "Up next" tag · `98535a0fe` InstrumentsBay persona-scope.
