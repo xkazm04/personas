@@ -33,13 +33,24 @@ timestamp — the next session can recognize it as abandoned.
 ## Active
 
 
-- **[2026-05-23 14:20 — started] /friend — orchestration (team assignments Phase A)**
-  - **Source:** Continuation of design session — Phase A (4 cycles) of team-assignment + orchestration layer. Design locked in conversation: capabilities = existing `DesignUseCase[]` on `persona.design_context`; Sonnet via `ClaudeProvider` (subscription); review surfaced through existing notification center (new `processType` values); parallel DAG runner with `max_parallel_steps` gate; navigation = sub-tab on team page; cascade-skip semantics; per-assignment pause scope.
-  - **Paths:** `src-tauri/src/db/migrations/incremental.rs`, `src-tauri/src/db/models/team_assignment.rs` (new), `src-tauri/src/db/repos/orchestration/` (new), `src-tauri/src/engine/team_assignment_orchestrator.rs` (new), `src-tauri/src/commands/teams/assignments.rs` (new), `src-tauri/src/lib.rs`, `src/api/pipeline/assignments.ts` (new), `src/features/pipeline/sub_assignments/` (new dir), `src/lib/notifications/notifyProcessComplete.ts`, `src/stores/notificationCenterStore.ts`, `src/stores/slices/pipeline/assignmentSlice.ts` (new), `src/i18n/locales/en.json` (additive `assignments.*` keys only), `docs/features/orchestration/README.md` (new or extension)
+- **[2026-05-23 — started] athena-orb Step 1 — in-footer avatar + hold-to-talk**
+  - **Source:** User-driven implementation of Step 1 from `docs/features/companion/athena-orb-overlay-plan.md`. Swap the footer `<Bot>` glyph for the real `AthenaAvatar`; add press-and-hold dictation that fires a voice turn through the existing `send()` pipeline without opening the panel.
+  - **Paths:** `src/features/plugins/companion/CompanionFooterIcon.tsx`, `src/features/plugins/companion/companionStore.ts` (additive `voiceTurnRequest` field), `src/features/plugins/companion/CompanionPanel.tsx` (one top-level consumer effect), `src/i18n/locales/en.json` (additive `plugins.companion.footer_*` keys only), `docs/features/companion/README.md`, `.claude/active-runs.md`
   - **Status:** started
-  - **Branch:** `worktree-friend-orchestration-142031`
+  - **Branch:** master (small surgical multi-file change, user-driven directly in main checkout so they can test live; staging only my own files per parallel-safety primitives — NOT touching the 50+ in-flight locale edits already in the working tree)
+  - **Note:** Companion `## Active` entry from 2026-05-16 is >2h old (stale/abandoned per the 2-hour rule); recently-completed shows companion work already merged. Reuses existing `AthenaAvatar`, `useDictation`, and `send()`. Uses browser dictation for Step 1 (the local-STT engine is the separate parallel workstream in the plan); flagged in code + README.
+
+- **[2026-05-23 14:20 — completed (48bed268d, c0ad24d24, b1048e782, 59a36da24)] /friend — orchestration (team assignments Phase A)**
+  - **Source:** Continuation of design session — Phase A (4 cycles) of team-assignment + orchestration layer. Design locked in conversation: capabilities = existing `DesignUseCase[]` on `persona.design_context`; Sonnet via `ClaudeProvider` (subscription); review surfaced through existing notification center (new `processType` values); parallel DAG runner with `max_parallel_steps` gate; navigation = sub-tab on team page; cascade-skip semantics; per-assignment pause scope.
+  - **Status:** completed
+  - **Branch:** `worktree-friend-orchestration-142031` (unmerged — user owns merge decision)
   - **Worktree:** `.claude/worktrees/friend-orchestration-142031/`
-  - **Note:** Phase A scope = manual-match orchestrator + schema + Team UI composer + checklist + review modal. Phase B (auto-match + auto-decompose via Sonnet) and Phase C (Athena chat layer) are explicitly OUT of scope for this worktree. Path-disjoint from all 10+ active sessions: /research on `engine/provider/claude.rs` (different file), /prototype on `agents/components/allPersonas/`, overview-polish on `features/overview/`, sidebar-L3 on `features/home/` + `shared/components/layout/sidebar/`, artist-tests on `plugins/artist/`, /friend-{theming,drive,companion,twin} on respective plugin/style dirs. Shared en.json: additive `assignments.*` keys only.
+  - **Commits:**
+    - A1 `48bed268d` — schema + orchestrator skeleton (3 tables, parallel DAG runner with manual matching, cascade-skip, eligibility pre-flight, review-resolution helpers, TEAM_ASSIGNMENT_PROGRESS event)
+    - A2 `c0ad24d24` — Tauri commands + ts-rs + Zustand slice (9 commands registered, AssignmentSlice with progress-bridge applyAssignmentProgress)
+    - A3 `b1048e782` — Team UI composer + checklist + live updates (AssignmentsButton/Panel/ProgressListener in sub_assignments/, mounted on CanvasOverlays alongside TeamMemoryBadge)
+    - A4 `59a36da24` — process notifications + inline step review (team-assignment-failed/unmatched ProcessTypes, useAssignmentNotificationDispatcher in BackgroundServices, inline Edit/Reassign/Skip actions on failed step rows)
+  - **Stats:** 47 file-touches across 4 commits, +2900 lines. Phase B (auto-match via embedding + Sonnet llm_eval + auto-decompose) and Phase C (Athena chat layer) are explicit follow-ons.
 
 - **[2026-05-18 — started] /prototype — PersonaOverviewPage A/B variants (Grid + Wildcard)**
   - **Source:** User-driven /prototype skill — directional variants for the All Personas list view. Two variants requested: (1) a uniform card grid with simplified metadata (icon, title, connector icons, status dot, trust level, triggers, last run), (2) a wildcard with a different mental model.
