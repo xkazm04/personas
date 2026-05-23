@@ -174,7 +174,7 @@ export function NumberStepper({
 
       <div className="flex items-center justify-center min-w-0 flex-1 px-1">
         {prefix != null && (
-          <span className="pl-1 typo-caption text-muted-foreground select-none">{prefix}</span>
+          <span className="pl-1 typo-caption text-foreground select-none">{prefix}</span>
         )}
         <input
           id={id}
@@ -216,7 +216,7 @@ export function NumberStepper({
           className="w-full min-w-0 bg-transparent text-center typo-body text-foreground tabular-nums outline-none placeholder:text-muted-foreground/40 px-1 py-1.5"
         />
         {suffix != null && (
-          <span className="pr-1 typo-caption text-muted-foreground select-none">{suffix}</span>
+          <span className="pr-1 typo-caption text-foreground select-none">{suffix}</span>
         )}
       </div>
 
