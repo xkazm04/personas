@@ -1173,7 +1173,11 @@ function Body(props: BodyProps) {
                       onOpenInBrain={handleOpenInBrain}
                     />
                   )}
-                  <Bubble role={m.role} index={i}>
+                  <Bubble
+                    role={m.role}
+                    index={i}
+                    onOpenInBrain={handleOpenInBrain}
+                  >
                     {m.content}
                   </Bubble>
                   {connectorJobIds.map((jobId) => {
