@@ -1,6 +1,7 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { CreateTeamAssignmentInput } from "@/lib/bindings/CreateTeamAssignmentInput";
+import type { DecomposedStep } from "@/lib/bindings/DecomposedStep";
 import type { ResolveStepReviewAction } from "@/lib/bindings/ResolveStepReviewAction";
 import type { TeamAssignment } from "@/lib/bindings/TeamAssignment";
 import type { TeamAssignmentDetail } from "@/lib/bindings/TeamAssignmentDetail";
@@ -46,3 +47,9 @@ export const resolveTeamAssignmentReview = (
 
 export const deleteTeamAssignment = (id: string) =>
   invoke<boolean>("delete_team_assignment", { id });
+
+/** Phase B3: ask Sonnet (via subscription) to break a natural-language
+ *  goal into ordered steps. Returns proposed `DecomposedStep[]`; the
+ *  composer wraps them into editable rows before the user submits. */
+export const decomposeTeamAssignmentGoal = (teamId: string, goal: string) =>
+  invoke<DecomposedStep[]>("decompose_team_assignment_goal", { teamId, goal });

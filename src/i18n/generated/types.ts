@@ -12528,6 +12528,11 @@ export type Translations = {
       auto_match_persona: string;
       match_confidence_label: string;
       match_rationale_prefix: string;
+      auto_decompose: string;
+      auto_decomposing: string;
+      auto_decompose_hint: string;
+      decompose_empty: string;
+      decompose_failed: string;
       start: string;
       abort: string;
       delete: string;

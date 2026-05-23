@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { X, Plus, Play, XCircle, ListChecks, Trash2, CircleDot, CircleCheck, CircleX, Loader2, CircleDashed, CircleSlash, Edit3, UserCog, SkipForward } from 'lucide-react';
+import { X, Plus, Play, XCircle, ListChecks, Trash2, CircleDot, CircleCheck, CircleX, Loader2, CircleDashed, CircleSlash, Edit3, UserCog, SkipForward, Sparkles } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { useAgentStore } from '@/stores/agentStore';
@@ -7,6 +7,7 @@ import type { Persona } from '@/lib/bindings/Persona';
 import type { TeamAssignment } from '@/lib/bindings/TeamAssignment';
 import type { TeamAssignmentStep } from '@/lib/bindings/TeamAssignmentStep';
 import type { CreateTeamAssignmentInput } from '@/lib/bindings/CreateTeamAssignmentInput';
+import { decomposeTeamAssignmentGoal } from '@/api/pipeline/assignments';
 import { useAssignmentProgressListener } from './useAssignmentProgressListener';
 
 interface AssignmentsPanelProps {
@@ -147,9 +148,39 @@ function AssignmentComposer({ teamId, teamPersonas, onCreated, onCancel, createA
     { id: crypto.randomUUID(), title: '', description: '', personaId: null, useCaseId: null },
   ]);
   const [submitting, setSubmitting] = useState(false);
+  const [decomposing, setDecomposing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const personaRequired = strategy === 'manual';
+
+  const autoDecompose = async () => {
+    setError(null);
+    if (!goal.trim()) {
+      setError(a.error_goal_required);
+      return;
+    }
+    setDecomposing(true);
+    try {
+      const proposed = await decomposeTeamAssignmentGoal(teamId, goal.trim());
+      if (proposed.length === 0) {
+        setError(a.decompose_empty);
+        return;
+      }
+      setSteps(
+        proposed.map((s) => ({
+          id: crypto.randomUUID(),
+          title: s.title,
+          description: s.description,
+          personaId: s.suggestedPersonaId,
+          useCaseId: s.suggestedUseCaseId,
+        })),
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : a.decompose_failed);
+    } finally {
+      setDecomposing(false);
+    }
+  };
 
   const addStep = () =>
     setSteps((rows) => [...rows, { id: crypto.randomUUID(), title: '', description: '', personaId: null, useCaseId: null }]);
@@ -217,6 +248,17 @@ function AssignmentComposer({ teamId, teamPersonas, onCreated, onCancel, createA
         rows={2}
         className="w-full px-2.5 py-1.5 rounded-input bg-secondary/50 border border-primary/15 typo-body text-foreground placeholder-foreground/40 focus:outline-none focus:border-orange-500/40 resize-none"
       />
+      <div className="flex justify-end">
+        <button
+          onClick={autoDecompose}
+          disabled={decomposing || !goal.trim()}
+          className="inline-flex items-center gap-1 px-2 py-1 rounded-interactive bg-violet-500/15 hover:bg-violet-500/25 text-violet-300 typo-caption disabled:opacity-50"
+          title={a.auto_decompose_hint}
+        >
+          {decomposing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+          {decomposing ? a.auto_decomposing : a.auto_decompose}
+        </button>
+      </div>
 
       <div className="flex items-center gap-2 pt-1">
         <label className="typo-caption font-medium text-foreground/70">{a.strategy_label}</label>

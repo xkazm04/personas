@@ -1950,6 +1950,7 @@ pub fn run() {
             commands::teams::assignments::abort_team_assignment,
             commands::teams::assignments::resolve_team_assignment_review,
             commands::teams::assignments::delete_team_assignment,
+            commands::teams::assignments::decompose_team_assignment_goal,
             // Tools
             commands::tools::tools::list_tool_definitions,
             commands::tools::tools::get_tool_definition,

@@ -12,14 +12,21 @@ use std::sync::Arc;
 use tauri::State;
 
 use crate::db::models::{
-    CreateTeamAssignmentInput, ResolveStepReviewAction, TeamAssignment, TeamAssignmentDetail,
-    TeamAssignmentEvent, TeamAssignmentStep,
+    CreateTeamAssignmentInput, Persona, ResolveStepReviewAction, TeamAssignment,
+    TeamAssignmentDetail, TeamAssignmentEvent, TeamAssignmentStep,
 };
+use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::orchestration::team_assignments as repo;
+use crate::db::repos::resources::teams as team_repo;
+use crate::engine::team_assignment_matching::{self as matching, DecomposedStep};
 use crate::engine::team_assignment_orchestrator as orchestrator;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
+
+/// Auto-decompose timeout — Sonnet usually returns in 5-20s for a small
+/// goal; 120s covers tail latency.
+const DECOMPOSE_TIMEOUT_SECS: u64 = 120;
 
 #[tauri::command]
 pub fn create_team_assignment(
@@ -178,4 +185,52 @@ pub fn delete_team_assignment(
 ) -> Result<bool, AppError> {
     require_auth_sync(&state)?;
     repo::delete(&state.db, &id)
+}
+
+/// Phase B3 — Auto-decompose a natural-language goal into ordered steps
+/// via the existing Claude (subscription) provider. The composer calls
+/// this, lets the user edit the proposal, then submits through the
+/// regular `create_team_assignment` path.
+///
+/// One Sonnet call per invocation; no DB writes. Errors surface as a
+/// toast on the frontend.
+#[tauri::command]
+pub async fn decompose_team_assignment_goal(
+    state: State<'_, Arc<AppState>>,
+    team_id: String,
+    goal: String,
+) -> Result<Vec<DecomposedStep>, AppError> {
+    require_auth(&state).await?;
+    let goal = goal.trim();
+    if goal.is_empty() {
+        return Err(AppError::Validation("Goal cannot be empty".into()));
+    }
+
+    let members = team_repo::get_members(&state.db, &team_id)?;
+    if members.is_empty() {
+        return Err(AppError::Validation(
+            "Team has no members — add personas before auto-decomposing".into(),
+        ));
+    }
+    let mut personas: Vec<Persona> = Vec::with_capacity(members.len());
+    for m in &members {
+        if let Ok(p) = persona_repo::get_by_id(&state.db, &m.persona_id) {
+            // Same eligibility filter the orchestrator applies at run time;
+            // proposing steps that won't run is wasted Sonnet tokens.
+            if p.enabled
+                && p.setup_status == "ready"
+                && !matches!(p.trust_level, crate::db::models::PersonaTrustLevel::Revoked)
+            {
+                personas.push(p);
+            }
+        }
+    }
+    if personas.is_empty() {
+        return Err(AppError::Validation(
+            "No eligible personas on team — every member is disabled, needs setup, or has revoked trust".into(),
+        ));
+    }
+
+    let candidates = matching::extract_candidates(&personas);
+    matching::decompose_goal(goal, &candidates, DECOMPOSE_TIMEOUT_SECS).await
 }
