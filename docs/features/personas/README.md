@@ -89,6 +89,24 @@ This doc set covers pillar 2. For pillar 1 see
 [templates/](../templates/README.md). For pillar 3 see
 [execution/](../execution/README.md).
 
+## Goal-to-Plan — narrated planner (preview)
+
+Personas sidebar → **Plan** (`agentTab === 'planner'`) opens a **read-only**
+goal-to-plan surface (`src/features/agents/sub_planner/`). The user states an
+outcome in plain language ("watch a competitor's pricing page daily and email
+me the changes"); the planner maps it to a reviewable, numbered sequence of
+in-app action steps — create a persona, connect a service, configure a
+trigger/schedule, review & confirm — drawn from the automation tool catalog
+that the test-automation bridge drives (`src/test/automation/bridge.ts`).
+
+**Nothing executes.** Stage 1 is a preview only: `planFromGoal()` in
+`rulePlanner.ts` produces the plan via deterministic keyword heuristics over
+`ACTION_CATALOG`, and each `PlanStep` records the bridge primitive it *would*
+drive (`bridgeRef`) purely for traceability. This is the trust-building front
+half of idea-ba306c32 ("the app builds itself while you watch") — later stages
+add an LLM planner brain and a visual dry-run walkthrough before any
+execution path is wired.
+
 ## Editor UI — the Design hub
 
 The per-persona editor surfaces are tabbed in `EditorTabBar`:

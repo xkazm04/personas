@@ -22,6 +22,7 @@ const HomePage = lazy(() => import('@/features/home/components/HomePage'));
 const PersonaEditor = lazy(() => import('@/features/agents/sub_editor').then(m => ({ default: m.PersonaEditor })));
 const PersonaOverviewPage = lazy(() => import('@/features/agents/components/allPersonas/PersonaOverviewPage'));
 const UnifiedBuildEntry = lazy(() => import('@/features/agents/components/matrix/UnifiedBuildEntry').then(m => ({ default: m.UnifiedBuildEntry })));
+const GoalPlannerPanel = lazy(() => import('@/features/agents/sub_planner').then(m => ({ default: m.GoalPlannerPanel })));
 const OverviewPage = lazy(() => import('@/features/overview/components/dashboard/OverviewPage'));
 const CredentialManager = lazy(() => import('@/features/vault/sub_credentials/manager/CredentialManager').then(m => ({ default: m.CredentialManager })));
 const TeamCanvas = lazy(() => import('@/features/pipeline/components/TeamCanvas'));
@@ -206,6 +207,10 @@ export default function PersonasPage() {
       // Groups manager (tier-gated alongside Teams)
       if (agentTab === 'groups') {
         return <ErrorBoundary name="Groups"><Suspense fallback={SectionFallback}><GroupManagerPage /></Suspense></ErrorBoundary>;
+      }
+      // Goal-to-Plan — read-only narrated planner (idea-ba306c32, Stage 1)
+      if (agentTab === 'planner') {
+        return <ErrorBoundary name="GoalPlanner"><Suspense fallback={SectionFallback}><GoalPlannerPanel /></Suspense></ErrorBoundary>;
       }
       if (personasFetched && !isLoading && !error && personas.length === 0) {
         return <ErrorBoundary name="UnifiedBuildEntry"><Suspense fallback={SectionFallback}><UnifiedBuildEntry /></Suspense></ErrorBoundary>;
