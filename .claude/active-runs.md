@@ -36,21 +36,27 @@ timestamp — the next session can recognize it as abandoned.
 - **[2026-05-23 — started] athena-orb Step 1 — in-footer avatar + hold-to-talk**
   - **Source:** User-driven implementation of Step 1 from `docs/features/companion/athena-orb-overlay-plan.md`. Swap the footer `<Bot>` glyph for the real `AthenaAvatar`; add press-and-hold dictation that fires a voice turn through the existing `send()` pipeline without opening the panel.
   - **Paths:** `src/features/plugins/companion/CompanionFooterIcon.tsx`, `src/features/plugins/companion/companionStore.ts` (additive `voiceTurnRequest` field), `src/features/plugins/companion/CompanionPanel.tsx` (one top-level consumer effect), `src/i18n/locales/en.json` (additive `plugins.companion.footer_*` keys only), `docs/features/companion/README.md`, `.claude/active-runs.md`
-  - **Status:** started
+  - **Status:** started — Step 1 `e64af71e0`, Step 2a `684fa34e0`, Step 2b `54b366869`. Step 2c (on-device Whisper STT) parked; audio-reactive analyser glow parked (needs centralized playback).
   - **Branch:** master (small surgical multi-file change, user-driven directly in main checkout so they can test live; staging only my own files per parallel-safety primitives — NOT touching the 50+ in-flight locale edits already in the working tree)
-  - **Note:** Companion `## Active` entry from 2026-05-16 is >2h old (stale/abandoned per the 2-hour rule); recently-completed shows companion work already merged. Reuses existing `AthenaAvatar`, `useDictation`, and `send()`. Uses browser dictation for Step 1 (the local-STT engine is the separate parallel workstream in the plan); flagged in code + README.
+  - **Note:** Companion `## Active` entry from 2026-05-16 is >2h old (stale/abandoned per the 2-hour rule); recently-completed shows companion work already merged. Step 1 = footer avatar + hold-to-talk. Step 2a = floating dockable orb (`minimized` state, `orb/AthenaOrbLayer`+`orb/AthenaOrb`, shared `useHoldToTalk`, `companionOrbEnabled`/`companionOrbPos`, Setup toggle, App.tsx mount). Browser dictation for now; on-device Whisper STT is Step 2c. Both commits: tsc + eslint clean, 360 companion+store tests green.
 
-- **[2026-05-23 14:20 — completed (48bed268d, c0ad24d24, b1048e782, 59a36da24)] /friend — orchestration (team assignments Phase A)**
-  - **Source:** Continuation of design session — Phase A (4 cycles) of team-assignment + orchestration layer. Design locked in conversation: capabilities = existing `DesignUseCase[]` on `persona.design_context`; Sonnet via `ClaudeProvider` (subscription); review surfaced through existing notification center (new `processType` values); parallel DAG runner with `max_parallel_steps` gate; navigation = sub-tab on team page; cascade-skip semantics; per-assignment pause scope.
+- **[2026-05-23 14:20 — completed (A+B+C, 10 commits)] /friend — orchestration (team assignments, full arc)**
+  - **Source:** Continuation of design session — full A→B→C arc of team-assignment + orchestration layer. Design locked in conversation: capabilities = existing `DesignUseCase[]` on `persona.design_context`; Sonnet via `ClaudeProvider` (subscription); review surfaced through existing notification center (new `processType` values); parallel DAG runner with `max_parallel_steps` gate; navigation = sub-tab on team page; cascade-skip semantics; per-assignment pause scope; Athena chat dispatch via existing approval flow.
   - **Status:** completed
   - **Branch:** `worktree-friend-orchestration-142031` (unmerged — user owns merge decision)
   - **Worktree:** `.claude/worktrees/friend-orchestration-142031/`
-  - **Commits:**
-    - A1 `48bed268d` — schema + orchestrator skeleton (3 tables, parallel DAG runner with manual matching, cascade-skip, eligibility pre-flight, review-resolution helpers, TEAM_ASSIGNMENT_PROGRESS event)
-    - A2 `c0ad24d24` — Tauri commands + ts-rs + Zustand slice (9 commands registered, AssignmentSlice with progress-bridge applyAssignmentProgress)
-    - A3 `b1048e782` — Team UI composer + checklist + live updates (AssignmentsButton/Panel/ProgressListener in sub_assignments/, mounted on CanvasOverlays alongside TeamMemoryBadge)
-    - A4 `59a36da24` — process notifications + inline step review (team-assignment-failed/unmatched ProcessTypes, useAssignmentNotificationDispatcher in BackgroundServices, inline Edit/Reassign/Skip actions on failed step rows)
-  - **Stats:** 47 file-touches across 4 commits, +2900 lines. Phase B (auto-match via embedding + Sonnet llm_eval + auto-decompose) and Phase C (Athena chat layer) are explicit follow-ons.
+  - **Commits (chronological):**
+    - A1 `48bed268d` — schema + orchestrator skeleton (3 tables, parallel DAG runner with manual matching, cascade-skip, eligibility pre-flight, TEAM_ASSIGNMENT_PROGRESS event)
+    - A2 `c0ad24d24` — Tauri commands + ts-rs + Zustand slice (9 commands, AssignmentSlice with progress-bridge applyAssignmentProgress)
+    - A3 `b1048e782` — Team UI composer + checklist + live updates (AssignmentsButton/Panel in sub_assignments/, mounted on CanvasOverlays)
+    - A4 `59a36da24` — process notifications + inline step review (team-assignment-failed/unmatched ProcessTypes, useAssignmentNotificationDispatcher in BackgroundServices, inline Edit/Reassign/Skip on failed steps)
+    - B1 `9781aa857` — matching layer (engine/team_assignment_matching.rs: extract_candidates, match_via_embedding ml-gated, match_via_llm_eval Sonnet, decompose_goal Sonnet; orchestrator resolve_assignee wires all three with embedding→llm_eval auto-fallback at < 0.45 confidence)
+    - B2 `ce435be7a` — composer strategy picker + match-result display (manual/embedding/llm_eval dropdown, optional per-step persona in auto modes, MatchConfidence chip + rationale italic on step rows)
+    - B3 `dbeb2cad6` — auto-decompose composer button (decompose_team_assignment_goal Tauri command, Sparkles button populates step rows from Sonnet proposal)
+    - C1 `5d7a7630b` — companion_assign_team IPC + OperativeMemory hook (begin_dispatched_operation tied to assignment, source='athena' + companion_op_id wiring, companion_assign_team_inner shared helper)
+    - C2 `2952a9e72` — companion chat-side cards + bridge (useCompanionAssignmentBridge filters source='athena', AthenaAssignmentRef in companionStore, CompanionAssignmentCards strip above messages)
+    - C3 `c5b06b433` — Athena dispatcher intent (assign_team in ALLOWED_ACTIONS, execute_assign_team executor in approvals.rs, constitution.md prompt vocabulary entry)
+  - **Stats:** ~70 file-touches across 10 commits, +4,500 lines. End-to-end: user can create assignments from canvas with manual/embedding/llm_eval matching + auto-decompose; failure surfaces through existing notification center with inline review; Athena chat creates assignments via "have the X team handle Y" → approval card → orchestrator. Phases A/B/C arc closed.
 
 - **[2026-05-18 — started] /prototype — PersonaOverviewPage A/B variants (Grid + Wildcard)**
   - **Source:** User-driven /prototype skill — directional variants for the All Personas list view. Two variants requested: (1) a uniform card grid with simplified metadata (icon, title, connector icons, status dot, trust level, triggers, last run), (2) a wildcard with a different mental model.
