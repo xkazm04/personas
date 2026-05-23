@@ -13016,6 +13016,8 @@
     "glossary_credential": "A saved login or access key that lets the agent connect to an external service.",
     "glossary_oauth": "A secure way to grant access without sharing your password.",
     "sort_by": "Sort by {label}",
+    "sort_active_asc": "Sorted by {label}, ascending. Activate to sort descending.",
+    "sort_active_desc": "Sorted by {label}, descending. Activate to sort ascending.",
     "filter_label": "Filter {label}",
     "search_ellipsis": "Search...",
     "search_label": "Search {label}",

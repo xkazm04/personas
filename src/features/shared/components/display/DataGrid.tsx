@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence, type Variants } from 'framer-motion';
-import { ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Inbox, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Inbox, X } from 'lucide-react';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
+import { SortableHeader } from '@/features/shared/components/display/SortableHeader';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DEFAULT_DENSITY, DENSITY_TOKENS, type Density } from '@/lib/density';
@@ -211,11 +212,6 @@ export function DataGrid<T>({
         style={{ gridTemplateColumns: gridTemplate }}
       >
         {columns.map((col) => {
-          const isSorted = sortKey === col.key;
-          const SortIcon = isSorted
-            ? sortDirection === 'asc' ? ArrowUp : ArrowDown
-            : ArrowUpDown;
-
           /* Select-all checkbox header */
           if (col.key === 'select' && onSelectAll) {
             return (
@@ -266,18 +262,16 @@ export function DataGrid<T>({
           /* Sortable header */
           if (col.sortable && onSort) {
             return (
-              <button
+              <SortableHeader
                 key={col.key}
-                type="button"
-                onClick={() => onSort(col.key)}
-                className={`${headerPadCls} typo-label text-foreground flex items-center gap-1 hover:text-foreground transition-colors focus-ring ${
-                  col.align === 'right' ? 'justify-end' : ''
-                }`}
-                aria-sort={isSorted ? (sortDirection === 'asc' ? 'ascending' : 'descending') : undefined}
-              >
-                {col.label}
-                <SortIcon className={`w-3 h-3 ${isSorted ? 'text-foreground' : 'text-foreground'}`} />
-              </button>
+                as="div"
+                label={col.label}
+                active={sortKey === col.key}
+                dir={sortDirection}
+                onSort={() => onSort(col.key)}
+                align={col.align === 'right' ? 'right' : 'left'}
+                padding={headerPadCls}
+              />
             );
           }
 

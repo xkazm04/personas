@@ -13022,6 +13022,8 @@ export type Translations = {
     glossary_credential: string;
     glossary_oauth: string;
     sort_by: string;
+    sort_active_asc: string;
+    sort_active_desc: string;
     filter_label: string;
     search_ellipsis: string;
     search_label: string;

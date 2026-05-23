@@ -1,9 +1,10 @@
 import {
-  ArrowUpDown, Activity,
+  Activity,
   CheckCircle2, PauseCircle, XCircle, AlertCircle,
 } from 'lucide-react';
 import type { DeployStatus, SortKey, SortDir } from './deploymentTypes';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { SortableHeader } from '@/features/shared/components/display/SortableHeader';
 
 // ---------------------------------------------------------------------------
 // Status icon
@@ -72,22 +73,14 @@ export function SortHeader({
   onToggle: (key: SortKey) => void;
   align?: 'right';
 }) {
-  const isActive = current === key;
   return (
-    <th
-      className={`px-4 py-2.5 typo-label text-foreground cursor-pointer hover:text-muted-foreground/90 transition-colors select-none ${
-        align === 'right' ? 'text-right' : 'text-left'
-      }`}
-      onClick={() => onToggle(key)}
-    >
-      <span className="inline-flex items-center gap-1">
-        {label}
-        <ArrowUpDown className={`w-3 h-3 transition-colors ${isActive ? 'text-primary' : 'text-foreground'}`} />
-        {isActive && (
-          <span className="typo-caption text-primary">{dir === 'asc' ? '\u2191' : '\u2193'}</span>
-        )}
-      </span>
-    </th>
+    <SortableHeader
+      label={label}
+      active={current === key}
+      dir={dir}
+      onSort={() => onToggle(key)}
+      align={align === 'right' ? 'right' : 'left'}
+    />
   );
 }
 
