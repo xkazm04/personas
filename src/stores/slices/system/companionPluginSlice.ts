@@ -139,9 +139,10 @@ export interface CompanionPluginSlice {
   /** 0..1 — only meaningful on multilingual_v2 / v3. `null` omits. */
   companionVoiceStyle: number | null;
   /**
-   * Playback volume (0..1) applied to every TTS `<audio>` element. Distinct
-   * from the engine tuning above — this is client-side output level, not a
-   * synthesis parameter. Default 1 (full).
+   * Playback volume (0..1) applied to every TTS `<audio>` element, live —
+   * `voicePlayback.play()` subscribes so a change affects Athena mid-sentence.
+   * Distinct from the engine tuning above — this is client-side output level,
+   * not a synthesis parameter. Default 0.5.
    */
   companionVoiceVolume: number;
   /** Phase F: pending prefill from Athena's prefill_persona_create op. */
@@ -243,7 +244,7 @@ export const createCompanionPluginSlice: StateCreator<
   companionVoiceSimilarity: 0.7,
   companionVoiceSpeed: null,
   companionVoiceStyle: 0.05,
-  companionVoiceVolume: 1,
+  companionVoiceVolume: 0.5,
   companionPrefill: null,
   companionLabJump: null,
   companionPanelCompact: false,

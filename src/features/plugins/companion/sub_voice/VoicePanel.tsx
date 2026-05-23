@@ -45,6 +45,8 @@ function EngineSelectorCard() {
   const setEngine = useSystemStore((s) => s.setCompanionVoiceEngine);
   const voiceEnabled = useSystemStore((s) => s.companionVoiceEnabled);
   const setVoiceEnabled = useSystemStore((s) => s.setCompanionVoiceEnabled);
+  const volume = useSystemStore((s) => s.companionVoiceVolume);
+  const setVolume = useSystemStore((s) => s.setCompanionVoiceVolume);
 
   // Switching engines invalidates the playback gate — disable until the
   // new engine reports it's configured. Avoids a state where the toggle
@@ -75,6 +77,27 @@ function EngineSelectorCard() {
           icon={<HardDrive className="w-4 h-4" />}
           label={t.plugins.companion.voice_engine_piper}
           caption={t.plugins.companion.voice_engine_piper_caption}
+        />
+      </div>
+
+      {/* Playback volume — engine-agnostic; mirrors the chat toolbar's
+          voice popover (both bind `companionVoiceVolume`). */}
+      <div className="px-1 pt-1 pb-2 space-y-1.5">
+        <div className="flex items-center justify-between">
+          <label className="typo-caption text-foreground font-medium">
+            {t.plugins.companion.voice_volume_label}
+          </label>
+          <span className="typo-code text-[11px] text-foreground">{Math.round(volume * 100)}%</span>
+        </div>
+        <input
+          type="range"
+          min={0}
+          max={1}
+          step={0.05}
+          value={volume}
+          onChange={(e) => setVolume(Number(e.target.value))}
+          className="w-full accent-primary"
+          aria-label={t.plugins.companion.voice_volume_label}
         />
       </div>
     </SectionCard>
