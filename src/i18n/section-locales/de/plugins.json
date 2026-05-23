@@ -1719,7 +1719,9 @@
     "team_preview_member_last_run": "Letzter Lauf",
     "team_preview_member_never_run": "nie",
     "team_preview_member_budget": "Budget",
-    "team_preview_member_open": "Im Editor öffnen"
+    "team_preview_member_open": "Im Editor öffnen",
+    "team_preview_canvas_reset": "Zurücksetzen",
+    "team_preview_canvas_reset_title": "Zoom und Pan auf Standard zurücksetzen"
   },
   "dev_runner": {
     "self_healing": "Selbstheilung",

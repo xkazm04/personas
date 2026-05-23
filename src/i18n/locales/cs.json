@@ -11362,7 +11362,9 @@
       "team_preview_member_last_run": "Poslední spuštění",
       "team_preview_member_never_run": "nikdy",
       "team_preview_member_budget": "Rozpočet",
-      "team_preview_member_open": "Otevřít v editoru"
+      "team_preview_member_open": "Otevřít v editoru",
+      "team_preview_canvas_reset": "Reset",
+      "team_preview_canvas_reset_title": "Resetovat přiblížení a posun na výchozí"
     },
     "dev_runner": {
       "self_healing": "Self-healing",

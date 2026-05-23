@@ -11362,7 +11362,9 @@
       "team_preview_member_last_run": "Lần chạy gần nhất",
       "team_preview_member_never_run": "chưa bao giờ",
       "team_preview_member_budget": "Ngân sách",
-      "team_preview_member_open": "Mở trong trình chỉnh sửa"
+      "team_preview_member_open": "Mở trong trình chỉnh sửa",
+      "team_preview_canvas_reset": "Đặt lại",
+      "team_preview_canvas_reset_title": "Đặt lại zoom và pan về mặc định"
     },
     "dev_runner": {
       "self_healing": "Tự phục hồi",

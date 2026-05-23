@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { Maximize2 } from 'lucide-react';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaTeamMember } from '@/lib/bindings/PersonaTeamMember';
 import type { PersonaTeamConnection } from '@/lib/bindings/PersonaTeamConnection';
@@ -25,6 +26,19 @@ const PREVIEW_WIDTH = 460;
 const PREVIEW_HEIGHT = 180;
 const NODE_RADIUS = 10;
 const PADDING = 24;
+
+// Pan/zoom bounds (cycle 25). The default view is `scale=1, tx=ty=0` —
+// graph fits the viewport. MIN_SCALE allows zooming OUT to half the
+// default when the user wants to see context after panning; MAX_SCALE
+// allows zooming IN by 4× to inspect crowded clusters. Pan distance is
+// not clamped — the visual band is the original viewBox, so a heavily
+// panned graph just disappears off-screen; the Reset button restores.
+const MIN_SCALE = 0.5;
+const MAX_SCALE = 4;
+// Per-tick zoom factor on the wheel. ~1.1 gives a smooth ramp at a
+// typical wheel notch; multiplicative so the rate is constant across
+// the zoom range.
+const WHEEL_ZOOM_STEP = 1.1;
 
 /**
  * Read-only fit-to-rect SVG mini-canvas for the bound PersonaTeam.
@@ -141,6 +155,91 @@ export function TeamGraphPreview({
     return { nodes: placedNodes, edges: placedEdges, allUnplaced };
   }, [members, connections, personas, teamColor]);
 
+  // Pan/zoom state (cycle 25). Stored as scale + (tx, ty) translation,
+  // applied as a single <g transform="translate(...) scale(...)"> on the
+  // graph contents. Wheel events zoom around the cursor; mousedown-drag
+  // on the empty canvas pans. Node-clicks still navigate (see hit-test
+  // guard in handlePointerDown — clicks on a <g role="button"> skip pan).
+  const [scale, setScale] = useState(1);
+  const [translate, setTranslate] = useState({ x: 0, y: 0 });
+  const panRef = useRef<{ startX: number; startY: number; tx: number; ty: number } | null>(null);
+  const svgRef = useRef<SVGSVGElement | null>(null);
+
+  const resetView = useCallback(() => {
+    setScale(1);
+    setTranslate({ x: 0, y: 0 });
+  }, []);
+
+  const handleWheel = useCallback((e: React.WheelEvent<SVGSVGElement>) => {
+    // Without preventDefault the outer modal's overflow-y-auto eats the
+    // wheel and the user can't zoom — they just scroll the modal body.
+    e.preventDefault();
+    const svg = svgRef.current;
+    if (!svg) return;
+    const rect = svg.getBoundingClientRect();
+    // Convert cursor position to SVG viewBox coordinates so we can zoom
+    // around the cursor (not the center). This keeps the point under the
+    // cursor stationary as the scale changes — the standard "zoom-to-cursor"
+    // affordance every map app uses.
+    const vx = ((e.clientX - rect.left) / rect.width) * PREVIEW_WIDTH;
+    const vy = ((e.clientY - rect.top) / rect.height) * PREVIEW_HEIGHT;
+    const zoomIn = e.deltaY < 0;
+    const factor = zoomIn ? WHEEL_ZOOM_STEP : 1 / WHEEL_ZOOM_STEP;
+    setScale((prev) => {
+      const next = Math.max(MIN_SCALE, Math.min(MAX_SCALE, prev * factor));
+      if (next === prev) return prev;
+      // Compose translate so (vx, vy) maps to itself before+after.
+      // newTx = vx - (vx - oldTx) * (next/prev)
+      setTranslate((tr) => ({
+        x: vx - (vx - tr.x) * (next / prev),
+        y: vy - (vy - tr.y) * (next / prev),
+      }));
+      return next;
+    });
+  }, []);
+
+  const handleSvgPointerDown = useCallback((e: React.PointerEvent<SVGSVGElement>) => {
+    // Skip if the click landed on a node (the node's own onClick handles it).
+    // Node groups carry role="button"; we walk the event target's ancestry to
+    // detect that.
+    let el = e.target as Element | null;
+    while (el && el !== e.currentTarget) {
+      if (el.getAttribute && el.getAttribute('role') === 'button') return;
+      el = el.parentElement;
+    }
+    panRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      tx: translate.x,
+      ty: translate.y,
+    };
+    (e.currentTarget as Element).setPointerCapture(e.pointerId);
+  }, [translate.x, translate.y]);
+
+  const handleSvgPointerMove = useCallback((e: React.PointerEvent<SVGSVGElement>) => {
+    const pan = panRef.current;
+    if (!pan) return;
+    const svg = svgRef.current;
+    if (!svg) return;
+    const rect = svg.getBoundingClientRect();
+    // Convert pixel delta to viewBox delta so panning feels 1:1 with the
+    // visible image regardless of how the SVG is scaled by CSS.
+    const dxVB = ((e.clientX - pan.startX) / rect.width) * PREVIEW_WIDTH;
+    const dyVB = ((e.clientY - pan.startY) / rect.height) * PREVIEW_HEIGHT;
+    setTranslate({ x: pan.tx + dxVB, y: pan.ty + dyVB });
+  }, []);
+
+  const handleSvgPointerUp = useCallback((e: React.PointerEvent<SVGSVGElement>) => {
+    panRef.current = null;
+    try {
+      (e.currentTarget as Element).releasePointerCapture(e.pointerId);
+    } catch {
+      // Not captured (release on a non-down event). Harmless.
+    }
+  }, []);
+
+  const isTransformed = scale !== 1 || translate.x !== 0 || translate.y !== 0;
+
   if (!layout) return null;
 
   return (
@@ -154,14 +253,36 @@ export function TeamGraphPreview({
             ({t.plugins.dev_projects.team_preview_canvas_unplaced})
           </span>
         )}
+        <span className="ml-auto flex items-center gap-2">
+          {isTransformed && (
+            <button
+              type="button"
+              onClick={resetView}
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-caption text-foreground/60 hover:text-foreground/90 hover:bg-secondary/40 rounded-card transition-colors"
+              title={t.plugins.dev_projects.team_preview_canvas_reset_title}
+            >
+              <Maximize2 className="w-3 h-3" />
+              {t.plugins.dev_projects.team_preview_canvas_reset}
+            </button>
+          )}
+          <span className="typo-caption text-foreground/40 font-mono tabular-nums">
+            {Math.round(scale * 100)}%
+          </span>
+        </span>
       </div>
       <div className="rounded-card border border-primary/10 bg-secondary/15 overflow-hidden">
         <svg
+          ref={svgRef}
           viewBox={`0 0 ${PREVIEW_WIDTH} ${PREVIEW_HEIGHT}`}
           preserveAspectRatio="xMidYMid meet"
           className="w-full block"
-          style={{ height: PREVIEW_HEIGHT }}
+          style={{ height: PREVIEW_HEIGHT, cursor: panRef.current ? 'grabbing' : 'grab' }}
           aria-label={t.plugins.dev_projects.team_preview_canvas_aria}
+          onWheel={handleWheel}
+          onPointerDown={handleSvgPointerDown}
+          onPointerMove={handleSvgPointerMove}
+          onPointerUp={handleSvgPointerUp}
+          onPointerCancel={handleSvgPointerUp}
         >
           {/* Connection arrowhead — neutral, scales with the line color via stroke. */}
           <defs>
@@ -177,6 +298,12 @@ export function TeamGraphPreview({
               <path d="M 0 0 L 10 5 L 0 10 z" fill={colorWithAlpha(teamColor, 0.7)} />
             </marker>
           </defs>
+
+          {/* Pan/zoom layer (cycle 25). Edges + nodes ride this group so a
+              single transform handles both. Translate before scale so the
+              origin stays the viewBox top-left and the math in handleWheel
+              composes consistently. */}
+          <g transform={`translate(${translate.x} ${translate.y}) scale(${scale})`}>
 
           {/* Edges first so they sit below the node circles. */}
           {layout.edges.map((e) => (
@@ -236,6 +363,7 @@ export function TeamGraphPreview({
               />
             </g>
           ))}
+          </g>
         </svg>
       </div>
     </section>

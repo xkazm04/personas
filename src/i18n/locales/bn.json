@@ -11362,7 +11362,9 @@
       "team_preview_member_last_run": "শেষ রান",
       "team_preview_member_never_run": "কখনো নয়",
       "team_preview_member_budget": "বাজেট",
-      "team_preview_member_open": "এডিটরে খুলুন"
+      "team_preview_member_open": "এডিটরে খুলুন",
+      "team_preview_canvas_reset": "রিসেট",
+      "team_preview_canvas_reset_title": "জুম এবং প্যান ডিফল্টে রিসেট করুন"
     },
     "dev_runner": {
       "self_healing": "স্ব-নিরাময়",

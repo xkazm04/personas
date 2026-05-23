@@ -1719,7 +1719,9 @@
     "team_preview_member_last_run": "最終実行",
     "team_preview_member_never_run": "なし",
     "team_preview_member_budget": "予算",
-    "team_preview_member_open": "エディタで開く"
+    "team_preview_member_open": "エディタで開く",
+    "team_preview_canvas_reset": "リセット",
+    "team_preview_canvas_reset_title": "ズームとパンをデフォルトにリセット"
   },
   "dev_runner": {
     "self_healing": "自己修復",

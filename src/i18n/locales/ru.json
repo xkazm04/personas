@@ -11362,7 +11362,9 @@
       "team_preview_member_last_run": "Последний запуск",
       "team_preview_member_never_run": "никогда",
       "team_preview_member_budget": "Бюджет",
-      "team_preview_member_open": "Открыть в редакторе"
+      "team_preview_member_open": "Открыть в редакторе",
+      "team_preview_canvas_reset": "Сбросить",
+      "team_preview_canvas_reset_title": "Сбросить масштаб и панораму"
     },
     "dev_runner": {
       "self_healing": "Самовосстановление",

@@ -1719,7 +1719,9 @@
     "team_preview_member_last_run": "Dernière exécution",
     "team_preview_member_never_run": "jamais",
     "team_preview_member_budget": "Budget",
-    "team_preview_member_open": "Ouvrir dans l'éditeur"
+    "team_preview_member_open": "Ouvrir dans l'éditeur",
+    "team_preview_canvas_reset": "Réinitialiser",
+    "team_preview_canvas_reset_title": "Réinitialiser le zoom et le panoramique"
   },
   "dev_runner": {
     "self_healing": "Auto-correction",

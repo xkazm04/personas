@@ -1719,7 +1719,9 @@
     "team_preview_member_last_run": "마지막 실행",
     "team_preview_member_never_run": "없음",
     "team_preview_member_budget": "예산",
-    "team_preview_member_open": "에디터에서 열기"
+    "team_preview_member_open": "에디터에서 열기",
+    "team_preview_canvas_reset": "초기화",
+    "team_preview_canvas_reset_title": "확대/축소 및 이동을 기본값으로 초기화"
   },
   "dev_runner": {
     "self_healing": "자가 복구",

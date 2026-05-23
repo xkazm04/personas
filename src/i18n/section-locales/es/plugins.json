@@ -1719,7 +1719,9 @@
     "team_preview_member_last_run": "Última ejecución",
     "team_preview_member_never_run": "nunca",
     "team_preview_member_budget": "Presupuesto",
-    "team_preview_member_open": "Abrir en editor"
+    "team_preview_member_open": "Abrir en editor",
+    "team_preview_canvas_reset": "Restablecer",
+    "team_preview_canvas_reset_title": "Restablecer zoom y pan a valores por defecto"
   },
   "dev_runner": {
     "self_healing": "Auto-Sanación",

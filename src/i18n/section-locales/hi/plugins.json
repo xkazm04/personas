@@ -1719,7 +1719,9 @@
     "team_preview_member_last_run": "अंतिम रन",
     "team_preview_member_never_run": "कभी नहीं",
     "team_preview_member_budget": "बजट",
-    "team_preview_member_open": "एडिटर में खोलें"
+    "team_preview_member_open": "एडिटर में खोलें",
+    "team_preview_canvas_reset": "रीसेट",
+    "team_preview_canvas_reset_title": "ज़ूम और पैन को डिफ़ॉल्ट पर रीसेट करें"
   },
   "dev_runner": {
     "self_healing": "Self-Healing",

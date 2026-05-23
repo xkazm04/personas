@@ -1719,7 +1719,9 @@
     "team_preview_member_last_run": "Run terakhir",
     "team_preview_member_never_run": "tidak pernah",
     "team_preview_member_budget": "Anggaran",
-    "team_preview_member_open": "Buka di editor"
+    "team_preview_member_open": "Buka di editor",
+    "team_preview_canvas_reset": "Reset",
+    "team_preview_canvas_reset_title": "Reset zoom dan pan ke default"
   },
   "dev_runner": {
     "self_healing": "Self-Healing",

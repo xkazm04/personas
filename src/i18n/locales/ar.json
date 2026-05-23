@@ -11362,7 +11362,9 @@
       "team_preview_member_last_run": "آخر تشغيل",
       "team_preview_member_never_run": "أبدًا",
       "team_preview_member_budget": "الميزانية",
-      "team_preview_member_open": "فتح في المحرر"
+      "team_preview_member_open": "فتح في المحرر",
+      "team_preview_canvas_reset": "إعادة تعيين",
+      "team_preview_canvas_reset_title": "إعادة تعيين التكبير والتحريك إلى الافتراضي"
     },
     "dev_runner": {
       "self_healing": "المعالجة الذاتية",

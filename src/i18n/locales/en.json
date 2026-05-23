@@ -11531,6 +11531,8 @@
       "team_preview_canvas_unplaced": "members not laid out yet",
       "team_preview_canvas_aria": "Mini canvas — team members and their connections",
       "team_preview_canvas_open_persona": "open in editor",
+      "team_preview_canvas_reset": "Reset",
+      "team_preview_canvas_reset_title": "Reset zoom and pan to defaults",
       "team_preview_member_enabled": "Enabled",
       "team_preview_member_disabled": "Disabled",
       "team_preview_member_trust": "Trust",

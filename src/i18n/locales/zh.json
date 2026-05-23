@@ -11362,7 +11362,9 @@
       "team_preview_member_last_run": "最近运行",
       "team_preview_member_never_run": "从未",
       "team_preview_member_budget": "预算",
-      "team_preview_member_open": "在编辑器中打开"
+      "team_preview_member_open": "在编辑器中打开",
+      "team_preview_canvas_reset": "重置",
+      "team_preview_canvas_reset_title": "重置缩放和平移为默认值"
     },
     "dev_runner": {
       "self_healing": "自愈",
