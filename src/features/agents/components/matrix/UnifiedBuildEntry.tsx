@@ -195,6 +195,20 @@ export function UnifiedBuildEntry() {
     }
   }, []);
 
+  // Mirror the intent textarea into the system store's
+  // `activeBuildIntent` slot so other surfaces (currently: the
+  // Companion → Decisions panel) can auto-scope to "the persona
+  // the user is actively designing." Empty intent clears the slot
+  // — opening a fresh build slate should not surface a stale
+  // "currently designing" banner elsewhere. Fires on every change;
+  // there's only one writer of this slot, no debounce concern.
+  useEffect(() => {
+    const trimmed = intentText.trim();
+    useSystemStore
+      .getState()
+      .setActiveBuildIntent(trimmed.length > 0 ? trimmed : null);
+  }, [intentText]);
+
   // -- Post-promotion: navigate to the promoted agent with fade transition --
 
   const handleViewPromotedAgent = useCallback(() => {
@@ -502,6 +516,11 @@ export function UnifiedBuildEntry() {
         resolvedMode,
         pendingCompanionSessionIdRef.current,
       );
+      // Launch succeeded — clear the active-build-intent mirror so the
+      // Decisions panel stops scoping to this intent the next time the
+      // user opens it. (The build session itself is now in-flight or
+      // promoted; the "currently designing" affordance has done its job.)
+      useSystemStore.getState().setActiveBuildIntent(null);
     } catch (err) {
       logger.error("Build session failed to start", { error: err });
       setLaunchError(
