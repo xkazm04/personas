@@ -161,15 +161,12 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       variant === 'accent' ? accentClasses : '',
       SIZE_CLASSES[size],
       block ? 'w-full justify-center' : '',
-      // When disabledReason is present, skip pointer-events-none so the tooltip can trigger on hover.
-      // `is-disabled` is a project utility (see globals.css) that pairs --disabled-opacity with
-      // cursor-not-allowed + pointer-events-none in one place; the reason variant keeps pointer
-      // events on so the Tooltip can fire and applies opacity from the var directly.
-      isDisabled
-        ? showReason
-          ? 'cursor-not-allowed'
-          : 'is-disabled'
-        : 'cursor-pointer',
+      // `is-disabled` is a project utility (see globals.css) pairing --disabled-opacity with
+      // cursor-not-allowed + pointer-events-none. We keep pointer-events-none even with a reason:
+      // a native disabled <button> swallows pointer/focus events regardless, so the Tooltip's
+      // focusable wrapper (tabIndex 0 span) is what surfaces the reason — hover falls through the
+      // inert button to that wrapper, and Tab lands on the wrapper rather than the dead button.
+      isDisabled ? 'is-disabled' : 'cursor-pointer',
       className,
     ]
       .filter(Boolean)
@@ -177,11 +174,8 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     const lockedStyle =
       lockedMinWidth != null && !isIconOnly ? { minWidth: `${lockedMinWidth}px` } : undefined;
-    const reasonOpacityStyle = showReason ? { opacity: 'var(--disabled-opacity)' } : undefined;
     const mergedStyle =
-      lockedStyle || style || reasonOpacityStyle
-        ? { ...lockedStyle, ...reasonOpacityStyle, ...style }
-        : undefined;
+      lockedStyle || style ? { ...lockedStyle, ...style } : undefined;
     const labelContent = loading && loadingLabel !== undefined ? loadingLabel : children;
     const dimClass = loading ? 'opacity-60' : '';
 
@@ -223,7 +217,22 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     );
 
     if (showReason) {
-      return <Tooltip content={disabledReason} placement="top" delay={200}>{btn}</Tooltip>;
+      // triggerFocusable makes the wrapper span the focus/hover target so the reason surfaces for
+      // mouse AND keyboard users even though the disabled button itself is inert. The wrapper must
+      // match the button's layout footprint (full width for block buttons) and show the
+      // not-allowed cursor, since the pointer-events-none button can't render its own.
+      const wrapperClass = `${block ? 'flex w-full' : 'inline-flex'} cursor-not-allowed`;
+      return (
+        <Tooltip
+          content={disabledReason}
+          placement="top"
+          delay={200}
+          triggerFocusable
+          triggerClassName={wrapperClass}
+        >
+          {btn}
+        </Tooltip>
+      );
     }
 
     return btn;
