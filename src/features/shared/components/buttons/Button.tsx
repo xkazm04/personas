@@ -220,8 +220,10 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       // triggerFocusable makes the wrapper span the focus/hover target so the reason surfaces for
       // mouse AND keyboard users even though the disabled button itself is inert. The wrapper must
       // match the button's layout footprint (full width for block buttons) and show the
-      // not-allowed cursor, since the pointer-events-none button can't render its own.
-      const wrapperClass = `${block ? 'flex w-full' : 'inline-flex'} cursor-not-allowed`;
+      // not-allowed cursor, since the pointer-events-none button can't render its own. focus-ring
+      // gives keyboard users a visible focus indicator on the wrapper (the inert button's own
+      // focus-ring never shows because it can't be focused); rounded-xl keeps the ring on-radius.
+      const wrapperClass = `${block ? 'flex w-full' : 'inline-flex'} cursor-not-allowed focus-ring rounded-xl`;
       return (
         <Tooltip
           content={disabledReason}
