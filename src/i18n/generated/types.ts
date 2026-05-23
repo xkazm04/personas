@@ -12689,6 +12689,13 @@ export type Translations = {
       notification_failed_summary: string;
       notification_unmatched_summary: string;
       athena_open_panel: string;
+      templates_label: string;
+      save_template: string;
+      saving_template: string;
+      template_saved: string;
+      save_template_hint: string;
+      delete_template: string;
+      use_template: string;
     };
     agent_teams: string;
     agent_teams_subtitle: string;

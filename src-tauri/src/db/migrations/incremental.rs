@@ -3494,6 +3494,31 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
             ON team_assignment_events(assignment_id, created_at);",
     )?;
 
+    // -- Team assignment templates (Phase C4) ------------------------------------
+    // A saved, reusable assignment shape: title + goal + match strategy +
+    // parallelism + the full step list (stored as a JSON array of
+    // CreateTeamAssignmentStepInput). Instantiating a template clones it into
+    // a fresh team_assignments row. Scoped per team (FK CASCADE) so a deleted
+    // team takes its templates with it. No FK from instantiated assignments
+    // back to the template — a template is a stamp, not a parent.
+    ddl_step(
+        conn,
+        "CREATE TABLE IF NOT EXISTS team_assignment_templates (
+            id                  TEXT PRIMARY KEY,
+            team_id             TEXT NOT NULL REFERENCES persona_teams(id) ON DELETE CASCADE,
+            title               TEXT NOT NULL,
+            goal                TEXT NOT NULL,
+            match_strategy      TEXT NOT NULL DEFAULT 'manual'
+                                CHECK(match_strategy IN ('manual','embedding','llm_eval')),
+            max_parallel_steps  INTEGER NOT NULL DEFAULT 3,
+            steps_json          TEXT NOT NULL DEFAULT '[]',
+            created_at          TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at          TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_team_assignment_templates_team
+            ON team_assignment_templates(team_id, updated_at DESC);",
+    )?;
+
     Ok(())
 }
 

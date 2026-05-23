@@ -4,17 +4,23 @@ import { reportError } from "../../storeTypes";
 
 import {
   abortTeamAssignment,
+  createAssignmentTemplate,
   createTeamAssignment,
+  deleteAssignmentTemplate,
   deleteTeamAssignment,
   getTeamAssignmentDetail,
+  instantiateAssignmentTemplate,
+  listAssignmentTemplates,
   listTeamAssignments,
   resolveTeamAssignmentReview,
   startTeamAssignment,
 } from "@/api/pipeline/assignments";
 import type { CreateTeamAssignmentInput } from "@/lib/bindings/CreateTeamAssignmentInput";
+import type { CreateTeamAssignmentTemplateInput } from "@/lib/bindings/CreateTeamAssignmentTemplateInput";
 import type { ResolveStepReviewAction } from "@/lib/bindings/ResolveStepReviewAction";
 import type { TeamAssignment } from "@/lib/bindings/TeamAssignment";
 import type { TeamAssignmentDetail } from "@/lib/bindings/TeamAssignmentDetail";
+import type { TeamAssignmentTemplate } from "@/lib/bindings/TeamAssignmentTemplate";
 
 // ----------------------------------------------------------------------------
 // Live-update payload (mirrors the Rust orchestrator's emit_progress json)
@@ -39,9 +45,22 @@ export interface AssignmentSlice {
   assignmentsByTeam: Record<string, TeamAssignment[]>;
   /** Detail cache (assignment + steps + recent events). Keyed by assignment id. */
   assignmentDetails: Record<string, TeamAssignmentDetail>;
+  /** Per-team saved-template cache (Phase C4). Keyed by team_id. */
+  assignmentTemplatesByTeam: Record<string, TeamAssignmentTemplate[]>;
 
   // Actions
   fetchTeamAssignments: (teamId: string) => Promise<void>;
+  fetchAssignmentTemplates: (teamId: string) => Promise<void>;
+  saveAssignmentTemplate: (
+    input: CreateTeamAssignmentTemplateInput,
+  ) => Promise<TeamAssignmentTemplate | null>;
+  deleteAssignmentTemplate: (teamId: string, id: string) => Promise<void>;
+  /** Clone a template into a fresh assignment, refresh the team list,
+   *  and return the new assignment so the caller can expand it. */
+  instantiateTemplate: (
+    teamId: string,
+    templateId: string,
+  ) => Promise<TeamAssignment | null>;
   fetchAssignmentDetail: (id: string) => Promise<TeamAssignmentDetail | null>;
   createTeamAssignment: (
     input: CreateTeamAssignmentInput,
@@ -67,6 +86,7 @@ export const createAssignmentSlice: StateCreator<
 > = (set, get) => ({
   assignmentsByTeam: {},
   assignmentDetails: {},
+  assignmentTemplatesByTeam: {},
 
   fetchTeamAssignments: async (teamId) => {
     try {
@@ -76,6 +96,74 @@ export const createAssignmentSlice: StateCreator<
       }));
     } catch (err) {
       reportError(err, "Failed to fetch team assignments", set);
+    }
+  },
+
+  fetchAssignmentTemplates: async (teamId) => {
+    try {
+      const list = await listAssignmentTemplates(teamId);
+      set((state) => ({
+        assignmentTemplatesByTeam: {
+          ...state.assignmentTemplatesByTeam,
+          [teamId]: list,
+        },
+      }));
+    } catch (err) {
+      reportError(err, "Failed to fetch assignment templates", set);
+    }
+  },
+
+  saveAssignmentTemplate: async (input) => {
+    try {
+      const tpl = await createAssignmentTemplate(input);
+      set((state) => {
+        const existing = state.assignmentTemplatesByTeam[input.teamId] ?? [];
+        return {
+          assignmentTemplatesByTeam: {
+            ...state.assignmentTemplatesByTeam,
+            [input.teamId]: [tpl, ...existing],
+          },
+        };
+      });
+      return tpl;
+    } catch (err) {
+      reportError(err, "Failed to save assignment template", set);
+      return null;
+    }
+  },
+
+  deleteAssignmentTemplate: async (teamId, id) => {
+    try {
+      await deleteAssignmentTemplate(id);
+      set((state) => ({
+        assignmentTemplatesByTeam: {
+          ...state.assignmentTemplatesByTeam,
+          [teamId]: (state.assignmentTemplatesByTeam[teamId] ?? []).filter(
+            (t) => t.id !== id,
+          ),
+        },
+      }));
+    } catch (err) {
+      reportError(err, "Failed to delete assignment template", set);
+    }
+  },
+
+  instantiateTemplate: async (teamId, templateId) => {
+    try {
+      const assignment = await instantiateAssignmentTemplate(templateId);
+      set((state) => {
+        const existing = state.assignmentsByTeam[teamId] ?? [];
+        return {
+          assignmentsByTeam: {
+            ...state.assignmentsByTeam,
+            [teamId]: [assignment, ...existing],
+          },
+        };
+      });
+      return assignment;
+    } catch (err) {
+      reportError(err, "Failed to instantiate template", set);
+      return null;
     }
   },
 

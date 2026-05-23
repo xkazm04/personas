@@ -2,12 +2,14 @@ import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { CompanionAssignTeamResult } from "@/lib/bindings/CompanionAssignTeamResult";
 import type { CreateTeamAssignmentInput } from "@/lib/bindings/CreateTeamAssignmentInput";
+import type { CreateTeamAssignmentTemplateInput } from "@/lib/bindings/CreateTeamAssignmentTemplateInput";
 import type { DecomposedStep } from "@/lib/bindings/DecomposedStep";
 import type { ResolveStepReviewAction } from "@/lib/bindings/ResolveStepReviewAction";
 import type { TeamAssignment } from "@/lib/bindings/TeamAssignment";
 import type { TeamAssignmentDetail } from "@/lib/bindings/TeamAssignmentDetail";
 import type { TeamAssignmentEvent } from "@/lib/bindings/TeamAssignmentEvent";
 import type { TeamAssignmentStep } from "@/lib/bindings/TeamAssignmentStep";
+import type { TeamAssignmentTemplate } from "@/lib/bindings/TeamAssignmentTemplate";
 
 // ============================================================================
 // Team Assignments (orchestration Phase A)
@@ -70,3 +72,22 @@ export const companionAssignTeam = (
     goal,
     title: title ?? null,
   });
+
+// ============================================================================
+// Templates (Phase C4)
+// ============================================================================
+
+export const createAssignmentTemplate = (
+  input: CreateTeamAssignmentTemplateInput,
+) => invoke<TeamAssignmentTemplate>("create_assignment_template", { input });
+
+export const listAssignmentTemplates = (teamId: string) =>
+  invoke<TeamAssignmentTemplate[]>("list_assignment_templates", { teamId });
+
+export const deleteAssignmentTemplate = (id: string) =>
+  invoke<boolean>("delete_assignment_template", { id });
+
+/** Clone a saved template into a fresh assignment (not auto-started).
+ *  Returns the new assignment so the panel can expand it. */
+export const instantiateAssignmentTemplate = (templateId: string) =>
+  invoke<TeamAssignment>("instantiate_assignment_template", { templateId });

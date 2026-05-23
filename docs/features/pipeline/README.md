@@ -46,14 +46,51 @@ The barrel `sub_canvas/index.ts` exports `CanvasDragProvider`, the toolbar, and 
 | Timeline | `components/timeline/MemoryTimeline.tsx`, `TimelineItem.tsx`, `TimelineControls.tsx` |
 | Run diff | `components/diff/RunDiffView.tsx`, `DiffHeader.tsx`, `DiffContent.tsx` |
 
+## sub_assignments — goal-driven team assignments
+
+`src/features/pipeline/sub_assignments/` is the assignment system layered on top of a team: instead of pre-wiring every node, the user gives the team a **goal**, the orchestrator decomposes it into a checklist of steps, matches each step to a persona, and runs them in a parallel DAG with human review on failure.
+
+The surface is a floating panel on the canvas (the orange `ListChecks` badge at bottom-left, next to the team-memory brain badge). It is **not** a separate sidebar route — assignments are scoped to the team whose canvas you're viewing.
+
+| Area | Files |
+| --- | --- |
+| Badge + panel | `AssignmentsButton.tsx`, `AssignmentsPanel.tsx` (mounted in `canvas/CanvasOverlays.tsx`) |
+| Live updates | `useAssignmentProgressListener.ts` (listens to `TEAM_ASSIGNMENT_PROGRESS`), `useAssignmentNotificationDispatcher.ts` (global, fires bell-icon notifications on `awaiting_review`) |
+
+### Composer
+
+- **Goal** + per-step rows (title, optional description, persona picker, use-case picker). The use-case dropdown is sourced from the persona's `design_context.use_cases` array.
+- **Matching strategy** dropdown:
+  - `manual` — the user pins a persona per step at creation time.
+  - `embedding` — local fastembed cosine match between the step text and each eligible candidate's capability summary (requires the `ml` build; auto-falls back to `llm_eval` below 0.45 confidence).
+  - `llm_eval` — one Sonnet call per step (via the user's Anthropic subscription through the Claude provider) picks the best persona.
+- **Auto-decompose** (violet Sparkles button) — one Sonnet call turns the goal into 2–6 editable step proposals with suggested personas.
+- **`max_parallel_steps`** slider (1–8) caps concurrent step executions.
+- **Save as template** — persists the current title/goal/strategy/steps as a reusable template for this team.
+
+### Checklist + review
+
+- Each step renders a status dot (`pending → matching → running → done | failed | skipped | awaiting_review`), the matched persona, match confidence + rationale (auto modes), and the output snippet / error.
+- On failure the assignment pauses (only that assignment — siblings continue) and the step row exposes inline **Edit requirement / Reassign / Skip** actions. A title-bar notification (`team_assignment_failed` / `team_assignment_unmatched` process types) deep-links here.
+- Cascade-skip: skipping a step auto-skips every step that depends on it.
+
+### Templates
+
+Saved templates appear as violet chips above the assignment list. Click a chip to instantiate (clones into a fresh assignment + auto-expands); hover-X deletes. Templates store the full step list as JSON and stamp out a new `team_assignments` row on use.
+
+### Athena chat dispatch
+
+Athena (the companion) can create assignments from chat: "have the X team handle Y" → she emits an `assign_team` op → an approval card → on approval, `companion_assign_team` decomposes + creates + starts the assignment with `source='athena'`, tied to a companion `OperativeMemory` operation. Progress shows as inline cards in the chat panel (`CompanionAssignmentCards`). See [companion/README.md](../companion/README.md).
+
 ## State and backend
 
-- Frontend store: `src/stores/pipelineStore.ts` (teams, groups, recipes — see [recipes/README.md](../recipes/README.md) for the recipes side).
-- Frontend API: `src/api/pipeline/{teams.ts,groups.ts,scheduler.ts,teamMemories.ts}`.
-- Backend commands: `src-tauri/src/commands/teams/mod.rs` plus team-memory IPC routed through pipeline-store wrappers.
-- Backend repos: `src-tauri/src/db/repos/core/{teams.rs,groups.rs}`.
+- Frontend store: `src/stores/pipelineStore.ts` (teams, groups, recipes, assignments — see [recipes/README.md](../recipes/README.md) for the recipes side). The assignment slice is `src/stores/slices/pipeline/assignmentSlice.ts`.
+- Frontend API: `src/api/pipeline/{teams.ts,groups.ts,scheduler.ts,teamMemories.ts,assignments.ts}`.
+- Backend commands: `src-tauri/src/commands/teams/{mod.rs,teams.rs,assignments.rs}` plus team-memory IPC routed through pipeline-store wrappers.
+- Backend repos: `src-tauri/src/db/repos/core/{teams.rs,groups.rs}` + `src-tauri/src/db/repos/orchestration/team_assignments.rs`.
+- Orchestration engine: `src-tauri/src/engine/{team_assignment_orchestrator.rs,team_assignment_matching.rs}`. Tables: `team_assignments`, `team_assignment_steps`, `team_assignment_events`, `team_assignment_templates`.
 
-The composition canvas itself does not directly invoke executions — wiring nodes produces a stored team graph, and execution happens when the assigned trigger fires (see [events/README.md](../events/README.md)) or the user runs the team manually (see [execution/README.md](../execution/README.md)).
+The composition canvas itself does not directly invoke executions — wiring nodes produces a stored team graph, and execution happens when the assigned trigger fires (see [events/README.md](../events/README.md)) or the user runs the team manually (see [execution/README.md](../execution/README.md)). Assignments are the third path: the orchestrator drives persona executions step-by-step against a goal.
 
 ## Known gaps
 
