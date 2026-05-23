@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Users } from 'lucide-react';
 import { usePipelineStore } from "@/stores/pipelineStore";
@@ -11,6 +12,7 @@ import {
 } from '@/features/pipeline/sub_canvas';
 import type { CanvasState, CanvasAction, MemberWithPersonaInfo } from '@/features/pipeline/sub_canvas';
 import { TeamMemoryPanel, TeamMemoryBadge } from '@/features/pipeline/sub_teamMemory';
+import { AssignmentsButton, AssignmentsPanel } from '@/features/pipeline/sub_assignments';
 import TeamConfigPanel from '../TeamConfigPanel';
 import type { PersonaTeamMember } from '@/lib/bindings/PersonaTeamMember';
 import type { PersonaTeamConnection } from '@/lib/bindings/PersonaTeamConnection';
@@ -70,6 +72,18 @@ export default function CanvasOverlays({
   const updateTeamMemory = usePipelineStore((s) => s.updateTeamMemory);
   const filterByRunId = usePipelineStore((s) => s.filterByRunId);
 
+  // Team assignments overlay (Phase A3) — local state so the change footprint
+  // stays small and the canvas state machine doesn't grow another orthogonal
+  // panel toggle.
+  const [assignmentsPanelOpen, setAssignmentsPanelOpen] = useState(false);
+  const assignmentsByTeam = usePipelineStore((s) => s.assignmentsByTeam);
+  const teamAssignments = assignmentsByTeam[selectedTeamId] ?? [];
+  const hasAwaitingReview = teamAssignments.some((a) => a.status === 'awaiting_review');
+  const teamMemberPersonaIds = useMemo(
+    () => teamMembers.map((m) => m.persona_id),
+    [teamMembers],
+  );
+
   return (
     <>
       <TeamMemoryBadge
@@ -95,6 +109,20 @@ export default function CanvasOverlays({
             onEdit={(id, title, content, category, importance) => updateTeamMemory(id, title, content, category, importance)}
           />
         )}
+
+      <AssignmentsButton
+        count={teamAssignments.length}
+        isOpen={assignmentsPanelOpen}
+        hasAwaitingReview={hasAwaitingReview}
+        onClick={() => setAssignmentsPanelOpen(true)}
+      />
+      {assignmentsPanelOpen && (
+        <AssignmentsPanel
+          teamId={selectedTeamId}
+          teamMemberPersonaIds={teamMemberPersonaIds}
+          onClose={() => setAssignmentsPanelOpen(false)}
+        />
+      )}
 
       <CanvasAssistant
         onSuggest={handleAssistantSuggest}

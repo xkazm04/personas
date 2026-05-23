@@ -180,6 +180,9 @@ export const EventName = {
   PIPELINE_CYCLE_WARNING: 'pipeline-cycle-warning',
   PIPELINE_APPROVAL_NEEDED: 'pipeline-approval-needed',
 
+  // Team assignments (orchestration Phase A)
+  TEAM_ASSIGNMENT_PROGRESS: 'team-assignment-progress',
+
   // P2P
   P2P_MANIFEST_SYNC_PROGRESS: 'p2p:manifest-sync-progress',
   NETWORK_SNAPSHOT_UPDATED: 'network:snapshot-updated',
@@ -804,6 +807,13 @@ export interface EventPayloadMap {
   [EventName.PIPELINE_STATUS]: PipelineStatusPayload;
   [EventName.PIPELINE_CYCLE_WARNING]: PipelineCycleWarningPayload;
   [EventName.PIPELINE_APPROVAL_NEEDED]: PipelineApprovalNeededPayload;
+
+  // Team assignments (orchestration Phase A)
+  [EventName.TEAM_ASSIGNMENT_PROGRESS]: {
+    assignment_id: string;
+    status: string;
+    step_id: string | null;
+  };
 
   // P2P
   [EventName.P2P_MANIFEST_SYNC_PROGRESS]: {
