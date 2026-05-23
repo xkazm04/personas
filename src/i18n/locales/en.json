@@ -10736,6 +10736,8 @@
       "tracking_master_on": "ON — Sonnet consolidator runs every hour for enabled projects.",
       "tracking_master_off": "OFF — no ingestion, no LLM, no brain writes.",
       "open_label": "Open Athena",
+      "footer_hold_to_talk": "Tap to open · hold to talk",
+      "footer_listening": "Listening… release to send",
       "panel_label": "Athena — companion panel",
       "initializing": "Waking up…",
       "init_failed": "Athena couldn't initialize",

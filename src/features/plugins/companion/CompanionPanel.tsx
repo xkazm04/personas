@@ -1106,6 +1106,19 @@ function Body(props: BodyProps) {
     [appendMessage, markPlaybackPlayed, resetStreamingText, setMessages, setPendingPlayback, setPlaybackAudioUrl, setQuickReplies, setChatCards, setSendError, setStreaming, voiceActive, voiceEngine, synthesisCredentialId, synthesisVoiceId, voiceSettings, recallSynthesisEnabled, autonomousMode],
   );
 
+  // Voice turns fired from the footer's hold-to-talk affordance. This panel
+  // component is always mounted (only its visible UI is gated on `isOpen`),
+  // so consuming the request here lets a footer-initiated turn run the full
+  // `send()` pipeline — streaming, transcript persistence, and TTS playback —
+  // without the panel ever opening. The reply surfaces to the user through
+  // the existing footer notice popover + Play button + auto-played TTS.
+  const voiceTurnRequest = useCompanionStore((s) => s.voiceTurnRequest);
+  useEffect(() => {
+    if (!voiceTurnRequest || streaming) return;
+    useCompanionStore.getState().setVoiceTurnRequest(null);
+    void send(voiceTurnRequest);
+  }, [voiceTurnRequest, streaming, send]);
+
   // Wrench-send: pipe the textarea content into the self-improve loop.
   // The improvement runs on a SEPARATE Claude CLI session at repo root
   // (not Athena's main session), writes to disk, and logs the outcome

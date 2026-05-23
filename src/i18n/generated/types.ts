@@ -10742,6 +10742,8 @@ export type Translations = {
       tracking_master_on: string;
       tracking_master_off: string;
       open_label: string;
+      footer_hold_to_talk: string;
+      footer_listening: string;
       panel_label: string;
       initializing: string;
       init_failed: string;

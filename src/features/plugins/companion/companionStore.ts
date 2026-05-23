@@ -191,6 +191,20 @@ interface CompanionStore {
   consumePendingPrompt: () => PendingPromptPayload | null;
 
   /**
+   * One-shot voice turn fired from outside the chat panel (the footer's
+   * hold-to-talk affordance). Distinct from `pendingPrompt` on purpose:
+   * `pendingPrompt` seeds the composer draft and is only consumed while
+   * the panel — and therefore the Composer — is mounted. `voiceTurnRequest`
+   * is consumed by an always-mounted effect in `CompanionPanel` so the
+   * user can speak to Athena and hear her reply (via the existing TTS +
+   * footer Play / notice pipeline) without ever opening the panel.
+   *
+   * Latest-wins; the consumer clears it before it calls `send()`.
+   */
+  voiceTurnRequest: string | null;
+  setVoiceTurnRequest: (text: string | null) => void;
+
+  /**
    * Per-turn recall preview surfaced from the backend's `recall-preview`
    * event. `streamingRecall` is the live, in-flight strip shown above the
    * streaming bubble; on the `finished` stream event it's moved into
@@ -365,6 +379,9 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
     if (prompt !== null) set({ pendingPrompt: null });
     return prompt;
   },
+
+  voiceTurnRequest: null,
+  setVoiceTurnRequest: (voiceTurnRequest) => set({ voiceTurnRequest }),
 
   streamingRecall: null,
   recallByEpisodeId: {},
