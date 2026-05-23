@@ -906,7 +906,10 @@
     "saving": "保存中...",
     "created_success": "メモリが正常に作成されました",
     "fill_required": "保存するにはすべての必須フィールドを入力してください",
-    "saving_memory": "メモリを保存中..."
+    "saving_memory": "メモリを保存中...",
+    "share_with_group": "共有先",
+    "share_with_group_hint": "このグループの各ペルソナはプロンプトでこのメモリを参照します — スタイルガイドや組織ポリシーなどの全体共有コンテキストに最適です。",
+    "share_with_group_title": "選択したペルソナによって作成され、そのグループの全メンバーに表示されます。"
   },
   "memory_filter": {
     "search_placeholder": "メモリを検索...",

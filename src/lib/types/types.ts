@@ -402,11 +402,11 @@ export type DesignSubTab = "use-cases" | "prompt" | "connectors" | "triggers" | 
 /** Legacy EditorTab values kept only for migrating persisted state. */
 export type LegacyEditorTab = "prompt" | "connectors" | "health";
 export type OverviewTab = "home" | "incidents" | "executions" | "manual-review" | "messages" | "events" | "knowledge" | "sla" | "health" | "observability" | "leaderboard";
-export type TemplateTab = "n8n" | "generated" | "recipes";
+export type TemplateTab = "n8n" | "generated" | "recipes" | "presets";
 export type CloudTab = "cloud" | "gitlab" | "unified";
 export type SettingsTab = "account" | "appearance" | "notifications" | "engine" | "byom" | "portability" | "network" | "admin" | "config" | "api-keys" | "history" | "limits";
 export type DevToolsTab = "overview" | "projects" | "goals" | "context-map" | "idea-scanner" | "idea-triage" | "task-runner" | "lifecycle" | "skills" | "fleet";
-export type AgentTab = "all" | "create" | "team" | "cloud";
+export type AgentTab = "all" | "create" | "team" | "groups" | "cloud";
 export type PluginTab = "browse" | "dev-tools" | "artist" | "obsidian-brain" | "research-lab" | "drive" | "twin" | "companion" | "langfuse";
 export type ResearchLabTab = "dashboard" | "projects" | "literature" | "hypotheses" | "experiments" | "findings" | "reports" | "graph";
 export type ObsidianBrainTab = "setup" | "sync" | "browse" | "graph" | "cloud";

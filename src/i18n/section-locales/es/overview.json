@@ -906,7 +906,10 @@
     "saving": "Guardando...",
     "created_success": "Memoria creada exitosamente",
     "fill_required": "Completa todos los campos requeridos para guardar",
-    "saving_memory": "Guardando memoria..."
+    "saving_memory": "Guardando memoria...",
+    "share_with_group": "Compartir con",
+    "share_with_group_hint": "Cada persona del grupo ve esta memoria en su prompt — útil para contexto a nivel de organización como estilo o políticas.",
+    "share_with_group_title": "Escrito por la persona seleccionada; aparece para cada miembro de su grupo."
   },
   "memory_filter": {
     "search_placeholder": "Buscar memorias...",

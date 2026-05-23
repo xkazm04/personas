@@ -101,9 +101,28 @@ export interface UiSlice {
    */
   monitorOpen: boolean;
 
+  /**
+   * Whether the Monitor grid should be partitioned by PersonaGroup. Persisted
+   * (via the SystemStore's persist middleware) so re-opening the Monitor
+   * preserves the user's last view choice across the entire session and across
+   * app restarts. `'none'` = flat grid (default); `'group'` = collapsible
+   * sections per group + an Ungrouped bucket.
+   */
+  monitorGroupBy: 'none' | 'group';
+
+  /**
+   * Set of group ids the user has collapsed in the Monitor's group view.
+   * Stored as a string[] (not Set<string>) because the persist middleware
+   * uses JSON serialization and a Set would be stringified to "{}".
+   * `'__ungrouped__'` is the sentinel id for the ungrouped section.
+   */
+  monitorCollapsedGroups: string[];
+
   // Actions
   setSidebarSection: (section: SidebarSection) => void;
   setMonitorOpen: (open: boolean) => void;
+  setMonitorGroupBy: (mode: 'none' | 'group') => void;
+  toggleMonitorGroupCollapsed: (groupId: string) => void;
   setHomeTab: (tab: HomeTab) => void;
   setHomeReleaseVersion: (version: string) => void;
   setTemplateTab: (tab: TemplateTab) => void;
@@ -169,6 +188,8 @@ export const NAV_HISTORY_MAX = 5;
 export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) => ({
   sidebarSection: "home" as SidebarSection,
   monitorOpen: false,
+  monitorGroupBy: 'none' as const,
+  monitorCollapsedGroups: [],
   homeTab: "welcome" as HomeTab,
   homeReleaseVersion: "roadmap",
   templateTab: "generated" as TemplateTab,
@@ -205,6 +226,14 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) =
   liveStreamHighlightEventId: null,
 
   setMonitorOpen: (open) => set({ monitorOpen: open }),
+  setMonitorGroupBy: (mode) => set({ monitorGroupBy: mode }),
+  toggleMonitorGroupCollapsed: (groupId) =>
+    set((state) => {
+      const idx = state.monitorCollapsedGroups.indexOf(groupId);
+      return idx >= 0
+        ? { monitorCollapsedGroups: state.monitorCollapsedGroups.filter((_, i) => i !== idx) }
+        : { monitorCollapsedGroups: [...state.monitorCollapsedGroups, groupId] };
+    }),
 
   setSidebarSection: (section) => startTransition(() => set((state) => {
     // Idempotent — re-clicking the current section is a no-op for history.

@@ -100,6 +100,7 @@ event_names! {
     TEMPLATE_GENERATE_OUTPUT   => "template-generate-output",
     TEMPLATE_ADOPT_STATUS      => "template-adopt-status",
     TEMPLATE_ADOPT_OUTPUT      => "template-adopt-output",
+    TEAM_PRESET_ADOPT_PROGRESS => "team-preset-adopt-progress",
 
     // Knowledge base
     KB_INGEST_PROGRESS         => "kb:ingest_progress",

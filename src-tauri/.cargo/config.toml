@@ -1,11 +1,17 @@
 # ts-rs binding output path. Default would be `src-tauri/bindings/`; redirect
 # to `src/lib/bindings/` (the frontend's canonical import path) so there's
-# one source of truth instead of two committed copies that drift. The path
-# is relative to CARGO_MANIFEST_DIR (= src-tauri/), so `../src/lib/bindings/`
-# resolves to repo-root-relative `src/lib/bindings/`. Future ts-rs invocations
-# (predev, prebuild, CI) write here directly — no manual copy step.
+# one source of truth instead of two committed copies that drift.
+#
+# `relative = true` resolves against the parent directory of this config file
+# (= `src-tauri/`), so `../src/lib/bindings` → repo-root `src/lib/bindings`.
+# `force = true` is REQUIRED — without it, proc-macro subprocesses (where the
+# ts-rs derive runs) silently inherit an empty env and fall back to the default
+# `src-tauri/bindings/` location, producing the dual-tree drift documented
+# in earlier parallel-session notes. With force=true the macro sees the path
+# at every expansion. Verified 2026-05-22: same touch+test cycle wrote bindings
+# to `src/lib/bindings/` with force, to `src-tauri/bindings/` without it.
 [env]
-TS_RS_EXPORT_DIR = { value = "../src/lib/bindings", relative = true }
+TS_RS_EXPORT_DIR = { value = "../src/lib/bindings", relative = true, force = true }
 
 # Use LLD for faster linking on Windows (2-5x faster than MSVC link.exe).
 # Applied to both Windows targets — speeds up cross-arch dev builds equally.

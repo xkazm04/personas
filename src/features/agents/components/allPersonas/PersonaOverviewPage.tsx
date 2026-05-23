@@ -1,7 +1,9 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Bot, Grid3x3, Orbit, Rows3, Trash2 } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
+import { usePipelineStore } from '@/stores/pipelineStore';
+import { useToastStore } from '@/stores/toastStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import Button from '@/features/shared/components/buttons/Button';
 import { DataGrid } from '@/features/shared/components/display/DataGrid';
@@ -11,6 +13,7 @@ import { DEFAULT_VIEW_CONFIG, type AgentListViewConfig } from './ViewPresetBar';
 import { PersonaOverviewBatchBar } from './PersonaOverviewBatchBar';
 import { PersonaOverviewToolbar } from './PersonaOverviewToolbar';
 import { PersonaOverviewCardList } from './PersonaOverviewCardList';
+import { PersonaGroupDropRail } from './PersonaGroupDropRail';
 import { PersonaOverviewEmptyState } from './PersonaOverviewEmptyState';
 import { PersonaOverviewVariantGrid } from './PersonaOverviewVariantGrid';
 import { PersonaOverviewVariantConstellation } from './PersonaOverviewVariantConstellation';
@@ -62,6 +65,11 @@ export default function PersonaOverviewPage() {
   const [search, setSearch] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [layout, setLayout] = useState<LayoutVariant>(readPersistedLayout);
+  // Group filter from PersonaGroupDropRail (cycle 19). null = unfiltered;
+  // a group id narrows to members; `'__ungrouped__'` narrows to no-group
+  // personas. Lives here rather than in `AgentListViewConfig` because the
+  // rail owns the toggle UX and it doesn't belong in the saved view preset.
+  const [groupFilter, setGroupFilter] = useState<string | null>(null);
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -85,10 +93,57 @@ export default function PersonaOverviewPage() {
 
   const { data: filteredData, connectorNamesMap, allConnectorNames } = usePersonaListFilters({
     personas, view, search, triggerCounts, lastRunMap, healthMap, isBuilding, isDraft, isFavorite,
+    groupFilter,
   });
 
   const { modal, handleBatchDelete, handleDeleteDrafts, draftIds } =
     usePersonaActions({ personas, selectedIds, setSelectedIds, deletePersona, selectPersona, isDraft });
+
+  // Cycle 21 — bulk-assign selected personas to a group (or null to
+  // unassign). Reuses the existing movePersonaToGroup action which already
+  // emits the storeBus event the agentStore listens for. We do the moves
+  // sequentially rather than in parallel to keep the storeBus event order
+  // deterministic; for typical N (≤ a few dozen) this is well under 1s.
+  const movePersonaToGroupAction = usePipelineStore((s) => s.movePersonaToGroup);
+  const pipelineGroups = usePipelineStore((s) => s.groups);
+  const pipelineGroupNameById = useMemo(
+    () => new Map(pipelineGroups.map((g) => [g.id, g.name])),
+    [pipelineGroups],
+  );
+  const addToast = useToastStore((s) => s.addToast);
+  const handleBatchMoveToGroup = useCallback(
+    async (groupId: string | null) => {
+      const ids = [...selectedIds];
+      if (ids.length === 0) return;
+      let ok = 0;
+      let failed = 0;
+      for (const id of ids) {
+        try {
+          await movePersonaToGroupAction(id, groupId);
+          ok += 1;
+        } catch {
+          failed += 1;
+        }
+      }
+      // Selection stays so the user can do a follow-up bulk action; the rail
+      // and DataGrid auto-rerender from the agentStore update.
+      const groupName = groupId
+        ? pipelineGroupNameById.get(groupId) ?? ''
+        : t.agents.persona_list.batch_move_to_ungrouped;
+      if (failed === 0) {
+        addToast(
+          tx(t.agents.persona_list.batch_moved_success, { count: ok, group: groupName }),
+          'success',
+        );
+      } else {
+        addToast(
+          tx(t.agents.persona_list.batch_moved_partial, { ok, failed, group: groupName }),
+          'error',
+        );
+      }
+    },
+    [selectedIds, movePersonaToGroupAction, addToast, t, tx, pipelineGroupNameById],
+  );
 
   // Drop selections that no longer match the filtered data
   useEffect(() => {
@@ -162,6 +217,7 @@ export default function PersonaOverviewPage() {
               count={selectedIds.size}
               onDelete={handleBatchDelete}
               onClear={() => setSelectedIds(new Set())}
+              onMoveToGroup={handleBatchMoveToGroup}
             />
             {draftIds.length > 0 && (
               <Button
@@ -181,6 +237,13 @@ export default function PersonaOverviewPage() {
           <PersonaOverviewToolbar search={search} onSearchChange={setSearch} view={view} onViewChange={setView} />
           {!isMobile && <LayoutModeTabs value={layout} onChange={setLayout} />}
         </div>
+        {/* Drop rail now renders in every layout (cycle 22 added
+            pointer-event DnD to constellation). Chips serve three roles:
+            click → filter, HTML5 drop (grid/baseline/card-list), and
+            pointer-event drop via elementFromPoint (constellation). The
+            data-persona-drop-target attr on each chip is how the
+            constellation drag locates them on pointerup. */}
+        <PersonaGroupDropRail filterId={groupFilter} onSelectFilter={setGroupFilter} />
 
         {filteredData.length === 0 && hasActiveFilter ? (
           <PersonaOverviewEmptyState onResetFilters={handleResetFilters} />
@@ -231,6 +294,16 @@ export default function PersonaOverviewPage() {
                 : healthMap[p.id]?.status === 'degraded' ? 'border-l-amber-400/60'
                 : 'border-l-emerald-400/40'
             }
+            getRowProps={(p) => ({
+              // Drag source for persona → group rail (cycle 16; baseline
+              // DataGrid layout). Identical contract to grid + card-list
+              // layouts: same MIME, same 'move' effect, same drop targets.
+              draggable: true,
+              onDragStart: (e) => {
+                e.dataTransfer.setData('application/x-personas-persona-id', p.id);
+                e.dataTransfer.effectAllowed = 'move';
+              },
+            })}
             sortKey={view.sortKey}
             sortDirection={view.sortDirection}
             onSort={handleSort}

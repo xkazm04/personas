@@ -1279,6 +1279,8 @@ pub fn run() {
             commands::core::memories::get_memory_count,
             commands::core::memories::get_memory_stats,
             commands::core::memories::list_memories_by_execution,
+            commands::core::memories::list_group_memories,
+            commands::core::memories::update_memory_group_id,
             commands::core::memories::create_memory,
             commands::core::memories::delete_memory,
             commands::core::memories::merge_memories,
@@ -1529,6 +1531,12 @@ pub fn run() {
             // 2026-05-09; only snapshot poll + instant adopt remain wired)
             commands::design::template_adopt::get_template_adopt_snapshot,
             commands::design::template_adopt::instant_adopt_template,
+            // Design -- Team Presets (filesystem-shipped multi-template bundles)
+            commands::design::team_presets::list_team_presets,
+            commands::design::team_presets::get_team_preset,
+            commands::design::team_presets::get_preset_adoption_schema,
+            commands::design::team_presets::adopt_team_preset,
+            commands::design::team_presets::retry_team_preset_members,
             commands::design::template_adopt::generate_template_background,
             commands::design::template_adopt::get_template_generate_snapshot,
             commands::design::template_adopt::clear_template_generate_snapshot,

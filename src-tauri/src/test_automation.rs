@@ -775,6 +775,7 @@ async fn handle_adopt_template(
         &app_state,
         req.template_name.clone(),
         req.design_result_json,
+        None,
     ) {
         Ok(val) => {
             // Refresh persona list in the webview

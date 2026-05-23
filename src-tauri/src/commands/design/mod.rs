@@ -11,6 +11,7 @@ pub mod platform_definitions;
 pub mod reviews;
 pub mod skills;
 pub mod smart_search;
+pub mod team_presets;
 pub mod team_synthesis;
 pub mod template_adopt;
 pub mod template_feedback;

@@ -14,18 +14,39 @@ export interface GroupSlice {
   // Actions
   fetchGroups: () => Promise<void>;
   createGroup: (input: { name: string; color?: string; description?: string }) => Promise<PersonaGroup | null>;
+  /**
+   * Partial update to a group. Three-state nullable semantics for the
+   * nullable fields (description, defaultModelProfile, defaultMaxBudgetUsd,
+   * defaultMaxTurns, sharedInstructions):
+   *
+   *   - field omitted              → preserve (no change)
+   *   - field set to `null`        → clear the column to NULL
+   *   - field set to a value       → set the column to that value
+   *
+   * Cycle 24 enabled this end-to-end via Option<Option<T>> + a custom
+   * double_option serde deserializer on the Rust struct.
+   */
   updateGroup: (id: string, updates: Partial<{
     name: string;
     color: string;
     collapsed: boolean;
-    description: string;
-    defaultModelProfile: string;
-    defaultMaxBudgetUsd: number;
-    defaultMaxTurns: number;
-    sharedInstructions: string;
+    description: string | null;
+    defaultModelProfile: string | null;
+    defaultMaxBudgetUsd: number | null;
+    defaultMaxTurns: number | null;
+    sharedInstructions: string | null;
   }>) => Promise<void>;
   deleteGroup: (id: string) => Promise<void>;
   reorderGroups: (orderedIds: string[]) => Promise<void>;
+  /**
+   * Convenience wrapper for the common "clear all defaults" pattern from
+   * the editor. Equivalent to calling `updateGroup(id, { sharedInstructions:
+   * null, defaultModelProfile: null, defaultMaxBudgetUsd: null,
+   * defaultMaxTurns: null })`. Kept as a separate method so the UI's
+   * intent is explicit and a future single-click action like "reset" can
+   * extend it without rewriting every caller.
+   */
+  clearGroupDefaults: (id: string) => Promise<void>;
   movePersonaToGroup: (personaId: string, groupId: string | null) => Promise<void>;
 }
 
@@ -59,17 +80,14 @@ export const createGroupSlice: StateCreator<PipelineStore, [], [], GroupSlice> =
 
   updateGroup: async (id, updates) => {
     try {
-      const input: UpdatePersonaGroupInput = {
-        name: updates.name ?? null,
-        color: updates.color ?? null,
-        sortOrder: null,
-        collapsed: updates.collapsed !== undefined ? updates.collapsed : null,
-        description: updates.description !== undefined ? updates.description : null,
-        defaultModelProfile: updates.defaultModelProfile !== undefined ? updates.defaultModelProfile : null,
-        defaultMaxBudgetUsd: updates.defaultMaxBudgetUsd !== undefined ? updates.defaultMaxBudgetUsd : null,
-        defaultMaxTurns: updates.defaultMaxTurns !== undefined ? updates.defaultMaxTurns : null,
-        sharedInstructions: updates.sharedInstructions !== undefined ? updates.sharedInstructions : null,
-      };
+      // Pass the user's intent through unchanged so the Rust side sees
+      // the three states correctly (undefined = preserve, null = clear,
+      // value = set). Building a full struct here would collapse undefined
+      // and null into the same "null" on the wire — exactly the bug cycle
+      // 24 fixed. The `UpdatePersonaGroupInput` binding now has all
+      // nullable fields as `string | null | undefined`, matching the
+      // double_option Rust deserializer.
+      const input: UpdatePersonaGroupInput = updates as UpdatePersonaGroupInput;
       const group = await updateGroup(id, input);
       set((state) => ({
         groups: state.groups.map((g) => (g.id === id ? group : g)),
@@ -104,6 +122,27 @@ export const createGroupSlice: StateCreator<PipelineStore, [], [], GroupSlice> =
       }));
     } catch (err) {
       reportError(err, "Failed to reorder groups", set);
+    }
+  },
+
+  clearGroupDefaults: async (id) => {
+    // After cycle 24's Option<Option<T>> refactor, "clear to NULL" is
+    // expressible through the normal updateGroup path. Keep the dedicated
+    // IPC as a backup path for direct callers, but the slice routes
+    // through updateGroup so the editor's optimistic UI flow shares the
+    // same store-update path as every other field change.
+    try {
+      const refreshed = await updateGroup(id, {
+        sharedInstructions: null,
+        defaultModelProfile: null,
+        defaultMaxBudgetUsd: null,
+        defaultMaxTurns: null,
+      });
+      set((state) => ({
+        groups: state.groups.map((g) => (g.id === id ? refreshed : g)),
+      }));
+    } catch (err) {
+      reportError(err, "Failed to clear group defaults", set);
     }
   },
 

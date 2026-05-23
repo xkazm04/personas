@@ -906,7 +906,10 @@
     "saving": "저장 중...",
     "created_success": "메모리가 성공적으로 생성됨",
     "fill_required": "저장하려면 모든 필수 항목을 입력하세요",
-    "saving_memory": "메모리 저장 중..."
+    "saving_memory": "메모리 저장 중...",
+    "share_with_group": "공유 대상",
+    "share_with_group_hint": "이 그룹의 모든 페르소나는 프롬프트에서 이 메모리를 봅니다 — 스타일 가이드나 조직 정책 같은 조직 차원의 컨텍스트에 유용합니다.",
+    "share_with_group_title": "선택된 페르소나가 작성; 해당 그룹의 모든 구성원에게 표시됩니다."
   },
   "memory_filter": {
     "search_placeholder": "메모리 검색...",

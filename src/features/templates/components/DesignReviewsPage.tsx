@@ -8,6 +8,7 @@ import { useSystemStore } from "@/stores/systemStore";
 import { GeneratedReviewsTab } from '@/features/templates/sub_generated';
 import N8nImportTab from '@/features/templates/sub_n8n/steps/N8nImportTab';
 import { RecipesPage } from '@/features/templates/sub_recipes';
+import { PresetLibraryPage } from '@/features/templates/sub_presets';
 import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
 import ActivityDiagramModal from '@/features/templates/sub_diagrams/ActivityDiagramModal';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
@@ -72,6 +73,11 @@ export default function DesignReviewsPage() {
           {activeTab === 'recipes' && (
             <ErrorBoundary name="Recipes">
               <RecipesPage />
+            </ErrorBoundary>
+          )}
+          {activeTab === 'presets' && (
+            <ErrorBoundary name="Presets">
+              <PresetLibraryPage />
             </ErrorBoundary>
           )}
         </div>

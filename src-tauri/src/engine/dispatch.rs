@@ -495,6 +495,7 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                     importance: clamped_importance,
                     tags: tags.as_ref().map(|t| crate::db::models::Json(t.clone())),
                     use_case_id: ctx.use_case_id.map(|s| s.to_string()),
+                    group_id: None,
                 },
             ) {
                 Ok(m) => ctx

@@ -469,6 +469,8 @@ pub async fn import_persona(
                 importance: Some(m.importance),
                 tags: m.tags.clone(),
                 use_case_id: None,
+            
+                group_id: None,
             })
             .collect();
         let expected = memory_inputs.len();

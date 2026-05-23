@@ -16,7 +16,16 @@ export interface BaseToast {
 
 export interface StandardToast extends BaseToast {
   kind: 'standard';
-  type: 'success' | 'error';
+  /**
+   * Visual tone of the toast. `warning` (added Stage 6 for the
+   * team-preset partial-failure path) sits between success and error:
+   * amber styling, polite ARIA live (not assertive), 4s default
+   * duration. Use it when the operation produced both real value AND
+   * meaningful failures — e.g. "adopted 4/6 members" — so the user
+   * neither over-trusts (success-tone lie) nor over-reacts (error-tone
+   * panic).
+   */
+  type: 'success' | 'error' | 'warning';
 }
 
 export interface HealingToast extends BaseToast {
@@ -34,8 +43,9 @@ export type Toast = StandardToast | HealingToast;
 // Priority mapping -- healing critical/high > standard error > standard success
 // ---------------------------------------------------------------------------
 
-const STANDARD_PRIORITY: Record<'success' | 'error', number> = {
+const STANDARD_PRIORITY: Record<'success' | 'error' | 'warning', number> = {
   success: 10,
+  warning: 18,
   error: 20,
 };
 
@@ -50,8 +60,9 @@ const HEALING_PRIORITY: Record<HealingToast['severity'], number> = {
 // Constants
 // ---------------------------------------------------------------------------
 
-const DEFAULT_DURATION: Record<'success' | 'error', number> = {
+const DEFAULT_DURATION: Record<'success' | 'error' | 'warning', number> = {
   success: 3000,
+  warning: 4000,
   error: 5000,
 };
 
@@ -69,7 +80,7 @@ export const MAX_VISIBLE_TOASTS = 3;
 
 interface ToastStore {
   toasts: Toast[];
-  addToast: (message: string, type: 'success' | 'error', duration?: number) => void;
+  addToast: (message: string, type: 'success' | 'error' | 'warning', duration?: number) => void;
   addHealingToast: (opts: {
     issueId: string;
     personaId: string;

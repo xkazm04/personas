@@ -103,13 +103,18 @@ function StandardToastItem({ toast, onDismiss }: { toast: StandardToast; onDismi
       className={`rounded-xl border shadow-elevation-3 backdrop-blur-md overflow-hidden ${
         toast.type === 'success'
           ? 'bg-emerald-950/90 border-emerald-500/25 text-emerald-300'
-          : 'bg-red-950/90 border-red-500/25 text-red-300'
+          : toast.type === 'warning'
+            ? 'bg-amber-950/90 border-amber-500/25 text-amber-300'
+            : 'bg-red-950/90 border-red-500/25 text-red-300'
       }`}
     >
       <div className="flex items-start gap-2.5 px-4 py-2.5">
         {toast.type === 'success' ? (
           <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" />
         ) : (
+          // warning + error share the AlertTriangle icon; the color band on
+          // the container is the differentiator. ARIA-wise warning is polite,
+          // error is assertive — handled in the store's announceImperative.
           <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
         )}
         <div className="flex-1 min-w-0">
@@ -133,7 +138,11 @@ function StandardToastItem({ toast, onDismiss }: { toast: StandardToast; onDismi
         <div
           data-paused={isPaused ? 'true' : 'false'}
           className={`animate-toast-progress h-full ${
-            toast.type === 'success' ? 'bg-emerald-400/50' : 'bg-red-400/50'
+            toast.type === 'success'
+              ? 'bg-emerald-400/50'
+              : toast.type === 'warning'
+                ? 'bg-amber-400/50'
+                : 'bg-red-400/50'
           }`}
           style={{ '--toast-duration': `${toast.duration}ms` } as CSSProperties}
         />

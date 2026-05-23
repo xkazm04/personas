@@ -128,6 +128,15 @@ const PersonaGridCard = memo(function PersonaGridCard({
           onRowClick(p);
         }
       }}
+      // Drag source for the persona → group assignment flow
+      // (cycle 12). The drop targets render in PersonaGroupDropRail at
+      // the top of PersonaOverviewPage. Setting effectAllowed to 'move'
+      // matches the semantic (a persona belongs to at most one group).
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData('application/x-personas-persona-id', p.id);
+        e.dataTransfer.effectAllowed = 'move';
+      }}
       className={`group relative rounded-modal border bg-secondary/20 backdrop-blur-sm transition-colors duration-150 px-4 pt-10 pb-3.5 flex flex-col items-center text-center gap-2 cursor-pointer min-h-[220px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40 ${
         selected
           ? 'border-primary/40 ring-1 ring-primary/30 bg-primary/[0.05]'

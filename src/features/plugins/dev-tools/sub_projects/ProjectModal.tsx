@@ -9,22 +9,32 @@ import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { useTranslation } from '@/i18n/useTranslation';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import {
-  FolderOpen, X, Plus, Pencil, Search, CheckCircle2,
+  FolderOpen, X, Plus, Pencil, Search, CheckCircle2, Users, Layers,
 } from 'lucide-react';
 import {
   type ProjectType, type EditProjectData, PROJECT_TYPES,
 } from './projectManagerTypes';
 import { GitHubRepoSelector } from './GitHubRepoSelector';
 import { silentCatch } from '@/lib/silentCatch';
+import { usePipelineStore } from '@/stores/pipelineStore';
 
 
 type ModalStep = 'form' | 'created';
 
+interface ProjectFormData {
+  name: string;
+  path: string;
+  projectType: ProjectType;
+  githubUrl: string;
+  teamId: string | null;
+  groupId: string | null;
+}
+
 interface ProjectModalProps {
   open: boolean;
   onClose: () => void;
-  onCreate: (data: { name: string; path: string; projectType: ProjectType; githubUrl: string }) => Promise<{ id: string } | undefined>;
-  onUpdate: (id: string, data: { name: string; projectType: ProjectType; githubUrl: string }) => Promise<void>;
+  onCreate: (data: ProjectFormData) => Promise<{ id: string } | undefined>;
+  onUpdate: (id: string, data: Omit<ProjectFormData, 'path'>) => Promise<void>;
   onScanNow: (projectId: string, rootPath: string, projectName: string) => void;
   editProject?: EditProjectData | null;
 }
@@ -45,9 +55,23 @@ export function ProjectModal({
   const [path, setPath] = useState('');
   const [projectType, setProjectType] = useState<ProjectType>('other');
   const [githubUrl, setGithubUrl] = useState('');
+  const [teamId, setTeamId] = useState<string | null>(null);
+  const [groupId, setGroupId] = useState<string | null>(null);
   const [nameEdited, setNameEdited] = useState(false);
   const [createdProject, setCreatedProject] = useState<{ id: string; name: string; path: string } | null>(null);
   const { shouldAnimate: _shouldAnimate } = useMotion();
+
+  // Teams + Groups roster for the binding pickers (cycles 5 + 15).
+  const teams = usePipelineStore((s) => s.teams);
+  const fetchTeams = usePipelineStore((s) => s.fetchTeams);
+  const groups = usePipelineStore((s) => s.groups);
+  const fetchGroups = usePipelineStore((s) => s.fetchGroups);
+  useEffect(() => {
+    if (isOpen) {
+      fetchTeams();
+      fetchGroups();
+    }
+  }, [isOpen, fetchTeams, fetchGroups]);
 
   // Pre-fill form when editing
   useEffect(() => {
@@ -56,6 +80,8 @@ export function ProjectModal({
       setPath(editProject.path);
       setProjectType(editProject.projectType);
       setGithubUrl(editProject.githubUrl);
+      setTeamId(editProject.teamId);
+      setGroupId(editProject.groupId);
       setNameEdited(true);
     }
   }, [editProject]);
@@ -92,6 +118,8 @@ export function ProjectModal({
         name: name.trim(),
         projectType,
         githubUrl: githubUrl.trim(),
+        teamId,
+        groupId,
       });
       handleClose();
     } else {
@@ -100,6 +128,8 @@ export function ProjectModal({
         path: path.trim(),
         projectType,
         githubUrl: githubUrl.trim(),
+        teamId,
+        groupId,
       });
       if (result) {
         setCreatedProject({ id: result.id, name: name.trim(), path: path.trim() });
@@ -114,6 +144,8 @@ export function ProjectModal({
     setPath('');
     setProjectType('other');
     setGithubUrl('');
+    setTeamId(null);
+    setGroupId(null);
     setNameEdited(false);
     setCreatedProject(null);
     onClose();
@@ -217,6 +249,65 @@ export function ProjectModal({
 
                 {/* GitHub URL -- repo selector (if PAT available) or manual input */}
                 <GitHubRepoSelector value={githubUrl} onChange={setGithubUrl} />
+
+                {/* Team binding — optional; ties this project to a PersonaTeam
+                    pipeline so the project surface shows the pipeline inline. */}
+                <div>
+                  <label className="typo-caption font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5" />
+                    {t.plugins.dev_projects.team_binding_label}
+                    <span className="text-[10px] text-foreground font-normal">
+                      ({t.plugins.dev_projects.team_binding_optional})
+                    </span>
+                  </label>
+                  <select
+                    value={teamId ?? ''}
+                    onChange={(e) => setTeamId(e.target.value || null)}
+                    className="w-full px-3 py-2 text-md bg-secondary/40 border border-primary/10 rounded-modal text-foreground focus-ring"
+                  >
+                    <option value="">{t.plugins.dev_projects.team_binding_none}</option>
+                    {teams.map((team) => (
+                      <option key={team.id} value={team.id}>
+                        {team.name}
+                      </option>
+                    ))}
+                  </select>
+                  {teams.length === 0 && (
+                    <p className="typo-caption text-foreground/60 mt-1">
+                      {t.plugins.dev_projects.team_binding_empty}
+                    </p>
+                  )}
+                </div>
+
+                {/* Group binding — optional; complementary to team_id. Ties
+                    this project to a PersonaGroup (workspace folder with
+                    shared instructions / defaults). Both bindings independent. */}
+                <div>
+                  <label className="typo-caption font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+                    <Layers className="w-3.5 h-3.5" />
+                    {t.plugins.dev_projects.group_binding_label}
+                    <span className="text-[10px] text-foreground font-normal">
+                      ({t.plugins.dev_projects.team_binding_optional})
+                    </span>
+                  </label>
+                  <select
+                    value={groupId ?? ''}
+                    onChange={(e) => setGroupId(e.target.value || null)}
+                    className="w-full px-3 py-2 text-md bg-secondary/40 border border-primary/10 rounded-modal text-foreground focus-ring"
+                  >
+                    <option value="">{t.plugins.dev_projects.group_binding_none}</option>
+                    {groups.map((group) => (
+                      <option key={group.id} value={group.id}>
+                        {group.name}
+                      </option>
+                    ))}
+                  </select>
+                  {groups.length === 0 && (
+                    <p className="typo-caption text-foreground/60 mt-1">
+                      {t.plugins.dev_projects.group_binding_empty}
+                    </p>
+                  )}
+                </div>
               </div>
 
               <div className="flex justify-end gap-2 mt-6">

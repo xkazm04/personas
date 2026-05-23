@@ -906,7 +906,10 @@
     "saving": "Menyimpan...",
     "created_success": "Memori berhasil dibuat",
     "fill_required": "Isi semua bidang yang diperlukan untuk menyimpan",
-    "saving_memory": "Menyimpan memori..."
+    "saving_memory": "Menyimpan memori...",
+    "share_with_group": "Bagikan dengan",
+    "share_with_group_hint": "Setiap persona di grup ini melihat memori ini dalam prompt mereka — berguna untuk konteks organisasi seperti gaya atau kebijakan.",
+    "share_with_group_title": "Ditulis oleh persona terpilih; muncul untuk setiap anggota grupnya."
   },
   "memory_filter": {
     "search_placeholder": "Cari memori...",

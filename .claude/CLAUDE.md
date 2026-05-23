@@ -87,7 +87,7 @@ src-tauri/
 - ESLint `no-restricted-imports` enforces this
 
 ### ts-rs bindings (Rust → TypeScript types)
-- **Single source of truth: `src/lib/bindings/`.** ts-rs writes here directly via `TS_RS_EXPORT_DIR` set in `src-tauri/.cargo/config.toml`. There is no longer a parallel `src-tauri/bindings/` directory — that dual-copy + manual-sync trap was retired in the build-tooling architect run (2026-05-01).
+- **Single source of truth: `src/lib/bindings/`.** ts-rs writes here directly via `TS_RS_EXPORT_DIR`, which is forwarded to rustc by `src-tauri/build.rs` (`cargo:rustc-env=TS_RS_EXPORT_DIR=../src/lib/bindings`). The earlier `[env]` table in `src-tauri/.cargo/config.toml` did NOT reliably reach the proc-macro expansion path — the dual-tree drift (`src-tauri/bindings/` AND `src/lib/bindings/` both committed and drifting) traced to that. The build.rs route closes the gap; `src-tauri/bindings/` was retired and now appears in `src-tauri/.gitignore` to prevent any future leak. The `.cargo/config.toml` entry stays as a belt-and-suspenders backstop for tooling that calls cargo without going through the build.rs.
 - **After adding `#[derive(TS)] #[ts(export)]` to a Rust struct**, run `cargo test --manifest-path src-tauri/Cargo.toml export_bindings` from the repo root. Commit the resulting new/changed files in `src/lib/bindings/`.
 - CI verifies via `git diff --quiet src/lib/bindings/` — a missing regen fails the build at `.github/workflows/ci.yml`'s binding-drift job.
 - New Tauri commands additionally need `node scripts/generate-command-names.mjs` (or just `npm run dev`/`npm run build` which trigger `predev`/`prebuild`).

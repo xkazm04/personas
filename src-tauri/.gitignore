@@ -4,3 +4,9 @@
 # Alternate target dir used when the primary target/ is locked by tauri dev.
 /target-bindings/
 /gen/schemas
+# ts-rs default output dir. We redirect to repo-root `src/lib/bindings/` via
+# `build.rs` (cargo:rustc-env=TS_RS_EXPORT_DIR), but if a future ts-rs change
+# or a forgotten env override writes here instead, the gitignore prevents
+# the dual-tree drift from coming back. The src/lib/bindings/ tree is the
+# single source of truth.
+/bindings/

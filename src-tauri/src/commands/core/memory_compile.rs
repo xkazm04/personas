@@ -317,6 +317,8 @@ Raw memories:
             importance: Some(4),
             tags: Some(Json(vec!["compiled".to_string(), "wiki".to_string()])),
             use_case_id: None,
+        
+            group_id: None,
         };
 
         match repo::create(&db, input) {

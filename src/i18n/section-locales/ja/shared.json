@@ -224,7 +224,11 @@
     "back_to_home": "Home",
     "whats_new": "What's New",
     "back_to_plugins": "Plugins",
-    "roadmap": "Roadmap"
+    "roadmap": "Roadmap",
+    "teams_label": "チーム",
+    "groups_label": "グループ",
+    "cloud_label": "クラウド",
+    "cloud_dev_pill": "dev"
   },
   "execution_detail": {
     "copy": "コピー",
