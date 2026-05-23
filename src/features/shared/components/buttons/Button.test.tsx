@@ -8,6 +8,9 @@ import Button from './Button';
  * to it never surfaces. The fix wraps a disabled-with-reason button in a focusable span
  * (tabIndex 0, aria-disabled) and keeps the button pointer-events-none so hover/focus land
  * on the wrapper instead.
+ *
+ * Uses plain vitest/chai matchers (not jest-dom) to stay tsc-checked while co-located and
+ * independent of the jest-dom setup, matching DeferUntilIdle.test.tsx.
  */
 describe('Button disabledReason', () => {
   afterEach(() => {
@@ -16,8 +19,8 @@ describe('Button disabledReason', () => {
 
   it('renders an enabled, non-wrapped button when not disabled', () => {
     render(<Button>Save</Button>);
-    const btn = screen.getByRole('button', { name: 'Save' });
-    expect(btn).not.toBeDisabled();
+    const btn = screen.getByRole('button', { name: 'Save' }) as HTMLButtonElement;
+    expect(btn.disabled).toBe(false);
     // No focusable disabled-reason wrapper around an enabled button.
     expect(btn.parentElement?.getAttribute('aria-disabled')).toBeNull();
   });
@@ -28,8 +31,8 @@ describe('Button disabledReason', () => {
         Save
       </Button>,
     );
-    const btn = screen.getByRole('button', { name: 'Save' });
-    expect(btn).toBeDisabled();
+    const btn = screen.getByRole('button', { name: 'Save' }) as HTMLButtonElement;
+    expect(btn.disabled).toBe(true);
     // Inner button is inert so events fall through to the wrapper.
     expect(btn.className).toContain('is-disabled');
 
@@ -41,8 +44,8 @@ describe('Button disabledReason', () => {
 
   it('does NOT add a focusable wrapper when disabled without a reason', () => {
     render(<Button disabled>Save</Button>);
-    const btn = screen.getByRole('button', { name: 'Save' });
-    expect(btn).toBeDisabled();
+    const btn = screen.getByRole('button', { name: 'Save' }) as HTMLButtonElement;
+    expect(btn.disabled).toBe(true);
     expect(btn.parentElement?.getAttribute('tabindex')).toBeNull();
     expect(btn.parentElement?.getAttribute('aria-disabled')).toBeNull();
   });
@@ -64,6 +67,6 @@ describe('Button disabledReason', () => {
     // The tooltip renders into a body portal; it stays visibility:hidden until its
     // positioning rAF runs (which it won't under fake timers), so query by text rather
     // than the (accessibility-tree-excluded) tooltip role.
-    expect(screen.getByText('Add a name to continue')).toBeInTheDocument();
+    expect(screen.getByText('Add a name to continue')).toBeTruthy();
   });
 });
