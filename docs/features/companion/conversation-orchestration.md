@@ -1,13 +1,25 @@
 # Athena conversation orchestration — replacing long-pause-then-big-bang
 
-**Status:** Variants **A + C shipped**; **B** parked for a likely follow-up. (Step 1 — removing the raw token stream — also shipped.)
+**Status:** Variants **A + B + C all shipped.** (Step 1 — removing the raw token stream — also shipped.)
+
+## Shipped (B — model-authored progress beats)
+
+Athena narrates long turns with `PROGRESS:` lines (taught in `prompt.rs`'s voice addendum, same family as `TTS:`):
+
+```
+PROGRESS: Pulling up your recent runs…
+PROGRESS: Found three failures — reading the logs…
+```
+
+- **Live detection (frontend).** `CompanionPanel` scans the accumulating `streamingText` for *completed* `PROGRESS:` lines (a line is complete once a newline follows it) and fires each beat exactly once. Each beat is shown in the streaming bubble (`streamingBeat`, which outranks the derived phase) and spoken via the exclusive progress-audio channel — the latest beat interrupts the prior, and the real reply cuts them all off.
+- **Precedence.** A model beat suppresses the generic Variant C ack/heartbeat for that turn (`beatFiredRef`) — Athena's own words beat filler.
+- **Strip (backend).** `dispatcher.rs` drops `PROGRESS:` lines from the persisted reply (alongside `TTS:`/`QR:`/`OP:`), so they never appear in the final bubble. No constitution version bump — the grammar lives in the per-turn prompt.
+- This needs no new IPC: beats ride the existing token stream we already receive; we simply parse + act on them client-side and clean them server-side.
 
 ## Shipped (A + C)
 
 - **A — event-driven status + tool detail.** `extractStreamPhase` already derived the phase from real `tool_use` blocks; it now also extracts a short **input detail** (search query, file basename, `Grep` pattern, command, `Task` description, `WebFetch` host) so the status line reads "Searching the web · climate data" / "Reading files · runner.rs" rather than a bare label. A new `responding` phase ("Composing reply…") shows while the answer generates (since we no longer render the partial token text). Phase labels still fall through gracefully for unknown tools.
 - **C — spoken "no dead air".** When voice is active, `CompanionPanel` speaks a short ack (`voice_progress_ack`, ~2.5s into a still-running turn) and a heartbeat (`voice_progress_working`, once the silence crosses the ~30s slow tier), each at most once per turn. Both are cut off the instant the real reply is queued (`stopProgressAudio` on `setPendingPlayback`) so filler never talks over Athena's answer; fast turns (< 2.5s) never trigger an ack. Gating reuses the existing `voiceActive` + slow-progress timer.
-
-Still parked: **B** (model-authored progress beats via an `OP: progress { say }` op flushed incrementally to chat + TTS) — the next step if A+C's pacing proves out.
 
 ---
 

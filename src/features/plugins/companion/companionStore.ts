@@ -103,6 +103,15 @@ interface CompanionStore {
    * and again when the turn finishes / errors / is interrupted.
    */
   streamingPhase: StreamPhase | null;
+  /**
+   * Latest model-authored progress beat (`PROGRESS:` line) for the current
+   * turn — Athena's own words narrating a long turn ("Reading the logs…").
+   * Shown in the streaming bubble in preference to the derived phase, and
+   * spoken aloud when voice is on (Variant B in
+   * docs/features/companion/conversation-orchestration.md). Cleared on turn
+   * start / finish.
+   */
+  streamingBeat: string | null;
   sendError: string | null;
 
   setState: (state: CompanionState) => void;
@@ -116,6 +125,7 @@ interface CompanionStore {
   appendStreamingText: (chunk: string) => void;
   resetStreamingText: () => void;
   setStreamingPhase: (phase: StreamPhase | null) => void;
+  setStreamingBeat: (beat: string | null) => void;
   setSendError: (err: string | null) => void;
 
   // Phase 3: approvals
@@ -312,6 +322,7 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
   streaming: false,
   streamingText: '',
   streamingPhase: null,
+  streamingBeat: null,
   sendError: null,
 
   setState: (state) => set({ state }),
@@ -327,6 +338,7 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
     set((s) => ({ streamingText: s.streamingText + chunk })),
   resetStreamingText: () => set({ streamingText: '' }),
   setStreamingPhase: (streamingPhase) => set({ streamingPhase }),
+  setStreamingBeat: (streamingBeat) => set({ streamingBeat }),
   setSendError: (sendError) => set({ sendError }),
 
   approvals: [],

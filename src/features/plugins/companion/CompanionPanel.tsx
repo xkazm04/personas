@@ -594,6 +594,7 @@ function Body(props: BodyProps) {
   // Replaces the dead "thinking…" placeholder so the user sees activity
   // even when prose text hasn't started arriving yet.
   const streamingPhase = useCompanionStore((s) => s.streamingPhase);
+  const streamingBeat = useCompanionStore((s) => s.streamingBeat);
   const turnSummaryByEpisodeId = useCompanionStore(
     (s) => s.turnSummaryByEpisodeId,
   );
@@ -693,6 +694,12 @@ function Body(props: BodyProps) {
   const progressAudioRef = useRef<HTMLAudioElement | null>(null);
   const progressUrlRef = useRef<string | null>(null);
   const spokenTiersRef = useRef<Set<number>>(new Set());
+  // Variant B — model-authored progress beats. `progressFiredRef` counts the
+  // `PROGRESS:` lines already surfaced this turn (streamingText only grows,
+  // so we re-scan and fire the new tail); `beatFiredRef` records whether any
+  // beat fired (so generic ack/heartbeat filler stands down).
+  const progressFiredRef = useRef(0);
+  const beatFiredRef = useRef(false);
 
   useEffect(() => {
     if (!streaming) {
@@ -756,6 +763,10 @@ function Body(props: BodyProps) {
           // Drop the prior turn's operational checklist; the new turn
           // rebuilds it from its own TodoWrite calls.
           useCompanionStore.getState().setStreamingSteps([]);
+          // Reset Variant B beat bookkeeping for the new turn.
+          useCompanionStore.getState().setStreamingBeat(null);
+          beatFiredRef.current = false;
+          progressFiredRef.current = 0;
         } else if (ev.kind === 'cli') {
           // Operational thread: a TodoWrite tool call republishes Athena's
           // full plan. Capture it (latest wins) so the inline checklist
@@ -1080,15 +1091,14 @@ function Body(props: BodyProps) {
     }
   }, []);
 
-  // Speak one short progress phrase for `tier` (once per turn). Bails when
-  // voice isn't active, or when the real reply is already queued/playing —
-  // we never want a filler line talking over Athena's actual answer.
-  const speakProgress = useCallback(
-    (text: string, tier: number) => {
+  // Synthesize + play one short progress clip on the exclusive progress
+  // channel (latest beat/ack wins — we stop the prior so they never stack).
+  // Bails when voice isn't active or the real reply is already queued.
+  const playProgressClip = useCallback(
+    (text: string) => {
       if (!voiceActive || !synthesisVoiceId) return;
-      if (spokenTiersRef.current.has(tier)) return;
       if (useCompanionStore.getState().pendingPlayback) return;
-      spokenTiersRef.current.add(tier);
+      stopProgressAudio();
       synthesizeTts(text, synthesisCredentialId, synthesisVoiceId, voiceSettings, voiceEngine)
         .then((url) => {
           // Re-check: the reply may have landed while we were synthesizing.
@@ -1109,7 +1119,31 @@ function Body(props: BodyProps) {
         })
         .catch(silentCatch('companion_voice_progress_synthesize'));
     },
-    [voiceActive, synthesisVoiceId, synthesisCredentialId, voiceSettings, voiceEngine],
+    [voiceActive, synthesisVoiceId, synthesisCredentialId, voiceSettings, voiceEngine, stopProgressAudio],
+  );
+
+  // Generic ack / heartbeat (Variant C). Each tier speaks at most once per
+  // turn — and is suppressed entirely once Athena has emitted her own
+  // progress beat (Variant B), since her words beat generic filler.
+  const speakProgress = useCallback(
+    (text: string, tier: number) => {
+      if (beatFiredRef.current) return;
+      if (spokenTiersRef.current.has(tier)) return;
+      spokenTiersRef.current.add(tier);
+      playProgressClip(text);
+    },
+    [playProgressClip],
+  );
+
+  // Fire a model-authored progress beat (Variant B): show Athena's own words
+  // in the streaming bubble and speak them.
+  const fireBeat = useCallback(
+    (text: string) => {
+      beatFiredRef.current = true;
+      useCompanionStore.getState().setStreamingBeat(text);
+      playProgressClip(text);
+    },
+    [playProgressClip],
   );
 
   const send = useCallback(
@@ -1132,9 +1166,12 @@ function Body(props: BodyProps) {
       appendMessage(optimistic);
       setStreaming(true);
       resetStreamingText();
-      // Fresh turn — reset the spoken-progress tiers and silence any
-      // leftover progress clip.
+      // Fresh turn — reset spoken-progress tiers + beat bookkeeping and
+      // silence any leftover progress clip.
       spokenTiersRef.current.clear();
+      beatFiredRef.current = false;
+      progressFiredRef.current = 0;
+      useCompanionStore.getState().setStreamingBeat(null);
       stopProgressAudio();
       // Seed the soft-progress clock so the chip-threshold effect
       // doesn't trip immediately based on a stale prior-turn timestamp.
@@ -1208,6 +1245,7 @@ function Body(props: BodyProps) {
         // entirely (the backend never got far enough to emit one), so
         // an explicit reset here is the safety net.
         useCompanionStore.getState().setStreamingPhase(null);
+        useCompanionStore.getState().setStreamingBeat(null);
       }
     },
     [appendMessage, markPlaybackPlayed, resetStreamingText, setMessages, setPendingPlayback, setPlaybackAudioUrl, setQuickReplies, setChatCards, setSendError, setStreaming, stopProgressAudio, voiceActive, voiceEngine, synthesisCredentialId, synthesisVoiceId, voiceSettings, recallSynthesisEnabled, autonomousMode],
@@ -1234,6 +1272,31 @@ function Body(props: BodyProps) {
       speakProgress(t.plugins.companion.voice_progress_working, 1);
     }
   }, [streaming, slowLevel, speakProgress, t]);
+
+  // Variant B — detect model-authored `PROGRESS:` beats as their lines
+  // complete in the streaming text and fire each once (show + speak). A
+  // line is "complete" once a newline follows it, so we scan all but the
+  // last split segment; `streamingText` only grows, so we fire the new
+  // tail past `progressFiredRef`.
+  useEffect(() => {
+    if (!streaming) {
+      progressFiredRef.current = 0;
+      return;
+    }
+    const parts = streamingText.split('\n');
+    const beats: string[] = [];
+    for (let i = 0; i < parts.length - 1; i++) {
+      const m = /^\s*PROGRESS:\s*(.+)$/.exec(parts[i] ?? '');
+      const body = m?.[1]?.trim();
+      if (body) beats.push(body);
+    }
+    if (beats.length > progressFiredRef.current) {
+      for (let i = progressFiredRef.current; i < beats.length; i++) {
+        fireBeat(beats[i]!);
+      }
+      progressFiredRef.current = beats.length;
+    }
+  }, [streamingText, streaming, fireBeat]);
 
   // Voice turns fired from the footer's hold-to-talk affordance. This panel
   // component is always mounted (only its visible UI is gated on `isOpen`),
@@ -1476,9 +1539,12 @@ function Body(props: BodyProps) {
                     See docs/features/companion/conversation-orchestration.md.
                   */}
                   <Bubble role="assistant" streaming index={messages.length}>
-                    {streamingPhase
-                      ? phaseLabel(t, tx, streamingPhase)
-                      : t.plugins.companion.thinking}
+                    {/* Athena's own progress beat (Variant B) wins over the
+                        derived phase; fall back to phase, then "Thinking…". */}
+                    {streamingBeat ??
+                      (streamingPhase
+                        ? phaseLabel(t, tx, streamingPhase)
+                        : t.plugins.companion.thinking)}
                   </Bubble>
                   <button
                     type="button"
