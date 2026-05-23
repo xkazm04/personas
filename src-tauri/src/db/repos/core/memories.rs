@@ -101,6 +101,7 @@ row_mapper!(row_to_memory -> PersonaMemory {
     created_at, updated_at,
     use_case_id [opt],
     group_id [opt],
+    home_team_id [opt],
 });
 
 /// Map user-provided sort column to a safe SQL column name.
@@ -1174,6 +1175,7 @@ mod tests {
                 use_case_id: None,
             
                 group_id: None,
+            
             },
         )
         .unwrap();
@@ -1194,6 +1196,7 @@ mod tests {
                 use_case_id: None,
             
                 group_id: None,
+            
             },
         )
         .unwrap();
@@ -1288,6 +1291,7 @@ mod tests {
             use_case_id: None,
         
             group_id: None,
+        
         };
 
         // Valid boundaries
@@ -1349,6 +1353,7 @@ mod tests {
                 use_case_id: None,
             
                 group_id: None,
+            
             },
         )
         .unwrap();
@@ -1366,6 +1371,7 @@ mod tests {
                 use_case_id: None,
             
                 group_id: None,
+            
             },
         )
         .unwrap();
@@ -1659,6 +1665,7 @@ mod tests {
                 use_case_id: Some("uc-x".into()),
             
                 group_id: None,
+            
             },
         )
         .unwrap();
@@ -1710,6 +1717,7 @@ mod tests {
                 use_case_id: None,
             
                 group_id: None,
+            
             },
             // 1: empty content after strip → empty_title_or_content
             CreatePersonaMemoryInput {
@@ -1723,6 +1731,7 @@ mod tests {
                 use_case_id: None,
             
                 group_id: None,
+            
             },
             // 2: bogus category → invalid_category
             CreatePersonaMemoryInput {
@@ -1736,6 +1745,7 @@ mod tests {
                 use_case_id: None,
             
                 group_id: None,
+            
             },
             // 3: valid
             CreatePersonaMemoryInput {
@@ -1749,6 +1759,7 @@ mod tests {
                 use_case_id: None,
             
                 group_id: None,
+            
             },
         ];
 
@@ -1814,6 +1825,7 @@ mod tests {
                 use_case_id: Some("uc-deleted-on-purpose".into()),
             
                 group_id: None,
+            
             },
         )
         .unwrap();
@@ -1830,6 +1842,7 @@ mod tests {
                 use_case_id: None,
             
                 group_id: None,
+            
             },
         )
         .unwrap();

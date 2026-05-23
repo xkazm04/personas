@@ -8,34 +8,34 @@
  * settings-mutating IPC writes one row here. Append-only; UI surfaces it via
  * the Settings → History tab.
  */
-export type SettingsAuditEntry = { id: string,
+export type SettingsAuditEntry = { id: string, 
 /**
  * High-level grouping that matches Settings sub-modules:
  * `"api_keys" | "notifications" | "appearance" | "engine" | "byom" |
  * "portability" | "account" | "admin" | "config" | "quality_gates"`.
  * New surfaces add new categories without a migration.
  */
-category: string,
+category: string, 
 /**
  * Specific knob touched, e.g. `"create"`, `"revoke"`, the
  * `app_settings.key`, or `"providers.allow_list"`. Free-form so each
  * category can pick a shape that reads well in the History table.
  */
-settingKey: string,
+settingKey: string, 
 /**
  * Action verb: `"create" | "update" | "delete" | "revoke" | "toggle"`.
  * Renders as a colored badge in the UI.
  */
-action: string,
+action: string, 
 /**
  * Prior value (sanitized) when meaningful. `None` for `"create"`.
  */
-beforeValue: string | null,
+beforeValue: string | null, 
 /**
  * New value (sanitized) when meaningful. `None` for `"delete"` /
  * `"revoke"`.
  */
-afterValue: string | null,
+afterValue: string | null, 
 /**
  * Caller surface: `"ui"` (Tauri IPC from desktop renderer), `"http"`
  * (management HTTP API), `"cli"`, `"system"`. `None` when origin

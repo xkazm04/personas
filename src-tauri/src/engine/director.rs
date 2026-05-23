@@ -797,6 +797,7 @@ mod tests {
             last_design_result: None,
             last_test_report: None,
             design_context: None,
+            home_team_id: None,
             icon: None,
             color: None,
             enabled: true,

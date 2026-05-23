@@ -27,7 +27,12 @@ warnings: Array<string>, id: string, project_id: string, name: string, descripti
  * `None` for personas that have never run a test (manual templates,
  * legacy installs).
  */
-last_test_report: string | null, model_profile: string | null, max_budget_usd: number | null, max_turns: number | null, design_context: string | null, group_id: string | null, source_review_id: string | null, trust_level: PersonaTrustLevel, trust_origin: PersonaTrustOrigin, trust_verified_at: string | null, trust_score: number, 
+last_test_report: string | null, model_profile: string | null, max_budget_usd: number | null, max_turns: number | null, design_context: string | null, group_id: string | null, 
+/**
+ * Workspace anchor (Groups→Teams consolidation): the one team whose
+ * shared instructions + defaults + injected memory apply at runtime.
+ */
+home_team_id: string | null, source_review_id: string | null, trust_level: PersonaTrustLevel, trust_origin: PersonaTrustOrigin, trust_verified_at: string | null, trust_score: number, 
 /**
  * Free parameters: JSON array of `PersonaParameter` definitions.
  * Adjustable at runtime without triggering a rebuild.
