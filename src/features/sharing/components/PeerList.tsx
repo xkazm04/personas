@@ -4,28 +4,13 @@ import { useSystemStore } from "@/stores/systemStore";
 import { useToastStore } from '@/stores/toastStore';
 import { PeerCard } from './PeerCard';
 import { PeerDetailDrawer } from './PeerDetailDrawer';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { createLogger } from "@/lib/log";
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 
 
 const logger = createLogger("peer-list");
-
-function useRelativeTime(ts: number | null): string {
-  const [, tick] = useState(0);
-  useEffect(() => {
-    if (ts === null) return;
-    const id = setInterval(() => tick((n) => n + 1), 15_000);
-    return () => clearInterval(id);
-  }, [ts]);
-
-  if (ts === null) return '';
-  const diff = Date.now() - ts;
-  if (diff < 10_000) return 'just now';
-  if (diff < 60_000) return `${Math.floor(diff / 1000)}s ago`;
-  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`;
-  return `${Math.floor(diff / 3_600_000)}h ago`;
-}
 
 export function PeerList() {
   const discoveredPeers = useSystemStore((s) => s.discoveredPeers);
@@ -58,8 +43,6 @@ export function PeerList() {
   useEffect(() => {
     doFetch().finally(() => setLoading(false));
   }, [doFetch]);
-
-  const lastScannedLabel = useRelativeTime(lastScannedAt);
 
   const handleConnect = async (peerId: string) => {
     setConnectingPeers((prev) => new Set(prev).add(peerId));
@@ -108,9 +91,9 @@ export function PeerList() {
             <RefreshCw className="w-3.5 h-3.5" />
             {st.refresh}
           </button>
-          {lastScannedLabel && (
+          {lastScannedAt !== null && (
             <span className="text-[10px] text-foreground">
-              scanned {lastScannedLabel}
+              scanned <RelativeTime timestamp={lastScannedAt} showTooltip={false} />
             </span>
           )}
         </div>
