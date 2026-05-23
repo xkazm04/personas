@@ -48,8 +48,17 @@ export interface TwinSlice {
   twinChannels: TwinChannel[];
   twinChannelsLoading: boolean;
 
+  // -- Cross-tab handoff slot used by Reflections → Training "Dig deeper".
+  //    ReflectionsPanel drops follow-up questions here, switches the tab to
+  //    training, and useTrainingSession consumes (and clears) them on mount.
+  //    A simple in-memory string list — not persisted; the moment the user
+  //    leaves Training, anything they didn't pick is gone, which matches the
+  //    "ask AI, jump in" intent.
+  pendingTrainingQuestions: string[] | null;
+
   // -- Actions ---------------------------------------------------------
   setTwinTab: (tab: TwinTab) => void;
+  setPendingTrainingQuestions: (questions: string[] | null) => void;
   fetchTwinProfiles: () => Promise<void>;
   createTwinProfile: (
     name: string,
@@ -149,8 +158,10 @@ export const createTwinSlice: StateCreator<SystemStore, [], [], TwinSlice> = (se
   twinVoiceLoading: false,
   twinChannels: [],
   twinChannelsLoading: false,
+  pendingTrainingQuestions: null,
 
   setTwinTab: (tab) => set({ twinTab: tab }),
+  setPendingTrainingQuestions: (questions) => set({ pendingTrainingQuestions: questions }),
 
   fetchTwinProfiles: async () => {
     set({ twinProfilesLoading: true });

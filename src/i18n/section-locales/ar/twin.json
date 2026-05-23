@@ -4,7 +4,9 @@
     "selectTwin": "Select a twin...",
     "pickerLabel": "اختر التوأم النشط",
     "searchPlaceholder": "ابحث بالاسم أو الدور…",
-    "noMatches": "لا توجد توائم تطابق بحثك."
+    "noMatches": "لا توجد توائم تطابق بحثك.",
+    "pinTwin": "تثبيت في الأعلى",
+    "unpinTwin": "إلغاء التثبيت"
   },
   "emptyState": {
     "subtitle": "You need an active twin to use this tab.",
@@ -84,6 +86,7 @@
     "lastMinutesAgo": "منذ {count} د",
     "lastHoursAgo": "منذ {count} س",
     "lastDaysAgo": "منذ {count} ي",
+    "staleTag": "يبدو خاملاً",
     "testTooltip": "تسجيل اختبار صادر اصطناعي",
     "testDisabledPaused": "فعّل القناة أولاً لاختبارها",
     "testAria": "إرسال رسالة اختبار",
@@ -110,7 +113,14 @@
     "saving": "Saving...",
     "save": "Save",
     "creating": "Creating...",
-    "create": "Create"
+    "create": "Create",
+    "autoSuggestCta": "صياغة النبرة من آخر {count} رسائل {channel}",
+    "autoSuggestButton": "اقتراح",
+    "autoSuggestGenerating": "جارٍ قراءة الرسائل…",
+    "autoSuggestTooltip": "يقرأ الرسائل الصادرة الأخيرة ويصوغ توجيهات الصوت والأمثلة. تبقى المراجعة والحفظ بيدك.",
+    "autoSuggestSuccess": "تمت صياغة الاقتراح — راجع واحفظ.",
+    "autoSuggestNoComms": "لا توجد رسائل {channel} كافية للتعلم منها بعد.",
+    "autoSuggestError": "تعذرت صياغة اقتراح النبرة."
   },
   "voice": {
     "title": "Voice",
@@ -250,6 +260,20 @@
     "switchToPending": "Switch to \"pending\" to review new items.",
     "approveTitle": "Approve — index into KB",
     "rejectTitle": "Reject — discard",
+    "digDeeperCta": "تعمّق أكثر",
+    "digDeeperGenerating": "جارٍ توليد الأسئلة…",
+    "digDeeperTooltip": "وافق على هذه الذاكرة واطلب من الذكاء الاصطناعي صياغة أسئلة تدريبية للمتابعة",
+    "digDeeperToast": "تمت الموافقة — جارٍ فتح Training Room بأسئلة المتابعة.",
+    "digDeeperError": "تعذّر توليد أسئلة المتابعة.",
+    "rejectReasonHeading": "لماذا ترفض هذه الذاكرة؟",
+    "rejectReasonIrrelevant": "غير ذي صلة",
+    "rejectReasonInaccurate": "غير دقيق",
+    "rejectReasonPrivate": "خاص",
+    "rejectReasonWrongTone": "نبرة غير مناسبة",
+    "rejectReasonNotePlaceholder": "أضف ملاحظة (اختياري)…",
+    "rejectReasonConfirm": "رفض",
+    "rejectReasonCancel": "إلغاء",
+    "rejectedReasonLabel": "السبب: {reason}",
     "priority": "priority",
     "conversationHistory": "Conversation History",
     "conversationExplanation": "Every message sent or received through the Twin connector is logged here. This is the raw interaction trail — the memory inbox above is the curated extract.",
@@ -462,6 +486,8 @@
     "allSetTitle": "كل شيء جاهز",
     "allSetBody": "كل مرحلة مكتملة. هذا التوأم جاهز للتحدث.",
     "moreCount": "+{count} المزيد",
+    "showAllGaps": "عرض كل {count} فجوة",
+    "showFewer": "عرض أقل",
     "titles": {
       "identityEmpty": "لا توجد سيرة بعد",
       "identityPartial": "السيرة قصيرة",
@@ -499,6 +525,7 @@
     "neverBridged": "أبدًا",
     "justNow": "الآن",
     "messageCount": "{count} رسالة",
+    "sparklineAria": "{count} رسالة في الأيام السبعة الماضية",
     "aliasPlaceholder": "اسم ودود (مثل \"Alice from Discord\")",
     "notesPlaceholder": "ملاحظات — السياق، التفضيلات، التواريخ المهمة…",
     "editAria": "تعديل الاسم المستعار والملاحظات",
@@ -530,6 +557,14 @@
     "emptyBody": "أضف حقائق أثناء مراجعتك لـ communications — كل حقيقة تستشهد بالرسائل التي أتت منها. ستقترح المراحل المستقبلية الحقائق تلقائيًا.",
     "deleteAria": "حذف الحقيقة المُقطَّرة"
   },
+  "rejectionPatterns": {
+    "title": "أنماط الرفض",
+    "subtitle": "لماذا أعدتَ الذكريات. إشارة على احتمال خلل في الاستخراج المسبق.",
+    "empty": "لا توجد ذكريات مرفوضة بعد — تابع المراجعة لملء هذا العرض.",
+    "totalRejected": "إجمالي المرفوض: {count}",
+    "otherBucket": "سبب آخر",
+    "noReasonBucket": "بدون سبب"
+  },
   "reflections": {
     "title": "تأمّلات",
     "subtitle": "يوميات مراجعة المُشغِّل. اطرح سؤالًا حول نشاط هذا التوأم الأخير — يقرأ Claude ملف التوأم وآخر 40 communication ويكتب إجابة قصيرة ومجمَّدة.",
@@ -540,6 +575,11 @@
     "reflectCta": "تأمّل",
     "generating": "جارٍ التأمّل…",
     "deleteAria": "حذف التأمّل",
+    "digDeeperCta": "تعمَّق أكثر",
+    "digDeeperGenerating": "جارٍ توليد الأسئلة…",
+    "digDeeperTooltip": "اطلب من الذكاء الاصطناعي صياغة أسئلة تدريب متابعة من هذا التأمّل",
+    "digDeeperToast": "الأسئلة جاهزة — جارٍ فتح Training.",
+    "digDeeperError": "تعذّر توليد أسئلة المتابعة.",
     "suggestedSeedLabels": {
       "voiceChange": "انحراف الصوت",
       "commsCadence": "الإيقاع",
@@ -568,6 +608,11 @@
     "commsSection": "آخر communications ({count})",
     "commsEmpty": "لا توجد communications مسجلة لهذا التوأم بعد.",
     "contactsSection": "أبرز جهات الاتصال حسب النشاط ({count})",
-    "contactsEmpty": "لا توجد جهات اتصال على هذا التوأم بعد."
+    "contactsEmpty": "لا توجد جهات اتصال على هذا التوأم بعد.",
+    "saveAsFact": "حفظ كحقيقة",
+    "saveAsFactSaved": "تم الحفظ",
+    "saveAsFactToast": "تم الحفظ في الحقائق المقطرة.",
+    "saveAsFactTooltip": "ترقية هذا الاتصال إلى حقيقة مقطرة دائمة",
+    "saveAsFactError": "تعذر الحفظ كحقيقة."
   }
 }

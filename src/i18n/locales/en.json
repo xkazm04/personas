@@ -13049,7 +13049,9 @@
       "selectTwin": "Select a twin...",
       "pickerLabel": "Pick the active twin",
       "searchPlaceholder": "Search by name or role…",
-      "noMatches": "No twins match your search."
+      "noMatches": "No twins match your search.",
+      "pinTwin": "Pin to top",
+      "unpinTwin": "Unpin"
     },
     "variantTabs": {
       "prototype": "Prototype",
@@ -13172,6 +13174,7 @@
       "lastMinutesAgo": "{count}m ago",
       "lastHoursAgo": "{count}h ago",
       "lastDaysAgo": "{count}d ago",
+      "staleTag": "looks stale",
       "testTooltip": "Log a synthetic outbound ping",
       "testDisabledPaused": "Activate the channel first to test it",
       "testAria": "Send test message",
@@ -13196,7 +13199,14 @@
       "saving": "Saving...",
       "save": "Save",
       "creating": "Creating...",
-      "create": "Create"
+      "create": "Create",
+      "autoSuggestCta": "Draft tone from {count} recent {channel} messages",
+      "autoSuggestButton": "Suggest",
+      "autoSuggestGenerating": "Reading messages…",
+      "autoSuggestTooltip": "Reads recent outbound messages and drafts voice directives + examples. You still review and save.",
+      "autoSuggestSuccess": "Suggestion drafted — review and save.",
+      "autoSuggestNoComms": "Not enough {channel} messages yet to learn from.",
+      "autoSuggestError": "Couldn't draft tone suggestion."
     },
     "voice": {
       "title": "Voice",
@@ -13339,7 +13349,12 @@
       "commsSection": "Recent communications ({count})",
       "commsEmpty": "No communications recorded for this twin yet.",
       "contactsSection": "Top contacts by activity ({count})",
-      "contactsEmpty": "No contacts on this twin yet."
+      "contactsEmpty": "No contacts on this twin yet.",
+      "saveAsFact": "Save as fact",
+      "saveAsFactSaved": "Saved",
+      "saveAsFactToast": "Saved to distilled facts.",
+      "saveAsFactTooltip": "Promote this communication to a durable distilled fact",
+      "saveAsFactError": "Couldn't save as fact."
     },
     "reflections": {
       "title": "Reflections",
@@ -13351,6 +13366,11 @@
       "reflectCta": "Reflect",
       "generating": "Reflecting…",
       "deleteAria": "Delete reflection",
+      "digDeeperCta": "Dig deeper",
+      "digDeeperGenerating": "Generating questions…",
+      "digDeeperTooltip": "Ask AI to draft follow-up training questions from this reflection",
+      "digDeeperToast": "Questions ready — opening Training.",
+      "digDeeperError": "Couldn't generate follow-up questions.",
       "suggestedSeedLabels": {
         "voiceChange": "Voice drift",
         "commsCadence": "Cadence",
@@ -13372,6 +13392,7 @@
       "neverBridged": "never",
       "justNow": "just now",
       "messageCount": "{count} messages",
+      "sparklineAria": "{count} messages in the last 7 days",
       "aliasPlaceholder": "Friendly name (e.g. \"Alice from Discord\")",
       "notesPlaceholder": "Notes — context, preferences, dates that matter…",
       "editAria": "Edit alias and notes",
@@ -13403,6 +13424,14 @@
       "emptyBody": "Add facts as you review communications — each fact citing the messages it came from. Future stages will propose facts automatically.",
       "deleteAria": "Delete distilled fact"
     },
+    "rejectionPatterns": {
+      "title": "Rejection patterns",
+      "subtitle": "Why you've pushed memories back. A signal that upstream extraction may be off.",
+      "empty": "No rejected memories yet — keep reviewing to populate this view.",
+      "totalRejected": "{count} rejected total",
+      "otherBucket": "Other reason",
+      "noReasonBucket": "No reason given"
+    },
     "knowledge": {
       "title": "Knowledge",
       "subtitle": "Review what the twin remembers. Approved memories power semantic recall; conversations log all interactions.",
@@ -13428,6 +13457,20 @@
       "switchToPending": "Switch to \"pending\" to review new items.",
       "approveTitle": "Approve — index into KB",
       "rejectTitle": "Reject — discard",
+      "digDeeperCta": "Dig deeper",
+      "digDeeperGenerating": "Generating questions…",
+      "digDeeperTooltip": "Approve this memory and ask AI to draft follow-up training questions",
+      "digDeeperToast": "Approved — opening Training with follow-up questions.",
+      "digDeeperError": "Couldn't generate follow-up questions.",
+      "rejectReasonHeading": "Why reject this memory?",
+      "rejectReasonIrrelevant": "Irrelevant",
+      "rejectReasonInaccurate": "Inaccurate",
+      "rejectReasonPrivate": "Private",
+      "rejectReasonWrongTone": "Wrong tone",
+      "rejectReasonNotePlaceholder": "Add a note (optional)…",
+      "rejectReasonConfirm": "Reject",
+      "rejectReasonCancel": "Cancel",
+      "rejectedReasonLabel": "Reason: {reason}",
       "priority": "priority",
       "bulkSelectAll": "Select all on this page",
       "bulkSelectedCount": "{count} selected",
@@ -13555,6 +13598,8 @@
       "allSetTitle": "All set",
       "allSetBody": "Every milestone is complete. This twin is ready to speak.",
       "moreCount": "+{count} more",
+      "showAllGaps": "Show all {count} gaps",
+      "showFewer": "Show fewer",
       "titles": {
         "identityEmpty": "No bio yet",
         "identityPartial": "Bio is short",

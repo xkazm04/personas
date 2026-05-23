@@ -13035,7 +13035,9 @@
       "selectTwin": "Select a twin...",
       "pickerLabel": "활성 트윈 선택",
       "searchPlaceholder": "이름 또는 역할로 검색…",
-      "noMatches": "검색과 일치하는 트윈이 없습니다."
+      "noMatches": "검색과 일치하는 트윈이 없습니다.",
+      "pinTwin": "상단 고정",
+      "unpinTwin": "고정 해제"
     },
     "emptyState": {
       "subtitle": "You need an active twin to use this tab.",
@@ -13115,6 +13117,7 @@
       "lastMinutesAgo": "{count}분 전",
       "lastHoursAgo": "{count}시간 전",
       "lastDaysAgo": "{count}일 전",
+      "staleTag": "활동 없음",
       "testTooltip": "합성 아웃바운드 핑 기록",
       "testDisabledPaused": "테스트하려면 먼저 채널을 활성화하세요",
       "testAria": "테스트 메시지 보내기",
@@ -13141,7 +13144,14 @@
       "saving": "Saving...",
       "save": "Save",
       "creating": "Creating...",
-      "create": "Create"
+      "create": "Create",
+      "autoSuggestCta": "최근 {channel} 메시지 {count}개에서 톤 초안 작성",
+      "autoSuggestButton": "제안",
+      "autoSuggestGenerating": "메시지를 읽는 중…",
+      "autoSuggestTooltip": "최근 발신 메시지를 읽고 보이스 지침과 예시를 초안 작성합니다. 검토 및 저장은 사용자가 직접 합니다.",
+      "autoSuggestSuccess": "제안이 작성되었습니다 — 검토 후 저장하세요.",
+      "autoSuggestNoComms": "학습할 {channel} 메시지가 아직 충분하지 않습니다.",
+      "autoSuggestError": "톤 제안을 작성할 수 없습니다."
     },
     "voice": {
       "title": "Voice",
@@ -13281,6 +13291,20 @@
       "switchToPending": "Switch to \"pending\" to review new items.",
       "approveTitle": "Approve — index into KB",
       "rejectTitle": "Reject — discard",
+      "digDeeperCta": "더 깊이 파기",
+      "digDeeperGenerating": "질문 생성 중…",
+      "digDeeperTooltip": "이 메모리를 승인하고 AI에게 후속 학습 질문 작성을 요청합니다",
+      "digDeeperToast": "승인됨 — 후속 질문과 함께 Training Room을 엽니다.",
+      "digDeeperError": "후속 질문을 생성할 수 없습니다.",
+      "rejectReasonHeading": "이 메모리를 거부하는 이유는 무엇인가요?",
+      "rejectReasonIrrelevant": "관련 없음",
+      "rejectReasonInaccurate": "부정확함",
+      "rejectReasonPrivate": "비공개",
+      "rejectReasonWrongTone": "잘못된 어조",
+      "rejectReasonNotePlaceholder": "메모 추가(선택 사항)…",
+      "rejectReasonConfirm": "거부",
+      "rejectReasonCancel": "취소",
+      "rejectedReasonLabel": "사유: {reason}",
       "priority": "priority",
       "conversationHistory": "Conversation History",
       "conversationExplanation": "Every message sent or received through the Twin connector is logged here. This is the raw interaction trail — the memory inbox above is the curated extract.",
@@ -13493,6 +13517,8 @@
       "allSetTitle": "준비 완료",
       "allSetBody": "모든 마일스톤이 완료되었습니다. 이 트윈은 말할 준비가 되었습니다.",
       "moreCount": "+{count}개 더",
+      "showAllGaps": "{count}개 모두 보기",
+      "showFewer": "간단히 보기",
       "titles": {
         "identityEmpty": "아직 bio가 없습니다",
         "identityPartial": "Bio가 짧습니다",
@@ -13530,6 +13556,7 @@
       "neverBridged": "없음",
       "justNow": "방금 전",
       "messageCount": "메시지 {count}개",
+      "sparklineAria": "지난 7일간 메시지 {count}개",
       "aliasPlaceholder": "친근한 이름 (예: \"Discord의 Alice\")",
       "notesPlaceholder": "메모 — 맥락, 선호 사항, 중요한 날짜…",
       "editAria": "별칭과 메모 편집",
@@ -13561,6 +13588,14 @@
       "emptyBody": "communication을 검토하면서 사실을 추가하세요 — 각 사실은 출처가 된 메시지를 인용합니다. 추후 단계에서는 사실을 자동으로 제안할 예정입니다.",
       "deleteAria": "정제된 사실 삭제"
     },
+    "rejectionPatterns": {
+      "title": "거절 패턴",
+      "subtitle": "기억을 되돌려 보낸 이유. 상류 추출이 어긋났을 가능성을 알리는 신호입니다.",
+      "empty": "아직 거절된 기억이 없습니다 — 검토를 계속해 이 화면을 채워보세요.",
+      "totalRejected": "총 {count}건 거절",
+      "otherBucket": "기타 사유",
+      "noReasonBucket": "사유 없음"
+    },
     "reflections": {
       "title": "회고",
       "subtitle": "운영자 감사용 저널. 이 트윈의 최근 활동에 대해 질문하면 — Claude가 트윈 프로필과 최근 communication 40개를 읽고 짧고 고정된 답변을 작성합니다.",
@@ -13571,6 +13606,11 @@
       "reflectCta": "회고",
       "generating": "회고 중…",
       "deleteAria": "회고 삭제",
+      "digDeeperCta": "더 깊이 파기",
+      "digDeeperGenerating": "질문 생성 중…",
+      "digDeeperTooltip": "이 회고에서 후속 Training 질문을 작성하도록 AI에 요청",
+      "digDeeperToast": "질문 준비 완료 — Training을 엽니다.",
+      "digDeeperError": "후속 질문을 생성하지 못했습니다.",
       "suggestedSeedLabels": {
         "voiceChange": "목소리 변화",
         "commsCadence": "리듬",
@@ -13599,7 +13639,12 @@
       "commsSection": "최근 communications ({count}개)",
       "commsEmpty": "이 트윈에 기록된 communication이 아직 없습니다.",
       "contactsSection": "활동 기준 상위 연락처 ({count}개)",
-      "contactsEmpty": "이 트윈에 연락처가 아직 없습니다."
+      "contactsEmpty": "이 트윈에 연락처가 아직 없습니다.",
+      "saveAsFact": "사실로 저장",
+      "saveAsFactSaved": "저장됨",
+      "saveAsFactToast": "정제된 사실에 저장되었습니다.",
+      "saveAsFactTooltip": "이 communication을 영구적인 정제된 사실로 승격",
+      "saveAsFactError": "사실로 저장할 수 없습니다."
     }
   },
   "recipe_shared": {

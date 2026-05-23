@@ -4,7 +4,9 @@
     "selectTwin": "Select a twin...",
     "pickerLabel": "选择当前 twin",
     "searchPlaceholder": "按名称或角色搜索…",
-    "noMatches": "没有匹配的 twin。"
+    "noMatches": "没有匹配的 twin。",
+    "pinTwin": "置顶",
+    "unpinTwin": "取消置顶"
   },
   "emptyState": {
     "subtitle": "You need an active twin to use this tab.",
@@ -84,6 +86,7 @@
     "lastMinutesAgo": "{count} 分钟前",
     "lastHoursAgo": "{count} 小时前",
     "lastDaysAgo": "{count} 天前",
+    "staleTag": "似乎已闲置",
     "testTooltip": "记录一条合成的外发探测消息",
     "testDisabledPaused": "先激活该通道才能测试",
     "testAria": "发送测试消息",
@@ -110,7 +113,14 @@
     "saving": "Saving...",
     "save": "Save",
     "creating": "Creating...",
-    "create": "Create"
+    "create": "Create",
+    "autoSuggestCta": "根据最近 {count} 条 {channel} 消息草拟语气",
+    "autoSuggestButton": "建议",
+    "autoSuggestGenerating": "正在读取消息…",
+    "autoSuggestTooltip": "读取最近发出的消息并草拟语气指令和示例。你仍需审核并保存。",
+    "autoSuggestSuccess": "已草拟建议 — 请审核并保存。",
+    "autoSuggestNoComms": "尚无足够的 {channel} 消息可供学习。",
+    "autoSuggestError": "无法草拟语气建议。"
   },
   "voice": {
     "title": "Voice",
@@ -250,6 +260,20 @@
     "switchToPending": "Switch to \"pending\" to review new items.",
     "approveTitle": "Approve — index into KB",
     "rejectTitle": "Reject — discard",
+    "digDeeperCta": "深入挖掘",
+    "digDeeperGenerating": "正在生成问题…",
+    "digDeeperTooltip": "批准此记忆并请 AI 起草后续训练问题",
+    "digDeeperToast": "已批准 — 正在打开 Training Room 以处理后续问题。",
+    "digDeeperError": "无法生成后续问题。",
+    "rejectReasonHeading": "为什么拒绝这条记忆？",
+    "rejectReasonIrrelevant": "不相关",
+    "rejectReasonInaccurate": "不准确",
+    "rejectReasonPrivate": "隐私",
+    "rejectReasonWrongTone": "语气不当",
+    "rejectReasonNotePlaceholder": "添加备注（可选）…",
+    "rejectReasonConfirm": "拒绝",
+    "rejectReasonCancel": "取消",
+    "rejectedReasonLabel": "原因：{reason}",
     "priority": "priority",
     "conversationHistory": "Conversation History",
     "conversationExplanation": "Every message sent or received through the Twin connector is logged here. This is the raw interaction trail — the memory inbox above is the curated extract.",
@@ -462,6 +486,8 @@
     "allSetTitle": "全部就绪",
     "allSetBody": "每一项里程碑都已完成。该 twin 已可以开口说话。",
     "moreCount": "还有 {count} 项",
+    "showAllGaps": "显示全部 {count} 项",
+    "showFewer": "收起",
     "titles": {
       "identityEmpty": "尚无 bio",
       "identityPartial": "Bio 太短",
@@ -499,6 +525,7 @@
     "neverBridged": "从未",
     "justNow": "刚刚",
     "messageCount": "{count} 条消息",
+    "sparklineAria": "过去 7 天内 {count} 条消息",
     "aliasPlaceholder": "友好名称（例如 \"Discord 上的 Alice\"）",
     "notesPlaceholder": "备注 — 背景、偏好、重要日期…",
     "editAria": "编辑别名和备注",
@@ -530,6 +557,14 @@
     "emptyBody": "在审阅通信时添加事实 — 每条事实都引用其来源消息。后续阶段会自动提出事实建议。",
     "deleteAria": "删除提炼事实"
   },
+  "rejectionPatterns": {
+    "title": "拒绝模式",
+    "subtitle": "你为什么把记忆驳回。这是上游提取可能有偏差的信号。",
+    "empty": "尚无被拒绝的记忆 — 继续审阅以填充此视图。",
+    "totalRejected": "共 {count} 条已拒绝",
+    "otherBucket": "其他原因",
+    "noReasonBucket": "未填写原因"
+  },
   "reflections": {
     "title": "反思",
     "subtitle": "操作者审查日记。就该 twin 的近期活动提一个问题 — Claude 会读取 twin 资料和最近 40 条通信，写下一段简短、冻结的答案。",
@@ -540,6 +575,11 @@
     "reflectCta": "反思",
     "generating": "反思中…",
     "deleteAria": "删除反思",
+    "digDeeperCta": "深入挖掘",
+    "digDeeperGenerating": "正在生成问题…",
+    "digDeeperTooltip": "让 AI 基于此反思草拟后续训练问题",
+    "digDeeperToast": "问题已准备就绪 — 正在打开 Training。",
+    "digDeeperError": "无法生成后续问题。",
     "suggestedSeedLabels": {
       "voiceChange": "语气漂移",
       "commsCadence": "节奏",
@@ -568,6 +608,11 @@
     "commsSection": "近期通信（{count}）",
     "commsEmpty": "该 twin 尚未记录任何通信。",
     "contactsSection": "活动最频繁的联系人（{count}）",
-    "contactsEmpty": "该 twin 还没有任何联系人。"
+    "contactsEmpty": "该 twin 还没有任何联系人。",
+    "saveAsFact": "保存为事实",
+    "saveAsFactSaved": "已保存",
+    "saveAsFactToast": "已保存到提炼事实。",
+    "saveAsFactTooltip": "将此通信提升为持久的提炼事实",
+    "saveAsFactError": "无法保存为事实。"
   }
 }

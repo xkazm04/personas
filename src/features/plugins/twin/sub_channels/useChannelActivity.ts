@@ -14,9 +14,25 @@ import { useSystemStore } from '@/stores/systemStore';
 
 const RECENT_LIMIT = 200;
 
+/**
+ * Channels with no activity past this threshold render with an amber-pulse
+ * dot in the atelier — "you forgot about this one, re-test or archive."
+ * 30d is the convention for "automation rot is becoming likely": shorter
+ * thresholds (7d, 14d) caught too many channels the user only uses for
+ * monthly cadences (newsletters, monthly check-ins), longer thresholds
+ * (60d, 90d) let truly dead channels stay green for too long.
+ */
+const STALE_THRESHOLD_MS = 30 * 24 * 60 * 60 * 1000;
+
 export interface ChannelActivity {
   /** Latest `occurred_at` (ISO-8601) per channel_type. */
   lastByChannel: Map<string, string>;
+  /**
+   * True for any active channel_type whose latest activity is older than
+   * `STALE_THRESHOLD_MS`. Channels that have NEVER bridged are NOT marked
+   * stale here — the renderer already treats "never used" differently.
+   */
+  staleByChannel: Map<string, boolean>;
   /** True while the underlying communications fetch is in flight. */
   loading: boolean;
 }
@@ -44,5 +60,16 @@ export function useChannelActivity(twinId: string | null): ChannelActivity {
     return map;
   }, [twinId, twinCommunications]);
 
-  return { lastByChannel, loading: twinCommsLoading };
+  const staleByChannel = useMemo(() => {
+    const map = new Map<string, boolean>();
+    const now = Date.now();
+    for (const [channel, iso] of lastByChannel) {
+      const then = Date.parse(iso);
+      if (Number.isNaN(then)) continue;
+      map.set(channel, now - then >= STALE_THRESHOLD_MS);
+    }
+    return map;
+  }, [lastByChannel]);
+
+  return { lastByChannel, staleByChannel, loading: twinCommsLoading };
 }

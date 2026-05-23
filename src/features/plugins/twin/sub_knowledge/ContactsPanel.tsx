@@ -1,11 +1,86 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Users, Edit2, Save, X, Clock } from 'lucide-react';
 import * as twinApi from '@/api/twin/twin';
+import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { Button } from '@/features/shared/components/buttons';
 import type { TwinContact } from '@/lib/bindings/TwinContact';
+
+const SPARKLINE_DAYS = 7;
+
+/**
+ * Buckets the active twin's communications into `SPARKLINE_DAYS` daily bins
+ * per contact-handle (case-insensitive). Bin 0 = oldest day, bin 6 = today.
+ * Empty histograms get a 0-filled array so the sparkline renderer can stay
+ * dumb about the absent-data case.
+ */
+function useContactSparklines(twinId: string): Map<string, number[]> {
+  const twinCommunications = useSystemStore((s) => s.twinCommunications);
+  return useMemo(() => {
+    const map = new Map<string, number[]>();
+    if (!twinId) return map;
+    const dayMs = 86_400_000;
+    const todayStart = Math.floor(Date.now() / dayMs) * dayMs;
+    const cutoff = todayStart - (SPARKLINE_DAYS - 1) * dayMs;
+    for (const c of twinCommunications) {
+      if (c.twin_id !== twinId) continue;
+      if (!c.contact_handle) continue;
+      const occurredMs = Date.parse(c.occurred_at);
+      if (Number.isNaN(occurredMs) || occurredMs < cutoff) continue;
+      const bin = Math.min(
+        SPARKLINE_DAYS - 1,
+        Math.max(0, Math.floor((occurredMs - cutoff) / dayMs)),
+      );
+      const key = c.contact_handle.toLowerCase();
+      const bins = map.get(key) ?? new Array<number>(SPARKLINE_DAYS).fill(0);
+      bins[bin] = (bins[bin] ?? 0) + 1;
+      map.set(key, bins);
+    }
+    return map;
+  }, [twinId, twinCommunications]);
+}
+
+interface SparklineProps {
+  bins: number[];
+  label: string;
+}
+
+function Sparkline({ bins, label }: SparklineProps) {
+  const max = bins.reduce((m, n) => (n > m ? n : m), 0);
+  if (max === 0) return null;
+  const barW = 3;
+  const gap = 1;
+  const h = 12;
+  const w = bins.length * barW + (bins.length - 1) * gap;
+  return (
+    <svg
+      width={w}
+      height={h}
+      viewBox={`0 0 ${w} ${h}`}
+      role="img"
+      aria-label={label}
+      className="flex-shrink-0 text-violet-400/85"
+    >
+      {bins.map((n, i) => {
+        const bh = max === 0 ? 0 : Math.max(1, Math.round((n / max) * h));
+        return (
+          <rect
+            key={i}
+            x={i * (barW + gap)}
+            y={h - bh}
+            width={barW}
+            height={bh}
+            rx={0.5}
+            fill="currentColor"
+            opacity={n === 0 ? 0.15 : 0.85}
+          />
+        );
+      })}
+    </svg>
+  );
+}
 
 /**
  * Cycle 14 Stage 1 — durable per-contact register. The backend auto-upserts
@@ -39,6 +114,8 @@ export function ContactsPanel({ twinId }: Props) {
   const [draftAlias, setDraftAlias] = useState('');
   const [draftNotes, setDraftNotes] = useState('');
   const [saving, setSaving] = useState(false);
+  const fetchTwinCommunications = useSystemStore((s) => s.fetchTwinCommunications);
+  const sparklines = useContactSparklines(twinId);
 
   useEffect(() => {
     if (!twinId) return;
@@ -46,7 +123,11 @@ export function ContactsPanel({ twinId }: Props) {
       .listTwinContacts(twinId)
       .then(setContacts)
       .catch(() => setContacts([]));
-  }, [twinId]);
+    // Pull a recent slice of communications to feed the per-contact 7d
+    // sparkline. Idempotent against the slice — other Brain panels load
+    // this too.
+    void fetchTwinCommunications(twinId, undefined, 200);
+  }, [twinId, fetchTwinCommunications]);
 
   const startEdit = (c: TwinContact) => {
     setEditingId(c.id);
@@ -144,6 +225,18 @@ export function ContactsPanel({ twinId }: Props) {
                           <span className="typo-caption text-foreground">
                             {tx(t.contacts.messageCount, { count: Number(c.message_count) })}
                           </span>
+                          {(() => {
+                            const bins = sparklines.get(c.handle.toLowerCase());
+                            if (!bins) return null;
+                            const total = bins.reduce((a, b) => a + b, 0);
+                            if (total === 0) return null;
+                            return (
+                              <Sparkline
+                                bins={bins}
+                                label={tx(t.contacts.sparklineAria, { count: total })}
+                              />
+                            );
+                          })()}
                         </div>
                       </>
                     )}

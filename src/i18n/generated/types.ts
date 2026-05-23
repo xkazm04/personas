@@ -13056,6 +13056,8 @@ export type Translations = {
       pickerLabel: string;
       searchPlaceholder: string;
       noMatches: string;
+      pinTwin: string;
+      unpinTwin: string;
     };
     variantTabs: {
       prototype: string;
@@ -13178,6 +13180,7 @@ export type Translations = {
       lastMinutesAgo: string;
       lastHoursAgo: string;
       lastDaysAgo: string;
+      staleTag: string;
       testTooltip: string;
       testDisabledPaused: string;
       testAria: string;
@@ -13203,6 +13206,13 @@ export type Translations = {
       save: string;
       creating: string;
       create: string;
+      autoSuggestCta: string;
+      autoSuggestButton: string;
+      autoSuggestGenerating: string;
+      autoSuggestTooltip: string;
+      autoSuggestSuccess: string;
+      autoSuggestNoComms: string;
+      autoSuggestError: string;
     };
     voice: {
       title: string;
@@ -13346,6 +13356,11 @@ export type Translations = {
       commsEmpty: string;
       contactsSection: string;
       contactsEmpty: string;
+      saveAsFact: string;
+      saveAsFactSaved: string;
+      saveAsFactToast: string;
+      saveAsFactTooltip: string;
+      saveAsFactError: string;
     };
     reflections: {
       title: string;
@@ -13357,6 +13372,11 @@ export type Translations = {
       reflectCta: string;
       generating: string;
       deleteAria: string;
+      digDeeperCta: string;
+      digDeeperGenerating: string;
+      digDeeperTooltip: string;
+      digDeeperToast: string;
+      digDeeperError: string;
       suggestedSeedLabels: {
         voiceChange: string;
         commsCadence: string;
@@ -13378,6 +13398,7 @@ export type Translations = {
       neverBridged: string;
       justNow: string;
       messageCount: string;
+      sparklineAria: string;
       aliasPlaceholder: string;
       notesPlaceholder: string;
       editAria: string;
@@ -13409,6 +13430,14 @@ export type Translations = {
       emptyBody: string;
       deleteAria: string;
     };
+    rejectionPatterns: {
+      title: string;
+      subtitle: string;
+      empty: string;
+      totalRejected: string;
+      otherBucket: string;
+      noReasonBucket: string;
+    };
     knowledge: {
       title: string;
       subtitle: string;
@@ -13434,6 +13463,20 @@ export type Translations = {
       switchToPending: string;
       approveTitle: string;
       rejectTitle: string;
+      digDeeperCta: string;
+      digDeeperGenerating: string;
+      digDeeperTooltip: string;
+      digDeeperToast: string;
+      digDeeperError: string;
+      rejectReasonHeading: string;
+      rejectReasonIrrelevant: string;
+      rejectReasonInaccurate: string;
+      rejectReasonPrivate: string;
+      rejectReasonWrongTone: string;
+      rejectReasonNotePlaceholder: string;
+      rejectReasonConfirm: string;
+      rejectReasonCancel: string;
+      rejectedReasonLabel: string;
       priority: string;
       bulkSelectAll: string;
       bulkSelectedCount: string;
@@ -13561,6 +13604,8 @@ export type Translations = {
       allSetTitle: string;
       allSetBody: string;
       moreCount: string;
+      showAllGaps: string;
+      showFewer: string;
       titles: {
         identityEmpty: string;
         identityPartial: string;

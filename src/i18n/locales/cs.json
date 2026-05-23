@@ -13035,7 +13035,9 @@
       "selectTwin": "Select a twin...",
       "pickerLabel": "Vyberte aktivního dvojníka",
       "searchPlaceholder": "Hledat podle jména nebo role…",
-      "noMatches": "Žádní dvojníci neodpovídají vašemu hledání."
+      "noMatches": "Žádní dvojníci neodpovídají vašemu hledání.",
+      "pinTwin": "Připnout nahoru",
+      "unpinTwin": "Odepnout"
     },
     "emptyState": {
       "subtitle": "You need an active twin to use this tab.",
@@ -13115,6 +13117,7 @@
       "lastMinutesAgo": "před {count} min",
       "lastHoursAgo": "před {count} h",
       "lastDaysAgo": "před {count} d",
+      "staleTag": "vypadá nečinně",
       "testTooltip": "Zalogovat syntetický odchozí ping",
       "testDisabledPaused": "Nejprve kanál aktivujte, abyste ho mohli otestovat",
       "testAria": "Odeslat testovací zprávu",
@@ -13141,7 +13144,14 @@
       "saving": "Saving...",
       "save": "Save",
       "creating": "Creating...",
-      "create": "Create"
+      "create": "Create",
+      "autoSuggestCta": "Navrhnout tón z {count} posledních zpráv z {channel}",
+      "autoSuggestButton": "Navrhnout",
+      "autoSuggestGenerating": "Čtu zprávy…",
+      "autoSuggestTooltip": "Přečte poslední odchozí zprávy a navrhne hlasové pokyny a příklady. Stále si je sám zkontroluješ a uložíš.",
+      "autoSuggestSuccess": "Návrh připraven — zkontroluj a ulož.",
+      "autoSuggestNoComms": "Zatím není dostatek zpráv z {channel} k učení.",
+      "autoSuggestError": "Návrh tónu se nepodařilo vytvořit."
     },
     "voice": {
       "title": "Voice",
@@ -13281,6 +13291,20 @@
       "switchToPending": "Switch to \"pending\" to review new items.",
       "approveTitle": "Approve — index into KB",
       "rejectTitle": "Reject — discard",
+      "digDeeperCta": "Prozkoumat hlouběji",
+      "digDeeperGenerating": "Generuji otázky…",
+      "digDeeperTooltip": "Schválit tuto vzpomínku a požádat AI o návrh navazujících tréninkových otázek",
+      "digDeeperToast": "Schváleno — otevírám Training Room s navazujícími otázkami.",
+      "digDeeperError": "Navazující otázky se nepodařilo vygenerovat.",
+      "rejectReasonHeading": "Proč zamítnout tuto vzpomínku?",
+      "rejectReasonIrrelevant": "Nerelevantní",
+      "rejectReasonInaccurate": "Nepřesné",
+      "rejectReasonPrivate": "Soukromé",
+      "rejectReasonWrongTone": "Špatný tón",
+      "rejectReasonNotePlaceholder": "Přidat poznámku (volitelné)…",
+      "rejectReasonConfirm": "Zamítnout",
+      "rejectReasonCancel": "Zrušit",
+      "rejectedReasonLabel": "Důvod: {reason}",
       "priority": "priority",
       "conversationHistory": "Conversation History",
       "conversationExplanation": "Every message sent or received through the Twin connector is logged here. This is the raw interaction trail — the memory inbox above is the curated extract.",
@@ -13493,6 +13517,8 @@
       "allSetTitle": "Vše hotovo",
       "allSetBody": "Každý milník je dokončen. Tento dvojník je připraven promluvit.",
       "moreCount": "+{count} dalších",
+      "showAllGaps": "Zobrazit všech {count}",
+      "showFewer": "Zobrazit méně",
       "titles": {
         "identityEmpty": "Zatím žádné bio",
         "identityPartial": "Bio je krátké",
@@ -13530,6 +13556,7 @@
       "neverBridged": "nikdy",
       "justNow": "právě teď",
       "messageCount": "{count} zpráv",
+      "sparklineAria": "{count} zpráv za posledních 7 dní",
       "aliasPlaceholder": "Přátelské jméno (např. \"Alice z Discordu\")",
       "notesPlaceholder": "Poznámky — kontext, preference, důležitá data…",
       "editAria": "Upravit alias a poznámky",
@@ -13561,6 +13588,14 @@
       "emptyBody": "Přidávejte fakta při procházení komunikací — každé fakt cituje zprávy, ze kterých vzniklo. Budoucí fáze budou fakta navrhovat automaticky.",
       "deleteAria": "Smazat destilované fakt"
     },
+    "rejectionPatterns": {
+      "title": "Vzorce odmítnutí",
+      "subtitle": "Proč jsi vracel/a vzpomínky zpět. Signál, že předchozí extrakce může mít odchylky.",
+      "empty": "Žádné odmítnuté vzpomínky zatím — pokračuj v revizi, ať se pohled naplní.",
+      "totalRejected": "Celkem odmítnuto: {count}",
+      "otherBucket": "Jiný důvod",
+      "noReasonBucket": "Bez uvedení důvodu"
+    },
     "reflections": {
       "title": "Reflexe",
       "subtitle": "Operátorské auditní deníky. Položte otázku o nedávné aktivitě tohoto dvojníka — Claude přečte profil dvojníka + posledních 40 komunikací a napíše krátkou, zmrazenou odpověď.",
@@ -13571,6 +13606,11 @@
       "reflectCta": "Reflektovat",
       "generating": "Reflektuji…",
       "deleteAria": "Smazat reflexi",
+      "digDeeperCta": "Kopat hlouběji",
+      "digDeeperGenerating": "Generuji otázky…",
+      "digDeeperTooltip": "Požádat AI o návrh navazujících otázek pro Training z této reflexe",
+      "digDeeperToast": "Otázky připraveny — otevírám Training.",
+      "digDeeperError": "Navazující otázky se nepodařilo vygenerovat.",
       "suggestedSeedLabels": {
         "voiceChange": "Drift hlasu",
         "commsCadence": "Kadence",
@@ -13599,7 +13639,12 @@
       "commsSection": "Nedávné komunikace ({count})",
       "commsEmpty": "Pro tohoto dvojníka zatím nejsou zaznamenány žádné komunikace.",
       "contactsSection": "Nejaktivnější kontakty ({count})",
-      "contactsEmpty": "Tento dvojník zatím nemá žádné kontakty."
+      "contactsEmpty": "Tento dvojník zatím nemá žádné kontakty.",
+      "saveAsFact": "Uložit jako fakt",
+      "saveAsFactSaved": "Uloženo",
+      "saveAsFactToast": "Uloženo do destilovaných faktů.",
+      "saveAsFactTooltip": "Povýšit tuto komunikaci na trvalý destilovaný fakt",
+      "saveAsFactError": "Nepodařilo se uložit jako fakt."
     }
   },
   "recipe_shared": {

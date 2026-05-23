@@ -4,7 +4,9 @@
     "selectTwin": "Select a twin...",
     "pickerLabel": "Pilih twin aktif",
     "searchPlaceholder": "Cari berdasarkan nama atau peran…",
-    "noMatches": "Tidak ada twin yang cocok dengan pencarian Anda."
+    "noMatches": "Tidak ada twin yang cocok dengan pencarian Anda.",
+    "pinTwin": "Sematkan di atas",
+    "unpinTwin": "Lepas sematan"
   },
   "emptyState": {
     "subtitle": "You need an active twin to use this tab.",
@@ -84,6 +86,7 @@
     "lastMinutesAgo": "{count} mnt lalu",
     "lastHoursAgo": "{count} jam lalu",
     "lastDaysAgo": "{count} hr lalu",
+    "staleTag": "tampak tak aktif",
     "testTooltip": "Catat ping keluar sintetis",
     "testDisabledPaused": "Aktifkan kanalnya terlebih dahulu untuk mengujinya",
     "testAria": "Kirim pesan uji",
@@ -110,7 +113,14 @@
     "saving": "Saving...",
     "save": "Save",
     "creating": "Creating...",
-    "create": "Create"
+    "create": "Create",
+    "autoSuggestCta": "Susun nada dari {count} pesan {channel} terbaru",
+    "autoSuggestButton": "Sarankan",
+    "autoSuggestGenerating": "Membaca pesan…",
+    "autoSuggestTooltip": "Membaca pesan keluar terbaru dan menyusun arahan suara serta contoh. Kamu tetap meninjau dan menyimpan.",
+    "autoSuggestSuccess": "Saran tersusun — tinjau dan simpan.",
+    "autoSuggestNoComms": "Belum cukup pesan {channel} untuk dipelajari.",
+    "autoSuggestError": "Tidak dapat menyusun saran nada."
   },
   "voice": {
     "title": "Voice",
@@ -250,6 +260,20 @@
     "switchToPending": "Switch to \"pending\" to review new items.",
     "approveTitle": "Approve — index into KB",
     "rejectTitle": "Reject — discard",
+    "digDeeperCta": "Gali lebih dalam",
+    "digDeeperGenerating": "Membuat pertanyaan…",
+    "digDeeperTooltip": "Setujui memori ini dan minta AI menyusun pertanyaan latihan lanjutan",
+    "digDeeperToast": "Disetujui — membuka Training Room dengan pertanyaan lanjutan.",
+    "digDeeperError": "Tidak dapat membuat pertanyaan lanjutan.",
+    "rejectReasonHeading": "Mengapa menolak memori ini?",
+    "rejectReasonIrrelevant": "Tidak relevan",
+    "rejectReasonInaccurate": "Tidak akurat",
+    "rejectReasonPrivate": "Pribadi",
+    "rejectReasonWrongTone": "Nada salah",
+    "rejectReasonNotePlaceholder": "Tambahkan catatan (opsional)…",
+    "rejectReasonConfirm": "Tolak",
+    "rejectReasonCancel": "Batal",
+    "rejectedReasonLabel": "Alasan: {reason}",
     "priority": "priority",
     "conversationHistory": "Conversation History",
     "conversationExplanation": "Every message sent or received through the Twin connector is logged here. This is the raw interaction trail — the memory inbox above is the curated extract.",
@@ -462,6 +486,8 @@
     "allSetTitle": "Semua siap",
     "allSetBody": "Setiap tonggak selesai. Twin ini siap berbicara.",
     "moreCount": "+{count} lainnya",
+    "showAllGaps": "Tampilkan semua {count}",
+    "showFewer": "Tampilkan lebih sedikit",
     "titles": {
       "identityEmpty": "Belum ada bio",
       "identityPartial": "Bio terlalu pendek",
@@ -499,6 +525,7 @@
     "neverBridged": "tidak pernah",
     "justNow": "baru saja",
     "messageCount": "{count} pesan",
+    "sparklineAria": "{count} pesan dalam 7 hari terakhir",
     "aliasPlaceholder": "Nama akrab (mis. \"Alice dari Discord\")",
     "notesPlaceholder": "Catatan — konteks, preferensi, tanggal penting…",
     "editAria": "Edit alias dan catatan",
@@ -530,6 +557,14 @@
     "emptyBody": "Tambahkan fakta saat Anda meninjau komunikasi — setiap fakta mengutip pesan asalnya. Tahap berikutnya akan mengusulkan fakta secara otomatis.",
     "deleteAria": "Hapus fakta suling"
   },
+  "rejectionPatterns": {
+    "title": "Pola penolakan",
+    "subtitle": "Mengapa Anda menolak memori. Sinyal bahwa ekstraksi di hulu mungkin meleset.",
+    "empty": "Belum ada memori yang ditolak — terus tinjau untuk mengisi tampilan ini.",
+    "totalRejected": "Total ditolak: {count}",
+    "otherBucket": "Alasan lain",
+    "noReasonBucket": "Tanpa alasan"
+  },
   "reflections": {
     "title": "Refleksi",
     "subtitle": "Jurnal audit operator. Ajukan pertanyaan tentang aktivitas terakhir twin ini — Claude membaca profil twin + 40 komunikasi terakhir dan menulis jawaban singkat yang dibekukan.",
@@ -540,6 +575,11 @@
     "reflectCta": "Refleksi",
     "generating": "Merefleksikan…",
     "deleteAria": "Hapus refleksi",
+    "digDeeperCta": "Gali lebih dalam",
+    "digDeeperGenerating": "Membuat pertanyaan…",
+    "digDeeperTooltip": "Minta AI menyusun pertanyaan pelatihan lanjutan dari refleksi ini",
+    "digDeeperToast": "Pertanyaan siap — membuka Training.",
+    "digDeeperError": "Tidak dapat membuat pertanyaan lanjutan.",
     "suggestedSeedLabels": {
       "voiceChange": "Pergeseran suara",
       "commsCadence": "Irama",
@@ -568,6 +608,11 @@
     "commsSection": "Komunikasi terbaru ({count})",
     "commsEmpty": "Belum ada komunikasi yang tercatat untuk twin ini.",
     "contactsSection": "Kontak teratas berdasarkan aktivitas ({count})",
-    "contactsEmpty": "Belum ada kontak pada twin ini."
+    "contactsEmpty": "Belum ada kontak pada twin ini.",
+    "saveAsFact": "Simpan sebagai fakta",
+    "saveAsFactSaved": "Tersimpan",
+    "saveAsFactToast": "Disimpan ke fakta tersaring.",
+    "saveAsFactTooltip": "Promosikan komunikasi ini menjadi fakta tersaring yang permanen",
+    "saveAsFactError": "Gagal menyimpan sebagai fakta."
   }
 }

@@ -13035,7 +13035,9 @@
       "selectTwin": "Select a twin...",
       "pickerLabel": "Выберите активного twin",
       "searchPlaceholder": "Поиск по имени или роли…",
-      "noMatches": "Нет twin, подходящих под запрос."
+      "noMatches": "Нет twin, подходящих под запрос.",
+      "pinTwin": "Закрепить сверху",
+      "unpinTwin": "Открепить"
     },
     "emptyState": {
       "subtitle": "You need an active twin to use this tab.",
@@ -13115,6 +13117,7 @@
       "lastMinutesAgo": "{count} мин назад",
       "lastHoursAgo": "{count} ч назад",
       "lastDaysAgo": "{count} дн назад",
+      "staleTag": "похоже неактивен",
       "testTooltip": "Записать синтетический исходящий пинг",
       "testDisabledPaused": "Сначала активируйте канал, чтобы его протестировать",
       "testAria": "Отправить тестовое сообщение",
@@ -13141,7 +13144,14 @@
       "saving": "Saving...",
       "save": "Save",
       "creating": "Creating...",
-      "create": "Create"
+      "create": "Create",
+      "autoSuggestCta": "Составить тон из последних {count} сообщений {channel}",
+      "autoSuggestButton": "Предложить",
+      "autoSuggestGenerating": "Читаем сообщения…",
+      "autoSuggestTooltip": "Читает недавние исходящие сообщения и составляет указания по голосу и примеры. Вы всё равно проверяете и сохраняете.",
+      "autoSuggestSuccess": "Предложение составлено — проверьте и сохраните.",
+      "autoSuggestNoComms": "Пока недостаточно сообщений {channel} для обучения.",
+      "autoSuggestError": "Не удалось составить предложение по тону."
     },
     "voice": {
       "title": "Voice",
@@ -13281,6 +13291,20 @@
       "switchToPending": "Switch to \"pending\" to review new items.",
       "approveTitle": "Approve — index into KB",
       "rejectTitle": "Reject — discard",
+      "digDeeperCta": "Углубиться",
+      "digDeeperGenerating": "Создаём вопросы…",
+      "digDeeperTooltip": "Подтвердите эту память и попросите ИИ составить уточняющие тренировочные вопросы",
+      "digDeeperToast": "Подтверждено — открываем Training Room с уточняющими вопросами.",
+      "digDeeperError": "Не удалось создать уточняющие вопросы.",
+      "rejectReasonHeading": "Почему отклонить эту память?",
+      "rejectReasonIrrelevant": "Нерелевантно",
+      "rejectReasonInaccurate": "Неточно",
+      "rejectReasonPrivate": "Личное",
+      "rejectReasonWrongTone": "Неверный тон",
+      "rejectReasonNotePlaceholder": "Добавьте заметку (необязательно)…",
+      "rejectReasonConfirm": "Отклонить",
+      "rejectReasonCancel": "Отмена",
+      "rejectedReasonLabel": "Причина: {reason}",
       "priority": "priority",
       "conversationHistory": "Conversation History",
       "conversationExplanation": "Every message sent or received through the Twin connector is logged here. This is the raw interaction trail — the memory inbox above is the curated extract.",
@@ -13493,6 +13517,8 @@
       "allSetTitle": "Всё готово",
       "allSetBody": "Все этапы пройдены. Этот twin готов говорить.",
       "moreCount": "+ ещё {count}",
+      "showAllGaps": "Показать все {count}",
+      "showFewer": "Свернуть",
       "titles": {
         "identityEmpty": "Биография ещё не задана",
         "identityPartial": "Биография коротковата",
@@ -13530,6 +13556,7 @@
       "neverBridged": "никогда",
       "justNow": "только что",
       "messageCount": "{count} сообщений",
+      "sparklineAria": "{count} сообщений за последние 7 дней",
       "aliasPlaceholder": "Понятное имя (напр. «Алиса из Discord»)",
       "notesPlaceholder": "Заметки — контекст, предпочтения, важные даты…",
       "editAria": "Изменить алиас и заметки",
@@ -13561,6 +13588,14 @@
       "emptyBody": "Добавляйте факты, разбирая коммуникации — каждый со ссылкой на исходные сообщения. На будущих стадиях факты будут предлагаться автоматически.",
       "deleteAria": "Удалить выжатый факт"
     },
+    "rejectionPatterns": {
+      "title": "Шаблоны отклонений",
+      "subtitle": "Почему вы отклоняли воспоминания. Сигнал, что извлечение на входе может быть неточным.",
+      "empty": "Отклонённых воспоминаний пока нет — продолжайте проверку, чтобы наполнить этот вид.",
+      "totalRejected": "Всего отклонено: {count}",
+      "otherBucket": "Другая причина",
+      "noReasonBucket": "Причина не указана"
+    },
     "reflections": {
       "title": "Рефлексии",
       "subtitle": "Журналы операторского аудита. Задайте вопрос про недавнюю активность этого twin — Claude прочитает профиль twin и последние 40 коммуникаций и напишет короткий, замороженный ответ.",
@@ -13571,6 +13606,11 @@
       "reflectCta": "Отрефлексировать",
       "generating": "Рефлексия…",
       "deleteAria": "Удалить рефлексию",
+      "digDeeperCta": "Копнуть глубже",
+      "digDeeperGenerating": "Генерируем вопросы…",
+      "digDeeperTooltip": "Попросите ИИ составить уточняющие вопросы для тренировки на основе этой рефлексии",
+      "digDeeperToast": "Вопросы готовы — открываем Training.",
+      "digDeeperError": "Не удалось сгенерировать уточняющие вопросы.",
       "suggestedSeedLabels": {
         "voiceChange": "Дрейф голоса",
         "commsCadence": "Каденс",
@@ -13599,7 +13639,12 @@
       "commsSection": "Свежие коммуникации ({count})",
       "commsEmpty": "У этого twin пока нет зафиксированных коммуникаций.",
       "contactsSection": "Топ контактов по активности ({count})",
-      "contactsEmpty": "У этого twin пока нет контактов."
+      "contactsEmpty": "У этого twin пока нет контактов.",
+      "saveAsFact": "Сохранить как факт",
+      "saveAsFactSaved": "Сохранено",
+      "saveAsFactToast": "Сохранено в выжимку фактов.",
+      "saveAsFactTooltip": "Сохранить это сообщение как устойчивый выжатый факт",
+      "saveAsFactError": "Не удалось сохранить как факт."
     }
   },
   "recipe_shared": {

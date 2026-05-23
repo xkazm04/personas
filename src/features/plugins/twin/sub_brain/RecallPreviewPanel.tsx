@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { ArrowDownLeft, ArrowUpRight, Eye, Loader2, Mic, RefreshCw, Sparkles, User, Users } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, BookmarkPlus, Check, Eye, Loader2, Mic, RefreshCw, Sparkles, User, Users } from 'lucide-react';
 import * as twinApi from '@/api/twin/twin';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
+import { useToastStore } from '@/stores/toastStore';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { Button } from '@/features/shared/components/buttons';
 import type { TwinRecallBundle } from '@/lib/bindings/TwinRecallBundle';
@@ -26,9 +27,32 @@ interface Props {
 export function RecallPreviewPanel({ twinId }: Props) {
   const { t: tFull, tx } = useTranslation();
   const t = tFull.twin;
+  const addToast = useToastStore((s) => s.addToast);
   const [bundle, setBundle] = useState<TwinRecallBundle | null>(null);
   const [loading, setLoading] = useState(false);
   const [contactFilter, setContactFilter] = useState('');
+  // Tracks which communications have been promoted to facts in this session so
+  // the button can lock to a "Saved" state. The DistilledFactsPanel is the
+  // source of truth on next reload — this set is just for in-session feedback.
+  const [savedCommIds, setSavedCommIds] = useState<Set<string>>(new Set());
+  const [savingCommId, setSavingCommId] = useState<string | null>(null);
+
+  const handleSaveAsFact = async (commId: string, content: string, contactHandle: string | null) => {
+    if (savedCommIds.has(commId) || savingCommId) return;
+    setSavingCommId(commId);
+    try {
+      // Default importance 3 (middle of the 1-5 range). User can re-rank later
+      // in the DistilledFactsPanel; recall preview's role is to make the save
+      // cheap, not to choose how important it is.
+      await twinApi.createDistilledFact(twinId, [commId], content, contactHandle ?? undefined, 3);
+      setSavedCommIds((prev) => new Set(prev).add(commId));
+      addToast(t.recall.saveAsFactToast, 'success');
+    } catch (e) {
+      addToast(e instanceof Error ? e.message : t.recall.saveAsFactError, 'error');
+    } finally {
+      setSavingCommId(null);
+    }
+  };
 
   const fetchRecall = async (handle?: string) => {
     setLoading(true);
@@ -156,8 +180,10 @@ export function RecallPreviewPanel({ twinId }: Props) {
               <ul className="space-y-1.5">
                 {bundle.recent_communications.map((c) => {
                   const isOut = c.direction === 'out';
+                  const isSaved = savedCommIds.has(c.id);
+                  const isSaving = savingCommId === c.id;
                   return (
-                    <li key={c.id} className="flex items-start gap-2 typo-caption text-foreground">
+                    <li key={c.id} className="group flex items-start gap-2 typo-caption text-foreground">
                       {isOut
                         ? <ArrowUpRight className="w-3 h-3 text-violet-400 mt-0.5 flex-shrink-0" />
                         : <ArrowDownLeft className="w-3 h-3 text-cyan-400 mt-0.5 flex-shrink-0" />}
@@ -167,6 +193,22 @@ export function RecallPreviewPanel({ twinId }: Props) {
                         </span>
                         <span className="block line-clamp-2">{c.content}</span>
                       </span>
+                      <button
+                        type="button"
+                        onClick={() => void handleSaveAsFact(c.id, c.content, c.contact_handle)}
+                        disabled={isSaved || isSaving}
+                        title={isSaved ? t.recall.saveAsFactSaved : t.recall.saveAsFactTooltip}
+                        className={`flex-shrink-0 mt-0.5 p-1 rounded-interactive transition-colors disabled:cursor-not-allowed ${
+                          isSaved
+                            ? 'text-emerald-400'
+                            : 'text-foreground/40 hover:text-violet-300 hover:bg-violet-500/10 opacity-0 group-hover:opacity-100 focus:opacity-100'
+                        }`}
+                        aria-label={isSaved ? t.recall.saveAsFactSaved : t.recall.saveAsFact}
+                      >
+                        {isSaving ? <Loader2 className="w-3 h-3 animate-spin" />
+                          : isSaved ? <Check className="w-3 h-3" />
+                          : <BookmarkPlus className="w-3 h-3" />}
+                      </button>
                     </li>
                   );
                 })}

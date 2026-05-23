@@ -13035,7 +13035,9 @@
       "selectTwin": "Select a twin...",
       "pickerLabel": "সক্রিয় টুইন বেছে নিন",
       "searchPlaceholder": "নাম বা ভূমিকা দিয়ে অনুসন্ধান করুন…",
-      "noMatches": "আপনার অনুসন্ধানের সাথে কোনো টুইন মেলে না।"
+      "noMatches": "আপনার অনুসন্ধানের সাথে কোনো টুইন মেলে না।",
+      "pinTwin": "উপরে পিন করুন",
+      "unpinTwin": "আনপিন করুন"
     },
     "emptyState": {
       "subtitle": "You need an active twin to use this tab.",
@@ -13115,6 +13117,7 @@
       "lastMinutesAgo": "{count} মিনিট আগে",
       "lastHoursAgo": "{count} ঘণ্টা আগে",
       "lastDaysAgo": "{count} দিন আগে",
+      "staleTag": "নিষ্ক্রিয় মনে হচ্ছে",
       "testTooltip": "একটি কৃত্রিম আউটবাউন্ড পিং লগ করুন",
       "testDisabledPaused": "পরীক্ষা করতে প্রথমে চ্যানেলটি সক্রিয় করুন",
       "testAria": "পরীক্ষামূলক বার্তা পাঠান",
@@ -13141,7 +13144,14 @@
       "saving": "Saving...",
       "save": "Save",
       "creating": "Creating...",
-      "create": "Create"
+      "create": "Create",
+      "autoSuggestCta": "{count}টি সাম্প্রতিক {channel} বার্তা থেকে টোন খসড়া করুন",
+      "autoSuggestButton": "প্রস্তাব দিন",
+      "autoSuggestGenerating": "বার্তা পড়া হচ্ছে…",
+      "autoSuggestTooltip": "সাম্প্রতিক বহির্গামী বার্তা পড়ে এবং ভয়েস নির্দেশিকা ও উদাহরণ খসড়া করে। আপনি এখনও পর্যালোচনা করে সংরক্ষণ করেন।",
+      "autoSuggestSuccess": "প্রস্তাব খসড়া করা হয়েছে — পর্যালোচনা করুন এবং সংরক্ষণ করুন।",
+      "autoSuggestNoComms": "শেখার জন্য এখনও পর্যাপ্ত {channel} বার্তা নেই।",
+      "autoSuggestError": "টোন প্রস্তাব খসড়া করা যায়নি।"
     },
     "voice": {
       "title": "Voice",
@@ -13281,6 +13291,20 @@
       "switchToPending": "Switch to \"pending\" to review new items.",
       "approveTitle": "Approve — index into KB",
       "rejectTitle": "Reject — discard",
+      "digDeeperCta": "আরও গভীরে যান",
+      "digDeeperGenerating": "প্রশ্ন তৈরি হচ্ছে…",
+      "digDeeperTooltip": "এই স্মৃতি অনুমোদন করুন এবং ফলো-আপ প্রশিক্ষণ প্রশ্ন তৈরি করতে AI-কে বলুন",
+      "digDeeperToast": "অনুমোদিত — ফলো-আপ প্রশ্ন সহ Training Room খোলা হচ্ছে।",
+      "digDeeperError": "ফলো-আপ প্রশ্ন তৈরি করা যায়নি।",
+      "rejectReasonHeading": "এই স্মৃতি কেন প্রত্যাখ্যান করবেন?",
+      "rejectReasonIrrelevant": "অপ্রাসঙ্গিক",
+      "rejectReasonInaccurate": "ভুল",
+      "rejectReasonPrivate": "ব্যক্তিগত",
+      "rejectReasonWrongTone": "ভুল সুর",
+      "rejectReasonNotePlaceholder": "একটি নোট যোগ করুন (ঐচ্ছিক)…",
+      "rejectReasonConfirm": "প্রত্যাখ্যান",
+      "rejectReasonCancel": "বাতিল",
+      "rejectedReasonLabel": "কারণ: {reason}",
       "priority": "priority",
       "conversationHistory": "Conversation History",
       "conversationExplanation": "Every message sent or received through the Twin connector is logged here. This is the raw interaction trail — the memory inbox above is the curated extract.",
@@ -13493,6 +13517,8 @@
       "allSetTitle": "সব প্রস্তুত",
       "allSetBody": "প্রতিটি মাইলফলক সম্পন্ন। এই টুইন কথা বলার জন্য প্রস্তুত।",
       "moreCount": "+আরও {count}টি",
+      "showAllGaps": "সব {count}টি ফাঁক দেখান",
+      "showFewer": "কম দেখান",
       "titles": {
         "identityEmpty": "এখনও কোনো জীবনী নেই",
         "identityPartial": "জীবনী সংক্ষিপ্ত",
@@ -13530,6 +13556,7 @@
       "neverBridged": "কখনও না",
       "justNow": "এইমাত্র",
       "messageCount": "{count}টি বার্তা",
+      "sparklineAria": "গত ৭ দিনে {count}টি বার্তা",
       "aliasPlaceholder": "বন্ধুত্বপূর্ণ নাম (যেমন \"Discord-এর Alice\")",
       "notesPlaceholder": "নোট — প্রসঙ্গ, পছন্দ, গুরুত্বপূর্ণ তারিখ…",
       "editAria": "উপনাম ও নোট সম্পাদনা করুন",
@@ -13561,6 +13588,14 @@
       "emptyBody": "যোগাযোগ পর্যালোচনা করার সময় তথ্য যোগ করুন — প্রতিটি তথ্য সেই বার্তাগুলো উদ্ধৃত করে যা থেকে এটি এসেছে। ভবিষ্যত পর্যায়গুলো স্বয়ংক্রিয়ভাবে তথ্য প্রস্তাব করবে।",
       "deleteAria": "পরিশোধিত তথ্য মুছুন"
     },
+    "rejectionPatterns": {
+      "title": "প্রত্যাখ্যান প্যাটার্ন",
+      "subtitle": "কেন আপনি স্মৃতিগুলো ফিরিয়ে দিয়েছেন। এটি ইঙ্গিত যে আপস্ট্রিম এক্সট্রাকশন ভুল হতে পারে।",
+      "empty": "এখনও কোনো প্রত্যাখ্যাত স্মৃতি নেই — পর্যালোচনা চালিয়ে যান এই ভিউ পূরণ করতে।",
+      "totalRejected": "মোট প্রত্যাখ্যাত: {count}",
+      "otherBucket": "অন্য কারণ",
+      "noReasonBucket": "কোনো কারণ দেওয়া হয়নি"
+    },
     "reflections": {
       "title": "প্রতিফলন",
       "subtitle": "অপারেটর-অডিট জার্নাল। এই টুইনের সাম্প্রতিক কার্যকলাপ সম্পর্কে একটি প্রশ্ন জিজ্ঞাসা করুন — Claude টুইন প্রোফাইল + শেষ ৪০টি যোগাযোগ পড়ে এবং একটি ছোট, স্থির উত্তর লেখে।",
@@ -13571,6 +13606,11 @@
       "reflectCta": "প্রতিফলিত করুন",
       "generating": "প্রতিফলিত হচ্ছে…",
       "deleteAria": "প্রতিফলন মুছুন",
+      "digDeeperCta": "আরও গভীরে যান",
+      "digDeeperGenerating": "প্রশ্ন তৈরি হচ্ছে…",
+      "digDeeperTooltip": "এই প্রতিফলন থেকে ফলো-আপ Training প্রশ্ন তৈরি করতে AI-কে বলুন",
+      "digDeeperToast": "প্রশ্ন প্রস্তুত — Training খোলা হচ্ছে।",
+      "digDeeperError": "ফলো-আপ প্রশ্ন তৈরি করা যায়নি।",
       "suggestedSeedLabels": {
         "voiceChange": "কণ্ঠস্বরে পরিবর্তন",
         "commsCadence": "ছন্দ",
@@ -13599,7 +13639,12 @@
       "commsSection": "সাম্প্রতিক যোগাযোগ ({count})",
       "commsEmpty": "এই টুইনের জন্য এখনও কোনো যোগাযোগ রেকর্ড করা হয়নি।",
       "contactsSection": "কার্যকলাপ অনুসারে শীর্ষ যোগাযোগ ({count})",
-      "contactsEmpty": "এই টুইনে এখনও কোনো যোগাযোগ নেই।"
+      "contactsEmpty": "এই টুইনে এখনও কোনো যোগাযোগ নেই।",
+      "saveAsFact": "ফ্যাক্ট হিসেবে সংরক্ষণ করুন",
+      "saveAsFactSaved": "সংরক্ষিত",
+      "saveAsFactToast": "পরিশোধিত ফ্যাক্টে সংরক্ষিত হয়েছে।",
+      "saveAsFactTooltip": "এই যোগাযোগটিকে একটি স্থায়ী পরিশোধিত ফ্যাক্টে উন্নীত করুন",
+      "saveAsFactError": "ফ্যাক্ট হিসেবে সংরক্ষণ করা যায়নি।"
     }
   },
   "recipe_shared": {

@@ -1,16 +1,21 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, Plus, Trash2, Save, Sparkles, MessageCircle, ListChecks, Ruler, Quote } from 'lucide-react';
+import { Loader2, Mic, Plus, Trash2, Save, Sparkles, MessageCircle, ListChecks, Ruler, Quote, Wand2 } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
+import { useToastStore } from '@/stores/toastStore';
 import { Button } from '@/features/shared/components/buttons';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { TwinEmptyState } from '../TwinEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 import { TONE_CHANNELS, paletteOf, type ChannelPalette } from '../_shared/channels';
+import * as twinApi from '@/api/twin/twin';
 import type { TwinTone } from '@/lib/bindings/TwinTone';
 import type { TwinChannelKind } from '@/api/enums';
 import { silentCatch } from '@/lib/silentCatch';
 import { DebtText } from '@/i18n/DebtText';
+
+const AUTO_SUGGEST_MIN_MSGS = 3;
+const AUTO_SUGGEST_SAMPLE_CAP = 12;
 
 
 
@@ -61,19 +66,29 @@ function parseConstraints(raw: string): string[] {
 }
 
 export default function ToneAtelier() {
-  const t = useTranslation().t.twin;
+  const { t: tFull, tx } = useTranslation();
+  const t = tFull.twin;
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
+  const activeTwin = useSystemStore((s) => s.twinProfiles).find((tp) => tp.id === activeTwinId);
   const twinTones = useSystemStore((s) => s.twinTones);
+  const twinCommunications = useSystemStore((s) => s.twinCommunications);
+  const fetchTwinCommunications = useSystemStore((s) => s.fetchTwinCommunications);
   const isLoading = useSystemStore((s) => s.twinTonesLoading);
   const fetchTwinTones = useSystemStore((s) => s.fetchTwinTones);
   const upsertTwinTone = useSystemStore((s) => s.upsertTwinTone);
   const deleteTwinTone = useSystemStore((s) => s.deleteTwinTone);
+  const addToast = useToastStore((s) => s.addToast);
 
   const [activeChannel, setActiveChannel] = useState<string>('generic');
   const [forms, setForms] = useState<Record<string, ToneForm>>({});
   const [savingChannel, setSavingChannel] = useState<string | null>(null);
+  const [autoSuggestingChannel, setAutoSuggestingChannel] = useState<string | null>(null);
 
   useEffect(() => { if (activeTwinId) fetchTwinTones(activeTwinId); }, [activeTwinId, fetchTwinTones]);
+  // Pull a recent slice of communications too — the auto-suggest button needs
+  // a per-channel count to know when to offer itself, and the actual generation
+  // call reads message bodies. Idempotent against the slice.
+  useEffect(() => { if (activeTwinId) void fetchTwinCommunications(activeTwinId, undefined, 100); }, [activeTwinId, fetchTwinCommunications]);
   useEffect(() => {
     const next: Record<string, ToneForm> = {};
     for (const tn of twinTones) next[tn.channel] = toneToForm(tn);
@@ -100,6 +115,73 @@ export default function ToneAtelier() {
     if (!confirm(t.tone.removeConfirm.replace('{channel}', ch))) return;
     await deleteTwinTone(tone.id);
     setForms((prev) => { const { [ch]: _, ...rest } = prev; return rest; });
+  };
+
+  // Per-channel comm count for the active twin — drives the auto-suggest
+  // banner's visibility and the {count} interpolation in its label.
+  const commsByChannel = useMemo(() => {
+    const map = new Map<string, string[]>();
+    if (!activeTwinId) return map;
+    for (const c of twinCommunications) {
+      if (c.twin_id !== activeTwinId) continue;
+      const list = map.get(c.channel) ?? [];
+      // Outbound bodies are the right training signal for tone; the twin's
+      // own voice is what we're modeling, not the inbound side.
+      if (c.direction === 'out' && c.content.trim().length > 0) {
+        list.push(c.content.trim());
+        map.set(c.channel, list);
+      }
+    }
+    return map;
+  }, [activeTwinId, twinCommunications]);
+
+  // Read recent outbound messages on a channel and ask Claude to draft a
+  // starting voice_directives + examples_json. The user reviews + saves —
+  // never auto-applied to the database, the form just gets prefilled.
+  const handleAutoSuggest = async (ch: string, channelLabel: string) => {
+    if (!activeTwin || autoSuggestingChannel) return;
+    const samples = (commsByChannel.get(ch) ?? []).slice(-AUTO_SUGGEST_SAMPLE_CAP);
+    if (samples.length < AUTO_SUGGEST_MIN_MSGS) {
+      addToast(tx(t.tone.autoSuggestNoComms, { channel: channelLabel }), 'error');
+      return;
+    }
+    setAutoSuggestingChannel(ch);
+    try {
+      const transcript = samples
+        .map((s, i) => `${i + 1}. ${s.length > 280 ? s.slice(0, 280) + '…' : s}`)
+        .join('\n');
+      const prompt = `You are calibrating a "tone profile" for an AI twin named ${activeTwin.name}${activeTwin.role ? ` (${activeTwin.role})` : ''} on the ${channelLabel} channel. Below are ${samples.length} recent outbound messages this twin actually sent on ${channelLabel}. Read them and produce a tone profile that captures HOW this twin speaks here (not the topics).
+
+Output EXACTLY this JSON shape, nothing else, no preamble:
+{"voiceDirectives":"<3-5 sentences describing the voice: register, pacing, formality, signature moves, what to avoid>","examples":["<short paraphrased example reply 1>","<short paraphrased example reply 2>","<short paraphrased example reply 3>"]}
+
+Recent ${channelLabel} messages from ${activeTwin.name}:
+${transcript}`;
+      const raw = await twinApi.generateBio(activeTwin.name, activeTwin.role ?? null, prompt);
+      // Be tolerant of the model wrapping in code fences or trailing prose.
+      const jsonStart = raw.indexOf('{');
+      const jsonEnd = raw.lastIndexOf('}');
+      if (jsonStart < 0 || jsonEnd <= jsonStart) {
+        throw new Error('no JSON in response');
+      }
+      const parsed = JSON.parse(raw.slice(jsonStart, jsonEnd + 1)) as { voiceDirectives?: unknown; examples?: unknown };
+      const voiceDirectives = typeof parsed.voiceDirectives === 'string' ? parsed.voiceDirectives.trim() : '';
+      const examples = Array.isArray(parsed.examples)
+        ? parsed.examples.filter((x): x is string => typeof x === 'string' && x.trim().length > 0).slice(0, 5)
+        : [];
+      if (!voiceDirectives) throw new Error('empty voiceDirectives');
+      // Merge with existing draft instead of clobbering, so a user who has
+      // started typing doesn't lose their work to the suggestion.
+      setForm(ch, {
+        voiceDirectives: voiceDirectives,
+        examplesJson: JSON.stringify(examples, null, 2),
+      });
+      addToast(t.tone.autoSuggestSuccess, 'success');
+    } catch (e) {
+      addToast(e instanceof Error ? e.message : t.tone.autoSuggestError, 'error');
+    } finally {
+      setAutoSuggestingChannel(null);
+    }
   };
 
   const stats = useMemo(() => ({
@@ -217,6 +299,42 @@ export default function ToneAtelier() {
                     )}
                   </div>
                 </div>
+
+                {/* Auto-suggest banner — appears only when the active channel
+                    is non-generic, has no tone row yet, and has enough sent
+                    messages to learn from. Pure UI sugar; the suggestion
+                    just prefills the form, the user still saves. */}
+                {active.id !== 'generic' && !exists && (() => {
+                  const msgCount = commsByChannel.get(active.id)?.length ?? 0;
+                  const eligible = msgCount >= AUTO_SUGGEST_MIN_MSGS;
+                  const isThis = autoSuggestingChannel === active.id;
+                  return (
+                    <div className={`rounded-card border border-violet-500/20 bg-gradient-to-r from-violet-500/8 via-card/40 to-violet-500/4 p-3.5 flex items-center gap-3`}>
+                      <div className="w-9 h-9 rounded-card bg-violet-500/15 border border-violet-400/40 flex items-center justify-center flex-shrink-0">
+                        <Wand2 className="w-4 h-4 text-violet-300" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="typo-caption font-medium text-foreground/90">
+                          {eligible
+                            ? tx(t.tone.autoSuggestCta, { count: msgCount, channel: active.label })
+                            : tx(t.tone.autoSuggestNoComms, { channel: active.label })}
+                        </p>
+                        <p className="text-[10px] text-foreground mt-0.5">{t.tone.autoSuggestTooltip}</p>
+                      </div>
+                      <Button
+                        onClick={() => void handleAutoSuggest(active.id, active.label)}
+                        disabled={!eligible || isThis || autoSuggestingChannel !== null}
+                        size="sm"
+                        variant="accent"
+                        accentColor="violet"
+                      >
+                        {isThis
+                          ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />{t.tone.autoSuggestGenerating}</>
+                          : <><Wand2 className="w-3.5 h-3.5 mr-1.5" />{t.tone.autoSuggestButton}</>}
+                      </Button>
+                    </div>
+                  );
+                })()}
 
                 {/* Voice directives — hero card */}
                 <Section icon={Sparkles} label={t.tone.voiceDirectives} accent={palette.text}>

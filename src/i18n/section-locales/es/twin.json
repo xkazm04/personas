@@ -4,7 +4,9 @@
     "selectTwin": "Select a twin...",
     "pickerLabel": "Elige el gemelo activo",
     "searchPlaceholder": "Buscar por nombre o rol…",
-    "noMatches": "Ningún gemelo coincide con tu búsqueda."
+    "noMatches": "Ningún gemelo coincide con tu búsqueda.",
+    "pinTwin": "Fijar arriba",
+    "unpinTwin": "Desfijar"
   },
   "emptyState": {
     "subtitle": "You need an active twin to use this tab.",
@@ -84,6 +86,7 @@
     "lastMinutesAgo": "hace {count} min",
     "lastHoursAgo": "hace {count} h",
     "lastDaysAgo": "hace {count} d",
+    "staleTag": "parece inactivo",
     "testTooltip": "Registrar un ping saliente sintético",
     "testDisabledPaused": "Activa el canal antes de probarlo",
     "testAria": "Enviar mensaje de prueba",
@@ -110,7 +113,14 @@
     "saving": "Saving...",
     "save": "Save",
     "creating": "Creating...",
-    "create": "Create"
+    "create": "Create",
+    "autoSuggestCta": "Redactar tono a partir de los últimos {count} mensajes de {channel}",
+    "autoSuggestButton": "Sugerir",
+    "autoSuggestGenerating": "Leyendo mensajes…",
+    "autoSuggestTooltip": "Lee los mensajes salientes recientes y redacta las directrices de voz y ejemplos. Tú sigues revisando y guardando.",
+    "autoSuggestSuccess": "Sugerencia redactada — revisa y guarda.",
+    "autoSuggestNoComms": "Aún no hay suficientes mensajes de {channel} para aprender.",
+    "autoSuggestError": "No se pudo redactar la sugerencia de tono."
   },
   "voice": {
     "title": "Voice",
@@ -250,6 +260,20 @@
     "switchToPending": "Switch to \"pending\" to review new items.",
     "approveTitle": "Approve — index into KB",
     "rejectTitle": "Reject — discard",
+    "digDeeperCta": "Profundizar",
+    "digDeeperGenerating": "Generando preguntas…",
+    "digDeeperTooltip": "Aprueba este recuerdo y pide a la IA que redacte preguntas de entrenamiento de seguimiento",
+    "digDeeperToast": "Aprobado — abriendo Training Room con preguntas de seguimiento.",
+    "digDeeperError": "No se pudieron generar preguntas de seguimiento.",
+    "rejectReasonHeading": "¿Por qué rechazar este recuerdo?",
+    "rejectReasonIrrelevant": "Irrelevante",
+    "rejectReasonInaccurate": "Inexacto",
+    "rejectReasonPrivate": "Privado",
+    "rejectReasonWrongTone": "Tono incorrecto",
+    "rejectReasonNotePlaceholder": "Añade una nota (opcional)…",
+    "rejectReasonConfirm": "Rechazar",
+    "rejectReasonCancel": "Cancelar",
+    "rejectedReasonLabel": "Motivo: {reason}",
     "priority": "priority",
     "conversationHistory": "Conversation History",
     "conversationExplanation": "Every message sent or received through the Twin connector is logged here. This is the raw interaction trail — the memory inbox above is the curated extract.",
@@ -462,6 +486,8 @@
     "allSetTitle": "Todo listo",
     "allSetBody": "Todos los hitos están completos. Este gemelo está listo para hablar.",
     "moreCount": "+{count} más",
+    "showAllGaps": "Mostrar las {count} brechas",
+    "showFewer": "Mostrar menos",
     "titles": {
       "identityEmpty": "Aún no hay bio",
       "identityPartial": "La bio es corta",
@@ -499,6 +525,7 @@
     "neverBridged": "nunca",
     "justNow": "ahora mismo",
     "messageCount": "{count} mensajes",
+    "sparklineAria": "{count} mensajes en los últimos 7 días",
     "aliasPlaceholder": "Nombre amigable (p. ej. \"Alice de Discord\")",
     "notesPlaceholder": "Notas — contexto, preferencias, fechas que importan…",
     "editAria": "Editar alias y notas",
@@ -530,6 +557,14 @@
     "emptyBody": "Agrega hechos a medida que revisas las comunicaciones — cada uno citando los mensajes que lo originaron. Etapas futuras propondrán hechos automáticamente.",
     "deleteAria": "Eliminar hecho destilado"
   },
+  "rejectionPatterns": {
+    "title": "Patrones de rechazo",
+    "subtitle": "Por qué has devuelto recuerdos. Una señal de que la extracción previa puede fallar.",
+    "empty": "Aún no hay recuerdos rechazados — sigue revisando para poblar esta vista.",
+    "totalRejected": "{count} rechazados en total",
+    "otherBucket": "Otro motivo",
+    "noReasonBucket": "Sin motivo indicado"
+  },
   "reflections": {
     "title": "Reflexiones",
     "subtitle": "Diarios de auditoría del operador. Pregunta algo sobre la actividad reciente de este gemelo — Claude lee el perfil del gemelo + las últimas 40 comunicaciones y escribe una respuesta breve y congelada.",
@@ -540,6 +575,11 @@
     "reflectCta": "Reflexionar",
     "generating": "Reflexionando…",
     "deleteAria": "Eliminar reflexión",
+    "digDeeperCta": "Profundizar",
+    "digDeeperGenerating": "Generando preguntas…",
+    "digDeeperTooltip": "Pide a la IA que redacte preguntas de entrenamiento de seguimiento a partir de esta reflexión",
+    "digDeeperToast": "Preguntas listas — abriendo Training.",
+    "digDeeperError": "No se pudieron generar preguntas de seguimiento.",
     "suggestedSeedLabels": {
       "voiceChange": "Deriva de voz",
       "commsCadence": "Cadencia",
@@ -568,6 +608,11 @@
     "commsSection": "Comunicaciones recientes ({count})",
     "commsEmpty": "Aún no hay comunicaciones registradas para este gemelo.",
     "contactsSection": "Contactos principales por actividad ({count})",
-    "contactsEmpty": "Aún no hay contactos en este gemelo."
+    "contactsEmpty": "Aún no hay contactos en este gemelo.",
+    "saveAsFact": "Guardar como hecho",
+    "saveAsFactSaved": "Guardado",
+    "saveAsFactToast": "Guardado en hechos destilados.",
+    "saveAsFactTooltip": "Promover esta comunicación a un hecho destilado duradero",
+    "saveAsFactError": "No se pudo guardar como hecho."
   }
 }
