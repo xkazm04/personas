@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCircle2, CheckSquare, Layers, Loader2, RotateCcw, Settings2, Square, Users, X, AlertCircle } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { Button } from '@/features/shared/components/buttons';
@@ -381,15 +382,26 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
           </section>
         )}
 
-        {customizing && schema && adoptionState === 'preview' && (
-          <PresetQuestionnaireForm
-            schema={schema}
-            value={overrides}
-            onChange={setOverrides}
-            expandedRoles={expandedRoles}
-            onToggleRole={toggleRole}
-          />
-        )}
+        <AnimatePresence initial={false}>
+          {customizing && schema && adoptionState === 'preview' && (
+            <motion.div
+              key="questionnaire"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="overflow-hidden"
+            >
+              <PresetQuestionnaireForm
+                schema={schema}
+                value={overrides}
+                onChange={setOverrides}
+                expandedRoles={expandedRoles}
+                onToggleRole={toggleRole}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Member rows — preview state shows just role + template; live
             adoption switches to status badges. Same row layout, different
