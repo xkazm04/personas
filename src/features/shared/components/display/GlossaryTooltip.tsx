@@ -1,6 +1,7 @@
 import { HelpCircle } from 'lucide-react';
 import { Tooltip } from './Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
+import { MOTION } from '@/lib/utils/designTokens';
 
 function useGlossary(): Record<string, string> {
   const { t } = useTranslation();
@@ -34,7 +35,7 @@ export function GlossaryTooltip({ term, definition }: GlossaryTooltipProps) {
   if (!text) return null;
 
   return (
-    <Tooltip content={text} placement="top" delay={200}>
+    <Tooltip content={text} placement="top" delay={MOTION.delay.tooltip.fast}>
       <span className="inline-flex items-center ml-0.5 text-foreground/90 hover:text-foreground transition-colors cursor-help">
         <HelpCircle className="w-3 h-3" />
       </span>

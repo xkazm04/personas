@@ -1,5 +1,6 @@
 import { useRef, useState, useCallback, type ReactNode } from 'react';
 import { Tooltip } from './Tooltip';
+import { MOTION } from '@/lib/utils/designTokens';
 
 interface TruncateWithTooltipProps {
   text: string;
@@ -44,7 +45,7 @@ export function TruncateWithTooltip({
   if (!isTruncated) return inner;
 
   return (
-    <Tooltip content={text} delay={400}>
+    <Tooltip content={text} delay={MOTION.delay.tooltip.default}>
       {inner}
     </Tooltip>
   );

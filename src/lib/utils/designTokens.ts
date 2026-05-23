@@ -36,7 +36,16 @@ export const MOTION = {
   },
   /** Deliberate delays before a UI element appears. */
   delay: {
-    tooltip: 400,
+    /**
+     * Hover-intent delay before a tooltip surfaces. `fast` (150ms) for dense,
+     * deliberate help affordances the user is already pointing at (glossary
+     * help icons); `default` (400ms) for incidental reveals like truncated-text
+     * tooltips, where a slower threshold avoids flicker during normal scanning.
+     */
+    tooltip: {
+      fast: 150,
+      default: 400,
+    },
   },
 } as const;
 
