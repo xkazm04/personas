@@ -9773,6 +9773,16 @@
   },
   "plugins": {
     "fleet": {
+      "dot_console_spawning": "Prozess startet",
+      "dot_console_alive": "Prozess aktiv",
+      "dot_console_exited": "Prozess beendet",
+      "dot_biz_idle": "Inaktiv — Runde beendet",
+      "dot_biz_working": "Arbeitet — Claude verarbeitet",
+      "dot_biz_awaiting": "Wartet auf Ihre Eingabe",
+      "dot_biz_stale": "Veraltet — seit über 5 Min. keine Aktivität",
+      "legend_show": "Statuslegende",
+      "legend_process": "Prozess",
+      "legend_activity": "Aktivität (Claude)",
       "state_awaiting_input": "Wartet auf Eingabe",
       "state_working": "Arbeitet",
       "state_spawning": "Startet",

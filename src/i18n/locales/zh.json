@@ -9697,6 +9697,16 @@
   },
   "plugins": {
     "fleet": {
+      "dot_console_spawning": "进程启动中",
+      "dot_console_alive": "进程运行中",
+      "dot_console_exited": "进程已退出",
+      "dot_biz_idle": "空闲 — 本轮已完成",
+      "dot_biz_working": "工作中 — Claude 正在处理",
+      "dot_biz_awaiting": "等待您的输入",
+      "dot_biz_stale": "停滞 — 5 分钟以上无活动",
+      "legend_show": "状态图例",
+      "legend_process": "进程",
+      "legend_activity": "活动（Claude）",
       "state_awaiting_input": "等待输入",
       "state_working": "工作中",
       "state_spawning": "启动中",

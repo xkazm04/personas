@@ -1,5 +1,15 @@
 {
   "fleet": {
+    "dot_console_spawning": "Процесс запускается",
+    "dot_console_alive": "Процесс активен",
+    "dot_console_exited": "Процесс завершён",
+    "dot_biz_idle": "Простой — ход завершён",
+    "dot_biz_working": "В работе — Claude обрабатывает",
+    "dot_biz_awaiting": "Ожидает вашего ввода",
+    "dot_biz_stale": "Устарел — нет активности более 5 мин",
+    "legend_show": "Легенда статусов",
+    "legend_process": "Процесс",
+    "legend_activity": "Активность (Claude)",
     "state_awaiting_input": "Ожидает ввода",
     "state_working": "В работе",
     "state_spawning": "Запуск",

@@ -1,5 +1,15 @@
 {
   "fleet": {
+    "dot_console_spawning": "プロセス起動中",
+    "dot_console_alive": "プロセス実行中",
+    "dot_console_exited": "プロセス終了",
+    "dot_biz_idle": "アイドル — ターン完了",
+    "dot_biz_working": "実行中 — Claude が処理中",
+    "dot_biz_awaiting": "入力をお待ちしています",
+    "dot_biz_stale": "停滞 — 5 分以上アクティビティなし",
+    "legend_show": "ステータス凡例",
+    "legend_process": "プロセス",
+    "legend_activity": "アクティビティ（Claude）",
     "state_awaiting_input": "入力待ち",
     "state_working": "実行中",
     "state_spawning": "起動中",

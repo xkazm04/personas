@@ -9808,6 +9808,16 @@ export type Translations = {
   };
   plugins: {
     fleet: {
+      dot_console_spawning: string;
+      dot_console_alive: string;
+      dot_console_exited: string;
+      dot_biz_idle: string;
+      dot_biz_working: string;
+      dot_biz_awaiting: string;
+      dot_biz_stale: string;
+      legend_show: string;
+      legend_process: string;
+      legend_activity: string;
       state_awaiting_input: string;
       state_working: string;
       state_spawning: string;

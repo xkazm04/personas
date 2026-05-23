@@ -1,5 +1,15 @@
 {
   "fleet": {
+    "dot_console_spawning": "프로세스 시작 중",
+    "dot_console_alive": "프로세스 활성",
+    "dot_console_exited": "프로세스 종료됨",
+    "dot_biz_idle": "유휴 — 차례 완료",
+    "dot_biz_working": "작업 중 — Claude가 처리 중",
+    "dot_biz_awaiting": "입력을 기다리는 중",
+    "dot_biz_stale": "정체 — 5분 이상 활동 없음",
+    "legend_show": "상태 범례",
+    "legend_process": "프로세스",
+    "legend_activity": "활동 (Claude)",
     "state_awaiting_input": "입력 대기",
     "state_working": "작업 중",
     "state_spawning": "시작 중",

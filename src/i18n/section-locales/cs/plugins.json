@@ -1,5 +1,15 @@
 {
   "fleet": {
+    "dot_console_spawning": "Proces se spouští",
+    "dot_console_alive": "Proces běží",
+    "dot_console_exited": "Proces ukončen",
+    "dot_biz_idle": "Nečinné — tah dokončen",
+    "dot_biz_working": "Pracuje — Claude zpracovává",
+    "dot_biz_awaiting": "Čeká na váš vstup",
+    "dot_biz_stale": "Zastaralé — žádná aktivita déle než 5 min",
+    "legend_show": "Legenda stavů",
+    "legend_process": "Proces",
+    "legend_activity": "Aktivita (Claude)",
     "state_awaiting_input": "Čeká na vstup",
     "state_working": "Pracuje",
     "state_spawning": "Spouští se",

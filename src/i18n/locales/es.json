@@ -9773,6 +9773,16 @@
   },
   "plugins": {
     "fleet": {
+      "dot_console_spawning": "Iniciando proceso",
+      "dot_console_alive": "Proceso activo",
+      "dot_console_exited": "Proceso finalizado",
+      "dot_biz_idle": "Inactivo — turno terminado",
+      "dot_biz_working": "Trabajando — Claude está procesando",
+      "dot_biz_awaiting": "Esperando tu intervención",
+      "dot_biz_stale": "Estancado — sin actividad por más de 5 min",
+      "legend_show": "Leyenda de estado",
+      "legend_process": "Proceso",
+      "legend_activity": "Actividad (Claude)",
       "state_awaiting_input": "Esperando entrada",
       "state_working": "Trabajando",
       "state_spawning": "Iniciando",

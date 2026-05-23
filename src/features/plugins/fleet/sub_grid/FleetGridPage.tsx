@@ -28,6 +28,8 @@ import { FleetHooksPill } from '../FleetHooksPill';
 import { FleetBroadcastModal } from '../FleetBroadcastModal';
 import { FleetNeedsYouBanner } from '../FleetNeedsYouBanner';
 import { FleetSummaryPills } from '../FleetSummaryPills';
+import { FleetStatusLegend } from '../FleetStatusLegend';
+import type { FleetLabelKey } from '../FleetStatusDots';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DebtText, debtText } from '@/i18n/DebtText';
 
@@ -36,17 +38,18 @@ import { DebtText, debtText } from '@/i18n/DebtText';
 // in the left list. Attention-grabbing first; terminal states last.
 const GROUP_ORDER: ReadonlyArray<{
   id: FleetSessionState;
-  label: string;
+  /** plugins.fleet key for the group header label. */
+  labelKey: FleetLabelKey;
   icon: typeof Hourglass;
   /** Tailwind text-color class for the icon + count badge. */
   accent: string;
 }> = [
-  { id: 'awaiting_input', label: 'Awaiting input', icon: Hourglass,    accent: 'text-violet-400' },
-  { id: 'running',        label: 'Working',        icon: Loader2,      accent: 'text-blue-400' },
-  { id: 'spawning',       label: 'Spawning',       icon: Sparkle,      accent: 'text-cyan-400' },
-  { id: 'idle',           label: 'Idle',           icon: CheckCircle2, accent: 'text-emerald-400' },
-  { id: 'stale',          label: 'Stale',          icon: Clock,        accent: 'text-orange-400' },
-  { id: 'exited',         label: 'Exited',         icon: Ban,          accent: 'text-foreground' },
+  { id: 'awaiting_input', labelKey: 'state_awaiting_input', icon: Hourglass,    accent: 'text-violet-400' },
+  { id: 'running',        labelKey: 'state_working',        icon: Loader2,      accent: 'text-blue-400' },
+  { id: 'spawning',       labelKey: 'state_spawning',       icon: Sparkle,      accent: 'text-cyan-400' },
+  { id: 'idle',           labelKey: 'state_idle',           icon: CheckCircle2, accent: 'text-emerald-400' },
+  { id: 'stale',          labelKey: 'state_stale',          icon: Clock,        accent: 'text-orange-400' },
+  { id: 'exited',         labelKey: 'state_exited',         icon: Ban,          accent: 'text-foreground' },
 ];
 
 /**
@@ -235,7 +238,12 @@ export default function FleetGridPage() {
         icon={<TerminalIcon className="w-5 h-5 text-primary" />}
         title={debtText("auto_fleet_sessions_691c1118")}
         subtitle={subtitle}
-        actions={<FleetHooksPill />}
+        actions={
+          <div className="flex items-center gap-1">
+            <FleetStatusLegend />
+            <FleetHooksPill />
+          </div>
+        }
       />
       <ContentBody>
         <div data-testid="fleet-grid-page" />
@@ -311,11 +319,15 @@ export default function FleetGridPage() {
                     <div className="flex items-center gap-1.5 px-2 mb-1">
                       <GroupIcon className={`w-3 h-3 ${g.accent} ${g.id === 'running' ? 'animate-spin' : ''}`} />
                       <span className="typo-label uppercase tracking-wider text-foreground">
-                        {g.label}
+                        {t.plugins.fleet[g.labelKey]}
                       </span>
                       <span
                         className={`ml-auto text-[10px] font-semibold ${g.accent}`}
-                        aria-label={`${g.sessions.length} session${g.sessions.length === 1 ? '' : 's'}`}
+                        aria-label={
+                          g.sessions.length === 1
+                            ? tx(t.plugins.fleet.sessions_one, { count: g.sessions.length })
+                            : tx(t.plugins.fleet.sessions_other, { count: g.sessions.length })
+                        }
                       >
                         {g.sessions.length}
                       </span>
