@@ -33,6 +33,14 @@ timestamp — the next session can recognize it as abandoned.
 ## Active
 
 
+- **[2026-05-23 — started] /prototype — Team Studio UI (replace DAG canvas)**
+  - **Source:** User-driven. Rework the selected-team view (currently the React Flow DAG in `TeamCanvas`) into a "Team Studio": manage persona roster, toggle each member's use cases on/off (`set_use_case_enabled`), and give a freeform assignment that the existing team-assignment orchestrator routes to the right persona (`decompose_team_assignment_goal` / `start_team_assignment`). NOT an edge-wiring canvas. Two directional variants (Grid + Split) behind a tab switcher per /prototype workflow. Also slated (later, separate): remove hardcoded PipelineTemplateGallery, wire Template Presets as creation entry, consolidate Groups into Teams.
+  - **Paths:** `src/features/pipeline/components/TeamCanvas.tsx` (tab switcher scaffold), `src/features/pipeline/components/teamStudio/**` (new variant files — created during prototyping), `.claude/active-runs.md`
+  - **Status:** started
+  - **Branch:** `worktree-prototype-team-studio`
+  - **Worktree:** `.claude/worktrees/prototype-team-studio/`
+  - **Note:** Orchestration + use-case-toggle backend already exists (parent's merged team-assignment arc + Phase C1 `enabled` flag) — variants wire to real commands, not mocks.
+
 - **[2026-05-23 — started] vault + companion UX fixes**
   - **Source:** User-driven UX/cleanup batch. Vault: (1) catalog scope modal no max-height → confirm button unreachable; (2) credentials edit modal scope not editable + no max-height + remove "Recipes" tab + remove mid-modal id copy widget. Companion: (a) populate Model from ElevenLabs scopes (voice already is); (b) Setup tab readability (themed section titles + title/description spacing); (c) Memory tab card subtitles; (d) Voice tab UI parity + default Stability 0.70 / Similarity 0.70 / Style 0.05; (e) remove Dashboard tab (Cockpit replaces it).
   - **Paths:** `src/features/vault/sub_catalog/**`, `src/features/vault/sub_credentials/**`, `src/features/plugins/companion/{sub_setup,sub_memory,sub_voice}/**`, `src/features/plugins/companion/CompanionPluginPage.tsx`, `src/features/plugins/companion/sub_dashboard/**` (removal), `src/stores/slices/system/companionPluginSlice.ts` (defaults + tab enum), `src/i18n/locales/en.json` (additive), docs as needed, `.claude/active-runs.md`
