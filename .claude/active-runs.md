@@ -32,13 +32,6 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
-- **[2026-05-24 — started] idea-7e17e33c — SortableHeader primitive (aria-sort + caret motion)**
-  - **Source:** Requirement `idea-7e17e33c-sortableheader-primitive-with`. Build a shared `<SortableHeader>` a11y primitive: emits `aria-sort=ascending/descending/none`, descriptive `aria-label`, `focus-ring`, and a 150ms rotate/opacity caret transition (reduced-motion handled by the global CSS reset — Layer 2). Adopt it in DeploymentTable (via `DeploymentSubComponents.SortHeader`) and the shared `DataGrid` sortable header.
-  - **Paths:** `src/features/shared/components/display/SortableHeader.tsx` (new), `src/features/shared/components/display/DataGrid.tsx`, `src/features/deployment/components/DeploymentSubComponents.tsx`, `src/i18n/locales/en.json` (additive `shared.sort_active_asc`/`sort_active_desc` only — reuses existing `shared.sort_by`), `.claude/active-runs.md`
-  - **Status:** started
-  - **Branch:** master (staging only own files per parallel-safety primitives)
-  - **Note:** Path-disjoint from all active sessions: deployment/* and shared/components/display/* are untouched by the WCAG/p2p/fleet/goalplan/companion/team-studio/vault/drive/memories sessions. Deliberately NOT touching `DriveFileList` (active /friend-drive worktree + special grouping semantics) or `MemoriesPageDense` (distinct dual-chevron design) or `UnifiedTable` (sort button intertwined with filter/search affordances). en.json: additive `shared.sort_active_*` only.
-
 - **[2026-05-24 — started] /architect — encrypted cross-device persona continuity (idea-720932d3)**
   - **Source:** Routed from `/friend` because the idea is moonshot_architect-scale: extend `engine/p2p/manifest_sync.rs` from one-way exposure-manifest sharing into bidirectional, conflict-aware E2E sync of the persona workspace (definitions/memories/schedules/triggers) across one user's own devices over the LAN/QUIC mesh, zero cloud. This run produces a rigorous ADR + phased rollout and (likely) queues; any execute is limited to a locally-verifiable additive slice (pure merge fn + unit tests, additive schema) — no two-device claims without a harness.
   - **Paths (read/design):** `src-tauri/src/engine/p2p/**`, `src-tauri/src/commands/network/**`, `src/features/sharing/**`, persona-definition repos/schema under `src-tauri/src/db/**`. Vault: `Architect/{scans,decisions,backlog,weak-patterns}`. Working-tree edits (if any execute): scoped additive only.
@@ -188,6 +181,11 @@ timestamp — the next session can recognize it as abandoned.
 
 
 ## Recently completed (last 14 days)
+
+- **[2026-05-24 — completed (commit: 442993751)] idea-7e17e33c — SortableHeader primitive (aria-sort + caret motion)**
+  - **What:** New shared a11y primitive `SortableHeader` for column-sorted tables. Emits `aria-sort=ascending/descending/none` on the column-header element (`<th>` implicit columnheader role; explicit `role="columnheader"` on the grid `<div>` variant), a descriptive `aria-label` ("Sort by X" / "Sorted by X, ascending. Activate to sort descending."), `focus-ring`, full-cell click target, and a 150ms rotate(asc↔desc)/opacity(active↔idle) caret transition replacing the instant icon swap. Reduced-motion handled by the global CSS reset (Layer 2) — no per-component gate.
+  - **Files:** `src/features/shared/components/display/SortableHeader.tsx` (new), `.../display/__tests__/SortableHeader.test.tsx` (new, 5 cases), `.../display/DataGrid.tsx` (sortable header → primitive, `as="div"`), `src/features/deployment/components/DeploymentSubComponents.tsx` (`SortHeader` now delegates to the primitive — `DeploymentTable.tsx` unchanged), `src/i18n/locales/en.json` + generated `types.ts`/`enSectionStrings.ts` (additive `shared.sort_active_asc`/`sort_active_desc`; reuses existing `shared.sort_by`).
+  - **Validation:** 5/5 unit tests pass; `tsc --noEmit` clean; eslint clean on touched files (pre-commit hook green). Staged exactly 7 own files via filtered patch (`git apply --cached` per-hunk) — the concurrent obsidian-brain session's `result_*` keys in en.json/types.ts/enSectionStrings were verified left unstaged and intact. Deliberately did NOT adopt in `DriveFileList` (active /friend-drive worktree + special kind-grouping semantics), `MemoriesPageDense` (distinct dual-chevron design), or `UnifiedTable` (sort button intertwined with filter/search affordances).
 
 - **[2026-05-24 — completed (commit: db1edcb70)] idea-b2217b3a — tabular-figure numeric system (`<Numeric>` + unit formatter)**
   - **What:** Added a `<Numeric>` primitive (`src/features/shared/components/display/Numeric.tsx`) that renders any number with tabular-nums lining figures (inline-style guarantee + `.font-data`), optional right-align, and optional unit formatting. Added a shared unit formatter to `formatters.ts`: `formatPercent`, `formatCount`, and a `formatNumeric` dispatcher over `ms/s/usd/percent/ratio/count/plain` reusing existing `formatCost`/`formatDuration`. Adopted in `AnimatedCounter` (tabular-nums → tabular-nums lining-nums for consistency) and `KpiTile` (static-value path routes through `<Numeric>`).
