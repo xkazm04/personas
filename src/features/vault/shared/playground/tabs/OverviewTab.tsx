@@ -1,6 +1,5 @@
-import { useState, useCallback } from 'react';
-import { Key, Pencil, Copy, Check } from 'lucide-react';
-import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
+import { useState } from 'react';
+import { Key, Pencil } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 import { CredentialEditForm } from '@/features/vault/sub_credentials/components/forms/CredentialEditForm';
@@ -49,15 +48,10 @@ export function OverviewTab({
   const { t } = useTranslation();
   const sh = t.vault.shared;
   const [isEditing, setIsEditing] = useState(false);
-  const { copied: copiedId, copy } = useCopyToClipboard(1500);
 
   const updateCredential = useVaultStore((s) => s.updateCredential);
   // Picker dispatch — modal is rendered by global <ResourcePickerHost />.
   const { promptIfScoped } = usePostSaveResourcePicker();
-
-  const copyCredentialId = useCallback(() => {
-    copy(credential.id);
-  }, [credential.id, copy]);
 
   return (
     <div className="p-6 space-y-6">
@@ -138,24 +132,6 @@ export function OverviewTab({
               <span className="break-all">{effectiveHealthcheckResult.message}</span>
             </div>
           )}
-
-          {/* Credential ID */}
-          <div className="flex items-center">
-            <Button
-              onClick={copyCredentialId}
-              variant="ghost"
-              size="xs"
-              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-primary/10 bg-secondary/20 text-foreground hover:text-foreground/80"
-              title={t.vault.shared.copy_credential_id}
-            >
-              <span className="font-mono">id</span>
-              {copiedId ? (
-                <div><Check className="animate-fade-scale-in w-3.5 h-3.5 text-emerald-400" /></div>
-              ) : (
-                <Copy className="w-3.5 h-3.5" />
-              )}
-            </Button>
-          </div>
 
           <OverviewSections
             credential={credential}

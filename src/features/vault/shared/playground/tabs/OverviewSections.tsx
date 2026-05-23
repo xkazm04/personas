@@ -56,6 +56,10 @@ export function OverviewSections({ credential, connector, onDelete }: OverviewSe
         </div>
       </div>
 
+      {/* Scope (resource-scoping picks) — kept near the top so editing the
+          scope doesn't require scrolling past the services/events sections. */}
+      <CredentialScopeSection credential={credential} connector={connector} />
+
       {/* Collapsible sections: Services and Events */}
       {connector.services.length > 0 && (
         <div className="border border-primary/10 rounded-modal overflow-hidden">
@@ -110,9 +114,6 @@ export function OverviewSections({ credential, connector, onDelete }: OverviewSe
           )}
         </div>
       )}
-
-      {/* Scope (resource-scoping picks) */}
-      <CredentialScopeSection credential={credential} connector={connector} />
 
       {/* Intelligence */}
       <div className="border border-primary/10 rounded-modal p-4">
