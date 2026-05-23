@@ -261,6 +261,44 @@ pub struct TeamAssignmentDetail {
     pub recent_events: Vec<TeamAssignmentEvent>,
 }
 
+// ============================================================================
+// Templates (Phase C4) — reusable assignment shapes
+// ============================================================================
+
+/// A saved assignment template. Stamps out a fresh `team_assignments` row
+/// (plus its steps) on instantiation. `steps_json` is a serialized
+/// `Vec<CreateTeamAssignmentStepInput>` — the same shape the composer
+/// submits — so instantiation is a straight clone into the create path.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct TeamAssignmentTemplate {
+    pub id: String,
+    pub team_id: String,
+    pub title: String,
+    pub goal: String,
+    pub match_strategy: String,
+    pub max_parallel_steps: i32,
+    /// JSON array of `CreateTeamAssignmentStepInput`. Parsed on instantiate.
+    pub steps_json: String,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateTeamAssignmentTemplateInput {
+    pub team_id: String,
+    pub title: String,
+    pub goal: String,
+    #[serde(default)]
+    pub match_strategy: Option<String>,
+    #[serde(default)]
+    pub max_parallel_steps: Option<i32>,
+    pub steps: Vec<CreateTeamAssignmentStepInput>,
+}
+
 /// Action taken by a user resolving an `awaiting_review` step.
 /// Maps 1:1 to the four buttons in the AssignmentReviewModal (Phase A4).
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]

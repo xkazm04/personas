@@ -10,7 +10,8 @@
 use rusqlite::params;
 
 use crate::db::models::{
-    CreateTeamAssignmentInput, TeamAssignment, TeamAssignmentEvent, TeamAssignmentStep,
+    CreateTeamAssignmentInput, CreateTeamAssignmentTemplateInput, TeamAssignment,
+    TeamAssignmentEvent, TeamAssignmentStep, TeamAssignmentTemplate,
 };
 use crate::db::DbPool;
 use crate::error::AppError;
@@ -603,5 +604,105 @@ pub fn insert_event(
 pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     let conn = pool.get()?;
     let n = conn.execute("DELETE FROM team_assignments WHERE id = ?1", [id])?;
+    Ok(n > 0)
+}
+
+// ----------------------------------------------------------------------------
+// Templates (Phase C4)
+// ----------------------------------------------------------------------------
+
+fn row_to_template(row: &rusqlite::Row) -> rusqlite::Result<TeamAssignmentTemplate> {
+    Ok(TeamAssignmentTemplate {
+        id: row.get("id")?,
+        team_id: row.get("team_id")?,
+        title: row.get("title")?,
+        goal: row.get("goal")?,
+        match_strategy: row.get("match_strategy")?,
+        max_parallel_steps: row.get("max_parallel_steps")?,
+        steps_json: row.get("steps_json")?,
+        created_at: row.get("created_at")?,
+        updated_at: row.get("updated_at")?,
+    })
+}
+
+pub fn create_template(
+    pool: &DbPool,
+    input: CreateTeamAssignmentTemplateInput,
+) -> Result<TeamAssignmentTemplate, AppError> {
+    let title = input.title.trim();
+    if title.is_empty() {
+        return Err(AppError::Validation("Template title cannot be empty".into()));
+    }
+    if title.len() > MAX_TITLE_LEN {
+        return Err(AppError::Validation(format!(
+            "Template title exceeds {MAX_TITLE_LEN} characters"
+        )));
+    }
+    if input.goal.trim().is_empty() {
+        return Err(AppError::Validation("Template goal cannot be empty".into()));
+    }
+    if input.steps.is_empty() {
+        return Err(AppError::Validation(
+            "Template must contain at least one step".into(),
+        ));
+    }
+    let strategy = input.match_strategy.as_deref().unwrap_or("manual");
+    let max_parallel = input.max_parallel_steps.unwrap_or(3).clamp(MIN_PARALLEL, MAX_PARALLEL);
+    let steps_json = serde_json::to_string(&input.steps)
+        .map_err(|e| AppError::Internal(format!("Failed to serialize template steps: {e}")))?;
+
+    let id = uuid::Uuid::new_v4().to_string();
+    let conn = pool.get()?;
+    conn.execute(
+        "INSERT INTO team_assignment_templates
+            (id, team_id, title, goal, match_strategy, max_parallel_steps, steps_json)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+        params![
+            id,
+            input.team_id,
+            title,
+            input.goal.trim(),
+            strategy,
+            max_parallel,
+            steps_json,
+        ],
+    )?;
+    get_template(pool, &id)
+}
+
+pub fn get_template(pool: &DbPool, id: &str) -> Result<TeamAssignmentTemplate, AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT id, team_id, title, goal, match_strategy, max_parallel_steps,
+                steps_json, created_at, updated_at
+         FROM team_assignment_templates WHERE id = ?1",
+    )?;
+    stmt.query_row([id], row_to_template).map_err(|e| match e {
+        rusqlite::Error::QueryReturnedNoRows => {
+            AppError::NotFound(format!("Template '{id}' not found"))
+        }
+        other => AppError::Database(other),
+    })
+}
+
+pub fn list_templates(
+    pool: &DbPool,
+    team_id: &str,
+) -> Result<Vec<TeamAssignmentTemplate>, AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT id, team_id, title, goal, match_strategy, max_parallel_steps,
+                steps_json, created_at, updated_at
+         FROM team_assignment_templates
+         WHERE team_id = ?1
+         ORDER BY updated_at DESC",
+    )?;
+    let rows = stmt.query_map([team_id], row_to_template)?;
+    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+}
+
+pub fn delete_template(pool: &DbPool, id: &str) -> Result<bool, AppError> {
+    let conn = pool.get()?;
+    let n = conn.execute("DELETE FROM team_assignment_templates WHERE id = ?1", [id])?;
     Ok(n > 0)
 }

@@ -12,8 +12,9 @@ use std::sync::Arc;
 use tauri::State;
 
 use crate::db::models::{
-    CreateTeamAssignmentInput, Persona, ResolveStepReviewAction, TeamAssignment,
-    TeamAssignmentDetail, TeamAssignmentEvent, TeamAssignmentStep,
+    CreateTeamAssignmentInput, CreateTeamAssignmentStepInput, CreateTeamAssignmentTemplateInput,
+    Persona, ResolveStepReviewAction, TeamAssignment, TeamAssignmentDetail, TeamAssignmentEvent,
+    TeamAssignmentStep, TeamAssignmentTemplate,
 };
 use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::orchestration::team_assignments as repo;
@@ -380,4 +381,67 @@ pub async fn decompose_team_assignment_goal(
 
     let candidates = matching::extract_candidates(&personas);
     matching::decompose_goal(goal, &candidates, DECOMPOSE_TIMEOUT_SECS).await
+}
+
+// ----------------------------------------------------------------------------
+// Templates (Phase C4) — save / list / delete / instantiate
+// ----------------------------------------------------------------------------
+
+#[tauri::command]
+pub fn create_assignment_template(
+    state: State<'_, Arc<AppState>>,
+    input: CreateTeamAssignmentTemplateInput,
+) -> Result<TeamAssignmentTemplate, AppError> {
+    require_auth_sync(&state)?;
+    repo::create_template(&state.db, input)
+}
+
+#[tauri::command]
+pub fn list_assignment_templates(
+    state: State<'_, Arc<AppState>>,
+    team_id: String,
+) -> Result<Vec<TeamAssignmentTemplate>, AppError> {
+    require_auth_sync(&state)?;
+    repo::list_templates(&state.db, &team_id)
+}
+
+#[tauri::command]
+pub fn delete_assignment_template(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
+    repo::delete_template(&state.db, &id)
+}
+
+/// Instantiate a template into a fresh assignment. Clones the saved
+/// title/goal/strategy/steps into the regular `create` path. Does NOT
+/// auto-start — the caller decides (the frontend offers a "create &
+/// start" affordance the same as the composer). Returns the new
+/// assignment so the UI can expand it immediately.
+#[tauri::command]
+pub fn instantiate_assignment_template(
+    state: State<'_, Arc<AppState>>,
+    template_id: String,
+) -> Result<TeamAssignment, AppError> {
+    require_auth_sync(&state)?;
+    let tpl = repo::get_template(&state.db, &template_id)?;
+    let steps: Vec<CreateTeamAssignmentStepInput> = serde_json::from_str(&tpl.steps_json)
+        .map_err(|e| AppError::Internal(format!("Template steps are corrupt: {e}")))?;
+    if steps.is_empty() {
+        return Err(AppError::Validation(
+            "Template has no steps to instantiate".into(),
+        ));
+    }
+    let input = CreateTeamAssignmentInput {
+        team_id: tpl.team_id,
+        title: tpl.title,
+        goal: tpl.goal,
+        match_strategy: Some(tpl.match_strategy),
+        max_parallel_steps: Some(tpl.max_parallel_steps),
+        source: Some("team_ui".into()),
+        companion_op_id: None,
+        steps,
+    };
+    repo::create(&state.db, input)
 }

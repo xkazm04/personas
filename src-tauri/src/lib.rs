@@ -1952,6 +1952,10 @@ pub fn run() {
             commands::teams::assignments::delete_team_assignment,
             commands::teams::assignments::decompose_team_assignment_goal,
             commands::teams::assignments::companion_assign_team,
+            commands::teams::assignments::create_assignment_template,
+            commands::teams::assignments::list_assignment_templates,
+            commands::teams::assignments::delete_assignment_template,
+            commands::teams::assignments::instantiate_assignment_template,
             // Tools
             commands::tools::tools::list_tool_definitions,
             commands::tools::tools::get_tool_definition,
