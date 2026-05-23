@@ -127,6 +127,7 @@ pub mod persona_jobs;
 pub mod pipeline;
 pub mod pipeline_executor;
 pub mod platform_rules;
+pub mod team_assignment_orchestrator;
 pub mod platforms;
 pub mod polling;
 pub mod prepared_run_cache;

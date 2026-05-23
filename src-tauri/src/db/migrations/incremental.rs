@@ -3349,6 +3349,86 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     // ADR: 2026-05-02-fk-hygiene-cascade.
     super::fk_hygiene::run(conn)?;
 
+    // -- Team assignments (Phase A orchestration) --------------------------------
+    // Goal-driven workflows on top of PersonaTeams. An assignment is a top-level
+    // goal; steps form a DAG (depends_on JSON array of step ids). The
+    // team_assignment_orchestrator engine module walks the DAG, kicks off
+    // persona executions, and surfaces failures through the existing
+    // notification center for human review. Capabilities resolve to existing
+    // DesignUseCase[] on persona.design_context — no capability_tags column.
+    //
+    // Phase A: manual matching only (user picks persona at composer time).
+    // Phase B will add embedding + llm_eval strategies.
+    // Phase C will populate companion_op_id from Athena dispatcher.
+    ddl_step(
+        conn,
+        "CREATE TABLE IF NOT EXISTS team_assignments (
+            id                  TEXT PRIMARY KEY,
+            team_id             TEXT NOT NULL REFERENCES persona_teams(id) ON DELETE CASCADE,
+            title               TEXT NOT NULL,
+            goal                TEXT NOT NULL,
+            status              TEXT NOT NULL DEFAULT 'queued'
+                                CHECK(status IN ('queued','running','awaiting_review','done','failed','aborted')),
+            match_strategy      TEXT NOT NULL DEFAULT 'manual'
+                                CHECK(match_strategy IN ('manual','embedding','llm_eval')),
+            max_parallel_steps  INTEGER NOT NULL DEFAULT 3,
+            source              TEXT NOT NULL DEFAULT 'team_ui'
+                                CHECK(source IN ('team_ui','athena','api')),
+            companion_op_id     TEXT,
+            created_at          TEXT NOT NULL DEFAULT (datetime('now')),
+            started_at          TEXT,
+            completed_at        TEXT,
+            error_message       TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_team_assignments_team
+            ON team_assignments(team_id, created_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_team_assignments_status
+            ON team_assignments(status) WHERE status IN ('queued','running','awaiting_review');",
+    )?;
+
+    ddl_step(
+        conn,
+        "CREATE TABLE IF NOT EXISTS team_assignment_steps (
+            id                    TEXT PRIMARY KEY,
+            assignment_id         TEXT NOT NULL REFERENCES team_assignments(id) ON DELETE CASCADE,
+            step_order            INTEGER NOT NULL,
+            title                 TEXT NOT NULL,
+            description           TEXT,
+            status                TEXT NOT NULL DEFAULT 'pending'
+                                  CHECK(status IN ('pending','matching','running','awaiting_review','done','skipped','failed')),
+            assigned_persona_id   TEXT REFERENCES personas(id) ON DELETE SET NULL,
+            assigned_use_case_id  TEXT,
+            match_confidence      REAL,
+            match_rationale       TEXT,
+            execution_id          TEXT REFERENCES persona_executions(id) ON DELETE SET NULL,
+            depends_on            TEXT,
+            output_summary        TEXT,
+            retry_count           INTEGER NOT NULL DEFAULT 0,
+            error_message         TEXT,
+            started_at            TEXT,
+            completed_at          TEXT,
+            UNIQUE(assignment_id, step_order)
+        );
+        CREATE INDEX IF NOT EXISTS idx_team_assignment_steps_assignment
+            ON team_assignment_steps(assignment_id, step_order);
+        CREATE INDEX IF NOT EXISTS idx_team_assignment_steps_status
+            ON team_assignment_steps(assignment_id, status);",
+    )?;
+
+    ddl_step(
+        conn,
+        "CREATE TABLE IF NOT EXISTS team_assignment_events (
+            id              TEXT PRIMARY KEY,
+            assignment_id   TEXT NOT NULL REFERENCES team_assignments(id) ON DELETE CASCADE,
+            step_id         TEXT REFERENCES team_assignment_steps(id) ON DELETE CASCADE,
+            kind            TEXT NOT NULL,
+            payload         TEXT,
+            created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_team_assignment_events_assignment
+            ON team_assignment_events(assignment_id, created_at);",
+    )?;
+
     Ok(())
 }
 

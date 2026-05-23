@@ -67,6 +67,9 @@ event_names! {
     // Event bus
     EVENT_BUS                  => "event-bus",
 
+    // Team assignments (orchestration Phase A)
+    TEAM_ASSIGNMENT_PROGRESS   => "team-assignment-progress",
+
     // Messages
     MESSAGE_CREATED            => "message-created",
 
