@@ -19,5 +19,6 @@
   "signed_in": "Вы вошли",
   "sign_out": "Выйти",
   "offline": "Офлайн",
-  "mobile_preview": "Mobile preview"
+  "mobile_preview": "Mobile preview",
+  "project_picker_none": "Нет проекта (показать все)"
 }

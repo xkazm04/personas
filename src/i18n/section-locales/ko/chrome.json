@@ -19,5 +19,6 @@
   "signed_in": "로그인됨",
   "sign_out": "로그아웃",
   "offline": "오프라인",
-  "mobile_preview": "Mobile preview"
+  "mobile_preview": "Mobile preview",
+  "project_picker_none": "프로젝트 없음(모두 표시)"
 }

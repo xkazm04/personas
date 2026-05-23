@@ -19,5 +19,6 @@
   "signed_in": "Přihlášen",
   "sign_out": "Odhlásit se",
   "offline": "Offline",
-  "mobile_preview": "Mobile preview"
+  "mobile_preview": "Mobile preview",
+  "project_picker_none": "Žádný projekt (zobrazit vše)"
 }

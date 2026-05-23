@@ -19,5 +19,6 @@
   "signed_in": "已登录",
   "sign_out": "退出登录",
   "offline": "离线",
-  "mobile_preview": "Mobile preview"
+  "mobile_preview": "Mobile preview",
+  "project_picker_none": "无项目（显示全部）"
 }

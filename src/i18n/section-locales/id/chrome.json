@@ -19,5 +19,6 @@
   "signed_in": "Sudah masuk",
   "sign_out": "Keluar",
   "offline": "Luring",
-  "mobile_preview": "Mobile preview"
+  "mobile_preview": "Mobile preview",
+  "project_picker_none": "Tidak ada proyek (tampilkan semua)"
 }

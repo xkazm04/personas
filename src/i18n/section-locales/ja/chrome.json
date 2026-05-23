@@ -19,5 +19,6 @@
   "signed_in": "サインイン済み",
   "sign_out": "サインアウト",
   "offline": "オフライン",
-  "mobile_preview": "Mobile preview"
+  "mobile_preview": "Mobile preview",
+  "project_picker_none": "プロジェクトなし (すべて表示)"
 }
