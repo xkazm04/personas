@@ -10730,6 +10730,7 @@
     "companion": {
       "name": "Athena",
       "role": "thinking partner",
+      "athena_assignments_title": "Team assignments in flight",
       "tracking_title": "Project tracking",
       "tracking_subtitle": "Athena absorbs CLI activity (git commits + active-runs ledger) into hourly per-project pulses she'll discuss with you when Dev Tools is on. Per-project flags live in Dev Tools → Lifecycle → Project Tracking.",
       "tracking_master_label": "Track development activity",
@@ -12549,7 +12550,8 @@
       "abort_assignment": "Abort assignment",
       "notification_failed_title": "Team assignment needs review",
       "notification_failed_summary": "Step \"{step}\" failed. Click to review and adjust.",
-      "notification_unmatched_summary": "Step \"{step}\" has no eligible persona. Click to review."
+      "notification_unmatched_summary": "Step \"{step}\" has no eligible persona. Click to review.",
+      "athena_open_panel": "Open in panel"
     },
     "agent_teams": "Agent Teams",
     "agent_teams_subtitle": "Design multi-agent pipelines with visual canvas",

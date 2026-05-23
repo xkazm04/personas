@@ -235,6 +235,28 @@ interface CompanionStore {
   upsertJob: (job: BackgroundJob) => void;
   attachPendingJobsToEpisode: (episodeId: string) => void;
   clearAllConnectorJobs: () => void;
+
+  // Phase C2 — Athena-dispatched team assignments. Cards display inline
+  // above the chat messages; each card is updated by the assignment
+  // progress listener. Bounded to the 6 most-recent so the chat doesn't
+  // get crowded by an old session's history.
+  athenaAssignments: AthenaAssignmentRef[];
+  upsertAthenaAssignment: (ref: AthenaAssignmentRef) => void;
+  dismissAthenaAssignment: (assignmentId: string) => void;
+}
+
+/** Compact projection of an assignment + its current status, surfaced as
+ *  a chat-side card. Populated by `useCompanionAssignmentBridge`. */
+export interface AthenaAssignmentRef {
+  assignmentId: string;
+  teamId: string;
+  title: string;
+  goal: string;
+  status: string;
+  totalSteps: number;
+  doneSteps: number;
+  failedSteps: number;
+  updatedAt: number;
 }
 
 export interface PendingPromptPayload {
@@ -278,6 +300,19 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
 
   chatCards: [],
   setChatCards: (chatCards) => set({ chatCards }),
+
+  athenaAssignments: [],
+  upsertAthenaAssignment: (ref) =>
+    set((s) => {
+      const next = s.athenaAssignments.filter((a) => a.assignmentId !== ref.assignmentId);
+      next.push(ref);
+      next.sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
+      return { athenaAssignments: next.slice(0, 6) };
+    }),
+  dismissAthenaAssignment: (assignmentId) =>
+    set((s) => ({
+      athenaAssignments: s.athenaAssignments.filter((a) => a.assignmentId !== assignmentId),
+    })),
 
   brainView: { open: false, kind: null, id: null },
   setBrainView: (brainView) => set({ brainView }),

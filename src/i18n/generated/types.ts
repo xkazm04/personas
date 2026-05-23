@@ -10736,6 +10736,7 @@ export type Translations = {
     companion: {
       name: string;
       role: string;
+      athena_assignments_title: string;
       tracking_title: string;
       tracking_subtitle: string;
       tracking_master_label: string;
@@ -12556,6 +12557,7 @@ export type Translations = {
       notification_failed_title: string;
       notification_failed_summary: string;
       notification_unmatched_summary: string;
+      athena_open_panel: string;
     };
     agent_teams: string;
     agent_teams_subtitle: string;
