@@ -32,6 +32,13 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+- **[2026-05-24 — started] idea-b2217b3a — tabular-figure numeric system (`<Numeric>` + unit formatter)**
+  - **Source:** Requirement `idea-b2217b3a-tabular-figure-numeric-system`. Add a `<Numeric>` primitive (tabular-nums lining-nums, optional right-align, optional unit formatting) and a shared unit formatter (`formatPercent` + `formatNumeric` dispatcher over ms/s/$/%/count) in `formatters.ts`. Adopt in core numeric surfaces (AnimatedCounter lining-nums consistency, KpiTile static-value path). Right-align infra already exists in DataGrid (`align: 'right'`) — NOT touching DataGrid (owned by idea-7e17e33c SortableHeader session).
+  - **Paths:** `src/features/shared/components/display/Numeric.tsx` (new), `src/lib/utils/formatters.ts`, `src/features/shared/components/display/AnimatedCounter.tsx`, `src/features/overview/components/shared/KpiTile.tsx`, `src/features/shared/components/display/__tests__/Numeric.test.tsx` (new), `src/lib/utils/__tests__/formatters.test.ts` (new), `.claude/active-runs.md`
+  - **Status:** started
+  - **Branch:** master (staging only own files per parallel-safety primitives)
+  - **Note:** Path-disjoint from all active sessions. Deliberately NOT editing `DataGrid.tsx`/`UnifiedTable`/`DeploymentSubComponents.tsx` (SortableHeader session owns DataGrid + Deployment; align infra already present so no need). No en.json changes (no new user-facing strings — primitive is presentational).
+
 - **[2026-05-24 — started] idea-7e17e33c — SortableHeader primitive (aria-sort + caret motion)**
   - **Source:** Requirement `idea-7e17e33c-sortableheader-primitive-with`. Build a shared `<SortableHeader>` a11y primitive: emits `aria-sort=ascending/descending/none`, descriptive `aria-label`, `focus-ring`, and a 150ms rotate/opacity caret transition (reduced-motion handled by the global CSS reset — Layer 2). Adopt it in DeploymentTable (via `DeploymentSubComponents.SortHeader`) and the shared `DataGrid` sortable header.
   - **Paths:** `src/features/shared/components/display/SortableHeader.tsx` (new), `src/features/shared/components/display/DataGrid.tsx`, `src/features/deployment/components/DeploymentSubComponents.tsx`, `src/i18n/locales/en.json` (additive `shared.sort_active_asc`/`sort_active_desc` only — reuses existing `shared.sort_by`), `.claude/active-runs.md`

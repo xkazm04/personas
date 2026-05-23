@@ -1,6 +1,7 @@
 import { memo, useMemo, type ReactNode } from 'react';
 import { TrendingUp, TrendingDown, type LucideIcon } from 'lucide-react';
 import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCounter';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 
 /**
  * Unified KPI tile primitive — replaces 3 hand-rolled stat-tile shapes
@@ -126,7 +127,9 @@ function renderValue(
     const mode = density === 'console' ? 'fade' : 'roll';
     return <AnimatedCounter value={numericValue} formatFn={format} mode={mode} />;
   }
-  return value ?? '';
+  // Static value: route through <Numeric> so the figure style is explicit and
+  // consistent with the animated path (tabular lining figures).
+  return <Numeric>{value ?? ''}</Numeric>;
 }
 
 export const KpiTile = memo(function KpiTile({

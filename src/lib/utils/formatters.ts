@@ -230,6 +230,90 @@ export function formatElapsed(
   return remMins > 0 ? `${hours}h ${remMins}m` : `${hours}h`;
 }
 
+/**
+ * Format a percentage with fixed precision so values stay column-aligned.
+ *
+ * @param value      The percent magnitude. By default this is already a
+ *                   percentage (e.g. `42.5` → `"42.5%"`); pass
+ *                   `fromRatio: true` when the input is a 0–1 ratio
+ *                   (e.g. `0.425` → `"42.5%"`).
+ * @param opts.precision  Decimal places (default `1`). Fixed precision is
+ *                   intentional — varying decimals make right-aligned
+ *                   percent columns ragged.
+ * @param opts.language  BCP-47 locale for the decimal separator (default `'en'`).
+ */
+export function formatPercent(
+  value: number | null | undefined,
+  opts?: { fromRatio?: boolean; precision?: number; language?: string },
+): string {
+  if (value == null || Number.isNaN(value)) return '—';
+  const { fromRatio = false, precision = 1, language = 'en' } = opts ?? {};
+  const ratio = fromRatio ? value : value / 100;
+  return new Intl.NumberFormat(language, {
+    style: 'percent',
+    minimumFractionDigits: precision,
+    maximumFractionDigits: precision,
+  }).format(ratio);
+}
+
+/**
+ * Format a plain count/quantity with locale-aware thousands grouping.
+ * `1234` → `"1,234"` (en) / `"1 234"` (fr). Null/NaN → em dash.
+ */
+export function formatCount(
+  value: number | null | undefined,
+  opts?: { language?: string; precision?: number },
+): string {
+  if (value == null || Number.isNaN(value)) return '—';
+  const { language = 'en', precision } = opts ?? {};
+  return new Intl.NumberFormat(language, {
+    minimumFractionDigits: precision,
+    maximumFractionDigits: precision ?? 2,
+  }).format(value);
+}
+
+/**
+ * Unit kinds understood by {@link formatNumeric} and the `<Numeric>` primitive.
+ * - `ms` / `s` — duration (delegates to {@link formatDuration})
+ * - `usd`       — US-dollar cost (delegates to {@link formatCost})
+ * - `percent`   — percentage magnitude (delegates to {@link formatPercent})
+ * - `ratio`     — 0–1 ratio rendered as a percent
+ * - `count`     — grouped integer/quantity (delegates to {@link formatCount})
+ * - `plain`     — grouped number, no unit
+ */
+export type NumericUnit = 'ms' | 's' | 'usd' | 'percent' | 'ratio' | 'count' | 'plain';
+
+/**
+ * One entry point for the handful of units that show up on metric surfaces
+ * (ms, $, %, counts). Centralizing the unit→string mapping means every KPI
+ * tile, table cell, and counter renders the same value the same way, and the
+ * `<Numeric>` primitive can format from a raw `value` + `unit` pair.
+ */
+export function formatNumeric(
+  value: number | null | undefined,
+  unit: NumericUnit = 'plain',
+  opts?: { language?: string; precision?: number },
+): string {
+  if (value == null || Number.isNaN(value)) return '—';
+  const { language, precision } = opts ?? {};
+  switch (unit) {
+    case 'ms':
+      return formatDuration(value, { unit: 'ms' });
+    case 's':
+      return formatDuration(value, { unit: 's' });
+    case 'usd':
+      return formatCost(value, { precision: 'auto', language });
+    case 'percent':
+      return formatPercent(value, { precision, language });
+    case 'ratio':
+      return formatPercent(value, { fromRatio: true, precision, language });
+    case 'count':
+    case 'plain':
+    default:
+      return formatCount(value, { language, precision });
+  }
+}
+
 // -- Simple mode helpers ------------------------------------------------
 
 import type { SimpleStatus } from './designTokens';

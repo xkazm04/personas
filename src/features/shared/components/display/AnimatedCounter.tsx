@@ -85,7 +85,7 @@ export function AnimatedCounter({
     <span
       className={className}
       style={{
-        fontVariantNumeric: 'tabular-nums',
+        fontVariantNumeric: 'tabular-nums lining-nums',
         display: 'inline-flex',
         alignItems: 'baseline',
         overflow: 'hidden',
@@ -127,7 +127,7 @@ function RollCounter({ text, className }: { text: string; className?: string }) 
     <span
       className={className}
       style={{
-        fontVariantNumeric: 'tabular-nums',
+        fontVariantNumeric: 'tabular-nums lining-nums',
         display: 'inline-flex',
         alignItems: 'baseline',
         whiteSpace: 'nowrap',
