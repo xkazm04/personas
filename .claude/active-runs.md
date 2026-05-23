@@ -33,6 +33,13 @@ timestamp — the next session can recognize it as abandoned.
 ## Active
 
 
+- **[2026-05-23 — started] vault + companion UX fixes**
+  - **Source:** User-driven UX/cleanup batch. Vault: (1) catalog scope modal no max-height → confirm button unreachable; (2) credentials edit modal scope not editable + no max-height + remove "Recipes" tab + remove mid-modal id copy widget. Companion: (a) populate Model from ElevenLabs scopes (voice already is); (b) Setup tab readability (themed section titles + title/description spacing); (c) Memory tab card subtitles; (d) Voice tab UI parity + default Stability 0.70 / Similarity 0.70 / Style 0.05; (e) remove Dashboard tab (Cockpit replaces it).
+  - **Paths:** `src/features/vault/sub_catalog/**`, `src/features/vault/sub_credentials/**`, `src/features/plugins/companion/{sub_setup,sub_memory,sub_voice}/**`, `src/features/plugins/companion/CompanionPluginPage.tsx`, `src/features/plugins/companion/sub_dashboard/**` (removal), `src/stores/slices/system/companionPluginSlice.ts` (defaults + tab enum), `src/i18n/locales/en.json` (additive), docs as needed, `.claude/active-runs.md`
+  - **Status:** completed — 3 commits on master (not merged elsewhere; already on master). `2aabb2909` companion Dashboard-tab removal · `863b74a82` companion settings polish (themed titles + shared ThemedSelect everywhere, scoped-model dropdown, voice defaults 0.70/0.70/0.05, memory card subtitles) · `50b376df5` vault scope-modal scroll fix + Recipes-tab/id-widget removal + scope-edit surfaced. All commits tsc + eslint clean; 360 companion+store, 68 vault, 232 companion tests green across the batch.
+  - **Branch:** master (user-driven, testing live; staged only own files per parallel-safety primitives)
+  - **Note:** Root-cause of the "unreachable confirm" scope modal was a flexbox bug — `ResourcePicker` body was `flex-1 overflow-y-auto` without `min-h-0`, so it grew past the panel's `max-h-[90vh]` and `overflow-hidden` clipped the footer; added `min-h-0` + `shrink-0` header/footer. Same picker serves catalog-add + edit. Scope editing already existed (`CredentialScopeSection`) but was buried at the bottom of the Overview — moved it up. Concurrent /friend sessions touched plugin dirs + en.json (additive keys only, disjoint).
+
 - **[2026-05-23 18:00 — completed (C4, merged 4d3f65e09)] /friend — assignment templates (Phase C4 + docs sync)**
   - **Source:** Continuation — deferred Phase C items from the team-assignment orchestration arc (merged at master `1bbb2bbc3`). C4 = saved assignment templates (reusable goals + step lists per team). Plus docs sync.
   - **Status:** completed (pending user merge decision)
