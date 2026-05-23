@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Plus, Users, Zap, Trash2, ArrowRight, Layers } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { usePipelineStore } from '@/stores/pipelineStore';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { AutoTeamModal } from './AutoTeamModal';
 import { CreateTeamForm } from './CreateTeamForm';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -9,20 +10,18 @@ import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 
 /**
  * Teams management table — the landing view of the "Teams" sidebar
- * entry (no team selected). Overview + create + disband.
+ * entry (no team selected). Standard ContentHeader + overview table +
+ * create + disband.
  *
- * "Disband" deletes the PersonaTeam (and cascades its membership +
+ * "Disband" deletes the PersonaTeam (cascading its membership +
  * connections) but NOT the member personas — they survive ungrouped,
- * exactly like removing a folder without deleting its files. Wired to
+ * like removing a folder without deleting its files. Wired to
  * `delete_team`, whose FK cascade only removes `persona_team_members`
  * rows, never the personas they point at.
- *
- * The old hardcoded PipelineTemplateGallery ("starter pipelines") was
- * removed here — Team Template Presets are the intended creation entry
- * point going forward.
  */
 export default function TeamList() {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
+  const ts = t.pipeline.team_studio;
   const teams = usePipelineStore((s) => s.teams);
   const teamCounts = usePipelineStore((s) => s.teamCounts);
   const fetchTeams = usePipelineStore((s) => s.fetchTeams);
@@ -37,8 +36,6 @@ export default function TeamList() {
   const [confirmDisbandId, setConfirmDisbandId] = useState<string | null>(null);
   const [showAutoTeam, setShowAutoTeam] = useState(false);
 
-  // Auto-revert disband confirmation after 3.5s so a stray click doesn't
-  // leave a primed delete button hanging.
   useEffect(() => {
     if (!confirmDisbandId) return;
     const timer = setTimeout(() => setConfirmDisbandId(null), 3500);
@@ -70,81 +67,75 @@ export default function TeamList() {
     setConfirmDisbandId(null);
   };
 
+  const countLabel = tx(
+    teams.length === 1 ? ts.teams_count_one : ts.teams_count_other,
+    { count: teams.length },
+  );
+
   return (
-    <div className="flex-1 min-h-0 flex flex-col w-full overflow-hidden">
-      <div className="flex-1 overflow-y-auto">
-        <div className="min-h-full p-6">
-          <div className="max-w-4xl 2xl:max-w-6xl mx-auto">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h1 className="typo-heading-lg font-bold text-foreground/90">{t.pipeline.agent_teams}</h1>
-                <p className="typo-body text-foreground mt-1">{t.pipeline.agent_teams_subtitle}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="accent"
-                  size="sm"
-                  icon={<Zap className="w-4 h-4" />}
-                  onClick={() => setShowAutoTeam(true)}
-                >
-                  {t.pipeline.auto_team}
-                </Button>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  icon={<Plus className="w-4 h-4" />}
-                  onClick={() => setShowCreate(true)}
-                >
-                  {t.pipeline.new_team}
-                </Button>
-              </div>
-            </div>
-
-            {showCreate && (
-              <div className="mb-5">
-                <CreateTeamForm
-                  newName={newName} onNameChange={setNewName}
-                  newDescription={newDescription} onDescriptionChange={setNewDescription}
-                  newColor={newColor} onColorChange={setNewColor}
-                  onSubmit={handleCreate} onCancel={() => setShowCreate(false)}
-                />
-              </div>
-            )}
-
-            {sortedTeams.length === 0 && !showCreate ? (
-              <EmptyState onCreate={() => setShowCreate(true)} onAuto={() => setShowAutoTeam(true)} t={t} />
-            ) : (
-              <div className="rounded-card border border-primary/12 overflow-hidden">
-                {/* Column header */}
-                <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-4 py-2 bg-secondary/20 border-b border-primary/10 typo-label uppercase tracking-wider text-foreground/55">
-                  <span>{t.pipeline.agent_teams}</span>
-                  <span className="text-right w-20">Members</span>
-                  <span className="text-right w-20">Status</span>
-                  <span className="w-[150px]" />
-                </div>
-                {sortedTeams.map((team) => (
-                  <TeamRow
-                    key={team.id}
-                    team={team}
-                    counts={teamCounts[team.id]}
-                    confirmingDisband={confirmDisbandId === team.id}
-                    onOpen={() => selectTeam(team.id)}
-                    onRequestDisband={() => setConfirmDisbandId(team.id)}
-                    onCancelDisband={() => setConfirmDisbandId(null)}
-                    onConfirmDisband={() => void handleDisband(team.id)}
-                  />
-                ))}
-              </div>
-            )}
+    <ContentBox minWidth={0} data-testid="teams-table">
+      <ContentHeader
+        icon={<Users className="w-5 h-5 text-indigo-300" />}
+        iconColor="indigo"
+        title={ts.teams_header_label}
+        subtitle={countLabel}
+        actions={
+          <div className="flex items-center gap-2">
+            <Button variant="accent" size="sm" icon={<Zap className="w-4 h-4" />} onClick={() => setShowAutoTeam(true)}>
+              {t.pipeline.auto_team}
+            </Button>
+            <Button variant="primary" size="sm" icon={<Plus className="w-4 h-4" />} onClick={() => setShowCreate(true)}>
+              {t.pipeline.new_team}
+            </Button>
           </div>
-        </div>
-      </div>
+        }
+      />
+
+      <ContentBody>
+        {showCreate && (
+          <div className="mb-5">
+            <CreateTeamForm
+              newName={newName} onNameChange={setNewName}
+              newDescription={newDescription} onDescriptionChange={setNewDescription}
+              newColor={newColor} onColorChange={setNewColor}
+              onSubmit={handleCreate} onCancel={() => setShowCreate(false)}
+            />
+          </div>
+        )}
+
+        {sortedTeams.length === 0 && !showCreate ? (
+          <EmptyState onCreate={() => setShowCreate(true)} onAuto={() => setShowAutoTeam(true)} t={t} />
+        ) : (
+          <div className="rounded-card border border-primary/12 overflow-hidden">
+            <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-4 py-2 bg-secondary/20 border-b border-primary/10 typo-label uppercase tracking-wider text-foreground/55">
+              <span>{t.pipeline.agent_teams}</span>
+              <span className="text-right w-20">{ts.col_members}</span>
+              <span className="text-right w-20">{ts.col_status}</span>
+              <span className="w-[150px]" />
+            </div>
+            {sortedTeams.map((team) => (
+              <TeamRow
+                key={team.id}
+                team={team}
+                counts={teamCounts[team.id]}
+                confirmingDisband={confirmDisbandId === team.id}
+                onOpen={() => selectTeam(team.id)}
+                onRequestDisband={() => setConfirmDisbandId(team.id)}
+                onCancelDisband={() => setConfirmDisbandId(null)}
+                onConfirmDisband={() => void handleDisband(team.id)}
+                ts={ts}
+              />
+            ))}
+          </div>
+        )}
+      </ContentBody>
 
       <AutoTeamModal open={showAutoTeam} onClose={() => setShowAutoTeam(false)} />
-    </div>
+    </ContentBox>
   );
 }
+
+type TeamStudioStrings = ReturnType<typeof useTranslation>['t']['pipeline']['team_studio'];
 
 interface TeamRowProps {
   team: PersonaTeam;
@@ -154,6 +145,7 @@ interface TeamRowProps {
   onRequestDisband: () => void;
   onCancelDisband: () => void;
   onConfirmDisband: () => void;
+  ts: TeamStudioStrings;
 }
 
 function TeamRow({
@@ -164,24 +156,15 @@ function TeamRow({
   onRequestDisband,
   onCancelDisband,
   onConfirmDisband,
+  ts,
 }: TeamRowProps) {
   const memberCount = counts?.members ?? 0;
   return (
     <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-4 py-2.5 border-b border-primary/8 last:border-b-0 hover:bg-secondary/15 transition-colors">
-      {/* Identity */}
-      <button
-        type="button"
-        onClick={onOpen}
-        className="flex items-center gap-2.5 min-w-0 text-left group/row"
-        style={{ borderLeft: undefined }}
-      >
+      <button type="button" onClick={onOpen} className="flex items-center gap-2.5 min-w-0 text-left group/row">
         <span
           className="flex-shrink-0 w-7 h-7 rounded-interactive flex items-center justify-center border"
-          style={{
-            backgroundColor: `${team.color}1f`,
-            borderColor: `${team.color}40`,
-            color: team.color,
-          }}
+          style={{ backgroundColor: `${team.color}1f`, borderColor: `${team.color}40`, color: team.color }}
         >
           {team.icon ? <span className="text-sm leading-none">{team.icon}</span> : <Layers className="w-3.5 h-3.5" />}
         </span>
@@ -195,13 +178,11 @@ function TeamRow({
         </span>
       </button>
 
-      {/* Members */}
       <span className="w-20 text-right inline-flex items-center justify-end gap-1 typo-body text-foreground/70">
         <Users className="w-3.5 h-3.5 text-foreground/40" />
         {memberCount}
       </span>
 
-      {/* Status */}
       <span className="w-20 text-right">
         <span
           className={`inline-flex items-center px-2 py-0.5 rounded-full border typo-caption ${
@@ -210,11 +191,10 @@ function TeamRow({
               : 'bg-secondary/40 text-foreground/50 border-primary/15'
           }`}
         >
-          {team.enabled ? 'Active' : 'Draft'}
+          {team.enabled ? ts.status_active : ts.status_draft}
         </span>
       </span>
 
-      {/* Actions */}
       <span className="w-[150px] flex items-center justify-end gap-1.5">
         {confirmingDisband ? (
           <>
@@ -223,14 +203,14 @@ function TeamRow({
               onClick={onConfirmDisband}
               className="px-2 py-1 rounded-interactive border border-red-500/40 bg-red-500/15 text-red-300 typo-caption font-medium hover:bg-red-500/25 transition-colors"
             >
-              Disband
+              {ts.disband}
             </button>
             <button
               type="button"
               onClick={onCancelDisband}
               className="px-2 py-1 rounded-interactive border border-primary/15 text-foreground/60 typo-caption hover:bg-secondary/40 transition-colors"
             >
-              Cancel
+              {ts.cancel}
             </button>
           </>
         ) : (
@@ -240,13 +220,13 @@ function TeamRow({
               onClick={onOpen}
               className="inline-flex items-center gap-1 px-2 py-1 rounded-interactive border border-primary/20 bg-secondary/30 text-foreground typo-caption font-medium hover:bg-secondary/50 transition-colors"
             >
-              Open <ArrowRight className="w-3 h-3" />
+              {ts.open} <ArrowRight className="w-3 h-3" />
             </button>
             <button
               type="button"
               onClick={onRequestDisband}
-              aria-label="Disband team"
-              title="Disband team (keeps personas)"
+              aria-label={ts.disband}
+              title={ts.disband_title}
               className="p-1 rounded-interactive text-foreground/40 hover:bg-red-500/15 hover:text-red-300 transition-colors"
             >
               <Trash2 className="w-3.5 h-3.5" />

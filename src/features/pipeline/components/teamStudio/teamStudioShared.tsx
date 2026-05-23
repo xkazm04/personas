@@ -5,6 +5,7 @@ import { decomposeTeamAssignmentGoal, companionAssignTeam } from '@/api/pipeline
 import { useAgentStore } from '@/stores/agentStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import type { DecomposedStep } from '@/lib/bindings/DecomposedStep';
 import type { PersonaTeamMember } from '@/lib/bindings/PersonaTeamMember';
@@ -111,6 +112,8 @@ interface AddMemberMenuProps {
 }
 
 export function AddMemberMenu({ appearance = 'button' }: AddMemberMenuProps) {
+  const { t } = useTranslation();
+  const ts = t.pipeline.team_studio;
   const personas = useAgentStore((s) => s.personas);
   const teamMembers = usePipelineStore((s) => s.teamMembers) as PersonaTeamMember[];
   const addTeamMember = usePipelineStore((s) => s.addTeamMember);
@@ -154,7 +157,7 @@ export function AddMemberMenu({ appearance = 'button' }: AddMemberMenuProps) {
         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/20 bg-secondary/30 typo-body font-medium text-foreground hover:bg-secondary/50 transition-colors"
       >
         <Plus className="w-4 h-4" />
-        Add persona
+        {ts.add_persona}
       </button>
     );
 
@@ -173,7 +176,7 @@ export function AddMemberMenu({ appearance = 'button' }: AddMemberMenuProps) {
             >
               {available.length === 0 ? (
                 <p className="px-3 py-3 typo-caption text-foreground/50">
-                  Every persona is already on this team.
+                  {ts.add_persona_none}
                 </p>
               ) : (
                 available.map((p) => (
@@ -211,6 +214,8 @@ interface OrchestrationConsoleProps {
 }
 
 export function OrchestrationConsole({ teamId, members, layout = 'panel' }: OrchestrationConsoleProps) {
+  const { t } = useTranslation();
+  const ts = t.pipeline.team_studio;
   const [goal, setGoal] = useState('');
   const [decomposing, setDecomposing] = useState(false);
   const [steps, setSteps] = useState<DecomposedStep[] | null>(null);
@@ -255,10 +260,8 @@ export function OrchestrationConsole({ teamId, members, layout = 'panel' }: Orch
     <div className={layout === 'band' ? 'flex flex-col gap-3' : 'flex flex-col gap-4 h-full'}>
       <div className="flex items-center gap-2">
         <Sparkles className="w-4 h-4 text-violet-300" />
-        <h3 className="typo-label uppercase tracking-wider text-foreground/80">Orchestrate</h3>
-        <span className="typo-caption text-foreground/50">
-          Describe the goal — the orchestrator routes it to the right personas.
-        </span>
+        <h3 className="typo-label uppercase tracking-wider text-foreground/80">{ts.orchestrate}</h3>
+        <span className="typo-caption text-foreground/50">{ts.orchestrate_subtitle}</span>
       </div>
 
       <div className="flex flex-col gap-2">
@@ -266,7 +269,7 @@ export function OrchestrationConsole({ teamId, members, layout = 'panel' }: Orch
           value={goal}
           onChange={(e) => setGoal(e.target.value)}
           rows={layout === 'band' ? 2 : 3}
-          placeholder="e.g. Pull this week's customer feedback, triage the top themes, and draft a backlog summary."
+          placeholder={ts.orchestrate_placeholder}
           className="w-full resize-none rounded-input bg-secondary/30 border border-primary/20 text-foreground typo-body px-3 py-2 focus:outline-none focus:border-primary/60"
         />
         <div className="flex items-center gap-2">
@@ -277,7 +280,7 @@ export function OrchestrationConsole({ teamId, members, layout = 'panel' }: Orch
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/20 bg-secondary/30 typo-body font-medium text-foreground hover:bg-secondary/50 disabled:opacity-50 transition-colors"
           >
             {decomposing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CircleDot className="w-3.5 h-3.5" />}
-            Preview routing
+            {ts.preview_routing}
           </button>
           <button
             type="button"
@@ -286,7 +289,7 @@ export function OrchestrationConsole({ teamId, members, layout = 'panel' }: Orch
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-violet-500/30 bg-gradient-to-r from-violet-500/20 to-indigo-500/20 typo-body font-medium text-violet-200 hover:from-violet-500/30 hover:to-indigo-500/30 disabled:opacity-50 transition-colors"
           >
             {running ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowRight className="w-3.5 h-3.5" />}
-            Assign &amp; run
+            {ts.assign_and_run}
           </button>
         </div>
       </div>
@@ -299,7 +302,7 @@ export function OrchestrationConsole({ teamId, members, layout = 'panel' }: Orch
             animate={{ opacity: 1, y: 0 }}
             className="rounded-card border border-emerald-500/25 bg-emerald-950/30 px-3 py-2 typo-body text-emerald-300"
           >
-            Assignment dispatched — the orchestrator is routing steps to members now.
+            {ts.assignment_dispatched}
           </motion.div>
         )}
 
@@ -311,9 +314,7 @@ export function OrchestrationConsole({ teamId, members, layout = 'panel' }: Orch
             className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-2"
           >
             {steps.length === 0 ? (
-              <p className="typo-body text-foreground/50 px-1">
-                No routing produced — try a more specific goal.
-              </p>
+              <p className="typo-body text-foreground/50 px-1">{ts.no_routing}</p>
             ) : (
               steps.map((step, i) => {
                 const who = personaName(step.suggestedPersonaId);
@@ -334,7 +335,7 @@ export function OrchestrationConsole({ teamId, members, layout = 'panel' }: Orch
                           → {who}
                         </span>
                       ) : (
-                        <span className="typo-caption text-amber-300/80">unrouted</span>
+                        <span className="typo-caption text-amber-300/80">{ts.step_unrouted}</span>
                       )}
                     </div>
                     {step.description && (

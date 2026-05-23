@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Sparkles, SlidersHorizontal, ArrowLeft } from 'lucide-react';
+import { Sparkles, SlidersHorizontal, ArrowLeft, Users } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { ContentHeader } from '@/features/shared/components/layout/ContentLayout';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useTeamStudioData } from './useTeamStudioData';
 import {
   MemberTierChip,
@@ -36,6 +38,8 @@ interface TeamStudioSplitVariantProps {
 type RightMode = { kind: 'member'; memberId: string } | { kind: 'orchestrate' };
 
 export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioSplitVariantProps) {
+  const { t, tx } = useTranslation();
+  const ts = t.pipeline.team_studio;
   const { members, toggleUseCase, busyUseCases } = useTeamStudioData();
   const [mode, setMode] = useState<RightMode>({ kind: 'orchestrate' });
 
@@ -51,77 +55,87 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
   const selected =
     mode.kind === 'member' ? members.find((m) => m.memberId === mode.memberId) ?? null : null;
 
+  const memberCountLabel = tx(
+    members.length === 1 ? ts.members_count_one : ts.members_count_other,
+    { count: members.length },
+  );
+
   return (
-    <div className="flex-1 min-h-0 flex overflow-hidden">
-      {/* Left — roster */}
-      <div className="flex-shrink-0 w-[300px] flex flex-col border-r border-primary/10 bg-secondary/10">
-        <div className="flex-shrink-0 px-4 py-3 border-b border-primary/10">
-          <div className="flex items-center gap-2 min-w-0">
-            {onBack && (
-              <button
-                type="button"
-                onClick={onBack}
-                aria-label="Back to teams"
-                title="Back to teams"
-                className="flex-shrink-0 -ml-1 p-1 rounded-interactive text-foreground/60 hover:bg-secondary/40 hover:text-foreground transition-colors"
-              >
-                <ArrowLeft className="w-4 h-4" />
-              </button>
-            )}
-            <h2 className="typo-heading font-semibold text-foreground truncate">{teamName}</h2>
+    <>
+      <ContentHeader
+        icon={<Users className="w-5 h-5 text-indigo-300" />}
+        iconColor="indigo"
+        title={ts.header_label}
+        subtitle={teamName}
+        actions={
+          onBack ? (
+            <button
+              type="button"
+              onClick={onBack}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/20 bg-secondary/30 typo-body font-medium text-foreground hover:bg-secondary/50 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              {ts.teams_header_label}
+            </button>
+          ) : undefined
+        }
+      />
+
+      <div className="flex-1 min-h-0 flex overflow-hidden">
+        {/* Left — roster */}
+        <div className="flex-shrink-0 w-[300px] flex flex-col border-r border-primary/10 bg-secondary/10">
+          <div className="flex-shrink-0 px-4 py-2.5 border-b border-primary/10">
+            <p className="typo-caption text-foreground/60">{memberCountLabel}</p>
           </div>
-          <p className="typo-caption text-foreground/60 mt-0.5">
-            {members.length} {members.length === 1 ? 'member' : 'members'}
-          </p>
+
+          {/* Orchestrate entry — pinned at top of the list as the primary action */}
+          <button
+            type="button"
+            onClick={() => setMode({ kind: 'orchestrate' })}
+            aria-pressed={mode.kind === 'orchestrate'}
+            className={`flex-shrink-0 mx-2 mt-2 mb-1 flex items-center gap-2 px-3 py-2.5 rounded-card border transition-colors ${
+              mode.kind === 'orchestrate'
+                ? 'border-violet-500/40 bg-gradient-to-r from-violet-500/15 to-indigo-500/15 text-violet-200'
+                : 'border-primary/15 bg-secondary/20 text-foreground hover:bg-secondary/40'
+            }`}
+          >
+            <Sparkles className="w-4 h-4 flex-shrink-0" />
+            <span className="typo-body font-medium">{ts.orchestrate_assignment}</span>
+          </button>
+
+          <div className="flex-1 min-h-0 overflow-y-auto px-2 pb-2 flex flex-col gap-1">
+            {members.map((m) => (
+              <RosterRow
+                key={m.memberId}
+                member={m}
+                selected={mode.kind === 'member' && mode.memberId === m.memberId}
+                onClick={() => setMode({ kind: 'member', memberId: m.memberId })}
+              />
+            ))}
+            <div className="mt-1">
+              <AddMemberMenu appearance="dashed" />
+            </div>
+          </div>
         </div>
 
-        {/* Orchestrate entry — pinned at top of the list as the primary action */}
-        <button
-          type="button"
-          onClick={() => setMode({ kind: 'orchestrate' })}
-          aria-pressed={mode.kind === 'orchestrate'}
-          className={`flex-shrink-0 mx-2 mt-2 mb-1 flex items-center gap-2 px-3 py-2.5 rounded-card border transition-colors ${
-            mode.kind === 'orchestrate'
-              ? 'border-violet-500/40 bg-gradient-to-r from-violet-500/15 to-indigo-500/15 text-violet-200'
-              : 'border-primary/15 bg-secondary/20 text-foreground hover:bg-secondary/40'
-          }`}
-        >
-          <Sparkles className="w-4 h-4 flex-shrink-0" />
-          <span className="typo-body font-medium">Orchestrate an assignment</span>
-        </button>
-
-        <div className="flex-1 min-h-0 overflow-y-auto px-2 pb-2 flex flex-col gap-1">
-          {members.map((m) => (
-            <RosterRow
-              key={m.memberId}
-              member={m}
-              selected={mode.kind === 'member' && mode.memberId === m.memberId}
-              onClick={() => setMode({ kind: 'member', memberId: m.memberId })}
+        {/* Right — dynamic pane */}
+        <div className="flex-1 min-h-0 overflow-hidden px-5 py-4">
+          {mode.kind === 'orchestrate' ? (
+            <OrchestrationConsole teamId={teamId} members={members} layout="panel" />
+          ) : selected ? (
+            <MemberAdjustPane
+              member={selected}
+              busyUseCases={busyUseCases}
+              onToggle={(ucId, enabled) => void toggleUseCase(selected.personaId, ucId, enabled)}
             />
-          ))}
-          <div className="mt-1">
-            <AddMemberMenu appearance="dashed" />
-          </div>
+          ) : (
+            <div className="h-full flex items-center justify-center typo-body text-foreground/40">
+              {ts.select_member}
+            </div>
+          )}
         </div>
       </div>
-
-      {/* Right — dynamic pane */}
-      <div className="flex-1 min-h-0 overflow-hidden px-5 py-4">
-        {mode.kind === 'orchestrate' ? (
-          <OrchestrationConsole teamId={teamId} members={members} layout="panel" />
-        ) : selected ? (
-          <MemberAdjustPane
-            member={selected}
-            busyUseCases={busyUseCases}
-            onToggle={(ucId, enabled) => void toggleUseCase(selected.personaId, ucId, enabled)}
-          />
-        ) : (
-          <div className="h-full flex items-center justify-center typo-body text-foreground/40">
-            Select a member to adjust its capabilities.
-          </div>
-        )}
-      </div>
-    </div>
+    </>
   );
 }
 
@@ -134,6 +148,7 @@ function RosterRow({
   selected: boolean;
   onClick: () => void;
 }) {
+  const { t, tx } = useTranslation();
   return (
     <button
       type="button"
@@ -149,7 +164,10 @@ function RosterRow({
       <div className="min-w-0 flex-1">
         <div className="typo-body font-medium text-foreground truncate">{member.name}</div>
         <div className="typo-caption text-foreground/50">
-          {member.activeUseCaseCount}/{member.useCases.length} active
+          {tx(t.pipeline.team_studio.capabilities_active, {
+            active: member.activeUseCaseCount,
+            total: member.useCases.length,
+          })}
         </div>
       </div>
       <MemberTierChip tier={member.modelTier} />
@@ -166,6 +184,7 @@ function MemberAdjustPane({
   busyUseCases: ReadonlySet<string>;
   onToggle: (useCaseId: string, enabled: boolean) => void;
 }) {
+  const { t, tx } = useTranslation();
   return (
     <div className="h-full flex flex-col gap-4">
       {/* Identity header */}
@@ -190,15 +209,18 @@ function MemberAdjustPane({
       {/* Capabilities */}
       <div className="flex items-center gap-2 flex-shrink-0">
         <SlidersHorizontal className="w-4 h-4 text-foreground/60" />
-        <h4 className="typo-label uppercase tracking-wider text-foreground/80">Capabilities</h4>
+        <h4 className="typo-label uppercase tracking-wider text-foreground/80">{t.pipeline.team_studio.capabilities}</h4>
         <span className="typo-caption text-foreground/50">
-          {member.activeUseCaseCount} of {member.useCases.length} active
+          {tx(t.pipeline.team_studio.capabilities_active, {
+            active: member.activeUseCaseCount,
+            total: member.useCases.length,
+          })}
         </span>
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-1 pr-1">
         {member.useCases.length === 0 ? (
-          <p className="typo-body text-foreground/40 px-2">This persona has no capabilities defined.</p>
+          <p className="typo-body text-foreground/40 px-2">{t.pipeline.team_studio.no_capabilities_persona}</p>
         ) : (
           member.useCases.map((uc) => (
             <div key={uc.id} className="rounded-card border border-primary/8 bg-secondary/15">
