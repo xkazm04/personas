@@ -33,6 +33,14 @@ timestamp — the next session can recognize it as abandoned.
 ## Active
 
 
+- **[2026-05-23 22:18 — started] /friend — team-presets UI polish round**
+  - **Source:** User-driven polish round on the team-presets gallery + adoption modal. A: card list (tags→own row, members→icon, drop description). B: detail modal (z-layering over header, click member to toggle, member descriptions from schema, "Adopt N members" by selection, customization-form readability + transition). Includes a backend addition: optional roles filter on `adopt_team_preset` for honest subset adoption.
+  - **Paths:** `src/features/templates/sub_presets/{PresetLibraryPage,PresetPreviewModal,PresetQuestionnaireForm}.tsx`, `src/api/templates/teamPresets.ts`, `src-tauri/src/engine/team_preset_adopter.rs`, `src-tauri/src/commands/design/template_adopt.rs`, `src/i18n/locales/en.json` (additive `templates.presets.*`), `src/lib/bindings/` (regen)
+  - **Status:** started
+  - **Branch:** `worktree-friend-preset-polish-221830`
+  - **Worktree:** `.claude/worktrees/friend-preset-polish-221830/`
+  - **Note:** No active preset session in the ledger; the recent `62e3775dc` preset-bugfix is already committed. Path-disjoint from the active athena-orb companion session. Branched from master `2aabb2909`.
+
 - **[2026-05-23 18:00 — completed (C4, merged 4d3f65e09)] /friend — assignment templates (Phase C4 + docs sync)**
   - **Source:** Continuation — deferred Phase C items from the team-assignment orchestration arc (merged at master `1bbb2bbc3`). C4 = saved assignment templates (reusable goals + step lists per team). Plus docs sync.
   - **Status:** completed (pending user merge decision)
