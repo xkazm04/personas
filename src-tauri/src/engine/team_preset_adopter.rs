@@ -62,6 +62,50 @@ const PROGRESS_ADOPTING: &str = "adopting";
 const PROGRESS_DONE: &str = "done";
 const PROGRESS_FAILED: &str = "failed";
 
+/// Pipeline role every preset member is stored under. The preset
+/// manifest's `role` is a semantic label (used for connection wiring +
+/// display), NOT a `persona_team_members.role` — that column is
+/// CHECK-constrained to the execution-runner's pipeline-role enum
+/// (orchestrator / worker / reviewer / router). `worker` is the neutral
+/// default; presets are collaborative agent bundles rather than strict
+/// orchestrator/worker pipelines, so every member lands as `worker`.
+const MEMBER_PIPELINE_ROLE: &str = "worker";
+
+/// Build the `persona_team_members.config` JSON that preserves the
+/// preset's semantic role label, since it can't live in the constrained
+/// `role` column. Shape: `{"preset_role":"<role>"}`. The UI's modal
+/// reads the role from the manifest directly, but read-back paths
+/// (e.g. the Playwright spec, a future "team came from preset X" badge)
+/// recover the semantic role from here.
+fn preset_role_config(role: &str) -> String {
+    serde_json::json!({ "preset_role": role }).to_string()
+}
+
+/// `instant_adopt_template_inner` expects the template's DESIGN — the
+/// `payload` object — as its `design_result_json`, NOT the whole
+/// on-disk template file (`{ id, name, payload: { … } }`). The
+/// frontend Dev-Clone shortcut passes `JSON.stringify(template.payload)`
+/// for exactly this reason; passing the full file instead yields an
+/// empty persona (default "You are a helpful AI assistant." prompt,
+/// no parameters) because the v3 normalizer + parameter-population
+/// both look for `persona` / `adoption_questions` at the top level.
+///
+/// `load_template_design_by_id` returns the full file (so the
+/// questionnaire-schema reader can pointer into `/payload/...`); this
+/// helper unwraps the `payload` for the adopt path. Legacy flat
+/// templates without a `payload` key fall through unchanged.
+fn design_payload_json(full_file_json: &str) -> String {
+    match serde_json::from_str::<serde_json::Value>(full_file_json) {
+        Ok(v) => match v.get("payload") {
+            Some(payload) => {
+                serde_json::to_string(payload).unwrap_or_else(|_| full_file_json.to_string())
+            }
+            None => full_file_json.to_string(),
+        },
+        Err(_) => full_file_json.to_string(),
+    }
+}
+
 fn emit_progress(
     app: &Option<AppHandle>,
     preset_id: &str,
@@ -253,12 +297,13 @@ pub fn adopt_preset(
         //    sees its own questions — keeps the
         //    `instant_adopt_template_inner` contract narrow (it
         //    receives only the overrides relevant to ONE template).
+        //    Pass the template's DESIGN (payload), not the whole file.
         let member_overrides = parameter_overrides.and_then(|all| all.get(&m.role));
         let adopt_value =
             match instant_adopt_template_inner(
                 state,
                 m.template_id.clone(),
-                design_json,
+                design_payload_json(&design_json),
                 member_overrides,
             ) {
                 Ok(v) => v,
@@ -315,15 +360,22 @@ pub fn adopt_preset(
             }
         }
 
-        // d. Add to team at the manifest position.
+        // d. Add to team at the manifest position. The preset's `role` is a
+        //    semantic LABEL ("capture", "triage", …) used for connection
+        //    wiring; it is NOT a valid `persona_team_members.role`, which is
+        //    CHECK-constrained to the pipeline-role enum (orchestrator /
+        //    worker / reviewer / router) the execution runner understands.
+        //    So we store every preset member as the neutral `worker` role
+        //    and preserve the semantic label in `config` (JSON) for the UI
+        //    and read-back.
         let team_member = match team_repo::add_member(
             &state.db,
             &team.id,
             &persona_id,
-            Some(m.role.clone()),
+            Some(MEMBER_PIPELINE_ROLE.to_string()),
             Some(m.x),
             Some(m.y),
-            None,
+            Some(preset_role_config(&m.role)),
         ) {
             Ok(tm) => tm,
             Err(err) => {
@@ -527,7 +579,7 @@ pub fn retry_failed_members(
         let adopt_value = match instant_adopt_template_inner(
             state,
             manifest_member.template_id.clone(),
-            design_json,
+            design_payload_json(&design_json),
             member_overrides,
         ) {
             Ok(v) => v,
@@ -582,14 +634,17 @@ pub fn retry_failed_members(
             }
         }
 
+        // See adopt_preset: the preset role is a semantic label, not a
+        // pipeline-role enum value — store `worker` + stash the label in
+        // config.
         let team_member = match team_repo::add_member(
             &state.db,
             team_id,
             &persona_id,
-            Some(role.clone()),
+            Some(MEMBER_PIPELINE_ROLE.to_string()),
             Some(manifest_member.x),
             Some(manifest_member.y),
-            None,
+            Some(preset_role_config(role)),
         ) {
             Ok(tm) => tm,
             Err(err) => {

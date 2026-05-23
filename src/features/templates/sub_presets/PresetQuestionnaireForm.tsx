@@ -164,12 +164,10 @@ function MemberSection({
   const hasQuestions = questions.length > 0;
 
   return (
-    <div
-      data-testid={`preset-questionnaire-member-${member.role}`}
-      className="rounded-card border border-primary/10 bg-background/40"
-    >
+    <div className="rounded-card border border-primary/10 bg-background/40">
       <button
         type="button"
+        data-testid={`preset-questionnaire-member-${member.role}`}
         onClick={hasQuestions ? onToggle : undefined}
         disabled={!hasQuestions}
         className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-secondary/15 disabled:cursor-default disabled:hover:bg-transparent rounded-card"

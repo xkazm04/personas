@@ -80,6 +80,18 @@ interface ListMembersResult {
   team_id: string;
   persona_id: string;
   role: string;
+  config: string | null;
+}
+
+/** Preset semantic role lives in member.config JSON, not the
+ *  pipeline-role `role` column (always "worker" for preset members). */
+function presetRoleOf(m: ListMembersResult): string | null {
+  if (!m.config) return null;
+  try {
+    return (JSON.parse(m.config) as { preset_role?: string }).preset_role ?? null;
+  } catch {
+    return null;
+  }
 }
 
 interface ListConnectionsResult {
@@ -198,6 +210,14 @@ test('preset-team adoption: backlog-execution', async () => {
     await waitForVisible(`[data-testid="preset-row-${role}"]`, 4_000);
   }
 
+  // Snapshot existing team ids so we identify the team THIS run creates,
+  // not a same-named team left by a prior run (possibly an empty shell
+  // from a failed adoption).
+  const beforeResp = await invokeCommandRaw('list_teams');
+  const beforeIds = new Set(
+    ((beforeResp.result as ListTeamsResult[]) ?? []).map((t) => t.id),
+  );
+
   // Fire adoption.
   await clickTestId('preset-adopt-all-button');
 
@@ -208,14 +228,12 @@ test('preset-team adoption: backlog-execution', async () => {
   const okCount = [...settled.values()].filter((s) => s === 'done').length;
   expect(okCount).toBeGreaterThan(0); // at least one member must have landed
 
-  // Verify the new team exists with the right name. invokeCommandRaw
-  // unwraps the {success, result} envelope; result is the raw command
-  // return.
+  // Verify the NEW team (id absent from the pre-adopt snapshot).
   const teamsResp = await invokeCommandRaw('list_teams');
   expect(teamsResp.success).toBe(true);
   const teams = (teamsResp.result as ListTeamsResult[]) ?? [];
-  const team = teams.find((t) => t.name === EXPECTED_TEAM_NAME);
-  expect(team, `Team named "${EXPECTED_TEAM_NAME}" should exist`).toBeTruthy();
+  const team = teams.find((t) => !beforeIds.has(t.id) && t.name === EXPECTED_TEAM_NAME);
+  expect(team, `newly-adopted team "${EXPECTED_TEAM_NAME}" should exist`).toBeTruthy();
   expect(team!.color).toBe('#F59E0B');
 
   // Verify the bound group exists.
@@ -233,10 +251,11 @@ test('preset-team adoption: backlog-execution', async () => {
   const members = (membersResp.result as ListMembersResult[]) ?? [];
   expect(members.length).toBe(okCount);
 
-  // Each member's role label must be in our expected set and have a
-  // successfully-adopted persona id.
+  // Each member's semantic preset role (from config) must be in our
+  // expected set; the DB `role` column is the pipeline role "worker".
   for (const m of members) {
-    expect(EXPECTED_ROLES).toContain(m.role);
+    expect(m.role).toBe('worker');
+    expect(EXPECTED_ROLES).toContain(presetRoleOf(m));
     expect(m.persona_id).toBeTruthy();
     expect(m.team_id).toBe(team!.id);
   }

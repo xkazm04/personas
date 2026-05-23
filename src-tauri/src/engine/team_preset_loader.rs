@@ -62,8 +62,54 @@ use crate::error::AppError;
 const PRESETS_RELATIVE_DIR: &str = "scripts/templates/_team_presets";
 const SUPPORTED_SCHEMA_VERSION: i32 = 1;
 
+/// Resolve the repo's `scripts/templates` root, robust to the process
+/// working directory.
+///
+/// `tauri dev` runs the compiled binary with CWD = `src-tauri/`, while
+/// `cargo test` and a repo-root invocation run with CWD = repo root.
+/// A bare `scripts/templates` relative path therefore resolves only in
+/// the latter case — which is exactly why the Presets gallery came up
+/// empty under `tauri dev` (the loader is the source of truth for the
+/// gallery, unlike regular templates which the frontend bundles via
+/// Vite's import.meta.glob and never touch this path).
+///
+/// We check candidates in order and return the first that exists:
+///   1. `scripts/templates`                 (CWD = repo root)
+///   2. `../scripts/templates`              (CWD = src-tauri, dev)
+///   3. `{CARGO_MANIFEST_DIR}/../scripts/templates`
+///      (compile-time anchor — CARGO_MANIFEST_DIR is the src-tauri dir,
+///       so its parent is the repo root; reliable in dev + tests)
+///
+/// Falls back to candidate 1 if none exist, so callers still get a
+/// well-formed (if empty) result rather than a panic.
+fn templates_root() -> PathBuf {
+    let candidates = [
+        PathBuf::from("scripts/templates"),
+        PathBuf::from("../scripts/templates"),
+        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("..")
+            .join("scripts")
+            .join("templates"),
+    ];
+    for c in &candidates {
+        if c.is_dir() {
+            return c.clone();
+        }
+    }
+    candidates[0].clone()
+}
+
 fn presets_dir() -> PathBuf {
-    PathBuf::from(PRESETS_RELATIVE_DIR)
+    // Prefer resolving under the located templates root so dev + tests
+    // agree; fall back to the bare relative path if the root resolver
+    // somehow yields a non-existent base (keeps the old behavior).
+    let root = templates_root();
+    let under_root = root.join("_team_presets");
+    if under_root.is_dir() {
+        under_root
+    } else {
+        PathBuf::from(PRESETS_RELATIVE_DIR)
+    }
 }
 
 /// Recursive deep-merge: overlay onto canonical in place.
@@ -337,13 +383,13 @@ pub fn load_template_design_by_id(template_id: &str) -> Result<String, AppError>
             "template_id must not contain path separators".into(),
         ));
     }
-    let templates_dir = std::path::Path::new("scripts/templates");
-    if !templates_dir.exists() {
+    let templates_dir = templates_root();
+    if !templates_dir.is_dir() {
         return Err(AppError::NotFound(format!(
             "Templates directory missing; cannot resolve '{template_id}'"
         )));
     }
-    let categories = std::fs::read_dir(templates_dir)
+    let categories = std::fs::read_dir(&templates_dir)
         .map_err(|e| AppError::Validation(format!("read_dir templates: {e}")))?;
     let target_filename = format!("{template_id}.json");
     for cat_entry in categories.flatten() {

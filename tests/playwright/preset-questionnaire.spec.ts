@@ -59,7 +59,21 @@ interface ListMembersResult {
   team_id: string;
   persona_id: string;
   role: string;
+  config: string | null;
 }
+
+/** The preset's semantic role label is stored in member.config JSON
+ *  ({"preset_role":"coach"}), not the CHECK-constrained `role` column
+ *  (which is the pipeline role "worker" for preset members). */
+function presetRoleOf(m: ListMembersResult): string | null {
+  if (!m.config) return null;
+  try {
+    return (JSON.parse(m.config) as { preset_role?: string }).preset_role ?? null;
+  } catch {
+    return null;
+  }
+}
+
 interface PersonaParameter {
   key: string;
   value: unknown;
@@ -175,26 +189,36 @@ test('preset questionnaire: parameter overrides land as persona.parameters value
   // Small settle so React commits both onChange updates before adopt.
   await sleep(300);
 
+  // Snapshot existing team ids so we can identify the team THIS adoption
+  // creates — the test DB may already hold same-named teams from prior
+  // runs, so a name-only lookup could read the wrong (default-adopted)
+  // team and make the override assertion meaningless.
+  const beforeResp = await invokeCommandRaw('list_teams');
+  const beforeIds = new Set(
+    ((beforeResp.result as ListTeamsResult[]) ?? []).map((t) => t.id),
+  );
+
   // Adopt.
   await clickTestId('preset-adopt-all-button');
   const status = await waitForRowSettled(ROLE, ADOPTION_TIMEOUT_MS);
   expect(status).toBe('done');
 
-  // Resolve team → member → persona.
+  // Resolve the NEW team (id absent from the pre-adopt snapshot).
   const teamsResp = await invokeCommandRaw('list_teams');
   expect(teamsResp.success).toBe(true);
-  const team = ((teamsResp.result as ListTeamsResult[]) ?? []).find(
-    (t) => t.name === EXPECTED_TEAM_NAME,
+  const allTeams = (teamsResp.result as ListTeamsResult[]) ?? [];
+  const team = allTeams.find(
+    (t) => !beforeIds.has(t.id) && t.name === EXPECTED_TEAM_NAME,
   );
-  expect(team, `Team "${EXPECTED_TEAM_NAME}" should exist`).toBeTruthy();
+  expect(team, `newly-adopted team "${EXPECTED_TEAM_NAME}" should exist`).toBeTruthy();
 
   const membersResp = await invokeCommandRaw('list_team_members', {
     teamId: team!.id,
   });
   expect(membersResp.success).toBe(true);
   const members = (membersResp.result as ListMembersResult[]) ?? [];
-  const coach = members.find((m) => m.role === ROLE);
-  expect(coach, `member role "${ROLE}" should exist`).toBeTruthy();
+  const coach = members.find((m) => presetRoleOf(m) === ROLE);
+  expect(coach, `member with preset role "${ROLE}" should exist`).toBeTruthy();
   expect(coach!.persona_id).toBeTruthy();
 
   // Read back the persona's parameters and assert the overrides landed.
