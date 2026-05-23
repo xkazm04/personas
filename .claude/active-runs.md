@@ -32,6 +32,14 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+- **[2026-05-24 — started] idea-bb6d6dc7 — Polished NumberStepper + Slider primitives**
+  - **Source:** Requirement `idea-bb6d6dc7-polished-numeric-stepper-slide`. Build a `<NumberStepper>` (28×28 minus/plus buttons flanking a centered value, hold-to-repeat acceleration, clamp to min/max/step, optional empty) and a `<Slider>` (native range wrapper using the existing `--slider-progress` CSS fill, keyboard arrows, live value bubble on drag). Adopt them in BudgetControls (budget + turns), AutomationConditionStep (timeout secs → stepper), RegressionPanelBaseline (threshold 1-50 → slider).
+  - **Paths:** `src/features/shared/components/forms/NumberStepper.tsx` (new), `src/features/shared/components/forms/Slider.tsx` (new), `src/features/shared/components/forms/__tests__/` (new), `src/features/agents/sub_model_config/components/BudgetControls.tsx`, `src/features/agents/sub_connectors/components/automation/AutomationConditionStep.tsx`, `src/features/agents/sub_lab/components/regression/RegressionPanelBaseline.tsx`, `src/i18n/locales/en.json` (additive `common.increase`/`common.decrease` only), `.claude/active-runs.md`
+  - **Status:** started
+  - **Branch:** worktree-stepper-slider-bb6d6dc7
+  - **Worktree:** .claude/worktrees/stepper-slider-bb6d6dc7/
+  - **Note:** Path-disjoint from active sessions. SortableHeader session works `shared/components/display/` (this is `shared/components/forms/`); fleet=plugins/fleet, goalplan=agents/sub_planner, companion=plugins/companion, team-studio=pipeline — none touch sub_model_config / sub_connectors/automation / sub_lab/regression. en.json: additive `common.increase`/`common.decrease` only.
+
 - **[2026-05-24 — started] /architect — encrypted cross-device persona continuity (idea-720932d3)**
   - **Source:** Routed from `/friend` because the idea is moonshot_architect-scale: extend `engine/p2p/manifest_sync.rs` from one-way exposure-manifest sharing into bidirectional, conflict-aware E2E sync of the persona workspace (definitions/memories/schedules/triggers) across one user's own devices over the LAN/QUIC mesh, zero cloud. This run produces a rigorous ADR + phased rollout and (likely) queues; any execute is limited to a locally-verifiable additive slice (pure merge fn + unit tests, additive schema) — no two-device claims without a harness.
   - **Paths (read/design):** `src-tauri/src/engine/p2p/**`, `src-tauri/src/commands/network/**`, `src/features/sharing/**`, persona-definition repos/schema under `src-tauri/src/db/**`. Vault: `Architect/{scans,decisions,backlog,weak-patterns}`. Working-tree edits (if any execute): scoped additive only.
