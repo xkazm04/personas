@@ -211,15 +211,33 @@ pub fn instant_adopt_template(
     design_result_json: String,
 ) -> Result<serde_json::Value, AppError> {
     require_auth_sync(&state)?;
-    instant_adopt_template_inner(&state, template_name, design_result_json)
+    instant_adopt_template_inner(&state, template_name, design_result_json, None)
 }
 
 /// Inner function callable from both Tauri command and test automation.
 /// Uses create_persona_atomically to create persona + tools + triggers in one transaction.
+///
+/// `parameter_overrides` is an optional map of `question_id -> answer`
+/// used by the preset adopter's combined-questionnaire path: the
+/// answers are forwarded verbatim to
+/// `populate_persona_parameters_from_design`, which prefers them over
+/// the template's `default` values when populating
+/// `persona.parameters[]`. Existing callers (the single-template
+/// "Adopt with defaults" path, the test bridge) pass `None` and the
+/// behavior is unchanged.
+///
+/// Why a separate channel instead of mutating the design JSON before
+/// calling this? `check_template_integrity` runs FIRST on
+/// `design_result_json` and would reject any pre-mutation tampering.
+/// Threading overrides through the existing
+/// `populate_persona_parameters_from_design(... answers)` arg lands
+/// the user's customization without touching the integrity-checked
+/// bytes.
 pub fn instant_adopt_template_inner(
     state: &Arc<AppState>,
     template_name: String,
     design_result_json: String,
+    parameter_overrides: Option<&std::collections::HashMap<String, serde_json::Value>>,
 ) -> Result<serde_json::Value, AppError> {
     use super::n8n_transform::types::{
         N8nConnectorRef, N8nPersonaOutput, N8nToolDraft, N8nTriggerDraft,
@@ -557,10 +575,43 @@ pub fn instant_adopt_template_inner(
     // The instant-adopt path doesn't carry user answers (the test bridge
     // skips the questionnaire) so every parameter lands at its template
     // default — exactly what the user expects from "adopt with defaults".
+    //
+    // The preset combined-questionnaire path threads its per-question
+    // overrides through `parameter_overrides`; we stringify the JSON
+    // values here to match the `HashMap<String, String>` answers
+    // contract `populate_persona_parameters_from_design` already
+    // expects from the build-session UI path. The stringification
+    // covers every type the questionnaire renders today: text,
+    // number, select, boolean, vault category — all of which round-
+    // trip through their string forms identically (the downstream
+    // normalizer re-parses them per the question's declared `type`).
+    //
     // Best-effort: a failure here logs and continues; the persona still
     // works, it just won't have tunable parameters surfaced.
     if let Some(pid) = created_persona_id.as_deref() {
-        if let Err(e) = populate_persona_parameters_from_design(&state.db, pid, &design, None) {
+        let answers: Option<std::collections::HashMap<String, String>> =
+            parameter_overrides.map(|m| {
+                m.iter()
+                    .map(|(qid, val)| {
+                        let s = match val {
+                            serde_json::Value::String(s) => s.clone(),
+                            serde_json::Value::Null => String::new(),
+                            serde_json::Value::Bool(b) => {
+                                if *b { "true".to_string() } else { "false".to_string() }
+                            }
+                            serde_json::Value::Number(n) => n.to_string(),
+                            other => serde_json::to_string(other).unwrap_or_default(),
+                        };
+                        (qid.clone(), s)
+                    })
+                    .collect()
+            });
+        if let Err(e) = populate_persona_parameters_from_design(
+            &state.db,
+            pid,
+            &design,
+            answers.as_ref(),
+        ) {
             tracing::warn!(
                 persona_id = %pid,
                 error = %e,

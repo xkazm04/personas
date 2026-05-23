@@ -68,10 +68,26 @@ export const getPresetAdoptionSchema = (presetId: string) =>
  * with the team + the members that did succeed so they can retry the
  * rest without losing progress.
  */
-export const adoptTeamPreset = (id: string) =>
+/**
+ * `parameterOverrides` shape: `{ [role]: { [questionId]: value } }`.
+ * Outer key is the preset-manifest role (`"capture"`, `"triage"`, …);
+ * inner key is an `adoption_questions[].id` (e.g. `"aq_task_fields"`);
+ * value is the user's answer. Pass `null` / omit to adopt every
+ * member with template defaults — the "Adopt with defaults" CTA.
+ */
+export type PresetParameterOverrides = Record<
+  string,
+  Record<string, unknown>
+>;
+
+export const adoptTeamPreset = (
+  id: string,
+  parameterOverrides: PresetParameterOverrides | null = null,
+) =>
   invoke<AdoptedTeamPresetResult>("adopt_team_preset", {
     id,
     language: currentLanguage(),
+    parameterOverrides,
   });
 
 /**
@@ -90,6 +106,7 @@ export const retryTeamPresetMembers = (
   teamId: string,
   groupId: string | null,
   roles: string[],
+  parameterOverrides: PresetParameterOverrides | null = null,
 ) =>
   invoke<AdoptedTeamPresetResult>("retry_team_preset_members", {
     presetId,
@@ -97,4 +114,5 @@ export const retryTeamPresetMembers = (
     groupId,
     roles,
     language: currentLanguage(),
+    parameterOverrides,
   });

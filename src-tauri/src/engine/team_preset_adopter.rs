@@ -123,11 +123,26 @@ fn persona_id_from_adopt_value(value: &serde_json::Value) -> Result<String, AppE
 /// `language` selects the locale-overlay sibling (`<id>.<lang>.json`) so
 /// the persisted team + group + member names match what the user saw in
 /// the preview modal. `None` adopts the canonical English manifest.
+///
+/// `parameter_overrides` carries the combined-questionnaire answers
+/// from the preview modal: `role -> question_id -> value`. The outer
+/// key is the preset-manifest role (`"capture"`, `"triage"`, …) so we
+/// can target each member's overrides precisely; the inner map is
+/// forwarded to `instant_adopt_template_inner` which lands the
+/// answers as `persona.parameters[]` values. `None` (or an empty map)
+/// adopts every member with its template defaults — the "Adopt with
+/// defaults" CTA path.
 pub fn adopt_preset(
     state: &Arc<AppState>,
     app: Option<AppHandle>,
     preset_id: &str,
     language: Option<&str>,
+    parameter_overrides: Option<
+        &std::collections::HashMap<
+            String,
+            std::collections::HashMap<String, serde_json::Value>,
+        >,
+    >,
 ) -> Result<AdoptedTeamPresetResult, AppError> {
     let preset: TeamPreset = team_preset_loader::get_preset(preset_id, language)?;
 
@@ -233,9 +248,19 @@ pub fn adopt_preset(
         };
 
         // b. Adopt via the existing single-template path (atomic +
-        //    integrity-checked).
+        //    integrity-checked). The per-role override map is extracted
+        //    from the outer `parameter_overrides` so each member only
+        //    sees its own questions — keeps the
+        //    `instant_adopt_template_inner` contract narrow (it
+        //    receives only the overrides relevant to ONE template).
+        let member_overrides = parameter_overrides.and_then(|all| all.get(&m.role));
         let adopt_value =
-            match instant_adopt_template_inner(state, m.template_id.clone(), design_json) {
+            match instant_adopt_template_inner(
+                state,
+                m.template_id.clone(),
+                design_json,
+                member_overrides,
+            ) {
                 Ok(v) => v,
                 Err(err) => {
                     let reason = err.to_string();
@@ -407,6 +432,12 @@ pub fn retry_failed_members(
     group_id: Option<&str>,
     roles_to_retry: &[String],
     language: Option<&str>,
+    parameter_overrides: Option<
+        &std::collections::HashMap<
+            String,
+            std::collections::HashMap<String, serde_json::Value>,
+        >,
+    >,
 ) -> Result<AdoptedTeamPresetResult, AppError> {
     let preset: TeamPreset = team_preset_loader::get_preset(preset_id, language)?;
 
@@ -492,10 +523,12 @@ pub fn retry_failed_members(
                 }
             };
 
+        let member_overrides = parameter_overrides.and_then(|all| all.get(role));
         let adopt_value = match instant_adopt_template_inner(
             state,
             manifest_member.template_id.clone(),
             design_json,
+            member_overrides,
         ) {
             Ok(v) => v,
             Err(err) => {

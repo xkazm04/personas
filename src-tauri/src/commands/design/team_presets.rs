@@ -84,6 +84,12 @@ pub fn get_preset_adoption_schema(
 /// modal. Switching language AFTER adoption does not retranslate
 /// existing teams (they're frozen at the adopted locale).
 ///
+/// `parameter_overrides` carries the combined questionnaire answers
+/// from the preview modal: outer key is the preset-manifest role,
+/// inner key is the question id, value is the answer (any JSON
+/// type; downstream code coerces per the question's declared
+/// `type`). Omit / pass `None` to adopt with template defaults.
+///
 /// Emits `team-preset-adopt-progress` events per member transition so
 /// the preview modal can render a per-row status table. Returns
 /// `AdoptedTeamPresetResult` with the new team_id, optional group_id,
@@ -94,9 +100,21 @@ pub fn adopt_team_preset(
     app: AppHandle,
     id: String,
     language: Option<String>,
+    parameter_overrides: Option<
+        std::collections::HashMap<
+            String,
+            std::collections::HashMap<String, serde_json::Value>,
+        >,
+    >,
 ) -> Result<AdoptedTeamPresetResult, AppError> {
     require_auth_sync(&state)?;
-    team_preset_adopter::adopt_preset(&state, Some(app), &id, language.as_deref())
+    team_preset_adopter::adopt_preset(
+        &state,
+        Some(app),
+        &id,
+        language.as_deref(),
+        parameter_overrides.as_ref(),
+    )
 }
 
 /// Retry the specified failed roles of a previously-adopted preset.
@@ -122,6 +140,12 @@ pub fn retry_team_preset_members(
     group_id: Option<String>,
     roles: Vec<String>,
     language: Option<String>,
+    parameter_overrides: Option<
+        std::collections::HashMap<
+            String,
+            std::collections::HashMap<String, serde_json::Value>,
+        >,
+    >,
 ) -> Result<AdoptedTeamPresetResult, AppError> {
     require_auth_sync(&state)?;
     team_preset_adopter::retry_failed_members(
@@ -132,5 +156,6 @@ pub fn retry_team_preset_members(
         group_id.as_deref(),
         &roles,
         language.as_deref(),
+        parameter_overrides.as_ref(),
     )
 }
