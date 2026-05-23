@@ -160,6 +160,13 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Recently completed (last 14 days)
 
+- **[2026-05-24 — completed (commits: 31ead17ac merge, cedc71d4f)] idea-165dceff — disabled-control reason tooltips surface on hover + keyboard**
+  - **Source:** Idea requirement (ui_perfectionist). `Button` already had a `disabledReason` prop, but the implementation relied on a native disabled `<button>` (which cannot take focus and swallows pointer events) wrapped by a `display:contents` Tooltip span — so the reason never reliably surfaced on hover OR keyboard focus.
+  - **Shipped:** `Tooltip.tsx` gains `triggerFocusable` (renders the trigger as a focusable box: `tabIndex=0` + `aria-disabled`, Escape to dismiss) + `triggerClassName` (layout footprint for the wrapper). `Button.tsx` now keeps the inert button `pointer-events-none` (`is-disabled`) and, when `showReason`, wraps it in the focusable Tooltip with `flex w-full`/`inline-flex` + `cursor-not-allowed`. `AsyncButton`/`CopyButton` inherit via prop spread. Added `Button.test.tsx` (4 tests, plain matchers so it's tsc-checked while co-located).
+  - **Paths:** `src/features/shared/components/{buttons/Button.tsx,buttons/Button.test.tsx,display/Tooltip.tsx}`
+  - **Branch:** built on `worktree-disabled-reason-tooltip` (merged no-ff `31ead17ac`, worktree+branch removed); follow-up test-matcher fix `cedc71d4f` direct on master.
+  - **Validation:** 4/4 vitest green; `tsc --noEmit` clean for the 3 files. Pre-existing tsc errors in `plugins/obsidian-brain/sub_sync/*` are another active session's in-flight work — left untouched. Path-disjoint from the concurrent obsidian-brain session. No i18n keys added (call sites already pass i18n'd reasons); no copy bulk-migration per fix-as-you-touch.
+
 - **[2026-05-23 — completed (commit: 4d9a98c8b)] idea-01db5cb0 — discoverable global shortcut cheat-sheet overlay**
   - **Source:** Idea requirement (ui_perfectionist). The main app exposed Cmd+K / Escape with no way to discover them; only IdeaTriagePage had a bespoke overlay.
   - **Shipped:** New `src/lib/keyboard/shortcutRegistry.ts` (single source of truth: sections Navigation/Agents/Editing, platform-aware `resolveKeyToken`, `SHORTCUTS_OPEN_EVENT`) + `ShortcutCheatSheet.tsx` (global `?` / Cmd+/ handler via `useAppKeyboard` priority 20, opens a `BaseModal` rendering `<kbd>` chips from the registry; also listens for the open event). Mounted in `App.tsx`. Subtle keyboard-icon affordance added to `DesktopFooter.tsx`. `IdeaTriagePage` local overlay consolidated into the global one (help button dispatches the event; `?`/Esc handled globally; accept/reject keys documented under Agents). i18n additive `chrome.shortcuts.*`. Unit test `__tests__/shortcutRegistry.test.ts` (5 passing).
