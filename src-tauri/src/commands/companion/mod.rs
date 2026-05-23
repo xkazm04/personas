@@ -20,6 +20,7 @@ pub mod proactive;
 pub mod project_tracking;
 #[cfg(feature = "desktop")]
 pub mod sensory;
+pub mod stt;
 pub mod templates;
 pub mod voice;
 

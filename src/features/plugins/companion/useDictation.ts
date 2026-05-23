@@ -19,7 +19,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { silentCatch } from '@/lib/silentCatch';
 
-interface DictationState {
+export interface DictationState {
   /** True if the browser exposes a SpeechRecognition implementation. */
   supported: boolean;
   /** True while a recognition session is active. */

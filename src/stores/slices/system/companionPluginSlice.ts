@@ -87,6 +87,16 @@ export type CompanionVoiceModel = (typeof COMPANION_VOICE_MODELS)[number];
 export type CompanionTtsEngine = 'elevenlabs' | 'piper';
 
 /**
+ * STT engine for Athena's voice input. Mirrors `SttEngineId` in
+ * `src/api/companion.ts`.
+ *
+ * Defaults to `'browser'` (Web Speech) for zero-setup back-compat; the
+ * user opts into `'whisper'` (local, on-device) once they've installed the
+ * engine binary + downloaded a model from the Voice tab.
+ */
+export type CompanionSttEngine = 'browser' | 'whisper';
+
+/**
  * Persisted floating-orb dock position, expressed as viewport fractions
  * (0..1) of the orb's top-left corner. `x` snaps to a side edge (≈0 left /
  * ≈1 right) when the user drops the orb; `y` is free (clamped to the
@@ -148,6 +158,10 @@ export interface CompanionPluginSlice {
   companionOrbEnabled: boolean;
   /** Persisted orb dock position (viewport fractions). See {@link OrbPosition}. */
   companionOrbPos: OrbPosition;
+  /** STT engine for voice input (footer hold-to-talk + orb). */
+  companionSttEngine: CompanionSttEngine;
+  /** Selected local whisper model id (e.g. `base.en`). Null until chosen. */
+  companionSttModelId: string | null;
   /**
    * Recall synthesis: when true, dense recall (above ~5K tokens) is
    * folded through a one-shot Claude call into a focused briefing
@@ -194,6 +208,8 @@ export interface CompanionPluginSlice {
   setCompanionPanelCompact: (v: boolean) => void;
   setCompanionOrbEnabled: (v: boolean) => void;
   setCompanionOrbPos: (p: OrbPosition) => void;
+  setCompanionSttEngine: (e: CompanionSttEngine) => void;
+  setCompanionSttModelId: (id: string | null) => void;
   setCompanionRecallSynthesisEnabled: (v: boolean) => void;
   setCompanionAutonomousMode: (v: boolean) => void;
   setActiveBuildIntent: (intent: string | null) => void;
@@ -223,6 +239,8 @@ export const createCompanionPluginSlice: StateCreator<
   companionPanelCompact: false,
   companionOrbEnabled: true,
   companionOrbPos: { x: 1, y: 0.82 },
+  companionSttEngine: 'browser',
+  companionSttModelId: null,
   companionRecallSynthesisEnabled: false,
   companionAutonomousMode: false,
   activeBuildIntent: null,
@@ -261,6 +279,8 @@ export const createCompanionPluginSlice: StateCreator<
   setCompanionPanelCompact: (companionPanelCompact) => set({ companionPanelCompact }),
   setCompanionOrbEnabled: (companionOrbEnabled) => set({ companionOrbEnabled }),
   setCompanionOrbPos: (companionOrbPos) => set({ companionOrbPos }),
+  setCompanionSttEngine: (companionSttEngine) => set({ companionSttEngine }),
+  setCompanionSttModelId: (companionSttModelId) => set({ companionSttModelId }),
   setCompanionRecallSynthesisEnabled: (companionRecallSynthesisEnabled) =>
     set({ companionRecallSynthesisEnabled }),
   setCompanionAutonomousMode: (companionAutonomousMode) =>

@@ -211,11 +211,12 @@ Editing `src/features/plugins/companion/**` triggers the doc-sync Stop hook → 
 - [x] `prefers-reduced-motion` handling (morph → opacity-only; orb hover-scale / pulse disabled) via framer `useReducedMotion`.
 - [~] Speaking glow: CSS pulse bloom while a spoken reply is queued/playing. **The audio-reactive `AnalyserNode` version is still parked** — `voicePlayback.play()` spins up a fresh `<audio>` per call with no shared analyser, so true level-driven bloom needs playback to be centralized first (§2.6).
 
-**Local STT (parallelizable with Step 2, ~3–5 days incl. backend)**
-- [ ] `companion/stt/` module (mod/whisper/catalog/downloader) + IPC + `ts-rs` bindings + command-names regen.
-- [ ] `useLocalDictation` (getUserMedia → 16k WAV → IPC) + `useSpeechInput` selector.
-- [ ] Voice tab STT section (engine selector, model browser, disclosure).
-- [ ] Wire orb + Composer to `useSpeechInput`.
+**Step 2c — local on-device Whisper STT (shipped)**
+- [x] `companion/stt/` module (mod/whisper/catalog/downloader) + 5 IPC commands + command-names regen. Types hand-mirrored in `api/companion.ts` (no ts-rs needed — matches the Piper TTS convention).
+- [x] `useLocalDictation` (getUserMedia → 16k mono WAV in the renderer → `companion_stt_transcribe`) + `useSpeechInput` selector; `useHoldToTalk` routes through it so footer + orb pick up the engine choice.
+- [x] Voice tab `SttPanel` (engine selector, install status, model browser with download/select/delete + progress, browser cloud disclosure).
+- [x] Slice fields `companionSttEngine` / `companionSttModelId` (persisted).
+- Note: batch engine keeps `listening` true through transcription to preserve the hold-to-talk contract (no live interim). Live transcription needs the `whisper-cli` binary + a downloaded model (same install UX as Piper TTS); verified via `cargo check`/`cargo test` (12 STT unit tests) — not exercised against a real binary in-session.
 
 ---
 

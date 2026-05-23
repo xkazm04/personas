@@ -34,7 +34,7 @@ Step 2 of [`athena-orb-overlay-plan.md`](./athena-orb-overlay-plan.md) promotes 
 
 **Polish (Step 2b).** Opening from the orb morphs the panel out of the orb's position (it flies + scales from the orb's recorded center, anchored to the panel's bottom-left corner, and collapses back on close). A global **Cmd/Ctrl+Shift+A** summons Athena and starts a voice turn (press again to send, **Esc** to cancel — the shared `useHoldToTalk` instance lives in `AthenaOrbLayer` so the orb and the keyboard drive one session). All of it honors `prefers-reduced-motion`. A CSS bloom pulses the orb while a spoken reply is queued/playing.
 
-Still parked: a true audio-reactive glow driven by an `AnalyserNode` (needs `voicePlayback` centralized first), and the on-device Whisper STT engine (plan §4 / Step 2c).
+Still parked: a true audio-reactive glow driven by an `AnalyserNode` (needs `voicePlayback` centralized first).
 
 ## Athena desktop-aware lineage
 
@@ -295,6 +295,17 @@ Synthesis spawns piper with `--model voice.onnx --config voice.onnx.json --outpu
 ### Language coverage UX
 
 The Piper voice browser groups voices by BCP-47 language. The user's current app locale is matched against voice prefixes (`en` matches `en-US` / `en-GB`, `cs` matches `cs-CZ`); matching groups are promoted to the top with a "Your language" badge. When no Piper voice covers the user's locale, the panel surfaces a fallback callout pointing them at ElevenLabs.
+
+## Voice input (speech-to-text)
+
+Athena's hold-to-talk (footer + orb) routes through `useSpeechInput`, which picks the engine from `companionSttEngine`:
+
+- **`browser`** (default) — the Web Speech API in the renderer (`useDictation`). Zero setup, but on WebView2 the audio is forwarded to the OS vendor's cloud STT (disclosed in the Voice tab).
+- **`whisper`** — on-device transcription via a sidecar `whisper-cli` binary (`useLocalDictation`). The mic is captured through an `AudioContext` pinned to 16 kHz mono, encoded as a WAV in the renderer, and sent to `companion_stt_transcribe` — audio never leaves the machine. It's batch (no live interim), so `listening` stays true through the transcription round-trip to preserve the hold-to-talk contract.
+
+Backend lives under `src-tauri/src/companion/stt/` mirroring the Piper TTS layout: `whisper.rs` (sidecar lookup `PERSONAS_WHISPER_BIN` → `~/.personas/companion-stt/bin/` → PATH; spawns `whisper-cli -m model -f wav -nt -np [-l lang]`), `catalog.rs` (curated ggml model allowlist), `downloader.rs` (atomic `.partial` download from `ggerganov/whisper.cpp`, progress on `companion://stt-download`). Commands: `companion_stt_transcribe`, `companion_stt_list_models`, `companion_stt_download_model`, `companion_stt_delete_model`, `companion_stt_engine_status`. The Voice tab's `SttPanel` exposes the engine selector, install status, and model browser. **Two preconditions for the local engine** (same UX as Piper TTS): a `whisper-cli` binary at `~/.personas/companion-stt/bin/`, and a downloaded model.
+
+**Why subprocess (same rationale as Piper):** users can swap newer whisper.cpp builds without recompiling, and the engine's ggml/BLAS stack stays in its own process.
 
 ## Self-improve loop
 

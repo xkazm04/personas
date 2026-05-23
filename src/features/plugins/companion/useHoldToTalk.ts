@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useCompanionStore } from './companionStore';
-import { useDictation } from './useDictation';
+import { useSpeechInput } from './useSpeechInput';
 
 /**
  * Shared hold-to-talk core for Athena's footer button and floating orb.
@@ -11,11 +11,10 @@ import { useDictation } from './useDictation';
  * Callers own the gesture discrimination (tap vs hold vs drag) and drive
  * this hook imperatively via {@link start} / {@link stop}.
  *
- * STT here is the browser Web Speech engine (`useDictation`). On WebView2
- * that forwards audio to the OS vendor's cloud STT; the on-device Whisper
- * engine is the separate workstream tracked in
- * `docs/features/companion/athena-orb-overlay-plan.md` §4. The mic is only
- * ever armed by an explicit `start()`, never on mount.
+ * STT routes through `useSpeechInput`, which picks the user's engine
+ * (`companionSttEngine`): the browser Web Speech engine (cloud-routed on
+ * WebView2) or the local on-device whisper engine (audio stays on device).
+ * The mic is only ever armed by an explicit `start()`, never on mount.
  */
 export interface HoldToTalk {
   /** True when the browser exposes a SpeechRecognition implementation. */
@@ -43,7 +42,7 @@ export interface HoldToTalk {
 
 export function useHoldToTalk(): HoldToTalk {
   const setVoiceTurnRequest = useCompanionStore((s) => s.setVoiceTurnRequest);
-  const dictation = useDictation();
+  const dictation = useSpeechInput();
   const [talking, setTalking] = useState(false);
   const talkingRef = useRef(false);
   // Set by `abort()` so the listening-end effect discards the transcript

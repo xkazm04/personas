@@ -16,6 +16,7 @@ import {
   type CompanionVoiceModel,
 } from '@/stores/slices/system/companionPluginSlice';
 import PiperVoicePanel from './PiperVoicePanel';
+import SttPanel from './SttPanel';
 import { debtText } from '@/i18n/DebtText';
 
 
@@ -32,6 +33,7 @@ export default function VoicePanel() {
     <div className="space-y-4 max-w-2xl">
       <EngineSelectorCard />
       {engine === 'piper' ? <PiperVoicePanel /> : <ElevenLabsVoicePanel />}
+      <SttPanel />
     </div>
   );
 }

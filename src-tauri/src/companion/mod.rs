@@ -20,5 +20,6 @@ pub mod proactive;
 pub mod projects;
 pub mod prompt;
 pub mod session;
+pub mod stt;
 pub mod templates;
 pub mod tts;
